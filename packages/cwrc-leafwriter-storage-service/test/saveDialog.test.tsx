@@ -14,6 +14,8 @@ import {
   waitFor,
 } from '@testing-library/react';
 import { userEvent } from '@testing-library/user-event';
+import Github from '@cwrc/leafwriter-storage-service/providers/Github';
+import Gitlab from '@cwrc/leafwriter-storage-service/providers/Gitlab';
 import { spyProviderFunctions } from './mocks/provider';
 import * as mock from './mocks/resource';
 
@@ -185,10 +187,78 @@ describe('Save Dialog', () => {
         const createButton = getByTestId(createRepoDialog, 'save:create-repo:create-button');
         await user.click(createButton);
 
+        // The mocked providers don't stub `createRepo`/`createRepoInOrg`, so
+        // the real permission check in the `createRepo` overmind action can
+        // fail (mismatched owner/provider username), opening a SimpleDialog
+        // error ("repo_creation_error"). That dialog is a sibling of
+        // `storage-dialog`, not a child of it, and is never dismissed by
+        // `closeLoadDialog()` - if left open, it leaks into later tests
+        // (mui-modal-provider's stack stays open, marking the next test's
+        // dialog `aria-hidden`), which is what caused
+        // "Rename > By Typing" to intermittently fail with "the element to
+        // be cleared could not be focused". Dismiss it here, same as a real
+        // user would, before finishing the test.
+        await waitFor(() =>
+          expect(
+            screen.queryByTestId('save:create-repo-dialog') === null ||
+              screen.queryByText(/creation error/i) !== null,
+          ).toBe(true),
+        );
+
+        const errorDialog = screen.queryByText(/creation error/i);
+        if (errorDialog) {
+          await user.click(screen.getByRole('button', { name: /close/i }));
+        }
+
         await closeLoadDialog();
       });
 
-      test.todo('Repository - Error');
+      test('Repository - Error', async () => {
+        // Force the create-repo action's failure path regardless of which
+        // owner/permission branch it takes (user vs organization), so this
+        // test doesn't depend on the incidental permission-check outcome
+        // that made the happy-path "Repository" test above sometimes hit
+        // this same branch by accident.
+        const ProviderClass = preferProvider === 'gitlab' ? Gitlab : Github;
+        jest.spyOn(ProviderClass.prototype, 'createRepo').mockResolvedValue(null);
+        jest.spyOn(ProviderClass.prototype, 'createRepoInOrg').mockResolvedValue(null);
+
+        const resource = mock.getResource({ provider: preferProvider, type: 'save' });
+        await setup({
+          config: { preferProvider, providers: [mock.githubAuth, mock.gitlabAuth] },
+          resource,
+          source: 'cloud',
+          type: 'save',
+        });
+
+        const storageDialog = screen.getByTestId('storage-dialog');
+        await waitFor(() => expect(getByTestId(storageDialog, 'list-repos')).toBeInTheDocument(), {
+          timeout: 500,
+        });
+
+        const createRepoButton = getByTestId(storageDialog, 'topbar:create-repository');
+        await user.click(createRepoButton);
+
+        const createRepoDialog = screen.getByTestId('save:create-repo-dialog');
+        await waitFor(() => expect(createRepoDialog).toBeInTheDocument());
+
+        const inputName = getByTestId(
+          createRepoDialog,
+          'save:create-repo:name-input',
+        ) as HTMLInputElement;
+        await user.type(inputName, 'repo-name');
+
+        const createButton = getByTestId(createRepoDialog, 'save:create-repo:create-button');
+        await user.click(createButton);
+
+        await waitFor(() => expect(screen.getByText(/creation error/i)).toBeInTheDocument());
+
+        // Same cleanup as the happy-path test above: dismiss the error
+        // dialog before finishing, or it leaks into later tests.
+        await user.click(screen.getByRole('button', { name: /close/i }));
+
+        await closeLoadDialog();
+      });
 
       test('Folder', async () => {
         const resource = mock.getResource({ provider: preferProvider, type: 'save' });
@@ -243,7 +313,50 @@ describe('Save Dialog', () => {
         await closeLoadDialog();
       });
 
-      test.todo('Folder - Error');
+      test('Folder - Error', async () => {
+        const ProviderClass = preferProvider === 'gitlab' ? Gitlab : Github;
+        jest.spyOn(ProviderClass.prototype, 'createFolder').mockResolvedValue(null);
+
+        const resource = mock.getResource({ provider: preferProvider, type: 'save' });
+        await setup({
+          config: { preferProvider, providers: [mock.githubAuth, mock.gitlabAuth] },
+          resource,
+          source: 'cloud',
+          type: 'save',
+        });
+
+        const storageDialog = screen.getByTestId('storage-dialog');
+        const repositories = getByTestId(storageDialog, 'list-repos');
+        await waitFor(() => expect(repositories).toBeInTheDocument());
+
+        const repo = getByTitle(repositories, 'repo1');
+        await user.dblClick(getByTestId(repo, 'primary-button'));
+
+        await waitFor(() =>
+          expect(getByTestId(storageDialog, 'topbar:create-folder')).toBeInTheDocument(),
+        );
+
+        const createFolderButton = getByTestId(storageDialog, 'topbar:create-folder');
+        await user.click(createFolderButton);
+
+        const createFolderDialog = screen.getByTestId('save:create-folder-dialog');
+        await waitFor(() => expect(createFolderDialog).toBeInTheDocument());
+
+        const inputName = getByTestId(
+          createFolderDialog,
+          'save:create-folder:name-input',
+        ) as HTMLInputElement;
+        await user.type(inputName, 'folder-name');
+
+        const createButton = getByTestId(createFolderDialog, 'save:create-folder:create-button');
+        await user.click(createButton);
+
+        await waitFor(() => expect(screen.getByText(/creation error/i)).toBeInTheDocument());
+
+        await user.click(screen.getByRole('button', { name: /close/i }));
+
+        await closeLoadDialog();
+      });
     });
 
     describe('Rename', () => {
