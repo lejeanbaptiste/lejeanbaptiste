@@ -1,14 +1,46 @@
+// Every *_VARIANTS list below is a straight re-export of
+// generatedAvatarParts.ts - a full scan of visual_style/*/ at pack time (see
+// visual_design/scripts/generate-avatar-parts-manifest.mjs), never a
+// hand-picked shortlist. Re-exported from here (rather than importing
+// generatedAvatarParts directly elsewhere) so callers have one module for
+// both the option shape and the choices available for each field.
+export {
+  EARRINGS_VARIANTS,
+  EYEBROWS_VARIANTS as EYEBROW_VARIANTS,
+  EYES_VARIANTS as EYE_VARIANTS,
+  FEATURES_VARIANTS,
+  GLASSES_VARIANTS,
+  HAIR_VARIANTS,
+  MOUTH_VARIANTS,
+} from './generatedAvatarParts';
+import {
+  EARRINGS_VARIANTS,
+  EYEBROWS_VARIANTS,
+  FEATURES_VARIANTS,
+} from './generatedAvatarParts';
+
 /** Registered in apps/desktop/src/main.ts alongside `ljb` and `ljb-asset`;
  * served by apps/desktop/src/avatarAssets.ts. */
 export const AVATAR_SCHEME = 'ljb-avatar';
 
 export interface DiceBearAvatarOptions {
   seed: string;
+  /** Which uniform body art (visual_design/bodies/body*.svg's f- and m-
+   * prefixed subtrees) the Service Record portrait uses - a player choice made
+   * alongside head/face customization, not randomized like pose/weapon.
+   * Kept on this same options object (not a separate field elsewhere) so
+   * it's persisted and edited as one unit with the rest of the portrait -
+   * see UniformAvatar.tsx for where it actually feeds the body compositor. */
+  bodyType: 'm' | 'f';
   eyebrowsVariant: string;
   eyesVariant: string;
   mouthVariant: string;
   glassesVariant: string;
   glassesProbability: number;
+  featuresVariant: string;
+  featuresProbability: number;
+  earringsVariant: string;
+  earringsProbability: number;
   hairVariant: string;
   skinColor: string;
   hairColor: string;
@@ -16,11 +48,16 @@ export interface DiceBearAvatarOptions {
 
 export const createDefaultDiceBearAvatar = (seed: string): DiceBearAvatarOptions => ({
   seed: seed.trim() || 'leaf-writer',
+  bodyType: 'm',
   eyebrowsVariant: 'variant01',
   eyesVariant: 'variant01',
   mouthVariant: 'variant01',
   glassesVariant: 'variant01',
   glassesProbability: 0,
+  featuresVariant: FEATURES_VARIANTS[0]!,
+  featuresProbability: 0,
+  earringsVariant: EARRINGS_VARIANTS[0]!,
+  earringsProbability: 0,
   hairVariant: 'short01',
   skinColor: 'f2d3b1',
   hairColor: '3eac2c',
@@ -39,6 +76,10 @@ export const diceBearAvatarUrl = (options: DiceBearAvatarOptions): string => {
     mouthVariant: options.mouthVariant,
     glassesVariant: options.glassesVariant,
     glassesProbability: String(options.glassesProbability),
+    featuresVariant: options.featuresVariant,
+    featuresProbability: String(options.featuresProbability),
+    earringsVariant: options.earringsVariant,
+    earringsProbability: String(options.earringsProbability),
     hairVariant: options.hairVariant,
     skinColor: options.skinColor,
     hairColor: options.hairColor,
@@ -46,35 +87,12 @@ export const diceBearAvatarUrl = (options: DiceBearAvatarOptions): string => {
   return `${AVATAR_SCHEME}://compose?${params.toString()}`;
 };
 
-export const MOUTH_VARIANTS = Array.from(
-  { length: 30 },
-  (_, index) => `variant${String(index + 1).padStart(2, '0')}`,
-);
-
-export const EYEBROW_VARIANTS = Array.from(
-  { length: 15 },
-  (_, index) => `variant${String(index + 1).padStart(2, '0')}`,
-);
-
-export const EYE_VARIANTS = Array.from(
-  { length: 26 },
-  (_, index) => `variant${String(index + 1).padStart(2, '0')}`,
-);
-
-export const GLASSES_VARIANTS = Array.from(
-  { length: 5 },
-  (_, index) => `variant${String(index + 1).padStart(2, '0')}`,
-);
-
-export const HAIR_VARIANTS = [
-  'short01',
-  'short05',
-  'short09',
-  'short14',
-  'short19',
-  'long03',
-  'long10',
-  'long18',
+/** Deliberately labeled "M"/"F", not "Male"/"Female" or "Sex"/"Gender" -
+ * this is a body-art choice (which uniform subtree renders), presented as
+ * plainly as possible. */
+export const BODY_TYPES: ReadonlyArray<{ label: string; value: 'm' | 'f' }> = [
+  { label: 'M', value: 'm' },
+  { label: 'F', value: 'f' },
 ];
 
 export const SKIN_COLORS = [

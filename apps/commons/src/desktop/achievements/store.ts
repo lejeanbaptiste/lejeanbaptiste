@@ -48,12 +48,29 @@ const sanitizeState = (parsed: Partial<AchievementsState>): AchievementsState =>
         options: {
           ...defaults,
           ...options,
+          bodyType: options.bodyType === 'm' || options.bodyType === 'f' ? options.bodyType : defaults.bodyType,
           eyebrowsVariant:
             typeof options.eyebrowsVariant === 'string'
               ? options.eyebrowsVariant
               : defaults.eyebrowsVariant,
           eyesVariant:
             typeof options.eyesVariant === 'string' ? options.eyesVariant : defaults.eyesVariant,
+          featuresVariant:
+            typeof options.featuresVariant === 'string'
+              ? options.featuresVariant
+              : defaults.featuresVariant,
+          featuresProbability:
+            typeof options.featuresProbability === 'number'
+              ? options.featuresProbability
+              : defaults.featuresProbability,
+          earringsVariant:
+            typeof options.earringsVariant === 'string'
+              ? options.earringsVariant
+              : defaults.earringsVariant,
+          earringsProbability:
+            typeof options.earringsProbability === 'number'
+              ? options.earringsProbability
+              : defaults.earringsProbability,
         },
       };
     }

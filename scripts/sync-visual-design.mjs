@@ -168,9 +168,10 @@ function main() {
   runVisualDesignScript('scripts/pack-assets.mjs');
   runVisualDesignScript('scripts/pack-definitions.mjs');
   runVisualDesignScript('scripts/generate-head-color-stats.mjs');
+  runVisualDesignScript('scripts/generate-avatar-parts-manifest.mjs');
   runVisualDesignScript('scripts/sync-avatar-parts.mjs');
   console.log(
-    'Synced artwork, game assets, achievement definitions, head color stats, and avatar parts from visual_design.',
+    'Synced artwork, game assets, achievement definitions, head color stats, avatar parts manifest, and avatar parts from visual_design.',
   );
 }
 

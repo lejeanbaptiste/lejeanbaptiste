@@ -10,12 +10,6 @@ on:
         description: Git ref to build
         required: true
         default: main
-      release_tag:
-        description: Existing release tag to receive desktop assets
-        required: true
-        default: v0.0.1
-  release:
-    types: [created]
 
 permissions:
   contents: write
@@ -258,19 +252,8 @@ jobs:
           path: |
             apps/desktop/release/*.pkg
             apps/desktop/release/*.zip
+            apps/desktop/release/*.zip.blockmap
             apps/desktop/release/latest-mac.yml
-
-      - name: Upload macOS package to release
-        if: github.event_name == 'workflow_dispatch'
-        uses: softprops/action-gh-release@v1
-        with:
-          tag_name: ${{ inputs.release_tag }}
-          files: |
-            apps/desktop/release/*.pkg
-            apps/desktop/release/*.zip
-            apps/desktop/release/latest-mac.yml
-        env:
-          GITHUB_TOKEN: ${{ github.token }}
 
   desktop-windows:
     name: Build Windows installer (x64)
@@ -312,14 +295,12 @@ jobs:
             Start-Sleep -Seconds (10 * $attempt)
           }
 
-      - name: Upload installer to release
-        if: github.event_name == 'release' && github.event.action == 'created' || github.event_name == 'workflow_dispatch'
-        uses: softprops/action-gh-release@v1
+      - name: Upload Windows package artifact
+        uses: actions/upload-artifact@v4
         with:
-          tag_name: ${{ inputs.release_tag || github.event.release.tag_name }}
-          files: |
+          name: windows-installer-x64
+          path: |
             apps/desktop/release/*.exe
             apps/desktop/release/*.exe.blockmap
             apps/desktop/release/latest.yml
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          if-no-files-found: error

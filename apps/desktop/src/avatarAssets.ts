@@ -30,15 +30,25 @@ const CONTENT_SIZE = 762;
 const PAD = CONTENT_SIZE;
 export const CANVAS_SIZE = CONTENT_SIZE + PAD * 2;
 
-// eyes -> eyebrows -> mouth -> glasses -> hair, on top of base. Matches
-// visual_style/manifest.json's stackingOrder (earrings/features exist in
-// the asset set but aren't wired into DiceBearAvatarOptions yet).
-const LAYER_ORDER: ReadonlyArray<{ folder: string; param: string; colorParam?: string }> = [
+// eyes -> eyebrows -> mouth -> features -> glasses -> hair -> earrings, on
+// top of base. Matches visual_style/manifest.json's stackingOrder - every
+// optional category (features/glasses/earrings) is wired in here, not just
+// a subset: a variant list existing in visual_style/ with nothing reading
+// it would be exactly the kind of hand-picked-shortlist-by-omission this is
+// meant to avoid.
+const LAYER_ORDER: ReadonlyArray<{
+  folder: string;
+  param: string;
+  colorParam?: string;
+  probabilityParam?: string;
+}> = [
   { folder: 'eyes', param: 'eyesVariant' },
   { folder: 'eyebrows', param: 'eyebrowsVariant' },
   { folder: 'mouth', param: 'mouthVariant' },
-  { folder: 'glasses', param: 'glassesVariant' },
+  { folder: 'features', param: 'featuresVariant', probabilityParam: 'featuresProbability' },
+  { folder: 'glasses', param: 'glassesVariant', probabilityParam: 'glassesProbability' },
   { folder: 'hair', param: 'hairVariant', colorParam: 'hairColor' },
+  { folder: 'earrings', param: 'earringsVariant', probabilityParam: 'earringsProbability' },
 ];
 
 function getPartsDir(): string {
@@ -80,8 +90,8 @@ function composeAvatarSvg(params: URLSearchParams): string {
   const parts = [withColor(base, isValidHex(skinColor) ? skinColor : null)];
 
   for (const layer of LAYER_ORDER) {
-    if (layer.folder === 'glasses') {
-      const probability = Number(params.get('glassesProbability') ?? '0');
+    if (layer.probabilityParam) {
+      const probability = Number(params.get(layer.probabilityParam) ?? '0');
       if (!(probability > 0)) continue;
     }
     const variant = params.get(layer.param);

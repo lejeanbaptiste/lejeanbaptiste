@@ -127,6 +127,14 @@ export const promptCloseDirtyTab = async (
       return 'proceed';
     }
 
+    const guard = await window.writer?.overmindActions?.ui?.guardSourceModeSave?.();
+    if (guard && !guard.proceed) {
+      if (guard.reverted) {
+        context.actions.ui.notifyViaSnackbar(t('LWC.desktop.project.messages.reverted_to_valid_version'));
+      }
+      return 'abort';
+    }
+
     const content =
       contentOverride ??
       (await getActiveEditorContent()) ??

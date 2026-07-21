@@ -2,6 +2,7 @@ import { Button, DialogActions, Stack } from '@mui/material';
 import { useAtomValue } from 'jotai';
 import { PointerEventHandler } from 'react';
 import { useTranslation } from 'react-i18next';
+import { checkWellFormedness } from '../../../utilities/checkWellFormedness';
 import { useDialog } from '../hooks/useDialog';
 import { useValidation } from '../hooks/useValidation';
 import { currentContentAtom, originalContentAtom } from '../store';
@@ -17,7 +18,7 @@ export const Footer = ({ onCancel, onDone }: FooterProps) => {
   const currentContent = useAtomValue(currentContentAtom);
   const originalContent = useAtomValue(originalContentAtom);
   const { updateContent } = useDialog();
-  const { checkValidity, handleValidationWarning } = useValidation();
+  const { checkValidity, handleValidationWarning, notifyStillInvalid } = useValidation();
 
   const handlClickChange: PointerEventHandler<HTMLButtonElement> = async (event) => {
     if (currentContent === originalContent) {
@@ -32,8 +33,19 @@ export const Footer = ({ onCancel, onDone }: FooterProps) => {
       return;
     }
 
-    const shouldCloseDialog = await handleValidationWarning(validity.error.message);
-    if (shouldCloseDialog) onCancel(event);
+    const shouldDiscard = await handleValidationWarning(validity.error.message);
+    if (!shouldDiscard) return;
+
+    // Discarding reverts to `originalContent` (closing without applying
+    // changes) — re-validate that baseline before trusting it, since the
+    // dialog may have opened on already-invalid content.
+    const revertedValidity = checkWellFormedness(originalContent);
+    if (!revertedValidity.valid) {
+      await notifyStillInvalid(revertedValidity.error.message);
+      return;
+    }
+
+    onCancel(event);
   };
 
   return (

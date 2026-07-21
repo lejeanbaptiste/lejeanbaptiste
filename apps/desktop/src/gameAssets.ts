@@ -93,3 +93,15 @@ export function getGameAssetColorStats(key: string): AssetColorStats | null {
     return null;
   }
 }
+
+/** Raw decrypted bytes for one bundled asset - used by bodyAssets.ts, which
+ * needs the actual body/poseN SVG source text to rewrite (toggling which
+ * rank/weapon groups are visible) before serving it, unlike the other
+ * `ljb-asset://` consumers that just display the bytes as-is. */
+export function getGameAssetBuffer(key: string): Buffer | null {
+  try {
+    return loadAssetMap().get(key)?.buffer ?? null;
+  } catch {
+    return null;
+  }
+}

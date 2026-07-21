@@ -328,6 +328,7 @@
           "no_supported_files_found": "No supported files found. Import supports TXT, Markdown, and RTF for now.",
           "open_project_first": "Open a project first.",
           "open_xml_before_saving": "Open an XML file before saving.",
+          "reverted_to_valid_version": "Changes discarded. The document was reverted to its last valid version and nothing was saved.",
           "project_not_fully_loaded": "Project is not fully loaded.",
           "imported_documents_success": "Imported {{documentCount}} document{{documentCount, plural, one {} other {s}}}.",
           "imported_documents_with_problems_snackbar": "Imported {{documentCount}} document{{documentCount, plural, one {} other {s}}}; {{problemCount}} problem file{{problemCount, plural, one {} other {s}}}. See console for details."

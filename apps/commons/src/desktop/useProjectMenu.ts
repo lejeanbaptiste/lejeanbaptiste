@@ -88,6 +88,15 @@ export const useProjectMenu = () => {
     if (!isDesktop()) return;
 
     clearFindHighlights();
+
+    const guard = await window.writer?.overmindActions?.ui?.guardSourceModeSave?.();
+    if (guard && !guard.proceed) {
+      if (guard.reverted) {
+        notifyViaSnackbar(t('LWC.desktop.project.messages.reverted_to_valid_version'));
+      }
+      return;
+    }
+
     const activeTab = openTabs.find((tab) => tab.filePath === activeTabPath);
     const content = await getEditorContent(leafWriter, activeTab?.content);
     if (!content) {
@@ -118,6 +127,15 @@ export const useProjectMenu = () => {
     if (!isDesktop()) return;
 
     clearFindHighlights();
+
+    const guard = await window.writer?.overmindActions?.ui?.guardSourceModeSave?.();
+    if (guard && !guard.proceed) {
+      if (guard.reverted) {
+        notifyViaSnackbar(t('LWC.desktop.project.messages.reverted_to_valid_version'));
+      }
+      return;
+    }
+
     const activeTab = openTabs.find((tab) => tab.filePath === activeTabPath);
     const content = await getEditorContent(leafWriter, activeTab?.content);
     if (!content) {

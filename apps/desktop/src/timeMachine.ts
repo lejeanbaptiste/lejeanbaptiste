@@ -2,7 +2,7 @@ import { constants } from 'fs';
 import fs from 'fs/promises';
 import path from 'path';
 
-const BACKUP_DIR_NAME = '.leafwriter-time-machine';
+const BACKUP_DIR_NAME = '.ljb-time-machine';
 const SNAPSHOTS_DIR_NAME = 'snapshots';
 const RESTORE_STAGING_DIR_NAME = 'restore-staging';
 const FILES_DIR_NAME = 'files';
