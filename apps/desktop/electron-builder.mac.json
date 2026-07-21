@@ -8,11 +8,9 @@
       "repo": "lejeanbaptiste"
     }
   ],
+  "artifactName": "Le-Jean-Baptiste-${version}-${arch}.${ext}",
   "mac": {
-    "target": [
-      "pkg",
-      "zip"
-    ],
+    "target": ["pkg", "zip"],
     "hardenedRuntime": true,
     "gatekeeperAssess": false,
     "entitlements": "resources/entitlements.mac.plist",
@@ -22,26 +20,17 @@
       {
         "from": "resources/python",
         "to": "python",
-        "filter": [
-          "**/*",
-          "!.deps-installed"
-        ]
+        "filter": ["**/*", "!.deps-installed"]
       },
       {
         "from": "resources/lemminx",
         "to": "lemminx",
-        "filter": [
-          "**/*",
-          "!*.zip",
-          "!.lemminx-version"
-        ]
+        "filter": ["**/*", "!*.zip", "!.lemminx-version"]
       }
     ]
   },
   "linux": null,
   "win": {
-    "target": [
-      "nsis"
-    ]
+    "target": ["nsis"]
   }
 }

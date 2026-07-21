@@ -461,45 +461,65 @@ export const enterSourceMode = async ({ state, actions }: Context) => {
   }
 };
 
-export const exitSourceMode = async ({ state, actions }: Context): Promise<boolean> => {
-  const { sourceOriginalContent, sourceCurrentContent } = state.ui;
+type SourceModeValidity = { valid: true } | { valid: false; message: string };
 
-  if (sourceCurrentContent === sourceOriginalContent) {
-    if (checkWellFormedness(sourceCurrentContent).valid) {
-      // Source-mode save does not refresh the hidden WYSIWYG tree; reload so markup
-      // panel and visual mode match the XML buffer (even when source text unchanged).
-      actions.document.setIsReload(true);
-      actions.document.loadDocumentXML(sourceCurrentContent);
-    }
-    actions.ui.setEditorViewMode('visual');
-    return true;
+/**
+ * Checks the current source-mode buffer (well-formedness, then schema if one
+ * is configured) and surfaces the same diagnostics used elsewhere: parse
+ * errors/schema violations are published as `documentValidated` so the
+ * Validation panel shows position + nature, exactly as it would for any
+ * other validation trigger.
+ */
+const checkCurrentSourceValidity = async ({
+  state,
+  actions,
+}: Context): Promise<SourceModeValidity> => {
+  const content = state.ui.sourceCurrentContent;
+  const wellFormed = checkWellFormedness(content);
+
+  if (!wellFormed.valid) {
+    const parseErrorCount = wellFormed.error.positions?.length ?? 1;
+    await actions.validator.updateValidationError(parseErrorCount);
+    window.writer
+      ?.event('documentValidated')
+      .publish(false, { valid: false, errors: [], parseError: wellFormed.error }, content);
+    window.writer?.layoutManager?.showModule('validation');
+    return { valid: false, message: wellFormed.error.message };
   }
 
-  const validity = checkWellFormedness(sourceCurrentContent);
-
-  if (validity.valid) {
-    const filePath = state.document.url;
-    if (filePath) {
-      window.writer?.overmindActions?.project?.updateTabContent?.({
-        filePath,
-        content: sourceCurrentContent,
-      });
-      window.writer?.overmindActions?.project?.markTabDirty?.(true);
-    }
-    window.__desktopStoredDocumentXml = sourceCurrentContent;
-
-    actions.document.setIsReload(true);
-    actions.document.loadDocumentXML(sourceCurrentContent);
-    actions.ui.setEditorViewMode('visual');
-    return true;
-  }
-
-  const parseErrorCount = validity.error.positions?.length ?? 1;
-  await actions.validator.updateValidationError(parseErrorCount);
-  window.writer
-    ?.event('documentValidated')
-    .publish(false, { valid: false, errors: [], parseError: validity.error }, sourceCurrentContent);
+  await actions.validator.validate();
   window.writer?.layoutManager?.showModule('validation');
+
+  // Only treat schema violations as blocking when a schema is actually
+  // loaded — `validate()` reports validationErrors=1 when no schema/worker
+  // is available, which means "unverifiable", not "invalid".
+  const schemaAvailable = state.validator.hasWorkerValidator && state.validator.hasSchema;
+  if (schemaAvailable && state.validator.validationErrors > 0) {
+    return {
+      valid: false,
+      message: i18n.t('LW.xml_document_schema_invalid', {
+        count: state.validator.validationErrors,
+      }),
+    };
+  }
+
+  return { valid: true };
+};
+
+/**
+ * Blocks leaving Source mode / saving while the buffer is invalid. Shows the
+ * existing "invalid document" popup (position/nature detail lives in the
+ * Validation panel it opens) and offers to revert to the content the buffer
+ * had when Source mode was entered. A revert is not assumed to be safe — the
+ * baseline itself is re-validated, and if it's still invalid the user gets a
+ * follow-up notice and stays in Source mode to fix it.
+ */
+const resolveInvalidSourceMode = async ({
+  state,
+  actions,
+}: Context): Promise<'valid' | 'reverted' | 'blocked'> => {
+  const validity = await checkCurrentSourceValidity({ state, actions } as Context);
+  if (validity.valid) return 'valid';
 
   const shouldDiscard = await new Promise<boolean>((resolve) => {
     actions.ui.openDialog({
@@ -508,7 +528,7 @@ export const exitSourceMode = async ({ state, actions }: Context): Promise<boole
         maxWidth: 'xs',
         severity: 'warning',
         title: i18n.t('LW.xml_document_invalid'),
-        Body: () => validity.error.message,
+        Body: () => validity.message,
         actions: [
           { action: 'cancel', label: i18n.t('LW.commons.cancel') },
           {
@@ -524,10 +544,84 @@ export const exitSourceMode = async ({ state, actions }: Context): Promise<boole
     });
   });
 
-  if (shouldDiscard) {
-    actions.ui.setEditorViewMode('visual');
-    return true;
+  if (!shouldDiscard) return 'blocked';
+
+  state.ui.sourceCurrentContent = state.ui.sourceOriginalContent;
+
+  const revertedValidity = await checkCurrentSourceValidity({ state, actions } as Context);
+  if (revertedValidity.valid) return 'reverted';
+
+  await new Promise<void>((resolve) => {
+    actions.ui.openDialog({
+      type: 'simple',
+      props: {
+        maxWidth: 'xs',
+        severity: 'warning',
+        title: i18n.t('LW.xml_document_invalid'),
+        Body: () => revertedValidity.message,
+        actions: [{ action: 'ok', label: i18n.t('LW.commons.ok') }],
+        onClose: () => resolve(),
+      },
+    });
+  });
+
+  return 'blocked';
+};
+
+export const exitSourceMode = async ({ state, actions }: Context): Promise<boolean> => {
+  const contentChanged = state.ui.sourceCurrentContent !== state.ui.sourceOriginalContent;
+
+  const result = await resolveInvalidSourceMode({ state, actions } as Context);
+  if (result === 'blocked') return false;
+
+  const finalContent = state.ui.sourceCurrentContent;
+
+  if (contentChanged && result === 'valid') {
+    const filePath = state.document.url;
+    if (filePath) {
+      window.writer?.overmindActions?.project?.updateTabContent?.({
+        filePath,
+        content: finalContent,
+      });
+      window.writer?.overmindActions?.project?.markTabDirty?.(true);
+    }
+    window.__desktopStoredDocumentXml = finalContent;
   }
 
-  return false;
+  // Source-mode save does not refresh the hidden WYSIWYG tree; reload so markup
+  // panel and visual mode match the XML buffer (even when source text unchanged).
+  actions.document.setIsReload(true);
+  actions.document.loadDocumentXML(finalContent);
+  actions.ui.setEditorViewMode('visual');
+  return true;
+};
+
+/**
+ * Guard used before any save-while-in-source-mode path. `proceed: false`
+ * means the caller must abort the save — either the buffer is still invalid
+ * and the user didn't discard, or it was reverted to its (valid) baseline
+ * and there's nothing new to persist.
+ */
+export const guardSourceModeSave = async ({
+  state,
+  actions,
+}: Context): Promise<{ proceed: boolean; content: string; reverted: boolean }> => {
+  if (state.ui.editorViewMode !== 'source') {
+    return { proceed: true, content: state.ui.sourceCurrentContent, reverted: false };
+  }
+
+  const result = await resolveInvalidSourceMode({ state, actions } as Context);
+  if (result === 'blocked') {
+    return { proceed: false, content: state.ui.sourceCurrentContent, reverted: false };
+  }
+
+  if (result === 'reverted') {
+    // Nothing new to persist: the buffer is back to what it was when Source
+    // mode was entered, and staying in source mode reflects that.
+    actions.document.setIsReload(true);
+    actions.document.loadDocumentXML(state.ui.sourceCurrentContent);
+    return { proceed: false, content: state.ui.sourceCurrentContent, reverted: true };
+  }
+
+  return { proceed: true, content: state.ui.sourceCurrentContent, reverted: false };
 };

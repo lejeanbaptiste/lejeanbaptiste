@@ -7,6 +7,7 @@
       "repo": "lejeanbaptiste"
     }
   ],
+  "artifactName": "Le-Jean-Baptiste-Setup-${version}-${arch}.${ext}",
   "extraResources": [
     {
       "from": "../../THIRD_PARTY_NOTICES.md",
@@ -23,10 +24,7 @@
     {
       "from": "resources/python",
       "to": "python",
-      "filter": [
-        "**/*",
-        "!.deps-installed"
-      ]
+      "filter": ["**/*", "!.deps-installed"]
     }
   ],
   "nsis": {
@@ -37,8 +35,6 @@
     "include": "installer.nsh"
   },
   "win": {
-    "target": [
-      "nsis"
-    ]
+    "target": ["nsis"]
   }
 }

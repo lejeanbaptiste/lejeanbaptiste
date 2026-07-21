@@ -49,6 +49,9 @@ jobs:
       - name: Install dependencies
         run: npm ci
 
+      - name: Set package version from release tag
+        run: node scripts/set-desktop-release-version.mjs "${{ inputs.release_tag || github.ref_name }}"
+
       - name: Build desktop package
         run: |
           attempts=3
@@ -97,6 +100,9 @@ jobs:
 
       - name: Install dependencies
         run: npm ci
+
+      - name: Set package version from release tag
+        run: node scripts/set-desktop-release-version.mjs "${{ inputs.release_tag || github.ref_name }}"
 
       - name: Build Flatpak
         run: |
@@ -153,6 +159,9 @@ jobs:
 
       - name: Install dependencies
         run: npm ci
+
+      - name: Set package version from release tag
+        run: node scripts/set-desktop-release-version.mjs "${{ inputs.release_tag || github.ref_name }}"
 
       - name: Write notary API key
         env:
@@ -212,6 +221,62 @@ jobs:
           path: |
             apps/desktop/release/*.pkg
             apps/desktop/release/*.zip
+            apps/desktop/release/*.zip.blockmap
+            apps/desktop/release/latest-mac.yml
+          if-no-files-found: error
+
+  windows:
+    name: Build Windows installer (${{ matrix.arch }})
+    runs-on: ${{ matrix.runner }}
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - arch: x64
+            runner: windows-latest
+          - arch: arm64
+            runner: windows-11-arm
+
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ inputs.source_ref || github.ref }}
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Set package version from release tag
+        run: node scripts/set-desktop-release-version.mjs "${{ inputs.release_tag || github.ref_name }}"
+
+      - name: Build Windows installer
+        shell: pwsh
+        working-directory: apps/desktop
+        run: |
+          $ErrorActionPreference = 'Stop'
+          $attempts = 3
+          for ($attempt = 1; $attempt -le $attempts; $attempt++) {
+            Write-Host "Running package:win attempt $attempt of $attempts"
+            & npm run package:win -- --${{ matrix.arch }}
+            if ($LASTEXITCODE -eq 0) { exit 0 }
+            if ($attempt -eq $attempts) { throw "package:win failed after $attempts attempts" }
+            Start-Sleep -Seconds (10 * $attempt)
+          }
+
+      - name: Upload Windows updater artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: windows-${{ matrix.arch }}
+          path: |
+            apps/desktop/release/*.exe
+            apps/desktop/release/*.exe.blockmap
+            apps/desktop/release/latest.yml
           if-no-files-found: error
 
   publish:
@@ -220,6 +285,7 @@ jobs:
       - linux-deb
       - linux-flatpak
       - macos-pkg
+      - windows
     runs-on: ubuntu-latest
     permissions:
       contents: write
@@ -245,7 +311,26 @@ jobs:
         with:
           pattern: macos-*
           path: release-assets/mac
-          merge-multiple: true
+
+      - name: Download Windows artifacts
+        uses: actions/download-artifact@v4
+        with:
+          pattern: windows-*
+          path: release-assets/windows
+
+      - name: Check out release tooling
+        uses: actions/checkout@v4
+        with:
+          clean: false
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+
+      - name: Install release-tool dependencies
+        run: npm ci --ignore-scripts
 
       # Flatten into one directory so SHA256SUMS contains bare filenames
       # (verifiable with `sha256sum --check` next to the downloads), and
@@ -254,7 +339,7 @@ jobs:
       - name: Flatten release assets
         run: |
           mkdir -p release-flat
-          find release-assets -type f -exec sh -c '
+          find release-assets -type f ! -name latest-mac.yml ! -name latest.yml -exec sh -c '
             for f; do
               # GitHub replaces spaces in release asset names with dots;
               # rename to match so SHA256SUMS entries equal the filenames
@@ -266,6 +351,31 @@ jobs:
               fi
               mv "$f" "release-flat/$base"
             done' _ {} +
+
+      - name: Combine macOS updater metadata
+        run: |
+          mapfile -t MAC_UPDATE_FILES < <(find release-assets/mac -name latest-mac.yml -type f | sort)
+          if [ "${#MAC_UPDATE_FILES[@]}" -ne 2 ]; then
+            echo "::error::expected two latest-mac.yml files, found ${#MAC_UPDATE_FILES[@]}"
+            exit 1
+          fi
+          node scripts/merge-update-info.mjs \
+            release-flat/latest-mac.yml "${MAC_UPDATE_FILES[@]}"
+
+      - name: Combine Windows updater metadata
+        run: |
+          mapfile -t WINDOWS_UPDATE_FILES < <(find release-assets/windows -name latest.yml -type f | sort)
+          if [ "${#WINDOWS_UPDATE_FILES[@]}" -ne 2 ]; then
+            echo "::error::expected two latest.yml files, found ${#WINDOWS_UPDATE_FILES[@]}"
+            exit 1
+          fi
+          node scripts/merge-update-info.mjs \
+            release-flat/latest.yml "${WINDOWS_UPDATE_FILES[@]}"
+
+      - name: Validate automatic-update assets
+        run: |
+          VERSION="${{ inputs.release_tag || github.ref_name }}"
+          node scripts/validate-updater-assets.mjs release-flat "${VERSION#v}"
 
       - name: Generate checksums
         working-directory: release-flat

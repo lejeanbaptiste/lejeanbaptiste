@@ -44,8 +44,28 @@ export const useValidation = () => {
     });
   };
 
+  // Shown after the user discards their edits: reverting is not assumed to be
+  // safe, since the content the dialog opened with may itself have been
+  // invalid. Only an "ok" is offered — there is nothing further to revert to.
+  const notifyStillInvalid = async (message: string): Promise<void> => {
+    return new Promise((resolve) => {
+      openDialog({
+        type: 'simple',
+        props: {
+          maxWidth: 'xs',
+          severity: 'warning',
+          title: t('LW.xml_document_invalid'),
+          Body: () => message,
+          actions: [{ action: 'ok', label: t('LW.commons.ok') }],
+          onClose: () => resolve(),
+        },
+      });
+    });
+  };
+
   return {
     checkValidity,
     handleValidationWarning,
+    notifyStillInvalid,
   };
 };

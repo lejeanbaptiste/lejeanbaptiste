@@ -19,7 +19,7 @@ import {
 import ShuffleIcon from '@mui/icons-material/Shuffle';
 import PrintIcon from '@mui/icons-material/Print';
 import EmojiEventsIcon from '@mui/icons-material/EmojiEvents';
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { useActions } from '@src/overmind';
 import {
   arrayBufferToBase64,
@@ -46,17 +46,20 @@ import {
   type MedalMetric,
 } from './MedalIcon';
 import {
+  BODY_TYPES,
   createDefaultDiceBearAvatar,
   diceBearAvatarUrl,
+  EARRINGS_VARIANTS,
   EYE_VARIANTS,
   EYEBROW_VARIANTS,
+  FEATURES_VARIANTS,
   GLASSES_VARIANTS,
   HAIR_VARIANTS,
   HAIR_COLORS,
   MOUTH_VARIANTS,
   SKIN_COLORS,
 } from './dicebear';
-import { UniformAvatar, pickBackgroundKey } from './UniformAvatar';
+import { buildBodyUrl, pickBackgroundKey, pickPose, pickWeapon, UniformAvatar } from './UniformAvatar';
 import { loadAchievementsState, saveAchievementsState } from './store';
 import type { AchievementsState, GlobalMetrics, UnlockedAchievement } from './types';
 
@@ -133,23 +136,68 @@ export const AchievementsDialog = ({ onClose, open }: AchievementsDialogProps) =
   const [encoderName, setEncoderName] = useState('');
   const [seedDraft, setSeedDraft] = useState('');
   const [backgroundKey, setBackgroundKey] = useState<string | null>(null);
+  const [poseIndex, setPoseIndex] = useState<number | null>(null);
+  const [weaponRank, setWeaponRank] = useState<number | null>(null);
+  const [weaponImageIds, setWeaponImageIds] = useState<string[]>([]);
   const [portraitEditorOpen, setPortraitEditorOpen] = useState(false);
   const showAlignmentGrid =
     typeof window !== 'undefined' &&
     new URLSearchParams(window.location.search).get('portraitGrid') === '1';
 
-  useEffect(() => {
-    if (!open) return;
+  // Loads achievements state and re-rolls the backdrop/pose/weapon pick.
+  // Called on mount (so everything's already resolved and fetched well
+  // before the user ever opens the dialog - see the effect below) and again
+  // every time the dialog closes (so the *next* open is instant too,
+  // instead of re-rolling and re-fetching at the moment the user clicks -
+  // that round trip through loadAchievementsState/pickPose/pickWeapon and
+  // then UniformAvatar's own head/body SVG fetches was exactly what caused
+  // the panel to visibly build itself piece by piece on every single open).
+  // Auto-expands the portrait editor the very first time this ever loads
+  // for a player who's never touched avatar customization (state.avatar is
+  // only null until they change something, and that persists from then on -
+  // no separate "have they seen this" flag needed). Checked once, off the
+  // first resolved state, not on every refreshPortrait() call - otherwise
+  // it'd also spring back open on every later close/reopen for a player who
+  // deliberately collapsed it without ever picking a single option.
+  const autoOpenCheckedRef = useRef(false);
+  const refreshPortrait = () => {
     void loadAchievementsState().then((loaded) => {
       setState(loaded);
+      if (!autoOpenCheckedRef.current) {
+        autoOpenCheckedRef.current = true;
+        if (loaded.avatar === null) setPortraitEditorOpen(true);
+      }
       // Picked together with `state` (React batches this) so the backdrop
       // is already resolved by the time the render below needs it.
       setBackgroundKey((previous) => pickBackgroundKey(highestRankIndexOf(loaded), previous));
+      // Pose and weapon are randomized the same way as the backdrop above
+      // (Daniel: "pose and weapons will be random"). Weapon depends on
+      // which pose just got picked and the player's current rank, so it's
+      // resolved from the new pose, not the stale one still in state.
+      setPoseIndex((previousPose) => {
+        const newPose = pickPose(previousPose);
+        setWeaponRank((previousWeaponRank) => {
+          const weapon = pickWeapon(newPose, highestRankIndexOf(loaded), previousWeaponRank);
+          setWeaponImageIds(weapon?.imageIds ?? []);
+          return weapon?.rank ?? null;
+        });
+        return newPose;
+      });
     });
-    void window.electronAPI
-      ?.getEncoderName()
-      .then(setEncoderName)
-      .catch(() => setEncoderName(''));
+  };
+
+  const didMountRef = useRef(false);
+  useEffect(() => {
+    if (!didMountRef.current) {
+      didMountRef.current = true;
+      refreshPortrait();
+      void window.electronAPI
+        ?.getEncoderName()
+        .then(setEncoderName)
+        .catch(() => setEncoderName(''));
+      return;
+    }
+    if (!open) refreshPortrait();
   }, [open]);
 
   useEffect(() => {
@@ -161,7 +209,7 @@ export const AchievementsDialog = ({ onClose, open }: AchievementsDialogProps) =
     );
   }, [encoderName, state]);
 
-  if (!state || !backgroundKey) {
+  if (!state || !backgroundKey || poseIndex === null) {
     return <Dialog fullWidth maxWidth="sm" onClose={onClose} open={open} />;
   }
 
@@ -177,6 +225,9 @@ export const AchievementsDialog = ({ onClose, open }: AchievementsDialogProps) =
   const avatarUrl = diceBearAvatarUrl(avatarOptions);
   const serviceSince = new Date(state.installedAt).toLocaleDateString();
   const highestRankIndex = highestRankIndexOf(state);
+  const weaponSelection = weaponRank !== null ? { imageIds: weaponImageIds, rank: weaponRank } : null;
+  const bodyBackUrl = buildBodyUrl(poseIndex, avatarOptions.bodyType, highestRankIndex, weaponSelection, 'back');
+  const bodyFrontUrl = buildBodyUrl(poseIndex, avatarOptions.bodyType, highestRankIndex, weaponSelection, 'front');
   const serviceRibbons = RANK_MEDALS.filter(
     (medal) => currentRankIndex(state, medal.metric) >= 0,
   ).map((medal) => METRIC_RIBBONS[medal.metric] ?? SPECIAL_RIBBON);
@@ -203,17 +254,25 @@ export const AchievementsDialog = ({ onClose, open }: AchievementsDialogProps) =
 
   const printCertificate = async () => {
     try {
-      const headSvgMarkup = await fetch(avatarUrl).then((response) => response.text());
-      // Same medals/ribbons the live avatar shows on the uniform - the
-      // certificate's portrait is the exact same composite, not a redrawn
-      // approximation, so there's no separate condensed medal list here.
+      const [headSvgMarkup, bodyBackSvgMarkup, bodyFrontSvgMarkup] = await Promise.all([
+        fetch(avatarUrl).then((response) => response.text()),
+        fetch(bodyBackUrl).then((response) => response.text()),
+        fetch(bodyFrontUrl).then((response) => response.text()),
+      ]);
+      // Same medals/ribbons/pose/weapon the live avatar shows on the
+      // uniform - the certificate's portrait is the exact same composite,
+      // not a redrawn approximation, so there's no separate condensed
+      // medal list here.
       const portraitFragment = await buildPortraitFragment({
         backgroundImageKey: backgroundKey,
+        bodyBackSvgMarkup,
+        bodyFrontSvgMarkup,
+        bodyType: avatarOptions.bodyType,
         hairColor: avatarOptions.hairColor,
         hairVariant: avatarOptions.hairVariant,
         headSvgMarkup,
         medals: uniformMedals,
-        rankIndex: highestRankIndex,
+        poseIndex,
         serviceRibbons,
         skinColor: avatarOptions.skinColor,
       });
@@ -286,15 +345,22 @@ export const AchievementsDialog = ({ onClose, open }: AchievementsDialogProps) =
       // shouldn't block the actual score submission.
       let avatarPngBase64: string | undefined;
       try {
-        const headSvgMarkup = await fetch(avatarUrl).then((response) => response.text());
+        const [headSvgMarkup, bodyBackSvgMarkup, bodyFrontSvgMarkup] = await Promise.all([
+          fetch(avatarUrl).then((response) => response.text()),
+          fetch(bodyBackUrl).then((response) => response.text()),
+          fetch(bodyFrontUrl).then((response) => response.text()),
+        ]);
         const portraitFragment = await buildPortraitFragment(
           {
             backgroundImageKey: backgroundKey,
+            bodyBackSvgMarkup,
+            bodyFrontSvgMarkup,
+            bodyType: avatarOptions.bodyType,
             hairColor: avatarOptions.hairColor,
             hairVariant: avatarOptions.hairVariant,
             headSvgMarkup,
             medals: uniformMedals,
-            rankIndex: highestRankIndex,
+            poseIndex,
             serviceRibbons,
             skinColor: avatarOptions.skinColor,
           },
@@ -367,8 +433,12 @@ export const AchievementsDialog = ({ onClose, open }: AchievementsDialogProps) =
     void updateAvatar({ seed });
   };
 
+  // keepMounted below: without it, MUI tears down everything inside
+  // (including UniformAvatar and its head/body SVG fetches) on every close,
+  // so the next open has to redo that whole round trip from scratch instead
+  // of reusing what refreshPortrait already prefetched while closed.
   return (
-    <Dialog fullWidth maxWidth="sm" onClose={onClose} open={open}>
+    <Dialog fullWidth keepMounted maxWidth="sm" onClose={onClose} open={open}>
       <DialogTitle>LJB Service Record</DialogTitle>
       <DialogContent>
         <Stack spacing={3}>
@@ -381,9 +451,10 @@ export const AchievementsDialog = ({ onClose, open }: AchievementsDialogProps) =
             >
               <UniformAvatar
                 headImageUrl={avatarUrl}
+                bodyBackImageUrl={bodyBackUrl}
+                bodyFrontImageUrl={bodyFrontUrl}
                 backgroundImageKey={backgroundKey}
                 medals={uniformMedals}
-                rankIndex={highestRankIndex}
                 serviceRibbons={serviceRibbons}
                 showAlignmentGrid={showAlignmentGrid}
                 size={128}
@@ -422,6 +493,21 @@ export const AchievementsDialog = ({ onClose, open }: AchievementsDialogProps) =
           {portraitEditorOpen && (
             <Box>
               <Stack direction="row" flexWrap="wrap" gap={1}>
+                <FormControl size="small" sx={{ minWidth: 72 }}>
+                  <Select
+                    aria-label="Body type"
+                    value={avatarOptions.bodyType}
+                    onChange={(event) =>
+                      void updateAvatar({ bodyType: event.target.value as 'm' | 'f' })
+                    }
+                  >
+                    {BODY_TYPES.map((bodyType) => (
+                      <MenuItem key={bodyType.value} value={bodyType.value}>
+                        {bodyType.label}
+                      </MenuItem>
+                    ))}
+                  </Select>
+                </FormControl>
                 <TextField
                   label="Seed"
                   onBlur={() => {
@@ -496,6 +582,26 @@ export const AchievementsDialog = ({ onClose, open }: AchievementsDialogProps) =
                 </FormControl>
                 <FormControl size="small" sx={{ minWidth: 116 }}>
                   <Select
+                    aria-label="Features"
+                    value={avatarOptions.featuresProbability ? avatarOptions.featuresVariant : 'none'}
+                    onChange={(event) =>
+                      void updateAvatar(
+                        event.target.value === 'none'
+                          ? { featuresProbability: 0 }
+                          : { featuresVariant: event.target.value, featuresProbability: 100 },
+                      )
+                    }
+                  >
+                    <MenuItem value="none">No feature</MenuItem>
+                    {FEATURES_VARIANTS.map((variant) => (
+                      <MenuItem key={variant} value={variant}>
+                        {variant.charAt(0).toUpperCase() + variant.slice(1)}
+                      </MenuItem>
+                    ))}
+                  </Select>
+                </FormControl>
+                <FormControl size="small" sx={{ minWidth: 116 }}>
+                  <Select
                     aria-label="Glasses"
                     value={avatarOptions.glassesProbability ? avatarOptions.glassesVariant : 'none'}
                     onChange={(event) =>
@@ -526,6 +632,27 @@ export const AchievementsDialog = ({ onClose, open }: AchievementsDialogProps) =
                         {variant.startsWith('long') ? 'Long hair' : 'Short hair'}{' '}
                         {variant.slice(-2)}
                       </MenuItem>
+                    ))}
+                  </Select>
+                </FormControl>
+                <FormControl size="small" sx={{ minWidth: 116 }}>
+                  <Select
+                    aria-label="Earrings"
+                    value={avatarOptions.earringsProbability ? avatarOptions.earringsVariant : 'none'}
+                    onChange={(event) =>
+                      void updateAvatar(
+                        event.target.value === 'none'
+                          ? { earringsProbability: 0 }
+                          : { earringsVariant: event.target.value, earringsProbability: 100 },
+                      )
+                    }
+                  >
+                    <MenuItem value="none">No earrings</MenuItem>
+                    {EARRINGS_VARIANTS.map((variant) => (
+                      <MenuItem
+                        key={variant}
+                        value={variant}
+                      >{`Earrings ${variant.slice(-2)}`}</MenuItem>
                     ))}
                   </Select>
                 </FormControl>

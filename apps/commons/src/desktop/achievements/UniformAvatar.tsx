@@ -1,7 +1,7 @@
-import { useColorScheme } from '@mui/material/styles';
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { colorMatchFilter, type ColorStats } from './colorMatch';
 import { BG_POOL_BY_RANK } from './generatedBackgroundPools';
+import { BODY_COLOR_STATS, POSE_INDICES, WEAPON_POOLS } from './generatedBodyPools';
 import { getHeadColorStats } from './headColorStats';
 import { MedalIcon, type MedalMetric, type MedalTier } from './MedalIcon';
 
@@ -10,13 +10,16 @@ import { MedalIcon, type MedalMetric, type MedalTier } from './MedalIcon';
 // bundled, encrypted resources/game-assets/assets.bin. The source artwork
 // lives in the private visual_design repo, not this one.
 export const GAME_ASSET_PREFIX = 'ljb-asset://';
-export const UNIFORM_KEYS = ['uniforms/1', 'uniforms/2', 'uniforms/3', 'uniforms/4', 'uniforms/5', 'uniforms/6', 'uniforms/7'];
+
+// Served by the desktop app's ljb-body:// protocol handler (see
+// apps/desktop/src/bodyAssets.ts), which composites one body/poseN SVG
+// (also read from the encrypted bundle) by toggling which rank/weapon
+// groups are visible - see buildBodyUrl below.
+export const BODY_SCHEME_PREFIX = 'ljb-body://compose?';
 
 type Ribbon = [string, string] | [string, string, string];
 
 interface UniformAvatarProps {
-  /** Highest rank index held (0-based into RANK_NAMES), -1 when unranked. */
-  rankIndex: number;
   /** Colorways of the rank medals currently held. */
   serviceRibbons: Ribbon[];
   /** Earned medals displayed as miniatures on the uniform. */
@@ -27,6 +30,15 @@ interface UniformAvatarProps {
   }>;
   /** A transparent, full-canvas DiceBear Adventurer SVG URL. */
   headImageUrl: string;
+  /** The composited body/pose/rank/weapon SVG URLs for the two layers the
+   * head sits between - see buildBodyUrl for how callers resolve
+   * pose+weapon (randomized, re-picked by the caller same as
+   * backgroundImageKey) and bodyType+rank (not randomized) into each one.
+   * `back` (background - rear props, a flag pole) renders behind the head,
+   * `front` (middle + foreground - the uniform itself) renders in front of
+   * it. */
+  bodyBackImageUrl: string;
+  bodyFrontImageUrl: string;
   /** ljb-asset:// key of the backdrop to show, e.g. "bg/3b" - see
    * backgroundPoolForRank/pickBackgroundKey below for how callers choose one. */
   backgroundImageKey: string;
@@ -35,11 +47,96 @@ interface UniformAvatarProps {
   size?: number;
 }
 
-// One image per rank (I-VII): a 340x319 canvas, coat flush to the bottom
-// edge and collar tip flush to the top edge, identical across all seven so
-// a single head placement lines up against every rank.
-const UNIFORM_SRCS = UNIFORM_KEYS.map((key) => `${GAME_ASSET_PREFIX}${key}`);
-export const UNIFORM_ASPECT = 340 / 319;
+/** Uniform random pick among every pose that has a full rank kit (see
+ * POSE_INDICES in generatedBodyPools.ts, auto-discovered at pack time),
+ * excluding `previousPose` when there's more than one option - same
+ * no-repeat-in-a-row behavior as pickBackgroundKey below. Pose is genuinely
+ * random per render, never persisted, per Daniel's "pose and weapons will be
+ * random". */
+export const pickPose = (previousPose: number | null): number => {
+  const choices =
+    previousPose !== null && POSE_INDICES.length > 1
+      ? POSE_INDICES.filter((pose) => pose !== previousPose)
+      : POSE_INDICES;
+  return choices[Math.floor(Math.random() * choices.length)]!;
+};
+
+/** One resolved weapon pick for a pose: the weapon-rank tier that was
+ * chosen (for display only) and the full list of image ids to show -
+ * everything every weapon "channel" has at that rank (a pose can have 0, 1,
+ * or 2 channels; see WEAPON_POOLS's own doc comment in generatedBodyPools.ts
+ * for why - body6.svg's rear/front split vs body7.svg's single group), and
+ * within a channel possibly more than one id (simultaneous parts of the
+ * same weapon, not alternates - see pickWeapon below). */
+export interface WeaponSelection {
+  rank: number;
+  imageIds: string[];
+}
+
+/** Daniel's rule: "at that rank or above, that weapon asset enters
+ * rotation... rank 5 will cycle randomly through rank 1-5 assets" - the
+ * exact same cumulative-pool random pick as backgroundPoolForRank/
+ * pickBackgroundKey, just over weapon-rank tiers instead of backdrop
+ * letters. Returns null when this pose has no weapon at all, or the
+ * player's rank hasn't unlocked any tier yet. */
+export const pickWeapon = (
+  poseIndex: number,
+  rankIndex: number,
+  previousRank: number | null,
+): WeaponSelection | null => {
+  const channels = WEAPON_POOLS[poseIndex] ?? [];
+  if (channels.length === 0) return null;
+
+  const unlockedRanks = new Set<number>();
+  for (const channel of channels) {
+    for (const rank of Object.keys(channel).map(Number)) {
+      if (rank <= rankIndex + 1) unlockedRanks.add(rank);
+    }
+  }
+  if (unlockedRanks.size === 0) return null;
+
+  const pool = Array.from(unlockedRanks);
+  const choices = previousRank !== null && pool.length > 1 ? pool.filter((rank) => rank !== previousRank) : pool;
+  const rank = choices[Math.floor(Math.random() * choices.length)]!;
+
+  // Every id sharing this rank within a channel is a simultaneous part of
+  // the same weapon at that tier (e.g. bodies/body7.svg's rank2 has two
+  // images ~170 units apart - one per hand - not two alternate designs to
+  // pick between), so all of them come along together, not just one.
+  const imageIds: string[] = [];
+  for (const channel of channels) {
+    const idsAtRank = channel[rank];
+    if (!idsAtRank || idsAtRank.length === 0) continue;
+    imageIds.push(...idsAtRank);
+  }
+  return { rank, imageIds };
+};
+
+/** Builds the ljb-body:// URL for one resolved portrait's `back` or `front`
+ * layer: a fixed pose + bodyType + rank, plus whichever specific weapon
+ * image ids (if any) were already resolved by pickWeapon - see
+ * bodyAssets.ts's composeBodySvg for how these get turned into
+ * display:none/inline toggles on the pose SVG. Call this twice, once per
+ * layer (see UniformAvatar's bodyBackImageUrl/bodyFrontImageUrl props) -
+ * `back` is the pose's `background` group (rear props, a flag pole) meant
+ * to sit behind the head, `front` is `middle` + `foreground` (the uniform
+ * itself) meant to sit in front of it. */
+export const buildBodyUrl = (
+  poseIndex: number,
+  bodyType: 'm' | 'f',
+  rankIndex: number,
+  weapon: WeaponSelection | null,
+  layer: 'back' | 'front',
+): string => {
+  const params = new URLSearchParams({
+    pose: String(poseIndex),
+    bodyType,
+    rank: String(Math.max(0, Math.min(6, rankIndex)) + 1),
+    layer,
+  });
+  if (weapon && weapon.imageIds.length > 0) params.set('weaponIds', weapon.imageIds.join(','));
+  return `${BODY_SCHEME_PREFIX}${params.toString()}`;
+};
 
 // Rank-gated portrait backdrops, one letter-suffixed pool per rank
 // (RANK_NAMES[0..6]). The pool available at a given rank is cumulative -
@@ -85,14 +182,11 @@ export const getCachedColorStats = (key: string): Promise<ColorStats> => {
   return cached;
 };
 
-// Fraction of the portrait frame height the coat occupies, anchored to the
-// bottom. The rest is sky reserved above the collar tip (which sits right at
-// the coat's own top edge) for the head to sit in. This new artwork has much
-// broader shoulders/epaulettes than the old sheet, so the coat needs a
-// smaller share of the frame than before or the head reads as too small
-// against them - 0.63 keeps the whole figure (coat + head) comfortably
-// inside the frame with margin to spare, rather than filling it edge to edge.
-export const COAT_FRACTION = 0.63;
+// Body, head, and background art are now all drawn on one identically
+// sized/ratioed canvas (visual_design/bodies/body*.svg, heads_positionned.svg,
+// and rewards/bg_*.png are all 200.55417 x 87.57708mm - see BG_ASPECT below),
+// deliberately so no separate coat-box/head-box coordinate systems are
+// needed anymore: background and body are both simple full-frame layers.
 
 // The DiceBear Adventurer SVG has a 762x762 content canvas. Some hair
 // variants (e.g. long18) draw strands outside it, so the local compositor
@@ -103,39 +197,85 @@ export const SVG_PAD = 762;
 export const SVG_VIEWBOX_SIZE = 762;
 export const PADDED_VIEWBOX_SIZE = SVG_VIEWBOX_SIZE + SVG_PAD * 2;
 
-// Fraction of the (padded) canvas the DiceBear face actually occupies,
-// measured from the unpadded SVG's rendered bounding box and shifted by
-// SVG_PAD. Intentional headroom, not something to crop away: it guarantees
-// the head never touches the frame even for taller hair variants, so it's
-// kept intact (object-fit: contain, not cropped).
-const HEAD_CONTENT = {
+// The shared canvas's own dimensions (see BG_ASPECT below), in the same
+// units Daniel measured the head registration in.
+const SHARED_CANVAS_WIDTH = 200.55417;
+const SHARED_CANVAS_HEIGHT = 87.57708;
+
+// Head placement, derived from heads_positionned.svg's `head` group
+// transform - `matrix(0.04382162,0,0,0.04382162,84.087754,11.470164)` -
+// which Daniel measured against the *unpadded* 0-762 visual_style content.
+// avatarAssets.ts's fetched SVG is padded (see SVG_PAD/PADDED_VIEWBOX_SIZE
+// above), so the translate component here is that matrix's own e/f shifted
+// by -(scale * SVG_PAD) to account for the pad before placing it on the
+// shared canvas - verified by rendering both side by side and diffing
+// (matched pixel-for-pixel bar antialiasing noise). Uniform scale (no
+// rotation/skew in the source matrix), so the padded composite always
+// renders as a square; expressed here as independent width/height frame
+// fractions since the shared canvas's own aspect ratio is only
+// approximately equal to BG_ASPECT (200.55417/87.57708 vs 758/331 - a
+// ~0.01% difference from Daniel's mm measurements, imperceptible).
+const HEAD_MATRIX_SCALE = 0.04382162;
+const HEAD_MATRIX_E = 84.087754;
+const HEAD_MATRIX_F = 11.470164;
+const HEAD_UNPADDED_LEFT = HEAD_MATRIX_E - HEAD_MATRIX_SCALE * SVG_PAD;
+const HEAD_UNPADDED_TOP = HEAD_MATRIX_F - HEAD_MATRIX_SCALE * SVG_PAD;
+const HEAD_RENDERED_SIZE = PADDED_VIEWBOX_SIZE * HEAD_MATRIX_SCALE;
+export const HEAD_LEFT_FRAC = HEAD_UNPADDED_LEFT / SHARED_CANVAS_WIDTH;
+export const HEAD_TOP_FRAC = HEAD_UNPADDED_TOP / SHARED_CANVAS_HEIGHT;
+export const HEAD_WIDTH_FRAC = HEAD_RENDERED_SIZE / SHARED_CANVAS_WIDTH;
+export const HEAD_HEIGHT_FRAC = HEAD_RENDERED_SIZE / SHARED_CANVAS_HEIGHT;
+
+// Where the actually-visible face content sits *within* the padded square
+// above - measured from the unpadded SVG's own rendered bounding box (the
+// same measurement the old HEAD_CONTENT constant used, before the
+// registration rework made the full padded box unnecessary for placing the
+// real head image). Used only for sizing the "avatar unavailable" fallback
+// below to roughly where a face would be, instead of the full padded
+// square - the padded square is mostly transparent margin, so sizing the
+// fallback to it renders as a jarring oversized blank shape.
+const HEAD_CONTENT_FRACTION_OF_SQUARE = {
   height: 472.9 / PADDED_VIEWBOX_SIZE,
   left: (141.4 + SVG_PAD) / PADDED_VIEWBOX_SIZE,
   top: (138.1 + SVG_PAD) / PADDED_VIEWBOX_SIZE,
   width: 502.5 / PADDED_VIEWBOX_SIZE,
 };
+export const HEAD_FALLBACK_LEFT_FRAC = HEAD_LEFT_FRAC + HEAD_CONTENT_FRACTION_OF_SQUARE.left * HEAD_WIDTH_FRAC;
+export const HEAD_FALLBACK_TOP_FRAC = HEAD_TOP_FRAC + HEAD_CONTENT_FRACTION_OF_SQUARE.top * HEAD_HEIGHT_FRAC;
+export const HEAD_FALLBACK_WIDTH_FRAC = HEAD_CONTENT_FRACTION_OF_SQUARE.width * HEAD_WIDTH_FRAC;
+export const HEAD_FALLBACK_HEIGHT_FRAC = HEAD_CONTENT_FRACTION_OF_SQUARE.height * HEAD_HEIGHT_FRAC;
 
-// The head box is a fixed-size square (frame-fraction units): with
-// object-fit:contain and a box this size, the render is height-limited (the
-// box is always given full coat width below), so the square fills exactly
-// edge-to-edge with no wasted padding.
-//
-// HEAD_BOX_TOP is pinned to a small positive margin (not solved from a chin
-// target) so the DiceBear image's own bounding square - padding included -
-// never gets clipped by the frame, even for hair variants taller than the
-// one this was measured against. The resulting chin position lands where it
-// should: covering most of the collar's black interior with the outline
-// just touching the red trim.
-export const HEAD_BOX_SIZE = 0.52 * (PADDED_VIEWBOX_SIZE / SVG_VIEWBOX_SIZE);
-export const HEAD_BOX_TOP = -0.01;
+// Single source of truth for every layer's stacking order - every sibling
+// in the portrait stack needs an explicit entry here, not just the ones
+// that happen to overlap today. Mixing explicit z-index values with
+// z-index:auto siblings is exactly what broke DecorationRack (medals sat at
+// the implicit auto/0 level, which paints *below* any sibling given a real
+// z-index) the moment head/body got explicit values for the head-behind-
+// body reorder - auto doesn't compete with a real z-index by DOM order,
+// it just loses.
+const PORTRAIT_Z_INDEX = {
+  bodyBack: 0,
+  head: 1,
+  bodyFront: 2,
+  decorationRack: 3,
+  devGrid: 4,
+} as const;
 
 // The empty chest panel to the right of the button line, as a fraction of
-// the coat image's own 340x319 canvas. Measured by masking every uniform
-// rank for its coat-navy color and intersecting the masks, so this rectangle
-// sits clear of the collar/epaulettes above, the sash intruding on the
-// highest rank below, the button line on the left, and the sleeve seam on
-// the right - across all seven ranks at once.
-export const DECORATION_PANEL = { height: 0.3597, left: 0.4276, top: 0.25, width: 0.2813 };
+// the full portrait frame (body art is full-frame now, so this is no longer
+// relative to a separate coat sub-box). Measured the same way the old value
+// was - masking bodies/body1.svg's navy color at rank 4 and rank 7 (to make
+// sure the rank-7 sash doesn't cut into it) for both bodyType m and f, and
+// intersecting - largest clear rect came out to left=0.483, top=0.525,
+// width=0.082, height=0.230 (in 1800x787 renders); the values below inset
+// that by a small safety margin so the rack doesn't touch the button line,
+// collar, or sash exactly at the edge.
+export const DECORATION_PANEL = { height: 0.19, left: 0.49, top: 0.53, width: 0.07 };
+
+// The decoration panel's own border/stroke color (ribbon rack, medal rack)
+// - reused for the portrait frame border too, so the frame reads as part
+// of the same panel rather than a separate light/dark-mode outline.
+export const PANEL_BORDER_COLOR = 'rgba(24, 35, 52, .75)';
 
 /** Choose a rows x columns grid that packs `count` items of the given
  * width:height aspect ratio into a box as large as possible, trying every
@@ -192,7 +332,7 @@ const RibbonRack = ({
           key={index}
           style={{
             background: `linear-gradient(90deg, ${stripes[0]} 0 33%, ${stripes[1]} 33% 66%, ${stripes[2]} 66%)`,
-            border: '1px solid rgba(24, 35, 52, .75)',
+            border: `1px solid ${PANEL_BORDER_COLOR}`,
             height: itemHeight,
             width: itemHeight * RIBBON_ASPECT,
           }}
@@ -274,6 +414,7 @@ const DecorationRack = ({
         // itself starts at coatTop (not 0) within the portrait frame.
         top: coatTop + coatHeight * DECORATION_PANEL.top,
         width: panelWidth,
+        zIndex: PORTRAIT_Z_INDEX.decorationRack,
       }}
     >
       {ribbons.length > 0 && (
@@ -284,58 +425,56 @@ const DecorationRack = ({
   );
 };
 
-export const UniformAvatar = ({
-  rankIndex,
-  serviceRibbons,
-  medals,
-  headImageUrl,
-  backgroundImageKey,
-  showAlignmentGrid = false,
-  size = 96,
-}: UniformAvatarProps) => {
-  // This app uses MUI's CSS-variables theming, where theme.palette.mode is
-  // a static seed rather than the live mode - useColorScheme() is what
-  // every other mode-aware component here reads instead (see
-  // HighlighterIcon.tsx, icons/tab/index.tsx).
-  const { mode, systemMode } = useColorScheme();
-  const isDarkMode = mode === 'dark' || (mode === 'system' && systemMode === 'dark');
-  // Trims the soft/anti-aliased edge left by the composited artwork. An
-  // inset box-shadow (not a border) so it paints over the existing frame
-  // without shifting the box model - every child below is positioned in
-  // pixel/percentage terms that assume the frame is exactly `size` tall.
-  const frameBorderColor = isDarkMode ? '#fff' : '#000';
-  const [headFailed, setHeadFailed] = useState(false);
-  const [paddedHeadSrc, setPaddedHeadSrc] = useState<string | null>(null);
+/** Both the head (ljb-avatar://) and body (ljb-body://) images are SVGs
+ * composited on the fly by a custom Electron protocol handler - fetched as
+ * text and re-served as a blob object URL rather than used as a plain <img
+ * src>, the same workaround this component already relied on for the head
+ * before the body art existed too. */
+function useComposedSvgSrc(url: string): { failed: boolean; src: string | null } {
+  const [failed, setFailed] = useState(false);
+  const [src, setSrc] = useState<string | null>(null);
   const objectUrlRef = useRef<string | null>(null);
-  useEffect(() => setHeadFailed(false), [headImageUrl]);
+  useEffect(() => setFailed(false), [url]);
   useEffect(() => {
     let cancelled = false;
-    setPaddedHeadSrc(null);
-    void fetch(headImageUrl)
+    setSrc(null);
+    void fetch(url)
       .then((response) => response.text())
       .then((svgText) => {
         if (cancelled) return;
-        // Already pre-padded by the local compositor - see SVG_PAD above.
         const blob = new Blob([svgText], { type: 'image/svg+xml' });
         const objectUrl = URL.createObjectURL(blob);
         if (objectUrlRef.current) URL.revokeObjectURL(objectUrlRef.current);
         objectUrlRef.current = objectUrl;
-        setPaddedHeadSrc(objectUrl);
+        setSrc(objectUrl);
       })
-      .catch(() => setHeadFailed(true));
+      .catch(() => setFailed(true));
     return () => {
       cancelled = true;
     };
-  }, [headImageUrl]);
+  }, [url]);
   useEffect(
     () => () => {
       if (objectUrlRef.current) URL.revokeObjectURL(objectUrlRef.current);
     },
     [],
   );
-  const uniformIndex = Math.max(0, Math.min(UNIFORM_KEYS.length - 1, rankIndex));
-  const uniformKey = UNIFORM_KEYS[uniformIndex]!;
-  const uniformSrc = UNIFORM_SRCS[uniformIndex]!;
+  return { failed, src };
+}
+
+export const UniformAvatar = ({
+  serviceRibbons,
+  medals,
+  headImageUrl,
+  bodyBackImageUrl,
+  bodyFrontImageUrl,
+  backgroundImageKey,
+  showAlignmentGrid = false,
+  size = 96,
+}: UniformAvatarProps) => {
+  const { failed: headFailed, src: paddedHeadSrc } = useComposedSvgSrc(headImageUrl);
+  const { failed: bodyBackFailed, src: bodyBackSrc } = useComposedSvgSrc(bodyBackImageUrl);
+  const { failed: bodyFrontFailed, src: bodyFrontSrc } = useComposedSvgSrc(bodyFrontImageUrl);
 
   // Color-matches the fixed-palette uniform and head sprites to whichever
   // backdrop they're currently sitting on, so a random pick doesn't leave
@@ -356,17 +495,27 @@ export const UniformAvatar = ({
       return NEUTRAL_STATS;
     }
   }, [headImageUrl]);
+  // Both layer URLs carry the same pose/bodyType, and there's one stat per
+  // pose+bodyType (not per layer) - front is as good a source as back.
+  const bodyStats = useMemo(() => {
+    try {
+      const params = new URL(bodyFrontImageUrl).searchParams;
+      const pose = params.get('pose');
+      const bodyType = params.get('bodyType');
+      return (pose && bodyType && BODY_COLOR_STATS[`${pose}:${bodyType}`]) || NEUTRAL_STATS;
+    } catch {
+      return NEUTRAL_STATS;
+    }
+  }, [bodyFrontImageUrl]);
   useEffect(() => {
     let cancelled = false;
-    void Promise.all([getCachedColorStats(backgroundImageKey), getCachedColorStats(uniformKey)]).then(
-      ([backgroundStats, uniformStats]) => {
-        if (!cancelled) setUniformFilter(colorMatchFilter(uniformStats, backgroundStats));
-      },
-    );
+    void getCachedColorStats(backgroundImageKey).then((backgroundStats) => {
+      if (!cancelled) setUniformFilter(colorMatchFilter(bodyStats, backgroundStats));
+    });
     return () => {
       cancelled = true;
     };
-  }, [backgroundImageKey, uniformKey]);
+  }, [backgroundImageKey, bodyStats]);
   useEffect(() => {
     let cancelled = false;
     void getCachedColorStats(backgroundImageKey).then((backgroundStats) => {
@@ -379,21 +528,29 @@ export const UniformAvatar = ({
 
   const backgroundSrc = `${GAME_ASSET_PREFIX}${backgroundImageKey}`;
   const sceneWidth = size * BG_ASPECT;
-  // The coat is anchored to the bottom of the frame; the remaining fraction
-  // above it is sky, reserved for the head to sit in (see COAT_FRACTION).
-  const coatHeight = size * COAT_FRACTION;
-  const coatWidth = coatHeight * UNIFORM_ASPECT;
-  const coatTop = size - coatHeight;
-  const portraitLeft = (sceneWidth - coatWidth) / 2;
+  // Body art is a full-frame layer now (see the shared-canvas comment above
+  // COAT_FRACTION used to live at) - "coat*" names kept only because
+  // DecorationRack below still takes them as its panel box.
+  const coatWidth = sceneWidth;
+  const coatHeight = size;
+  const coatTop = 0;
+  const portraitLeft = 0;
   const ribbons: Ribbon[] = serviceRibbons.slice(0, 9);
-  // Box width is the full coat width - wider than HEAD_BOX_SIZE - so
-  // object-fit:contain is always height-limited and the square renders at
-  // exactly HEAD_BOX_SIZE regardless of the coat's own proportions.
   const resolvedHeadPlacement = {
-    height: `${HEAD_BOX_SIZE * 100}%`,
-    left: '0%',
-    top: `${HEAD_BOX_TOP * 100}%`,
-    width: '100%',
+    height: `${HEAD_HEIGHT_FRAC * 100}%`,
+    left: `${HEAD_LEFT_FRAC * 100}%`,
+    top: `${HEAD_TOP_FRAC * 100}%`,
+    width: `${HEAD_WIDTH_FRAC * 100}%`,
+  };
+  // Sized to roughly where the visible face sits, not the full padded
+  // square resolvedHeadPlacement describes - that square is mostly
+  // transparent margin, so a fallback that size renders as an oversized
+  // blank shape.
+  const fallbackHeadPlacement = {
+    height: `${HEAD_FALLBACK_HEIGHT_FRAC * 100}%`,
+    left: `${HEAD_FALLBACK_LEFT_FRAC * 100}%`,
+    top: `${HEAD_FALLBACK_TOP_FRAC * 100}%`,
+    width: `${HEAD_FALLBACK_WIDTH_FRAC * 100}%`,
   };
 
   return (
@@ -420,34 +577,46 @@ export const UniformAvatar = ({
           width: coatWidth,
         }}
       >
-        <img
-          alt=""
-          draggable={false}
-          src={uniformSrc}
-          style={{
-            filter: uniformFilter,
-            height: coatHeight,
-            left: 0,
-            position: 'absolute',
-            top: coatTop,
-            width: coatWidth,
-          }}
-        />
+        {!bodyBackFailed && bodyBackSrc && (
+          <img
+            alt=""
+            draggable={false}
+            src={bodyBackSrc}
+            style={{
+              filter: uniformFilter,
+              height: coatHeight,
+              left: 0,
+              objectFit: 'fill',
+              position: 'absolute',
+              top: coatTop,
+              width: coatWidth,
+              zIndex: PORTRAIT_Z_INDEX.bodyBack,
+            }}
+          />
+        )}
+        {/* Head paints between the two body layers - `back` (rear props, a
+            flag pole) sits behind the head, `front` (the uniform itself)
+            sits in front of it and is meant to cover the lower part of the
+            neck, which is exactly why the neck/shadow were added to the
+            head art in the first place. Rendering the whole flattened body
+            on top of the head (the old order, from before there were two
+            separate layers) left both the head floating above the
+            uniform's collar and any rear prop/flag incorrectly covering the
+            face instead of sitting behind it. */}
         {!headFailed && paddedHeadSrc ? (
           <img
             alt=""
             draggable={false}
-            onError={() => setHeadFailed(true)}
             src={paddedHeadSrc}
             style={{
               filter: headFilter,
               height: resolvedHeadPlacement.height,
               left: resolvedHeadPlacement.left,
-              objectFit: 'contain',
+              objectFit: 'fill',
               position: 'absolute',
               top: resolvedHeadPlacement.top,
               width: resolvedHeadPlacement.width,
-              zIndex: 2,
+              zIndex: PORTRAIT_Z_INDEX.head,
             }}
           />
         ) : (
@@ -457,11 +626,12 @@ export const UniformAvatar = ({
               background: '#f2d3b1',
               border: '1px solid #716b61',
               borderRadius: '50%',
-              height: '50%',
-              left: '15%',
+              height: fallbackHeadPlacement.height,
+              left: fallbackHeadPlacement.left,
               position: 'absolute',
-              top: '-2%',
-              width: '70%',
+              top: fallbackHeadPlacement.top,
+              width: fallbackHeadPlacement.width,
+              zIndex: PORTRAIT_Z_INDEX.head,
             }}
           >
             <span
@@ -499,6 +669,23 @@ export const UniformAvatar = ({
             />
           </div>
         )}
+        {!bodyFrontFailed && bodyFrontSrc && (
+          <img
+            alt=""
+            draggable={false}
+            src={bodyFrontSrc}
+            style={{
+              filter: uniformFilter,
+              height: coatHeight,
+              left: 0,
+              objectFit: 'fill',
+              position: 'absolute',
+              top: coatTop,
+              width: coatWidth,
+              zIndex: PORTRAIT_Z_INDEX.bodyFront,
+            }}
+          />
+        )}
         {showAlignmentGrid && (
           <div
             aria-hidden="true"
@@ -513,7 +700,7 @@ export const UniformAvatar = ({
               position: 'absolute',
               top: '43%',
               width: '44%',
-              zIndex: 4,
+              zIndex: PORTRAIT_Z_INDEX.devGrid,
             }}
           />
         )}
@@ -566,7 +753,7 @@ export const UniformAvatar = ({
       <div
         aria-hidden="true"
         style={{
-          boxShadow: `inset 0 0 0 1px ${frameBorderColor}`,
+          boxShadow: `inset 0 0 0 1px ${PANEL_BORDER_COLOR}`,
           inset: 0,
           pointerEvents: 'none',
           position: 'absolute',

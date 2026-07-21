@@ -686,6 +686,8 @@
     "title": "",
     "unknown": "",
     "xml_document_invalid": "XML document invalid",
+    "xml_document_schema_invalid": "This document does not follow the schema ({{count}} error(s)). See the Validation panel for details.",
+    "xml_document_still_invalid": "The reverted document still contains errors. See the Validation panel for details.",
     "Copy Source and Translation": "Copy Source and Translation",
     "Loading authorities": "Loading authorities"
   }

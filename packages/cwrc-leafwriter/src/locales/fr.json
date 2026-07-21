@@ -549,6 +549,8 @@
     "title": "titre",
     "unknown": "inconnu",
     "xml_document_invalid": "document XML invalide",
+    "xml_document_schema_invalid": "Ce document ne respecte pas le schéma ({{count}} erreur(s)). Voir le panneau de validation pour plus de détails.",
+    "xml_document_still_invalid": "Le document rétabli contient toujours des erreurs. Voir le panneau de validation pour plus de détails.",
     "Copy Source and Translation": "Copier la source et la traduction",
     "Loading authorities": "Chargement des autorités"
   }

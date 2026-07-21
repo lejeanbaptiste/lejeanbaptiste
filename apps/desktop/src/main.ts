@@ -26,6 +26,7 @@ import {
 } from './nativeDialogs';
 import { GAME_ASSET_SCHEME, getGameAssetColorStats, registerGameAssetProtocol } from './gameAssets';
 import { AVATAR_SCHEME, registerAvatarProtocol } from './avatarAssets';
+import { BODY_SCHEME, registerBodyProtocol } from './bodyAssets';
 import {
   getCachedLeaderboardToken,
   pollLeaderboardDeviceFlow,
@@ -502,6 +503,15 @@ protocol.registerSchemesAsPrivileged([
   },
   {
     scheme: AVATAR_SCHEME,
+    privileges: {
+      secure: true,
+      standard: true,
+      supportFetchAPI: true,
+      corsEnabled: true,
+    },
+  },
+  {
+    scheme: BODY_SCHEME,
     privileges: {
       secure: true,
       standard: true,
@@ -2084,6 +2094,7 @@ app.whenReady().then(() => {
   registerLjbProtocol();
   registerGameAssetProtocol();
   registerAvatarProtocol();
+  registerBodyProtocol();
   registerIpcHandlers();
   registerNativeDialogIpc();
   registerLemminxIpc(() => mainWindow);

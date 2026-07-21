@@ -10,12 +10,28 @@ const clamp = (value: number, min: number, max: number): number => Math.min(max,
 // discolored rather than blended. Measured against the real assets (all 22
 // backdrops average saturation ~0.06-0.37; the uniform coat ~0.61, the
 // DiceBear head ~0.52), the real ratios this needs to cover run
-// ~0.17-0.72 for saturation - a floor of 0.6 was leaving the muted
-// backdrops almost entirely uncorrected. Brightness is kept conservative:
-// over-brightening a flat-color coat via brightness() risks blowing it out
-// to white in a way desaturating doesn't.
-const BRIGHTNESS_RANGE: [number, number] = [0.75, 1.25];
-const SATURATION_RANGE: [number, number] = [0.15, 1.2];
+// ~0.17-0.72 for saturation. Brightness is kept conservative: over-
+// brightening a flat-color coat via brightness() risks blowing it out to
+// white in a way desaturating doesn't - the new body art's cream front
+// panel (~240/255) clips to solid white above ~1.06x, hence the 1.08
+// ceiling.
+//
+// Both floors got tightened from an earlier, much wider pass ([0.75, 0.15])
+// after a pale-skin-tone head against a dark, muted battle-scene backdrop
+// came back looking washed-out gray rather than merely "toned down" -
+// verified by rendering the actual filter values that combo produces
+// (brightness(0.75) saturate(0.15)) against a real head asset, side by
+// side with tighter candidates. Skin/hair color is a player's chosen
+// identity, not something that should visibly shift toward whatever
+// backdrop happened to load; the uniform's fixed navy has much more room to
+// assimilate into a scene without looking "wrong". A shared, single
+// tolerance still applies to both (colorMatchFilter doesn't know which
+// layer is calling it), so these floors are picked to keep skin
+// recognizable first, at the cost of the uniform blending in slightly less
+// on the darkest/most-desaturated backdrops than the old wider range would
+// have allowed.
+const BRIGHTNESS_RANGE: [number, number] = [0.85, 1.08];
+const SATURATION_RANGE: [number, number] = [0.55, 1.2];
 
 /** CSS filter() value that nudges `own`'s average lightness/saturation
  * toward `target`'s (e.g. a layer toward the backdrop it sits on). Both

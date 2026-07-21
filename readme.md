@@ -99,14 +99,18 @@ All release assets can be verified as described in [SECURITY.md](SECURITY.md).
 2. Open the `.pkg` file and follow the installer. The packages are signed
    and notarized, so Gatekeeper accepts them without warnings.
 3. The application will be installed to `/Applications/Le Jean-Baptiste.app`.
-4. Update by installing a newer release; automatic in-app updates are planned.
+4. Signed updates are checked automatically when the application starts and
+   every four hours. A downloaded update is installed when the application
+   quits. The `.pkg` is only needed for the first installation.
 
 ### Windows
 
-1. Download `Le.Jean-Baptiste.Setup.<version>.exe`.
+1. Download the installer for your machine: `arm64` for Windows on Arm or
+   `x64` for Intel/AMD (`Le-Jean-Baptiste-Setup-<version>-<arch>.exe`).
 2. Run the installer and follow the prompts. Choose your installation directory and start-menu shortcut preferences.
 3. **Note:** The installer is not signed by a certificate authority. Windows Defender SmartScreen may show a warning. To proceed, click "More info" → "Run anyway". A signed package through the Microsoft Store is planned.
-4. Update by installing a newer release.
+4. Updates are checked automatically when the application starts and every
+   four hours. A downloaded update is installed when the application quits.
 
 ### Linux
 
