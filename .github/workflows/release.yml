@@ -180,7 +180,21 @@ jobs:
           APPLE_API_KEY: ${{ runner.temp }}/notary_key.p8
           APPLE_API_KEY_ID: ${{ secrets.APPLE_API_KEY_ID }}
           APPLE_API_ISSUER: ${{ secrets.APPLE_API_ISSUER }}
-        run: npm run build:desktop:mac:release
+        run: |
+          attempts=3
+          for attempt in $(seq 1 "$attempts"); do
+            echo "Running build:desktop:mac:release attempt $attempt of $attempts"
+            package_exit=0
+            npm run build:desktop:mac:release || package_exit=$?
+            if [ "$package_exit" -eq 0 ]; then
+              exit 0
+            fi
+            if [ "$attempt" -eq "$attempts" ]; then
+              exit "$package_exit"
+            fi
+            echo "build:desktop:mac:release failed with exit code $package_exit. Waiting before retry..."
+            sleep $((10 * attempt))
+          done
 
       - name: Notarize and staple installer
         env:
