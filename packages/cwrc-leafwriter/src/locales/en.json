@@ -615,7 +615,7 @@
       },
       "find": "",
       "find entity": "find {{entity}}",
-      "tag without linking": "tag without linking"
+      "tag without linking": "Add"
     },
     "low": "",
     "markup panel": "",
@@ -712,7 +712,7 @@
     "show only valid tags": "show only valid tags",
     "show_lod_annotation": "Show Linked Open Data Annotation",
     "source": "",
-    "tag without linking": "",
+    "tag without linking": "Add",
     "thing": "",
     "title": "",
     "unknown": "",

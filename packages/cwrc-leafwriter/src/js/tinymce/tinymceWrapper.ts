@@ -1,4 +1,5 @@
 import $ from 'jquery';
+import { debounce } from 'lodash';
 import 'tinymce/icons/default';
 import 'tinymce/models/dom';
 import 'tinymce/themes/silver';
@@ -1296,6 +1297,24 @@ export const tinymceWrapperInit = function ({
     return event.code === 'Enter' || event.code === 'NumpadEnter';
   };
 
+  // Syncing the current entity's text content requires scanning the whole editor
+  // body for `.entityHighlight`, which is too expensive to do on every keystroke.
+  // Debounce it so arrow-key navigation (which runs doHighlightCheck/updateTagBoundaryState
+  // synchronously, above) stays snappy while typing; the entity content just lags
+  // slightly behind, which is imperceptible.
+  const syncCurrentEntityContent = () => {
+    const entityId = writer.entitiesManager.getCurrentEntity();
+    if (entityId === null) return;
+    const content = $('.entityHighlight', writer.editor?.getBody()).text();
+    const entity = writer.entitiesManager.getEntity(entityId);
+    if (entity?.isNote()) {
+      entity.setNoteContent($(`#${entityId}`, writer.editor?.getBody()).html());
+    }
+    entity?.setContent(content);
+    writer.event('entityEdited').publish(entityId);
+  };
+  const debouncedSyncCurrentEntityContent = debounce(syncCurrentEntityContent, 150);
+
   const onKeyUpHandler = (event: KeyboardEvent) => {
     // nav keys and backspace check
     switch (event.code) {
@@ -1316,16 +1335,9 @@ export const tinymceWrapperInit = function ({
     if (writer.isReadOnly === true) return;
     if (writer.isTextLocked === true) return;
 
-    // update current entity
-    const entityId = writer.entitiesManager.getCurrentEntity();
-    if (entityId !== null) {
-      const content = $('.entityHighlight', writer.editor?.getBody()).text();
-      const entity = writer.entitiesManager.getEntity(entityId);
-      if (entity?.isNote()) {
-        entity.setNoteContent($(`#${entityId}`, writer.editor?.getBody()).html());
-      }
-      entity?.setContent(content);
-      writer.event('entityEdited').publish(entityId);
+    // update current entity (debounced, see syncCurrentEntityContent above)
+    if (writer.entitiesManager.getCurrentEntity() !== null) {
+      debouncedSyncCurrentEntityContent();
     }
 
     if (writer.editor?.currentNode) {
@@ -1427,11 +1439,20 @@ export const tinymceWrapperInit = function ({
     writer.event('writerKeyup').publish(event);
   };
 
-  const onChangeHandler = () => {
+  // TinyMCE fires 'Change' on essentially every keystroke. The br-cleanup scan and the
+  // contentChanged publish (which drives validation resets, the structure tree rebuild,
+  // and the source editor sync) are all whole-document work, so debounce them rather than
+  // running on every key. Navigation (doHighlightCheck/updateTagBoundaryState/writerKeyup)
+  // is unaffected and stays synchronous.
+  const debouncedOnChange = debounce(() => {
     if (!window.__desktopTagging) {
       $('br', writer.editor?.getBody()).remove(); // remove br tags that get added by shift+enter
     }
     writer.event('contentChanged').publish();
+  }, 150);
+
+  const onChangeHandler = () => {
+    debouncedOnChange();
   };
 
   const onNodeChangeHandler = (element: Element) => {

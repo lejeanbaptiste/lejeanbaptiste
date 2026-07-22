@@ -1,6 +1,6 @@
 import { UniqueIdentifier } from '@dnd-kit/core';
 import { useAtom, useAtomValue, useSetAtom } from 'jotai';
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import { log } from '../../../utilities';
 import {
   displayTextNodesAtom,
@@ -27,6 +27,35 @@ export const useEditor = (flattenedTree: FlattenedItem[]) => {
   const [initialized, setInitialized] = useState(false);
   const [updatePending, setUpdatePending] = useState(false);
   const updateTimerRef = useRef<number | null>(null);
+
+  // Lookup indexes rebuilt only when the tree itself changes, so selection during
+  // arrow-key navigation doesn't have to linear-scan the whole document on every keypress.
+  const xpathToItem = useMemo(() => {
+    const map = new Map<string, FlattenedItem>();
+    for (const item of flattenedTree) {
+      if (item.xpath) map.set(item.xpath, item);
+    }
+    return map;
+  }, [flattenedTree]);
+
+  const idToItem = useMemo(() => {
+    const map = new Map<UniqueIdentifier, FlattenedItem>();
+    for (const item of flattenedTree) {
+      map.set(item.id, item);
+    }
+    return map;
+  }, [flattenedTree]);
+
+  const siblingKey = (parentId: UniqueIdentifier | null, depth: number, index: number) =>
+    `${String(parentId)}::${depth}::${index}`;
+
+  const siblingToItem = useMemo(() => {
+    const map = new Map<string, FlattenedItem>();
+    for (const item of flattenedTree) {
+      map.set(siblingKey(item.parentId, item.depth, item.index), item);
+    }
+    return map;
+  }, [flattenedTree]);
 
   const scheduleUpdatePending = () => {
     if (updateTimerRef.current !== null) {
@@ -167,7 +196,7 @@ export const useEditor = (flattenedTree: FlattenedItem[]) => {
 
     const xpath = writer.utilities.getNodeXpath(anchorNode);
 
-    const item = flattenedTree.find((flat) => flat.xpath === xpath);
+    const item = xpath ? xpathToItem.get(xpath) : undefined;
     if (!item) return;
     if (selectedItems.includes(item.id)) return;
 
@@ -179,7 +208,7 @@ export const useEditor = (flattenedTree: FlattenedItem[]) => {
   const selectCommonAncestorItem = (node: Node) => {
     const xpath = writer.utilities.getNodeXpath(node);
 
-    const item = flattenedTree.find((flat) => flat.xpath === xpath);
+    const item = xpath ? xpathToItem.get(xpath) : undefined;
     if (!item) return;
     if (selectedItems.includes(item.id)) return;
 
@@ -192,8 +221,8 @@ export const useEditor = (flattenedTree: FlattenedItem[]) => {
     const startXpath = writer.utilities.getNodeXpath(startContainer);
     const endXpath = writer.utilities.getNodeXpath(endContainer);
 
-    const startItem = flattenedTree.find((flat) => flat.xpath === startXpath);
-    const endItem = flattenedTree.find((flat) => flat.xpath === endXpath);
+    const startItem = startXpath ? xpathToItem.get(startXpath) : undefined;
+    const endItem = endXpath ? xpathToItem.get(endXpath) : undefined;
     if (!startItem || !endItem) return;
 
     const parents = getItemParents(startItem.id);
@@ -205,10 +234,7 @@ export const useEditor = (flattenedTree: FlattenedItem[]) => {
     const lastIndex = Math.max(startItem.index, endItem.index);
 
     for (let i = firstIndex; i <= lastIndex; i++) {
-      const item = flattenedTree.find(
-        ({ depth, index, parentId }) =>
-          depth === startItem.depth && parentId === endItem.parentId && index === i,
-      );
+      const item = siblingToItem.get(siblingKey(endItem.parentId, startItem.depth, i));
       if (item) expandedSelection.push(item.id);
     }
 
@@ -217,13 +243,11 @@ export const useEditor = (flattenedTree: FlattenedItem[]) => {
 
   const getItemParents = (id: UniqueIdentifier) => {
     const parents: UniqueIdentifier[] = [];
-    let parentId = flattenedTree.find((item) => item.id === id)?.parentId;
-    if (!parentId) return [];
+    let parentId = idToItem.get(id)?.parentId;
 
     while (parentId) {
-      if (!parentId) break;
       parents.push(parentId);
-      parentId = flattenedTree.find((item) => item.id === parentId)?.parentId;
+      parentId = idToItem.get(parentId)?.parentId;
     }
 
     return parents;

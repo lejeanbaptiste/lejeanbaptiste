@@ -10,6 +10,8 @@
 export type NameTypeId =
   | 'primary' // canonical name
   | 'birth' // name given at birth (may differ from courtesy/art/canonical name)
+  | 'family' // surname / 姓
+  | 'given' // given name / 名
   | 'courtesy' // 字 zi
   | 'art' // 號 hao / art name
   | 'posthumous' // 諡號
@@ -21,6 +23,8 @@ export type NameTypeId =
 export const ALL_NAME_TYPES: NameTypeId[] = [
   'primary',
   'birth',
+  'family',
+  'given',
   'courtesy',
   'art',
   'posthumous',
@@ -31,7 +35,7 @@ export const ALL_NAME_TYPES: NameTypeId[] = [
 ];
 
 /** Default set excluded from corpus tagging (user-overridable via settings). */
-export const DEFAULT_UNTAGGABLE_TYPES: NameTypeId[] = ['courtesy'];
+export const DEFAULT_UNTAGGABLE_TYPES: NameTypeId[] = ['courtesy', 'family', 'given'];
 
 /**
  * True when a name of this type may seed corpus auto-tagging. Untyped names
@@ -50,6 +54,8 @@ export function isTaggableNameType(
 export const WIKIDATA_PROP_TO_NAME_TYPE: Record<string, NameTypeId> = {
   P1559: 'primary', // name in native language
   P1477: 'birth', // birth name
+  P734: 'family', // family name / surname
+  P735: 'given', // given name
   P1782: 'courtesy', // courtesy name (字)
   P1787: 'art', // art name (號)
   P1786: 'posthumous', // posthumous name (諡號)
@@ -66,6 +72,9 @@ export const WIKIDATA_PROP_TO_NAME_TYPE: Record<string, NameTypeId> = {
 export const CJK_LABEL_TO_NAME_TYPE: Record<string, NameTypeId> = {
   本名: 'birth',
   原名: 'birth',
+  姓: 'family',
+  姓氏: 'family',
+  名: 'given',
   字: 'courtesy',
   表字: 'courtesy',
   號: 'art',

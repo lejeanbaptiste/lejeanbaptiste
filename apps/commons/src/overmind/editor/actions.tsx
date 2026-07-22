@@ -44,13 +44,13 @@ export const save = async (
     content: string;
     screenshot?: string;
   },
-): Promise<{ success: true } | { success: false; error: Error }> => {
+): Promise<{ success: true; saved: boolean } | { success: false; error: Error }> => {
   state.editor.isSaving = true;
 
   // Check diff document
   if (actions.editor.isContentSameAsLastSaved(content)) {
     actions.editor.afterSave();
-    return { success: true };
+    return { success: true, saved: false };
   }
 
   const { resource } = state.editor;
@@ -104,7 +104,7 @@ export const save = async (
   actions.editor.afterSave();
   state.editor.contentLastSaved = content;
 
-  return { success: true };
+  return { success: true, saved: true };
 };
 
 export const afterSave = async ({ state, actions }: Context) => {

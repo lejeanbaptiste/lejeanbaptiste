@@ -1,4 +1,5 @@
 import { resolveTextHitInXml } from './resolveTextHitInXml';
+import { compileFindLiteralRegex, tryCompileFindRegex } from './regexPatternUtils';
 import { searchInContent } from './textSearchUtils';
 
 const MARKUP_IN_SLICE = /[<>]/;
@@ -38,17 +39,12 @@ export const applyRegexReplacement = (match: RegExpExecArray, replacement: strin
 };
 
 const buildSearchRegex = (query: string, useRegex: boolean, ignoreCase = false): RegExp | null => {
-  const flags = ignoreCase ? 'giu' : 'gu';
-  if (useRegex) {
-    try {
-      return new RegExp(query, flags);
-    } catch {
-      return null;
-    }
+  if (useRegex) return tryCompileFindRegex(query, ignoreCase);
+  try {
+    return compileFindLiteralRegex(query, ignoreCase);
+  } catch {
+    return null;
   }
-
-  const escaped = query.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
-  return new RegExp(escaped, flags);
 };
 
 export interface ReplaceAllResult {

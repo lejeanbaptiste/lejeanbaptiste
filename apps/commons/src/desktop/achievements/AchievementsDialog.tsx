@@ -463,7 +463,7 @@ export const AchievementsDialog = ({ onClose, open }: AchievementsDialogProps) =
   return (
     <Dialog fullWidth keepMounted maxWidth="sm" onClose={onClose} open={open}>
       <DialogTitle>LJB Service Record</DialogTitle>
-      <DialogContent>
+      <DialogContent sx={portraitEditorOpen ? { overflow: 'visible' } : undefined}>
         <Stack spacing={3}>
           {/* Officer header */}
           <Stack alignItems="center" direction="row" spacing={2}>

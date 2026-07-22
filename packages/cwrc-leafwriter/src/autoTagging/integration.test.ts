@@ -367,4 +367,22 @@ describe('AutoTaggingSession', () => {
     expect(getCurrent()).not.toContain('<persName>張衡</persName>');
     expect(getCurrent()).toContain('<placeName>洛陽</placeName>');
   });
+
+  it('falls back to stored XML when the converter cannot read the editor body', async () => {
+    window.__desktopStoredDocumentXml = XML;
+    const writer: WriterLike = {
+      converter: {
+        getDocumentContent: async () => {
+          throw new Error(
+            'Could not convert the document to XML: no root element found (schema root: TEI).',
+          );
+        },
+      },
+      loadDocumentXML: () => {},
+    };
+    const session = new AutoTaggingSession(writer);
+    const doc = await session.getDocument();
+    expect(doc.documentElement.localName).toBe('TEI');
+    delete window.__desktopStoredDocumentXml;
+  });
 });

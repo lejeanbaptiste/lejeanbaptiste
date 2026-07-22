@@ -1,9 +1,10 @@
-import { addEntity } from './entities';
+import { addEntity, findEntity } from './entities';
 import { EntityStore, type EntityFileApi } from './entityStore';
 import { resolveEntityStorePaths } from './entityStoreResolve';
 import {
   applyLookupResolution,
   crosswalkForRef,
+  linkLocalEntityWithoutAuthority,
   linkWithoutEnrichment,
   parseAuthorityUri,
   planLookupResolution,
@@ -263,6 +264,39 @@ describe('planLookupResolution / applyLookupResolution', () => {
     const log = fs.files.get('/proj/.ljb/entity-decisions.jsonl') ?? '';
     expect(log).toContain('"source":"manual-lookup"');
     expect(log).toContain('"surface":"攸之"');
+  });
+});
+
+describe('linkLocalEntityWithoutAuthority', () => {
+  it('mints a local-only entity and returns its key', async () => {
+    const { store } = makeStore();
+    const result = await linkLocalEntityWithoutAuthority('person', '江祀', { store });
+    expect(result).toMatchObject({
+      status: 'linked',
+      key: 'person-000001',
+      entityName: '江祀',
+      wasCreated: true,
+    });
+
+    const doc = await store.loadEntities();
+    const person = findEntity(doc, 'person-000001');
+    expect(person?.getElementsByTagName('idno').length).toBe(0);
+    expect(person?.getElementsByTagName('persName')[0]?.textContent).toBe('江祀');
+  });
+
+  it('reuses an existing entity when the surface matches a stored name exactly', async () => {
+    const { store } = makeStore();
+    const doc = await store.loadEntities();
+    const { id } = addEntity(doc, 'person', { name: '江祀' });
+    await store.saveEntities(doc);
+
+    const result = await linkLocalEntityWithoutAuthority('person', '江祀', { store });
+    expect(result).toMatchObject({
+      status: 'linked',
+      key: id,
+      entityName: '江祀',
+      wasCreated: false,
+    });
   });
 });
 

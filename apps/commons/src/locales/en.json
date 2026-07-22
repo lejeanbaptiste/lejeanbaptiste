@@ -588,6 +588,8 @@
             "unclassified": "unclassified",
             "primary": "Full name",
             "birth": "Birth name",
+            "family": "Family name (姓)",
+            "given": "Given name (名)",
             "courtesy": "Courtesy name (字)",
             "art": "Art name (號)",
             "posthumous": "Posthumous name (諡號)",

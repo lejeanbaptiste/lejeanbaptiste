@@ -54,6 +54,7 @@ import type { DecisionEvent } from './reviewController';
 import type { Suggestion, WhitespacePolicy } from './types';
 import type { DateRangeFilter } from './packLoader';
 import type { SearchTextRange } from './chunk';
+import { resolveCurrentDocumentXml } from './documentContent';
 import { findSelectionRangeInDocument, searchTextForDomRange } from './selectionScope';
 
 export { MAX_AUTHORITY_SUGGESTIONS } from './authorityTagBomb';
@@ -64,6 +65,7 @@ export { MAX_AUTHORITY_SUGGESTIONS } from './authorityTagBomb';
  */
 export interface WriterLike {
   converter: { getDocumentContent: (includeRDF: boolean) => Promise<string | null | undefined> };
+  getContent?: () => Promise<string | null | undefined>;
   loadDocumentXML: (xml: string) => unknown;
   schemaManager?: { isTagValidChildOfParent: (child: string, parent: string) => boolean };
   editor?: {
@@ -84,7 +86,7 @@ export interface WriterLike {
     };
   };
   overmindState?: {
-    document?: { url?: string };
+    document?: { url?: string; xml?: string };
     editor?: { resource?: { filePath?: string } };
   };
   validate?: () => void;
@@ -395,8 +397,7 @@ export class AutoTaggingSession {
 
   /** Current document as a normalized XML DOM — the input for producers. */
   async getDocument(): Promise<Document> {
-    const xml = await this.writer.converter.getDocumentContent(false);
-    if (!xml) throw new Error('AutoTaggingSession: could not read the current document');
+    const xml = await resolveCurrentDocumentXml(this.writer);
     const doc = new DOMParser().parseFromString(xml, 'application/xml');
     normalizeDomText(doc);
     return doc;

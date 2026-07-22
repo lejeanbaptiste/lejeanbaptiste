@@ -369,6 +369,7 @@ class Writer extends EventManager {
     if (this.isReadOnly) return;
     if (!this.overmindState.editor.contentHasChanged) return;
     if (window.location.hostname === 'localhost') return;
+    if ((window as Window & { __ljbAppQuitting?: boolean }).__ljbAppQuitting) return;
 
     event.preventDefault();
     const msg = t('LW.You have unsaved changes');

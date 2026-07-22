@@ -1,4 +1,5 @@
 import { clearFindHighlightsInSourceEditor } from './findSourceEditorHighlights';
+import { compileFindLiteralRegex, tryCompileFindRegex } from './regexPatternUtils';
 import { clearActiveFindHighlightInEditor } from './selectTextInEditor';
 
 const FIND_HIT_CLASS = 'lw-find-hit';
@@ -70,16 +71,12 @@ const collectTextNodes = (root: Node): Text[] => {
 };
 
 const buildSearchRegex = (query: string, useRegex: boolean) => {
-  if (useRegex) {
-    try {
-      return new RegExp(query, 'gu');
-    } catch {
-      return null;
-    }
+  if (useRegex) return tryCompileFindRegex(query, false);
+  try {
+    return compileFindLiteralRegex(query, false);
+  } catch {
+    return null;
   }
-
-  const escaped = query.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
-  return new RegExp(escaped, 'gu');
 };
 
 interface HighlightSpan {

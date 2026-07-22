@@ -24,7 +24,7 @@ export const Footer = () => {
   const resolution = useAtomValue(resolutionAtom);
   const selected = useAtomValue(selectedAtom);
 
-  const { confirmSelected } = useEntityLookup();
+  const { confirmSelected, tagWithoutLinking } = useEntityLookup();
 
   const handlSelectLink = () => void confirmSelected();
 
@@ -44,7 +44,11 @@ export const Footer = () => {
       <Button onClick={() => handleClose()} variant="text">
         {t('LW.commons.cancel')}
       </Button>
-      <Button onClick={() => query && handleClose({ type: entityType, query })} variant="text">
+      <Button
+        disabled={!query.trim() || resolution !== null}
+        onClick={() => void tagWithoutLinking()}
+        variant="text"
+      >
         {t('LW.lookups.tag without linking')}
       </Button>
       <Button

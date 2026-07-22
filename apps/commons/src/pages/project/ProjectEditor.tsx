@@ -13,7 +13,7 @@ import { AboutDialog } from '@src/desktop/AboutDialog';
 import { TimeMachineDialog } from '@src/desktop/TimeMachineDialog';
 import { openFindPanel, DESKTOP_OPEN_FIND_EVENT } from '@src/desktop/desktopLeftPanelBridge';
 import { openNativeSchemaPicker } from '@src/desktop/openNativeSchemaPicker';
-import { useLeafWriter } from '@src/hooks';
+import { useLeafWriter, waitForWriter } from '@src/hooks';
 import { leafwriterAtom, leafWriterSessionKeyAtom } from '@src/jotai';
 import { useActions, useAppState } from '@src/overmind';
 import { isDesktop } from '@src/types/desktop';
@@ -29,6 +29,7 @@ export const ProjectEditor = () => {
   const previousTabRef = useRef<string | null>(null);
   const initStartedForRef = useRef<string | null>(null);
   const loadLibStartedForRef = useRef<number | null>(null);
+  const loadGenerationRef = useRef(0);
 
   const { initLeafWriter, loadDocumentInWriter, loadLib, ensureLeafWriterReadyForSettings } =
     useLeafWriter();
@@ -105,33 +106,58 @@ export const ProjectEditor = () => {
       return;
     }
 
-    if (!leafWriter || !resource?.content) return;
+    if (!leafWriter || !resource.content) return;
 
-    if (!window.writer) {
-      if (initStartedForRef.current === leafWriter.id) return;
-      initStartedForRef.current = leafWriter.id;
-      void initLeafWriter();
-      previousTabRef.current = resource.filePath;
-      return;
-    }
+    let cancelled = false;
 
-    if (previousTabRef.current !== resource.filePath) {
+    const syncEditorToActiveTab = async () => {
+      const targetPath = resource.filePath!;
+      const targetContent = resource.content!;
+      const generation = ++loadGenerationRef.current;
+
+      const shouldApply = () =>
+        !cancelled && loadGenerationRef.current === generation;
+
+      if (!window.writer) {
+        if (initStartedForRef.current !== leafWriter.id) {
+          initStartedForRef.current = leafWriter.id;
+          await initLeafWriter({
+            filePath: targetPath,
+            content: targetContent,
+            shouldApply,
+          });
+        } else {
+          await waitForWriter();
+        }
+      }
+
+      if (!shouldApply() || !window.writer) return;
+      if (previousTabRef.current === targetPath) return;
+
       const restoreDirty =
-        openTabs.find((tab) => tab.filePath === resource.filePath)?.dirty ?? false;
-      void loadDocumentInWriter(
-        resource.filePath,
-        resource.content,
-        cursorPositions[resource.filePath] ?? null,
+        openTabs.find((tab) => tab.filePath === targetPath)?.dirty ?? false;
+      const loaded = await loadDocumentInWriter(
+        targetPath,
+        targetContent,
+        cursorPositions[targetPath] ?? null,
         restoreDirty,
+        shouldApply,
       );
-    }
+      if (shouldApply() && loaded) {
+        previousTabRef.current = targetPath;
+      }
+    };
 
-    previousTabRef.current = resource.filePath;
+    void syncEditorToActiveTab();
+
+    return () => {
+      cancelled = true;
+    };
   }, [
     cursorPositions,
     resource?.filePath,
-    leafWriter,
     resource?.content,
+    leafWriter,
     initLeafWriter,
     loadDocumentInWriter,
     openTabs,

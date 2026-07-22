@@ -11,6 +11,7 @@
  * dialog can show a confirm step without having touched entities.xml yet.
  */
 import type { NamedEntityType } from '../types';
+import { autoRomanize } from '../utilities/romanize';
 import { LOOKUP_TYPE_TO_KIND } from '../services/entity-database-lookup';
 import {
   addEntity,
@@ -21,6 +22,7 @@ import {
   type EntityKind,
 } from './entities';
 import type { EntityStore } from './entityStore';
+import { listEntities } from './entityOps';
 import { isLatinSurface } from './disambiguationMatch';
 import { romanizeFromAuthorityMetadata } from '../utilities/romanize';
 import type { AuthorityPackId } from './packPaths';
@@ -546,4 +548,58 @@ export async function linkWithoutEnrichment(
   ]);
   await logDecision(input, deps, kind, key);
   return { status: 'linked', key, entityName, wasCreated: false };
+}
+
+/**
+ * Tag without linking to an external authority: find an existing project entity
+ * whose name matches the surface exactly, or mint a local-only record (no
+ * `<idno>`), then return its `@key`.
+ */
+export async function linkLocalEntityWithoutAuthority(
+  entityType: NamedEntityType,
+  query: string,
+  deps: LookupResolveDeps,
+): Promise<LookupResolutionResult> {
+  const kind = LOOKUP_TYPE_TO_KIND[entityType];
+  const surface = query.normalize('NFC').trim();
+  if (!kind || !surface) return { status: 'passthrough' };
+
+  const doc = await deps.store.loadEntities();
+  const input: LookupSelectionInput = {
+    uri: '',
+    label: surface,
+    entityType,
+    query: surface,
+  };
+
+  const existing = listEntities(doc).find(
+    (entity) =>
+      entity.kind === kind &&
+      entity.nameEntries.some((entry) => entry.text.normalize('NFC') === surface),
+  );
+
+  if (existing) {
+    await logDecision(input, deps, kind, existing.id);
+    return {
+      status: 'linked',
+      key: existing.id,
+      entityName: existing.names[0] ?? surface,
+      wasCreated: false,
+    };
+  }
+
+  const { id } = addEntity(
+    doc,
+    kind,
+    {
+      name: surface,
+      nameLang:
+        deps.projectLang && !isLatinSurface(surface) ? deps.projectLang : undefined,
+      romanizedName: autoRomanize(surface, deps.projectLang) ?? undefined,
+    },
+    LJB_LOOKUP_RESP,
+  );
+  await deps.store.saveEntities(doc);
+  await logDecision(input, deps, kind, id);
+  return { status: 'linked', key: id, entityName: surface, wasCreated: true };
 }

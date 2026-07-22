@@ -3,6 +3,7 @@ import { RESET } from 'jotai/utils';
 import { entityStoreFromDesktop } from '../../autoTagging/entityStore';
 import {
   applyLookupResolution,
+  linkLocalEntityWithoutAuthority,
   linkWithoutEnrichment,
   planLookupResolution,
   type LookupResolveDeps,
@@ -10,6 +11,7 @@ import {
 } from '../../autoTagging/lookupResolve';
 import type { AuthorityPackId } from '../../autoTagging/packPaths';
 import { packIdsForEntityType, readPackCached } from '../../services/authority-pack-lookup';
+import { internalEntityUri } from '../../services/entity-database-lookup';
 import type { AuthorityLookupResult, EntityLink, NamedEntityType } from '../../types/index';
 import { log } from '../../utilities';
 import {
@@ -224,6 +226,39 @@ export const useEntityLookup = () => {
     }
   };
 
+  /** Tag the surface with a project entity @key, without an external authority URI. */
+  const tagWithoutLinking = async () => {
+    const trimmed = query.trim();
+    if (!trimmed) return closeWith();
+
+    const deps = await resolveDeps(lookupType);
+    if (!deps) return closeWith();
+
+    setResolution({ status: 'resolving' });
+    try {
+      const result = await linkLocalEntityWithoutAuthority(lookupType, trimmed, deps);
+      if (result.status === 'linked') {
+        closeWith(
+          buildLink({
+            name: result.entityName,
+            uri: internalEntityUri(result.key),
+            repository: 'entity-database',
+            key: result.key,
+            wasCreated: result.wasCreated,
+          }),
+        );
+        return;
+      }
+      closeWith();
+    } catch (error) {
+      log.warn(`Local entity tag failed: ${String(error)}`);
+      setResolution({
+        status: 'error',
+        message: error instanceof Error ? error.message : String(error),
+      });
+    }
+  };
+
   /** Fall back to today's behavior: plain URI link, entities.xml untouched. */
   const linkWithoutDatabase = () => {
     const input = selectionInput();
@@ -283,6 +318,7 @@ export const useEntityLookup = () => {
     confirmPendingLink,
     resolveConflict,
     linkWithoutDatabase,
+    tagWithoutLinking,
     search,
   };
 };

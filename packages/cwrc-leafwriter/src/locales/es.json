@@ -334,7 +334,7 @@
       },
       "find": "",
       "find entity": "",
-      "tag without linking": ""
+      "tag without linking": "Añadir"
     },
     "low": "",
     "markup panel": "",
@@ -475,7 +475,7 @@
     "show only valid tags": "Mostrar solo etiquetas válidas",
     "show_lod_annotation": "Mostrar Anotación de Datos Abiertos Enlazados",
     "source": "",
-    "tag without linking": "",
+    "tag without linking": "Añadir",
     "thing": "",
     "title": "",
     "unknown": "",

@@ -14,6 +14,7 @@ import { useEffect, useRef } from 'react';
 import { useTranslation } from 'react-i18next';
 import type { CorrectionPopupMode } from './useCorrectionController';
 import type { SchemaAttributeDetail } from '../tagging/attributeSuggestions';
+import { useClampedPopupPosition } from '../tagging/clampPopupPosition';
 
 export interface CorrectionPopupProps {
   addAttrName: string;
@@ -65,6 +66,15 @@ export const CorrectionPopup = ({
   const { t } = useTranslation();
   const correctionInputRef = useRef<HTMLInputElement>(null);
   const extraAttrNames = Object.keys(extraAttributes);
+  const { ref: popupRef, left, top } = useClampedPopupPosition(anchor, open, [
+    addAttrName,
+    availableAttributes.length,
+    cert,
+    corrText,
+    errorMessage,
+    extraAttrNames.length,
+    mode,
+  ]);
 
   useEffect(() => {
     if (open) {
@@ -76,12 +86,13 @@ export const CorrectionPopup = ({
 
   return (
     <Paper
+      ref={popupRef}
       elevation={8}
       onKeyDown={onPopupKeyDown}
       sx={{
         position: 'fixed',
-        left: anchor.left,
-        top: anchor.top + 8,
+        left,
+        top,
         zIndex: 1400,
         width: 300,
         maxHeight: 420,

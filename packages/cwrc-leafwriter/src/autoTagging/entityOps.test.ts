@@ -182,6 +182,29 @@ describe('name attributes', () => {
     });
   });
 
+  it('setNameType syncs family and given names to their note fields', () => {
+    const doc = makeDoc();
+    const { id } = addEntity(doc, 'person', { name: '江祀' });
+
+    setNameType(doc, id, '江', 'family');
+    expect(listEntities(doc)[0]).toMatchObject({
+      familyName: '江',
+      givenName: null,
+      nameEntries: expect.arrayContaining([expect.objectContaining({ text: '江', type: 'family' })]),
+    });
+
+    setNameType(doc, id, '祀', 'given');
+    expect(listEntities(doc)[0]).toMatchObject({
+      familyName: '江',
+      givenName: '祀',
+      nameEntries: expect.arrayContaining([expect.objectContaining({ text: '祀', type: 'given' })]),
+    });
+
+    setNameType(doc, id, '祀', null);
+    expect(listEntities(doc)[0]).toMatchObject({ givenName: null });
+    expect(listEntities(doc)[0]!.nameEntries.find((entry) => entry.text === '祀')!.type).toBeNull();
+  });
+
   it('taggableEntityNames excludes courtesy names by default but keeps legacy untyped ones', () => {
     const doc = makeDoc();
     addEntity(doc, 'person', {

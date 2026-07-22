@@ -267,6 +267,34 @@ const getActiveEditorContent = async (): Promise<string | null> => {
   return null;
 };
 
+/** Write the live editor buffer into the active tab before leaving it. */
+const persistActiveTabEditorContent = async ({ state, actions }: Context): Promise<void> => {
+  if (!state.project.activeTabPath) return;
+
+  const currentTab = state.project.openTabs.find(
+    (tab) => tab.filePath === state.project.activeTabPath,
+  );
+  if (!currentTab) return;
+
+  const content = await getActiveEditorContent();
+  if (!content) return;
+
+  let savedContent = content;
+  if (window.electronAPI) {
+    savedContent = await prepareFileContent(
+      { state, actions } as Context,
+      currentTab.filePath,
+      content,
+    );
+  }
+  currentTab.content = savedContent;
+  currentTab.dirty = state.editor.contentHasChanged;
+  if (!currentTab.lastSavedContent) {
+    currentTab.lastSavedContent = state.editor.contentLastSaved || savedContent;
+  }
+  currentTab.editorReady = true;
+};
+
 const promptUnsavedBeforeProjectSwitch = async (context: Context): Promise<'proceed' | 'abort'> => {
   if (!window.electronAPI?.showNativeMessageBox) return 'proceed';
 
@@ -563,14 +591,15 @@ export const restoreLastProject = async (context: Context) => {
     const openFilePaths = session?.openFilePaths ?? [];
     for (const filePath of openFilePaths) {
       try {
-        await context.actions.project.openFile(filePath);
+        await context.actions.project.restoreTabWithoutSync(filePath);
       } catch (error) {
         console.warn('[project] restoreWorkspaceSession skipped file:', filePath, error);
       }
     }
 
-    if (session?.activeFilePath && context.state.project.activeTabPath !== session.activeFilePath) {
-      await context.actions.project.switchTab({ filePath: session.activeFilePath });
+    const targetActivePath = session?.activeFilePath ?? openFilePaths[openFilePaths.length - 1];
+    if (targetActivePath && context.state.project.openTabs.some((tab) => tab.filePath === targetActivePath)) {
+      await context.actions.project.switchTab({ filePath: targetActivePath });
     }
   } catch (error) {
     console.error('[project] restoreLastProject failed:', error);
@@ -994,6 +1023,27 @@ const prepareFileContent = async ({ state }: Context, filePath: string, content:
   return normalizeTeiHeaderLanguageElements(prepared.content);
 };
 
+/**
+ * Loads a saved tab's content into project state during workspace restore,
+ * without touching the live editor singleton. `openFile` can't be reused for
+ * this: it round-trips every restored tab through `window.writer`, and since
+ * that singleton loads asynchronously, back-to-back calls race and stamp one
+ * tab's stale editor content onto another. Only the tab that ends up active
+ * needs a real editor sync, done once via `switchTab` after this loop.
+ */
+export const restoreTabWithoutSync = async ({ state, actions }: Context, filePath: string) => {
+  if (!window.electronAPI || !state.project.isProjectReady || !state.project.rootPath) return;
+  if (isCorpusExcludedPath(filePath, state.project.rootPath)) return;
+  if (state.project.openTabs.some((tab) => tab.filePath === filePath)) return;
+
+  let content = await window.electronAPI.readFile(filePath);
+  content = await prepareFileContent({ state, actions } as Context, filePath, content);
+  const filename = getFilename(filePath);
+  const tab = { content, dirty: false, lastSavedContent: content, editorReady: true, filePath, filename };
+
+  state.project.openTabs = [...state.project.openTabs, tab];
+};
+
 export const openFile = async ({ state, actions }: Context, filePath: string) => {
   if (!window.electronAPI || !state.project.isProjectReady || !state.project.rootPath) return;
   if (isCorpusExcludedPath(filePath, state.project.rootPath)) return;
@@ -1004,6 +1054,8 @@ export const openFile = async ({ state, actions }: Context, filePath: string) =>
   }
 
   try {
+    await persistActiveTabEditorContent({ state, actions });
+
     let content = await window.electronAPI.readFile(filePath);
     content = await prepareFileContent({ state, actions } as Context, filePath, content);
     const filename = getFilename(filePath);
@@ -1026,32 +1078,33 @@ export const openFile = async ({ state, actions }: Context, filePath: string) =>
 };
 
 export const switchTab = async (
-  { state, actions }: Context,
+  context: Context,
   { content, filePath }: { content?: string; filePath: string },
 ) => {
+  const { state, actions } = context;
   captureActiveCursorPosition(state.project);
 
-  if (content && state.project.activeTabPath) {
-    const currentTab = state.project.openTabs.find(
-      (tab) => tab.filePath === state.project.activeTabPath,
-    );
-    if (currentTab) {
-      let savedContent = content;
-      if (window.electronAPI) {
-        savedContent = await prepareFileContent(
-          { state, actions } as Context,
-          currentTab.filePath,
-          content,
-        );
+  if (state.project.activeTabPath && state.project.activeTabPath !== filePath) {
+    if (content) {
+      const currentTab = state.project.openTabs.find(
+        (tab) => tab.filePath === state.project.activeTabPath,
+      );
+      if (currentTab) {
+        let savedContent = content;
+        if (window.electronAPI) {
+          savedContent = await prepareFileContent(context, currentTab.filePath, content);
+        }
+        currentTab.content = savedContent;
+        // Trust the editor's dirty flag — string-comparing XML against a shared
+        // contentLastSaved falsely dirties other tabs after save/stamp.
+        currentTab.dirty = state.editor.contentHasChanged;
+        if (!currentTab.lastSavedContent) {
+          currentTab.lastSavedContent = state.editor.contentLastSaved || savedContent;
+        }
+        currentTab.editorReady = true;
       }
-      currentTab.content = savedContent;
-      // Trust the editor's dirty flag — string-comparing XML against a shared
-      // contentLastSaved falsely dirties other tabs after save/stamp.
-      currentTab.dirty = state.editor.contentHasChanged;
-      if (!currentTab.lastSavedContent) {
-        currentTab.lastSavedContent = state.editor.contentLastSaved || savedContent;
-      }
-      currentTab.editorReady = true;
+    } else {
+      await persistActiveTabEditorContent(context);
     }
   }
 
@@ -1089,7 +1142,7 @@ export const switchTab = async (
 export const saveActiveTab = async (
   context: Context,
   { content }: { content: string },
-): Promise<{ success: boolean; content?: string; error?: string }> => {
+): Promise<{ success: boolean; content?: string; error?: string; skipped?: boolean }> => {
   const { state } = context;
   if (!window.electronAPI || !state.project.activeTabPath) {
     return { success: false, error: 'No active file' };
@@ -1099,6 +1152,10 @@ export const saveActiveTab = async (
   const tab = state.project.openTabs.find((item) => item.filePath === filePath);
   if (tab && isTempTab(tab)) {
     return saveActiveTabAs(context, { content });
+  }
+
+  if (!state.editor.contentHasChanged && !tab?.dirty) {
+    return { success: true, skipped: true };
   }
 
   try {

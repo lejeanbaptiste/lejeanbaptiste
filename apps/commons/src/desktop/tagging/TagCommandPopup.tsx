@@ -11,6 +11,7 @@ import {
 } from '@mui/material';
 import { useEffect, useRef } from 'react';
 import type { TagCommandMode } from './tagCommand';
+import { useClampedPopupPosition } from './clampPopupPosition';
 
 export interface TagCommandPopupProps {
   anchor: { left: number; top: number } | null;
@@ -51,6 +52,13 @@ export const TagCommandPopup = ({
 }: TagCommandPopupProps) => {
   const inputRef = useRef<HTMLInputElement>(null);
   const selectedItemRef = useRef<HTMLDivElement>(null);
+  const { ref: popupRef, left, top } = useClampedPopupPosition(anchor, open, [
+    filter,
+    highlightedIndex,
+    mode,
+    suggestions.length,
+    matchCount,
+  ]);
 
   useEffect(() => {
     if (open) {
@@ -75,11 +83,12 @@ export const TagCommandPopup = ({
 
   return (
     <Paper
+      ref={popupRef}
       elevation={8}
       sx={{
         position: 'fixed',
-        left: anchor.left,
-        top: anchor.top + 8,
+        left,
+        top,
         zIndex: 1400,
         width: 260,
         maxHeight: 320,

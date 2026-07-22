@@ -1,4 +1,5 @@
 import { parseXmlDocument } from '../xpath/evaluateXPathAll';
+import { tryCompileFindRegex } from './regexPatternUtils';
 import {
   applyRegexReplacement,
   isReplaceableSourceHit,
@@ -45,13 +46,8 @@ export interface ValidateReplaceAllResult {
   skippedNonReplaceable: number;
 }
 
-const buildSearchRegex = (query: string, ignoreCase = false): RegExp | null => {
-  try {
-    return new RegExp(query, ignoreCase ? 'giu' : 'gu');
-  } catch {
-    return null;
-  }
-};
+const buildSearchRegex = (query: string, ignoreCase = false): RegExp | null =>
+  tryCompileFindRegex(query, ignoreCase);
 
 export const validateAndReplaceHit = (
   content: string,
