@@ -11,6 +11,7 @@ import {
 } from '@src/desktop/teiHeaderXml';
 import { separateBlockElements } from '@src/desktop/xmlBlockSpacing';
 import { ENABLED_CATALOG_IDS, getEnabledCatalogSchemas } from '@src/desktop/schemaCatalog';
+import { unlockAchievement } from '@src/desktop/achievements/engine';
 import {
   leafwriterAtom,
   leafWriterEventsAtom,
@@ -370,6 +371,19 @@ export const useLeafWriter = () => {
 
       leafWriter.autosave = autosave;
       tapDocument(resource, schemaName);
+      if (
+        isDesktop() &&
+        config?.schema?.rng &&
+        (!config.schema.catalogId ||
+          !(ENABLED_CATALOG_IDS as readonly string[]).includes(config.schema.catalogId))
+      ) {
+        void unlockAchievement('make-your-own-rules', (message) =>
+          notifyViaSnackbar({
+            message,
+            options: { variant: 'success', autoHideDuration: 7000 },
+          }),
+        );
+      }
       subscribeToTimerService(leafWriter);
       if (isDesktop()) {
         const cursorPosition = resource.filePath ? cursorPositions[resource.filePath] : null;

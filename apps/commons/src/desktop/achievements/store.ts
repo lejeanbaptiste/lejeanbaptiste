@@ -21,6 +21,15 @@ const sanitizeState = (parsed: Partial<AchievementsState>): AchievementsState =>
     typeof parsed.installedAt === 'string' ? parsed.installedAt : new Date().toISOString(),
   );
   state.saveCount = typeof parsed.saveCount === 'number' ? parsed.saveCount : 0;
+  state.leaderboardPublicationDays = Array.isArray(parsed.leaderboardPublicationDays)
+    ? [
+        ...new Set(
+          parsed.leaderboardPublicationDays.filter(
+            (day): day is string => typeof day === 'string' && /^\d{4}-\d{2}-\d{2}$/.test(day),
+          ),
+        ),
+      ].sort()
+    : [];
   if (parsed.unlocked && typeof parsed.unlocked === 'object') {
     for (const [id, entry] of Object.entries(parsed.unlocked)) {
       if (entry && typeof entry.at === 'string') state.unlocked[id] = { at: entry.at };
@@ -48,7 +57,10 @@ const sanitizeState = (parsed: Partial<AchievementsState>): AchievementsState =>
         options: {
           ...defaults,
           ...options,
-          bodyType: options.bodyType === 'm' || options.bodyType === 'f' ? options.bodyType : defaults.bodyType,
+          bodyType:
+            options.bodyType === 'm' || options.bodyType === 'f'
+              ? options.bodyType
+              : defaults.bodyType,
           eyebrowsVariant:
             typeof options.eyebrowsVariant === 'string'
               ? options.eyebrowsVariant

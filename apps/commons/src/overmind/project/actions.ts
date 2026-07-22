@@ -3,7 +3,10 @@ import type { Context } from '../';
 /** Skip debounced saves while restoring tabs so we do not persist partial/empty session state. */
 let suppressWorkspaceSessionSave = false;
 import { buildProjectSchemas, type ProjectBundle } from '@src/desktop/projectFile';
-import { completeProjectOnboarding, completePostLoadOnboarding } from '@src/desktop/projectOnboarding';
+import {
+  completeProjectOnboarding,
+  completePostLoadOnboarding,
+} from '@src/desktop/projectOnboarding';
 import { ensureEntityDbFolder } from '@src/desktop/entityDbOnboarding';
 import {
   mergeMetadataIntoHeader,
@@ -130,7 +133,9 @@ export const promptCloseDirtyTab = async (
     const guard = await window.writer?.overmindActions?.ui?.guardSourceModeSave?.();
     if (guard && !guard.proceed) {
       if (guard.reverted) {
-        context.actions.ui.notifyViaSnackbar(t('LWC.desktop.project.messages.reverted_to_valid_version'));
+        context.actions.ui.notifyViaSnackbar(
+          t('LWC.desktop.project.messages.reverted_to_valid_version'),
+        );
       }
       return 'abort';
     }
@@ -374,7 +379,10 @@ export const saveAllDirtyTabs = async (
       await window.electronAPI.writeFile(tab.filePath, content);
       await ignoreSavedFileChange(tab.filePath);
     } catch {
-      return { ok: false, error: t('LWC.desktop.project.errors.could_not_save_file', { filename: tab.filename }) };
+      return {
+        ok: false,
+        error: t('LWC.desktop.project.errors.could_not_save_file', { filename: tab.filename }),
+      };
     }
   }
 
@@ -466,7 +474,10 @@ const runPostLoadOnboarding = async (context: Context, bundle: ProjectBundle) =>
   context.state.project.config = updated.config;
   context.state.project.projectSchemas = buildProjectSchemas(updated.rootPath, updated.config);
   if (window.writer) {
-    registerDesktopSchemas([...getEnabledCatalogSchemas(), ...context.state.project.projectSchemas]);
+    registerDesktopSchemas([
+      ...getEnabledCatalogSchemas(),
+      ...context.state.project.projectSchemas,
+    ]);
   }
 };
 
@@ -656,7 +667,9 @@ export const newFile = async (context: Context) => {
   };
 
   if (!(await metadataFileExists(bundle))) {
-    notifyViaSnackbar(t('LWC.desktop.project.messages.complete_metadata_setup_before_creating_file'));
+    notifyViaSnackbar(
+      t('LWC.desktop.project.messages.complete_metadata_setup_before_creating_file'),
+    );
     return;
   }
 
@@ -877,7 +890,11 @@ export const importDocuments = async (context: Context) => {
     state.project.rootPath,
     state.project.config?.schema,
   );
-  state.project.tree = await loadTreeLevel(state.project.rootPath, schemaDirPath, state.project.rootPath);
+  state.project.tree = await loadTreeLevel(
+    state.project.rootPath,
+    schemaDirPath,
+    state.project.rootPath,
+  );
   if (writtenPaths.length > 0 && window.electronAPI?.syncWatchedFiles) {
     await window.electronAPI.syncWatchedFiles(state.project.openTabs.map((tab) => tab.filePath));
   }
@@ -1073,6 +1090,7 @@ export const saveActiveTab = async (
   }
 
   try {
+    const savedFromSourceMode = isSourceEditorMode();
     const baseXml = window.__desktopStoredDocumentXml ?? tab?.content ?? content;
     const editorBody = stripTeiHeaderForVisualEditor(content);
     const merged = mergeEditorBodyWithStoredHeader(editorBody, baseXml);
@@ -1090,6 +1108,7 @@ export const saveActiveTab = async (
             filePath,
             xml: stamped,
             stats: merged,
+            sourceMode: savedFromSourceMode,
             notify: (message) =>
               context.actions.ui.notifyViaSnackbar({
                 message,
@@ -1236,6 +1255,7 @@ export const saveActiveTabAs = async (
   }
 
   try {
+    const savedFromSourceMode = isSourceEditorMode();
     const sourceTab = previousPath
       ? state.project.openTabs.find((item) => item.filePath === previousPath)
       : state.project.openTabs.find((item) => item.filePath === state.project.activeTabPath);
@@ -1301,6 +1321,7 @@ export const saveActiveTabAs = async (
             filePath,
             xml: stamped,
             stats: merged,
+            sourceMode: savedFromSourceMode,
             notify: (message) =>
               actions.ui.notifyViaSnackbar({
                 message,

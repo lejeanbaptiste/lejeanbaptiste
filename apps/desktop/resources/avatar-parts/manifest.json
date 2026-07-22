@@ -45,7 +45,8 @@
         "variant23",
         "variant24",
         "variant25",
-        "variant26"
+        "variant26",
+        "variant27"
       ],
       "colorable": false
     },
@@ -119,7 +120,8 @@
         "variant02",
         "variant03",
         "variant04",
-        "variant05"
+        "variant05",
+        "variant06"
       ],
       "colorable": false
     },
@@ -162,6 +164,8 @@
         "long24",
         "long25",
         "long26",
+        "long27",
+        "long28",
         "short01",
         "short02",
         "short03",

@@ -1,0 +1,25 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 762 762">
+  <defs>
+    <linearGradient id="mangaPink" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#7d175f"/><stop offset=".48" stop-color="#d934a5"/><stop offset="1" stop-color="#ff9ddd"/></linearGradient>
+    <radialGradient id="mangaGlow" cx="50%" cy="76%" r="58%"><stop offset="0" stop-color="#ffd6f2" stop-opacity=".95"/><stop offset="1" stop-color="#ff7ccc" stop-opacity="0"/></radialGradient>
+    <clipPath id="mangaLeftClip"><path d="M174 365c18-33 54-49 91-40 20 5 36 16 50 33-25 30-56 44-88 39-23-3-41-14-53-32Z"/></clipPath>
+    <clipPath id="mangaRightClip"><path d="M365 354c27-42 77-57 124-40 24 8 44 24 61 44-31 37-70 55-111 50-34-4-58-22-74-54Z"/></clipPath>
+  </defs>
+
+  <!-- Almond-shaped manga eyes in the collection's screen-left three-quarter view. -->
+  <path d="M159 366c24-49 75-69 124-52 24 8 43 23 58 43-31 39-72 59-115 53-31-4-54-20-67-44Z" fill="#000"/>
+  <path d="M350 354c34-61 104-81 166-53 25 11 45 30 61 52-37 49-86 72-139 67-45-5-76-29-88-66Z" fill="#000"/>
+  <path d="M174 365c18-33 54-49 91-40 20 5 36 16 50 33-25 30-56 44-88 39-23-3-41-14-53-32Z" fill="#fff"/>
+  <path d="M365 354c27-42 77-57 124-40 24 8 44 24 61 44-31 37-70 55-111 50-34-4-58-22-74-54Z" fill="#fff"/>
+
+  <!-- Pink jewel irises, offset toward screen-left to carry the gaze. -->
+  <g clip-path="url(#mangaLeftClip)"><ellipse cx="226" cy="359" rx="39" ry="48" fill="url(#mangaPink)"/><ellipse cx="226" cy="359" rx="39" ry="48" fill="url(#mangaGlow)"/><ellipse cx="217" cy="353" rx="20" ry="30" fill="#37122f"/><ellipse cx="213" cy="356" rx="10" ry="19" fill="#100811"/></g>
+  <g clip-path="url(#mangaRightClip)"><ellipse cx="430" cy="354" rx="49" ry="59" fill="url(#mangaPink)"/><ellipse cx="430" cy="354" rx="49" ry="59" fill="url(#mangaGlow)"/><ellipse cx="418" cy="348" rx="25" ry="36" fill="#37122f"/><ellipse cx="412" cy="351" rx="12" ry="22" fill="#100811"/></g>
+
+  <!-- Glossy manga highlights and small lower reflections. -->
+  <ellipse cx="212" cy="338" rx="12" ry="15" fill="#fff"/><ellipse cx="407" cy="328" rx="16" ry="19" fill="#fff"/><circle cx="237" cy="348" r="7" fill="#fff"/><circle cx="439" cy="342" r="9" fill="#fff"/><circle cx="219" cy="379" r="5" fill="#ffd9f3"/><circle cx="416" cy="382" r="7" fill="#ffd9f3"/>
+
+  <!-- Strong upper eyeliner and tapered outward lashes, kept separate from eyebrows. -->
+  <path d="M160 366c27-50 78-68 125-51 23 8 41 22 56 42M169 354l-25-14m39-3-23-25m42 12-13-31m37 23-5-33M350 354c36-61 105-79 166-51 25 11 45 29 61 50M557 340l30-18m-47 4 27-29m-48 18 17-38m-42 28 8-40" fill="none" stroke="#000" stroke-width="8" stroke-linecap="round" stroke-linejoin="round"/>
+  <path d="M188 391l-12 11m37-2-7 14m250 0 8 16m22-24 14 13" fill="none" stroke="#000" stroke-width="5" stroke-linecap="round"/>
+</svg>

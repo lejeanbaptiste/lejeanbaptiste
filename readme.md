@@ -145,3 +145,11 @@ For detailed build and packaging information, see [apps/desktop/README.md](apps/
 ## Build From Source
 
 See [apps/desktop/README.md](apps/desktop/README.md) for the compilation and packaging instructions.
+
+## Future goals
+
+- [ ] Option to track annotator on the tag level for collaborations.
+- [ ] Copy-and-paste export of paragraphs with translation for word processors
+- [ ] LaTeX export
+- [ ] Improved Chinese office name tagging
+- [ ] Support for custom authorities and personal SQL databases

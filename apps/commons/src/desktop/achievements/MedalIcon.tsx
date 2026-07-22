@@ -1,7 +1,8 @@
 export type MedalTier = 'bronze' | 'silver' | 'gold';
 
-/** The 5 rank metrics, plus 'special' for special/rare decorations. */
-export type MedalMetric = 'texts' | 'tags' | 'disambiguated' | 'places' | 'entities' | 'special';
+/** The 6 rank metrics, plus 'special' for special/rare decorations. */
+export type MedalMetric =
+  'texts' | 'tags' | 'disambiguated' | 'places' | 'entities' | 'published' | 'special';
 
 // Served at runtime by the desktop app's ljb-asset:// protocol handler,
 // same as the uniform/backdrop art - see gameAssets.ts. Duplicated here
@@ -13,7 +14,10 @@ const GAME_ASSET_PREFIX = 'ljb-asset://';
 /** Opaque key for the pre-rendered medal-disc art - see
  * visual_design/scripts/pack-assets.mjs's MANIFEST for the source list. */
 export const medalAssetKey = (metric: MedalMetric, tier: MedalTier): string =>
-  `medal/${metric}-${tier}`;
+  // Dedicated Mentioned-in-Despatches artwork lands in the medal-art pass.
+  // Reuse the neutral campaign placeholder until then so the new ladder never
+  // renders a broken ljb-asset URL.
+  `medal/${metric === 'published' ? 'texts' : metric}-${tier}`;
 
 interface MedalIconProps {
   metric: MedalMetric;
@@ -54,6 +58,7 @@ export const METRIC_RIBBONS: Record<string, [string, string] | [string, string, 
   disambiguated: ['#7b1113', '#f0e68c'],
   places: ['#0f6b4f', '#d9d9d9'],
   entities: ['#3d2b56', '#c49a3a'],
+  published: ['#7a1f2b', '#f4efe2', '#1f3557'],
 };
 
 /** Rare and special decorations share a solemn dark-red sash. */

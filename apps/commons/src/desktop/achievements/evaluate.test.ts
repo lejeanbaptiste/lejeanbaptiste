@@ -1,5 +1,6 @@
 import {
   RANK_MEDALS,
+  RANK_NAMES,
   RARE_ACHIEVEMENTS,
   RARE_UNLOCK_PROBABILITY,
   TOTAL_ACHIEVEMENTS,
@@ -38,7 +39,8 @@ const baseContext = (overrides?: Partial<SaveContext>): SaveContext => ({
   savedAt: new Date('2026-07-17T14:00:00'),
   encoderName: 'Daniel',
   fileCounts: null,
-  xml: '<TEI/>',
+  xml: '<TEI><text>content</text></TEI>',
+  sourceMode: false,
   roll: 0.999,
   pickRoll: 0,
   ...overrides,
@@ -50,6 +52,7 @@ const zeroMetrics = (): GlobalMetrics => ({
   disambiguated: 0,
   places: 0,
   entities: 0,
+  published: 0,
   languages: 0,
 });
 
@@ -86,11 +89,13 @@ describe('approximateWordCount', () => {
 describe('aggregateGlobalMetrics', () => {
   it('sums annotation work but takes the max of shared entity counts', () => {
     const state = emptyState('2026-01-01T00:00:00.000Z');
+    state.leaderboardPublicationDays = ['2026-07-20', '2026-07-21'];
     state.projects['a'] = { ...emptyProjectMetrics(), tagsTotal: 10, entities: 300 };
     state.projects['b'] = { ...emptyProjectMetrics(), tagsTotal: 5, entities: 300 };
     const global = aggregateGlobalMetrics(state);
     expect(global.tags).toBe(15);
     expect(global.entities).toBe(300);
+    expect(global.published).toBe(2);
   });
 });
 
@@ -102,7 +107,7 @@ describe('determineNewUnlocks', () => {
     const earned = determineNewUnlocks(freshState(), global, baseContext());
     expect(earned).toContain(rankMedalAchievementId('tags', 0));
     expect(earned).toContain(rankMedalAchievementId('tags', 2)); // threshold 5000
-    expect(earned).not.toContain(rankMedalAchievementId('tags', 3)); // threshold 20000
+    expect(earned).not.toContain(rankMedalAchievementId('tags', 3)); // threshold 10000
   });
 
   it('does not re-award ranks already held', () => {
@@ -137,6 +142,38 @@ describe('determineNewUnlocks', () => {
     );
   });
 
+  it('awards Wet Work only for a save originating in Source mode', () => {
+    expect(
+      determineNewUnlocks(
+        freshState(),
+        zeroMetrics(),
+        baseContext({ sourceMode: true, xml: '<TEI><text>edited</text></TEI>' }),
+      ),
+    ).toContain('wet-work');
+    expect(determineNewUnlocks(freshState(), zeroMetrics(), baseContext())).not.toContain(
+      'wet-work',
+    );
+  });
+
+  it('awards The Empty Honour for a valid saved document using an empty element', () => {
+    expect(
+      determineNewUnlocks(
+        freshState(),
+        zeroMetrics(),
+        baseContext({ xml: '<TEI><text><lb/></text></TEI>' }),
+      ),
+    ).toContain('empty-honour');
+  });
+
+  it('awards Mentioned in Despatches from distinct leaderboard publication days', () => {
+    const earned = determineNewUnlocks(
+      freshState(),
+      { ...zeroMetrics(), published: 5 },
+      baseContext(),
+    );
+    expect(earned).toContain(rankMedalAchievementId('published', 0));
+  });
+
   it('rolls a rare achievement only under the probability threshold', () => {
     const win = baseContext({ roll: RARE_UNLOCK_PROBABILITY / 2, pickRoll: 0 });
     const earnedWin = determineNewUnlocks(freshState(), zeroMetrics(), win);
@@ -169,14 +206,18 @@ describe('determineNewUnlocks', () => {
 
 describe('catalogue', () => {
   it('advertises the full achievement count', () => {
-    // Medal lengths vary by metric; the catalogue includes every configured threshold.
     const rankCount = RANK_MEDALS.reduce((total, medal) => total + medal.thresholds.length, 0);
-    expect(TOTAL_ACHIEVEMENTS).toBe(rankCount + 9 + 11);
+    expect(RANK_MEDALS).toHaveLength(6);
+    expect(RANK_MEDALS.every((medal) => medal.thresholds.length === RANK_NAMES.length)).toBe(true);
+    expect(rankCount).toBe(42);
+    expect(TOTAL_ACHIEVEMENTS).toBe(rankCount + 12 + 12);
+    expect(TOTAL_ACHIEVEMENTS).toBe(66);
   });
 
   it('ignores retired achievement ids left in old files when counting', () => {
     const state = emptyState('2026-07-01T00:00:00.000Z');
     state.unlocked['first-persname'] = { at: '2026-07-01T00:00:00.000Z' }; // retired
+    state.unlocked['character-development'] = { at: '2026-07-01T00:00:00.000Z' }; // retired
     state.unlocked['chou-blanc'] = { at: '2026-07-01T00:00:00.000Z' };
     expect(countUnlocked(state)).toBe(1);
   });

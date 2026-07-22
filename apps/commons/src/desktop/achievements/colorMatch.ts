@@ -30,8 +30,11 @@ const clamp = (value: number, min: number, max: number): number => Math.min(max,
 // recognizable first, at the cost of the uniform blending in slightly less
 // on the darkest/most-desaturated backdrops than the old wider range would
 // have allowed.
-const BRIGHTNESS_RANGE: [number, number] = [0.85, 1.08];
-const SATURATION_RANGE: [number, number] = [0.55, 1.2];
+// Floors pulled back 20% of the remaining distance to 1.0 (0.85->0.88,
+// 0.55->0.64) from the tightened values above, per follow-up feedback that
+// the tightened pass still darkened/desaturated a bit more than wanted.
+const BRIGHTNESS_RANGE: [number, number] = [0.88, 1.08];
+const SATURATION_RANGE: [number, number] = [0.64, 1.2];
 
 /** CSS filter() value that nudges `own`'s average lightness/saturation
  * toward `target`'s (e.g. a layer toward the backdrop it sits on). Both

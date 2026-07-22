@@ -73,14 +73,43 @@ export interface WeaponSelection {
   imageIds: string[];
 }
 
+/** True if this rank has anything at all to show for `bodyType` in this
+ * channel - either a universal (sex-independent) piece, or a bodyType-
+ * specific piece under any variant. */
+const channelHasRankFor = (
+  channel: (typeof WEAPON_POOLS)[number][number],
+  rank: number,
+  bodyType: 'm' | 'f',
+): boolean => {
+  const entry = channel[rank];
+  if (!entry) return false;
+  if (entry.universal.length > 0) return true;
+  const byBodyType = entry[bodyType];
+  return !!byBodyType && Object.keys(byBodyType).length > 0;
+};
+
 /** Daniel's rule: "at that rank or above, that weapon asset enters
  * rotation... rank 5 will cycle randomly through rank 1-5 assets" - the
  * exact same cumulative-pool random pick as backgroundPoolForRank/
  * pickBackgroundKey, just over weapon-rank tiers instead of backdrop
  * letters. Returns null when this pose has no weapon at all, or the
- * player's rank hasn't unlocked any tier yet. */
+ * player's rank hasn't unlocked any tier yet.
+ *
+ * Some ranks have sex-specific alternates at the same rank (body6.svg's
+ * f-rank2-a vs f-rank2-b) - mutually exclusive designs, not simultaneous
+ * parts, so exactly one variant letter is picked per rank+bodyType. That
+ * pick is made *once*, shared across every channel (not independently per
+ * channel), and only from variant letters common to every channel that has
+ * a bodyType-specific piece at this rank - picking independently per
+ * channel could combine a front half authored for variant "a" with a rear
+ * half only drawn for variant "b" (body6.svg's rank4/rank5 are asymmetric
+ * like this: not every variant has a matching piece in both the background
+ * and foreground weapon groups). Falls back to the union across channels
+ * only if they share no variant at all, so a rank with genuinely disjoint
+ * per-channel authoring still shows *something* rather than nothing. */
 export const pickWeapon = (
   poseIndex: number,
+  bodyType: 'm' | 'f',
   rankIndex: number,
   previousRank: number | null,
 ): WeaponSelection | null => {
@@ -90,7 +119,7 @@ export const pickWeapon = (
   const unlockedRanks = new Set<number>();
   for (const channel of channels) {
     for (const rank of Object.keys(channel).map(Number)) {
-      if (rank <= rankIndex + 1) unlockedRanks.add(rank);
+      if (rank <= rankIndex + 1 && channelHasRankFor(channel, rank, bodyType)) unlockedRanks.add(rank);
     }
   }
   if (unlockedRanks.size === 0) return null;
@@ -99,15 +128,36 @@ export const pickWeapon = (
   const choices = previousRank !== null && pool.length > 1 ? pool.filter((rank) => rank !== previousRank) : pool;
   const rank = choices[Math.floor(Math.random() * choices.length)]!;
 
-  // Every id sharing this rank within a channel is a simultaneous part of
-  // the same weapon at that tier (e.g. bodies/body7.svg's rank2 has two
-  // images ~170 units apart - one per hand - not two alternate designs to
-  // pick between), so all of them come along together, not just one.
+  // Variant keys the bodyType has at this rank, per channel (only channels
+  // that have *something* for this bodyType at this rank count).
+  const variantKeySetsPerChannel = channels
+    .map((channel) => channel[rank]?.[bodyType])
+    .filter((byBodyType): byBodyType is Record<string, readonly string[]> => !!byBodyType)
+    .map((byBodyType) => new Set(Object.keys(byBodyType)));
+
+  let variant: string | null = null;
+  if (variantKeySetsPerChannel.length > 0) {
+    const intersection = variantKeySetsPerChannel.reduce((acc, keys) =>
+      new Set(Array.from(acc).filter((key) => keys.has(key))),
+    );
+    const union = new Set(variantKeySetsPerChannel.flatMap((keys) => Array.from(keys)));
+    const candidates = Array.from(intersection.size > 0 ? intersection : union);
+    variant = candidates[Math.floor(Math.random() * candidates.length)]!;
+  }
+
+  // Every id sharing this rank+bodyType+variant within a channel is a
+  // simultaneous part of the same design (e.g. bodies/body7.svg's rank2 has
+  // two images ~170 units apart - one per hand), so all of them come along
+  // together.
   const imageIds: string[] = [];
   for (const channel of channels) {
-    const idsAtRank = channel[rank];
-    if (!idsAtRank || idsAtRank.length === 0) continue;
-    imageIds.push(...idsAtRank);
+    const entry = channel[rank];
+    if (!entry) continue;
+    imageIds.push(...entry.universal);
+    if (variant !== null) {
+      const idsForVariant = entry[bodyType]?.[variant];
+      if (idsForVariant) imageIds.push(...idsForVariant);
+    }
   }
   return { rank, imageIds };
 };

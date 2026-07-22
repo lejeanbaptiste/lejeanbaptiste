@@ -21,6 +21,7 @@ import RefreshIcon from '@mui/icons-material/Refresh';
 import RestoreIcon from '@mui/icons-material/Restore';
 import { useActions, useAppState } from '@src/overmind';
 import type { TimeMachineSnapshotSummary } from '@src/types/desktop';
+import { unlockAchievement } from '@src/desktop/achievements/engine';
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 
@@ -116,8 +117,7 @@ export const TimeMachineDialog = ({ onClose, open }: TimeMachineDialogProps) => 
       const confirmation = await window.electronAPI.showNativeMessageBox({
         type: 'warning',
         title: t('LWC.desktop.time_machine.restore_snapshot'),
-        message:
-          t('LWC.desktop.time_machine.restore_snapshot_message'),
+        message: t('LWC.desktop.time_machine.restore_snapshot_message'),
         buttons: [t('LWC.desktop.time_machine.restore'), t('LWC.desktop.time_machine.cancel')],
         cancelId: 1,
         defaultId: 1,
@@ -139,6 +139,12 @@ export const TimeMachineDialog = ({ onClose, open }: TimeMachineDialogProps) => 
       await reloadDirectoryInTree(rootPath);
       await Promise.all(openTabs.map((tab) => reloadTabFromDisk(tab.filePath)));
       await loadSnapshots();
+      await unlockAchievement('recovery-under-fire', (message) =>
+        notifyViaSnackbar({
+          message,
+          options: { variant: 'success', autoHideDuration: 7000 },
+        }),
+      );
       notifyViaSnackbar({
         message: t('LWC.desktop.time_machine.project_restored'),
         options: { variant: 'success' },

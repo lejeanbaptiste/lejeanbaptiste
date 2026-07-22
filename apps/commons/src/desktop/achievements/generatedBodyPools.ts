@@ -8,12 +8,16 @@
 // WEAPON_POOLS: per pose index, one entry per <g inkscape:label="weapons">
 // block found in that pose's SVG (a pose can have zero, one, or two - two
 // when a weapon is split into rear/front halves across background/
-// foreground layers, e.g. body6.svg). Each entry maps rank number -> the
-// image ids that belong to that rank - more than one id means simultaneous
-// parts of the same weapon at that rank (e.g. body7.svg's rank2 sits one
-// image per hand, not two alternates to choose between), all shown
-// together. Opaque ids, not spoilers - they mean nothing without the
-// encrypted artwork itself.
+// foreground layers, e.g. body6.svg). Each entry maps rank number -> a
+// WeaponRankPool: "universal" ids show regardless of bodyType (a plain
+// rankN label); "f"/"m" are only present when that rank has a bodyType-
+// specific piece (an f-rankN/m-rankN label), keyed by variant - '' for a
+// plain f-rankN with no letter suffix, or the letter(s) after the dash for
+// mutually exclusive alternates (body6.svg's f-rank2-a vs f-rank2-b). More
+// than one id sharing the same bucket means simultaneous parts of the same
+// design (e.g. body7.svg's rank2 sits one image per hand, not two
+// alternates), all shown together. Opaque ids, not spoilers - they mean
+// nothing without the encrypted artwork itself.
 //
 // BODY_COLOR_STATS: one precomputed lightness/saturation stat per
 // "<poseIndex>:<bodyType>" key, sampled from a representative rank-1, no-
@@ -22,9 +26,15 @@
 
 import type { ColorStats } from './colorMatch';
 
+export interface WeaponRankPool {
+  readonly universal: readonly string[];
+  readonly f?: Readonly<Record<string, readonly string[]>>;
+  readonly m?: Readonly<Record<string, readonly string[]>>;
+}
+
 export const POSE_INDICES: readonly number[] = [1,2,3,4,5,6,7];
 
-export const WEAPON_POOLS: Readonly<Record<number, ReadonlyArray<Record<number, readonly string[]>>>> =
+export const WEAPON_POOLS: Readonly<Record<number, ReadonlyArray<Record<number, WeaponRankPool>>>> =
   {
   "1": [],
   "2": [],
@@ -32,78 +42,221 @@ export const WEAPON_POOLS: Readonly<Record<number, ReadonlyArray<Record<number, 
   "4": [],
   "5": [
     {
-      "1": [
-        "image1-04"
-      ],
-      "2": [
-        "image1-9"
-      ],
-      "3": [
-        "image1-854"
-      ],
-      "4": [
-        "image1-6"
-      ]
+      "1": {
+        "universal": [
+          "image1-04"
+        ]
+      },
+      "2": {
+        "universal": [
+          "image1-9"
+        ]
+      },
+      "3": {
+        "universal": [
+          "image1-854"
+        ]
+      },
+      "4": {
+        "universal": [
+          "image1-6"
+        ]
+      }
     }
   ],
   "6": [
     {
-      "1": [
-        "image1-8"
-      ],
-      "2": [
-        "image1-5"
-      ],
-      "3": [
-        "image1-451"
-      ]
+      "1": {
+        "universal": [],
+        "f": {
+          "a": [
+            "image412"
+          ]
+        },
+        "m": {
+          "a": [
+            "image405"
+          ]
+        }
+      },
+      "2": {
+        "universal": [],
+        "f": {
+          "a": [
+            "image400"
+          ]
+        },
+        "m": {
+          "a": [
+            "image397"
+          ]
+        }
+      },
+      "3": {
+        "universal": [],
+        "f": {
+          "a": [
+            "image1-36"
+          ]
+        },
+        "m": {
+          "a": [
+            "image7"
+          ]
+        }
+      },
+      "4": {
+        "universal": [],
+        "f": {
+          "b": [
+            "image396"
+          ]
+        },
+        "m": {
+          "b": [
+            "image395"
+          ]
+        }
+      },
+      "5": {
+        "universal": [],
+        "f": {
+          "a": [
+            "image391",
+            "image392"
+          ],
+          "b": [
+            "image413"
+          ]
+        },
+        "m": {
+          "a": [
+            "image11",
+            "image12"
+          ],
+          "b": [
+            "image415"
+          ]
+        }
+      }
     },
     {
-      "1": [
-        "image1-2"
-      ],
-      "2": [
-        "image1-80"
-      ],
-      "3": [
-        "image1-3"
-      ],
-      "4": [
-        "image1-07"
-      ]
+      "1": {
+        "universal": [],
+        "f": {
+          "a": [
+            "image1-768"
+          ]
+        },
+        "m": {
+          "a": [
+            "image404"
+          ]
+        }
+      },
+      "2": {
+        "universal": [],
+        "f": {
+          "a": [
+            "image1-97",
+            "image399"
+          ]
+        },
+        "m": {
+          "a": [
+            "image1-9"
+          ]
+        }
+      },
+      "3": {
+        "universal": [],
+        "f": {
+          "a": [
+            "image6"
+          ]
+        },
+        "m": {
+          "a": [
+            "image8"
+          ]
+        }
+      },
+      "4": {
+        "universal": [],
+        "f": {
+          "a": [
+            "image5"
+          ],
+          "b": [
+            "image394"
+          ]
+        },
+        "m": {
+          "b": [
+            "image1-04"
+          ]
+        }
+      },
+      "5": {
+        "universal": [],
+        "f": {
+          "a": [
+            "image1-79"
+          ],
+          "b": [
+            "image401"
+          ]
+        },
+        "m": {
+          "a": [
+            "image390"
+          ],
+          "b": [
+            "image414"
+          ]
+        }
+      }
     }
   ],
   "7": [
     {
-      "2": [
-        "image1-52",
-        "image1-97"
-      ],
-      "3": [
-        "image1-1",
-        "image1-22"
-      ],
-      "4": [
-        "image1-760",
-        "image9"
-      ],
-      "5": [
-        "image1-79",
-        "image1-70",
-        "image1-75"
-      ]
+      "2": {
+        "universal": [
+          "image1-52",
+          "image1-97"
+        ]
+      },
+      "3": {
+        "universal": [
+          "image1-1",
+          "image1-22"
+        ]
+      },
+      "4": {
+        "universal": [
+          "image1-760",
+          "image9"
+        ]
+      },
+      "5": {
+        "universal": [
+          "image1-79",
+          "image1-70",
+          "image1-75"
+        ]
+      }
     }
   ]
 };
 
 export const BODY_COLOR_STATS: Readonly<Record<string, ColorStats>> = {
   "1:m": {
-    "lightness": 0.2691240254234247,
-    "saturation": 0.7369487671710715
+    "lightness": 0.2428076017641199,
+    "saturation": 0.7500214265768296
   },
   "1:f": {
-    "lightness": 0.2963766054514331,
-    "saturation": 0.708576740172114
+    "lightness": 0.2764244595006493,
+    "saturation": 0.7149850230381264
   },
   "2:m": {
     "lightness": 0.34609213220125123,
@@ -138,19 +291,19 @@ export const BODY_COLOR_STATS: Readonly<Record<string, ColorStats>> = {
     "saturation": 0.7046588868426846
   },
   "6:m": {
-    "lightness": 0.3387009737661219,
-    "saturation": 0.7030278554344159
+    "lightness": 0.28873670894129033,
+    "saturation": 0.4722569618518989
   },
   "6:f": {
-    "lightness": 0.3342883626557145,
-    "saturation": 0.7528136020422758
+    "lightness": 0.2835435489760362,
+    "saturation": 0.49309045623193365
   },
   "7:m": {
-    "lightness": 0.38249594840953466,
-    "saturation": 0.5496946104064634
+    "lightness": 0.3814221270144912,
+    "saturation": 0.5517488875252086
   },
   "7:f": {
-    "lightness": 0.3986420742218896,
-    "saturation": 0.5777154382073404
+    "lightness": 0.3977665932683914,
+    "saturation": 0.5798748669883655
   }
 };

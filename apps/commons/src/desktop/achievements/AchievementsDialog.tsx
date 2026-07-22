@@ -34,10 +34,11 @@ import {
   RANK_NAMES,
   RARE_ACHIEVEMENTS,
   SPECIAL_ACHIEVEMENTS,
+  STARTER_RANK_NAME,
   TOTAL_ACHIEVEMENTS,
-  findAchievementDef,
 } from './definitions';
-import { aggregateGlobalMetrics, countUnlocked, currentRankIndex } from './evaluate';
+import { aggregateGlobalMetrics, countUnlocked, currentRankIndex, metricValue } from './evaluate';
+import { recordLeaderboardPublication } from './engine';
 import {
   MedalIcon,
   METRIC_RIBBONS,
@@ -59,9 +60,16 @@ import {
   MOUTH_VARIANTS,
   SKIN_COLORS,
 } from './dicebear';
-import { buildBodyUrl, pickBackgroundKey, pickPose, pickWeapon, UniformAvatar } from './UniformAvatar';
+import type { DiceBearAvatarOptions } from './dicebear';
+import {
+  buildBodyUrl,
+  pickBackgroundKey,
+  pickPose,
+  pickWeapon,
+  UniformAvatar,
+} from './UniformAvatar';
 import { loadAchievementsState, saveAchievementsState } from './store';
-import type { AchievementsState, GlobalMetrics, UnlockedAchievement } from './types';
+import type { AchievementsState, UnlockedAchievement } from './types';
 
 interface AchievementsDialogProps {
   onClose: () => void;
@@ -83,23 +91,7 @@ const METRIC_LABELS: Record<string, string> = {
   disambiguated: 'Tags disambiguated',
   places: 'Places disambiguated',
   entities: 'Entities on file',
-};
-
-const metricValue = (global: GlobalMetrics, metric: string): number => {
-  switch (metric) {
-    case 'texts':
-      return global.texts;
-    case 'tags':
-      return global.tags;
-    case 'disambiguated':
-      return global.disambiguated;
-    case 'places':
-      return global.places;
-    case 'entities':
-      return global.entities;
-    default:
-      return 0;
-  }
+  published: 'Days published to leaderboard',
 };
 
 const collectDecorations = (state: AchievementsState): UnlockedAchievement[] => {
@@ -119,7 +111,7 @@ const highestRankIndexOf = (state: AchievementsState): number =>
   Math.max(-1, ...RANK_MEDALS.map((medal) => currentRankIndex(state, medal.metric)));
 
 /** The highest rank held across all metrics, for the header line. */
-const highestCommission = (state: AchievementsState): string | null => {
+const highestCommission = (state: AchievementsState): string => {
   let best: { rankIndex: number; medalName: string } | null = null;
   for (const medal of RANK_MEDALS) {
     const rankIndex = currentRankIndex(state, medal.metric);
@@ -127,7 +119,7 @@ const highestCommission = (state: AchievementsState): string | null => {
       best = { rankIndex, medalName: medal.medalName };
     }
   }
-  return best ? `${RANK_NAMES[best.rankIndex]}, ${best.medalName}` : null;
+  return best ? `${RANK_NAMES[best.rankIndex]}, ${best.medalName}` : STARTER_RANK_NAME;
 };
 
 export const AchievementsDialog = ({ onClose, open }: AchievementsDialogProps) => {
@@ -140,6 +132,13 @@ export const AchievementsDialog = ({ onClose, open }: AchievementsDialogProps) =
   const [weaponRank, setWeaponRank] = useState<number | null>(null);
   const [weaponImageIds, setWeaponImageIds] = useState<string[]>([]);
   const [portraitEditorOpen, setPortraitEditorOpen] = useState(false);
+  // Set while the pointer hovers an option in one of the head-part Selects
+  // below, so the officer-header portrait shows that option live instead of
+  // the committed one - lets someone judge a mouth or a hairstyle against
+  // their own actual portrait before picking it, with no extra UI real
+  // estate and no scaling logic (it's a real composite, same as the
+  // committed avatar).
+  const [hoverPreview, setHoverPreview] = useState<Partial<DiceBearAvatarOptions> | null>(null);
   const showAlignmentGrid =
     typeof window !== 'undefined' &&
     new URLSearchParams(window.location.search).get('portraitGrid') === '1';
@@ -174,10 +173,19 @@ export const AchievementsDialog = ({ onClose, open }: AchievementsDialogProps) =
       // (Daniel: "pose and weapons will be random"). Weapon depends on
       // which pose just got picked and the player's current rank, so it's
       // resolved from the new pose, not the stale one still in state.
+      const loadedBodyType =
+        loaded.avatar?.kind === 'dicebear'
+          ? loaded.avatar.options.bodyType
+          : createDefaultDiceBearAvatar(encoderName).bodyType;
       setPoseIndex((previousPose) => {
         const newPose = pickPose(previousPose);
         setWeaponRank((previousWeaponRank) => {
-          const weapon = pickWeapon(newPose, highestRankIndexOf(loaded), previousWeaponRank);
+          const weapon = pickWeapon(
+            newPose,
+            loadedBodyType,
+            highestRankIndexOf(loaded),
+            previousWeaponRank,
+          );
           setWeaponImageIds(weapon?.imageIds ?? []);
           return weapon?.rank ?? null;
         });
@@ -223,11 +231,29 @@ export const AchievementsDialog = ({ onClose, open }: AchievementsDialogProps) =
       ? state.avatar.options
       : createDefaultDiceBearAvatar(encoderName);
   const avatarUrl = diceBearAvatarUrl(avatarOptions);
+  // Committed avatar unless a Select option is currently hovered - see
+  // hoverPreview above.
+  const displayedAvatarUrl = hoverPreview
+    ? diceBearAvatarUrl({ ...avatarOptions, ...hoverPreview })
+    : avatarUrl;
   const serviceSince = new Date(state.installedAt).toLocaleDateString();
   const highestRankIndex = highestRankIndexOf(state);
-  const weaponSelection = weaponRank !== null ? { imageIds: weaponImageIds, rank: weaponRank } : null;
-  const bodyBackUrl = buildBodyUrl(poseIndex, avatarOptions.bodyType, highestRankIndex, weaponSelection, 'back');
-  const bodyFrontUrl = buildBodyUrl(poseIndex, avatarOptions.bodyType, highestRankIndex, weaponSelection, 'front');
+  const weaponSelection =
+    weaponRank !== null ? { imageIds: weaponImageIds, rank: weaponRank } : null;
+  const bodyBackUrl = buildBodyUrl(
+    poseIndex,
+    avatarOptions.bodyType,
+    highestRankIndex,
+    weaponSelection,
+    'back',
+  );
+  const bodyFrontUrl = buildBodyUrl(
+    poseIndex,
+    avatarOptions.bodyType,
+    highestRankIndex,
+    weaponSelection,
+    'front',
+  );
   const serviceRibbons = RANK_MEDALS.filter(
     (medal) => currentRankIndex(state, medal.metric) >= 0,
   ).map((medal) => METRIC_RIBBONS[medal.metric] ?? SPECIAL_RIBBON);
@@ -311,7 +337,8 @@ export const AchievementsDialog = ({ onClose, open }: AchievementsDialogProps) =
       if (!token) {
         const flow = await window.electronAPI?.startLeaderboardDeviceFlow?.();
         if (!flow) throw new Error('Could not start GitHub login.');
-        const copyCode = () => void window.electronAPI?.writeClipboardRich?.({ text: flow.userCode });
+        const copyCode = () =>
+          void window.electronAPI?.writeClipboardRich?.({ text: flow.userCode });
         // Copied immediately so pasting on the GitHub page that just opened
         // is the only step - the button below is just a fallback in case
         // something else overwrote the clipboard in the meantime.
@@ -388,6 +415,7 @@ export const AchievementsDialog = ({ onClose, open }: AchievementsDialogProps) =
             disambiguated: global.disambiguated,
             places: global.places,
             entities: global.entities,
+            published: global.published,
           },
           unlockedCount,
           totalAchievements: TOTAL_ACHIEVEMENTS,
@@ -396,6 +424,14 @@ export const AchievementsDialog = ({ onClose, open }: AchievementsDialogProps) =
       });
       const body = (await response.json()) as { ok?: boolean; message?: string; error?: string };
       if (!response.ok || !body.ok) throw new Error(body.error ?? 'Submission failed.');
+
+      const updated = await recordLeaderboardPublication(new Date(), (message) =>
+        notifyViaSnackbar({
+          message,
+          options: { variant: 'success', autoHideDuration: 7000 },
+        }),
+      );
+      setState({ ...updated });
 
       notifyViaSnackbar({
         message: body.message ?? 'Added to the leaderboard.',
@@ -413,16 +449,6 @@ export const AchievementsDialog = ({ onClose, open }: AchievementsDialogProps) =
     const current = await loadAchievementsState();
     const options = { ...avatarOptions, ...changes };
     current.avatar = { kind: 'dicebear', options };
-    if (!current.unlocked['character-development']) {
-      current.unlocked['character-development'] = { at: new Date().toISOString() };
-      const def = findAchievementDef('character-development');
-      if (def) {
-        notifyViaSnackbar({
-          message: `🎖️ Achievement unlocked: ${def.name} — ${def.description}`,
-          options: { variant: 'success', autoHideDuration: 7000 },
-        });
-      }
-    }
     await saveAchievementsState(current);
     setState({ ...current });
   };
@@ -450,7 +476,7 @@ export const AchievementsDialog = ({ onClose, open }: AchievementsDialogProps) =
               title={portraitEditorOpen ? 'Close portrait editor' : 'Edit portrait'}
             >
               <UniformAvatar
-                headImageUrl={avatarUrl}
+                headImageUrl={displayedAvatarUrl}
                 bodyBackImageUrl={bodyBackUrl}
                 bodyFrontImageUrl={bodyFrontUrl}
                 backgroundImageKey={backgroundKey}
@@ -465,7 +491,7 @@ export const AchievementsDialog = ({ onClose, open }: AchievementsDialogProps) =
                 {encoderName.trim() || 'Unknown Encoder'}
               </Typography>
               <Typography color="text.secondary" variant="body2">
-                {commission ?? 'Unranked. The corpus awaits.'}
+                {commission}
               </Typography>
               <Typography color="text.secondary" variant="caption">
                 In service since {serviceSince}
@@ -541,12 +567,15 @@ export const AchievementsDialog = ({ onClose, open }: AchievementsDialogProps) =
                 <FormControl size="small" sx={{ minWidth: 116 }}>
                   <Select
                     aria-label="Eyebrows"
+                    onClose={() => setHoverPreview(null)}
                     value={avatarOptions.eyebrowsVariant}
                     onChange={(event) => void updateAvatar({ eyebrowsVariant: event.target.value })}
                   >
                     {EYEBROW_VARIANTS.map((variant) => (
                       <MenuItem
                         key={variant}
+                        onMouseEnter={() => setHoverPreview({ eyebrowsVariant: variant })}
+                        onMouseLeave={() => setHoverPreview(null)}
                         value={variant}
                       >{`Eyebrows ${variant.slice(-2)}`}</MenuItem>
                     ))}
@@ -555,12 +584,15 @@ export const AchievementsDialog = ({ onClose, open }: AchievementsDialogProps) =
                 <FormControl size="small" sx={{ minWidth: 116 }}>
                   <Select
                     aria-label="Eyes"
+                    onClose={() => setHoverPreview(null)}
                     value={avatarOptions.eyesVariant}
                     onChange={(event) => void updateAvatar({ eyesVariant: event.target.value })}
                   >
                     {EYE_VARIANTS.map((variant) => (
                       <MenuItem
                         key={variant}
+                        onMouseEnter={() => setHoverPreview({ eyesVariant: variant })}
+                        onMouseLeave={() => setHoverPreview(null)}
                         value={variant}
                       >{`Eyes ${variant.slice(-2)}`}</MenuItem>
                     ))}
@@ -569,12 +601,15 @@ export const AchievementsDialog = ({ onClose, open }: AchievementsDialogProps) =
                 <FormControl size="small" sx={{ minWidth: 116 }}>
                   <Select
                     aria-label="Mouth"
+                    onClose={() => setHoverPreview(null)}
                     value={avatarOptions.mouthVariant}
                     onChange={(event) => void updateAvatar({ mouthVariant: event.target.value })}
                   >
                     {MOUTH_VARIANTS.map((variant) => (
                       <MenuItem
                         key={variant}
+                        onMouseEnter={() => setHoverPreview({ mouthVariant: variant })}
+                        onMouseLeave={() => setHoverPreview(null)}
                         value={variant}
                       >{`Mouth ${variant.slice(-2)}`}</MenuItem>
                     ))}
@@ -583,7 +618,10 @@ export const AchievementsDialog = ({ onClose, open }: AchievementsDialogProps) =
                 <FormControl size="small" sx={{ minWidth: 116 }}>
                   <Select
                     aria-label="Features"
-                    value={avatarOptions.featuresProbability ? avatarOptions.featuresVariant : 'none'}
+                    onClose={() => setHoverPreview(null)}
+                    value={
+                      avatarOptions.featuresProbability ? avatarOptions.featuresVariant : 'none'
+                    }
                     onChange={(event) =>
                       void updateAvatar(
                         event.target.value === 'none'
@@ -592,9 +630,22 @@ export const AchievementsDialog = ({ onClose, open }: AchievementsDialogProps) =
                       )
                     }
                   >
-                    <MenuItem value="none">No feature</MenuItem>
+                    <MenuItem
+                      onMouseEnter={() => setHoverPreview({ featuresProbability: 0 })}
+                      onMouseLeave={() => setHoverPreview(null)}
+                      value="none"
+                    >
+                      No feature
+                    </MenuItem>
                     {FEATURES_VARIANTS.map((variant) => (
-                      <MenuItem key={variant} value={variant}>
+                      <MenuItem
+                        key={variant}
+                        onMouseEnter={() =>
+                          setHoverPreview({ featuresVariant: variant, featuresProbability: 100 })
+                        }
+                        onMouseLeave={() => setHoverPreview(null)}
+                        value={variant}
+                      >
                         {variant.charAt(0).toUpperCase() + variant.slice(1)}
                       </MenuItem>
                     ))}
@@ -603,6 +654,7 @@ export const AchievementsDialog = ({ onClose, open }: AchievementsDialogProps) =
                 <FormControl size="small" sx={{ minWidth: 116 }}>
                   <Select
                     aria-label="Glasses"
+                    onClose={() => setHoverPreview(null)}
                     value={avatarOptions.glassesProbability ? avatarOptions.glassesVariant : 'none'}
                     onChange={(event) =>
                       void updateAvatar(
@@ -612,10 +664,20 @@ export const AchievementsDialog = ({ onClose, open }: AchievementsDialogProps) =
                       )
                     }
                   >
-                    <MenuItem value="none">No glasses</MenuItem>
+                    <MenuItem
+                      onMouseEnter={() => setHoverPreview({ glassesProbability: 0 })}
+                      onMouseLeave={() => setHoverPreview(null)}
+                      value="none"
+                    >
+                      No glasses
+                    </MenuItem>
                     {GLASSES_VARIANTS.map((variant) => (
                       <MenuItem
                         key={variant}
+                        onMouseEnter={() =>
+                          setHoverPreview({ glassesVariant: variant, glassesProbability: 100 })
+                        }
+                        onMouseLeave={() => setHoverPreview(null)}
                         value={variant}
                       >{`Glasses ${variant.slice(-2)}`}</MenuItem>
                     ))}
@@ -624,11 +686,17 @@ export const AchievementsDialog = ({ onClose, open }: AchievementsDialogProps) =
                 <FormControl size="small" sx={{ minWidth: 116 }}>
                   <Select
                     aria-label="Hair"
+                    onClose={() => setHoverPreview(null)}
                     value={avatarOptions.hairVariant}
                     onChange={(event) => void updateAvatar({ hairVariant: event.target.value })}
                   >
                     {HAIR_VARIANTS.map((variant) => (
-                      <MenuItem key={variant} value={variant}>
+                      <MenuItem
+                        key={variant}
+                        onMouseEnter={() => setHoverPreview({ hairVariant: variant })}
+                        onMouseLeave={() => setHoverPreview(null)}
+                        value={variant}
+                      >
                         {variant.startsWith('long') ? 'Long hair' : 'Short hair'}{' '}
                         {variant.slice(-2)}
                       </MenuItem>
@@ -638,7 +706,10 @@ export const AchievementsDialog = ({ onClose, open }: AchievementsDialogProps) =
                 <FormControl size="small" sx={{ minWidth: 116 }}>
                   <Select
                     aria-label="Earrings"
-                    value={avatarOptions.earringsProbability ? avatarOptions.earringsVariant : 'none'}
+                    onClose={() => setHoverPreview(null)}
+                    value={
+                      avatarOptions.earringsProbability ? avatarOptions.earringsVariant : 'none'
+                    }
                     onChange={(event) =>
                       void updateAvatar(
                         event.target.value === 'none'
@@ -647,10 +718,20 @@ export const AchievementsDialog = ({ onClose, open }: AchievementsDialogProps) =
                       )
                     }
                   >
-                    <MenuItem value="none">No earrings</MenuItem>
+                    <MenuItem
+                      onMouseEnter={() => setHoverPreview({ earringsProbability: 0 })}
+                      onMouseLeave={() => setHoverPreview(null)}
+                      value="none"
+                    >
+                      No earrings
+                    </MenuItem>
                     {EARRINGS_VARIANTS.map((variant) => (
                       <MenuItem
                         key={variant}
+                        onMouseEnter={() =>
+                          setHoverPreview({ earringsVariant: variant, earringsProbability: 100 })
+                        }
+                        onMouseLeave={() => setHoverPreview(null)}
                         value={variant}
                       >{`Earrings ${variant.slice(-2)}`}</MenuItem>
                     ))}
@@ -731,7 +812,9 @@ export const AchievementsDialog = ({ onClose, open }: AchievementsDialogProps) =
                         </Typography>
                       </Stack>
                       <Typography color="text.secondary" variant="caption">
-                        {rankIndex >= 0 ? RANK_NAMES[rankIndex] : 'Not yet decorated'}
+                        {rankIndex >= 0
+                          ? RANK_NAMES[rankIndex]
+                          : `${STARTER_RANK_NAME} — not yet decorated`}
                         {nextThreshold
                           ? ` — ${value.toLocaleString()} / ${nextThreshold.toLocaleString()} to ${RANK_NAMES[rankIndex + 1]}`
                           : rankIndex >= 0
