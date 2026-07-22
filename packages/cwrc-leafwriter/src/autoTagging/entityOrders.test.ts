@@ -8,6 +8,7 @@ import {
   readAppliedOrderIds,
   readOrders,
   recordOrder,
+  unionOrderLogs,
   writeAppliedOrderIds,
   type EntityOrder,
 } from './entityOrders';
@@ -75,6 +76,24 @@ describe('composeRemap', () => {
     const later = order({ dbId: 'db1', id: 'z', when: '2026-01-02T00:00:00Z', remap: { b: 'c' } });
     const earlier = order({ dbId: 'db1', id: 'a', when: '2026-01-01T00:00:00Z', remap: { a: 'b' } });
     expect(composeRemap([later, earlier])).toEqual({ a: 'c', b: 'c' });
+  });
+});
+
+describe('unionOrderLogs', () => {
+  it('unions by order id and sorts chronologically (rollback-survival)', () => {
+    const early = order({ dbId: 'db1', id: 'a', when: '2026-01-01T00:00:00Z', remap: { x: 'y' } });
+    const late = order({ dbId: 'db1', id: 'b', when: '2026-02-01T00:00:00Z', remap: { y: null } });
+    // restored log has only the early order; pre-restore log had both
+    const restored = appendOrders('', [early]);
+    const preRestore = appendOrders('', [early, late]);
+    const merged = parseOrders(unionOrderLogs(preRestore, restored));
+    expect(merged.map((o) => o.id)).toEqual(['a', 'b']);
+  });
+
+  it('is idempotent on identical logs', () => {
+    const a = order({ dbId: 'db1', id: 'a', when: '2026-01-01T00:00:00Z' });
+    const body = appendOrders('', [a]);
+    expect(unionOrderLogs(body, body)).toBe(body);
   });
 });
 

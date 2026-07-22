@@ -88,6 +88,24 @@ export function appendOrders(existing: string, orders: EntityOrder[]): string {
 }
 
 /**
+ * Union two order-log bodies by order id, oldest first. Used to preserve the
+ * append-only log across a central-database rollback: a Time Machine restore
+ * brings back yesterday's log, but orders recorded since then are propagation
+ * truth other checkouts may not have applied yet — they must survive. Union the
+ * pre-restore log back into the restored one and no order is ever lost.
+ */
+export function unionOrderLogs(a: string, b: string): string {
+  const byId = new Map<string, EntityOrder>();
+  for (const order of [...parseOrders(a), ...parseOrders(b)]) {
+    if (!byId.has(order.id)) byId.set(order.id, order);
+  }
+  const merged = [...byId.values()].sort(
+    (x, y) => x.when.localeCompare(y.when) || x.id.localeCompare(y.id),
+  );
+  return appendOrders('', merged);
+}
+
+/**
  * Fold a chronological list of order remaps into one composite remap, following
  * chains: if `a→b` then later `b→c`, the result maps both `a→c` and `b→c`; a
  * later delete (`b→null`) likewise repoints everything that pointed at `b`.

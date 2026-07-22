@@ -1,6 +1,64 @@
 # Dual entity database & bridge — planning
 
-**Status:** Planning (2026-07-22)  
+**Status:** Largely implemented (2026-07-23) — see "Implementation status" below  
+**Original status:** Planning (2026-07-22)
+
+---
+
+## Implementation status (2026-07-23)
+
+The sync architecture landed in one pass (Phases 1–4 of the plan in
+`entity-registry-merges-and-splits.md` § Reflections). What shipped, and the two
+decisions that superseded this doc's original locks:
+
+**Superseded lock — central ids are now UUIDs too.** §Id schemes below says
+central keeps sequential ids; that was overturned: `mintEntityId` (kind-prefixed
+UUID) now serves **both** databases, because sequential central ids collide the
+moment two machines mint `person-000043` for different people — which the
+fork-merge story (Story F) requires to never happen. Existing sequential ids are
+grandfathered (`nextEntityId` still scans them; nothing is bulk-rewritten).
+
+**Architecture change — the order log replaced the registry as the correctness
+backbone.** Merges/deletes now append a durable, timestamped, db-scoped remap to
+`entity-orders.jsonl` beside `entities.xml` (`entityOrders.ts`); every project
+checkout replays unapplied orders on open via a per-machine cursor
+(`applyOrders.ts`), idempotently. The path registry survives only as an
+eager-crawl optimization and its destructive prune is gone (`registerProject`
+never drops entries it can't `pathExists` — that prune *was* the Story A–F bug).
+
+Shipped modules (all in `packages/cwrc-leafwriter/src/autoTagging/` unless noted):
+
+| Piece | Module |
+|---|---|
+| Per-entity `changed` timestamp (`<note type="ljb-changed" when>`) | `entities.ts` — `touchEntity`/`getEntityChanged`/`backfillEntityTimestamps` |
+| UUID minting both sides | `entities.ts` — `mintEntityId` |
+| `ljb-central` concordance rows | `concordance.ts` |
+| `userStableId` in `{entityDbFolder}/user-id.txt` | `userStableId.ts` |
+| Per-corpus-file PEDB stamp (`<idno type="ljb-project-database">`) | `corpusStamp.ts` |
+| Order log + cursor + compose/union | `entityOrders.ts`; replay in `apps/commons/.../entityDb/applyOrders.ts` |
+| Classified orphan sweep (genuine vs stray-file) | `orphanSweep.ts`; orchestrated in `entityDatabaseCheck.ts`; gentle prompt on open in `useEntityDatabaseLifecycle.ts` |
+| Field-level reconcile (union/fill/conflict) | `reconcile.ts` |
+| Link / Promote (authority-first) | `promote.ts` |
+| Bridge inbox (unlinked/broken/syncable/conflict) | `bridgeInbox.ts`; dialog `apps/commons/.../sidebar/BridgeInboxDialog.tsx` (Hub icon in the database toolbar) |
+| Central Time Machine tab | `TimeMachineDialog.tsx` — snapshots the central folder into its own `.ljb-time-machine` (roams with the folder); restore preserves the order log via `unionOrderLogs` |
+| Fork-merge of two central copies | `centralForkMerge.ts` (engine + tests; menu entry point still to wire) |
+
+Deliberate semantics worth remembering:
+
+- Corpus `@key`s are **never** touched by Link/Promote/reconcile — only Absorb
+  (via the order log + remap) rewrites keys.
+- Writing an `ljb-central` mapping does **not** bump the entity's `changed`
+  timestamp (per-user metadata must not fake content recency).
+- Fork-merge treats absence as *addition on the other side*, never deletion —
+  deletions travel exclusively through the order log.
+- A lost/blank order cursor costs a redundant scan, never correctness (replay is
+  idempotent).
+
+Still open: fork-merge UI entry point; conflict-resolution UI beyond the inbox
+list (currently resolve by editing either record); i18n for the new dialog
+strings; workshop-chapter copy (Phase E below).
+
+---  
 **Scope:** Desktop app — personal central `entities.xml` **and** per-project `entities.xml`, with an interpretation layer (bridge) between them; collaboration via shared project DB; separate rollbacks  
 **Related:** [`Auto-tagging.md`](Auto-tagging.md) (current single-store model), [`Auto-tagging-phases.md`](Auto-tagging-phases.md) Phase 3, [`versioning-planning.md`](versioning-planning.md), [`entity-database-viewer-planning.md`](entity-database-viewer-planning.md), [`import-planning.md`](import-planning.md), [`entity-registry-merges-and-splits.md`](entity-registry-merges-and-splits.md) (plain-language explainer: registry fragility, merge blast radius, why split is hard)
 
