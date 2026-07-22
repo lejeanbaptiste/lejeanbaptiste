@@ -52,15 +52,19 @@ describe('registerProject', () => {
     expect(roots).toEqual(['/proj/a']);
   });
 
-  it('prunes roots that no longer exist', async () => {
+  it('keeps roots not visible from this machine (roaming fix: no destructive prune)', async () => {
     const fs = new FakeFs();
     fs.dirs.add('/proj/a');
-    fs.dirs.add('/proj/gone');
-    await registerProject(fs, ENTITIES, '/proj/gone');
-    fs.dirs.delete('/proj/gone');
+    fs.dirs.add('/proj/other-machine');
+    // another machine's checkout registered itself, then isn't mounted here
+    await registerProject(fs, ENTITIES, '/proj/other-machine');
+    fs.dirs.delete('/proj/other-machine');
 
+    // registering our own project must NOT drop the other machine's entry
     const roots = await registerProject(fs, ENTITIES, '/proj/a');
-    expect(roots).toEqual(['/proj/a']);
+    expect(roots).toEqual(['/proj/other-machine', '/proj/a']);
+    // it stays persisted for the other machine to keep using
+    expect(await readProjectRegistry(fs, ENTITIES)).toEqual(['/proj/other-machine', '/proj/a']);
   });
 
   it('survives a corrupt registry file', async () => {

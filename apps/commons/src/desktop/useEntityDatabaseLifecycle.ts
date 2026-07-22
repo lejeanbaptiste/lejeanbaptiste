@@ -1,4 +1,5 @@
 import { entityStoreFromDesktop } from '../../../../packages/cwrc-leafwriter/src/autoTagging/entityStore';
+import { applyPendingOrders } from '@src/desktop/entityDb/applyOrders';
 import { runEntityDatabaseCheck } from '../../../../packages/cwrc-leafwriter/src/autoTagging/entityDatabaseCheck';
 import { resolveEntityStorePaths } from '../../../../packages/cwrc-leafwriter/src/autoTagging/entityStoreResolve';
 import { removeOrphanProjectEntitiesFile } from '@src/desktop/entityDatabaseCleanup';
@@ -70,6 +71,22 @@ export const useEntityDatabaseLifecycle = () => {
             window.electronAPI!.updateProjectFileConfig(path, patch),
         },
       );
+
+      // Replay any merge/delete orders recorded elsewhere (other machine, fresh
+      // clone, a tree the eager crawl couldn't see). Idempotent; safe to run on
+      // every open. Rich reporting lands with the Phase 3 Bridge inbox.
+      try {
+        const result = await applyPendingOrders(store);
+        if (result.ordersApplied > 0 && (result.summary?.filesChanged ?? 0) > 0) {
+          // eslint-disable-next-line no-console
+          console.info(
+            `[entity-orders] applied ${result.ordersApplied} order(s); ` +
+              `updated ${result.summary?.filesChanged} file(s) in this project.`,
+          );
+        }
+      } catch {
+        // never block project open on order replay
+      }
     })();
   }, [config?.entityDatabaseId, config?.entityStore, projectFilePath, rootPath]);
 
