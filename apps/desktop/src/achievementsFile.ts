@@ -151,6 +151,20 @@ const readOneCandidate = async (filePath: string): Promise<string | null> => {
 export const readAchievementsFileFrom = async (filePath: string): Promise<string | null> =>
   readOneCandidate(filePath);
 
+/**
+ * Checks whether a candidate achievements folder actually has a loadable
+ * file in it, so the settings panel can warn immediately instead of the
+ * folder silently falling back to the old storage location on next read.
+ */
+export const checkAchievementsFolder = async (
+  folder: string,
+): Promise<{ hasFile: boolean; readable: boolean }> => {
+  const filePath = path.join(folder, ACHIEVEMENTS_FILENAME);
+  if (!existsSync(filePath)) return { hasFile: false, readable: true };
+  const content = await readOneCandidate(filePath);
+  return { hasFile: true, readable: content !== null };
+};
+
 export const readAchievementsFile = async (): Promise<string | null> => {
   const primary = await getPrimaryPath();
   const candidates = [primary, `${primary}.bak`, getUserDataPath(), `${getUserDataPath()}.bak`];

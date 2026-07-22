@@ -547,6 +547,7 @@
         "entity_database_folder": "Dossier de la base",
         "entity_database_hint": "Choisissez le dossier qui contient entities.xml (pas un sous-dossier du projet). Les packs d’autorité et les téléchargements CBDB/DILA bruts s’y trouvent aussi.",
         "entity_database_missing": "Aucun dossier de base d’entités n’est configuré. La désambiguïsation est bloquée jusqu’à ce que vous en choisissiez un.",
+        "entity_database_reveal": "Afficher dans le gestionnaire de fichiers",
         "remember_workspace_on_startup": "Rouvrir le projet et les onglets au démarrage",
         "user_name": "Nom d’utilisateur",
         "your_name": "Votre nom"

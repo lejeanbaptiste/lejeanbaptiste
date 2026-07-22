@@ -31,6 +31,7 @@ export const useCommonsUiBridge = () => {
     switchLanguage,
   } = useActions().ui;
   const [encoderName, setEncoderNameState] = useState('');
+  const [encoderNameLoaded, setEncoderNameLoaded] = useState(false);
   const [aiApiSettings, setAiApiSettingsState] = useState<AiApiSettings | null>(null);
   const [entityDbFolder, setEntityDbFolderState] = useState<string | null>(null);
   const [achievementsFolder, setAchievementsFolderState] = useState<string | null>(null);
@@ -43,6 +44,7 @@ export const useCommonsUiBridge = () => {
 
     void window.electronAPI.getEncoderName().then((name) => {
       setEncoderNameState(name ?? '');
+      setEncoderNameLoaded(true);
     });
   }, []);
 
@@ -207,12 +209,26 @@ export const useCommonsUiBridge = () => {
     return picked;
   }, []);
 
-  const pickAchievementsFolder = useCallback(async (): Promise<string | null> => {
+  const pickAchievementsFolder = useCallback(async (): Promise<{
+    folder: string;
+    warning?: string;
+  } | null> => {
     const picked = await window.electronAPI?.pickAchievementsFolder?.();
     if (!picked) return null;
+
+    const check = await window.electronAPI?.checkAchievementsFolder?.(picked);
     await window.electronAPI?.setAchievementsFolder?.(picked);
     setAchievementsFolderState(picked);
-    return picked;
+    // Otherwise the in-memory achievements state loaded from the old folder
+    // (or default) keeps being served until an app restart, and switching
+    // folders looks like it silently did nothing.
+    clearAchievementsCache();
+
+    const warning =
+      check?.hasFile && !check.readable
+        ? 'This folder has an achievements.json, but it could not be read (corrupted, or saved by a different installation). A new one will be created here instead.'
+        : undefined;
+    return { folder: picked, warning };
   }, []);
 
   const importAchievementsFrom = useCallback(async (): Promise<{
@@ -281,6 +297,7 @@ export const useCommonsUiBridge = () => {
 
     window.__ljbCommonsUi = {
       encoderName,
+      encoderNameLoaded,
       aiApiSettings,
       entityDbFolder,
       achievementsFolder,
@@ -314,6 +331,7 @@ export const useCommonsUiBridge = () => {
     aiApiSettings,
     authorityLifecycleStatus,
     encoderName,
+    encoderNameLoaded,
     entityDbFolder,
     achievementsFolder,
     rememberWorkspaceOnStartup,

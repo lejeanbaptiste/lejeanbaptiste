@@ -194,6 +194,7 @@
         "entity_database_folder": "Database folder",
         "entity_database_hint": "Choose the folder that contains entities.xml (not a project subfolder). Authority packs and raw CBDB/DILA downloads also live here.",
         "entity_database_missing": "No entity database folder is configured. Disambiguation is blocked until you choose one.",
+        "entity_database_reveal": "Reveal in file browser",
         "field_required": "This field is required.",
         "remember_workspace_on_startup": "Reopen project and tabs on startup",
         "setup_incomplete": "Set your language, user name, and database folder before closing settings.",

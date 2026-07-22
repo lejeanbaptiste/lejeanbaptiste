@@ -170,7 +170,8 @@ const TreeNode = ({
 
 export const SidebarExplorerTab = () => {
   const { activeTabPath, config, isProjectReady, rootPath, tree } = useAppState().project;
-  const { loadDirectoryChildren, openFile, setExplorerFocusedPath } = useActions().project;
+  const { loadDirectoryChildren, openFile, openProject, setExplorerFocusedPath } =
+    useActions().project;
   const { t } = useTranslation();
   const treePaneRef = useRef<HTMLDivElement>(null);
   const focusedRowRef = useRef<HTMLDivElement>(null);
@@ -311,9 +312,21 @@ export const SidebarExplorerTab = () => {
         }}
       >
         {!isProjectReady ? (
-          <Typography variant="body2" color="text.secondary" sx={{ p: 2 }}>
+          <Button
+            fullWidth
+            onClick={() => void openProject()}
+            startIcon={<FolderOpenIcon sx={{ fontSize: 16 }} />}
+            sx={{
+              p: 2,
+              justifyContent: 'flex-start',
+              textAlign: 'left',
+              textTransform: 'none',
+              color: 'text.secondary',
+              fontWeight: 400,
+            }}
+          >
             {t('LWC.desktop.explorer.open_project_hint')}
-          </Typography>
+          </Button>
         ) : isFiltering ? (
           visibleFilterMatches.length === 0 ? (
             <Typography variant="body2" color="text.secondary" sx={{ p: 2 }}>

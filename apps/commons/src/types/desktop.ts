@@ -251,6 +251,7 @@ export interface ElectronAPI {
   ) => Promise<import('../desktop/sourceProfileTypes').SourceProfileFile>;
   getAchievementsFolder?: () => Promise<string | null>;
   setAchievementsFolder?: (folder: string | null) => Promise<void>;
+  checkAchievementsFolder?: (folder: string) => Promise<{ hasFile: boolean; readable: boolean }>;
   pickAchievementsFolder?: () => Promise<string | null>;
   pickImportAchievementsFile?: () => Promise<string | null>;
   readAchievementsFileFrom?: (filePath: string) => Promise<string | null>;
@@ -422,6 +423,7 @@ declare global {
     __ljbCommonsUi?: {
       aiApiSettings: AiApiSettings | null;
       encoderName: string;
+      encoderNameLoaded: boolean;
       entityDbFolder: string | null;
       achievementsFolder: string | null;
       rememberWorkspaceOnStartup: boolean;
@@ -429,7 +431,7 @@ declare global {
       skipEntityDetachConfirm: boolean;
       skipExplorerDeleteConfirm: boolean;
       pickEntityDbFolder: () => Promise<string | null>;
-      pickAchievementsFolder: () => Promise<string | null>;
+      pickAchievementsFolder: () => Promise<{ folder: string; warning?: string } | null>;
       importAchievementsFrom: () => Promise<{ ok: boolean; cancelled?: boolean; error?: string }>;
       setAiApiSettings: (settings: Partial<AiApiSettings>) => void | Promise<void>;
       setEncoderName: (name: string) => void | Promise<void>;

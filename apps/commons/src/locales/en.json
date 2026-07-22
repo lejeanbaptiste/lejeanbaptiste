@@ -509,6 +509,13 @@
         "reload": "Reload database",
         "keep": "Keep current copy"
       },
+      "user_name_prompt": {
+        "title": "Your name",
+        "message": "Enter the name you'll be tagging as.",
+        "note": "This is written into each document's metadata as the tagger of record - it's not shared or synced anywhere.",
+        "placeholder": "Your name",
+        "save": "Save"
+      },
       "explorer": {
         "delete": "Delete",
         "delete_confirm_file": "Delete “{{name}}”? This cannot be undone.",

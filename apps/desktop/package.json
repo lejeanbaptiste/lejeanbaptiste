@@ -26,6 +26,8 @@
     "prepackage:mac:release": "npm run icon:export && npm run python:download && npm run lemminx:download",
     "prepackage:win": "C:\\Progra~1\\nodejs\\node.exe ../../scripts/export-icon.mjs && C:\\Progra~1\\nodejs\\node.exe scripts/download-python-runtime.mjs",
     "prepackage:dir": "npm run icon:export && npm run python:download && npm run lemminx:download",
+    "prepackage:linux:amd64": "npm run icon:export && npm run python:download && npm run lemminx:download",
+    "prepackage:linux:arm64": "npm run icon:export && npm run python:download && npm run lemminx:download",
     "dev": "node scripts/brand-electron-dev.mjs && tsup --watch --onSuccess \"node scripts/run-electron-dev.mjs\"",
     "start": "node scripts/brand-electron-dev.mjs && node scripts/run-electron-dev.mjs",
     "package": "npm run build && electron-builder --config electron-builder.mac.json",
