@@ -499,6 +499,8 @@
     "edit_source": "edit source",
     "view_mode_source": "Source",
     "view_mode_visual": "Visual",
+    "zoom_in": "Zoom in",
+    "zoom_out": "Zoom out",
     "editorToolbar": {
       "Add Tag": "Add Tag",
       "Add Translation": "Add Translation",
