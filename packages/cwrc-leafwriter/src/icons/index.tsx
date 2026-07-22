@@ -51,6 +51,7 @@ import SearchIcon from '@mui/icons-material/Search';
 import SettingsRoundedIcon from '@mui/icons-material/SettingsRounded';
 import ShortTextIcon from '@mui/icons-material/ShortText';
 import StickyNote2Icon from '@mui/icons-material/StickyNote2';
+import StickyNote2OutlinedIcon from '@mui/icons-material/StickyNote2Outlined';
 import StreamIcon from '@mui/icons-material/Stream';
 import StyleOutlinedIcon from '@mui/icons-material/StyleOutlined';
 import TagRoundedIcon from '@mui/icons-material/TagRounded';
@@ -193,6 +194,8 @@ const icons = {
   showTagsOn: LabelImportantRoundedIcon,
   showBreaksOff: ViewStreamOutlinedIcon,
   showBreaksOn: ViewWeekOutlinedIcon,
+  showNotesOff: StickyNote2OutlinedIcon,
+  showNotesOn: StickyNote2Icon,
   ShuffleVariant: ShuffleVariantIcon,
   sortAlphabetically: OrderAlphabeticalAscendingIcon,
   sortLinear: ArrowDownwardIcon,

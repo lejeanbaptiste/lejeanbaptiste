@@ -52,6 +52,8 @@ export type EditorStateType = {
   showTags: boolean;
   /** When false, hide <lb> and <pb> in the visual editor so interrupted text reads as one block. */
   showBreaks: boolean;
+  /** Bulk override for note/citation/keyword commentary folding (.noteWrapper.hide) - see toggleShowNotes. */
+  showNotes: boolean;
   /** Strip inter-character whitespace on load for no-space East Asian docs. */
   stripCjkWhitespace: boolean;
   /** Reject Find & Replace edits that would leave the document's XML not well-formed. */
@@ -99,6 +101,7 @@ export const state: EditorStateType = {
   showTagBubble: true,
   showTags: false,
   showBreaks: true,
+  showNotes: false,
   stripCjkWhitespace: false,
   validateXmlOnReplace: true,
   schemas: {},

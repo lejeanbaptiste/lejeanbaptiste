@@ -228,6 +228,19 @@ export const toggleShowTags = ({ state }: Context, value?: boolean) => {
   state.editor.showTags = value;
 };
 
+/**
+ * Bulk show/hide for all folded commentary (note/citation/keyword entities
+ * wrapped in .noteWrapper by tagger.addNoteWrapper). Individual notes stay
+ * independently toggleable afterward via their own click handler - this just
+ * mass-sets every wrapper's .hide class to match.
+ */
+export const toggleShowNotes = ({ state }: Context, value?: boolean) => {
+  if (!window.writer?.editor) return;
+  const next = value ?? !state.editor.showNotes;
+  $('.noteWrapper', window.writer.editor.getDoc()).toggleClass('hide', !next);
+  state.editor.showNotes = next;
+};
+
 export const toggleShowBreaks = ({ state, effects }: Context, value?: boolean) => {
   if (!window.writer?.editor) return;
   const next = value ?? !state.editor.showBreaks;
@@ -539,6 +552,7 @@ export const clear = ({ state }: Context) => {
   state.editor.showEntities = true;
   state.editor.showEntities = true;
   state.editor.showTags = false;
+  state.editor.showNotes = false;
   state.editor.showBreaks = true;
   state.editor.validateXmlOnReplace = true;
 };
