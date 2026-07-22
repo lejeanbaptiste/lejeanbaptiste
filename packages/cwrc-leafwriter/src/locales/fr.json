@@ -541,13 +541,13 @@
     },
     "desktop": {
       "settings": {
-        "achievements_storage": "Médailles et statistiques",
+        "achievements_storage": "Statistiques",
         "achievements_storage_folder": "Dossier de stockage",
         "achievements_storage_default": "Par défaut (dossier de données de l’application)",
         "achievements_storage_change": "Choisir un dossier…",
-        "achievements_storage_hint": "Pointez ceci vers un dossier surveillé par votre propre outil de synchronisation (Dropbox, iCloud, etc.) pour transporter vos médailles et statistiques entre machines. Stocké chiffré ; rien n’est envoyé nulle part sauf si votre outil de synchronisation le fait.",
+        "achievements_storage_hint": "Pointez ceci vers un dossier surveillé par votre propre outil de synchronisation (Dropbox, iCloud, etc.) pour transporter vos statistiques entre machines. Stocké chiffré ; rien n’est envoyé nulle part sauf si votre outil de synchronisation le fait.",
         "achievements_import": "Charger depuis un autre fichier…",
-        "achievements_import_hint": "Remplace toutes les médailles, statistiques et progrès de rang locaux par le contenu d’un fichier choisi. Ne peut pas être annulé.",
+        "achievements_import_hint": "Remplace toutes les statistiques et progrès de rang locaux par le contenu d’un fichier choisi. Ne peut pas être annulé.",
         "entity_database": "Base d’entités",
         "entity_database_change": "Changer de dossier",
         "entity_database_folder": "Dossier de la base",

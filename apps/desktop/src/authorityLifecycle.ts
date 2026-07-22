@@ -6,6 +6,8 @@ import fs from 'node:fs';
 import fsp from 'node:fs/promises';
 import path from 'node:path';
 
+import { writeFileAtomic } from './atomicWrite';
+
 import {
   ALL_AUTHORITY_PROFILES,
   COMPILE_POLICY_VERSION,
@@ -210,9 +212,7 @@ export const writeLifecycleConfig = async (
   const dir = path.join(entityDbFolder, AUTHORITY_DB_DIRNAME);
   await fsp.mkdir(dir, { recursive: true });
   const target = lifecyclePath(entityDbFolder);
-  const temp = `${target}.tmp`;
-  await fsp.writeFile(temp, `${JSON.stringify(next, null, 2)}\n`, 'utf-8');
-  await fsp.rename(temp, target);
+  await writeFileAtomic(target, `${JSON.stringify(next, null, 2)}\n`);
   return next;
 };
 

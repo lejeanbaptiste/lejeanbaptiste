@@ -241,8 +241,8 @@ export const useCommonsUiBridge = () => {
 
     const confirmed = await window.electronAPI?.showNativeMessageBox?.({
       type: 'warning',
-      title: 'Replace local medals and stats?',
-      message: `This replaces all locally-saved medals, stats, and rank progress with the contents of:\n${picked}\n\nThis cannot be undone.`,
+      title: 'Replace local stats?',
+      message: `This replaces all locally-saved stats and rank progress with the contents of:\n${picked}\n\nThis cannot be undone.`,
       buttons: ['Cancel', 'Replace'],
       defaultId: 0,
       cancelId: 0,

@@ -1,6 +1,7 @@
 import { app } from 'electron';
 import fs from 'fs/promises';
 import path from 'path';
+import { recoverFromFailedAtomicWrite, writeFileAtomic } from './atomicWrite';
 
 interface AppPrefs {
   lastProjectFile: string | null;
@@ -164,23 +165,22 @@ export const parseAppPrefs = (
 };
 
 const readAppPrefs = async (): Promise<AppPrefs> => {
+  const prefsPath = getPrefsPath();
   try {
-    const raw = await fs.readFile(getPrefsPath(), 'utf-8');
+    await recoverFromFailedAtomicWrite(prefsPath);
+    const raw = await fs.readFile(prefsPath, 'utf-8');
     const parsed = JSON.parse(raw) as Partial<AppPrefs> & { lastRootPath?: string | null };
     return parseAppPrefs(parsed);
   } catch (error) {
     if ((error as NodeJS.ErrnoException).code === 'ENOENT') return defaultAppPrefs();
-    const corruptPath = `${getPrefsPath()}.corrupt-${Date.now()}`;
-    await fs.rename(getPrefsPath(), corruptPath).catch(() => undefined);
+    const corruptPath = `${prefsPath}.corrupt-${Date.now()}`;
+    await fs.rename(prefsPath, corruptPath).catch(() => undefined);
     return defaultAppPrefs();
   }
 };
 
 const writeAppPrefs = async (prefs: AppPrefs) => {
-  const prefsPath = getPrefsPath();
-  const tempPath = `${prefsPath}.tmp`;
-  await fs.writeFile(tempPath, JSON.stringify(prefs, null, 2), 'utf-8');
-  await fs.rename(tempPath, prefsPath);
+  await writeFileAtomic(getPrefsPath(), JSON.stringify(prefs, null, 2));
 };
 
 /** Serialize read-modify-write so concurrent saves cannot clobber fields like entityDbFolder. */

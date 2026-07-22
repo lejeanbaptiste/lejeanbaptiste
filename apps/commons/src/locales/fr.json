@@ -346,10 +346,11 @@
         "new_folder": "Nouveau dossier",
         "new_folder_placeholder": "Nom du dossier",
         "new_folder_title": "Nouveau dossier",
-        "open_project_hint": "Ouvrez un projet via Fichier → Ouvrir un projet (⌘O).",
-      "rename": "Renommer",
-      "rename_placeholder": "Nouveau nom",
-      "rename_title": "Renommer"
+        "open_project_hint": "Ouvrez un projet via Fichier → Ouvrir un projet ({{shortcut}}).",
+        "open_folder_editor_hint": "Ouvrez un dossier ({{shortcut}})…",
+        "rename": "Renommer",
+        "rename_placeholder": "Nouveau nom",
+        "rename_title": "Renommer"
       },
       "sidebar": {
         "find": {

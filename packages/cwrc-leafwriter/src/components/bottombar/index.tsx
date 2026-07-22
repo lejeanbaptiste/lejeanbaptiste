@@ -28,11 +28,7 @@ export const BottomBar = () => {
     <Paper
       elevation={0}
       square
-      sx={[
-        { width: '100%', backgroundColor: '#f5f5f5' },
-        (theme) =>
-          theme.applyStyles('dark', { backgroundColor: theme.vars.palette.background.paper }),
-      ]}
+      sx={{ width: '100%', backgroundColor: 'background.paper' }}
     >
       {!desktop && (
         <PrivacyDialog onClose={() => setPrivacyDialogOpen(false)} open={privacyDialogOpen} />

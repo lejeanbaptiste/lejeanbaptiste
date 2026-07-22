@@ -1,6 +1,7 @@
 import { randomUUID } from 'crypto';
 import fs from 'fs/promises';
 import path from 'path';
+import { writeFileAtomic } from './atomicWrite';
 
 import {
   DEFAULT_METADATA_PATH,
@@ -92,9 +93,7 @@ const normalizeConfig = (raw: Partial<ProjectFileConfig>, rootPath: string): Pro
 });
 
 const writeConfigFile = async (projectFilePath: string, config: ProjectFileConfig): Promise<void> => {
-  const tempPath = `${projectFilePath}.tmp`;
-  await fs.writeFile(tempPath, JSON.stringify(config, null, 2), 'utf-8');
-  await fs.rename(tempPath, projectFilePath);
+  await writeFileAtomic(projectFilePath, JSON.stringify(config, null, 2));
 };
 
 export const writeProjectConfig = async (

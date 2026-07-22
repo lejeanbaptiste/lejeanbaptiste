@@ -1,4 +1,5 @@
 import { Box, Typography } from '@mui/material';
+import WestIcon from '@mui/icons-material/West';
 import {
   TagCommandProvider,
   CorrectionProvider,
@@ -18,13 +19,18 @@ import { useLeafWriter, waitForWriter } from '@src/hooks';
 import { leafwriterAtom, leafWriterSessionKeyAtom } from '@src/jotai';
 import { useActions, useAppState } from '@src/overmind';
 import { isDesktop } from '@src/types/desktop';
+import { modShortcut } from '@src/utils/platform';
 import { useAtom } from 'jotai';
 import { useEffect, useRef } from 'react';
+import { useTranslation } from 'react-i18next';
 
 export const ProjectEditor = () => {
   const { contentHasChanged, readonly, resource } = useAppState().editor;
-  const { cursorPositions, isProjectReady, openTabs, projectFilePath } = useAppState().project;
-  const { markTabDirty } = useActions().project;
+  const { cursorPositions, isProjectReady, openTabs, projectFilePath, rootPath } =
+    useAppState().project;
+  const { markTabDirty, openProject } = useActions().project;
+  const { t } = useTranslation();
+  const hasProject = Boolean(rootPath);
 
   const divEl = useRef<HTMLDivElement>(null);
   const previousTabRef = useRef<string | null>(null);
@@ -243,19 +249,48 @@ export const ProjectEditor = () => {
           {!resource && (
             <Box
               sx={{
-                alignItems: 'center',
                 bgcolor: 'background.default',
                 display: 'flex',
                 height: '100%',
-                justifyContent: 'center',
                 inset: 0,
                 position: 'absolute',
                 zIndex: 1,
+                ...(hasProject
+                  ? { alignItems: 'center', justifyContent: 'center' }
+                  : { alignItems: 'flex-start', justifyContent: 'flex-start', p: 2 }),
               }}
             >
-              <Typography color="text.secondary" variant="body1">
-                Open a folder and select an XML file to begin editing.
-              </Typography>
+              {hasProject ? (
+                <Typography color="text.secondary" variant="body1">
+                  Open a folder and select an XML file to begin editing.
+                </Typography>
+              ) : (
+                <Box
+                  component="button"
+                  type="button"
+                  onClick={() => void openProject()}
+                  sx={{
+                    alignItems: 'center',
+                    background: 'none',
+                    border: 'none',
+                    color: 'text.secondary',
+                    cursor: 'pointer',
+                    display: 'inline-flex',
+                    font: 'inherit',
+                    gap: 1,
+                    p: 0,
+                    textAlign: 'left',
+                    '&:hover': { color: 'text.primary' },
+                  }}
+                >
+                  <WestIcon sx={{ fontSize: 20 }} aria-hidden />
+                  <Typography color="inherit" variant="body1">
+                    {t('LWC.desktop.explorer.open_folder_editor_hint', {
+                      shortcut: modShortcut('O'),
+                    })}
+                  </Typography>
+                </Box>
+              )}
             </Box>
           )}
           <Box

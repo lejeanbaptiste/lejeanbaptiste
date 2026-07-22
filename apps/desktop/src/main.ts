@@ -1290,9 +1290,9 @@ const registerIpcHandlers = () => {
     const parent = getTopNativeDialogWindow() ?? mainWindow ?? undefined;
     const options: Electron.OpenDialogOptions = {
       properties: ['openDirectory', 'createDirectory'],
-      title: 'Choose medals & stats folder',
+      title: 'Choose stats folder',
       message:
-        'Your medals and stats (achievements.json) will be stored here instead of the app data folder - point this at a folder your own sync tool (Dropbox, iCloud, etc.) watches to carry it between machines.',
+        'Your stats (achievements.json) will be stored here instead of the app data folder - point this at a folder your own sync tool (Dropbox, iCloud, etc.) watches to carry it between machines.',
       defaultPath: await getDialogDefaultPath(),
     };
     const result = parent
@@ -1307,8 +1307,8 @@ const registerIpcHandlers = () => {
     const parent = getTopNativeDialogWindow() ?? mainWindow ?? undefined;
     const options: Electron.OpenDialogOptions = {
       properties: ['openFile'],
-      title: 'Load medals & stats from another file',
-      message: 'Select an achievements.json to import. This replaces your local medals and stats.',
+      title: 'Load stats from another file',
+      message: 'Select an achievements.json to import. This replaces your local stats.',
       filters: [
         { name: 'Achievements file', extensions: ['json'] },
         { name: 'All files', extensions: ['*'] },
