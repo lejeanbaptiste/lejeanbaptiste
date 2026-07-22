@@ -10,6 +10,7 @@ import { ValdidationErrors } from './ValdidationErrors';
 import AnnotationMode from './annotationMode';
 import EditorMode from './editorMode';
 import { Schema } from './schema';
+import { EditorZoomControls } from './sourceView/EditorZoomControls';
 import { SourceView } from './sourceView';
 
 const isDesktopApp = () =>
@@ -43,6 +44,7 @@ export const BottomBar = () => {
             <AnnotationMode />
             <Schema />
             <SourceView />
+            <EditorZoomControls />
           </>
         )}
 

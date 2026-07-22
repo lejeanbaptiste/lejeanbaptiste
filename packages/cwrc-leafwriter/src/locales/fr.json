@@ -256,6 +256,8 @@
     "edit_source": "modifier la source",
     "view_mode_source": "Source",
     "view_mode_visual": "Visuel",
+    "zoom_in": "Zoomer",
+    "zoom_out": "Dézoomer",
     "editorToolbar": {
       "Add Tag": "Ajouter une balise",
       "Add Translation": "Ajouter une traduction",
