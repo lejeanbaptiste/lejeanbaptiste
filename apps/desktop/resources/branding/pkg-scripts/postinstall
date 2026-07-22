@@ -1,0 +1,23 @@
+#!/bin/bash
+# pkgbuild's default ownership ("recommended") leaves the installed .app
+# owned by root, since the installer itself always runs elevated regardless
+# of which account invoked it. A root-owned bundle can't be swapped in place
+# by electron-updater's Squirrel.Mac-based self-update (see
+# apps/desktop/src/updater.ts) - it just fails silently with a console-only
+# warning, so pkg installs never see an update notification. Re-own the
+# installed app to the logged-in console user so self-update can write to it.
+set -e
+
+APP_NAME="Le Jean-Baptiste.app"
+INSTALL_DIR="${2:-/Applications}"
+APP_PATH="$INSTALL_DIR/$APP_NAME"
+
+if [ -d "$APP_PATH" ]; then
+  CONSOLE_USER="$(stat -f "%Su" /dev/console 2>/dev/null || true)"
+  if [ -n "$CONSOLE_USER" ] && [ "$CONSOLE_USER" != "root" ]; then
+    CONSOLE_GROUP="$(id -gn "$CONSOLE_USER" 2>/dev/null || echo staff)"
+    chown -R "$CONSOLE_USER:$CONSOLE_GROUP" "$APP_PATH"
+  fi
+fi
+
+exit 0

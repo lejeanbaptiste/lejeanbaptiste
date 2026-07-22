@@ -14,6 +14,9 @@ export const DATABASE_IDNO_TYPE = 'ljb-entity-database';
 export const LJB_AUTOTAG_RESP = '#ljb-autotag';
 export const LJB_RESP = 'le-jean-baptiste';
 
+/** `<note type>` that records an entity's last-modified timestamp (for CEDB↔PEDB sync). */
+export const CHANGED_NOTE_TYPE = 'ljb-changed';
+
 /** @deprecated Use LJB_AUTOTAG_RESP */
 export const LEAFWRITER_AUTOTAG_RESP = LJB_AUTOTAG_RESP;
 
@@ -87,12 +90,29 @@ export function parseIsoYear(when: string | null | undefined): number | null {
   return match ? parseInt(match[1]!, 10) : null;
 }
 
-/** Mint a new database fingerprint id. */
-export function newDatabaseId(): string {
+/** A random UUID (v4 when available), used for database fingerprints and entity ids. */
+function randomUuid(): string {
   if (typeof crypto !== 'undefined' && crypto.randomUUID) {
     return crypto.randomUUID();
   }
-  return `ljb-${Date.now()}-${Math.random().toString(36).slice(2, 10)}`;
+  return `${Date.now().toString(16)}-${Math.random().toString(16).slice(2, 10)}-${Math.random().toString(16).slice(2, 6)}`;
+}
+
+/** Mint a new database fingerprint id. */
+export function newDatabaseId(): string {
+  return randomUuid();
+}
+
+/**
+ * Mint a fresh, collision-safe entity id: kind prefix + UUID
+ * (e.g. `person-a1b2c3d4-…`). Kind-prefixing keeps the id a legal `xml:id`
+ * (an NCName must not start with a digit) and human-debuggable. Used for both
+ * central and project databases so two machines never mint the same id for
+ * different people. Sequential ids minted by earlier versions are grandfathered
+ * (see `nextEntityId`), not rewritten.
+ */
+export function mintEntityId(kind: EntityKind): string {
+  return `${ENTITY_KINDS[kind].idPrefix}-${randomUuid()}`;
 }
 
 /** An empty entity file: TEI standoff with the four core lists. */
@@ -181,6 +201,63 @@ export function nextEntityId(doc: Document, kind: EntityKind): string {
   return candidate;
 }
 
+/** The `<note type="ljb-changed">` child of an entity item, if present. */
+function changedNote(item: Element): Element | null {
+  for (const child of Array.from(item.children)) {
+    if (child.localName === 'note' && child.getAttribute('type') === CHANGED_NOTE_TYPE) {
+      return child;
+    }
+  }
+  return null;
+}
+
+/** Read an entity element's last-modified ISO timestamp, or null when unstamped. */
+export function getEntityChanged(item: Element): string | null {
+  return changedNote(item)?.getAttribute('when')?.trim() || null;
+}
+
+/**
+ * Stamp an entity element's last-modified timestamp (default: now), creating or
+ * updating its `<note type="ljb-changed" when="…"/>`. The note is kept last so
+ * it never displaces the first description/cache/dates note that other code
+ * reads via `getElementsByTagName('note')[0]`.
+ */
+export function touchEntity(item: Element, when: string = new Date().toISOString()): void {
+  const existing = changedNote(item);
+  if (existing) {
+    existing.setAttribute('when', when);
+    return;
+  }
+  const note = item.ownerDocument.createElementNS(TEI_NS, 'note');
+  note.setAttribute('type', CHANGED_NOTE_TYPE);
+  note.setAttribute('when', when);
+  item.appendChild(note);
+}
+
+/**
+ * Stamp every entity that has no `changed` timestamp yet (default: now), so
+ * records minted before this feature get a baseline for CEDB↔PEDB sync. Returns
+ * how many were stamped.
+ */
+export function backfillEntityTimestamps(
+  doc: Document,
+  when: string = new Date().toISOString(),
+): number {
+  let count = 0;
+  for (const config of Object.values(ENTITY_KINDS)) {
+    const list = doc.getElementsByTagName(config.list)[0];
+    if (!list) continue;
+    for (const item of Array.from(list.children)) {
+      if (item.localName !== config.item) continue;
+      if (!getEntityChanged(item)) {
+        touchEntity(item, when);
+        count += 1;
+      }
+    }
+  }
+  return count;
+}
+
 /** Get (creating if needed) the list element for a kind. */
 function getList(doc: Document, kind: EntityKind): Element {
   const { list } = ENTITY_KINDS[kind];
@@ -204,7 +281,7 @@ export function addEntity(
   resp?: string,
 ): { id: string; element: Element } {
   const config = ENTITY_KINDS[kind];
-  const id = nextEntityId(doc, kind);
+  const id = mintEntityId(kind);
 
   const item = doc.createElementNS(TEI_NS, config.item);
   item.setAttributeNS(XML_NS, 'xml:id', id);
@@ -288,18 +365,21 @@ export function addEntity(
     }
   }
 
+  touchEntity(item);
   getList(doc, kind).appendChild(item);
   return { id, element: item };
 }
 
 /** Append authority `<idno>`s to an existing entity element. */
 export function appendAuthorityIdnos(doc: Document, element: Element, ids: AuthorityId[]): void {
+  if (ids.length === 0) return;
   for (const authority of ids) {
     const idno = doc.createElementNS(TEI_NS, 'idno');
     idno.setAttribute('type', authority.type);
     idno.textContent = authority.value;
     element.appendChild(idno);
   }
+  touchEntity(element);
 }
 
 /** Find an entity element by its local id. */

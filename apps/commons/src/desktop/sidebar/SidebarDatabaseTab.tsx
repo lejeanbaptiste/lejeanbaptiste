@@ -79,14 +79,20 @@ import { useActions, useAppState } from '@src/overmind';
 import { applyKeyRemapAcrossProjects, type KeyRemapSummary } from '../entityDb/applyKeyRemap';
 import { authorityLookupUrl } from '../entityDb/authorityLinks';
 
-/** Lower ordinal = older entity; the merge survivor defaults to the oldest id. */
+/**
+ * Ordinal of a legacy sequential id (`person-000042` → 42); UUID ids have none.
+ * TODO(sync Phase 3): default the survivor to the oldest `changed` timestamp
+ * instead of id order once Absorb is reworked — for UUID ids the id carries no
+ * age. The merge dialog lets the user override this default either way.
+ */
 const idOrdinal = (id: string): number => {
-  const match = id.match(/(\d+)$/);
+  const match = id.match(/-(\d+)$/);
   return match ? parseInt(match[1]!, 10) : Number.MAX_SAFE_INTEGER;
 };
 
+/** Default merge survivor: lowest sequential ordinal, then lexby id for a stable UUID default. */
 const oldestId = (ids: string[]): string =>
-  [...ids].sort((a, b) => idOrdinal(a) - idOrdinal(b))[0]!;
+  [...ids].sort((a, b) => idOrdinal(a) - idOrdinal(b) || a.localeCompare(b))[0]!;
 
 const escapeRegExp = (text: string): string => text.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
 

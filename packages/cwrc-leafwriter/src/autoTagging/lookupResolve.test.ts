@@ -273,13 +273,13 @@ describe('linkLocalEntityWithoutAuthority', () => {
     const result = await linkLocalEntityWithoutAuthority('person', '江祀', { store });
     expect(result).toMatchObject({
       status: 'linked',
-      key: 'person-000001',
       entityName: '江祀',
       wasCreated: true,
     });
+    expect(result.key).toMatch(/^person-[0-9a-f-]{36}$/);
 
     const doc = await store.loadEntities();
-    const person = findEntity(doc, 'person-000001');
+    const person = findEntity(doc, result.key!);
     expect(person?.getElementsByTagName('idno').length).toBe(0);
     expect(person?.getElementsByTagName('persName')[0]?.textContent).toBe('江祀');
   });
