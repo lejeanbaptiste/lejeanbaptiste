@@ -23,22 +23,26 @@ export {
   packsRoot,
 } from '../../commons/src/desktop/authorityPackTypes';
 
-export function getAuthorityPackStatuses(baseFolder: string): AuthorityPackStatus[] {
-  return AUTHORITY_PACKS.filter((spec) => !spec.virtual).map((spec) => {
+export async function getAuthorityPackStatuses(
+  baseFolder: string,
+): Promise<AuthorityPackStatus[]> {
+  return Promise.all(AUTHORITY_PACKS.filter((spec) => !spec.virtual).map(async (spec) => {
     const file = packPath(baseFolder, spec.id);
     let installed = false;
     let bytes: number | undefined;
     let entityCount: number | undefined;
     try {
-      const stat = fs.statSync(file);
+      const stat = await fsp.stat(file);
       installed = stat.isFile();
       bytes = stat.size;
       const manifestPath = path.join(path.dirname(file), 'manifest.json');
-      if (fs.existsSync(manifestPath)) {
-        const manifest = JSON.parse(fs.readFileSync(manifestPath, 'utf8')) as {
+      try {
+        const manifest = JSON.parse(await fsp.readFile(manifestPath, 'utf8')) as {
           files?: Record<string, { entityCount?: number }>;
         };
         entityCount = manifest.files?.[path.basename(file)]?.entityCount;
+      } catch {
+        // Pack files remain usable when their optional manifest is unavailable.
       }
     } catch {
       installed = false;
@@ -50,7 +54,7 @@ export function getAuthorityPackStatuses(baseFolder: string): AuthorityPackStatu
       bytes,
       entityCount,
     };
-  });
+  }));
 }
 
 export async function installAuthorityPacksFrom(

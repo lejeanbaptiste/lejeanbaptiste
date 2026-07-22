@@ -1527,7 +1527,7 @@ const registerIpcHandlers = () => {
   ipcMain.handle('authorityPack:statuses', async () => {
     const folder = await getEntityDbFolderOrNull();
     if (!folder) return [];
-    return getAuthorityPackStatuses(folder);
+    return await getAuthorityPackStatuses(folder);
   });
 
   ipcMain.handle('authorityPack:read', async (_event, packId: string) => {
