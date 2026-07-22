@@ -357,7 +357,7 @@
       },
       "find": "trouver",
       "find entity": "trouver {{entité}}",
-      "tag without linking": "tag sans lien"
+      "tag without linking": "Ajouter"
     },
     "low": "faible",
     "markup panel": "Panneau de balisage",
@@ -565,7 +565,7 @@
     "show only valid tags": "afficher uniquement les balises valides",
     "show_lod_annotation": "Afficher l'annotation des données ouvertes liées",
     "source": "source",
-    "tag without linking": "balise sans lien",
+    "tag without linking": "Ajouter",
     "thing": "chose",
     "title": "titre",
     "unknown": "inconnu",

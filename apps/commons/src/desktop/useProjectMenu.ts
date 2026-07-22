@@ -105,6 +105,7 @@ export const useProjectMenu = () => {
     }
 
     const result = await saveActiveTab({ content });
+    if (result.skipped) return;
     if (result.success) {
       finalizeSavedDocument(result.content ?? content);
       notifyViaSnackbar({ message: t('LWC.desktop.project.document_saved'), options: { variant: 'success' } });

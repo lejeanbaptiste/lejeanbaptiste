@@ -1,5 +1,6 @@
-import type { TextHit, VisibleSnippet } from './types';
+import { compileFindRegex } from './regexPatternUtils';
 import { isReplaceableTextHit } from './replaceText';
+import type { TextHit, VisibleSnippet } from './types';
 
 const SNIPPET_RADIUS = 36;
 const SNIPPET_VISIBLE_RADIUS = 16;
@@ -213,7 +214,7 @@ export const searchRegexInContent = (
 
   let regex: RegExp;
   try {
-    regex = new RegExp(pattern, ignoreCase ? 'gi' : 'g');
+    regex = compileFindRegex(pattern, ignoreCase);
   } catch (error) {
     throw new Error(error instanceof Error ? error.message : 'Invalid regular expression.');
   }

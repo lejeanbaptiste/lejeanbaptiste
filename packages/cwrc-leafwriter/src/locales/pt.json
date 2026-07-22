@@ -334,7 +334,7 @@
       },
       "find": "LW.lookups.find",
       "find entity": "encontrar {{entidade}}",
-      "tag without linking": "tag sem vincular"
+      "tag without linking": "Adicionar"
     },
     "low": "LW.baixo",
     "markup panel": "Painel LW.markup",
@@ -475,7 +475,7 @@
     "show only valid tags": "mostrar apenas tags validos",
     "show_lod_annotation": "Mostrar anotação de dados abertos vinculados",
     "source": "LW.fonte",
-    "tag without linking": "LW.tag sem link",
+    "tag without linking": "Adicionar",
     "thing": "LW.coisa",
     "title": "LW.título",
     "unknown": "LW.desconhecido",

@@ -1,3 +1,4 @@
+import AddIcon from '@mui/icons-material/Add';
 import CloseIcon from '@mui/icons-material/Close';
 import LabelOutlinedIcon from '@mui/icons-material/LabelOutlined';
 import OpenInNewIcon from '@mui/icons-material/OpenInNew';
@@ -101,6 +102,7 @@ export const AttributesPanel = ({ visible = true }: { visible?: boolean }) => {
   const [schemaAttributes, setSchemaAttributes] = useState<SchemaAttributeDetail[]>([]);
   const [values, setValues] = useState<Record<string, string>>({});
   const [addAttrName, setAddAttrName] = useState('');
+  const [addAttrValue, setAddAttrValue] = useState('');
   const [sourceLanguage, setSourceLanguage] = useState<string | null>(null);
   const [linkedEntityInfo, setLinkedEntityInfo] = useState<LinkedEntityInfo | null>(null);
   const [entityInfoRevision, setEntityInfoRevision] = useState(0);
@@ -313,9 +315,20 @@ export const AttributesPanel = ({ visible = true }: { visible?: boolean }) => {
       ))
     : undefined;
 
+  const currentNameType =
+    linkedEntityInfo && mentionSurface
+      ? linkedEntityInfo.entity.familyName === mentionSurface
+        ? 'family'
+        : linkedEntityInfo.entity.givenName === mentionSurface
+          ? 'given'
+          : (matchedNameEntry?.type ?? '')
+      : '';
+
   const nameTypeLabels: Record<NameTypeId, string> = {
     primary: 'Primary name',
     birth: 'Birth name',
+    family: 'Family name (姓)',
+    given: 'Given name (名)',
     courtesy: 'Courtesy name (字)',
     art: 'Art name (號)',
     posthumous: 'Posthumous name (諡號)',
@@ -379,8 +392,9 @@ export const AttributesPanel = ({ visible = true }: { visible?: boolean }) => {
   const handleAddAttribute = () => {
     const element = tagElementRef.current;
     if (!element || readonly || !addAttrName.trim()) return;
-    applyAttributeToTag(element, addAttrName.trim(), '');
+    applyAttributeToTag(element, addAttrName.trim(), addAttrValue);
     setAddAttrName('');
+    setAddAttrValue('');
     setValues(readTagAttributes(element));
   };
 
@@ -534,6 +548,7 @@ export const AttributesPanel = ({ visible = true }: { visible?: boolean }) => {
 
   const lookupAvailable = Boolean(getLookupEntityTypeForTag(tagName));
   const unsetSchemaAttrs = schemaAttributes.filter((attr) => !(attr.name in values));
+  const addAttrSchema = unsetSchemaAttrs.find((attr) => attr.name === addAttrName);
   const eastAsianAttrNames = new Set([
     'dyn_id',
     'ruler_id',
@@ -641,7 +656,7 @@ export const AttributesPanel = ({ visible = true }: { visible?: boolean }) => {
                       <TextField
                         select
                         size="small"
-                        value={matchedNameEntry?.type ?? ''}
+                        value={currentNameType}
                         disabled={readonly || nameTypeBusy}
                         onChange={(event) => void commitNameType(event.target.value)}
                         sx={{ minWidth: 150, '& .MuiInputBase-input': { py: 0.25, fontSize: 12 } }}
@@ -791,18 +806,25 @@ export const AttributesPanel = ({ visible = true }: { visible?: boolean }) => {
           })}
 
           {unsetSchemaAttrs.length > 0 ? (
-            <Stack alignItems="flex-start" direction="row" spacing={1}>
+            <Stack alignItems="center" direction="row" spacing={0.5}>
               <TextField
                 select
                 disabled={readonly}
-                label="Add attribute"
+                label="Select"
                 size="small"
-                sx={{ minWidth: 160 }}
                 value={addAttrName}
-                onChange={(event) => setAddAttrName(event.target.value)}
+                onChange={(event) => {
+                  setAddAttrName(event.target.value);
+                  setAddAttrValue('');
+                }}
+                sx={{
+                  width: 96,
+                  flexShrink: 0,
+                  '& .MuiInputBase-input': { py: 0.75, fontSize: 12 },
+                }}
               >
                 <MenuItem value="">
-                  <em>Select…</em>
+                  <em>…</em>
                 </MenuItem>
                 {unsetSchemaAttrs.map((attr) => (
                   <MenuItem key={attr.name} value={attr.name}>
@@ -810,9 +832,61 @@ export const AttributesPanel = ({ visible = true }: { visible?: boolean }) => {
                   </MenuItem>
                 ))}
               </TextField>
-              <Button disabled={readonly || !addAttrName} onClick={handleAddAttribute} size="small" variant="outlined">
-                Add
-              </Button>
+              {addAttrSchema?.choices && addAttrSchema.choices.length > 0 ? (
+                <TextField
+                  select
+                  disabled={readonly || !addAttrName}
+                  fullWidth
+                  label="Value"
+                  size="small"
+                  sx={{ flex: 1, minWidth: 0 }}
+                  value={addAttrValue}
+                  onChange={(event) => setAddAttrValue(event.target.value)}
+                  onKeyDown={(event) => {
+                    if (event.key === 'Enter') {
+                      event.preventDefault();
+                      handleAddAttribute();
+                    }
+                  }}
+                >
+                  <MenuItem value="">
+                    <em>(none)</em>
+                  </MenuItem>
+                  {addAttrSchema.choices.map((choice) => (
+                    <MenuItem key={choice} value={choice}>
+                      {choice}
+                    </MenuItem>
+                  ))}
+                </TextField>
+              ) : (
+                <TextField
+                  disabled={readonly || !addAttrName}
+                  fullWidth
+                  label="Value"
+                  size="small"
+                  sx={{ flex: 1, minWidth: 0 }}
+                  value={addAttrValue}
+                  onChange={(event) => setAddAttrValue(event.target.value)}
+                  onKeyDown={(event) => {
+                    if (event.key === 'Enter') {
+                      event.preventDefault();
+                      handleAddAttribute();
+                    }
+                  }}
+                />
+              )}
+              <Tooltip title="Add attribute">
+                <span>
+                  <IconButton
+                    aria-label="Add attribute"
+                    disabled={readonly || !addAttrName.trim() || !addAttrValue.trim()}
+                    onClick={handleAddAttribute}
+                    size="small"
+                  >
+                    <AddIcon fontSize="small" />
+                  </IconButton>
+                </span>
+              </Tooltip>
             </Stack>
           ) : null}
         </Stack>

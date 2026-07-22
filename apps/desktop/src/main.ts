@@ -561,6 +561,7 @@ if (isDev) {
 }
 
 let mainWindow: BrowserWindow | null = null;
+let isQuitting = false;
 let serverProcess: ChildProcess | null = null;
 let openFileWatcher: OpenFileWatcher | null = null;
 let activeProjectRoot: string | null = null;
@@ -2146,6 +2147,7 @@ initNativeDialogs({
   getParentWindow: () => mainWindow,
   getAppIcon,
   getPreloadPath: () => path.join(__dirname, 'preload.js'),
+  isAppQuitting: () => isQuitting,
 });
 
 // Launching again (e.g. from the launcher icon) must focus the running app,
@@ -2188,13 +2190,21 @@ app.whenReady().then(() => {
   });
 });
 
+app.on('before-quit', () => {
+  isQuitting = true;
+  closeAllNativeDialogs();
+  if (mainWindow && !mainWindow.isDestroyed() && !mainWindow.webContents.isDestroyed()) {
+    void mainWindow.webContents.executeJavaScript('window.__ljbAppQuitting = true');
+  }
+});
+
 app.on('window-all-closed', () => {
   if (serverProcess) {
     serverProcess.kill();
     serverProcess = null;
   }
   disposeLemminx();
-  if (process.platform !== 'darwin') app.quit();
+  if (process.platform !== 'darwin' || isQuitting) app.quit();
 });
 
 app.on('will-quit', () => {

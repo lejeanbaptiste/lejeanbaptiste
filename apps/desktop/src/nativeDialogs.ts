@@ -69,17 +69,20 @@ let getAppUrl: (path: string) => Promise<string>;
 let getParentWindow: () => BrowserWindow | null;
 let getAppIcon: () => Electron.NativeImage | undefined;
 let getPreloadPath: () => string;
+let isAppQuitting = () => false;
 
 export const initNativeDialogs = (deps: {
   getAppUrl: (path: string) => Promise<string>;
   getParentWindow: () => BrowserWindow | null;
   getAppIcon: () => Electron.NativeImage | undefined;
   getPreloadPath: () => string;
+  isAppQuitting?: () => boolean;
 }) => {
   getAppUrl = deps.getAppUrl;
   getParentWindow = deps.getParentWindow;
   getAppIcon = deps.getAppIcon;
   getPreloadPath = deps.getPreloadPath;
+  isAppQuitting = deps.isAppQuitting ?? (() => false);
 };
 
 const notifyDialogClosed = (id: string) => {
@@ -144,6 +147,7 @@ const createDialogWindow = (
 const attachPooledCloseHandler = (type: NativeDialogType, dialogWindow: BrowserWindow) => {
   dialogWindow.on('close', (event) => {
     if (!POOLED_DIALOG_TYPES.has(type)) return;
+    if (isAppQuitting()) return;
     event.preventDefault();
     for (const [id, entry] of nativeDialogWindows) {
       if (entry.window === dialogWindow) {

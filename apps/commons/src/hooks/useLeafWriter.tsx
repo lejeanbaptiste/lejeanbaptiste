@@ -38,7 +38,7 @@ type LeafWriterOptionsSettings = Types.LeafWriterOptionsSettings;
 const SETTINGS_BOOTSTRAP_XML =
   '<TEI xmlns="http://www.tei-c.org/ns/1.0"><text><body><p/></body></text></TEI>';
 
-const waitForWriter = async (timeoutMs = 5000): Promise<boolean> => {
+export const waitForWriter = async (timeoutMs = 5000): Promise<boolean> => {
   const started = Date.now();
   while (!window.writer) {
     if (Date.now() - started > timeoutMs) return false;
@@ -184,24 +184,32 @@ export const useLeafWriter = () => {
     setLeafWriter(lw);
   };
 
-  const initLeafWriter = async () => {
-    if (!leafWriter || !resource?.content) return;
+  const initLeafWriter = async (override?: {
+    filePath: string;
+    content: string;
+    shouldApply?: () => boolean;
+  }) => {
+    const filePath = override?.filePath ?? resource?.filePath;
+    const rawContent = override?.content ?? resource?.content;
+    if (!leafWriter || !rawContent || !filePath) return;
+    if (override?.shouldApply && !override.shouldApply()) return;
 
     const author = user && {
       name: user.identities.get(user.preferredID)?.name ?? `${user.firstName} ${user.lastName}`,
       uri: user?.identities.get(user.preferredID)?.uri ?? '',
     };
 
-    let xml = resource.content ?? '';
+    let xml = rawContent;
     let documentSchemas = schemas;
 
-    if (isDesktop() && resource.filePath && rootPath) {
+    if (isDesktop() && filePath && rootPath) {
       const prepared = await prepareDesktopDocument(
-        resource.filePath,
+        filePath,
         xml,
         rootPath,
         config?.schema,
       );
+      if (override?.shouldApply && !override.shouldApply()) return;
       xml = prepared.content;
       documentSchemas = [...projectSchemas, ...prepared.schemas];
       registerDesktopSchemas([
@@ -209,11 +217,13 @@ export const useLeafWriter = () => {
         ...projectSchemas,
         ...prepared.schemas,
       ]);
-      if (xml !== resource.content) {
+      if (resource && xml !== resource.content && resource.filePath === filePath) {
         await setResource({ ...resource, content: xml });
-        updateTabContent({ filePath: resource.filePath, content: xml });
+        updateTabContent({ filePath, content: xml });
       }
     }
+
+    if (override?.shouldApply && !override.shouldApply()) return;
 
     const settings: LeafWriterOptionsSettings = {
       locale: currentLocale,
@@ -240,7 +250,7 @@ export const useLeafWriter = () => {
 
     leafWriter.init({
       document: {
-        url: resource.filePath ?? resource.url,
+        url: filePath ?? resource?.url,
         xml: visualXml,
       },
       settings,
@@ -248,6 +258,7 @@ export const useLeafWriter = () => {
     });
 
     if (isDesktop()) {
+      window.__desktopStoredDocumentXml = xml;
       window.writer?.overmindActions?.document?.setDocumentXml?.(xml);
     }
 
@@ -257,6 +268,8 @@ export const useLeafWriter = () => {
       analytics.track('editor', { opened: true });
       analytics.page();
     }
+
+    await waitForWriter();
   };
 
   /** Minimal editor bootstrap so settings and preferences work before any file is open. */
@@ -310,8 +323,9 @@ export const useLeafWriter = () => {
     content: string,
     cursorPosition?: WorkspaceCursorPosition | null,
     restoreDirty = false,
-  ) => {
-    if (!window.writer) return;
+    shouldApply?: () => boolean,
+  ): Promise<boolean> => {
+    if (!window.writer) return false;
 
     if (isDesktop() && rootPath && config?.schema) {
       const prepared = await prepareDesktopDocument(filePath, content, rootPath, config.schema);
@@ -321,6 +335,12 @@ export const useLeafWriter = () => {
         ...projectSchemas,
         ...prepared.schemas,
       ]);
+    }
+
+    if (shouldApply && !shouldApply()) return false;
+
+    if (isDesktop()) {
+      window.__desktopStoredDocumentXml = content;
     }
 
     window.writer.overmindActions?.ui?.resetSourceEditor?.();
@@ -342,6 +362,7 @@ export const useLeafWriter = () => {
       focusFirstBodyParagraph();
     }
     showDefaultEastPanel();
+    return true;
   };
 
   const setEditorEvents = () => {
@@ -499,22 +520,28 @@ export const useLeafWriter = () => {
 
     leafWriter.setContentHasChanged(false);
 
-    notifyViaSnackbar({
-      message: t('LWC.storage.document_saved'),
-      options: { variant: 'success' },
-    });
+    if (saved.saved) {
+      notifyViaSnackbar({
+        message: t('LWC.storage.document_saved'),
+        options: { variant: 'success' },
+      });
+    }
   };
 
   const saveFeedback = (saved: boolean) => {
-    const type = saved ? 'success' : 'error';
-    const message = saved
-      ? t('LWC.storage.document_saved')
-      : `${t('LWC.error.something_went_wrong')}. ${t('LWC.storage.document_not_saved')}!`;
+    if (saved) {
+      notifyViaSnackbar({
+        message: t('LWC.storage.document_saved'),
+        options: { variant: 'success' },
+      });
+      leafWriter?.setContentHasChanged(false);
+      return;
+    }
 
-    notifyViaSnackbar({ message, options: { variant: type } });
-
-    if (!leafWriter) return;
-    if (saved) leafWriter.setContentHasChanged(false);
+    notifyViaSnackbar({
+      message: `${t('LWC.error.something_went_wrong')}. ${t('LWC.storage.document_not_saved')}!`,
+      options: { variant: 'error' },
+    });
   };
 
   const handleCloseDocument = () => {

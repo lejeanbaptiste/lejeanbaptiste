@@ -267,6 +267,27 @@ export function setNameType(
   if (!kind) throw new Error(`Unknown entity kind for: ${id}`);
   const trimmed = nameText.trim();
   if (!trimmed) return;
+
+  if (type === 'family') {
+    setNoteOfType(doc, id, 'familyName', trimmed);
+  } else if (type === 'given') {
+    setNoteOfType(doc, id, 'givenName', trimmed);
+  } else if (type === null) {
+    if (familyNameNote(item)?.textContent?.trim() === trimmed) {
+      setNoteOfType(doc, id, 'familyName', '');
+    }
+    if (givenNameNote(item)?.textContent?.trim() === trimmed) {
+      setNoteOfType(doc, id, 'givenName', '');
+    }
+  } else {
+    if (familyNameNote(item)?.textContent?.trim() === trimmed) {
+      setNoteOfType(doc, id, 'familyName', '');
+    }
+    if (givenNameNote(item)?.textContent?.trim() === trimmed) {
+      setNoteOfType(doc, id, 'givenName', '');
+    }
+  }
+
   const target = nameElements(item, kind).find((el) => el.textContent?.trim() === trimmed);
   if (target) {
     if (type) target.setAttribute('type', type);

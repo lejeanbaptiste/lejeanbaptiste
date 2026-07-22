@@ -9,6 +9,7 @@ import {
 } from '@mui/material';
 import { useEffect, useRef } from 'react';
 import type { SchemaAttributeDetail } from './attributeSuggestions';
+import { useClampedPopupPosition } from './clampPopupPosition';
 
 export interface AttributeCommandPopupProps {
   anchor: { left: number; top: number } | null;
@@ -47,6 +48,14 @@ export const AttributeCommandPopup = ({
 }: AttributeCommandPopupProps) => {
   const nameInputRef = useRef<HTMLInputElement>(null);
   const valueInputRef = useRef<HTMLInputElement>(null);
+  const { ref: popupRef, left, top } = useClampedPopupPosition(anchor, open, [
+    focusedField,
+    highlightedIndex,
+    nameFilter,
+    schemaAttributes.length,
+    valueFilter,
+    valueSuggestions.length,
+  ]);
 
   useEffect(() => {
     if (!open) return;
@@ -67,12 +76,13 @@ export const AttributeCommandPopup = ({
 
   return (
     <Paper
+      ref={popupRef}
       elevation={8}
       onKeyDown={onPopupKeyDown}
       sx={{
         position: 'fixed',
-        left: anchor.left,
-        top: anchor.top + 8,
+        left,
+        top,
         zIndex: 1400,
         width: 280,
         maxHeight: 360,

@@ -47,16 +47,28 @@ interface UniformAvatarProps {
   size?: number;
 }
 
+/** Minimum player rank index (0-based into RANK_NAMES) before a pose may
+ * enter the random rotation. Poses not listed here are available from
+ * unranked upward. */
+const POSE_MIN_RANK_INDEX: Partial<Record<number, number>> = {
+  3: 2, // body3.svg — rank 3 (Caporal) and above
+  4: 2, // body4.svg — rank 3 (Caporal) and above
+};
+
 /** True when this pose may appear in the random rotation at `rankIndex`.
- * Unarmed poses (no weapon channels) are always eligible. Poses with weapon
- * art require at least one weapon tier unlocked at the player's rank - the
- * same cumulative rule as pickWeapon below (e.g. body7.svg only has weapons
- * from rank 2 up, so it stays out of rotation for rank 1 and below). */
+ * Some poses have a minimum rank (see POSE_MIN_RANK_INDEX). Poses with
+ * weapon art also require at least one weapon tier unlocked at the player's
+ * rank - the same cumulative rule as pickWeapon below (e.g. body7.svg only
+ * has weapons from rank 2 up, so it stays out of rotation for rank 1 and
+ * below). Unarmed poses with no minimum rank are always eligible. */
 export const poseEligibleForRank = (
   poseIndex: number,
   bodyType: 'm' | 'f',
   rankIndex: number,
 ): boolean => {
+  const minRankIndex = POSE_MIN_RANK_INDEX[poseIndex] ?? -1;
+  if (rankIndex < minRankIndex) return false;
+
   const channels = WEAPON_POOLS[poseIndex] ?? [];
   if (channels.length === 0) return true;
   for (const channel of channels) {

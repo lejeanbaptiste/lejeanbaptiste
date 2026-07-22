@@ -5,6 +5,7 @@ import type { SearchScope } from '../shared/searchScope';
 import { matchesDocScope, type DocScope } from './docScope';
 import { getCompanionTranslationFilePaths } from './translationCompanionResults';
 import { filterHitsForWysiwygEditor } from './wysiwygVisibleHits';
+import { tryCompileFindRegex } from './regexPatternUtils';
 import { searchInContent } from './textSearchUtils';
 import type { FindFileResult } from './types';
 
@@ -78,13 +79,11 @@ export const searchText = async ({
   }
 
   if (useRegex) {
-    try {
-      new RegExp(trimmed, ignoreCase ? 'gi' : 'g');
-    } catch (error) {
+    if (!tryCompileFindRegex(trimmed, ignoreCase)) {
       return {
         results: [],
         totalMatches: 0,
-        error: error instanceof Error ? error.message : 'Invalid regular expression.',
+        error: 'Invalid regular expression.',
       };
     }
   }

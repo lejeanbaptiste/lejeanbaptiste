@@ -17,11 +17,15 @@ describe('normalizeNameType', () => {
     expect(normalizeNameType('P1785')).toBe('temple');
     expect(normalizeNameType('P1787')).toBe('art');
     expect(normalizeNameType('P1559')).toBe('primary');
+    expect(normalizeNameType('P734')).toBe('family');
+    expect(normalizeNameType('P735')).toBe('given');
     expect(normalizeNameType('P742')).toBe('pen');
     expect(normalizeNameType('P1449')).toBe('variant');
   });
 
   it('maps CJK category labels in traditional and simplified forms', () => {
+    expect(normalizeNameType('姓')).toBe('family');
+    expect(normalizeNameType('名')).toBe('given');
     expect(normalizeNameType('字')).toBe('courtesy');
     expect(normalizeNameType('號')).toBe('art');
     expect(normalizeNameType('号')).toBe('art');
@@ -43,8 +47,10 @@ describe('normalizeNameType', () => {
 
 describe('isTaggableNameType', () => {
   it('excludes courtesy names by default and keeps everything else', () => {
-    expect(DEFAULT_UNTAGGABLE_TYPES).toEqual(['courtesy']);
+    expect(DEFAULT_UNTAGGABLE_TYPES).toEqual(['courtesy', 'family', 'given']);
     expect(isTaggableNameType('courtesy')).toBe(false);
+    expect(isTaggableNameType('family')).toBe(false);
+    expect(isTaggableNameType('given')).toBe(false);
     expect(isTaggableNameType('primary')).toBe(true);
     expect(isTaggableNameType('posthumous')).toBe(true);
     expect(isTaggableNameType('variant')).toBe(true);

@@ -341,7 +341,7 @@
       },
       "find": "",
       "find entity": "",
-      "tag without linking": ""
+      "tag without linking": "Hinzufügen"
     },
     "low": "niedrig",
     "markup panel": "",
@@ -497,7 +497,7 @@
     "show only valid tags": "zeige nur gültige Tags",
     "show_lod_annotation": "Zeige Linked Open Data Annotation",
     "source": "Herkunft",
-    "tag without linking": "Taggen ohne verlinken",
+    "tag without linking": "Hinzufügen",
     "thing": "Sache",
     "title": "Werk",
     "unknown": "Unbekannt",
