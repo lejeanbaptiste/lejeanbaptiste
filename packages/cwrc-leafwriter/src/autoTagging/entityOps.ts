@@ -6,7 +6,7 @@
  */
 
 import { isLatnLang, latnLangFor } from '../utilities/languageCodes';
-import { ENTITY_KINDS, findEntity, type AuthorityId, type EntityKind } from './entities';
+import { ENTITY_KINDS, findEntity, touchEntity, type AuthorityId, type EntityKind } from './entities';
 import { isTaggableNameType, normalizeNameType, type NameTypeId } from './nameTypes';
 
 const TEI_NS = 'http://www.tei-c.org/ns/1.0';
@@ -162,17 +162,24 @@ function setNoteOfType(doc: Document, id: string, type: string, text: string): v
   const existing = noteOfType(item, type);
   const trimmed = text.trim();
   if (!trimmed) {
-    existing?.remove();
+    if (existing) {
+      existing.remove();
+      touchEntity(item);
+    }
     return;
   }
   if (existing) {
-    existing.textContent = trimmed;
+    if ((existing.textContent?.trim() ?? '') !== trimmed) {
+      existing.textContent = trimmed;
+      touchEntity(item);
+    }
     return;
   }
   const note = doc.createElementNS(TEI_NS, 'note');
   note.setAttribute('type', type);
   note.textContent = trimmed;
   item.appendChild(note);
+  touchEntity(item);
 }
 
 export interface NameAttributes {
@@ -199,12 +206,16 @@ export function addEntityName(
   const names = nameElements(item, kind);
   const existing = names.find((el) => el.textContent?.trim() === trimmed);
   if (existing) {
+    let upgraded = false;
     if (attributes?.lang && !existing.getAttribute('xml:lang')) {
       existing.setAttributeNS(XML_NS, 'xml:lang', attributes.lang);
+      upgraded = true;
     }
     if (attributes?.type && !existing.getAttribute('type')) {
       existing.setAttribute('type', attributes.type);
+      upgraded = true;
     }
+    if (upgraded) touchEntity(item);
     return false;
   }
   const el = doc.createElementNS(TEI_NS, ENTITY_KINDS[kind].name);
@@ -214,6 +225,7 @@ export function addEntityName(
   const last = names[names.length - 1];
   if (last?.nextSibling) item.insertBefore(el, last.nextSibling);
   else item.appendChild(el);
+  touchEntity(item);
   return true;
 }
 
@@ -235,11 +247,17 @@ export function setRomanizedName(
   const existing = names.find((el) => isLatnLang(el.getAttribute('xml:lang')));
   const trimmed = text.trim();
   if (!trimmed) {
-    existing?.remove();
+    if (existing) {
+      existing.remove();
+      touchEntity(item);
+    }
     return;
   }
   if (existing) {
-    existing.textContent = trimmed;
+    if ((existing.textContent?.trim() ?? '') !== trimmed) {
+      existing.textContent = trimmed;
+      touchEntity(item);
+    }
     return;
   }
   const el = doc.createElementNS(TEI_NS, ENTITY_KINDS[kind].name);
@@ -249,6 +267,7 @@ export function setRomanizedName(
   if (first?.nextSibling) item.insertBefore(el, first.nextSibling);
   else if (first) item.appendChild(el);
   else item.insertBefore(el, item.firstChild);
+  touchEntity(item);
 }
 
 /**
@@ -292,6 +311,7 @@ export function setNameType(
   if (target) {
     if (type) target.setAttribute('type', type);
     else target.removeAttribute('type');
+    touchEntity(item);
     return;
   }
   if (type) addEntityName(doc, id, trimmed, { type, lang });
@@ -320,6 +340,7 @@ export function renameEntityName(doc: Document, id: string, name: string): boole
   for (const duplicate of names.slice(1)) {
     if ((duplicate.textContent?.trim() ?? '') === trimmed) duplicate.remove();
   }
+  touchEntity(item);
   return true;
 }
 
@@ -333,6 +354,7 @@ export function removeEntityName(doc: Document, id: string, name: string): boole
   const target = names.find((el) => el.textContent?.trim() === name.trim());
   if (!target) return false;
   target.remove();
+  touchEntity(item);
   return true;
 }
 
@@ -347,6 +369,7 @@ export function attachAuthority(doc: Document, id: string, ref: AuthorityId): bo
   idno.setAttribute('type', ref.type);
   idno.textContent = ref.value.trim();
   item.appendChild(idno);
+  touchEntity(item);
   return true;
 }
 
@@ -358,6 +381,7 @@ export function detachAuthority(doc: Document, id: string, ref: AuthorityId): bo
   );
   if (!target) return false;
   target.remove();
+  touchEntity(item);
   return true;
 }
 
@@ -432,6 +456,7 @@ export function mergeEntities(doc: Document, keepId: string, dropIds: string[]):
     dropped.remove();
     remap[dropId] = keepId;
   }
+  if (Object.keys(remap).length > 0) touchEntity(keeper);
   return { keepId, remap };
 }
 
