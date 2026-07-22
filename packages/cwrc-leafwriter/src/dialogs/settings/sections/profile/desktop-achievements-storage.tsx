@@ -7,7 +7,7 @@ const getCommonsUiBridge = () =>
     window as Window & {
       __ljbCommonsUi?: {
         achievementsFolder: string | null;
-        pickAchievementsFolder: () => Promise<string | null>;
+        pickAchievementsFolder: () => Promise<{ folder: string; warning?: string } | null>;
         importAchievementsFrom: () => Promise<{ ok: boolean; cancelled?: boolean; error?: string }>;
       };
     }
@@ -18,6 +18,7 @@ export const DesktopAchievementsStorage = () => {
   const bridge = getCommonsUiBridge();
   const [achievementsFolder, setAchievementsFolder] = useState(bridge?.achievementsFolder ?? null);
   const [importError, setImportError] = useState<string | null>(null);
+  const [folderWarning, setFolderWarning] = useState<string | null>(null);
 
   useEffect(() => {
     const sync = () => setAchievementsFolder(getCommonsUiBridge()?.achievementsFolder ?? null);
@@ -29,8 +30,12 @@ export const DesktopAchievementsStorage = () => {
   if (!bridge) return null;
 
   const handleChooseFolder = async () => {
+    setFolderWarning(null);
     const picked = await bridge.pickAchievementsFolder();
-    if (picked) setAchievementsFolder(picked);
+    if (picked) {
+      setAchievementsFolder(picked.folder);
+      if (picked.warning) setFolderWarning(picked.warning);
+    }
   };
 
   const handleImport = async () => {
@@ -58,6 +63,11 @@ export const DesktopAchievementsStorage = () => {
           <Button onClick={() => void handleChooseFolder()} size="small" variant="outlined">
             {t('LW.desktop.settings.achievements_storage_change')}
           </Button>
+          {folderWarning && (
+            <Typography color="warning.main" sx={{ mt: 0.5 }} variant="caption" component="p">
+              {folderWarning}
+            </Typography>
+          )}
         </Box>
 
         <Box sx={{ pt: 1 }}>

@@ -192,6 +192,7 @@ export interface ElectronAPI {
   ) => Promise<import('../../commons/src/desktop/sourceProfileTypes').SourceProfileFile>;
   getAchievementsFolder: () => Promise<string | null>;
   setAchievementsFolder: (folder: string | null) => Promise<void>;
+  checkAchievementsFolder: (folder: string) => Promise<{ hasFile: boolean; readable: boolean }>;
   pickAchievementsFolder: () => Promise<string | null>;
   pickImportAchievementsFile: () => Promise<string | null>;
   readAchievementsFileFrom: (filePath: string) => Promise<string | null>;
@@ -427,6 +428,7 @@ const electronAPI: ElectronAPI = {
   deleteSourceProfile: (profileId: string) => ipcRenderer.invoke('deleteSourceProfile', profileId),
   getAchievementsFolder: () => ipcRenderer.invoke('getAchievementsFolder'),
   setAchievementsFolder: (folder: string | null) => ipcRenderer.invoke('setAchievementsFolder', folder),
+  checkAchievementsFolder: (folder: string) => ipcRenderer.invoke('checkAchievementsFolder', folder),
   pickAchievementsFolder: () => ipcRenderer.invoke('pickAchievementsFolder'),
   pickImportAchievementsFile: () => ipcRenderer.invoke('pickImportAchievementsFile'),
   readAchievementsFileFrom: (filePath: string) =>

@@ -32,6 +32,10 @@
     {
       "from": "resources/game-assets",
       "to": "game-assets"
+    },
+    {
+      "from": "resources/avatar-parts",
+      "to": "avatar-parts"
     }
   ]
 }

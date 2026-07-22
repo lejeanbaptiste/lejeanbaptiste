@@ -21,14 +21,20 @@ permissions:
 jobs:
   linux-deb:
     name: Build Linux .deb (${{ matrix.arch }})
-    runs-on: ubuntu-latest
+    runs-on: ${{ matrix.runner }}
     strategy:
       fail-fast: false
       matrix:
         include:
+          # The bundled Python runtime is downloaded for the host architecture
+          # (process.arch), so each arch must build on a native runner —
+          # otherwise the amd64 host's runtime gets bundled into the arm64
+          # .deb, and the app fails to invoke Python on real arm64 machines.
           - arch: amd64
+            runner: ubuntu-latest
             script: build:desktop:linux:amd64
           - arch: arm64
+            runner: ubuntu-24.04-arm
             script: build:desktop:linux:arm64
 
     steps:

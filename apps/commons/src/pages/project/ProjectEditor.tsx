@@ -11,6 +11,7 @@ import {
 import { TOOLBAR_ROW_HEIGHT } from '@src/desktop/sidebarConstants';
 import { AboutDialog } from '@src/desktop/AboutDialog';
 import { TimeMachineDialog } from '@src/desktop/TimeMachineDialog';
+import { UserNamePromptDialog } from '@src/desktop/UserNamePromptDialog';
 import { openFindPanel, DESKTOP_OPEN_FIND_EVENT } from '@src/desktop/desktopLeftPanelBridge';
 import { openNativeSchemaPicker } from '@src/desktop/openNativeSchemaPicker';
 import { useLeafWriter, waitForWriter } from '@src/hooks';
@@ -220,6 +221,7 @@ export const ProjectEditor = () => {
     <Box sx={{ display: 'flex', flex: 1, minHeight: 0 }}>
       <AboutDialog onClose={() => setAboutOpen(false)} open={aboutOpen} />
       <TimeMachineDialog onClose={() => setTimeMachineOpen(false)} open={timeMachineOpen} />
+      <UserNamePromptDialog />
       <TagCommandProvider />
       <CorrectionProvider />
       <UnifiedLeftPanel />

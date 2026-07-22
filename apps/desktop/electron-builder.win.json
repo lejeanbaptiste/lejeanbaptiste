@@ -29,12 +29,14 @@
   ],
   "nsis": {
     "oneClick": false,
+    "perMachine": true,
     "allowToChangeInstallationDirectory": true,
     "createDesktopShortcut": true,
     "createStartMenuShortcut": true,
     "include": "installer.nsh"
   },
   "win": {
-    "target": ["nsis"]
+    "target": ["nsis"],
+    "icon": "resources/branding/icon.filled.png"
   }
 }

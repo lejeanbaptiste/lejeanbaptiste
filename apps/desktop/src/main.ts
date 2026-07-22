@@ -82,7 +82,12 @@ import { loadOrCreateProject, loadProjectFile, writeProjectConfig, type ProjectB
 import { resolveDialogDefaultPath } from './dialogDefaultPath';
 import mammoth from 'mammoth';
 import { extractOdtText } from './odtText';
-import { readAchievementsFile, readAchievementsFileFrom, writeAchievementsFile } from './achievementsFile';
+import {
+  checkAchievementsFolder,
+  readAchievementsFile,
+  readAchievementsFileFrom,
+  writeAchievementsFile,
+} from './achievementsFile';
 import {
   deleteSourceProfileFromFile,
   readSourceProfilesFile,
@@ -1275,6 +1280,10 @@ const registerIpcHandlers = () => {
 
   ipcMain.handle('setAchievementsFolder', async (_event, folder: string | null) => {
     await setAchievementsFolder(folder);
+  });
+
+  ipcMain.handle('checkAchievementsFolder', async (_event, folder: string) => {
+    return checkAchievementsFolder(folder);
   });
 
   ipcMain.handle('pickAchievementsFolder', async () => {

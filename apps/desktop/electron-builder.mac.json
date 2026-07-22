@@ -10,6 +10,7 @@
   ],
   "artifactName": "Le-Jean-Baptiste-${version}-${arch}.${ext}",
   "mac": {
+    "icon": "resources/branding/icon.filled.png",
     "target": ["pkg", "zip"],
     "hardenedRuntime": true,
     "gatekeeperAssess": false,
