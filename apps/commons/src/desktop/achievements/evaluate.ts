@@ -24,6 +24,7 @@ export const emptyState = (nowIso: string): AchievementsState => ({
   version: 1,
   installedAt: nowIso,
   saveCount: 0,
+  leaderboardPublicationDays: [],
   unlocked: {},
   projects: {},
   avatar: null,
@@ -88,6 +89,7 @@ export const aggregateGlobalMetrics = (state: AchievementsState): GlobalMetrics 
     disambiguated: 0,
     places: 0,
     entities: 0,
+    published: state.leaderboardPublicationDays.length,
     languages: 0,
   };
   for (const project of Object.values(state.projects)) {
@@ -110,13 +112,15 @@ export interface SaveContext {
   fileCounts: FileUsageCounts | null;
   /** Raw XML of the saved document. */
   xml: string;
+  /** The save originated from an edited Monaco Source-mode buffer. */
+  sourceMode: boolean;
   /** Random roll in [0, 1) — injected for testability. */
   roll: number;
   /** Second roll used to pick which rare achievement unlocks. */
   pickRoll: number;
 }
 
-const metricValue = (global: GlobalMetrics, metric: string): number => {
+export const metricValue = (global: GlobalMetrics, metric: string): number => {
   switch (metric) {
     case 'texts':
       return global.texts;
@@ -128,10 +132,16 @@ const metricValue = (global: GlobalMetrics, metric: string): number => {
       return global.places;
     case 'entities':
       return global.entities;
+    case 'published':
+      return global.published;
     default:
       return 0;
   }
 };
+
+/** A self-closing XML element in a document that has passed the normal save validation. */
+export const hasEmptyElement = (xml: string): boolean =>
+  /<[A-Za-z_][\w:.-]*(?:\s[^<>]*?)?\s*\/>/.test(xml);
 
 const DAY_MS = 24 * 60 * 60 * 1000;
 
@@ -141,21 +151,28 @@ const DAY_MS = 24 * 60 * 60 * 1000;
  * the feature for the first time) — all are returned; the caller decides how
  * loudly to announce them.
  */
+export const determineNewRankUnlocks = (
+  state: AchievementsState,
+  global: GlobalMetrics,
+): string[] => {
+  const earned: string[] = [];
+  for (const medal of RANK_MEDALS) {
+    const value = metricValue(global, medal.metric);
+    medal.thresholds.slice(0, RANK_NAMES.length).forEach((threshold, rankIndex) => {
+      const id = rankMedalAchievementId(medal.metric, rankIndex);
+      if (value >= threshold && !state.unlocked[id]) earned.push(id);
+    });
+  }
+  return earned;
+};
+
 export const determineNewUnlocks = (
   state: AchievementsState,
   global: GlobalMetrics,
   context: SaveContext,
 ): string[] => {
-  const earned: string[] = [];
+  const earned = determineNewRankUnlocks(state, global);
   const has = (id: string) => Boolean(state.unlocked[id]) || earned.includes(id);
-
-  for (const medal of RANK_MEDALS) {
-    const value = metricValue(global, medal.metric);
-    medal.thresholds.slice(0, RANK_NAMES.length).forEach((threshold, rankIndex) => {
-      const id = rankMedalAchievementId(medal.metric, rankIndex);
-      if (value >= threshold && !has(id)) earned.push(id);
-    });
-  }
 
   const hour = context.savedAt.getHours();
   if (hour >= 2 && hour < 5 && !has('chou-blanc')) earned.push('chou-blanc');
@@ -169,6 +186,10 @@ export const determineNewUnlocks = (
   }
 
   if (global.languages >= 5 && !has('polyglot-scholar')) earned.push('polyglot-scholar');
+
+  if (context.sourceMode && !has('wet-work')) earned.push('wet-work');
+
+  if (hasEmptyElement(context.xml) && !has('empty-honour')) earned.push('empty-honour');
 
   if (
     !has('long-form-commitment') &&

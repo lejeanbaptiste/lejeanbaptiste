@@ -1,0 +1,16 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 762 762">
+  <g transform="translate(133.5 332.3)" stroke-linejoin="round">
+    <!-- Dark elastic strap, mostly hidden by hair in the final layer stack. -->
+    <path d="M10 35C87 2 270-17 365 10c27 8 52 23 76 41" fill="none" stroke="#161616" stroke-width="22" stroke-linecap="round"/>
+    <!-- Leather/metal side cups establish the welding and motorcycle-goggle profile. -->
+    <path d="M23 43 55 19l31 8-7 111-34 17-25-38Z" fill="#1b1715"/><path d="m354 8 39 11 34 36-9 76-35 23-31-21Z" fill="#1b1715"/>
+    <!-- Bridge and asymmetric circular frames follow the existing glasses anchors. -->
+    <path d="M145 74c19-15 42-19 64-9 7 3 13 8 19 13" fill="none" stroke="#171717" stroke-width="17" stroke-linecap="round"/>
+    <ellipse cx="103" cy="81" rx="78" ry="69" transform="rotate(-5 103 81)" fill="#090909"/><ellipse cx="286" cy="72" rx="91" ry="80" transform="rotate(5 286 72)" fill="#090909"/>
+    <ellipse cx="103" cy="81" rx="70" ry="61" transform="rotate(-5 103 81)" fill="#9a4f26"/><ellipse cx="286" cy="72" rx="83" ry="72" transform="rotate(5 286 72)" fill="#9a4f26"/>
+    <ellipse cx="103" cy="81" rx="58" ry="50" transform="rotate(-5 103 81)" fill="#252c2d"/><ellipse cx="286" cy="72" rx="70" ry="60" transform="rotate(5 286 72)" fill="#252c2d"/>
+    <!-- Low-key smoked-lens reflections. -->
+    <path d="M63 56c18-18 45-24 68-14-22 5-39 17-53 36ZM235 43c23-21 57-27 85-14-27 5-49 20-66 44Z" fill="#8fa0a0" opacity=".34"/>
+    <path d="M53 118c22 17 54 21 80 8M226 115c29 20 70 23 101 7" fill="none" stroke="#c4773f" stroke-width="6" stroke-linecap="round" opacity=".75"/>
+  </g>
+</svg>

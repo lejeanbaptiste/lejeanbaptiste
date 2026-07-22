@@ -4,12 +4,73 @@ import { findAchievementDef } from './definitions';
 import {
   aggregateGlobalMetrics,
   countEntitiesInXml,
+  determineNewRankUnlocks,
   determineNewUnlocks,
   metricsFromTagStats,
 } from './evaluate';
 import { getProjectMetrics, loadAchievementsState, saveAchievementsState } from './store';
+import type { AchievementsState } from './types';
 
 export type AchievementUnlockNotifier = (message: string) => void;
+
+const notifyUnlocks = (ids: string[], notify: AchievementUnlockNotifier) => {
+  if (ids.length > 3) {
+    notify(`🎖️ ${ids.length} achievements unlocked — see your Service Record`);
+    return;
+  }
+  for (const id of ids) {
+    const def = findAchievementDef(id);
+    if (def) notify(`🎖️ Achievement unlocked: ${def.name} — ${def.description}`);
+  }
+};
+
+const applyUnlocks = (state: AchievementsState, ids: string[], at: string): string[] => {
+  const applied = ids.filter((id) => !state.unlocked[id]);
+  for (const id of applied) state.unlocked[id] = { at };
+  return applied;
+};
+
+/** Unlock a one-off achievement from an event outside the document-save path. */
+export const unlockAchievement = async (
+  id: string,
+  notify: AchievementUnlockNotifier,
+): Promise<AchievementsState> => {
+  const state = await loadAchievementsState();
+  const applied = applyUnlocks(state, [id], new Date().toISOString());
+  if (applied.length > 0) {
+    await saveAchievementsState(state);
+    notifyUnlocks(applied, notify);
+  }
+  return state;
+};
+
+export const localCalendarDay = (date: Date): string => {
+  const year = String(date.getFullYear()).padStart(4, '0');
+  const month = String(date.getMonth() + 1).padStart(2, '0');
+  const day = String(date.getDate()).padStart(2, '0');
+  return `${year}-${month}-${day}`;
+};
+
+/** Record one successful leaderboard publication per local calendar day. */
+export const recordLeaderboardPublication = async (
+  publishedAt: Date,
+  notify: AchievementUnlockNotifier,
+): Promise<AchievementsState> => {
+  const state = await loadAchievementsState();
+  const day = localCalendarDay(publishedAt);
+  if (state.leaderboardPublicationDays.includes(day)) return state;
+
+  state.leaderboardPublicationDays.push(day);
+  state.leaderboardPublicationDays.sort();
+  const applied = applyUnlocks(
+    state,
+    determineNewRankUnlocks(state, aggregateGlobalMetrics(state)),
+    publishedAt.toISOString(),
+  );
+  await saveAchievementsState(state);
+  notifyUnlocks(applied, notify);
+  return state;
+};
 
 const toRelativePath = (rootPath: string, filePath: string): string => {
   const normalizedRoot = normalizePathKey(rootPath).replace(/\/+$/, '');
@@ -51,10 +112,11 @@ export const processSaveForAchievements = async (options: {
   filePath: string;
   xml: string;
   stats: TagUsageStats;
+  sourceMode: boolean;
   notify: AchievementUnlockNotifier;
 }): Promise<void> => {
   try {
-    const { rootPath, filePath, xml, stats, notify } = options;
+    const { rootPath, filePath, xml, stats, sourceMode, notify } = options;
     const state = await loadAchievementsState();
     const savedAt = new Date();
 
@@ -94,27 +156,15 @@ export const processSaveForAchievements = async (options: {
       encoderName,
       fileCounts: stats.files[relativePath] ?? null,
       xml,
+      sourceMode,
       roll: Math.random(),
       pickRoll: Math.random(),
     });
 
-    const at = savedAt.toISOString();
-    for (const id of newUnlocks) {
-      state.unlocked[id] = { at };
-    }
+    const applied = applyUnlocks(state, newUnlocks, savedAt.toISOString());
 
     await saveAchievementsState(state);
-
-    if (newUnlocks.length > 3) {
-      // A veteran corpus meeting the medals for the first time: one summary
-      // instead of a snackbar barrage.
-      notify(`🎖️ ${newUnlocks.length} achievements unlocked — see your Service Record`);
-    } else {
-      for (const id of newUnlocks) {
-        const def = findAchievementDef(id);
-        if (def) notify(`🎖️ Achievement unlocked: ${def.name} — ${def.description}`);
-      }
-    }
+    notifyUnlocks(applied, notify);
   } catch {
     // Decorative feature: swallow everything.
   }

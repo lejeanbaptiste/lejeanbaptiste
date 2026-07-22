@@ -15,6 +15,8 @@ export interface AchievementsState {
   /** First time the achievements file was created — service start date. */
   installedAt: string;
   saveCount: number;
+  /** Distinct local calendar days on which a leaderboard submission succeeded. */
+  leaderboardPublicationDays: string[];
   unlocked: Record<string, { at: string }>;
   projects: Record<string, ProjectMetrics>;
   avatar: { kind: 'dicebear'; options: import('./dicebear').DiceBearAvatarOptions } | null;
@@ -27,17 +29,18 @@ export interface GlobalMetrics {
   disambiguated: number;
   places: number;
   entities: number;
+  published: number;
   languages: number;
 }
 
-export type MetricId = 'texts' | 'tags' | 'disambiguated' | 'places' | 'entities';
+export type MetricId = 'texts' | 'tags' | 'disambiguated' | 'places' | 'entities' | 'published';
 
 export interface RankMedalDef {
   metric: MetricId;
-  /** Medal (decoration) name, e.g. "Order of the Angle Bracket". */
+  /** Medal (decoration) name, e.g. "Order of the Chevron". */
   medalName: string;
   description: string;
-  /** One threshold per rank, Private → General. */
+  /** One threshold per medal-bearing rank, Fusilier → Général de brigade. */
   thresholds: number[];
 }
 

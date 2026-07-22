@@ -1,4 +1,5 @@
 import { colorMatchFilter } from './colorMatch';
+import { STARTER_RANK_NAME } from './definitions';
 import { BODY_COLOR_STATS } from './generatedBodyPools';
 import { getHeadColorStats } from './headColorStats';
 import { medalAssetKey, type MedalMetric, type MedalTier } from './MedalIcon';
@@ -133,11 +134,20 @@ const layoutGridItems = <T,>(
   }));
 };
 
-const ribbonRectSvg = (ribbon: Ribbon, x: number, y: number, width: number, height: number): string => {
+const ribbonRectSvg = (
+  ribbon: Ribbon,
+  x: number,
+  y: number,
+  width: number,
+  height: number,
+): string => {
   const stripes = ribbon.length === 3 ? ribbon : [ribbon[0], ribbon[1], ribbon[0]];
   const stripeWidth = width / 3;
   const stripeRects = stripes
-    .map((color, index) => `<rect x="${x + index * stripeWidth}" y="${y}" width="${stripeWidth}" height="${height}" fill="${color}" />`)
+    .map(
+      (color, index) =>
+        `<rect x="${x + index * stripeWidth}" y="${y}" width="${stripeWidth}" height="${height}" fill="${color}" />`,
+    )
     .join('');
   return `${stripeRects}<rect x="${x}" y="${y}" width="${width}" height="${height}" fill="none" stroke="${PANEL_BORDER_COLOR}" stroke-width="1" />`;
 };
@@ -212,7 +222,9 @@ export const buildPortraitFragment = async (
 ): Promise<{ svg: string; width: number; height: number }> => {
   // Fetch each distinct medal key once even if the same medal appears
   // several times in input.medals (e.g. multiple ranks of the same metric).
-  const medalKeys = Array.from(new Set(input.medals.map((medal) => medalAssetKey(medal.metric, medal.tier))));
+  const medalKeys = Array.from(
+    new Set(input.medals.map((medal) => medalAssetKey(medal.metric, medal.tier))),
+  );
 
   const [backgroundStats, backgroundDataUri, medalDataUriEntries] = await Promise.all([
     getCachedColorStats(input.backgroundImageKey),
@@ -375,7 +387,7 @@ export const buildCertificateSvg = (options: CertificateAssembleOptions): string
     ${options.portraitFragment.svg}
   </g>
   <text x="${CERTIFICATE_WIDTH / 2}" y="${nameY}" text-anchor="middle" font-family="Georgia, serif" font-size="32" font-weight="bold" fill="#f2ede2">${escapeXml(options.encoderName)}</text>
-  <text x="${CERTIFICATE_WIDTH / 2}" y="${commissionY}" text-anchor="middle" font-family="Georgia, serif" font-size="19" fill="#c8b98a">${escapeXml(options.commission ?? 'Unranked. The corpus awaits.')}</text>
+  <text x="${CERTIFICATE_WIDTH / 2}" y="${commissionY}" text-anchor="middle" font-family="Georgia, serif" font-size="19" fill="#c8b98a">${escapeXml(options.commission ?? STARTER_RANK_NAME)}</text>
   <text x="${CERTIFICATE_WIDTH / 2}" y="${serviceSinceY}" text-anchor="middle" font-family="Georgia, serif" font-size="14" fill="#8b93a6">In service since ${escapeXml(options.serviceSince)}</text>
   <line x1="60" y1="${dividerY}" x2="${CERTIFICATE_WIDTH - 60}" y2="${dividerY}" stroke="#3a4a63" stroke-width="1" />
   ${metricLines}
@@ -401,7 +413,9 @@ export const svgToPngBytes = (
   height: number,
 ): Promise<Uint8Array> =>
   new Promise((resolve, reject) => {
-    const blobUrl = URL.createObjectURL(new Blob([svgMarkup], { type: 'image/svg+xml;charset=utf-8' }));
+    const blobUrl = URL.createObjectURL(
+      new Blob([svgMarkup], { type: 'image/svg+xml;charset=utf-8' }),
+    );
     const revoke = () => URL.revokeObjectURL(blobUrl);
     const img = new Image();
     img.onload = () => {
