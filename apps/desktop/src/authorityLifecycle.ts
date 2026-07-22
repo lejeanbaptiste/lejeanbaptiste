@@ -237,7 +237,7 @@ const sumDirectoryBytes = async (dirPath: string): Promise<number> => {
 export const entityDbFolderReady = (entityDbFolder: string | null): boolean =>
   !!entityDbFolder?.trim() && fs.existsSync(path.join(entityDbFolder, 'entities.xml'));
 
-const packsReady = (packStatuses: ReturnType<typeof getAuthorityPackStatuses>): boolean =>
+const packsReady = (packStatuses: Awaited<ReturnType<typeof getAuthorityPackStatuses>>): boolean =>
   packStatuses.every((pack) => pack.installed);
 
 export const getRemotePacksIndexCached = async (): Promise<AuthorityPacksIndex | null> => {
@@ -255,7 +255,7 @@ export const getRemotePacksIndexCached = async (): Promise<AuthorityPacksIndex |
 
 export const isUpdateAvailable = (
   lifecycle: AuthorityLifecycleConfig,
-  packStatuses: ReturnType<typeof getAuthorityPackStatuses>,
+  packStatuses: Awaited<ReturnType<typeof getAuthorityPackStatuses>>,
   localPackManifest: Awaited<ReturnType<typeof readInstalledPacksManifest>>,
   remoteIndex: AuthorityPacksIndex | null,
   rawSources: Awaited<ReturnType<typeof getAuthorityStatuses>>,
@@ -303,7 +303,7 @@ export const getAuthorityLifecycleStatus = async (
   const rawSources = (await getAuthorityStatuses(rawDir)).filter((source) =>
     rawSourceIds.includes(source.id),
   );
-  const allPackStatuses = ready ? getAuthorityPackStatuses(entityDbFolder!) : [];
+  const allPackStatuses = ready ? await getAuthorityPackStatuses(entityDbFolder!) : [];
   const packIds = unionPackIds(profiles);
   const packs = allPackStatuses.filter((pack) => packIds.includes(pack.id));
 
