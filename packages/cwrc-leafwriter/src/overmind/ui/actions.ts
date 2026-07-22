@@ -373,6 +373,7 @@ export const startAutoTaggingReview = (
   if (state.ui.disambiguationReview.active) actions.ui.exitDisambiguationReview();
   stashAutoTaggingBatch(suggestions, notice);
   state.ui.autoTaggingReview.active = true;
+  state.ui.autoTaggingReview.batchId += 1;
   state.ui.autoTaggingReview.aiValidation = aiValidation;
   window.dispatchEvent(new CustomEvent('desktop:auto-tagging-review-open'));
 };

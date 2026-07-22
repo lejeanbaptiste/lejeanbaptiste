@@ -70,6 +70,7 @@ import {
 } from './UniformAvatar';
 import { loadAchievementsState, saveAchievementsState } from './store';
 import type { AchievementsState, UnlockedAchievement } from './types';
+import { avatarSelectMenuProps } from './avatarSelectMenuProps';
 
 interface AchievementsDialogProps {
   onClose: () => void;
@@ -182,7 +183,7 @@ export const AchievementsDialog = ({ onClose, open }: AchievementsDialogProps) =
           ? loaded.avatar.options.bodyType
           : createDefaultDiceBearAvatar(encoderName).bodyType;
       setPoseIndex((previousPose) => {
-        const newPose = pickPose(previousPose);
+        const newPose = pickPose(previousPose, loadedBodyType, highestRankIndexOf(loaded));
         setWeaponRank((previousWeaponRank) => {
           const weapon = pickWeapon(
             newPose,
@@ -517,6 +518,7 @@ export const AchievementsDialog = ({ onClose, open }: AchievementsDialogProps) =
               <Stack direction="row" flexWrap="wrap" gap={1}>
                 <FormControl size="small" sx={{ minWidth: 72 }}>
                   <Select
+                    MenuProps={avatarSelectMenuProps}
                     aria-label="Body type"
                     value={avatarOptions.bodyType}
                     onChange={(event) =>
@@ -558,6 +560,7 @@ export const AchievementsDialog = ({ onClose, open }: AchievementsDialogProps) =
                 />
                 <FormControl size="small" sx={{ minWidth: 116 }}>
                   <Select
+                    MenuProps={avatarSelectMenuProps}
                     aria-label="Eyebrows"
                     onClose={() => setHoverPreview(null)}
                     value={avatarOptions.eyebrowsVariant}
@@ -575,6 +578,7 @@ export const AchievementsDialog = ({ onClose, open }: AchievementsDialogProps) =
                 </FormControl>
                 <FormControl size="small" sx={{ minWidth: 116 }}>
                   <Select
+                    MenuProps={avatarSelectMenuProps}
                     aria-label="Eyes"
                     onClose={() => setHoverPreview(null)}
                     value={avatarOptions.eyesVariant}
@@ -592,6 +596,7 @@ export const AchievementsDialog = ({ onClose, open }: AchievementsDialogProps) =
                 </FormControl>
                 <FormControl size="small" sx={{ minWidth: 116 }}>
                   <Select
+                    MenuProps={avatarSelectMenuProps}
                     aria-label="Mouth"
                     onClose={() => setHoverPreview(null)}
                     value={avatarOptions.mouthVariant}
@@ -609,6 +614,7 @@ export const AchievementsDialog = ({ onClose, open }: AchievementsDialogProps) =
                 </FormControl>
                 <FormControl size="small" sx={{ minWidth: 116 }}>
                   <Select
+                    MenuProps={avatarSelectMenuProps}
                     aria-label="Features"
                     onClose={() => setHoverPreview(null)}
                     value={
@@ -645,6 +651,7 @@ export const AchievementsDialog = ({ onClose, open }: AchievementsDialogProps) =
                 </FormControl>
                 <FormControl size="small" sx={{ minWidth: 116 }}>
                   <Select
+                    MenuProps={avatarSelectMenuProps}
                     aria-label="Glasses"
                     onClose={() => setHoverPreview(null)}
                     value={avatarOptions.glassesProbability ? avatarOptions.glassesVariant : 'none'}
@@ -677,6 +684,7 @@ export const AchievementsDialog = ({ onClose, open }: AchievementsDialogProps) =
                 </FormControl>
                 <FormControl size="small" sx={{ minWidth: 116 }}>
                   <Select
+                    MenuProps={avatarSelectMenuProps}
                     aria-label="Hair"
                     onClose={() => setHoverPreview(null)}
                     value={avatarOptions.hairVariant}
@@ -697,6 +705,7 @@ export const AchievementsDialog = ({ onClose, open }: AchievementsDialogProps) =
                 </FormControl>
                 <FormControl size="small" sx={{ minWidth: 116 }}>
                   <Select
+                    MenuProps={avatarSelectMenuProps}
                     aria-label="Earrings"
                     onClose={() => setHoverPreview(null)}
                     value={
@@ -731,6 +740,7 @@ export const AchievementsDialog = ({ onClose, open }: AchievementsDialogProps) =
                 </FormControl>
                 <FormControl size="small" sx={{ minWidth: 116 }}>
                   <Select
+                    MenuProps={avatarSelectMenuProps}
                     aria-label="Skin tone"
                     value={avatarOptions.skinColor}
                     onChange={(event) => void updateAvatar({ skinColor: event.target.value })}
@@ -744,6 +754,7 @@ export const AchievementsDialog = ({ onClose, open }: AchievementsDialogProps) =
                 </FormControl>
                 <FormControl size="small" sx={{ minWidth: 116 }}>
                   <Select
+                    MenuProps={avatarSelectMenuProps}
                     aria-label="Hair color"
                     value={avatarOptions.hairColor}
                     onChange={(event) => void updateAvatar({ hairColor: event.target.value })}

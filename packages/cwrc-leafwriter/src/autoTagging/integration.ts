@@ -1,4 +1,4 @@
-import { buildDocIndex } from './anchor';
+import { buildDocIndex, locateOccurrenceInIndex } from './anchor';
 import { dateCuratorDisplaySurface } from './dateCurator';
 import {
   applySuggestions,
@@ -781,51 +781,18 @@ export class AutoTaggingSession {
     try {
       const body = editor.getBody();
       const index = buildDocIndex(body, this.policy);
-      const displaySurface = surface;
+      // Use the Nth document-wide occurrence — never indexOf's first hit.
+      // Flat search text also covers date strings that span element boundaries.
+      const located = locateOccurrenceInIndex(index, surface, occurrence);
+      if (!located) return false;
 
-      // Prefer full date string (may span element boundaries in XML; flat in editor text).
-      const flatStart = index.text.indexOf(displaySurface);
-      if (flatStart !== -1 && displaySurface.length > 0) {
-        for (let i = 0; i < index.nodes.length; i++) {
-          const nodeStart = index.nodeStart[i]!;
-          const nodeEnd = nodeStart + index.nodes[i]!.search.text.length;
-          if (flatStart >= nodeStart && flatStart < nodeEnd) {
-            const local = flatStart - nodeStart;
-            const { node, search } = index.nodes[i]!;
-            const endFlat = Math.min(flatStart + displaySurface.length, nodeEnd);
-            const rawStart = search.map[local]!;
-            const rawEnd = search.map[endFlat - nodeStart - 1]! + 1;
-            const range = editor.getDoc().createRange();
-            range.setStart(node, rawStart);
-            range.setEnd(node, rawEnd);
-            editor.selection.setRng(range);
-            editor.selection.scrollIntoView?.();
-            (node.parentElement as HTMLElement | null)?.scrollIntoView?.({ block: 'center' });
-            return true;
-          }
-        }
-      }
-
-      let seen = 0;
-      for (const { node, search } of index.nodes) {
-        let from = 0;
-        while (true) {
-          const idx = search.text.indexOf(surface, from);
-          if (idx === -1) break;
-          from = idx + 1;
-          if (++seen < occurrence) continue;
-
-          const start = search.map[idx]!;
-          const end = search.map[idx + surface.length - 1]! + 1;
-          const range = editor.getDoc().createRange();
-          range.setStart(node, start);
-          range.setEnd(node, end);
-          editor.selection.setRng(range);
-          editor.selection.scrollIntoView?.();
-          (node.parentElement as HTMLElement | null)?.scrollIntoView?.({ block: 'center' });
-          return true;
-        }
-      }
+      const range = editor.getDoc().createRange();
+      range.setStart(located.node, located.start);
+      range.setEnd(located.node, located.end);
+      editor.selection.setRng(range);
+      editor.selection.scrollIntoView?.();
+      (located.node.parentElement as HTMLElement | null)?.scrollIntoView?.({ block: 'center' });
+      return true;
     } catch {
       // focusing is a convenience; never let it break the review walk
     }

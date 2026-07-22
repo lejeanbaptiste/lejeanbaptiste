@@ -42,6 +42,11 @@ export interface DateCuratorPanelProps {
   onFocus?: (suggestion: Suggestion) => void;
   onDecision?: (event: DecisionEvent) => void;
   onClose?: () => void;
+  /**
+   * When true (resolve pass), finishing the last pending item applies accepted
+   * dates and lets the host close the panel. Tag-only review leaves this off.
+   */
+  finishWhenIdle?: boolean;
   autoFocus?: boolean;
   busy?: boolean;
 }
@@ -316,6 +321,7 @@ export const DateCuratorPanel = ({
   onFocus,
   onDecision,
   onClose,
+  finishWhenIdle = false,
   autoFocus = true,
   busy = false,
 }: DateCuratorPanelProps) => {
@@ -357,66 +363,6 @@ export const DateCuratorPanel = ({
 
   const attachIndexFor = (suggestion: Suggestion): number | '' => attachById[suggestion.id] ?? '';
 
-  const decidePending = (index: number, decision: 'accepted' | 'rejected') => {
-    const pending = controller.pendingVisible();
-    const suggestion = pending[index];
-    if (!suggestion) return;
-
-    if (decision === 'accepted') {
-      const selected = selectedIndexFor(suggestion);
-      if (!canAcceptDateSuggestion(suggestion, selected)) return;
-      finalizeDateSuggestion(suggestion, selected);
-      const attach = attachIndexFor(suggestion);
-      if (attach !== '' && suggestion.dateResolution) {
-        suggestion.dateResolution.attachToDateIndex = attach;
-      }
-    }
-
-    controller.moveToPendingIndex(index);
-    controller.decide(decision);
-    rerender();
-  };
-
-  const handleKeyDown = useCallback(
-    (event: React.KeyboardEvent) => {
-      const key = event.key;
-      if ((key === 'Enter' && !event.shiftKey) || key === 'a') {
-        const pending = controller.pendingVisible();
-        const index = pending.findIndex((s) => s === controller.current());
-        if (index >= 0) {
-          decidePending(index, 'accepted');
-          event.preventDefault();
-          return;
-        }
-      }
-      if (handleReviewKey(controller, key, { shift: event.shiftKey })) {
-        event.preventDefault();
-        rerender();
-      }
-    },
-    // decidePending closes over controller state — rerender on each render is intentional
-    [controller, suggestions],
-  );
-
-  const undecideItem = (suggestion: Suggestion) => {
-    controller.undecideSuggestion(suggestion);
-    rerender();
-  };
-
-  const changeDateDecision = (suggestion: Suggestion, decision: 'accepted' | 'rejected') => {
-    if (decision === 'accepted') {
-      const selected = selectedIndexFor(suggestion);
-      if (!canAcceptDateSuggestion(suggestion, selected)) return;
-      finalizeDateSuggestion(suggestion, selected);
-      const attach = attachIndexFor(suggestion);
-      if (attach !== '' && suggestion.dateResolution) {
-        suggestion.dateResolution.attachToDateIndex = attach;
-      }
-    }
-    controller.changeDecision(suggestion, decision);
-    rerender();
-  };
-
   const collectForApply = (includeUnreviewedPending: boolean): Suggestion[] => {
     const batch: Suggestion[] = [];
     for (const suggestion of suggestions) {
@@ -440,6 +386,76 @@ export const DateCuratorPanel = ({
       }
     }
     return batch;
+  };
+
+  /** Resolve pass: once nothing is pending, apply accepted dates (host closes) or close empty. */
+  const finishIfIdle = () => {
+    if (!finishWhenIdle || controller.pendingVisible().length > 0) return;
+    const toApply = collectForApply(false);
+    if (toApply.length > 0) onApply(toApply);
+    else onClose?.();
+  };
+
+  const decidePending = (index: number, decision: 'accepted' | 'rejected') => {
+    const pending = controller.pendingVisible();
+    const suggestion = pending[index];
+    if (!suggestion) return;
+
+    if (decision === 'accepted') {
+      const selected = selectedIndexFor(suggestion);
+      if (!canAcceptDateSuggestion(suggestion, selected)) return;
+      finalizeDateSuggestion(suggestion, selected);
+      const attach = attachIndexFor(suggestion);
+      if (attach !== '' && suggestion.dateResolution) {
+        suggestion.dateResolution.attachToDateIndex = attach;
+      }
+    }
+
+    controller.moveToPendingIndex(index);
+    controller.decide(decision);
+    rerender();
+    finishIfIdle();
+  };
+
+  const handleKeyDown = useCallback(
+    (event: React.KeyboardEvent) => {
+      const key = event.key;
+      if ((key === 'Enter' && !event.shiftKey) || key === 'a') {
+        const pending = controller.pendingVisible();
+        const index = pending.findIndex((s) => s === controller.current());
+        if (index >= 0) {
+          decidePending(index, 'accepted');
+          event.preventDefault();
+          return;
+        }
+      }
+      if (handleReviewKey(controller, key, { shift: event.shiftKey })) {
+        event.preventDefault();
+        rerender();
+        finishIfIdle();
+      }
+    },
+    // decidePending closes over controller state — rerender on each render is intentional
+    [controller, suggestions],
+  );
+
+  const undecideItem = (suggestion: Suggestion) => {
+    controller.undecideSuggestion(suggestion);
+    rerender();
+  };
+
+  const changeDateDecision = (suggestion: Suggestion, decision: 'accepted' | 'rejected') => {
+    if (decision === 'accepted') {
+      const selected = selectedIndexFor(suggestion);
+      if (!canAcceptDateSuggestion(suggestion, selected)) return;
+      finalizeDateSuggestion(suggestion, selected);
+      const attach = attachIndexFor(suggestion);
+      if (attach !== '' && suggestion.dateResolution) {
+        suggestion.dateResolution.attachToDateIndex = attach;
+      }
+    }
+    controller.changeDecision(suggestion, decision);
+    rerender();
   };
 
   const apply = () => {

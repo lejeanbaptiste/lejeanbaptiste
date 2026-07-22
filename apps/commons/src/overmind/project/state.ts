@@ -13,6 +13,11 @@ export interface FileTreeNode {
 export interface OpenTab {
   content: string;
   dirty: boolean;
+  /**
+   * Last content written to disk (or loaded clean). Used as the dirty-check
+   * baseline so switching tabs does not treat unsaved edits as already saved.
+   */
+  lastSavedContent: string;
   editorReady: boolean;
   externalChangePending?: boolean;
   filePath: string;

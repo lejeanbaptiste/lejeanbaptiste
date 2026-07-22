@@ -389,7 +389,7 @@ export const saveAllDirtyTabs = async (
   state.project.openTabs = state.project.openTabs.map((tab) => {
     if (!tab.dirty) return tab;
     const content = tab.filePath === activePath && activeContent ? activeContent : tab.content;
-    return { ...tab, content, dirty: false };
+    return { ...tab, content, lastSavedContent: content, dirty: false };
   });
 
   if (activePath && activeContent) {
@@ -693,6 +693,7 @@ export const newFile = async (context: Context) => {
     const tab = {
       content,
       dirty: false,
+      lastSavedContent: content,
       editorReady: true,
       filePath: temp.filePath,
       filename: temp.filename,
@@ -1006,7 +1007,7 @@ export const openFile = async ({ state, actions }: Context, filePath: string) =>
     let content = await window.electronAPI.readFile(filePath);
     content = await prepareFileContent({ state, actions } as Context, filePath, content);
     const filename = getFilename(filePath);
-    const tab = { content, dirty: false, editorReady: true, filePath, filename };
+    const tab = { content, dirty: false, lastSavedContent: content, editorReady: true, filePath, filename };
 
     state.project.openTabs = [...state.project.openTabs, tab];
     state.project.activeTabPath = filePath;
@@ -1044,7 +1045,12 @@ export const switchTab = async (
         );
       }
       currentTab.content = savedContent;
-      currentTab.dirty = savedContent !== state.editor.contentLastSaved;
+      // Trust the editor's dirty flag — string-comparing XML against a shared
+      // contentLastSaved falsely dirties other tabs after save/stamp.
+      currentTab.dirty = state.editor.contentHasChanged;
+      if (!currentTab.lastSavedContent) {
+        currentTab.lastSavedContent = state.editor.contentLastSaved || savedContent;
+      }
       currentTab.editorReady = true;
     }
   }
@@ -1061,7 +1067,14 @@ export const switchTab = async (
     tab.editorReady = true;
   }
 
+  if (!tab.lastSavedContent) {
+    tab.lastSavedContent = tab.dirty ? state.editor.contentLastSaved || tab.content : tab.content;
+  }
+
   state.project.activeTabPath = filePath;
+  // Baseline for the incoming tab — never the dirty buffer, or close/save
+  // prompts lose track of unsaved edits.
+  state.editor.contentLastSaved = tab.lastSavedContent;
   state.editor.contentHasChanged = tab.dirty;
 
   await actions.editor.setResource({
@@ -1070,7 +1083,6 @@ export const switchTab = async (
     filename: tab.filename,
     isLocal: true,
   });
-  state.editor.contentLastSaved = tab.content;
   await actions.project.saveWorkspaceSession();
 };
 
@@ -1124,7 +1136,9 @@ export const saveActiveTab = async (
         });
     }
     state.project.openTabs = state.project.openTabs.map((tab) =>
-      tab.filePath === filePath ? { ...tab, content: stamped, dirty: false } : tab,
+      tab.filePath === filePath
+        ? { ...tab, content: stamped, lastSavedContent: stamped, dirty: false }
+        : tab,
     );
     state.editor.contentLastSaved = stamped;
     state.editor.contentHasChanged = false;
@@ -1169,7 +1183,13 @@ export const reloadTabFromDisk = async ({ state, actions }: Context, filePath: s
 
     state.project.openTabs = state.project.openTabs.map((item) =>
       item.filePath === filePath
-        ? { ...item, content, dirty: false, externalChangePending: false }
+        ? {
+            ...item,
+            content,
+            lastSavedContent: content,
+            dirty: false,
+            externalChangePending: false,
+          }
         : item,
     );
 
@@ -1281,7 +1301,15 @@ export const saveActiveTabAs = async (
     if (previousPath) {
       state.project.openTabs = state.project.openTabs.map((tab) =>
         tab.filePath === previousPath
-          ? { ...tab, filePath, filename, content: stamped, dirty: false, isTemp: false }
+          ? {
+              ...tab,
+              filePath,
+              filename,
+              content: stamped,
+              lastSavedContent: stamped,
+              dirty: false,
+              isTemp: false,
+            }
           : tab,
       );
       state.project.activeTabPath = filePath;
@@ -1291,6 +1319,7 @@ export const saveActiveTabAs = async (
         {
           content: stamped,
           dirty: false,
+          lastSavedContent: stamped,
           editorReady: true,
           filePath,
           filename,
@@ -1418,6 +1447,7 @@ export const closeTab = async (
     state.editor.contentLastSaved = undefined;
     await actions.editor.clearResource();
     clearWriterSession();
+    showExplorerLeftPanel();
     await actions.project.saveWorkspaceSession();
     return;
   }

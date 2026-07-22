@@ -112,6 +112,13 @@ class XML2CWRC {
       return;
     }
 
+    // Same schema as last time — loadSchema is skipped, but document.schemaId may
+    // have been cleared (e.g. close last tab → clearWriterSession). Restore it so
+    // the bottom-bar schema selector does not stay hidden.
+    if (schemaProcess.schemaId) {
+      overmindActions.document.setInitialStateSchema(schemaProcess.schemaId);
+    }
+
     const { docSchema } = schemaProcess;
     if (docSchema.css && docSchema.css !== schemaManager.getCss()) {
       const currentSchema = schemaManager.getCurrentSchema();

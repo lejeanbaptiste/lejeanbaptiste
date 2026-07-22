@@ -319,7 +319,16 @@ const SourceProfileControls = ({
           size="small"
           value={selectedProfileId}
           onChange={(event) => setSelectedProfileId(event.target.value)}
-          SelectProps={{ displayEmpty: true }}
+          InputLabelProps={{ shrink: true }}
+          SelectProps={{
+            displayEmpty: true,
+            renderValue: (value) => {
+              if (!value) {
+                return t('LWC.desktop.file_metadata.profile_none');
+              }
+              return profiles.find((profile) => profile.id === value)?.label ?? '';
+            },
+          }}
         >
           <MenuItem value="">
             <em>{t('LWC.desktop.file_metadata.profile_none')}</em>

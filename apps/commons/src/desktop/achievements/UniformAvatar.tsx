@@ -47,17 +47,47 @@ interface UniformAvatarProps {
   size?: number;
 }
 
+/** True when this pose may appear in the random rotation at `rankIndex`.
+ * Unarmed poses (no weapon channels) are always eligible. Poses with weapon
+ * art require at least one weapon tier unlocked at the player's rank - the
+ * same cumulative rule as pickWeapon below (e.g. body7.svg only has weapons
+ * from rank 2 up, so it stays out of rotation for rank 1 and below). */
+export const poseEligibleForRank = (
+  poseIndex: number,
+  bodyType: 'm' | 'f',
+  rankIndex: number,
+): boolean => {
+  const channels = WEAPON_POOLS[poseIndex] ?? [];
+  if (channels.length === 0) return true;
+  for (const channel of channels) {
+    for (const rank of Object.keys(channel).map(Number)) {
+      if (rank <= rankIndex + 1 && channelHasRankFor(channel, rank, bodyType)) return true;
+    }
+  }
+  return false;
+};
+
+/** Every pose eligible for random pick at this rank and body type. */
+export const eligiblePoseIndices = (bodyType: 'm' | 'f', rankIndex: number): number[] =>
+  POSE_INDICES.filter((pose) => poseEligibleForRank(pose, bodyType, rankIndex));
+
 /** Uniform random pick among every pose that has a full rank kit (see
- * POSE_INDICES in generatedBodyPools.ts, auto-discovered at pack time),
+ * POSE_INDICES in generatedBodyPools.ts, auto-discovered at pack time) and
+ * is eligible at the player's rank (see poseEligibleForRank above),
  * excluding `previousPose` when there's more than one option - same
  * no-repeat-in-a-row behavior as pickBackgroundKey below. Pose is genuinely
  * random per render, never persisted, per Daniel's "pose and weapons will be
  * random". */
-export const pickPose = (previousPose: number | null): number => {
+export const pickPose = (
+  previousPose: number | null,
+  bodyType: 'm' | 'f',
+  rankIndex: number,
+): number => {
+  const eligible = eligiblePoseIndices(bodyType, rankIndex);
   const choices =
-    previousPose !== null && POSE_INDICES.length > 1
-      ? POSE_INDICES.filter((pose) => pose !== previousPose)
-      : POSE_INDICES;
+    previousPose !== null && eligible.length > 1
+      ? eligible.filter((pose) => pose !== previousPose)
+      : eligible;
   return choices[Math.floor(Math.random() * choices.length)]!;
 };
 
@@ -75,7 +105,8 @@ export interface WeaponSelection {
 
 /** True if this rank has anything at all to show for `bodyType` in this
  * channel - either a universal (sex-independent) piece, or a bodyType-
- * specific piece under any variant. */
+ * specific piece under any variant. Shared by poseEligibleForRank and
+ * pickWeapon below. */
 const channelHasRankFor = (
   channel: (typeof WEAPON_POOLS)[number][number],
   rank: number,

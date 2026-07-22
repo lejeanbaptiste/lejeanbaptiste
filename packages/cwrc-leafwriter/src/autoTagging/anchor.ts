@@ -218,6 +218,44 @@ export function createAnchor(
 }
 
 /**
+ * Locate the Nth (1-based) occurrence of `surface` in the document search text,
+ * returning the text node and raw offsets for as much of that match as sits in
+ * the starting node. Used by editor focus jumps — structural xpaths from the
+ * XML document do not apply to TinyMCE's HTML body.
+ */
+export function locateOccurrenceInIndex(
+  index: DocIndex,
+  surface: string,
+  occurrence: number,
+): { node: Text; start: number; end: number } | null {
+  if (!surface || occurrence < 1) return null;
+
+  let flatStart = -1;
+  let from = 0;
+  for (let seen = 0; seen < occurrence; seen++) {
+    flatStart = index.text.indexOf(surface, from);
+    if (flatStart === -1) return null;
+    from = flatStart + 1;
+  }
+
+  for (let i = 0; i < index.nodes.length; i++) {
+    const nodeStart = index.nodeStart[i]!;
+    const nodeLen = index.nodes[i]!.search.text.length;
+    const nodeEnd = nodeStart + nodeLen;
+    if (flatStart < nodeStart || flatStart >= nodeEnd) continue;
+
+    const local = flatStart - nodeStart;
+    const { node, search } = index.nodes[i]!;
+    const endFlat = Math.min(flatStart + surface.length, nodeEnd);
+    const rawStart = search.map[local];
+    const rawEndMap = search.map[endFlat - nodeStart - 1];
+    if (rawStart === undefined || rawEndMap === undefined) return null;
+    return { node, start: rawStart, end: rawEndMap + 1 };
+  }
+  return null;
+}
+
+/**
  * Resolve an anchor against a (possibly edited) document, in tiers:
  * 1. XPath resolves and node hash matches → use stored offset.
  * 2. XPath resolves, hash differs → search within that node, context as tiebreaker.
