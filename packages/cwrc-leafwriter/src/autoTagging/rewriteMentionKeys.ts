@@ -53,3 +53,27 @@ export function rewriteMentionKeys(
 export function containsAnyKey(xml: string, keys: string[]): boolean {
   return keys.some((key) => xml.includes(`key="${key}"`) || xml.includes(`key='${key}'`));
 }
+
+/**
+ * Collect every mention `@key` value in the raw XML (open tags only, skipping
+ * comments/CDATA), string-based to match `rewriteMentionKeys`. Used by the
+ * orphan sweep to compare corpus keys against the entity database.
+ */
+export function collectKeys(xml: string): Set<string> {
+  const keys = new Set<string>();
+  const segments = xml.split(OPAQUE_SECTION);
+  for (let i = 0; i < segments.length; i += 1) {
+    if (i % 2 === 1) continue; // opaque section
+    const tags = segments[i]!.match(OPEN_TAG);
+    if (!tags) continue;
+    for (const tag of tags) {
+      if (!tag.includes('key=')) continue;
+      let match: RegExpExecArray | null;
+      KEY_ATTR.lastIndex = 0;
+      while ((match = KEY_ATTR.exec(tag)) !== null) {
+        if (match[3]) keys.add(match[3]);
+      }
+    }
+  }
+  return keys;
+}

@@ -1,6 +1,10 @@
 import { entityStoreFromDesktop } from '../../../../packages/cwrc-leafwriter/src/autoTagging/entityStore';
 import { applyPendingOrders } from '@src/desktop/entityDb/applyOrders';
-import { runEntityDatabaseCheck } from '../../../../packages/cwrc-leafwriter/src/autoTagging/entityDatabaseCheck';
+import {
+  purgeReportedOrphans,
+  runEntityDatabaseCheck,
+  sweepProjectOrphans,
+} from '../../../../packages/cwrc-leafwriter/src/autoTagging/entityDatabaseCheck';
 import { resolveEntityStorePaths } from '../../../../packages/cwrc-leafwriter/src/autoTagging/entityStoreResolve';
 import { removeOrphanProjectEntitiesFile } from '@src/desktop/entityDatabaseCleanup';
 import { useAppState } from '@src/overmind';
@@ -55,6 +59,16 @@ export const useEntityDatabaseLifecycle = () => {
         await removeOrphanProjectEntitiesFile(rootPath, centralFolder);
       }
 
+      const checkApi = {
+        listProjectXmlFiles: (path: string) => window.electronAPI!.listProjectXmlFiles(path),
+        readFile: (path: string) => window.electronAPI!.readFile(path),
+        writeFile: (path: string, content: string) => window.electronAPI!.writeFile(path, content),
+        showNativeMessageBox: (options: Parameters<typeof window.electronAPI.showNativeMessageBox>[0]) =>
+          window.electronAPI!.showNativeMessageBox(options),
+        updateProjectFileConfig: (path: string, patch: Record<string, unknown>) =>
+          window.electronAPI!.updateProjectFileConfig(path, patch),
+      };
+
       await runEntityDatabaseCheck(
         store,
         {
@@ -62,19 +76,12 @@ export const useEntityDatabaseLifecycle = () => {
           projectRoot: rootPath,
           projectFilePath,
         },
-        {
-          listProjectXmlFiles: (path) => window.electronAPI!.listProjectXmlFiles(path),
-          readFile: (path) => window.electronAPI!.readFile(path),
-          writeFile: (path, content) => window.electronAPI!.writeFile(path, content),
-          showNativeMessageBox: (options) => window.electronAPI!.showNativeMessageBox(options),
-          updateProjectFileConfig: (path, patch) =>
-            window.electronAPI!.updateProjectFileConfig(path, patch),
-        },
+        checkApi,
       );
 
       // Replay any merge/delete orders recorded elsewhere (other machine, fresh
       // clone, a tree the eager crawl couldn't see). Idempotent; safe to run on
-      // every open. Rich reporting lands with the Phase 3 Bridge inbox.
+      // every open.
       try {
         const result = await applyPendingOrders(store);
         if (result.ordersApplied > 0 && (result.summary?.filesChanged ?? 0) > 0) {
@@ -86,6 +93,37 @@ export const useEntityDatabaseLifecycle = () => {
         }
       } catch {
         // never block project open on order replay
+      }
+
+      // Gentle orphan check: after orders have converged, surface corpus keys
+      // that resolve to nothing — but only the genuine orphans (stray files from
+      // another edition are reported separately and never auto-stripped).
+      try {
+        const report = await sweepProjectOrphans(store, checkApi, rootPath);
+        if (report.orphanKeyCount > 0) {
+          const strayNote =
+            report.strayFiles.length > 0
+              ? `\n\n${report.strayFiles.length} file(s) appear to belong to a different project database and were left untouched.`
+              : '';
+          const { response } = await window.electronAPI!.showNativeMessageBox({
+            type: 'warning',
+            title: 'Unresolved entity keys found',
+            message: `${report.orphanKeyCount} tag key(s) in ${report.orphanFiles.length} file(s) no longer match any entity in this database.`,
+            detail:
+              'This usually means the database was rolled back or hand-edited. You can strip these keys (tags are kept), or cancel and restore from Time Machine instead.' +
+              strayNote,
+            buttons: ['Cancel', 'Strip orphan keys'],
+            defaultId: 0,
+            cancelId: 0,
+          });
+          if (response === 1) {
+            const purged = await purgeReportedOrphans(checkApi, report);
+            // eslint-disable-next-line no-console
+            console.info(`[orphan-sweep] stripped ${purged} orphan key(s).`);
+          }
+        }
+      } catch {
+        // never block project open on the orphan sweep
       }
     })();
   }, [config?.entityDatabaseId, config?.entityStore, projectFilePath, rootPath]);

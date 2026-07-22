@@ -1,5 +1,6 @@
 import AutorenewIcon from '@mui/icons-material/Autorenew';
 import CallSplitIcon from '@mui/icons-material/CallSplit';
+import HubOutlinedIcon from '@mui/icons-material/HubOutlined';
 import DeleteOutlineIcon from '@mui/icons-material/DeleteOutline';
 import EditOutlinedIcon from '@mui/icons-material/EditOutlined';
 import LaunchIcon from '@mui/icons-material/Launch';
@@ -78,6 +79,7 @@ import { openExternalUrl } from '../../../../../packages/cwrc-leafwriter/src/uti
 import { useActions, useAppState } from '@src/overmind';
 import { applyKeyRemapAcrossProjects, type KeyRemapSummary } from '../entityDb/applyKeyRemap';
 import { authorityLookupUrl } from '../entityDb/authorityLinks';
+import { BridgeInboxDialog } from './BridgeInboxDialog';
 
 /**
  * Ordinal of a legacy sequential id (`person-000042` → 42); UUID ids have none.
@@ -145,6 +147,7 @@ export const SidebarDatabaseTab = ({ active = false }: SidebarDatabaseTabProps) 
   const [editNewNameType, setEditNewNameType] = useState<string>('');
   const [splitInfoOpen, setSplitInfoOpen] = useState(false);
   const [lastSummary, setLastSummary] = useState<KeyRemapSummary | null>(null);
+  const [bridgeOpen, setBridgeOpen] = useState(false);
 
   const [menuAnchor, setMenuAnchor] = useState<{ el: HTMLElement; entity: EntitySummary } | null>(
     null,
@@ -580,6 +583,11 @@ export const SidebarDatabaseTab = ({ active = false }: SidebarDatabaseTabProps) 
                 {selected.size >= 2 ? ` (${selected.size})` : ''}
               </Button>
             </span>
+          </Tooltip>
+          <Tooltip title="Bridge to central database">
+            <IconButton size="small" onClick={() => setBridgeOpen(true)} aria-label="Bridge to central database">
+              <HubOutlinedIcon fontSize="small" />
+            </IconButton>
           </Tooltip>
           <Tooltip title={t('LWC.desktop.sidebar.database.reload_entities')}>
             <IconButton size="small" onClick={() => void reload()} aria-label={t('LWC.desktop.sidebar.database.reload_entities')}>
@@ -1142,6 +1150,12 @@ export const SidebarDatabaseTab = ({ active = false }: SidebarDatabaseTabProps) 
           </Stack>
         </DialogContent>
       </Dialog>
+
+      <BridgeInboxDialog
+        open={bridgeOpen}
+        onClose={() => setBridgeOpen(false)}
+        onChanged={() => void reload()}
+      />
     </Box>
   );
 };
