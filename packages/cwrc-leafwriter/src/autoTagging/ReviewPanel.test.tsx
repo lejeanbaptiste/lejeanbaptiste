@@ -100,7 +100,9 @@ describe('ReviewPanel', () => {
     const panel = screen.getByTestId('review-panel');
     fireEvent.keyDown(panel, { key: 'j' });
     fireEvent.keyDown(panel, { key: 'j' });
-    expect(focused).toEqual(['fake_0', 'fake_1', 'fake_2']); // initial + two moves
+    // initial + two moves, in document order: 上陽子, 老君, 上陽子 (fake_1 is the second
+    // 上陽子 occurrence, which follows 老君/fake_2 in the text)
+    expect(focused).toEqual(['fake_0', 'fake_2', 'fake_1']);
   });
 
   it('accepts and rejects via the row buttons (no keyboard needed)', () => {
