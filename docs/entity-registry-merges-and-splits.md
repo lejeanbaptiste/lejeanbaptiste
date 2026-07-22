@@ -351,3 +351,40 @@ uuids must start with a letter. If we're using @key, would should indeed prefix 
 
 ### CEDB alone on a single computer
 CEDB is mandatory, so too is PEDB.
+
+---
+
+# Addendum: what was implemented (2026-07-23)
+
+The order-based design sketched above shipped. In this doc's vocabulary:
+
+- **Merge orders exist.** Every Absorb/delete appends a timestamped order (a
+  `@key` remap in the owning database's id space) to `entity-orders.jsonl`
+  beside `entities.xml`. Any checkout that couldn't be reached at merge time
+  replays unapplied orders on its next open — Stories B, C, D and F now
+  self-heal on relink instead of silently keeping dead keys.
+- **The address book stopped forgetting.** `registerProject` no longer prunes
+  paths it can't see from the current machine (the Story A bug); the registry is
+  demoted to an eager-crawl optimization, with the order log as the correctness
+  backbone.
+- **Timestamps exist.** Every entity record carries `<note type="ljb-changed"
+  when="…">`, the substrate for the sync algorithm in the Reflections.
+- **Both databases mint kind-prefixed UUIDs** (`person-<uuid>`); legacy
+  sequential ids are grandfathered until touched.
+- **The corpus sweep is classified, not wholesale.** Each corpus file carries
+  its PEDB fingerprint (`<idno type="ljb-project-database">`), so the sweep
+  distinguishes "file copied from another project" (left untouched, reported)
+  from "database rolled back" (offered as an explicit, severe strip — the
+  gentle prompt on open). Wholesale purge is no longer the default recovery.
+- **The bridge verbs exist without a fake Split.** Link/Promote write per-user
+  `<idno type="ljb-central" subtype="{userStableId}">` rows and never rewrite
+  corpus keys (moral #5 honored: no "Split entity…" button was shipped).
+- **Time Machine has two tabs.** Central snapshots live in the central folder's
+  own `.ljb-time-machine` and roam with it; restoring the central database
+  preserves the order log (append-only truth survives rollback — moral #6).
+- **Story F's Unison merge exists** (`centralForkMerge.ts`): additions union,
+  identical records adopt the newer timestamp, field disagreements surface as
+  conflicts with a "keep all more recent" bulk option; absence is never treated
+  as deletion (deletions travel only through orders).
+
+Companion doc has the full module map: [`dual-entity-database-planning.md`](dual-entity-database-planning.md) § Implementation status.

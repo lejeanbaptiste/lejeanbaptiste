@@ -207,6 +207,19 @@ export function planReconcile(pedbItem: Element, cedbItem: Element): ReconcilePl
   return plan;
 }
 
+/** Set one reconcilable scalar field on an entity (used to resolve conflicts). */
+export function setEntityScalar(
+  doc: Document,
+  id: string,
+  field: ScalarField,
+  value: string | number,
+): void {
+  const item = findEntity(doc, id);
+  if (!item) throw new Error(`setEntityScalar: entity not found: ${id}`);
+  setScalar(doc, id, item, field, value);
+  touchEntity(item);
+}
+
 const setScalar = (
   doc: Document,
   id: string,

@@ -13,6 +13,8 @@ import {
   ListItem,
   ListItemText,
   Stack,
+  Tab,
+  Tabs,
   Tooltip,
   Typography,
 } from '@mui/material';
@@ -24,11 +26,20 @@ import type { TimeMachineSnapshotSummary } from '@src/types/desktop';
 import { unlockAchievement } from '@src/desktop/achievements/engine';
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
+import {
+  ORDERS_FILE,
+  unionOrderLogs,
+} from '../../../../packages/cwrc-leafwriter/src/autoTagging/entityOrders';
+import { joinPath } from '../../../../packages/cwrc-leafwriter/src/autoTagging/pathJoin';
 
 interface TimeMachineDialogProps {
   onClose: () => void;
   open: boolean;
 }
+
+type TimeMachineMode = 'project' | 'central';
+
+const CENTRAL_SNAPSHOT_NAME = 'Central entity database';
 
 const formatDate = (value: string) =>
   new Intl.DateTimeFormat(undefined, {
@@ -53,6 +64,8 @@ export const TimeMachineDialog = ({ onClose, open }: TimeMachineDialogProps) => 
   const { config, isProjectReady, openTabs, rootPath } = useAppState().project;
   const { reloadDirectoryInTree, reloadTabFromDisk, saveAllDirtyTabs } = useActions().project;
   const { notifyViaSnackbar } = useActions().ui;
+  const [mode, setMode] = useState<TimeMachineMode>('project');
+  const [centralFolder, setCentralFolder] = useState<string | null>(null);
   const [snapshots, setSnapshots] = useState<TimeMachineSnapshotSummary[]>([]);
   const [busyAction, setBusyAction] = useState<'backup' | 'load' | 'restore' | null>(null);
   const [error, setError] = useState<string | null>(null);
@@ -60,36 +73,58 @@ export const TimeMachineDialog = ({ onClose, open }: TimeMachineDialogProps) => 
   const projectName = useMemo(() => config?.name?.trim() || 'Untitled project', [config?.name]);
   const isBusy = busyAction !== null;
 
+  // The two timelines are deliberately separate: the project tab snapshots the
+  // project tree; the central tab snapshots the central entity DB folder
+  // (entities.xml + order log + registry), whose history roams with the folder.
+  const activeRoot = mode === 'project' ? rootPath : centralFolder;
+  const activeName = mode === 'project' ? projectName : CENTRAL_SNAPSHOT_NAME;
+
+  useEffect(() => {
+    if (!open) return;
+    void (async () => {
+      try {
+        setCentralFolder((await window.electronAPI?.getEntityDbFolder?.()) ?? null);
+      } catch {
+        setCentralFolder(null);
+      }
+    })();
+  }, [open]);
+
   const loadSnapshots = useCallback(async () => {
-    if (!open || !rootPath || !window.electronAPI?.listTimeMachineSnapshots) return;
+    if (!open || !activeRoot || !window.electronAPI?.listTimeMachineSnapshots) {
+      setSnapshots([]);
+      return;
+    }
     setBusyAction('load');
     setError(null);
     try {
-      setSnapshots(await window.electronAPI.listTimeMachineSnapshots(rootPath));
+      setSnapshots(await window.electronAPI.listTimeMachineSnapshots(activeRoot));
     } catch (loadError) {
       setError(loadError instanceof Error ? loadError.message : 'Could not load snapshots.');
     } finally {
       setBusyAction(null);
     }
-  }, [open, rootPath]);
+  }, [open, activeRoot]);
 
   useEffect(() => {
     void loadSnapshots();
   }, [loadSnapshots]);
 
   const handleBackup = async () => {
-    if (!rootPath || !window.electronAPI?.createTimeMachineSnapshot) return;
+    if (!activeRoot || !window.electronAPI?.createTimeMachineSnapshot) return;
     setBusyAction('backup');
     setError(null);
 
     try {
-      const saveResult = await saveAllDirtyTabs();
-      if (!saveResult.ok) {
-        setError(saveResult.error ?? 'Could not save open files before backup.');
-        return;
+      if (mode === 'project') {
+        const saveResult = await saveAllDirtyTabs();
+        if (!saveResult.ok) {
+          setError(saveResult.error ?? 'Could not save open files before backup.');
+          return;
+        }
       }
 
-      const snapshot = await window.electronAPI.createTimeMachineSnapshot(rootPath, projectName);
+      const snapshot = await window.electronAPI.createTimeMachineSnapshot(activeRoot, activeName);
       setSnapshots((current) => [snapshot, ...current]);
       notifyViaSnackbar({
         message: t('LWC.desktop.time_machine.snapshot_created'),
@@ -106,8 +141,38 @@ export const TimeMachineDialog = ({ onClose, open }: TimeMachineDialogProps) => 
     }
   };
 
+  /**
+   * Restoring the central folder must not lose merge/delete orders recorded
+   * since the snapshot: the order log is append-only propagation truth that
+   * other checkouts may not have applied yet. Union the pre-restore log back
+   * into the restored one.
+   */
+  const restoreCentralPreservingOrders = async (snapshotPath: string) => {
+    const api = window.electronAPI!;
+    const ordersPath = joinPath(centralFolder!, ORDERS_FILE);
+    let preRestoreLog = '';
+    try {
+      if (await api.pathExists(ordersPath)) preRestoreLog = await api.readFile(ordersPath);
+    } catch {
+      preRestoreLog = '';
+    }
+
+    await api.restoreTimeMachineSnapshotToProject(centralFolder!, CENTRAL_SNAPSHOT_NAME, snapshotPath);
+
+    if (preRestoreLog.trim()) {
+      let restoredLog = '';
+      try {
+        if (await api.pathExists(ordersPath)) restoredLog = await api.readFile(ordersPath);
+      } catch {
+        restoredLog = '';
+      }
+      const merged = unionOrderLogs(preRestoreLog, restoredLog);
+      if (merged !== restoredLog) await api.writeFile(ordersPath, merged);
+    }
+  };
+
   const handleRestore = async (snapshot: TimeMachineSnapshotSummary) => {
-    if (!rootPath || !window.electronAPI?.restoreTimeMachineSnapshotToProject) {
+    if (!activeRoot || !window.electronAPI?.restoreTimeMachineSnapshotToProject) {
       return;
     }
 
@@ -117,7 +182,10 @@ export const TimeMachineDialog = ({ onClose, open }: TimeMachineDialogProps) => 
       const confirmation = await window.electronAPI.showNativeMessageBox({
         type: 'warning',
         title: t('LWC.desktop.time_machine.restore_snapshot'),
-        message: t('LWC.desktop.time_machine.restore_snapshot_message'),
+        message:
+          mode === 'central'
+            ? 'Restore the central entity database to this snapshot? Merge/delete orders recorded since then are preserved. Projects linked to this database may report unresolved keys afterwards — review the sync prompts on next open.'
+            : t('LWC.desktop.time_machine.restore_snapshot_message'),
         buttons: [t('LWC.desktop.time_machine.restore'), t('LWC.desktop.time_machine.cancel')],
         cancelId: 1,
         defaultId: 1,
@@ -125,28 +193,35 @@ export const TimeMachineDialog = ({ onClose, open }: TimeMachineDialogProps) => 
 
       if (confirmation.response !== 0) return;
 
-      const saveResult = await saveAllDirtyTabs();
-      if (!saveResult.ok) {
-        setError(saveResult.error ?? 'Could not save open files before restore.');
-        return;
+      if (mode === 'project') {
+        const saveResult = await saveAllDirtyTabs();
+        if (!saveResult.ok) {
+          setError(saveResult.error ?? 'Could not save open files before restore.');
+          return;
+        }
+        await window.electronAPI.restoreTimeMachineSnapshotToProject(
+          activeRoot,
+          activeName,
+          snapshot.path,
+        );
+        await reloadDirectoryInTree(activeRoot);
+        await Promise.all(openTabs.map((tab) => reloadTabFromDisk(tab.filePath)));
+        await unlockAchievement('recovery-under-fire', (message) =>
+          notifyViaSnackbar({
+            message,
+            options: { variant: 'success', autoHideDuration: 7000 },
+          }),
+        );
+      } else {
+        await restoreCentralPreservingOrders(snapshot.path);
       }
 
-      await window.electronAPI.restoreTimeMachineSnapshotToProject(
-        rootPath,
-        projectName,
-        snapshot.path,
-      );
-      await reloadDirectoryInTree(rootPath);
-      await Promise.all(openTabs.map((tab) => reloadTabFromDisk(tab.filePath)));
       await loadSnapshots();
-      await unlockAchievement('recovery-under-fire', (message) =>
-        notifyViaSnackbar({
-          message,
-          options: { variant: 'success', autoHideDuration: 7000 },
-        }),
-      );
       notifyViaSnackbar({
-        message: t('LWC.desktop.time_machine.project_restored'),
+        message:
+          mode === 'central'
+            ? 'Central entity database restored.'
+            : t('LWC.desktop.time_machine.project_restored'),
         options: { variant: 'success' },
       });
     } catch (restoreError) {
@@ -165,22 +240,45 @@ export const TimeMachineDialog = ({ onClose, open }: TimeMachineDialogProps) => 
       <DialogTitle>{t('LWC.desktop.time_machine.title')}</DialogTitle>
       <DialogContent dividers>
         <Stack spacing={2}>
-          {!isProjectReady || !rootPath ? (
+          <Tabs
+            onChange={(_event, value: TimeMachineMode) => setMode(value)}
+            value={mode}
+            variant="fullWidth"
+          >
+            <Tab label={t('LWC.desktop.time_machine.title_project', 'Project')} value="project" />
+            <Tab
+              label={t('LWC.desktop.time_machine.title_central', 'Entity database')}
+              value="central"
+            />
+          </Tabs>
+
+          {mode === 'project' && (!isProjectReady || !rootPath) ? (
             <Alert severity="info">{t('LWC.desktop.time_machine.open_project_first')}</Alert>
+          ) : null}
+          {mode === 'central' && !centralFolder ? (
+            <Alert severity="info">
+              No central entity database folder is configured (App Settings).
+            </Alert>
+          ) : null}
+          {mode === 'central' ? (
+            <Alert severity="info" sx={{ py: 0 }}>
+              Restoring one timeline never restores the other: corpus files live in project
+              snapshots, the entity database in these.
+            </Alert>
           ) : null}
 
           {error ? <Alert severity="error">{error}</Alert> : null}
 
           <Box>
-            <Typography variant="subtitle2">{projectName}</Typography>
-            <Typography color="text.secondary" noWrap title={rootPath ?? ''} variant="body2">
-              {rootPath}
+            <Typography variant="subtitle2">{activeName}</Typography>
+            <Typography color="text.secondary" noWrap title={activeRoot ?? ''} variant="body2">
+              {activeRoot}
             </Typography>
           </Box>
 
           <Stack direction="row" spacing={1}>
             <Button
-              disabled={!rootPath || isBusy}
+              disabled={!activeRoot || isBusy}
               onClick={() => void handleBackup()}
               startIcon={busyAction === 'backup' ? <CircularProgress size={16} /> : <AddIcon />}
               variant="contained"
@@ -190,7 +288,7 @@ export const TimeMachineDialog = ({ onClose, open }: TimeMachineDialogProps) => 
             <Tooltip title={t('LWC.desktop.time_machine.refresh_snapshots')}>
               <span>
                 <IconButton
-                  disabled={!rootPath || isBusy}
+                  disabled={!activeRoot || isBusy}
                   onClick={() => void loadSnapshots()}
                   size="small"
                 >
@@ -213,7 +311,13 @@ export const TimeMachineDialog = ({ onClose, open }: TimeMachineDialogProps) => 
                   disableGutters
                   key={snapshot.id}
                   secondaryAction={
-                    <Tooltip title={t('LWC.desktop.time_machine.restore_to_current_project')}>
+                    <Tooltip
+                      title={
+                        mode === 'central'
+                          ? 'Restore the central entity database'
+                          : t('LWC.desktop.time_machine.restore_to_current_project')
+                      }
+                    >
                       <span>
                         <IconButton
                           disabled={isBusy}
