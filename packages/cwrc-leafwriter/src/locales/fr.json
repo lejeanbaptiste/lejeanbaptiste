@@ -286,7 +286,11 @@
       "Hide Breaks": "Masquer les coupures",
       "Hide Breaks tooltip": "Masquer les sauts de ligne et de page pour lire le texte comme un bloc continu",
       "Show Breaks": "Afficher les coupures",
-      "Show Breaks tooltip": "Afficher les sauts de ligne et de page dans l’éditeur"
+      "Show Breaks tooltip": "Afficher les sauts de ligne et de page dans l’éditeur",
+      "Hide Notes": "Masquer toutes les notes",
+      "Hide Notes tooltip": "Replier tous les commentaires (notes, citations, mots-clés)",
+      "Show Notes": "Afficher toutes les notes",
+      "Show Notes tooltip": "Déplier tous les commentaires (notes, citations, mots-clés) dans le texte"
     },
     "entity": {
       "_plural": {

@@ -50,10 +50,12 @@ export interface MenuItem extends Item {
 export const EditorToolbar = () => {
   const { t } = useTranslation();
   const { schemaId } = useAppState().document;
-  const { choiceDisplayMode, isReadonly, showBreaks, showTags, textLocked } = useAppState().editor;
+  const { choiceDisplayMode, isReadonly, showBreaks, showNotes, showTags, textLocked } =
+    useAppState().editor;
   // const { fullscreen } = useAppState().ui;
 
-  const { cycleChoiceDisplayMode, toggleShowBreaks, toggleShowTags, toggleTextLocked } = useActions().editor;
+  const { cycleChoiceDisplayMode, toggleShowBreaks, toggleShowNotes, toggleShowTags, toggleTextLocked } =
+    useActions().editor;
   const { openDialog, showContextMenu } = useActions().ui;
   const { calendarOffered } = useCalendarWorkflow();
 
@@ -262,6 +264,17 @@ export const EditorToolbar = () => {
       onClick: () => toggleShowTags(),
       selected: showTags,
       title: showTags ? t('LW.editorToolbar.Hide Tags') : t('LW.editorToolbar.Show Tags'),
+      type: 'toggle',
+    },
+    {
+      group: 'ui',
+      icon: showNotes ? 'showNotesOn' : 'showNotesOff',
+      onClick: () => toggleShowNotes(),
+      selected: showNotes,
+      title: showNotes ? t('LW.editorToolbar.Hide Notes') : t('LW.editorToolbar.Show Notes'),
+      tooltip: showNotes
+        ? t('LW.editorToolbar.Hide Notes tooltip')
+        : t('LW.editorToolbar.Show Notes tooltip'),
       type: 'toggle',
     },
     // {

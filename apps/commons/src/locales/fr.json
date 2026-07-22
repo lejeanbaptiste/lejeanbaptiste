@@ -9,6 +9,7 @@
       "cancel": "annuler",
       "close": "fermer",
       "contact_us": "contactez-nous",
+      "continue": "Continuer",
       "conversion failed": "La conversion a échoué",
       "cookies settings": "",
       "create": "créer",
@@ -442,6 +443,12 @@
           }
         }
       }
+    },
+    "translation": {
+      "indexing_document": "Indexation du document pour la traduction…",
+      "no_languages_configured": "Aucune langue de traduction n’est encore configurée. Ajoutez-en dans Projet → Métadonnées de l’édition…",
+      "open_project_to_use_translations": "Ouvrez un projet pour utiliser les traductions.",
+      "translate_failed": "Échec de la traduction : {{error}}"
     },
     "time_machine": {
       "title": "Machine à remonter le temps",
