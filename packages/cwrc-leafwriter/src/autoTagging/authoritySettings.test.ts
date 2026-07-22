@@ -28,7 +28,7 @@ describe('authoritySettings', () => {
   });
 
   it('excludes courtesy names from tagging by default, honoring persisted overrides', () => {
-    expect(excludedNameTypesFromSettings(undefined)).toEqual(['courtesy']);
+    expect(excludedNameTypesFromSettings(undefined)).toEqual(['courtesy', 'family', 'given']);
     expect(excludedNameTypesFromSettings({ excludedNameTypes: [] })).toEqual([]);
     expect(
       excludedNameTypesFromSettings({ excludedNameTypes: ['courtesy', 'art', 'bogus'] }),
