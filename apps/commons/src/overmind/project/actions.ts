@@ -1105,6 +1105,7 @@ export const saveActiveTab = async (
         .then((merged) =>
           processSaveForAchievements({
             rootPath,
+            projectId: state.project.config?.projectId,
             filePath,
             xml: stamped,
             stats: merged,
@@ -1318,6 +1319,7 @@ export const saveActiveTabAs = async (
         .then((merged) =>
           processSaveForAchievements({
             rootPath,
+            projectId: state.project.config?.projectId,
             filePath,
             xml: stamped,
             stats: merged,

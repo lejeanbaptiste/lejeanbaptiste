@@ -6,7 +6,6 @@ import {
   DialogContent,
   DialogTitle,
   FormControl,
-  IconButton,
   LinearProgress,
   MenuItem,
   Paper,
@@ -16,7 +15,6 @@ import {
   Tooltip,
   Typography,
 } from '@mui/material';
-import ShuffleIcon from '@mui/icons-material/Shuffle';
 import PrintIcon from '@mui/icons-material/Print';
 import EmojiEventsIcon from '@mui/icons-material/EmojiEvents';
 import { useEffect, useRef, useState } from 'react';
@@ -49,8 +47,10 @@ import {
 import {
   BODY_TYPES,
   createDefaultDiceBearAvatar,
+  decodeAvatarCode,
   diceBearAvatarUrl,
   EARRINGS_VARIANTS,
+  encodeAvatarCode,
   EYE_VARIANTS,
   EYEBROW_VARIANTS,
   FEATURES_VARIANTS,
@@ -126,7 +126,11 @@ export const AchievementsDialog = ({ onClose, open }: AchievementsDialogProps) =
   const { notifyViaSnackbar } = useActions().ui;
   const [state, setState] = useState<AchievementsState | null>(null);
   const [encoderName, setEncoderName] = useState('');
-  const [seedDraft, setSeedDraft] = useState('');
+  const [codeDraft, setCodeDraft] = useState('');
+  // True while the Code field has focus, so the sync effect below doesn't
+  // overwrite what the player is actively typing/pasting with the
+  // still-committed code on every re-render.
+  const [codeFocused, setCodeFocused] = useState(false);
   const [backgroundKey, setBackgroundKey] = useState<string | null>(null);
   const [poseIndex, setPoseIndex] = useState<number | null>(null);
   const [weaponRank, setWeaponRank] = useState<number | null>(null);
@@ -209,13 +213,11 @@ export const AchievementsDialog = ({ onClose, open }: AchievementsDialogProps) =
   }, [open]);
 
   useEffect(() => {
-    if (!state) return;
-    setSeedDraft(
-      state.avatar?.kind === 'dicebear'
-        ? state.avatar.options.seed
-        : createDefaultDiceBearAvatar(encoderName).seed,
-    );
-  }, [encoderName, state]);
+    if (!state || codeFocused) return;
+    const options =
+      state.avatar?.kind === 'dicebear' ? state.avatar.options : createDefaultDiceBearAvatar(encoderName);
+    setCodeDraft(encodeAvatarCode(options));
+  }, [codeFocused, encoderName, state]);
 
   if (!state || !backgroundKey || poseIndex === null) {
     return <Dialog fullWidth maxWidth="sm" onClose={onClose} open={open} />;
@@ -453,12 +455,6 @@ export const AchievementsDialog = ({ onClose, open }: AchievementsDialogProps) =
     setState({ ...current });
   };
 
-  const randomizeAvatar = () => {
-    const seed = crypto.randomUUID().slice(0, 8);
-    setSeedDraft(seed);
-    void updateAvatar({ seed });
-  };
-
   // keepMounted below: without it, MUI tears down everything inside
   // (including UniformAvatar and its head/body SVG fetches) on every close,
   // so the next open has to redo that whole round trip from scratch instead
@@ -535,34 +531,30 @@ export const AchievementsDialog = ({ onClose, open }: AchievementsDialogProps) =
                   </Select>
                 </FormControl>
                 <TextField
-                  label="Seed"
+                  label="Code"
+                  onFocus={() => setCodeFocused(true)}
                   onBlur={() => {
-                    const seed = seedDraft.trim() || 'leaf-writer';
-                    setSeedDraft(seed);
-                    if (seed !== avatarOptions.seed) void updateAvatar({ seed });
+                    setCodeFocused(false);
+                    const decoded = decodeAvatarCode(codeDraft);
+                    if (decoded) {
+                      void updateAvatar(decoded);
+                    } else {
+                      setCodeDraft(encodeAvatarCode(avatarOptions));
+                      if (codeDraft.trim() !== encodeAvatarCode(avatarOptions)) {
+                        notifyViaSnackbar({
+                          message: 'That code is not valid.',
+                          options: { variant: 'error', autoHideDuration: 4000 },
+                        });
+                      }
+                    }
                   }}
-                  onChange={(event) => setSeedDraft(event.target.value)}
+                  onChange={(event) => setCodeDraft(event.target.value)}
                   onKeyDown={(event) => {
                     if (event.key === 'Enter') event.currentTarget.blur();
                   }}
                   size="small"
                   sx={{ minWidth: 240, flex: '1 1 240px' }}
-                  value={seedDraft}
-                  slotProps={{
-                    input: {
-                      endAdornment: (
-                        <IconButton
-                          aria-label="Randomize seed"
-                          edge="end"
-                          onClick={randomizeAvatar}
-                          size="small"
-                          title="Randomize seed"
-                        >
-                          <ShuffleIcon fontSize="small" />
-                        </IconButton>
-                      ),
-                    },
-                  }}
+                  value={codeDraft}
                 />
                 <FormControl size="small" sx={{ minWidth: 116 }}>
                   <Select

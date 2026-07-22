@@ -41,6 +41,7 @@
     "paths": {
       "@cwrc/leafwriter/languageCodes": ["../../packages/cwrc-leafwriter/src/utilities/languageCodes.ts"],
       "@cwrc/leafwriter/documentExport": ["../../packages/cwrc-leafwriter/src/js/conversion/documentExport.ts"],
+      "@cwrc/leafwriter/pageBreakDetection": ["../../packages/cwrc-leafwriter/src/utilities/pageBreakDetection.ts"],
       "@cwrc/leafwriter-validator": ["../../packages/cwrc-leafwriter-validator/src/index.worker.ts"],
       "@src/*": ["src/*"]
     },

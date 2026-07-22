@@ -409,6 +409,96 @@ class Tagger {
     }
   }
 
+  /**
+   * Opens the Correction popup (desktop) or legacy dialog (web).
+   */
+  addQuickCorrectionDialog() {
+    if (!this.writer.editor) return;
+
+    if (typeof window !== 'undefined' && window.__desktopCorrection?.openCorrectionPopup) {
+      const opened = window.__desktopCorrection.openCorrectionPopup();
+      if (opened !== false) return;
+    }
+
+    this.openLegacyCorrectionDialog();
+  }
+
+  private openLegacyCorrectionDialog() {
+    if (!this.writer.editor) return;
+
+    const requiresSelection = this.writer.schemaManager.mapper.doesEntityRequireSelection('correction');
+    const result =
+      !requiresSelection && this.writer.editor.selection.isCollapsed()
+        ? this.VALID
+        : this.isSelectionValid({ isStructTag: false, cleanRange: true });
+
+    if (result === this.NO_SELECTION) {
+      this.writer.dialogManager.show('message', {
+        title: 'Error',
+        msg: 'Please select some text before adding an entity.',
+        type: 'error',
+      });
+      return;
+    }
+
+    this.writer.editor.currentBookmark = this.writer.editor.selection.getBookmark(1);
+
+    if (result === this.VALID) {
+      const childName = this.writer.schemaManager.mapper.getParentTag('correction');
+
+      //@ts-ignore
+      let parentTag = this.writer.editor.currentBookmark.rng.commonAncestorContainer;
+      while (parentTag.nodeType !== Node.ELEMENT_NODE) {
+        parentTag = parentTag.parentNode;
+      }
+
+      const parentName = parentTag.getAttribute('_tag');
+      //@ts-ignore
+      const isValid = this.writer.schemaManager.isTagValidChildOfParent(childName, parentName);
+
+      if (!isValid) {
+        this.writer.dialogManager.show('message', {
+          title: 'Invalid XML',
+          msg: `
+            You cannot add a correction entity in this location because its element <b>${childName}</b> is not a valid child of <b>${parentName}</b>.
+          `,
+          type: 'error',
+        });
+      }
+
+      this.writer.dialogManager.show('correction', { quick: true });
+      return;
+    }
+
+    if (result === this.OVERLAP) {
+      if (!this.writer.allowOverlap === true) {
+        this.writer.dialogManager.confirm({
+          title: 'Warning',
+          msg: `
+            <p>You are attempting to create overlapping entities or to create an entity across sibling XML tags, which is not allowed in this editor mode.</p>
+            <p>If you wish to continue, the editor mode will be switched to <b>XML and RDF (Overlapping Entities)</b> and only RDF will be created for the entity you intend to add.</p>
+            <p>Do you wish to continue?</p>
+          `,
+          showConfirmKey: 'confirm-overlapping-entities',
+          type: 'info',
+          height: 350,
+          callback: (confirmed: boolean) => {
+            if (!confirmed) return;
+
+            this.writer.allowOverlap = true;
+            this.writer.mode = this.writer.XMLRDF;
+            this.writer.dialogManager.show('correction', { quick: true });
+          },
+        });
+
+        return;
+      }
+
+      this.writer.dialogManager.show('correction', { quick: true });
+      return;
+    }
+  }
+
   //! deprecated: This funcion is not called from anywhere
   /**
    * A general removal function for entities and structure tags
@@ -1510,7 +1600,7 @@ class Tagger {
    * @param {Boolean} cleanRange True to remove extra whitespace and fix text range that spans multiple parents
    * @returns {Integer}
    */
-  private isSelectionValid({
+  isSelectionValid({
     isStructTag,
     cleanRange,
   }: {

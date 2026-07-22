@@ -1,7 +1,9 @@
 import {
   Box,
+  Button,
   Checkbox,
   FormControlLabel,
+  MenuItem,
   Paper,
   Stack,
   TextField,
@@ -29,6 +31,19 @@ import {
   readSourceDescriptionFromXml,
   type SourceDescription,
 } from '@src/desktop/sourceDescription';
+import {
+  applyProfileToSource,
+  createSourceProfile,
+  profileLabelFromSource,
+  readGlobalSourceProfiles,
+  scanProjectSourceProfiles,
+  toSharedSource,
+  upsertGlobalSourceProfile,
+} from '@src/desktop/sourceProfiles';
+import type { DedupedProjectSource, SourceProfile } from '@src/desktop/sourceProfileTypes';
+import { SourceProfileImportDialog } from '@src/desktop/SourceProfileImportDialog';
+import { SourceProfileSaveDialog } from '@src/desktop/SourceProfileSaveDialog';
+import { isDesktop } from '@src/types/desktop';
 import { useActions, useAppState } from '@src/overmind';
 import { useCallback, useEffect, useRef, useState } from 'react';
 
@@ -208,6 +223,155 @@ const TeiSourceFields = ({
   );
 };
 
+const SourceProfileControls = ({
+  catalogId,
+  disabled,
+  onApplySource,
+  rootPath,
+  sourceValues,
+}: {
+  catalogId?: string | null;
+  disabled: boolean;
+  onApplySource: (next: SourceDescription) => void;
+  rootPath: string | null;
+  sourceValues: SourceDescription;
+}) => {
+  const { t } = useTranslation();
+  const [profiles, setProfiles] = useState<SourceProfile[]>([]);
+  const [selectedProfileId, setSelectedProfileId] = useState('');
+  const [importOpen, setImportOpen] = useState(false);
+  const [importLoading, setImportLoading] = useState(false);
+  const [importEntries, setImportEntries] = useState<DedupedProjectSource[]>([]);
+  const [saveOpen, setSaveOpen] = useState(false);
+
+  const reloadProfiles = useCallback(async () => {
+    if (!isDesktop()) return;
+    try {
+      const next = await readGlobalSourceProfiles();
+      setProfiles(next);
+    } catch {
+      setProfiles([]);
+    }
+  }, []);
+
+  useEffect(() => {
+    void reloadProfiles();
+  }, [reloadProfiles]);
+
+  const applySharedSource = useCallback(
+    (shared: ReturnType<typeof toSharedSource>) => {
+      const merged = applyProfileToSource(sourceValues, shared);
+      onApplySource(merged);
+    },
+    [onApplySource, sourceValues],
+  );
+
+  const handleApplySelected = () => {
+    const profile = profiles.find((entry) => entry.id === selectedProfileId);
+    if (!profile) return;
+    applySharedSource(profile.source);
+  };
+
+  const handleSaveProfile = async (label: string) => {
+    const profile = createSourceProfile(sourceValues, label, profiles);
+    const next = await upsertGlobalSourceProfile(profile);
+    setProfiles(next);
+    setSelectedProfileId(profile.id);
+    setSaveOpen(false);
+  };
+
+  const openImportDialog = async () => {
+    if (!rootPath) return;
+    setImportOpen(true);
+    setImportLoading(true);
+    try {
+      const entries = await scanProjectSourceProfiles(rootPath, catalogId);
+      setImportEntries(entries);
+    } catch {
+      setImportEntries([]);
+    } finally {
+      setImportLoading(false);
+    }
+  };
+
+  const handleImportApply = (entry: DedupedProjectSource) => {
+    applySharedSource(entry.source);
+    setImportOpen(false);
+  };
+
+  const handleImportAddToLibrary = async (entry: DedupedProjectSource) => {
+    const profile = createSourceProfile(entry.source, entry.label, profiles);
+    const next = await upsertGlobalSourceProfile(profile);
+    setProfiles(next);
+    setSelectedProfileId(profile.id);
+  };
+
+  if (!isDesktop()) return null;
+
+  return (
+    <>
+      <Stack spacing={1}>
+        <TextField
+          select
+          fullWidth
+          disabled={disabled || profiles.length === 0}
+          label={t('LWC.desktop.file_metadata.source_profile')}
+          size="small"
+          value={selectedProfileId}
+          onChange={(event) => setSelectedProfileId(event.target.value)}
+          SelectProps={{ displayEmpty: true }}
+        >
+          <MenuItem value="">
+            <em>{t('LWC.desktop.file_metadata.profile_none')}</em>
+          </MenuItem>
+          {profiles.map((profile) => (
+            <MenuItem key={profile.id} value={profile.id}>
+              {profile.label}
+            </MenuItem>
+          ))}
+        </TextField>
+        <Stack direction="row" flexWrap="wrap" gap={0.5}>
+          <Button
+            disabled={disabled || !selectedProfileId}
+            onClick={handleApplySelected}
+            size="small"
+            variant="contained"
+          >
+            {t('LWC.desktop.file_metadata.profile_apply')}
+          </Button>
+          <Button disabled={disabled} onClick={() => setSaveOpen(true)} size="small" variant="outlined">
+            {t('LWC.desktop.file_metadata.profile_save_as')}
+          </Button>
+          <Button
+            disabled={disabled || !rootPath}
+            onClick={() => void openImportDialog()}
+            size="small"
+            variant="outlined"
+          >
+            {t('LWC.desktop.file_metadata.import_from_project')}
+          </Button>
+        </Stack>
+      </Stack>
+
+      <SourceProfileSaveDialog
+        defaultLabel={profileLabelFromSource(toSharedSource(sourceValues))}
+        onClose={() => setSaveOpen(false)}
+        onSave={(label) => void handleSaveProfile(label)}
+        open={saveOpen}
+      />
+
+      <SourceProfileImportDialog
+        entries={importEntries}
+        loading={importLoading}
+        onAddToLibrary={(entry) => void handleImportAddToLibrary(entry)}
+        onApply={handleImportApply}
+        onClose={() => setImportOpen(false)}
+        open={importOpen}
+      />
+    </>
+  );
+};
+
 export const FileMetadataPanel = () => {
   const { t } = useTranslation();
   const { activeTabPath, config, openTabs, rootPath } = useAppState().project;
@@ -324,6 +488,16 @@ export const FileMetadataPanel = () => {
     debounceRef.current = setTimeout(() => commitSourceChanges(next), 300);
   };
 
+  const applySourceImmediately = useCallback(
+    (next: SourceDescription) => {
+      if (debounceRef.current) clearTimeout(debounceRef.current);
+      sourceValuesRef.current = next;
+      setSourceValues(next);
+      commitSourceChanges(next);
+    },
+    [commitSourceChanges],
+  );
+
   useEffect(
     () => () => {
       if (debounceRef.current) clearTimeout(debounceRef.current);
@@ -365,13 +539,22 @@ export const FileMetadataPanel = () => {
       ]}
     >
       <Stack spacing={2}>
-        <Typography variant="subtitle2">File metadata</Typography>
+        <Typography variant="subtitle2">{t('LWC.desktop.file_metadata.panel_title')}</Typography>
         {structured ? (
-          <TeiSourceFields
-            disabled={readonly}
-            onChange={handleSourceChange}
-            value={sourceValues}
-          />
+          <>
+            <SourceProfileControls
+              catalogId={catalogId}
+              disabled={readonly}
+              onApplySource={applySourceImmediately}
+              rootPath={rootPath}
+              sourceValues={sourceValues}
+            />
+            <TeiSourceFields
+              disabled={readonly}
+              onChange={handleSourceChange}
+              value={sourceValues}
+            />
+          </>
         ) : (
           metadataFields.map((field) => (
             <TextField

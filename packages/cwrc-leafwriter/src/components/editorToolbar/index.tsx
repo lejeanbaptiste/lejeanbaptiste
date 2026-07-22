@@ -5,6 +5,7 @@ import { useTranslation } from 'react-i18next';
 import { useCalendarWorkflow } from '../../autoTagging';
 import type { IconLeafWriter } from '../../icons';
 import { useActions, useAppState } from '../../overmind';
+import type { ChoiceDisplayMode } from '../../overmind/editor/state';
 import { EntityType } from '../../types';
 import { Button } from './Button';
 import { IconButton } from './IconButton';
@@ -16,6 +17,18 @@ type ItemGroup = 'action' | 'ui' | 'panel' | 'general';
 const isDesktopApp = () =>
   typeof window !== 'undefined' &&
   !!(window as Window & { electronAPI?: unknown }).electronAPI;
+
+const CHOICE_DISPLAY_MODE_ICON: Record<ChoiceDisplayMode, IconLeafWriter> = {
+  original: 'history',
+  corrected: 'autoFixHigh',
+  both: 'layers',
+};
+
+const CHOICE_DISPLAY_MODE_LABEL: Record<ChoiceDisplayMode, string> = {
+  original: 'Original',
+  corrected: 'Corrected',
+  both: 'Both',
+};
 
 export interface Item {
   disabled?: boolean;
@@ -37,10 +50,10 @@ export interface MenuItem extends Item {
 export const EditorToolbar = () => {
   const { t } = useTranslation();
   const { schemaId } = useAppState().document;
-  const { isReadonly, showTags, textLocked } = useAppState().editor;
+  const { choiceDisplayMode, isReadonly, showBreaks, showTags, textLocked } = useAppState().editor;
   // const { fullscreen } = useAppState().ui;
 
-  const { toggleShowTags, toggleTextLocked } = useActions().editor;
+  const { cycleChoiceDisplayMode, toggleShowBreaks, toggleShowTags, toggleTextLocked } = useActions().editor;
   const { openDialog, showContextMenu } = useActions().ui;
   const { calendarOffered } = useCalendarWorkflow();
 
@@ -57,7 +70,7 @@ export const EditorToolbar = () => {
     [openDialog],
   );
 
-  const { entity, spacing } = useTheme();
+  const { entity } = useTheme();
 
   const container = useRef<HTMLDivElement>(null);
 
@@ -208,7 +221,41 @@ export const EditorToolbar = () => {
       type: 'iconButton',
     },
     { group: 'action', type: 'divider', hide: hideEntityShortcutButtons },
+    {
+      group: 'action',
+      disabled: !isSupported('correction'),
+      hide: isReadonly,
+      icon: 'findReplace',
+      onClick: () => window.writer.tagger.addQuickCorrectionDialog(),
+      title: t('LW.editorToolbar.Correction'),
+      tooltip: t('LW.editorToolbar.Correction tooltip'),
+      type: 'iconButton',
+    },
+    {
+      group: 'action',
+      disabled: !isSupported('correction'),
+      hide: isReadonly,
+      icon: CHOICE_DISPLAY_MODE_ICON[choiceDisplayMode],
+      onClick: () => cycleChoiceDisplayMode(),
+      title: t(`LW.editorToolbar.Correction Display: ${CHOICE_DISPLAY_MODE_LABEL[choiceDisplayMode]}`),
+      tooltip: t('LW.editorToolbar.Correction Display tooltip'),
+      type: 'iconButton',
+    },
     { group: 'action', type: 'divider', hide: isReadonly },
+    {
+      group: 'ui',
+      hide: isReadonly,
+      icon: showBreaks ? 'showBreaksOn' : 'showBreaksOff',
+      onClick: () => toggleShowBreaks(),
+      selected: showBreaks,
+      title: showBreaks
+        ? t('LW.editorToolbar.Hide Breaks')
+        : t('LW.editorToolbar.Show Breaks'),
+      tooltip: showBreaks
+        ? t('LW.editorToolbar.Hide Breaks tooltip')
+        : t('LW.editorToolbar.Show Breaks tooltip'),
+      type: 'toggle',
+    },
     {
       group: 'ui',
       icon: showTags ? 'showTagsOn' : 'showTagsOff',
@@ -297,7 +344,16 @@ export const EditorToolbar = () => {
       iconButton: <IconButton {...(item as MenuItem)} />,
       toggle: <Toggle {...(item as MenuItem)} />,
       divider: (
-        <Divider orientation="vertical" variant="middle" flexItem sx={{ width: spacing(2) }} />
+        <Divider
+          orientation="vertical"
+          flexItem
+          sx={{
+            alignSelf: 'center',
+            height: 18,
+            mx: 0.25,
+            borderColor: 'divider',
+          }}
+        />
       ),
     };
     return <>{BUTTON_TYPES[item.type]}</>;
@@ -330,7 +386,7 @@ export const EditorToolbar = () => {
   );
 
   if (isDesktopApp()) {
-    const flatItems = items.filter((item) => !item.hide && item.type !== 'divider');
+    const flatItems = items.filter((item) => !item.hide);
     return (
       <Stack
         ref={container}
@@ -347,7 +403,7 @@ export const EditorToolbar = () => {
           {flatItems.map((item, index) => (
             <Box
               layout
-              key={'title' in item ? item.title : index}
+              key={'title' in item ? item.title : `toolbar-${index}`}
               component={motion.div}
               initial={{ scale: 0, opacity: 0 }}
               exit={{ scale: 0, opacity: 0 }}

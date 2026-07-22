@@ -59,7 +59,7 @@ describe('seedSuggestions + bucketSeeds', () => {
 });
 
 describe('autoLinkUnique', () => {
-  it('mints entities, tags mentions, and stamps key + resp', async () => {
+  it('mints entities and tags mentions with a key', async () => {
     const doc = parse(TEI);
     const entitiesDoc = parseEntities(createEntitiesScaffold());
     const candidates = [
@@ -73,7 +73,7 @@ describe('autoLinkUnique', () => {
     expect(result.entitiesCreated).toBe(2);
 
     const xml = new XMLSerializer().serializeToString(doc);
-    expect(xml).toMatch(/<placeName key="place-000001" resp="#ljb-autotag">洛陽<\/placeName>/);
+    expect(xml).toMatch(/<placeName key="place-000001">洛陽<\/placeName>/);
     // the minted entity carries the authority idno
     const person = findEntity(entitiesDoc, 'person-000001')!;
     expect(person.getElementsByTagName('idno')[0]?.textContent).toBe('p1');

@@ -27,3 +27,5 @@ export * from './schemaSetupSession';
 export * from './projectMetadataSession';
 export * from './tagging/TagCommandProvider';
 export * from './tagging/desktopTaggingBridge';
+export * from './correction/CorrectionProvider';
+export * from './correction/desktopCorrectionBridge';

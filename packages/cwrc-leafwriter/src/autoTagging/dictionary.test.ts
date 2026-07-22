@@ -149,4 +149,20 @@ describe('dictionaryTag', () => {
     // Not ambiguous anymore — persName was ruled out by the ancestor check.
     expect(suggestions[0]!.rationale).not.toContain('ambiguous');
   });
+
+  it('skips placeName when the span is already inside placeName', () => {
+    const doc = parse(
+      '<TEI xmlns="http://www.tei-c.org/ns/1.0"><text><body><p><placeName>洛陽</placeName>城。</p></body></text></TEI>',
+    );
+    const suggestions = dictionaryTag(doc, [{ string: '洛陽', tag: 'placeName' }], 'ignore');
+    expect(suggestions).toHaveLength(0);
+  });
+
+  it('skips placeName when the span is already inside geogName', () => {
+    const doc = parse(
+      '<TEI xmlns="http://www.tei-c.org/ns/1.0"><text><body><p><geogName>洛陽</geogName>城。</p></body></text></TEI>',
+    );
+    const suggestions = dictionaryTag(doc, [{ string: '洛陽', tag: 'placeName' }], 'ignore');
+    expect(suggestions).toHaveLength(0);
+  });
 });

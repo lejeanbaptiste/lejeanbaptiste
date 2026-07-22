@@ -1,25 +1,278 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 762 762">
-  <defs>
-    <linearGradient id="mangaPink" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#7d175f"/><stop offset=".48" stop-color="#d934a5"/><stop offset="1" stop-color="#ff9ddd"/></linearGradient>
-    <radialGradient id="mangaGlow" cx="50%" cy="76%" r="58%"><stop offset="0" stop-color="#ffd6f2" stop-opacity=".95"/><stop offset="1" stop-color="#ff7ccc" stop-opacity="0"/></radialGradient>
-    <clipPath id="mangaLeftClip"><path d="M174 365c18-33 54-49 91-40 20 5 36 16 50 33-25 30-56 44-88 39-23-3-41-14-53-32Z"/></clipPath>
-    <clipPath id="mangaRightClip"><path d="M365 354c27-42 77-57 124-40 24 8 44 24 61 44-31 37-70 55-111 50-34-4-58-22-74-54Z"/></clipPath>
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<svg
+   viewBox="0 0 762 762"
+   version="1.1"
+   id="svg23"
+   sodipodi:docname="variant27.svg"
+   inkscape:version="1.4.4 (dcaf3e7, 2026-05-05)"
+   xmlns:inkscape="http://www.inkscape.org/namespaces/inkscape"
+   xmlns:sodipodi="http://sodipodi.sourceforge.net/DTD/sodipodi-0.dtd"
+   xmlns:xlink="http://www.w3.org/1999/xlink"
+   xmlns="http://www.w3.org/2000/svg"
+   xmlns:svg="http://www.w3.org/2000/svg">
+  <sodipodi:namedview
+     id="namedview23"
+     pagecolor="#ffffff"
+     bordercolor="#000000"
+     borderopacity="0.25"
+     inkscape:showpageshadow="2"
+     inkscape:pageopacity="0.0"
+     inkscape:pagecheckerboard="0"
+     inkscape:deskcolor="#d1d1d1"
+     inkscape:zoom="1.1456693"
+     inkscape:cx="267.96564"
+     inkscape:cy="489.23368"
+     inkscape:window-width="1830"
+     inkscape:window-height="1022"
+     inkscape:window-x="0"
+     inkscape:window-y="30"
+     inkscape:window-maximized="0"
+     inkscape:current-layer="svg23" />
+  <defs
+     id="defs6">
+    <linearGradient
+       id="mangaPink"
+       x1="0"
+       y1="0"
+       x2="0"
+       y2="1">
+      <stop
+         offset="0"
+         stop-color="#7d175f"
+         id="stop1" />
+      <stop
+         offset=".48"
+         stop-color="#d934a5"
+         id="stop2" />
+      <stop
+         offset="1"
+         stop-color="#ff9ddd"
+         id="stop3" />
+    </linearGradient>
+    <radialGradient
+       id="mangaGlow"
+       cx="50%"
+       cy="76%"
+       r="58%">
+      <stop
+         offset="0"
+         stop-color="#ffd6f2"
+         stop-opacity=".95"
+         id="stop4" />
+      <stop
+         offset="1"
+         stop-color="#ff7ccc"
+         stop-opacity="0"
+         id="stop5" />
+    </radialGradient>
+    <clipPath
+       id="mangaLeftClip">
+      <path
+         d="M174 365c18-33 54-49 91-40 20 5 36 16 50 33-25 30-56 44-88 39-23-3-41-14-53-32Z"
+         id="path5" />
+    </clipPath>
+    <clipPath
+       id="mangaRightClip">
+      <path
+         d="M365 354c27-42 77-57 124-40 24 8 44 24 61 44-31 37-70 55-111 50-34-4-58-22-74-54Z"
+         id="path6" />
+    </clipPath>
+    <linearGradient
+       inkscape:collect="always"
+       xlink:href="#mangaPink"
+       id="linearGradient23"
+       x1="418.07379"
+       y1="268.8401"
+       x2="418.07379"
+       y2="376.37614"
+       gradientTransform="scale(0.91132238,1.0973065)"
+       gradientUnits="userSpaceOnUse" />
+    <radialGradient
+       inkscape:collect="always"
+       xlink:href="#mangaGlow"
+       id="radialGradient23"
+       cx="471.84181"
+       cy="350.56749"
+       r="62.370902"
+       gradientTransform="scale(0.91132238,1.0973065)"
+       fx="471.84181"
+       fy="350.56749"
+       gradientUnits="userSpaceOnUse" />
+    <linearGradient
+       inkscape:collect="always"
+       xlink:href="#mangaPink"
+       id="linearGradient24"
+       x1="207.45787"
+       y1="280.33161"
+       x2="207.45787"
+       y2="366.86484"
+       gradientTransform="scale(0.90138782,1.1094004)"
+       gradientUnits="userSpaceOnUse" />
+    <radialGradient
+       inkscape:collect="always"
+       xlink:href="#mangaGlow"
+       id="radialGradient24"
+       cx="250.72449"
+       cy="346.09687"
+       r="50.189272"
+       gradientTransform="scale(0.90138782,1.1094004)"
+       fx="250.72449"
+       fy="346.09687"
+       gradientUnits="userSpaceOnUse" />
   </defs>
-
   <!-- Almond-shaped manga eyes in the collection's screen-left three-quarter view. -->
-  <path d="M159 366c24-49 75-69 124-52 24 8 43 23 58 43-31 39-72 59-115 53-31-4-54-20-67-44Z" fill="#000"/>
-  <path d="M350 354c34-61 104-81 166-53 25 11 45 30 61 52-37 49-86 72-139 67-45-5-76-29-88-66Z" fill="#000"/>
-  <path d="M174 365c18-33 54-49 91-40 20 5 36 16 50 33-25 30-56 44-88 39-23-3-41-14-53-32Z" fill="#fff"/>
-  <path d="M365 354c27-42 77-57 124-40 24 8 44 24 61 44-31 37-70 55-111 50-34-4-58-22-74-54Z" fill="#fff"/>
-
+  <path
+     d="m 158.69127,419.11236 c 19.27751,-39.35826 60.24223,-55.42285 99.60048,-41.76795 19.27752,6.42584 34.53889,18.47429 46.58733,34.53888 -24.90012,31.32597 -57.83254,47.39056 -92.37142,42.57118 -24.90012,-3.21292 -43.3744,-16.0646 -53.81639,-35.34211 z"
+     fill="#000000"
+     id="path7"
+     style="stroke-width:0.803229" />
+  <path
+     d="m 312.10815,409.47361 c 27.30982,-48.99702 83.5359,-65.06162 133.33614,-42.57118 20.08075,8.83553 36.14534,24.09689 48.99702,41.76794 -29.7195,39.35826 -69.07776,57.83255 -111.64893,53.8164 -36.14534,-4.01615 -61.04547,-23.29366 -70.68423,-53.01316 z"
+     fill="#000000"
+     id="path8"
+     style="stroke-width:0.803229" />
+  <path
+     d="m 170.73971,418.30913 c 14.45814,-26.50659 43.37441,-39.35826 73.09391,-32.12919 16.0646,4.01615 28.91628,12.85168 40.16149,26.50659 -20.08074,24.09689 -44.98086,35.3421 -70.68422,31.32595 -18.47429,-2.40969 -32.93242,-11.24521 -42.57118,-25.70335 z"
+     fill="#ffffff"
+     id="path9"
+     style="stroke-width:0.803229" />
+  <path
+     d="m 324.1566,409.47361 c 21.68721,-33.73565 61.8487,-45.7841 99.60049,-32.1292 19.27752,6.42584 35.34211,19.27752 48.99702,35.34212 -24.90013,29.71949 -56.22608,44.17763 -89.15851,40.16148 -27.30981,-3.21292 -46.58732,-17.67106 -59.439,-43.3744 z"
+     fill="#ffffff"
+     id="path10"
+     style="stroke-width:0.803229" />
   <!-- Pink jewel irises, offset toward screen-left to carry the gaze. -->
-  <g clip-path="url(#mangaLeftClip)"><ellipse cx="226" cy="359" rx="39" ry="48" fill="url(#mangaPink)"/><ellipse cx="226" cy="359" rx="39" ry="48" fill="url(#mangaGlow)"/><ellipse cx="217" cy="353" rx="20" ry="30" fill="#37122f"/><ellipse cx="213" cy="356" rx="10" ry="19" fill="#100811"/></g>
-  <g clip-path="url(#mangaRightClip)"><ellipse cx="430" cy="354" rx="49" ry="59" fill="url(#mangaPink)"/><ellipse cx="430" cy="354" rx="49" ry="59" fill="url(#mangaGlow)"/><ellipse cx="418" cy="348" rx="25" ry="36" fill="#37122f"/><ellipse cx="412" cy="351" rx="12" ry="22" fill="#100811"/></g>
-
+  <g
+     clip-path="url(#mangaLeftClip)"
+     id="g13"
+     style="display:inline"
+     transform="matrix(0.80322977,0,0,0.80322977,30.977728,125.13027)">
+    <ellipse
+       cx="226"
+       cy="359"
+       rx="39"
+       ry="48"
+       fill="url(#mangaPink)"
+       id="ellipse10"
+       style="fill:url(#linearGradient24)" />
+    <ellipse
+       cx="226"
+       cy="359"
+       rx="39"
+       ry="48"
+       fill="url(#mangaGlow)"
+       id="ellipse11"
+       style="fill:url(#radialGradient24)" />
+    <ellipse
+       cx="217"
+       cy="353"
+       rx="20"
+       ry="30"
+       fill="#37122f"
+       id="ellipse12" />
+    <ellipse
+       cx="213"
+       cy="356"
+       rx="10"
+       ry="19"
+       fill="#100811"
+       id="ellipse13" />
+  </g>
+  <g
+     clip-path="url(#mangaRightClip)"
+     id="g17"
+     style="display:inline"
+     transform="matrix(0.80322977,0,0,0.80322977,30.977728,125.13027)">
+    <ellipse
+       cx="430"
+       cy="354"
+       rx="49"
+       ry="59"
+       fill="url(#mangaPink)"
+       id="ellipse14"
+       style="fill:url(#linearGradient23)" />
+    <ellipse
+       cx="430"
+       cy="354"
+       rx="49"
+       ry="59"
+       fill="url(#mangaGlow)"
+       id="ellipse15"
+       style="fill:url(#radialGradient23)" />
+    <ellipse
+       cx="418"
+       cy="348"
+       rx="25"
+       ry="36"
+       fill="#37122f"
+       id="ellipse16" />
+    <ellipse
+       cx="412"
+       cy="351"
+       rx="12"
+       ry="22"
+       fill="#100811"
+       id="ellipse17" />
+  </g>
   <!-- Glossy manga highlights and small lower reflections. -->
-  <ellipse cx="212" cy="338" rx="12" ry="15" fill="#fff"/><ellipse cx="407" cy="328" rx="16" ry="19" fill="#fff"/><circle cx="237" cy="348" r="7" fill="#fff"/><circle cx="439" cy="342" r="9" fill="#fff"/><circle cx="219" cy="379" r="5" fill="#ffd9f3"/><circle cx="416" cy="382" r="7" fill="#ffd9f3"/>
-
+  <ellipse
+     cx="201.26244"
+     cy="396.62192"
+     rx="9.6387577"
+     ry="12.048447"
+     fill="#ffffff"
+     id="ellipse18"
+     style="stroke-width:0.803229" />
+  <ellipse
+     cx="357.89224"
+     cy="388.5896"
+     rx="12.851676"
+     ry="15.261366"
+     fill="#ffffff"
+     id="ellipse19"
+     style="stroke-width:0.803229" />
+  <circle
+     cx="221.34319"
+     cy="404.65421"
+     r="5.6226082"
+     fill="#ffffff"
+     id="circle19"
+     style="stroke-width:0.803229" />
+  <circle
+     cx="383.59561"
+     cy="399.83481"
+     r="7.2290683"
+     fill="#ffffff"
+     id="circle20"
+     style="stroke-width:0.803229" />
+  <circle
+     cx="206.88504"
+     cy="429.55432"
+     r="4.016149"
+     fill="#ffd9f3"
+     id="circle21"
+     style="stroke-width:0.803229" />
+  <circle
+     cx="365.12131"
+     cy="431.96402"
+     r="5.6226082"
+     fill="#ffd9f3"
+     id="circle22"
+     style="stroke-width:0.803229" />
   <!-- Strong upper eyeliner and tapered outward lashes, kept separate from eyebrows. -->
-  <path d="M160 366c27-50 78-68 125-51 23 8 41 22 56 42M169 354l-25-14m39-3-23-25m42 12-13-31m37 23-5-33M350 354c36-61 105-79 166-51 25 11 45 29 61 50M557 340l30-18m-47 4 27-29m-48 18 17-38m-42 28 8-40" fill="none" stroke="#000" stroke-width="8" stroke-linecap="round" stroke-linejoin="round"/>
-  <path d="M188 391l-12 11m37-2-7 14m250 0 8 16m22-24 14 13" fill="none" stroke="#000" stroke-width="5" stroke-linecap="round"/>
+  <path
+     d="m 159.4945,419.11236 c 21.6872,-40.16149 62.65192,-54.61963 100.40372,-40.96472 18.47428,6.42584 32.93242,17.67106 44.98086,33.73565 m -138.15552,-2.40968 -20.08074,-11.24523 m 31.32596,-2.40968 -18.47428,-20.08074 m 33.73565,9.63874 -10.44199,-24.90011 m 29.7195,18.47428 -4.01615,-26.50658 m 103.61664,57.02932 c 28.91627,-48.99702 84.33913,-63.45516 133.33614,-40.96473 20.08075,8.83553 36.14534,23.29366 48.99702,40.16149 m -16.0646,-10.44199 24.0969,-14.45813 m -37.7518,3.21292 21.68721,-23.29366 m -38.55504,14.45813 13.65491,-30.52273 m -33.73565,22.49043 6.42584,-32.12919"
+     fill="none"
+     stroke="#000000"
+     stroke-width="6.42584"
+     stroke-linecap="round"
+     stroke-linejoin="round"
+     id="path22" />
+  <path
+     d="m 181.98493,439.19311 -9.63875,8.83552 m 29.7195,-1.60645 -5.62261,11.24521 m 200.80744,0 6.42584,12.85168 m 17.67105,-19.27752 11.24522,10.44199"
+     fill="none"
+     stroke="#000000"
+     stroke-width="4.01615"
+     stroke-linecap="round"
+     id="path23" />
 </svg>

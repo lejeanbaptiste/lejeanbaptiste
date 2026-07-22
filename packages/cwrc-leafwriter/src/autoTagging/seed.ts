@@ -225,7 +225,7 @@ function resolveEntity(
 /**
  * Auto-link a set of unique-hit matches: mint/find the entity for each,
  * apply the tags via the existing apply engine (one snapshot / one undo),
- * then stamp `key` + `resp` onto the created elements. Mutates `doc` and
+ * then stamp `key` onto the created elements. Mutates `doc` and
  * `entitiesDoc`; the caller persists both.
  */
 export async function autoLinkUnique(
@@ -256,7 +256,6 @@ export async function autoLinkUnique(
     const resolved = byId.get(result.suggestion.id);
     if (!resolved) continue;
     result.element.setAttribute('key', resolved.entityId);
-    result.element.setAttribute('resp', LJB_AUTOTAG_RESP);
     links.push({
       suggestion: result.suggestion,
       entityId: resolved.entityId,

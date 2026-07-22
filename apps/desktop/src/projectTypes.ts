@@ -19,6 +19,15 @@ export interface ProjectFileConfig {
   name: string;
   schema?: ProjectSchemaConfig;
   metadata?: string;
+  /**
+   * Stable identity for this project, independent of its filesystem path.
+   * Generated once and persisted here (not derived from rootPath) so the
+   * same project checked out at different absolute paths - e.g. Mac vs
+   * Windows checkouts of the same repo - is recognized as one project by
+   * the achievements engine instead of accumulating two separate,
+   * double-counted entries.
+   */
+  projectId?: string;
   /** Central (default) or project-local entity database. */
   entityStore?: 'central' | 'project';
   /** UUID fingerprint of the linked entities.xml database file. */

@@ -61,6 +61,30 @@ describe('documentImport', () => {
     expect(inspectImportedXml(xml)).toEqual({ ok: true });
   });
 
+  test('converts a sequential page number into a <pb/> milestone between paragraphs', () => {
+    const xml = buildImportedDocumentXml({
+      config,
+      format: 'txt',
+      sourcePath: '/tmp/paginated.txt',
+      text: 'First paragraph ends here.\n\n12\n\nSecond paragraph starts here.',
+    });
+
+    expect(xml).toContain('<p>First paragraph ends here.</p>');
+    expect(xml).toContain('<pb n="12"/>');
+    expect(xml).toContain('<p>Second paragraph starts here.</p>');
+  });
+
+  test('heals a paragraph split across a page boundary with no preceding punctuation', () => {
+    const xml = buildImportedDocumentXml({
+      config,
+      format: 'txt',
+      sourcePath: '/tmp/paginated-heal.txt',
+      text: 'This sentence continues\n12\nacross the page break.',
+    });
+
+    expect(xml).toContain('<p>This sentence continues <pb n="12"/> across the page break.</p>');
+  });
+
   test('reports parser diagnostics for malformed generated XML', () => {
     const inspection = inspectImportedXml('<root><broken></root>');
 

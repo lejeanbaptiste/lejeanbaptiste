@@ -360,6 +360,14 @@ span[data-mce-bogus] {
   display: none;
 }
 
+/* Reading view: hide line/page breaks so text interrupted by <lb>/<pb> flows together. */
+body.hideBreaks *[_tag='lb'],
+body.hideBreaks *[_tag='pb'] {
+  display: none !important;
+  margin: 0 !important;
+  height: 0 !important;
+}
+
 *[_tag='pb'] {
   display: flex !important;
   position: relative !important;

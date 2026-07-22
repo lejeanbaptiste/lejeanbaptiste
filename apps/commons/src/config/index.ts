@@ -8,5 +8,4 @@ export const supportedStorageProviders = ['github'];
 
 export const RECENT_DOCUMENTS_LIMIT = 8;
 
-export const AUTOSAVE_TIMEOUT = 60_000;
-export const AUTOSAVE_TIMEOUT_RETRY = 10_000;
+export const SAVE_CONFLICT_RETRY_DELAY = 10_000;

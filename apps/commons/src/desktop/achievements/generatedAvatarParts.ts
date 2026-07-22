@@ -12,7 +12,7 @@ export const MOUTH_VARIANTS: readonly string[] = ["variant01","variant02","varia
 
 export const GLASSES_VARIANTS: readonly string[] = ["variant01","variant02","variant03","variant04","variant05","variant06"];
 
-export const HAIR_VARIANTS: readonly string[] = ["long01","long02","long03","long04","long05","long06","long07","long08","long09","long10","long11","long12","long13","long14","long15","long16","long17","long18","long19","long20","long21","long22","long23","long24","long25","long26","long27","long28","short01","short02","short03","short04","short05","short06","short07","short08","short09","short10","short11","short12","short13","short14","short15","short16","short17","short18","short19"];
+export const HAIR_VARIANTS: readonly string[] = ["long01","long02","long03","long04","long05","long06","long07","long08","long09","long10","long11","long12","long13","long14","long15","long16","long17","long18","long19","long20","long21","long22","long23","long24","long25","long26","long27","short01","short02","short03","short04","short05","short06","short07","short08","short09","short10","short11","short12","short13","short14","short15","short16","short17","short18","short19"];
 
 export const FEATURES_VARIANTS: readonly string[] = ["birthmark","blush","freckles","mustache"];
 

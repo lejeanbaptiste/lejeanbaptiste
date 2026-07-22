@@ -40,23 +40,11 @@ import {
   seedSuggestionsFromIndex,
   suggestionsFromSeedMatches,
 } from './seed';
+import { dedupeSuggestionsByLocation } from './suggestionFilters';
 import type { Suggestion, WhitespacePolicy } from './types';
 
 /** Review panel cap in the app; harness runs should omit this. */
 export const MAX_AUTHORITY_SUGGESTIONS = 2000;
-
-/** Deduplicate suggestions by their document location (tag, surface, xpath, offset). */
-function dedupeSuggestionsByLocation(suggestions: Suggestion[]): Suggestion[] {
-  const seen = new Map<string, Suggestion>();
-  for (const suggestion of suggestions) {
-    const anchor = suggestion.anchor;
-    const key = `${suggestion.tag}\t${anchor.surface}\t${anchor.xpath}\t${anchor.offset}`;
-    if (!seen.has(key)) {
-      seen.set(key, suggestion);
-    }
-  }
-  return [...seen.values()];
-}
 
 export interface AuthorityTagBombOptions {
   dateFilter?: DateRangeFilter;

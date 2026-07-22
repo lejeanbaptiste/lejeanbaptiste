@@ -1,7 +1,10 @@
 import ForumIcon from '@mui/icons-material/Forum';
 import AccountTreeRoundedIcon from '@mui/icons-material/AccountTreeRounded';
 import AddCircleOutlineIcon from '@mui/icons-material/AddCircleOutline';
+import ViewStreamOutlinedIcon from '@mui/icons-material/ViewStreamOutlined';
+import ViewWeekOutlinedIcon from '@mui/icons-material/ViewWeekOutlined';
 import ArrowDownwardIcon from '@mui/icons-material/ArrowDownward';
+import AutoFixHighIcon from '@mui/icons-material/AutoFixHigh';
 import ArrowForwardIosIcon from '@mui/icons-material/ArrowForwardIos';
 import BlockIcon from '@mui/icons-material/Block';
 import CallSplitIcon from '@mui/icons-material/CallSplit';
@@ -15,6 +18,7 @@ import ContentCopyIcon from '@mui/icons-material/ContentCopy';
 import ContentPasteIcon from '@mui/icons-material/ContentPaste';
 import EditIcon from '@mui/icons-material/Edit';
 import EventIcon from '@mui/icons-material/Event';
+import FindReplaceIcon from '@mui/icons-material/FindReplace';
 import FingerprintIcon from '@mui/icons-material/Fingerprint';
 import FormatListBulletedIcon from '@mui/icons-material/FormatListBulleted';
 import FormatQuoteIcon from '@mui/icons-material/FormatQuote';
@@ -23,8 +27,10 @@ import FullscreenExitRoundedIcon from '@mui/icons-material/FullscreenExitRounded
 import FullscreenRoundedIcon from '@mui/icons-material/FullscreenRounded';
 import GitHubIcon from '@mui/icons-material/GitHub';
 import HelpCenterIcon from '@mui/icons-material/HelpCenter';
+import HistoryIcon from '@mui/icons-material/History';
 import LabelImportantRoundedIcon from '@mui/icons-material/LabelImportantRounded';
 import LabelRoundedIcon from '@mui/icons-material/LabelRounded';
+import LayersIcon from '@mui/icons-material/Layers';
 import LinkRoundedIcon from '@mui/icons-material/LinkRounded';
 import LockIcon from '@mui/icons-material/Lock';
 import LockOpenIcon from '@mui/icons-material/LockOpen';
@@ -99,6 +105,7 @@ const icons = {
   add: AddCircleOutlineIcon,
   arrowDownwardIcon: ArrowDownwardIcon,
   arrowForwardIosIcon: ArrowForwardIosIcon,
+  autoFixHigh: AutoFixHighIcon,
   block: BlockIcon,
   BookIcon: BookIcon,
   BookOutlinedIcon: BookOutlinedIcon,
@@ -132,6 +139,7 @@ const icons = {
   entities: StreamIcon,
   entitiesTag: StyleOutlinedIcon,
   EventIcon: EventIcon,
+  findReplace: FindReplaceIcon,
   fingerprint: FingerprintIcon,
   FormatQuoteIcon: FormatQuoteIcon,
   FormatQuoteOutlinedIcon: FormatQuoteOutlinedIcon,
@@ -142,6 +150,7 @@ const icons = {
   github: GitHubIcon,
   gitlab: GitlabIcon,
   HelpCenterIcon: HelpCenterIcon,
+  history: HistoryIcon,
   imageViewer: PhotoLibraryRoundedIcon,
   insertTag: TagPlusIcon,
   invalid: WarningAmberRoundedIcon,
@@ -149,6 +158,7 @@ const icons = {
   LabelImportantRoundedIcon: LabelImportantRoundedIcon,
   LabelRoundedIcon: LabelRoundedIcon,
   LabelVariantOutline: LabelVariantOutlineIcon,
+  layers: LayersIcon,
   link: LinkRoundedIcon,
   LinkRoundedIcon: LinkRoundedIcon,
   merge: MergeRoundedIcon,
@@ -181,6 +191,8 @@ const icons = {
   shortText: ShortTextIcon,
   showTagsOff: LabelVariantOutlineIcon,
   showTagsOn: LabelImportantRoundedIcon,
+  showBreaksOff: ViewStreamOutlinedIcon,
+  showBreaksOn: ViewWeekOutlinedIcon,
   ShuffleVariant: ShuffleVariantIcon,
   sortAlphabetically: OrderAlphabeticalAscendingIcon,
   sortLinear: ArrowDownwardIcon,

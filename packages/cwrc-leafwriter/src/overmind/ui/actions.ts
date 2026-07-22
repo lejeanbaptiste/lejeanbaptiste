@@ -1,6 +1,7 @@
 // import i18n from 'i18next';
 import { getDefaultStore } from 'jotai';
 import { nanoid } from 'nanoid';
+import type { OptionsObject, VariantType } from 'notistack';
 import { entityLookupDialogAtom } from '../../jotai/entity-lookup';
 import { Context } from '../';
 import { db } from '../../db';
@@ -203,13 +204,46 @@ export const setDialogDisplayId = (
   ];
 };
 
+const SNACKBAR_AUTO_HIDE_MS: Partial<Record<VariantType, number>> = {
+  success: 4000,
+  info: 5000,
+  warning: 7000,
+  error: 8000,
+  default: 5000,
+};
+
+const mergeSnackbarOptions = (options: OptionsObject = {}): OptionsObject => {
+  const variant = (options.variant ?? 'default') as VariantType;
+  const autoHideDuration =
+    options.autoHideDuration ?? SNACKBAR_AUTO_HIDE_MS[variant] ?? SNACKBAR_AUTO_HIDE_MS.default;
+
+  const merged: OptionsObject = {
+    persist: false,
+    autoHideDuration,
+    ...options,
+  };
+
+  if (merged.persist) {
+    delete merged.autoHideDuration;
+  }
+
+  return merged;
+};
+
 export const notifyViaSnackbar = ({ state }: Context, notification: NotificationProps | string) => {
   if (typeof notification === 'string') notification = { message: notification };
 
   let key = notification.options?.key;
   if (!key) key = new Date().getTime() + Math.random();
 
-  state.ui.notifications = [...state.ui.notifications, { ...notification, key }];
+  state.ui.notifications = [
+    ...state.ui.notifications,
+    {
+      ...notification,
+      key,
+      options: mergeSnackbarOptions(notification.options),
+    },
+  ];
 };
 
 export const closeNotificationSnackbar = ({ state }: Context, key?: string | number) => {

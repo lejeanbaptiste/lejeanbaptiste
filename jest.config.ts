@@ -104,6 +104,8 @@ const config: Config.InitialOptions = {
         '^@src/(.*)$': '<rootDir>/apps/commons/src/$1',
         '^@cwrc/leafwriter/documentExport$':
           '<rootDir>/packages/cwrc-leafwriter/src/js/conversion/documentExport.ts',
+        '^@cwrc/leafwriter/pageBreakDetection$':
+          '<rootDir>/packages/cwrc-leafwriter/src/utilities/pageBreakDetection.ts',
         '^dexie$': dexieModulePath,
       },
       resetMocks: false,

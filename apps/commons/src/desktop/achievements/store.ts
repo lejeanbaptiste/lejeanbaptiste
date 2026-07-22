@@ -113,6 +113,24 @@ export const loadAchievementsState = async (): Promise<AchievementsState> => {
   return cachedState;
 };
 
+/**
+ * Validates and sanitizes an achievements.json payload read from an
+ * arbitrary file (e.g. one picked for "load from another file"). Returns
+ * null for anything that isn't at least a parseable object, but otherwise
+ * degrades gracefully like `loadAchievementsState` - a garbled or
+ * differently-shaped file still yields a valid (if mostly empty) state
+ * rather than throwing.
+ */
+export const importAchievementsState = (raw: string): AchievementsState | null => {
+  try {
+    const parsed = JSON.parse(raw) as unknown;
+    if (!parsed || typeof parsed !== 'object') return null;
+    return sanitizeState(parsed as Partial<AchievementsState>);
+  } catch {
+    return null;
+  }
+};
+
 export const saveAchievementsState = async (state: AchievementsState): Promise<void> => {
   cachedState = state;
   try {

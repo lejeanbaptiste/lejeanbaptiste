@@ -114,6 +114,16 @@ const addAttrValueCounts = (
   }
 };
 
+const isInsideTeiHeader = (element: Element): boolean => {
+  let current: Element | null = element;
+  while (current) {
+    const name = current.localName || current.tagName;
+    if (name === 'teiHeader') return true;
+    current = current.parentElement;
+  }
+  return false;
+};
+
 export const countTagsInXml = (xml: string): Record<string, number> => {
   const counts: Record<string, number> = {};
   const parser = new DOMParser();
@@ -122,7 +132,9 @@ export const countTagsInXml = (xml: string): Record<string, number> => {
 
   const walk = (element: Element) => {
     const name = element.localName || element.tagName;
-    if (name) counts[name] = (counts[name] ?? 0) + 1;
+    if (name && !isInsideTeiHeader(element)) {
+      counts[name] = (counts[name] ?? 0) + 1;
+    }
     for (const child of element.children) {
       walk(child as Element);
     }
@@ -152,7 +164,7 @@ export const countAttrsInXml = (
 
   const walk = (element: Element) => {
     const tagName = element.localName || element.tagName;
-    if (tagName) {
+    if (tagName && !isInsideTeiHeader(element)) {
       for (const attr of Array.from(element.attributes)) {
         recordAttr(tagName, attr.name, attr.value);
       }
@@ -301,3 +313,15 @@ export const clearTagStatsCache = () => {
   cachedStats = null;
   cachedRootPath = null;
 };
+
+/** Overlay unsaved open-tab XML onto persisted stats for live UI (e.g. Tag Appearance). */
+export const previewProjectTagStats = (
+  stats: TagUsageStats,
+  rootPath: string,
+  openTabs: Array<{ content: string; filePath: string }>,
+): TagUsageStats =>
+  openTabs.reduce((merged, tab) => {
+    if (!tab.content?.trim()) return merged;
+    const relativePath = toRelativePath(rootPath, tab.filePath);
+    return mergeFileCountsIntoProject(merged, relativePath, countUsageInXml(tab.content));
+  }, stats);

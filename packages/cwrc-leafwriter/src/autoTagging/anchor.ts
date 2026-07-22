@@ -285,3 +285,55 @@ function pickByContext(index: DocIndex, anchor: Anchor, candidates: Occurrence[]
   if (second && second.score === first.score) return null;
   return first.occ;
 }
+
+interface XPathStep {
+  kind: 'element' | 'text';
+  name?: string;
+  /** 1-based sibling index; omitted `[1]` on elements is treated as 1. */
+  index: number;
+}
+
+function parseXPathStep(step: string): XPathStep | null {
+  const textMatch = /^text\(\)\[(\d+)\]$/.exec(step);
+  if (textMatch) return { kind: 'text', index: parseInt(textMatch[1]!, 10) };
+  const elementMatch = /^([^[]+)(?:\[(\d+)\])?$/.exec(step);
+  if (elementMatch) {
+    return {
+      kind: 'element',
+      name: elementMatch[1]!,
+      index: elementMatch[2] ? parseInt(elementMatch[2], 10) : 1,
+    };
+  }
+  return null;
+}
+
+/** Compare structural text-node paths in document order (not lexicographic string order). */
+export function compareXPath(a: string, b: string): number {
+  const stepsA = a.replace(/^\//, '').split('/').filter(Boolean);
+  const stepsB = b.replace(/^\//, '').split('/').filter(Boolean);
+  const depth = Math.max(stepsA.length, stepsB.length);
+  for (let i = 0; i < depth; i++) {
+    if (i >= stepsA.length) return -1;
+    if (i >= stepsB.length) return 1;
+    const stepA = parseXPathStep(stepsA[i]!);
+    const stepB = parseXPathStep(stepsB[i]!);
+    if (!stepA || !stepB) return stepsA[i]!.localeCompare(stepsB[i]!);
+    if (stepA.kind !== stepB.kind) return stepA.kind === 'element' ? -1 : 1;
+    if (stepA.kind === 'element' && stepB.kind === 'element') {
+      const nameCmp = stepA.name!.localeCompare(stepB.name!);
+      if (nameCmp !== 0) return nameCmp;
+    }
+    if (stepA.index !== stepB.index) return stepA.index - stepB.index;
+  }
+  return 0;
+}
+
+/** Order anchors by where they sit in the document: xpath, then offset within the text node. */
+export function compareAnchorsByDocumentPosition(a: Anchor, b: Anchor): number {
+  const xpathCmp = compareXPath(a.xpath, b.xpath);
+  if (xpathCmp !== 0) return xpathCmp;
+  if (a.offset !== b.offset) return a.offset - b.offset;
+  const surfaceCmp = a.surface.localeCompare(b.surface);
+  if (surfaceCmp !== 0) return surfaceCmp;
+  return a.occurrence - b.occurrence;
+}

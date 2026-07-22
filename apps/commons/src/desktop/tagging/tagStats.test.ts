@@ -5,6 +5,7 @@ import {
   getAttrValueCounts,
   getProjectAttrCounts,
   mergeFileCountsIntoProject,
+  previewProjectTagStats,
   type TagUsageStats,
 } from './tagStats';
 
@@ -15,23 +16,20 @@ const emptyStats = (): TagUsageStats => ({
 });
 
 describe('countTagsInXml', () => {
-  test('counts element names in TEI XML', () => {
+  test('counts element names in TEI XML but skips teiHeader metadata', () => {
     const xml = `<?xml version="1.0"?>
 <TEI xmlns="http://www.tei-c.org/ns/1.0">
-  <teiHeader><fileDesc><titleStmt><title/></titleStmt></fileDesc></teiHeader>
-  <text><body><p>One</p><p>Two</p><persName>Ada</persName></body></text>
+  <teiHeader><fileDesc><titleStmt><title/><publisher/></titleStmt></fileDesc></teiHeader>
+  <text><body><p>One</p><p>Two</p><persName>Ada</persName><date when="800">800</date></body></text>
 </TEI>`;
 
     expect(countTagsInXml(xml)).toEqual({
       TEI: 1,
-      teiHeader: 1,
-      fileDesc: 1,
-      titleStmt: 1,
-      title: 1,
       text: 1,
       body: 1,
       p: 2,
       persName: 1,
+      date: 1,
     });
   });
 });
@@ -93,5 +91,24 @@ describe('mergeFileCountsIntoProject', () => {
       attrValues: {},
     });
     expect(getProjectAttrCounts(updated, 'persName')).toEqual({});
+  });
+});
+
+describe('previewProjectTagStats', () => {
+  test('includes unsaved open-tab content before save', () => {
+    const persisted = mergeFileCountsIntoProject(emptyStats(), 'chapter1.xml', {
+      tags: { p: 1 },
+      attrs: {},
+      attrValues: {},
+    });
+    const liveXml = `<?xml version="1.0"?>
+<TEI xmlns="http://www.tei-c.org/ns/1.0"><text><body><p>One</p><date when="800">800</date></body></text></TEI>`;
+
+    const preview = previewProjectTagStats(persisted, '/proj', [
+      { filePath: '/proj/chapter1.xml', content: liveXml },
+    ]);
+
+    expect(preview.project.tags.date).toBe(1);
+    expect(preview.project.tags.p).toBe(1);
   });
 });

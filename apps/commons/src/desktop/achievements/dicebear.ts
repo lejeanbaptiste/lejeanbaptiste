@@ -16,7 +16,11 @@ export {
 import {
   EARRINGS_VARIANTS,
   EYEBROWS_VARIANTS,
+  EYES_VARIANTS,
   FEATURES_VARIANTS,
+  GLASSES_VARIANTS,
+  HAIR_VARIANTS,
+  MOUTH_VARIANTS,
 } from './generatedAvatarParts';
 
 /** Registered in apps/desktop/src/main.ts alongside `ljb` and `ljb-asset`;
@@ -109,3 +113,81 @@ export const HAIR_COLORS = [
   { label: 'Copper', value: 'cb6820' },
   { label: 'Silver', value: 'afafaf' },
 ];
+
+export type AvatarCodeOptions = Omit<DiceBearAvatarOptions, 'seed'>;
+
+/** Fixed field order for the encoded Code text - keep in sync with
+ * DiceBearAvatarOptions (minus `seed`, which the composite ignores, see
+ * diceBearAvatarUrl above). Order only affects the encoded array shape;
+ * append fields here rather than reordering, or codes already copied out by
+ * players stop decoding to what they copied. */
+const AVATAR_CODE_FIELDS = [
+  'bodyType',
+  'eyebrowsVariant',
+  'eyesVariant',
+  'mouthVariant',
+  'glassesVariant',
+  'glassesProbability',
+  'featuresVariant',
+  'featuresProbability',
+  'earringsVariant',
+  'earringsProbability',
+  'hairVariant',
+  'skinColor',
+  'hairColor',
+] as const satisfies readonly (keyof AvatarCodeOptions)[];
+
+const toBase64Url = (input: string): string =>
+  btoa(input).replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, '');
+
+const fromBase64Url = (input: string): string => {
+  const restored = input.replace(/-/g, '+').replace(/_/g, '/');
+  const padded = restored + '='.repeat((4 - (restored.length % 4)) % 4);
+  return atob(padded);
+};
+
+/** Encodes every player-visible portrait choice (all of DiceBearAvatarOptions
+ * except `seed`, which is dead weight - see diceBearAvatarUrl) into one
+ * copy-pasteable code, so a look can be shared or restored without touching
+ * each Select in turn. Callers recompute this off the committed avatar
+ * options on every change rather than storing it - it's a pure projection of
+ * `options`, never a second source of truth. */
+export const encodeAvatarCode = (options: DiceBearAvatarOptions): string => {
+  const values = AVATAR_CODE_FIELDS.map((field) => options[field]);
+  return toBase64Url(JSON.stringify(values));
+};
+
+/** Inverse of encodeAvatarCode. Returns null for anything that isn't a code
+ * this build could have produced - malformed base64/JSON, wrong field count,
+ * or a value outside the current variant lists (e.g. a code copied from a
+ * build with a different generated-parts manifest) - so callers can fall
+ * back to the last good options instead of applying a half-valid portrait. */
+export const decodeAvatarCode = (code: string): AvatarCodeOptions | null => {
+  let values: unknown;
+  try {
+    values = JSON.parse(fromBase64Url(code.trim()));
+  } catch {
+    return null;
+  }
+  if (!Array.isArray(values) || values.length !== AVATAR_CODE_FIELDS.length) return null;
+  const decoded = Object.fromEntries(
+    AVATAR_CODE_FIELDS.map((field, index) => [field, values[index]]),
+  ) as AvatarCodeOptions;
+
+  const isValid =
+    BODY_TYPES.some((option) => option.value === decoded.bodyType) &&
+    EYEBROWS_VARIANTS.includes(decoded.eyebrowsVariant) &&
+    EYES_VARIANTS.includes(decoded.eyesVariant) &&
+    MOUTH_VARIANTS.includes(decoded.mouthVariant) &&
+    GLASSES_VARIANTS.includes(decoded.glassesVariant) &&
+    (decoded.glassesProbability === 0 || decoded.glassesProbability === 100) &&
+    FEATURES_VARIANTS.includes(decoded.featuresVariant) &&
+    (decoded.featuresProbability === 0 || decoded.featuresProbability === 100) &&
+    EARRINGS_VARIANTS.includes(decoded.earringsVariant) &&
+    (decoded.earringsProbability === 0 || decoded.earringsProbability === 100) &&
+    HAIR_VARIANTS.includes(decoded.hairVariant) &&
+    SKIN_COLORS.some((option) => option.value === decoded.skinColor) &&
+    HAIR_COLORS.some((option) => option.value === decoded.hairColor);
+
+  return isValid ? decoded : null;
+};

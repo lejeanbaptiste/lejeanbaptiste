@@ -4,6 +4,7 @@ import { log } from '../../utilities';
 import { stripCjkWhitespaceInElement } from '../../utilities/cjkWhitespace';
 import { isValidHttpURL } from '../../utilities/string';
 import { EntityConfig } from '../entities/Entity';
+import { syncCorrectionEntityDom, syncAllCorrectionEntities } from '../entities/correctionDom';
 import { RESERVED_ATTRIBUTES } from '../schema/mapper';
 import Writer from '../Writer';
 import { openEditorModeDialog, openProcessIssueDialog, type ProcessSchemaProps } from './prompts';
@@ -602,6 +603,8 @@ class XML2CWRC {
           this.writer.allowOverlap = false;
         }
 
+        syncAllCorrectionEntities(this.writer);
+
         dfd.resolve();
       });
 
@@ -663,6 +666,10 @@ class XML2CWRC {
           selRange.setEnd(endNode, endOffset);
           this.writer.tagger.addEntityTag(entry, selRange);
 
+          if (entry.getType() === 'correction') {
+            syncCorrectionEntityDom(this.writer, entry);
+          }
+
           if (entry.getContent() === undefined) {
             this.writer.entitiesManager.highlightEntity(); // remove highlight
             this.writer.entitiesManager.highlightEntity(entry.getId());
@@ -695,6 +702,10 @@ class XML2CWRC {
             (entry.getNoteContent() === undefined || entry.getNoteContent() === '')
           ) {
             entry.setNoteContent($(entityNode).html());
+          }
+
+          if (type === 'correction') {
+            syncCorrectionEntityDom(this.writer, entry, entityNode as Element);
           }
         } else {
           log.warn('xml2cwrc.insertEntities: cannot find entity tag for', range.startXPath);

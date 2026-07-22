@@ -1,20 +1,16 @@
 import { isDesktop } from '@src/types/desktop';
-import { openApplicationSettingsAndWait } from './openApplicationSettings';
 
 /**
- * Ensure the app-level central entity database folder exists. Rather than a
- * dedicated pop-up, this opens the settings panel directly: it blocks closing
- * until language, user name, and database folder are all set (see the
- * settings dialog's onBeforeClose gating), so callers can await it exactly
- * like the old blocking prompt.
+ * Ensure the app-level central entity database folder exists. The folder is
+ * auto-created under a fixed app-data default on first access (see
+ * getEntityDbFolder in projectPrefs.ts), so this just makes sure that has
+ * happened before callers proceed.
  */
 export const ensureEntityDbFolder = async (): Promise<boolean> => {
   if (!isDesktop() || !window.electronAPI) return true;
 
-  const existing = await window.electronAPI.getEntityDbFolder?.();
-  if (existing?.trim()) return true;
-
-  return openApplicationSettingsAndWait();
+  await window.electronAPI.getEntityDbFolder?.();
+  return true;
 };
 
 export const projectHasEntityStorePreference = async (

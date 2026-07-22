@@ -99,7 +99,7 @@ export const useLeafWriter = () => {
 
   const { user } = useAppState().auth;
   const { config, cursorPositions, projectSchemas, rootPath } = useAppState().project;
-  const { autosave, contentHasChanged, readonly, resource, timerService } = useAppState().editor;
+  const { contentHasChanged, readonly, resource } = useAppState().editor;
   const { currentLocale } = useAppState().ui;
 
   const {
@@ -109,11 +109,8 @@ export const useLeafWriter = () => {
     save,
     saveAs,
     setResource,
-    setAutosave,
     setContentLastSaved,
     setContentHasChanged,
-    subscribeToTimerService,
-    unsubscribeFromTimerService,
   } = useActions().editor;
   const { addToRecentDocument, download } = useActions().storage;
   const { updateTabContent } = useActions().project;
@@ -123,8 +120,6 @@ export const useLeafWriter = () => {
   const [leafWriterEvent, setLeafWriterEvents] = useAtom(leafWriterEventsAtom);
   const [tapDocumentTimer, setTapDocumentTimer] = useAtom(tapDocumentTimerAtom);
   const bumpEditorSession = useSetAtom(leafWriterSessionKeyAtom);
-
-  const canAutosaveResource = Boolean(resource?.provider || (isDesktop() && resource?.filePath));
 
   useEffect(() => {
     if (!isDesktop() || !rootPath || !leafWriter) return;
@@ -349,13 +344,6 @@ export const useLeafWriter = () => {
     const dirtyEvent = leafWriter.onContentHasChanged.subscribe((value) => {
       if (!leafWriter) return;
       setContentHasChanged(value);
-
-      if (value === false) {
-        timerService.stop();
-        return;
-      }
-
-      if (autosave && canAutosaveResource) timerService.start();
     });
     // leafWriterEvents.push(dirtyEvent);
     setLeafWriterEvents((prev) => [...prev, dirtyEvent]);
@@ -369,7 +357,6 @@ export const useLeafWriter = () => {
         return;
       }
 
-      leafWriter.autosave = autosave;
       tapDocument(resource, schemaName);
       if (
         isDesktop() &&
@@ -384,7 +371,6 @@ export const useLeafWriter = () => {
           }),
         );
       }
-      subscribeToTimerService(leafWriter);
       if (isDesktop()) {
         const cursorPosition = resource.filePath ? cursorPositions[resource.filePath] : null;
         if (cursorPosition) {
@@ -399,12 +385,9 @@ export const useLeafWriter = () => {
     setLeafWriterEvents((prev) => [...prev, onLoadEvent]);
 
     const onCloseEvent = leafWriter.onClose.subscribe(() => {
-      unsubscribeFromTimerService();
-
       if (isDesktop()) {
         const editor = leafWriter;
         removeSubscribers();
-        timerService.stop();
         if (tapDocumentTimer) clearTimeout(tapDocumentTimer);
 
         void (async () => {
@@ -425,29 +408,7 @@ export const useLeafWriter = () => {
     });
     // leafWriterEvents.push(onCloseEvent);
     setLeafWriterEvents((prev) => [...prev, onCloseEvent]);
-
-    const onStateChangeEvent = leafWriter.onEditorStateChange.subscribe((editorState) => {
-      if (editorState.autosave !== undefined && editorState.autosave !== autosave) {
-        setAutosave(editorState.autosave);
-      }
-    });
-    // leafWriterEvents.push(onStateChangeEvent);
-    setLeafWriterEvents((prev) => [...prev, onStateChangeEvent]);
   };
-
-  useEffect(() => {
-    if (!contentHasChanged) {
-      timerService.stop();
-      return;
-    }
-
-    if (autosave && canAutosaveResource) {
-      timerService.start();
-      return;
-    }
-
-    timerService.stop();
-  }, [autosave, canAutosaveResource, contentHasChanged, timerService]);
 
   const removeSubscribers = () => {
     // leafWriterEvents.forEach((subs) => subs.unsubscribe());
@@ -590,7 +551,6 @@ export const useLeafWriter = () => {
   };
 
   const disposeLeafWriter = () => {
-    timerService.stop();
     if (tapDocumentTimer) clearTimeout(tapDocumentTimer);
 
     leafWriter?.dispose();

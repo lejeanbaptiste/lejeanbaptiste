@@ -4,6 +4,7 @@ import {
   getMirroredNameDeleteEdits,
   unwrapTagPair,
 } from './closingTagParser';
+import { isPairedTagAutoDeleteAllowed } from './pairedTagAutoDelete';
 
 describe('paired tag unwrap parser', () => {
   test('findUnwrapTagPair for opening and closing delimiters', () => {
@@ -87,5 +88,22 @@ describe('paired tag unwrap parser', () => {
     expect(getMirroredNameDeleteEdits(content, pair, content.indexOf('c>') + 1, true)).toBe(
       'unwrap',
     );
+  });
+
+  test('allows auto-delete only when XML is well-formed', () => {
+    expect(isPairedTagAutoDeleteAllowed('<choice><corr>xxx</corr></choice>')).toBe(true);
+    expect(isPairedTagAutoDeleteAllowed('<cat>卷</cat>')).toBe(true);
+    expect(isPairedTagAutoDeleteAllowed('<choice><corr>xxx</corr></wrong>')).toBe(false);
+    expect(isPairedTagAutoDeleteAllowed('<supplied reason="omitted">xxx</corr></choice>')).toBe(
+      false,
+    );
+  });
+
+  test('local tag pair can exist while auto-delete stays disabled on invalid XML', () => {
+    const content = '<choice><corr>xxx</corr></wrong>';
+    const pair = findUnwrapTagPair(content, content.indexOf('corr') + 2);
+
+    expect(pair).not.toBeNull();
+    expect(isPairedTagAutoDeleteAllowed(content)).toBe(false);
   });
 });

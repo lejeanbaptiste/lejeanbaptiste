@@ -1,3 +1,4 @@
+import { randomUUID } from 'crypto';
 import fs from 'fs/promises';
 import path from 'path';
 
@@ -72,6 +73,7 @@ const normalizeDisambiguationSettings = (
 const normalizeConfig = (raw: Partial<ProjectFileConfig>, rootPath: string): ProjectFileConfig => ({
   version: 1,
   name: typeof raw.name === 'string' && raw.name.trim() ? raw.name : path.basename(rootPath),
+  projectId: typeof raw.projectId === 'string' && raw.projectId.trim() ? raw.projectId.trim() : undefined,
   schema:
     raw.schema && typeof raw.schema.rng === 'string' && raw.schema.rng.trim()
       ? { ...raw.schema, rng: raw.schema.rng.trim() }
@@ -152,6 +154,7 @@ export const loadOrCreateProject = async (rootPath: string): Promise<ProjectBund
     const config: ProjectFileConfig = {
       version: 1,
       name: path.basename(rootPath),
+      projectId: randomUUID(),
       schema: await detectSchema(rootPath),
       metadata: DEFAULT_METADATA_PATH,
     };
@@ -161,10 +164,16 @@ export const loadOrCreateProject = async (rootPath: string): Promise<ProjectBund
 
   const parsed = JSON.parse(raw) as Partial<ProjectFileConfig>;
   const config = normalizeConfig(parsed, rootPath);
+  let dirty = false;
+  if (!config.projectId) {
+    config.projectId = randomUUID();
+    dirty = true;
+  }
   if (!config.schema) {
     config.schema = await detectSchema(rootPath);
-    await writeConfigFile(projectFilePath, config);
+    dirty = true;
   }
+  if (dirty) await writeConfigFile(projectFilePath, config);
   return { rootPath, projectFilePath, config };
 };
 
@@ -177,18 +186,26 @@ export const loadProjectFile = async (projectFilePath: string): Promise<ProjectB
     const raw = await fs.readFile(projectFilePath, 'utf-8');
     const parsed = JSON.parse(raw) as Partial<ProjectFileConfig>;
     const config = normalizeConfig(parsed, rootPath);
+    let dirty = false;
+
+    if (!config.projectId) {
+      config.projectId = randomUUID();
+      dirty = true;
+    }
 
     if (config.schema?.rng) {
       try {
         await fs.stat(resolveProjectPath(rootPath, config.schema.rng));
       } catch {
         config.schema = await detectSchema(rootPath);
-        await writeConfigFile(projectFilePath, config);
+        dirty = true;
       }
     } else {
       config.schema = await detectSchema(rootPath);
-      await writeConfigFile(projectFilePath, config);
+      dirty = true;
     }
+
+    if (dirty) await writeConfigFile(projectFilePath, config);
 
     return { rootPath, projectFilePath, config };
   } catch {

@@ -110,6 +110,18 @@ export const fetchSchemaAttributes = async (
   return schemaAttrsFromManager(tagElement);
 };
 
+export const fetchSchemaAttributesForTag = async (
+  tagName: string,
+): Promise<SchemaAttributeDetail[]> => {
+  const writer = getWriter();
+  if (!writer?.schemaManager || !tagName) return [];
+
+  const raw = writer.schemaManager.getAttributesForTag(tagName) ?? [];
+  return (raw as Record<string, unknown>[])
+    .map((att) => toSchemaAttribute(att))
+    .filter((att): att is SchemaAttributeDetail => Boolean(att));
+};
+
 export const sortAttributeSuggestions = (
   attrs: SchemaAttributeDetail[],
   tagName: string,

@@ -9,6 +9,8 @@ interface AppPrefs {
   rememberWorkspaceOnStartup?: boolean;
   workspaceSession?: WorkspaceSession;
   entityDbFolder?: string | null;
+  /** Explicit override for where achievements.json lives; see getAchievementsFolder. */
+  achievementsFolder?: string | null;
   /** Last directory used in a system open/save dialog. */
   lastDialogDir?: string | null;
 }
@@ -110,6 +112,11 @@ const sanitizeWorkspaceSession = (value: WorkspaceSession | undefined): Workspac
 
 const getPrefsPath = () => path.join(app.getPath('userData'), PREFS_FILENAME);
 
+const DEFAULT_ENTITY_DB_DIRNAME = 'entity-database';
+
+const getDefaultEntityDbFolder = () =>
+  path.join(app.getPath('userData'), DEFAULT_ENTITY_DB_DIRNAME);
+
 const defaultAppPrefs = (): AppPrefs => ({
   lastProjectFile: null,
   encoderName: '',
@@ -117,6 +124,7 @@ const defaultAppPrefs = (): AppPrefs => ({
   rememberWorkspaceOnStartup: true,
   workspaceSession: sanitizeWorkspaceSession(undefined),
   entityDbFolder: null,
+  achievementsFolder: null,
 });
 
 const readCommonPrefs = (
@@ -128,6 +136,8 @@ const readCommonPrefs = (
   workspaceSession: sanitizeWorkspaceSession(parsed.workspaceSession),
   entityDbFolder:
     typeof parsed.entityDbFolder === 'string' ? parsed.entityDbFolder.trim() || null : null,
+  achievementsFolder:
+    typeof parsed.achievementsFolder === 'string' ? parsed.achievementsFolder.trim() || null : null,
 });
 
 /** Parse stored prefs JSON. Exported for unit tests. */
@@ -228,15 +238,46 @@ export const setLastDialogDir = async (dir: string | null) => {
   });
 };
 
+/**
+ * Returns the user's chosen entity-database folder, or auto-creates and
+ * persists a fixed default under Electron's per-platform app-data directory
+ * the first time this is called. Never returns null in practice; callers
+ * that picked a custom folder in the past keep using it unchanged.
+ */
 export const getEntityDbFolder = async (): Promise<string | null> => {
   const prefs = await readAppPrefs();
   const folder = prefs.entityDbFolder?.trim();
-  return folder || null;
+  if (folder) return folder;
+
+  const defaultFolder = getDefaultEntityDbFolder();
+  await fs.mkdir(defaultFolder, { recursive: true });
+  await mutateAppPrefs((p) => {
+    p.entityDbFolder = defaultFolder;
+  });
+  return defaultFolder;
 };
 
 export const setEntityDbFolder = async (folder: string | null) => {
   await mutateAppPrefs((prefs) => {
     prefs.entityDbFolder = folder?.trim() || null;
+  });
+};
+
+/**
+ * Explicit override for where achievements.json lives. Returns null when
+ * unset, meaning achievementsFile.ts falls back to the entity database
+ * folder, then userData - this setting exists so a player can put their
+ * medals somewhere synced (e.g. a Dropbox/iCloud folder) even when they
+ * don't use a shared entity database at all.
+ */
+export const getAchievementsFolder = async (): Promise<string | null> => {
+  const prefs = await readAppPrefs();
+  return prefs.achievementsFolder?.trim() || null;
+};
+
+export const setAchievementsFolder = async (folder: string | null) => {
+  await mutateAppPrefs((prefs) => {
+    prefs.achievementsFolder = folder?.trim() || null;
   });
 };
 

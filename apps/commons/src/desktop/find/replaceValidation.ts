@@ -62,6 +62,7 @@ export const validateAndReplaceHit = (
   query: string,
   ignoreCase = false,
   allowMarkup = false,
+  enforceWellFormedXml = true,
 ): ValidateReplaceHitResult => {
   const canReplace = allowMarkup
     ? isReplaceableSourceHit(content, start, end)
@@ -96,7 +97,11 @@ export const validateAndReplaceHit = (
 
   const nextContent = replaceHitAtOffset(content, start, end, nextReplacement);
 
-  if (MARKUP_CHARS.test(nextReplacement) && !isWellFormedXml(nextContent)) {
+  if (
+    enforceWellFormedXml &&
+    MARKUP_CHARS.test(nextReplacement) &&
+    !isWellFormedXml(nextContent)
+  ) {
     return { ok: false, error: INVALID_XML_MESSAGE };
   }
 
@@ -110,6 +115,7 @@ export const validateAndReplaceAll = (
   useRegex: boolean,
   ignoreCase = false,
   allowMarkup = false,
+  enforceWellFormedXml = true,
 ): ValidateReplaceAllResult => {
   if (useRegex && !buildSearchRegex(query, ignoreCase)) {
     return { ok: false, count: 0, skippedNonReplaceable: 0, error: 'Invalid regular expression.' };
@@ -125,7 +131,7 @@ export const validateAndReplaceAll = (
     return { ok: true, content, count: 0, skippedNonReplaceable };
   }
 
-  if (!isWellFormedXml(nextContent)) {
+  if (enforceWellFormedXml && !isWellFormedXml(nextContent)) {
     return {
       ok: false,
       count: 0,

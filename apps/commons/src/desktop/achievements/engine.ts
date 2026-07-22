@@ -109,6 +109,14 @@ const readEntityDatabaseXml = async (rootPath: string): Promise<string | null> =
  */
 export const processSaveForAchievements = async (options: {
   rootPath: string;
+  /**
+   * Stable per-project id from jean-baptiste.project.json (see
+   * ProjectFileConfig.projectId). Falls back to the normalized root path
+   * for callers that predate this field, but that fallback re-splits a
+   * project's stats if it's later opened from a different absolute path
+   * (e.g. a second machine) - always prefer passing the real id.
+   */
+  projectId?: string;
   filePath: string;
   xml: string;
   stats: TagUsageStats;
@@ -116,13 +124,13 @@ export const processSaveForAchievements = async (options: {
   notify: AchievementUnlockNotifier;
 }): Promise<void> => {
   try {
-    const { rootPath, filePath, xml, stats, sourceMode, notify } = options;
+    const { rootPath, projectId, filePath, xml, stats, sourceMode, notify } = options;
     const state = await loadAchievementsState();
     const savedAt = new Date();
 
     state.saveCount += 1;
 
-    const projectKey = normalizePathKey(rootPath);
+    const projectKey = projectId ?? normalizePathKey(rootPath);
     const project = getProjectMetrics(state, projectKey);
 
     const relativePath = toRelativePath(rootPath, filePath);

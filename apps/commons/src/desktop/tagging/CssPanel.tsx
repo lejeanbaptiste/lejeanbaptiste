@@ -13,46 +13,14 @@ import { useAtomValue } from 'jotai';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { HighlighterIcon } from './HighlighterIcon';
 import { getEditorTagContext } from './tagSuggestions';
-import { clearTagStatsCache, loadTagStats } from './tagStats';
+import { clearTagStatsCache, loadTagStats, previewProjectTagStats } from './tagStats';
 import type { TagUsageStats } from './tagStats';
+import {
+  isTagAppearanceCandidate,
+  tagAppearanceSupportsHighlight,
+} from './tagAppearanceExclusions';
 import { loadTagColors, resolveTagColor, updateTagColor } from './tagColors';
 import type { TagColorEntry, TagColorsFile } from './tagColors';
-
-const INFRASTRUCTURE_TAGS = new Set([
-  'TEI',
-  'teiHeader',
-  'text',
-  'front',
-  'body',
-  'back',
-  'div',
-  'fileDesc',
-  'titleStmt',
-  'editionStmt',
-  'publicationStmt',
-  'sourceDesc',
-  'encodingDesc',
-  'projectDesc',
-  'appInfo',
-  'application',
-  'profileDesc',
-  'langUsage',
-  'language',
-  'revisionDesc',
-  'change',
-  'standOff',
-  'listPerson',
-  'listPlace',
-  'listOrg',
-  'listBibl',
-  'person',
-  'place',
-  'org',
-  'bibl',
-  'head',
-  'label',
-  'p',
-]);
 
 const emptyStats = (): TagUsageStats => ({
   version: 1,
@@ -65,7 +33,7 @@ const isVisualEditorActive = (): boolean =>
   window.writer?.overmindState?.ui?.editorViewMode !== 'source';
 
 export const CssPanel = ({ visible = true }: { visible?: boolean }) => {
-  const { activeTabPath, rootPath } = useAppState().project;
+  const { activeTabPath, openTabs, rootPath } = useAppState().project;
   const { readonly } = useAppState().editor;
   const leafWriter = useAtomValue(leafwriterAtom);
 
@@ -82,8 +50,9 @@ export const CssPanel = ({ visible = true }: { visible?: boolean }) => {
       return;
     }
     clearTagStatsCache();
-    setTagStats(await loadTagStats(rootPath));
-  }, [rootPath]);
+    const persisted = await loadTagStats(rootPath);
+    setTagStats(previewProjectTagStats(persisted, rootPath, openTabs));
+  }, [openTabs, rootPath]);
 
   const refreshTagColors = useCallback(async () => {
     if (!rootPath) {
@@ -102,18 +71,34 @@ export const CssPanel = ({ visible = true }: { visible?: boolean }) => {
     setActiveTagName(name);
   }, []);
 
-  useEffect(() => {
-    void refreshStats();
-    void refreshTagColors();
-  }, [refreshStats, refreshTagColors]);
+  const persistPendingChange = useCallback(async () => {
+    const pending = pendingEntryRef.current;
+    if (!pending || !rootPath) return;
+    pendingEntryRef.current = null;
+    const updated = await updateTagColor(rootPath, pending.tagName, pending.colors);
+    setTagColors(updated);
+  }, [rootPath]);
 
-  useEffect(() => {
-    if (!visible) return;
+  const refreshPanel = useCallback(async () => {
+    await Promise.all([refreshStats(), refreshTagColors()]);
     syncActiveTag();
-  }, [syncActiveTag, visible]);
+  }, [refreshStats, refreshTagColors, syncActiveTag]);
 
   useEffect(() => {
-    if (!leafWriter) return;
+    if (visible) {
+      void refreshPanel();
+      return;
+    }
+
+    if (saveDebounceRef.current) {
+      clearTimeout(saveDebounceRef.current);
+      saveDebounceRef.current = null;
+    }
+    void persistPendingChange();
+  }, [visible, refreshPanel, persistPendingChange]);
+
+  useEffect(() => {
+    if (!visible || !leafWriter) return;
 
     const writer = window.writer;
     if (!writer) return;
@@ -137,23 +122,12 @@ export const CssPanel = ({ visible = true }: { visible?: boolean }) => {
       writer.event(eventName).subscribe(onEditorChange);
     }
 
-    void syncActiveTag();
-    void refreshStats();
-
     return () => {
       for (const eventName of events) {
         writer.event(eventName).unsubscribe(onEditorChange);
       }
     };
-  }, [leafWriter, refreshStats, syncActiveTag]);
-
-  const persistPendingChange = useCallback(async () => {
-    const pending = pendingEntryRef.current;
-    if (!pending || !rootPath) return;
-    pendingEntryRef.current = null;
-    const updated = await updateTagColor(rootPath, pending.tagName, pending.colors);
-    setTagColors(updated);
-  }, [rootPath]);
+  }, [leafWriter, refreshStats, syncActiveTag, visible]);
 
   useEffect(
     () => () => {
@@ -193,7 +167,7 @@ export const CssPanel = ({ visible = true }: { visible?: boolean }) => {
   const orderedTags = useMemo(
     () =>
       Object.entries(tagStats.project.tags)
-        .filter(([tagName, count]) => count > 0 && !INFRASTRUCTURE_TAGS.has(tagName))
+        .filter(([tagName, count]) => isTagAppearanceCandidate(tagName, count))
         .sort((left, right) => {
           if (right[1] !== left[1]) return right[1] - left[1];
           return left[0].localeCompare(right[0]);
@@ -225,20 +199,21 @@ export const CssPanel = ({ visible = true }: { visible?: boolean }) => {
           </Typography>
         </Stack>
         <Typography color="text.secondary" variant="caption">
-          Project-wide colors, ordered by frequency.
+          Body annotation tags only — not metadata or structure (div, p, …).
         </Typography>
       </Stack>
 
       <Box sx={{ flex: 1, minHeight: 0, overflow: 'auto' }}>
         {orderedTags.length === 0 ? (
           <Typography color="text.secondary" sx={{ p: 2 }} variant="body2">
-            No tag statistics available yet.
+            No annotation tags in the document body yet.
           </Typography>
         ) : (
           <Stack spacing={0.5} sx={{ p: 1 }}>
             {orderedTags.map(([tagName, count]) => {
               const colors = resolveTagColor(tagColors ?? { version: 1, tags: {} }, tagName) ?? {};
-              const highlightOn = colors.highlightEnabled !== false;
+              const supportsHighlight = tagAppearanceSupportsHighlight(tagName);
+              const highlightOn = supportsHighlight && colors.highlightEnabled !== false;
               const textOn = colors.textEnabled !== false;
               return (
                 <Stack
@@ -284,15 +259,17 @@ export const CssPanel = ({ visible = true }: { visible?: boolean }) => {
                   >
                     {tagName}
                   </Typography>
-                  <ColorSwatchPicker
-                    ariaLabel={`${tagName} highlight color`}
-                    disabled={readonly || !rootPath}
-                    onChange={(hex) =>
-                      updateEntry(tagName, (current) => ({ ...current, highlight: hex }))
-                    }
-                    swatchColor={colors.highlight && highlightOn ? colors.highlight : undefined}
-                    value={colors.highlight ?? '#ffffff'}
-                  />
+                  {supportsHighlight ? (
+                    <ColorSwatchPicker
+                      ariaLabel={`${tagName} highlight color`}
+                      disabled={readonly || !rootPath}
+                      onChange={(hex) =>
+                        updateEntry(tagName, (current) => ({ ...current, highlight: hex }))
+                      }
+                      swatchColor={colors.highlight && highlightOn ? colors.highlight : undefined}
+                      value={colors.highlight ?? '#ffffff'}
+                    />
+                  ) : null}
                   <ColorSwatchPicker
                     ariaLabel={`${tagName} text color`}
                     disabled={readonly || !rootPath}
@@ -303,25 +280,28 @@ export const CssPanel = ({ visible = true }: { visible?: boolean }) => {
                     sx={{ opacity: textOn ? 1 : 0.5 }}
                     value={colors.text ?? '#000000'}
                   />
-                  <Checkbox
-                    checked={highlightOn}
-                    disabled={readonly || !rootPath}
-                    inputProps={{ 'aria-label': `${tagName} show background` }}
-                    onChange={(_event, checked) =>
-                      updateEntry(tagName, (current) => ({
-                        ...current,
-                        highlightEnabled: checked,
-                      }))
-                    }
-                    sx={{
-                      color: 'text.primary',
-                      flexShrink: 0,
-                      height: 18,
-                      p: 0,
-                      width: 18,
-                      '& .MuiSvgIcon-root': { fontSize: 18 },
-                    }}
-                  />
+                  {supportsHighlight ? (
+                    <Checkbox
+                      checked={highlightOn}
+                      disabled={readonly || !rootPath}
+                      inputProps={{ 'aria-label': `${tagName} show background` }}
+                      onChange={(_event, checked) =>
+                        updateEntry(tagName, (current) => ({
+                          ...current,
+                          highlightEnabled: checked,
+                        }))
+                      }
+                      sx={{
+                        color: 'text.primary',
+                        flexShrink: 0,
+                        height: 18,
+                        ml: 'auto',
+                        p: 0,
+                        width: 18,
+                        '& .MuiSvgIcon-root': { fontSize: 18 },
+                      }}
+                    />
+                  ) : null}
                 </Stack>
               );
             })}

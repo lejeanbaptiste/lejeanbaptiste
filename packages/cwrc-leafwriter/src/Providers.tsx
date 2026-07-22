@@ -21,7 +21,7 @@ const Providers = (props: LeafWriterOptions) => {
     <ThemeProvider theme={theme}>
       <CssBaseline enableColorScheme />
       <ModalProvider>
-        <SnackbarProvider>
+        <SnackbarProvider autoHideDuration={5000} disableWindowBlurListener>
           <App {...props} />
         </SnackbarProvider>
       </ModalProvider>

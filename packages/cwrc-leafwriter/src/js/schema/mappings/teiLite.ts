@@ -171,25 +171,30 @@ const correction: EntityMappingProps = {
       sicText: 'sic/text()',
     },
   },
-  parentTag: ['choice', 'corr'],
+  parentTag: ['choice', 'corr', 'supplied', 'surplus'],
   requiresSelection: false,
   textTag: 'sic',
   types: ['fabio:Correction'],
-  xpathSelector: 'self::choice|self::corr',
+  xpathSelector: 'self::choice|self::corr|self::supplied|self::surplus',
   mappingFunction: (entity) => {
+    const tag = entity.getTag();
+    if (tag === 'supplied' || tag === 'surplus') {
+      return [`<${tag}${getAttributeString(entity.getAttributes())}>`, `</${tag}>`];
+    }
+
     const corrText = entity.getCustomValue('corrText');
     const sicText = entity.getCustomValue('sicText');
 
-    const tag = sicText ? 'choice' : 'corr';
+    const choiceTag = sicText ? 'choice' : 'corr';
 
-    let startTag = `<${tag}${getAttributeString(entity.getAttributes())}>`;
+    let startTag = `<${choiceTag}${getAttributeString(entity.getAttributes())}>`;
     let endTag;
 
     if (sicText) {
       startTag += '<sic>';
       endTag = `</sic><corr>${corrText}</corr></choice>`;
     } else {
-      endTag = `</${tag}>`;
+      endTag = `</${choiceTag}>`;
     }
 
     return [startTag, endTag];
