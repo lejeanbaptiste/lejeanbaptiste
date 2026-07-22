@@ -256,8 +256,16 @@ jobs:
             apps/desktop/release/latest-mac.yml
 
   desktop-windows:
-    name: Build Windows installer (x64)
-    runs-on: windows-latest
+    name: Build Windows installer (${{ matrix.arch }})
+    runs-on: ${{ matrix.runner }}
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - arch: x64
+            runner: windows-latest
+          - arch: arm64
+            runner: windows-11-arm
 
     steps:
       - name: Check out repository
@@ -274,7 +282,7 @@ jobs:
       - name: Install dependencies
         run: npm ci
 
-      - name: Build Windows installer (x64)
+      - name: Build Windows installer (${{ matrix.arch }})
         shell: pwsh
         working-directory: apps/desktop
         run: |
@@ -282,7 +290,7 @@ jobs:
           $attempts = 3
           for ($attempt = 1; $attempt -le $attempts; $attempt++) {
             Write-Host "Running package:win attempt $attempt of $attempts"
-            & npm run package:win
+            & npm run package:win -- --${{ matrix.arch }}
             if ($LASTEXITCODE -eq 0) {
               exit 0
             }
@@ -298,7 +306,7 @@ jobs:
       - name: Upload Windows package artifact
         uses: actions/upload-artifact@v4
         with:
-          name: windows-installer-x64
+          name: windows-installer-${{ matrix.arch }}
           path: |
             apps/desktop/release/*.exe
             apps/desktop/release/*.exe.blockmap
