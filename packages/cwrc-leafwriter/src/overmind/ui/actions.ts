@@ -366,6 +366,18 @@ export const setSelectedTranslationUnit = ({ state }: Context, unitId: string | 
   state.ui.translationMode.selectedUnitId = unitId;
 };
 
+/**
+ * Whether any docked review walk is active, right now, in this call. Carried
+ * as CustomEvent detail on every open/close dispatch below so listeners
+ * (e.g. the desktop shell's left/right panel suppression) can resync to the
+ * authoritative truth on every event instead of incrementing/decrementing a
+ * local counter that drifts if events ever fire out of the exact pairs it
+ * expects (auto-tagging exiting into disambiguation, etc.).
+ */
+const dockedReviewActiveDetail = (state: Context['state']) => ({
+  active: state.ui.autoTaggingReview.active || state.ui.disambiguationReview.active,
+});
+
 export const startAutoTaggingReview = (
   { state, actions }: Context,
   { suggestions, notice, aiValidation }: { suggestions: Suggestion[]; notice?: string; aiValidation?: boolean },
@@ -375,13 +387,17 @@ export const startAutoTaggingReview = (
   state.ui.autoTaggingReview.active = true;
   state.ui.autoTaggingReview.batchId += 1;
   state.ui.autoTaggingReview.aiValidation = aiValidation;
-  window.dispatchEvent(new CustomEvent('desktop:auto-tagging-review-open'));
+  window.dispatchEvent(
+    new CustomEvent('desktop:auto-tagging-review-open', { detail: dockedReviewActiveDetail(state) }),
+  );
 };
 
 export const exitAutoTaggingReview = ({ state }: Context) => {
   clearAutoTaggingBatch();
   state.ui.autoTaggingReview.active = false;
-  window.dispatchEvent(new CustomEvent('desktop:auto-tagging-review-close'));
+  window.dispatchEvent(
+    new CustomEvent('desktop:auto-tagging-review-close', { detail: dockedReviewActiveDetail(state) }),
+  );
 };
 
 export const startDisambiguationReview = (
@@ -391,12 +407,16 @@ export const startDisambiguationReview = (
   if (state.ui.autoTaggingReview.active) actions.ui.exitAutoTaggingReview();
   state.ui.disambiguationReview.active = true;
   state.ui.disambiguationReview.aiCuration = options?.aiCuration ?? true;
-  window.dispatchEvent(new CustomEvent('desktop:disambiguation-review-open'));
+  window.dispatchEvent(
+    new CustomEvent('desktop:disambiguation-review-open', { detail: dockedReviewActiveDetail(state) }),
+  );
 };
 
 export const exitDisambiguationReview = ({ state }: Context) => {
   state.ui.disambiguationReview.active = false;
-  window.dispatchEvent(new CustomEvent('desktop:disambiguation-review-close'));
+  window.dispatchEvent(
+    new CustomEvent('desktop:disambiguation-review-close', { detail: dockedReviewActiveDetail(state) }),
+  );
 };
 
 /**

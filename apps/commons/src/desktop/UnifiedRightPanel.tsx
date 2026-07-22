@@ -97,7 +97,6 @@ export const UnifiedRightPanel = () => {
   const [panelWidth, setPanelWidth] = useState(readStoredWidth);
   const collapsedRef = useRef(collapsed);
   const suppressedByDockedReviewRef = useRef(false);
-  const dockedReviewSuppressCountRef = useRef(0);
   const restoreExpandedAfterDockedReviewRef = useRef(false);
 
   collapsedRef.current = collapsed;
@@ -135,38 +134,37 @@ export const UnifiedRightPanel = () => {
     };
   }, [showTab, expand]);
 
-  // Hide the right panel while a docked review pane is open; restore if it was expanded.
+  // Hide the right panel while a docked review pane is open; restore if it was
+  // expanded. Driven by the CustomEvent's `detail.active` (the authoritative
+  // "is any review active right now" computed at dispatch time in
+  // overmind/ui/actions.ts) rather than counting opens/closes locally -
+  // counting drifts permanently stuck-collapsed if events ever fire out of
+  // the exact pairs it expects (e.g. auto-tagging exiting straight into
+  // disambiguation dispatches close+open back to back).
   useEffect(() => {
-    const onOpen = () => {
-      if (dockedReviewSuppressCountRef.current === 0) {
+    const onDockedReviewChange = (event: Event) => {
+      const active = (event as CustomEvent<{ active: boolean }>).detail?.active ?? false;
+      if (active === suppressedByDockedReviewRef.current) return;
+      suppressedByDockedReviewRef.current = active;
+      if (active) {
         setCollapsed((prev) => {
           restoreExpandedAfterDockedReviewRef.current = !prev;
           return true;
         });
+      } else {
+        if (restoreExpandedAfterDockedReviewRef.current) setCollapsed(false);
+        restoreExpandedAfterDockedReviewRef.current = false;
       }
-      dockedReviewSuppressCountRef.current += 1;
-      suppressedByDockedReviewRef.current = true;
     };
-    const onClose = () => {
-      dockedReviewSuppressCountRef.current = Math.max(0, dockedReviewSuppressCountRef.current - 1);
-      if (dockedReviewSuppressCountRef.current > 0) return;
-      suppressedByDockedReviewRef.current = false;
-      if (restoreExpandedAfterDockedReviewRef.current) setCollapsed(false);
-      restoreExpandedAfterDockedReviewRef.current = false;
-    };
-    const openEvents = [
+    const events = [
       'desktop:auto-tagging-review-open',
-      'desktop:disambiguation-review-open',
-    ] as const;
-    const closeEvents = [
       'desktop:auto-tagging-review-close',
+      'desktop:disambiguation-review-open',
       'desktop:disambiguation-review-close',
     ] as const;
-    for (const eventName of openEvents) window.addEventListener(eventName, onOpen);
-    for (const eventName of closeEvents) window.addEventListener(eventName, onClose);
+    for (const eventName of events) window.addEventListener(eventName, onDockedReviewChange);
     return () => {
-      for (const eventName of openEvents) window.removeEventListener(eventName, onOpen);
-      for (const eventName of closeEvents) window.removeEventListener(eventName, onClose);
+      for (const eventName of events) window.removeEventListener(eventName, onDockedReviewChange);
     };
   }, []);
 
