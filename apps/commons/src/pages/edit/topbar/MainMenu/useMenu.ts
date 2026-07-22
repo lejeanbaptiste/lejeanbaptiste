@@ -4,6 +4,7 @@ import { useLeafWriter, useMessage, useOpenResource } from '@src/hooks';
 import { useActions, useAppState } from '@src/overmind';
 import { listTransformations } from '@src/services/leaf-te';
 import { type Resource } from '@src/types';
+import { isMacOS, modShortcut } from '@src/utils/platform';
 import { useLiveQuery } from 'dexie-react-hooks';
 import { useTranslation } from 'react-i18next';
 import type { ItemProps, SubMenuProps } from './components';
@@ -45,7 +46,7 @@ export const useMenu = () => {
           resource: undefined,
           type: 'load',
         }),
-      shortcut: ' ⌘O',
+      shortcut: ` ${modShortcut('O')}`,
     },
     {
       disabled: userState !== 'AUTHENTICATED',
@@ -68,7 +69,7 @@ export const useMenu = () => {
       icon: 'save',
       label: t('LWC.commons.save'),
       onTrigger: () => void (!resource?.provider ? handleSave('saveAs') : handleSave()),
-      shortcut: ' ⌘S',
+      shortcut: ` ${modShortcut('S')}`,
       tooltipText: cloudDisabledMessage,
     },
     {
@@ -79,7 +80,7 @@ export const useMenu = () => {
       icon: 'saveAs',
       label: `${t('LWC.commons.save_as')}...`,
       onTrigger: () => void handleSave('saveAs'),
-      shortcut: ' ⌘⌥⇧S',
+      shortcut: isMacOS() ? ' ⌘⌥⇧S' : ' Ctrl+Alt+Shift+S',
       tooltipText: cloudDisabledMessage,
     },
     {
@@ -92,7 +93,7 @@ export const useMenu = () => {
     {
       label: t('LWC.commons.close'),
       onTrigger: () => handleCloseDocument(),
-      shortcut: ' ⌘W',
+      shortcut: ` ${modShortcut('W')}`,
     },
   ];
 
@@ -167,7 +168,7 @@ export const useMenu = () => {
   };
 
   const onKeydownHandle = async (event: KeyboardEvent) => {
-    if (!event.metaKey) return;
+    if (!(event.metaKey || event.ctrlKey)) return;
 
     let action: 'save' | 'saveAs' | 'load' | 'download' | '' = '';
 

@@ -23,6 +23,7 @@ import {
 import { getProjectSchemaDirPath, getRelativeFolderLabel, isPathUnder } from '@src/desktop/explorer/treeUtils';
 import { useActions, useAppState } from '@src/overmind';
 import type { FileTreeNode } from '@src/overmind/project/state';
+import { modShortcut } from '@src/utils/platform';
 import { useEffect, useMemo, useRef } from 'react';
 import { useTranslation } from 'react-i18next';
 import {
@@ -273,7 +274,7 @@ export const SidebarExplorerTab = () => {
 
   return (
     <Box sx={{ display: 'flex', flexDirection: 'column', height: '100%' }}>
-      {isProjectReady ? (
+      {rootPath ? (
         <Box sx={{ p: 1, borderBottom: 1, borderColor: 'divider' }}>
           <TextField
             fullWidth
@@ -311,7 +312,7 @@ export const SidebarExplorerTab = () => {
           minHeight: 0,
         }}
       >
-        {!isProjectReady ? (
+        {!rootPath ? (
           <Button
             fullWidth
             onClick={() => void openProject()}
@@ -325,7 +326,7 @@ export const SidebarExplorerTab = () => {
               fontWeight: 400,
             }}
           >
-            {t('LWC.desktop.explorer.open_project_hint')}
+            {t('LWC.desktop.explorer.open_project_hint', { shortcut: modShortcut('O') })}
           </Button>
         ) : isFiltering ? (
           visibleFilterMatches.length === 0 ? (

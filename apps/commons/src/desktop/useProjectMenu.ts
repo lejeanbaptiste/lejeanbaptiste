@@ -335,7 +335,7 @@ export const useProjectMenu = () => {
         return;
       }
 
-      if (event.metaKey && event.key === ',') {
+      if ((event.metaKey || event.ctrlKey) && event.key === ',') {
         event.preventDefault();
         event.stopPropagation();
         await openSettings(

@@ -28,14 +28,10 @@ export const LateralBar = ({ side }: LateralBarProps) => {
           <Paper
             elevation={5}
             square
-            sx={[
-              {
-                height: '100%',
-                backgroundColor: '#f5f5f5',
-              },
-              (theme) =>
-                theme.applyStyles('dark', { backgroundColor: theme.vars.palette.background.paper }),
-            ]}
+            sx={{
+              height: '100%',
+              backgroundColor: 'background.paper',
+            }}
           >
             <ToggleButtonGroup
               exclusive

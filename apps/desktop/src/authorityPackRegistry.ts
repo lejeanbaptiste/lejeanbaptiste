@@ -11,6 +11,8 @@ import { Readable } from 'node:stream';
 import { pipeline } from 'node:stream/promises';
 import { promisify } from 'node:util';
 
+import { writeFileAtomic } from './atomicWrite';
+
 import { AUTHORITY_DB_DIRNAME } from './authorityDatabases';
 import {
   AUTHORITY_PACK_REGISTRY,
@@ -63,9 +65,7 @@ export const writeInstalledPacksManifest = async (
   const dir = path.join(entityDbFolder, AUTHORITY_DB_DIRNAME);
   await fsp.mkdir(dir, { recursive: true });
   const target = packsManifestPath(entityDbFolder);
-  const temp = `${target}.tmp`;
-  await fsp.writeFile(temp, `${JSON.stringify(manifest, null, 2)}\n`, 'utf-8');
-  await fsp.rename(temp, target);
+  await writeFileAtomic(target, `${JSON.stringify(manifest, null, 2)}\n`);
 };
 
 const sha256File = async (filePath: string): Promise<string> => {

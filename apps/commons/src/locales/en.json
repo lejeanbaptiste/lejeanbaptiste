@@ -535,7 +535,8 @@
         "new_folder": "New folder",
         "new_folder_placeholder": "Folder name",
         "new_folder_title": "New folder",
-        "open_project_hint": "Open a project with File → Open Project (⌘O).",
+        "open_project_hint": "Open a project with File → Open Project ({{shortcut}}).",
+        "open_folder_editor_hint": "Open a folder ({{shortcut}})…",
         "rename": "Rename",
         "rename_placeholder": "New name",
         "rename_title": "Rename"

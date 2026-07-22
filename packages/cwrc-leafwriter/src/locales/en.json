@@ -182,13 +182,13 @@
     },
     "desktop": {
       "settings": {
-        "achievements_storage": "Medals & stats",
+        "achievements_storage": "Stats",
         "achievements_storage_folder": "Storage folder",
         "achievements_storage_default": "Default (app data folder)",
         "achievements_storage_change": "Choose folder…",
-        "achievements_storage_hint": "Point this at a folder your own sync tool (Dropbox, iCloud, etc.) watches to carry your medals and stats between machines. Stored encrypted; nothing is sent anywhere unless your sync tool does it.",
+        "achievements_storage_hint": "Point this at a folder your own sync tool (Dropbox, iCloud, etc.) watches to carry your stats between machines. Stored encrypted; nothing is sent anywhere unless your sync tool does it.",
         "achievements_import": "Load from another file…",
-        "achievements_import_hint": "Replaces all local medals, stats, and rank progress with the contents of a file you pick. Cannot be undone.",
+        "achievements_import_hint": "Replaces all local stats and rank progress with the contents of a file you pick. Cannot be undone.",
         "entity_database": "Entity database",
         "entity_database_change": "Change folder…",
         "entity_database_folder": "Database folder",

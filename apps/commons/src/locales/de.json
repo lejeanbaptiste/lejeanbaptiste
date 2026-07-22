@@ -226,7 +226,8 @@
         "new_folder": "Neuer Ordner",
         "new_folder_placeholder": "Ordnername",
         "new_folder_title": "Neuer Ordner",
-        "open_project_hint": "Öffnen Sie ein Projekt über Datei → Projekt öffnen (⌘O).",
+        "open_project_hint": "Öffnen Sie ein Projekt über Datei → Projekt öffnen ({{shortcut}}).",
+        "open_folder_editor_hint": "Ordner öffnen ({{shortcut}})…",
         "rename": "Umbenennen",
         "rename_placeholder": "Neuer Name",
         "rename_title": "Umbenennen"

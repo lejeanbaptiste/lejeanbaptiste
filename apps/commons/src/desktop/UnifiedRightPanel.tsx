@@ -7,6 +7,7 @@ import LabelOutlinedIcon from '@mui/icons-material/LabelOutlined';
 import TranslateIcon from '@mui/icons-material/Translate';
 import { Box, IconButton, ToggleButton, ToggleButtonGroup, Tooltip } from '@mui/material';
 import { leafwriterAtom } from '@src/jotai';
+import { useAppState } from '@src/overmind';
 import { useAtom } from 'jotai';
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { FileMetadataPanel } from './FileMetadataPanel';
@@ -92,14 +93,28 @@ const resizeEditor = () => {
 
 export const UnifiedRightPanel = () => {
   const [leafWriter] = useAtom(leafwriterAtom);
+  const { rootPath } = useAppState().project;
+  const hasProject = Boolean(rootPath);
+  const hadProjectRef = useRef(hasProject);
+
   const [activeTab, setActiveTab] = useState<RightTabId>('fileMetadata');
-  const [collapsed, setCollapsed] = useState(false);
+  const [collapsed, setCollapsed] = useState(!hasProject);
   const [panelWidth, setPanelWidth] = useState(readStoredWidth);
   const collapsedRef = useRef(collapsed);
   const suppressedByDockedReviewRef = useRef(false);
   const restoreExpandedAfterDockedReviewRef = useRef(false);
 
   collapsedRef.current = collapsed;
+
+  useEffect(() => {
+    if (!hasProject) {
+      setCollapsed(true);
+    } else if (!hadProjectRef.current && leafWriter) {
+      // Stay collapsed until the editor exists; expand once content can use it.
+      setCollapsed(false);
+    }
+    hadProjectRef.current = hasProject;
+  }, [hasProject, leafWriter]);
 
   const imageViewerSlotRef = useRef<HTMLDivElement>(null);
   const validationSlotRef = useRef<HTMLDivElement>(null);

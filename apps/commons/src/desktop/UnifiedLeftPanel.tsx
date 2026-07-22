@@ -1,6 +1,7 @@
 import { Box } from '@mui/material';
 import { useCallback, useEffect, useRef, useState } from 'react';
 import type { SidebarTabId } from '@src/icons/tab';
+import { useActions, useAppState } from '@src/overmind';
 import {
   DESKTOP_FIND_FOCUS_EVENT,
   DESKTOP_LEFT_PANEL_EVENT,
@@ -39,14 +40,30 @@ const resizeEditor = () => {
 };
 
 export const UnifiedLeftPanel = () => {
+  const { rootPath } = useAppState().project;
+  const { openProject } = useActions().project;
+  const hasProject = Boolean(rootPath);
+  const hadProjectRef = useRef(hasProject);
+
   const [activeTab, setActiveTab] = useState<SidebarTabId>('explorer');
-  const [collapsed, setCollapsed] = useState(false);
+  const [collapsed, setCollapsed] = useState(!hasProject);
   const [panelWidth, setPanelWidth] = useState(readStoredWidth);
   const collapsedRef = useRef(collapsed);
   const suppressedByDockedReviewRef = useRef(false);
   const restoreExpandedAfterDockedReviewRef = useRef(false);
 
   collapsedRef.current = collapsed;
+
+  // No project → keep the strip collapsed. Opening a project expands the explorer.
+  useEffect(() => {
+    if (!hasProject) {
+      setCollapsed(true);
+    } else if (!hadProjectRef.current) {
+      setCollapsed(false);
+      setActiveTab('explorer');
+    }
+    hadProjectRef.current = hasProject;
+  }, [hasProject]);
 
   const showTab = useCallback((tab: SidebarTabId) => {
     setActiveTab(tab);
@@ -129,6 +146,11 @@ export const UnifiedLeftPanel = () => {
   }, [collapsed, panelWidth]);
 
   const handleSelectTab = (tab: SidebarTabId) => {
+    // With no project open, the explorer icon is the open-project affordance.
+    if (!hasProject && tab === 'explorer') {
+      void openProject();
+      return;
+    }
     setActiveTab(tab);
     if (!suppressedByDockedReviewRef.current && collapsed) setCollapsed(false);
   };
