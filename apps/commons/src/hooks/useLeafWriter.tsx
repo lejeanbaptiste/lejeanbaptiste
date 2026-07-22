@@ -309,6 +309,7 @@ export const useLeafWriter = () => {
     filePath: string,
     content: string,
     cursorPosition?: WorkspaceCursorPosition | null,
+    restoreDirty = false,
   ) => {
     if (!window.writer) return;
 
@@ -325,7 +326,14 @@ export const useLeafWriter = () => {
     window.writer.overmindActions?.ui?.resetSourceEditor?.();
     window.writer.overmindActions?.document?.setDocumentUrl?.(filePath);
     window.writer.loadDocumentXML(content);
-    window.writer.overmindActions?.editor?.setContentHasChanged?.(false);
+    // loadDocumentXML / documentLoaded clear dirty — restore the tab's own flag.
+    const applyDirty = () => {
+      window.writer?.overmindActions?.editor?.setContentHasChanged?.(restoreDirty);
+      window.writer?.overmindActions?.project?.markTabDirty?.(restoreDirty);
+      if (window.writer?.editor) window.writer.editor.isNotDirty = !restoreDirty;
+    };
+    applyDirty();
+    queueMicrotask(applyDirty);
     window.writer.layoutManager?.resizeEditor?.();
     window.writer.layoutManager?.resizeAll?.();
     if (cursorPosition) {

@@ -1,10 +1,12 @@
 import fs from 'fs';
 import path from 'path';
 import {
+  buildDocIndex,
   collectTextNodes,
   compareAnchorsByDocumentPosition,
   compareXPath,
   createAnchor,
+  locateOccurrenceInIndex,
   resolveAnchor,
   resolveXPath,
   xpathForTextNode,
@@ -211,6 +213,26 @@ describe('real corpus (test_project/sizhu_shang.xml)', () => {
     const reResolved = resolveAnchor(doc, anchor, 'ignore');
     expect(reResolved).not.toBeNull();
     expect(reResolved!.node.data.slice(reResolved!.start, reResolved!.end)).toBe('上陽子');
+  });
+});
+
+describe('locateOccurrenceInIndex', () => {
+  it('finds the Nth occurrence, not always the first', () => {
+    const doc = parse(
+      `<TEI xmlns="http://www.tei-c.org/ns/1.0"><text><body>
+<p>世祖初立。</p>
+<p>又見世祖。</p>
+<p>世祖崩。</p>
+</body></text></TEI>`,
+    );
+    const index = buildDocIndex(doc, 'ignore');
+    const first = locateOccurrenceInIndex(index, '世祖', 1);
+    const second = locateOccurrenceInIndex(index, '世祖', 2);
+    const third = locateOccurrenceInIndex(index, '世祖', 3);
+    expect(first?.node.data).toContain('世祖初立');
+    expect(second?.node.data).toContain('又見世祖');
+    expect(third?.node.data).toContain('世祖崩');
+    expect(locateOccurrenceInIndex(index, '世祖', 4)).toBeNull();
   });
 });
 

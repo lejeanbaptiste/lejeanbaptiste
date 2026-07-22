@@ -18,6 +18,8 @@ export interface TranslationModeState {
 
 export interface AutoTaggingReviewState {
   active: boolean;
+  /** Bumped on every new batch so an already-open panel reloads (e.g. tag → resolve). */
+  batchId: number;
   aiValidation?: boolean;
 }
 
@@ -70,6 +72,7 @@ export const state: State = {
   },
   autoTaggingReview: {
     active: false,
+    batchId: 0,
   },
   disambiguationReview: {
     active: false,

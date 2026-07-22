@@ -82,7 +82,10 @@ export const DocumentTabBar = () => {
       sx={{ minHeight: 28 }}
       TabScrollButtonProps={{ style: { WebkitAppRegion: 'no-drag' } as React.CSSProperties }}
     >
-      {openTabs.map((tab) => (
+      {openTabs.map((tab) => {
+        const isActive = tab.filePath === activeTabPath;
+        const isDirty = isActive ? contentHasChanged : tab.dirty;
+        return (
         <Tab
           key={tab.filePath}
           value={tab.filePath}
@@ -90,7 +93,7 @@ export const DocumentTabBar = () => {
             <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
               <Typography component="span" variant="body2">
                 {tab.filename}
-                {tab.dirty ? ' *' : ''}
+                {isDirty ? ' *' : ''}
                 {tab.externalChangePending ? ' ↻' : ''}
               </Typography>
               <IconButton
@@ -106,7 +109,8 @@ export const DocumentTabBar = () => {
           sx={{ minHeight: 28, textTransform: 'none' }}
           style={{ WebkitAppRegion: 'no-drag' } as React.CSSProperties}
         />
-      ))}
+        );
+      })}
     </Tabs>
   );
 };

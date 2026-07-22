@@ -22,7 +22,7 @@ import { useEffect, useRef } from 'react';
 
 export const ProjectEditor = () => {
   const { contentHasChanged, readonly, resource } = useAppState().editor;
-  const { cursorPositions, isProjectReady, projectFilePath } = useAppState().project;
+  const { cursorPositions, isProjectReady, openTabs, projectFilePath } = useAppState().project;
   const { markTabDirty } = useActions().project;
 
   const divEl = useRef<HTMLDivElement>(null);
@@ -116,10 +116,13 @@ export const ProjectEditor = () => {
     }
 
     if (previousTabRef.current !== resource.filePath) {
+      const restoreDirty =
+        openTabs.find((tab) => tab.filePath === resource.filePath)?.dirty ?? false;
       void loadDocumentInWriter(
         resource.filePath,
         resource.content,
         cursorPositions[resource.filePath] ?? null,
+        restoreDirty,
       );
     }
 
@@ -131,6 +134,7 @@ export const ProjectEditor = () => {
     resource?.content,
     initLeafWriter,
     loadDocumentInWriter,
+    openTabs,
   ]);
 
   useEffect(() => {

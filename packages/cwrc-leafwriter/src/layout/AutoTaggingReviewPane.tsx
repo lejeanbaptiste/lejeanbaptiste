@@ -44,6 +44,7 @@ const isDesktopApp = () => typeof window !== 'undefined' && !!window.electronAPI
 export const AutoTaggingReviewPane = () => {
   const { t } = useTranslation('LW');
   const active = useAppState().ui.autoTaggingReview?.active ?? false;
+  const batchId = useAppState().ui.autoTaggingReview?.batchId ?? 0;
   const aiValidationEnabled = useAppState().ui.autoTaggingReview?.aiValidation ?? true;
   const { exitAutoTaggingReview } = useActions().ui;
   const [suggestions, setSuggestions] = useState<Suggestion[]>([]);
@@ -128,11 +129,10 @@ export const AutoTaggingReviewPane = () => {
     return () => {
       cancelled = true;
     };
-    // aiValidationEnabled is fixed for the lifetime of a batch (set once when
-    // the review opens); only re-run this on active toggling, not every
-    // render.
+    // batchId reloads when a new run starts while the panel is already open
+    // (e.g. tag dates → resolve dates). aiValidation is fixed per batch.
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [active]);
+  }, [active, batchId]);
 
   useEffect(() => {
     if (!active) return;
@@ -190,6 +190,7 @@ export const AutoTaggingReviewPane = () => {
   const handleApply = useCallback(
     (accepted: Suggestion[]) => {
       if (busy) return;
+      const closeAfterApply = isDateCuratorBatch(accepted) || isDateCuratorBatch(suggestions);
       void (async () => {
         setBusyLabel('Applying tags…');
         setProgress({ done: 0, total: accepted.length });
@@ -233,6 +234,14 @@ export const AutoTaggingReviewPane = () => {
                   : 'success',
             );
           }
+          // Resolve is a finishing pass — close once attributes are written.
+          if (closeAfterApply && result.applied > 0) {
+            if (session.current) void session.current.flushDecisions();
+            session.current = null;
+            setApplied(0);
+            setCanRevert(false);
+            exitAutoTaggingReview();
+          }
         } catch (error) {
           const message = error instanceof Error ? error.message : String(error);
           console.error('[auto-tagging] apply failed', error);
@@ -244,7 +253,7 @@ export const AutoTaggingReviewPane = () => {
         }
       })();
     },
-    [busy, getSession, suggestions],
+    [busy, exitAutoTaggingReview, getSession, suggestions],
   );
 
   const handleRevert = useCallback(() => {
@@ -366,7 +375,7 @@ export const AutoTaggingReviewPane = () => {
         </Stack>
 
         {notice && (
-          <Alert severity="warning" sx={{ mx: 1, mt: 1, py: 0.25 }} onClose={() => setNotice(null)}>
+          <Alert severity="info" sx={{ mx: 1, mt: 1, py: 0.25 }} onClose={() => setNotice(null)}>
             {notice}
           </Alert>
         )}
@@ -386,6 +395,7 @@ export const AutoTaggingReviewPane = () => {
             <DateCuratorPanel
               autoFocus={false}
               busy={busy}
+              finishWhenIdle={isDateCuratorBatch(suggestions)}
               suggestions={suggestions}
               onApply={handleApply}
               onFocus={handleFocus}
