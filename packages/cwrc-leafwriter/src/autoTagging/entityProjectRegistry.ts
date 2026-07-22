@@ -1,9 +1,19 @@
 /**
  * Registry of project roots sharing an entity database. Lives as
  * `entity-projects.json` beside `entities.xml`; every project that opens the
- * database checks itself in, so merge/delete key propagation knows which
- * project trees to rewrite. Roots that no longer exist on disk are pruned on
- * read.
+ * database checks itself in, so merge/delete key propagation can *eagerly*
+ * rewrite the trees it can see right now.
+ *
+ * The registry is an **optimization, not the correctness backbone** — that is
+ * the durable order log (`entityOrders.ts`), which lets any tree converge on its
+ * next open regardless of whether it was registered or reachable at merge time.
+ * So check-in is now **non-destructive**: it never deletes another entry just
+ * because that path can't be seen from the current machine. Doing so was the
+ * roaming bug in `entity-registry-merges-and-splits.md` (Stories A–F) — opening
+ * on machine B dropped machine A's checkout, and a later merge on A silently
+ * missed B. We still filter to existing paths at *use* time (`resolveProjectRoots`)
+ * because we can only walk what is actually present, but we no longer throw the
+ * record away.
  */
 
 import type { EntityFileApi } from './entityStore';
@@ -47,8 +57,10 @@ export async function readProjectRegistry(
 }
 
 /**
- * Check a project root into the registry. Prunes roots that have vanished
- * from disk. Returns the registered roots after the update.
+ * Check a project root into the registry, non-destructively: keep every existing
+ * entry (including paths not visible from this machine — they belong to other
+ * checkouts) and append this root if it isn't already recorded. Returns the
+ * registered roots after the update.
  */
 export async function registerProject(
   api: EntityFileApi,
@@ -57,17 +69,10 @@ export async function registerProject(
 ): Promise<string[]> {
   const existing = await readProjectRegistry(api, entitiesPath);
 
-  const kept: string[] = [];
-  for (const root of existing) {
-    if (await api.pathExists(root)) kept.push(root);
-  }
+  const already = existing.some((root) => normalizePath(root) === normalizePath(projectRoot));
+  const next = already ? existing : [...existing, projectRoot];
 
-  const already = kept.some((root) => normalizePath(root) === normalizePath(projectRoot));
-  const next = already ? kept : [...kept, projectRoot];
-
-  const unchanged = next.length === existing.length &&
-    next.every((root, index) => root === existing[index]);
-  if (!unchanged) {
+  if (!already) {
     await api.writeFile(registryPathFor(entitiesPath), serializeRegistry(next));
     await api.notifyOwnWrite?.(registryPathFor(entitiesPath));
   }

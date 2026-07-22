@@ -1,10 +1,19 @@
 import { appendRecords, type DecisionRecord } from './decisionLog';
 import {
   createEntitiesScaffold,
+  getDatabaseId,
   isEntityDatabase,
   parseEntities,
   serializeEntities,
 } from './entities';
+import {
+  makeOrder,
+  readAppliedOrderIds,
+  readOrders,
+  recordOrder,
+  writeAppliedOrderIds,
+  type EntityOrder,
+} from './entityOrders';
 import { registerProject, resolveProjectRoots } from './entityProjectRegistry';
 import {
   resolveEntityStorePaths,
@@ -151,6 +160,39 @@ export class EntityStore {
   /** Registered project roots that still exist, always including this project. */
   async registryProjectRoots(): Promise<string[]> {
     return resolveProjectRoots(this.api, this.entitiesPath, this.projectRoot);
+  }
+
+  /**
+   * Record a merge/delete as a durable order beside `entities.xml`, so projects
+   * not reachable right now converge on their next open (see `entityOrders.ts`).
+   * `dbId` defaults to the attached database's fingerprint; pass it when the doc
+   * is already loaded to avoid a re-read.
+   */
+  async recordEntityOrder(
+    remap: Record<string, string | null>,
+    dbId?: string,
+  ): Promise<EntityOrder | null> {
+    if (Object.keys(remap).length === 0) return null;
+    const fingerprint = dbId ?? getDatabaseId(await this.loadEntities());
+    if (!fingerprint) return null;
+    const order = makeOrder(fingerprint, remap);
+    await recordOrder(this.api, this.entitiesPath, order);
+    return order;
+  }
+
+  /** All recorded orders in the log beside `entities.xml`. */
+  async readEntityOrders(): Promise<EntityOrder[]> {
+    return readOrders(this.api, this.entitiesPath);
+  }
+
+  /** Order ids this project checkout has already applied. */
+  async readAppliedOrderIds(): Promise<Set<string>> {
+    return readAppliedOrderIds(this.api, this.projectLjbDir);
+  }
+
+  /** Persist the applied-order-id set for this project checkout. */
+  async writeAppliedOrderIds(applied: Set<string>): Promise<void> {
+    await writeAppliedOrderIds(this.api, this.projectLjbDir, applied);
   }
 
   /** Append decision records to the JSONL log, creating it if needed. */

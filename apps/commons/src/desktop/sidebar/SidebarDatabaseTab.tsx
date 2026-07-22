@@ -36,7 +36,7 @@ import {
 } from '@mui/material';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import type { AuthorityId, EntityKind } from '../../../../../packages/cwrc-leafwriter/src/autoTagging/entities';
+import { getDatabaseId, type AuthorityId, type EntityKind } from '../../../../../packages/cwrc-leafwriter/src/autoTagging/entities';
 import {
   addEntityName,
   deleteEntity,
@@ -276,9 +276,13 @@ export const SidebarDatabaseTab = ({ active = false }: SidebarDatabaseTabProps) 
       setBusyMessage(message);
       try {
         const doc = await store.loadEntities();
+        const dbId = getDatabaseId(doc) ?? undefined;
         const remap = mutate(doc) ?? undefined;
         await store.saveEntities(doc);
         if (remap && Object.keys(remap).length > 0) {
+          // Durable order first (so a crash mid-crawl still lets other checkouts
+          // converge), then the eager cross-project crawl for this machine.
+          await store.recordEntityOrder(remap, dbId);
           const summary = await applyKeyRemapAcrossProjects(store, remap);
           setLastSummary(summary);
         }
