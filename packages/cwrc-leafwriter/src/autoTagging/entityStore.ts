@@ -243,26 +243,21 @@ export interface DesktopEntityStoreGlobals {
   };
 }
 
-/**
- * Build an EntityStore from the desktop globals, or null in the web app / when
- * no project is open.
- */
-export function entityStoreFromDesktop(): EntityStore | null {
-  const globals = window as unknown as DesktopEntityStoreGlobals & {
-    electronAPI?: DesktopEntityStoreGlobals['electronAPI'] & {
-      statFile?: (filePath: string) => Promise<{ mtimeMs: number }>;
-      ignoreFileChange?: (filePath: string, mtimeMs: number) => Promise<void>;
-      armFileWrite?: (filePath: string) => Promise<void>;
-    };
+type DesktopGlobals = DesktopEntityStoreGlobals & {
+  electronAPI?: DesktopEntityStoreGlobals['electronAPI'] & {
+    statFile?: (filePath: string) => Promise<{ mtimeMs: number }>;
+    ignoreFileChange?: (filePath: string, mtimeMs: number) => Promise<void>;
+    armFileWrite?: (filePath: string) => Promise<void>;
   };
-  const rawApi = globals.electronAPI;
-  const project = globals.__ljbLspProject;
-  const root = project?.projectRoot;
-  if (!rawApi?.ensureDirectory || !rawApi.pathExists || !rawApi.readFile || !rawApi.writeFile || !root) {
+};
+
+/** Build the desktop-backed EntityFileApi, or null when the bridge is missing. */
+export function desktopEntityFileApi(): EntityFileApi | null {
+  const rawApi = (window as unknown as DesktopGlobals).electronAPI;
+  if (!rawApi?.ensureDirectory || !rawApi.pathExists || !rawApi.readFile || !rawApi.writeFile) {
     return null;
   }
-
-  const api: EntityFileApi = {
+  return {
     ensureDirectory: (dirPath) => rawApi.ensureDirectory!(dirPath),
     pathExists: (filePath) => rawApi.pathExists!(filePath),
     readFile: (filePath) => rawApi.readFile!(filePath),
@@ -285,12 +280,45 @@ export function entityStoreFromDesktop(): EntityStore | null {
       }
     },
   };
+}
 
+/**
+ * Build an EntityStore from the desktop globals, or null in the web app / when
+ * no project is open.
+ */
+export function entityStoreFromDesktop(): EntityStore | null {
+  const api = desktopEntityFileApi();
+  const project = (window as unknown as DesktopGlobals).__ljbLspProject;
+  const root = project?.projectRoot;
+  if (!api || !root) return null;
   try {
     const paths = resolveEntityStorePaths({
       projectRoot: root,
       entityStore: project?.entityStore,
       centralFolder: project?.entityDbFolder ?? null,
+    });
+    return EntityStore.fromPaths(api, paths);
+  } catch {
+    return null;
+  }
+}
+
+/**
+ * Build a **central-mode** EntityStore (the user's personal CEDB), regardless of
+ * what store the project itself uses — the second half the Bridge needs.
+ * Returns null when no central folder is configured.
+ */
+export function centralEntityStoreFromDesktop(centralFolder: string | null): EntityStore | null {
+  const api = desktopEntityFileApi();
+  const project = (window as unknown as DesktopGlobals).__ljbLspProject;
+  const root = project?.projectRoot;
+  const folder = centralFolder ?? project?.entityDbFolder ?? null;
+  if (!api || !root || !folder) return null;
+  try {
+    const paths = resolveEntityStorePaths({
+      projectRoot: root,
+      entityStore: 'central',
+      centralFolder: folder,
     });
     return EntityStore.fromPaths(api, paths);
   } catch {

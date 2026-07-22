@@ -1,6 +1,13 @@
 import { getDatabaseId, TAG_TO_KIND } from './entities';
+import { listEntities } from './entityOps';
 import type { EntityStore } from './entityStore';
 import { purgeEntityKeys } from './mentions';
+import {
+  orphanPurgeRemap,
+  sweepOrphans,
+  type OrphanSweepReport,
+} from './orphanSweep';
+import { rewriteMentionKeys } from './rewriteMentionKeys';
 
 export interface EntityDatabaseCheckInput {
   projectDatabaseId?: string;
@@ -60,6 +67,53 @@ export async function purgeEntityKeysInProject(
     if (count > 0) {
       await api.writeFile(file.path, new XMLSerializer().serializeToString(doc));
       total += count;
+    }
+  }
+  return total;
+}
+
+/**
+ * Scan the corpus for `@key`s that no longer resolve to any entity in the
+ * database, classified (via the per-file PEDB stamp) into genuine orphans vs
+ * misfiled "stray" files. This is the safe, precise alternative to the
+ * wholesale purge: it never strips keys in a file that belongs to a *different*
+ * project database.
+ */
+export async function sweepProjectOrphans(
+  store: EntityStore,
+  api: EntityDatabaseCheckApi,
+  projectRoot: string,
+): Promise<OrphanSweepReport> {
+  const doc = await store.loadEntities();
+  const pedbIds = new Set(listEntities(doc).map((entity) => entity.id));
+  const fingerprint = getDatabaseId(doc) ?? '';
+  const files = await api.listProjectXmlFiles(projectRoot);
+  const corpus: { path: string; xml: string }[] = [];
+  for (const file of files) {
+    if (file.name === 'entities.xml') continue;
+    corpus.push({ path: file.path, xml: await api.readFile(file.path) });
+  }
+  return sweepOrphans(corpus, pedbIds, fingerprint);
+}
+
+/**
+ * Strip only the *genuine* orphan keys from the report's files (stray files are
+ * never touched). Returns how many keys were removed. String-based rewrite so
+ * corpus formatting is preserved.
+ */
+export async function purgeReportedOrphans(
+  api: EntityDatabaseCheckApi,
+  report: OrphanSweepReport,
+): Promise<number> {
+  const remap = orphanPurgeRemap(report);
+  if (Object.keys(remap).length === 0) return 0;
+  let total = 0;
+  for (const file of report.orphanFiles) {
+    const xml = await api.readFile(file.path);
+    const result = rewriteMentionKeys(xml, remap);
+    if (result.changed) {
+      await api.writeFile(file.path, result.xml);
+      total += result.count;
     }
   }
   return total;
