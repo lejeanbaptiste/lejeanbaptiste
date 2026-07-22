@@ -307,6 +307,18 @@ jobs:
       attestations: write
 
     steps:
+      # actions/checkout wipes the workspace directory when it isn't already a
+      # git repo, so it must run before anything downloads artifacts into it.
+      - name: Check out release tooling
+        uses: actions/checkout@v4
+        with:
+          clean: false
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+
       - name: Download .deb artifacts
         uses: actions/download-artifact@v4
         with:
@@ -331,16 +343,6 @@ jobs:
         with:
           pattern: windows-*
           path: release-assets/windows
-
-      - name: Check out release tooling
-        uses: actions/checkout@v4
-        with:
-          clean: false
-
-      - name: Set up Node.js
-        uses: actions/setup-node@v4
-        with:
-          node-version: 20
           cache: npm
 
       - name: Install release-tool dependencies
