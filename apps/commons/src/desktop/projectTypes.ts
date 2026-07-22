@@ -17,6 +17,14 @@ export interface ProjectSchemaConfig {
 export interface ProjectFileConfig {
   version: 1;
   name: string;
+  /**
+   * Stable identity for this project, independent of its filesystem path.
+   * Used as the achievements engine's project key instead of the OS path,
+   * so the same project checked out at different absolute paths (e.g. Mac
+   * vs Windows checkouts of the same repo) is recognized as one project
+   * instead of accumulating two separate, double-counted entries.
+   */
+  projectId?: string;
   schema?: ProjectSchemaConfig;
   /** Relative path, default schema/project-metadata.json */
   metadata?: string;

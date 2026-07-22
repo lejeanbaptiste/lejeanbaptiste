@@ -20,6 +20,7 @@ import {
   markDatesPassApplied,
   markDatesPassRan,
   validateSuggestions,
+  prepareSuggestionsForReview,
   type Suggestion,
 } from '../autoTagging';
 import { useActions, useAppState } from '../overmind';
@@ -80,30 +81,35 @@ export const AutoTaggingReviewPane = () => {
     }
 
     const batch = takeAutoTaggingBatch();
-    setSuggestions(batch);
     setNotice(takeAutoTaggingNotice());
     setApplyDiagnostics(null);
     setApplyDiagSeverity('info');
     setApplied(0);
     setCanRevert(false);
 
-    if (
-      !aiValidationEnabled ||
-      batch.length === 0 ||
-      isDateCuratorBatch(batch) ||
-      isDateTagOnlyBatch(batch)
-    ) {
-      return;
-    }
-    const settings = aiApiSettingsFromDesktop();
-    if (!settings || !isAiSuggestReady(settings)) return;
-
     let cancelled = false;
     void (async () => {
       try {
+        const session = getSession();
+        const doc = await session.getDocument();
+        const { suggestions: prepared } = prepareSuggestionsForReview(doc, session.policy, batch);
+        if (cancelled) return;
+        setSuggestions(prepared);
+
+        if (
+          !aiValidationEnabled ||
+          prepared.length === 0 ||
+          isDateCuratorBatch(prepared) ||
+          isDateTagOnlyBatch(prepared)
+        ) {
+          return;
+        }
+        const settings = aiApiSettingsFromDesktop();
+        if (!settings || !isAiSuggestReady(settings)) return;
+
         const client = createLlmClientFromSettings(settings);
         const results = await validateSuggestions({
-          suggestions: batch,
+          suggestions: prepared,
           client,
         });
         if (cancelled || results.size === 0) return;
@@ -114,7 +120,8 @@ export const AutoTaggingReviewPane = () => {
           }),
         );
       } catch (error) {
-        console.warn('[auto-tagging] AI validation failed:', error);
+        console.warn('[auto-tagging] Failed to prepare review batch:', error);
+        if (!cancelled) setSuggestions(batch);
       }
     })();
 
@@ -131,7 +138,24 @@ export const AutoTaggingReviewPane = () => {
     if (!active) return;
     const append = (event: Event) => {
       const additions = (event as CustomEvent<Suggestion[]>).detail ?? [];
-      if (additions.length > 0) setSuggestions((current) => [...current, ...additions]);
+      if (additions.length === 0) return;
+      void (async () => {
+        try {
+          const session = getSession();
+          const doc = await session.getDocument();
+          setSuggestions((current) => {
+            const { suggestions: prepared } = prepareSuggestionsForReview(
+              doc,
+              session.policy,
+              [...current, ...additions],
+            );
+            return prepared;
+          });
+        } catch (error) {
+          console.warn('[auto-tagging] Failed to prepare appended suggestions:', error);
+          setSuggestions((current) => [...current, ...additions]);
+        }
+      })();
     };
     window.addEventListener('desktop:auto-tagging-review-append', append);
     return () => window.removeEventListener('desktop:auto-tagging-review-append', append);

@@ -242,6 +242,18 @@ export interface ElectronAPI {
   setEncoderName: (name: string) => Promise<void>;
   readAchievementsFile?: () => Promise<string | null>;
   writeAchievementsFile?: (content: string) => Promise<void>;
+  readSourceProfiles?: () => Promise<import('../desktop/sourceProfileTypes').SourceProfileFile>;
+  upsertSourceProfile?: (
+    profile: import('../desktop/sourceProfileTypes').SourceProfile,
+  ) => Promise<import('../desktop/sourceProfileTypes').SourceProfileFile>;
+  deleteSourceProfile?: (
+    profileId: string,
+  ) => Promise<import('../desktop/sourceProfileTypes').SourceProfileFile>;
+  getAchievementsFolder?: () => Promise<string | null>;
+  setAchievementsFolder?: (folder: string | null) => Promise<void>;
+  pickAchievementsFolder?: () => Promise<string | null>;
+  pickImportAchievementsFile?: () => Promise<string | null>;
+  readAchievementsFileFrom?: (filePath: string) => Promise<string | null>;
   getGameAssetColorStats?: (key: string) => Promise<{ lightness: number; saturation: number } | null>;
   saveCertificatePng?: (bytes: Uint8Array, suggestedName: string) => Promise<boolean>;
   getCachedLeaderboardToken?: () => Promise<string | null>;
@@ -411,11 +423,14 @@ declare global {
       aiApiSettings: AiApiSettings | null;
       encoderName: string;
       entityDbFolder: string | null;
+      achievementsFolder: string | null;
       rememberWorkspaceOnStartup: boolean;
       skipCopyPasteHelp: boolean;
       skipEntityDetachConfirm: boolean;
       skipExplorerDeleteConfirm: boolean;
       pickEntityDbFolder: () => Promise<string | null>;
+      pickAchievementsFolder: () => Promise<string | null>;
+      importAchievementsFrom: () => Promise<{ ok: boolean; cancelled?: boolean; error?: string }>;
       setAiApiSettings: (settings: Partial<AiApiSettings>) => void | Promise<void>;
       setEncoderName: (name: string) => void | Promise<void>;
       setRememberWorkspaceOnStartup: (value: boolean) => void | Promise<void>;

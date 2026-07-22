@@ -4,6 +4,8 @@ import { DEFAULT_ASIAN_FONT, DEFAULT_LATIN_FONT } from './fontFamilies';
 
 export const DEFAULT_EDITOR_FONT_SIZE = 11;
 
+export type ChoiceDisplayMode = 'original' | 'corrected' | 'both';
+
 // eslint-disable-next-line @typescript-eslint/consistent-type-definitions
 export type EditorStateType = {
   advancedSettings: boolean;
@@ -15,9 +17,10 @@ export type EditorStateType = {
     label: string;
     disabled?: boolean;
   }[];
-  autosave?: boolean;
   asianFont: string;
   baseUrl?: string;
+  /** Display mode for <choice>/<sic>/<corr>: show original text only, corrected text only, or both. */
+  choiceDisplayMode: ChoiceDisplayMode;
   contentHasChanged: boolean;
   fontSize: number;
   latinFont: string;
@@ -47,8 +50,12 @@ export type EditorStateType = {
   showRawXmlPanel: boolean;
   showTagBubble: boolean;
   showTags: boolean;
+  /** When false, hide <lb> and <pb> in the visual editor so interrupted text reads as one block. */
+  showBreaks: boolean;
   /** Strip inter-character whitespace on load for no-space East Asian docs. */
   stripCjkWhitespace: boolean;
+  /** Reject Find & Replace edits that would leave the document's XML not well-formed. */
+  validateXmlOnReplace: boolean;
 };
 
 export const state: EditorStateType = {
@@ -66,6 +73,7 @@ export const state: EditorStateType = {
   }),
   asianFont: DEFAULT_ASIAN_FONT,
   baseUrl: '.',
+  choiceDisplayMode: 'both',
   contentHasChanged: false,
   editorMode: 'xmlrdf',
   editorModeLabel: derived((state: EditorStateType) => {
@@ -90,7 +98,9 @@ export const state: EditorStateType = {
   showRawXmlPanel: false,
   showTagBubble: true,
   showTags: false,
+  showBreaks: true,
   stripCjkWhitespace: false,
+  validateXmlOnReplace: true,
   schemas: {},
   schemasList: derived((state: EditorStateType) => Object.values(state.schemas)),
   schemaMappings: ['cwrcEntry', 'orlando', 'tei', 'teiLite'],

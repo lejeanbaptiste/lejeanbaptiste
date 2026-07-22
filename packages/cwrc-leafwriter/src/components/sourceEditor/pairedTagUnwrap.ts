@@ -7,6 +7,7 @@ import {
   type TextDeleteRange,
   type UnwrapTagPair,
 } from './closingTagParser';
+import { isPairedTagAutoDeleteAllowed } from './pairedTagAutoDelete';
 
 const selectionMatchesRange = (
   selection: monaco.Selection,
@@ -89,6 +90,8 @@ export const registerPairedTagUnwrap = (
     if (!selection) return;
 
     const content = model.getValue();
+    if (!isPairedTagAutoDeleteAllowed(content)) return;
+
     const offset = model.getOffsetAt(selection.getStartPosition());
     const pair = findUnwrapTagPair(content, offset);
     if (!pair) return;

@@ -227,14 +227,6 @@ export class Leafwriter {
     // TODO
   }
 
-  get autosave() {
-    return overmind.state.editor.autosave ?? false;
-  }
-
-  set autosave(value: boolean) {
-    overmind.actions.editor.setAutosave(value);
-  }
-
   getAllowOverlap() {
     return overmind.state.editor.allowOverlap;
   }

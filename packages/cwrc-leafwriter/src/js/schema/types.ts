@@ -57,6 +57,7 @@ export interface MappingProps {
 export interface CustomValuesProps {
   // [x: string]: string;
   corrText?: string;
+  correctionKind?: string;
   placeType?: string;
   precision?: string;
   sicText?: string;

@@ -2,6 +2,13 @@ import en from './en.json';
 import fr from './fr.json';
 
 const requiredKeys = [
+  'achievements_storage',
+  'achievements_storage_folder',
+  'achievements_storage_default',
+  'achievements_storage_change',
+  'achievements_storage_hint',
+  'achievements_import',
+  'achievements_import_hint',
   'entity_database',
   'entity_database_change',
   'entity_database_folder',

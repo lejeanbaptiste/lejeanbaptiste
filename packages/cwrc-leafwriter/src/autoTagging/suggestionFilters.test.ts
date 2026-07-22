@@ -1,5 +1,5 @@
 import { normalizeDomText } from './normalize';
-import { filterNestedSameTagAdds } from './suggestionFilters';
+import { filterNestedSameTagAdds, prepareSuggestionsForReview } from './suggestionFilters';
 import type { Suggestion } from './types';
 
 const parse = (xml: string) => {
@@ -61,5 +61,39 @@ describe('filterNestedSameTagAdds', () => {
     const { suggestions, dropped } = filterNestedSameTagAdds(doc, 'ignore', [remove]);
     expect(dropped).toBe(0);
     expect(suggestions).toEqual([remove]);
+  });
+
+  it('drops an add for placeName already wrapped in placeName', () => {
+    const doc = parse(
+      '<TEI xmlns="http://www.tei-c.org/ns/1.0"><text><body><p><placeName>洛陽</placeName></p></body></text></TEI>',
+    );
+    const { suggestions, dropped } = filterNestedSameTagAdds(doc, 'ignore', [
+      addSuggestion('洛陽', 1, 'placeName'),
+    ]);
+    expect(dropped).toBe(1);
+    expect(suggestions).toHaveLength(0);
+  });
+
+  it('drops an add for placeName already wrapped in geogName', () => {
+    const doc = parse(
+      '<TEI xmlns="http://www.tei-c.org/ns/1.0"><text><body><p><geogName>洛陽</geogName></p></body></text></TEI>',
+    );
+    const { suggestions, dropped } = filterNestedSameTagAdds(doc, 'ignore', [
+      addSuggestion('洛陽', 1, 'placeName'),
+    ]);
+    expect(dropped).toBe(1);
+    expect(suggestions).toHaveLength(0);
+  });
+
+  it('dedupes identical location suggestions in prepareSuggestionsForReview', () => {
+    const doc = parse('<TEI><text><body><p>洛陽</p></body></text></TEI>');
+    const first = addSuggestion('洛陽', 1, 'placeName');
+    const duplicate = { ...addSuggestion('洛陽', 1, 'placeName'), id: 'y' };
+    const { suggestions, droppedDuplicate } = prepareSuggestionsForReview(doc, 'ignore', [
+      first,
+      duplicate,
+    ]);
+    expect(droppedDuplicate).toBe(1);
+    expect(suggestions).toHaveLength(1);
   });
 });

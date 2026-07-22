@@ -39,6 +39,7 @@ import {
   type StructuredOutputMode,
 } from './aiTranslationLlm';
 import {
+  getAchievementsFolder,
   getAiApiSettings,
   getEncoderName,
   getEntityDbFolder,
@@ -48,6 +49,7 @@ import {
   setLastDialogDir,
   getWorkspaceSession,
   saveWorkspaceSession,
+  setAchievementsFolder,
   setAiApiSettings,
   setEncoderName,
   setEntityDbFolder,
@@ -76,10 +78,16 @@ import {
   setAuthorityLifecycleEnabled,
 } from './authorityLifecycle';
 import { getChgisStatus, installChgisFromArchive, removeChgisData } from './authorityChgis';
-import { loadOrCreateProject, loadProjectFile, writeProjectConfig } from './projectFile';
+import { loadOrCreateProject, loadProjectFile, writeProjectConfig, type ProjectBundle } from './projectFile';
+import { resolveDialogDefaultPath } from './dialogDefaultPath';
 import mammoth from 'mammoth';
 import { extractOdtText } from './odtText';
-import { readAchievementsFile, writeAchievementsFile } from './achievementsFile';
+import { readAchievementsFile, readAchievementsFileFrom, writeAchievementsFile } from './achievementsFile';
+import {
+  deleteSourceProfileFromFile,
+  readSourceProfilesFile,
+  upsertSourceProfileInFile,
+} from './sourceProfilesFile';
 import { decodeTextBuffer } from './textEncoding';
 import {
   createDirectory,
@@ -558,6 +566,14 @@ let openFileWatcher: OpenFileWatcher | null = null;
 let activeProjectRoot: string | null = null;
 const approvedRendererReadRoots = new Set<string>();
 
+const setActiveProjectRoot = (rootPath: string | null): void => {
+  activeProjectRoot = rootPath ? path.resolve(rootPath) : null;
+};
+
+const activateProjectBundle = (bundle: ProjectBundle | null): void => {
+  setActiveProjectRoot(bundle?.rootPath ?? null);
+};
+
 const isPathWithin = (root: string, candidate: string): boolean => {
   const relative = path.relative(path.resolve(root), path.resolve(candidate));
   return relative === '' || (!relative.startsWith('..') && !path.isAbsolute(relative));
@@ -1027,16 +1043,18 @@ const setMainWindowTitle = (title?: string) => {
   mainWindow?.setTitle(title?.trim() ? title : APP_NAME);
 };
 
-/**
- * Where a system dialog should start: the last place the user was in one,
- * else the entity database folder, else Documents.
- */
 const getDialogDefaultPath = async (): Promise<string> => {
-  const lastDir = await getLastDialogDir();
-  if (lastDir && existsSync(lastDir)) return lastDir;
   const entityDbFolder = await getEntityDbFolder();
-  if (entityDbFolder && existsSync(entityDbFolder)) return entityDbFolder;
-  return app.getPath('documents');
+  const lastDir = await getLastDialogDir();
+  const lastProjectFile = await getValidLastProjectFile();
+
+  return resolveDialogDefaultPath({
+    entityDbFolder,
+    homeDir: app.getPath('home'),
+    lastDialogDir: lastDir,
+    lastProjectFile,
+    pathExists: existsSync,
+  });
 };
 
 const rememberDialogDir = (pickedPath: string, kind: 'directory' | 'file') => {
@@ -1075,7 +1093,7 @@ const openProjectFromDialog = async () => {
 
   try {
     const bundle = await loadOrCreateProject(result.filePaths[0]);
-    activeProjectRoot = bundle.rootPath;
+    activateProjectBundle(bundle);
     await writeLastProjectFile(bundle.projectFilePath);
     return bundle;
   } catch (error) {
@@ -1119,7 +1137,9 @@ const registerIpcHandlers = () => {
     if (!(await getRememberWorkspaceOnStartup())) return null;
     const projectFilePath = await getValidLastProjectFile();
     if (!projectFilePath) return null;
-    return loadProjectFile(projectFilePath);
+    const bundle = await loadProjectFile(projectFilePath);
+    activateProjectBundle(bundle);
+    return bundle;
   });
 
   ipcMain.handle('getRememberWorkspaceOnStartup', () => getRememberWorkspaceOnStartup());
@@ -1140,6 +1160,7 @@ const registerIpcHandlers = () => {
 
     const bundle = await loadProjectFile(projectFilePath);
     if (!bundle) return null;
+    activateProjectBundle(bundle);
 
     const openFilePaths: string[] = [];
     for (const filePath of session?.openFilePaths ?? []) {
@@ -1237,6 +1258,65 @@ const registerIpcHandlers = () => {
     await writeAchievementsFile(content);
   });
 
+  ipcMain.handle('readSourceProfiles', async () => readSourceProfilesFile());
+
+  ipcMain.handle(
+    'upsertSourceProfile',
+    async (_event, profile: import('../../commons/src/desktop/sourceProfileTypes').SourceProfile) =>
+      upsertSourceProfileInFile(profile),
+  );
+
+  ipcMain.handle('deleteSourceProfile', async (_event, profileId: string) =>
+    deleteSourceProfileFromFile(profileId),
+  );
+
+  ipcMain.handle('getAchievementsFolder', async () => getAchievementsFolder());
+
+  ipcMain.handle('setAchievementsFolder', async (_event, folder: string | null) => {
+    await setAchievementsFolder(folder);
+  });
+
+  ipcMain.handle('pickAchievementsFolder', async () => {
+    const parent = getTopNativeDialogWindow() ?? mainWindow ?? undefined;
+    const options: Electron.OpenDialogOptions = {
+      properties: ['openDirectory', 'createDirectory'],
+      title: 'Choose medals & stats folder',
+      message:
+        'Your medals and stats (achievements.json) will be stored here instead of the app data folder - point this at a folder your own sync tool (Dropbox, iCloud, etc.) watches to carry it between machines.',
+      defaultPath: await getDialogDefaultPath(),
+    };
+    const result = parent
+      ? await dialog.showOpenDialog(parent, options)
+      : await dialog.showOpenDialog(options);
+    if (result.canceled || result.filePaths.length === 0) return null;
+    rememberDialogDir(result.filePaths[0], 'directory');
+    return result.filePaths[0] ?? null;
+  });
+
+  ipcMain.handle('pickImportAchievementsFile', async () => {
+    const parent = getTopNativeDialogWindow() ?? mainWindow ?? undefined;
+    const options: Electron.OpenDialogOptions = {
+      properties: ['openFile'],
+      title: 'Load medals & stats from another file',
+      message: 'Select an achievements.json to import. This replaces your local medals and stats.',
+      filters: [
+        { name: 'Achievements file', extensions: ['json'] },
+        { name: 'All files', extensions: ['*'] },
+      ],
+      defaultPath: await getDialogDefaultPath(),
+    };
+    const result = parent
+      ? await dialog.showOpenDialog(parent, options)
+      : await dialog.showOpenDialog(options);
+    if (result.canceled || result.filePaths.length === 0) return null;
+    rememberDialogDir(result.filePaths[0], 'file');
+    return result.filePaths[0] ?? null;
+  });
+
+  ipcMain.handle('readAchievementsFileFrom', async (_event, filePath: string) => {
+    return readAchievementsFileFrom(filePath);
+  });
+
   ipcMain.handle('getGameAssetColorStats', (_event, key: string) => {
     return getGameAssetColorStats(key);
   });
@@ -1291,7 +1371,9 @@ const registerIpcHandlers = () => {
   });
 
   ipcMain.handle('reloadProjectBundle', async (_event, projectFilePath: string) => {
-    return loadProjectFile(projectFilePath);
+    const bundle = await loadProjectFile(projectFilePath);
+    if (bundle) activateProjectBundle(bundle);
+    return bundle;
   });
 
   ipcMain.handle(

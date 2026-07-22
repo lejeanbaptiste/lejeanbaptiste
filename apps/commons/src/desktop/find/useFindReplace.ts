@@ -29,6 +29,7 @@ export interface UseFindReplaceParams {
   activeTabPath: string | null;
   allowMarkupReplace?: boolean;
   customPath: string;
+  enforceWellFormedXml?: boolean;
   docScope?: DocScope;
   findQuery: string;
   onSearchComplete: (params: {
@@ -56,6 +57,7 @@ export const useFindReplace = ({
   allowMarkupReplace = false,
   customPath,
   docScope,
+  enforceWellFormedXml = true,
   findQuery,
   onSearchComplete,
   openTabs,
@@ -148,6 +150,7 @@ export const useFindReplace = ({
       findQuery.trim(),
       ignoreCase,
       allowMarkupReplace,
+      enforceWellFormedXml,
     );
 
     if (!outcome.ok || !outcome.content) {
@@ -219,6 +222,7 @@ export const useFindReplace = ({
   }, [
     activeTabPath,
     allowMarkupReplace,
+    enforceWellFormedXml,
     findQuery,
     loadDocumentInWriter,
     loadFileContent,
@@ -259,6 +263,7 @@ export const useFindReplace = ({
         useRegex,
         ignoreCase,
         allowMarkupReplace,
+        enforceWellFormedXml,
       );
 
       if (!outcome.ok) {
@@ -321,6 +326,7 @@ export const useFindReplace = ({
   }, [
     activeTabPath,
     allowMarkupReplace,
+    enforceWellFormedXml,
     findQuery,
     loadDocumentInWriter,
     loadFileContent,

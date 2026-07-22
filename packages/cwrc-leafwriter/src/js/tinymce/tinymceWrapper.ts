@@ -11,6 +11,7 @@ import './plugins/prevent_delete';
 import fscreen from 'fscreen';
 import Writer from '../Writer';
 import { stripCjkWhitespaceInElement } from '../../utilities/cjkWhitespace';
+import { resolvePageBreakMarkers, tagPageBreaks } from '../../utilities/pageBreakDetection';
 import { normalizePastedParagraphs, fixNestedPastedParagraphs, removeEmptyParagraphs, PARAGRAPH_TAG } from './normalizePastedParagraphs';
 import {
   buildLeafWriterClipboardPayload,
@@ -300,17 +301,19 @@ export const tinymceWrapperInit = function ({
 
   const textToParagraphXml = (text: string) => {
     const normalized = text.replace(/\r\n?/g, '\n');
+    const tagged = tagPageBreaks(normalized);
     // Blank lines separate paragraphs when present; otherwise every line break does,
     // since the paste dialog only offers this mode for text without blank lines.
-    const separator = /\n{2,}/.test(normalized) ? /\n{2,}/ : /\n/;
-    return normalized
+    const separator = /\n{2,}/.test(tagged) ? /\n{2,}/ : /\n/;
+    return tagged
       .split(separator)
       .map((paragraph) => paragraph.trim())
       .filter(Boolean)
-      .map(
-        (paragraph) =>
-          `<${PARAGRAPH_TAG}>${paragraph.split('\n').map(escapeHtml).join('<lb/>')}</${PARAGRAPH_TAG}>`,
-      )
+      .map((paragraph) => {
+        const resolved = resolvePageBreakMarkers(paragraph, escapeHtml, (n) => `<pb n="${n}"/>`);
+        if ('soleMarker' in resolved) return resolved.soleMarker;
+        return `<${PARAGRAPH_TAG}>${resolved.text.replace(/\n/g, '<lb/>')}</${PARAGRAPH_TAG}>`;
+      })
       .join('');
   };
 

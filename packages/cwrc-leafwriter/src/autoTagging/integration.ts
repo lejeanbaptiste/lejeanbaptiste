@@ -24,7 +24,7 @@ import {
   type PendingCache,
 } from './disambiguationPending';
 import { DecisionLogBuffer, type DecisionRecord } from './decisionLog';
-import { LJB_AUTOTAG_RESP, TAG_TO_KIND, type EntityKind } from './entities';
+import { TAG_TO_KIND, type EntityKind } from './entities';
 import { autoRomanize } from '../utilities/romanize';
 import { entityStoreFromDesktop, type EntityStore } from './entityStore';
 import { DisambiguationAiCache } from './disambiguationAiCache';
@@ -32,8 +32,8 @@ import type { AiPromptProfile } from './aiPromptProfiles';
 import type { LlmClient } from './llmClient';
 import { LlmCache } from './llmCache';
 import { llmSuggest, type LlmSuggestResult } from './llmSuggest';
-import { filterNestedSameTagAdds } from './suggestionFilters';
-import { llmAudit, collectTaggedSpans, type LlmAuditResult } from './llmAudit';
+import { collectTaggedSpans, prepareSuggestionsForReview } from './suggestionFilters';
+import { llmAudit, type LlmAuditResult } from './llmAudit';
 import { normalizeDomText } from './normalize';
 import type { AuthorityPackId } from './packPaths';
 import { MAX_AUTHORITY_SUGGESTIONS, runAuthorityTagBombOnDocument } from './authorityTagBomb';
@@ -253,10 +253,14 @@ export class AutoTaggingSession {
       range,
       onChunk,
     });
-    const { suggestions, dropped } = filterNestedSameTagAdds(doc, this.policy, result.suggestions);
+    const { suggestions, droppedNested } = prepareSuggestionsForReview(
+      doc,
+      this.policy,
+      result.suggestions,
+    );
     return {
       suggestions,
-      unverifiableCount: result.unverifiableCount + dropped,
+      unverifiableCount: result.unverifiableCount + droppedNested,
     };
   }
 
@@ -285,11 +289,15 @@ export class AutoTaggingSession {
       range,
       onChunk,
     });
-    const { suggestions, dropped } = filterNestedSameTagAdds(doc, this.policy, result.suggestions);
+    const { suggestions, droppedNested } = prepareSuggestionsForReview(
+      doc,
+      this.policy,
+      result.suggestions,
+    );
     return {
       ...result,
       suggestions,
-      unverifiableCount: result.unverifiableCount + dropped,
+      unverifiableCount: result.unverifiableCount + droppedNested,
     };
   }
 
@@ -330,7 +338,8 @@ export class AutoTaggingSession {
         void yieldToUi();
       },
     });
-    return result;
+    const { suggestions } = prepareSuggestionsForReview(doc, this.policy, result.suggestions);
+    return { ...result, suggestions };
   }
 
   async runEastAsianDateTag(
@@ -639,7 +648,7 @@ export class AutoTaggingSession {
       options.createNew ? undefined : candidate,
     );
 
-    assignEntity({ element: instance.element, entityId, resp: LJB_AUTOTAG_RESP });
+    assignEntity({ element: instance.element, entityId });
     await this.saveEntities();
     await this.persistDocument(instance.element.ownerDocument!);
     this.logResolution(instance, 'resolved', entityId);
@@ -654,7 +663,7 @@ export class AutoTaggingSession {
     const first = instances[0]!;
     const entityId = await this.resolveMention(first, candidate);
     for (const instance of instances.slice(1)) {
-      assignEntity({ element: instance.element, entityId, resp: LJB_AUTOTAG_RESP });
+      assignEntity({ element: instance.element, entityId });
       await this.persistDocument(instance.element.ownerDocument!);
       this.logResolution(instance, 'resolved', entityId);
     }

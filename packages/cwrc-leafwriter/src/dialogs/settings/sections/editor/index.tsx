@@ -6,23 +6,14 @@ import { FontFamily } from './font-family';
 import { FontSize } from './font-size';
 
 export const Editor = () => {
-  const { autosave, isReadonly, showEntities, stripCjkWhitespace } = useAppState().editor;
-  const { setAutosave, setShowEntities, setStripCjkWhitespace } = useActions().editor;
+  const { showEntities, stripCjkWhitespace, validateXmlOnReplace } = useAppState().editor;
+  const { setShowEntities, setStripCjkWhitespace, setValidateXmlOnReplace } = useActions().editor;
   const { t } = useTranslation();
 
   return (
     <List dense>
       <FontSize />
       <FontFamily />
-      {autosave !== undefined && !isReadonly && (
-        <Toggler
-          icon="cloudSync"
-          onChange={setAutosave}
-          title={t('LW.commons.autosave')}
-          type="toggle"
-          value={autosave}
-        />
-      )}
       <Toggler
         icon="entitiesTag"
         onChange={setShowEntities}
@@ -36,6 +27,14 @@ export const Editor = () => {
         title={t('LW.settings.editor.strip_east_asian_whitespace')}
         type="toggle"
         value={stripCjkWhitespace}
+      />
+      <Toggler
+        description={t('LW.settings.editor.validate_xml_on_replace_description')}
+        icon="correction"
+        onChange={setValidateXmlOnReplace}
+        title={t('LW.settings.editor.validate_xml_on_replace')}
+        type="toggle"
+        value={validateXmlOnReplace}
       />
     </List>
   );

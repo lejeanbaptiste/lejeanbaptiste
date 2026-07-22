@@ -1,6 +1,10 @@
 import { useActions, useAppState } from '@src/overmind';
 import { registerLeafWriterCommonsI18n } from '@src/desktop/registerLeafWriterCommonsI18n';
 import { isDesktop, type AiApiSettings } from '@src/types/desktop';
+import {
+  clearAchievementsCache,
+  importAchievementsState,
+} from '@src/desktop/achievements/store';
 import type {
   AuthorityLifecycleRunResult,
   AuthorityLifecycleSetEnabledOptions,
@@ -29,6 +33,7 @@ export const useCommonsUiBridge = () => {
   const [encoderName, setEncoderNameState] = useState('');
   const [aiApiSettings, setAiApiSettingsState] = useState<AiApiSettings | null>(null);
   const [entityDbFolder, setEntityDbFolderState] = useState<string | null>(null);
+  const [achievementsFolder, setAchievementsFolderState] = useState<string | null>(null);
   const [rememberWorkspaceOnStartup, setRememberWorkspaceOnStartupState] = useState(true);
   const [authorityLifecycleStatus, setAuthorityLifecycleStatusState] =
     useState<AuthorityLifecycleStatus | null>(null);
@@ -54,6 +59,14 @@ export const useCommonsUiBridge = () => {
 
     void window.electronAPI.getEntityDbFolder().then((folder) => {
       setEntityDbFolderState(typeof folder === 'string' && folder.trim() ? folder : null);
+    });
+  }, []);
+
+  useEffect(() => {
+    if (!isDesktop() || !window.electronAPI?.getAchievementsFolder) return;
+
+    void window.electronAPI.getAchievementsFolder().then((folder) => {
+      setAchievementsFolderState(typeof folder === 'string' && folder.trim() ? folder : null);
     });
   }, []);
 
@@ -194,6 +207,43 @@ export const useCommonsUiBridge = () => {
     return picked;
   }, []);
 
+  const pickAchievementsFolder = useCallback(async (): Promise<string | null> => {
+    const picked = await window.electronAPI?.pickAchievementsFolder?.();
+    if (!picked) return null;
+    await window.electronAPI?.setAchievementsFolder?.(picked);
+    setAchievementsFolderState(picked);
+    return picked;
+  }, []);
+
+  const importAchievementsFrom = useCallback(async (): Promise<{
+    ok: boolean;
+    cancelled?: boolean;
+    error?: string;
+  }> => {
+    const picked = await window.electronAPI?.pickImportAchievementsFile?.();
+    if (!picked) return { ok: false, cancelled: true };
+
+    const confirmed = await window.electronAPI?.showNativeMessageBox?.({
+      type: 'warning',
+      title: 'Replace local medals and stats?',
+      message: `This replaces all locally-saved medals, stats, and rank progress with the contents of:\n${picked}\n\nThis cannot be undone.`,
+      buttons: ['Cancel', 'Replace'],
+      defaultId: 0,
+      cancelId: 0,
+    });
+    if (confirmed?.response !== 1) return { ok: false, cancelled: true };
+
+    const raw = await window.electronAPI?.readAchievementsFileFrom?.(picked);
+    if (!raw) return { ok: false, error: 'Could not read that file.' };
+
+    const imported = importAchievementsState(raw);
+    if (!imported) return { ok: false, error: 'That file is not a valid achievements file.' };
+
+    await window.electronAPI?.writeAchievementsFile?.(JSON.stringify(imported, null, 2));
+    clearAchievementsCache();
+    return { ok: true };
+  }, []);
+
   const setRememberWorkspaceOnStartup = useCallback(async (value: boolean) => {
     setRememberWorkspaceOnStartupState(value);
     await window.electronAPI?.setRememberWorkspaceOnStartup?.(value);
@@ -233,6 +283,7 @@ export const useCommonsUiBridge = () => {
       encoderName,
       aiApiSettings,
       entityDbFolder,
+      achievementsFolder,
       rememberWorkspaceOnStartup,
       skipCopyPasteHelp,
       skipEntityDetachConfirm,
@@ -245,6 +296,8 @@ export const useCommonsUiBridge = () => {
       setSkipEntityDetachConfirm,
       setSkipExplorerDeleteConfirm,
       pickEntityDbFolder,
+      pickAchievementsFolder,
+      importAchievementsFrom,
       testAiConnection,
       refreshAuthorityLifecycle,
       setAuthorityLifecycleEnabled,
@@ -262,8 +315,11 @@ export const useCommonsUiBridge = () => {
     authorityLifecycleStatus,
     encoderName,
     entityDbFolder,
+    achievementsFolder,
     rememberWorkspaceOnStartup,
     pickEntityDbFolder,
+    pickAchievementsFolder,
+    importAchievementsFrom,
     refreshAuthorityLifecycle,
     runAuthorityLifecycleUpdate,
     revealAuthorityLifecycleFolder,

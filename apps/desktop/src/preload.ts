@@ -183,6 +183,18 @@ export interface ElectronAPI {
   setEncoderName: (name: string) => Promise<void>;
   readAchievementsFile: () => Promise<string | null>;
   writeAchievementsFile: (content: string) => Promise<void>;
+  readSourceProfiles: () => Promise<import('../../commons/src/desktop/sourceProfileTypes').SourceProfileFile>;
+  upsertSourceProfile: (
+    profile: import('../../commons/src/desktop/sourceProfileTypes').SourceProfile,
+  ) => Promise<import('../../commons/src/desktop/sourceProfileTypes').SourceProfileFile>;
+  deleteSourceProfile: (
+    profileId: string,
+  ) => Promise<import('../../commons/src/desktop/sourceProfileTypes').SourceProfileFile>;
+  getAchievementsFolder: () => Promise<string | null>;
+  setAchievementsFolder: (folder: string | null) => Promise<void>;
+  pickAchievementsFolder: () => Promise<string | null>;
+  pickImportAchievementsFile: () => Promise<string | null>;
+  readAchievementsFileFrom: (filePath: string) => Promise<string | null>;
   getGameAssetColorStats: (key: string) => Promise<{ lightness: number; saturation: number } | null>;
   saveCertificatePng: (bytes: Uint8Array, suggestedName: string) => Promise<boolean>;
   getCachedLeaderboardToken: () => Promise<string | null>;
@@ -409,6 +421,16 @@ const electronAPI: ElectronAPI = {
   setEncoderName: (name: string) => ipcRenderer.invoke('setEncoderName', name),
   readAchievementsFile: () => ipcRenderer.invoke('readAchievementsFile'),
   writeAchievementsFile: (content: string) => ipcRenderer.invoke('writeAchievementsFile', content),
+  readSourceProfiles: () => ipcRenderer.invoke('readSourceProfiles'),
+  upsertSourceProfile: (profile: import('../../commons/src/desktop/sourceProfileTypes').SourceProfile) =>
+    ipcRenderer.invoke('upsertSourceProfile', profile),
+  deleteSourceProfile: (profileId: string) => ipcRenderer.invoke('deleteSourceProfile', profileId),
+  getAchievementsFolder: () => ipcRenderer.invoke('getAchievementsFolder'),
+  setAchievementsFolder: (folder: string | null) => ipcRenderer.invoke('setAchievementsFolder', folder),
+  pickAchievementsFolder: () => ipcRenderer.invoke('pickAchievementsFolder'),
+  pickImportAchievementsFile: () => ipcRenderer.invoke('pickImportAchievementsFile'),
+  readAchievementsFileFrom: (filePath: string) =>
+    ipcRenderer.invoke('readAchievementsFileFrom', filePath),
   getGameAssetColorStats: (key: string) => ipcRenderer.invoke('getGameAssetColorStats', key),
   saveCertificatePng: (bytes: Uint8Array, suggestedName: string) =>
     ipcRenderer.invoke('saveCertificatePng', bytes, suggestedName),

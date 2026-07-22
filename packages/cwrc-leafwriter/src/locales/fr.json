@@ -53,6 +53,11 @@
     "Copy Entity": "Copier l'entité",
     "Copy Tag and Contents": "Copier la balise et le contenu",
     "Correction": "Correction",
+    "Correction type": "Type de correction",
+    "Substitute (sic/corr)": "Substituer (sic/corr)",
+    "Add (supplied)": "Ajouter (<supplied>)",
+    "Delete (surplus)": "Supprimer (<surplus>)",
+    "Supplied text": "Texte suppléé",
     "Current document": "Document actuel",
     "Date": "Date",
     "Date Picker": "Sélecteur de date",
@@ -201,7 +206,6 @@
       "appearance": "apparence",
       "authorities": "autorités",
       "authority": "Autorité",
-      "autosave": "sauvegarde automatique",
       "beta": "bêta",
       "cancel": "annuler",
       "change": "changer",
@@ -272,7 +276,15 @@
       "Tag Thing": "Baliser un objet",
       "Tag Work": "Baliser un ouvrage",
       "Toggle Fullscreen": "Basculer en plein écran",
-      "Validate": "Valider"
+      "Validate": "Valider",
+      "Quick Correction": "Correction",
+      "Quick Correction tooltip": "Marquer des changements éditoriaux : substituer (sic/corr), ajouter (<supplied>) ou supprimer (<surplus>)",
+      "Correction": "Correction",
+      "Correction tooltip": "Marquer des changements éditoriaux : substituer (sic/corr), ajouter (<supplied>) ou supprimer (<surplus>)",
+      "Hide Breaks": "Masquer les coupures",
+      "Hide Breaks tooltip": "Masquer les sauts de ligne et de page pour lire le texte comme un bloc continu",
+      "Show Breaks": "Afficher les coupures",
+      "Show Breaks tooltip": "Afficher les sauts de ligne et de page dans l’éditeur"
     },
     "entity": {
       "_plural": {
@@ -477,7 +489,9 @@
         "font_size_slider": "Curseur de taille de police",
         "interface_zoom": "Zoom de l'interface",
         "interface_zoom_slider": "Curseur de zoom de l'interface",
-        "show_tag_bubble": "Afficher la bulle du nom de balise"
+        "show_tag_bubble": "Afficher la bulle du nom de balise",
+        "validate_xml_on_replace": "Exiger un XML bien formé pour Rechercher et remplacer",
+        "validate_xml_on_replace_description": "Lorsque cette option est activée, un remplacement est bloqué s'il rend le XML du document mal formé (par exemple, modifier une balise ouvrante sans sa balise fermante)."
       },
       "markupPanel": {
         "Allow drag and drop": "Autoriser le glisser-déposer",
@@ -521,6 +535,13 @@
     },
     "desktop": {
       "settings": {
+        "achievements_storage": "Médailles et statistiques",
+        "achievements_storage_folder": "Dossier de stockage",
+        "achievements_storage_default": "Par défaut (dossier de données de l’application)",
+        "achievements_storage_change": "Choisir un dossier…",
+        "achievements_storage_hint": "Pointez ceci vers un dossier surveillé par votre propre outil de synchronisation (Dropbox, iCloud, etc.) pour transporter vos médailles et statistiques entre machines. Stocké chiffré ; rien n’est envoyé nulle part sauf si votre outil de synchronisation le fait.",
+        "achievements_import": "Charger depuis un autre fichier…",
+        "achievements_import_hint": "Remplace toutes les médailles, statistiques et progrès de rang locaux par le contenu d’un fichier choisi. Ne peut pas être annulé.",
         "entity_database": "Base d’entités",
         "entity_database_change": "Changer de dossier",
         "entity_database_folder": "Dossier de la base",

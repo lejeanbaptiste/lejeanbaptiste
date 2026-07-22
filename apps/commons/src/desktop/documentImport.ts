@@ -1,5 +1,6 @@
 import type { ProjectFileConfig } from './projectFile';
 import { buildSkeletonForCatalog } from './schemaTemplates';
+import { resolvePageBreakMarkers, tagPageBreaks } from '@cwrc/leafwriter/pageBreakDetection';
 
 export type ImportableDocumentFormat = 'txt' | 'md' | 'rtf' | 'docx' | 'odt';
 
@@ -236,11 +237,21 @@ export const extractPlainTextForImport = (
 const replaceTeiTitle = (xml: string, title: string): string =>
   xml.replace(/<title(\s[^>]*)?>[\s\S]*?<\/title>/, `<title$1>${escapeXmlText(title)}</title>`);
 
+const renderImportedParagraph = (paragraph: string, tag: string): string => {
+  const resolved = resolvePageBreakMarkers(
+    paragraph,
+    escapeXmlText,
+    (n) => `<pb n="${n}"/>`,
+  );
+  if ('soleMarker' in resolved) return resolved.soleMarker;
+  return `<${tag}>${resolved.text}</${tag}>`;
+};
+
 const replaceTeiBody = (xml: string, paragraphs: string[]): string => {
   const body = [
     '<body>',
     '    <div type="text">',
-    ...paragraphs.map((paragraph) => `      <p>${escapeXmlText(paragraph)}</p>`),
+    ...paragraphs.map((paragraph) => `      ${renderImportedParagraph(paragraph, 'p')}`),
     '    </div>',
     '  </body>',
   ].join('\n  ');
@@ -258,7 +269,7 @@ const replaceOrlandoTitle = (xml: string, title: string): string =>
     .replace(/<STANDARD>[\s\S]*?<\/STANDARD>/, `<STANDARD>${escapeXmlText(title)}</STANDARD>`);
 
 const replaceOrlandoBody = (xml: string, paragraphs: string[]): string => {
-  const prose = paragraphs.map((paragraph) => `<P>${escapeXmlText(paragraph)}</P>`).join('\n      ');
+  const prose = paragraphs.map((paragraph) => renderImportedParagraph(paragraph, 'P')).join('\n      ');
   return xml.replace(
     /<AUTHORSUMMARY>[\s\S]*?<\/AUTHORSUMMARY>/,
     `<AUTHORSUMMARY>\n      ${prose}\n  </AUTHORSUMMARY>`,
@@ -277,7 +288,9 @@ export const buildImportedDocumentXml = ({
   text: string;
 }): string => {
   const title = basenameWithoutExtension(sourcePath);
-  const paragraphs = normalizeImportedParagraphs(extractPlainTextForImport(text, format));
+  const paragraphs = normalizeImportedParagraphs(
+    tagPageBreaks(extractPlainTextForImport(text, format)),
+  );
   const fallbackParagraphs = paragraphs.length > 0 ? paragraphs : [''];
   const skeleton = buildSkeletonForCatalog(config);
 

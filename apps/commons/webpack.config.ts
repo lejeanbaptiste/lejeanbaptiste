@@ -215,6 +215,15 @@ const webpackConfig: webpack.Configuration = {
         'conversion',
         'documentExport.ts',
       ),
+      // Exact-match alias so document import (file-level, no editor UI) can use the
+      // shared page-break detector without pulling in the whole editor bundle.
+      '@cwrc/leafwriter/pageBreakDetection$': path.resolve(
+        relPathToPackages,
+        'cwrc-leafwriter',
+        'src',
+        'utilities',
+        'pageBreakDetection.ts',
+      ),
       '@cwrc/leafwriter': path.resolve(relPathToPackages, 'cwrc-leafwriter', 'src', 'index.tsx'),
       '@cwrc/leafwriter-storage-service$': path.join(storageServiceSrc, 'index.tsx'),
       '@cwrc/leafwriter-storage-service/components$': path.join(

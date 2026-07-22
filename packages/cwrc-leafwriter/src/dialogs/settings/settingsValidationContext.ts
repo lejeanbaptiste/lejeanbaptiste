@@ -10,7 +10,6 @@ const defaultState: SettingsValidationState = {
   isDesktop: false,
   languageValid: true,
   encoderNameValid: true,
-  entityDbFolderValid: true,
   allValid: true,
   attempted: false,
 };

@@ -2,6 +2,8 @@ import fs from 'fs';
 import path from 'path';
 import {
   collectTextNodes,
+  compareAnchorsByDocumentPosition,
+  compareXPath,
   createAnchor,
   resolveAnchor,
   resolveXPath,
@@ -209,5 +211,40 @@ describe('real corpus (test_project/sizhu_shang.xml)', () => {
     const reResolved = resolveAnchor(doc, anchor, 'ignore');
     expect(reResolved).not.toBeNull();
     expect(reResolved!.node.data.slice(reResolved!.start, reResolved!.end)).toBe('上陽子');
+  });
+});
+
+describe('compareXPath', () => {
+  it('orders sibling elements by numeric index, not lexicographically', () => {
+    expect(compareXPath('/TEI/text/body/div[2]/p/text()[1]', '/TEI/text/body/div[10]/p/text()[1]')).toBeLessThan(
+      0,
+    );
+  });
+
+  it('orders paragraphs within the same div', () => {
+    expect(compareXPath('/TEI/text/body/div/p[1]/text()[1]', '/TEI/text/body/div/p[2]/text()[1]')).toBeLessThan(0);
+  });
+
+  it('treats a shorter path as an ancestor that comes first', () => {
+    expect(compareXPath('/TEI/text/body/div', '/TEI/text/body/div/p/text()[1]')).toBeLessThan(0);
+  });
+});
+
+describe('compareAnchorsByDocumentPosition', () => {
+  it('orders by xpath first, then offset within the text node', () => {
+    const earlier = {
+      documentId: 'doc',
+      xpath: '/TEI/text/body/div/p[1]/text()[1]',
+      offset: 0,
+      surface: '甲',
+      occurrence: 1,
+      contextBefore: '',
+      contextAfter: '',
+      nodeHash: '0',
+    };
+    const laterParagraph = { ...earlier, xpath: '/TEI/text/body/div/p[2]/text()[1]' };
+    const laterOffset = { ...earlier, offset: 5 };
+    expect(compareAnchorsByDocumentPosition(earlier, laterParagraph)).toBeLessThan(0);
+    expect(compareAnchorsByDocumentPosition(earlier, laterOffset)).toBeLessThan(0);
   });
 });

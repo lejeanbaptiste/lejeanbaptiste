@@ -5,16 +5,60 @@ import { db } from '../../db';
 import { resetLookupPreferences } from '../../jotai/entity-lookup/utilities';
 import type { LeafWriterOptionsSettings, Schema } from '../../types';
 import { DEFAULT_ASIAN_FONT, DEFAULT_LATIN_FONT, getValidFontFamily } from './fontFamilies';
-import { DEFAULT_EDITOR_FONT_SIZE } from './state';
+import { DEFAULT_EDITOR_FONT_SIZE, type ChoiceDisplayMode } from './state';
 
 const DIALOG_PREFS_COOKIE_NAME = 'leaf-writer-base-dialog-preferences';
 const ASIAN_FONT_KEY = 'asianFont';
+const CHOICE_DISPLAY_MODE_KEY = 'choiceDisplayMode';
+const CHOICE_DISPLAY_STYLE_ID = 'choiceDisplayStyle';
+const CHOICE_DISPLAY_MODES: ChoiceDisplayMode[] = ['original', 'corrected', 'both'];
 const FONT_FAMILY_STYLE_ID = 'leafwriter-default-font-families';
 const FONT_SIZE_KEY = 'fontSize';
 const LATIN_FONT_KEY = 'latinFont';
+const SHOW_BREAKS_KEY = 'showBreaks';
 const SHOW_RAW_XML_PANEL_KEY = 'showRawXmlPanel';
 const STRIP_CJK_WHITESPACE_KEY = 'stripCjkWhitespace';
 const TEXT_LOCKED_KEY = 'textLocked';
+const VALIDATE_XML_ON_REPLACE_KEY = 'validateXmlOnReplace';
+
+/**
+ * A correction entity's live editor content is always its corrected text (see
+ * CorrectionDialog); the original text is stamped separately as a `data-sic-text`
+ * attribute (not editor content, so it's invisible to XML export). To display the
+ * original instead, we shrink the real (corrected) text to nothing and show the
+ * original via a same-size `::before` pseudo-element - CSS-only, no DOM/content changes.
+ */
+const applyChoiceDisplayMode = (mode: ChoiceDisplayMode, fontSize: number) => {
+  if (!window.writer?.editor) return;
+  const doc = window.writer.editor.getDoc();
+
+  let $style = $(`#${CHOICE_DISPLAY_STYLE_ID}`, doc);
+  if ($style.length === 0) {
+    $style = $(`<style id="${CHOICE_DISPLAY_STYLE_ID}" type="text/css" />`).appendTo($('head', doc));
+  }
+  $style.text(`
+    .choiceDisplay-original .entity.correction[data-sic-text] {
+      font-size: 0 !important;
+    }
+    .choiceDisplay-original .entity.correction[data-sic-text]::before {
+      content: attr(data-sic-text);
+      font-size: ${fontSize}pt !important;
+    }
+    .choiceDisplay-both .entity.correction[data-sic-text]::before {
+      content: attr(data-sic-text) " / ";
+    }
+    .choiceDisplay-corrected .entity.correction[_tag="surplus"] {
+      font-size: 0 !important;
+    }
+    .choiceDisplay-original .entity.correction[_tag="supplied"] {
+      font-size: 0 !important;
+    }
+  `);
+
+  $('body', doc)
+    .removeClass(CHOICE_DISPLAY_MODES.map((m) => `choiceDisplay-${m}`).join(' '))
+    .addClass(`choiceDisplay-${mode}`);
+};
 
 const CJK_FONT_SELECTORS = [
   ':lang(zh)',
@@ -92,6 +136,7 @@ export const applyInitialSettings = ({ state, actions, effects }: Context) => {
   const body = window.writer.editor.getBody();
   if (state.editor.showEntities) $(body).addClass('showEntities');
   if (state.editor.showTags) $(body).addClass('showTags');
+  if (!state.editor.showBreaks) $(body).addClass('hideBreaks');
   if (state.editor.showTagBubble) $(body).addClass('showTagBubble');
   window.writer.layoutManager.applyRawXmlPanelVisibility(state.editor.showRawXmlPanel);
 
@@ -103,10 +148,25 @@ export const applyInitialSettings = ({ state, actions, effects }: Context) => {
     state.editor.textLocked = storedTextLocked;
     window.writer.isTextLocked = storedTextLocked;
   }
-};
 
-export const setAutosave = ({ state }: Context, value?: boolean) => {
-  state.editor.autosave = value;
+  const storedValidateXmlOnReplace = effects.editor.api.getFromLocalStorage<boolean>(
+    VALIDATE_XML_ON_REPLACE_KEY,
+  );
+  if (storedValidateXmlOnReplace !== null) {
+    state.editor.validateXmlOnReplace = storedValidateXmlOnReplace;
+  }
+
+  const storedChoiceDisplayMode = effects.editor.api.getFromLocalStorage<ChoiceDisplayMode>(
+    CHOICE_DISPLAY_MODE_KEY,
+  );
+  if (storedChoiceDisplayMode && CHOICE_DISPLAY_MODES.includes(storedChoiceDisplayMode)) {
+    state.editor.choiceDisplayMode = storedChoiceDisplayMode;
+  }
+  applyChoiceDisplayMode(state.editor.choiceDisplayMode, state.editor.fontSize);
+
+  const storedShowBreaks = effects.editor.api.getFromLocalStorage<boolean>(SHOW_BREAKS_KEY);
+  if (storedShowBreaks !== null) state.editor.showBreaks = storedShowBreaks;
+  $('body', window.writer.editor.getDoc()).toggleClass('hideBreaks', !state.editor.showBreaks);
 };
 
 export const suspendLWChangeEvent = async ({ state }: Context, value: boolean) => {
@@ -132,6 +192,7 @@ export const setFontSize = ({ state, effects }: Context, value: number) => {
   window.writer.editor.dom.setStyles(window.writer.editor.dom.getRoot(), styles);
   state.editor.fontSize = value;
   effects.editor.api.saveToLocalStorage(FONT_SIZE_KEY, value);
+  applyChoiceDisplayMode(state.editor.choiceDisplayMode, value);
 };
 
 export const applyFontFamilies = ({ state }: Context) => {
@@ -167,6 +228,27 @@ export const toggleShowTags = ({ state }: Context, value?: boolean) => {
   state.editor.showTags = value;
 };
 
+export const toggleShowBreaks = ({ state, effects }: Context, value?: boolean) => {
+  if (!window.writer?.editor) return;
+  const next = value ?? !state.editor.showBreaks;
+  $('body', window.writer.editor.getDoc()).toggleClass('hideBreaks', !next);
+  state.editor.showBreaks = next;
+  effects.editor.api.saveToLocalStorage(SHOW_BREAKS_KEY, next);
+};
+
+export const setChoiceDisplayMode = ({ state, effects }: Context, mode: ChoiceDisplayMode) => {
+  if (!window.writer?.editor) return;
+  applyChoiceDisplayMode(mode, state.editor.fontSize);
+  state.editor.choiceDisplayMode = mode;
+  effects.editor.api.saveToLocalStorage(CHOICE_DISPLAY_MODE_KEY, mode);
+};
+
+export const cycleChoiceDisplayMode = ({ state, actions }: Context) => {
+  const index = CHOICE_DISPLAY_MODES.indexOf(state.editor.choiceDisplayMode);
+  const next = CHOICE_DISPLAY_MODES[(index + 1) % CHOICE_DISPLAY_MODES.length]!;
+  actions.editor.setChoiceDisplayMode(next);
+};
+
 export const toggleShowTagBubble = ({ state, effects }: Context, value?: boolean) => {
   if (!window.writer?.editor) return;
   const next = value ?? !state.editor.showTagBubble;
@@ -191,6 +273,11 @@ export const setStripCjkWhitespace = ({ state, effects }: Context, value: boolea
       if (xml) window.writer?.loadDocumentXML(xml);
     });
   }
+};
+
+export const setValidateXmlOnReplace = ({ state, effects }: Context, value: boolean) => {
+  state.editor.validateXmlOnReplace = value;
+  effects.editor.api.saveToLocalStorage<boolean>(VALIDATE_XML_ON_REPLACE_KEY, value);
 };
 
 export const setShowRawXmlPanel = ({ state, effects }: Context, value: boolean) => {
@@ -369,6 +456,7 @@ export const resetPreferences = async ({ actions }: Context) => {
   actions.editor.toggleShowTags(false);
   actions.editor.setShowEntities(true);
   actions.editor.setShowRawXmlPanel(false);
+  actions.editor.setValidateXmlOnReplace(true);
   actions.editor.setEditorMode('xmlrdf');
   actions.editor.setAnnotationrMode(3);
   await actions.ui.resetDoNotDisplayDialogs();
@@ -451,4 +539,6 @@ export const clear = ({ state }: Context) => {
   state.editor.showEntities = true;
   state.editor.showEntities = true;
   state.editor.showTags = false;
+  state.editor.showBreaks = true;
+  state.editor.validateXmlOnReplace = true;
 };

@@ -1,31 +1,22 @@
-import {
-  Alert,
-  Box,
-  Button,
-  ListItem,
-  Stack,
-  TextField,
-  Typography,
-} from '@mui/material';
+import { Box, Button, ListItem, Stack, TextField, Typography } from '@mui/material';
 import { useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { useSettingsValidation } from '../../settingsValidationContext';
 
 const getCommonsUiBridge = () =>
   (
     window as Window & {
       __ljbCommonsUi?: {
         entityDbFolder: string | null;
-        pickEntityDbFolder: () => Promise<string | null>;
+        revealAuthorityLifecycleFolder: () => Promise<void>;
       };
     }
   ).__ljbCommonsUi;
 
+/** True store location; only revealed here, never re-picked (see auto-tagging dialog for that). */
 export const DesktopEntityDatabase = () => {
   const { t } = useTranslation();
   const bridge = getCommonsUiBridge();
   const [entityDbFolder, setEntityDbFolder] = useState(bridge?.entityDbFolder ?? null);
-  const { attempted, entityDbFolderValid } = useSettingsValidation();
 
   useEffect(() => {
     const sync = () => setEntityDbFolder(getCommonsUiBridge()?.entityDbFolder ?? null);
@@ -42,37 +33,22 @@ export const DesktopEntityDatabase = () => {
         {t('LW.desktop.settings.entity_database')}
       </Typography>
 
-      {!entityDbFolder && (
-        <Alert severity={attempted && !entityDbFolderValid ? 'error' : 'warning'} sx={{ mb: 1, width: '100%' }}>
-          {t('LW.desktop.settings.entity_database_missing')}
-        </Alert>
-      )}
-
       <Stack spacing={1} sx={{ width: '100%' }}>
         <TextField
-          error={attempted && !entityDbFolderValid}
           fullWidth
           InputProps={{ readOnly: true }}
           label={t('LW.desktop.settings.entity_database_folder')}
           size="small"
           value={entityDbFolder ?? ''}
-          helperText={
-            attempted && !entityDbFolderValid
-              ? t('LW.desktop.settings.field_required')
-              : t('LW.desktop.settings.entity_database_hint')
-          }
+          helperText={t('LW.desktop.settings.entity_database_hint')}
         />
         <Box>
           <Button
-            onClick={() =>
-              void bridge.pickEntityDbFolder().then((folder) => {
-                if (folder) setEntityDbFolder(folder);
-              })
-            }
+            onClick={() => void bridge.revealAuthorityLifecycleFolder()}
             size="small"
             variant="outlined"
           >
-            {t('LW.desktop.settings.entity_database_change')}
+            {t('LW.desktop.settings.entity_database_reveal')}
           </Button>
         </Box>
       </Stack>

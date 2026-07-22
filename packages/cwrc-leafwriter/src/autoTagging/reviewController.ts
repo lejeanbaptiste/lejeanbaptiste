@@ -1,4 +1,11 @@
+import { compareAnchorsByDocumentPosition } from './anchor';
 import type { Suggestion, SuggestionSource } from './types';
+
+function sortSuggestionsByDocumentPosition(suggestions: Suggestion[]): Suggestion[] {
+  return [...suggestions].sort((left, right) =>
+    compareAnchorsByDocumentPosition(left.anchor, right.anchor),
+  );
+}
 
 export type Decision = 'accepted' | 'rejected';
 
@@ -59,7 +66,7 @@ export class ReviewController {
   private readonly options: ReviewControllerOptions;
 
   constructor(suggestions: Suggestion[], options: ReviewControllerOptions = {}) {
-    this.suggestions = [...suggestions];
+    this.suggestions = sortSuggestionsByDocumentPosition(suggestions);
     this.options = options;
     if (this.pendingGroups().length > 0) this.moveToPendingIndex(0);
   }
@@ -98,7 +105,7 @@ export class ReviewController {
     return Math.min(Math.max(stored, 0), group.length - 1);
   }
 
-  /** Pending suggestions grouped into navigation stops, in batch order. */
+  /** Pending suggestions grouped into navigation stops, in document order. */
   pendingGroups(): PendingGroup[] {
     return this.groupsOf(this.pendingVisible()).map((suggestions) => ({
       suggestions,

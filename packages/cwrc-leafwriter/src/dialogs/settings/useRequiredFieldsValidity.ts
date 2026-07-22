@@ -7,7 +7,7 @@ const isDesktopApp =
 const getCommonsUiBridge = () =>
   (
     window as Window & {
-      __ljbCommonsUi?: { encoderName: string; entityDbFolder: string | null };
+      __ljbCommonsUi?: { encoderName: string };
     }
   ).__ljbCommonsUi;
 
@@ -15,16 +15,14 @@ export interface RequiredFieldsValidity {
   isDesktop: boolean;
   languageValid: boolean;
   encoderNameValid: boolean;
-  entityDbFolderValid: boolean;
   allValid: boolean;
 }
 
-/** Language, user name, and database folder must all be set on desktop before settings can close. */
+/** Language and user name must both be set on desktop before settings can close. */
 export const useRequiredFieldsValidity = (): RequiredFieldsValidity => {
   const { currentLocale } = useAppState().ui;
   const [bridgeState, setBridgeState] = useState(() => ({
     encoderName: getCommonsUiBridge()?.encoderName ?? '',
-    entityDbFolder: getCommonsUiBridge()?.entityDbFolder ?? null,
   }));
 
   useEffect(() => {
@@ -32,7 +30,6 @@ export const useRequiredFieldsValidity = (): RequiredFieldsValidity => {
     const sync = () =>
       setBridgeState({
         encoderName: getCommonsUiBridge()?.encoderName ?? '',
-        entityDbFolder: getCommonsUiBridge()?.entityDbFolder ?? null,
       });
     sync();
     window.addEventListener('ljbCommonsUiChanged', sync);
@@ -41,13 +38,11 @@ export const useRequiredFieldsValidity = (): RequiredFieldsValidity => {
 
   const languageValid = !!currentLocale?.trim();
   const encoderNameValid = !isDesktopApp || !!bridgeState.encoderName.trim();
-  const entityDbFolderValid = !isDesktopApp || !!bridgeState.entityDbFolder?.trim();
 
   return {
     isDesktop: isDesktopApp,
     languageValid,
     encoderNameValid,
-    entityDbFolderValid,
-    allValid: languageValid && encoderNameValid && entityDbFolderValid,
+    allValid: languageValid && encoderNameValid,
   };
 };

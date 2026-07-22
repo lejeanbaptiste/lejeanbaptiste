@@ -89,7 +89,7 @@ export const App = () => {
     <ThemeProvider theme={theme} defaultMode={darkMode ? 'dark' : 'light'}>
       <SyncColorScheme darkMode={darkMode} />
       <ModalProvider>
-        <SnackbarProvider>
+        <SnackbarProvider autoHideDuration={5000} disableWindowBlurListener>
           <CssBaseline enableColorScheme />
           {storageDialogState.open && <Storage />}
           {routing}

@@ -21,6 +21,16 @@ const make = (id: string, extra: Partial<Suggestion> = {}): Suggestion => ({
 });
 
 describe('ReviewController', () => {
+  it('walks pending suggestions in document order even when the batch is shuffled', () => {
+    const c = new ReviewController([
+      make('later', { anchor: { ...make('x').anchor, xpath: '/TEI/text/body/div/p[2]/text()[1]' } }),
+      make('earlier', { anchor: { ...make('x').anchor, xpath: '/TEI/text/body/div/p[1]/text()[1]' } }),
+    ]);
+    expect(c.current()!.id).toBe('earlier');
+    c.next();
+    expect(c.current()!.id).toBe('later');
+  });
+
   it('walks, decides, and advances to the next pending suggestion', () => {
     const focused: string[] = [];
     const decisions: DecisionEvent[] = [];
@@ -172,11 +182,19 @@ describe('ReviewController', () => {
 
   describe('same-span alternatives (one string, several tags)', () => {
     const altPair = () => {
-      const anchor = { ...make('x').anchor, surface: '高祖', offset: 5 };
+      const anchor = {
+        ...make('x').anchor,
+        surface: '高祖',
+        offset: 5,
+        xpath: '/TEI/text/body/div/p[1]/text()[1]',
+      };
       return [
         make('as-pers', { tag: 'persName', anchor: { ...anchor } }),
         make('as-title', { tag: 'title', anchor: { ...anchor } }),
-        make('other', { anchor: { ...make('x').anchor, surface: '洛陽' }, tag: 'placeName' }),
+        make('other', {
+          anchor: { ...make('x').anchor, surface: '洛陽', xpath: '/TEI/text/body/div/p[2]/text()[1]' },
+          tag: 'placeName',
+        }),
       ];
     };
 

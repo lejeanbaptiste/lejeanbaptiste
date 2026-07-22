@@ -2,6 +2,7 @@ import $ from 'jquery';
 import { EntityType, SchemaMappingType } from '../../types';
 import { log } from '../../utilities';
 import Entity from '../entities/Entity';
+import { syncCorrectionEntityDom } from '../entities/correctionDom';
 import Writer from '../Writer';
 import { cwrcEntry, empty, orlando, tei, teiLite } from './mappings';
 import type { EntityMappingProps } from './types';
@@ -564,6 +565,10 @@ class Mapper {
     if (isNote) this.writer.tagger.addNoteWrapper(tag, entityType);
 
     const entity = this.writer.entitiesManager.addEntity(config as Entity);
+
+    if (entityType === 'correction') {
+      syncCorrectionEntityDom(this.writer, entity, tag);
+    }
 
     if (showEntityDialog) {
       if (!isNamedEntity || (isNamedEntity && !entity.getURI())) {

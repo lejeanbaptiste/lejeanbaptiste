@@ -1,5 +1,6 @@
 import { buildDocIndex, createAnchor } from './anchor';
 import { isInsideDateElement } from './dates';
+import { isWrappedByEntityTag } from './suggestionFilters';
 import { MultiStringMatcher } from './matcher';
 import type { Suggestion, WhitespacePolicy } from './types';
 
@@ -125,11 +126,11 @@ export function dictionaryTag(
     if (isInsideDateElement(node)) continue;
 
     // Ancestor tag names for this node, computed once (not per match).
-    const ancestors = ancestorTagNames(node);
+    const alreadyTagged = (tag: string) => isWrappedByEntityTag(node, tag);
 
     for (const match of matcher.scan(search.text)) {
       // Skip tags already wrapping this spot — no point re-suggesting.
-      const tags = tagsByString.get(match.pattern)!.filter((tag) => !ancestors.has(tag));
+      const tags = tagsByString.get(match.pattern)!.filter((tag) => !alreadyTagged(tag));
       if (tags.length === 0) continue;
 
       const rawStart = search.map[match.start]!;
@@ -155,13 +156,4 @@ export function dictionaryTag(
   }
 
   return suggestions;
-}
-
-/** The set of ancestor element names above a node (computed once per node). */
-function ancestorTagNames(node: Node): Set<string> {
-  const names = new Set<string>();
-  for (let el = node.parentElement; el; el = el.parentElement) {
-    names.add(el.localName || el.nodeName);
-  }
-  return names;
 }

@@ -79,6 +79,7 @@ const flattenResults = (
 };
 
 const isSourceEditorMode = () => window.writer?.overmindState?.ui?.editorViewMode === 'source';
+const shouldValidateXmlOnReplace = () => window.writer?.overmindState?.editor?.validateXmlOnReplace ?? true;
 
 export const SidebarFindTab = () => {
   const { t } = useTranslation();
@@ -234,6 +235,7 @@ export const SidebarFindTab = () => {
     allowMarkupReplace: sourceMode,
     customPath,
     docScope,
+    enforceWellFormedXml: shouldValidateXmlOnReplace(),
     findQuery,
     onSearchComplete: handleSearchComplete,
     openTabs,

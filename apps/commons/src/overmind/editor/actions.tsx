@@ -1,7 +1,5 @@
-import LeafWriter from '@cwrc/leafwriter';
 import { saveDocument } from '@cwrc/leafwriter-storage-service/headless';
-import { AUTOSAVE_TIMEOUT_RETRY } from '@src/config';
-import { isDesktop } from '@src/types/desktop';
+import { SAVE_CONFLICT_RETRY_DELAY } from '@src/config';
 import type { Error, Resource } from '@src/types';
 import { isErrorMessage } from '@src/types';
 import { log } from '@src/utilities';
@@ -31,10 +29,6 @@ export const setResource = async ({ state }: Context, resource?: Resource) => {
 
 export const clearResource = async ({ state }: Context) => {
   state.editor.resource = undefined;
-};
-
-export const setAutosave = ({ state }: Context, value: boolean) => {
-  state.editor.autosave = !!value;
 };
 
 export const isContentSameAsLastSaved = ({ state }: Context, content: string) => {
@@ -97,11 +91,9 @@ export const save = async (
       return { success: false, error: response };
     }
 
-    const { timerService } = state.editor;
-    if (timerService.maxAttempts === Infinity) {
+    if (!state.editor.saveDelayed) {
       state.editor.saveDelayed = true;
-      // actions.editor.delaySave({ content });
-      timerService.stop().setDuration(AUTOSAVE_TIMEOUT_RETRY).setMaxAttempt(5).start();
+      scheduleConflictRetry({ state, actions }, { content, screenshot }, 1);
     }
 
     return { success: false, error: response };
@@ -160,27 +152,24 @@ export const setContentHasChanged = ({ state }: Context, value: boolean) => {
   state.editor.contentHasChanged = value;
 };
 
-export const subscribeToTimerService = ({ state, actions }: Context, editor: LeafWriter) => {
-  state.editor.timerService.onTimer.subscribe(async () => {
-    const content = await editor.getContent();
-    if (typeof content !== 'string') return;
+const CONFLICT_RETRY_MAX_ATTEMPTS = 5;
 
-    if (isDesktop() && state.editor.resource?.filePath) {
-      const result = await actions.project.saveActiveTab({ content });
-      if (result.success) {
-        editor.setContentHasChanged(false);
-        state.editor.contentLastSaved = result.content ?? content;
-      }
+const scheduleConflictRetry = (
+  { state, actions }: Pick<Context, 'state' | 'actions'>,
+  params: { content: string; screenshot?: string },
+  attempt: number,
+): void => {
+  setTimeout(async () => {
+    const result = await actions.editor.save(params);
+    const isConflict = !result.success && result.error?.message === 'conflict';
+
+    if (isConflict && attempt < CONFLICT_RETRY_MAX_ATTEMPTS) {
+      scheduleConflictRetry({ state, actions }, params, attempt + 1);
       return;
     }
 
-    const screenshot = await editor.getDocumentScreenshot();
-    await actions.editor.save({ content, screenshot });
-  });
-};
-
-export const unsubscribeFromTimerService = ({ state }: Context) => {
-  state.editor.timerService.onTimer.unsubscribe();
+    state.editor.saveDelayed = false;
+  }, SAVE_CONFLICT_RETRY_DELAY);
 };
 
 export const close = async ({ state, actions }: Context) => {

@@ -12,7 +12,11 @@ import {
   buildAuditCleanPrompt,
   suggestionResponseSchema,
 } from './prompts';
+import { collectTaggedSpans, type TaggedSpan } from './suggestionFilters';
 import type { Suggestion, SuggestionAction } from './types';
+
+export type { TaggedSpan } from './suggestionFilters';
+export { collectTaggedSpans } from './suggestionFilters';
 
 export interface LlmAuditOptions extends ChunkOptions {
   /** Tags to audit — both the ones already applied and candidates for 'add'. */
@@ -37,37 +41,6 @@ export interface LlmAuditResult {
 }
 
 const CLEAN_ACTIONS = ['remove', 'retag', 'redraw-boundary'];
-
-export interface TaggedSpan {
-  start: number;
-  end: number;
-  tag: string;
-}
-
-export function collectTaggedSpans(
-  doc: Document,
-  index: DocIndex,
-  tagSet: Set<string>,
-): TaggedSpan[] {
-  const walker = doc.createTreeWalker(doc.documentElement ?? doc, NodeFilter.SHOW_ELEMENT);
-  const spans: TaggedSpan[] = [];
-  let el = walker.nextNode() as Element | null;
-  while (el) {
-    if (tagSet.has(el.nodeName)) {
-      const textChildren = Array.from(el.childNodes).filter((n) => n.nodeType === Node.TEXT_NODE);
-      if (textChildren.length === 1) {
-        const nodeIdx = index.nodes.findIndex((n) => n.node === textChildren[0]);
-        if (nodeIdx !== -1) {
-          const start = index.nodeStart[nodeIdx]!;
-          const end = start + index.nodes[nodeIdx]!.search.text.length;
-          spans.push({ start, end, tag: el.nodeName });
-        }
-      }
-    }
-    el = walker.nextNode() as Element | null;
-  }
-  return spans.sort((a, b) => a.start - b.start);
-}
 
 function currentTagAt(spans: TaggedSpan[], docStart: number, docEnd: number): string | null {
   const exact = spans.find((s) => s.start === docStart && s.end === docEnd);

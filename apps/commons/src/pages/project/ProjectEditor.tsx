@@ -1,6 +1,7 @@
 import { Box, Typography } from '@mui/material';
 import {
   TagCommandProvider,
+  CorrectionProvider,
   UnifiedLeftPanel,
   UnifiedRightPanel,
   useExternalFileWatcher,
@@ -190,6 +191,7 @@ export const ProjectEditor = () => {
       <AboutDialog onClose={() => setAboutOpen(false)} open={aboutOpen} />
       <TimeMachineDialog onClose={() => setTimeMachineOpen(false)} open={timeMachineOpen} />
       <TagCommandProvider />
+      <CorrectionProvider />
       <UnifiedLeftPanel />
       <Box sx={{ display: 'flex', flexDirection: 'column', flex: 1, minWidth: 0 }}>
         <Box

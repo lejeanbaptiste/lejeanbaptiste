@@ -153,3 +153,4 @@ See [apps/desktop/README.md](apps/desktop/README.md) for the compilation and pac
 - [ ] LaTeX export
 - [ ] Improved Chinese office name tagging
 - [ ] Support for custom authorities and personal SQL databases
+- [ ] AI assist for Sanmiao to identify beginning of dynasties, reigns, eras

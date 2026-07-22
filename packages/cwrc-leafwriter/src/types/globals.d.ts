@@ -149,6 +149,9 @@ declare global {
     __desktopStoredDocumentXml?: string;
     __desktopStripTeiHeaderForVisualEditor?: (xml: string) => string;
     __desktopTagging?: DesktopTaggingBridge;
+    __desktopCorrection?: {
+      openCorrectionPopup: () => boolean;
+    };
     __desktopValidatorInstrumentation?: DesktopValidatorInstrumentation;
     /** DevTools helper: `await __ljbDebugValidator()` */
     __ljbDebugValidator?: (options?: { runValidation?: boolean }) => Promise<unknown>;
