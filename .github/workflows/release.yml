@@ -425,8 +425,10 @@ jobs:
             release-flat/* \
             --clobber
 
-  # Releases created with GITHUB_TOKEN do not fire the "release: published"
-  # trigger, so the apt deployment is called directly instead.
+  # publish-apt.yml has no "release: published" trigger of its own (that
+  # fired unordered against these still-running upload steps and failed
+  # every time - see publish-apt.yml's header comment); call it directly
+  # here instead, gated on every build/upload finishing first.
   apt-repo:
     name: Publish apt repository
     needs: publish
