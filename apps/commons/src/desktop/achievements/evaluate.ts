@@ -24,11 +24,24 @@ export const emptyState = (nowIso: string): AchievementsState => ({
   version: 1,
   installedAt: nowIso,
   saveCount: 0,
+  timeMachineRuns: 0,
   leaderboardPublicationDays: [],
   unlocked: {},
   projects: {},
   avatar: null,
 });
+
+/** Empty annotation tags that earn The Empty Honour (not bare `<lb/>` etc.). */
+export const EMPTY_HONOUR_TAGS = [
+  'persName',
+  'placeName',
+  'date',
+  'roleName',
+  'orgName',
+  'org',
+] as const;
+
+export const PRECAUTIONARY_MEASURES_THRESHOLD = 10;
 
 const sumDisambiguated = (attrs: TagUsageStats['project']['attrs']): number => {
   let total = 0;
@@ -139,9 +152,20 @@ export const metricValue = (global: GlobalMetrics, metric: string): number => {
   }
 };
 
-/** A self-closing XML element in a document that has passed the normal save validation. */
-export const hasEmptyElement = (xml: string): boolean =>
-  /<[A-Za-z_][\w:.-]*(?:\s[^<>]*?)?\s*\/>/.test(xml);
+/**
+ * True when the document uses an empty persName / placeName / date / roleName /
+ * org(Name) — self-closing or paired with only whitespace inside.
+ */
+export const hasEmptyElement = (xml: string): boolean => {
+  const names = EMPTY_HONOUR_TAGS.join('|');
+  const selfClosing = new RegExp(`<(?:${names})(?:\\s[^<>]*?)?\\s*/>`, 'i');
+  if (selfClosing.test(xml)) return true;
+  const emptyPair = new RegExp(
+    `<(${names})(?:\\s[^<>]*?)?>\\s*</\\1\\s*>`,
+    'i',
+  );
+  return emptyPair.test(xml);
+};
 
 const DAY_MS = 24 * 60 * 60 * 1000;
 

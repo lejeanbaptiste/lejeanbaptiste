@@ -23,7 +23,7 @@ import RefreshIcon from '@mui/icons-material/Refresh';
 import RestoreIcon from '@mui/icons-material/Restore';
 import { useActions, useAppState } from '@src/overmind';
 import type { TimeMachineSnapshotSummary } from '@src/types/desktop';
-import { unlockAchievement } from '@src/desktop/achievements/engine';
+import { unlockAchievement, recordTimeMachineRun } from '@src/desktop/achievements/engine';
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import {
@@ -88,6 +88,15 @@ export const TimeMachineDialog = ({ onClose, open }: TimeMachineDialogProps) => 
         setCentralFolder(null);
       }
     })();
+    void recordTimeMachineRun((message) =>
+      notifyViaSnackbar({
+        message,
+        options: { variant: 'success', autoHideDuration: 7000 },
+      }),
+    );
+    // Count each open once; omit notifyViaSnackbar so parent re-renders don't
+    // inflate timeMachineRuns while the dialog stays open.
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- intentional
   }, [open]);
 
   const loadSnapshots = useCallback(async () => {

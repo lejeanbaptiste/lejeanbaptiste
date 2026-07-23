@@ -7,6 +7,7 @@ import {
   determineNewRankUnlocks,
   determineNewUnlocks,
   metricsFromTagStats,
+  PRECAUTIONARY_MEASURES_THRESHOLD,
 } from './evaluate';
 import { getProjectMetrics, loadAchievementsState, saveAchievementsState } from './store';
 import type { AchievementsState } from './types';
@@ -41,6 +42,25 @@ export const unlockAchievement = async (
     await saveAchievementsState(state);
     notifyUnlocks(applied, notify);
   }
+  return state;
+};
+
+/**
+ * Count one Time Machine opening. Unlocks Precautionary measures at the
+ * tenth run (see PRECAUTIONARY_MEASURES_THRESHOLD).
+ */
+export const recordTimeMachineRun = async (
+  notify: AchievementUnlockNotifier,
+): Promise<AchievementsState> => {
+  const state = await loadAchievementsState();
+  state.timeMachineRuns = (state.timeMachineRuns ?? 0) + 1;
+  const at = new Date().toISOString();
+  const applied =
+    state.timeMachineRuns >= PRECAUTIONARY_MEASURES_THRESHOLD
+      ? applyUnlocks(state, ['precautionary-measures'], at)
+      : [];
+  await saveAchievementsState(state);
+  notifyUnlocks(applied, notify);
   return state;
 };
 

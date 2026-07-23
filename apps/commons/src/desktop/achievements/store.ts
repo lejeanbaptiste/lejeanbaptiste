@@ -21,6 +21,10 @@ const sanitizeState = (parsed: Partial<AchievementsState>): AchievementsState =>
     typeof parsed.installedAt === 'string' ? parsed.installedAt : new Date().toISOString(),
   );
   state.saveCount = typeof parsed.saveCount === 'number' ? parsed.saveCount : 0;
+  state.timeMachineRuns =
+    typeof parsed.timeMachineRuns === 'number' && parsed.timeMachineRuns >= 0
+      ? Math.floor(parsed.timeMachineRuns)
+      : 0;
   state.leaderboardPublicationDays = Array.isArray(parsed.leaderboardPublicationDays)
     ? [
         ...new Set(
