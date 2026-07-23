@@ -2,6 +2,7 @@ import $ from 'jquery';
 import { SETTINGS_BOOTSTRAP_URL } from '../../constants/settingsBootstrap';
 import { log } from '../../utilities';
 import { stripCjkWhitespaceInElement } from '../../utilities/cjkWhitespace';
+import { stripRedundantNamespacesInElement } from '../../utilities/stripRedundantNamespaces';
 import { isValidHttpURL } from '../../utilities/string';
 import { EntityConfig } from '../entities/Entity';
 import { syncCorrectionEntityDom, syncAllCorrectionEntities } from '../entities/correctionDom';
@@ -48,6 +49,12 @@ class XML2CWRC {
     if (this.writer.overmindState?.editor?.stripCjkWhitespace) {
       stripCjkWhitespaceInElement(doc);
     }
+
+    // Always on, unlike the opt-in CJK pass above: dropping a redundant
+    // xmlns/xmlns:* declaration can't change any element's resolved
+    // namespace, so there's no document-meaning tradeoff to gate behind a
+    // setting.
+    stripRedundantNamespacesInElement(doc);
 
     const { overmindActions, schemaManager } = this.writer;
     const schemaProcess: ProcessSchemaProps = { doc, writer: this.writer };

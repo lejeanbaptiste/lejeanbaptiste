@@ -86,6 +86,12 @@ const LEADERBOARD_WORKER_URL = 'https://ljb-leaderboard.lejeanbaptiste.workers.d
 // avatar size cap.
 const LEADERBOARD_AVATAR_SIZE = 140;
 
+// bodies/body0.svg - the plain civilian body, deliberately excluded from
+// POSE_INDICES/the random pose pool (see generatedBodyPools.ts) since it has
+// no per-rank uniform kit. Shown fixed, never randomized, for unranked
+// ("Civil") players in place of a picked pose.
+const CIVILIAN_POSE_INDEX = 0;
+
 const METRIC_LABELS: Record<string, string> = {
   texts: 'Documents saved',
   tags: 'Tags added',
@@ -183,6 +189,18 @@ export const AchievementsDialog = ({ onClose, open }: AchievementsDialogProps) =
           ? loaded.avatar.options.bodyType
           : createDefaultDiceBearAvatar(encoderName).bodyType;
       setPoseIndex((previousPose) => {
+        // Unranked players ("Civil") show the fixed civilian body (pose 0,
+        // no rank kit/weapon) rather than a random ranked pose - pose 0 has
+        // no f-rank/m-rank decoration to speak of, and is intentionally
+        // excluded from POSE_INDICES for exactly that reason (see
+        // generatedBodyPools.ts). Falling through to pickPose/pickWeapon
+        // here for rankIndex -1 used to render a random Fusilier (rank 1)
+        // uniform instead of the civilian portrait.
+        if (highestRankIndexOf(loaded) === -1) {
+          setWeaponRank(null);
+          setWeaponImageIds([]);
+          return CIVILIAN_POSE_INDEX;
+        }
         const newPose = pickPose(previousPose, loadedBodyType, highestRankIndexOf(loaded));
         setWeaponRank((previousWeaponRank) => {
           const weapon = pickWeapon(

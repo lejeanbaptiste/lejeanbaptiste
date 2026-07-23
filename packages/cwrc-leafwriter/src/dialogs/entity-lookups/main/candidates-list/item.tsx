@@ -16,9 +16,11 @@ import { useEntityLookup } from '../../useEntityLookup';
 
 interface Props extends AuthorityLookupResult {
   authority: Authority | (string & {});
+  /** True when this result is sourced from the user's own database (PEDB/CEDB). */
+  isOwnDatabase?: boolean;
 }
 
-export const Item = ({ authority, description, internal, label, uri }: Props) => {
+export const Item = ({ authority, description, internal, isOwnDatabase, label, uri }: Props) => {
   const lookupType = useAtomValue(lookupTypeAtom);
   const [selected, setSelected] = useAtom(selectedAtom);
 
@@ -49,7 +51,24 @@ export const Item = ({ authority, description, internal, label, uri }: Props) =>
       }
       sx={{ my: 0.5 }}
     >
-      <ListItemButton selected={selected?.uri === uri} sx={{ borderRadius: 1 }}>
+      <ListItemButton
+        selected={selected?.uri === uri}
+        sx={[
+          { borderRadius: 1 },
+          isOwnDatabase
+            ? {
+                backgroundColor: '#e8f5e9',
+                '&:hover': { backgroundColor: '#c8e6c9' },
+              }
+            : {},
+          (theme) =>
+            isOwnDatabase
+              ? theme.applyStyles('dark', {
+                  backgroundColor: 'rgba(46, 125, 50, 0.16)',
+                })
+              : {},
+        ]}
+      >
         <ListItemText
           primary={label}
           secondary={

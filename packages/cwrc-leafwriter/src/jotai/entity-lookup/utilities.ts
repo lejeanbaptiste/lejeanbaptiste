@@ -4,6 +4,10 @@ import { authoritiesInitialConfig } from '../../config/authorities';
 import { db } from '../../db';
 import { authorityPackLookupServices } from '../../services/authority-pack-lookup';
 import {
+  CENTRAL_ENTITY_DATABASE_SERVICE_ID,
+  centralEntityDatabaseLookupService,
+} from '../../services/central-entity-database-lookup';
+import {
   ENTITY_DATABASE_SERVICE_ID,
   entityDatabaseLookupService,
 } from '../../services/entity-database-lookup';
@@ -20,9 +24,12 @@ import { log, slugify } from '../../utilities';
 
 const defaultStore = getDefaultStore();
 
-/** Entity-database service is pinned above every configured authority. */
-const defaultPriority = (serviceId: string) =>
-  serviceId === ENTITY_DATABASE_SERVICE_ID ? -1 : Infinity;
+/** The project and central entity-database services are pinned above every configured authority. */
+const defaultPriority = (serviceId: string) => {
+  if (serviceId === ENTITY_DATABASE_SERVICE_ID) return -2;
+  if (serviceId === CENTRAL_ENTITY_DATABASE_SERVICE_ID) return -1;
+  return Infinity;
+};
 
 export const configureAuthorityServices = async (
   customAuthorityServices: AuthorityServiceConfig[] = [],
@@ -34,6 +41,10 @@ export const configureAuthorityServices = async (
   // The project's own entity database always comes first (desktop only).
   const entityDbService = entityDatabaseLookupService();
   if (entityDbService) authorityServices.set(entityDbService.id, entityDbService);
+
+  // The user's central entity database — always consulted alongside PEDB.
+  const centralDbService = centralEntityDatabaseLookupService();
+  if (centralDbService) authorityServices.set(centralDbService.id, centralDbService);
 
   // Pack-backed authorities (CBDB, DILA, NDL) — local, offline (desktop only).
   authorityPackLookupServices().forEach((service) => {

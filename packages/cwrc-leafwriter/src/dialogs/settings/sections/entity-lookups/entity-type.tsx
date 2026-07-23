@@ -14,6 +14,7 @@ import { useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { db } from '../../../../db';
 import { Icon } from '../../../../icons';
+import { isOwnDatabaseService } from '../../../../services/own-database-authorities';
 import type { LookupServicePreference, NamedEntityType } from '../../../../types';
 import { capitalizeString } from '../../../../utilities';
 import { Authority } from './authority';
@@ -22,8 +23,12 @@ import { useLookupServicePrefeneces } from './useLookupEntity';
 export const EntityType = ({ entityType }: { entityType: NamedEntityType }) => {
   const { t } = useTranslation();
 
+  // PEDB/CEDB are always-on and have no toggle here — see isOwnDatabaseService.
   const entityTypes = useLiveQuery(
-    () => db.lookupServicePreferences.where({ entityType }).sortBy('priority'),
+    async () =>
+      (await db.lookupServicePreferences.where({ entityType }).sortBy('priority')).filter(
+        (pref) => !isOwnDatabaseService(pref.authorityId),
+      ),
     [],
     [],
   );
