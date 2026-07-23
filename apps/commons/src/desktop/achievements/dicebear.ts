@@ -64,7 +64,7 @@ export const createDefaultDiceBearAvatar = (seed: string): DiceBearAvatarOptions
   earringsProbability: 0,
   hairVariant: 'short01',
   skinColor: 'f2d3b1',
-  hairColor: '3eac2c',
+  hairColor: '0e0e0e',
 });
 
 /** Build a deterministic Adventurer SVG URL, composited locally from the

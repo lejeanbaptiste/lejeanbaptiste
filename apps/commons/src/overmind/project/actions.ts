@@ -549,6 +549,47 @@ export const openProject = async (context: Context) => {
   }
 };
 
+/**
+ * Tears the current project down without opening another one, back to the
+ * "Open a folder…" empty state — the same reset `openProject` already does
+ * before loading a new bundle (see lines above), just without a bundle to
+ * load afterward. Session persistence is untouched: relaunching still
+ * restores whatever was last open, same as quitting with a project open.
+ */
+export const closeProject = async (context: Context) => {
+  const { state, actions } = context;
+  const { notifyViaSnackbar } = actions.ui;
+
+  if (!state.project.rootPath) {
+    notifyViaSnackbar(t('LWC.desktop.project.messages.open_project_first'));
+    return;
+  }
+
+  const guard = await promptUnsavedBeforeProjectSwitch(context);
+  if (guard === 'abort') return;
+
+  state.project.openTabs = [];
+  state.project.activeTabPath = null;
+  state.project.cursorPositions = {};
+  state.editor.contentHasChanged = false;
+  state.editor.contentLastSaved = undefined;
+  window.writer?.overmindActions?.ui?.resetSourceEditor?.();
+  await actions.editor.clearResource();
+  resetDesktopEditorSession();
+
+  if (window.writer) {
+    window.writer.overmindActions?.editor?.clearProjectSchemas?.();
+  }
+
+  state.project.rootPath = null;
+  state.project.projectFilePath = null;
+  state.project.config = null;
+  state.project.projectSchemas = [];
+  state.project.tree = [];
+  state.project.explorerFocusedPath = null;
+  state.project.explorerFocusedIsDirectory = false;
+};
+
 export const restoreLastProject = async (context: Context) => {
   if (!window.electronAPI?.restoreWorkspaceSession && !window.electronAPI?.restoreLastProject) {
     context.state.project.isProjectReady = true;

@@ -94,7 +94,12 @@ const readEntityDatabaseXml = async (rootPath: string): Promise<string | null> =
   }
 
   for (const candidate of candidates) {
+    // Most projects have no entity database yet (never onboarded, or the
+    // project store is 'central' with nothing configured) - checking first
+    // avoids a doomed readFile that Electron logs as an unhandled IPC error
+    // in the terminal even though the rejection itself is caught below.
     try {
+      if (!(await api.pathExists(candidate))) continue;
       return await api.readFile(candidate);
     } catch {
       // Try the next candidate.
