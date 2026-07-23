@@ -18,6 +18,7 @@ import type {
   SchemaUpdateCheckOptions,
   SchemaUpdateCheckResult,
 } from '../../commons/src/desktop/schemaUpdateTypes';
+import type { AppUpdateCheckResult } from '../../commons/src/desktop/appUpdateTypes';
 
 export interface FileEntry {
   name: string;
@@ -161,6 +162,7 @@ export interface ElectronAPI {
     options?: SchemaUpdateCheckOptions,
   ) => Promise<SchemaUpdateCheckResult>;
   applyCatalogSchemaUpdate: (projectFilePath: string) => Promise<SchemaUpdateApplyResult>;
+  checkForAppUpdates: () => Promise<AppUpdateCheckResult>;
   listTimeMachineSnapshots: (projectRootPath: string) => Promise<TimeMachineSnapshotSummary[]>;
   createTimeMachineSnapshot: (
     projectRootPath: string,
@@ -190,10 +192,6 @@ export interface ElectronAPI {
   deleteSourceProfile: (
     profileId: string,
   ) => Promise<import('../../commons/src/desktop/sourceProfileTypes').SourceProfileFile>;
-  getAchievementsFolder: () => Promise<string | null>;
-  setAchievementsFolder: (folder: string | null) => Promise<void>;
-  checkAchievementsFolder: (folder: string) => Promise<{ hasFile: boolean; readable: boolean }>;
-  pickAchievementsFolder: () => Promise<string | null>;
   pickImportAchievementsFile: () => Promise<string | null>;
   readAchievementsFileFrom: (filePath: string) => Promise<string | null>;
   getGameAssetColorStats: (key: string) => Promise<{ lightness: number; saturation: number } | null>;
@@ -402,6 +400,7 @@ const electronAPI: ElectronAPI = {
     ipcRenderer.invoke('checkSchemaUpdate', projectFilePath, options),
   applyCatalogSchemaUpdate: (projectFilePath: string) =>
     ipcRenderer.invoke('applyCatalogSchemaUpdate', projectFilePath),
+  checkForAppUpdates: () => ipcRenderer.invoke('app:checkForUpdates'),
   listTimeMachineSnapshots: (projectRootPath: string) =>
     ipcRenderer.invoke('timeMachine:listSnapshots', projectRootPath),
   createTimeMachineSnapshot: (projectRootPath: string, projectName: string) =>
@@ -432,10 +431,6 @@ const electronAPI: ElectronAPI = {
   upsertSourceProfile: (profile: import('../../commons/src/desktop/sourceProfileTypes').SourceProfile) =>
     ipcRenderer.invoke('upsertSourceProfile', profile),
   deleteSourceProfile: (profileId: string) => ipcRenderer.invoke('deleteSourceProfile', profileId),
-  getAchievementsFolder: () => ipcRenderer.invoke('getAchievementsFolder'),
-  setAchievementsFolder: (folder: string | null) => ipcRenderer.invoke('setAchievementsFolder', folder),
-  checkAchievementsFolder: (folder: string) => ipcRenderer.invoke('checkAchievementsFolder', folder),
-  pickAchievementsFolder: () => ipcRenderer.invoke('pickAchievementsFolder'),
   pickImportAchievementsFile: () => ipcRenderer.invoke('pickImportAchievementsFile'),
   readAchievementsFileFrom: (filePath: string) =>
     ipcRenderer.invoke('readAchievementsFileFrom', filePath),

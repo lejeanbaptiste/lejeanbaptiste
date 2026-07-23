@@ -294,7 +294,11 @@
       "project": {
         "document_saved": "Document enregistré",
         "refreshing": "Actualisation…",
-        "schema_is_up_to_date": "Le schéma est déjà à jour."
+        "schema_is_up_to_date": "Le schéma est déjà à jour.",
+        "app_is_up_to_date": "L'application est à jour.",
+        "app_update_downloading": "Une nouvelle version ({{version}}) a été trouvée et est en cours de téléchargement. Elle s'installera à la prochaine fermeture de l'application.",
+        "app_update_check_failed_title": "Échec de la vérification des mises à jour",
+        "app_update_check_failed": "Impossible de vérifier les mises à jour de l'application : {{error}}"
       },
       "close_unsaved": {
         "title": "Modifications non enregistrées",

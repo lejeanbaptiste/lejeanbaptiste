@@ -281,16 +281,36 @@ export const useProjectMenu = () => {
         return;
       }
 
-      if (action === 'check-schema-update') {
-        if (!isProjectReady || !projectFilePath) {
-          notifyViaSnackbar(t('LWC.desktop.project.messages.open_project_first'));
-          return;
-        }
+      if (action === 'look-for-updates') {
+        void (async () => {
+          if (window.electronAPI?.checkForAppUpdates) {
+            const result = await window.electronAPI.checkForAppUpdates();
+            if (result.status === 'current') {
+              notifyViaSnackbar(t('LWC.desktop.project.app_is_up_to_date'));
+            } else if (result.status === 'updateAvailable') {
+              notifyViaSnackbar(
+                t('LWC.desktop.project.app_update_downloading', { version: result.version }),
+              );
+            } else if (result.status === 'error') {
+              await window.electronAPI?.showNativeMessageBox({
+                type: 'warning',
+                title: t('LWC.desktop.project.app_update_check_failed_title'),
+                message: t('LWC.desktop.project.app_update_check_failed', {
+                  error: result.message,
+                }),
+                buttons: [t('LWC.desktop.project.dialogs.ok_button')],
+                defaultId: 0,
+              });
+            }
+          }
 
-        void checkSchemaUpdateManually(projectFilePath, {
-          notify: (message) => notifyViaSnackbar(message),
-          onBundleUpdated: (bundle) => refreshProjectSchemaConfig(bundle),
-        });
+          if (isProjectReady && projectFilePath) {
+            void checkSchemaUpdateManually(projectFilePath, {
+              notify: (message) => notifyViaSnackbar(message),
+              onBundleUpdated: (bundle) => refreshProjectSchemaConfig(bundle),
+            });
+          }
+        })();
       }
     });
   }, [

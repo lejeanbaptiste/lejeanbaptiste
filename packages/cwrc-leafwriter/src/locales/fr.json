@@ -542,14 +542,13 @@
     "desktop": {
       "settings": {
         "achievements_storage": "Statistiques",
-        "achievements_storage_folder": "Dossier de stockage",
-        "achievements_storage_default": "Par défaut (dossier de données de l’application)",
-        "achievements_storage_change": "Choisir un dossier…",
-        "achievements_storage_hint": "Pointez ceci vers un dossier surveillé par votre propre outil de synchronisation (Dropbox, iCloud, etc.) pour transporter vos statistiques entre machines. Stocké chiffré ; rien n’est envoyé nulle part sauf si votre outil de synchronisation le fait.",
+        "achievements_storage_hint": "Vos statistiques sont stockées dans votre dossier de base d'entités : synchroniser ce dossier (p. ex. via Dropbox ou iCloud) transporte donc vos statistiques automatiquement. Stocké chiffré.",
         "achievements_import": "Charger depuis un autre fichier…",
         "achievements_import_hint": "Remplace toutes les statistiques et progrès de rang locaux par le contenu d’un fichier choisi. Ne peut pas être annulé.",
         "entity_database": "Base d’entités",
-        "entity_database_change": "Changer de dossier",
+        "entity_database_change": "Choisir une base existante…",
+        "entity_database_change_hint": "Utilise une base d'entités déjà présente sur le disque (p. ex. synchronisée depuis un autre ordinateur via Dropbox ou iCloud) au lieu de la base actuelle. Rien n'est déplacé ni copié.",
+        "entity_database_change_success": "Base d'entités choisie utilisée désormais.",
         "entity_database_folder": "Dossier de la base",
         "entity_database_hint": "Votre dossier de base d’entités contient entities.xml, les packs d’autorité et les téléchargements bruts.",
         "entity_database_missing": "Aucun dossier de base d’entités n’est configuré. La désambiguïsation est bloquée jusqu’à ce que vous en choisissiez un.",

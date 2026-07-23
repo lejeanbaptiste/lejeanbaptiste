@@ -34,7 +34,6 @@ export const useCommonsUiBridge = () => {
   const [encoderNameLoaded, setEncoderNameLoaded] = useState(false);
   const [aiApiSettings, setAiApiSettingsState] = useState<AiApiSettings | null>(null);
   const [entityDbFolder, setEntityDbFolderState] = useState<string | null>(null);
-  const [achievementsFolder, setAchievementsFolderState] = useState<string | null>(null);
   const [rememberWorkspaceOnStartup, setRememberWorkspaceOnStartupState] = useState(true);
   const [authorityLifecycleStatus, setAuthorityLifecycleStatusState] =
     useState<AuthorityLifecycleStatus | null>(null);
@@ -59,17 +58,14 @@ export const useCommonsUiBridge = () => {
   useEffect(() => {
     if (!isDesktop() || !window.electronAPI?.getEntityDbFolder) return;
 
-    void window.electronAPI.getEntityDbFolder().then((folder) => {
-      setEntityDbFolderState(typeof folder === 'string' && folder.trim() ? folder : null);
-    });
-  }, []);
-
-  useEffect(() => {
-    if (!isDesktop() || !window.electronAPI?.getAchievementsFolder) return;
-
-    void window.electronAPI.getAchievementsFolder().then((folder) => {
-      setAchievementsFolderState(typeof folder === 'string' && folder.trim() ? folder : null);
-    });
+    void window.electronAPI
+      .getEntityDbFolder()
+      .then((folder) => {
+        setEntityDbFolderState(typeof folder === 'string' && folder.trim() ? folder : null);
+      })
+      .catch((error) => {
+        console.error('Failed to load entity database folder:', error);
+      });
   }, []);
 
   useEffect(() => {
@@ -209,28 +205,6 @@ export const useCommonsUiBridge = () => {
     return picked;
   }, []);
 
-  const pickAchievementsFolder = useCallback(async (): Promise<{
-    folder: string;
-    warning?: string;
-  } | null> => {
-    const picked = await window.electronAPI?.pickAchievementsFolder?.();
-    if (!picked) return null;
-
-    const check = await window.electronAPI?.checkAchievementsFolder?.(picked);
-    await window.electronAPI?.setAchievementsFolder?.(picked);
-    setAchievementsFolderState(picked);
-    // Otherwise the in-memory achievements state loaded from the old folder
-    // (or default) keeps being served until an app restart, and switching
-    // folders looks like it silently did nothing.
-    clearAchievementsCache();
-
-    const warning =
-      check?.hasFile && !check.readable
-        ? 'This folder has an achievements.json, but it could not be read (corrupted, or saved by a different installation). A new one will be created here instead.'
-        : undefined;
-    return { folder: picked, warning };
-  }, []);
-
   const importAchievementsFrom = useCallback(async (): Promise<{
     ok: boolean;
     cancelled?: boolean;
@@ -303,10 +277,7 @@ export const useCommonsUiBridge = () => {
     }
     if (result.ok && result.folder) {
       setEntityDbFolderState(result.folder);
-      const achievements = await window.electronAPI?.getAchievementsFolder?.();
-      setAchievementsFolderState(
-        typeof achievements === 'string' && achievements.trim() ? achievements : null,
-      );
+      clearAchievementsCache();
       await refreshAuthorityLifecycle();
     }
     return result;
@@ -321,7 +292,6 @@ export const useCommonsUiBridge = () => {
       encoderNameLoaded,
       aiApiSettings,
       entityDbFolder,
-      achievementsFolder,
       rememberWorkspaceOnStartup,
       skipCopyPasteHelp,
       skipEntityDetachConfirm,
@@ -334,7 +304,6 @@ export const useCommonsUiBridge = () => {
       setSkipEntityDetachConfirm,
       setSkipExplorerDeleteConfirm,
       pickEntityDbFolder,
-      pickAchievementsFolder,
       importAchievementsFrom,
       testAiConnection,
       refreshAuthorityLifecycle,
@@ -355,10 +324,8 @@ export const useCommonsUiBridge = () => {
     encoderName,
     encoderNameLoaded,
     entityDbFolder,
-    achievementsFolder,
     rememberWorkspaceOnStartup,
     pickEntityDbFolder,
-    pickAchievementsFolder,
     importAchievementsFrom,
     refreshAuthorityLifecycle,
     runAuthorityLifecycleUpdate,

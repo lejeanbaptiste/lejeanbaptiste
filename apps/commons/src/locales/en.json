@@ -336,6 +336,10 @@
         "schema_setup": "Project schema setup",
         "refreshing": "Refreshing…",
         "schema_is_up_to_date": "Schema is up to date.",
+        "app_is_up_to_date": "App is up to date.",
+        "app_update_downloading": "A new version ({{version}}) was found and is downloading. It will install the next time you quit the app.",
+        "app_update_check_failed_title": "Update check failed",
+        "app_update_check_failed": "Could not check for app updates: {{error}}",
         "errors": {
           "could_not_load_edition_metadata": "Could not load edition metadata.",
           "could_not_save_file": "Could not save {{filename}}.",
@@ -515,7 +519,16 @@
         "message": "Enter the name you'll be tagging as.",
         "note": "This is written into each document's metadata as the tagger of record - it's not shared or synced anywhere.",
         "placeholder": "Your name",
-        "save": "Save"
+        "save": "Save",
+        "next": "Next"
+      },
+      "database_setup_prompt": {
+        "title": "Entity database",
+        "message": "This is where your named entities, authority packs, and stats will be stored.",
+        "folder_label": "Database folder",
+        "choose": "Choose a different or existing folder…",
+        "note": "Already have a database synced from another machine (e.g. via Dropbox or iCloud)? Choose its folder here to use it instead of creating a new one.",
+        "done": "Done"
       },
       "explorer": {
         "delete": "Delete",

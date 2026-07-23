@@ -183,14 +183,13 @@
     "desktop": {
       "settings": {
         "achievements_storage": "Stats",
-        "achievements_storage_folder": "Storage folder",
-        "achievements_storage_default": "Default (app data folder)",
-        "achievements_storage_change": "Choose folder…",
-        "achievements_storage_hint": "Point this at a folder your own sync tool (Dropbox, iCloud, etc.) watches to carry your stats between machines. Stored encrypted; nothing is sent anywhere unless your sync tool does it.",
+        "achievements_storage_hint": "Your stats live inside your entity database folder, so syncing that folder (e.g. via Dropbox or iCloud) carries your stats along automatically. Stored encrypted.",
         "achievements_import": "Load from another file…",
         "achievements_import_hint": "Replaces all local stats and rank progress with the contents of a file you pick. Cannot be undone.",
         "entity_database": "Entity database",
-        "entity_database_change": "Change folder…",
+        "entity_database_change": "Choose existing…",
+        "entity_database_change_hint": "Point to an entity database that already exists on disk (e.g. synced from another machine via Dropbox or iCloud) instead of the current one. Nothing is moved or copied.",
+        "entity_database_change_success": "Now using the chosen entity database.",
         "entity_database_folder": "Database folder",
         "entity_database_hint": "Your entity database folder holds entities.xml, authority packs, and raw authority downloads.",
         "entity_database_missing": "No entity database folder is configured. Disambiguation is blocked until you choose one.",
