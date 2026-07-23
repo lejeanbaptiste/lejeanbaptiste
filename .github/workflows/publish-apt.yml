@@ -1,10 +1,17 @@
 name: Publish apt repository
 
 # Builds and deploys the signed apt repository from the .deb assets of a
-# published release. Normally called from release.yml after it publishes a
-# release; the release/dispatch triggers cover releases published from the
-# GitHub UI and manual re-runs.
-
+# published release. Called from release.yml's apt-repo job (needs: publish,
+# which needs every build) once all platform assets are actually uploaded.
+#
+# Deliberately no `on: release: types: [published]` trigger here: despite
+# GitHub's docs claiming GITHUB_TOKEN-created releases don't retrigger
+# workflows, they empirically do in this repo, and that trigger has no
+# ordering against the still-running build/upload jobs - it fired within
+# seconds of every tag push and failed every time with "no assets to
+# download" because the .deb files hadn't been uploaded yet. Use
+# workflow_dispatch (with a release_tag input) for any one-off rebuild,
+# including releases published by hand from the GitHub UI.
 on:
   workflow_call:
     inputs:
@@ -12,8 +19,6 @@ on:
         description: Published release tag to build the apt repo from
         type: string
         required: true
-  release:
-    types: [published]
   workflow_dispatch:
     inputs:
       release_tag:
@@ -50,7 +55,7 @@ jobs:
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
-          TAG_NAME="${{ inputs.release_tag || github.event.release.tag_name }}"
+          TAG_NAME="${{ inputs.release_tag }}"
           echo "TAG_NAME=$TAG_NAME" >> "$GITHUB_ENV"
           mkdir -p release-assets/debs
           gh release download "$TAG_NAME" --repo "$GITHUB_REPOSITORY" \
