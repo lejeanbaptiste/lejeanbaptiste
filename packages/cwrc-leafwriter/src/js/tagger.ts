@@ -1067,10 +1067,15 @@ class Tagger {
   }
 
   addNoteWrapper = (tag: Element, type: string) => {
+    // Match the note's own HTML element so block commentary (div[_tag=note],
+    // common for TEI type="editor" notes) isn't wrapped in a span — browsers
+    // "repair" that invalid nesting and the clickable icon stand-in is lost.
+    const wrapperTag = tag.nodeName.toLowerCase() === 'div' ? 'div' : 'span';
     $(tag)
       .filter(':visible') //! don't add to invisible tags
-      .wrap(`<span class="noteWrapper ${type} hide" title="${tag.textContent}" />`)
+      .wrap(`<${wrapperTag} class="noteWrapper ${type} hide" />`)
       .parent()
+      .attr('title', tag.textContent ?? '')
       .on('click', ({ target }) => {
         const $target = $(target);
         if ($target.hasClass('noteWrapper')) $target.toggleClass('hide');
@@ -1089,20 +1094,37 @@ class Tagger {
 
       this.addNoteWrapper(note, entity.getType());
     });
+
+    // Bare <note>s (imported/hand-authored TEI with no RDF note entity) also
+    // need the icon stand-in so they can be collapsed/expanded individually,
+    // same as entity notes. Skip anything already wrapped above.
+    this.addNoteWrappersForBareNotes();
+  }
+
+  /** Wrap [_tag=note] elements that aren't already inside a .noteWrapper. */
+  addNoteWrappersForBareNotes() {
+    const body = this.writer.editor?.getBody();
+    if (!body) return;
+
+    $(body)
+      .find('[_tag="note"]')
+      .filter((_i, el) => $(el).closest('.noteWrapper').length === 0)
+      .each((_i, el) => {
+        this.addNoteWrapper(el, 'note');
+      });
   }
 
   removeNoteWrapper(tag: JQuery<HTMLElement>) {
     $(tag).unwrap('.noteWrapper');
   }
 
-  // remove all the noteWrapper elements.
+  // remove all the noteWrapper elements (entity and bare).
   // needed when running evaluateXPath on cwrc docs and used in conjunction with addNoteWrappersForEntities.
   removeNoteWrappersForEntities() {
-    this.writer.entitiesManager.eachEntity((id: string, entity: Entity) => {
-      if (entity.isNote()) {
-        this.removeNoteWrapper($(`#${id}`, this.writer.editor?.getBody()));
-      }
-    });
+    const body = this.writer.editor?.getBody();
+    if (!body) return;
+    // Unwrap every wrapped note tag; click handlers go away with the wrappers.
+    $('.noteWrapper > [_tag]', body).unwrap('.noteWrapper');
   }
 
   /**

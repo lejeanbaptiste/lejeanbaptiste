@@ -206,8 +206,22 @@ body {
   color: #00cc00 !important;
 }
 
+/*
+ * Notes are schema "block" tags, so xml2cwrc / TinyMCE render them as <div>
+ * and tagger wraps them in <div class="noteWrapper">. Without an override,
+ * that block box puts the yellow icon (and expanded commentary) on its own
+ * line and splits Chinese running text. Force the wrapper inline so the
+ * anchor and expanded note flow with the paragraph; authors who want a
+ * break can insert <lb/> (or a nested block) inside the note.
+ */
+.noteWrapper {
+  display: inline;
+}
+
 .noteWrapper::before {
   cursor: pointer;
+  display: inline-block;
+  vertical-align: baseline;
 }
 
 /* .noteWrapper.note::before {
@@ -321,7 +335,11 @@ body {
 }
 
 .noteWrapper > * {
-  display: inherit;
+  /* inline — not inherit — so expanded note/comm text stays in the paragraph
+   * even when the underlying HTML element is a <div[_tag=note]>. */
+  display: inline;
+  /* Distinguish expanded commentary from the base text it glosses. */
+  font-size: 0.85em;
 }
 
 .noteWrapper.hide > * {
