@@ -50,7 +50,7 @@
   },
   "devDependencies": {
     "electron": "43.1.0",
-    "electron-builder": "26.15.3",
+    "electron-builder": "^26.15.7",
     "tsup": "^8.5.1",
     "typescript": "^5.9.3"
   }
