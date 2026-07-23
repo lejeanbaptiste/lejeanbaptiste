@@ -1,6 +1,7 @@
-import { Box, ListSubheader } from '@mui/material';
+import { Avatar, Box, ListSubheader, Stack } from '@mui/material';
 import { useEffect } from 'react';
 import { useInView } from 'react-intersection-observer';
+import { OWN_DATABASE_INITIALS, isOwnDatabaseService } from '../../../../services/own-database-authorities';
 import { LookupService } from '../../store';
 import { Item } from './item';
 
@@ -11,6 +12,7 @@ interface CandidateListProps {
 
 export const CandidatesList = ({ authority, setAuthorityInView }: CandidateListProps) => {
   const { entry, inView, ref } = useInView({ threshold: 0 });
+  const initials = OWN_DATABASE_INITIALS[authority.id];
 
   useEffect(() => {
     if (entry) setAuthorityInView({ id: entry.target.id, inView });
@@ -35,11 +37,25 @@ export const CandidatesList = ({ authority, setAuthorityInView }: CandidateListP
             }),
         ]}
       >
-        {authority.name}
+        {initials ? (
+          <Stack alignItems="center" direction="row" spacing={1}>
+            <Avatar sx={{ width: 20, height: 20, fontSize: '0.6rem', bgcolor: 'success.main' }}>
+              {initials}
+            </Avatar>
+            <span>{authority.name}</span>
+          </Stack>
+        ) : (
+          authority.name
+        )}
       </ListSubheader>
       {authority.results?.status === 'success' &&
         authority.results?.candidates.map((candidate) => (
-          <Item key={candidate.uri} authority={authority.id} {...candidate} />
+          <Item
+            key={candidate.uri}
+            authority={authority.id}
+            isOwnDatabase={isOwnDatabaseService(authority.id)}
+            {...candidate}
+          />
         ))}
     </Box>
   );

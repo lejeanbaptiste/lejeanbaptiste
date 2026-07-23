@@ -62,11 +62,11 @@ export function findCentralByAuthority(
   return null;
 }
 
-/** Reconstruct a `NewEntity` payload from a project entity's fields. */
-function toNewEntity(pedbItem: Element): { kind: EntityKind; entity: NewEntity; familyName: string | null; givenName: string | null } {
-  const kind = kindOf(pedbItem);
-  if (!kind) throw new Error(`promote: unknown entity kind for ${pedbItem.localName}`);
-  const fields = readFields(pedbItem);
+/** Reconstruct a `NewEntity` payload from an entity's fields (PEDB or CEDB item). */
+export function toNewEntity(item: Element): { kind: EntityKind; entity: NewEntity; familyName: string | null; givenName: string | null } {
+  const kind = kindOf(item);
+  if (!kind) throw new Error(`promote: unknown entity kind for ${item.localName}`);
+  const fields = readFields(item);
   const [primary, ...rest] = fields.names;
   if (!primary) throw new Error('promote: entity has no name');
   const entity: NewEntity = {
@@ -125,4 +125,47 @@ export function promoteToCentral(
   if (givenName) setGivenName(cedbDoc, centralId, givenName);
   const linked = linkToCentral(pedbItem, userStableId, centralId);
   return { centralId, created: true, linked };
+}
+
+export interface AdoptResult {
+  pedbId: string;
+  /** True when a new project record was minted; false when an already-linked one was reused. */
+  created: boolean;
+}
+
+/** The project entity (if any) this user has already linked to `centralId`. */
+function findLinkedPedbEntity(pedbDoc: Document, kind: EntityKind, centralId: string, userStableId: string): string | null {
+  const list = pedbDoc.getElementsByTagName(ENTITY_KINDS[kind].list)[0];
+  if (!list) return null;
+  for (const item of Array.from(list.children)) {
+    if (item.localName !== ENTITY_KINDS[kind].item) continue;
+    if (getCentralId(item, userStableId) === centralId) return item.getAttribute('xml:id');
+  }
+  return null;
+}
+
+/**
+ * The reverse of `promoteToCentral`: ensure the central entity `centralId` is
+ * represented in the project database and linked for `userStableId`.
+ * Idempotent: an already-linked central entity returns its existing project id.
+ */
+export function adoptFromCentral(
+  pedbDoc: Document,
+  centralId: string,
+  cedbDoc: Document,
+  userStableId: string,
+): AdoptResult {
+  const cedbItem = findEntity(cedbDoc, centralId);
+  if (!cedbItem) throw new Error(`adopt: central entity not found: ${centralId}`);
+
+  const { kind, entity, familyName, givenName } = toNewEntity(cedbItem);
+
+  const existingPedbId = findLinkedPedbEntity(pedbDoc, kind, centralId, userStableId);
+  if (existingPedbId) return { pedbId: existingPedbId, created: false };
+
+  const { id: pedbId, element: pedbItem } = addEntity(pedbDoc, kind, entity);
+  if (familyName) setFamilyName(pedbDoc, pedbId, familyName);
+  if (givenName) setGivenName(pedbDoc, pedbId, givenName);
+  linkToCentral(pedbItem, userStableId, centralId);
+  return { pedbId, created: true };
 }

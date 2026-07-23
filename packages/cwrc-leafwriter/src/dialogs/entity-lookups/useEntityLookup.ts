@@ -1,6 +1,10 @@
 import { useAtom, useAtomValue, useSetAtom } from 'jotai';
 import { RESET } from 'jotai/utils';
-import { entityStoreFromDesktop } from '../../autoTagging/entityStore';
+import {
+  centralEntityStoreFromDesktop,
+  desktopEntityFileApi,
+  entityStoreFromDesktop,
+} from '../../autoTagging/entityStore';
 import {
   applyLookupResolution,
   linkLocalEntityWithoutAuthority,
@@ -10,7 +14,10 @@ import {
   type LookupSelectionInput,
 } from '../../autoTagging/lookupResolve';
 import type { AuthorityPackId } from '../../autoTagging/packPaths';
+import { adoptFromCentral } from '../../autoTagging/promote';
+import { readOrMintUserStableId } from '../../autoTagging/userStableId';
 import { packIdsForEntityType, readPackCached } from '../../services/authority-pack-lookup';
+import { centralEntityIdFromUri } from '../../services/central-entity-database-lookup';
 import { internalEntityUri } from '../../services/entity-database-lookup';
 import type { AuthorityLookupResult, EntityLink, NamedEntityType } from '../../types/index';
 import { log } from '../../utilities';
@@ -47,6 +54,31 @@ const projectSourceLanguage = async (): Promise<string | null> => {
   } catch {
     return null;
   }
+};
+
+/**
+ * A CEDB candidate has no representation in this project yet — mint (or reuse)
+ * a linked project entity for it before resolving, so it behaves like any
+ * other project entity from here on. Returns null when the central database
+ * isn't reachable (no folder configured, no project open).
+ */
+const adoptCentralEntity = async (centralId: string): Promise<string | null> => {
+  const projectStore = entityStoreFromDesktop();
+  const api = desktopEntityFileApi();
+  if (!projectStore || !api) return null;
+
+  const centralFolder = (await window.electronAPI?.getEntityDbFolder?.().catch(() => null)) ?? null;
+  const centralStore = centralEntityStoreFromDesktop(centralFolder);
+  if (!centralStore) return null;
+
+  const { id: userStableId } = await readOrMintUserStableId(api, centralFolder);
+  const [pedbDoc, cedbDoc] = await Promise.all([
+    projectStore.loadEntities(),
+    centralStore.loadEntities(),
+  ]);
+  const { pedbId, created } = adoptFromCentral(pedbDoc, centralId, cedbDoc, userStableId);
+  if (created) await projectStore.saveEntities(pedbDoc);
+  return pedbId;
 };
 
 const resolveDeps = async (entityType: NamedEntityType): Promise<LookupResolveDeps | null> => {
@@ -120,10 +152,22 @@ export const useEntityLookup = () => {
         repository: selected ? selected.authority : 'custom',
       });
 
-    // Picking an entity-database result links directly — no resolution needed.
+    // Picking a project-entity result links directly — no resolution needed.
     if (selected?.internal) {
-      closeWith(buildLink({ name: selected.label, uri: selected.uri, repository: 'entity-database', key: selected.internal.id }));
-      return;
+      const centralId = centralEntityIdFromUri(selected.uri);
+      if (centralId) {
+        // Picking a central-database result adopts it into this project first —
+        // it has no project entity yet — then links to the adopted entity.
+        const pedbId = await adoptCentralEntity(centralId);
+        if (pedbId) {
+          closeWith(buildLink({ name: selected.label, uri: selected.uri, repository: 'entity-database', key: pedbId }));
+          return;
+        }
+        // Central database unreachable — fall through to a plain URI link.
+      } else {
+        closeWith(buildLink({ name: selected.label, uri: selected.uri, repository: 'entity-database', key: selected.internal.id }));
+        return;
+      }
     }
 
     const deps = await resolveDeps(lookupType);

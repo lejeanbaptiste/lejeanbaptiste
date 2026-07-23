@@ -4,6 +4,7 @@ import { getDefaultStore, Provider, useAtom, useAtomValue, useSetAtom } from 'jo
 import { useEffect } from 'react';
 import { db } from '../../db';
 import { authorityServicesAtom, entityLookupDialogAtom } from '../../jotai/entity-lookup';
+import { isOwnDatabaseService } from '../../services/own-database-authorities';
 import { AuthorityService, EntityLookupDialogProps } from '../../types';
 import { Footer } from './footer';
 import { Header } from './header';
@@ -69,7 +70,9 @@ export const Wrapper = ({
 
     const authorities: AuthorityService[] = [];
     prefs.forEach((pref) => {
-      if (pref.disabled) return;
+      // PEDB/CEDB (the user's own databases) are always consulted, regardless
+      // of preference state — they cannot be disabled from settings.
+      if (pref.disabled && !isOwnDatabaseService(pref.authorityId)) return;
       const authority = authorityServices.get(pref.authorityId);
       if (authority) authorities.push(authority);
     });
