@@ -13,6 +13,7 @@ export * from './entities';
 export * from './decisionLog';
 export * from './entityStore';
 export * from './entityStoreResolve';
+export * from './ownDatabaseCandidates';
 export * from './authority';
 export * from './seed';
 export * from './integration';

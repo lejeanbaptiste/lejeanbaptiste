@@ -8,15 +8,20 @@ import path from 'node:path';
 
 import {
   AUTHORITY_PACKS,
+  authorityPackOrigin,
   type AuthorityPackId,
   type AuthorityPackStatus,
   packPath,
   packsRoot,
 } from '../../commons/src/desktop/authorityPackTypes';
 
+/** File-backed specs only — pedb/cedb/project/list packs are read live, never on disk. */
+const filePacks = () => AUTHORITY_PACKS.filter((spec) => !spec.virtual && authorityPackOrigin(spec) === 'file');
+
 export {
   AUTHORITY_PACKS_DIRNAME,
   AUTHORITY_PACKS,
+  authorityPackOrigin,
   type AuthorityPackId,
   type AuthorityPackStatus,
   packPath,
@@ -26,7 +31,7 @@ export {
 export async function getAuthorityPackStatuses(
   baseFolder: string,
 ): Promise<AuthorityPackStatus[]> {
-  return Promise.all(AUTHORITY_PACKS.filter((spec) => !spec.virtual).map(async (spec) => {
+  return Promise.all(filePacks().map(async (spec) => {
     const file = packPath(baseFolder, spec.id);
     let installed = false;
     let bytes: number | undefined;
@@ -65,7 +70,7 @@ export async function installAuthorityPacksFrom(
   await fsp.mkdir(destRoot, { recursive: true });
   const copied: AuthorityPackId[] = [];
 
-  for (const spec of AUTHORITY_PACKS.filter((entry) => !entry.virtual)) {
+  for (const spec of filePacks()) {
     const srcFile = path.join(sourcePacksRoot, spec.relativePath);
     const destFile = packPath(entityDbFolder, spec.id);
     await fsp.mkdir(path.dirname(destFile), { recursive: true });

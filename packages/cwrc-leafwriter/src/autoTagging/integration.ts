@@ -26,7 +26,10 @@ import {
 import { DecisionLogBuffer, type DecisionRecord } from './decisionLog';
 import { TAG_TO_KIND, type EntityKind } from './entities';
 import { autoRomanize } from '../utilities/romanize';
-import { entityStoreFromDesktop, type EntityStore } from './entityStore';
+import { centralEntityStoreFromDesktop, entityStoreFromDesktop, type EntityStore } from './entityStore';
+import { candidatesFromEntityDatabase } from './ownDatabaseCandidates';
+import { crawlDocuments } from './crawl';
+import { dictionaryTag, type DictionaryEntry } from './dictionary';
 import { DisambiguationAiCache } from './disambiguationAiCache';
 import type { AiPromptProfile } from './aiPromptProfiles';
 import type { LlmClient } from './llmClient';
@@ -35,7 +38,7 @@ import { llmSuggest, type LlmSuggestResult } from './llmSuggest';
 import { collectTaggedSpans, prepareSuggestionsForReview } from './suggestionFilters';
 import { llmAudit, type LlmAuditResult } from './llmAudit';
 import { normalizeDomText } from './normalize';
-import type { AuthorityPackId } from './packPaths';
+import { AUTHORITY_PACKS, authorityPackOrigin, type AuthorityPackId } from './packPaths';
 import { MAX_AUTHORITY_SUGGESTIONS, runAuthorityTagBombOnDocument } from './authorityTagBomb';
 import {
   dateTagOnlyFromSanmiao,
@@ -58,6 +61,50 @@ import { resolveCurrentDocumentXml } from './documentContent';
 import { findSelectionRangeInDocument, searchTextForDomRange } from './selectionScope';
 
 export { MAX_AUTHORITY_SUGGESTIONS } from './authorityTagBomb';
+
+/** Entity kind read from PEDB/CEDB entities.xml for each own-database pack id. */
+export const OWN_DATABASE_KIND_BY_PACK_ID: Partial<Record<AuthorityPackId, EntityKind>> = {
+  'pedb-persons': 'person',
+  'pedb-places': 'place',
+  'pedb-orgs': 'org',
+  'pedb-works': 'work',
+  'cedb-persons': 'person',
+  'cedb-places': 'place',
+  'cedb-orgs': 'org',
+  'cedb-works': 'work',
+};
+
+/**
+ * Broader TEI tag synonyms crawled per category (mirrors `DEFAULT_CRAWL_TAGS`
+ * in `crawl.ts`), keyed by a project/list pack's `defaultTag`.
+ */
+const CRAWL_TAGS_BY_DEFAULT_TAG: Record<string, string[]> = {
+  persName: ['persName'],
+  placeName: ['placeName', 'geogName'],
+  orgName: ['orgName', 'org'],
+  roleName: ['roleName'],
+  title: ['title', 'name'],
+};
+
+export interface TagBombImportedList {
+  name: string;
+  entries: DictionaryEntry[];
+}
+
+export interface TagBombOptions {
+  dateFilter?: DateRangeFilter;
+  onProgress?: (message: string) => void;
+  /** Parsed CSV/TSV/xlsx/ODS files chosen in the panel, filtered by the checked `list-*` categories. */
+  importedLists?: TagBombImportedList[];
+}
+
+export interface TagBombResult {
+  suggestions: Suggestion[];
+  candidateCount: number;
+  matchCount: number;
+  loaded: Partial<Record<AuthorityPackId, number>>;
+  truncated: boolean;
+}
 
 /**
  * The slice of Writer this session needs. Kept structural so the session can
@@ -342,6 +389,107 @@ export class AutoTaggingSession {
     });
     const { suggestions } = prepareSuggestionsForReview(doc, this.policy, result.suggestions);
     return { ...result, suggestions };
+  }
+
+  /**
+   * Unified "Tag bomb": pools NDJSON authority packs, PEDB/CEDB (read live
+   * from entities.xml), this project's already-tagged mentions (disambiguated
+   * and not), and any imported CSV/TSV/xlsx/ODS lists into one run. The date
+   * filter applies only to sources with real dates (packs, PEDB, CEDB) — project
+   * tags and imported-list entries have none and pass through unfiltered.
+   */
+  async runTagBomb(
+    packIds: AuthorityPackId[],
+    readPackFile: (packId: AuthorityPackId) => Promise<string>,
+    options: TagBombOptions = {},
+  ): Promise<TagBombResult> {
+    const doc = await this.getDocument();
+
+    const pedbIds = packIds.filter((id) => this.specOrigin(id) === 'pedb');
+    const cedbIds = packIds.filter((id) => this.specOrigin(id) === 'cedb');
+    const projectIds = packIds.filter((id) => this.specOrigin(id) === 'project');
+    const listIds = packIds.filter((id) => this.specOrigin(id) === 'list');
+
+    const extraCandidates: { groupLabel: string; candidates: ReturnType<typeof candidatesFromEntityDatabase> }[] = [];
+    if (pedbIds.length > 0 && this.store) {
+      const pedbDoc = await this.store.loadEntities();
+      for (const id of pedbIds) {
+        const kind = OWN_DATABASE_KIND_BY_PACK_ID[id];
+        if (!kind) continue;
+        extraCandidates.push({ groupLabel: id, candidates: candidatesFromEntityDatabase(pedbDoc, kind, 'PEDB') });
+      }
+    }
+    if (cedbIds.length > 0) {
+      const centralStore = centralEntityStoreFromDesktop(null);
+      if (centralStore) {
+        const cedbDoc = await centralStore.loadEntities();
+        for (const id of cedbIds) {
+          const kind = OWN_DATABASE_KIND_BY_PACK_ID[id];
+          if (!kind) continue;
+          extraCandidates.push({ groupLabel: id, candidates: candidatesFromEntityDatabase(cedbDoc, kind, 'CEDB') });
+        }
+      }
+    }
+
+    const authorityResult = await runAuthorityTagBombOnDocument(doc, packIds, readPackFile, this.policy, {
+      dateFilter: options.dateFilter,
+      extraCandidates,
+      onProgress: (message) => {
+        options.onProgress?.(message);
+        void yieldToUi();
+      },
+    });
+
+    const extraSuggestionGroups: Suggestion[][] = [];
+    const loaded: Partial<Record<AuthorityPackId, number>> = { ...authorityResult.loaded };
+
+    if (projectIds.length > 0) {
+      const crawlTags = [...new Set(projectIds.flatMap((id) => this.crawlTagsFor(id)))];
+      if (crawlTags.length > 0) {
+        const { documents } = await this.getProjectDocuments();
+        const entries = crawlDocuments(documents, this.policy, crawlTags);
+        loaded['project' as AuthorityPackId] = (loaded['project' as AuthorityPackId] ?? 0) + entries.length;
+        extraSuggestionGroups.push(dictionaryTag(doc, entries, this.policy, 'this project'));
+      }
+    }
+
+    if (listIds.length > 0 && (options.importedLists?.length ?? 0) > 0) {
+      const listTags = new Set(listIds.map((id) => this.defaultTagFor(id)).filter((tag): tag is string => !!tag));
+      for (const file of options.importedLists ?? []) {
+        const filtered = file.entries.filter((entry) => listTags.has(entry.tag));
+        if (filtered.length === 0) continue;
+        loaded['list' as AuthorityPackId] = (loaded['list' as AuthorityPackId] ?? 0) + filtered.length;
+        extraSuggestionGroups.push(dictionaryTag(doc, filtered, this.policy, file.name));
+      }
+    }
+
+    const merged = [authorityResult.suggestions, ...extraSuggestionGroups].flat();
+    const { suggestions: deduped } = prepareSuggestionsForReview(doc, this.policy, merged);
+    const truncated = authorityResult.truncated || deduped.length > MAX_AUTHORITY_SUGGESTIONS;
+    const suggestions = deduped.slice(0, MAX_AUTHORITY_SUGGESTIONS);
+
+    return {
+      suggestions,
+      candidateCount: authorityResult.candidateCount,
+      matchCount: authorityResult.matchCount,
+      loaded,
+      truncated,
+    };
+  }
+
+  private specOrigin(id: AuthorityPackId): ReturnType<typeof authorityPackOrigin> | undefined {
+    const spec = AUTHORITY_PACKS.find((p) => p.id === id);
+    return spec ? authorityPackOrigin(spec) : undefined;
+  }
+
+  /** Broader TEI tag synonyms to crawl for a `project-*` pack id's category. */
+  private crawlTagsFor(id: AuthorityPackId): string[] {
+    const tag = this.defaultTagFor(id);
+    return tag ? (CRAWL_TAGS_BY_DEFAULT_TAG[tag] ?? [tag]) : [];
+  }
+
+  private defaultTagFor(id: AuthorityPackId): string | undefined {
+    return AUTHORITY_PACKS.find((p) => p.id === id)?.defaultTag;
   }
 
   async runEastAsianDateTag(

@@ -5,6 +5,7 @@ import {
   Box,
   Button,
   Checkbox,
+  Chip,
   Dialog,
   DialogContent,
   FormControlLabel,
@@ -19,12 +20,13 @@ import { useEffect, useMemo, useRef, useState } from 'react';
 import {
   AutoTaggingSession,
   aiApiSettingsFromDesktop,
+  candidatesFromEntityDatabase,
+  centralEntityStoreFromDesktop,
   countAuthorityPackStrings,
-  crawlDocuments,
+  countCandidatesUniqueStrings,
   createDefaultAiPromptProfilesState,
   createLlmClientFromSettings,
   defaultAiTagSelection,
-  dictionaryTag,
   entriesFromRows,
   getActiveAiPromptProfile,
   inferEastAsianLanguageFromDocument,
@@ -36,6 +38,8 @@ import {
   persistValidationSettings,
   readPersistedValidationSettings,
   defaultAuthorityPacksRecord,
+  entityStoreFromDesktop,
+  OWN_DATABASE_KIND_BY_PACK_ID,
   persistAuthoritySettings,
   readAiPromptProfilesFromDesktop,
   readPersistedAuthoritySettings,
@@ -51,12 +55,13 @@ import {
   type DateFilterMode,
   AUTHORITY_PACKS,
   AUTHORITY_SOURCE_LABELS,
+  authorityPackOrigin,
   expandAuthorityPackIds,
   groupAuthorityPacksByTagType,
   UI_AUTHORITY_PACK_IDS,
   WIKIDATA_PERSON_CHILD_PACK_IDS,
-  type DictionaryEntry,
   type Suggestion,
+  type TagBombImportedList,
   appendAutoTaggingBatch,
   finishAiRunProgress,
   startAiRunProgress,
@@ -115,6 +120,21 @@ const visibleAuthorityPackIdsForLanguage = (language: string | null): AuthorityP
           ]
         : UI_AUTHORITY_PACK_IDS.filter((id) => !id.startsWith('ndl-'));
 
+/** The user's own databases (project, then central) always lead every category group. */
+const OWN_DATABASE_PACK_IDS: AuthorityPackId[] = AUTHORITY_PACKS.filter((spec) => {
+  const origin = authorityPackOrigin(spec);
+  return origin === 'pedb' || origin === 'cedb';
+}).map((spec) => spec.id);
+
+/**
+ * Project tags/imported lists are language-agnostic and always pooled into
+ * every category group, after whatever file packs the language filter shows.
+ */
+const POOLED_AUTHORITY_PACK_IDS: AuthorityPackId[] = AUTHORITY_PACKS.filter((spec) => {
+  const origin = authorityPackOrigin(spec);
+  return origin === 'project' || origin === 'list';
+}).map((spec) => spec.id);
+
 /** CE presets for dynasty-scoped tag bombs. */
 const AUTHORITY_YEAR_PRESETS = [
   { label: 'Eastern Han', start: 25, end: 220 },
@@ -165,6 +185,88 @@ const isAuthorityPackInstalled = (
       )
     : (statuses.find((status) => status.id === packId)?.installed ?? false);
 
+/**
+ * Availability for non-file rows. PEDB and CEDB currently share the entity
+ * database folder setting (see `entityStore.ts`'s `centralEntityStoreFromDesktop`
+ * fallback) until a dedicated central-folder setting exists — both gate on
+ * `entityDbFolder`. Project tags are always available; an imported list needs
+ * at least one file chosen.
+ */
+const isAuthorityPackAvailable = (
+  packId: AuthorityPackId,
+  statuses: { id: AuthorityPackId; installed: boolean }[],
+  entityDbFolder: string | null,
+  importedListCount: number,
+): boolean => {
+  const spec = AUTHORITY_PACKS.find((p) => p.id === packId);
+  const origin = spec ? authorityPackOrigin(spec) : 'file';
+  switch (origin) {
+    case 'pedb':
+    case 'cedb':
+      return Boolean(entityDbFolder);
+    case 'project':
+      return true;
+    case 'list':
+      return importedListCount > 0;
+    default:
+      return isAuthorityPackInstalled(packId, statuses);
+  }
+};
+
+const unavailableSuffixFor = (origin: ReturnType<typeof authorityPackOrigin>): string => {
+  switch (origin) {
+    case 'pedb':
+    case 'cedb':
+      return ' (no entity database configured)';
+    case 'list':
+      return ' (add a file below)';
+    case 'project':
+      return '';
+    default:
+      return ' (not installed)';
+  }
+};
+
+/**
+ * Live "· N strings" preview for PEDB/CEDB rows, mirroring the NDJSON pack
+ * preview but reading straight from entities.xml — one load per database,
+ * reused across every requested kind.
+ */
+const countOwnDatabasePackStrings = async (
+  ids: AuthorityPackId[],
+  range?: { mode: DateFilterMode; start: number; end: number },
+): Promise<AuthorityPackStringCounts> => {
+  const out: AuthorityPackStringCounts = {};
+
+  const pedbIds = ids.filter((id) => id in OWN_DATABASE_KIND_BY_PACK_ID && id.startsWith('pedb-'));
+  if (pedbIds.length > 0) {
+    const store = entityStoreFromDesktop();
+    if (store) {
+      const doc = await store.loadEntities();
+      for (const id of pedbIds) {
+        const kind = OWN_DATABASE_KIND_BY_PACK_ID[id];
+        if (!kind) continue;
+        out[id] = countCandidatesUniqueStrings(candidatesFromEntityDatabase(doc, kind, 'PEDB'), range);
+      }
+    }
+  }
+
+  const cedbIds = ids.filter((id) => id in OWN_DATABASE_KIND_BY_PACK_ID && id.startsWith('cedb-'));
+  if (cedbIds.length > 0) {
+    const store = centralEntityStoreFromDesktop(null);
+    if (store) {
+      const doc = await store.loadEntities();
+      for (const id of cedbIds) {
+        const kind = OWN_DATABASE_KIND_BY_PACK_ID[id];
+        if (!kind) continue;
+        out[id] = countCandidatesUniqueStrings(candidatesFromEntityDatabase(doc, kind, 'CEDB'), range);
+      }
+    }
+  }
+
+  return out;
+};
+
 const isDesktopApp = () => typeof window !== 'undefined' && !!window.electronAPI;
 
 /**
@@ -202,6 +304,7 @@ export const AutoTaggingDialog = ({ id, onClose, open = false }: IDialog) => {
       mode === 'none' ? 'limit' : mode === 'limit' ? 'exclude' : 'none',
     );
   };
+  const [importedLists, setImportedLists] = useState<TagBombImportedList[]>([]);
   const [authorityPackCounts, setAuthorityPackCounts] = useState<AuthorityPackStringCounts>({});
   const [authorityPackCountsLoading, setAuthorityPackCountsLoading] = useState(false);
   const authorityCountGeneration = useRef(0);
@@ -228,6 +331,7 @@ export const AutoTaggingDialog = ({ id, onClose, open = false }: IDialog) => {
     if (!open) {
       setSelectionRange(null);
       setLimitToSelection(true);
+      setImportedLists([]);
       return;
     }
     void getSession()
@@ -349,17 +453,28 @@ export const AutoTaggingDialog = ({ id, onClose, open = false }: IDialog) => {
   }, [open]);
 
   const visibleAuthorityPackIds = useMemo(
-    () => visibleAuthorityPackIdsForLanguage(sourceLanguage),
+    () => [
+      ...OWN_DATABASE_PACK_IDS,
+      ...visibleAuthorityPackIdsForLanguage(sourceLanguage),
+      ...POOLED_AUTHORITY_PACK_IDS,
+    ],
     [sourceLanguage],
   );
   const visibleAuthorityPackGroups = useMemo(
     () => groupAuthorityPacksByTagType(visibleAuthorityPackIds),
     [visibleAuthorityPackIds],
   );
-  const anyVisibleAuthorityPackInstalled = visibleAuthorityPackIds.some((id) =>
-    isAuthorityPackInstalled(id, authorityStatus),
+  const anyVisibleFilePackInstalled = visibleAuthorityPackIds
+    .filter((id) => {
+      const spec = AUTHORITY_PACKS.find((p) => p.id === id);
+      return spec ? authorityPackOrigin(spec) === 'file' : true;
+    })
+    .some((id) => isAuthorityPackInstalled(id, authorityStatus));
+  const anyCheckedSourceAvailable = visibleAuthorityPackIds.some(
+    (id) =>
+      authorityPacks[id] &&
+      isAuthorityPackAvailable(id, authorityStatus, entityDbFolder, importedLists.length),
   );
-  const authoritySetupReady = Boolean(entityDbFolder) && anyVisibleAuthorityPackInstalled;
 
   useEffect(() => {
     if (step !== 'authority' || !entityDbFolder || busy || !isDesktopApp()) {
@@ -367,9 +482,6 @@ export const AutoTaggingDialog = ({ id, onClose, open = false }: IDialog) => {
       setAuthorityPackCountsLoading(false);
       return;
     }
-
-    const readPack = cachedPackReader();
-    if (!readPack) return;
 
     const generation = ++authorityCountGeneration.current;
     setAuthorityPackCountsLoading(true);
@@ -390,12 +502,15 @@ export const AutoTaggingDialog = ({ id, onClose, open = false }: IDialog) => {
               };
 
         try {
-          const counts = await countAuthorityPackStrings(
-            visibleAuthorityPackIds,
-            readPack,
-            installedIds,
-            range,
-          );
+          const counts: AuthorityPackStringCounts = {};
+          const readPack = cachedPackReader();
+          if (readPack) {
+            Object.assign(
+              counts,
+              await countAuthorityPackStrings(visibleAuthorityPackIds, readPack, installedIds, range),
+            );
+          }
+          Object.assign(counts, await countOwnDatabasePackStrings(visibleAuthorityPackIds, range));
           if (generation !== authorityCountGeneration.current) return;
           setAuthorityPackCounts(counts);
         } catch {
@@ -419,66 +534,29 @@ export const AutoTaggingDialog = ({ id, onClose, open = false }: IDialog) => {
     authorityYearRange,
     visibleAuthorityPackIds,
   ]);
-  const authorityPackGroupLabel = isJapaneseLanguageCode(sourceLanguage)
-    ? 'NDL / Wikidata'
-    : isTibetanLanguageCode(sourceLanguage)
-      ? 'Wikidata'
-      : 'CBDB / DILA / Wikidata';
-
   const beginReview = (produced: Suggestion[], notice?: string) => {
     startAutoTaggingReview({ suggestions: produced, notice, aiValidation });
     handleClose();
   };
 
-  const openReview = async (parsed: DictionaryEntry[], sourceLabel: string) => {
-    if (parsed.length === 0) {
-      setError('No usable entries found. Expected columns: string, tag.');
-      return;
-    }
-    const doc = await getSession().getDocument();
-    const produced = dictionaryTag(doc, parsed, getSession().policy, sourceLabel);
-    if (produced.length === 0) {
-      setError(`No untagged matches in the document for these ${parsed.length} entries.`);
-      return;
-    }
-    beginReview(produced);
-  };
-
-  const importList = async (file: File) => {
+  const addImportedFile = async (file: File) => {
     setError(null);
-    setBusy(true);
     try {
       const entries = SPREADSHEET_RE.test(file.name)
         ? entriesFromRows(await readSpreadsheet(await file.arrayBuffer(), file.name))
         : parseDictionaryTable(await file.text());
-      await openReview(entries, file.name);
+      if (entries.length === 0) {
+        setError(`No usable entries found in ${file.name}. Expected columns: string, tag.`);
+        return;
+      }
+      setImportedLists((current) => [...current, { name: file.name, entries }]);
     } catch (e) {
       setError(e instanceof Error ? e.message : String(e));
-    } finally {
-      setBusy(false);
     }
   };
 
-  const crawlProject = async () => {
-    setError(null);
-    setBusy(true);
-    try {
-      const { documents, available } = await getSession().getProjectDocuments();
-      const entries = crawlDocuments(documents, getSession().policy);
-      if (entries.length === 0) {
-        setError(
-          available
-            ? 'No tagged entities found in the project to crawl.'
-            : 'No tagged entities found in this document to crawl.',
-        );
-        return;
-      }
-      await openReview(entries, available ? 'the project' : 'this document');
-    } catch (e) {
-      setError(e instanceof Error ? e.message : String(e));
-    } finally {
-      setBusy(false);
-    }
+  const removeImportedFile = (name: string) => {
+    setImportedLists((current) => current.filter((file) => file.name !== name));
   };
 
   const aiDisabled = !isDesktopApp() || !aiReady;
@@ -567,19 +645,23 @@ export const AutoTaggingDialog = ({ id, onClose, open = false }: IDialog) => {
     }
   };
 
-  const runAuthorityTagBomb = async () => {
+  const runTagBomb = async () => {
     const installedIds = new Set(
       authorityStatus.filter((status) => status.installed).map((status) => status.id),
     );
-    const selected = expandAuthorityPackIds(
-      visibleAuthorityPackIds.filter((id) => authorityPacks[id]),
-    ).filter((id) => installedIds.has(id));
+    const checked = expandAuthorityPackIds(visibleAuthorityPackIds.filter((id) => authorityPacks[id]));
+    const originOf = (id: AuthorityPackId) => {
+      const spec = AUTHORITY_PACKS.find((p) => p.id === id);
+      return spec ? authorityPackOrigin(spec) : 'file';
+    };
+    const selected = checked.filter((id) => (originOf(id) === 'file' ? installedIds.has(id) : true));
     if (selected.length === 0) {
-      setError('Select at least one authority pack.');
+      setError('Select at least one source.');
       return;
     }
+    const needsFileReader = selected.some((id) => originOf(id) === 'file');
     const readPack = cachedPackReader();
-    if (!readPack) {
+    if (needsFileReader && !readPack) {
       setError('Authority pack API is not available.');
       return;
     }
@@ -604,10 +686,15 @@ export const AutoTaggingDialog = ({ id, onClose, open = false }: IDialog) => {
               start: Math.min(yearStart, yearEnd),
               end: Math.max(yearStart, yearEnd),
             };
-      const result = await getSession().runAuthorityTagBomb(selected, readPack, {
-        onProgress: setAuthorityProgress,
-        ...(dateFilter ? { dateFilter } : {}),
-      });
+      const result = await getSession().runTagBomb(
+        selected,
+        readPack ?? (async () => ''),
+        {
+          onProgress: setAuthorityProgress,
+          ...(dateFilter ? { dateFilter } : {}),
+          importedLists,
+        },
+      );
       if (result.suggestions.length === 0) {
         const filterNote =
           authorityDateFilter === 'none'
@@ -781,7 +868,7 @@ export const AutoTaggingDialog = ({ id, onClose, open = false }: IDialog) => {
     <>
       <AutoTaggingApplyOverlay
         open={busy && (step === 'ai' || step === 'authority')}
-        label={step === 'authority' ? authorityProgress || 'Loading authority packs…' : aiBusyLabel}
+        label={step === 'authority' ? authorityProgress || 'Loading tag bomb sources…' : aiBusyLabel}
         done={step === 'ai' ? aiProgress.done : 0}
         total={step === 'ai' ? aiProgress.total : 0}
       />
@@ -794,7 +881,7 @@ export const AutoTaggingDialog = ({ id, onClose, open = false }: IDialog) => {
       >
         <DialogContent sx={{ p: 1.5 }}>
           <Typography variant="overline" color="text.secondary" sx={{ lineHeight: 1.6 }}>
-            {step === 'authority' ? 'Authority tag bomb' : 'Auto-tagging'}
+            {step === 'authority' ? 'Tag bomb' : 'Auto-tagging'}
           </Typography>
 
           {error && (
@@ -834,24 +921,8 @@ export const AutoTaggingDialog = ({ id, onClose, open = false }: IDialog) => {
                     }
                     sx={{ ml: 0, mb: 0.5 }}
                   />
-                  {methodButton('Tag from a list (CSV, TSV, xlsx, ODS)', () =>
-                    fileInput.current?.click(),
-                  )}
-                  <input
-                    ref={fileInput}
-                    type="file"
-                    accept=".csv,.tsv,.txt,.xlsx,.xlsm,.ods"
-                    hidden
-                    data-testid="dictionary-file-input"
-                    onChange={(event) => {
-                      const file = event.target.files?.[0];
-                      if (file) void importList(file);
-                      event.target.value = '';
-                    }}
-                  />
-                  {methodButton('From existing tags in this project', () => void crawlProject())}
                   {methodButton(
-                    `Tag from authority packs (${authorityPackGroupLabel})`,
+                    'Tag bomb',
                     () => openAuthorityStep(),
                     !isDesktopApp(),
                     !isDesktopApp() ? 'Desktop app only' : undefined,
@@ -910,7 +981,7 @@ export const AutoTaggingDialog = ({ id, onClose, open = false }: IDialog) => {
                   {packsLocationHint}
                 </Alert>
               )}
-              {entityDbFolder && !anyVisibleAuthorityPackInstalled && !packsLocationHint && (
+              {entityDbFolder && !anyVisibleFilePackInstalled && !packsLocationHint && (
                 <Alert severity="info" sx={{ py: 0.5 }}>
                   Entity database: {entityDbFolder}
                   <br />
@@ -927,6 +998,56 @@ export const AutoTaggingDialog = ({ id, onClose, open = false }: IDialog) => {
                   </Box>
                 </Alert>
               )}
+              <Box sx={{ px: 0.25 }}>
+                <Stack direction="row" spacing={0.5} alignItems="center" flexWrap="wrap" useFlexGap>
+                  <Typography
+                    variant="caption"
+                    color="text.secondary"
+                    sx={{ fontWeight: 600, fontSize: '0.6875rem' }}
+                  >
+                    Imported lists:
+                  </Typography>
+                  {importedLists.map((file) => (
+                    <Chip
+                      key={file.name}
+                      size="small"
+                      label={`${file.name} (${file.entries.length})`}
+                      disabled={busy}
+                      onDelete={() => removeImportedFile(file.name)}
+                      sx={{ fontSize: '0.6875rem', height: 20 }}
+                    />
+                  ))}
+                  <Button
+                    size="small"
+                    variant="outlined"
+                    disabled={busy}
+                    onClick={() => fileInput.current?.click()}
+                    sx={{
+                      py: 0,
+                      px: 0.75,
+                      minWidth: 0,
+                      minHeight: 22,
+                      fontSize: '0.6875rem',
+                      textTransform: 'none',
+                    }}
+                  >
+                    + Add file…
+                  </Button>
+                  <input
+                    ref={fileInput}
+                    type="file"
+                    accept=".csv,.tsv,.txt,.xlsx,.xlsm,.ods"
+                    multiple
+                    hidden
+                    data-testid="dictionary-file-input"
+                    onChange={(event) => {
+                      const files = Array.from(event.target.files ?? []);
+                      for (const file of files) void addImportedFile(file);
+                      event.target.value = '';
+                    }}
+                  />
+                </Stack>
+              </Box>
               <Stack spacing={0.25}>
                 {visibleAuthorityPackGroups.map((group) => (
                   <Box key={group.tag}>
@@ -935,8 +1056,19 @@ export const AutoTaggingDialog = ({ id, onClose, open = false }: IDialog) => {
                     </Typography>
                     <Stack spacing={0}>
                       {group.packs.map((opt) => {
-                        const installed = isAuthorityPackInstalled(opt.id, authorityStatus);
+                        const origin = authorityPackOrigin(opt);
+                        const available = isAuthorityPackAvailable(
+                          opt.id,
+                          authorityStatus,
+                          entityDbFolder,
+                          importedLists.length,
+                        );
                         const rowLabel = AUTHORITY_SOURCE_LABELS[opt.source];
+                        const suffix = available
+                          ? origin === 'file' || origin === 'pedb' || origin === 'cedb'
+                            ? formatPackStringCount(authorityPackCounts, opt.id, authorityPackCountsLoading)
+                            : ''
+                          : unavailableSuffixFor(origin);
                         return (
                           <FormControlLabel
                             key={opt.id}
@@ -944,7 +1076,7 @@ export const AutoTaggingDialog = ({ id, onClose, open = false }: IDialog) => {
                               <Checkbox
                                 size="small"
                                 checked={authorityPacks[opt.id]}
-                                disabled={busy || !installed}
+                                disabled={busy || !available}
                                 sx={{ py: 0.125 }}
                                 onChange={(event) =>
                                   setAuthorityPacks((current) => ({
@@ -954,7 +1086,7 @@ export const AutoTaggingDialog = ({ id, onClose, open = false }: IDialog) => {
                                 }
                               />
                             }
-                            label={`${rowLabel}${installed ? formatPackStringCount(authorityPackCounts, opt.id, authorityPackCountsLoading) : ' (not installed)'}`}
+                            label={`${rowLabel}${suffix}`}
                             sx={authorityOptionSx}
                           />
                         );
@@ -1060,8 +1192,8 @@ export const AutoTaggingDialog = ({ id, onClose, open = false }: IDialog) => {
                 <Button
                   size="small"
                   variant="contained"
-                  disabled={busy || !authoritySetupReady}
-                  onClick={() => void runAuthorityTagBomb()}
+                  disabled={busy || !anyCheckedSourceAvailable}
+                  onClick={() => void runTagBomb()}
                 >
                   Run tag bomb
                 </Button>

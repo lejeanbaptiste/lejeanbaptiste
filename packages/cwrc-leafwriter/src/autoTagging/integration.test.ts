@@ -240,6 +240,81 @@ describe('AutoTaggingSession', () => {
     });
   });
 
+  describe('runTagBomb', () => {
+    type DesktopGlobals = {
+      electronAPI?: {
+        listProjectXmlFiles: (root: string) => Promise<{ name: string; path: string }[]>;
+        readFile: (path: string) => Promise<string>;
+      };
+      __ljbLspProject?: { projectRoot?: string };
+      writer?: { overmindState?: { editor?: { resource?: { filePath?: string } } } };
+    };
+
+    const win = window as unknown as DesktopGlobals;
+    let savedElectron: DesktopGlobals['electronAPI'];
+    let savedProject: DesktopGlobals['__ljbLspProject'];
+    let savedWriter: DesktopGlobals['writer'];
+
+    beforeEach(() => {
+      savedElectron = win.electronAPI;
+      savedProject = win.__ljbLspProject;
+      savedWriter = win.writer;
+      delete win.electronAPI;
+      delete win.__ljbLspProject;
+      delete win.writer;
+    });
+
+    afterEach(() => {
+      if (savedElectron === undefined) delete win.electronAPI;
+      else win.electronAPI = savedElectron;
+      if (savedProject === undefined) delete win.__ljbLspProject;
+      else win.__ljbLspProject = savedProject;
+      if (savedWriter === undefined) delete win.writer;
+      else win.writer = savedWriter;
+    });
+
+    it('merges a file pack, project-tag crawl, and an imported list into one result', async () => {
+      const liveXml = `<TEI xmlns="http://www.tei-c.org/ns/1.0"><text><body>
+<p>張衡居洛陽，張衡造渾天儀。</p>
+</body></text></TEI>`;
+      const otherXml = `<TEI xmlns="http://www.tei-c.org/ns/1.0"><text><body>
+<p><placeName>洛陽</placeName></p>
+</body></text></TEI>`;
+
+      const { writer } = makeWriter(liveXml);
+      win.electronAPI = {
+        listProjectXmlFiles: async () => [{ name: 'other.xml', path: '/proj/other.xml' }],
+        readFile: async (path) => {
+          if (path === '/proj/other.xml') return otherXml;
+          throw new Error(`unexpected read: ${path}`);
+        },
+      };
+      win.__ljbLspProject = { projectRoot: '/proj' };
+      win.writer = { overmindState: { editor: { resource: { filePath: '/proj/current.xml' } } } };
+
+      const session = new AutoTaggingSession(writer);
+
+      const dilaPack = JSON.stringify({
+        source: 'DILA',
+        authorityId: 'zhang-heng',
+        kind: 'person',
+        primaryName: '張衡',
+        searchStrings: ['張衡'],
+      });
+      const readPackFile = async () => dilaPack;
+
+      const result = await session.runTagBomb(['dila-persons', 'project-places', 'list-works'], readPackFile, {
+        importedLists: [{ name: 'my.csv', entries: [{ string: '渾天儀', tag: 'title' }] }],
+      });
+
+      const byTag = (tag: string) => result.suggestions.filter((s) => s.tag === tag);
+      expect(byTag('persName')).toHaveLength(2); // 張衡 appears twice
+      expect(byTag('placeName')).toHaveLength(1); // 洛陽, from the project crawl
+      expect(byTag('title')).toHaveLength(1); // 渾天儀, from the imported list
+      expect(result.suggestions.every((s) => s.status === 'pending')).toBe(true);
+    });
+  });
+
   describe('decision logging', () => {
     const makeStore = () => {
       const files = new Map<string, string>();

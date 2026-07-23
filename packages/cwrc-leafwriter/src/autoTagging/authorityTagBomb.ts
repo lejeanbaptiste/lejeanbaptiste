@@ -3,7 +3,13 @@ import {
   iterateAuthorityNdjson,
   type DateRangeFilter,
 } from './packLoader';
-import { expandAuthorityPackIds, type AuthorityPackId } from './packPaths';
+import {
+  AUTHORITY_PACKS,
+  authorityPackOrigin,
+  expandAuthorityPackIds,
+  type AuthorityPackId,
+} from './packPaths';
+import type { AuthorityCandidate } from './authority';
 
 /** CBDB before DILA so overlap merge prefers CBDB metadata as the base. CHGIS before DILA for place dates. */
 const PACK_LOAD_ORDER: AuthorityPackId[] = [
@@ -55,6 +61,13 @@ export interface AuthorityTagBombOptions {
   onProgress?: (message: string) => void;
   /** When set, cap suggestions (UI). Omit for full scoring in validation harness. */
   maxSuggestions?: number;
+  /**
+   * Pre-built candidates (e.g. from a PEDB/CEDB entities.xml, converted with
+   * `candidatesFromEntityDatabase`) folded into the same seed index as the
+   * NDJSON packs, subject to the same `dateFilter`. Grouped under `groupLabel`
+   * in the returned `loaded` map (e.g. `'pedb-persons'`).
+   */
+  extraCandidates?: { groupLabel: string; candidates: AuthorityCandidate[] }[];
 }
 
 export interface AuthorityTagBombResult {
@@ -90,7 +103,14 @@ export async function runAuthorityTagBombOnDocument(
   const loaded: Partial<Record<AuthorityPackId, number>> = {};
   let candidateCount = 0;
 
-  for (const packId of sortPackIds(expandAuthorityPackIds(packIds))) {
+  // Non-file origins (pedb/cedb/project/list) have no NDJSON to stream —
+  // callers route those to `extraCandidates` instead.
+  const filePackIds = expandAuthorityPackIds(packIds).filter((id) => {
+    const spec = AUTHORITY_PACKS.find((p) => p.id === id);
+    return spec ? authorityPackOrigin(spec) === 'file' : true;
+  });
+
+  for (const packId of sortPackIds(filePackIds)) {
     options.onProgress?.(`Loading ${packId}…`);
     let packCount = 0;
     const content = await readPackFile(packId);
@@ -101,6 +121,17 @@ export async function runAuthorityTagBombOnDocument(
       candidateCount += 1;
     }
     loaded[packId] = packCount;
+  }
+
+  for (const group of options.extraCandidates ?? []) {
+    let groupCount = 0;
+    for (const candidate of group.candidates) {
+      if (dateFilter && !candidatePassesDateFilter(candidate, dateFilter)) continue;
+      addCandidateToSeedIndex(index, candidate);
+      groupCount += 1;
+      candidateCount += 1;
+    }
+    loaded[group.groupLabel as AuthorityPackId] = groupCount;
   }
 
   options.onProgress?.(`Matching ${candidateCount.toLocaleString()} authority entries…`);

@@ -2,6 +2,7 @@
 export {
   AUTHORITY_PACKS_DIRNAME,
   AUTHORITY_PACKS,
+  authorityPackOrigin,
   packPath,
   packsRoot,
   type AuthorityPackId,
