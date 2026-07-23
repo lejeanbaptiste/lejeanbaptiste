@@ -3,6 +3,7 @@ import { useAtomValue } from 'jotai';
 import { useTranslation } from 'react-i18next';
 import type { EntityLink } from '../../types/authority';
 import {
+  checkedEntriesAtom,
   entityTypeAtom,
   isUriValidAtom,
   manualInputAtom,
@@ -23,6 +24,7 @@ export const Footer = () => {
   const query = useAtomValue(queryAtom);
   const resolution = useAtomValue(resolutionAtom);
   const selected = useAtomValue(selectedAtom);
+  const checkedEntries = useAtomValue(checkedEntriesAtom);
 
   const { confirmSelected, tagWithoutLinking } = useEntityLookup();
 
@@ -53,11 +55,15 @@ export const Footer = () => {
       </Button>
       <Button
         autoFocus
-        disabled={(!selected && (manualInput === '' || !isUriValid)) || resolution !== null}
+        disabled={
+          (!selected && checkedEntries.size === 0 && (manualInput === '' || !isUriValid)) ||
+          resolution !== null
+        }
         onClick={handlSelectLink}
         variant="contained"
       >
         {t('LW.commons.select')}
+        {checkedEntries.size > 1 ? ` (${checkedEntries.size})` : ''}
       </Button>
     </DialogActions>
   );

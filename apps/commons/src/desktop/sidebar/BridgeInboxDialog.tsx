@@ -17,6 +17,7 @@ import {
 import { useCallback, useEffect, useState } from 'react';
 import type { BridgeInboxReport } from '../../../../../packages/cwrc-leafwriter/src/autoTagging/bridgeInbox';
 import {
+  applyPendingCentralOrders,
   computeBridgeInbox,
   loadBridgeContext,
   promoteEntities,
@@ -44,6 +45,7 @@ export const BridgeInboxDialog = ({ open, onClose, onChanged }: Props) => {
   const [error, setError] = useState<string | null>(null);
   const [context, setContext] = useState<BridgeContext | null>(null);
   const [report, setReport] = useState<BridgeInboxReport | null>(null);
+  const [centralOrdersNote, setCentralOrdersNote] = useState<string | null>(null);
 
   const refresh = useCallback(async (ctx: BridgeContext) => {
     setLoading(true);
@@ -62,6 +64,7 @@ export const BridgeInboxDialog = ({ open, onClose, onChanged }: Props) => {
     setReport(null);
     setUnavailable(null);
     setError(null);
+    setCentralOrdersNote(null);
     void (async () => {
       const availability = await loadBridgeContext();
       if (!availability.available) {
@@ -70,6 +73,19 @@ export const BridgeInboxDialog = ({ open, onClose, onChanged }: Props) => {
         return;
       }
       setContext(availability.context);
+      // Converge against any central-database merges/deletes this project
+      // hasn't seen yet before showing the inbox — otherwise a just-merged
+      // duplicate would still show up here as "broken".
+      try {
+        const synced = await applyPendingCentralOrders(availability.context);
+        if (synced.repointed > 0 || synced.cleared > 0) {
+          setCentralOrdersNote(
+            `Applied ${synced.ordersApplied} central update(s): ${synced.repointed} link(s) repointed, ${synced.cleared} cleared.`,
+          );
+        }
+      } catch {
+        // never block the inbox on this — worst case, the entry still shows as broken
+      }
       await refresh(availability.context);
     })();
   }, [open, refresh]);
@@ -105,6 +121,11 @@ export const BridgeInboxDialog = ({ open, onClose, onChanged }: Props) => {
       <DialogTitle>Bridge to central database</DialogTitle>
       <DialogContent dividers>
         {unavailable && <Alert severity="info">{unavailable}</Alert>}
+        {centralOrdersNote && (
+          <Alert severity="success" sx={{ mb: 2 }} onClose={() => setCentralOrdersNote(null)}>
+            {centralOrdersNote}
+          </Alert>
+        )}
         {error && (
           <Alert severity="error" sx={{ mb: 2 }}>
             {error}

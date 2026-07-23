@@ -1,5 +1,6 @@
 import { resolveAnchor } from './anchor';
 import { isEntityTagForbiddenInDate, isInsideDateElement } from './dates';
+import { isWrappedByEntityTag } from './suggestionFilters';
 import type { Suggestion, SuggestionAction, WhitespacePolicy } from './types';
 
 export type ApplyOutcome =
@@ -231,10 +232,11 @@ function applyAdd(doc: Document, suggestion: Suggestion, options: ApplyOptions):
   const parent = resolved.node.parentElement;
   if (!parent) return { suggestion, outcome: 'unresolvable' };
 
-  // Dedup: skip if the same tag already wraps this text (any ancestor of the
-  // text node with the same name — inserting would nest <persName> in <persName>).
-  for (let el: Element | null = parent; el; el = el.parentElement) {
-    if (el.nodeName === suggestion.tag) return { suggestion, outcome: 'already-tagged' };
+  // Dedup: skip if the same kind already wraps this text (any ancestor of the
+  // text node with an equivalent tag — inserting would nest e.g. <roleName>
+  // inside <roleName>).
+  if (isWrappedByEntityTag(resolved.node, suggestion.tag)) {
+    return { suggestion, outcome: 'already-tagged' };
   }
 
   if (blockedBySchema(schemaTagName(parent), suggestion.tag, options)) {

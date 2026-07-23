@@ -461,7 +461,8 @@ export const mergeEditorBodyWithStoredHeader = (editorXml: string, storedXml: st
   return new XMLSerializer().serializeToString(storedDoc);
 };
 
-/** Reattach stored file header so RelaxNG validation matches the on-disk document. */
+/** Reattach stored file header so Visual-mode RelaxNG validation matches the on-disk document.
+ * Source mode must not use this — validate the Monaco buffer as-is. */
 export const mergeStoredHeaderForValidation = (editorXml: string, storedXml: string): string => {
   if (!storedXml || !/<teiHeader[\s>]/i.test(storedXml)) return editorXml;
   const editorBody = stripTeiHeaderForVisualEditor(editorXml);

@@ -168,7 +168,33 @@ describe('documentImport', () => {
     expect(result.xml).toContain(`${FORMER_KEY_ANA_PREFIX}person-000014`);
     expect(result.xml).toContain('href="schema/tei_lite.rng"');
     expect(result.xml).toContain('<title>Han Xin</title>');
-    expect(result.xml).toContain('Imported into this project from HanXin');
+    expect(result.xml).toMatch(
+      /<change when="\d{4}-\d{2}-\d{2}">Imported into this project from HanXin/,
+    );
+    expect(result.xml).not.toMatch(/<sourceDesc[\s\S]*?<p>Imported into this project/);
+    expect(inspectImportedXml(result.xml)).toEqual({ ok: true });
+  });
+
+  test('records import provenance in revisionDesc even when sourceDesc has biblStruct', () => {
+    const withBiblStruct = sampleTei.replace(
+      '<sourceDesc><p>Old source</p></sourceDesc>',
+      `<sourceDesc>
+      <biblStruct>
+        <monogr><title>Nan Qi Shu</title></monogr>
+      </biblStruct>
+    </sourceDesc>`,
+    );
+
+    const result = buildImportedXmlDocument({
+      config,
+      sourcePath: '/incoming/NanQiShu_bio.xml',
+      xml: withBiblStruct,
+    });
+
+    expect(result.xml).toContain('<biblStruct>');
+    expect(result.xml).toContain('<revisionDesc>');
+    expect(result.xml).toMatch(/<change when="\d{4}-\d{2}-\d{2}">Imported into this project/);
+    expect(result.xml).not.toMatch(/<sourceDesc[^>]*>[\s\S]*?<p>Imported/);
     expect(inspectImportedXml(result.xml)).toEqual({ ok: true });
   });
 

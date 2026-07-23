@@ -415,6 +415,14 @@ const appendImportProvenanceNote = ({
   const note = `Imported into this project from ${sourceName} on ${date}.${keyNote}`;
 
   if (family === 'orlando') {
+    // Orlando: prefer REVISIONDESC; fall back to appending text in SOURCEDESC.
+    if (/<REVISIONDESC\b[^>]*>[\s\S]*?<\/REVISIONDESC>/i.test(xml)) {
+      return xml.replace(
+        /<REVISIONDESC\b[^>]*>/i,
+        (open) =>
+          `${open}\n    <RESPONSIBILITY RESP="Le Jean-Baptiste" when="${date}">${escapeXmlText(note)}</RESPONSIBILITY>`,
+      );
+    }
     if (/<SOURCEDESC\b[^>]*>[\s\S]*?<\/SOURCEDESC>/i.test(xml)) {
       return xml.replace(
         /<\/SOURCEDESC>/i,
@@ -424,14 +432,48 @@ const appendImportProvenanceNote = ({
     return xml;
   }
 
-  if (/<sourceDesc\b[^>]*>[\s\S]*?<\/sourceDesc>/i.test(xml)) {
-    return xml.replace(
-      /<\/sourceDesc>/i,
-      `    <p>${escapeXmlText(note)}</p>\n  </sourceDesc>`,
-    );
+  // TEI: put provenance in revisionDesc/change — sourceDesc often holds
+  // biblStruct (or similar) and does not allow a sibling <p>.
+  if (typeof DOMParser === 'undefined') {
+    if (/<revisionDesc\b[^>]*>/i.test(xml)) {
+      return xml.replace(
+        /<revisionDesc\b[^>]*>/i,
+        (open) => `${open}\n    <change when="${date}">${escapeXmlText(note)}</change>`,
+      );
+    }
+    if (/<\/teiHeader>/i.test(xml)) {
+      return xml.replace(
+        /<\/teiHeader>/i,
+        `  <revisionDesc>\n    <change when="${date}">${escapeXmlText(note)}</change>\n  </revisionDesc>\n</teiHeader>`,
+      );
+    }
+    return xml;
   }
 
-  return xml;
+  const parser = new DOMParser();
+  const doc = parser.parseFromString(xml, 'application/xml');
+  if (doc.querySelector('parsererror')) return xml;
+
+  const teiNs = 'http://www.tei-c.org/ns/1.0';
+  const header =
+    doc.getElementsByTagNameNS(teiNs, 'teiHeader')[0] ??
+    doc.getElementsByTagName('teiHeader')[0];
+  if (!header) return xml;
+
+  let revisionDesc =
+    header.getElementsByTagNameNS(teiNs, 'revisionDesc')[0] ??
+    header.getElementsByTagName('revisionDesc')[0];
+  if (!revisionDesc) {
+    revisionDesc = doc.createElementNS(teiNs, 'revisionDesc');
+    header.appendChild(revisionDesc);
+  }
+
+  const change = doc.createElementNS(teiNs, 'change');
+  change.setAttribute('when', date);
+  change.textContent = note;
+  revisionDesc.insertBefore(change, revisionDesc.firstChild);
+
+  return new XMLSerializer().serializeToString(doc);
 };
 
 /**

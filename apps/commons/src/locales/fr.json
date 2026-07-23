@@ -257,11 +257,6 @@
         "account_linked": "Account linked",
         "manage_your_lincs_account": "Manage your LINCS account"
       },
-      "components": {
-        "bottombar": {
-          "annotation_mode": "Annotation Mode"
-        }
-      },
       "error": {
         "something_went_wrong": "Something went wrong",
         "unknown_error": "An unknown error occurred.",

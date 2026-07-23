@@ -328,11 +328,17 @@ export const validate = async ({ state, actions }: Context) => {
     return;
   }
 
+  // Visual mode often edits a body-only tree; reattach the stored teiHeader so
+  // RelaxNG sees the on-disk document. Source mode shows the full XML buffer —
+  // validate that as-is so header edits (sourceDesc, etc.) are not silently
+  // overwritten by a stale stored snapshot.
   const mergeForValidation = window.__desktopMergeHeaderForValidation;
   const validationString =
-    typeof mergeForValidation === 'function'
-      ? mergeForValidation(documentString ?? '')
-      : documentString;
+    state.ui.editorViewMode === 'source'
+      ? documentString
+      : typeof mergeForValidation === 'function'
+        ? mergeForValidation(documentString ?? '')
+        : documentString;
 
   if (!validationString) {
     instrumentation.validationRunning = false;

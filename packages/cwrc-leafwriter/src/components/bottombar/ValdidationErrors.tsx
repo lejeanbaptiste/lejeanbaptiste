@@ -10,9 +10,9 @@ export const ValdidationErrors = () => {
   const handleClick = () => window.writer.validate();
 
   return (
-    <Tooltip title={t('LW.components.bottombar.annotation_mode')}>
+    <Tooltip title={t('LW.panels.validation')}>
       <Button
-        id="annotation-mode-select"
+        id="validation-errors"
         color="warning"
         onClick={handleClick}
         size="small"

@@ -85,15 +85,41 @@ describe('filterNestedSameTagAdds', () => {
     expect(suggestions).toHaveLength(0);
   });
 
-  it('dedupes identical location suggestions in prepareSuggestionsForReview', () => {
+  it('drops a shorter same-kind add nested inside a longer sibling suggestion', () => {
+    const doc = parse(
+      '<TEI xmlns="http://www.tei-c.org/ns/1.0"><text><body><p>授參知政事。</p></body></text></TEI>',
+    );
+    const { suggestions, dropped } = filterNestedSameTagAdds(doc, 'ignore', [
+      addSuggestion('知政事', 1, 'roleName'),
+      addSuggestion('參知政事', 1, 'roleName'),
+    ]);
+    expect(dropped).toBe(1);
+    expect(suggestions).toHaveLength(1);
+    expect(suggestions[0]?.anchor.surface).toBe('參知政事');
+  });
+
+  it('keeps same-surface adds when the tags are different kinds', () => {
+    const doc = parse(
+      '<TEI xmlns="http://www.tei-c.org/ns/1.0"><text><body><p>授參知政事。</p></body></text></TEI>',
+    );
+    const { suggestions, dropped } = filterNestedSameTagAdds(doc, 'ignore', [
+      addSuggestion('參知政事', 1, 'roleName'),
+      addSuggestion('參知政事', 1, 'title'),
+    ]);
+    expect(dropped).toBe(0);
+    expect(suggestions).toHaveLength(2);
+  });
+
+  it('collapses identical same-kind spans before review (nest filter or location dedupe)', () => {
     const doc = parse('<TEI><text><body><p>洛陽</p></body></text></TEI>');
     const first = addSuggestion('洛陽', 1, 'placeName');
     const duplicate = { ...addSuggestion('洛陽', 1, 'placeName'), id: 'y' };
-    const { suggestions, droppedDuplicate } = prepareSuggestionsForReview(doc, 'ignore', [
-      first,
-      duplicate,
-    ]);
-    expect(droppedDuplicate).toBe(1);
+    const { suggestions, droppedNested, droppedDuplicate } = prepareSuggestionsForReview(
+      doc,
+      'ignore',
+      [first, duplicate],
+    );
     expect(suggestions).toHaveLength(1);
+    expect(droppedNested + droppedDuplicate).toBe(1);
   });
 });

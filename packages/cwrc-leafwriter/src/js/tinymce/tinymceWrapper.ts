@@ -13,6 +13,10 @@ import fscreen from 'fscreen';
 import Writer from '../Writer';
 import { stripCjkWhitespaceInElement } from '../../utilities/cjkWhitespace';
 import { resolvePageBreakMarkers, tagPageBreaks } from '../../utilities/pageBreakDetection';
+import {
+  applyPunctuationBoundaryMove,
+  isPunctuationBoundaryNavEvent,
+} from '../../utilities/punctuationBoundaryNav';
 import { normalizePastedParagraphs, fixNestedPastedParagraphs, removeEmptyParagraphs, PARAGRAPH_TAG } from './normalizePastedParagraphs';
 import {
   buildLeafWriterClipboardPayload,
@@ -1185,6 +1189,27 @@ export const tinymceWrapperInit = function ({
 
     writer.editor.lastKeyPress = event.code; // store the last key press
 
+    // Option+←/→ (Mac) or Ctrl+←/→ (Windows/Linux): jump by punctuation / whitespace,
+    // landing after the boundary. Replaces the browser's Latin-centric "word" jump,
+    // which is nearly useless for Chinese and other no-space scripts.
+    const isMac = tinymce.Env.os.isMacOS() || tinymce.Env.os.isiOS();
+    if (isPunctuationBoundaryNavEvent(event, isMac)) {
+      const sel = writer.editor.selection.getSel();
+      if (sel) {
+        const direction = event.code === 'ArrowRight' ? 'forward' : 'backward';
+        applyPunctuationBoundaryMove(
+          writer.editor.getBody(),
+          sel,
+          direction,
+          event.shiftKey,
+          (node) => writer.editor!.dom.isBlock(node),
+        );
+      }
+      event.preventDefault();
+      event.stopPropagation();
+      return;
+    }
+
     // At an internal end-boundary (cursor inside _tag element at end of its text), block Delete
     // so the browser doesn't merge content from after the tag into the element.
     if (
@@ -1207,22 +1232,45 @@ export const tinymceWrapperInit = function ({
       writer.isReadOnly !== true &&
       writer.isTextLocked !== true
     ) {
-      const node = writer.editor.selection.getNode();
-      const tagEl = isElement(node) ? node.closest('[_tag]') : null;
-      const tagName = tagEl?.getAttribute('_tag');
-      if (
-        tagEl &&
-        tagName &&
-        tagName !== writer.schemaManager.getRoot() &&
-        tagName !== writer.schemaManager.getHeader()
-      ) {
-        const id = tagEl.getAttribute('id');
-        if (id) {
-          event.preventDefault();
-          clearTagBoundaryState();
-          writer.tagger.removeTag(id);
-          return;
+      // Refresh boundary/active highlight so short tags (roleName, etc.) whose caret
+      // sits just outside the span still resolve to the highlighted element — not the
+      // parent <p>/div that selection.getNode().closest('[_tag]') would climb to.
+      updateTagBoundaryState();
+
+      const rootTag = writer.schemaManager.getRoot();
+      const headerTag = writer.schemaManager.getHeader();
+      const isDeletableTag = (el: Element | null): el is Element => {
+        if (!el) return false;
+        const tagName = el.getAttribute('_tag');
+        return Boolean(tagName && tagName !== 'pb' && tagName !== rootTag && tagName !== headerTag);
+      };
+
+      let tagEl: Element | null = null;
+      if (isDeletableTag(currentBoundaryElement)) tagEl = currentBoundaryElement;
+      else if (isDeletableTag(currentActiveElement)) tagEl = currentActiveElement;
+      else {
+        const rng = writer.editor.selection.getRng();
+        let node: Node | null = rng.startContainer;
+        if (node.nodeType === Node.TEXT_NODE) node = node.parentElement;
+        while (node && isElement(node) && node !== writer.editor.getBody()) {
+          if (isDeletableTag(node)) {
+            tagEl = node;
+            break;
+          }
+          node = node.parentElement;
         }
+      }
+
+      if (tagEl) {
+        let id = tagEl.getAttribute('id');
+        if (!id) {
+          id = writer.getUniqueId('dom_');
+          tagEl.setAttribute('id', id);
+        }
+        event.preventDefault();
+        clearTagBoundaryState();
+        writer.tagger.removeTag(id);
+        return;
       }
     }
 

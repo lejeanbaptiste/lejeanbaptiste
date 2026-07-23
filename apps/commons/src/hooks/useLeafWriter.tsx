@@ -90,9 +90,9 @@ export const useLeafWriter = () => {
     window.__desktopMergeHeaderForValidation = (editorXml: string) => {
       const stored =
         window.__desktopStoredDocumentXml ?? window.writer?.overmindState?.document?.xml ?? '';
-      // Block spacing here (not just at disk-save) so the Source-mode buffer — which is
-      // regenerated from the editor's run-on serializer output through this bridge — shows
-      // the same one-block-per-line layout the saved file gets.
+      // Used for Visual-mode validation / Source sync: reattach stored teiHeader
+      // to body-only editor XML. Source-mode validate() skips this merge so the
+      // Monaco buffer (including header edits) is checked as-is.
       return separateBlockElements(mergeStoredHeaderForValidation(editorXml, stored));
     };
   }

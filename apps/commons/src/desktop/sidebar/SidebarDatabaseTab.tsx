@@ -3,6 +3,7 @@ import CallSplitIcon from '@mui/icons-material/CallSplit';
 import HubOutlinedIcon from '@mui/icons-material/HubOutlined';
 import DeleteOutlineIcon from '@mui/icons-material/DeleteOutline';
 import EditOutlinedIcon from '@mui/icons-material/EditOutlined';
+import FactCheckOutlinedIcon from '@mui/icons-material/FactCheckOutlined';
 import LaunchIcon from '@mui/icons-material/Launch';
 import MergeIcon from '@mui/icons-material/Merge';
 import MoreVertIcon from '@mui/icons-material/MoreVert';
@@ -10,6 +11,7 @@ import RefreshIcon from '@mui/icons-material/Refresh';
 import WarningAmberIcon from '@mui/icons-material/WarningAmber';
 import {
   Alert,
+  Badge,
   Box,
   Button,
   Checkbox,
@@ -53,6 +55,7 @@ import {
   setGivenName,
   setNameType,
   setRomanizedName,
+  type CentralMergeConflict,
   type DuplicateGroup,
   type EntitySummary,
 } from '../../../../../packages/cwrc-leafwriter/src/autoTagging/entityOps';
@@ -79,8 +82,10 @@ import {
 import { openExternalUrl } from '../../../../../packages/cwrc-leafwriter/src/utilities/DOM';
 import { useActions, useAppState } from '@src/overmind';
 import { applyKeyRemapAcrossProjects, type KeyRemapSummary } from '../entityDb/applyKeyRemap';
+import { computeMergeDocket } from '../entityDb/bridge';
 import { authorityLookupUrl } from '../entityDb/authorityLinks';
 import { BridgeInboxDialog } from './BridgeInboxDialog';
+import { MergeDocketDialog } from './MergeDocketDialog';
 
 /**
  * Ordinal of a legacy sequential id (`person-000042` → 42); UUID ids have none.
@@ -156,6 +161,8 @@ export const SidebarDatabaseTab = ({ active = false }: SidebarDatabaseTabProps) 
   const [splitInfoOpen, setSplitInfoOpen] = useState(false);
   const [lastSummary, setLastSummary] = useState<KeyRemapSummary | null>(null);
   const [bridgeOpen, setBridgeOpen] = useState(false);
+  const [docketOpen, setDocketOpen] = useState(false);
+  const [docketCount, setDocketCount] = useState(0);
 
   const [menuAnchor, setMenuAnchor] = useState<{ el: HTMLElement; entity: EntitySummary } | null>(
     null,
@@ -179,11 +186,19 @@ export const SidebarDatabaseTab = ({ active = false }: SidebarDatabaseTabProps) 
       setDuplicates([]);
       setWarnings([]);
       setCentralStore(null);
+      setDocketCount(0);
       return;
     }
     const centralFolder = (await window.electronAPI?.getEntityDbFolder?.().catch(() => null)) ?? null;
     const resolvedCentralStore = centralEntityStoreFromDesktop(centralFolder);
     setCentralStore(resolvedCentralStore);
+    if (resolvedCentralStore) {
+      computeMergeDocket(resolvedCentralStore)
+        .then((docket) => setDocketCount(docket.length))
+        .catch(() => setDocketCount(0));
+    } else {
+      setDocketCount(0);
+    }
 
     // Pure view switch: browse either database, never both at once - Project
     // falls back from Central if no central folder is configured yet.
@@ -382,8 +397,33 @@ export const SidebarDatabaseTab = ({ active = false }: SidebarDatabaseTabProps) 
     if (!mergeIds || !mergeKeepId) return;
     const dropIds = mergeIds.filter((id) => id !== mergeKeepId);
     const targetStore = resolveStoreFor(mergeKeepId);
+    // A conflict only matters for a PEDB merge: it's the signal that two
+    // *central* entities might also be duplicates (see mergeEntities). A
+    // central-to-central merge has no PEDB counterpart to raise a suggestion for.
+    const isProjectMerge = targetStore === store;
     setMergeIds(null);
-    void runMutation(targetStore, 'Merging entities…', (doc) => mergeEntities(doc, mergeKeepId, dropIds).remap);
+
+    let sourceDbId: string | null = null;
+    let centralConflicts: CentralMergeConflict[] = [];
+    void runMutation(targetStore, 'Merging entities…', (doc) => {
+      sourceDbId = getDatabaseId(doc);
+      const result = mergeEntities(doc, mergeKeepId, dropIds);
+      centralConflicts = result.centralConflicts;
+      return result.remap;
+    }).then(async () => {
+      if (!isProjectMerge || !centralStore || centralConflicts.length === 0) return;
+      for (const conflict of centralConflicts) {
+        await centralStore
+          .recordMergeSuggestion(sourceDbId ?? 'unknown', [
+            conflict.keptCentralId,
+            conflict.droppedCentralId,
+          ])
+          .catch(() => undefined);
+      }
+      computeMergeDocket(centralStore)
+        .then((docket) => setDocketCount(docket.length))
+        .catch(() => undefined);
+    });
   };
 
   const requestDelete = (entity: EntitySummary) => {
@@ -635,6 +675,21 @@ export const SidebarDatabaseTab = ({ active = false }: SidebarDatabaseTabProps) 
             <Tooltip title="Bridge to central database">
               <IconButton size="small" onClick={() => setBridgeOpen(true)} aria-label="Bridge to central database">
                 <HubOutlinedIcon fontSize="small" />
+              </IconButton>
+            </Tooltip>
+          )}
+          {centralStore && (
+            <Tooltip
+              title={
+                docketCount > 0
+                  ? `Merge docket: ${docketCount} central suggestion(s) pending review`
+                  : 'Merge docket'
+              }
+            >
+              <IconButton size="small" onClick={() => setDocketOpen(true)} aria-label="Merge docket">
+                <Badge badgeContent={docketCount} color="warning">
+                  <FactCheckOutlinedIcon fontSize="small" />
+                </Badge>
               </IconButton>
             </Tooltip>
           )}
@@ -1203,6 +1258,13 @@ export const SidebarDatabaseTab = ({ active = false }: SidebarDatabaseTabProps) 
       <BridgeInboxDialog
         open={bridgeOpen}
         onClose={() => setBridgeOpen(false)}
+        onChanged={() => void reload()}
+      />
+
+      <MergeDocketDialog
+        open={docketOpen}
+        onClose={() => setDocketOpen(false)}
+        centralStore={centralStore}
         onChanged={() => void reload()}
       />
     </Box>

@@ -48,6 +48,21 @@ describe('recoverFromFailedAtomicWrite', () => {
     expect(await fs.readFile(filePath, 'utf-8')).toBe('{"recovered":true}');
   });
 
+  it('promotes a leftover .bak when the destination and .tmp are missing', async () => {
+    const filePath = path.join(dir, 'project-prefs.json');
+    await fs.writeFile(`${filePath}.bak`, '{"fromBak":true}', 'utf-8');
+    expect(await recoverFromFailedAtomicWrite(filePath)).toBe(true);
+    expect(await fs.readFile(filePath, 'utf-8')).toBe('{"fromBak":true}');
+  });
+
+  it('prefers .tmp over .bak when both leftovers exist', async () => {
+    const filePath = path.join(dir, 'project-prefs.json');
+    await fs.writeFile(`${filePath}.bak`, '{"old":true}', 'utf-8');
+    await fs.writeFile(`${filePath}.tmp`, '{"new":true}', 'utf-8');
+    expect(await recoverFromFailedAtomicWrite(filePath)).toBe(true);
+    expect(await fs.readFile(filePath, 'utf-8')).toBe('{"new":true}');
+  });
+
   it('does nothing when the destination already exists', async () => {
     const filePath = path.join(dir, 'project-prefs.json');
     await fs.writeFile(filePath, '{"ok":true}', 'utf-8');

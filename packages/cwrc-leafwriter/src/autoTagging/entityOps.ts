@@ -6,6 +6,12 @@
  */
 
 import { isLatnLang, latnLangFor } from '../utilities/languageCodes';
+import {
+  CENTRAL_IDNO_TYPE,
+  getCentralId,
+  listCentralMappings,
+  setCentralMapping,
+} from './concordance';
 import { ENTITY_KINDS, findEntity, touchEntity, type AuthorityId, type EntityKind } from './entities';
 import { isTaggableNameType, normalizeNameType, type NameTypeId } from './nameTypes';
 
@@ -46,7 +52,7 @@ export interface EntitySummary {
   givenName: string | null;
 }
 
-const kindOfElement = (el: Element): EntityKind | null => ITEM_TO_KIND[el.localName] ?? null;
+export const kindOfElement = (el: Element): EntityKind | null => ITEM_TO_KIND[el.localName] ?? null;
 
 const nameElements = (item: Element, kind: EntityKind): Element[] => {
   const tag = ENTITY_KINDS[kind].name;
@@ -86,6 +92,7 @@ function summarize(item: Element): EntitySummary | null {
     romanized: nameEntries.find((entry) => isLatnLang(entry.lang))?.text ?? null,
     description: descriptionNote(item)?.textContent?.trim() || null,
     authorities: idnoElements(item)
+      .filter((el) => el.getAttribute('type') !== CENTRAL_IDNO_TYPE)
       .map((el) => ({
         type: el.getAttribute('type') ?? '',
         value: el.textContent?.trim() ?? '',
@@ -385,16 +392,40 @@ export function detachAuthority(doc: Document, id: string, ref: AuthorityId): bo
   return true;
 }
 
+export interface CentralMergeConflict {
+  /** Stable user id whose mapping disagreed (the idno's `subtype`). */
+  userStableId: string;
+  /** The central id kept on the survivor. */
+  keptCentralId: string;
+  /** The central id the dropped entity named for the same user — a possible CEDB duplicate. */
+  droppedCentralId: string;
+}
+
 export interface MergeResult {
   keepId: string;
   /** Old id → surviving id, for rewriting `@key` across documents. */
   remap: Record<string, string>;
+  /**
+   * Per-user `ljb-central` mappings that disagreed between keeper and a
+   * dropped entity (both non-empty, naming different central ids). Neither
+   * side is overwritten; the caller surfaces these as a "these two central
+   * entities might be duplicates too" suggestion instead of silently picking
+   * one.
+   */
+  centralConflicts: CentralMergeConflict[];
 }
 
 /**
  * Merge `dropIds` into `keepId`: union names, authority idnos, and notes
  * (keeper's description wins; a dropped description is kept only when the
  * keeper has none). Dropped elements are removed from the document.
+ *
+ * The per-user `ljb-central` concordance row is handled separately from
+ * ordinary authority idnos (never blindly copied — it would silently lose its
+ * `subtype`/user id via the generic idno-copy path): a mapping the keeper
+ * lacks is transferred from the dropped entity; a mapping only the keeper has
+ * stays; a mapping present on both sides that names different central ids is
+ * left on the keeper as-is and reported as a `centralConflicts` entry.
  */
 export function mergeEntities(doc: Document, keepId: string, dropIds: string[]): MergeResult {
   const keeper = requireEntity(doc, keepId);
@@ -402,6 +433,7 @@ export function mergeEntities(doc: Document, keepId: string, dropIds: string[]):
   if (!kind) throw new Error(`Unknown entity kind for: ${keepId}`);
 
   const remap: Record<string, string> = {};
+  const centralConflicts: CentralMergeConflict[] = [];
   for (const dropId of dropIds) {
     if (dropId === keepId) continue;
     const dropped = requireEntity(doc, dropId);
@@ -424,7 +456,21 @@ export function mergeEntities(doc: Document, keepId: string, dropIds: string[]):
     for (const idno of idnoElements(dropped)) {
       const type = idno.getAttribute('type');
       const value = idno.textContent?.trim();
-      if (type && value) attachAuthority(doc, keepId, { type, value });
+      // The ljb-central row is per-user metadata, not a shared authority id —
+      // handled below, where the subtype (user id) is preserved correctly.
+      if (type && value && type !== CENTRAL_IDNO_TYPE) attachAuthority(doc, keepId, { type, value });
+    }
+    for (const mapping of listCentralMappings(dropped)) {
+      const keptCentralId = getCentralId(keeper, mapping.userStableId);
+      if (!keptCentralId) {
+        setCentralMapping(keeper, mapping.userStableId, mapping.centralId);
+      } else if (keptCentralId !== mapping.centralId) {
+        centralConflicts.push({
+          userStableId: mapping.userStableId,
+          keptCentralId,
+          droppedCentralId: mapping.centralId,
+        });
+      }
     }
     const droppedDescription = descriptionNote(dropped)?.textContent?.trim();
     if (droppedDescription && !descriptionNote(keeper)) {
@@ -457,7 +503,7 @@ export function mergeEntities(doc: Document, keepId: string, dropIds: string[]):
     remap[dropId] = keepId;
   }
   if (Object.keys(remap).length > 0) touchEntity(keeper);
-  return { keepId, remap };
+  return { keepId, remap, centralConflicts };
 }
 
 /**

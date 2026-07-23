@@ -3,6 +3,7 @@ import { EntityStore, type EntityFileApi } from './entityStore';
 import { resolveEntityStorePaths } from './entityStoreResolve';
 import {
   applyLookupResolution,
+  appendExtraAuthorityIds,
   crosswalkForRef,
   linkLocalEntityWithoutAuthority,
   linkWithoutEnrichment,
@@ -264,6 +265,121 @@ describe('planLookupResolution / applyLookupResolution', () => {
     const log = fs.files.get('/proj/.ljb/entity-decisions.jsonl') ?? '';
     expect(log).toContain('"source":"manual-lookup"');
     expect(log).toContain('"surface":"攸之"');
+  });
+
+  it('mints one entity carrying idnos from every checked candidate (extraUris)', async () => {
+    const { store } = makeStore();
+    const result = await applyLookupResolution(
+      input({ extraUris: ['https://viaf.org/viaf/12345/'] }),
+      { store, packIds, readPackFile },
+    );
+    expect(result).toMatchObject({ status: 'linked', wasCreated: true });
+    if (result.status !== 'linked') return;
+
+    const doc = await store.loadEntities();
+    const person = doc.getElementsByTagName('person')[0]!;
+    expect(person.getAttribute('xml:id')).toBe(result.key);
+    const idnos = Array.from(person.getElementsByTagName('idno')).map((el) => [
+      el.getAttribute('type'),
+      el.textContent,
+    ]);
+    expect(idnos).toEqual(
+      expect.arrayContaining([
+        ['Wikidata', 'Q712570'],
+        ['CBDB', '31305'],
+        ['DILA', 'A001492'],
+        ['VIAF', '12345'],
+      ]),
+    );
+  });
+
+  it('links an existing entity found via an extra checked candidate, enriching with both idno sets', async () => {
+    const { store } = makeStore();
+    const doc = await store.loadEntities();
+    const { id } = addEntity(doc, 'person', {
+      name: '沈攸之',
+      authorityIds: [{ type: 'VIAF', value: '12345' }],
+    });
+    await store.saveEntities(doc);
+
+    const result = await applyLookupResolution(
+      input({ extraUris: ['https://viaf.org/viaf/12345/'] }),
+      { store, packIds, readPackFile },
+    );
+    expect(result).toMatchObject({ status: 'linked', key: id, wasCreated: false });
+
+    const after = await store.loadEntities();
+    const idnos = Array.from(after.getElementsByTagName('idno')).map((el) => [
+      el.getAttribute('type'),
+      el.textContent,
+    ]);
+    expect(idnos).toEqual(
+      expect.arrayContaining([
+        ['VIAF', '12345'],
+        ['Wikidata', 'Q712570'],
+        ['CBDB', '31305'],
+      ]),
+    );
+  });
+});
+
+describe('appendExtraAuthorityIds', () => {
+  it('attaches parsed authority ids from extra uris onto an already-linked entity', async () => {
+    const { store } = makeStore();
+    const doc = await store.loadEntities();
+    const { id } = addEntity(doc, 'person', { name: '沈攸之' });
+    await store.saveEntities(doc);
+
+    await appendExtraAuthorityIds(
+      id,
+      ['https://www.wikidata.org/wiki/Q712570', 'https://viaf.org/viaf/12345/'],
+      { store },
+    );
+
+    const after = await store.loadEntities();
+    const element = findEntity(after, id)!;
+    const idnos = Array.from(element.getElementsByTagName('idno')).map((el) => [
+      el.getAttribute('type'),
+      el.textContent,
+    ]);
+    expect(idnos).toEqual(
+      expect.arrayContaining([
+        ['Wikidata', 'Q712570'],
+        ['VIAF', '12345'],
+      ]),
+    );
+  });
+
+  it('does not duplicate an idno the entity already carries', async () => {
+    const { store } = makeStore();
+    const doc = await store.loadEntities();
+    const { id } = addEntity(doc, 'person', {
+      name: '沈攸之',
+      authorityIds: [{ type: 'Wikidata', value: 'Q712570' }],
+    });
+    await store.saveEntities(doc);
+
+    await appendExtraAuthorityIds(id, ['https://www.wikidata.org/wiki/Q712570'], { store });
+
+    const after = await store.loadEntities();
+    const element = findEntity(after, id)!;
+    const wikidataIdnos = Array.from(element.getElementsByTagName('idno')).filter(
+      (el) => el.getAttribute('type') === 'Wikidata',
+    );
+    expect(wikidataIdnos).toHaveLength(1);
+  });
+
+  it('is a no-op when no extra uris parse to a known authority', async () => {
+    const { store } = makeStore();
+    const doc = await store.loadEntities();
+    const { id } = addEntity(doc, 'person', { name: '沈攸之' });
+    await store.saveEntities(doc);
+
+    await appendExtraAuthorityIds(id, ['https://example.org/people/42'], { store });
+
+    const after = await store.loadEntities();
+    const element = findEntity(after, id)!;
+    expect(element.getElementsByTagName('idno')).toHaveLength(0);
   });
 });
 

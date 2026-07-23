@@ -567,16 +567,19 @@ const checkCurrentSourceValidity = async ({
  * Validation panel it opens) and offers to revert to the content the buffer
  * had when Source mode was entered. A revert is not assumed to be safe — the
  * baseline itself is re-validated, and if it's still invalid the user gets a
- * follow-up notice and stays in Source mode to fix it.
+ * follow-up notice and stays in Source mode to fix it (unless leave-anyway
+ * is offered for exit-only flows).
  */
-const resolveInvalidSourceMode = async ({
-  state,
-  actions,
-}: Context): Promise<'valid' | 'reverted' | 'blocked'> => {
+const resolveInvalidSourceMode = async (
+  { state, actions }: Context,
+  options?: { allowLeaveAnyway?: boolean },
+): Promise<'valid' | 'reverted' | 'leaveAnyway' | 'blocked'> => {
+  const allowLeaveAnyway = options?.allowLeaveAnyway === true;
   const validity = await checkCurrentSourceValidity({ state, actions } as Context);
   if (validity.valid) return 'valid';
 
-  const shouldDiscard = await new Promise<boolean>((resolve) => {
+  type DialogChoice = 'cancel' | 'discard' | 'leaveAnyway';
+  const choice = await new Promise<DialogChoice>((resolve) => {
     actions.ui.openDialog({
       type: 'simple',
       props: {
@@ -591,20 +594,60 @@ const resolveInvalidSourceMode = async ({
             label: i18n.t('LW.commons.discard_changes'),
             variant: 'outlined',
           },
+          ...(allowLeaveAnyway
+            ? [
+                {
+                  action: 'leaveAnyway',
+                  label: i18n.t('LW.commons.leave_source_anyway'),
+                  variant: 'contained' as const,
+                },
+              ]
+            : []),
         ],
         onClose: async (action) => {
-          resolve(action === 'discard');
+          if (action === 'discard') resolve('discard');
+          else if (action === 'leaveAnyway') resolve('leaveAnyway');
+          else resolve('cancel');
         },
       },
     });
   });
 
-  if (!shouldDiscard) return 'blocked';
+  if (choice === 'cancel') return 'blocked';
+  if (choice === 'leaveAnyway') return 'leaveAnyway';
 
   state.ui.sourceCurrentContent = state.ui.sourceOriginalContent;
 
   const revertedValidity = await checkCurrentSourceValidity({ state, actions } as Context);
   if (revertedValidity.valid) return 'reverted';
+
+  if (allowLeaveAnyway) {
+    const followUp = await new Promise<'ok' | 'leaveAnyway'>((resolve) => {
+      actions.ui.openDialog({
+        type: 'simple',
+        props: {
+          maxWidth: 'xs',
+          severity: 'warning',
+          title: i18n.t('LW.xml_document_invalid'),
+          Body: () => i18n.t('LW.xml_document_still_invalid'),
+          actions: [
+            { action: 'ok', label: i18n.t('LW.commons.ok') },
+            {
+              action: 'leaveAnyway',
+              label: i18n.t('LW.commons.leave_source_anyway'),
+              variant: 'contained',
+            },
+          ],
+          onClose: (action) => resolve(action === 'leaveAnyway' ? 'leaveAnyway' : 'ok'),
+        },
+      });
+    });
+    if (followUp === 'leaveAnyway') {
+      // Keep the discarded baseline (still invalid) so the user can leave.
+      return 'leaveAnyway';
+    }
+    return 'blocked';
+  }
 
   await new Promise<void>((resolve) => {
     actions.ui.openDialog({
@@ -624,23 +667,32 @@ const resolveInvalidSourceMode = async ({
 };
 
 export const exitSourceMode = async ({ state, actions }: Context): Promise<boolean> => {
-  const contentChanged = state.ui.sourceCurrentContent !== state.ui.sourceOriginalContent;
-
-  const result = await resolveInvalidSourceMode({ state, actions } as Context);
+  const result = await resolveInvalidSourceMode(
+    { state, actions } as Context,
+    { allowLeaveAnyway: true },
+  );
   if (result === 'blocked') return false;
 
   const finalContent = state.ui.sourceCurrentContent;
+  const leavingWithEdits = finalContent !== state.ui.sourceOriginalContent;
 
-  if (contentChanged && result === 'valid') {
-    const filePath = state.document.url;
-    if (filePath) {
-      window.writer?.overmindActions?.project?.updateTabContent?.({
-        filePath,
-        content: finalContent,
-      });
-      window.writer?.overmindActions?.project?.markTabDirty?.(true);
+  // Persist the Source buffer into the tab/stored snapshot whenever we leave
+  // with that buffer (valid edits or explicit leave-anyway). Skip when the
+  // user discarded back to an unchanged entry baseline.
+  if (result === 'valid' || result === 'leaveAnyway') {
+    if (leavingWithEdits || result === 'leaveAnyway') {
+      const filePath = state.document.url;
+      if (filePath) {
+        window.writer?.overmindActions?.project?.updateTabContent?.({
+          filePath,
+          content: finalContent,
+        });
+        if (leavingWithEdits) {
+          window.writer?.overmindActions?.project?.markTabDirty?.(true);
+        }
+      }
+      window.__desktopStoredDocumentXml = finalContent;
     }
-    window.__desktopStoredDocumentXml = finalContent;
   }
 
   // Source-mode save does not refresh the hidden WYSIWYG tree; reload so markup
@@ -656,6 +708,8 @@ export const exitSourceMode = async ({ state, actions }: Context): Promise<boole
  * means the caller must abort the save — either the buffer is still invalid
  * and the user didn't discard, or it was reverted to its (valid) baseline
  * and there's nothing new to persist.
+ *
+ * Does not offer "leave anyway": saving invalid XML is never allowed here.
  */
 export const guardSourceModeSave = async ({
   state,
@@ -665,8 +719,11 @@ export const guardSourceModeSave = async ({
     return { proceed: true, content: state.ui.sourceCurrentContent, reverted: false };
   }
 
-  const result = await resolveInvalidSourceMode({ state, actions } as Context);
-  if (result === 'blocked') {
+  const result = await resolveInvalidSourceMode(
+    { state, actions } as Context,
+    { allowLeaveAnyway: false },
+  );
+  if (result === 'blocked' || result === 'leaveAnyway') {
     return { proceed: false, content: state.ui.sourceCurrentContent, reverted: false };
   }
 

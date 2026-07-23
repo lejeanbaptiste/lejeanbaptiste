@@ -1,4 +1,5 @@
 import { addEntity, createEntitiesScaffold, findEntity, parseEntities } from './entities';
+import { getCentralId, setCentralMapping } from './concordance';
 import {
   addEntityName,
   attachAuthority,
@@ -46,6 +47,17 @@ describe('listEntities', () => {
       { type: 'CBDB', value: '25788' },
     ]);
     expect(entities[1]).toMatchObject({ kind: 'place', names: ['建康'] });
+  });
+
+  it('excludes the per-user ljb-central concordance row from authorities', () => {
+    const doc = makeDoc();
+    const { element } = addEntity(doc, 'person', {
+      name: '王導',
+      authorityIds: [{ type: 'CBDB', value: '25788' }],
+    });
+    setCentralMapping(element, 'user-a', 'person-central-1');
+
+    expect(listEntities(doc)[0]!.authorities).toEqual([{ type: 'CBDB', value: '25788' }]);
   });
 });
 
@@ -343,6 +355,83 @@ describe('mergeEntities', () => {
     expect(remap).toEqual({ [drop1]: keep, [drop2]: keep });
     expect(listEntities(doc)).toHaveLength(1);
     expect(listEntities(doc)[0]!.names).toEqual(['A', 'B', 'C']);
+  });
+
+  it('returns no central conflicts when neither side has a ljb-central mapping', () => {
+    const doc = makeDoc();
+    const keep = addEntity(doc, 'person', { name: 'A' }).id;
+    const drop = addEntity(doc, 'person', { name: 'B' }).id;
+    const { centralConflicts } = mergeEntities(doc, keep, [drop]);
+    expect(centralConflicts).toEqual([]);
+  });
+
+  it('transfers a ljb-central mapping the keeper lacks from the dropped entity', () => {
+    const doc = makeDoc();
+    const keepEl = addEntity(doc, 'person', { name: 'A' });
+    const dropEl = addEntity(doc, 'person', { name: 'B' });
+    setCentralMapping(dropEl.element, 'user-a', 'person-central-1');
+
+    const { centralConflicts } = mergeEntities(doc, keepEl.id, [dropEl.id]);
+    expect(centralConflicts).toEqual([]);
+    const keeper = findEntity(doc, keepEl.id)!;
+    expect(getCentralId(keeper, 'user-a')).toBe('person-central-1');
+  });
+
+  it('keeps the keeper mapping and reports a conflict when both sides map the same user to different central ids', () => {
+    const doc = makeDoc();
+    const keepEl = addEntity(doc, 'person', { name: 'A' });
+    const dropEl = addEntity(doc, 'person', { name: 'B' });
+    setCentralMapping(keepEl.element, 'user-a', 'person-central-1');
+    setCentralMapping(dropEl.element, 'user-a', 'person-central-2');
+
+    const { centralConflicts } = mergeEntities(doc, keepEl.id, [dropEl.id]);
+    expect(centralConflicts).toEqual([
+      { userStableId: 'user-a', keptCentralId: 'person-central-1', droppedCentralId: 'person-central-2' },
+    ]);
+    const keeper = findEntity(doc, keepEl.id)!;
+    expect(getCentralId(keeper, 'user-a')).toBe('person-central-1');
+  });
+
+  it('does not duplicate a ljb-central mapping when both sides already agree', () => {
+    const doc = makeDoc();
+    const keepEl = addEntity(doc, 'person', { name: 'A' });
+    const dropEl = addEntity(doc, 'person', { name: 'B' });
+    setCentralMapping(keepEl.element, 'user-a', 'person-central-1');
+    setCentralMapping(dropEl.element, 'user-a', 'person-central-1');
+
+    const { centralConflicts } = mergeEntities(doc, keepEl.id, [dropEl.id]);
+    expect(centralConflicts).toEqual([]);
+    const keeper = findEntity(doc, keepEl.id)!;
+    expect(getCentralId(keeper, 'user-a')).toBe('person-central-1');
+  });
+
+  it('keeps different users mappings independent, transferring and conflicting separately', () => {
+    const doc = makeDoc();
+    const keepEl = addEntity(doc, 'person', { name: 'A' });
+    const dropEl = addEntity(doc, 'person', { name: 'B' });
+    setCentralMapping(keepEl.element, 'user-a', 'person-central-1');
+    setCentralMapping(dropEl.element, 'user-a', 'person-central-2'); // conflicts
+    setCentralMapping(dropEl.element, 'user-b', 'person-central-9'); // keeper lacks this — transfers
+
+    const { centralConflicts } = mergeEntities(doc, keepEl.id, [dropEl.id]);
+    expect(centralConflicts).toEqual([
+      { userStableId: 'user-a', keptCentralId: 'person-central-1', droppedCentralId: 'person-central-2' },
+    ]);
+    const keeper = findEntity(doc, keepEl.id)!;
+    expect(getCentralId(keeper, 'user-a')).toBe('person-central-1');
+    expect(getCentralId(keeper, 'user-b')).toBe('person-central-9');
+  });
+
+  it('never copies the ljb-central row as a generic authority idno', () => {
+    const doc = makeDoc();
+    const keepEl = addEntity(doc, 'person', { name: 'A' });
+    const dropEl = addEntity(doc, 'person', { name: 'B' });
+    setCentralMapping(dropEl.element, 'user-a', 'person-central-1');
+
+    mergeEntities(doc, keepEl.id, [dropEl.id]);
+    // authorities() already excludes ljb-central (see the listEntities test below);
+    // this asserts the merge path never routes it through attachAuthority either.
+    expect(listEntities(doc)[0]!.authorities).toEqual([]);
   });
 });
 

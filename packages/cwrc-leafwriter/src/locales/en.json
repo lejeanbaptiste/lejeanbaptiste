@@ -57,7 +57,7 @@
         "Add Custom Authority": "Add Custom Authority",
         "chgis": {
           "download_from": "Download from",
-          "entity_db_required": "Choose an entity database folder (with entities.xml) in App Settings before installing CHGIS.",
+          "entity_db_required": "Could not resolve a local folder for authority data. Try restarting the app.",
           "install_here": "then install here. LEAF-Writer compiles a local pack only - nothing is redistributed.",
           "install_failed": "CHGIS install failed.",
           "install_from_download": "Install from download…",
@@ -79,7 +79,7 @@
           "disable_title": "Disable offline authorities",
           "disabled": "Offline authority updates disabled.",
           "enable_failed": "Download or compile failed. Try again from Settings.",
-          "entity_db_required": "Choose an entity database folder (with entities.xml) in App Settings before enabling offline authorities.",
+          "entity_db_required": "Could not resolve a local folder for authority data. Try restarting the app.",
           "keep_files": "Keep files",
           "ready_default": "CBDB, DILA, and Wikidata authority packs are ready for auto-tagging.",
           "ready_japanese": "NDL authority packs are ready for auto-tagging.",
@@ -459,6 +459,7 @@
       "status_installed": "installed",
       "description": "Description",
       "discard_changes": "discard changes",
+      "leave_source_anyway": "leave Source anyway",
       "edit": "edit",
       "editor": "editor",
       "entity_types": "Entity types",
@@ -728,7 +729,7 @@
     "unknown": "",
     "xml_document_invalid": "XML document invalid",
     "xml_document_schema_invalid": "This document does not follow the schema ({{count}} error(s)). See the Validation panel for details.",
-    "xml_document_still_invalid": "The reverted document still contains errors. See the Validation panel for details.",
+    "xml_document_still_invalid": "The reverted document still contains errors. See the Validation panel for details. You can leave Source anyway, but Visual mode and save may still complain until the schema errors are fixed.",
     "Copy Source and Translation": "Copy Source and Translation",
     "Loading authorities": "Loading authorities"
   }
