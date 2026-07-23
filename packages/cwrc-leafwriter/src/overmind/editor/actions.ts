@@ -230,26 +230,15 @@ export const toggleShowTags = ({ state }: Context, value?: boolean) => {
 
 /**
  * Bulk show/hide for all folded commentary (note/citation/keyword entities
- * wrapped in .noteWrapper by tagger.addNoteWrapper). Individual notes stay
- * independently toggleable afterward via their own click handler - this just
- * mass-sets every wrapper's .hide class to match.
- *
- * <note> elements that were never converted into a CWRC note entity (e.g.
- * imported/hand-authored TEI with no matching RDF annotation - see
- * xml2cwrc.ts's processRDF) have no .noteWrapper span at all - regardless of
- * @type, including type="editor"/"comm" - so the rule above has nothing to
- * act on for them. Toggle those bare [_tag="note"] elements directly too
- * (see the matching CSS rule in editor.less); elements already inside a
- * .noteWrapper are excluded so they aren't double-toggled.
+ * and bare TEI <note>s, all wrapped in .noteWrapper by tagger.addNoteWrapper).
+ * Individual notes stay independently toggleable afterward via their own
+ * click-on-icon handler - this just mass-sets every wrapper's .hide class.
  */
 export const toggleShowNotes = ({ state }: Context, value?: boolean) => {
   if (!window.writer?.editor) return;
   const next = value ?? !state.editor.showNotes;
   const doc = window.writer.editor.getDoc();
   $('.noteWrapper', doc).toggleClass('hide', !next);
-  $('[_tag="note"]', doc)
-    .filter((_i, el) => $(el).closest('.noteWrapper').length === 0)
-    .toggleClass('hide', !next);
   state.editor.showNotes = next;
 };
 
