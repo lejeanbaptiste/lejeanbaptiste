@@ -25,7 +25,29 @@ export type AuthorityPackId =
   | 'ndl-persons'
   | 'ndl-places'
   | 'ndl-orgs'
-  | 'ndl-works';
+  | 'ndl-works'
+  /** Project entity database (PEDB) — read live from entities.xml, not a file pack. */
+  | 'pedb-persons'
+  | 'pedb-places'
+  | 'pedb-orgs'
+  | 'pedb-works'
+  /** Central entity database (CEDB) — read live from the central entities.xml. */
+  | 'cedb-persons'
+  | 'cedb-places'
+  | 'cedb-orgs'
+  | 'cedb-works'
+  /** This project's already-tagged mentions (disambiguated and not), crawled live. */
+  | 'project-persons'
+  | 'project-places'
+  | 'project-orgs'
+  | 'project-offices'
+  | 'project-works'
+  /** User-imported CSV/TSV/xlsx/ODS list(s), parsed live in the tag-bomb panel. */
+  | 'list-persons'
+  | 'list-places'
+  | 'list-orgs'
+  | 'list-offices'
+  | 'list-works';
 
 /** Dynasty-scoped Wikidata NDJSON packs (installed separately; selected via `wikidata-persons`). */
 export const WIKIDATA_PERSON_CHILD_PACK_IDS = [
@@ -39,11 +61,25 @@ const WIKIDATA_PERSON_CHILD_SET = new Set<AuthorityPackId>(WIKIDATA_PERSON_CHILD
 export interface AuthorityPackSpec {
   id: AuthorityPackId;
   label: string;
-  source: 'cbdb' | 'dila' | 'chgis' | 'wikidata' | 'ndl';
+  source: 'cbdb' | 'dila' | 'chgis' | 'wikidata' | 'ndl' | 'pedb' | 'cedb' | 'project' | 'list';
   relativePath: string;
   defaultTag: string;
   /** When true, {@link expandAuthorityPackIds} loads {@link WIKIDATA_PERSON_CHILD_PACK_IDS}. */
   virtual?: boolean;
+  /**
+   * Where the candidates come from at run time. Omitted (default `'file'`)
+   * means the usual NDJSON pack under `authority-packs/`, read via
+   * `readPackFile`/`packPath()`. Non-file origins have `relativePath: ''`
+   * and are never passed to `packPath()` — the tag-bomb runner routes them
+   * to a live source instead (entities.xml for pedb/cedb, a project crawl
+   * for project, parsed import files for list).
+   */
+  origin?: 'file' | 'pedb' | 'cedb' | 'project' | 'list';
+}
+
+/** `spec.origin`, defaulting to `'file'` when omitted (existing NDJSON packs). */
+export function authorityPackOrigin(spec: AuthorityPackSpec): NonNullable<AuthorityPackSpec['origin']> {
+  return spec.origin ?? 'file';
 }
 
 export const AUTHORITY_PACKS: AuthorityPackSpec[] = [
@@ -202,6 +238,150 @@ export const AUTHORITY_PACKS: AuthorityPackSpec[] = [
     relativePath: 'ndl/works.ndjson',
     defaultTag: 'title',
   },
+  {
+    id: 'pedb-persons',
+    label: 'PEDB persons',
+    source: 'pedb',
+    relativePath: '',
+    defaultTag: 'persName',
+    origin: 'pedb',
+  },
+  {
+    id: 'pedb-places',
+    label: 'PEDB places',
+    source: 'pedb',
+    relativePath: '',
+    defaultTag: 'placeName',
+    origin: 'pedb',
+  },
+  {
+    id: 'pedb-orgs',
+    label: 'PEDB organizations',
+    source: 'pedb',
+    relativePath: '',
+    defaultTag: 'orgName',
+    origin: 'pedb',
+  },
+  {
+    id: 'pedb-works',
+    label: 'PEDB works',
+    source: 'pedb',
+    relativePath: '',
+    defaultTag: 'title',
+    origin: 'pedb',
+  },
+  {
+    id: 'cedb-persons',
+    label: 'CEDB persons',
+    source: 'cedb',
+    relativePath: '',
+    defaultTag: 'persName',
+    origin: 'cedb',
+  },
+  {
+    id: 'cedb-places',
+    label: 'CEDB places',
+    source: 'cedb',
+    relativePath: '',
+    defaultTag: 'placeName',
+    origin: 'cedb',
+  },
+  {
+    id: 'cedb-orgs',
+    label: 'CEDB organizations',
+    source: 'cedb',
+    relativePath: '',
+    defaultTag: 'orgName',
+    origin: 'cedb',
+  },
+  {
+    id: 'cedb-works',
+    label: 'CEDB works',
+    source: 'cedb',
+    relativePath: '',
+    defaultTag: 'title',
+    origin: 'cedb',
+  },
+  {
+    id: 'project-persons',
+    label: 'Project tags: persons',
+    source: 'project',
+    relativePath: '',
+    defaultTag: 'persName',
+    origin: 'project',
+  },
+  {
+    id: 'project-places',
+    label: 'Project tags: places',
+    source: 'project',
+    relativePath: '',
+    defaultTag: 'placeName',
+    origin: 'project',
+  },
+  {
+    id: 'project-orgs',
+    label: 'Project tags: organizations',
+    source: 'project',
+    relativePath: '',
+    defaultTag: 'orgName',
+    origin: 'project',
+  },
+  {
+    id: 'project-offices',
+    label: 'Project tags: offices',
+    source: 'project',
+    relativePath: '',
+    defaultTag: 'roleName',
+    origin: 'project',
+  },
+  {
+    id: 'project-works',
+    label: 'Project tags: works',
+    source: 'project',
+    relativePath: '',
+    defaultTag: 'title',
+    origin: 'project',
+  },
+  {
+    id: 'list-persons',
+    label: 'Imported list: persons',
+    source: 'list',
+    relativePath: '',
+    defaultTag: 'persName',
+    origin: 'list',
+  },
+  {
+    id: 'list-places',
+    label: 'Imported list: places',
+    source: 'list',
+    relativePath: '',
+    defaultTag: 'placeName',
+    origin: 'list',
+  },
+  {
+    id: 'list-orgs',
+    label: 'Imported list: organizations',
+    source: 'list',
+    relativePath: '',
+    defaultTag: 'orgName',
+    origin: 'list',
+  },
+  {
+    id: 'list-offices',
+    label: 'Imported list: offices',
+    source: 'list',
+    relativePath: '',
+    defaultTag: 'roleName',
+    origin: 'list',
+  },
+  {
+    id: 'list-works',
+    label: 'Imported list: works',
+    source: 'list',
+    relativePath: '',
+    defaultTag: 'title',
+    origin: 'list',
+  },
 ];
 
 export interface AuthorityPackSelection {
@@ -223,6 +403,9 @@ export function packPath(baseFolder: string, packId: AuthorityPackId): string {
   if (!spec) throw new Error(`Unknown pack: ${packId}`);
   if (spec.virtual) {
     throw new Error(`Pack ${packId} is a UI grouping — expand with expandAuthorityPackIds() first`);
+  }
+  if (authorityPackOrigin(spec) !== 'file') {
+    throw new Error(`Pack ${packId} has no NDJSON file — origin is ${authorityPackOrigin(spec)}`);
   }
   const sep = baseFolder.includes('\\') ? '\\' : '/';
   return `${baseFolder.replace(/[/\\]+$/, '')}${sep}${AUTHORITY_PACKS_DIRNAME}${sep}${spec.relativePath.replace(/\//g, sep)}`;
@@ -249,6 +432,24 @@ export const UI_AUTHORITY_PACK_IDS: AuthorityPackId[] = [
   'ndl-places',
   'ndl-orgs',
   'ndl-works',
+  'pedb-persons',
+  'pedb-places',
+  'pedb-orgs',
+  'pedb-works',
+  'cedb-persons',
+  'cedb-places',
+  'cedb-orgs',
+  'cedb-works',
+  'project-persons',
+  'project-places',
+  'project-orgs',
+  'project-offices',
+  'project-works',
+  'list-persons',
+  'list-places',
+  'list-orgs',
+  'list-offices',
+  'list-works',
 ];
 
 /** Expand virtual selections (e.g. `wikidata-persons` → all installed dynasty packs). */
@@ -335,16 +536,30 @@ export function groupAuthorityPacksByTagType(
   return groups;
 }
 
-export const AUTHORITY_SOURCE_ORDER = ['cbdb', 'dila', 'chgis', 'wikidata', 'ndl'] as const;
+export const AUTHORITY_SOURCE_ORDER = [
+  'pedb',
+  'cedb',
+  'cbdb',
+  'dila',
+  'chgis',
+  'wikidata',
+  'ndl',
+  'project',
+  'list',
+] as const;
 
 export type AuthoritySourceId = (typeof AUTHORITY_SOURCE_ORDER)[number];
 
 export const AUTHORITY_SOURCE_LABELS: Record<AuthoritySourceId, string> = {
+  pedb: 'User database (project)',
+  cedb: 'User database (central)',
   cbdb: 'CBDB',
   dila: 'DILA',
   chgis: 'CHGIS',
   wikidata: 'Wikidata',
   ndl: 'NDL',
+  project: 'Project tags',
+  list: 'Imported list',
 };
 
 /** Short row label under a source heading (Persons, Places, …). */
@@ -368,6 +583,24 @@ export const AUTHORITY_PACK_SHORT_LABELS: Partial<Record<AuthorityPackId, string
   'ndl-places': 'Places',
   'ndl-orgs': 'Organizations',
   'ndl-works': 'Works',
+  'pedb-persons': 'Persons',
+  'pedb-places': 'Places',
+  'pedb-orgs': 'Organizations',
+  'pedb-works': 'Works',
+  'cedb-persons': 'Persons',
+  'cedb-places': 'Places',
+  'cedb-orgs': 'Organizations',
+  'cedb-works': 'Works',
+  'project-persons': 'Persons',
+  'project-places': 'Places',
+  'project-orgs': 'Organizations',
+  'project-offices': 'Offices',
+  'project-works': 'Works',
+  'list-persons': 'Persons',
+  'list-places': 'Places',
+  'list-orgs': 'Organizations',
+  'list-offices': 'Offices',
+  'list-works': 'Works',
 };
 
 export interface AuthorityPackSourceGroup {

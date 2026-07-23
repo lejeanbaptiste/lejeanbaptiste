@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useRef, useState } from 'react';
+import { useEffect, useMemo, useRef, useState, type CSSProperties } from 'react';
 import { colorMatchFilter, type ColorStats } from './colorMatch';
 import { BG_POOL_BY_RANK } from './generatedBackgroundPools';
 import { BODY_COLOR_STATS, POSE_INDICES, WEAPON_POOLS } from './generatedBodyPools';
@@ -518,12 +518,48 @@ const DecorationRack = ({
   );
 };
 
-/** Both the head (ljb-avatar://) and body (ljb-body://) images are SVGs
- * composited on the fly by a custom Electron protocol handler - fetched as
- * text and re-served as a blob object URL rather than used as a plain <img
- * src>, the same workaround this component already relied on for the head
- * before the body art existed too. */
-function useComposedSvgSrc(url: string): { failed: boolean; src: string | null } {
+/**
+ * Head/body SVGs are fetched from protocol handlers and shown as `<img>`
+ * blobs. Before blobifying we stamp explicit pixel `width`/`height` on the
+ * root `<svg>` so Chromium rasterizes densely (thin vector strokes otherwise
+ * look jagged). Body layers are also laid out at BODY_CSS_OVERSAMPLE × the
+ * portrait box, then scaled back in CSS for a sharper intermediate bitmap.
+ * Source art is left untouched.
+ */
+export const BODY_CSS_OVERSAMPLE = 2;
+
+/** Extra intrinsic SVG pixels per CSS pixel of the `<img>` box (HiDPI stamp). */
+export const SVG_PIXEL_OVERSAMPLE = 2;
+
+/** Replace root `<svg>` width/height with pixel sizes so `<img>` rasterizes densely. */
+export const stampSvgPixelSize = (svgText: string, widthPx: number, heightPx: number): string => {
+  const width = Math.max(1, Math.round(widthPx));
+  const height = Math.max(1, Math.round(heightPx));
+  return svgText.replace(/<svg\b([^>]*)>/, (_match, attrs: string) => {
+    const cleaned = String(attrs)
+      .replace(/\swidth=(["'])[\s\S]*?\1/g, '')
+      .replace(/\sheight=(["'])[\s\S]*?\1/g, '');
+    return `<svg width="${width}" height="${height}"${cleaned}>`;
+  });
+};
+
+const devicePixelRatioOr1 = (): number =>
+  typeof window !== 'undefined' && window.devicePixelRatio > 0 ? window.devicePixelRatio : 1;
+
+/** Intrinsic SVG pixel size for an `<img>` whose CSS box is `cssWidth`×`cssHeight`. */
+export const svgStampPixelsForCssBox = (
+  cssWidth: number,
+  cssHeight: number,
+): { width: number; height: number } => {
+  const scale = SVG_PIXEL_OVERSAMPLE * devicePixelRatioOr1();
+  return { width: cssWidth * scale, height: cssHeight * scale };
+};
+
+function useComposedSvgSrc(
+  url: string,
+  stampWidthPx: number,
+  stampHeightPx: number,
+): { failed: boolean; src: string | null } {
   const [failed, setFailed] = useState(false);
   const [src, setSrc] = useState<string | null>(null);
   const objectUrlRef = useRef<string | null>(null);
@@ -535,7 +571,8 @@ function useComposedSvgSrc(url: string): { failed: boolean; src: string | null }
       .then((response) => response.text())
       .then((svgText) => {
         if (cancelled) return;
-        const blob = new Blob([svgText], { type: 'image/svg+xml' });
+        const stamped = stampSvgPixelSize(svgText, stampWidthPx, stampHeightPx);
+        const blob = new Blob([stamped], { type: 'image/svg+xml' });
         const objectUrl = URL.createObjectURL(blob);
         if (objectUrlRef.current) URL.revokeObjectURL(objectUrlRef.current);
         objectUrlRef.current = objectUrl;
@@ -545,7 +582,7 @@ function useComposedSvgSrc(url: string): { failed: boolean; src: string | null }
     return () => {
       cancelled = true;
     };
-  }, [url]);
+  }, [url, stampWidthPx, stampHeightPx]);
   useEffect(
     () => () => {
       if (objectUrlRef.current) URL.revokeObjectURL(objectUrlRef.current);
@@ -565,9 +602,37 @@ export const UniformAvatar = ({
   showAlignmentGrid = false,
   size = 96,
 }: UniformAvatarProps) => {
-  const { failed: headFailed, src: paddedHeadSrc } = useComposedSvgSrc(headImageUrl);
-  const { failed: bodyBackFailed, src: bodyBackSrc } = useComposedSvgSrc(bodyBackImageUrl);
-  const { failed: bodyFrontFailed, src: bodyFrontSrc } = useComposedSvgSrc(bodyFrontImageUrl);
+  const sceneWidth = size * BG_ASPECT;
+  const coatWidth = sceneWidth;
+  const coatHeight = size;
+  const coatTop = 0;
+  const portraitLeft = 0;
+
+  // Body <img> CSS box is 2× the portrait, then scaled back — see BODY_CSS_OVERSAMPLE.
+  const bodyCssWidth = coatWidth * BODY_CSS_OVERSAMPLE;
+  const bodyCssHeight = coatHeight * BODY_CSS_OVERSAMPLE;
+  const bodyStamp = svgStampPixelsForCssBox(bodyCssWidth, bodyCssHeight);
+
+  // Head stays 1× in layout; denser SVG stamp only (approach B).
+  const headCssWidth = coatWidth * HEAD_WIDTH_FRAC;
+  const headCssHeight = coatHeight * HEAD_HEIGHT_FRAC;
+  const headStamp = svgStampPixelsForCssBox(headCssWidth, headCssHeight);
+
+  const { failed: headFailed, src: paddedHeadSrc } = useComposedSvgSrc(
+    headImageUrl,
+    headStamp.width,
+    headStamp.height,
+  );
+  const { failed: bodyBackFailed, src: bodyBackSrc } = useComposedSvgSrc(
+    bodyBackImageUrl,
+    bodyStamp.width,
+    bodyStamp.height,
+  );
+  const { failed: bodyFrontFailed, src: bodyFrontSrc } = useComposedSvgSrc(
+    bodyFrontImageUrl,
+    bodyStamp.width,
+    bodyStamp.height,
+  );
 
   // Color-matches the fixed-palette uniform and head sprites to whichever
   // backdrop they're currently sitting on, so a random pick doesn't leave
@@ -620,14 +685,9 @@ export const UniformAvatar = ({
   }, [backgroundImageKey, headStats]);
 
   const backgroundSrc = `${GAME_ASSET_PREFIX}${backgroundImageKey}`;
-  const sceneWidth = size * BG_ASPECT;
   // Body art is a full-frame layer now (see the shared-canvas comment above
   // COAT_FRACTION used to live at) - "coat*" names kept only because
   // DecorationRack below still takes them as its panel box.
-  const coatWidth = sceneWidth;
-  const coatHeight = size;
-  const coatTop = 0;
-  const portraitLeft = 0;
   const ribbons: Ribbon[] = serviceRibbons.slice(0, 9);
   const resolvedHeadPlacement = {
     height: `${HEAD_HEIGHT_FRAC * 100}%`,
@@ -644,6 +704,18 @@ export const UniformAvatar = ({
     left: `${HEAD_FALLBACK_LEFT_FRAC * 100}%`,
     top: `${HEAD_FALLBACK_TOP_FRAC * 100}%`,
     width: `${HEAD_FALLBACK_WIDTH_FRAC * 100}%`,
+  };
+
+  const bodyLayerStyle: CSSProperties = {
+    filter: uniformFilter,
+    height: bodyCssHeight,
+    left: 0,
+    objectFit: 'fill',
+    position: 'absolute',
+    top: coatTop,
+    transform: `scale(${1 / BODY_CSS_OVERSAMPLE})`,
+    transformOrigin: 'top left',
+    width: bodyCssWidth,
   };
 
   return (
@@ -675,16 +747,7 @@ export const UniformAvatar = ({
             alt=""
             draggable={false}
             src={bodyBackSrc}
-            style={{
-              filter: uniformFilter,
-              height: coatHeight,
-              left: 0,
-              objectFit: 'fill',
-              position: 'absolute',
-              top: coatTop,
-              width: coatWidth,
-              zIndex: PORTRAIT_Z_INDEX.bodyBack,
-            }}
+            style={{ ...bodyLayerStyle, zIndex: PORTRAIT_Z_INDEX.bodyBack }}
           />
         )}
         {/* Head paints between the two body layers - `back` (rear props, a
@@ -767,16 +830,7 @@ export const UniformAvatar = ({
             alt=""
             draggable={false}
             src={bodyFrontSrc}
-            style={{
-              filter: uniformFilter,
-              height: coatHeight,
-              left: 0,
-              objectFit: 'fill',
-              position: 'absolute',
-              top: coatTop,
-              width: coatWidth,
-              zIndex: PORTRAIT_Z_INDEX.bodyFront,
-            }}
+            style={{ ...bodyLayerStyle, zIndex: PORTRAIT_Z_INDEX.bodyFront }}
           />
         )}
         {showAlignmentGrid && (

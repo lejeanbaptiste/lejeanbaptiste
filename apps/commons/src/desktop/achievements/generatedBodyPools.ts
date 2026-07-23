@@ -255,67 +255,67 @@ export const WEAPON_POOLS: Readonly<Record<number, ReadonlyArray<Record<number, 
 
 export const BODY_COLOR_STATS: Readonly<Record<string, ColorStats>> = {
   "0:m": {
-    "lightness": 0.2052541613066874,
-    "saturation": 0.13916654751585397
+    "lightness": 0.20524546866101945,
+    "saturation": 0.13953426043894415
   },
   "0:f": {
-    "lightness": 0.15586907240057737,
-    "saturation": 0.1306594178550638
+    "lightness": 0.15782304091615793,
+    "saturation": 0.13022940578439354
   },
   "1:m": {
-    "lightness": 0.2428076017641199,
-    "saturation": 0.7500214265768296
+    "lightness": 0.2430278149103234,
+    "saturation": 0.7518017100170777
   },
   "1:f": {
-    "lightness": 0.2764244595006493,
-    "saturation": 0.7149850230381264
+    "lightness": 0.27692572926005943,
+    "saturation": 0.71501128502576
   },
   "2:m": {
-    "lightness": 0.34609213220125123,
-    "saturation": 0.7463285128136914
+    "lightness": 0.3462723927919635,
+    "saturation": 0.7467161106363289
   },
   "2:f": {
-    "lightness": 0.32937692567309534,
-    "saturation": 0.6706400613674258
+    "lightness": 0.32935814610414493,
+    "saturation": 0.6711772346884606
   },
   "3:m": {
-    "lightness": 0.32826398852224536,
-    "saturation": 0.6818100889900286
+    "lightness": 0.3284507615123122,
+    "saturation": 0.6830626567861804
   },
   "3:f": {
-    "lightness": 0.3356509618065274,
-    "saturation": 0.7314399781156994
+    "lightness": 0.33549611641086774,
+    "saturation": 0.7325838313155693
   },
   "4:m": {
-    "lightness": 0.33781748098577935,
-    "saturation": 0.6726052148233042
+    "lightness": 0.3381955235752437,
+    "saturation": 0.6731212028542185
   },
   "4:f": {
-    "lightness": 0.3168144020353551,
-    "saturation": 0.7339583002408145
+    "lightness": 0.3166763406800682,
+    "saturation": 0.7339473172178462
   },
   "5:m": {
-    "lightness": 0.4377627480811179,
-    "saturation": 0.6820537547031494
+    "lightness": 0.4393589613853619,
+    "saturation": 0.6813891079772731
   },
   "5:f": {
-    "lightness": 0.44434465032648435,
-    "saturation": 0.7046588868426846
+    "lightness": 0.44592791614732347,
+    "saturation": 0.7041345282314619
   },
   "6:m": {
-    "lightness": 0.3387009737661219,
-    "saturation": 0.7030278554344159
+    "lightness": 0.3387063985349195,
+    "saturation": 0.7025048220852016
   },
   "6:f": {
-    "lightness": 0.3342883626557145,
-    "saturation": 0.7528136020422758
+    "lightness": 0.3344217851120945,
+    "saturation": 0.7544283438371846
   },
   "7:m": {
-    "lightness": 0.3814221270144912,
-    "saturation": 0.5517488875252086
+    "lightness": 0.38290093700004146,
+    "saturation": 0.5517742555238363
   },
   "7:f": {
-    "lightness": 0.3977665932683914,
-    "saturation": 0.5798748669883655
+    "lightness": 0.39870205560965766,
+    "saturation": 0.5794844005979924
   }
 };

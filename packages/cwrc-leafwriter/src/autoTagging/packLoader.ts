@@ -132,17 +132,18 @@ export interface PackStringCount {
 }
 
 /**
- * Count matchable strings in one NDJSON pack. Uses the same year filter and
- * minimum surface length as the authority tag bomb.
+ * Count matchable strings in an already-loaded set of candidates (e.g. a
+ * PEDB/CEDB entities.xml converted via `candidatesFromEntityDatabase`). Uses
+ * the same year filter and minimum surface length as the authority tag bomb.
  */
-export function countPackUniqueStrings(
-  content: string,
+export function countCandidatesUniqueStrings(
+  candidates: Iterable<AuthorityCandidate>,
   range?: DateRangeFilter | YearRangeFilter,
   minLength: number = DEFAULT_MIN_MATCH_LENGTH,
 ): PackStringCount {
   const strings = new Set<string>();
   let entities = 0;
-  for (const candidate of iterateAuthorityNdjson(content)) {
+  for (const candidate of candidates) {
     if (range && 'mode' in range) {
       if (!candidatePassesDateFilter(candidate, range)) continue;
     } else if (range && !candidateIntersectsYearRange(candidate, range)) {
@@ -156,6 +157,18 @@ export function countPackUniqueStrings(
     }
   }
   return { entities, uniqueStrings: strings.size };
+}
+
+/**
+ * Count matchable strings in one NDJSON pack. Uses the same year filter and
+ * minimum surface length as the authority tag bomb.
+ */
+export function countPackUniqueStrings(
+  content: string,
+  range?: DateRangeFilter | YearRangeFilter,
+  minLength: number = DEFAULT_MIN_MATCH_LENGTH,
+): PackStringCount {
+  return countCandidatesUniqueStrings(iterateAuthorityNdjson(content), range, minLength);
 }
 
 export interface LoadedAuthorityPacks {

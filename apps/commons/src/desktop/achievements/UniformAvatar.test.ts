@@ -1,4 +1,11 @@
-import { eligiblePoseIndices, poseEligibleForRank } from './UniformAvatar';
+import {
+  eligiblePoseIndices,
+  poseEligibleForRank,
+  stampSvgPixelSize,
+  svgStampPixelsForCssBox,
+  BODY_CSS_OVERSAMPLE,
+  SVG_PIXEL_OVERSAMPLE,
+} from './UniformAvatar';
 
 describe('pose rank eligibility', () => {
   it('keeps early unarmed poses at every rank', () => {
@@ -35,5 +42,34 @@ describe('pose rank eligibility', () => {
 
   it('limits unranked players to body1 and body2', () => {
     expect(eligiblePoseIndices('m', -1)).toEqual([1, 2]);
+  });
+});
+
+describe('stampSvgPixelSize', () => {
+  it('replaces mm width/height with pixel sizes and keeps viewBox', () => {
+    const input =
+      '<svg width="200.55417mm" height="87.57708mm" viewBox="0 0 200.55417 87.57708" xmlns="http://www.w3.org/2000/svg"><g/></svg>';
+    const stamped = stampSvgPixelSize(input, 586.5, 256);
+    expect(stamped).toMatch(/^<svg width="587" height="256" viewBox="0 0 200.55417 87.57708"/);
+    expect(stamped).toContain('xmlns="http://www.w3.org/2000/svg"');
+    expect(stamped).not.toContain('mm');
+  });
+
+  it('handles single-quoted attributes', () => {
+    const stamped = stampSvgPixelSize("<svg width='10' height='10' viewBox='0 0 1 1'></svg>", 20, 40);
+    expect(stamped).toBe('<svg width="20" height="40" viewBox=\'0 0 1 1\'></svg>');
+  });
+});
+
+describe('svgStampPixelsForCssBox', () => {
+  it('multiplies the CSS box by SVG_PIXEL_OVERSAMPLE (and devicePixelRatio)', () => {
+    const original = window.devicePixelRatio;
+    Object.defineProperty(window, 'devicePixelRatio', { configurable: true, value: 1 });
+    expect(svgStampPixelsForCssBox(100, 50)).toEqual({
+      width: 100 * SVG_PIXEL_OVERSAMPLE,
+      height: 50 * SVG_PIXEL_OVERSAMPLE,
+    });
+    expect(BODY_CSS_OVERSAMPLE).toBe(2);
+    Object.defineProperty(window, 'devicePixelRatio', { configurable: true, value: original });
   });
 });
