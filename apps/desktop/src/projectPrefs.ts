@@ -1,4 +1,4 @@
-import { app } from 'electron';
+import { app, dialog } from 'electron';
 import fs from 'fs/promises';
 import path from 'path';
 import { recoverFromFailedAtomicWrite, writeFileAtomic } from './atomicWrite';
@@ -244,16 +244,38 @@ export const setLastDialogDir = async (dir: string | null) => {
  * the first time this is called. Never returns null in practice; callers
  * that picked a custom folder in the past keep using it unchanged.
  */
+let hasShownEntityDbCreationError = false;
+
 export const getEntityDbFolder = async (): Promise<string | null> => {
   const prefs = await readAppPrefs();
   const folder = prefs.entityDbFolder?.trim();
   if (folder) return folder;
 
   const defaultFolder = getDefaultEntityDbFolder();
-  await fs.mkdir(defaultFolder, { recursive: true });
-  await mutateAppPrefs((p) => {
-    p.entityDbFolder = defaultFolder;
-  });
+  try {
+    await fs.mkdir(defaultFolder, { recursive: true });
+    await mutateAppPrefs((p) => {
+      p.entityDbFolder = defaultFolder;
+    });
+  } catch (error) {
+    // Surface the failure instead of throwing: an uncaught rejection here
+    // propagates through the IPC call and leaves the settings panel showing
+    // a blank folder path with no indication why. console.error alone is
+    // invisible in a packaged build with devtools closed, so also show a
+    // native dialog once per session - entity tagging is fully blocked
+    // until this folder exists, so this needs to reach the user, not just
+    // the log. (mkdir failing means nothing gets persisted, so every call
+    // here retries and would otherwise re-show the dialog every time.)
+    console.error('Failed to create default entity database folder:', error);
+    if (!hasShownEntityDbCreationError) {
+      hasShownEntityDbCreationError = true;
+      const detail = error instanceof Error ? error.message : String(error);
+      dialog.showErrorBox(
+        'Could not create your entity database folder',
+        `Le Jean-Baptiste could not create:\n${defaultFolder}\n\n${detail}\n\nEntity tagging will be unavailable until you choose a writable folder in Settings > Entity database.`,
+      );
+    }
+  }
   return defaultFolder;
 };
 

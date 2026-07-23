@@ -15,6 +15,7 @@ import type {
   SchemaUpdateCheckOptions,
   SchemaUpdateCheckResult,
 } from '@src/desktop/schemaUpdateTypes';
+import type { AppUpdateCheckResult } from '@src/desktop/appUpdateTypes';
 
 export interface FileEntry {
   name: string;
@@ -220,6 +221,7 @@ export interface ElectronAPI {
     options?: SchemaUpdateCheckOptions,
   ) => Promise<SchemaUpdateCheckResult>;
   applyCatalogSchemaUpdate: (projectFilePath: string) => Promise<SchemaUpdateApplyResult>;
+  checkForAppUpdates: () => Promise<AppUpdateCheckResult>;
   listTimeMachineSnapshots: (projectRootPath: string) => Promise<TimeMachineSnapshotSummary[]>;
   createTimeMachineSnapshot: (
     projectRootPath: string,
@@ -249,10 +251,6 @@ export interface ElectronAPI {
   deleteSourceProfile?: (
     profileId: string,
   ) => Promise<import('../desktop/sourceProfileTypes').SourceProfileFile>;
-  getAchievementsFolder?: () => Promise<string | null>;
-  setAchievementsFolder?: (folder: string | null) => Promise<void>;
-  checkAchievementsFolder?: (folder: string) => Promise<{ hasFile: boolean; readable: boolean }>;
-  pickAchievementsFolder?: () => Promise<string | null>;
   pickImportAchievementsFile?: () => Promise<string | null>;
   readAchievementsFileFrom?: (filePath: string) => Promise<string | null>;
   getGameAssetColorStats?: (key: string) => Promise<{ lightness: number; saturation: number } | null>;
@@ -431,7 +429,6 @@ declare global {
       encoderName: string;
       encoderNameLoaded: boolean;
       entityDbFolder: string | null;
-      achievementsFolder: string | null;
       rememberWorkspaceOnStartup: boolean;
       skipCopyPasteHelp: boolean;
       skipEntityDetachConfirm: boolean;
@@ -443,7 +440,6 @@ declare global {
         error?: string;
         folder?: string;
       }>;
-      pickAchievementsFolder: () => Promise<{ folder: string; warning?: string } | null>;
       importAchievementsFrom: () => Promise<{ ok: boolean; cancelled?: boolean; error?: string }>;
       setAiApiSettings: (settings: Partial<AiApiSettings>) => void | Promise<void>;
       setEncoderName: (name: string) => void | Promise<void>;

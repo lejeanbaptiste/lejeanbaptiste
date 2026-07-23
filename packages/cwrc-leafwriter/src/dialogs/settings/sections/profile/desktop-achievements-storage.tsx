@@ -1,42 +1,23 @@
-import { Box, Button, ListItem, Stack, TextField, Typography } from '@mui/material';
-import { useEffect, useState } from 'react';
+import { Box, ListItem, Stack, Typography, Button } from '@mui/material';
+import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 
 const getCommonsUiBridge = () =>
   (
     window as Window & {
       __ljbCommonsUi?: {
-        achievementsFolder: string | null;
-        pickAchievementsFolder: () => Promise<{ folder: string; warning?: string } | null>;
         importAchievementsFrom: () => Promise<{ ok: boolean; cancelled?: boolean; error?: string }>;
       };
     }
   ).__ljbCommonsUi;
 
+/** Stats travel with the entity database folder automatically; no separate location to configure. */
 export const DesktopAchievementsStorage = () => {
   const { t } = useTranslation();
   const bridge = getCommonsUiBridge();
-  const [achievementsFolder, setAchievementsFolder] = useState(bridge?.achievementsFolder ?? null);
   const [importError, setImportError] = useState<string | null>(null);
-  const [folderWarning, setFolderWarning] = useState<string | null>(null);
-
-  useEffect(() => {
-    const sync = () => setAchievementsFolder(getCommonsUiBridge()?.achievementsFolder ?? null);
-    sync();
-    window.addEventListener('ljbCommonsUiChanged', sync);
-    return () => window.removeEventListener('ljbCommonsUiChanged', sync);
-  }, []);
 
   if (!bridge) return null;
-
-  const handleChooseFolder = async () => {
-    setFolderWarning(null);
-    const picked = await bridge.pickAchievementsFolder();
-    if (picked) {
-      setAchievementsFolder(picked.folder);
-      if (picked.warning) setFolderWarning(picked.warning);
-    }
-  };
 
   const handleImport = async () => {
     setImportError(null);
@@ -51,26 +32,11 @@ export const DesktopAchievementsStorage = () => {
       </Typography>
 
       <Stack spacing={1} sx={{ width: '100%' }}>
-        <TextField
-          fullWidth
-          InputProps={{ readOnly: true }}
-          label={t('LW.desktop.settings.achievements_storage_folder')}
-          size="small"
-          value={achievementsFolder ?? t('LW.desktop.settings.achievements_storage_default')}
-          helperText={t('LW.desktop.settings.achievements_storage_hint')}
-        />
-        <Box>
-          <Button onClick={() => void handleChooseFolder()} size="small" variant="outlined">
-            {t('LW.desktop.settings.achievements_storage_change')}
-          </Button>
-          {folderWarning && (
-            <Typography color="warning.main" sx={{ mt: 0.5 }} variant="caption" component="p">
-              {folderWarning}
-            </Typography>
-          )}
-        </Box>
+        <Typography color="text.secondary" variant="caption" component="p">
+          {t('LW.desktop.settings.achievements_storage_hint')}
+        </Typography>
 
-        <Box sx={{ pt: 1 }}>
+        <Box>
           <Button onClick={() => void handleImport()} size="small" variant="outlined" color="warning">
             {t('LW.desktop.settings.achievements_import')}
           </Button>

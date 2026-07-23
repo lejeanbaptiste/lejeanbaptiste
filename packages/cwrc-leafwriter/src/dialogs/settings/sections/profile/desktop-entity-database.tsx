@@ -14,11 +14,12 @@ const getCommonsUiBridge = () =>
           error?: string;
           folder?: string;
         }>;
+        pickEntityDbFolder: () => Promise<string | null>;
       };
     }
   ).__ljbCommonsUi;
 
-/** True store location; revealed here, relocated via Move (see auto-tagging dialog to create/point). */
+/** True store location; revealed here, relocated via Move, or swapped for an existing one via Choose. */
 export const DesktopEntityDatabase = () => {
   const { t } = useTranslation();
   const bridge = getCommonsUiBridge();
@@ -26,6 +27,8 @@ export const DesktopEntityDatabase = () => {
   const [moving, setMoving] = useState(false);
   const [moveError, setMoveError] = useState<string | null>(null);
   const [moveSuccess, setMoveSuccess] = useState(false);
+  const [choosing, setChoosing] = useState(false);
+  const [chooseSuccess, setChooseSuccess] = useState(false);
 
   useEffect(() => {
     const sync = () => setEntityDbFolder(getCommonsUiBridge()?.entityDbFolder ?? null);
@@ -39,6 +42,7 @@ export const DesktopEntityDatabase = () => {
   const handleMove = async () => {
     setMoveError(null);
     setMoveSuccess(false);
+    setChooseSuccess(false);
     setMoving(true);
     try {
       const result = await bridge.moveEntityDbFolder();
@@ -49,6 +53,22 @@ export const DesktopEntityDatabase = () => {
       }
     } finally {
       setMoving(false);
+    }
+  };
+
+  const handleChoose = async () => {
+    setMoveError(null);
+    setMoveSuccess(false);
+    setChooseSuccess(false);
+    setChoosing(true);
+    try {
+      const picked = await bridge.pickEntityDbFolder();
+      if (picked) {
+        setEntityDbFolder(picked);
+        setChooseSuccess(true);
+      }
+    } finally {
+      setChoosing(false);
     }
   };
 
@@ -83,13 +103,29 @@ export const DesktopEntityDatabase = () => {
           >
             {t('LW.desktop.settings.entity_database_move')}
           </Button>
+          <Button
+            disabled={choosing}
+            onClick={() => void handleChoose()}
+            size="small"
+            variant="outlined"
+          >
+            {t('LW.desktop.settings.entity_database_change')}
+          </Button>
         </Box>
         <Typography color="text.secondary" variant="caption" component="p">
           {t('LW.desktop.settings.entity_database_move_hint')}
         </Typography>
+        <Typography color="text.secondary" variant="caption" component="p">
+          {t('LW.desktop.settings.entity_database_change_hint')}
+        </Typography>
         {moveSuccess && (
           <Typography color="success.main" variant="caption" component="p">
             {t('LW.desktop.settings.entity_database_move_success')}
+          </Typography>
+        )}
+        {chooseSuccess && (
+          <Typography color="success.main" variant="caption" component="p">
+            {t('LW.desktop.settings.entity_database_change_success')}
           </Typography>
         )}
         {moveError && (

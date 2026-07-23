@@ -1,6 +1,8 @@
 import { app } from 'electron';
 import { autoUpdater } from 'electron-updater';
 
+import type { AppUpdateCheckResult } from '../../commons/src/desktop/appUpdateTypes';
+
 const CHECK_INTERVAL_MS = 4 * 60 * 60 * 1000;
 
 /**
@@ -29,4 +31,25 @@ export const initAutoUpdater = (): (() => void) => {
     autoUpdater.removeListener('error', onError);
     autoUpdater.removeListener('update-downloaded', onUpdateDownloaded);
   };
+};
+
+/**
+ * User-triggered check (menu action), separate from the silent background poll above.
+ * Reuses the same autoUpdater singleton, so a found update still downloads in the
+ * background and installs on quit via the 'update-downloaded' listener already registered.
+ */
+export const checkForAppUpdatesManually = async (): Promise<AppUpdateCheckResult> => {
+  if (!app.isPackaged) return { status: 'unsupported' };
+  if (process.platform !== 'darwin' && process.platform !== 'win32') return { status: 'unsupported' };
+
+  try {
+    const result = await autoUpdater.checkForUpdates();
+    const latestVersion = result?.updateInfo?.version;
+    if (!latestVersion || latestVersion === app.getVersion()) {
+      return { status: 'current' };
+    }
+    return { status: 'updateAvailable', version: latestVersion };
+  } catch (error) {
+    return { status: 'error', message: error instanceof Error ? error.message : String(error) };
+  }
 };

@@ -83,7 +83,6 @@ import { resolveDialogDefaultPath } from './dialogDefaultPath';
 import mammoth from 'mammoth';
 import { extractOdtText } from './odtText';
 import {
-  checkAchievementsFolder,
   readAchievementsFile,
   readAchievementsFileFrom,
   writeAchievementsFile,
@@ -113,7 +112,7 @@ import {
   searchZoteroItems,
 } from './zoteroClient';
 import { disposeLemminx, registerLemminxIpc } from './lemminx/lspBridge';
-import { initAutoUpdater } from './updater';
+import { checkForAppUpdatesManually, initAutoUpdater } from './updater';
 import { installCatalogSchema, installLocalSchema } from './schemaSetup';
 import { ensureSanmiaoDatesSchemaMerged } from './sanmiaoSchemaMerge';
 import { applyCatalogSchemaUpdate, checkCatalogSchemaUpdate } from './checkSchemaUpdate';
@@ -955,9 +954,9 @@ const buildApplicationMenu = () => {
     click: () => sendMenuAction('edition-metadata'),
   };
 
-  const checkSchemaUpdateItem: Electron.MenuItemConstructorOptions = {
-    label: 'Check for schema updates',
-    click: () => sendMenuAction('check-schema-update'),
+  const lookForUpdatesItem: Electron.MenuItemConstructorOptions = {
+    label: 'Look for Updates',
+    click: () => sendMenuAction('look-for-updates'),
   };
 
   const timeMachineItem: Electron.MenuItemConstructorOptions = {
@@ -1022,7 +1021,7 @@ const buildApplicationMenu = () => {
         openProjectItem,
         closeProjectItem,
         editionMetadataItem,
-        checkSchemaUpdateItem,
+        lookForUpdatesItem,
         timeMachineItem,
         menuSeparator(),
         ...(process.platform !== 'darwin'
@@ -1284,33 +1283,6 @@ const registerIpcHandlers = () => {
     deleteSourceProfileFromFile(profileId),
   );
 
-  ipcMain.handle('getAchievementsFolder', async () => getAchievementsFolder());
-
-  ipcMain.handle('setAchievementsFolder', async (_event, folder: string | null) => {
-    await setAchievementsFolder(folder);
-  });
-
-  ipcMain.handle('checkAchievementsFolder', async (_event, folder: string) => {
-    return checkAchievementsFolder(folder);
-  });
-
-  ipcMain.handle('pickAchievementsFolder', async () => {
-    const parent = getTopNativeDialogWindow() ?? mainWindow ?? undefined;
-    const options: Electron.OpenDialogOptions = {
-      properties: ['openDirectory', 'createDirectory'],
-      title: 'Choose stats folder',
-      message:
-        'Your stats (achievements.json) will be stored here instead of the app data folder - point this at a folder your own sync tool (Dropbox, iCloud, etc.) watches to carry it between machines.',
-      defaultPath: await getDialogDefaultPath(),
-    };
-    const result = parent
-      ? await dialog.showOpenDialog(parent, options)
-      : await dialog.showOpenDialog(options);
-    if (result.canceled || result.filePaths.length === 0) return null;
-    rememberDialogDir(result.filePaths[0], 'directory');
-    return result.filePaths[0] ?? null;
-  });
-
   ipcMain.handle('pickImportAchievementsFile', async () => {
     const parent = getTopNativeDialogWindow() ?? mainWindow ?? undefined;
     const options: Electron.OpenDialogOptions = {
@@ -1424,6 +1396,10 @@ const registerIpcHandlers = () => {
 
   ipcMain.handle('applyCatalogSchemaUpdate', async (_event, projectFilePath: string) => {
     return applyCatalogSchemaUpdate(projectFilePath);
+  });
+
+  ipcMain.handle('app:checkForUpdates', async () => {
+    return checkForAppUpdatesManually();
   });
 
   ipcMain.handle('timeMachine:listSnapshots', async (_event, projectRootPath: string) => {
@@ -1707,7 +1683,20 @@ const registerIpcHandlers = () => {
   ipcMain.handle('authorityLifecycle:revealFolder', async () => {
     const folder = await getEntityDbFolderOrNull();
     if (!folder) return false;
-    shell.showItemInFolder(path.join(folder, 'entities.xml'));
+    // shell.showItemInFolder needs the target file to literally exist - it
+    // fails silently on Windows (unlike macOS, which falls back to the
+    // folder) when entities.xml hasn't been created yet. Reveal the folder
+    // itself in that case so the button never appears to do nothing.
+    const entitiesPath = path.join(folder, 'entities.xml');
+    if (existsSync(entitiesPath)) {
+      shell.showItemInFolder(entitiesPath);
+    } else {
+      const error = await shell.openPath(folder);
+      if (error) {
+        console.error('Failed to reveal entity database folder:', error);
+        return false;
+      }
+    }
     return true;
   });
 
