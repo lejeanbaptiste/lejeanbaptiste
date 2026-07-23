@@ -154,3 +154,4 @@ See [apps/desktop/README.md](apps/desktop/README.md) for the compilation and pac
 - [ ] Improved Chinese office name tagging
 - [ ] Support for custom authorities and personal SQL databases
 - [ ] AI assist for Sanmiao to identify beginning of dynasties, reigns, eras
+- [ ] Geo-aware placename disambiguation across authorities (see [placename-geo-disambiguation-planning.md](docs/placename-geo-disambiguation-planning.md))

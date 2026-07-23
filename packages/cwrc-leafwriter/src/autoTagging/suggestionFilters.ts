@@ -113,9 +113,13 @@ export function dedupeSuggestionsByLocation(suggestions: Suggestion[]): Suggesti
 }
 
 /**
- * Drop `add` suggestions that would nest (or duplicate) an existing mark of the
- * same tag — e.g. add 行成 as persName when 行成 is already inside
- * <persName>張行成</persName>. Applied before the review panel.
+ * Drop `add` suggestions that would nest (or duplicate) a mark of the same
+ * kind — either an existing document wrapper, or a longer sibling suggestion
+ * in this batch. E.g. add 行成 as persName when 行成 is already inside
+ * <persName>張行成</persName>, or suggest roleName「知政事」 when the batch
+ * also suggests roleName「參知政事」 spanning the same text. Applied before
+ * the review panel. Longer / outer wins; same-kind inside same-kind is never
+ * offered.
  */
 export function filterNestedSameTagAdds(
   doc: Document,
@@ -129,20 +133,49 @@ export function filterNestedSameTagAdds(
   const tagSet = new Set(adds.map((s) => s.tag));
   const existing = collectTaggedSpans(doc, index, tagSet);
 
+  type SpannedAdd = { suggestion: Suggestion; start: number; end: number; length: number };
+  const spanned: SpannedAdd[] = [];
+  const unresolvable = new Set<Suggestion>();
+  for (const suggestion of adds) {
+    const span = docSpanAt(index.text, suggestion.anchor.surface, suggestion.anchor.occurrence);
+    if (!span) {
+      unresolvable.add(suggestion);
+      continue;
+    }
+    spanned.push({
+      suggestion,
+      start: span.start,
+      end: span.end,
+      length: span.end - span.start,
+    });
+  }
+
+  // Longer first so the outer span is kept, then the inner is rejected as nested.
+  spanned.sort((a, b) => b.length - a.length || a.start - b.start);
+
+  const keptSpans: TaggedSpan[] = existing.map((span) => ({ ...span }));
+  const keptAdds = new Set<Suggestion>();
   let dropped = 0;
-  const kept = suggestions.filter((s) => {
-    if (s.action !== 'add') return true;
-    const span = docSpanAt(index.text, s.anchor.surface, s.anchor.occurrence);
-    if (!span) return true;
-    const nested = existing.some(
+
+  for (const row of spanned) {
+    const nested = keptSpans.some(
       (t) =>
-        entityTagsEquivalent(t.tag, s.tag) && span.start >= t.start && span.end <= t.end,
+        entityTagsEquivalent(t.tag, row.suggestion.tag) &&
+        row.start >= t.start &&
+        row.end <= t.end,
     );
     if (nested) {
       dropped++;
-      return false;
+      continue;
     }
-    return true;
+    keptAdds.add(row.suggestion);
+    keptSpans.push({ start: row.start, end: row.end, tag: row.suggestion.tag });
+  }
+
+  const kept = suggestions.filter((s) => {
+    if (s.action !== 'add') return true;
+    if (unresolvable.has(s)) return true;
+    return keptAdds.has(s);
   });
 
   return { suggestions: kept, dropped };

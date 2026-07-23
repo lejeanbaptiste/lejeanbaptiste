@@ -1,5 +1,6 @@
 import OpenInNewIcon from '@mui/icons-material/OpenInNew';
 import {
+  Checkbox,
   Chip,
   IconButton,
   ListItem,
@@ -11,7 +12,7 @@ import {
 import { useAtom, useAtomValue } from 'jotai';
 import { useState } from 'react';
 import type { Authority, AuthorityLookupResult } from '../../../../types/authority';
-import { lookupTypeAtom, selectedAtom } from '../../store';
+import { checkedEntriesAtom, lookupTypeAtom, selectedAtom } from '../../store';
 import { useEntityLookup } from '../../useEntityLookup';
 
 interface Props extends AuthorityLookupResult {
@@ -20,12 +21,27 @@ interface Props extends AuthorityLookupResult {
   isOwnDatabase?: boolean;
 }
 
+const stopRowClick = (event: { stopPropagation: () => void }) => event.stopPropagation();
+
 export const Item = ({ authority, description, internal, isOwnDatabase, label, uri }: Props) => {
   const lookupType = useAtomValue(lookupTypeAtom);
   const [selected, setSelected] = useAtom(selectedAtom);
+  const [checkedEntries, setCheckedEntries] = useAtom(checkedEntriesAtom);
 
   const { confirmSelected } = useEntityLookup();
   const [hover, setHover] = useState(false);
+
+  const entry = { authority, entityType: lookupType, label, uri, description, internal };
+  const checked = checkedEntries.has(uri);
+
+  const toggleChecked = (next: boolean) => {
+    setCheckedEntries((prev) => {
+      const map = new Map(prev);
+      if (next) map.set(uri, entry);
+      else map.delete(uri);
+      return map;
+    });
+  };
 
   const handleOnDoubleClick = () => {
     if (uri !== selected?.uri) return;
@@ -36,9 +52,7 @@ export const Item = ({ authority, description, internal, isOwnDatabase, label, u
     <ListItem
       dense
       disablePadding
-      onClick={() =>
-        setSelected({ authority, entityType: lookupType, label, uri, description, internal })
-      }
+      onClick={() => setSelected(entry)}
       onDoubleClick={handleOnDoubleClick}
       onMouseEnter={() => setHover(true)}
       onMouseLeave={() => setHover(false)}
@@ -51,10 +65,20 @@ export const Item = ({ authority, description, internal, isOwnDatabase, label, u
       }
       sx={{ my: 0.5 }}
     >
+      <Checkbox
+        aria-label={`Also link ${label}`}
+        checked={checked}
+        onChange={(event) => toggleChecked(event.target.checked)}
+        onClick={stopRowClick}
+        onMouseDown={stopRowClick}
+        size="small"
+        sx={{ p: 0.5, ml: 0.5 }}
+      />
       <ListItemButton
         selected={selected?.uri === uri}
         sx={[
           { borderRadius: 1 },
+          checked && { borderLeft: '3px solid', borderLeftColor: 'primary.main' },
           isOwnDatabase
             ? {
                 backgroundColor: '#e8f5e9',

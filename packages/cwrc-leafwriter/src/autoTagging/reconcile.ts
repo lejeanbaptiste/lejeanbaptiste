@@ -41,7 +41,7 @@ export interface NameField {
   type: string | null;
 }
 
-interface EntityFields {
+export interface EntityFields {
   names: NameField[];
   authorities: AuthorityId[];
   description: string | null;

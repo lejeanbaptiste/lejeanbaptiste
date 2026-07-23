@@ -172,7 +172,20 @@ const readAppPrefs = async (): Promise<AppPrefs> => {
     const parsed = JSON.parse(raw) as Partial<AppPrefs> & { lastRootPath?: string | null };
     return parseAppPrefs(parsed);
   } catch (error) {
-    if ((error as NodeJS.ErrnoException).code === 'ENOENT') return defaultAppPrefs();
+    if ((error as NodeJS.ErrnoException).code === 'ENOENT') {
+      // One more recovery pass: a concurrent Windows atomic write may have
+      // just left `.bak`/`.tmp` behind with the real prefs.
+      if (await recoverFromFailedAtomicWrite(prefsPath)) {
+        try {
+          const raw = await fs.readFile(prefsPath, 'utf-8');
+          const parsed = JSON.parse(raw) as Partial<AppPrefs> & { lastRootPath?: string | null };
+          return parseAppPrefs(parsed);
+        } catch {
+          // fall through to defaults
+        }
+      }
+      return defaultAppPrefs();
+    }
     const corruptPath = `${prefsPath}.corrupt-${Date.now()}`;
     await fs.rename(prefsPath, corruptPath).catch(() => undefined);
     return defaultAppPrefs();
@@ -194,6 +207,13 @@ const mutateAppPrefs = async (mutator: (prefs: AppPrefs) => void): Promise<void>
   });
   await prefsWriteChain;
 };
+
+/**
+ * In-memory copy of the configured entity-database folder. Avoids re-reading
+ * (and risking a mid-write ENOENT → false “unset”) on every renderer readFile
+ * path check. Invalidated whenever the folder is set explicitly.
+ */
+let cachedEntityDbFolder: string | null | undefined;
 
 export const writeLastProjectFile = async (projectFilePath: string) => {
   await mutateAppPrefs((prefs) => {
@@ -251,19 +271,34 @@ export const setLastDialogDir = async (dir: string | null) => {
  * not yet mounted) and silently pointed people at the wrong database. If
  * this folder is genuinely unreachable, callers see that directly instead of
  * being quietly redirected somewhere else.
+ *
+ * Defaulting is done inside the serialized prefs write chain, and only when
+ * the stored value is still empty — a concurrent workspace-session save must
+ * never be able to briefly hide prefs and trick us into overwriting a real
+ * ShareDocs/Dropbox path with the empty app-data default.
  */
 let hasShownEntityDbCreationError = false;
 
 export const getEntityDbFolder = async (): Promise<string | null> => {
+  if (typeof cachedEntityDbFolder === 'string' && cachedEntityDbFolder.trim()) {
+    return cachedEntityDbFolder;
+  }
+
   const prefs = await readAppPrefs();
-  const folder = prefs.entityDbFolder?.trim();
-  if (folder) return folder;
+  const existing = prefs.entityDbFolder?.trim();
+  if (existing) {
+    cachedEntityDbFolder = existing;
+    return existing;
+  }
 
   const defaultFolder = getDefaultEntityDbFolder();
   try {
     await fs.mkdir(defaultFolder, { recursive: true });
+    // Only write the default if nothing else won the race while we were
+    // mkdir'ing — otherwise we would clobber a folder the user just set
+    // (or that a recovered prefs file already had).
     await mutateAppPrefs((p) => {
-      p.entityDbFolder = defaultFolder;
+      if (!p.entityDbFolder?.trim()) p.entityDbFolder = defaultFolder;
     });
   } catch (error) {
     // Surface the failure instead of throwing: an uncaught rejection here
@@ -283,15 +318,24 @@ export const getEntityDbFolder = async (): Promise<string | null> => {
         `Le Jean-Baptiste could not create:\n${defaultFolder}\n\n${detail}\n\nEntity tagging will be unavailable until you choose a writable folder in Settings > Entity database.`,
       );
     }
+    cachedEntityDbFolder = defaultFolder;
+    return defaultFolder;
   }
-  return defaultFolder;
+
+  const after = await readAppPrefs();
+  const resolved = after.entityDbFolder?.trim() || defaultFolder;
+  cachedEntityDbFolder = resolved;
+  return resolved;
 };
 
 /** Setting a new folder forgets the old one completely - no history is kept to fall back to. */
 export const setEntityDbFolder = async (folder: string | null) => {
+  const next = folder?.trim() || null;
+  cachedEntityDbFolder = next ?? undefined;
   await mutateAppPrefs((prefs) => {
-    prefs.entityDbFolder = folder?.trim() || null;
+    prefs.entityDbFolder = next;
   });
+  cachedEntityDbFolder = next;
 };
 
 const LOCAL_AUTHORITY_ASSETS_DIRNAME = 'authority-assets';

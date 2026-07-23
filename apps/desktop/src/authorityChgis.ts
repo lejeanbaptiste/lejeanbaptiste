@@ -37,8 +37,14 @@ const chgisManifestPath = (entityDbFolder: string): string =>
 const chgisPackDir = (entityDbFolder: string): string =>
   path.join(entityDbFolder, AUTHORITY_PACKS_DIRNAME, 'chgis');
 
+/**
+ * Packs/databases live in the local per-machine authority-assets folder
+ * (see getLocalAuthorityAssetsDir), not inside the project's entities.xml
+ * folder — that folder is always created on demand and never depends on
+ * entities.xml existing. "Ready" here just means a folder was resolved.
+ */
 export const entityDbFolderReady = (entityDbFolder: string | null): boolean =>
-  !!entityDbFolder?.trim() && fs.existsSync(path.join(entityDbFolder, 'entities.xml'));
+  !!entityDbFolder?.trim();
 
 const sumDirectoryBytes = async (dirPath: string): Promise<number> => {
   let total = 0;
@@ -205,7 +211,7 @@ export const installChgisFromArchive = async ({
   if (!entityDbFolderReady(entityDbFolder)) {
     return {
       ok: false,
-      error: 'Configure an entity database folder containing entities.xml before installing CHGIS.',
+      error: 'No authority-assets folder could be resolved; restart the app before installing CHGIS.',
     };
   }
 

@@ -7,6 +7,7 @@ import {
 } from '../../autoTagging/entityStore';
 import {
   applyLookupResolution,
+  appendExtraAuthorityIds,
   linkLocalEntityWithoutAuthority,
   linkWithoutEnrichment,
   planLookupResolution,
@@ -23,6 +24,7 @@ import type { AuthorityLookupResult, EntityLink, NamedEntityType } from '../../t
 import { log } from '../../utilities';
 import {
   authoritiesAtom,
+  checkedEntriesAtom,
   entityTypeAtom,
   isUriValidAtom,
   isUserAuthenticatedAtom,
@@ -34,6 +36,7 @@ import {
   resolutionAtom,
   selectedAtom,
 } from './store';
+import type { EntryLink } from '../../types/authority';
 
 /** Installed (non-virtual) authority packs, for concordance expansion. */
 const installedPackIds = async (): Promise<AuthorityPackId[]> => {
@@ -102,6 +105,7 @@ export const useEntityLookup = () => {
   const onClose = useAtomValue(onCloseAtom);
   const query = useAtomValue(queryAtom);
   const [selected, setSelected] = useAtom(selectedAtom);
+  const [checkedEntries, setCheckedEntries] = useAtom(checkedEntriesAtom);
   const setResolution = useSetAtom(resolutionAtom);
 
   const buildLink = (
@@ -114,14 +118,40 @@ export const useEntityLookup = () => {
     ...over,
   });
 
+  /**
+   * When one or more candidates are checked, the primary is whichever one is
+   * a project/central entity (if any — it's the thing that gets linked
+   * directly), otherwise the first checked. Every other checked candidate's
+   * uri is carried as `extraUris`, so its authority id gets attached to
+   * whatever entity the primary resolves to.
+   */
+  const checkedPrimaryAndExtras = (): { primary: EntryLink; extraUris: string[] } | null => {
+    const checked = [...checkedEntries.values()];
+    if (checked.length === 0) return null;
+    const primary = checked.find((entry) => entry.internal) ?? checked[0]!;
+    const extraUris = checked.filter((entry) => entry !== primary).map((entry) => entry.uri);
+    return { primary, extraUris };
+  };
+
   const selectionInput = (): LookupSelectionInput | null => {
-    if (selected) {
+    const checked = checkedPrimaryAndExtras();
+    const active = checked?.primary ?? selected;
+    if (active) {
+      const extraUris = checked?.extraUris ?? [];
+      const description = extraUris.length
+        ? ([active.description, ...checked!.extraUris.map((uri) =>
+            [...checkedEntries.values()].find((entry) => entry.uri === uri)?.description,
+          )]
+            .filter(Boolean)
+            .join(' · ') || undefined)
+        : active.description;
       return {
-        uri: selected.uri,
-        label: selected.label,
-        description: selected.description,
+        uri: active.uri,
+        label: active.label,
+        description,
         entityType: lookupType,
         query,
+        extraUris,
       };
     }
     if (manualInput !== '' && isUriValid) {
@@ -145,27 +175,39 @@ export const useEntityLookup = () => {
     const input = selectionInput();
     if (!input) return;
 
+    const checked = checkedPrimaryAndExtras();
+    const active = checked?.primary ?? selected;
+    const extraUris = checked?.extraUris ?? [];
+
     const plainLink = () =>
       buildLink({
         name: input.label,
         uri: input.uri,
-        repository: selected ? selected.authority : 'custom',
+        repository: active ? active.authority : 'custom',
       });
 
     // Picking a project-entity result links directly — no resolution needed.
-    if (selected?.internal) {
-      const centralId = centralEntityIdFromUri(selected.uri);
+    if (active?.internal) {
+      const attachExtras = async (key: string) => {
+        if (extraUris.length === 0) return;
+        const deps = await resolveDeps(lookupType);
+        if (deps) await appendExtraAuthorityIds(key, extraUris, deps);
+      };
+
+      const centralId = centralEntityIdFromUri(active.uri);
       if (centralId) {
         // Picking a central-database result adopts it into this project first —
         // it has no project entity yet — then links to the adopted entity.
         const pedbId = await adoptCentralEntity(centralId);
         if (pedbId) {
-          closeWith(buildLink({ name: selected.label, uri: selected.uri, repository: 'entity-database', key: pedbId }));
+          await attachExtras(pedbId);
+          closeWith(buildLink({ name: active.label, uri: active.uri, repository: 'entity-database', key: pedbId }));
           return;
         }
         // Central database unreachable — fall through to a plain URI link.
       } else {
-        closeWith(buildLink({ name: selected.label, uri: selected.uri, repository: 'entity-database', key: selected.internal.id }));
+        await attachExtras(active.internal.id);
+        closeWith(buildLink({ name: active.label, uri: active.uri, repository: 'entity-database', key: active.internal.id }));
         return;
       }
     }
@@ -226,7 +268,7 @@ export const useEntityLookup = () => {
           buildLink({
             name: input.label,
             uri: input.uri,
-            repository: selected ? selected.authority : 'custom',
+            repository: (checkedPrimaryAndExtras()?.primary ?? selected)?.authority ?? 'custom',
             key: result.key,
             wasCreated: result.wasCreated,
           }),
@@ -258,7 +300,7 @@ export const useEntityLookup = () => {
         buildLink({
           name: input.label,
           uri: input.uri,
-          repository: selected ? selected.authority : 'custom',
+          repository: (checkedPrimaryAndExtras()?.primary ?? selected)?.authority ?? 'custom',
           key,
         }),
       );
@@ -311,7 +353,7 @@ export const useEntityLookup = () => {
       buildLink({
         name: input.label,
         uri: input.uri,
-        repository: selected ? selected.authority : 'custom',
+        repository: (checkedPrimaryAndExtras()?.primary ?? selected)?.authority ?? 'custom',
       }),
     );
   };
@@ -336,6 +378,7 @@ export const useEntityLookup = () => {
 
   const search = async ({ query, type }: { query: string; type: NamedEntityType }) => {
     setSelected(null);
+    setCheckedEntries(new Map());
     setResolution(RESET);
 
     //reset authorities results

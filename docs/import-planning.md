@@ -65,7 +65,7 @@ interface IrBlock {
 - **rtf** — current stripper is adequate for blind import.
 - **docx** — `mammoth` (pure JS) with a transform that keeps style names in the IR.
 - **odt** — plain-text extraction (supported in Phase 1 path).
-- **xml (v1)** — same-family TEI/Orlando only: demote `@key` to `@ana` (`ljb-former-key:`), attach project schema PIs, merge edition metadata, provenance note. Skip `entities.xml`. Element remapping still deferred.
+- **xml (v1)** — same-family TEI/Orlando only: demote `@key` to `@ana` (`ljb-former-key:`), attach project schema PIs, merge edition metadata, provenance in `revisionDesc/change`. Skip `entities.xml`. Element remapping still deferred.
 
 ### 2. Import profile (the rule set)
 
@@ -111,7 +111,7 @@ Engine properties:
 
 - Selection: native dialog, multi-select files or a folder (recursive, filtered to supported extensions).
 - Output mirrors the source tree under a chosen folder inside the project root (default `imported/<batch>/`), one `.xml` per source, filename slugified, existing-path auto-suffixing as already implemented.
-- Each output: skeleton → merge project metadata → per-file `<title>` (profile `title` field, else filename) → body → provenance in `sourceDesc` (source path, import date, profile name).
+- Each output: skeleton → merge project metadata → per-file `<title>` (profile `title` field, else filename) → body → provenance in `revisionDesc/change` (source path, import date, profile name).
 - Validate each file; report lists blocks emitted, rule hit counts, validation status, anomalies. Large batches don't auto-open tabs; single-file import opens the result.
 - Idempotent re-runs: skip-or-overwrite prompt.
 
@@ -129,7 +129,7 @@ Engine properties:
 - **Phase 3 — docx extraction.** mammoth with style names; style-name rules. Acceptance: `MKBG OCR.docx` imports with headings mapped and page-number noise handled.
 - **Phase 4 — AI inference.** Sampling, prompt, schema validation, retry, review-panel wiring. Acceptance: analyzing `KR1a0145_002.txt` yields a profile matching (± one tweak) the Phase 2 hand-written one.
 - **Deferred:** full element-mapping profiles for exotic XML (HanShu custom tags → TEI); docx footnotes/runs; tables/images; Zotero-linked citation recognition.
-- **XML import (v1, 2026-07-23):** `.xml` is accepted by Import Documents. Same-family only (TEI↔TEI including jTEI; Orlando↔Orlando). Keeps body structure; attaches project schema PIs; demotes `@key` → `@ana` token `ljb-former-key:…` with a warning dialog; merges project edition metadata; adds a short `sourceDesc` provenance note. Cross-family conversion and element remapping still deferred.
+- **XML import (v1, 2026-07-23):** `.xml` is accepted by Import Documents. Same-family only (TEI↔TEI including jTEI; Orlando↔Orlando). Keeps body structure; attaches project schema PIs; demotes `@key` → `@ana` token `ljb-former-key:…` with a warning dialog; merges project edition metadata; records provenance in `revisionDesc/change` (not `sourceDesc`, which often holds `biblStruct`). Cross-family conversion and element remapping still deferred.
 
 ## Open questions
 

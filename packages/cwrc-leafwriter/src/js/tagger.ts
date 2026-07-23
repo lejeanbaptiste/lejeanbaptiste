@@ -501,12 +501,14 @@ class Tagger {
 
   //! deprecated: This funcion is not called from anywhere
   /**
-   * A general removal function for entities and structure tags
+   * Unwrap a tag (entity or structure), keeping its text contents.
+   * Always uses {@link removeStructureTag}: `removeEntity` only strips the
+   * annotation and re-adds the structural tag, which made Shift+Backspace
+   * look like a no-op on entity-marked spans (persName, roleName with a key, …).
    * @param {String} [id] The id of the tag to remove
    */
   removeTag(id: string) {
-    const $tag = this.getCurrentTag(id) as JQuery<HTMLElement>;
-    $tag.attr('_entity') ? this.removeEntity(id) : this.removeStructureTag(id);
+    this.removeStructureTag(id);
   }
 
   /**

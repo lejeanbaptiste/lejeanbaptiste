@@ -1,5 +1,6 @@
 import { entityStoreFromDesktop } from '../../../../packages/cwrc-leafwriter/src/autoTagging/entityStore';
 import { applyPendingOrders } from '@src/desktop/entityDb/applyOrders';
+import { applyPendingCentralOrders, loadBridgeContext } from '@src/desktop/entityDb/bridge';
 import {
   purgeReportedOrphans,
   runEntityDatabaseCheck,
@@ -86,6 +87,28 @@ export const useEntityDatabaseLifecycle = () => {
         }
       } catch {
         // never block project open on order replay
+      }
+
+      // Converge this project's central-database mappings against any
+      // Absorb/delete that happened in the central database itself — a
+      // duplicate merged there doesn't rewrite this PEDB's corpus keys (it
+      // never touches this id space), but the `ljb-central` mapping that
+      // named the merged-away id would otherwise sit stale/"broken" until
+      // someone opens the Bridge inbox by hand.
+      try {
+        const availability = await loadBridgeContext();
+        if (availability.available) {
+          const synced = await applyPendingCentralOrders(availability.context);
+          if (synced.repointed > 0 || synced.cleared > 0) {
+            // eslint-disable-next-line no-console
+            console.info(
+              `[central-orders] applied ${synced.ordersApplied} order(s); ` +
+                `repointed ${synced.repointed}, cleared ${synced.cleared} mapping(s).`,
+            );
+          }
+        }
+      } catch {
+        // never block project open on central order replay
       }
 
       // Gentle orphan check: after orders have converged, surface corpus keys

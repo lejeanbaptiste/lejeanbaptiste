@@ -3,15 +3,33 @@ import {
   type BridgeInboxReport,
 } from '../../../../../packages/cwrc-leafwriter/src/autoTagging/bridgeInbox';
 import {
+  applyCentralRemapToPedb,
+  pendingCentralRemap,
+} from '../../../../../packages/cwrc-leafwriter/src/autoTagging/centralOrderSync';
+import {
+  pendingMergeSuggestions,
+} from '../../../../../packages/cwrc-leafwriter/src/autoTagging/centralMergeSuggestions';
+import {
   centralEntityStoreFromDesktop,
   desktopEntityFileApi,
   entityStoreFromDesktop,
   type EntityStore,
 } from '../../../../../packages/cwrc-leafwriter/src/autoTagging/entityStore';
+import { kindOfElement, mergeEntities } from '../../../../../packages/cwrc-leafwriter/src/autoTagging/entityOps';
 import { promoteToCentral } from '../../../../../packages/cwrc-leafwriter/src/autoTagging/promote';
-import { applyReconcilePlan, planReconcile } from '../../../../../packages/cwrc-leafwriter/src/autoTagging/reconcile';
+import {
+  applyReconcilePlan,
+  planReconcile,
+  readFields,
+  type EntityFields,
+} from '../../../../../packages/cwrc-leafwriter/src/autoTagging/reconcile';
 import { readOrMintUserStableId } from '../../../../../packages/cwrc-leafwriter/src/autoTagging/userStableId';
-import { findEntity } from '../../../../../packages/cwrc-leafwriter/src/autoTagging/entities';
+import {
+  findEntity,
+  getDatabaseId,
+  type EntityKind,
+} from '../../../../../packages/cwrc-leafwriter/src/autoTagging/entities';
+import { applyKeyRemapAcrossProjects } from './applyKeyRemap';
 
 /**
  * Desktop wiring for the Bridge (Link/Promote/Sync between the project database
@@ -63,6 +81,55 @@ export async function computeBridgeInbox(ctx: BridgeContext): Promise<BridgeInbo
   return buildBridgeInbox(pedbDoc, cedbDoc, ctx.userStableId);
 }
 
+export interface CentralOrderSyncSummary {
+  /** Central-database orders newly applied to this project's mappings. */
+  ordersApplied: number;
+  /** Mappings repointed to a merge survivor. */
+  repointed: number;
+  /** Mappings cleared because the central entity was deleted outright. */
+  cleared: number;
+}
+
+/**
+ * Converge this project's `ljb-central` mappings against the central
+ * database's own order log: any mapping naming an id that was merged or
+ * deleted upstream gets repointed (or cleared) automatically. This is what
+ * makes a central-database Absorb reach a linked PEDB even though the PEDB
+ * is a different `entities.xml` with its own id space — the mapping is the
+ * only bridge between the two, so it's the only thing that needs to move.
+ * Idempotent and safe to call on every project open or Bridge-dialog visit.
+ */
+export async function applyPendingCentralOrders(
+  ctx: BridgeContext,
+): Promise<CentralOrderSyncSummary> {
+  const none: CentralOrderSyncSummary = { ordersApplied: 0, repointed: 0, cleared: 0 };
+
+  const [pedbDoc, cedbDoc, cedbOrders, applied] = await Promise.all([
+    ctx.projectStore.loadEntities(),
+    ctx.centralStore.loadEntities(),
+    ctx.centralStore.readEntityOrders(),
+    ctx.projectStore.readAppliedOrderIds(),
+  ]);
+  const cedbDbId = getDatabaseId(cedbDoc);
+  if (!cedbDbId) return none;
+
+  const { pending, remap } = pendingCentralRemap(cedbOrders, cedbDbId, applied);
+  if (pending.length === 0) return none;
+
+  const result = applyCentralRemapToPedb(pedbDoc, remap, ctx.userStableId);
+  for (const order of pending) applied.add(order.id);
+  await ctx.projectStore.writeAppliedOrderIds(applied);
+  if (result.repointed.length > 0 || result.cleared.length > 0) {
+    await ctx.projectStore.saveEntities(pedbDoc);
+  }
+
+  return {
+    ordersApplied: pending.length,
+    repointed: result.repointed.length,
+    cleared: result.cleared.length,
+  };
+}
+
 /** Promote the given project entity ids into the central database and link them. */
 export async function promoteEntities(ctx: BridgeContext, pedbIds: string[]): Promise<number> {
   if (pedbIds.length === 0) return 0;
@@ -106,4 +173,91 @@ export async function syncEntities(
   if (cedbTouched) await ctx.centralStore.saveEntities(cedbDoc);
   if (pedbTouched) await ctx.projectStore.saveEntities(pedbDoc);
   return { synced };
+}
+
+/**
+ * The merge docket: central-database merge suggestions still worth a
+ * decision (see `centralMergeSuggestions.ts`). Central-only — unlike the
+ * Bridge inbox above, this doesn't need a project database at all, since a
+ * suggestion can be raised by any project bridged to this catalogue, on any
+ * machine. Call with whatever central store the database panel is already
+ * holding, whether or not the current project happens to bridge to it.
+ */
+export interface MergeDocketSide {
+  id: string;
+  kind: EntityKind;
+  /** Names (by type), dates, description, and linked authorities for the comparison view. */
+  fields: EntityFields;
+}
+
+export interface MergeDocketEntry {
+  suggestionId: string;
+  when: string;
+  sides: [MergeDocketSide, MergeDocketSide];
+}
+
+export async function computeMergeDocket(centralStore: EntityStore): Promise<MergeDocketEntry[]> {
+  const [cedbDoc, suggestions, resolutions, cedbOrders] = await Promise.all([
+    centralStore.loadEntities(),
+    centralStore.readMergeSuggestions(),
+    centralStore.readMergeSuggestionResolutions(),
+    centralStore.readEntityOrders(),
+  ]);
+  const cedbDbId = getDatabaseId(cedbDoc);
+  if (!cedbDbId) return [];
+
+  const pending = pendingMergeSuggestions(suggestions, resolutions, cedbOrders, cedbDbId, cedbDoc);
+  const entries: MergeDocketEntry[] = [];
+  for (const item of pending) {
+    const [aId, bId] = item.centralIds;
+    const aItem = findEntity(cedbDoc, aId);
+    const bItem = findEntity(cedbDoc, bId);
+    const aKind = aItem && kindOfElement(aItem);
+    const bKind = bItem && kindOfElement(bItem);
+    if (!aItem || !bItem || !aKind || !bKind) continue; // shouldn't happen; already checked by pendingMergeSuggestions
+    entries.push({
+      suggestionId: item.id,
+      when: item.when,
+      sides: [
+        { id: aId, kind: aKind, fields: readFields(aItem) },
+        { id: bId, kind: bKind, fields: readFields(bItem) },
+      ],
+    });
+  }
+  return entries;
+}
+
+export type MergeSuggestionDecision =
+  | { action: 'ignore' }
+  | { action: 'merge'; keepId: string; dropId: string };
+
+/**
+ * Act on a docket entry: either record the suggestion as ignored (it never
+ * resurfaces, but nothing else changes — see `centralMergeSuggestions.ts`),
+ * or actually merge the two central entities the user confirmed are the
+ * same. A merge here is an ordinary central Absorb: it records a durable
+ * order (so every bridged PEDB converges its own `ljb-central` mapping the
+ * next time it opens or visits its Bridge inbox) and eagerly rewrites any
+ * project still using this file directly, exactly like a manual central
+ * merge from the database panel.
+ */
+export async function resolveMergeSuggestion(
+  centralStore: EntityStore,
+  suggestionId: string,
+  decision: MergeSuggestionDecision,
+): Promise<void> {
+  if (decision.action === 'ignore') {
+    await centralStore.recordMergeSuggestionResolution(suggestionId, 'ignored');
+    return;
+  }
+
+  const cedbDoc = await centralStore.loadEntities();
+  const dbId = getDatabaseId(cedbDoc) ?? undefined;
+  const { remap } = mergeEntities(cedbDoc, decision.keepId, [decision.dropId]);
+  await centralStore.saveEntities(cedbDoc);
+  if (Object.keys(remap).length > 0) {
+    await centralStore.recordEntityOrder(remap, dbId);
+    await applyKeyRemapAcrossProjects(centralStore, remap).catch(() => undefined);
+  }
+  await centralStore.recordMergeSuggestionResolution(suggestionId, 'merged');
 }

@@ -216,6 +216,7 @@
       "status_installed": "installé",
       "description": "Description",
       "discard_changes": "annuler les modifications",
+      "leave_source_anyway": "quitter le mode Source quand même",
       "edit": "modifier",
       "editor": "éditeur",
       "entity types": "types d'entités",

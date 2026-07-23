@@ -234,8 +234,14 @@ const sumDirectoryBytes = async (dirPath: string): Promise<number> => {
   return total;
 };
 
+/**
+ * Packs/databases live in the local per-machine authority-assets folder
+ * (see getLocalAuthorityAssetsDir), not inside the project's entities.xml
+ * folder — that folder is always created on demand and never depends on
+ * entities.xml existing. "Ready" here just means a folder was resolved.
+ */
 export const entityDbFolderReady = (entityDbFolder: string | null): boolean =>
-  !!entityDbFolder?.trim() && fs.existsSync(path.join(entityDbFolder, 'entities.xml'));
+  !!entityDbFolder?.trim();
 
 const packsReady = (packStatuses: Awaited<ReturnType<typeof getAuthorityPackStatuses>>): boolean =>
   packStatuses.every((pack) => pack.installed);
@@ -440,7 +446,7 @@ export const runAuthorityLifecyclePipeline = async (
   if (!entityDbFolderReady(entityDbFolder)) {
     return {
       ok: false,
-      error: 'Configure an entity database folder containing entities.xml before enabling authorities.',
+      error: 'No authority-assets folder could be resolved; restart the app before enabling authorities.',
     };
   }
 

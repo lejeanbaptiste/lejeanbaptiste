@@ -228,6 +228,8 @@ export interface LookupSelectionInput {
   entityType: NamedEntityType;
   /** The (possibly user-edited) query string, logged as the mention surface. */
   query: string;
+  /** URIs of other authority candidates checked alongside the primary one — their idnos get added to the same entity. */
+  extraUris?: string[];
 }
 
 export interface LookupResolveDeps {
@@ -315,7 +317,7 @@ function readEntitiesOfKind(doc: Document, kind: EntityKind): EntityRecord[] {
   return out;
 }
 
-const idnoEquals = (a: AuthorityId, b: AuthorityId) =>
+export const idnoEquals = (a: AuthorityId, b: AuthorityId) =>
   a.type.toLowerCase() === b.type.toLowerCase() && a.value === b.value;
 
 const entityHasIdno = (entity: EntityRecord, idno: AuthorityId) =>
@@ -347,25 +349,33 @@ export async function planLookupResolution(
   const kind = LOOKUP_TYPE_TO_KIND[input.entityType];
   if (!kind) return { action: 'passthrough' };
 
-  const parsed = parseAuthorityUri(input.uri);
-  const ref: ParsedAuthorityRef = parsed ?? { idnoType: 'URI', value: input.uri };
+  const refs: ParsedAuthorityRef[] = [input.uri, ...(input.extraUris ?? [])].map(
+    (uri) => parseAuthorityUri(uri) ?? { idnoType: 'URI', value: uri },
+  );
 
   // Concordance expansion only for recognized authorities — a pasted URL is
-  // not disambiguated against the packs.
-  const crosswalk =
-    parsed && deps.readPackFile && deps.packIds?.length
-      ? await crosswalkForRef(ref, deps.packIds, deps.readPackFile)
-      : { idnos: [{ type: ref.idnoType, value: ref.value }] as AuthorityId[] };
+  // not disambiguated against the packs. Each checked candidate's ref is
+  // expanded independently, then the results are merged into one idno set.
+  const crosswalks: CrosswalkResult[] = await Promise.all(
+    refs.map((ref) =>
+      deps.readPackFile && deps.packIds?.length
+        ? crosswalkForRef(ref, deps.packIds, deps.readPackFile)
+        : Promise.resolve({ idnos: [{ type: ref.idnoType, value: ref.value }] }),
+    ),
+  );
+  const idnos = dedupeIdnos(crosswalks.flatMap((c) => c.idnos));
+  const candidateMeta = crosswalks.map((c) => c.candidate).find(Boolean);
 
   const doc = await deps.store.loadEntities();
   const entities = readEntitiesOfKind(doc, kind);
 
-  const refIdno: AuthorityId = { type: ref.idnoType, value: ref.value };
-  const direct = entities.filter((entity) => entityHasIdno(entity, refIdno));
+  const direct = entities.filter((entity) =>
+    refs.some((ref) => entityHasIdno(entity, { type: ref.idnoType, value: ref.value })),
+  );
 
   if (direct.length > 1) {
     // Pre-existing duplicate — a curation problem, never a merge-by-lookup.
-    return { action: 'conflict', candidates: toConflictCandidates(direct), idnos: crosswalk.idnos };
+    return { action: 'conflict', candidates: toConflictCandidates(direct), idnos };
   }
 
   if (direct.length === 1) {
@@ -376,19 +386,19 @@ export async function planLookupResolution(
       entityName: entity.name,
       description: entity.description,
       matchedBy: 'direct',
-      ...splitEnrichment(entity, crosswalk.idnos),
+      ...splitEnrichment(entity, idnos),
     };
   }
 
   const viaCrosswalk = entities.filter((entity) =>
-    crosswalk.idnos.some((idno) => entityHasIdno(entity, idno)),
+    idnos.some((idno) => entityHasIdno(entity, idno)),
   );
 
   if (viaCrosswalk.length > 1) {
     return {
       action: 'conflict',
       candidates: toConflictCandidates(viaCrosswalk),
-      idnos: crosswalk.idnos,
+      idnos,
     };
   }
 
@@ -400,21 +410,20 @@ export async function planLookupResolution(
       entityName: entity.name,
       description: entity.description,
       matchedBy: 'crosswalk',
-      ...splitEnrichment(entity, crosswalk.idnos),
+      ...splitEnrichment(entity, idnos),
     };
   }
 
-  const entityName = crosswalk.candidate?.primaryName ?? input.label;
+  const entityName = candidateMeta?.primaryName ?? input.label;
   return {
     action: 'mint',
     entityName,
-    idnos: crosswalk.idnos,
-    description: input.description ?? crosswalk.candidate?.description,
-    startYear: crosswalk.candidate?.startYear,
-    endYear: crosswalk.candidate?.endYear,
+    idnos,
+    description: input.description ?? candidateMeta?.description,
+    startYear: candidateMeta?.startYear,
+    endYear: candidateMeta?.endYear,
     romanizedName:
-      romanizeFromAuthorityMetadata(crosswalk.candidate, entityName, deps.projectLang) ??
-      undefined,
+      romanizeFromAuthorityMetadata(candidateMeta, entityName, deps.projectLang) ?? undefined,
   };
 }
 
@@ -521,6 +530,42 @@ export async function applyLookupResolution(
   await deps.store.saveEntities(doc);
   await logDecision(input, deps, kind, id);
   return { status: 'linked', key: id, entityName: plan.entityName, wasCreated: true };
+}
+
+/**
+ * Attach extra authority URIs (checked alongside a project/central entity
+ * that's linked directly, bypassing the plan/mint pipeline) onto that entity
+ * as additional idnos. Existing same-type idnos are left untouched.
+ */
+export async function appendExtraAuthorityIds(
+  key: string,
+  extraUris: string[],
+  deps: LookupResolveDeps,
+): Promise<void> {
+  const refs = extraUris.map(parseAuthorityUri).filter((ref): ref is ParsedAuthorityRef => !!ref);
+  if (refs.length === 0) return;
+
+  const doc = await deps.store.loadEntities();
+  const element = findEntity(doc, key);
+  if (!element) return;
+
+  const existing: AuthorityId[] = [];
+  const idnoEls = element.getElementsByTagName('idno');
+  for (let i = 0; i < idnoEls.length; i++) {
+    const idnoEl = idnoEls.item(i)!;
+    existing.push({
+      type: idnoEl.getAttribute('type') ?? 'unknown',
+      value: idnoEl.textContent?.trim() ?? '',
+    });
+  }
+
+  const toAdd = dedupeIdnos(refs.map((ref) => ({ type: ref.idnoType, value: ref.value }))).filter(
+    (idno) => !existing.some((own) => idnoEquals(own, idno)),
+  );
+  if (toAdd.length === 0) return;
+
+  appendAuthorityIdnos(doc, element, toAdd);
+  await deps.store.saveEntities(doc);
 }
 
 /**

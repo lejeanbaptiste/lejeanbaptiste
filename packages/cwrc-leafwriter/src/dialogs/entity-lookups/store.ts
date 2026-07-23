@@ -50,6 +50,10 @@ isUserAuthenticatedAtom.debugLabel = 'isUserAuthenticated.Atom';
 export const selectedAtom = atomWithReset<EntryLink | null>(null);
 selectedAtom.debugLabel = 'selected.Atom';
 
+/** Checkbox-selected candidates (keyed by uri), for linking several authority entries to one entity. */
+export const checkedEntriesAtom = atomWithReset<Map<string, EntryLink>>(new Map());
+checkedEntriesAtom.debugLabel = 'checkedEntries.Atom';
+
 export const manualInputAtom = atom<string>('');
 manualInputAtom.debugLabel = 'manualInput.Atom';
 

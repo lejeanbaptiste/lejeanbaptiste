@@ -1,3 +1,14 @@
+import {
+  makeMergeSuggestion,
+  makeMergeSuggestionResolution,
+  readMergeSuggestionResolutions as readMergeSuggestionResolutionsFile,
+  readMergeSuggestions as readMergeSuggestionsFile,
+  recordMergeSuggestion as recordMergeSuggestionFile,
+  recordMergeSuggestionResolution as recordMergeSuggestionResolutionFile,
+  type CentralMergeSuggestion,
+  type MergeSuggestionAction,
+  type MergeSuggestionResolution,
+} from './centralMergeSuggestions';
 import { appendRecords, type DecisionRecord } from './decisionLog';
 import {
   createEntitiesScaffold,
@@ -211,6 +222,44 @@ export class EntityStore {
   /** Persist the applied-order-id set for this project checkout. */
   async writeAppliedOrderIds(applied: Set<string>): Promise<void> {
     await writeAppliedOrderIds(this.api, this.projectLjbDir, applied);
+  }
+
+  /**
+   * Raise a merge docket suggestion beside `entities.xml`: two central ids
+   * that might be duplicates (surfaced by a PEDB merge whose two sides
+   * mapped the same user to different central ids). A no-op for a
+   * degenerate same-id pair.
+   */
+  async recordMergeSuggestion(
+    sourceDbId: string,
+    centralIds: [string, string],
+  ): Promise<CentralMergeSuggestion | null> {
+    if (centralIds[0] === centralIds[1]) return null;
+    const suggestion = makeMergeSuggestion(sourceDbId, centralIds);
+    await recordMergeSuggestionFile(this.api, this.entitiesPath, suggestion);
+    return suggestion;
+  }
+
+  /** All merge-docket suggestions ever raised beside `entities.xml`. */
+  async readMergeSuggestions(): Promise<CentralMergeSuggestion[]> {
+    return readMergeSuggestionsFile(this.api, this.entitiesPath);
+  }
+
+  /** Every recorded decision (merged/ignored) on a merge-docket suggestion. */
+  async readMergeSuggestionResolutions(): Promise<MergeSuggestionResolution[]> {
+    return readMergeSuggestionResolutionsFile(this.api, this.entitiesPath);
+  }
+
+  /** Record the user's decision on a merge-docket suggestion, so it never resurfaces. */
+  async recordMergeSuggestionResolution(
+    suggestionId: string,
+    action: MergeSuggestionAction,
+  ): Promise<void> {
+    await recordMergeSuggestionResolutionFile(
+      this.api,
+      this.entitiesPath,
+      makeMergeSuggestionResolution(suggestionId, action),
+    );
   }
 
   /** Append decision records to the JSONL log, creating it if needed. */
