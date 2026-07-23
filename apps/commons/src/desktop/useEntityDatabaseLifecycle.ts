@@ -6,7 +6,6 @@ import {
   sweepProjectOrphans,
 } from '../../../../packages/cwrc-leafwriter/src/autoTagging/entityDatabaseCheck';
 import { resolveEntityStorePaths } from '../../../../packages/cwrc-leafwriter/src/autoTagging/entityStoreResolve';
-import { removeOrphanProjectEntitiesFile } from '@src/desktop/entityDatabaseCleanup';
 import { useAppState } from '@src/overmind';
 import { isDesktop } from '@src/types/desktop';
 import { useCallback, useEffect, useRef } from 'react';
@@ -21,19 +20,12 @@ export const useEntityDatabaseLifecycle = () => {
   const resolveEntitiesPath = useCallback((): string | null => {
     if (!isDesktop() || !rootPath) return null;
     try {
-      const globals = window as unknown as {
-        __ljbLspProject?: { entityDbFolder?: string | null; entityStore?: 'central' | 'project' };
-      };
-      const paths = resolveEntityStorePaths({
-        projectRoot: rootPath,
-        entityStore: config?.entityStore ?? globals.__ljbLspProject?.entityStore,
-        centralFolder: globals.__ljbLspProject?.entityDbFolder ?? null,
-      });
+      const paths = resolveEntityStorePaths({ projectRoot: rootPath });
       return paths.entitiesPath;
     } catch {
       return null;
     }
-  }, [config?.entityStore, rootPath]);
+  }, [rootPath]);
 
   useEffect(() => {
     if (!isDesktop() || !projectFilePath || !rootPath) return;
@@ -49,16 +41,6 @@ export const useEntityDatabaseLifecycle = () => {
       // key propagation knows every project tree using this entities.xml.
       await store.registerProjectInRegistry().catch(() => undefined);
 
-      if (config?.entityStore !== 'project') {
-        const globals = window as unknown as {
-          __ljbLspProject?: { entityDbFolder?: string | null };
-        };
-        const centralFolder =
-          globals.__ljbLspProject?.entityDbFolder ??
-          (await window.electronAPI!.getEntityDbFolder?.().catch(() => null));
-        await removeOrphanProjectEntitiesFile(rootPath, centralFolder);
-      }
-
       const checkApi = {
         listProjectXmlFiles: (path: string) => window.electronAPI!.listProjectXmlFiles(path),
         readFile: (path: string) => window.electronAPI!.readFile(path),
@@ -69,7 +51,15 @@ export const useEntityDatabaseLifecycle = () => {
           window.electronAPI!.updateProjectFileConfig(path, patch),
       };
 
-      await runEntityDatabaseCheck(
+      // eslint-disable-next-line no-console
+      console.info('[entity-db-check] running check for project', {
+        projectFilePath,
+        projectRoot: rootPath,
+        projectDatabaseId: config?.entityDatabaseId,
+        entitiesPath: store.entitiesPath,
+      });
+
+      const checkResult = await runEntityDatabaseCheck(
         store,
         {
           projectDatabaseId: config?.entityDatabaseId,
@@ -78,6 +68,9 @@ export const useEntityDatabaseLifecycle = () => {
         },
         checkApi,
       );
+
+      // eslint-disable-next-line no-console
+      console.info('[entity-db-check] check completed', { status: checkResult.status, databaseId: checkResult.databaseId });
 
       // Replay any merge/delete orders recorded elsewhere (other machine, fresh
       // clone, a tree the eager crawl couldn't see). Idempotent; safe to run on
@@ -126,7 +119,7 @@ export const useEntityDatabaseLifecycle = () => {
         // never block project open on the orphan sweep
       }
     })();
-  }, [config?.entityDatabaseId, config?.entityStore, projectFilePath, rootPath]);
+  }, [config?.entityDatabaseId, projectFilePath, rootPath]);
 
   useEffect(() => {
     if (!isDesktop() || !window.electronAPI?.onExternalFileChange) return;

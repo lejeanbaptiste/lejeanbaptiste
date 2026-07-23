@@ -121,12 +121,20 @@ export class EntityStore {
   /**
    * Load the entity file, creating `entities.xml` from the scaffold on first
    * use. Returns the parsed document.
+   *
+   * `pathExists` returning false is treated as "genuinely missing, safe to
+   * scaffold" - but a synced/network/cloud folder (exactly what the central
+   * database commonly lives in) can report false transiently while still
+   * mounting, and a scaffolded empty file here gets silently overwritten
+   * back onto disk by the next `saveEntities` call, destroying whatever was
+   * really there. A single false reading is not enough evidence of "missing"
+   * to justify that - retry briefly before concluding it's real.
    */
   async loadEntities(): Promise<Document> {
     this.assertEntitiesPathForMode();
     const entitiesDir = this.entitiesPath.replace(/[/\\][^/\\]+$/, '');
     await this.api.ensureDirectory(entitiesDir);
-    if (!(await this.api.pathExists(this.entitiesPath))) {
+    if (!(await this.existsWithRetry(this.entitiesPath))) {
       await this.api.armOwnWrite?.(this.entitiesPath);
       await this.api.writeFile(this.entitiesPath, createEntitiesScaffold());
       await this.api.notifyOwnWrite?.(this.entitiesPath);
@@ -137,6 +145,16 @@ export class EntityStore {
       throw new Error(`Not an entity database file: ${this.entitiesPath}`);
     }
     return doc;
+  }
+
+  private async existsWithRetry(filePath: string): Promise<boolean> {
+    if (await this.api.pathExists(filePath)) return true;
+    const delays = [200, 500, 1000, 2000];
+    for (const delay of delays) {
+      await new Promise((resolve) => setTimeout(resolve, delay));
+      if (await this.api.pathExists(filePath)) return true;
+    }
+    return false;
   }
 
   /** Write the entity document back to disk. */
@@ -238,8 +256,9 @@ export interface DesktopEntityStoreGlobals {
   electronAPI?: Partial<EntityFileApi>;
   __ljbLspProject?: {
     projectRoot?: string;
-    entityStore?: EntityStoreMode;
     entityDbFolder?: string | null;
+    /** When true, this project's PEDB is auto-synced with the CEDB. */
+    syncToCentral?: boolean;
   };
 }
 
@@ -294,7 +313,6 @@ export function entityStoreFromDesktop(): EntityStore | null {
   try {
     const paths = resolveEntityStorePaths({
       projectRoot: root,
-      entityStore: project?.entityStore,
       centralFolder: project?.entityDbFolder ?? null,
     });
     return EntityStore.fromPaths(api, paths);

@@ -8,6 +8,7 @@ import { useEffect, useRef } from 'react';
 import { useTranslation } from 'react-i18next';
 
 import { parseIsoYear } from '../../../../packages/cwrc-leafwriter/src/autoTagging/entities';
+import { computeBridgeInbox, loadBridgeContext, promoteEntities, syncEntities } from './entityDb/bridge';
 import { getActiveTabXml } from './fileMetadata';
 import { buildProjectSchemas, type ProjectBundle } from './projectFile';
 import { getProjectSourceLanguage } from './projectLanguage';
@@ -20,7 +21,6 @@ import {
   writeProjectMetadata,
 } from './projectMetadata';
 import { invalidateMetadataDialogStateCache, warmMetadataDialogStateCache } from './projectMetadataDialogState';
-import { removeOrphanProjectEntitiesFile } from './entityDatabaseCleanup';
 import {
   clearProjectMetadataSession,
   getProjectMetadataSession,
@@ -361,14 +361,14 @@ export const useNativeDialogBridge = () => {
               applyToDocuments,
               translationAlignmentUnit,
               translationLanguages,
-              entityStore,
+              syncToCentral,
             } = (args ?? {}) as {
               values?: Record<string, string>;
               custom?: Array<{ path: string; label: string; value: string }>;
               applyToDocuments?: boolean;
               translationAlignmentUnit?: 'div' | 'p';
               translationLanguages?: Array<{ code: string; label: string }>;
-              entityStore?: 'central' | 'project';
+              syncToCentral?: boolean;
             };
             const dialogId = getStringArg(args, 'dialogId');
             if (!dialogId) {
@@ -394,16 +394,41 @@ export const useNativeDialogBridge = () => {
               })),
             };
 
+            let syncReport: { broken: number; conflicts: number } | undefined;
             try {
               await writeProjectMetadata(bundle, draft);
-              if (entityStore && electronAPI.updateProjectFileConfig) {
+              if (typeof syncToCentral === 'boolean' && electronAPI.updateProjectFileConfig) {
+                // Turning sync on for the first time bulk-promotes/syncs
+                // everything before persisting the flag - this must run here
+                // (the main window), not in the settings dialog's own
+                // separate BrowserWindow, which has no __ljbLspProject global
+                // for entityStoreFromDesktop()/centralEntityStoreFromDesktop()
+                // to read.
+                if (syncToCentral && bundle.config.syncToCentral !== true) {
+                  const availability = await loadBridgeContext();
+                  if (!availability.available) {
+                    return { ok: false, error: availability.reason };
+                  }
+                  // First-time bulk sync rewrites the whole central database
+                  // file - snapshot it first so a bad sync is always a
+                  // one-click Time Machine restore, not a support incident.
+                  const centralFolder = availability.context.centralStore.centralFolder;
+                  if (centralFolder && electronAPI.createTimeMachineSnapshot) {
+                    await electronAPI
+                      .createTimeMachineSnapshot(centralFolder, 'Central database (auto, before sync)')
+                      .catch(() => undefined);
+                  }
+                  const report = await computeBridgeInbox(availability.context);
+                  await promoteEntities(availability.context, report.unlinked.map((item) => item.id));
+                  await syncEntities(
+                    availability.context,
+                    report.syncable.map((item) => ({ pedbId: item.id, centralId: item.centralId })),
+                  );
+                  syncReport = { broken: report.broken.length, conflicts: report.conflicts.length };
+                }
                 await electronAPI.updateProjectFileConfig(bundle.projectFilePath, {
-                  entityStore,
+                  syncToCentral,
                 });
-              }
-              if (entityStore === 'central') {
-                const centralFolder = await electronAPI.getEntityDbFolder?.();
-                await removeOrphanProjectEntitiesFile(bundle.rootPath, centralFolder);
               }
               invalidateMetadataDialogStateCache(bundle.projectFilePath);
               void warmMetadataDialogStateCache(bundle, session.mode);
@@ -513,7 +538,7 @@ export const useNativeDialogBridge = () => {
               });
             }
 
-            return { ok: true, summary };
+            return { ok: true, summary, syncReport };
           }
           case 'cancelProjectMetadata': {
             const dialogId = getStringArg(args, 'dialogId');

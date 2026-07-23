@@ -14,7 +14,7 @@ import {
   systemPreferences,
 } from 'electron';
 import { fork, type ChildProcess } from 'child_process';
-import { existsSync } from 'fs';
+import { existsSync, statSync } from 'fs';
 import fs from 'fs/promises';
 import path from 'path';
 import {
@@ -44,6 +44,7 @@ import {
   getEncoderName,
   getEntityDbFolder,
   getLastDialogDir,
+  getLocalAuthorityAssetsDir,
   getRememberWorkspaceOnStartup,
   getValidLastProjectFile,
   setLastDialogDir,
@@ -162,7 +163,7 @@ interface AiTranslationResult {
   translationXml?: string;
 }
 
-type ImportableDocumentFormat = 'txt' | 'md' | 'rtf' | 'docx' | 'odt';
+type ImportableDocumentFormat = 'txt' | 'md' | 'rtf' | 'docx' | 'odt' | 'xml';
 
 interface DocumentImportSource {
   format: ImportableDocumentFormat;
@@ -177,6 +178,7 @@ const getImportableDocumentFormat = (filePath: string): ImportableDocumentFormat
   if (extension === '.rtf') return 'rtf';
   if (extension === '.docx') return 'docx';
   if (extension === '.odt') return 'odt';
+  if (extension === '.xml') return 'xml';
   return null;
 };
 
@@ -572,6 +574,7 @@ let serverProcess: ChildProcess | null = null;
 let openFileWatcher: OpenFileWatcher | null = null;
 let activeProjectRoot: string | null = null;
 const approvedRendererReadRoots = new Set<string>();
+const approvedRendererWriteRoots = new Set<string>();
 
 const setActiveProjectRoot = (rootPath: string | null): void => {
   activeProjectRoot = rootPath ? path.resolve(rootPath) : null;
@@ -591,13 +594,23 @@ const assertRendererWritePath = async (candidate: string): Promise<void> => {
   if (activeProjectRoot) roots.push(activeProjectRoot);
   const entityDbFolder = await getEntityDbFolder();
   if (entityDbFolder) roots.push(entityDbFolder);
-  if (!roots.some((root) => isPathWithin(root, candidate))) {
-    throw new Error('Renderer file writes are restricted to the active project and app data folders.');
-  }
+  if (roots.some((root) => isPathWithin(root, candidate))) return;
+  if ([...approvedRendererWriteRoots].some((root) => isPathWithin(root, candidate))) return;
+  console.error('[writeFile] rejected path outside approved roots:', {
+    candidate,
+    activeProjectRoot,
+    roots,
+    approvedRendererWriteRoots: [...approvedRendererWriteRoots],
+  });
+  throw new Error('Renderer file writes are restricted to the active project and app data folders.');
 };
 
 const approveRendererReadRoot = (root: string): void => {
   approvedRendererReadRoots.add(path.resolve(root));
+};
+
+const approveRendererWriteRoot = (root: string): void => {
+  approvedRendererWriteRoots.add(path.resolve(root));
 };
 
 const assertRendererReadPath = async (candidate: string): Promise<void> => {
@@ -607,6 +620,15 @@ const assertRendererReadPath = async (candidate: string): Promise<void> => {
   if (entityDbFolder) roots.push(entityDbFolder);
   if (roots.some((root) => isPathWithin(root, candidate))) return;
   if ([...approvedRendererReadRoots].some((root) => isPathWithin(root, candidate))) return;
+  // Logged rather than only thrown: this has been hard to pin down from user
+  // reports alone (e.g. auto-tag/disambiguate on a fresh file), so capture
+  // exactly what was rejected against what was allowed for the next repro.
+  console.error('[readFile] rejected path outside approved roots:', {
+    candidate,
+    activeProjectRoot,
+    roots,
+    approvedRendererReadRoots: [...approvedRendererReadRoots],
+  });
   throw new Error('Renderer file reads are restricted to approved application paths.');
 };
 
@@ -723,6 +745,9 @@ const collectImportSourcesFromPath = async (
   if (stat.isFile()) {
     const format = getImportableDocumentFormat(entryPath);
     if (!format) return [];
+    if (format === 'xml' && path.basename(entryPath).toLowerCase() === 'entities.xml') {
+      return [];
+    }
 
     return [
       {
@@ -1479,11 +1504,11 @@ const registerIpcHandlers = () => {
       filters: [
         {
           name: 'Importable documents',
-          extensions: ['txt', 'md', 'markdown', 'rtf', 'docx', 'odt'],
+          extensions: ['txt', 'md', 'markdown', 'rtf', 'docx', 'odt', 'xml'],
         },
         { name: 'All files', extensions: ['*'] },
       ],
-      message: 'Choose text, Markdown, RTF files, or folders to import.',
+      message: 'Choose text, Markdown, RTF, Word, ODT, or XML files (or folders) to import.',
       properties: ['openFile', 'openDirectory', 'multiSelections'],
       title: 'Import documents',
       defaultPath: await getDialogDefaultPath(),
@@ -1508,6 +1533,9 @@ const registerIpcHandlers = () => {
     return { filePath, filename: 'untitled.xml' };
   });
 
+  // Reads apps/desktop/package.json version (stamped from the release tag in CI).
+  ipcMain.handle('getAppVersion', () => app.getVersion());
+
   ipcMain.handle('getEncoderName', async () => getEncoderName());
 
   ipcMain.handle('setEncoderName', async (_event, name: string) => {
@@ -1517,8 +1545,8 @@ const registerIpcHandlers = () => {
   ipcMain.handle('getEntityDbFolder', async () => getEntityDbFolder());
 
   const getAuthorityDbDir = async (): Promise<string | null> => {
-    const folder = await getEntityDbFolder();
-    return folder?.trim() ? path.join(folder, AUTHORITY_DB_DIRNAME) : null;
+    const folder = await getLocalAuthorityAssetsDir();
+    return path.join(folder, AUTHORITY_DB_DIRNAME);
   };
 
   ipcMain.handle('authorityDb:statuses', async () =>
@@ -1580,8 +1608,8 @@ const registerIpcHandlers = () => {
       detail:
         'This project uses Chinese as its source language. LEAF-Writer can download ' +
         'CBDB (China Biographical Database, ~600 MB) and the DILA Buddhist Studies ' +
-        'authorities (~85 MB), plus compiled Wikidata packs, for automated tagging. They are stored next to your ' +
-        'central entity database and download in the background.',
+        'authorities (~85 MB), plus compiled Wikidata packs, for automated tagging. They are ' +
+        'stored locally on this machine (not synced with your entity database) and download in the background.',
     });
     if (result.response !== 0) {
       await fs.mkdir(baseDir, { recursive: true });
@@ -1595,10 +1623,11 @@ const registerIpcHandlers = () => {
     return 'accepted';
   });
 
-  const getEntityDbFolderOrNull = async () => {
-    const folder = await getEntityDbFolder();
-    return folder?.trim() ? folder : null;
-  };
+  // Named "OrNull" for historical reasons (it used to wrap getEntityDbFolder,
+  // which really can be unconfigured) - getLocalAuthorityAssetsDir always
+  // resolves, but every call site below already handles a null folder, so
+  // this stays a thin passthrough rather than touching every handler.
+  const getEntityDbFolderOrNull = async () => getLocalAuthorityAssetsDir();
 
   ipcMain.handle('authorityPack:statuses', async () => {
     const folder = await getEntityDbFolderOrNull();
@@ -1681,21 +1710,15 @@ const registerIpcHandlers = () => {
   });
 
   ipcMain.handle('authorityLifecycle:revealFolder', async () => {
+    // Reveals the local authority-assets folder (packs/databases), not the
+    // entity database folder - these live separately now, see
+    // getLocalAuthorityAssetsDir in projectPrefs.ts.
     const folder = await getEntityDbFolderOrNull();
     if (!folder) return false;
-    // shell.showItemInFolder needs the target file to literally exist - it
-    // fails silently on Windows (unlike macOS, which falls back to the
-    // folder) when entities.xml hasn't been created yet. Reveal the folder
-    // itself in that case so the button never appears to do nothing.
-    const entitiesPath = path.join(folder, 'entities.xml');
-    if (existsSync(entitiesPath)) {
-      shell.showItemInFolder(entitiesPath);
-    } else {
-      const error = await shell.openPath(folder);
-      if (error) {
-        console.error('Failed to reveal entity database folder:', error);
-        return false;
-      }
+    const error = await shell.openPath(folder);
+    if (error) {
+      console.error('Failed to reveal authority assets folder:', error);
+      return false;
     }
     return true;
   });
@@ -1791,10 +1814,10 @@ const registerIpcHandlers = () => {
             : 'Download Chinese authority databases?';
       const fallbackDetail =
         profile === 'japanese'
-          ? 'This project uses Japanese as its source language. LEAF-Writer can download NDL and Wikidata authority packs for automated tagging. They are stored next to your central entity database.'
+          ? 'This project uses Japanese as its source language. LEAF-Writer can download NDL and Wikidata authority packs for automated tagging. They are stored locally on this machine, not synced with your entity database.'
           : profile === 'tibetan'
-            ? 'This project uses Tibetan as its source language. LEAF-Writer can download Wikidata authority packs for automated tagging. They are stored next to your central entity database.'
-            : 'This project uses Chinese as its source language. LEAF-Writer can download CBDB (China Biographical Database, ~600 MB), the DILA Buddhist Studies authorities (~85 MB), and Wikidata authority packs for automated tagging. They are stored next to your central entity database.';
+            ? 'This project uses Tibetan as its source language. LEAF-Writer can download Wikidata authority packs for automated tagging. They are stored locally on this machine, not synced with your entity database.'
+            : 'This project uses Chinese as its source language. LEAF-Writer can download CBDB (China Biographical Database, ~600 MB), the DILA Buddhist Studies authorities (~85 MB), and Wikidata authority packs for automated tagging. They are stored locally on this machine, not synced with your entity database.';
 
       const result = await dialog.showMessageBox(mainWindow, {
         type: 'question',
@@ -1894,13 +1917,34 @@ const registerIpcHandlers = () => {
     await setEntityDbFolder(folder);
   });
 
+  // Merging/deleting entities propagates the key remap across every project
+  // registered against the shared entity database (entity-projects.json),
+  // not just the one currently open - so those roots need read/write
+  // approval too. The renderer resolves them from that registry file, which
+  // is itself only readable via the same restricted API, and each is
+  // re-checked here as a real existing directory before being trusted.
+  ipcMain.handle('approveEntityRegistryRoots', async (_event, roots: unknown) => {
+    if (!Array.isArray(roots)) return false;
+    for (const root of roots) {
+      if (typeof root !== 'string' || !root.trim()) continue;
+      try {
+        if (!statSync(root).isDirectory()) continue;
+      } catch {
+        continue;
+      }
+      approveRendererReadRoot(root);
+      approveRendererWriteRoot(root);
+    }
+    return true;
+  });
+
   ipcMain.handle('pickEntityDbFolder', async () => {
     const parent = getTopNativeDialogWindow() ?? mainWindow ?? undefined;
     const options: Electron.OpenDialogOptions = {
       properties: ['openDirectory', 'createDirectory'],
       title: 'Choose entity database folder',
       message:
-        'This folder will hold your entity database (entities.xml). You can keep your projects here too.',
+        'Prefer a folder synced by Dropbox, iCloud, or similar so your entity database can travel between machines. You can keep projects here too.',
       defaultPath: await getDialogDefaultPath(),
     };
     const result = parent

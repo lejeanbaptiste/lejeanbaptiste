@@ -32,7 +32,7 @@ Each sample exercises a different profile feature:
 1. **`KR1a0145_002.txt`** — Kanseki Repository / mandoku format. Org-mode metadata lines (`#+TITLE:`, `#+PROPERTY: JUAN …`), `<pb:KR1a0145_WYG_002-1a>` page-break markers, `¶` end-of-line pilcrows where a *missing* pilcrow means the paragraph continues across the page break. Needs: line-pattern rules → `<pb/>`, metadata capture → header, pilcrow-based line joining.
 2. **`nihonshoki.md`** — Wikisource-style markdown. `{{header}}` template block carrying title/section metadata (currently passes through the md stripper as literal text — needs a rule), blank-line paragraphs, `〈…〉` interlinear notes and `★`/`■` editorial symbols as inline-rule candidates.
 3. **`MKBG OCR.docx`** — OCR'd Word document. Needs: docx extraction, heading/style mapping, OCR-noise tolerance (running headers, loose page numbers → `<pb/>` or drop).
-4. **`HanShu_bio_007_j_34_HanXin_clean.xml`** — already-structured custom XML. Out of scope for blind import; detect "already XML" and skip with a notice. Long-term: element-mapping rules (their `<note type="comm">` → TEI `<note>`).
+4. **`HanShu_bio_007_j_34_HanXin_clean.xml`** — already-structured custom XML. Root is not TEI/Orlando, so v1 XML import rejects it with a clear error. Long-term: element-mapping rules (their `<note type="comm">` → TEI `<note>`).
 
 ## Architecture
 
@@ -64,8 +64,8 @@ interface IrBlock {
 - **md** — grow the current regex stripper into (or replace with) `markdown-it` token walking; capture front matter and `{{…}}` blocks into `metadata`.
 - **rtf** — current stripper is adequate for blind import.
 - **docx** — `mammoth` (pure JS) with a transform that keeps style names in the IR.
-- **odt** — deferred; `content.xml` is parseable when a corpus demands it.
-- **xml** — detect, skip, report.
+- **odt** — plain-text extraction (supported in Phase 1 path).
+- **xml (v1)** — same-family TEI/Orlando only: demote `@key` to `@ana` (`ljb-former-key:`), attach project schema PIs, merge edition metadata, provenance note. Skip `entities.xml`. Element remapping still deferred.
 
 ### 2. Import profile (the rule set)
 
@@ -128,7 +128,8 @@ Engine properties:
 - **Phase 2 — Profile engine + manual profiles.** Rule vocabulary, IR, save/load, review panel with preview. Acceptance: hand-written mandoku profile imports `KR1a0145_002.txt` with `<pb/>` elements and correctly joined lines.
 - **Phase 3 — docx extraction.** mammoth with style names; style-name rules. Acceptance: `MKBG OCR.docx` imports with headings mapped and page-number noise handled.
 - **Phase 4 — AI inference.** Sampling, prompt, schema validation, retry, review-panel wiring. Acceptance: analyzing `KR1a0145_002.txt` yields a profile matching (± one tweak) the Phase 2 hand-written one.
-- **Deferred:** odt; element-mapping for already-XML sources (HanShu case); docx footnotes/runs; tables/images; Zotero-linked citation recognition.
+- **Deferred:** full element-mapping profiles for exotic XML (HanShu custom tags → TEI); docx footnotes/runs; tables/images; Zotero-linked citation recognition.
+- **XML import (v1, 2026-07-23):** `.xml` is accepted by Import Documents. Same-family only (TEI↔TEI including jTEI; Orlando↔Orlando). Keeps body structure; attaches project schema PIs; demotes `@key` → `@ana` token `ljb-former-key:…` with a warning dialog; merges project edition metadata; adds a short `sourceDesc` provenance note. Cross-family conversion and element remapping still deferred.
 
 ## Open questions
 

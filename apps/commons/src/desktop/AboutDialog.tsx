@@ -9,8 +9,8 @@ import {
   Typography,
 } from '@mui/material';
 import { useActions } from '@src/overmind';
+import { useEffect, useState } from 'react';
 
-const APP_VERSION = '0.0.1';
 const PROJECT_URL = 'https://github.com/lejeanbaptiste/lejeanbaptiste';
 const BUG_REPORT_URL =
   'https://github.com/lejeanbaptiste/lejeanbaptiste/issues/new?template=bug_report.md';
@@ -22,6 +22,20 @@ interface AboutDialogProps {
 
 export const AboutDialog = ({ onClose, open }: AboutDialogProps) => {
   const { openDialog } = useActions().ui;
+  const [appVersion, setAppVersion] = useState<string | null>(null);
+
+  useEffect(() => {
+    if (!open) return;
+    let cancelled = false;
+    void window.electronAPI?.getAppVersion?.().then((version) => {
+      if (!cancelled && typeof version === 'string' && version.trim()) {
+        setAppVersion(version.trim());
+      }
+    });
+    return () => {
+      cancelled = true;
+    };
+  }, [open]);
 
   const handlePrivacy = () => {
     onClose();
@@ -39,9 +53,11 @@ export const AboutDialog = ({ onClose, open }: AboutDialogProps) => {
           <Link href={PROJECT_URL} rel="noopener noreferrer" target="_blank" variant="body2">
             Project website
           </Link>
-          <Typography color="text.secondary" variant="caption">
-            Version {APP_VERSION}
-          </Typography>
+          {appVersion && (
+            <Typography color="text.secondary" variant="caption">
+              Version {appVersion}
+            </Typography>
+          )}
           <Stack direction="row" flexWrap="wrap" gap={2}>
             <Link component="button" onClick={handlePrivacy} variant="body2">
               Privacy policy

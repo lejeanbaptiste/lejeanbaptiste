@@ -181,6 +181,8 @@ export interface ElectronAPI {
   pickSchemaFiles: () => Promise<PickSchemaFilesResult | null>;
   pickDocumentImportSources: () => Promise<DocumentImportSource[] | null>;
   createTempDocument: (content: string) => Promise<{ filePath: string; filename: string }>;
+  /** Desktop app version from package.json / app.getVersion(). */
+  getAppVersion: () => Promise<string>;
   getEncoderName: () => Promise<string>;
   setEncoderName: (name: string) => Promise<void>;
   readAchievementsFile: () => Promise<string | null>;
@@ -212,6 +214,7 @@ export interface ElectronAPI {
   getEntityDbFolder: () => Promise<string | null>;
   setEntityDbFolder: (folder: string | null) => Promise<void>;
   pickEntityDbFolder: () => Promise<string | null>;
+  approveEntityRegistryRoots: (roots: string[]) => Promise<boolean>;
   moveEntityDbFolder: () => Promise<{
     ok: boolean;
     cancelled?: boolean;
@@ -423,6 +426,7 @@ const electronAPI: ElectronAPI = {
   pickSchemaFiles: () => ipcRenderer.invoke('pickSchemaFiles'),
   pickDocumentImportSources: () => ipcRenderer.invoke('pickDocumentImportSources'),
   createTempDocument: (content: string) => ipcRenderer.invoke('createTempDocument', content),
+  getAppVersion: () => ipcRenderer.invoke('getAppVersion'),
   getEncoderName: () => ipcRenderer.invoke('getEncoderName'),
   setEncoderName: (name: string) => ipcRenderer.invoke('setEncoderName', name),
   readAchievementsFile: () => ipcRenderer.invoke('readAchievementsFile'),
@@ -444,6 +448,8 @@ const electronAPI: ElectronAPI = {
   getEntityDbFolder: () => ipcRenderer.invoke('getEntityDbFolder'),
   setEntityDbFolder: (folder: string | null) => ipcRenderer.invoke('setEntityDbFolder', folder),
   pickEntityDbFolder: () => ipcRenderer.invoke('pickEntityDbFolder'),
+  approveEntityRegistryRoots: (roots: string[]) =>
+    ipcRenderer.invoke('approveEntityRegistryRoots', roots),
   moveEntityDbFolder: () => ipcRenderer.invoke('moveEntityDbFolder'),
   pickAuthorityPacksSource: () => ipcRenderer.invoke('pickAuthorityPacksSource'),
   authorityDbStatuses: () => ipcRenderer.invoke('authorityDb:statuses'),

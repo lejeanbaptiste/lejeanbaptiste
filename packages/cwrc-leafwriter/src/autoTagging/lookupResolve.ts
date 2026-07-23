@@ -13,6 +13,7 @@
 import type { NamedEntityType } from '../types';
 import { autoRomanize } from '../utilities/romanize';
 import { LOOKUP_TYPE_TO_KIND } from '../services/entity-database-lookup';
+import { autoSyncEntityToCentral } from './autoSync';
 import {
   addEntity,
   appendAuthorityIdnos,
@@ -516,6 +517,7 @@ export async function applyLookupResolution(
     },
     LJB_LOOKUP_RESP,
   );
+  await autoSyncEntityToCentral(doc, id);
   await deps.store.saveEntities(doc);
   await logDecision(input, deps, kind, id);
   return { status: 'linked', key: id, entityName: plan.entityName, wasCreated: true };
@@ -599,6 +601,7 @@ export async function linkLocalEntityWithoutAuthority(
     },
     LJB_LOOKUP_RESP,
   );
+  await autoSyncEntityToCentral(doc, id);
   await deps.store.saveEntities(doc);
   await logDecision(input, deps, kind, id);
   return { status: 'linked', key: id, entityName: surface, wasCreated: true };

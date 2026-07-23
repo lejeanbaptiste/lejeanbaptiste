@@ -24,6 +24,7 @@ export interface AuthorityPrefetchSession {
   getEntitiesDocument(): Document | null;
   loadEntities(): Promise<Document>;
   savePendingCache(): Promise<void>;
+  candidateSearchCentralContext(): Promise<{ doc: Document; userStableId: string } | null>;
 }
 
 export interface AuthorityPrefetchHandle {
@@ -121,6 +122,7 @@ export function runAuthorityPrefetch(
       if (session.getPendingCandidates(group.tag, group.surface) == null) {
         const entitiesDoc = session.getEntitiesDocument() ?? (await session.loadEntities());
         if (stopped) return;
+        const central = (await session.candidateSearchCentralContext()) ?? undefined;
         const rows = await buildDisambiguationCandidates(
           entitiesDoc,
           group.tag,
@@ -149,6 +151,10 @@ export function runAuthorityPrefetch(
                   false,
                   cachedPackReader(),
                   session.dilaPlaceDetailCache ?? undefined,
+                  undefined,
+                  undefined,
+                  undefined,
+                  central,
                 );
                 if (stopped) return;
                 session.rememberPendingCandidates(group.tag, group.surface, refreshed);
@@ -158,6 +164,8 @@ export function runAuthorityPrefetch(
               }
             })();
           },
+          undefined,
+          central,
         );
         if (stopped) return;
         session.rememberPendingCandidates(group.tag, group.surface, rows);

@@ -91,5 +91,10 @@ export async function applyKeyRemapAcrossProjects(
   remap: Record<string, string | null>,
 ): Promise<KeyRemapSummary> {
   const roots = await store.registryProjectRoots();
+  // Reads/writes are normally restricted to the one currently-open project;
+  // this operation deliberately touches every other project registered
+  // against the shared entity database too, so those roots need explicit
+  // one-time approval from the main process first.
+  await window.electronAPI?.approveEntityRegistryRoots?.(roots);
   return applyKeyRemapToRoots(roots, store.entitiesPath, remap, desktopFileOps());
 }

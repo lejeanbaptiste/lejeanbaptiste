@@ -81,6 +81,7 @@ function createSession() {
     cache: { throttle: jest.fn().mockResolvedValue(undefined) },
     disambiguationAiCache: null,
     getDocument: jest.fn().mockResolvedValue(entitiesDoc),
+    candidateSearchCentralContext: jest.fn().mockResolvedValue(null),
   } as any;
 }
 

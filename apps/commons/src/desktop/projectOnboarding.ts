@@ -4,7 +4,7 @@ import { metadataFileExists } from './projectMetadata';
 import { getProjectSourceLanguage, projectRequiresSourceLanguage } from './projectLanguage';
 import { openNativeProjectMetadata } from './openNativeProjectMetadata';
 import { openNativeSchemaSetup } from './openNativeSchemaSetup';
-import { ensureEntityDbFolder, projectHasEntityStorePreference } from './entityDbOnboarding';
+import { ensureEntityDbFolder } from './entityDbOnboarding';
 import { isDesktop } from '@src/types/desktop';
 
 const projectHasSchema = async (bundle: ProjectBundle): Promise<boolean> => {
@@ -90,17 +90,7 @@ export const completePostLoadOnboarding = async (bundle: ProjectBundle): Promise
   let current = bundle;
 
   log('ensuring entity db folder');
-  if (await ensureEntityDbFolder()) {
-    if (!(await projectHasEntityStorePreference(current.projectFilePath))) {
-      log('no entity store preference — opening metadata dialog');
-      const saved = await openNativeProjectMetadata(current.projectFilePath, 'edition');
-      log(`entity store dialog result: ${saved}`);
-      if (saved === 'saved' && window.electronAPI?.reloadProjectBundle) {
-        const reloaded = await window.electronAPI.reloadProjectBundle(current.projectFilePath);
-        if (reloaded) current = reloaded;
-      }
-    }
-  }
+  await ensureEntityDbFolder();
 
   // Non-blocking: the authority-database offer (Chinese projects only) must
   // not hold up project open, and downloads run in the main process.

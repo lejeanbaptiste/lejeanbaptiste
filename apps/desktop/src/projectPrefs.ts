@@ -243,6 +243,14 @@ export const setLastDialogDir = async (dir: string | null) => {
  * persists a fixed default under Electron's per-platform app-data directory
  * the first time this is called. Never returns null in practice; callers
  * that picked a custom folder in the past keep using it unchanged.
+ *
+ * Deliberately trusts prefs.entityDbFolder as-is with no existence checks,
+ * retries, or fallback to some other previously-used folder: this used to
+ * auto-recover from history when entities.xml wasn't immediately found, but
+ * that misfired on ordinary transient conditions (a synced/network folder
+ * not yet mounted) and silently pointed people at the wrong database. If
+ * this folder is genuinely unreachable, callers see that directly instead of
+ * being quietly redirected somewhere else.
  */
 let hasShownEntityDbCreationError = false;
 
@@ -279,10 +287,71 @@ export const getEntityDbFolder = async (): Promise<string | null> => {
   return defaultFolder;
 };
 
+/** Setting a new folder forgets the old one completely - no history is kept to fall back to. */
 export const setEntityDbFolder = async (folder: string | null) => {
   await mutateAppPrefs((prefs) => {
     prefs.entityDbFolder = folder?.trim() || null;
   });
+};
+
+const LOCAL_AUTHORITY_ASSETS_DIRNAME = 'authority-assets';
+/** Historically these lived inside the (often cloud-synced) entity database folder; see getLocalAuthorityAssetsDir. */
+const MIGRATED_AUTHORITY_SUBDIRS = ['authority-packs', 'authority-databases'] as const;
+let authorityAssetsMigrationAttempted = false;
+
+const moveDirectory = async (source: string, dest: string): Promise<void> => {
+  try {
+    await fs.rename(source, dest);
+  } catch (error) {
+    if ((error as NodeJS.ErrnoException).code !== 'EXDEV') throw error;
+    // Source and destination are on different volumes - fall back to copy+delete.
+    await fs.cp(source, dest, { recursive: true });
+    await fs.rm(source, { recursive: true, force: true });
+  }
+};
+
+/**
+ * Base directory for downloaded authority-pack/database assets (CBDB, DILA,
+ * compiled Wikidata packs, CHGIS, etc.) - always the local per-machine
+ * app-data folder, never inside the entity database folder. These can run
+ * into the hundreds of MB, and the entity database folder is commonly
+ * synced (Dropbox/iCloud/etc.); syncing that much data would be slow and
+ * wasteful, and it re-creates exactly the "is this folder really here yet"
+ * race that has already caused real data loss elsewhere in this app (see
+ * EntityStore.loadEntities()'s retry logic).
+ *
+ * One-time, best-effort migration: if a legacy install already downloaded
+ * these under the entity database folder, move them here instead of forcing
+ * a re-download. Attempted at most once per app session; a failure just
+ * leaves the legacy copy in place and retries on next launch.
+ */
+export const getLocalAuthorityAssetsDir = async (): Promise<string> => {
+  const dir = path.join(app.getPath('userData'), LOCAL_AUTHORITY_ASSETS_DIRNAME);
+  await fs.mkdir(dir, { recursive: true });
+
+  if (!authorityAssetsMigrationAttempted) {
+    authorityAssetsMigrationAttempted = true;
+    const legacyFolder = await getEntityDbFolder();
+    if (legacyFolder) {
+      for (const name of MIGRATED_AUTHORITY_SUBDIRS) {
+        const legacyPath = path.join(legacyFolder, name);
+        const newPath = path.join(dir, name);
+        try {
+          const [legacyExists, newExists] = await Promise.all([
+            fs.access(legacyPath).then(() => true).catch(() => false),
+            fs.access(newPath).then(() => true).catch(() => false),
+          ]);
+          if (legacyExists && !newExists) {
+            await moveDirectory(legacyPath, newPath);
+          }
+        } catch (error) {
+          console.error(`Failed to migrate ${name} out of the entity database folder:`, error);
+        }
+      }
+    }
+  }
+
+  return dir;
 };
 
 /**

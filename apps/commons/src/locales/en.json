@@ -69,7 +69,8 @@
         "organization": "Org",
         "work": "Wrk"
       },
-      "status_installed": "installed"
+      "status_installed": "installed",
+      "add": "Add"
     },
     "cookie consent": {
       "consent_banner": {
@@ -127,47 +128,47 @@
     },
     "dialogs": {
       "importExport": {
-      "document": "document.",
-      "Learn more about importing files": "Learn more about importing files",
-      "convert and open": "convert and open",
-      "convert document": "convert document",
-      "format": "format",
-      "docx document": "Word document (.docx)",
-      "odt document": "OpenDocument text (.odt)",
-      "rtf document": "RTF document (.rtf)",
-      "markdown document": "Markdown document (.md)",
-      "text document": "Text document (.txt)",
-      "include translations": "Include translations inserted after paragraphs",
-      "translation language": "Translation language",
-      "include bibliography": "Include bibliography (References)",
-      "message": {
-        "LEAF-Writer needs to convert it to be able to use it": "LEAF-Writer needs to convert it to be able to use it.",
-        "this_looks_like_a": "This looks like a ",
-        "intercept_load_file_format": "<0>This looks like a </0> <1>{{format}}</1> <2>document.</2>"
+        "document": "document.",
+        "Learn more about importing files": "Learn more about importing files",
+        "convert and open": "convert and open",
+        "convert document": "convert document",
+        "format": "format",
+        "docx document": "Word document (.docx)",
+        "odt document": "OpenDocument text (.odt)",
+        "rtf document": "RTF document (.rtf)",
+        "markdown document": "Markdown document (.md)",
+        "text document": "Text document (.txt)",
+        "include translations": "Include translations inserted after paragraphs",
+        "translation language": "Translation language",
+        "include bibliography": "Include bibliography (References)",
+        "message": {
+          "LEAF-Writer needs to convert it to be able to use it": "LEAF-Writer needs to convert it to be able to use it.",
+          "this_looks_like_a": "This looks like a ",
+          "intercept_load_file_format": "<0>This looks like a </0> <1>{{format}}</1> <2>document.</2>"
+        },
+        "try to open it without converting": "try to open it without converting"
       },
-      "try to open it without converting": "try to open it without converting"
-    },
       "languages": {
-      "de": "German",
-      "en": "English",
-      "es": "Spanish",
-      "fr": "French",
-      "pt": "Portuguese",
-      "ro": "Romanian"
-    },
+        "de": "German",
+        "en": "English",
+        "es": "Spanish",
+        "fr": "French",
+        "pt": "Portuguese",
+        "ro": "Romanian"
+      },
       "messages": {
-      "annotation_need_space": "Annotating documents requires more space.",
-      "link_to_storage_provider_instructions": "You can do that by clicking on the user icon in the top-right corner of the screen and then selecting an option in the list of storage providers.",
-      "rotate_phone": "Please rotate your phone or open LEAF-Writer on a large screen.",
-      "service not available at the moment": "Service not available at the moment",
-      "try_again": "Try again",
-      "unable_to_upload file": "Unable to upload file",
-      "you_must_sign_in_to_open_and_save_document_from_the_cloud": "You must sign in to open and save documents from the cloud",
-      "you_must_sign_in_witn_a_storage_provider_to_open_and_save_document_from_the_cloud": "You must sign in witn a storage provider to open and save document from the cloud"
-    },
+        "annotation_need_space": "Annotating documents requires more space.",
+        "link_to_storage_provider_instructions": "You can do that by clicking on the user icon in the top-right corner of the screen and then selecting an option in the list of storage providers.",
+        "rotate_phone": "Please rotate your phone or open LEAF-Writer on a large screen.",
+        "service not available at the moment": "Service not available at the moment",
+        "try_again": "Try again",
+        "unable_to_upload file": "Unable to upload file",
+        "you_must_sign_in_to_open_and_save_document_from_the_cloud": "You must sign in to open and save documents from the cloud",
+        "you_must_sign_in_witn_a_storage_provider_to_open_and_save_document_from_the_cloud": "You must sign in witn a storage provider to open and save document from the cloud"
+      },
       "messsages": {
-      "authentication_server_is_currently_unavailable": "Authentication server is currently unavailable"
-    },
+        "authentication_server_is_currently_unavailable": "Authentication server is currently unavailable"
+      },
       "on this page": "On this page",
       "profile": {
         "account_linked": "Account linked",
@@ -184,33 +185,33 @@
         "webpack_wait": "If you just started the desktop app, wait for webpack to finish compiling and reload the window."
       },
       "storage": {
-      "all_changes_salved": "all changes saved",
-      "click to upload": "click to upload",
-      "click_to_save": "click to save",
-      "document_not_saved": "Document not saved",
-      "document_saved": "Document saved",
-      "drag the document here": "drag the document here",
-      "error": {
-        "document_not_supported": "The document you are trying to load is not supported. Please check that it has the correct extension and is well-formed.",
-        "xml_not_well-formed_message": "The document you are trying to load is not well-formed. Check that it has the XML extension and follows the correct XML grammar."
+        "all_changes_salved": "all changes saved",
+        "click to upload": "click to upload",
+        "click_to_save": "click to save",
+        "document_not_saved": "Document not saved",
+        "document_saved": "Document saved",
+        "drag the document here": "drag the document here",
+        "error": {
+          "document_not_supported": "The document you are trying to load is not supported. Please check that it has the correct extension and is well-formed.",
+          "xml_not_well-formed_message": "The document you are trying to load is not well-formed. Check that it has the XML extension and follows the correct XML grammar."
+        },
+        "export": "export",
+        "export document": "export document",
+        "from_the_cloud": "from the cloud",
+        "from_your_device": "From your device",
+        "import": "import",
+        "import document": "import document",
+        "invalid_request": "Invalid request",
+        "paste_your_XML_here": "paste your XML here",
+        "provider not found": "provider not found",
+        "saving": "saving",
+        "waiting_for_resource": "waiting for resource",
+        "warning": {
+          "check_URL_structure": "check URL structure",
+          "storage_provider_invalid": "provider '{{provider}}' is invalid or not a supported"
+        },
+        "you_will_lose_any_unsaved_changes": "You will lose any unsaved changes"
       },
-      "export": "export",
-      "export document": "export document",
-      "from_the_cloud": "from the cloud",
-      "from_your_device": "From your device",
-      "import": "import",
-      "import document": "import document",
-      "invalid_request": "Invalid request",
-      "paste_your_XML_here": "paste your XML here",
-      "provider not found": "provider not found",
-      "saving": "saving",
-      "waiting_for_resource": "waiting for resource",
-      "warning": {
-        "check_URL_structure": "check URL structure",
-        "storage_provider_invalid": "provider '{{provider}}' is invalid or not a supported"
-      },
-      "you_will_lose_any_unsaved_changes": "You will lose any unsaved changes"
-    },
       "templates": {
         "choose_a_template": "choose a template"
       },
@@ -352,6 +353,10 @@
           "discard_changes_button": "Discard changes",
           "dont_save_button": "Don't Save",
           "import_diagnostics_title": "Import diagnostics",
+          "import_xml_continue_button": "Import",
+          "import_xml_warning_detail": "Foreign entity keys (@key) will be moved to a backup token on @ana (ljb-former-key:…) so they do not point at this project's entity catalogue. Compatible header fields stay in the file; project edition metadata is merged in; the project's schema is attached. Element remapping between different schemas is not done yet.",
+          "import_xml_warning_message": "{{documentCount}} XML file{{documentCount, plural, one {} other {s}}} will be imported into this project.",
+          "import_xml_warning_title": "Import XML documents",
           "imported_documents_with_problems": "Imported {{documentCount}} document{{documentCount, plural, one {} other {s}}} with {{problemCount}} problem file{{problemCount, plural, one {} other {s}}}.",
           "ok_button": "OK",
           "save_all_button": "Save All",
@@ -372,12 +377,13 @@
           "document_import_unavailable_restart": "Document import is unavailable. Restart the desktop app.",
           "complete_metadata_setup_before_creating_file": "Complete project metadata setup before creating a file.",
           "new_file_unavailable_restart": "New File is unavailable. Restart the desktop app.",
-          "no_supported_files_found": "No supported files found. Import supports TXT, Markdown, and RTF for now.",
+          "no_supported_files_found": "No supported files found. Import supports TXT, Markdown, RTF, DOCX, ODT, and XML.",
           "open_project_first": "Open a project first.",
           "open_xml_before_saving": "Open an XML file before saving.",
           "reverted_to_valid_version": "Changes discarded. The document was reverted to its last valid version and nothing was saved.",
           "project_not_fully_loaded": "Project is not fully loaded.",
           "imported_documents_success": "Imported {{documentCount}} document{{documentCount, plural, one {} other {s}}}.",
+          "imported_documents_success_with_keys": "Imported {{documentCount}} document{{documentCount, plural, one {} other {s}}}; moved {{keyCount}} foreign entity key{{keyCount, plural, one {} other {s}}} to backup (@ana).",
           "imported_documents_with_problems_snackbar": "Imported {{documentCount}} document{{documentCount, plural, one {} other {s}}}; {{problemCount}} problem file{{problemCount, plural, one {} other {s}}}. See console for details."
         },
         "select_language": "Select language…",
@@ -389,8 +395,6 @@
         "schema_warning": "LEAF-Writer cannot guarantee that the document will work correctly with the selected schema",
         "tei_path": "TEI path",
         "schema": "Schema",
-        "central_database": "Central database",
-        "project_database": "This project's database",
         "div_alignment": "Div (section-level, looser)",
         "paragraph_alignment": "Paragraph (1:1)",
         "code": "Code",
@@ -402,9 +406,10 @@
         "add_custom_field": "Add custom field",
         "custom_fields": "Custom fields",
         "entity_database": "Entity database",
-        "entity_database_hint": "Use your central database (App Settings) or keep a separate entities.xml in this project folder.",
+        "entity_database_hint": "By default, this project keeps its own entity database. Turning on sync copies every entity to your central database and keeps them linked automatically — searches and the database panel then include entities from your other synced projects too.",
+        "sync_to_central": "Sync entities to central database",
         "first_setup_message": "Save once to finish project setup. Source language is required; other fields may be left blank.",
-        "defaults_message": "Project-wide defaults and entity database choice.",
+        "defaults_message": "Project-wide defaults.",
         "choose_schema_message": "Choose a schema for this project. Files are copied into the project folder.",
         "languages": "Languages",
         "save_button": "Save",
@@ -421,80 +426,80 @@
         "reload": "Reload",
         "keep_editing": "Keep editing"
       },
-    "translation_links_restored_one": "Restored {{count}} translation link after external change",
-    "translation_links_restored_other": "Restored {{count}} translation links after external change",
-    "translation": {
-      "indexing_document": "Indexing document for translation…",
-      "no_languages_configured": "No translation languages configured yet. Add them in Project → Edition metadata…",
-      "open_project_to_use_translations": "Open a project to use translations.",
-      "translate_failed": "Translate failed: {{error}}"
-    },
-    "ai_api_bridge_unavailable": "Desktop AI API bridge is unavailable.",
-    "authority_prompt": {
-      "download_button": "Download",
-      "not_now_button": "Not now",
-      "chinese": {
-        "message": "Download Chinese authority databases?",
-        "detail": "This project uses Chinese as its source language. LEAF-Writer can download CBDB (China Biographical Database, ~600 MB), the DILA Buddhist Studies authorities (~85 MB), and Wikidata authority packs for automated tagging. They are stored next to your central entity database."
+      "translation_links_restored_one": "Restored {{count}} translation link after external change",
+      "translation_links_restored_other": "Restored {{count}} translation links after external change",
+      "translation": {
+        "indexing_document": "Indexing document for translation…",
+        "no_languages_configured": "No translation languages configured yet. Add them in Project → Edition metadata…",
+        "open_project_to_use_translations": "Open a project to use translations.",
+        "translate_failed": "Translate failed: {{error}}"
       },
-      "japanese": {
-        "message": "Download Japanese authority packs?",
-        "detail": "This project uses Japanese as its source language. LEAF-Writer can download NDL and Wikidata authority packs for automated tagging. They are stored next to your central entity database."
+      "ai_api_bridge_unavailable": "Desktop AI API bridge is unavailable.",
+      "authority_prompt": {
+        "download_button": "Download",
+        "not_now_button": "Not now",
+        "chinese": {
+          "message": "Download Chinese authority databases?",
+          "detail": "This project uses Chinese as its source language. LEAF-Writer can download CBDB (China Biographical Database, ~600 MB), the DILA Buddhist Studies authorities (~85 MB), and Wikidata authority packs for automated tagging. They are stored next to your central entity database."
+        },
+        "japanese": {
+          "message": "Download Japanese authority packs?",
+          "detail": "This project uses Japanese as its source language. LEAF-Writer can download NDL and Wikidata authority packs for automated tagging. They are stored next to your central entity database."
+        },
+        "tibetan": {
+          "message": "Download Tibetan authority packs?",
+          "detail": "This project uses Tibetan as its source language. LEAF-Writer can download Wikidata authority packs for automated tagging. They are stored next to your central entity database."
+        }
       },
-      "tibetan": {
-        "message": "Download Tibetan authority packs?",
-        "detail": "This project uses Tibetan as its source language. LEAF-Writer can download Wikidata authority packs for automated tagging. They are stored next to your central entity database."
-      }
-    },
-    "bulk_update_warning": "{{count}} open document(s) have unsaved changes. Bulk update writes to disk and may overwrite in-memory edits.",
-    "copy_schema_failed": "Could not copy schema file.",
-    "could_not_open_settings": "Could not open settings.",
-    "could_not_save_metadata": "Could not save metadata.",
-    "could_not_save_translation_settings": "Could not save translation settings.",
-    "open_project_first": "Open a project first.",
-    "open_translation_tab_for_zotero": "Open the Translation tab to choose Zotero citation style.",
-    "open_xml_before_saving": "Open an XML file before saving.",
-    "project_settings_saved": "Project settings saved.",
-    "refreshing_zotero_citations": "Refreshing Zotero citations.",
-    "schema_download_failed": "Schema download failed.",
-    "unsaved_documents": "Unsaved documents",
-    "updated_files_overrides_skipped": "{{count}} field(s) left unchanged due to per-file edits.",
-    "updated_files_summary": "Updated {{updated}} file(s); {{skipped}} unchanged.",
-    "time_machine": {
-      "title": "Time Machine",
-      "open_project_first": "Open a project before using Time Machine.",
-      "back_up_now": "Back Up Now",
-      "refresh_snapshots": "Refresh snapshots",
-      "restore_to_current_project": "Restore to current project",
-      "restore_snapshot": "Restore snapshot",
-      "restore_snapshot_message": "This will back up the current project, then replace the current project files with the selected snapshot.",
-      "restore": "Restore",
-      "cancel": "Cancel",
-      "close": "Close",
-      "no_snapshots_yet": "No snapshots yet.",
-      "snapshot_created": "Snapshot created.",
-      "project_restored": "Project restored from snapshot.",
-      "could_not_create_snapshot": "Could not create snapshot.",
-      "could_not_restore_snapshot": "Could not restore snapshot.",
-      "months": {
-        "january": "January",
-        "february": "February",
-        "march": "March",
-        "april": "April",
-        "may": "May",
-        "june": "June",
-        "july": "July",
-        "august": "August",
-        "september": "September",
-        "october": "October",
-        "november": "November",
-        "december": "December"
-      }
-    },
-    "close_unsaved": {
-      "title": "Unsaved changes",
-      "message": "{{filename}} has unsaved changes. Close without saving?"
-    },
+      "bulk_update_warning": "{{count}} open document(s) have unsaved changes. Bulk update writes to disk and may overwrite in-memory edits.",
+      "copy_schema_failed": "Could not copy schema file.",
+      "could_not_open_settings": "Could not open settings.",
+      "could_not_save_metadata": "Could not save metadata.",
+      "could_not_save_translation_settings": "Could not save translation settings.",
+      "open_project_first": "Open a project first.",
+      "open_translation_tab_for_zotero": "Open the Translation tab to choose Zotero citation style.",
+      "open_xml_before_saving": "Open an XML file before saving.",
+      "project_settings_saved": "Project settings saved.",
+      "refreshing_zotero_citations": "Refreshing Zotero citations.",
+      "schema_download_failed": "Schema download failed.",
+      "unsaved_documents": "Unsaved documents",
+      "updated_files_overrides_skipped": "{{count}} field(s) left unchanged due to per-file edits.",
+      "updated_files_summary": "Updated {{updated}} file(s); {{skipped}} unchanged.",
+      "time_machine": {
+        "title": "Time Machine",
+        "open_project_first": "Open a project before using Time Machine.",
+        "back_up_now": "Back Up Now",
+        "refresh_snapshots": "Refresh snapshots",
+        "restore_to_current_project": "Restore to current project",
+        "restore_snapshot": "Restore snapshot",
+        "restore_snapshot_message": "This will back up the current project, then replace the current project files with the selected snapshot.",
+        "restore": "Restore",
+        "cancel": "Cancel",
+        "close": "Close",
+        "no_snapshots_yet": "No snapshots yet.",
+        "snapshot_created": "Snapshot created.",
+        "project_restored": "Project restored from snapshot.",
+        "could_not_create_snapshot": "Could not create snapshot.",
+        "could_not_restore_snapshot": "Could not restore snapshot.",
+        "months": {
+          "january": "January",
+          "february": "February",
+          "march": "March",
+          "april": "April",
+          "may": "May",
+          "june": "June",
+          "july": "July",
+          "august": "August",
+          "september": "September",
+          "october": "October",
+          "november": "November",
+          "december": "December"
+        }
+      },
+      "close_unsaved": {
+        "title": "Unsaved changes",
+        "message": "{{filename}} has unsaved changes. Close without saving?"
+      },
       "settings": {
         "editor_options_hint": "Schema, authorities, and other editor options are available from the ⚙ toolbar while a document is open.",
         "remember_workspace_on_startup": "Reopen project and tabs on startup",
@@ -506,7 +511,9 @@
         "entity_database": "Entity database",
         "entity_database_folder": "Database folder",
         "entity_database_hint": "Your entity database lives in a fixed app-data folder. Authority packs also live here.",
-        "entity_database_reveal": "Open folder"
+        "entity_database_reveal": "Open folder",
+        "user_name": "User name",
+        "your_name": "Your name"
       },
       "entity_database_changed": {
         "title": "Entity database changed",
@@ -517,16 +524,16 @@
       "user_name_prompt": {
         "title": "Your name",
         "message": "Enter the name you'll be tagging as.",
-        "note": "This is written into each document's metadata as the tagger of record - it's not shared or synced anywhere.",
         "placeholder": "Your name",
         "save": "Save",
         "next": "Next"
       },
       "database_setup_prompt": {
         "title": "Entity database",
-        "message": "This is where your named entities, authority packs, and stats will be stored.",
+        "message": "Choose a folder for your entity database, preferably one synced to a cloud.",
         "folder_label": "Database folder",
-        "choose": "Choose a different or existing folder…",
+        "folder_placeholder": "No folder chosen yet",
+        "choose": "Choose folder…",
         "note": "Already have a database synced from another machine (e.g. via Dropbox or iCloud)? Choose its folder here to use it instead of creating a new one.",
         "done": "Done"
       },
@@ -651,11 +658,11 @@
           "current_names": "Current: {{names}}",
           "keys_updated_summary": "{{keysUpdated}} tags updated in {{filesChanged}} files across {{projects}} projects.",
           "entity_types": {
-          "all": "All",
-          "person": "Per",
-          "place": "Pla",
-          "organization": "Org",
-          "work": "Wrk"
+            "all": "All",
+            "person": "Per",
+            "place": "Pla",
+            "organization": "Org",
+            "work": "Wrk"
           },
           "status_installed": "installed",
           "save": "Save",
@@ -671,6 +678,124 @@
             "keep_current": "Keep current copy"
           }
         }
+      }
+    },
+    "importExport": {
+      "Learn more about importing files": "Learn more about importing files",
+      "convert and open": "convert and open",
+      "convert document": "convert document",
+      "format": "format",
+      "docx document": "Word document (.docx)",
+      "odt document": "OpenDocument Text (.odt)",
+      "rtf document": "RTF document (.rtf)",
+      "markdown document": "Markdown document (.md)",
+      "text document": "Text document (.txt)",
+      "include translations": "Include translations inserted after paragraphs",
+      "translation language": "Translation language",
+      "include bibliography": "Include bibliography (References)",
+      "message": {
+        "LEAF-Writer needs to convert it to be able to use it": "LEAF-Writer needs to convert it to be able to use it.",
+        "intercept_load_file_format": "<0>This looks like a </0> <1>{{format}}</1> <2>document.</2>"
+      },
+      "try to open it without converting": "try to open it without converting"
+    },
+    "languages": {
+      "de": "German",
+      "en": "English",
+      "es": "Spanish",
+      "fr": "French",
+      "pt": "Portuguese",
+      "ro": "Romanian"
+    },
+    "messages": {
+      "annotation_need_space": "Annotating documents needs more space.",
+      "link_to_storage_provider_instructions": "You can do this by clicking the user icon in the upper-right corner, then selecting an option from the list of storage providers.",
+      "rotate_phone": "Please rotate your phone or open LEAF-Writer on a larger screen.",
+      "service not available at the moment": "Service not available at the moment",
+      "try_again": "Try again",
+      "unable_to_upload file": "Unable to upload the file",
+      "you_must_sign_in_to_open_and_save_document_from_the_cloud": "You must sign in to open and save documents from the cloud",
+      "you_must_sign_in_witn_a_storage_provider_to_open_and_save_document_from_the_cloud": "You must sign in with a storage provider to open and save a document from the cloud"
+    },
+    "messsages": {
+      "authentication_server_is_currently_unavailable": "Authentication server is currently unavailable"
+    },
+    "on this page": "On this page",
+    "profile": {
+      "manage_your_lincs_account": "Manage your LINCS account"
+    },
+    "storage": {
+      "all_changes_salved": "all changes saved",
+      "click to upload": "click to upload",
+      "click_to_save": "click to save",
+      "document_not_saved": "Document not saved",
+      "document_saved": "Document saved",
+      "drag the document here": "drag the document here",
+      "error": {
+        "document_not_supported": "The document you are trying to load is not supported. Please check that it has the correct extension and is well-formed.",
+        "xml_not_well-formed_message": "The document you are trying to load is not well-formed. Check that it has the XML extension and follows the correct XML grammar."
+      },
+      "export": "export",
+      "export document": "export document",
+      "from_the_cloud": "from the cloud",
+      "from_your_device": "From your device",
+      "import": "import",
+      "import document": "import document",
+      "invalid_request": "Invalid request",
+      "paste_your_XML_here": "paste your XML here",
+      "provider not found": "provider not found",
+      "saving": "saving",
+      "waiting_for_resource": "waiting for resource",
+      "warning": {
+        "check_URL_structure": "check URL structure",
+        "storage_provider_invalid": "provider '{{provider}}' is invalid or not a supported"
+      },
+      "you_will_lose_any_unsaved_changes": "You will lose any unsaved changes"
+    },
+    "templates": {
+      "choose_a_template": "choose a template"
+    },
+    "ui": {
+      "appearance": "appearance",
+      "dark_theme": "Dark theme",
+      "device_theme": "Device theme",
+      "light_theme": "Light theme"
+    },
+    "translation": {
+      "indexing_document": "Indexing document for translation…",
+      "no_languages_configured": "No translation languages are configured yet. Add some in Project → Edition metadata…",
+      "open_project_to_use_translations": "Open a project to use translations.",
+      "translate_failed": "Translation failed: {{error}}"
+    },
+    "time_machine": {
+      "title": "Time Machine",
+      "open_project_first": "Open a project before using Time Machine.",
+      "back_up_now": "Back up now",
+      "refresh_snapshots": "Refresh snapshots",
+      "restore_to_current_project": "Restore to current project",
+      "restore_snapshot": "Restore snapshot",
+      "restore_snapshot_message": "This will first back up the current project, then replace the current project files with the selected snapshot.",
+      "restore": "Restore",
+      "cancel": "Cancel",
+      "close": "Close",
+      "no_snapshots_yet": "No snapshots yet.",
+      "snapshot_created": "Snapshot created.",
+      "project_restored": "Project restored from snapshot.",
+      "could_not_create_snapshot": "Could not create snapshot.",
+      "could_not_restore_snapshot": "Could not restore snapshot.",
+      "months": {
+        "january": "January",
+        "february": "February",
+        "march": "March",
+        "april": "April",
+        "may": "May",
+        "june": "June",
+        "july": "July",
+        "august": "August",
+        "september": "September",
+        "october": "October",
+        "november": "November",
+        "december": "December"
       }
     }
   },

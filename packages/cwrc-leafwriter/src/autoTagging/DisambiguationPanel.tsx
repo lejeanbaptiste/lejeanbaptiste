@@ -45,6 +45,7 @@ import { CbdbIcon, DilaIcon, InitialsIcon } from '../icons/custom/AuthoritySourc
 import { WikipediaIcon } from '../icons/custom/Wikipedia';
 import { openExternalUrl } from '../utilities/DOM';
 import { cachedPackReader } from '../services/authority-pack-lookup';
+import { linkedCentralIds } from './bridgeInbox';
 import {
   buildDisambiguationCandidates,
   candidateLinks,
@@ -496,6 +497,7 @@ export const DisambiguationPanel = ({
     ) => {
       const groupKey = mentionGroupKey(targetGroup);
       try {
+        const central = await session.candidateSearchCentralContext();
         const rows = await buildDisambiguationCandidates(
           entitiesDoc,
           targetGroup.tag,
@@ -516,6 +518,7 @@ export const DisambiguationPanel = ({
               }
             : undefined,
           projectLang,
+          central ?? undefined,
         );
         if (currentKeyRef.current !== groupKey) return;
         setCandidates(rows);
@@ -554,7 +557,13 @@ export const DisambiguationPanel = ({
           // group was last cached, possibly from another view entirely).
           const entitiesDoc = await session.loadEntities();
           const freshLocal = candidatesFromEntityFile(entitiesDoc, targetGroup.tag, targetGroup.surface);
-          const rows = mergeCandidates([freshLocal, cached]);
+          const central = await session.candidateSearchCentralContext();
+          const freshCentral = central
+            ? candidatesFromEntityFile(central.doc, targetGroup.tag, targetGroup.surface, 'cedb').filter(
+                (candidate) => !linkedCentralIds(entitiesDoc, central.userStableId).has(candidate.centralEntityId!),
+              )
+            : [];
+          const rows = mergeCandidates([freshLocal, freshCentral, cached]);
           setCandidates(rows);
           // The prefetcher can cache DILA place rows before their lazy detail
           // scrapes (dynasty/dates) have landed. Heal such rows in the
@@ -583,6 +592,7 @@ export const DisambiguationPanel = ({
         const cache = session.cache;
         if (!cache) throw new Error('Authority cache is unavailable.');
         const groupKey = mentionGroupKey(targetGroup);
+        const central = await session.candidateSearchCentralContext();
         const rows = await buildDisambiguationCandidates(
           entitiesDoc,
           targetGroup.tag,
@@ -598,6 +608,7 @@ export const DisambiguationPanel = ({
             void refreshDilaDates(targetGroup, cache, entitiesDoc);
           },
           projectLang,
+          central ?? undefined,
         );
         if (!cacheDisabled) {
           session.rememberPendingCandidates(targetGroup.tag, targetGroup.surface, rows);

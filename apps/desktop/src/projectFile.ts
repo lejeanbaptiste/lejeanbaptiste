@@ -83,7 +83,7 @@ const normalizeConfig = (raw: Partial<ProjectFileConfig>, rootPath: string): Pro
     typeof raw.metadata === 'string' && raw.metadata.trim()
       ? raw.metadata.trim()
       : DEFAULT_METADATA_PATH,
-  entityStore: (raw.entityStore === 'project' || raw.entityStore === 'central') ? raw.entityStore : undefined,
+  syncToCentral: typeof raw.syncToCentral === 'boolean' ? raw.syncToCentral : undefined,
   entityDatabaseId:
     typeof raw.entityDatabaseId === 'string' && raw.entityDatabaseId.trim()
       ? raw.entityDatabaseId.trim()
@@ -96,15 +96,31 @@ const writeConfigFile = async (projectFilePath: string, config: ProjectFileConfi
   await writeFileAtomic(projectFilePath, JSON.stringify(config, null, 2));
 };
 
+/**
+ * Serialize read-modify-write per project file so concurrent patches (e.g. an
+ * auto-tagging crawl touching several files, each patching entityDatabaseId or
+ * authority/disambiguation settings) cannot clobber each other's fields —
+ * same race `mutateAppPrefs` guards against in projectPrefs.ts.
+ */
+const projectConfigWriteChains = new Map<string, Promise<unknown>>();
+
 export const writeProjectConfig = async (
   projectFilePath: string,
   patch: Partial<ProjectFileConfig>,
 ): Promise<ProjectBundle> => {
   const rootPath = path.dirname(projectFilePath);
-  const raw = JSON.parse(await fs.readFile(projectFilePath, 'utf-8')) as Partial<ProjectFileConfig>;
-  const config = normalizeConfig({ ...raw, ...patch }, rootPath);
-  await writeConfigFile(projectFilePath, config);
-  return { rootPath, projectFilePath, config };
+  const previous = projectConfigWriteChains.get(projectFilePath) ?? Promise.resolve();
+  const next = previous.then(async () => {
+    const raw = JSON.parse(await fs.readFile(projectFilePath, 'utf-8')) as Partial<ProjectFileConfig>;
+    const config = normalizeConfig({ ...raw, ...patch }, rootPath);
+    await writeConfigFile(projectFilePath, config);
+    return { rootPath, projectFilePath, config };
+  });
+  projectConfigWriteChains.set(
+    projectFilePath,
+    next.catch(() => undefined),
+  );
+  return next;
 };
 
 const detectSchema = async (rootPath: string): Promise<ProjectSchemaConfig | undefined> => {

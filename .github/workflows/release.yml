@@ -278,6 +278,14 @@ jobs:
       - name: Build Windows installer
         shell: pwsh
         working-directory: apps/desktop
+        env:
+          # prepackage:win invokes a hardcoded system node.exe (see that
+          # script for why); on the arm64 runner that binary can itself be
+          # x64, which would make download-python-runtime.mjs silently
+          # bundle the wrong-arch Python/sanmiao build. Pin explicitly to
+          # what this job is actually packaging for.
+          LJB_PYTHON_PLATFORM: win32
+          LJB_PYTHON_ARCH: ${{ matrix.arch }}
         run: |
           $ErrorActionPreference = 'Stop'
           $attempts = 3

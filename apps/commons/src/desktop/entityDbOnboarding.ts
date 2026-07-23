@@ -12,18 +12,3 @@ export const ensureEntityDbFolder = async (): Promise<boolean> => {
   await window.electronAPI.getEntityDbFolder?.();
   return true;
 };
-
-export const projectHasEntityStorePreference = async (
-  projectFilePath: string,
-): Promise<boolean> => {
-  if (!window.electronAPI?.readFile) return true;
-  try {
-    const raw = JSON.parse(await window.electronAPI.readFile(projectFilePath)) as Record<
-      string,
-      unknown
-    >;
-    return Object.prototype.hasOwnProperty.call(raw, 'entityStore');
-  } catch {
-    return true;
-  }
-};

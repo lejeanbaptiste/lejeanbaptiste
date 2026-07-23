@@ -94,3 +94,20 @@ export function buildBridgeInbox(
 export function bridgeAttentionCount(report: BridgeInboxReport): number {
   return report.unlinked.length + report.broken.length + report.conflicts.length;
 }
+
+/**
+ * Central ids already linked from some entity in `pedbDoc` for this user.
+ * Used to avoid showing the same logical entity twice when merging PEDB and
+ * CEDB entity/candidate lists (e.g. the database panel, disambiguation
+ * search) - a CEDB entity in this set already has a PEDB row representing
+ * it, so the CEDB one should be skipped.
+ */
+export function linkedCentralIds(pedbDoc: Document, userStableId: string): Set<string> {
+  const ids = new Set<string>();
+  for (const entity of listEntities(pedbDoc)) {
+    const item = findEntity(pedbDoc, entity.id);
+    const centralId = item ? getCentralId(item, userStableId) : null;
+    if (centralId) ids.add(centralId);
+  }
+  return ids;
+}

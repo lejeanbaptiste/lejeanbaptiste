@@ -61,6 +61,7 @@ import {
   type NameTypeId,
 } from '../../../../../packages/cwrc-leafwriter/src/autoTagging/nameTypes';
 import {
+  centralEntityStoreFromDesktop,
   entityStoreFromDesktop,
   type EntityStore,
 } from '../../../../../packages/cwrc-leafwriter/src/autoTagging/entityStore';
@@ -98,6 +99,9 @@ const oldestId = (ids: string[]): string =>
 
 const escapeRegExp = (text: string): string => text.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
 
+/** Which database the panel is currently browsing - a pure view switch, unrelated to syncToCentral. */
+type DatabaseView = 'project' | 'central';
+
 interface ConfirmState {
   title: string;
   body: string;
@@ -116,7 +120,11 @@ export const SidebarDatabaseTab = ({ active = false }: SidebarDatabaseTabProps) 
   const { t } = useTranslation();
   const { skipEntityDetachConfirm } = useAppState().ui;
   const { setSkipEntityDetachConfirm } = useActions().ui;
+  const { config } = useAppState().project;
+  const syncToCentral = config?.syncToCentral === true;
+  const [databaseView, setDatabaseView] = useState<DatabaseView>('project');
   const [store, setStore] = useState<EntityStore | null>(null);
+  const [centralStore, setCentralStore] = useState<EntityStore | null>(null);
   const [projectLang, setProjectLang] = useState<string | null>(null);
   const [entities, setEntities] = useState<EntitySummary[]>([]);
   const [duplicates, setDuplicates] = useState<DuplicateGroup[]>([]);
@@ -170,21 +178,31 @@ export const SidebarDatabaseTab = ({ active = false }: SidebarDatabaseTabProps) 
       setEntities([]);
       setDuplicates([]);
       setWarnings([]);
+      setCentralStore(null);
       return;
     }
+    const centralFolder = (await window.electronAPI?.getEntityDbFolder?.().catch(() => null)) ?? null;
+    const resolvedCentralStore = centralEntityStoreFromDesktop(centralFolder);
+    setCentralStore(resolvedCentralStore);
+
+    // Pure view switch: browse either database, never both at once - Project
+    // falls back from Central if no central folder is configured yet.
+    const activeStore = databaseView === 'central' && resolvedCentralStore ? resolvedCentralStore : currentStore;
+
     setLoading(true);
     setLoadError(null);
     try {
-      const doc = await currentStore.loadEntities();
+      const doc = await activeStore.loadEntities();
       setEntities(listEntities(doc));
-      setDuplicates(findAuthorityDuplicates(doc));
-      setWarnings(await loadOpenWarnings(currentStore));
+      // Duplicate-authority detection and lookup warnings are project-only concerns.
+      setDuplicates(activeStore === currentStore ? findAuthorityDuplicates(doc) : []);
+      setWarnings(activeStore === currentStore ? await loadOpenWarnings(currentStore) : []);
     } catch (error) {
       setLoadError(error instanceof Error ? error.message : String(error));
     } finally {
       setLoading(false);
     }
-  }, []);
+  }, [databaseView]);
 
   // Load on mount and refresh whenever the tab becomes visible (the project —
   // and with it the entity store — may not exist yet at app start).
@@ -193,14 +211,16 @@ export const SidebarDatabaseTab = ({ active = false }: SidebarDatabaseTabProps) 
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [active, reload]);
 
-  // Reload when the entity database changes on disk (external edit or another flow).
+  // Reload when either database changes on disk (external edit or another flow).
   useEffect(() => {
     if (!window.electronAPI?.onExternalFileChange || !store) return;
-    const entitiesPath = store.entitiesPath.replace(/\\/g, '/');
+    const watchedPaths = new Set(
+      [store.entitiesPath, centralStore?.entitiesPath].filter((path): path is string => Boolean(path)).map((path) => path.replace(/\\/g, '/')),
+    );
     return window.electronAPI.onExternalFileChange((filePath: string) => {
-      if (filePath.replace(/\\/g, '/') === entitiesPath) void reload();
+      if (watchedPaths.has(filePath.replace(/\\/g, '/'))) void reload();
     });
-  }, [reload, store]);
+  }, [reload, store, centralStore]);
 
   const { regex, regexError } = useMemo(() => {
     const trimmed = search.trim();
@@ -266,27 +286,37 @@ export const SidebarDatabaseTab = ({ active = false }: SidebarDatabaseTabProps) 
     });
   };
 
+  /** Whichever database is currently being browsed - every visible row belongs to it. */
+  const resolveStoreFor = useCallback(
+    (_id: string): EntityStore | null => (databaseView === 'central' ? centralStore : store),
+    [centralStore, databaseView, store],
+  );
+
   /**
    * Run a mutation against the entity file: load fresh, mutate, save, then
    * optionally propagate a key remap across every registered project.
+   * `targetStore` is resolved by the caller from the entity/entities being
+   * touched - it's the PEDB store for ordinary rows, or the central store for
+   * a CEDB-only row shown here because syncToCentral merged it in.
    */
   const runMutation = useCallback(
     async (
+      targetStore: EntityStore | null,
       message: string,
       mutate: (doc: Document) => Record<string, string | null> | void,
     ) => {
-      if (!store) return;
+      if (!targetStore) return;
       setBusyMessage(message);
       try {
-        const doc = await store.loadEntities();
+        const doc = await targetStore.loadEntities();
         const dbId = getDatabaseId(doc) ?? undefined;
         const remap = mutate(doc) ?? undefined;
-        await store.saveEntities(doc);
+        await targetStore.saveEntities(doc);
         if (remap && Object.keys(remap).length > 0) {
           // Durable order first (so a crash mid-crawl still lets other checkouts
           // converge), then the eager cross-project crawl for this machine.
-          await store.recordEntityOrder(remap, dbId);
-          const summary = await applyKeyRemapAcrossProjects(store, remap);
+          await targetStore.recordEntityOrder(remap, dbId);
+          const summary = await applyKeyRemapAcrossProjects(targetStore, remap);
           setLastSummary(summary);
         }
         setSelected(new Set());
@@ -297,7 +327,7 @@ export const SidebarDatabaseTab = ({ active = false }: SidebarDatabaseTabProps) 
         setBusyMessage(null);
       }
     },
-    [reload, store],
+    [reload],
   );
 
   /**
@@ -308,13 +338,15 @@ export const SidebarDatabaseTab = ({ active = false }: SidebarDatabaseTabProps) 
    */
   const runEntityMutation = useCallback(
     async (message: string, mutate: (doc: Document) => void) => {
-      if (!store || !editEntity) return;
+      if (!editEntity) return;
+      const targetStore = resolveStoreFor(editEntity.id);
+      if (!targetStore) return;
       const entityId = editEntity.id;
       setBusyMessage(message);
       try {
-        const doc = await store.loadEntities();
+        const doc = await targetStore.loadEntities();
         mutate(doc);
-        await store.saveEntities(doc);
+        await targetStore.saveEntities(doc);
         const refreshed = listEntities(doc).find((entity) => entity.id === entityId) ?? null;
         setEditEntity(refreshed);
         if (refreshed) {
@@ -331,7 +363,7 @@ export const SidebarDatabaseTab = ({ active = false }: SidebarDatabaseTabProps) 
         setBusyMessage(null);
       }
     },
-    [editEntity, reload, store],
+    [editEntity, reload, resolveStoreFor],
   );
 
   /** Merge button: <2 selected extends the search with an alternation, ≥2 opens the merge dialog. */
@@ -349,8 +381,9 @@ export const SidebarDatabaseTab = ({ active = false }: SidebarDatabaseTabProps) 
   const confirmMerge = () => {
     if (!mergeIds || !mergeKeepId) return;
     const dropIds = mergeIds.filter((id) => id !== mergeKeepId);
+    const targetStore = resolveStoreFor(mergeKeepId);
     setMergeIds(null);
-    void runMutation('Merging entities…', (doc) => mergeEntities(doc, mergeKeepId, dropIds).remap);
+    void runMutation(targetStore, 'Merging entities…', (doc) => mergeEntities(doc, mergeKeepId, dropIds).remap);
   };
 
   const requestDelete = (entity: EntitySummary) => {
@@ -363,7 +396,7 @@ export const SidebarDatabaseTab = ({ active = false }: SidebarDatabaseTabProps) 
       confirmLabel: 'Delete entity',
       destructive: true,
       onConfirm: () =>
-        void runMutation('Deleting entity…', (doc) => {
+        void runMutation(resolveStoreFor(entity.id), 'Deleting entity…', (doc) => {
           deleteEntity(doc, entity.id);
           return { [entity.id]: null };
         }),
@@ -372,7 +405,7 @@ export const SidebarDatabaseTab = ({ active = false }: SidebarDatabaseTabProps) 
 
   const requestDetach = (entity: EntitySummary, ref: AuthorityId) => {
     const detach = () =>
-      void runMutation('Detaching authority…', (doc) => {
+      void runMutation(resolveStoreFor(entity.id), 'Detaching authority…', (doc) => {
         detachAuthority(doc, entity.id, ref);
       });
     if (skipEntityDetachConfirm) {
@@ -433,7 +466,7 @@ export const SidebarDatabaseTab = ({ active = false }: SidebarDatabaseTabProps) 
     const givenName = editGivenName;
     const givenNameChanged = givenName.trim() !== (editEntity.givenName ?? '');
     setEditEntity(null);
-    void runMutation('Saving entity…', (doc) => {
+    void runMutation(resolveStoreFor(id), 'Saving entity…', (doc) => {
       if (canonicalName) renameEntityName(doc, id, canonicalName);
       setEntityDescription(doc, id, description);
       if (romanizedChanged) setRomanizedName(doc, id, romanized, projectLang);
@@ -481,7 +514,8 @@ export const SidebarDatabaseTab = ({ active = false }: SidebarDatabaseTabProps) 
   };
 
   const markGroupIntentional = (group: DuplicateGroup) => {
-    void runMutation('Marking as intentional…', (doc) => {
+    // Duplicate-authority detection is PEDB-only (see reload), so this always targets the project store.
+    void runMutation(store, 'Marking as intentional…', (doc) => {
       markDuplicateIntentional(doc, group.entityIds);
     });
   };
@@ -564,6 +598,19 @@ export const SidebarDatabaseTab = ({ active = false }: SidebarDatabaseTabProps) 
             <ToggleButton value="org">{t('LWC.desktop.sidebar.database.entity_types.organization')}</ToggleButton>
             <ToggleButton value="work">{t('LWC.desktop.sidebar.database.entity_types.work')}</ToggleButton>
           </ToggleButtonGroup>
+          <Tooltip title={databaseView === 'central' ? 'Browsing your central database' : 'Browsing this project’s database'}>
+            <span>
+              <Button
+                size="small"
+                variant="contained"
+                color={databaseView === 'central' ? 'error' : 'success'}
+                onClick={() => setDatabaseView((prev) => (prev === 'central' ? 'project' : 'central'))}
+                startIcon={<HubOutlinedIcon fontSize="small" />}
+              >
+                {databaseView === 'central' ? 'Central' : 'Project'}
+              </Button>
+            </span>
+          </Tooltip>
           <Box sx={{ flex: 1 }} />
           <Tooltip
             title={
@@ -584,11 +631,13 @@ export const SidebarDatabaseTab = ({ active = false }: SidebarDatabaseTabProps) 
               </Button>
             </span>
           </Tooltip>
-          <Tooltip title="Bridge to central database">
-            <IconButton size="small" onClick={() => setBridgeOpen(true)} aria-label="Bridge to central database">
-              <HubOutlinedIcon fontSize="small" />
-            </IconButton>
-          </Tooltip>
+          {!syncToCentral && (
+            <Tooltip title="Bridge to central database">
+              <IconButton size="small" onClick={() => setBridgeOpen(true)} aria-label="Bridge to central database">
+                <HubOutlinedIcon fontSize="small" />
+              </IconButton>
+            </Tooltip>
+          )}
           <Tooltip title={t('LWC.desktop.sidebar.database.reload_entities')}>
             <IconButton size="small" onClick={() => void reload()} aria-label={t('LWC.desktop.sidebar.database.reload_entities')}>
               <RefreshIcon fontSize="small" />
