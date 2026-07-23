@@ -320,7 +320,7 @@ class DateDialog implements SchemaDialog {
       this.$dateInput.css({ borderBottom: '' });
       $startDate.css({ borderBottom: '' });
       $endDate.css({ borderBottom: '' });
-      this.$dateInput.trigger('focus');
+      this.$dateInput[0]?.focus({ preventScroll: true });
     });
 
     this.dialog.$el.on('beforeSave', (_event: JQuery.Event, dialog: DialogForm) => {

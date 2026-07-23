@@ -1,4 +1,5 @@
 import { Box, useColorScheme } from '@mui/material';
+import '../../monacoEnvironment';
 import 'monaco-editor/esm/vs/basic-languages/xml/xml.contribution';
 import 'monaco-editor/esm/vs/editor/editor.main';
 import 'monaco-editor/esm/vs/editor/contrib/linkedEditing/browser/linkedEditing.js';

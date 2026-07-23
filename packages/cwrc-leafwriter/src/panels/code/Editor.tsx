@@ -1,17 +1,11 @@
 import { Box, useColorScheme } from '@mui/material';
+import '../../monacoEnvironment';
 import 'monaco-editor/esm/vs/basic-languages/xml/xml.contribution';
 import 'monaco-editor/esm/vs/editor/editor.main';
 import * as monaco from 'monaco-editor/esm/vs/editor/editor.api';
 import { useEffect, useMemo, useRef, useState } from 'react';
 
 // * Intellisense for XML: https://mono.software/2017/04/11/custom-intellisense-with-monaco-editor/
-
-// @ts-ignore
-// self.MonacoEnvironment = {
-//   getWorkerUrl: function (_moduleId: any, label: string) {
-//     return './editor.worker.bundle.js';
-//   },
-// };
 
 interface EditorProps {
   showLOD: boolean;
@@ -133,9 +127,17 @@ export const Editor = ({ showLOD }: EditorProps) => {
 
   const updateView = async (useDoc: boolean = false) => {
     if (!enabled) return;
+    // Avoid converting while the editor is empty or mid-load — that spam-logs
+    // "converter: no root found for TEI" on every selection/content event.
+    if (!writer.isDocLoaded || !writer.editor) return;
 
-    if (useDoc || writer.editor?.selection.isCollapsed()) {
-      const content = await writer.converter.getDocumentContent(_showLOD);
+    if (useDoc || writer.editor.selection.isCollapsed()) {
+      let content: string | null | undefined;
+      try {
+        content = await writer.converter.getDocumentContent(_showLOD);
+      } catch {
+        return;
+      }
       if (!content) return;
 
       setShowingFullDocument(true);

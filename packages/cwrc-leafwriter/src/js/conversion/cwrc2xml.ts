@@ -34,12 +34,11 @@ class CWRC2XML {
     // XML
 
     const root = this.writer.schemaManager.getRoot();
+    // Prefer a direct child (normal TinyMCE layout), then a nested match —
+    // wrappers can sit between body and the schema root during load/teardown.
     let $rootEl = $body.children(`[_tag=${root}]`);
-
-    if ($rootEl.length === 0) {
-      log.warn('converter: no root found for', root);
-      $rootEl = $body.find('[_tag]:eq(0)'); // fallback
-    }
+    if ($rootEl.length === 0) $rootEl = $body.find(`[_tag=${root}]`).first();
+    if ($rootEl.length === 0) $rootEl = $body.find('[_tag]:eq(0)'); // last-resort fallback
 
     if ($rootEl.length === 0) {
       // No tagged content at all (e.g. schema root unresolved or the editor

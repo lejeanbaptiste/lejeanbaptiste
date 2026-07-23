@@ -222,8 +222,9 @@ class AttributesEditor implements LWDialogProps {
     //@ts-ignore
     this.$schemaDialog.dialog('open');
 
-    // TODO contradicting focuses
-    $('button[role=ok]', this.$schemaDialog.parent()).trigger('focus');
+    // Prefer native focus over jQuery .trigger('focus') — the latter routes
+    // through focusMappedHandler and can recurse with the dialog focus trap.
+    $('button[role=ok]', this.$schemaDialog.parent())[0]?.focus({ preventScroll: true });
     // //$('input, select', $schemaDialog).first().focus();
   }
 

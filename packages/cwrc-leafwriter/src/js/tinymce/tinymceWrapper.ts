@@ -528,11 +528,11 @@ export const tinymceWrapperInit = function ({
       if (!option) return;
       selectedMode = option.mode;
       $list.find('button').removeClass('selected').css({ outline: '' });
-      $list
+      const $selected = $list
         .find(`button[data-mode="${selectedMode}"]`)
         .addClass('selected')
-        .css({ outline: '2px solid currentColor' })
-        .trigger('focus');
+        .css({ outline: '2px solid currentColor' });
+      ($selected[0] as HTMLElement | undefined)?.focus({ preventScroll: true });
     };
 
     const finish = (saveDefault: boolean) => {
