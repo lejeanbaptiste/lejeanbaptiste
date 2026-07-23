@@ -273,6 +273,12 @@ export interface ElectronAPI {
   getEntityDbFolder: () => Promise<string | null>;
   setEntityDbFolder: (folder: string | null) => Promise<void>;
   pickEntityDbFolder: () => Promise<string | null>;
+  moveEntityDbFolder: () => Promise<{
+    ok: boolean;
+    cancelled?: boolean;
+    error?: string;
+    folder?: string;
+  }>;
   pickAuthorityPacksSource?: () => Promise<string | null>;
   authorityDbStatuses?: () => Promise<AuthoritySourceStatus[]>;
   authorityDbDownload?: (sourceId: AuthoritySourceId) => Promise<{ ok: boolean; error?: string }>;
@@ -431,6 +437,12 @@ declare global {
       skipEntityDetachConfirm: boolean;
       skipExplorerDeleteConfirm: boolean;
       pickEntityDbFolder: () => Promise<string | null>;
+      moveEntityDbFolder: () => Promise<{
+        ok: boolean;
+        cancelled?: boolean;
+        error?: string;
+        folder?: string;
+      }>;
       pickAchievementsFolder: () => Promise<{ folder: string; warning?: string } | null>;
       importAchievementsFrom: () => Promise<{ ok: boolean; cancelled?: boolean; error?: string }>;
       setAiApiSettings: (settings: Partial<AiApiSettings>) => void | Promise<void>;

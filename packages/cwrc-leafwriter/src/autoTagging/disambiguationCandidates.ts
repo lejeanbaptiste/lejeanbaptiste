@@ -441,7 +441,7 @@ export function candidatesFromEntityFile(doc: Document, tag: string, surface: st
   return out;
 }
 
-function mergeCandidates(
+export function mergeCandidates(
   lists: DisambiguationCandidate[][],
   options?: MergeCandidateOptions,
 ): DisambiguationCandidate[] {

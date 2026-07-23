@@ -49,9 +49,11 @@ import {
   buildDisambiguationCandidates,
   candidateLinks,
   candidatePassesYearFilter,
+  candidatesFromEntityFile,
   collapseCrossAuthorityCandidates,
   enrichCandidateCrossRefs,
   extractWikidataId,
+  mergeCandidates,
   mergeSelectedCandidates,
   type CandidateLink,
   type DisambiguationCandidate,
@@ -546,7 +548,13 @@ export const DisambiguationPanel = ({
           ? null
           : session.getPendingCandidates(targetGroup.tag, targetGroup.surface);
         if (cached && !forceRefresh) {
-          const rows = collapseCrossAuthorityCandidates(cached.map(enrichCandidateCrossRefs));
+          // The cache only exists to avoid re-querying external authorities;
+          // the project's own entity file is cheap to re-read, so always
+          // merge in fresh local matches (e.g. an entity added after this
+          // group was last cached, possibly from another view entirely).
+          const entitiesDoc = await session.loadEntities();
+          const freshLocal = candidatesFromEntityFile(entitiesDoc, targetGroup.tag, targetGroup.surface);
+          const rows = mergeCandidates([freshLocal, cached]);
           setCandidates(rows);
           // The prefetcher can cache DILA place rows before their lazy detail
           // scrapes (dynasty/dates) have landed. Heal such rows in the
@@ -564,7 +572,6 @@ export const DisambiguationPanel = ({
           if (needsDilaDates && session.cache) {
             const cacheForRefresh = session.cache;
             void (async () => {
-              const entitiesDoc = session.getEntitiesDocument() ?? (await session.loadEntities());
               void refreshDilaDates(targetGroup, cacheForRefresh, entitiesDoc, true);
             })();
           }

@@ -291,6 +291,27 @@ export const useCommonsUiBridge = () => {
     await window.electronAPI?.authorityLifecycleRevealFolder?.();
   }, []);
 
+  const moveEntityDbFolder = useCallback(async (): Promise<{
+    ok: boolean;
+    cancelled?: boolean;
+    error?: string;
+    folder?: string;
+  }> => {
+    const result = await window.electronAPI?.moveEntityDbFolder?.();
+    if (!result) {
+      return { ok: false, error: 'Desktop entity database bridge is unavailable.' };
+    }
+    if (result.ok && result.folder) {
+      setEntityDbFolderState(result.folder);
+      const achievements = await window.electronAPI?.getAchievementsFolder?.();
+      setAchievementsFolderState(
+        typeof achievements === 'string' && achievements.trim() ? achievements : null,
+      );
+      await refreshAuthorityLifecycle();
+    }
+    return result;
+  }, [refreshAuthorityLifecycle]);
+
   useEffect(() => {
     if (!isDesktop()) return;
     registerLeafWriterCommonsI18n();
@@ -320,6 +341,7 @@ export const useCommonsUiBridge = () => {
       setAuthorityLifecycleEnabled,
       runAuthorityLifecycleUpdate,
       revealAuthorityLifecycleFolder,
+      moveEntityDbFolder,
     };
 
     window.dispatchEvent(new Event('ljbCommonsUiChanged'));
@@ -341,6 +363,7 @@ export const useCommonsUiBridge = () => {
     refreshAuthorityLifecycle,
     runAuthorityLifecycleUpdate,
     revealAuthorityLifecycleFolder,
+    moveEntityDbFolder,
     setAiApiSettings,
     setAuthorityLifecycleEnabled,
     setEncoderName,

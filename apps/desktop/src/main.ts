@@ -102,6 +102,8 @@ import {
   movePath,
   renamePath,
 } from './explorerFileOps';
+import { moveEntityDbFolder } from './moveEntityDb';
+import { PROJECT_FILE_NAME } from './projectTypes';
 import { OpenFileWatcher } from './openFileWatcher';
 import {
   cancelZoteroPick,
@@ -1918,6 +1920,70 @@ const registerIpcHandlers = () => {
     if (result.canceled || result.filePaths.length === 0) return null;
     rememberDialogDir(result.filePaths[0], 'directory');
     return result.filePaths[0] ?? null;
+  });
+
+  ipcMain.handle('moveEntityDbFolder', async () => {
+    const source = await getEntityDbFolder();
+    if (!source) {
+      return { ok: false, error: 'No entity database folder configured.' };
+    }
+
+    const parent = getTopNativeDialogWindow() ?? mainWindow ?? undefined;
+    const options: Electron.OpenDialogOptions = {
+      properties: ['openDirectory', 'createDirectory'],
+      title: 'Choose new entity database folder',
+      message:
+        'Select where to move your entity database (entities.xml, authority packs, and related files).',
+      defaultPath: await getDialogDefaultPath(),
+    };
+    const pickResult = parent
+      ? await dialog.showOpenDialog(parent, options)
+      : await dialog.showOpenDialog(options);
+    if (pickResult.canceled || pickResult.filePaths.length === 0) {
+      return { ok: false, cancelled: true };
+    }
+
+    const dest = pickResult.filePaths[0]?.replace(/[/\\]+$/, '') ?? '';
+    if (!dest) return { ok: false, cancelled: true };
+    rememberDialogDir(dest, 'directory');
+
+    if (existsSync(path.join(dest, PROJECT_FILE_NAME))) {
+      return {
+        ok: false,
+        error:
+          'That folder is a Le Jean-Baptiste project. Choose a different folder for your entity database.',
+      };
+    }
+
+    const confirmParent = parent ?? mainWindow;
+    if (!confirmParent) {
+      return { ok: false, error: 'Cannot show confirmation dialog.' };
+    }
+
+    const confirmed = await dialog.showMessageBox(confirmParent, {
+      type: 'warning',
+      title: 'Move entity database?',
+      message: `Move your entity database from:\n${source}\n\nto:\n${dest}\n\nAll files will be copied to the new location and the old folder will be removed after a successful move.`,
+      buttons: ['Move', 'Cancel'],
+      defaultId: 0,
+      cancelId: 1,
+    });
+    if (confirmed.response !== 0) {
+      return { ok: false, cancelled: true };
+    }
+
+    try {
+      await moveEntityDbFolder(source, dest);
+      await setEntityDbFolder(dest);
+      const achievementsFolder = await getAchievementsFolder();
+      if (achievementsFolder && path.resolve(achievementsFolder) === path.resolve(source)) {
+        await setAchievementsFolder(dest);
+      }
+      return { ok: true, folder: dest };
+    } catch (error) {
+      const message = error instanceof Error ? error.message : 'Move failed.';
+      return { ok: false, error: message };
+    }
   });
 
   ipcMain.handle('pickAuthorityPacksSource', async () => {
