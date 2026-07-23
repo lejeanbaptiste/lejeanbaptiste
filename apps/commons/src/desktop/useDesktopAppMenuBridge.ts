@@ -21,7 +21,7 @@ const activeZoomBridge = () => {
 
 /** App-wide Electron menu shortcuts (registered once, survives route changes). */
 export const useDesktopAppMenuBridge = () => {
-  const { openProject } = useActions().project;
+  const { closeProject, openProject } = useActions().project;
 
   useEffect(() => {
     if (!isDesktop() || !window.electronAPI?.onAppMenuAction) return;
@@ -36,6 +36,11 @@ export const useDesktopAppMenuBridge = () => {
     const unsubscribe = window.electronAPI.onAppMenuAction((action) => {
       if (action === 'open-project') {
         void openProject();
+        return;
+      }
+
+      if (action === 'close-project') {
+        void closeProject();
         return;
       }
 
@@ -77,5 +82,5 @@ export const useDesktopAppMenuBridge = () => {
     void window.electronAPI.signalRendererReady?.();
 
     return unsubscribe;
-  }, [openProject]);
+  }, [closeProject, openProject]);
 };

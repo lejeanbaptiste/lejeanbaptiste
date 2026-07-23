@@ -382,7 +382,7 @@ export const SidebarExplorerTab = () => {
           )
         ) : tree.length === 0 ? (
           <Typography variant="body2" color="text.secondary" sx={{ p: 2, minHeight: '100%' }}>
-            {t('LWC.desktop.explorer.open_project_hint')}
+            {t('LWC.desktop.explorer.open_project_hint', { shortcut: modShortcut('O') })}
           </Typography>
         ) : (
           <List dense disablePadding sx={{ minHeight: '100%' }}>

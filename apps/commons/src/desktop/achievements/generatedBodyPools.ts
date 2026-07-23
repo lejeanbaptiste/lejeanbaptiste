@@ -3,7 +3,8 @@
 //
 // POSE_INDICES: every pose that has a full f-rank1..7/m-rank1..7 kit (i.e.
 // is eligible for the random pose pick in UniformAvatar.tsx) - excludes
-// bodies/body0.svg, the civilian body.
+// bodies/body0.svg, the civilian body (still packed as body/pose0 for the
+// fixed Civil portrait).
 //
 // WEAPON_POOLS: per pose index, one entry per <g inkscape:label="weapons">
 // block found in that pose's SVG (a pose can have zero, one, or two - two
@@ -22,7 +23,7 @@
 // BODY_COLOR_STATS: one precomputed lightness/saturation stat per
 // "<poseIndex>:<bodyType>" key, sampled from a representative rank-1, no-
 // weapon render - see colorMatch.ts/getHeadColorStats for the equivalent
-// head-side table this mirrors.
+// head-side table this mirrors. Includes pose 0 (civilian).
 
 import type { ColorStats } from './colorMatch';
 
@@ -253,6 +254,14 @@ export const WEAPON_POOLS: Readonly<Record<number, ReadonlyArray<Record<number, 
 };
 
 export const BODY_COLOR_STATS: Readonly<Record<string, ColorStats>> = {
+  "0:m": {
+    "lightness": 0.2052541613066874,
+    "saturation": 0.13916654751585397
+  },
+  "0:f": {
+    "lightness": 0.15586907240057737,
+    "saturation": 0.1306594178550638
+  },
   "1:m": {
     "lightness": 0.2428076017641199,
     "saturation": 0.7500214265768296

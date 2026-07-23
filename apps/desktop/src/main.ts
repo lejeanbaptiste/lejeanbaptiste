@@ -925,6 +925,11 @@ const buildApplicationMenu = () => {
     },
   };
 
+  const closeProjectItem: Electron.MenuItemConstructorOptions = {
+    label: 'Close Project',
+    click: () => sendMenuAction('close-project'),
+  };
+
   const saveItem: Electron.MenuItemConstructorOptions = {
     label: 'Save',
     accelerator: 'CommandOrControl+S',
@@ -1013,6 +1018,7 @@ const buildApplicationMenu = () => {
         closeTabItem,
         menuSeparator(),
         openProjectItem,
+        closeProjectItem,
         editionMetadataItem,
         checkSchemaUpdateItem,
         timeMachineItem,

@@ -88,7 +88,13 @@ export const SidebarIconTabBar = ({
         orientation={orientation}
         value={activeTab}
         onChange={(_event, value: SidebarTabId | null) => {
-          if (value) onSelectTab(value);
+          // Exclusive mode reports `null` when the already-active tab is
+          // clicked again (MUI's toggle-off semantics) - there's no "no tab
+          // selected" state here, so re-fire for the current tab instead of
+          // swallowing the click. This is what makes re-clicking the active
+          // icon expand a collapsed panel, and (with no project open) makes
+          // the explorer icon's open-project affordance actually clickable.
+          onSelectTab(value ?? activeTab);
         }}
         sx={{
           flex: isVertical ? undefined : 1,

@@ -9,7 +9,11 @@ import {
   useProjectMenu,
   registerApplicationSettingsBootstrap,
 } from '@src/desktop';
-import { TOOLBAR_ROW_HEIGHT } from '@src/desktop/sidebarConstants';
+import {
+  LEFT_PANEL_COLLAPSED_WIDTH,
+  SIDEBAR_TAB_BUTTON_SIZE,
+  TOOLBAR_ROW_HEIGHT,
+} from '@src/desktop/sidebarConstants';
 import { AboutDialog } from '@src/desktop/AboutDialog';
 import { TimeMachineDialog } from '@src/desktop/TimeMachineDialog';
 import { UserNamePromptDialog } from '@src/desktop/UserNamePromptDialog';
@@ -23,6 +27,16 @@ import { modShortcut } from '@src/utils/platform';
 import { useAtom } from 'jotai';
 import { useEffect, useRef } from 'react';
 import { useTranslation } from 'react-i18next';
+
+// Vertical center of the sidebar's folder/explorer icon in its collapsed
+// strip (see SidebarIconTabBar.tsx): 2px top padding (theme spacing 0.25) +
+// the collapse chevron button (SIDEBAR_TAB_BUTTON_SIZE) + 1px grouped-button
+// margin (theme spacing 0.125), then half the folder button's own height.
+// Computed against the sidebar strip's own top edge (y=0 of the shared row
+// container both it and this callout sit in) rather than guessed from the
+// content column, which has an extra toolbar row above it that the sidebar
+// doesn't.
+const OPEN_FOLDER_CALLOUT_TOP = 2 + SIDEBAR_TAB_BUTTON_SIZE + 1 + SIDEBAR_TAB_BUTTON_SIZE / 2;
 
 export const ProjectEditor = () => {
   const { contentHasChanged, readonly, resource } = useAppState().editor;
@@ -224,13 +238,53 @@ export const ProjectEditor = () => {
   }, []);
 
   return (
-    <Box sx={{ display: 'flex', flex: 1, minHeight: 0 }}>
+    <Box sx={{ display: 'flex', flex: 1, minHeight: 0, position: 'relative' }}>
       <AboutDialog onClose={() => setAboutOpen(false)} open={aboutOpen} />
       <TimeMachineDialog onClose={() => setTimeMachineOpen(false)} open={timeMachineOpen} />
       <UserNamePromptDialog />
       <TagCommandProvider />
       <CorrectionProvider />
       <UnifiedLeftPanel />
+      {!resource && !hasProject && (
+        // A floating callout rather than a plain inline hint, so it visually
+        // reads as "click the folder icon over there". Positioned against
+        // this component's own top-level row (the shared ancestor whose top
+        // edge the sidebar's icon strip and this callout both start from),
+        // not the content column below — that column has an extra 35px
+        // toolbar row above it that the sidebar doesn't, which would throw
+        // off any offset measured from inside it.
+        <Box
+          component="button"
+          type="button"
+          onClick={() => void openProject()}
+          sx={{
+            alignItems: 'center',
+            bgcolor: 'success.main',
+            border: 'none',
+            borderRadius: 5,
+            boxShadow: 3,
+            color: 'success.contrastText',
+            cursor: 'pointer',
+            display: 'inline-flex',
+            font: 'inherit',
+            gap: 1,
+            left: LEFT_PANEL_COLLAPSED_WIDTH + 8,
+            m: 0,
+            position: 'absolute',
+            px: 2,
+            py: 1,
+            top: OPEN_FOLDER_CALLOUT_TOP,
+            transform: 'translateY(-50%)',
+            zIndex: 2,
+            '&:hover': { bgcolor: 'success.dark' },
+          }}
+        >
+          <WestIcon sx={{ fontSize: 20 }} aria-hidden />
+          <Typography color="inherit" variant="body1">
+            {t('LWC.desktop.explorer.open_folder_editor_hint', { shortcut: modShortcut('O') })}
+          </Typography>
+        </Box>
+      )}
       <Box sx={{ display: 'flex', flexDirection: 'column', flex: 1, minWidth: 0 }}>
         <Box
           id="desktop-toolbar-row"
@@ -249,47 +303,20 @@ export const ProjectEditor = () => {
           {!resource && (
             <Box
               sx={{
+                alignItems: 'center',
                 bgcolor: 'background.default',
                 display: 'flex',
                 height: '100%',
                 inset: 0,
+                justifyContent: 'center',
                 position: 'absolute',
                 zIndex: 1,
-                ...(hasProject
-                  ? { alignItems: 'center', justifyContent: 'center' }
-                  : { alignItems: 'flex-start', justifyContent: 'flex-start', p: 2 }),
               }}
             >
-              {hasProject ? (
+              {hasProject && (
                 <Typography color="text.secondary" variant="body1">
                   Open a folder and select an XML file to begin editing.
                 </Typography>
-              ) : (
-                <Box
-                  component="button"
-                  type="button"
-                  onClick={() => void openProject()}
-                  sx={{
-                    alignItems: 'center',
-                    background: 'none',
-                    border: 'none',
-                    color: 'text.secondary',
-                    cursor: 'pointer',
-                    display: 'inline-flex',
-                    font: 'inherit',
-                    gap: 1,
-                    p: 0,
-                    textAlign: 'left',
-                    '&:hover': { color: 'text.primary' },
-                  }}
-                >
-                  <WestIcon sx={{ fontSize: 20 }} aria-hidden />
-                  <Typography color="inherit" variant="body1">
-                    {t('LWC.desktop.explorer.open_folder_editor_hint', {
-                      shortcut: modShortcut('O'),
-                    })}
-                  </Typography>
-                </Box>
               )}
             </Box>
           )}

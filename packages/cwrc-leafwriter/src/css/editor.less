@@ -243,6 +243,17 @@ body {
   display: none !important;
 }
 
+// <note> elements never converted into a CWRC note entity (e.g. imported or
+// hand-authored TEI with no matching RDF annotation - see xml2cwrc.ts's
+// processRDF) render with no .noteWrapper span at all, so the rule above has
+// nothing to hide. Every tagged element carries its TEI tag in `_tag`
+// regardless of entity status (see cwrc2xml.ts/xml2cwrc.ts), so toggle
+// visibility on the element itself for this case - there's no separate
+// wrapper to keep visible, unlike the entity case above.
+[_tag='note'].hide {
+  display: none !important;
+}
+
 .showEntities .citation.start,
 .showEntities .note.start,
 .showEntities .keyword.start {

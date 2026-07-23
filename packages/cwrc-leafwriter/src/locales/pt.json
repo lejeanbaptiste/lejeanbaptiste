@@ -333,7 +333,7 @@
         "find entity": "Entidade LW.lookups.entity.find"
       },
       "find": "LW.lookups.find",
-      "find entity": "encontrar {{entidade}}",
+      "find entity": "encontrar {{entity}}",
       "tag without linking": "Adicionar"
     },
     "low": "LW.baixo",

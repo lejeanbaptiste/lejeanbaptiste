@@ -362,7 +362,7 @@
         "find entity": "Trouver l'entité"
       },
       "find": "trouver",
-      "find entity": "trouver {{entité}}",
+      "find entity": "trouver {{entity}}",
       "tag without linking": "Ajouter"
     },
     "low": "faible",
