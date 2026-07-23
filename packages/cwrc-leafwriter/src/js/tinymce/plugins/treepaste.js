@@ -241,10 +241,10 @@
                     if (!option) return;
                     selectedMode = option.mode;
                     $list.find('button').removeClass('selected').css({ outline: '' });
-                    $list.find('button[data-mode="' + selectedMode + '"]')
+                    var $selected = $list.find('button[data-mode="' + selectedMode + '"]')
                         .addClass('selected')
-                        .css({ outline: '2px solid currentColor' })
-                        .trigger('focus');
+                        .css({ outline: '2px solid currentColor' });
+                    if ($selected[0] && $selected[0].focus) $selected[0].focus({ preventScroll: true });
                 }
 
                 function finish(saveDefault) {

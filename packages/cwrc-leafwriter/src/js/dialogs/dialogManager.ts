@@ -85,12 +85,28 @@ const setDialogListeners = ($cwrcDialogWrapper: JQuery<HTMLElement>) => {
           // doesn't leak through and re-open the tag command popup.
           // The editor may be mid-teardown by now (tab switch, file close) — focusing a
           // removed editor crashes deep inside TinyMCE (querySelector on a null doc).
+          // Defer past jQuery UI's opener.trigger('focus') / focusin trap — calling
+          // editor.focus() synchronously here recurses through jQuery's
+          // focusMappedHandler and blows the stack (RangeError).
           const editor = window.writer?.editor;
           if (!editor || (editor as { removed?: boolean }).removed || !editor.getDoc()) return;
           (editor as any)._suppressEnterUntil = Date.now() + 300;
-          editor.focus();
+          window.setTimeout(() => {
+            if ((editor as { removed?: boolean }).removed || !editor.getDoc()) return;
+            editor.focus();
+          }, 0);
         });
     },
+  });
+
+  // TinyMCE's recommended guard: stop jQuery UI's modal focusin trap from
+  // reclaiming focus when it lands inside the editor chrome (otherwise
+  // dialog close ↔ editor.focus can loop through focusMappedHandler).
+  $(document).on('focusin.leafwriter-tinymce', (event) => {
+    const target = event.target as Element | null;
+    if (target?.closest?.('.tox-tinymce, .tox-tinymce-aux, .tox-dialog')) {
+      event.stopImmediatePropagation();
+    }
   });
 
   // do the same for tooltips
@@ -136,6 +152,8 @@ const setDialogListeners = ($cwrcDialogWrapper: JQuery<HTMLElement>) => {
 };
 
 const restorePreviousDialogListeners = () => {
+  $(document).off('focusin.leafwriter-tinymce');
+
   //@ts-ignore
   $.extend($.ui.dialog.prototype.options, {
     appendTo: prevAppendTo,
