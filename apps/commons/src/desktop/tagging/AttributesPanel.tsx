@@ -48,6 +48,8 @@ import {
   removeAttributeFromTag,
 } from './attributeCommand';
 import {
+  clearKeyFromExactMatches,
+  countExactKeyedTagMatches,
   countExactUnkeyedTagMatches,
   listExactUnkeyedTagMatches,
   propagateAttributesToExactUnkeyedMatches,
@@ -108,6 +110,7 @@ export const AttributesPanel = ({ visible = true }: { visible?: boolean }) => {
   const [entityInfoRevision, setEntityInfoRevision] = useState(0);
   const [nameTypeBusy, setNameTypeBusy] = useState(false);
   const [propagatableMatchCount, setPropagatableMatchCount] = useState(0);
+  const [keyedMatchCount, setKeyedMatchCount] = useState(0);
   const [walkMatches, setWalkMatches] = useState<Element[]>([]);
   const [walkIndex, setWalkIndex] = useState(0);
   const [walkActive, setWalkActive] = useState(false);
@@ -147,6 +150,7 @@ export const AttributesPanel = ({ visible = true }: { visible?: boolean }) => {
       setSchemaAttributes([]);
       setValues({});
       setPropagatableMatchCount(0);
+      setKeyedMatchCount(0);
       return;
     }
 
@@ -163,17 +167,20 @@ export const AttributesPanel = ({ visible = true }: { visible?: boolean }) => {
       setSchemaAttributes([]);
       setValues({});
       setPropagatableMatchCount(0);
+      setKeyedMatchCount(0);
       return;
     }
 
     const generation = ++syncGenerationRef.current;
     setTagElement(element);
     setTagName(name);
-    setValues(readTagAttributes(element));
+    const attrs = readTagAttributes(element);
+    setValues(attrs);
     setPropagatableMatchCount(countExactUnkeyedTagMatches(element));
-    const attrs = await fetchSchemaAttributes(element);
+    setKeyedMatchCount(attrs.key ? countExactKeyedTagMatches(element, attrs.key) : 0);
+    const schemaAttrs = await fetchSchemaAttributes(element);
     if (generation !== syncGenerationRef.current) return;
-    setSchemaAttributes(attrs);
+    setSchemaAttributes(schemaAttrs);
   }, []);
 
   const attachEditorSync = useCallback(() => {
@@ -387,6 +394,7 @@ export const AttributesPanel = ({ visible = true }: { visible?: boolean }) => {
     if (!element || readonly) return;
     removeAttributeFromTag(element, attrName);
     setValues(readTagAttributes(element));
+    if (attrName === 'key') setKeyedMatchCount(0);
   };
 
   const handleAddAttribute = () => {
@@ -395,16 +403,37 @@ export const AttributesPanel = ({ visible = true }: { visible?: boolean }) => {
     applyAttributeToTag(element, addAttrName.trim(), addAttrValue);
     setAddAttrName('');
     setAddAttrValue('');
-    setValues(readTagAttributes(element));
+    const attrs = readTagAttributes(element);
+    setValues(attrs);
+    if (addAttrName.trim() === 'key') {
+      setKeyedMatchCount(attrs.key ? countExactKeyedTagMatches(element, attrs.key) : 0);
+    }
   };
 
   const handleLookup = () => {
     const element = tagElementRef.current;
     if (!element || readonly) return;
     openEntityLookupForTag(element, () => {
-      setValues(readTagAttributes(element));
+      const attrs = readTagAttributes(element);
+      setValues(attrs);
       setPropagatableMatchCount(countExactUnkeyedTagMatches(element));
+      setKeyedMatchCount(attrs.key ? countExactKeyedTagMatches(element, attrs.key) : 0);
     });
+  };
+
+  const handleClearKeyEverywhere = () => {
+    const element = tagElementRef.current;
+    const key = valuesRef.current.key?.trim();
+    if (!element || readonly || !key) return;
+    const { cleared } = clearKeyFromExactMatches(element, key);
+    setValues(readTagAttributes(element));
+    setKeyedMatchCount(0);
+    if (cleared > 0) {
+      notifyViaSnackbar({
+        message: `Removed the key from ${cleared} matching ${cleared === 1 ? 'tag' : 'tags'}.`,
+        options: { variant: 'success' },
+      });
+    }
   };
 
   const refreshWalkMatches = useCallback(() => {
@@ -701,6 +730,18 @@ export const AttributesPanel = ({ visible = true }: { visible?: boolean }) => {
                   ) : null}
                 </Stack>
               </Alert>
+            ) : null}
+            {linkedEntityInfo && keyedMatchCount > 1 ? (
+              <Button
+                color="warning"
+                disabled={readonly}
+                onClick={handleClearKeyEverywhere}
+                size="small"
+                startIcon={<CloseIcon fontSize="small" />}
+                variant="outlined"
+              >
+                Unlink key from all {keyedMatchCount} matches
+              </Button>
             ) : null}
             {walkActive ? (
               <Alert

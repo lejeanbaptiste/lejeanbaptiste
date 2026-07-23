@@ -92,6 +92,12 @@ declare global {
     getEntityDbFolder?: () => Promise<string | null>;
     setEntityDbFolder?: (folder: string | null) => Promise<void>;
     pickEntityDbFolder?: () => Promise<string | null>;
+    moveEntityDbFolder?: () => Promise<{
+      ok: boolean;
+      cancelled?: boolean;
+      error?: string;
+      folder?: string;
+    }>;
     pickAuthorityPacksSource?: () => Promise<string | null>;
     authorityPackStatuses?: () => Promise<
       import('../autoTagging/packPaths').AuthorityPackStatus[]

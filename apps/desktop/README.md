@@ -4,7 +4,7 @@ Electron desktop shell for LEAF-Writer Commons.
 
 ## Prerequisites
 
-- Node.js 20+
+- Node.js 24+
 - npm workspaces installed from the repo root: `npm install`
 
 ## Development

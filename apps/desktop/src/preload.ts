@@ -214,6 +214,12 @@ export interface ElectronAPI {
   getEntityDbFolder: () => Promise<string | null>;
   setEntityDbFolder: (folder: string | null) => Promise<void>;
   pickEntityDbFolder: () => Promise<string | null>;
+  moveEntityDbFolder: () => Promise<{
+    ok: boolean;
+    cancelled?: boolean;
+    error?: string;
+    folder?: string;
+  }>;
   pickAuthorityPacksSource: () => Promise<string | null>;
   authorityDbStatuses: () => Promise<AuthoritySourceStatus[]>;
   authorityDbDownload: (sourceId: AuthoritySourceId) => Promise<{ ok: boolean; error?: string }>;
@@ -443,6 +449,7 @@ const electronAPI: ElectronAPI = {
   getEntityDbFolder: () => ipcRenderer.invoke('getEntityDbFolder'),
   setEntityDbFolder: (folder: string | null) => ipcRenderer.invoke('setEntityDbFolder', folder),
   pickEntityDbFolder: () => ipcRenderer.invoke('pickEntityDbFolder'),
+  moveEntityDbFolder: () => ipcRenderer.invoke('moveEntityDbFolder'),
   pickAuthorityPacksSource: () => ipcRenderer.invoke('pickAuthorityPacksSource'),
   authorityDbStatuses: () => ipcRenderer.invoke('authorityDb:statuses'),
   authorityDbDownload: (sourceId: AuthoritySourceId) =>
