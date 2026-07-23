@@ -1,11 +1,28 @@
 import { app } from 'electron';
+import { existsSync } from 'fs';
 import fs from 'fs/promises';
 import path from 'path';
 import type { SourceProfile, SourceProfileFile } from '../../commons/src/desktop/sourceProfileTypes';
+import { getEntityDbFolder } from './projectPrefs';
 
 const PROFILES_FILENAME = 'source-profiles.json';
 
-const getProfilesPath = () => path.join(app.getPath('userData'), PROFILES_FILENAME);
+const getUserDataProfilesPath = () => path.join(app.getPath('userData'), PROFILES_FILENAME);
+
+/**
+ * Source profiles are shared reference data tied to the corpus, like
+ * entities.xml and achievements.json, so they live inside the entity
+ * database folder when one is configured - otherwise adopting someone
+ * else's synced database folder wouldn't bring their source profiles along.
+ * Falls back to the userData copy so existing installs don't lose data.
+ */
+const getProfilesPath = async (): Promise<string> => {
+  const entityDbFolder = await getEntityDbFolder();
+  if (entityDbFolder && existsSync(entityDbFolder)) {
+    return path.join(entityDbFolder, PROFILES_FILENAME);
+  }
+  return getUserDataProfilesPath();
+};
 
 const emptyFile = (): SourceProfileFile => ({ version: 1, profiles: [] });
 
@@ -71,19 +88,34 @@ export const sanitizeSourceProfileFile = (parsed: unknown): SourceProfileFile =>
   return { version: 1, profiles };
 };
 
-export const readSourceProfilesFile = async (): Promise<SourceProfileFile> => {
-  const filePath = getProfilesPath();
+const readOneCandidate = async (filePath: string): Promise<SourceProfileFile | null> => {
   try {
     const raw = await fs.readFile(filePath, 'utf-8');
     return sanitizeSourceProfileFile(JSON.parse(raw));
   } catch (error) {
-    if ((error as NodeJS.ErrnoException).code === 'ENOENT') return emptyFile();
+    if ((error as NodeJS.ErrnoException).code === 'ENOENT') return null;
     throw error;
   }
 };
 
+export const readSourceProfilesFile = async (): Promise<SourceProfileFile> => {
+  const primaryPath = await getProfilesPath();
+  const primary = await readOneCandidate(primaryPath);
+  if (primary) return primary;
+
+  // Falls back to the pre-migration userData location so upgrading doesn't
+  // look like a wipe for installs that had profiles before this moved.
+  const legacyPath = getUserDataProfilesPath();
+  if (legacyPath !== primaryPath) {
+    const legacy = await readOneCandidate(legacyPath);
+    if (legacy) return legacy;
+  }
+
+  return emptyFile();
+};
+
 export const writeSourceProfilesFile = async (file: SourceProfileFile): Promise<void> => {
-  const filePath = getProfilesPath();
+  const filePath = await getProfilesPath();
   await fs.mkdir(path.dirname(filePath), { recursive: true });
   await fs.writeFile(filePath, `${JSON.stringify(sanitizeSourceProfileFile(file), null, 2)}\n`, 'utf-8');
 };

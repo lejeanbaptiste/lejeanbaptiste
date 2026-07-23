@@ -30,9 +30,21 @@ const TARGETS = {
   'win32-x64': 'x86_64-pc-windows-msvc',
 };
 
-const target = TARGETS[`${process.platform}-${process.arch}`];
+// Overridable via env vars rather than trusting process.platform/process.arch
+// unconditionally: on some CI Windows arm64 runners, the node.exe that ends
+// up invoking this script (see apps/desktop/package.json's prepackage:win,
+// which hardcodes a system node.exe path for unrelated PATH reasons) can
+// itself be an x64 build even though the runner and target installer are
+// arm64 - process.arch would then silently report x64 and bundle the wrong
+// Python/sanmiao build into the arm64 installer. This bit the Linux arm64
+// build the same way (fixed by passing an explicit --arm64 electron-builder
+// flag); CI sets these for the platform/arch it's actually packaging for.
+const platform = process.env.LJB_PYTHON_PLATFORM || process.platform;
+const arch = process.env.LJB_PYTHON_ARCH || process.arch;
+
+const target = TARGETS[`${platform}-${arch}`];
 if (!target) {
-  console.error(`[python-runtime] Unsupported platform: ${process.platform}-${process.arch}`);
+  console.error(`[python-runtime] Unsupported platform: ${platform}-${arch}`);
   process.exit(1);
 }
 

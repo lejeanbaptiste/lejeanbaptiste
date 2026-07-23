@@ -12,6 +12,7 @@ import {
   extractViafId,
   extractWikidataId,
   fetchLiveCandidates,
+  mergeCandidates,
   mergeSelectedCandidates,
   resolveEntityInDocument,
   type DisambiguationCandidate,
@@ -811,6 +812,26 @@ describe('disambiguationCandidates', () => {
     ]);
     expect(merged?.sources).toEqual(['Wikidata', 'VIAF']);
     expect(merged?.authorityIds).toHaveLength(2);
+  });
+
+  it('dedupes central-database candidates by centralEntityId when re-merging cache', () => {
+    const freshCentral: DisambiguationCandidate = {
+      id: 'person-cedb-1',
+      label: '江德麟',
+      romanizedName: 'Jiang De Lin',
+      sources: ['central-database'],
+      centralEntityId: 'person-cedb-1',
+      fromEntityFile: true,
+    };
+    const cached: DisambiguationCandidate = {
+      ...freshCentral,
+      sources: ['central-database', 'Wikidata'],
+    };
+
+    const rows = mergeCandidates([[freshCentral], [cached]]);
+    expect(rows).toHaveLength(1);
+    expect(rows[0]?.centralEntityId).toBe('person-cedb-1');
+    expect(rows[0]?.sources).toEqual(['central-database', 'Wikidata']);
   });
 
   it('builds external links for candidates', () => {

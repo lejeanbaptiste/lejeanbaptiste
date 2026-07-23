@@ -26,9 +26,11 @@ import {
   collectTypedNamesForCandidate,
   extractWikidataId,
   mergeSelectedCandidates,
+  resolveCandidateForPedb,
   resolveEntityInDocument,
   type DisambiguationCandidate,
 } from '../../../../packages/cwrc-leafwriter/src/autoTagging/disambiguationCandidates';
+import { autoSyncEntityToCentral } from '../../../../packages/cwrc-leafwriter/src/autoTagging/autoSync';
 import {
   addEntity,
   createEntitiesScaffold,
@@ -36,9 +38,13 @@ import {
   type EntityKind,
 } from '../../../../packages/cwrc-leafwriter/src/autoTagging/entities';
 import {
+  centralEntityStoreFromDesktop,
+  desktopEntityFileApi,
   entityStoreFromDesktop,
+  type DesktopEntityStoreGlobals,
   type EntityStore,
 } from '../../../../packages/cwrc-leafwriter/src/autoTagging/entityStore';
+import { readOrMintUserStableId } from '../../../../packages/cwrc-leafwriter/src/autoTagging/userStableId';
 import { fetchWikidataWorkDetails } from '../../../../packages/cwrc-leafwriter/src/autoTagging/wikidataWorkDetails';
 import {
   autoRomanize,
@@ -59,6 +65,8 @@ interface LookupSession {
   entitiesDoc: Document;
   cache: AuthorityCache;
   projectLang: string | null;
+  /** Present only for a syncToCentral project - lets lookup also search/adopt from the CEDB. */
+  central: { store: EntityStore; doc: Document; userStableId: string } | null;
 }
 
 const projectSourceLanguage = async (): Promise<string | null> => {
@@ -67,6 +75,24 @@ const projectSourceLanguage = async (): Promise<string | null> => {
       __leafWriterProject?: { getProjectSourceLanguage?: () => Promise<string | null> };
     };
     return (await globals.__leafWriterProject?.getProjectSourceLanguage?.()) ?? null;
+  } catch {
+    return null;
+  }
+};
+
+/** Resolve the central database + this user's stable id, when this project has syncToCentral on. */
+const resolveCentralLookupContext = async (): Promise<LookupSession['central']> => {
+  try {
+    const project = (window as unknown as DesktopEntityStoreGlobals).__ljbLspProject;
+    if (!project?.syncToCentral) return null;
+    const api = desktopEntityFileApi();
+    if (!api) return null;
+    const centralFolder = project.entityDbFolder ?? null;
+    const centralStore = centralEntityStoreFromDesktop(centralFolder);
+    if (!centralStore) return null;
+    const { id: userStableId } = await readOrMintUserStableId(api, centralFolder);
+    const doc = await centralStore.loadEntities();
+    return { store: centralStore, doc, userStableId };
   } catch {
     return null;
   }
@@ -81,6 +107,7 @@ const createLookupSession = async (): Promise<LookupSession> => {
       entitiesDoc: parseEntities(createEntitiesScaffold()),
       cache: new AuthorityCache(null, null),
       projectLang,
+      central: null,
     };
   }
   const api = window.electronAPI;
@@ -97,6 +124,7 @@ const createLookupSession = async (): Promise<LookupSession> => {
     entitiesDoc: await store.loadEntities(),
     cache: new AuthorityCache(cacheApi, cacheApi ? store.authorityCacheDir : null),
     projectLang,
+    central: await resolveCentralLookupContext(),
   };
 };
 
@@ -200,6 +228,7 @@ export const EntityLookupField = ({
         undefined,
         undefined,
         session.projectLang,
+        session.central ? { doc: session.central.doc, userStableId: session.central.userStableId } : undefined,
       );
       setCandidates(rows);
       setCheckedIds(new Set());
@@ -234,7 +263,7 @@ export const EntityLookupField = ({
   const linkSelected = async () => {
     if (!candidates) return;
     const checked = candidates.filter((c) => checkedIds.has(c.id));
-    const merged = mergeSelectedCandidates(checked);
+    let merged = mergeSelectedCandidates(checked);
     if (!merged) return;
 
     setValue({ name: merged.label, ref: merged.uri });
@@ -242,12 +271,22 @@ export const EntityLookupField = ({
     try {
       const session = await getSession();
       if (!session.store) return;
+      // A candidate picked from the central database needs a project mirror
+      // minted/linked before it can be treated as an ordinary local match.
+      if (merged.centralEntityId && session.central) {
+        merged = await resolveCandidateForPedb(
+          merged,
+          session.entitiesDoc,
+          session.central.store,
+          session.central.userStableId,
+        );
+      }
       const typedNames = await collectTypedNamesForCandidate(merged).catch(() => undefined);
       const givenFamilyNames = await collectGivenFamilyNamesForCandidate(
         merged,
         session.projectLang,
       ).catch(() => undefined);
-      resolveEntityInDocument(
+      const resolvedId = resolveEntityInDocument(
         session.entitiesDoc,
         {
           kind,
@@ -268,6 +307,7 @@ export const EntityLookupField = ({
         },
         merged,
       );
+      await autoSyncEntityToCentral(session.entitiesDoc, resolvedId);
 
       if (kind === 'work' && onWorkDetails) {
         const qid = extractWikidataId(merged.uri ?? '');
@@ -275,20 +315,23 @@ export const EntityLookupField = ({
           try {
             const details = await fetchWikidataWorkDetails(qid);
             if (details) {
-              const authors = details.authors.map((author) => {
-                resolveEntityInDocument(session.entitiesDoc, {
-                  kind: 'person',
-                  name: author.label,
-                  romanizedName:
-                    autoRomanize(author.label, session.projectLang) ?? undefined,
-                  nameLang: session.projectLang ?? undefined,
-                  authorityIds: [{ type: 'Wikidata', value: author.qid }],
-                });
-                return {
-                  name: author.label,
-                  ref: `https://www.wikidata.org/wiki/${author.qid}`,
-                } as EntityLookupValue;
-              });
+              const authors = await Promise.all(
+                details.authors.map(async (author) => {
+                  const authorId = resolveEntityInDocument(session.entitiesDoc, {
+                    kind: 'person',
+                    name: author.label,
+                    romanizedName:
+                      autoRomanize(author.label, session.projectLang) ?? undefined,
+                    nameLang: session.projectLang ?? undefined,
+                    authorityIds: [{ type: 'Wikidata', value: author.qid }],
+                  });
+                  await autoSyncEntityToCentral(session.entitiesDoc, authorId);
+                  return {
+                    name: author.label,
+                    ref: `https://www.wikidata.org/wiki/${author.qid}`,
+                  } as EntityLookupValue;
+                }),
+              );
               onWorkDetails({ workYear: details.publicationYear, authors });
             }
           } catch {
@@ -324,6 +367,7 @@ export const EntityLookupField = ({
         romanizedName,
         description,
       });
+      await autoSyncEntityToCentral(session.entitiesDoc, id);
       await session.store.saveEntities(session.entitiesDoc);
       setValue({ name, key: id });
     } catch {

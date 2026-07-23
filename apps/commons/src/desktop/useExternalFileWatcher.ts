@@ -6,7 +6,7 @@ import { resolveEntityStorePaths } from '../../../../packages/cwrc-leafwriter/sr
 import { recoverTranslationLinksOnExternalChange } from './translationRecovery';
 
 export const useExternalFileWatcher = () => {
-  const { activeTabPath, openTabs, config, rootPath } = useAppState().project;
+  const { activeTabPath, openTabs, rootPath } = useAppState().project;
   const { contentHasChanged } = useAppState().editor;
   const { reloadTabFromDisk, setExternalChangePending, isTabContentStaleOnDisk } =
     useActions().project;
@@ -104,14 +104,7 @@ export const useExternalFileWatcher = () => {
     const paths = openTabs.map((tab) => tab.filePath);
     if (rootPath) {
       try {
-        const globals = window as unknown as {
-          __ljbLspProject?: { entityDbFolder?: string | null; entityStore?: 'central' | 'project' };
-        };
-        const entitiesPath = resolveEntityStorePaths({
-          projectRoot: rootPath,
-          entityStore: config?.entityStore ?? globals.__ljbLspProject?.entityStore,
-          centralFolder: globals.__ljbLspProject?.entityDbFolder ?? null,
-        }).entitiesPath;
+        const entitiesPath = resolveEntityStorePaths({ projectRoot: rootPath }).entitiesPath;
         paths.push(entitiesPath);
       } catch {
         // central folder may not be configured yet
@@ -119,7 +112,7 @@ export const useExternalFileWatcher = () => {
     }
 
     void window.electronAPI.syncWatchedFiles(paths);
-  }, [config?.entityStore, openTabs, rootPath]);
+  }, [openTabs, rootPath]);
 
   useEffect(() => {
     if (!isDesktop() || !window.electronAPI?.onExternalFileChange) return;

@@ -69,7 +69,7 @@ export interface FileStat {
   size: number;
 }
 
-export type ImportableDocumentFormat = 'txt' | 'md' | 'rtf' | 'docx' | 'odt';
+export type ImportableDocumentFormat = 'txt' | 'md' | 'rtf' | 'docx' | 'odt' | 'xml';
 
 export interface DocumentImportSource {
   format: ImportableDocumentFormat;
@@ -240,6 +240,8 @@ export interface ElectronAPI {
   pickSchemaFiles: () => Promise<PickSchemaFilesResult | null>;
   pickDocumentImportSources: () => Promise<DocumentImportSource[] | null>;
   createTempDocument: (content: string) => Promise<{ filePath: string; filename: string }>;
+  /** Desktop app version from package.json / Electron app.getVersion(). */
+  getAppVersion?: () => Promise<string>;
   getEncoderName: () => Promise<string>;
   setEncoderName: (name: string) => Promise<void>;
   readAchievementsFile?: () => Promise<string | null>;
@@ -271,6 +273,7 @@ export interface ElectronAPI {
   getEntityDbFolder: () => Promise<string | null>;
   setEntityDbFolder: (folder: string | null) => Promise<void>;
   pickEntityDbFolder: () => Promise<string | null>;
+  approveEntityRegistryRoots: (roots: string[]) => Promise<boolean>;
   moveEntityDbFolder: () => Promise<{
     ok: boolean;
     cancelled?: boolean;

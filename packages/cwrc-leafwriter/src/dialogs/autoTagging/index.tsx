@@ -876,7 +876,11 @@ export const AutoTaggingDialog = ({ id, onClose, open = false }: IDialog) => {
         open={open}
         onClose={handleClose}
         PaperProps={{
-          sx: { width: step === 'methods' ? 340 : 380, m: 1, borderRadius: 1 },
+          sx: {
+            width: step === 'methods' ? 340 : step === 'authority' ? 680 : 380,
+            m: 1,
+            borderRadius: 1,
+          },
         }}
       >
         <DialogContent sx={{ p: 1.5 }}>
@@ -1048,7 +1052,15 @@ export const AutoTaggingDialog = ({ id, onClose, open = false }: IDialog) => {
                   />
                 </Stack>
               </Box>
-              <Stack spacing={0.25}>
+              <Box
+                sx={{
+                  display: 'grid',
+                  gridTemplateColumns: '1fr 1fr',
+                  columnGap: 2,
+                  rowGap: 0.25,
+                  alignItems: 'start',
+                }}
+              >
                 {visibleAuthorityPackGroups.map((group) => (
                   <Box key={group.tag}>
                     <Typography variant="caption" sx={authoritySourceHeadingSx}>
@@ -1094,7 +1106,7 @@ export const AutoTaggingDialog = ({ id, onClose, open = false }: IDialog) => {
                     </Stack>
                   </Box>
                 ))}
-              </Stack>
+              </Box>
               <Box sx={{ px: 0.25, pt: 0.25 }}>
                 <Stack direction="row" alignItems="center" spacing={0.5}>
                   <Tooltip

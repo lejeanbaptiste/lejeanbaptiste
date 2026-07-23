@@ -1,4 +1,5 @@
 import { buildDocIndex, locateOccurrenceInIndex } from './anchor';
+import { autoSyncEntityToCentral } from './autoSync';
 import { dateCuratorDisplaySurface } from './dateCurator';
 import {
   applySuggestions,
@@ -15,6 +16,7 @@ import type { DisambiguationCandidate } from './disambiguationCandidates';
 import {
   collectGivenFamilyNamesForCandidate,
   collectTypedNamesForCandidate,
+  resolveCandidateForPedb,
   resolveEntityInDocument,
 } from './disambiguationCandidates';
 import {
@@ -26,7 +28,14 @@ import {
 import { DecisionLogBuffer, type DecisionRecord } from './decisionLog';
 import { TAG_TO_KIND, type EntityKind } from './entities';
 import { autoRomanize } from '../utilities/romanize';
-import { centralEntityStoreFromDesktop, entityStoreFromDesktop, type EntityStore } from './entityStore';
+import {
+  centralEntityStoreFromDesktop,
+  desktopEntityFileApi,
+  entityStoreFromDesktop,
+  type DesktopEntityStoreGlobals,
+  type EntityStore,
+} from './entityStore';
+import { readOrMintUserStableId } from './userStableId';
 import { candidatesFromEntityDatabase } from './ownDatabaseCandidates';
 import { crawlDocuments } from './crawl';
 import { dictionaryTag, type DictionaryEntry } from './dictionary';
@@ -221,6 +230,39 @@ export class AutoTaggingSession {
 
   get entityStore(): EntityStore | null {
     return this.store;
+  }
+
+  private centralContextPromise: Promise<{ store: EntityStore; userStableId: string } | null> | null = null;
+
+  /**
+   * Resolve the central database + this user's stable id, when this project
+   * has syncToCentral on - so disambiguation can also search the CEDB.
+   * Memoized per session: this is called once per candidate lookup and the
+   * result never changes mid-session.
+   */
+  async centralContext(): Promise<{ store: EntityStore; userStableId: string } | null> {
+    if (!this.centralContextPromise) {
+      this.centralContextPromise = (async () => {
+        const project = (window as unknown as DesktopEntityStoreGlobals).__ljbLspProject;
+        if (!project?.syncToCentral) return null;
+        const api = desktopEntityFileApi();
+        if (!api) return null;
+        const centralFolder = project.entityDbFolder ?? null;
+        const centralStore = centralEntityStoreFromDesktop(centralFolder);
+        if (!centralStore) return null;
+        const { id: userStableId } = await readOrMintUserStableId(api, centralFolder);
+        return { store: centralStore, userStableId };
+      })();
+    }
+    return this.centralContextPromise;
+  }
+
+  /** The `central` argument buildDisambiguationCandidates expects, or null when syncToCentral is off. */
+  async candidateSearchCentralContext(): Promise<{ doc: Document; userStableId: string } | null> {
+    const central = await this.centralContext();
+    if (!central) return null;
+    const doc = await central.store.loadEntities();
+    return { doc, userStableId: central.userStableId };
   }
 
   /** Project source language (BCP-47) from the desktop bridge; cached for the session. */
@@ -760,6 +802,16 @@ export class AutoTaggingSession {
     const kind = options.kind ?? TAG_TO_KIND[instance.tag];
     if (!kind) throw new Error(`Unsupported tag: ${instance.tag}`);
 
+    // A candidate picked from the central database (syncToCentral merged
+    // search) needs a project mirror minted/linked before it can be treated
+    // as an ordinary local match.
+    if (candidate.centralEntityId) {
+      const central = await this.centralContext();
+      if (central) {
+        candidate = await resolveCandidateForPedb(candidate, entitiesDoc, central.store, central.userStableId);
+      }
+    }
+
     const projectLang = await this.projectLanguage();
     const name = options.name ?? instance.surface;
     const projectLangName = options.createNew ? undefined : candidate.projectLangName;
@@ -798,6 +850,7 @@ export class AutoTaggingSession {
     );
 
     assignEntity({ element: instance.element, entityId });
+    await autoSyncEntityToCentral(entitiesDoc, entityId);
     await this.saveEntities();
     await this.persistDocument(instance.element.ownerDocument!);
     this.logResolution(instance, 'resolved', entityId);

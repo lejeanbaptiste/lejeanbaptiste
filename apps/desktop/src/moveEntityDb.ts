@@ -9,14 +9,20 @@ export class MoveEntityDbError extends Error {
   }
 }
 
-/** Top-level names owned by the entity database; refuse move if any already exist at dest. */
+/**
+ * Top-level names owned by the entity database; refuse move if any already
+ * exist at dest. Authority packs/databases are deliberately NOT here - they
+ * live in the local (non-synced) app-data folder, not the entity database
+ * folder, so they never travel with a Move and are never mistaken for
+ * pre-existing entity-db content at the destination. See
+ * getLocalAuthorityAssetsDir in projectPrefs.ts.
+ */
 export const ENTITY_DB_RESERVED_NAMES = [
   'entities.xml',
-  'authority-packs',
-  'authority-databases',
   'user-id.txt',
   'entity-orders.jsonl',
   'achievements.json',
+  'source-profiles.json',
   '.ljb-time-machine',
 ] as const;
 

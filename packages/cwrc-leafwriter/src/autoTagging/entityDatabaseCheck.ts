@@ -49,6 +49,17 @@ export async function checkEntityDatabaseFingerprint(
   const mismatch = Boolean(
     input.projectDatabaseId && databaseId && input.projectDatabaseId !== databaseId,
   );
+  // eslint-disable-next-line no-console
+  console.info('[entity-db-check] fingerprint compare', {
+    entitiesPath: store.entitiesPath,
+    mode: store.mode,
+    centralFolder: store.centralFolder,
+    projectRoot: input.projectRoot,
+    projectFilePath: input.projectFilePath,
+    projectDatabaseId: input.projectDatabaseId ?? null,
+    activeDatabaseId: databaseId,
+    mismatch,
+  });
   return { databaseId, mismatch };
 }
 
@@ -135,6 +146,12 @@ export async function runEntityDatabaseCheck(
   }
 
   if (!input.projectDatabaseId && api.updateProjectFileConfig) {
+    // eslint-disable-next-line no-console
+    console.info('[entity-db-check] linking project to database for the first time', {
+      entitiesPath: store.entitiesPath,
+      projectFilePath: input.projectFilePath,
+      databaseId,
+    });
     await api.updateProjectFileConfig(input.projectFilePath, { entityDatabaseId: databaseId });
     return { status: 'linked', databaseId };
   }
@@ -147,33 +164,40 @@ export async function runEntityDatabaseCheck(
     return { status: 'cancelled', databaseId };
   }
 
+  // eslint-disable-next-line no-console
+  console.info('[entity-db-check] showing mismatch prompt', {
+    entitiesPath: store.entitiesPath,
+    projectFilePath: input.projectFilePath,
+    projectDatabaseId: input.projectDatabaseId,
+    activeDatabaseId: databaseId,
+  });
+
   const { response } = await api.showNativeMessageBox({
     type: 'warning',
     title: 'Entity database mismatch',
     message: 'This project was linked to a different entity database.',
     detail:
-      'Keys in your XML may not match the current database. You can purge @key attributes only (tags are kept), or cancel and fix the database location in Project settings.',
-    buttons: ['Cancel', 'Import from previous database', 'Purge keys'],
+      'This can mean the database was genuinely swapped, or that Settings > Entity database ' +
+      'is pointing at the wrong folder and your existing keys are still valid. Check that ' +
+      'setting first — purging is destructive and only appropriate once you have confirmed ' +
+      'the keys really do not match.',
+    buttons: ['Cancel', 'Purge keys'],
     defaultId: 0,
     cancelId: 0,
   });
 
-  if (response === 2) {
+  // eslint-disable-next-line no-console
+  console.info('[entity-db-check] mismatch prompt response', {
+    response,
+    action: response === 1 ? 'purge' : 'cancel',
+  });
+
+  if (response === 1) {
     await purgeEntityKeysInProject(api, input.projectRoot);
     if (api.updateProjectFileConfig) {
       await api.updateProjectFileConfig(input.projectFilePath, { entityDatabaseId: databaseId });
     }
     return { status: 'purged', databaseId };
-  }
-
-  if (response === 1) {
-    await api.showNativeMessageBox({
-      type: 'info',
-      title: 'Import not available',
-      message: 'Import from a previous database is not available in this version.',
-      detail: 'Use Purge keys to strip @key only, then disambiguate again.',
-      buttons: ['OK'],
-    });
   }
 
   return { status: 'cancelled', databaseId };

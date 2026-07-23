@@ -52,6 +52,7 @@ import { separateBlockElements } from '@src/desktop/xmlBlockSpacing';
 import {
   buildDocumentImportPlan,
   buildImportedDocumentXml,
+  buildImportedXmlDocument,
   assertImportedXmlWellFormed,
   logImportedXmlInspection,
   type DocumentImportPlanItem,
@@ -828,32 +829,74 @@ const confirmDocumentImportOverwrite = async (
   return 'cancel';
 };
 
+const confirmXmlDocumentImport = async (xmlCount: number): Promise<boolean> => {
+  if (!window.electronAPI?.showNativeMessageBox) return true;
+
+  const result = await window.electronAPI.showNativeMessageBox({
+    buttons: [
+      t('LWC.desktop.project.dialogs.cancel_button'),
+      t('LWC.desktop.project.dialogs.import_xml_continue_button'),
+    ],
+    cancelId: 0,
+    defaultId: 1,
+    detail: t('LWC.desktop.project.dialogs.import_xml_warning_detail'),
+    message: t('LWC.desktop.project.dialogs.import_xml_warning_message', {
+      documentCount: xmlCount,
+    }),
+    title: t('LWC.desktop.project.dialogs.import_xml_warning_title'),
+    type: 'warning',
+  });
+
+  return result.response === 1;
+};
+
 const writeImportedDocument = async (
   item: DocumentImportPlanItem,
   config: ProjectBundle['config'],
   metadata: Awaited<ReturnType<typeof readProjectMetadata>>,
-): Promise<void> => {
+): Promise<{ keysDemoted: number }> => {
   if (!window.electronAPI) throw new Error('Desktop file APIs are unavailable.');
 
-  const { text } =
-    item.format === 'docx'
-      ? await window.electronAPI.extractDocxText(item.sourcePath)
-      : item.format === 'odt'
-        ? await window.electronAPI.extractOdtText(item.sourcePath)
-        : await window.electronAPI.readFileAutoEncoding(item.sourcePath);
-  let xml = buildImportedDocumentXml({
-    config,
-    format: item.format,
-    sourcePath: item.sourcePath,
-    text,
-  });
-  logImportedXmlInspection({
-    content: xml,
-    outputPath: item.outputPath,
-    sourcePath: item.sourcePath,
-    stage: 'body generation',
-  });
-  assertImportedXmlWellFormed(xml, 'Generated import XML is not well formed');
+  let xml: string;
+  let keysDemoted = 0;
+
+  if (item.format === 'xml') {
+    const { text } = await window.electronAPI.readFileAutoEncoding(item.sourcePath);
+    const imported = buildImportedXmlDocument({
+      config,
+      sourcePath: item.sourcePath,
+      xml: text,
+    });
+    xml = imported.xml;
+    keysDemoted = imported.keysDemoted;
+    logImportedXmlInspection({
+      content: xml,
+      outputPath: item.outputPath,
+      sourcePath: item.sourcePath,
+      stage: 'xml import transform',
+    });
+    assertImportedXmlWellFormed(xml, 'Imported XML is not well formed after transform');
+  } else {
+    const { text } =
+      item.format === 'docx'
+        ? await window.electronAPI.extractDocxText(item.sourcePath)
+        : item.format === 'odt'
+          ? await window.electronAPI.extractOdtText(item.sourcePath)
+          : await window.electronAPI.readFileAutoEncoding(item.sourcePath);
+    xml = buildImportedDocumentXml({
+      config,
+      format: item.format,
+      sourcePath: item.sourcePath,
+      text,
+    });
+    logImportedXmlInspection({
+      content: xml,
+      outputPath: item.outputPath,
+      sourcePath: item.sourcePath,
+      stage: 'body generation',
+    });
+    assertImportedXmlWellFormed(xml, 'Generated import XML is not well formed');
+  }
 
   if (metadata) {
     xml = mergeMetadataIntoHeader(xml, metadata);
@@ -865,14 +908,18 @@ const writeImportedDocument = async (
     });
     assertImportedXmlWellFormed(xml, 'Imported XML is not well formed after metadata merge');
   }
-  xml = separateBlockElements(xml);
-  logImportedXmlInspection({
-    content: xml,
-    outputPath: item.outputPath,
-    sourcePath: item.sourcePath,
-    stage: 'block formatting',
-  });
-  assertImportedXmlWellFormed(xml, 'Imported XML is not well formed after block formatting');
+
+  // Preserve existing XML formatting; only normalize spacing for freshly built docs.
+  if (item.format !== 'xml') {
+    xml = separateBlockElements(xml);
+    logImportedXmlInspection({
+      content: xml,
+      outputPath: item.outputPath,
+      sourcePath: item.sourcePath,
+      stage: 'block formatting',
+    });
+    assertImportedXmlWellFormed(xml, 'Imported XML is not well formed after block formatting');
+  }
 
   const parentDir = getParentPath(item.outputPath);
   if (parentDir) await window.electronAPI.ensureDirectory(parentDir);
@@ -886,6 +933,8 @@ const writeImportedDocument = async (
     stage: 'disk write',
   });
   assertImportedXmlWellFormed(writtenXml, 'Written import XML is not well formed');
+
+  return { keysDemoted };
 };
 
 const formatDocumentImportProblems = (problems: DocumentImportProblem[]): string =>
@@ -925,6 +974,12 @@ export const importDocuments = async (context: Context) => {
     return;
   }
 
+  const xmlSourceCount = sources.filter((source) => source.format === 'xml').length;
+  if (xmlSourceCount > 0) {
+    const confirmed = await confirmXmlDocumentImport(xmlSourceCount);
+    if (!confirmed) return;
+  }
+
   const existingOutputPaths = await getExistingImportOutputPaths(state.project.rootPath, sources);
   const overwriteChoice = await confirmDocumentImportOverwrite(existingOutputPaths.length);
   if (overwriteChoice === 'cancel') return;
@@ -943,11 +998,13 @@ export const importDocuments = async (context: Context) => {
   const metadata = await readProjectMetadata(bundle);
   const problems: DocumentImportProblem[] = [];
   const writtenPaths: string[] = [];
+  let keysDemotedTotal = 0;
 
   for (const item of plan) {
     try {
-      await writeImportedDocument(item, state.project.config, metadata);
+      const written = await writeImportedDocument(item, state.project.config, metadata);
       writtenPaths.push(item.outputPath);
+      keysDemotedTotal += written.keysDemoted;
     } catch (error) {
       problems.push({
         message: error instanceof Error ? error.message : String(error),
@@ -1017,9 +1074,15 @@ export const importDocuments = async (context: Context) => {
   }
 
   notifyViaSnackbar({
-    message: t('LWC.desktop.project.messages.imported_documents_success', {
-      documentCount: writtenPaths.length,
-    }),
+    message:
+      keysDemotedTotal > 0
+        ? t('LWC.desktop.project.messages.imported_documents_success_with_keys', {
+            documentCount: writtenPaths.length,
+            keyCount: keysDemotedTotal,
+          })
+        : t('LWC.desktop.project.messages.imported_documents_success', {
+            documentCount: writtenPaths.length,
+          }),
     options: { variant: 'success' },
   });
 };

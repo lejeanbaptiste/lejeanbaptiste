@@ -2,6 +2,12 @@ import { useSearchParams } from 'react-router';
 import {
   Box,
   Button,
+  Checkbox,
+  Dialog,
+  DialogActions,
+  DialogContent,
+  DialogContentText,
+  DialogTitle,
   FormControlLabel,
   IconButton,
   MenuItem,
@@ -39,6 +45,11 @@ export const NativeProjectMetadataPage = () => {
   const [alignmentUnit, setAlignmentUnit] = useState<'div' | 'p'>('p');
   const [languages, setLanguages] = useState<TranslationLanguage[]>([]);
   const [newLangCode, setNewLangCode] = useState('');
+  const [syncToCentral, setSyncToCentral] = useState(false);
+  const [savedSyncToCentral, setSavedSyncToCentral] = useState(false);
+  const [confirmSyncOpen, setConfirmSyncOpen] = useState(false);
+  const [pendingApplyToDocuments, setPendingApplyToDocuments] = useState(false);
+  const [syncReport, setSyncReport] = useState<{ broken: number; conflicts: number } | null>(null);
 
   const invoke = useCallback(
     async (method: string, args?: unknown) => {
@@ -56,6 +67,8 @@ export const NativeProjectMetadataPage = () => {
       setState(dialogState);
       setAlignmentUnit(dialogState.translation.alignmentUnit ?? 'p');
       setLanguages(dialogState.translation.languages);
+      setSyncToCentral(dialogState.syncToCentral);
+      setSavedSyncToCentral(dialogState.syncToCentral);
       setError(null);
     } else {
       setError(t('LWC.desktop.project.errors.could_not_load_edition_metadata'));
@@ -148,8 +161,29 @@ export const NativeProjectMetadataPage = () => {
     setLanguages((prev) => prev.filter((lang) => lang.code !== code));
   };
 
-  const handleSave = async (applyToDocuments: boolean) => {
+  /**
+   * Turning sync on is a one-way, explicit action: it copies every entity in
+   * this project's database into the central database and links them, so it
+   * gets a confirmation before Save commits to it. This is an in-app dialog,
+   * not a native OS message box - this page runs in its own separate
+   * native-dialog BrowserWindow, and native-modal-on-native-modal stacking
+   * from that window was unreliable. The actual bulk promote/sync work
+   * happens back in the main window's saveProjectMetadata handler (this
+   * window has no access to the main window's __ljbLspProject global that
+   * entityStoreFromDesktop()/centralEntityStoreFromDesktop() depend on).
+   */
+  const handleSave = (applyToDocuments: boolean) => {
     if (!state || submitting) return;
+    if (syncToCentral && !savedSyncToCentral) {
+      setPendingApplyToDocuments(applyToDocuments);
+      setConfirmSyncOpen(true);
+      return;
+    }
+    void performSave(applyToDocuments);
+  };
+
+  const performSave = async (applyToDocuments: boolean) => {
+    if (!state) return;
     setSubmitting(true);
     setError(null);
     try {
@@ -167,10 +201,19 @@ export const NativeProjectMetadataPage = () => {
         applyToDocuments,
         translationAlignmentUnit: alignmentUnit,
         translationLanguages: languagesToSave,
-        entityStore: state.entityStore,
-      })) as { ok: boolean; error?: string; summary?: string };
+        syncToCentral,
+      })) as {
+        ok: boolean;
+        error?: string;
+        summary?: string;
+        syncReport?: { broken: number; conflicts: number };
+      };
       if (!result?.ok) {
         setError(result?.error ?? t('LWC.desktop.project.errors.could_not_save_metadata'));
+        return;
+      }
+      if (result.syncReport && (result.syncReport.broken > 0 || result.syncReport.conflicts > 0)) {
+        setSyncReport(result.syncReport);
         return;
       }
       closeDialog();
@@ -324,23 +367,15 @@ export const NativeProjectMetadataPage = () => {
             <Typography color="text.secondary" variant="body2">
               {t('LWC.desktop.project.entity_database_hint')}
             </Typography>
-            <RadioGroup
-              value={state.entityStore}
-              onChange={(event) =>
-                setState((prev) =>
-                  prev
-                    ? { ...prev, entityStore: event.target.value as 'central' | 'project' }
-                    : prev,
-                )
+            <FormControlLabel
+              control={
+                <Checkbox
+                  checked={syncToCentral}
+                  onChange={(event) => setSyncToCentral(event.target.checked)}
+                />
               }
-            >
-              <FormControlLabel control={<Radio size="small" />} label={t('LWC.desktop.project.central_database')} value="central" />
-              <FormControlLabel
-                control={<Radio size="small" />}
-                label={t('LWC.desktop.project.project_database')}
-                value="project"
-              />
-            </RadioGroup>
+              label={t('LWC.desktop.project.sync_to_central')}
+            />
 
             <Typography sx={{ pt: 1 }} variant="subtitle2">
               {t('LWC.desktop.project.translation')}
@@ -444,7 +479,7 @@ export const NativeProjectMetadataPage = () => {
         {!isFirstSetup && (
           <Button
             disabled={submitting || languageMissing}
-            onClick={() => void handleSave(false)}
+            onClick={() => handleSave(false)}
             variant="outlined"
           >
             {t('LWC.desktop.project.save_defaults_only')}
@@ -453,12 +488,55 @@ export const NativeProjectMetadataPage = () => {
         <Button
           color="primary"
           disabled={submitting || !state || languageMissing}
-          onClick={() => void handleSave(!isFirstSetup)}
+          onClick={() => handleSave(!isFirstSetup)}
           variant="contained"
         >
           {isFirstSetup ? t('LWC.desktop.project.save_button') : t('LWC.desktop.project.save_and_update_documents_button')}
         </Button>
       </Box>
+
+      <Dialog open={confirmSyncOpen} onClose={() => setConfirmSyncOpen(false)} maxWidth="xs" fullWidth>
+        <DialogTitle>Sync entities to central database</DialogTitle>
+        <DialogContent>
+          <DialogContentText>
+            This will copy every entity in this project’s database to your central database and keep
+            them linked going forward. Continue?
+          </DialogContentText>
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={() => setConfirmSyncOpen(false)}>{t('LWC.commons.cancel')}</Button>
+          <Button
+            variant="contained"
+            onClick={() => {
+              setConfirmSyncOpen(false);
+              void performSave(pendingApplyToDocuments);
+            }}
+          >
+            Sync now
+          </Button>
+        </DialogActions>
+      </Dialog>
+
+      <Dialog open={!!syncReport} onClose={() => setSyncReport(null)} maxWidth="xs" fullWidth>
+        <DialogTitle>Sync completed with some items needing attention</DialogTitle>
+        <DialogContent>
+          <DialogContentText>
+            {syncReport
+              ? `${syncReport.broken} broken link(s) and ${syncReport.conflicts} conflict(s) could not be auto-resolved. Open "Bridge to central database" from the database panel to review them.`
+              : ''}
+          </DialogContentText>
+        </DialogContent>
+        <DialogActions>
+          <Button
+            onClick={() => {
+              setSyncReport(null);
+              closeDialog();
+            }}
+          >
+            OK
+          </Button>
+        </DialogActions>
+      </Dialog>
     </Box>
   );
 };

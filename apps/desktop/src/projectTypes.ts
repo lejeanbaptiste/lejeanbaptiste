@@ -28,10 +28,10 @@ export interface ProjectFileConfig {
    * double-counted entries.
    */
   projectId?: string;
-  /** Central (default) or project-local entity database. */
-  entityStore?: 'central' | 'project';
   /** UUID fingerprint of the linked entities.xml database file. */
   entityDatabaseId?: string;
+  /** When true, this project's PEDB is kept auto-synced with the CEDB (Promote on create, no manual Bridge). */
+  syncToCentral?: boolean;
   /** Saved authority tag-bomb pack/year settings for this project. */
   autoTaggingAuthority?: AutoTaggingAuthoritySettings;
   /** Disambiguation panel preferences for this project. */

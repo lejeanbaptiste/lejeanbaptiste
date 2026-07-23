@@ -37,14 +37,14 @@ export const useLspProjectBridge = () => {
     window.__ljbLspProject = {
       defaultSchemaRng: config?.schema?.rng,
       projectRoot: rootPath ?? undefined,
-      entityStore: config?.entityStore ?? 'central',
       entityDbFolder,
+      syncToCentral: config?.syncToCentral === true,
     };
 
     return () => {
       delete window.__ljbLspProject;
     };
-  }, [config?.entityStore, config?.schema?.rng, entityDbFolder, rootPath]);
+  }, [config?.schema?.rng, config?.syncToCentral, entityDbFolder, rootPath]);
 };
 
 declare global {
@@ -52,8 +52,9 @@ declare global {
     __ljbLspProject?: {
       defaultSchemaRng?: string;
       projectRoot?: string;
-      entityStore?: 'central' | 'project';
       entityDbFolder?: string | null;
+      /** When true, this project's PEDB is auto-synced with the CEDB (see syncToCentral in projectTypes.ts). */
+      syncToCentral?: boolean;
     };
   }
 }

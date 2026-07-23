@@ -1,7 +1,14 @@
 import {
+  applyProjectSchemaProcessingInstructions,
   buildDocumentImportPlan,
   buildImportedDocumentXml,
+  buildImportedXmlDocument,
+  catalogXmlFamily,
+  demoteEntityKeys,
+  detectXmlDocumentFamily,
+  FORMER_KEY_ANA_PREFIX,
   inspectImportedXml,
+  isEntityDatabaseFilename,
   normalizeImportedParagraphs,
   stripMarkdownToPlainText,
   stripRtfToPlainText,
@@ -17,6 +24,23 @@ const config: ProjectFileConfig = {
   },
   version: 1,
 };
+
+const sampleTei = `<?xml version="1.0" encoding="UTF-8"?>
+<?xml-model href="https://example.org/other.rng" type="application/xml" schematypens="http://relaxng.org/ns/structure/1.0"?>
+<TEI xmlns="http://www.tei-c.org/ns/1.0">
+<teiHeader>
+  <fileDesc>
+    <titleStmt><title>Han Xin</title></titleStmt>
+    <publicationStmt><publisher>Source Press</publisher></publicationStmt>
+    <sourceDesc><p>Old source</p></sourceDesc>
+  </fileDesc>
+</teiHeader>
+<text>
+  <body>
+    <p><persName key="person-000014">張衡</persName> met <placeName key="place-000002">洛陽</placeName>.</p>
+  </body>
+</text>
+</TEI>`;
 
 describe('documentImport', () => {
   test('normalizes paragraphs from blank-line separated text', () => {
@@ -104,5 +128,66 @@ describe('documentImport', () => {
     });
 
     expect(plan.map((item) => item.outputPath)).toEqual(['/project/a-2.xml', '/project/a-3.xml']);
+  });
+
+  test('detects TEI and Orlando document families', () => {
+    expect(detectXmlDocumentFamily(sampleTei)).toBe('tei');
+    expect(detectXmlDocumentFamily('<ORLANDO><ORLANDOHEADER/></ORLANDO>')).toBe('orlando');
+    expect(detectXmlDocumentFamily('<bio><person/></bio>')).toBe('unknown');
+    expect(catalogXmlFamily('teiLite')).toBe('tei');
+    expect(catalogXmlFamily('orlando')).toBe('orlando');
+  });
+
+  test('demotes @key onto @ana with a former-key token', () => {
+    const result = demoteEntityKeys(
+      '<p><persName key="person-000014">張衡</persName> and <placeName key="place-1" ana="geo">洛陽</placeName></p>',
+    );
+
+    expect(result.count).toBe(2);
+    expect(result.xml).not.toMatch(/\skey=/);
+    expect(result.xml).toContain(`ana="${FORMER_KEY_ANA_PREFIX}person-000014"`);
+    expect(result.xml).toContain(`ana="geo ${FORMER_KEY_ANA_PREFIX}place-1"`);
+  });
+
+  test('rewrites schema processing instructions to the project schema', () => {
+    const updated = applyProjectSchemaProcessingInstructions(sampleTei, config);
+    expect(updated).toContain('href="schema/tei_lite.rng"');
+    expect(updated).toContain('href="schema/tei.css"');
+    expect(updated).not.toContain('https://example.org/other.rng');
+  });
+
+  test('imports TEI XML with demoted keys, project schema, and provenance', () => {
+    const result = buildImportedXmlDocument({
+      config,
+      sourcePath: '/incoming/HanXin.xml',
+      xml: sampleTei,
+    });
+
+    expect(result.keysDemoted).toBe(2);
+    expect(result.xml).not.toMatch(/\skey=/);
+    expect(result.xml).toContain(`${FORMER_KEY_ANA_PREFIX}person-000014`);
+    expect(result.xml).toContain('href="schema/tei_lite.rng"');
+    expect(result.xml).toContain('<title>Han Xin</title>');
+    expect(result.xml).toContain('Imported into this project from HanXin');
+    expect(inspectImportedXml(result.xml)).toEqual({ ok: true });
+  });
+
+  test('rejects entities.xml and cross-family XML imports', () => {
+    expect(isEntityDatabaseFilename('/project/entities.xml')).toBe(true);
+    expect(() =>
+      buildImportedXmlDocument({
+        config,
+        sourcePath: '/project/entities.xml',
+        xml: sampleTei,
+      }),
+    ).toThrow(/entity database/i);
+
+    expect(() =>
+      buildImportedXmlDocument({
+        config,
+        sourcePath: '/incoming/orlando.xml',
+        xml: '<ORLANDO><ORLANDOHEADER/></ORLANDO>',
+      }),
+    ).toThrow(/Cross-family/i);
   });
 });

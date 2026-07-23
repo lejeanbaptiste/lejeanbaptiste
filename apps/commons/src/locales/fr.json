@@ -68,7 +68,9 @@
         "organization": "Org",
         "work": "Œuv"
       },
-      "status_installed": "installé"
+      "status_installed": "installé",
+      "loading": "Chargement…",
+      "add": "Ajouter"
     },
     "cookie consent": {
       "consent_banner": {
@@ -109,7 +111,9 @@
     "error": {
       "message404": "Soit vous avez essayé une route louche, soit vous êtes venu ici par erreur. Revenez à la <1>page principale.</1>",
       "page_not_Found": "Page non trouvée",
-      "something_went_wrong": "Quelque chose s'est mal passé"
+      "something_went_wrong": "Quelque chose s'est mal passé",
+      "page_not_found": "Page not found",
+      "illustration_from": "Illustration from"
     },
     "home": {
       "bugReport": {
@@ -205,6 +209,128 @@
         "toc": "Table des matières",
         "markup": "Balisage",
         "database": "Base d’entités"
+      },
+      "importExport": {
+        "document": "document.",
+        "Learn more about importing files": "Learn more about importing files",
+        "convert and open": "convert and open",
+        "convert document": "convert document",
+        "format": "format",
+        "docx document": "Word document (.docx)",
+        "odt document": "OpenDocument text (.odt)",
+        "rtf document": "RTF document (.rtf)",
+        "markdown document": "Markdown document (.md)",
+        "text document": "Text document (.txt)",
+        "include translations": "Include translations inserted after paragraphs",
+        "translation language": "Translation language",
+        "include bibliography": "Include bibliography (References)",
+        "message": {
+          "LEAF-Writer needs to convert it to be able to use it": "LEAF-Writer needs to convert it to be able to use it.",
+          "this_looks_like_a": "This looks like a ",
+          "intercept_load_file_format": "<0>This looks like a </0> <1>{{format}}</1> <2>document.</2>"
+        },
+        "try to open it without converting": "try to open it without converting"
+      },
+      "languages": {
+        "de": "German",
+        "en": "English",
+        "es": "Spanish",
+        "fr": "French",
+        "pt": "Portuguese",
+        "ro": "Romanian"
+      },
+      "messages": {
+        "annotation_need_space": "Annotating documents requires more space.",
+        "link_to_storage_provider_instructions": "You can do that by clicking on the user icon in the top-right corner of the screen and then selecting an option in the list of storage providers.",
+        "rotate_phone": "Please rotate your phone or open LEAF-Writer on a large screen.",
+        "service not available at the moment": "Service not available at the moment",
+        "try_again": "Try again",
+        "unable_to_upload file": "Unable to upload file",
+        "you_must_sign_in_to_open_and_save_document_from_the_cloud": "You must sign in to open and save documents from the cloud",
+        "you_must_sign_in_witn_a_storage_provider_to_open_and_save_document_from_the_cloud": "You must sign in witn a storage provider to open and save document from the cloud"
+      },
+      "messsages": {
+        "authentication_server_is_currently_unavailable": "Authentication server is currently unavailable"
+      },
+      "on this page": "On this page",
+      "profile": {
+        "account_linked": "Account linked",
+        "manage_your_lincs_account": "Manage your LINCS account"
+      },
+      "components": {
+        "bottombar": {
+          "annotation_mode": "Annotation Mode"
+        }
+      },
+      "error": {
+        "something_went_wrong": "Something went wrong",
+        "unknown_error": "An unknown error occurred.",
+        "webpack_wait": "If you just started the desktop app, wait for webpack to finish compiling and reload the window."
+      },
+      "storage": {
+        "all_changes_salved": "all changes saved",
+        "click to upload": "click to upload",
+        "click_to_save": "click to save",
+        "document_not_saved": "Document not saved",
+        "document_saved": "Document saved",
+        "drag the document here": "drag the document here",
+        "error": {
+          "document_not_supported": "The document you are trying to load is not supported. Please check that it has the correct extension and is well-formed.",
+          "xml_not_well-formed_message": "The document you are trying to load is not well-formed. Check that it has the XML extension and follows the correct XML grammar."
+        },
+        "export": "export",
+        "export document": "export document",
+        "from_the_cloud": "from the cloud",
+        "from_your_device": "From your device",
+        "import": "import",
+        "import document": "import document",
+        "invalid_request": "Invalid request",
+        "paste_your_XML_here": "paste your XML here",
+        "provider not found": "provider not found",
+        "saving": "saving",
+        "waiting_for_resource": "waiting for resource",
+        "warning": {
+          "check_URL_structure": "check URL structure",
+          "storage_provider_invalid": "provider '{{provider}}' is invalid or not a supported"
+        },
+        "you_will_lose_any_unsaved_changes": "You will lose any unsaved changes"
+      },
+      "templates": {
+        "choose_a_template": "choose a template"
+      },
+      "aria_labels": {
+        "save": "save",
+        "main_menu": "Main Menu",
+        "collapse_sidebar_panel": "Collapse sidebar panel",
+        "expand_sidebar_panel": "Expand sidebar panel",
+        "resize_left_panel": "Resize left panel",
+        "resize_right_panel": "Resize right panel",
+        "toggle_sidebar_panel": "Toggle sidebar panel",
+        "expand_right_panel": "Expand right panel",
+        "collapse_right_panel": "Collapse right panel",
+        "help": "help",
+        "document_location": "Document location"
+      },
+      "ui": {
+        "appearance": "appearance",
+        "dark_theme": "Dark theme",
+        "device_theme": "Device theme",
+        "light_theme": "Light theme"
+      },
+      "east_asian_dates": {
+        "dynasty": "Dynasty",
+        "emperor": "Emperor",
+        "era": "Era",
+        "year": "Year",
+        "month": "Month",
+        "day": "Day",
+        "sexagenary_year": "Sexagenary year",
+        "sexagenary_day": "Sexagenary day",
+        "new_moon_gz": "New-moon gz",
+        "nmd_gz": "Nmd gz",
+        "type_to_search": "Type to search…",
+        "placeholder_example": "元年, 3, 十八",
+        "optional": "optional"
       }
     },
     "ui": {
@@ -298,7 +424,86 @@
         "app_is_up_to_date": "L'application est à jour.",
         "app_update_downloading": "Une nouvelle version ({{version}}) a été trouvée et est en cours de téléchargement. Elle s'installera à la prochaine fermeture de l'application.",
         "app_update_check_failed_title": "Échec de la vérification des mises à jour",
-        "app_update_check_failed": "Impossible de vérifier les mises à jour de l'application : {{error}}"
+        "app_update_check_failed": "Impossible de vérifier les mises à jour de l'application : {{error}}",
+        "settings": "Projet settings",
+        "schema_setup": "Projet schema setup",
+        "errors": {
+          "could_not_load_edition_metadata": "Impossible de load edition metadata.",
+          "could_not_save_file": "Impossible de save {{filename}}.",
+          "could_not_save_metadata": "Impossible de save metadata.",
+          "could_not_load_project_settings": "Impossible de load project settings."
+        },
+        "dialogs": {
+          "cancel_button": "Annuler",
+          "close_without_saving": "{{filename}} has unsaved changes. Fermer without saving?",
+          "discard_changes_button": "Discard changes",
+          "dont_save_button": "Don't Enregistrer",
+          "import_diagnostics_title": "Import diagnostics",
+          "import_xml_continue_button": "Import",
+          "import_xml_warning_detail": "Foreign entity keys (@key) will be moved to a backup token on @ana (ljb-former-key:…) so they do not point at this project's entity catalogue. Compatible header fields stay in the file; project edition metadata is merged in; the project's schema is attached. Element remapping between different schemas is not done yet.",
+          "import_xml_warning_message": "{{documentCount}} XML file{{documentCount, plural, one {} other {s}}} will be imported into this project.",
+          "import_xml_warning_title": "Import XML documents",
+          "imported_documents_with_problems": "Imported {{documentCount}} document{{documentCount, plural, one {} other {s}}} with {{problemCount}} problem file{{problemCount, plural, one {} other {s}}}.",
+          "ok_button": "OK",
+          "save_all_button": "Enregistrer All",
+          "save_before_closing": "Enregistrer \"{{filename}}\" to your project folder before closing?",
+          "save_before_opening_project": "Enregistrer the new document to your project folder before opening another project?",
+          "save_before_opening_project_with_list": "Enregistrer changes before opening another project?\n\n{{fileList}}",
+          "save_button": "Enregistrer",
+          "unsaved_changes_title": "Unsaved changes",
+          "unsaved_documents_title": "Unsaved documents",
+          "unsaved_new_document_title": "Unsaved new document"
+        },
+        "messages": {
+          "could_not_create_new_file": "Impossible de create a new file.",
+          "could_not_open_project_folder": "Impossible de open the project folder. Check the console for details.",
+          "could_not_read_document_content": "Impossible de read document content.",
+          "could_not_save_all_files": "Impossible de save all files.",
+          "desktop_file_access_unavailable_restart": "Desktop file access is unavailable. Restart the desktop app.",
+          "document_import_unavailable_restart": "Document import is unavailable. Restart the desktop app.",
+          "complete_metadata_setup_before_creating_file": "Complete project metadata setup before creating a file.",
+          "new_file_unavailable_restart": "New File is unavailable. Restart the desktop app.",
+          "no_supported_files_found": "No supported files found. Import supports TXT, Markdown, RTF, DOCX, ODT, and XML.",
+          "open_project_first": "Ouvrez un projet first.",
+          "open_xml_before_saving": "Ouvrir an XML file before saving.",
+          "reverted_to_valid_version": "Changes discarded. The document was reverted to its last valid version and nothing was saved.",
+          "project_not_fully_loaded": "Projet is not fully loaded.",
+          "imported_documents_success": "Imported {{documentCount}} document{{documentCount, plural, one {} other {s}}}.",
+          "imported_documents_success_with_keys": "Imported {{documentCount}} document{{documentCount, plural, one {} other {s}}}; moved {{keyCount}} foreign entity key{{keyCount, plural, one {} other {s}}} to backup (@ana).",
+          "imported_documents_with_problems_snackbar": "Imported {{documentCount}} document{{documentCount, plural, one {} other {s}}}; {{problemCount}} problem file{{problemCount, plural, one {} other {s}}}. See console for details."
+        },
+        "select_language": "Select language…",
+        "use_local_schema_file": "Use local schema file…",
+        "schema_download_failed": "Schéma download failed.",
+        "copy_schema_failed": "Impossible de copy schema file.",
+        "download": "Télécharger",
+        "select_schema": "Select schema",
+        "schema_warning": "LEAF-Writer cannot guarantee that the document will work correctly with the selected schema",
+        "tei_path": "TEI path",
+        "schema": "Schéma",
+        "div_alignment": "Div (section-level, looser)",
+        "paragraph_alignment": "Paragraph (1:1)",
+        "code": "Code",
+        "label": "Label",
+        "value": "Value",
+        "remove_custom_field": "Retirer custom field",
+        "remove_language": "Retirer language",
+        "add_translation_language": "Ajouter translation language",
+        "add_custom_field": "Ajouter custom field",
+        "custom_fields": "Custom fields",
+        "entity_database": "base d’entités",
+        "entity_database_hint": "By default, this project keeps its own base d’entités. Turning on sync copies every entity to your central database and keeps them linked automatically — searches and the database panel then include entities from your other synced projects too.",
+        "sync_to_central": "Sync entities to central database",
+        "first_setup_message": "Enregistrer once to finish project setup. Source language is required; other fields may be left blank.",
+        "defaults_message": "Projet-wide defaults.",
+        "choose_schema_message": "Choose a schema for this project. Files are copied into the project folder.",
+        "languages": "Langues",
+        "save_button": "Enregistrer",
+        "save_defaults_only": "Enregistrer defaults only",
+        "save_and_update_documents_button": "Enregistrer and update documents…",
+        "alignment_unit_locked": "Alignment unit is locked once translations have started.",
+        "alignment_granularity_hint": "Choose the granularity at which source and translation are linked. This cannot be changed later.",
+        "translation": "Translation"
       },
       "close_unsaved": {
         "title": "Modifications non enregistrées",
@@ -447,6 +652,113 @@
             "keep_current": "Conserver la copie actuelle"
           }
         }
+      },
+      "only_available_desktop": "Cette page n’est disponible que dans l’application de bureau.",
+      "author_pill": {
+        "authors_label": "Authors",
+        "add_author": "Ajouter author",
+        "type_name_search": "Type a name, then search",
+        "search_authorities": "Search authorities",
+        "add_without_authority_match": "Ajouter without authority match",
+        "lookup_failed": "Lookup failed — check your connection, or create it without a match.",
+        "local_entity": "Local entity",
+        "no_authority_link": "No authority link",
+        "create_new": "Create new",
+        "create_new_help": "Not in any authority — add it with a canonical name and a one-line description.",
+        "canonical_name": "Name",
+        "romanized_name": "Romanized name",
+        "one_line_description": "One-line description",
+        "add": "Ajouter",
+        "no_matches": "No matches — create it below, or refine the spelling.",
+        "link_selected": "Link selected",
+        "link_selected_count": "Link {{count}} as one entity"
+      },
+      "translation": {
+        "indexing_document": "Indexing document for translation…",
+        "no_languages_configured": "No translation languages configured yet. Ajouter them in Projet → Edition metadata…",
+        "open_project_to_use_translations": "Ouvrez un projet to use translations.",
+        "translate_failed": "Translate failed: {{error}}"
+      },
+      "ai_api_bridge_unavailable": "Le pont API IA du bureau est indisponible.",
+      "bulk_update_warning": "{{count}} open document(s) have unsaved changes. Bulk update writes to disk and may overwrite in-memory edits.",
+      "copy_schema_failed": "Impossible de copy schema file.",
+      "could_not_open_settings": "Impossible d’ouvrir les paramètres.",
+      "could_not_save_metadata": "Impossible d’enregistrer les métadonnées.",
+      "could_not_save_translation_settings": "Impossible de save translation settings.",
+      "open_project_first": "Ouvrez d’abord un projet.",
+      "open_translation_tab_for_zotero": "Ouvrir the Translation tab to choose Zotero citation style.",
+      "open_xml_before_saving": "Ouvrez un fichier XML avant d’enregistrer.",
+      "project_settings_saved": "Projet settings saved.",
+      "refreshing_zotero_citations": "Refreshing Zotero citations.",
+      "schema_download_failed": "Schéma download failed.",
+      "unsaved_documents": "Unsaved documents",
+      "updated_files_overrides_skipped": "{{count}} field(s) left unchanged due to per-file edits.",
+      "updated_files_summary": "Updated {{updated}} file(s); {{skipped}} unchanged.",
+      "time_machine": {
+        "title": "Time Machine",
+        "open_project_first": "Ouvrez un projet before using Time Machine.",
+        "back_up_now": "Back Up Now",
+        "refresh_snapshots": "Refresh snapshots",
+        "restore_to_current_project": "Restore to current project",
+        "restore_snapshot": "Restore snapshot",
+        "restore_snapshot_message": "This will back up the current project, then replace the current project files with the selected snapshot.",
+        "restore": "Restore",
+        "cancel": "Annuler",
+        "close": "Fermer",
+        "no_snapshots_yet": "No snapshots yet.",
+        "snapshot_created": "Snapshot created.",
+        "project_restored": "Projet restored from snapshot.",
+        "could_not_create_snapshot": "Impossible de create snapshot.",
+        "could_not_restore_snapshot": "Impossible de restore snapshot.",
+        "months": {
+          "january": "January",
+          "february": "February",
+          "march": "March",
+          "april": "April",
+          "may": "May",
+          "june": "June",
+          "july": "July",
+          "august": "August",
+          "september": "September",
+          "october": "October",
+          "november": "November",
+          "december": "December"
+        }
+      },
+      "entity_database_changed": {
+        "title": "Base d’entités modifiée",
+        "message": "entities.xml a été modifié en dehors de Le Jean-Baptiste. Recharger avant d’écrire des changements d’entités ?",
+        "reload": "Recharger la base",
+        "keep": "Garder la copie actuelle"
+      },
+      "user_name_prompt": {
+        "title": "Votre nom",
+        "message": "Entrez le nom sous lequel vous annoterez.",
+        "placeholder": "Votre nom",
+        "save": "Enregistrer",
+        "next": "Suivant"
+      },
+      "database_setup_prompt": {
+        "title": "Base d’entités",
+        "message": "Choisissez un dossier pour votre base d’entités, de préférence synchronisé dans le cloud.",
+        "folder_label": "Dossier de la base",
+        "folder_placeholder": "Aucun dossier choisi",
+        "choose": "Choisir un dossier…",
+        "note": "Vous avez déjà une base synchronisée depuis une autre machine (Dropbox, iCloud, etc.) ? Choisissez son dossier ici pour l’utiliser plutôt que d’en créer une nouvelle.",
+        "done": "Terminé"
+      },
+      "tagging": {
+        "add_attribute": "Ajouter attribute",
+        "highlight": "Highlight",
+        "text": "Text",
+        "filter_attributes": "Filter attributes...",
+        "attribute_value": "Attribute value",
+        "attribute_name": "Attribute name",
+        "filter_tags": "Filter tags..."
+      },
+      "scope_fields": {
+        "scope": "Scope",
+        "folder_placeholder": "/path/to/folder"
       }
     },
     "translation": {

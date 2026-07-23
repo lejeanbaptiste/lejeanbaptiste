@@ -2,6 +2,7 @@ import { applySuggestions, type ApplyOptions } from './apply';
 import type { AuthorityCandidate } from './authority';
 import { teiTagForCandidate } from './authority';
 import { collapseLinkedCandidates, mergeCandidateIntoLookupList } from './authorityOverlap';
+import { autoSyncEntitiesToCentral } from './autoSync';
 import { dictionaryTag, type DictionaryEntry } from './dictionary';
 import { addEntity, ENTITY_KINDS, findEntity, LJB_AUTOTAG_RESP } from './entities';
 import { isLatinSurface } from './disambiguationMatch';
@@ -237,15 +238,23 @@ export async function autoLinkUnique(
 ): Promise<AutoLinkResult> {
   const minted = new Map<string, string>();
   const byId = new Map<string, { entityId: string; candidate: AuthorityCandidate }>();
+  const createdIds: string[] = [];
   let entitiesCreated = 0;
 
   for (const match of matches) {
     const candidate = match.candidates[0];
     if (!candidate) continue;
     const { id, created } = resolveEntity(entitiesDoc, candidate, minted, projectLang);
-    if (created) entitiesCreated += 1;
+    if (created) {
+      entitiesCreated += 1;
+      createdIds.push(id);
+    }
     byId.set(match.suggestion.id, { entityId: id, candidate });
   }
+
+  // One central-store round trip for the whole batch rather than one per
+  // entity - seed/import can mint many entities at once.
+  await autoSyncEntitiesToCentral(entitiesDoc, createdIds);
 
   const suggestions = matches.map((m) => m.suggestion);
   const { results, snapshot } = await applySuggestions(doc, suggestions, options);

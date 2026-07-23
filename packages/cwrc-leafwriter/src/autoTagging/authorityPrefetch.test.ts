@@ -41,6 +41,7 @@ function makeSession(options: { hasCache?: boolean; seedPending?: Record<string,
     savePendingCache: async () => {
       session.savePendingCacheCalls += 1;
     },
+    candidateSearchCentralContext: async () => null,
     savePendingCacheCalls: 0,
     pendingEntries,
   };
@@ -106,6 +107,8 @@ describe('runAuthorityPrefetch', () => {
       undefined,
       undefined,
       expect.any(Function), // onDilaDatesReady: re-remember rows once lazy DILA scrapes land
+      undefined,
+      undefined, // no central context (syncToCentral off in this session mock)
     );
   });
 

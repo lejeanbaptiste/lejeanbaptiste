@@ -12,7 +12,9 @@ import {
   type AuthorityId,
   type EntityKind,
 } from './entities';
+import { linkedCentralIds } from './bridgeInbox';
 import type { EntityStore } from './entityStore';
+import { adoptFromCentral } from './promote';
 import {
   extractWikidataIdsFromText,
   fetchWikidataGivenFamilyNames,
@@ -51,6 +53,13 @@ export interface DisambiguationCandidate {
   uri?: string;
   authorityIds?: AuthorityId[];
   localEntityId?: string;
+  /**
+   * Set instead of `localEntityId` when this candidate comes from the
+   * central database (syncToCentral) rather than this project's own PEDB.
+   * Resolving it requires adopting a PEDB mirror first - see
+   * `resolveCandidateForPedb`.
+   */
+  centralEntityId?: string;
   fromEntityFile?: boolean;
   /** Birth/founding year (persons: Wikidata P569; CHGIS places: metadata.startYear). */
   startYear?: number;
@@ -334,6 +343,7 @@ export function mergeSelectedCandidates(
     sources: [...new Set(candidates.flatMap((c) => c.sources))],
     uri: fromFile?.uri ?? first.uri,
     localEntityId: fromFile?.localEntityId ?? first.localEntityId,
+    centralEntityId: fromFile?.centralEntityId ?? first.centralEntityId,
     fromEntityFile: candidates.some((c) => c.fromEntityFile),
     authorityIds: dedupeAuthorityIds(candidates.flatMap((c) => c.authorityIds ?? [])),
     startYear: startYears.length ? Math.min(...startYears) : undefined,
@@ -382,7 +392,12 @@ export function collapseCrossAuthorityCandidates(
 }
 
 /** Candidates from the local entity file matching surface text. */
-export function candidatesFromEntityFile(doc: Document, tag: string, surface: string): DisambiguationCandidate[] {
+export function candidatesFromEntityFile(
+  doc: Document,
+  tag: string,
+  surface: string,
+  origin: 'pedb' | 'cedb' = 'pedb',
+): DisambiguationCandidate[] {
   const kind = TAG_TO_KIND[tag];
   if (!kind) return [];
 
@@ -428,8 +443,9 @@ export function candidatesFromEntityFile(doc: Document, tag: string, surface: st
       id: localId || `local-${i}`,
       label: nameTexts[0] || surface,
       description: descriptionNote?.textContent ?? undefined,
-      sources: ['entity-file'],
-      localEntityId: localId || undefined,
+      sources: origin === 'cedb' ? ['central-database'] : ['entity-file'],
+      localEntityId: origin === 'pedb' ? localId || undefined : undefined,
+      centralEntityId: origin === 'cedb' ? localId || undefined : undefined,
       authorityIds,
       fromEntityFile: true,
       startYear,
@@ -441,11 +457,22 @@ export function candidatesFromEntityFile(doc: Document, tag: string, surface: st
   return out;
 }
 
+function mergeIntoExisting(
+  existing: DisambiguationCandidate,
+  candidate: DisambiguationCandidate,
+): void {
+  existing.sources = Array.from(new Set([...existing.sources, ...candidate.sources]));
+  if (candidate.authorityIds) {
+    existing.authorityIds = [...(existing.authorityIds ?? []), ...candidate.authorityIds];
+  }
+}
+
 export function mergeCandidates(
   lists: DisambiguationCandidate[][],
   options?: MergeCandidateOptions,
 ): DisambiguationCandidate[] {
   const byLocal = new Map<string, DisambiguationCandidate>();
+  const byCentral = new Map<string, DisambiguationCandidate>();
   const out: DisambiguationCandidate[] = [];
 
   for (const list of lists) {
@@ -453,10 +480,7 @@ export function mergeCandidates(
       if (candidate.localEntityId) {
         const existing = byLocal.get(candidate.localEntityId);
         if (existing) {
-          existing.sources = Array.from(new Set([...existing.sources, ...candidate.sources]));
-          if (candidate.authorityIds) {
-            existing.authorityIds = [...(existing.authorityIds ?? []), ...candidate.authorityIds];
-          }
+          mergeIntoExisting(existing, candidate);
           continue;
         }
         byLocal.set(candidate.localEntityId, candidate);
@@ -464,9 +488,20 @@ export function mergeCandidates(
         continue;
       }
 
+      if (candidate.centralEntityId) {
+        const existing = byCentral.get(candidate.centralEntityId);
+        if (existing) {
+          mergeIntoExisting(existing, candidate);
+          continue;
+        }
+        byCentral.set(candidate.centralEntityId, candidate);
+        out.push(candidate);
+        continue;
+      }
+
       const dup = out.find((c) => c.uri && c.uri === candidate.uri);
       if (dup) {
-        dup.sources = Array.from(new Set([...dup.sources, ...candidate.sources]));
+        mergeIntoExisting(dup, candidate);
         continue;
       }
       out.push(candidate);
@@ -942,8 +977,18 @@ export async function buildDisambiguationCandidates(
   dilaFetchImpl?: DilaFetchFn,
   onDilaDatesReady?: () => void,
   projectLang?: string | null,
+  /** Present only for a syncToCentral project - merges in matching CEDB entities. */
+  central?: { doc: Document; userStableId: string },
 ): Promise<DisambiguationCandidate[]> {
   const local = candidatesFromEntityFile(entitiesDoc, tag, surface);
+  const centralCandidates = central
+    ? (() => {
+        const linked = linkedCentralIds(entitiesDoc, central.userStableId);
+        return candidatesFromEntityFile(central.doc, tag, surface, 'cedb').filter(
+          (candidate) => !linked.has(candidate.centralEntityId!),
+        );
+      })()
+    : [];
   const packLocal = readPackFile
     ? await candidatesFromAuthorityPacks(
         tag,
@@ -958,7 +1003,7 @@ export async function buildDisambiguationCandidates(
   const live = await fetchLiveCandidates(tag, surface, cache, enabledAuthorities, forceRefresh, readPackFile);
   const options = mergeOptionsForLang(projectLang);
   const merged = collapseCrossAuthorityCandidates(
-    mergeCandidates([local, packLocal, live], options).map(enrichCandidateCrossRefs),
+    mergeCandidates([local, centralCandidates, packLocal, live], options).map(enrichCandidateCrossRefs),
     options,
   );
   await enrichCandidateNames(merged, projectLang);
@@ -985,6 +1030,28 @@ export interface ResolveEntityInput {
   description?: string;
   startYear?: number;
   endYear?: number;
+}
+
+/**
+ * `resolveEntityInDocument` only knows about the PEDB, so a CEDB-origin
+ * candidate (from a syncToCentral project's merged disambiguation search)
+ * must be adopted into the PEDB first - this mints/reuses a linked project
+ * mirror and rewrites the candidate to look like an ordinary local match
+ * (`localEntityId` set, `centralEntityId` cleared). Candidates without a
+ * `centralEntityId` pass through unchanged.
+ */
+export async function resolveCandidateForPedb(
+  candidate: DisambiguationCandidate,
+  pedbDoc: Document,
+  centralStore: EntityStore,
+  userStableId: string,
+): Promise<DisambiguationCandidate> {
+  if (!candidate.centralEntityId) return candidate;
+  // adoptFromCentral only reads cedbDoc (to copy fields) and mutates pedbDoc
+  // (mint + link) - the caller already owns saving pedbDoc afterward.
+  const cedbDoc = await centralStore.loadEntities();
+  const { pedbId } = adoptFromCentral(pedbDoc, candidate.centralEntityId, cedbDoc, userStableId);
+  return { ...candidate, localEntityId: pedbId, centralEntityId: undefined };
 }
 
 /** Mint or reuse entity in database; returns local id. */
