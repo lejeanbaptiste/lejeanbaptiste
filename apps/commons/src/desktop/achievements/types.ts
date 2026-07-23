@@ -15,6 +15,8 @@ export interface AchievementsState {
   /** First time the achievements file was created — service start date. */
   installedAt: string;
   saveCount: number;
+  /** Times the Time Machine dialog has been opened (for Precautionary measures). */
+  timeMachineRuns: number;
   /** Distinct local calendar days on which a leaderboard submission succeeded. */
   leaderboardPublicationDays: string[];
   unlocked: Record<string, { at: string }>;

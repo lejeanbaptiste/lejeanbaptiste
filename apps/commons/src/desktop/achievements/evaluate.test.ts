@@ -155,14 +155,49 @@ describe('determineNewUnlocks', () => {
     );
   });
 
-  it('awards The Empty Honour for a valid saved document using an empty element', () => {
+  it('awards The Empty Honour for an empty persName / placeName / date / roleName / org', () => {
+    expect(
+      determineNewUnlocks(
+        freshState(),
+        zeroMetrics(),
+        baseContext({ xml: '<TEI><text><persName/></text></TEI>' }),
+      ),
+    ).toContain('empty-honour');
+    expect(
+      determineNewUnlocks(
+        freshState(),
+        zeroMetrics(),
+        baseContext({ xml: '<TEI><text><placeName></placeName></text></TEI>' }),
+      ),
+    ).toContain('empty-honour');
+    expect(
+      determineNewUnlocks(
+        freshState(),
+        zeroMetrics(),
+        baseContext({ xml: '<TEI><text><date /></text></TEI>' }),
+      ),
+    ).toContain('empty-honour');
+    expect(
+      determineNewUnlocks(
+        freshState(),
+        zeroMetrics(),
+        baseContext({ xml: '<TEI><text><roleName/></text></TEI>' }),
+      ),
+    ).toContain('empty-honour');
+    expect(
+      determineNewUnlocks(
+        freshState(),
+        zeroMetrics(),
+        baseContext({ xml: '<TEI><text><orgName/></text></TEI>' }),
+      ),
+    ).toContain('empty-honour');
     expect(
       determineNewUnlocks(
         freshState(),
         zeroMetrics(),
         baseContext({ xml: '<TEI><text><lb/></text></TEI>' }),
       ),
-    ).toContain('empty-honour');
+    ).not.toContain('empty-honour');
   });
 
   it('awards Mentioned in Despatches from distinct leaderboard publication days', () => {
@@ -210,8 +245,8 @@ describe('catalogue', () => {
     expect(RANK_MEDALS).toHaveLength(6);
     expect(RANK_MEDALS.every((medal) => medal.thresholds.length === RANK_NAMES.length)).toBe(true);
     expect(rankCount).toBe(42);
-    expect(TOTAL_ACHIEVEMENTS).toBe(rankCount + 12 + 12);
-    expect(TOTAL_ACHIEVEMENTS).toBe(66);
+    expect(TOTAL_ACHIEVEMENTS).toBe(rankCount + 13 + 12);
+    expect(TOTAL_ACHIEVEMENTS).toBe(67);
   });
 
   it('ignores retired achievement ids left in old files when counting', () => {

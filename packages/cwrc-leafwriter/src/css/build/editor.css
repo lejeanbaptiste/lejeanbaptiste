@@ -7,6 +7,7 @@
   --thing: rgb(131, 149, 167);
   --citation: rgb(0, 128, 64);
   --note: rgb(224, 190, 0);
+  --note-anchor-size: 0.75em;
   --date: rgb(253, 119, 170);
   --correction: rgb(191, 4, 4);
   --keyword: rgb(16, 172, 132);
@@ -216,134 +217,89 @@ body {
  */
 .noteWrapper {
   display: inline;
-}
-
-.noteWrapper::before {
-  cursor: pointer;
-  display: inline-block;
   vertical-align: baseline;
+  line-height: inherit;
+  white-space: normal;
 }
 
-/* .noteWrapper.note::before {
-  content: url(../images/note_inline_large.png);
-} */
-
-/* .noteWrapper.note::before {
-  content: "N";
-  background-color: rgb(224, 190, 0);
-  border-radius: 4px;
-  font-family: 'Lato';
-  font-weight: 700;
-  padding: 2px 4px 2px 4px;
-  color: white;
-  margin-left: 2px;
-  margin-right: 2px;
-} */
-
-.noteWrapper.note::before {
-  content: url(../images/sticky-note-inline.svg);
-  /* background-color: rgb(224, 190, 0); */
-  background-color: var(--note);
-  border-radius: 2px;
-  padding: 2px 3px 0px 3px;
-  color: white;
-  margin-left: 2px;
-  margin-right: 2px;
-  position: relative;
-  top: 2px;
-}
-
-/* .noteWrapper.citation::before {
-  content: url(../images/citation_inline_large.png);
-} */
-
-.noteWrapper.citation::before {
-  content: url(../images/citation.svg);
-  /* background-color: rgb(205, 0, 116); */
-  background-color: var(--citation);
-  border-radius: 2px;
-  padding: 2px 3px 0px 3px;
-  color: white;
-  margin-left: 2px;
-  margin-right: 2px;
-  position: relative;
-  top: 2px;
-}
-
-/* .noteWrapper.keyword::before {
-  content: url(../images/keyword_inline_large.png);
-} */
-
-.noteWrapper.keyword::before {
-  content: url(../images/key_inline.svg);
-  background-color: rgb(0, 128, 64);
-  border-radius: 2px;
-  padding: 2px 3px 0px 3px;
-  color: white;
-  margin-left: 2px;
-  margin-right: 2px;
-  position: relative;
-  top: 2px;
-}
-
-/* .noteWrapper.note.entityHighlight::before {
-  content: url(../images/note_inline_large_highlight.png);
-} */
-
-.noteWrapper.note.entityHighlight::before {
-  content: url(../images/sticky-note-inline.svg);
-  background-color: rgb(224, 190, 0);
-  border-radius: 2px;
-  padding: 2px 3px 0px 3px;
-  color: white;
-  margin-left: 6px;
-  margin-right: 2px;
-  position: relative;
-  top: 2px;
-}
-
-/* .noteWrapper.citation.entityHighlight::before {
-  content: url(../images/citation_inline_large_highlight.png);
-} */
-
-.noteWrapper.citation.entityHighlight::before {
-  content: url(../images/citation.svg);
-  background-color: var(--citation);
-  border-radius: 2px;
-  padding: 2px 3px 0px 3px;
-  color: white;
-  margin-left: 6px;
-  margin-right: 2px;
-  position: relative;
-  top: 2px;
-}
-
-/* .noteWrapper.keyword.entityHighlight::before {
-  content: url(../images/keyword_inline_large_highlight.png);
-} */
-
+/* Compact square anchor (~75% line height); background image, not content:url */
+.noteWrapper.note::before,
+.noteWrapper.citation::before,
+.noteWrapper.keyword::before,
+.noteWrapper.note.entityHighlight::before,
+.noteWrapper.citation.entityHighlight::before,
 .noteWrapper.keyword.entityHighlight::before {
-  content: url(../images/key_inline.svg);
+  content: '';
+  display: inline-block;
+  width: var(--note-anchor-size);
+  height: var(--note-anchor-size);
+  margin: 0 0.08em;
+  padding: 0;
+  border: none;
+  border-radius: 1px;
+  box-sizing: border-box;
+  line-height: 0;
+  vertical-align: -0.12em;
+  position: static;
+  top: auto;
+  cursor: pointer;
+  background-repeat: no-repeat;
+  background-position: center;
+  background-size: 70% 70%;
+}
+
+.noteWrapper.note::before,
+.noteWrapper.note.entityHighlight::before {
+  background-color: var(--note);
+  background-image: url(../images/sticky-note-inline.svg);
+}
+
+.noteWrapper.citation::before,
+.noteWrapper.citation.entityHighlight::before {
+  background-color: var(--citation);
+  background-image: url(../images/citation.svg);
+}
+
+.noteWrapper.keyword::before,
+.noteWrapper.keyword.entityHighlight::before {
   background-color: rgb(0, 128, 64);
-  border-radius: 2px;
-  padding: 2px 3px 0px 3px;
-  color: white;
-  margin-left: 6px;
-  margin-right: 2px;
-  position: relative;
-  top: 2px;
+  background-image: url(../images/key_inline.svg);
 }
 
 .noteWrapper > * {
-  /* inline — not inherit — so expanded note/comm text stays in the paragraph
-   * even when the underlying HTML element is a <div[_tag=note]>. */
-  display: inline;
+  display: inline !important;
+  margin: 0;
+  padding: 0;
+  vertical-align: baseline;
+  line-height: inherit;
   /* Distinguish expanded commentary from the base text it glosses. */
   font-size: 0.85em;
 }
 
 .noteWrapper.hide > * {
   display: none !important;
+}
+
+/* showEntities chrome fights inline commentary */
+.showEntities .noteWrapper .entity.note,
+.showEntities .noteWrapper .entity.citation,
+.showEntities .noteWrapper .entity.keyword {
+  padding: 0 !important;
+  margin: 0 !important;
+  border: none !important;
+  background-color: transparent !important;
+  display: inline !important;
+}
+
+.showEntities .noteWrapper .note.start,
+.showEntities .noteWrapper .citation.start,
+.showEntities .noteWrapper .keyword.start {
+  padding: 0 !important;
+  margin: 0 !important;
+  padding-left: 0 !important;
+  margin-left: 0 !important;
+  display: inline !important;
+  background-color: transparent !important;
 }
 
 /* .showEntities .citation.start,
