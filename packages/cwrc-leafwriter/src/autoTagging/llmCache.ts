@@ -50,7 +50,10 @@ export class LlmCache {
   }
 
   private filePath(key: string): string {
-    return `${this.cacheDir}/${key.replace(/[^a-zA-Z0-9_.:-]/g, '_')}.json`;
+    // `:` is illegal in Windows filenames (reserved for NTFS alternate data
+    // streams) - the cache key below is colon-delimited, so it must not be
+    // in the allowed set here even though it reads fine on macOS/Linux.
+    return `${this.cacheDir}/${key.replace(/[^a-zA-Z0-9_.-]/g, '_')}.json`;
   }
 
   async get(
