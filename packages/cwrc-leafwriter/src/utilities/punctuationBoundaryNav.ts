@@ -1,6 +1,6 @@
 /**
  * Option/Alt (Mac) or Ctrl (Windows/Linux) + Left/Right: move the caret by
- * punctuation / whitespace boundaries, landing *after* the boundary.
+ * punctuation / whitespace boundaries, landing *before* the boundary.
  *
  * Designed for Chinese and other no-space scripts, where the browser's default
  * "word" jump is nearly useless. Spaces, line breaks, and any Unicode punctuation
@@ -25,19 +25,35 @@ const isContentChar = (ch: string): boolean =>
 
 export type BoundaryDirection = 'forward' | 'backward';
 
+/** True when `offset` is the start of a punctuation/whitespace run. */
+const isBoundaryRunStart = (text: string, offset: number): boolean => {
+  if (offset < 0 || offset >= text.length || !isBoundaryChar(text[offset]!)) return false;
+  if (offset === 0) return true;
+  const prev = text[offset - 1]!;
+  return isInvisibleChar(prev) || isContentChar(prev);
+};
+
 /**
- * Given a flat string and caret offset, return the offset after the next
+ * Stop positions: start of document, start of each boundary run, end of document.
+ * Consecutive punctuation/spaces count as one run (one stop, before the first mark).
+ */
+const boundaryStopOffsets = (text: string): number[] => {
+  const stops = [0];
+  for (let i = 0; i < text.length; i += 1) {
+    if (isBoundaryRunStart(text, i)) stops.push(i);
+  }
+  const n = text.length;
+  if (stops[stops.length - 1] !== n) stops.push(n);
+  return stops;
+};
+
+/**
+ * Given a flat string and caret offset, return the offset *before* the next
  * (or previous) punctuation/whitespace boundary run.
  *
- * Forward:
- * - If the caret sits on a boundary, skip that boundary run and stop.
- * - Otherwise skip content, then the following boundary run, and stop.
- * - No further boundary → end of string.
- *
- * Backward:
- * - If sitting right after a boundary run, step back over it first.
- * - Then step back over the preceding content.
- * - Land after the previous boundary (or at 0).
+ * Forward: next boundary-run start after the caret (or end of string).
+ * Backward: previous boundary-run start before the caret (or start of string).
+ * If the caret is already on a stop, move to the next/previous one.
  */
 export function findPunctuationBoundaryOffset(
   text: string,
@@ -45,31 +61,21 @@ export function findPunctuationBoundaryOffset(
   direction: BoundaryDirection,
 ): number {
   const n = text.length;
-  let i = Math.max(0, Math.min(offset, n));
+  const i = Math.max(0, Math.min(offset, n));
+  const stops = boundaryStopOffsets(text);
 
   if (direction === 'forward') {
-    while (i < n && isInvisibleChar(text[i]!)) i += 1;
-
-    if (i < n && isBoundaryChar(text[i]!)) {
-      while (i < n && (isInvisibleChar(text[i]!) || isBoundaryChar(text[i]!))) i += 1;
-      return i;
+    for (const stop of stops) {
+      if (stop > i) return stop;
     }
-
-    while (i < n && (isInvisibleChar(text[i]!) || isContentChar(text[i]!))) i += 1;
-    while (i < n && (isInvisibleChar(text[i]!) || isBoundaryChar(text[i]!))) i += 1;
-    return i;
+    return n;
   }
 
-  // backward
-  while (i > 0 && isInvisibleChar(text[i - 1]!)) i -= 1;
-
-  if (i > 0 && isBoundaryChar(text[i - 1]!)) {
-    while (i > 0 && (isInvisibleChar(text[i - 1]!) || isBoundaryChar(text[i - 1]!))) i -= 1;
+  for (let s = stops.length - 1; s >= 0; s -= 1) {
+    const stop = stops[s]!;
+    if (stop < i) return stop;
   }
-
-  while (i > 0 && (isInvisibleChar(text[i - 1]!) || isContentChar(text[i - 1]!))) i -= 1;
-
-  return i;
+  return 0;
 }
 
 export type TextCaret = { node: Text; offset: number };
