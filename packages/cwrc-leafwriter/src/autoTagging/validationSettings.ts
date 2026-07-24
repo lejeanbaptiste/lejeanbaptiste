@@ -1,6 +1,7 @@
 /**
  * AI validation settings for auto-tagging review.
  * Controls whether AI pre-validates suggestions before human review.
+ * Persisted per project in jean-baptiste.project.json as `autoTaggingValidation`.
  */
 
 export interface ValidationSettings {
@@ -25,16 +26,34 @@ export function autoAcceptThresholdFromSettings(settings?: ValidationSettings): 
 
 /** Read validation settings from desktop project API. */
 export function readPersistedValidationSettings(): ValidationSettings | undefined {
-  // TODO: Wire up to project settings once getAutoTaggingSettings is available
-  // For now, return undefined to use defaults
-  return undefined;
+  const raw = window.__leafWriterProject?.getAutoTaggingValidationSettings?.();
+  if (!raw) return undefined;
+  return {
+    aiValidation:
+      typeof raw.aiValidation === 'boolean' ? raw.aiValidation : DEFAULT_AI_VALIDATION,
+    autoAcceptThreshold:
+      typeof raw.autoAcceptThreshold === 'number'
+        ? raw.autoAcceptThreshold
+        : DEFAULT_AUTO_ACCEPT_THRESHOLD,
+  };
 }
 
-/** Persist validation settings to project file. */
+/**
+ * Persist validation settings to the project file.
+ * Merges with the current value so a partial update (e.g. only `aiValidation`)
+ * does not wipe `autoAcceptThreshold`.
+ */
 export async function persistValidationSettings(
   settings: ValidationSettings,
 ): Promise<void> {
-  // TODO: Wire up to project settings once setAutoTaggingSettings is available
-  // For now, this is a no-op
-  console.log('AI validation settings saved (not yet persisted to project):', settings);
+  const projectFilePath = window.__leafWriterProject?.getProjectFilePath?.();
+  if (!projectFilePath || !window.electronAPI?.updateProjectFileConfig) return;
+  const merged: ValidationSettings = {
+    ...readPersistedValidationSettings(),
+    ...settings,
+  };
+  await window.electronAPI.updateProjectFileConfig(projectFilePath, {
+    autoTaggingValidation: merged,
+  });
+  window.__leafWriterProject?.setAutoTaggingValidationSettings?.(merged);
 }

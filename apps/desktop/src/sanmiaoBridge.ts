@@ -116,6 +116,35 @@ let cachedDevRoot: string | null | undefined;
  */
 const MIN_SANMIAO_VERSION = '0.2.10';
 
+/** Keep in sync with SANMIAO_SPEC in apps/desktop/scripts/download-python-runtime.mjs. */
+const SANMIAO_SPEC = `sanmiao[fuzzy]==${MIN_SANMIAO_VERSION}`;
+
+const isMissingSanmiaoModule = (stderr: string): boolean =>
+  /ModuleNotFoundError: No module named ['"]sanmiao['"]/.test(stderr);
+
+/**
+ * A candidate Python that runs but simply lacks the `sanmiao` package (rather
+ * than being broken/unusable) is fixable in place: pip-install it ourselves
+ * so the user never has to run a manual `pip install` command. `--user`
+ * avoids needing write access to the interpreter's own site-packages (e.g.
+ * a bundled runtime under Program Files, or a system install requiring
+ * elevation).
+ */
+const tryAutoInstallSanmiao = async (python: string): Promise<boolean> => {
+  try {
+    logSanmiao('attempting automatic sanmiao install', { python, spec: SANMIAO_SPEC });
+    await execFileAsync(python, ['-m', 'pip', 'install', '--user', '--upgrade', SANMIAO_SPEC], {
+      timeout: 3 * 60 * 1000,
+      env: process.env,
+    });
+    return true;
+  } catch (error) {
+    const stderr = (error as { stderr?: string })?.stderr ?? String(error);
+    logSanmiao('automatic sanmiao install failed', { python, reason: stderr.trim().slice(-500) });
+    return false;
+  }
+};
+
 const SANMIAO_IMPORT_CHECK = [
   'import re, sanmiao',
   'from sanmiao.tei_bridge import cli_main',
@@ -157,6 +186,22 @@ export const resolveSanmiaoPython = async (): Promise<string> => {
       logSanmiao('using python', { python, root: root ?? undefined });
       return python;
     } catch (error) {
+      const stderr = (error as { stderr?: string })?.stderr ?? String(error);
+      if (isMissingSanmiaoModule(stderr) && (await tryAutoInstallSanmiao(python))) {
+        try {
+          await execFileAsync(python, ['-c', SANMIAO_IMPORT_CHECK], {
+            timeout: 15_000,
+            env: process.env,
+          });
+          cachedPython = python;
+          cachedDevRoot = null;
+          logSanmiao('using python (auto-installed sanmiao)', { python });
+          return python;
+        } catch (retryError) {
+          recordFailure(python, retryError);
+          continue;
+        }
+      }
       recordFailure(python, error);
     }
   }

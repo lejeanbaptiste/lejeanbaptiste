@@ -36,7 +36,15 @@ export interface ProjectFileConfig {
   syncToCentral?: boolean;
   /** Saved authority tag-bomb pack/year settings for this project. */
   autoTaggingAuthority?: AutoTaggingAuthoritySettings;
+  /** AI validation preferences for auto-tagging review (pre-select / warnings). */
+  autoTaggingValidation?: AutoTaggingValidationSettings;
   disambiguation?: DisambiguationSettings;
+}
+
+/** Persisted in jean-baptiste.project.json — mirrors cwrc-leafwriter validationSettings. */
+export interface AutoTaggingValidationSettings {
+  aiValidation?: boolean;
+  autoAcceptThreshold?: number;
 }
 
 export interface DisambiguationSettings {

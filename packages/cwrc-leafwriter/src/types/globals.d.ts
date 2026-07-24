@@ -215,6 +215,16 @@ declare global {
         yearFilterEnabled?: boolean;
         hideUndated?: boolean;
       }) => void;
+      getAutoTaggingValidationSettings: () =>
+        | {
+            aiValidation?: boolean;
+            autoAcceptThreshold?: number;
+          }
+        | undefined;
+      setAutoTaggingValidationSettings: (settings: {
+        aiValidation?: boolean;
+        autoAcceptThreshold?: number;
+      }) => void;
       getDisambiguationSettings: () =>
         | {
             aiCuration?: boolean;

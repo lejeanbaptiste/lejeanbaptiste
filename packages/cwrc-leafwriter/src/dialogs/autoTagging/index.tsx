@@ -37,6 +37,7 @@ import {
   persistAiPromptProfiles,
   persistValidationSettings,
   readPersistedValidationSettings,
+  aiValidationFromSettings,
   defaultAuthorityPacksRecord,
   entityStoreFromDesktop,
   OWN_DATABASE_KIND_BY_PACK_ID,
@@ -422,7 +423,7 @@ export const AutoTaggingDialog = ({ id, onClose, open = false }: IDialog) => {
   useEffect(() => {
     if (!open) return;
     const validationSettings = readPersistedValidationSettings();
-    setAiValidation(validationSettings?.aiValidation ?? true);
+    setAiValidation(aiValidationFromSettings(validationSettings));
   }, [open]);
 
   useEffect(() => {
@@ -535,7 +536,11 @@ export const AutoTaggingDialog = ({ id, onClose, open = false }: IDialog) => {
     visibleAuthorityPackIds,
   ]);
   const beginReview = (produced: Suggestion[], notice?: string) => {
-    startAutoTaggingReview({ suggestions: produced, notice, aiValidation });
+    startAutoTaggingReview({
+      suggestions: produced,
+      notice,
+      aiValidation: aiValidation && aiReady,
+    });
     handleClose();
   };
 
@@ -907,11 +912,18 @@ export const AutoTaggingDialog = ({ id, onClose, open = false }: IDialog) => {
                 </Typography>
               ) : (
                 <>
+                  {methodButton(
+                    'Tag bomb',
+                    () => openAuthorityStep(),
+                    !isDesktopApp(),
+                    !isDesktopApp() ? 'Desktop app only' : undefined,
+                  )}
                   <FormControlLabel
                     control={
                       <Checkbox
                         size="small"
                         checked={aiValidation}
+                        disabled={aiDisabled}
                         onChange={(event) => {
                           setAiValidation(event.target.checked);
                           void persistValidationSettings({ aiValidation: event.target.checked });
@@ -919,26 +931,24 @@ export const AutoTaggingDialog = ({ id, onClose, open = false }: IDialog) => {
                       />
                     }
                     label={
-                      <Typography variant="caption">
+                      <Typography
+                        variant="caption"
+                        color={aiDisabled ? 'text.disabled' : 'text.primary'}
+                      >
                         AI validation (pre-select best candidates, show warnings)
                       </Typography>
                     }
-                    sx={{ ml: 0, mb: 0.5 }}
+                    title={aiDisabledReason}
+                    sx={{ ml: 0, mb: 0.5, ...(aiDisabled ? { opacity: 0.6 } : {}) }}
                   />
-                  {methodButton(
-                    'Tag bomb',
-                    () => openAuthorityStep(),
-                    !isDesktopApp(),
-                    !isDesktopApp() ? 'Desktop app only' : undefined,
-                  )}
                   {isDesktopApp() && !aiReady && (
                     <Typography
                       variant="caption"
                       color="text.secondary"
                       sx={{ px: 1, py: 0.125, fontSize: '0.6875rem', lineHeight: 1.35 }}
                     >
-                      AI suggest and audit need a tested API connection — configure and test it in
-                      Application Settings.
+                      AI suggest, audit, and validation need a tested API connection — configure and
+                      test it in Application Settings.
                     </Typography>
                   )}
                   {methodButton(

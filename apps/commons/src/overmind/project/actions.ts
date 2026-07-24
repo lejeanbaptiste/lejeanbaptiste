@@ -1554,7 +1554,11 @@ export const isTabContentStaleOnDisk = async (
     let diskContent = await window.electronAPI.readFile(filePath);
     diskContent = await prepareFileContent({ state, actions } as Context, filePath, diskContent);
 
-    let baseline = tab.content;
+    // Compare against what we last knew was on disk — not the dirty in-memory
+    // buffer. Tag bomb (and other in-app applies) update `tab.content` without
+    // writing the file; on Windows a spurious fs.watch event then made
+    // disk≠tab.content look like an external edit and popped this dialog.
+    let baseline = tab.lastSavedContent || tab.content;
     const isSourceActive =
       state.project.activeTabPath === filePath &&
       window.writer?.overmindState?.ui?.editorViewMode === 'source';

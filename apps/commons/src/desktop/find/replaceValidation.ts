@@ -89,6 +89,20 @@ export const validateAndReplaceHit = (
     }
 
     nextReplacement = applyRegexReplacement(match, replacement);
+  } else {
+    // start/end come from a hit found earlier; the document may have changed
+    // since (typing, auto-closed tags, etc.), so those offsets can now point at
+    // unrelated content. Refuse rather than silently replacing the wrong text.
+    const actual = content.slice(start, end);
+    const matchesQuery = ignoreCase
+      ? actual.toLowerCase() === query.toLowerCase()
+      : actual === query;
+    if (!matchesQuery) {
+      return {
+        ok: false,
+        error: 'The document changed since this match was found. Search again to continue.',
+      };
+    }
   }
 
   const nextContent = replaceHitAtOffset(content, start, end, nextReplacement);

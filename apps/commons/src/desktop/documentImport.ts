@@ -268,6 +268,73 @@ export const isEntityDatabaseFilename = (filePath: string): boolean =>
   basenameWithoutExtension(filePath).toLowerCase() === 'entities' &&
   /\.xml$/i.test(filePath);
 
+/**
+ * Scans for top-level `<div>...</div>` blocks (tracking nesting depth so a
+ * div's own nested divs aren't split out separately). Used to salvage content
+ * from an unrecognized XML dialect that otherwise happens to hold TEI-shaped
+ * markup (div/head/p/pb/choice/sic/corr/note) under some other root.
+ */
+export const extractTopLevelDivs = (xml: string): string[] => {
+  const divs: string[] = [];
+  const tagPattern = /<(\/?)div\b[^>]*?(\/?)>/g;
+  let depth = 0;
+  let start = -1;
+  let match: RegExpExecArray | null;
+
+  while ((match = tagPattern.exec(xml)) !== null) {
+    const isClose = match[1] === '/';
+    const isSelfClose = match[2] === '/';
+    if (isSelfClose) continue;
+
+    if (!isClose) {
+      if (depth === 0) start = match.index;
+      depth += 1;
+      continue;
+    }
+
+    depth = Math.max(0, depth - 1);
+    if (depth === 0 && start !== -1) {
+      divs.push(xml.slice(start, match.index + match[0].length));
+      start = -1;
+    }
+  }
+
+  return divs;
+};
+
+/** Best-effort title from the first <head> inside the salvaged divs, else the filename. */
+const titleFromDivsOrFilename = (divsXml: string, sourcePath: string): string => {
+  const headMatch = divsXml.match(/<head\b[^>]*>([\s\S]*?)<\/head>/i);
+  const headText = headMatch?.[1]?.replace(/<[^>]+>/g, '').trim();
+  return headText || basenameWithoutExtension(sourcePath);
+};
+
+/**
+ * Wraps salvaged div content in a minimal TEI skeleton so a document from an
+ * unrecognized dialect can still be imported when it happens to hold TEI-shaped
+ * body markup. Project schema PIs are attached later by
+ * applyProjectSchemaProcessingInstructions, same as any other TEI import.
+ */
+export const wrapForeignDivsAsTei = (divsXml: string, sourcePath: string): string => {
+  const title = titleFromDivsOrFilename(divsXml, sourcePath);
+
+  return `<?xml version="1.0" encoding="UTF-8"?>
+<TEI xmlns="http://www.tei-c.org/ns/1.0">
+<teiHeader>
+  <fileDesc>
+    <titleStmt><title>${escapeXmlText(title)}</title></titleStmt>
+    <publicationStmt><publisher/></publicationStmt>
+    <sourceDesc><p/></sourceDesc>
+  </fileDesc>
+</teiHeader>
+<text>
+  <body>
+${divsXml}
+  </body>
+</text>
+</TEI>`;
+};
+
 export const detectXmlDocumentFamily = (xml: string): XmlDocumentFamily => {
   const stripped = xml
     .replace(/<\?[\s\S]*?\?>/g, ' ')
@@ -498,13 +565,24 @@ export const buildImportedXmlDocument = ({
 
   assertImportedXmlWellFormed(xml, 'Source XML is not well formed');
 
-  const sourceFamily = detectXmlDocumentFamily(xml);
+  let workingXml = xml;
+  let sourceFamily = detectXmlDocumentFamily(workingXml);
   const targetFamily = catalogXmlFamily(config.schema?.catalogId);
 
   if (sourceFamily === 'unknown') {
-    throw new Error(
-      'Could not recognize the root element. XML import currently supports TEI (or teiCorpus) and Orlando documents.',
-    );
+    // Unrecognized root (not TEI/teiCorpus/Orlando) — salvage any top-level
+    // <div> content, which is often already TEI-shaped markup (head/p/pb/
+    // choice+sic+corr/note) under a foreign wrapper, by wrapping it in a
+    // minimal TEI skeleton instead of refusing the import outright.
+    const divs = extractTopLevelDivs(workingXml);
+    if (divs.length === 0) {
+      throw new Error(
+        'Could not recognize the root element. XML import currently supports TEI (or teiCorpus) and Orlando documents.',
+      );
+    }
+    workingXml = wrapForeignDivsAsTei(divs.join('\n'), sourcePath);
+    assertImportedXmlWellFormed(workingXml, 'Salvaged XML is not well formed');
+    sourceFamily = 'tei';
   }
 
   if (targetFamily === 'unknown') {
@@ -519,7 +597,7 @@ export const buildImportedXmlDocument = ({
     );
   }
 
-  const demoted = demoteEntityKeys(xml);
+  const demoted = demoteEntityKeys(workingXml);
   let next = applyProjectSchemaProcessingInstructions(demoted.xml, config);
   next = appendImportProvenanceNote({
     xml: next,
