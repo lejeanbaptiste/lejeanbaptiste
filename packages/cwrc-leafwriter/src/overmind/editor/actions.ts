@@ -41,11 +41,11 @@ const applyChoiceDisplayMode = (mode: ChoiceDisplayMode, fontSize: number) => {
       font-size: 0 !important;
     }
     .choiceDisplay-original .entity.correction[data-sic-text]::before {
-      content: attr(data-sic-text);
+      content: attr(data-sic-text) " [sic.]";
       font-size: ${fontSize}pt !important;
     }
     .choiceDisplay-both .entity.correction[data-sic-text]::before {
-      content: attr(data-sic-text) " / ";
+      content: attr(data-sic-text) " [sic.] / ";
     }
     .choiceDisplay-corrected .entity.correction[_tag="surplus"] {
       font-size: 0 !important;

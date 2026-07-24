@@ -448,6 +448,27 @@
       "selectUnitMessage": "Sélectionnez une {{unit}} dans la source pour la traduire.",
       "defaultUnitLabel": "section"
     },
+    "dateAuthority": {
+      "loading_calendar_tables": "Chargement des tables calendaires…",
+      "calendar_lookup_unavailable": "La recherche calendaire est indisponible. Installez sanmiao et redémarrez l’application.",
+      "calendar_context_hint": "Contexte calendaire (dynastie, empereur, ère) — utilisé par sanmiao pour résoudre les dates.",
+      "dynasty": "Dynastie",
+      "emperor": "Empereur",
+      "era": "Ère",
+      "type_to_search": "Tapez pour rechercher…",
+      "year": "Année",
+      "year_placeholder": "元年, 3, 十八",
+      "month": "Mois",
+      "month_placeholder": "3, 十八",
+      "day": "Jour",
+      "optional": "facultatif",
+      "sexagenary_year": "Année sexagésimale",
+      "sex_year_placeholder": "sex_year",
+      "sexagenary_day": "Jour sexagésimal",
+      "gz_placeholder": "gz",
+      "new_moon_gz": "gz de nouvelle lune",
+      "nmd_gz_placeholder": "nmd_gz"
+    },
     "settings": {
       "ai_api": {
         "api_key": "Clé API",

@@ -1582,6 +1582,11 @@ export const closeTab = async (
 ) => {
   if (state.project.activeTabPath === filePath) {
     captureActiveCursorPosition(state.project);
+    // Validation/disambiguation/auto-tagging review are all scoped to whatever
+    // document is currently loaded in the shared writer, so they only need
+    // closing when the tab being closed is the one they belong to.
+    window.__desktopRightPanel?.dismissTab('validation');
+    window.writer?.overmindActions?.ui?.dismissReviewPanes?.();
   }
 
   if (content) {

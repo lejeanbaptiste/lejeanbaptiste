@@ -103,6 +103,12 @@ export const UnifiedRightPanel = () => {
   const collapsedRef = useRef(collapsed);
   const suppressedByDockedReviewRef = useRef(false);
   const restoreExpandedAfterDockedReviewRef = useRef(false);
+  // Tab to return to once the auto-opened fileMetadata/validation view is dismissed
+  // (panel collapsed, or user navigates away). Set the first time an automatic
+  // showTab() call (file load -> fileMetadata, validation errors -> validation)
+  // overrides whatever the user had open; cleared once restored or once the user
+  // makes a manual tab choice of their own.
+  const restoreTabRef = useRef<RightTabId | null>(null);
 
   collapsedRef.current = collapsed;
 
@@ -124,9 +130,19 @@ export const UnifiedRightPanel = () => {
     panelTrace('rightPanel: showTab', { tab });
     if (!TAB_ORDER.includes(tab as RightTabId)) return;
     const tabId = tab as RightTabId;
-    setActiveTab((current) =>
-      tabId === 'fileMetadata' && current === 'translation' ? current : tabId,
-    );
+    setActiveTab((current) => {
+      if (tabId === 'fileMetadata' && current === 'translation') return current;
+      if (
+        (tabId === 'fileMetadata' || tabId === 'validation') &&
+        tabId !== current &&
+        restoreTabRef.current === null &&
+        current !== 'fileMetadata' &&
+        current !== 'validation'
+      ) {
+        restoreTabRef.current = current;
+      }
+      return tabId;
+    });
     if (!suppressedByDockedReviewRef.current) setCollapsed(false);
   }, []);
 
@@ -135,8 +151,20 @@ export const UnifiedRightPanel = () => {
     setCollapsed(false);
   }, []);
 
+  // Dismiss a tab if it's the one currently showing (e.g. the validation tab when
+  // the tab it was reporting on gets closed), falling back to whatever tab was
+  // open before it took over, same as the collapse-button restore.
+  const dismissTab = useCallback((tab: string) => {
+    setActiveTab((current) => {
+      if (current !== tab) return current;
+      const fallback = restoreTabRef.current ?? 'fileMetadata';
+      restoreTabRef.current = null;
+      return fallback;
+    });
+  }, []);
+
   useEffect(() => {
-    window.__desktopRightPanel = { showTab, expand };
+    window.__desktopRightPanel = { showTab, expand, dismissTab };
 
     if (window.__desktopRightPanelPendingTab) {
       setActiveTab(window.__desktopRightPanelPendingTab);
@@ -147,7 +175,7 @@ export const UnifiedRightPanel = () => {
     return () => {
       delete window.__desktopRightPanel;
     };
-  }, [showTab, expand]);
+  }, [showTab, expand, dismissTab]);
 
   // Hide the right panel while a docked review pane is open; restore if it was
   // expanded. Driven by the CustomEvent's `detail.active` (the authoritative
@@ -385,6 +413,8 @@ export const UnifiedRightPanel = () => {
           value={activeTab}
           onChange={(_event, value: RightTabId | null) => {
             if (value) {
+              // A manual pick breaks any pending auto-view restore chain.
+              restoreTabRef.current = null;
               setActiveTab(value);
               if (!suppressedByDockedReviewRef.current && collapsed) setCollapsed(false);
             }
@@ -428,7 +458,13 @@ export const UnifiedRightPanel = () => {
           <Tooltip placement={tooltipPlacement} title="Collapse panel">
             <IconButton
               size="small"
-              onClick={() => setCollapsed(true)}
+              onClick={() => {
+                if (restoreTabRef.current) {
+                  setActiveTab(restoreTabRef.current);
+                  restoreTabRef.current = null;
+                }
+                setCollapsed(true);
+              }}
               aria-label="Collapse right panel"
               sx={{
                 width: SIDEBAR_TAB_BUTTON_SIZE,

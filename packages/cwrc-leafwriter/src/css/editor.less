@@ -88,6 +88,45 @@ body {
   background-color: fade(@entity-correction, 20%);
 }
 
+/* Editorial correction readings: sic/surplus (as-found text) in red with a
+   "[sic.]" marker, corr/supplied (edited text) in green. */
+.entity.correction[data-sic-text] {
+  color: @entity-correction-corr !important;
+}
+.entity.correction[data-sic-text]::before {
+  color: @entity-correction-sic !important;
+}
+.entity.correction[_tag='surplus'] {
+  color: @entity-correction-sic !important;
+}
+.entity.correction[_tag='surplus']::after {
+  content: ' [sic.]';
+}
+.entity.correction[_tag='supplied'] {
+  color: @entity-correction-corr !important;
+}
+
+/* Same readings, but for documents where sic/corr/surplus/supplied are
+   plain schema tags (no entity/correction class, just a bare _tag attribute). */
+*[_tag='sic'] {
+  color: @entity-correction-sic !important;
+}
+*[_tag='sic']::after {
+  content: ' [sic.]';
+}
+*[_tag='corr'] {
+  color: @entity-correction-corr !important;
+}
+*[_tag='surplus'] {
+  color: @entity-correction-sic !important;
+}
+*[_tag='surplus']::after {
+  content: ' [sic.]';
+}
+*[_tag='supplied'] {
+  color: @entity-correction-corr !important;
+}
+
 .entityHighlight.link {
   background-color: fade(@entity-link, 20%);
 }
