@@ -39,7 +39,13 @@ import {
 } from '@mui/material';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { getDatabaseId, type AuthorityId, type EntityKind } from '../../../../../packages/cwrc-leafwriter/src/autoTagging/entities';
+import {
+  findEntity,
+  getDatabaseId,
+  type AuthorityId,
+  type EntityKind,
+} from '../../../../../packages/cwrc-leafwriter/src/autoTagging/entities';
+import { listCentralMappings } from '../../../../../packages/cwrc-leafwriter/src/autoTagging/concordance';
 import {
   addEntityName,
   deleteEntity,
@@ -427,6 +433,13 @@ export const SidebarDatabaseTab = ({ active = false }: SidebarDatabaseTabProps) 
   };
 
   const requestDelete = (entity: EntitySummary) => {
+    const targetStore = resolveStoreFor(entity.id);
+    // A deleted PEDB entity's central mapping(s) become the "purge" half of
+    // the merge docket: the linked central entity may now be an orphan worth
+    // reviewing. A central-to-central delete has no PEDB counterpart to
+    // raise a suggestion for (its own concordance rows, if any, are inert).
+    const isProjectDelete = targetStore === store;
+
     setConfirm({
       title: `Delete ${entity.names[0] ?? entity.id}?`,
       body:
@@ -435,11 +448,25 @@ export const SidebarDatabaseTab = ({ active = false }: SidebarDatabaseTabProps) 
         `Save open documents first.`,
       confirmLabel: 'Delete entity',
       destructive: true,
-      onConfirm: () =>
-        void runMutation(resolveStoreFor(entity.id), 'Deleting entity…', (doc) => {
+      onConfirm: () => {
+        let sourceDbId: string | null = null;
+        let centralIds: string[] = [];
+        void runMutation(targetStore, 'Deleting entity…', (doc) => {
+          sourceDbId = getDatabaseId(doc);
+          const item = findEntity(doc, entity.id);
+          if (item) centralIds = listCentralMappings(item).map((mapping) => mapping.centralId);
           deleteEntity(doc, entity.id);
           return { [entity.id]: null };
-        }),
+        }).then(async () => {
+          if (!isProjectDelete || !centralStore || centralIds.length === 0) return;
+          for (const centralId of centralIds) {
+            await centralStore.recordDeleteSuggestion(sourceDbId ?? 'unknown', centralId).catch(() => undefined);
+          }
+          computeMergeDocket(centralStore)
+            .then((docket) => setDocketCount(docket.length))
+            .catch(() => undefined);
+        });
+      },
     });
   };
 

@@ -1,11 +1,14 @@
 import {
+  makeDeleteSuggestion,
   makeMergeSuggestion,
   makeMergeSuggestionResolution,
   readMergeSuggestionResolutions as readMergeSuggestionResolutionsFile,
   readMergeSuggestions as readMergeSuggestionsFile,
   recordMergeSuggestion as recordMergeSuggestionFile,
   recordMergeSuggestionResolution as recordMergeSuggestionResolutionFile,
+  type CentralDeleteSuggestion,
   type CentralMergeSuggestion,
+  type CentralSuggestion,
   type MergeSuggestionAction,
   type MergeSuggestionResolution,
 } from './centralMergeSuggestions';
@@ -240,12 +243,27 @@ export class EntityStore {
     return suggestion;
   }
 
-  /** All merge-docket suggestions ever raised beside `entities.xml`. */
-  async readMergeSuggestions(): Promise<CentralMergeSuggestion[]> {
+  /**
+   * Raise a merge docket suggestion beside `entities.xml`: a central id whose
+   * PEDB counterpart was deleted (purged), so it may now be an orphan worth
+   * reviewing for deletion too.
+   */
+  async recordDeleteSuggestion(
+    sourceDbId: string,
+    centralId: string,
+  ): Promise<CentralDeleteSuggestion | null> {
+    if (!centralId) return null;
+    const suggestion = makeDeleteSuggestion(sourceDbId, centralId);
+    await recordMergeSuggestionFile(this.api, this.entitiesPath, suggestion);
+    return suggestion;
+  }
+
+  /** All merge-docket suggestions (merge and delete) ever raised beside `entities.xml`. */
+  async readMergeSuggestions(): Promise<CentralSuggestion[]> {
     return readMergeSuggestionsFile(this.api, this.entitiesPath);
   }
 
-  /** Every recorded decision (merged/ignored) on a merge-docket suggestion. */
+  /** Every recorded decision (merged/deleted/ignored) on a merge-docket suggestion. */
   async readMergeSuggestionResolutions(): Promise<MergeSuggestionResolution[]> {
     return readMergeSuggestionResolutionsFile(this.api, this.entitiesPath);
   }

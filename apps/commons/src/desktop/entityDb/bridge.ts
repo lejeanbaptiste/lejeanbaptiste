@@ -7,6 +7,7 @@ import {
   pendingCentralRemap,
 } from '../../../../../packages/cwrc-leafwriter/src/autoTagging/centralOrderSync';
 import {
+  pendingDeleteSuggestions,
   pendingMergeSuggestions,
 } from '../../../../../packages/cwrc-leafwriter/src/autoTagging/centralMergeSuggestions';
 import {
@@ -15,7 +16,7 @@ import {
   entityStoreFromDesktop,
   type EntityStore,
 } from '../../../../../packages/cwrc-leafwriter/src/autoTagging/entityStore';
-import { kindOfElement, mergeEntities } from '../../../../../packages/cwrc-leafwriter/src/autoTagging/entityOps';
+import { deleteEntity, kindOfElement, mergeEntities } from '../../../../../packages/cwrc-leafwriter/src/autoTagging/entityOps';
 import { promoteToCentral } from '../../../../../packages/cwrc-leafwriter/src/autoTagging/promote';
 import {
   applyReconcilePlan,
@@ -176,12 +177,13 @@ export async function syncEntities(
 }
 
 /**
- * The merge docket: central-database merge suggestions still worth a
- * decision (see `centralMergeSuggestions.ts`). Central-only — unlike the
- * Bridge inbox above, this doesn't need a project database at all, since a
- * suggestion can be raised by any project bridged to this catalogue, on any
- * machine. Call with whatever central store the database panel is already
- * holding, whether or not the current project happens to bridge to it.
+ * The merge docket: central-database merge and delete (purge) suggestions
+ * still worth a decision (see `centralMergeSuggestions.ts`). Central-only —
+ * unlike the Bridge inbox above, this doesn't need a project database at
+ * all, since a suggestion can be raised by any project bridged to this
+ * catalogue, on any machine. Call with whatever central store the database
+ * panel is already holding, whether or not the current project happens to
+ * bridge to it.
  */
 export interface MergeDocketSide {
   id: string;
@@ -190,11 +192,9 @@ export interface MergeDocketSide {
   fields: EntityFields;
 }
 
-export interface MergeDocketEntry {
-  suggestionId: string;
-  when: string;
-  sides: [MergeDocketSide, MergeDocketSide];
-}
+export type MergeDocketEntry =
+  | { kind: 'merge'; suggestionId: string; when: string; sides: [MergeDocketSide, MergeDocketSide] }
+  | { kind: 'delete'; suggestionId: string; when: string; side: MergeDocketSide };
 
 export async function computeMergeDocket(centralStore: EntityStore): Promise<MergeDocketEntry[]> {
   const [cedbDoc, suggestions, resolutions, cedbOrders] = await Promise.all([
@@ -206,9 +206,10 @@ export async function computeMergeDocket(centralStore: EntityStore): Promise<Mer
   const cedbDbId = getDatabaseId(cedbDoc);
   if (!cedbDbId) return [];
 
-  const pending = pendingMergeSuggestions(suggestions, resolutions, cedbOrders, cedbDbId, cedbDoc);
   const entries: MergeDocketEntry[] = [];
-  for (const item of pending) {
+
+  const pendingMerges = pendingMergeSuggestions(suggestions, resolutions, cedbOrders, cedbDbId, cedbDoc);
+  for (const item of pendingMerges) {
     const [aId, bId] = item.centralIds;
     const aItem = findEntity(cedbDoc, aId);
     const bItem = findEntity(cedbDoc, bId);
@@ -216,6 +217,7 @@ export async function computeMergeDocket(centralStore: EntityStore): Promise<Mer
     const bKind = bItem && kindOfElement(bItem);
     if (!aItem || !bItem || !aKind || !bKind) continue; // shouldn't happen; already checked by pendingMergeSuggestions
     entries.push({
+      kind: 'merge',
       suggestionId: item.id,
       when: item.when,
       sides: [
@@ -224,22 +226,39 @@ export async function computeMergeDocket(centralStore: EntityStore): Promise<Mer
       ],
     });
   }
+
+  const pendingDeletes = pendingDeleteSuggestions(suggestions, resolutions, cedbOrders, cedbDbId, cedbDoc);
+  for (const item of pendingDeletes) {
+    const centralItem = findEntity(cedbDoc, item.centralId);
+    const centralKind = centralItem && kindOfElement(centralItem);
+    if (!centralItem || !centralKind) continue; // shouldn't happen; already checked by pendingDeleteSuggestions
+    entries.push({
+      kind: 'delete',
+      suggestionId: item.id,
+      when: item.when,
+      side: { id: item.centralId, kind: centralKind, fields: readFields(centralItem) },
+    });
+  }
+
+  entries.sort((a, b) => a.when.localeCompare(b.when));
   return entries;
 }
 
 export type MergeSuggestionDecision =
   | { action: 'ignore' }
-  | { action: 'merge'; keepId: string; dropId: string };
+  | { action: 'merge'; keepId: string; dropId: string }
+  | { action: 'delete'; centralId: string };
 
 /**
- * Act on a docket entry: either record the suggestion as ignored (it never
- * resurfaces, but nothing else changes — see `centralMergeSuggestions.ts`),
- * or actually merge the two central entities the user confirmed are the
- * same. A merge here is an ordinary central Absorb: it records a durable
- * order (so every bridged PEDB converges its own `ljb-central` mapping the
- * next time it opens or visits its Bridge inbox) and eagerly rewrites any
- * project still using this file directly, exactly like a manual central
- * merge from the database panel.
+ * Act on a docket entry: record the suggestion as ignored (it never
+ * resurfaces, but nothing else changes), merge the two central entities the
+ * user confirmed are the same, or delete the central entity the user
+ * confirmed is an orphan — see `centralMergeSuggestions.ts`. Both the merge
+ * and the delete are ordinary central Absorb/delete operations: each records
+ * a durable order (so every bridged PEDB converges its own `ljb-central`
+ * mapping the next time it opens or visits its Bridge inbox) and eagerly
+ * rewrites any project still using this file directly, exactly like a
+ * manual central merge/delete from the database panel.
  */
 export async function resolveMergeSuggestion(
   centralStore: EntityStore,
@@ -253,6 +272,17 @@ export async function resolveMergeSuggestion(
 
   const cedbDoc = await centralStore.loadEntities();
   const dbId = getDatabaseId(cedbDoc) ?? undefined;
+
+  if (decision.action === 'delete') {
+    deleteEntity(cedbDoc, decision.centralId);
+    await centralStore.saveEntities(cedbDoc);
+    const remap = { [decision.centralId]: null };
+    await centralStore.recordEntityOrder(remap, dbId);
+    await applyKeyRemapAcrossProjects(centralStore, remap).catch(() => undefined);
+    await centralStore.recordMergeSuggestionResolution(suggestionId, 'deleted');
+    return;
+  }
+
   const { remap } = mergeEntities(cedbDoc, decision.keepId, [decision.dropId]);
   await centralStore.saveEntities(cedbDoc);
   if (Object.keys(remap).length > 0) {

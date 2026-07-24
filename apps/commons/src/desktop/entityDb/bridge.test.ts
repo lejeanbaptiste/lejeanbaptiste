@@ -128,11 +128,13 @@ describe('computeMergeDocket / resolveMergeSuggestion', () => {
 
     const docket = await computeMergeDocket(ctx.centralStore);
     expect(docket).toHaveLength(1);
-    expect(docket[0]!.sides.map((side) => side.id)).toEqual([a, b]);
-    expect(docket[0]!.sides[0]!.fields.names.map((n) => n.text)).toEqual(['南齊書']);
-    expect(docket[0]!.sides[1]!.fields.authorities).toEqual([{ type: 'Wikidata', value: 'Q123' }]);
+    const entry = docket[0]!;
+    if (entry.kind !== 'merge') throw new Error('expected a merge entry');
+    expect(entry.sides.map((side) => side.id)).toEqual([a, b]);
+    expect(entry.sides[0]!.fields.names.map((n) => n.text)).toEqual(['南齊書']);
+    expect(entry.sides[1]!.fields.authorities).toEqual([{ type: 'Wikidata', value: 'Q123' }]);
 
-    await resolveMergeSuggestion(ctx.centralStore, docket[0]!.suggestionId, {
+    await resolveMergeSuggestion(ctx.centralStore, entry.suggestionId, {
       action: 'merge',
       keepId: a,
       dropId: b,
@@ -167,5 +169,48 @@ describe('computeMergeDocket / resolveMergeSuggestion', () => {
   it('is empty when nothing has been suggested', async () => {
     const { ctx } = makeContext();
     expect(await computeMergeDocket(ctx.centralStore)).toEqual([]);
+  });
+
+  it('lists a purge suggestion for a single orphaned central entity, and deletes it on confirm', async () => {
+    const { ctx } = makeContext();
+    const cedbDoc = await ctx.centralStore.loadEntities();
+    const a = addEntity(cedbDoc, 'work', { name: '南齊書', description: 'History of Southern Qi' }).id;
+    await ctx.centralStore.saveEntities(cedbDoc);
+    await ctx.centralStore.recordDeleteSuggestion('pedb-1', a);
+
+    const docket = await computeMergeDocket(ctx.centralStore);
+    expect(docket).toHaveLength(1);
+    const entry = docket[0]!;
+    if (entry.kind !== 'delete') throw new Error('expected a delete entry');
+    expect(entry.side.id).toBe(a);
+    expect(entry.side.fields.description).toBe('History of Southern Qi');
+
+    await resolveMergeSuggestion(ctx.centralStore, entry.suggestionId, {
+      action: 'delete',
+      centralId: a,
+    });
+
+    expect(await computeMergeDocket(ctx.centralStore)).toEqual([]);
+    const afterDoc = await ctx.centralStore.loadEntities();
+    expect(afterDoc.getElementsByTagName('bibl')).toHaveLength(0);
+
+    const orders = await ctx.centralStore.readEntityOrders();
+    expect(orders).toHaveLength(1);
+    expect(orders[0]!.remap).toEqual({ [a]: null });
+  });
+
+  it('drops a purge suggestion when kept, without touching the entity', async () => {
+    const { ctx } = makeContext();
+    const cedbDoc = await ctx.centralStore.loadEntities();
+    const a = addEntity(cedbDoc, 'work', { name: '南齊書' }).id;
+    await ctx.centralStore.saveEntities(cedbDoc);
+    await ctx.centralStore.recordDeleteSuggestion('pedb-1', a);
+
+    const docket = await computeMergeDocket(ctx.centralStore);
+    await resolveMergeSuggestion(ctx.centralStore, docket[0]!.suggestionId, { action: 'ignore' });
+
+    expect(await computeMergeDocket(ctx.centralStore)).toEqual([]);
+    const afterDoc = await ctx.centralStore.loadEntities();
+    expect(afterDoc.getElementsByTagName('bibl')).toHaveLength(1);
   });
 });
