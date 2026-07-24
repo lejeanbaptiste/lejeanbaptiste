@@ -353,8 +353,16 @@ export const DateCuratorPanel = ({
     setAttachById({});
   }, [suggestions]);
 
+  // Reclaim focus only if it's already somewhere inside this panel (e.g. on a button
+  // that was just clicked) so j/k navigation keeps working after a decision. Never pull
+  // focus away from the editor — a pending decision can resolve after the user has already
+  // clicked back into the document, and stealing focus there silently breaks editor
+  // shortcuts like Shift+Backspace even though the caret still looks active.
   const rerender = () => {
-    containerRef.current?.focus();
+    const active = document.activeElement;
+    if (active && containerRef.current?.contains(active)) {
+      containerRef.current.focus();
+    }
     forceRender();
   };
 
