@@ -333,10 +333,13 @@ export const AchievementsDialog = ({ onClose, open }: AchievementsDialogProps) =
         unlockedCount,
       });
       const bytes = await svgToPngBytes(svg, CERTIFICATE_WIDTH, CERTIFICATE_HEIGHT);
+      const now = new Date();
+      const pad = (value: number) => String(value).padStart(2, '0');
+      const dateTimeSuffix = `${now.getFullYear()}-${pad(now.getMonth() + 1)}-${pad(now.getDate())} ${pad(now.getHours())}h${pad(now.getMinutes())}`;
       const suggestedName = `${(encoderName.trim() || 'service-record')
         .toLowerCase()
         .replace(/[^a-z0-9]+/g, '-')
-        .replace(/^-+|-+$/g, '')}-service-record.png`;
+        .replace(/^-+|-+$/g, '')}-service-record ${dateTimeSuffix}.png`;
       const saved = await window.electronAPI?.saveCertificatePng?.(bytes, suggestedName);
       if (saved) {
         notifyViaSnackbar({
