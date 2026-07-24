@@ -1255,8 +1255,13 @@ class Tagger {
 
     if (selection === '\uFEFF') {
       this.writer.utilities.selectElementById(id, true);
-    } else if (action == undefined) {
-      // place the cursor at the end of the tag's contents
+    } else if (action == undefined || action === this.ADD) {
+      // Place the cursor at the end of the tag's contents \u2014 not just outside a
+      // boundary case that happened to fall through, this is every ordinary wrap.
+      // Landing inside the tag (rather than just after it, where the DOM left the
+      // range after surroundContents/replaceWith) means the tag is immediately
+      // "current" for chained shortcuts like Alt+Enter (add attribute) without an
+      // extra arrow-key nudge to step back inside.
       //@ts-ignore
       const rng: Range = this.writer.editor?.selection.getRng(true);
       //@ts-ignore
