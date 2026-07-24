@@ -1,8 +1,10 @@
 import { addEntity, createEntitiesScaffold, parseEntities } from './entities';
 import { makeOrder } from './entityOrders';
 import {
+  makeDeleteSuggestion,
   makeMergeSuggestion,
   makeMergeSuggestionResolution,
+  pendingDeleteSuggestions,
   pendingMergeSuggestions,
   type CentralMergeSuggestion,
   type MergeSuggestionResolution,
@@ -90,6 +92,75 @@ describe('pendingMergeSuggestions', () => {
   it('is empty with no suggestions', () => {
     const { doc } = setupCedb();
     expect(pendingMergeSuggestions([], [], [], CEDB_ID, doc)).toEqual([]);
+  });
+
+  it('ignores delete-kind suggestions mixed into the same log', () => {
+    const { doc, a } = setupCedb();
+    const del = makeDeleteSuggestion('pedb-1', a);
+    expect(pendingMergeSuggestions([del], [], [], CEDB_ID, doc)).toEqual([]);
+  });
+});
+
+describe('pendingDeleteSuggestions', () => {
+  it('surfaces a fresh delete suggestion naming the still-existing central id', () => {
+    const { doc, a } = setupCedb();
+    const suggestion = makeDeleteSuggestion('pedb-1', a);
+
+    const pending = pendingDeleteSuggestions([suggestion], [], [], CEDB_ID, doc);
+    expect(pending).toEqual([{ id: suggestion.id, when: suggestion.when, centralId: a }]);
+  });
+
+  it('drops a delete suggestion once it has any resolution', () => {
+    const { doc, a } = setupCedb();
+    const suggestion = makeDeleteSuggestion('pedb-1', a);
+    const resolution = makeMergeSuggestionResolution(suggestion.id, 'ignored');
+
+    expect(pendingDeleteSuggestions([suggestion], [resolution], [], CEDB_ID, doc)).toEqual([]);
+  });
+
+  it('drops a delete suggestion once the central entity was actually deleted', () => {
+    const { doc, a } = setupCedb();
+    const suggestion = makeDeleteSuggestion('pedb-1', a);
+    const order = makeOrder(CEDB_ID, { [a]: null });
+
+    expect(pendingDeleteSuggestions([suggestion], [], [order], CEDB_ID, doc)).toEqual([]);
+  });
+
+  it('resolves through a later merge to the surviving id', () => {
+    const { doc, a, b } = setupCedb();
+    const suggestion = makeDeleteSuggestion('pedb-1', a);
+    const order = makeOrder(CEDB_ID, { [a]: b });
+
+    const pending = pendingDeleteSuggestions([suggestion], [], [order], CEDB_ID, doc);
+    expect(pending).toEqual([{ id: suggestion.id, when: suggestion.when, centralId: b }]);
+  });
+
+  it('drops a delete suggestion whose id no longer exists in the central database', () => {
+    const { doc } = setupCedb();
+    const suggestion = makeDeleteSuggestion('pedb-1', 'work-does-not-exist');
+
+    expect(pendingDeleteSuggestions([suggestion], [], [], CEDB_ID, doc)).toEqual([]);
+  });
+
+  it('collapses two delete suggestions that resolve to the same central id', () => {
+    const { doc, a } = setupCedb();
+    const first = makeDeleteSuggestion('pedb-1', a, '2026-01-01T00:00:00.000Z');
+    const second = makeDeleteSuggestion('pedb-2', a, '2026-01-02T00:00:00.000Z');
+
+    const pending = pendingDeleteSuggestions([first, second], [], [], CEDB_ID, doc);
+    expect(pending).toHaveLength(1);
+    expect(pending[0]!.id).toBe(first.id);
+  });
+
+  it('ignores merge-kind suggestions mixed into the same log', () => {
+    const { doc, a, b } = setupCedb();
+    const merge = makeMergeSuggestion('pedb-1', [a, b]);
+    expect(pendingDeleteSuggestions([merge], [], [], CEDB_ID, doc)).toEqual([]);
+  });
+
+  it('is empty with no suggestions', () => {
+    const { doc } = setupCedb();
+    expect(pendingDeleteSuggestions([], [], [], CEDB_ID, doc)).toEqual([]);
   });
 });
 

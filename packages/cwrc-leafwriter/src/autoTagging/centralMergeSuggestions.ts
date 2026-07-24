@@ -1,22 +1,31 @@
 /**
- * The **merge docket**: when a PEDB merge unions two project entities that
- * each carry a `ljb-central` mapping for the same user pointing at two
- * *different* central ids (see the `centralConflicts` produced by
- * `mergeEntities`), that's a strong hint the two central entities are the
- * same too — but merging central entities affects every project bridged to
- * that catalogue, so it must never happen silently. Instead it becomes a
- * **suggestion**, appended to a durable log beside the central `entities.xml`
- * (mirroring `entityOrders.ts`), for the user to review and accept or ignore.
+ * The **merge docket**: two kinds of "this project touched something linked
+ * to the central database — review the central side too" proposals, appended
+ * to a durable log beside the central `entities.xml` (mirroring
+ * `entityOrders.ts`), for the user to review and accept or ignore. Merging
+ * or purging central entities affects every project bridged to that
+ * catalogue, so it must never happen silently.
+ *
+ *  - **merge**: a PEDB merge unioned two project entities that each carry a
+ *    `ljb-central` mapping for the same user pointing at two *different*
+ *    central ids (see the `centralConflicts` produced by `mergeEntities`) —
+ *    a strong hint the two central entities are duplicates too.
+ *  - **delete**: a PEDB entity carrying a `ljb-central` mapping was deleted
+ *    (purged) from the project — a hint the linked central entity may now be
+ *    an orphan worth reviewing for deletion too. (Not raised for the
+ *    corpus-only "purge keys" recovery flow, which never touches
+ *    `entities.xml` or the concordance.)
  *
  * Two append-only JSONL logs, like the order log:
- *  - suggestions: the raw proposals ("these two central ids might be dupes").
+ *  - suggestions: the raw proposals.
  *  - resolutions: what the user decided about each suggestion id, so a
  *    dismissed suggestion never resurfaces, and an accepted one isn't
  *    reapplied.
  *
- * `pendingMergeSuggestions` folds both logs plus the central database's own
- * order log (so a suggestion already satisfied by an ordinary Absorb quietly
- * drops off the docket) into the list still worth showing the user.
+ * `pendingMergeSuggestions` / `pendingDeleteSuggestions` fold both logs plus
+ * the central database's own order log (so a suggestion already satisfied by
+ * an ordinary Absorb/delete quietly drops off the docket) into the entries
+ * still worth showing the user.
  */
 
 import { findEntity } from './entities';
@@ -27,6 +36,7 @@ export const MERGE_SUGGESTIONS_FILE = 'entity-merge-suggestions.jsonl';
 export const MERGE_SUGGESTION_RESOLUTIONS_FILE = 'entity-merge-suggestion-resolutions.jsonl';
 
 export interface CentralMergeSuggestion {
+  kind: 'merge';
   /** Unique id for this suggestion (dedup key; also what a resolution references). */
   id: string;
   /** ISO timestamp the suggestion was raised. */
@@ -37,7 +47,21 @@ export interface CentralMergeSuggestion {
   centralIds: [string, string];
 }
 
-export type MergeSuggestionAction = 'merged' | 'ignored';
+export interface CentralDeleteSuggestion {
+  kind: 'delete';
+  /** Unique id for this suggestion (dedup key; also what a resolution references). */
+  id: string;
+  /** ISO timestamp the suggestion was raised. */
+  when: string;
+  /** Fingerprint of the PEDB whose delete surfaced this. Informational only. */
+  sourceDbId: string;
+  /** The central id whose PEDB counterpart was deleted. */
+  centralId: string;
+}
+
+export type CentralSuggestion = CentralMergeSuggestion | CentralDeleteSuggestion;
+
+export type MergeSuggestionAction = 'merged' | 'deleted' | 'ignored';
 
 export interface MergeSuggestionResolution {
   /** Unique id for this resolution record. */
@@ -59,7 +83,15 @@ export function makeMergeSuggestion(
   centralIds: [string, string],
   when: string = new Date().toISOString(),
 ): CentralMergeSuggestion {
-  return { id: randomId('suggestion'), when, sourceDbId, centralIds };
+  return { kind: 'merge', id: randomId('suggestion'), when, sourceDbId, centralIds };
+}
+
+export function makeDeleteSuggestion(
+  sourceDbId: string,
+  centralId: string,
+  when: string = new Date().toISOString(),
+): CentralDeleteSuggestion {
+  return { kind: 'delete', id: randomId('suggestion'), when, sourceDbId, centralId };
 }
 
 export function makeMergeSuggestionResolution(
@@ -89,20 +121,23 @@ function appendJsonl<T>(existing: string, records: T[]): string {
   return base ? `${base}\n${lines.join('\n')}\n` : `${lines.join('\n')}\n`;
 }
 
-function parseSuggestions(jsonl: string): CentralMergeSuggestion[] {
-  const out: CentralMergeSuggestion[] = [];
+function parseSuggestions(jsonl: string): CentralSuggestion[] {
+  const out: CentralSuggestion[] = [];
   for (const line of jsonl.split(/\r?\n/)) {
     const trimmed = line.trim();
     if (!trimmed) continue;
     try {
-      const parsed = JSON.parse(trimmed) as CentralMergeSuggestion;
-      if (
-        parsed?.id &&
-        parsed.sourceDbId &&
-        Array.isArray(parsed.centralIds) &&
-        parsed.centralIds.length === 2
-      ) {
+      const parsed = JSON.parse(trimmed) as CentralSuggestion;
+      if (!parsed?.id || !parsed.sourceDbId) continue;
+      if (parsed.kind === 'delete' && typeof parsed.centralId === 'string' && parsed.centralId) {
         out.push(parsed);
+      } else if (
+        (parsed.kind === 'merge' || parsed.kind === undefined) &&
+        Array.isArray((parsed as CentralMergeSuggestion).centralIds) &&
+        (parsed as CentralMergeSuggestion).centralIds.length === 2
+      ) {
+        // `kind` defaults to 'merge' for lines written before the delete kind existed.
+        out.push({ ...(parsed as CentralMergeSuggestion), kind: 'merge' });
       }
     } catch {
       // skip corrupt lines rather than failing the whole log
@@ -121,7 +156,7 @@ function parseResolutions(jsonl: string): MergeSuggestionResolution[] {
       if (
         parsed?.id &&
         parsed.suggestionId &&
-        (parsed.action === 'merged' || parsed.action === 'ignored')
+        (parsed.action === 'merged' || parsed.action === 'deleted' || parsed.action === 'ignored')
       ) {
         out.push(parsed);
       }
@@ -135,7 +170,7 @@ function parseResolutions(jsonl: string): MergeSuggestionResolution[] {
 export async function readMergeSuggestions(
   api: EntityFileApi,
   entitiesPath: string,
-): Promise<CentralMergeSuggestion[]> {
+): Promise<CentralSuggestion[]> {
   const path = suggestionsPathFor(entitiesPath);
   if (!(await api.pathExists(path))) return [];
   try {
@@ -148,7 +183,7 @@ export async function readMergeSuggestions(
 export async function recordMergeSuggestion(
   api: EntityFileApi,
   entitiesPath: string,
-  suggestion: CentralMergeSuggestion,
+  suggestion: CentralSuggestion,
 ): Promise<void> {
   const path = suggestionsPathFor(entitiesPath);
   const existing = (await api.pathExists(path)) ? await api.readFile(path) : '';
@@ -195,7 +230,7 @@ export interface PendingMergeSuggestion {
 
 /**
  * Fold the suggestion log, the resolution log, and the central database's own
- * order log into the suggestions still worth asking the user about:
+ * order log into the merge suggestions still worth asking the user about:
  *  - already resolved (merged or ignored) → dropped.
  *  - either id already merged away with no requested-pair survivor left, or
  *    the pair already converged to the same id via an ordinary Absorb →
@@ -205,7 +240,7 @@ export interface PendingMergeSuggestion {
  *  - two suggestions that resolve to the same unordered pair → collapsed to one.
  */
 export function pendingMergeSuggestions(
-  suggestions: CentralMergeSuggestion[],
+  suggestions: CentralSuggestion[],
   resolutions: MergeSuggestionResolution[],
   cedbOrders: EntityOrder[],
   cedbDbId: string,
@@ -218,6 +253,7 @@ export function pendingMergeSuggestions(
   const seenPairs = new Set<string>();
   const out: PendingMergeSuggestion[] = [];
   for (const suggestion of suggestions) {
+    if (suggestion.kind !== 'merge') continue;
     if (resolvedIds.has(suggestion.id)) continue;
 
     const [rawA, rawB] = suggestion.centralIds;
@@ -227,10 +263,50 @@ export function pendingMergeSuggestions(
     if (a === b) continue; // already unified by a regular Absorb
     if (!findEntity(cedbDoc, a) || !findEntity(cedbDoc, b)) continue; // stale
 
-    const pairKey = [a, b].sort().join(' ');
+    const pairKey = [a, b].sort().join(' ');
     if (seenPairs.has(pairKey)) continue;
     seenPairs.add(pairKey);
     out.push({ id: suggestion.id, when: suggestion.when, centralIds: [a, b] });
+  }
+  return out;
+}
+
+export interface PendingDeleteSuggestion {
+  id: string;
+  when: string;
+  /** The central id as it currently stands (resolved through any real order chain). */
+  centralId: string;
+}
+
+/**
+ * Fold the suggestion log, the resolution log, and the central database's own
+ * order log into the delete suggestions still worth asking the user about —
+ * same rules as `pendingMergeSuggestions`: already resolved, already
+ * deleted/merged away upstream, or duplicate central id → dropped.
+ */
+export function pendingDeleteSuggestions(
+  suggestions: CentralSuggestion[],
+  resolutions: MergeSuggestionResolution[],
+  cedbOrders: EntityOrder[],
+  cedbDbId: string,
+  cedbDoc: Document,
+): PendingDeleteSuggestion[] {
+  const resolvedIds = new Set(resolutions.map((resolution) => resolution.suggestionId));
+  const remap = composeRemap(cedbOrders.filter((order) => order.dbId === cedbDbId));
+  const resolve = (id: string): string | null => (id in remap ? remap[id]! : id);
+
+  const seen = new Set<string>();
+  const out: PendingDeleteSuggestion[] = [];
+  for (const suggestion of suggestions) {
+    if (suggestion.kind !== 'delete') continue;
+    if (resolvedIds.has(suggestion.id)) continue;
+
+    const resolved = resolve(suggestion.centralId);
+    if (!resolved) continue; // already deleted/merged away upstream — nothing to purge
+    if (!findEntity(cedbDoc, resolved)) continue; // stale
+    if (seen.has(resolved)) continue;
+    seen.add(resolved);
+    out.push({ id: suggestion.id, when: suggestion.when, centralId: resolved });
   }
   return out;
 }

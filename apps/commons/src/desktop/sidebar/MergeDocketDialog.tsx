@@ -103,16 +103,17 @@ const SideColumn = ({ side }: { side: MergeDocketSide }) => (
   </Stack>
 );
 
-const DocketRow = ({
+const MergeDocketRow = ({
   entry,
   busy,
   onResolve,
 }: {
-  entry: MergeDocketEntry;
+  entry: Extract<MergeDocketEntry, { kind: 'merge' }>;
   busy: boolean;
   onResolve: (decision: { action: 'ignore' } | { action: 'merge'; keepId: string }) => void;
 }) => {
   const [keepId, setKeepId] = useState(entry.sides[0].id);
+  const keptSide = entry.sides.find((side) => side.id === keepId) ?? entry.sides[0];
 
   return (
     <Box sx={{ py: 1.5 }}>
@@ -141,7 +142,7 @@ const DocketRow = ({
           disabled={busy}
           onClick={() => onResolve({ action: 'merge', keepId })}
         >
-          Merge, keep {keepId === entry.sides[0].id ? entry.sides[0].fields.names[0]?.text ?? entry.sides[0].id : entry.sides[1].fields.names[0]?.text ?? entry.sides[1].id}
+          Merge, keep {keptSide.fields.names[0]?.text ?? keptSide.id}
         </Button>
         <Button size="small" variant="outlined" disabled={busy} onClick={() => onResolve({ action: 'ignore' })}>
           Ignore
@@ -151,12 +152,45 @@ const DocketRow = ({
   );
 };
 
+const DeleteDocketRow = ({
+  entry,
+  busy,
+  onResolve,
+}: {
+  entry: Extract<MergeDocketEntry, { kind: 'delete' }>;
+  busy: boolean;
+  onResolve: (decision: { action: 'ignore' } | { action: 'delete' }) => void;
+}) => (
+  <Box sx={{ py: 1.5 }}>
+    <Typography variant="caption" color="text.secondary" component="div" sx={{ mb: 1 }}>
+      A linked project deleted its counterpart of this central entity — it may now be an orphan.
+    </Typography>
+    <Box sx={{ maxWidth: 420 }}>
+      <SideColumn side={entry.side} />
+    </Box>
+    <Stack direction="row" spacing={1} sx={{ mt: 1.5 }}>
+      <Button
+        size="small"
+        variant="contained"
+        color="error"
+        disabled={busy}
+        onClick={() => onResolve({ action: 'delete' })}
+      >
+        Delete from central
+      </Button>
+      <Button size="small" variant="outlined" disabled={busy} onClick={() => onResolve({ action: 'ignore' })}>
+        Keep
+      </Button>
+    </Stack>
+  </Box>
+);
+
 /**
- * The merge docket: central-database merge suggestions raised when a linked
- * project merged two entities that mapped the same user to different
- * central ids. Nothing here is applied automatically — the user reviews a
- * side-by-side comparison and picks Merge (an ordinary central Absorb) or
- * Ignore (recorded, so it never resurfaces) for each.
+ * The merge docket: central-database merge and delete (purge) suggestions
+ * raised when a linked project merged or deleted entities mapped to the
+ * central database. Nothing here is applied automatically — the user
+ * reviews a comparison and picks Merge/Delete (an ordinary central
+ * Absorb/delete) or Ignore/Keep (recorded, so it never resurfaces) for each.
  */
 export const MergeDocketDialog = ({ open, onClose, centralStore, onChanged }: Props) => {
   const [loading, setLoading] = useState(false);
@@ -185,7 +219,10 @@ export const MergeDocketDialog = ({ open, onClose, centralStore, onChanged }: Pr
 
   const resolve = async (
     suggestionId: string,
-    decision: { action: 'ignore' } | { action: 'merge'; keepId: string; dropId: string },
+    decision:
+      | { action: 'ignore' }
+      | { action: 'merge'; keepId: string; dropId: string }
+      | { action: 'delete'; centralId: string },
   ) => {
     if (!centralStore) return;
     setBusy(true);
@@ -226,22 +263,37 @@ export const MergeDocketDialog = ({ open, onClose, centralStore, onChanged }: Pr
           entries.map((entry, index) => (
             <Box key={entry.suggestionId}>
               {index > 0 && <Divider />}
-              <DocketRow
-                entry={entry}
-                busy={busy}
-                onResolve={(decision) =>
-                  void resolve(
-                    entry.suggestionId,
-                    decision.action === 'ignore'
-                      ? { action: 'ignore' }
-                      : {
-                          action: 'merge',
-                          keepId: decision.keepId,
-                          dropId: entry.sides.find((side) => side.id !== decision.keepId)!.id,
-                        },
-                  )
-                }
-              />
+              {entry.kind === 'merge' ? (
+                <MergeDocketRow
+                  entry={entry}
+                  busy={busy}
+                  onResolve={(decision) =>
+                    void resolve(
+                      entry.suggestionId,
+                      decision.action === 'ignore'
+                        ? { action: 'ignore' }
+                        : {
+                            action: 'merge',
+                            keepId: decision.keepId,
+                            dropId: entry.sides.find((side) => side.id !== decision.keepId)!.id,
+                          },
+                    )
+                  }
+                />
+              ) : (
+                <DeleteDocketRow
+                  entry={entry}
+                  busy={busy}
+                  onResolve={(decision) =>
+                    void resolve(
+                      entry.suggestionId,
+                      decision.action === 'ignore'
+                        ? { action: 'ignore' }
+                        : { action: 'delete', centralId: entry.side.id },
+                    )
+                  }
+                />
+              )}
             </Box>
           ))}
       </DialogContent>
