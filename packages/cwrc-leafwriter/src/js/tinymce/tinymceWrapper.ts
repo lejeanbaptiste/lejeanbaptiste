@@ -1190,7 +1190,7 @@ export const tinymceWrapperInit = function ({
     writer.editor.lastKeyPress = event.code; // store the last key press
 
     // Option+←/→ (Mac) or Ctrl+←/→ (Windows/Linux): jump by punctuation / whitespace,
-    // landing after the boundary. Replaces the browser's Latin-centric "word" jump,
+    // landing before the boundary. Replaces the browser's Latin-centric "word" jump,
     // which is nearly useless for Chinese and other no-space scripts.
     const isMac = tinymce.Env.os.isMacOS() || tinymce.Env.os.isiOS();
     if (isPunctuationBoundaryNavEvent(event, isMac)) {
