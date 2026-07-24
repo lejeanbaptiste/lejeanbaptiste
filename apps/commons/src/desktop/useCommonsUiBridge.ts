@@ -200,7 +200,23 @@ export const useCommonsUiBridge = () => {
       await window.electronAPI?.ensureDirectory?.(`${folder}/${AUTHORITY_PACKS_DIRNAME}`);
     }
 
-    await window.electronAPI?.setEntityDbFolder?.(picked);
+    try {
+      await window.electronAPI?.setEntityDbFolder?.(picked);
+    } catch (error) {
+      // Still reflect the pick in the UI (and let the caller proceed) even if
+      // persisting it failed - otherwise a prefs-write error here silently
+      // reverts the folder field to empty with no explanation, and since
+      // Settings/onboarding requires a folder before Save enables, the user
+      // is stuck with no visible cause. Surface the actual error instead.
+      const detail = error instanceof Error ? error.message : String(error);
+      void window.electronAPI?.showNativeMessageBox?.({
+        type: 'warning',
+        title: 'Could not save entity database folder',
+        message: `${folder}\n\nThe folder was set for this session, but saving it failed and it may not persist. Try again, or check that Le Jean-Baptiste can write to its app data folder.`,
+        detail,
+        buttons: ['OK'],
+      });
+    }
     setEntityDbFolderState(picked);
     return picked;
   }, []);

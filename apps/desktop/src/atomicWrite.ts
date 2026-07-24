@@ -1,4 +1,5 @@
 import fs from 'fs/promises';
+import path from 'path';
 
 /**
  * Write `contents` to `filePath` via a sibling `.tmp`, then replace the
@@ -17,6 +18,11 @@ import fs from 'fs/promises';
 export const writeFileAtomic = async (filePath: string, contents: string): Promise<void> => {
   const tempPath = `${filePath}.tmp`;
   const backupPath = `${filePath}.bak`;
+  // Callers shouldn't have to remember to create their own parent directory
+  // first - on a fresh install nothing has written into userData yet, and a
+  // missing directory here surfaces as a confusing ENOENT on the *rename*
+  // step below rather than an obvious "directory doesn't exist" error.
+  await fs.mkdir(path.dirname(filePath), { recursive: true });
   await fs.writeFile(tempPath, contents, 'utf-8');
 
   if (process.platform !== 'win32') {
