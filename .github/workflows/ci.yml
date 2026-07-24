@@ -282,6 +282,15 @@ jobs:
       - name: Install dependencies
         run: npm ci
 
+      # Windows Defender's real-time scanner can grab a transient lock on a file right
+      # after it's written, which electron-builder then hits as EBUSY while copying
+      # build output (e.g. apps/commons/public/js/app.js.map) into the packaged app.
+      # The existing retry loop below doesn't help since nothing removes the cause
+      # between attempts — excluding the workspace stops the scan from racing the copy.
+      - name: Exclude workspace from Windows Defender scanning
+        shell: pwsh
+        run: Add-MpPreference -ExclusionPath "$env:GITHUB_WORKSPACE"
+
       - name: Build Windows installer (${{ matrix.arch }})
         shell: pwsh
         working-directory: apps/desktop
