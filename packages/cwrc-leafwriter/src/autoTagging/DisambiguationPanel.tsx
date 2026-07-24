@@ -1530,6 +1530,12 @@ export const DisambiguationPanel = ({
             helperText="Latin-script form, used for search"
             value={newEntityRomanized}
             onChange={(event) => setNewEntityRomanized(event.target.value)}
+            onKeyDown={(event) => {
+              if (event.key === 'Enter') {
+                event.preventDefault();
+                void confirmNewEntity();
+              }
+            }}
             disabled={newEntityBusy}
             sx={{ mt: 2 }}
           />
