@@ -380,6 +380,22 @@ export function collapseCrossAuthorityCandidates(
     for (let i = 1; i < indices.length; i++) union(head, indices[i]!);
   }
 
+  // Different authorities agreeing on the exact same birth and death years is
+  // itself a strong enough signal to treat two rows as the same person, even
+  // without a shared cross-referenced id.
+  for (let i = 0; i < candidates.length; i++) {
+    for (let j = i + 1; j < candidates.length; j++) {
+      if (find(i) === find(j)) continue;
+      const a = candidates[i]!;
+      const b = candidates[j]!;
+      const sameAuthority = a.sources.some((source) => b.sources.includes(source));
+      if (sameAuthority) continue;
+      if (a.startYear == null || a.endYear == null) continue;
+      if (a.startYear !== b.startYear || a.endYear !== b.endYear) continue;
+      union(i, j);
+    }
+  }
+
   const groups = new Map<number, DisambiguationCandidate[]>();
   candidates.forEach((candidate, index) => {
     const root = find(index);

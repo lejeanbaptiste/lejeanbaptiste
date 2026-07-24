@@ -510,6 +510,47 @@ describe('disambiguationCandidates', () => {
     expect(rows[0]?.authorityIds).toHaveLength(2);
   });
 
+  it('collapses candidates from different authorities that share identical birth and death years', () => {
+    const rows = collapseCrossAuthorityCandidates([
+      {
+        id: 'https://www.wikidata.org/wiki/Q1',
+        label: 'Example Person',
+        sources: ['Wikidata'],
+        startYear: 1200,
+        endYear: 1260,
+      },
+      {
+        id: 'https://viaf.org/viaf/1',
+        label: 'Example Person (variant)',
+        sources: ['VIAF'],
+        startYear: 1200,
+        endYear: 1260,
+      },
+    ]);
+    expect(rows).toHaveLength(1);
+    expect(rows[0]?.sources).toEqual(expect.arrayContaining(['Wikidata', 'VIAF']));
+  });
+
+  it('does not collapse candidates from different authorities when years differ, are only partially known, or come from the same authority', () => {
+    const differentYears = collapseCrossAuthorityCandidates([
+      { id: 'a', label: 'Person A', sources: ['Wikidata'], startYear: 1200, endYear: 1260 },
+      { id: 'b', label: 'Person B', sources: ['VIAF'], startYear: 1200, endYear: 1261 },
+    ]);
+    expect(differentYears).toHaveLength(2);
+
+    const partialYears = collapseCrossAuthorityCandidates([
+      { id: 'a', label: 'Person A', sources: ['Wikidata'], startYear: 1200 },
+      { id: 'b', label: 'Person B', sources: ['VIAF'], startYear: 1200 },
+    ]);
+    expect(partialYears).toHaveLength(2);
+
+    const sameAuthority = collapseCrossAuthorityCandidates([
+      { id: 'a', label: 'Person A', sources: ['Wikidata'], startYear: 1200, endYear: 1260 },
+      { id: 'b', label: 'Person B', sources: ['Wikidata'], startYear: 1200, endYear: 1260 },
+    ]);
+    expect(sameAuthority).toHaveLength(2);
+  });
+
   it('extracts VIAF ids from locale-prefixed permalinks (e.g. viaf.org/fr/viaf/…)', () => {
     expect(extractViafId('https://viaf.org/fr/viaf/16332263')).toBe('16332263');
     expect(extractViafId('https://viaf.org/viaf/16332263')).toBe('16332263');

@@ -7,6 +7,7 @@ import {
   DEFAULT_METADATA_PATH,
   PROJECT_FILE_NAME,
   type AutoTaggingAuthoritySettings,
+  type AutoTaggingValidationSettings,
   type DisambiguationSettings,
   type ProjectBundle,
   type ProjectFileConfig,
@@ -71,6 +72,19 @@ const normalizeDisambiguationSettings = (
   return Object.keys(out).length ? out : undefined;
 };
 
+const normalizeAutoTaggingValidation = (
+  raw: unknown,
+): AutoTaggingValidationSettings | undefined => {
+  if (!raw || typeof raw !== 'object') return undefined;
+  const value = raw as AutoTaggingValidationSettings;
+  const out: AutoTaggingValidationSettings = {};
+  if (typeof value.aiValidation === 'boolean') out.aiValidation = value.aiValidation;
+  if (typeof value.autoAcceptThreshold === 'number') {
+    out.autoAcceptThreshold = value.autoAcceptThreshold;
+  }
+  return Object.keys(out).length ? out : undefined;
+};
+
 const normalizeConfig = (raw: Partial<ProjectFileConfig>, rootPath: string): ProjectFileConfig => ({
   version: 1,
   name: typeof raw.name === 'string' && raw.name.trim() ? raw.name : path.basename(rootPath),
@@ -89,6 +103,7 @@ const normalizeConfig = (raw: Partial<ProjectFileConfig>, rootPath: string): Pro
       ? raw.entityDatabaseId.trim()
       : undefined,
   autoTaggingAuthority: normalizeAutoTaggingAuthority(raw.autoTaggingAuthority),
+  autoTaggingValidation: normalizeAutoTaggingValidation(raw.autoTaggingValidation),
   disambiguation: normalizeDisambiguationSettings(raw.disambiguation),
 });
 

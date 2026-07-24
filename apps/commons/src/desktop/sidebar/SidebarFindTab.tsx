@@ -296,8 +296,20 @@ export const SidebarFindTab = () => {
 
   const resetFindOnEditorViewModeChange = useCallback(() => {
     setSourceMode(isSourceEditorMode());
-    resetFindPanel();
-  }, [resetFindPanel]);
+    // Source/visual highlighting and hit offsets are mode-specific, so results and
+    // selection need clearing on switch — but keep the typed query fields so the
+    // user isn't forced to retype them after toggling modes.
+    clearFindHighlights();
+    lastSearchKeyRef.current = '';
+    setWalkMode(null);
+    walkOriginRef.current = null;
+    setResults([]);
+    setTotalMatches(0);
+    setCollapsedFilePaths(new Set());
+    setSelectedIndex(-1);
+    selectedIndexRef.current = -1;
+    setError(null);
+  }, []);
 
   useEffect(() => {
     window.addEventListener(DESKTOP_EDITOR_VIEW_MODE_EVENT, resetFindOnEditorViewModeChange);

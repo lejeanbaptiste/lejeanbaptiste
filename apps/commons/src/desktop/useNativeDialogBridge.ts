@@ -40,7 +40,12 @@ import {
   getSchemaSetupSession,
   subscribeSchemaSetupDialogClosed,
 } from './schemaSetupSession';
-import type { AutoTaggingAuthoritySettings, DisambiguationSettings, ProjectMetadataFile } from './projectTypes';
+import type {
+  AutoTaggingAuthoritySettings,
+  AutoTaggingValidationSettings,
+  DisambiguationSettings,
+  ProjectMetadataFile,
+} from './projectTypes';
 import {
   addTranslationLanguage,
   readTranslationSettings,
@@ -59,6 +64,8 @@ declare global {
       getActiveFileWorkYear?: () => number | null;
       getAutoTaggingAuthoritySettings: () => AutoTaggingAuthoritySettings | undefined;
       setAutoTaggingAuthoritySettings: (settings: AutoTaggingAuthoritySettings) => void;
+      getAutoTaggingValidationSettings: () => AutoTaggingValidationSettings | undefined;
+      setAutoTaggingValidationSettings: (settings: AutoTaggingValidationSettings) => void;
       getDisambiguationSettings: () => DisambiguationSettings | undefined;
       setDisambiguationSettings: (settings: DisambiguationSettings) => void;
     };
@@ -113,6 +120,7 @@ export const useNativeDialogBridge = () => {
   const { reloadTabFromDisk } = useActions().project;
   const [leafWriter] = useAtom(leafwriterAtom);
   const authoritySettingsCache = useRef<AutoTaggingAuthoritySettings | undefined>(undefined);
+  const validationSettingsCache = useRef<AutoTaggingValidationSettings | undefined>(undefined);
   const disambiguationSettingsCache = useRef<DisambiguationSettings | undefined>(undefined);
   const activeTabPathRef = useRef(activeTabPath);
   const openTabsRef = useRef(openTabs);
@@ -145,6 +153,7 @@ export const useNativeDialogBridge = () => {
       return;
     }
     authoritySettingsCache.current = undefined;
+    validationSettingsCache.current = undefined;
     disambiguationSettingsCache.current = undefined;
     setActiveProjectBundle({ rootPath, projectFilePath, config });
     window.__leafWriterProject = {
@@ -161,6 +170,11 @@ export const useNativeDialogBridge = () => {
         authoritySettingsCache.current ?? config.autoTaggingAuthority,
       setAutoTaggingAuthoritySettings: (settings) => {
         authoritySettingsCache.current = settings;
+      },
+      getAutoTaggingValidationSettings: () =>
+        validationSettingsCache.current ?? config.autoTaggingValidation,
+      setAutoTaggingValidationSettings: (settings) => {
+        validationSettingsCache.current = settings;
       },
       getDisambiguationSettings: () =>
         disambiguationSettingsCache.current ?? config.disambiguation,
