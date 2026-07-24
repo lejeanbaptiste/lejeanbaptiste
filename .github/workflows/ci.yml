@@ -246,7 +246,7 @@ jobs:
           echo "Installed and verified $app_path"
 
       - name: Upload macOS package artifact
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: macos-pkg-arm64
           path: |
@@ -313,7 +313,7 @@ jobs:
           }
 
       - name: Upload Windows package artifact
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: windows-installer-${{ matrix.arch }}
           path: |
