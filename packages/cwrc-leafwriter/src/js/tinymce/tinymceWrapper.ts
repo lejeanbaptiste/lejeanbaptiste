@@ -1058,6 +1058,80 @@ export const tinymceWrapperInit = function ({
     (n as Element).hasAttribute('_tag') &&
     (n as Element).getAttribute('_tag') !== 'pb';
 
+  // doHighlightCheck() moves the cursor out of entity wrappers, so "end of persName"
+  // lands at offset=0 in the next text node with the entity wrapper as previousSibling.
+  // Look through an entity wrapper to find the [_tag] span inside it.
+  const tagElThroughEntity = (n: Node | null): Element | null => {
+    if (!n || !isElement(n)) return null;
+    const el = n as Element;
+    const tag = el.getAttribute('_tag');
+    // Plain structural tag (no entity marker)
+    if (tag && tag !== 'pb' && !el.hasAttribute('_entity')) return el;
+    if (!el.hasAttribute('_entity')) return null;
+    // Combined entity+tag span: xml2cwrc stamps _entity onto the existing structural tag in-place
+    if (tag && tag !== 'pb') return el;
+    // Pure entity wrapper (has _entity, no _tag): look for a structural child
+    const inner = el.querySelector('[_tag]:not([_entity])') as Element | null;
+    return inner && inner.getAttribute('_tag') !== 'pb' ? inner : null;
+  };
+
+  /**
+   * Tag targeted by Shift+Backspace / Shift+Delete: the inline phrase/entity tag at
+   * the caret — never a block like <p>/<div>. Short tags (roleName) often leave the
+   * caret just outside the span; in that case use the adjacent sibling tag.
+   */
+  const findShiftDeleteTagTarget = (): Element | null => {
+    if (!writer.editor) return null;
+
+    const rootTag = writer.schemaManager.getRoot();
+    const headerTag = writer.schemaManager.getHeader();
+    const body = writer.editor.getBody();
+    const isCandidate = (el: Element | null): el is Element => {
+      if (!el) return false;
+      const tagName = el.getAttribute('_tag');
+      if (!tagName || tagName === 'pb' || tagName === rootTag || tagName === headerTag) {
+        return false;
+      }
+      // Shift+Backspace is for phrase/entity tags. Unwrapping a paragraph when the
+      // caret sits in plain text (or just outside a short roleName that we failed to
+      // resolve) looks like a no-op or pops a schema warning — never treat blocks as targets.
+      if (writer.editor!.dom.isBlock(el)) return false;
+      return true;
+    };
+
+    const rng = writer.editor.selection.getRng();
+    let node: Node | null = rng.startContainer;
+    if (node.nodeType === Node.TEXT_NODE) node = node.parentElement;
+
+    // 1. Innermost inline [_tag] ancestor of the caret
+    while (node && isElement(node) && node !== body) {
+      if (isCandidate(node)) return node;
+      node = node.parentElement;
+    }
+
+    // 2. Adjacent sibling tag (caret sitting just before/after a short span)
+    const container = rng.startContainer;
+    const offset = rng.startOffset;
+    let adjacent: Element | null = null;
+    if (container.nodeType === Node.TEXT_NODE) {
+      const textLen = (container as Text).length;
+      if (offset === 0) adjacent = tagElThroughEntity(container.previousSibling);
+      else if (offset >= textLen) adjacent = tagElThroughEntity(container.nextSibling);
+    } else if (isElement(container)) {
+      const el = container as Element;
+      adjacent =
+        tagElThroughEntity(el.childNodes[offset] ?? null) ??
+        tagElThroughEntity(el.childNodes[offset - 1] ?? null);
+    }
+    if (isCandidate(adjacent)) return adjacent;
+
+    // 3. Highlighted boundary/active tag from the last boundary update
+    if (isCandidate(currentBoundaryElement)) return currentBoundaryElement;
+    if (isCandidate(currentActiveElement)) return currentActiveElement;
+
+    return null;
+  };
+
   const updateTagBoundaryState = () => {
     if (!writer.editor) return;
 
@@ -1072,23 +1146,6 @@ export const tinymceWrapperInit = function ({
 
     let tagEl: Element | null = null;
     let atBoundary = false;
-
-    // doHighlightCheck() moves the cursor out of entity wrappers, so "end of persName"
-    // lands at offset=0 in the next text node with the entity wrapper as previousSibling.
-    // This helper looks through an entity wrapper to find the [_tag] span inside it.
-    const tagElThroughEntity = (n: Node | null): Element | null => {
-      if (!n || !isElement(n)) return null;
-      const el = n as Element;
-      const tag = el.getAttribute('_tag');
-      // Plain structural tag (no entity marker)
-      if (tag && tag !== 'pb' && !el.hasAttribute('_entity')) return el;
-      if (!el.hasAttribute('_entity')) return null;
-      // Combined entity+tag span: xml2cwrc stamps _entity onto the existing structural tag in-place
-      if (tag && tag !== 'pb') return el;
-      // Pure entity wrapper (has _entity, no _tag): look for a structural child
-      const inner = el.querySelector('[_tag]:not([_entity])') as Element | null;
-      return inner && inner.getAttribute('_tag') !== 'pb' ? inner : null;
-    };
 
     // externalBoundary = cursor is in parent/sibling rather than inside the element's own text.
     // Only external boundaries trigger backspace-to-remove; internal ones allow normal text editing.
@@ -1222,9 +1279,11 @@ export const tinymceWrapperInit = function ({
       return;
     }
 
-    // Shift+Backspace / Shift+Delete: delete the innermost tag at the cursor, regardless of
-    // exact cursor position within it (not just at a boundary). To delete an outer wrapper,
-    // either press this twice (innermost first, then its parent) or use the markup tree panel.
+    // Shift+Backspace / Shift+Delete: unwrap the inline tag at the cursor (phrase/entity),
+    // keeping its text. Never targets block structure (<p>, <div>, …). Short tags like
+    // roleName often leave the caret just outside the span — those are resolved via the
+    // adjacent sibling. To remove an outer wrapper, press again (innermost first) or use
+    // the markup tree panel.
     if (
       event.shiftKey &&
       (event.code === 'Backspace' || event.code === 'Delete') &&
@@ -1232,35 +1291,8 @@ export const tinymceWrapperInit = function ({
       writer.isReadOnly !== true &&
       writer.isTextLocked !== true
     ) {
-      // Refresh boundary/active highlight so short tags (roleName, etc.) whose caret
-      // sits just outside the span still resolve to the highlighted element — not the
-      // parent <p>/div that selection.getNode().closest('[_tag]') would climb to.
       updateTagBoundaryState();
-
-      const rootTag = writer.schemaManager.getRoot();
-      const headerTag = writer.schemaManager.getHeader();
-      const isDeletableTag = (el: Element | null): el is Element => {
-        if (!el) return false;
-        const tagName = el.getAttribute('_tag');
-        return Boolean(tagName && tagName !== 'pb' && tagName !== rootTag && tagName !== headerTag);
-      };
-
-      let tagEl: Element | null = null;
-      if (isDeletableTag(currentBoundaryElement)) tagEl = currentBoundaryElement;
-      else if (isDeletableTag(currentActiveElement)) tagEl = currentActiveElement;
-      else {
-        const rng = writer.editor.selection.getRng();
-        let node: Node | null = rng.startContainer;
-        if (node.nodeType === Node.TEXT_NODE) node = node.parentElement;
-        while (node && isElement(node) && node !== writer.editor.getBody()) {
-          if (isDeletableTag(node)) {
-            tagEl = node;
-            break;
-          }
-          node = node.parentElement;
-        }
-      }
-
+      const tagEl = findShiftDeleteTagTarget();
       if (tagEl) {
         let id = tagEl.getAttribute('id');
         if (!id) {
@@ -1268,6 +1300,7 @@ export const tinymceWrapperInit = function ({
           tagEl.setAttribute('id', id);
         }
         event.preventDefault();
+        event.stopPropagation();
         clearTagBoundaryState();
         writer.tagger.removeTag(id);
         return;

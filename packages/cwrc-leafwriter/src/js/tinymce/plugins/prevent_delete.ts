@@ -315,6 +315,10 @@ const preventDelete = (editor: Editor, event: EditorEvent<KeyboardEvent>) => {
 
 tinymce.PluginManager.add('preventdelete', function (editor) {
   editor.on('keydown', (event) => {
+    // Shift+Backspace / Shift+Delete unwrap inline tags in tinymceWrapper — do not
+    // intercept those shortcuts here (especially at offset 0, where preventDelete
+    // would cancel the key and make tag removal look broken).
+    if (event.shiftKey && (event.code === 'Backspace' || event.code === 'Delete')) return;
     if (keyWillDelete(event)) preventDelete(editor, event);
   });
 });

@@ -10,6 +10,8 @@
   --note-anchor-size: 0.75em;
   --date: rgb(253, 119, 170);
   --correction: rgb(191, 4, 4);
+  --correction-sic: rgb(191, 4, 4);
+  --correction-corr: rgb(0, 128, 0);
   --keyword: rgb(16, 172, 132);
   --link: rgb(70, 130, 180);
 }
@@ -95,6 +97,45 @@ body {
 
 .entityHighlight.correction {
   background-color: rgba(255, 51, 0, 0.2);
+}
+
+/* Editorial correction readings: sic/surplus (as-found text) in red with a
+   "[sic.]" marker, corr/supplied (edited text) in green. */
+.entity.correction[data-sic-text] {
+  color: var(--correction-corr) !important;
+}
+.entity.correction[data-sic-text]::before {
+  color: var(--correction-sic) !important;
+}
+.entity.correction[_tag='surplus'] {
+  color: var(--correction-sic) !important;
+}
+.entity.correction[_tag='surplus']::after {
+  content: ' [sic.]';
+}
+.entity.correction[_tag='supplied'] {
+  color: var(--correction-corr) !important;
+}
+
+/* Same readings, but for documents where sic/corr/surplus/supplied are
+   plain schema tags (no entity/correction class, just a bare _tag attribute). */
+*[_tag='sic'] {
+  color: var(--correction-sic) !important;
+}
+*[_tag='sic']::after {
+  content: ' [sic.]';
+}
+*[_tag='corr'] {
+  color: var(--correction-corr) !important;
+}
+*[_tag='surplus'] {
+  color: var(--correction-sic) !important;
+}
+*[_tag='surplus']::after {
+  content: ' [sic.]';
+}
+*[_tag='supplied'] {
+  color: var(--correction-corr) !important;
 }
 
 .entityHighlight.link {

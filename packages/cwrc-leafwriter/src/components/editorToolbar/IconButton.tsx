@@ -20,6 +20,7 @@ export const IconButton = ({ color, disabled, icon, onClick, title, tooltip }: M
           disabled={disabled}
           color="primary"
           onClick={onClick}
+          onMouseDown={(e) => e.preventDefault()}
           size="small"
           sx={[
             {

@@ -424,6 +424,7 @@ declare global {
     __desktopRightPanel?: {
       expand: () => void;
       showTab: (tab: DesktopRightPanelTab) => void;
+      dismissTab: (tab: DesktopRightPanelTab) => void;
     };
     __desktopRightPanelPendingTab?: DesktopRightPanelTab;
     __desktopValidatorInstrumentation?: DesktopValidatorInstrumentation;

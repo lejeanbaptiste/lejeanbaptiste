@@ -12,6 +12,7 @@ export const Toggle = ({ icon, onClick, selected, title }: MenuItem) => {
       <ToggleButton
         aria-label={title}
         onClick={onClick}
+        onMouseDown={(e) => e.preventDefault()}
         selected={selected}
         size="small"
         sx={[

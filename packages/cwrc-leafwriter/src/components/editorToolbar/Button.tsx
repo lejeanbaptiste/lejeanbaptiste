@@ -13,6 +13,7 @@ export const Button = ({ icon, onClick, title, tooltip }: MenuItem) => {
       <MuiButton
         color="primary"
         onClick={onClick}
+        onMouseDown={(e) => e.preventDefault()}
         startIcon={<Icon component={getIcon(icon)} fontSize="small" />}
         sx={[
           { height: 34, textTransform: 'capitalize' },
