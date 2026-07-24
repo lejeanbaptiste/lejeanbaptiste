@@ -42,7 +42,7 @@ const exportScript = path.join(repoRoot, 'scripts/export-icon.mjs');
 const require = createRequire(import.meta.url);
 const electronRoot = path.dirname(require.resolve('electron/package.json'));
 const sourceAppRoot = path.join(electronRoot, 'dist/Electron.app');
-const electronVersion = readFileSync(path.join(electronRoot, 'dist/version'), 'utf8').trim();
+const electronVersionPath = path.join(electronRoot, 'dist/version');
 
 const readPlistValue = (plistPath, key) =>
   execFileSync('plutil', ['-extract', key, 'raw', '-o', '-', plistPath], {
@@ -94,7 +94,7 @@ const buildIcnsFromPng = (sourcePng, targetIcns) => {
   }
 };
 
-const syncDevAppBundle = () => {
+const syncDevAppBundle = (electronVersion) => {
   mkdirSync(devDir, { recursive: true });
 
   const previousVersion = existsSync(versionMarkerPath)
@@ -134,7 +134,15 @@ const patchDevAppMetadata = () => {
 };
 
 try {
-  syncDevAppBundle();
+  if (!existsSync(electronVersionPath) || !existsSync(sourceAppRoot)) {
+    console.error(
+      `[le-jean-baptiste] Electron binary is missing at ${path.join(electronRoot, 'dist')}.\n` +
+        'Run: node node_modules/electron/install.js',
+    );
+    process.exit(1);
+  }
+  const electronVersion = readFileSync(electronVersionPath, 'utf8').trim();
+  syncDevAppBundle(electronVersion);
   patchDevAppMetadata();
   console.log(`[le-jean-baptiste] Dev app ready: ${APP_NAME} (${electronVersion})`);
 } catch (error) {
