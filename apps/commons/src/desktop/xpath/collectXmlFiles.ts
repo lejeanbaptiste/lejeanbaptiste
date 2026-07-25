@@ -1,4 +1,4 @@
-import { INFRASTRUCTURE_DIR, isCorpusExcludedPath } from '../infrastructurePaths';
+import { isCorpusExcludedPath, isInfrastructureDirName } from '../infrastructurePaths';
 
 export const collectXmlFiles = async (
   dirPath: string,
@@ -11,7 +11,7 @@ export const collectXmlFiles = async (
 
   for (const entry of entries) {
     if (entry.isDirectory) {
-      if (entry.name === INFRASTRUCTURE_DIR) continue;
+      if (isInfrastructureDirName(entry.name)) continue;
       files.push(...(await collectXmlFiles(entry.path, projectRoot)));
       continue;
     }

@@ -12,6 +12,7 @@ import RefreshIcon from '@mui/icons-material/Refresh';
 import WarningAmberIcon from '@mui/icons-material/WarningAmber';
 import {
   Alert,
+  Autocomplete,
   Badge,
   Box,
   Button,
@@ -34,8 +35,6 @@ import {
   Radio,
   Stack,
   TextField,
-  ToggleButton,
-  ToggleButtonGroup,
   Tooltip,
   Typography,
 } from '@mui/material';
@@ -267,6 +266,22 @@ export const SidebarDatabaseTab = ({ active = false }: SidebarDatabaseTabProps) 
       };
     }
   }, [search]);
+
+  type KindFilterOption = { value: EntityKind | 'all'; label: string };
+
+  const kindFilterOptions = useMemo(
+    (): KindFilterOption[] => [
+      { value: 'all', label: t('LWC.desktop.sidebar.database.entity_types.all') },
+      { value: 'person', label: t('LWC.desktop.sidebar.database.entity_types.person') },
+      { value: 'place', label: t('LWC.desktop.sidebar.database.entity_types.place') },
+      { value: 'org', label: t('LWC.desktop.sidebar.database.entity_types.organization') },
+      { value: 'work', label: t('LWC.desktop.sidebar.database.entity_types.work') },
+    ],
+    [t],
+  );
+
+  const selectedKindOption =
+    kindFilterOptions.find((option) => option.value === kindFilter) ?? kindFilterOptions[0];
 
   /**
    * Romanization shown under the display name: the stored -Latn name, or an
@@ -710,7 +725,7 @@ export const SidebarDatabaseTab = ({ active = false }: SidebarDatabaseTabProps) 
 
   return (
     <Box sx={{ display: 'flex', flexDirection: 'column', height: '100%', minHeight: 0 }}>
-      {/* Toolbar: search + filter + actions */}
+      {/* Toolbar: search / type+view / tools */}
       <Stack spacing={1} sx={{ p: 1, borderBottom: 1, borderColor: 'divider' }}>
         <TextField
           fullWidth
@@ -731,21 +746,25 @@ export const SidebarDatabaseTab = ({ active = false }: SidebarDatabaseTabProps) 
             ) : undefined,
           }}
         />
-        <Stack direction="row" spacing={1} alignItems="center">
-          <ToggleButtonGroup
-            exclusive
+        <Stack direction="row" spacing={1} alignItems="center" sx={{ flexWrap: 'nowrap' }}>
+          <Autocomplete
             size="small"
-            value={kindFilter}
-            onChange={(_event, value: EntityKind | 'all' | null) => {
-              if (value) setKindFilter(value);
-            }}
-          >
-            <ToggleButton value="all">{t('LWC.desktop.sidebar.database.entity_types.all')}</ToggleButton>
-            <ToggleButton value="person">{t('LWC.desktop.sidebar.database.entity_types.person')}</ToggleButton>
-            <ToggleButton value="place">{t('LWC.desktop.sidebar.database.entity_types.place')}</ToggleButton>
-            <ToggleButton value="org">{t('LWC.desktop.sidebar.database.entity_types.organization')}</ToggleButton>
-            <ToggleButton value="work">{t('LWC.desktop.sidebar.database.entity_types.work')}</ToggleButton>
-          </ToggleButtonGroup>
+            disableClearable
+            autoHighlight
+            openOnFocus
+            options={kindFilterOptions}
+            value={selectedKindOption}
+            onChange={(_event, option) => setKindFilter(option.value)}
+            getOptionLabel={(option) => option.label}
+            isOptionEqualToValue={(a, b) => a.value === b.value}
+            sx={{ flex: 1, minWidth: 140 }}
+            renderInput={(params) => (
+              <TextField
+                {...params}
+                aria-label={t('LWC.desktop.sidebar.database.entity_type_filter')}
+              />
+            )}
+          />
           <Tooltip title={databaseView === 'central' ? 'Browsing your central database' : 'Browsing this project’s database'}>
             <span>
               <Button
@@ -754,12 +773,14 @@ export const SidebarDatabaseTab = ({ active = false }: SidebarDatabaseTabProps) 
                 color={databaseView === 'central' ? 'error' : 'success'}
                 onClick={() => setDatabaseView((prev) => (prev === 'central' ? 'project' : 'central'))}
                 startIcon={<HubOutlinedIcon fontSize="small" />}
+                sx={{ flexShrink: 0, whiteSpace: 'nowrap' }}
               >
                 {databaseView === 'central' ? 'Central' : 'Project'}
               </Button>
             </span>
           </Tooltip>
-          <Box sx={{ flex: 1 }} />
+        </Stack>
+        <Stack direction="row" spacing={1} alignItems="center" sx={{ flexWrap: 'nowrap' }}>
           <Tooltip
             title={
               selected.size >= 2
@@ -773,15 +794,17 @@ export const SidebarDatabaseTab = ({ active = false }: SidebarDatabaseTabProps) 
                 startIcon={<MergeIcon />}
                 variant={selected.size >= 2 ? 'contained' : 'outlined'}
                 onClick={handleMergeClick}
+                sx={{ flexShrink: 0, whiteSpace: 'nowrap' }}
               >
                 {t('LWC.desktop.sidebar.database.merge')}
                 {selected.size >= 2 ? ` (${selected.size})` : ''}
               </Button>
             </span>
           </Tooltip>
+          <Box sx={{ flex: 1, minWidth: 0 }} />
           {!syncToCentral && (
             <Tooltip title="Bridge to central database">
-              <IconButton size="small" onClick={() => setBridgeOpen(true)} aria-label="Bridge to central database">
+              <IconButton size="small" onClick={() => setBridgeOpen(true)} aria-label="Bridge to central database" sx={{ flexShrink: 0 }}>
                 <HubOutlinedIcon fontSize="small" />
               </IconButton>
             </Tooltip>
@@ -794,7 +817,7 @@ export const SidebarDatabaseTab = ({ active = false }: SidebarDatabaseTabProps) 
                   : 'Merge docket'
               }
             >
-              <IconButton size="small" onClick={() => setDocketOpen(true)} aria-label="Merge docket">
+              <IconButton size="small" onClick={() => setDocketOpen(true)} aria-label="Merge docket" sx={{ flexShrink: 0 }}>
                 <Badge badgeContent={docketCount} color="warning">
                   <FactCheckOutlinedIcon fontSize="small" />
                 </Badge>
@@ -813,13 +836,14 @@ export const SidebarDatabaseTab = ({ active = false }: SidebarDatabaseTabProps) 
                 disabled={!activeStore || backfillBusy}
                 onClick={() => void runNameBackfill()}
                 aria-label="Backfill names from authorities"
+                sx={{ flexShrink: 0 }}
               >
                 <PlaylistAddIcon fontSize="small" />
               </IconButton>
             </span>
           </Tooltip>
           <Tooltip title={t('LWC.desktop.sidebar.database.reload_entities')}>
-            <IconButton size="small" onClick={() => void reload()} aria-label={t('LWC.desktop.sidebar.database.reload_entities')}>
+            <IconButton size="small" onClick={() => void reload()} aria-label={t('LWC.desktop.sidebar.database.reload_entities')} sx={{ flexShrink: 0 }}>
               <RefreshIcon fontSize="small" />
             </IconButton>
           </Tooltip>

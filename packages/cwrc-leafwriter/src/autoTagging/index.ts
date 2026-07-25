@@ -61,4 +61,5 @@ export * from './validationHarness';
 export * from './aiRunProgress';
 export * from './batchHolder';
 export * from './nameTypeLabels';
+export * from './NameTypePolicyPanel';
 export * from './nameBackfill';

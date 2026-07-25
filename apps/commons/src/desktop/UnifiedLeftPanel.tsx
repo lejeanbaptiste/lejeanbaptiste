@@ -10,6 +10,7 @@ import {
 import { LeftPanelResizeHandle } from './LeftPanelResizeHandle';
 import {
   LEFT_PANEL_COLLAPSED_WIDTH,
+  LEFT_PANEL_DATABASE_MIN_WIDTH,
   LEFT_PANEL_DEFAULT_WIDTH,
   LEFT_PANEL_MAX_WIDTH,
   LEFT_PANEL_MIN_WIDTH,
@@ -21,8 +22,8 @@ import { SidebarFindTab } from './sidebar/SidebarFindTab';
 import { SidebarXPathTab } from './sidebar/SidebarXPathTab';
 import { SidebarIconTabBar } from './SidebarIconTabBar';
 
-const clampWidth = (width: number) =>
-  Math.min(LEFT_PANEL_MAX_WIDTH, Math.max(LEFT_PANEL_MIN_WIDTH, width));
+const clampWidth = (width: number, minWidth = LEFT_PANEL_MIN_WIDTH) =>
+  Math.min(LEFT_PANEL_MAX_WIDTH, Math.max(minWidth, width));
 
 const readStoredWidth = () => {
   try {
@@ -54,6 +55,15 @@ export const UnifiedLeftPanel = () => {
 
   collapsedRef.current = collapsed;
 
+  const panelMinWidth =
+    activeTab === 'database' ? LEFT_PANEL_DATABASE_MIN_WIDTH : LEFT_PANEL_MIN_WIDTH;
+
+  // Opening the database tab may need a wider floor than explorer/find.
+  useEffect(() => {
+    if (collapsed) return;
+    setPanelWidth((current) => clampWidth(current, panelMinWidth));
+  }, [collapsed, panelMinWidth]);
+
   // No project → keep the strip collapsed. Opening a project expands the explorer.
   useEffect(() => {
     if (!hasProject) {
@@ -75,15 +85,18 @@ export const UnifiedLeftPanel = () => {
     setCollapsed(false);
   }, []);
 
-  const handleWidthChange = useCallback((nextWidth: number) => {
-    const clamped = clampWidth(nextWidth);
-    setPanelWidth(clamped);
-    try {
-      localStorage.setItem(LEFT_PANEL_WIDTH_STORAGE_KEY, String(clamped));
-    } catch {
-      // ignore
-    }
-  }, []);
+  const handleWidthChange = useCallback(
+    (nextWidth: number) => {
+      const clamped = clampWidth(nextWidth, panelMinWidth);
+      setPanelWidth(clamped);
+      try {
+        localStorage.setItem(LEFT_PANEL_WIDTH_STORAGE_KEY, String(clamped));
+      } catch {
+        // ignore
+      }
+    },
+    [panelMinWidth],
+  );
 
   useEffect(() => {
     window.__desktopLeftPanel = { showTab, expand };
@@ -173,7 +186,7 @@ export const UnifiedLeftPanel = () => {
     <Box
       sx={{
         width: collapsed ? LEFT_PANEL_COLLAPSED_WIDTH : panelWidth,
-        minWidth: collapsed ? LEFT_PANEL_COLLAPSED_WIDTH : LEFT_PANEL_MIN_WIDTH,
+        minWidth: collapsed ? LEFT_PANEL_COLLAPSED_WIDTH : panelMinWidth,
         maxWidth: collapsed ? LEFT_PANEL_COLLAPSED_WIDTH : LEFT_PANEL_MAX_WIDTH,
         flexShrink: 0,
         display: 'flex',

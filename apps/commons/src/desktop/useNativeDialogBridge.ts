@@ -8,6 +8,11 @@ import { useEffect, useRef } from 'react';
 import { useTranslation } from 'react-i18next';
 
 import { parseIsoYear } from '../../../../packages/cwrc-leafwriter/src/autoTagging/entities';
+import { ALL_NAME_TYPES, type NameTypeId } from '../../../../packages/cwrc-leafwriter/src/autoTagging/nameTypes';
+import {
+  resolveNameTypeTaggingPolicy,
+  type NameTypeTaggingBucket,
+} from '../../../../packages/cwrc-leafwriter/src/autoTagging/nameTypeTaggingPolicy';
 import { computeBridgeInbox, loadBridgeContext, promoteEntities, syncEntities } from './entityDb/bridge';
 import { getActiveTabXml } from './fileMetadata';
 import { buildProjectSchemas, type ProjectBundle } from './projectFile';
@@ -562,6 +567,59 @@ export const useNativeDialogBridge = () => {
 
             clearProjectMetadataSession(dialogId);
             session.onCancel();
+            return { ok: true };
+          }
+          case 'getNameTypeTaggingPolicyState': {
+            const dialogId = getStringArg(args, 'dialogId');
+            const session = dialogId ? getProjectMetadataSession(dialogId) : undefined;
+            if (!session) return null;
+            const bundle = await resolveProjectBundle(session.projectFilePath);
+            if (!bundle) return null;
+            const settings =
+              authoritySettingsCache.current ?? bundle.config.autoTaggingAuthority;
+            const sourceLanguage = await getProjectSourceLanguage(bundle);
+            const policy = resolveNameTypeTaggingPolicy(settings, sourceLanguage);
+            return {
+              buckets: policy.buckets,
+              customTypes: policy.customTypes,
+              artMinCodePoints: policy.artMinCodePoints,
+              sourceLanguage,
+            };
+          }
+          case 'persistNameTypeTaggingPolicy': {
+            const dialogId = getStringArg(args, 'dialogId');
+            const session = dialogId ? getProjectMetadataSession(dialogId) : undefined;
+            if (!session) return { ok: false, error: 'Invalid metadata session.' };
+            const bundle = await resolveProjectBundle(session.projectFilePath);
+            if (!bundle) return { ok: false, error: 'Project not found.' };
+            if (!electronAPI.updateProjectFileConfig) {
+              return { ok: false, error: 'Could not update project settings.' };
+            }
+
+            const payload = (args ?? {}) as {
+              buckets?: Record<NameTypeId, NameTypeTaggingBucket>;
+              customTypes?: AutoTaggingAuthoritySettings['customNameTypes'];
+              artMinCodePoints?: number;
+            };
+            if (!payload.buckets) {
+              return { ok: false, error: 'Missing name-type policy.' };
+            }
+
+            const current =
+              authoritySettingsCache.current ?? bundle.config.autoTaggingAuthority ?? {};
+            const next: AutoTaggingAuthoritySettings = {
+              ...current,
+              nameTypeTaggingPolicy: Object.fromEntries(
+                ALL_NAME_TYPES.map((type) => [type, payload.buckets![type]]),
+              ),
+              customNameTypes: payload.customTypes ?? current.customNameTypes,
+              artMinCodePoints: payload.artMinCodePoints ?? current.artMinCodePoints,
+            };
+            await electronAPI.updateProjectFileConfig(bundle.projectFilePath, {
+              autoTaggingAuthority: next,
+            });
+            authoritySettingsCache.current = next;
+            window.__leafWriterProject?.setAutoTaggingAuthoritySettings?.(next);
             return { ok: true };
           }
           default:

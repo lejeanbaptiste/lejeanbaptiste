@@ -652,12 +652,13 @@
           "merge_dialog_note": "The selected entry survives; the others are folded into it.",
           "current_names": "Current: {{names}}",
           "keys_updated_summary": "{{keysUpdated}} tags updated in {{filesChanged}} files across {{projects}} projects.",
+          "entity_type_filter": "Entity type",
           "entity_types": {
             "all": "All",
-            "person": "Per",
-            "place": "Pla",
-            "organization": "Org",
-            "work": "Wrk"
+            "person": "Person",
+            "place": "Place",
+            "organization": "Organization",
+            "work": "Work"
           },
           "status_installed": "installed",
           "save": "Save",

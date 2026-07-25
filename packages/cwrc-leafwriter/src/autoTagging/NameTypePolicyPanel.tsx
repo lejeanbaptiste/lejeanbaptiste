@@ -4,35 +4,27 @@ import {
   Box,
   Button,
   IconButton,
-  ListItem,
   Stack,
   TextField,
   ToggleButton,
   Typography,
 } from '@mui/material';
 import { useCallback, useEffect, useRef, useState } from 'react';
-import { ToggleButtonGroup } from '../../../../components/ToggleButtonGroup';
+import { ToggleButtonGroup } from '../components/ToggleButtonGroup';
 import {
   defaultPolicyForLanguage,
-  persistAuthoritySettings,
-  readPersistedAuthoritySettings,
-  readProjectNameTypeTaggingPolicy,
   validateCustomNameTypeId,
   type CustomNameType,
   type NameTypeTaggingBucket,
-} from '../../../../autoTagging/authoritySettings';
-import { ALL_NAME_TYPES, type NameTypeId } from '../../../../autoTagging/nameTypes';
-import { nameTypeLabel } from '../../../../autoTagging/nameTypeLabels';
+} from './authoritySettings';
+import { ALL_NAME_TYPES, type NameTypeId } from './nameTypes';
+import { nameTypeLabel } from './nameTypeLabels';
 
 const BUCKET_OPTIONS: { value: NameTypeTaggingBucket; label: string }[] = [
   { value: 'phase1', label: 'Phase 1' },
   { value: 'phase2', label: 'Phase 2' },
   { value: 'never', label: 'Never' },
 ];
-
-const isDesktopWithProject = (): boolean =>
-  Boolean(window.electronAPI) &&
-  Boolean(window.__leafWriterProject?.getProjectFilePath?.()?.trim());
 
 function builtInBucketsFromPolicy(
   buckets: Record<string, NameTypeTaggingBucket>,
@@ -68,9 +60,31 @@ const BucketSelector = ({
   </ToggleButtonGroup>
 );
 
-export const DesktopNameTypePolicy = () => {
+/** Load/save contract so the panel can run in the project-settings dialog window. */
+export type NameTypePolicyIO = {
+  load: () => Promise<{
+    buckets: Record<string, NameTypeTaggingBucket>;
+    customTypes: CustomNameType[];
+    artMinCodePoints: number;
+    sourceLanguage: string | null;
+  }>;
+  persist: (next: {
+    buckets: Record<NameTypeId, NameTypeTaggingBucket>;
+    customTypes: CustomNameType[];
+    artMinCodePoints: number;
+  }) => Promise<void>;
+};
+
+export const NameTypePolicyPanel = ({
+  io,
+  sourceLanguage: sourceLanguageOverride,
+}: {
+  io: NameTypePolicyIO;
+  /** Draft language from the open project-settings form (overrides loaded language for labels/reset). */
+  sourceLanguage?: string | null;
+}) => {
   const [loaded, setLoaded] = useState(false);
-  const [sourceLanguage, setSourceLanguage] = useState<string | null>(null);
+  const [loadedSourceLanguage, setLoadedSourceLanguage] = useState<string | null>(null);
   const [buckets, setBuckets] = useState<Record<NameTypeId, NameTypeTaggingBucket>>(
     () => builtInBucketsFromPolicy(defaultPolicyForLanguage(null)),
   );
@@ -82,6 +96,9 @@ export const DesktopNameTypePolicy = () => {
   const [customFormError, setCustomFormError] = useState<string | null>(null);
   const saveGenerationRef = useRef(0);
 
+  const sourceLanguage =
+    sourceLanguageOverride !== undefined ? sourceLanguageOverride : loadedSourceLanguage;
+
   const persist = useCallback(
     async (next: {
       buckets: Record<NameTypeId, NameTypeTaggingBucket>;
@@ -89,43 +106,29 @@ export const DesktopNameTypePolicy = () => {
       artMinCodePoints: number;
     }) => {
       const generation = ++saveGenerationRef.current;
-      const current = readPersistedAuthoritySettings() ?? {};
-      await persistAuthoritySettings({
-        ...current,
-        nameTypeTaggingPolicy: Object.fromEntries(
-          ALL_NAME_TYPES.map((type) => [type, next.buckets[type]]),
-        ),
-        customNameTypes: next.customTypes,
-        artMinCodePoints: next.artMinCodePoints,
-      });
+      await io.persist(next);
       if (generation !== saveGenerationRef.current) return;
     },
-    [],
+    [io],
   );
 
   useEffect(() => {
-    if (!isDesktopWithProject()) return;
     let cancelled = false;
 
     void (async () => {
-      const policy = await readProjectNameTypeTaggingPolicy();
+      const policy = await io.load();
       if (cancelled) return;
       setBuckets(builtInBucketsFromPolicy(policy.buckets));
       setCustomTypes(policy.customTypes);
       setArtMinCodePoints(policy.artMinCodePoints);
-      try {
-        const lang = (await window.__leafWriterProject?.getProjectSourceLanguage?.()) ?? null;
-        if (!cancelled) setSourceLanguage(lang);
-      } catch {
-        if (!cancelled) setSourceLanguage(null);
-      }
+      setLoadedSourceLanguage(policy.sourceLanguage);
       setLoaded(true);
     })();
 
     return () => {
       cancelled = true;
     };
-  }, []);
+  }, [io]);
 
   const updateBuiltInBucket = (type: NameTypeId, bucket: NameTypeTaggingBucket) => {
     setBuckets((current) => {
@@ -184,14 +187,13 @@ export const DesktopNameTypePolicy = () => {
     void persist({ buckets, customTypes: next, artMinCodePoints });
   };
 
-  if (!isDesktopWithProject()) return null;
   if (!loaded) return null;
 
   const primaryBucket = buckets.primary;
   const showPrimaryWarning = primaryBucket === 'phase2' || primaryBucket === 'never';
 
   return (
-    <ListItem sx={{ flexDirection: 'column', alignItems: 'stretch', px: 0, py: 1 }}>
+    <Box sx={{ display: 'flex', flexDirection: 'column', alignItems: 'stretch' }}>
       <Stack spacing={1.25} width="100%">
         <Box>
           <Typography variant="subtitle2">Name types for auto-tagging</Typography>
@@ -323,6 +325,6 @@ export const DesktopNameTypePolicy = () => {
           </Stack>
         </Box>
       </Stack>
-    </ListItem>
+    </Box>
   );
 };

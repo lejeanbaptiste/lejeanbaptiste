@@ -11,6 +11,11 @@ export const TOOLBAR_ROW_HEIGHT = 35;
 
 /** Minimum width so six tab icons stay on one row. */
 export const LEFT_PANEL_MIN_WIDTH = 240;
+/**
+ * Database tab toolbar: type menu + Central/Project + Fusionner + tool icons
+ * must stay on one line without clipping.
+ */
+export const LEFT_PANEL_DATABASE_MIN_WIDTH = 340;
 export const LEFT_PANEL_DEFAULT_WIDTH = 280;
 export const LEFT_PANEL_MAX_WIDTH = 520;
 export const LEFT_PANEL_COLLAPSED_WIDTH = 48;
