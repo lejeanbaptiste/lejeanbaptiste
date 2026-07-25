@@ -32,6 +32,7 @@ import LinkIcon from '@mui/icons-material/Link';
 import LockIcon from '@mui/icons-material/Lock';
 import LockOpenIcon from '@mui/icons-material/LockOpen';
 import MoreVertIcon from '@mui/icons-material/MoreVert';
+import SpellcheckIcon from '@mui/icons-material/Spellcheck';
 import StickyNote2Icon from '@mui/icons-material/StickyNote2';
 import SubscriptIcon from '@mui/icons-material/Subscript';
 import SuperscriptIcon from '@mui/icons-material/Superscript';
@@ -53,6 +54,25 @@ import { isMacOS } from '../utils/platform';
 
 const TEI_NS = 'http://www.tei-c.org/ns/1.0';
 const DEFAULT_CITATION_STYLE_ID = 'chicago-note-bibliography';
+const SPELLCHECK_STORAGE_KEY = 'leafWriterTranslationSpellcheck';
+
+const readSpellcheckEnabled = (): boolean => {
+  try {
+    const stored = window.localStorage.getItem(SPELLCHECK_STORAGE_KEY);
+    if (stored === null) return true;
+    return stored === '1' || stored === 'true';
+  } catch {
+    return true;
+  }
+};
+
+const writeSpellcheckEnabled = (enabled: boolean): void => {
+  try {
+    window.localStorage.setItem(SPELLCHECK_STORAGE_KEY, enabled ? '1' : '0');
+  } catch {
+    // Ignore quota / private-mode failures; the in-memory toggle still works.
+  }
+};
 
 const getElementsByLocalName = (root: Document | Element, localName: string): Element[] => {
   const namespaced = Array.from(root.getElementsByTagNameNS(TEI_NS, localName));
@@ -439,6 +459,7 @@ export const TranslationPane = () => {
     getTranslationLanguageState(),
   );
   const [locked, setLocked] = useState(false);
+  const [spellcheckEnabled, setSpellcheckEnabled] = useState(() => readSpellcheckEnabled());
   const [formatAnchor, setFormatAnchor] = useState<HTMLElement | null>(null);
   const [paneFontSize, setPaneFontSize] = useState(() => translationFontZoom.get());
   const editableRef = useRef<HTMLDivElement>(null);
@@ -485,6 +506,17 @@ export const TranslationPane = () => {
     return () =>
       window.removeEventListener('desktop:translation-language-state-changed', syncLanguageState);
   }, []);
+
+  // Chromium spellcheck: toggle lives in the pane; dictionary language follows
+  // the current translation target (e.g. fr → French Hunspell / macOS dict).
+  useEffect(() => {
+    const setSpellcheck = window.electronAPI?.setTranslationSpellcheck;
+    if (!setSpellcheck) return;
+    const languageCodes = [
+      languageState?.selectedLang || translationMode.lang || '',
+    ].filter(Boolean);
+    void setSpellcheck({ enabled: spellcheckEnabled, languageCodes });
+  }, [languageState?.selectedLang, spellcheckEnabled, translationMode.lang]);
 
   // Pane text zoom (8–24px): keyboard Cmd/Ctrl +/-/0 while the pane has focus,
   // plus a window bridge so the desktop menu accelerators can drive it.
@@ -1548,6 +1580,15 @@ export const TranslationPane = () => {
 
   const languageOptions = languageState?.languages ?? [];
   const selectedLanguage = languageState?.selectedLang || translationMode.lang || '';
+  const spellcheckLang = selectedLanguage || undefined;
+
+  const toggleSpellcheck = () => {
+    setSpellcheckEnabled((previous) => {
+      const next = !previous;
+      writeSpellcheckEnabled(next);
+      return next;
+    });
+  };
   const shortcut = (macShortcut: string, otherShortcut: string) => (mac ? macShortcut : otherShortcut);
   const formatItems: Array<{
     command:
@@ -1743,6 +1784,23 @@ export const TranslationPane = () => {
           </span>
         </Tooltip>
 
+        <Tooltip
+          title={
+            spellcheckEnabled
+              ? t('LW.translationPane.disableSpellcheck')
+              : t('LW.translationPane.enableSpellcheck')
+          }
+        >
+          <IconButton
+            aria-pressed={spellcheckEnabled}
+            color={spellcheckEnabled ? 'primary' : 'default'}
+            onClick={toggleSpellcheck}
+            size="small"
+          >
+            <SpellcheckIcon fontSize="small" />
+          </IconButton>
+        </Tooltip>
+
         <Tooltip title={t('LW.translationPane.formatting')}>
           <span>
             <IconButton
@@ -1900,6 +1958,8 @@ export const TranslationPane = () => {
           <Box
             ref={editableRef}
             contentEditable
+            lang={spellcheckLang}
+            spellCheck={spellcheckEnabled}
             suppressContentEditableWarning
             onBlur={() => {
               void persist();
@@ -2016,6 +2076,8 @@ export const TranslationPane = () => {
                       contentEditable
                       data-leaf-footnote-editor={index}
                       dangerouslySetInnerHTML={{ __html: text }}
+                      lang={spellcheckLang}
+                      spellCheck={spellcheckEnabled}
                       onBlur={(event) => {
                         rememberFootnoteRange(index, event.currentTarget);
                         updateFootnote(index, event.currentTarget.innerHTML);

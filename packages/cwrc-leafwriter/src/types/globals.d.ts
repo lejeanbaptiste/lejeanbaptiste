@@ -46,6 +46,11 @@ declare global {
     /** Interface (window chrome) zoom — scales the entire UI, unlike the per-pane text zooms. */
     setUiZoomFactor?: (factor: number) => void;
     getUiZoomFactor?: () => number;
+    /** Chromium spellcheck for the translation pane (dictionary language follows the target lang). */
+    setTranslationSpellcheck?: (options: {
+      enabled: boolean;
+      languageCodes?: string[];
+    }) => Promise<void>;
     sanmiaoListDateAuthority?: (options?: {
       civ?: string[];
     }) => Promise<import('../dateAuthority/types').DateAuthorityIndex>;
@@ -202,6 +207,14 @@ declare global {
             yearStart?: number;
             yearEnd?: number;
             excludedNameTypes?: string[];
+            nameTypeTaggingPolicy?: Record<string, 'phase1' | 'phase2' | 'never'>;
+            customNameTypes?: Array<{
+              id: string;
+              label: string;
+              labelsByLang?: Record<string, string>;
+              bucket: 'phase1' | 'phase2' | 'never';
+            }>;
+            artMinCodePoints?: number;
             yearFilterEnabled?: boolean;
             hideUndated?: boolean;
           }
@@ -212,6 +225,14 @@ declare global {
         yearStart?: number;
         yearEnd?: number;
         excludedNameTypes?: string[];
+        nameTypeTaggingPolicy?: Record<string, 'phase1' | 'phase2' | 'never'>;
+        customNameTypes?: Array<{
+          id: string;
+          label: string;
+          labelsByLang?: Record<string, string>;
+          bucket: 'phase1' | 'phase2' | 'never';
+        }>;
+        artMinCodePoints?: number;
         yearFilterEnabled?: boolean;
         hideUndated?: boolean;
       }) => void;

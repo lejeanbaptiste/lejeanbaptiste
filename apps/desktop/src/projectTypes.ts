@@ -62,8 +62,16 @@ export interface AutoTaggingAuthoritySettings {
   yearFilterEnabled?: boolean;
   yearStart?: number;
   yearEnd?: number;
-  /** Name types barred from seeding corpus auto-tagging (default: courtesy names 字). */
+  /** @deprecated Migrated to nameTypeTaggingPolicy (phase2 bucket). */
   excludedNameTypes?: string[];
+  nameTypeTaggingPolicy?: Record<string, 'phase1' | 'phase2' | 'never'>;
+  customNameTypes?: Array<{
+    id: string;
+    label: string;
+    labelsByLang?: Record<string, string>;
+    bucket: 'phase1' | 'phase2' | 'never';
+  }>;
+  artMinCodePoints?: number;
   hideUndated?: boolean;
 }
 

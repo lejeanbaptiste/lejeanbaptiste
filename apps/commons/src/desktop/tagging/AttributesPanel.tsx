@@ -38,6 +38,7 @@ import {
   ALL_NAME_TYPES,
   type NameTypeId,
 } from '../../../../../packages/cwrc-leafwriter/src/autoTagging/nameTypes';
+import { nameTypeLabel } from '../../../../../packages/cwrc-leafwriter/src/autoTagging/nameTypeLabels';
 import { entityStoreFromDesktop } from '../../../../../packages/cwrc-leafwriter/src/autoTagging/entityStore';
 import { foldForSearch } from '../../../../../packages/cwrc-leafwriter/src/utilities/romanize';
 import { openExternalUrl } from '../../../../../packages/cwrc-leafwriter/src/utilities/DOM';
@@ -331,19 +332,9 @@ export const AttributesPanel = ({ visible = true }: { visible?: boolean }) => {
           : (matchedNameEntry?.type ?? '')
       : '';
 
-  const nameTypeLabels: Record<NameTypeId, string> = {
-    primary: 'Primary name',
-    birth: 'Birth name',
-    family: 'Family name (姓)',
-    given: 'Given name (名)',
-    courtesy: 'Courtesy name (字)',
-    art: 'Art name (號)',
-    posthumous: 'Posthumous name (諡號)',
-    temple: 'Temple name (廟號)',
-    dharma: 'Dharma name',
-    pen: 'Pen name',
-    variant: 'Variant',
-  };
+  const nameTypeLabels: Record<NameTypeId, string> = Object.fromEntries(
+    ALL_NAME_TYPES.map((type) => [type, nameTypeLabel(type, sourceLanguage)]),
+  ) as Record<NameTypeId, string>;
 
   /** Write the chosen name type for this surface onto the entity record (entities.xml only). */
   const commitNameType = async (raw: string) => {

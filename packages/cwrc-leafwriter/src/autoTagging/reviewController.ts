@@ -42,7 +42,10 @@ export interface PendingGroup {
   selectedIndex: number;
 }
 
-/** Same-span 'add' suggestions with different tags share this key. */
+/**
+ * Same-span 'add' suggestions with different tags, or the same tag with
+ * different entity `@key`s, share this key.
+ */
 function alternativeGroupKey(s: Suggestion): string | null {
   if (s.action !== 'add') return null;
   return `${s.anchor.xpath}\t${s.anchor.offset}\t${s.anchor.surface}`;
@@ -88,8 +91,12 @@ export class ReviewController {
     const groups: Suggestion[][] = [];
     for (const key of order) {
       const bucket = byKey.get(key)!;
-      // Only a real alternative group when the bucket actually carries >1 distinct tag.
-      if (bucket.length > 1 && new Set(bucket.map((s) => s.tag)).size > 1) {
+      const distinctTags = new Set(bucket.map((s) => s.tag));
+      const distinctKeys = new Set(
+        bucket.map((s) => s.attributes?.key).filter((value): value is string => !!value),
+      );
+      // Alternative group: competing tags, or same tag with different entity keys (short-form).
+      if (bucket.length > 1 && (distinctTags.size > 1 || distinctKeys.size > 1)) {
         groups.push(bucket);
       } else {
         for (const item of bucket) groups.push([item]);
@@ -217,19 +224,24 @@ export class ReviewController {
   }
 
   /**
-   * Same-span 'add' suggestions with different tags are mutually exclusive
-   * alternatives (one string offered as e.g. both persName and title).
+   * Same-span 'add' suggestions with different tags, or the same tag with
+   * different `@key`s, are mutually exclusive alternatives.
    */
   private isAlternative(a: Suggestion, b: Suggestion): boolean {
-    return (
-      a !== b &&
-      a.action === 'add' &&
-      b.action === 'add' &&
-      a.tag !== b.tag &&
-      a.anchor.xpath === b.anchor.xpath &&
-      a.anchor.offset === b.anchor.offset &&
-      a.anchor.surface === b.anchor.surface
-    );
+    if (
+      a === b ||
+      a.action !== 'add' ||
+      b.action !== 'add' ||
+      a.anchor.xpath !== b.anchor.xpath ||
+      a.anchor.offset !== b.anchor.offset ||
+      a.anchor.surface !== b.anchor.surface
+    ) {
+      return false;
+    }
+    if (a.tag !== b.tag) return true;
+    const keyA = a.attributes?.key;
+    const keyB = b.attributes?.key;
+    return !!keyA && !!keyB && keyA !== keyB;
   }
 
   /** Accepting one alternative rejects the others — only one tag can win the span. */

@@ -383,6 +383,8 @@
       "copyFailed": "Kopieren fehlgeschlagen: {{error}}",
       "lockTranslationUnit": "Übersetzungseinheit sperren",
       "unlockTranslationUnit": "Übersetzungseinheit entsperren",
+      "enableSpellcheck": "Rechtschreibvorschläge einschalten",
+      "disableSpellcheck": "Rechtschreibvorschläge ausschalten",
       "formatting": "Formatierung",
       "formatItems": {
         "bold": "Fett",

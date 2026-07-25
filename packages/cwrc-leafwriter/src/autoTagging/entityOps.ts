@@ -13,6 +13,11 @@ import {
   setCentralMapping,
 } from './concordance';
 import { ENTITY_KINDS, findEntity, touchEntity, type AuthorityId, type EntityKind } from './entities';
+import {
+  isPhase1SeedName,
+  isNameTypeTaggingPolicy,
+  type NameTypeTaggingPolicy,
+} from './nameTypeTaggingPolicy';
 import { isTaggableNameType, normalizeNameType, type NameTypeId } from './nameTypes';
 
 const TEI_NS = 'http://www.tei-c.org/ns/1.0';
@@ -126,10 +131,15 @@ export function listEntities(doc: Document): EntitySummary[] {
  */
 export function taggableEntityNames(
   entity: EntitySummary,
-  excluded?: NameTypeId[],
+  excludedOrPolicy?: NameTypeId[] | NameTypeTaggingPolicy,
 ): string[] {
+  if (isNameTypeTaggingPolicy(excludedOrPolicy)) {
+    return entity.nameEntries
+      .filter((entry) => isPhase1SeedName(entry.type, entry.text, excludedOrPolicy))
+      .map((entry) => entry.text);
+  }
   return entity.nameEntries
-    .filter((entry) => isTaggableNameType(entry.type, excluded))
+    .filter((entry) => isTaggableNameType(entry.type, excludedOrPolicy))
     .map((entry) => entry.text);
 }
 

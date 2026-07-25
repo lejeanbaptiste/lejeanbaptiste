@@ -37,6 +37,10 @@ import {
 } from './entityStore';
 import { readOrMintUserStableId } from './userStableId';
 import { candidatesFromEntityDatabase } from './ownDatabaseCandidates';
+import {
+  nameTypeTaggingPolicyFromSettings,
+  readPersistedAuthoritySettings,
+} from './authoritySettings';
 import { crawlDocuments } from './crawl';
 import { dictionaryTag, type DictionaryEntry } from './dictionary';
 import { DisambiguationAiCache } from './disambiguationAiCache';
@@ -44,7 +48,9 @@ import type { AiPromptProfile } from './aiPromptProfiles';
 import type { LlmClient } from './llmClient';
 import { LlmCache } from './llmCache';
 import { llmSuggest, type LlmSuggestResult } from './llmSuggest';
+import { listEntities } from './entityOps';
 import { collectTaggedSpans, prepareSuggestionsForReview } from './suggestionFilters';
+import { keyedPersNameFloors, phase2StringsForEntity, shortFormTag } from './shortFormTag';
 import { llmAudit, type LlmAuditResult } from './llmAudit';
 import { normalizeDomText } from './normalize';
 import { AUTHORITY_PACKS, authorityPackOrigin, type AuthorityPackId } from './packPaths';
@@ -447,6 +453,10 @@ export class AutoTaggingSession {
   ): Promise<TagBombResult> {
     const doc = await this.getDocument();
 
+    const sourceLang = await this.projectLanguage();
+    const authoritySettings = readPersistedAuthoritySettings();
+    const nameTypePolicy = nameTypeTaggingPolicyFromSettings(authoritySettings, sourceLang);
+
     const pedbIds = packIds.filter((id) => this.specOrigin(id) === 'pedb');
     const cedbIds = packIds.filter((id) => this.specOrigin(id) === 'cedb');
     const projectIds = packIds.filter((id) => this.specOrigin(id) === 'project');
@@ -458,7 +468,10 @@ export class AutoTaggingSession {
       for (const id of pedbIds) {
         const kind = OWN_DATABASE_KIND_BY_PACK_ID[id];
         if (!kind) continue;
-        extraCandidates.push({ groupLabel: id, candidates: candidatesFromEntityDatabase(pedbDoc, kind, 'PEDB') });
+        extraCandidates.push({
+          groupLabel: id,
+          candidates: candidatesFromEntityDatabase(pedbDoc, kind, 'PEDB', nameTypePolicy),
+        });
       }
     }
     if (cedbIds.length > 0) {
@@ -468,7 +481,10 @@ export class AutoTaggingSession {
         for (const id of cedbIds) {
           const kind = OWN_DATABASE_KIND_BY_PACK_ID[id];
           if (!kind) continue;
-          extraCandidates.push({ groupLabel: id, candidates: candidatesFromEntityDatabase(cedbDoc, kind, 'CEDB') });
+          extraCandidates.push({
+            groupLabel: id,
+            candidates: candidatesFromEntityDatabase(cedbDoc, kind, 'CEDB', nameTypePolicy),
+          });
         }
       }
     }
@@ -476,6 +492,7 @@ export class AutoTaggingSession {
     const authorityResult = await runAuthorityTagBombOnDocument(doc, packIds, readPackFile, this.policy, {
       dateFilter: options.dateFilter,
       extraCandidates,
+      nameTypePolicy,
       onProgress: (message) => {
         options.onProgress?.(message);
         void yieldToUi();
@@ -517,6 +534,82 @@ export class AutoTaggingSession {
       loaded,
       truncated,
     };
+  }
+
+  /**
+   * Phase-2 short-form pass: seed from keyed people in the active document,
+   * match their phase-2 typed names (min length 1), always send hits to review.
+   */
+  async runShortFormTag(options?: { startFromFirstAppearance?: boolean }): Promise<{
+    suggestions: Suggestion[];
+    keyedEntityCount: number;
+    stringCount: number;
+    notice?: string;
+  }> {
+    if (!this.store) {
+      throw new Error('Entity database is not configured.');
+    }
+
+    const doc = await this.getDocument();
+    const floors = keyedPersNameFloors(doc, this.policy);
+    const keyedEntityCount = floors.size;
+
+    if (keyedEntityCount === 0) {
+      return {
+        suggestions: [],
+        keyedEntityCount: 0,
+        stringCount: 0,
+        notice:
+          'No keyed person names in this document. Tag and link people first (tag bomb or manual), then run short-form tagging.',
+      };
+    }
+
+    const entitiesDoc = await this.store.loadEntities();
+    const entitiesById = new Map(
+      listEntities(entitiesDoc)
+        .filter((entity) => entity.kind === 'person' && floors.has(entity.id))
+        .map((entity) => [entity.id, entity] as const),
+    );
+
+    const sourceLang = await this.projectLanguage();
+    const nameTypePolicy = nameTypeTaggingPolicyFromSettings(
+      readPersistedAuthoritySettings(),
+      sourceLang,
+    );
+
+    let stringCount = 0;
+    for (const entityId of floors.keys()) {
+      const entity = entitiesById.get(entityId);
+      if (entity) stringCount += phase2StringsForEntity(entity, nameTypePolicy).length;
+    }
+
+    if (stringCount === 0) {
+      return {
+        suggestions: [],
+        keyedEntityCount,
+        stringCount: 0,
+        notice:
+          'The keyed people in this document have no phase-2 name strings in your entity database (courtesy / given names, short 號, etc.). Add typed names on those entities or run authority backfill when available.',
+      };
+    }
+
+    const suggestions = shortFormTag(doc, entitiesById, floors, {
+      policy: nameTypePolicy,
+      whitespacePolicy: this.policy,
+      startFromFirstAppearance: options?.startFromFirstAppearance,
+    });
+
+    if (suggestions.length === 0) {
+      return {
+        suggestions: [],
+        keyedEntityCount,
+        stringCount,
+        notice:
+          'No untagged short-form matches in this document (or every match falls before the first keyed appearance when that option is on).',
+      };
+    }
+
+    return { suggestions, keyedEntityCount, stringCount };
   }
 
   private specOrigin(id: AuthorityPackId): ReturnType<typeof authorityPackOrigin> | undefined {

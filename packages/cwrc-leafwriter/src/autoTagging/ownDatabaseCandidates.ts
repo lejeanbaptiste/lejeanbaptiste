@@ -1,5 +1,10 @@
 import type { AuthorityCandidate } from './authority';
 import { ENTITY_KINDS, parseIsoYear, type EntityKind } from './entities';
+import {
+  phase1SearchStringsFromCandidate,
+  resolveNameTypeTaggingPolicy,
+  type NameTypeTaggingPolicy,
+} from './nameTypeTaggingPolicy';
 
 /** Parse the `<note type="dates">start/end</note>` written by `addEntity` for non-person kinds. */
 function datesFromNote(note: string | null | undefined): { startYear?: number; endYear?: number } {
@@ -26,7 +31,9 @@ export function candidatesFromEntityDatabase(
   doc: Document,
   kind: EntityKind,
   source: 'PEDB' | 'CEDB',
+  policy?: NameTypeTaggingPolicy,
 ): AuthorityCandidate[] {
+  const namePolicy = policy ?? resolveNameTypeTaggingPolicy(undefined, null);
   const { item, name: nameTag } = ENTITY_KINDS[kind];
   const candidates: AuthorityCandidate[] = [];
 
@@ -37,12 +44,21 @@ export function candidatesFromEntityDatabase(
     if (!id) continue;
 
     const searchStrings: string[] = [];
+    const names: { text: string; type?: string }[] = [];
     const nameEls = el.getElementsByTagName(nameTag);
     for (let j = 0; j < nameEls.length; j++) {
-      const text = nameEls.item(j)?.textContent?.trim();
-      if (text && !searchStrings.includes(text)) searchStrings.push(text);
+      const nameEl = nameEls.item(j);
+      const text = nameEl?.textContent?.trim();
+      if (!text) continue;
+      const type = nameEl?.getAttribute('type') ?? undefined;
+      names.push(type ? { text, type } : { text });
+      if (!searchStrings.includes(text)) searchStrings.push(text);
     }
-    if (searchStrings.length === 0) continue;
+    const filteredSearchStrings = phase1SearchStringsFromCandidate(
+      { searchStrings, names },
+      namePolicy,
+    );
+    if (filteredSearchStrings.length === 0) continue;
 
     let description: string | undefined;
     let dates: { startYear?: number; endYear?: number } = {};
@@ -75,8 +91,9 @@ export function candidatesFromEntityDatabase(
       source,
       authorityId: id,
       kind,
-      primaryName: searchStrings[0]!,
-      searchStrings,
+      primaryName: filteredSearchStrings[0]!,
+      searchStrings: filteredSearchStrings,
+      ...(kind === 'person' && names.length > 0 ? { names } : {}),
       ...(Object.keys(metadata).length > 0 ? { metadata } : {}),
     });
   }

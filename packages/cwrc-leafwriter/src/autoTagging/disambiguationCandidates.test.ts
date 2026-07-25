@@ -329,6 +329,14 @@ describe('disambiguationCandidates', () => {
         mergeSelectedCandidates(latinFirst, { preferNonLatinLabel: true })?.label,
       ).toBe('張衡');
     });
+
+    it('preserves geo from whichever row carries it', () => {
+      const withGeo: DisambiguationCandidate[] = [
+        { id: 'dila', label: '竟陵', sources: ['DILA'] },
+        { id: 'chgis', label: '竟陵', sources: ['CHGIS'], geo: { lat: 30.65, lon: 113.15 } },
+      ];
+      expect(mergeSelectedCandidates(withGeo)?.geo).toEqual({ lat: 30.65, lon: 113.15 });
+    });
   });
 
   describe('enrichCandidateNames', () => {
@@ -711,6 +719,39 @@ describe('disambiguationCandidates', () => {
     const chgisRow = rows.find((row) => row.sources.includes('CHGIS'));
     expect(chgisRow?.startYear).toBe(618);
     expect(chgisRow?.endYear).toBe(907);
+  });
+
+  it('threads metadata.geo from a place pack row onto the DisambiguationCandidate', async () => {
+    mockReconcile.mockResolvedValue([]);
+    const chgisPlacesPack = [
+      JSON.stringify({
+        source: 'CHGIS',
+        authorityId: 'CH-002',
+        kind: 'place',
+        primaryName: '竟陵',
+        searchStrings: ['竟陵'],
+        metadata: { geo: { lat: 30.65, lon: 113.15 }, description: 'CHGIS 竟陵' },
+      }),
+    ].join('\n');
+    const readPackFile = jest.fn(async (packId: string) => {
+      if (packId === 'chgis-places') return chgisPlacesPack;
+      throw new Error(`not installed: ${packId}`);
+    });
+    const doc = parseEntities(createEntitiesScaffold());
+    const cache = new AuthorityCache(null, null);
+
+    const rows = await buildDisambiguationCandidates(
+      doc,
+      'placeName',
+      '竟陵',
+      cache,
+      ['Wikidata', 'VIAF'],
+      false,
+      readPackFile,
+    );
+
+    const chgisRow = rows.find((row) => row.sources.includes('CHGIS'));
+    expect(chgisRow?.geo).toEqual({ lat: 30.65, lon: 113.15 });
   });
 
   it('does not leak one DILA place record\'s dates onto another record sharing the same name', async () => {

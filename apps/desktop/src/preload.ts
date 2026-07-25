@@ -185,6 +185,10 @@ export interface ElectronAPI {
   getAppVersion: () => Promise<string>;
   getEncoderName: () => Promise<string>;
   setEncoderName: (name: string) => Promise<void>;
+  setTranslationSpellcheck: (options: {
+    enabled: boolean;
+    languageCodes?: string[];
+  }) => Promise<void>;
   readAchievementsFile: () => Promise<string | null>;
   writeAchievementsFile: (content: string) => Promise<void>;
   readSourceProfiles: () => Promise<import('../../commons/src/desktop/sourceProfileTypes').SourceProfileFile>;
@@ -429,6 +433,8 @@ const electronAPI: ElectronAPI = {
   getAppVersion: () => ipcRenderer.invoke('getAppVersion'),
   getEncoderName: () => ipcRenderer.invoke('getEncoderName'),
   setEncoderName: (name: string) => ipcRenderer.invoke('setEncoderName', name),
+  setTranslationSpellcheck: (options: { enabled: boolean; languageCodes?: string[] }) =>
+    ipcRenderer.invoke('setTranslationSpellcheck', options),
   readAchievementsFile: () => ipcRenderer.invoke('readAchievementsFile'),
   writeAchievementsFile: (content: string) => ipcRenderer.invoke('writeAchievementsFile', content),
   readSourceProfiles: () => ipcRenderer.invoke('readSourceProfiles'),

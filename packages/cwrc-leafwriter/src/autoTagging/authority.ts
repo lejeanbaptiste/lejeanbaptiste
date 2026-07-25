@@ -51,6 +51,10 @@ export interface AuthorityCandidate {
     translation?: string;
     /** DILA `note type="disambiguation"` — not the same person as… */
     disambiguation?: string;
+    /** WGS84 coordinates, when the source authority carries them (CHGIS, CBDB). */
+    geo?: { lat: number; lon: number };
+    /** Source shapefile/table layer, e.g. CHGIS's county vs. prefecture point layer. */
+    layer?: string;
   };
 }
 

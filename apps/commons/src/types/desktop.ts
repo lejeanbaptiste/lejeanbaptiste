@@ -244,6 +244,11 @@ export interface ElectronAPI {
   getAppVersion?: () => Promise<string>;
   getEncoderName: () => Promise<string>;
   setEncoderName: (name: string) => Promise<void>;
+  /** Enable Chromium spellcheck for the translation pane and set dictionary languages. */
+  setTranslationSpellcheck?: (options: {
+    enabled: boolean;
+    languageCodes?: string[];
+  }) => Promise<void>;
   readAchievementsFile?: () => Promise<string | null>;
   writeAchievementsFile?: (content: string) => Promise<void>;
   readSourceProfiles?: () => Promise<import('../desktop/sourceProfileTypes').SourceProfileFile>;

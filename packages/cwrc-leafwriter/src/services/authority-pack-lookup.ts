@@ -28,6 +28,8 @@ export interface PackRow {
     pinyin?: string;
     yomi?: string;
     translation?: string;
+    /** WGS84 coordinates, when the source authority carries them (CHGIS, CBDB places). */
+    geo?: { lat: number; lon: number };
   };
 }
 

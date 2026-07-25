@@ -79,10 +79,10 @@ Then, from the repo root:
 npm run build:desktop:linux
 ```
 
-The `.deb` lands in `apps/desktop/release/` (e.g. `le-jean-baptiste-desktop_0.0.1_arm64.deb`). Install it with:
+The `.deb` lands in `apps/desktop/release/` (e.g. `Le-Jean-Baptiste-linux-0.0.1-arm64.deb`). Install it with:
 
 ```bash
-sudo apt install ./apps/desktop/release/le-jean-baptiste-desktop_*.deb
+sudo apt install ./apps/desktop/release/Le-Jean-Baptiste-linux-*.deb
 ```
 
 For GitHub-hosted updates, the release workflow publishes a signed APT repo

@@ -73,6 +73,8 @@ export interface DisambiguationCandidate {
   romanizedName?: string;
   /** Typed names from the authority (courtesy/posthumous/…), ingested into entities.xml on linking. */
   typedNames?: TypedName[];
+  /** WGS84 coordinates, when the source authority carries them (CHGIS, CBDB places). */
+  geo?: { lat: number; lon: number };
 }
 
 export interface TypedName {
@@ -349,6 +351,7 @@ export function mergeSelectedCandidates(
     startYear: startYears.length ? Math.min(...startYears) : undefined,
     endYear: endYears.length ? Math.max(...endYears) : undefined,
     dynasty: candidates.find((c) => c.dynasty)?.dynasty,
+    geo: candidates.find((c) => c.geo)?.geo,
   };
 }
 
@@ -481,6 +484,7 @@ function mergeIntoExisting(
   if (candidate.authorityIds) {
     existing.authorityIds = [...(existing.authorityIds ?? []), ...candidate.authorityIds];
   }
+  existing.geo ??= candidate.geo;
 }
 
 export function mergeCandidates(
@@ -695,6 +699,7 @@ async function candidatesFromAuthorityPacks(
             romanizeFromAuthorityMetadata(row?.metadata, row?.primaryName ?? match.label, projectLang) ??
             undefined,
           typedNames: typedNamesFromPackRow(row?.names),
+          geo: row?.metadata?.geo,
         });
       }
     } catch {

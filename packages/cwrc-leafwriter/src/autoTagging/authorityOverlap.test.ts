@@ -146,4 +146,64 @@ describe('authorityOverlap', () => {
     expect(merged[0].source).toBe('CHGIS+DILA');
     expect(merged[0].searchStrings.sort()).toEqual(['襄沔', '襄陽']);
   });
+
+  describe('geo-aware place merging (placename-geo-disambiguation)', () => {
+    function jingling(source: string, authorityId: string, geo?: { lat: number; lon: number }) {
+      const candidate: AuthorityCandidate = {
+        source,
+        authorityId,
+        kind: 'place',
+        primaryName: '竟陵',
+        searchStrings: ['竟陵'],
+        metadata: { description: `${source} 竟陵`, geo },
+      };
+      return candidate;
+    }
+
+    it('merges same-named places within the proximity threshold', () => {
+      const cbdb = jingling('CBDB', 'c1', { lat: 30.65, lon: 113.15 });
+      const chgis = jingling('CHGIS', 'ch1', { lat: 30.652, lon: 113.152 }); // ~0.3km away
+      const merged = collapseLinkedCandidates([cbdb, chgis], 5);
+      expect(merged).toHaveLength(1);
+      expect(merged[0].source).toBe('CBDB+CHGIS');
+    });
+
+    it('does NOT merge same-named places beyond the proximity threshold — the core fix', () => {
+      const cbdb = jingling('CBDB', 'c1', { lat: 30.65, lon: 113.15 }); // Hubei
+      const chgis = jingling('CHGIS', 'ch1', { lat: 39.9, lon: 116.4 }); // Beijing, ~1000km away
+      const merged = collapseLinkedCandidates([cbdb, chgis], 5);
+      expect(merged).toHaveLength(2);
+      expect(merged.map((c) => c.source).sort()).toEqual(['CBDB', 'CHGIS']);
+    });
+
+    it('falls back to name-only merge when either side has no geo', () => {
+      const cbdb = jingling('CBDB', 'c1', { lat: 30.65, lon: 113.15 });
+      const dila = jingling('DILA', 'd1', undefined);
+      const merged = collapseLinkedCandidates([cbdb, dila], 5);
+      expect(merged).toHaveLength(1);
+      expect(merged[0].source).toBe('CBDB+DILA');
+    });
+
+    it('respects a custom proximityKm (wider radius merges what a tighter one would split)', () => {
+      // ~800km apart — beyond a 5km default, within an intentionally wide 1000km test radius.
+      const cbdb = jingling('CBDB', 'c1', { lat: 30.65, lon: 113.15 });
+      const chgis = jingling('CHGIS', 'ch1', { lat: 37.5, lon: 114.5 });
+      expect(collapseLinkedCandidates([cbdb, chgis], 5)).toHaveLength(2);
+      expect(collapseLinkedCandidates([cbdb, chgis], 1000)).toHaveLength(1);
+    });
+
+    it('crosswalk ids still win over geography (never overridden by distance)', () => {
+      const cbdb = jingling('CBDB', 'c1', { lat: 30.65, lon: 113.15 });
+      const chgis: AuthorityCandidate = {
+        source: 'CHGIS',
+        authorityId: 'ch1',
+        kind: 'place',
+        primaryName: '竟陵',
+        searchStrings: ['竟陵'],
+        metadata: { geo: { lat: 39.9, lon: 116.4 }, crosswalk: { cbdb: 'c1' } },
+      };
+      const merged = collapseLinkedCandidates([cbdb, chgis], 5);
+      expect(merged).toHaveLength(1);
+    });
+  });
 });

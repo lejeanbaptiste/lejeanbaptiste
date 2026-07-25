@@ -54,11 +54,238 @@ In the entity-lookup dialog (`packages/cwrc-leafwriter/src/dialogs/entity-lookup
 
 ## Phasing
 
-- **Phase 1 — Coordinates in packs.** Extend CBDB/DILA/CHGIS pack compilation to carry `metadata.geo`. Acceptance: a compiled pack's place rows for a known ambiguous name (e.g. 臨川) show two distinct coordinate pairs when they are, in fact, two different places.
-- **Phase 2 — Distance + clustering utility.** Pure `packages/cwrc-leafwriter/src/autoTagging/geoCluster.ts`: haversine + greedy clustering, unit-testable without any UI. Acceptance: synthetic fixture with 3 authorities × 2 real clusters resolves correctly at a given threshold.
-- **Phase 3 — Settings + wiring into crosswalk conflict path.** `placeProximityKm` in project prefs; `planLookupResolution`'s `conflict` branch (and the auto-tagging suggestion filter) groups candidates by cluster before presenting them.
-- **Phase 4 — Merged period display.** Source-tagged period strings surfaced in the disambiguation UI and used as fallback description text on mint/link.
-- **Deferred:** per-admin-level (or per-place-type) adaptive radius instead of one global number; historical relocation modeling (a place whose *point* itself changes over time, which geo-clustering alone can't distinguish from "renamed and never moved").
+Dependencies: Admin vocabulary (Phase A) → Coordinate source data fixes (Phase 0) → Pack compilation (Phase 1) → Clustering/UI (Phases 2–4) → Persisted entities (Phase 5).
+
+### Phase A — Admin-vocabulary mapping table
+
+**Scope:** build a single controlled vocabulary for administrative levels across CHGIS, CBDB, and external authorities (Wikidata, others). This table drives two outputs:
+1. **Normalized admin-level codes** (for display, single-admin constraint on clusters, cross-source unification)
+2. **Suffix-character mapping** (for name-variant generation: Xian → 縣, Zhou → 州, Fu → 府, etc.)
+
+**Inputs:**
+- CHGIS `TYPE_CH` (Chinese single-character codes: 州, 縣, 郡, 道, etc.) — all ~20 distinct values across v6 layers.
+- CBDB `c_admin_type` (romanized English: 239 raw values, real count ~200 after case-dedup) — includes Xian, Zhou, Prefecture, Pu, Jiedu, Du, Fu, Wei, Shi, County, Fengjun, Dao, Lu, etc.
+- Wikidata/external authorities: equivalence links, alt names, hierarchy info if available.
+
+**Outputs:** a TSV or structured file mapping `{chgis_type, cbdb_admin_type, wikidata_qid?, normalized_code, suffix_char}` with one row per known distinct level. Sample rows:
+```
+州      Zhou        Q[...]    prefecture  州
+縣      Xian        Q[...]    county      縣
+郡      Jun/Fengjun Q[...]    commandery  郡
+```
+
+**Acceptance:** all CBDB `c_admin_type` raw values can be mapped to exactly one normalized code and suffix character; mappings cross-checked against Wikidata where available.
+
+**Note:** this is independent research + mapping work, not code changes; unblocks Phase 0.
+
+**Status (2026-07-25): first-pass concordance built.** `/authority extraction/admin_type_concordance.tsv` maps all distinct CBDB `c_admin_type` values against CHGIS `TYPE_CH`/`TYPE_PY`, with columns `cbdb_admin_type, chgis_type_ch, chgis_type_py, cbdb_count, chgis_count, confidence, suffix_char, notes`.
+
+- 10 high-confidence 1:1 pairs (Xian↔縣, Zhou↔州, Fu↔府, Wei↔衛, Lu↔路, Ting↔廳, Zhangguansi↔長官司, Qianhusuo↔千戶所), case variants (Xian/xian etc.) listed as separate rows.
+- Ambiguous cases resolved to a primary mapping: Jun→郡 (commandery, over the rarer 軍 military-district reading), Fengjun→郡, State→國, Shi→市, Du left low-confidence (CHGIS fragments it into rare compounds).
+- ~23% of CBDB terms (Shi, Pu, Qi, Diqu, Shixiaqu, military/Qing-era compounds, modern autonomous-region terms) have no CHGIS equivalent — kept as rows with blank CHGIS columns and an inferred `suffix_char` so Phase 0c can still generate name variants for them.
+- **Not yet done:** Wikidata QID cross-referencing (column reserved, not populated) and hierarchy validation. Sufficient as-is to unblock Phase 0 (CBDB coordinate/suffix work); Wikidata linkage can be layered in later without reshaping the table.
+
+### Wikidata as a fourth authority — current state (2026-07-25, verified in code)
+
+There's an existing, working Wikidata extraction pipeline at `/authority extraction/wikidata/` (`sparqlClient.mjs`, `entityParse.mjs`, `compile.mjs`, `compileKind.mjs`), following the same dump-extract → compiled-NDJSON-pack pattern as CBDB/CHGIS. Two things confirmed by direct inspection, correcting an earlier assumption:
+
+- **No Chinese place pack exists.** `packs/wikidata/` has `person-zh-hant-{tang,song,yuan,ming,qing,pre-ming}`, `org-zh-hant`, `work-zh-hant` — but no `place-zh-hant`. The only compiled place pack is `place-bo` (Tibetan, 472 records). The raw zh-hant extracts (`raw-zh-hant-priority1/persons.raw.ndjson`, `raw-zh-hant-pre-ming/persons.raw.ndjson`) contain persons only — no place raw file was ever extracted for zh-hant. **The Chinese tag pack does not currently include any Wikidata place names.**
+- **No crosswalk ids reach compiled place packs, even where a place pack exists.** `identifierProperties.json` and `identifierClaims.mjs` map Wikidata external-id properties (P497 → CBDB id, P4711 → CHGIS id, plus DILA/VIAF/BDRC) into `metadata.crosswalk` — but that machinery is wired only into the *person* compile path (`compile.mjs`). The place/org/work compile path (`compileKind.mjs:19-45`, `kindCandidateFromRaw`) builds `metadata` from only `description`/`startYear`/`endYear` and never touches identifier claims. Confirmed empty in the one real sample: `place-bo/places.ndjson` records carry no `crosswalk` field at all.
+
+**Decision (this session):** coordinates will not be extracted from Wikidata into the compiled pack — they'll be pulled live from the Wikidata API at disambiguation time instead, so Wikidata place-pack compilation does not need P625 handling. What's still needed to make Wikidata a usable fourth place-tagging source:
+1. Extract zh-hant place raw data (currently missing entirely).
+2. Compile it via the existing `place` kind path (`compileWikidataKindPack`).
+3. ~~Wire crosswalk-id extraction into the place/org/work compile path~~ — **done, see below.**
+
+#### Crosswalk wiring — implemented (2026-07-25)
+
+Investigation found the gap was broader than just places: `compiledCrosswalkFromRaw()` (in `identifierClaims.mjs`, converts `raw.crosswalk` → `metadata.crosswalk`) was fully implemented and unit-tested but **never called from either compile path** — not `compile.mjs` (persons) nor `compileKind.mjs` (place/org/work). Raw extraction always captured crosswalk ids correctly (`P497`→cbdb, `P4711`→chgis, etc., per `identifierProperties.json`); they were silently dropped at compile time for every kind, not just places.
+
+Fixed in `authority extraction/wikidata/{compile.mjs,compileKind.mjs,identifierClaims.mjs}`:
+- Both compile paths now call `compiledCrosswalkFromRaw()` and attach the result to `metadata.crosswalk`.
+- Added a **disable-a-posteriori mechanism**, per your requirement: `compiledCrosswalkFromRaw(raw, { disableKeys: [...] })` drops named crosswalk keys (e.g. `chgis`) at compile time. This is a **recompile-time filter, not a re-extraction** — raw NDJSON always retains every crosswalk id captured during the (expensive, multi-hour) dump scan, so disabling or re-enabling a specific crosswalk source is just a cheap recompile with/without `--disable-crosswalk key1,key2`, never a re-scan of the dump.
+- `compileKind.mjs` CLI takes `--disable-crosswalk key1,key2`; the choice is recorded in the pack's `manifest.json` as `disabledCrosswalkKeys` for traceability.
+- Test coverage: `wikidata/compileKind.test.mjs` (new), `wikidata/identifierClaims.test.mjs`, `wikidata/extract.test.mjs` (updated — previously asserted the bug's behavior, i.e. `crosswalk === undefined`, now asserts the fix). Full `wikidata/*.test.mjs` suite passes (43/43).
+- **Not yet threaded through:** `compile.mjs`'s CLI and the dynasty/pre-ming/country pack-builder functions don't expose `disableCrosswalkKeys` as a flag yet (only `compileKind.mjs`'s CLI does) — low priority, add when a person pack actually needs it.
+
+#### Still blocked: actual zh-hant place extraction
+
+Extracting real Chinese place data requires re-scanning the full Wikidata dump (~90–100 GB compressed, several hours per scan). The dump file is **not currently on disk** on this machine (previously used for the person extracts, then removed) — re-downloading and re-scanning is a real time/disk/CPU cost. **To be run on another machine** — full instructions below.
+
+##### Instructions: extracting the zh-hant place pack
+
+Run from `/authority extraction`:
+
+**1. Download the dump** (skip if you already have it from a prior extraction):
+```bash
+# ~90-100 GB compressed. Save wherever you have space, e.g. ~/Downloads/latest-all.json.bz2
+curl -o ~/Downloads/latest-all.json.bz2 https://dumps.wikimedia.org/wikidatawiki/entities/latest-all.json.bz2
+```
+Verify the file is complete (should be ~90-100 GB) before proceeding — a truncated download will silently produce a partial pack.
+
+**2. Extract zh-hant places from the dump** (single pass, several hours, high CPU, modest RAM — streams + checkpoints):
+```bash
+npm run wikidata:extract -- \
+  --kinds place \
+  --membership label-only \
+  --language zh-hant \
+  --out packs/wikidata/raw-zh-hant-place \
+  --dump ~/Downloads/latest-all.json.bz2 \
+  --progress 500000
+```
+If interrupted, resume with `--resume` appended (re-reads from the start but skips already-scanned entities — decompression time only, matched rows are kept):
+```bash
+npm run wikidata:extract -- \
+  --kinds place --membership label-only --language zh-hant \
+  --out packs/wikidata/raw-zh-hant-place \
+  --dump ~/Downloads/latest-all.json.bz2 \
+  --progress 500000 --resume
+```
+
+**3. Compile the pack** (fast — seconds to minutes, no dump needed, safe to rerun):
+```bash
+node wikidata/compileKind.mjs \
+  --raw packs/wikidata/raw-zh-hant-place/places.raw.ndjson \
+  --kind place \
+  --language zh-hant \
+  --out packs/wikidata/place-zh-hant
+```
+This now automatically attaches `metadata.crosswalk` (cbdb/chgis/dila/viaf/wikidata ids) per the fix above. To exclude a specific crosswalk source (e.g. if CHGIS ids prove unreliable and you want them out without re-extracting), add:
+```bash
+  --disable-crosswalk chgis
+```
+Recompiling with or without `--disable-crosswalk` only touches step 3 (seconds) — step 1–2 (the expensive dump download/scan) never need to be repeated to change this.
+
+**4. Verify:**
+```bash
+wc -l packs/wikidata/place-zh-hant/places.ndjson
+head -3 packs/wikidata/place-zh-hant/places.ndjson
+cat packs/wikidata/place-zh-hant/manifest.json
+```
+Expect a nonzero `disabledCrosswalkKeys` entry in the manifest only if you passed `--disable-crosswalk`; otherwise `[]`.
+
+### Phase 0 — Coordinate source data fixes
+
+Fix the two CHGIS/CBDB coordinate issues before compilation. Both needed for valid Phase 1 pack output.
+
+**0a. CHGIS county-layer CRS reprojection — implemented (2026-07-25)**
+- **Problem:** county points (`v6_time_cnty_pts_utf`, 10,520 records) are in Xian_1980_Gauss_Kruger_zone_19 (projected CRS, meter-scale coordinates like `{lat: 4319886.6, lon: 19506884.1}`), but `pointLatLon()` read them raw without reprojection, mislabeling them as WGS84. Prefecture points (`v6_time_pref_pts_utf_wgs84`, 5,226 records) are already WGS84 and correct.
+- **Fix, as built:** added `proj4` dependency (`authority extraction/package.json`). New module `chgis/crs.mjs` holds a `LAYER_CRS` registry keyed by shapefile basename — currently only `v6_time_cnty_pts_utf` maps to the Gauss-Krüger proj4 string; any other layer (including the prefecture layer) passes through unchanged. `chgis/parseShapefile.mjs`'s `iterateShapefileRows()` now derives the layer name from the `.shp` path, reprojects only when `layerNeedsReprojection()` says so, and validates the result with `isValidWgs84()` before attaching `row.lat`/`row.lon` — out-of-bounds points are dropped (not silently kept) and logged with a count via `console.warn`, rather than crashing or shipping bad coordinates. `placeFromChgisRow` (`compileRecords.mjs`) needed no changes — it already only reads pre-extracted `row.lat`/`row.lon`.
+- **Verified:** `chgis/crs.test.mjs` (new) reprojects the exact bad sample value from the audit (`{lat: 4319886.6, lon: 19506884.1}`) and confirms it now lands in valid China bounds (lon 73–135°E, lat 18–53°N). Full `chgis/*.test.mjs` suite passes (11 pass, 1 skipped — the real-shapefile integration test, which requires the actual `.shp` files that aren't on this machine).
+- **Not yet verified against real data.** The `.shp`/`.prj` files live only on the machine where CHGIS gets downloaded/compiled (per the existing README workflow, `~/Downloads/chgis_layers/` → `npm run compile:chgis`) — **you'll need to recompile CHGIS yourself and confirm the county layer's coordinates land correctly**. Step-by-step smoke test: `authority extraction/chgis/SMOKE_TEST.md` (compile-log warning check, bulk bounds check script, `PRES_LOC` spot-checks, cross-check against the already-correct prefecture layer). If it's still wrong, the Gauss-Krüger proj4 string in `crs.mjs` is the first thing to re-check against the real `.prj` sidecar.
+- **Note:** Xian 1980 datum transformation is approximate (`+towgs84=0,0,0`, no real datum-shift parameters known/published), adequate for county-level clustering at ~5 km threshold, not survey-grade.
+
+**0b. CBDB coordinate extraction — implemented (2026-07-25)**
+- **Problem:** `ADDR_CODES` schema carries `x_coord REAL` / `y_coord REAL` / `CHGIS_PT_ID INTEGER`, but `compileCbdbPlaces()` only SELECTed `c_addr_id, c_name_chn, c_alt_names, c_firstyear, c_lastyear, c_admin_type` — coordinates were not extracted. Coverage was 0/30,100 rows.
+- **Fix, as built:** `cbdb/compileRecords.mjs`'s `compileCbdbPlaces()` now selects `a.x_coord, a.y_coord` and sets `metadata.geo = { lat: y_coord, lon: x_coord }`, explicitly excluding the `{0,0}` missing-value sentinel (`!(x_coord === 0 && y_coord === 0)`). No reprojection needed — CBDB coordinates are already WGS84.
+- **Verified against the real `.upstream/cbdb.sqlite3` dump (integration test, not a fixture):** `cbdb/compileRecordsPlaces.test.mjs` confirms 15,000–16,000 of 30,100 rows carry `metadata.geo` (matches the audited ~51.5%), zero `(0,0)` sentinels leak through, and at least one record lands in plausible China bounds with lat/lon in the correct (unswapped) axis order.
+
+**0c. CBDB name-variant generation for admin-suffixed forms — implemented (2026-07-25)**
+- **Problem:** CBDB stores bare place names (竟陵 for a Xian) in `c_name_chn`, and `c_admin_type` separately. Corpus texts often include the suffix (竟陵縣), but string-matching against bare names fails.
+- **Fix, as built:** new module `cbdb/adminVocabulary.mjs` loads `admin_type_concordance.tsv` and exposes `suffixedNameVariant(name, adminType)`. `compileCbdbPlaces()` calls it per row and, when a suffix is known and the name doesn't already carry it, adds the suffixed form (e.g. 竟陵 → 竟陵縣) to `searchStrings` alongside the bare name.
+- **Script bug caught and fixed while implementing this:** the concordance's `suffix_char` column was originally populated in **simplified** Chinese (县, 卫, 厅, 国 — matching CHGIS's `TYPE_CH`, which really is simplified, confirmed by inspecting the compiled pack). But CBDB's `c_name_chn` is **traditional** (confirmed: `賓縣`, `古縣`, `蓋縣` in the real data) — appending a simplified suffix to a traditional name would have produced a string (竟陵县) that can never match traditional-script corpus text. Fixed by re-deriving `suffix_char` in traditional script (縣, 衛, 廳, 國, 區, 門, 莊, etc.) while deliberately leaving `chgis_type_ch` simplified, since that column exists to match CHGIS's own script. Documented inline in the TSV's notes column so the two-script convention doesn't get "fixed" back to being consistent by mistake later.
+- **Verified against real data:** `cbdb/compileRecordsPlaces.test.mjs` confirms a real bare-name Xian record gets its traditional-suffixed variant (e.g. `X` → `X縣`) in `searchStrings`. Unit tests for the suffix-lookup module itself: `cbdb/adminVocabulary.test.mjs`.
+- **Full test suite after 0a–0c:** 75/76 pass across `cbdb/*.test.mjs`, `chgis/*.test.mjs`, `wikidata/*.test.mjs` (the 1 skip is the CHGIS real-shapefile integration test, expected — see Phase 0a).
+
+### Phase 1 — Coordinates in packs
+
+Depends on: Phase 0, Phase A (vocabulary table).
+
+**Scope:** recompile CHGIS and CBDB packs with fixed/extracted coordinates. DILA is out of scope (0.3% coverage).
+
+**Acceptance:** 
+- CHGIS pack: 15,746 records, 100% with `metadata.geo`, all valid WGS84 bounds (after CRS fix).
+- CBDB pack: 30,100 records, ~51.5% with `metadata.geo`, no (0,0) sentinels.
+- For a known ambiguous name (e.g. 竟陵), a merged candidate list shows two distinct coordinate pairs and name variants if they are, in fact, two different places (different c_addr_id + distinct geo clusters).
+
+### Phase 2 — Distance + clustering utility — implemented (2026-07-25)
+
+Depends on: Phase 1.
+
+**Scope:** pure utility function `packages/cwrc-leafwriter/src/autoTagging/geoCluster.ts`: haversine distance, greedy single-link clustering by distance ≤ threshold (configurable, default ~5 km).
+
+**As built:**
+- `haversineDistanceKm(a, b)` — pure great-circle distance, no dependency.
+- `clusterByDistance(points, thresholdKm)` — single-link clustering; a point joins any cluster where it's within threshold of *any* current member (not just the centroid), and can bridge two previously separate clusters into one.
+- `clusterCandidatesByGeo(candidates, thresholdKm)` — the actual entry point for disambiguation code: takes `AuthorityCandidate[]`, splits into geo-bearing candidates (clustered) and `noGeo` (candidates without `metadata.geo`, returned separately rather than dropped — for the "no geo data" fallback labeling per the Phase 3 UI design). Each cluster carries a derived `centroid` for display (never stored).
+- Added `metadata.geo?: { lat, lon }` and `metadata.layer?: string` to the TS `AuthorityCandidate` type (`autoTagging/authority.ts`) — these fields were already flowing through compiled NDJSON packs (Phase 0/1) but weren't declared on the consuming side yet.
+
+**Acceptance — met:** `geoCluster.test.ts` includes the exact fixture this phase specified: 3 authorities (CBDB/CHGIS/Wikidata) × 2 real geo-clusters (two same-named 竟陵 places ~2000 km apart, each authority's hit within a few km of the others) resolves to exactly 2 clusters of 3 members each at a 5 km threshold. Plus: cluster-bridging, centroid computation, and no-geo candidates preserved (not dropped). 7/7 tests pass; typecheck clean; no regressions in `authority`/`packLoader` test suites (60/61 pass, 1 pre-existing unrelated skip).
+
+### Phase 3 — Settings + wiring into crosswalk conflict path
+
+Depends on: Phase 2.
+
+**Scope, as originally written:** add `placeProximityKm` to project prefs (Settings panel, default 5 km, range 0–50). Wire clustering into `planLookupResolution`'s conflict branch: when a name string resolves to multiple project entities or multiple pack rows, group candidates by cluster before presenting them to the user. Separate visual groups for distinct clusters; rows with no coordinates fall back to bare string/crosswalk behavior, labeled "no geo data."
+
+#### Found a more precise wiring point, and fixed the actual bug — implemented (2026-07-25)
+
+Investigation found `planLookupResolution`'s conflict branch operates on **project entities already in `entities.xml`** (`EntityRecord`, no geo — that only exists on raw pack rows, and only lands on entities.xml once Phase 5 is built). The real "same name, different place" collision lives one layer earlier: `shouldMergePlacePackCandidates` (`authorityOverlap.ts`), which decides whether two **raw pack rows** (a CBDB hit and a CHGIS hit, say) get merged into one candidate before ever reaching the disambiguation UI. Its existing fallback rule was: *same primary name across CBDB/DILA/CHGIS → merge*, with **no geo check at all** — this is the exact bug the whole plan set out to fix (e.g. two distinct places both named 臨川 would auto-merge into one candidate today).
+
+**Fixed:**
+- `shouldMergePlacePackCandidates(a, b, proximityKm)` now takes an optional proximity radius. Crosswalk-id matches still win unconditionally (an explicit cross-reference is never overridden by geography). For the name-only fallback: if either candidate lacks `metadata.geo`, behavior is unchanged (name-only merge — the "no geo data" fallback case). If both have geo, they only merge when within `proximityKm` (haversine, via `geoCluster.ts`) — otherwise they now correctly surface as **distinct** candidates.
+- `DEFAULT_PLACE_PROXIMITY_KM = 5` (matches the design default) is exported from `authorityOverlap.ts` and used wherever a caller doesn't have settings context.
+- `collapseLinkedCandidates()` and `mergeCandidateIntoLookupList()` both take an optional `proximityKm` parameter, threaded down to `shouldMergePlacePackCandidates`, defaulting to `DEFAULT_PLACE_PROXIMITY_KM` so every existing call site (including `seed.ts`'s pack-index building) gets the fix automatically without call-site changes.
+- `placeProximityKm` added to `DisambiguationSettings` (`disambiguationSettings.ts`), following the exact existing pattern for `dateFilter`/`yearStart`/`yearEnd`: `placeProximityKmFromSettings()` reads it back clamped to 0–50 km (falls back to the default outside that range or if absent), `persistPlaceProximityKm()` does a read-modify-write persist matching `persistDisambiguationDateFilter`'s shape.
+
+**Tests:** 5 new cases in `authorityOverlap.test.ts` covering: merge within threshold, correct split beyond threshold (the core fix, with a synthetic Hubei/Beijing same-name pair), no-geo fallback, custom-radius behavior, and crosswalk-wins-over-distance. 28/29 relevant tests pass across `authorityOverlap`/`seed`/`disambiguationSettings`/`geoCluster` (1 pre-existing unrelated skip); no regressions in the 92/93 downstream `disambiguationCandidates`/`lookupResolve`/`suggestionFilters`/`apply` suites. Typecheck clean (pre-existing unrelated errors only, in `dialogManager.ts`/`tinymceWrapper.ts`/`monacoEnvironment.ts`).
+
+#### Geo threaded into the interactive disambiguation panel's data path — implemented (2026-07-25)
+
+Investigation found the interactive disambiguation panel (`DisambiguationPanel.tsx`) does **not** go through `authorityOverlap.ts`'s merge at all — it builds one `DisambiguationCandidate` per matched pack row directly in `candidatesFromAuthorityPacks()`, then only merges via crosswalk keys or exact matching birth/death years (`collapseCrossAuthorityCandidates`), never by bare name. So the naive-name-merge bug fixed above only ever affected the auto-tagging seed/tag-bomb pipeline (`seed.ts`) — the interactive panel already showed distant same-named places as separate candidates. Confirmed, not assumed: traced the actual code path end to end.
+
+What *was* missing on this path: `metadata.geo` never reached `DisambiguationCandidate` at all — dropped at the `PackRow`/`DisambiguationCandidate` type boundary. Fixed:
+- Added `geo?: { lat, lon }` to `PackRow['metadata']` (`services/authority-pack-lookup.ts`) and to `DisambiguationCandidate` (`disambiguationCandidates.ts`).
+- `candidatesFromAuthorityPacks()` now copies `row?.metadata?.geo` onto each candidate.
+- `mergeIntoExisting()` and `mergeSelectedCandidates()` (the two merge paths within `disambiguationCandidates.ts`) preserve `geo` from whichever input row carries it, matching the existing pattern for other optional fields.
+- Tests: `buildDisambiguationCandidates` test confirms a CHGIS pack row's `metadata.geo` reaches the final candidate; `mergeSelectedCandidates` test confirms geo survives a merge. 113/114 relevant tests pass across `disambiguationCandidates`/`lookupResolve`/`suggestionFilters`/`authorityOverlap`/`seed`/`geoCluster`/`authority-pack-lookup` (1 pre-existing unrelated skip). Typecheck clean (same 5 pre-existing unrelated errors as before, in files this work never touched).
+
+#### Visible clustering UI in the disambiguation panel — implemented (2026-07-25)
+
+`clusterCandidatesByGeo` (AuthorityCandidate-shaped) turned out not to fit `DisambiguationCandidate` directly — that type carries `geo` at the top level, not under `metadata`. Rather than force one shape onto the other, generalized `geoCluster.ts`: added `clusterByGeoAccessor(items, thresholdKm, getGeo)`, taking an explicit accessor so any shape works; `clusterCandidatesByGeo` is now a thin wrapper of it for the `AuthorityCandidate`/`metadata.geo` case (unchanged API, existing callers/tests untouched).
+
+**Built in `DisambiguationPanel.tsx`:**
+- A proximity-radius `Slider` (0–50 km, matching the design range), shown only when the active group's tag is `placeName`, backed by the new `placeProximityKm` state, reading/writing via `placeProximityKmFromSettings`/`persistPlaceProximityKm` — this is the Settings-panel control that was the other missing piece of Phase 3, placed inline in the disambiguation panel itself (the natural place a user would want to adjust it) rather than in a separate global Settings screen.
+- `placeClusterLabelById`: a memo computing `clusterByGeoAccessor(filteredCandidates, placeProximityKm, c => c.geo)` for place groups, but only producing labels when there are **≥2 real clusters** — a single cluster (nothing ambiguous) or a lone candidate renders no badges at all, so the UI stays quiet except when it's actually surfacing a decision.
+- Each candidate row now shows a small lettered `Chip` (A, B, C…, with a 📍 icon) when it belongs to a real cluster, or a muted outlined "no geo data" chip when it has no coordinates and clustering is active for that group — letters are assigned in cluster-discovery order (stable per render, not a persisted identity).
+
+**Tests:** 2 new `DisambiguationPanel.test.tsx` cases — one renders 3 place candidates (two ~1000km apart, one ungeo'd) and asserts the actual rendered DOM shows letters "A"/"B" and "no geo data" text; the other confirms a single geo-bearing candidate shows **no** badges (nothing to disambiguate). Both assert on real RTL-rendered output, not mocks. 92/93 relevant tests pass across `DisambiguationPanel`/`geoCluster`/`disambiguationCandidates`/`authorityOverlap`/`disambiguationSettings`/`seed`/`authority-pack-lookup` (1 pre-existing unrelated skip). Typecheck clean (same 5 pre-existing unrelated errors).
+
+**Not independently browser-verified.** This panel lives inside the Electron desktop app and needs a loaded project (entities.xml + installed authority packs) to reach this UI state — the available preview tooling only runs `leafwriter-commons`, a different app, so this wasn't visually confirmed in a live browser/Electron session. Verification rests on the RTL component tests, which do render real DOM and assert on real text content, not mocked-away structure.
+
+**Genuinely still not built:**
+- `planLookupResolution`'s conflict branch (project-entity duplicates already in entities.xml) is unaffected by any of this — it stays name/crosswalk-only until Phase 5 puts geo data on entities.xml.
+- Clicking a cluster letter to filter the candidate list to just that cluster (current UI shows all candidates with badges, doesn't yet let the user narrow to one cluster) — a possible follow-on if the letter labels alone prove insufficient in practice.
+
+**Acceptance — met.** Both correctness (Phase 3 core fix) and the originally-scoped UI (proximity control + visible cluster grouping + "no geo data" labeling) are implemented and tested. What was deferred as a separate design task (Phase 6 map-pin comparison view) remains deferred.
+
+### Phase 4 — Merged period display and entity linking
+
+Depends on: Phase 3.
+
+**Scope:** merge-time period display (existing design from §4) now feeds entity linking and minting. When a user links to or mints from a cluster, use the merged period strings as fallback description text (non-destructive enrichment, only if entity has no description yet). Authority source tags preserved in display.
+
+**Acceptance:** linking a corpus mention to a multi-authority cluster creates/updates the project entity with merged period metadata.
+
+### Phase 5 — Persisted cluster entities in entities.xml
+
+Depends on: all prior phases.
+
+**Scope:** implement the cluster entity schema (§"Schema for `<place type="cluster">`" above) in the app's entities.xml handling. Clusters are separate from mention-level `<place>` entities (marked by `type="cluster"` attribute). Implement delinking logic: removing an authority link removes the corresponding `<sourceEntry>` block and all data tagged with that source.
+
+**Acceptance:** users can create/edit cluster entities with coordinates, admin-level, multi-authority associations, and multi-date ranges; unlinking an authority removes only that authority's contributions (tags, dates, etc.) without affecting other sources.
+
+### Phase 6 — Map-pin / OSM comparison view
+
+Depends on: Phase 5.
+
+**Scope:** TBD. Visual comparison of geo-clusters during disambiguation (pin each cluster on a map, user compares to decide if they are distinct places). Inline vs external link, data privacy for desktop app sending place data to map provider, popup content. Deferred pending completion of phases 0–5.
+
+### Deferred to v2
+
+- Per-admin-level (or per-place-type) adaptive radius instead of one global number (Open Question 1).
+- Historical relocation modeling (a place whose geographic point itself changes over time, which geo-clustering alone cannot distinguish from "renamed and never moved").
+- DILA coordinate integration (0.3% coverage, not worth the effort at this time).
 
 ## Open questions
 
@@ -66,3 +293,97 @@ In the entity-lookup dialog (`packages/cwrc-leafwriter/src/dialogs/entity-lookup
 2. **Confidence score vs. hard cutoff.** A hard km cutoff creates edge-of-threshold artifacts (4.9 km groups, 5.1 km doesn't). A distance-decay confidence score is more principled but adds UI complexity (how do you show "80% confident same place"?) — probably not worth it for v1.
 3. **Missing-coordinate fallback rate.** Need to check what fraction of DILA/CBDB place rows actually carry coordinates before promising this covers "most" ambiguous cases — some rows may only have a district-chain reference and no lat/lon at all.
 4. **Does a cluster ever get its own idno-like identity** (a synthetic "this is the same physical spot" id), or does it stay purely a UI grouping recomputed each time? Recomputing is simpler and avoids yet another id space; lean that way unless projects need to store "we decided these are the same place" durably.
+
+
+---
+
+Some thoughts: 
+- There is no harm in building the infrastructure (settings pannel 'group by distance' toggle, which activates a distance field, 0-50 km ?), nor in extracting longitude and latitude from CBDB, DILA, and CHGIS.
+- to be clear, we are not SEARCHING BY LONG AND LAT, or not at this point, but using it to group results from a string search.
+- This is a distinct ontology from `placeName`. It is in fact a _place_ that may have multiple names. It should probably be treated differently, if not by separate tags then by separate items in our database. However, that make the question of what a `placeName` _is_ if not a word pointing to a concrete location... Instead, it is about administrative heirarchy at a given time?
+
+We should probably store BOTH in entities.xml.
+
+In addition to locating and extracting longitude and latitude from all our authorities, online and off, we really need to dig though them to see if we can't create some homogenous way to treat administrative units (e.g., 縣VS郡). I know these are present (in pinyin) in CHGIS, but I'm not sure if it's the case in all... This is more for the 'places as units within administrative geography' entity than 'places as coordinates' entitiy.
+
+This makes sense to me: in disambiguate, we group either as we do now, or we group by name + long&lat and, presumably, extract the 'common coordinates'. To help disambiguation of PLACES, we should really have a link on each candidate cluser in this mode pointing to a map. CHGIS is clever: you search a string, and they produce a map with the different hits. Perhaps we could split into clusters, give each a number or letter, then shove the descriptions into a pin to drop in open street maps or Google (?). It doesn't make sense to do this individually for each identical cluster, because one needs to compare the clusters one to another if they point to four really distinct places... **(Deferred — see Phasing. Do this after the persisted-cluster model, coordinate fixes, and vocabulary unification below are built.)**
+
+---
+
+## Decisions (2026-07-25)
+
+Resolves Open Question 4 (does a cluster get its own identity?) in the opposite direction from the original lean: **clusters are persisted**, not recomputed each time.
+
+### Persisted cluster model
+
+A decided cluster is modeled like a person entity — same shape, different fields:
+
+- **Tag strings**: user-entered plus authority-pulled, deduped. Includes admin-suffixed variants (e.g. both 竟陵 and 竟陵縣) generated at compile time from the admin-type vocabulary — see below. Each tag carries an origin marker (`source` attribute) for delinking.
+- **Coordinates**: exactly one `{lat, lon}` pair. Not a set to merge/average — the user (or the clustering step) picks the point that represents the decided place. Carries an origin marker.
+- **Administrative level**: exactly one. The user cannot mix admin levels across the authority hits folded into a cluster (e.g. a district and a commandery cannot be the same cluster) — this is a hard constraint, not a warning. Carries an origin marker.
+- **Date ranges**: multiple, expressed both in years and in dynasty labels, grouped by authority source (one entry per authority per period). This is the existing "merge-time period display" behavior from §4 above, now stored rather than only displayed. Delinking removes the entire authority's date entries.
+- **Authority associations**: multiple idnos, one per source hit folded into the cluster, stored as `<sourceEntry source="..." authId="...">` wrappers around that authority's date entries.
+- **User notes**: freetext, user-entered only (not imported from authorities — users follow the link if they want authority context). Stamped with who/when.
+- **Audit metadata**: all entities carry `created` / `createdBy` / `modified` / `modifiedBy` (ISO 8601 timestamps, username only).
+- **No duplicate-authority-reference warning.** Multiple clusters may legitimately reference the same authority id (e.g. a broad CHGIS commandery record split across several narrower user-decided clusters). The system does not warn on this — it is expected, not an error condition.
+
+#### Schema for `<place type="cluster">` in entities.xml
+
+```xml
+<place xml:id="cluster_789" type="cluster" 
+       created="2026-07-25T10:00:00Z" createdBy="daniel"
+       modified="2026-07-25T14:30:00Z" modifiedBy="daniel">
+  
+  <!-- user-entered freetext notes (no import from authorities) -->
+  <note source="user" who="daniel" when="2026-07-25T10:30:00Z">
+    Context or interpretation notes here
+  </note>
+  
+  <!-- tag strings: user-entered and authority-sourced, marked by origin -->
+  <placeName source="user">竟陵</placeName>
+  <placeName source="cbdb">竟陵縣</placeName>
+  
+  <!-- coordinates with origin marking -->
+  <location source="cbdb">
+    <geo>32.0514 118.778</geo>
+  </location>
+  
+  <!-- administrative level with origin marking -->
+  <note type="adminLevel" source="cbdb">xian</note>
+  
+  <!-- authority associations + date ranges grouped by source
+       When delinking an authority, delete the entire <sourceEntry> block -->
+  <sourceEntry source="cbdb" authId="c_addr_123">
+    <date from="260" to="504">0–260</date>
+    <date from="704">704–</date>
+  </sourceEntry>
+  <sourceEntry source="chgis" authId="sys_456">
+    <date from="1000" to="1400">Song</date>
+  </sourceEntry>
+</place>
+```
+
+This schema applies uniformly to all entity types (`<person>`, `<placeName>` mention-level, etc.): all carry `created`/`createdBy`/`modified`/`modifiedBy` and user notes, and all data sourced from authorities carry an origin marker for delinking.
+
+### Admin-vocabulary unification — scope
+
+Extends beyond the three internal sources: **unify CHGIS (`TYPE_CH`, Chinese single characters), CBDB (`c_admin_type`, romanized English, 239 raw values / <200 real after case-dedup), and external authorities (Wikidata, others) into one controlled admin-level vocabulary.** This mapping table is also the source for the suffix-character lookup used to generate admin-suffixed name variants (e.g. Xian → 縣) at compile time. Not yet built — needs a real mapping pass, not just the two internal sources.
+
+### CHGIS coordinate audit (2026-07-25)
+
+- Two source layers: county points (`v6_time_cnty_pts_utf`, 10,522 raw / 10,520 compiled) and prefecture points (`v6_time_pref_pts_utf_wgs84`, 5,226 raw/compiled).
+- **Prefecture layer is clean**: confirmed WGS84 via `.prj`, zero (0,0) sentinels, zero out-of-bounds values across all 5,226 records.
+- **County layer is 100% wrong, not missing**: every one of the 10,520 records carries a `metadata.geo` value (so naive coverage checks read as "100%"), but all of them are raw Xian_1980_Gauss_Kruger_zone_19 easting/northing values mislabeled as WGS84 lat/lon (e.g. `{lat: 4319886.6, lon: 19506884.1}`). This is **66.8% of the compiled CHGIS pack (10,520/15,746 records)** silently wrong until the reprojection fix (see Phase 1 below) lands.
+- No precision/certainty field exists in the shapefile DBF schema (23 fields checked); `GEO_SRC` is a provenance code (`FROM_FD`/`FROM_AC`), not a confidence flag — can't be used to auto-flag approximate points.
+
+### CBDB coordinate audit (2026-07-25)
+
+- `ADDR_CODES.x_coord`/`y_coord` are NOT currently extracted by `compileCbdbPlaces` (`cbdb/compileRecords.mjs:96-101`) — this is the gap to close, not a bug to fix. Values are already plain WGS84 (confirmed via 20-row sample, all plausible China/Manchuria coordinates), no reprojection needed. Note the axis naming: `x_coord` = longitude, `y_coord` = latitude.
+- Coverage: 15,487 / 30,100 rows (~51.5%) have usable coordinates after excluding the `0.0/0.0` sentinel (316 rows) used for missing values.
+- `CHGIS_PT_ID` crosswalk (`chgis/cbdbCrosswalk.mjs`) covers fewer rows (10,996) than direct `x_coord`/`y_coord` — useful as a fallback/cross-check, not a primary source.
+
+### DILA — out of scope
+
+Only 329/117k DILA place records carry coordinates (0.3%) — effectively unusable for clustering. DILA is dropped from the geo-disambiguation plan; CHGIS + CBDB are the two coordinate sources going forward. (DILA's admin-vocabulary field, `<note type="category">` free text, is likewise not part of the vocabulary-unification pass.)
+
+

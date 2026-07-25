@@ -67,6 +67,32 @@ function createGroup(): MentionGroup {
   };
 }
 
+function createPlaceGroup(): MentionGroup {
+  const doc = new DOMParser().parseFromString(
+    '<TEI xmlns="http://www.tei-c.org/ns/1.0"><text><body><p><placeName>竟陵</placeName></p></body></text></TEI>',
+    'application/xml',
+  );
+  const element = doc.getElementsByTagName('placeName')[0]!;
+  const textNode = element.firstChild as Text;
+  const anchor = createAnchor('doc-1', doc, textNode, 0, textNode.data.length, 'ignore');
+  return {
+    tag: 'placeName',
+    surface: '竟陵',
+    fullyResolved: false,
+    instances: [
+      {
+        documentId: 'doc-1',
+        tag: 'placeName',
+        surface: '竟陵',
+        element,
+        anchor,
+        hasKey: false,
+        isUnresolved: true,
+      },
+    ],
+  };
+}
+
 function createSession() {
   const entitiesDoc = new DOMParser().parseFromString(
     '<TEI xmlns="http://www.tei-c.org/ns/1.0"><text><body/></text></TEI>',
@@ -184,5 +210,47 @@ describe('DisambiguationPanel', () => {
     window.dispatchEvent(new Event('ljbCommonsUiChanged'));
 
     expect(await screen.findByText('AI reviewed these candidates and did not pre-select any.')).toBeTruthy();
+  });
+
+  it('labels geographically distinct place candidates with cluster letters, and ungeo\'d ones as "no geo data"', async () => {
+    mockBuildDisambiguationCandidates.mockResolvedValue([
+      { id: 'cbdb:a', label: '竟陵', sources: ['CBDB'], geo: { lat: 30.65, lon: 113.15 } },
+      { id: 'chgis:b', label: '竟陵', sources: ['CHGIS'], geo: { lat: 39.9, lon: 116.4 } }, // ~1000km away
+      { id: 'dila:c', label: '竟陵', sources: ['DILA'] }, // no geo
+    ]);
+    mockRankDisambiguationCandidates.mockResolvedValue({
+      selectedCandidateIds: [],
+      rationales: {},
+      confidences: {},
+      suggestCreateNew: false,
+    });
+
+    render(
+      <DisambiguationPanel session={createSession()} groups={[createPlaceGroup()]} aiCuration={false} />,
+    );
+
+    expect(await screen.findByText('A')).toBeTruthy();
+    expect(await screen.findByText('B')).toBeTruthy();
+    expect(await screen.findByText('no geo data')).toBeTruthy();
+  });
+
+  it('does not show cluster labels for a single place candidate (nothing to disambiguate)', async () => {
+    mockBuildDisambiguationCandidates.mockResolvedValue([
+      { id: 'cbdb:a', label: '竟陵', sources: ['CBDB'], geo: { lat: 30.65, lon: 113.15 } },
+    ]);
+    mockRankDisambiguationCandidates.mockResolvedValue({
+      selectedCandidateIds: [],
+      rationales: {},
+      confidences: {},
+      suggestCreateNew: false,
+    });
+
+    render(
+      <DisambiguationPanel session={createSession()} groups={[createPlaceGroup()]} aiCuration={false} />,
+    );
+
+    await waitFor(() => expect(mockBuildDisambiguationCandidates).toHaveBeenCalled());
+    expect(screen.queryByText('no geo data')).toBeNull();
+    expect(screen.queryByText('A')).toBeNull();
   });
 });

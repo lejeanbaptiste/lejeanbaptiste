@@ -101,12 +101,13 @@ function docSpanAt(
   return null;
 }
 
-/** Deduplicate suggestions by their document location (tag, surface, xpath, offset). */
+/** Deduplicate suggestions by their document location (tag, surface, xpath, offset, entity key). */
 export function dedupeSuggestionsByLocation(suggestions: Suggestion[]): Suggestion[] {
   const seen = new Map<string, Suggestion>();
   for (const suggestion of suggestions) {
     const anchor = suggestion.anchor;
-    const key = `${suggestion.tag}\t${anchor.surface}\t${anchor.xpath}\t${anchor.offset}`;
+    const entityKey = suggestion.attributes?.key ?? '';
+    const key = `${suggestion.tag}\t${anchor.surface}\t${anchor.xpath}\t${anchor.offset}\t${entityKey}`;
     if (!seen.has(key)) seen.set(key, suggestion);
   }
   return [...seen.values()];
@@ -153,23 +154,49 @@ export function filterNestedSameTagAdds(
   // Longer first so the outer span is kept, then the inner is rejected as nested.
   spanned.sort((a, b) => b.length - a.length || a.start - b.start);
 
-  const keptSpans: TaggedSpan[] = existing.map((span) => ({ ...span }));
+  const keptBatchSpans: Array<{ start: number; end: number; tag: string; entityKey?: string }> = [];
   const keptAdds = new Set<Suggestion>();
   let dropped = 0;
 
   for (const row of spanned) {
-    const nested = keptSpans.some(
+    const nestedInDocument = existing.some(
       (t) =>
         entityTagsEquivalent(t.tag, row.suggestion.tag) &&
         row.start >= t.start &&
         row.end <= t.end,
     );
-    if (nested) {
+    if (nestedInDocument) {
       dropped++;
       continue;
     }
+
+    const rowKey = row.suggestion.attributes?.key;
+    const blockedByBatch = keptBatchSpans.some((t) => {
+      if (!entityTagsEquivalent(t.tag, row.suggestion.tag)) return false;
+      if (row.start < t.start || row.end > t.end) return false;
+      if (
+        row.start === t.start &&
+        row.end === t.end &&
+        rowKey &&
+        t.entityKey &&
+        rowKey !== t.entityKey
+      ) {
+        return false;
+      }
+      return true;
+    });
+    if (blockedByBatch) {
+      dropped++;
+      continue;
+    }
+
     keptAdds.add(row.suggestion);
-    keptSpans.push({ start: row.start, end: row.end, tag: row.suggestion.tag });
+    keptBatchSpans.push({
+      start: row.start,
+      end: row.end,
+      tag: row.suggestion.tag,
+      entityKey: rowKey,
+    });
   }
 
   const kept = suggestions.filter((s) => {
