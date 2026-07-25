@@ -33,6 +33,7 @@ export type DialogType =
   | 'selectSchema'
   | 'simple'
   | 'settings'
+  | 'plugins'
   | 'xpathSearch';
 
 export interface SimpleDialogMessageProps {

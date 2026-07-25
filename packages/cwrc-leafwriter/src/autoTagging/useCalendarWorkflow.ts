@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useState } from 'react';
 import { AutoTaggingSession } from './integration';
+import { isCjkDatesEnabled } from '../plugins';
 import {
   autoTaggingDocumentKey,
   inferEastAsianLanguageFromDocument,
@@ -47,7 +48,10 @@ export const useCalendarWorkflow = (): CalendarWorkflowState & { refresh: () => 
         ).catch(() => inferEastAsianLanguageFromDocument(doc));
         const docKey = autoTaggingDocumentKey(window.writer);
         const offered =
-          isDesktopApp() && sanmiaoAvailable() && isEastAsianDatesMethodAvailable(lang);
+          isCjkDatesEnabled() &&
+          isDesktopApp() &&
+          sanmiaoAvailable() &&
+          isEastAsianDatesMethodAvailable(lang);
 
         setState({
           calendarOffered: offered,

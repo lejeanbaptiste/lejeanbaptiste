@@ -9,6 +9,7 @@ import {
   Popup,
   SelectSchemaDialog,
   SettingsDialog,
+  PluginsDialog,
   SimpleDialog,
   XPathSearchDialog,
   type DialogProps,
@@ -73,6 +74,7 @@ export const useDialog = () => {
     if (type === 'editSchema') return EditSchemaDialog;
     if (type === 'editSource') return EditSourceDialog;
     if (type === 'settings') return SettingsDialog;
+    if (type === 'plugins') return PluginsDialog;
     if (type === 'popup') return Popup;
     if (type === 'xpathSearch') return XPathSearchDialog;
     if (type === 'autoTagging') return AutoTaggingDialog;

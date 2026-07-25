@@ -6,6 +6,7 @@ import { execFile, spawn } from 'node:child_process';
 import fs from 'node:fs';
 import path from 'node:path';
 import { promisify } from 'node:util';
+import { isPluginEnabledInMain, resolvePluginPythonBinary } from './plugins/pluginHost';
 
 const execFileAsync = promisify(execFile);
 
@@ -66,8 +67,13 @@ export const resolveSanmiaoRoot = (): string | null => {
   return null;
 };
 
-/** Relocatable CPython (sanmiao preinstalled) staged by download-python-runtime.mjs. */
+/** Relocatable CPython (sanmiao preinstalled) from the cjk-dates plugin or legacy core bundle. */
 const bundledRuntimePython = (): string | null => {
+  if (isPluginEnabledInMain('cjk-dates')) {
+    const pluginPython = resolvePluginPythonBinary('cjk-dates');
+    if (pluginPython) return pluginPython;
+  }
+
   const roots = [
     process.resourcesPath ? path.join(process.resourcesPath, 'python') : null,
     path.resolve(__dirname, '../resources/python'),

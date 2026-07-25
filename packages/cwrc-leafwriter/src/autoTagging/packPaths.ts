@@ -26,6 +26,7 @@ export type AuthorityPackId =
   | 'ndl-places'
   | 'ndl-orgs'
   | 'ndl-works'
+  | 'norbert-persons'
   /** Project entity database (PEDB) — read live from entities.xml, not a file pack. */
   | 'pedb-persons'
   | 'pedb-places'
@@ -61,7 +62,7 @@ const WIKIDATA_PERSON_CHILD_SET = new Set<AuthorityPackId>(WIKIDATA_PERSON_CHILD
 export interface AuthorityPackSpec {
   id: AuthorityPackId;
   label: string;
-  source: 'cbdb' | 'dila' | 'chgis' | 'wikidata' | 'ndl' | 'pedb' | 'cedb' | 'project' | 'list';
+  source: 'cbdb' | 'dila' | 'chgis' | 'wikidata' | 'ndl' | 'norbert' | 'pedb' | 'cedb' | 'project' | 'list';
   relativePath: string;
   defaultTag: string;
   /** When true, {@link expandAuthorityPackIds} loads {@link WIKIDATA_PERSON_CHILD_PACK_IDS}. */
@@ -239,6 +240,13 @@ export const AUTHORITY_PACKS: AuthorityPackSpec[] = [
     defaultTag: 'title',
   },
   {
+    id: 'norbert-persons',
+    label: 'Norbert persons',
+    source: 'norbert',
+    relativePath: 'norbert/persons.ndjson',
+    defaultTag: 'persName',
+  },
+  {
     id: 'pedb-persons',
     label: 'PEDB persons',
     source: 'pedb',
@@ -398,8 +406,22 @@ export interface AuthorityPackStatus {
   entityCount?: number;
 }
 
-export function packPath(baseFolder: string, packId: AuthorityPackId): string {
-  const spec = AUTHORITY_PACKS.find((p) => p.id === packId);
+/** Runtime packs registered by enabled plugins (see plugins/registry.ts). */
+let dynamicAuthorityPackSpecs: AuthorityPackSpec[] = [];
+
+export function setDynamicAuthorityPackSpecs(specs: AuthorityPackSpec[]): void {
+  dynamicAuthorityPackSpecs = specs;
+}
+
+export function getAuthorityPackSpec(packId: AuthorityPackId | string): AuthorityPackSpec | undefined {
+  return (
+    dynamicAuthorityPackSpecs.find((p) => p.id === packId) ??
+    AUTHORITY_PACKS.find((p) => p.id === packId)
+  );
+}
+
+export function packPath(baseFolder: string, packId: AuthorityPackId | string): string {
+  const spec = getAuthorityPackSpec(packId);
   if (!spec) throw new Error(`Unknown pack: ${packId}`);
   if (spec.virtual) {
     throw new Error(`Pack ${packId} is a UI grouping — expand with expandAuthorityPackIds() first`);
@@ -432,6 +454,7 @@ export const UI_AUTHORITY_PACK_IDS: AuthorityPackId[] = [
   'ndl-places',
   'ndl-orgs',
   'ndl-works',
+  'norbert-persons',
   'pedb-persons',
   'pedb-places',
   'pedb-orgs',
@@ -544,6 +567,7 @@ export const AUTHORITY_SOURCE_ORDER = [
   'chgis',
   'wikidata',
   'ndl',
+  'norbert',
   'project',
   'list',
 ] as const;
@@ -558,6 +582,7 @@ export const AUTHORITY_SOURCE_LABELS: Record<AuthoritySourceId, string> = {
   chgis: 'CHGIS',
   wikidata: 'Wikidata',
   ndl: 'NDL',
+  norbert: 'Norbert',
   project: 'Project tags',
   list: 'Imported list',
 };
@@ -583,6 +608,7 @@ export const AUTHORITY_PACK_SHORT_LABELS: Partial<Record<AuthorityPackId, string
   'ndl-places': 'Places',
   'ndl-orgs': 'Organizations',
   'ndl-works': 'Works',
+  'norbert-persons': 'Persons',
   'pedb-persons': 'Persons',
   'pedb-places': 'Places',
   'pedb-orgs': 'Organizations',

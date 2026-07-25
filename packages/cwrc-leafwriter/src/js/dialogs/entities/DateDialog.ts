@@ -18,6 +18,7 @@ import {
   mergeEastAsianIntoAttributes,
   readEastAsianDateValues,
 } from '../../../dateAuthority/values';
+import { isCjkDatesEnabled } from '../../../plugins/registry';
 import { isEastAsianCalendarLanguageCode } from '../../../utilities/languageCodes';
 import i18next from 'i18next';
 
@@ -417,7 +418,8 @@ class DateDialog implements SchemaDialog {
     }
 
     const language = (await window.__leafWriterProject?.getProjectSourceLanguage?.()) ?? null;
-    this.eastAsianMode = isEastAsianCalendarLanguageCode(language);
+    this.eastAsianMode =
+      isCjkDatesEnabled() && isEastAsianCalendarLanguageCode(language);
     const $eastAsian = $(`#${id}_eastAsianDates`);
 
     if (!this.eastAsianMode) {

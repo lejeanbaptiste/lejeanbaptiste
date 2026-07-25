@@ -20,6 +20,7 @@ import { leafwriterAtom } from '@src/jotai';
 import { useActions, useAppState } from '@src/overmind';
 import {
   EastAsianDateFields,
+  isCjkDatesEnabled,
   isEastAsianCalendarLanguageCode,
   mergeEastAsianIntoAttributes,
   readEastAsianDateValues,
@@ -117,7 +118,9 @@ export const AttributesPanel = ({ visible = true }: { visible?: boolean }) => {
   const [walkActive, setWalkActive] = useState(false);
 
   const eastAsianDates =
-    tagName === 'date' && isEastAsianCalendarLanguageCode(sourceLanguage);
+    isCjkDatesEnabled() &&
+    tagName === 'date' &&
+    isEastAsianCalendarLanguageCode(sourceLanguage);
   const { authority, loading: authorityLoading, error: authorityError } = useDateAuthority(
     eastAsianDates,
   );
