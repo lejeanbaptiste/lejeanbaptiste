@@ -1,8 +1,8 @@
-import type { ComponentType } from 'react';
 import {
   registerPluginDialog,
   registerPluginReviewPanel,
   registerPluginToolbarItem,
+  type PluginDialogComponent,
   type PluginReviewPanelMatcher,
   type PluginReviewPanelComponent,
 } from './pluginExtensions';
@@ -13,7 +13,7 @@ export interface PluginRegisterContext {
   pluginId: string;
   log: (message: string) => void;
   registerToolAction: (action: string, handler: PluginToolActionHandler) => void;
-  registerDialog: (type: string, component: ComponentType<Record<string, unknown>>) => void;
+  registerDialog: (type: string, component: PluginDialogComponent) => void;
   registerReviewPanel: (
     matcher: PluginReviewPanelMatcher,
     component: PluginReviewPanelComponent,

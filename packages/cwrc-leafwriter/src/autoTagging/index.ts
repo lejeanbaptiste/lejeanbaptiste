@@ -9,6 +9,8 @@ export * from './fakeSuggestions';
 export * from './dictionary';
 export * from './spreadsheet';
 export * from './crawl';
+export * from './dateWorkflow';
+export * from './dateCurator';
 export * from './entities';
 export * from './decisionLog';
 export * from './entityStore';

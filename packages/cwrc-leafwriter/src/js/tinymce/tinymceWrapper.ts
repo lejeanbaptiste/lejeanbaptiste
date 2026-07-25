@@ -1086,7 +1086,7 @@ export const tinymceWrapperInit = function ({
     const rootTag = writer.schemaManager.getRoot();
     const headerTag = writer.schemaManager.getHeader();
     const body = writer.editor.getBody();
-    const isCandidate = (el: Element | null): el is Element => {
+    const isCandidate = (el: Element | null): boolean => {
       if (!el) return false;
       const tagName = el.getAttribute('_tag');
       if (!tagName || tagName === 'pb' || tagName === rootTag || tagName === headerTag) {

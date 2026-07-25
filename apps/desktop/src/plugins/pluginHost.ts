@@ -4,6 +4,7 @@ import fs from 'node:fs';
 import fsp from 'node:fs/promises';
 import path from 'node:path';
 import { packsRoot } from '../authorityPacks';
+import { toLocalFileUrl } from '../../../commons/src/desktop/localFileUrl';
 import {
   PLUGIN_MANIFEST_FILENAME,
   type PluginHostSnapshot,
@@ -225,7 +226,7 @@ export function getPluginEntryModuleUrl(pluginId: string): string | null {
   if (!plugin?.enabled) return null;
   const filePath = getPluginEntryModulePath(plugin);
   if (!filePath) return null;
-  return `ljb://${encodeURIComponent(filePath)}`;
+  return toLocalFileUrl(filePath);
 }
 
 /** Tools menu items from enabled plugins (for native menu build). */

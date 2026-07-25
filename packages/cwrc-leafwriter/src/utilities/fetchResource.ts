@@ -1,11 +1,24 @@
 const LJB_PREFIX = 'ljb://';
+// Keep in sync with apps/commons/src/desktop/localFileUrl.ts: the path must live in
+// pathname segments, not the host, or Chromium's special-scheme host/IDNA parsing
+// rejects the URL for any path containing "/" or " ".
+const LJB_HOST = 'local/';
 
 export const isLocalFileUrl = (url: string): boolean => url.startsWith(LJB_PREFIX);
+
+const toLocalFileUrl = (absolutePath: string): string => {
+  const segments = absolutePath.split(/[\\/]+/).filter(Boolean);
+  return `${LJB_PREFIX}${LJB_HOST}${segments.map(encodeURIComponent).join('/')}`;
+};
 
 export const fromLocalFileUrl = (url: string): string | null => {
   if (!isLocalFileUrl(url)) return null;
   try {
-    return decodeURIComponent(url.slice(LJB_PREFIX.length));
+    const rest = url.slice(LJB_PREFIX.length + LJB_HOST.length);
+    if (!rest) return null;
+    const segments = rest.split('/').map(decodeURIComponent);
+    const isWindowsDrive = /^[A-Za-z]:$/.test(segments[0]);
+    return isWindowsDrive ? segments.join('\\') : `/${segments.join('/')}`;
   } catch {
     return null;
   }
@@ -49,7 +62,7 @@ const resolveIncludeUrl = (baseSchemaUrl: string, href: string): string => {
       0,
       Math.max(localBase.lastIndexOf('/'), localBase.lastIndexOf('\\')),
     );
-    return `${LJB_PREFIX}${encodeURIComponent(`${dir}${separator}${includeFile}`)}`;
+    return toLocalFileUrl(`${dir}${separator}${includeFile}`);
   }
 
   if (/^https?:\/\//i.test(baseSchemaUrl)) {

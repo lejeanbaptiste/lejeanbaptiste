@@ -3,6 +3,7 @@ import { buildSearchText } from './normalize';
 import { chunkDocument, type Chunk } from './chunk';
 import {
   buildTaggableDocIndex,
+  ENTITY_TAGS_FORBIDDEN_IN_DATE,
   findTeiBodyRoot,
   isInsideDateElement,
 } from './dateTeiHelpers';

@@ -131,6 +131,7 @@ import { disposeLemminx, registerLemminxIpc } from './lemminx/lspBridge';
 import { checkForAppUpdatesManually, initAutoUpdater } from './updater';
 import { installCatalogSchema, installLocalSchema } from './schemaSetup';
 import { ensureSanmiaoDatesSchemaMerged } from './sanmiaoSchemaMerge';
+import { fromLocalFileUrl } from '../../commons/src/desktop/localFileUrl';
 import { applyCatalogSchemaUpdate, checkCatalogSchemaUpdate } from './checkSchemaUpdate';
 import {
   createTimeMachineSnapshot,
@@ -548,7 +549,8 @@ protocol.registerSchemesAsPrivileged([
 const registerLjbProtocol = () => {
   protocol.registerFileProtocol('ljb', (request, callback) => {
     try {
-      const filePath = decodeURIComponent(request.url.slice('ljb://'.length));
+      const filePath = fromLocalFileUrl(request.url);
+      if (!filePath) throw new Error('invalid ljb:// url');
       callback({ path: path.normalize(filePath) });
     } catch {
       callback({ error: -2 });
