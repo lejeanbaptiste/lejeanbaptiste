@@ -35,7 +35,10 @@ export const completeProjectOnboarding = async (
     log(`schema setup result: ${setup.result}`);
     if (setup.result !== 'installed' || !setup.bundle) return null;
     current = setup.bundle;
-  } else if (window.electronAPI?.ensureSanmiaoDatesSchema) {
+  } else if (
+    window.electronAPI?.ensureSanmiaoDatesSchema &&
+    (await window.electronAPI.pluginsIsEnabled?.('cjk-dates'))
+  ) {
     log('schema present — ensuring sanmiao dates schema');
     const mergeResult = await window.electronAPI.ensureSanmiaoDatesSchema(current.projectFilePath);
     log(`sanmiao merge: ${mergeResult.merged}`);

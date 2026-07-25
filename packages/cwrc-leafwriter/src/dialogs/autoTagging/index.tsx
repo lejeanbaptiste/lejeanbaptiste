@@ -73,6 +73,7 @@ import {
   isJapaneseLanguageCode,
   isTibetanLanguageCode,
 } from '../../utilities/languageCodes';
+import { isPluginEnabled } from '../../plugins';
 import { AutoTaggingApplyOverlay } from '../../layout/AutoTaggingApplyOverlay';
 import { useActions } from '../../overmind';
 import type { IDialog } from '../type';
@@ -94,32 +95,38 @@ const defaultAuthorityPacksForLanguage = (
     'wikidata-persons-bo': isTibetanLanguageCode(language),
   });
 
+const pluginGatedPackIds = (ids: AuthorityPackId[]): AuthorityPackId[] =>
+  ids.filter((id) => id !== 'norbert-persons' || isPluginEnabled('norbert'));
+
 const visibleAuthorityPackIdsForLanguage = (language: string | null): AuthorityPackId[] =>
-  isJapaneseLanguageCode(language)
-    ? [
-        'ndl-persons',
-        'ndl-places',
-        'ndl-orgs',
-        'ndl-works',
-        'wikidata-persons-ja',
-        'wikidata-orgs-ja',
-        'wikidata-works-ja',
-      ]
-    : isTibetanLanguageCode(language)
-      ? ['wikidata-persons-bo', 'wikidata-places-bo', 'wikidata-orgs-bo']
-      : isChineseLanguageCode(language) || !language
-        ? [
-            'cbdb-persons',
-            'cbdb-places',
-            'cbdb-offices',
-            'dila-persons',
-            'dila-places',
-            'chgis-places',
-            'wikidata-persons',
-            'wikidata-orgs-zh-hant',
-            'wikidata-works-zh-hant',
-          ]
-        : UI_AUTHORITY_PACK_IDS.filter((id) => !id.startsWith('ndl-'));
+  pluginGatedPackIds(
+    isJapaneseLanguageCode(language)
+      ? [
+          'ndl-persons',
+          'ndl-places',
+          'ndl-orgs',
+          'ndl-works',
+          'wikidata-persons-ja',
+          'wikidata-orgs-ja',
+          'wikidata-works-ja',
+        ]
+      : isTibetanLanguageCode(language)
+        ? ['wikidata-persons-bo', 'wikidata-places-bo', 'wikidata-orgs-bo']
+        : isChineseLanguageCode(language) || !language
+          ? [
+              'cbdb-persons',
+              'cbdb-places',
+              'cbdb-offices',
+              'dila-persons',
+              'dila-places',
+              'chgis-places',
+              'wikidata-persons',
+              'wikidata-orgs-zh-hant',
+              'wikidata-works-zh-hant',
+              'norbert-persons',
+            ]
+          : UI_AUTHORITY_PACK_IDS.filter((id) => !id.startsWith('ndl-')),
+  );
 
 /** The user's own databases (project, then central) always lead every category group. */
 const OWN_DATABASE_PACK_IDS: AuthorityPackId[] = AUTHORITY_PACKS.filter((spec) => {

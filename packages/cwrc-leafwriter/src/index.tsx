@@ -53,6 +53,7 @@ export {
   mergeEastAsianIntoAttributes,
 } from './dateAuthority';
 export type { EastAsianDateValues, DateAuthorityIndex } from './dateAuthority';
+export { isCjkDatesEnabled, isPluginEnabled } from './plugins';
 export { entityLookupDialogAtom } from './jotai/entity-lookup';
 export { SETTINGS_BOOTSTRAP_URL } from './constants/settingsBootstrap';
 export * as Types from './types';

@@ -239,6 +239,23 @@ export interface ElectronAPI {
   authorityPackInstallFrom?: (
     sourcePacksRoot: string,
   ) => Promise<{ ok: boolean; copied?: string[]; error?: string }>;
+  pluginsGetSnapshot?: () => Promise<
+    import('../../../packages/cwrc-leafwriter/src/plugins/types').PluginHostSnapshotView
+  >;
+  pluginsSetEnabled?: (
+    pluginId: string,
+    enabled: boolean,
+  ) => Promise<
+    import('../../../packages/cwrc-leafwriter/src/plugins/types').PluginHostSnapshotView
+  >;
+  pluginsInstallFrom?: (
+    sourceDir: string,
+  ) => Promise<
+    import('../../../packages/cwrc-leafwriter/src/plugins/types').PluginHostSnapshotView
+  >;
+  pluginsPickInstallFolder?: () => Promise<string | null>;
+  pluginsDismissLanguagePrompt?: (pluginId: string) => Promise<void>;
+  pluginsIsEnabled?: (pluginId: string) => Promise<boolean>;
   authorityLifecycleGet?: () => Promise<
     import('../../commons/src/desktop/authorityLifecycleTypes').AuthorityLifecycleStatus
   >;
@@ -472,6 +489,14 @@ const electronAPI: ElectronAPI = {
   authorityPackRead: (packId: string) => ipcRenderer.invoke('authorityPack:read', packId),
   authorityPackInstallFrom: (sourcePacksRoot: string) =>
     ipcRenderer.invoke('authorityPack:installFrom', sourcePacksRoot),
+  pluginsGetSnapshot: () => ipcRenderer.invoke('plugins:getSnapshot'),
+  pluginsSetEnabled: (pluginId: string, enabled: boolean) =>
+    ipcRenderer.invoke('plugins:setEnabled', pluginId, enabled),
+  pluginsInstallFrom: (sourceDir: string) => ipcRenderer.invoke('plugins:installFrom', sourceDir),
+  pluginsPickInstallFolder: () => ipcRenderer.invoke('plugins:pickInstallFolder'),
+  pluginsDismissLanguagePrompt: (pluginId: string) =>
+    ipcRenderer.invoke('plugins:dismissLanguagePrompt', pluginId),
+  pluginsIsEnabled: (pluginId: string) => ipcRenderer.invoke('plugins:isEnabled', pluginId),
   authorityLifecycleGet: () => ipcRenderer.invoke('authorityLifecycle:get'),
   authorityLifecycleSetEnabled: (options) =>
     ipcRenderer.invoke('authorityLifecycle:setEnabled', options),

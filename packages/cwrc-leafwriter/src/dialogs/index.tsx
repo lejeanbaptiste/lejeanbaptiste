@@ -10,3 +10,4 @@ export * from './xpathSearch';
 export * from './autoTagging';
 export * from './calendar';
 export * from './disambiguation';
+export * from './plugins';

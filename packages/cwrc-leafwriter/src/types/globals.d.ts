@@ -113,6 +113,19 @@ declare global {
     authorityPackInstallFrom?: (
       sourcePacksRoot: string,
     ) => Promise<{ ok: boolean; copied?: string[]; error?: string }>;
+    pluginsGetSnapshot?: () => Promise<
+      import('../plugins/types').PluginHostSnapshotView
+    >;
+    pluginsSetEnabled?: (
+      pluginId: string,
+      enabled: boolean,
+    ) => Promise<import('../plugins/types').PluginHostSnapshotView>;
+    pluginsInstallFrom?: (
+      sourceDir: string,
+    ) => Promise<import('../plugins/types').PluginHostSnapshotView>;
+    pluginsPickInstallFolder?: () => Promise<string | null>;
+    pluginsDismissLanguagePrompt?: (pluginId: string) => Promise<void>;
+    pluginsIsEnabled?: (pluginId: string) => Promise<boolean>;
     /** CHGIS historical-places authority (installed from a downloaded archive). */
     authorityChgisGet?: () => Promise<{
       installed: boolean;

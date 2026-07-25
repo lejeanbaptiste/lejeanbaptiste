@@ -83,6 +83,15 @@ import {
   setAuthorityLifecycleEnabled,
 } from './authorityLifecycle';
 import { getChgisStatus, installChgisFromArchive, removeChgisData } from './authorityChgis';
+import {
+  dismissPluginLanguagePrompt,
+  getPluginHostSnapshot,
+  installPluginFromDirectory,
+  isPluginEnabledInMain,
+  seedDevPluginsIfEmpty,
+  setPluginEnabled,
+  syncEnabledPluginContributions,
+} from './plugins';
 import { loadOrCreateProject, loadProjectFile, writeProjectConfig, type ProjectBundle } from './projectFile';
 import { resolveDialogDefaultPath } from './dialogDefaultPath';
 import mammoth from 'mammoth';
@@ -920,6 +929,16 @@ const buildToolsMenu = (): Electron.MenuItemConstructorOptions => ({
   label: 'Tools',
   submenu: [
     {
+      label: 'Plugins…',
+      click: () => sendMenuAction('open-plugins'),
+    },
+    menuSeparator(),
+    {
+      label: 'East Asian date curator…',
+      click: () => sendMenuAction('cjk-dates.open-curator'),
+    },
+    menuSeparator(),
+    {
       label: 'Zotero Preferences',
       click: () => sendMenuAction('zotero-preferences'),
     },
@@ -1410,6 +1429,7 @@ const registerIpcHandlers = () => {
   );
 
   ipcMain.handle('ensureSanmiaoDatesSchema', async (_event, projectFilePath: string) => {
+    if (!isPluginEnabledInMain('cjk-dates')) return { merged: false };
     const bundle = await loadProjectFile(projectFilePath);
     if (!bundle) return { merged: false };
     const merged = await ensureSanmiaoDatesSchemaMerged(bundle);
@@ -1709,6 +1729,105 @@ const registerIpcHandlers = () => {
         error: error instanceof Error ? error.message : String(error),
       };
     }
+  });
+
+  ipcMain.handle('plugins:getSnapshot', async () => {
+    const snapshot = await getPluginHostSnapshot();
+    return {
+      plugins: snapshot.plugins.map((plugin) => ({
+        id: plugin.id,
+        name: plugin.name,
+        version: plugin.version,
+        description: plugin.description,
+        license: plugin.license,
+        author: plugin.author,
+        homepage: plugin.homepage,
+        languages: plugin.languages,
+        enabled: plugin.enabled,
+        manifestError: plugin.manifestError,
+        manifest: plugin.manifestError
+          ? undefined
+          : {
+              languagePrompt: plugin.manifest.languagePrompt,
+              contributions: plugin.manifest.contributions,
+            },
+      })),
+      state: snapshot.state,
+    };
+  });
+
+  ipcMain.handle('plugins:setEnabled', async (_event, pluginId: string, enabled: boolean) => {
+    const snapshot = await setPluginEnabled(pluginId, enabled);
+    return {
+      plugins: snapshot.plugins.map((plugin) => ({
+        id: plugin.id,
+        name: plugin.name,
+        version: plugin.version,
+        description: plugin.description,
+        license: plugin.license,
+        author: plugin.author,
+        homepage: plugin.homepage,
+        languages: plugin.languages,
+        enabled: plugin.enabled,
+        manifestError: plugin.manifestError,
+        manifest: plugin.manifestError
+          ? undefined
+          : {
+              languagePrompt: plugin.manifest.languagePrompt,
+              contributions: plugin.manifest.contributions,
+            },
+      })),
+      state: snapshot.state,
+    };
+  });
+
+  ipcMain.handle('plugins:installFrom', async (_event, sourceDir: string) => {
+    const snapshot = await installPluginFromDirectory(sourceDir);
+    return {
+      plugins: snapshot.plugins.map((plugin) => ({
+        id: plugin.id,
+        name: plugin.name,
+        version: plugin.version,
+        description: plugin.description,
+        license: plugin.license,
+        author: plugin.author,
+        homepage: plugin.homepage,
+        languages: plugin.languages,
+        enabled: plugin.enabled,
+        manifestError: plugin.manifestError,
+        manifest: plugin.manifestError
+          ? undefined
+          : {
+              languagePrompt: plugin.manifest.languagePrompt,
+              contributions: plugin.manifest.contributions,
+            },
+      })),
+      state: snapshot.state,
+    };
+  });
+
+  ipcMain.handle('plugins:pickInstallFolder', async () => {
+    const parent = getTopNativeDialogWindow() ?? mainWindow ?? undefined;
+    const options: Electron.OpenDialogOptions = {
+      properties: ['openDirectory'],
+      title: 'Install LJB plugin',
+      message: 'Select a plugin package folder containing plugin.manifest.json.',
+      defaultPath: await getDialogDefaultPath(),
+    };
+    const result = parent
+      ? await dialog.showOpenDialog(parent, options)
+      : await dialog.showOpenDialog(options);
+    if (result.canceled || result.filePaths.length === 0) return null;
+    rememberDialogDir(result.filePaths[0], 'directory');
+    return result.filePaths[0] ?? null;
+  });
+
+  ipcMain.handle('plugins:dismissLanguagePrompt', async (_event, pluginId: string) => {
+    await dismissPluginLanguagePrompt(pluginId);
+  });
+
+  ipcMain.handle('plugins:isEnabled', async (_event, pluginId: string) => {
+    return isPluginEnabledInMain(pluginId);
   });
 
   const emitAuthorityLifecycleProgress = (
@@ -2319,6 +2438,10 @@ app.whenReady().then(() => {
   registerNativeDialogIpc();
   registerLemminxIpc(() => mainWindow);
   initAutoUpdater();
+  void (async () => {
+    await seedDevPluginsIfEmpty();
+    await syncEnabledPluginContributions();
+  })();
   void createWindow();
 
   app.on('activate', () => {

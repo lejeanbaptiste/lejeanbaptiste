@@ -11,6 +11,7 @@ import {
   Typography,
 } from '@mui/material';
 import { useCallback, useEffect, useRef, useState } from 'react';
+import { isCjkDatesEnabled } from '../../plugins';
 import {
   AutoTaggingSession,
   autoTaggingDocumentKey,
@@ -113,7 +114,10 @@ export const CalendarDialog = ({ notice, onClose, open = false }: CalendarDialog
     !!window.electronAPI?.sanmiaoProposeDatesBatch ||
     !!window.electronAPI?.sanmiaoProposeDates;
   const calendarOffered =
-    isDesktopApp() && sanmiaoAvailable && isEastAsianDatesMethodAvailable(sourceLanguage);
+    isCjkDatesEnabled() &&
+    isDesktopApp() &&
+    sanmiaoAvailable &&
+    isEastAsianDatesMethodAvailable(sourceLanguage);
 
   const getSession = () => {
     session.current ??= new AutoTaggingSession(window.writer);

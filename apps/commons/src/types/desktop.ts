@@ -299,6 +299,23 @@ export interface ElectronAPI {
   authorityPackInstallFrom?: (
     sourcePacksRoot: string,
   ) => Promise<{ ok: boolean; copied?: string[]; error?: string }>;
+  pluginsGetSnapshot?: () => Promise<
+    import('../../../../packages/cwrc-leafwriter/src/plugins/types').PluginHostSnapshotView
+  >;
+  pluginsSetEnabled?: (
+    pluginId: string,
+    enabled: boolean,
+  ) => Promise<
+    import('../../../../packages/cwrc-leafwriter/src/plugins/types').PluginHostSnapshotView
+  >;
+  pluginsInstallFrom?: (
+    sourceDir: string,
+  ) => Promise<
+    import('../../../../packages/cwrc-leafwriter/src/plugins/types').PluginHostSnapshotView
+  >;
+  pluginsPickInstallFolder?: () => Promise<string | null>;
+  pluginsDismissLanguagePrompt?: (pluginId: string) => Promise<void>;
+  pluginsIsEnabled?: (pluginId: string) => Promise<boolean>;
   authorityLifecycleGet?: () => Promise<AuthorityLifecycleStatus>;
   authorityLifecycleSetEnabled?: (
     options: AuthorityLifecycleSetEnabledOptions,

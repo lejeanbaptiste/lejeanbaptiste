@@ -9,6 +9,7 @@ export * from './UnifiedRightPanel';
 export * from './ProjectSidebar';
 export * from './useExternalFileWatcher';
 export * from './useDesktopAppMenuBridge';
+export * from './usePluginBootstrap';
 export * from './useProjectMenu';
 export * from './useLspProjectBridge';
 export * from './useEntityDatabaseLifecycle';

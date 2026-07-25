@@ -6,6 +6,7 @@ import {
   UnifiedLeftPanel,
   UnifiedRightPanel,
   useExternalFileWatcher,
+  usePluginBootstrap,
   useProjectMenu,
   registerApplicationSettingsBootstrap,
 } from '@src/desktop';
@@ -43,6 +44,7 @@ export const ProjectEditor = () => {
   const { cursorPositions, isProjectReady, openTabs, projectFilePath, rootPath } =
     useAppState().project;
   const { markTabDirty, openProject } = useActions().project;
+  const { notifyViaSnackbar } = useActions().ui;
   const { t } = useTranslation();
   const hasProject = Boolean(rootPath);
 
@@ -59,6 +61,7 @@ export const ProjectEditor = () => {
   const [leafWriter] = useAtom(leafwriterAtom);
   const [sessionKey] = useAtom(leafWriterSessionKeyAtom);
   useExternalFileWatcher();
+  usePluginBootstrap(undefined, (message) => notifyViaSnackbar(message));
 
   useEffect(() => {
     if (!isDesktop()) return;

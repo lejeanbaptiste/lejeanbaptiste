@@ -2,6 +2,7 @@ import { clearFindHighlights } from '@src/desktop/find/findEditorHighlights';
 import { openFindPanel } from '@src/desktop/desktopLeftPanelBridge';
 import { openEditionMetadataDialog } from '@src/desktop/projectOnboarding';
 import { openApplicationSettings } from '@src/desktop/openApplicationSettings';
+import { openPluginsDialog } from '@src/desktop/usePluginBootstrap';
 import { checkSchemaUpdateManually } from '@src/desktop/schemaUpdateCheck';
 import { leafwriterAtom } from '@src/jotai';
 import { useActions, useAppState } from '@src/overmind';
@@ -247,6 +248,33 @@ export const useProjectMenu = () => {
 
       if (action === 'open-settings') {
         void openSettings(leafWriter, (message) => notifyViaSnackbar(message), t('LWC.desktop.could_not_open_settings'));
+        return;
+      }
+
+      if (action === 'open-plugins') {
+        if (!openPluginsDialog()) {
+          notifyViaSnackbar('Could not open Plugins dialog.');
+        }
+        return;
+      }
+
+      if (action === 'cjk-dates.open-curator') {
+        void (async () => {
+          const enabled = window.electronAPI?.pluginsIsEnabled
+            ? await window.electronAPI.pluginsIsEnabled('cjk-dates')
+            : false;
+          if (!enabled) {
+            notifyViaSnackbar(
+              'Enable the “East Asian dates” plugin in Tools → Plugins to use the date curator.',
+            );
+            return;
+          }
+          if (window.writer) {
+            window.writer.overmindActions.ui.openDialog({ type: 'calendar' });
+            return;
+          }
+          notifyViaSnackbar('Open a document before using the date curator.');
+        })();
         return;
       }
 
