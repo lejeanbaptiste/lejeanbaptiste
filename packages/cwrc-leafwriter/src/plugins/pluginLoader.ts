@@ -29,8 +29,16 @@ export async function loadEnabledPluginModules(
     if (!plugin.enabled || plugin.manifestError) continue;
     if (loadedPluginIds.has(plugin.id)) continue;
 
+    // Claim the slot before any await: concurrent calls to this function (e.g. two
+    // refreshPluginRegistry snapshots landing back-to-back) must not both pass the
+    // check above and double-register the same plugin's toolbar items/dialogs.
+    loadedPluginIds.add(plugin.id);
+
     const url = await window.electronAPI.pluginsGetModuleUrl(plugin.id);
-    if (!url) continue;
+    if (!url) {
+      loadedPluginIds.delete(plugin.id);
+      continue;
+    }
 
     try {
       const mod = await importPluginModule(url);
@@ -40,11 +48,12 @@ export async function loadEnabledPluginModules(
       }
       context.onEnable?.();
       loadedContexts.set(plugin.id, context);
-      loadedPluginIds.add(plugin.id);
       if (!previousEnabled.has(plugin.id)) {
         context.log('loaded');
       }
     } catch (error) {
+      loadedPluginIds.delete(plugin.id);
+      clearPluginExtensionsForPlugin(plugin.id);
       console.warn(`[plugins] Failed to load ${plugin.id}:`, error);
     }
   }

@@ -1,4 +1,6 @@
-import type { PluginToolActionHandler } from './registerContext';
+export type PluginToolActionHandler = (ctx: {
+  notify: (message: string) => void;
+}) => void | Promise<void>;
 
 const handlers = new Map<string, PluginToolActionHandler>();
 

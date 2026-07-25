@@ -9,18 +9,10 @@
  * Import this module from every entry that creates a Monaco editor.
  */
 
-declare global {
-  // eslint-disable-next-line no-var
-  var MonacoEnvironment:
-    | {
-        getWorkerUrl?: (moduleId: string, label: string) => string;
-        getWorker?: (moduleId: string, label: string) => Worker;
-      }
-    | undefined;
-}
+export {};
 
-if (typeof globalThis !== 'undefined' && !globalThis.MonacoEnvironment) {
-  globalThis.MonacoEnvironment = {
+if (typeof MonacoEnvironment === 'undefined' || !MonacoEnvironment) {
+  MonacoEnvironment = {
     getWorkerUrl: () => {
       const origin =
         typeof window !== 'undefined' && window.location?.origin

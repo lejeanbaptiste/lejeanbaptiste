@@ -1,4 +1,4 @@
-import { CalendarDialog } from '../../dialogs/calendar/index.tsx';
+import { CalendarDialog } from '../../dialogs/calendar';
 import { DateCuratorPanel } from '../../autoTagging/DateCuratorPanel';
 import {
   isDateCuratorBatch,

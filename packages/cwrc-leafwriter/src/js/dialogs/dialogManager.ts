@@ -103,7 +103,7 @@ const setDialogListeners = ($cwrcDialogWrapper: JQuery<HTMLElement>) => {
   // reclaiming focus when it lands inside the editor chrome (otherwise
   // dialog close ↔ editor.focus can loop through focusMappedHandler).
   $(document).on('focusin.leafwriter-tinymce', (event) => {
-    const target = event.target as Element | null;
+    const target = event.target as unknown as Element | null;
     if (target?.closest?.('.tox-tinymce, .tox-tinymce-aux, .tox-dialog')) {
       event.stopImmediatePropagation();
     }

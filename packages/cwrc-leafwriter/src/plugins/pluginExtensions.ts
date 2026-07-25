@@ -1,17 +1,19 @@
 import type { ComponentType } from 'react';
+import type { DecisionEvent } from '../autoTagging/reviewController';
 import type { Suggestion } from '../autoTagging/types';
+import type { IDialog } from '../dialogs/type';
 
-export type PluginDialogComponent = ComponentType<Record<string, unknown>>;
+export type PluginDialogComponent = ComponentType<IDialog>;
 
 export type PluginReviewPanelComponent = ComponentType<{
   autoFocus?: boolean;
   busy?: boolean;
   finishWhenIdle?: boolean;
   suggestions: Suggestion[];
-  onApply: () => void | Promise<void>;
-  onFocus: (index: number) => void;
-  onDecision: (index: number, accepted: boolean) => void;
-  onClose: () => void;
+  onApply: (accepted: Suggestion[]) => void;
+  onFocus?: (suggestion: Suggestion) => void;
+  onDecision?: (event: DecisionEvent) => void;
+  onClose?: () => void;
 }>;
 
 export type PluginReviewPanelMatcher = (suggestions: Suggestion[]) => boolean;
