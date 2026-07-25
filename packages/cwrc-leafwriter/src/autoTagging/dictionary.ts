@@ -1,5 +1,5 @@
 import { buildDocIndex, createAnchor } from './anchor';
-import { isInsideDateElement } from './dates';
+import { isInsideDateElement } from './dateTeiHelpers';
 import { isWrappedByEntityTag } from './suggestionFilters';
 import { MultiStringMatcher } from './matcher';
 import type { Suggestion, WhitespacePolicy } from './types';

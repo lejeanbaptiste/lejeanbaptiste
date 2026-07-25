@@ -1,6 +1,9 @@
 export * from './pluginTypes';
 export {
   dismissPluginLanguagePrompt,
+  getCachedPluginHostSnapshot,
+  getEnabledPluginToolsMenuItems,
+  getPluginEntryModuleUrl,
   getPluginHostSnapshot,
   installPluginFromDirectory,
   isPluginEnabledInMain,
@@ -8,3 +11,4 @@ export {
   setPluginEnabled,
   syncEnabledPluginContributions,
 } from './pluginHost';
+export type { PluginToolsMenuContribution } from './pluginHost';

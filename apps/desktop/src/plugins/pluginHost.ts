@@ -1,4 +1,5 @@
 import { app } from 'electron';
+import { execFileSync } from 'node:child_process';
 import fs from 'node:fs';
 import fsp from 'node:fs/promises';
 import path from 'node:path';
@@ -14,6 +15,15 @@ import {
 const STATE_FILENAME = 'plugin-state.json';
 
 let cachedState: PluginHostState | null = null;
+let cachedSnapshot: PluginHostSnapshot | null = null;
+
+export interface PluginToolsMenuContribution {
+  pluginId: string;
+  id: string;
+  label: string;
+  action: string;
+  separatorBefore?: boolean;
+}
 
 function pluginsRoot(): string {
   return path.join(app.getPath('userData'), 'plugins');
@@ -70,9 +80,25 @@ function coreBundledPythonCandidates(): string[] {
 }
 
 async function ensurePluginBundledAssets(plugin: PluginRecord): Promise<void> {
-  if (plugin.id !== 'cjk-dates') return;
-  const destPython = path.join(plugin.installPath, 'python');
-  if (fs.existsSync(destPython)) return;
+  const runtimePath = plugin.manifest.entry?.python?.runtimePath;
+  if (!runtimePath) return;
+
+  const destPython = path.join(plugin.installPath, runtimePath);
+  const pythonBin =
+    process.platform === 'win32'
+      ? path.join(destPython, 'python.exe')
+      : path.join(destPython, 'bin', 'python3');
+  if (fs.existsSync(pythonBin)) return;
+
+  const downloadScript = path.join(plugin.installPath, 'scripts/download-python-runtime.mjs');
+  if (fs.existsSync(downloadScript)) {
+    try {
+      execFileSync('node', [downloadScript], { cwd: plugin.installPath, stdio: 'inherit' });
+    } catch {
+      // Fall through to legacy core symlink.
+    }
+    if (fs.existsSync(pythonBin)) return;
+  }
 
   const [corePython] = coreBundledPythonCandidates();
   const coreRoot = corePython
@@ -179,7 +205,46 @@ export async function getPluginHostSnapshot(): Promise<PluginHostSnapshot> {
   }
 
   plugins.sort((a, b) => a.name.localeCompare(b.name));
-  return { plugins, state };
+  cachedSnapshot = { plugins, state };
+  return cachedSnapshot;
+}
+
+export function getCachedPluginHostSnapshot(): PluginHostSnapshot | null {
+  return cachedSnapshot;
+}
+
+export function getPluginEntryModulePath(plugin: PluginRecord): string | null {
+  const rel = plugin.manifest.entry?.module?.trim();
+  if (!rel) return null;
+  const abs = path.join(plugin.installPath, rel);
+  return fs.existsSync(abs) ? abs : null;
+}
+
+export function getPluginEntryModuleUrl(pluginId: string): string | null {
+  const plugin = cachedSnapshot?.plugins.find((p) => p.id === pluginId && !p.manifestError);
+  if (!plugin?.enabled) return null;
+  const filePath = getPluginEntryModulePath(plugin);
+  if (!filePath) return null;
+  return `ljb://${encodeURIComponent(filePath)}`;
+}
+
+/** Tools menu items from enabled plugins (for native menu build). */
+export function getEnabledPluginToolsMenuItems(): PluginToolsMenuContribution[] {
+  if (!cachedSnapshot) return [];
+  const items: PluginToolsMenuContribution[] = [];
+  for (const plugin of cachedSnapshot.plugins) {
+    if (!plugin.enabled || plugin.manifestError) continue;
+    for (const item of plugin.manifest.contributions?.toolsMenu ?? []) {
+      items.push({
+        pluginId: plugin.id,
+        id: item.id,
+        label: item.label,
+        action: item.action ?? `${plugin.id}.${item.id}`,
+        separatorBefore: item.separatorBefore,
+      });
+    }
+  }
+  return items;
 }
 
 export async function setPluginEnabled(pluginId: string, enabled: boolean): Promise<PluginHostSnapshot> {

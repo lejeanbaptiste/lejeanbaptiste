@@ -316,6 +316,7 @@ export interface ElectronAPI {
   pluginsPickInstallFolder?: () => Promise<string | null>;
   pluginsDismissLanguagePrompt?: (pluginId: string) => Promise<void>;
   pluginsIsEnabled?: (pluginId: string) => Promise<boolean>;
+  pluginsGetModuleUrl?: (pluginId: string) => Promise<string | null>;
   authorityLifecycleGet?: () => Promise<AuthorityLifecycleStatus>;
   authorityLifecycleSetEnabled?: (
     options: AuthorityLifecycleSetEnabledOptions,
@@ -341,36 +342,13 @@ export interface ElectronAPI {
   onAuthorityChgisProgress?: (
     callback: (progress: import('@src/desktop/authorityChgisTypes').ChgisInstallProgress) => void,
   ) => () => void;
-  sanmiaoProposeDates?: (
-    text: string,
-    options?: import('../../../../packages/cwrc-leafwriter/src/autoTagging/dates').SanmiaoProposeOptions,
-  ) => Promise<
-    import('../../../../packages/cwrc-leafwriter/src/autoTagging/dates').SanmiaoProposal[]
-  >;
-  sanmiaoProposeDatesBatch?: (
-    chunks: string[],
-    options?: import('../../../../packages/cwrc-leafwriter/src/autoTagging/dates').SanmiaoProposeOptions,
-  ) => Promise<
-    import('../../../../packages/cwrc-leafwriter/src/autoTagging/dates').SanmiaoProposal[][]
-  >;
-  sanmiaoTagDatesBatch?: (
-    chunks: string[],
-    options?: import('../../../../packages/cwrc-leafwriter/src/autoTagging/dates').SanmiaoProposeOptions,
-  ) => Promise<
-    import('../../../../packages/cwrc-leafwriter/src/autoTagging/dates').SanmiaoProposal[][]
-  >;
-  sanmiaoResolveDatesBatch?: (
-    dates: string[],
-    options?: import('../../../../packages/cwrc-leafwriter/src/autoTagging/dates').SanmiaoProposeOptions,
-  ) => Promise<
-    (import('../../../../packages/cwrc-leafwriter/src/autoTagging/dates').SanmiaoProposal | null)[]
-  >;
-  sanmiaoListDateAuthority?: (options?: {
-    civ?: string[];
-  }) => Promise<
-    import('../../../../packages/cwrc-leafwriter/src/dateAuthority/types').DateAuthorityIndex
-  >;
-  onSanmiaoProgress?: (
+  pluginsEnsureSchemaContribution?: (
+    pluginId: string,
+    projectFilePath: string,
+  ) => Promise<{ merged: boolean }>;
+  pluginsInvokePython?: (pluginId: string, payload: Record<string, unknown>) => Promise<unknown>;
+  onPluginPythonProgress?: (
+    pluginId: string,
     callback: (
       progress: import('../../../../packages/cwrc-leafwriter/src/autoTagging/dates').SanmiaoChunkProgressEvent,
     ) => void,

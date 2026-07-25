@@ -1,4 +1,4 @@
-import { findTeiBodyRoot } from './dates';
+import { findTeiBodyRoot } from './dateTeiHelpers';
 import {
   isChineseLanguageCode,
   isEastAsianCalendarLanguageCode,

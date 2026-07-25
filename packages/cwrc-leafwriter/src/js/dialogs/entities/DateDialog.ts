@@ -9,11 +9,6 @@ import DialogForm from '../dialogForm/dialogForm';
 import type { LWDialogConfigProps } from '../types';
 import type { SchemaDialog } from './types';
 import {
-  getEastAsianDateFieldValues,
-  mountEastAsianDateFields,
-  unmountEastAsianDateFields,
-} from '../../../dateAuthority/eastAsianDateMount';
-import {
   hasEastAsianCalendarContext,
   mergeEastAsianIntoAttributes,
   readEastAsianDateValues,
@@ -21,6 +16,8 @@ import {
 import { isCjkDatesEnabled } from '../../../plugins/registry';
 import { isEastAsianCalendarLanguageCode } from '../../../utilities/languageCodes';
 import i18next from 'i18next';
+
+type EastAsianDateMount = typeof import('../../../dateAuthority/eastAsianDateMount');
 
 type DateTypes = 'date' | 'range' | 'DATE' | 'DATERANGE' | 'DATESTRUCT';
 
@@ -72,6 +69,7 @@ class DateDialog implements SchemaDialog {
 
   dateRange: any;
   eastAsianMode = false;
+  private eastAsianMount: EastAsianDateMount | null = null;
   private readonly formId: string;
 
   constructor({ writer, parentEl }: LWDialogConfigProps) {
@@ -326,7 +324,7 @@ class DateDialog implements SchemaDialog {
 
     this.dialog.$el.on('beforeSave', (_event: JQuery.Event, dialog: DialogForm) => {
       if (this.eastAsianMode) {
-        const eastAsian = getEastAsianDateFieldValues();
+        const eastAsian = this.eastAsianMount?.getEastAsianDateFieldValues() ?? readEastAsianDateValues({});
         if (!hasEastAsianCalendarContext(eastAsian)) {
           dialog.isValid = false;
           return;
@@ -440,8 +438,16 @@ class DateDialog implements SchemaDialog {
 
     const container = $eastAsian[0];
     if (container) {
-      mountEastAsianDateFields(container, { initialValues: initial });
+      const mount = await this.loadEastAsianMount();
+      mount.mountEastAsianDateFields(container, { initialValues: initial });
     }
+  }
+
+  private async loadEastAsianMount(): Promise<EastAsianDateMount> {
+    if (!this.eastAsianMount) {
+      this.eastAsianMount = await import('../../../dateAuthority/eastAsianDateMount');
+    }
+    return this.eastAsianMount;
   }
 
   private selectedTextField(id: string) {
@@ -693,7 +699,8 @@ class DateDialog implements SchemaDialog {
   }
 
   destroy() {
-    unmountEastAsianDateFields();
+    this.eastAsianMount?.unmountEastAsianDateFields();
+    this.eastAsianMount = null;
     // eslint-disable-next-line @typescript-eslint/ban-ts-comment
     //@ts-ignore
     this.$dateInput.datepicker('destroy');

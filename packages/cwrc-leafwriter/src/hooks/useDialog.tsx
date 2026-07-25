@@ -2,7 +2,6 @@ import { useModal } from 'mui-modal-provider';
 import { useEffect } from 'react';
 import {
   AutoTaggingDialog,
-  CalendarDialog,
   DisambiguationDialog,
   EditSchemaDialog,
   EditSourceDialog,
@@ -15,6 +14,7 @@ import {
   type DialogProps,
   type DialogType,
 } from '../dialogs';
+import { getPluginDialog } from '../plugins/pluginExtensions';
 import { useActions, useAppState } from '../overmind';
 
 let displayed: string[] = [];
@@ -78,7 +78,7 @@ export const useDialog = () => {
     if (type === 'popup') return Popup;
     if (type === 'xpathSearch') return XPathSearchDialog;
     if (type === 'autoTagging') return AutoTaggingDialog;
-    if (type === 'calendar') return CalendarDialog;
+    if (type === 'calendar') return getPluginDialog('calendar');
     if (type === 'disambiguation') return DisambiguationDialog;
   };
 };

@@ -9,20 +9,18 @@ import {
 import { takeAutoTaggingBatch, takeAutoTaggingNotice } from '../autoTagging/batchHolder';
 import {
   AutoTaggingSession,
-  DateCuratorPanel,
   ReviewPanel,
   aiApiSettingsFromDesktop,
   autoTaggingDocumentKey,
   createLlmClientFromSettings,
   isAiSuggestReady,
-  isDateCuratorBatch,
-  isDateTagOnlyBatch,
   markDatesPassApplied,
   markDatesPassRan,
   validateSuggestions,
   prepareSuggestionsForReview,
   type Suggestion,
 } from '../autoTagging';
+import { findPluginReviewPanel } from '../plugins/pluginExtensions';
 import { useActions, useAppState } from '../overmind';
 import { AutoTaggingApplyOverlay, type AutoTaggingBusyLabel } from './AutoTaggingApplyOverlay';
 import { DockedResizeHandle, useStoredPanelWidth } from './DockedResizeHandle';
@@ -391,29 +389,36 @@ export const AutoTaggingReviewPane = () => {
         )}
 
         <Box sx={{ flex: 1, minHeight: 0 }}>
-          {isDateCuratorBatch(suggestions) || isDateTagOnlyBatch(suggestions) ? (
-            <DateCuratorPanel
-              autoFocus={false}
-              busy={busy}
-              finishWhenIdle={isDateCuratorBatch(suggestions)}
-              suggestions={suggestions}
-              onApply={handleApply}
-              onFocus={handleFocus}
-              onDecision={handleDecision}
-              onClose={handleClose}
-            />
-          ) : (
-            <ReviewPanel
-              autoFocus={false}
-              busy={busy}
-              suggestions={suggestions}
-              onApply={handleApply}
-              onFocus={handleFocus}
-              onDecision={handleDecision}
-              onClose={handleClose}
-              aiValidationEnabled={aiValidationEnabled}
-            />
-          )}
+          {(() => {
+            const pluginPanel = findPluginReviewPanel(suggestions);
+            if (pluginPanel) {
+              const PluginPanel = pluginPanel.component;
+              return (
+                <PluginPanel
+                  autoFocus={false}
+                  busy={busy}
+                  finishWhenIdle={pluginPanel.finishWhenIdle}
+                  suggestions={suggestions}
+                  onApply={handleApply}
+                  onFocus={handleFocus}
+                  onDecision={handleDecision}
+                  onClose={handleClose}
+                />
+              );
+            }
+            return (
+              <ReviewPanel
+                autoFocus={false}
+                busy={busy}
+                suggestions={suggestions}
+                onApply={handleApply}
+                onFocus={handleFocus}
+                onDecision={handleDecision}
+                onClose={handleClose}
+                aiValidationEnabled={aiValidationEnabled}
+              />
+            );
+          })()}
         </Box>
       </Box>
     </>

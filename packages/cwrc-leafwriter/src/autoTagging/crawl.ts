@@ -1,5 +1,5 @@
 import type { DictionaryEntry } from './dictionary';
-import { findTeiBodyRoot, isInsideDateElement } from './dates';
+import { findTeiBodyRoot, isInsideDateElement } from './dateTeiHelpers';
 import { buildSearchText } from './normalize';
 import type { WhitespacePolicy } from './types';
 

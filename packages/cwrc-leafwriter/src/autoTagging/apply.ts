@@ -1,5 +1,5 @@
 import { resolveAnchor } from './anchor';
-import { isEntityTagForbiddenInDate, isInsideDateElement } from './dates';
+import { isEntityTagForbiddenInDate, isInsideDateElement } from './dateTeiHelpers';
 import { isWrappedByEntityTag } from './suggestionFilters';
 import type { Suggestion, SuggestionAction, WhitespacePolicy } from './types';
 
