@@ -11,7 +11,12 @@ import {
   Typography,
 } from '@mui/material';
 import { useCallback, useEffect, useRef, useState } from 'react';
-import { isCjkDatesEnabled } from '../../plugins';
+import { isCjkDatesEnabled, getRegisteredAutoTaggingProducers, cjkDatesStepForProducer } from '../../plugins';
+import {
+  cjkDatesResolveDatesBatch,
+  cjkDatesTagDatesBatch,
+  isCjkDatesPythonAvailable,
+} from '../../plugins/cjkDatesPython';
 import {
   AutoTaggingSession,
   autoTaggingDocumentKey,
@@ -109,12 +114,17 @@ export const CalendarDialog = ({ notice, onClose, open = false }: CalendarDialog
   const session = useRef<AutoTaggingSession | null>(null);
   const { startAutoTaggingReview } = useActions().ui;
 
-  const sanmiaoAvailable =
-    !!window.electronAPI?.sanmiaoTagDatesBatch ||
-    !!window.electronAPI?.sanmiaoProposeDatesBatch ||
-    !!window.electronAPI?.sanmiaoProposeDates;
+  const sanmiaoAvailable = isCjkDatesPythonAvailable();
+  const dateProducers = getRegisteredAutoTaggingProducers('cjk-dates');
+  const tagProducer =
+    dateProducers.find((p) => cjkDatesStepForProducer(p.id) === 'tag') ??
+    dateProducers.find((p) => p.kind === 'dates');
+  const resolveProducer =
+    dateProducers.find((p) => cjkDatesStepForProducer(p.id) === 'resolve') ??
+    dateProducers.find((p) => p.kind === 'custom');
   const calendarOffered =
     isCjkDatesEnabled() &&
+    (dateProducers.length === 0 || Boolean(tagProducer && resolveProducer)) &&
     isDesktopApp() &&
     sanmiaoAvailable &&
     isEastAsianDatesMethodAvailable(sourceLanguage);
@@ -213,9 +223,8 @@ export const CalendarDialog = ({ notice, onClose, open = false }: CalendarDialog
   const selectedCiv = () => SANMIAO_CIV_OPTIONS.filter((o) => dateCiv[o.id]).map((o) => o.id);
 
   const runEastAsianDateTag = async () => {
-    const batchTag = window.electronAPI?.sanmiaoTagDatesBatch;
-    if (!batchTag) {
-      setError('Sanmiao tag API is not available. Restart the desktop app.');
+    if (!isCjkDatesPythonAvailable()) {
+      setError('East Asian dates plugin Python backend is not available. Restart the desktop app.');
       return;
     }
     const civ = selectedCiv();
@@ -229,10 +238,8 @@ export const CalendarDialog = ({ notice, onClose, open = false }: CalendarDialog
     setDatesProgress('Tagging dates…');
     setDatesChunkProgress({ done: 0, total: 0 });
     try {
-      const tagFn: import('../../autoTagging/dates').SanmiaoBatchTagFn = (chunks, opts, onChunk) => {
-        const stop = window.electronAPI?.onSanmiaoProgress?.((event) => onChunk?.(event));
-        return batchTag(chunks, opts).finally(() => stop?.());
-      };
+      const tagFn: import('../../autoTagging/dates').SanmiaoBatchTagFn = (chunks, opts, onChunk) =>
+        cjkDatesTagDatesBatch(chunks, opts, onChunk);
 
       const result = await getSession().runEastAsianDateTag(tagFn, {
         civ,
@@ -262,9 +269,8 @@ export const CalendarDialog = ({ notice, onClose, open = false }: CalendarDialog
   };
 
   const runEastAsianDateResolve = async () => {
-    const batchResolve = window.electronAPI?.sanmiaoResolveDatesBatch;
-    if (!batchResolve) {
-      setError('Sanmiao resolve API is not available. Restart the desktop app.');
+    if (!isCjkDatesPythonAvailable()) {
+      setError('East Asian dates plugin Python backend is not available. Restart the desktop app.');
       return;
     }
     const civ = selectedCiv();
@@ -282,10 +288,7 @@ export const CalendarDialog = ({ notice, onClose, open = false }: CalendarDialog
         dates,
         opts,
         onChunk,
-      ) => {
-        const stop = window.electronAPI?.onSanmiaoProgress?.((event) => onChunk?.(event));
-        return batchResolve(dates, opts).finally(() => stop?.());
-      };
+      ) => cjkDatesResolveDatesBatch(dates, opts, onChunk);
 
       const result = await getSession().runEastAsianDateResolve(resolveFn, {
         civ,
@@ -367,7 +370,7 @@ export const CalendarDialog = ({ notice, onClose, open = false }: CalendarDialog
                   complete={tagPassComplete}
                   count={dateCounts.tagged}
                   countLabel="tagged in document"
-                  label="Tag dates"
+                  label={tagProducer?.label ?? 'Tag dates'}
                   onRun={() => void runEastAsianDateTag()}
                   variant="contained"
                 />
@@ -377,7 +380,7 @@ export const CalendarDialog = ({ notice, onClose, open = false }: CalendarDialog
                   complete={resolvePassComplete}
                   count={dateCounts.resolved}
                   countLabel="resolved in document"
-                  label="Resolve dates"
+                  label={resolveProducer?.label ?? 'Resolve dates'}
                   onRun={() => void runEastAsianDateResolve()}
                 />
               </Stack>

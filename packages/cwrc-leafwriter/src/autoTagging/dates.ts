@@ -1,150 +1,43 @@
 import { buildDocIndex, collectTextNodes, createAnchor, type DocIndex } from './anchor';
 import { buildSearchText } from './normalize';
 import { chunkDocument, type Chunk } from './chunk';
+import {
+  buildTaggableDocIndex,
+  findTeiBodyRoot,
+  isInsideDateElement,
+} from './dateTeiHelpers';
 import type { Anchor, DateCandidate, DateResolution, Suggestion, WhitespacePolicy } from './types';
+import type {
+  DateTagOptions,
+  SanmiaoBatchProposeFn,
+  SanmiaoBatchResolveFn,
+  SanmiaoBatchTagFn,
+  SanmiaoChunkProgressEvent,
+  SanmiaoProposal,
+  SanmiaoProposeOptions,
+} from './sanmiaoDateTypes';
+
+export type {
+  DateTagOptions,
+  DateTagProgress,
+  SanmiaoBatchProposeFn,
+  SanmiaoBatchResolveFn,
+  SanmiaoBatchTagFn,
+  SanmiaoChunkProgressEvent,
+  SanmiaoProposal,
+  SanmiaoProposeOptions,
+} from './sanmiaoDateTypes';
+
+export {
+  buildTaggableDocIndex,
+  ENTITY_TAGS_FORBIDDEN_IN_DATE,
+  findTeiBodyRoot,
+  isEntityTagForbiddenInDate,
+  isInsideDateElement,
+} from './dateTeiHelpers';
 
 /** Tag the whole body in one sanmiao call; split by paragraph only above this size. */
 export const DATE_TAG_SPLIT_THRESHOLD_CHARS = 20_000;
-
-export interface SanmiaoProposeOptions {
-  civ?: string[];
-  sequential?: boolean;
-  fuzzy?: boolean;
-  tpq?: number;
-  taq?: number;
-  pg?: boolean;
-  lang?: string;
-}
-
-export interface SanmiaoProposal {
-  date_index: number;
-  date_string: string;
-  status: 'unique' | 'ambiguous' | 'unresolved' | 'tagged';
-  candidates: Array<{
-    displayLine: string;
-    attrs?: Record<string, string>;
-    era_id?: number | null;
-    dyn_id?: number | null;
-    error_str?: string | null;
-  }>;
-  attrs?: Record<string, string>;
-  parseInnerXml?: string;
-}
-
-export type SanmiaoBatchTagFn = (
-  chunks: string[],
-  options: SanmiaoProposeOptions,
-  onChunk?: (event: SanmiaoChunkProgressEvent) => void,
-) => Promise<SanmiaoProposal[][]>;
-
-export type SanmiaoBatchResolveFn = (
-  dateXml: string[],
-  options: SanmiaoProposeOptions,
-  onChunk?: (event: SanmiaoChunkProgressEvent) => void,
-) => Promise<(SanmiaoProposal | null)[]>;
-
-export type SanmiaoBatchProposeFn = (
-  chunks: string[],
-  options: SanmiaoProposeOptions,
-  onChunk?: (event: SanmiaoChunkProgressEvent) => void,
-) => Promise<SanmiaoProposal[][]>;
-
-export type SanmiaoChunkProgressEvent =
-  | { type: 'init'; total: number; tablesMs: number }
-  | {
-      type: 'chunk';
-      index: number;
-      done: number;
-      total: number;
-      ms: number;
-      chars: number;
-      proposals: number;
-      skipped: boolean;
-    };
-
-export interface DateTagProgress {
-  phase: 'starting' | 'chunk' | 'mapping' | 'done';
-  done: number;
-  total: number;
-  tablesMs?: number;
-  ms?: number;
-  chars?: number;
-  proposalsInChunk?: number;
-  suggestionsSoFar?: number;
-}
-
-export interface DateTagOptions extends SanmiaoProposeOptions {
-  onProgress?: (progress: DateTagProgress) => void;
-  /** Split by paragraph when taggable body text exceeds this (default 20_000). */
-  splitThresholdChars?: number;
-}
-
-/** Prefer TEI `<text><body>` over header/front matter. */
-export function findTeiBodyRoot(doc: Document): Node {
-  const root = doc.documentElement;
-  if (!root) return doc;
-  const walker = doc.createTreeWalker(root, NodeFilter.SHOW_ELEMENT);
-  let node = walker.nextNode() as Element | null;
-  while (node) {
-    if (node.localName === 'body' && hasAncestorLocalName(node, 'text')) return node;
-    node = walker.nextNode() as Element | null;
-  }
-  return root;
-}
-
-function hasAncestorLocalName(node: Element, name: string): boolean {
-  for (let el = node.parentElement; el; el = el.parentElement) {
-    if (el.localName === name) return true;
-  }
-  return false;
-}
-
-/** Document index excluding text already inside `<date>` elements. */
-export function buildTaggableDocIndex(root: Node, policy: WhitespacePolicy): DocIndex {
-  const all = collectTextNodes(root, policy);
-  const nodes = all.filter(({ node }) => !isInsideDateElement(node));
-  const nodeStart: number[] = [];
-  let total = 0;
-  for (const { search } of nodes) {
-    nodeStart.push(total);
-    total += search.text.length;
-  }
-  return { nodes, text: nodes.map((n) => n.search.text).join(''), nodeStart };
-}
-
-/** TEI entity tags that must not be inserted inside `<date>` (sanmiao owns that subtree). */
-export const ENTITY_TAGS_FORBIDDEN_IN_DATE = [
-  'persName',
-  'placeName',
-  'orgName',
-  'org',
-  'geogName',
-  'name',
-  'roleName',
-  'title',
-] as const;
-
-function hasDateAncestor(node: Node): boolean {
-  let el: Element | null =
-    node.nodeType === Node.TEXT_NODE
-      ? (node as Text).parentElement
-      : node.nodeType === Node.ELEMENT_NODE
-        ? (node as Element)
-        : node.parentElement;
-  for (; el; el = el.parentElement) {
-    if (el.localName === 'date') return true;
-  }
-  return false;
-}
-
-/** True when `node` sits inside a TEI `<date>` (including subelements like when/orig). */
-export function isInsideDateElement(node: Node): boolean {
-  return hasDateAncestor(node);
-}
-
-export function isEntityTagForbiddenInDate(tag: string): boolean {
-  return (ENTITY_TAGS_FORBIDDEN_IN_DATE as readonly string[]).includes(tag);
-}
 
 /** Map a flat offset in taggable search text to raw text-node offsets. */
 export function offsetToRawRange(

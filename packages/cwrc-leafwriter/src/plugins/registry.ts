@@ -1,9 +1,17 @@
 import type { AuthorityPackSpec } from '../autoTagging/packPaths';
 import { setDynamicAuthorityPackSpecs } from '../autoTagging/packPaths';
-import type { PluginHostSnapshotView, RegisteredPluginPackSpec } from './types';
+import { loadEnabledPluginModules } from './pluginLoader';
+import type {
+  PluginHostSnapshotView,
+  RegisteredAutoTaggingProducer,
+  RegisteredPluginPackSpec,
+  RegisteredToolsMenuItem,
+} from './types';
 
 let snapshot: PluginHostSnapshotView | null = null;
 let registeredPackSpecs: RegisteredPluginPackSpec[] = [];
+let registeredAutoTaggingProducers: RegisteredAutoTaggingProducer[] = [];
+let registeredToolsMenuItems: RegisteredToolsMenuItem[] = [];
 
 function rebuildPackSpecs(next: PluginHostSnapshotView | null) {
   registeredPackSpecs = [];
@@ -37,10 +45,38 @@ function rebuildPackSpecs(next: PluginHostSnapshotView | null) {
   setDynamicAuthorityPackSpecs(registeredPackSpecs);
 }
 
+function rebuildContributions(next: PluginHostSnapshotView | null) {
+  registeredAutoTaggingProducers = [];
+  registeredToolsMenuItems = [];
+  if (!next) return;
+
+  for (const plugin of next.plugins) {
+    if (!plugin.enabled || plugin.manifestError) continue;
+
+    for (const producer of plugin.manifest?.contributions?.autoTagging ?? []) {
+      registeredAutoTaggingProducers.push({
+        pluginId: plugin.id,
+        ...producer,
+      });
+    }
+
+    for (const item of plugin.manifest?.contributions?.toolsMenu ?? []) {
+      registeredToolsMenuItems.push({
+        pluginId: plugin.id,
+        ...item,
+        action: item.action ?? `${plugin.id}.${item.id}`,
+      });
+    }
+  }
+}
+
 export async function refreshPluginRegistry(): Promise<PluginHostSnapshotView | null> {
+  const previousEnabled = new Set(snapshot?.state.enabled ?? []);
   const next = await window.electronAPI?.pluginsGetSnapshot?.();
   snapshot = next ?? null;
   rebuildPackSpecs(snapshot);
+  rebuildContributions(snapshot);
+  await loadEnabledPluginModules(snapshot, previousEnabled);
   return snapshot;
 }
 
@@ -52,6 +88,22 @@ export function getRegisteredPluginPackSpecs(): RegisteredPluginPackSpec[] {
   return registeredPackSpecs;
 }
 
+export function getRegisteredAutoTaggingProducers(
+  pluginId?: string,
+): RegisteredAutoTaggingProducer[] {
+  if (!pluginId) return registeredAutoTaggingProducers;
+  return registeredAutoTaggingProducers.filter((producer) => producer.pluginId === pluginId);
+}
+
+export function getRegisteredToolsMenuItems(pluginId?: string): RegisteredToolsMenuItem[] {
+  if (!pluginId) return registeredToolsMenuItems;
+  return registeredToolsMenuItems.filter((item) => item.pluginId === pluginId);
+}
+
+export function findRegisteredToolsMenuAction(action: string): RegisteredToolsMenuItem | undefined {
+  return registeredToolsMenuItems.find((item) => item.action === action);
+}
+
 export function getEnabledPluginIds(): string[] {
   return snapshot?.state.enabled ?? [];
 }
@@ -61,7 +113,10 @@ export function isPluginEnabled(pluginId: string): boolean {
 }
 
 export function isCjkDatesEnabled(): boolean {
-  return isPluginEnabled('cjk-dates');
+  if (!isPluginEnabled('cjk-dates')) return false;
+  const producers = getRegisteredAutoTaggingProducers('cjk-dates');
+  if (producers.length === 0) return true;
+  return producers.some((p) => p.kind === 'dates' || p.kind === 'custom');
 }
 
 export function findLanguagePromptForDocumentLanguage(lang: string | undefined): {
@@ -85,4 +140,5 @@ export function findLanguagePromptForDocumentLanguage(lang: string | undefined):
 export function setPluginRegistrySnapshot(next: PluginHostSnapshotView | null) {
   snapshot = next;
   rebuildPackSpecs(snapshot);
+  rebuildContributions(snapshot);
 }

@@ -1,5 +1,7 @@
 import { useEffect, useState } from 'react';
 import { enrichDateAuthorityIndex } from './search';
+import { isCjkDatesEnabled } from '../plugins';
+import { cjkDatesListDateAuthority, isCjkDatesPythonAvailable } from '../plugins/cjkDatesPython';
 import type { DateAuthorityIndex } from './types';
 
 let cachedIndex: DateAuthorityIndex | null = null;
@@ -14,11 +16,10 @@ export async function loadDateAuthority(
   const key = civ.join(',');
   if (cachedIndex && cacheKey === key) return cachedIndex;
 
-  const listFn = window.electronAPI?.sanmiaoListDateAuthority;
-  if (!listFn) return null;
+  if (!isCjkDatesPythonAvailable() || !isCjkDatesEnabled()) return null;
 
   if (!inflight) {
-    inflight = listFn({ civ: [...civ] })
+    inflight = cjkDatesListDateAuthority({ civ: [...civ] })
       .then((raw) => {
         const index = enrichDateAuthorityIndex(raw);
         cachedIndex = index;
@@ -82,5 +83,5 @@ export function useDateAuthority(enabled: boolean): {
 }
 
 export function isDateAuthorityAvailable(): boolean {
-  return Boolean(window.electronAPI?.sanmiaoListDateAuthority);
+  return isCjkDatesPythonAvailable() && isCjkDatesEnabled();
 }

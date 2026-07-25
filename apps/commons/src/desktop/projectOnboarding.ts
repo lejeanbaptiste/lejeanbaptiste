@@ -36,11 +36,14 @@ export const completeProjectOnboarding = async (
     if (setup.result !== 'installed' || !setup.bundle) return null;
     current = setup.bundle;
   } else if (
-    window.electronAPI?.ensureSanmiaoDatesSchema &&
+    window.electronAPI?.pluginsEnsureSchemaContribution &&
     (await window.electronAPI.pluginsIsEnabled?.('cjk-dates'))
   ) {
-    log('schema present — ensuring sanmiao dates schema');
-    const mergeResult = await window.electronAPI.ensureSanmiaoDatesSchema(current.projectFilePath);
+    log('schema present — ensuring cjk-dates schema contribution');
+    const mergeResult = await window.electronAPI.pluginsEnsureSchemaContribution(
+      'cjk-dates',
+      current.projectFilePath,
+    );
     log(`sanmiao merge: ${mergeResult.merged}`);
     if (mergeResult.merged && window.writer) {
       await window.writer.overmindActions?.validator?.clearCache?.();

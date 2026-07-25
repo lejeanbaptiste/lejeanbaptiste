@@ -157,6 +157,20 @@ export interface ElectronAPI {
     cssPath?: string | null,
   ) => Promise<ProjectBundle>;
   ensureSanmiaoDatesSchema?: (projectFilePath: string) => Promise<{ merged: boolean }>;
+  pluginsEnsureSchemaContribution?: (
+    pluginId: string,
+    projectFilePath: string,
+  ) => Promise<{ merged: boolean }>;
+  pluginsInvokePython?: (
+    pluginId: string,
+    payload: Record<string, unknown>,
+  ) => Promise<unknown>;
+  onPluginPythonProgress?: (
+    pluginId: string,
+    callback: (
+      progress: import('../../../packages/cwrc-leafwriter/src/autoTagging/dates').SanmiaoChunkProgressEvent,
+    ) => void,
+  ) => () => void;
   checkSchemaUpdate: (
     projectFilePath: string,
     options?: SchemaUpdateCheckOptions,
@@ -256,6 +270,7 @@ export interface ElectronAPI {
   pluginsPickInstallFolder?: () => Promise<string | null>;
   pluginsDismissLanguagePrompt?: (pluginId: string) => Promise<void>;
   pluginsIsEnabled?: (pluginId: string) => Promise<boolean>;
+  pluginsGetModuleUrl?: (pluginId: string) => Promise<string | null>;
   authorityLifecycleGet?: () => Promise<
     import('../../commons/src/desktop/authorityLifecycleTypes').AuthorityLifecycleStatus
   >;
@@ -294,28 +309,6 @@ export interface ElectronAPI {
     callback: (
       progress: import('../../commons/src/desktop/authorityChgisTypes').ChgisInstallProgress,
     ) => void,
-  ) => () => void;
-  sanmiaoProposeDates?: (
-    text: string,
-    options?: import('./sanmiaoBridge').SanmiaoProposeOptions,
-  ) => Promise<import('./sanmiaoBridge').SanmiaoProposal[]>;
-  sanmiaoProposeDatesBatch?: (
-    chunks: string[],
-    options?: import('./sanmiaoBridge').SanmiaoProposeOptions,
-  ) => Promise<import('./sanmiaoBridge').SanmiaoProposal[][]>;
-  sanmiaoTagDatesBatch?: (
-    chunks: string[],
-    options?: import('./sanmiaoBridge').SanmiaoProposeOptions,
-  ) => Promise<import('./sanmiaoBridge').SanmiaoProposal[][]>;
-  sanmiaoResolveDatesBatch?: (
-    dates: string[],
-    options?: import('./sanmiaoBridge').SanmiaoProposeOptions,
-  ) => Promise<(import('./sanmiaoBridge').SanmiaoProposal | null)[]>;
-  sanmiaoListDateAuthority?: (
-    options?: import('./sanmiaoBridge').SanmiaoProposeOptions,
-  ) => Promise<import('./sanmiaoBridge').DateAuthorityIndex>;
-  onSanmiaoProgress?: (
-    callback: (progress: import('./sanmiaoBridge').SanmiaoChunkProgress) => void,
   ) => () => void;
   updateProjectFileConfig: (
     projectFilePath: string,
@@ -419,7 +412,22 @@ const electronAPI: ElectronAPI = {
   installLocalSchema: (projectFilePath: string, rngPath: string, cssPath?: string | null) =>
     ipcRenderer.invoke('installLocalSchema', projectFilePath, rngPath, cssPath),
   ensureSanmiaoDatesSchema: (projectFilePath: string) =>
-    ipcRenderer.invoke('ensureSanmiaoDatesSchema', projectFilePath),
+    ipcRenderer.invoke('plugins:ensureSchemaContribution', 'cjk-dates', projectFilePath),
+  pluginsEnsureSchemaContribution: (pluginId: string, projectFilePath: string) =>
+    ipcRenderer.invoke('plugins:ensureSchemaContribution', pluginId, projectFilePath),
+  pluginsInvokePython: (pluginId: string, payload: Record<string, unknown>) =>
+    ipcRenderer.invoke('plugins:invokePython', pluginId, payload),
+  onPluginPythonProgress: (pluginId, callback) => {
+    const listener = (
+      _event: Electron.IpcRendererEvent,
+      eventPluginId: string,
+      progress: import('../../../packages/cwrc-leafwriter/src/autoTagging/dates').SanmiaoChunkProgressEvent,
+    ) => {
+      if (eventPluginId === pluginId) callback(progress);
+    };
+    ipcRenderer.on('plugins:pythonProgress', listener);
+    return () => ipcRenderer.removeListener('plugins:pythonProgress', listener);
+  },
   checkSchemaUpdate: (projectFilePath: string, options?: SchemaUpdateCheckOptions) =>
     ipcRenderer.invoke('checkSchemaUpdate', projectFilePath, options),
   applyCatalogSchemaUpdate: (projectFilePath: string) =>
@@ -497,6 +505,7 @@ const electronAPI: ElectronAPI = {
   pluginsDismissLanguagePrompt: (pluginId: string) =>
     ipcRenderer.invoke('plugins:dismissLanguagePrompt', pluginId),
   pluginsIsEnabled: (pluginId: string) => ipcRenderer.invoke('plugins:isEnabled', pluginId),
+  pluginsGetModuleUrl: (pluginId: string) => ipcRenderer.invoke('plugins:getModuleUrl', pluginId),
   authorityLifecycleGet: () => ipcRenderer.invoke('authorityLifecycle:get'),
   authorityLifecycleSetEnabled: (options) =>
     ipcRenderer.invoke('authorityLifecycle:setEnabled', options),
@@ -533,22 +542,6 @@ const electronAPI: ElectronAPI = {
     ) => callback(progress);
     ipcRenderer.on('authorityChgis:progress', listener);
     return () => ipcRenderer.removeListener('authorityChgis:progress', listener);
-  },
-  sanmiaoProposeDates: (text, options) => ipcRenderer.invoke('sanmiao:proposeDates', text, options),
-  sanmiaoProposeDatesBatch: (chunks, options) =>
-    ipcRenderer.invoke('sanmiao:proposeDatesBatch', chunks, options),
-  sanmiaoTagDatesBatch: (chunks, options) =>
-    ipcRenderer.invoke('sanmiao:tagDatesBatch', chunks, options),
-  sanmiaoResolveDatesBatch: (dates, options) =>
-    ipcRenderer.invoke('sanmiao:resolveDatesBatch', dates, options),
-  sanmiaoListDateAuthority: (options) => ipcRenderer.invoke('sanmiao:listDateAuthority', options),
-  onSanmiaoProgress: (callback) => {
-    const listener = (
-      _event: Electron.IpcRendererEvent,
-      progress: import('./sanmiaoBridge').SanmiaoChunkProgress,
-    ) => callback(progress);
-    ipcRenderer.on('sanmiao:progress', listener);
-    return () => ipcRenderer.removeListener('sanmiao:progress', listener);
   },
   updateProjectFileConfig: (projectFilePath: string, patch: Record<string, unknown>) =>
     ipcRenderer.invoke('updateProjectFileConfig', projectFilePath, patch),

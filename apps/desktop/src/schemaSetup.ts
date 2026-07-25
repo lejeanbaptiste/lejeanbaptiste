@@ -20,6 +20,7 @@ import {
   shouldMergeSanmiaoDates,
   writeSanmiaoMergedTeiSchema,
 } from './sanmiaoSchemaMerge';
+import { isPluginEnabledInMain } from './plugins';
 
 const TEI_NS = 'http://www.tei-c.org/ns/1.0';
 
@@ -61,7 +62,7 @@ export const installCatalogSchema = async (
       priorFiles.set(filePath, await fs.readFile(filePath).catch(() => null));
     }
 
-    if (shouldMergeSanmiaoDates(entry.id, rngContent)) {
+    if (isPluginEnabledInMain('cjk-dates') && shouldMergeSanmiaoDates(entry.id, rngContent)) {
       await writeSanmiaoMergedTeiSchema(schemaDir, entry.localRngName, rngContent);
     } else {
       await fs.writeFile(rngPath, rngContent, 'utf-8');
@@ -131,7 +132,7 @@ export const installLocalSchema = async (
 
     const rngContent = await fs.readFile(destRng, 'utf-8');
 
-    if (shouldMergeSanmiaoDates(undefined, rngContent)) {
+    if (isPluginEnabledInMain('cjk-dates') && shouldMergeSanmiaoDates(undefined, rngContent)) {
       await writeSanmiaoMergedTeiSchema(schemaDir, rngName, rngContent);
     }
 

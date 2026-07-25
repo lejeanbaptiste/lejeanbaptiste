@@ -85,6 +85,8 @@ import {
 import { getChgisStatus, installChgisFromArchive, removeChgisData } from './authorityChgis';
 import {
   dismissPluginLanguagePrompt,
+  getEnabledPluginToolsMenuItems,
+  getPluginEntryModuleUrl,
   getPluginHostSnapshot,
   installPluginFromDirectory,
   isPluginEnabledInMain,
@@ -137,14 +139,7 @@ import {
   restoreTimeMachineSnapshotToProject,
   restoreTimeMachineSnapshotToDirectory,
 } from './timeMachine';
-import {
-  sanmiaoListDateAuthority,
-  sanmiaoProposeDates,
-  sanmiaoProposeDatesBatch,
-  sanmiaoResolveDatesBatch,
-  sanmiaoTagDatesBatch,
-  type SanmiaoProposeOptions,
-} from './sanmiaoBridge';
+import { invokePluginPython } from './pluginPythonBridge';
 
 const APP_NAME = 'Le Jean-Baptiste';
 
@@ -925,19 +920,27 @@ const buildViewMenu = (): Electron.MenuItemConstructorOptions => ({
   ],
 });
 
-const buildToolsMenu = (): Electron.MenuItemConstructorOptions => ({
-  label: 'Tools',
-  submenu: [
+const buildToolsMenu = (): Electron.MenuItemConstructorOptions => {
+  const pluginItems = getEnabledPluginToolsMenuItems();
+  const submenu: Electron.MenuItemConstructorOptions[] = [
     {
       label: 'Plugins…',
       click: () => sendMenuAction('open-plugins'),
     },
     menuSeparator(),
-    {
-      label: 'East Asian date curator…',
-      click: () => sendMenuAction('cjk-dates.open-curator'),
-    },
-    menuSeparator(),
+  ];
+
+  for (const item of pluginItems) {
+    if (item.separatorBefore) submenu.push(menuSeparator());
+    submenu.push({
+      label: item.label,
+      click: () => sendMenuAction(item.action),
+    });
+  }
+
+  if (pluginItems.length > 0) submenu.push(menuSeparator());
+
+  submenu.push(
     {
       label: 'Zotero Preferences',
       click: () => sendMenuAction('zotero-preferences'),
@@ -946,8 +949,10 @@ const buildToolsMenu = (): Electron.MenuItemConstructorOptions => ({
       label: 'Zotero Refresh',
       click: () => sendMenuAction('zotero-refresh'),
     },
-  ],
-});
+  );
+
+  return { label: 'Tools', submenu };
+};
 
 const buildHelpMenu = (): Electron.MenuItemConstructorOptions => ({
   label: 'Help',
@@ -1428,13 +1433,32 @@ const registerIpcHandlers = () => {
     },
   );
 
-  ipcMain.handle('ensureSanmiaoDatesSchema', async (_event, projectFilePath: string) => {
-    if (!isPluginEnabledInMain('cjk-dates')) return { merged: false };
-    const bundle = await loadProjectFile(projectFilePath);
-    if (!bundle) return { merged: false };
-    const merged = await ensureSanmiaoDatesSchemaMerged(bundle);
-    return { merged };
-  });
+  ipcMain.handle(
+    'plugins:ensureSchemaContribution',
+    async (_event, pluginId: string, projectFilePath: string) => {
+      if (pluginId !== 'cjk-dates' || !isPluginEnabledInMain(pluginId)) return { merged: false };
+      const bundle = await loadProjectFile(projectFilePath);
+      if (!bundle) return { merged: false };
+      const merged = await ensureSanmiaoDatesSchemaMerged(bundle);
+      return { merged };
+    },
+  );
+
+  ipcMain.handle(
+    'plugins:invokePython',
+    async (event, pluginId: string, payload: Record<string, unknown>) => {
+      const useStream = Boolean(payload.chunks || payload.dates);
+      return invokePluginPython(
+        pluginId,
+        payload,
+        useStream
+          ? (progress) => {
+              event.sender.send('plugins:pythonProgress', pluginId, progress);
+            }
+          : undefined,
+      );
+    },
+  );
 
   ipcMain.handle(
     'checkSchemaUpdate',
@@ -1683,40 +1707,6 @@ const registerIpcHandlers = () => {
     );
   });
 
-  ipcMain.handle(
-    'sanmiao:proposeDates',
-    async (_event, text: string, options?: SanmiaoProposeOptions) =>
-      sanmiaoProposeDates(text, options ?? {}),
-  );
-
-  ipcMain.handle(
-    'sanmiao:proposeDatesBatch',
-    async (event, chunks: string[], options?: SanmiaoProposeOptions) =>
-      sanmiaoProposeDatesBatch(chunks, options ?? {}, (progress) => {
-        event.sender.send('sanmiao:progress', progress);
-      }),
-  );
-
-  ipcMain.handle(
-    'sanmiao:tagDatesBatch',
-    async (event, chunks: string[], options?: SanmiaoProposeOptions) =>
-      sanmiaoTagDatesBatch(chunks, options ?? {}, (progress) => {
-        event.sender.send('sanmiao:progress', progress);
-      }),
-  );
-
-  ipcMain.handle(
-    'sanmiao:resolveDatesBatch',
-    async (event, dates: string[], options?: SanmiaoProposeOptions) =>
-      sanmiaoResolveDatesBatch(dates, options ?? {}, (progress) => {
-        event.sender.send('sanmiao:progress', progress);
-      }),
-  );
-
-  ipcMain.handle('sanmiao:listDateAuthority', async (_event, options?: SanmiaoProposeOptions) =>
-    sanmiaoListDateAuthority(options ?? {}),
-  );
-
   ipcMain.handle('authorityPack:installFrom', async (_event, sourcePacksRoot: string) => {
     const folder = await getEntityDbFolderOrNull();
     if (!folder) return { ok: false, error: 'No entity database folder configured.' };
@@ -1758,6 +1748,7 @@ const registerIpcHandlers = () => {
 
   ipcMain.handle('plugins:setEnabled', async (_event, pluginId: string, enabled: boolean) => {
     const snapshot = await setPluginEnabled(pluginId, enabled);
+    buildApplicationMenu();
     return {
       plugins: snapshot.plugins.map((plugin) => ({
         id: plugin.id,
@@ -1783,6 +1774,7 @@ const registerIpcHandlers = () => {
 
   ipcMain.handle('plugins:installFrom', async (_event, sourceDir: string) => {
     const snapshot = await installPluginFromDirectory(sourceDir);
+    buildApplicationMenu();
     return {
       plugins: snapshot.plugins.map((plugin) => ({
         id: plugin.id,
@@ -1828,6 +1820,10 @@ const registerIpcHandlers = () => {
 
   ipcMain.handle('plugins:isEnabled', async (_event, pluginId: string) => {
     return isPluginEnabledInMain(pluginId);
+  });
+
+  ipcMain.handle('plugins:getModuleUrl', async (_event, pluginId: string) => {
+    return getPluginEntryModuleUrl(pluginId);
   });
 
   const emitAuthorityLifecycleProgress = (
@@ -2429,7 +2425,6 @@ app.whenReady().then(() => {
     if (icon) app.dock?.setIcon(icon);
   }
 
-  buildApplicationMenu();
   registerLjbProtocol();
   registerGameAssetProtocol();
   registerAvatarProtocol();
@@ -2440,6 +2435,8 @@ app.whenReady().then(() => {
   initAutoUpdater();
   void (async () => {
     await seedDevPluginsIfEmpty();
+    await getPluginHostSnapshot();
+    buildApplicationMenu();
     await syncEnabledPluginContributions();
   })();
   void createWindow();

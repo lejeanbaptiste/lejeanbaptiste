@@ -51,26 +51,13 @@ declare global {
       enabled: boolean;
       languageCodes?: string[];
     }) => Promise<void>;
-    sanmiaoListDateAuthority?: (options?: {
-      civ?: string[];
-    }) => Promise<import('../dateAuthority/types').DateAuthorityIndex>;
-    sanmiaoProposeDates?: (
-      text: string,
-      options?: import('../autoTagging/dates').SanmiaoProposeOptions,
-    ) => Promise<import('../autoTagging/dates').SanmiaoProposal[]>;
-    sanmiaoProposeDatesBatch?: (
-      chunks: string[],
-      options?: import('../autoTagging/dates').SanmiaoProposeOptions,
-    ) => Promise<import('../autoTagging/dates').SanmiaoProposal[][]>;
-    sanmiaoTagDatesBatch?: (
-      chunks: string[],
-      options?: import('../autoTagging/dates').SanmiaoProposeOptions,
-    ) => Promise<import('../autoTagging/dates').SanmiaoProposal[][]>;
-    sanmiaoResolveDatesBatch?: (
-      dates: string[],
-      options?: import('../autoTagging/dates').SanmiaoProposeOptions,
-    ) => Promise<(import('../autoTagging/dates').SanmiaoProposal | null)[]>;
-    onSanmiaoProgress?: (
+    pluginsEnsureSchemaContribution?: (
+      pluginId: string,
+      projectFilePath: string,
+    ) => Promise<{ merged: boolean }>;
+    pluginsInvokePython?: (pluginId: string, payload: Record<string, unknown>) => Promise<unknown>;
+    onPluginPythonProgress?: (
+      pluginId: string,
       callback: (progress: import('../autoTagging/dates').SanmiaoChunkProgressEvent) => void,
     ) => () => void;
     showNativeMessageBox?: (options: {
@@ -126,6 +113,7 @@ declare global {
     pluginsPickInstallFolder?: () => Promise<string | null>;
     pluginsDismissLanguagePrompt?: (pluginId: string) => Promise<void>;
     pluginsIsEnabled?: (pluginId: string) => Promise<boolean>;
+    pluginsGetModuleUrl?: (pluginId: string) => Promise<string | null>;
     /** CHGIS historical-places authority (installed from a downloaded archive). */
     authorityChgisGet?: () => Promise<{
       installed: boolean;

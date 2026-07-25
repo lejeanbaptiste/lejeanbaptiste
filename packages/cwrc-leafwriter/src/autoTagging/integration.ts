@@ -1,6 +1,5 @@
 import { buildDocIndex, locateOccurrenceInIndex } from './anchor';
 import { autoSyncEntityToCentral } from './autoSync';
-import { dateCuratorDisplaySurface } from './dateCurator';
 import {
   applySuggestions,
   assignEntity,
@@ -55,13 +54,7 @@ import { llmAudit, type LlmAuditResult } from './llmAudit';
 import { normalizeDomText } from './normalize';
 import { AUTHORITY_PACKS, authorityPackOrigin, type AuthorityPackId } from './packPaths';
 import { MAX_AUTHORITY_SUGGESTIONS, runAuthorityTagBombOnDocument } from './authorityTagBomb';
-import {
-  dateTagOnlyFromSanmiao,
-  dateResolveFromDocument,
-  type DateTagOptions,
-  type SanmiaoBatchResolveFn,
-  type SanmiaoBatchTagFn,
-} from './dates';
+import type { DateTagOptions, SanmiaoBatchResolveFn, SanmiaoBatchTagFn } from './sanmiaoDateTypes';
 import {
   collectMentions,
   mergeMentionGroups,
@@ -631,6 +624,7 @@ export class AutoTaggingSession {
     batchTag: SanmiaoBatchTagFn,
     options: DateTagOptions = {},
   ): Promise<{ suggestions: Suggestion[]; proposalCount: number }> {
+    const { dateTagOnlyFromSanmiao } = await import('./dates');
     const doc = await this.getDocument();
     const suggestions = await dateTagOnlyFromSanmiao(doc, this.policy, batchTag, options);
     return { suggestions, proposalCount: suggestions.length };
@@ -640,6 +634,7 @@ export class AutoTaggingSession {
     batchResolve: SanmiaoBatchResolveFn,
     options: DateTagOptions = {},
   ): Promise<{ suggestions: Suggestion[]; proposalCount: number }> {
+    const { dateResolveFromDocument } = await import('./dates');
     const doc = await this.getDocument();
     const suggestions = await dateResolveFromDocument(doc, this.policy, batchResolve, options);
     return { suggestions, proposalCount: suggestions.length };
@@ -1061,7 +1056,10 @@ export class AutoTaggingSession {
     if (!editor) return false;
 
     try {
-      const displaySurface = dateCuratorDisplaySurface(suggestion);
+      const displaySurface =
+        suggestion.source === 'dates' && suggestion.dateResolution
+          ? suggestion.dateResolution.displaySurface ?? suggestion.anchor.surface
+          : suggestion.anchor.surface;
       if (this.focusAnchor(displaySurface, suggestion.anchor.occurrence)) return true;
       return this.focusAnchor(suggestion.anchor.surface, suggestion.anchor.occurrence);
     } catch {

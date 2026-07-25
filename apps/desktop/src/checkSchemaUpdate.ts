@@ -21,6 +21,7 @@ import {
   shouldMergeSanmiaoDates,
   writeSanmiaoMergedTeiSchema,
 } from './sanmiaoSchemaMerge';
+import { isPluginEnabledInMain } from './plugins';
 import type { ProjectMetadataFile } from './projectTypes';
 import {
   isSchemaCheckThrottled,
@@ -194,7 +195,7 @@ export const applyCatalogSchemaUpdate = async (
     const { text: rngContent, url: sourceUrl } = await fetchText(entry.rngUrls);
     const { text: cssContent, url: sourceCssUrl } = await fetchText(entry.cssUrls);
 
-    if (shouldMergeSanmiaoDates(entry.id, rngContent)) {
+    if (isPluginEnabledInMain('cjk-dates') && shouldMergeSanmiaoDates(entry.id, rngContent)) {
       await writeSanmiaoMergedTeiSchema(schemaDir, entry.localRngName, rngContent);
     } else {
       await fs.writeFile(rngPath, rngContent, 'utf-8');

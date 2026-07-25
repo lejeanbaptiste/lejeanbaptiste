@@ -18,16 +18,15 @@ import {
 } from '@mui/material';
 import { leafwriterAtom } from '@src/jotai';
 import { useActions, useAppState } from '@src/overmind';
+import { useAtomValue } from 'jotai';
+import { lazy, Suspense, useCallback, useEffect, useRef, useState } from 'react';
+import { isCjkDatesEnabled } from '../../../../../packages/cwrc-leafwriter/src/plugins/registry';
+import { isEastAsianCalendarLanguageCode } from '../../../../../packages/cwrc-leafwriter/src/utilities/languageCodes';
 import {
-  EastAsianDateFields,
-  isCjkDatesEnabled,
-  isEastAsianCalendarLanguageCode,
   mergeEastAsianIntoAttributes,
   readEastAsianDateValues,
-  useDateAuthority,
-} from '@cwrc/leafwriter';
-import { useAtomValue } from 'jotai';
-import { useCallback, useEffect, useRef, useState } from 'react';
+} from '../../../../../packages/cwrc-leafwriter/src/dateAuthority/values';
+import type { EastAsianDateValues } from '../../../../../packages/cwrc-leafwriter/src/dateAuthority/types';
 import { CbdbIcon, DilaIcon, InitialsIcon } from '../../../../../packages/cwrc-leafwriter/src/icons/custom/AuthoritySource';
 import { WikipediaIcon } from '../../../../../packages/cwrc-leafwriter/src/icons/custom/Wikipedia';
 import {
@@ -42,6 +41,12 @@ import {
 import { nameTypeLabel } from '../../../../../packages/cwrc-leafwriter/src/autoTagging/nameTypeLabels';
 import { entityStoreFromDesktop } from '../../../../../packages/cwrc-leafwriter/src/autoTagging/entityStore';
 import { foldForSearch } from '../../../../../packages/cwrc-leafwriter/src/utilities/romanize';
+
+const LazyAttributesEastAsianSection = lazy(() =>
+  import('../../../../../packages/cwrc-leafwriter/src/dateAuthority/AttributesEastAsianSection').then(
+    (mod) => ({ default: mod.AttributesEastAsianSection }),
+  ),
+);
 import { openExternalUrl } from '../../../../../packages/cwrc-leafwriter/src/utilities/DOM';
 import {
   applyAttributeToTag,
@@ -121,9 +126,6 @@ export const AttributesPanel = ({ visible = true }: { visible?: boolean }) => {
     isCjkDatesEnabled() &&
     tagName === 'date' &&
     isEastAsianCalendarLanguageCode(sourceLanguage);
-  const { authority, loading: authorityLoading, error: authorityError } = useDateAuthority(
-    eastAsianDates,
-  );
 
   const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const syncGenerationRef = useRef(0);
@@ -561,7 +563,7 @@ export const AttributesPanel = ({ visible = true }: { visible?: boolean }) => {
     );
   }
 
-  const handleEastAsianChange = (nextValues: ReturnType<typeof readEastAsianDateValues>) => {
+  const handleEastAsianChange = (nextValues: EastAsianDateValues) => {
     const merged = mergeEastAsianIntoAttributes(valuesRef.current, nextValues);
     valuesRef.current = merged;
     setValues(merged);
@@ -772,14 +774,13 @@ export const AttributesPanel = ({ visible = true }: { visible?: boolean }) => {
       <Box sx={{ flex: 1, minHeight: 0, overflow: 'auto', p: 1.5 }}>
         <Stack spacing={1.5}>
           {eastAsianDates ? (
-            <EastAsianDateFields
-              authority={authority}
-              disabled={readonly}
-              error={authorityError}
-              loading={authorityLoading}
-              onChange={handleEastAsianChange}
-              values={readEastAsianDateValues(values)}
-            />
+            <Suspense fallback={<Typography variant="body2">Loading calendar fields…</Typography>}>
+              <LazyAttributesEastAsianSection
+                disabled={readonly}
+                onChange={handleEastAsianChange}
+                values={readEastAsianDateValues(values)}
+              />
+            </Suspense>
           ) : null}
 
           {setAttributeEntries.length === 0 && !eastAsianDates ? (

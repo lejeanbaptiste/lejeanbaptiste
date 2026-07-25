@@ -26,12 +26,37 @@ export interface PluginHostSnapshotView {
   };
 }
 
+export interface PluginAutoTaggingProducerView {
+  id: string;
+  label: string;
+  description?: string;
+  kind: string;
+  defaultEnabled?: boolean;
+  tags?: string[];
+}
+
+export interface PluginToolsMenuItemView {
+  id: string;
+  label: string;
+  action?: string;
+  separatorBefore?: boolean;
+}
+
 export interface PluginManifestContributionsView {
-  autoTagging?: { id: string; label: string; kind: string }[];
+  autoTagging?: PluginAutoTaggingProducerView[];
   authorityPacks?: { id: string; label: string; defaultTag?: string }[];
-  toolsMenu?: { id: string; label: string }[];
+  toolsMenu?: PluginToolsMenuItemView[];
 }
 
 export interface RegisteredPluginPackSpec extends AuthorityPackSpec {
   pluginId: string;
+}
+
+export interface RegisteredAutoTaggingProducer extends PluginAutoTaggingProducerView {
+  pluginId: string;
+}
+
+export interface RegisteredToolsMenuItem extends PluginToolsMenuItemView {
+  pluginId: string;
+  action: string;
 }

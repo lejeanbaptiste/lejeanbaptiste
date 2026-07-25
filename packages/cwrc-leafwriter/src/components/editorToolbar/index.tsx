@@ -2,7 +2,7 @@ import { Box, Divider, Paper, Stack, useTheme } from '@mui/material';
 import { AnimatePresence, motion } from 'motion/react';
 import { useCallback, useRef } from 'react';
 import { useTranslation } from 'react-i18next';
-import { useCalendarWorkflow } from '../../autoTagging';
+import { getPluginToolbarItems } from '../../plugins/pluginExtensions';
 import type { IconLeafWriter } from '../../icons';
 import { useActions, useAppState } from '../../overmind';
 import type { ChoiceDisplayMode } from '../../overmind/editor/state';
@@ -57,7 +57,7 @@ export const EditorToolbar = () => {
   const { cycleChoiceDisplayMode, toggleShowBreaks, toggleShowNotes, toggleShowTags, toggleTextLocked } =
     useActions().editor;
   const { openDialog, showContextMenu } = useActions().ui;
-  const { calendarOffered } = useCalendarWorkflow();
+  const pluginToolbarItems = getPluginToolbarItems();
 
   const openCalendarDialog = useCallback(
     (notice?: string) => {
@@ -294,15 +294,18 @@ export const EditorToolbar = () => {
       title: t('LW.xpathSearch.title'),
       type: 'iconButton',
     },
-    {
-      group: 'ui',
-      hide: isReadonly || !calendarOffered,
-      icon: 'date',
-      onClick: () => openCalendarDialog(),
-      title: 'Calendar',
-      tooltip: 'Tag and resolve East Asian dates (sanmiao)',
-      type: 'iconButton',
-    },
+    ...pluginToolbarItems.map(
+      (item) =>
+        ({
+          group: item.group ?? 'ui',
+          hide: isReadonly || !item.isAvailable(),
+          icon: item.icon as IconLeafWriter,
+          onClick: () => item.onClick({ openCalendar: openCalendarDialog }),
+          title: item.title,
+          tooltip: item.tooltip,
+          type: 'iconButton',
+        }) satisfies MenuItem,
+    ),
     {
       group: 'ui',
       hide: isReadonly,
