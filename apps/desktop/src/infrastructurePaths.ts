@@ -1,11 +1,19 @@
 /**
  * Hidden project infrastructure lives under `/.ljb/` (decision log, authority
- * cache, etc.). The visible `entities.xml` at project root (project mode) is
- * also excluded from corpus scans. Whole-project operations must skip both.
+ * cache, etc.) and `/.ljb-time-machine/` (project snapshots). The visible
+ * `entities.xml` at project root (project mode) is also excluded from corpus
+ * scans. Whole-project operations must skip all of these.
  */
 
 export const INFRASTRUCTURE_DIR = '.ljb';
+export const TIME_MACHINE_DIR = '.ljb-time-machine';
 export const ENTITIES_FILE_NAME = 'entities.xml';
+
+/** Directory names that walkers should never descend into. */
+export const INFRASTRUCTURE_DIR_NAMES = new Set([INFRASTRUCTURE_DIR, TIME_MACHINE_DIR]);
+
+export const isInfrastructureDirName = (name: string): boolean =>
+  INFRASTRUCTURE_DIR_NAMES.has(name);
 
 export const normalizePathKey = (filePath: string): string =>
   filePath.split(/[/\\]+/).filter(Boolean).join('/').toLowerCase();
@@ -13,9 +21,9 @@ export const normalizePathKey = (filePath: string): string =>
 export const pathsMatch = (a: string, b: string): boolean =>
   normalizePathKey(a) === normalizePathKey(b);
 
-/** True when any path segment is the reserved infrastructure directory. */
+/** True when any path segment is a reserved infrastructure directory. */
 export const isInfrastructurePath = (filePath: string): boolean =>
-  filePath.split(/[/\\]+/).includes(INFRASTRUCTURE_DIR);
+  filePath.split(/[/\\]+/).some((segment) => isInfrastructureDirName(segment));
 
 /**
  * True for the project-local entity database file at `{projectRoot}/entities.xml`.

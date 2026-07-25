@@ -626,12 +626,13 @@
           "merge_dialog_note": "L’entrée sélectionnée survit ; les autres sont fusionnées en elle.",
           "current_names": "Actuel : {{names}}",
           "keys_updated_summary": "{{keysUpdated}} balises mises à jour dans {{filesChanged}} fichiers sur {{projects}} projets.",
+          "entity_type_filter": "Type d’entité",
           "entity_types": {
             "all": "Tous",
-            "person": "Per",
-            "place": "Liu",
-            "organization": "Org",
-            "work": "Œuv"
+            "person": "Personne",
+            "place": "Lieu",
+            "organization": "Organisation",
+            "work": "Œuvre"
           },
           "status_installed": "installé",
           "save": "Enregistrer",

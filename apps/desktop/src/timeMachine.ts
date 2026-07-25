@@ -1,8 +1,9 @@
 import { constants } from 'fs';
 import fs from 'fs/promises';
 import path from 'path';
+import { TIME_MACHINE_DIR } from './infrastructurePaths';
 
-const BACKUP_DIR_NAME = '.ljb-time-machine';
+const BACKUP_DIR_NAME = TIME_MACHINE_DIR;
 const SNAPSHOTS_DIR_NAME = 'snapshots';
 const RESTORE_STAGING_DIR_NAME = 'restore-staging';
 const FILES_DIR_NAME = 'files';

@@ -23,11 +23,15 @@ import {
   isKnownLanguageCode,
   languageLabelForCode,
 } from '@cwrc/leafwriter/languageCodes';
+import {
+  NameTypePolicyPanel,
+  type NameTypePolicyIO,
+} from '../../../../../packages/cwrc-leafwriter/src/autoTagging/NameTypePolicyPanel';
 import { isDesktop } from '@src/types/desktop';
 import { SOURCE_LANGUAGE_PATH } from '@src/desktop/projectLanguage';
 import type { ProjectMetadataDialogState } from '@src/desktop/projectMetadataDialogState';
 import type { TranslationLanguage } from '@src/desktop/translationTypes';
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 
 export const NativeProjectMetadataPage = () => {
@@ -57,6 +61,36 @@ export const NativeProjectMetadataPage = () => {
     },
     [activeDialogId],
   );
+
+  const nameTypePolicyIO = useMemo((): NameTypePolicyIO => {
+    return {
+      load: async () => {
+        const state = (await invoke('getNameTypeTaggingPolicyState', {
+          dialogId: activeDialogId,
+        })) as {
+          buckets: Record<string, 'phase1' | 'phase2' | 'never'>;
+          customTypes: Array<{ id: string; label: string; bucket: 'phase1' | 'phase2' | 'never' }>;
+          artMinCodePoints: number;
+          sourceLanguage: string | null;
+        } | null;
+        if (!state) {
+          throw new Error('Could not load name-type policy.');
+        }
+        return state;
+      },
+      persist: async (next) => {
+        const result = (await invoke('persistNameTypeTaggingPolicy', {
+          dialogId: activeDialogId,
+          buckets: next.buckets,
+          customTypes: next.customTypes,
+          artMinCodePoints: next.artMinCodePoints,
+        })) as { ok?: boolean; error?: string } | null;
+        if (!result?.ok) {
+          throw new Error(result?.error ?? 'Could not save name-type policy.');
+        }
+      },
+    };
+  }, [activeDialogId, invoke]);
 
   const closeDialog = useCallback(() => {
     void window.electronAPI?.closeNativeDialog(activeDialogId);
@@ -445,6 +479,13 @@ export const NativeProjectMetadataPage = () => {
                 {t('LWC.commons.add')}
               </Button>
             </Stack>
+
+            <Box sx={{ pt: 1 }}>
+              <NameTypePolicyPanel
+                io={nameTypePolicyIO}
+                sourceLanguage={(state.values[SOURCE_LANGUAGE_PATH] ?? '').trim() || null}
+              />
+            </Box>
 
             {error && (
               <Typography color="error" variant="body2">

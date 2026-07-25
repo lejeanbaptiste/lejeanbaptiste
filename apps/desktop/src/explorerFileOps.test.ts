@@ -15,20 +15,30 @@ describe('project enumerators exclude infrastructure', () => {
     await fs.writeFile(path.join(root, 'schema', 'tei_all.rng'), '<grammar/>');
     await fs.mkdir(path.join(root, '.ljb'));
     await fs.writeFile(path.join(root, '.ljb', 'entity-decisions.jsonl'), '');
+    await fs.mkdir(path.join(root, '.ljb-time-machine/snapshots/2026-07-24/files/bios'), {
+      recursive: true,
+    });
+    await fs.writeFile(
+      path.join(root, '.ljb-time-machine/snapshots/2026-07-24/files/bios/chapter1.xml'),
+      '<TEI/>',
+    );
   });
 
   afterAll(async () => {
     await fs.rm(root, { recursive: true, force: true });
   });
 
-  it('listProjectXmlFiles skips .ljb/, entities.xml, and schema/', async () => {
+  it('listProjectXmlFiles skips .ljb/, .ljb-time-machine/, entities.xml, and schema/', async () => {
     const names = (await listProjectXmlFiles(root)).map((f) => f.name);
     expect(names).toEqual(['chapter1.xml', 'notes.xml']);
     expect(names).not.toContain('entities.xml');
   });
 
-  it('findXmlFilesByName never surfaces infrastructure files', async () => {
+  it('findXmlFilesByName never surfaces infrastructure or snapshot files', async () => {
     expect(await findXmlFilesByName(root, 'entities')).toEqual([]);
     expect((await findXmlFilesByName(root, 'chapter')).map((f) => f.name)).toEqual(['chapter1.xml']);
+    expect((await findXmlFilesByName(root, 'chapter')).map((f) => f.path)).toEqual([
+      path.join(root, 'chapter1.xml'),
+    ]);
   });
 });

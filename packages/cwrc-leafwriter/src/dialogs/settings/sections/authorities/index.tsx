@@ -6,7 +6,6 @@ import { authorityServicesAtom } from '../../../../jotai/entity-lookup';
 import { Authority } from './authority';
 import { DesktopOfflineAuthorities } from './desktop-offline-authorities';
 import { DesktopChgisAuthorities } from './desktop-chgis-authorities';
-import { DesktopNameTypePolicy } from './desktop-name-type-policy';
 
 export const Authorities = () => {
   const authorityServices = useAtomValue(authorityServicesAtom);
@@ -26,7 +25,6 @@ export const Authorities = () => {
         <>
           <DesktopOfflineAuthorities />
           <DesktopChgisAuthorities />
-          <DesktopNameTypePolicy />
           <Divider sx={{ my: 1 }} />
         </>
       )}
