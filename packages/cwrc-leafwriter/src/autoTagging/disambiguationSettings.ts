@@ -1,4 +1,5 @@
 import { AUTHORITY_YEAR_MAX } from './authoritySettings';
+import { DEFAULT_PLACE_PROXIMITY_KM } from './authorityOverlap';
 import type { DateFilterMode } from './packLoader';
 
 /** Per-project disambiguation UI settings (stored in jean-baptiste.project.json). */
@@ -11,6 +12,12 @@ export interface DisambiguationSettings {
   dateFilter?: DateFilterMode;
   yearStart?: number;
   yearEnd?: number;
+  /**
+   * Proximity radius (km) for treating same-named place hits from different
+   * authority packs as one place vs. distinct candidates. See
+   * placename-geo-disambiguation-planning.md "Design §2" — 0–50 km range.
+   */
+  placeProximityKm?: number;
 }
 
 export const DEFAULT_DISAMBIGUATION_AI_CURATION = true;
@@ -27,6 +34,15 @@ export function disambiguationCachingDisabledFromSettings(
   settings?: DisambiguationSettings,
 ): boolean {
   return settings?.disableCaching === true;
+}
+
+/** 0–50 km range per the design; out-of-range or non-finite input falls back to the default. */
+export function placeProximityKmFromSettings(settings?: DisambiguationSettings): number {
+  const raw = settings?.placeProximityKm;
+  if (typeof raw !== 'number' || !Number.isFinite(raw) || raw < 0 || raw > 50) {
+    return DEFAULT_PLACE_PROXIMITY_KM;
+  }
+  return raw;
 }
 
 /**
@@ -69,6 +85,7 @@ export function readPersistedDisambiguationSettings(): DisambiguationSettings | 
     dateFilter: raw.dateFilter,
     yearStart: raw.yearStart,
     yearEnd: raw.yearEnd,
+    placeProximityKm: raw.placeProximityKm,
   };
 }
 
@@ -97,5 +114,14 @@ export async function persistDisambiguationDateFilter(
     dateFilter,
     yearStart: Math.min(...yearRange),
     yearEnd: Math.max(...yearRange),
+  });
+}
+
+/** Persist just the place-proximity radius, read-modify-write (see persistDisambiguationDateFilter). */
+export async function persistPlaceProximityKm(proximityKm: number): Promise<void> {
+  const current = readPersistedDisambiguationSettings();
+  await persistDisambiguationSettings({
+    ...current,
+    placeProximityKm: proximityKm,
   });
 }

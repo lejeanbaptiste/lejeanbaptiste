@@ -1,5 +1,6 @@
 {
   "extends": "./electron-builder.base.json",
+  "artifactName": "Le-Jean-Baptiste-linux-${version}-${arch}.${ext}",
   "linux": {
     "target": [
       "deb"

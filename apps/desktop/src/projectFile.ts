@@ -53,6 +53,33 @@ const normalizeAutoTaggingAuthority = (
   if (yearStart != null) out.yearStart = yearStart;
   if (yearEnd != null) out.yearEnd = yearEnd;
   if (typeof value.hideUndated === 'boolean') out.hideUndated = value.hideUndated;
+  if (Array.isArray(value.excludedNameTypes)) {
+    out.excludedNameTypes = value.excludedNameTypes.filter(
+      (entry): entry is string => typeof entry === 'string' && entry.trim().length > 0,
+    );
+  }
+  if (value.nameTypeTaggingPolicy && typeof value.nameTypeTaggingPolicy === 'object') {
+    const policy: Record<string, 'phase1' | 'phase2' | 'never'> = {};
+    for (const [key, bucket] of Object.entries(value.nameTypeTaggingPolicy)) {
+      if (bucket === 'phase1' || bucket === 'phase2' || bucket === 'never') {
+        policy[key] = bucket;
+      }
+    }
+    if (Object.keys(policy).length > 0) out.nameTypeTaggingPolicy = policy;
+  }
+  if (Array.isArray(value.customNameTypes)) {
+    out.customNameTypes = value.customNameTypes.filter(
+      (entry): entry is NonNullable<AutoTaggingAuthoritySettings['customNameTypes']>[number] =>
+        !!entry &&
+        typeof entry === 'object' &&
+        typeof entry.id === 'string' &&
+        typeof entry.label === 'string' &&
+        (entry.bucket === 'phase1' || entry.bucket === 'phase2' || entry.bucket === 'never'),
+    );
+  }
+  if (typeof value.artMinCodePoints === 'number' && value.artMinCodePoints > 0) {
+    out.artMinCodePoints = value.artMinCodePoints;
+  }
   return Object.keys(out).length ? out : undefined;
 };
 

@@ -376,6 +376,8 @@
       "copyFailed": "Falha ao copiar: {{error}}",
       "lockTranslationUnit": "Bloquear unidade de tradução",
       "unlockTranslationUnit": "Desbloquear unidade de tradução",
+      "enableSpellcheck": "Ativar sugestões ortográficas",
+      "disableSpellcheck": "Desativar sugestões ortográficas",
       "formatting": "Formatação",
       "formatItems": {
         "bold": "Negrito",

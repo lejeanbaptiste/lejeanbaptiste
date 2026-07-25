@@ -4,8 +4,10 @@ import {
   DEFAULT_AUTHORITY_YEAR_RANGE,
   excludedNameTypesFromSettings,
   migrateDateFilter,
+  nameTypeTaggingPolicyFromSettings,
   uiStateFromSettings,
 } from './authoritySettings';
+import { resolveNameTypeTaggingPolicy } from './nameTypeTaggingPolicy';
 
 describe('authoritySettings', () => {
   it('defaults to the Eastern Han preset when no work year is known', () => {
@@ -33,5 +35,23 @@ describe('authoritySettings', () => {
     expect(
       excludedNameTypesFromSettings({ excludedNameTypes: ['courtesy', 'art', 'bogus'] }),
     ).toEqual(['courtesy', 'art']);
+  });
+
+  it('derives exclusions from the three-bucket policy when legacy field is absent', () => {
+    expect(excludedNameTypesFromSettings({}, 'zh')).toEqual(
+      expect.arrayContaining(['courtesy', 'family', 'given']),
+    );
+    expect(excludedNameTypesFromSettings({ nameTypeTaggingPolicy: { courtesy: 'phase1' } }, 'zh')).toEqual(
+      expect.arrayContaining(['family', 'given']),
+    );
+  });
+
+  it('exposes nameTypeTaggingPolicyFromSettings for UI and tag bomb', () => {
+    const policy = nameTypeTaggingPolicyFromSettings({ excludedNameTypes: ['art'] }, 'ja');
+    expect(policy.buckets.art).toBe('phase2');
+    expect(policy.buckets.birth).toBe('phase2');
+    expect(resolveNameTypeTaggingPolicy({ excludedNameTypes: ['art'] }, 'ja').buckets.art).toBe(
+      'phase2',
+    );
   });
 });

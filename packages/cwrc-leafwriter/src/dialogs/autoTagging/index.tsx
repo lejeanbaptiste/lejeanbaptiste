@@ -306,6 +306,8 @@ export const AutoTaggingDialog = ({ id, onClose, open = false }: IDialog) => {
     );
   };
   const [importedLists, setImportedLists] = useState<TagBombImportedList[]>([]);
+  const [shortFormFromFirstAppearance, setShortFormFromFirstAppearance] = useState(true);
+  const [busyMessage, setBusyMessage] = useState('');
   const [authorityPackCounts, setAuthorityPackCounts] = useState<AuthorityPackStringCounts>({});
   const [authorityPackCountsLoading, setAuthorityPackCountsLoading] = useState(false);
   const authorityCountGeneration = useRef(0);
@@ -650,6 +652,36 @@ export const AutoTaggingDialog = ({ id, onClose, open = false }: IDialog) => {
     }
   };
 
+  const runShortFormTag = async () => {
+    if (!entityDbFolder) {
+      setError('Choose an entity database folder first (App Settings → Entity database).');
+      return;
+    }
+
+    setError(null);
+    setBusy(true);
+    setBusyMessage('Finding short-form names…');
+    try {
+      const result = await getSession().runShortFormTag({
+        startFromFirstAppearance: shortFormFromFirstAppearance,
+      });
+      if (result.suggestions.length === 0) {
+        setError(result.notice ?? 'No short-form matches.');
+        return;
+      }
+      const detail =
+        result.keyedEntityCount > 0 && result.stringCount > 0
+          ? `${result.suggestions.length} short-form hit${result.suggestions.length === 1 ? '' : 's'} from ${result.keyedEntityCount} keyed ${result.keyedEntityCount === 1 ? 'person' : 'people'} (${result.stringCount} seed string${result.stringCount === 1 ? '' : 's'}). Every hit needs review.`
+          : undefined;
+      beginReview(result.suggestions, detail);
+    } catch (e) {
+      setError(e instanceof Error ? e.message : String(e));
+    } finally {
+      setBusy(false);
+      setBusyMessage('');
+    }
+  };
+
   const runTagBomb = async () => {
     const installedIds = new Set(
       authorityStatus.filter((status) => status.installed).map((status) => status.id),
@@ -872,8 +904,12 @@ export const AutoTaggingDialog = ({ id, onClose, open = false }: IDialog) => {
   return (
     <>
       <AutoTaggingApplyOverlay
-        open={busy && (step === 'ai' || step === 'authority')}
-        label={step === 'authority' ? authorityProgress || 'Loading tag bomb sources…' : aiBusyLabel}
+        open={busy && (step === 'ai' || step === 'authority' || busyMessage.length > 0)}
+        label={
+          step === 'authority'
+            ? authorityProgress || 'Loading tag bomb sources…'
+            : busyMessage || aiBusyLabel
+        }
         done={step === 'ai' ? aiProgress.done : 0}
         total={step === 'ai' ? aiProgress.total : 0}
       />
@@ -918,6 +954,39 @@ export const AutoTaggingDialog = ({ id, onClose, open = false }: IDialog) => {
                     !isDesktopApp(),
                     !isDesktopApp() ? 'Desktop app only' : undefined,
                   )}
+                  {methodButton(
+                    'Short-form names',
+                    () => void runShortFormTag(),
+                    !isDesktopApp() || !entityDbFolder,
+                    !isDesktopApp()
+                      ? 'Desktop app only'
+                      : !entityDbFolder
+                        ? 'Configure an entity database in App Settings'
+                        : undefined,
+                  )}
+                  <FormControlLabel
+                    control={
+                      <Checkbox
+                        size="small"
+                        checked={shortFormFromFirstAppearance}
+                        disabled={!isDesktopApp() || !entityDbFolder || busy}
+                        onChange={(event) => setShortFormFromFirstAppearance(event.target.checked)}
+                      />
+                    }
+                    label={
+                      <Typography
+                        variant="caption"
+                        color={!isDesktopApp() || !entityDbFolder ? 'text.disabled' : 'text.primary'}
+                      >
+                        Start from first appearance (short-form)
+                      </Typography>
+                    }
+                    sx={{
+                      ml: 0,
+                      mb: 0.5,
+                      ...(!isDesktopApp() || !entityDbFolder ? { opacity: 0.6 } : {}),
+                    }}
+                  />
                   <FormControlLabel
                     control={
                       <Checkbox

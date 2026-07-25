@@ -7,6 +7,7 @@ import FactCheckOutlinedIcon from '@mui/icons-material/FactCheckOutlined';
 import LaunchIcon from '@mui/icons-material/Launch';
 import MergeIcon from '@mui/icons-material/Merge';
 import MoreVertIcon from '@mui/icons-material/MoreVert';
+import PlaylistAddIcon from '@mui/icons-material/PlaylistAdd';
 import RefreshIcon from '@mui/icons-material/Refresh';
 import WarningAmberIcon from '@mui/icons-material/WarningAmber';
 import {
@@ -25,6 +26,7 @@ import {
   FormControlLabel,
   IconButton,
   InputAdornment,
+  LinearProgress,
   ListItemIcon,
   ListItemText,
   Menu,
@@ -69,6 +71,9 @@ import {
   ALL_NAME_TYPES,
   type NameTypeId,
 } from '../../../../../packages/cwrc-leafwriter/src/autoTagging/nameTypes';
+import { backfillEntityNames } from '../../../../../packages/cwrc-leafwriter/src/autoTagging/nameBackfill';
+import { nameTypeLabel } from '../../../../../packages/cwrc-leafwriter/src/autoTagging/nameTypeLabels';
+import { cachedPackReader } from '../../../../../packages/cwrc-leafwriter/src/services/authority-pack-lookup';
 import {
   centralEntityStoreFromDesktop,
   entityStoreFromDesktop,
@@ -130,7 +135,7 @@ interface SidebarDatabaseTabProps {
 export const SidebarDatabaseTab = ({ active = false }: SidebarDatabaseTabProps) => {
   const { t } = useTranslation();
   const { skipEntityDetachConfirm } = useAppState().ui;
-  const { setSkipEntityDetachConfirm } = useActions().ui;
+  const { setSkipEntityDetachConfirm, notifyViaSnackbar } = useActions().ui;
   const { config } = useAppState().project;
   const syncToCentral = config?.syncToCentral === true;
   const [databaseView, setDatabaseView] = useState<DatabaseView>('project');
@@ -169,6 +174,13 @@ export const SidebarDatabaseTab = ({ active = false }: SidebarDatabaseTabProps) 
   const [bridgeOpen, setBridgeOpen] = useState(false);
   const [docketOpen, setDocketOpen] = useState(false);
   const [docketCount, setDocketCount] = useState(0);
+  const [backfillBusy, setBackfillBusy] = useState(false);
+  const [backfillProgress, setBackfillProgress] = useState<{
+    done: number;
+    total: number;
+    entityLabel?: string;
+  } | null>(null);
+  const backfillAbortRef = useRef<AbortController | null>(null);
 
   const [menuAnchor, setMenuAnchor] = useState<{ el: HTMLElement; entity: EntitySummary } | null>(
     null,
@@ -311,6 +323,75 @@ export const SidebarDatabaseTab = ({ active = false }: SidebarDatabaseTabProps) 
   const resolveStoreFor = useCallback(
     (_id: string): EntityStore | null => (databaseView === 'central' ? centralStore : store),
     [centralStore, databaseView, store],
+  );
+
+  /** Active entity store for list/browse mutations (project PEDB or central CEDB view). */
+  const activeStore = useMemo(
+    () => (databaseView === 'central' && centralStore ? centralStore : store),
+    [centralStore, databaseView, store],
+  );
+
+  /**
+   * Pull typed names (字/名/… and Wikidata claims) onto person entities from
+   * installed authority packs + live Wikidata. Non-destructive: never overwrites
+   * an existing `@type` on a name element.
+   */
+  const runNameBackfill = useCallback(
+    async (entityIds?: string[]) => {
+      if (!activeStore || backfillBusy) return;
+      const controller = new AbortController();
+      backfillAbortRef.current = controller;
+      setBackfillBusy(true);
+      setBackfillProgress({ done: 0, total: 0 });
+      try {
+        const doc = await activeStore.loadEntities();
+        const readPack = cachedPackReader();
+        const result = await backfillEntityNames(doc, {
+          entityIds,
+          readPackFile: readPack,
+          projectLang,
+          signal: controller.signal,
+          onProgress: (progress) =>
+            setBackfillProgress({
+              done: progress.done,
+              total: progress.total,
+              entityLabel: progress.entityLabel,
+            }),
+        });
+        await activeStore.saveEntities(doc);
+        if (entityIds?.length === 1) {
+          const refreshed = listEntities(doc).find((entity) => entity.id === entityIds[0]);
+          if (refreshed && editEntity?.id === refreshed.id) {
+            setEditEntity(refreshed);
+            setEditFamilyName(refreshed.familyName ?? '');
+            setEditGivenName(refreshed.givenName ?? '');
+            setEditNameTypes(
+              Object.fromEntries(
+                refreshed.nameEntries.map((entry) => [entry.text, entry.type ?? '']),
+              ),
+            );
+          }
+        }
+        await reload();
+        const scope = entityIds?.length === 1 ? 'this person' : `${result.entitiesScanned} linked persons`;
+        notifyViaSnackbar({
+          message: result.cancelled
+            ? `Backfill cancelled — added ${result.namesAdded} name${result.namesAdded === 1 ? '' : 's'} across ${result.entitiesUpdated} entit${result.entitiesUpdated === 1 ? 'y' : 'ies'}.`
+            : `Backfill complete for ${scope}: added ${result.namesAdded} name${result.namesAdded === 1 ? '' : 's'} across ${result.entitiesUpdated} entit${result.entitiesUpdated === 1 ? 'y' : 'ies'}.` +
+              (result.skippedNoAuthority > 0
+                ? ` Skipped ${result.skippedNoAuthority} person${result.skippedNoAuthority === 1 ? '' : 's'} with no authority id.`
+                : ''),
+          options: { variant: result.cancelled ? 'warning' : 'success' },
+        });
+      } catch (error) {
+        setLoadError(error instanceof Error ? error.message : String(error));
+      } finally {
+        backfillAbortRef.current = null;
+        setBackfillBusy(false);
+        setBackfillProgress(null);
+      }
+    },
+    [activeStore, backfillBusy, editEntity?.id, notifyViaSnackbar, projectLang, reload],
   );
 
   /**
@@ -720,12 +801,55 @@ export const SidebarDatabaseTab = ({ active = false }: SidebarDatabaseTabProps) 
               </IconButton>
             </Tooltip>
           )}
+          <Tooltip
+            title={
+              'Backfill names from authorities — adds missing typed names (字/名/…) from CBDB/DILA packs and Wikidata. ' +
+              'Best results need a rebuilt CBDB pack with bare forms in names[]; Wikidata-linked people get live enrichment.'
+            }
+          >
+            <span>
+              <IconButton
+                size="small"
+                disabled={!activeStore || backfillBusy}
+                onClick={() => void runNameBackfill()}
+                aria-label="Backfill names from authorities"
+              >
+                <PlaylistAddIcon fontSize="small" />
+              </IconButton>
+            </span>
+          </Tooltip>
           <Tooltip title={t('LWC.desktop.sidebar.database.reload_entities')}>
             <IconButton size="small" onClick={() => void reload()} aria-label={t('LWC.desktop.sidebar.database.reload_entities')}>
               <RefreshIcon fontSize="small" />
             </IconButton>
           </Tooltip>
         </Stack>
+        {backfillBusy && (
+          <Stack spacing={0.5}>
+            <LinearProgress
+              variant={backfillProgress && backfillProgress.total > 0 ? 'determinate' : 'indeterminate'}
+              value={
+                backfillProgress && backfillProgress.total > 0
+                  ? (backfillProgress.done / backfillProgress.total) * 100
+                  : undefined
+              }
+            />
+            <Stack direction="row" spacing={1} alignItems="center" justifyContent="space-between">
+              <Typography variant="caption" color="text.secondary" noWrap sx={{ flex: 1, minWidth: 0 }}>
+                {backfillProgress?.entityLabel
+                  ? `Enriching ${backfillProgress.entityLabel}… (${backfillProgress.done}/${backfillProgress.total || '…'})`
+                  : 'Backfilling names from authorities…'}
+              </Typography>
+              <Button
+                size="small"
+                onClick={() => backfillAbortRef.current?.abort()}
+                sx={{ flexShrink: 0 }}
+              >
+                Cancel
+              </Button>
+            </Stack>
+          </Stack>
+        )}
       </Stack>
 
       {/* Duplicate-authority warning */}
@@ -1165,7 +1289,7 @@ export const SidebarDatabaseTab = ({ active = false }: SidebarDatabaseTabProps) 
                       </MenuItem>
                       {ALL_NAME_TYPES.map((type) => (
                         <MenuItem key={type} value={type}>
-                          {t(`LWC.desktop.sidebar.database.name_types.${type}`)}
+                          {nameTypeLabel(type, projectLang)}
                         </MenuItem>
                       ))}
                     </TextField>
@@ -1183,6 +1307,23 @@ export const SidebarDatabaseTab = ({ active = false }: SidebarDatabaseTabProps) 
                   </Stack>
                 ))}
             </Stack>
+          )}
+          {editEntity?.kind === 'person' && (
+            <Box sx={{ mt: 2 }}>
+              <Button
+                size="small"
+                variant="outlined"
+                startIcon={<PlaylistAddIcon fontSize="small" />}
+                disabled={backfillBusy || editEntity.authorities.length === 0}
+                onClick={() => void runNameBackfill([editEntity.id])}
+              >
+                Refresh names from authorities
+              </Button>
+              <Typography variant="caption" color="text.secondary" component="div" sx={{ mt: 0.5 }}>
+                Adds missing typed names from packs and Wikidata without overwriting your edits. Wikidata-linked
+                people benefit most until the CBDB pack includes bare 字/名/姓 in names[].
+              </Typography>
+            </Box>
           )}
           <Stack direction="row" spacing={1} alignItems="flex-start" sx={{ mt: 2 }}>
             <TextField
@@ -1210,7 +1351,7 @@ export const SidebarDatabaseTab = ({ active = false }: SidebarDatabaseTabProps) 
               </MenuItem>
               {ALL_NAME_TYPES.map((type) => (
                 <MenuItem key={type} value={type}>
-                  {t(`LWC.desktop.sidebar.database.name_types.${type}`)}
+                  {nameTypeLabel(type, projectLang)}
                 </MenuItem>
               ))}
             </TextField>

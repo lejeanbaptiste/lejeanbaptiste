@@ -4,6 +4,7 @@ import ExpandMoreIcon from '@mui/icons-material/ExpandMore';
 import FilterAltIcon from '@mui/icons-material/FilterAlt';
 import FilterAltOffIcon from '@mui/icons-material/FilterAltOff';
 import HelpOutlineIcon from '@mui/icons-material/HelpOutline';
+import RoomIcon from '@mui/icons-material/Room';
 import LinkIcon from '@mui/icons-material/Link';
 import OpenInNewIcon from '@mui/icons-material/OpenInNew';
 import PersonAddIcon from '@mui/icons-material/PersonAdd';
@@ -65,10 +66,13 @@ import {
   dateFilterFromSettings,
   disambiguationCachingDisabledFromSettings,
   persistDisambiguationDateFilter,
+  persistPlaceProximityKm,
+  placeProximityKmFromSettings,
   readPersistedDisambiguationSettings,
   yearRangeFromSettings,
 } from './disambiguationSettings';
 import { normalizeDateRangeFilter, type DateFilterMode, type DateRangeFilter } from './packLoader';
+import { clusterByGeoAccessor } from './geoCluster';
 import { resolveManualAuthorityLink } from './manualAuthorityLink';
 import type { AuthorityCache } from './authorityCache';
 import { fetchWikidataSummary, type WikidataSummary } from './wikidataDates';
@@ -312,6 +316,13 @@ export const DisambiguationPanel = ({
   const commitYearRange = (range: [number, number]) => {
     setYearRange(range);
     void persistDisambiguationDateFilter(dateFilterMode, range);
+  };
+  const [placeProximityKm, setPlaceProximityKm] = useState<number>(() =>
+    placeProximityKmFromSettings(readPersistedDisambiguationSettings()),
+  );
+  const commitPlaceProximityKm = (km: number) => {
+    setPlaceProximityKm(km);
+    void persistPlaceProximityKm(km);
   };
   const [aiPromptProfiles, setAiPromptProfiles] = useState<AiPromptProfilesState>(
     createDefaultAiPromptProfilesState(),
@@ -645,6 +656,29 @@ export const DisambiguationPanel = ({
     () => candidates.filter((candidate) => candidatePassesYearFilter(candidate, dateFilter)),
     [candidates, dateFilter],
   );
+
+  /**
+   * Geo clustering only matters for places, and only when it actually
+   * disambiguates something — a single cluster (or all-singleton candidates
+   * with no shared name) isn't worth labeling. Letters are assigned in
+   * cluster-discovery order, which is stable for a given candidate list but
+   * not meaningful beyond "these are the same group" — see geoCluster.ts.
+   */
+  const placeClusterLabelById = useMemo(() => {
+    if (group?.tag !== 'placeName' || filteredCandidates.length < 2) return null;
+    const { clusters } = clusterByGeoAccessor(
+      filteredCandidates,
+      placeProximityKm,
+      (candidate) => candidate.geo,
+    );
+    if (clusters.length < 2) return null;
+    const byId = new Map<string, string>();
+    clusters.forEach((cluster, index) => {
+      const label = String.fromCharCode(65 + index); // A, B, C, …
+      for (const member of cluster.members) byId.set(member.id, label);
+    });
+    return byId;
+  }, [group?.tag, filteredCandidates, placeProximityKm]);
 
   useEffect(() => {
     if (!aiCuration || rankingAi || loadingCandidates || aiRanked) return;
@@ -1035,6 +1069,26 @@ export const DisambiguationPanel = ({
                       sx={{ height: 16, fontSize: 10, bgcolor: '#1b5e20', color: '#fff', fontWeight: 600 }}
                     />
                   )}
+                  {placeClusterLabelById &&
+                    (placeClusterLabelById.has(candidate.id) ? (
+                      <Tooltip title="Places within the proximity radius of each other share a letter — distinct letters are geographically distinct hits">
+                        <Chip
+                          icon={<RoomIcon sx={{ fontSize: 12 }} />}
+                          label={placeClusterLabelById.get(candidate.id)}
+                          size="small"
+                          sx={{ height: 16, fontSize: 10, fontWeight: 600 }}
+                        />
+                      </Tooltip>
+                    ) : (
+                      <Tooltip title="This candidate has no coordinates — it can't be grouped by proximity">
+                        <Chip
+                          label="no geo data"
+                          size="small"
+                          variant="outlined"
+                          sx={{ height: 16, fontSize: 10, color: 'text.secondary' }}
+                        />
+                      </Tooltip>
+                    ))}
                   {confidence !== undefined && (
                     <Chip
                       label={getConfidenceLabel(confidence)}
@@ -1214,6 +1268,44 @@ export const DisambiguationPanel = ({
           {Math.min(...yearRange)}–{Math.max(...yearRange)}
         </Typography>
       </Box>
+
+      {group?.tag === 'placeName' && (
+        <Box
+          sx={{
+            display: 'flex',
+            alignItems: 'center',
+            gap: 0.5,
+            mb: 0.5,
+            flexShrink: 0,
+            px: 0.75,
+            height: 24,
+          }}
+        >
+          <Tooltip title="Proximity radius — same-named places within this distance are treated as one candidate">
+            <RoomIcon sx={{ fontSize: 16, color: 'text.secondary', flexShrink: 0 }} />
+          </Tooltip>
+          <Slider
+            size="small"
+            min={0}
+            max={50}
+            step={1}
+            value={placeProximityKm}
+            onChange={(_event, value) => setPlaceProximityKm(value as number)}
+            onChangeCommitted={(_event, value) => commitPlaceProximityKm(value as number)}
+            valueLabelDisplay="auto"
+            getAriaLabel={() => 'Place proximity radius (km)'}
+            getAriaValueText={(value) => `${value} km`}
+            sx={{ flex: 1, minWidth: 0, mx: 0.5 }}
+          />
+          <Typography
+            variant="caption"
+            color="text.secondary"
+            sx={{ fontSize: '0.6875rem', flexShrink: 0, whiteSpace: 'nowrap' }}
+          >
+            {placeProximityKm} km
+          </Typography>
+        </Box>
+      )}
 
       <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5, mb: 0.5, flexShrink: 0, px: 0.75 }}>
         <Select

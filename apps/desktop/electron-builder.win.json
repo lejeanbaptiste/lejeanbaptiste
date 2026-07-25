@@ -7,7 +7,7 @@
       "repo": "lejeanbaptiste"
     }
   ],
-  "artifactName": "Le-Jean-Baptiste-Setup-${version}-${arch}.${ext}",
+  "artifactName": "Le-Jean-Baptiste-win-Setup-${version}-${arch}.${ext}",
   "extraResources": [
     {
       "from": "../../THIRD_PARTY_NOTICES.md",

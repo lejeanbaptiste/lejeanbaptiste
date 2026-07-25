@@ -106,7 +106,7 @@ All release assets can be verified as described in [SECURITY.md](SECURITY.md).
 ### Windows
 
 1. Download the installer for your machine: `arm64` for Windows on Arm or
-   `x64` for Intel/AMD (`Le-Jean-Baptiste-Setup-<version>-<arch>.exe`).
+   `x64` for Intel/AMD (`Le-Jean-Baptiste-win-Setup-<version>-<arch>.exe`).
 2. Run the installer and follow the prompts. Choose your installation directory and start-menu shortcut preferences.
 3. **Note:** The installer is not signed by a certificate authority. Windows Defender SmartScreen may show a warning. To proceed, click "More info" → "Run anyway". A signed package through the Microsoft Store is planned.
 4. Updates are checked automatically when the application starts and every
@@ -132,13 +132,13 @@ sudo apt install le-jean-baptiste-desktop
 
 **Standalone .deb (Debian/Ubuntu):**
 
-1. Download `le-jean-baptiste-desktop_<version>_amd64.deb` (or `_arm64.deb`).
-2. Install with your package manager: `sudo apt install ./le-jean-baptiste-desktop_<version>_amd64.deb`
+1. Download `Le-Jean-Baptiste-linux-<version>-amd64.deb` (or `-arm64.deb`).
+2. Install with your package manager: `sudo apt install ./Le-Jean-Baptiste-linux-<version>-amd64.deb`
 
 **Flatpak (x86_64):**
 
-1. Download `Le.Jean-Baptiste-<version>-x86_64.flatpak`.
-2. Install with: `flatpak install ./Le.Jean-Baptiste-<version>-x86_64.flatpak`
+1. Download `Le-Jean-Baptiste-linux-flatpak-<version>-x86_64.flatpak`.
+2. Install with: `flatpak install ./Le-Jean-Baptiste-linux-flatpak-<version>-x86_64.flatpak`
 
 For detailed build and packaging information, see [apps/desktop/README.md](apps/desktop/README.md).
 
@@ -155,3 +155,6 @@ See [apps/desktop/README.md](apps/desktop/README.md) for the compilation and pac
 - [ ] Support for custom authorities and personal SQL databases
 - [ ] AI assist for Sanmiao to identify beginning of dynasties, reigns, eras
 - [ ] Geo-aware placename disambiguation across authorities (see [placename-geo-disambiguation-planning.md](docs/placename-geo-disambiguation-planning.md))
+- [ ] Improve translation pane word-processing features.
+- [ ] LanguageTool as a plugin
+- [ ] Ship Sanmiao as a plugin, + Norbert tools.

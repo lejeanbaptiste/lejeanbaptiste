@@ -39,6 +39,10 @@ import {
   type StructuredOutputMode,
 } from './aiTranslationLlm';
 import {
+  applyTranslationSpellcheck,
+  attachTranslationSpellcheckContextMenu,
+} from './translationSpellcheck';
+import {
   getAchievementsFolder,
   getAiApiSettings,
   getEncoderName,
@@ -1542,6 +1546,21 @@ const registerIpcHandlers = () => {
     await setEncoderName(name);
   });
 
+  ipcMain.handle(
+    'setTranslationSpellcheck',
+    (
+      event,
+      options: { enabled: boolean; languageCodes?: string[] },
+    ): void => {
+      applyTranslationSpellcheck(event.sender, {
+        enabled: options?.enabled === true,
+        languageCodes: Array.isArray(options?.languageCodes)
+          ? options.languageCodes.filter((code): code is string => typeof code === 'string')
+          : [],
+      });
+    },
+  );
+
   ipcMain.handle('getEntityDbFolder', async () => getEntityDbFolder());
 
   const getAuthorityDbDir = async (): Promise<string | null> => {
@@ -2163,8 +2182,11 @@ const createWindow = async () => {
       preload: path.join(__dirname, 'preload.js'),
       contextIsolation: true,
       nodeIntegration: false,
+      spellcheck: true,
     },
   });
+
+  attachTranslationSpellcheckContextMenu(mainWindow.webContents);
 
   mainWindow.on('maximize', () => mainWindow?.webContents.send('window-maximized', true));
   mainWindow.on('unmaximize', () => mainWindow?.webContents.send('window-maximized', false));

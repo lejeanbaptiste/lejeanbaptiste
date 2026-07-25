@@ -406,6 +406,8 @@
       "copyFailed": "La copie a échoué : {{error}}",
       "lockTranslationUnit": "Verrouiller l'unité de traduction",
       "unlockTranslationUnit": "Déverrouiller l'unité de traduction",
+      "enableSpellcheck": "Activer les suggestions d'orthographe",
+      "disableSpellcheck": "Désactiver les suggestions d'orthographe",
       "formatting": "Mise en forme",
       "formatItems": {
         "bold": "Gras",

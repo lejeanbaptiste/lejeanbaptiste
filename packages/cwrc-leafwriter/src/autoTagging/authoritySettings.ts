@@ -9,6 +9,26 @@ import {
   normalizeNameType,
   type NameTypeId,
 } from './nameTypes';
+import {
+  excludedFromPhase1Types,
+  resolveNameTypeTaggingPolicy,
+  type CustomNameType,
+  type NameTypeTaggingBucket,
+  type NameTypeTaggingPolicy,
+} from './nameTypeTaggingPolicy';
+
+export type { CustomNameType, NameTypeTaggingBucket, NameTypeTaggingPolicy };
+export {
+  DEFAULT_ART_MIN_CODEPOINTS,
+  bucketForTypedName,
+  defaultPolicyForLanguage,
+  filterCandidateForPhase1,
+  isPhase1SeedName,
+  isPhase2SeedName,
+  phase1SearchStringsFromCandidate,
+  resolveNameTypeTaggingPolicy,
+  validateCustomNameTypeId,
+} from './nameTypeTaggingPolicy';
 
 /** Per-project authority tag-bomb settings (stored in jean-baptiste.project.json). */
 export interface AutoTaggingAuthoritySettings {
@@ -20,22 +40,58 @@ export interface AutoTaggingAuthoritySettings {
    * Name types barred from seeding corpus auto-tagging (default: courtesy
    * names 字, which are common words and produce nonsense tags). Excluded
    * types stay searchable and usable for manual disambiguation.
+   * @deprecated Migrated to {@link nameTypeTaggingPolicy} (phase2 bucket).
    */
   excludedNameTypes?: string[];
+  /** Per-type seed bucket overrides (phase1 / phase2 / never). */
+  nameTypeTaggingPolicy?: Record<string, NameTypeTaggingBucket>;
+  /** Project-scoped custom name types with default buckets. */
+  customNameTypes?: CustomNameType[];
+  /** Code-point threshold for length-gated `art` names (default 3). */
+  artMinCodePoints?: number;
   /** @deprecated Use {@link dateFilter}. */
   yearFilterEnabled?: boolean;
   /** @deprecated Folded into {@link dateFilter} (`limit` vs `exclude`). */
   hideUndated?: boolean;
 }
 
-/** Normalized exclusion list for {@link isTaggableNameType}, with the courtesy-name default. */
+/**
+ * Normalized exclusion list for {@link isTaggableNameType}. Honors legacy
+ * `excludedNameTypes` when present; otherwise derives phase2+never from the
+ * resolved three-bucket policy.
+ */
 export function excludedNameTypesFromSettings(
   settings?: AutoTaggingAuthoritySettings,
+  sourceLanguage?: string | null,
 ): NameTypeId[] {
-  if (!settings?.excludedNameTypes) return DEFAULT_UNTAGGABLE_TYPES;
-  return settings.excludedNameTypes
-    .map((raw) => normalizeNameType(raw))
-    .filter((type): type is NameTypeId => type !== null);
+  if (!settings) return DEFAULT_UNTAGGABLE_TYPES;
+  if ('excludedNameTypes' in settings) {
+    if (!settings.excludedNameTypes) return DEFAULT_UNTAGGABLE_TYPES;
+    return settings.excludedNameTypes
+      .map((raw) => normalizeNameType(raw))
+      .filter((type): type is NameTypeId => type !== null);
+  }
+  return excludedFromPhase1Types(resolveNameTypeTaggingPolicy(settings, sourceLanguage));
+}
+
+/** Resolved name-type tagging policy from persisted settings and project language. */
+export function nameTypeTaggingPolicyFromSettings(
+  settings?: AutoTaggingAuthoritySettings,
+  sourceLanguage?: string | null,
+): NameTypeTaggingPolicy {
+  return resolveNameTypeTaggingPolicy(settings, sourceLanguage);
+}
+
+/** Async helper for UI and tag-bomb: reads persisted settings + project source language. */
+export async function readProjectNameTypeTaggingPolicy(): Promise<NameTypeTaggingPolicy> {
+  const settings = readPersistedAuthoritySettings();
+  let sourceLanguage: string | null = null;
+  try {
+    sourceLanguage = (await window.__leafWriterProject?.getProjectSourceLanguage?.()) ?? null;
+  } catch {
+    sourceLanguage = null;
+  }
+  return resolveNameTypeTaggingPolicy(settings, sourceLanguage);
 }
 
 export const DEFAULT_AUTHORITY_YEAR_RANGE: [number, number] = [25, 220];
@@ -94,9 +150,13 @@ export function settingsFromUiState(input: {
   packs: Record<AuthorityPackId, boolean>;
   dateFilter: DateFilterMode;
   yearRange: [number, number];
+  /** When omitted, name-type policy fields are preserved from persisted settings. */
+  preserve?: AutoTaggingAuthoritySettings;
 }): AutoTaggingAuthoritySettings {
   const [yearStart, yearEnd] = input.yearRange;
+  const preserved = input.preserve ?? readPersistedAuthoritySettings() ?? {};
   return {
+    ...preserved,
     packs: persistedPacksFromUi(input.packs),
     dateFilter: input.dateFilter,
     yearStart: Math.min(yearStart, yearEnd),
@@ -131,6 +191,11 @@ export function readPersistedAuthoritySettings(): AutoTaggingAuthoritySettings |
     yearStart: raw.yearStart,
     yearEnd: raw.yearEnd,
     excludedNameTypes: raw.excludedNameTypes,
+    nameTypeTaggingPolicy: raw.nameTypeTaggingPolicy as
+      | Record<string, NameTypeTaggingBucket>
+      | undefined,
+    customNameTypes: raw.customNameTypes as CustomNameType[] | undefined,
+    artMinCodePoints: raw.artMinCodePoints,
     yearFilterEnabled: raw.yearFilterEnabled,
     hideUndated: raw.hideUndated,
   };

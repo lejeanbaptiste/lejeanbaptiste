@@ -10,6 +10,11 @@ import {
   type AuthorityPackId,
 } from './packPaths';
 import type { AuthorityCandidate } from './authority';
+import {
+  filterCandidateForPhase1,
+  resolveNameTypeTaggingPolicy,
+  type NameTypeTaggingPolicy,
+} from './nameTypeTaggingPolicy';
 
 /** CBDB before DILA so overlap merge prefers CBDB metadata as the base. CHGIS before DILA for place dates. */
 const PACK_LOAD_ORDER: AuthorityPackId[] = [
@@ -68,6 +73,8 @@ export interface AuthorityTagBombOptions {
    * in the returned `loaded` map (e.g. `'pedb-persons'`).
    */
   extraCandidates?: { groupLabel: string; candidates: AuthorityCandidate[] }[];
+  /** When omitted, uses the Chinese default preset (legacy / test harness). */
+  nameTypePolicy?: NameTypeTaggingPolicy;
 }
 
 export interface AuthorityTagBombResult {
@@ -100,6 +107,8 @@ export async function runAuthorityTagBombOnDocument(
       : undefined);
 
   const index = createAuthoritySeedIndex();
+  const nameTypePolicy =
+    options.nameTypePolicy ?? resolveNameTypeTaggingPolicy(undefined, null);
   const loaded: Partial<Record<AuthorityPackId, number>> = {};
   let candidateCount = 0;
 
@@ -116,7 +125,9 @@ export async function runAuthorityTagBombOnDocument(
     const content = await readPackFile(packId);
     for (const candidate of iterateAuthorityNdjson(content)) {
       if (dateFilter && !candidatePassesDateFilter(candidate, dateFilter)) continue;
-      addCandidateToSeedIndex(index, candidate);
+      const filtered = filterCandidateForPhase1(candidate, nameTypePolicy);
+      if (filtered.searchStrings.length === 0) continue;
+      addCandidateToSeedIndex(index, filtered);
       packCount += 1;
       candidateCount += 1;
     }
@@ -127,7 +138,9 @@ export async function runAuthorityTagBombOnDocument(
     let groupCount = 0;
     for (const candidate of group.candidates) {
       if (dateFilter && !candidatePassesDateFilter(candidate, dateFilter)) continue;
-      addCandidateToSeedIndex(index, candidate);
+      const filtered = filterCandidateForPhase1(candidate, nameTypePolicy);
+      if (filtered.searchStrings.length === 0) continue;
+      addCandidateToSeedIndex(index, filtered);
       groupCount += 1;
       candidateCount += 1;
     }

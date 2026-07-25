@@ -16,12 +16,12 @@ const requireCount = (label, pattern, count) => {
     throw new Error(`Expected ${count} ${label}; found ${found.join(', ') || 'none'}`);
 };
 
-requireCount('macOS ZIPs', /^Le-Jean-Baptiste-.*-(?:arm64|x64)\.zip$/, 2);
-requireCount('macOS ZIP blockmaps', /^Le-Jean-Baptiste-.*-(?:arm64|x64)\.zip\.blockmap$/, 2);
-requireCount('Windows installers', /^Le-Jean-Baptiste-Setup-.*-(?:arm64|x64)\.exe$/, 2);
+requireCount('macOS ZIPs', /^Le-Jean-Baptiste-mac-.*-(?:arm64|x64)\.zip$/, 2);
+requireCount('macOS ZIP blockmaps', /^Le-Jean-Baptiste-mac-.*-(?:arm64|x64)\.zip\.blockmap$/, 2);
+requireCount('Windows installers', /^Le-Jean-Baptiste-win-Setup-.*-(?:arm64|x64)\.exe$/, 2);
 requireCount(
   'Windows installer blockmaps',
-  /^Le-Jean-Baptiste-Setup-.*-(?:arm64|x64)\.exe\.blockmap$/,
+  /^Le-Jean-Baptiste-win-Setup-.*-(?:arm64|x64)\.exe\.blockmap$/,
   2,
 );
 

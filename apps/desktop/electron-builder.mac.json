@@ -8,7 +8,7 @@
       "repo": "lejeanbaptiste"
     }
   ],
-  "artifactName": "Le-Jean-Baptiste-${version}-${arch}.${ext}",
+  "artifactName": "Le-Jean-Baptiste-mac-${version}-${arch}.${ext}",
   "mac": {
     "icon": "resources/branding/icon.filled.png",
     "target": ["pkg", "zip"],

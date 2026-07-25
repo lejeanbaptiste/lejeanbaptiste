@@ -1,4 +1,5 @@
 import type { AuthorityCandidate } from './authority';
+import { haversineDistanceKm } from './geoCluster';
 
 /** CBDB ids are sometimes zero-padded in DILA crosswalks. */
 export function normalizeCbdbId(id: string): string {
@@ -7,6 +8,15 @@ export function normalizeCbdbId(id: string): string {
 }
 
 const PLACE_AUTHORITY_SOURCES = new Set(['CBDB', 'DILA', 'CHGIS']);
+
+/**
+ * Default proximity radius (km) for treating two same-named place hits from
+ * different packs as the same physical place. See "placeProximityKm" in
+ * disambiguationSettings.ts for the user-configurable version; this default
+ * applies wherever a caller doesn't have settings context (e.g. seed.ts's
+ * pack-index building, which runs ahead of any per-document settings read).
+ */
+export const DEFAULT_PLACE_PROXIMITY_KM = 5;
 
 function placeChgisId(candidate: AuthorityCandidate): string | undefined {
   if (candidate.source === 'CHGIS') return candidate.authorityId;
@@ -28,12 +38,18 @@ function placeCbdbId(candidate: AuthorityCandidate): string | undefined {
 
 /**
  * Whether two place-authority rows describe the same place when loaded from
- * different packs (DILA + CHGIS + CBDB). Crosswalk ids win; otherwise same
- * primary name across place packs is treated as one index row.
+ * different packs (DILA + CHGIS + CBDB). Crosswalk ids win (an explicit
+ * cross-reference is never overridden by geography). Otherwise, same primary
+ * name across place packs is treated as one index row *only if* neither side
+ * carries coordinates (nothing to check) or both do and land within
+ * `proximityKm` of each other — this is the fix for the "same name, different
+ * place" collision (e.g. two places both named 臨川): a bare name match no
+ * longer merges two authority hits that are geographically far apart.
  */
 export function shouldMergePlacePackCandidates(
   a: AuthorityCandidate,
   b: AuthorityCandidate,
+  proximityKm: number = DEFAULT_PLACE_PROXIMITY_KM,
 ): boolean {
   if (a.kind !== 'place' || b.kind !== 'place') return false;
   if (canonicalEntityKey(a) === canonicalEntityKey(b)) return true;
@@ -50,23 +66,32 @@ export function shouldMergePlacePackCandidates(
   const bCbdb = placeCbdbId(b);
   if (aCbdb && bCbdb && aCbdb === bCbdb) return true;
 
-  return (
+  const sameName =
     PLACE_AUTHORITY_SOURCES.has(a.source) &&
     PLACE_AUTHORITY_SOURCES.has(b.source) &&
-    a.primaryName.trim() === b.primaryName.trim()
-  );
+    a.primaryName.trim() === b.primaryName.trim();
+  if (!sameName) return false;
+
+  const aGeo = a.metadata?.geo;
+  const bGeo = b.metadata?.geo;
+  // No geo signal on one/both sides — fall back to name-only behavior (today's
+  // pre-geo default), per the disambiguation-UI design's "no geo data" case.
+  if (!aGeo || !bGeo) return true;
+
+  return haversineDistanceKm(aGeo, bGeo) <= proximityKm;
 }
 
 function mergeIntoList(
   list: AuthorityCandidate[],
   candidate: AuthorityCandidate,
+  proximityKm: number = DEFAULT_PLACE_PROXIMITY_KM,
 ): void {
   const keyIdx = list.findIndex((c) => canonicalEntityKey(c) === canonicalEntityKey(candidate));
   if (keyIdx >= 0) {
     list[keyIdx] = mergeAuthorityCandidates(list[keyIdx]!, candidate);
     return;
   }
-  const mergeIdx = list.findIndex((c) => shouldMergePlacePackCandidates(c, candidate));
+  const mergeIdx = list.findIndex((c) => shouldMergePlacePackCandidates(c, candidate, proximityKm));
   if (mergeIdx >= 0) {
     list[mergeIdx] = mergeAuthorityCandidates(list[mergeIdx]!, candidate);
     return;
@@ -173,8 +198,16 @@ export function mergeAuthorityCandidates(
   };
 }
 
-/** Collapse CBDB+DILA duplicates while keeping genuinely ambiguous names separate. */
-export function collapseLinkedCandidates(candidates: AuthorityCandidate[]): AuthorityCandidate[] {
+/**
+ * Collapse CBDB+DILA duplicates while keeping genuinely ambiguous names
+ * separate. `proximityKm` — see {@link DEFAULT_PLACE_PROXIMITY_KM} — governs
+ * whether two same-named place hits merge or surface as distinct candidates;
+ * pass the project's `placeProximityKm` setting when available.
+ */
+export function collapseLinkedCandidates(
+  candidates: AuthorityCandidate[],
+  proximityKm: number = DEFAULT_PLACE_PROXIMITY_KM,
+): AuthorityCandidate[] {
   if (candidates.length <= 1) return candidates;
 
   const merged: AuthorityCandidate[] = [];
@@ -184,7 +217,7 @@ export function collapseLinkedCandidates(candidates: AuthorityCandidate[]): Auth
       merged[keyIdx] = mergeAuthorityCandidates(merged[keyIdx]!, candidate);
       continue;
     }
-    const packIdx = merged.findIndex((c) => shouldMergePlacePackCandidates(c, candidate));
+    const packIdx = merged.findIndex((c) => shouldMergePlacePackCandidates(c, candidate, proximityKm));
     if (packIdx >= 0) {
       merged[packIdx] = mergeAuthorityCandidates(merged[packIdx]!, candidate);
       continue;

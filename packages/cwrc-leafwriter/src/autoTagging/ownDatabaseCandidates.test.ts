@@ -1,5 +1,7 @@
 import { addEntity, createEntitiesScaffold, parseEntities } from './entities';
+import { setNameType } from './entityOps';
 import { candidatesFromEntityDatabase } from './ownDatabaseCandidates';
+import { resolveNameTypeTaggingPolicy } from './nameTypeTaggingPolicy';
 
 describe('candidatesFromEntityDatabase', () => {
   it('recovers search strings, dates, and description for a person', () => {
@@ -53,5 +55,23 @@ describe('candidatesFromEntityDatabase', () => {
     element.getElementsByTagName('title')[0]!.textContent = '   ';
 
     expect(candidatesFromEntityDatabase(doc, 'work', 'PEDB')).toEqual([]);
+  });
+
+  it('filters courtesy names from phase1 searchStrings using name types on persName', () => {
+    const doc = parseEntities(createEntitiesScaffold());
+    const { id } = addEntity(doc, 'person', {
+      name: '王安石',
+      altNames: [{ text: '王介甫', type: 'courtesy' }],
+    });
+    setNameType(doc, id, '王安石', 'primary');
+
+    const zhPolicy = resolveNameTypeTaggingPolicy(undefined, 'zh');
+    const [candidate] = candidatesFromEntityDatabase(doc, 'person', 'PEDB', zhPolicy);
+    expect(candidate!.searchStrings).toEqual(['王安石']);
+    expect(candidate!.names).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({ text: '王介甫', type: 'courtesy' }),
+      ]),
+    );
   });
 });

@@ -668,6 +668,8 @@
       "copyFailed": "Copy failed: {{error}}",
       "lockTranslationUnit": "Lock translation unit",
       "unlockTranslationUnit": "Unlock translation unit",
+      "enableSpellcheck": "Turn on spelling suggestions",
+      "disableSpellcheck": "Turn off spelling suggestions",
       "formatting": "Formatting",
       "formatItems": {
         "bold": "Bold",
