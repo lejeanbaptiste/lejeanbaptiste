@@ -86,6 +86,7 @@
     "lodash": "^4.17.23",
     "loglevel": "^1.9.2",
     "luxon": "^3.7.2",
+    "maplibre-gl": "^6.0.0",
     "mdi-material-ui": "^7.9.4",
     "monaco-editor": "0.52.2",
     "motion": "^12.35.0",

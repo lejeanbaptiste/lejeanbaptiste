@@ -39,6 +39,19 @@ jest.mock('react-virtuoso', () => ({
   }) => <div>{data.map((row, index) => <div key={index}>{itemContent(index, row)}</div>)}</div>,
 }));
 
+// The real component (and maplibre-gl underneath it) is covered by
+// PlaceComparisonMap.test.tsx — mocked here so this file never has to load
+// the ESM-only maplibre-gl package, and so tests can assert the panel wires
+// the right pins/title through without rendering an actual map.
+jest.mock('./mapView/PlaceComparisonMap', () => ({
+  PlaceComparisonMap: ({ open, pins, title }: { open: boolean; pins: unknown[]; title: string }) =>
+    open ? (
+      <div data-testid="place-comparison-map">
+        {title} ({pins.length} pins)
+      </div>
+    ) : null,
+}));
+
 import { DisambiguationPanel } from './DisambiguationPanel';
 
 function createGroup(): MentionGroup {
@@ -67,9 +80,9 @@ function createGroup(): MentionGroup {
   };
 }
 
-function createPlaceGroup(): MentionGroup {
+function createPlaceGroup(surface = '竟陵'): MentionGroup {
   const doc = new DOMParser().parseFromString(
-    '<TEI xmlns="http://www.tei-c.org/ns/1.0"><text><body><p><placeName>竟陵</placeName></p></body></text></TEI>',
+    `<TEI xmlns="http://www.tei-c.org/ns/1.0"><text><body><p><placeName>${surface}</placeName></p></body></text></TEI>`,
     'application/xml',
   );
   const element = doc.getElementsByTagName('placeName')[0]!;
@@ -77,13 +90,13 @@ function createPlaceGroup(): MentionGroup {
   const anchor = createAnchor('doc-1', doc, textNode, 0, textNode.data.length, 'ignore');
   return {
     tag: 'placeName',
-    surface: '竟陵',
+    surface,
     fullyResolved: false,
     instances: [
       {
         documentId: 'doc-1',
         tag: 'placeName',
-        surface: '竟陵',
+        surface,
         element,
         anchor,
         hasKey: false,
@@ -252,5 +265,83 @@ describe('DisambiguationPanel', () => {
     await waitFor(() => expect(mockBuildDisambiguationCandidates).toHaveBeenCalled());
     expect(screen.queryByText('no geo data')).toBeNull();
     expect(screen.queryByText('A')).toBeNull();
+  });
+
+  it('renders a single row for an already-merged geo-cluster candidate', async () => {
+    // Simulates what buildDisambiguationCandidates now returns once geo-cluster
+    // merging (WP1) has folded a CBDB + CHGIS hit into one row — the panel
+    // itself does no merging, it just renders whatever it's given.
+    mockBuildDisambiguationCandidates.mockResolvedValue([
+      { id: 'cbdb:a', label: '竟陵', sources: ['CBDB', 'CHGIS'], geo: { lat: 30.651, lon: 113.151 } },
+    ]);
+    mockRankDisambiguationCandidates.mockResolvedValue({
+      selectedCandidateIds: [],
+      rationales: {},
+      confidences: {},
+      suggestCreateNew: false,
+    });
+
+    render(
+      <DisambiguationPanel session={createSession()} groups={[createPlaceGroup()]} aiCuration={false} />,
+    );
+
+    await waitFor(() => expect(mockBuildDisambiguationCandidates).toHaveBeenCalled());
+    expect(await screen.findAllByRole('checkbox')).toHaveLength(1);
+  });
+
+  it('shows a map icon only on group headers whose background prefetch cache already has ≥2 geo clusters', async () => {
+    mockBuildDisambiguationCandidates.mockResolvedValue([]);
+    mockRankDisambiguationCandidates.mockResolvedValue({
+      selectedCandidateIds: [],
+      rationales: {},
+      confidences: {},
+      suggestCreateNew: false,
+    });
+
+    const session = createSession();
+    session.getPendingCandidates.mockImplementation((tag: string, surface: string) => {
+      if (surface !== '甲') return null;
+      return [
+        { id: 'cbdb:a', label: '甲', sources: ['CBDB'], geo: { lat: 30.65, lon: 113.15 } },
+        { id: 'chgis:b', label: '甲', sources: ['CHGIS'], geo: { lat: 39.9, lon: 116.4 } }, // ~1000km away
+      ];
+    });
+
+    render(
+      <DisambiguationPanel
+        session={session}
+        groups={[createPlaceGroup('甲'), createPlaceGroup('乙')]}
+        aiCuration={false}
+      />,
+    );
+
+    expect(await screen.findByLabelText('Compare 甲 on map')).toBeTruthy();
+    expect(screen.queryByLabelText('Compare 乙 on map')).toBeNull();
+  });
+
+  it('opens the comparison map with one pin per cluster when the group-header icon is clicked', async () => {
+    mockBuildDisambiguationCandidates.mockResolvedValue([]);
+    mockRankDisambiguationCandidates.mockResolvedValue({
+      selectedCandidateIds: [],
+      rationales: {},
+      confidences: {},
+      suggestCreateNew: false,
+    });
+
+    const session = createSession();
+    session.getPendingCandidates.mockReturnValue([
+      { id: 'cbdb:a', label: '甲', sources: ['CBDB'], geo: { lat: 30.65, lon: 113.15 } },
+      { id: 'chgis:b', label: '甲', sources: ['CHGIS'], geo: { lat: 39.9, lon: 116.4 } },
+    ]);
+
+    render(
+      <DisambiguationPanel session={session} groups={[createPlaceGroup('甲')]} aiCuration={false} />,
+    );
+
+    (await screen.findByLabelText('Compare 甲 on map')).click();
+
+    const mapDialog = await screen.findByTestId('place-comparison-map');
+    expect(mapDialog.textContent).toContain('甲 — compare clusters');
+    expect(mapDialog.textContent).toContain('2 pins');
   });
 });

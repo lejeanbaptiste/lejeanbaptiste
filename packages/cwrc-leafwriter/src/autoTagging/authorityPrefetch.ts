@@ -4,6 +4,7 @@ import { prefetchFinished, prefetchProgress } from './authorityLoadProgress';
 import { buildDisambiguationCandidates, type DisambiguationCandidate } from './disambiguationCandidates';
 import {
   disambiguationCachingDisabledFromSettings,
+  placeProximityKmFromSettings,
   readPersistedDisambiguationSettings,
 } from './disambiguationSettings';
 import type { DilaPlaceDetailCache } from './dilaPlaceDetailCache';
@@ -123,6 +124,7 @@ export function runAuthorityPrefetch(
         const entitiesDoc = session.getEntitiesDocument() ?? (await session.loadEntities());
         if (stopped) return;
         const central = (await session.candidateSearchCentralContext()) ?? undefined;
+        const placeProximityKm = placeProximityKmFromSettings(readPersistedDisambiguationSettings());
         const rows = await buildDisambiguationCandidates(
           entitiesDoc,
           group.tag,
@@ -155,6 +157,7 @@ export function runAuthorityPrefetch(
                   undefined,
                   undefined,
                   central,
+                  placeProximityKm,
                 );
                 if (stopped) return;
                 session.rememberPendingCandidates(group.tag, group.surface, refreshed);
@@ -166,6 +169,7 @@ export function runAuthorityPrefetch(
           },
           undefined,
           central,
+          placeProximityKm,
         );
         if (stopped) return;
         session.rememberPendingCandidates(group.tag, group.surface, rows);

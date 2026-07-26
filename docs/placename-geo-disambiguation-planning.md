@@ -56,6 +56,8 @@ In the entity-lookup dialog (`packages/cwrc-leafwriter/src/dialogs/entity-lookup
 
 Dependencies: Admin vocabulary (Phase A) → Coordinate source data fixes (Phase 0) → Pack compilation (Phase 1) → Clustering/UI (Phases 2–4) → Persisted entities (Phase 5).
 
+**Revised 2026-07-26:** Phase 6 (map view) no longer waits on Phase 5. It only needs geo-bearing merged candidates, which Phases 1–3 already provide — see "Decisions (2026-07-26)" below.
+
 ### Phase A — Admin-vocabulary mapping table
 
 **Scope:** build a single controlled vocabulary for administrative levels across CHGIS, CBDB, and external authorities (Wikidata, others). This table drives two outputs:
@@ -257,7 +259,7 @@ What *was* missing on this path: `metadata.geo` never reached `DisambiguationCan
 - `planLookupResolution`'s conflict branch (project-entity duplicates already in entities.xml) is unaffected by any of this — it stays name/crosswalk-only until Phase 5 puts geo data on entities.xml.
 - Clicking a cluster letter to filter the candidate list to just that cluster (current UI shows all candidates with badges, doesn't yet let the user narrow to one cluster) — a possible follow-on if the letter labels alone prove insufficient in practice.
 
-**Acceptance — met.** Both correctness (Phase 3 core fix) and the originally-scoped UI (proximity control + visible cluster grouping + "no geo data" labeling) are implemented and tested. What was deferred as a separate design task (Phase 6 map-pin comparison view) remains deferred.
+**Acceptance — met.** Both correctness (Phase 3 core fix) and the originally-scoped UI (proximity control + visible cluster grouping + "no geo data" labeling) are implemented and tested. Phase 6 (map-pin comparison view), originally deferred as a separate design task, has since been re-scoped and unblocked — see "Decisions (2026-07-26)" below.
 
 ### Phase 4 — Merged period display and entity linking
 
@@ -275,11 +277,26 @@ Depends on: all prior phases.
 
 **Acceptance:** users can create/edit cluster entities with coordinates, admin-level, multi-authority associations, and multi-date ranges; unlinking an authority removes only that authority's contributions (tags, dates, etc.) without affecting other sources.
 
-### Phase 6 — Map-pin / OSM comparison view
+### Phase 6 — Map-pin comparison view
 
-Depends on: Phase 5.
+**Revised 2026-07-26 — depends only on Phase 3 (merge extension below), not Phase 5.** Originally scoped as TBD and gated on persisted cluster entities; re-scoped after review of `docs/map-app.md` to be a pure visualization layer over data the panel already computes, so it does not need entities.xml changes to ship.
 
-**Scope:** TBD. Visual comparison of geo-clusters during disambiguation (pin each cluster on a map, user compares to decide if they are distinct places). Inline vs external link, data privacy for desktop app sending place data to map provider, popup content. Deferred pending completion of phases 0–5.
+**Scope:**
+- **No geocoding.** Coordinates come only from `DisambiguationCandidate.geo` (already populated from CHGIS/CBDB packs per Phase 1/2). Nominatim, or any other place-name → coordinates lookup, is out of scope — this map never geocodes a string, it only renders coordinates the candidates already carry. Candidates without `geo` are excluded from the map (consistent with the panel's existing "no geo data" fallback labeling); they are not approximated or geocoded as a substitute.
+- **Merge extension (prerequisite):** today, `clusterByGeoAccessor` (`geoCluster.ts`) only *labels* place candidates with a cluster letter — `collapseCrossAuthorityCandidates` (`disambiguationCandidates.ts:359-411`) does not currently fold candidates together by geo-cluster membership, only by shared authority key or (for persons) matching birth/death years. Extend the merge step so place-type groups also collapse when candidates share a geo cluster, producing one merged `DisambiguationCandidate` per cluster with a combined `sources` list — the same shape persons already get when merged across authorities (`entities.ts:280-327` writes one `<idno>` per merged source). This turns "10 date-filtered hits, 3 of them badged A, 4 badged B, 3 badged C" into "3 merged cluster rows," each carrying all its folded-in source badges.
+- **Map pins = one per merged cluster row**, at the cluster centroid (already computed by `clusterCandidatesByGeo`/`clusterByGeoAccessor`). Not one pin per raw authority hit.
+- **Entry point:** a small icon on the group header (next to the ambiguous string/`surface`, not per candidate row), shown only when the group has ≥2 real geo clusters — same gating `placeClusterLabelById` already uses. Clicking it opens a modal map with one pin per cluster, colored/lettered using the exact same palette as the row badges, so there's one visual vocabulary between the list and the map, not two.
+- **Tiles: local MBTiles, downloaded on first map open, superseding the MapTiler decision below.** Since this is a desktop app (`apps/desktop`, Electron), the tile-hosting-policy problem (§"Decisions," point 2) can be sidestepped entirely rather than worked around with a keyed provider: on first opening the map, prompt the user to download a regional MBTiles bundle (street/satellite/relief, capped at ~500 MB) covering the historically-relevant area (East/Central Asia). MapLibre then points at a small local tile server (e.g. `tileserver-gl`, bundled with the app) reading from the downloaded MBTiles — no external tile requests at all after the initial download, no API key, no per-request tile-provider ToS to comply with, and it works offline. MapTiler remains a documented fallback only for regions/detail levels not covered by the bundled MBTiles (see updated "Decisions," point 2).
+- **Dual-use note:** build the map component to take `{candidate, clusterLabel, color}[]` as input (pins to render), not `MentionGroup`/panel-specific types directly — so the same component can later serve the "map of disambiguated places in the current document" view (§1.1 of `docs/map-app.md`) without rewriting it.
+
+**Acceptance:**
+- A place group with ≥2 geo-bearing clusters shows a group-header map icon; clicking it renders one pin per cluster at its centroid, matching row-badge colors/letters.
+- Candidates without `geo` never appear on the map and don't block the icon from working for the candidates that do have coordinates.
+- No network call to any geocoding service occurs as part of rendering the map.
+- First-open flow: user is prompted to download the regional MBTiles bundle (size shown, capped ~500 MB) before the map renders tiles; declining still shows pins (e.g. on a blank/graticule background) rather than blocking disambiguation entirely.
+- After download, opening the map again does not re-download or make any external request.
+
+**Not in this phase:** persisted cluster entities (still Phase 5), Nominatim/geocoding fallback for geo-less candidates, doc-wide "all disambiguated places" map (future, per `docs/map-app.md` §1.1), automatic MBTiles bundle updates (v2 concern).
 
 ### Deferred to v2
 
@@ -306,7 +323,7 @@ We should probably store BOTH in entities.xml.
 
 In addition to locating and extracting longitude and latitude from all our authorities, online and off, we really need to dig though them to see if we can't create some homogenous way to treat administrative units (e.g., 縣VS郡). I know these are present (in pinyin) in CHGIS, but I'm not sure if it's the case in all... This is more for the 'places as units within administrative geography' entity than 'places as coordinates' entitiy.
 
-This makes sense to me: in disambiguate, we group either as we do now, or we group by name + long&lat and, presumably, extract the 'common coordinates'. To help disambiguation of PLACES, we should really have a link on each candidate cluser in this mode pointing to a map. CHGIS is clever: you search a string, and they produce a map with the different hits. Perhaps we could split into clusters, give each a number or letter, then shove the descriptions into a pin to drop in open street maps or Google (?). It doesn't make sense to do this individually for each identical cluster, because one needs to compare the clusters one to another if they point to four really distinct places... **(Deferred — see Phasing. Do this after the persisted-cluster model, coordinate fixes, and vocabulary unification below are built.)**
+This makes sense to me: in disambiguate, we group either as we do now, or we group by name + long&lat and, presumably, extract the 'common coordinates'. To help disambiguation of PLACES, we should really have a link on each candidate cluser in this mode pointing to a map. CHGIS is clever: you search a string, and they produce a map with the different hits. Perhaps we could split into clusters, give each a number or letter, then shove the descriptions into a pin to drop in open street maps or Google (?). It doesn't make sense to do this individually for each identical cluster, because one needs to compare the clusters one to another if they point to four really distinct places... **(Originally deferred pending the persisted-cluster model, coordinate fixes, and vocabulary unification — re-scoped 2026-07-26 to not require those; see Phase 6 and "Decisions (2026-07-26)".)**
 
 ---
 
@@ -386,4 +403,16 @@ Extends beyond the three internal sources: **unify CHGIS (`TYPE_CH`, Chinese sin
 
 Only 329/117k DILA place records carry coordinates (0.3%) — effectively unusable for clustering. DILA is dropped from the geo-disambiguation plan; CHGIS + CBDB are the two coordinate sources going forward. (DILA's admin-vocabulary field, `<note type="category">` free text, is likewise not part of the vocabulary-unification pass.)
 
+---
+
+## Decisions (2026-07-26)
+
+Follows review of `docs/map-app.md` (the original standalone map planning doc, written before this document's Phase 6 existed). That doc is superseded by this section and by the revised Phase 6 above; kept on disk as a UI/UX reference (popup sizing, tooltip layout, resize behavior) but its architecture section (Nominatim geocoding, generic tile sourcing) is no longer authoritative.
+
+1. **No Nominatim, no geocoding, period.** The map only ever renders coordinates already present on a candidate (`DisambiguationCandidate.geo`, sourced from compiled CHGIS/CBDB packs). A candidate with no coordinates is excluded from the map rather than geocoded as a fallback. This applies uniformly, not just to the common case — simpler to reason about and removes the Nominatim rate-limit/legal question `map-app.md` raised, since it no longer applies.
+2. **Tile provider: local MBTiles, downloaded on first map open (revised from the MapTiler decision made earlier the same day).** Initially settled on MapTiler — rejected over Google Maps/Earth (requires a Google Cloud billing account despite a free credit, so it doesn't avoid the "API key" problem either; ToS restricts caching/offline use, awkward for a research tool; sends place-query traffic to Google, worse on data-sovereignty grounds than the Nominatim question it would replace) and over raw OSM raster tiles (`tile.openstreetmap.org`'s usage policy prohibits bulk/redistributed-app use). But since this ships inside a desktop Electron app (`apps/desktop`), the tile-hosting-policy problem doesn't need a keyed provider at all: prompt the user to download a regional MBTiles bundle (street/satellite/relief, capped ~500 MB, covering the historically-relevant East/Central Asia region) on first map open, then serve tiles from a local tile server (e.g. `tileserver-gl`) reading that file. No API key, no ongoing external requests, works offline, no third-party ToS to track. MapTiler is kept as a documented fallback only for areas/zoom levels outside the bundled region.
+3. **Phase 6 no longer depends on Phase 5.** It was originally gated on persisted cluster entities in entities.xml. Since the map is a pure visualization layer over data the panel already computes (merged candidates + centroids), it doesn't need entities.xml changes to ship. Phase 5 remains a separate, later piece of work.
+4. **Place-candidate merging must be extended to match how persons already merge.** Today `collapseCrossAuthorityCandidates` (`disambiguationCandidates.ts:359-411`) folds person candidates together on shared authority key or matching birth/death years, producing one row with a combined `sources` list — but for places, geo-cluster membership (`clusterByGeoAccessor` in `geoCluster.ts`) only *labels* rows with a letter; it never merges them. Extending the merge step to also collapse on geo-cluster membership brings places to parity with persons (one row per real-world cluster, not one row per raw authority hit) and is what makes "one pin per cluster centroid" correct instead of "one pin per raw hit."
+5. **Group-header icon reuses the existing cluster letter/color convention**, rather than inventing new pin colors or labels — the map and the row badges must read as one visual system, not two.
+6. **Component lives in `packages/cwrc-leafwriter`**, alongside `autoTagging/` and `DisambiguationPanel.tsx`, since that's the only workspace currently consuming this code; not worth a new package for one component. Built to take pre-clustered `{candidate, clusterLabel, color}[]` as input (not panel-specific types), so the same component can later serve the document-wide "map of disambiguated places" view described in `docs/map-app.md` §1.1 without a rewrite.
 

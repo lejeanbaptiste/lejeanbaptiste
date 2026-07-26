@@ -73,6 +73,7 @@ import {
 } from './disambiguationSettings';
 import { normalizeDateRangeFilter, type DateFilterMode, type DateRangeFilter } from './packLoader';
 import { clusterByGeoAccessor } from './geoCluster';
+import { PlaceComparisonMap, type MapPin } from './mapView/PlaceComparisonMap';
 import { resolveManualAuthorityLink } from './manualAuthorityLink';
 import type { AuthorityCache } from './authorityCache';
 import { fetchWikidataSummary, type WikidataSummary } from './wikidataDates';
@@ -110,6 +111,9 @@ export interface DisambiguationPanelProps {
 }
 
 const stopRowClick = (event: { stopPropagation: () => void }) => event.stopPropagation();
+
+/** Cycled by cluster discovery order for the group-header comparison map's pins. */
+const PLACE_CLUSTER_COLORS = ['#d32f2f', '#1976d2', '#388e3c', '#f57c00', '#7b1fa2', '#00838f'];
 
 const AuthorityLinkIcon = ({ link }: { link: CandidateLink }) => (
   <IconButton
@@ -166,6 +170,9 @@ interface GroupHeaderProps {
   resolved?: boolean;
   onToggle: () => void;
   onSelect: () => void;
+  /** ≥2 geo clusters already prefetched for this group — see mapPinsForGroup. */
+  mapPins?: MapPin[] | null;
+  onOpenMap?: () => void;
 }
 
 const GroupHeader = ({
@@ -175,54 +182,74 @@ const GroupHeader = ({
   resolved = false,
   onToggle,
   onSelect,
+  mapPins,
+  onOpenMap,
 }: GroupHeaderProps) => {
   const pendingCount = pendingInstances(group).length;
   const entityKey = group.instances.find((item) => item.hasKey)?.element.getAttribute('key') ?? '';
+  const showMapIcon = (mapPins?.length ?? 0) >= 2;
 
   return (
-    <Button
-      fullWidth
-      size="small"
-      data-testid={`disambiguation-group-${group.surface}`}
-      data-current={isCurrent || undefined}
-      onClick={() => {
-        onSelect();
-        onToggle();
-      }}
-      endIcon={
-        <ExpandMoreIcon sx={{ transform: expanded ? 'rotate(180deg)' : undefined, transition: '0.2s' }} />
-      }
-      sx={{
-        justifyContent: 'space-between',
-        textTransform: 'none',
-        px: 0.75,
-        py: 0.5,
-        borderRadius: 0,
-        borderLeft: '3px solid',
-        borderLeftColor: isCurrent ? 'primary.main' : 'transparent',
-        bgcolor: isCurrent ? 'action.selected' : undefined,
-      }}
-    >
-      <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5, minWidth: 0, flex: 1 }}>
-        <Typography variant="body2" sx={{ fontWeight: 600 }} noWrap>
-          {group.surface}
-        </Typography>
-        <Chip size="small" label={group.tag} sx={{ height: 18, fontSize: 10, '& .MuiChip-label': { fontWeight: 400 } }} />
-        {resolved ? (
-          <Chip
-            size="small"
-            color="success"
-            variant="outlined"
-            label={entityKey || 'resolved'}
-            sx={{ height: 18, fontSize: 10, maxWidth: 120 }}
-          />
-        ) : (
-          <Typography variant="caption" color="text.secondary" noWrap>
-            {pendingCount} left · {group.instances.length} total
+    <Box sx={{ display: 'flex', alignItems: 'stretch' }}>
+      <Button
+        fullWidth
+        size="small"
+        data-testid={`disambiguation-group-${group.surface}`}
+        data-current={isCurrent || undefined}
+        onClick={() => {
+          onSelect();
+          onToggle();
+        }}
+        endIcon={
+          <ExpandMoreIcon sx={{ transform: expanded ? 'rotate(180deg)' : undefined, transition: '0.2s' }} />
+        }
+        sx={{
+          justifyContent: 'space-between',
+          textTransform: 'none',
+          px: 0.75,
+          py: 0.5,
+          borderRadius: 0,
+          borderLeft: '3px solid',
+          borderLeftColor: isCurrent ? 'primary.main' : 'transparent',
+          bgcolor: isCurrent ? 'action.selected' : undefined,
+        }}
+      >
+        <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5, minWidth: 0, flex: 1 }}>
+          <Typography variant="body2" sx={{ fontWeight: 600 }} noWrap>
+            {group.surface}
           </Typography>
-        )}
-      </Box>
-    </Button>
+          <Chip size="small" label={group.tag} sx={{ height: 18, fontSize: 10, '& .MuiChip-label': { fontWeight: 400 } }} />
+          {resolved ? (
+            <Chip
+              size="small"
+              color="success"
+              variant="outlined"
+              label={entityKey || 'resolved'}
+              sx={{ height: 18, fontSize: 10, maxWidth: 120 }}
+            />
+          ) : (
+            <Typography variant="caption" color="text.secondary" noWrap>
+              {pendingCount} left · {group.instances.length} total
+            </Typography>
+          )}
+        </Box>
+      </Button>
+      {showMapIcon && (
+        <Tooltip title="Compare this group's geographic clusters on a map">
+          <IconButton
+            size="small"
+            aria-label={`Compare ${group.surface} on map`}
+            onClick={(event) => {
+              event.stopPropagation();
+              onOpenMap?.();
+            }}
+            sx={{ borderRadius: 0, px: 0.75 }}
+          >
+            <RoomIcon fontSize="small" />
+          </IconButton>
+        </Tooltip>
+      )}
+    </Box>
   );
 };
 
@@ -530,6 +557,7 @@ export const DisambiguationPanel = ({
             : undefined,
           projectLang,
           central ?? undefined,
+          placeProximityKm,
         );
         if (currentKeyRef.current !== groupKey) return;
         setCandidates(rows);
@@ -541,7 +569,7 @@ export const DisambiguationPanel = ({
         // Best-effort silent refresh; leave the existing (undated) candidates as-is.
       }
     },
-    [cacheDisabled, projectLang, session],
+    [cacheDisabled, placeProximityKm, projectLang, session],
   );
 
   const loadCandidates = useCallback(
@@ -574,7 +602,10 @@ export const DisambiguationPanel = ({
                 (candidate) => !linkedCentralIds(entitiesDoc, central.userStableId).has(candidate.centralEntityId!),
               )
             : [];
-          const rows = mergeCandidates([freshLocal, freshCentral, cached]);
+          const rows = mergeCandidates([freshLocal, freshCentral, cached], {
+            tag: targetGroup.tag,
+            placeProximityKm,
+          });
           setCandidates(rows);
           // The prefetcher can cache DILA place rows before their lazy detail
           // scrapes (dynasty/dates) have landed. Heal such rows in the
@@ -620,6 +651,7 @@ export const DisambiguationPanel = ({
           },
           projectLang,
           central ?? undefined,
+          placeProximityKm,
         );
         if (!cacheDisabled) {
           session.rememberPendingCandidates(targetGroup.tag, targetGroup.surface, rows);
@@ -635,7 +667,7 @@ export const DisambiguationPanel = ({
         setLoadingCandidates(false);
       }
     },
-    [applyAiRank, cacheDisabled, projectLang, refreshDilaDates, session],
+    [applyAiRank, cacheDisabled, placeProximityKm, projectLang, refreshDilaDates, session],
   );
 
   useEffect(() => {
@@ -679,6 +711,37 @@ export const DisambiguationPanel = ({
     });
     return byId;
   }, [group?.tag, filteredCandidates, placeProximityKm]);
+
+  const [mapModal, setMapModal] = useState<{ title: string; pins: MapPin[] } | null>(null);
+
+  /**
+   * Pins for a group's header map icon, or null/empty when there's nothing
+   * to compare. Reads only the background prefetcher's cache
+   * (session.getPendingCandidates) rather than fetching — runAuthorityPrefetch
+   * already warms every not-yet-resolved group in the background, so a group
+   * simply shows no icon until its prefetch lands (no new eager-fetch
+   * machinery needed here — see docs/placename-geo-disambiguation-planning.md
+   * Phase 6, WP3).
+   */
+  const mapPinsForGroup = useCallback(
+    (targetGroup: MentionGroup): MapPin[] => {
+      if (targetGroup.tag !== 'placeName') return [];
+      const cached = session.getPendingCandidates(targetGroup.tag, targetGroup.surface);
+      if (!cached) return [];
+      const { clusters } = clusterByGeoAccessor(cached, placeProximityKm, (candidate) => candidate.geo);
+      if (clusters.length < 2) return [];
+      return clusters.map((cluster, index) => ({
+        id: cluster.members[0]!.id,
+        label: String.fromCharCode(65 + index),
+        color: PLACE_CLUSTER_COLORS[index % PLACE_CLUSTER_COLORS.length]!,
+        lat: cluster.centroid.lat,
+        lon: cluster.centroid.lon,
+        sources: [...new Set(cluster.members.flatMap((member) => member.sources))],
+        description: [...new Set(cluster.members.map((member) => member.label))].join(' / '),
+      }));
+    },
+    [placeProximityKm, session],
+  );
 
   useEffect(() => {
     if (!aiCuration || rankingAi || loadingCandidates || aiRanked) return;
@@ -1415,6 +1478,13 @@ export const DisambiguationPanel = ({
                     if (!expanded) controller.selectGroup(key, { focus: true, expand: true });
                     rerender();
                   }}
+                  mapPins={mapPinsForGroup(targetGroup)}
+                  onOpenMap={() =>
+                    setMapModal({
+                      title: `${targetGroup.surface} — compare clusters`,
+                      pins: mapPinsForGroup(targetGroup),
+                    })
+                  }
                 />
                 <Collapse in={expanded}>
                   {resolvedRow ? renderResolvedGroupBody(targetGroup) : renderPendingGroupBody(targetGroup)}
@@ -1587,6 +1657,12 @@ export const DisambiguationPanel = ({
         await persistAiPromptProfiles(next);
         setAiPromptProfiles(next);
       }}
+    />
+    <PlaceComparisonMap
+      open={mapModal != null}
+      pins={mapModal?.pins ?? []}
+      title={mapModal?.title ?? ''}
+      onClose={() => setMapModal(null)}
     />
     <Dialog
       open={newEntityDialogOpen}

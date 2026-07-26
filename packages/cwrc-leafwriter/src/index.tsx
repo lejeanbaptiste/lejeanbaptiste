@@ -6,6 +6,7 @@ import '@fontsource/lato/900.css';
 import '@fortawesome/fontawesome-free/css/fontawesome.css';
 import '@fortawesome/fontawesome-free/css/solid.css';
 import '@fortawesome/fontawesome-free/css/regular.css';
+import 'maplibre-gl/dist/maplibre-gl.css';
 import { PaletteMode } from '@mui/material';
 import * as Sentry from '@sentry/react';
 import Dexie from 'dexie';
