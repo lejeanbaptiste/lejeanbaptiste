@@ -2,7 +2,7 @@ import fs from 'fs';
 import path from 'path';
 import type { AuthorityCandidate } from './authority';
 import { candidatesFromCsv } from './authority';
-import { createEntitiesScaffold, parseEntities } from './entities';
+import { createEntitiesScaffold, parseEntities, readOfficeRelations } from './entities';
 import { normalizeDomText } from './normalize';
 import { autoLinkUnique, bucketSeeds, seedSuggestions, suggestionsFromSeedMatches } from './seed';
 
@@ -156,6 +156,37 @@ describe('autoLinkUnique', () => {
     expect(result.linked).toBe(2);
     expect(result.entitiesCreated).toBe(1); // but only one entity
     expect(entitiesDoc.getElementsByTagName('person')).toHaveLength(1);
+  });
+
+  it('imports an explicit Norbert office parent and hierarchy relation', async () => {
+    const doc = parse('<TEI><text><p>吏部</p></text></TEI>');
+    const entitiesDoc = parseEntities(createEntitiesScaffold());
+    const child = cand({
+      source: 'Norbert',
+      authorityId: '2',
+      kind: 'office',
+      primaryName: '吏部',
+      searchStrings: ['吏部'],
+      metadata: {
+        parentOffice: {
+          source: 'Norbert',
+          authorityId: '1',
+          entityId: 'norbert:office:1',
+          name: '尚書省',
+        },
+      },
+    });
+    const { unique } = bucketSeeds(seedSuggestions(doc, [child], 'ignore'));
+    const result = await autoLinkUnique(doc, entitiesDoc, unique, { policy: 'ignore' });
+    expect(result.entitiesCreated).toBe(2);
+    expect(result.relationsCreated).toBe(1);
+    const offices = Array.from(entitiesDoc.getElementsByTagName('org')).filter(
+      (item) => item.getAttribute('type') === 'office',
+    );
+    expect(
+      offices.map((item) => item.getElementsByTagName('orgName')[0]?.textContent),
+    ).toEqual(expect.arrayContaining(['尚書省', '吏部']));
+    expect(readOfficeRelations(entitiesDoc)).toHaveLength(1);
   });
 });
 

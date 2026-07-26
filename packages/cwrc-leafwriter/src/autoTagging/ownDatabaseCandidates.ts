@@ -1,5 +1,5 @@
 import type { AuthorityCandidate } from './authority';
-import { ENTITY_KINDS, parseIsoYear, type EntityKind } from './entities';
+import { ENTITY_KINDS, entityElements, parseIsoYear, type EntityKind } from './entities';
 import {
   phase1SearchStringsFromCandidate,
   resolveNameTypeTaggingPolicy,
@@ -25,7 +25,7 @@ function datesFromNote(note: string | null | undefined): { startYear?: number; e
  * side of `searchEntityDocument` (`services/entity-database-lookup.ts`), but
  * bulk (no query filter) — dates parsed the way `addEntity` writes them
  * (`entities.ts`): `<birth>`/`<death>` for persons, `<note type="dates">`
- * for place/org/work.
+ * for place/org/work/office.
  */
 export function candidatesFromEntityDatabase(
   doc: Document,
@@ -34,12 +34,11 @@ export function candidatesFromEntityDatabase(
   policy?: NameTypeTaggingPolicy,
 ): AuthorityCandidate[] {
   const namePolicy = policy ?? resolveNameTypeTaggingPolicy(undefined, null);
-  const { item, name: nameTag } = ENTITY_KINDS[kind];
+  const { name: nameTag } = ENTITY_KINDS[kind];
   const candidates: AuthorityCandidate[] = [];
 
-  const items = doc.getElementsByTagName(item);
-  for (let i = 0; i < items.length; i++) {
-    const el = items.item(i)!;
+  const items = entityElements(doc, kind);
+  for (const el of items) {
     const id = el.getAttribute('xml:id');
     if (!id) continue;
 

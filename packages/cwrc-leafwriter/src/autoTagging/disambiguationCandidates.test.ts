@@ -104,6 +104,33 @@ describe('disambiguationCandidates', () => {
     expect(rows[0]?.description).toBe('Jin-dynasty usurper');
   });
 
+  it('refreshes appointment metadata when an authority-linked person is reused', () => {
+    const doc = parseEntities(createEntitiesScaffold());
+    addEntity(doc, 'person', {
+      name: '王安石',
+      authorityIds: [{ type: 'CBDB', value: '1762' }],
+    });
+    const appointments = [{
+      source: 'CBDB',
+      authorityId: 'posting:1',
+      person: { source: 'CBDB', authorityId: '1762' },
+      office: { source: 'CBDB', authorityId: '42', name: '尚書' },
+    }];
+    const id = resolveEntityInDocument(
+      doc,
+      {
+        kind: 'person',
+        name: '王安石',
+        authorityIds: [{ type: 'CBDB', value: '1762' }],
+        authorityMetadata: { appointments },
+      },
+    );
+    const cache = Array.from(findEntity(doc, id)!.children).find(
+      (child) => child.localName === 'note' && child.getAttribute('type') === 'authority-cache',
+    );
+    expect(JSON.parse(cache?.textContent ?? '{}').appointments).toEqual(appointments);
+  });
+
   it('matches local entities on alternative names, keeping the display name as label', () => {
     const doc = parseEntities(createEntitiesScaffold());
     addEntity(doc, 'person', {
@@ -719,6 +746,49 @@ describe('disambiguationCandidates', () => {
     const chgisRow = rows.find((row) => row.sources.includes('CHGIS'));
     expect(chgisRow?.startYear).toBe(618);
     expect(chgisRow?.endYear).toBe(907);
+  });
+
+  it('surfaces office candidates and retains hierarchy metadata', async () => {
+    mockReconcile.mockResolvedValue([]);
+    const parentOffice = {
+      source: 'Norbert',
+      authorityId: '10',
+      entityId: 'norbert:office:10',
+      name: '州',
+    };
+    const norbertOffices = [
+      JSON.stringify({
+        source: 'Norbert',
+        authorityId: '11',
+        kind: 'office',
+        primaryName: '刺史',
+        searchStrings: ['刺史'],
+        metadata: { followsOffice: true, parentOffice },
+      }),
+    ].join('\n');
+    const readPackFile = jest.fn(async (packId: string) => {
+      if (packId === 'norbert-offices') return norbertOffices;
+      throw new Error(`not installed: ${packId}`);
+    });
+    const doc = parseEntities(createEntitiesScaffold());
+    const cache = new AuthorityCache(null, null);
+
+    const rows = await buildDisambiguationCandidates(
+      doc,
+      'roleName',
+      '刺史',
+      cache,
+      [],
+      false,
+      readPackFile,
+    );
+
+    expect(rows).toHaveLength(1);
+    expect(rows[0]).toMatchObject({
+      sources: ['NORBERT'],
+      authorityIds: [{ type: 'NORBERT', value: '11' }],
+      authorityMetadata: { followsOffice: true, parentOffice },
+    });
   });
 
   it('threads metadata.geo from a place pack row onto the DisambiguationCandidate', async () => {

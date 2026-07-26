@@ -165,6 +165,7 @@ const icons = {
   merge: MergeRoundedIcon,
   MergeRoundedIcon: MergeRoundedIcon,
   note: StickyNote2Icon,
+  office: AccountTreeRoundedIcon,
   OrderAlphabeticalAscending: OrderAlphabeticalAscendingIcon,
   organization: PeopleAltIcon,
   organizationDraft: PeopleOutlineOutlinedIcon,

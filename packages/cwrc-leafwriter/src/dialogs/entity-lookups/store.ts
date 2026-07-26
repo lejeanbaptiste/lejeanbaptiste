@@ -9,7 +9,6 @@ import type {
   AuthorityLookupResult,
   AuthorityService,
   EntityLink,
-  EntityType,
   EntryLink,
   NamedEntityType,
 } from '../../types';
@@ -25,7 +24,7 @@ export type LookupService = AuthorityService & {
 export const authoritiesAtom = atom<LookupService[]>([]);
 authoritiesAtom.debugLabel = 'authorities.Atom';
 
-export const entityTypeAtom = atom<EntityType>('thing');
+export const entityTypeAtom = atom<NamedEntityType>('thing');
 entityTypeAtom.debugLabel = 'entityType.Atom';
 
 export const lookupTypeAtom = atom((get) => {

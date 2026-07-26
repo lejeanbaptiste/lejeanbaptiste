@@ -19,7 +19,9 @@
 
 import {
   ENTITY_KINDS,
+  entityElements,
   findEntity,
+  getEntityList,
   getEntityChanged,
   touchEntity,
   type EntityKind,
@@ -30,8 +32,6 @@ import {
   setEntityScalar,
   type FieldConflict,
 } from './reconcile';
-
-const TEI_NS = 'http://www.tei-c.org/ns/1.0';
 
 export interface ForkMergeConflict extends FieldConflict {
   /** Entity id the conflict sits on. */
@@ -48,16 +48,6 @@ export interface ForkMergeResult {
   changed: boolean;
 }
 
-const listFor = (doc: Document, kind: EntityKind): Element => {
-  const { list } = ENTITY_KINDS[kind];
-  const existing = doc.getElementsByTagName(list)[0];
-  if (existing) return existing;
-  const standOff = doc.getElementsByTagName('standOff')[0] ?? doc.documentElement;
-  const el = doc.createElementNS(TEI_NS, list);
-  standOff.appendChild(el);
-  return el;
-};
-
 /**
  * Merge `fromDoc` (the other fork) into `intoDoc`. `intoDoc` becomes the merged
  * database; `fromDoc` is scratch and should be discarded afterwards.
@@ -69,21 +59,14 @@ export function mergeForkedCentral(
 ): ForkMergeResult {
   const result: ForkMergeResult = { imported: 0, reconciled: 0, conflicts: [], changed: false };
 
-  for (const [kind, config] of Object.entries(ENTITY_KINDS) as [
-    EntityKind,
-    (typeof ENTITY_KINDS)[EntityKind],
-  ][]) {
-    const fromList = fromDoc.getElementsByTagName(config.list)[0];
-    if (!fromList) continue;
-
-    for (const fromItem of Array.from(fromList.children)) {
-      if (fromItem.localName !== config.item) continue;
+  for (const kind of Object.keys(ENTITY_KINDS) as EntityKind[]) {
+    for (const fromItem of entityElements(fromDoc, kind)) {
       const id = fromItem.getAttribute('xml:id');
       if (!id) continue;
 
       const intoItem = findEntity(intoDoc, id);
       if (!intoItem) {
-        listFor(intoDoc, kind).appendChild(intoDoc.importNode(fromItem, true));
+        getEntityList(intoDoc, kind).appendChild(intoDoc.importNode(fromItem, true));
         result.imported += 1;
         result.changed = true;
         continue;

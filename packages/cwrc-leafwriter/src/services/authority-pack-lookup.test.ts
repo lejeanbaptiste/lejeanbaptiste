@@ -1,4 +1,8 @@
-import { packResultUri, searchPackContent } from './authority-pack-lookup';
+import {
+  packIdsForEntityType,
+  packResultUri,
+  searchPackContent,
+} from './authority-pack-lookup';
 import { parseAuthorityUri } from '../autoTagging/lookupResolve';
 
 const rows = [
@@ -164,8 +168,35 @@ describe('packResultUri round-trips through parseAuthorityUri', () => {
     ['dila' as const, 'person' as const, 'A001492', 'DILA'],
     ['dila' as const, 'place' as const, 'PL000123', 'DILA'],
     ['ndl' as const, 'person' as const, '00270123', 'NDL'],
+    ['cbdb' as const, 'office' as const, '1234', 'CBDB'],
+    ['norbert' as const, 'office' as const, '5678', 'NORBERT'],
   ])('%s %s %s → %s', (source, entityType, id, idnoType) => {
     const parsed = parseAuthorityUri(packResultUri(source, entityType, id));
     expect(parsed).toMatchObject({ idnoType, value: id });
+  });
+});
+
+describe('office authority packs', () => {
+  it('restricts role-name lookup to office packs', () => {
+    expect(
+      packIdsForEntityType(
+        ['cbdb-persons', 'cbdb-offices', 'norbert-persons', 'norbert-offices'],
+        'office',
+      ),
+    ).toEqual(['cbdb-offices', 'norbert-offices']);
+  });
+
+  it('returns stable offline office URNs', () => {
+    const row = JSON.stringify({
+      source: 'norbert',
+      authorityId: '42',
+      kind: 'office',
+      primaryName: '太守',
+      searchStrings: ['太守'],
+    });
+    expect(searchPackContent(`${row}\n`, 'norbert', 'office', '太守')[0]).toMatchObject({
+      label: '太守',
+      uri: 'urn:ljb:authority:norbert:office:42',
+    });
   });
 });

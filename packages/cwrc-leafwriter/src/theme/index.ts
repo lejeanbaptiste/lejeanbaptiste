@@ -13,6 +13,7 @@ interface Entities {
   place: Entity;
   organization: Entity;
   org: Entity;
+  office: Entity;
   work: Entity;
   thing: Entity;
   citation: Entity;
@@ -55,6 +56,10 @@ const theme = createTheme({
     org: {
       color: { main: 'rgb(176, 185, 122)' },
       icon: 'organization',
+    },
+    office: {
+      color: { main: 'rgb(142, 92, 48)' },
+      icon: 'office',
     },
     work: {
       color: { main: 'rgb(175, 70, 240)' },

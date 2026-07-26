@@ -4,11 +4,19 @@ import { teiTagForCandidate } from './authority';
 import { collapseLinkedCandidates, mergeCandidateIntoLookupList } from './authorityOverlap';
 import { autoSyncEntitiesToCentral } from './autoSync';
 import { dictionaryTag, type DictionaryEntry } from './dictionary';
-import { addEntity, ENTITY_KINDS, findEntity, LJB_AUTOTAG_RESP } from './entities';
+import {
+  addEntity,
+  addOfficeRelation,
+  appendAuthorityIdnos,
+  ENTITY_KINDS,
+  findEntity,
+  LJB_AUTOTAG_RESP,
+} from './entities';
 import { isLatinSurface } from './disambiguationMatch';
 import { romanizeFromAuthorityMetadata } from '../utilities/romanize';
 import { rationaleForCandidates } from './packLoader';
 import type { Suggestion, WhitespacePolicy } from './types';
+import { extractPluginOfficeRelations } from '../plugins/officeRelationExtractors';
 
 /**
  * Dedupe source labels for the pill display. Each input may itself already be
@@ -168,9 +176,57 @@ export interface AutoLinkResult {
   linked: number;
   /** Number of new entities minted in the entity file. */
   entitiesCreated: number;
+  /** Office hierarchy assertions gathered from plugin concatenation rules. */
+  relationsCreated: number;
   /** Per-mention resolution details (for the decision log). */
   links: ResolvedLink[];
   snapshot: string;
+}
+
+export interface AppliedOfficeMention {
+  element: Element;
+  entityId: string;
+  candidate: AuthorityCandidate;
+}
+
+function comesBefore(a: Element, b: Element): boolean {
+  return Boolean(a.compareDocumentPosition(b) & 4);
+}
+
+function elementsAreAdjacent(first: Element, second: Element): boolean {
+  let cursor = first.nextSibling;
+  while (cursor?.nodeType === 3 && !(cursor.textContent ?? '').trim()) {
+    cursor = cursor.nextSibling;
+  }
+  return cursor === second;
+}
+
+export function recordAdjacentOfficeRelations(
+  entitiesDoc: Document,
+  mentions: AppliedOfficeMention[],
+): number {
+  const ordered = [...mentions].sort((a, b) =>
+    comesBefore(a.element, b.element) ? -1 : comesBefore(b.element, a.element) ? 1 : 0,
+  );
+  let created = 0;
+  for (let i = 1; i < ordered.length; i += 1) {
+    const first = ordered[i - 1]!;
+    const second = ordered[i]!;
+    const adjacent = elementsAreAdjacent(first.element, second.element);
+    for (const relation of extractPluginOfficeRelations({
+      first: first.candidate,
+      second: second.candidate,
+      adjacent,
+    })) {
+      const result = addOfficeRelation(entitiesDoc, {
+        parentId: first.entityId,
+        childId: second.entityId,
+        ...relation,
+      });
+      if (result.created) created += 1;
+    }
+  }
+  return created;
 }
 
 /**
@@ -183,16 +239,36 @@ function resolveEntity(
   minted: Map<string, string>,
   projectLang?: string | null,
 ): { id: string; created: boolean } {
-  const memo = `${candidate.source}\t${candidate.authorityId}`;
+  const authorityIds =
+    candidate.kind === 'office'
+      ? officeAuthorityIds(candidate)
+      : [{ type: candidate.source, value: candidate.authorityId }];
+  const memo =
+    candidate.metadata?.canonicalEntityId
+    ?? authorityIds.map((id) => `${id.type}:${id.value}`).sort().join('|');
   const already = minted.get(memo);
   if (already) return { id: already, created: false };
 
   // Scan the entity file for an existing idno match.
   for (const idno of Array.from(entitiesDoc.getElementsByTagName('idno'))) {
-    if (idno.getAttribute('type') === candidate.source && idno.textContent === candidate.authorityId) {
+    if (authorityIds.some(
+      (authority) =>
+        idno.getAttribute('type') === authority.type
+        && idno.textContent === authority.value,
+    )) {
       const owner = idno.parentElement;
       const existing = owner?.getAttribute('xml:id');
-      if (existing) {
+      if (existing && owner) {
+        const ownIds = new Set(
+          Array.from(owner.getElementsByTagName('idno')).map(
+            (value) => `${value.getAttribute('type')}\t${value.textContent}`,
+          ),
+        );
+        appendAuthorityIdnos(
+          entitiesDoc,
+          owner,
+          authorityIds.filter((value) => !ownIds.has(`${value.type}\t${value.value}`)),
+        );
         minted.set(memo, existing);
         return { id: existing, created: false };
       }
@@ -206,13 +282,16 @@ function resolveEntity(
   );
   const { id } = addEntity(
     entitiesDoc,
-    candidate.kind === 'office' ? 'org' : candidate.kind,
+    candidate.kind,
     {
       name: candidate.primaryName,
       nameLang:
         projectLang && !isLatinSurface(candidate.primaryName) ? projectLang : undefined,
       romanizedName: romanizedName ?? undefined,
-      authorityIds: [{ type: candidate.source, value: candidate.authorityId }],
+      authorityIds,
+      officeTypeIds: candidate.kind === 'office'
+        ? candidate.metadata?.officeTypeIds
+        : undefined,
       ...(candidate.metadata
         ? { cache: { source: candidate.source, data: candidate.metadata } }
         : {}),
@@ -221,6 +300,56 @@ function resolveEntity(
   );
   minted.set(memo, id);
   return { id, created: true };
+}
+
+function officeAuthorityIds(candidate: AuthorityCandidate) {
+  const ids: { type: string; value: string }[] = [];
+  const add = (type: string, value: string | undefined) => {
+    if (!value || ids.some((id) => id.type === type && id.value === value)) return;
+    ids.push({ type, value });
+  };
+  if (!candidate.source.includes('+')) add(candidate.source, candidate.authorityId);
+  add('CBDB', candidate.metadata?.crosswalk?.cbdb);
+  add('Norbert', candidate.metadata?.crosswalk?.norbert);
+  return ids;
+}
+
+function importExplicitOfficeParent(
+  entitiesDoc: Document,
+  childId: string,
+  candidate: AuthorityCandidate,
+  minted: Map<string, string>,
+  projectLang?: string | null,
+): { entitiesCreated: number; relationsCreated: number; createdId?: string } {
+  const parent = candidate.metadata?.parentOffice;
+  if (candidate.kind !== 'office' || !parent) {
+    return { entitiesCreated: 0, relationsCreated: 0 };
+  }
+  const parentCandidate: AuthorityCandidate = {
+    source: parent.source,
+    authorityId: parent.authorityId,
+    kind: 'office',
+    primaryName: parent.name,
+    searchStrings: [parent.name],
+    metadata: {
+      entityId: parent.entityId,
+      canonicalEntityId: parent.entityId.startsWith('cbdb:') ? parent.entityId : undefined,
+    },
+  };
+  const resolved = resolveEntity(entitiesDoc, parentCandidate, minted, projectLang);
+  const relation = addOfficeRelation(entitiesDoc, {
+    parentId: resolved.id,
+    childId,
+    source: 'norbert',
+    rule: 'explicit-parent-string',
+    sourceIds: [parent.authorityId, candidate.authorityId],
+    confidence: 'inferred',
+  });
+  return {
+    entitiesCreated: resolved.created ? 1 : 0,
+    relationsCreated: relation.created ? 1 : 0,
+    createdId: resolved.created ? resolved.id : undefined,
+  };
 }
 
 /**
@@ -240,6 +369,7 @@ export async function autoLinkUnique(
   const byId = new Map<string, { entityId: string; candidate: AuthorityCandidate }>();
   const createdIds: string[] = [];
   let entitiesCreated = 0;
+  let importedRelationsCreated = 0;
 
   for (const match of matches) {
     const candidate = match.candidates[0];
@@ -249,22 +379,36 @@ export async function autoLinkUnique(
       entitiesCreated += 1;
       createdIds.push(id);
     }
+    const structure = importExplicitOfficeParent(
+      entitiesDoc,
+      id,
+      candidate,
+      minted,
+      projectLang,
+    );
+    entitiesCreated += structure.entitiesCreated;
+    importedRelationsCreated += structure.relationsCreated;
+    if (structure.createdId) createdIds.push(structure.createdId);
     byId.set(match.suggestion.id, { entityId: id, candidate });
   }
-
-  // One central-store round trip for the whole batch rather than one per
-  // entity - seed/import can mint many entities at once.
-  await autoSyncEntitiesToCentral(entitiesDoc, createdIds);
 
   const suggestions = matches.map((m) => m.suggestion);
   const { results, snapshot } = await applySuggestions(doc, suggestions, options);
 
   const links: ResolvedLink[] = [];
+  const officeMentions: AppliedOfficeMention[] = [];
   for (const result of results) {
     if (result.outcome !== 'applied' || !result.element) continue;
     const resolved = byId.get(result.suggestion.id);
     if (!resolved) continue;
     result.element.setAttribute('key', resolved.entityId);
+    if (resolved.candidate.kind === 'office') {
+      officeMentions.push({
+        element: result.element,
+        entityId: resolved.entityId,
+        candidate: resolved.candidate,
+      });
+    }
     links.push({
       suggestion: result.suggestion,
       entityId: resolved.entityId,
@@ -273,7 +417,15 @@ export async function autoLinkUnique(
     });
   }
 
-  return { linked: links.length, entitiesCreated, links, snapshot };
+  const relationsCreated =
+    importedRelationsCreated
+    + recordAdjacentOfficeRelations(entitiesDoc, officeMentions);
+
+  // One central-store round trip for the whole batch rather than one per
+  // entity - seed/import can mint many entities at once.
+  await autoSyncEntitiesToCentral(entitiesDoc, createdIds);
+
+  return { linked: links.length, entitiesCreated, relationsCreated, links, snapshot };
 }
 
 // Re-export for callers assembling a run.

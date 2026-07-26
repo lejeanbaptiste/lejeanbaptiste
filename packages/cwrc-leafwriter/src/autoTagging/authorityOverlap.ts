@@ -111,6 +111,9 @@ export function canonicalEntityKey(candidate: AuthorityCandidate): string {
   if (candidate.kind === 'place' && cbdbCrosswalk) {
     return `place:CBDB:${normalizeCbdbId(cbdbCrosswalk)}`;
   }
+  if (candidate.kind === 'office' && cbdbCrosswalk) {
+    return `office:CBDB:${normalizeCbdbId(cbdbCrosswalk)}`;
+  }
   const chgisCrosswalk = candidate.metadata?.crosswalk?.chgis;
   if (candidate.kind === 'place' && chgisCrosswalk) {
     return `place:CHGIS:${chgisCrosswalk}`;
@@ -181,6 +184,21 @@ export function mergeAuthorityCandidates(
   if (incoming.source === 'DILA' && incoming.kind === 'place') {
     crosswalk.dila = incoming.authorityId;
   }
+  if (existing.source === 'Norbert' && existing.kind === 'office') {
+    crosswalk.norbert = existing.authorityId;
+  }
+  if (incoming.source === 'Norbert' && incoming.kind === 'office') {
+    crosswalk.norbert = incoming.authorityId;
+  }
+  const appointments = [...new Map(
+    [
+      ...(existing.metadata?.appointments ?? []),
+      ...(incoming.metadata?.appointments ?? []),
+    ].map((appointment) => [
+      `${appointment.source}:${appointment.authorityId}`,
+      appointment,
+    ]),
+  ).values()];
 
   return {
     ...existing,
@@ -194,6 +212,7 @@ export function mergeAuthorityCandidates(
       crosswalk: Object.keys(crosswalk).length ? crosswalk : undefined,
       startYear: minDefined(existing.metadata?.startYear, incoming.metadata?.startYear),
       endYear: maxDefined(existing.metadata?.endYear, incoming.metadata?.endYear),
+      appointments: appointments.length ? appointments : undefined,
     },
   };
 }

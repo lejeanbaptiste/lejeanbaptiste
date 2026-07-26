@@ -3,6 +3,10 @@ import { clearPluginPersonNameSegmentersForPlugin, clearAllPluginPersonNameSegme
 import type { DecisionEvent } from '../autoTagging/reviewController';
 import type { Suggestion } from '../autoTagging/types';
 import type { IDialog } from '../dialogs/type';
+import {
+  clearAllPluginOfficeRelationExtractors,
+  clearPluginOfficeRelationExtractor,
+} from './officeRelationExtractors';
 
 export type PluginDialogComponent = ComponentType<IDialog>;
 
@@ -99,6 +103,7 @@ export function clearPluginExtensionsForPlugin(pluginId: string): void {
     if (pluginToolbarItems[i]?.pluginId === pluginId) pluginToolbarItems.splice(i, 1);
   }
   clearPluginPersonNameSegmentersForPlugin(pluginId);
+  clearPluginOfficeRelationExtractor(pluginId);
 }
 
 export function clearAllPluginExtensions(): void {
@@ -106,4 +111,5 @@ export function clearAllPluginExtensions(): void {
   pluginReviewPanels.length = 0;
   pluginToolbarItems.length = 0;
   clearAllPluginPersonNameSegmenters();
+  clearAllPluginOfficeRelationExtractors();
 }

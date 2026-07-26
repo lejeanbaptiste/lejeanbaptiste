@@ -28,3 +28,8 @@ export {
   suggestPersonRomanization,
 } from './personNameDefaults';
 export type { PluginRegisterContext, PluginToolActionHandler } from './registerContext';
+export type {
+  ExtractedOfficeRelation,
+  OfficeRelationExtractionInput,
+  PluginOfficeRelationExtractor,
+} from './officeRelationExtractors';

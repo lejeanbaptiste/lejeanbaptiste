@@ -75,6 +75,47 @@ resolved person contained by the mention; `ref` may additionally point to an
 external authority such as Wikidata. Separate mentions of the same person
 share the key rather than being merged structurally.
 
+## Office entities
+
+Disambiguated offices are a fifth LJB entity kind, while remaining within TEI
+vocabulary. They serialize as `org[@type='office']` in a dedicated
+`listOrg[@type='offices']`:
+
+```xml
+<listOrg type="offices">
+  <org xml:id="office-…" type="office">
+    <orgName>吏部</orgName>
+    <idno type="CBDB">123</idno>
+    <idno type="Norbert">456</idno>
+    <state type="office-classification" ref="cbdb:office-type:060302"/>
+  </org>
+</listOrg>
+```
+
+Corpus mentions continue to use `roleName key="office-…"`. The application
+kind and corpus tag are intentionally separate.
+
+Office hierarchy is stored in `listRelation[@type='office-hierarchy']`.
+CBDB category membership remains in the downloaded authority pack and is
+referenced from the office entity. Norbert parent-child observations use
+`relation[@name='parentOf']`; `@resp`, `@ana`, `@cert`, and `@corresp` retain
+their source, inference rule, certainty, and source row ids.
+
+```xml
+<listRelation type="office-hierarchy">
+  <relation name="parentOf"
+    active="#office-parent" passive="#office-child"
+    resp="#norbert" ana="office-concatenation" cert="low"
+    corresp="urn:ljb:authority:norbert:1 urn:ljb:authority:norbert:2"/>
+</listRelation>
+```
+
+These relations describe accumulated evidence, not a complete snapshot of a
+dynasty's bureaucracy. Appointment assertions are currently retained inside
+the selected person's `authority-cache` metadata for disambiguation and future
+entity modeling; dates and biographical order are intentionally not imported.
+Person-wrapper modeling remains a separate layer.
+
 ## Schema implementation
 
 The desktop schema merge adds `nobleTitle` and `name[@type='personWrapper']`

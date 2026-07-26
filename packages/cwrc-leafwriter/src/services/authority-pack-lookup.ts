@@ -13,6 +13,7 @@ import type {
 import { AUTHORITY_PACKS, type AuthorityPackId } from '../autoTagging/packPaths';
 import { packReadFinished, packReadStarted } from '../autoTagging/authorityLoadProgress';
 import { stringsMatchExactly } from '../autoTagging/disambiguationMatch';
+import type { AuthorityCandidate } from '../autoTagging/authority';
 
 export interface PackRow {
   authorityId?: string;
@@ -20,22 +21,12 @@ export interface PackRow {
   searchStrings?: string[];
   /** Typed names, when the pack export preserves name categories (字/號/…). */
   names?: { text: string; type?: string; lang?: string }[];
-  metadata?: {
-    dynasty?: string;
-    startYear?: number;
-    endYear?: number;
-    description?: string;
-    pinyin?: string;
-    yomi?: string;
-    translation?: string;
-    /** WGS84 coordinates, when the source authority carries them (CHGIS, CBDB places). */
-    geo?: { lat: number; lon: number };
-  };
+  metadata?: AuthorityCandidate['metadata'];
 }
 
 const MAX_RESULTS = 10;
 
-type PackSource = 'cbdb' | 'dila' | 'ndl';
+type PackSource = 'cbdb' | 'dila' | 'ndl' | 'norbert';
 
 const SERVICES: {
   source: PackSource;
@@ -49,7 +40,14 @@ const SERVICES: {
     id: 'cbdb',
     name: 'CBDB',
     url: 'https://projects.iq.harvard.edu/cbdb',
-    packs: { person: 'cbdb-persons', place: 'cbdb-places' },
+    packs: { person: 'cbdb-persons', place: 'cbdb-places', office: 'cbdb-offices' },
+  },
+  {
+    source: 'norbert',
+    id: 'norbert',
+    name: 'Norbert',
+    url: 'urn:ljb:authority:norbert',
+    packs: { person: 'norbert-persons', office: 'norbert-offices' },
   },
   {
     source: 'dila',
@@ -80,7 +78,9 @@ const SERVICES: {
 export function packResultUri(source: PackSource, entityType: NamedEntityType, id: string): string {
   switch (source) {
     case 'cbdb':
-      return entityType === 'place'
+      return entityType === 'office'
+        ? `urn:ljb:authority:cbdb:office:${id}`
+        : entityType === 'place'
         ? `https://cbdb.fas.harvard.edu/place?id=${id}`
         : `https://cbdb.fas.harvard.edu/person?id=${id}`;
     case 'dila':
@@ -90,6 +90,8 @@ export function packResultUri(source: PackSource, entityType: NamedEntityType, i
     case 'ndl':
       // Assumes name authorities (ndlna); refine if a pack ships ndlsh ids.
       return `https://id.ndl.go.jp/auth/ndlna/${id}`;
+    case 'norbert':
+      return `urn:ljb:authority:norbert:${entityType}:${id}`;
   }
 }
 
@@ -223,6 +225,7 @@ const ENTITY_TYPE_TAG: Partial<Record<NamedEntityType, string>> = {
   organization: 'orgName',
   work: 'title',
   citation: 'title',
+  office: 'roleName',
 };
 
 /** Restrict a pack list to those holding the given entity type (by pack tag). */

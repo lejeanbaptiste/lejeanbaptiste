@@ -20,7 +20,7 @@ export const CHANGED_NOTE_TYPE = 'ljb-changed';
 /** @deprecated Use LJB_AUTOTAG_RESP */
 export const LEAFWRITER_AUTOTAG_RESP = LJB_AUTOTAG_RESP;
 
-export type EntityKind = 'person' | 'place' | 'org' | 'work';
+export type EntityKind = 'person' | 'place' | 'org' | 'work' | 'office';
 
 interface KindConfig {
   /** Containing TEI list element. */
@@ -31,6 +31,10 @@ interface KindConfig {
   name: string;
   /** xml:id prefix and the id-scan pattern. */
   idPrefix: string;
+  /** Distinguishes multiple TEI lists with the same element name. */
+  listType?: string;
+  /** Distinguishes application kinds sharing the same TEI item element. */
+  itemType?: string;
 }
 
 export const ENTITY_KINDS: Record<EntityKind, KindConfig> = {
@@ -38,6 +42,14 @@ export const ENTITY_KINDS: Record<EntityKind, KindConfig> = {
   place: { list: 'listPlace', item: 'place', name: 'placeName', idPrefix: 'place' },
   org: { list: 'listOrg', item: 'org', name: 'orgName', idPrefix: 'org' },
   work: { list: 'listBibl', item: 'bibl', name: 'title', idPrefix: 'work' },
+  office: {
+    list: 'listOrg',
+    listType: 'offices',
+    item: 'org',
+    itemType: 'office',
+    name: 'orgName',
+    idPrefix: 'office',
+  },
 };
 
 /** Mention tag name → entity kind. */
@@ -47,6 +59,7 @@ export const TAG_TO_KIND: Record<string, EntityKind> = {
   orgName: 'org',
   title: 'work',
   bibl: 'work',
+  roleName: 'office',
 };
 
 const ID_WIDTH = 6;
@@ -77,6 +90,8 @@ export interface NewEntity {
   endYear?: number;
   /** Historical dynasties/states associated with a person. */
   nationality?: { id: string; canonicalId: string; label: string; sourceIds?: string[] }[];
+  /** Source-scoped CBDB office classification nodes retained by reference. */
+  officeTypeIds?: string[];
 }
 
 /** Format a signed year as an ISO/W3C `@when` year, e.g. -155 -> "-0155", 1990 -> "1990". */
@@ -120,7 +135,7 @@ export function mintEntityId(kind: EntityKind): string {
 /** An empty entity file: TEI standoff with the four core lists. */
 export function createEntitiesScaffold(databaseId: string = newDatabaseId()): string {
   const lists = Object.values(ENTITY_KINDS)
-    .map((k) => `<${k.list}/>`)
+    .map((k) => `<${k.list}${k.listType ? ` type="${k.listType}"` : ''}/>`)
     .join('\n      ');
   return `<?xml version="1.0" encoding="UTF-8"?>
 <TEI xmlns="${TEI_NS}">
@@ -236,6 +251,31 @@ export function touchEntity(item: Element, when: string = new Date().toISOString
   item.appendChild(note);
 }
 
+/** Add or replace the authority-cache payload for an existing entity/source. */
+export function setAuthorityCache(
+  doc: Document,
+  entityId: string,
+  source: string,
+  data: unknown,
+  when: string = new Date().toISOString(),
+): void {
+  const item = findEntity(doc, entityId);
+  if (!item) return;
+  const existing = Array.from(item.children).find(
+    (child) =>
+      child.localName === 'note' &&
+      child.getAttribute('type') === 'authority-cache' &&
+      child.getAttribute('source') === source,
+  );
+  const note = existing ?? doc.createElementNS(TEI_NS, 'note');
+  note.setAttribute('type', 'authority-cache');
+  note.setAttribute('source', source);
+  note.setAttribute('resp', LJB_RESP);
+  note.setAttribute('when', when);
+  note.textContent = JSON.stringify(data);
+  if (!existing) item.appendChild(note);
+}
+
 /**
  * Stamp every entity that has no `changed` timestamp yet (default: now), so
  * records minted before this feature get a baseline for CEDB↔PEDB sync. Returns
@@ -246,11 +286,8 @@ export function backfillEntityTimestamps(
   when: string = new Date().toISOString(),
 ): number {
   let count = 0;
-  for (const config of Object.values(ENTITY_KINDS)) {
-    const list = doc.getElementsByTagName(config.list)[0];
-    if (!list) continue;
-    for (const item of Array.from(list.children)) {
-      if (item.localName !== config.item) continue;
+  for (const kind of Object.keys(ENTITY_KINDS) as EntityKind[]) {
+    for (const item of entityElements(doc, kind)) {
       if (!getEntityChanged(item)) {
         touchEntity(item, when);
         count += 1;
@@ -260,14 +297,47 @@ export function backfillEntityTimestamps(
   return count;
 }
 
+function listMatchesKind(list: Element, kind: EntityKind): boolean {
+  const config = ENTITY_KINDS[kind];
+  if (list.localName !== config.list) return false;
+  const type = list.getAttribute('type');
+  return config.listType ? type === config.listType : !type;
+}
+
+export function entityElementMatchesKind(item: Element, kind: EntityKind): boolean {
+  const config = ENTITY_KINDS[kind];
+  if (item.localName !== config.item) return false;
+  const type = item.getAttribute('type');
+  return config.itemType ? type === config.itemType : type !== 'office';
+}
+
+export function entityKindOfElement(item: Element): EntityKind | null {
+  for (const kind of Object.keys(ENTITY_KINDS) as EntityKind[]) {
+    if (entityElementMatchesKind(item, kind)) return kind;
+  }
+  return null;
+}
+
+/** Direct entity children in the kind-specific TEI list. */
+export function entityElements(doc: Document, kind: EntityKind): Element[] {
+  const config = ENTITY_KINDS[kind];
+  const lists = Array.from(doc.getElementsByTagName(config.list))
+    .filter((list) => listMatchesKind(list, kind));
+  return lists.flatMap((list) =>
+    Array.from(list.children).filter((item) => entityElementMatchesKind(item, kind)),
+  );
+}
+
 /** Get (creating if needed) the list element for a kind. */
-function getList(doc: Document, kind: EntityKind): Element {
-  const { list } = ENTITY_KINDS[kind];
-  const existing = doc.getElementsByTagName(list)[0];
+export function getEntityList(doc: Document, kind: EntityKind): Element {
+  const config = ENTITY_KINDS[kind];
+  const existing = Array.from(doc.getElementsByTagName(config.list))
+    .find((list) => listMatchesKind(list, kind));
   if (existing) return existing;
   const standOff =
     doc.getElementsByTagName('standOff')[0] ?? doc.documentElement;
-  const el = doc.createElementNS(TEI_NS, list);
+  const el = doc.createElementNS(TEI_NS, config.list);
+  if (config.listType) el.setAttribute('type', config.listType);
   standOff.appendChild(el);
   return el;
 }
@@ -287,6 +357,7 @@ export function addEntity(
 
   const item = doc.createElementNS(TEI_NS, config.item);
   item.setAttributeNS(XML_NS, 'xml:id', id);
+  if (config.itemType) item.setAttribute('type', config.itemType);
   if (resp) item.setAttribute('resp', resp);
 
   const name = doc.createElementNS(TEI_NS, config.name);
@@ -354,6 +425,15 @@ export function addEntity(
     }
   }
 
+  if (kind === 'office') {
+    for (const officeTypeId of entity.officeTypeIds ?? []) {
+      const state = doc.createElementNS(TEI_NS, 'state');
+      state.setAttribute('type', 'office-classification');
+      state.setAttribute('ref', officeTypeId);
+      item.appendChild(state);
+    }
+  }
+
   if (entity.startYear != null || entity.endYear != null) {
     if (kind === 'person') {
       if (entity.startYear != null) {
@@ -379,8 +459,89 @@ export function addEntity(
   }
 
   touchEntity(item);
-  getList(doc, kind).appendChild(item);
+  getEntityList(doc, kind).appendChild(item);
   return { id, element: item };
+}
+
+export interface NewOfficeRelation {
+  parentId: string;
+  childId: string;
+  source: string;
+  rule: string;
+  sourceIds?: string[];
+  confidence?: 'asserted' | 'inferred';
+}
+
+export interface OfficeRelationRecord extends NewOfficeRelation {
+  element: Element;
+}
+
+function officeRelationList(doc: Document): Element {
+  const existing = Array.from(doc.getElementsByTagName('listRelation')).find(
+    (list) => list.getAttribute('type') === 'office-hierarchy',
+  );
+  if (existing) return existing;
+  const standOff = doc.getElementsByTagName('standOff')[0] ?? doc.documentElement;
+  const list = doc.createElementNS(TEI_NS, 'listRelation');
+  list.setAttribute('type', 'office-hierarchy');
+  standOff.appendChild(list);
+  return list;
+}
+
+const relationTarget = (value: string | null) => value?.replace(/^#/, '') ?? '';
+
+export function readOfficeRelations(doc: Document): OfficeRelationRecord[] {
+  const list = Array.from(doc.getElementsByTagName('listRelation')).find(
+    (candidate) => candidate.getAttribute('type') === 'office-hierarchy',
+  );
+  if (!list) return [];
+  return Array.from(list.children)
+    .filter((element) => element.localName === 'relation' && element.getAttribute('name') === 'parentOf')
+    .map((element) => ({
+      parentId: relationTarget(element.getAttribute('active')),
+      childId: relationTarget(element.getAttribute('passive')),
+      source: element.getAttribute('resp')?.replace(/^#/, '') ?? '',
+      rule: element.getAttribute('ana') ?? '',
+      sourceIds: (element.getAttribute('corresp') ?? '')
+        .split(/\s+/)
+        .filter(Boolean)
+        .map((value) => decodeURIComponent(value.slice(value.lastIndexOf(':') + 1))),
+      confidence: element.getAttribute('cert') === 'high' ? 'asserted' : 'inferred',
+      element,
+    }));
+}
+
+/** Add a deduplicated, provenance-bearing office hierarchy assertion. */
+export function addOfficeRelation(
+  doc: Document,
+  relation: NewOfficeRelation,
+): { created: boolean; element: Element } {
+  const existing = readOfficeRelations(doc).find(
+    (row) =>
+      row.parentId === relation.parentId
+      && row.childId === relation.childId
+      && row.source === relation.source
+      && row.rule === relation.rule,
+  );
+  if (existing) return { created: false, element: existing.element };
+
+  const element = doc.createElementNS(TEI_NS, 'relation');
+  element.setAttribute('name', 'parentOf');
+  element.setAttribute('active', `#${relation.parentId}`);
+  element.setAttribute('passive', `#${relation.childId}`);
+  element.setAttribute('resp', `#${relation.source}`);
+  element.setAttribute('ana', relation.rule);
+  element.setAttribute('cert', relation.confidence === 'asserted' ? 'high' : 'low');
+  if (relation.sourceIds?.length) {
+    element.setAttribute(
+      'corresp',
+      relation.sourceIds
+        .map((id) => `urn:ljb:authority:${encodeURIComponent(relation.source)}:${encodeURIComponent(id)}`)
+        .join(' '),
+    );
+  }
+  officeRelationList(doc).appendChild(element);
+  return { created: true, element };
 }
 
 /** Append authority `<idno>`s to an existing entity element. */
