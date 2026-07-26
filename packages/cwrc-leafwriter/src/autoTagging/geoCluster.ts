@@ -38,7 +38,8 @@ export function haversineDistanceKm(a: GeoPoint, b: GeoPoint): number {
   return EARTH_RADIUS_KM * c;
 }
 
-function centroidOf(points: GeoPoint[]): GeoPoint {
+/** Arithmetic mean of a set of points — fine at cluster scale, not geodesically exact over large distances. */
+export function centroidOf(points: GeoPoint[]): GeoPoint {
   const lat = points.reduce((sum, p) => sum + p.lat, 0) / points.length;
   const lon = points.reduce((sum, p) => sum + p.lon, 0) / points.length;
   return { lat, lon };

@@ -1,4 +1,8 @@
-import { compileFindRegex, expandUnicodeWordShorthand } from './regexPatternUtils';
+import {
+  applyRegexReplacement,
+  compileFindRegex,
+  expandUnicodeWordShorthand,
+} from './regexPatternUtils';
 
 describe('expandUnicodeWordShorthand', () => {
   test('expands \\w to Unicode letters and numbers outside a class', () => {
@@ -25,5 +29,13 @@ describe('compileFindRegex', () => {
   test('still matches ASCII word characters', () => {
     const regex = compileFindRegex('\\w+');
     expect('hello_9'.match(regex)?.[0]).toBe('hello_9');
+  });
+});
+
+describe('applyRegexReplacement', () => {
+  test('supports dollar, slash, and hash capture aliases', () => {
+    const match = compileFindRegex('(甲)(\\w+)').exec('甲乙丙');
+    expect(match).not.toBeNull();
+    expect(applyRegexReplacement(match!, '$2-\\1-#2')).toBe('乙丙-甲-乙丙');
   });
 });

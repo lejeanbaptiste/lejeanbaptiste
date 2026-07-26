@@ -91,6 +91,24 @@ declare global {
       folder?: string;
     }>;
     pickAuthorityPacksSource?: () => Promise<string | null>;
+    /** Local PMTiles regional basemaps for the place-name geo-comparison map (see mapView/PlaceComparisonMap.tsx, mapView/regionalBundles.ts). */
+    mapTilesStatus?: () => Promise<{
+      installed: boolean;
+      path: string | null;
+      regions: { id: string; sha256: string; installedAt: string }[];
+    }>;
+    mapTilesPromptDownload?: () => Promise<'accepted' | 'declined'>;
+    mapTilesDownload?: (bundle: {
+      id: string;
+      url: string;
+      fileName: string;
+      bytes: number;
+      sha256: string;
+    }) => Promise<{ ok: boolean; path?: string; error?: string }>;
+    mapTilesRemove?: (bundleId: string) => Promise<{ ok: boolean; error?: string }>;
+    onMapTilesProgress?: (
+      callback: (progress: { message: string; receivedBytes?: number; totalBytes?: number | null }) => void,
+    ) => () => void;
     authorityPackStatuses?: () => Promise<
       import('../autoTagging/packPaths').AuthorityPackStatus[]
     >;

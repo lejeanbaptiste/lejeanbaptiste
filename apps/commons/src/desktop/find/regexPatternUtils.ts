@@ -63,3 +63,19 @@ export const compileFindLiteralRegex = (query: string, ignoreCase = false): RegE
   const escaped = query.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
   return new RegExp(escaped, ignoreCase ? 'giu' : 'gu');
 };
+
+/** Apply the shared replacement dialect: $1, \\1, #1, and $$ for a match. */
+export const applyRegexReplacement = (match: RegExpExecArray, replacement: string): string => {
+  const withBackrefs = replacement.replace(/[\\#]([1-9]\d*)/g, (_full, digits: string) => {
+    const index = Number.parseInt(digits, 10);
+    if (Number.isNaN(index) || index < 1 || index >= match.length) return '';
+    return match[index] ?? '';
+  });
+
+  return withBackrefs.replace(/\$(\$|\d+)/g, (_full, token: string) => {
+    if (token === '$') return '$';
+    const index = Number.parseInt(token, 10);
+    if (Number.isNaN(index) || index < 1 || index >= match.length) return '';
+    return match[index] ?? '';
+  });
+};

@@ -586,6 +586,55 @@ describe('disambiguationCandidates', () => {
     expect(sameAuthority).toHaveLength(2);
   });
 
+  it('collapses place candidates within the proximity radius, taking the centroid as geo', () => {
+    const rows = collapseCrossAuthorityCandidates(
+      [
+        { id: 'cbdb-a', label: '竟陵', sources: ['CBDB'], geo: { lat: 30.65, lon: 113.15 } },
+        { id: 'chgis-a', label: '竟陵', sources: ['CHGIS'], geo: { lat: 30.652, lon: 113.152 } },
+      ],
+      { tag: 'placeName', placeProximityKm: 5 },
+    );
+    expect(rows).toHaveLength(1);
+    expect(rows[0]?.sources).toEqual(expect.arrayContaining(['CBDB', 'CHGIS']));
+    expect(rows[0]?.geo?.lat).toBeCloseTo(30.651, 2);
+    expect(rows[0]?.geo?.lon).toBeCloseTo(113.151, 2);
+  });
+
+  it('keeps two same-named places distinct when they are beyond the proximity radius', () => {
+    // Two real, ~2000km-apart places both named 竟陵 — the canonical "same
+    // name, different place" fixture (see geoCluster.test.ts).
+    const rows = collapseCrossAuthorityCandidates(
+      [
+        { id: 'cbdb-a', label: '竟陵', sources: ['CBDB'], geo: { lat: 30.65, lon: 113.15 } },
+        { id: 'cbdb-b', label: '竟陵', sources: ['CHGIS'], geo: { lat: 39.9, lon: 116.4 } },
+      ],
+      { tag: 'placeName', placeProximityKm: 5 },
+    );
+    expect(rows).toHaveLength(2);
+  });
+
+  it('does not merge place candidates when either side has no coordinates', () => {
+    const rows = collapseCrossAuthorityCandidates(
+      [
+        { id: 'cbdb-a', label: '竟陵', sources: ['CBDB'], geo: { lat: 30.65, lon: 113.15 } },
+        { id: 'dila-a', label: '竟陵', sources: ['DILA'] },
+      ],
+      { tag: 'placeName', placeProximityKm: 5 },
+    );
+    expect(rows).toHaveLength(2);
+  });
+
+  it('does not apply geo-cluster merging outside place groups', () => {
+    const rows = collapseCrossAuthorityCandidates(
+      [
+        { id: 'a', label: 'Person A', sources: ['Wikidata'], geo: { lat: 30.65, lon: 113.15 } },
+        { id: 'b', label: 'Person B', sources: ['VIAF'], geo: { lat: 30.652, lon: 113.152 } },
+      ],
+      { tag: 'persName', placeProximityKm: 5 },
+    );
+    expect(rows).toHaveLength(2);
+  });
+
   it('extracts VIAF ids from locale-prefixed permalinks (e.g. viaf.org/fr/viaf/…)', () => {
     expect(extractViafId('https://viaf.org/fr/viaf/16332263')).toBe('16332263');
     expect(extractViafId('https://viaf.org/viaf/16332263')).toBe('16332263');
