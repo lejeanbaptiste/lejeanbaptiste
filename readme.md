@@ -151,16 +151,24 @@ See [apps/desktop/README.md](apps/desktop/README.md) for the compilation and pac
 - [ ] Disambiguation to fetch nationality
 - [ ] Asset packs to include nationality
 - [ ] Norbert plugin: identify style names
+- [ ] Build expert tools: purge, tag bomb corpus...
+- [ ] Try to adopt CBDB's office name infrastructure
+- [ ] Build OSM viewer (do we want OSM?)
+- [ ] Improved Chinese office name tagging
+- [ ] Geo-aware placename disambiguation across authorities (see [placename-geo-disambiguation-planning.md](docs/placename-geo-disambiguation-planning.md))
+- [ ] Ship Sanmiao as a plugin, + Norbert tools.- [ ] Ship Sanmiao as a plugin, + Norbert tools.
 
 ## Todo
-- [ ] Norbert: tag nationality preceding office title or persame (look at the rules that I use), include in our new person wrapper
+- [ ] Build extended propagate function
+
 - [ ] Sort out how to handle place of origin
-- [ ] Try to adopt CBDB's office name infrastructure
+  - [ ] Finish the noble titles and person wrapper
+
+  - [ ] Norbert: tag nationality preceding office title or persame (look at the rules that I use), include in our new person wrapper
+
 - [ ] Asset packs compile place of origin 
 - [ ] Disambiguation fetch place of origin
-- [ ] Build OSM viewer (do we want OSM?)
 - [ ] Build document stats window with list of people, map of places, etc.
-- [ ] Build expert tools: purge, apply throughout corpus, tag bomb corpus...
 - [ ] Official titles dictionaries, dates dictionaries for hover-over
 - [ ] Word plugin to handle names and dates correctly while centralising data.
 
@@ -169,10 +177,7 @@ See [apps/desktop/README.md](apps/desktop/README.md) for the compilation and pac
 - [ ] Option to track annotator on the tag level for collaborations.
 - [ ] Copy-and-paste export of paragraphs with translation for word processors
 - [ ] LaTeX export
-- [ ] Improved Chinese office name tagging
 - [ ] Support for custom authorities and personal SQL databases
 - [ ] AI assist for Sanmiao to identify beginning of dynasties, reigns, eras
-- [ ] Geo-aware placename disambiguation across authorities (see [placename-geo-disambiguation-planning.md](docs/placename-geo-disambiguation-planning.md))
 - [ ] Improve translation pane word-processing features.
 - [ ] LanguageTool as a plugin
-- [ ] Ship Sanmiao as a plugin, + Norbert tools.

@@ -109,6 +109,7 @@ describe('runAuthorityPrefetch', () => {
       expect.any(Function), // onDilaDatesReady: re-remember rows once lazy DILA scrapes land
       undefined,
       undefined, // no central context (syncToCentral off in this session mock)
+      5, // default placeProximityKm from settings
     );
   });
 
