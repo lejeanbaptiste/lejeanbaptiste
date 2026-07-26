@@ -2,6 +2,8 @@ import { Dialog, DialogContent, DialogTitle, IconButton, Typography } from '@mui
 import CloseIcon from '@mui/icons-material/Close';
 import { useEffect, useRef, useState } from 'react';
 import { LngLatBounds, MapLibreMap, Marker, Popup, type StyleSpecification } from 'maplibre-gl';
+import { noLabels } from 'protomaps-themes-base';
+import { findBundleForPoint, REGIONAL_BUNDLES } from './regionalBundles';
 
 /**
  * A single pin to compare on the map. Deliberately generic — not
@@ -29,11 +31,12 @@ export interface PlaceComparisonMapProps {
 }
 
 /**
- * Blank style used until the local MBTiles tile-serving protocol (Phase 6,
- * WP5 — see docs/placename-geo-disambiguation-planning.md) is registered.
- * Pins still render and are still comparable by relative position even
- * without basemap tiles underneath — per the Phase 6 acceptance criterion
- * that declining/lacking the tile download must not block disambiguation.
+ * Blank style used until a local PMTiles regional bundle covering the current
+ * view is installed (Phase 6, WP5 — see
+ * docs/placename-geo-disambiguation-planning.md). Pins still render and are
+ * still comparable by relative position even without basemap tiles
+ * underneath — per the Phase 6 acceptance criterion that declining/lacking
+ * the tile download must not block disambiguation.
  */
 function blankStyle(): StyleSpecification {
   return {
@@ -49,6 +52,37 @@ function blankStyle(): StyleSpecification {
   };
 }
 
+/**
+ * Real vector basemap once a local PMTiles regional bundle is installed,
+ * served entirely in-process by apps/desktop/src/mapTiles.ts's
+ * `pmtiles://<bundleId>/...` protocol handler (must match its PMTILES_SCHEME
+ * constant) — no network request, no local HTTP server. Uses Protomaps'
+ * official "light" theme with labels stripped (no glyphs to fetch — this
+ * dialog's pins already carry their own labels), swapped in after the map
+ * already exists (see `map.setStyle` below) rather than chosen up front, so
+ * pins never wait on this check.
+ */
+function vectorStyle(bundleId: string): StyleSpecification {
+  return {
+    version: 8,
+    sources: {
+      protomaps: {
+        type: 'vector',
+        tiles: [`pmtiles://${bundleId}/{z}/{x}/{y}.mvt`],
+        maxzoom: 15,
+      },
+    },
+    layers: noLabels('protomaps', 'light') as StyleSpecification['layers'],
+  };
+}
+
+function centroidOfPins(pins: MapPin[]): { lat: number; lon: number } | null {
+  if (pins.length === 0) return null;
+  const lat = pins.reduce((sum, p) => sum + p.lat, 0) / pins.length;
+  const lon = pins.reduce((sum, p) => sum + p.lon, 0) / pins.length;
+  return { lat, lon };
+}
+
 export function PlaceComparisonMap({ open, onClose, pins, title }: PlaceComparisonMapProps) {
   // MUI's Dialog mounts its Portal content in a commit after the initial
   // render, so a plain useRef's `.current` isn't populated yet the first
@@ -58,9 +92,12 @@ export function PlaceComparisonMap({ open, onClose, pins, title }: PlaceComparis
   const [container, setContainer] = useState<HTMLDivElement | null>(null);
   const mapRef = useRef<MapLibreMap | null>(null);
   const markersRef = useRef<Marker[]>([]);
+  const [showRegionWarning, setShowRegionWarning] = useState(false);
 
   useEffect(() => {
     if (!open || !container) return;
+    let cancelled = false;
+    let installedBundleIds: string[] = [];
 
     const map = new MapLibreMap({
       container,
@@ -70,6 +107,40 @@ export function PlaceComparisonMap({ open, onClose, pins, title }: PlaceComparis
       attributionControl: false,
     });
     mapRef.current = map;
+
+    const updateRegionWarning = () => {
+      const { lat, lng } = map.getCenter();
+      const covered = installedBundleIds.some((id) => {
+        const bundle = REGIONAL_BUNDLES.find((b) => b.id === id);
+        return bundle && findBundleForPoint([bundle], lat, lng) != null;
+      });
+      setShowRegionWarning(!covered);
+    };
+
+    // Pins render immediately against the blank style; the real basemap (if
+    // a bundle covering these pins is installed) swaps in afterward without
+    // disturbing markers, which live outside the style. A declined/missing
+    // download just leaves the blank background — never blocks comparing
+    // pins.
+    window.electronAPI
+      ?.mapTilesStatus?.()
+      .then((status) => {
+        if (cancelled) return;
+        installedBundleIds = status?.regions?.map((r) => r.id) ?? [];
+
+        const centroid = centroidOfPins(pins);
+        const matchingInstalled =
+          centroid &&
+          installedBundleIds
+            .map((id) => REGIONAL_BUNDLES.find((b) => b.id === id))
+            .find((bundle) => bundle && findBundleForPoint([bundle], centroid.lat, centroid.lon));
+        if (matchingInstalled) map.setStyle(vectorStyle(matchingInstalled.id));
+
+        updateRegionWarning();
+      })
+      .catch(() => undefined);
+
+    map.on('moveend', updateRegionWarning);
 
     map.on('load', () => {
       if (pins.length === 0) return;
@@ -118,6 +189,7 @@ export function PlaceComparisonMap({ open, onClose, pins, title }: PlaceComparis
     });
 
     return () => {
+      cancelled = true;
       for (const marker of markersRef.current) marker.remove();
       markersRef.current = [];
       map.remove();
@@ -137,6 +209,14 @@ export function PlaceComparisonMap({ open, onClose, pins, title }: PlaceComparis
         </IconButton>
       </DialogTitle>
       <DialogContent sx={{ p: 0 }}>
+        {showRegionWarning && (
+          <Typography
+            variant="caption"
+            sx={{ display: 'block', color: 'error.main', px: 1, py: 0.5, bgcolor: 'error.light' }}
+          >
+            This region isn't downloaded. Go to Settings to download maps.
+          </Typography>
+        )}
         <div ref={setContainer} style={{ width: '100%', height: 400 }} />
       </DialogContent>
     </Dialog>
