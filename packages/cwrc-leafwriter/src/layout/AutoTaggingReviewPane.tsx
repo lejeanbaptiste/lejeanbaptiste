@@ -23,6 +23,7 @@ import {
   type Suggestion,
 } from '../autoTagging';
 import { findPluginReviewPanel } from '../plugins/pluginExtensions';
+import { cachedPackReader } from '../services/authority-pack-lookup';
 import { useActions, useAppState } from '../overmind';
 import { AutoTaggingApplyOverlay, type AutoTaggingBusyLabel } from './AutoTaggingApplyOverlay';
 import { DockedResizeHandle, useStoredPanelWidth } from './DockedResizeHandle';
@@ -212,6 +213,32 @@ export const AutoTaggingReviewPane = () => {
           }
           setApplied((n) => n + result.applied);
           setCanRevert(getSession().canRevert);
+          // Norbert's second pass runs only after component tags have landed.
+          // It is intentionally best-effort: projects without the optional
+          // wrapper pack simply continue with the ordinary review batch.
+          if (result.applied > 0) {
+            const readPack = cachedPackReader();
+            if (readPack) {
+              try {
+                const wrapperBatch = await getSession().runPersonWrapperConcatenation(readPack);
+                if (wrapperBatch.suggestions.length > 0) {
+                  const currentDoc = await getSession().getDocument();
+                  setSuggestions((current) =>
+                    prepareSuggestionsForReview(
+                      currentDoc,
+                      getSession().policy,
+                      [...current, ...wrapperBatch.suggestions],
+                    ).suggestions,
+                  );
+                  setNotice(
+                    `${wrapperBatch.matchCount} Norbert person-wrapper candidate${wrapperBatch.matchCount === 1 ? '' : 's'} found after component tagging.`,
+                  );
+                }
+              } catch (error) {
+                console.warn('[auto-tagging] Norbert wrapper concatenation failed:', error);
+              }
+            }
+          }
           // Warm the disambiguation caches for the freshly applied tags while
           // the user reviews — gently paced so the editor stays responsive.
           if (result.applied > 0 && window.writer) {
@@ -233,6 +260,13 @@ export const AutoTaggingReviewPane = () => {
                   ? 'warning'
                   : 'success',
             );
+          }
+          if (result.personWrapperValidation?.errors.length) {
+            const wrapperText = result.personWrapperValidation.errors.slice(0, 3).join('\n');
+            setApplyDiagnostics((current) =>
+              `${current ? `${current}\n\n` : ''}Person-wrapper validation:\n${wrapperText}`,
+            );
+            setApplyDiagSeverity('error');
           }
           // Resolve is a finishing pass — close once attributes are written.
           if (closeAfterApply && result.applied > 0) {

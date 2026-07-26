@@ -40,6 +40,8 @@ const PACK_LOAD_ORDER: AuthorityPackId[] = [
   'ndl-orgs',
   'ndl-works',
   'norbert-persons',
+  'norbert-person-wrappers',
+  'norbert-wiki-nt',
   'norbert-offices',
 ];
 

@@ -17,7 +17,8 @@ import {
   touchEntity,
 } from './entities';
 
-const UUID_ID = /^(person|place|org|work|office)-[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/;
+const UUID_ID =
+  /^(person|place|org|work|office)-[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/;
 
 describe('entities scaffold', () => {
   it('creates an empty TEI standoff with core lists and a dedicated office list', () => {
@@ -188,7 +189,47 @@ describe('addEntity', () => {
     ]);
 
     // lands in the right list
-    expect(doc.getElementsByTagName('listPerson')[0]?.getElementsByTagName('person')).toHaveLength(1);
+    expect(doc.getElementsByTagName('listPerson')[0]?.getElementsByTagName('person')).toHaveLength(
+      1,
+    );
+  });
+
+  it('writes repeatable nobleTitle relations with decomposed title parts', () => {
+    const doc = parseEntities(createEntitiesScaffold());
+    const { id } = addEntity(doc, 'person', {
+      name: '範',
+      nobleTitles: [
+        {
+          ref: 'norbert:noble-title:zhou-wang',
+          resp: LJB_AUTOTAG_RESP,
+          source: 'doc-1',
+          when: '2026-07-26T00:00:00.000Z',
+          placeName: { text: '鄱陽', ref: 'norbert:place:poyang' },
+          roleName: { text: '王', ref: 'norbert:rank:wang' },
+        },
+        {
+          ref: 'norbert:noble-title:prince-of-b',
+          placeName: { text: 'B', ref: 'norbert:place:b' },
+          roleName: { text: 'Prince', ref: 'norbert:rank:prince' },
+          posthumousName: { text: '景王', ref: 'norbert:posthumous:jing-wang' },
+        },
+      ],
+    });
+
+    const nobleTitles = Array.from(findEntity(doc, id)!.getElementsByTagName('nobleTitle'));
+    expect(nobleTitles).toHaveLength(2);
+    expect(nobleTitles[0]?.getAttribute('ref')).toBe('norbert:noble-title:zhou-wang');
+    expect(nobleTitles[0]?.getAttribute('resp')).toBe(LJB_AUTOTAG_RESP);
+    expect(nobleTitles[0]?.getAttribute('source')).toBe('doc-1');
+    expect(nobleTitles[0]?.getAttribute('when')).toBe('2026-07-26T00:00:00.000Z');
+    expect(nobleTitles[0]?.getElementsByTagName('placeName')[0]?.textContent).toBe('鄱陽');
+    expect(nobleTitles[0]?.getElementsByTagName('roleName')[0]?.textContent).toBe('王');
+    const posthumous = nobleTitles[1]?.getElementsByTagName('persName')[0];
+    expect(posthumous?.textContent).toBe('景王');
+    expect(posthumous?.getAttribute('type')).toBe('posthumous');
+    expect(nobleTitles[1]?.getElementsByTagName('placeName')[0]?.getAttribute('ref')).toBe(
+      'norbert:place:b',
+    );
   });
 
   it('writes dual-script names: typed/lang primary, -Latn romanization, typed alt names', () => {
@@ -277,7 +318,11 @@ describe('addEntity', () => {
     expect(note.getAttribute('type')).toBe('description');
     expect(note.textContent).toBe('Han dynasty polymath');
 
-    const { id: bceId } = addEntity(doc, 'person', { name: '孔子', startYear: -551, endYear: -479 });
+    const { id: bceId } = addEntity(doc, 'person', {
+      name: '孔子',
+      startYear: -551,
+      endYear: -479,
+    });
     const bce = findEntity(doc, bceId)!;
     expect(bce.getElementsByTagName('birth')[0]?.getAttribute('when')).toBe('-0551');
     expect(bce.getElementsByTagName('death')[0]?.getAttribute('when')).toBe('-0479');

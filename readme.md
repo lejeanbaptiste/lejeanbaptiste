@@ -154,29 +154,26 @@ For detailed build and packaging information, see [apps/desktop/README.md](apps/
 
 See [apps/desktop/README.md](apps/desktop/README.md) for the compilation and packaging instructions.
 
-## Building
+## To validate
 
-- [x] wire dates and nationality separately.
-- [x] Disambiguation to fetch nationality
-- [x] Asset packs to include nationality
+- [ ] wire dates and nationality separately.
+- [ ] Disambiguation to fetch nationality
+- [ ] Asset packs to include nationality
 - [ ] Norbert plugin: identify style names
-
-
-
-## Todo
-
-- [x] Norbert: tag nationality preceding office title or persame (look at the rules that I use), include in our new person wrapper
-- [x] Settle place-of-origin storage modes (coordinate mode vs ID mode; conflicts fall back to ID mode)
+- [ ] Build expert tools: purge, apply throughout corpus, tag bomb corpus...
+- [ ] Norbert: tag nationality preceding office title or persame (look at the rules that I use), include in our new person wrapper
+- [ ] Settle place-of-origin storage modes (coordinate mode vs ID mode; conflicts fall back to ID mode)
 - [ ] Try to adopt CBDB's office name infrastructure
 - [ ] Asset packs compile place of origin 
 - [ ] Disambiguation fetch place of origin
 - [ ] Build OSM viewer (do we want OSM?)
+- [ ] Geo-aware placename disambiguation across authorities (see [placename-geo-disambiguation-planning.md](docs/placename-geo-disambiguation-planning.md))
+
+## Todo
+
 - [ ] Build document stats window with list of people, map of places, etc.
-- [ ] Build expert tools: purge, apply throughout corpus, tag bomb corpus...
 - [ ] Official titles dictionaries, dates dictionaries for hover-over
 - [ ] Word plugin to handle names and dates correctly while centralising data.
-
-
 
 ## Future goals
 
@@ -186,6 +183,5 @@ See [apps/desktop/README.md](apps/desktop/README.md) for the compilation and pac
 - [ ] Support for custom authorities and personal SQL databases
 - [ ] AI assist for Sanmiao to identify beginning of dynasties, reigns, eras
 - [ ] Import DILA markers into Sanmiao
-- [ ] Geo-aware placename disambiguation across authorities (see [placename-geo-disambiguation-planning.md](docs/placename-geo-disambiguation-planning.md))
 - [ ] Improve translation pane word-processing features.
 - [ ] LanguageTool as a plugin

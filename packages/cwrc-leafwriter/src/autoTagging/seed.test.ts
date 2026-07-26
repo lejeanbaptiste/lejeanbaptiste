@@ -4,7 +4,7 @@ import type { AuthorityCandidate } from './authority';
 import { candidatesFromCsv } from './authority';
 import { createEntitiesScaffold, parseEntities, readOfficeRelations } from './entities';
 import { normalizeDomText } from './normalize';
-import { autoLinkUnique, bucketSeeds, seedSuggestions, suggestionsFromSeedMatches } from './seed';
+import { autoLinkUnique, bucketSeeds, compoundWrapperSuggestions, seedSuggestions, suggestionsFromSeedMatches } from './seed';
 
 const parse = (xml: string) => {
   const doc = new DOMParser().parseFromString(xml, 'application/xml');
@@ -71,6 +71,38 @@ describe('seedSuggestions + bucketSeeds', () => {
     for (const s of suggestions.filter((s) => s.anchor.surface === '張衡')) {
       expect(s.sourceDetail).toBe('CBDB');
     }
+  });
+
+  it('turns a wrapper candidate into nested personWrapper content', () => {
+    const doc = parse('<TEI xmlns="http://www.tei-c.org/ns/1.0"><text><body><p>鄱陽王範</p></body></text></TEI>');
+    const candidate = cand({
+      authorityId: 'noble-title:19',
+      searchStrings: ['鄱陽王範'],
+      metadata: {
+        wrapper: {
+          personId: '7',
+          titleRowId: '19',
+          components: { fief: '鄱陽', roleName: '王', persName: '範' },
+        },
+      },
+    });
+    const [suggestion] = suggestionsFromSeedMatches(seedSuggestions(doc, [candidate], 'ignore'));
+    expect(suggestion?.tag).toBe('name');
+    expect(suggestion?.attributes).toEqual({ type: 'personWrapper', cert: 'unknown' });
+    expect(suggestion?.innerXml).toBe('<nobleTitle><placeName>鄱陽</placeName><roleName>王</roleName></nobleTitle><persName>範</persName>');
+  });
+
+  it('finds a wrapper after its component elements already exist', () => {
+    const doc = parse('<TEI xmlns="http://www.tei-c.org/ns/1.0"><text><body><p><roleName>合州刺史</roleName><nobleTitle><placeName>鄱陽</placeName><roleName>王</roleName></nobleTitle><persName>範</persName></p></body></text></TEI>');
+    const candidate = cand({
+      authorityId: 'noble-title:20',
+      searchStrings: ['合州刺史鄱陽王範'],
+      metadata: { wrapper: { personId: '8', titleRowId: '20', components: { roleName: '合州刺史', fief: '鄱陽', persName: '範' } } },
+    });
+    const [match] = compoundWrapperSuggestions(doc, [candidate], 'ignore');
+    expect(match?.suggestion.action).toBe('add-compound');
+    expect(match?.suggestion.anchor.endXpath).toBeDefined();
+    expect(match?.candidates[0]?.metadata?.wrapper?.personId).toBe('8');
   });
 });
 

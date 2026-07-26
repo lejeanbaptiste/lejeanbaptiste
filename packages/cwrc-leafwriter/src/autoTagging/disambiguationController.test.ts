@@ -3,6 +3,7 @@ import {
   mentionGroupKey,
   pendingInstances,
   syncMentionGroupFromElements,
+  tagTypesPresent,
 } from './disambiguationController';
 import type { MentionGroup, MentionInstance } from './mentions';
 
@@ -43,6 +44,15 @@ function mockGroup(
 }
 
 describe('DisambiguationController', () => {
+  it('offers only tag types represented by the validation scan', () => {
+    expect(tagTypesPresent([
+      mockGroup('李白', [mockInstance(false)], 'persName'),
+      mockGroup('太守', [mockInstance(false, '太守')], 'roleName'),
+      mockGroup('範', [mockInstance(false, '範')], 'name'),
+      mockGroup('李白', [mockInstance(false)], 'persName'),
+    ])).toEqual(['name', 'persName', 'roleName']);
+  });
+
   it('lists pending and resolved groups separately', () => {
     const groups = [
       mockGroup('李白', [mockInstance(false)]),

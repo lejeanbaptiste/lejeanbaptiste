@@ -1,4 +1,5 @@
 import { applySuggestions, type ApplyOptions } from './apply';
+import { buildDocIndex, createCompoundAnchor } from './anchor';
 import type { AuthorityCandidate } from './authority';
 import { teiTagForCandidate } from './authority';
 import { collapseLinkedCandidates, mergeCandidateIntoLookupList } from './authorityOverlap';
@@ -42,12 +43,108 @@ function dedupeSourceLabels(sources: string[]): string[] {
 
 /** Convert seed matches to tag-stage suggestions (no @key — disambiguation later). */
 export function suggestionsFromSeedMatches(matches: SeedMatch[]): Suggestion[] {
-  return matches.map((match) => ({
-    ...match.suggestion,
-    source: 'authority' as const,
-    sourceDetail: dedupeSourceLabels(match.candidates.map((c) => c.source)).join('+'),
-    rationale: rationaleForCandidates(match.candidates),
-  }));
+  return matches.map((match) => {
+    const wrapper = match.candidates.find((candidate) => candidate.metadata?.wrapper)?.metadata?.wrapper;
+    return {
+      ...match.suggestion,
+      ...(wrapper ? {
+        tag: 'name',
+        attributes: { type: 'personWrapper', cert: 'unknown' },
+        innerXml: wrapperInnerXml(wrapper),
+      } : {}),
+      source: 'authority' as const,
+      sourceDetail: dedupeSourceLabels(match.candidates.map((c) => c.source)).join('+'),
+      rationale: rationaleForCandidates(match.candidates),
+    };
+  });
+}
+
+/** Find wrappers whose full string is now represented by adjacent tagged components. */
+export function compoundWrapperSuggestions(
+  doc: Document,
+  candidates: AuthorityCandidate[],
+  policy: WhitespacePolicy,
+): SeedMatch[] {
+  const index = buildDocIndex(doc, policy);
+  const byLocation = new Map<string, SeedMatch>();
+  let counter = 0;
+  for (const candidate of candidates) {
+    if (!candidate.metadata?.wrapper) continue;
+    for (const surface of candidate.searchStrings) {
+      if ([...surface].length < 2) continue;
+      let from = 0;
+      while (true) {
+        const flatStart = index.text.indexOf(surface, from);
+        if (flatStart < 0) break;
+        from = flatStart + 1;
+        const start = boundaryAt(index, flatStart);
+        const end = boundaryAt(index, flatStart + [...surface].length - 1);
+        if (!start || !end || start.node === end.node) continue;
+        const key = `${flatStart}\t${surface}`;
+        let match = byLocation.get(key);
+        if (!match) {
+          match = {
+            suggestion: {
+              id: `wrapper_compound_${counter++}`,
+              source: 'authority',
+              sourceDetail: candidate.source,
+              action: 'add-compound',
+              tag: 'name',
+              attributes: { type: 'personWrapper', cert: 'unknown' },
+              anchor: createCompoundAnchor(
+                '', doc, start.node, start.rawStart, end.node, end.rawEnd, surface, policy, index,
+              ),
+              rationale: `Concatenated person wrapper candidate from ${candidate.source}`,
+              status: 'pending',
+            },
+            candidates: [],
+          };
+          byLocation.set(key, match);
+        }
+        if (!match.candidates.some((item) => item.authorityId === candidate.authorityId && item.source === candidate.source)) {
+          match.candidates.push(candidate);
+        }
+      }
+    }
+  }
+  return [...byLocation.values()];
+}
+
+function boundaryAt(
+  index: ReturnType<typeof buildDocIndex>,
+  flatOffset: number,
+): { node: Text; rawStart: number; rawEnd: number } | null {
+  for (let i = 0; i < index.nodes.length; i++) {
+    const start = index.nodeStart[i]!;
+    const end = start + index.nodes[i]!.search.text.length;
+    if (flatOffset < start || flatOffset >= end) continue;
+    const local = flatOffset - start;
+    const search = index.nodes[i]!.search;
+    return { node: index.nodes[i]!.node, rawStart: search.map[local]!, rawEnd: search.map[local]! + 1 };
+  }
+  return null;
+}
+
+function xmlEscape(value: string): string {
+  return value.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+}
+
+/** Build nested TEI content for a transient wrapper suggestion. */
+export function wrapperInnerXml(
+  wrapper: NonNullable<NonNullable<AuthorityCandidate['metadata']>['wrapper']>,
+): string {
+  const components = wrapper.components;
+  const nationality = components.nationality ? `<nationality>${xmlEscape(components.nationality)}</nationality>` : '';
+  const titleParts = [
+    components.fief ? `<placeName>${xmlEscape(components.fief)}</placeName>` : '',
+    components.posthumousName ? `<persName type="posthumous">${xmlEscape(components.posthumousName)}</persName>` : '',
+    components.roleName ? `<roleName>${xmlEscape(components.roleName)}</roleName>` : '',
+  ].join('');
+  const title = titleParts ? `<nobleTitle>${titleParts}</nobleTitle>` : '';
+  const temple = components.templeName
+    ? `<persName type="temple">${xmlEscape(components.templeName)}</persName>`
+    : '';
+  return `${nationality}${title}${temple}<persName>${xmlEscape(components.persName)}</persName>`;
 }
 
 /** A corpus match with the authority candidate(s) whose name matched there. */

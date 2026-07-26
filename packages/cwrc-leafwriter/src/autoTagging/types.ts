@@ -8,6 +8,7 @@ export type SuggestionSource =
 
 export type SuggestionAction =
   | 'add'
+  | 'add-compound'
   | 'remove'
   | 'retag'
   | 'redraw-boundary'
@@ -39,6 +40,9 @@ export interface Anchor {
   contextAfter: string;
   /** Hash of the text node's search text, to detect staleness. */
   nodeHash: string;
+  /** End boundary for a compound suggestion spanning tagged sibling elements. */
+  endXpath?: string;
+  endOffset?: number;
 }
 
 export interface Suggestion {
@@ -49,6 +53,8 @@ export interface Suggestion {
   action: SuggestionAction;
   tag: string;
   attributes?: Record<string, string>;
+  /** Optional nested TEI content, used by compound plugin suggestions. */
+  innerXml?: string;
   anchor: Anchor;
   confidence?: number;
   rationale?: string;

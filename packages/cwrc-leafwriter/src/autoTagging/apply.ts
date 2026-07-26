@@ -1,5 +1,6 @@
-import { resolveAnchor } from './anchor';
+import { resolveAnchor, resolveXPath } from './anchor';
 import { isEntityTagForbiddenInDate, isInsideDateElement } from './dateTeiHelpers';
+import { validatePersonWrappers, type PersonWrapperValidation } from './personWrapperValidation';
 import { isWrappedByEntityTag } from './suggestionFilters';
 import type { Suggestion, SuggestionAction, WhitespacePolicy } from './types';
 
@@ -46,6 +47,8 @@ export interface BatchResult {
   snapshot: string;
   /** Populated when apply diagnostics are built (integration layer). */
   diagnostics?: import('./applyDiagnostics').ApplyDiagnosticsReport;
+  /** LJB wrapper validation after the batch; pending cert=unknown is reported separately. */
+  personWrapperValidation?: PersonWrapperValidation;
 }
 
 const yieldToUi = (): Promise<void> =>
@@ -59,6 +62,7 @@ const ACTION_PRIORITY: Partial<Record<SuggestionAction, number>> = {
   retag: 1,
   'resolve-date': 1,
   remove: 2,
+  'add-compound': 3,
   add: 3,
 };
 
@@ -205,6 +209,7 @@ export async function applySuggestions(
     results,
     applied: results.filter((r) => r.outcome === 'applied').length,
     snapshot,
+    personWrapperValidation: validatePersonWrappers(doc),
   };
 }
 
@@ -212,6 +217,8 @@ function applyOne(doc: Document, suggestion: Suggestion, options: ApplyOptions):
   switch (suggestion.action) {
     case 'add':
       return applyAdd(doc, suggestion, options);
+    case 'add-compound':
+      return applyCompoundAdd(doc, suggestion, options);
     case 'resolve-date':
       return applyResolveDate(doc, suggestion, options);
     case 'remove':
@@ -223,6 +230,95 @@ function applyOne(doc: Document, suggestion: Suggestion, options: ApplyOptions):
     default:
       return { suggestion, outcome: 'unsupported-action' };
   }
+}
+
+/** Wrap a contiguous run of already-tagged sibling components in a person wrapper. */
+function applyCompoundAdd(doc: Document, suggestion: Suggestion, options: ApplyOptions): ApplyResult {
+  if (!suggestion.anchor.endXpath || suggestion.anchor.endOffset === undefined) {
+    return { suggestion, outcome: 'unresolvable' };
+  }
+  const startNode = resolveXPath(doc, suggestion.anchor.xpath);
+  const endNode = resolveXPath(doc, suggestion.anchor.endXpath);
+  if (!startNode || !endNode) return { suggestion, outcome: 'unresolvable' };
+  const start = { node: startNode, start: suggestion.anchor.offset, end: suggestion.anchor.offset };
+  const endOffset = suggestion.anchor.endOffset;
+  if (endOffset < 0 || endOffset > endNode.data.length) return { suggestion, outcome: 'unresolvable' };
+
+  const commonParent = nearestCommonElement(start.node, endNode);
+  const first = directChildContaining(start.node, commonParent);
+  const last = directChildContaining(endNode, commonParent);
+  if (!commonParent || !first || !last || first === last || first.parentNode !== last.parentNode) {
+    return { suggestion, outcome: 'unresolvable' };
+  }
+  const parent = first.parentElement;
+  if (!parent) return { suggestion, outcome: 'unresolvable' };
+  if (blockedBySchema(schemaTagName(parent), suggestion.tag, options)) {
+    return { suggestion, outcome: 'schema-blocked' };
+  }
+  if (blockedByUserRule(parent, suggestion.tag, options)) {
+    return { suggestion, outcome: 'rule-blocked' };
+  }
+  if (isInsideDateElement(start.node) || isInsideDateElement(endNode)) {
+    return { suggestion, outcome: 'rule-blocked' };
+  }
+  if (findAncestorTag(start.node, suggestion.tag)) return { suggestion, outcome: 'already-tagged' };
+
+  const firstText = firstTextDescendant(first);
+  const lastText = lastTextDescendant(last);
+  if (firstText !== start.node || start.start !== 0 || lastText !== endNode || endOffset !== endNode.data.length) {
+    return { suggestion, outcome: 'unresolvable' };
+  }
+
+  const element = doc.createElementNS(doc.documentElement?.namespaceURI ?? null, suggestion.tag);
+  for (const [name, value] of Object.entries(suggestion.attributes ?? {})) element.setAttribute(name, value);
+  parent.insertBefore(element, first);
+  let current: ChildNode | null = first;
+  while (current) {
+    const next: ChildNode | null = current.nextSibling;
+    element.appendChild(current);
+    if (current === last) break;
+    current = next;
+  }
+  return { suggestion, outcome: 'applied', element };
+}
+
+function directChildContaining(node: Node, parent: Element | null): Element | null {
+  if (!parent) return null;
+  let current: Node | null = node;
+  while (current && current.parentNode !== parent) current = current.parentNode;
+  return current instanceof Element ? current : null;
+}
+
+function nearestCommonElement(a: Node, b: Node): Element | null {
+  const ancestors = new Set<Element>();
+  for (let el = a.parentElement; el; el = el.parentElement) ancestors.add(el);
+  for (let el = b.parentElement; el; el = el.parentElement) {
+    if (ancestors.has(el)) return el;
+  }
+  return null;
+}
+
+function firstTextDescendant(element: Element): Text | null {
+  const walker = element.ownerDocument!.createTreeWalker(element, NodeFilter.SHOW_TEXT);
+  return (walker.nextNode() as Text | null) ?? null;
+}
+
+function lastTextDescendant(element: Element): Text | null {
+  const walker = element.ownerDocument!.createTreeWalker(element, NodeFilter.SHOW_TEXT);
+  let last: Text | null = null;
+  let node = walker.nextNode();
+  while (node) {
+    last = node as Text;
+    node = walker.nextNode();
+  }
+  return last;
+}
+
+function findAncestorTag(node: Node, tag: string): Element | null {
+  for (let el = node.parentElement; el; el = el.parentElement) {
+    if (el.nodeName === tag) return el;
+  }
+  return null;
 }
 
 function applyAdd(doc: Document, suggestion: Suggestion, options: ApplyOptions): ApplyResult {
@@ -250,6 +346,9 @@ function applyAdd(doc: Document, suggestion: Suggestion, options: ApplyOptions):
   }
 
   const element = wrapRange(doc, resolved.node, resolved.start, resolved.end, suggestion);
+  if (suggestion.innerXml) {
+    replaceInnerStructure(doc, element, suggestion.innerXml);
+  }
   if (suggestion.dateResolution?.parseXml) {
     replaceDateInnerStructure(doc, element, suggestion.dateResolution.parseXml);
   }
@@ -457,6 +556,20 @@ function replaceDateInnerStructure(doc: Document, element: Element, innerXml: st
   while (element.firstChild) {
     element.removeChild(element.firstChild);
   }
+  for (const child of Array.from(wrapper.childNodes)) {
+    element.appendChild(doc.importNode(child, true));
+  }
+}
+
+/** Replace the text child of a compound suggestion with validated TEI XML. */
+function replaceInnerStructure(doc: Document, element: Element, innerXml: string): void {
+  const teiNs = doc.documentElement?.namespaceURI ?? 'http://www.tei-c.org/ns/1.0';
+  const wrapped = `<wrapper xmlns="${teiNs}">${innerXml}</wrapper>`;
+  const parsed = new DOMParser().parseFromString(wrapped, 'application/xml');
+  const wrapper = parsed.documentElement;
+  if (!wrapper || parsed.getElementsByTagName('parsererror').length > 0) return;
+
+  while (element.firstChild) element.removeChild(element.firstChild);
   for (const child of Array.from(wrapper.childNodes)) {
     element.appendChild(doc.importNode(child, true));
   }

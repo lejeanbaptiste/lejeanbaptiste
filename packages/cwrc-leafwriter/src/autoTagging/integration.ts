@@ -15,6 +15,7 @@ import type { DisambiguationCandidate } from './disambiguationCandidates';
 import {
   collectGivenFamilyNamesForCandidate,
   collectTypedNamesForCandidate,
+  candidatesFromEntityFile,
   resolveCandidateForPedb,
   resolveEntityInDocument,
 } from './disambiguationCandidates';
@@ -25,14 +26,15 @@ import {
   type PendingCache,
 } from './disambiguationPending';
 import { DecisionLogBuffer, type DecisionRecord } from './decisionLog';
-import {
-  addOfficeRelation,
-  findEntity,
-  TAG_TO_KIND,
-  type EntityKind,
-} from './entities';
+import { addOfficeRelation, findEntity, TAG_TO_KIND, type EntityKind } from './entities';
 import type { AuthorityCandidate } from './authority';
 import { extractPluginOfficeRelations } from '../plugins/officeRelationExtractors';
+import { extractRegisteredEntityData } from '../plugins/entityDataExtractors';
+import {
+  ingestExtractedEntityData,
+  personWrapperSource,
+  refreshExtractedEntityDataForDocument,
+} from './entityExtraction';
 import { autoRomanize } from '../utilities/romanize';
 import {
   centralEntityStoreFromDesktop,
@@ -49,6 +51,7 @@ import {
 } from './authoritySettings';
 import { crawlDocuments } from './crawl';
 import { dictionaryTag, type DictionaryEntry } from './dictionary';
+import { compoundWrapperSuggestions, suggestionsFromSeedMatches } from './seed';
 import { DisambiguationAiCache } from './disambiguationAiCache';
 import type { AiPromptProfile } from './aiPromptProfiles';
 import type { LlmClient } from './llmClient';
@@ -71,7 +74,7 @@ import {
 } from './mentions';
 import type { DecisionEvent } from './reviewController';
 import type { Suggestion, WhitespacePolicy } from './types';
-import type { DateRangeFilter } from './packLoader';
+import { iterateAuthorityNdjson, type DateRangeFilter } from './packLoader';
 import type { SearchTextRange } from './chunk';
 import { resolveCurrentDocumentXml } from './documentContent';
 import { findSelectionRangeInDocument, searchTextForDomRange } from './selectionScope';
@@ -90,6 +93,68 @@ export const OWN_DATABASE_KIND_BY_PACK_ID: Partial<Record<AuthorityPackId, Entit
   'cedb-orgs': 'org',
   'cedb-works': 'work',
 };
+
+/** The identity-bearing child of a person wrapper (not a posthumous/temple name). */
+function wrapperPersonName(wrapper: Element): Element | null {
+  return (
+    Array.from(wrapper.getElementsByTagName('persName')).find(
+      (element) => !element.getAttribute('type'),
+    ) ?? null
+  );
+}
+
+/**
+ * Repair wrapper/inner-person keys from the local entity database.
+ *
+ * This is intentionally conservative: an exact local-name match must resolve
+ * to one project entity. Conflicts are left untouched for the validation UI.
+ */
+export function reconcilePersonWrapperKeys(doc: Document, entitiesDoc: Document): boolean {
+  let changed = false;
+  for (const wrapper of Array.from(doc.getElementsByTagName('name'))) {
+    if (wrapper.getAttribute('type') !== 'personWrapper') continue;
+    const person = wrapperPersonName(wrapper);
+    if (!person) continue;
+    const wrapperKey = wrapper.getAttribute('key')?.trim() ?? '';
+    const personKey = person.getAttribute('key')?.trim() ?? '';
+    if (wrapperKey && personKey) {
+      // A disagreement is evidence of a real disambiguation conflict.
+      if (wrapperKey !== personKey && wrapper.getAttribute('cert') !== 'unknown') {
+        wrapper.setAttribute('cert', 'unknown');
+        changed = true;
+      }
+      continue;
+    }
+    if (wrapperKey) {
+      assignEntity({ element: person, entityId: wrapperKey });
+      changed = true;
+      continue;
+    }
+    if (personKey) {
+      assignEntity({ element: wrapper, entityId: personKey });
+      changed = true;
+      continue;
+    }
+
+    const surface = person.textContent?.trim() ?? '';
+    if (!surface) continue;
+    const local = candidatesFromEntityFile(entitiesDoc, 'persName', surface)
+      .map((candidate) => candidate.localEntityId)
+      .filter((id): id is string => !!id);
+    const ids = [...new Set(local)];
+    if (ids.length !== 1) {
+      if (wrapper.getAttribute('cert') !== 'unknown') {
+        wrapper.setAttribute('cert', 'unknown');
+        changed = true;
+      }
+      continue;
+    }
+    assignEntity({ element: person, entityId: ids[0]! });
+    assignEntity({ element: wrapper, entityId: ids[0]! });
+    changed = true;
+  }
+  return changed;
+}
 
 /**
  * Broader TEI tag synonyms crawled per category (mirrors `DEFAULT_CRAWL_TAGS`
@@ -209,16 +274,14 @@ function previousAdjacentElement(element: Element): Element | null {
   while (cursor?.nodeType === 3 && !(cursor.textContent ?? '').trim()) {
     cursor = cursor.previousSibling;
   }
-  return cursor?.nodeType === 1 ? cursor as Element : null;
+  return cursor?.nodeType === 1 ? (cursor as Element) : null;
 }
 
 function candidateSourceRef(candidate: DisambiguationCandidate): {
   source: string;
   authorityId: string;
 } | null {
-  const norbert = candidate.authorityIds?.find(
-    (id) => id.type.toLowerCase() === 'norbert',
-  );
+  const norbert = candidate.authorityIds?.find((id) => id.type.toLowerCase() === 'norbert');
   if (norbert) return { source: 'Norbert', authorityId: norbert.value };
   const first = candidate.authorityIds?.[0];
   return first ? { source: first.type, authorityId: first.value } : null;
@@ -244,8 +307,8 @@ function importResolvedOfficeStructure(
       childId,
       source: 'norbert',
       rule: 'explicit-parent-string',
-      sourceIds: [parent.authorityId, childRef?.authorityId].filter(
-        (id): id is string => Boolean(id),
+      sourceIds: [parent.authorityId, childRef?.authorityId].filter((id): id is string =>
+        Boolean(id),
       ),
       confidence: 'inferred',
     });
@@ -263,9 +326,9 @@ function importResolvedOfficeStructure(
     authorityId: firstIdno.textContent?.trim() ?? previousId,
     kind: 'office',
     primaryName:
-      previousEntity.getElementsByTagName('orgName')[0]?.textContent?.trim()
-      ?? previous?.textContent?.trim()
-      ?? previousId,
+      previousEntity.getElementsByTagName('orgName')[0]?.textContent?.trim() ??
+      previous?.textContent?.trim() ??
+      previousId,
     searchStrings: [],
   };
   const second: AuthorityCandidate = {
@@ -304,6 +367,7 @@ export class AutoTaggingSession {
   private llmCache: LlmCache | null = null;
   private disambiguationAiCacheStore: DisambiguationAiCache | null = null;
   private pendingCache: PendingCache = { version: 1, entries: {} };
+  private personWrapperCandidatesPromise: Promise<AuthorityCandidate[]> | null = null;
   private documentPaths = new Map<Document, string>();
   private projectLangPromise: Promise<string | null> | null = null;
 
@@ -344,7 +408,10 @@ export class AutoTaggingSession {
     return this.store;
   }
 
-  private centralContextPromise: Promise<{ store: EntityStore; userStableId: string } | null> | null = null;
+  private centralContextPromise: Promise<{
+    store: EntityStore;
+    userStableId: string;
+  } | null> | null = null;
 
   /**
    * Resolve the central database + this user's stable id, when this project
@@ -546,6 +613,33 @@ export class AutoTaggingSession {
   }
 
   /**
+   * Second Norbert pass: after component tags have been applied, find wrapper
+   * candidates spanning adjacent tagged components.  The returned suggestions
+   * preserve those children and are intended for the normal review/apply path.
+   */
+  async runPersonWrapperConcatenation(
+    readPackFile: (packId: AuthorityPackId) => Promise<string>,
+  ): Promise<{ suggestions: Suggestion[]; matchCount: number }> {
+    const doc = await this.getDocument();
+    this.personWrapperCandidatesPromise ??= (async () => {
+      const candidates: AuthorityCandidate[] = [];
+      const content = await readPackFile('norbert-person-wrappers');
+      for (const candidate of iterateAuthorityNdjson(content)) {
+        if (candidate.metadata?.wrapper) candidates.push(candidate);
+      }
+      return candidates;
+    })();
+    const candidates = await this.personWrapperCandidatesPromise;
+    const matches = compoundWrapperSuggestions(doc, candidates, this.policy);
+    const suggestions = prepareSuggestionsForReview(
+      doc,
+      this.policy,
+      suggestionsFromSeedMatches(matches),
+    ).suggestions;
+    return { suggestions, matchCount: matches.length };
+  }
+
+  /**
    * Unified "Tag bomb": pools NDJSON authority packs, PEDB/CEDB (read live
    * from entities.xml), this project's already-tagged mentions (disambiguated
    * and not), and any imported CSV/TSV/xlsx/ODS lists into one run. The date
@@ -574,7 +668,10 @@ export class AutoTaggingSession {
     const projectIds = packIds.filter((id) => this.specOrigin(id) === 'project');
     const listIds = packIds.filter((id) => this.specOrigin(id) === 'list');
 
-    const extraCandidates: { groupLabel: string; candidates: ReturnType<typeof candidatesFromEntityDatabase> }[] = [];
+    const extraCandidates: {
+      groupLabel: string;
+      candidates: ReturnType<typeof candidatesFromEntityDatabase>;
+    }[] = [];
     if (pedbIds.length > 0 && this.store) {
       const pedbDoc = await this.store.loadEntities();
       for (const id of pedbIds) {
@@ -620,15 +717,21 @@ export class AutoTaggingSession {
     let anyTruncated = false;
 
     for (const { doc, filePath } of scopeDocs) {
-      const authorityResult = await runAuthorityTagBombOnDocument(doc, packIds, readPackFile, this.policy, {
-        dateFilter: options.dateFilter,
-        extraCandidates,
-        nameTypePolicy,
-        onProgress: (message) => {
-          options.onProgress?.(multiDoc ? `${filePath}: ${message}` : message);
-          void yieldToUi();
+      const authorityResult = await runAuthorityTagBombOnDocument(
+        doc,
+        packIds,
+        readPackFile,
+        this.policy,
+        {
+          dateFilter: options.dateFilter,
+          extraCandidates,
+          nameTypePolicy,
+          onProgress: (message) => {
+            options.onProgress?.(multiDoc ? `${filePath}: ${message}` : message);
+            void yieldToUi();
+          },
         },
-      });
+      );
 
       const extraSuggestionGroups: Suggestion[][] = [];
       const loaded: Partial<Record<AuthorityPackId, number>> = { ...authorityResult.loaded };
@@ -636,15 +739,20 @@ export class AutoTaggingSession {
       if (pooledProjectEntries.length > 0) {
         loaded['project' as AuthorityPackId] =
           (loaded['project' as AuthorityPackId] ?? 0) + pooledProjectEntries.length;
-        extraSuggestionGroups.push(dictionaryTag(doc, pooledProjectEntries, this.policy, 'this project'));
+        extraSuggestionGroups.push(
+          dictionaryTag(doc, pooledProjectEntries, this.policy, 'this project'),
+        );
       }
 
       if (listIds.length > 0 && (options.importedLists?.length ?? 0) > 0) {
-        const listTags = new Set(listIds.map((id) => this.defaultTagFor(id)).filter((tag): tag is string => !!tag));
+        const listTags = new Set(
+          listIds.map((id) => this.defaultTagFor(id)).filter((tag): tag is string => !!tag),
+        );
         for (const file of options.importedLists ?? []) {
           const filtered = file.entries.filter((entry) => listTags.has(entry.tag));
           if (filtered.length === 0) continue;
-          loaded['list' as AuthorityPackId] = (loaded['list' as AuthorityPackId] ?? 0) + filtered.length;
+          loaded['list' as AuthorityPackId] =
+            (loaded['list' as AuthorityPackId] ?? 0) + filtered.length;
           extraSuggestionGroups.push(dictionaryTag(doc, filtered, this.policy, file.name));
         }
       }
@@ -1003,7 +1111,18 @@ export class AutoTaggingSession {
       };
       const documentId = globals.writer?.overmindState?.editor?.resource?.filePath ?? 'current';
       this.documentPaths.set(doc, documentId);
-      const groups = collectMentions(doc, this.policy, documentId, options);
+      let groups = collectMentions(doc, this.policy, documentId, options);
+      if (this.store) {
+        const entitiesDoc = this.entitiesDoc ?? (await this.loadEntities());
+        if (reconcilePersonWrapperKeys(doc, entitiesDoc)) {
+          await this.persistDocument(doc);
+          groups = collectMentions(doc, this.policy, documentId, options);
+        }
+        refreshExtractedEntityDataForDocument(entitiesDoc, doc, documentId, (wrapper, key) =>
+          extractRegisteredEntityData({ wrapper, documentKey: key }),
+        );
+        await this.saveEntities();
+      }
       options.onProgress?.(1, 1);
       return groups;
     }
@@ -1015,9 +1134,20 @@ export class AutoTaggingSession {
     for (let i = 0; i < documents.length; i++) {
       const doc = documents[i]!;
       options.onProgress?.(i, total);
-      groups.push(
-        ...collectMentions(doc, this.policy, this.documentPaths.get(doc) ?? `doc-${i}`, options),
-      );
+      const documentId = this.documentPaths.get(doc) ?? `doc-${i}`;
+      let documentGroups = collectMentions(doc, this.policy, documentId, options);
+      if (this.store) {
+        const entitiesDoc = this.entitiesDoc ?? (await this.loadEntities());
+        if (reconcilePersonWrapperKeys(doc, entitiesDoc)) {
+          await this.persistDocument(doc);
+          documentGroups = collectMentions(doc, this.policy, documentId, options);
+        }
+        refreshExtractedEntityDataForDocument(entitiesDoc, doc, documentId, (wrapper, key) =>
+          extractRegisteredEntityData({ wrapper, documentKey: key }),
+        );
+        await this.saveEntities();
+      }
+      groups.push(...documentGroups);
       if (i < documents.length - 1) await yieldToUi();
     }
 
@@ -1116,7 +1246,7 @@ export class AutoTaggingSession {
   ): Promise<string> {
     if (!this.store) throw new Error('No entity store available');
     const entitiesDoc = this.entitiesDoc ?? (await this.loadEntities());
-    const kind = options.kind ?? TAG_TO_KIND[instance.tag];
+    const kind = options.kind ?? (instance.tag === 'name' ? 'person' : TAG_TO_KIND[instance.tag]);
     if (!kind) throw new Error(`Unsupported tag: ${instance.tag}`);
 
     // A candidate picked from the central database (syncToCentral merged
@@ -1125,12 +1255,18 @@ export class AutoTaggingSession {
     if (candidate.centralEntityId) {
       const central = await this.centralContext();
       if (central) {
-        candidate = await resolveCandidateForPedb(candidate, entitiesDoc, central.store, central.userStableId);
+        candidate = await resolveCandidateForPedb(
+          candidate,
+          entitiesDoc,
+          central.store,
+          central.userStableId,
+        );
       }
     }
 
     const projectLang = await this.projectLanguage();
-    const name = options.name ?? instance.surface;
+    const wrapperPerson = instance.tag === 'name' ? wrapperPersonName(instance.element) : null;
+    const name = options.name ?? wrapperPerson?.textContent?.trim() ?? instance.surface;
     const projectLangName = options.createNew ? undefined : candidate.projectLangName;
     const romanizedName =
       options.romanizedName ??
@@ -1159,6 +1295,9 @@ export class AutoTaggingSession {
         familyName: givenFamilyNames.familyName,
         givenName: givenFamilyNames.givenName,
         authorityIds: candidate.authorityIds,
+        authoritySource: candidate.authorityIds?.[0]
+          ? `${candidate.authorityIds[0].type}:${candidate.authorityIds[0].value}`
+          : undefined,
         description: options.description ?? candidate.description,
         startYear: candidate.startYear,
         endYear: candidate.endYear,
@@ -1168,14 +1307,24 @@ export class AutoTaggingSession {
     );
 
     assignEntity({ element: instance.element, entityId });
+    if (wrapperPerson) assignEntity({ element: wrapperPerson, entityId });
+    if (wrapperPerson) {
+      const documentKey = this.documentPaths.get(instance.element.ownerDocument!) ?? 'current';
+      const wrappers = Array.from(
+        instance.element.ownerDocument!.getElementsByTagName('name'),
+      ).filter((candidate) => candidate.getAttribute('type') === 'personWrapper');
+      const source = personWrapperSource(documentKey, wrappers.indexOf(instance.element) + 1);
+      const assertions = extractRegisteredEntityData({
+        wrapper: instance.element,
+        documentKey,
+      });
+      if (assertions.length > 0) {
+        ingestExtractedEntityData(entitiesDoc, entityId, source, assertions);
+      }
+    }
     const relatedEntityIds =
       kind === 'office'
-        ? importResolvedOfficeStructure(
-            entitiesDoc,
-            instance.element,
-            entityId,
-            candidate,
-          )
+        ? importResolvedOfficeStructure(entitiesDoc, instance.element, entityId, candidate)
         : [];
     if (instance.tag === 'persName') {
       tagFollowingStyleNames(instance.element.ownerDocument!);
@@ -1357,7 +1506,7 @@ export class AutoTaggingSession {
     try {
       const displaySurface =
         suggestion.source === 'dates' && suggestion.dateResolution
-          ? suggestion.dateResolution.displaySurface ?? suggestion.anchor.surface
+          ? (suggestion.dateResolution.displaySurface ?? suggestion.anchor.surface)
           : suggestion.anchor.surface;
       if (this.focusAnchor(displaySurface, suggestion.anchor.occurrence)) return true;
       return this.focusAnchor(suggestion.anchor.surface, suggestion.anchor.occurrence);

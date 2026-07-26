@@ -1,4 +1,4 @@
-import type { AuthorityPackSpec } from '../autoTagging/packPaths';
+import { AUTHORITY_PACKS, type AuthorityPackSpec } from '../autoTagging/packPaths';
 import { setDynamicAuthorityPackSpecs } from '../autoTagging/packPaths';
 import { loadEnabledPluginModules } from './pluginLoader';
 import type {
@@ -22,6 +22,11 @@ function rebuildPackSpecs(next: PluginHostSnapshotView | null) {
     const packs = plugin.manifest?.contributions?.authorityPacks;
     if (!packs?.length) continue;
     for (const pack of packs) {
+      const builtIn = AUTHORITY_PACKS.find((spec) => spec.id === pack.id);
+      if (builtIn) {
+        registeredPackSpecs.push({ pluginId: plugin.id, ...builtIn });
+        continue;
+      }
       const folder = pack.id.replace(/-(persons|places|works|offices)$/, '');
       const suffix = pack.id.match(/-(persons|places|works|offices)$/)?.[1] ?? 'persons';
       const fileName =

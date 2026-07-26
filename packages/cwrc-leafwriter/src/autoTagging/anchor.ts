@@ -218,6 +218,65 @@ export function createAnchor(
 }
 
 /**
+ * Create an anchor whose surface crosses text-node boundaries.  This is used
+ * only by the post-component person-wrapper pass: the ordinary tagger keeps
+ * insertions inside one text node, while this pass wraps existing sibling
+ * elements as a unit.
+ */
+export function createCompoundAnchor(
+  documentId: string,
+  root: Node,
+  startNode: Text,
+  startRaw: number,
+  endNode: Text,
+  endRaw: number,
+  surface: string,
+  policy: WhitespacePolicy,
+  prebuiltIndex?: DocIndex,
+): Anchor {
+  const index = prebuiltIndex ?? buildDocIndex(root, policy);
+  const startIndex = index.nodes.findIndex((entry) => entry.node === startNode);
+  const endIndex = index.nodes.findIndex((entry) => entry.node === endNode);
+  if (startIndex < 0 || endIndex < 0 || endIndex < startIndex) {
+    throw new Error('createCompoundAnchor: boundary node is not under root');
+  }
+  const startSearch = index.nodes[startIndex]!.search;
+  const localStart = startSearch.map.findIndex((raw) => raw >= startRaw);
+  if (localStart < 0) throw new Error('createCompoundAnchor: invalid start boundary');
+  const endSearch = index.nodes[endIndex]!.search;
+  let localEnd = endSearch.map.findIndex((raw) => raw >= endRaw);
+  if (localEnd < 0) localEnd = endSearch.map.length;
+
+  const flatStart = index.nodeStart[startIndex]! + localStart;
+  const occurrence = (() => {
+    let seen = 0;
+    let from = 0;
+    while (true) {
+      const at = index.text.indexOf(surface, from);
+      if (at < 0) return 0;
+      seen++;
+      if (at === flatStart) return seen;
+      from = at + 1;
+    }
+  })();
+  if (!occurrence) throw new Error('createCompoundAnchor: surface does not match boundary');
+  const before = index.text.slice(Math.max(0, flatStart - CONTEXT_LENGTH), flatStart);
+  const after = index.text.slice(flatStart + surface.length, flatStart + surface.length + CONTEXT_LENGTH);
+  return {
+    documentId,
+    xpath: xpathForTextNode(startNode),
+    offset: startSearch.map[localStart]!,
+    surface,
+    occurrence,
+    contextBefore: before,
+    contextAfter: after,
+    nodeHash: hashText(startSearch.text),
+    endXpath: xpathForTextNode(endNode),
+    endOffset: endRaw,
+  };
+}
+
+/**
  * Locate the Nth (1-based) occurrence of `surface` in the document search text,
  * returning the text node and raw offsets for as much of that match as sits in
  * the starting node. Used by editor focus jumps — structural xpaths from the

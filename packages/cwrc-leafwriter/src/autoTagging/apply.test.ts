@@ -1,6 +1,6 @@
 import fs from 'fs';
 import path from 'path';
-import { collectTextNodes, createAnchor } from './anchor';
+import { collectTextNodes, createAnchor, createCompoundAnchor } from './anchor';
 import { applySuggestions, revertToSnapshot } from './apply';
 import { anchorForDateElement, findTeiBodyRoot } from './dates';
 import { normalizeDomText } from './normalize';
@@ -54,6 +54,24 @@ const suggest = (
 };
 
 describe('applySuggestions', () => {
+  it('wraps existing tagged components without replacing their structure', async () => {
+    const doc = parse(`<TEI xmlns="http://www.tei-c.org/ns/1.0"><text><body><p><roleName>合州刺史</roleName><nobleTitle><placeName>鄱陽</placeName><roleName>王</roleName></nobleTitle><persName>範</persName></p></body></text></TEI>`);
+    const start = doc.getElementsByTagName('roleName')[0]!.firstChild as Text;
+    const end = doc.getElementsByTagName('persName')[0]!.firstChild as Text;
+    const anchor = createCompoundAnchor('doc', doc, start, 0, end, end.data.length, '合州刺史鄱陽王範', 'ignore');
+    const suggestion: Suggestion = {
+      id: 'compound', source: 'authority', action: 'add-compound', tag: 'name',
+      attributes: { type: 'personWrapper', cert: 'unknown' }, anchor, status: 'pending',
+    };
+    const { applied } = await applySuggestions(doc, [suggestion], { policy: 'ignore' });
+    expect(applied).toBe(1);
+    const wrapper = doc.getElementsByTagName('name')[0]!;
+    expect(wrapper.getAttribute('type')).toBe('personWrapper');
+    expect(wrapper.getElementsByTagName('roleName')).toHaveLength(2);
+    expect(wrapper.getElementsByTagName('placeName')[0]!.textContent).toBe('鄱陽');
+    expect(wrapper.getElementsByTagName('persName')[0]!.textContent).toBe('範');
+  });
+
   it('wraps the anchored range in a new element in the document namespace', async () => {
     const doc = parse(TEI);
     const batch = [suggest(doc, '上陽子', 'persName')];

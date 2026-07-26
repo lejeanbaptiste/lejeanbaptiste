@@ -6,6 +6,7 @@
 
 import { latnLangFor } from '../utilities/languageCodes';
 import type { NameTypeId } from './nameTypes';
+import { writeEntityValueProvenance, type EntityValueOrigin } from './entityProvenance';
 
 const TEI_NS = 'http://www.tei-c.org/ns/1.0';
 const XML_NS = 'http://www.w3.org/XML/1998/namespace';
@@ -70,6 +71,27 @@ export interface AuthorityId {
   value: string;
 }
 
+export interface TitlePart {
+  text: string;
+  ref?: string;
+}
+
+export interface NobleTitleRecord {
+  /** Authority id for the confirmed title combination, when available. */
+  ref?: string;
+  /** Provenance for the stored relation (e.g. source doc or auto-tag pass). */
+  resp?: string;
+  /** Optional source label / document id for the stored relation. */
+  source?: string;
+  /** Optional assertion timestamp. */
+  when?: string;
+  /** Field provenance. Legacy records infer this from resp/source. */
+  origin?: EntityValueOrigin;
+  placeName: TitlePart;
+  roleName: TitlePart;
+  posthumousName?: TitlePart;
+}
+
 export interface NewEntity {
   /** Surface/display name for the entity. */
   name: string;
@@ -80,6 +102,8 @@ export interface NewEntity {
   /** Extra alternative names (e.g. the document surface form), deduped against name/romanizedName. */
   altNames?: { text: string; type?: NameTypeId; lang?: string }[];
   authorityIds?: AuthorityId[];
+  /** Stable authority source attached to imported field values. */
+  authoritySource?: string;
   /** Optional compact authority-cache payload, stored as a JSON note. */
   cache?: { source: string; data: unknown; when?: string };
   /** One-line human-written description, stored as `<note type="description">` for later disambiguation. */
@@ -90,6 +114,8 @@ export interface NewEntity {
   endYear?: number;
   /** Historical dynasties/states associated with a person. */
   nationality?: { id: string; canonicalId: string; label: string; sourceIds?: string[] }[];
+  /** Repeatable noble-title relations attached to a person entity. */
+  nobleTitles?: NobleTitleRecord[];
   /** Source-scoped CBDB office classification nodes retained by reference. */
   officeTypeIds?: string[];
 }
@@ -188,7 +214,11 @@ export function isEntityDatabase(doc: Document): boolean {
 function allIds(doc: Document): Set<string> {
   const ids = new Set<string>();
   const walker = doc.createTreeWalker(doc.documentElement, NodeFilter.SHOW_ELEMENT);
-  for (let node = walker.currentNode as Element | null; node; node = walker.nextNode() as Element | null) {
+  for (
+    let node = walker.currentNode as Element | null;
+    node;
+    node = walker.nextNode() as Element | null
+  ) {
     const id = node.getAttribute('xml:id');
     if (id) ids.add(id);
   }
@@ -321,8 +351,9 @@ export function entityKindOfElement(item: Element): EntityKind | null {
 /** Direct entity children in the kind-specific TEI list. */
 export function entityElements(doc: Document, kind: EntityKind): Element[] {
   const config = ENTITY_KINDS[kind];
-  const lists = Array.from(doc.getElementsByTagName(config.list))
-    .filter((list) => listMatchesKind(list, kind));
+  const lists = Array.from(doc.getElementsByTagName(config.list)).filter((list) =>
+    listMatchesKind(list, kind),
+  );
   return lists.flatMap((list) =>
     Array.from(list.children).filter((item) => entityElementMatchesKind(item, kind)),
   );
@@ -331,11 +362,11 @@ export function entityElements(doc: Document, kind: EntityKind): Element[] {
 /** Get (creating if needed) the list element for a kind. */
 export function getEntityList(doc: Document, kind: EntityKind): Element {
   const config = ENTITY_KINDS[kind];
-  const existing = Array.from(doc.getElementsByTagName(config.list))
-    .find((list) => listMatchesKind(list, kind));
+  const existing = Array.from(doc.getElementsByTagName(config.list)).find((list) =>
+    listMatchesKind(list, kind),
+  );
   if (existing) return existing;
-  const standOff =
-    doc.getElementsByTagName('standOff')[0] ?? doc.documentElement;
+  const standOff = doc.getElementsByTagName('standOff')[0] ?? doc.documentElement;
   const el = doc.createElementNS(TEI_NS, config.list);
   if (config.listType) el.setAttribute('type', config.listType);
   standOff.appendChild(el);
@@ -359,6 +390,8 @@ export function addEntity(
   item.setAttributeNS(XML_NS, 'xml:id', id);
   if (config.itemType) item.setAttribute('type', config.itemType);
   if (resp) item.setAttribute('resp', resp);
+  const importedOrigin =
+    resp === LJB_AUTOTAG_RESP || resp === LEAFWRITER_AUTOTAG_RESP ? 'authority' : 'user';
 
   const name = doc.createElementNS(TEI_NS, config.name);
   name.textContent = entity.name;
@@ -366,6 +399,7 @@ export function addEntity(
     name.setAttributeNS(XML_NS, 'xml:lang', entity.nameLang);
     name.setAttribute('type', 'primary');
   }
+  writeEntityValueProvenance(name, { origin: importedOrigin });
   item.appendChild(name);
 
   const writtenNames = new Set<string>([entity.name.normalize('NFC').trim()]);
@@ -375,6 +409,7 @@ export function addEntity(
     const el = doc.createElementNS(TEI_NS, config.name);
     el.textContent = romanized;
     el.setAttributeNS(XML_NS, 'xml:lang', latnLangFor(entity.nameLang));
+    writeEntityValueProvenance(el, { origin: importedOrigin });
     item.appendChild(el);
     writtenNames.add(romanized);
   }
@@ -386,6 +421,7 @@ export function addEntity(
     el.textContent = text;
     if (alt.type) el.setAttribute('type', alt.type);
     if (alt.lang) el.setAttributeNS(XML_NS, 'xml:lang', alt.lang);
+    writeEntityValueProvenance(el, { origin: importedOrigin });
     item.appendChild(el);
     writtenNames.add(text);
   }
@@ -394,6 +430,10 @@ export function addEntity(
     const idno = doc.createElementNS(TEI_NS, 'idno');
     idno.setAttribute('type', authority.type);
     idno.textContent = authority.value;
+    writeEntityValueProvenance(idno, {
+      origin: 'authority',
+      source: `${authority.type}:${authority.value}`,
+    });
     item.appendChild(idno);
   }
 
@@ -404,6 +444,7 @@ export function addEntity(
     note.setAttribute('resp', LJB_RESP);
     note.setAttribute('when', entity.cache.when ?? new Date().toISOString());
     note.textContent = JSON.stringify(entity.cache.data);
+    writeEntityValueProvenance(note, { origin: 'authority', source: entity.cache.source });
     item.appendChild(note);
   }
 
@@ -411,6 +452,7 @@ export function addEntity(
     const note = doc.createElementNS(TEI_NS, 'note');
     note.setAttribute('type', 'description');
     note.textContent = entity.description;
+    writeEntityValueProvenance(note, { origin: importedOrigin });
     item.appendChild(note);
   }
 
@@ -421,7 +463,68 @@ export function addEntity(
       const el = doc.createElementNS(TEI_NS, 'nationality');
       el.textContent = nationality;
       el.setAttribute('ref', value.canonicalId);
+      writeEntityValueProvenance(el, {
+        origin: value.sourceIds?.length ? 'authority' : 'user',
+        source: value.sourceIds?.[0] ?? entity.authoritySource,
+      });
       item.appendChild(el);
+    }
+
+    const writtenTitles = new Set<string>();
+    for (const title of entity.nobleTitles ?? []) {
+      const placeText = title.placeName.text.normalize('NFC').trim();
+      const roleText = title.roleName.text.normalize('NFC').trim();
+      const posthumousText = title.posthumousName?.text.normalize('NFC').trim() || '';
+      const hasTitleData =
+        Boolean(title.ref || title.resp || title.source || title.when) ||
+        Boolean(title.placeName.ref || placeText) ||
+        Boolean(title.roleName.ref || roleText) ||
+        Boolean(title.posthumousName?.ref || posthumousText);
+      if (!hasTitleData) continue;
+      const dedupeKey = [
+        title.ref ?? '',
+        title.resp ?? '',
+        title.source ?? '',
+        title.when ?? '',
+        title.placeName.ref ?? '',
+        placeText,
+        title.roleName.ref ?? '',
+        roleText,
+        title.posthumousName?.ref ?? '',
+        posthumousText,
+      ].join('\u001f');
+      if (writtenTitles.has(dedupeKey)) continue;
+
+      const nobleTitle = doc.createElementNS(TEI_NS, 'nobleTitle');
+      if (title.ref) nobleTitle.setAttribute('ref', title.ref);
+      if (title.resp) nobleTitle.setAttribute('resp', title.resp);
+      if (title.source) nobleTitle.setAttribute('source', title.source);
+      if (title.when) nobleTitle.setAttribute('when', title.when);
+      writeEntityValueProvenance(nobleTitle, {
+        origin: title.origin ?? (title.source?.startsWith('xml:') ? 'xml' : 'authority'),
+        source: title.source,
+      });
+
+      const placeName = doc.createElementNS(TEI_NS, 'placeName');
+      if (title.placeName.ref) placeName.setAttribute('ref', title.placeName.ref);
+      placeName.textContent = placeText;
+      nobleTitle.appendChild(placeName);
+
+      const roleName = doc.createElementNS(TEI_NS, 'roleName');
+      if (title.roleName.ref) roleName.setAttribute('ref', title.roleName.ref);
+      roleName.textContent = roleText;
+      nobleTitle.appendChild(roleName);
+
+      if (title.posthumousName) {
+        const posthumousName = doc.createElementNS(TEI_NS, 'persName');
+        posthumousName.setAttribute('type', 'posthumous');
+        if (title.posthumousName.ref) posthumousName.setAttribute('ref', title.posthumousName.ref);
+        posthumousName.textContent = posthumousText;
+        nobleTitle.appendChild(posthumousName);
+      }
+
+      item.appendChild(nobleTitle);
+      writtenTitles.add(dedupeKey);
     }
   }
 
@@ -439,11 +542,13 @@ export function addEntity(
       if (entity.startYear != null) {
         const birth = doc.createElementNS(TEI_NS, 'birth');
         birth.setAttribute('when', isoYearString(entity.startYear));
+        writeEntityValueProvenance(birth, { origin: importedOrigin });
         item.appendChild(birth);
       }
       if (entity.endYear != null) {
         const death = doc.createElementNS(TEI_NS, 'death');
         death.setAttribute('when', isoYearString(entity.endYear));
+        writeEntityValueProvenance(death, { origin: importedOrigin });
         item.appendChild(death);
       }
     } else {
@@ -454,6 +559,7 @@ export function addEntity(
         entity.startYear != null ? isoYearString(entity.startYear) : '',
         entity.endYear != null ? isoYearString(entity.endYear) : '',
       ].join('/');
+      writeEntityValueProvenance(note, { origin: importedOrigin });
       item.appendChild(note);
     }
   }
@@ -496,7 +602,9 @@ export function readOfficeRelations(doc: Document): OfficeRelationRecord[] {
   );
   if (!list) return [];
   return Array.from(list.children)
-    .filter((element) => element.localName === 'relation' && element.getAttribute('name') === 'parentOf')
+    .filter(
+      (element) => element.localName === 'relation' && element.getAttribute('name') === 'parentOf',
+    )
     .map((element) => ({
       parentId: relationTarget(element.getAttribute('active')),
       childId: relationTarget(element.getAttribute('passive')),
@@ -518,10 +626,10 @@ export function addOfficeRelation(
 ): { created: boolean; element: Element } {
   const existing = readOfficeRelations(doc).find(
     (row) =>
-      row.parentId === relation.parentId
-      && row.childId === relation.childId
-      && row.source === relation.source
-      && row.rule === relation.rule,
+      row.parentId === relation.parentId &&
+      row.childId === relation.childId &&
+      row.source === relation.source &&
+      row.rule === relation.rule,
   );
   if (existing) return { created: false, element: existing.element };
 
@@ -536,7 +644,10 @@ export function addOfficeRelation(
     element.setAttribute(
       'corresp',
       relation.sourceIds
-        .map((id) => `urn:ljb:authority:${encodeURIComponent(relation.source)}:${encodeURIComponent(id)}`)
+        .map(
+          (id) =>
+            `urn:ljb:authority:${encodeURIComponent(relation.source)}:${encodeURIComponent(id)}`,
+        )
         .join(' '),
     );
   }
@@ -557,7 +668,11 @@ export function appendAuthorityIdnos(doc: Document, element: Element, ids: Autho
 }
 
 /** Append person nationality labels without duplicating existing values. */
-export function appendNationalities(doc: Document, element: Element, values: { id: string; canonicalId: string; label: string; sourceIds?: string[] }[]): void {
+export function appendNationalities(
+  doc: Document,
+  element: Element,
+  values: { id: string; canonicalId: string; label: string; sourceIds?: string[] }[],
+): void {
   const existing = new Set(
     Array.from(element.getElementsByTagName('nationality')).map(
       (el) => el.getAttribute('ref') || el.textContent?.trim(),
@@ -577,7 +692,11 @@ export function appendNationalities(doc: Document, element: Element, values: { i
 /** Find an entity element by its local id. */
 export function findEntity(doc: Document, id: string): Element | null {
   const walker = doc.createTreeWalker(doc.documentElement, NodeFilter.SHOW_ELEMENT);
-  for (let node = walker.currentNode as Element | null; node; node = walker.nextNode() as Element | null) {
+  for (
+    let node = walker.currentNode as Element | null;
+    node;
+    node = walker.nextNode() as Element | null
+  ) {
     if (node.getAttribute('xml:id') === id) return node;
   }
   return null;

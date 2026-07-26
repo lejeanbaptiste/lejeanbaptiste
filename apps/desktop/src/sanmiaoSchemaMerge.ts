@@ -8,7 +8,7 @@ import type { ProjectBundle } from './projectFile';
 
 export const SANMIAO_PATCH_FILENAME = 'ljb-sanmiao-dates.rng';
 /** Bump when the generated RNG changes so existing merged schemas get regenerated. */
-export const SANMIAO_MERGE_VERSION = 6;
+export const SANMIAO_MERGE_VERSION = 9;
 const MERGE_VERSION_MARKER = `ljb-sanmiao-merge v${SANMIAO_MERGE_VERSION}`;
 const TEI_NS = 'http://www.tei-c.org/ns/1.0';
 const TEI_CATALOG_IDS = new Set(['teiAll', 'teiLite', 'teiSimplePrint', 'jTei']);
@@ -140,9 +140,15 @@ export const generateSanmiaoHelperDefines = (): string => {
   return `${partDefines}
   <define name="ljb.nobleTitle">
     <element name="nobleTitle">
-      <zeroOrMore>
-        <choice><text/><ref name="model.global"/><ref name="model.nameLike"/></choice>
-      </zeroOrMore>
+      <oneOrMore>
+        <choice>
+          <text/>
+          <ref name="model.global"/>
+          <ref name="placeName"/>
+          <ref name="roleName"/>
+          <ref name="persName"/>
+        </choice>
+      </oneOrMore>
     </element>
   </define>
   <define name="ljb.personWrapper">
@@ -150,7 +156,17 @@ export const generateSanmiaoHelperDefines = (): string => {
       <attribute name="type"><value>personWrapper</value></attribute>
       <optional><attribute name="key"><text/></attribute></optional>
       <optional><attribute name="ref"><text/></attribute></optional>
-      <zeroOrMore><choice><text/><ref name="model.global"/><ref name="model.phrase"/></choice></zeroOrMore>
+      <oneOrMore>
+        <choice>
+          <text/>
+          <ref name="model.global"/>
+          <ref name="persName"/>
+          <ref name="roleName"/>
+          <ref name="placeName"/>
+          <ref name="ljb.nobleTitle"/>
+          <ref name="nationality"/>
+        </choice>
+      </oneOrMore>
     </element>
   </define>
   <define name="ljb.sanmiao.rel">

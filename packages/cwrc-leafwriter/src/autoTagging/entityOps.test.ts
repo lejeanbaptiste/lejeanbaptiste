@@ -18,6 +18,10 @@ import {
   setNameType,
   setRomanizedName,
   taggableEntityNames,
+  decoupleAuthority,
+  listEntityAssertions,
+  rejectEntityAssertion,
+  validateEntityAssertion,
 } from './entityOps';
 
 const makeDoc = () => parseEntities(createEntitiesScaffold('test-db'));
@@ -58,6 +62,55 @@ describe('listEntities', () => {
     setCentralMapping(element, 'user-a', 'person-central-1');
 
     expect(listEntities(doc)[0]!.authorities).toEqual([{ type: 'CBDB', value: '25788' }]);
+  });
+});
+
+describe('field-level provenance', () => {
+  it('validates and rejects imported assertions without losing their source', () => {
+    const doc = makeDoc();
+    const { id } = addEntity(doc, 'person', {
+      name: '張衡',
+      nationality: [{ id: 'han', canonicalId: 'han', label: '漢', sourceIds: ['CBDB:1'] }],
+      nobleTitles: [
+        {
+          source: 'xml:chapter-1#wrapper-2',
+          origin: 'xml',
+          placeName: { text: '鄱陽' },
+          roleName: { text: '王' },
+        },
+      ],
+    });
+    const assertions = listEntityAssertions(doc, id);
+    const authority = assertions.find((a) => a.value === '漢')!;
+    const extracted = assertions.find((a) => a.value.includes('鄱陽'))!;
+    expect(authority.origin).toBe('authority');
+    expect(extracted.origin).toBe('xml');
+    expect(validateEntityAssertion(doc, id, authority.key)).toBe(true);
+    expect(listEntityAssertions(doc, id).find((a) => a.key === authority.key)).toMatchObject({
+      origin: 'user',
+      source: 'CBDB:1',
+      status: 'active',
+    });
+    expect(rejectEntityAssertion(doc, id, extracted.key)).toBe(true);
+    expect(listEntityAssertions(doc, id).find((a) => a.key === extracted.key)).toMatchObject({
+      origin: 'xml',
+      source: 'xml:chapter-1#wrapper-2',
+      status: 'rejected',
+    });
+  });
+
+  it('decouples active authority data but preserves rejected tombstones', () => {
+    const doc = makeDoc();
+    const { id } = addEntity(doc, 'person', {
+      name: '張衡',
+      nationality: [{ id: 'han', canonicalId: 'han', label: '漢', sourceIds: ['CBDB:1'] }],
+    });
+    const assertion = listEntityAssertions(doc, id).find((a) => a.value === '漢')!;
+    rejectEntityAssertion(doc, id, assertion.key);
+    expect(decoupleAuthority(doc, id, { type: 'CBDB', value: '1' })).toBe(0);
+    expect(listEntityAssertions(doc, id).find((a) => a.key === assertion.key)?.status).toBe(
+      'rejected',
+    );
   });
 });
 
@@ -202,7 +255,9 @@ describe('name attributes', () => {
     expect(listEntities(doc)[0]).toMatchObject({
       familyName: '江',
       givenName: null,
-      nameEntries: expect.arrayContaining([expect.objectContaining({ text: '江', type: 'family' })]),
+      nameEntries: expect.arrayContaining([
+        expect.objectContaining({ text: '江', type: 'family' }),
+      ]),
     });
 
     setNameType(doc, id, '祀', 'given');
@@ -386,7 +441,11 @@ describe('mergeEntities', () => {
 
     const { centralConflicts } = mergeEntities(doc, keepEl.id, [dropEl.id]);
     expect(centralConflicts).toEqual([
-      { userStableId: 'user-a', keptCentralId: 'person-central-1', droppedCentralId: 'person-central-2' },
+      {
+        userStableId: 'user-a',
+        keptCentralId: 'person-central-1',
+        droppedCentralId: 'person-central-2',
+      },
     ]);
     const keeper = findEntity(doc, keepEl.id)!;
     expect(getCentralId(keeper, 'user-a')).toBe('person-central-1');
@@ -415,7 +474,11 @@ describe('mergeEntities', () => {
 
     const { centralConflicts } = mergeEntities(doc, keepEl.id, [dropEl.id]);
     expect(centralConflicts).toEqual([
-      { userStableId: 'user-a', keptCentralId: 'person-central-1', droppedCentralId: 'person-central-2' },
+      {
+        userStableId: 'user-a',
+        keptCentralId: 'person-central-1',
+        droppedCentralId: 'person-central-2',
+      },
     ]);
     const keeper = findEntity(doc, keepEl.id)!;
     expect(getCentralId(keeper, 'user-a')).toBe('person-central-1');
@@ -450,12 +513,12 @@ describe('deleteEntity', () => {
 
 describe('normalizeAuthorityValue', () => {
   it('collapses Wikidata URL variants to the Q-id', () => {
-    expect(
-      normalizeAuthorityValue('Wikidata', 'http://www.wikidata.org/entity/Q468747'),
-    ).toBe('Q468747');
-    expect(
-      normalizeAuthorityValue('Wikidata', 'https://www.wikidata.org/wiki/Q468747'),
-    ).toBe('Q468747');
+    expect(normalizeAuthorityValue('Wikidata', 'http://www.wikidata.org/entity/Q468747')).toBe(
+      'Q468747',
+    );
+    expect(normalizeAuthorityValue('Wikidata', 'https://www.wikidata.org/wiki/Q468747')).toBe(
+      'Q468747',
+    );
     expect(normalizeAuthorityValue('Wikidata', 'Q468747')).toBe('Q468747');
   });
 
