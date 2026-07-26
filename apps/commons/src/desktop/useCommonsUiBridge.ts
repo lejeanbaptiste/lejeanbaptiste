@@ -1,10 +1,7 @@
 import { useActions, useAppState } from '@src/overmind';
 import { registerLeafWriterCommonsI18n } from '@src/desktop/registerLeafWriterCommonsI18n';
 import { isDesktop, type AiApiSettings } from '@src/types/desktop';
-import {
-  clearAchievementsCache,
-  importAchievementsState,
-} from '@src/desktop/achievements/store';
+import { clearAchievementsCache } from '@src/desktop/achievements/store';
 import type {
   AuthorityLifecycleRunResult,
   AuthorityLifecycleSetEnabledOptions,
@@ -221,35 +218,6 @@ export const useCommonsUiBridge = () => {
     return picked;
   }, []);
 
-  const importAchievementsFrom = useCallback(async (): Promise<{
-    ok: boolean;
-    cancelled?: boolean;
-    error?: string;
-  }> => {
-    const picked = await window.electronAPI?.pickImportAchievementsFile?.();
-    if (!picked) return { ok: false, cancelled: true };
-
-    const confirmed = await window.electronAPI?.showNativeMessageBox?.({
-      type: 'warning',
-      title: 'Replace local stats?',
-      message: `This replaces all locally-saved stats and rank progress with the contents of:\n${picked}\n\nThis cannot be undone.`,
-      buttons: ['Cancel', 'Replace'],
-      defaultId: 0,
-      cancelId: 0,
-    });
-    if (confirmed?.response !== 1) return { ok: false, cancelled: true };
-
-    const raw = await window.electronAPI?.readAchievementsFileFrom?.(picked);
-    if (!raw) return { ok: false, error: 'Could not read that file.' };
-
-    const imported = importAchievementsState(raw);
-    if (!imported) return { ok: false, error: 'That file is not a valid achievements file.' };
-
-    await window.electronAPI?.writeAchievementsFile?.(JSON.stringify(imported, null, 2));
-    clearAchievementsCache();
-    return { ok: true };
-  }, []);
-
   const setRememberWorkspaceOnStartup = useCallback(async (value: boolean) => {
     setRememberWorkspaceOnStartupState(value);
     await window.electronAPI?.setRememberWorkspaceOnStartup?.(value);
@@ -320,7 +288,6 @@ export const useCommonsUiBridge = () => {
       setSkipEntityDetachConfirm,
       setSkipExplorerDeleteConfirm,
       pickEntityDbFolder,
-      importAchievementsFrom,
       testAiConnection,
       refreshAuthorityLifecycle,
       setAuthorityLifecycleEnabled,
@@ -342,7 +309,6 @@ export const useCommonsUiBridge = () => {
     entityDbFolder,
     rememberWorkspaceOnStartup,
     pickEntityDbFolder,
-    importAchievementsFrom,
     refreshAuthorityLifecycle,
     runAuthorityLifecycleUpdate,
     revealAuthorityLifecycleFolder,

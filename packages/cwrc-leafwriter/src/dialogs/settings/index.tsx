@@ -7,7 +7,16 @@ import { AddCustomAuthority } from '../custom-authority-dialog/add-custom-author
 import type { IDialog } from '../type';
 import { Section } from './components';
 import { Header } from './header';
-import { Authorities, Editor, EntityLookups, MarkupPanel, Profile, Reset, UI } from './sections';
+import {
+  Authorities,
+  Editor,
+  EntityLookups,
+  Guardrails,
+  MarkupPanel,
+  Profile,
+  Reset,
+  UI,
+} from './sections';
 import { DesktopAiApi } from './sections/ui/desktop-ai-api';
 import { SettingsValidationContext } from './settingsValidationContext';
 import { SideMenu } from './side-menu';
@@ -62,6 +71,7 @@ export const SettingsDialog = ({ onClose, open = false }: IDialog) => {
             { id: 'interface', label: t('LW.commons.interface') },
             { id: 'ai-api', label: t('LW.settings.ai_api.title'), hide: !isDesktop },
             { id: 'editor', label: t('LW.commons.editor') },
+            { id: 'guardrails', label: t('LW.settings.guardrails.title') },
             { id: 'authorities', label: t('LW.commons.authorities'), hide: isReadonly },
             { id: 'entityLookups', label: t('LW.commons.entity_types'), hide: isReadonly },
             { id: 'markup-panel', label: t('LW.settings.markupPanel.title'), hide: isReadonly },
@@ -91,6 +101,13 @@ export const SettingsDialog = ({ onClose, open = false }: IDialog) => {
               )}
               <Section id="editor" title={t('LW.commons.editor')}>
                 <Editor />
+              </Section>
+              <Section
+                id="guardrails"
+                title={t('LW.settings.guardrails.title')}
+                description={t('LW.settings.guardrails.description')}
+              >
+                <Guardrails />
               </Section>
               {!isReadonly && (
                 <>

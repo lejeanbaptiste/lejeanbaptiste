@@ -27,7 +27,26 @@
     "autoTagging": {
       "tag_types": "Tag types",
       "tag_types_placeholder": "persName, placeName…",
-      "tag_types_helper": "Pick from the schema or type a tag name."
+      "tag_types_helper": "Pick from the schema or type a tag name.",
+      "tag_bomb_scope": {
+        "label": "Scope",
+        "current_document": "Current document",
+        "open_tabs": "Open tabs",
+        "select_folder": "Select folder…",
+        "entire_corpus": "Entire corpus",
+        "folder_placeholder": "Folder path"
+      },
+      "skip_review": "Skip review (apply matches directly)",
+      "tag_bomb_queue": {
+        "title": "{{count}} document{{count, plural, one {} other {s}}} matched",
+        "review": "Review",
+        "applying": "Applying…",
+        "applied": "Applied {{count}} tag{{count, plural, one {} other {s}}}",
+        "hits": "{{count}} hit{{count, plural, one {} other {s}}}",
+        "resume_title": "Resume tag bomb queue",
+        "resume_body": "{{count}} document{{count, plural, one {} other {s}}} left to review from the last run.",
+        "discard": "Discard queue"
+      }
     },
     "entityLookups": {
       "trigger_search": "Trigger search",
@@ -121,6 +140,18 @@
         "validate_xml_on_replace": "Require well-formed XML for Find & Replace",
         "validate_xml_on_replace_description": "When on, a replace is blocked if it would leave the document's XML not well-formed (e.g. changing an opening tag without its closing tag)."
       },
+      "guardrails": {
+        "title": "Guardrails",
+        "description": "Even if you are an expert, you will make catastrophic mistakes with your corpus. Enable the following protections to avoid that.",
+        "enable_xml_editing": "Enable direct editing of the XML code",
+        "enable_multi_file_automation": "Enable automated edits across multiple files",
+        "snapshot_before": "Automatically save time machine snapshot before:",
+        "snapshot_before_options": {
+          "multiFile": "Applying changes across multiple files",
+          "corpusWide": "Applying changes corpus-wide",
+          "none": "None"
+        }
+      },
       "ai_api": {
         "api_key": "API key",
         "base_url": "Base URL",
@@ -182,19 +213,12 @@
     },
     "desktop": {
       "settings": {
-        "achievements_storage": "Stats",
-        "achievements_storage_hint": "Your stats live inside your entity database folder, so syncing that folder (e.g. via Dropbox or iCloud) carries your stats along automatically. Stored encrypted.",
-        "achievements_import": "Load from another file…",
-        "achievements_import_hint": "Replaces all local stats and rank progress with the contents of a file you pick. Cannot be undone.",
         "entity_database": "Entity database",
         "entity_database_change": "Choose existing…",
-        "entity_database_change_hint": "Point to an entity database that already exists on disk (e.g. synced from another machine via Dropbox or iCloud) instead of the current one. Nothing is moved or copied.",
         "entity_database_change_success": "Now using the chosen entity database.",
         "entity_database_folder": "Database folder",
-        "entity_database_hint": "Your entity database folder holds entities.xml, authority packs, and raw authority downloads.",
         "entity_database_missing": "No entity database folder is configured. Disambiguation is blocked until you choose one.",
         "entity_database_move": "Move…",
-        "entity_database_move_hint": "Relocate the entire database to another folder (e.g. Dropbox or iCloud). All files move with it; the old folder is removed after success.",
         "entity_database_move_success": "Entity database moved.",
         "entity_database_move_error": "Could not move the entity database.",
         "entity_database_reveal": "Reveal in file browser",

@@ -67,6 +67,14 @@ declare global {
       getProjectSourceLanguage?: () => Promise<string | null>;
       /** Signed year (negative = BCE) from the active file's profileDesc/creation/date, or null if unset/no file. */
       getActiveFileWorkYear?: () => number | null;
+      /** Every open editor tab, for `openTabs`-scoped tag bomb runs. */
+      getOpenTabs?: () => { filePath: string; content: string }[];
+      /** Re-read `filePath` from disk into its open tab, if any, after a direct (skip-review) write. */
+      reloadFileFromDisk?: (filePath: string) => Promise<void>;
+      /** Open (or switch to) `filePath` as the active editor tab. */
+      openFile?: (filePath: string) => Promise<void>;
+      /** Guardrail hook: snapshot the project before a multi-document automated edit (tag bomb, purge, propagate). */
+      createTimeMachineSnapshot?: (label?: string) => Promise<{ ok: boolean; path?: string }>;
       getAutoTaggingAuthoritySettings: () => AutoTaggingAuthoritySettings | undefined;
       setAutoTaggingAuthoritySettings: (settings: AutoTaggingAuthoritySettings) => void;
       getAutoTaggingValidationSettings: () => AutoTaggingValidationSettings | undefined;
@@ -122,7 +130,7 @@ export const useNativeDialogBridge = () => {
   const { activeTabPath, config, openTabs, projectFilePath, rootPath } = useAppState().project;
   const { setSkipCopyPasteHelp, setSkipExplorerDeleteConfirm, setThemeAppearance, switchLanguage, notifyViaSnackbar } =
     useActions().ui;
-  const { reloadTabFromDisk } = useActions().project;
+  const { openFile, reloadTabFromDisk } = useActions().project;
   const [leafWriter] = useAtom(leafwriterAtom);
   const authoritySettingsCache = useRef<AutoTaggingAuthoritySettings | undefined>(undefined);
   const validationSettingsCache = useRef<AutoTaggingValidationSettings | undefined>(undefined);
@@ -171,6 +179,27 @@ export const useNativeDialogBridge = () => {
         const { workDate } = readSourceDescriptionFromXml(xml);
         return parseIsoYear(workDate.when) ?? parseIsoYear(workDate.notBefore);
       },
+      getOpenTabs: () =>
+        openTabsRef.current.map((tab) => ({ filePath: tab.filePath, content: tab.content })),
+      reloadFileFromDisk: async (filePath) => {
+        if (openTabsRef.current.some((tab) => tab.filePath === filePath)) {
+          await reloadTabFromDisk(filePath);
+        }
+      },
+      openFile: (filePath) => openFile(filePath),
+      createTimeMachineSnapshot: async (label) => {
+        if (!rootPath || !window.electronAPI) return { ok: false };
+        try {
+          const snapshot = await window.electronAPI.createTimeMachineSnapshot(
+            rootPath,
+            label ?? 'auto',
+          );
+          notifyViaSnackbar({ message: t('LWC.desktop.time_machine.snapshot_created') });
+          return { ok: true, path: snapshot.path };
+        } catch {
+          return { ok: false };
+        }
+      },
       getAutoTaggingAuthoritySettings: () =>
         authoritySettingsCache.current ?? config.autoTaggingAuthority,
       setAutoTaggingAuthoritySettings: (settings) => {
@@ -190,7 +219,7 @@ export const useNativeDialogBridge = () => {
     return () => {
       delete window.__leafWriterProject;
     };
-  }, [rootPath, projectFilePath, config]);
+  }, [rootPath, projectFilePath, config, openFile, reloadTabFromDisk, notifyViaSnackbar, t]);
 
   useEffect(() => {
     if (!isDesktop()) return;

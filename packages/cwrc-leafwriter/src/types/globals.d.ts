@@ -201,6 +201,14 @@ declare global {
       getProjectSourceLanguage?: () => Promise<string | null>;
       /** Signed year (negative = BCE) from the active file's profileDesc/creation/date, or null if unset/no file. */
       getActiveFileWorkYear?: () => number | null;
+      /** Every open editor tab, for `openTabs`-scoped tag bomb runs. */
+      getOpenTabs?: () => { filePath: string; content: string }[];
+      /** Re-read `filePath` from disk into its open tab, if any, after a direct (skip-review) write. */
+      reloadFileFromDisk?: (filePath: string) => Promise<void>;
+      /** Open (or switch to) `filePath` as the active editor tab. */
+      openFile?: (filePath: string) => Promise<void>;
+      /** Guardrail hook: snapshot the project before a multi-document automated edit (tag bomb, purge, propagate). */
+      createTimeMachineSnapshot?: (label?: string) => Promise<{ ok: boolean; path?: string }>;
       getAutoTaggingAuthoritySettings: () =>
         | {
             packs?: string[];

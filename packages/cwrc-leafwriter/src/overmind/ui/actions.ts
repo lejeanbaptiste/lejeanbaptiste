@@ -502,6 +502,7 @@ export const clearSourcePendingCursorOffset = ({ state }: Context) => {
 };
 
 export const enterSourceMode = async ({ state, actions }: Context) => {
+  if (!state.editor.enableXmlEditing) return;
   const visualCaret = getVisualCaretForSourceSync();
   const content = await resolveSourceEditorContent(state);
   if (!content) return;

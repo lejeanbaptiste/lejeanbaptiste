@@ -17,7 +17,7 @@ const isDesktopApp = () =>
   typeof window !== 'undefined' && !!(window as Window & { electronAPI?: unknown }).electronAPI;
 
 export const BottomBar = () => {
-  const { isReadonly } = useAppState().editor;
+  const { enableXmlEditing, isReadonly } = useAppState().editor;
   const { validationErrors } = useAppState().validator;
   const { t } = useTranslation();
   const version = pck.version;
@@ -39,12 +39,12 @@ export const BottomBar = () => {
             <EditorMode />
             <AnnotationMode />
             <Schema />
-            <SourceView />
+            {enableXmlEditing && <SourceView />}
             <EditorZoomControls />
           </>
         )}
 
-        {validationErrors > 0 && !isReadonly && <ValdidationErrors />}
+        {validationErrors > 0 && !isReadonly && enableXmlEditing && <ValdidationErrors />}
 
         <Box flexGrow={1} />
 

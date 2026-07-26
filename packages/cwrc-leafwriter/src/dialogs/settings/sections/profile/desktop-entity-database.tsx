@@ -73,7 +73,11 @@ export const DesktopEntityDatabase = () => {
   };
 
   return (
-    <ListItem dense disableGutters sx={{ alignItems: 'flex-start', flexDirection: 'column', py: 0.5 }}>
+    <ListItem
+      dense
+      disableGutters
+      sx={{ alignItems: 'flex-start', flexDirection: 'column', py: 0.5 }}
+    >
       <Typography color="text.secondary" sx={{ mb: 0.75 }} variant="caption">
         {t('LW.desktop.settings.entity_database')}
       </Typography>
@@ -85,7 +89,6 @@ export const DesktopEntityDatabase = () => {
           label={t('LW.desktop.settings.entity_database_folder')}
           size="small"
           value={entityDbFolder ?? ''}
-          helperText={t('LW.desktop.settings.entity_database_hint')}
         />
         <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 1 }}>
           <Button
@@ -112,12 +115,6 @@ export const DesktopEntityDatabase = () => {
             {t('LW.desktop.settings.entity_database_change')}
           </Button>
         </Box>
-        <Typography color="text.secondary" variant="caption" component="p">
-          {t('LW.desktop.settings.entity_database_move_hint')}
-        </Typography>
-        <Typography color="text.secondary" variant="caption" component="p">
-          {t('LW.desktop.settings.entity_database_change_hint')}
-        </Typography>
         {moveSuccess && (
           <Typography color="success.main" variant="caption" component="p">
             {t('LW.desktop.settings.entity_database_move_success')}

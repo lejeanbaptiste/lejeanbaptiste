@@ -258,9 +258,9 @@ export interface ElectronAPI {
   deleteSourceProfile?: (
     profileId: string,
   ) => Promise<import('../desktop/sourceProfileTypes').SourceProfileFile>;
-  pickImportAchievementsFile?: () => Promise<string | null>;
-  readAchievementsFileFrom?: (filePath: string) => Promise<string | null>;
-  getGameAssetColorStats?: (key: string) => Promise<{ lightness: number; saturation: number } | null>;
+  getGameAssetColorStats?: (
+    key: string,
+  ) => Promise<{ lightness: number; saturation: number } | null>;
   saveCertificatePng?: (bytes: Uint8Array, suggestedName: string) => Promise<boolean>;
   getCachedLeaderboardToken?: () => Promise<string | null>;
   startLeaderboardDeviceFlow?: () => Promise<{
@@ -444,7 +444,6 @@ declare global {
         error?: string;
         folder?: string;
       }>;
-      importAchievementsFrom: () => Promise<{ ok: boolean; cancelled?: boolean; error?: string }>;
       setAiApiSettings: (settings: Partial<AiApiSettings>) => void | Promise<void>;
       setEncoderName: (name: string) => void | Promise<void>;
       setRememberWorkspaceOnStartup: (value: boolean) => void | Promise<void>;
