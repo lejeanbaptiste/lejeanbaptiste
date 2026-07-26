@@ -1,12 +1,15 @@
 import AddIcon from '@mui/icons-material/Add';
+import RefreshIcon from '@mui/icons-material/Refresh';
 import { Box, IconButton, Typography } from '@mui/material';
 import { useTranslation } from 'react-i18next';
 
 interface HeaderProps {
   onClickAdd: (action: 'add') => void;
+  onClickRefresh: () => void;
+  refreshDisabled?: boolean;
 }
 
-export const Header = ({ onClickAdd }: HeaderProps) => {
+export const Header = ({ onClickAdd, onClickRefresh, refreshDisabled }: HeaderProps) => {
   const { t } = useTranslation();
 
   return (
@@ -23,13 +26,23 @@ export const Header = ({ onClickAdd }: HeaderProps) => {
       <Typography sx={{ cursor: 'default', textTransform: 'capitalize' }} variant="caption">
         {t('LW.commons.schemas')}
       </Typography>
-      <IconButton
-        aria-label={t('LW.commons.add').toString()}
-        onClick={() => onClickAdd('add')}
-        size="small"
-      >
-        <AddIcon sx={{ height: 12, width: 12 }} />
-      </IconButton>
+      <Box display="flex" gap={0.25}>
+        <IconButton
+          aria-label={t('LW.commons.refresh').toString()}
+          disabled={refreshDisabled}
+          onClick={onClickRefresh}
+          size="small"
+        >
+          <RefreshIcon sx={{ height: 12, width: 12 }} />
+        </IconButton>
+        <IconButton
+          aria-label={t('LW.commons.add').toString()}
+          onClick={() => onClickAdd('add')}
+          size="small"
+        >
+          <AddIcon sx={{ height: 12, width: 12 }} />
+        </IconButton>
+      </Box>
     </Box>
   );
 };

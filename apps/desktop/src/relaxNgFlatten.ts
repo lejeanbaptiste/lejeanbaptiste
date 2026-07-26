@@ -16,6 +16,40 @@ const findDirectDefine = (parent: Element, name: string): Element | null =>
     (el) => el.tagName.toLowerCase() === 'define' && el.getAttribute('name') === name,
   ) ?? null;
 
+/** Apply RelaxNG's `combine="choice"` to a flattened duplicate define. */
+const mergeChoiceDefine = (existing: Element, incoming: Element): void => {
+  const incomingChildren = directChildElements(incoming);
+  let choice = directChildElements(existing).find(
+    (el) => el.tagName.toLowerCase() === 'choice',
+  );
+
+  if (!choice) {
+    choice = existing.ownerDocument!.createElement('choice');
+    const priorChildren = directChildElements(existing);
+    for (const child of priorChildren) choice.appendChild(child.cloneNode(true));
+    for (const child of priorChildren) existing.removeChild(child);
+    existing.appendChild(choice);
+  }
+
+  for (const child of incomingChildren) {
+    choice.appendChild(existing.ownerDocument!.importNode(child, true));
+  }
+  existing.removeAttribute('combine');
+};
+
+const mergeDefine = (parent: Element, incoming: Element): void => {
+  const name = incoming.getAttribute('name');
+  const existing = name ? findDirectDefine(parent, name) : null;
+  if (existing && incoming.getAttribute('combine') === 'choice') {
+    mergeChoiceDefine(existing, incoming);
+    return;
+  }
+
+  const clone = incoming.ownerDocument!.importNode(incoming, true);
+  if (existing) existing.parentNode!.replaceChild(clone, existing);
+  else parent.appendChild(clone);
+};
+
 const mergeChildIntoGrammar = (targetGrammar: Element, child: Element): void => {
   const tag = child.tagName.toLowerCase();
   if (tag === 'start') {
@@ -26,11 +60,7 @@ const mergeChildIntoGrammar = (targetGrammar: Element, child: Element): void => 
     return;
   }
   if (tag === 'define') {
-    const name = child.getAttribute('name');
-    const existing = name ? findDirectDefine(targetGrammar, name) : null;
-    const clone = child.cloneNode(true);
-    if (existing) existing.parentNode!.replaceChild(clone, existing);
-    else targetGrammar.appendChild(clone);
+    mergeDefine(targetGrammar, child);
   }
 };
 
@@ -72,11 +102,7 @@ const flattenGrammarIncludes = (
         if (existingStart) existingStart.parentNode!.replaceChild(imported, existingStart);
         else includeGrammar.appendChild(imported);
       } else if (tag === 'define') {
-        const name = overrideChild.getAttribute('name');
-        const existingDefine = name ? findDirectDefine(includeGrammar, name) : null;
-        const imported = includeDoc.importNode(overrideChild, true);
-        if (existingDefine) existingDefine.parentNode!.replaceChild(imported, existingDefine);
-        else includeGrammar.appendChild(imported);
+        mergeDefine(includeGrammar, overrideChild);
       }
     }
 

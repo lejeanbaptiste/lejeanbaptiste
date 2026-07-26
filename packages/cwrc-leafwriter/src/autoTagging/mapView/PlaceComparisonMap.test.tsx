@@ -111,6 +111,37 @@ describe('PlaceComparisonMap', () => {
     expect(mockJumpTo).not.toHaveBeenCalled();
   });
 
+  it('refreshes the rendered markers when the pins change while the dialog stays open', async () => {
+    const { rerender } = render(
+      <PlaceComparisonMap open pins={[makePin({ id: 'a' })]} title="Single place" onClose={jest.fn()} />,
+    );
+    await act(async () => {
+      onLoadCallback?.();
+      await Promise.resolve();
+    });
+
+    await act(async () => {
+      rerender(
+        <PlaceComparisonMap
+          open
+          pins={[makePin({ id: 'a' }), makePin({ id: 'b', lat: 39.9, lon: 116.4 })]}
+          title="Two places"
+          onClose={jest.fn()}
+        />,
+      );
+      await Promise.resolve();
+    });
+    await act(async () => {
+      onLoadCallback?.();
+      await Promise.resolve();
+    });
+
+    expect(mockRemove).toHaveBeenCalledTimes(1);
+    expect(mockSetLngLat).toHaveBeenCalledTimes(3);
+    expect(mockAddTo).toHaveBeenCalledTimes(3);
+    expect(mockFitBounds).toHaveBeenCalledTimes(1);
+  });
+
   it('jumps to the single pin instead of fitting bounds when there is only one', () => {
     render(<PlaceComparisonMap open pins={[makePin()]} title="Single place" onClose={jest.fn()} />);
 
@@ -152,9 +183,10 @@ describe('PlaceComparisonMap', () => {
     };
 
     render(<PlaceComparisonMap open pins={[makePin()]} title="Single place" onClose={jest.fn()} />);
-    onLoadCallback?.();
-
-    await new Promise((resolve) => setTimeout(resolve, 0));
+    await act(async () => {
+      onLoadCallback?.();
+      await Promise.resolve();
+    });
 
     expect(mockSetStyle).toHaveBeenCalledTimes(1);
     const [style] = mockSetStyle.mock.calls[0];
@@ -167,9 +199,10 @@ describe('PlaceComparisonMap', () => {
     };
 
     render(<PlaceComparisonMap open pins={[makePin()]} title="Single place" onClose={jest.fn()} />);
-    onLoadCallback?.();
-
-    await new Promise((resolve) => setTimeout(resolve, 0));
+    await act(async () => {
+      onLoadCallback?.();
+      await Promise.resolve();
+    });
 
     expect(mockSetStyle).not.toHaveBeenCalled();
     expect(screen.getByText(/isn't downloaded/)).toBeTruthy();
@@ -185,8 +218,10 @@ describe('PlaceComparisonMap', () => {
     };
 
     render(<PlaceComparisonMap open pins={[makePin()]} title="Single place" onClose={jest.fn()} />);
-    onLoadCallback?.();
-    await new Promise((resolve) => setTimeout(resolve, 0));
+    await act(async () => {
+      onLoadCallback?.();
+      await Promise.resolve();
+    });
 
     expect(screen.queryByText(/isn't downloaded/)).toBeNull();
   });
@@ -201,8 +236,10 @@ describe('PlaceComparisonMap', () => {
     };
 
     render(<PlaceComparisonMap open pins={[makePin()]} title="Single place" onClose={jest.fn()} />);
-    onLoadCallback?.();
-    await new Promise((resolve) => setTimeout(resolve, 0));
+    await act(async () => {
+      onLoadCallback?.();
+      await Promise.resolve();
+    });
     expect(screen.queryByText(/isn't downloaded/)).toBeNull();
 
     // Pan to the middle of the Atlantic — outside every registered bundle.

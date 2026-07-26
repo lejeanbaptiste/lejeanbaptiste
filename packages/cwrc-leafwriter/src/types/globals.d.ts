@@ -69,6 +69,13 @@ declare global {
       title: string;
       type?: 'error' | 'info' | 'none' | 'question' | 'warning';
     }) => Promise<{ response: number; checkboxChecked: boolean }>;
+    reloadProjectBundle?: (
+      projectFilePath: string,
+    ) => Promise<import('../../../../apps/commons/src/desktop/projectTypes').ProjectBundle | null>;
+    installCatalogSchema?: (
+      projectFilePath: string,
+      catalogId: string,
+    ) => Promise<import('../../../../apps/commons/src/desktop/projectTypes').ProjectBundle>;
     updateProjectFileConfig?: (
       projectFilePath: string,
       patch: Record<string, unknown>,
