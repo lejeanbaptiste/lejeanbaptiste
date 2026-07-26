@@ -177,6 +177,7 @@ See [apps/desktop/README.md](apps/desktop/README.md) for the compilation and pac
 - [ ] Build document stats window with list of people, map of places, etc.
 - [ ] Official titles dictionaries, dates dictionaries for hover-over
 - [ ] Word plugin to handle names and dates correctly while centralising data.
+- [ ] Regional PMTiles download/cache flow for maps (see [map-tiles-planning.md](docs/map-tiles-planning.md))
 
 ## Future goals
 

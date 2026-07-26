@@ -33,6 +33,14 @@ export interface MapTileBundleSpec {
   sha256: string;
 }
 
+export function isConfiguredMapTileBundle(bundle: MapTileBundleSpec): boolean {
+  return (
+    !bundle.url.includes('TODO-replace-with-real-hosted-url') &&
+    bundle.bytes > 0 &&
+    !/^0+$/.test(bundle.sha256)
+  );
+}
+
 // TODO(map-tiles): replace url/bytes/sha256 with real values once each region
 // has actually been extracted and hosted — see the module doc comment above.
 //

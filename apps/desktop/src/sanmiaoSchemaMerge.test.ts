@@ -23,6 +23,7 @@ const SAMPLE_TEI_DATE = `
 const MINIMAL_TEI = `<?xml version="1.0"?>
 <grammar xmlns="http://relaxng.org/ns/structure/1.0">
   <a:documentation xmlns:a="http://relaxng.org/ns/compatibility/annotations/1.0">TEI Edition: P5 Version 4.9.0</a:documentation>
+  <define name="model.phrase"><choice><ref name="persName"/><ref name="date"/></choice></define>
   ${SAMPLE_TEI_DATE}
   <define name="persName"><element name="persName"/></define>
 </grammar>`;
@@ -59,6 +60,8 @@ describe('sanmiaoSchemaMerge', () => {
     expect(merged.flatRng).toContain('ref name="att.datable.attributes"');
     expect(merged.flatRng).toContain('ljb.sanmiao.date.parts');
     expect(merged.flatRng).toContain('<define name="ljb.sanmiao.date.parts">');
+    expect(merged.flatRng).toContain('ref name="persName"');
+    expect(merged.flatRng).toContain('ref name="ljb.nobleTitle"');
     expect(merged.flatRng).toContain('persName');
     expect(isFlatRelaxNgGrammar(merged.flatRng)).toBe(true);
     expect(isSanmiaoMergedWrapper(merged.flatRng)).toBe(true);

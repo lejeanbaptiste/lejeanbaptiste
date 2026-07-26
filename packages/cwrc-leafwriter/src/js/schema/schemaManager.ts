@@ -132,7 +132,16 @@ class SchemaManager {
   static revisionFromRngContent(rngContent: string): string {
     const mergeVersion = rngContent.match(/ljb-sanmiao-merge v\d+/i)?.[0];
     if (mergeVersion) return mergeVersion.toLowerCase();
-    return rngContent.slice(0, 4096);
+
+    // Use a whole-file fingerprint so changes later in large TEI RNG files
+    // still invalidate the validator worker cache.
+    let hash = 2166136261;
+    for (let i = 0; i < rngContent.length; i++) {
+      hash ^= rngContent.charCodeAt(i);
+      hash = Math.imul(hash, 16777619);
+    }
+
+    return `rng-${rngContent.length.toString(16)}-${(hash >>> 0).toString(16).padStart(8, '0')}`;
   }
 
   async revisionForRngUrl(rngUrl: string): Promise<string | null> {

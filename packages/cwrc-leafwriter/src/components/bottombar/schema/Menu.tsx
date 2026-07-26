@@ -25,6 +25,7 @@ export const Menu = ({ anchorEl, handleClose }: MenuProps) => {
   const { t } = useTranslation();
 
   const { changeSchema, schemaShouldChange } = useEditorReaction();
+  const projectFilePath = window.__leafWriterProject?.getProjectFilePath?.();
 
   const open = Boolean(anchorEl);
 
@@ -100,6 +101,67 @@ export const Menu = ({ anchorEl, handleClose }: MenuProps) => {
     });
   };
 
+  const handleRefreshSchema = async () => {
+    handleClose();
+    if (!projectFilePath) return;
+    if (!window.electronAPI?.installCatalogSchema) {
+      notifyViaSnackbar({
+        message: 'Schema refresh is unavailable in this environment.',
+        options: { variant: 'warning' },
+      });
+      return;
+    }
+
+    try {
+      const reloadedBundle = await window.electronAPI.reloadProjectBundle?.(projectFilePath);
+      const currentSchemaCatalogId = reloadedBundle?.config.schema?.catalogId;
+      if (!currentSchemaCatalogId) {
+        notifyViaSnackbar({
+          message: 'This project does not use a catalog schema, so there is nothing to refresh.',
+          options: { variant: 'warning' },
+        });
+        return;
+      }
+
+      const updatedBundle = await window.electronAPI.installCatalogSchema(
+        projectFilePath,
+        currentSchemaCatalogId,
+      );
+
+      // Re-register the project schema so the renderer sees the refreshed
+      // on-disk file, then force the validator worker to discard its blob.
+      await window.writer?.overmindActions?.project?.refreshProjectSchemaConfig?.(updatedBundle);
+      await window.writer?.overmindActions?.validator?.clearCache?.();
+
+      const currentSchemaId = window.writer?.schemaManager?.getCurrentSchema?.()?.id;
+      if (currentSchemaId) {
+        const refreshedSchema = window.writer?.schemaManager?.getCurrentSchema?.();
+        const refreshedRng = refreshedSchema?.rng?.[0];
+        const refreshedCss = refreshedSchema?.css?.[0];
+        if (refreshedRng) {
+          // Do not let an old document xml-model processing instruction win
+          // over the project's freshly installed catalog schema.
+          window.writer.schemaManager.setDocumentSchemaUrl(refreshedRng);
+        }
+        if (refreshedCss) window.writer.schemaManager.setDocumentCssUrl(refreshedCss);
+        await window.writer?.schemaManager?.loadSchema?.(currentSchemaId);
+      }
+
+      await window.writer?.overmindActions?.validator?.validate?.();
+
+      notifyViaSnackbar({
+        message: 'Schema refreshed successfully.',
+        options: { variant: 'success' },
+      });
+    } catch (error) {
+      console.error('[schema-menu] refresh failed:', error);
+      notifyViaSnackbar({
+        message: 'Schema refresh failed.',
+        options: { variant: 'error' },
+      });
+    }
+  };
+
   const handleUndo = (snackbarKey: SnackbarKey, previousValue: string) => {
     closeNotificationSnackbar(snackbarKey);
     const response = changeSchema({ value: previousValue, isUndo: true });
@@ -122,7 +184,11 @@ export const Menu = ({ anchorEl, handleClose }: MenuProps) => {
       }}
       transformOrigin={{ horizontal: 'left', vertical: 'bottom' }}
     >
-      <Header onClickAdd={handleOpenEditSchemaDialog} />
+      <Header
+        onClickAdd={handleOpenEditSchemaDialog}
+        onClickRefresh={() => void handleRefreshSchema()}
+        refreshDisabled={!projectFilePath}
+      />
       {editor.schemasList.map(({ id, name, editable }) => (
         <ListItem
           key={id}

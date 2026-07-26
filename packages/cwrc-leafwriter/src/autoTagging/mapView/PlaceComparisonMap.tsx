@@ -195,8 +195,7 @@ export function PlaceComparisonMap({ open, onClose, pins, title }: PlaceComparis
       map.remove();
       mapRef.current = null;
     };
-    // eslint-disable-next-line react-hooks/exhaustive-deps -- pins/title only need to seed the map on open
-  }, [open, container]);
+  }, [open, container, pins]);
 
   return (
     <Dialog open={open} onClose={onClose} maxWidth="md" fullWidth>

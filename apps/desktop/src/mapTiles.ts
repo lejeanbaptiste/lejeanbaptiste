@@ -27,6 +27,7 @@ import path from 'node:path';
 import { Readable } from 'node:stream';
 import { pipeline } from 'node:stream/promises';
 import zlib from 'node:zlib';
+import { fileURLToPath } from 'node:url';
 import { protocol } from 'electron';
 import { Compression, PMTiles, type Source } from 'pmtiles';
 
@@ -40,6 +41,7 @@ export const MAP_TILES_DIRNAME = 'map-tiles';
 const MAP_TILES_MANIFEST_FILENAME = 'map-tiles.manifest.json';
 const MAX_MAP_TILE_BUNDLE_BYTES = 500 * 1024 * 1024;
 const DOWNLOAD_TIMEOUT_MS = 30 * 60 * 1000;
+const MAP_TILES_SOURCE_DIR_ENV = 'LEAFWRITER_MAP_TILES_SOURCE_DIR';
 
 export interface MapTileBundleSpec {
   /** Stable id for this regional bundle, e.g. "china". Also the tile URL's host segment. */
@@ -142,6 +144,12 @@ const downloadToFile = async (
   onChunk?: (receivedBytes: number, totalBytes: number | null) => void,
   maxBytes = MAX_MAP_TILE_BUNDLE_BYTES,
 ): Promise<void> => {
+  const sourcePath = resolveLocalMapTileSourcePath(url);
+  if (sourcePath) {
+    await copyFileToPath(sourcePath, destPath, onChunk, maxBytes);
+    return;
+  }
+
   const response = await fetch(url, { signal: AbortSignal.timeout(DOWNLOAD_TIMEOUT_MS) });
   if (!response.ok || !response.body) {
     throw new Error(`HTTP ${response.status} downloading ${url}`);
@@ -168,12 +176,67 @@ const downloadToFile = async (
   );
 };
 
+const resolveLocalMapTileSourcePath = (source: string): string | null => {
+  const stagedDir = process.env[MAP_TILES_SOURCE_DIR_ENV]?.trim();
+  if (stagedDir) {
+    const stagedPath = path.join(stagedDir, path.basename(source));
+    if (fs.existsSync(stagedPath)) return stagedPath;
+  }
+
+  try {
+    const parsed = new URL(source);
+    if (parsed.protocol === 'file:') {
+      const filePath = fileURLToPath(parsed);
+      if (fs.existsSync(filePath)) return filePath;
+    }
+  } catch {
+    if (path.isAbsolute(source) && fs.existsSync(source)) return source;
+  }
+
+  return null;
+};
+
+const copyFileToPath = async (
+  sourcePath: string,
+  destPath: string,
+  onChunk?: (receivedBytes: number, totalBytes: number | null) => void,
+  maxBytes = MAX_MAP_TILE_BUNDLE_BYTES,
+): Promise<void> => {
+  const totalBytes = (await fsp.stat(sourcePath)).size;
+  if (totalBytes > maxBytes) {
+    throw new Error(`Download exceeds the ${maxBytes} byte limit.`);
+  }
+
+  let receivedBytes = 0;
+  await pipeline(
+    fs.createReadStream(sourcePath),
+    async function* (chunks) {
+      for await (const chunk of chunks) {
+        receivedBytes += (chunk as Buffer).length;
+        if (receivedBytes > maxBytes) throw new Error(`Download exceeds the ${maxBytes} byte limit.`);
+        onChunk?.(receivedBytes, totalBytes);
+        yield chunk;
+      }
+    },
+    fs.createWriteStream(destPath),
+  );
+};
+
 export interface InstallMapTileBundleOptions {
   mapTilesDir: string;
   bundle: MapTileBundleSpec;
   force?: boolean;
   onProgress?: (message: string, receivedBytes?: number, totalBytes?: number | null) => void;
 }
+
+export const isConfiguredMapTileBundle = (bundle: MapTileBundleSpec): boolean => {
+  const sourcePath = resolveLocalMapTileSourcePath(bundle.url);
+  return (
+    (sourcePath !== null || !bundle.url.includes('TODO-replace-with-real-hosted-url')) &&
+    bundle.bytes > 0 &&
+    !/^0+$/.test(bundle.sha256)
+  );
+};
 
 /** Download the bundle's .pmtiles file, verify its checksum, and install it atomically. */
 export const installMapTileBundle = async ({
@@ -182,6 +245,9 @@ export const installMapTileBundle = async ({
   force = false,
   onProgress,
 }: InstallMapTileBundleOptions): Promise<{ installed: boolean; path: string }> => {
+  if (!isConfiguredMapTileBundle(bundle)) {
+    throw new Error(`Map tile bundle "${bundle.id}" has not been configured yet.`);
+  }
   const destPath = mapTileBundlePath(mapTilesDir, bundle);
   if (!force && (await mapTileBundleInstalled(mapTilesDir, bundle)) && fs.existsSync(destPath)) {
     return { installed: false, path: destPath };
@@ -194,12 +260,22 @@ export const installMapTileBundle = async ({
   const tempPath = `${destPath}.download`;
 
   onProgress?.(`Downloading ${bundle.fileName}…`, 0, bundle.bytes);
-  await downloadToFile(
-    bundle.url,
-    tempPath,
-    (received, total) => onProgress?.('Downloading map tiles…', received, total ?? bundle.bytes),
-    Math.min(MAX_MAP_TILE_BUNDLE_BYTES, bundle.bytes + 8 * 1024 * 1024),
-  );
+  const sourcePath = resolveLocalMapTileSourcePath(bundle.url);
+  if (sourcePath) {
+    await copyFileToPath(
+      sourcePath,
+      tempPath,
+      (received, total) => onProgress?.('Copying map tiles…', received, total ?? bundle.bytes),
+      Math.min(MAX_MAP_TILE_BUNDLE_BYTES, bundle.bytes + 8 * 1024 * 1024),
+    );
+  } else {
+    await downloadToFile(
+      bundle.url,
+      tempPath,
+      (received, total) => onProgress?.('Downloading map tiles…', received, total ?? bundle.bytes),
+      Math.min(MAX_MAP_TILE_BUNDLE_BYTES, bundle.bytes + 8 * 1024 * 1024),
+    );
+  }
 
   onProgress?.('Verifying download…');
   const digest = await sha256File(tempPath);

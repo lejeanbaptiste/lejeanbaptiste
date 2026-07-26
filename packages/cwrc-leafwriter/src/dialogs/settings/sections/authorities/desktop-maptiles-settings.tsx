@@ -1,6 +1,7 @@
 import { Alert, Box, Button, LinearProgress, ListItem, Stack, Typography } from '@mui/material';
 import { useCallback, useEffect, useState } from 'react';
 import {
+  isConfiguredMapTileBundle,
   REGIONAL_BUNDLES,
   type MapTileBundleSpec,
 } from '../../../../autoTagging/mapView/regionalBundles';
@@ -73,6 +74,7 @@ export const DesktopMapTilesSettings = () => {
         {REGIONAL_BUNDLES.map((bundle) => {
           const installed = regions.find((r) => r.id === bundle.id);
           const working = busyId === bundle.id;
+          const configured = isConfiguredMapTileBundle(bundle);
           return (
             <Stack key={bundle.id} spacing={0.5}>
               <Stack direction="row" spacing={1} alignItems="center">
@@ -87,10 +89,10 @@ export const DesktopMapTilesSettings = () => {
                 <Button
                   size="small"
                   variant={installed ? 'outlined' : 'contained'}
-                  disabled={working}
+                  disabled={working || !configured}
                   onClick={() => void handleDownload(bundle)}
                 >
-                  {installed ? 'Re-download' : 'Download'}
+                  {installed ? 'Re-download' : configured ? 'Download' : 'Not configured'}
                 </Button>
                 {installed && (
                   <Button
@@ -104,6 +106,11 @@ export const DesktopMapTilesSettings = () => {
                   </Button>
                 )}
               </Stack>
+              {!configured && (
+                <Typography variant="caption" color="text.secondary">
+                  This bundle still needs real host, size, and checksum metadata.
+                </Typography>
+              )}
               {working && progressMessage && (
                 <Box>
                   <LinearProgress />

@@ -6,6 +6,7 @@ import path from 'node:path';
 import {
   installMapTileBundle,
   listInstalledMapTileRegions,
+  isConfiguredMapTileBundle,
   mapTileBundleInstalled,
   mapTileBundlePath,
   mapTilesManifestPath,
@@ -150,6 +151,57 @@ describe('mapTiles', () => {
 
     await expect(installMapTileBundle({ mapTilesDir: tempDir, bundle })).rejects.toThrow('exceeds the');
     expect(global.fetch).not.toHaveBeenCalled();
+  });
+
+  it('rejects placeholder bundle metadata before attempting a network fetch', async () => {
+    const bundle = makeBundle({
+      id: 'china',
+      url: 'https://TODO-replace-with-real-hosted-url/china.pmtiles',
+      bytes: 0,
+      sha256: '0'.repeat(64),
+    });
+    global.fetch = jest.fn();
+
+    expect(isConfiguredMapTileBundle(bundle)).toBe(false);
+    await expect(installMapTileBundle({ mapTilesDir: tempDir, bundle })).rejects.toThrow(
+      'has not been configured yet',
+    );
+    expect(global.fetch).not.toHaveBeenCalled();
+  });
+
+  it('copies a staged local pmtiles file when the source directory override is set', async () => {
+    const sourceDir = await fs.mkdtemp(path.join(os.tmpdir(), 'map-tiles-source-'));
+    const contents = 'staged china pmtiles bytes';
+    const sourcePath = path.join(sourceDir, 'china.pmtiles');
+    await fs.writeFile(sourcePath, contents, 'utf-8');
+
+    const bundle = makeBundle({
+      id: 'china',
+      url: 'https://TODO-replace-with-real-hosted-url/china.pmtiles',
+      fileName: 'china.pmtiles',
+      bytes: contents.length,
+      sha256: sha256(contents),
+    });
+
+    const originalSourceDir = process.env.LEAFWRITER_MAP_TILES_SOURCE_DIR;
+    process.env.LEAFWRITER_MAP_TILES_SOURCE_DIR = sourceDir;
+    global.fetch = jest.fn();
+
+    try {
+      expect(isConfiguredMapTileBundle(bundle)).toBe(true);
+      const result = await installMapTileBundle({ mapTilesDir: tempDir, bundle });
+
+      expect(result.installed).toBe(true);
+      expect(await fs.readFile(result.path, 'utf-8')).toBe(contents);
+      expect(global.fetch).not.toHaveBeenCalled();
+    } finally {
+      if (originalSourceDir === undefined) {
+        delete process.env.LEAFWRITER_MAP_TILES_SOURCE_DIR;
+      } else {
+        process.env.LEAFWRITER_MAP_TILES_SOURCE_DIR = originalSourceDir;
+      }
+      await fs.rm(sourceDir, { recursive: true, force: true });
+    }
   });
 
   it('builds a stable manifest path under the map tiles directory', () => {

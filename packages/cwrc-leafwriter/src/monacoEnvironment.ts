@@ -11,8 +11,14 @@
 
 export {};
 
-if (typeof MonacoEnvironment === 'undefined' || !MonacoEnvironment) {
-  MonacoEnvironment = {
+const globalScope = globalThis as typeof globalThis & {
+  MonacoEnvironment?: {
+    getWorkerUrl: () => string;
+  };
+};
+
+if (!globalScope.MonacoEnvironment) {
+  globalScope.MonacoEnvironment = {
     getWorkerUrl: () => {
       const origin =
         typeof window !== 'undefined' && window.location?.origin
