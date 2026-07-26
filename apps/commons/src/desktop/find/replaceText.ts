@@ -1,5 +1,9 @@
 import { resolveTextHitInXml } from './resolveTextHitInXml';
-import { compileFindLiteralRegex, tryCompileFindRegex } from './regexPatternUtils';
+import {
+  applyRegexReplacement,
+  compileFindLiteralRegex,
+  tryCompileFindRegex,
+} from './regexPatternUtils';
 import { searchInContent } from './textSearchUtils';
 
 const MARKUP_IN_SLICE = /[<>]/;
@@ -22,21 +26,7 @@ export const replaceHitAtOffset = (
   replacement: string,
 ): string => content.slice(0, start) + replacement + content.slice(end);
 
-/** Apply regex-style `$1`, `$2`, `$$`, and `\1`, `\2` substitution from a match. */
-export const applyRegexReplacement = (match: RegExpExecArray, replacement: string): string => {
-  const withBackrefs = replacement.replace(/\\([1-9]\d*)/g, (_full, digits: string) => {
-    const index = Number.parseInt(digits, 10);
-    if (Number.isNaN(index) || index < 1 || index >= match.length) return '';
-    return match[index] ?? '';
-  });
-
-  return withBackrefs.replace(/\$(\$|\d+)/g, (_full, token: string) => {
-    if (token === '$') return '$';
-    const index = Number.parseInt(token, 10);
-    if (Number.isNaN(index) || index < 1 || index >= match.length) return '';
-    return match[index] ?? '';
-  });
-};
+export { applyRegexReplacement } from './regexPatternUtils';
 
 const buildSearchRegex = (query: string, useRegex: boolean, ignoreCase = false): RegExp | null => {
   if (useRegex) return tryCompileFindRegex(query, ignoreCase);

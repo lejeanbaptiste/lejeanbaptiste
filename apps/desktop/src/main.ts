@@ -49,6 +49,7 @@ import {
   getEntityDbFolder,
   getLastDialogDir,
   getLocalAuthorityAssetsDir,
+  getMapTilesDir,
   getRememberWorkspaceOnStartup,
   getValidLastProjectFile,
   setLastDialogDir,
@@ -83,6 +84,14 @@ import {
   setAuthorityLifecycleEnabled,
 } from './authorityLifecycle';
 import { getChgisStatus, installChgisFromArchive, removeChgisData } from './authorityChgis';
+import {
+  installMapTileBundle,
+  listInstalledMapTileRegions,
+  PMTILES_SCHEME,
+  registerPmtilesProtocol,
+  removeMapTileBundle,
+  type MapTileBundleSpec,
+} from './mapTiles';
 import {
   dismissPluginLanguagePrompt,
   getEnabledPluginToolsMenuItems,
@@ -543,6 +552,16 @@ protocol.registerSchemesAsPrivileged([
       standard: true,
       supportFetchAPI: true,
       corsEnabled: true,
+    },
+  },
+  {
+    scheme: PMTILES_SCHEME,
+    privileges: {
+      secure: true,
+      standard: true,
+      supportFetchAPI: true,
+      corsEnabled: true,
+      stream: true,
     },
   },
 ]);
@@ -1662,6 +1681,83 @@ const registerIpcHandlers = () => {
     return 'accepted';
   });
 
+  ipcMain.handle('mapTiles:status', async () => {
+    const mapTilesDir = await getMapTilesDir();
+    const regions = await listInstalledMapTileRegions(mapTilesDir);
+    return { installed: regions.length > 0, path: regions.length > 0 ? mapTilesDir : null, regions };
+  });
+
+  ipcMain.handle('mapTiles:remove', async (_event, bundleId: string) => {
+    try {
+      const mapTilesDir = await getMapTilesDir();
+      await removeMapTileBundle(mapTilesDir, bundleId);
+      return { ok: true };
+    } catch (error) {
+      return { ok: false, error: error instanceof Error ? error.message : String(error) };
+    }
+  });
+
+  ipcMain.handle('mapTiles:promptDownload', async () => {
+    if (!mainWindow) return 'declined';
+
+    const mapTilesDir = await getMapTilesDir();
+    const declinedMarker = path.join(mapTilesDir, 'download-declined.json');
+    if (existsSync(declinedMarker)) return 'declined';
+
+    const result = await dialog.showMessageBox(mainWindow, {
+      type: 'question',
+      buttons: ['Download', 'Not now'],
+      defaultId: 0,
+      cancelId: 1,
+      message: 'Download offline map tiles?',
+      detail:
+        'LEAF-Writer can download a basemap (streets, satellite, relief) for comparing ' +
+        'place-name candidates on a map — up to 500 MB, stored locally on this machine ' +
+        '(not synced with your entity database), used entirely offline once downloaded.',
+    });
+    if (result.response !== 0) {
+      await fs.mkdir(mapTilesDir, { recursive: true });
+      await fs.writeFile(
+        declinedMarker,
+        JSON.stringify({ declinedAt: new Date().toISOString() }, null, 2),
+        'utf-8',
+      );
+      return 'declined';
+    }
+    return 'accepted';
+  });
+
+  const activeMapTileDownloads = new Set<string>();
+
+  ipcMain.handle('mapTiles:download', async (event, bundle: MapTileBundleSpec) => {
+    if (activeMapTileDownloads.has(bundle.id)) {
+      return { ok: false, error: 'Download already in progress.' };
+    }
+    activeMapTileDownloads.add(bundle.id);
+    let lastSent = 0;
+    try {
+      const mapTilesDir = await getMapTilesDir();
+      const { path: installedPath } = await installMapTileBundle({
+        mapTilesDir,
+        bundle,
+        onProgress: (message, receivedBytes, totalBytes) => {
+          const now = Date.now();
+          if (now - lastSent < 250) return;
+          lastSent = now;
+          if (!event.sender.isDestroyed()) {
+            event.sender.send('mapTiles:progress', { message, receivedBytes, totalBytes });
+          }
+        },
+      });
+      return { ok: true, path: installedPath };
+    } catch (error) {
+      const message = error instanceof Error ? error.message : String(error);
+      return { ok: false, error: message };
+    } finally {
+      activeMapTileDownloads.delete(bundle.id);
+    }
+  });
+
   // Named "OrNull" for historical reasons (it used to wrap getEntityDbFolder,
   // which really can be unconfigured) - getLocalAuthorityAssetsDir always
   // resolves, but every call site below already handles a null folder, so
@@ -2405,6 +2501,7 @@ app.whenReady().then(() => {
   registerGameAssetProtocol();
   registerAvatarProtocol();
   registerBodyProtocol();
+  registerPmtilesProtocol();
   registerIpcHandlers();
   registerNativeDialogIpc();
   registerLemminxIpc(() => mainWindow);

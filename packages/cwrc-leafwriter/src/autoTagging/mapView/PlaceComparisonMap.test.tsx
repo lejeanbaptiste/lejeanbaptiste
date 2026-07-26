@@ -1,4 +1,4 @@
-import { render, screen } from '@testing-library/react';
+import { act, render, screen } from '@testing-library/react';
 import { PlaceComparisonMap, type MapPin } from './PlaceComparisonMap';
 
 const mockFitBounds = jest.fn();
@@ -9,14 +9,18 @@ const mockSetPopup = jest.fn();
 const mockRemove = jest.fn();
 const mockMarkerRemove = jest.fn();
 const mockExtend = jest.fn();
+const mockSetStyle = jest.fn();
 
 let onLoadCallback: (() => void) | null = null;
+let onMoveEndCallback: (() => void) | null = null;
+let mockCenter = { lat: 30.65, lng: 113.15 };
 
 jest.mock('maplibre-gl', () => {
   class MockMap {
     constructor(public options: unknown) {}
     on(event: string, cb: () => void) {
       if (event === 'load') onLoadCallback = cb;
+      if (event === 'moveend') onMoveEndCallback = cb;
     }
     fitBounds(...args: unknown[]) {
       mockFitBounds(...args);
@@ -26,6 +30,12 @@ jest.mock('maplibre-gl', () => {
     }
     remove() {
       mockRemove();
+    }
+    setStyle(...args: unknown[]) {
+      mockSetStyle(...args);
+    }
+    getCenter() {
+      return mockCenter;
     }
   }
   class MockMarker {
@@ -81,6 +91,9 @@ describe('PlaceComparisonMap', () => {
   afterEach(() => {
     jest.clearAllMocks();
     onLoadCallback = null;
+    onMoveEndCallback = null;
+    mockCenter = { lat: 30.65, lng: 113.15 };
+    delete (window as { electronAPI?: unknown }).electronAPI;
   });
 
   it('creates one marker per pin and fits bounds to all of them once the map loads', () => {
@@ -126,5 +139,76 @@ describe('PlaceComparisonMap', () => {
 
     expect(mockMarkerRemove).toHaveBeenCalledTimes(1);
     expect(mockRemove).toHaveBeenCalledTimes(1);
+  });
+
+  it('swaps in the real vector basemap once a bundle covering the pins is confirmed installed', async () => {
+    // makePin() defaults to 竟陵 (30.65, 113.15), which falls inside the "china" bundle's bounds.
+    (window as unknown as { electronAPI: unknown }).electronAPI = {
+      mapTilesStatus: jest.fn().mockResolvedValue({
+        installed: true,
+        path: '/tiles',
+        regions: [{ id: 'china', sha256: 'a'.repeat(64), installedAt: '2026-07-26T00:00:00Z' }],
+      }),
+    };
+
+    render(<PlaceComparisonMap open pins={[makePin()]} title="Single place" onClose={jest.fn()} />);
+    onLoadCallback?.();
+
+    await new Promise((resolve) => setTimeout(resolve, 0));
+
+    expect(mockSetStyle).toHaveBeenCalledTimes(1);
+    const [style] = mockSetStyle.mock.calls[0];
+    expect(style.sources.protomaps.tiles[0]).toBe('pmtiles://china/{z}/{x}/{y}.mvt');
+  });
+
+  it('leaves the blank background and shows the region warning when no bundle covering the pins is installed', async () => {
+    (window as unknown as { electronAPI: unknown }).electronAPI = {
+      mapTilesStatus: jest.fn().mockResolvedValue({ installed: false, path: null, regions: [] }),
+    };
+
+    render(<PlaceComparisonMap open pins={[makePin()]} title="Single place" onClose={jest.fn()} />);
+    onLoadCallback?.();
+
+    await new Promise((resolve) => setTimeout(resolve, 0));
+
+    expect(mockSetStyle).not.toHaveBeenCalled();
+    expect(screen.getByText(/isn't downloaded/)).toBeTruthy();
+  });
+
+  it('does not show the region warning once the current view is covered by an installed bundle', async () => {
+    (window as unknown as { electronAPI: unknown }).electronAPI = {
+      mapTilesStatus: jest.fn().mockResolvedValue({
+        installed: true,
+        path: '/tiles',
+        regions: [{ id: 'china', sha256: 'a'.repeat(64), installedAt: '2026-07-26T00:00:00Z' }],
+      }),
+    };
+
+    render(<PlaceComparisonMap open pins={[makePin()]} title="Single place" onClose={jest.fn()} />);
+    onLoadCallback?.();
+    await new Promise((resolve) => setTimeout(resolve, 0));
+
+    expect(screen.queryByText(/isn't downloaded/)).toBeNull();
+  });
+
+  it('shows the region warning after panning into an area no installed bundle covers', async () => {
+    (window as unknown as { electronAPI: unknown }).electronAPI = {
+      mapTilesStatus: jest.fn().mockResolvedValue({
+        installed: true,
+        path: '/tiles',
+        regions: [{ id: 'china', sha256: 'a'.repeat(64), installedAt: '2026-07-26T00:00:00Z' }],
+      }),
+    };
+
+    render(<PlaceComparisonMap open pins={[makePin()]} title="Single place" onClose={jest.fn()} />);
+    onLoadCallback?.();
+    await new Promise((resolve) => setTimeout(resolve, 0));
+    expect(screen.queryByText(/isn't downloaded/)).toBeNull();
+
+    // Pan to the middle of the Atlantic — outside every registered bundle.
+    mockCenter = { lat: 30, lng: -40 };
+    act(() => onMoveEndCallback?.());
+
+    expect(screen.getByText(/isn't downloaded/)).toBeTruthy();
   });
 });

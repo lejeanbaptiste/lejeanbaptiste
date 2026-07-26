@@ -398,6 +398,22 @@ export const getLocalAuthorityAssetsDir = async (): Promise<string> => {
   return dir;
 };
 
+const MAP_TILES_DIRNAME = 'map-tiles';
+
+/**
+ * Base directory for the downloaded MBTiles basemap bundle used by the
+ * place-name geo-comparison map (docs/placename-geo-disambiguation-planning.md,
+ * Phase 6) — a sibling of authority-packs/authority-databases under the same
+ * local, per-machine assets folder, for the same reason: this can run into
+ * hundreds of MB and must never live in a (commonly synced) entity database
+ * folder.
+ */
+export const getMapTilesDir = async (): Promise<string> => {
+  const dir = path.join(await getLocalAuthorityAssetsDir(), MAP_TILES_DIRNAME);
+  await fs.mkdir(dir, { recursive: true });
+  return dir;
+};
+
 /**
  * Explicit override for where achievements.json lives. Returns null when
  * unset, meaning achievementsFile.ts falls back to the entity database
