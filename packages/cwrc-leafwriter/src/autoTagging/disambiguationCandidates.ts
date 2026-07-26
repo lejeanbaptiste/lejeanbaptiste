@@ -53,6 +53,7 @@ import { AUTHORITY_PACKS } from './packPaths';
 import { normalizeDateRangeFilter, parseAuthorityNdjson, type DateRangeFilter } from './packLoader';
 import type { AuthorityCandidate } from './authority';
 import type { AuthorityPackId } from './packPaths';
+import { centroidOf, haversineDistanceKm } from './geoCluster';
 
 export interface DisambiguationCandidate {
   id: string;
@@ -326,6 +327,15 @@ export interface MergeCandidateOptions {
    * search string matched).
    */
   preferNonLatinLabel?: boolean;
+  /** The mention group's tag — geo-cluster merging only applies to `'placeName'`. */
+  tag?: string;
+  /**
+   * Radius (km) within which two place candidates are treated as the same
+   * functional location and collapsed into one row (see
+   * docs/placename-geo-disambiguation-planning.md, Phase 6). Only takes
+   * effect when `tag === 'placeName'`.
+   */
+  placeProximityKm?: number;
 }
 
 /** Merge checked rows into one candidate (manual link or accept). */
@@ -371,8 +381,20 @@ export function mergeSelectedCandidates(
     startYear: startYears.length ? Math.min(...startYears) : undefined,
     endYear: endYears.length ? Math.max(...endYears) : undefined,
     dynasty: candidates.find((c) => c.dynasty)?.dynasty,
-    geo: candidates.find((c) => c.geo)?.geo,
+    geo: mergedGeo(candidates),
   };
+}
+
+/**
+ * Representative point for a merged row: the centroid of every source
+ * candidate that carries coordinates. A single geo-bearing candidate's
+ * centroid is just that point, so this subsumes the old first-wins
+ * behavior for non-place merges while giving places (Phase 6) the "mean of
+ * the cluster" point the disambiguation-panel map needs.
+ */
+function mergedGeo(candidates: DisambiguationCandidate[]): { lat: number; lon: number } | undefined {
+  const points = candidates.map((c) => c.geo).filter((geo): geo is { lat: number; lon: number } => geo != null);
+  return points.length > 0 ? centroidOf(points) : undefined;
 }
 
 /** Collapse rows that share a Wikidata Q-id or other cross-authority key. */
@@ -416,6 +438,24 @@ export function collapseCrossAuthorityCandidates(
       if (a.startYear == null || a.endYear == null) continue;
       if (a.startYear !== b.startYear || a.endYear !== b.endYear) continue;
       union(i, j);
+    }
+  }
+
+  // Place candidates within the configured proximity radius are treated as
+  // the same functional location (docs/placename-geo-disambiguation-planning.md,
+  // Phase 6) — same union-find, so it composes with the id/year passes above
+  // rather than replacing them. Candidates missing coordinates never merge on
+  // this pass (mirrors authorityOverlap.ts's shouldMergePlacePackCandidates).
+  if (options?.tag === 'placeName' && options?.placeProximityKm != null) {
+    for (let i = 0; i < candidates.length; i++) {
+      for (let j = i + 1; j < candidates.length; j++) {
+        if (find(i) === find(j)) continue;
+        const a = candidates[i]!;
+        const b = candidates[j]!;
+        if (!a.geo || !b.geo) continue;
+        if (haversineDistanceKm(a.geo, b.geo) > options.placeProximityKm) continue;
+        union(i, j);
+      }
     }
   }
 
@@ -1039,6 +1079,8 @@ export async function buildDisambiguationCandidates(
   projectLang?: string | null,
   /** Present only for a syncToCentral project - merges in matching CEDB entities. */
   central?: { doc: Document; userStableId: string },
+  /** Proximity radius (km) for collapsing place candidates into geo clusters — see Phase 6. */
+  placeProximityKm?: number,
 ): Promise<DisambiguationCandidate[]> {
   const local = candidatesFromEntityFile(entitiesDoc, tag, surface);
   const centralCandidates = central
@@ -1068,7 +1110,7 @@ export async function buildDisambiguationCandidates(
     forceRefresh,
     readPackFile,
   );
-  const options = mergeOptionsForLang(projectLang);
+  const options: MergeCandidateOptions = { ...mergeOptionsForLang(projectLang), tag, placeProximityKm };
   const merged = collapseCrossAuthorityCandidates(
     mergeCandidates([local, centralCandidates, packLocal, live], options).map(
       enrichCandidateCrossRefs,

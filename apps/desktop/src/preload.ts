@@ -13,6 +13,13 @@ import type {
   AuthoritySourceStatus,
 } from './authorityDatabases';
 import type { ProjectBundle } from './projectFile';
+import type { MapTileBundleSpec } from './mapTiles';
+
+export interface MapTilesProgress {
+  message: string;
+  receivedBytes?: number;
+  totalBytes?: number | null;
+}
 import type {
   SchemaUpdateApplyResult,
   SchemaUpdateCheckOptions,
@@ -243,6 +250,17 @@ export interface ElectronAPI {
   authorityDbDownload: (sourceId: AuthoritySourceId) => Promise<{ ok: boolean; error?: string }>;
   authorityDbPromptDownload: () => Promise<'accepted' | 'declined'>;
   onAuthorityDbProgress: (callback: (progress: AuthorityDownloadProgress) => void) => () => void;
+  mapTilesStatus: () => Promise<{
+    installed: boolean;
+    path: string | null;
+    regions: { id: string; sha256: string; installedAt: string }[];
+  }>;
+  mapTilesPromptDownload: () => Promise<'accepted' | 'declined'>;
+  mapTilesDownload: (
+    bundle: MapTileBundleSpec,
+  ) => Promise<{ ok: boolean; path?: string; error?: string }>;
+  mapTilesRemove: (bundleId: string) => Promise<{ ok: boolean; error?: string }>;
+  onMapTilesProgress: (callback: (progress: MapTilesProgress) => void) => () => void;
   authorityPackStatuses?: () => Promise<
     import('../../commons/src/desktop/authorityPackTypes').AuthorityPackStatus[]
   >;
@@ -493,6 +511,16 @@ const electronAPI: ElectronAPI = {
       callback(progress);
     ipcRenderer.on('authorityDb:progress', listener);
     return () => ipcRenderer.removeListener('authorityDb:progress', listener);
+  },
+  mapTilesStatus: () => ipcRenderer.invoke('mapTiles:status'),
+  mapTilesPromptDownload: () => ipcRenderer.invoke('mapTiles:promptDownload'),
+  mapTilesDownload: (bundle: MapTileBundleSpec) => ipcRenderer.invoke('mapTiles:download', bundle),
+  mapTilesRemove: (bundleId: string) => ipcRenderer.invoke('mapTiles:remove', bundleId),
+  onMapTilesProgress: (callback: (progress: MapTilesProgress) => void) => {
+    const listener = (_event: Electron.IpcRendererEvent, progress: MapTilesProgress) =>
+      callback(progress);
+    ipcRenderer.on('mapTiles:progress', listener);
+    return () => ipcRenderer.removeListener('mapTiles:progress', listener);
   },
   authorityPackStatuses: () => ipcRenderer.invoke('authorityPack:statuses'),
   authorityPackRead: (packId: string) => ipcRenderer.invoke('authorityPack:read', packId),

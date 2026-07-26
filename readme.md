@@ -167,10 +167,13 @@ See [apps/desktop/README.md](apps/desktop/README.md) for the compilation and pac
 - [ ] Asset packs compile place of origin 
 - [ ] Disambiguation fetch place of origin
 - [ ] Build OSM viewer (do we want OSM?)
+- [ ] Improved Chinese office name tagging
 - [ ] Geo-aware placename disambiguation across authorities (see [placename-geo-disambiguation-planning.md](docs/placename-geo-disambiguation-planning.md))
+- [ ] Ship Sanmiao as a plugin, + Norbert tools.
 
 ## Todo
 
+- [ ] Build extended propagate function
 - [ ] Build document stats window with list of people, map of places, etc.
 - [ ] Official titles dictionaries, dates dictionaries for hover-over
 - [ ] Word plugin to handle names and dates correctly while centralising data.
