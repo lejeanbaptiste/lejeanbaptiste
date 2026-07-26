@@ -156,17 +156,17 @@ See [apps/desktop/README.md](apps/desktop/README.md) for the compilation and pac
 
 ## Building
 
-- [ ] wire dates and nationality separately.
-- [ ] Disambiguation to fetch nationality
-- [ ] Asset packs to include nationality
+- [x] wire dates and nationality separately.
+- [x] Disambiguation to fetch nationality
+- [x] Asset packs to include nationality
 - [ ] Norbert plugin: identify style names
 
 
 
 ## Todo
 
-- [ ] Norbert: tag nationality preceding office title or persame (look at the rules that I use), include in our new person wrapper
-- [ ] Sort out how to handle place of origin
+- [x] Norbert: tag nationality preceding office title or persame (look at the rules that I use), include in our new person wrapper
+- [x] Settle place-of-origin storage modes (coordinate mode vs ID mode; conflicts fall back to ID mode)
 - [ ] Try to adopt CBDB's office name infrastructure
 - [ ] Asset packs compile place of origin 
 - [ ] Disambiguation fetch place of origin

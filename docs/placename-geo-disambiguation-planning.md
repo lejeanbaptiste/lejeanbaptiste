@@ -273,7 +273,13 @@ Depends on: all prior phases.
 
 **Scope:** implement the cluster entity schema (§"Schema for `<place type="cluster">`" above) in the app's entities.xml handling. Clusters are separate from mention-level `<place>` entities (marked by `type="cluster"` attribute). Implement delinking logic: removing an authority link removes the corresponding `<sourceEntry>` block and all data tagged with that source.
 
-**Acceptance:** users can create/edit cluster entities with coordinates, admin-level, multi-authority associations, and multi-date ranges; unlinking an authority removes only that authority's contributions (tags, dates, etc.) without affecting other sources.
+**Acceptance:** users can create/edit coordinate-mode or ID-mode place
+entities with strings, admin-level, multi-authority associations, and
+multi-date ranges. Coordinate-mode entities carry one selected representative
+point; ID-mode entities retain source identifiers without claiming an
+entity-level point. Unlinking an authority removes only that authority's
+contributions (tags, dates, and source metadata) without affecting other
+sources.
 
 ### Phase 6 — Map-pin / OSM comparison view
 
@@ -292,7 +298,9 @@ Depends on: Phase 5.
 1. **Fixed global radius vs. scaled-by-type.** A temple and a circuit/province need very different "close enough" radii. V1 ships one global setting; do we want an early override per DILA/CBDB admin-type bucket, or wait until the flat radius proves wrong in practice?
 2. **Confidence score vs. hard cutoff.** A hard km cutoff creates edge-of-threshold artifacts (4.9 km groups, 5.1 km doesn't). A distance-decay confidence score is more principled but adds UI complexity (how do you show "80% confident same place"?) — probably not worth it for v1.
 3. **Missing-coordinate fallback rate.** Need to check what fraction of DILA/CBDB place rows actually carry coordinates before promising this covers "most" ambiguous cases — some rows may only have a district-chain reference and no lat/lon at all.
-4. **Does a cluster ever get its own idno-like identity** (a synthetic "this is the same physical spot" id), or does it stay purely a UI grouping recomputed each time? Recomputing is simpler and avoids yet another id space; lean that way unless projects need to store "we decided these are the same place" durably.
+4. **Resolved:** a decided place cluster gets a durable project entity. Its
+   storage mode is `coordinates` only when the origin-place import policy below
+   is satisfied; otherwise it is `id`.
 
 
 ---
@@ -365,6 +373,52 @@ A decided cluster is modeled like a person entity — same shape, different fiel
 
 This schema applies uniformly to all entity types (`<person>`, `<placeName>` mention-level, etc.): all carry `created`/`createdBy`/`modified`/`modifiedBy` and user notes, and all data sourced from authorities carry an origin marker for delinking.
 
+### Decision (2026-07-26): origin-place import modes
+
+Place-of-origin assertions always retain a string, but an entity must not claim
+a coordinate when the authority evidence does not support one coherent place
+identity. For one confirmed origin assertion, the importer applies this rule:
+
+1. If every candidate with coordinates falls within the configured proximity
+   radius, import the coherent result as a **place-as-coordinates** entity.
+   Preserve all place strings and authority IDs, and select one representative
+   coordinate for the entity. Source-level coordinates remain attached to their
+   source entries; they are not averaged into a new fact. Candidates without
+   coordinates remain separately represented as **place-as-id**, unless an
+   explicit authority crosswalk proves they are the same record.
+2. If there is a geographic conflict, such as coordinate clusters outside the
+   radius, incompatible administrative identities, or unresolved authority
+   disagreement, import every candidate as **place-as-id**. Preserve strings,
+   IDs, coordinates, and provenance as source metadata, but do not promote any
+   coordinate to the entity-level location.
+3. If no candidate has coordinates, import the result as place-as-id. Missing
+   coordinates are not `0,0` and are not a reason to discard the authority
+   link.
+
+The radius groups candidates returned by a string search; it is not a search by
+latitude/longitude and is not an identity oracle. Administrative level remains
+a hard compatibility check. A later user decision may promote an ID-mode
+entity to coordinate mode without changing its authority provenance.
+
+The intended entity shape is:
+
+```xml
+<place xml:id="place-123" type="coordinates">
+  <placeName>鄱陽</placeName>
+  <location><geo>28.21 116.68</geo></location>
+  <sourceEntry source="cbdb" authId="c_addr_123"/>
+</place>
+
+<place xml:id="place-124" type="id">
+  <placeName>鄱陽</placeName>
+  <sourceEntry source="dila" authId="dila:PL456"/>
+</place>
+```
+
+`coordinates` and `id` are entity storage modes, not corpus tag names.
+Corpus `placeName` markup and a person's origin relationship point to the
+selected project place with `@key`/`@ref` as appropriate.
+
 ### Admin-vocabulary unification — scope
 
 Extends beyond the three internal sources: **unify CHGIS (`TYPE_CH`, Chinese single characters), CBDB (`c_admin_type`, romanized English, 239 raw values / <200 real after case-dedup), and external authorities (Wikidata, others) into one controlled admin-level vocabulary.** This mapping table is also the source for the suffix-character lookup used to generate admin-suffixed name variants (e.g. Xian → 縣) at compile time. Not yet built — needs a real mapping pass, not just the two internal sources.
@@ -385,5 +439,3 @@ Extends beyond the three internal sources: **unify CHGIS (`TYPE_CH`, Chinese sin
 ### DILA — out of scope
 
 Only 329/117k DILA place records carry coordinates (0.3%) — effectively unusable for clustering. DILA is dropped from the geo-disambiguation plan; CHGIS + CBDB are the two coordinate sources going forward. (DILA's admin-vocabulary field, `<note type="category">` free text, is likewise not part of the vocabulary-unification pass.)
-
-
