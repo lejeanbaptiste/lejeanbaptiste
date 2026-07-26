@@ -53,6 +53,7 @@ import { keyedPersNameFloors, phase2StringsForEntity, shortFormTag } from './sho
 import { llmAudit, type LlmAuditResult } from './llmAudit';
 import { normalizeDomText } from './normalize';
 import { AUTHORITY_PACKS, authorityPackOrigin, type AuthorityPackId } from './packPaths';
+import { tagFollowingStyleNames } from './styleNameTag';
 import { MAX_AUTHORITY_SUGGESTIONS, runAuthorityTagBombOnDocument } from './authorityTagBomb';
 import type { DateTagOptions, SanmiaoBatchResolveFn, SanmiaoBatchTagFn } from './sanmiaoDateTypes';
 import {
@@ -938,6 +939,9 @@ export class AutoTaggingSession {
     );
 
     assignEntity({ element: instance.element, entityId });
+    if (instance.tag === 'persName') {
+      tagFollowingStyleNames(instance.element.ownerDocument!);
+    }
     await autoSyncEntityToCentral(entitiesDoc, entityId);
     await this.saveEntities();
     await this.persistDocument(instance.element.ownerDocument!);

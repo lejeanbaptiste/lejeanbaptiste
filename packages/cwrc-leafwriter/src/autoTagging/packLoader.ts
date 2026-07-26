@@ -32,8 +32,11 @@ function candidateOverlapsYearRange(
   end: number,
 ): boolean {
   const meta = candidate.metadata;
-  const yearStart = meta?.startYear;
-  const yearEnd = meta?.endYear ?? meta?.startYear;
+  const fine = meta?.dateSource === 'fine' || meta?.dateSource == null && (meta?.startYear != null || meta?.endYear != null);
+  const nationalityYears = (meta?.nationality ?? [])
+    .flatMap((n) => n.startYear != null || n.endYear != null ? [{ start: n.startYear ?? n.endYear!, end: n.endYear ?? n.startYear! }] : []);
+  const yearStart = fine ? meta?.startYear : nationalityYears.length ? Math.min(...nationalityYears.map((n) => n.start)) - 60 : undefined;
+  const yearEnd = fine ? (meta?.endYear ?? meta?.startYear) : nationalityYears.length ? Math.max(...nationalityYears.map((n) => n.end)) + 60 : undefined;
   if (yearStart == null && yearEnd == null) return false;
   const lo = yearStart ?? yearEnd!;
   const hi = yearEnd ?? yearStart!;
@@ -52,8 +55,11 @@ export function candidatePassesDateFilter(
 
   const { start, end } = normalizeDateRangeFilter(filter);
   const meta = candidate.metadata;
-  const yearStart = meta?.startYear;
-  const yearEnd = meta?.endYear ?? meta?.startYear;
+  const fine = meta?.dateSource === 'fine' || meta?.dateSource == null && (meta?.startYear != null || meta?.endYear != null);
+  const nationalityYears = (meta?.nationality ?? [])
+    .flatMap((n) => n.startYear != null || n.endYear != null ? [{ start: n.startYear ?? n.endYear!, end: n.endYear ?? n.startYear! }] : []);
+  const yearStart = fine ? meta?.startYear : nationalityYears.length ? Math.min(...nationalityYears.map((n) => n.start)) - 60 : undefined;
+  const yearEnd = fine ? (meta?.endYear ?? meta?.startYear) : nationalityYears.length ? Math.max(...nationalityYears.map((n) => n.end)) + 60 : undefined;
   const undated = yearStart == null && yearEnd == null;
 
   if (undated) {
@@ -99,8 +105,11 @@ export function candidateIntersectsYearRange(
   range: YearRangeFilter,
 ): boolean {
   const meta = candidate.metadata;
-  const start = meta?.startYear;
-  const end = meta?.endYear ?? meta?.startYear;
+  const fine = meta?.dateSource === 'fine' || meta?.dateSource == null && (meta?.startYear != null || meta?.endYear != null);
+  const nationalityYears = (meta?.nationality ?? [])
+    .flatMap((n) => n.startYear != null || n.endYear != null ? [{ start: n.startYear ?? n.endYear!, end: n.endYear ?? n.startYear! }] : []);
+  const start = fine ? meta?.startYear : nationalityYears.length ? Math.min(...nationalityYears.map((n) => n.start)) - 60 : undefined;
+  const end = fine ? (meta?.endYear ?? meta?.startYear) : nationalityYears.length ? Math.max(...nationalityYears.map((n) => n.end)) + 60 : undefined;
 
   if (start == null && end == null) {
     // DILA places have no lifespan in the authority file — still match in text;

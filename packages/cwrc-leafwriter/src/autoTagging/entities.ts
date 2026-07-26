@@ -75,6 +75,8 @@ export interface NewEntity {
   startYear?: number;
   /** Death/dissolution year (signed; negative = BCE). Persons: `<death when>`; others: `<note type="dates">`. */
   endYear?: number;
+  /** Historical dynasties/states associated with a person. */
+  nationality?: { id: string; canonicalId: string; label: string; sourceIds?: string[] }[];
 }
 
 /** Format a signed year as an ISO/W3C `@when` year, e.g. -155 -> "-0155", 1990 -> "1990". */
@@ -341,6 +343,17 @@ export function addEntity(
     item.appendChild(note);
   }
 
+  if (kind === 'person') {
+    for (const value of entity.nationality ?? []) {
+      const nationality = value.label.trim();
+      if (!nationality) continue;
+      const el = doc.createElementNS(TEI_NS, 'nationality');
+      el.textContent = nationality;
+      el.setAttribute('ref', value.canonicalId);
+      item.appendChild(el);
+    }
+  }
+
   if (entity.startYear != null || entity.endYear != null) {
     if (kind === 'person') {
       if (entity.startYear != null) {
@@ -380,6 +393,24 @@ export function appendAuthorityIdnos(doc: Document, element: Element, ids: Autho
     element.appendChild(idno);
   }
   touchEntity(element);
+}
+
+/** Append person nationality labels without duplicating existing values. */
+export function appendNationalities(doc: Document, element: Element, values: { id: string; canonicalId: string; label: string; sourceIds?: string[] }[]): void {
+  const existing = new Set(
+    Array.from(element.getElementsByTagName('nationality')).map(
+      (el) => el.getAttribute('ref') || el.textContent?.trim(),
+    ),
+  );
+  for (const value of values) {
+    const label = value.label.trim();
+    if (!label || existing.has(value.canonicalId)) continue;
+    const el = doc.createElementNS(TEI_NS, 'nationality');
+    el.textContent = label;
+    el.setAttribute('ref', value.canonicalId);
+    element.appendChild(el);
+    existing.add(value.canonicalId);
+  }
 }
 
 /** Find an entity element by its local id. */

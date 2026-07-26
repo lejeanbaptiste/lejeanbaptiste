@@ -146,6 +146,24 @@ For detailed build and packaging information, see [apps/desktop/README.md](apps/
 
 See [apps/desktop/README.md](apps/desktop/README.md) for the compilation and packaging instructions.
 
+## Building
+- [ ] wire dates and nationality separately.
+- [ ] Disambiguation to fetch nationality
+- [ ] Asset packs to include nationality
+- [ ] Norbert plugin: identify style names
+
+## Todo
+- [ ] Norbert: tag nationality preceding office title or persame (look at the rules that I use), include in our new person wrapper
+- [ ] Sort out how to handle place of origin
+- [ ] Try to adopt CBDB's office name infrastructure
+- [ ] Asset packs compile place of origin 
+- [ ] Disambiguation fetch place of origin
+- [ ] Build OSM viewer (do we want OSM?)
+- [ ] Build document stats window with list of people, map of places, etc.
+- [ ] Build expert tools: purge, apply throughout corpus, tag bomb corpus...
+- [ ] Official titles dictionaries, dates dictionaries for hover-over
+- [ ] Word plugin to handle names and dates correctly while centralising data.
+
 ## Future goals
 
 - [ ] Option to track annotator on the tag level for collaborations.

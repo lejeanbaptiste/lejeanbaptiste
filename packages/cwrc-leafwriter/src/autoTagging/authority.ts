@@ -27,6 +27,8 @@ export interface AuthorityCandidate {
   names?: { text: string; type?: string; lang?: string }[];
   metadata?: {
     dynasty?: string;
+    nationality?: { id: string; canonicalId: string; label: string; sourceIds?: string[]; startYear?: number; endYear?: number }[];
+    dateSource?: 'fine' | 'nationality';
     startYear?: number;
     endYear?: number;
     /** Place subtype (county/mountain/…) or similar sub-classification. */
