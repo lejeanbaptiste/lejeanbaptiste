@@ -68,6 +68,7 @@ import type { DateRangeFilter } from './packLoader';
 import type { SearchTextRange } from './chunk';
 import { resolveCurrentDocumentXml } from './documentContent';
 import { findSelectionRangeInDocument, searchTextForDomRange } from './selectionScope';
+import type { TagBombScope } from './tagBombScope';
 
 export { MAX_AUTHORITY_SUGGESTIONS } from './authorityTagBomb';
 
@@ -105,14 +106,36 @@ export interface TagBombOptions {
   onProgress?: (message: string) => void;
   /** Parsed CSV/TSV/xlsx/ODS files chosen in the panel, filtered by the checked `list-*` categories. */
   importedLists?: TagBombImportedList[];
+  /** Which document(s) to scan. Defaults to `currentFile` — the pre-scope behavior. */
+  scope?: TagBombScope;
+  /** Folder path, required when `scope` is `custom`. */
+  customPath?: string;
 }
 
 export interface TagBombResult {
+  /** Suggestions for the current/first-matched document — unchanged for `currentFile` scope. */
   suggestions: Suggestion[];
   candidateCount: number;
   matchCount: number;
   loaded: Partial<Record<AuthorityPackId, number>>;
   truncated: boolean;
+  /**
+   * Present when `scope` matched more than one document. One entry per
+   * document that had at least one suggestion, for sequential per-document
+   * review. `suggestions` above mirrors `byDocument[0]` in that case.
+   */
+  byDocument?: TagBombDocumentResult[];
+}
+
+export interface TagBombDocumentResult {
+  filePath: string;
+  suggestions: Suggestion[];
+  matchCount: number;
+}
+
+export interface TagBombScopeDocument {
+  doc: Document;
+  filePath: string;
 }
 
 /**
@@ -445,7 +468,13 @@ export class AutoTaggingSession {
     readPackFile: (packId: AuthorityPackId) => Promise<string>,
     options: TagBombOptions = {},
   ): Promise<TagBombResult> {
-    const doc = await this.getDocument();
+    const scope = options.scope ?? 'currentFile';
+    const { documents: scopeDocs, error } = await this.resolveTagBombScopeDocuments(
+      scope,
+      options.customPath,
+    );
+    if (error) throw new Error(error);
+    if (scopeDocs.length === 0) throw new Error('No documents matched the selected scope.');
 
     const sourceLang = await this.projectLanguage();
     const authoritySettings = readPersistedAuthoritySettings();
@@ -483,50 +512,76 @@ export class AutoTaggingSession {
       }
     }
 
-    const authorityResult = await runAuthorityTagBombOnDocument(doc, packIds, readPackFile, this.policy, {
-      dateFilter: options.dateFilter,
-      extraCandidates,
-      nameTypePolicy,
-      onProgress: (message) => {
-        options.onProgress?.(message);
-        void yieldToUi();
-      },
-    });
-
-    const extraSuggestionGroups: Suggestion[][] = [];
-    const loaded: Partial<Record<AuthorityPackId, number>> = { ...authorityResult.loaded };
-
+    // Project-tag dictionary is pooled across the whole project regardless of
+    // scope — computed once and reused for every scanned document.
+    let pooledProjectEntries: DictionaryEntry[] = [];
     if (projectIds.length > 0) {
       const crawlTags = [...new Set(projectIds.flatMap((id) => this.crawlTagsFor(id)))];
       if (crawlTags.length > 0) {
         const { documents } = await this.getProjectDocuments();
-        const entries = crawlDocuments(documents, this.policy, crawlTags);
-        loaded['project' as AuthorityPackId] = (loaded['project' as AuthorityPackId] ?? 0) + entries.length;
-        extraSuggestionGroups.push(dictionaryTag(doc, entries, this.policy, 'this project'));
+        pooledProjectEntries = crawlDocuments(documents, this.policy, crawlTags);
       }
     }
 
-    if (listIds.length > 0 && (options.importedLists?.length ?? 0) > 0) {
-      const listTags = new Set(listIds.map((id) => this.defaultTagFor(id)).filter((tag): tag is string => !!tag));
-      for (const file of options.importedLists ?? []) {
-        const filtered = file.entries.filter((entry) => listTags.has(entry.tag));
-        if (filtered.length === 0) continue;
-        loaded['list' as AuthorityPackId] = (loaded['list' as AuthorityPackId] ?? 0) + filtered.length;
-        extraSuggestionGroups.push(dictionaryTag(doc, filtered, this.policy, file.name));
+    const multiDoc = scopeDocs.length > 1;
+    const byDocument: TagBombDocumentResult[] = [];
+    let lastCandidateCount = 0;
+    let totalMatchCount = 0;
+    let lastLoaded: Partial<Record<AuthorityPackId, number>> = {};
+    let anyTruncated = false;
+
+    for (const { doc, filePath } of scopeDocs) {
+      const authorityResult = await runAuthorityTagBombOnDocument(doc, packIds, readPackFile, this.policy, {
+        dateFilter: options.dateFilter,
+        extraCandidates,
+        nameTypePolicy,
+        onProgress: (message) => {
+          options.onProgress?.(multiDoc ? `${filePath}: ${message}` : message);
+          void yieldToUi();
+        },
+      });
+
+      const extraSuggestionGroups: Suggestion[][] = [];
+      const loaded: Partial<Record<AuthorityPackId, number>> = { ...authorityResult.loaded };
+
+      if (pooledProjectEntries.length > 0) {
+        loaded['project' as AuthorityPackId] =
+          (loaded['project' as AuthorityPackId] ?? 0) + pooledProjectEntries.length;
+        extraSuggestionGroups.push(dictionaryTag(doc, pooledProjectEntries, this.policy, 'this project'));
+      }
+
+      if (listIds.length > 0 && (options.importedLists?.length ?? 0) > 0) {
+        const listTags = new Set(listIds.map((id) => this.defaultTagFor(id)).filter((tag): tag is string => !!tag));
+        for (const file of options.importedLists ?? []) {
+          const filtered = file.entries.filter((entry) => listTags.has(entry.tag));
+          if (filtered.length === 0) continue;
+          loaded['list' as AuthorityPackId] = (loaded['list' as AuthorityPackId] ?? 0) + filtered.length;
+          extraSuggestionGroups.push(dictionaryTag(doc, filtered, this.policy, file.name));
+        }
+      }
+
+      const merged = [authorityResult.suggestions, ...extraSuggestionGroups].flat();
+      const { suggestions: deduped } = prepareSuggestionsForReview(doc, this.policy, merged);
+      const truncated = authorityResult.truncated || deduped.length > MAX_AUTHORITY_SUGGESTIONS;
+      const suggestions = deduped.slice(0, MAX_AUTHORITY_SUGGESTIONS);
+
+      lastCandidateCount = authorityResult.candidateCount;
+      lastLoaded = loaded;
+      totalMatchCount += authorityResult.matchCount;
+      anyTruncated = anyTruncated || truncated;
+
+      if (!multiDoc || suggestions.length > 0) {
+        byDocument.push({ filePath, suggestions, matchCount: authorityResult.matchCount });
       }
     }
-
-    const merged = [authorityResult.suggestions, ...extraSuggestionGroups].flat();
-    const { suggestions: deduped } = prepareSuggestionsForReview(doc, this.policy, merged);
-    const truncated = authorityResult.truncated || deduped.length > MAX_AUTHORITY_SUGGESTIONS;
-    const suggestions = deduped.slice(0, MAX_AUTHORITY_SUGGESTIONS);
 
     return {
-      suggestions,
-      candidateCount: authorityResult.candidateCount,
-      matchCount: authorityResult.matchCount,
-      loaded,
-      truncated,
+      suggestions: byDocument[0]?.suggestions ?? [],
+      candidateCount: lastCandidateCount,
+      matchCount: totalMatchCount,
+      loaded: lastLoaded,
+      truncated: anyTruncated,
+      ...(multiDoc ? { byDocument } : {}),
     };
   }
 
@@ -703,8 +758,22 @@ export class AutoTaggingSession {
     }
 
     const activePath = globals.writer?.overmindState?.editor?.resource?.filePath;
-    const documents = [current];
     this.documentPaths.set(current, activePath ?? 'current');
+    const documents = await this.readXmlFilesUnder(root, activePath ?? '', current);
+    return { documents, available: true };
+  }
+
+  /** `current` plus every readable, parseable XML file under `root` (skipping `activePath`). */
+  private async readXmlFilesUnder(
+    root: string,
+    activePath: string,
+    current: Document,
+  ): Promise<Document[]> {
+    const globals = window as unknown as { electronAPI?: Partial<DesktopProjectApi> };
+    const api = globals.electronAPI;
+    const documents = [current];
+    if (!api?.listProjectXmlFiles || !api.readFile) return documents;
+
     const files = await api.listProjectXmlFiles(root);
     for (const file of files) {
       if (activePath && samePath(file.path, activePath)) continue;
@@ -719,7 +788,77 @@ export class AutoTaggingSession {
         // skip files that can't be read or parsed
       }
     }
-    return { documents, available: true };
+    return documents;
+  }
+
+  /**
+   * Resolve the document set for a tag bomb `scope`. `currentFile` is the
+   * legacy single-document behavior; the others gather documents from open
+   * tabs, the whole project, or an arbitrary folder (desktop only).
+   */
+  async resolveTagBombScopeDocuments(
+    scope: TagBombScope,
+    customPath?: string,
+  ): Promise<{ documents: TagBombScopeDocument[]; error?: string }> {
+    const current = await this.getDocument();
+    const globals = window as unknown as {
+      writer?: { overmindState?: { editor?: { resource?: { filePath?: string } } } };
+      __ljbLspProject?: { projectRoot?: string };
+      __leafWriterProject?: {
+        getOpenTabs?: () => { filePath: string; content: string }[];
+      };
+    };
+    const activePath = globals.writer?.overmindState?.editor?.resource?.filePath ?? 'current';
+    this.documentPaths.set(current, activePath);
+
+    if (scope === 'currentFile') {
+      return { documents: [{ doc: current, filePath: activePath }] };
+    }
+
+    if (scope === 'openTabs') {
+      const tabs = globals.__leafWriterProject?.getOpenTabs?.() ?? [];
+      if (tabs.length === 0) return { documents: [], error: 'No files are open.' };
+
+      const documents: TagBombScopeDocument[] = [];
+      for (const tab of tabs) {
+        if (samePath(tab.filePath, activePath)) {
+          documents.push({ doc: current, filePath: activePath });
+          continue;
+        }
+        try {
+          const doc = new DOMParser().parseFromString(tab.content, 'application/xml');
+          if (doc.getElementsByTagName('parsererror').length > 0) continue;
+          normalizeDomText(doc);
+          this.documentPaths.set(doc, tab.filePath);
+          documents.push({ doc, filePath: tab.filePath });
+        } catch {
+          // skip files that can't be parsed
+        }
+      }
+      return { documents };
+    }
+
+    if (scope === 'project') {
+      const root = globals.__ljbLspProject?.projectRoot;
+      if (!root) return { documents: [], error: 'Open a project folder first.' };
+      const documents = await this.readXmlFilesUnder(root, activePath, current);
+      return {
+        documents: documents.map((doc) => ({
+          doc,
+          filePath: this.documentPaths.get(doc) ?? activePath,
+        })),
+      };
+    }
+
+    const folder = customPath?.trim();
+    if (!folder) return { documents: [], error: 'Enter a folder path.' };
+    const documents = await this.readXmlFilesUnder(folder, activePath, current);
+    return {
+      documents: documents.map((doc) => ({
+        doc,
+        filePath: this.documentPaths.get(doc) ?? activePath,
+      })),
+    };
   }
 
   async loadEntities(): Promise<Document> {
@@ -1027,6 +1166,58 @@ export class AutoTaggingSession {
       this.writer.loadDocumentXML(xml);
       this.syncUnsavedStateAfterReload(xml);
       this.writer.validate?.();
+    }
+    return result;
+  }
+
+  /**
+   * Apply suggestions straight to `filePath`, bypassing the review panel
+   * ("Skip review"). Reloads the live editor when it's the active document;
+   * otherwise re-reads, patches, and writes the file directly, then asks the
+   * app shell to refresh a matching open tab if one exists.
+   */
+  async applyTagBombDocument(
+    filePath: string,
+    suggestions: Suggestion[],
+    userRules: UserRule[] = [],
+  ): Promise<BatchResult> {
+    const globals = window as unknown as {
+      writer?: { overmindState?: { editor?: { resource?: { filePath?: string } } } };
+      __leafWriterProject?: { reloadFileFromDisk?: (filePath: string) => Promise<void> };
+      electronAPI?: {
+        readFile: (path: string) => Promise<string>;
+        writeFile: (path: string, content: string) => Promise<void>;
+      };
+    };
+    const activePath = globals.writer?.overmindState?.editor?.resource?.filePath;
+    if (activePath && samePath(filePath, activePath)) {
+      return this.apply(suggestions, userRules);
+    }
+
+    const api = globals.electronAPI;
+    if (!api?.readFile || !api.writeFile) {
+      throw new Error('File access is not available.');
+    }
+    const xml = await api.readFile(filePath);
+    const doc = new DOMParser().parseFromString(xml, 'application/xml');
+    normalizeDomText(doc);
+    const schemaManager = this.writer.schemaManager;
+    const applyOptions = {
+      policy: this.policy,
+      ...(schemaManager
+        ? {
+            canContain: (parent: string, child: string) =>
+              canContainForAutoTagging(schemaManager, parent, child),
+          }
+        : {}),
+      userRules,
+    };
+    const raw = await applySuggestions(doc, suggestions, applyOptions);
+    const result = withApplyDiagnostics(doc, raw, applyOptions);
+    if (result.applied > 0) {
+      const serialized = new XMLSerializer().serializeToString(doc);
+      await api.writeFile(filePath, serialized);
+      await globals.__leafWriterProject?.reloadFileFromDisk?.(filePath);
     }
     return result;
   }

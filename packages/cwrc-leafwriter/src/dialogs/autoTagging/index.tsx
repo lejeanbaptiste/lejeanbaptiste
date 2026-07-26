@@ -8,15 +8,21 @@ import {
   Chip,
   Dialog,
   DialogContent,
+  FormControl,
   FormControlLabel,
   IconButton,
+  InputLabel,
   Link,
+  MenuItem,
+  Select,
   Slider,
   Stack,
+  TextField,
   Tooltip,
   Typography,
 } from '@mui/material';
 import { useEffect, useMemo, useRef, useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import {
   AutoTaggingSession,
   aiApiSettingsFromDesktop,
@@ -67,6 +73,14 @@ import {
   finishAiRunProgress,
   startAiRunProgress,
   updateAiRunProgress,
+  TAG_BOMB_SCOPES,
+  TAG_BOMB_SCOPE_LABEL_KEYS,
+  type TagBombScope,
+  type TagBombDocumentResult,
+  peekTagBombQueue,
+  setTagBombQueue,
+  consumeTagBombQueueEntry,
+  clearTagBombQueue,
 } from '../../autoTagging';
 import {
   isChineseLanguageCode,
@@ -75,7 +89,7 @@ import {
 } from '../../utilities/languageCodes';
 import { isPluginEnabled } from '../../plugins';
 import { AutoTaggingApplyOverlay } from '../../layout/AutoTaggingApplyOverlay';
-import { useActions } from '../../overmind';
+import { useActions, useAppState } from '../../overmind';
 import type { IDialog } from '../type';
 import { AiPromptEditorDialog } from './AiPromptEditorDialog';
 import { AiTagChipPicker } from './AiTagChipPicker';
@@ -282,6 +296,7 @@ const isDesktopApp = () => typeof window !== 'undefined' && !!window.electronAPI
  * docked review panel (split screen) — the editor stays visible, not greyed out.
  */
 export const AutoTaggingDialog = ({ id, onClose, open = false }: IDialog) => {
+  const { t } = useTranslation();
   const [error, setError] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
   const [step, setStep] = useState<DialogStep>('methods');
@@ -313,6 +328,11 @@ export const AutoTaggingDialog = ({ id, onClose, open = false }: IDialog) => {
     );
   };
   const [importedLists, setImportedLists] = useState<TagBombImportedList[]>([]);
+  const [tagBombScope, setTagBombScope] = useState<TagBombScope>('currentFile');
+  const [tagBombCustomPath, setTagBombCustomPath] = useState('');
+  const [skipReview, setSkipReview] = useState(false);
+  const [tagBombQueue, setTagBombQueueLocal] = useState<TagBombDocumentResult[] | null>(null);
+  const [queueBusyPath, setQueueBusyPath] = useState<string | null>(null);
   const [shortFormFromFirstAppearance, setShortFormFromFirstAppearance] = useState(true);
   const [busyMessage, setBusyMessage] = useState('');
   const [authorityPackCounts, setAuthorityPackCounts] = useState<AuthorityPackStringCounts>({});
@@ -328,12 +348,18 @@ export const AutoTaggingDialog = ({ id, onClose, open = false }: IDialog) => {
   // local model server stops generating instead of running to completion.
   useEffect(() => () => aiAbort.current?.abort(), []);
   const { startAutoTaggingReview, dismissReviewPanes, notifyViaSnackbar } = useActions().ui;
+  const { enableMultiFileAutomation, multiFileSnapshotBefore } = useAppState().editor;
 
   // Opening the launcher abandons any in-progress review or disambiguation
   // walk without saving — the new run starts from a clean slate.
   useEffect(() => {
     if (open) dismissReviewPanes();
   }, [open, dismissReviewPanes]);
+
+  // Offer to resume a multi-document tag bomb queue left over from a prior run.
+  useEffect(() => {
+    if (open) setTagBombQueueLocal(peekTagBombQueue());
+  }, [open]);
 
   // Capture the editor selection at open — TinyMCE keeps its range while the
   // dialog has focus, but the user may click around before running AI.
@@ -689,6 +715,47 @@ export const AutoTaggingDialog = ({ id, onClose, open = false }: IDialog) => {
     }
   };
 
+  /** Apply one queued document's suggestions directly, bypassing review, and drop it from the queue. */
+  const applyQueueDocument = async (doc: TagBombDocumentResult) => {
+    setQueueBusyPath(doc.filePath);
+    setError(null);
+    try {
+      const result = await getSession().applyTagBombDocument(doc.filePath, doc.suggestions);
+      notifyViaSnackbar({
+        message: t('LW.autoTagging.tag_bomb_queue.applied', { count: result.applied }),
+      });
+      const remaining = consumeTagBombQueueEntry(doc.filePath);
+      setTagBombQueueLocal(remaining);
+    } catch (e) {
+      setError(e instanceof Error ? e.message : String(e));
+    } finally {
+      setQueueBusyPath(null);
+    }
+  };
+
+  /** Open a queued document (if not already active) and start the familiar single-document review. */
+  const reviewQueueDocument = async (doc: TagBombDocumentResult) => {
+    setQueueBusyPath(doc.filePath);
+    setError(null);
+    try {
+      if (doc.filePath !== 'current') {
+        await window.__leafWriterProject?.openFile?.(doc.filePath);
+      }
+      const remaining = consumeTagBombQueueEntry(doc.filePath);
+      setTagBombQueueLocal(remaining);
+      beginReview(doc.suggestions, `${doc.filePath} · ${doc.matchCount} matches`);
+    } catch (e) {
+      setError(e instanceof Error ? e.message : String(e));
+    } finally {
+      setQueueBusyPath(null);
+    }
+  };
+
+  const discardQueue = () => {
+    clearTagBombQueue();
+    setTagBombQueueLocal(null);
+  };
+
   const runTagBomb = async () => {
     const installedIds = new Set(
       authorityStatus.filter((status) => status.installed).map((status) => status.id),
@@ -701,6 +768,11 @@ export const AutoTaggingDialog = ({ id, onClose, open = false }: IDialog) => {
     const selected = checked.filter((id) => (originOf(id) === 'file' ? installedIds.has(id) : true));
     if (selected.length === 0) {
       setError('Select at least one source.');
+      return;
+    }
+    const effectiveScope: TagBombScope = enableMultiFileAutomation ? tagBombScope : 'currentFile';
+    if (effectiveScope === 'custom' && !tagBombCustomPath.trim()) {
+      setError('Enter a folder path.');
       return;
     }
     const needsFileReader = selected.some((id) => originOf(id) === 'file');
@@ -737,9 +809,16 @@ export const AutoTaggingDialog = ({ id, onClose, open = false }: IDialog) => {
           onProgress: setAuthorityProgress,
           ...(dateFilter ? { dateFilter } : {}),
           importedLists,
+          scope: effectiveScope,
+          ...(effectiveScope === 'custom' ? { customPath: tagBombCustomPath } : {}),
         },
       );
-      if (result.suggestions.length === 0) {
+      const matchedDocs: TagBombDocumentResult[] =
+        result.byDocument ??
+        (result.suggestions.length > 0
+          ? [{ filePath: 'current', suggestions: result.suggestions, matchCount: result.matchCount }]
+          : []);
+      if (matchedDocs.length === 0) {
         const filterNote =
           authorityDateFilter === 'none'
             ? ''
@@ -749,12 +828,44 @@ export const AutoTaggingDialog = ({ id, onClose, open = false }: IDialog) => {
         );
         return;
       }
-      beginReview(result.suggestions, formatAuthorityTagBombNotice(result));
+
+      // Guardrail: auto-snapshot before a multi-document run, per the configured threshold.
+      if (matchedDocs.length > 1) {
+        const isCorpusWide = effectiveScope === 'project';
+        const shouldSnapshot =
+          multiFileSnapshotBefore === 'multiFile' ||
+          (multiFileSnapshotBefore === 'corpusWide' && isCorpusWide);
+        if (shouldSnapshot) {
+          await window.__leafWriterProject?.createTimeMachineSnapshot?.('tag-bomb');
+        }
+      }
+
+      if (skipReview) {
+        setBusyMessage(t('LW.autoTagging.tag_bomb_queue.applying'));
+        let appliedTotal = 0;
+        for (const docResult of matchedDocs) {
+          // eslint-disable-next-line no-await-in-loop
+          const applied = await getSession().applyTagBombDocument(docResult.filePath, docResult.suggestions);
+          appliedTotal += applied.applied;
+        }
+        notifyViaSnackbar({ message: t('LW.autoTagging.tag_bomb_queue.applied', { count: appliedTotal }) });
+        handleClose();
+        return;
+      }
+
+      if (matchedDocs.length === 1) {
+        beginReview(matchedDocs[0]!.suggestions, formatAuthorityTagBombNotice(result));
+        return;
+      }
+
+      setTagBombQueue(matchedDocs);
+      setTagBombQueueLocal(matchedDocs);
     } catch (e) {
       setError(e instanceof Error ? e.message : String(e));
     } finally {
       setBusy(false);
       setAuthorityProgress('');
+      setBusyMessage('');
     }
   };
 
@@ -1049,6 +1160,57 @@ export const AutoTaggingDialog = ({ id, onClose, open = false }: IDialog) => {
             </Stack>
           ) : step === 'authority' ? (
             <Stack spacing={0.75} sx={{ mt: 0.25 }}>
+              {tagBombQueue && tagBombQueue.length > 0 && (
+                <Alert severity="info" sx={{ py: 0.5 }}>
+                  {t('LW.autoTagging.tag_bomb_queue.resume_title')}
+                  <Box sx={{ mt: 0.5 }}>
+                    <Typography variant="caption" sx={{ display: 'block', mb: 0.5 }}>
+                      {t('LW.autoTagging.tag_bomb_queue.resume_body', { count: tagBombQueue.length })}
+                    </Typography>
+                    <Stack spacing={0.5}>
+                      {tagBombQueue.map((doc) => (
+                        <Stack
+                          key={doc.filePath}
+                          direction="row"
+                          spacing={0.5}
+                          alignItems="center"
+                          justifyContent="space-between"
+                        >
+                          <Typography
+                            variant="caption"
+                            sx={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}
+                          >
+                            {doc.filePath} · {t('LW.autoTagging.tag_bomb_queue.hits', { count: doc.matchCount })}
+                          </Typography>
+                          <Stack direction="row" spacing={0.5} flexShrink={0}>
+                            <Button
+                              size="small"
+                              variant="outlined"
+                              disabled={queueBusyPath !== null}
+                              onClick={() => void reviewQueueDocument(doc)}
+                            >
+                              {t('LW.autoTagging.tag_bomb_queue.review')}
+                            </Button>
+                            <Button
+                              size="small"
+                              variant="text"
+                              disabled={queueBusyPath !== null}
+                              onClick={() => void applyQueueDocument(doc)}
+                            >
+                              {t('LW.autoTagging.skip_review')}
+                            </Button>
+                          </Stack>
+                        </Stack>
+                      ))}
+                    </Stack>
+                    <Box sx={{ mt: 0.5 }}>
+                      <Link component="button" variant="caption" underline="hover" onClick={discardQueue}>
+                        {t('LW.autoTagging.tag_bomb_queue.discard')}
+                      </Link>
+                    </Box>
+                  </Box>
+                </Alert>
+              )}
               {!entityDbFolder && (
                 <Alert severity="warning" sx={{ py: 0.5 }}>
                   No entity database folder configured. Pick the folder that contains{' '}
@@ -1088,6 +1250,53 @@ export const AutoTaggingDialog = ({ id, onClose, open = false }: IDialog) => {
                   </Box>
                 </Alert>
               )}
+              <Box sx={{ px: 0.25 }}>
+                <Stack direction="row" spacing={1} alignItems="center" flexWrap="wrap" useFlexGap>
+                  {enableMultiFileAutomation && (
+                    <FormControl size="small" disabled={busy} sx={{ minWidth: 160 }}>
+                      <InputLabel id="tag-bomb-scope-label" sx={{ fontSize: '0.8125rem' }}>
+                        {t('LW.autoTagging.tag_bomb_scope.label')}
+                      </InputLabel>
+                      <Select
+                        labelId="tag-bomb-scope-label"
+                        label={t('LW.autoTagging.tag_bomb_scope.label')}
+                        value={tagBombScope}
+                        onChange={(event) => setTagBombScope(event.target.value as TagBombScope)}
+                        sx={{ fontSize: '0.8125rem' }}
+                      >
+                        {TAG_BOMB_SCOPES.map((value) => (
+                          <MenuItem key={value} value={value} sx={{ fontSize: '0.8125rem' }}>
+                            {t(TAG_BOMB_SCOPE_LABEL_KEYS[value])}
+                          </MenuItem>
+                        ))}
+                      </Select>
+                    </FormControl>
+                  )}
+                  {enableMultiFileAutomation && tagBombScope === 'custom' && (
+                    <TextField
+                      size="small"
+                      disabled={busy}
+                      placeholder={t('LW.autoTagging.tag_bomb_scope.folder_placeholder')}
+                      value={tagBombCustomPath}
+                      onChange={(event) => setTagBombCustomPath(event.target.value)}
+                      slotProps={{ input: { sx: { fontSize: '0.8125rem' } } }}
+                      sx={{ minWidth: 220 }}
+                    />
+                  )}
+                  <FormControlLabel
+                    control={
+                      <Checkbox
+                        size="small"
+                        checked={skipReview}
+                        disabled={busy}
+                        onChange={(event) => setSkipReview(event.target.checked)}
+                      />
+                    }
+                    label={<Typography variant="caption">{t('LW.autoTagging.skip_review')}</Typography>}
+                    sx={{ ml: 0 }}
+                  />
+                </Stack>
+              </Box>
               <Box sx={{ px: 0.25 }}>
                 <Stack direction="row" spacing={0.5} alignItems="center" flexWrap="wrap" useFlexGap>
                   <Typography

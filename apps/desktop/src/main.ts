@@ -94,15 +94,16 @@ import {
   setPluginEnabled,
   syncEnabledPluginContributions,
 } from './plugins';
-import { loadOrCreateProject, loadProjectFile, writeProjectConfig, type ProjectBundle } from './projectFile';
+import {
+  loadOrCreateProject,
+  loadProjectFile,
+  writeProjectConfig,
+  type ProjectBundle,
+} from './projectFile';
 import { resolveDialogDefaultPath } from './dialogDefaultPath';
 import mammoth from 'mammoth';
 import { extractOdtText } from './odtText';
-import {
-  readAchievementsFile,
-  readAchievementsFileFrom,
-  writeAchievementsFile,
-} from './achievementsFile';
+import { readAchievementsFile, writeAchievementsFile } from './achievementsFile';
 import {
   deleteSourceProfileFromFile,
   readSourceProfilesFile,
@@ -612,7 +613,9 @@ const assertRendererWritePath = async (candidate: string): Promise<void> => {
     roots,
     approvedRendererWriteRoots: [...approvedRendererWriteRoots],
   });
-  throw new Error('Renderer file writes are restricted to the active project and app data folders.');
+  throw new Error(
+    'Renderer file writes are restricted to the active project and app data folders.',
+  );
 };
 
 const approveRendererReadRoot = (root: string): void => {
@@ -1338,49 +1341,22 @@ const registerIpcHandlers = () => {
     deleteSourceProfileFromFile(profileId),
   );
 
-  ipcMain.handle('pickImportAchievementsFile', async () => {
-    const parent = getTopNativeDialogWindow() ?? mainWindow ?? undefined;
-    const options: Electron.OpenDialogOptions = {
-      properties: ['openFile'],
-      title: 'Load stats from another file',
-      message: 'Select an achievements.json to import. This replaces your local stats.',
-      filters: [
-        { name: 'Achievements file', extensions: ['json'] },
-        { name: 'All files', extensions: ['*'] },
-      ],
-      defaultPath: await getDialogDefaultPath(),
-    };
-    const result = parent
-      ? await dialog.showOpenDialog(parent, options)
-      : await dialog.showOpenDialog(options);
-    if (result.canceled || result.filePaths.length === 0) return null;
-    rememberDialogDir(result.filePaths[0], 'file');
-    return result.filePaths[0] ?? null;
-  });
-
-  ipcMain.handle('readAchievementsFileFrom', async (_event, filePath: string) => {
-    return readAchievementsFileFrom(filePath);
-  });
-
   ipcMain.handle('getGameAssetColorStats', (_event, key: string) => {
     return getGameAssetColorStats(key);
   });
 
-  ipcMain.handle(
-    'saveCertificatePng',
-    async (_event, bytes: Uint8Array, suggestedName: string) => {
-      if (!mainWindow) return false;
-      mainWindow.focus();
-      const result = await dialog.showSaveDialog(mainWindow, {
-        defaultPath: path.join(await getDialogDefaultPath(), suggestedName),
-        filters: [{ name: 'PNG Image', extensions: ['png'] }],
-      });
-      if (result.canceled || !result.filePath) return false;
-      await fs.writeFile(result.filePath, Buffer.from(bytes));
-      rememberDialogDir(result.filePath, 'file');
-      return true;
-    },
-  );
+  ipcMain.handle('saveCertificatePng', async (_event, bytes: Uint8Array, suggestedName: string) => {
+    if (!mainWindow) return false;
+    mainWindow.focus();
+    const result = await dialog.showSaveDialog(mainWindow, {
+      defaultPath: path.join(await getDialogDefaultPath(), suggestedName),
+      filters: [{ name: 'PNG Image', extensions: ['png'] }],
+    });
+    if (result.canceled || !result.filePath) return false;
+    await fs.writeFile(result.filePath, Buffer.from(bytes));
+    rememberDialogDir(result.filePath, 'file');
+    return true;
+  });
 
   ipcMain.handle('getCachedLeaderboardToken', () => getCachedLeaderboardToken());
   ipcMain.handle('startLeaderboardDeviceFlow', () => startLeaderboardDeviceFlow());
@@ -1539,7 +1515,8 @@ const registerIpcHandlers = () => {
       title: 'Choose CSS file (optional)',
       message: 'Optional: choose a CSS file for this schema, or Cancel to skip.',
     });
-    if (!cssResult.canceled && cssResult.filePaths[0]) approveRendererReadRoot(cssResult.filePaths[0]);
+    if (!cssResult.canceled && cssResult.filePaths[0])
+      approveRendererReadRoot(cssResult.filePaths[0]);
     return {
       rngPath: rngResult.filePaths[0],
       cssPath: cssResult.canceled || !cssResult.filePaths[0] ? null : cssResult.filePaths[0],
@@ -1594,10 +1571,7 @@ const registerIpcHandlers = () => {
 
   ipcMain.handle(
     'setTranslationSpellcheck',
-    (
-      event,
-      options: { enabled: boolean; languageCodes?: string[] },
-    ): void => {
+    (event, options: { enabled: boolean; languageCodes?: string[] }): void => {
       applyTranslationSpellcheck(event.sender, {
         enabled: options?.enabled === true,
         languageCodes: Array.isArray(options?.languageCodes)

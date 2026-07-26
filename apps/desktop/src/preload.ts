@@ -161,10 +161,7 @@ export interface ElectronAPI {
     pluginId: string,
     projectFilePath: string,
   ) => Promise<{ merged: boolean }>;
-  pluginsInvokePython?: (
-    pluginId: string,
-    payload: Record<string, unknown>,
-  ) => Promise<unknown>;
+  pluginsInvokePython?: (pluginId: string, payload: Record<string, unknown>) => Promise<unknown>;
   onPluginPythonProgress?: (
     pluginId: string,
     callback: (
@@ -205,16 +202,18 @@ export interface ElectronAPI {
   }) => Promise<void>;
   readAchievementsFile: () => Promise<string | null>;
   writeAchievementsFile: (content: string) => Promise<void>;
-  readSourceProfiles: () => Promise<import('../../commons/src/desktop/sourceProfileTypes').SourceProfileFile>;
+  readSourceProfiles: () => Promise<
+    import('../../commons/src/desktop/sourceProfileTypes').SourceProfileFile
+  >;
   upsertSourceProfile: (
     profile: import('../../commons/src/desktop/sourceProfileTypes').SourceProfile,
   ) => Promise<import('../../commons/src/desktop/sourceProfileTypes').SourceProfileFile>;
   deleteSourceProfile: (
     profileId: string,
   ) => Promise<import('../../commons/src/desktop/sourceProfileTypes').SourceProfileFile>;
-  pickImportAchievementsFile: () => Promise<string | null>;
-  readAchievementsFileFrom: (filePath: string) => Promise<string | null>;
-  getGameAssetColorStats: (key: string) => Promise<{ lightness: number; saturation: number } | null>;
+  getGameAssetColorStats: (
+    key: string,
+  ) => Promise<{ lightness: number; saturation: number } | null>;
   saveCertificatePng: (bytes: Uint8Array, suggestedName: string) => Promise<boolean>;
   getCachedLeaderboardToken: () => Promise<string | null>;
   startLeaderboardDeviceFlow: () => Promise<{
@@ -463,18 +462,20 @@ const electronAPI: ElectronAPI = {
   readAchievementsFile: () => ipcRenderer.invoke('readAchievementsFile'),
   writeAchievementsFile: (content: string) => ipcRenderer.invoke('writeAchievementsFile', content),
   readSourceProfiles: () => ipcRenderer.invoke('readSourceProfiles'),
-  upsertSourceProfile: (profile: import('../../commons/src/desktop/sourceProfileTypes').SourceProfile) =>
-    ipcRenderer.invoke('upsertSourceProfile', profile),
+  upsertSourceProfile: (
+    profile: import('../../commons/src/desktop/sourceProfileTypes').SourceProfile,
+  ) => ipcRenderer.invoke('upsertSourceProfile', profile),
   deleteSourceProfile: (profileId: string) => ipcRenderer.invoke('deleteSourceProfile', profileId),
-  pickImportAchievementsFile: () => ipcRenderer.invoke('pickImportAchievementsFile'),
-  readAchievementsFileFrom: (filePath: string) =>
-    ipcRenderer.invoke('readAchievementsFileFrom', filePath),
   getGameAssetColorStats: (key: string) => ipcRenderer.invoke('getGameAssetColorStats', key),
   saveCertificatePng: (bytes: Uint8Array, suggestedName: string) =>
     ipcRenderer.invoke('saveCertificatePng', bytes, suggestedName),
   getCachedLeaderboardToken: () => ipcRenderer.invoke('getCachedLeaderboardToken'),
   startLeaderboardDeviceFlow: () => ipcRenderer.invoke('startLeaderboardDeviceFlow'),
-  pollLeaderboardDeviceFlow: (deviceCode: string, intervalSeconds: number, expiresInSeconds: number) =>
+  pollLeaderboardDeviceFlow: (
+    deviceCode: string,
+    intervalSeconds: number,
+    expiresInSeconds: number,
+  ) =>
     ipcRenderer.invoke('pollLeaderboardDeviceFlow', deviceCode, intervalSeconds, expiresInSeconds),
   getEntityDbFolder: () => ipcRenderer.invoke('getEntityDbFolder'),
   setEntityDbFolder: (folder: string | null) => ipcRenderer.invoke('setEntityDbFolder', folder),

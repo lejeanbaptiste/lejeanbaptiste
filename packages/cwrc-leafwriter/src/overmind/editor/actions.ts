@@ -5,7 +5,7 @@ import { db } from '../../db';
 import { resetLookupPreferences } from '../../jotai/entity-lookup/utilities';
 import type { LeafWriterOptionsSettings, Schema } from '../../types';
 import { DEFAULT_ASIAN_FONT, DEFAULT_LATIN_FONT, getValidFontFamily } from './fontFamilies';
-import { DEFAULT_EDITOR_FONT_SIZE, type ChoiceDisplayMode } from './state';
+import { DEFAULT_EDITOR_FONT_SIZE, type ChoiceDisplayMode, type MultiFileSnapshotTrigger } from './state';
 
 const DIALOG_PREFS_COOKIE_NAME = 'leaf-writer-base-dialog-preferences';
 const ASIAN_FONT_KEY = 'asianFont';
@@ -20,6 +20,10 @@ const SHOW_RAW_XML_PANEL_KEY = 'showRawXmlPanel';
 const STRIP_CJK_WHITESPACE_KEY = 'stripCjkWhitespace';
 const TEXT_LOCKED_KEY = 'textLocked';
 const VALIDATE_XML_ON_REPLACE_KEY = 'validateXmlOnReplace';
+const ENABLE_XML_EDITING_KEY = 'enableXmlEditing';
+const ENABLE_MULTI_FILE_AUTOMATION_KEY = 'enableMultiFileAutomation';
+const MULTI_FILE_SNAPSHOT_BEFORE_KEY = 'multiFileSnapshotBefore';
+const MULTI_FILE_SNAPSHOT_TRIGGERS: MultiFileSnapshotTrigger[] = ['multiFile', 'corpusWide', 'none'];
 
 /**
  * A correction entity's live editor content is always its corrected text (see
@@ -154,6 +158,28 @@ export const applyInitialSettings = ({ state, actions, effects }: Context) => {
   );
   if (storedValidateXmlOnReplace !== null) {
     state.editor.validateXmlOnReplace = storedValidateXmlOnReplace;
+  }
+
+  const storedEnableXmlEditing = effects.editor.api.getFromLocalStorage<boolean>(
+    ENABLE_XML_EDITING_KEY,
+  );
+  if (storedEnableXmlEditing !== null) state.editor.enableXmlEditing = storedEnableXmlEditing;
+
+  const storedEnableMultiFileAutomation = effects.editor.api.getFromLocalStorage<boolean>(
+    ENABLE_MULTI_FILE_AUTOMATION_KEY,
+  );
+  if (storedEnableMultiFileAutomation !== null) {
+    state.editor.enableMultiFileAutomation = storedEnableMultiFileAutomation;
+  }
+
+  const storedMultiFileSnapshotBefore = effects.editor.api.getFromLocalStorage<MultiFileSnapshotTrigger>(
+    MULTI_FILE_SNAPSHOT_BEFORE_KEY,
+  );
+  if (
+    storedMultiFileSnapshotBefore &&
+    MULTI_FILE_SNAPSHOT_TRIGGERS.includes(storedMultiFileSnapshotBefore)
+  ) {
+    state.editor.multiFileSnapshotBefore = storedMultiFileSnapshotBefore;
   }
 
   const storedChoiceDisplayMode = effects.editor.api.getFromLocalStorage<ChoiceDisplayMode>(
@@ -292,6 +318,33 @@ export const setStripCjkWhitespace = ({ state, effects }: Context, value: boolea
 export const setValidateXmlOnReplace = ({ state, effects }: Context, value: boolean) => {
   state.editor.validateXmlOnReplace = value;
   effects.editor.api.saveToLocalStorage<boolean>(VALIDATE_XML_ON_REPLACE_KEY, value);
+};
+
+export const setEnableXmlEditing = ({ state, actions, effects }: Context, value: boolean) => {
+  state.editor.enableXmlEditing = value;
+  effects.editor.api.saveToLocalStorage<boolean>(ENABLE_XML_EDITING_KEY, value);
+  if (!value && state.ui.editorViewMode === 'source') {
+    void actions.ui.exitSourceMode();
+  }
+  // The desktop shell (right panel tabs, etc.) lives outside this overmind
+  // instance and can't subscribe to it directly — notify via a DOM event,
+  // like the auto-tagging/disambiguation review-panel open/close signals.
+  window.dispatchEvent(
+    new CustomEvent('leafwriter:enable-xml-editing-change', { detail: { value } }),
+  );
+};
+
+export const setEnableMultiFileAutomation = ({ state, effects }: Context, value: boolean) => {
+  state.editor.enableMultiFileAutomation = value;
+  effects.editor.api.saveToLocalStorage<boolean>(ENABLE_MULTI_FILE_AUTOMATION_KEY, value);
+};
+
+export const setMultiFileSnapshotBefore = (
+  { state, effects }: Context,
+  value: MultiFileSnapshotTrigger,
+) => {
+  state.editor.multiFileSnapshotBefore = value;
+  effects.editor.api.saveToLocalStorage<MultiFileSnapshotTrigger>(MULTI_FILE_SNAPSHOT_BEFORE_KEY, value);
 };
 
 export const setShowRawXmlPanel = ({ state, effects }: Context, value: boolean) => {

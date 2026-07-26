@@ -9,7 +9,7 @@ import { Box, IconButton, ToggleButton, ToggleButtonGroup, Tooltip } from '@mui/
 import { leafwriterAtom } from '@src/jotai';
 import { useAppState } from '@src/overmind';
 import { useAtom } from 'jotai';
-import { useCallback, useEffect, useRef, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { FileMetadataPanel } from './FileMetadataPanel';
 import { describePanelNode, panelTrace } from './panelTrace';
 import { AttributesPanel } from './tagging/AttributesPanel';
@@ -94,6 +94,26 @@ const resizeEditor = () => {
 export const UnifiedRightPanel = () => {
   const [leafWriter] = useAtom(leafwriterAtom);
   const { rootPath } = useAppState().project;
+
+  // `enableXmlEditing` lives in the embedded editor's own overmind instance,
+  // outside this app's state tree — read it off `window.writer` and stay in
+  // sync via the change event `setEnableXmlEditing` dispatches.
+  const [enableXmlEditing, setEnableXmlEditing] = useState(
+    () => window.writer?.overmindState?.editor?.enableXmlEditing ?? true,
+  );
+  useEffect(() => {
+    setEnableXmlEditing(window.writer?.overmindState?.editor?.enableXmlEditing ?? true);
+    const handler = (event: Event) => {
+      const detail = (event as CustomEvent<{ value: boolean }>).detail;
+      setEnableXmlEditing(detail.value);
+    };
+    window.addEventListener('leafwriter:enable-xml-editing-change', handler);
+    return () => window.removeEventListener('leafwriter:enable-xml-editing-change', handler);
+  }, [leafWriter]);
+  const visibleTabOrder = useMemo(
+    () => TAB_ORDER.filter((tabId) => enableXmlEditing || tabId !== 'validation'),
+    [enableXmlEditing],
+  );
   const hasProject = Boolean(rootPath);
   const hadProjectRef = useRef(hasProject);
 
@@ -430,7 +450,7 @@ export const UnifiedRightPanel = () => {
             },
           }}
         >
-          {TAB_ORDER.map((tabId) => (
+          {visibleTabOrder.map((tabId) => (
             <ToggleButton
               key={tabId}
               value={tabId}

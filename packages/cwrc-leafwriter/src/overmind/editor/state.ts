@@ -6,6 +6,9 @@ export const DEFAULT_EDITOR_FONT_SIZE = 11;
 
 export type ChoiceDisplayMode = 'original' | 'corrected' | 'both';
 
+/** When to auto-snapshot before a multi-document automated edit (tag bomb, purge, propagate). */
+export type MultiFileSnapshotTrigger = 'multiFile' | 'corpusWide' | 'none';
+
 // eslint-disable-next-line @typescript-eslint/consistent-type-definitions
 export type EditorStateType = {
   advancedSettings: boolean;
@@ -22,6 +25,12 @@ export type EditorStateType = {
   /** Display mode for <choice>/<sic>/<corr>: show original text only, corrected text only, or both. */
   choiceDisplayMode: ChoiceDisplayMode;
   contentHasChanged: boolean;
+  /** Guardrail: when false, the XML source editor and validation panel are unreachable. */
+  enableXmlEditing: boolean;
+  /** Guardrail: when false, tag bomb (and future purge/propagate) are limited to the current document. */
+  enableMultiFileAutomation: boolean;
+  /** Guardrail: when to auto-snapshot before a multi-document automated edit. */
+  multiFileSnapshotBefore: MultiFileSnapshotTrigger;
   fontSize: number;
   latinFont: string;
   editorMode: string;
@@ -77,6 +86,9 @@ export const state: EditorStateType = {
   baseUrl: '.',
   choiceDisplayMode: 'both',
   contentHasChanged: false,
+  enableXmlEditing: true,
+  enableMultiFileAutomation: true,
+  multiFileSnapshotBefore: 'multiFile',
   editorMode: 'xmlrdf',
   editorModeLabel: derived((state: EditorStateType) => {
     const editMode = state.editorModes.find((mode) => mode.value === state.editorMode);

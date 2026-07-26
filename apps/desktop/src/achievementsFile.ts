@@ -1,4 +1,11 @@
-import { createCipheriv, createDecipheriv, createHash, createHmac, randomBytes, timingSafeEqual } from 'crypto';
+import {
+  createCipheriv,
+  createDecipheriv,
+  createHash,
+  createHmac,
+  randomBytes,
+  timingSafeEqual,
+} from 'crypto';
 import { app } from 'electron';
 import { existsSync } from 'fs';
 import fs from 'fs/promises';
@@ -109,7 +116,11 @@ const tryDecrypt = (raw: string): string | null => {
     return null;
   }
   try {
-    const decipher = createDecipheriv('aes-256-gcm', getEncryptionKey(), Buffer.from(envelope.iv, 'hex'));
+    const decipher = createDecipheriv(
+      'aes-256-gcm',
+      getEncryptionKey(),
+      Buffer.from(envelope.iv, 'hex'),
+    );
     decipher.setAuthTag(Buffer.from(envelope.tag, 'hex'));
     const plaintext = Buffer.concat([
       decipher.update(Buffer.from(envelope.data, 'hex')),
@@ -142,14 +153,12 @@ const readOneCandidate = async (filePath: string): Promise<string | null> => {
   const decrypted = tryDecrypt(raw);
   if (decrypted !== null) return decrypted;
 
-  const legacyHmac = await fs.readFile(`${filePath}${LEGACY_HMAC_SUFFIX}`, 'utf-8').catch(() => null);
+  const legacyHmac = await fs
+    .readFile(`${filePath}${LEGACY_HMAC_SUFFIX}`, 'utf-8')
+    .catch(() => null);
   if (legacyHmac !== null && !legacyVerify(raw, legacyHmac)) return null;
   return raw;
 };
-
-/** Reads an arbitrary achievements file, e.g. one picked for import. Never throws. */
-export const readAchievementsFileFrom = async (filePath: string): Promise<string | null> =>
-  readOneCandidate(filePath);
 
 /**
  * Checks whether a candidate achievements folder actually has a loadable
