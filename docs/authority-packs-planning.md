@@ -29,6 +29,10 @@ They are disambiguation clues, not yet TEI appointment/event encoding. The
 operational refresh and publication checklist lives in
 [`authoritypacks/docs/extraction-todo.md`](../../authoritypacks/docs/extraction-todo.md).
 
+**Current handoff:** implementation is complete for this phase. Local build,
+integration testing, and bug fixing are the next validation gate before the
+authority-pack release is closed.
+
 This document reframes auto-tagging priorities after the first live AI runs: **what to build next**, **how mainstream authority sources can be scraped/packaged/distributed as tag strings**, and **where AI fits** relative to Norbert/MARKUS-style “tag bombs.”
 
 ---
@@ -125,8 +129,20 @@ Each NDJSON record matches the existing `AuthorityCandidate` shape:
 | **kind** | Maps to TEI tag (`persName`, `placeName`, …) | — |
 | **dynasty / startYear / endYear** | Optional **load-time filter** (Markus dynasty slider) | Clue line + precision gate |
 | **description / subtype** | — | Review panel clue |
+| **place strings / authority IDs** | Place-name and origin matching | Required for place disambiguation and entity provenance |
+| **geo** (`lat`, `lon`) | — | Optional grouping signal; never use `{0,0}` as missing data |
+| **admin level / period** | — | Compatibility and historical disambiguation clue |
 
 **Tag time stays tag-only** (no `@key` on corpus XML until disambiguation — enforced 2026-07-05).
+
+Place packs remain source-shaped. A pack may provide names and IDs without
+coordinates, or coordinates without a shared administrative model; compilation
+does not fabricate a common place record. During origin disambiguation,
+nearby compatible coordinate candidates can be stored as a coordinate-mode
+place entity. Geographic conflict, or entirely missing-coordinate evidence, is
+stored as an ID-mode place entity with the original strings, IDs, and
+provenance preserved. See
+[placename-geo-disambiguation-planning.md](placename-geo-disambiguation-planning.md).
 
 ### 3.3 Distribution model
 

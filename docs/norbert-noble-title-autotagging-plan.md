@@ -47,8 +47,9 @@ portion of this layer.
 ### 2. Project entities
 
 `entities.xml` stores confirmed project knowledge: persons and relationships
-that the user has accepted, created, or explicitly imported. It should collect
-confirmed contextual data such as:
+that the user has accepted, created, or explicitly imported. It already
+persists nationality data, and it should collect confirmed contextual data
+such as:
 
 - nationality/dynasty/court;
 - place of origin;
@@ -145,6 +146,14 @@ The data should be compiled into authority-pack records with stable authority
 IDs, names, search strings, and minimal contextual metadata. The pack is used
 for candidate generation and disambiguation; it is not edited by users.
 
+Place-of-origin resolution follows the two-mode policy in
+[placename-geo-disambiguation-planning.md](placename-geo-disambiguation-planning.md):
+coherent nearby coordinate candidates may produce a coordinate place entity;
+missing-coordinate candidates use ID mode; and any unresolved geographic
+conflict causes all candidates to be imported as ID-mode places. This policy
+must be settled before noble-title fiefs are persisted, since fiefs use the
+same place entity model.
+
 ## Required entity-data model
 
 The project entity model needs to represent confirmed relationships without
@@ -156,18 +165,44 @@ turning every textual occurrence into a duplicate entity. Conceptually:
   <nationality ref="norbert:dynasty:…">梁</nationality>
   <origin ref="norbert:place:…">鄱陽</origin>
   <occupation ref="norbert:office:…">合州刺史</occupation>
-  <nobleTitle ref="norbert:noble-title:…">鄱陽王</nobleTitle>
+  <nobleTitle ref="norbert:noble-title:…">
+    <placeName ref="norbert:place:…">鄱陽</placeName>
+    <roleName ref="norbert:rank:…">王</roleName>
+  </nobleTitle>
 </person>
 ```
 
-The exact existing `entities.xml` vocabulary and cardinalities must be
-checked before implementation. The essential requirements are:
+For noble titles specifically, `entities.xml` should store the confirmed
+relation on the person record, not a hypothetical person string. The title
+should stay decomposed into the same components used in document markup:
+
+- `placeName` for the fief or territorial component;
+- `roleName` for the rank/title component;
+- optional `ref` / `key` values pointing to the authoritative record for the
+  confirmed title;
+- source provenance on the stored relation, not just in the source document.
+
+The exact existing `entities.xml` vocabulary and cardinalities must be checked
+before implementation. The essential requirements are:
 
 - one stable project person ID;
 - repeatable relationships to places, offices, dynasties, and titles;
 - authority references where available;
 - provenance for the source document and confirmation decision;
 - no automatic creation from an unresolved or hypothetical match.
+
+## Implementation order
+
+The work should proceed in this order:
+
+1. settle the `entities.xml` storage shape for noble titles;
+2. encode that shape in the TEI XML files;
+3. update the relevant schemas to allow the new elements and attributes;
+4. document the new behavior alongside the other TEI and Norbert changes;
+5. only then wire the person and noble-title expander into the Norbert plugin.
+
+That ordering keeps the storage model, source markup, schema, and plugin
+behavior aligned instead of letting any one layer drift ahead of the others.
 
 ## Autotagging workflow
 
@@ -206,6 +241,8 @@ For `合州刺史鄱陽王範`, the intended result is:
 
 - Define pack schemas for persons, dynasties, places, offices, and noble
   titles.
+- Define place records with a display string, stable authority IDs, optional
+  coordinates, and source provenance; authorities need not share one structure.
 - Extend the Norbert compiled asset or add companion assets as needed.
 - Preserve stable authority IDs and source provenance.
 - Define normalized search strings and contextual fields.
@@ -214,7 +251,8 @@ For `合州刺史鄱陽王範`, the intended result is:
 
 - Inspect the current `entities.xml` schema and entity writer.
 - Add confirmed person relationships for nationality, origin, office, and
-  noble title.
+  noble title; origin and fief relationships point to the appropriate
+  coordinate-mode or ID-mode place entity.
 - Add authority references and provenance.
 - Ensure imports and updates are idempotent.
 - Ensure hypothetical matcher candidates never enter `entities.xml`.
@@ -242,6 +280,16 @@ For `合州刺史鄱陽王範`, the intended result is:
 - Offer confirmed relationship updates to `entities.xml`.
 - Use confirmed project data to improve later disambiguation.
 - Keep the shipped authority asset immutable during document editing.
+
+### Phase 6 — Norbert expander integration
+
+- Expose the person and noble-title expander as a plugin-side matcher hook.
+- Feed the transient `persName_expansion` / noble-title combinations into
+  post-autotag suggestion generation.
+- Keep hypothetical combinations out of `entities.xml`; only confirmed
+  wrapper keys and confirmed relations should persist.
+- Reuse the same compiled authority inputs for both tagging and
+  disambiguation, so the plugin and the project entity store stay in sync.
 
 ## Design constraints
 
