@@ -19,6 +19,7 @@ import {
   appendAuthorityIdnos,
   appendNationalities,
   ENTITY_KINDS,
+  entityElements,
   findEntity,
   type AuthorityId,
   type EntityKind,
@@ -75,6 +76,17 @@ const URI_PATTERNS: {
 ];
 
 export function parseAuthorityUri(uri: string): ParsedAuthorityRef | null {
+  const localPack = uri.match(
+    /^urn:ljb:authority:(cbdb|norbert):(person|place|office):(.+)$/i,
+  );
+  if (localPack) {
+    const source = localPack[1]!.toLowerCase();
+    return {
+      idnoType: source === 'cbdb' ? 'CBDB' : 'NORBERT',
+      crosswalkKey: source,
+      value: localPack[3]!,
+    };
+  }
   for (const { pattern, idnoType, crosswalkKey, transform } of URI_PATTERNS) {
     const match = uri.match(pattern);
     if (match) {
@@ -98,6 +110,7 @@ const CROSSWALK_IDNO_TYPES: Record<string, string> = {
   viaf: 'VIAF',
   ndl: 'NDL',
   bdrc: 'BDRC',
+  norbert: 'NORBERT',
 };
 
 /** Pack source id → canonical idno type for the candidate's own authorityId. */
@@ -107,6 +120,7 @@ const SOURCE_IDNO_TYPES: Record<string, string> = {
   dila: 'DILA',
   wikidata: 'Wikidata',
   ndl: 'NDL',
+  norbert: 'NORBERT',
 };
 
 export interface CrosswalkResult {
@@ -288,11 +302,10 @@ interface EntityRecord {
 }
 
 function readEntitiesOfKind(doc: Document, kind: EntityKind): EntityRecord[] {
-  const { item, name: nameTag } = ENTITY_KINDS[kind];
+  const { name: nameTag } = ENTITY_KINDS[kind];
   const out: EntityRecord[] = [];
-  const items = doc.getElementsByTagName(item);
-  for (let i = 0; i < items.length; i++) {
-    const el = items.item(i)!;
+  const items = entityElements(doc, kind);
+  for (const el of items) {
     const key = el.getAttribute('xml:id');
     if (!key) continue;
     const idnos: AuthorityId[] = [];

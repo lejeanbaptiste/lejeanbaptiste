@@ -1,7 +1,33 @@
 # Authority packs & the tag-bomb strategy
 
-Status: planning (2026-07-05).  
+Status: planning, with office and appointment disambiguation implemented
+(2026-07-26).
 Companion to [Auto-tagging.md](Auto-tagging.md), [authority-databases-planning.md](authority-databases-planning.md), [authority-databases-phases.md](authority-databases-phases.md), [authority-extraction.md](authority-extraction.md).
+
+## Implementation update: offices and appointments
+
+The current implementation adopts the CBDB office data structure as the
+shared authority shape. CBDB is canonical for office identity, classification,
+and hierarchy where it has coverage; Norbert remains an additional tagging
+source, especially for periods not represented by CBDB. Norbert source IDs are
+preserved, but they are not asserted to be cross-source identities.
+
+Implemented outputs include:
+
+- CBDB and Norbert office records and office search strings.
+- CBDB office classification and hierarchy records.
+- Norbert-derived parent/child relations from concatenated office strings,
+  marked as source observations rather than canonical hierarchy.
+- Source-preserving appointment records from CBDB posting data and Norbert
+  `person_offices` rows.
+- Combined appointment metadata on person authority candidates for
+  disambiguation and authority-cache refresh when a person is imported into
+  `entities.xml`.
+
+The appointment records deliberately omit year spans and biographical order.
+They are disambiguation clues, not yet TEI appointment/event encoding. The
+operational refresh and publication checklist lives in
+[`authoritypacks/docs/extraction-todo.md`](../../authoritypacks/docs/extraction-todo.md).
 
 This document reframes auto-tagging priorities after the first live AI runs: **what to build next**, **how mainstream authority sources can be scraped/packaged/distributed as tag strings**, and **where AI fits** relative to Norbert/MARKUS-style “tag bombs.”
 
@@ -65,7 +91,9 @@ packs/
   cbdb/
     persons.ndjson
     places.ndjson
-    offices.ndjson         # roleName strings at tag time; entity home TBD
+    offices.ndjson         # roleName strings plus office authority metadata
+    office-relations.ndjson # parent/child relations where available
+    appointments.ndjson    # person–office clues for disambiguation
 ```
 
 Each NDJSON record matches the existing `AuthorityCandidate` shape:
@@ -254,7 +282,8 @@ You cannot anticipate every project’s tag set. **Ship packs by language + kind
 
 1. **`cbdb-persons-zh`** — classical/modern Chinese biographical names + alt names; dynasty metadata  
 2. **`cbdb-places-zh`** — historical admin places  
-3. **`cbdb-offices-zh`** — office strings → `<roleName>` at tag time (entity modeling still open)  
+3. **`cbdb-offices-zh`** — office strings → `<roleName>` at tag time, with
+   disambiguated office entities and hierarchy metadata
 4. **`dila-persons-zh` / `dila-places-zh`** — Buddhist-studies corpora  
 5. **`wikidata-persons-zh`** — WDumper or custom dump: humans with zh labels  
 6. **`geonames-places-{CC}`** — per-country geographic names (CN, JP, TW, …)  
@@ -270,7 +299,7 @@ Tibetan: **`wikidata-places-tibetan-labels`** as interim; pursue THL separately.
 | place strings | `placeName` or `geogName` | Yes (`listPlace`) |
 | org strings | `orgName` | Yes (`listOrg`) |
 | work/title strings | `title` | Yes (`listBibl`) |
-| office strings | `roleName` | **Open** — tag in corpus; may not mint entity (Phase 4a note) |
+| office strings | `roleName` | Yes — office entities use the shared CBDB-shaped structure |
 
 **Project tagging guide** (user-authored, 10–20 bullets) sits above all packs: “regnal names → X”, “offices → roleName”, etc. Packs do not encode TEI philosophy — they encode **matchable strings**.
 
@@ -319,11 +348,13 @@ TEI does not offer one standard for “person P held office O in year Y” that 
 
 | Norbert pattern | LJB direction |
 |-----------------|---------------|
-| Nested `<appointment>` with persName + roleName + date | **Custom ODD element** — valid if schema defines it; not in default packs |
+| Nested `<appointment>` with persName + roleName + date | **Deferred TEI modeling** — appointment clues are in authority packs, without dates/order |
 | `person_id` on `<roleName>` | **Non-TEI** — avoid in interchange; use `@corresp` / standoff / event table later |
-| Flat tag bomb then CSV disambiguation | **Current LJB path** — matches Phase 2–4 design |
+| Flat tag bomb then CSV disambiguation | **Current LJB path** — matches Phase 2–4 design; appointment metadata supplies additional clues |
 
-**Do not block tag-bomb work on appointment modeling.** Tag offices as `roleName` strings first; structural encoding is a **schema/project decision**, not an auto-tagging prerequisite.
+**Do not block tag-bomb work on appointment modeling.** Tag offices as
+`roleName` strings and use office/appointment metadata for disambiguation;
+structural encoding remains a later schema/project decision.
 
 ---
 

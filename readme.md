@@ -1,11 +1,11 @@
 # Le Jean-Baptiste
 
-<img src="apps/desktop/resources/branding/splash_new.png" alt="splash" height="300">
+
 
 Le Jean-Baptiste is a desktop XML markup editor forked from the in-browser tool [LEAF-Writer](https://leaf-writer.leaf-vre.org/), part of [The Linked Editing Academic Framework](https://www.leaf-vre.org/) (LEAF) tool suite. LEAF-Writer is an enhancement of the CWRC-Writer developed by the [Canadian Writing Research Collaboratory (CWRC)](https://cwrc.ca), and was developed alongside the [Named Entity Recognition Vetting Environment](https://nerve.lincsproject.ca/en) (NERVE). The project website is [github.com/lejeanbaptiste/lejeanbaptiste](https://github.com/lejeanbaptiste/lejeanbaptiste). Le Jean-Baptiste wraps the web app in Electron for offline, individual desktop use and includes workflow changes aimed particularly at local editing and East Asian documents.
 
-![GPL-2.0](https://img.shields.io/badge/license-GPL--2.0-orange)
-[![Commitizen friendly](https://img.shields.io/badge/commitizen-friendly-brightgreen.svg)](http://commitizen.github.io/cz-cli/)
+GPL-2.0
+[Commitizen friendly](http://commitizen.github.io/cz-cli/)
 
 ## License and attribution
 
@@ -16,19 +16,19 @@ For a concise list of the major bundled components and where to verify their lic
 ## Credits
 
 - **[LEAF](https://www.leaf-vre.org/)** (The Linked Editing Academic
-  Framework) — Le Jean-Baptiste is a desktop fork of
-  [LEAF-Writer](https://leaf-writer.leaf-vre.org/), itself an enhancement of
-  CWRC-Writer from the [Canadian Writing Research Collaboratory
-  (CWRC)](https://cwrc.ca).
+Framework) — Le Jean-Baptiste is a desktop fork of
+[LEAF-Writer](https://leaf-writer.leaf-vre.org/), itself an enhancement of
+CWRC-Writer from the [Canadian Writing Research Collaboratory
+(CWRC)](https://cwrc.ca).
 - **[Sanmiao](https://github.com/PotatoSinology/sanmiao)** — Chinese,
-  Japanese, and Korean historical calendar conversion by Daniel Patrick
-  Morgan (CNRS-CRCAO), bundled as the desktop app's date-conversion back
-  end. MIT licensed.
+Japanese, and Korean historical calendar conversion by Daniel Patrick
+Morgan (CNRS-CRCAO), bundled as the desktop app's date-conversion back
+end. MIT licensed.
 - **[Adventurer](https://www.figma.com/community/file/1184595184137881796)**
-  by Lisa Wischofsky ([@lischi_art](https://www.instagram.com/lischi_art/))
-  — the player-avatar art in the achievement system, distributed via
-  [DiceBear](https://www.dicebear.com/styles/adventurer) and licensed under
-  [CC BY 4.0](https://creativecommons.org/licenses/by/4.0/).
+by Lisa Wischofsky ([@lischi_art](https://www.instagram.com/lischi_art/))
+— the player-avatar art in the achievement system, distributed via
+[DiceBear](https://www.dicebear.com/styles/adventurer) and licensed under
+[CC BY 4.0](https://creativecommons.org/licenses/by/4.0/).
 
 See [THIRD_PARTY_NOTICES.md](THIRD_PARTY_NOTICES.md) for the rest of the
 bundled runtime components (TinyMCE, Font Awesome, Lato, etc.) and their
@@ -51,7 +51,7 @@ This README now focuses on the desktop fork and its shared packages. Some of the
 ## Asset Sources
 
 Artwork and spoiler-protected game assets come from the private
-[`visual_design`](https://github.com/lejeanbaptiste/visual_design) repo.
+`[visual_design](https://github.com/lejeanbaptiste/visual_design)` repo.
 Run `npm run visual-design:sync` to refresh the mirrored files in this repo.
 
 Tracked here as mirrored or generated assets:
@@ -70,7 +70,9 @@ Tracked here as mirrored or generated assets:
 - `apps/desktop/resources/game-assets/assets.bin`
 - `apps/desktop/src/generated/gameAssetKey.ts`
 - `apps/desktop/resources/avatar-parts/**` (Adventurer avatar-part layers -
-  not spoiler-protected, mirrored as plain SVG files)
+not spoiler-protected, mirrored as plain SVG files)
+
+
 
 ## What is built
 
@@ -87,6 +89,8 @@ Le Jean-Baptiste is the desktop, offline-first fork of LEAF-Writer. The current 
 - Using keyboard-driven markup shortcuts for wrapping, inserting, renaming, attribute entry, and bulk propagation.
 - Working with translation companions in split-pane form for paired source/translation editing.
 
+
+
 ## Install
 
 Download the installer for your platform from the
@@ -97,20 +101,24 @@ All release assets can be verified as described in [SECURITY.md](SECURITY.md).
 
 1. Download the `.pkg` for your machine: `arm64` (Apple silicon) or `x64` (Intel).
 2. Open the `.pkg` file and follow the installer. The packages are signed
-   and notarized, so Gatekeeper accepts them without warnings.
+  and notarized, so Gatekeeper accepts them without warnings.
 3. The application will be installed to `/Applications/Le Jean-Baptiste.app`.
 4. Signed updates are checked automatically when the application starts and
-   every four hours. A downloaded update is installed when the application
+  every four hours. A downloaded update is installed when the application
    quits. The `.pkg` is only needed for the first installation.
+
+
 
 ### Windows
 
 1. Download the installer for your machine: `arm64` for Windows on Arm or
-   `x64` for Intel/AMD (`Le-Jean-Baptiste-win-Setup-<version>-<arch>.exe`).
+  `x64` for Intel/AMD (`Le-Jean-Baptiste-win-Setup-<version>-<arch>.exe`).
 2. Run the installer and follow the prompts. Choose your installation directory and start-menu shortcut preferences.
 3. **Note:** The installer is not signed by a certificate authority. Windows Defender SmartScreen may show a warning. To proceed, click "More info" → "Run anyway". A signed package through the Microsoft Store is planned.
 4. Updates are checked automatically when the application starts and every
-   four hours. A downloaded update is installed when the application quits.
+  four hours. A downloaded update is installed when the application quits.
+
+
 
 ### Linux
 
@@ -147,12 +155,16 @@ For detailed build and packaging information, see [apps/desktop/README.md](apps/
 See [apps/desktop/README.md](apps/desktop/README.md) for the compilation and packaging instructions.
 
 ## Building
+
 - [ ] wire dates and nationality separately.
 - [ ] Disambiguation to fetch nationality
 - [ ] Asset packs to include nationality
 - [ ] Norbert plugin: identify style names
 
+
+
 ## Todo
+
 - [ ] Norbert: tag nationality preceding office title or persame (look at the rules that I use), include in our new person wrapper
 - [ ] Sort out how to handle place of origin
 - [ ] Try to adopt CBDB's office name infrastructure
@@ -164,15 +176,16 @@ See [apps/desktop/README.md](apps/desktop/README.md) for the compilation and pac
 - [ ] Official titles dictionaries, dates dictionaries for hover-over
 - [ ] Word plugin to handle names and dates correctly while centralising data.
 
+
+
 ## Future goals
 
 - [ ] Option to track annotator on the tag level for collaborations.
 - [ ] Copy-and-paste export of paragraphs with translation for word processors
 - [ ] LaTeX export
-- [ ] Improved Chinese office name tagging
 - [ ] Support for custom authorities and personal SQL databases
 - [ ] AI assist for Sanmiao to identify beginning of dynasties, reigns, eras
+- [ ] Import DILA markers into Sanmiao
 - [ ] Geo-aware placename disambiguation across authorities (see [placename-geo-disambiguation-planning.md](docs/placename-geo-disambiguation-planning.md))
 - [ ] Improve translation pane word-processing features.
 - [ ] LanguageTool as a plugin
-- [ ] Ship Sanmiao as a plugin, + Norbert tools.

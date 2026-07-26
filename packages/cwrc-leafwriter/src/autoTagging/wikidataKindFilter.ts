@@ -63,6 +63,10 @@ export const WIKIDATA_KIND_RULES: Record<
     ],
     excludeInstanceOf: ['Q4167410', 'Q13442814', 'Q17329259'],
   },
+  office: {
+    instanceOf: [],
+    excludeInstanceOf: [],
+  },
 };
 
 const GLOBAL_EXCLUDE = ['Q4167410', 'Q13442814'];

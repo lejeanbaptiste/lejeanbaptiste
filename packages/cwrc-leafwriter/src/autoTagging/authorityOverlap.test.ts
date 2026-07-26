@@ -45,6 +45,37 @@ describe('authorityOverlap', () => {
     expect(merged.metadata?.crosswalk?.cbdb).toBe('1762');
   });
 
+  it('unions appointment assertions when person candidates overlap', () => {
+    const merged = mergeAuthorityCandidates(
+      {
+        ...cbdbWang,
+        metadata: {
+          appointments: [{
+            source: 'CBDB',
+            authorityId: 'posting:1',
+            person: { source: 'CBDB', authorityId: '1762' },
+            office: { source: 'CBDB', authorityId: '42', name: '尚書' },
+          }],
+        },
+      },
+      {
+        ...dilaWang,
+        source: 'Norbert',
+        metadata: {
+          crosswalk: { cbdb: '1762' },
+          appointments: [{
+            source: 'Norbert',
+            authorityId: 'person_offices:9',
+            person: { source: 'Norbert', authorityId: '123' },
+            office: { source: 'Norbert', authorityId: '7', name: '侍中' },
+          }],
+        },
+      },
+    );
+    expect(merged.metadata?.appointments).toHaveLength(2);
+    expect(merged.metadata?.appointments?.map((a) => a.office.name)).toEqual(['尚書', '侍中']);
+  });
+
   it('collapseLinkedCandidates keeps distinct people with the same surface', () => {
     const other: AuthorityCandidate = {
       source: 'CBDB',

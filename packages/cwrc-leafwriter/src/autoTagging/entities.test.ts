@@ -1,5 +1,6 @@
 import {
   addEntity,
+  addOfficeRelation,
   backfillEntityTimestamps,
   createEntitiesScaffold,
   findEntity,
@@ -10,20 +11,26 @@ import {
   mintEntityId,
   nextEntityId,
   parseEntities,
+  readOfficeRelations,
   serializeEntities,
   TAG_TO_KIND,
   touchEntity,
 } from './entities';
 
-const UUID_ID = /^(person|place|org|work)-[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/;
+const UUID_ID = /^(person|place|org|work|office)-[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/;
 
 describe('entities scaffold', () => {
-  it('creates an empty TEI standoff with the four core lists', () => {
+  it('creates an empty TEI standoff with core lists and a dedicated office list', () => {
     const doc = parseEntities(createEntitiesScaffold('test-db-id'));
     expect(doc.getElementsByTagName('parsererror')).toHaveLength(0);
     for (const list of ['listPerson', 'listPlace', 'listOrg', 'listBibl']) {
-      expect(doc.getElementsByTagName(list)).toHaveLength(1);
+      expect(doc.getElementsByTagName(list).length).toBeGreaterThanOrEqual(1);
     }
+    expect(
+      Array.from(doc.getElementsByTagName('listOrg')).some(
+        (list) => list.getAttribute('type') === 'offices',
+      ),
+    ).toBe(true);
     expect(getDatabaseId(doc)).toBe('test-db-id');
     expect(isEntityDatabase(doc)).toBe(true);
   });
@@ -57,7 +64,7 @@ describe('nextEntityId', () => {
 
 describe('mintEntityId', () => {
   it('mints a kind-prefixed UUID that is a legal xml:id (never starts with a digit)', () => {
-    for (const kind of ['person', 'place', 'org', 'work'] as const) {
+    for (const kind of ['person', 'place', 'org', 'work', 'office'] as const) {
       const id = mintEntityId(kind);
       expect(id).toMatch(UUID_ID);
       expect(id.startsWith(`${kind === 'work' ? 'work' : kind}-`)).toBe(true);
@@ -68,6 +75,46 @@ describe('mintEntityId', () => {
   it('mints unique ids', () => {
     const ids = new Set(Array.from({ length: 50 }, () => mintEntityId('person')));
     expect(ids.size).toBe(50);
+  });
+});
+
+describe('office entities and relations', () => {
+  it('stores offices separately from organizations in TEI-compatible listOrg records', () => {
+    const doc = parseEntities(createEntitiesScaffold());
+    const office = addEntity(doc, 'office', {
+      name: '尚書省',
+      authorityIds: [{ type: 'CBDB', value: '42' }],
+      officeTypeIds: ['cbdb:office-type:0603'],
+    });
+    const org = addEntity(doc, 'org', { name: '白馬寺' });
+    expect(office.element.localName).toBe('org');
+    expect(office.element.getAttribute('type')).toBe('office');
+    expect(office.element.getElementsByTagName('orgName')[0]?.textContent).toBe('尚書省');
+    expect(office.element.getElementsByTagName('state')[0]?.getAttribute('ref')).toBe(
+      'cbdb:office-type:0603',
+    );
+    expect(org.element.getAttribute('type')).toBeNull();
+    expect(office.id).toMatch(/^office-/);
+  });
+
+  it('deduplicates parentOf assertions and round-trips their provenance', () => {
+    const doc = parseEntities(createEntitiesScaffold());
+    const parentId = addEntity(doc, 'office', { name: '尚書省' }).id;
+    const childId = addEntity(doc, 'office', { name: '吏部' }).id;
+    const relation = {
+      parentId,
+      childId,
+      source: 'norbert',
+      rule: 'office-concatenation',
+      sourceIds: ['1', '2'],
+      confidence: 'inferred' as const,
+    };
+    expect(addOfficeRelation(doc, relation).created).toBe(true);
+    expect(addOfficeRelation(doc, relation).created).toBe(false);
+    const reparsed = parseEntities(serializeEntities(doc));
+    const rows = readOfficeRelations(reparsed);
+    expect(rows).toHaveLength(1);
+    expect(rows[0]).toMatchObject(relation);
   });
 });
 

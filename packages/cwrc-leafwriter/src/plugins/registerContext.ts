@@ -13,6 +13,10 @@ import {
   type PluginPersonNameSegmentResult,
 } from './personNameSegmenters';
 import { registerPluginToolAction, type PluginToolActionHandler } from './toolActions';
+import {
+  registerPluginOfficeRelationExtractor,
+  type PluginOfficeRelationExtractor,
+} from './officeRelationExtractors';
 
 export interface PluginRegisterContext {
   pluginId: string;
@@ -39,6 +43,8 @@ export interface PluginRegisterContext {
   registerPersonNameSegmenter: (
     segmenter: (input: PluginPersonNameSegmentInput) => PluginPersonNameSegmentResult | null,
   ) => void;
+  /** Infer a hierarchy edge from two adjacent, resolved office matches. */
+  registerOfficeRelationExtractor: (extractor: PluginOfficeRelationExtractor) => void;
   onEnable?: () => void;
   onDisable?: () => void;
 }
@@ -63,6 +69,9 @@ export function createPluginRegisterContext(pluginId: string): PluginRegisterCon
     loadHostModule: loadPluginHostModule,
     registerPersonNameSegmenter: (segmenter) => {
       registerPluginPersonNameSegmenter(pluginId, segmenter);
+    },
+    registerOfficeRelationExtractor: (extractor) => {
+      registerPluginOfficeRelationExtractor(pluginId, extractor);
     },
   };
   return context;

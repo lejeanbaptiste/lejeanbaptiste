@@ -17,6 +17,7 @@ export const namedEntityTypes = [
   'place',
   'organization',
   'work',
+  'office',
   'thing',
   'concept',
   'citation',

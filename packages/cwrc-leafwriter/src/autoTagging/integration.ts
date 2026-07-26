@@ -25,7 +25,14 @@ import {
   type PendingCache,
 } from './disambiguationPending';
 import { DecisionLogBuffer, type DecisionRecord } from './decisionLog';
-import { TAG_TO_KIND, type EntityKind } from './entities';
+import {
+  addOfficeRelation,
+  findEntity,
+  TAG_TO_KIND,
+  type EntityKind,
+} from './entities';
+import type { AuthorityCandidate } from './authority';
+import { extractPluginOfficeRelations } from '../plugins/officeRelationExtractors';
 import { autoRomanize } from '../utilities/romanize';
 import {
   centralEntityStoreFromDesktop,
@@ -196,6 +203,88 @@ const yieldToUi = (): Promise<void> =>
   new Promise((resolve) => {
     requestAnimationFrame(() => requestAnimationFrame(() => resolve()));
   });
+
+function previousAdjacentElement(element: Element): Element | null {
+  let cursor = element.previousSibling;
+  while (cursor?.nodeType === 3 && !(cursor.textContent ?? '').trim()) {
+    cursor = cursor.previousSibling;
+  }
+  return cursor?.nodeType === 1 ? cursor as Element : null;
+}
+
+function candidateSourceRef(candidate: DisambiguationCandidate): {
+  source: string;
+  authorityId: string;
+} | null {
+  const norbert = candidate.authorityIds?.find(
+    (id) => id.type.toLowerCase() === 'norbert',
+  );
+  if (norbert) return { source: 'Norbert', authorityId: norbert.value };
+  const first = candidate.authorityIds?.[0];
+  return first ? { source: first.type, authorityId: first.value } : null;
+}
+
+function importResolvedOfficeStructure(
+  entitiesDoc: Document,
+  element: Element,
+  childId: string,
+  candidate: DisambiguationCandidate,
+): string[] {
+  const relatedEntityIds: string[] = [];
+  const childRef = candidateSourceRef(candidate);
+  const parent = candidate.authorityMetadata?.parentOffice;
+  if (parent) {
+    const parentId = resolveEntityInDocument(entitiesDoc, {
+      kind: 'office',
+      name: parent.name,
+      authorityIds: [{ type: parent.source, value: parent.authorityId }],
+    });
+    addOfficeRelation(entitiesDoc, {
+      parentId,
+      childId,
+      source: 'norbert',
+      rule: 'explicit-parent-string',
+      sourceIds: [parent.authorityId, childRef?.authorityId].filter(
+        (id): id is string => Boolean(id),
+      ),
+      confidence: 'inferred',
+    });
+    relatedEntityIds.push(parentId);
+  }
+
+  const previous = previousAdjacentElement(element);
+  const previousId = previous?.localName === 'roleName' ? previous.getAttribute('key') : null;
+  const previousEntity = previousId ? findEntity(entitiesDoc, previousId) : null;
+  const firstIdno = previousEntity?.getElementsByTagName('idno')[0];
+  if (!previousId || !previousEntity || !firstIdno || !childRef) return relatedEntityIds;
+
+  const first: AuthorityCandidate = {
+    source: firstIdno.getAttribute('type') ?? 'unknown',
+    authorityId: firstIdno.textContent?.trim() ?? previousId,
+    kind: 'office',
+    primaryName:
+      previousEntity.getElementsByTagName('orgName')[0]?.textContent?.trim()
+      ?? previous?.textContent?.trim()
+      ?? previousId,
+    searchStrings: [],
+  };
+  const second: AuthorityCandidate = {
+    source: childRef.source,
+    authorityId: childRef.authorityId,
+    kind: 'office',
+    primaryName: element.textContent?.trim() ?? childRef.authorityId,
+    searchStrings: [],
+    metadata: candidate.authorityMetadata,
+  };
+  for (const relation of extractPluginOfficeRelations({ first, second, adjacent: true })) {
+    addOfficeRelation(entitiesDoc, {
+      parentId: previousId,
+      childId,
+      ...relation,
+    });
+  }
+  return relatedEntityIds;
+}
 
 /**
  * One auto-tagging run against a live document (Phase 2 integration).
@@ -1073,15 +1162,30 @@ export class AutoTaggingSession {
         description: options.description ?? candidate.description,
         startYear: candidate.startYear,
         endYear: candidate.endYear,
+        authorityMetadata: candidate.authorityMetadata,
       },
       options.createNew ? undefined : candidate,
     );
 
     assignEntity({ element: instance.element, entityId });
+    const relatedEntityIds =
+      kind === 'office'
+        ? importResolvedOfficeStructure(
+            entitiesDoc,
+            instance.element,
+            entityId,
+            candidate,
+          )
+        : [];
     if (instance.tag === 'persName') {
       tagFollowingStyleNames(instance.element.ownerDocument!);
     }
     await autoSyncEntityToCentral(entitiesDoc, entityId);
+    for (const relatedId of relatedEntityIds) {
+      if (relatedId !== entityId) {
+        await autoSyncEntityToCentral(entitiesDoc, relatedId);
+      }
+    }
     await this.saveEntities();
     await this.persistDocument(instance.element.ownerDocument!);
     this.logResolution(instance, 'resolved', entityId);

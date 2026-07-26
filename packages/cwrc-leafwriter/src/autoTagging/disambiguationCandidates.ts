@@ -5,10 +5,12 @@ import { AuthorityCache } from './authorityCache';
 import {
   addEntity,
   ENTITY_KINDS,
+  entityElements,
   findEntity,
   getDatabaseId,
   parseIsoYear,
   TAG_TO_KIND,
+  setAuthorityCache,
   type AuthorityId,
   type EntityKind,
 } from './entities';
@@ -75,6 +77,8 @@ export interface DisambiguationCandidate {
   typedNames?: TypedName[];
   /** WGS84 coordinates, when the source authority carries them (CHGIS, CBDB places). */
   geo?: { lat: number; lon: number };
+  /** Raw pack metadata needed when the selected office is minted. */
+  authorityMetadata?: AuthorityCandidate['metadata'];
 }
 
 export interface TypedName {
@@ -89,6 +93,7 @@ const TAG_TO_ENTITY_TYPE: Record<string, NamedEntityType> = {
   orgName: 'organization',
   title: 'work',
   bibl: 'work',
+  roleName: 'office',
 };
 
 const AUTHORITY_MAP: Record<string, 'wikidata' | 'viaf' | 'dbpedia' | 'geonames' | 'getty' | 'gnd'> = {
@@ -420,20 +425,11 @@ export function candidatesFromEntityFile(
   const kind = TAG_TO_KIND[tag];
   if (!kind) return [];
 
-  const listTag =
-    kind === 'person'
-      ? 'person'
-      : kind === 'place'
-        ? 'place'
-        : kind === 'org'
-          ? 'org'
-          : 'bibl';
-
   const nameTag = ENTITY_KINDS[kind].name;
-  const items = doc.getElementsByTagName(listTag);
+  const items = entityElements(doc, kind);
   const out: DisambiguationCandidate[] = [];
   for (let i = 0; i < items.length; i++) {
-    const el = items.item(i)!;
+    const el = items[i]!;
     if (!entityNameMatches(el, nameTag, surface)) continue;
     const localId = el.getAttribute('xml:id') ?? '';
     const idnos = Array.from(el.getElementsByTagName('idno'));
@@ -626,7 +622,7 @@ async function candidatesFromAuthorityPacks(
 ): Promise<DisambiguationCandidate[]> {
   const entityType = TAG_TO_ENTITY_TYPE[tag] ?? 'person';
   const packIds = packIdsForEntityType(
-    ['cbdb-persons', 'cbdb-places', 'cbdb-offices', 'dila-persons', 'dila-places', 'chgis-places', 'ndl-persons', 'ndl-places', 'ndl-orgs', 'ndl-works'],
+    ['cbdb-persons', 'cbdb-places', 'cbdb-offices', 'dila-persons', 'dila-places', 'chgis-places', 'ndl-persons', 'ndl-places', 'ndl-orgs', 'ndl-works', 'norbert-persons', 'norbert-offices'],
     entityType,
   );
   const results: DisambiguationCandidate[] = [];
@@ -636,7 +632,7 @@ async function candidatesFromAuthorityPacks(
       const content = await readPackFile(packId);
       const spec = AUTHORITY_PACKS.find((item) => item.id === packId);
       if (!spec) continue;
-      const packSource = spec.source as 'cbdb' | 'dila' | 'ndl';
+      const packSource = spec.source as 'cbdb' | 'dila' | 'ndl' | 'norbert';
       // searchPackRows hands back each match's parsed ndjson row, so the
       // metadata (years, dynasty, authorityId) comes straight from the ≤10
       // matched lines — no full-pack parse per lookup.
@@ -700,6 +696,7 @@ async function candidatesFromAuthorityPacks(
             undefined,
           typedNames: typedNamesFromPackRow(row?.names),
           geo: row?.metadata?.geo,
+          authorityMetadata: row?.metadata,
         });
       }
     } catch {
@@ -1051,6 +1048,7 @@ export interface ResolveEntityInput {
   description?: string;
   startYear?: number;
   endYear?: number;
+  authorityMetadata?: AuthorityCandidate['metadata'];
 }
 
 /**
@@ -1107,6 +1105,14 @@ export function resolveEntityInDocument(
       if (input.givenName && !getGivenName(entitiesDoc, id)) {
         setGivenName(entitiesDoc, id, input.givenName);
       }
+      if (input.authorityMetadata) {
+        setAuthorityCache(
+          entitiesDoc,
+          id,
+          input.authorityIds?.[0]?.type ?? 'authority-pack',
+          input.authorityMetadata,
+        );
+      }
     } catch {
       // best-effort enrichment; reuse must never fail because of it
     }
@@ -1138,6 +1144,14 @@ export function resolveEntityInDocument(
     description: input.description,
     startYear: input.startYear,
     endYear: input.endYear,
+    cache: input.authorityMetadata
+      ? {
+          source: input.authorityIds?.[0]?.type ?? 'authority-pack',
+          data: input.authorityMetadata,
+        }
+      : undefined,
+    officeTypeIds:
+      input.kind === 'office' ? input.authorityMetadata?.officeTypeIds : undefined,
   });
   if (input.familyName) setFamilyName(entitiesDoc, id, input.familyName);
   if (input.givenName) setGivenName(entitiesDoc, id, input.givenName);

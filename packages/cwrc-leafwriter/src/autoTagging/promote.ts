@@ -15,6 +15,8 @@ import { getCentralId, setCentralMapping } from './concordance';
 import {
   addEntity,
   ENTITY_KINDS,
+  entityElements,
+  entityKindOfElement,
   findEntity,
   type EntityKind,
   type NewEntity,
@@ -23,13 +25,7 @@ import { setFamilyName, setGivenName } from './entityOps';
 import { normalizeNameType, type NameTypeId } from './nameTypes';
 import { readFields } from './reconcile';
 
-const ITEM_TO_KIND: Record<string, EntityKind> = Object.fromEntries(
-  (Object.entries(ENTITY_KINDS) as [EntityKind, (typeof ENTITY_KINDS)[EntityKind]][]).map(
-    ([kind, config]) => [config.item, kind],
-  ),
-);
-
-const kindOf = (item: Element): EntityKind | null => ITEM_TO_KIND[item.localName] ?? null;
+const kindOf = entityKindOfElement;
 
 /** Record a PEDB↔CEDB mapping for this user. Returns true when it changed. */
 export function linkToCentral(pedbItem: Element, userStableId: string, centralId: string): boolean {
@@ -47,10 +43,7 @@ export function findCentralByAuthority(
 ): string | null {
   if (authorities.length === 0) return null;
   const wanted = new Set(authorities.map((a) => `${a.type.toLowerCase()}\t${a.value.trim()}`));
-  const list = cedbDoc.getElementsByTagName(ENTITY_KINDS[kind].list)[0];
-  if (!list) return null;
-  for (const item of Array.from(list.children)) {
-    if (item.localName !== ENTITY_KINDS[kind].item) continue;
+  for (const item of entityElements(cedbDoc, kind)) {
     for (const idno of Array.from(item.children).filter((c) => c.localName === 'idno')) {
       const type = idno.getAttribute('type');
       const value = idno.textContent?.trim();
@@ -135,10 +128,7 @@ export interface AdoptResult {
 
 /** The project entity (if any) this user has already linked to `centralId`. */
 function findLinkedPedbEntity(pedbDoc: Document, kind: EntityKind, centralId: string, userStableId: string): string | null {
-  const list = pedbDoc.getElementsByTagName(ENTITY_KINDS[kind].list)[0];
-  if (!list) return null;
-  for (const item of Array.from(list.children)) {
-    if (item.localName !== ENTITY_KINDS[kind].item) continue;
+  for (const item of entityElements(pedbDoc, kind)) {
     if (getCentralId(item, userStableId) === centralId) return item.getAttribute('xml:id');
   }
   return null;

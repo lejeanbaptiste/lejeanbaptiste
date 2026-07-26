@@ -3,7 +3,7 @@
  * database). Registered on desktop and pinned above every external authority
  * so the user's own entities always appear first in the lookup dialog.
  */
-import { ENTITY_KINDS, type EntityKind } from '../autoTagging/entities';
+import { ENTITY_KINDS, entityElements, type EntityKind } from '../autoTagging/entities';
 import { entityStoreFromDesktop } from '../autoTagging/entityStore';
 import type {
   AuthorityLookupParams,
@@ -34,6 +34,7 @@ export const LOOKUP_TYPE_TO_KIND: Partial<Record<NamedEntityType, EntityKind>> =
   organization: 'org',
   work: 'work',
   citation: 'work',
+  office: 'office',
 };
 
 const MAX_RESULTS = 20;
@@ -51,13 +52,13 @@ export function searchEntityDocument(
   kind: EntityKind,
   query: string,
 ): AuthorityLookupResult[] {
-  const { item, name: nameTag } = ENTITY_KINDS[kind];
+  const { name: nameTag } = ENTITY_KINDS[kind];
   const normalizedQuery = normalize(query);
   const results: AuthorityLookupResult[] = [];
 
-  const items = doc.getElementsByTagName(item);
+  const items = entityElements(doc, kind);
   for (let i = 0; i < items.length && results.length < MAX_RESULTS; i++) {
-    const el = items.item(i)!;
+    const el = items[i]!;
     const id = el.getAttribute('xml:id');
     if (!id) continue;
 

@@ -1,7 +1,7 @@
 import type { EntityKind } from './entities';
 
-/** Standoff kinds plus compile-time `office` (corpus tag: roleName). */
-export type AuthorityKind = EntityKind | 'office';
+/** Standoff kinds; office corpus mentions tag as roleName. */
+export type AuthorityKind = EntityKind;
 
 /**
  * A normalized authority record (Phase 4a). Every source — a CSV export, CBDB,
@@ -26,6 +26,7 @@ export interface AuthorityCandidate {
    */
   names?: { text: string; type?: string; lang?: string }[];
   metadata?: {
+    appointments?: AppointmentRecord[];
     dynasty?: string;
     nationality?: { id: string; canonicalId: string; label: string; sourceIds?: string[]; startYear?: number; endYear?: number }[];
     dateSource?: 'fine' | 'nationality';
@@ -44,6 +45,7 @@ export interface AuthorityCandidate {
       viaf?: string;
       ndl?: string;
       bdrc?: string;
+      norbert?: string;
     };
     pinyin?: string;
     /** NDL ja-kana reading (katakana). */
@@ -51,6 +53,8 @@ export interface AuthorityCandidate {
     /** Hiragana form of `yomi` for IME lookup. */
     yomiHiragana?: string;
     translation?: string;
+    alternateTranslation?: string;
+    alternatePinyin?: string;
     /** DILA `note type="disambiguation"` — not the same person as… */
     disambiguation?: string;
     /** WGS84 coordinates, when the source authority carries them (CHGIS, CBDB). */
@@ -65,10 +69,43 @@ export interface AuthorityCandidate {
     followsOffice?: boolean;
     followsPerson?: boolean;
     isNobleTitle?: boolean;
+    isCollective?: boolean;
+    isReligious?: boolean;
+    isMilitary?: boolean;
+    isMeritTitle?: boolean;
+    isPrestigeTitle?: boolean;
+    isQualifier?: boolean;
     isSite?: boolean;
     /** Norbert `office.parent_string` when present. */
     parentString?: string;
+    parentIsSite?: boolean;
+    parentOffice?: {
+      source: string;
+      authorityId: string;
+      entityId: string;
+      name: string;
+    };
+    prefix?: string;
+    core?: string;
+    category?: string;
+    categoryIsSuffix?: boolean;
+    yieldPrefix?: boolean;
+    entityId?: string;
+    canonicalEntityId?: string;
+    officeTypeIds?: string[];
+    sourceRef?: string;
+    sourcePages?: string;
+    note?: string;
   };
+}
+
+export interface AppointmentRecord {
+  source: string;
+  authorityId: string;
+  person: { source: string; authorityId: string };
+  office: { source: string; authorityId?: string; name: string };
+  appointmentType?: string;
+  sourceRef?: string;
 }
 
 /** Corpus TEI tag used when matching this candidate. */
@@ -79,6 +116,7 @@ export function teiTagForCandidate(candidate: AuthorityCandidate): string {
     place: 'placeName',
     org: 'orgName',
     work: 'title',
+    office: 'roleName',
   };
   return map[candidate.kind];
 }

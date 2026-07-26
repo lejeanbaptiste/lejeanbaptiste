@@ -12,7 +12,15 @@ import {
   listCentralMappings,
   setCentralMapping,
 } from './concordance';
-import { ENTITY_KINDS, findEntity, touchEntity, type AuthorityId, type EntityKind } from './entities';
+import {
+  ENTITY_KINDS,
+  entityElements,
+  entityKindOfElement,
+  findEntity,
+  touchEntity,
+  type AuthorityId,
+  type EntityKind,
+} from './entities';
 import {
   isPhase1SeedName,
   isNameTypeTaggingPolicy,
@@ -22,13 +30,6 @@ import { isTaggableNameType, normalizeNameType, type NameTypeId } from './nameTy
 
 const TEI_NS = 'http://www.tei-c.org/ns/1.0';
 const XML_NS = 'http://www.w3.org/XML/1998/namespace';
-
-/** Entity item element name → kind. */
-const ITEM_TO_KIND: Record<string, EntityKind> = Object.fromEntries(
-  (Object.entries(ENTITY_KINDS) as [EntityKind, (typeof ENTITY_KINDS)[EntityKind]][]).map(
-    ([kind, config]) => [config.item, kind],
-  ),
-) as Record<string, EntityKind>;
 
 export const DUPLICATE_OK_NOTE_TYPE = 'duplicate-ok';
 
@@ -57,7 +58,7 @@ export interface EntitySummary {
   givenName: string | null;
 }
 
-export const kindOfElement = (el: Element): EntityKind | null => ITEM_TO_KIND[el.localName] ?? null;
+export const kindOfElement = entityKindOfElement;
 
 const nameElements = (item: Element, kind: EntityKind): Element[] => {
   const tag = ENTITY_KINDS[kind].name;
@@ -111,10 +112,8 @@ function summarize(item: Element): EntitySummary | null {
 /** Every entity in the database, in document order. */
 export function listEntities(doc: Document): EntitySummary[] {
   const out: EntitySummary[] = [];
-  for (const config of Object.values(ENTITY_KINDS)) {
-    const list = doc.getElementsByTagName(config.list)[0];
-    if (!list) continue;
-    for (const item of Array.from(list.children)) {
+  for (const kind of Object.keys(ENTITY_KINDS) as EntityKind[]) {
+    for (const item of entityElements(doc, kind)) {
       const summary = summarize(item);
       if (summary) out.push(summary);
     }
