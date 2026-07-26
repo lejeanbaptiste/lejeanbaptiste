@@ -17,6 +17,7 @@ import {
   registerPluginOfficeRelationExtractor,
   type PluginOfficeRelationExtractor,
 } from './officeRelationExtractors';
+import { registerPluginEntityDataExtractor } from './entityDataExtractors';
 
 export interface PluginRegisterContext {
   pluginId: string;
@@ -26,7 +27,10 @@ export interface PluginRegisterContext {
   registerReviewPanel: (
     matcher: PluginReviewPanelMatcher,
     component: PluginReviewPanelComponent,
-    options?: { finishWhenIdle?: boolean | ((suggestions: import('../autoTagging/types').Suggestion[]) => boolean) },
+    options?: {
+      finishWhenIdle?:
+        boolean | ((suggestions: import('../autoTagging/types').Suggestion[]) => boolean);
+    },
   ) => void;
   registerToolbarItem: (item: {
     id: string;
@@ -45,6 +49,9 @@ export interface PluginRegisterContext {
   ) => void;
   /** Infer a hierarchy edge from two adjacent, resolved office matches. */
   registerOfficeRelationExtractor: (extractor: PluginOfficeRelationExtractor) => void;
+  registerEntityDataExtractor: (
+    extractor: import('./entityDataExtractors').PluginEntityDataExtractor,
+  ) => void;
   onEnable?: () => void;
   onDisable?: () => void;
 }
@@ -72,6 +79,9 @@ export function createPluginRegisterContext(pluginId: string): PluginRegisterCon
     },
     registerOfficeRelationExtractor: (extractor) => {
       registerPluginOfficeRelationExtractor(pluginId, extractor);
+    },
+    registerEntityDataExtractor: (extractor) => {
+      registerPluginEntityDataExtractor(pluginId, extractor);
     },
   };
   return context;

@@ -3,7 +3,7 @@ import { execFileSync } from 'node:child_process';
 import fs from 'node:fs';
 import fsp from 'node:fs/promises';
 import path from 'node:path';
-import { packsRoot } from '../authorityPacks';
+import { packPath, packsRoot } from '../authorityPacks';
 import { toLocalFileUrl } from '../../../commons/src/desktop/localFileUrl';
 import {
   PLUGIN_MANIFEST_FILENAME,
@@ -375,10 +375,17 @@ async function applyPluginContributions(plugin: PluginRecord): Promise<void> {
   for (const pack of packs) {
     if (pack.install.source === 'bundled' && pack.install.path) {
       const srcRoot = path.join(plugin.installPath, pack.install.path);
-      const destDir = path.join(destRoot, pack.id.replace(/-persons$/, '') || pack.id);
       if (!fs.existsSync(srcRoot)) continue;
-      await fsp.mkdir(destDir, { recursive: true });
-      await copyDir(srcRoot, destDir);
+      const stat = await fsp.stat(srcRoot);
+      if (stat.isDirectory()) {
+        const destDir = path.join(destRoot, pack.id.replace(/-persons$/, '') || pack.id);
+        await fsp.mkdir(destDir, { recursive: true });
+        await copyDir(srcRoot, destDir);
+      } else {
+        const destFile = packPath(entityDbFolder, pack.id);
+        await fsp.mkdir(path.dirname(destFile), { recursive: true });
+        await fsp.copyFile(srcRoot, destFile);
+      }
       continue;
     }
 

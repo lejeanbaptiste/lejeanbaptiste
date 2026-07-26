@@ -22,6 +22,13 @@ import {
   type EntityKind,
 } from './entities';
 import {
+  entityValueKey,
+  readEntityValueProvenance,
+  writeEntityValueProvenance,
+  type EntityValueOrigin,
+  type EntityValueStatus,
+} from './entityProvenance';
+import {
   isPhase1SeedName,
   isNameTypeTaggingPolicy,
   type NameTypeTaggingPolicy,
@@ -56,6 +63,11 @@ export interface EntitySummary {
   familyName: string | null;
   /** Person's given name, stored separately from the display name. Persons only. */
   givenName: string | null;
+  /** Origins represented by active field values on this entity. */
+  origins: EntityValueOrigin[];
+  rejectedCount: number;
+  rejectedAssertions: { element: string; value: string; source: string | null }[];
+  assertions: EntityAssertionSummary[];
 }
 
 export const kindOfElement = entityKindOfElement;
@@ -99,6 +111,7 @@ function summarize(item: Element): EntitySummary | null {
     description: descriptionNote(item)?.textContent?.trim() || null,
     authorities: idnoElements(item)
       .filter((el) => el.getAttribute('type') !== CENTRAL_IDNO_TYPE)
+      .filter((el) => readEntityValueProvenance(el).status === 'active')
       .map((el) => ({
         type: el.getAttribute('type') ?? '',
         value: el.textContent?.trim() ?? '',
@@ -106,7 +119,141 @@ function summarize(item: Element): EntitySummary | null {
       .filter((ref) => ref.type && ref.value),
     familyName: familyNameNote(item)?.textContent?.trim() || null,
     givenName: givenNameNote(item)?.textContent?.trim() || null,
+    origins: Array.from(
+      new Set(
+        Array.from(item.children)
+          .filter(
+            (child) => child.localName !== 'note' || child.getAttribute('type') !== 'ljb-changed',
+          )
+          .filter((child) => readEntityValueProvenance(child).status === 'active')
+          .map((child) => readEntityValueProvenance(child).origin),
+      ),
+    ),
+    rejectedCount: Array.from(item.children).filter(
+      (child) => readEntityValueProvenance(child).status === 'rejected',
+    ).length,
+    rejectedAssertions: Array.from(item.children)
+      .filter((child) => readEntityValueProvenance(child).status === 'rejected')
+      .map((child) => ({
+        element: child.localName,
+        value: child.textContent?.trim() ?? '',
+        source: readEntityValueProvenance(child).source,
+      }))
+      .filter((assertion) => assertion.value),
+    assertions: Array.from(item.children)
+      .filter((child) => child.localName !== 'note' || child.getAttribute('type') !== 'ljb-changed')
+      .map((child) => ({
+        key: entityValueKey(child),
+        element: child.localName,
+        value: child.textContent?.trim() ?? '',
+        ...readEntityValueProvenance(child),
+      }))
+      .filter((assertion) => assertion.value || assertion.element === 'idno'),
   };
+}
+
+export interface EntityAssertionSummary {
+  key: string;
+  element: string;
+  value: string;
+  origin: EntityValueOrigin;
+  source: string | null;
+  status: EntityValueStatus;
+}
+
+/** List field-level assertions, including rejected values for the review UI. */
+export function listEntityAssertions(doc: Document, id: string): EntityAssertionSummary[] {
+  const item = requireEntity(doc, id);
+  return Array.from(item.children)
+    .filter((child) => child.localName !== 'note' || child.getAttribute('type') !== 'ljb-changed')
+    .map((child) => {
+      const provenance = readEntityValueProvenance(child);
+      return {
+        key: entityValueKey(child),
+        element: child.localName,
+        value: child.textContent?.trim() ?? '',
+        ...provenance,
+      };
+    })
+    .filter((assertion) => assertion.value || assertion.element === 'idno');
+}
+
+/** Accept an imported value as a user assertion while retaining its source. */
+export function validateEntityAssertion(doc: Document, id: string, key: string): boolean {
+  const item = requireEntity(doc, id);
+  const target = Array.from(item.children).find((child) => entityValueKey(child) === key);
+  if (!target) return false;
+  const current = readEntityValueProvenance(target);
+  if (current.origin === 'user' && current.status === 'active') return false;
+  writeEntityValueProvenance(target, { origin: 'user', source: current.source, status: 'active' });
+  touchEntity(item);
+  return true;
+}
+
+/** Reject an imported value without deleting its durable source/value tombstone. */
+export function rejectEntityAssertion(doc: Document, id: string, key: string): boolean {
+  const item = requireEntity(doc, id);
+  const target = Array.from(item.children).find((child) => entityValueKey(child) === key);
+  if (!target) return false;
+  const current = readEntityValueProvenance(target);
+  if (current.origin === 'user' || current.status === 'rejected') return false;
+  writeEntityValueProvenance(target, {
+    origin: current.origin,
+    source: current.source,
+    status: 'rejected',
+  });
+  touchEntity(item);
+  return true;
+}
+
+/** Restore a rejected imported assertion so the next refresh can use it. */
+export function restoreEntityAssertion(doc: Document, id: string, key: string): boolean {
+  const item = requireEntity(doc, id);
+  const target = Array.from(item.children).find((child) => entityValueKey(child) === key);
+  if (!target) return false;
+  const current = readEntityValueProvenance(target);
+  if (current.status !== 'rejected' || current.origin === 'user') return false;
+  writeEntityValueProvenance(target, {
+    origin: current.origin,
+    source: current.source,
+    status: 'active',
+  });
+  touchEntity(item);
+  return true;
+}
+
+/**
+ * Detach one authority. Active authority values are removed; rejected values
+ * remain as tombstones so a later refresh cannot silently re-add them.
+ */
+export function decoupleAuthority(doc: Document, id: string, authority: AuthorityId): number {
+  const item = requireEntity(doc, id);
+  let removed = 0;
+  for (const child of Array.from(item.children)) {
+    const provenance = readEntityValueProvenance(child);
+    const matchesId =
+      child.localName === 'idno' &&
+      child.getAttribute('type') === authority.type &&
+      child.textContent?.trim() === authority.value.trim();
+    const matchesSource = provenance.source === `${authority.type}:${authority.value}`;
+    if (matchesId || matchesSource) {
+      if (provenance.status === 'active' && provenance.origin === 'authority') {
+        child.remove();
+        removed += 1;
+      }
+    }
+    if (
+      child.localName === 'note' &&
+      child.getAttribute('type') === 'authority-cache' &&
+      (child.getAttribute('source') === authority.type ||
+        child.getAttribute('source') === `${authority.type}:${authority.value}`)
+    ) {
+      child.remove();
+      removed += 1;
+    }
+  }
+  if (removed) touchEntity(item);
+  return removed;
 }
 
 /** Every entity in the database, in document order. */
@@ -467,7 +614,8 @@ export function mergeEntities(doc: Document, keepId: string, dropIds: string[]):
       const value = idno.textContent?.trim();
       // The ljb-central row is per-user metadata, not a shared authority id —
       // handled below, where the subtype (user id) is preserved correctly.
-      if (type && value && type !== CENTRAL_IDNO_TYPE) attachAuthority(doc, keepId, { type, value });
+      if (type && value && type !== CENTRAL_IDNO_TYPE)
+        attachAuthority(doc, keepId, { type, value });
     }
     for (const mapping of listCentralMappings(dropped)) {
       const keptCentralId = getCentralId(keeper, mapping.userStableId);
@@ -495,8 +643,7 @@ export function mergeEntities(doc: Document, keepId: string, dropIds: string[]):
     }
     // Carry over authority-cache notes for sources the keeper lacks.
     for (const note of Array.from(dropped.children).filter(
-      (child) =>
-        child.localName === 'note' && child.getAttribute('type') === 'authority-cache',
+      (child) => child.localName === 'note' && child.getAttribute('type') === 'authority-cache',
     )) {
       const source = note.getAttribute('source');
       const alreadyCached = Array.from(keeper.children).some(

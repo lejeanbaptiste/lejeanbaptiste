@@ -35,6 +35,11 @@ export function mentionGroupKey(group: MentionGroup): string {
   return `${group.tag}\0${group.surface}`;
 }
 
+/** Tag types represented by the current validation scan, with no phantom options. */
+export function tagTypesPresent(groups: MentionGroup[]): string[] {
+  return [...new Set(groups.map((group) => group.tag))].sort((a, b) => a.localeCompare(b));
+}
+
 function matchesFilters(group: MentionGroup, filters: DisambiguationFilters): boolean {
   return !filters.tag || group.tag === filters.tag;
 }
@@ -44,19 +49,19 @@ function isIgnored(state: DisambiguationState, group: MentionGroup): boolean {
 }
 
 export function pendingInstances(group: MentionGroup): MentionInstance[] {
-  return group.instances.filter((instance) => !instance.hasKey);
+  return group.instances.filter((instance) => !instance.hasKey || instance.isUnresolved);
 }
 
 export function syncMentionInstanceFromElement(instance: MentionInstance): void {
   const key = instance.element.getAttribute('key')?.trim() ?? '';
   const cert = instance.element.getAttribute('cert')?.trim() ?? '';
   instance.hasKey = key.length > 0;
-  instance.isUnresolved = cert === 'unknown' && !instance.hasKey;
+  instance.isUnresolved = cert === 'unknown';
 }
 
 export function syncMentionGroupFromElements(group: MentionGroup): void {
   for (const instance of group.instances) syncMentionInstanceFromElement(instance);
-  group.fullyResolved = group.instances.every((item) => item.hasKey);
+  group.fullyResolved = group.instances.every((item) => item.hasKey && !item.isUnresolved);
 }
 
 function filteredGroups(state: DisambiguationState): MentionGroup[] {

@@ -44,6 +44,13 @@ a document.
 The existing `wiki-nt-links` asset is the foundation for the noble-title
 portion of this layer.
 
+The Norbert SQL/export workflow must also extract the person-wrapper
+combinations needed by the matcher. These exports should preserve the
+component fields—nationality, origin or fief, office, noble-title parts, and
+personal-name forms—rather than exporting only a flattened display string.
+The flattened combinations can then be generated into the plugin-owned
+matcher asset without becoming project entities.
+
 ### 2. Project entities
 
 `entities.xml` stores confirmed project knowledge: persons and relationships
@@ -137,7 +144,7 @@ local lookup data for:
 |---|---|
 | Persons and names | Resolve the personal-name component and alternate forms |
 | Nationality/dynasty/court | Restrict candidates by historical polity and period |
-| Places | Resolve origin places and fiefs |
+| Places | Resolve origin places and fiefs, but keep those relations distinct |
 | Noble titles | Match fief + rank combinations and link them to persons |
 | Official posts | Resolve office strings and person–office relationships |
 | Dates/ranges | Reject historically impossible person/title/office matches |
@@ -150,9 +157,9 @@ Place-of-origin resolution follows the two-mode policy in
 [placename-geo-disambiguation-planning.md](placename-geo-disambiguation-planning.md):
 coherent nearby coordinate candidates may produce a coordinate place entity;
 missing-coordinate candidates use ID mode; and any unresolved geographic
-conflict causes all candidates to be imported as ID-mode places. This policy
-must be settled before noble-title fiefs are persisted, since fiefs use the
-same place entity model.
+conflict causes all candidates to be imported as ID-mode places. Fiefs use
+the same place authority, but they are a different relation from origin and
+must be stored separately.
 
 ## Required entity-data model
 
@@ -168,19 +175,30 @@ turning every textual occurrence into a duplicate entity. Conceptually:
   <nobleTitle ref="norbert:noble-title:…">
     <placeName ref="norbert:place:…">鄱陽</placeName>
     <roleName ref="norbert:rank:…">王</roleName>
+    <persName type="posthumous" ref="norbert:posthumous:…">…</persName>
   </nobleTitle>
 </person>
 ```
 
-For noble titles specifically, `entities.xml` should store the confirmed
-relation on the person record, not a hypothetical person string. The title
+For noble titles specifically, `entities.xml` should store each confirmed
+title combination as its own relation on the person record, not a hypothetical
+person string and not a standalone noble-title entity. One person can have
+multiple distinct noble-title relations over time, for example different
+fiefs, different ranks, or separate posthumous titles. Each stored relation
 should stay decomposed into the same components used in document markup:
 
 - `placeName` for the fief or territorial component;
 - `roleName` for the rank/title component;
+- `persName type="posthumous"` or other title-part elements where the source requires it;
 - optional `ref` / `key` values pointing to the authoritative record for the
   confirmed title;
 - source provenance on the stored relation, not just in the source document.
+
+Fief is not origin. The same place authority can support both, but the
+relation type must distinguish whether the place is a homeland, a fief, or
+something else. If a title string needs a posthumous-name component, the
+stored and TEI-facing form should use `persName type="posthumous"` inside the
+`nobleTitle`, not a separate custom element.
 
 The exact existing `entities.xml` vocabulary and cardinalities must be checked
 before implementation. The essential requirements are:
@@ -204,23 +222,109 @@ The work should proceed in this order:
 That ordering keeps the storage model, source markup, schema, and plugin
 behavior aligned instead of letting any one layer drift ahead of the others.
 
+## Open discussion items
+
+Before we wire the final Norbert plugin behavior, we still need to settle:
+
+- how the noble-title spans should be tagged in the document flow, including
+  the exact boundary rules for when a title begins and ends;
+- how the person-name generator should assemble and rank candidate strings,
+  especially where title, fief, posthumous name, and personal name all overlap.
+
+The current Norbert rules are the baseline for both decisions. In particular,
+nationality markers may be inserted temporarily as disambiguation context. A
+nationality marker is retained only when it participates in a meaningful
+concatenated person match; an isolated one-character nationality must not
+survive merely because it was useful during candidate generation.
+
+Standalone noble titles may remain tagged when they are genuinely standalone.
+They should not be absorbed into a `personWrapper` when they are not followed
+by, or otherwise joined to, a personal name or another meaningful person
+context. When a noble title does participate in a recognized person sequence,
+its fief and role components remain nested inside `nobleTitle`.
+
+Generated combinations are transient matcher data. They must never appear as
+project entities merely because they were generated or matched. Only a
+resolved person occurrence, or a relationship explicitly confirmed by the
+user, may affect `entities.xml`.
+
+## Incremental name-generation and caching strategy
+
+The generator should not rebuild every combination before every document
+batch. It should maintain a derived, in-memory matcher cache keyed by the
+relevant entity and authority-data revisions.
+
+The intended behavior is:
+
+1. Generate or load the complete cache at application startup when needed.
+2. When a person or related authority record is ingested, generate only that
+   person's combinations immediately.
+3. Leave unchanged people untouched, using a per-person fingerprint of the
+   inputs that affect generation: names, nationality/dynasty, origin, fiefs,
+   roles, noble-title components, and relevant date ranges.
+4. Invalidate and rebuild only affected people when entities are refreshed.
+5. Provide an explicit full rebuild for migrations, schema changes, and
+   troubleshooting.
+
+The first implementation should make startup and entity-refresh generation
+non-blocking and expose progress/cancellation if the work proves visible to
+users. An optional idle-time sweep can be added later, but it should not be
+necessary for correctness: the cache must already be correct after startup,
+ingestion, or refresh.
+
+The cache may be persisted as a plugin-owned derived artifact for fast
+startup, provided that it is clearly separate from `entities.xml`, can be
+discarded and regenerated, and is invalidated when its source revision or
+generation algorithm changes.
+
+## New implementation todo items
+
+- Store `name type="personWrapper"` occurrences with exactly one resolved
+  person key; integrate them into autotagging and disambiguation, but exclude
+  wrappers from the entities-panel entity list.
+- Add validation for person wrappers: exactly one person key, valid nested
+  component structure, no hypothetical wrapper persisted as an entity, and
+  preservation of the wrapper's single-person association through save,
+  reload, and export.
+- Preserve Norbert's temporary-nationality behavior and reject unresolved
+  standalone nationality markers from final output.
+- Define and test the boundary rules distinguishing standalone `nobleTitle`
+  markup from title components inside a `personWrapper`.
+- Implement incremental name-generation caching, including fingerprints,
+  invalidation, derived-cache persistence, and a full-rebuild path.
+- Export wrapper-ready combinations from Norbert SQL, including the separate
+  `person_noble_titles` component fields and their person IDs.
+- Run the wrapper candidate pass before ordinary component tagging, ordered by
+  descending surface length; after component tagging, run a second
+  concatenation pass to discover, validate, and intake newly formed wrapper
+  candidates.
+
+These belong in the Norbert plugin discussion because they affect UI behavior
+and candidate generation, not just the stored authority data.
+
 ## Autotagging workflow
 
 Once the data foundation is stable, Norbert can provide a post-processing
 autotagging producer:
 
-1. Run the ordinary date, authority, place, office, and person producers.
-2. Read tagged component spans from the document.
-3. Detect compatible contiguous sequences, including noble-title patterns.
-4. Query the transient authority matcher index.
-5. Use dynasty, place, office, title, date, and personal-name context to rank
+1. Run the person-wrapper producer first. It searches the longest generated
+   person combinations before any shorter component producer claims their
+   text.
+2. Read and preserve the nested component spans selected for each wrapper.
+3. Query the transient authority matcher index.
+4. Use dynasty, place, office, title, date, and personal-name context to rank
    candidates.
-6. Emit one compound suggestion for the complete person mention.
-7. On acceptance, write the nested component markup and one
+5. Emit one compound suggestion for the complete person mention.
+6. On acceptance, write the nested component markup and one
    `name[@type='personWrapper']`.
-8. Attach the single resolved person key to the wrapper.
-9. Offer confirmed relationships for persistence in `entities.xml`, without
+7. Attach the single resolved person key to the wrapper.
+8. Offer confirmed relationships for persistence in `entities.xml`, without
    automatically creating hypothetical entities.
+
+The wrapper pass must be ordered by descending matched span length, with
+overlap handling that preserves the longest accepted wrapper. Only after this
+pass should the ordinary person, noble-title, office, place, nationality, and
+other component producers run on text not already claimed by a wrapper.
 
 For `合州刺史鄱陽王範`, the intended result is:
 
@@ -234,6 +338,25 @@ For `合州刺史鄱陽王範`, the intended result is:
   <persName>範</persName>
 </name>
 ```
+
+## Current implementation snapshot
+
+As of July 26, 2026, the following pieces are in place:
+
+- `entities.xml` stores repeatable `nobleTitle` relations on people, with each
+  title decomposed into its parts and posthumous components represented as
+  `persName type="posthumous"`.
+- The Norbert plugin ships a bundled runtime asset,
+  `data/wiki-nt-links.ndjson`, registered as the `norbert-wiki-nt` authority
+  pack.
+- That asset is compiled from the plugin’s wiki/Norbert review workflow, not
+  from the live SQL dump.
+- The current compiled asset contains 903 reviewable rows; more can be added
+  later as the Wikipedia/Norbert title set is expanded.
+
+That means the storage model is now stable enough to document and ship, while
+the final runtime wiring still needs to connect the combined title pack into
+the Norbert tagging/disambiguation path.
 
 ## Sequenced implementation plan
 
@@ -252,7 +375,8 @@ For `合州刺史鄱陽王範`, the intended result is:
 - Inspect the current `entities.xml` schema and entity writer.
 - Add confirmed person relationships for nationality, origin, office, and
   noble title; origin and fief relationships point to the appropriate
-  coordinate-mode or ID-mode place entity.
+  coordinate-mode or ID-mode place entity, but remain distinct relation
+  types.
 - Add authority references and provenance.
 - Ensure imports and updates are idempotent.
 - Ensure hypothetical matcher candidates never enter `entities.xml`.
@@ -272,6 +396,7 @@ For `合州刺史鄱陽王範`, the intended result is:
 - Match full and abbreviated noble-title combinations.
 - Rank candidates using dynasty, office, place, title, date, and personal
   name.
+- Allow multiple distinct noble-title relations per person.
 - Emit unresolved candidates for review rather than inventing entities.
 
 ### Phase 5 — Confirmation and feedback
@@ -302,9 +427,74 @@ For `合州刺史鄱陽王範`, the intended result is:
 - Authority IDs and project entity IDs must not be confused.
 - Existing documents without the new wrapper markup must remain valid.
 
-## Immediate next step
+## Current implementation status
 
-The immediate next task is Phase 1 plus an audit of the existing
-`entities.xml` model. We should settle the authority record contracts and the
-confirmed relationship representation before implementing the noble-title
-autotagging producer.
+The authority contract, private Norbert SQL export, wrapper pack registration,
+schema validation, and initial wrapper-first matching path are implemented.
+The private SQL dump is used only as a local build input and is not recorded
+in, or shipped by, any repository. The generated pack contains 2,392 wrapper
+records and 9,486 wrapper search strings in the current local build.
+
+The second-pass compound mechanism is now implemented as well. After ordinary
+component tags have been applied, `runPersonWrapperConcatenation()` scans the
+wrapper pack for concatenated spans and returns `add-compound` suggestions.
+Applying one of these moves the existing sibling elements under
+`<name type="personWrapper">`, preserving their ontology and attributes.
+This is intentionally a separate pass because a wrapper that crosses existing
+element boundaries cannot be inserted by the ordinary single-text-node tagger.
+
+## Immediate next steps
+
+1. Connect the second pass to the Norbert plugin's post-component review flow.
+2. Resolve accepted wrappers to exactly one person key; do not create a
+   wrapper entity or populate `entities.xml` from hypothetical candidates.
+3. Add validation that rejects wrappers with missing/ambiguous keys and checks
+   that each noble-title combination remains a distinct fief/role/name record.
+4. Add the lightweight cache and refresh/startup scheduling for the person and
+   noble-title expanders.
+
+## Validation-panel follow-up
+
+- Include `name[@type="personWrapper"]` in the validation/disambiguation panel
+  as a person mention, without exposing it as a separate entity category.
+- Include `roleName` mentions in the same panel for office and title review.
+- Build the tag-type dropdown from the tag types represented by the current
+  document scan, and clear a stale selection when that type disappears.
+
+## Wrapper resolution policy
+
+The inner untyped `persName` is the identity-bearing child of a
+`personWrapper`; the wrapper is contextual association markup, not a person
+entity. During a validation scan:
+
+- If the inner person already has a key, copy that key to the wrapper.
+- If the wrapper already has a key, copy it to the inner person.
+- If neither is keyed and the local entity database has exactly one matching
+  person, assign that key to both automatically.
+- If there are zero or multiple local matches, leave both unresolved and add
+  `cert="unknown"` to the wrapper. The panel displays a red instruction to
+  disambiguate the person first; creating a new entity or manually linking the
+  wrapper itself is disabled.
+- If the two existing keys disagree, preserve the conflict, mark the wrapper
+  unresolved, and require another person disambiguation.
+
+Resolving a wrapper through the person candidate list uses the inner person's
+surface when creating/updating the entity and writes the selected key to both
+elements. It therefore cannot accidentally create an entity named with the
+entire concatenated title string. The wrapper-pack records are cached for the
+session; the local entity file remains the source of truth for automatic
+resolution.
+
+When a wrapper is resolved, the enabled plugin entity-data extractors receive
+the wrapper and reconcile its confirmed assertions into the keyed person. The
+Norbert extractor writes repeatable, provenance-bearing `nobleTitle` values,
+including separate fief, role, and posthumous-name components. Assertions are
+scoped to the source document and wrapper occurrence, so a later refresh can
+withdraw XML-derived values without deleting user-authored values.
+
+The apply pipeline now runs wrapper validation after every batch. A wrapper
+with `cert="unknown"` is reported as pending rather than structurally invalid;
+other missing keys, conflicting keys, malformed title children, or missing
+person components are reported as validation errors. The ordinary TEI schema
+therefore permits the explicit pending state, while the LJB wrapper validator
+still enforces the resolved state.

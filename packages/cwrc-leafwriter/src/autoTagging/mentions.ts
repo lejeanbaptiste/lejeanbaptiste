@@ -20,7 +20,7 @@ export interface MentionGroup {
   fullyResolved: boolean;
 }
 
-const DISAMBIGUATION_TAGS = Object.keys(TAG_TO_KIND);
+const DISAMBIGUATION_TAGS = [...Object.keys(TAG_TO_KIND), 'name'];
 
 function mentionFromElement(
   element: Element,
@@ -37,13 +37,17 @@ function mentionFromElement(
   const key = element.getAttribute('key')?.trim() ?? '';
   const cert = element.getAttribute('cert')?.trim() ?? '';
   const hasKey = key.length > 0;
-  const isUnresolved = cert === 'unknown' && !hasKey;
+  const isUnresolved = cert === 'unknown';
 
   const textNode = findPrimaryTextNode(element);
   if (!textNode) return null;
 
   const rawStart = 0;
   const rawEnd = textNode.data.length;
+  // A personWrapper may contain several sibling elements, so its full
+  // surface cannot be represented by the ordinary single-text-node anchor.
+  // Anchor the first component for focus/decision bookkeeping; the mention's
+  // displayed surface remains the complete wrapper text above.
   const anchor = createAnchor(
     documentId,
     doc.documentElement,
@@ -92,6 +96,7 @@ export function collectMentions(
     for (let i = 0; i < elements.length; i++) {
       const el = elements.item(i);
       if (!el) continue;
+      if (tag === 'name' && el.getAttribute('type') !== 'personWrapper') continue;
       const mention = mentionFromElement(el, doc, policy, documentId, index, occurrenceCache);
       if (!mention) continue;
       if (mention.hasKey && !includeResolved) continue;
@@ -109,7 +114,7 @@ export function collectMentions(
       tag: first.tag,
       surface: first.surface,
       instances,
-      fullyResolved: instances.every((m) => m.hasKey),
+      fullyResolved: instances.every((m) => m.hasKey && !m.isUnresolved),
     });
   }
 
@@ -127,7 +132,7 @@ export function mergeMentionGroups(groups: MentionGroup[]): MentionGroup[] {
       continue;
     }
     existing.instances.push(...group.instances);
-    existing.fullyResolved = existing.instances.every((m) => m.hasKey);
+    existing.fullyResolved = existing.instances.every((m) => m.hasKey && !m.isUnresolved);
   }
   return [...byKey.values()].sort((a, b) => a.surface.localeCompare(b.surface, 'zh-Hans'));
 }

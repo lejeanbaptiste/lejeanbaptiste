@@ -94,6 +94,20 @@ export interface AuthorityCandidate {
     canonicalEntityId?: string;
     officeTypeIds?: string[];
     sourceRef?: string;
+    /** Transient Norbert wrapper recipe; never itself an entity record. */
+    wrapper?: {
+      personId: string;
+      titleRowId: string;
+      components: {
+        nationality?: string;
+        fief?: string;
+        roleName?: string;
+        posthumousName?: string;
+        templeName?: string;
+        persName: string;
+      };
+      fiefPlaceId?: string;
+    };
     sourcePages?: string;
     note?: string;
   };
@@ -110,6 +124,7 @@ export interface AppointmentRecord {
 
 /** Corpus TEI tag used when matching this candidate. */
 export function teiTagForCandidate(candidate: AuthorityCandidate): string {
+  if (candidate.metadata?.wrapper) return 'name';
   if (candidate.kind === 'office') return candidate.metadata?.teiTag ?? 'roleName';
   const map: Record<EntityKind, string> = {
     person: 'persName',

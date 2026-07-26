@@ -1,5 +1,7 @@
 import AutorenewIcon from '@mui/icons-material/Autorenew';
 import CallSplitIcon from '@mui/icons-material/CallSplit';
+import CheckIcon from '@mui/icons-material/Check';
+import ClearIcon from '@mui/icons-material/Clear';
 import HubOutlinedIcon from '@mui/icons-material/HubOutlined';
 import DeleteOutlineIcon from '@mui/icons-material/DeleteOutline';
 import EditOutlinedIcon from '@mui/icons-material/EditOutlined';
@@ -9,6 +11,7 @@ import MergeIcon from '@mui/icons-material/Merge';
 import MoreVertIcon from '@mui/icons-material/MoreVert';
 import PlaylistAddIcon from '@mui/icons-material/PlaylistAdd';
 import RefreshIcon from '@mui/icons-material/Refresh';
+import UndoIcon from '@mui/icons-material/Undo';
 import WarningAmberIcon from '@mui/icons-material/WarningAmber';
 import {
   Alert,
@@ -50,7 +53,8 @@ import { listCentralMappings } from '../../../../../packages/cwrc-leafwriter/src
 import {
   addEntityName,
   deleteEntity,
-  detachAuthority,
+  decoupleAuthority,
+  listEntityAssertions,
   findAuthorityDuplicates,
   listEntities,
   markDuplicateIntentional,
@@ -62,6 +66,9 @@ import {
   setGivenName,
   setNameType,
   setRomanizedName,
+  rejectEntityAssertion,
+  restoreEntityAssertion,
+  validateEntityAssertion,
   type CentralMergeConflict,
   type DuplicateGroup,
   type EntitySummary,
@@ -151,6 +158,7 @@ export const SidebarDatabaseTab = ({ active = false }: SidebarDatabaseTabProps) 
   const [search, setSearch] = useState('');
   const [kindFilter, setKindFilter] = useState<EntityKind | 'all'>('all');
   const [selected, setSelected] = useState<Set<string>>(() => new Set());
+  const [showRejected, setShowRejected] = useState(false);
 
   const [confirm, setConfirm] = useState<ConfirmState | null>(null);
   const [skipDetachChecked, setSkipDetachChecked] = useState(false);
@@ -206,7 +214,8 @@ export const SidebarDatabaseTab = ({ active = false }: SidebarDatabaseTabProps) 
       setDocketCount(0);
       return;
     }
-    const centralFolder = (await window.electronAPI?.getEntityDbFolder?.().catch(() => null)) ?? null;
+    const centralFolder =
+      (await window.electronAPI?.getEntityDbFolder?.().catch(() => null)) ?? null;
     const resolvedCentralStore = centralEntityStoreFromDesktop(centralFolder);
     setCentralStore(resolvedCentralStore);
     if (resolvedCentralStore) {
@@ -219,7 +228,8 @@ export const SidebarDatabaseTab = ({ active = false }: SidebarDatabaseTabProps) 
 
     // Pure view switch: browse either database, never both at once - Project
     // falls back from Central if no central folder is configured yet.
-    const activeStore = databaseView === 'central' && resolvedCentralStore ? resolvedCentralStore : currentStore;
+    const activeStore =
+      databaseView === 'central' && resolvedCentralStore ? resolvedCentralStore : currentStore;
 
     setLoading(true);
     setLoadError(null);
@@ -247,7 +257,9 @@ export const SidebarDatabaseTab = ({ active = false }: SidebarDatabaseTabProps) 
   useEffect(() => {
     if (!window.electronAPI?.onExternalFileChange || !store) return;
     const watchedPaths = new Set(
-      [store.entitiesPath, centralStore?.entitiesPath].filter((path): path is string => Boolean(path)).map((path) => path.replace(/\\/g, '/')),
+      [store.entitiesPath, centralStore?.entitiesPath]
+        .filter((path): path is string => Boolean(path))
+        .map((path) => path.replace(/\\/g, '/')),
     );
     return window.electronAPI.onExternalFileChange((filePath: string) => {
       if (watchedPaths.has(filePath.replace(/\\/g, '/'))) void reload();
@@ -388,7 +400,8 @@ export const SidebarDatabaseTab = ({ active = false }: SidebarDatabaseTabProps) 
           }
         }
         await reload();
-        const scope = entityIds?.length === 1 ? 'this person' : `${result.entitiesScanned} linked persons`;
+        const scope =
+          entityIds?.length === 1 ? 'this person' : `${result.entitiesScanned} linked persons`;
         notifyViaSnackbar({
           message: result.cancelled
             ? `Backfill cancelled — added ${result.namesAdded} name${result.namesAdded === 1 ? '' : 's'} across ${result.entitiesUpdated} entit${result.entitiesUpdated === 1 ? 'y' : 'ies'}.`
@@ -483,6 +496,27 @@ export const SidebarDatabaseTab = ({ active = false }: SidebarDatabaseTabProps) 
     [editEntity, reload, resolveStoreFor],
   );
 
+  const runEntityMutationForId = useCallback(
+    async (entityId: string, message: string, mutate: (doc: Document, id: string) => void) => {
+      const targetStore = resolveStoreFor(entityId);
+      if (!targetStore) return;
+      setBusyMessage(message);
+      try {
+        const doc = await targetStore.loadEntities();
+        mutate(doc, entityId);
+        await targetStore.saveEntities(doc);
+        const refreshed = listEntities(doc).find((entity) => entity.id === entityId) ?? null;
+        if (editEntity?.id === entityId) setEditEntity(refreshed);
+        await reload();
+      } catch (error) {
+        setLoadError(error instanceof Error ? error.message : String(error));
+      } finally {
+        setBusyMessage(null);
+      }
+    },
+    [editEntity?.id, reload, resolveStoreFor],
+  );
+
   /** Merge button: <2 selected extends the search with an alternation, ≥2 opens the merge dialog. */
   const handleMergeClick = () => {
     if (selected.size >= 2) {
@@ -556,7 +590,9 @@ export const SidebarDatabaseTab = ({ active = false }: SidebarDatabaseTabProps) 
         }).then(async () => {
           if (!isProjectDelete || !centralStore || centralIds.length === 0) return;
           for (const centralId of centralIds) {
-            await centralStore.recordDeleteSuggestion(sourceDbId ?? 'unknown', centralId).catch(() => undefined);
+            await centralStore
+              .recordDeleteSuggestion(sourceDbId ?? 'unknown', centralId)
+              .catch(() => undefined);
           }
           computeMergeDocket(centralStore)
             .then((docket) => setDocketCount(docket.length))
@@ -569,7 +605,7 @@ export const SidebarDatabaseTab = ({ active = false }: SidebarDatabaseTabProps) 
   const requestDetach = (entity: EntitySummary, ref: AuthorityId) => {
     const detach = () =>
       void runMutation(resolveStoreFor(entity.id), 'Detaching authority…', (doc) => {
-        detachAuthority(doc, entity.id, ref);
+        decoupleAuthority(doc, entity.id, ref);
       });
     if (skipEntityDetachConfirm) {
       detach();
@@ -735,11 +771,19 @@ export const SidebarDatabaseTab = ({ active = false }: SidebarDatabaseTabProps) 
           value={search}
           onChange={(event) => setSearch(event.target.value)}
           error={!!regexError}
-          helperText={regexError ? t('LWC.desktop.sidebar.database.invalid_regex', { detail: regexError }) : undefined}
+          helperText={
+            regexError
+              ? t('LWC.desktop.sidebar.database.invalid_regex', { detail: regexError })
+              : undefined
+          }
           InputProps={{
             endAdornment: search ? (
               <InputAdornment position="end">
-                <IconButton size="small" onClick={() => setSearch('')} aria-label={t('LWC.desktop.sidebar.database.clear_search')}>
+                <IconButton
+                  size="small"
+                  onClick={() => setSearch('')}
+                  aria-label={t('LWC.desktop.sidebar.database.clear_search')}
+                >
                   ×
                 </IconButton>
               </InputAdornment>
@@ -765,13 +809,21 @@ export const SidebarDatabaseTab = ({ active = false }: SidebarDatabaseTabProps) 
               />
             )}
           />
-          <Tooltip title={databaseView === 'central' ? 'Browsing your central database' : 'Browsing this project’s database'}>
+          <Tooltip
+            title={
+              databaseView === 'central'
+                ? 'Browsing your central database'
+                : 'Browsing this project’s database'
+            }
+          >
             <span>
               <Button
                 size="small"
                 variant="contained"
                 color={databaseView === 'central' ? 'error' : 'success'}
-                onClick={() => setDatabaseView((prev) => (prev === 'central' ? 'project' : 'central'))}
+                onClick={() =>
+                  setDatabaseView((prev) => (prev === 'central' ? 'project' : 'central'))
+                }
                 startIcon={<HubOutlinedIcon fontSize="small" />}
                 sx={{ flexShrink: 0, whiteSpace: 'nowrap' }}
               >
@@ -804,7 +856,12 @@ export const SidebarDatabaseTab = ({ active = false }: SidebarDatabaseTabProps) 
           <Box sx={{ flex: 1, minWidth: 0 }} />
           {!syncToCentral && (
             <Tooltip title="Bridge to central database">
-              <IconButton size="small" onClick={() => setBridgeOpen(true)} aria-label="Bridge to central database" sx={{ flexShrink: 0 }}>
+              <IconButton
+                size="small"
+                onClick={() => setBridgeOpen(true)}
+                aria-label="Bridge to central database"
+                sx={{ flexShrink: 0 }}
+              >
                 <HubOutlinedIcon fontSize="small" />
               </IconButton>
             </Tooltip>
@@ -817,7 +874,12 @@ export const SidebarDatabaseTab = ({ active = false }: SidebarDatabaseTabProps) 
                   : 'Merge docket'
               }
             >
-              <IconButton size="small" onClick={() => setDocketOpen(true)} aria-label="Merge docket" sx={{ flexShrink: 0 }}>
+              <IconButton
+                size="small"
+                onClick={() => setDocketOpen(true)}
+                aria-label="Merge docket"
+                sx={{ flexShrink: 0 }}
+              >
                 <Badge badgeContent={docketCount} color="warning">
                   <FactCheckOutlinedIcon fontSize="small" />
                 </Badge>
@@ -843,15 +905,33 @@ export const SidebarDatabaseTab = ({ active = false }: SidebarDatabaseTabProps) 
             </span>
           </Tooltip>
           <Tooltip title={t('LWC.desktop.sidebar.database.reload_entities')}>
-            <IconButton size="small" onClick={() => void reload()} aria-label={t('LWC.desktop.sidebar.database.reload_entities')} sx={{ flexShrink: 0 }}>
+            <IconButton
+              size="small"
+              onClick={() => void reload()}
+              aria-label={t('LWC.desktop.sidebar.database.reload_entities')}
+              sx={{ flexShrink: 0 }}
+            >
               <RefreshIcon fontSize="small" />
             </IconButton>
           </Tooltip>
+          <FormControlLabel
+            sx={{ ml: 0, mr: 0, whiteSpace: 'nowrap' }}
+            control={
+              <Checkbox
+                size="small"
+                checked={showRejected}
+                onChange={(event) => setShowRejected(event.target.checked)}
+              />
+            }
+            label={t('LWC.desktop.sidebar.database.show_rejected')}
+          />
         </Stack>
         {backfillBusy && (
           <Stack spacing={0.5}>
             <LinearProgress
-              variant={backfillProgress && backfillProgress.total > 0 ? 'determinate' : 'indeterminate'}
+              variant={
+                backfillProgress && backfillProgress.total > 0 ? 'determinate' : 'indeterminate'
+              }
               value={
                 backfillProgress && backfillProgress.total > 0
                   ? (backfillProgress.done / backfillProgress.total) * 100
@@ -859,7 +939,12 @@ export const SidebarDatabaseTab = ({ active = false }: SidebarDatabaseTabProps) 
               }
             />
             <Stack direction="row" spacing={1} alignItems="center" justifyContent="space-between">
-              <Typography variant="caption" color="text.secondary" noWrap sx={{ flex: 1, minWidth: 0 }}>
+              <Typography
+                variant="caption"
+                color="text.secondary"
+                noWrap
+                sx={{ flex: 1, minWidth: 0 }}
+              >
                 {backfillProgress?.entityLabel
                   ? `Enriching ${backfillProgress.entityLabel}… (${backfillProgress.done}/${backfillProgress.total || '…'})`
                   : 'Backfilling names from authorities…'}
@@ -880,9 +965,11 @@ export const SidebarDatabaseTab = ({ active = false }: SidebarDatabaseTabProps) 
       {duplicates.length > 0 && (
         <Alert severity="warning" icon={<WarningAmberIcon fontSize="small" />} sx={{ m: 1, py: 0 }}>
           <Typography variant="caption" component="div" sx={{ fontWeight: 600 }}>
-              {duplicates.length === 1
+            {duplicates.length === 1
               ? t('LWC.desktop.sidebar.database.duplicate_authority_one')
-              : t('LWC.desktop.sidebar.database.duplicate_authority_many', { count: duplicates.length })}
+              : t('LWC.desktop.sidebar.database.duplicate_authority_many', {
+                  count: duplicates.length,
+                })}
           </Typography>
           {duplicates.slice(0, 5).map((group) => (
             <Stack
@@ -894,9 +981,7 @@ export const SidebarDatabaseTab = ({ active = false }: SidebarDatabaseTabProps) 
             >
               <Typography variant="caption" sx={{ flex: 1, minWidth: 0 }} noWrap>
                 {group.type} {group.value}:{' '}
-                {group.entityIds
-                  .map((id) => entityById(id)?.names[0] ?? id)
-                  .join(', ')}
+                {group.entityIds.map((id) => entityById(id)?.names[0] ?? id).join(', ')}
               </Typography>
               <Button size="small" onClick={() => mergeDuplicateGroup(group)}>
                 {t('LWC.desktop.sidebar.database.merge')}
@@ -978,77 +1063,130 @@ export const SidebarDatabaseTab = ({ active = false }: SidebarDatabaseTabProps) 
         ) : (
           visible.map((entity) => {
             const romanized = romanizedOf(entity);
-            const altNames = entity.names
-              .slice(1)
-              .filter((name) => name !== romanized);
+            const altNames = entity.names.slice(1).filter((name) => name !== romanized);
             return (
-            <Box
-              key={entity.id}
-              sx={{
-                display: 'flex',
-                alignItems: 'flex-start',
-                gap: 0.5,
-                px: 1,
-                py: 0.75,
-                borderBottom: 1,
-                borderColor: 'divider',
-                bgcolor: selected.has(entity.id) ? 'action.selected' : undefined,
-              }}
-            >
-              <Checkbox
-                size="small"
-                checked={selected.has(entity.id)}
-                onChange={() => toggleSelected(entity.id)}
-                sx={{ p: 0.25, mt: 0.125 }}
-              />
-              <Box sx={{ flex: 1, minWidth: 0 }}>
-                <Stack direction="row" spacing={0.75} alignItems="baseline">
-                  <Typography variant="body2" sx={{ fontWeight: 600 }} noWrap>
-                    {entity.names[0] ?? '(unnamed)'}
-                  </Typography>
-                  {romanized && romanized !== entity.names[0] && (
-                    <Typography variant="caption" color="text.secondary" noWrap>
-                      {romanized}
-                    </Typography>
-                  )}
-                  {altNames.length > 0 && (
-                    <Typography variant="caption" color="text.secondary" noWrap>
-                      {altNames.join(' · ')}
-                    </Typography>
-                  )}
-                </Stack>
-                <Typography variant="caption" color="text.secondary" component="div" noWrap>
-                  {entity.id}
-                  {entity.description ? ` — ${entity.description}` : ''}
-                </Typography>
-                {entity.authorities.length > 0 && (
-                  <Stack direction="row" spacing={0.5} useFlexGap flexWrap="wrap" sx={{ mt: 0.25 }}>
-                    {entity.authorities.map((ref) => {
-                      const url = authorityLookupUrl(ref);
-                      return (
-                        <Chip
-                          key={`${ref.type}-${ref.value}`}
-                          label={ref.type}
-                          size="small"
-                          variant="outlined"
-                          icon={url ? <LaunchIcon sx={{ fontSize: 12 }} /> : undefined}
-                          onClick={url ? () => openExternalUrl(url) : undefined}
-                          onDelete={() => requestDetach(entity, ref)}
-                          sx={{ height: 20, '& .MuiChip-label': { px: 0.75, fontSize: 11 } }}
-                        />
-                      );
-                    })}
-                  </Stack>
-                )}
-              </Box>
-              <IconButton
-                size="small"
-                onClick={(event) => setMenuAnchor({ el: event.currentTarget, entity })}
-                aria-label={t('LWC.desktop.sidebar.database.actions_for', { id: entity.id })}
+              <Box
+                key={entity.id}
+                sx={{
+                  display: 'flex',
+                  alignItems: 'flex-start',
+                  gap: 0.5,
+                  px: 1,
+                  py: 0.75,
+                  borderBottom: 1,
+                  borderColor: 'divider',
+                  bgcolor: selected.has(entity.id) ? 'action.selected' : undefined,
+                }}
               >
-                <MoreVertIcon fontSize="small" />
-              </IconButton>
-            </Box>
+                <Checkbox
+                  size="small"
+                  checked={selected.has(entity.id)}
+                  onChange={() => toggleSelected(entity.id)}
+                  sx={{ p: 0.25, mt: 0.125 }}
+                />
+                <Box sx={{ flex: 1, minWidth: 0 }}>
+                  <Stack direction="row" spacing={0.75} alignItems="baseline">
+                    <Typography variant="body2" sx={{ fontWeight: 600 }} noWrap>
+                      {entity.names[0] ?? '(unnamed)'}
+                    </Typography>
+                    {romanized && romanized !== entity.names[0] && (
+                      <Typography variant="caption" color="text.secondary" noWrap>
+                        {romanized}
+                      </Typography>
+                    )}
+                    {altNames.length > 0 && (
+                      <Typography variant="caption" color="text.secondary" noWrap>
+                        {altNames.join(' · ')}
+                      </Typography>
+                    )}
+                  </Stack>
+                  <Typography variant="caption" color="text.secondary" component="div" noWrap>
+                    {entity.id}
+                    {entity.description ? ` — ${entity.description}` : ''}
+                  </Typography>
+                  <Stack direction="row" spacing={0.5} useFlexGap flexWrap="wrap" sx={{ mt: 0.25 }}>
+                    {entity.origins.map((origin) => (
+                      <Chip
+                        key={origin}
+                        label={t(`LWC.desktop.sidebar.database.origin_${origin}`)}
+                        size="small"
+                        color={
+                          origin === 'user'
+                            ? 'default'
+                            : origin === 'authority'
+                              ? 'primary'
+                              : 'secondary'
+                        }
+                        variant="outlined"
+                        sx={{ height: 20, '& .MuiChip-label': { px: 0.75, fontSize: 11 } }}
+                      />
+                    ))}
+                    {showRejected && entity.rejectedCount > 0 && (
+                      <>
+                        <Chip
+                          label={t('LWC.desktop.sidebar.database.rejected_count', {
+                            count: entity.rejectedCount,
+                          })}
+                          size="small"
+                          color="error"
+                          variant="outlined"
+                          sx={{
+                            height: 20,
+                            textDecoration: 'line-through',
+                            '& .MuiChip-label': { px: 0.75, fontSize: 11 },
+                          }}
+                        />
+                        {entity.rejectedAssertions.map((assertion) => (
+                          <Chip
+                            key={`${assertion.element}-${assertion.value}-${assertion.source ?? ''}`}
+                            label={`${assertion.element}: ${assertion.value}`}
+                            size="small"
+                            color="error"
+                            variant="outlined"
+                            sx={{
+                              height: 20,
+                              textDecoration: 'line-through',
+                              '& .MuiChip-label': { px: 0.75, fontSize: 11 },
+                            }}
+                          />
+                        ))}
+                      </>
+                    )}
+                  </Stack>
+                  {entity.authorities.length > 0 && (
+                    <Stack
+                      direction="row"
+                      spacing={0.5}
+                      useFlexGap
+                      flexWrap="wrap"
+                      sx={{ mt: 0.25 }}
+                    >
+                      {entity.authorities.map((ref) => {
+                        const url = authorityLookupUrl(ref);
+                        return (
+                          <Chip
+                            key={`${ref.type}-${ref.value}`}
+                            label={ref.type}
+                            size="small"
+                            variant="outlined"
+                            icon={url ? <LaunchIcon sx={{ fontSize: 12 }} /> : undefined}
+                            onClick={url ? () => openExternalUrl(url) : undefined}
+                            onDelete={() => requestDetach(entity, ref)}
+                            sx={{ height: 20, '& .MuiChip-label': { px: 0.75, fontSize: 11 } }}
+                          />
+                        );
+                      })}
+                    </Stack>
+                  )}
+                </Box>
+                <IconButton
+                  size="small"
+                  onClick={(event) => setMenuAnchor({ el: event.currentTarget, entity })}
+                  aria-label={t('LWC.desktop.sidebar.database.actions_for', { id: entity.id })}
+                >
+                  <MoreVertIcon fontSize="small" />
+                </IconButton>
+              </Box>
             );
           })
         )}
@@ -1083,6 +1221,50 @@ export const SidebarDatabaseTab = ({ active = false }: SidebarDatabaseTabProps) 
         </MenuItem>
         <MenuItem
           onClick={() => {
+            const target = menuAnchor;
+            setMenuAnchor(null);
+            if (!target) return;
+            void runEntityMutationForId(
+              target.entity.id,
+              t('LWC.desktop.sidebar.database.validating_data'),
+              (doc, id) => {
+                for (const assertion of listEntityAssertions(doc, id)) {
+                  if (assertion.origin !== 'user' && assertion.status === 'active')
+                    validateEntityAssertion(doc, id, assertion.key);
+                }
+              },
+            );
+          }}
+        >
+          <ListItemIcon>
+            <CheckIcon fontSize="small" color="success" />
+          </ListItemIcon>
+          <ListItemText primary={t('LWC.desktop.sidebar.database.validate_imported')} />
+        </MenuItem>
+        <MenuItem
+          onClick={() => {
+            const target = menuAnchor;
+            setMenuAnchor(null);
+            if (!target) return;
+            void runEntityMutationForId(
+              target.entity.id,
+              t('LWC.desktop.sidebar.database.rejecting_data'),
+              (doc, id) => {
+                for (const assertion of listEntityAssertions(doc, id)) {
+                  if (assertion.origin !== 'user' && assertion.status === 'active')
+                    rejectEntityAssertion(doc, id, assertion.key);
+                }
+              },
+            );
+          }}
+        >
+          <ListItemIcon>
+            <ClearIcon fontSize="small" color="error" />
+          </ListItemIcon>
+          <ListItemText primary={t('LWC.desktop.sidebar.database.reject_imported')} />
+        </MenuItem>
+        <MenuItem
+          onClick={() => {
             setSplitInfoOpen(true);
             setMenuAnchor(null);
           }}
@@ -1101,7 +1283,10 @@ export const SidebarDatabaseTab = ({ active = false }: SidebarDatabaseTabProps) 
           <ListItemIcon>
             <DeleteOutlineIcon fontSize="small" color="error" />
           </ListItemIcon>
-          <ListItemText primary={t('LWC.desktop.sidebar.database.delete_entity')} primaryTypographyProps={{ color: 'error' }} />
+          <ListItemText
+            primary={t('LWC.desktop.sidebar.database.delete_entity')}
+            primaryTypographyProps={{ color: 'error' }}
+          />
         </MenuItem>
       </Menu>
 
@@ -1125,7 +1310,9 @@ export const SidebarDatabaseTab = ({ active = false }: SidebarDatabaseTabProps) 
           )}
         </DialogContent>
         <DialogActions>
-          <Button onClick={() => setConfirm(null)}>{t('LWC.desktop.sidebar.database.dialogs.cancel')}</Button>
+          <Button onClick={() => setConfirm(null)}>
+            {t('LWC.desktop.sidebar.database.dialogs.cancel')}
+          </Button>
           <Button
             color={confirm?.destructive ? 'error' : 'primary'}
             variant="contained"
@@ -1143,7 +1330,9 @@ export const SidebarDatabaseTab = ({ active = false }: SidebarDatabaseTabProps) 
 
       {/* Merge dialog */}
       <Dialog open={!!mergeIds} onClose={() => setMergeIds(null)} maxWidth="xs" fullWidth>
-        <DialogTitle>{t('LWC.desktop.sidebar.database.merge_dialog_title', { count: mergeIds?.length ?? 0 })}</DialogTitle>
+        <DialogTitle>
+          {t('LWC.desktop.sidebar.database.merge_dialog_title', { count: mergeIds?.length ?? 0 })}
+        </DialogTitle>
         <DialogContent>
           <DialogContentText sx={{ mb: 1 }}>
             {t('LWC.desktop.sidebar.database.merge_dialog_message')}
@@ -1174,7 +1363,9 @@ export const SidebarDatabaseTab = ({ active = false }: SidebarDatabaseTabProps) 
           </Typography>
         </DialogContent>
         <DialogActions>
-          <Button onClick={() => setMergeIds(null)}>{t('LWC.desktop.sidebar.database.dialogs.cancel')}</Button>
+          <Button onClick={() => setMergeIds(null)}>
+            {t('LWC.desktop.sidebar.database.dialogs.cancel')}
+          </Button>
           <Button variant="contained" onClick={confirmMerge}>
             {t('LWC.desktop.sidebar.database.merge')}
           </Button>
@@ -1289,6 +1480,111 @@ export const SidebarDatabaseTab = ({ active = false }: SidebarDatabaseTabProps) 
               />
             </Stack>
           )}
+          {editEntity &&
+            editEntity.assertions.some(
+              (assertion) => assertion.origin !== 'user' && assertion.status === 'active',
+            ) && (
+              <Stack spacing={0.75} sx={{ mt: 2 }}>
+                <Typography variant="caption" color="text.secondary">
+                  {t('LWC.desktop.sidebar.database.imported_data_heading')}
+                </Typography>
+                {editEntity.assertions
+                  .filter(
+                    (assertion) => assertion.origin !== 'user' && assertion.status === 'active',
+                  )
+                  .map((assertion) => (
+                    <Stack key={assertion.key} direction="row" spacing={0.5} alignItems="center">
+                      <Chip
+                        size="small"
+                        variant="outlined"
+                        color={assertion.origin === 'authority' ? 'primary' : 'secondary'}
+                        label={`${assertion.element}: ${assertion.value}`}
+                        sx={{ flex: 1, minWidth: 0, justifyContent: 'flex-start' }}
+                      />
+                      <Tooltip title={t('LWC.desktop.sidebar.database.validate_data')}>
+                        <IconButton
+                          size="small"
+                          color="success"
+                          aria-label={t('LWC.desktop.sidebar.database.validate_data')}
+                          onClick={() =>
+                            void runEntityMutationForId(
+                              editEntity.id,
+                              t('LWC.desktop.sidebar.database.validating_data'),
+                              (doc, id) => {
+                                validateEntityAssertion(doc, id, assertion.key);
+                              },
+                            )
+                          }
+                        >
+                          <CheckIcon fontSize="small" />
+                        </IconButton>
+                      </Tooltip>
+                      <Tooltip title={t('LWC.desktop.sidebar.database.reject_data')}>
+                        <IconButton
+                          size="small"
+                          color="error"
+                          aria-label={t('LWC.desktop.sidebar.database.reject_data')}
+                          onClick={() =>
+                            void runEntityMutationForId(
+                              editEntity.id,
+                              t('LWC.desktop.sidebar.database.rejecting_data'),
+                              (doc, id) => {
+                                rejectEntityAssertion(doc, id, assertion.key);
+                              },
+                            )
+                          }
+                        >
+                          <ClearIcon fontSize="small" />
+                        </IconButton>
+                      </Tooltip>
+                    </Stack>
+                  ))}
+              </Stack>
+            )}
+          {showRejected &&
+            editEntity &&
+            editEntity.assertions.some((assertion) => assertion.status === 'rejected') && (
+              <Stack spacing={0.75} sx={{ mt: 2 }}>
+                <Typography variant="caption" color="text.secondary">
+                  {t('LWC.desktop.sidebar.database.rejected_data_heading')}
+                </Typography>
+                {editEntity.assertions
+                  .filter((assertion) => assertion.status === 'rejected')
+                  .map((assertion) => (
+                    <Stack key={assertion.key} direction="row" spacing={0.5} alignItems="center">
+                      <Chip
+                        size="small"
+                        color="error"
+                        variant="outlined"
+                        label={`${assertion.element}: ${assertion.value}`}
+                        sx={{
+                          flex: 1,
+                          minWidth: 0,
+                          justifyContent: 'flex-start',
+                          textDecoration: 'line-through',
+                        }}
+                      />
+                      <Tooltip title={t('LWC.desktop.sidebar.database.restore_data')}>
+                        <IconButton
+                          size="small"
+                          aria-label={t('LWC.desktop.sidebar.database.restore_data')}
+                          onClick={() =>
+                            void runEntityMutationForId(
+                              editEntity.id,
+                              t('LWC.desktop.sidebar.database.restoring_data'),
+                              (doc, id) => {
+                                restoreEntityAssertion(doc, id, assertion.key);
+                              },
+                            )
+                          }
+                        >
+                          <UndoIcon fontSize="small" />
+                        </IconButton>
+                      </Tooltip>
+                    </Stack>
+                  ))}
+              </Stack>
+            )}
           {editEntity && editEntity.nameEntries.length > 1 && (
             <Stack spacing={0.75} sx={{ mt: 2 }}>
               <Typography variant="caption" color="text.secondary">
@@ -1344,8 +1640,9 @@ export const SidebarDatabaseTab = ({ active = false }: SidebarDatabaseTabProps) 
                 Refresh names from authorities
               </Button>
               <Typography variant="caption" color="text.secondary" component="div" sx={{ mt: 0.5 }}>
-                Adds missing typed names from packs and Wikidata without overwriting your edits. Wikidata-linked
-                people benefit most until the CBDB pack includes bare 字/名/姓 in names[].
+                Adds missing typed names from packs and Wikidata without overwriting your edits.
+                Wikidata-linked people benefit most until the CBDB pack includes bare 字/名/姓 in
+                names[].
               </Typography>
             </Box>
           )}
@@ -1391,7 +1688,9 @@ export const SidebarDatabaseTab = ({ active = false }: SidebarDatabaseTabProps) 
           </Stack>
         </DialogContent>
         <DialogActions>
-          <Button onClick={() => setEditEntity(null)}>{t('LWC.desktop.sidebar.database.dialogs.cancel')}</Button>
+          <Button onClick={() => setEditEntity(null)}>
+            {t('LWC.desktop.sidebar.database.dialogs.cancel')}
+          </Button>
           <Button variant="contained" onClick={saveEdit}>
             {t('LWC.desktop.sidebar.database.save')}
           </Button>
@@ -1407,7 +1706,9 @@ export const SidebarDatabaseTab = ({ active = false }: SidebarDatabaseTabProps) 
           </DialogContentText>
         </DialogContent>
         <DialogActions>
-          <Button onClick={() => setSplitInfoOpen(false)}>{t('LWC.desktop.sidebar.database.dialogs.got_it')}</Button>
+          <Button onClick={() => setSplitInfoOpen(false)}>
+            {t('LWC.desktop.sidebar.database.dialogs.got_it')}
+          </Button>
         </DialogActions>
       </Dialog>
 
@@ -1433,7 +1734,9 @@ export const SidebarDatabaseTab = ({ active = false }: SidebarDatabaseTabProps) 
           )}
         </DialogContent>
         <DialogActions>
-          <Button onClick={() => setLastSummary(null)}>{t('LWC.desktop.sidebar.database.dialogs.close')}</Button>
+          <Button onClick={() => setLastSummary(null)}>
+            {t('LWC.desktop.sidebar.database.dialogs.close')}
+          </Button>
         </DialogActions>
       </Dialog>
 

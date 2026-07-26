@@ -43,7 +43,9 @@ one office:
 
 ```xml
 <nobleTitle>
-  <placeName>鄱陽</placeName><roleName>王</roleName>
+  <placeName>鄱陽</placeName>
+  <roleName>王</roleName>
+</nobleTitle>
 ```
 
 The plugin may use a shipped, transient index containing hypothetical
@@ -51,6 +53,10 @@ combinations generated from Norbert and Wikidata. Those combinations are
 matcher candidates, not entity records. Only a combination that occurs in
 the document is materialized as markup, and only a resolved person receives a
 `key` or authority `ref`.
+
+When a title string needs a posthumous-name component, use `persName` with
+`type="posthumous"` inside the `nobleTitle`. The entity store may keep
+several separate `nobleTitle` records for the same person.
 
 ## `name type="personWrapper"`
 
@@ -74,6 +80,11 @@ a replacement for the project's entity database. Its `key` points to the
 resolved person contained by the mention; `ref` may additionally point to an
 external authority such as Wikidata. Separate mentions of the same person
 share the key rather than being merged structurally.
+
+In the entity database, the same person may carry multiple repeatable
+`<nobleTitle>` records, each with its own provenance and component parts.
+That keeps "Lord of B" and "Prince of A" distinct instead of flattening them
+into one title bucket.
 
 ## Office entities
 

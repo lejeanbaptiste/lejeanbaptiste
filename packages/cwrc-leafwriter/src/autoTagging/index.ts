@@ -28,6 +28,7 @@ export * from './authorityCache';
 export * from './disambiguationCandidates';
 export * from './manualAuthorityLink';
 export * from './disambiguationController';
+export * from './personWrapperValidation';
 export * from './disambiguationPending';
 export * from './entityDatabaseCheck';
 export { ReviewPanel, type ReviewPanelProps } from './ReviewPanel';

@@ -27,7 +27,9 @@ export type AuthorityPackId =
   | 'ndl-orgs'
   | 'ndl-works'
   | 'norbert-persons'
+  | 'norbert-person-wrappers'
   | 'norbert-offices'
+  | 'norbert-wiki-nt'
   /** Project entity database (PEDB) — read live from entities.xml, not a file pack. */
   | 'pedb-persons'
   | 'pedb-places'
@@ -248,11 +250,26 @@ export const AUTHORITY_PACKS: AuthorityPackSpec[] = [
     defaultTag: 'persName',
   },
   {
+    id: 'norbert-person-wrappers',
+    label: 'Norbert person wrappers',
+    source: 'norbert',
+    relativePath: 'norbert/person-wrappers.ndjson',
+    // Indexed as person candidates; the wrapper candidate itself emits <name>.
+    defaultTag: 'persName',
+  },
+  {
     id: 'norbert-offices',
     label: 'Norbert offices (官名)',
     source: 'norbert',
     relativePath: 'norbert/offices.ndjson',
     defaultTag: 'roleName',
+  },
+  {
+    id: 'norbert-wiki-nt',
+    label: 'Norbert wiki noble titles',
+    source: 'norbert',
+    relativePath: 'norbert/wiki-nt-links.ndjson',
+    defaultTag: 'persName',
   },
   {
     id: 'pedb-persons',
@@ -463,7 +480,9 @@ export const UI_AUTHORITY_PACK_IDS: AuthorityPackId[] = [
   'ndl-orgs',
   'ndl-works',
   'norbert-persons',
+  'norbert-person-wrappers',
   'norbert-offices',
+  'norbert-wiki-nt',
   'pedb-persons',
   'pedb-places',
   'pedb-orgs',
@@ -618,7 +637,9 @@ export const AUTHORITY_PACK_SHORT_LABELS: Partial<Record<AuthorityPackId, string
   'ndl-orgs': 'Organizations',
   'ndl-works': 'Works',
   'norbert-persons': 'Persons',
+  'norbert-person-wrappers': 'Persons',
   'norbert-offices': 'Offices',
+  'norbert-wiki-nt': 'Persons',
   'pedb-persons': 'Persons',
   'pedb-places': 'Places',
   'pedb-orgs': 'Organizations',

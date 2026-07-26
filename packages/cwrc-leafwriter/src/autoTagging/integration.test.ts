@@ -4,7 +4,7 @@ import { parseLog } from './decisionLog';
 import { EntityStore, type EntityFileApi } from './entityStore';
 import { resolveEntityStorePaths } from './entityStoreResolve';
 import { collectTextNodes, createAnchor } from './anchor';
-import { AutoTaggingSession, type WriterLike } from './integration';
+import { AutoTaggingSession, reconcilePersonWrapperKeys, type WriterLike } from './integration';
 
 const XML = `<TEI xmlns="http://www.tei-c.org/ns/1.0"><text><body>
 <p>張衡居洛陽，張衡造渾天儀。</p>
@@ -29,6 +29,23 @@ const makeWriter = (initial: string, forbid?: { parent: string; child: string })
 };
 
 describe('AutoTaggingSession', () => {
+  it('auto-resolves a wrapper and its inner person from one local entity match', () => {
+    const doc = new DOMParser().parseFromString(
+      '<TEI xmlns="http://www.tei-c.org/ns/1.0"><text><body><p><name type="personWrapper"><nobleTitle><placeName>鄱陽</placeName><roleName>王</roleName></nobleTitle><persName>範</persName></name></p></body></text></TEI>',
+      'application/xml',
+    );
+    const entities = new DOMParser().parseFromString(
+      '<TEI xmlns="http://www.tei-c.org/ns/1.0"><teiHeader/><text/><listPerson><person xml:id="person-7"><persName>範</persName></person></listPerson></TEI>',
+      'application/xml',
+    );
+    expect(reconcilePersonWrapperKeys(doc, entities)).toBe(true);
+    const wrapper = doc.getElementsByTagName('name')[0]!;
+    const person = doc.getElementsByTagName('persName')[0]!;
+    expect(wrapper.getAttribute('key')).toBe('person-7');
+    expect(person.getAttribute('key')).toBe('person-7');
+    expect(wrapper.hasAttribute('cert')).toBe(false);
+  });
+
   it('produces, applies, and reloads the editor with the tagged XML', async () => {
     const { writer, loads, getCurrent } = makeWriter(XML);
     const session = new AutoTaggingSession(writer);

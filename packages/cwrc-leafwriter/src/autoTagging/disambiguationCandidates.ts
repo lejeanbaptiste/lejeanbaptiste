@@ -28,9 +28,20 @@ import {
   wikidataLabelsByQid,
   type WikidataGivenFamilyNames,
 } from './disambiguationMatch';
-import { addEntityName, getFamilyName, getGivenName, setFamilyName, setGivenName, setRomanizedName } from './entityOps';
+import {
+  addEntityName,
+  getFamilyName,
+  getGivenName,
+  setFamilyName,
+  setGivenName,
+  setRomanizedName,
+} from './entityOps';
 import { normalizeNameType, type NameTypeId } from './nameTypes';
-import { isEastAsianCalendarLanguageCode, isLatnLang, isTibetanLanguageCode } from '../utilities/languageCodes';
+import {
+  isEastAsianCalendarLanguageCode,
+  isLatnLang,
+  isTibetanLanguageCode,
+} from '../utilities/languageCodes';
 import { autoRomanize, romanizeFromAuthorityMetadata } from '../utilities/romanize';
 import type { WikidataFetchFn } from './wikidataDates';
 import { fetchWikidataLifespan, prefixDescriptionWithLifespan } from './wikidataDates';
@@ -39,11 +50,7 @@ import { DilaPlaceDetailCache } from './dilaPlaceDetailCache';
 import { wikidataQidsMatchingKind } from './wikidataKindFilter';
 import { packIdsForEntityType, searchPackRows } from '../services/authority-pack-lookup';
 import { AUTHORITY_PACKS } from './packPaths';
-import {
-  normalizeDateRangeFilter,
-  parseAuthorityNdjson,
-  type DateRangeFilter,
-} from './packLoader';
+import { normalizeDateRangeFilter, parseAuthorityNdjson, type DateRangeFilter } from './packLoader';
 import type { AuthorityCandidate } from './authority';
 import type { AuthorityPackId } from './packPaths';
 
@@ -54,6 +61,7 @@ export interface DisambiguationCandidate {
   sources: string[];
   uri?: string;
   authorityIds?: AuthorityId[];
+  authoritySource?: string;
   localEntityId?: string;
   /**
    * Set instead of `localEntityId` when this candidate comes from the
@@ -94,9 +102,13 @@ const TAG_TO_ENTITY_TYPE: Record<string, NamedEntityType> = {
   title: 'work',
   bibl: 'work',
   roleName: 'office',
+  name: 'person',
 };
 
-const AUTHORITY_MAP: Record<string, 'wikidata' | 'viaf' | 'dbpedia' | 'geonames' | 'getty' | 'gnd'> = {
+const AUTHORITY_MAP: Record<
+  string,
+  'wikidata' | 'viaf' | 'dbpedia' | 'geonames' | 'getty' | 'gnd'
+> = {
   Wikidata: 'wikidata',
   VIAF: 'viaf',
   DBPedia: 'dbpedia',
@@ -146,9 +158,12 @@ export function extractCbdbId(text: string): string | null {
 }
 
 export const CBDB_PERSON_URL = (id: string) => `https://cbdb.fas.harvard.edu/person?id=${id}`;
-export const DILA_PERSON_URL = (id: string) => `https://authority.dila.edu.tw/person/search.php?code=${id}`;
-export const DILA_PLACE_URL = (id: string) => `https://authority.dila.edu.tw/place/search.php?code=${id}`;
-export const DILA_URL = (id: string) => (id.startsWith('PL') ? DILA_PLACE_URL(id) : DILA_PERSON_URL(id));
+export const DILA_PERSON_URL = (id: string) =>
+  `https://authority.dila.edu.tw/person/search.php?code=${id}`;
+export const DILA_PLACE_URL = (id: string) =>
+  `https://authority.dila.edu.tw/place/search.php?code=${id}`;
+export const DILA_URL = (id: string) =>
+  id.startsWith('PL') ? DILA_PLACE_URL(id) : DILA_PERSON_URL(id);
 
 export type WikipediaSite = 'enwiki' | 'zhwiki';
 
@@ -260,13 +275,11 @@ function dedupeAuthorityIds(ids: AuthorityId[]): AuthorityId[] {
 }
 
 /** Pull cross-authority ids embedded in reconcile description text. */
-export function enrichCandidateCrossRefs(candidate: DisambiguationCandidate): DisambiguationCandidate {
+export function enrichCandidateCrossRefs(
+  candidate: DisambiguationCandidate,
+): DisambiguationCandidate {
   const authorityIds = dedupeAuthorityIds(
-    authorityIdsFromCrossRefs(
-      candidate.authorityIds ?? [],
-      candidate.description,
-      candidate.uri,
-    ),
+    authorityIdsFromCrossRefs(candidate.authorityIds ?? [], candidate.description, candidate.uri),
   );
   return { ...candidate, authorityIds };
 }
@@ -294,7 +307,9 @@ function authorityIdsFromCrossRefs(
     const cbdb = extractCbdbId(text);
     if (cbdb) add('CBDB', cbdb);
 
-    const dila = text.match(/authority\.dila\.edu\.tw\/[^\s]*?(?:aid=|fromInner=|code=|\/)([A-Z]{1,2}\d+)/)?.[1];
+    const dila = text.match(
+      /authority\.dila\.edu\.tw\/[^\s]*?(?:aid=|fromInner=|code=|\/)([A-Z]{1,2}\d+)/,
+    )?.[1];
     if (dila) add('DILA', dila);
 
     const ndl = text.match(/id\.ndl\.go\.jp\/auth\/(?:ndlna|ndlsh)\/([\w-]+)/i)?.[1];
@@ -422,7 +437,7 @@ export function candidatesFromEntityFile(
   surface: string,
   origin: 'pedb' | 'cedb' = 'pedb',
 ): DisambiguationCandidate[] {
-  const kind = TAG_TO_KIND[tag];
+  const kind = tag === 'name' ? 'person' : TAG_TO_KIND[tag];
   if (!kind) return [];
 
   const nameTag = ENTITY_KINDS[kind].name;
@@ -441,8 +456,10 @@ export function candidatesFromEntityFile(
     const descriptionNote =
       notes.find((note) => note.getAttribute('type') === 'description') ??
       notes.find((note) => !note.getAttribute('type'));
-    let startYear = parseIsoYear(el.getElementsByTagName('birth')[0]?.getAttribute('when')) ?? undefined;
-    let endYear = parseIsoYear(el.getElementsByTagName('death')[0]?.getAttribute('when')) ?? undefined;
+    let startYear =
+      parseIsoYear(el.getElementsByTagName('birth')[0]?.getAttribute('when')) ?? undefined;
+    let endYear =
+      parseIsoYear(el.getElementsByTagName('death')[0]?.getAttribute('when')) ?? undefined;
     const datesNote = notes.find((note) => note.getAttribute('type') === 'dates');
     if (startYear == null && endYear == null && datesNote) {
       const [start, end] = (datesNote.textContent ?? '').split('/');
@@ -539,8 +556,7 @@ async function filterWikidataByKind<T extends { uri: string; description?: strin
 
   const withQid: Array<{ match: T; qid: string }> = [];
   for (const match of matches) {
-    const qid =
-      extractWikidataId(match.uri) ?? extractWikidataId(match.description ?? '');
+    const qid = extractWikidataId(match.uri) ?? extractWikidataId(match.description ?? '');
     if (qid) withQid.push({ match, qid });
   }
   if (withQid.length === 0) return [];
@@ -560,7 +576,9 @@ export function clearPersonPackIndexForTests(): void {
 /** Session-lifetime cache of parsed CHGIS rows, keyed by exact search string. */
 let chgisIndexPromise: Promise<Map<string, { startYear?: number; endYear?: number }>> | null = null;
 
-function buildChgisIndex(rows: AuthorityCandidate[]): Map<string, { startYear?: number; endYear?: number }> {
+function buildChgisIndex(
+  rows: AuthorityCandidate[],
+): Map<string, { startYear?: number; endYear?: number }> {
   const index = new Map<string, { startYear?: number; endYear?: number }>();
   for (const row of rows) {
     const years = { startYear: row.metadata?.startYear, endYear: row.metadata?.endYear };
@@ -622,7 +640,22 @@ async function candidatesFromAuthorityPacks(
 ): Promise<DisambiguationCandidate[]> {
   const entityType = TAG_TO_ENTITY_TYPE[tag] ?? 'person';
   const packIds = packIdsForEntityType(
-    ['cbdb-persons', 'cbdb-places', 'cbdb-offices', 'dila-persons', 'dila-places', 'chgis-places', 'ndl-persons', 'ndl-places', 'ndl-orgs', 'ndl-works', 'norbert-persons', 'norbert-offices'],
+    [
+      'cbdb-persons',
+      'cbdb-places',
+      'cbdb-offices',
+      'dila-persons',
+      'dila-places',
+      'chgis-places',
+      'ndl-persons',
+      'ndl-places',
+      'ndl-orgs',
+      'ndl-works',
+      'norbert-persons',
+      'norbert-person-wrappers',
+      'norbert-wiki-nt',
+      'norbert-offices',
+    ],
     entityType,
   );
   const results: DisambiguationCandidate[] = [];
@@ -636,7 +669,12 @@ async function candidatesFromAuthorityPacks(
       // searchPackRows hands back each match's parsed ndjson row, so the
       // metadata (years, dynasty, authorityId) comes straight from the ≤10
       // matched lines — no full-pack parse per lookup.
-      for (const { result: match, row } of searchPackRows(content, packSource, entityType, surface)) {
+      for (const { result: match, row } of searchPackRows(
+        content,
+        packSource,
+        entityType,
+        surface,
+      )) {
         let description = match.description;
         let startYear = row?.metadata?.startYear;
         let endYear = row?.metadata?.endYear;
@@ -692,8 +730,11 @@ async function candidatesFromAuthorityPacks(
           projectLangName:
             row?.primaryName && !isLatinSurface(row.primaryName) ? row.primaryName : undefined,
           romanizedName:
-            romanizeFromAuthorityMetadata(row?.metadata, row?.primaryName ?? match.label, projectLang) ??
-            undefined,
+            romanizeFromAuthorityMetadata(
+              row?.metadata,
+              row?.primaryName ?? match.label,
+              projectLang,
+            ) ?? undefined,
           typedNames: typedNamesFromPackRow(row?.names),
           geo: row?.metadata?.geo,
           authorityMetadata: row?.metadata,
@@ -754,9 +795,10 @@ export async function fetchLiveCandidates(
   readPackFile?: ReadAuthorityPackFile,
 ): Promise<DisambiguationCandidate[]> {
   const entityType = TAG_TO_ENTITY_TYPE[tag] ?? 'person';
-  const entityKind = TAG_TO_KIND[tag];
+  const entityKind = tag === 'name' ? 'person' : TAG_TO_KIND[tag];
   const results: DisambiguationCandidate[] = [];
-  const chgisYears = tag === 'placeName' && readPackFile ? await chgisYearsForSurface(surface, readPackFile) : null;
+  const chgisYears =
+    tag === 'placeName' && readPackFile ? await chgisYearsForSurface(surface, readPackFile) : null;
 
   for (const name of enabledAuthorities) {
     const authorityId = AUTHORITY_MAP[name];
@@ -1018,10 +1060,19 @@ export async function buildDisambiguationCandidates(
         projectLang,
       )
     : [];
-  const live = await fetchLiveCandidates(tag, surface, cache, enabledAuthorities, forceRefresh, readPackFile);
+  const live = await fetchLiveCandidates(
+    tag,
+    surface,
+    cache,
+    enabledAuthorities,
+    forceRefresh,
+    readPackFile,
+  );
   const options = mergeOptionsForLang(projectLang);
   const merged = collapseCrossAuthorityCandidates(
-    mergeCandidates([local, centralCandidates, packLocal, live], options).map(enrichCandidateCrossRefs),
+    mergeCandidates([local, centralCandidates, packLocal, live], options).map(
+      enrichCandidateCrossRefs,
+    ),
     options,
   );
   await enrichCandidateNames(merged, projectLang);
@@ -1045,6 +1096,7 @@ export interface ResolveEntityInput {
   /** Person's given name (P735), backfilled only when the entity has none yet. */
   givenName?: string;
   authorityIds?: AuthorityId[];
+  authoritySource?: string;
   description?: string;
   startYear?: number;
   endYear?: number;
@@ -1109,7 +1161,7 @@ export function resolveEntityInDocument(
         setAuthorityCache(
           entitiesDoc,
           id,
-          input.authorityIds?.[0]?.type ?? 'authority-pack',
+          input.authoritySource ?? input.authorityIds?.[0]?.type ?? 'authority-pack',
           input.authorityMetadata,
         );
       }
@@ -1141,17 +1193,17 @@ export function resolveEntityInDocument(
     romanizedName: input.romanizedName,
     altNames: altNames.length > 0 ? altNames : undefined,
     authorityIds: input.authorityIds,
+    authoritySource: input.authoritySource,
     description: input.description,
     startYear: input.startYear,
     endYear: input.endYear,
     cache: input.authorityMetadata
       ? {
-          source: input.authorityIds?.[0]?.type ?? 'authority-pack',
+          source: input.authoritySource ?? input.authorityIds?.[0]?.type ?? 'authority-pack',
           data: input.authorityMetadata,
         }
       : undefined,
-    officeTypeIds:
-      input.kind === 'office' ? input.authorityMetadata?.officeTypeIds : undefined,
+    officeTypeIds: input.kind === 'office' ? input.authorityMetadata?.officeTypeIds : undefined,
   });
   if (input.familyName) setFamilyName(entitiesDoc, id, input.familyName);
   if (input.givenName) setGivenName(entitiesDoc, id, input.givenName);

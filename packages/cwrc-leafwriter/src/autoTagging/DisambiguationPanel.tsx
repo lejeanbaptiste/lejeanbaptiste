@@ -82,6 +82,7 @@ import {
   mentionGroupKey,
   pendingInstances,
   syncMentionGroupFromElements,
+  tagTypesPresent,
 } from './disambiguationController';
 import { TAG_TO_KIND } from './entities';
 import { AutoTaggingSession } from './integration';
@@ -101,6 +102,22 @@ import {
 } from './aiPromptProfiles';
 import { AiPromptEditorDialog } from '../dialogs/autoTagging/AiPromptEditorDialog';
 import type { MentionGroup, MentionInstance } from './mentions';
+
+const wrapperIdentityElement = (element: Element): Element | null =>
+  Array.from(element.getElementsByTagName('persName')).find(
+    (person) => !person.getAttribute('type'),
+  ) ?? null;
+
+const wrapperNeedsPersonResolution = (instance: MentionInstance): boolean =>
+  instance.tag === 'name' && !wrapperIdentityElement(instance.element)?.getAttribute('key');
+
+const wrapperHasKeyConflict = (instance: MentionInstance): boolean => {
+  if (instance.tag !== 'name') return false;
+  const person = wrapperIdentityElement(instance.element);
+  const wrapperKey = instance.element.getAttribute('key')?.trim();
+  const personKey = person?.getAttribute('key')?.trim();
+  return !!wrapperKey && !!personKey && wrapperKey !== personKey;
+};
 
 export interface DisambiguationPanelProps {
   session: AutoTaggingSession;
@@ -423,7 +440,22 @@ export const DisambiguationPanel = ({
   const currentKey = group ? mentionGroupKey(group) : null;
   const currentKeyRef = useRef<string | null>(null);
   currentKeyRef.current = currentKey;
-  const tagOptions = useMemo(() => [...new Set(groups.map((item) => item.tag))], [groups]);
+  const tagOptions = useMemo(() => tagTypesPresent(groups), [groups]);
+  const keyedEntityIds = useMemo(
+    () =>
+      new Set(
+        groups.flatMap((item) =>
+          item.instances
+            .map((instance) => instance.element.getAttribute('key')?.trim())
+            .filter((key): key is string => !!key),
+        ),
+      ),
+    [groups],
+  );
+
+  useEffect(() => {
+    if (tagFilter && !tagOptions.includes(tagFilter)) setTagFilter('');
+  }, [tagFilter, tagOptions]);
 
   const toggleCandidate = (candidateId: string, checked: boolean) => {
     setCheckedIds((prev) => {
@@ -802,6 +834,8 @@ export const DisambiguationPanel = ({
   const checkedCandidates = filteredCandidates.filter((candidate) => checkedIds.has(candidate.id));
   const selected = mergeSelectedCandidates(checkedCandidates);
   const showCandidateUi = !!group && pendingInstances(group).length > 0;
+  const currentWrapperNeedsPerson =
+    !!instance && (wrapperNeedsPersonResolution(instance) || wrapperHasKeyConflict(instance));
   const aiSelectedCount = checkedCandidates.length;
   const aiStatus = useMemo(() => {
     if (!aiCuration || !group || !controller.isExpanded(group)) return null;
@@ -1019,6 +1053,7 @@ export const DisambiguationPanel = ({
           const checked = checkedIds.has(candidate.id);
           const links = candidateLinks(candidate);
           const confidence = aiConfidences[candidate.id];
+          const appearsInDocument = !!candidate.localEntityId && keyedEntityIds.has(candidate.localEntityId);
           return (
             <Box
               key={candidate.id}
@@ -1032,7 +1067,7 @@ export const DisambiguationPanel = ({
                 cursor: 'pointer',
                 borderLeft: '3px solid',
                 borderLeftColor: checked ? 'primary.main' : 'transparent',
-                bgcolor: checked ? 'action.selected' : undefined,
+                bgcolor: checked ? 'action.selected' : appearsInDocument ? 'success.50' : undefined,
               }}
             >
               <Checkbox
@@ -1067,6 +1102,14 @@ export const DisambiguationPanel = ({
                       label="local"
                       size="small"
                       sx={{ height: 16, fontSize: 10, bgcolor: '#1b5e20', color: '#fff', fontWeight: 600 }}
+                    />
+                  )}
+                  {appearsInDocument && (
+                    <Chip
+                      label="already in document"
+                      size="small"
+                      color="success"
+                      sx={{ height: 16, fontSize: 10, fontWeight: 600 }}
                     />
                   )}
                   {placeClusterLabelById &&
@@ -1119,6 +1162,8 @@ export const DisambiguationPanel = ({
 
   const renderPendingGroupBody = (targetGroup: MentionGroup) => {
     const instances = pendingInstances(targetGroup);
+    const wrapperNeedsPerson = instances.some(wrapperNeedsPersonResolution);
+    const wrapperConflict = instances.some(wrapperHasKeyConflict);
     return (
       <>
         {instances.map((item, index) => (
@@ -1132,6 +1177,16 @@ export const DisambiguationPanel = ({
             }}
           />
         ))}
+        {targetGroup === group && wrapperNeedsPerson && (
+          <Alert severity="error" sx={{ mx: 0.75, my: 0.5, py: 0.25 }}>
+            Disambiguate the inner person name first. This wrapper cannot be resolved until its person is identified.
+          </Alert>
+        )}
+        {targetGroup === group && wrapperConflict && (
+          <Alert severity="error" sx={{ mx: 0.75, my: 0.5, py: 0.25 }}>
+            The wrapper and its inner person have conflicting keys. Resolve the person again before accepting this wrapper.
+          </Alert>
+        )}
         {targetGroup === group && aiSuggestCreateNew && (
           <Alert severity="info" sx={{ mx: 0.75, my: 0.5, py: 0.25 }}>
             AI suggests creating a new entity
@@ -1334,7 +1389,9 @@ export const DisambiguationPanel = ({
 
       <Typography variant="caption" color="text.secondary" sx={{ px: 0.75, mb: 0.5, flexShrink: 0 }}>
         {counts.pending} pending · {counts.resolved} resolved
-        {group ? ` · ${TAG_TO_KIND[group.tag] ?? 'entity'}` : ''}
+        {group
+          ? ` · ${group.tag === 'name' && group.instances[0]?.element.getAttribute('type') === 'personWrapper' ? 'person' : TAG_TO_KIND[group.tag] ?? 'entity'}`
+          : ''}
       </Typography>
 
       {aiCuration && (
@@ -1469,11 +1526,20 @@ export const DisambiguationPanel = ({
           </Tooltip>
           <Box sx={{ flex: 1, minWidth: 4 }} />
           <Stack direction="row" spacing={0.25} alignItems="center" flexShrink={0}>
-            <Tooltip title={aiSuggestCreateNew ? 'AI suggests creating a new entity' : 'Create new entity'}>
+            <Tooltip
+              title={
+                currentWrapperNeedsPerson
+                  ? 'Disambiguate the inner person name before creating an entity for this wrapper'
+                  : aiSuggestCreateNew
+                    ? 'AI suggests creating a new entity'
+                    : 'Create new entity'
+              }
+            >
               <IconButton
                 size="small"
                 aria-label="Create new entity"
                 color={aiSuggestCreateNew ? 'warning' : 'default'}
+                disabled={currentWrapperNeedsPerson}
                 onClick={() => {
                   setNewEntityDescription('');
                   setNewEntityRomanized(
@@ -1490,6 +1556,7 @@ export const DisambiguationPanel = ({
                 size="small"
                 aria-label="Link to authority"
                 color={manualLinkOpen ? 'primary' : 'default'}
+                disabled={currentWrapperNeedsPerson}
                 onClick={() => {
                   setManualLinkOpen((open) => !open);
                   setManualLinkError(null);

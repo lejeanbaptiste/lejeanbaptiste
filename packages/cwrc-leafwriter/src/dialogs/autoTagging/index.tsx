@@ -110,7 +110,12 @@ const defaultAuthorityPacksForLanguage = (
   });
 
 const pluginGatedPackIds = (ids: AuthorityPackId[]): AuthorityPackId[] =>
-  ids.filter((id) => id !== 'norbert-persons' || isPluginEnabled('norbert'));
+  ids.filter((id) => {
+    if (id === 'norbert-persons' || id === 'norbert-person-wrappers' || id === 'norbert-wiki-nt') {
+      return isPluginEnabled('norbert');
+    }
+    return true;
+  });
 
 const visibleAuthorityPackIdsForLanguage = (language: string | null): AuthorityPackId[] =>
   pluginGatedPackIds(
@@ -138,6 +143,8 @@ const visibleAuthorityPackIdsForLanguage = (language: string | null): AuthorityP
               'wikidata-orgs-zh-hant',
               'wikidata-works-zh-hant',
               'norbert-persons',
+              'norbert-person-wrappers',
+              'norbert-wiki-nt',
             ]
           : UI_AUTHORITY_PACK_IDS.filter((id) => !id.startsWith('ndl-')),
   );
