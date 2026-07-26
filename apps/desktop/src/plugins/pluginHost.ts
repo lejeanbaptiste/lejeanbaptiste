@@ -407,13 +407,14 @@ function resolveLocalAuthorityPack(
   ].filter((p): p is string => !!p);
 
   for (const root of candidates) {
-    if (packId === 'norbert-persons') {
-      const personsFile = path.join(root, 'packs/norbert/persons.ndjson');
+    if (packId === 'norbert-persons' || packId === 'norbert-offices') {
+      const fileName = packId === 'norbert-offices' ? 'offices.ndjson' : 'persons.ndjson';
+      const dataFile = path.join(root, 'packs/norbert', fileName);
       const manifestFile = path.join(root, 'packs/norbert/manifest.json');
-      if (fs.existsSync(personsFile)) {
+      if (fs.existsSync(dataFile)) {
         return {
-          relativePath: 'norbert/persons.ndjson',
-          personsFile,
+          relativePath: `norbert/${fileName}`,
+          personsFile: dataFile,
           manifestFile: fs.existsSync(manifestFile) ? manifestFile : undefined,
         };
       }

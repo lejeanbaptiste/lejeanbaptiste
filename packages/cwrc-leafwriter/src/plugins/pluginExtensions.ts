@@ -1,4 +1,5 @@
 import type { ComponentType } from 'react';
+import { clearPluginPersonNameSegmentersForPlugin, clearAllPluginPersonNameSegmenters } from './personNameSegmenters';
 import type { DecisionEvent } from '../autoTagging/reviewController';
 import type { Suggestion } from '../autoTagging/types';
 import type { IDialog } from '../dialogs/type';
@@ -97,10 +98,12 @@ export function clearPluginExtensionsForPlugin(pluginId: string): void {
   for (let i = pluginToolbarItems.length - 1; i >= 0; i -= 1) {
     if (pluginToolbarItems[i]?.pluginId === pluginId) pluginToolbarItems.splice(i, 1);
   }
+  clearPluginPersonNameSegmentersForPlugin(pluginId);
 }
 
 export function clearAllPluginExtensions(): void {
   pluginDialogs.clear();
   pluginReviewPanels.length = 0;
   pluginToolbarItems.length = 0;
+  clearAllPluginPersonNameSegmenters();
 }

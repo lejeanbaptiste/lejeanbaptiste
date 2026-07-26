@@ -39,6 +39,8 @@ const PACK_LOAD_ORDER: AuthorityPackId[] = [
   'ndl-places',
   'ndl-orgs',
   'ndl-works',
+  'norbert-persons',
+  'norbert-offices',
 ];
 
 const sortPackIds = (packIds: AuthorityPackId[]): AuthorityPackId[] =>

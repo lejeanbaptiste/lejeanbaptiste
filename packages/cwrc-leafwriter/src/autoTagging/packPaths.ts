@@ -27,6 +27,7 @@ export type AuthorityPackId =
   | 'ndl-orgs'
   | 'ndl-works'
   | 'norbert-persons'
+  | 'norbert-offices'
   /** Project entity database (PEDB) — read live from entities.xml, not a file pack. */
   | 'pedb-persons'
   | 'pedb-places'
@@ -247,6 +248,13 @@ export const AUTHORITY_PACKS: AuthorityPackSpec[] = [
     defaultTag: 'persName',
   },
   {
+    id: 'norbert-offices',
+    label: 'Norbert offices (官名)',
+    source: 'norbert',
+    relativePath: 'norbert/offices.ndjson',
+    defaultTag: 'roleName',
+  },
+  {
     id: 'pedb-persons',
     label: 'PEDB persons',
     source: 'pedb',
@@ -455,6 +463,7 @@ export const UI_AUTHORITY_PACK_IDS: AuthorityPackId[] = [
   'ndl-orgs',
   'ndl-works',
   'norbert-persons',
+  'norbert-offices',
   'pedb-persons',
   'pedb-places',
   'pedb-orgs',
@@ -609,6 +618,7 @@ export const AUTHORITY_PACK_SHORT_LABELS: Partial<Record<AuthorityPackId, string
   'ndl-orgs': 'Organizations',
   'ndl-works': 'Works',
   'norbert-persons': 'Persons',
+  'norbert-offices': 'Offices',
   'pedb-persons': 'Persons',
   'pedb-places': 'Places',
   'pedb-orgs': 'Organizations',

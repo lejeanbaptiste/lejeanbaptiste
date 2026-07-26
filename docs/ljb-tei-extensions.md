@@ -1,0 +1,85 @@
+# LJB TEI extensions for historical Chinese texts
+
+**Status:** Implemented in the generated TEI schemas (2026-07).
+
+LJB adds a small number of elements and conventions to TEI for information
+that is important to historical Chinese tagging but is not fully represented
+by the stock TEI content models. These are LJB extensions, not replacements
+for TEI semantics.
+
+## Calendar structure inside `date`
+
+Sanmiao treats a historical date as a calendar expression, not merely as a
+string that can be converted once into a modern date. The text may explicitly
+name a dynasty, ruler, era, year, month, day, sexagenary cycle, or related
+calendar component. Those components are therefore retained as children of
+`date`:
+
+```xml
+<date resp="#ljb-sanmiao">
+  <dyn>魏</dyn><ruler>明帝</ruler><era>太和</era><year>十八年</year><month>二月</month>
+</date>
+```
+
+The child elements record what is actually present in the source. Resolution
+attributes such as `era_id`, `ruler_id`, `jdn`, and `when` record the result of
+looking that expression up in Sanmiao's tables. They are deliberately kept
+separate: a table may supply implied or interpolated calendar information,
+but that information must not be mistaken for words occurring in the text.
+
+This distinction supports both initial resolution and later re-resolution
+when tables, calendar assumptions, or project settings change. In general,
+parse children may be written when a date is tagged; resolution attributes
+should be written only after a candidate has been selected or uniquely
+resolved. See [the Sanmiao schema documentation](sanmiao-dates-schema.md) for
+the complete element and attribute lists.
+
+## `nobleTitle`
+
+`nobleTitle` groups the title portion of a historical Chinese person mention
+while retaining its internal components. It is used for a fief/place followed
+by a rank or title, rather than treating the entire phrase as one place or
+one office:
+
+```xml
+<nobleTitle>
+  <placeName>鄱陽</placeName><roleName>王</roleName>
+```
+
+The plugin may use a shipped, transient index containing hypothetical
+combinations generated from Norbert and Wikidata. Those combinations are
+matcher candidates, not entity records. Only a combination that occurs in
+the document is materialized as markup, and only a resolved person receives a
+`key` or authority `ref`.
+
+## `name type="personWrapper"`
+
+Chinese historical person references commonly concatenate several facts:
+office, noble title, fief, place of origin, personal name, posthumous name,
+and other identifying names. These facts belong to one person, but they are
+not ontologically the same kind of name. `name[@type='personWrapper']` groups
+the spans that jointly identify one textual person mention without flattening
+their individual semantics:
+
+```xml
+<name type="personWrapper" key="norbert:person:456">
+  <roleName>合州刺史</roleName>
+  <nobleTitle><placeName>鄱陽</placeName><roleName>王</roleName></nobleTitle>
+  <persName>範</persName>
+</name>
+```
+
+The wrapper is an inline association, not a new hypothetical person and not
+a replacement for the project's entity database. Its `key` points to the
+resolved person contained by the mention; `ref` may additionally point to an
+external authority such as Wikidata. Separate mentions of the same person
+share the key rather than being merged structurally.
+
+## Schema implementation
+
+The desktop schema merge adds `nobleTitle` and `name[@type='personWrapper']`
+to TEI phrase content and permits their component elements. The generated
+schema remains a flattened project-local schema; the pristine upstream TEI
+schema is preserved separately so the extension can be regenerated when the
+TEI catalog or LJB extension changes. The merge version is bumped whenever
+these generated definitions change.
