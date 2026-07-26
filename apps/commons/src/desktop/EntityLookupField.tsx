@@ -38,6 +38,10 @@ import {
   type EntityKind,
 } from '../../../../packages/cwrc-leafwriter/src/autoTagging/entities';
 import {
+  applyPersonNameSplitToEntity,
+  suggestPersonRomanization,
+} from '../../../../packages/cwrc-leafwriter/src/plugins/personNameDefaults';
+import {
   centralEntityStoreFromDesktop,
   desktopEntityFileApi,
   entityStoreFromDesktop,
@@ -201,7 +205,11 @@ export const EntityLookupField = ({
     try {
       const session = await getSession();
       setShowRomanized(canAutoRomanize(session.projectLang));
-      setCreateRomanized(autoRomanize(query.trim(), session.projectLang) ?? '');
+      const romanized =
+        kind === 'person'
+          ? suggestPersonRomanization(query.trim(), session.projectLang)
+          : autoRomanize(query.trim(), session.projectLang);
+      setCreateRomanized(romanized ?? '');
     } catch {
       setShowRomanized(false);
       setCreateRomanized('');
@@ -367,6 +375,9 @@ export const EntityLookupField = ({
         romanizedName,
         description,
       });
+      if (kind === 'person') {
+        applyPersonNameSplitToEntity(session.entitiesDoc, id, name, session.projectLang);
+      }
       await autoSyncEntityToCentral(session.entitiesDoc, id);
       await session.store.saveEntities(session.entitiesDoc);
       setValue({ name, key: id });

@@ -55,6 +55,17 @@ export interface AuthorityCandidate {
     geo?: { lat: number; lon: number };
     /** Source shapefile/table layer, e.g. CHGIS's county vs. prefecture point layer. */
     layer?: string;
+    /** Office typically follows a placeName (令, 太守, …). Used by Norbert concatenate pass. */
+    geoAdminSuffix?: boolean;
+    /** Place category when a geo-admin office wraps a preceding placeName (縣/郡/州). */
+    placeCat?: string;
+    followsPlace?: boolean;
+    followsOffice?: boolean;
+    followsPerson?: boolean;
+    isNobleTitle?: boolean;
+    isSite?: boolean;
+    /** Norbert `office.parent_string` when present. */
+    parentString?: string;
   };
 }
 

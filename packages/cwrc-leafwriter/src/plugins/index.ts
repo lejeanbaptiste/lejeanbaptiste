@@ -22,4 +22,9 @@ export {
   setPluginRegistrySnapshot,
 } from './registry';
 export { dispatchPluginToolAction, isKnownPluginToolAction, registerPluginToolAction } from './toolActions';
+export {
+  applyPersonNameSplitToEntity,
+  suggestPersonNameSplit,
+  suggestPersonRomanization,
+} from './personNameDefaults';
 export type { PluginRegisterContext, PluginToolActionHandler } from './registerContext';

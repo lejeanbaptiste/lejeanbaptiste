@@ -7,6 +7,11 @@ import {
   type PluginReviewPanelComponent,
 } from './pluginExtensions';
 import { loadPluginHostModule } from './hostModules';
+import {
+  registerPluginPersonNameSegmenter,
+  type PluginPersonNameSegmentInput,
+  type PluginPersonNameSegmentResult,
+} from './personNameSegmenters';
 import { registerPluginToolAction, type PluginToolActionHandler } from './toolActions';
 
 export interface PluginRegisterContext {
@@ -30,6 +35,10 @@ export interface PluginRegisterContext {
   }) => void;
   /** Load UI modules bundled with LJB (webpack). Used by plugins that delegate UI to the host. */
   loadHostModule: (moduleId: string) => Promise<import('./hostModules').PluginHostModule>;
+  /** Split a Chinese person name into family + given (e.g. Norbert surname table). */
+  registerPersonNameSegmenter: (
+    segmenter: (input: PluginPersonNameSegmentInput) => PluginPersonNameSegmentResult | null,
+  ) => void;
   onEnable?: () => void;
   onDisable?: () => void;
 }
@@ -52,6 +61,9 @@ export function createPluginRegisterContext(pluginId: string): PluginRegisterCon
       registerPluginToolbarItem({ pluginId, ...item });
     },
     loadHostModule: loadPluginHostModule,
+    registerPersonNameSegmenter: (segmenter) => {
+      registerPluginPersonNameSegmenter(pluginId, segmenter);
+    },
   };
   return context;
 }

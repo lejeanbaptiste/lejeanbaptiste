@@ -8,7 +8,7 @@ import type { ProjectBundle } from './projectFile';
 
 export const SANMIAO_PATCH_FILENAME = 'ljb-sanmiao-dates.rng';
 /** Bump when the generated RNG changes so existing merged schemas get regenerated. */
-export const SANMIAO_MERGE_VERSION = 5;
+export const SANMIAO_MERGE_VERSION = 6;
 const MERGE_VERSION_MARKER = `ljb-sanmiao-merge v${SANMIAO_MERGE_VERSION}`;
 const TEI_NS = 'http://www.tei-c.org/ns/1.0';
 const TEI_CATALOG_IDS = new Set(['teiAll', 'teiLite', 'teiSimplePrint', 'jTei']);
@@ -93,6 +93,13 @@ ${attRefLines}
     </define>`;
 };
 
+/** Add LJB's inline grouping elements to TEI's phrase content model. */
+const buildLjbInlineModelOverride = (): string => `
+    <define name="model.phrase" combine="choice">
+      <ref name="ljb.nobleTitle"/>
+      <ref name="ljb.personWrapper"/>
+    </define>`;
+
 export const buildSanmiaoWrapperRng = (teiCoreFileName: string, baseRng: string): string => `<?xml version="1.0" encoding="UTF-8"?>
 <grammar xmlns="http://relaxng.org/ns/structure/1.0"
          ns="${TEI_NS}"
@@ -101,6 +108,7 @@ export const buildSanmiaoWrapperRng = (teiCoreFileName: string, baseRng: string)
   <a:documentation>Le Jean-Baptiste: TEI + sanmiao East Asian date extension (${MERGE_VERSION_MARKER})</a:documentation>
   <include href="${teiCoreFileName}">
 ${buildDateOverrideDefine(baseRng)}
+${buildLjbInlineModelOverride()}
   </include>
 ${generateSanmiaoHelperDefines()}
 </grammar>
@@ -130,6 +138,21 @@ export const generateSanmiaoHelperDefines = (): string => {
   );
 
   return `${partDefines}
+  <define name="ljb.nobleTitle">
+    <element name="nobleTitle">
+      <zeroOrMore>
+        <choice><text/><ref name="model.global"/><ref name="model.nameLike"/></choice>
+      </zeroOrMore>
+    </element>
+  </define>
+  <define name="ljb.personWrapper">
+    <element name="name">
+      <attribute name="type"><value>personWrapper</value></attribute>
+      <optional><attribute name="key"><text/></attribute></optional>
+      <optional><attribute name="ref"><text/></attribute></optional>
+      <zeroOrMore><choice><text/><ref name="model.global"/><ref name="model.phrase"/></choice></zeroOrMore>
+    </element>
+  </define>
   <define name="ljb.sanmiao.rel">
     <element name="rel">
       <optional>
