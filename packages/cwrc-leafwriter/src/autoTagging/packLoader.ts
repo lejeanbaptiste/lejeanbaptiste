@@ -26,6 +26,23 @@ export function normalizeDateRangeFilter(filter: DateRangeFilter): DateRangeFilt
   };
 }
 
+/**
+ * Exclusion for precise lifespans is anachronism-oriented rather than an
+ * interval-overlap test: a person is too late if they were born after the
+ * cutoff, or if their mean lifespan date is more than 60 years after it.
+ */
+export function preciseDateExceedsExcludeLimit(
+  startYear: number | undefined,
+  endYear: number | undefined,
+  limit: number,
+): boolean {
+  if (startYear != null && startYear > limit) return true;
+  if (startYear != null && endYear != null) {
+    return (startYear + endYear) / 2 > limit + 60;
+  }
+  return false;
+}
+
 function candidateOverlapsYearRange(
   candidate: AuthorityCandidate,
   start: number,
@@ -69,7 +86,10 @@ export function candidatePassesDateFilter(
     return filter.mode === 'exclude';
   }
 
-  const overlaps = candidateOverlapsYearRange(candidate, start, end);
+  const overlaps =
+    filter.mode === 'exclude' && fine
+      ? preciseDateExceedsExcludeLimit(meta?.startYear, meta?.endYear, start)
+      : candidateOverlapsYearRange(candidate, start, end);
   return filter.mode === 'limit' ? overlaps : !overlaps;
 }
 

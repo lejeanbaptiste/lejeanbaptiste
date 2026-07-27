@@ -50,7 +50,12 @@ import { DilaPlaceDetailCache } from './dilaPlaceDetailCache';
 import { wikidataQidsMatchingKind } from './wikidataKindFilter';
 import { packIdsForEntityType, searchPackRows } from '../services/authority-pack-lookup';
 import { AUTHORITY_PACKS } from './packPaths';
-import { normalizeDateRangeFilter, parseAuthorityNdjson, type DateRangeFilter } from './packLoader';
+import {
+  normalizeDateRangeFilter,
+  parseAuthorityNdjson,
+  preciseDateExceedsExcludeLimit,
+  type DateRangeFilter,
+} from './packLoader';
 import type { AuthorityCandidate } from './authority';
 import type { AuthorityPackId } from './packPaths';
 import { centroidOf, haversineDistanceKm } from './geoCluster';
@@ -88,6 +93,15 @@ export interface DisambiguationCandidate {
   geo?: { lat: number; lon: number };
   /** Raw pack metadata needed when the selected office is minted. */
   authorityMetadata?: AuthorityCandidate['metadata'];
+}
+
+/** Accept only WGS84 coordinates; CHGIS also contains projected layer values. */
+export function normalizeGeo(
+  geo: { lat: number; lon: number } | undefined,
+): { lat: number; lon: number } | undefined {
+  if (!geo || !Number.isFinite(geo.lat) || !Number.isFinite(geo.lon)) return undefined;
+  if (geo.lat < -90 || geo.lat > 90 || geo.lon < -180 || geo.lon > 180) return undefined;
+  return geo;
 }
 
 export interface TypedName {
@@ -776,7 +790,7 @@ async function candidatesFromAuthorityPacks(
               projectLang,
             ) ?? undefined,
           typedNames: typedNamesFromPackRow(row?.names),
-          geo: row?.metadata?.geo,
+          geo: normalizeGeo(row?.metadata?.geo),
           authorityMetadata: row?.metadata,
         });
       }
@@ -809,7 +823,10 @@ export function candidatePassesYearFilter(
 
   const lo = yearStart ?? yearEnd!;
   const hi = yearEnd ?? yearStart!;
-  const overlaps = lo <= end && hi >= start;
+  const overlaps =
+    filter.mode === 'exclude'
+      ? preciseDateExceedsExcludeLimit(yearStart, candidate.endYear, start)
+      : lo <= end && hi >= start;
   return filter.mode === 'limit' ? overlaps : !overlaps;
 }
 

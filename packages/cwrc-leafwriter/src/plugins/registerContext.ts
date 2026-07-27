@@ -18,6 +18,10 @@ import {
   type PluginOfficeRelationExtractor,
 } from './officeRelationExtractors';
 import { registerPluginEntityDataExtractor } from './entityDataExtractors';
+import {
+  registerPluginPatternTagProducer,
+  type PluginPatternTagProducer,
+} from './patternTagProducers';
 
 export interface PluginRegisterContext {
   pluginId: string;
@@ -52,6 +56,8 @@ export interface PluginRegisterContext {
   registerEntityDataExtractor: (
     extractor: import('./entityDataExtractors').PluginEntityDataExtractor,
   ) => void;
+  /** Supply wrapper-shaped candidates for the compound person-wrapper pass ("pattern-tag" contributions). */
+  registerPatternTagProducer: (producer: PluginPatternTagProducer) => void;
   onEnable?: () => void;
   onDisable?: () => void;
 }
@@ -82,6 +88,9 @@ export function createPluginRegisterContext(pluginId: string): PluginRegisterCon
     },
     registerEntityDataExtractor: (extractor) => {
       registerPluginEntityDataExtractor(pluginId, extractor);
+    },
+    registerPatternTagProducer: (producer) => {
+      registerPluginPatternTagProducer(pluginId, producer);
     },
   };
   return context;

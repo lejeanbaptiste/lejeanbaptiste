@@ -761,7 +761,7 @@ export const DisambiguationPanel = ({
       const cached = session.getPendingCandidates(targetGroup.tag, targetGroup.surface);
       if (!cached) return [];
       const { clusters } = clusterByGeoAccessor(cached, placeProximityKm, (candidate) => candidate.geo);
-      if (clusters.length < 2) return [];
+      if (clusters.length === 0) return [];
       return clusters.map((cluster, index) => ({
         id: cluster.members[0]!.id,
         label: String.fromCharCode(65 + index),
@@ -1346,7 +1346,7 @@ export const DisambiguationPanel = ({
               ? 'Date filter off — click to limit candidates to the year range'
               : dateFilterMode === 'limit'
                 ? 'Limit: keep candidates overlapping the year range'
-                : 'Exclude: drop candidates overlapping the year range'
+                : 'Exclude: drop candidates born after the cutoff or much later on average'
           }
         >
           <IconButton

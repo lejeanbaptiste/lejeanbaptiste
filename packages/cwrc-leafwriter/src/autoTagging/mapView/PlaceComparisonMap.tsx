@@ -108,13 +108,17 @@ export function PlaceComparisonMap({ open, onClose, pins, title }: PlaceComparis
     });
     mapRef.current = map;
 
+    const isCovered = (lat: number, lon: number) =>
+      installedBundleIds.some((id) => {
+        const bundle = REGIONAL_BUNDLES.find((b) => b.id === id);
+        return bundle && findBundleForPoint([bundle], lat, lon) != null;
+      });
+
+    // Used once the camera has actually settled (e.g. after the user pans),
+    // when map.getCenter() reflects where they're actually looking.
     const updateRegionWarning = () => {
       const { lat, lng } = map.getCenter();
-      const covered = installedBundleIds.some((id) => {
-        const bundle = REGIONAL_BUNDLES.find((b) => b.id === id);
-        return bundle && findBundleForPoint([bundle], lat, lng) != null;
-      });
-      setShowRegionWarning(!covered);
+      setShowRegionWarning(!isCovered(lat, lng));
     };
 
     // Pins render immediately against the blank style; the real basemap (if
@@ -136,7 +140,12 @@ export function PlaceComparisonMap({ open, onClose, pins, title }: PlaceComparis
             .find((bundle) => bundle && findBundleForPoint([bundle], centroid.lat, centroid.lon));
         if (matchingInstalled) map.setStyle(vectorStyle(matchingInstalled.id));
 
-        updateRegionWarning();
+        // Checked against the pins' own location, not map.getCenter(): at
+        // this point the camera may still be sitting at its [0, 0] initial
+        // position (jumpTo/fitBounds hasn't run yet, since that happens in
+        // the 'load' handler below), so reading it here would misreport an
+        // installed region as uncovered.
+        setShowRegionWarning(centroid ? !isCovered(centroid.lat, centroid.lon) : false);
       })
       .catch(() => undefined);
 

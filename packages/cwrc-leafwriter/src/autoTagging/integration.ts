@@ -30,6 +30,7 @@ import { addOfficeRelation, findEntity, TAG_TO_KIND, type EntityKind } from './e
 import type { AuthorityCandidate } from './authority';
 import { extractPluginOfficeRelations } from '../plugins/officeRelationExtractors';
 import { extractRegisteredEntityData } from '../plugins/entityDataExtractors';
+import { collectPluginPatternTagCandidates } from '../plugins/patternTagProducers';
 import {
   ingestExtractedEntityData,
   personWrapperSource,
@@ -652,6 +653,7 @@ export class AutoTaggingSession {
       } catch {
         // The wiki asset is optional; the ordinary Norbert wrapper pack still runs.
       }
+      candidates.push(...(await collectPluginPatternTagCandidates()));
       return candidates;
     })();
     const candidates = await this.personWrapperCandidatesPromise;
