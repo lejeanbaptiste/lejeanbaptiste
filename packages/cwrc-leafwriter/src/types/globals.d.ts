@@ -168,6 +168,10 @@ declare global {
     pluginsDismissLanguagePrompt?: (pluginId: string) => Promise<void>;
     pluginsIsEnabled?: (pluginId: string) => Promise<boolean>;
     pluginsGetModuleUrl?: (pluginId: string) => Promise<string | null>;
+    pluginsGetRemoteIndex?: () => Promise<import('../../../../apps/commons/src/desktop/pluginRegistryTypes').PluginReleaseIndex>;
+    pluginsInstallRemote?: (
+      entry: import('../../../../apps/commons/src/desktop/pluginRegistryTypes').PluginReleaseEntry,
+    ) => Promise<import('../plugins/types').PluginHostSnapshotView>;
     /** CHGIS historical-places authority (installed from a downloaded archive). */
     authorityChgisGet?: () => Promise<{
       installed: boolean;

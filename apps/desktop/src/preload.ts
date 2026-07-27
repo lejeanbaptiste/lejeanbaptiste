@@ -310,6 +310,10 @@ export interface ElectronAPI {
   pluginsDismissLanguagePrompt?: (pluginId: string) => Promise<void>;
   pluginsIsEnabled?: (pluginId: string) => Promise<boolean>;
   pluginsGetModuleUrl?: (pluginId: string) => Promise<string | null>;
+  pluginsGetRemoteIndex?: () => Promise<import('../../commons/src/desktop/pluginRegistryTypes').PluginReleaseIndex>;
+  pluginsInstallRemote?: (
+    entry: import('../../commons/src/desktop/pluginRegistryTypes').PluginReleaseEntry,
+  ) => Promise<import('../../../packages/cwrc-leafwriter/src/plugins/types').PluginHostSnapshotView>;
   authorityLifecycleGet?: () => Promise<
     import('../../commons/src/desktop/authorityLifecycleTypes').AuthorityLifecycleStatus
   >;
@@ -566,6 +570,8 @@ const electronAPI: ElectronAPI = {
     ipcRenderer.invoke('plugins:dismissLanguagePrompt', pluginId),
   pluginsIsEnabled: (pluginId: string) => ipcRenderer.invoke('plugins:isEnabled', pluginId),
   pluginsGetModuleUrl: (pluginId: string) => ipcRenderer.invoke('plugins:getModuleUrl', pluginId),
+  pluginsGetRemoteIndex: () => ipcRenderer.invoke('plugins:getRemoteIndex'),
+  pluginsInstallRemote: (entry) => ipcRenderer.invoke('plugins:installRemote', entry),
   authorityLifecycleGet: () => ipcRenderer.invoke('authorityLifecycle:get'),
   authorityLifecycleSetEnabled: (options) =>
     ipcRenderer.invoke('authorityLifecycle:setEnabled', options),

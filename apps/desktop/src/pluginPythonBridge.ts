@@ -83,13 +83,18 @@ const pythonCandidatesForPlugin = (pluginId: string): string[] => {
   const fromEnv = process.env.SANMIAO_PYTHON?.trim();
   if (fromEnv) return [fromEnv];
 
+  const candidates: string[] = [];
   const pluginPython = resolvePluginPythonBinary(pluginId);
-  if (pluginPython) return [pluginPython, 'python3', 'python'];
+  if (pluginPython) candidates.push(pluginPython);
 
   const corePython = coreBundledPython();
-  if (corePython) return [corePython, 'python3', 'python'];
+  if (corePython) candidates.push(corePython);
 
-  return ['python3', 'python'];
+  // Keep system interpreters as a last resort. In particular, do not return
+  // early when a plugin-level interpreter exists: an incomplete plugin tree
+  // must not mask the app-bundled interpreter that contains sanmiao.
+  candidates.push('python3', 'python');
+  return [...new Set(candidates)];
 };
 
 const isMissingSanmiaoModule = (stderr: string): boolean =>
