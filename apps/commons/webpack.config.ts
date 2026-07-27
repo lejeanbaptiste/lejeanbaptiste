@@ -61,6 +61,28 @@ const plugins = [
           'leafwriter-validator.worker.js',
         ),
       },
+      {
+        // maplibre-gl loads its worker at runtime via a URL it derives from
+        // import.meta.url — webpack bundles that expression down to
+        // document.baseURI, so the worker script must be served as a static
+        // file at the app root (see PlaceComparisonMap.tsx's map) or the
+        // request falls through to the SPA's HTML fallback and the map never
+        // initializes ("Failed to load module script ... text/html"). The
+        // worker itself statically imports maplibre-gl-shared.mjs by a
+        // root-relative path, so that must be served alongside it.
+        from: require.resolve('maplibre-gl/dist/maplibre-gl-worker.mjs'),
+      },
+      {
+        from: require.resolve('maplibre-gl/dist/maplibre-gl-worker.mjs') + '.map',
+        noErrorOnMissing: true,
+      },
+      {
+        from: require.resolve('maplibre-gl/dist/maplibre-gl-shared.mjs'),
+      },
+      {
+        from: require.resolve('maplibre-gl/dist/maplibre-gl-shared.mjs') + '.map',
+        noErrorOnMissing: true,
+      },
     ],
   }),
   new HtmlWebpackPlugin({

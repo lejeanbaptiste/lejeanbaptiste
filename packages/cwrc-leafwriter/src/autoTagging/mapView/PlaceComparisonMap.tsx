@@ -108,6 +108,11 @@ export function PlaceComparisonMap({ open, onClose, pins, title }: PlaceComparis
     });
     mapRef.current = map;
 
+    // eslint-disable-next-line no-console
+    map.on('error', (e) => console.log('[DEBUG map error]', e.error));
+    // eslint-disable-next-line no-console
+    map.on('load', () => console.log('[DEBUG map load fired]', pins.length));
+
     const isCovered = (lat: number, lon: number) =>
       installedBundleIds.some((id) => {
         const bundle = REGIONAL_BUNDLES.find((b) => b.id === id);

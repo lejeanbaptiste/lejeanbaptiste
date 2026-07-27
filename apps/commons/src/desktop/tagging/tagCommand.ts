@@ -92,8 +92,15 @@ const expandSelectionToElementBoundaries = (editor: NonNullable<ReturnType<typeo
     return wrapper;
   };
 
+  // Must start from the range's actual common ancestor, not startContainer alone —
+  // if the selection's end sits in a different inline sub-element of the note (e.g.
+  // start is in plain note text, end is inside a nested <hi>/entity span), a root
+  // found from startContainer alone may not be an ancestor of endContainer. The walk
+  // below that clamps endChild to lca then never finds a match and climbs all the way
+  // to a top-level block ancestor — silently reproducing the paragraph-wide expansion
+  // this function exists to prevent.
   const lca = noteWrapper
-    ? noteContentRoot(rng.startContainer, noteWrapper)
+    ? noteContentRoot(rng.commonAncestorContainer, noteWrapper)
     : rng.commonAncestorContainer;
 
   // Walk up from startContainer to find its topmost child under lca
