@@ -1,9 +1,31 @@
 import { Dialog, DialogContent, DialogTitle, IconButton, Typography } from '@mui/material';
 import CloseIcon from '@mui/icons-material/Close';
 import { useEffect, useRef, useState } from 'react';
-import { LngLatBounds, MapLibreMap, Marker, Popup, type StyleSpecification } from 'maplibre-gl';
+import {
+  LngLatBounds,
+  MapLibreMap,
+  Marker,
+  Popup,
+  setWorkerUrl,
+  type StyleSpecification,
+} from 'maplibre-gl';
 import { noLabels } from 'protomaps-themes-base';
 import { findBundleForPoint, REGIONAL_BUNDLES } from './regionalBundles';
+
+// MapLibre computes its worker's URL from `import.meta.url` at the moment it
+// first needs a worker (lazily, inside an async callback — not at module
+// top-level). Webpack's `import.meta.url` polyfill falls back to
+// `document.currentScript`, which is only set during synchronous top-level
+// script execution; by the time MapLibre actually needs a worker, it's
+// long gone, and the polyfill's further fallback (scanning for the last
+// <script> tag) can land on some other dynamically-injected script in this
+// editor (Monaco, TinyMCE, etc.) — one with no real `src`. The result is
+// `new Worker('', { type: 'module' })`, a worker that runs no code at all:
+// no top-level execution, no message handling, no tile fetches, forever.
+// `maplibre-gl-worker.mjs` is served at the app root by
+// apps/commons/webpack.config.ts's CopyWebpackPlugin pattern — point
+// straight at it instead of trusting the auto-detected URL.
+setWorkerUrl('/maplibre-gl-worker.mjs');
 
 /**
  * A single pin to compare on the map. Deliberately generic — not
@@ -107,11 +129,6 @@ export function PlaceComparisonMap({ open, onClose, pins, title }: PlaceComparis
       attributionControl: false,
     });
     mapRef.current = map;
-
-    // eslint-disable-next-line no-console
-    map.on('error', (e) => console.log('[DEBUG map error]', e.error));
-    // eslint-disable-next-line no-console
-    map.on('load', () => console.log('[DEBUG map load fired]', pins.length));
 
     const isCovered = (lat: number, lon: number) =>
       installedBundleIds.some((id) => {

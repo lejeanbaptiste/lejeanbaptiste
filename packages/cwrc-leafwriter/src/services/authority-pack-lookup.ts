@@ -270,6 +270,21 @@ export function cachedPackReader(): ((packId: AuthorityPackId) => Promise<string
   return window.electronAPI?.authorityPackRead ? readPackCached : undefined;
 }
 
+/**
+ * Drop cached pack contents so a subsequent read re-fetches from disk.
+ * Call after any (re)install so the tag-bomb dialog and lookup services pick
+ * up new file contents without requiring an app restart. Omit `packIds` to
+ * clear everything (e.g. after a plugin enable/reinstall, whose set of
+ * touched packs isn't known to the caller).
+ */
+export function clearPackContentCache(packIds?: AuthorityPackId[]): void {
+  if (!packIds) {
+    packContentCache.clear();
+    return;
+  }
+  for (const packId of packIds) packContentCache.delete(packId);
+}
+
 async function installedPackIds(): Promise<Set<AuthorityPackId>> {
   const statuses = (await window.electronAPI?.authorityPackStatuses?.()) ?? [];
   return new Set(statuses.filter((status) => status.installed).map((status) => status.id));

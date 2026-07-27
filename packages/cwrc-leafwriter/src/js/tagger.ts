@@ -1108,23 +1108,13 @@ class Tagger {
       this.addNoteWrapper(note, entity.getType());
     });
 
-    // Bare <note>s (imported/hand-authored TEI with no RDF note entity) also
-    // need the icon stand-in so they can be collapsed/expanded individually,
-    // same as entity notes. Skip anything already wrapped above.
-    this.addNoteWrappersForBareNotes();
-  }
-
-  /** Wrap [_tag=note] elements that aren't already inside a .noteWrapper. */
-  addNoteWrappersForBareNotes() {
-    const body = this.writer.editor?.getBody();
-    if (!body) return;
-
-    $(body)
-      .find('[_tag="note"]')
-      .filter((_i, el) => $(el).closest('.noteWrapper').length === 0)
-      .each((_i, el) => {
-        this.addNoteWrapper(el, 'note');
-      });
+    // Bare <note>s (imported/hand-authored TEI with no RDF note entity) are
+    // deliberately NOT wrapped in .noteWrapper - see toggleShowNotes for how
+    // their folding is handled instead. Wrapping them means unwrapping and
+    // rewrapping on every validation pass (removeNoteWrappersForEntities /
+    // addNoteWrappersForEntities, run ~150ms after any content change), which
+    // can tear down and rebuild the DOM under a user's live text selection
+    // mid-interaction and corrupt the resulting Range.
   }
 
   removeNoteWrapper(tag: JQuery<HTMLElement>) {

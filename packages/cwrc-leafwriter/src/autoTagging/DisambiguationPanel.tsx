@@ -884,16 +884,6 @@ export const DisambiguationPanel = ({
     forceRender();
   };
 
-  const handleKeyDown = useCallback(
-    (event: React.KeyboardEvent) => {
-      if (handleDisambiguationKey(controller, event.key, { shift: event.shiftKey })) {
-        event.preventDefault();
-        forceRender();
-      }
-    },
-    [controller],
-  );
-
   const checkedCandidates = filteredCandidates.filter((candidate) => checkedIds.has(candidate.id));
   const selected = mergeSelectedCandidates(checkedCandidates);
   const showCandidateUi = !!group && pendingInstances(group).length > 0;
@@ -960,6 +950,28 @@ export const DisambiguationPanel = ({
       setError(e instanceof Error ? e.message : String(e));
     }
   };
+
+  const handleKeyDown = useCallback(
+    (event: React.KeyboardEvent) => {
+      if (handleDisambiguationKey(controller, event.key, { shift: event.shiftKey })) {
+        event.preventDefault();
+        forceRender();
+        return;
+      }
+      if (event.key === 'Enter') {
+        const target = event.target as HTMLElement;
+        const isTextEntry =
+          target.tagName === 'TEXTAREA' ||
+          (target.tagName === 'INPUT' && (target as HTMLInputElement).type !== 'checkbox');
+        if (isTextEntry) return;
+        if (selected) {
+          event.preventDefault();
+          void acceptOccurrence();
+        }
+      }
+    },
+    [controller, selected, acceptOccurrence],
+  );
 
   const acceptDocumentSurface = async () => {
     if (!group || !selected || !instance) return;

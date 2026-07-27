@@ -19,6 +19,7 @@ import {
   type PluginHostSnapshotView,
   type PluginRecordView,
 } from '../../plugins';
+import { clearPackContentCache } from '../../services/authority-pack-lookup';
 import type { IDialog } from '../type';
 
 function PluginRow({
@@ -107,6 +108,9 @@ export const PluginsDialog = ({ onClose, open = false }: IDialog) => {
     setError(null);
     try {
       const next = await window.electronAPI?.pluginsSetEnabled?.(pluginId, enabled);
+      // Enabling a plugin can (re)copy its authority packs to disk — drop any
+      // cached pack contents so the tag-bomb dialog picks up the new files.
+      clearPackContentCache();
       if (next) {
         setSnapshot(next);
         setPluginRegistrySnapshot(next);

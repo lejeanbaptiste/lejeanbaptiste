@@ -72,6 +72,7 @@ jest.mock('maplibre-gl', () => {
     Marker: MockMarker,
     Popup: MockPopup,
     LngLatBounds: MockLngLatBounds,
+    setWorkerUrl: jest.fn(),
   };
 }, { virtual: true });
 

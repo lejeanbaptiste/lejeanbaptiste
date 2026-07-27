@@ -321,6 +321,14 @@ body {
   display: none !important;
 }
 
+/* <note> elements never converted into a CWRC note entity (imported or
+hand-authored TEI with no matching RDF annotation) render with no
+.noteWrapper span at all, so the rule above has nothing to hide - toggle
+visibility on the element itself instead. */
+[_tag='note'].hide {
+  display: none !important;
+}
+
 /* showEntities chrome fights inline commentary */
 .showEntities .noteWrapper .entity.note,
 .showEntities .noteWrapper .entity.citation,

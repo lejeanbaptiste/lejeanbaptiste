@@ -60,6 +60,7 @@ import {
   type AuthorityPackStringCounts,
   type DateFilterMode,
   AUTHORITY_PACKS,
+  AUTHORITY_PACK_SHORT_LABELS,
   authorityPackOrigin,
   expandAuthorityPackIds,
   groupAuthorityPacksByTagType,
@@ -91,7 +92,7 @@ import { useActions, useAppState } from '../../overmind';
 import type { IDialog } from '../type';
 import { AiPromptEditorDialog } from './AiPromptEditorDialog';
 import { AiTagChipPicker } from './AiTagChipPicker';
-import { cachedPackReader } from '../../services/authority-pack-lookup';
+import { cachedPackReader, clearPackContentCache } from '../../services/authority-pack-lookup';
 
 const SPREADSHEET_RE = /\.(xlsx|xlsm|ods)$/i;
 type DialogStep = 'methods' | 'ai' | 'authority';
@@ -191,6 +192,14 @@ const authoritySourceHeadingSx = {
   pt: 0.5,
   pb: 0.125,
 } as const;
+
+/** Colored badge replacing the "PEDB"/"CEDB" prefix on own-database rows. */
+const OWN_DATABASE_BADGE: Partial<
+  Record<ReturnType<typeof authorityPackOrigin>, { label: string; color: string; bg: string }>
+> = {
+  pedb: { label: 'Local', color: '#0b5fa5', bg: '#e3f0fb' },
+  cedb: { label: 'Central', color: '#7a3ea1', bg: '#f2e8f8' },
+};
 
 const formatPackStringCount = (
   counts: AuthorityPackStringCounts,
@@ -683,6 +692,7 @@ export const AutoTaggingDialog = ({ id, onClose, open = false }: IDialog) => {
         setError(result?.error ?? 'Install failed.');
         return;
       }
+      clearPackContentCache();
       await refreshAuthoritySetup();
     } catch (e) {
       setError(e instanceof Error ? e.message : String(e));
@@ -1362,51 +1372,113 @@ export const AutoTaggingDialog = ({ id, onClose, open = false }: IDialog) => {
                   alignItems: 'start',
                 }}
               >
-                {visibleAuthorityPackGroups.map((group) => (
-                  <Box key={group.tag}>
-                    <Typography variant="caption" sx={authoritySourceHeadingSx}>
-                      {group.label}
-                    </Typography>
-                    <Stack spacing={0}>
-                      {group.packs.map((opt) => {
-                        const origin = authorityPackOrigin(opt);
-                        const available = isAuthorityPackAvailable(
-                          opt.id,
-                          authorityStatus,
-                          entityDbFolder,
-                          importedLists.length,
-                        );
-                        const rowLabel = opt.label;
-                        const suffix = available
-                          ? origin === 'file' || origin === 'pedb' || origin === 'cedb'
-                            ? formatPackStringCount(authorityPackCounts, opt.id, authorityPackCountsLoading)
-                            : ''
-                          : unavailableSuffixFor(origin);
-                        return (
-                          <FormControlLabel
-                            key={opt.id}
-                            control={
-                              <Checkbox
-                                size="small"
-                                checked={authorityPacks[opt.id]}
-                                disabled={busy || !available}
-                                sx={{ py: 0.125 }}
-                                onChange={(event) =>
-                                  setAuthorityPacks((current) => ({
-                                    ...current,
-                                    [opt.id]: event.target.checked,
-                                  }))
-                                }
-                              />
-                            }
-                            label={`${rowLabel}${suffix}`}
-                            sx={authorityOptionSx}
-                          />
-                        );
-                      })}
-                    </Stack>
-                  </Box>
-                ))}
+                {visibleAuthorityPackGroups.map((group) => {
+                  const availableGroupPackIds = group.packs
+                    .map((opt) => opt.id)
+                    .filter((packId) =>
+                      isAuthorityPackAvailable(
+                        packId,
+                        authorityStatus,
+                        entityDbFolder,
+                        importedLists.length,
+                      ),
+                    );
+                  const checkedInGroup = availableGroupPackIds.filter((packId) => authorityPacks[packId]);
+                  const groupAllChecked =
+                    availableGroupPackIds.length > 0 &&
+                    checkedInGroup.length === availableGroupPackIds.length;
+                  const groupSomeChecked =
+                    checkedInGroup.length > 0 && checkedInGroup.length < availableGroupPackIds.length;
+                  return (
+                    <Box key={group.tag}>
+                      <Stack direction="row" alignItems="center" spacing={0.25}>
+                        <Checkbox
+                          size="small"
+                          checked={groupAllChecked}
+                          indeterminate={groupSomeChecked}
+                          disabled={busy || availableGroupPackIds.length === 0}
+                          title={`Toggle all ${group.label.toLowerCase()}`}
+                          onChange={(event) => {
+                            const next = event.target.checked;
+                            setAuthorityPacks((current) => {
+                              const updated = { ...current };
+                              for (const packId of availableGroupPackIds) updated[packId] = next;
+                              return updated;
+                            });
+                          }}
+                          sx={{ p: 0.25 }}
+                        />
+                        <Typography variant="caption" sx={authoritySourceHeadingSx}>
+                          {group.label}
+                        </Typography>
+                      </Stack>
+                      <Stack spacing={0}>
+                        {group.packs.map((opt) => {
+                          const origin = authorityPackOrigin(opt);
+                          const available = isAuthorityPackAvailable(
+                            opt.id,
+                            authorityStatus,
+                            entityDbFolder,
+                            importedLists.length,
+                          );
+                          const badge = OWN_DATABASE_BADGE[origin];
+                          const rowLabel = badge
+                            ? (AUTHORITY_PACK_SHORT_LABELS[opt.id] ?? opt.label)
+                            : opt.label;
+                          const suffix = available
+                            ? origin === 'file' || origin === 'pedb' || origin === 'cedb'
+                              ? formatPackStringCount(authorityPackCounts, opt.id, authorityPackCountsLoading)
+                              : ''
+                            : unavailableSuffixFor(origin);
+                          return (
+                            <FormControlLabel
+                              key={opt.id}
+                              control={
+                                <Checkbox
+                                  size="small"
+                                  checked={authorityPacks[opt.id]}
+                                  disabled={busy || !available}
+                                  sx={{ py: 0.125 }}
+                                  onChange={(event) =>
+                                    setAuthorityPacks((current) => ({
+                                      ...current,
+                                      [opt.id]: event.target.checked,
+                                    }))
+                                  }
+                                />
+                              }
+                              label={
+                                badge ? (
+                                  <Stack direction="row" alignItems="center" spacing={0.5} component="span">
+                                    <Box
+                                      component="span"
+                                      sx={{
+                                        fontSize: '0.625rem',
+                                        fontWeight: 700,
+                                        lineHeight: 1,
+                                        px: 0.5,
+                                        py: 0.25,
+                                        borderRadius: 0.5,
+                                        color: badge.color,
+                                        bgcolor: badge.bg,
+                                      }}
+                                    >
+                                      {badge.label}
+                                    </Box>
+                                    <Box component="span">{`${rowLabel}${suffix}`}</Box>
+                                  </Stack>
+                                ) : (
+                                  `${rowLabel}${suffix}`
+                                )
+                              }
+                              sx={authorityOptionSx}
+                            />
+                          );
+                        })}
+                      </Stack>
+                    </Box>
+                  );
+                })}
               </Box>
               <Box sx={{ px: 0.25, pt: 0.25 }}>
                 <Stack direction="row" alignItems="center" spacing={0.5}>
