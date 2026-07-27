@@ -166,6 +166,11 @@ See [apps/desktop/README.md](apps/desktop/README.md) for the compilation and pac
 - [ ] Test purge/propagate
 - [ ] Hidden note placeholder
 
+## Icons
+- choice/surpluss/supplied : tool_correction.svg
+- advanced transform : tool_transform.svg
+- commentary : tool_hide_notes.svg, tool_show_notes.svg
+
 ## Todo
 
 - [ ] Build extended propagate function
