@@ -154,22 +154,16 @@ For detailed build and packaging information, see [apps/desktop/README.md](apps/
 
 See [apps/desktop/README.md](apps/desktop/README.md) for the compilation and packaging instructions.
 
-## To validate
+## Debug
 
-- [ ] wire dates and nationality separately.
-- [ ] Disambiguation to fetch nationality
-- [ ] Asset packs to include nationality
-- [ ] Norbert plugin: identify style names
-- [ ] Build expert tools: purge, apply throughout corpus, tag bomb corpus...
-- [ ] Norbert: tag nationality preceding office title or persame (look at the rules that I use), include in our new person wrapper
-- [ ] Settle place-of-origin storage modes (coordinate mode vs ID mode; conflicts fall back to ID mode)
-- [ ] Try to adopt CBDB's office name infrastructure
-- [ ] Asset packs compile place of origin 
-- [ ] Disambiguation fetch place of origin
-- [ ] Build OSM viewer (do we want OSM?)
-- [ ] Improved Chinese office name tagging
-- [ ] Geo-aware placename disambiguation across authorities (see [placename-geo-disambiguation-planning.md](docs/placename-geo-disambiguation-planning.md))
-- [ ] Ship Sanmiao as a plugin, + Norbert tools.
+- [ ] Entities not importing dynasty, place of origin
+- [ ] Norbert needs a badge
+- [ ] Redo new icons
+- [ ] Entities items should maybe expand ?
+- [ ] add nationality to name in schema
+- [ ] auto metadata schema fixer
+- [ ] Option to ignore schema in Source mode
+- [ ] 
 
 ## Todo
 
