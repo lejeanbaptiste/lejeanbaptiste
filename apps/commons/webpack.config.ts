@@ -73,15 +73,7 @@ const plugins = [
         from: require.resolve('maplibre-gl/dist/maplibre-gl-worker.mjs'),
       },
       {
-        from: require.resolve('maplibre-gl/dist/maplibre-gl-worker.mjs') + '.map',
-        noErrorOnMissing: true,
-      },
-      {
         from: require.resolve('maplibre-gl/dist/maplibre-gl-shared.mjs'),
-      },
-      {
-        from: require.resolve('maplibre-gl/dist/maplibre-gl-shared.mjs') + '.map',
-        noErrorOnMissing: true,
       },
       {
         // Pre-rendered SDF glyph PBFs for the place-comparison map's labeled
