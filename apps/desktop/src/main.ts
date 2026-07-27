@@ -10,6 +10,7 @@ import {
   net,
   Notification,
   protocol,
+  type WebContents,
   shell,
   systemPreferences,
 } from 'electron';
@@ -1697,6 +1698,83 @@ const registerIpcHandlers = () => {
     }
   });
 
+  const notifyMapTilesDownload = (bundle: MapTileBundleSpec, ok: boolean, detail: string) => {
+    if (!mainWindow) return;
+    new Notification({
+      title: ok ? 'Map tiles installed' : 'Map tiles download failed',
+      body: `${bundle.label ?? bundle.id}: ${detail}`,
+    }).show();
+  };
+
+  const activeMapTileDownloads = new Set<string>();
+  const activeMapTileDownloadState = new Map<
+    string,
+    { bundleId: string; message: string; receivedBytes?: number; totalBytes?: number | null }
+  >();
+
+  ipcMain.handle('mapTiles:downloadStatus', async () => ({
+    active: [...activeMapTileDownloadState.values()],
+  }));
+
+  const runMapTilesDownload = async (event: { sender: WebContents }, bundle: MapTileBundleSpec) => {
+    if (activeMapTileDownloads.has(bundle.id)) {
+      return { ok: false, error: 'Download already in progress.' };
+    }
+    activeMapTileDownloads.add(bundle.id);
+    let lastSent = 0;
+    try {
+      const mapTilesDir = await getMapTilesDir();
+      activeMapTileDownloadState.set(bundle.id, { bundleId: bundle.id, message: 'Preparing download…' });
+      const { path: installedPath } = await installMapTileBundle({
+        mapTilesDir,
+        bundle,
+        onProgress: (message, receivedBytes, totalBytes) => {
+          const now = Date.now();
+          if (now - lastSent < 250) return;
+          lastSent = now;
+          activeMapTileDownloadState.set(bundle.id, {
+            bundleId: bundle.id,
+            message,
+            receivedBytes,
+            totalBytes,
+          });
+          if (!event.sender.isDestroyed()) {
+            event.sender.send('mapTiles:progress', {
+              bundleId: bundle.id,
+              message,
+              receivedBytes,
+              totalBytes,
+            });
+          }
+        },
+      });
+      activeMapTileDownloadState.delete(bundle.id);
+      if (!event.sender.isDestroyed()) {
+        event.sender.send('mapTiles:downloadComplete', {
+          bundleId: bundle.id,
+          installed: true,
+          path: installedPath,
+        });
+      }
+      notifyMapTilesDownload(bundle, true, 'ready to use.');
+      return { ok: true, path: installedPath };
+    } catch (error) {
+      const message = error instanceof Error ? error.message : String(error);
+      activeMapTileDownloadState.delete(bundle.id);
+      if (!event.sender.isDestroyed()) {
+        event.sender.send('mapTiles:downloadComplete', {
+          bundleId: bundle.id,
+          installed: false,
+          error: message,
+        });
+      }
+      notifyMapTilesDownload(bundle, false, message);
+      return { ok: false, error: message };
+    } finally {
+      activeMapTileDownloads.delete(bundle.id);
+    }
+  };
+
   ipcMain.handle('mapTiles:promptDownload', async () => {
     if (!mainWindow) return 'declined';
 
@@ -1727,35 +1805,13 @@ const registerIpcHandlers = () => {
     return 'accepted';
   });
 
-  const activeMapTileDownloads = new Set<string>();
-
   ipcMain.handle('mapTiles:download', async (event, bundle: MapTileBundleSpec) => {
-    if (activeMapTileDownloads.has(bundle.id)) {
-      return { ok: false, error: 'Download already in progress.' };
-    }
-    activeMapTileDownloads.add(bundle.id);
-    let lastSent = 0;
-    try {
-      const mapTilesDir = await getMapTilesDir();
-      const { path: installedPath } = await installMapTileBundle({
-        mapTilesDir,
-        bundle,
-        onProgress: (message, receivedBytes, totalBytes) => {
-          const now = Date.now();
-          if (now - lastSent < 250) return;
-          lastSent = now;
-          if (!event.sender.isDestroyed()) {
-            event.sender.send('mapTiles:progress', { message, receivedBytes, totalBytes });
-          }
-        },
-      });
-      return { ok: true, path: installedPath };
-    } catch (error) {
-      const message = error instanceof Error ? error.message : String(error);
-      return { ok: false, error: message };
-    } finally {
-      activeMapTileDownloads.delete(bundle.id);
-    }
+    return runMapTilesDownload(event, bundle);
+  });
+
+  ipcMain.handle('mapTiles:downloadBackground', async (event, bundle: MapTileBundleSpec) => {
+    void runMapTilesDownload(event, bundle);
+    return { ok: true, queued: true };
   });
 
   // Named "OrNull" for historical reasons (it used to wrap getEntityDbFolder,
@@ -2383,9 +2439,9 @@ const createWindow = async () => {
   });
 
   // Surface renderer console output in the terminal for startup debugging.
-  mainWindow.webContents.on('console-message', (_event, level, message) => {
-    if (process.env.LJB_DEBUG === '1' || level >= 2) {
-      console.log(`[renderer:${level}] ${message}`);
+  mainWindow.webContents.on('console-message', (event) => {
+    if (process.env.LJB_DEBUG === '1' || event.level === 'warning' || event.level === 'error') {
+      console.log(`[renderer:${event.level}] ${event.message}`);
     }
   });
 

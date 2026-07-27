@@ -554,7 +554,34 @@
           "multiFile": "L'application de modifications sur plusieurs fichiers",
           "corpusWide": "L'application de modifications sur tout le corpus",
           "none": "Aucun"
-        }
+        },
+        "validate_multi_file_automation": "Ne valider les modifications des autres fichiers qu’après validation"
+      },
+      "tagTransform": {
+        "title": "Transformation avancée des balises",
+        "find": "Rechercher",
+        "replace": "Remplacer",
+        "string": "Chaîne",
+        "regex": "Expression régulière",
+        "none": "Aucune",
+        "tag": "Type de balise",
+        "key_attribute": "Attribut clé",
+        "attribute": "Attribut",
+        "value": "Valeur",
+        "additional_fields": "Champs supplémentaires",
+        "add_attribute": "Ajouter un champ",
+        "purge": "Purger",
+        "purge_tag": "Purger la balise",
+        "purge_children": "Purger les enfants",
+        "purge_attributes": "Attributs à purger",
+        "not": "Inverser la condition",
+        "custom_folder": "Dossier",
+        "required": "Saisissez une chaîne à rechercher.",
+        "multi_file_disabled": "Activez les modifications sur plusieurs fichiers dans les garde-fous.",
+        "custom_folder_required": "Choisissez un dossier pour cette portée.",
+        "snapshot_failed": "L’instantané de sécurité n’a pas pu être créé. Aucune modification n’a été effectuée.",
+        "no_matches": "Aucun contenu correspondant trouvé.",
+        "applied": "{{count}} modifications appliquées dans {{files}} fichier(s)."
       },
       "markupPanel": {
         "Allow drag and drop": "Autoriser le glisser-déposer",

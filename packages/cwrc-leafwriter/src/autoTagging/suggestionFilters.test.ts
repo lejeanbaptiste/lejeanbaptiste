@@ -1,5 +1,9 @@
 import { normalizeDomText } from './normalize';
-import { filterNestedSameTagAdds, prepareSuggestionsForReview } from './suggestionFilters';
+import {
+  filterNestedSameTagAdds,
+  prepareSuggestionsForReview,
+  removeNestedSameTagElements,
+} from './suggestionFilters';
 import type { Suggestion } from './types';
 
 const parse = (xml: string) => {
@@ -27,6 +31,16 @@ const addSuggestion = (surface: string, occurrence: number, tag: string): Sugges
 });
 
 describe('filterNestedSameTagAdds', () => {
+  it('unwraps nested same-type elements while preserving their content', () => {
+    const doc = parse(
+      '<TEI><text><body><p><persName>張<persName>行成</persName></persName></p></body></text></TEI>',
+    );
+
+    expect(removeNestedSameTagElements(doc)).toBe(1);
+    expect(doc.querySelectorAll('persName')).toHaveLength(1);
+    expect(doc.querySelector('persName')?.textContent).toBe('張行成');
+  });
+
   it('drops an add nested inside the same tag type', () => {
     const doc = parse('<TEI><text><body><p><persName>張行成</persName></p></body></text></TEI>');
     const { suggestions, dropped } = filterNestedSameTagAdds(doc, 'ignore', [

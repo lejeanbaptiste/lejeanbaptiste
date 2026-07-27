@@ -150,7 +150,34 @@
           "multiFile": "Applying changes across multiple files",
           "corpusWide": "Applying changes corpus-wide",
           "none": "None"
-        }
+        },
+        "validate_multi_file_automation": "Only commit changes to other files after validation"
+      },
+      "tagTransform": {
+        "title": "Advanced tag transform",
+        "find": "Find",
+        "replace": "Replace",
+        "string": "String",
+        "regex": "Regular expression",
+        "none": "None",
+        "tag": "Tag type",
+        "key_attribute": "Key attribute",
+        "attribute": "Attribute",
+        "value": "Value",
+        "additional_fields": "Additional fields",
+        "add_attribute": "Add field",
+        "purge": "Purge",
+        "purge_tag": "Purge tag",
+        "purge_children": "Purge children",
+        "purge_attributes": "Attributes to purge",
+        "not": "Negate condition",
+        "custom_folder": "Folder",
+        "required": "Enter a string to find.",
+        "multi_file_disabled": "Enable multi-file automation in Guardrails first.",
+        "custom_folder_required": "Choose a folder for this scope.",
+        "snapshot_failed": "The safety snapshot could not be created. No changes were made.",
+        "no_matches": "No matching content found.",
+        "applied": "Applied {{count}} changes across {{files}} file(s)."
       },
       "ai_api": {
         "api_key": "API key",

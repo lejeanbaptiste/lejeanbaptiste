@@ -394,7 +394,10 @@ async function applyPluginContributions(plugin: PluginRecord): Promise<void> {
       if (!localPack) continue;
       const destDir = path.join(destRoot, path.dirname(localPack.relativePath));
       await fsp.mkdir(destDir, { recursive: true });
-      await fsp.copyFile(localPack.personsFile, path.join(destDir, 'persons.ndjson'));
+      await fsp.copyFile(
+        localPack.personsFile,
+        path.join(destDir, path.basename(localPack.relativePath)),
+      );
       if (localPack.manifestFile) {
         await fsp.copyFile(localPack.manifestFile, path.join(destDir, 'manifest.json'));
       }
@@ -414,8 +417,16 @@ function resolveLocalAuthorityPack(
   ].filter((p): p is string => !!p);
 
   for (const root of candidates) {
-    if (packId === 'norbert-persons' || packId === 'norbert-offices') {
-      const fileName = packId === 'norbert-offices' ? 'offices.ndjson' : 'persons.ndjson';
+    const norbertFileName =
+      packId === 'norbert-persons'
+        ? 'persons.ndjson'
+        : packId === 'norbert-person-wrappers'
+          ? 'person-wrappers.ndjson'
+          : packId === 'norbert-offices'
+            ? 'offices.ndjson'
+            : null;
+    if (norbertFileName) {
+      const fileName = norbertFileName;
       const dataFile = path.join(root, 'packs/norbert', fileName);
       const manifestFile = path.join(root, 'packs/norbert/manifest.json');
       if (fs.existsSync(dataFile)) {

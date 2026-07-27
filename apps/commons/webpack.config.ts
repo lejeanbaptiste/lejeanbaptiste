@@ -281,7 +281,29 @@ const webpackConfig: webpack.Configuration = {
     },
   },
   stats: isDev ? { children: true } : {},
+  // MapLibre's ESM bundle contains one internal dynamic dependency expression
+  // that webpack cannot statically analyze. It is a known vendor false
+  // positive, so we silence only that exact warning instead of relaxing all
+  // warnings globally.
+  ignoreWarnings: [
+    (warning: any) => {
+      const message = typeof warning.message === 'string' ? warning.message : '';
+      const resource = warning.module?.resource ?? '';
+      return (
+        message.includes('Critical dependency: the request of a dependency is an expression') &&
+        resource.includes('node_modules/maplibre-gl/dist/maplibre-gl.mjs')
+      );
+    },
+  ],
   watch: isDev ? true : false,
+  watchOptions: isDev
+    ? {
+        // Polling avoids EMFILE on large workspaces where native watchers can
+        // exhaust the per-process file descriptor limit during dev rebuilds.
+        ignored: /(^|[\\/])(\.git|node_modules|dist)([\\/]|$)/,
+        poll: 1000,
+      }
+    : undefined,
 };
 
 webpackConfig.resolve?.fallback;

@@ -5,7 +5,11 @@ import { db } from '../../db';
 import { resetLookupPreferences } from '../../jotai/entity-lookup/utilities';
 import type { LeafWriterOptionsSettings, Schema } from '../../types';
 import { DEFAULT_ASIAN_FONT, DEFAULT_LATIN_FONT, getValidFontFamily } from './fontFamilies';
-import { DEFAULT_EDITOR_FONT_SIZE, type ChoiceDisplayMode, type MultiFileSnapshotTrigger } from './state';
+import {
+  DEFAULT_EDITOR_FONT_SIZE,
+  type ChoiceDisplayMode,
+  type MultiFileSnapshotTrigger,
+} from './state';
 
 const DIALOG_PREFS_COOKIE_NAME = 'leaf-writer-base-dialog-preferences';
 const ASIAN_FONT_KEY = 'asianFont';
@@ -23,7 +27,12 @@ const VALIDATE_XML_ON_REPLACE_KEY = 'validateXmlOnReplace';
 const ENABLE_XML_EDITING_KEY = 'enableXmlEditing';
 const ENABLE_MULTI_FILE_AUTOMATION_KEY = 'enableMultiFileAutomation';
 const MULTI_FILE_SNAPSHOT_BEFORE_KEY = 'multiFileSnapshotBefore';
-const MULTI_FILE_SNAPSHOT_TRIGGERS: MultiFileSnapshotTrigger[] = ['multiFile', 'corpusWide', 'none'];
+const VALIDATE_MULTI_FILE_AUTOMATION_KEY = 'validateMultiFileAutomation';
+const MULTI_FILE_SNAPSHOT_TRIGGERS: MultiFileSnapshotTrigger[] = [
+  'multiFile',
+  'corpusWide',
+  'none',
+];
 
 /**
  * A correction entity's live editor content is always its corrected text (see
@@ -38,7 +47,9 @@ const applyChoiceDisplayMode = (mode: ChoiceDisplayMode, fontSize: number) => {
 
   let $style = $(`#${CHOICE_DISPLAY_STYLE_ID}`, doc);
   if ($style.length === 0) {
-    $style = $(`<style id="${CHOICE_DISPLAY_STYLE_ID}" type="text/css" />`).appendTo($('head', doc));
+    $style = $(`<style id="${CHOICE_DISPLAY_STYLE_ID}" type="text/css" />`).appendTo(
+      $('head', doc),
+    );
   }
   $style.text(`
     .choiceDisplay-original .entity.correction[data-sic-text] {
@@ -160,9 +171,8 @@ export const applyInitialSettings = ({ state, actions, effects }: Context) => {
     state.editor.validateXmlOnReplace = storedValidateXmlOnReplace;
   }
 
-  const storedEnableXmlEditing = effects.editor.api.getFromLocalStorage<boolean>(
-    ENABLE_XML_EDITING_KEY,
-  );
+  const storedEnableXmlEditing =
+    effects.editor.api.getFromLocalStorage<boolean>(ENABLE_XML_EDITING_KEY);
   if (storedEnableXmlEditing !== null) state.editor.enableXmlEditing = storedEnableXmlEditing;
 
   const storedEnableMultiFileAutomation = effects.editor.api.getFromLocalStorage<boolean>(
@@ -172,9 +182,10 @@ export const applyInitialSettings = ({ state, actions, effects }: Context) => {
     state.editor.enableMultiFileAutomation = storedEnableMultiFileAutomation;
   }
 
-  const storedMultiFileSnapshotBefore = effects.editor.api.getFromLocalStorage<MultiFileSnapshotTrigger>(
-    MULTI_FILE_SNAPSHOT_BEFORE_KEY,
-  );
+  const storedMultiFileSnapshotBefore =
+    effects.editor.api.getFromLocalStorage<MultiFileSnapshotTrigger>(
+      MULTI_FILE_SNAPSHOT_BEFORE_KEY,
+    );
   if (
     storedMultiFileSnapshotBefore &&
     MULTI_FILE_SNAPSHOT_TRIGGERS.includes(storedMultiFileSnapshotBefore)
@@ -182,9 +193,15 @@ export const applyInitialSettings = ({ state, actions, effects }: Context) => {
     state.editor.multiFileSnapshotBefore = storedMultiFileSnapshotBefore;
   }
 
-  const storedChoiceDisplayMode = effects.editor.api.getFromLocalStorage<ChoiceDisplayMode>(
-    CHOICE_DISPLAY_MODE_KEY,
+  const storedValidateMultiFileAutomation = effects.editor.api.getFromLocalStorage<boolean>(
+    VALIDATE_MULTI_FILE_AUTOMATION_KEY,
   );
+  if (storedValidateMultiFileAutomation !== null) {
+    state.editor.validateMultiFileAutomation = storedValidateMultiFileAutomation;
+  }
+
+  const storedChoiceDisplayMode =
+    effects.editor.api.getFromLocalStorage<ChoiceDisplayMode>(CHOICE_DISPLAY_MODE_KEY);
   if (storedChoiceDisplayMode && CHOICE_DISPLAY_MODES.includes(storedChoiceDisplayMode)) {
     state.editor.choiceDisplayMode = storedChoiceDisplayMode;
   }
@@ -344,7 +361,15 @@ export const setMultiFileSnapshotBefore = (
   value: MultiFileSnapshotTrigger,
 ) => {
   state.editor.multiFileSnapshotBefore = value;
-  effects.editor.api.saveToLocalStorage<MultiFileSnapshotTrigger>(MULTI_FILE_SNAPSHOT_BEFORE_KEY, value);
+  effects.editor.api.saveToLocalStorage<MultiFileSnapshotTrigger>(
+    MULTI_FILE_SNAPSHOT_BEFORE_KEY,
+    value,
+  );
+};
+
+export const setValidateMultiFileAutomation = ({ state, effects }: Context, value: boolean) => {
+  state.editor.validateMultiFileAutomation = value;
+  effects.editor.api.saveToLocalStorage<boolean>(VALIDATE_MULTI_FILE_AUTOMATION_KEY, value);
 };
 
 export const setShowRawXmlPanel = ({ state, effects }: Context, value: boolean) => {

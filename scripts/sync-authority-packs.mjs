@@ -24,6 +24,8 @@ const packFiles = [
   'dila/persons.ndjson',
   'dila/places.ndjson',
   'dila/manifest.json',
+  'wikidata/place-zh-hant/places.ndjson',
+  'wikidata/place-zh-hant/manifest.json',
   'wikidata/person-zh-hant-pre-ming/persons.ndjson',
   'wikidata/person-zh-hant-pre-ming/manifest.json',
   'wikidata/person-zh-hant-ming/persons.ndjson',

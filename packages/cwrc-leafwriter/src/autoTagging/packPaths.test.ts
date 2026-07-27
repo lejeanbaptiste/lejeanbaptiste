@@ -1,5 +1,6 @@
 import {
   expandAuthorityPackIds,
+  AUTHORITY_PACKS,
   persistedPacksFromUi,
   uiPacksFromPersisted,
   WIKIDATA_PERSON_CHILD_PACK_IDS,
@@ -29,5 +30,20 @@ describe('authority pack UI helpers', () => {
     for (const child of WIKIDATA_PERSON_CHILD_PACK_IDS) {
       expect(saved).not.toContain(child);
     }
+  });
+
+  it('keeps the Norbert person packs distinct by full label', () => {
+    expect(AUTHORITY_PACKS.find((pack) => pack.id === 'norbert-persons')?.label).toBe(
+      'Norbert persons',
+    );
+    expect(AUTHORITY_PACKS.find((pack) => pack.id === 'norbert-person-wrappers')?.label).toBe(
+      'Norbert person wrappers',
+    );
+    expect(AUTHORITY_PACKS.find((pack) => pack.id === 'norbert-wiki-nt')?.label).toBe(
+      'Norbert wiki noble titles',
+    );
+    expect(AUTHORITY_PACKS.find((pack) => pack.id === 'wikidata-places-zh-hant')?.label).toBe(
+      'Wikidata places (zh-hant)',
+    );
   });
 });

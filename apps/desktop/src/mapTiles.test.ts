@@ -14,6 +14,7 @@ import {
   parsePmtilesTileUrl,
   readInstalledMapTilesManifest,
   removeMapTileBundle,
+  resolveLatestProtomapsBuild,
   type MapTileBundleSpec,
 } from './mapTiles';
 
@@ -167,6 +168,24 @@ describe('mapTiles', () => {
       'has not been configured yet',
     );
     expect(global.fetch).not.toHaveBeenCalled();
+  });
+
+  it('resolves the newest available daily Protomaps build', async () => {
+    global.fetch = jest
+      .fn()
+      .mockResolvedValueOnce(new Response(null, { status: 404 }))
+      .mockResolvedValueOnce(new Response(null, { status: 200 })) as unknown as typeof fetch;
+
+    await expect(resolveLatestProtomapsBuild()).resolves.toMatch(
+      /^https:\/\/build\.protomaps\.com\/\d{8}\.pmtiles$/,
+    );
+    expect(global.fetch).toHaveBeenCalledTimes(2);
+    expect((global.fetch as jest.Mock).mock.calls[0][0]).toMatch(
+      /^https:\/\/build\.protomaps\.com\/\d{8}\.pmtiles$/,
+    );
+    expect((global.fetch as jest.Mock).mock.calls[0][1]).toEqual(
+      expect.objectContaining({ method: 'HEAD' }),
+    );
   });
 
   it('copies a staged local pmtiles file when the source directory override is set', async () => {

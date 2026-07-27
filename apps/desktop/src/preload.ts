@@ -16,9 +16,24 @@ import type { ProjectBundle } from './projectFile';
 import type { MapTileBundleSpec } from './mapTiles';
 
 export interface MapTilesProgress {
+  bundleId: string;
   message: string;
   receivedBytes?: number;
   totalBytes?: number | null;
+}
+
+export interface MapTilesDownloadState {
+  bundleId: string;
+  message: string;
+  receivedBytes?: number;
+  totalBytes?: number | null;
+}
+
+export interface MapTilesDownloadComplete {
+  bundleId: string;
+  installed: boolean;
+  path?: string;
+  error?: string;
 }
 import type {
   SchemaUpdateApplyResult,
@@ -259,8 +274,15 @@ export interface ElectronAPI {
   mapTilesDownload: (
     bundle: MapTileBundleSpec,
   ) => Promise<{ ok: boolean; path?: string; error?: string }>;
+  mapTilesDownloadBackground: (
+    bundle: MapTileBundleSpec,
+  ) => Promise<{ ok: boolean; queued?: boolean; error?: string }>;
   mapTilesRemove: (bundleId: string) => Promise<{ ok: boolean; error?: string }>;
+  mapTilesDownloadStatus: () => Promise<{ active: MapTilesDownloadState[] }>;
   onMapTilesProgress: (callback: (progress: MapTilesProgress) => void) => () => void;
+  onMapTilesDownloadComplete: (
+    callback: (result: MapTilesDownloadComplete) => void,
+  ) => () => void;
   authorityPackStatuses?: () => Promise<
     import('../../commons/src/desktop/authorityPackTypes').AuthorityPackStatus[]
   >;
@@ -515,12 +537,21 @@ const electronAPI: ElectronAPI = {
   mapTilesStatus: () => ipcRenderer.invoke('mapTiles:status'),
   mapTilesPromptDownload: () => ipcRenderer.invoke('mapTiles:promptDownload'),
   mapTilesDownload: (bundle: MapTileBundleSpec) => ipcRenderer.invoke('mapTiles:download', bundle),
+  mapTilesDownloadBackground: (bundle: MapTileBundleSpec) =>
+    ipcRenderer.invoke('mapTiles:downloadBackground', bundle),
   mapTilesRemove: (bundleId: string) => ipcRenderer.invoke('mapTiles:remove', bundleId),
+  mapTilesDownloadStatus: () => ipcRenderer.invoke('mapTiles:downloadStatus'),
   onMapTilesProgress: (callback: (progress: MapTilesProgress) => void) => {
     const listener = (_event: Electron.IpcRendererEvent, progress: MapTilesProgress) =>
       callback(progress);
     ipcRenderer.on('mapTiles:progress', listener);
     return () => ipcRenderer.removeListener('mapTiles:progress', listener);
+  },
+  onMapTilesDownloadComplete: (callback: (result: MapTilesDownloadComplete) => void) => {
+    const listener = (_event: Electron.IpcRendererEvent, result: MapTilesDownloadComplete) =>
+      callback(result);
+    ipcRenderer.on('mapTiles:downloadComplete', listener);
+    return () => ipcRenderer.removeListener('mapTiles:downloadComplete', listener);
   },
   authorityPackStatuses: () => ipcRenderer.invoke('authorityPack:statuses'),
   authorityPackRead: (packId: string) => ipcRenderer.invoke('authorityPack:read', packId),

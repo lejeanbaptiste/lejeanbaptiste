@@ -1,7 +1,7 @@
 import { resolveAnchor, resolveXPath } from './anchor';
 import { isEntityTagForbiddenInDate, isInsideDateElement } from './dateTeiHelpers';
 import { validatePersonWrappers, type PersonWrapperValidation } from './personWrapperValidation';
-import { isWrappedByEntityTag } from './suggestionFilters';
+import { isWrappedByEntityTag, removeNestedSameTagElements } from './suggestionFilters';
 import type { Suggestion, SuggestionAction, WhitespacePolicy } from './types';
 
 export type ApplyOutcome =
@@ -167,6 +167,9 @@ export async function applySuggestions(
   options: ApplyOptions,
 ): Promise<BatchResult> {
   const snapshot = new XMLSerializer().serializeToString(doc);
+  // Normalize both documents loaded from disk and markup produced by another
+  // producer before the result is handed to schema validation.
+  removeNestedSameTagElements(doc);
   const ordered = [...suggestions].sort(compareSuggestions);
 
   // Spans already claimed by an applied 'add', to block a second, differently
@@ -204,6 +207,10 @@ export async function applySuggestions(
       await yieldToUi();
     }
   }
+
+  // Compound/retag producers can move existing elements around, so run the
+  // cleanup again after all mutations as the final pre-validation step.
+  removeNestedSameTagElements(doc);
 
   return {
     results,

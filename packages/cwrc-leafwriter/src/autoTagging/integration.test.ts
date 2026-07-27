@@ -4,7 +4,12 @@ import { parseLog } from './decisionLog';
 import { EntityStore, type EntityFileApi } from './entityStore';
 import { resolveEntityStorePaths } from './entityStoreResolve';
 import { collectTextNodes, createAnchor } from './anchor';
-import { AutoTaggingSession, reconcilePersonWrapperKeys, type WriterLike } from './integration';
+import {
+  AutoTaggingSession,
+  reconcilePersonWrapperKeys,
+  type WriterLike,
+} from './integration';
+import type { AuthorityPackId } from './packPaths';
 
 const XML = `<TEI xmlns="http://www.tei-c.org/ns/1.0"><text><body>
 <p>張衡居洛陽，張衡造渾天儀。</p>
@@ -29,6 +34,21 @@ const makeWriter = (initial: string, forbid?: { parent: string; child: string })
 };
 
 describe('AutoTaggingSession', () => {
+  it('runs a text-preserving transform through the session boundary', async () => {
+    const { writer, getCurrent } = makeWriter('<root><p><persName key="B">劉備</persName></p></root>');
+    writer.overmindState = { editor: { resource: { filePath: 'current' } } };
+    (window as unknown as { writer: WriterLike }).writer = writer;
+    const session = new AutoTaggingSession(writer);
+    const result = await session.runTagTransform({
+      string: '劉備',
+      tagName: 'persName',
+      replaceKey: { name: 'key', value: 'A' },
+      scope: 'currentFile',
+    });
+    expect(result).toEqual({ filesChanged: 1, matches: 1 });
+    expect(getCurrent()).toContain('key="A"');
+  });
+
   it('auto-resolves a wrapper and its inner person from one local entity match', () => {
     const doc = new DOMParser().parseFromString(
       '<TEI xmlns="http://www.tei-c.org/ns/1.0"><text><body><p><name type="personWrapper"><nobleTitle><placeName>鄱陽</placeName><roleName>王</roleName></nobleTitle><persName>範</persName></name></p></body></text></TEI>',
@@ -329,6 +349,33 @@ describe('AutoTaggingSession', () => {
       expect(byTag('placeName')).toHaveLength(1); // 洛陽, from the project crawl
       expect(byTag('title')).toHaveLength(1); // 渾天儀, from the imported list
       expect(result.suggestions.every((s) => s.status === 'pending')).toBe(true);
+    });
+
+    it('loads the Wikidata zh-hant place pack through the normal tag-bomb path', async () => {
+      const { writer } = makeWriter(
+        `<TEI xmlns="http://www.tei-c.org/ns/1.0"><text><body><p>洛陽是都城。</p></body></text></TEI>`,
+      );
+      const session = new AutoTaggingSession(writer);
+
+      const wikidataPlacesPack = JSON.stringify({
+        source: 'Wikidata',
+        authorityId: 'Q123456',
+        kind: 'place',
+        primaryName: '洛陽',
+        searchStrings: ['洛陽', '洛阳'],
+        metadata: { description: 'Historical Chinese place', subtype: 'place' },
+      });
+      const readPackFile = async (packId: AuthorityPackId) => {
+        if (packId === 'wikidata-places-zh-hant') return wikidataPlacesPack;
+        throw new Error(`unexpected pack read: ${packId}`);
+      };
+
+      const result = await session.runTagBomb(['wikidata-places-zh-hant'], readPackFile);
+
+      expect(result.suggestions).toHaveLength(1);
+      expect(result.suggestions[0]?.tag).toBe('placeName');
+      expect(result.suggestions[0]?.anchor.surface).toBe('洛陽');
+      expect(result.loaded['wikidata-places-zh-hant']).toBe(1);
     });
   });
 

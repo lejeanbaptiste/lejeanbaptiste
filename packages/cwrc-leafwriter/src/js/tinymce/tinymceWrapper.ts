@@ -1225,6 +1225,20 @@ export const tinymceWrapperInit = function ({
     'Escape',
   ]);
 
+  // TinyMCE sometimes forwards a normalized KeyboardEvent without `code`.
+  // Use the semantic key first, with the physical/legacy values as fallbacks,
+  // so Shift+Backspace remains reliable across browsers and keyboard layouts.
+  const isBackspaceOrDelete = (event: KeyboardEvent): boolean =>
+    event.key === 'Backspace' ||
+    event.key === 'Delete' ||
+    event.code === 'Backspace' ||
+    event.code === 'Delete' ||
+    event.keyCode === 8 ||
+    event.keyCode === 46;
+
+  const isBackspace = (event: KeyboardEvent): boolean =>
+    event.key === 'Backspace' || event.code === 'Backspace' || event.keyCode === 8;
+
   const shouldBlockWhenTextLocked = (event: KeyboardEvent): boolean => {
     if (writer.isTextLocked !== true) return false;
     if (event.isComposing) return false;
@@ -1286,7 +1300,7 @@ export const tinymceWrapperInit = function ({
     // the markup tree panel.
     if (
       event.shiftKey &&
-      (event.code === 'Backspace' || event.code === 'Delete') &&
+      isBackspaceOrDelete(event) &&
       !event.ctrlKey && !event.metaKey && !event.altKey &&
       writer.isReadOnly !== true &&
       writer.isTextLocked !== true
@@ -1316,8 +1330,9 @@ export const tinymceWrapperInit = function ({
     if (
       currentBoundaryElement &&
       currentBoundaryIsExternal &&
-      ((event.code === 'Delete' && currentBoundarySide === 'before') ||
-        (event.code === 'Backspace' && currentBoundarySide === 'after')) &&
+      isBackspaceOrDelete(event) &&
+      ((!isBackspace(event) && currentBoundarySide === 'before') ||
+        (isBackspace(event) && currentBoundarySide === 'after')) &&
       !event.shiftKey && !event.ctrlKey && !event.metaKey && !event.altKey &&
       writer.isReadOnly !== true &&
       writer.isTextLocked !== true

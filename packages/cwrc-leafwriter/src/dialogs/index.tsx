@@ -8,5 +8,6 @@ export * from './settings';
 export * from './type';
 export * from './xpathSearch';
 export * from './autoTagging';
+export * from './tagTransform';
 export * from './disambiguation';
 export * from './plugins';
