@@ -951,6 +951,21 @@ export const DisambiguationPanel = ({
     }
   };
 
+  const acceptDocumentSurface = async () => {
+    if (!group || !selected || !instance) return;
+    const sameDoc = group.instances.filter(
+      (item) => !item.hasKey && item.documentId === instance.documentId,
+    );
+    try {
+      await session.resolveMentions(sameDoc, selected);
+      afterChange(group);
+      controller.next();
+      rerender();
+    } catch (e) {
+      setError(e instanceof Error ? e.message : String(e));
+    }
+  };
+
   const handleKeyDown = useCallback(
     (event: React.KeyboardEvent) => {
       if (handleDisambiguationKey(controller, event.key, { shift: event.shiftKey })) {
@@ -966,27 +981,12 @@ export const DisambiguationPanel = ({
         if (isTextEntry) return;
         if (selected) {
           event.preventDefault();
-          void acceptOccurrence();
+          void (event.shiftKey ? acceptDocumentSurface() : acceptOccurrence());
         }
       }
     },
-    [controller, selected, acceptOccurrence],
+    [acceptDocumentSurface, acceptOccurrence, controller, selected],
   );
-
-  const acceptDocumentSurface = async () => {
-    if (!group || !selected || !instance) return;
-    const sameDoc = group.instances.filter(
-      (item) => !item.hasKey && item.documentId === instance.documentId,
-    );
-    try {
-      await session.resolveMentions(sameDoc, selected);
-      afterChange(group);
-      controller.next();
-      rerender();
-    } catch (e) {
-      setError(e instanceof Error ? e.message : String(e));
-    }
-  };
 
   const markCurrentUnresolved = async () => {
     if (!instance || !group) return;
@@ -1723,7 +1723,7 @@ export const DisambiguationPanel = ({
 
       {showCandidateUi && (
         <Typography variant="caption" color="text.secondary" sx={{ px: 0.75, pb: 0.5, flexShrink: 0 }}>
-          j/k navigate · Enter accept (buttons)
+          j/k navigate · Enter accept occurrence · Shift+Enter accept document
         </Typography>
       )}
     </Box>
