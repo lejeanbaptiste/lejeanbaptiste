@@ -39,7 +39,6 @@ import {
   isAiSuggestReady,
   listAiTagOptions,
   parseDictionaryTable,
-  formatAuthorityTagBombNotice,
   persistAiPromptProfiles,
   persistValidationSettings,
   readPersistedValidationSettings,
@@ -861,7 +860,7 @@ export const AutoTaggingDialog = ({ id, onClose, open = false }: IDialog) => {
       }
 
       if (matchedDocs.length === 1) {
-        beginReview(matchedDocs[0]!.suggestions, formatAuthorityTagBombNotice(result));
+        beginReview(matchedDocs[0]!.suggestions);
         return;
       }
 
