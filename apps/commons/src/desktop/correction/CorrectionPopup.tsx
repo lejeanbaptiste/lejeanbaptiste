@@ -192,7 +192,14 @@ export const CorrectionPopup = ({
               label={t('LWC.desktop.correction.add_attribute')}
               value={addAttrName}
               onChange={(event) => setAddAttrName(event.target.value)}
-              SelectProps={{ displayEmpty: true }}
+              InputLabelProps={{ shrink: true }}
+              SelectProps={{
+                displayEmpty: true,
+                renderValue: (value) => {
+                  if (!value) return <em>{t('LWC.desktop.correction.choose_attribute')}</em>;
+                  return String(value);
+                },
+              }}
             >
               <MenuItem value="">
                 <em>{t('LWC.desktop.correction.choose_attribute')}</em>

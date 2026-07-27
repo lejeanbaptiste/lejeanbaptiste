@@ -1,4 +1,4 @@
-import { Alert, Box, Button, LinearProgress, ListItem, Stack, Typography } from '@mui/material';
+import { Alert, Box, Button, CircularProgress, LinearProgress, ListItem, Stack, Typography } from '@mui/material';
 import { useCallback, useEffect, useState } from 'react';
 import {
   isConfiguredMapTileBundle,
@@ -10,12 +10,19 @@ const MAP_TILES_ATTRIBUTION =
   'Basemap data © OpenStreetMap contributors, made available under the Open Database License (ODbL), via Protomaps (protomaps.com).';
 
 type RegionStatus = { id: string; sha256: string; installedAt: string };
+type DownloadState = {
+  bundleId: string;
+  message: string;
+  receivedBytes?: number;
+  totalBytes?: number | null;
+};
 
 export const DesktopMapTilesSettings = () => {
   const [regions, setRegions] = useState<RegionStatus[]>([]);
   const [busyId, setBusyId] = useState<string | null>(null);
-  const [progressMessage, setProgressMessage] = useState<string | null>(null);
+  const [downloads, setDownloads] = useState<Record<string, DownloadState>>({});
   const [error, setError] = useState<{ id: string; text: string } | null>(null);
+  const [completion, setCompletion] = useState<{ id: string; text: string; severity: 'success' | 'error' } | null>(null);
 
   const refresh = useCallback(async () => {
     const status = await window.electronAPI?.mapTilesStatus?.();
@@ -25,22 +32,66 @@ export const DesktopMapTilesSettings = () => {
   useEffect(() => {
     void refresh();
     const api = window.electronAPI;
-    if (!api?.onMapTilesProgress) return;
-    return api.onMapTilesProgress((progress) => setProgressMessage(progress.message));
+    const disposers: Array<() => void> = [];
+    const hydrateDownloads = async () => {
+      const snapshot = await api?.mapTilesDownloadStatus?.();
+      const next: Record<string, DownloadState> = {};
+      for (const item of snapshot?.active ?? []) next[item.bundleId] = item;
+      setDownloads(next);
+      const activeBundleId = Object.keys(next)[0] ?? null;
+      setBusyId(activeBundleId);
+    };
+    void hydrateDownloads();
+    if (api?.onMapTilesProgress) {
+      disposers.push(
+        api.onMapTilesProgress((progress) => {
+          setDownloads((current) => ({
+            ...current,
+            [progress.bundleId]: progress,
+          }));
+          setBusyId(progress.bundleId);
+        }),
+      );
+    }
+    if (api?.onMapTilesDownloadComplete) {
+      disposers.push(
+        api.onMapTilesDownloadComplete((result) => {
+          setBusyId((current) => (current === result.bundleId ? null : current));
+          setDownloads((current) => {
+            const { [result.bundleId]: _removed, ...rest } = current;
+            return rest;
+          });
+          if (result.installed) {
+            setCompletion({ id: result.bundleId, text: 'Map tiles downloaded and ready for offline use.', severity: 'success' });
+          } else {
+            setCompletion({ id: result.bundleId, text: result.error ?? 'Map tile download failed.', severity: 'error' });
+          }
+          void refresh();
+        }),
+      );
+    }
+    return () => disposers.forEach((dispose) => dispose());
   }, [refresh]);
 
   const handleDownload = async (bundle: MapTileBundleSpec) => {
     setError(null);
+    setCompletion(null);
     setBusyId(bundle.id);
     try {
-      const result = await window.electronAPI?.mapTilesDownload?.(bundle);
+      const result = await window.electronAPI?.mapTilesDownloadBackground?.(bundle);
       if (!result?.ok) {
         setError({ id: bundle.id, text: result?.error ?? 'Map tile download is unavailable in this build.' });
+        setBusyId(null);
+      } else {
+        setCompletion({
+          id: bundle.id,
+          text: 'Download started in the background. You’ll be notified when it finishes.',
+          severity: 'success',
+        });
       }
-      await refresh();
-    } finally {
+    } catch {
       setBusyId(null);
-      setProgressMessage(null);
+      setDownloads({});
     }
   };
 
@@ -74,7 +125,9 @@ export const DesktopMapTilesSettings = () => {
         {REGIONAL_BUNDLES.map((bundle) => {
           const installed = regions.find((r) => r.id === bundle.id);
           const working = busyId === bundle.id;
+          const download = downloads[bundle.id];
           const configured = isConfiguredMapTileBundle(bundle);
+          const determinate = typeof download?.receivedBytes === 'number' && typeof download?.totalBytes === 'number' && download.totalBytes > 0;
           return (
             <Stack key={bundle.id} spacing={0.5}>
               <Stack direction="row" spacing={1} alignItems="center">
@@ -108,20 +161,39 @@ export const DesktopMapTilesSettings = () => {
               </Stack>
               {!configured && (
                 <Typography variant="caption" color="text.secondary">
-                  This bundle still needs real host, size, and checksum metadata.
+                  This bundle cannot be downloaded in the current desktop build.
                 </Typography>
               )}
-              {working && progressMessage && (
+              {working && (
                 <Box>
-                  <LinearProgress />
+                  <Stack direction="row" spacing={1} alignItems="center" sx={{ mb: 0.5 }}>
+                    {determinate ? (
+                      <LinearProgress
+                        variant="determinate"
+                        value={Math.min(100, ((download?.receivedBytes ?? 0) / (download?.totalBytes ?? 1)) * 100)}
+                        sx={{ flex: 1, height: 4, borderRadius: 1 }}
+                      />
+                    ) : (
+                      <LinearProgress variant="indeterminate" sx={{ flex: 1, height: 4, borderRadius: 1 }} />
+                    )}
+                    <CircularProgress size={16} thickness={5} />
+                  </Stack>
                   <Typography variant="caption" color="text.secondary">
-                    {progressMessage}
+                    {download?.message ?? 'Working in the background…'}
+                    {determinate
+                      ? ` ${Math.round(((download?.receivedBytes ?? 0) / (download?.totalBytes ?? 1)) * 100)}%`
+                      : ''}
                   </Typography>
                 </Box>
               )}
               {error?.id === bundle.id && (
                 <Alert severity="error" sx={{ py: 0.25 }}>
                   {error.text}
+                </Alert>
+              )}
+              {completion?.id === bundle.id && (
+                <Alert severity={completion.severity} sx={{ py: 0.25 }}>
+                  {completion.text}
                 </Alert>
               )}
             </Stack>

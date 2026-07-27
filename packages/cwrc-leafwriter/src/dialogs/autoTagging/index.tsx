@@ -61,7 +61,6 @@ import {
   type AuthorityPackStringCounts,
   type DateFilterMode,
   AUTHORITY_PACKS,
-  AUTHORITY_SOURCE_LABELS,
   authorityPackOrigin,
   expandAuthorityPackIds,
   groupAuthorityPacksByTagType,
@@ -140,6 +139,7 @@ const visibleAuthorityPackIdsForLanguage = (language: string | null): AuthorityP
               'dila-places',
               'chgis-places',
               'wikidata-persons',
+              'wikidata-places-zh-hant',
               'wikidata-orgs-zh-hant',
               'wikidata-works-zh-hant',
               'norbert-persons',
@@ -1377,7 +1377,7 @@ export const AutoTaggingDialog = ({ id, onClose, open = false }: IDialog) => {
                           entityDbFolder,
                           importedLists.length,
                         );
-                        const rowLabel = AUTHORITY_SOURCE_LABELS[opt.source];
+                        const rowLabel = opt.label;
                         const suffix = available
                           ? origin === 'file' || origin === 'pedb' || origin === 'cedb'
                             ? formatPackStringCount(authorityPackCounts, opt.id, authorityPackCountsLoading)

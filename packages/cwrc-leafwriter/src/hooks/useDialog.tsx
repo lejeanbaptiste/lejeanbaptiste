@@ -2,6 +2,7 @@ import { useModal } from 'mui-modal-provider';
 import { useEffect } from 'react';
 import {
   AutoTaggingDialog,
+  TagTransformDialog,
   DisambiguationDialog,
   EditSchemaDialog,
   EditSourceDialog,
@@ -78,6 +79,7 @@ export const useDialog = () => {
     if (type === 'popup') return Popup;
     if (type === 'xpathSearch') return XPathSearchDialog;
     if (type === 'autoTagging') return AutoTaggingDialog;
+    if (type === 'tagTransform') return TagTransformDialog;
     if (type === 'calendar') return getPluginDialog('calendar');
     if (type === 'disambiguation') return DisambiguationDialog;
   };

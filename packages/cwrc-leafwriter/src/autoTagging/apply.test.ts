@@ -54,6 +54,17 @@ const suggest = (
 };
 
 describe('applySuggestions', () => {
+  it('removes nested same-type tags before returning the validation result', async () => {
+    const doc = parse(
+      '<TEI xmlns="http://www.tei-c.org/ns/1.0"><text><body><p><persName>張<persName>行成</persName></persName></p></body></text></TEI>',
+    );
+
+    await applySuggestions(doc, [], { policy: 'ignore' });
+
+    expect(doc.getElementsByTagName('persName')).toHaveLength(1);
+    expect(doc.getElementsByTagName('persName')[0]!.textContent).toBe('張行成');
+  });
+
   it('wraps existing tagged components without replacing their structure', async () => {
     const doc = parse(`<TEI xmlns="http://www.tei-c.org/ns/1.0"><text><body><p><roleName>合州刺史</roleName><nobleTitle><placeName>鄱陽</placeName><roleName>王</roleName></nobleTitle><persName>範</persName></p></body></text></TEI>`);
     const start = doc.getElementsByTagName('roleName')[0]!.firstChild as Text;

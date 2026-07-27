@@ -15,8 +15,7 @@ type ItemType = 'button' | 'divider' | 'iconButton' | 'toggle';
 type ItemGroup = 'action' | 'ui' | 'panel' | 'general';
 
 const isDesktopApp = () =>
-  typeof window !== 'undefined' &&
-  !!(window as Window & { electronAPI?: unknown }).electronAPI;
+  typeof window !== 'undefined' && !!(window as Window & { electronAPI?: unknown }).electronAPI;
 
 const CHOICE_DISPLAY_MODE_ICON: Record<ChoiceDisplayMode, IconLeafWriter> = {
   original: 'history',
@@ -54,8 +53,13 @@ export const EditorToolbar = () => {
     useAppState().editor;
   // const { fullscreen } = useAppState().ui;
 
-  const { cycleChoiceDisplayMode, toggleShowBreaks, toggleShowNotes, toggleShowTags, toggleTextLocked } =
-    useActions().editor;
+  const {
+    cycleChoiceDisplayMode,
+    toggleShowBreaks,
+    toggleShowNotes,
+    toggleShowTags,
+    toggleTextLocked,
+  } = useActions().editor;
   const { openDialog, showContextMenu } = useActions().ui;
   const pluginToolbarItems = getPluginToolbarItems();
 
@@ -91,9 +95,7 @@ export const EditorToolbar = () => {
       icon: textLocked ? 'lock' : 'lockOpen',
       onClick: () => toggleTextLocked(),
       selected: textLocked,
-      title: textLocked
-        ? t('LW.editorToolbar.Unlock Text')
-        : t('LW.editorToolbar.Lock Text'),
+      title: textLocked ? t('LW.editorToolbar.Unlock Text') : t('LW.editorToolbar.Lock Text'),
       tooltip: textLocked
         ? t('LW.editorToolbar.Unlock Text tooltip')
         : t('LW.editorToolbar.Lock Text tooltip'),
@@ -239,7 +241,9 @@ export const EditorToolbar = () => {
       hide: isReadonly,
       icon: CHOICE_DISPLAY_MODE_ICON[choiceDisplayMode],
       onClick: () => cycleChoiceDisplayMode(),
-      title: t(`LW.editorToolbar.Correction Display: ${CHOICE_DISPLAY_MODE_LABEL[choiceDisplayMode]}`),
+      title: t(
+        `LW.editorToolbar.Correction Display: ${CHOICE_DISPLAY_MODE_LABEL[choiceDisplayMode]}`,
+      ),
       tooltip: t('LW.editorToolbar.Correction Display tooltip'),
       type: 'iconButton',
     },
@@ -250,9 +254,7 @@ export const EditorToolbar = () => {
       icon: showBreaks ? 'showBreaksOn' : 'showBreaksOff',
       onClick: () => toggleShowBreaks(),
       selected: showBreaks,
-      title: showBreaks
-        ? t('LW.editorToolbar.Hide Breaks')
-        : t('LW.editorToolbar.Show Breaks'),
+      title: showBreaks ? t('LW.editorToolbar.Hide Breaks') : t('LW.editorToolbar.Show Breaks'),
       tooltip: showBreaks
         ? t('LW.editorToolbar.Hide Breaks tooltip')
         : t('LW.editorToolbar.Show Breaks tooltip'),
@@ -312,6 +314,14 @@ export const EditorToolbar = () => {
       icon: 'TagPlus',
       onClick: () => openDialog({ type: 'autoTagging', props: { id: 'autoTagging' } }),
       title: 'Auto-tagging',
+      type: 'iconButton',
+    },
+    {
+      group: 'ui',
+      hide: isReadonly,
+      icon: 'findReplace',
+      onClick: () => openDialog({ type: 'tagTransform', props: { id: 'tagTransform' } }),
+      title: 'Advanced tag transform',
       type: 'iconButton',
     },
     {

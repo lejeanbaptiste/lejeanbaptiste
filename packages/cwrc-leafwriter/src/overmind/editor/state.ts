@@ -31,6 +31,8 @@ export type EditorStateType = {
   enableMultiFileAutomation: boolean;
   /** Guardrail: when to auto-snapshot before a multi-document automated edit. */
   multiFileSnapshotBefore: MultiFileSnapshotTrigger;
+  /** Guardrail: validate every non-current file before committing automated edits. */
+  validateMultiFileAutomation: boolean;
   fontSize: number;
   latinFont: string;
   editorMode: string;
@@ -89,6 +91,7 @@ export const state: EditorStateType = {
   enableXmlEditing: true,
   enableMultiFileAutomation: true,
   multiFileSnapshotBefore: 'multiFile',
+  validateMultiFileAutomation: true,
   editorMode: 'xmlrdf',
   editorModeLabel: derived((state: EditorStateType) => {
     const editMode = state.editorModes.find((mode) => mode.value === state.editorMode);

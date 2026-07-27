@@ -7,10 +7,18 @@ import { Toggler } from '../../components';
 const SNAPSHOT_TRIGGERS: MultiFileSnapshotTrigger[] = ['multiFile', 'corpusWide', 'none'];
 
 export const Guardrails = () => {
-  const { enableMultiFileAutomation, enableXmlEditing, multiFileSnapshotBefore } =
-    useAppState().editor;
-  const { setEnableMultiFileAutomation, setEnableXmlEditing, setMultiFileSnapshotBefore } =
-    useActions().editor;
+  const {
+    enableMultiFileAutomation,
+    enableXmlEditing,
+    multiFileSnapshotBefore,
+    validateMultiFileAutomation,
+  } = useAppState().editor;
+  const {
+    setEnableMultiFileAutomation,
+    setEnableXmlEditing,
+    setMultiFileSnapshotBefore,
+    setValidateMultiFileAutomation,
+  } = useActions().editor;
   const { t } = useTranslation();
 
   return (
@@ -48,6 +56,15 @@ export const Guardrails = () => {
             ))}
           </Select>
         </FormControl>
+      )}
+      {enableMultiFileAutomation && (
+        <Toggler
+          icon="validate"
+          onChange={setValidateMultiFileAutomation}
+          title={t('LW.settings.guardrails.validate_multi_file_automation')}
+          type="toggle"
+          value={validateMultiFileAutomation}
+        />
       )}
     </List>
   );

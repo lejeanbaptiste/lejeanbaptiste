@@ -17,6 +17,11 @@ export type Action = 'add' | 'before' | 'after' | 'around' | 'inside' | 'change'
 class Tagger {
   readonly writer: Writer;
 
+  // Note wrappers are presentation-only DOM. Validation and other editor
+  // refreshes temporarily remove and recreate them, so keep the user's
+  // expanded state on the underlying note element rather than on the wrapper.
+  private readonly expandedNoteElements = new WeakSet<Element>();
+
   // tag insertion types (actions)
   readonly ADD = 'add';
   readonly BEFORE = 'before';
@@ -1073,14 +1078,20 @@ class Tagger {
     // common for TEI type="editor" notes) isn't wrapped in a span — browsers
     // "repair" that invalid nesting and the clickable icon stand-in is lost.
     const wrapperTag = tag.nodeName.toLowerCase() === 'div' ? 'div' : 'span';
+    const expanded = this.expandedNoteElements.has(tag);
     $(tag)
       .filter(':visible') //! don't add to invisible tags
-      .wrap(`<${wrapperTag} class="noteWrapper ${type} hide" />`)
+      .wrap(`<${wrapperTag} class="noteWrapper ${type}${expanded ? '' : ' hide'}" />`)
       .parent()
       .attr('title', tag.textContent ?? '')
       .on('click', ({ target }) => {
         const $target = $(target);
-        if ($target.hasClass('noteWrapper')) $target.toggleClass('hide');
+        if ($target.hasClass('noteWrapper')) {
+          const nextExpanded = $target.hasClass('hide');
+          $target.toggleClass('hide', !nextExpanded);
+          if (nextExpanded) this.expandedNoteElements.add(tag);
+          else this.expandedNoteElements.delete(tag);
+        }
       });
   };
 
@@ -1117,6 +1128,9 @@ class Tagger {
   }
 
   removeNoteWrapper(tag: JQuery<HTMLElement>) {
+    tag.each((_i, element) => {
+      this.expandedNoteElements.delete(element);
+    });
     $(tag).unwrap('.noteWrapper');
   }
 
@@ -1126,7 +1140,16 @@ class Tagger {
     const body = this.writer.editor?.getBody();
     if (!body) return;
     // Unwrap every wrapped note tag; click handlers go away with the wrappers.
-    $('.noteWrapper > [_tag]', body).unwrap('.noteWrapper');
+    $('.noteWrapper > [_tag]', body)
+      .each((_i, element) => {
+        const wrapper = element.parentElement;
+        if (wrapper?.classList.contains('hide')) {
+          this.expandedNoteElements.delete(element);
+        } else {
+          this.expandedNoteElements.add(element);
+        }
+      })
+      .unwrap('.noteWrapper');
   }
 
   /**

@@ -36,6 +36,9 @@ import {
   refreshExtractedEntityDataForDocument,
 } from './entityExtraction';
 import { autoRomanize } from '../utilities/romanize';
+import { checkWellFormedness } from '../utilities/checkWellFormedness';
+import { applyPurge, type PurgeOptions } from './purge';
+import * as Comlink from 'comlink';
 import {
   centralEntityStoreFromDesktop,
   desktopEntityFileApi,
@@ -208,6 +211,17 @@ export interface TagBombDocumentResult {
 export interface TagBombScopeDocument {
   doc: Document;
   filePath: string;
+}
+
+export interface TagTransformOptions extends PurgeOptions {
+  scope?: TagBombScope;
+  customPath?: string;
+  validateOtherFiles?: boolean;
+}
+
+export interface TagTransformResult {
+  filesChanged: number;
+  matches: number;
 }
 
 /**
@@ -1049,7 +1063,14 @@ export class AutoTaggingSession {
 
     const folder = customPath?.trim();
     if (!folder) return { documents: [], error: 'Enter a folder path.' };
-    const documents = await this.readXmlFilesUnder(folder, activePath, current);
+    let documents = await this.readXmlFilesUnder(folder, activePath, current);
+    const normalizedFolder = folder.replace(/\\/g, '/').replace(/\/+$/, '').toLowerCase();
+    const activeInFolder =
+      activePath !== 'current' &&
+      (samePath(activePath, folder) ||
+        activePath.replace(/\\/g, '/').toLowerCase().startsWith(`${normalizedFolder}/`));
+    if (!activeInFolder)
+      documents = documents.filter((doc) => this.documentPaths.get(doc) !== activePath);
     return {
       documents: documents.map((doc) => ({
         doc,
@@ -1210,6 +1231,98 @@ export class AutoTaggingSession {
     if (globals.electronAPI?.writeFile) {
       await globals.electronAPI.writeFile(path, xml);
     }
+  }
+
+  /** Apply a text-preserving tag transform to the selected document scope. */
+  async runTagTransform(options: TagTransformOptions = {}): Promise<TagTransformResult> {
+    const scope = options.scope ?? 'currentFile';
+    const { documents, error } = await this.resolveTagBombScopeDocuments(scope, options.customPath);
+    if (error) throw new Error(error);
+    if (documents.length === 0) throw new Error('No documents matched the selected scope.');
+
+    const changed: Array<{ filePath: string; xml: string; doc: Document; matches: number }> = [];
+    let matches = 0;
+    const schemaManager = this.writer.schemaManager;
+    const transformOptions: TagTransformOptions = {
+      ...options,
+      canInsertTag: schemaManager?.isTagValidChildOfParent
+        ? (tagName, parentName) => schemaManager.isTagValidChildOfParent(tagName, parentName)
+        : options.canInsertTag,
+    };
+    for (const entry of documents) {
+      const count = applyPurge(entry.doc, transformOptions);
+      if (count === 0) continue;
+      const xml = new XMLSerializer().serializeToString(entry.doc);
+      const wellFormed = checkWellFormedness(xml);
+      if (!wellFormed.valid) throw new Error(`Transform would make ${entry.filePath} invalid XML.`);
+      changed.push({ ...entry, xml, matches: count });
+      matches += count;
+    }
+    if (changed.length === 0) return { filesChanged: 0, matches: 0 };
+
+    if (
+      options.validateOtherFiles &&
+      changed.some(({ filePath }) => !this.isActiveFile(filePath))
+    ) {
+      for (const item of changed) {
+        if (this.isActiveFile(item.filePath)) continue;
+        const valid = await this.validateXmlAgainstCurrentSchema(item.xml);
+        if (!valid)
+          throw new Error(
+            `Transform was not committed because ${item.filePath} failed validation.`,
+          );
+      }
+    }
+
+    const api = (
+      window as unknown as {
+        electronAPI?: { writeFile?: (path: string, content: string) => Promise<void> };
+      }
+    ).electronAPI;
+    for (const item of changed) {
+      if (this.isActiveFile(item.filePath)) {
+        this.writer.loadDocumentXML(item.xml);
+        this.syncUnsavedStateAfterReload(item.xml);
+      } else if (api?.writeFile) {
+        await api.writeFile(item.filePath, item.xml);
+        await (
+          window as unknown as {
+            __leafWriterProject?: { reloadFileFromDisk?: (path: string) => Promise<void> };
+          }
+        ).__leafWriterProject?.reloadFileFromDisk?.(item.filePath);
+      } else {
+        throw new Error('File access is not available.');
+      }
+    }
+    return { filesChanged: changed.length, matches };
+  }
+
+  private isActiveFile(filePath: string): boolean {
+    const active =
+      this.writer.overmindState?.editor?.resource?.filePath ??
+      this.writer.overmindState?.document?.url;
+    return !active || filePath === 'current' || samePath(active, filePath);
+  }
+
+  private async validateXmlAgainstCurrentSchema(xml: string): Promise<boolean> {
+    if (!checkWellFormedness(xml).valid) return false;
+    const validator = (
+      window as unknown as {
+        leafwriterValidator?: { validate: (value: string, callback: unknown) => Promise<void> };
+      }
+    ).leafwriterValidator;
+    if (!validator) return false;
+    return new Promise<boolean>((resolve) => {
+      void validator
+        .validate(
+          xml,
+          Comlink.proxy((result: { valid?: boolean; state?: { valueOf: () => number } }) => {
+            if (result.state && result.state.valueOf() <= 2) return;
+            resolve(result.valid === true);
+          }),
+        )
+        .catch(() => resolve(false));
+    });
   }
 
   private logResolution(

@@ -86,6 +86,31 @@ export function collectTaggedSpans(
   return spans.sort((a, b) => a.start - b.start);
 }
 
+/**
+ * Unwrap same-type tags nested inside another same-type tag.
+ *
+ * Auto-tagging normally filters duplicate additions, but documents can still
+ * arrive with nested markup (or acquire it through a producer that does not
+ * use the normal add path). Same-type nesting is never useful to the editor:
+ * remove the inner wrapper while preserving all of its children.
+ */
+export function removeNestedSameTagElements(doc: Document): number {
+  let removed = 0;
+  const elements = Array.from(doc.querySelectorAll('*'));
+
+  for (const element of elements) {
+    const tag = elementLocalTag(element);
+    for (let ancestor = element.parentElement; ancestor; ancestor = ancestor.parentElement) {
+      if (elementLocalTag(ancestor) !== tag) continue;
+      element.replaceWith(...Array.from(element.childNodes));
+      removed++;
+      break;
+    }
+  }
+
+  return removed;
+}
+
 function docSpanAt(
   text: string,
   surface: string,

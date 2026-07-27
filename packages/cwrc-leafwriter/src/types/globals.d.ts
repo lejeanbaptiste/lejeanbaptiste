@@ -105,16 +105,45 @@ declare global {
       regions: { id: string; sha256: string; installedAt: string }[];
     }>;
     mapTilesPromptDownload?: () => Promise<'accepted' | 'declined'>;
+    mapTilesDownloadBackground?: (
+      bundle: {
+        id: string;
+        source?: string;
+        url: string;
+        bbox?: [number, number, number, number];
+        fileName: string;
+        bytes?: number;
+        sha256?: string;
+      },
+    ) => Promise<{ ok: boolean; queued?: boolean; error?: string }>;
     mapTilesDownload?: (bundle: {
       id: string;
+      source?: string;
       url: string;
+      bbox?: [number, number, number, number];
       fileName: string;
-      bytes: number;
-      sha256: string;
+      bytes?: number;
+      sha256?: string;
     }) => Promise<{ ok: boolean; path?: string; error?: string }>;
     mapTilesRemove?: (bundleId: string) => Promise<{ ok: boolean; error?: string }>;
+    mapTilesDownloadStatus?: () => Promise<{
+      active: {
+        bundleId: string;
+        message: string;
+        receivedBytes?: number;
+        totalBytes?: number | null;
+      }[];
+    }>;
     onMapTilesProgress?: (
-      callback: (progress: { message: string; receivedBytes?: number; totalBytes?: number | null }) => void,
+      callback: (progress: {
+        bundleId: string;
+        message: string;
+        receivedBytes?: number;
+        totalBytes?: number | null;
+      }) => void,
+    ) => () => void;
+    onMapTilesDownloadComplete?: (
+      callback: (result: { bundleId: string; installed: boolean; path?: string; error?: string }) => void,
     ) => () => void;
     authorityPackStatuses?: () => Promise<
       import('../autoTagging/packPaths').AuthorityPackStatus[]
