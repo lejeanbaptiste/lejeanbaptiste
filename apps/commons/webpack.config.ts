@@ -83,6 +83,16 @@ const plugins = [
         from: require.resolve('maplibre-gl/dist/maplibre-gl-shared.mjs') + '.map',
         noErrorOnMissing: true,
       },
+      {
+        // Pre-rendered SDF glyph PBFs for the place-comparison map's labeled
+        // basemap (city/province/place names, not just geometry) — see
+        // scripts/download-glyphs.mjs (run via predev/prebuild) and
+        // PlaceComparisonMap.tsx's vectorStyle `glyphs` URL, which points at
+        // `/fonts/{fontstack}/{range}.pbf` to match this `to`.
+        from: path.resolve(__dirname, 'resources', 'fonts'),
+        to: 'fonts',
+        noErrorOnMissing: true,
+      },
     ],
   }),
   new HtmlWebpackPlugin({
