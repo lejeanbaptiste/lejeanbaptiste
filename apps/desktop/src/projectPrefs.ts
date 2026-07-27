@@ -118,6 +118,11 @@ const DEFAULT_ENTITY_DB_DIRNAME = 'entity-database';
 const getDefaultEntityDbFolder = () =>
   path.join(app.getPath('userData'), DEFAULT_ENTITY_DB_DIRNAME);
 
+// Windows briefly removes the live prefs file while swapping `.tmp` into
+// place. Readers must not recover that `.tmp` during the swap, or the writer
+// will fail when it tries to rename a temp file that another reader stole.
+let prefsWriteInProgress = false;
+
 const defaultAppPrefs = (): AppPrefs => ({
   lastProjectFile: null,
   encoderName: '',
@@ -167,7 +172,7 @@ export const parseAppPrefs = (
 const readAppPrefs = async (): Promise<AppPrefs> => {
   const prefsPath = getPrefsPath();
   try {
-    await recoverFromFailedAtomicWrite(prefsPath);
+    if (!prefsWriteInProgress) await recoverFromFailedAtomicWrite(prefsPath);
     const raw = await fs.readFile(prefsPath, 'utf-8');
     const parsed = JSON.parse(raw) as Partial<AppPrefs> & { lastRootPath?: string | null };
     return parseAppPrefs(parsed);
@@ -175,7 +180,7 @@ const readAppPrefs = async (): Promise<AppPrefs> => {
     if ((error as NodeJS.ErrnoException).code === 'ENOENT') {
       // One more recovery pass: a concurrent Windows atomic write may have
       // just left `.bak`/`.tmp` behind with the real prefs.
-      if (await recoverFromFailedAtomicWrite(prefsPath)) {
+      if (!prefsWriteInProgress && (await recoverFromFailedAtomicWrite(prefsPath))) {
         try {
           const raw = await fs.readFile(prefsPath, 'utf-8');
           const parsed = JSON.parse(raw) as Partial<AppPrefs> & { lastRootPath?: string | null };
@@ -200,10 +205,17 @@ const writeAppPrefs = async (prefs: AppPrefs) => {
 let prefsWriteChain: Promise<void> = Promise.resolve();
 
 const mutateAppPrefs = async (mutator: (prefs: AppPrefs) => void): Promise<void> => {
-  prefsWriteChain = prefsWriteChain.then(async () => {
+  // A failed write must not leave every later preference save rejected by the
+  // same promise chain. The next save gets a chance to recover `.tmp`/`.bak`.
+  prefsWriteChain = prefsWriteChain.catch(() => undefined).then(async () => {
     const prefs = await readAppPrefs();
     mutator(prefs);
-    await writeAppPrefs(prefs);
+    prefsWriteInProgress = true;
+    try {
+      await writeAppPrefs(prefs);
+    } finally {
+      prefsWriteInProgress = false;
+    }
   });
   await prefsWriteChain;
 };
