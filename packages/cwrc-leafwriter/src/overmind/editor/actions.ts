@@ -642,7 +642,7 @@ export const clear = ({ state }: Context) => {
   state.editor.showEntities = true;
   state.editor.showEntities = true;
   state.editor.showTags = false;
-  state.editor.showNotes = false;
+  state.editor.showNotes = true;
   state.editor.showBreaks = true;
   state.editor.validateXmlOnReplace = true;
 };

@@ -26,7 +26,7 @@ export interface PackRow {
 
 const MAX_RESULTS = 10;
 
-type PackSource = 'cbdb' | 'dila' | 'ndl' | 'norbert';
+type PackSource = 'cbdb' | 'dila' | 'chgis' | 'ndl' | 'norbert';
 
 const SERVICES: {
   source: PackSource;
@@ -87,6 +87,10 @@ export function packResultUri(source: PackSource, entityType: NamedEntityType, i
       return entityType === 'place'
         ? `https://authority.dila.edu.tw/place/search.php?code=${id}`
         : `https://authority.dila.edu.tw/person/search.php?code=${id}`;
+    // CHGIS has no per-record public lookup page (unlike CBDB/DILA) — a
+    // stable synthetic urn, like norbert's, is enough for id/de-dup purposes.
+    case 'chgis':
+      return `urn:ljb:authority:chgis:${entityType}:${id}`;
     case 'ndl':
       // Assumes name authorities (ndlna); refine if a pack ships ndlsh ids.
       return `https://id.ndl.go.jp/auth/ndlna/${id}`;

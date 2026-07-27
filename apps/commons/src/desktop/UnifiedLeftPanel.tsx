@@ -150,6 +150,10 @@ export const UnifiedLeftPanel = () => {
 
   useEffect(() => {
     if (activeTab !== 'find') return;
+    // Find & Replace needs to see matches that may live inside folded notes.
+    if (window.writer?.overmindState?.editor?.showNotes === false) {
+      window.writer.overmindActions?.editor?.toggleShowNotes?.(true);
+    }
     window.dispatchEvent(new CustomEvent(DESKTOP_FIND_FOCUS_EVENT));
   }, [activeTab]);
 

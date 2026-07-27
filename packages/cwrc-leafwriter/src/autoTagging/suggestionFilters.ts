@@ -1,4 +1,5 @@
 import { buildDocIndex, type DocIndex } from './anchor';
+import { isEntityTagForbiddenInDate } from './dateTeiHelpers';
 import type { Suggestion, WhitespacePolicy } from './types';
 
 /** TEI tags that represent the same entity kind for skip/filter purposes. */
@@ -7,6 +8,15 @@ export const ENTITY_TAG_EQUIVALENTS: ReadonlyMap<string, readonly string[]> = ne
   ['geogName', ['placeName', 'geogName']],
   ['orgName', ['orgName', 'org']],
   ['org', ['orgName', 'org']],
+]);
+
+/**
+ * Nestings TEI's RelaxNG grammar structurally permits (phrase-level tags are
+ * broadly cross-nestable via `model.phrase`) but that are never editorially
+ * valid for this project. Enforced regardless of what the live schema allows.
+ */
+export const FORBIDDEN_ENTITY_NESTING: ReadonlyMap<string, readonly string[]> = new Map([
+  ['title', ['roleName', 'placeName', 'persName']],
 ]);
 
 export function elementLocalTag(el: Element): string {
@@ -23,13 +33,70 @@ export function entityTagsEquivalent(a: string, b: string): boolean {
   return group != null && group.includes(b);
 }
 
-/** True when `node` sits inside an entity wrapper equivalent to `tag`. */
-export function isWrappedByEntityTag(node: Node, tag: string): boolean {
-  const names = new Set(entityTagNamesFor(tag));
+function isForbiddenNesting(ancestorTag: string, childTag: string): boolean {
+  return FORBIDDEN_ENTITY_NESTING.get(childTag)?.includes(ancestorTag) ?? false;
+}
+
+/**
+ * True when inserting an element tagged any of `tags` at `node` would nest
+ * inside an ancestor of the same (or equivalent) entity kind, or violate a
+ * {@link FORBIDDEN_ENTITY_NESTING} rule against an ancestor.
+ */
+export function isNestingBlocked(node: Node, tags: Iterable<string>): boolean {
+  const tagList = [...tags];
   for (let el = node.parentElement; el; el = el.parentElement) {
-    if (names.has(elementLocalTag(el))) return true;
+    const ancestorTag = elementLocalTag(el);
+    for (const tag of tagList) {
+      if (entityTagsEquivalent(ancestorTag, tag)) return true;
+      if (isForbiddenNesting(ancestorTag, tag)) return true;
+    }
   }
   return false;
+}
+
+/** True when `node` sits inside an entity wrapper equivalent to `tag`, or
+ * inside an ancestor that forbids nesting `tag` beneath it. */
+export function isWrappedByEntityTag(node: Node, tag: string): boolean {
+  return isNestingBlocked(node, [tag]);
+}
+
+/** Local tag names of `element` itself plus every ancestor, outward. */
+export function ancestorTagsOf(element: Element): string[] {
+  const tags: string[] = [elementLocalTag(element)];
+  for (let el = element.parentElement; el; el = el.parentElement) tags.push(elementLocalTag(el));
+  return tags;
+}
+
+/**
+ * Recursively unwrap descendants of `root` that would violate containment
+ * once `root` is spliced in at a position whose tag chain is `ancestorTags`
+ * (host element outward). Applies three checks, all defense against a
+ * producer (compound-wrapper builders, sanmiao date resolution) generating
+ * XML that a naive splice would insert unchecked:
+ *  - same/equivalent-tag self-nesting (schema allows it, editors never want it)
+ *  - {@link FORBIDDEN_ENTITY_NESTING} pairs
+ *  - entity tags forbidden anywhere inside a `<date>` (when `insideDate`, or
+ *    once a descendant `<date>` is entered)
+ * Unwrapping preserves the offending element's own children/text in place.
+ */
+export function sanitizeGeneratedFragment(
+  root: Element,
+  ancestorTags: readonly string[],
+  insideDate = false,
+): void {
+  for (const child of Array.from(root.children)) {
+    const tag = elementLocalTag(child);
+    const blocked =
+      ancestorTags.some((a) => entityTagsEquivalent(a, tag) || isForbiddenNesting(a, tag)) ||
+      (insideDate && isEntityTagForbiddenInDate(tag));
+    if (blocked) {
+      child.replaceWith(...Array.from(child.childNodes));
+      // Structure changed under `root` — re-scan its current children.
+      sanitizeGeneratedFragment(root, ancestorTags, insideDate);
+      return;
+    }
+    sanitizeGeneratedFragment(child, [...ancestorTags, tag], insideDate || tag === 'date');
+  }
 }
 
 export interface TaggedSpan {

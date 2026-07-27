@@ -405,6 +405,8 @@ export const startDisambiguationReview = (
   options?: { aiCuration?: boolean },
 ) => {
   if (state.ui.autoTaggingReview.active) actions.ui.exitAutoTaggingReview();
+  // Disambiguation needs to see mentions that may live inside folded notes.
+  if (!state.editor.showNotes) actions.editor.toggleShowNotes(true);
   state.ui.disambiguationReview.active = true;
   state.ui.disambiguationReview.aiCuration = options?.aiCuration ?? true;
   window.dispatchEvent(

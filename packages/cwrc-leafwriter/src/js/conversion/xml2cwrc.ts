@@ -612,7 +612,7 @@ class XML2CWRC {
         this.writer.tagger.addNoteWrappersForEntities();
         // Wrappers start with .hide; re-apply the toolbar preference so a
         // session that left notes expanded stays expanded after reload.
-        const showNotes = this.writer.overmindState?.editor?.showNotes ?? false;
+        const showNotes = this.writer.overmindState?.editor?.showNotes ?? true;
         this.writer.overmindActions?.editor?.toggleShowNotes?.(showNotes);
 
         if (this.writer.entitiesManager.doEntitiesOverlap()) {

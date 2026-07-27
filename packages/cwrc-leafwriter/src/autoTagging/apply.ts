@@ -1,7 +1,12 @@
 import { resolveAnchor, resolveXPath } from './anchor';
 import { isEntityTagForbiddenInDate, isInsideDateElement } from './dateTeiHelpers';
 import { validatePersonWrappers, type PersonWrapperValidation } from './personWrapperValidation';
-import { isWrappedByEntityTag, removeNestedSameTagElements } from './suggestionFilters';
+import {
+  ancestorTagsOf,
+  isWrappedByEntityTag,
+  removeNestedSameTagElements,
+  sanitizeGeneratedFragment,
+} from './suggestionFilters';
 import type { Suggestion, SuggestionAction, WhitespacePolicy } from './types';
 
 export type ApplyOutcome =
@@ -220,6 +225,71 @@ export async function applySuggestions(
   };
 }
 
+export interface StaleCheckResult {
+  stale: boolean;
+  reason?: string;
+}
+
+/**
+ * Non-mutating check of whether a still-pending `add`/`add-compound`
+ * suggestion would still apply against the current document — i.e. it
+ * hasn't been tagged by the user in the meantime, and wouldn't now violate
+ * the schema or a tagging rule (e.g. its span ended up inside a `<date>`).
+ * Other actions (retag/remove/resolve-date/redraw-boundary) aren't re-checked
+ * here: they target existing markup and are cheap to just retry at apply time.
+ */
+export function checkSuggestionStillApplicable(
+  doc: Document,
+  suggestion: Suggestion,
+  options: ApplyOptions,
+): StaleCheckResult {
+  if (suggestion.action === 'add-compound') {
+    const resolved = resolveCompoundAdd(doc, suggestion, options);
+    return resolved.ok ? { stale: false } : { stale: true, reason: resolved.reason };
+  }
+  if (suggestion.action !== 'add') return { stale: false };
+
+  const resolved = resolveAnchor(doc, suggestion.anchor, options.policy);
+  if (!resolved) return { stale: true, reason: 'anchor no longer resolves in the document' };
+  const parent = resolved.node.parentElement;
+  if (!parent) return { stale: true, reason: 'anchor has no parent element' };
+  if (isWrappedByEntityTag(resolved.node, suggestion.tag)) {
+    return { stale: true, reason: `already tagged as <${suggestion.tag}>` };
+  }
+  if (blockedBySchema(schemaTagName(parent), suggestion.tag, options)) {
+    return { stale: true, reason: `schema no longer allows <${suggestion.tag}> here` };
+  }
+  if (blockedByUserRule(parent, suggestion.tag, options)) {
+    return { stale: true, reason: `blocked by a user tagging rule for <${suggestion.tag}>` };
+  }
+  if (isEntityTagForbiddenInDate(suggestion.tag) && isInsideDateElement(resolved.node)) {
+    return { stale: true, reason: 'now inside a <date> element' };
+  }
+  return { stale: false };
+}
+
+/**
+ * Re-check every still-pending suggestion against the live document (the
+ * review panel's Refresh button): suggestions that were tagged by the user
+ * in the meantime, or would now be schema/rule-blocked, are marked
+ * unresolvable rather than removed, so counts stay honest.
+ */
+export function revalidatePendingSuggestions(
+  doc: Document,
+  suggestions: Suggestion[],
+  options: ApplyOptions,
+): { staleCount: number } {
+  let staleCount = 0;
+  for (const suggestion of suggestions) {
+    if (suggestion.status !== 'pending') continue;
+    if (checkSuggestionStillApplicable(doc, suggestion, options).stale) {
+      suggestion.status = 'unresolvable';
+      staleCount++;
+    }
+  }
+  return { staleCount };
+}
+
 function applyOne(doc: Document, suggestion: Suggestion, options: ApplyOptions): ApplyResult {
   switch (suggestion.action) {
     case 'add':
@@ -239,42 +309,80 @@ function applyOne(doc: Document, suggestion: Suggestion, options: ApplyOptions):
   }
 }
 
-/** Wrap a contiguous run of already-tagged sibling components in a person wrapper. */
-function applyCompoundAdd(doc: Document, suggestion: Suggestion, options: ApplyOptions): ApplyResult {
+export type CompoundAddResolution =
+  | { ok: true; parent: Element; first: Element; last: Element }
+  | { ok: false; outcome: ApplyOutcome; reason: string };
+
+/**
+ * Resolve (without mutating) the contiguous run of already-tagged sibling
+ * components a person-wrapper `add-compound` suggestion would wrap. Shared
+ * by {@link applyCompoundAdd} and the diagnostics/refresh paths so the
+ * explanation of a failure is the actual reason it failed, not a guess.
+ */
+export function resolveCompoundAdd(
+  doc: Document,
+  suggestion: Suggestion,
+  options: ApplyOptions,
+): CompoundAddResolution {
   if (!suggestion.anchor.endXpath || suggestion.anchor.endOffset === undefined) {
-    return { suggestion, outcome: 'unresolvable' };
+    return { ok: false, outcome: 'unresolvable', reason: 'anchor is missing its end boundary' };
   }
   const startNode = resolveXPath(doc, suggestion.anchor.xpath);
   const endNode = resolveXPath(doc, suggestion.anchor.endXpath);
-  if (!startNode || !endNode) return { suggestion, outcome: 'unresolvable' };
-  const start = { node: startNode, start: suggestion.anchor.offset, end: suggestion.anchor.offset };
+  if (!startNode || !endNode) {
+    return { ok: false, outcome: 'unresolvable', reason: 'xpath no longer resolves for the wrapper span' };
+  }
+  const start = { node: startNode, start: suggestion.anchor.offset };
   const endOffset = suggestion.anchor.endOffset;
-  if (endOffset < 0 || endOffset > endNode.data.length) return { suggestion, outcome: 'unresolvable' };
+  if (endOffset < 0 || endOffset > endNode.data.length) {
+    return { ok: false, outcome: 'unresolvable', reason: 'end offset is no longer within its node' };
+  }
 
   const commonParent = nearestCommonElement(start.node, endNode);
   const first = directChildContaining(start.node, commonParent);
   const last = directChildContaining(endNode, commonParent);
   if (!commonParent || !first || !last || first === last || first.parentNode !== last.parentNode) {
-    return { suggestion, outcome: 'unresolvable' };
+    return {
+      ok: false,
+      outcome: 'unresolvable',
+      reason: 'the wrapper components are no longer adjacent siblings',
+    };
   }
   const parent = first.parentElement;
-  if (!parent) return { suggestion, outcome: 'unresolvable' };
+  if (!parent) {
+    return { ok: false, outcome: 'unresolvable', reason: 'wrapper components have no parent element' };
+  }
   if (blockedBySchema(schemaTagName(parent), suggestion.tag, options)) {
-    return { suggestion, outcome: 'schema-blocked' };
+    return { ok: false, outcome: 'schema-blocked', reason: `schema does not allow <${suggestion.tag}> here` };
   }
   if (blockedByUserRule(parent, suggestion.tag, options)) {
-    return { suggestion, outcome: 'rule-blocked' };
+    return { ok: false, outcome: 'rule-blocked', reason: `blocked by a user tagging rule for <${suggestion.tag}>` };
   }
   if (isInsideDateElement(start.node) || isInsideDateElement(endNode)) {
-    return { suggestion, outcome: 'rule-blocked' };
+    return { ok: false, outcome: 'rule-blocked', reason: 'wrapper span is now inside a <date> element' };
   }
-  if (findAncestorTag(start.node, suggestion.tag)) return { suggestion, outcome: 'already-tagged' };
+  if (findAncestorTag(start.node, suggestion.tag)) {
+    return { ok: false, outcome: 'already-tagged', reason: `already inside a <${suggestion.tag}> element` };
+  }
 
   const firstText = firstTextDescendant(first);
   const lastText = lastTextDescendant(last);
   if (firstText !== start.node || start.start !== 0 || lastText !== endNode || endOffset !== endNode.data.length) {
-    return { suggestion, outcome: 'unresolvable' };
+    return {
+      ok: false,
+      outcome: 'unresolvable',
+      reason: 'the wrapper span no longer exactly bounds its tagged components',
+    };
   }
+
+  return { ok: true, parent, first, last };
+}
+
+/** Wrap a contiguous run of already-tagged sibling components in a person wrapper. */
+function applyCompoundAdd(doc: Document, suggestion: Suggestion, options: ApplyOptions): ApplyResult {
+  const resolved = resolveCompoundAdd(doc, suggestion, options);
+  if (!resolved.ok) return { suggestion, outcome: resolved.outcome };
+  const { parent, first, last } = resolved;
 
   const element = doc.createElementNS(doc.documentElement?.namespaceURI ?? null, suggestion.tag);
   for (const [name, value] of Object.entries(suggestion.attributes ?? {})) element.setAttribute(name, value);
@@ -354,10 +462,15 @@ function applyAdd(doc: Document, suggestion: Suggestion, options: ApplyOptions):
 
   const element = wrapRange(doc, resolved.node, resolved.start, resolved.end, suggestion);
   if (suggestion.innerXml) {
-    replaceInnerStructure(doc, element, suggestion.innerXml);
+    replaceInnerStructure(doc, element, suggestion.innerXml, ancestorTagsOf(element));
   }
   if (suggestion.dateResolution?.parseXml) {
-    replaceDateInnerStructure(doc, element, suggestion.dateResolution.parseXml);
+    replaceDateInnerStructure(
+      doc,
+      element,
+      suggestion.dateResolution.parseXml,
+      ancestorTagsOf(element),
+    );
   }
   return { suggestion, outcome: 'applied', element };
 }
@@ -381,7 +494,12 @@ function applyResolveDate(
   }
 
   if (suggestion.dateResolution?.parseXml) {
-    replaceDateInnerStructure(doc, dateEl, suggestion.dateResolution.parseXml);
+    replaceDateInnerStructure(
+      doc,
+      dateEl,
+      suggestion.dateResolution.parseXml,
+      ancestorTagsOf(dateEl),
+    );
   }
 
   return { suggestion, outcome: 'applied', element: dateEl };
@@ -552,13 +670,25 @@ function wrapRange(
   return element;
 }
 
-/** Replace bare text inside `<date>` with sanmiao parse children (era, year, …). */
-function replaceDateInnerStructure(doc: Document, element: Element, innerXml: string): void {
+/**
+ * Replace bare text inside `<date>` with sanmiao parse children (era, year,
+ * …). Sanitized against `ancestorTags` before insertion: sanmiao's own output
+ * is an external producer and is not otherwise checked against our schema, so
+ * this is the only guard against e.g. a `<persName>` it emits ending up
+ * inside `<ruler>` (whose content model is text/model.global only).
+ */
+function replaceDateInnerStructure(
+  doc: Document,
+  element: Element,
+  innerXml: string,
+  ancestorTags: readonly string[],
+): void {
   const teiNs = doc.documentElement?.namespaceURI ?? 'http://www.tei-c.org/ns/1.0';
   const wrapped = `<wrapper xmlns="${teiNs}">${innerXml}</wrapper>`;
   const parsed = new DOMParser().parseFromString(wrapped, 'application/xml');
   const wrapper = parsed.documentElement;
   if (!wrapper || parsed.getElementsByTagName('parsererror').length > 0) return;
+  sanitizeGeneratedFragment(wrapper, ancestorTags, true);
 
   while (element.firstChild) {
     element.removeChild(element.firstChild);
@@ -568,13 +698,24 @@ function replaceDateInnerStructure(doc: Document, element: Element, innerXml: st
   }
 }
 
-/** Replace the text child of a compound suggestion with validated TEI XML. */
-function replaceInnerStructure(doc: Document, element: Element, innerXml: string): void {
+/**
+ * Replace the text child of a compound suggestion (nobleTitle / personWrapper)
+ * with its generated TEI structure, sanitized against `ancestorTags` first —
+ * e.g. a nobleTitle's `<roleName>` component must not land inside a
+ * pre-existing `<roleName>` ancestor at the insertion point.
+ */
+function replaceInnerStructure(
+  doc: Document,
+  element: Element,
+  innerXml: string,
+  ancestorTags: readonly string[],
+): void {
   const teiNs = doc.documentElement?.namespaceURI ?? 'http://www.tei-c.org/ns/1.0';
   const wrapped = `<wrapper xmlns="${teiNs}">${innerXml}</wrapper>`;
   const parsed = new DOMParser().parseFromString(wrapped, 'application/xml');
   const wrapper = parsed.documentElement;
   if (!wrapper || parsed.getElementsByTagName('parsererror').length > 0) return;
+  sanitizeGeneratedFragment(wrapper, ancestorTags, ancestorTags.includes('date'));
 
   while (element.firstChild) element.removeChild(element.firstChild);
   for (const child of Array.from(wrapper.childNodes)) {

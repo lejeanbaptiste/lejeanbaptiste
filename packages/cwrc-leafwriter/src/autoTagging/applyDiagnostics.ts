@@ -1,5 +1,5 @@
 import { buildDocIndex, resolveAnchor, resolveXPath } from './anchor';
-import type { ApplyOptions, ApplyResult, BatchResult } from './apply';
+import { resolveCompoundAdd, type ApplyOptions, type ApplyResult, type BatchResult } from './apply';
 import { buildSearchText, hashText } from './normalize';
 import type { Anchor, Suggestion, WhitespacePolicy } from './types';
 
@@ -89,6 +89,23 @@ export function explainAnchorFailure(
   );
 }
 
+/**
+ * Human-readable explanation for a failed `add-compound` (person-wrapper)
+ * suggestion. Unlike an ordinary anchor, its `surface` spans several text
+ * nodes, so it can never be found inside any single node's search text —
+ * routing it through {@link explainAnchorFailure} produces a nonsense
+ * "surface not at stored offset" message. Use the same resolver the apply
+ * step itself uses instead.
+ */
+function explainCompoundAddFailure(
+  doc: Document,
+  suggestion: Suggestion,
+  options: ApplyOptions,
+): string {
+  const resolved = resolveCompoundAdd(doc, suggestion, options);
+  return resolved.ok ? '' : resolved.reason;
+}
+
 function explainResolveDateFailure(
   doc: Document,
   suggestion: Suggestion,
@@ -139,6 +156,9 @@ function explainFailure(
     case 'unresolvable':
       if (suggestion.action === 'resolve-date') {
         return explainResolveDateFailure(doc, suggestion, options.policy);
+      }
+      if (suggestion.action === 'add-compound') {
+        return explainCompoundAddFailure(doc, suggestion, options);
       }
       return explainAnchorFailure(doc, suggestion.anchor, options.policy);
     default:

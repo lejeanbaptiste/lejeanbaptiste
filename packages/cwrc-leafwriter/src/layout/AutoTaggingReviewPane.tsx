@@ -52,6 +52,7 @@ export const AutoTaggingReviewPane = () => {
   const [applied, setApplied] = useState(0);
   const [canRevert, setCanRevert] = useState(false);
   const [busy, setBusy] = useState(false);
+  const [refreshing, setRefreshing] = useState(false);
   const [busyLabel, setBusyLabel] = useState<AutoTaggingBusyLabel>('Applying tags…');
   const [progress, setProgress] = useState({ done: 0, total: 0 });
   const [notice, setNotice] = useState<string | null>(null);
@@ -290,6 +291,31 @@ export const AutoTaggingReviewPane = () => {
     [busy, exitAutoTaggingReview, getSession, suggestions],
   );
 
+  const handleRefresh = useCallback(() => {
+    if (busy || refreshing) return;
+    void (async () => {
+      setRefreshing(true);
+      try {
+        const readPack = cachedPackReader();
+        if (!readPack) return;
+        const result = await getSession().refreshReviewBatch(suggestions, readPack);
+        setSuggestions(result.suggestions);
+        const parts: string[] = [];
+        if (result.staleCount > 0) {
+          parts.push(`${result.staleCount} suggestion${result.staleCount === 1 ? '' : 's'} no longer applied and ${result.staleCount === 1 ? 'was' : 'were'} removed`);
+        }
+        if (result.wrapperMatchCount > 0) {
+          parts.push(`${result.wrapperMatchCount} person-wrapper/noble-title candidate${result.wrapperMatchCount === 1 ? '' : 's'} found`);
+        }
+        if (parts.length > 0) setNotice(parts.join('; ') + '.');
+      } catch (error) {
+        console.warn('[auto-tagging] refresh failed:', error);
+      } finally {
+        setRefreshing(false);
+      }
+    })();
+  }, [busy, refreshing, getSession, suggestions]);
+
   const handleRevert = useCallback(() => {
     if (busy) return;
     void (async () => {
@@ -452,6 +478,8 @@ export const AutoTaggingReviewPane = () => {
                 onDecision={handleDecision}
                 onClose={handleClose}
                 aiValidationEnabled={aiValidationEnabled}
+                onRefresh={handleRefresh}
+                refreshing={refreshing}
               />
             );
           })()}

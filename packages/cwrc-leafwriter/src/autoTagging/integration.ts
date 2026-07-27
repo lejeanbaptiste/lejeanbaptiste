@@ -4,6 +4,8 @@ import {
   applySuggestions,
   assignEntity,
   markUnresolved as markMentionUnresolved,
+  revalidatePendingSuggestions,
+  type ApplyOptions,
   type BatchResult,
   type UserRule,
 } from './apply';
@@ -55,7 +57,7 @@ import {
 } from './authoritySettings';
 import { crawlDocuments } from './crawl';
 import { dictionaryTag, type DictionaryEntry } from './dictionary';
-import { compoundWrapperSuggestions, suggestionsFromSeedMatches } from './seed';
+import { compoundWrapperSuggestions, seedSuggestions, suggestionsFromSeedMatches } from './seed';
 import { DisambiguationAiCache } from './disambiguationAiCache';
 import type { AiPromptProfile } from './aiPromptProfiles';
 import type { LlmClient } from './llmClient';
@@ -641,13 +643,13 @@ export class AutoTaggingSession {
       const candidates: AuthorityCandidate[] = [];
       const wrapperContent = await readPackFile('norbert-person-wrappers');
       for (const candidate of iterateAuthorityNdjson(wrapperContent)) {
-        if (candidate.metadata?.wrapper) candidates.push(candidate);
+        if (candidate.metadata?.wrapper || candidate.metadata?.nobleTitle) candidates.push(candidate);
       }
       try {
         const wikiContent = await readPackFile('norbert-wiki-nt');
         for (const candidate of iterateAuthorityNdjson(wikiContent)) {
           for (const expanded of expandNorbertWikiNtCandidate(candidate)) {
-            if (expanded.metadata?.wrapper) candidates.push(expanded);
+            if (expanded.metadata?.wrapper || expanded.metadata?.nobleTitle) candidates.push(expanded);
           }
         }
       } catch {
@@ -657,13 +659,66 @@ export class AutoTaggingSession {
       return candidates;
     })();
     const candidates = await this.personWrapperCandidatesPromise;
-    const matches = compoundWrapperSuggestions(doc, candidates, this.policy);
+
+    // Compound wrappers need their components already tagged as separate
+    // adjacent elements; standalone noble titles (no full wrapper recipe)
+    // are ordinary single-node 'add' suggestions and go through the normal
+    // seed matcher instead.
+    const wrapperMatches = compoundWrapperSuggestions(doc, candidates, this.policy);
+    const nobleTitleOnly = candidates.filter(
+      (c) => !c.metadata?.wrapper && c.metadata?.nobleTitle,
+    );
+    const nobleTitleMatches =
+      nobleTitleOnly.length > 0 ? seedSuggestions(doc, nobleTitleOnly, this.policy) : [];
+    const matches = [...wrapperMatches, ...nobleTitleMatches];
+
     const suggestions = prepareSuggestionsForReview(
       doc,
       this.policy,
       suggestionsFromSeedMatches(matches),
     ).suggestions;
     return { suggestions, matchCount: matches.length };
+  }
+
+  /**
+   * Refresh a review batch in place: re-check every still-pending suggestion
+   * against the live document (dropping ones the user already tagged by hand,
+   * or that would now violate the schema — e.g. landed inside a `<date>`),
+   * and pull in any freshly available person-wrapper / noble-title candidates
+   * now that more components are tagged.
+   */
+  async refreshReviewBatch(
+    suggestions: Suggestion[],
+    readPackFile: (packId: AuthorityPackId) => Promise<string>,
+    userRules: UserRule[] = [],
+  ): Promise<{ suggestions: Suggestion[]; staleCount: number; wrapperMatchCount: number }> {
+    const doc = await this.getDocument();
+    const { staleCount } = revalidatePendingSuggestions(doc, suggestions, this.buildApplyOptions(userRules));
+    const wrapperBatch = await this.runPersonWrapperConcatenation(readPackFile);
+    const merged = prepareSuggestionsForReview(
+      doc,
+      this.policy,
+      [...suggestions, ...wrapperBatch.suggestions],
+    ).suggestions;
+    return { suggestions: merged, staleCount, wrapperMatchCount: wrapperBatch.matchCount };
+  }
+
+  private buildApplyOptions(
+    userRules: UserRule[] = [],
+    onProgress?: ApplyProgressCallback,
+  ): ApplyOptions {
+    const schemaManager = this.writer.schemaManager;
+    return {
+      policy: this.policy,
+      ...(schemaManager
+        ? {
+            canContain: (parent: string, child: string) =>
+              canContainForAutoTagging(schemaManager, parent, child),
+          }
+        : {}),
+      userRules,
+      onProgress,
+    };
   }
 
   /**
@@ -1522,18 +1577,7 @@ export class AutoTaggingSession {
     await yieldToUi();
 
     const doc = await this.getDocument();
-    const schemaManager = this.writer.schemaManager;
-    const applyOptions = {
-      policy: this.policy,
-      ...(schemaManager
-        ? {
-            canContain: (parent: string, child: string) =>
-              canContainForAutoTagging(schemaManager, parent, child),
-          }
-        : {}),
-      userRules,
-      onProgress,
-    };
+    const applyOptions = this.buildApplyOptions(userRules, onProgress);
     const raw = await applySuggestions(doc, accepted, applyOptions);
     const result = withApplyDiagnostics(doc, raw, applyOptions);
 
@@ -1580,17 +1624,7 @@ export class AutoTaggingSession {
     const xml = await api.readFile(filePath);
     const doc = new DOMParser().parseFromString(xml, 'application/xml');
     normalizeDomText(doc);
-    const schemaManager = this.writer.schemaManager;
-    const applyOptions = {
-      policy: this.policy,
-      ...(schemaManager
-        ? {
-            canContain: (parent: string, child: string) =>
-              canContainForAutoTagging(schemaManager, parent, child),
-          }
-        : {}),
-      userRules,
-    };
+    const applyOptions = this.buildApplyOptions(userRules);
     const raw = await applySuggestions(doc, suggestions, applyOptions);
     const result = withApplyDiagnostics(doc, raw, applyOptions);
     if (result.applied > 0) {

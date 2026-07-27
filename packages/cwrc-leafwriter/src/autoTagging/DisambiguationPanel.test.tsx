@@ -247,7 +247,7 @@ describe('DisambiguationPanel', () => {
     expect(await screen.findByText('no geo data')).toBeTruthy();
   });
 
-  it('does not show cluster labels for a single place candidate (nothing to disambiguate)', async () => {
+  it('still badges a single geo-bearing place candidate, even with nothing else to disambiguate against', async () => {
     mockBuildDisambiguationCandidates.mockResolvedValue([
       { id: 'cbdb:a', label: '竟陵', sources: ['CBDB'], geo: { lat: 30.65, lon: 113.15 } },
     ]);
@@ -263,8 +263,8 @@ describe('DisambiguationPanel', () => {
     );
 
     await waitFor(() => expect(mockBuildDisambiguationCandidates).toHaveBeenCalled());
+    expect(await screen.findByText('A')).toBeTruthy();
     expect(screen.queryByText('no geo data')).toBeNull();
-    expect(screen.queryByText('A')).toBeNull();
   });
 
   it('renders a single row for an already-merged geo-cluster candidate', async () => {
