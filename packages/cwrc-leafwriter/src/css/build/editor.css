@@ -329,6 +329,24 @@ visibility on the element itself instead. */
   display: none !important;
 }
 
+/* <note> is block-level in the schema (type="editor" apparatus notes are
+typically <div>s), but commentary reads best running inline with the text
+it glosses rather than breaking the paragraph onto its own line. */
+[_tag='note'],
+.noteWrapper {
+  display: inline !important;
+}
+
+/* Color notes by their TEI @type so editorial vs. commentary apparatus is
+distinguishable at a glance. */
+[_tag='note'][type='editor'] {
+  color: red;
+}
+
+[_tag='note'][type='comm'] {
+  color: green;
+}
+
 /* showEntities chrome fights inline commentary */
 .showEntities .noteWrapper .entity.note,
 .showEntities .noteWrapper .entity.citation,

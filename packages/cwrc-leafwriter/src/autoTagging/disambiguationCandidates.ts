@@ -719,7 +719,7 @@ async function candidatesFromAuthorityPacks(
       const content = await readPackFile(packId);
       const spec = AUTHORITY_PACKS.find((item) => item.id === packId);
       if (!spec) continue;
-      const packSource = spec.source as 'cbdb' | 'dila' | 'ndl' | 'norbert';
+      const packSource = spec.source as 'cbdb' | 'dila' | 'chgis' | 'ndl' | 'norbert';
       // searchPackRows hands back each match's parsed ndjson row, so the
       // metadata (years, dynasty, authorityId) comes straight from the ≤10
       // matched lines — no full-pack parse per lookup.

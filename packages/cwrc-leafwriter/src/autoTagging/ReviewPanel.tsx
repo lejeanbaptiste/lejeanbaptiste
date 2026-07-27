@@ -1,6 +1,7 @@
 import CheckIcon from '@mui/icons-material/Check';
 import CloseIcon from '@mui/icons-material/Close';
 import ExpandMoreIcon from '@mui/icons-material/ExpandMore';
+import RefreshIcon from '@mui/icons-material/Refresh';
 import UndoIcon from '@mui/icons-material/Undo';
 import WarningIcon from '@mui/icons-material/Warning';
 import Box from '@mui/material/Box';
@@ -36,6 +37,13 @@ export interface ReviewPanelProps {
   busy?: boolean;
   /** When true, show AI validation warnings and pre-selections. */
   aiValidationEnabled?: boolean;
+  /**
+   * Re-check pending suggestions against the live document (drop ones
+   * already tagged or now schema-blocked) and pull in freshly available
+   * person-wrapper / noble-title candidates. Omit to hide the button.
+   */
+  onRefresh?: () => void;
+  refreshing?: boolean;
 }
 
 const statusColor: Record<Suggestion['status'], 'default' | 'success' | 'error' | 'warning'> = {
@@ -413,6 +421,8 @@ export const ReviewPanel = ({
   onClose,
   autoFocus = true,
   busy = false,
+  onRefresh,
+  refreshing = false,
 }: ReviewPanelProps) => {
   const { t } = useTranslation('LW');
   const [, forceRender] = useReducer((n: number) => n + 1, 0);
@@ -544,6 +554,21 @@ export const ReviewPanel = ({
           {counts.pending} pending · {counts.accepted} accepted · {counts.rejected} rejected
           {counts.unresolvable > 0 ? ` · ${counts.unresolvable} unresolvable` : ''}
         </Typography>
+        {onRefresh && (
+          <Tooltip title={t('Re-check against the document and regenerate person wrappers / noble titles')}>
+            <span>
+              <IconButton
+                size="small"
+                onClick={onRefresh}
+                disabled={busy || refreshing}
+                data-testid="review-refresh"
+                aria-label={t('Refresh suggestions')}
+              >
+                <RefreshIcon fontSize="small" />
+              </IconButton>
+            </span>
+          </Tooltip>
+        )}
       </Box>
 
       <Box sx={{ display: 'flex', gap: 0.5, alignItems: 'center', px: 1, pb: 0.5, flexShrink: 0 }}>

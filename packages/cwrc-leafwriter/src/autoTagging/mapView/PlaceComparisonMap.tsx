@@ -9,7 +9,7 @@ import {
   setWorkerUrl,
   type StyleSpecification,
 } from 'maplibre-gl';
-import { noLabels } from 'protomaps-themes-base';
+import protomapsLayers from 'protomaps-themes-base';
 import { findBundleForPoint, REGIONAL_BUNDLES } from './regionalBundles';
 
 // MapLibre computes its worker's URL from `import.meta.url` at the moment it
@@ -75,18 +75,36 @@ function blankStyle(): StyleSpecification {
 }
 
 /**
+ * Which local name to render for place/city/province labels, per installed
+ * region — matches REGIONAL_BUNDLES' `languages` (regionalBundles.ts).
+ * Everything here is Han-script text either way (this tool works with
+ * Traditional/Classical Chinese sources), so China and Tibet share a
+ * lang/script pair; protomaps-themes-base has no dedicated Tibetan pair.
+ */
+const LABEL_LANG_BY_BUNDLE: Record<string, { lang: string; script?: string }> = {
+  china: { lang: 'zh-Hant', script: 'Han' },
+  tibet: { lang: 'zh-Hant', script: 'Han' },
+  japan: { lang: 'ja' },
+};
+const DEFAULT_LABEL_LANG = { lang: 'zh-Hant', script: 'Han' };
+
+/**
  * Real vector basemap once a local PMTiles regional bundle is installed,
  * served entirely in-process by apps/desktop/src/mapTiles.ts's
  * `pmtiles://<bundleId>/...` protocol handler (must match its PMTILES_SCHEME
  * constant) — no network request, no local HTTP server. Uses Protomaps'
- * official "light" theme with labels stripped (no glyphs to fetch — this
- * dialog's pins already carry their own labels), swapped in after the map
- * already exists (see `map.setStyle` below) rather than chosen up front, so
- * pins never wait on this check.
+ * official "light" theme with city/province/place labels (glyphs served
+ * locally too — see apps/commons/scripts/download-glyphs.mjs and its
+ * webpack.config.ts CopyWebpackPlugin pattern — so labels work fully
+ * offline, same as the tiles themselves), swapped in after the map already
+ * exists (see `map.setStyle` below) rather than chosen up front, so pins
+ * never wait on this check.
  */
 function vectorStyle(bundleId: string): StyleSpecification {
+  const { lang, script } = LABEL_LANG_BY_BUNDLE[bundleId] ?? DEFAULT_LABEL_LANG;
   return {
     version: 8,
+    glyphs: '/fonts/{fontstack}/{range}.pbf',
     sources: {
       protomaps: {
         type: 'vector',
@@ -94,7 +112,7 @@ function vectorStyle(bundleId: string): StyleSpecification {
         maxzoom: 15,
       },
     },
-    layers: noLabels('protomaps', 'light') as StyleSpecification['layers'],
+    layers: protomapsLayers('protomaps', 'light', lang, script) as StyleSpecification['layers'],
   };
 }
 

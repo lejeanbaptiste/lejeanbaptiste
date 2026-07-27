@@ -343,6 +343,11 @@ class LayoutManager {
   }
 
   showModule(moduleId: ISettingsModuleName) {
+    // Validation needs to see errors that may live inside folded notes.
+    if (moduleId === 'validation' && this.writer.overmindState?.editor?.showNotes === false) {
+      this.writer.overmindActions?.editor?.toggleShowNotes?.(true);
+    }
+
     const westModules: DesktopLeftPanelTab[] = ['toc', 'markup'];
     if (!this.modulesLayout.has('west') && westModules.includes(moduleId as DesktopLeftPanelTab)) {
       window.__desktopLeftPanel?.showTab(moduleId as DesktopLeftPanelTab);

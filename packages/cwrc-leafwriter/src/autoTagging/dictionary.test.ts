@@ -132,7 +132,7 @@ describe('dictionaryTag', () => {
     expect(zhang[0]!.rationale).toContain('<title>');
   });
 
-  it('only offers the alternative tag when the span is already inside one of them', () => {
+  it('drops both persName and title once the span is already inside persName', () => {
     const doc = parse(
       '<TEI xmlns="http://www.tei-c.org/ns/1.0"><p><persName>張衡</persName>在此。</p></TEI>',
     );
@@ -144,10 +144,26 @@ describe('dictionaryTag', () => {
       ],
       'ignore',
     );
+    // persName is ruled out as already-tagged; title is ruled out because a
+    // work title must never nest inside a persName (never useful, and a
+    // schema violation in spirit even where the grammar itself is lenient).
+    expect(suggestions).toHaveLength(0);
+  });
+
+  it('still offers an unrelated tag alongside a forbidden one for the same span', () => {
+    const doc = parse(
+      '<TEI xmlns="http://www.tei-c.org/ns/1.0"><p><persName>張衡</persName>在此。</p></TEI>',
+    );
+    const suggestions = dictionaryTag(
+      doc,
+      [
+        { string: '張衡', tag: 'orgName' },
+        { string: '張衡', tag: 'title' },
+      ],
+      'ignore',
+    );
     expect(suggestions).toHaveLength(1);
-    expect(suggestions[0]!.tag).toBe('title');
-    // Not ambiguous anymore — persName was ruled out by the ancestor check.
-    expect(suggestions[0]!.rationale).not.toContain('ambiguous');
+    expect(suggestions[0]!.tag).toBe('orgName');
   });
 
   it('skips placeName when the span is already inside placeName', () => {

@@ -83,6 +83,87 @@ describe('applySuggestions', () => {
     expect(wrapper.getElementsByTagName('persName')[0]!.textContent).toBe('範');
   });
 
+  it('does not nest a nobleTitle roleName inside a pre-existing roleName ancestor', async () => {
+    const doc = parse(
+      '<TEI xmlns="http://www.tei-c.org/ns/1.0"><text><body><p><roleName>太尉</roleName></p></body></text></TEI>',
+    );
+    const suggestion: Suggestion = {
+      id: 'nobletitle_in_rolename',
+      source: 'authority',
+      action: 'add',
+      tag: 'nobleTitle',
+      innerXml: '<roleName>太尉</roleName>',
+      anchor: createAnchor(
+        'doc',
+        doc,
+        doc.getElementsByTagName('roleName')[0]!.firstChild as Text,
+        0,
+        2,
+        'ignore',
+      ),
+      status: 'pending',
+    };
+    const { applied } = await applySuggestions(doc, [suggestion], { policy: 'ignore' });
+    expect(applied).toBe(1);
+    // Only the original roleName survives — the compound's own roleName was
+    // stripped rather than nested inside it.
+    expect(doc.getElementsByTagName('roleName')).toHaveLength(1);
+    expect(doc.getElementsByTagName('nobleTitle')[0]!.textContent).toBe('太尉');
+  });
+
+  it('does not nest a title inside an existing persName/placeName/roleName', async () => {
+    const doc = parse(
+      '<TEI xmlns="http://www.tei-c.org/ns/1.0"><text><body><p><persName>史記</persName></p></body></text></TEI>',
+    );
+    const suggestion: Suggestion = {
+      id: 'title_in_persname',
+      source: 'dictionary',
+      action: 'add',
+      tag: 'title',
+      anchor: createAnchor(
+        'doc',
+        doc,
+        doc.getElementsByTagName('persName')[0]!.firstChild as Text,
+        0,
+        2,
+        'ignore',
+      ),
+      status: 'pending',
+    };
+    const { results, applied } = await applySuggestions(doc, [suggestion], { policy: 'ignore' });
+    expect(applied).toBe(0);
+    expect(results[0]!.outcome).toBe('already-tagged');
+    expect(doc.getElementsByTagName('title')).toHaveLength(0);
+  });
+
+  it('strips a persName sanmiao emits inside <ruler> rather than inserting it', async () => {
+    const doc = parse(
+      '<TEI xmlns="http://www.tei-c.org/ns/1.0"><text><body><p><date cert="low">魏文帝</date></p></body></text></TEI>',
+    );
+    const dateEl = doc.getElementsByTagName('date')[0] as Element;
+    const anchor = anchorForDateElement(dateEl, findTeiBodyRoot(doc), 'ignore');
+    const suggestion: Suggestion = {
+      id: 'date_resolve_ruler_persname',
+      source: 'dates',
+      sourceDetail: 'sanmiao-resolve',
+      action: 'resolve-date',
+      tag: 'date',
+      anchor: anchor!,
+      status: 'pending',
+      attributes: { resp: '#ljb-sanmiao', cert: 'high' },
+      dateResolution: {
+        status: 'unique',
+        displaySurface: '魏文帝',
+        candidates: [{ displayLine: 'test', attrs: {} }],
+        parseXml: '<ruler>文<persName>帝</persName></ruler>',
+      },
+    };
+    const { applied } = await applySuggestions(doc, [suggestion], { policy: 'ignore' });
+    expect(applied).toBe(1);
+    expect(dateEl.getElementsByTagName('persName')).toHaveLength(0);
+    expect(dateEl.getElementsByTagName('ruler')[0]!.textContent).toBe('文帝');
+  });
+
   it('wraps the anchored range in a new element in the document namespace', async () => {
     const doc = parse(TEI);
     const batch = [suggest(doc, '上陽子', 'persName')];

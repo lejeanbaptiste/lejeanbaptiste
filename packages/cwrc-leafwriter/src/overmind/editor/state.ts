@@ -116,7 +116,7 @@ export const state: EditorStateType = {
   showTagBubble: true,
   showTags: false,
   showBreaks: true,
-  showNotes: false,
+  showNotes: true,
   stripCjkWhitespace: false,
   validateXmlOnReplace: true,
   schemas: {},

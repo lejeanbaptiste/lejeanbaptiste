@@ -494,7 +494,13 @@ export const DisambiguationPanel = ({
   };
 
   const applyAiRank = useCallback(
-    async (_targetGroup: MentionGroup, rows: DisambiguationCandidate[], targetInstance: MentionInstance) => {
+    async (targetGroup: MentionGroup, rows: DisambiguationCandidate[], targetInstance: MentionInstance) => {
+      // Guard against a stale call landing after the user has already moved on
+      // to a different group (e.g. rapid j/k navigation) — otherwise its
+      // resets and eventual results would clobber the now-current group's state.
+      const groupKey = mentionGroupKey(targetGroup);
+      if (currentKeyRef.current !== groupKey) return;
+
       setAiRationales({});
       setAiConfidences({});
       setAiSuggestCreateNew(false);
@@ -526,7 +532,7 @@ export const DisambiguationPanel = ({
               retryAtMs: Date.now() + info.delayMs,
             }),
         });
-        if (!rank) return;
+        if (!rank || currentKeyRef.current !== groupKey) return;
 
         setAiRationales(rank.rationales);
         setAiConfidences(rank.confidences ?? {});
@@ -540,11 +546,14 @@ export const DisambiguationPanel = ({
         }
         setAiRanked(true);
       } catch (e) {
+        if (currentKeyRef.current !== groupKey) return;
         setError(e instanceof Error ? e.message : String(e));
         setAiRanked(true);
       } finally {
-        setRankingAi(false);
-        setRateLimitRetry(null);
+        if (currentKeyRef.current === groupKey) {
+          setRankingAi(false);
+          setRateLimitRetry(null);
+        }
       }
     },
     [activePromptProfile, aiCuration, i18n.language, session],
@@ -610,6 +619,12 @@ export const DisambiguationPanel = ({
       forceRefresh = false,
       targetInstance?: MentionInstance | null,
     ) => {
+      // Captured once so every later commit in this call can check it's still
+      // the group the panel is showing — an in-flight fetch for a group the
+      // user has since navigated away from must not overwrite the new group's
+      // candidates (this is how a stale, unrelated, possibly-checked candidate
+      // could otherwise appear under the wrong group after quick j/k navigation).
+      const groupKey = mentionGroupKey(targetGroup);
       setLoadingCandidates(true);
       setError(null);
       setCandidates([]);
@@ -638,6 +653,7 @@ export const DisambiguationPanel = ({
             tag: targetGroup.tag,
             placeProximityKm,
           });
+          if (currentKeyRef.current !== groupKey) return;
           setCandidates(rows);
           // The prefetcher can cache DILA place rows before their lazy detail
           // scrapes (dynasty/dates) have landed. Heal such rows in the
@@ -665,7 +681,6 @@ export const DisambiguationPanel = ({
         const entitiesDoc = session.getEntitiesDocument() ?? (await session.loadEntities());
         const cache = session.cache;
         if (!cache) throw new Error('Authority cache is unavailable.');
-        const groupKey = mentionGroupKey(targetGroup);
         const central = await session.candidateSearchCentralContext();
         const rows = await buildDisambiguationCandidates(
           entitiesDoc,
@@ -689,14 +704,16 @@ export const DisambiguationPanel = ({
           session.rememberPendingCandidates(targetGroup.tag, targetGroup.surface, rows);
           await session.savePendingCache();
         }
+        if (currentKeyRef.current !== groupKey) return;
         setCandidates(rows);
         const inst = targetInstance ?? controllerRef.current?.currentInstance();
         if (inst) await applyAiRank(targetGroup, rows, inst);
       } catch (e) {
+        if (currentKeyRef.current !== groupKey) return;
         setError(e instanceof Error ? e.message : String(e));
         setCandidates([]);
       } finally {
-        setLoadingCandidates(false);
+        if (currentKeyRef.current === groupKey) setLoadingCandidates(false);
       }
     },
     [applyAiRank, cacheDisabled, placeProximityKm, projectLang, refreshDilaDates, session],
@@ -722,20 +739,23 @@ export const DisambiguationPanel = ({
   );
 
   /**
-   * Geo clustering only matters for places, and only when it actually
-   * disambiguates something — a single cluster (or all-singleton candidates
-   * with no shared name) isn't worth labeling. Letters are assigned in
-   * cluster-discovery order, which is stable for a given candidate list but
-   * not meaningful beyond "these are the same group" — see geoCluster.ts.
+   * Every geo-bearing candidate gets a letter — even when they all land in
+   * one cluster (e.g. the same city across several eras), the letter still
+   * marks "this one has coordinates" (see the per-candidate chip below).
+   * Multiple letters only appear once candidates actually land in different
+   * clusters, which is also what unlocks the group header's "compare on
+   * map" icon (mapPinsForGroup, >= 2 clusters). Letters are assigned in
+   * cluster-discovery order, stable for a given candidate list but not
+   * meaningful beyond "these are the same group" — see geoCluster.ts.
    */
   const placeClusterLabelById = useMemo(() => {
-    if (group?.tag !== 'placeName' || filteredCandidates.length < 2) return null;
+    if (group?.tag !== 'placeName') return null;
     const { clusters } = clusterByGeoAccessor(
       filteredCandidates,
       placeProximityKm,
       (candidate) => candidate.geo,
     );
-    if (clusters.length < 2) return null;
+    if (clusters.length === 0) return null;
     const byId = new Map<string, string>();
     clusters.forEach((cluster, index) => {
       const label = String.fromCharCode(65 + index); // A, B, C, …
@@ -744,23 +764,41 @@ export const DisambiguationPanel = ({
     return byId;
   }, [group?.tag, filteredCandidates, placeProximityKm]);
 
+  /**
+   * Candidates with coordinates first (stable otherwise) — the geo-bearing
+   * ones are the ones worth comparing/checking against a map, so they
+   * shouldn't be buried below a long tail of no-geo candidates.
+   */
+  const displayCandidates = useMemo(() => {
+    if (!placeClusterLabelById) return filteredCandidates;
+    return [...filteredCandidates].sort(
+      (a, b) => Number(!placeClusterLabelById.has(a.id)) - Number(!placeClusterLabelById.has(b.id)),
+    );
+  }, [filteredCandidates, placeClusterLabelById]);
+
   const [mapModal, setMapModal] = useState<{ title: string; pins: MapPin[] } | null>(null);
 
   /**
    * Pins for a group's header map icon, or null/empty when there's nothing
-   * to compare. Reads only the background prefetcher's cache
-   * (session.getPendingCandidates) rather than fetching — runAuthorityPrefetch
-   * already warms every not-yet-resolved group in the background, so a group
-   * simply shows no icon until its prefetch lands (no new eager-fetch
-   * machinery needed here — see docs/placename-geo-disambiguation-planning.md
-   * Phase 6, WP3).
+   * to compare. For the currently expanded group, uses the already-fetched
+   * `filteredCandidates` (same data the A/B cluster-letter chips are built
+   * from) rather than the background prefetcher's cache — when "Disable
+   * caching" is on, `runAuthorityPrefetch` is a no-op and nothing ever
+   * writes to that cache (see authorityPrefetch.ts), so a cache-only read
+   * would leave the icon permanently missing even though this group's data
+   * is sitting right there in state. Other (not-currently-expanded) groups
+   * still rely on the prefetch cache — see
+   * docs/placename-geo-disambiguation-planning.md Phase 6, WP3.
    */
   const mapPinsForGroup = useCallback(
     (targetGroup: MentionGroup): MapPin[] => {
       if (targetGroup.tag !== 'placeName') return [];
-      const cached = session.getPendingCandidates(targetGroup.tag, targetGroup.surface);
-      if (!cached) return [];
-      const { clusters } = clusterByGeoAccessor(cached, placeProximityKm, (candidate) => candidate.geo);
+      const isCurrentGroup = group != null && mentionGroupKey(targetGroup) === currentKey;
+      const source = isCurrentGroup
+        ? filteredCandidates
+        : session.getPendingCandidates(targetGroup.tag, targetGroup.surface);
+      if (!source || source.length === 0) return [];
+      const { clusters } = clusterByGeoAccessor(source, placeProximityKm, (candidate) => candidate.geo);
       if (clusters.length === 0) return [];
       return clusters.map((cluster, index) => ({
         id: cluster.members[0]!.id,
@@ -772,7 +810,7 @@ export const DisambiguationPanel = ({
         description: [...new Set(cluster.members.map((member) => member.label))].join(' / '),
       }));
     },
-    [placeProximityKm, session],
+    [placeProximityKm, session, group, currentKey, filteredCandidates],
   );
 
   useEffect(() => {
@@ -1124,7 +1162,7 @@ export const DisambiguationPanel = ({
     }
     return (
       <>
-        {filteredCandidates.map((candidate) => {
+        {displayCandidates.map((candidate) => {
           const checked = checkedIds.has(candidate.id);
           const links = candidateLinks(candidate);
           const confidence = aiConfidences[candidate.id];
