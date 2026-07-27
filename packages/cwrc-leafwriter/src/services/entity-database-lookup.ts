@@ -41,10 +41,10 @@ const MAX_RESULTS = 20;
 
 const normalize = (value: string) => value.trim().toLowerCase().replace(/\s+/g, ' ');
 
-/** CJK-friendly match: either string contains the other (no tokenization). */
+/** Match a stored name to the lookup text without treating surnames as names. */
 function namesMatch(query: string, name: string): boolean {
   if (!query || !name) return false;
-  return name.includes(query) || query.includes(name);
+  return query === name;
 }
 
 export function searchEntityDocument(

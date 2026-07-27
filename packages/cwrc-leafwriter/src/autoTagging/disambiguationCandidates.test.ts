@@ -14,6 +14,7 @@ import {
   fetchLiveCandidates,
   mergeCandidates,
   mergeSelectedCandidates,
+  normalizeGeo,
   resolveEntityInDocument,
   type DisambiguationCandidate,
 } from './disambiguationCandidates';
@@ -32,6 +33,12 @@ const mockReconcile = reconcile as jest.MockedFunction<typeof reconcile>;
 describe('disambiguationCandidates', () => {
   afterEach(() => {
     clearPersonPackIndexForTests();
+  });
+
+  it('keeps valid WGS84 coordinates and rejects projected CHGIS coordinates', () => {
+    expect(normalizeGeo({ lat: 34.76179, lon: 117.4856 })).toEqual({ lat: 34.76179, lon: 117.4856 });
+    expect(normalizeGeo({ lat: 3868251.59, lon: 20103198.36 })).toBeUndefined();
+    expect(normalizeGeo({ lat: Number.NaN, lon: 117 })).toBeUndefined();
   });
 
   it('finds local entity-file matches', () => {
@@ -1079,6 +1086,17 @@ describe('disambiguationCandidates', () => {
       expect(candidatePassesYearFilter(dated, { mode: 'exclude', start: 200, end: 300 })).toBe(false);
       expect(candidatePassesYearFilter(dated, { mode: 'exclude', start: 300, end: 400 })).toBe(true);
       expect(candidatePassesYearFilter(base, { mode: 'exclude', start: 200, end: 300 })).toBe(true);
+    });
+
+    it('exclude mode uses birth and mean dates rather than death alone', () => {
+      const diesLate = { ...base, startYear: 100, endYear: 250 };
+      const meanTooLate = { ...base, startYear: 100, endYear: 500 };
+      const bornTooLate = { ...base, startYear: 201, endYear: 250 };
+      const filter = { mode: 'exclude' as const, start: 200, end: 2000 };
+
+      expect(candidatePassesYearFilter(diesLate, filter)).toBe(true);
+      expect(candidatePassesYearFilter(meanTooLate, filter)).toBe(false);
+      expect(candidatePassesYearFilter(bornTooLate, filter)).toBe(false);
     });
 
     it('treats a single-year candidate (only startYear) as a point in time', () => {

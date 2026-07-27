@@ -66,7 +66,35 @@ const stripEntityWrapper = (tagElement: Element): Element => {
 const expandSelectionToElementBoundaries = (editor: NonNullable<ReturnType<typeof getWriter>>['editor']): boolean => {
   if (!editor) return false;
   const rng = getSelectionRange(editor);
-  const lca = rng.commonAncestorContainer;
+
+  // Note contents are rendered through a presentation-only wrapper. When a
+  // selection inside one note crosses an inline boundary, the DOM range can
+  // report the surrounding paragraph as its common ancestor. Expanding that
+  // range to paragraph-level children would unexpectedly tag the whole
+  // paragraph, so use the note's own tag as the expansion boundary.
+  const noteWrapperFor = (node: Node): Element | null => {
+    const element = node.nodeType === Node.ELEMENT_NODE ? (node as Element) : node.parentElement;
+    return element?.closest('.noteWrapper') ?? null;
+  };
+  const startNoteWrapper = noteWrapperFor(rng.startContainer);
+  const endNoteWrapper = noteWrapperFor(rng.endContainer);
+  const noteWrapper =
+    startNoteWrapper && startNoteWrapper === endNoteWrapper ? startNoteWrapper : null;
+
+  const noteContentRoot = (node: Node, wrapper: Element): Element => {
+    let current: Node | null = node;
+    while (current && current !== wrapper) {
+      if (current.nodeType === Node.ELEMENT_NODE && (current as Element).hasAttribute('_tag')) {
+        return current as Element;
+      }
+      current = current.parentNode;
+    }
+    return wrapper;
+  };
+
+  const lca = noteWrapper
+    ? noteContentRoot(rng.startContainer, noteWrapper)
+    : rng.commonAncestorContainer;
 
   // Walk up from startContainer to find its topmost child under lca
   let startChild: Node = rng.startContainer;

@@ -1298,12 +1298,13 @@ export const tinymceWrapperInit = function ({
     // roleName often leave the caret just outside the span — those are resolved via the
     // adjacent sibling. To remove an outer wrapper, press again (innermost first) or use
     // the markup tree panel.
+    // Text lock only guards against editing text content — tag removal doesn't touch
+    // text, so it stays available even when writer.isTextLocked is true.
     if (
       event.shiftKey &&
       isBackspaceOrDelete(event) &&
       !event.ctrlKey && !event.metaKey && !event.altKey &&
-      writer.isReadOnly !== true &&
-      writer.isTextLocked !== true
+      writer.isReadOnly !== true
     ) {
       updateTagBoundaryState();
       const tagEl = findShiftDeleteTagTarget();

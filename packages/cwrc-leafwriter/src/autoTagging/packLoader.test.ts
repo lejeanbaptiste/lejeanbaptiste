@@ -116,6 +116,32 @@ describe('candidatePassesDateFilter', () => {
     expect(candidatePassesDateFilter(tang, exclude)).toBe(false);
     expect(candidatePassesDateFilter(undated, exclude)).toBe(true);
   });
+
+  it('exclude uses birth and mean dates instead of dropping on death date alone', () => {
+    const diesLate = person({
+      authorityId: '4',
+      primaryName: '晚卒',
+      searchStrings: ['晚卒'],
+      metadata: { startYear: 550, endYear: 650 },
+    });
+    const meanTooLate = person({
+      authorityId: '5',
+      primaryName: '平均太晚',
+      searchStrings: ['平均太晚'],
+      metadata: { startYear: 550, endYear: 800 },
+    });
+    const bornTooLate = person({
+      authorityId: '6',
+      primaryName: '出生太晚',
+      searchStrings: ['出生太晚'],
+      metadata: { startYear: 651, endYear: 700 },
+    });
+    const exclude = { mode: 'exclude' as const, start: 600, end: 2000 };
+
+    expect(candidatePassesDateFilter(diesLate, exclude)).toBe(true);
+    expect(candidatePassesDateFilter(meanTooLate, exclude)).toBe(false);
+    expect(candidatePassesDateFilter(bornTooLate, exclude)).toBe(false);
+  });
 });
 
 describe('countPackUniqueStrings', () => {
