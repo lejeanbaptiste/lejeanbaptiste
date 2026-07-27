@@ -45,12 +45,27 @@ function dedupeSourceLabels(sources: string[]): string[] {
 export function suggestionsFromSeedMatches(matches: SeedMatch[]): Suggestion[] {
   return matches.map((match) => {
     const wrapper = match.candidates.find((candidate) => candidate.metadata?.wrapper)?.metadata?.wrapper;
+    const nobleTitle = match.candidates.find(
+      (candidate) => !candidate.metadata?.wrapper && candidate.metadata?.teiTag === 'nobleTitle',
+    )?.metadata?.nobleTitle;
+    const nobleTitleXml = nobleTitle
+      ? [
+          nobleTitle.fief ? `<placeName>${xmlEscape(nobleTitle.fief)}</placeName>` : '',
+          nobleTitle.posthumousName
+            ? `<persName type="posthumous">${xmlEscape(nobleTitle.posthumousName)}</persName>`
+            : '',
+          nobleTitle.roleName ? `<roleName>${xmlEscape(nobleTitle.roleName)}</roleName>` : '',
+        ].join('')
+      : undefined;
     return {
       ...match.suggestion,
       ...(wrapper ? {
         tag: 'name',
         attributes: { type: 'personWrapper', cert: 'unknown' },
         innerXml: wrapperInnerXml(wrapper),
+      } : nobleTitleXml ? {
+        tag: 'nobleTitle',
+        innerXml: nobleTitleXml,
       } : {}),
       source: 'authority' as const,
       sourceDetail: dedupeSourceLabels(match.candidates.map((c) => c.source)).join('+'),

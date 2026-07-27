@@ -1,6 +1,7 @@
 # Norbert noble-title autotagging and person-context data
 
-**Status:** Planning
+**Status:** Implemented in the authority-tagging path; UI validation and live
+data-refresh scheduling remain follow-up work.
 
 This document records the agreed direction for bringing Norbert's contextual
 person matching into the Norbert plugin. The goal is to preserve the useful
@@ -416,6 +417,14 @@ the Norbert tagging/disambiguation path.
 - Reuse the same compiled authority inputs for both tagging and
   disambiguation, so the plugin and the project entity store stay in sync.
 
+The current implementation ships `wiki-nt-links.ndjson` as structured
+AuthorityCandidate rows. LJB expands the noble-title components at runtime,
+keeps wrapper search strings separate from standalone-title strings, and
+renders the latter as `nobleTitle`. The wrapper candidates participate in both
+the initial longest-match authority pass and the post-component concatenation
+pass. The manifest no longer advertises a separate unimplemented producer;
+the authority pack is consumed by the existing Norbert tag-bomb pipeline.
+
 ## Design constraints
 
 - One `personWrapper` contains one person ID at most.
@@ -443,14 +452,13 @@ Applying one of these moves the existing sibling elements under
 This is intentionally a separate pass because a wrapper that crosses existing
 element boundaries cannot be inserted by the ordinary single-text-node tagger.
 
-## Immediate next steps
+## Remaining next steps
 
-1. Connect the second pass to the Norbert plugin's post-component review flow.
-2. Resolve accepted wrappers to exactly one person key; do not create a
+1. Resolve accepted wrappers to exactly one person key; do not create a
    wrapper entity or populate `entities.xml` from hypothetical candidates.
-3. Add validation that rejects wrappers with missing/ambiguous keys and checks
+2. Add validation that rejects wrappers with missing/ambiguous keys and checks
    that each noble-title combination remains a distinct fief/role/name record.
-4. Add the lightweight cache and refresh/startup scheduling for the person and
+3. Add the lightweight cache and refresh/startup scheduling for the person and
    noble-title expanders.
 
 ## Validation-panel follow-up
