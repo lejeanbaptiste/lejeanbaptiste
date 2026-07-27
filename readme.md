@@ -163,7 +163,8 @@ See [apps/desktop/README.md](apps/desktop/README.md) for the compilation and pac
 - [ ] add nationality to name in schema
 - [ ] auto metadata schema fixer
 - [ ] Option to ignore schema in Source mode
-- [ ] 
+- [ ] Test purge/propagate
+- [ ] Hidden note placeholder
 
 ## Todo
 

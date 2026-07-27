@@ -548,6 +548,7 @@
         "title": "Garde-fous",
         "description": "Même en étant expert·e, vous ferez des erreurs catastrophiques sur votre corpus. Activez les protections suivantes pour l'éviter.",
         "enable_xml_editing": "Autoriser l'édition directe du code XML",
+        "allow_source_mode_schema_violations": "Autoriser l'enregistrement et la sortie du mode Source malgré des violations du schéma",
         "enable_multi_file_automation": "Autoriser les modifications automatisées sur plusieurs fichiers",
         "snapshot_before": "Enregistrer automatiquement un instantané de la machine à remonter le temps avant :",
         "snapshot_before_options": {

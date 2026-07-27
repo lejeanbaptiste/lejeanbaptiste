@@ -144,6 +144,7 @@
         "title": "Guardrails",
         "description": "Even if you are an expert, you will make catastrophic mistakes with your corpus. Enable the following protections to avoid that.",
         "enable_xml_editing": "Enable direct editing of the XML code",
+        "allow_source_mode_schema_violations": "Allow saving and exiting Source mode with schema violations",
         "enable_multi_file_automation": "Enable automated edits across multiple files",
         "snapshot_before": "Automatically save time machine snapshot before:",
         "snapshot_before_options": {

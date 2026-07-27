@@ -14,6 +14,7 @@ import { AUTHORITY_PACKS, type AuthorityPackId } from '../autoTagging/packPaths'
 import { packReadFinished, packReadStarted } from '../autoTagging/authorityLoadProgress';
 import { stringsMatchExactly } from '../autoTagging/disambiguationMatch';
 import type { AuthorityCandidate } from '../autoTagging/authority';
+import type { AuthorityPackContent } from '../autoTagging/packLoader';
 
 export interface PackRow {
   authorityId?: string;
@@ -120,7 +121,7 @@ function describeRow(row: PackRow): string | undefined {
  * before JSON parsing, so scanning a large pack per search stays cheap.
  */
 export function searchPackContent(
-  content: string,
+  content: AuthorityPackContent,
   source: PackSource,
   entityType: NamedEntityType,
   query: string,
@@ -141,7 +142,7 @@ export interface PackSearchMatch {
  * re-parse the whole pack to recover it.
  */
 export function searchPackRows(
-  content: string,
+  content: AuthorityPackContent,
   source: PackSource,
   entityType: NamedEntityType,
   query: string,
@@ -166,29 +167,18 @@ export function searchPackRows(
   const exact: PackSearchMatch[] = [];
   const seen = new Set<string>();
 
-  // Scan with indexOf jumps instead of splitting into lines: a matching row
-  // must contain the shortest candidate query verbatim, and hits are rare, so
-  // letting the native string search skip over non-matching content avoids
-  // allocating a line array and iterating hundreds of thousands of lines on
-  // every lookup. Only the (few) lines containing a hit are sliced and parsed.
-  let searchFrom = 0;
-  while (exact.length < limit) {
-    const hit = content.indexOf(shortestQuery, searchFrom);
-    if (hit === -1) break;
-    const lineStart = content.lastIndexOf('\n', hit) + 1;
-    const nextNewline = content.indexOf('\n', hit);
-    const lineEnd = nextNewline === -1 ? content.length : nextNewline;
-    // Resume after this line — multiple hits within one line must not re-add it.
-    searchFrom = lineEnd + 1;
-    const line = content.slice(lineStart, lineEnd);
-    if (!line.trim()) continue;
+  // A hit only ever adds one row, so this is shared between both scan
+  // strategies below — the difference is just how each locates candidate lines.
+  const tryLine = (line: string): void => {
+    const trimmedLine = line.trim();
+    if (!trimmedLine) return;
     let row: PackRow;
     try {
-      row = JSON.parse(line) as PackRow;
+      row = JSON.parse(trimmedLine) as PackRow;
     } catch {
-      continue;
+      return;
     }
-    if (!row.authorityId || !row.primaryName) continue;
+    if (!row.authorityId || !row.primaryName) return;
 
     const strings = row.searchStrings?.length ? row.searchStrings : [row.primaryName];
     // Track which search string actually matched — for places it may be an
@@ -199,10 +189,10 @@ export function searchPackRows(
       matchedString = strings.find((s) => stringsMatchExactly(s, q));
       if (matchedString) break;
     }
-    if (!matchedString) continue;
+    if (!matchedString) return;
 
     const uri = packResultUri(source, entityType, String(row.authorityId));
-    if (seen.has(uri)) continue;
+    if (seen.has(uri)) return;
     seen.add(uri);
 
     const label =
@@ -218,6 +208,33 @@ export function searchPackRows(
       },
       row,
     });
+  };
+
+  if (Array.isArray(content)) {
+    // Pack already split into lines (the desktop bridge's shape for packs too
+    // large to hold as one string) — a plain scan, prefiltered the same way.
+    for (const line of content) {
+      if (exact.length >= limit) break;
+      if (line.includes(shortestQuery)) tryLine(line);
+    }
+  } else {
+    const text = content as string;
+    // Scan with indexOf jumps instead of splitting into lines: a matching row
+    // must contain the shortest candidate query verbatim, and hits are rare, so
+    // letting the native string search skip over non-matching content avoids
+    // allocating a line array and iterating hundreds of thousands of lines on
+    // every lookup. Only the (few) lines containing a hit are sliced and parsed.
+    let searchFrom = 0;
+    while (exact.length < limit) {
+      const hit = text.indexOf(shortestQuery, searchFrom);
+      if (hit === -1) break;
+      const lineStart = text.lastIndexOf('\n', hit) + 1;
+      const nextNewline = text.indexOf('\n', hit);
+      const lineEnd = nextNewline === -1 ? text.length : nextNewline;
+      // Resume after this line — multiple hits within one line must not re-add it.
+      searchFrom = lineEnd + 1;
+      tryLine(text.slice(lineStart, lineEnd));
+    }
   }
 
   return exact.slice(0, limit);
@@ -245,9 +262,9 @@ export function packIdsForEntityType(
 }
 
 /** Session-lifetime cache of pack contents (packs only change on reinstall). */
-const packContentCache = new Map<AuthorityPackId, Promise<string>>();
+const packContentCache = new Map<AuthorityPackId, Promise<AuthorityPackContent>>();
 
-export function readPackCached(packId: AuthorityPackId): Promise<string> {
+export function readPackCached(packId: AuthorityPackId): Promise<AuthorityPackContent> {
   const readPack = window.electronAPI?.authorityPackRead;
   if (!readPack) return Promise.reject(new Error('Authority packs unavailable'));
   let cached = packContentCache.get(packId);
@@ -270,7 +287,7 @@ export function readPackCached(packId: AuthorityPackId): Promise<string> {
  * `window.electronAPI?.authorityPackRead` directly — the raw bridge call
  * re-reads the multi-megabyte ndjson file over IPC on every invocation.
  */
-export function cachedPackReader(): ((packId: AuthorityPackId) => Promise<string>) | undefined {
+export function cachedPackReader(): ((packId: AuthorityPackId) => Promise<AuthorityPackContent>) | undefined {
   return window.electronAPI?.authorityPackRead ? readPackCached : undefined;
 }
 

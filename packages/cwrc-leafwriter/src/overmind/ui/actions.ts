@@ -550,9 +550,15 @@ const checkCurrentSourceValidity = async ({
 
   // Only treat schema violations as blocking when a schema is actually
   // loaded — `validate()` reports validationErrors=1 when no schema/worker
-  // is available, which means "unverifiable", not "invalid".
+  // is available, which means "unverifiable", not "invalid". The guardrail
+  // still runs validate() above (so the Validation panel reflects reality)
+  // but skips blocking on the result.
   const schemaAvailable = state.validator.hasWorkerValidator && state.validator.hasSchema;
-  if (schemaAvailable && state.validator.validationErrors > 0) {
+  if (
+    schemaAvailable &&
+    state.validator.validationErrors > 0 &&
+    !state.editor.allowSourceModeSchemaViolations
+  ) {
     return {
       valid: false,
       message: i18n.t('LW.xml_document_schema_invalid', {

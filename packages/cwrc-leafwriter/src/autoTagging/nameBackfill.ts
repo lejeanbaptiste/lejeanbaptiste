@@ -5,7 +5,7 @@
  */
 
 import type { AuthorityPackId } from './packPaths';
-import { iterateAuthorityNdjson } from './packLoader';
+import { iterateAuthorityNdjson, type AuthorityPackContent } from './packLoader';
 import {
   collectGivenFamilyNamesForCandidate,
   collectTypedNamesForCandidate,
@@ -56,7 +56,7 @@ function typedNamesFromPackRow(
 }
 
 async function buildPackNameIndex(
-  readPackFile: (packId: AuthorityPackId) => Promise<string>,
+  readPackFile: (packId: AuthorityPackId) => Promise<AuthorityPackContent>,
 ): Promise<Map<string, TypedName[]>> {
   const index = new Map<string, TypedName[]>();
   const packs: { packId: AuthorityPackId; source: string }[] = [
@@ -132,7 +132,7 @@ export async function backfillEntityNames(
   doc: Document,
   options: {
     entityIds?: string[];
-    readPackFile?: (packId: AuthorityPackId) => Promise<string>;
+    readPackFile?: (packId: AuthorityPackId) => Promise<AuthorityPackContent>;
     projectLang?: string | null;
     signal?: AbortSignal;
     onProgress?: (p: NameBackfillProgress) => void;

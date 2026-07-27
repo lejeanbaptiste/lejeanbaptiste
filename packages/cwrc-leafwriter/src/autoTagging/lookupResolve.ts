@@ -29,6 +29,7 @@ import { listEntities } from './entityOps';
 import { isLatinSurface } from './disambiguationMatch';
 import { romanizeFromAuthorityMetadata } from '../utilities/romanize';
 import type { AuthorityPackId } from './packPaths';
+import { authorityPackLines, type AuthorityPackContent } from './packLoader';
 import { WARNINGS_FILE } from './lookupWarnings';
 import type { LookupWarning } from './lookupWarnings';
 
@@ -196,19 +197,19 @@ export function dedupeIdnos(ids: AuthorityId[]): AuthorityId[] {
 export async function crosswalkForRef(
   ref: ParsedAuthorityRef,
   packIds: AuthorityPackId[],
-  readPackFile: (packId: AuthorityPackId) => Promise<string>,
+  readPackFile: (packId: AuthorityPackId) => Promise<AuthorityPackContent>,
 ): Promise<CrosswalkResult> {
   const idnos: AuthorityId[] = [{ type: ref.idnoType, value: ref.value }];
   let candidate: CrosswalkResult['candidate'];
 
   for (const packId of packIds) {
-    let content: string;
+    let content: AuthorityPackContent;
     try {
       content = await readPackFile(packId);
     } catch {
       continue; // pack listed but unreadable — skip, don't fail the lookup
     }
-    for (const line of content.split('\n')) {
+    for (const line of authorityPackLines(content)) {
       if (!line.includes(ref.value)) continue;
       let row: PackRow;
       try {
@@ -253,7 +254,7 @@ export interface LookupSelectionInput {
 export interface LookupResolveDeps {
   store: EntityStore;
   packIds?: AuthorityPackId[];
-  readPackFile?: (packId: AuthorityPackId) => Promise<string>;
+  readPackFile?: (packId: AuthorityPackId) => Promise<AuthorityPackContent>;
   /** Document the mention lives in, for the decision log. */
   documentId?: string;
   /** Project source language; when set, minted names carry xml:lang + a romanization. */

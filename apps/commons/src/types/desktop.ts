@@ -295,7 +295,7 @@ export interface ElectronAPI {
   >;
   authorityPackRead?: (
     packId: import('@src/desktop/authorityPackTypes').AuthorityPackId,
-  ) => Promise<string>;
+  ) => Promise<string[]>;
   authorityPackInstallFrom?: (
     sourcePacksRoot: string,
   ) => Promise<{ ok: boolean; copied?: string[]; error?: string }>;

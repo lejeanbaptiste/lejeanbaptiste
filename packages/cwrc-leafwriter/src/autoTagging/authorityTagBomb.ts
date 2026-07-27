@@ -1,6 +1,7 @@
 import {
   candidatePassesDateFilter,
   iterateAuthorityNdjson,
+  type AuthorityPackContent,
   type DateRangeFilter,
 } from './packLoader';
 import {
@@ -98,7 +99,7 @@ export interface AuthorityTagBombResult {
 export async function runAuthorityTagBombOnDocument(
   doc: Document,
   packIds: AuthorityPackId[],
-  readPackFile: (packId: AuthorityPackId) => Promise<string>,
+  readPackFile: (packId: AuthorityPackId) => Promise<AuthorityPackContent>,
   policy: WhitespacePolicy,
   options: AuthorityTagBombOptions = {},
 ): Promise<AuthorityTagBombResult> {
