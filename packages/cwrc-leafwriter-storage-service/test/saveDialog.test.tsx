@@ -143,6 +143,10 @@ describe('Save Dialog', () => {
 
     describe('Create', () => {
       test('Repository', async () => {
+        const ProviderClass = preferProvider === 'gitlab' ? Gitlab : Github;
+        jest.spyOn(ProviderClass.prototype, 'createRepo').mockResolvedValue(mock.repository);
+        jest.spyOn(ProviderClass.prototype, 'createRepoInOrg').mockResolvedValue(mock.repository);
+
         const resource = mock.getResource({ provider: preferProvider, type: 'save' });
         await setup({
           config: { preferProvider, providers: [mock.githubAuth, mock.gitlabAuth] },
