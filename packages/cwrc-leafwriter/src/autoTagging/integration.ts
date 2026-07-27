@@ -78,6 +78,7 @@ import {
 import type { DecisionEvent } from './reviewController';
 import type { Suggestion, WhitespacePolicy } from './types';
 import { iterateAuthorityNdjson, type DateRangeFilter } from './packLoader';
+import { expandNorbertWikiNtCandidate } from './norbertWikiNt';
 import type { SearchTextRange } from './chunk';
 import { resolveCurrentDocumentXml } from './documentContent';
 import { findSelectionRangeInDocument, searchTextForDomRange } from './selectionScope';
@@ -637,9 +638,19 @@ export class AutoTaggingSession {
     const doc = await this.getDocument();
     this.personWrapperCandidatesPromise ??= (async () => {
       const candidates: AuthorityCandidate[] = [];
-      const content = await readPackFile('norbert-person-wrappers');
-      for (const candidate of iterateAuthorityNdjson(content)) {
+      const wrapperContent = await readPackFile('norbert-person-wrappers');
+      for (const candidate of iterateAuthorityNdjson(wrapperContent)) {
         if (candidate.metadata?.wrapper) candidates.push(candidate);
+      }
+      try {
+        const wikiContent = await readPackFile('norbert-wiki-nt');
+        for (const candidate of iterateAuthorityNdjson(wikiContent)) {
+          for (const expanded of expandNorbertWikiNtCandidate(candidate)) {
+            if (expanded.metadata?.wrapper) candidates.push(expanded);
+          }
+        }
+      } catch {
+        // The wiki asset is optional; the ordinary Norbert wrapper pack still runs.
       }
       return candidates;
     })();

@@ -108,6 +108,15 @@ export interface AuthorityCandidate {
       };
       fiefPlaceId?: string;
     };
+    /** Structured noble-title components used by the Norbert wiki runtime. */
+    nobleTitle?: {
+      fief?: string;
+      roleName?: string;
+      posthumousName?: string;
+    };
+    /** Runtime-only partitions; the shipped asset remains compact and unexpanded. */
+    wrapperSearchStrings?: string[];
+    titleSearchStrings?: string[];
     sourcePages?: string;
     note?: string;
   };
@@ -125,6 +134,7 @@ export interface AppointmentRecord {
 /** Corpus TEI tag used when matching this candidate. */
 export function teiTagForCandidate(candidate: AuthorityCandidate): string {
   if (candidate.metadata?.wrapper) return 'name';
+  if (candidate.metadata?.teiTag) return candidate.metadata.teiTag;
   if (candidate.kind === 'office') return candidate.metadata?.teiTag ?? 'roleName';
   const map: Record<EntityKind, string> = {
     person: 'persName',

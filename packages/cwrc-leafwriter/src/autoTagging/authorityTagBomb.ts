@@ -58,6 +58,7 @@ import {
 } from './seed';
 import { dedupeSuggestionsByLocation } from './suggestionFilters';
 import type { Suggestion, WhitespacePolicy } from './types';
+import { expandNorbertWikiNtCandidate } from './norbertWikiNt';
 
 /** Review panel cap in the app; harness runs should omit this. */
 export const MAX_AUTHORITY_SUGGESTIONS = 2000;
@@ -116,6 +117,7 @@ export async function runAuthorityTagBombOnDocument(
     options.nameTypePolicy ?? resolveNameTypeTaggingPolicy(undefined, null);
   const loaded: Partial<Record<AuthorityPackId, number>> = {};
   let candidateCount = 0;
+  const norbertNamesByAuthorityId = new Map<string, string[]>();
 
   // Non-file origins (pedb/cedb/project/list) have no NDJSON to stream —
   // callers route those to `extraCandidates` instead.
@@ -129,12 +131,25 @@ export async function runAuthorityTagBombOnDocument(
     let packCount = 0;
     const content = await readPackFile(packId);
     for (const candidate of iterateAuthorityNdjson(content)) {
-      if (dateFilter && !candidatePassesDateFilter(candidate, dateFilter)) continue;
-      const filtered = filterCandidateForPhase1(candidate, nameTypePolicy);
-      if (filtered.searchStrings.length === 0) continue;
-      addCandidateToSeedIndex(index, filtered);
-      packCount += 1;
-      candidateCount += 1;
+      const runtimeCandidates =
+        packId === 'norbert-wiki-nt'
+          ? expandNorbertWikiNtCandidate(candidate, norbertNamesByAuthorityId)
+          : [candidate];
+      for (const runtimeCandidate of runtimeCandidates) {
+        if (dateFilter && !candidatePassesDateFilter(runtimeCandidate, dateFilter)) continue;
+        const filtered = filterCandidateForPhase1(runtimeCandidate, nameTypePolicy);
+        if (filtered.searchStrings.length === 0) continue;
+        if (packId === 'norbert-persons') {
+          const names = [
+            filtered.primaryName,
+            ...(filtered.names ?? []).map((name) => name.text),
+          ].filter(Boolean);
+          norbertNamesByAuthorityId.set(filtered.authorityId, [...new Set(names)]);
+        }
+        addCandidateToSeedIndex(index, filtered);
+        packCount += 1;
+        candidateCount += 1;
+      }
     }
     loaded[packId] = packCount;
   }
