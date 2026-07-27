@@ -104,6 +104,7 @@ import {
   setPluginEnabled,
   syncEnabledPluginContributions,
 } from './plugins';
+import { fetchRemotePluginIndex, installRemotePlugin } from './plugins/pluginRegistry';
 import {
   loadOrCreateProject,
   loadProjectFile,
@@ -1921,6 +1922,41 @@ const registerIpcHandlers = () => {
               languagePrompt: plugin.manifest.languagePrompt,
               contributions: plugin.manifest.contributions,
             },
+      })),
+      state: snapshot.state,
+    };
+  });
+
+  ipcMain.handle('plugins:getRemoteIndex', async () => fetchRemotePluginIndex());
+
+  ipcMain.handle('plugins:installRemote', async (_event, entry) => {
+    const index = await fetchRemotePluginIndex();
+    const canonical = index.plugins.find(
+      (candidate) =>
+        candidate.id === entry?.id &&
+        candidate.version === entry?.version &&
+        candidate.fileName === entry?.fileName &&
+        candidate.sha256 === entry?.sha256,
+    );
+    if (!canonical) throw new Error('Plugin release is no longer present in the remote registry.');
+    await installRemotePlugin(canonical);
+    const snapshot = await getPluginHostSnapshot();
+    buildApplicationMenu();
+    return {
+      plugins: snapshot.plugins.map((plugin) => ({
+        id: plugin.id,
+        name: plugin.name,
+        version: plugin.version,
+        description: plugin.description,
+        license: plugin.license,
+        author: plugin.author,
+        homepage: plugin.homepage,
+        languages: plugin.languages,
+        enabled: plugin.enabled,
+        manifestError: plugin.manifestError,
+        manifest: plugin.manifestError
+          ? undefined
+          : { languagePrompt: plugin.manifest.languagePrompt, contributions: plugin.manifest.contributions },
       })),
       state: snapshot.state,
     };

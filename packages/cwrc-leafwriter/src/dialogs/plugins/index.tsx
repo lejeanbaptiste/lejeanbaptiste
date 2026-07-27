@@ -21,15 +21,20 @@ import {
 } from '../../plugins';
 import { clearPackContentCache } from '../../services/authority-pack-lookup';
 import type { IDialog } from '../type';
+import type { PluginReleaseEntry } from '../../../../apps/commons/src/desktop/pluginRegistryTypes';
 
 function PluginRow({
   plugin,
   busy,
   onToggle,
+  remote,
+  onInstall,
 }: {
   plugin: PluginRecordView;
   busy: boolean;
   onToggle: (enabled: boolean) => void;
+  remote?: PluginReleaseEntry;
+  onInstall?: () => void;
 }) {
   const packs = plugin.manifest?.contributions?.authorityPacks ?? [];
   const producers = plugin.manifest?.contributions?.autoTagging ?? [];
@@ -76,6 +81,11 @@ function PluginRow({
               Documentation
             </Link>
           )}
+          {remote && remote.version !== plugin.version && onInstall && (
+            <Button size="small" variant="outlined" onClick={onInstall} disabled={busy} sx={{ alignSelf: 'flex-start' }}>
+              Update to v{remote.version}
+            </Button>
+          )}
         </Stack>
         <Switch
           checked={plugin.enabled}
@@ -90,6 +100,7 @@ function PluginRow({
 
 export const PluginsDialog = ({ onClose, open = false }: IDialog) => {
   const [snapshot, setSnapshot] = useState<PluginHostSnapshotView | null>(null);
+  const [remotePlugins, setRemotePlugins] = useState<PluginReleaseEntry[]>([]);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -97,6 +108,12 @@ export const PluginsDialog = ({ onClose, open = false }: IDialog) => {
     setError(null);
     const next = await refreshPluginRegistry();
     setSnapshot(next);
+    try {
+      const remote = await window.electronAPI?.pluginsGetRemoteIndex?.();
+      setRemotePlugins(remote?.plugins ?? []);
+    } catch {
+      // The local plugin list remains usable while offline.
+    }
   }, []);
 
   useEffect(() => {
@@ -143,6 +160,23 @@ export const PluginsDialog = ({ onClose, open = false }: IDialog) => {
     }
   };
 
+  const handleRemoteInstall = async (entry: PluginReleaseEntry) => {
+    setBusy(true);
+    setError(null);
+    try {
+      const next = await window.electronAPI?.pluginsInstallRemote?.(entry);
+      if (next) {
+        setSnapshot(next);
+        setPluginRegistrySnapshot(next);
+        await refreshPluginRegistry();
+      }
+    } catch (err) {
+      setError(err instanceof Error ? err.message : String(err));
+    } finally {
+      setBusy(false);
+    }
+  };
+
   return (
     <Dialog fullWidth maxWidth="md" onClose={() => onClose?.('close')} open={open}>
       <DialogTitle>Plugins</DialogTitle>
@@ -165,8 +199,26 @@ export const PluginsDialog = ({ onClose, open = false }: IDialog) => {
               plugin={plugin}
               busy={busy}
               onToggle={(enabled) => void handleToggle(plugin.id, enabled)}
+              remote={remotePlugins.find((entry) => entry.id === plugin.id)}
+              onInstall={() => {
+                const entry = remotePlugins.find((candidate) => candidate.id === plugin.id);
+                if (entry) void handleRemoteInstall(entry);
+              }}
             />
           ))}
+          {remotePlugins
+            .filter((entry) => !snapshot?.plugins.some((plugin) => plugin.id === entry.id))
+            .map((entry) => (
+              <Box key={entry.id} sx={{ border: 1, borderColor: 'divider', borderRadius: 2, p: 2 }}>
+                <Stack direction="row" alignItems="center" justifyContent="space-between" spacing={2}>
+                  <Stack spacing={0.5}>
+                    <Typography variant="subtitle1" fontWeight={600}>{entry.name} <Typography component="span" variant="caption">v{entry.version}</Typography></Typography>
+                    <Typography variant="body2" color="text.secondary">{entry.description}</Typography>
+                  </Stack>
+                  <Button variant="contained" onClick={() => void handleRemoteInstall(entry)} disabled={busy}>Install</Button>
+                </Stack>
+              </Box>
+            ))}
         </Stack>
       </DialogContent>
       <DialogActions sx={{ px: 3, pb: 2 }}>

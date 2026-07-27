@@ -317,6 +317,10 @@ export interface ElectronAPI {
   pluginsDismissLanguagePrompt?: (pluginId: string) => Promise<void>;
   pluginsIsEnabled?: (pluginId: string) => Promise<boolean>;
   pluginsGetModuleUrl?: (pluginId: string) => Promise<string | null>;
+  pluginsGetRemoteIndex?: () => Promise<import('../desktop/pluginRegistryTypes').PluginReleaseIndex>;
+  pluginsInstallRemote?: (
+    entry: import('../desktop/pluginRegistryTypes').PluginReleaseEntry,
+  ) => Promise<import('../../../../packages/cwrc-leafwriter/src/plugins/types').PluginHostSnapshotView>;
   authorityLifecycleGet?: () => Promise<AuthorityLifecycleStatus>;
   authorityLifecycleSetEnabled?: (
     options: AuthorityLifecycleSetEnabledOptions,

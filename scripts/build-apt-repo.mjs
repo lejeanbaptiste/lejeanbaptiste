@@ -111,10 +111,16 @@ async function main() {
   }
 
   const architectures = new Set();
+  const packageNamesByArchitecture = new Map();
   for (const debFile of debFiles) {
     const sourcePath = path.join(inputDir, debFile);
     const architecture = run('dpkg-deb', ['-f', sourcePath, 'Architecture']).trim();
+    const packageName = run('dpkg-deb', ['-f', sourcePath, 'Package']).trim();
     architectures.add(architecture);
+    if (!packageNamesByArchitecture.has(architecture)) {
+      packageNamesByArchitecture.set(architecture, new Set());
+    }
+    packageNamesByArchitecture.get(architecture).add(packageName);
     await fs.copyFile(sourcePath, path.join(poolDir, debFile));
   }
 
@@ -122,9 +128,18 @@ async function main() {
     const architectureDir = path.join(releaseDir, `binary-${architecture}`);
     await fs.mkdir(architectureDir, { recursive: true });
     const packagesPath = path.join(architectureDir, 'Packages');
-    const packages = run('dpkg-scanpackages', ['-a', architecture, 'pool', '/dev/null'], {
+    // dpkg-scanpackages scans the directory passed to it, but does not
+    // reliably recurse through the pool hierarchy. Point it at the package
+    // directory itself so the generated index cannot silently be empty.
+    const packagePool = path.relative(repoDir, poolDir);
+    const packages = run('dpkg-scanpackages', ['-a', architecture, packagePool, '/dev/null'], {
       cwd: repoDir,
     });
+    for (const packageName of packageNamesByArchitecture.get(architecture) ?? []) {
+      if (!packages.split(/\r?\n/).includes(`Package: ${packageName}`)) {
+        throw new Error(`APT index for ${architecture} is missing ${packageName}`);
+      }
+    }
     await fs.writeFile(packagesPath, packages);
     await fs.writeFile(
       `${packagesPath}.gz`,
