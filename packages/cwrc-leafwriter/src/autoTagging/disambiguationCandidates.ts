@@ -54,6 +54,7 @@ import {
   normalizeDateRangeFilter,
   parseAuthorityNdjson,
   preciseDateExceedsExcludeLimit,
+  type AuthorityPackContent,
   type DateRangeFilter,
 } from './packLoader';
 import type { AuthorityCandidate } from './authority';
@@ -621,7 +622,7 @@ async function filterWikidataByKind<T extends { uri: string; description?: strin
   return withQid.filter((row) => matching.has(row.qid)).map((row) => row.match);
 }
 
-export type ReadAuthorityPackFile = (packId: AuthorityPackId) => Promise<string>;
+export type ReadAuthorityPackFile = (packId: AuthorityPackId) => Promise<AuthorityPackContent>;
 
 export function clearPersonPackIndexForTests(): void {
   chgisIndexPromise = null;

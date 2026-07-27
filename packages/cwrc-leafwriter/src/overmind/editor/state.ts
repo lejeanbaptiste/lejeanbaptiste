@@ -33,6 +33,8 @@ export type EditorStateType = {
   multiFileSnapshotBefore: MultiFileSnapshotTrigger;
   /** Guardrail: validate every non-current file before committing automated edits. */
   validateMultiFileAutomation: boolean;
+  /** Guardrail: when true, schema violations no longer block saving from or exiting Source mode (well-formedness still does). */
+  allowSourceModeSchemaViolations: boolean;
   fontSize: number;
   latinFont: string;
   editorMode: string;
@@ -92,6 +94,7 @@ export const state: EditorStateType = {
   enableMultiFileAutomation: true,
   multiFileSnapshotBefore: 'multiFile',
   validateMultiFileAutomation: true,
+  allowSourceModeSchemaViolations: false,
   editorMode: 'xmlrdf',
   editorModeLabel: derived((state: EditorStateType) => {
     const editMode = state.editorModes.find((mode) => mode.value === state.editorMode);

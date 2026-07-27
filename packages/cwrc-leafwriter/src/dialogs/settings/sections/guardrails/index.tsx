@@ -8,12 +8,14 @@ const SNAPSHOT_TRIGGERS: MultiFileSnapshotTrigger[] = ['multiFile', 'corpusWide'
 
 export const Guardrails = () => {
   const {
+    allowSourceModeSchemaViolations,
     enableMultiFileAutomation,
     enableXmlEditing,
     multiFileSnapshotBefore,
     validateMultiFileAutomation,
   } = useAppState().editor;
   const {
+    setAllowSourceModeSchemaViolations,
     setEnableMultiFileAutomation,
     setEnableXmlEditing,
     setMultiFileSnapshotBefore,
@@ -30,6 +32,15 @@ export const Guardrails = () => {
         type="toggle"
         value={enableXmlEditing}
       />
+      {enableXmlEditing && (
+        <Toggler
+          icon="validate"
+          onChange={setAllowSourceModeSchemaViolations}
+          title={t('LW.settings.guardrails.allow_source_mode_schema_violations')}
+          type="toggle"
+          value={allowSourceModeSchemaViolations}
+        />
+      )}
       <Toggler
         icon="insertTag"
         onChange={setEnableMultiFileAutomation}

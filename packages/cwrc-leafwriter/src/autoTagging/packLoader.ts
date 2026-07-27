@@ -93,21 +93,48 @@ export function candidatePassesDateFilter(
   return filter.mode === 'limit' ? overlaps : !overlaps;
 }
 
+/**
+ * A pack's NDJSON body as handed back by `readPackFile`: either the full text
+ * (small packs, test fixtures) or a pre-split array of lines. The desktop
+ * bridge always returns the array form — some packs (e.g. CBDB persons) are
+ * large enough that joining them back into one string would exceed V8's hard
+ * ~512MB single-string ceiling, so every consumer here accepts either shape.
+ */
+export type AuthorityPackContent = string | readonly string[];
+
+/** Normalize pack content into a line array, only splitting when given raw text. */
+export function authorityPackLines(content: AuthorityPackContent): readonly string[] {
+  return Array.isArray(content) ? content : (content as string).split(/\r?\n/);
+}
+
 /** Parse NDJSON text (one JSON object per line). Avoids split() on huge files. */
-export function parseAuthorityNdjson(content: string): AuthorityCandidate[] {
+export function parseAuthorityNdjson(content: AuthorityPackContent): AuthorityCandidate[] {
   const out: AuthorityCandidate[] = [];
   for (const row of iterateAuthorityNdjson(content)) out.push(row);
   return out;
 }
 
 /** Stream-parse NDJSON without building one giant array (tag-bomb scale). */
-export function* iterateAuthorityNdjson(content: string): Generator<AuthorityCandidate> {
+export function* iterateAuthorityNdjson(content: AuthorityPackContent): Generator<AuthorityCandidate> {
+  if (Array.isArray(content)) {
+    for (const rawLine of content) {
+      const trimmed = rawLine.trim();
+      if (!trimmed) continue;
+      const row = JSON.parse(trimmed) as AuthorityCandidate;
+      if (row.source && row.authorityId && row.kind && row.primaryName && row.searchStrings?.length) {
+        yield row;
+      }
+    }
+    return;
+  }
+
+  const text = content as string;
   let lineStart = 0;
-  while (lineStart <= content.length) {
-    const lineEnd = content.indexOf('\n', lineStart);
-    const sliceEnd = lineEnd === -1 ? content.length : lineEnd;
-    const trimmed = content.slice(lineStart, sliceEnd).trim();
-    lineStart = lineEnd === -1 ? content.length + 1 : lineEnd + 1;
+  while (lineStart <= text.length) {
+    const lineEnd = text.indexOf('\n', lineStart);
+    const sliceEnd = lineEnd === -1 ? text.length : lineEnd;
+    const trimmed = text.slice(lineStart, sliceEnd).trim();
+    lineStart = lineEnd === -1 ? text.length + 1 : lineEnd + 1;
     if (!trimmed) continue;
     const row = JSON.parse(trimmed) as AuthorityCandidate;
     if (row.source && row.authorityId && row.kind && row.primaryName && row.searchStrings?.length) {
@@ -193,7 +220,7 @@ export function countCandidatesUniqueStrings(
  * minimum surface length as the authority tag bomb.
  */
 export function countPackUniqueStrings(
-  content: string,
+  content: AuthorityPackContent,
   range?: DateRangeFilter | YearRangeFilter,
   minLength: number = DEFAULT_MIN_MATCH_LENGTH,
 ): PackStringCount {

@@ -5,6 +5,7 @@
 import fs from 'node:fs';
 import fsp from 'node:fs/promises';
 import path from 'node:path';
+import readline from 'node:readline';
 
 import {
   AUTHORITY_PACKS,
@@ -89,9 +90,27 @@ export async function installAuthorityPacksFrom(
   return { copied };
 }
 
+/**
+ * Read a pack's NDJSON as an array of lines, streamed off disk rather than
+ * materialized as one string. Some packs (e.g. CBDB persons) exceed V8's hard
+ * ~512MB single-string ceiling (`buffer.constants.MAX_STRING_LENGTH`); a
+ * `fsp.readFile(..., 'utf8')` on such a file throws `RangeError: Invalid
+ * string length` before the caller ever sees the data. Splitting into lines
+ * up front keeps every individual string well under that ceiling regardless
+ * of how large the pack grows, and readline never buffers more than one line
+ * at a time while reading.
+ */
 export async function readAuthorityPackFile(
   entityDbFolder: string,
   packId: AuthorityPackId,
-): Promise<string> {
-  return fsp.readFile(packPath(entityDbFolder, packId), 'utf8');
+): Promise<string[]> {
+  const rl = readline.createInterface({
+    input: fs.createReadStream(packPath(entityDbFolder, packId), { encoding: 'utf8' }),
+    crlfDelay: Infinity,
+  });
+  const lines: string[] = [];
+  for await (const line of rl) {
+    lines.push(line);
+  }
+  return lines;
 }

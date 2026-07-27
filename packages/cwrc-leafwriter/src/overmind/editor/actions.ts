@@ -28,6 +28,7 @@ const ENABLE_XML_EDITING_KEY = 'enableXmlEditing';
 const ENABLE_MULTI_FILE_AUTOMATION_KEY = 'enableMultiFileAutomation';
 const MULTI_FILE_SNAPSHOT_BEFORE_KEY = 'multiFileSnapshotBefore';
 const VALIDATE_MULTI_FILE_AUTOMATION_KEY = 'validateMultiFileAutomation';
+const ALLOW_SOURCE_MODE_SCHEMA_VIOLATIONS_KEY = 'allowSourceModeSchemaViolations';
 const MULTI_FILE_SNAPSHOT_TRIGGERS: MultiFileSnapshotTrigger[] = [
   'multiFile',
   'corpusWide',
@@ -198,6 +199,13 @@ export const applyInitialSettings = ({ state, actions, effects }: Context) => {
   );
   if (storedValidateMultiFileAutomation !== null) {
     state.editor.validateMultiFileAutomation = storedValidateMultiFileAutomation;
+  }
+
+  const storedAllowSourceModeSchemaViolations = effects.editor.api.getFromLocalStorage<boolean>(
+    ALLOW_SOURCE_MODE_SCHEMA_VIOLATIONS_KEY,
+  );
+  if (storedAllowSourceModeSchemaViolations !== null) {
+    state.editor.allowSourceModeSchemaViolations = storedAllowSourceModeSchemaViolations;
   }
 
   const storedChoiceDisplayMode =
@@ -381,6 +389,14 @@ export const setMultiFileSnapshotBefore = (
 export const setValidateMultiFileAutomation = ({ state, effects }: Context, value: boolean) => {
   state.editor.validateMultiFileAutomation = value;
   effects.editor.api.saveToLocalStorage<boolean>(VALIDATE_MULTI_FILE_AUTOMATION_KEY, value);
+};
+
+export const setAllowSourceModeSchemaViolations = (
+  { state, effects }: Context,
+  value: boolean,
+) => {
+  state.editor.allowSourceModeSchemaViolations = value;
+  effects.editor.api.saveToLocalStorage<boolean>(ALLOW_SOURCE_MODE_SCHEMA_VIOLATIONS_KEY, value);
 };
 
 export const setShowRawXmlPanel = ({ state, effects }: Context, value: boolean) => {

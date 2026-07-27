@@ -4,6 +4,7 @@ import {
   countPackUniqueStrings,
   candidatePassesDateFilter,
   iterateAuthorityNdjson,
+  type AuthorityPackContent,
   type DateRangeFilter,
   type PackStringCount,
 } from './packLoader';
@@ -15,7 +16,7 @@ import {
 export type AuthorityPackStringCounts = Partial<Record<AuthorityPackId, PackStringCount>>;
 
 function accumulatePackStrings(
-  content: string,
+  content: AuthorityPackContent,
   strings: Set<string>,
   range?: DateRangeFilter,
 ): number {
@@ -35,7 +36,7 @@ function accumulatePackStrings(
 /** Count unique match strings for UI pack rows (expands wikidata-persons across child files). */
 export async function countAuthorityPackStrings(
   uiPackIds: AuthorityPackId[],
-  readPackFile: (packId: AuthorityPackId) => Promise<string>,
+  readPackFile: (packId: AuthorityPackId) => Promise<AuthorityPackContent>,
   installedIds: Set<AuthorityPackId>,
   range?: DateRangeFilter,
 ): Promise<AuthorityPackStringCounts> {

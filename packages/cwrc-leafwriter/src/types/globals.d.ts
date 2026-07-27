@@ -150,7 +150,7 @@ declare global {
     >;
     authorityPackRead?: (
       packId: import('../autoTagging/packPaths').AuthorityPackId,
-    ) => Promise<string>;
+    ) => Promise<string[]>;
     authorityPackInstallFrom?: (
       sourcePacksRoot: string,
     ) => Promise<{ ok: boolean; copied?: string[]; error?: string }>;

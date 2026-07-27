@@ -80,7 +80,7 @@ import {
 } from './mentions';
 import type { DecisionEvent } from './reviewController';
 import type { Suggestion, WhitespacePolicy } from './types';
-import { iterateAuthorityNdjson, type DateRangeFilter } from './packLoader';
+import { iterateAuthorityNdjson, type AuthorityPackContent, type DateRangeFilter } from './packLoader';
 import { expandNorbertWikiNtCandidate } from './norbertWikiNt';
 import type { SearchTextRange } from './chunk';
 import { resolveCurrentDocumentXml } from './documentContent';
@@ -602,7 +602,7 @@ export class AutoTaggingSession {
    */
   async runAuthorityTagBomb(
     packIds: AuthorityPackId[],
-    readPackFile: (packId: AuthorityPackId) => Promise<string>,
+    readPackFile: (packId: AuthorityPackId) => Promise<AuthorityPackContent>,
     options: {
       dateFilter?: DateRangeFilter;
       /** @deprecated Use {@link dateFilter}. */
@@ -636,7 +636,7 @@ export class AutoTaggingSession {
    * preserve those children and are intended for the normal review/apply path.
    */
   async runPersonWrapperConcatenation(
-    readPackFile: (packId: AuthorityPackId) => Promise<string>,
+    readPackFile: (packId: AuthorityPackId) => Promise<AuthorityPackContent>,
   ): Promise<{ suggestions: Suggestion[]; matchCount: number }> {
     const doc = await this.getDocument();
     this.personWrapperCandidatesPromise ??= (async () => {
@@ -689,7 +689,7 @@ export class AutoTaggingSession {
    */
   async refreshReviewBatch(
     suggestions: Suggestion[],
-    readPackFile: (packId: AuthorityPackId) => Promise<string>,
+    readPackFile: (packId: AuthorityPackId) => Promise<AuthorityPackContent>,
     userRules: UserRule[] = [],
   ): Promise<{ suggestions: Suggestion[]; staleCount: number; wrapperMatchCount: number }> {
     const doc = await this.getDocument();
@@ -730,7 +730,7 @@ export class AutoTaggingSession {
    */
   async runTagBomb(
     packIds: AuthorityPackId[],
-    readPackFile: (packId: AuthorityPackId) => Promise<string>,
+    readPackFile: (packId: AuthorityPackId) => Promise<AuthorityPackContent>,
     options: TagBombOptions = {},
   ): Promise<TagBombResult> {
     const scope = options.scope ?? 'currentFile';
