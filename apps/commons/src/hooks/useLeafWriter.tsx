@@ -203,12 +203,7 @@ export const useLeafWriter = () => {
     let documentSchemas = schemas;
 
     if (isDesktop() && filePath && rootPath) {
-      const prepared = await prepareDesktopDocument(
-        filePath,
-        xml,
-        rootPath,
-        config?.schema,
-      );
+      const prepared = await prepareDesktopDocument(filePath, xml, rootPath, config?.schema);
       if (override?.shouldApply && !override.shouldApply()) return;
       xml = prepared.content;
       documentSchemas = [...projectSchemas, ...prepared.schemas];
@@ -501,14 +496,13 @@ export const useLeafWriter = () => {
 
     const content = await getContent();
     if (!content) return;
-    const screenshot = await leafWriter.getDocumentScreenshot();
 
     if (action === 'saveAs') {
-      saveAs({ content, screenshot });
+      saveAs({ content });
       return;
     }
 
-    const saved = await save({ content, screenshot });
+    const saved = await save({ content });
 
     if (!saved.success) {
       notifyViaSnackbar({
@@ -577,10 +571,9 @@ export const useLeafWriter = () => {
 
         const content = await leafWriter.getContent();
         if (!content) return;
-        const screenshot = await leafWriter.getDocumentScreenshot();
 
         setContentLastSaved(content);
-        addToRecentDocument({ ...resource, screenshot, schemaName });
+        addToRecentDocument({ ...resource, schemaName });
       }, 5_000),
     );
   };

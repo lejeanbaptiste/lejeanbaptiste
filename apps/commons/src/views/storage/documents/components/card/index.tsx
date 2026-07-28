@@ -6,7 +6,7 @@ import { formatDistanceToNow } from 'date-fns';
 import { AnimatePresence, motion, type Variants } from 'motion/react';
 import { useState, type MouseEvent } from 'react';
 import type { Layout } from '../..';
-import { CoverImage, Footer } from './components';
+import { Footer } from './components';
 
 interface DocumentCardProps extends Resource {
   deletable?: boolean;
@@ -19,8 +19,6 @@ interface DocumentCardProps extends Resource {
 }
 
 export const CARD_WIDTH = 250;
-
-const ENABLE_SNAPSHOT = true;
 
 export const DocumentCard = ({
   deletable = false,
@@ -36,8 +34,7 @@ export const DocumentCard = ({
 
   const [hover, setHover] = useState(false);
 
-  const { filename, id, icon, modifiedAt, owner, path, provider, repo, screenshot, title } =
-    resource;
+  const { filename, id, icon, modifiedAt, owner, path, provider, repo, title } = resource;
 
   const lastDate = modifiedAt
     ? formatDistanceToNow(new Date(modifiedAt), {
@@ -99,12 +96,6 @@ export const DocumentCard = ({
       exit={{ scale: 0.8, opacity: 0 }}
     >
       <Stack>
-        <AnimatePresence>
-          {ENABLE_SNAPSHOT && layout === 'grid' && screenshot && (
-            <CoverImage expanded={hover || !!selected} image={screenshot} width={width} />
-          )}
-        </AnimatePresence>
-
         <Stack direction="column" py={1} pl={2} pr={1}>
           <Stack
             direction="row"

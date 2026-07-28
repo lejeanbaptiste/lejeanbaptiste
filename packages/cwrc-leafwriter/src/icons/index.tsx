@@ -116,15 +116,21 @@ const themedToolIcon = (light: string, dark: string) => {
     const { mode, systemMode } = useColorScheme();
     const { darkMode } = useAppState().ui;
     const isDark = darkMode || mode === 'dark' || (mode === 'system' && systemMode === 'dark');
+    const svgMarkup = (isDark ? dark : light).replace(/^[\s\S]*?(?=<svg)/, '');
 
     return (
       <Box
-        component="img"
-        src={isDark ? dark : light}
-        alt=""
+        component="span"
         aria-hidden
         className={className}
-        sx={{ width: '1em', height: '1em', objectFit: 'contain', ...sx }}
+        dangerouslySetInnerHTML={{ __html: svgMarkup }}
+        sx={{
+          display: 'inline-flex',
+          width: '1em',
+          height: '1em',
+          '& > svg': { display: 'block', width: '100%', height: '100%' },
+          ...sx,
+        }}
       />
     );
   };
