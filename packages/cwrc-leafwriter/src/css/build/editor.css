@@ -321,11 +321,21 @@ body {
   display: none !important;
 }
 
-/* <note> elements never converted into a CWRC note entity (imported or
-hand-authored TEI with no matching RDF annotation) render with no
-.noteWrapper span at all, so the rule above has nothing to hide - toggle
-visibility on the element itself instead. */
+/* Keep a compact anchor for bare notes while their content is hidden. */
 [_tag='note'].hide {
+  display: inline !important;
+  font-size: 0 !important;
+  line-height: 1em !important;
+}
+[_tag='note'].hide::before {
+  content: url(../images/sticky-note-inline.svg);
+  display: inline-block;
+  width: 16px;
+  height: 16px;
+  margin: 0 2px;
+  vertical-align: text-bottom;
+}
+[_tag='note'].hide > * {
   display: none !important;
 }
 

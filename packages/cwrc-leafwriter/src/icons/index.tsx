@@ -68,7 +68,9 @@ import OrderAlphabeticalAscendingIcon from 'mdi-material-ui/OrderAlphabeticalAsc
 import PlaylistCheckIcon from 'mdi-material-ui/PlaylistCheck';
 import ShuffleVariantIcon from 'mdi-material-ui/ShuffleVariant';
 import TagPlusIcon from 'mdi-material-ui/TagPlus';
-import { SvgIcon, type SvgIconProps } from '@mui/material';
+import { Box, SvgIcon, type SvgIconProps } from '@mui/material';
+import { useColorScheme } from '@mui/material/styles';
+import { useAppState } from '../overmind';
 
 import { BookIcon, BookOutlinedIcon } from './custom/Book';
 import { DisambiguateIcon } from './custom/Disambiguate';
@@ -96,10 +98,44 @@ import tagRemoveIcon from './svg/tag-remove-solid.svg';
 import TranslationIcon from './svg/translate.svg';
 import triangleExclamationIcon from './svg/triangle-exclamation-solid.svg';
 import iconOrg from './svg/users-solid.svg';
+import toolCorrection from '../../../../apps/commons/src/icons/tool_correction.svg';
+import toolCorrectionDark from '../../../../apps/commons/src/icons/tool_correction.dark.svg';
+import toolHideNotes from '../../../../apps/commons/src/icons/tool_hide_notes.svg';
+import toolHideNotesDark from '../../../../apps/commons/src/icons/tool_hide_notes.dark.svg';
+import toolShowNotes from '../../../../apps/commons/src/icons/tool_show_notes.svg';
+import toolShowNotesDark from '../../../../apps/commons/src/icons/tool_show_notes.dark.svg';
+import toolTransform from '../../../../apps/commons/src/icons/tool_transform.svg';
+import toolTransformDark from '../../../../apps/commons/src/icons/tool_transform.dark.svg';
 
 export { BookIcon, BookOutlinedIcon } from './custom/Book';
 export { DisambiguateIcon } from './custom/Disambiguate';
 export { BoxIcon, BoxOutlinedIcon } from './custom/BoxOpen';
+
+const themedToolIcon = (light: string, dark: string) => {
+  const ToolIcon = ({ sx, className }: SvgIconProps) => {
+    const { mode, systemMode } = useColorScheme();
+    const { darkMode } = useAppState().ui;
+    const isDark = darkMode || mode === 'dark' || (mode === 'system' && systemMode === 'dark');
+
+    return (
+      <Box
+        component="img"
+        src={isDark ? dark : light}
+        alt=""
+        aria-hidden
+        className={className}
+        sx={{ width: '1em', height: '1em', objectFit: 'contain', ...sx }}
+      />
+    );
+  };
+
+  return ToolIcon;
+};
+
+const toolCorrectionIcon = themedToolIcon(toolCorrection, toolCorrectionDark);
+const toolHideNotesIcon = themedToolIcon(toolHideNotes, toolHideNotesDark);
+const toolShowNotesIcon = themedToolIcon(toolShowNotes, toolShowNotesDark);
+const toolTransformIcon = themedToolIcon(toolTransform, toolTransformDark);
 
 const icons = {
   accept: CheckIcon,
@@ -129,6 +165,7 @@ const icons = {
   concept: ForumIcon,
   copy: ContentCopyIcon,
   correction: WarningRoundedIcon,
+  toolCorrection: toolCorrectionIcon,
   date: EventIcon,
   delete: ClearIcon,
   disambiguate: DisambiguateIcon,
@@ -197,6 +234,8 @@ const icons = {
   showBreaksOn: ViewWeekOutlinedIcon,
   showNotesOff: StickyNote2OutlinedIcon,
   showNotesOn: StickyNote2Icon,
+  toolHideNotes: toolHideNotesIcon,
+  toolShowNotes: toolShowNotesIcon,
   ShuffleVariant: ShuffleVariantIcon,
   sortAlphabetically: OrderAlphabeticalAscendingIcon,
   sortLinear: ArrowDownwardIcon,
@@ -205,6 +244,7 @@ const icons = {
   StickyNote2Icon: StickyNote2Icon,
   structure: AccountTreeRoundedIcon,
   tagMultiSelection: LabelMultipleOutlineIcon,
+  toolTransform: toolTransformIcon,
   TagPlus: TagPlusIcon,
   TagRoundedIcon: TagRoundedIcon,
   tags: LabelRoundedIcon,

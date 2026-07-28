@@ -2,6 +2,7 @@ import Box from '@mui/material/Box';
 import Tooltip from '@mui/material/Tooltip';
 import Typography from '@mui/material/Typography';
 import type { ReactElement } from 'react';
+import norbertMini from '../../../../apps/commons/src/assets/images/norbert-mini.png';
 import { CbdbIcon, ChgisIcon, DilaIcon } from '../icons/custom/AuthoritySource';
 import { WikipediaIcon } from '../icons/custom/Wikipedia';
 
@@ -18,6 +19,15 @@ const sourceIcon = (label: string): ReactElement | null => {
       return <CbdbIcon sx={ICON_SX} />;
     case 'chgis':
       return <ChgisIcon sx={ICON_SX} />;
+    case 'norbert':
+      return (
+        <Box
+          component="img"
+          src={norbertMini}
+          alt=""
+          sx={{ width: 14, height: 14, objectFit: 'contain', display: 'block' }}
+        />
+      );
     default:
       return null;
   }
@@ -61,27 +71,32 @@ export const SourceBadges = ({ label }: { label: string }) => {
         const icon = sourceIcon(part);
         const ownDatabase = OWN_DATABASE_LABEL[part.toLowerCase()];
         return (
-          <Tooltip key={part} title={ownDatabase ? `${ownDatabase.label} entity database` : part} arrow>
-            {icon ?? (ownDatabase ? (
-              <Typography
-                component="span"
-                variant="caption"
-                sx={{
-                  fontSize: 10,
-                  lineHeight: 1.4,
-                  px: 0.5,
-                  borderRadius: '8px',
-                  color: ownDatabase.color,
-                  bgcolor: ownDatabase.bg,
-                }}
-              >
-                {ownDatabase.label}
-              </Typography>
-            ) : (
-              <Typography component="span" variant="caption" sx={{ fontSize: 10, lineHeight: 1 }}>
-                {part}
-              </Typography>
-            ))}
+          <Tooltip
+            key={part}
+            title={ownDatabase ? `${ownDatabase.label} entity database` : part}
+            arrow
+          >
+            {icon ??
+              (ownDatabase ? (
+                <Typography
+                  component="span"
+                  variant="caption"
+                  sx={{
+                    fontSize: 10,
+                    lineHeight: 1.4,
+                    px: 0.5,
+                    borderRadius: '8px',
+                    color: ownDatabase.color,
+                    bgcolor: ownDatabase.bg,
+                  }}
+                >
+                  {ownDatabase.label}
+                </Typography>
+              ) : (
+                <Typography component="span" variant="caption" sx={{ fontSize: 10, lineHeight: 1 }}>
+                  {part}
+                </Typography>
+              ))}
           </Tooltip>
         );
       })}

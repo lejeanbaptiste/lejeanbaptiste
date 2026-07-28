@@ -59,6 +59,15 @@ const BRANDING_TARGETS = [
   ['tab_tree.dark.svg', 'apps/commons/src/icons/tab/tab_tree.dark.svg'],
   ['tab_tree.png', 'apps/commons/src/icons/tab/tab_tree.png'],
   ['tab_tree.dark.png', 'apps/commons/src/icons/tab/tab_tree.dark.png'],
+  ['tool_correction.svg', 'apps/commons/src/icons/tool_correction.svg'],
+  ['tool_correction.dark.svg', 'apps/commons/src/icons/tool_correction.dark.svg'],
+  ['tool_transform.svg', 'apps/commons/src/icons/tool_transform.svg'],
+  ['tool_transform.dark.svg', 'apps/commons/src/icons/tool_transform.dark.svg'],
+  ['tool_hide_notes.svg', 'apps/commons/src/icons/tool_hide_notes.svg'],
+  ['tool_hide_notes.dark.svg', 'apps/commons/src/icons/tool_hide_notes.dark.svg'],
+  ['tool_show_notes.svg', 'apps/commons/src/icons/tool_show_notes.svg'],
+  ['tool_show_notes.dark.svg', 'apps/commons/src/icons/tool_show_notes.dark.svg'],
+  ['norbert-mini.png', 'apps/commons/src/assets/images/norbert-mini.png'],
   ['splash.svg', 'apps/desktop/resources/branding/splash.svg'],
   ['splash_new.png', 'apps/desktop/resources/branding/splash_new.png'],
 ];
@@ -149,7 +158,12 @@ function syncArtwork() {
   for (const relPath of CLEANUP_TARGETS) removeIfPresent(relPath);
 
   for (const [sourceRel, destinationRel] of BRANDING_TARGETS) {
-    const sourceBase = sourceRel.startsWith('splash') ? SOURCE_REPO_SPLASH_DIR : SOURCE_REPO_ICON_DIR;
+    const sourceBase =
+      sourceRel === 'norbert-mini.png'
+        ? VISUAL_DESIGN_ROOT
+        : sourceRel.startsWith('splash')
+          ? SOURCE_REPO_SPLASH_DIR
+          : SOURCE_REPO_ICON_DIR;
     copyRelative(sourceBase, sourceRel, destinationRel);
   }
 }

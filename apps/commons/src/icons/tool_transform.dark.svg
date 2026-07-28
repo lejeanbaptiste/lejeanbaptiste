@@ -1,0 +1,50 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<!-- Created with Inkscape (http://www.inkscape.org/) -->
+
+<svg
+   width="47.848721mm"
+   height="47.848717mm"
+   viewBox="0 0 47.848721 47.848717"
+   version="1.1"
+   id="svg1"
+   inkscape:version="1.4.4 (dcaf3e7, 2026-05-05)"
+   sodipodi:docname="tool_transform.svg"
+   inkscape:export-filename="tool_transform.png"
+   inkscape:export-xdpi="96"
+   inkscape:export-ydpi="96"
+   xml:space="preserve"
+   xmlns:inkscape="http://www.inkscape.org/namespaces/inkscape"
+   xmlns:sodipodi="http://sodipodi.sourceforge.net/DTD/sodipodi-0.dtd"
+   xmlns="http://www.w3.org/2000/svg"
+   xmlns:svg="http://www.w3.org/2000/svg"><sodipodi:namedview
+     id="namedview1"
+     pagecolor="#ffffff"
+     bordercolor="#000000"
+     borderopacity="0.25"
+     inkscape:showpageshadow="2"
+     inkscape:pageopacity="0.0"
+     inkscape:pagecheckerboard="0"
+     inkscape:deskcolor="#d1d1d1"
+     inkscape:document-units="mm"
+     inkscape:zoom="0.18712951"
+     inkscape:cx="-363.3847"
+     inkscape:cy="251.16296"
+     inkscape:window-width="1512"
+     inkscape:window-height="921"
+     inkscape:window-x="0"
+     inkscape:window-y="33"
+     inkscape:window-maximized="1"
+     inkscape:current-layer="layer1"
+     showgrid="false" /><defs
+     id="defs1" /><g
+     inkscape:label="Layer 1"
+     inkscape:groupmode="layer"
+     id="layer1"
+     transform="translate(-78.845833,-124.61875)"
+     style="display:inline"><path
+       id="path46"
+       style="fill:#bfd5d5;fill-opacity:1;stroke:none;stroke-width:1.825;stroke-linecap:round;stroke-linejoin:miter;stroke-dasharray:none;stroke-opacity:1;paint-order:markers fill stroke"
+       d="M 105.92842 124.82804 L 105.92842 172.25822 A 23.924358 23.924358 0 0 0 126.69459 148.54287 A 23.924358 23.924358 0 0 0 105.92842 124.82804 z " /><path
+       style="fill:#bfd5d5;fill-opacity:1;stroke:none;stroke-width:1.825;stroke-linecap:round;stroke-linejoin:miter;stroke-dasharray:none;stroke-opacity:1;paint-order:markers fill stroke"
+       d="m 78.845833,124.61875 v 47.84876 h 20.766174 v -47.84876 z"
+       id="rect46" /></g></svg>

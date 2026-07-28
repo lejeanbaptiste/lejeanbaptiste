@@ -289,7 +289,25 @@ body {
 // regardless of entity status (see cwrc2xml.ts/xml2cwrc.ts), so toggle
 // visibility on the element itself for this case - there's no separate
 // wrapper to keep visible, unlike the entity case above.
+// Keep a compact anchor for bare notes while their content is hidden. The
+// note element remains in the editor DOM, so the marker stays at the exact
+// position where the hidden commentary occurs without being serialized.
 [_tag='note'].hide {
+  display: inline !important;
+  font-size: 0 !important;
+  line-height: 1em !important;
+}
+
+[_tag='note'].hide::before {
+  content: url(../images/sticky-note-inline.svg);
+  display: inline-block;
+  width: 16px;
+  height: 16px;
+  margin: 0 2px;
+  vertical-align: text-bottom;
+}
+
+[_tag='note'].hide > * {
   display: none !important;
 }
 

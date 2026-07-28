@@ -18,9 +18,9 @@ const isDesktopApp = () =>
   typeof window !== 'undefined' && !!(window as Window & { electronAPI?: unknown }).electronAPI;
 
 const CHOICE_DISPLAY_MODE_ICON: Record<ChoiceDisplayMode, IconLeafWriter> = {
-  original: 'history',
-  corrected: 'autoFixHigh',
-  both: 'layers',
+  original: 'toolCorrection',
+  corrected: 'toolCorrection',
+  both: 'toolCorrection',
 };
 
 const CHOICE_DISPLAY_MODE_LABEL: Record<ChoiceDisplayMode, string> = {
@@ -270,7 +270,7 @@ export const EditorToolbar = () => {
     },
     {
       group: 'ui',
-      icon: showNotes ? 'showNotesOn' : 'showNotesOff',
+      icon: showNotes ? 'toolHideNotes' : 'toolShowNotes',
       onClick: () => toggleShowNotes(),
       selected: showNotes,
       title: showNotes ? t('LW.editorToolbar.Hide Notes') : t('LW.editorToolbar.Show Notes'),
@@ -319,7 +319,7 @@ export const EditorToolbar = () => {
     {
       group: 'ui',
       hide: isReadonly,
-      icon: 'findReplace',
+      icon: 'toolTransform',
       onClick: () => openDialog({ type: 'tagTransform', props: { id: 'tagTransform' } }),
       title: 'Advanced tag transform',
       type: 'iconButton',
