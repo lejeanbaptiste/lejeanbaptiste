@@ -23,6 +23,24 @@ export interface DecisionEvent {
   decision: Decision;
 }
 
+export interface ReviewSnapshot {
+  counts: {
+    total: number;
+    pending: number;
+    accepted: number;
+    rejected: number;
+    unresolvable: number;
+  };
+  visible: Suggestion[];
+  pendingVisible: Suggestion[];
+  acceptedVisible: Suggestion[];
+  rejectedVisible: Suggestion[];
+  pendingGroups: PendingGroup[];
+  current: Suggestion | null;
+  currentPendingIndex: number;
+  remainingCount: number;
+}
+
 export interface ReviewControllerOptions {
   /** Called on every accept/reject — feeds the decision log (Phase 3). */
   onDecision?: (event: DecisionEvent) => void;
@@ -179,6 +197,42 @@ export class ReviewController {
     const group = this.currentGroup();
     if (!group) return null;
     return group.suggestions[group.selectedIndex] ?? group.suggestions[0] ?? null;
+  }
+
+  snapshot(): ReviewSnapshot {
+    const visible = this.visible();
+    const pendingVisible = visible.filter((s) => s.status === 'pending');
+    const acceptedVisible = visible.filter((s) => s.status === 'accepted');
+    const rejectedVisible = visible.filter((s) => s.status === 'rejected');
+    const counts = {
+      total: this.suggestions.length,
+      pending: 0,
+      accepted: 0,
+      rejected: 0,
+      unresolvable: 0,
+    };
+    for (const suggestion of this.suggestions) {
+      counts[suggestion.status] += 1;
+    }
+    const pendingGroups = this.groupsOf(pendingVisible).map((suggestions) => ({
+      suggestions,
+      selectedIndex: this.selectedIndexFor(suggestions),
+    }));
+    const currentGroup = pendingGroups[this.cursorPendingIndex] ?? null;
+    const current =
+      currentGroup?.suggestions[currentGroup.selectedIndex] ?? currentGroup?.suggestions[0] ?? null;
+
+    return {
+      counts,
+      visible,
+      pendingVisible,
+      acceptedVisible,
+      rejectedVisible,
+      pendingGroups,
+      current,
+      currentPendingIndex: this.cursorPendingIndex,
+      remainingCount: counts.pending + counts.accepted,
+    };
   }
 
   counts() {

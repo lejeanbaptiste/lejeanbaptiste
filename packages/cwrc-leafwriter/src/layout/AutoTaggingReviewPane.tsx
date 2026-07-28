@@ -56,6 +56,7 @@ export const AutoTaggingReviewPane = () => {
   const [busyLabel, setBusyLabel] = useState<AutoTaggingBusyLabel>('Applying tags…');
   const [progress, setProgress] = useState({ done: 0, total: 0 });
   const [notice, setNotice] = useState<string | null>(null);
+  const [reviewPanelReady, setReviewPanelReady] = useState(false);
   const [applyDiagnostics, setApplyDiagnostics] = useState<string | null>(null);
   const [applyDiagSeverity, setApplyDiagSeverity] = useState<
     'error' | 'warning' | 'success' | 'info'
@@ -65,6 +66,26 @@ export const AutoTaggingReviewPane = () => {
     'lw.autoTagging.panelWidth',
     AUTO_TAGGING_PANEL_WIDTH,
   );
+
+  // Let the dock/header paint before mounting the suggestion list. The review
+  // list can contain many rows and mounting it in the same task as opening
+  // the pane makes the first paint and first keypress feel stalled.
+  useEffect(() => {
+    if (!active) {
+      setReviewPanelReady(false);
+      return;
+    }
+
+    let firstFrame = 0;
+    let secondFrame = 0;
+    firstFrame = requestAnimationFrame(() => {
+      secondFrame = requestAnimationFrame(() => setReviewPanelReady(true));
+    });
+    return () => {
+      cancelAnimationFrame(firstFrame);
+      cancelAnimationFrame(secondFrame);
+    };
+  }, [active]);
 
   const getSession = useCallback(() => {
     if (!window.writer) throw new Error('Editor not ready');
@@ -451,7 +472,13 @@ export const AutoTaggingReviewPane = () => {
         )}
 
         <Box sx={{ flex: 1, minHeight: 0 }}>
-          {(() => {
+          {!reviewPanelReady ? (
+            <Box sx={{ p: 2 }}>
+              <Typography variant="body2" color="text.secondary">
+                Loading…
+              </Typography>
+            </Box>
+          ) : (() => {
             const pluginPanel = findPluginReviewPanel(suggestions);
             if (pluginPanel) {
               const PluginPanel = pluginPanel.component;

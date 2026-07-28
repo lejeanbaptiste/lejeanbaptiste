@@ -19,9 +19,11 @@ import {
   listEntities,
   setFamilyName,
   setGivenName,
+  setRomanizedName,
   type EntitySummary,
 } from './entityOps';
 import { normalizeNameType, type NameTypeId } from './nameTypes';
+import { suggestPersonNameSplit, suggestPersonRomanization } from '../plugins/personNameDefaults';
 
 export interface NameBackfillProgress {
   done: number;
@@ -109,11 +111,7 @@ function nameTypeForText(
  * Apply one typed name non-destructively. Returns true when a new name was added
  * or an existing untyped name was upgraded with `@type`.
  */
-function applyTypedName(
-  doc: Document,
-  entityId: string,
-  typed: TypedName,
-): boolean {
+function applyTypedName(doc: Document, entityId: string, typed: TypedName): boolean {
   const beforeType = nameTypeForText(doc, entityId, typed.text);
   const added = addEntityName(doc, entityId, typed.text, { type: typed.type, lang: typed.lang });
   if (added) return true;
@@ -185,7 +183,11 @@ export async function backfillEntityNames(
     };
 
     const typedNames = await collectTypedNamesForCandidate(candidate, fetchImpl);
-    const givenFamily = await collectGivenFamilyNamesForCandidate(candidate, projectLang, fetchImpl);
+    const givenFamily = await collectGivenFamilyNamesForCandidate(
+      candidate,
+      projectLang,
+      fetchImpl,
+    );
 
     for (const typed of typedNames) {
       if (applyTypedName(doc, entity.id, typed)) {
@@ -209,6 +211,25 @@ export async function backfillEntityNames(
     if (givenFamily.givenName && !getGivenName(doc, entity.id)) {
       setGivenName(doc, entity.id, givenFamily.givenName);
       entityChanged = true;
+    }
+
+    // Norbert supplies the historically appropriate surname boundary when its
+    // plugin is active; use it only as a fallback after authority values.
+    const norbertSplit = suggestPersonNameSplit(entity.names[0] ?? '', projectLang ?? null);
+    if (norbertSplit?.familyName && !getFamilyName(doc, entity.id)) {
+      setFamilyName(doc, entity.id, norbertSplit.familyName);
+      entityChanged = true;
+    }
+    if (norbertSplit?.givenName && !getGivenName(doc, entity.id)) {
+      setGivenName(doc, entity.id, norbertSplit.givenName);
+      entityChanged = true;
+    }
+    if (!entity.romanized) {
+      const romanized = suggestPersonRomanization(entity.names[0] ?? '', projectLang ?? null);
+      if (romanized) {
+        setRomanizedName(doc, entity.id, romanized, projectLang ?? null);
+        entityChanged = true;
+      }
     }
 
     if (entityChanged) entitiesUpdated++;

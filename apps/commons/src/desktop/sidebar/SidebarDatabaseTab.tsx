@@ -82,6 +82,10 @@ import {
   type NameTypeId,
 } from '../../../../../packages/cwrc-leafwriter/src/autoTagging/nameTypes';
 import { backfillEntityNames } from '../../../../../packages/cwrc-leafwriter/src/autoTagging/nameBackfill';
+import {
+  suggestPersonNameSplit,
+  suggestPersonRomanization,
+} from '../../../../../packages/cwrc-leafwriter/src/plugins/personNameDefaults';
 import { nameTypeLabel } from '../../../../../packages/cwrc-leafwriter/src/autoTagging/nameTypeLabels';
 import { cachedPackReader } from '../../../../../packages/cwrc-leafwriter/src/services/authority-pack-lookup';
 import { authorityPackLines } from '../../../../../packages/cwrc-leafwriter/src/autoTagging/packLoader';
@@ -657,14 +661,21 @@ export const SidebarDatabaseTab = ({ active = false }: SidebarDatabaseTabProps) 
   };
 
   const openEdit = (entity: EntitySummary) => {
+    const personSplit =
+      entity.kind === 'person' ? suggestPersonNameSplit(entity.names[0] ?? '', projectLang) : null;
+    const suggestedRomanized =
+      entity.romanized ??
+      (entity.kind === 'person'
+        ? suggestPersonRomanization(entity.names[0] ?? '', projectLang)
+        : null);
     setEditEntity(entity);
     setEditCanonicalName(entity.names[0] ?? '');
     setEditingName(false);
     setEditDescription(entity.description ?? '');
-    setEditRomanized(entity.romanized ?? '');
-    setEditHadRomanized(Boolean(entity.romanized));
-    setEditFamilyName(entity.familyName ?? '');
-    setEditGivenName(entity.givenName ?? '');
+    setEditRomanized(suggestedRomanized ?? '');
+    setEditHadRomanized(Boolean(suggestedRomanized));
+    setEditFamilyName(entity.familyName ?? personSplit?.familyName ?? '');
+    setEditGivenName(entity.givenName ?? personSplit?.givenName ?? '');
     setEditNameTypes(
       Object.fromEntries(entity.nameEntries.map((entry) => [entry.text, entry.type ?? ''])),
     );
@@ -1497,6 +1508,21 @@ export const SidebarDatabaseTab = ({ active = false }: SidebarDatabaseTabProps) 
                 </Tooltip>
               </>
             )}
+            <Box sx={{ flex: 1 }} />
+            {editEntity?.kind === 'person' && (
+              <Tooltip title={t('LWC.desktop.sidebar.database.refresh_authorities')}>
+                <span>
+                  <IconButton
+                    size="small"
+                    aria-label={t('LWC.desktop.sidebar.database.refresh_authorities')}
+                    disabled={backfillBusy || editEntity.authorities.length === 0}
+                    onClick={() => void runNameBackfill([editEntity.id])}
+                  >
+                    <RefreshIcon fontSize="small" />
+                  </IconButton>
+                </span>
+              </Tooltip>
+            )}
           </Stack>
           <Typography variant="caption" color="text.secondary" component="div">
             {editEntity?.id}
@@ -1516,7 +1542,6 @@ export const SidebarDatabaseTab = ({ active = false }: SidebarDatabaseTabProps) 
               fullWidth
               size="small"
               label={t('LWC.desktop.sidebar.database.romanized_name')}
-              helperText={t('LWC.desktop.sidebar.database.romanized_hint')}
               value={editRomanized}
               onChange={(event) => setEditRomanized(event.target.value)}
               sx={{ mt: 2 }}
@@ -1543,6 +1568,25 @@ export const SidebarDatabaseTab = ({ active = false }: SidebarDatabaseTabProps) 
                 ) : undefined,
               }}
             />
+          )}
+          {editEntity?.kind === 'person' && (
+            <Stack spacing={0.5} sx={{ mt: 2 }}>
+              <Typography variant="caption" color="text.secondary">
+                {t('LWC.desktop.sidebar.database.person_facts')}
+              </Typography>
+              <Typography variant="body2">
+                {t('LWC.desktop.sidebar.database.dates')}: {editEntity.startYear ?? '—'}–
+                {editEntity.endYear ?? '—'}
+              </Typography>
+              <Typography variant="body2">
+                {t('LWC.desktop.sidebar.database.nationality')}:{' '}
+                {editEntity.nationalities.join(', ') || '—'}
+              </Typography>
+              <Typography variant="body2">
+                {t('LWC.desktop.sidebar.database.place_of_origin')}:{' '}
+                {editEntity.placesOfOrigin.join(', ') || '—'}
+              </Typography>
+            </Stack>
           )}
           {editEntity?.kind === 'person' && (
             <Stack direction="row" spacing={1} sx={{ mt: 2 }}>
@@ -1710,29 +1754,11 @@ export const SidebarDatabaseTab = ({ active = false }: SidebarDatabaseTabProps) 
                 ))}
             </Stack>
           )}
-          {editEntity?.kind === 'person' && (
-            <Box sx={{ mt: 2 }}>
-              <Button
-                size="small"
-                variant="outlined"
-                startIcon={<PlaylistAddIcon fontSize="small" />}
-                disabled={backfillBusy || editEntity.authorities.length === 0}
-                onClick={() => void runNameBackfill([editEntity.id])}
-              >
-                Refresh names from authorities
-              </Button>
-              <Typography variant="caption" color="text.secondary" component="div" sx={{ mt: 0.5 }}>
-                Adds missing typed names from packs and Wikidata without overwriting your edits.
-                Wikidata-linked people benefit most until the CBDB pack includes bare 字/名/姓 in
-                names[].
-              </Typography>
-            </Box>
-          )}
           <Stack direction="row" spacing={1} alignItems="flex-start" sx={{ mt: 2 }}>
             <TextField
               fullWidth
               size="small"
-              label={t('LWC.desktop.sidebar.database.add_alternative_name')}
+              label={t('LWC.desktop.sidebar.database.add_name')}
               value={editNewName}
               onChange={(event) => setEditNewName(event.target.value)}
               onKeyDown={(event) => {

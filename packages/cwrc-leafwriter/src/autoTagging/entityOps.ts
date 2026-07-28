@@ -18,6 +18,7 @@ import {
   entityElements,
   entityKindOfElement,
   findEntity,
+  parseIsoYear,
   touchEntity,
   type AuthorityId,
   type EntityKind,
@@ -89,6 +90,10 @@ export interface EntitySummary {
   familyName: string | null;
   /** Person's given name, stored separately from the display name. Persons only. */
   givenName: string | null;
+  startYear: number | null;
+  endYear: number | null;
+  nationalities: string[];
+  placesOfOrigin: string[];
   /** Origins represented by active field values on this entity. */
   origins: EntityValueOrigin[];
   rejectedCount: number;
@@ -146,6 +151,16 @@ function summarize(item: Element): EntitySummary | null {
       .filter((ref) => ref.type && ref.value),
     familyName: familyNameNote(item)?.textContent?.trim() || null,
     givenName: givenNameNote(item)?.textContent?.trim() || null,
+    startYear: parseIsoYear(item.getElementsByTagName('birth')[0]?.getAttribute('when')),
+    endYear: parseIsoYear(item.getElementsByTagName('death')[0]?.getAttribute('when')),
+    nationalities: Array.from(item.children)
+      .filter((child) => child.localName === 'nationality')
+      .map((child) => child.textContent?.trim() ?? '')
+      .filter(Boolean),
+    placesOfOrigin: Array.from(item.children)
+      .filter((child) => child.localName === 'placeName')
+      .map((child) => child.textContent?.trim() ?? '')
+      .filter(Boolean),
     origins: Array.from(
       new Set(
         Array.from(item.children)

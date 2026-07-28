@@ -443,6 +443,7 @@ export const ReviewPanel = ({
   );
 
   const tagOptions = useMemo(() => [...new Set(suggestions.map((suggestion) => suggestion.tag))], [suggestions]);
+  const snapshot = controller.snapshot();
 
   useEffect(() => {
     if (autoFocus) containerRef.current?.focus();
@@ -502,23 +503,18 @@ export const ReviewPanel = ({
     forceRender();
   };
 
-  const counts = controller.counts();
-  const pendingGroups = controller.pendingGroups();
-  const accepted = controller.acceptedVisible();
-  const rejected = controller.rejectedVisible();
-  const current = controller.current();
-  const remainingCount = counts.pending + counts.accepted;
-  const currentPendingIndex = useMemo(
-    () => (current ? pendingGroups.findIndex((group) => group.suggestions.includes(current)) : -1),
-    [current, pendingGroups],
-  );
+  const { counts, pendingGroups, acceptedVisible: accepted, rejectedVisible: rejected, current, remainingCount } =
+    snapshot;
+  const currentPendingIndex = current
+    ? pendingGroups.findIndex((group) => group.suggestions.includes(current))
+    : -1;
 
   useEffect(() => {
-    if (pendingGroups.length === 0) {
+    if (snapshot.pendingGroups.length === 0) {
       if (accepted.length > 0) setAcceptedOpen(true);
       if (rejected.length > 0) setRejectedOpen(true);
     }
-  }, [pendingGroups.length, accepted.length, rejected.length]);
+  }, [snapshot.pendingGroups.length, accepted.length, rejected.length]);
 
   useEffect(() => {
     if (!current) return;

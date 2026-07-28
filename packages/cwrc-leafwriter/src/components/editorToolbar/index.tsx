@@ -18,9 +18,9 @@ const isDesktopApp = () =>
   typeof window !== 'undefined' && !!(window as Window & { electronAPI?: unknown }).electronAPI;
 
 const CHOICE_DISPLAY_MODE_ICON: Record<ChoiceDisplayMode, IconLeafWriter> = {
-  original: 'toolCorrection',
-  corrected: 'toolCorrection',
-  both: 'toolCorrection',
+  original: 'history',
+  corrected: 'autoFixHigh',
+  both: 'layers',
 };
 
 const CHOICE_DISPLAY_MODE_LABEL: Record<ChoiceDisplayMode, string> = {
@@ -229,7 +229,7 @@ export const EditorToolbar = () => {
       group: 'action',
       disabled: !isSupported('correction'),
       hide: isReadonly,
-      icon: 'findReplace',
+      icon: 'toolCorrection',
       onClick: () => window.writer.tagger.addQuickCorrectionDialog(),
       title: t('LW.editorToolbar.Correction'),
       tooltip: t('LW.editorToolbar.Correction tooltip'),

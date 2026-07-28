@@ -338,6 +338,7 @@ export const DateCuratorPanel = ({
     () => new ReviewController(suggestions, { onFocus, onDecision }),
     [suggestions, onFocus, onDecision],
   );
+  const snapshot = controller.snapshot();
 
   useEffect(() => {
     if (autoFocus) containerRef.current?.focus();
@@ -429,8 +430,8 @@ export const DateCuratorPanel = ({
     (event: React.KeyboardEvent) => {
       const key = event.key;
       if ((key === 'Enter' && !event.shiftKey) || key === 'a') {
-        const pending = controller.pendingVisible();
-        const index = pending.findIndex((s) => s === controller.current());
+        const pending = snapshot.pendingVisible;
+        const index = pending.findIndex((s) => s === snapshot.current);
         if (index >= 0) {
           decidePending(index, 'accepted');
           event.preventDefault();
@@ -444,7 +445,7 @@ export const DateCuratorPanel = ({
       }
     },
     // decidePending closes over controller state — rerender on each render is intentional
-    [controller, suggestions],
+    [controller, snapshot, suggestions],
   );
 
   const undecideItem = (suggestion: Suggestion) => {
@@ -476,11 +477,7 @@ export const DateCuratorPanel = ({
     forceRender();
   };
 
-  const counts = controller.counts();
-  const pending = controller.pendingVisible();
-  const accepted = controller.acceptedVisible();
-  const rejected = controller.rejectedVisible();
-  const current = controller.current();
+  const { counts, pendingVisible: pending, acceptedVisible: accepted, rejectedVisible: rejected, current } = snapshot;
   const remainingCount = counts.pending + counts.accepted;
 
   useEffect(() => {
