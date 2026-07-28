@@ -6,11 +6,11 @@ import HubOutlinedIcon from '@mui/icons-material/HubOutlined';
 import DeleteOutlineIcon from '@mui/icons-material/DeleteOutline';
 import EditOutlinedIcon from '@mui/icons-material/EditOutlined';
 import FactCheckOutlinedIcon from '@mui/icons-material/FactCheckOutlined';
-import LaunchIcon from '@mui/icons-material/Launch';
 import MergeIcon from '@mui/icons-material/Merge';
 import MoreVertIcon from '@mui/icons-material/MoreVert';
 import PlaylistAddIcon from '@mui/icons-material/PlaylistAdd';
 import RefreshIcon from '@mui/icons-material/Refresh';
+import SearchIcon from '@mui/icons-material/Search';
 import UndoIcon from '@mui/icons-material/Undo';
 import WarningAmberIcon from '@mui/icons-material/WarningAmber';
 import {
@@ -52,6 +52,7 @@ import {
 import { listCentralMappings } from '../../../../../packages/cwrc-leafwriter/src/autoTagging/concordance';
 import {
   addEntityName,
+  attachAuthority,
   deleteEntity,
   decoupleAuthority,
   listEntityAssertions,
@@ -76,6 +77,7 @@ import {
   type ConcordanceAssociation,
   type ConcordanceImportResult,
   type EntitySummary,
+  normalizeAuthorityValue,
 } from '../../../../../packages/cwrc-leafwriter/src/autoTagging/entityOps';
 import {
   ALL_NAME_TYPES,
@@ -107,11 +109,15 @@ import {
 } from '../../../../../packages/cwrc-leafwriter/src/utilities/romanize';
 import { openExternalUrl } from '../../../../../packages/cwrc-leafwriter/src/utilities/DOM';
 import { useActions, useAppState } from '@src/overmind';
+import { entityLookupDialogAtom } from '@cwrc/leafwriter';
+import { getDefaultStore } from 'jotai';
+import { RESET } from 'jotai/utils';
 import { applyKeyRemapAcrossProjects, type KeyRemapSummary } from '../entityDb/applyKeyRemap';
 import { computeMergeDocket } from '../entityDb/bridge';
 import { authorityLookupUrl } from '../entityDb/authorityLinks';
 import { BridgeInboxDialog } from './BridgeInboxDialog';
 import { MergeDocketDialog } from './MergeDocketDialog';
+import { SourceBadges } from '../../../../../packages/cwrc-leafwriter/src/autoTagging/SourceBadges';
 
 /**
  * Ordinal of a legacy sequential id (`person-000042` → 42); UUID ids have none.
@@ -129,6 +135,18 @@ const oldestId = (ids: string[]): string =>
   [...ids].sort((a, b) => idOrdinal(a) - idOrdinal(b) || a.localeCompare(b))[0]!;
 
 const escapeRegExp = (text: string): string => text.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+
+const normalizedAuthorityRefs = (refs: AuthorityId[]): AuthorityId[] =>
+  refs
+    .map((ref) => ({ ...ref, value: normalizeAuthorityValue(ref.type, ref.value) }))
+    .filter(
+      (ref, index, all) =>
+        all.findIndex(
+          (candidate) =>
+            candidate.type.toLowerCase() === ref.type.toLowerCase() &&
+            candidate.value === ref.value,
+        ) === index,
+    );
 
 /** Which database the panel is currently browsing - a pure view switch, unrelated to syncToCentral. */
 type DatabaseView = 'project' | 'central';
@@ -683,6 +701,22 @@ export const SidebarDatabaseTab = ({ active = false }: SidebarDatabaseTabProps) 
     setEditNewNameType('');
   };
 
+  const openEntityLookup = (entity: EntitySummary) => {
+    const lookupStore = getDefaultStore();
+    lookupStore.set(entityLookupDialogAtom, {
+      isUserAuthenticated: window.writer?.overmindState?.user?.uri !== '#anonymous',
+      query: entity.names[0] ?? '',
+      type: entity.kind === 'org' ? 'organization' : entity.kind,
+      onClose: (response) => {
+        lookupStore.set(entityLookupDialogAtom, RESET);
+        if (!response || response.repository === 'entity-database') return;
+        void runEntityMutationForId(entity.id, 'Linking authority…', (doc, id) => {
+          attachAuthority(doc, id, { type: response.repository, value: response.uri });
+        });
+      },
+    });
+  };
+
   const startRename = () => {
     nameBeforeRename.current = editCanonicalName;
     setEditingName(true);
@@ -1141,7 +1175,7 @@ export const SidebarDatabaseTab = ({ active = false }: SidebarDatabaseTabProps) 
         ) : (
           visible.map((entity) => {
             const romanized = romanizedOf(entity);
-            const altNames = entity.names.slice(1).filter((name) => name !== romanized);
+            const authorities = normalizedAuthorityRefs(entity.authorities);
             return (
               <Box
                 key={entity.id}
@@ -1172,52 +1206,88 @@ export const SidebarDatabaseTab = ({ active = false }: SidebarDatabaseTabProps) 
                         {romanized}
                       </Typography>
                     )}
-                    {altNames.length > 0 && (
-                      <Typography variant="caption" color="text.secondary" noWrap>
-                        {altNames.join(' · ')}
-                      </Typography>
+                    {authorities.length > 0 && (
+                      <Box
+                        component="span"
+                        sx={{
+                          display: 'flex',
+                          alignItems: 'center',
+                          gap: 0.5,
+                          minWidth: 0,
+                          flex: 1,
+                          overflow: 'hidden',
+                          whiteSpace: 'nowrap',
+                        }}
+                      >
+                        {authorities.map((ref) => {
+                          const url = authorityLookupUrl(ref);
+                          return (
+                            <Box
+                              key={`${ref.type}-${ref.value}`}
+                              component="span"
+                              onClick={url ? () => openExternalUrl(url) : undefined}
+                              sx={{
+                                cursor: url ? 'pointer' : 'default',
+                                display: 'inline-flex',
+                                flexShrink: 0,
+                              }}
+                              title={ref.value}
+                            >
+                              <SourceBadges label={ref.type} />
+                            </Box>
+                          );
+                        })}
+                      </Box>
                     )}
                   </Stack>
                   <Typography variant="caption" color="text.secondary" component="div" noWrap>
                     {entity.id}
                     {entity.description ? ` — ${entity.description}` : ''}
                   </Typography>
-                  <Stack direction="row" spacing={0.5} useFlexGap flexWrap="wrap" sx={{ mt: 0.25 }}>
-                    {entity.origins.map((origin) => (
-                      <Chip
-                        key={origin}
-                        label={t(`LWC.desktop.sidebar.database.origin_${origin}`)}
-                        size="small"
-                        color={
-                          origin === 'user'
-                            ? 'default'
-                            : origin === 'authority'
-                              ? 'primary'
-                              : 'secondary'
-                        }
-                        variant="outlined"
-                        sx={{ height: 20, '& .MuiChip-label': { px: 0.75, fontSize: 11 } }}
-                      />
-                    ))}
-                    {showRejected && entity.rejectedCount > 0 && (
-                      <>
-                        <Chip
-                          label={t('LWC.desktop.sidebar.database.rejected_count', {
-                            count: entity.rejectedCount,
-                          })}
-                          size="small"
-                          color="error"
-                          variant="outlined"
-                          sx={{
-                            height: 20,
-                            textDecoration: 'line-through',
-                            '& .MuiChip-label': { px: 0.75, fontSize: 11 },
-                          }}
-                        />
-                        {entity.rejectedAssertions.map((assertion) => (
+                  {showRejected && (
+                    <Stack
+                      direction="row"
+                      spacing={0.5}
+                      useFlexGap
+                      flexWrap="wrap"
+                      sx={{ mt: 0.25 }}
+                    >
+                      {showRejected && entity.rejectedCount > 0 && (
+                        <>
                           <Chip
-                            key={`${assertion.element}-${assertion.value}-${assertion.source ?? ''}`}
-                            label={`${assertion.element}: ${assertion.value}`}
+                            label={t('LWC.desktop.sidebar.database.rejected_count', {
+                              count: entity.rejectedCount,
+                            })}
+                            size="small"
+                            color="error"
+                            variant="outlined"
+                            sx={{
+                              height: 20,
+                              textDecoration: 'line-through',
+                              '& .MuiChip-label': { px: 0.75, fontSize: 11 },
+                            }}
+                          />
+                          {entity.rejectedAssertions.map((assertion) => (
+                            <Chip
+                              key={`${assertion.element}-${assertion.value}-${assertion.source ?? ''}`}
+                              label={`${assertion.element}: ${assertion.value}`}
+                              size="small"
+                              color="error"
+                              variant="outlined"
+                              sx={{
+                                height: 20,
+                                textDecoration: 'line-through',
+                                '& .MuiChip-label': { px: 0.75, fontSize: 11 },
+                              }}
+                            />
+                          ))}
+                        </>
+                      )}
+                      {showRejected &&
+                        entity.rejectedConcordances.map((rejection) => (
+                          <Chip
+                            key={`${rejection.leftId}-${rejection.rightId}`}
+                            label={`${rejection.leftId} ↔ ${rejection.rightId}`}
                             size="small"
                             color="error"
                             variant="outlined"
@@ -1228,47 +1298,6 @@ export const SidebarDatabaseTab = ({ active = false }: SidebarDatabaseTabProps) 
                             }}
                           />
                         ))}
-                      </>
-                    )}
-                    {showRejected &&
-                      entity.rejectedConcordances.map((rejection) => (
-                        <Chip
-                          key={`${rejection.leftId}-${rejection.rightId}`}
-                          label={`${rejection.leftId} ↔ ${rejection.rightId}`}
-                          size="small"
-                          color="error"
-                          variant="outlined"
-                          sx={{
-                            height: 20,
-                            textDecoration: 'line-through',
-                            '& .MuiChip-label': { px: 0.75, fontSize: 11 },
-                          }}
-                        />
-                      ))}
-                  </Stack>
-                  {entity.authorities.length > 0 && (
-                    <Stack
-                      direction="row"
-                      spacing={0.5}
-                      useFlexGap
-                      flexWrap="wrap"
-                      sx={{ mt: 0.25 }}
-                    >
-                      {entity.authorities.map((ref) => {
-                        const url = authorityLookupUrl(ref);
-                        return (
-                          <Chip
-                            key={`${ref.type}-${ref.value}`}
-                            label={ref.type}
-                            size="small"
-                            variant="outlined"
-                            icon={url ? <LaunchIcon sx={{ fontSize: 12 }} /> : undefined}
-                            onClick={url ? () => openExternalUrl(url) : undefined}
-                            onDelete={() => requestDetach(entity, ref)}
-                            sx={{ height: 20, '& .MuiChip-label': { px: 0.75, fontSize: 11 } }}
-                          />
-                        );
-                      })}
                     </Stack>
                   )}
                 </Box>
@@ -1506,6 +1535,16 @@ export const SidebarDatabaseTab = ({ active = false }: SidebarDatabaseTabProps) 
                     <EditOutlinedIcon fontSize="inherit" />
                   </IconButton>
                 </Tooltip>
+                <Tooltip title={t('LWC.desktop.sidebar.database.lookup_entity')}>
+                  <IconButton
+                    size="small"
+                    onClick={() => editEntity && openEntityLookup(editEntity)}
+                    aria-label={t('LWC.desktop.sidebar.database.lookup_entity')}
+                    sx={{ p: 0.25 }}
+                  >
+                    <SearchIcon fontSize="inherit" />
+                  </IconButton>
+                </Tooltip>
               </>
             )}
             <Box sx={{ flex: 1 }} />
@@ -1527,6 +1566,45 @@ export const SidebarDatabaseTab = ({ active = false }: SidebarDatabaseTabProps) 
           <Typography variant="caption" color="text.secondary" component="div">
             {editEntity?.id}
           </Typography>
+          {editEntity && normalizedAuthorityRefs(editEntity.authorities).length > 0 && (
+            <Box
+              sx={{ display: 'flex', flexWrap: 'wrap', gap: 0.5, alignItems: 'center', mt: 0.5 }}
+            >
+              {normalizedAuthorityRefs(editEntity.authorities).map((ref) => {
+                const url = authorityLookupUrl(ref);
+                return (
+                  <Stack
+                    key={`${ref.type}-${ref.value}`}
+                    direction="row"
+                    spacing={0.25}
+                    alignItems="center"
+                  >
+                    <Box
+                      component="span"
+                      onClick={url ? () => openExternalUrl(url) : undefined}
+                      sx={{ cursor: url ? 'pointer' : 'default', display: 'inline-flex' }}
+                      title={ref.type}
+                    >
+                      <SourceBadges label={ref.type} />
+                    </Box>
+                    <Typography variant="caption" noWrap sx={{ maxWidth: 220 }}>
+                      {ref.value}
+                    </Typography>
+                    <Tooltip title={t('LWC.desktop.sidebar.database.detach_authority')}>
+                      <IconButton
+                        size="small"
+                        aria-label={`${t('LWC.desktop.sidebar.database.detach_authority')} ${ref.type}`}
+                        onClick={() => requestDetach(editEntity, ref)}
+                        sx={{ p: 0.25, color: 'text.secondary' }}
+                      >
+                        <ClearIcon fontSize="small" />
+                      </IconButton>
+                    </Tooltip>
+                  </Stack>
+                );
+              })}
+            </Box>
+          )}
         </DialogTitle>
         <DialogContent>
           <TextField
@@ -1608,7 +1686,10 @@ export const SidebarDatabaseTab = ({ active = false }: SidebarDatabaseTabProps) 
           )}
           {editEntity &&
             editEntity.assertions.some(
-              (assertion) => assertion.origin !== 'user' && assertion.status === 'active',
+              (assertion) =>
+                assertion.element !== 'idno' &&
+                assertion.origin !== 'user' &&
+                assertion.status === 'active',
             ) && (
               <Stack spacing={0.75} sx={{ mt: 2 }}>
                 <Typography variant="caption" color="text.secondary">
@@ -1616,7 +1697,10 @@ export const SidebarDatabaseTab = ({ active = false }: SidebarDatabaseTabProps) 
                 </Typography>
                 {editEntity.assertions
                   .filter(
-                    (assertion) => assertion.origin !== 'user' && assertion.status === 'active',
+                    (assertion) =>
+                      assertion.element !== 'idno' &&
+                      assertion.origin !== 'user' &&
+                      assertion.status === 'active',
                   )
                   .map((assertion) => (
                     <Stack key={assertion.key} direction="row" spacing={0.5} alignItems="center">

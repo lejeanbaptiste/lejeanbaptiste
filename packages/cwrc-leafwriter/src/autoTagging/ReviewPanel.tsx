@@ -14,7 +14,15 @@ import MenuItem from '@mui/material/MenuItem';
 import Select from '@mui/material/Select';
 import Tooltip from '@mui/material/Tooltip';
 import Typography from '@mui/material/Typography';
-import { useCallback, useEffect, useMemo, useReducer, useRef, useState, type ReactNode } from 'react';
+import {
+  useCallback,
+  useEffect,
+  useMemo,
+  useReducer,
+  useRef,
+  useState,
+  type ReactNode,
+} from 'react';
 import { useTranslation } from 'react-i18next';
 import { Virtuoso, type VirtuosoHandle } from 'react-virtuoso';
 import {
@@ -83,7 +91,7 @@ const SuggestionRow = ({
   const showValidation = aiValidation !== undefined;
   const validationColor = getValidationColor(aiValidation?.confidence);
   const confidenceLabel = getConfidenceLabel(aiValidation?.confidence);
-  
+
   return (
     <Box
       role="listitem"
@@ -133,41 +141,11 @@ const SuggestionRow = ({
           label={suggestion.status}
           data-testid={`status-${suggestion.id}`}
         />
-      {suggestion.status !== 'unresolvable' && (
-        <Box sx={{ ml: 'auto', display: 'flex', gap: 0.25 }}>
-          {suggestion.status === 'pending' && onAccept && onReject ? (
-            <>
-              <Tooltip title="Accept (Enter)">
-                <IconButton
-                  size="small"
-                  color="success"
-                  data-testid={`accept-${suggestion.id}`}
-                  onClick={(event) => {
-                    event.stopPropagation();
-                    onAccept();
-                  }}
-                >
-                  <CheckIcon fontSize="small" />
-                </IconButton>
-              </Tooltip>
-              <Tooltip title="Reject (Backspace)">
-                <IconButton
-                  size="small"
-                  color="error"
-                  data-testid={`reject-${suggestion.id}`}
-                  onClick={(event) => {
-                    event.stopPropagation();
-                    onReject();
-                  }}
-                >
-                  <CloseIcon fontSize="small" />
-                </IconButton>
-              </Tooltip>
-            </>
-          ) : (
-            <>
-              {suggestion.status === 'rejected' && onAccept ? (
-                <Tooltip title="Accept">
+        {suggestion.status !== 'unresolvable' && (
+          <Box sx={{ ml: 'auto', display: 'flex', gap: 0.25 }}>
+            {suggestion.status === 'pending' && onAccept && onReject ? (
+              <>
+                <Tooltip title="Accept (Enter)">
                   <IconButton
                     size="small"
                     color="success"
@@ -180,9 +158,7 @@ const SuggestionRow = ({
                     <CheckIcon fontSize="small" />
                   </IconButton>
                 </Tooltip>
-              ) : null}
-              {suggestion.status === 'accepted' && onReject ? (
-                <Tooltip title="Reject">
+                <Tooltip title="Reject (Backspace)">
                   <IconButton
                     size="small"
                     color="error"
@@ -195,44 +171,76 @@ const SuggestionRow = ({
                     <CloseIcon fontSize="small" />
                   </IconButton>
                 </Tooltip>
-              ) : null}
-              {onUndo ? (
-                <Tooltip title="Back to pending (u)">
-                  <IconButton
-                    size="small"
-                    data-testid={`undo-${suggestion.id}`}
-                    onClick={(event) => {
-                      event.stopPropagation();
-                      onUndo();
-                    }}
-                  >
-                    <UndoIcon fontSize="small" />
-                  </IconButton>
-                </Tooltip>
-              ) : null}
-            </>
-          )}
-        </Box>
+              </>
+            ) : (
+              <>
+                {suggestion.status === 'rejected' && onAccept ? (
+                  <Tooltip title="Accept">
+                    <IconButton
+                      size="small"
+                      color="success"
+                      data-testid={`accept-${suggestion.id}`}
+                      onClick={(event) => {
+                        event.stopPropagation();
+                        onAccept();
+                      }}
+                    >
+                      <CheckIcon fontSize="small" />
+                    </IconButton>
+                  </Tooltip>
+                ) : null}
+                {suggestion.status === 'accepted' && onReject ? (
+                  <Tooltip title="Reject">
+                    <IconButton
+                      size="small"
+                      color="error"
+                      data-testid={`reject-${suggestion.id}`}
+                      onClick={(event) => {
+                        event.stopPropagation();
+                        onReject();
+                      }}
+                    >
+                      <CloseIcon fontSize="small" />
+                    </IconButton>
+                  </Tooltip>
+                ) : null}
+                {onUndo ? (
+                  <Tooltip title="Back to pending (u)">
+                    <IconButton
+                      size="small"
+                      data-testid={`undo-${suggestion.id}`}
+                      onClick={(event) => {
+                        event.stopPropagation();
+                        onUndo();
+                      }}
+                    >
+                      <UndoIcon fontSize="small" />
+                    </IconButton>
+                  </Tooltip>
+                ) : null}
+              </>
+            )}
+          </Box>
+        )}
+      </Box>
+      <Typography variant="caption" color="text.secondary" component="div">
+        …{suggestion.anchor.contextBefore}
+        <b>{suggestion.anchor.surface}</b>
+        {suggestion.anchor.contextAfter}…
+      </Typography>
+      {suggestion.rationale && suggestion.source !== 'authority' && (
+        <Typography variant="caption" component="div" color="text.secondary" sx={{ mt: 0.25 }}>
+          {suggestion.rationale}
+        </Typography>
+      )}
+      {aiValidation?.rationale && (
+        <Typography variant="caption" component="div" color="error.main" sx={{ mt: 0.25 }}>
+          AI: {aiValidation.rationale}
+        </Typography>
       )}
     </Box>
-    <Typography variant="caption" color="text.secondary" component="div">
-      …{suggestion.anchor.contextBefore}
-      <b>{suggestion.anchor.surface}</b>
-      {suggestion.anchor.contextAfter}…
-    </Typography>
-    {suggestion.rationale && suggestion.source !== 'authority' && (
-      <Typography variant="caption" component="div" color="text.secondary" sx={{ mt: 0.25 }}>
-        {suggestion.rationale}
-      </Typography>
-    )}
-    {aiValidation?.rationale && (
-      <Typography variant="caption" component="div" color="error.main" sx={{ mt: 0.25 }}>
-        AI: {aiValidation.rationale}
-      </Typography>
-    )}
-  </Box>
-);
-}
+  );
+};
 
 interface AlternativeGroupRowProps {
   group: PendingGroup;
@@ -262,8 +270,8 @@ const AlternativeGroupRow = ({
   const first = group.suggestions[0]!;
 
   // Also find if any suggestion in the group has an AI warning
-  const hasAiWarning = group.suggestions.some(s => s.aiValidation?.warning);
-  
+  const hasAiWarning = group.suggestions.some((s) => s.aiValidation?.warning);
+
   return (
     <Box
       role="listitem"
@@ -291,7 +299,7 @@ const AlternativeGroupRow = ({
         const validationColor = getValidationColor(aiValidation?.confidence);
         const confidenceLabel = getConfidenceLabel(aiValidation?.confidence);
         const isRecommended = aiValidation?.recommended === true;
-        
+
         return (
           <Box
             key={suggestion.id}
@@ -309,9 +317,9 @@ const AlternativeGroupRow = ({
               }}
               sx={{ p: 0.25 }}
             />
-            <Chip 
-              size="small" 
-              label={`<${suggestion.tag}>`} 
+            <Chip
+              size="small"
+              label={`<${suggestion.tag}>`}
               color={isRecommended ? 'primary' : 'default'}
               variant={isRecommended ? 'filled' : 'outlined'}
             />
@@ -336,37 +344,37 @@ const AlternativeGroupRow = ({
                 <WarningIcon color="error" sx={{ fontSize: 14 }} />
               </Tooltip>
             )}
-          {index === 0 && (
-            <Box sx={{ ml: 'auto', display: 'flex', gap: 0.25 }}>
-              <Tooltip title="Accept the checked alternative (Enter)">
-                <IconButton
-                  size="small"
-                  color="success"
-                  data-testid={`accept-group-${first.id}`}
-                  onClick={(event) => {
-                    event.stopPropagation();
-                    onAccept();
-                  }}
-                >
-                  <CheckIcon fontSize="small" />
-                </IconButton>
-              </Tooltip>
-              <Tooltip title="Reject the pair (Backspace)">
-                <IconButton
-                  size="small"
-                  color="error"
-                  data-testid={`reject-group-${first.id}`}
-                  onClick={(event) => {
-                    event.stopPropagation();
-                    onReject();
-                  }}
-                >
-                  <CloseIcon fontSize="small" />
-                </IconButton>
-              </Tooltip>
-            </Box>
-          )}
-        </Box>
+            {index === 0 && (
+              <Box sx={{ ml: 'auto', display: 'flex', gap: 0.25 }}>
+                <Tooltip title="Accept the checked alternative (Enter)">
+                  <IconButton
+                    size="small"
+                    color="success"
+                    data-testid={`accept-group-${first.id}`}
+                    onClick={(event) => {
+                      event.stopPropagation();
+                      onAccept();
+                    }}
+                  >
+                    <CheckIcon fontSize="small" />
+                  </IconButton>
+                </Tooltip>
+                <Tooltip title="Reject the pair (Backspace)">
+                  <IconButton
+                    size="small"
+                    color="error"
+                    data-testid={`reject-group-${first.id}`}
+                    onClick={(event) => {
+                      event.stopPropagation();
+                      onReject();
+                    }}
+                  >
+                    <CloseIcon fontSize="small" />
+                  </IconButton>
+                </Tooltip>
+              </Box>
+            )}
+          </Box>
         );
       })}
       {hasAiWarning && (
@@ -403,9 +411,17 @@ const DecisionGroup = ({ title, count, open, onToggle, children }: DecisionGroup
       size="small"
       onClick={onToggle}
       endIcon={
-        <ExpandMoreIcon sx={{ transform: open ? 'rotate(180deg)' : undefined, transition: '0.2s' }} />
+        <ExpandMoreIcon
+          sx={{ transform: open ? 'rotate(180deg)' : undefined, transition: '0.2s' }}
+        />
       }
-      sx={{ justifyContent: 'space-between', textTransform: 'none', px: 1, py: 0.5, borderRadius: 0 }}
+      sx={{
+        justifyContent: 'space-between',
+        textTransform: 'none',
+        px: 1,
+        py: 0.5,
+        borderRadius: 0,
+      }}
     >
       {title} ({count})
     </Button>
@@ -442,7 +458,10 @@ export const ReviewPanel = ({
     [filteredSuggestions, onFocus, onDecision],
   );
 
-  const tagOptions = useMemo(() => [...new Set(suggestions.map((suggestion) => suggestion.tag))], [suggestions]);
+  const tagOptions = useMemo(
+    () => [...new Set(suggestions.map((suggestion) => suggestion.tag))],
+    [suggestions],
+  );
   const snapshot = controller.snapshot();
 
   useEffect(() => {
@@ -503,8 +522,14 @@ export const ReviewPanel = ({
     forceRender();
   };
 
-  const { counts, pendingGroups, acceptedVisible: accepted, rejectedVisible: rejected, current, remainingCount } =
-    snapshot;
+  const {
+    counts,
+    pendingGroups,
+    acceptedVisible: accepted,
+    rejectedVisible: rejected,
+    current,
+    remainingCount,
+  } = snapshot;
   const currentPendingIndex = current
     ? pendingGroups.findIndex((group) => group.suggestions.includes(current))
     : -1;
@@ -551,7 +576,9 @@ export const ReviewPanel = ({
           {counts.unresolvable > 0 ? ` · ${counts.unresolvable} unresolvable` : ''}
         </Typography>
         {onRefresh && (
-          <Tooltip title={t('Re-check against the document and regenerate person wrappers / noble titles')}>
+          <Tooltip
+            title={t('Re-check against the document and regenerate person wrappers / noble titles')}
+          >
             <span>
               <IconButton
                 size="small"
@@ -715,8 +742,13 @@ export const ReviewPanel = ({
             {t('Close review')}
           </Button>
         )}
-        <Typography variant="caption" color="text.secondary" sx={{ ml: 'auto', alignSelf: 'center' }}>
-          j/k · Space pick alternative · Enter · Shift+Enter all same · Backspace · Shift+Backspace all same
+        <Typography
+          variant="caption"
+          color="text.secondary"
+          sx={{ ml: 'auto', alignSelf: 'center' }}
+        >
+          j/k · Space pick alternative · Enter · Shift+Enter all same · Backspace · Shift+Backspace
+          all same
         </Typography>
       </Box>
     </Box>

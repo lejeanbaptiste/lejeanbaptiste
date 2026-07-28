@@ -167,11 +167,10 @@ export const AutoTaggingReviewPane = () => {
           const session = getSession();
           const doc = await session.getDocument();
           setSuggestions((current) => {
-            const { suggestions: prepared } = prepareSuggestionsForReview(
-              doc,
-              session.policy,
-              [...current, ...additions],
-            );
+            const { suggestions: prepared } = prepareSuggestionsForReview(doc, session.policy, [
+              ...current,
+              ...additions,
+            ]);
             return prepared;
           });
         } catch (error) {
@@ -245,12 +244,12 @@ export const AutoTaggingReviewPane = () => {
                 const wrapperBatch = await getSession().runPersonWrapperConcatenation(readPack);
                 if (wrapperBatch.suggestions.length > 0) {
                   const currentDoc = await getSession().getDocument();
-                  setSuggestions((current) =>
-                    prepareSuggestionsForReview(
-                      currentDoc,
-                      getSession().policy,
-                      [...current, ...wrapperBatch.suggestions],
-                    ).suggestions,
+                  setSuggestions(
+                    (current) =>
+                      prepareSuggestionsForReview(currentDoc, getSession().policy, [
+                        ...current,
+                        ...wrapperBatch.suggestions,
+                      ]).suggestions,
                   );
                   setNotice(
                     `${wrapperBatch.matchCount} Norbert person-wrapper candidate${wrapperBatch.matchCount === 1 ? '' : 's'} found after component tagging.`,
@@ -285,8 +284,9 @@ export const AutoTaggingReviewPane = () => {
           }
           if (result.personWrapperValidation?.errors.length) {
             const wrapperText = result.personWrapperValidation.errors.slice(0, 3).join('\n');
-            setApplyDiagnostics((current) =>
-              `${current ? `${current}\n\n` : ''}Person-wrapper validation:\n${wrapperText}`,
+            setApplyDiagnostics(
+              (current) =>
+                `${current ? `${current}\n\n` : ''}Person-wrapper validation:\n${wrapperText}`,
             );
             setApplyDiagSeverity('error');
           }
@@ -323,10 +323,14 @@ export const AutoTaggingReviewPane = () => {
         setSuggestions(result.suggestions);
         const parts: string[] = [];
         if (result.staleCount > 0) {
-          parts.push(`${result.staleCount} suggestion${result.staleCount === 1 ? '' : 's'} no longer applied and ${result.staleCount === 1 ? 'was' : 'were'} removed`);
+          parts.push(
+            `${result.staleCount} suggestion${result.staleCount === 1 ? '' : 's'} no longer applied and ${result.staleCount === 1 ? 'was' : 'were'} removed`,
+          );
         }
         if (result.wrapperMatchCount > 0) {
-          parts.push(`${result.wrapperMatchCount} person-wrapper/noble-title candidate${result.wrapperMatchCount === 1 ? '' : 's'} found`);
+          parts.push(
+            `${result.wrapperMatchCount} person-wrapper/noble-title candidate${result.wrapperMatchCount === 1 ? '' : 's'} found`,
+          );
         }
         if (parts.length > 0) setNotice(parts.join('; ') + '.');
       } catch (error) {
@@ -478,38 +482,40 @@ export const AutoTaggingReviewPane = () => {
                 Loading…
               </Typography>
             </Box>
-          ) : (() => {
-            const pluginPanel = findPluginReviewPanel(suggestions);
-            if (pluginPanel) {
-              const PluginPanel = pluginPanel.component;
+          ) : (
+            (() => {
+              const pluginPanel = findPluginReviewPanel(suggestions);
+              if (pluginPanel) {
+                const PluginPanel = pluginPanel.component;
+                return (
+                  <PluginPanel
+                    autoFocus={false}
+                    busy={busy}
+                    finishWhenIdle={pluginPanel.finishWhenIdle}
+                    suggestions={suggestions}
+                    onApply={handleApply}
+                    onFocus={handleFocus}
+                    onDecision={handleDecision}
+                    onClose={handleClose}
+                  />
+                );
+              }
               return (
-                <PluginPanel
+                <ReviewPanel
                   autoFocus={false}
                   busy={busy}
-                  finishWhenIdle={pluginPanel.finishWhenIdle}
                   suggestions={suggestions}
                   onApply={handleApply}
                   onFocus={handleFocus}
                   onDecision={handleDecision}
                   onClose={handleClose}
+                  aiValidationEnabled={aiValidationEnabled}
+                  onRefresh={handleRefresh}
+                  refreshing={refreshing}
                 />
               );
-            }
-            return (
-              <ReviewPanel
-                autoFocus={false}
-                busy={busy}
-                suggestions={suggestions}
-                onApply={handleApply}
-                onFocus={handleFocus}
-                onDecision={handleDecision}
-                onClose={handleClose}
-                aiValidationEnabled={aiValidationEnabled}
-                onRefresh={handleRefresh}
-                refreshing={refreshing}
-              />
-            );
-          })()}
+            })()
+          )}
         </Box>
       </Box>
     </>

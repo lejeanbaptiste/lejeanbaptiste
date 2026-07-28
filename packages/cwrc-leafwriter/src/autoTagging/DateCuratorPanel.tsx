@@ -230,7 +230,8 @@ const DateRow = ({
             </Typography>
           )}
 
-          {(dateStatus === 'ambiguous' || (dateStatus === 'unresolved' && candidates.length > 1)) && (
+          {(dateStatus === 'ambiguous' ||
+            (dateStatus === 'unresolved' && candidates.length > 1)) && (
             <RadioGroup
               value={selectedIndex ?? ''}
               onChange={(_event, value) => onSelectCandidate(Number(value))}
@@ -305,9 +306,17 @@ const DecisionGroup = ({ title, count, open, onToggle, children }: DecisionGroup
       size="small"
       onClick={onToggle}
       endIcon={
-        <ExpandMoreIcon sx={{ transform: open ? 'rotate(180deg)' : undefined, transition: '0.2s' }} />
+        <ExpandMoreIcon
+          sx={{ transform: open ? 'rotate(180deg)' : undefined, transition: '0.2s' }}
+        />
       }
-      sx={{ justifyContent: 'space-between', textTransform: 'none', px: 1, py: 0.5, borderRadius: 0 }}
+      sx={{
+        justifyContent: 'space-between',
+        textTransform: 'none',
+        px: 1,
+        py: 0.5,
+        borderRadius: 0,
+      }}
     >
       {title} ({count})
     </Button>
@@ -477,7 +486,13 @@ export const DateCuratorPanel = ({
     forceRender();
   };
 
-  const { counts, pendingVisible: pending, acceptedVisible: accepted, rejectedVisible: rejected, current } = snapshot;
+  const {
+    counts,
+    pendingVisible: pending,
+    acceptedVisible: accepted,
+    rejectedVisible: rejected,
+    current,
+  } = snapshot;
   const remainingCount = counts.pending + counts.accepted;
 
   useEffect(() => {
@@ -639,7 +654,11 @@ export const DateCuratorPanel = ({
             {t('Close review')}
           </Button>
         )}
-        <Typography variant="caption" color="text.secondary" sx={{ ml: 'auto', alignSelf: 'center' }}>
+        <Typography
+          variant="caption"
+          color="text.secondary"
+          sx={{ ml: 'auto', alignSelf: 'center' }}
+        >
           j/k · Enter · Shift+Enter all same · Backspace · Shift+Backspace all same
         </Typography>
       </Box>

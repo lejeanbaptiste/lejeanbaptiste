@@ -1,4 +1,4 @@
-import { buildDocIndex, locateOccurrenceInIndex } from './anchor';
+import { buildDocIndex, locateOccurrenceInIndex, type DocIndex } from './anchor';
 import { autoSyncEntityToCentral } from './autoSync';
 import {
   applySuggestions,
@@ -80,7 +80,11 @@ import {
 } from './mentions';
 import type { DecisionEvent } from './reviewController';
 import type { Suggestion, WhitespacePolicy } from './types';
-import { iterateAuthorityNdjson, type AuthorityPackContent, type DateRangeFilter } from './packLoader';
+import {
+  iterateAuthorityNdjson,
+  type AuthorityPackContent,
+  type DateRangeFilter,
+} from './packLoader';
 import { expandNorbertWikiNtCandidate } from './norbertWikiNt';
 import type { SearchTextRange } from './chunk';
 import { resolveCurrentDocumentXml } from './documentContent';
@@ -388,6 +392,7 @@ export class AutoTaggingSession {
   private personWrapperCandidatesPromise: Promise<AuthorityCandidate[]> | null = null;
   private documentPaths = new Map<Document, string>();
   private projectLangPromise: Promise<string | null> | null = null;
+  private focusIndex: { body: HTMLElement; index: DocIndex } | null = null;
 
   constructor(
     private readonly writer: WriterLike,
@@ -643,13 +648,15 @@ export class AutoTaggingSession {
       const candidates: AuthorityCandidate[] = [];
       const wrapperContent = await readPackFile('norbert-person-wrappers');
       for (const candidate of iterateAuthorityNdjson(wrapperContent)) {
-        if (candidate.metadata?.wrapper || candidate.metadata?.nobleTitle) candidates.push(candidate);
+        if (candidate.metadata?.wrapper || candidate.metadata?.nobleTitle)
+          candidates.push(candidate);
       }
       try {
         const wikiContent = await readPackFile('norbert-wiki-nt');
         for (const candidate of iterateAuthorityNdjson(wikiContent)) {
           for (const expanded of expandNorbertWikiNtCandidate(candidate)) {
-            if (expanded.metadata?.wrapper || expanded.metadata?.nobleTitle) candidates.push(expanded);
+            if (expanded.metadata?.wrapper || expanded.metadata?.nobleTitle)
+              candidates.push(expanded);
           }
         }
       } catch {
@@ -665,9 +672,7 @@ export class AutoTaggingSession {
     // are ordinary single-node 'add' suggestions and go through the normal
     // seed matcher instead.
     const wrapperMatches = compoundWrapperSuggestions(doc, candidates, this.policy);
-    const nobleTitleOnly = candidates.filter(
-      (c) => !c.metadata?.wrapper && c.metadata?.nobleTitle,
-    );
+    const nobleTitleOnly = candidates.filter((c) => !c.metadata?.wrapper && c.metadata?.nobleTitle);
     const nobleTitleMatches =
       nobleTitleOnly.length > 0 ? seedSuggestions(doc, nobleTitleOnly, this.policy) : [];
     const matches = [...wrapperMatches, ...nobleTitleMatches];
@@ -693,13 +698,16 @@ export class AutoTaggingSession {
     userRules: UserRule[] = [],
   ): Promise<{ suggestions: Suggestion[]; staleCount: number; wrapperMatchCount: number }> {
     const doc = await this.getDocument();
-    const { staleCount } = revalidatePendingSuggestions(doc, suggestions, this.buildApplyOptions(userRules));
-    const wrapperBatch = await this.runPersonWrapperConcatenation(readPackFile);
-    const merged = prepareSuggestionsForReview(
+    const { staleCount } = revalidatePendingSuggestions(
       doc,
-      this.policy,
-      [...suggestions, ...wrapperBatch.suggestions],
-    ).suggestions;
+      suggestions,
+      this.buildApplyOptions(userRules),
+    );
+    const wrapperBatch = await this.runPersonWrapperConcatenation(readPackFile);
+    const merged = prepareSuggestionsForReview(doc, this.policy, [
+      ...suggestions,
+      ...wrapperBatch.suggestions,
+    ]).suggestions;
     return { suggestions: merged, staleCount, wrapperMatchCount: wrapperBatch.matchCount };
   }
 
@@ -1270,6 +1278,10 @@ export class AutoTaggingSession {
     if (this.writer.editor) this.writer.editor.isNotDirty = false;
   }
 
+  private invalidateFocusIndex(): void {
+    this.focusIndex = null;
+  }
+
   private async persistDocument(doc: Document): Promise<void> {
     const xml = new XMLSerializer().serializeToString(doc);
     const path = this.documentPaths.get(doc);
@@ -1280,6 +1292,7 @@ export class AutoTaggingSession {
     const activePath = globals.writer?.overmindState?.editor?.resource?.filePath;
 
     if (!path || path === 'current' || (activePath && samePath(path, activePath))) {
+      this.invalidateFocusIndex();
       this.writer.loadDocumentXML(xml);
       this.syncUnsavedStateAfterReload(xml);
       // The editor's own tag/attribute definitions aren't necessarily settled
@@ -1349,6 +1362,7 @@ export class AutoTaggingSession {
     ).electronAPI;
     for (const item of changed) {
       if (this.isActiveFile(item.filePath)) {
+        this.invalidateFocusIndex();
         this.writer.loadDocumentXML(item.xml);
         this.syncUnsavedStateAfterReload(item.xml);
       } else if (api?.writeFile) {
@@ -1586,6 +1600,7 @@ export class AutoTaggingSession {
       await yieldToUi();
       this.snapshots.push(result.snapshot);
       const xml = new XMLSerializer().serializeToString(doc);
+      this.invalidateFocusIndex();
       this.writer.loadDocumentXML(xml);
       this.syncUnsavedStateAfterReload(xml);
       this.writer.validate?.();
@@ -1643,6 +1658,7 @@ export class AutoTaggingSession {
   revertLastApply(): boolean {
     const snapshot = this.snapshots.pop();
     if (!snapshot) return false;
+    this.invalidateFocusIndex();
     this.writer.loadDocumentXML(snapshot);
     this.syncUnsavedStateAfterReload(snapshot);
     return true;
@@ -1681,7 +1697,14 @@ export class AutoTaggingSession {
 
     try {
       const body = editor.getBody();
-      const index = buildDocIndex(body, this.policy);
+      const index =
+        this.focusIndex?.body === body
+          ? this.focusIndex.index
+          : (() => {
+              const built = buildDocIndex(body, this.policy);
+              this.focusIndex = { body, index: built };
+              return built;
+            })();
       // Use the Nth document-wide occurrence — never indexOf's first hit.
       // Flat search text also covers date strings that span element boundaries.
       const located = locateOccurrenceInIndex(index, surface, occurrence);

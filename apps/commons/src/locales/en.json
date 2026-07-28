@@ -625,6 +625,8 @@
           "one_line_description": "One-line description",
           "romanized_name": "Romanized name",
           "refresh_authorities": "Refresh data from authorities",
+          "lookup_entity": "Look up this entity",
+          "detach_authority": "Detach authority",
           "person_facts": "Person facts",
           "dates": "Dates",
           "nationality": "Nationality",

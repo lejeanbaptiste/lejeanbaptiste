@@ -271,14 +271,20 @@ export function restoreEntityAssertion(doc: Document, id: string, key: string): 
  */
 export function decoupleAuthority(doc: Document, id: string, authority: AuthorityId): number {
   const item = requireEntity(doc, id);
+  const normalizedValue = normalizeAuthorityValue(authority.type, authority.value);
   let removed = 0;
   for (const child of Array.from(item.children)) {
     const provenance = readEntityValueProvenance(child);
     const matchesId =
       child.localName === 'idno' &&
       child.getAttribute('type') === authority.type &&
-      child.textContent?.trim() === authority.value.trim();
-    const matchesSource = provenance.source === `${authority.type}:${authority.value}`;
+      normalizeAuthorityValue(authority.type, child.textContent?.trim() ?? '') === normalizedValue;
+    const matchesSource = provenance.source?.startsWith(`${authority.type}:`)
+      ? normalizeAuthorityValue(
+          authority.type,
+          provenance.source.slice(authority.type.length + 1),
+        ) === normalizedValue
+      : false;
     if (matchesId || matchesSource) {
       if (provenance.status === 'active' && provenance.origin === 'authority') {
         child.remove();
@@ -567,8 +573,11 @@ export function removeEntityName(doc: Document, id: string, name: string): boole
 /** Attach an authority idno unless the same type+value is already present. */
 export function attachAuthority(doc: Document, id: string, ref: AuthorityId): boolean {
   const item = requireEntity(doc, id);
+  const normalizedValue = normalizeAuthorityValue(ref.type, ref.value);
   const exists = idnoElements(item).some(
-    (el) => el.getAttribute('type') === ref.type && el.textContent?.trim() === ref.value.trim(),
+    (el) =>
+      el.getAttribute('type') === ref.type &&
+      normalizeAuthorityValue(ref.type, el.textContent?.trim() ?? '') === normalizedValue,
   );
   if (exists) return false;
   const idno = doc.createElementNS(TEI_NS, 'idno');

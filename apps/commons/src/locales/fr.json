@@ -599,6 +599,8 @@
           "one_line_description": "Description en une ligne",
           "romanized_name": "Nom romanisé",
           "refresh_authorities": "Actualiser les données des autorités",
+          "lookup_entity": "Rechercher cette entité",
+          "detach_authority": "Détacher l’autorité",
           "person_facts": "Informations sur la personne",
           "dates": "Dates",
           "nationality": "Nationalité",
