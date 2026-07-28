@@ -4,6 +4,7 @@ export const AUTHORITY_PACKS_DIRNAME = 'authority-packs';
 
 export type AuthorityPackId =
   | 'cbdb-persons'
+  | 'cbdb-concordance'
   | 'cbdb-places'
   | 'cbdb-offices'
   | 'dila-persons'
@@ -66,7 +67,17 @@ const WIKIDATA_PERSON_CHILD_SET = new Set<AuthorityPackId>(WIKIDATA_PERSON_CHILD
 export interface AuthorityPackSpec {
   id: AuthorityPackId;
   label: string;
-  source: 'cbdb' | 'dila' | 'chgis' | 'wikidata' | 'ndl' | 'norbert' | 'pedb' | 'cedb' | 'project' | 'list';
+  source:
+    | 'cbdb'
+    | 'dila'
+    | 'chgis'
+    | 'wikidata'
+    | 'ndl'
+    | 'norbert'
+    | 'pedb'
+    | 'cedb'
+    | 'project'
+    | 'list';
   relativePath: string;
   defaultTag: string;
   /** When true, {@link expandAuthorityPackIds} loads {@link WIKIDATA_PERSON_CHILD_PACK_IDS}. */
@@ -83,11 +94,20 @@ export interface AuthorityPackSpec {
 }
 
 /** `spec.origin`, defaulting to `'file'` when omitted (existing NDJSON packs). */
-export function authorityPackOrigin(spec: AuthorityPackSpec): NonNullable<AuthorityPackSpec['origin']> {
+export function authorityPackOrigin(
+  spec: AuthorityPackSpec,
+): NonNullable<AuthorityPackSpec['origin']> {
   return spec.origin ?? 'file';
 }
 
 export const AUTHORITY_PACKS: AuthorityPackSpec[] = [
+  {
+    id: 'cbdb-concordance',
+    label: 'CBDB person concordance',
+    source: 'cbdb',
+    relativePath: 'cbdb/person-concordance.ndjson',
+    defaultTag: '',
+  },
   {
     id: 'cbdb-persons',
     label: 'CBDB persons',
@@ -446,7 +466,9 @@ export function setDynamicAuthorityPackSpecs(specs: AuthorityPackSpec[]): void {
   dynamicAuthorityPackSpecs = specs;
 }
 
-export function getAuthorityPackSpec(packId: AuthorityPackId | string): AuthorityPackSpec | undefined {
+export function getAuthorityPackSpec(
+  packId: AuthorityPackId | string,
+): AuthorityPackSpec | undefined {
   return (
     dynamicAuthorityPackSpecs.find((p) => p.id === packId) ??
     AUTHORITY_PACKS.find((p) => p.id === packId)
@@ -527,7 +549,9 @@ export function isWikidataPersonChildPackId(id: AuthorityPackId): boolean {
 }
 
 /** Map persisted pack ids (incl. legacy per-dynasty Wikidata) to UI checkbox state. */
-export function uiPacksFromPersisted(persisted?: AuthorityPackId[]): Record<AuthorityPackId, boolean> {
+export function uiPacksFromPersisted(
+  persisted?: AuthorityPackId[],
+): Record<AuthorityPackId, boolean> {
   const base = Object.fromEntries(UI_AUTHORITY_PACK_IDS.map((id) => [id, false])) as Record<
     AuthorityPackId,
     boolean
@@ -580,9 +604,7 @@ export interface AuthorityPackTypeGroup {
 }
 
 /** Group visible pack specs by TEI tag type (persName, placeName, …). */
-export function groupAuthorityPacksByTagType(
-  packIds: AuthorityPackId[],
-): AuthorityPackTypeGroup[] {
+export function groupAuthorityPacksByTagType(packIds: AuthorityPackId[]): AuthorityPackTypeGroup[] {
   const specs = packIds
     .map((id) => AUTHORITY_PACKS.find((p) => p.id === id))
     .filter((p): p is AuthorityPackSpec => !!p);
@@ -677,7 +699,9 @@ export interface AuthorityPackSourceGroup {
 }
 
 /** Group visible pack specs by authority source (CBDB, DILA, …). */
-export function groupAuthorityPacksBySource(packIds: AuthorityPackId[]): AuthorityPackSourceGroup[] {
+export function groupAuthorityPacksBySource(
+  packIds: AuthorityPackId[],
+): AuthorityPackSourceGroup[] {
   const specs = packIds
     .map((id) => AUTHORITY_PACKS.find((p) => p.id === id))
     .filter((p): p is AuthorityPackSpec => !!p);
@@ -692,5 +716,9 @@ export function groupAuthorityPacksBySource(packIds: AuthorityPackId[]): Authori
 }
 
 export function shortAuthorityPackLabel(packId: AuthorityPackId): string {
-  return AUTHORITY_PACK_SHORT_LABELS[packId] ?? AUTHORITY_PACKS.find((p) => p.id === packId)?.label ?? packId;
+  return (
+    AUTHORITY_PACK_SHORT_LABELS[packId] ??
+    AUTHORITY_PACKS.find((p) => p.id === packId)?.label ??
+    packId
+  );
 }

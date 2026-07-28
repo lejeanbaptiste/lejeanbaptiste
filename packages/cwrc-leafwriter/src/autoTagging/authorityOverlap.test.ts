@@ -36,6 +36,26 @@ describe('authorityOverlap', () => {
     expect(canonicalEntityKey(dilaWang)).toBe('person:CBDB:1762');
   });
 
+  it('uses CBDB internal canonical person ids for duplicate rows', () => {
+    const canonical = {
+      source: 'CBDB',
+      authorityId: '141',
+      kind: 'person',
+      primaryName: '喬維岳',
+      searchStrings: ['喬維岳'],
+      metadata: { canonicalEntityId: 'cbdb:person:141' },
+    } as AuthorityCandidate;
+    const duplicate = {
+      source: 'CBDB',
+      authorityId: '96120',
+      kind: 'person',
+      primaryName: '喬維岳',
+      searchStrings: ['喬維岳'],
+      metadata: { canonicalEntityId: 'cbdb:person:141' },
+    } as AuthorityCandidate;
+    expect(canonicalEntityKey(canonical)).toBe(canonicalEntityKey(duplicate));
+  });
+
   it('merges linked CBDB and DILA candidates', () => {
     const merged = mergeAuthorityCandidates(cbdbWang, dilaWang);
     expect(merged.source).toBe('CBDB+DILA');
@@ -50,12 +70,14 @@ describe('authorityOverlap', () => {
       {
         ...cbdbWang,
         metadata: {
-          appointments: [{
-            source: 'CBDB',
-            authorityId: 'posting:1',
-            person: { source: 'CBDB', authorityId: '1762' },
-            office: { source: 'CBDB', authorityId: '42', name: '尚書' },
-          }],
+          appointments: [
+            {
+              source: 'CBDB',
+              authorityId: 'posting:1',
+              person: { source: 'CBDB', authorityId: '1762' },
+              office: { source: 'CBDB', authorityId: '42', name: '尚書' },
+            },
+          ],
         },
       },
       {
@@ -63,12 +85,14 @@ describe('authorityOverlap', () => {
         source: 'Norbert',
         metadata: {
           crosswalk: { cbdb: '1762' },
-          appointments: [{
-            source: 'Norbert',
-            authorityId: 'person_offices:9',
-            person: { source: 'Norbert', authorityId: '123' },
-            office: { source: 'Norbert', authorityId: '7', name: '侍中' },
-          }],
+          appointments: [
+            {
+              source: 'Norbert',
+              authorityId: 'person_offices:9',
+              person: { source: 'Norbert', authorityId: '123' },
+              office: { source: 'Norbert', authorityId: '7', name: '侍中' },
+            },
+          ],
         },
       },
     );

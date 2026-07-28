@@ -44,7 +44,8 @@ function dedupeSourceLabels(sources: string[]): string[] {
 /** Convert seed matches to tag-stage suggestions (no @key — disambiguation later). */
 export function suggestionsFromSeedMatches(matches: SeedMatch[]): Suggestion[] {
   return matches.map((match) => {
-    const wrapper = match.candidates.find((candidate) => candidate.metadata?.wrapper)?.metadata?.wrapper;
+    const wrapper = match.candidates.find((candidate) => candidate.metadata?.wrapper)?.metadata
+      ?.wrapper;
     const nobleTitle = match.candidates.find(
       (candidate) => !candidate.metadata?.wrapper && candidate.metadata?.teiTag === 'nobleTitle',
     )?.metadata?.nobleTitle;
@@ -59,14 +60,18 @@ export function suggestionsFromSeedMatches(matches: SeedMatch[]): Suggestion[] {
       : undefined;
     return {
       ...match.suggestion,
-      ...(wrapper ? {
-        tag: 'name',
-        attributes: { type: 'personWrapper', cert: 'unknown' },
-        innerXml: wrapperInnerXml(wrapper),
-      } : nobleTitleXml ? {
-        tag: 'nobleTitle',
-        innerXml: nobleTitleXml,
-      } : {}),
+      ...(wrapper
+        ? {
+            tag: 'name',
+            attributes: { type: 'personWrapper', cert: 'unknown' },
+            innerXml: wrapperInnerXml(wrapper),
+          }
+        : nobleTitleXml
+          ? {
+              tag: 'nobleTitle',
+              innerXml: nobleTitleXml,
+            }
+          : {}),
       source: 'authority' as const,
       sourceDetail: dedupeSourceLabels(match.candidates.map((c) => c.source)).join('+'),
       rationale: rationaleForCandidates(match.candidates),
@@ -107,7 +112,15 @@ export function compoundWrapperSuggestions(
               tag: 'name',
               attributes: { type: 'personWrapper', cert: 'unknown' },
               anchor: createCompoundAnchor(
-                '', doc, start.node, start.rawStart, end.node, end.rawEnd, surface, policy, index,
+                '',
+                doc,
+                start.node,
+                start.rawStart,
+                end.node,
+                end.rawEnd,
+                surface,
+                policy,
+                index,
               ),
               rationale: `Concatenated person wrapper candidate from ${candidate.source}`,
               status: 'pending',
@@ -116,7 +129,12 @@ export function compoundWrapperSuggestions(
           };
           byLocation.set(key, match);
         }
-        if (!match.candidates.some((item) => item.authorityId === candidate.authorityId && item.source === candidate.source)) {
+        if (
+          !match.candidates.some(
+            (item) =>
+              item.authorityId === candidate.authorityId && item.source === candidate.source,
+          )
+        ) {
           match.candidates.push(candidate);
         }
       }
@@ -135,13 +153,21 @@ function boundaryAt(
     if (flatOffset < start || flatOffset >= end) continue;
     const local = flatOffset - start;
     const search = index.nodes[i]!.search;
-    return { node: index.nodes[i]!.node, rawStart: search.map[local]!, rawEnd: search.map[local]! + 1 };
+    return {
+      node: index.nodes[i]!.node,
+      rawStart: search.map[local]!,
+      rawEnd: search.map[local]! + 1,
+    };
   }
   return null;
 }
 
 function xmlEscape(value: string): string {
-  return value.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+  return value
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;');
 }
 
 /** Build nested TEI content for a transient wrapper suggestion. */
@@ -149,10 +175,14 @@ export function wrapperInnerXml(
   wrapper: NonNullable<NonNullable<AuthorityCandidate['metadata']>['wrapper']>,
 ): string {
   const components = wrapper.components;
-  const nationality = components.nationality ? `<nationality>${xmlEscape(components.nationality)}</nationality>` : '';
+  const nationality = components.nationality
+    ? `<nationality>${xmlEscape(components.nationality)}</nationality>`
+    : '';
   const titleParts = [
     components.fief ? `<placeName>${xmlEscape(components.fief)}</placeName>` : '',
-    components.posthumousName ? `<persName type="posthumous">${xmlEscape(components.posthumousName)}</persName>` : '',
+    components.posthumousName
+      ? `<persName type="posthumous">${xmlEscape(components.posthumousName)}</persName>`
+      : '',
     components.roleName ? `<roleName>${xmlEscape(components.roleName)}</roleName>` : '',
   ].join('');
   const title = titleParts ? `<nobleTitle>${titleParts}</nobleTitle>` : '';
@@ -354,20 +384,41 @@ function resolveEntity(
   const authorityIds =
     candidate.kind === 'office'
       ? officeAuthorityIds(candidate)
-      : [{ type: candidate.source, value: candidate.authorityId }];
+      : [
+          { type: candidate.source, value: candidate.authorityId },
+          ...(candidate.metadata?.canonicalEntityId?.startsWith(
+            `${candidate.source.toLowerCase()}:person:`,
+          )
+            ? [
+                {
+                  type: candidate.source,
+                  value: candidate.metadata.canonicalEntityId.slice(
+                    `${candidate.source.toLowerCase()}:person:`.length,
+                  ),
+                },
+              ]
+            : []),
+        ].filter(
+          (id, index, all) =>
+            all.findIndex((other) => other.type === id.type && other.value === id.value) === index,
+        );
   const memo =
-    candidate.metadata?.canonicalEntityId
-    ?? authorityIds.map((id) => `${id.type}:${id.value}`).sort().join('|');
+    candidate.metadata?.canonicalEntityId ??
+    authorityIds
+      .map((id) => `${id.type}:${id.value}`)
+      .sort()
+      .join('|');
   const already = minted.get(memo);
   if (already) return { id: already, created: false };
 
   // Scan the entity file for an existing idno match.
   for (const idno of Array.from(entitiesDoc.getElementsByTagName('idno'))) {
-    if (authorityIds.some(
-      (authority) =>
-        idno.getAttribute('type') === authority.type
-        && idno.textContent === authority.value,
-    )) {
+    if (
+      authorityIds.some(
+        (authority) =>
+          idno.getAttribute('type') === authority.type && idno.textContent === authority.value,
+      )
+    ) {
       const owner = idno.parentElement;
       const existing = owner?.getAttribute('xml:id');
       if (existing && owner) {
@@ -397,13 +448,10 @@ function resolveEntity(
     candidate.kind,
     {
       name: candidate.primaryName,
-      nameLang:
-        projectLang && !isLatinSurface(candidate.primaryName) ? projectLang : undefined,
+      nameLang: projectLang && !isLatinSurface(candidate.primaryName) ? projectLang : undefined,
       romanizedName: romanizedName ?? undefined,
       authorityIds,
-      officeTypeIds: candidate.kind === 'office'
-        ? candidate.metadata?.officeTypeIds
-        : undefined,
+      officeTypeIds: candidate.kind === 'office' ? candidate.metadata?.officeTypeIds : undefined,
       ...(candidate.metadata
         ? { cache: { source: candidate.source, data: candidate.metadata } }
         : {}),
@@ -491,13 +539,7 @@ export async function autoLinkUnique(
       entitiesCreated += 1;
       createdIds.push(id);
     }
-    const structure = importExplicitOfficeParent(
-      entitiesDoc,
-      id,
-      candidate,
-      minted,
-      projectLang,
-    );
+    const structure = importExplicitOfficeParent(entitiesDoc, id, candidate, minted, projectLang);
     entitiesCreated += structure.entitiesCreated;
     importedRelationsCreated += structure.relationsCreated;
     if (structure.createdId) createdIds.push(structure.createdId);
@@ -530,8 +572,7 @@ export async function autoLinkUnique(
   }
 
   const relationsCreated =
-    importedRelationsCreated
-    + recordAdjacentOfficeRelations(entitiesDoc, officeMentions);
+    importedRelationsCreated + recordAdjacentOfficeRelations(entitiesDoc, officeMentions);
 
   // One central-store round trip for the whole batch rather than one per
   // entity - seed/import can mint many entities at once.

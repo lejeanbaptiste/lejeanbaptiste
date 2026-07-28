@@ -67,10 +67,14 @@ import {
   setNameType,
   setRomanizedName,
   rejectEntityAssertion,
+  rejectConcordance,
+  applyConcordanceAssociations,
   restoreEntityAssertion,
   validateEntityAssertion,
   type CentralMergeConflict,
   type DuplicateGroup,
+  type ConcordanceAssociation,
+  type ConcordanceImportResult,
   type EntitySummary,
 } from '../../../../../packages/cwrc-leafwriter/src/autoTagging/entityOps';
 import {
@@ -80,6 +84,7 @@ import {
 import { backfillEntityNames } from '../../../../../packages/cwrc-leafwriter/src/autoTagging/nameBackfill';
 import { nameTypeLabel } from '../../../../../packages/cwrc-leafwriter/src/autoTagging/nameTypeLabels';
 import { cachedPackReader } from '../../../../../packages/cwrc-leafwriter/src/services/authority-pack-lookup';
+import { authorityPackLines } from '../../../../../packages/cwrc-leafwriter/src/autoTagging/packLoader';
 import {
   centralEntityStoreFromDesktop,
   entityStoreFromDesktop,
@@ -150,6 +155,9 @@ export const SidebarDatabaseTab = ({ active = false }: SidebarDatabaseTabProps) 
   const [projectLang, setProjectLang] = useState<string | null>(null);
   const [entities, setEntities] = useState<EntitySummary[]>([]);
   const [duplicates, setDuplicates] = useState<DuplicateGroup[]>([]);
+  const [concordanceConflicts, setConcordanceConflicts] = useState<
+    ConcordanceImportResult['conflicts']
+  >([]);
   const [warnings, setWarnings] = useState<LookupWarning[]>([]);
   const [loading, setLoading] = useState(false);
   const [busyMessage, setBusyMessage] = useState<string | null>(null);
@@ -209,6 +217,7 @@ export const SidebarDatabaseTab = ({ active = false }: SidebarDatabaseTabProps) 
     if (!currentStore) {
       setEntities([]);
       setDuplicates([]);
+      setConcordanceConflicts([]);
       setWarnings([]);
       setCentralStore(null);
       setDocketCount(0);
@@ -235,9 +244,35 @@ export const SidebarDatabaseTab = ({ active = false }: SidebarDatabaseTabProps) 
     setLoadError(null);
     try {
       const doc = await activeStore.loadEntities();
+      let conflicts: ConcordanceImportResult['conflicts'] = [];
+      if (activeStore === currentStore) {
+        const readPack = cachedPackReader();
+        if (readPack) {
+          try {
+            const content = await readPack('cbdb-concordance');
+            const associations = authorityPackLines(content)
+              .map((line) => {
+                try {
+                  return JSON.parse(line) as ConcordanceAssociation;
+                } catch {
+                  return null;
+                }
+              })
+              .filter((row): row is ConcordanceAssociation =>
+                Boolean(row?.source && row.canonicalId && row.mergedFromId),
+              );
+            const imported = applyConcordanceAssociations(doc, associations);
+            conflicts = imported.conflicts;
+            if (imported.applied > 0) await currentStore.saveEntities(doc);
+          } catch {
+            // Older installations may not yet have the concordance file.
+          }
+        }
+      }
       setEntities(listEntities(doc));
       // Duplicate-authority detection and lookup warnings are project-only concerns.
       setDuplicates(activeStore === currentStore ? findAuthorityDuplicates(doc) : []);
+      setConcordanceConflicts(activeStore === currentStore ? conflicts : []);
       setWarnings(activeStore === currentStore ? await loadOpenWarnings(currentStore) : []);
     } catch (error) {
       setLoadError(error instanceof Error ? error.message : String(error));
@@ -719,6 +754,12 @@ export const SidebarDatabaseTab = ({ active = false }: SidebarDatabaseTabProps) 
     });
   };
 
+  const rejectConcordanceConflict = (conflict: ConcordanceImportResult['conflicts'][number]) => {
+    void runMutation(store, 'Rejecting concordance…', (doc) => {
+      rejectConcordance(doc, conflict.association, conflict.entityIds[0]);
+    });
+  };
+
   const entityById = (id: string) => entities.find((entity) => entity.id === id);
 
   /** Jump the list to one entity (search pins it, checkbox selects it). */
@@ -994,6 +1035,32 @@ export const SidebarDatabaseTab = ({ active = false }: SidebarDatabaseTabProps) 
         </Alert>
       )}
 
+      {concordanceConflicts.length > 0 && (
+        <Alert severity="info" sx={{ m: 1, py: 0 }}>
+          <Typography variant="caption" component="div" sx={{ fontWeight: 600 }}>
+            CBDB concordance associations need review
+          </Typography>
+          {concordanceConflicts.slice(0, 5).map((conflict) => (
+            <Stack
+              key={`${conflict.association.source}:${conflict.association.canonicalId}:${conflict.association.mergedFromId}`}
+              direction="row"
+              spacing={0.5}
+              alignItems="center"
+              sx={{ mt: 0.5 }}
+            >
+              <Typography variant="caption" sx={{ flex: 1, minWidth: 0 }} noWrap>
+                {conflict.association.source} {conflict.association.canonicalId} ↔{' '}
+                {conflict.association.mergedFromId}:{' '}
+                {conflict.entityIds.map((id) => entityById(id)?.names[0] ?? id).join(', ')}
+              </Typography>
+              <Button size="small" onClick={() => rejectConcordanceConflict(conflict)}>
+                Reject
+              </Button>
+            </Stack>
+          ))}
+        </Alert>
+      )}
+
       {/* Lookup curation warnings (filed by the entity lookup dialog) */}
       {warnings.length > 0 && (
         <Alert severity="warning" icon={<WarningAmberIcon fontSize="small" />} sx={{ m: 1, py: 0 }}>
@@ -1152,6 +1219,21 @@ export const SidebarDatabaseTab = ({ active = false }: SidebarDatabaseTabProps) 
                         ))}
                       </>
                     )}
+                    {showRejected &&
+                      entity.rejectedConcordances.map((rejection) => (
+                        <Chip
+                          key={`${rejection.leftId}-${rejection.rightId}`}
+                          label={`${rejection.leftId} ↔ ${rejection.rightId}`}
+                          size="small"
+                          color="error"
+                          variant="outlined"
+                          sx={{
+                            height: 20,
+                            textDecoration: 'line-through',
+                            '& .MuiChip-label': { px: 0.75, fontSize: 11 },
+                          }}
+                        />
+                      ))}
                   </Stack>
                   {entity.authorities.length > 0 && (
                     <Stack

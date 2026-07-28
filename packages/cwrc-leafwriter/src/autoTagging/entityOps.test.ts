@@ -2,6 +2,7 @@ import { addEntity, createEntitiesScaffold, findEntity, parseEntities } from './
 import { getCentralId, setCentralMapping } from './concordance';
 import {
   addEntityName,
+  applyConcordanceAssociations,
   attachAuthority,
   deleteEntity,
   detachAuthority,
@@ -20,6 +21,8 @@ import {
   taggableEntityNames,
   decoupleAuthority,
   listEntityAssertions,
+  listConcordanceRejections,
+  rejectConcordance,
   rejectEntityAssertion,
   validateEntityAssertion,
 } from './entityOps';
@@ -62,6 +65,55 @@ describe('listEntities', () => {
     setCentralMapping(element, 'user-a', 'person-central-1');
 
     expect(listEntities(doc)[0]!.authorities).toEqual([{ type: 'CBDB', value: '25788' }]);
+  });
+});
+
+describe('CBDB concordance updates', () => {
+  const association = {
+    source: 'CBDB',
+    canonicalId: '141',
+    mergedFromId: '96120',
+    notes: 'same person',
+  };
+
+  it('adds a new authority id to the one matching local entity', () => {
+    const doc = makeDoc();
+    const entity = addEntity(doc, 'person', {
+      name: '喬維岳',
+      authorityIds: [{ type: 'CBDB', value: '141' }],
+    });
+    const result = applyConcordanceAssociations(doc, [association]);
+    expect(result).toMatchObject({ applied: 1, conflicts: [] });
+    expect(listEntities(doc).find((item) => item.id === entity.id)?.authorities).toEqual([
+      { type: 'CBDB', value: '141' },
+      { type: 'CBDB', value: '96120' },
+    ]);
+  });
+
+  it('preserves a user rejection across repeated authority updates', () => {
+    const doc = makeDoc();
+    const entity = addEntity(doc, 'person', {
+      name: '喬維岳',
+      authorityIds: [{ type: 'CBDB', value: '141' }],
+    });
+    rejectConcordance(doc, association, entity.id);
+    expect(applyConcordanceAssociations(doc, [association])).toMatchObject({
+      rejected: 1,
+      applied: 0,
+    });
+    expect(listConcordanceRejections(doc)).toHaveLength(1);
+    expect(
+      listEntities(doc).find((item) => item.id === entity.id)?.rejectedConcordances,
+    ).toHaveLength(1);
+  });
+
+  it('does not merge two distinct local entities automatically', () => {
+    const doc = makeDoc();
+    addEntity(doc, 'person', { name: '喬維岳', authorityIds: [{ type: 'CBDB', value: '141' }] });
+    addEntity(doc, 'person', { name: '喬維岳', authorityIds: [{ type: 'CBDB', value: '96120' }] });
+    const result = applyConcordanceAssociations(doc, [association]);
+    expect(result.conflicts).toHaveLength(1);
+    expect(listEntities(doc).flatMap((item) => item.authorities)).toHaveLength(2);
   });
 });
 

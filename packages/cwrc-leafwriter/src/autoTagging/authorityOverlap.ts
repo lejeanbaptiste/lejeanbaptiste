@@ -104,6 +104,9 @@ function mergeIntoList(
  * the same key as the matching CBDB row.
  */
 export function canonicalEntityKey(candidate: AuthorityCandidate): string {
+  if (candidate.kind === 'person' && candidate.metadata?.canonicalEntityId) {
+    return candidate.metadata.canonicalEntityId;
+  }
   const cbdbCrosswalk = candidate.metadata?.crosswalk?.cbdb;
   if (candidate.kind === 'person' && cbdbCrosswalk) {
     return `person:CBDB:${normalizeCbdbId(cbdbCrosswalk)}`;
@@ -190,15 +193,13 @@ export function mergeAuthorityCandidates(
   if (incoming.source === 'Norbert' && incoming.kind === 'office') {
     crosswalk.norbert = incoming.authorityId;
   }
-  const appointments = [...new Map(
-    [
-      ...(existing.metadata?.appointments ?? []),
-      ...(incoming.metadata?.appointments ?? []),
-    ].map((appointment) => [
-      `${appointment.source}:${appointment.authorityId}`,
-      appointment,
-    ]),
-  ).values()];
+  const appointments = [
+    ...new Map(
+      [...(existing.metadata?.appointments ?? []), ...(incoming.metadata?.appointments ?? [])].map(
+        (appointment) => [`${appointment.source}:${appointment.authorityId}`, appointment],
+      ),
+    ).values(),
+  ];
 
   return {
     ...existing,
@@ -236,7 +237,9 @@ export function collapseLinkedCandidates(
       merged[keyIdx] = mergeAuthorityCandidates(merged[keyIdx]!, candidate);
       continue;
     }
-    const packIdx = merged.findIndex((c) => shouldMergePlacePackCandidates(c, candidate, proximityKm));
+    const packIdx = merged.findIndex((c) =>
+      shouldMergePlacePackCandidates(c, candidate, proximityKm),
+    );
     if (packIdx >= 0) {
       merged[packIdx] = mergeAuthorityCandidates(merged[packIdx]!, candidate);
       continue;

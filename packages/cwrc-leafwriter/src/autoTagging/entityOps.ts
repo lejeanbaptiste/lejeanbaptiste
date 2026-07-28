@@ -14,6 +14,7 @@ import {
 } from './concordance';
 import {
   ENTITY_KINDS,
+  appendAuthorityIdnos,
   entityElements,
   entityKindOfElement,
   findEntity,
@@ -39,6 +40,31 @@ const TEI_NS = 'http://www.tei-c.org/ns/1.0';
 const XML_NS = 'http://www.w3.org/XML/1998/namespace';
 
 export const DUPLICATE_OK_NOTE_TYPE = 'duplicate-ok';
+export const CONCORDANCE_REJECTED_NOTE_TYPE = 'concordance-rejected';
+
+export interface ConcordanceAssociation {
+  source: string;
+  canonicalId: string;
+  mergedFromId: string;
+  notes?: string;
+  sourceRef?: string;
+}
+
+export interface ConcordanceRejection {
+  source: string;
+  leftId: string;
+  rightId: string;
+  reason: string | null;
+  entityId: string | null;
+}
+
+export interface ConcordanceImportResult {
+  applied: number;
+  alreadyPresent: number;
+  rejected: number;
+  unresolved: number;
+  conflicts: { association: ConcordanceAssociation; entityIds: string[] }[];
+}
 
 export interface NameEntry {
   text: string;
@@ -67,6 +93,7 @@ export interface EntitySummary {
   origins: EntityValueOrigin[];
   rejectedCount: number;
   rejectedAssertions: { element: string; value: string; source: string | null }[];
+  rejectedConcordances: ConcordanceRejection[];
   assertions: EntityAssertionSummary[];
 }
 
@@ -140,6 +167,7 @@ function summarize(item: Element): EntitySummary | null {
         source: readEntityValueProvenance(child).source,
       }))
       .filter((assertion) => assertion.value),
+    rejectedConcordances: listConcordanceRejectionsForEntity(item.ownerDocument, id),
     assertions: Array.from(item.children)
       .filter((child) => child.localName !== 'note' || child.getAttribute('type') !== 'ljb-changed')
       .map((child) => ({
@@ -760,4 +788,138 @@ export function markDuplicateIntentional(doc: Document, ids: string[]): void {
   note.setAttribute('type', DUPLICATE_OK_NOTE_TYPE);
   note.setAttribute('target', target);
   first.appendChild(note);
+}
+
+const concordanceRef = (source: string, id: string): string => {
+  const value = /^cbdb$/i.test(source) ? id.replace(/^0+(?=\d)/, '') : id;
+  return `${source.trim().toUpperCase()}:${value.trim()}`;
+};
+
+const concordanceRefs = (association: ConcordanceAssociation): [string, string] =>
+  [
+    concordanceRef(association.source, association.canonicalId),
+    concordanceRef(association.source, association.mergedFromId),
+  ].sort() as [string, string];
+
+const allEntityElements = (doc: Document): Element[] =>
+  (Object.keys(ENTITY_KINDS) as EntityKind[]).flatMap((kind) => entityElements(doc, kind));
+
+const activeAuthorityRefs = (entity: Element): string[] =>
+  idnoElements(entity)
+    .filter((idno) => idno.getAttribute('type') !== CENTRAL_IDNO_TYPE)
+    .filter((idno) => readEntityValueProvenance(idno).status === 'active')
+    .map((idno) => concordanceRef(idno.getAttribute('type') ?? '', idno.textContent?.trim() ?? ''));
+
+function rejectionFromNote(note: Element): ConcordanceRejection | null {
+  const target = (note.getAttribute('target') ?? '').split(/\s+/).filter(Boolean);
+  if (target.length !== 2) return null;
+  const [leftId, rightId] = target.sort();
+  return {
+    source: note.getAttribute('source') ?? leftId.split(':')[0] ?? '',
+    leftId,
+    rightId,
+    reason: note.getAttribute('reason'),
+    entityId: note.parentElement?.getAttribute('xml:id') ?? null,
+  };
+}
+
+export function listConcordanceRejections(doc: Document): ConcordanceRejection[] {
+  return Array.from(doc.getElementsByTagName('note'))
+    .filter((note) => note.getAttribute('type') === CONCORDANCE_REJECTED_NOTE_TYPE)
+    .map(rejectionFromNote)
+    .filter((rejection): rejection is ConcordanceRejection => rejection !== null);
+}
+
+function listConcordanceRejectionsForEntity(
+  doc: Document,
+  entityId: string,
+): ConcordanceRejection[] {
+  const entity = allEntityElements(doc).find(
+    (candidate) => candidate.getAttribute('xml:id') === entityId,
+  );
+  if (!entity) return [];
+  const refs = new Set(activeAuthorityRefs(entity));
+  return listConcordanceRejections(doc).filter(
+    (rejection) => refs.has(rejection.leftId) || refs.has(rejection.rightId),
+  );
+}
+
+export function isConcordanceRejected(doc: Document, association: ConcordanceAssociation): boolean {
+  const [left, right] = concordanceRefs(association);
+  return listConcordanceRejections(doc).some(
+    (rejection) => rejection.leftId === left && rejection.rightId === right,
+  );
+}
+
+export function rejectConcordance(
+  doc: Document,
+  association: ConcordanceAssociation,
+  entityId?: string,
+  reason = 'user',
+): void {
+  if (isConcordanceRejected(doc, association)) return;
+  const [left, right] = concordanceRefs(association);
+  const owner = entityId
+    ? findEntity(doc, entityId)
+    : allEntityElements(doc).find((entity) =>
+        activeAuthorityRefs(entity).some((ref) => ref === left || ref === right),
+      );
+  if (!owner) return;
+  const note = doc.createElementNS(TEI_NS, 'note');
+  note.setAttribute('type', CONCORDANCE_REJECTED_NOTE_TYPE);
+  note.setAttribute('source', association.source);
+  note.setAttribute('target', `${left} ${right}`);
+  note.setAttribute('reason', reason);
+  if (association.notes) note.textContent = association.notes;
+  owner.appendChild(note);
+}
+
+export function applyConcordanceAssociations(
+  doc: Document,
+  associations: ConcordanceAssociation[],
+): ConcordanceImportResult {
+  const result: ConcordanceImportResult = {
+    applied: 0,
+    alreadyPresent: 0,
+    rejected: 0,
+    unresolved: 0,
+    conflicts: [],
+  };
+  for (const association of associations) {
+    if (isConcordanceRejected(doc, association)) {
+      result.rejected++;
+      continue;
+    }
+    const [left, right] = concordanceRefs(association);
+    const owners = allEntityElements(doc).filter((entity) => {
+      const refs = activeAuthorityRefs(entity);
+      return refs.includes(left) || refs.includes(right);
+    });
+    if (owners.length === 0) {
+      result.unresolved++;
+      continue;
+    }
+    if (owners.length > 1) {
+      result.conflicts.push({
+        association,
+        entityIds: owners.map((entity) => entity.getAttribute('xml:id')!).filter(Boolean),
+      });
+      continue;
+    }
+    const owner = owners[0]!;
+    const refs = new Set(activeAuthorityRefs(owner));
+    const missing = [
+      [association.source, association.canonicalId],
+      [association.source, association.mergedFromId],
+    ]
+      .filter(([, id]) => !refs.has(concordanceRef(association.source, id)))
+      .map(([type, value]) => ({ type, value }));
+    if (!missing.length) {
+      result.alreadyPresent++;
+      continue;
+    }
+    appendAuthorityIdnos(doc, owner, missing);
+    result.applied++;
+  }
+  return result;
 }

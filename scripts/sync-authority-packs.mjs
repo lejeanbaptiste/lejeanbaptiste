@@ -18,6 +18,7 @@ const defaultSource = path.resolve(repoRoot, '../authority extraction/packs');
 
 const packFiles = [
   'cbdb/persons.ndjson',
+  'cbdb/person-concordance.ndjson',
   'cbdb/places.ndjson',
   'cbdb/offices.ndjson',
   'cbdb/manifest.json',
@@ -56,14 +57,16 @@ const packFiles = [
   'ndl/manifest.json',
 ];
 
-const destRoot = process.argv[2]
-  ? path.resolve(process.argv[2], 'authority-packs')
-  : null;
+const destRoot = process.argv[2] ? path.resolve(process.argv[2], 'authority-packs') : null;
 
 if (!fs.existsSync(defaultSource)) {
   console.error(`Source packs not found: ${defaultSource}`);
-  console.error('Run: cd "../authority extraction" && npm run compile:cbdb && npm run compile:dila');
-  console.error('Optional Wikidata: npm run wikidata:compile-all (Tang/Ming/Qing under packs/wikidata/)');
+  console.error(
+    'Run: cd "../authority extraction" && npm run compile:cbdb && npm run compile:dila',
+  );
+  console.error(
+    'Optional Wikidata: npm run wikidata:compile-all (Tang/Ming/Qing under packs/wikidata/)',
+  );
   process.exit(1);
 }
 
