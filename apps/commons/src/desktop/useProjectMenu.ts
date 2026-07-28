@@ -196,7 +196,9 @@ export const useProjectMenu = () => {
   useEffect(() => {
     if (!isDesktop() || !window.electronAPI?.onAppMenuAction) return;
 
-    return window.electronAPI.onAppMenuAction((action) => {
+    void window.electronAPI.setPluginsMenuVisible?.(isProjectReady && Boolean(leafWriter || window.writer));
+
+    const unsubscribe = window.electronAPI.onAppMenuAction((action) => {
       if (action === 'new-file') {
         void newFile();
         return;
@@ -327,6 +329,11 @@ export const useProjectMenu = () => {
         })();
       }
     });
+
+    return () => {
+      unsubscribe();
+      void window.electronAPI.setPluginsMenuVisible?.(false);
+    };
   }, [
     activeTabPath,
     isProjectReady,

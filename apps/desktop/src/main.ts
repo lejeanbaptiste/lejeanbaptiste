@@ -950,8 +950,10 @@ const buildToolsMenu = (): Electron.MenuItemConstructorOptions => {
   const pluginItems = getEnabledPluginToolsMenuItems();
   const submenu: Electron.MenuItemConstructorOptions[] = [
     {
+      id: 'open-plugins',
       label: 'Plugins…',
       click: () => sendMenuAction('open-plugins'),
+      visible: false,
     },
     menuSeparator(),
   ];
@@ -1866,10 +1868,7 @@ const registerIpcHandlers = () => {
         manifestError: plugin.manifestError,
         manifest: plugin.manifestError
           ? undefined
-          : {
-              languagePrompt: plugin.manifest.languagePrompt,
-              contributions: plugin.manifest.contributions,
-            },
+          : { languagePrompt: plugin.manifest.languagePrompt, contributions: plugin.manifest.contributions },
       })),
       state: snapshot.state,
     };
@@ -1956,7 +1955,10 @@ const registerIpcHandlers = () => {
         manifestError: plugin.manifestError,
         manifest: plugin.manifestError
           ? undefined
-          : { languagePrompt: plugin.manifest.languagePrompt, contributions: plugin.manifest.contributions },
+          : {
+              languagePrompt: plugin.manifest.languagePrompt,
+              contributions: plugin.manifest.contributions,
+            },
       })),
       state: snapshot.state,
     };
@@ -2443,6 +2445,10 @@ const registerIpcHandlers = () => {
         ? { x: Math.round(x), y: Math.round(y) }
         : {}),
     });
+  });
+  ipcMain.handle('set-plugins-menu-visible', (_event, visible: boolean) => {
+    const item = Menu.getApplicationMenu()?.getMenuItemById('open-plugins');
+    if (item) item.visible = visible === true;
   });
 };
 

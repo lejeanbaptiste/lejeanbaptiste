@@ -26,7 +26,7 @@ import { useActions, useAppState } from '@src/overmind';
 import { isDesktop } from '@src/types/desktop';
 import { modShortcut } from '@src/utils/platform';
 import { useAtom } from 'jotai';
-import { useEffect, useRef } from 'react';
+import { useCallback, useEffect, useRef } from 'react';
 import { useTranslation } from 'react-i18next';
 
 // Vertical center of the sidebar's folder/explorer icon in its collapsed
@@ -44,7 +44,7 @@ export const ProjectEditor = () => {
   const { cursorPositions, isProjectReady, openTabs, projectFilePath, rootPath } =
     useAppState().project;
   const { markTabDirty, openProject } = useActions().project;
-  const { notifyViaSnackbar } = useActions().ui;
+  const { notifyViaSnackbar, openDialog } = useActions().ui;
   const { t } = useTranslation();
   const hasProject = Boolean(rootPath);
 
@@ -61,7 +61,31 @@ export const ProjectEditor = () => {
   const [leafWriter] = useAtom(leafwriterAtom);
   const [sessionKey] = useAtom(leafWriterSessionKeyAtom);
   useExternalFileWatcher();
-  usePluginBootstrap(undefined, (message) => notifyViaSnackbar(message));
+  const showPluginPrompt = useCallback(
+    (prompt: { message: string }) => {
+      openDialog({
+        type: 'simple',
+        props: {
+          title: t('LWC.commons.plugins_available_title'),
+          Body: `${t('LWC.commons.plugins_available_message')}\n\n${prompt.message}`,
+          severity: 'info',
+          actions: [
+            {
+              action: 'open-plugins',
+              label: t('LWC.commons.open_plugins'),
+              variant: 'contained',
+            },
+            { action: 'later', label: t('LWC.commons.not_now') },
+          ],
+          onClose: (action) => {
+            if (action === 'open-plugins') openDialog({ type: 'plugins' });
+          },
+        },
+      });
+    },
+    [openDialog, t],
+  );
+  usePluginBootstrap(undefined, showPluginPrompt);
 
   useEffect(() => {
     if (!isDesktop()) return;

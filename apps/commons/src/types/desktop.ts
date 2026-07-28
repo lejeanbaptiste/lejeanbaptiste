@@ -382,6 +382,7 @@ export interface ElectronAPI {
   isWindowMaximized: () => Promise<boolean>;
   onWindowMaximized: (callback: (maximized: boolean) => void) => () => void;
   onAppMenuAction: (callback: (action: string) => void) => () => void;
+  setPluginsMenuVisible: (visible: boolean) => Promise<void>;
   signalRendererReady: () => Promise<void>;
   onExternalFileChange: (callback: (filePath: string) => void) => () => void;
   showNativeMessageBox: (
