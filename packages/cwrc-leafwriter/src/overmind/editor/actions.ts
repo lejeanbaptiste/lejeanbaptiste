@@ -20,6 +20,7 @@ const FONT_FAMILY_STYLE_ID = 'leafwriter-default-font-families';
 const FONT_SIZE_KEY = 'fontSize';
 const LATIN_FONT_KEY = 'latinFont';
 const SHOW_BREAKS_KEY = 'showBreaks';
+const SHOW_NOTES_KEY = 'showNotes';
 const SHOW_RAW_XML_PANEL_KEY = 'showRawXmlPanel';
 const STRIP_CJK_WHITESPACE_KEY = 'stripCjkWhitespace';
 const TEXT_LOCKED_KEY = 'textLocked';
@@ -130,6 +131,21 @@ export const writerInitSettings = async (
   actions.editor.setReadonly(settings.readonly);
 };
 
+/**
+ * Applies the note/citation/keyword commentary folding to the current DOM -
+ * shared by toggleShowNotes and applyInitialSettings so a (re)initialized
+ * TinyMCE document (new doc load, undo across a load boundary, source-mode
+ * round trip) picks up the persisted showNotes preference instead of
+ * defaulting every note back to visible. See toggleShowNotes for why bare
+ * [_tag="note"] elements are toggled separately from .noteWrapper.
+ */
+const applyShowNotesToDom = (doc: Document, show: boolean) => {
+  $('.noteWrapper', doc).toggleClass('hide', !show);
+  $('[_tag="note"]', doc)
+    .filter((_i, el) => $(el).closest('.noteWrapper').length === 0)
+    .toggleClass('hide', !show);
+};
+
 export const applyInitialSettings = ({ state, actions, effects }: Context) => {
   if (!window.writer?.editor) return;
 
@@ -218,6 +234,10 @@ export const applyInitialSettings = ({ state, actions, effects }: Context) => {
   const storedShowBreaks = effects.editor.api.getFromLocalStorage<boolean>(SHOW_BREAKS_KEY);
   if (storedShowBreaks !== null) state.editor.showBreaks = storedShowBreaks;
   $('body', window.writer.editor.getDoc()).toggleClass('hideBreaks', !state.editor.showBreaks);
+
+  const storedShowNotes = effects.editor.api.getFromLocalStorage<boolean>(SHOW_NOTES_KEY);
+  if (storedShowNotes !== null) state.editor.showNotes = storedShowNotes;
+  applyShowNotesToDom(window.writer.editor.getDoc(), state.editor.showNotes);
 };
 
 export const suspendLWChangeEvent = async ({ state }: Context, value: boolean) => {
@@ -293,15 +313,12 @@ export const toggleShowTags = ({ state }: Context, value?: boolean) => {
  * (see the matching CSS rule in editor.less); elements already inside a
  * .noteWrapper are excluded so they aren't double-toggled.
  */
-export const toggleShowNotes = ({ state }: Context, value?: boolean) => {
+export const toggleShowNotes = ({ state, effects }: Context, value?: boolean) => {
   if (!window.writer?.editor) return;
   const next = value ?? !state.editor.showNotes;
-  const doc = window.writer.editor.getDoc();
-  $('.noteWrapper', doc).toggleClass('hide', !next);
-  $('[_tag="note"]', doc)
-    .filter((_i, el) => $(el).closest('.noteWrapper').length === 0)
-    .toggleClass('hide', !next);
+  applyShowNotesToDom(window.writer.editor.getDoc(), next);
   state.editor.showNotes = next;
+  effects.editor.api.saveToLocalStorage<boolean>(SHOW_NOTES_KEY, next);
 };
 
 export const toggleShowBreaks = ({ state, effects }: Context, value?: boolean) => {

@@ -307,23 +307,39 @@ body {
 // note element remains in the editor DOM, so the marker stays at the exact
 // position where the hidden commentary occurs without being serialized.
 [_tag='note'].hide {
-  display: inline !important;
+  // inline-block at a fixed size plus overflow: hidden clips the note's own
+  // text/descendants to the marker's footprint, regardless of how much
+  // content the note holds. visibility: hidden alone keeps the box in flow
+  // at its *natural* size - for a bare-text note (no child elements for the
+  // `> *` rule below to display:none) that left a tall blank gap where the
+  // wrapped-but-invisible text used to reflow.
+  display: inline-block !important;
+  overflow: hidden !important;
+  width: 0.75em !important;
+  height: 0.75em !important;
+  margin: 0 0.1em !important;
   // Keep the hidden note in the surrounding text's line box while allowing
   // its 0.75em placeholder to resolve against the surrounding font size.
   font-size: inherit !important;
-  line-height: inherit !important;
+  line-height: 1 !important;
+  vertical-align: middle !important;
   visibility: hidden !important;
 }
 
+// content is !important here because a project's own schema CSS (see
+// schemaManager.ts's loadSchemaCSS, which rewrites bare tag selectors like
+// `note[type]` to `*[_tag="note"][type]` and injects them into this same
+// document) can define an equal-specificity ::before content rule of its
+// own - e.g. CWRC's stock tei.css sets `note[type]:before { content:
+// attr(type) ': ' }` for schema-driven previews. Without !important, that
+// rule wins the tie on source order and hijacks this marker's content
+// while `visibility: visible` (unchallenged, so still in effect) keeps it
+// painted, silently unhiding the note's @type as visible text.
 [_tag='note'].hide::before {
-  content: '';
-  display: inline-block;
-  // The host inherits the line font size so these dimensions remain relative
-  // to the surrounding line even while the note content is hidden.
-  width: 0.75em;
-  height: 0.75em;
-  margin: 0 0.1em;
-  vertical-align: middle;
+  content: '' !important;
+  display: block;
+  width: 100%;
+  height: 100%;
   visibility: visible;
   background-color: var(--note);
   background-image: url(../images/sticky-note-inline.svg);
@@ -334,7 +350,7 @@ body {
 }
 
 .noteWrapper.note.hide::before {
-  content: '';
+  content: '' !important;
   display: inline-block;
   width: 0.75em;
   height: 0.75em;

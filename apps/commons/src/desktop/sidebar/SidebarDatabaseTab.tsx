@@ -48,7 +48,7 @@ import {
   Tooltip,
   Typography,
 } from '@mui/material';
-import { Fragment, useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { Fragment, memo, useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import type { ReactNode } from 'react';
 import { useTranslation } from 'react-i18next';
 import {
@@ -229,6 +229,47 @@ const precisionLabel = (precision: string | null | undefined, t: TFn): string =>
   return key ? t(`LWC.desktop.sidebar.database.${key}`) : precision;
 };
 
+interface EntityValueInputProps {
+  placeholder: string;
+  onCommit: (value: string) => void;
+}
+
+/**
+ * Keep draft text local to the small input subtree. The database tab renders
+ * the entire entity list, so lifting this state to the tab makes every
+ * keystroke reconcile all visible entities.
+ */
+const EntityValueInput = memo(({ placeholder, onCommit }: EntityValueInputProps) => {
+  const [value, setValue] = useState('');
+  const commit = () => {
+    const trimmed = value.trim();
+    if (!trimmed) return;
+    setValue('');
+    onCommit(trimmed);
+  };
+
+  return (
+    <>
+      <TextField
+        variant="standard"
+        size="small"
+        placeholder={placeholder}
+        value={value}
+        onChange={(event) => setValue(event.target.value)}
+        onKeyDown={(event) => {
+          if (event.key === 'Enter') {
+            event.preventDefault();
+            commit();
+          }
+        }}
+      />
+      <IconButton size="small" disabled={!value.trim()} onClick={commit}>
+        <AddIcon fontSize="small" />
+      </IconButton>
+    </>
+  );
+});
+
 const scholarlyYear = (year: number, precision: string | null | undefined, t: TFn): string => {
   const label = precisionLabel(precision, t);
   const qualifier = label ? `${label} ` : '';
@@ -350,8 +391,6 @@ export const SidebarDatabaseTab = ({ active = false }: SidebarDatabaseTabProps) 
   const [dateDeathQualifier, setDateDeathQualifier] = useState<DatePrecision>('');
   const [dateBirthBce, setDateBirthBce] = useState(false);
   const [dateDeathBce, setDateDeathBce] = useState(false);
-  const [newNationality, setNewNationality] = useState('');
-  const [newOrigin, setNewOrigin] = useState('');
   const [namesExpanded, setNamesExpanded] = useState(false);
   const [splitInfoOpen, setSplitInfoOpen] = useState(false);
   const [lastSummary, setLastSummary] = useState<KeyRemapSummary | null>(null);
@@ -406,23 +445,32 @@ export const SidebarDatabaseTab = ({ active = false }: SidebarDatabaseTabProps) 
       (await window.electronAPI?.getEntityDbFolder?.().catch(() => null)) ?? null;
     const resolvedCentralStore = centralEntityStoreFromDesktop(centralFolder);
     setCentralStore(resolvedCentralStore);
-    if (resolvedCentralStore) {
-      computeMergeDocket(resolvedCentralStore)
-        .then((docket) => setDocketCount(docket.length))
-        .catch(() => setDocketCount(0));
-    } else {
-      setDocketCount(0);
-    }
 
     // Pure view switch: browse either database, never both at once - Project
     // falls back from Central if no central folder is configured yet.
     const activeStore =
       databaseView === 'central' && resolvedCentralStore ? resolvedCentralStore : currentStore;
 
+    // Viewing Central means activeStore.loadEntities() below already parses the
+    // same doc the docket needs - kick the docket off only once that doc is in
+    // hand instead of re-parsing central entities.xml a second time in parallel.
+    if (resolvedCentralStore && activeStore !== resolvedCentralStore) {
+      computeMergeDocket(resolvedCentralStore)
+        .then((docket) => setDocketCount(docket.length))
+        .catch(() => setDocketCount(0));
+    } else if (!resolvedCentralStore) {
+      setDocketCount(0);
+    }
+
     setLoading(true);
     setLoadError(null);
     try {
       const doc = await activeStore.loadEntities();
+      if (resolvedCentralStore && activeStore === resolvedCentralStore) {
+        computeMergeDocket(resolvedCentralStore, doc)
+          .then((docket) => setDocketCount(docket.length))
+          .catch(() => setDocketCount(0));
+      }
       let conflicts: ConcordanceImportResult['conflicts'] = [];
       if (activeStore === currentStore) {
         const readPack = cachedPackReader();
@@ -863,8 +911,6 @@ export const SidebarDatabaseTab = ({ active = false }: SidebarDatabaseTabProps) 
     );
     setEditNewName('');
     setEditNewNameType('');
-    setNewNationality('');
-    setNewOrigin('');
     setNamesExpanded(false);
   };
 
@@ -1373,29 +1419,23 @@ export const SidebarDatabaseTab = ({ active = false }: SidebarDatabaseTabProps) 
     });
   };
 
-  const commitAddNationality = () => {
+  const commitAddNationality = useCallback((input: string) => {
     if (!editEntity) return;
-    const value = newNationality.trim();
-    if (!value) return;
-    setNewNationality('');
     void runEntityMutationForId(
       editEntity.id,
       t('LWC.desktop.sidebar.database.adding_data'),
-      (doc, id) => addUserNationality(doc, id, value),
+      (doc, id) => addUserNationality(doc, id, input),
     );
-  };
+  }, [editEntity, runEntityMutationForId, t]);
 
-  const commitAddOrigin = () => {
+  const commitAddOrigin = useCallback((input: string) => {
     if (!editEntity) return;
-    const value = newOrigin.trim();
-    if (!value) return;
-    setNewOrigin('');
     void runEntityMutationForId(
       editEntity.id,
       t('LWC.desktop.sidebar.database.adding_data'),
-      (doc, id) => addUserOrigin(doc, id, value),
+      (doc, id) => addUserOrigin(doc, id, input),
     );
-  };
+  }, [editEntity, runEntityMutationForId, t]);
 
   const mergeDuplicateGroup = (group: DuplicateGroup) => {
     setMergeIds(group.entityIds);
@@ -2501,45 +2541,17 @@ export const SidebarDatabaseTab = ({ active = false }: SidebarDatabaseTabProps) 
                   ))}
                   <Fragment>
                     <Box />
-                    <TextField
-                      variant="standard"
-                      size="small"
+                    <EntityValueInput
                       placeholder={t('LWC.desktop.sidebar.database.add_nationality_placeholder')}
-                      value={newNationality}
-                      onChange={(event) => setNewNationality(event.target.value)}
-                      onKeyDown={(event) => {
-                        if (event.key === 'Enter') {
-                          event.preventDefault();
-                          commitAddNationality();
-                        }
-                      }}
+                      onCommit={commitAddNationality}
                     />
-                    <IconButton
-                      size="small"
-                      disabled={!newNationality.trim()}
-                      onClick={commitAddNationality}
-                    >
-                      <AddIcon fontSize="small" />
-                    </IconButton>
                   </Fragment>
                   <Fragment>
                     <Box />
-                    <TextField
-                      variant="standard"
-                      size="small"
+                    <EntityValueInput
                       placeholder={t('LWC.desktop.sidebar.database.add_origin_placeholder')}
-                      value={newOrigin}
-                      onChange={(event) => setNewOrigin(event.target.value)}
-                      onKeyDown={(event) => {
-                        if (event.key === 'Enter') {
-                          event.preventDefault();
-                          commitAddOrigin();
-                        }
-                      }}
+                      onCommit={commitAddOrigin}
                     />
-                    <IconButton size="small" disabled={!newOrigin.trim()} onClick={commitAddOrigin}>
-                      <AddIcon fontSize="small" />
-                    </IconButton>
                   </Fragment>
                 </Box>
               )}

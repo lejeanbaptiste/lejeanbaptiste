@@ -65,7 +65,10 @@ const config: Config.InitialOptions = {
       clearMocks: true,
       modulePathIgnorePatterns: ['<rootDir>/.claude/'],
       coveragePathIgnorePatterns: ['/node_modules/', '/dist', '/lib', 'lib-esm', '/test'],
-      moduleNameMapper: { '^dexie$': dexieModulePath },
+      moduleNameMapper: {
+        '^dexie$': dexieModulePath,
+        '\\.(png|jpe?g|gif|svg|webp)$': '<rootDir>/packages/cwrc-leafwriter/test/fileMock.cjs',
+      },
       resetMocks: false,
       setupFiles: [
         '<rootDir>/packages/cwrc-leafwriter/test/setup/structuredClone.ts',
@@ -107,6 +110,7 @@ const config: Config.InitialOptions = {
         '^@cwrc/leafwriter/pageBreakDetection$':
           '<rootDir>/packages/cwrc-leafwriter/src/utilities/pageBreakDetection.ts',
         '^dexie$': dexieModulePath,
+        '\\.(png|jpe?g|gif|svg|webp)$': '<rootDir>/packages/cwrc-leafwriter/test/fileMock.cjs',
       },
       resetMocks: false,
       setupFiles: [

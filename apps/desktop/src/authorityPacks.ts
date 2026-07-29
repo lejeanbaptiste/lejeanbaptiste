@@ -104,13 +104,22 @@ export async function readAuthorityPackFile(
   entityDbFolder: string,
   packId: AuthorityPackId,
 ): Promise<string[]> {
-  const rl = readline.createInterface({
-    input: fs.createReadStream(packPath(entityDbFolder, packId), { encoding: 'utf8' }),
-    crlfDelay: Infinity,
-  });
-  const lines: string[] = [];
-  for await (const line of rl) {
-    lines.push(line);
+  try {
+    const rl = readline.createInterface({
+      input: fs.createReadStream(packPath(entityDbFolder, packId), { encoding: 'utf8' }),
+      crlfDelay: Infinity,
+    });
+    const lines: string[] = [];
+    for await (const line of rl) {
+      lines.push(line);
+    }
+    return lines;
+  } catch (error) {
+    // Some packs (e.g. the CBDB person concordance) are optional add-ons that
+    // may not have been generated yet for an installed source pack. Callers
+    // already treat a missing file as "no data available"; returning [] here
+    // avoids Electron logging a scary ENOENT for an expected condition.
+    if ((error as NodeJS.ErrnoException)?.code === 'ENOENT') return [];
+    throw error;
   }
-  return lines;
 }

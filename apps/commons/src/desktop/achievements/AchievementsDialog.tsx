@@ -29,11 +29,12 @@ import {
   svgToPngBytes,
 } from './certificate';
 import {
+  OVERALL_RANK_NAMES,
   RANK_MEDALS,
   RANK_NAMES,
   RARE_ACHIEVEMENTS,
+  RIBBONS_PER_OVERALL_RANK,
   SPECIAL_ACHIEVEMENTS,
-  STARTER_RANK_NAME,
   TOTAL_ACHIEVEMENTS,
 } from './definitions';
 import { aggregateGlobalMetrics, countUnlocked, currentRankIndex, metricValue } from './evaluate';
@@ -107,11 +108,13 @@ const METRIC_LABELS: Record<string, string> = {
 // Placeholder ribbon art (real art TBD) - reuses the same striped-gradient
 // technique and per-metric colorways as RibbonRack in UniformAvatar.tsx, one
 // bar per tier already earned for that metric.
+const RIBBON_WIDTH = 12 * (18 / 7);
+
 const RibbonStack = ({ metric, count }: { metric: MedalMetric; count: number }) => {
   const stripes = METRIC_RIBBONS[metric] ?? SPECIAL_RIBBON;
   const [c1, c2, c3] = stripes.length === 3 ? stripes : [stripes[0], stripes[1], stripes[0]];
   return (
-    <Stack spacing={0.5} sx={{ flexShrink: 0 }}>
+    <Stack spacing={0.5} sx={{ flexShrink: 0, width: RIBBON_WIDTH }}>
       {Array.from({ length: count }, (_, i) => (
         <Box
           key={i}
@@ -119,7 +122,7 @@ const RibbonStack = ({ metric, count }: { metric: MedalMetric; count: number }) 
             background: `linear-gradient(90deg, ${c1} 0 33%, ${c2} 33% 66%, ${c3} 66%)`,
             border: '1px solid rgba(0,0,0,0.2)',
             height: 12,
-            width: 12 * (18 / 7),
+            width: RIBBON_WIDTH,
           }}
         />
       ))}
@@ -143,16 +146,22 @@ const collectDecorations = (state: AchievementsState): UnlockedAchievement[] => 
 const highestRankIndexOf = (state: AchievementsState): number =>
   Math.max(-1, ...RANK_MEDALS.map((medal) => currentRankIndex(state, medal.metric)));
 
-/** The highest rank held across all metrics, for the header line. */
-const highestCommission = (state: AchievementsState, locale: 'fr' | 'en'): string => {
-  let best: { rankIndex: number; medalName: string } | null = null;
-  for (const medal of RANK_MEDALS) {
-    const rankIndex = currentRankIndex(state, medal.metric);
-    if (rankIndex >= 0 && (!best || rankIndex > best.rankIndex)) {
-      best = { rankIndex, medalName: medal.medalName[locale] };
-    }
-  }
-  return best ? `${RANK_NAMES[best.rankIndex]}, ${best.medalName}` : STARTER_RANK_NAME;
+/** Total ribbons (classes) earned across every metric ladder. */
+const totalRibbonsEarned = (state: AchievementsState): number =>
+  RANK_MEDALS.reduce(
+    (total, medal) => total + Math.max(0, currentRankIndex(state, medal.metric) + 1),
+    0,
+  );
+
+/** Composite rank shown after the player's name - climbs one step per
+ * RIBBONS_PER_OVERALL_RANK ribbons earned in any combination across the 8
+ * metrics, independent of the per-metric classes shown in the grid below. */
+const calculatedRank = (state: AchievementsState): string => {
+  const overallIndex = Math.min(
+    OVERALL_RANK_NAMES.length - 1,
+    Math.floor(totalRibbonsEarned(state) / RIBBONS_PER_OVERALL_RANK),
+  );
+  return OVERALL_RANK_NAMES[overallIndex]!;
 };
 
 export const AchievementsDialog = ({ onClose, open }: AchievementsDialogProps) => {
@@ -278,7 +287,7 @@ export const AchievementsDialog = ({ onClose, open }: AchievementsDialogProps) =
   const unlockedCount = countUnlocked(state);
   const percent = Math.round((unlockedCount / TOTAL_ACHIEVEMENTS) * 100);
   const decorations = collectDecorations(state);
-  const commission = highestCommission(state, locale);
+  const commission = calculatedRank(state);
   const avatarOptions =
     state.avatar?.kind === 'dicebear'
       ? state.avatar.options
@@ -865,13 +874,10 @@ export const AchievementsDialog = ({ onClose, open }: AchievementsDialogProps) =
                       </Typography>
                       <Typography color="text.secondary" component="div" variant="caption">
                         {rankIndex >= 0
-                          ? RANK_NAMES[rankIndex]
-                          : `${STARTER_RANK_NAME} — not yet decorated`}
-                        {nextThreshold
-                          ? ` — ${value.toLocaleString()} / ${nextThreshold.toLocaleString()} to next ribbon`
-                          : rankIndex >= 0
-                            ? ' — highest class attained'
-                            : ` — ${medal.thresholds[0]!.toLocaleString()} to next ribbon`}
+                          ? nextThreshold
+                            ? `${RANK_NAMES[rankIndex]} — ${value.toLocaleString()} / ${nextThreshold.toLocaleString()} to go`
+                            : `${RANK_NAMES[rankIndex]} — highest class attained`
+                          : `${value.toLocaleString()} / ${medal.thresholds[0]!.toLocaleString()} to go`}
                       </Typography>
                       <LinearProgress
                         sx={{ height: 4, borderRadius: 1, mt: 0.5 }}

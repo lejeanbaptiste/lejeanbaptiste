@@ -196,9 +196,13 @@ export type MergeDocketEntry =
   | { kind: 'merge'; suggestionId: string; when: string; sides: [MergeDocketSide, MergeDocketSide] }
   | { kind: 'delete'; suggestionId: string; when: string; side: MergeDocketSide };
 
-export async function computeMergeDocket(centralStore: EntityStore): Promise<MergeDocketEntry[]> {
+export async function computeMergeDocket(
+  centralStore: EntityStore,
+  /** Pass an already-loaded central doc (e.g. from a sibling load) to skip re-parsing it. */
+  preloadedDoc?: Document,
+): Promise<MergeDocketEntry[]> {
   const [cedbDoc, suggestions, resolutions, cedbOrders] = await Promise.all([
-    centralStore.loadEntities(),
+    preloadedDoc ?? centralStore.loadEntities(),
     centralStore.readMergeSuggestions(),
     centralStore.readMergeSuggestionResolutions(),
     centralStore.readEntityOrders(),
