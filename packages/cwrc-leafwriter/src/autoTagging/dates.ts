@@ -1,6 +1,7 @@
 import { buildDocIndex, collectTextNodes, createAnchor, type DocIndex } from './anchor';
 import { buildSearchText } from './normalize';
 import { chunkDocument, type Chunk } from './chunk';
+import { cloneWithHiddenReadingsCleared, textWithoutHiddenReadings } from './hiddenChoiceText';
 import {
   buildTaggableDocIndex,
   ENTITY_TAGS_FORBIDDEN_IN_DATE,
@@ -328,7 +329,7 @@ export interface BodyDateEntry {
 
 /** Plain-text content of a `<date>` element under the whitespace policy. */
 export function dateElementSurface(el: Element, policy: WhitespacePolicy): string {
-  const raw = el.textContent ?? '';
+  const raw = textWithoutHiddenReadings(el);
   if (policy === 'ignore') return raw.replace(/\s+/g, '');
   return buildSearchText(raw, policy).text.trim();
 }
@@ -345,7 +346,7 @@ export function collectBodyDatesInOrder(bodyRoot: Node, policy: WhitespacePolicy
       entries.push({
         element: el,
         surface: dateElementSurface(el, policy),
-        outerXml: new XMLSerializer().serializeToString(el),
+        outerXml: new XMLSerializer().serializeToString(cloneWithHiddenReadingsCleared(el)),
       });
     }
     node = walker.nextNode();

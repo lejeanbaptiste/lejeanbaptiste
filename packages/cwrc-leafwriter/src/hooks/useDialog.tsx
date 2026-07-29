@@ -3,6 +3,7 @@ import { useEffect } from 'react';
 import {
   AutoTaggingDialog,
   TagTransformDialog,
+  ChineseAssetsDialog,
   DisambiguationDialog,
   EditSchemaDialog,
   EditSourceDialog,
@@ -81,6 +82,7 @@ export const useDialog = () => {
     if (type === 'autoTagging') return AutoTaggingDialog;
     if (type === 'tagTransform') return TagTransformDialog;
     if (type === 'calendar') return getPluginDialog('calendar');
+    if (type === 'chineseAssets') return ChineseAssetsDialog;
     if (type === 'disambiguation') return DisambiguationDialog;
   };
 };

@@ -1,3 +1,5 @@
+import { defaultChineseNameSegmenter } from './defaultChineseNameSegmenter';
+
 export interface PluginPersonNameSegmentResult {
   familyName: string;
   givenName: string;
@@ -32,7 +34,14 @@ export function clearAllPluginPersonNameSegmenters(): void {
   segmenters.clear();
 }
 
-/** First registered segmenter that returns a result wins (registration order ≈ plugin load order). */
+/**
+ * First registered segmenter that returns a result wins (registration order
+ * ≈ plugin load order). When every registered plugin declines — including a
+ * plugin that's active but has no entry for this particular name (e.g.
+ * Norbert without a stored pinyin reading) — a built-in default segmenter
+ * has a last-resort try, so common names still split even without plugin
+ * help.
+ */
 export function segmentPersonNameWithPlugins(
   name: string,
   projectLang: string | null,
@@ -44,5 +53,7 @@ export function segmentPersonNameWithPlugins(
     const result = segmenter({ name: trimmed, projectLang, romanize });
     if (result?.familyName && result.givenName) return result;
   }
+  const fallback = defaultChineseNameSegmenter({ name: trimmed, projectLang, romanize });
+  if (fallback?.familyName && fallback.givenName) return fallback;
   return null;
 }

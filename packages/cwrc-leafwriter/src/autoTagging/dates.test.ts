@@ -1,6 +1,7 @@
 import {
   buildDateTagChunks,
   buildTaggableDocIndex,
+  collectBodyDatesInOrder,
   dateResolveFromDocument,
   dateTagOnlyFromSanmiao,
   findTeiBodyRoot,
@@ -161,6 +162,32 @@ describe('dateResolveFromDocument', () => {
     expect(suggestions[0]!.dateResolution?.parseXml).toContain('<year>八年</year>');
     expect(suggestions[0]!.dateResolution?.parseXml).not.toContain('placeName');
     expect(suggestions[0]!.dateResolution?.parseXml).toContain('洛陽');
+  });
+});
+
+describe('collectBodyDatesInOrder', () => {
+  it('excludes sic/surplus text from the serialized outerXml sent to sanmiao', () => {
+    const doc = docFromBody(
+      '<date><choice><sic>太</sic><corr>建</corr></choice>元元年</date>',
+    );
+    const entries = collectBodyDatesInOrder(findTeiBodyRoot(doc), policy);
+    expect(entries).toHaveLength(1);
+    expect(entries[0]!.outerXml).not.toContain('太');
+    expect(entries[0]!.outerXml).toContain('<corr>建</corr>');
+    expect(entries[0]!.outerXml).toContain('元元年');
+  });
+
+  it('still strips sic/surplus when the date already carries prior sanmiao attributes', () => {
+    // Reproduces the report: re-resolving a <date> that a prior sanmiao pass
+    // already annotated (dyn_id/era_id/etc.) must not resend the raw sic text.
+    const doc = docFromBody(
+      '<date dyn_id="84" ruler_id="7605" era_id="272" year="1" cert="high" cal_stream="1" ind_year="479" sex_year="56"><choice><sic>太</sic><corr>建</corr></choice>元元年</date>',
+    );
+    const entries = collectBodyDatesInOrder(findTeiBodyRoot(doc), policy);
+    expect(entries).toHaveLength(1);
+    expect(entries[0]!.outerXml).not.toContain('太');
+    expect(entries[0]!.outerXml).toContain('era_id="272"');
+    expect(entries[0]!.outerXml).toContain('<corr>建</corr></choice>元元年');
   });
 });
 

@@ -2,6 +2,7 @@ import type { ButtonProps } from '@mui/material';
 import { DialogProps as MuiDialogProps } from '@mui/material/Dialog';
 import { Options as ModalProviderOptions } from 'mui-modal-provider';
 import type { Schema, SchemaMappingType } from '../types';
+import type { MissingAssetType } from '../utilities/chineseAssetStatus';
 export declare type ModalComponentProps<P> = Omit<P, 'open'>;
 
 export type SeverityType = 'error' | 'info' | 'success' | 'warning';
@@ -28,6 +29,7 @@ export type DialogType =
   | 'autoTagging'
   | 'tagTransform'
   | 'calendar'
+  | 'chineseAssets'
   | 'disambiguation'
   | 'editSchema'
   | 'editSource'
@@ -63,10 +65,15 @@ export interface EditSourceDialogProps extends IDialog {
   type?: 'content' | 'header';
 }
 
+export interface ChineseAssetsDialogProps extends IDialog {
+  missingAssets?: MissingAssetType[];
+}
+
 export type DialogProps = IDialog &
   SimpleDialogProps &
   EditSchemaDialogProps &
-  EditSourceDialogProps;
+  EditSourceDialogProps &
+  ChineseAssetsDialogProps;
 
 export interface DialogBarProps {
   dismissed?: boolean;

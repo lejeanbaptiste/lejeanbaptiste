@@ -34,6 +34,7 @@ import type { AuthorityCandidate } from './authority';
 import { extractPluginOfficeRelations } from '../plugins/officeRelationExtractors';
 import { extractRegisteredEntityData } from '../plugins/entityDataExtractors';
 import { collectPluginPatternTagCandidates } from '../plugins/patternTagProducers';
+import { suggestPersonNameSplit, suggestPersonRomanization } from '../plugins/personNameDefaults';
 import {
   ingestExtractedEntityData,
   personWrapperSource,
@@ -1476,20 +1477,35 @@ export class AutoTaggingSession {
     const wrapperPerson = instance.tag === 'name' ? wrapperPersonName(instance.element) : null;
     const name = options.name ?? wrapperPerson?.textContent?.trim() ?? instance.surface;
     const projectLangName = options.createNew ? undefined : candidate.projectLangName;
-    const romanizedName =
-      options.romanizedName ??
-      candidate.romanizedName ??
-      autoRomanize(projectLangName ?? name, projectLang) ??
-      undefined;
+    const nameForSplit = projectLangName ?? name;
     // Pull every typed name (courtesy 字, posthumous 諡號, birth name, …) plus
     // given/family name the chosen authority knows, so the entity record
     // carries them from day one — this runs even for createNew (e.g. a
     // manually-pasted Wikidata link with no reconcile candidate) since the
     // candidate still carries the authority id to look up.
-    const [typedNames, givenFamilyNames] = await Promise.all([
+    const [typedNames, authorityGivenFamilyNames] = await Promise.all([
       collectTypedNamesForCandidate(candidate),
       collectGivenFamilyNamesForCandidate(candidate, projectLang),
     ]);
+    // A freshly-minted person (create-new, or an authority match with no
+    // P734/P735) gets its family/given split from a registered plugin
+    // segmenter (e.g. Norbert's Chinese surname table) when one is active,
+    // with a correctly concatenated romanization ("Li Chunfeng", not
+    // "Li Chun Feng") — used only as a fallback after authority values.
+    const pluginSplit =
+      !authorityGivenFamilyNames.familyName && !authorityGivenFamilyNames.givenName
+        ? suggestPersonNameSplit(nameForSplit, projectLang)
+        : null;
+    const givenFamilyNames = {
+      familyName: authorityGivenFamilyNames.familyName ?? pluginSplit?.familyName,
+      givenName: authorityGivenFamilyNames.givenName ?? pluginSplit?.givenName,
+    };
+    const romanizedName =
+      options.romanizedName ??
+      candidate.romanizedName ??
+      (pluginSplit ? suggestPersonRomanization(nameForSplit, projectLang) : null) ??
+      autoRomanize(nameForSplit, projectLang) ??
+      undefined;
 
     const entityId = resolveEntityInDocument(
       entitiesDoc,

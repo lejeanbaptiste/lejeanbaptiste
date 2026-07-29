@@ -11,3 +11,4 @@ export * from './autoTagging';
 export * from './tagTransform';
 export * from './disambiguation';
 export * from './plugins';
+export * from './chinese-assets/ChineseAssetsDialog';

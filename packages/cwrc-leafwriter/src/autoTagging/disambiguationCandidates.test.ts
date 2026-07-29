@@ -61,6 +61,31 @@ describe('disambiguationCandidates', () => {
     expect(rows[0]?.sources).toContain('entity-file');
   });
 
+  it('matches an entity-file name that carries a <choice><sic>/<corr>', () => {
+    const doc = parseEntities(createEntitiesScaffold());
+    const ns = 'http://www.tei-c.org/ns/1.0';
+    const listPerson = doc.getElementsByTagName('listPerson')[0]!;
+    const person = doc.createElementNS(ns, 'person');
+    person.setAttributeNS('http://www.w3.org/XML/1998/namespace', 'xml:id', 'person-000002');
+    const name = doc.createElementNS(ns, 'persName');
+    const choice = doc.createElementNS(ns, 'choice');
+    const sic = doc.createElementNS(ns, 'sic');
+    sic.textContent = '張';
+    const corr = doc.createElementNS(ns, 'corr');
+    corr.textContent = '章';
+    choice.appendChild(sic);
+    choice.appendChild(corr);
+    name.appendChild(choice);
+    name.appendChild(doc.createTextNode('衡'));
+    person.appendChild(name);
+    listPerson.appendChild(person);
+
+    const rows = candidatesFromEntityFile(doc, 'persName', '章衡');
+    expect(rows).toHaveLength(1);
+    expect(rows[0]?.localEntityId).toBe('person-000002');
+    expect(rows[0]?.label).toBe('章衡');
+  });
+
   it('stores and reads back a one-line description for a manually created entity', () => {
     const doc = parseEntities(createEntitiesScaffold());
     const id = resolveEntityInDocument(doc, {

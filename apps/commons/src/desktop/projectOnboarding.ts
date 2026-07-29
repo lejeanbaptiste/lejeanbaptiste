@@ -1,4 +1,5 @@
 import { maybeOfferAuthorityDatabases } from './authorityDbOnboarding';
+import { maybeOfferChineseAssetDownloads } from './chineseAssetOnboarding';
 import { joinProjectPath, type ProjectBundle } from './projectFile';
 import { metadataFileExists } from './projectMetadata';
 import { getProjectSourceLanguage, projectRequiresSourceLanguage } from './projectLanguage';
@@ -101,6 +102,10 @@ export const completePostLoadOnboarding = async (bundle: ProjectBundle): Promise
   // Non-blocking: the authority-database offer (Chinese projects only) must
   // not hold up project open, and downloads run in the main process.
   void maybeOfferAuthorityDatabases(current).catch(() => undefined);
+
+  // Non-blocking, once per project open: prompt for any remaining Chinese
+  // assets (map tiles, CHGIS, …) still missing after the check above.
+  void maybeOfferChineseAssetDownloads(current).catch(() => undefined);
 
   log('post-load onboarding complete');
   return current;

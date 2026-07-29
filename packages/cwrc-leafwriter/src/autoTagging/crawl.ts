@@ -1,5 +1,6 @@
 import type { DictionaryEntry } from './dictionary';
 import { findTeiBodyRoot, isInsideDateElement } from './dateTeiHelpers';
+import { textWithoutHiddenReadings } from './hiddenChoiceText';
 import { buildSearchText } from './normalize';
 import type { WhitespacePolicy } from './types';
 
@@ -36,7 +37,7 @@ export function crawlEntities(
   for (const tag of tags) {
     for (const el of Array.from(bodyRoot.getElementsByTagName(tag))) {
       if (isInsideDateElement(el)) continue;
-      const surface = buildSearchText(el.textContent ?? '', policy).text;
+      const surface = buildSearchText(textWithoutHiddenReadings(el), policy).text;
       if (surface.length === 0) continue;
       const mapKey = `${tag}\t${surface}`;
       if (!bySurfaceTag.has(mapKey)) bySurfaceTag.set(mapKey, { string: surface, tag });

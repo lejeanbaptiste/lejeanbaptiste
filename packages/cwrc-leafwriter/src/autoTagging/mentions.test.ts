@@ -46,6 +46,15 @@ describe('mentions', () => {
     }
   });
 
+  it('excludes sic/surplus text from the mention surface', () => {
+    const document = new DOMParser().parseFromString(
+      '<TEI xmlns="http://www.tei-c.org/ns/1.0"><text><body><p><persName><choice><sic>張</sic><corr>章</corr></choice>衡</persName></p></body></text></TEI>',
+      'application/xml',
+    );
+    const groups = collectMentions(document, 'ignore');
+    expect(groups.map((group) => group.surface)).toEqual(['章衡']);
+  });
+
   it('includes personWrapper and roleName in validation mentions', () => {
     const document = new DOMParser().parseFromString(
       '<TEI xmlns="http://www.tei-c.org/ns/1.0"><text><body><p><name type="personWrapper"><roleName>合州刺史</roleName><persName>範</persName></name><roleName cert="unknown">太守</roleName></p></body></text></TEI>',

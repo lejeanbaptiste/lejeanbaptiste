@@ -156,20 +156,24 @@ See [apps/desktop/README.md](apps/desktop/README.md) for the compilation and pac
 
 ## TODO
 
-- [ ] Redo icons : highlight
 - [ ] Test purge/propagate
+
+
+
 - [ ] Merge divirged entities DB
+- [ ] Suggest map download, otherwise disable map disambiguate icon.
 - [ ] Auto parse and organise noble titles
+- [ ] Word plugin to handle names and dates correctly while centralising data.
+
+- [ ] Noble title and person wrapper tagging (testing).
+- [ ] Stats window (unsure)
 
 
 
-- [ ] Noble title and person wrapper tagging.
 - [ ] Build document stats window with list of people, map of places, etc.
 - [ ] Official titles dictionaries, dates dictionaries for hover-over
-- [ ] Word plugin to handle names and dates correctly while centralising data.
 - [ ] Regional PMTiles download/cache flow for maps (see [map-tiles-planning.md](docs/map-tiles-planning.md))
-
-
+- [ ] Redo icons : highlight
 
 ## Future goals
 

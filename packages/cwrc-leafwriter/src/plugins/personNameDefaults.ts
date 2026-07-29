@@ -9,7 +9,12 @@ export function suggestPersonNameSplit(
   name: string,
   projectLang: string | null,
 ): PluginPersonNameSegmentResult | null {
-  return segmentPersonNameWithPlugins(name, projectLang, (part) => autoRomanize(part, projectLang));
+  // Each part (surname, given name) romanizes as one concatenated word —
+  // "Chunfeng", not "Chun Feng" — regardless of how the segmenter itself
+  // joins the two parts back together for its own `romanizedName`.
+  return segmentPersonNameWithPlugins(name, projectLang, (part) =>
+    autoRomanize(part, projectLang, { concatenate: true }),
+  );
 }
 
 /** Romanize a new person label, using plugin split parts when Norbert (etc.) is enabled. */
@@ -18,7 +23,12 @@ export function suggestPersonRomanization(
   projectLang: string | null,
 ): string | null {
   const split = suggestPersonNameSplit(name, projectLang);
-  if (split?.romanizedName) return split.romanizedName;
+  if (split) {
+    const family = autoRomanize(split.familyName, projectLang, { concatenate: true });
+    const given = autoRomanize(split.givenName, projectLang, { concatenate: true });
+    if (family && given) return `${family} ${given}`;
+    if (split.romanizedName) return split.romanizedName;
+  }
   return autoRomanize(name, projectLang);
 }
 

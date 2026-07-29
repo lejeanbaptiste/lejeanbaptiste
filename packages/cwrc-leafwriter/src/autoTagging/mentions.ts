@@ -1,5 +1,6 @@
 import { buildDocIndex, createAnchor, type DocIndex, type OccurrenceCache } from './anchor';
 import { TAG_TO_KIND } from './entities';
+import { textWithoutHiddenReadings } from './hiddenChoiceText';
 import type { Anchor, WhitespacePolicy } from './types';
 
 export interface MentionInstance {
@@ -31,7 +32,7 @@ function mentionFromElement(
   occurrenceCache: OccurrenceCache,
 ): MentionInstance | null {
   const tag = element.nodeName;
-  const surface = (element.textContent ?? '').trim();
+  const surface = textWithoutHiddenReadings(element).trim();
   if (!surface) return null;
 
   const key = element.getAttribute('key')?.trim() ?? '';

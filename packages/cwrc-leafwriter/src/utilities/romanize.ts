@@ -37,12 +37,17 @@ export function canAutoRomanize(projectLang: string | null | undefined): boolean
 const capitalize = (value: string): string =>
   value ? value[0]!.toUpperCase() + value.slice(1) : value;
 
-function pinyinFor(name: string): string | null {
+function pinyinFor(name: string, options?: { concatenate?: boolean }): string | null {
   const syllables = pinyin(name, { toneType: 'none', type: 'array' })
     .map((syllable) => syllable.trim())
     .filter(Boolean);
   if (syllables.length === 0) return null;
-  const romanized = syllables.map(capitalize).join(' ');
+  // Word mode (concatenate): syllables within one name part (e.g. a 2-character
+  // given name, or a compound surname like 歐陽) run together as a single word
+  // with only the initial letter capitalized — "Chunfeng", not "Chun Feng".
+  const romanized = options?.concatenate
+    ? capitalize(syllables.join(''))
+    : syllables.map(capitalize).join(' ');
   // pinyin-pro echoes non-Chinese characters back; if nothing changed script,
   // the input wasn't romanizable.
   return isLatinScript(romanized) ? romanized : null;
@@ -72,14 +77,20 @@ function romajiForKana(name: string): string | null {
  * Best-effort romanization of a project-script name. Returns null for Latin
  * input, unsupported languages (e.g. Korean), and Japanese input that is not
  * pure kana.
+ *
+ * @param options.concatenate Treat `name` as a single name part (a given
+ * name or a surname) whose syllables should run together as one word, rather
+ * than a full label whose characters are independently-capitalized units.
+ * Chinese-only; Tibetan/Japanese already romanize a part as one word.
  */
 export function autoRomanize(
   name: string,
   projectLang: string | null | undefined,
+  options?: { concatenate?: boolean },
 ): string | null {
   const trimmed = name.normalize('NFC').trim();
   if (!trimmed || isLatinScript(trimmed)) return null;
-  if (isChineseLanguageCode(projectLang)) return pinyinFor(trimmed);
+  if (isChineseLanguageCode(projectLang)) return pinyinFor(trimmed, options);
   if (isTibetanLanguageCode(projectLang)) return wylieFor(trimmed);
   if (isJapaneseLanguageCode(projectLang)) return romajiForKana(trimmed);
   return null;

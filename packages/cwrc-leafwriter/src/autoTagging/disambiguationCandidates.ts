@@ -19,6 +19,7 @@ import {
 } from './entities';
 import { linkedCentralIds } from './bridgeInbox';
 import type { EntityStore } from './entityStore';
+import { textWithoutHiddenReadings } from './hiddenChoiceText';
 import { adoptFromCentral } from './promote';
 import {
   extractWikidataIdsFromText,
@@ -150,7 +151,7 @@ function entityNameElements(element: Element, nameTag: string): Element[] {
  */
 function entityNameMatches(element: Element, nameTag: string, surface: string): boolean {
   return entityNameElements(element, nameTag).some((el) =>
-    stringsMatchExactly(surface, el.textContent?.trim() ?? ''),
+    stringsMatchExactly(surface, textWithoutHiddenReadings(el).trim()),
   );
 }
 
@@ -543,10 +544,9 @@ export function candidatesFromEntityFile(
       endYear = parseIsoYear(end) ?? undefined;
     }
     const nameEls = entityNameElements(el, nameTag);
-    const nameTexts = nameEls.map((name) => name.textContent?.trim() ?? '').filter(Boolean);
-    const romanizedName = nameEls
-      .find((name) => isLatnLang(name.getAttribute('xml:lang')))
-      ?.textContent?.trim();
+    const nameTexts = nameEls.map((name) => textWithoutHiddenReadings(name).trim()).filter(Boolean);
+    const romanizedNameEl = nameEls.find((name) => isLatnLang(name.getAttribute('xml:lang')));
+    const romanizedName = romanizedNameEl ? textWithoutHiddenReadings(romanizedNameEl).trim() : undefined;
     out.push({
       id: localId || `local-${i}`,
       label: nameTexts[0] || surface,

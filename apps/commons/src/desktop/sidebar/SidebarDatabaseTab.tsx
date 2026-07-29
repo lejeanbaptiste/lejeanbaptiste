@@ -4,6 +4,7 @@ import ExpandMoreIcon from '@mui/icons-material/ExpandMore';
 import CheckIcon from '@mui/icons-material/Check';
 import ClearIcon from '@mui/icons-material/Clear';
 import ContentCopyIcon from '@mui/icons-material/ContentCopy';
+import DeleteOutlineIcon from '@mui/icons-material/DeleteOutline';
 import HubOutlinedIcon from '@mui/icons-material/HubOutlined';
 import FactCheckOutlinedIcon from '@mui/icons-material/FactCheckOutlined';
 import MergeIcon from '@mui/icons-material/Merge';
@@ -46,11 +47,15 @@ import type { ReactNode } from 'react';
 import { useTranslation } from 'react-i18next';
 import {
   ENTITY_KINDS,
+  findEntity,
   getDatabaseId,
   type AuthorityId,
   type EntityKind,
 } from '../../../../../packages/cwrc-leafwriter/src/autoTagging/entities';
-import { listCentralMappings } from '../../../../../packages/cwrc-leafwriter/src/autoTagging/concordance';
+import {
+  getCentralId,
+  listCentralMappings,
+} from '../../../../../packages/cwrc-leafwriter/src/autoTagging/concordance';
 import {
   addEntityName,
   addUserNationality,
@@ -60,6 +65,7 @@ import {
   acceptEntityDescriptionAssertion,
   attachAuthority,
   decoupleAuthority,
+  deleteEntity,
   groupFieldAssertions,
   findAuthorityDuplicates,
   listEntities,
@@ -919,6 +925,62 @@ export const SidebarDatabaseTab = ({ active = false }: SidebarDatabaseTabProps) 
       confirmLabel: 'Detach',
       showSkipDetachOption: true,
       onConfirm: detach,
+    });
+  };
+
+  /**
+   * Delete button in the entity edit dialog: strips the key from every tagged
+   * mention across all projects sharing this database (via the merge/delete
+   * remap engine already used for merges), then removes the entity itself from
+   * PEDB. When the deleted entity is linked to the user's central database, a
+   * delete suggestion is lodged there too — the central row is purged only
+   * after review in the merge docket, never automatically.
+   */
+  const requestDeleteEntity = (entity: EntitySummary) => {
+    const targetStore = resolveStoreFor(entity.id);
+    if (!targetStore) return;
+    const isProjectEntity = targetStore === store;
+    setConfirm({
+      title: t('LWC.desktop.sidebar.database.delete_entity_title', {
+        name: entity.names[0] ?? entity.id,
+      }),
+      body: t('LWC.desktop.sidebar.database.delete_entity_body'),
+      confirmLabel: t('LWC.desktop.sidebar.database.delete_entity_confirm'),
+      destructive: true,
+      onConfirm: () => {
+        let sourceDbId: string | null = null;
+        let centralIdToPurge: string | null = null;
+        void runMutation(
+          targetStore,
+          t('LWC.desktop.sidebar.database.deleting_entity'),
+          async (doc) => {
+            sourceDbId = getDatabaseId(doc);
+            if (isProjectEntity && centralStore) {
+              const element = findEntity(doc, entity.id);
+              const api = desktopEntityFileApi();
+              if (element && api) {
+                const { id: userStableId } = await readOrMintUserStableId(
+                  api,
+                  centralStore.centralFolder,
+                );
+                centralIdToPurge = getCentralId(element, userStableId);
+              }
+            }
+            deleteEntity(doc, entity.id);
+            return { [entity.id]: null };
+          },
+        ).then(async () => {
+          setEditEntity(null);
+          if (centralIdToPurge && centralStore && sourceDbId) {
+            await centralStore
+              .recordDeleteSuggestion(sourceDbId, centralIdToPurge)
+              .catch(() => undefined);
+            computeMergeDocket(centralStore)
+              .then((docket) => setDocketCount(docket.length))
+              .catch(() => undefined);
+          }
+        });
+      },
     });
   };
 
@@ -2493,6 +2555,17 @@ export const SidebarDatabaseTab = ({ active = false }: SidebarDatabaseTabProps) 
               </>
             )}
             <Box sx={{ flex: 1 }} />
+            {editEntity && (
+              <Tooltip title={t('LWC.desktop.sidebar.database.delete_entity')}>
+                <IconButton
+                  size="small"
+                  aria-label={t('LWC.desktop.sidebar.database.delete_entity')}
+                  onClick={() => requestDeleteEntity(editEntity)}
+                >
+                  <DeleteOutlineIcon fontSize="small" />
+                </IconButton>
+              </Tooltip>
+            )}
             {(editEntity?.kind === 'person' || editEntity?.kind === 'work') && (
               <Tooltip title={t('LWC.desktop.sidebar.database.refresh_authorities')}>
                 <span>

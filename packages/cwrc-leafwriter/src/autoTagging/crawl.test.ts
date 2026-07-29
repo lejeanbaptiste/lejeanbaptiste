@@ -101,6 +101,14 @@ describe('crawlEntities', () => {
     expect(suggestions).toHaveLength(0);
   });
 
+  it('excludes sic/surplus readings from a crawled surface', () => {
+    const doc = parse(
+      `<TEI xmlns="http://www.tei-c.org/ns/1.0"><p><persName><choice><sic>張</sic><corr>章</corr></choice>衡</persName></p></TEI>`,
+    );
+    const entries = crawlEntities(doc, 'ignore');
+    expect(entries).toEqual([{ string: '章衡', tag: 'persName' }]);
+  });
+
   it('does not crawl entity tags from the TEI header', () => {
     const doc = parse(
       `<TEI xmlns="http://www.tei-c.org/ns/1.0">
