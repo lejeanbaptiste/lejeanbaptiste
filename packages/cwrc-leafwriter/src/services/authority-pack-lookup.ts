@@ -82,12 +82,12 @@ export function packResultUri(source: PackSource, entityType: NamedEntityType, i
       return entityType === 'office'
         ? `urn:ljb:authority:cbdb:office:${id}`
         : entityType === 'place'
-        ? `https://cbdb.fas.harvard.edu/place?id=${id}`
-        : `https://cbdb.fas.harvard.edu/person?id=${id}`;
+        ? `https://cbdb.fas.harvard.edu/cbdbapi/place.php?id=${id}`
+        : `https://cbdb.fas.harvard.edu/cbdbapi/person.php?id=${id}`;
     case 'dila':
       return entityType === 'place'
-        ? `https://authority.dila.edu.tw/place/search.php?code=${id}`
-        : `https://authority.dila.edu.tw/person/search.php?code=${id}`;
+        ? `https://authority.dila.edu.tw/place/?fromInner=${id}`
+        : `https://authority.dila.edu.tw/person/?fromInner=${id}`;
     // CHGIS has no per-record public lookup page (unlike CBDB/DILA) — a
     // stable synthetic urn, like norbert's, is enough for id/de-dup purposes.
     case 'chgis':

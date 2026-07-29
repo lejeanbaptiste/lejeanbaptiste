@@ -17,7 +17,7 @@ export function tagFollowingStyleNames(doc: Document): number {
     style.setAttribute('type', 'courtesy');
     style.setAttribute('key', key);
     style.textContent = styleName;
-    text.data = punctuation + text.data.slice(match[0].length);
+    text.data = '字' + text.data.slice(1 + styleName.length);
     person.parentNode?.insertBefore(style, text);
     tagged += 1;
   }

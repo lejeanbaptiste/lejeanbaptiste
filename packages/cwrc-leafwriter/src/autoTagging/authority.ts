@@ -27,8 +27,16 @@ export interface AuthorityCandidate {
   names?: { text: string; type?: string; lang?: string }[];
   metadata?: {
     appointments?: AppointmentRecord[];
+    origin?: OriginAssertion[];
     dynasty?: string;
-    nationality?: { id: string; canonicalId: string; label: string; sourceIds?: string[]; startYear?: number; endYear?: number }[];
+    nationality?: {
+      id: string;
+      canonicalId: string;
+      label: string;
+      sourceIds?: string[];
+      startYear?: number;
+      endYear?: number;
+    }[];
     dateSource?: 'fine' | 'nationality';
     startYear?: number;
     endYear?: number;
@@ -129,6 +137,15 @@ export interface AppointmentRecord {
   office: { source: string; authorityId?: string; name: string };
   appointmentType?: string;
   sourceRef?: string;
+}
+
+export interface OriginAssertion {
+  source: string;
+  originType?: string;
+  placeName: string;
+  placeAuthorityId?: string;
+  sourceRef?: string;
+  [key: string]: unknown;
 }
 
 /** Corpus TEI tag used when matching this candidate. */
@@ -269,7 +286,7 @@ export function authorityRowsFromCsv(content: string, columns: CsvColumnMap = {}
   const rows: AuthorityRow[] = [];
   for (let i = 1; i < lines.length; i++) {
     const cells = splitCsvLine(lines[i]!);
-    const at = (index: number) => (index >= 0 ? cells[index]?.trim() ?? '' : '');
+    const at = (index: number) => (index >= 0 ? (cells[index]?.trim() ?? '') : '');
 
     const idRaw = idCols.map((c) => cells[c]?.trim() ?? '').find((v) => v.length > 0);
     const string = at(stringCol);

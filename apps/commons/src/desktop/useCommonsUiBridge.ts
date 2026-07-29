@@ -30,6 +30,7 @@ export const useCommonsUiBridge = () => {
   const [encoderName, setEncoderNameState] = useState('');
   const [encoderNameLoaded, setEncoderNameLoaded] = useState(false);
   const [aiApiSettings, setAiApiSettingsState] = useState<AiApiSettings | null>(null);
+  const [githubConnected, setGithubConnected] = useState(false);
   const [entityDbFolder, setEntityDbFolderState] = useState<string | null>(null);
   const [rememberWorkspaceOnStartup, setRememberWorkspaceOnStartupState] = useState(true);
   const [authorityLifecycleStatus, setAuthorityLifecycleStatusState] =
@@ -49,6 +50,14 @@ export const useCommonsUiBridge = () => {
 
     void window.electronAPI.getAiApiSettings().then((settings) => {
       setAiApiSettingsState(settings);
+    });
+  }, []);
+
+  useEffect(() => {
+    if (!isDesktop() || !window.electronAPI?.getCachedLeaderboardToken) return;
+
+    void window.electronAPI.getCachedLeaderboardToken().then((token) => {
+      setGithubConnected(Boolean(token));
     });
   }, []);
 
@@ -149,6 +158,38 @@ export const useCommonsUiBridge = () => {
         error: 'Desktop AI API bridge is unavailable.',
       }
     );
+  }, []);
+
+  const connectGithub = useCallback(async (onStarted?: (userCode: string) => void) => {
+    const api = window.electronAPI;
+    if (!api?.startLeaderboardDeviceFlow || !api.pollLeaderboardDeviceFlow) {
+      return { ok: false, error: 'Desktop GitHub bridge is unavailable.' };
+    }
+
+    try {
+      const flow = await api.startLeaderboardDeviceFlow();
+      onStarted?.(flow.userCode);
+      const result = await api.pollLeaderboardDeviceFlow(
+        flow.deviceCode,
+        flow.interval,
+        flow.expiresIn,
+      );
+      if ('token' in result) {
+        setGithubConnected(true);
+        return { ok: true };
+      }
+      return { ok: false, error: result.error };
+    } catch (error) {
+      return {
+        ok: false,
+        error: error instanceof Error ? error.message : 'Could not connect to GitHub.',
+      };
+    }
+  }, []);
+
+  const disconnectGithub = useCallback(async () => {
+    await window.electronAPI?.clearCachedLeaderboardToken?.();
+    setGithubConnected(false);
   }, []);
 
   const pickEntityDbFolder = useCallback(async (): Promise<string | null> => {
@@ -275,6 +316,9 @@ export const useCommonsUiBridge = () => {
       encoderName,
       encoderNameLoaded,
       aiApiSettings,
+      githubConnected,
+      connectGithub,
+      disconnectGithub,
       entityDbFolder,
       rememberWorkspaceOnStartup,
       skipCopyPasteHelp,
@@ -303,6 +347,9 @@ export const useCommonsUiBridge = () => {
     };
   }, [
     aiApiSettings,
+    connectGithub,
+    disconnectGithub,
+    githubConnected,
     authorityLifecycleStatus,
     encoderName,
     encoderNameLoaded,

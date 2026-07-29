@@ -325,15 +325,73 @@ body {
 [_tag='note'].hide {
   display: inline !important;
   font-size: 0 !important;
-  line-height: 1em !important;
+  line-height: inherit !important;
 }
 [_tag='note'].hide::before {
-  content: url(../images/sticky-note-inline.svg);
+  content: '';
   display: inline-block;
-  width: 16px;
-  height: 16px;
-  margin: 0 2px;
-  vertical-align: text-bottom;
+  width: 1rem;
+  height: 1rem;
+  margin: 0 0.1em;
+  vertical-align: middle;
+  background-color: var(--note);
+  background-image: url(../images/sticky-note-inline.svg);
+  background-repeat: no-repeat;
+  background-position: center;
+  background-size: 70% 70%;
+  border-radius: 2px;
+}
+
+.noteWrapper.note.hide::before {
+  content: '';
+  display: inline-block;
+  width: 1em;
+  height: 1em;
+  margin: 0 0.1em;
+  vertical-align: baseline;
+  background-color: var(--note);
+  background-image: url(../images/sticky-note-inline.svg);
+  background-repeat: no-repeat;
+  background-position: center;
+  background-size: 70% 70%;
+  border-radius: 2px;
+}
+
+/* CJK prose uses the compact annotation marker rather than the Latin sticky
+note. Match both xml:lang and HTML lang, including common legacy codes. */
+:is(
+    [lang|='zh'],
+    [lang|='lzh'],
+    [lang|='chi'],
+    [lang|='zho'],
+    [lang|='ja'],
+    [lang|='jpn'],
+    [xml\:lang|='zh'],
+    [xml\:lang|='lzh'],
+    [xml\:lang|='chi'],
+    [xml\:lang|='zho'],
+    [xml\:lang|='ja'],
+    [xml\:lang|='jpn']
+  )
+  :is([_tag='note'].hide, .noteWrapper.note.hide)::before,
+[_tag='note'].hide:is(
+    [lang|='zh'],
+    [lang|='lzh'],
+    [lang|='chi'],
+    [lang|='zho'],
+    [lang|='ja'],
+    [lang|='jpn'],
+    [xml\:lang|='zh'],
+    [xml\:lang|='lzh'],
+    [xml\:lang|='chi'],
+    [xml\:lang|='zho'],
+    [xml\:lang|='ja'],
+    [xml\:lang|='jpn']
+  )::before {
+  background-color: transparent;
+  background-image: url(../images/tool_hide_notes.svg);
+  background-size: 100% 100%;
+  border-radius: 0;
 }
 [_tag='note'].hide > * {
   display: none !important;

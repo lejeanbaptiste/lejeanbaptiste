@@ -32,17 +32,10 @@ import {
   Tooltip,
   Typography,
 } from '@mui/material';
-import {
-  useCallback,
-  useEffect,
-  useMemo,
-  useReducer,
-  useRef,
-  useState,
-} from 'react';
+import { useCallback, useEffect, useMemo, useReducer, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Virtuoso, type VirtuosoHandle } from 'react-virtuoso';
-import { CbdbIcon, DilaIcon, InitialsIcon } from '../icons/custom/AuthoritySource';
+import { CbdbIcon, DilaIcon, InitialsIcon, NorbertIcon } from '../icons/custom/AuthoritySource';
 import { WikipediaIcon } from '../icons/custom/Wikipedia';
 import { openExternalUrl } from '../utilities/DOM';
 import { cachedPackReader } from '../services/authority-pack-lookup';
@@ -171,9 +164,17 @@ const SectionHeaderRow = ({ title, count, open, onToggle }: SectionHeaderRowProp
       size="small"
       onClick={onToggle}
       endIcon={
-        <ExpandMoreIcon sx={{ transform: open ? 'rotate(180deg)' : undefined, transition: '0.2s' }} />
+        <ExpandMoreIcon
+          sx={{ transform: open ? 'rotate(180deg)' : undefined, transition: '0.2s' }}
+        />
       }
-      sx={{ justifyContent: 'space-between', textTransform: 'none', px: 1, py: 0.5, borderRadius: 0 }}
+      sx={{
+        justifyContent: 'space-between',
+        textTransform: 'none',
+        px: 1,
+        py: 0.5,
+        borderRadius: 0,
+      }}
     >
       {title} ({count})
     </Button>
@@ -218,7 +219,9 @@ const GroupHeader = ({
           onToggle();
         }}
         endIcon={
-          <ExpandMoreIcon sx={{ transform: expanded ? 'rotate(180deg)' : undefined, transition: '0.2s' }} />
+          <ExpandMoreIcon
+            sx={{ transform: expanded ? 'rotate(180deg)' : undefined, transition: '0.2s' }}
+          />
         }
         sx={{
           justifyContent: 'space-between',
@@ -235,7 +238,11 @@ const GroupHeader = ({
           <Typography variant="body2" sx={{ fontWeight: 600 }} noWrap>
             {group.surface}
           </Typography>
-          <Chip size="small" label={group.tag} sx={{ height: 18, fontSize: 10, '& .MuiChip-label': { fontWeight: 400 } }} />
+          <Chip
+            size="small"
+            label={group.tag}
+            sx={{ height: 18, fontSize: 10, '& .MuiChip-label': { fontWeight: 400 } }}
+          />
           {resolved ? (
             <Chip
               size="small"
@@ -347,7 +354,8 @@ export const DisambiguationPanel = ({
     ),
   );
   const dateFilter: DateRangeFilter = useMemo(
-    () => normalizeDateRangeFilter({ mode: dateFilterMode, start: yearRange[0], end: yearRange[1] }),
+    () =>
+      normalizeDateRangeFilter({ mode: dateFilterMode, start: yearRange[0], end: yearRange[1] }),
     [dateFilterMode, yearRange],
   );
   const cycleDateFilterMode = () => {
@@ -395,8 +403,7 @@ export const DisambiguationPanel = ({
     let cancelled = false;
     void (async () => {
       try {
-        const lang =
-          (await window.__leafWriterProject?.getProjectSourceLanguage?.()) ?? null;
+        const lang = (await window.__leafWriterProject?.getProjectSourceLanguage?.()) ?? null;
         if (!cancelled) setProjectLang(lang);
       } catch {
         // no bridge (web app) — dual-script enrichment simply stays off
@@ -421,7 +428,9 @@ export const DisambiguationPanel = ({
   useEffect(() => {
     if (!rateLimitRetry) return;
     const tick = () => {
-      setRateLimitSecondsLeft(Math.max(0, Math.ceil((rateLimitRetry.retryAtMs - Date.now()) / 1000)));
+      setRateLimitSecondsLeft(
+        Math.max(0, Math.ceil((rateLimitRetry.retryAtMs - Date.now()) / 1000)),
+      );
     };
     tick();
     const interval = setInterval(tick, 1000);
@@ -494,7 +503,11 @@ export const DisambiguationPanel = ({
   };
 
   const applyAiRank = useCallback(
-    async (targetGroup: MentionGroup, rows: DisambiguationCandidate[], targetInstance: MentionInstance) => {
+    async (
+      targetGroup: MentionGroup,
+      rows: DisambiguationCandidate[],
+      targetInstance: MentionInstance,
+    ) => {
       // Guard against a stale call landing after the user has already moved on
       // to a different group (e.g. rapid j/k navigation) — otherwise its
       // resets and eventual results would clobber the now-current group's state.
@@ -642,11 +655,23 @@ export const DisambiguationPanel = ({
           // merge in fresh local matches (e.g. an entity added after this
           // group was last cached, possibly from another view entirely).
           const entitiesDoc = await session.loadEntities();
-          const freshLocal = candidatesFromEntityFile(entitiesDoc, targetGroup.tag, targetGroup.surface);
+          const freshLocal = candidatesFromEntityFile(
+            entitiesDoc,
+            targetGroup.tag,
+            targetGroup.surface,
+          );
           const central = await session.candidateSearchCentralContext();
           const freshCentral = central
-            ? candidatesFromEntityFile(central.doc, targetGroup.tag, targetGroup.surface, 'cedb').filter(
-                (candidate) => !linkedCentralIds(entitiesDoc, central.userStableId).has(candidate.centralEntityId!),
+            ? candidatesFromEntityFile(
+                central.doc,
+                targetGroup.tag,
+                targetGroup.surface,
+                'cedb',
+              ).filter(
+                (candidate) =>
+                  !linkedCentralIds(entitiesDoc, central.userStableId).has(
+                    candidate.centralEntityId!,
+                  ),
               )
             : [];
           const rows = mergeCandidates([freshLocal, freshCentral, cached], {
@@ -798,7 +823,11 @@ export const DisambiguationPanel = ({
         ? filteredCandidates
         : session.getPendingCandidates(targetGroup.tag, targetGroup.surface);
       if (!source || source.length === 0) return [];
-      const { clusters } = clusterByGeoAccessor(source, placeProximityKm, (candidate) => candidate.geo);
+      const { clusters } = clusterByGeoAccessor(
+        source,
+        placeProximityKm,
+        (candidate) => candidate.geo,
+      );
       if (clusters.length === 0) return [];
       return clusters.map((cluster, index) => ({
         id: cluster.members[0]!.id,
@@ -849,7 +878,14 @@ export const DisambiguationPanel = ({
     } else if (!aiCuration && filteredCandidates.length !== 1) {
       setCheckedIds(new Set());
     }
-  }, [aiCuration, aiRationales, aiSuggestCreateNew, group?.surface, group?.tag, filteredCandidates]);
+  }, [
+    aiCuration,
+    aiRationales,
+    aiSuggestCreateNew,
+    group?.surface,
+    group?.tag,
+    filteredCandidates,
+  ]);
 
   useEffect(() => {
     if (pending.length === 0 && resolved.length > 0) setResolvedOpen(true);
@@ -1076,7 +1112,9 @@ export const DisambiguationPanel = ({
     try {
       const authorityId = await resolveManualAuthorityLink(manualLinkValue);
       if (!authorityId) {
-        setManualLinkError('Only Wikidata, Wikipedia, VIAF, DBPedia, Getty, GND, or Geonames links are accepted.');
+        setManualLinkError(
+          'Only Wikidata, Wikipedia, VIAF, DBPedia, Getty, GND, or Geonames links are accepted.',
+        );
         return;
       }
       // Harvest the one-line description and life dates for the database entry.
@@ -1166,7 +1204,8 @@ export const DisambiguationPanel = ({
           const checked = checkedIds.has(candidate.id);
           const links = candidateLinks(candidate);
           const confidence = aiConfidences[candidate.id];
-          const appearsInDocument = !!candidate.localEntityId && keyedEntityIds.has(candidate.localEntityId);
+          const appearsInDocument =
+            !!candidate.localEntityId && keyedEntityIds.has(candidate.localEntityId);
           return (
             <Box
               key={candidate.id}
@@ -1196,7 +1235,8 @@ export const DisambiguationPanel = ({
                   <Typography variant="body2" sx={{ fontWeight: 500, flex: 1, minWidth: 0 }} noWrap>
                     {candidate.projectLangName ?? candidate.label}
                     {candidate.romanizedName &&
-                      candidate.romanizedName !== (candidate.projectLangName ?? candidate.label) && (
+                      candidate.romanizedName !==
+                        (candidate.projectLangName ?? candidate.label) && (
                         <Typography
                           component="span"
                           variant="caption"
@@ -1210,11 +1250,24 @@ export const DisambiguationPanel = ({
                   {links.map((link) => (
                     <AuthorityLinkIcon key={link.url} link={link} />
                   ))}
+                  {candidate.sources.some((source) => source.toLowerCase() === 'norbert') && (
+                    <Tooltip title="Norbert" arrow>
+                      <Box component="span" sx={{ display: 'inline-flex', mt: 0.125 }}>
+                        <NorbertIcon />
+                      </Box>
+                    </Tooltip>
+                  )}
                   {candidate.fromEntityFile && (
                     <Chip
                       label="local"
                       size="small"
-                      sx={{ height: 16, fontSize: 10, bgcolor: '#1b5e20', color: '#fff', fontWeight: 600 }}
+                      sx={{
+                        height: 16,
+                        fontSize: 10,
+                        bgcolor: '#1b5e20',
+                        color: '#fff',
+                        fontWeight: 600,
+                      }}
                     />
                   )}
                   {appearsInDocument && (
@@ -1256,12 +1309,22 @@ export const DisambiguationPanel = ({
                   )}
                 </Box>
                 {candidate.description && (
-                  <Typography variant="caption" color="text.secondary" display="block" sx={{ lineHeight: 1.3 }}>
+                  <Typography
+                    variant="caption"
+                    color="text.secondary"
+                    display="block"
+                    sx={{ lineHeight: 1.3 }}
+                  >
                     {candidate.description}
                   </Typography>
                 )}
                 {aiRationales[candidate.id] && (
-                  <Typography variant="caption" color="primary.main" display="block" sx={{ lineHeight: 1.3 }}>
+                  <Typography
+                    variant="caption"
+                    color="primary.main"
+                    display="block"
+                    sx={{ lineHeight: 1.3 }}
+                  >
                     AI: {aiRationales[candidate.id]}
                   </Typography>
                 )}
@@ -1292,12 +1355,14 @@ export const DisambiguationPanel = ({
         ))}
         {targetGroup === group && wrapperNeedsPerson && (
           <Alert severity="error" sx={{ mx: 0.75, my: 0.5, py: 0.25 }}>
-            Disambiguate the inner person name first. This wrapper cannot be resolved until its person is identified.
+            Disambiguate the inner person name first. This wrapper cannot be resolved until its
+            person is identified.
           </Alert>
         )}
         {targetGroup === group && wrapperConflict && (
           <Alert severity="error" sx={{ mx: 0.75, my: 0.5, py: 0.25 }}>
-            The wrapper and its inner person have conflicting keys. Resolve the person again before accepting this wrapper.
+            The wrapper and its inner person have conflicting keys. Resolve the person again before
+            accepting this wrapper.
           </Alert>
         )}
         {targetGroup === group && aiSuggestCreateNew && (
@@ -1349,95 +1414,42 @@ export const DisambiguationPanel = ({
 
   return (
     <>
-    <Box
-      ref={containerRef}
-      tabIndex={0}
-      onKeyDown={handleKeyDown}
-      data-testid="disambiguation-panel"
-      sx={{ display: 'flex', flexDirection: 'column', height: '100%', minWidth: 0, outline: 'none' }}
-    >
-      {error && (
-        <Alert severity="error" onClose={() => setError(null)} sx={{ mb: 0.5, py: 0 }}>
-          {error}
-        </Alert>
-      )}
-
-      {loadingCandidates && (
-        <Alert severity="info" sx={{ mx: 0.75, mb: 0.5, py: 0.25, flexShrink: 0 }}>
-          Reading authority data for this entity — this can take a moment…
-        </Alert>
-      )}
-
-      {rankingAi && (
-        <Alert
-          severity={rateLimitRetry ? 'warning' : 'info'}
-          sx={{ mx: 0.75, mb: 0.5, py: 0.25, flexShrink: 0 }}
-        >
-          {rateLimitRetry
-            ? `AI rate limited — retrying in ${rateLimitSecondsLeft}s (attempt ${rateLimitRetry.attempt}/${rateLimitRetry.maxAttempts})…`
-            : 'AI is curating candidates for this entity — this can take a moment…'}
-        </Alert>
-      )}
-
       <Box
+        ref={containerRef}
+        tabIndex={0}
+        onKeyDown={handleKeyDown}
+        data-testid="disambiguation-panel"
         sx={{
           display: 'flex',
-          alignItems: 'center',
-          gap: 0.5,
-          mb: 0.5,
-          flexShrink: 0,
-          px: 0.75,
-          height: 24,
+          flexDirection: 'column',
+          height: '100%',
+          minWidth: 0,
+          outline: 'none',
         }}
       >
-        <Tooltip
-          title={
-            dateFilterMode === 'none'
-              ? 'Date filter off — click to limit candidates to the year range'
-              : dateFilterMode === 'limit'
-                ? 'Limit: keep candidates overlapping the year range'
-                : 'Exclude: drop candidates born after the cutoff or much later on average'
-          }
-        >
-          <IconButton
-            size="small"
-            aria-label="Toggle date filter mode"
-            onClick={cycleDateFilterMode}
-            sx={{ p: 0.25, flexShrink: 0 }}
-          >
-            {dateFilterMode === 'none' ? (
-              <FilterAltOffIcon sx={{ fontSize: 16 }} />
-            ) : (
-              <FilterAltIcon
-                sx={{ fontSize: 16, color: dateFilterMode === 'exclude' ? 'error.main' : 'primary.main' }}
-              />
-            )}
-          </IconButton>
-        </Tooltip>
-        <Slider
-          size="small"
-          min={AUTHORITY_YEAR_MIN}
-          max={AUTHORITY_YEAR_MAX}
-          step={1}
-          value={yearRange}
-          onChange={(_event, value) => setYearRange(value as [number, number])}
-          onChangeCommitted={(_event, value) => commitYearRange(value as [number, number])}
-          valueLabelDisplay="auto"
-          getAriaLabel={(index) => (index === 0 ? 'Start year' : 'End year')}
-          getAriaValueText={(value) => `${value} CE`}
-          disabled={dateFilterMode === 'none'}
-          sx={{ flex: 1, minWidth: 0, mx: 0.5 }}
-        />
-        <Typography
-          variant="caption"
-          color="text.secondary"
-          sx={{ fontSize: '0.6875rem', flexShrink: 0, whiteSpace: 'nowrap' }}
-        >
-          {Math.min(...yearRange)}–{Math.max(...yearRange)}
-        </Typography>
-      </Box>
+        {error && (
+          <Alert severity="error" onClose={() => setError(null)} sx={{ mb: 0.5, py: 0 }}>
+            {error}
+          </Alert>
+        )}
 
-      {group?.tag === 'placeName' && (
+        {loadingCandidates && (
+          <Alert severity="info" sx={{ mx: 0.75, mb: 0.5, py: 0.25, flexShrink: 0 }}>
+            Reading authority data for this entity — this can take a moment…
+          </Alert>
+        )}
+
+        {rankingAi && (
+          <Alert
+            severity={rateLimitRetry ? 'warning' : 'info'}
+            sx={{ mx: 0.75, mb: 0.5, py: 0.25, flexShrink: 0 }}
+          >
+            {rateLimitRetry
+              ? `AI rate limited — retrying in ${rateLimitSecondsLeft}s (attempt ${rateLimitRetry.attempt}/${rateLimitRetry.maxAttempts})…`
+              : 'AI is curating candidates for this entity — this can take a moment…'}
+          </Alert>
+        )}
+
         <Box
           sx={{
             display: 'flex',
@@ -1449,20 +1461,45 @@ export const DisambiguationPanel = ({
             height: 24,
           }}
         >
-          <Tooltip title="Proximity radius — same-named places within this distance are treated as one candidate">
-            <RoomIcon sx={{ fontSize: 16, color: 'text.secondary', flexShrink: 0 }} />
+          <Tooltip
+            title={
+              dateFilterMode === 'none'
+                ? 'Date filter off — click to limit candidates to the year range'
+                : dateFilterMode === 'limit'
+                  ? 'Limit: keep candidates overlapping the year range'
+                  : 'Exclude: drop candidates born after the cutoff or much later on average'
+            }
+          >
+            <IconButton
+              size="small"
+              aria-label="Toggle date filter mode"
+              onClick={cycleDateFilterMode}
+              sx={{ p: 0.25, flexShrink: 0 }}
+            >
+              {dateFilterMode === 'none' ? (
+                <FilterAltOffIcon sx={{ fontSize: 16 }} />
+              ) : (
+                <FilterAltIcon
+                  sx={{
+                    fontSize: 16,
+                    color: dateFilterMode === 'exclude' ? 'error.main' : 'primary.main',
+                  }}
+                />
+              )}
+            </IconButton>
           </Tooltip>
           <Slider
             size="small"
-            min={0}
-            max={50}
+            min={AUTHORITY_YEAR_MIN}
+            max={AUTHORITY_YEAR_MAX}
             step={1}
-            value={placeProximityKm}
-            onChange={(_event, value) => setPlaceProximityKm(value as number)}
-            onChangeCommitted={(_event, value) => commitPlaceProximityKm(value as number)}
+            value={yearRange}
+            onChange={(_event, value) => setYearRange(value as [number, number])}
+            onChangeCommitted={(_event, value) => commitYearRange(value as [number, number])}
             valueLabelDisplay="auto"
-            getAriaLabel={() => 'Place proximity radius (km)'}
-            getAriaValueText={(value) => `${value} km`}
+            getAriaLabel={(index) => (index === 0 ? 'Start year' : 'End year')}
+            getAriaValueText={(value) => `${value} CE`}
+            disabled={dateFilterMode === 'none'}
             sx={{ flex: 1, minWidth: 0, mx: 0.5 }}
           />
           <Typography
@@ -1470,351 +1507,389 @@ export const DisambiguationPanel = ({
             color="text.secondary"
             sx={{ fontSize: '0.6875rem', flexShrink: 0, whiteSpace: 'nowrap' }}
           >
-            {placeProximityKm} km
+            {Math.min(...yearRange)}–{Math.max(...yearRange)}
           </Typography>
         </Box>
-      )}
 
-      <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5, mb: 0.5, flexShrink: 0, px: 0.75 }}>
-        <Select
-          size="small"
-          value={tagFilter}
-          displayEmpty
-          onChange={(event) => setTagFilter(event.target.value)}
-          sx={{ flex: 1, fontSize: 12 }}
+        {group?.tag === 'placeName' && (
+          <Box
+            sx={{
+              display: 'flex',
+              alignItems: 'center',
+              gap: 0.5,
+              mb: 0.5,
+              flexShrink: 0,
+              px: 0.75,
+              height: 24,
+            }}
+          >
+            <Tooltip title="Proximity radius — same-named places within this distance are treated as one candidate">
+              <RoomIcon sx={{ fontSize: 16, color: 'text.secondary', flexShrink: 0 }} />
+            </Tooltip>
+            <Slider
+              size="small"
+              min={0}
+              max={50}
+              step={1}
+              value={placeProximityKm}
+              onChange={(_event, value) => setPlaceProximityKm(value as number)}
+              onChangeCommitted={(_event, value) => commitPlaceProximityKm(value as number)}
+              valueLabelDisplay="auto"
+              getAriaLabel={() => 'Place proximity radius (km)'}
+              getAriaValueText={(value) => `${value} km`}
+              sx={{ flex: 1, minWidth: 0, mx: 0.5 }}
+            />
+            <Typography
+              variant="caption"
+              color="text.secondary"
+              sx={{ fontSize: '0.6875rem', flexShrink: 0, whiteSpace: 'nowrap' }}
+            >
+              {placeProximityKm} km
+            </Typography>
+          </Box>
+        )}
+
+        <Box
+          sx={{ display: 'flex', alignItems: 'center', gap: 0.5, mb: 0.5, flexShrink: 0, px: 0.75 }}
         >
-          <MenuItem value="">All tags</MenuItem>
-          {tagOptions.map((tag) => (
-            <MenuItem key={tag} value={tag}>
-              {tag}
-            </MenuItem>
-          ))}
-        </Select>
-        <IconButton
-          size="small"
-          aria-label="Refresh candidates"
-          onClick={() => group && void loadCandidates(group, true)}
-          disabled={loadingCandidates || !group}
-        >
-          <RefreshIcon sx={{ fontSize: 16 }} />
-        </IconButton>
-      </Box>
+          <Select
+            size="small"
+            value={tagFilter}
+            displayEmpty
+            onChange={(event) => setTagFilter(event.target.value)}
+            sx={{ flex: 1, fontSize: 12 }}
+          >
+            <MenuItem value="">All tags</MenuItem>
+            {tagOptions.map((tag) => (
+              <MenuItem key={tag} value={tag}>
+                {tag}
+              </MenuItem>
+            ))}
+          </Select>
+          <IconButton
+            size="small"
+            aria-label="Refresh candidates"
+            onClick={() => group && void loadCandidates(group, true)}
+            disabled={loadingCandidates || !group}
+          >
+            <RefreshIcon sx={{ fontSize: 16 }} />
+          </IconButton>
+        </Box>
 
-      <Typography variant="caption" color="text.secondary" sx={{ px: 0.75, mb: 0.5, flexShrink: 0 }}>
-        {counts.pending} pending · {counts.resolved} resolved
-        {group
-          ? ` · ${group.tag === 'name' && group.instances[0]?.element.getAttribute('type') === 'personWrapper' ? 'person' : TAG_TO_KIND[group.tag] ?? 'entity'}`
-          : ''}
-      </Typography>
-
-      {aiCuration && (
-        <Stack
-          direction="row"
-          spacing={1}
-          alignItems="center"
-          flexWrap="wrap"
+        <Typography
+          variant="caption"
+          color="text.secondary"
           sx={{ px: 0.75, mb: 0.5, flexShrink: 0 }}
         >
-          <Typography variant="caption" color="text.secondary">
-            Prompt profile: {activePromptProfile.label}
-          </Typography>
-          <Link
-            component="button"
-            variant="caption"
-            underline="hover"
-            onClick={() => setPromptEditorOpen(true)}
+          {counts.pending} pending · {counts.resolved} resolved
+          {group
+            ? ` · ${group.tag === 'name' && group.instances[0]?.element.getAttribute('type') === 'personWrapper' ? 'person' : (TAG_TO_KIND[group.tag] ?? 'entity')}`
+            : ''}
+        </Typography>
+
+        {aiCuration && (
+          <Stack
+            direction="row"
+            spacing={1}
+            alignItems="center"
+            flexWrap="wrap"
+            sx={{ px: 0.75, mb: 0.5, flexShrink: 0 }}
           >
-            Edit prompt…
-          </Link>
-          {cacheDisabled && (
-            <Chip size="small" variant="outlined" label="Cache off" sx={{ height: 18, fontSize: 10 }} />
-          )}
-        </Stack>
-      )}
+            <Typography variant="caption" color="text.secondary">
+              Prompt profile: {activePromptProfile.label}
+            </Typography>
+            <Link
+              component="button"
+              variant="caption"
+              underline="hover"
+              onClick={() => setPromptEditorOpen(true)}
+            >
+              Edit prompt…
+            </Link>
+            {cacheDisabled && (
+              <Chip
+                size="small"
+                variant="outlined"
+                label="Cache off"
+                sx={{ height: 18, fontSize: 10 }}
+              />
+            )}
+          </Stack>
+        )}
 
-      {aiStatus && (
-        <Alert severity={aiStatus.severity} sx={{ mx: 0.75, mb: 0.5, py: 0.25, flexShrink: 0 }}>
-          {aiStatus.text}
-        </Alert>
-      )}
+        {aiStatus && (
+          <Alert severity={aiStatus.severity} sx={{ mx: 0.75, mb: 0.5, py: 0.25, flexShrink: 0 }}>
+            {aiStatus.text}
+          </Alert>
+        )}
 
-      <Box sx={{ flex: 1, minHeight: 0 }} onClick={() => containerRef.current?.focus()}>
-        <Virtuoso
-          ref={groupListRef}
-          data={listRows}
-          overscan={600}
-          itemContent={(_index, row) => {
-            if (row.kind === 'empty') {
+        <Box sx={{ flex: 1, minHeight: 0 }} onClick={() => containerRef.current?.focus()}>
+          <Virtuoso
+            ref={groupListRef}
+            data={listRows}
+            overscan={600}
+            itemContent={(_index, row) => {
+              if (row.kind === 'empty') {
+                return (
+                  <Typography variant="caption" color="text.secondary" sx={{ px: 0.75, py: 0.5 }}>
+                    {row.message}
+                  </Typography>
+                );
+              }
+
+              if (row.kind === 'resolved-header') {
+                return (
+                  <SectionHeaderRow
+                    title={t('Resolved')}
+                    count={resolved.length}
+                    open={resolvedOpen}
+                    onToggle={() => setResolvedOpen((open) => !open)}
+                  />
+                );
+              }
+
+              const targetGroup = row.group;
+              const key = mentionGroupKey(targetGroup);
+              const expanded = controller.isExpanded(targetGroup);
+              const isCurrent = key === currentKey;
+              const resolvedRow = row.kind === 'resolved-group';
+
               return (
-                <Typography variant="caption" color="text.secondary" sx={{ px: 0.75, py: 0.5 }}>
-                  {row.message}
-                </Typography>
+                <Box sx={{ borderBottom: 1, borderColor: 'divider' }}>
+                  <GroupHeader
+                    group={targetGroup}
+                    isCurrent={isCurrent}
+                    expanded={expanded}
+                    resolved={resolvedRow}
+                    onSelect={() => {
+                      controller.selectGroup(key, { focus: true, expand: expanded });
+                      rerender();
+                    }}
+                    onToggle={() => {
+                      controller.toggleExpanded(targetGroup);
+                      if (!expanded) controller.selectGroup(key, { focus: true, expand: true });
+                      rerender();
+                    }}
+                    mapPins={mapPinsForGroup(targetGroup)}
+                    onOpenMap={() =>
+                      setMapModal({
+                        title: `${targetGroup.surface} — compare clusters`,
+                        pins: mapPinsForGroup(targetGroup),
+                      })
+                    }
+                  />
+                  <Collapse in={expanded}>
+                    {resolvedRow
+                      ? renderResolvedGroupBody(targetGroup)
+                      : renderPendingGroupBody(targetGroup)}
+                  </Collapse>
+                </Box>
               );
-            }
+            }}
+            style={{ height: '100%' }}
+          />
+        </Box>
 
-            if (row.kind === 'resolved-header') {
-              return (
-                <SectionHeaderRow
-                  title={t('Resolved')}
-                  count={resolved.length}
-                  open={resolvedOpen}
-                  onToggle={() => setResolvedOpen((open) => !open)}
-                />
-              );
-            }
-
-            const targetGroup = row.group;
-            const key = mentionGroupKey(targetGroup);
-            const expanded = controller.isExpanded(targetGroup);
-            const isCurrent = key === currentKey;
-            const resolvedRow = row.kind === 'resolved-group';
-
-            return (
-              <Box sx={{ borderBottom: 1, borderColor: 'divider' }}>
-                <GroupHeader
-                  group={targetGroup}
-                  isCurrent={isCurrent}
-                  expanded={expanded}
-                  resolved={resolvedRow}
-                  onSelect={() => {
-                    controller.selectGroup(key, { focus: true, expand: expanded });
+        {showCandidateUi && instance && (
+          <Box
+            sx={{
+              flexShrink: 0,
+              borderTop: 1,
+              borderColor: 'divider',
+              p: 0.75,
+              display: 'flex',
+              alignItems: 'center',
+              gap: 0.5,
+              minWidth: 0,
+            }}
+          >
+            <Tooltip title="Accept this occurrence">
+              <span>
+                <Button
+                  size="small"
+                  variant="contained"
+                  disabled={!selected}
+                  startIcon={<CheckIcon sx={{ fontSize: 14 }} />}
+                  onClick={() => void acceptOccurrence()}
+                  sx={{ px: 1, minWidth: 0, fontSize: 12, whiteSpace: 'nowrap' }}
+                >
+                  Occurrence
+                </Button>
+              </span>
+            </Tooltip>
+            <Tooltip title="Accept all matching mentions in this document">
+              <span>
+                <Button
+                  size="small"
+                  variant="outlined"
+                  disabled={!selected}
+                  startIcon={<CheckIcon sx={{ fontSize: 14 }} />}
+                  onClick={() => void acceptDocumentSurface()}
+                  sx={{ px: 1, minWidth: 0, fontSize: 12, whiteSpace: 'nowrap' }}
+                >
+                  Document
+                </Button>
+              </span>
+            </Tooltip>
+            <Box sx={{ flex: 1, minWidth: 4 }} />
+            <Stack direction="row" spacing={0.25} alignItems="center" flexShrink={0}>
+              <Tooltip
+                title={
+                  currentWrapperNeedsPerson
+                    ? 'Disambiguate the inner person name before creating an entity for this wrapper'
+                    : aiSuggestCreateNew
+                      ? 'AI suggests creating a new entity'
+                      : 'Create new entity'
+                }
+              >
+                <IconButton
+                  size="small"
+                  aria-label="Create new entity"
+                  color={aiSuggestCreateNew ? 'warning' : 'default'}
+                  disabled={currentWrapperNeedsPerson}
+                  onClick={() => {
+                    setNewEntityDescription('');
+                    setNewEntityRomanized(
+                      (instance && autoRomanize(instance.surface, projectLang)) ?? '',
+                    );
+                    setNewEntityDialogOpen(true);
+                  }}
+                >
+                  <PersonAddIcon sx={{ fontSize: 18 }} />
+                </IconButton>
+              </Tooltip>
+              <Tooltip title="Link to a known authority (Wikidata, Wikipedia, VIAF, …) — for entities with no reconcile match">
+                <IconButton
+                  size="small"
+                  aria-label="Link to authority"
+                  color={manualLinkOpen ? 'primary' : 'default'}
+                  disabled={currentWrapperNeedsPerson}
+                  onClick={() => {
+                    setManualLinkOpen((open) => !open);
+                    setManualLinkError(null);
+                  }}
+                >
+                  <LinkIcon sx={{ fontSize: 18 }} />
+                </IconButton>
+              </Tooltip>
+              <Tooltip title="Mark unresolved">
+                <IconButton
+                  size="small"
+                  aria-label="Mark unresolved"
+                  color="warning"
+                  onClick={() => void markCurrentUnresolved()}
+                >
+                  <HelpOutlineIcon sx={{ fontSize: 18 }} />
+                </IconButton>
+              </Tooltip>
+              <Tooltip title="Ignore">
+                <IconButton
+                  size="small"
+                  aria-label="Ignore"
+                  onClick={() => {
+                    controller.ignoreCurrentGroup();
                     rerender();
                   }}
-                  onToggle={() => {
-                    controller.toggleExpanded(targetGroup);
-                    if (!expanded) controller.selectGroup(key, { focus: true, expand: true });
+                >
+                  <SkipNextIcon sx={{ fontSize: 18 }} />
+                </IconButton>
+              </Tooltip>
+              <Tooltip title="Split group">
+                <IconButton
+                  size="small"
+                  aria-label="Split group"
+                  onClick={() => {
+                    controller.splitCurrentInstance();
                     rerender();
                   }}
-                  mapPins={mapPinsForGroup(targetGroup)}
-                  onOpenMap={() =>
-                    setMapModal({
-                      title: `${targetGroup.surface} — compare clusters`,
-                      pins: mapPinsForGroup(targetGroup),
-                    })
+                >
+                  <CallSplitIcon sx={{ fontSize: 18 }} />
+                </IconButton>
+              </Tooltip>
+            </Stack>
+          </Box>
+        )}
+
+        {showCandidateUi && manualLinkOpen && (
+          <Box sx={{ flexShrink: 0, borderTop: 1, borderColor: 'divider', p: 0.75 }}>
+            <Stack direction="row" spacing={0.5} alignItems="center">
+              <TextField
+                size="small"
+                autoFocus
+                placeholder="Paste a Wikidata, Wikipedia, or VIAF URL…"
+                value={manualLinkValue}
+                onChange={(event) => setManualLinkValue(event.target.value)}
+                onKeyDown={(event) => {
+                  if (event.key === 'Enter') {
+                    event.preventDefault();
+                    void submitManualLink();
                   }
-                />
-                <Collapse in={expanded}>
-                  {resolvedRow ? renderResolvedGroupBody(targetGroup) : renderPendingGroupBody(targetGroup)}
-                </Collapse>
-              </Box>
-            );
-          }}
-          style={{ height: '100%' }}
-        />
-      </Box>
-
-      {showCandidateUi && instance && (
-        <Box
-          sx={{
-            flexShrink: 0,
-            borderTop: 1,
-            borderColor: 'divider',
-            p: 0.75,
-            display: 'flex',
-            alignItems: 'center',
-            gap: 0.5,
-            minWidth: 0,
-          }}
-        >
-          <Tooltip title="Accept this occurrence">
-            <span>
+                }}
+                disabled={manualLinkBusy}
+                sx={{ flex: 1, minWidth: 0, '& .MuiInputBase-input': { fontSize: 12, py: 0.5 } }}
+              />
               <Button
                 size="small"
                 variant="contained"
-                disabled={!selected}
-                startIcon={<CheckIcon sx={{ fontSize: 14 }} />}
-                onClick={() => void acceptOccurrence()}
+                disabled={manualLinkBusy || !manualLinkValue.trim()}
+                onClick={() => void submitManualLink()}
                 sx={{ px: 1, minWidth: 0, fontSize: 12, whiteSpace: 'nowrap' }}
               >
-                Occurrence
+                Link
               </Button>
-            </span>
-          </Tooltip>
-          <Tooltip title="Accept all matching mentions in this document">
-            <span>
-              <Button
-                size="small"
-                variant="outlined"
-                disabled={!selected}
-                startIcon={<CheckIcon sx={{ fontSize: 14 }} />}
-                onClick={() => void acceptDocumentSurface()}
-                sx={{ px: 1, minWidth: 0, fontSize: 12, whiteSpace: 'nowrap' }}
-              >
-                Document
-              </Button>
-            </span>
-          </Tooltip>
-          <Box sx={{ flex: 1, minWidth: 4 }} />
-          <Stack direction="row" spacing={0.25} alignItems="center" flexShrink={0}>
-            <Tooltip
-              title={
-                currentWrapperNeedsPerson
-                  ? 'Disambiguate the inner person name before creating an entity for this wrapper'
-                  : aiSuggestCreateNew
-                    ? 'AI suggests creating a new entity'
-                    : 'Create new entity'
-              }
-            >
-              <IconButton
-                size="small"
-                aria-label="Create new entity"
-                color={aiSuggestCreateNew ? 'warning' : 'default'}
-                disabled={currentWrapperNeedsPerson}
-                onClick={() => {
-                  setNewEntityDescription('');
-                  setNewEntityRomanized(
-                    (instance && autoRomanize(instance.surface, projectLang)) ?? '',
-                  );
-                  setNewEntityDialogOpen(true);
-                }}
-              >
-                <PersonAddIcon sx={{ fontSize: 18 }} />
-              </IconButton>
-            </Tooltip>
-            <Tooltip title="Link to a known authority (Wikidata, Wikipedia, VIAF, …) — for entities with no reconcile match">
-              <IconButton
-                size="small"
-                aria-label="Link to authority"
-                color={manualLinkOpen ? 'primary' : 'default'}
-                disabled={currentWrapperNeedsPerson}
-                onClick={() => {
-                  setManualLinkOpen((open) => !open);
-                  setManualLinkError(null);
-                }}
-              >
-                <LinkIcon sx={{ fontSize: 18 }} />
-              </IconButton>
-            </Tooltip>
-            <Tooltip title="Mark unresolved">
-              <IconButton
-                size="small"
-                aria-label="Mark unresolved"
-                color="warning"
-                onClick={() => void markCurrentUnresolved()}
-              >
-                <HelpOutlineIcon sx={{ fontSize: 18 }} />
-              </IconButton>
-            </Tooltip>
-            <Tooltip title="Ignore">
-              <IconButton
-                size="small"
-                aria-label="Ignore"
-                onClick={() => {
-                  controller.ignoreCurrentGroup();
-                  rerender();
-                }}
-              >
-                <SkipNextIcon sx={{ fontSize: 18 }} />
-              </IconButton>
-            </Tooltip>
-            <Tooltip title="Split group">
-              <IconButton
-                size="small"
-                aria-label="Split group"
-                onClick={() => {
-                  controller.splitCurrentInstance();
-                  rerender();
-                }}
-              >
-                <CallSplitIcon sx={{ fontSize: 18 }} />
-              </IconButton>
-            </Tooltip>
-          </Stack>
-        </Box>
-      )}
+            </Stack>
+            {manualLinkError && (
+              <Typography variant="caption" color="error" display="block" sx={{ mt: 0.5 }}>
+                {manualLinkError}
+              </Typography>
+            )}
+          </Box>
+        )}
 
-      {showCandidateUi && manualLinkOpen && (
-        <Box sx={{ flexShrink: 0, borderTop: 1, borderColor: 'divider', p: 0.75 }}>
-          <Stack direction="row" spacing={0.5} alignItems="center">
-            <TextField
-              size="small"
-              autoFocus
-              placeholder="Paste a Wikidata, Wikipedia, or VIAF URL…"
-              value={manualLinkValue}
-              onChange={(event) => setManualLinkValue(event.target.value)}
-              onKeyDown={(event) => {
-                if (event.key === 'Enter') {
-                  event.preventDefault();
-                  void submitManualLink();
-                }
-              }}
-              disabled={manualLinkBusy}
-              sx={{ flex: 1, minWidth: 0, '& .MuiInputBase-input': { fontSize: 12, py: 0.5 } }}
-            />
-            <Button
-              size="small"
-              variant="contained"
-              disabled={manualLinkBusy || !manualLinkValue.trim()}
-              onClick={() => void submitManualLink()}
-              sx={{ px: 1, minWidth: 0, fontSize: 12, whiteSpace: 'nowrap' }}
-            >
-              Link
-            </Button>
-          </Stack>
-          {manualLinkError && (
-            <Typography variant="caption" color="error" display="block" sx={{ mt: 0.5 }}>
-              {manualLinkError}
-            </Typography>
-          )}
-        </Box>
-      )}
-
-      {showCandidateUi && (
-        <Typography variant="caption" color="text.secondary" sx={{ px: 0.75, pb: 0.5, flexShrink: 0 }}>
-          j/k navigate · Enter accept occurrence · Shift+Enter accept document
-        </Typography>
-      )}
-    </Box>
-    <AiPromptEditorDialog
-      open={promptEditorOpen}
-      state={aiPromptProfiles}
-      highlightField="disambiguation"
-      onClose={() => setPromptEditorOpen(false)}
-      onSave={async (next) => {
-        await persistAiPromptProfiles(next);
-        setAiPromptProfiles(next);
-      }}
-    />
-    <PlaceComparisonMap
-      open={mapModal != null}
-      pins={mapModal?.pins ?? []}
-      title={mapModal?.title ?? ''}
-      onClose={() => setMapModal(null)}
-    />
-    <Dialog
-      open={newEntityDialogOpen}
-      onClose={() => !newEntityBusy && setNewEntityDialogOpen(false)}
-      maxWidth="xs"
-      fullWidth
-    >
-      <DialogTitle>New entity: {instance?.surface}</DialogTitle>
-      <DialogContent>
-        <Typography variant="caption" color="text.secondary" display="block" sx={{ mb: 1 }}>
-          Not in any authority. A one-line description helps disambiguate this entity later.
-        </Typography>
-        <TextField
-          autoFocus
-          fullWidth
-          size="small"
-          placeholder="e.g. legendary flood-taming ruler, founder of the Xia dynasty"
-          value={newEntityDescription}
-          onChange={(event) => setNewEntityDescription(event.target.value)}
-          onKeyDown={(event) => {
-            if (event.key === 'Enter') {
-              event.preventDefault();
-              void confirmNewEntity();
-            }
-          }}
-          disabled={newEntityBusy}
-        />
-        {(canAutoRomanize(projectLang) || newEntityRomanized) && (
+        {showCandidateUi && (
+          <Typography
+            variant="caption"
+            color="text.secondary"
+            sx={{ px: 0.75, pb: 0.5, flexShrink: 0 }}
+          >
+            j/k navigate · Enter accept occurrence · Shift+Enter accept document
+          </Typography>
+        )}
+      </Box>
+      <AiPromptEditorDialog
+        open={promptEditorOpen}
+        state={aiPromptProfiles}
+        highlightField="disambiguation"
+        onClose={() => setPromptEditorOpen(false)}
+        onSave={async (next) => {
+          await persistAiPromptProfiles(next);
+          setAiPromptProfiles(next);
+        }}
+      />
+      <PlaceComparisonMap
+        open={mapModal != null}
+        pins={mapModal?.pins ?? []}
+        title={mapModal?.title ?? ''}
+        onClose={() => setMapModal(null)}
+      />
+      <Dialog
+        open={newEntityDialogOpen}
+        onClose={() => !newEntityBusy && setNewEntityDialogOpen(false)}
+        maxWidth="xs"
+        fullWidth
+      >
+        <DialogTitle>New entity: {instance?.surface}</DialogTitle>
+        <DialogContent>
+          <Typography variant="caption" color="text.secondary" display="block" sx={{ mb: 1 }}>
+            Not in any authority. A one-line description helps disambiguate this entity later.
+          </Typography>
           <TextField
+            autoFocus
             fullWidth
             size="small"
-            label="Romanized name"
-            helperText="Latin-script form, used for search"
-            value={newEntityRomanized}
-            onChange={(event) => setNewEntityRomanized(event.target.value)}
+            placeholder="e.g. legendary flood-taming ruler, founder of the Xia dynasty"
+            value={newEntityDescription}
+            onChange={(event) => setNewEntityDescription(event.target.value)}
             onKeyDown={(event) => {
               if (event.key === 'Enter') {
                 event.preventDefault();
@@ -1822,19 +1897,39 @@ export const DisambiguationPanel = ({
               }
             }}
             disabled={newEntityBusy}
-            sx={{ mt: 2 }}
           />
-        )}
-      </DialogContent>
-      <DialogActions>
-        <Button onClick={() => setNewEntityDialogOpen(false)} disabled={newEntityBusy}>
-          Cancel
-        </Button>
-        <Button variant="contained" onClick={() => void confirmNewEntity()} disabled={newEntityBusy}>
-          Create
-        </Button>
-      </DialogActions>
-    </Dialog>
+          {(canAutoRomanize(projectLang) || newEntityRomanized) && (
+            <TextField
+              fullWidth
+              size="small"
+              label="Romanized name"
+              helperText="Latin-script form, used for search"
+              value={newEntityRomanized}
+              onChange={(event) => setNewEntityRomanized(event.target.value)}
+              onKeyDown={(event) => {
+                if (event.key === 'Enter') {
+                  event.preventDefault();
+                  void confirmNewEntity();
+                }
+              }}
+              disabled={newEntityBusy}
+              sx={{ mt: 2 }}
+            />
+          )}
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={() => setNewEntityDialogOpen(false)} disabled={newEntityBusy}>
+            Cancel
+          </Button>
+          <Button
+            variant="contained"
+            onClick={() => void confirmNewEntity()}
+            disabled={newEntityBusy}
+          >
+            Create
+          </Button>
+        </DialogActions>
+      </Dialog>
     </>
   );
 };

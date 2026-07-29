@@ -22,8 +22,18 @@ import {
   setRomanizedName,
   type EntitySummary,
 } from './entityOps';
+import {
+  appendAuthorityDates,
+  appendAuthoritySourcedValues,
+  findEntity,
+  setAuthorityCache,
+  touchEntity,
+} from './entities';
+import type { AuthorityCandidate } from './authority';
 import { normalizeNameType, type NameTypeId } from './nameTypes';
 import { suggestPersonNameSplit, suggestPersonRomanization } from '../plugins/personNameDefaults';
+import { fetchWikidataLifespan } from './wikidataDates';
+import { fetchWikidataNationality } from './wikidataNationality';
 
 export interface NameBackfillProgress {
   done: number;
@@ -57,10 +67,16 @@ function typedNamesFromPackRow(
   return out;
 }
 
+interface AuthorityEnrichment {
+  names: TypedName[];
+  primaryName?: string;
+  metadata?: AuthorityCandidate['metadata'];
+}
+
 async function buildPackNameIndex(
   readPackFile: (packId: AuthorityPackId) => Promise<AuthorityPackContent>,
-): Promise<Map<string, TypedName[]>> {
-  const index = new Map<string, TypedName[]>();
+): Promise<Map<string, AuthorityEnrichment>> {
+  const index = new Map<string, AuthorityEnrichment>();
   const packs: { packId: AuthorityPackId; source: string }[] = [
     { packId: 'cbdb-persons', source: 'CBDB' },
     { packId: 'dila-persons', source: 'DILA' },
@@ -70,8 +86,12 @@ async function buildPackNameIndex(
       const content = await readPackFile(packId);
       for (const row of iterateAuthorityNdjson(content)) {
         const typed = typedNamesFromPackRow(row.names);
-        if (typed.length === 0) continue;
-        index.set(`${source}:${row.authorityId}`, typed);
+        if (typed.length === 0 && !row.metadata) continue;
+        index.set(`${source}:${row.authorityId}`, {
+          names: typed,
+          primaryName: row.primaryName,
+          metadata: row.metadata,
+        });
       }
     } catch {
       // Pack missing or unreadable — skip silently.
@@ -82,19 +102,137 @@ async function buildPackNameIndex(
 
 function packTypedNamesForEntity(
   entity: EntitySummary,
-  index: Map<string, TypedName[]> | null,
+  index: Map<string, AuthorityEnrichment> | null,
 ): TypedName[] {
   if (!index) return [];
   const byText = new Map<string, TypedName>();
   for (const auth of entity.authorities) {
     const key = `${auth.type}:${auth.value.trim()}`;
-    const names = index.get(key);
-    if (!names) continue;
-    for (const name of names) {
+    const enrichment = index.get(key);
+    if (!enrichment) continue;
+    for (const name of enrichment.names) {
       byText.set(name.text.normalize('NFC'), name);
     }
   }
   return [...byText.values()];
+}
+
+function authorityEnrichmentForEntity(
+  entity: EntitySummary,
+  index: Map<string, AuthorityEnrichment> | null,
+): AuthorityCandidate['metadata'] | undefined {
+  if (!index) return undefined;
+  const rows = authorityEnrichmentsForEntity(entity, index)
+    .map(({ enrichment }) => enrichment.metadata)
+    .filter((metadata): metadata is NonNullable<AuthorityCandidate['metadata']> =>
+      Boolean(metadata),
+    );
+  if (rows.length === 0) return undefined;
+  return {
+    ...rows[0],
+    startYear: rows.find((row) => row.startYear != null)?.startYear,
+    endYear: rows.find((row) => row.endYear != null)?.endYear,
+    nationality: [
+      ...new Map(
+        rows.flatMap((row) => row.nationality ?? []).map((value) => [value.canonicalId, value]),
+      ).values(),
+    ],
+    origin: [
+      ...new Map(
+        rows
+          .flatMap((row) => row.origin ?? [])
+          .map((value) => [`${value.source}:${value.placeAuthorityId ?? value.placeName}`, value]),
+      ).values(),
+    ],
+    appointments: [
+      ...new Map(
+        rows
+          .flatMap((row) => row.appointments ?? [])
+          .map((value) => [`${value.source}:${value.authorityId}`, value]),
+      ).values(),
+    ],
+  };
+}
+
+/** Return every pack enrichment linked to an entity, retaining its source. */
+function authorityEnrichmentsForEntity(
+  entity: EntitySummary,
+  index: Map<string, AuthorityEnrichment> | null,
+): Array<{ source: string; enrichment: AuthorityEnrichment }> {
+  if (!index) return [];
+  return entity.authorities.flatMap((auth) => {
+    const source = auth.type.trim().toUpperCase();
+    const enrichment = index.get(`${source}:${auth.value.trim()}`);
+    return enrichment ? [{ source, enrichment }] : [];
+  });
+}
+
+function firstAuthorityEnrichment(
+  entity: EntitySummary,
+  index: Map<string, AuthorityEnrichment> | null,
+): AuthorityEnrichment | undefined {
+  return authorityEnrichmentsForEntity(entity, index)[0]?.enrichment;
+}
+
+/** Apply the same scalar/repeatable authority fields written when disambiguating. */
+function applyAuthorityMetadata(
+  doc: Document,
+  entityId: string,
+  metadata: AuthorityCandidate['metadata'] | undefined,
+  source: string,
+): boolean {
+  if (!metadata) return false;
+  const item = findEntity(doc, entityId);
+  if (!item) return false;
+  const normalizedSource = source.trim().toUpperCase();
+  let changed = appendAuthorityDates(doc, item, source, {
+    startYear: metadata.startYear,
+    endYear: metadata.endYear,
+  });
+  if (metadata.nationality?.length) {
+    const nationalityChanged = appendAuthoritySourcedValues(
+      doc,
+      item,
+      'nationality',
+      metadata.nationality.map((value) => ({
+        text: value.label,
+        ref: value.canonicalId,
+        source: normalizedSource,
+      })),
+    );
+    changed = changed || nationalityChanged;
+  }
+  if (metadata.origin?.length) {
+    const originChanged = appendAuthoritySourcedValues(
+      doc,
+      item,
+      'placeName',
+      metadata.origin
+        .filter((value) => value.placeName?.trim())
+        .map((value) => ({
+          text: value.placeName,
+          ref: value.placeAuthorityId,
+          source: value.source ?? normalizedSource,
+        })),
+    );
+    changed = changed || originChanged;
+  }
+  if (metadata.appointments?.length) {
+    const sourceNote = Array.from(item.children).find(
+      (child) =>
+        child.localName === 'note' &&
+        child.getAttribute('type') === 'authority-cache' &&
+        child.getAttribute('source') === source.trim().toUpperCase(),
+    );
+    const previous = sourceNote?.textContent ?? '';
+    const next = JSON.stringify(metadata);
+    if (previous !== next) {
+      setAuthorityCache(doc, entityId, source.trim().toUpperCase(), metadata);
+      changed = true;
+    }
+  }
+  if (changed) touchEntity(item);
+  return changed;
 }
 
 function nameTypeForText(
@@ -181,6 +319,18 @@ export async function backfillEntityNames(
         return fromPack.length > 0 ? fromPack : undefined;
       })(),
     };
+    const metadata = authorityEnrichmentForEntity(entity, packIndex);
+    const firstEnrichment = firstAuthorityEnrichment(entity, packIndex);
+    const primaryName = firstEnrichment?.primaryName?.trim();
+    if (primaryName && primaryName !== entity.names[0]) {
+      if (applyTypedName(doc, entity.id, { text: primaryName, type: 'variant' })) {
+        namesAdded++;
+        entityChanged = true;
+      }
+    }
+    candidate.startYear = metadata?.startYear;
+    candidate.endYear = metadata?.endYear;
+    candidate.authorityMetadata = metadata;
 
     const typedNames = await collectTypedNamesForCandidate(candidate, fetchImpl);
     const givenFamily = await collectGivenFamilyNamesForCandidate(
@@ -225,10 +375,51 @@ export async function backfillEntityNames(
       entityChanged = true;
     }
     if (!entity.romanized) {
-      const romanized = suggestPersonRomanization(entity.names[0] ?? '', projectLang ?? null);
+      const authorityRomanized = metadata?.pinyin ?? metadata?.yomi;
+      const romanized =
+        authorityRomanized?.trim() ||
+        suggestPersonRomanization(entity.names[0] ?? '', projectLang ?? null);
       if (romanized) {
         setRomanizedName(doc, entity.id, romanized, projectLang ?? null);
         entityChanged = true;
+      }
+    }
+
+    // Refresh every linked authority independently. Dates are stored as
+    // source-specific assertions, so a DILA value is retained even when a
+    // user value or another authority already supplied a different year.
+    for (const { source, enrichment } of authorityEnrichmentsForEntity(entity, packIndex)) {
+      if (applyAuthorityMetadata(doc, entity.id, enrichment.metadata, source)) {
+        entityChanged = true;
+      }
+    }
+
+    // Packs only cover CBDB/DILA; a Wikidata-linked entity needs its own
+    // live fetch so refresh isn't a no-op for it.
+    const wikidataIdno = entity.authorities.find(
+      (auth) => auth.type.trim().toUpperCase() === 'WIKIDATA',
+    );
+    if (wikidataIdno) {
+      const [lifespan, nationality] = await Promise.all([
+        fetchWikidataLifespan(wikidataIdno.value, fetchImpl),
+        fetchWikidataNationality(wikidataIdno.value, fetchImpl, projectLang),
+      ]);
+      if (lifespan || nationality) {
+        const changed = applyAuthorityMetadata(
+          doc,
+          entity.id,
+          {
+            startYear: lifespan?.birthYear,
+            endYear: lifespan?.deathYear,
+            nationality: nationality?.map((value) => ({
+              id: value.canonicalId,
+              canonicalId: value.canonicalId,
+              label: value.label,
+            })),
+          },
+          'Wikidata',
+        );
+        if (changed) entityChanged = true;
       }
     }
 

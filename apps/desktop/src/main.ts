@@ -30,6 +30,7 @@ import { AVATAR_SCHEME, registerAvatarProtocol } from './avatarAssets';
 import { BODY_SCHEME, registerBodyProtocol } from './bodyAssets';
 import {
   getCachedLeaderboardToken,
+  clearCachedLeaderboardToken,
   pollLeaderboardDeviceFlow,
   startLeaderboardDeviceFlow,
 } from './leaderboardAuth';
@@ -1382,6 +1383,7 @@ const registerIpcHandlers = () => {
   });
 
   ipcMain.handle('getCachedLeaderboardToken', () => getCachedLeaderboardToken());
+  ipcMain.handle('clearCachedLeaderboardToken', () => clearCachedLeaderboardToken());
   ipcMain.handle('startLeaderboardDeviceFlow', () => startLeaderboardDeviceFlow());
   ipcMain.handle(
     'pollLeaderboardDeviceFlow',
@@ -1688,7 +1690,11 @@ const registerIpcHandlers = () => {
   ipcMain.handle('mapTiles:status', async () => {
     const mapTilesDir = await getMapTilesDir();
     const regions = await listInstalledMapTileRegions(mapTilesDir);
-    return { installed: regions.length > 0, path: regions.length > 0 ? mapTilesDir : null, regions };
+    return {
+      installed: regions.length > 0,
+      path: regions.length > 0 ? mapTilesDir : null,
+      regions,
+    };
   });
 
   ipcMain.handle('mapTiles:remove', async (_event, bundleId: string) => {
@@ -1727,7 +1733,10 @@ const registerIpcHandlers = () => {
     let lastSent = 0;
     try {
       const mapTilesDir = await getMapTilesDir();
-      activeMapTileDownloadState.set(bundle.id, { bundleId: bundle.id, message: 'Preparing download…' });
+      activeMapTileDownloadState.set(bundle.id, {
+        bundleId: bundle.id,
+        message: 'Preparing download…',
+      });
       const { path: installedPath } = await installMapTileBundle({
         mapTilesDir,
         bundle,
@@ -1868,7 +1877,10 @@ const registerIpcHandlers = () => {
         manifestError: plugin.manifestError,
         manifest: plugin.manifestError
           ? undefined
-          : { languagePrompt: plugin.manifest.languagePrompt, contributions: plugin.manifest.contributions },
+          : {
+              languagePrompt: plugin.manifest.languagePrompt,
+              contributions: plugin.manifest.contributions,
+            },
       })),
       state: snapshot.state,
     };

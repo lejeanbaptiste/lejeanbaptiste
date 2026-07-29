@@ -18,6 +18,7 @@ import {
   UI,
 } from './sections';
 import { DesktopAiApi } from './sections/ui/desktop-ai-api';
+import { DesktopGithub } from './sections/ui/desktop-github';
 import { SettingsValidationContext } from './settingsValidationContext';
 import { SideMenu } from './side-menu';
 import { useRequiredFieldsValidity } from './useRequiredFieldsValidity';
@@ -51,17 +52,17 @@ export const SettingsDialog = ({ onClose, open = false }: IDialog) => {
       maxWidth={isDesktop ? 'lg' : 'md'}
       onClose={handleClose}
       open={open}
-        PaperProps={{
-          sx: {
-            borderRadius: 3.5,
-            border: 'none',
-            outline: 'none',
-            overflow: 'hidden',
-            m: 1,
-            bgcolor: 'background.paper',
-            boxShadow: (theme) => theme.shadows[10],
-          },
-        }}
+      PaperProps={{
+        sx: {
+          borderRadius: 3.5,
+          border: 'none',
+          outline: 'none',
+          overflow: 'hidden',
+          m: 1,
+          bgcolor: 'background.paper',
+          boxShadow: (theme) => theme.shadows[10],
+        },
+      }}
     >
       <Header onClose={handleClose} />
       <Stack direction="row" overflow="hidden" px={0.75} pb={0.75}>
@@ -69,6 +70,7 @@ export const SettingsDialog = ({ onClose, open = false }: IDialog) => {
           items={[
             { id: 'profile', label: t('LW.commons.profile'), hide: !isDesktop },
             { id: 'interface', label: t('LW.commons.interface') },
+            { id: 'github', label: 'GitHub', hide: !isDesktop },
             { id: 'ai-api', label: t('LW.settings.ai_api.title'), hide: !isDesktop },
             { id: 'editor', label: t('LW.commons.editor') },
             { id: 'guardrails', label: t('LW.settings.guardrails.title') },
@@ -92,6 +94,13 @@ export const SettingsDialog = ({ onClose, open = false }: IDialog) => {
               <Section id="interface" title={t('LW.commons.interface')}>
                 <UI />
               </Section>
+              {isDesktop && (
+                <Section id="github" title="GitHub">
+                  <List dense>
+                    <DesktopGithub />
+                  </List>
+                </Section>
+              )}
               {isDesktop && (
                 <Section id="ai-api" title={t('LW.settings.ai_api.title')}>
                   <List dense>

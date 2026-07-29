@@ -39,7 +39,7 @@ describe('searchPackContent', () => {
     expect(results).toHaveLength(1);
     expect(results[0]).toMatchObject({
       label: '沈攸之',
-      uri: 'https://cbdb.fas.harvard.edu/person?id=31305',
+      uri: 'https://cbdb.fas.harvard.edu/cbdbapi/person.php?id=31305',
     });
     expect(results[0]!.description).toContain('劉宋');
   });

@@ -85,30 +85,42 @@ export const DocumentTabBar = () => {
       {openTabs.map((tab) => {
         const isActive = tab.filePath === activeTabPath;
         const isDirty = isActive ? contentHasChanged : tab.dirty;
+        const label = `${tab.filename}${isDirty ? ' *' : ''}${tab.externalChangePending ? ' ↻' : ''}`;
         return (
-        <Tab
-          key={tab.filePath}
-          value={tab.filePath}
-          label={
-            <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
-              <Typography component="span" variant="body2">
-                {tab.filename}
-                {isDirty ? ' *' : ''}
-                {tab.externalChangePending ? ' ↻' : ''}
-              </Typography>
-              <IconButton
-                component="span"
-                size="small"
-                onClick={(event) => void handleClose(event, tab.filePath)}
-                sx={{ p: 0.25 }}
-              >
-                <CloseIcon sx={{ fontSize: 14 }} />
-              </IconButton>
-            </Box>
-          }
-          sx={{ minHeight: 28, textTransform: 'none' }}
-          style={{ WebkitAppRegion: 'no-drag' } as React.CSSProperties}
-        />
+          <Tab
+            key={tab.filePath}
+            value={tab.filePath}
+            label={
+              <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5, minWidth: 0 }}>
+                <Typography
+                  component="span"
+                  title={label}
+                  variant="body2"
+                  sx={{
+                    display: 'block',
+                    flex: '0 1 auto',
+                    minWidth: 0,
+                    maxWidth: '30ch',
+                    overflow: 'hidden',
+                    textOverflow: 'ellipsis',
+                    whiteSpace: 'nowrap',
+                  }}
+                >
+                  {label}
+                </Typography>
+                <IconButton
+                  component="span"
+                  size="small"
+                  onClick={(event) => void handleClose(event, tab.filePath)}
+                  sx={{ p: 0.25 }}
+                >
+                  <CloseIcon sx={{ fontSize: 14 }} />
+                </IconButton>
+              </Box>
+            }
+            sx={{ minHeight: 28, textTransform: 'none' }}
+            style={{ WebkitAppRegion: 'no-drag' } as React.CSSProperties}
+          />
         );
       })}
     </Tabs>

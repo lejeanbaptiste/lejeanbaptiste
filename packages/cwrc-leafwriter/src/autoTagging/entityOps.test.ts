@@ -1,17 +1,28 @@
-import { addEntity, createEntitiesScaffold, findEntity, parseEntities } from './entities';
+import {
+  addEntity,
+  appendAuthoritySourcedValues,
+  createEntitiesScaffold,
+  findEntity,
+  parseEntities,
+} from './entities';
 import { getCentralId, setCentralMapping } from './concordance';
 import {
+  acceptEntityDescriptionAssertion,
   addEntityName,
+  addUserNationality,
+  addUserOrigin,
   applyConcordanceAssociations,
   attachAuthority,
   deleteEntity,
   detachAuthority,
   findAuthorityDuplicates,
+  groupFieldAssertions,
   listEntities,
   markDuplicateIntentional,
   mergeEntities,
   normalizeAuthorityValue,
   removeEntityName,
+  removeEntityValue,
   renameEntityName,
   setEntityDescription,
   setFamilyName,
@@ -163,6 +174,146 @@ describe('field-level provenance', () => {
     expect(listEntityAssertions(doc, id).find((a) => a.key === assertion.key)?.status).toBe(
       'rejected',
     );
+  });
+});
+
+describe('groupFieldAssertions', () => {
+  it('groups a multi-valued field into agreeing/pending/rejected', () => {
+    const doc = makeDoc();
+    const { id } = addEntity(doc, 'person', { name: '劉善明' });
+    const el = findEntity(doc, id)!;
+    appendAuthoritySourcedValues(doc, el, 'nationality', [
+      { text: '宋(劉)', ref: 'dynasty:song-liu', source: 'CBDB' },
+      { text: '宋(劉)', ref: 'dynasty:song-liu', source: 'DILA' },
+      { text: '南齊', ref: 'dynasty:qi', source: 'Wikidata' },
+    ]);
+    const assertions = listEntityAssertions(doc, id).filter((a) => a.element === 'nationality');
+    const groups = groupFieldAssertions(assertions, new Set(['宋(劉)']), false);
+    expect(groups.agreeingSources.sort()).toEqual(['CBDB', 'DILA']);
+    expect(groups.pending).toHaveLength(1);
+    expect(groups.pending[0]?.value).toBe('南齊');
+    expect(groups.rejected).toHaveLength(0);
+  });
+
+  it('only includes rejected assertions when showRejected is true', () => {
+    const doc = makeDoc();
+    const { id } = addEntity(doc, 'person', { name: '劉善明' });
+    const el = findEntity(doc, id)!;
+    appendAuthoritySourcedValues(doc, el, 'nationality', [
+      { text: '南齊', ref: 'dynasty:qi', source: 'Wikidata' },
+    ]);
+    const key = listEntityAssertions(doc, id).find((a) => a.element === 'nationality')!.key;
+    rejectEntityAssertion(doc, id, key);
+
+    const assertions = listEntityAssertions(doc, id).filter((a) => a.element === 'nationality');
+    expect(groupFieldAssertions(assertions, new Set(), false).rejected).toHaveLength(0);
+    expect(groupFieldAssertions(assertions, new Set(), true).rejected).toHaveLength(1);
+  });
+});
+
+describe('EntitySummary nationalities/placesOfOrigin', () => {
+  it('excludes rejected elements and dedupes identical labels from multiple sources', () => {
+    const doc = makeDoc();
+    const { id } = addEntity(doc, 'person', { name: '劉善明' });
+    const el = findEntity(doc, id)!;
+    appendAuthoritySourcedValues(doc, el, 'nationality', [
+      { text: '宋(劉)', ref: 'dynasty:song-liu', source: 'CBDB' },
+      { text: '宋(劉)', ref: 'dynasty:song-liu', source: 'DILA' },
+      { text: '南齊', ref: 'dynasty:qi', source: 'Wikidata' },
+    ]);
+    const rejectedKey = listEntityAssertions(doc, id).find(
+      (a) => a.element === 'nationality' && a.value === '南齊',
+    )!.key;
+    rejectEntityAssertion(doc, id, rejectedKey);
+
+    const summary = listEntities(doc).find((entity) => entity.id === id)!;
+    expect(summary.nationalities).toEqual(['劉宋']);
+  });
+
+  it('merges known dynasty aliases from different authorities into one canonical label', () => {
+    const doc = makeDoc();
+    const { id } = addEntity(doc, 'person', { name: '曹丕' });
+    const el = findEntity(doc, id)!;
+    appendAuthoritySourcedValues(doc, el, 'nationality', [
+      { text: '三國魏', ref: 'dynasty:wei', source: 'CBDB' },
+      { text: '曹魏', ref: 'https://www.wikidata.org/entity/Q6', source: 'Wikidata' },
+    ]);
+
+    const summary = listEntities(doc).find((entity) => entity.id === id)!;
+    expect(summary.nationalities).toEqual(['曹魏']);
+  });
+});
+
+describe('acceptEntityDescriptionAssertion', () => {
+  it('promotes an authority description to user, removing any prior user description', () => {
+    const doc = makeDoc();
+    const { id } = addEntity(doc, 'person', { name: '劉善明' });
+    setEntityDescription(doc, id, 'My own note');
+    const el = findEntity(doc, id)!;
+    appendAuthoritySourcedValues(doc, el, 'note', [
+      { text: 'A Song dynasty official.', noteType: 'description', source: 'Wikidata' },
+      { text: 'Served under Emperor Ming.', noteType: 'description', source: 'CBDB' },
+    ]);
+
+    const target = listEntityAssertions(doc, id).find(
+      (a) => a.element === 'note' && a.value === 'A Song dynasty official.',
+    )!;
+    expect(acceptEntityDescriptionAssertion(doc, id, target.key)).toBe(true);
+
+    const summary = listEntities(doc).find((entity) => entity.id === id)!;
+    expect(summary.description).toBe('A Song dynasty official.');
+
+    // the other authority description is untouched and still pending
+    const remaining = listEntityAssertions(doc, id).filter(
+      (a) => a.element === 'note' && a.noteType === 'description',
+    );
+    expect(remaining).toHaveLength(2);
+    expect(
+      remaining.find((a) => a.value === 'Served under Emperor Ming.')?.origin,
+    ).toBe('authority');
+  });
+});
+
+describe('addUserNationality / addUserOrigin / removeEntityValue', () => {
+  it('adds a user-origin nationality and dedupes a repeat add', () => {
+    const doc = makeDoc();
+    const { id } = addEntity(doc, 'person', { name: '劉善明' });
+    expect(addUserNationality(doc, id, '南齊')).toBe(true);
+    expect(addUserNationality(doc, id, '南齊')).toBe(false);
+
+    const summary = listEntities(doc).find((entity) => entity.id === id)!;
+    expect(summary.nationalities).toEqual(['南齊']);
+    const assertion = listEntityAssertions(doc, id).find((a) => a.element === 'nationality')!;
+    expect(assertion.origin).toBe('user');
+  });
+
+  it('adds a user-origin place of origin', () => {
+    const doc = makeDoc();
+    const { id } = addEntity(doc, 'person', { name: '劉善明' });
+    expect(addUserOrigin(doc, id, '洛陽')).toBe(true);
+    const summary = listEntities(doc).find((entity) => entity.id === id)!;
+    expect(summary.placesOfOrigin).toEqual(['洛陽']);
+  });
+
+  it('hard-deletes a user value but rejects (tombstones) an authority value', () => {
+    const doc = makeDoc();
+    const { id } = addEntity(doc, 'person', { name: '劉善明' });
+    addUserNationality(doc, id, '洛陽州');
+    const el = findEntity(doc, id)!;
+    appendAuthoritySourcedValues(doc, el, 'nationality', [
+      { text: '南齊', ref: 'dynasty:qi', source: 'Wikidata' },
+    ]);
+
+    const userAssertion = listEntityAssertions(doc, id).find((a) => a.value === '洛陽州')!;
+    const authorityAssertion = listEntityAssertions(doc, id).find((a) => a.value === '南齊')!;
+
+    expect(removeEntityValue(doc, id, userAssertion.key)).toBe(true);
+    expect(removeEntityValue(doc, id, authorityAssertion.key)).toBe(true);
+
+    const remaining = listEntityAssertions(doc, id).filter((a) => a.element === 'nationality');
+    expect(remaining.find((a) => a.value === '洛陽州')).toBeUndefined(); // hard-deleted
+    const rejected = remaining.find((a) => a.value === '南齊')!;
+    expect(rejected.status).toBe('rejected'); // tombstoned, not deleted
   });
 });
 

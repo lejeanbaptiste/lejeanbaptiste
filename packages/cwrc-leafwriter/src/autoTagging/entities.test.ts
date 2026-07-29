@@ -1,6 +1,7 @@
 import {
   addEntity,
   addOfficeRelation,
+  appendAuthoritySourcedValues,
   backfillEntityTimestamps,
   createEntitiesScaffold,
   findEntity,
@@ -16,6 +17,7 @@ import {
   TAG_TO_KIND,
   touchEntity,
 } from './entities';
+import { readEntityValueProvenance } from './entityProvenance';
 
 const UUID_ID =
   /^(person|place|org|work|office)-[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/;
@@ -342,6 +344,100 @@ describe('addEntity', () => {
     const reparsed = parseEntities(serializeEntities(doc));
     expect(findEntity(reparsed, id)?.nodeName).toBe('org');
     expect(reparsed.getElementsByTagName('org')).toHaveLength(1);
+  });
+
+  it('writes one element per source when two authorities agree on nationality', () => {
+    const doc = parseEntities(createEntitiesScaffold());
+    const { id } = addEntity(doc, 'person', {
+      name: '劉善明',
+      authorityAssertions: [
+        { source: 'CBDB', nationality: [{ canonicalId: 'dynasty:song-liu', label: '宋(劉)' }] },
+        { source: 'DILA', nationality: [{ canonicalId: 'dynasty:song-liu', label: '宋(劉)' }] },
+      ],
+    });
+    const nationalities = Array.from(findEntity(doc, id)!.getElementsByTagName('nationality'));
+    expect(nationalities).toHaveLength(2);
+    expect(nationalities.map((el) => readEntityValueProvenance(el).source).sort()).toEqual([
+      'CBDB',
+      'DILA',
+    ]);
+    expect(nationalities.every((el) => el.textContent === '宋(劉)')).toBe(true);
+  });
+
+  it('writes two distinct birth elements when two authorities disagree on the year', () => {
+    const doc = parseEntities(createEntitiesScaffold());
+    const { id } = addEntity(doc, 'person', {
+      name: '劉善明',
+      authorityAssertions: [
+        { source: 'CBDB', startYear: 420 },
+        { source: 'DILA', startYear: 425 },
+      ],
+    });
+    const births = Array.from(findEntity(doc, id)!.getElementsByTagName('birth'));
+    expect(births).toHaveLength(2);
+    expect(
+      births.map((el) => [readEntityValueProvenance(el).source, el.getAttribute('when')]).sort(),
+    ).toEqual([
+      ['CBDB', '0420'],
+      ['DILA', '0425'],
+    ]);
+  });
+
+  it('leaves non-authorityAssertions callers producing the same XML as before', () => {
+    const doc = parseEntities(createEntitiesScaffold());
+    const { id } = addEntity(doc, 'person', {
+      name: '張衡',
+      startYear: 78,
+      endYear: 139,
+      nationality: [{ id: 'n1', canonicalId: 'dynasty:han', label: 'Han' }],
+    });
+    const el = findEntity(doc, id)!;
+    expect(el.getElementsByTagName('birth')).toHaveLength(1);
+    expect(el.getElementsByTagName('death')).toHaveLength(1);
+    expect(el.getElementsByTagName('nationality')).toHaveLength(1);
+  });
+});
+
+describe('appendAuthoritySourcedValues', () => {
+  it('adds one element per new source and is a no-op for an exact re-add', () => {
+    const doc = parseEntities(createEntitiesScaffold());
+    const { id } = addEntity(doc, 'person', { name: '劉善明' });
+    const el = findEntity(doc, id)!;
+
+    const firstChange = appendAuthoritySourcedValues(doc, el, 'placeName', [
+      { text: '彭城', source: 'CBDB' },
+    ]);
+    expect(firstChange).toBe(true);
+    expect(el.getElementsByTagName('placeName')).toHaveLength(1);
+
+    const secondChange = appendAuthoritySourcedValues(doc, el, 'placeName', [
+      { text: '彭城', source: 'DILA' },
+    ]);
+    expect(secondChange).toBe(true);
+    expect(el.getElementsByTagName('placeName')).toHaveLength(2);
+
+    const noopChange = appendAuthoritySourcedValues(doc, el, 'placeName', [
+      { text: '彭城', source: 'CBDB' },
+    ]);
+    expect(noopChange).toBe(false);
+    expect(el.getElementsByTagName('placeName')).toHaveLength(2);
+  });
+
+  it('stamps authority provenance on note[type] values', () => {
+    const doc = parseEntities(createEntitiesScaffold());
+    const { id } = addEntity(doc, 'person', { name: '劉善明' });
+    const el = findEntity(doc, id)!;
+    appendAuthoritySourcedValues(doc, el, 'note', [
+      { text: 'A Song dynasty official.', noteType: 'description', source: 'Wikidata' },
+    ]);
+    const note = Array.from(el.getElementsByTagName('note')).find(
+      (n) => n.getAttribute('type') === 'description',
+    )!;
+    expect(readEntityValueProvenance(note)).toEqual({
+      origin: 'authority',
+      source: 'WIKIDATA',
+      status: 'active',
+    });
   });
 });
 

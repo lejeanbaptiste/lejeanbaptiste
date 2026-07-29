@@ -1,5 +1,5 @@
-import { addEntity, createEntitiesScaffold, parseEntities } from './entities';
-import { listEntities } from './entityOps';
+import { addEntity, createEntitiesScaffold, findEntity, parseEntities } from './entities';
+import { listEntities, setUserEntityDate } from './entityOps';
 import { backfillEntityNames } from './nameBackfill';
 import { clearWikidataNamesCacheForTests, clearWikidataTypedNamesCacheForTests } from './disambiguationMatch';
 import type { AuthorityPackId } from './packPaths';
@@ -165,5 +165,209 @@ describe('backfillEntityNames', () => {
     const result = await backfillEntityNames(doc, { readPackFile });
     expect(result.skippedNoAuthority).toBe(1);
     expect(result.entitiesScanned).toBe(1);
+  });
+
+  it('refreshes every linked authority date without replacing the user date', async () => {
+    const doc = makeDoc();
+    const { id } = addEntity(doc, 'person', {
+      name: '徐孝嗣',
+      authorityIds: [
+        { type: 'CBDB', value: '193924' },
+        { type: 'DILA', value: 'A003126' },
+      ],
+    });
+    setUserEntityDate(doc, id, 'birth', 420, '');
+    setUserEntityDate(doc, id, 'death', 499, '');
+
+    const readPackFile = async (packId: AuthorityPackId) => {
+      if (packId === 'cbdb-persons') {
+        return `${JSON.stringify({
+          source: 'CBDB',
+          authorityId: '193924',
+          kind: 'person',
+          primaryName: '徐孝嗣',
+          searchStrings: ['徐孝嗣'],
+          names: [],
+          metadata: { startYear: 452, endYear: 500 },
+        })}\n`;
+      }
+      if (packId === 'dila-persons') {
+        return `${JSON.stringify({
+          source: 'DILA',
+          authorityId: 'A003126',
+          kind: 'person',
+          primaryName: '徐孝嗣',
+          searchStrings: ['徐孝嗣'],
+          names: [],
+          metadata: { startYear: 453, endYear: 499 },
+        })}\n`;
+      }
+      throw new Error('missing');
+    };
+
+    await backfillEntityNames(doc, { readPackFile });
+    const entity = listEntities(doc).find((row) => row.id === id)!;
+    expect(entity.startYear).toBe(420);
+    expect(entity.endYear).toBe(499);
+    const birthDates = Array.from(findEntity(doc, id)!.children)
+      .filter((child) => child.localName === 'birth')
+      .map((child) => [child.getAttribute('when'), child.getAttribute('origin'), child.getAttribute('source')]);
+    expect(birthDates).toEqual(expect.arrayContaining([
+      ['0420', 'user', null],
+      ['0452', 'authority', 'CBDB'],
+      ['0453', 'authority', 'DILA'],
+    ]));
+  });
+
+  it('refreshes dates and nationality for a Wikidata-only-linked entity', async () => {
+    const doc = makeDoc();
+    const { id } = addEntity(doc, 'person', {
+      name: '劉善明',
+      authorityIds: [{ type: 'Wikidata', value: 'Q1' }],
+    });
+
+    const originalFetch = global.fetch;
+    global.fetch = jest.fn(async (url: string) => {
+      if (url.includes('props=claims|descriptions')) {
+        return {
+          ok: true,
+          json: async () => ({
+            entities: {
+              Q1: {
+                claims: {
+                  P569: [
+                    {
+                      mainsnak: {
+                        snaktype: 'value',
+                        datavalue: { value: { time: '+0420-01-01T00:00:00Z', precision: 9 } },
+                      },
+                    },
+                  ],
+                  P570: [
+                    {
+                      mainsnak: {
+                        snaktype: 'value',
+                        datavalue: { value: { time: '+0479-01-01T00:00:00Z', precision: 9 } },
+                      },
+                    },
+                  ],
+                },
+                descriptions: {},
+              },
+            },
+          }),
+        } as unknown as Response;
+      }
+      if (url.includes('ids=Q1') && url.includes('props=claims&format=json')) {
+        return {
+          ok: true,
+          json: async () => ({
+            entities: {
+              Q1: {
+                claims: {
+                  P27: [{ mainsnak: { snaktype: 'value', datavalue: { value: { id: 'Q148' } } } }],
+                },
+              },
+            },
+          }),
+        } as unknown as Response;
+      }
+      if (url.includes('props=labels')) {
+        return {
+          ok: true,
+          json: async () => ({ entities: { Q148: { labels: { en: { value: 'China' } } } } }),
+        } as unknown as Response;
+      }
+      return { ok: true, json: async () => ({ entities: {} }) } as unknown as Response;
+    }) as unknown as typeof fetch;
+
+    try {
+      await backfillEntityNames(doc, { fetchImpl: global.fetch });
+      const entity = listEntities(doc).find((row) => row.id === id)!;
+      expect(entity.startYear).toBe(420);
+      expect(entity.endYear).toBe(479);
+      expect(entity.nationalities).toEqual(['China']);
+      const birth = Array.from(findEntity(doc, id)!.children).find(
+        (child) => child.localName === 'birth',
+      )!;
+      expect(birth.getAttribute('origin')).toBe('authority');
+      expect(birth.getAttribute('source')).toBe('WIKIDATA');
+    } finally {
+      global.fetch = originalFetch;
+    }
+  });
+
+  it('keeps DILA and Wikidata dates distinct when an entity is linked to both', async () => {
+    const doc = makeDoc();
+    const { id } = addEntity(doc, 'person', {
+      name: '徐孝嗣',
+      authorityIds: [
+        { type: 'DILA', value: 'A003126' },
+        { type: 'Wikidata', value: 'Q1' },
+      ],
+    });
+    setUserEntityDate(doc, id, 'birth', 420, '');
+
+    const readPackFile = async (packId: AuthorityPackId) => {
+      if (packId === 'dila-persons') {
+        return `${JSON.stringify({
+          source: 'DILA',
+          authorityId: 'A003126',
+          kind: 'person',
+          primaryName: '徐孝嗣',
+          searchStrings: ['徐孝嗣'],
+          names: [],
+          metadata: { startYear: 453, endYear: 499 },
+        })}\n`;
+      }
+      throw new Error('missing');
+    };
+
+    const originalFetch = global.fetch;
+    global.fetch = jest.fn(async (url: string) => {
+      if (url.includes('props=claims|descriptions')) {
+        return {
+          ok: true,
+          json: async () => ({
+            entities: {
+              Q1: {
+                claims: {
+                  P569: [
+                    {
+                      mainsnak: {
+                        snaktype: 'value',
+                        datavalue: { value: { time: '+0452-01-01T00:00:00Z', precision: 9 } },
+                      },
+                    },
+                  ],
+                },
+                descriptions: {},
+              },
+            },
+          }),
+        } as unknown as Response;
+      }
+      return { ok: true, json: async () => ({ entities: {} }) } as unknown as Response;
+    }) as unknown as typeof fetch;
+
+    try {
+      await backfillEntityNames(doc, { readPackFile, fetchImpl: global.fetch });
+      const birthDates = Array.from(findEntity(doc, id)!.children)
+        .filter((child) => child.localName === 'birth')
+        .map((child) => [
+          child.getAttribute('when'),
+          child.getAttribute('origin'),
+          child.getAttribute('source'),
+        ]);
+      expect(birthDates).toEqual(
+        expect.arrayContaining([
+          ['0420', 'user', null],
+          ['0453', 'authority', 'DILA'],
+          ['0452', 'authority', 'WIKIDATA'],
+        ]),
+      );
+    } finally {
+      global.fetch = originalFetch;
+    }
   });
 });

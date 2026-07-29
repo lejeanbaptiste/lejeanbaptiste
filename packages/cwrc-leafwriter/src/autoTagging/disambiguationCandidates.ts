@@ -4,6 +4,8 @@ import type { AuthorityLookupResult } from '../types/authority';
 import { AuthorityCache } from './authorityCache';
 import {
   addEntity,
+  appendAuthorityDates,
+  appendAuthoritySourcedValues,
   ENTITY_KINDS,
   entityElements,
   findEntity,
@@ -12,6 +14,7 @@ import {
   TAG_TO_KIND,
   setAuthorityCache,
   type AuthorityId,
+  type AuthoritySourcedFields,
   type EntityKind,
 } from './entities';
 import { linkedCentralIds } from './bridgeInbox';
@@ -94,6 +97,8 @@ export interface DisambiguationCandidate {
   geo?: { lat: number; lon: number };
   /** Raw pack metadata needed when the selected office is minted. */
   authorityMetadata?: AuthorityCandidate['metadata'];
+  /** Raw authority rows retained when a display candidate is deduplicated. */
+  authorityAssertions?: DisambiguationCandidate[];
 }
 
 /** Accept only WGS84 coordinates; CHGIS also contains projected layer values. */
@@ -173,11 +178,11 @@ export function extractCbdbId(text: string): string | null {
   return match ? match[1]! : null;
 }
 
-export const CBDB_PERSON_URL = (id: string) => `https://cbdb.fas.harvard.edu/person?id=${id}`;
+export const CBDB_PERSON_URL = (id: string) => `https://cbdb.fas.harvard.edu/cbdbapi/person.php?id=${id}`;
 export const DILA_PERSON_URL = (id: string) =>
-  `https://authority.dila.edu.tw/person/search.php?code=${id}`;
+  `https://authority.dila.edu.tw/person/?fromInner=${id}`;
 export const DILA_PLACE_URL = (id: string) =>
-  `https://authority.dila.edu.tw/place/search.php?code=${id}`;
+  `https://authority.dila.edu.tw/place/?fromInner=${id}`;
 export const DILA_URL = (id: string) =>
   id.startsWith('PL') ? DILA_PLACE_URL(id) : DILA_PERSON_URL(id);
 
@@ -376,6 +381,16 @@ export function mergeSelectedCandidates(
     ? (candidates.map((c) => c.label).find((label) => label && !isLatinSurface(label)) ??
       projectLangName)
     : undefined;
+  const authorityAssertionMap = new Map<string, DisambiguationCandidate>();
+  for (const candidate of candidates.flatMap((candidate) => {
+    if (candidate.authorityAssertions?.length) return candidate.authorityAssertions;
+    if (candidate.fromEntityFile || candidate.localEntityId || candidate.centralEntityId) return [];
+    return [candidate];
+  })) {
+    const key = `${candidate.uri ?? candidate.id}\0${candidate.sources.join(',')}`;
+    authorityAssertionMap.set(key, candidate);
+  }
+  const authorityAssertions = [...authorityAssertionMap.values()];
   return {
     id: fromFile?.id ?? first.id,
     label: fromFile?.label ?? nonLatinLabel ?? first.label,
@@ -397,6 +412,7 @@ export function mergeSelectedCandidates(
     endYear: endYears.length ? Math.max(...endYears) : undefined,
     dynasty: candidates.find((c) => c.dynasty)?.dynasty,
     geo: mergedGeo(candidates),
+    authorityAssertions: authorityAssertions.length ? authorityAssertions : undefined,
   };
 }
 
@@ -407,8 +423,12 @@ export function mergeSelectedCandidates(
  * behavior for non-place merges while giving places (Phase 6) the "mean of
  * the cluster" point the disambiguation-panel map needs.
  */
-function mergedGeo(candidates: DisambiguationCandidate[]): { lat: number; lon: number } | undefined {
-  const points = candidates.map((c) => c.geo).filter((geo): geo is { lat: number; lon: number } => geo != null);
+function mergedGeo(
+  candidates: DisambiguationCandidate[],
+): { lat: number; lon: number } | undefined {
+  const points = candidates
+    .map((c) => c.geo)
+    .filter((geo): geo is { lat: number; lon: number } => geo != null);
   return points.length > 0 ? centroidOf(points) : undefined;
 }
 
@@ -564,7 +584,9 @@ export function mergeCandidates(
   const out: DisambiguationCandidate[] = [];
 
   for (const list of lists) {
-    for (const candidate of list) {
+    for (const candidate of list.flatMap((item) =>
+      item.authorityAssertions?.length ? [item, ...item.authorityAssertions] : [item],
+    )) {
       if (candidate.localEntityId) {
         const existing = byLocal.get(candidate.localEntityId);
         if (existing) {
@@ -1128,7 +1150,11 @@ export async function buildDisambiguationCandidates(
     forceRefresh,
     readPackFile,
   );
-  const options: MergeCandidateOptions = { ...mergeOptionsForLang(projectLang), tag, placeProximityKm };
+  const options: MergeCandidateOptions = {
+    ...mergeOptionsForLang(projectLang),
+    tag,
+    placeProximityKm,
+  };
   const merged = collapseCrossAuthorityCandidates(
     mergeCandidates([local, centralCandidates, packLocal, live], options).map(
       enrichCandidateCrossRefs,
@@ -1155,12 +1181,57 @@ export interface ResolveEntityInput {
   familyName?: string;
   /** Person's given name (P735), backfilled only when the entity has none yet. */
   givenName?: string;
+  /** Source-preserving place-of-origin assertions. */
+  origin?: NonNullable<AuthorityCandidate['metadata']>['origin'];
   authorityIds?: AuthorityId[];
   authoritySource?: string;
   description?: string;
   startYear?: number;
   endYear?: number;
   authorityMetadata?: AuthorityCandidate['metadata'];
+  /**
+   * Per-authority raw values retained through merge (see
+   * `mergeSelectedCandidates`'s `authorityAssertions`) — when set,
+   * `resolveEntityInDocument` writes one element per (field, source) instead
+   * of collapsing to a single value with a single source.
+   */
+  authorityAssertions?: DisambiguationCandidate[];
+}
+
+/** Map raw per-authority candidates into the shape `addEntity`/`appendAuthoritySourcedValues` expect. */
+function toAuthoritySourcedFields(
+  candidates: DisambiguationCandidate[] | undefined,
+): AuthoritySourcedFields[] | undefined {
+  if (!candidates?.length) return undefined;
+  const mapped = candidates
+    .map((candidate): AuthoritySourcedFields => {
+      const source = (
+        candidate.authoritySource ??
+        candidate.authorityIds?.[0]?.type ??
+        candidate.sources[0] ??
+        'authority'
+      ).toUpperCase();
+      return {
+        source,
+        startYear: candidate.startYear,
+        endYear: candidate.endYear,
+        nationality: candidate.authorityMetadata?.nationality?.map((value) => ({
+          canonicalId: value.canonicalId,
+          label: value.label,
+        })),
+        origin: candidate.authorityMetadata?.origin,
+        description: candidate.description,
+      };
+    })
+    .filter(
+      (assertion) =>
+        assertion.startYear != null ||
+        assertion.endYear != null ||
+        assertion.nationality?.length ||
+        assertion.origin?.length ||
+        assertion.description,
+    );
+  return mapped.length ? mapped : undefined;
 }
 
 /**
@@ -1224,6 +1295,49 @@ export function resolveEntityInDocument(
           input.authoritySource ?? input.authorityIds?.[0]?.type ?? 'authority-pack',
           input.authorityMetadata,
         );
+        if (input.kind === 'person') {
+          const entity = findEntity(entitiesDoc, id);
+          const perSourceAssertions = toAuthoritySourcedFields(input.authorityAssertions);
+          if (entity && perSourceAssertions?.length) {
+            for (const assertion of perSourceAssertions) {
+              appendAuthorityDates(entitiesDoc, entity, assertion.source, {
+                startYear: assertion.startYear,
+                endYear: assertion.endYear,
+              });
+              if (assertion.nationality?.length) {
+                appendAuthoritySourcedValues(
+                  entitiesDoc,
+                  entity,
+                  'nationality',
+                  assertion.nationality.map((value) => ({
+                    text: value.label,
+                    ref: value.canonicalId,
+                    source: assertion.source,
+                  })),
+                );
+              }
+              if (assertion.origin?.length) {
+                appendAuthoritySourcedValues(
+                  entitiesDoc,
+                  entity,
+                  'placeName',
+                  assertion.origin.map((value) => ({
+                    text: value.placeName,
+                    ref: value.placeAuthorityId,
+                    source: value.source ?? assertion.source,
+                  })),
+                );
+              }
+            }
+          } else if (entity) {
+            appendAuthorityDates(
+              entitiesDoc,
+              entity,
+              input.authoritySource ?? input.authorityIds?.[0]?.type ?? 'authority-pack',
+              input.authorityMetadata,
+            );
+          }
+        }
       }
     } catch {
       // best-effort enrichment; reuse must never fail because of it
@@ -1257,6 +1371,9 @@ export function resolveEntityInDocument(
     description: input.description,
     startYear: input.startYear,
     endYear: input.endYear,
+    origin: input.origin,
+    authorityAssertions:
+      input.kind === 'person' ? toAuthoritySourcedFields(input.authorityAssertions) : undefined,
     cache: input.authorityMetadata
       ? {
           source: input.authoritySource ?? input.authorityIds?.[0]?.type ?? 'authority-pack',

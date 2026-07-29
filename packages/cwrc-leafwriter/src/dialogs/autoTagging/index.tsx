@@ -23,6 +23,7 @@ import {
 } from '@mui/material';
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
+import { NorbertIcon } from '../../icons/custom/AuthoritySource';
 import {
   AutoTaggingSession,
   aiApiSettingsFromDesktop,
@@ -283,7 +284,10 @@ const countOwnDatabasePackStrings = async (
       for (const id of pedbIds) {
         const kind = OWN_DATABASE_KIND_BY_PACK_ID[id];
         if (!kind) continue;
-        out[id] = countCandidatesUniqueStrings(candidatesFromEntityDatabase(doc, kind, 'PEDB'), range);
+        out[id] = countCandidatesUniqueStrings(
+          candidatesFromEntityDatabase(doc, kind, 'PEDB'),
+          range,
+        );
       }
     }
   }
@@ -296,7 +300,10 @@ const countOwnDatabasePackStrings = async (
       for (const id of cedbIds) {
         const kind = OWN_DATABASE_KIND_BY_PACK_ID[id];
         if (!kind) continue;
-        out[id] = countCandidatesUniqueStrings(candidatesFromEntityDatabase(doc, kind, 'CEDB'), range);
+        out[id] = countCandidatesUniqueStrings(
+          candidatesFromEntityDatabase(doc, kind, 'CEDB'),
+          range,
+        );
       }
     }
   }
@@ -558,7 +565,12 @@ export const AutoTaggingDialog = ({ id, onClose, open = false }: IDialog) => {
           if (readPack) {
             Object.assign(
               counts,
-              await countAuthorityPackStrings(visibleAuthorityPackIds, readPack, installedIds, range),
+              await countAuthorityPackStrings(
+                visibleAuthorityPackIds,
+                readPack,
+                installedIds,
+                range,
+              ),
             );
           }
           Object.assign(counts, await countOwnDatabasePackStrings(visibleAuthorityPackIds, range));
@@ -776,12 +788,16 @@ export const AutoTaggingDialog = ({ id, onClose, open = false }: IDialog) => {
     const installedIds = new Set(
       authorityStatus.filter((status) => status.installed).map((status) => status.id),
     );
-    const checked = expandAuthorityPackIds(visibleAuthorityPackIds.filter((id) => authorityPacks[id]));
+    const checked = expandAuthorityPackIds(
+      visibleAuthorityPackIds.filter((id) => authorityPacks[id]),
+    );
     const originOf = (id: AuthorityPackId) => {
       const spec = AUTHORITY_PACKS.find((p) => p.id === id);
       return spec ? authorityPackOrigin(spec) : 'file';
     };
-    const selected = checked.filter((id) => (originOf(id) === 'file' ? installedIds.has(id) : true));
+    const selected = checked.filter((id) =>
+      originOf(id) === 'file' ? installedIds.has(id) : true,
+    );
     if (selected.length === 0) {
       setError('Select at least one source.');
       return;
@@ -818,21 +834,23 @@ export const AutoTaggingDialog = ({ id, onClose, open = false }: IDialog) => {
               start: Math.min(yearStart, yearEnd),
               end: Math.max(yearStart, yearEnd),
             };
-      const result = await getSession().runTagBomb(
-        selected,
-        readPack ?? (async () => ''),
-        {
-          onProgress: setAuthorityProgress,
-          ...(dateFilter ? { dateFilter } : {}),
-          importedLists,
-          scope: effectiveScope,
-          ...(effectiveScope === 'custom' ? { customPath: tagBombCustomPath } : {}),
-        },
-      );
+      const result = await getSession().runTagBomb(selected, readPack ?? (async () => ''), {
+        onProgress: setAuthorityProgress,
+        ...(dateFilter ? { dateFilter } : {}),
+        importedLists,
+        scope: effectiveScope,
+        ...(effectiveScope === 'custom' ? { customPath: tagBombCustomPath } : {}),
+      });
       const matchedDocs: TagBombDocumentResult[] =
         result.byDocument ??
         (result.suggestions.length > 0
-          ? [{ filePath: 'current', suggestions: result.suggestions, matchCount: result.matchCount }]
+          ? [
+              {
+                filePath: 'current',
+                suggestions: result.suggestions,
+                matchCount: result.matchCount,
+              },
+            ]
           : []);
       if (matchedDocs.length === 0) {
         const filterNote =
@@ -861,10 +879,15 @@ export const AutoTaggingDialog = ({ id, onClose, open = false }: IDialog) => {
         let appliedTotal = 0;
         for (const docResult of matchedDocs) {
           // eslint-disable-next-line no-await-in-loop
-          const applied = await getSession().applyTagBombDocument(docResult.filePath, docResult.suggestions);
+          const applied = await getSession().applyTagBombDocument(
+            docResult.filePath,
+            docResult.suggestions,
+          );
           appliedTotal += applied.applied;
         }
-        notifyViaSnackbar({ message: t('LW.autoTagging.tag_bomb_queue.applied', { count: appliedTotal }) });
+        notifyViaSnackbar({
+          message: t('LW.autoTagging.tag_bomb_queue.applied', { count: appliedTotal }),
+        });
         handleClose();
         return;
       }
@@ -1110,7 +1133,9 @@ export const AutoTaggingDialog = ({ id, onClose, open = false }: IDialog) => {
                     label={
                       <Typography
                         variant="caption"
-                        color={!isDesktopApp() || !entityDbFolder ? 'text.disabled' : 'text.primary'}
+                        color={
+                          !isDesktopApp() || !entityDbFolder ? 'text.disabled' : 'text.primary'
+                        }
                       >
                         Start from first appearance (short-form)
                       </Typography>
@@ -1181,7 +1206,9 @@ export const AutoTaggingDialog = ({ id, onClose, open = false }: IDialog) => {
                   {t('LW.autoTagging.tag_bomb_queue.resume_title')}
                   <Box sx={{ mt: 0.5 }}>
                     <Typography variant="caption" sx={{ display: 'block', mb: 0.5 }}>
-                      {t('LW.autoTagging.tag_bomb_queue.resume_body', { count: tagBombQueue.length })}
+                      {t('LW.autoTagging.tag_bomb_queue.resume_body', {
+                        count: tagBombQueue.length,
+                      })}
                     </Typography>
                     <Stack spacing={0.5}>
                       {tagBombQueue.map((doc) => (
@@ -1194,9 +1221,14 @@ export const AutoTaggingDialog = ({ id, onClose, open = false }: IDialog) => {
                         >
                           <Typography
                             variant="caption"
-                            sx={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}
+                            sx={{
+                              overflow: 'hidden',
+                              textOverflow: 'ellipsis',
+                              whiteSpace: 'nowrap',
+                            }}
                           >
-                            {doc.filePath} · {t('LW.autoTagging.tag_bomb_queue.hits', { count: doc.matchCount })}
+                            {doc.filePath} ·{' '}
+                            {t('LW.autoTagging.tag_bomb_queue.hits', { count: doc.matchCount })}
                           </Typography>
                           <Stack direction="row" spacing={0.5} flexShrink={0}>
                             <Button
@@ -1220,7 +1252,12 @@ export const AutoTaggingDialog = ({ id, onClose, open = false }: IDialog) => {
                       ))}
                     </Stack>
                     <Box sx={{ mt: 0.5 }}>
-                      <Link component="button" variant="caption" underline="hover" onClick={discardQueue}>
+                      <Link
+                        component="button"
+                        variant="caption"
+                        underline="hover"
+                        onClick={discardQueue}
+                      >
                         {t('LW.autoTagging.tag_bomb_queue.discard')}
                       </Link>
                     </Box>
@@ -1308,7 +1345,9 @@ export const AutoTaggingDialog = ({ id, onClose, open = false }: IDialog) => {
                         onChange={(event) => setSkipReview(event.target.checked)}
                       />
                     }
-                    label={<Typography variant="caption">{t('LW.autoTagging.skip_review')}</Typography>}
+                    label={
+                      <Typography variant="caption">{t('LW.autoTagging.skip_review')}</Typography>
+                    }
                     sx={{ ml: 0 }}
                   />
                 </Stack>
@@ -1383,12 +1422,15 @@ export const AutoTaggingDialog = ({ id, onClose, open = false }: IDialog) => {
                         importedLists.length,
                       ),
                     );
-                  const checkedInGroup = availableGroupPackIds.filter((packId) => authorityPacks[packId]);
+                  const checkedInGroup = availableGroupPackIds.filter(
+                    (packId) => authorityPacks[packId],
+                  );
                   const groupAllChecked =
                     availableGroupPackIds.length > 0 &&
                     checkedInGroup.length === availableGroupPackIds.length;
                   const groupSomeChecked =
-                    checkedInGroup.length > 0 && checkedInGroup.length < availableGroupPackIds.length;
+                    checkedInGroup.length > 0 &&
+                    checkedInGroup.length < availableGroupPackIds.length;
                   return (
                     <Box key={group.tag}>
                       <Stack direction="row" alignItems="center" spacing={0.25}>
@@ -1422,12 +1464,17 @@ export const AutoTaggingDialog = ({ id, onClose, open = false }: IDialog) => {
                             importedLists.length,
                           );
                           const badge = OWN_DATABASE_BADGE[origin];
+                          const sourceBadge = origin === 'norbert' ? <NorbertIcon /> : null;
                           const rowLabel = badge
                             ? (AUTHORITY_PACK_SHORT_LABELS[opt.id] ?? opt.label)
                             : opt.label;
                           const suffix = available
                             ? origin === 'file' || origin === 'pedb' || origin === 'cedb'
-                              ? formatPackStringCount(authorityPackCounts, opt.id, authorityPackCountsLoading)
+                              ? formatPackStringCount(
+                                  authorityPackCounts,
+                                  opt.id,
+                                  authorityPackCountsLoading,
+                                )
                               : ''
                             : unavailableSuffixFor(origin);
                           return (
@@ -1448,23 +1495,30 @@ export const AutoTaggingDialog = ({ id, onClose, open = false }: IDialog) => {
                                 />
                               }
                               label={
-                                badge ? (
-                                  <Stack direction="row" alignItems="center" spacing={0.5} component="span">
-                                    <Box
-                                      component="span"
-                                      sx={{
-                                        fontSize: '0.625rem',
-                                        fontWeight: 700,
-                                        lineHeight: 1,
-                                        px: 0.5,
-                                        py: 0.25,
-                                        borderRadius: 0.5,
-                                        color: badge.color,
-                                        bgcolor: badge.bg,
-                                      }}
-                                    >
-                                      {badge.label}
-                                    </Box>
+                                badge || sourceBadge ? (
+                                  <Stack
+                                    direction="row"
+                                    alignItems="center"
+                                    spacing={0.5}
+                                    component="span"
+                                  >
+                                    {sourceBadge ?? (
+                                      <Box
+                                        component="span"
+                                        sx={{
+                                          fontSize: '0.625rem',
+                                          fontWeight: 700,
+                                          lineHeight: 1,
+                                          px: 0.5,
+                                          py: 0.25,
+                                          borderRadius: 0.5,
+                                          color: badge!.color,
+                                          bgcolor: badge!.bg,
+                                        }}
+                                      >
+                                        {badge!.label}
+                                      </Box>
+                                    )}
                                     <Box component="span">{`${rowLabel}${suffix}`}</Box>
                                   </Stack>
                                 ) : (

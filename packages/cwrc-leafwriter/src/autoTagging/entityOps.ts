@@ -18,6 +18,7 @@ import {
   entityElements,
   entityKindOfElement,
   findEntity,
+  isoYearString,
   parseIsoYear,
   touchEntity,
   type AuthorityId,
@@ -36,6 +37,7 @@ import {
   type NameTypeTaggingPolicy,
 } from './nameTypeTaggingPolicy';
 import { isTaggableNameType, normalizeNameType, type NameTypeId } from './nameTypes';
+import { canonicalDynastyKey, preferredDynastyLabel } from './dynastyCrosswalk';
 
 const TEI_NS = 'http://www.tei-c.org/ns/1.0';
 const XML_NS = 'http://www.w3.org/XML/1998/namespace';
@@ -114,9 +116,24 @@ const noteOfType = (item: Element, type: string): Element | null =>
     (child) => child.localName === 'note' && child.getAttribute('type') === type,
   ) ?? null;
 
-const descriptionNote = (item: Element): Element | null => noteOfType(item, 'description');
 const familyNameNote = (item: Element): Element | null => noteOfType(item, 'familyName');
 const givenNameNote = (item: Element): Element | null => noteOfType(item, 'givenName');
+
+const activeNotesOfType = (item: Element, type: string): Element[] =>
+  Array.from(item.children).filter(
+    (child) =>
+      child.localName === 'note' &&
+      child.getAttribute('type') === type &&
+      readEntityValueProvenance(child).status === 'active',
+  );
+
+/** The entity's "current" description: the user's own, else the first active authority description. */
+const activeDescription = (item: Element): Element | null => {
+  const notes = activeNotesOfType(item, 'description');
+  return (
+    notes.find((note) => readEntityValueProvenance(note).origin === 'user') ?? notes[0] ?? null
+  );
+};
 
 const idnoElements = (item: Element): Element[] =>
   Array.from(item.children).filter((child) => child.localName === 'idno');
@@ -127,11 +144,26 @@ const nameEntryOf = (el: Element): NameEntry => ({
   type: normalizeNameType(el.getAttribute('type')),
 });
 
+const assertionValueOf = (el: Element): string =>
+  el.localName === 'birth' || el.localName === 'death'
+    ? (el.getAttribute('when') ?? el.textContent?.trim() ?? '')
+    : (el.textContent?.trim() ?? '');
+
+const activeDateYear = (item: Element, tag: 'birth' | 'death'): number | null => {
+  const dates = Array.from(item.children).filter(
+    (child) => child.localName === tag && readEntityValueProvenance(child).status === 'active',
+  );
+  const selected =
+    dates.find((child) => readEntityValueProvenance(child).origin === 'user') ?? dates[0];
+  return parseIsoYear(selected?.getAttribute('when'));
+};
+
 function summarize(item: Element): EntitySummary | null {
   const kind = kindOfElement(item);
   const id = item.getAttribute('xml:id');
   if (!kind || !id) return null;
   const nameEntries = nameElements(item, kind)
+    .filter((el) => readEntityValueProvenance(el).status === 'active')
     .map(nameEntryOf)
     .filter((entry) => entry.text);
   return {
@@ -140,7 +172,7 @@ function summarize(item: Element): EntitySummary | null {
     names: nameEntries.map((entry) => entry.text),
     nameEntries,
     romanized: nameEntries.find((entry) => isLatnLang(entry.lang))?.text ?? null,
-    description: descriptionNote(item)?.textContent?.trim() || null,
+    description: activeDescription(item)?.textContent?.trim() || null,
     authorities: idnoElements(item)
       .filter((el) => el.getAttribute('type') !== CENTRAL_IDNO_TYPE)
       .filter((el) => readEntityValueProvenance(el).status === 'active')
@@ -151,16 +183,27 @@ function summarize(item: Element): EntitySummary | null {
       .filter((ref) => ref.type && ref.value),
     familyName: familyNameNote(item)?.textContent?.trim() || null,
     givenName: givenNameNote(item)?.textContent?.trim() || null,
-    startYear: parseIsoYear(item.getElementsByTagName('birth')[0]?.getAttribute('when')),
-    endYear: parseIsoYear(item.getElementsByTagName('death')[0]?.getAttribute('when')),
-    nationalities: Array.from(item.children)
-      .filter((child) => child.localName === 'nationality')
-      .map((child) => child.textContent?.trim() ?? '')
-      .filter(Boolean),
-    placesOfOrigin: Array.from(item.children)
-      .filter((child) => child.localName === 'placeName')
-      .map((child) => child.textContent?.trim() ?? '')
-      .filter(Boolean),
+    startYear: activeDateYear(item, 'birth'),
+    endYear: activeDateYear(item, 'death'),
+    nationalities: Array.from(
+      new Map(
+        Array.from(item.children)
+          .filter((child) => child.localName === 'nationality')
+          .filter((child) => readEntityValueProvenance(child).status === 'active')
+          .map((child) => child.textContent?.trim() ?? '')
+          .filter(Boolean)
+          .map((label) => [canonicalDynastyKey(label), preferredDynastyLabel(label)] as const),
+      ).values(),
+    ),
+    placesOfOrigin: Array.from(
+      new Set(
+        Array.from(item.children)
+          .filter((child) => child.localName === 'placeName')
+          .filter((child) => readEntityValueProvenance(child).status === 'active')
+          .map((child) => child.textContent?.trim() ?? '')
+          .filter(Boolean),
+      ),
+    ),
     origins: Array.from(
       new Set(
         Array.from(item.children)
@@ -178,7 +221,7 @@ function summarize(item: Element): EntitySummary | null {
       .filter((child) => readEntityValueProvenance(child).status === 'rejected')
       .map((child) => ({
         element: child.localName,
-        value: child.textContent?.trim() ?? '',
+        value: assertionValueOf(child),
         source: readEntityValueProvenance(child).source,
       }))
       .filter((assertion) => assertion.value),
@@ -188,8 +231,13 @@ function summarize(item: Element): EntitySummary | null {
       .map((child) => ({
         key: entityValueKey(child),
         element: child.localName,
-        value: child.textContent?.trim() ?? '',
+        value: assertionValueOf(child),
         ...readEntityValueProvenance(child),
+        precision:
+          child.localName === 'birth' || child.localName === 'death'
+            ? child.getAttribute('precision')
+            : undefined,
+        noteType: child.localName === 'note' ? child.getAttribute('type') : undefined,
       }))
       .filter((assertion) => assertion.value || assertion.element === 'idno'),
   };
@@ -202,6 +250,9 @@ export interface EntityAssertionSummary {
   origin: EntityValueOrigin;
   source: string | null;
   status: EntityValueStatus;
+  precision?: string | null;
+  /** `<note>`'s `@type` (e.g. "description", "authority-cache"); undefined for non-note elements. */
+  noteType?: string | null;
 }
 
 /** List field-level assertions, including rejected values for the review UI. */
@@ -214,11 +265,56 @@ export function listEntityAssertions(doc: Document, id: string): EntityAssertion
       return {
         key: entityValueKey(child),
         element: child.localName,
-        value: child.textContent?.trim() ?? '',
+        value: assertionValueOf(child),
         ...provenance,
+        precision:
+          child.localName === 'birth' || child.localName === 'death'
+            ? child.getAttribute('precision')
+            : undefined,
+        noteType: child.localName === 'note' ? child.getAttribute('type') : undefined,
       };
     })
     .filter((assertion) => assertion.value || assertion.element === 'idno');
+}
+
+export interface FieldAssertionGroups {
+  /** Distinct authority sources whose active value exactly matches a value in `acceptedValues`. */
+  agreeingSources: string[];
+  /** Active authority assertions whose value is NOT in `acceptedValues` — still awaiting accept/reject. */
+  pending: EntityAssertionSummary[];
+  /** Rejected assertions for this field. */
+  rejected: EntityAssertionSummary[];
+}
+
+/**
+ * Group one field's assertions (already filtered to a single element tag) into
+ * agreeing/pending/rejected, generalizing the birth/death dedup pattern to any
+ * repeatable authority-sourced field (nationality, placeName, description).
+ */
+export function groupFieldAssertions(
+  assertions: EntityAssertionSummary[],
+  acceptedValues: Set<string>,
+  showRejected: boolean,
+  /** Normalizes a value before comparison (e.g. dynasty-alias crosswalk); identity by default. */
+  valueKey: (value: string) => string = (value) => value,
+): FieldAssertionGroups {
+  const active = assertions.filter(
+    (assertion) => assertion.origin === 'authority' && (showRejected || assertion.status === 'active'),
+  );
+  const acceptedKeys = new Set(Array.from(acceptedValues, valueKey));
+  const agreeingSources = Array.from(
+    new Set(
+      active
+        .filter((assertion) => assertion.status === 'active' && acceptedKeys.has(valueKey(assertion.value)))
+        .map((assertion) => assertion.source?.split(':')[0])
+        .filter((source): source is string => Boolean(source)),
+    ),
+  );
+  const pending = active.filter(
+    (assertion) => assertion.status === 'active' && !acceptedKeys.has(valueKey(assertion.value)),
+  );
+  const rejected = active.filter((assertion) => assertion.status === 'rejected');
+  return { agreeingSources, pending, rejected };
 }
 
 /** Accept an imported value as a user assertion while retaining its source. */
@@ -286,7 +382,12 @@ export function decoupleAuthority(doc: Document, id: string, authority: Authorit
         ) === normalizedValue
       : false;
     if (matchesId || matchesSource) {
-      if (provenance.status === 'active' && provenance.origin === 'authority') {
+      if (
+        provenance.origin === 'authority' &&
+        (provenance.status === 'active' ||
+          (provenance.status === 'rejected' &&
+            (child.localName === 'birth' || child.localName === 'death')))
+      ) {
         child.remove();
         removed += 1;
       }
@@ -344,9 +445,99 @@ function requireEntity(doc: Document, id: string): Element {
   return item;
 }
 
-/** Set (or clear, with empty text) the one-line description note. */
+/** Add a user-asserted repeatable value (nationality/placeName), deduped against existing active values. */
+function addUserValue(
+  doc: Document,
+  id: string,
+  tag: 'nationality' | 'placeName',
+  label: string,
+): boolean {
+  const item = requireEntity(doc, id);
+  const trimmed = label.trim();
+  if (!trimmed) return false;
+  const exists = Array.from(item.children).some(
+    (child) =>
+      child.localName === tag &&
+      readEntityValueProvenance(child).status === 'active' &&
+      child.textContent?.trim() === trimmed,
+  );
+  if (exists) return false;
+  const el = doc.createElementNS(TEI_NS, tag);
+  el.textContent = trimmed;
+  writeEntityValueProvenance(el, { origin: 'user', source: null, status: 'active' });
+  item.appendChild(el);
+  touchEntity(item);
+  return true;
+}
+
+/** Add a user-typed nationality/dynasty value. */
+export function addUserNationality(doc: Document, id: string, label: string): boolean {
+  return addUserValue(doc, id, 'nationality', label);
+}
+
+/** Add a user-typed place-of-origin value. */
+export function addUserOrigin(doc: Document, id: string, label: string): boolean {
+  return addUserValue(doc, id, 'placeName', label);
+}
+
+/**
+ * Remove one currently-active value by its assertion key: a user-origin value
+ * is deleted outright, an authority-origin one is rejected (tombstoned) so a
+ * later refresh doesn't silently re-add it.
+ */
+export function removeEntityValue(doc: Document, id: string, key: string): boolean {
+  const item = requireEntity(doc, id);
+  const target = Array.from(item.children).find((child) => entityValueKey(child) === key);
+  if (!target) return false;
+  const provenance = readEntityValueProvenance(target);
+  if (provenance.status !== 'active') return false;
+  if (provenance.origin === 'user') {
+    target.remove();
+  } else {
+    writeEntityValueProvenance(target, {
+      origin: provenance.origin,
+      source: provenance.source,
+      status: 'rejected',
+    });
+  }
+  touchEntity(item);
+  return true;
+}
+
+/**
+ * Set (or clear, with empty text) the user's own one-line description,
+ * leaving any authority-sourced descriptions untouched (there may be
+ * several, one per source — see `acceptEntityDescriptionAssertion`).
+ */
 export function setEntityDescription(doc: Document, id: string, text: string): void {
-  setNoteOfType(doc, id, 'description', text);
+  const item = requireEntity(doc, id);
+  const existing = Array.from(item.children).find(
+    (child) =>
+      child.localName === 'note' &&
+      child.getAttribute('type') === 'description' &&
+      readEntityValueProvenance(child).origin === 'user',
+  );
+  const trimmed = text.trim();
+  if (!trimmed) {
+    if (existing) {
+      existing.remove();
+      touchEntity(item);
+    }
+    return;
+  }
+  if (existing) {
+    if ((existing.textContent?.trim() ?? '') !== trimmed) {
+      existing.textContent = trimmed;
+      touchEntity(item);
+    }
+    return;
+  }
+  const note = doc.createElementNS(TEI_NS, 'note');
+  note.setAttribute('type', 'description');
+  note.textContent = trimmed;
+  writeEntityValueProvenance(note, { origin: 'user', source: null, status: 'active' });
+  item.appendChild(note);
+  touchEntity(item);
 }
 
 /** Set (or clear, with empty text) a person's family name (surname), stored separately from the display name. */
@@ -357,6 +548,78 @@ export function setFamilyName(doc: Document, id: string, text: string): void {
 /** Set (or clear, with empty text) a person's given name, stored separately from the display name. */
 export function setGivenName(doc: Document, id: string, text: string): void {
   setNoteOfType(doc, id, 'givenName', text);
+}
+
+export type DatePart = 'birth' | 'death';
+export type DatePrecision =
+  | ''
+  | 'b.'
+  | 'b. ca.'
+  | 'active'
+  | 'active ca.'
+  | 'fl.'
+  | 'd.'
+  | 'd. ca.'
+  | 'active to'
+  | 'active to ca.';
+
+/** Set or clear a user-controlled birth/death value while preserving authority assertions. */
+export function setUserEntityDate(
+  doc: Document,
+  id: string,
+  part: DatePart,
+  year: number | null,
+  precision: DatePrecision = '',
+): void {
+  const item = requireEntity(doc, id);
+  const existing = Array.from(item.children).find(
+    (child) => child.localName === part && readEntityValueProvenance(child).origin === 'user',
+  );
+  if (year == null) {
+    if (existing) existing.remove();
+  } else {
+    const element = existing ?? doc.createElementNS(TEI_NS, part);
+    element.setAttribute('when', isoYearString(year));
+    if (precision) element.setAttribute('precision', precision);
+    else element.removeAttribute('precision');
+    writeEntityValueProvenance(element, { origin: 'user', source: null, status: 'active' });
+    if (!existing) item.appendChild(element);
+  }
+  touchEntity(item);
+}
+
+/** Promote an authority date assertion to the user's selected date. */
+export function acceptEntityDateAssertion(doc: Document, id: string, key: string): boolean {
+  const item = requireEntity(doc, id);
+  const target = Array.from(item.children).find((child) => entityValueKey(child) === key);
+  if (!target || (target.localName !== 'birth' && target.localName !== 'death')) return false;
+  const part = target.localName as DatePart;
+  const userDate = Array.from(item.children).find(
+    (child) => child.localName === part && readEntityValueProvenance(child).origin === 'user',
+  );
+  if (userDate && userDate !== target) userDate.remove();
+  writeEntityValueProvenance(target, { origin: 'user', source: null, status: 'active' });
+  touchEntity(item);
+  return true;
+}
+
+/** Promote an authority description assertion to the user's own description. */
+export function acceptEntityDescriptionAssertion(doc: Document, id: string, key: string): boolean {
+  const item = requireEntity(doc, id);
+  const target = Array.from(item.children).find((child) => entityValueKey(child) === key);
+  if (!target || target.localName !== 'note' || target.getAttribute('type') !== 'description') {
+    return false;
+  }
+  const userNote = Array.from(item.children).find(
+    (child) =>
+      child.localName === 'note' &&
+      child.getAttribute('type') === 'description' &&
+      readEntityValueProvenance(child).origin === 'user',
+  );
+  if (userNote && userNote !== target) userNote.remove();
+  writeEntityValueProvenance(target, { origin: 'user', source: null, status: 'active' });
+  touchEntity(item);
+  return true;
 }
 
 /** Current family name, or null when unset. */
@@ -681,8 +944,8 @@ export function mergeEntities(doc: Document, keepId: string, dropIds: string[]):
         });
       }
     }
-    const droppedDescription = descriptionNote(dropped)?.textContent?.trim();
-    if (droppedDescription && !descriptionNote(keeper)) {
+    const droppedDescription = activeDescription(dropped)?.textContent?.trim();
+    if (droppedDescription && !activeDescription(keeper)) {
       setEntityDescription(doc, keepId, droppedDescription);
     }
     const droppedFamilyName = familyNameNote(dropped)?.textContent?.trim();

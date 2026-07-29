@@ -474,6 +474,76 @@ describe('AutoTaggingSession', () => {
       expect(getCurrent()).toContain(`key="${entityId}"`);
       expect(files.get('/proj/entities.xml')).toContain(entityId);
     });
+
+    it('writes distinct per-source elements when the candidate carries authorityAssertions', async () => {
+      const files = new Map<string, string>();
+      const api = {
+        ensureDirectory: async (dir: string) => {
+          files.set(dir, '');
+        },
+        pathExists: async (path: string) => files.has(path),
+        readFile: async (path: string) => files.get(path) ?? '',
+        writeFile: async (path: string, content: string) => {
+          files.set(path, content);
+        },
+      };
+      const paths = resolveEntityStorePaths({ projectRoot: '/proj', entityStore: 'project' });
+      const store = EntityStore.fromPaths(api, paths);
+      const { writer, getCurrent } = makeWriter(XML);
+      const session = new AutoTaggingSession(writer, 'ignore', store);
+
+      const doc = await session.getDocument();
+      const suggestions = dictionaryTag(doc, [{ string: '張衡', tag: 'persName' }], 'ignore');
+      await session.apply(suggestions);
+      expect(getCurrent()).toContain('<persName>張衡</persName>');
+
+      const groups = await session.scanMentions();
+      const group = groups.find((item) => item.surface === '張衡');
+      const instance = group!.instances[0];
+      if (!instance) throw new Error('missing mention instance');
+
+      const entityId = await session.resolveMention(instance, {
+        id: 'new',
+        label: '張衡',
+        sources: ['CBDB', 'DILA'],
+        authorityAssertions: [
+          {
+            id: 'cbdb-1',
+            label: '張衡',
+            sources: ['CBDB'],
+            authorityIds: [{ type: 'CBDB', value: '1' }],
+            startYear: 78,
+            authorityMetadata: {
+              nationality: [{ id: 'han', canonicalId: 'dynasty:han', label: 'Han' }],
+            },
+          },
+          {
+            id: 'dila-1',
+            label: '張衡',
+            sources: ['DILA'],
+            authorityIds: [{ type: 'DILA', value: 'A1' }],
+            startYear: 79,
+            authorityMetadata: {
+              nationality: [{ id: 'han', canonicalId: 'dynasty:han', label: 'Han' }],
+            },
+          },
+        ],
+      });
+
+      const savedDoc = new DOMParser().parseFromString(
+        files.get('/proj/entities.xml')!,
+        'application/xml',
+      );
+      const person = Array.from(savedDoc.getElementsByTagName('person')).find(
+        (el) => el.getAttribute('xml:id') === entityId,
+      )!;
+      const births = Array.from(person.getElementsByTagName('birth'));
+      expect(births).toHaveLength(2);
+      expect(births.map((b) => b.getAttribute('source')).sort()).toEqual(['CBDB', 'DILA']);
+      const nationalities = Array.from(person.getElementsByTagName('nationality'));
+      expect(nationalities).toHaveLength(2);
+      expect(nationalities.map((n) => n.getAttribute('source')).sort()).toEqual(['CBDB', 'DILA']);
+    });
   });
 
   it('applies audit remove suggestions through the session', async () => {

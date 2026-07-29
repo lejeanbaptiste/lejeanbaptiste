@@ -11,6 +11,7 @@ describe('tagFollowingStyleNames', () => {
     expect(doc.querySelectorAll('persName')[1]?.textContent).toBe('介甫');
     expect(doc.querySelectorAll('persName')[1]?.getAttribute('type')).toBe('courtesy');
     expect(doc.querySelectorAll('persName')[1]?.getAttribute('key')).toBe('p1');
+    expect(doc.documentElement.textContent).toContain('字');
     expect(doc.documentElement.textContent).toContain('，居京');
   });
 

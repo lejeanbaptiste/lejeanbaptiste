@@ -65,6 +65,7 @@ const BRANDING_TARGETS = [
   ['tool_transform.dark.svg', 'apps/commons/src/icons/tool_transform.dark.svg'],
   ['tool_hide_notes.svg', 'apps/commons/src/icons/tool_hide_notes.svg'],
   ['tool_hide_notes.dark.svg', 'apps/commons/src/icons/tool_hide_notes.dark.svg'],
+  ['tool_hide_notes.svg', 'packages/cwrc-leafwriter/src/images/tool_hide_notes.svg'],
   ['tool_show_notes.svg', 'apps/commons/src/icons/tool_show_notes.svg'],
   ['tool_show_notes.dark.svg', 'apps/commons/src/icons/tool_show_notes.dark.svg'],
   ['norbert-mini.png', 'apps/commons/src/assets/images/norbert-mini.png'],

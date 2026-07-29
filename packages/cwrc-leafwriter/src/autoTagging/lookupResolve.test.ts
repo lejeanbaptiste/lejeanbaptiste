@@ -11,6 +11,7 @@ import {
   planLookupResolution,
   type LookupSelectionInput,
 } from './lookupResolve';
+import { listEntityAssertions } from './entityOps';
 import type { AuthorityPackId } from './packPaths';
 
 class FakeFs implements EntityFileApi {
@@ -54,12 +55,31 @@ const packRow = ndjsonLine({
   searchStrings: ['沈攸之', '攸之'],
   metadata: {
     description: 'Liu-Song general, d. 478',
+    startYear: 420,
+    endYear: 478,
     crosswalk: { wikidata: ['Q712570'], dila: 'A001492' },
   },
 });
 
 const readPackFile = async (_packId: AuthorityPackId) => packRow + '\n';
 const packIds: AuthorityPackId[] = ['cbdb-persons'];
+
+const dilaPackRow = ndjsonLine({
+  source: 'DILA',
+  authorityId: 'A003126',
+  kind: 'person',
+  primaryName: '徐孝嗣',
+  searchStrings: ['徐孝嗣', '徐始昌'],
+  metadata: {
+    description: '徐孝嗣 (453–499, 南齊, 徐湛之孫，徐聿之子)',
+    startYear: 453,
+    endYear: 499,
+    crosswalk: { wikidata: ['Q11070461'], cbdb: '193924' },
+  },
+});
+
+const readDilaPackFile = async (_packId: AuthorityPackId) => dilaPackRow + '\n';
+const dilaPackIds: AuthorityPackId[] = ['dila-persons'];
 
 describe('parseAuthorityUri', () => {
   it('parses known authority URIs', () => {
@@ -73,19 +93,24 @@ describe('parseAuthorityUri', () => {
       idnoType: 'VIAF',
       value: '12345',
     });
+    expect(parseAuthorityUri('https://cbdb.fas.harvard.edu/cbdbapi/person.php?id=31305')).toMatchObject({
+      idnoType: 'CBDB',
+      value: '31305',
+    });
+    // legacy CBDB link format, still parseable
     expect(parseAuthorityUri('https://cbdb.fas.harvard.edu/person?id=31305')).toMatchObject({
       idnoType: 'CBDB',
       value: '31305',
     });
     expect(
-      parseAuthorityUri('https://authority.dila.edu.tw/person/search.php?code=A001492'),
+      parseAuthorityUri('https://authority.dila.edu.tw/person/?fromInner=A001492'),
     ).toMatchObject({ idnoType: 'DILA', value: 'A001492' });
     expect(
-      parseAuthorityUri('https://authority.dila.edu.tw/place/search.php?code=PL000000030584'),
+      parseAuthorityUri('https://authority.dila.edu.tw/place/?fromInner=PL000000030584'),
     ).toMatchObject({ idnoType: 'DILA', value: 'PL000000030584' });
     // legacy link formats, still parseable
     expect(
-      parseAuthorityUri('https://authority.dila.edu.tw/person/?fromInner=A001492'),
+      parseAuthorityUri('https://authority.dila.edu.tw/person/search.php?code=A001492'),
     ).toMatchObject({ idnoType: 'DILA', value: 'A001492' });
     expect(
       parseAuthorityUri('https://authority.dila.edu.tw/person/search.php?aid=A001492'),
@@ -146,6 +171,17 @@ describe('planLookupResolution / applyLookupResolution', () => {
     expect(idnoTypes).toEqual(expect.arrayContaining(['Wikidata', 'CBDB', 'DILA']));
     // Pack primary name preferred over the clicked label
     expect(person.getElementsByTagName('persName')[0]?.textContent).toBe('沈攸之');
+    const assertions = listEntityAssertions(doc, result.key);
+    expect(assertions.find((a) => a.element === 'birth')).toMatchObject({
+      origin: 'authority',
+      source: 'CBDB',
+      status: 'active',
+    });
+    expect(assertions.find((a) => a.element === 'death')).toMatchObject({
+      origin: 'authority',
+      source: 'CBDB',
+      status: 'active',
+    });
   });
 
   it('links to an existing entity on a direct idno hit and enriches it', async () => {
@@ -174,6 +210,62 @@ describe('planLookupResolution / applyLookupResolution', () => {
         ['DILA', 'A001492'],
       ]),
     );
+  });
+
+  it('hydrates authority dates when linking an existing DILA entity', async () => {
+    const { store } = makeStore();
+    const doc = await store.loadEntities();
+    const { id } = addEntity(doc, 'person', {
+      name: '徐孝嗣',
+      authorityIds: [{ type: 'DILA', value: 'A003126' }],
+    });
+    await store.saveEntities(doc);
+
+    const result = await applyLookupResolution(
+      input({
+        uri: 'https://authority.dila.edu.tw/person/search.php?code=A003126',
+        label: '徐孝嗣',
+        query: '徐孝嗣',
+      }),
+      { store, packIds: dilaPackIds, readPackFile: readDilaPackFile },
+    );
+    expect(result).toMatchObject({ status: 'linked', key: id, wasCreated: false });
+
+    const after = await store.loadEntities();
+    const assertions = listEntityAssertions(after, id);
+    expect(assertions.find((a) => a.element === 'birth')).toMatchObject({
+      origin: 'authority',
+      source: 'DILA',
+      status: 'active',
+    });
+    expect(assertions.find((a) => a.element === 'death')).toMatchObject({
+      origin: 'authority',
+      source: 'DILA',
+      status: 'active',
+    });
+  });
+
+  it('mints per-source birth elements when two checked references each crosswalk independently', async () => {
+    const { store } = makeStore();
+    const combinedReadPackFile = async (packId: AuthorityPackId) =>
+      packId === 'cbdb-persons' ? packRow + '\n' : dilaPackRow + '\n';
+
+    const result = await applyLookupResolution(
+      input({
+        uri: 'https://cbdb.fas.harvard.edu/cbdbapi/person.php?id=31305',
+        extraUris: ['https://authority.dila.edu.tw/person/?fromInner=A003126'],
+      }),
+      { store, packIds: ['cbdb-persons', 'dila-persons'], readPackFile: combinedReadPackFile },
+    );
+    expect(result).toMatchObject({ status: 'linked', wasCreated: true });
+    if (result.status !== 'linked') return;
+
+    const doc = await store.loadEntities();
+    const assertions = listEntityAssertions(doc, result.key);
+    const births = assertions.filter((a) => a.element === 'birth');
+    expect(births).toHaveLength(2);
+    expect(births.map((a) => a.source).sort()).toEqual(['CBDB', 'DILA']);
+    expect(births.map((a) => a.value).sort()).toEqual(['0420', '0453']);
   });
 
   it('links via crosswalk when the entity only carries a CBDB idno', async () => {

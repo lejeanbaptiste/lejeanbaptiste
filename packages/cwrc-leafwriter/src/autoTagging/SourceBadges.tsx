@@ -2,8 +2,8 @@ import Box from '@mui/material/Box';
 import Tooltip from '@mui/material/Tooltip';
 import Typography from '@mui/material/Typography';
 import type { ReactElement } from 'react';
-import norbertMini from '../../../../apps/commons/src/assets/images/norbert-mini.png';
-import { CbdbIcon, ChgisIcon, DilaIcon } from '../icons/custom/AuthoritySource';
+import viafBadge from '../../../../apps/commons/src/assets/images/badge_oclc.png';
+import { CbdbIcon, ChgisIcon, DilaIcon, NorbertIcon } from '../icons/custom/AuthoritySource';
 import { WikipediaIcon } from '../icons/custom/Wikipedia';
 
 const ICON_SX = { fontSize: 14, display: 'block' } as const;
@@ -19,15 +19,17 @@ const sourceIcon = (label: string): ReactElement | null => {
       return <CbdbIcon sx={ICON_SX} />;
     case 'chgis':
       return <ChgisIcon sx={ICON_SX} />;
-    case 'norbert':
+    case 'viaf':
       return (
         <Box
           component="img"
-          src={norbertMini}
+          src={viafBadge}
           alt=""
           sx={{ width: 14, height: 14, objectFit: 'contain', display: 'block' }}
         />
       );
+    case 'norbert':
+      return <NorbertIcon />;
     default:
       return null;
   }
@@ -51,6 +53,13 @@ export const SourceBadges = ({ label }: { label: string }) => {
     .filter(Boolean);
   if (parts.length === 0) return null;
 
+  const grouped = parts.reduce<{ label: string; count: number }[]>((result, part) => {
+    const existing = result.find((entry) => entry.label.toLowerCase() === part.toLowerCase());
+    if (existing) existing.count += 1;
+    else result.push({ label: part, count: 1 });
+    return result;
+  }, []);
+
   return (
     <Box
       component="span"
@@ -67,7 +76,7 @@ export const SourceBadges = ({ label }: { label: string }) => {
         flexShrink: 0,
       }}
     >
-      {parts.map((part) => {
+      {grouped.map(({ label: part, count }) => {
         const icon = sourceIcon(part);
         const ownDatabase = OWN_DATABASE_LABEL[part.toLowerCase()];
         return (
@@ -76,27 +85,55 @@ export const SourceBadges = ({ label }: { label: string }) => {
             title={ownDatabase ? `${ownDatabase.label} entity database` : part}
             arrow
           >
-            {icon ??
-              (ownDatabase ? (
+            <Box component="span" sx={{ position: 'relative', display: 'inline-flex' }}>
+              {icon ??
+                (ownDatabase ? (
+                  <Typography
+                    component="span"
+                    variant="caption"
+                    sx={{
+                      fontSize: 10,
+                      lineHeight: 1.4,
+                      px: 0.5,
+                      borderRadius: '8px',
+                      color: ownDatabase.color,
+                      bgcolor: ownDatabase.bg,
+                    }}
+                  >
+                    {ownDatabase.label}
+                  </Typography>
+                ) : (
+                  <Typography
+                    component="span"
+                    variant="caption"
+                    sx={{ fontSize: 10, lineHeight: 1 }}
+                  >
+                    {part}
+                  </Typography>
+                ))}
+              {count > 1 && (
                 <Typography
                   component="span"
-                  variant="caption"
                   sx={{
-                    fontSize: 10,
-                    lineHeight: 1.4,
-                    px: 0.5,
-                    borderRadius: '8px',
-                    color: ownDatabase.color,
-                    bgcolor: ownDatabase.bg,
+                    position: 'absolute',
+                    top: -2,
+                    right: -5,
+                    minWidth: 11,
+                    height: 11,
+                    px: 0.25,
+                    borderRadius: '6px',
+                    bgcolor: 'primary.main',
+                    color: 'primary.contrastText',
+                    fontSize: 8,
+                    lineHeight: '11px',
+                    textAlign: 'center',
+                    fontWeight: 700,
                   }}
                 >
-                  {ownDatabase.label}
+                  {count}
                 </Typography>
-              ) : (
-                <Typography component="span" variant="caption" sx={{ fontSize: 10, lineHeight: 1 }}>
-                  {part}
-                </Typography>
-              ))}
+              )}
+            </Box>
           </Tooltip>
         );
       })}

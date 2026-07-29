@@ -1496,7 +1496,9 @@ export class AutoTaggingSession {
         description: options.description ?? candidate.description,
         startYear: candidate.startYear,
         endYear: candidate.endYear,
+        origin: candidate.authorityMetadata?.origin,
         authorityMetadata: candidate.authorityMetadata,
+        authorityAssertions: candidate.authorityAssertions,
       },
       options.createNew ? undefined : candidate,
     );

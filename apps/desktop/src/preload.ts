@@ -238,6 +238,7 @@ export interface ElectronAPI {
   ) => Promise<{ lightness: number; saturation: number } | null>;
   saveCertificatePng: (bytes: Uint8Array, suggestedName: string) => Promise<boolean>;
   getCachedLeaderboardToken: () => Promise<string | null>;
+  clearCachedLeaderboardToken: () => Promise<void>;
   startLeaderboardDeviceFlow: () => Promise<{
     userCode: string;
     verificationUri: string;
@@ -280,9 +281,7 @@ export interface ElectronAPI {
   mapTilesRemove: (bundleId: string) => Promise<{ ok: boolean; error?: string }>;
   mapTilesDownloadStatus: () => Promise<{ active: MapTilesDownloadState[] }>;
   onMapTilesProgress: (callback: (progress: MapTilesProgress) => void) => () => void;
-  onMapTilesDownloadComplete: (
-    callback: (result: MapTilesDownloadComplete) => void,
-  ) => () => void;
+  onMapTilesDownloadComplete: (callback: (result: MapTilesDownloadComplete) => void) => () => void;
   authorityPackStatuses?: () => Promise<
     import('../../commons/src/desktop/authorityPackTypes').AuthorityPackStatus[]
   >;
@@ -310,10 +309,14 @@ export interface ElectronAPI {
   pluginsDismissLanguagePrompt?: (pluginId: string) => Promise<void>;
   pluginsIsEnabled?: (pluginId: string) => Promise<boolean>;
   pluginsGetModuleUrl?: (pluginId: string) => Promise<string | null>;
-  pluginsGetRemoteIndex?: () => Promise<import('../../commons/src/desktop/pluginRegistryTypes').PluginReleaseIndex>;
+  pluginsGetRemoteIndex?: () => Promise<
+    import('../../commons/src/desktop/pluginRegistryTypes').PluginReleaseIndex
+  >;
   pluginsInstallRemote?: (
     entry: import('../../commons/src/desktop/pluginRegistryTypes').PluginReleaseEntry,
-  ) => Promise<import('../../../packages/cwrc-leafwriter/src/plugins/types').PluginHostSnapshotView>;
+  ) => Promise<
+    import('../../../packages/cwrc-leafwriter/src/plugins/types').PluginHostSnapshotView
+  >;
   authorityLifecycleGet?: () => Promise<
     import('../../commons/src/desktop/authorityLifecycleTypes').AuthorityLifecycleStatus
   >;
@@ -515,6 +518,7 @@ const electronAPI: ElectronAPI = {
   saveCertificatePng: (bytes: Uint8Array, suggestedName: string) =>
     ipcRenderer.invoke('saveCertificatePng', bytes, suggestedName),
   getCachedLeaderboardToken: () => ipcRenderer.invoke('getCachedLeaderboardToken'),
+  clearCachedLeaderboardToken: () => ipcRenderer.invoke('clearCachedLeaderboardToken'),
   startLeaderboardDeviceFlow: () => ipcRenderer.invoke('startLeaderboardDeviceFlow'),
   pollLeaderboardDeviceFlow: (
     deviceCode: string,

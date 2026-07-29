@@ -6,7 +6,12 @@
 
 import { latnLangFor } from '../utilities/languageCodes';
 import type { NameTypeId } from './nameTypes';
-import { writeEntityValueProvenance, type EntityValueOrigin } from './entityProvenance';
+import type { OriginAssertion } from './authority';
+import {
+  readEntityValueProvenance,
+  writeEntityValueProvenance,
+  type EntityValueOrigin,
+} from './entityProvenance';
 
 const TEI_NS = 'http://www.tei-c.org/ns/1.0';
 const XML_NS = 'http://www.w3.org/XML/1998/namespace';
@@ -106,6 +111,8 @@ export interface NewEntity {
   authoritySource?: string;
   /** Optional compact authority-cache payload, stored as a JSON note. */
   cache?: { source: string; data: unknown; when?: string };
+  /** Force the provenance used for imported scalar/repeatable fields. */
+  importedOrigin?: EntityValueOrigin;
   /** One-line human-written description, stored as `<note type="description">` for later disambiguation. */
   description?: string;
   /** Birth/founding year (signed; negative = BCE). Persons: `<birth when>`; others: `<note type="dates">`. */
@@ -116,8 +123,29 @@ export interface NewEntity {
   nationality?: { id: string; canonicalId: string; label: string; sourceIds?: string[] }[];
   /** Repeatable noble-title relations attached to a person entity. */
   nobleTitles?: NobleTitleRecord[];
+  /** Source-preserving place-of-origin assertions attached to a person entity. */
+  origin?: OriginAssertion[];
   /** Source-scoped CBDB office classification nodes retained by reference. */
   officeTypeIds?: string[];
+  /**
+   * Per-authority raw values, kept distinct through write instead of collapsed
+   * into the single scalar fields above. When present, this supersedes
+   * startYear/endYear/nationality/origin/description for person entities so
+   * that two authorities asserting different (or the same) values each keep
+   * their own provenance-bearing element.
+   */
+  authorityAssertions?: AuthoritySourcedFields[];
+}
+
+/** One authority's raw values for a set of fields, kept distinct through merge/write. */
+export interface AuthoritySourcedFields {
+  /** Normalized upper-case authority label, e.g. "CBDB", "DILA", "WIKIDATA". */
+  source: string;
+  startYear?: number;
+  endYear?: number;
+  nationality?: { canonicalId: string; label: string }[];
+  origin?: OriginAssertion[];
+  description?: string;
 }
 
 /** Format a signed year as an ISO/W3C `@when` year, e.g. -155 -> "-0155", 1990 -> "1990". */
@@ -391,7 +419,14 @@ export function addEntity(
   if (config.itemType) item.setAttribute('type', config.itemType);
   if (resp) item.setAttribute('resp', resp);
   const importedOrigin =
-    resp === LJB_AUTOTAG_RESP || resp === LEAFWRITER_AUTOTAG_RESP ? 'authority' : 'user';
+    entity.importedOrigin ??
+    (entity.authorityIds?.length || entity.cache || entity.authoritySource
+      ? 'authority'
+      : resp === LJB_AUTOTAG_RESP || resp === LEAFWRITER_AUTOTAG_RESP
+        ? 'authority'
+        : 'user');
+  const importedSource =
+    (entity.authoritySource ?? entity.authorityIds?.[0]?.type ?? null)?.toUpperCase() ?? null;
 
   const name = doc.createElementNS(TEI_NS, config.name);
   name.textContent = entity.name;
@@ -399,7 +434,10 @@ export function addEntity(
     name.setAttributeNS(XML_NS, 'xml:lang', entity.nameLang);
     name.setAttribute('type', 'primary');
   }
-  writeEntityValueProvenance(name, { origin: importedOrigin });
+  writeEntityValueProvenance(name, {
+    origin: importedOrigin,
+    source: importedOrigin === 'authority' ? importedSource : null,
+  });
   item.appendChild(name);
 
   const writtenNames = new Set<string>([entity.name.normalize('NFC').trim()]);
@@ -409,7 +447,10 @@ export function addEntity(
     const el = doc.createElementNS(TEI_NS, config.name);
     el.textContent = romanized;
     el.setAttributeNS(XML_NS, 'xml:lang', latnLangFor(entity.nameLang));
-    writeEntityValueProvenance(el, { origin: importedOrigin });
+    writeEntityValueProvenance(el, {
+      origin: importedOrigin,
+      source: importedOrigin === 'authority' ? importedSource : null,
+    });
     item.appendChild(el);
     writtenNames.add(romanized);
   }
@@ -421,7 +462,10 @@ export function addEntity(
     el.textContent = text;
     if (alt.type) el.setAttribute('type', alt.type);
     if (alt.lang) el.setAttributeNS(XML_NS, 'xml:lang', alt.lang);
-    writeEntityValueProvenance(el, { origin: importedOrigin });
+    writeEntityValueProvenance(el, {
+      origin: importedOrigin,
+      source: importedOrigin === 'authority' ? importedSource : null,
+    });
     item.appendChild(el);
     writtenNames.add(text);
   }
@@ -448,15 +492,54 @@ export function addEntity(
     item.appendChild(note);
   }
 
-  if (entity.description) {
+  if (entity.description && !entity.authorityAssertions?.length) {
     const note = doc.createElementNS(TEI_NS, 'note');
     note.setAttribute('type', 'description');
     note.textContent = entity.description;
-    writeEntityValueProvenance(note, { origin: importedOrigin });
+    writeEntityValueProvenance(note, {
+      origin: importedOrigin,
+      source: importedOrigin === 'authority' ? importedSource : null,
+    });
     item.appendChild(note);
   }
 
-  if (kind === 'person') {
+  if (kind === 'person' && entity.authorityAssertions?.length) {
+    for (const assertion of entity.authorityAssertions) {
+      if (assertion.nationality?.length) {
+        appendAuthoritySourcedValues(
+          doc,
+          item,
+          'nationality',
+          assertion.nationality.map((value) => ({
+            text: value.label,
+            ref: value.canonicalId,
+            source: assertion.source,
+          })),
+        );
+      }
+      if (assertion.origin?.length) {
+        appendAuthoritySourcedValues(
+          doc,
+          item,
+          'placeName',
+          assertion.origin.map((value) => ({
+            text: value.placeName,
+            ref: value.placeAuthorityId,
+            source: value.source ?? assertion.source,
+          })),
+        );
+      }
+      if (assertion.description?.trim()) {
+        appendAuthoritySourcedValues(doc, item, 'note', [
+          {
+            text: assertion.description.trim(),
+            noteType: 'description',
+            source: assertion.source,
+          },
+        ]);
+      }
+    }
+  } else if (kind === 'person') {
     for (const value of entity.nationality ?? []) {
       const nationality = value.label.trim();
       if (!nationality) continue;
@@ -465,11 +548,29 @@ export function addEntity(
       el.setAttribute('ref', value.canonicalId);
       writeEntityValueProvenance(el, {
         origin: value.sourceIds?.length ? 'authority' : 'user',
-        source: value.sourceIds?.[0] ?? entity.authoritySource,
+        source:
+          value.sourceIds?.length || importedOrigin === 'authority'
+            ? value.sourceIds?.[0] ?? importedSource
+            : entity.authoritySource,
       });
       item.appendChild(el);
     }
 
+    for (const origin of entity.origin ?? []) {
+      const place = origin.placeName?.trim();
+      if (!place) continue;
+      const el = doc.createElementNS(TEI_NS, 'placeName');
+      if (origin.placeAuthorityId) el.setAttribute('ref', origin.placeAuthorityId);
+      el.textContent = place;
+      writeEntityValueProvenance(el, {
+        origin: importedOrigin,
+        source: importedOrigin === 'authority' ? origin.source ?? importedSource : origin.source,
+      });
+      item.appendChild(el);
+    }
+  }
+
+  if (kind === 'person') {
     const writtenTitles = new Set<string>();
     for (const title of entity.nobleTitles ?? []) {
       const placeText = title.placeName.text.normalize('NFC').trim();
@@ -537,18 +638,38 @@ export function addEntity(
     }
   }
 
-  if (entity.startYear != null || entity.endYear != null) {
+  const hasAuthorityDates = entity.authorityAssertions?.some(
+    (assertion) => assertion.startYear != null || assertion.endYear != null,
+  );
+  if (kind === 'person' && entity.authorityAssertions?.length) {
+    for (const assertion of entity.authorityAssertions) {
+      appendAuthorityDates(doc, item, assertion.source, {
+        startYear: assertion.startYear,
+        endYear: assertion.endYear,
+      });
+    }
+  }
+  if (
+    (entity.startYear != null || entity.endYear != null) &&
+    !(kind === 'person' && hasAuthorityDates)
+  ) {
     if (kind === 'person') {
       if (entity.startYear != null) {
         const birth = doc.createElementNS(TEI_NS, 'birth');
         birth.setAttribute('when', isoYearString(entity.startYear));
-        writeEntityValueProvenance(birth, { origin: importedOrigin });
+        writeEntityValueProvenance(birth, {
+          origin: importedOrigin,
+          source: importedOrigin === 'authority' ? importedSource : null,
+        });
         item.appendChild(birth);
       }
       if (entity.endYear != null) {
         const death = doc.createElementNS(TEI_NS, 'death');
         death.setAttribute('when', isoYearString(entity.endYear));
-        writeEntityValueProvenance(death, { origin: importedOrigin });
+        writeEntityValueProvenance(death, {
+          origin: importedOrigin,
+          source: importedOrigin === 'authority' ? importedSource : null,
+        });
         item.appendChild(death);
       }
     } else {
@@ -559,7 +680,10 @@ export function addEntity(
         entity.startYear != null ? isoYearString(entity.startYear) : '',
         entity.endYear != null ? isoYearString(entity.endYear) : '',
       ].join('/');
-      writeEntityValueProvenance(note, { origin: importedOrigin });
+      writeEntityValueProvenance(note, {
+        origin: importedOrigin,
+        source: importedOrigin === 'authority' ? importedSource : null,
+      });
       item.appendChild(note);
     }
   }
@@ -667,26 +791,123 @@ export function appendAuthorityIdnos(doc: Document, element: Element, ids: Autho
   touchEntity(element);
 }
 
-/** Append person nationality labels without duplicating existing values. */
+/**
+ * Append person nationality labels without duplicating a value already
+ * asserted by the same source. A second source asserting the same
+ * nationality still gets its own element, so its badge isn't lost.
+ */
 export function appendNationalities(
   doc: Document,
   element: Element,
   values: { id: string; canonicalId: string; label: string; sourceIds?: string[] }[],
 ): void {
+  const nationalityKey = (ref: string | null, source: string | null) =>
+    `${source ?? ''}${ref ?? ''}`;
   const existing = new Set(
-    Array.from(element.getElementsByTagName('nationality')).map(
-      (el) => el.getAttribute('ref') || el.textContent?.trim(),
+    Array.from(element.getElementsByTagName('nationality')).map((el) =>
+      nationalityKey(
+        el.getAttribute('ref') || el.textContent?.trim() || null,
+        readEntityValueProvenance(el).source,
+      ),
     ),
   );
   for (const value of values) {
     const label = value.label.trim();
-    if (!label || existing.has(value.canonicalId)) continue;
+    if (!label) continue;
+    const source = value.sourceIds?.[0] ?? null;
+    const key = nationalityKey(value.canonicalId, source);
+    if (existing.has(key)) continue;
     const el = doc.createElementNS(TEI_NS, 'nationality');
     el.textContent = label;
     el.setAttribute('ref', value.canonicalId);
+    writeEntityValueProvenance(el, {
+      origin: value.sourceIds?.length ? 'authority' : 'user',
+      source,
+    });
     element.appendChild(el);
-    existing.add(value.canonicalId);
+    existing.add(key);
   }
+}
+
+/** Append or refresh a person's authority-backed birth/death assertions. */
+export function appendAuthorityDates(
+  doc: Document,
+  element: Element,
+  source: string,
+  dates: { startYear?: number; endYear?: number },
+): boolean {
+  const normalizedSource = source.trim().toUpperCase();
+  let changed = false;
+  const write = (tag: 'birth' | 'death', year: number | undefined) => {
+    if (year == null) return;
+    const existing = Array.from(element.children).filter(
+      (child) =>
+        child.localName === tag &&
+        readEntityValueProvenance(child).origin === 'authority' &&
+        readEntityValueProvenance(child).source === normalizedSource,
+    );
+    const exact = existing.find((child) => parseIsoYear(child.getAttribute('when')) === year);
+    if (exact) {
+      writeEntityValueProvenance(exact, { origin: 'authority', source: normalizedSource });
+      return;
+    }
+    for (const child of existing) child.remove();
+    const el = doc.createElementNS(TEI_NS, tag);
+    el.setAttribute('when', isoYearString(year));
+    writeEntityValueProvenance(el, { origin: 'authority', source: normalizedSource });
+    element.appendChild(el);
+    changed = true;
+  };
+  write('birth', dates.startYear);
+  write('death', dates.endYear);
+  if (changed) touchEntity(element);
+  return changed;
+}
+
+/**
+ * Append repeatable authority-sourced child elements (nationality, placeName,
+ * note[type=description]) without dropping values already asserted by other
+ * sources. Dedupes only on (tag, source, ref‖text, noteType) so two
+ * authorities can each contribute their own row for the same tag, and
+ * refreshing a source doesn't re-duplicate a value it already asserted.
+ */
+export function appendAuthoritySourcedValues(
+  doc: Document,
+  element: Element,
+  tag: 'nationality' | 'placeName' | 'note',
+  values: { text: string; ref?: string; source: string; noteType?: string }[],
+): boolean {
+  let changed = false;
+  const keyOf = (child: Element) => {
+    const provenance = readEntityValueProvenance(child);
+    const identity = child.getAttribute('ref') || child.textContent?.trim() || '';
+    const noteType = tag === 'note' ? (child.getAttribute('type') ?? '') : '';
+    return `${(provenance.source ?? '').trim().toUpperCase()}${identity}${noteType}`;
+  };
+  const existing = new Set(
+    Array.from(element.children)
+      .filter((child) => child.localName === tag)
+      .map(keyOf),
+  );
+  for (const value of values) {
+    const text = value.text.trim();
+    if (!text) continue;
+    const normalizedSource = value.source.trim().toUpperCase();
+    const identity = value.ref || text;
+    const noteType = tag === 'note' ? (value.noteType ?? '') : '';
+    const key = `${normalizedSource}${identity}${noteType}`;
+    if (existing.has(key)) continue;
+    const el = doc.createElementNS(TEI_NS, tag);
+    el.textContent = text;
+    if (value.ref) el.setAttribute('ref', value.ref);
+    if (tag === 'note' && value.noteType) el.setAttribute('type', value.noteType);
+    writeEntityValueProvenance(el, { origin: 'authority', source: normalizedSource });
+    element.appendChild(el);
+    existing.add(key);
+    changed = true;
+  }
+  if (changed) touchEntity(element);
+  return changed;
 }
 
 /** Find an entity element by its local id. */

@@ -1,5 +1,17 @@
+import Box, { type BoxProps } from '@mui/material/Box';
 import SvgIcon, { type SvgIconProps } from '@mui/material/SvgIcon';
 import { forwardRef } from 'react';
+import norbertMini from '../../../../../apps/commons/src/assets/images/norbert-mini.png';
+
+export const NorbertIcon = ({ sx, ...props }: BoxProps) => (
+  <Box
+    component="img"
+    src={norbertMini}
+    alt=""
+    sx={{ width: 14, height: 14, objectFit: 'contain', display: 'block', ...sx }}
+    {...props}
+  />
+);
 
 /**
  * Dharma wheel (dharmachakra) mark for DILA (Dharma Drum Institute of
@@ -73,4 +85,15 @@ export const CbdbIcon = forwardRef<SVGSVGElement, SvgIconProps>(function CbdbIco
 
 export const ChgisIcon = forwardRef<SVGSVGElement, SvgIconProps>(function ChgisIcon(props, ref) {
   return <InitialsIcon ref={ref} top="CH" bottom="GIS" {...props} />;
+});
+
+/** Compact VIAF/OCLC mark: the three overlapping library-network circles. */
+export const ViafIcon = forwardRef<SVGSVGElement, SvgIconProps>(function ViafIcon(props, ref) {
+  return (
+    <SvgIcon ref={ref} viewBox="0 0 24 24" {...props}>
+      <circle cx="9" cy="9" r="7" fill="none" stroke="#1976a8" strokeWidth="2.2" />
+      <circle cx="15" cy="9" r="7" fill="none" stroke="#5b8f29" strokeWidth="2.2" />
+      <circle cx="12" cy="15" r="7" fill="none" stroke="#e87522" strokeWidth="2.2" />
+    </SvgIcon>
+  );
 });

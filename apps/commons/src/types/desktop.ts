@@ -317,10 +317,14 @@ export interface ElectronAPI {
   pluginsDismissLanguagePrompt?: (pluginId: string) => Promise<void>;
   pluginsIsEnabled?: (pluginId: string) => Promise<boolean>;
   pluginsGetModuleUrl?: (pluginId: string) => Promise<string | null>;
-  pluginsGetRemoteIndex?: () => Promise<import('../desktop/pluginRegistryTypes').PluginReleaseIndex>;
+  pluginsGetRemoteIndex?: () => Promise<
+    import('../desktop/pluginRegistryTypes').PluginReleaseIndex
+  >;
   pluginsInstallRemote?: (
     entry: import('../desktop/pluginRegistryTypes').PluginReleaseEntry,
-  ) => Promise<import('../../../../packages/cwrc-leafwriter/src/plugins/types').PluginHostSnapshotView>;
+  ) => Promise<
+    import('../../../../packages/cwrc-leafwriter/src/plugins/types').PluginHostSnapshotView
+  >;
   authorityLifecycleGet?: () => Promise<AuthorityLifecycleStatus>;
   authorityLifecycleSetEnabled?: (
     options: AuthorityLifecycleSetEnabledOptions,
@@ -364,6 +368,20 @@ export interface ElectronAPI {
   getAiApiSettings: () => Promise<AiApiSettings>;
   setAiApiSettings: (settings: Partial<AiApiSettings>) => Promise<void>;
   testAiConnection: (settings: Partial<AiApiSettings>) => Promise<AiConnectionResult>;
+  getCachedLeaderboardToken?: () => Promise<string | null>;
+  clearCachedLeaderboardToken?: () => Promise<void>;
+  startLeaderboardDeviceFlow?: () => Promise<{
+    userCode: string;
+    verificationUri: string;
+    deviceCode: string;
+    interval: number;
+    expiresIn: number;
+  }>;
+  pollLeaderboardDeviceFlow?: (
+    deviceCode: string,
+    intervalSeconds: number,
+    expiresInSeconds: number,
+  ) => Promise<{ token: string } | { error: string }>;
   generateAiTranslation: (request: AiTranslationRequest) => Promise<AiTranslationResult>;
   zoteroListStyles: () => Promise<ZoteroStyle[]>;
   renamePath: (oldPath: string, newPath: string) => Promise<string>;
@@ -450,6 +468,11 @@ declare global {
         folder?: string;
       }>;
       setAiApiSettings: (settings: Partial<AiApiSettings>) => void | Promise<void>;
+      githubConnected: boolean;
+      connectGithub: (
+        onStarted?: (userCode: string) => void,
+      ) => Promise<{ ok: boolean; error?: string }>;
+      disconnectGithub: () => Promise<void>;
       setEncoderName: (name: string) => void | Promise<void>;
       setRememberWorkspaceOnStartup: (value: boolean) => void | Promise<void>;
       setSkipCopyPasteHelp: (value: boolean) => void;

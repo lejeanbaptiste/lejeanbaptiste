@@ -25,6 +25,7 @@ import {
   clearWikidataTypedNamesCacheForTests,
 } from './disambiguationMatch';
 import { addEntity, createEntitiesScaffold, findEntity, parseEntities } from './entities';
+import { readEntityValueProvenance } from './entityProvenance';
 import { listEntities } from './entityOps';
 
 jest.mock('../services/lincs-api', () => ({ reconcile: jest.fn() }));
@@ -96,6 +97,84 @@ describe('disambiguationCandidates', () => {
     expect(rows).toHaveLength(1);
     expect(rows[0]?.startYear).toBe(-1036);
     expect(rows[0]?.endYear).toBe(938);
+  });
+
+  it('writes distinct per-source elements when resolving with authorityAssertions', () => {
+    const doc = parseEntities(createEntitiesScaffold());
+    const id = resolveEntityInDocument(doc, {
+      kind: 'person',
+      name: '劉善明',
+      authorityAssertions: [
+        {
+          id: 'dila-a003126',
+          label: '劉善明',
+          sources: ['DILA'],
+          authorityIds: [{ type: 'DILA', value: 'A003126' }],
+          startYear: 420,
+          authorityMetadata: {
+            nationality: [{ id: 'song', canonicalId: 'dynasty:song-liu', label: '宋(劉)' }],
+          },
+        },
+        {
+          id: 'wikidata-Q1',
+          label: '劉善明',
+          sources: ['Wikidata'],
+          authorityIds: [{ type: 'Wikidata', value: 'Q1' }],
+          startYear: 425,
+          authorityMetadata: {
+            nationality: [{ id: 'song', canonicalId: 'dynasty:song-liu', label: '宋(劉)' }],
+          },
+        },
+      ],
+    });
+
+    const el = findEntity(doc, id)!;
+    const births = Array.from(el.getElementsByTagName('birth'));
+    expect(births).toHaveLength(2);
+    expect(births.map((b) => readEntityValueProvenance(b).source).sort()).toEqual([
+      'DILA',
+      'WIKIDATA',
+    ]);
+    const nationalities = Array.from(el.getElementsByTagName('nationality'));
+    expect(nationalities).toHaveLength(2);
+    expect(nationalities.map((n) => readEntityValueProvenance(n).source).sort()).toEqual([
+      'DILA',
+      'WIKIDATA',
+    ]);
+  });
+
+  it('applies authorityAssertions when re-linking to an existing entity', () => {
+    const doc = parseEntities(createEntitiesScaffold());
+    const id = resolveEntityInDocument(doc, {
+      kind: 'person',
+      name: '劉善明',
+      authorityIds: [{ type: 'DILA', value: 'A003126' }],
+      authorityAssertions: [
+        { id: 'dila-a003126', label: '劉善明', sources: ['DILA'], startYear: 420 },
+      ],
+    });
+
+    resolveEntityInDocument(
+      doc,
+      {
+        kind: 'person',
+        name: '劉善明',
+        authorityIds: [{ type: 'Wikidata', value: 'Q1' }],
+        authorityMetadata: { startYear: 425 },
+        authorityAssertions: [
+          { id: 'wikidata-Q1', label: '劉善明', sources: ['Wikidata'], startYear: 425 },
+        ],
+      },
+      { id, label: '劉善明', sources: [], localEntityId: id },
+    );
+
+    const el = findEntity(doc, id)!;
+    const births = Array.from(el.getElementsByTagName('birth'));
+    expect(births).toHaveLength(2);
+    expect(births.map((b) => readEntityValueProvenance(b).source).sort()).toEqual([
+      'DILA',
+      'WIKIDATA',
+    ]);
   });
 
   it('prefers the description note over an authority-cache note on the same entity', () => {
@@ -492,7 +571,7 @@ describe('disambiguationCandidates', () => {
             uri: 'https://www.wikidata.org/wiki/Q1137864',
             label: 'Example Person',
             description:
-              'Sources: https://viaf.org/viaf/404064183, https://authority.dila.edu.tw/person/search.php?code=A001492, https://id.ndl.go.jp/auth/ndlna/00270123',
+              'Sources: https://viaf.org/viaf/404064183, https://authority.dila.edu.tw/person/?fromInner=A001492, https://id.ndl.go.jp/auth/ndlna/00270123',
           },
         ];
       }
@@ -502,7 +581,7 @@ describe('disambiguationCandidates', () => {
             uri: 'https://viaf.org/viaf/404064183',
             label: 'Example Person',
             description:
-              'Sources: https://www.wikidata.org/wiki/Q1137864, https://authority.dila.edu.tw/person/search.php?code=A001492, https://id.ndl.go.jp/auth/ndlna/00270123',
+              'Sources: https://www.wikidata.org/wiki/Q1137864, https://authority.dila.edu.tw/person/?fromInner=A001492, https://id.ndl.go.jp/auth/ndlna/00270123',
           },
         ];
       }
@@ -550,6 +629,39 @@ describe('disambiguationCandidates', () => {
     expect(rows).toHaveLength(1);
     expect(rows[0]?.sources).toEqual(expect.arrayContaining(['Wikidata', 'VIAF']));
     expect(rows[0]?.authorityIds).toHaveLength(2);
+  });
+
+  it('retains pre-deduplication authority assertions in the pending projection', () => {
+    const cached = collapseCrossAuthorityCandidates([
+      {
+        id: 'dila-a003126',
+        label: '徐孝嗣',
+        description: 'Sources: WKP|Q1',
+        sources: ['DILA'],
+        uri: 'https://authority.dila.edu.tw/person/?fromInner=A003126',
+        authorityIds: [{ type: 'DILA', value: 'A003126' }],
+        startYear: 453,
+        endYear: 499,
+      },
+      {
+        id: 'wikidata-Q1',
+        label: '徐孝嗣',
+        sources: ['Wikidata'],
+        uri: 'https://www.wikidata.org/entity/Q1',
+        authorityIds: [{ type: 'Wikidata', value: 'Q1' }],
+        startYear: 452,
+        endYear: 500,
+      },
+    ])[0]!;
+
+    const reloaded = mergeCandidates([[cached]])[0]!;
+    expect(reloaded.authorityAssertions).toHaveLength(2);
+    expect(reloaded.authorityAssertions?.map((row) => [row.sources[0], row.startYear])).toEqual(
+      expect.arrayContaining([
+        ['DILA', 453],
+        ['Wikidata', 452],
+      ]),
+    );
   });
 
   it('collapses candidates from different authorities that share identical birth and death years', () => {
@@ -921,8 +1033,8 @@ describe('disambiguationCandidates', () => {
     const dilaRows = rows.filter((row) => row.sources.includes('DILA'));
     expect(dilaRows).toHaveLength(2);
     const byUri = new Map(dilaRows.map((row) => [row.uri, row]));
-    const first = byUri.get('https://authority.dila.edu.tw/place/search.php?code=PL000000000001');
-    const second = byUri.get('https://authority.dila.edu.tw/place/search.php?code=PL000000000002');
+    const first = byUri.get('https://authority.dila.edu.tw/place/?fromInner=PL000000000001');
+    const second = byUri.get('https://authority.dila.edu.tw/place/?fromInner=PL000000000002');
     expect(first?.startYear).toBe(265);
     expect(first?.endYear).toBe(316);
     expect(second?.startYear).toBe(589);
@@ -930,7 +1042,7 @@ describe('disambiguationCandidates', () => {
 
     // authorityIds must hold the bare id, not the already-formatted record URL —
     // otherwise DILA_URL()/candidateLinks() wraps a full URL inside another URL
-    // (e.g. ".../person/search.php?code=https://authority.dila.edu.tw/place/...").
+    // (e.g. ".../person/?fromInner=https://authority.dila.edu.tw/place/...").
     expect(first?.authorityIds).toContainEqual({ type: 'DILA', value: 'PL000000000001' });
     expect(second?.authorityIds).toContainEqual({ type: 'DILA', value: 'PL000000000002' });
   });

@@ -31,13 +31,13 @@ describe('pose rank eligibility', () => {
   });
 
   it('lists only eligible poses for rank 1 (Fusilier)', () => {
-    expect(eligiblePoseIndices('m', 0)).toEqual([1, 2, 5, 6]);
-    expect(eligiblePoseIndices('f', 0)).toEqual([1, 2, 5, 6]);
+    expect(eligiblePoseIndices('m', 0)).toEqual([1, 2, 5, 6, 8]);
+    expect(eligiblePoseIndices('f', 0)).toEqual([1, 2, 5, 6, 8]);
   });
 
-  it('includes body7 from rank 2 upward but not body3/4 until rank 3', () => {
-    expect(eligiblePoseIndices('m', 1)).toEqual([1, 2, 5, 6, 7]);
-    expect(eligiblePoseIndices('m', 2)).toEqual([1, 2, 3, 4, 5, 6, 7]);
+  it('includes body7 and body8 from rank 2 upward but not body3/4 until rank 3', () => {
+    expect(eligiblePoseIndices('m', 1)).toEqual([1, 2, 5, 6, 7, 8]);
+    expect(eligiblePoseIndices('m', 2)).toEqual([1, 2, 3, 4, 5, 6, 7, 8]);
   });
 
   it('limits unranked players to body1 and body2', () => {
