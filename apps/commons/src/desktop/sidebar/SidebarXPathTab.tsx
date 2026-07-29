@@ -19,6 +19,11 @@ import type { XPathFileResult } from '../xpath/types';
 import { ScopeFields } from '../shared/ScopeFields';
 import type { SearchScope } from '../shared/searchScope';
 import { useXPathJump } from '../xpath/useXPathJump';
+import {
+  DESKTOP_LEFT_PANEL_EVENT,
+  DESKTOP_XPATH_SEARCH_EVENT,
+  type DesktopXPathSearchDetail,
+} from '../desktopLeftPanelBridge';
 
 interface FlatXPathResult {
   filePath: string;
@@ -213,9 +218,47 @@ export const SidebarXPathTab = () => {
     }
   }, [activeTabPath, customPath, openTabs, query, resource?.filePath, rootPath, scope]);
 
+  useEffect(() => {
+    const handlePrefill = (event: Event) => {
+      const detail = (event as CustomEvent<DesktopXPathSearchDetail>).detail;
+      if (!detail?.query) return;
+      setQuery(detail.query);
+      setScope('currentFile');
+      setResults([]);
+      setError(null);
+      window.dispatchEvent(new CustomEvent(DESKTOP_LEFT_PANEL_EVENT, { detail: { tab: 'xpath' } }));
+      requestAnimationFrame(
+        () =>
+          void searchXPath({
+            activeTabPath,
+            customPath: '',
+            openTabs,
+            query: detail.query,
+            rootPath,
+            scope: 'currentFile',
+          }).then(({ results: nextResults, error: searchError }) => {
+            setResults(nextResults);
+            setError(searchError ?? (nextResults.length === 0 ? 'No results.' : null));
+          }),
+      );
+    };
+
+    window.addEventListener(DESKTOP_XPATH_SEARCH_EVENT, handlePrefill);
+    return () => window.removeEventListener(DESKTOP_XPATH_SEARCH_EVENT, handlePrefill);
+  }, [activeTabPath, openTabs, rootPath]);
+
   return (
     <Box sx={{ display: 'flex', flexDirection: 'column', height: '100%' }}>
-      <Box sx={{ p: 1, borderBottom: 1, borderColor: 'divider', display: 'flex', flexDirection: 'column', gap: 1 }}>
+      <Box
+        sx={{
+          p: 1,
+          borderBottom: 1,
+          borderColor: 'divider',
+          display: 'flex',
+          flexDirection: 'column',
+          gap: 1,
+        }}
+      >
         <TextField
           fullWidth
           size="small"
@@ -250,9 +293,7 @@ export const SidebarXPathTab = () => {
         tabIndex={flatResults.length > 0 ? 0 : -1}
         onKeyDown={handleResultsKeyDown}
         role="listbox"
-        aria-activedescendant={
-          selectedIndex >= 0 ? `xpath-result-${selectedIndex}` : undefined
-        }
+        aria-activedescendant={selectedIndex >= 0 ? `xpath-result-${selectedIndex}` : undefined}
         sx={{
           flex: 1,
           overflow: 'auto',
@@ -269,7 +310,11 @@ export const SidebarXPathTab = () => {
         )}
 
         {!loading && error && (
-          <Typography variant="body2" color={results.length === 0 ? 'error' : 'text.secondary'} sx={{ p: 1.5 }}>
+          <Typography
+            variant="body2"
+            color={results.length === 0 ? 'error' : 'text.secondary'}
+            sx={{ p: 1.5 }}
+          >
             {error}
           </Typography>
         )}

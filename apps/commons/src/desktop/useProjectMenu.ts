@@ -3,7 +3,10 @@ import { openFindPanel } from '@src/desktop/desktopLeftPanelBridge';
 import { openEditionMetadataDialog } from '@src/desktop/projectOnboarding';
 import { openApplicationSettings } from '@src/desktop/openApplicationSettings';
 import { openPluginsDialog } from '@src/desktop/usePluginBootstrap';
-import { dispatchPluginToolAction, isKnownPluginToolAction } from '../../../../packages/cwrc-leafwriter/src/plugins';
+import {
+  dispatchPluginToolAction,
+  isKnownPluginToolAction,
+} from '../../../../packages/cwrc-leafwriter/src/plugins';
 import { checkSchemaUpdateManually } from '@src/desktop/schemaUpdateCheck';
 import { leafwriterAtom } from '@src/jotai';
 import { useActions, useAppState } from '@src/overmind';
@@ -110,7 +113,10 @@ export const useProjectMenu = () => {
     if (result.skipped) return;
     if (result.success) {
       finalizeSavedDocument(result.content ?? content);
-      notifyViaSnackbar({ message: t('LWC.desktop.project.document_saved'), options: { variant: 'success' } });
+      notifyViaSnackbar({
+        message: t('LWC.desktop.project.document_saved'),
+        options: { variant: 'success' },
+      });
       return;
     }
 
@@ -151,7 +157,10 @@ export const useProjectMenu = () => {
 
     if (result.success) {
       finalizeSavedDocument(result.content ?? content);
-      notifyViaSnackbar({ message: t('LWC.desktop.project.document_saved'), options: { variant: 'success' } });
+      notifyViaSnackbar({
+        message: t('LWC.desktop.project.document_saved'),
+        options: { variant: 'success' },
+      });
       return;
     }
 
@@ -196,7 +205,9 @@ export const useProjectMenu = () => {
   useEffect(() => {
     if (!isDesktop() || !window.electronAPI?.onAppMenuAction) return;
 
-    void window.electronAPI.setPluginsMenuVisible?.(isProjectReady && Boolean(leafWriter || window.writer));
+    void window.electronAPI.setPluginsMenuVisible?.(
+      isProjectReady && Boolean(leafWriter || window.writer),
+    );
 
     const unsubscribe = window.electronAPI.onAppMenuAction((action) => {
       if (action === 'new-file') {
@@ -250,7 +261,11 @@ export const useProjectMenu = () => {
       }
 
       if (action === 'open-settings') {
-        void openSettings(leafWriter, (message) => notifyViaSnackbar(message), t('LWC.desktop.could_not_open_settings'));
+        void openSettings(
+          leafWriter,
+          (message) => notifyViaSnackbar(message),
+          t('LWC.desktop.could_not_open_settings'),
+        );
         return;
       }
 
@@ -332,7 +347,7 @@ export const useProjectMenu = () => {
 
     return () => {
       unsubscribe();
-      void window.electronAPI.setPluginsMenuVisible?.(false);
+      void window.electronAPI?.setPluginsMenuVisible?.(false);
     };
   }, [
     activeTabPath,

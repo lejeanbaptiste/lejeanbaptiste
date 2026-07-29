@@ -82,9 +82,15 @@ class PersonDialog implements SchemaDialog {
 
     // eslint-disable-next-line @typescript-eslint/ban-ts-comment
     //@ts-ignore
-    $(`#${this.id}_keyPill`, $el).button().on('click', () => {
-      this.openEntityLookup();
-    });
+    (
+      $(`#${this.id}_keyPill`, $el) as JQuery<HTMLElement> & {
+        button: (...args: unknown[]) => JQuery<HTMLElement>;
+      }
+    )
+      .button()
+      .on('click', () => {
+        this.openEntityLookup();
+      });
 
     this.dialog = new DialogForm({
       writer,
@@ -108,6 +114,15 @@ class PersonDialog implements SchemaDialog {
 
   private openEntityLookup() {
     if (!this.currentKey) return;
+
+    if ((window as Window & { __desktopLeftPanel?: unknown }).__desktopLeftPanel) {
+      window.dispatchEvent(
+        new CustomEvent('desktop-database:show-entity', {
+          detail: { id: this.currentKey, type: this.type },
+        }),
+      );
+      return;
+    }
 
     this.parentEl.css('display', 'none');
 

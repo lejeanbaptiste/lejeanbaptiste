@@ -640,7 +640,10 @@ export const restoreLastProject = async (context: Context) => {
     }
 
     const targetActivePath = session?.activeFilePath ?? openFilePaths[openFilePaths.length - 1];
-    if (targetActivePath && context.state.project.openTabs.some((tab) => tab.filePath === targetActivePath)) {
+    if (
+      targetActivePath &&
+      context.state.project.openTabs.some((tab) => tab.filePath === targetActivePath)
+    ) {
       await context.actions.project.switchTab({ filePath: targetActivePath });
     }
   } catch (error) {
@@ -1143,12 +1146,20 @@ export const restoreTabWithoutSync = async ({ state, actions }: Context, filePat
   let content = await window.electronAPI.readFile(filePath);
   content = await prepareFileContent({ state, actions } as Context, filePath, content);
   const filename = getFilename(filePath);
-  const tab = { content, dirty: false, lastSavedContent: content, editorReady: true, filePath, filename };
+  const tab = {
+    content,
+    dirty: false,
+    lastSavedContent: content,
+    editorReady: true,
+    filePath,
+    filename,
+  };
 
   state.project.openTabs = [...state.project.openTabs, tab];
 };
 
-export const openFile = async ({ state, actions }: Context, filePath: string) => {
+export const openFile = async (context: Context, filePath: string) => {
+  const { state, actions } = context;
   if (!window.electronAPI || !state.project.isProjectReady || !state.project.rootPath) return;
   if (isCorpusExcludedPath(filePath, state.project.rootPath)) return;
   const existing = state.project.openTabs.find((tab) => tab.filePath === filePath);
@@ -1158,12 +1169,19 @@ export const openFile = async ({ state, actions }: Context, filePath: string) =>
   }
 
   try {
-    await persistActiveTabEditorContent({ state, actions });
+    await persistActiveTabEditorContent(context);
 
     let content = await window.electronAPI.readFile(filePath);
     content = await prepareFileContent({ state, actions } as Context, filePath, content);
     const filename = getFilename(filePath);
-    const tab = { content, dirty: false, lastSavedContent: content, editorReady: true, filePath, filename };
+    const tab = {
+      content,
+      dirty: false,
+      lastSavedContent: content,
+      editorReady: true,
+      filePath,
+      filename,
+    };
 
     state.project.openTabs = [...state.project.openTabs, tab];
     state.project.activeTabPath = filePath;

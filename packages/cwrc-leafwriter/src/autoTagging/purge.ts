@@ -91,7 +91,10 @@ const wrapTextMatches = (doc: Document, options: PurgeOptions, tagName: string):
     const matchesInText = Array.from(source.matchAll(matcher));
     if (
       !matchesInText.length ||
-      !matches(textNode.parentElement?.getAttribute(options.key?.name ?? ''), options.key)
+      !matches(
+        options.key ? (textNode.parentElement?.getAttribute(options.key.name) ?? null) : null,
+        options.key,
+      )
     )
       continue;
     if (

@@ -5,14 +5,17 @@ import { useTranslation } from 'react-i18next';
 import { BottomBar, ContextMenu, EditorLocationBar, EditorToolbar } from './components';
 import { createConfig } from './config';
 import { EntityLookupDialog } from './dialogs';
-import { useDialog, useNotifier } from './hooks';
+import { useDialog, useNotifier, useTeiHeaderRepairPrompt } from './hooks';
 import { configureAuthorityServices } from './jotai/entity-lookup/utilities';
 import type Writer from './js/Writer';
 import { useActions, useAppState } from './overmind';
 import { MarkupPanel } from './panels/markup';
 import { TocPanel } from './panels/toc';
 import { AutoTaggingReviewPane } from './layout/AutoTaggingReviewPane';
-import { DisambiguationReviewPane, DISAMBIGUATION_PANEL_WIDTH } from './layout/DisambiguationReviewPane';
+import {
+  DisambiguationReviewPane,
+  DISAMBIGUATION_PANEL_WIDTH,
+} from './layout/DisambiguationReviewPane';
 import { TranslationPane } from './layout/TranslationPane';
 import type { LeafWriterOptions } from './types';
 import './utilities/cursorSession';
@@ -93,6 +96,7 @@ const App = ({ document, settings, user }: LeafWriterOptions) => {
 
   useDialog();
   useNotifier();
+  useTeiHeaderRepairPrompt(writer);
 
   const [editorToobarContainer, setEditorToobarContainer] = useState<Element | null>(null);
   const [editorLocationBarContainer, setEditorLocationBarContainer] = useState<Element | null>(
@@ -106,7 +110,9 @@ const App = ({ document, settings, user }: LeafWriterOptions) => {
   );
   const [translationPaneContainer, setTranslationPaneContainer] = useState<Element | null>(null);
   const [autoTaggingPaneContainer, setAutoTaggingPaneContainer] = useState<Element | null>(null);
-  const [disambiguationPaneContainer, setDisambiguationPaneContainer] = useState<Element | null>(null);
+  const [disambiguationPaneContainer, setDisambiguationPaneContainer] = useState<Element | null>(
+    null,
+  );
 
   const [ready, setReady] = useState(false);
   const setupInProgressRef = useRef(false);
@@ -183,111 +189,113 @@ const App = ({ document, settings, user }: LeafWriterOptions) => {
     }
     setupInProgressRef.current = true;
     try {
-    const config = await createConfig(settings);
+      const config = await createConfig(settings);
 
-    config.container = CONTAINER;
+      config.container = CONTAINER;
 
-    actions.document.clear();
-    actions.editor.clear();
+      actions.document.clear();
+      actions.editor.clear();
 
-    actions.editor.writerInitSettings(config);
+      actions.editor.writerInitSettings(config);
 
-    if (settings?.locale) actions.ui.switchLocal(settings.locale);
+      if (settings?.locale) actions.ui.switchLocal(settings.locale);
 
-    configureAuthorityServices(settings?.authorityServices);
+      configureAuthorityServices(settings?.authorityServices);
 
-    actions.user.setUser(user);
+      actions.user.setUser(user);
 
-    await waitForElement(`#${CONTAINER}`);
+      await waitForElement(`#${CONTAINER}`);
 
-    const { default: Writer } = await import(
-      /* webpackChunkName: "leafwriter-visual-editor" */ './js/Writer'
-    );
-    const _writer = new Writer(config);
+      const { default: Writer } = await import(
+        /* webpackChunkName: "leafwriter-visual-editor" */ './js/Writer'
+      );
+      const _writer = new Writer(config);
 
-    //@ts-ignore
-    _writer.overmindState = state;
-    //@ts-ignore
-    _writer.overmindActions = actions;
-    window.writer = _writer;
+      //@ts-ignore
+      _writer.overmindState = state;
+      //@ts-ignore
+      _writer.overmindActions = actions;
+      window.writer = _writer;
 
-    window.__ljbDebugValidator = (
-      opts?: Parameters<typeof actions.validator.debugValidatorState>[0],
-    ) => actions.validator.debugValidatorState(opts);
+      window.__ljbDebugValidator = (
+        opts?: Parameters<typeof actions.validator.debugValidatorState>[0],
+      ) => actions.validator.debugValidatorState(opts);
 
-    //@ts-ignore
-    _writer.event('writerInitialized').subscribe(() => {
-      actions.document.setDocumentUrl(document.url);
+      //@ts-ignore
+      _writer.event('writerInitialized').subscribe(() => {
+        actions.document.setDocumentUrl(document.url);
 
-      if (document.xml) {
-        actions.document.setDocumentXml(document.xml);
-      }
+        if (document.xml) {
+          actions.document.setDocumentXml(document.xml);
+        }
 
-      _writer.setDocument(document.xml);
+        _writer.setDocument(document.xml);
 
-      setWriter(window.writer);
+        setWriter(window.writer);
 
-      const desktopToolbarRow = isDesktopApp()
-        ? window.document.querySelector('#desktop-toolbar-row')
-        : null;
-      const legacyToolbarEl = window.document.querySelector('#editor-toolbar');
-      if (desktopToolbarRow && legacyToolbarEl instanceof HTMLElement) {
-        legacyToolbarEl.style.display = 'none';
-      }
+        const desktopToolbarRow = isDesktopApp()
+          ? window.document.querySelector('#desktop-toolbar-row')
+          : null;
+        const legacyToolbarEl = window.document.querySelector('#editor-toolbar');
+        if (desktopToolbarRow && legacyToolbarEl instanceof HTMLElement) {
+          legacyToolbarEl.style.display = 'none';
+        }
 
-      const toolbarContainer = desktopToolbarRow ?? legacyToolbarEl;
-      const locationBarContainer = window.document.querySelector('#editor-location-bar');
-      const sourceEditorPane = window.document.querySelector('#source-editor-pane');
-      const _codePanelContainer = window.document.querySelector(`#${_writer.editorId}-code`);
+        const toolbarContainer = desktopToolbarRow ?? legacyToolbarEl;
+        const locationBarContainer = window.document.querySelector('#editor-location-bar');
+        const sourceEditorPane = window.document.querySelector('#source-editor-pane');
+        const _codePanelContainer = window.document.querySelector(`#${_writer.editorId}-code`);
 
-      setEditorToobarContainer(toolbarContainer);
-      setEditorLocationBarContainer(locationBarContainer);
-      setSourceEditorPaneContainer(sourceEditorPane);
-      setCodePanelContainer(_codePanelContainer);
+        setEditorToobarContainer(toolbarContainer);
+        setEditorLocationBarContainer(locationBarContainer);
+        setSourceEditorPaneContainer(sourceEditorPane);
+        setCodePanelContainer(_codePanelContainer);
 
-      if (isDesktopApp()) {
-        void (async () => {
-          try {
-            const [_tocPanelContainer, _structureTreePanelContainer] = await Promise.all([
-              waitForElement('#desktop-panel-toc'),
-              waitForElement('#desktop-panel-markup'),
-            ]);
+        if (isDesktopApp()) {
+          void (async () => {
+            try {
+              const [_tocPanelContainer, _structureTreePanelContainer] = await Promise.all([
+                waitForElement('#desktop-panel-toc'),
+                waitForElement('#desktop-panel-markup'),
+              ]);
 
-            setTocPanelContainer(_tocPanelContainer);
-            setStructureTreePanelContainer(_structureTreePanelContainer);
-          } catch {
-            console.warn('Desktop left panel mount points not found');
-          }
-        })();
-      } else {
-        const _tocPanelContainer = window.document.querySelector(`#${_writer.editorId}-toc`);
-        const _structureTreePanelContainer = window.document.querySelector(
-          `#${_writer.editorId}-markup`,
-        );
+              setTocPanelContainer(_tocPanelContainer);
+              setStructureTreePanelContainer(_structureTreePanelContainer);
+            } catch {
+              console.warn('Desktop left panel mount points not found');
+            }
+          })();
+        } else {
+          const _tocPanelContainer = window.document.querySelector(`#${_writer.editorId}-toc`);
+          const _structureTreePanelContainer = window.document.querySelector(
+            `#${_writer.editorId}-markup`,
+          );
 
-        setTocPanelContainer(_tocPanelContainer);
-        setStructureTreePanelContainer(_structureTreePanelContainer);
-      }
+          setTocPanelContainer(_tocPanelContainer);
+          setStructureTreePanelContainer(_structureTreePanelContainer);
+        }
 
-      setTimeout(() => _writer.layoutManager.resizeEditor(), 50);
-    });
+        setTimeout(() => _writer.layoutManager.resizeEditor(), 50);
+      });
 
-    _writer.event('documentLoaded').subscribe((success: boolean) => {
-      if (!success) return;
-      if (document.xml) {
-        actions.document.setDocumentXml(document.xml);
-      }
-      actions.document.setLoaded(true);
-    });
+      _writer.event('documentLoaded').subscribe((success: boolean) => {
+        if (!success) return;
+        if (document.xml) {
+          actions.document.setDocumentXml(document.xml);
+        }
+        actions.document.setLoaded(true);
+      });
 
-    setReady(true);
+      setReady(true);
     } finally {
       setupInProgressRef.current = false;
     }
   };
 
   return (
-    <Box sx={{ display: 'flex', flexDirection: 'column', height: '100%', minHeight: 0, width: '100%' }}>
+    <Box
+      sx={{ display: 'flex', flexDirection: 'column', height: '100%', minHeight: 0, width: '100%' }}
+    >
       <Box id={CONTAINER} sx={{ flex: 1, minHeight: 0, width: '100%' }}>
         {writer && <ContextMenu />}
         <EntityLookupDialog />
@@ -302,9 +310,7 @@ const App = ({ document, settings, user }: LeafWriterOptions) => {
             editorViewMode === 'source' &&
             createPortal(
               <Suspense fallback={null}>
-                <SourceEditorPane
-                  key={state.document.url ?? state.document.schemaId ?? 'source'}
-                />
+                <SourceEditorPane key={state.document.url ?? state.document.schemaId ?? 'source'} />
               </Suspense>,
               sourceEditorPaneContainer,
             )}
@@ -321,8 +327,7 @@ const App = ({ document, settings, user }: LeafWriterOptions) => {
               </Suspense>,
               codePanelContainer,
             )}
-          {translationPaneContainer &&
-            createPortal(<TranslationPane />, translationPaneContainer)}
+          {translationPaneContainer && createPortal(<TranslationPane />, translationPaneContainer)}
           {autoTaggingPaneContainer &&
             createPortal(<AutoTaggingReviewPane />, autoTaggingPaneContainer)}
           {disambiguationPaneContainer &&

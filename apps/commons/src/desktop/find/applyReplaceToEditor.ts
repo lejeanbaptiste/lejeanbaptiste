@@ -18,7 +18,7 @@ export interface SyncReplacedContentParams {
   activeTabPath: string | null;
   content: string;
   filePath: string;
-  loadDocumentInWriter?: (filePath: string, content: string) => Promise<void>;
+  loadDocumentInWriter?: (filePath: string, content: string) => Promise<void | boolean>;
   markTabDirty: (dirty: boolean) => void;
   resourceFilePath?: string | null;
   /** In-place Monaco edit (undoable) instead of replacing the whole buffer. */

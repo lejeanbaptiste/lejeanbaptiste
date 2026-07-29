@@ -21,7 +21,7 @@ import {
 } from '../../plugins';
 import { clearPackContentCache } from '../../services/authority-pack-lookup';
 import type { IDialog } from '../type';
-import type { PluginReleaseEntry } from '../../../../apps/commons/src/desktop/pluginRegistryTypes';
+import type { PluginReleaseEntry } from '../../../../../apps/commons/src/desktop/pluginRegistryTypes';
 
 function PluginRow({
   plugin,
@@ -82,7 +82,13 @@ function PluginRow({
             </Link>
           )}
           {remote && remote.version !== plugin.version && onInstall && (
-            <Button size="small" variant="outlined" onClick={onInstall} disabled={busy} sx={{ alignSelf: 'flex-start' }}>
+            <Button
+              size="small"
+              variant="outlined"
+              onClick={onInstall}
+              disabled={busy}
+              sx={{ alignSelf: 'flex-start' }}
+            >
               Update to v{remote.version}
             </Button>
           )}
@@ -210,12 +216,30 @@ export const PluginsDialog = ({ onClose, open = false }: IDialog) => {
             .filter((entry) => !snapshot?.plugins.some((plugin) => plugin.id === entry.id))
             .map((entry) => (
               <Box key={entry.id} sx={{ border: 1, borderColor: 'divider', borderRadius: 2, p: 2 }}>
-                <Stack direction="row" alignItems="center" justifyContent="space-between" spacing={2}>
+                <Stack
+                  direction="row"
+                  alignItems="center"
+                  justifyContent="space-between"
+                  spacing={2}
+                >
                   <Stack spacing={0.5}>
-                    <Typography variant="subtitle1" fontWeight={600}>{entry.name} <Typography component="span" variant="caption">v{entry.version}</Typography></Typography>
-                    <Typography variant="body2" color="text.secondary">{entry.description}</Typography>
+                    <Typography variant="subtitle1" fontWeight={600}>
+                      {entry.name}{' '}
+                      <Typography component="span" variant="caption">
+                        v{entry.version}
+                      </Typography>
+                    </Typography>
+                    <Typography variant="body2" color="text.secondary">
+                      {entry.description}
+                    </Typography>
                   </Stack>
-                  <Button variant="contained" onClick={() => void handleRemoteInstall(entry)} disabled={busy}>Install</Button>
+                  <Button
+                    variant="contained"
+                    onClick={() => void handleRemoteInstall(entry)}
+                    disabled={busy}
+                  >
+                    Install
+                  </Button>
                 </Stack>
               </Box>
             ))}

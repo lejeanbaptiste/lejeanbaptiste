@@ -1464,7 +1464,7 @@ export const AutoTaggingDialog = ({ id, onClose, open = false }: IDialog) => {
                             importedLists.length,
                           );
                           const badge = OWN_DATABASE_BADGE[origin];
-                          const sourceBadge = origin === 'norbert' ? <NorbertIcon /> : null;
+                          const sourceBadge = opt.source === 'norbert' ? <NorbertIcon /> : null;
                           const rowLabel = badge
                             ? (AUTHORITY_PACK_SHORT_LABELS[opt.id] ?? opt.label)
                             : opt.label;

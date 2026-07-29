@@ -1,9 +1,9 @@
 export {};
 
 declare global {
-  interface JQuery {
+  interface JQuery<TElement = HTMLElement> {
     dialog(method: 'option', optionName: string): any;
-    dialog(...args: unknown[]): JQuery;
+    dialog(...args: unknown[]): JQuery<TElement>;
   }
 
   type DesktopLeftPanelTab = 'explorer' | 'find' | 'xpath' | 'toc' | 'markup';

@@ -263,6 +263,7 @@ export interface ElectronAPI {
   ) => Promise<{ lightness: number; saturation: number } | null>;
   saveCertificatePng?: (bytes: Uint8Array, suggestedName: string) => Promise<boolean>;
   getCachedLeaderboardToken?: () => Promise<string | null>;
+  clearCachedLeaderboardToken?: () => Promise<void>;
   startLeaderboardDeviceFlow?: () => Promise<{
     userCode: string;
     verificationUri: string;
@@ -275,6 +276,45 @@ export interface ElectronAPI {
     intervalSeconds: number,
     expiresInSeconds: number,
   ) => Promise<{ token: string } | { error: string }>;
+  mapTilesStatus?: () => Promise<{
+    installed: boolean;
+    path: string | null;
+    regions: { id: string; sha256: string; installedAt: string }[];
+  }>;
+  mapTilesDownloadBackground?: (bundle: {
+    id: string;
+    source?: string;
+    url: string;
+    bbox?: [number, number, number, number];
+    fileName: string;
+    bytes?: number;
+    sha256?: string;
+  }) => Promise<{ ok: boolean; queued?: boolean; error?: string }>;
+  mapTilesDownloadStatus?: () => Promise<{
+    active: {
+      bundleId: string;
+      message: string;
+      receivedBytes?: number;
+      totalBytes?: number | null;
+    }[];
+  }>;
+  mapTilesRemove?: (bundleId: string) => Promise<{ ok: boolean; error?: string }>;
+  onMapTilesProgress?: (
+    callback: (progress: {
+      bundleId: string;
+      message: string;
+      receivedBytes?: number;
+      totalBytes?: number | null;
+    }) => void,
+  ) => () => void;
+  onMapTilesDownloadComplete?: (
+    callback: (result: {
+      bundleId: string;
+      installed: boolean;
+      path?: string;
+      error?: string;
+    }) => void,
+  ) => () => void;
   getEntityDbFolder: () => Promise<string | null>;
   setEntityDbFolder: (folder: string | null) => Promise<void>;
   pickEntityDbFolder: () => Promise<string | null>;
@@ -371,20 +411,6 @@ export interface ElectronAPI {
   getAiApiSettings: () => Promise<AiApiSettings>;
   setAiApiSettings: (settings: Partial<AiApiSettings>) => Promise<void>;
   testAiConnection: (settings: Partial<AiApiSettings>) => Promise<AiConnectionResult>;
-  getCachedLeaderboardToken?: () => Promise<string | null>;
-  clearCachedLeaderboardToken?: () => Promise<void>;
-  startLeaderboardDeviceFlow?: () => Promise<{
-    userCode: string;
-    verificationUri: string;
-    deviceCode: string;
-    interval: number;
-    expiresIn: number;
-  }>;
-  pollLeaderboardDeviceFlow?: (
-    deviceCode: string,
-    intervalSeconds: number,
-    expiresInSeconds: number,
-  ) => Promise<{ token: string } | { error: string }>;
   generateAiTranslation: (request: AiTranslationRequest) => Promise<AiTranslationResult>;
   zoteroListStyles: () => Promise<ZoteroStyle[]>;
   renamePath: (oldPath: string, newPath: string) => Promise<string>;

@@ -1,0 +1,13 @@
+<?xml version='1.0' encoding='UTF-8'?>
+<TEI xmlns="http://www.tei-c.org/ns/1.0">
+  <teiHeader>
+    <fileDesc>
+      <titleStmt><title>南齊書</title><author ref="https://authority.dila.edu.tw/person/search.php?code=A017909">蕭子顯</author><funder>CNRS</funder><principal>Daniel Morgan</principal></titleStmt>
+      <publicationStmt><publisher/><distributor>Daniel Morgan</distributor><availability><licence>CC BY</licence></availability></publicationStmt>
+      <sourceDesc><biblStruct><monogr><author ref="https://authority.dila.edu.tw/person/search.php?code=A017909">蕭子顯</author><title>南齊書</title><edition>Zhonghua shuju</edition><imprint><date/></imprint></monogr></biblStruct></sourceDesc>
+    </fileDesc>
+    <profileDesc><creation><date when="0537">0537</date></creation><langUsage><language ident="zh-Hant"/></langUsage></profileDesc>
+    <revisionDesc><change when="2026-07-24">Imported into this project from NanQiShu_bio_152_j_46_CaiYue_clean on 2026-07-24.</change></revisionDesc>
+  </teiHeader>
+  <text><body><p>Test.</p></body></text>
+</TEI>

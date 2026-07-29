@@ -1,7 +1,5 @@
 # Le Jean-Baptiste
 
-
-
 Le Jean-Baptiste is a desktop XML markup editor forked from the in-browser tool [LEAF-Writer](https://leaf-writer.leaf-vre.org/), part of [The Linked Editing Academic Framework](https://www.leaf-vre.org/) (LEAF) tool suite. LEAF-Writer is an enhancement of the CWRC-Writer developed by the [Canadian Writing Research Collaboratory (CWRC)](https://cwrc.ca), and was developed alongside the [Named Entity Recognition Vetting Environment](https://nerve.lincsproject.ca/en) (NERVE). The project website is [github.com/lejeanbaptiste/lejeanbaptiste](https://github.com/lejeanbaptiste/lejeanbaptiste). Le Jean-Baptiste wraps the web app in Electron for offline, individual desktop use and includes workflow changes aimed particularly at local editing and East Asian documents.
 
 GPL-2.0
@@ -156,33 +154,26 @@ For detailed build and packaging information, see [apps/desktop/README.md](apps/
 
 See [apps/desktop/README.md](apps/desktop/README.md) for the compilation and packaging instructions.
 
-## Debug
+## TODO
 
-- [ ] Entities not importing dynasty, place of origin
-- [ ] Norbert needs a badge
-- [ ] Redo new icons
-- [ ] Entities items should maybe expand ?
-- [ ] add nationality to name in schema
-- [ ] auto metadata schema fixer
-- [ ] Option to ignore schema in Source mode
+- [ ] Redo icons : highlight
 - [ ] Test purge/propagate
-- [ ] Hidden note placeholder
+- [ ] Merge divirged entities DB
+- [ ] Auto parse and organise noble titles
 
-## Icons
-- choice/surpluss/supplied : tool_correction.svg
-- advanced transform : tool_transform.svg
-- commentary : tool_hide_notes.svg, tool_show_notes.svg
 
-## Todo
 
-- [ ] Build extended propagate function
+- [ ] Noble title and person wrapper tagging.
 - [ ] Build document stats window with list of people, map of places, etc.
 - [ ] Official titles dictionaries, dates dictionaries for hover-over
 - [ ] Word plugin to handle names and dates correctly while centralising data.
 - [ ] Regional PMTiles download/cache flow for maps (see [map-tiles-planning.md](docs/map-tiles-planning.md))
 
+
+
 ## Future goals
 
+- [ ] Further Norbert functions
 - [ ] Option to track annotator on the tag level for collaborations.
 - [ ] Copy-and-paste export of paragraphs with translation for word processors
 - [ ] LaTeX export

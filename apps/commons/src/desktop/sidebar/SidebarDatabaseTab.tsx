@@ -134,6 +134,12 @@ import { authorityLookupUrl } from '../entityDb/authorityLinks';
 import { BridgeInboxDialog } from './BridgeInboxDialog';
 import { MergeDocketDialog } from './MergeDocketDialog';
 import { SourceBadges } from '../../../../../packages/cwrc-leafwriter/src/autoTagging/SourceBadges';
+import {
+  DESKTOP_DATABASE_ENTITY_EVENT,
+  DESKTOP_LEFT_PANEL_EVENT,
+  DESKTOP_XPATH_SEARCH_EVENT,
+  type DesktopDatabaseEntityDetail,
+} from '../desktopLeftPanelBridge';
 import { canonicalNationalityLabel } from '../../../../../packages/cwrc-leafwriter/src/autoTagging/dynastyCrosswalk';
 import { enrichWikidataWorkEntity } from '../../../../../packages/cwrc-leafwriter/src/autoTagging/wikidataWorkDetails';
 import {
@@ -536,6 +542,26 @@ export const SidebarDatabaseTab = ({ active = false }: SidebarDatabaseTabProps) 
     if (active || !store) void reload();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [active, reload]);
+
+  useEffect(() => {
+    const handleShowEntity = (event: Event) => {
+      const detail = (event as CustomEvent<DesktopDatabaseEntityDetail>).detail;
+      if (!detail?.id) return;
+
+      const type = detail.type === 'org' || detail.type === 'organization' ? 'org' : detail.type;
+      setDatabaseView('project');
+      setKindFilter(type as EntityKind);
+      setSearch(`^${escapeRegExp(detail.id)}$`);
+      setSelected(new Set([detail.id]));
+      window.dispatchEvent(
+        new CustomEvent(DESKTOP_LEFT_PANEL_EVENT, { detail: { tab: 'database' } }),
+      );
+      requestAnimationFrame(() => searchInputRef.current?.focus());
+    };
+
+    window.addEventListener(DESKTOP_DATABASE_ENTITY_EVENT, handleShowEntity);
+    return () => window.removeEventListener(DESKTOP_DATABASE_ENTITY_EVENT, handleShowEntity);
+  }, []);
 
   // Reload when either database changes on disk (external edit or another flow).
   useEffect(() => {
@@ -1723,6 +1749,24 @@ export const SidebarDatabaseTab = ({ active = false }: SidebarDatabaseTabProps) 
     setSelected(new Set([id]));
   };
 
+  const openXPathForEntity = (entity: EntitySummary) => {
+    const tagType =
+      entity.kind === 'person'
+        ? 'persName'
+        : entity.kind === 'place'
+          ? 'placeName'
+          : entity.kind === 'org'
+            ? 'orgName'
+            : entity.kind === 'work'
+              ? 'title'
+              : entity.kind;
+    window.dispatchEvent(
+      new CustomEvent(DESKTOP_XPATH_SEARCH_EVENT, {
+        detail: { query: `TEI//${tagType}[@key="${entity.id}"]` },
+      }),
+    );
+  };
+
   /** Show every implicated entity together, preselected so Merge is one click away. */
   const reviewWarningEntities = (warning: LookupWarning) => {
     setKindFilter('all');
@@ -2206,6 +2250,16 @@ export const SidebarDatabaseTab = ({ active = false }: SidebarDatabaseTabProps) 
                     sx={{ flexShrink: 0 }}
                   >
                     <OpenInNewIcon fontSize="small" />
+                  </IconButton>
+                </Tooltip>
+                <Tooltip title="Find in XPath panel">
+                  <IconButton
+                    size="small"
+                    onClick={() => openXPathForEntity(entity)}
+                    aria-label="Find entity in XPath panel"
+                    sx={{ flexShrink: 0 }}
+                  >
+                    <SearchIcon fontSize="small" />
                   </IconButton>
                 </Tooltip>
               </Box>

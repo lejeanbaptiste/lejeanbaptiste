@@ -69,7 +69,9 @@ const RuleList = ({
 }) => {
   const { t: translate } = useTranslation();
   const t = (key: string, fallback?: string) =>
-    translate(key.replace('LW.tagTransform', 'LW.settings.tagTransform'), fallback);
+    translate(key.replace('LW.tagTransform', 'LW.settings.tagTransform'), {
+      defaultValue: fallback ?? key,
+    });
   return (
     <Stack spacing={0.5}>
       <Typography variant="caption">{label}</Typography>
@@ -122,7 +124,9 @@ const RuleList = ({
 export const TagTransformDialog = (props: IDialog) => {
   const { t: translate } = useTranslation();
   const t = (key: string, fallback?: string) =>
-    translate(key.replace('LW.tagTransform', 'LW.settings.tagTransform'), fallback);
+    translate(key.replace('LW.tagTransform', 'LW.settings.tagTransform'), {
+      defaultValue: fallback ?? key,
+    });
   const [findString, setFindString] = useState('');
   const [findTag, setFindTag] = useState('none');
   const [findTagNegated, setFindTagNegated] = useState(false);
@@ -351,7 +355,7 @@ export const TagTransformDialog = (props: IDialog) => {
         return;
       }
       window.writer?.overmindActions?.ui?.notifyViaSnackbar?.({
-        message: t('LW.tagTransform.applied', {
+        message: translate('LW.settings.tagTransform.applied', {
           count: result.matches,
           files: result.filesChanged,
         }),

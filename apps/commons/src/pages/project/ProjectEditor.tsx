@@ -78,7 +78,12 @@ export const ProjectEditor = () => {
             { action: 'later', label: t('LWC.commons.not_now') },
           ],
           onClose: (action) => {
-            if (action === 'open-plugins') openDialog({ type: 'plugins' });
+            if (action === 'open-plugins') {
+              window.writer?.overmindActions?.ui?.openDialog?.({
+                type: 'plugins',
+                props: { id: 'plugins' },
+              });
+            }
           },
         },
       });
@@ -129,7 +134,12 @@ export const ProjectEditor = () => {
   }, [ensureLeafWriterReadyForSettings]);
 
   useEffect(() => {
-    if (divEl.current && isProjectReady && !leafWriter && loadLibStartedForRef.current !== sessionKey) {
+    if (
+      divEl.current &&
+      isProjectReady &&
+      !leafWriter &&
+      loadLibStartedForRef.current !== sessionKey
+    ) {
       loadLibStartedForRef.current = sessionKey;
       divEl.current.style.height = '100%';
       void loadLib(divEl.current);
@@ -163,8 +173,7 @@ export const ProjectEditor = () => {
       const targetContent = resource.content!;
       const generation = ++loadGenerationRef.current;
 
-      const shouldApply = () =>
-        !cancelled && loadGenerationRef.current === generation;
+      const shouldApply = () => !cancelled && loadGenerationRef.current === generation;
 
       if (!window.writer) {
         if (initStartedForRef.current !== leafWriter.id) {
@@ -182,8 +191,7 @@ export const ProjectEditor = () => {
       if (!shouldApply() || !window.writer) return;
       if (previousTabRef.current === targetPath) return;
 
-      const restoreDirty =
-        openTabs.find((tab) => tab.filePath === targetPath)?.dirty ?? false;
+      const restoreDirty = openTabs.find((tab) => tab.filePath === targetPath)?.dirty ?? false;
       const loaded = await loadDocumentInWriter(
         targetPath,
         targetContent,
@@ -365,11 +373,25 @@ export const ProjectEditor = () => {
       {/* Mount point for the auto-tagging review panel (portaled from LEAF-Writer App). */}
       <Box
         id="desktop-panel-auto-tagging"
-        sx={{ flexShrink: 0, height: '100%', overflow: 'hidden', width: 0, minWidth: 0, display: 'none' }}
+        sx={{
+          flexShrink: 0,
+          height: '100%',
+          overflow: 'hidden',
+          width: 0,
+          minWidth: 0,
+          display: 'none',
+        }}
       />
       <Box
         id="desktop-panel-disambiguation"
-        sx={{ flexShrink: 0, height: '100%', overflow: 'hidden', width: 0, minWidth: 0, display: 'none' }}
+        sx={{
+          flexShrink: 0,
+          height: '100%',
+          overflow: 'hidden',
+          width: 0,
+          minWidth: 0,
+          display: 'none',
+        }}
       />
       <UnifiedRightPanel />
     </Box>

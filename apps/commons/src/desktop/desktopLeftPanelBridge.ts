@@ -13,20 +13,33 @@ declare global {
 
 export const DESKTOP_LEFT_PANEL_EVENT = 'desktop-left-panel:show';
 
+export const DESKTOP_DATABASE_ENTITY_EVENT = 'desktop-database:show-entity';
+
+export const DESKTOP_XPATH_SEARCH_EVENT = 'desktop-xpath:search';
+
 export const DESKTOP_FIND_FOCUS_EVENT = 'desktop-left-panel:focus-find';
 
-export type DesktopLeftPanelShowDetail = {
+export interface DesktopLeftPanelShowDetail {
   tab: SidebarTabId;
-};
+}
+
+export interface DesktopDatabaseEntityDetail {
+  id: string;
+  type: string;
+}
+
+export interface DesktopXPathSearchDetail {
+  query: string;
+}
 
 export const DESKTOP_OPEN_FIND_EVENT = 'desktop:open-find';
 
 /** Fired when the user switches Visual ↔ Source in the editor. */
 export const DESKTOP_EDITOR_VIEW_MODE_EVENT = 'desktop:editor-view-mode-changed';
 
-export type DesktopEditorViewModeDetail = {
+export interface DesktopEditorViewModeDetail {
   mode: 'source' | 'visual';
-};
+}
 
 const MAX_OPEN_FIND_RETRIES = 30;
 

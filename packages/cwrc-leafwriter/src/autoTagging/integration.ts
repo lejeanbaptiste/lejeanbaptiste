@@ -1326,7 +1326,7 @@ export class AutoTaggingSession {
   }
 
   /** Apply a text-preserving tag transform to the selected document scope. */
-  async runTagTransform(options: TagTransformOptions = {}): Promise<TagTransformResult> {
+  async runTagTransform(options: Partial<TagTransformOptions> = {}): Promise<TagTransformResult> {
     const scope = options.scope ?? 'currentFile';
     const { documents, error } = await this.resolveTagBombScopeDocuments(scope, options.customPath);
     if (error) throw new Error(error);
@@ -1336,6 +1336,8 @@ export class AutoTaggingSession {
     let matches = 0;
     const schemaManager = this.writer.schemaManager;
     const transformOptions: TagTransformOptions = {
+      string: options.string ?? '',
+      tagName: options.tagName ?? '*',
       ...options,
       canInsertTag: schemaManager?.isTagValidChildOfParent
         ? (tagName, parentName) => schemaManager.isTagValidChildOfParent(tagName, parentName)
