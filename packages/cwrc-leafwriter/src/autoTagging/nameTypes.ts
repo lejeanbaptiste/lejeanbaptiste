@@ -18,6 +18,7 @@ export type NameTypeId =
   | 'temple' // 廟號
   | 'dharma' // religious/dharma name
   | 'pen' // pen name / pseudonym
+  | 'translation' // translated title/label
   | 'variant'; // unclassified alternate (legacy searchStrings, surface forms)
 
 export const ALL_NAME_TYPES: NameTypeId[] = [
@@ -31,6 +32,7 @@ export const ALL_NAME_TYPES: NameTypeId[] = [
   'temple',
   'dharma',
   'pen',
+  'translation',
   'variant',
 ];
 

@@ -1,16 +1,13 @@
 import AddIcon from '@mui/icons-material/Add';
 import AutorenewIcon from '@mui/icons-material/Autorenew';
 import ExpandMoreIcon from '@mui/icons-material/ExpandMore';
-import CallSplitIcon from '@mui/icons-material/CallSplit';
 import CheckIcon from '@mui/icons-material/Check';
 import ClearIcon from '@mui/icons-material/Clear';
 import ContentCopyIcon from '@mui/icons-material/ContentCopy';
 import HubOutlinedIcon from '@mui/icons-material/HubOutlined';
-import DeleteOutlineIcon from '@mui/icons-material/DeleteOutline';
-import EditOutlinedIcon from '@mui/icons-material/EditOutlined';
 import FactCheckOutlinedIcon from '@mui/icons-material/FactCheckOutlined';
 import MergeIcon from '@mui/icons-material/Merge';
-import MoreVertIcon from '@mui/icons-material/MoreVert';
+import OpenInNewIcon from '@mui/icons-material/OpenInNew';
 import PlaylistAddIcon from '@mui/icons-material/PlaylistAdd';
 import RefreshIcon from '@mui/icons-material/Refresh';
 import SearchIcon from '@mui/icons-material/Search';
@@ -36,9 +33,6 @@ import {
   IconButton,
   InputAdornment,
   LinearProgress,
-  ListItemIcon,
-  ListItemText,
-  Menu,
   MenuItem,
   Radio,
   Stack,
@@ -52,7 +46,6 @@ import type { ReactNode } from 'react';
 import { useTranslation } from 'react-i18next';
 import {
   ENTITY_KINDS,
-  findEntity,
   getDatabaseId,
   type AuthorityId,
   type EntityKind,
@@ -62,24 +55,27 @@ import {
   addEntityName,
   addUserNationality,
   addUserOrigin,
+  addUserNobleTitle,
   acceptEntityDateAssertion,
   acceptEntityDescriptionAssertion,
   attachAuthority,
-  deleteEntity,
   decoupleAuthority,
   groupFieldAssertions,
-  listEntityAssertions,
   findAuthorityDuplicates,
   listEntities,
   markDuplicateIntentional,
   mergeEntities,
   removeEntityName,
   removeEntityValue,
+  removeNobleTitle,
   renameEntityName,
   setEntityDescription,
   setNameType,
+  updateNobleTitle,
   setRomanizedName,
   setUserEntityDate,
+  setUserWorkAuthors,
+  setUserWorkDate,
   rejectEntityAssertion,
   rejectConcordance,
   applyConcordanceAssociations,
@@ -99,15 +95,21 @@ import {
   type NameTypeId,
 } from '../../../../../packages/cwrc-leafwriter/src/autoTagging/nameTypes';
 import { backfillEntityNames } from '../../../../../packages/cwrc-leafwriter/src/autoTagging/nameBackfill';
+import {
+  autoSyncEntitiesToCentral,
+  autoSyncEntityToCentral,
+} from '../../../../../packages/cwrc-leafwriter/src/autoTagging/autoSync';
 import { suggestPersonRomanization } from '../../../../../packages/cwrc-leafwriter/src/plugins/personNameDefaults';
 import { nameTypeLabel } from '../../../../../packages/cwrc-leafwriter/src/autoTagging/nameTypeLabels';
 import { cachedPackReader } from '../../../../../packages/cwrc-leafwriter/src/services/authority-pack-lookup';
 import { authorityPackLines } from '../../../../../packages/cwrc-leafwriter/src/autoTagging/packLoader';
 import {
   centralEntityStoreFromDesktop,
+  desktopEntityFileApi,
   entityStoreFromDesktop,
   type EntityStore,
 } from '../../../../../packages/cwrc-leafwriter/src/autoTagging/entityStore';
+import { readOrMintUserStableId } from '../../../../../packages/cwrc-leafwriter/src/autoTagging/userStableId';
 import {
   loadOpenWarnings,
   resolveWarning,
@@ -127,12 +129,17 @@ import { getDefaultStore } from 'jotai';
 import { RESET } from 'jotai/utils';
 import { db } from '../../../../../packages/cwrc-leafwriter/src/db';
 import { applyKeyRemapAcrossProjects, type KeyRemapSummary } from '../entityDb/applyKeyRemap';
-import { computeMergeDocket } from '../entityDb/bridge';
+import { applyPendingCentralOrders, computeMergeDocket, promoteEntities } from '../entityDb/bridge';
 import { authorityLookupUrl } from '../entityDb/authorityLinks';
 import { BridgeInboxDialog } from './BridgeInboxDialog';
 import { MergeDocketDialog } from './MergeDocketDialog';
 import { SourceBadges } from '../../../../../packages/cwrc-leafwriter/src/autoTagging/SourceBadges';
 import { canonicalNationalityLabel } from '../../../../../packages/cwrc-leafwriter/src/autoTagging/dynastyCrosswalk';
+import { enrichWikidataWorkEntity } from '../../../../../packages/cwrc-leafwriter/src/autoTagging/wikidataWorkDetails';
+import {
+  extractWikidataId,
+  resolveEntityInDocument,
+} from '../../../../../packages/cwrc-leafwriter/src/autoTagging/disambiguationCandidates';
 
 /**
  * Ordinal of a legacy sequential id (`person-000042` → 42); UUID ids have none.
@@ -216,6 +223,16 @@ const PRECISION_LABEL_KEYS: Partial<Record<DatePrecision, string>> = {
   'd. ca.': 'precision_d_ca',
   'active to': 'precision_active_to',
   'active to ca.': 'precision_active_to_ca',
+};
+
+const WORK_TITLE_TYPES: NameTypeId[] = ['primary', 'translation', 'variant'];
+type WorkDatePrecision = '' | 'not before' | 'ca.' | 'not after';
+
+const WORK_DATE_START_PRECISION_OPTIONS: WorkDatePrecision[] = ['', 'not before', 'ca.'];
+const WORK_DATE_END_PRECISION_OPTIONS: WorkDatePrecision[] = ['', 'not after', 'ca.'];
+
+const neutralActionButtonSx = {
+  color: 'text.secondary',
 };
 
 const precisionLabel = (precision: string | null | undefined, t: TFn): string => {
@@ -305,7 +322,7 @@ interface PendingValidation {
 }
 
 export const SidebarDatabaseTab = ({ active = false }: SidebarDatabaseTabProps) => {
-  const { t } = useTranslation();
+  const { t, i18n } = useTranslation();
   const { skipEntityDetachConfirm } = useAppState().ui;
   const { setSkipEntityDetachConfirm, notifyViaSnackbar } = useActions().ui;
   const { config } = useAppState().project;
@@ -336,9 +353,10 @@ export const SidebarDatabaseTab = ({ active = false }: SidebarDatabaseTabProps) 
   const [editCanonicalName, setEditCanonicalName] = useState('');
   const [editingName, setEditingName] = useState(false);
   const nameBeforeRename = useRef('');
+  const [editingRomanized, setEditingRomanized] = useState(false);
+  const romanizedBeforeEdit = useRef('');
   const [editDescription, setEditDescription] = useState('');
   const [editRomanized, setEditRomanized] = useState('');
-  const [editHadRomanized, setEditHadRomanized] = useState(false);
   const [editNameTypes, setEditNameTypes] = useState<Record<string, string>>({});
   const [editNewName, setEditNewName] = useState('');
   const [editNewNameType, setEditNewNameType] = useState<string>('');
@@ -350,9 +368,20 @@ export const SidebarDatabaseTab = ({ active = false }: SidebarDatabaseTabProps) 
   const [dateDeathQualifier, setDateDeathQualifier] = useState<DatePrecision>('');
   const [dateBirthBce, setDateBirthBce] = useState(false);
   const [dateDeathBce, setDateDeathBce] = useState(false);
+  const [workDateStart, setWorkDateStart] = useState('');
+  const [workDateEnd, setWorkDateEnd] = useState('');
+  const [workDateStartPrecision, setWorkDateStartPrecision] = useState<WorkDatePrecision>('');
+  const [workDateEndPrecision, setWorkDateEndPrecision] = useState<WorkDatePrecision>('');
   const [valuesEditing, setValuesEditing] = useState(false);
   const [namesExpanded, setNamesExpanded] = useState(false);
-  const [splitInfoOpen, setSplitInfoOpen] = useState(false);
+  const [titlesExpanded, setTitlesExpanded] = useState(false);
+  const [rolesExpanded, setRolesExpanded] = useState(false);
+  const [newTitle, setNewTitle] = useState({
+    dynasty: '',
+    fief: '',
+    posthumousName: '',
+    title: '',
+  });
   const [lastSummary, setLastSummary] = useState<KeyRemapSummary | null>(null);
   const [bridgeOpen, setBridgeOpen] = useState(false);
   const [docketOpen, setDocketOpen] = useState(false);
@@ -364,10 +393,8 @@ export const SidebarDatabaseTab = ({ active = false }: SidebarDatabaseTabProps) 
     entityLabel?: string;
   } | null>(null);
   const backfillAbortRef = useRef<AbortController | null>(null);
-
-  const [menuAnchor, setMenuAnchor] = useState<{ el: HTMLElement; entity: EntitySummary } | null>(
-    null,
-  );
+  /** Guards against overlapping bulk catch-up sync passes across successive reload() calls. */
+  const bulkSyncInFlightRef = useRef(false);
 
   const searchInputRef = useRef<HTMLInputElement | null>(null);
 
@@ -405,6 +432,38 @@ export const SidebarDatabaseTab = ({ active = false }: SidebarDatabaseTabProps) 
       (await window.electronAPI?.getEntityDbFolder?.().catch(() => null)) ?? null;
     const resolvedCentralStore = centralEntityStoreFromDesktop(centralFolder);
     setCentralStore(resolvedCentralStore);
+
+    // Reconcile this project's ljb-central mappings on every open/visit: pick up
+    // upstream central merges/deletes, then promote+link any PEDB entity that
+    // isn't mapped yet (idempotent - promoteToCentral no-ops once linked). This
+    // is the only place this can happen when syncToCentral is on, since that
+    // flag hides the manual Bridge button (see the toolbar below).
+    if (syncToCentral && resolvedCentralStore && !bulkSyncInFlightRef.current) {
+      bulkSyncInFlightRef.current = true;
+      void (async () => {
+        try {
+          const api = desktopEntityFileApi();
+          if (!api) return;
+          const { id: userStableId } = await readOrMintUserStableId(api, centralFolder);
+          const bridgeCtx = {
+            projectStore: currentStore,
+            centralStore: resolvedCentralStore,
+            userStableId,
+          };
+          await applyPendingCentralOrders(bridgeCtx);
+          const pedbIds = listEntities(await currentStore.loadEntities()).map(
+            (entity) => entity.id,
+          );
+          await promoteEntities(bridgeCtx, pedbIds);
+        } catch (error) {
+          // Best-effort: a manual edit's own auto-sync still covers that entity.
+          // eslint-disable-next-line no-console
+          console.error('[bridge] catch-up sync on project open failed:', error);
+        } finally {
+          bulkSyncInFlightRef.current = false;
+        }
+      })();
+    }
 
     // Pure view switch: browse either database, never both at once - Project
     // falls back from Central if no central folder is configured yet.
@@ -466,7 +525,7 @@ export const SidebarDatabaseTab = ({ active = false }: SidebarDatabaseTabProps) 
     } finally {
       setLoading(false);
     }
-  }, [databaseView]);
+  }, [databaseView, syncToCentral]);
 
   // Load on mount and refresh whenever the tab becomes visible (the project —
   // and with it the entity store — may not exist yet at app start).
@@ -510,6 +569,7 @@ export const SidebarDatabaseTab = ({ active = false }: SidebarDatabaseTabProps) 
       { value: 'place', label: t('LWC.desktop.sidebar.database.entity_types.place') },
       { value: 'org', label: t('LWC.desktop.sidebar.database.entity_types.organization') },
       { value: 'work', label: t('LWC.desktop.sidebar.database.entity_types.work') },
+      { value: 'office', label: t('LWC.desktop.sidebar.database.entity_types.office') },
     ],
     [t],
   );
@@ -599,6 +659,7 @@ export const SidebarDatabaseTab = ({ active = false }: SidebarDatabaseTabProps) 
           entityIds,
           readPackFile: readPack,
           projectLang,
+          desktopLanguage: i18n.language,
           signal: controller.signal,
           onProgress: (progress) =>
             setBackfillProgress({
@@ -607,6 +668,9 @@ export const SidebarDatabaseTab = ({ active = false }: SidebarDatabaseTabProps) 
               entityLabel: progress.entityLabel,
             }),
         });
+        if (entityIds && entityIds.length > 0 && activeStore === store) {
+          await autoSyncEntitiesToCentral(doc, entityIds);
+        }
         await activeStore.saveEntities(doc);
         if (entityIds?.length === 1) {
           const refreshed = listEntities(doc).find((entity) => entity.id === entityIds[0]);
@@ -639,7 +703,16 @@ export const SidebarDatabaseTab = ({ active = false }: SidebarDatabaseTabProps) 
         setBackfillProgress(null);
       }
     },
-    [activeStore, backfillBusy, editEntity?.id, notifyViaSnackbar, projectLang, reload],
+    [
+      activeStore,
+      backfillBusy,
+      editEntity?.id,
+      i18n.language,
+      notifyViaSnackbar,
+      projectLang,
+      reload,
+      store,
+    ],
   );
 
   /**
@@ -653,14 +726,21 @@ export const SidebarDatabaseTab = ({ active = false }: SidebarDatabaseTabProps) 
     async (
       targetStore: EntityStore | null,
       message: string,
-      mutate: (doc: Document) => Record<string, string | null> | void,
+      mutate: (
+        doc: Document,
+      ) => Record<string, string | null> | void | Promise<Record<string, string | null> | void>,
+      /** Entity ids still present after `mutate` that should sync to central before saving (PEDB only). */
+      syncIds?: string[],
     ) => {
       if (!targetStore) return;
       setBusyMessage(message);
       try {
         const doc = await targetStore.loadEntities();
         const dbId = getDatabaseId(doc) ?? undefined;
-        const remap = mutate(doc) ?? undefined;
+        const remap = (await mutate(doc)) ?? undefined;
+        if (syncIds && syncIds.length > 0 && targetStore === store) {
+          await autoSyncEntitiesToCentral(doc, syncIds);
+        }
         await targetStore.saveEntities(doc);
         if (remap && Object.keys(remap).length > 0) {
           // Durable order first (so a crash mid-crawl still lets other checkouts
@@ -677,7 +757,7 @@ export const SidebarDatabaseTab = ({ active = false }: SidebarDatabaseTabProps) 
         setBusyMessage(null);
       }
     },
-    [reload],
+    [reload, store],
   );
 
   /**
@@ -696,6 +776,7 @@ export const SidebarDatabaseTab = ({ active = false }: SidebarDatabaseTabProps) 
       try {
         const doc = await targetStore.loadEntities();
         mutate(doc);
+        if (targetStore === store) await autoSyncEntityToCentral(doc, entityId);
         await targetStore.saveEntities(doc);
         const refreshed = listEntities(doc).find((entity) => entity.id === entityId) ?? null;
         setEditEntity(refreshed);
@@ -713,7 +794,7 @@ export const SidebarDatabaseTab = ({ active = false }: SidebarDatabaseTabProps) 
         setBusyMessage(null);
       }
     },
-    [editEntity, reload, resolveStoreFor],
+    [editEntity, reload, resolveStoreFor, store],
   );
 
   const runEntityMutationForId = useCallback(
@@ -724,6 +805,7 @@ export const SidebarDatabaseTab = ({ active = false }: SidebarDatabaseTabProps) 
       try {
         const doc = await targetStore.loadEntities();
         mutate(doc, entityId);
+        if (targetStore === store) await autoSyncEntityToCentral(doc, entityId);
         await targetStore.saveEntities(doc);
         const refreshed = listEntities(doc).find((entity) => entity.id === entityId) ?? null;
         if (editEntity?.id === entityId) setEditEntity(refreshed);
@@ -734,7 +816,7 @@ export const SidebarDatabaseTab = ({ active = false }: SidebarDatabaseTabProps) 
         setBusyMessage(null);
       }
     },
-    [editEntity?.id, reload, resolveStoreFor],
+    [editEntity?.id, reload, resolveStoreFor, store],
   );
 
   /** Merge button: <2 selected extends the search with an alternation, ≥2 opens the merge dialog. */
@@ -761,12 +843,17 @@ export const SidebarDatabaseTab = ({ active = false }: SidebarDatabaseTabProps) 
 
     let sourceDbId: string | null = null;
     let centralConflicts: CentralMergeConflict[] = [];
-    void runMutation(targetStore, 'Merging entities…', (doc) => {
-      sourceDbId = getDatabaseId(doc);
-      const result = mergeEntities(doc, mergeKeepId, dropIds);
-      centralConflicts = result.centralConflicts;
-      return result.remap;
-    }).then(async () => {
+    void runMutation(
+      targetStore,
+      'Merging entities…',
+      (doc) => {
+        sourceDbId = getDatabaseId(doc);
+        const result = mergeEntities(doc, mergeKeepId, dropIds);
+        centralConflicts = result.centralConflicts;
+        return result.remap;
+      },
+      [mergeKeepId],
+    ).then(async () => {
       if (!isProjectMerge || !centralStore || centralConflicts.length === 0) return;
       for (const conflict of centralConflicts) {
         await centralStore
@@ -782,51 +869,16 @@ export const SidebarDatabaseTab = ({ active = false }: SidebarDatabaseTabProps) 
     });
   };
 
-  const requestDelete = (entity: EntitySummary) => {
-    const targetStore = resolveStoreFor(entity.id);
-    // A deleted PEDB entity's central mapping(s) become the "purge" half of
-    // the merge docket: the linked central entity may now be an orphan worth
-    // reviewing. A central-to-central delete has no PEDB counterpart to
-    // raise a suggestion for (its own concordance rows, if any, are inert).
-    const isProjectDelete = targetStore === store;
-
-    setConfirm({
-      title: `Delete ${entity.names[0] ?? entity.id}?`,
-      body:
-        `This removes ${entity.id} from the entity database and strips its key from every tag ` +
-        `in every project sharing this database. The tags themselves stay in your documents. ` +
-        `Save open documents first.`,
-      confirmLabel: 'Delete entity',
-      destructive: true,
-      onConfirm: () => {
-        let sourceDbId: string | null = null;
-        let centralIds: string[] = [];
-        void runMutation(targetStore, 'Deleting entity…', (doc) => {
-          sourceDbId = getDatabaseId(doc);
-          const item = findEntity(doc, entity.id);
-          if (item) centralIds = listCentralMappings(item).map((mapping) => mapping.centralId);
-          deleteEntity(doc, entity.id);
-          return { [entity.id]: null };
-        }).then(async () => {
-          if (!isProjectDelete || !centralStore || centralIds.length === 0) return;
-          for (const centralId of centralIds) {
-            await centralStore
-              .recordDeleteSuggestion(sourceDbId ?? 'unknown', centralId)
-              .catch(() => undefined);
-          }
-          computeMergeDocket(centralStore)
-            .then((docket) => setDocketCount(docket.length))
-            .catch(() => undefined);
-        });
-      },
-    });
-  };
-
   const requestDetach = (entity: EntitySummary, ref: AuthorityId) => {
     const detach = () =>
-      void runMutation(resolveStoreFor(entity.id), 'Detaching authority…', (doc) => {
-        decoupleAuthority(doc, entity.id, ref);
-      });
+      void runMutation(
+        resolveStoreFor(entity.id),
+        'Detaching authority…',
+        (doc) => {
+          decoupleAuthority(doc, entity.id, ref);
+        },
+        [entity.id],
+      );
     if (skipEntityDetachConfirm) {
       detach();
       return;
@@ -850,9 +902,10 @@ export const SidebarDatabaseTab = ({ active = false }: SidebarDatabaseTabProps) 
     setEditEntity(entity);
     setEditCanonicalName(entity.names[0] ?? '');
     setEditingName(false);
+    setEditingRomanized(false);
     setEditDescription(entity.description ?? '');
     setEditRomanized(suggestedRomanized ?? '');
-    setEditHadRomanized(Boolean(suggestedRomanized));
+    const workDate = entity.workDate;
     const birthAssertion = entity.assertions.find(
       (assertion) => assertion.element === 'birth' && assertion.origin === 'user',
     );
@@ -865,6 +918,22 @@ export const SidebarDatabaseTab = ({ active = false }: SidebarDatabaseTabProps) 
     setDateDeathBce(entity.endYear != null && entity.endYear < 0);
     setDateBirthQualifier((birthAssertion?.precision as DatePrecision) ?? '');
     setDateDeathQualifier((deathAssertion?.precision as DatePrecision) ?? '');
+    setWorkDateStart(
+      workDate?.startYear != null
+        ? String(Math.abs(workDate.startYear))
+        : entity.startYear != null
+          ? String(Math.abs(entity.startYear))
+          : '',
+    );
+    setWorkDateEnd(
+      workDate?.endYear != null
+        ? String(Math.abs(workDate.endYear))
+        : entity.endYear != null
+          ? String(Math.abs(entity.endYear))
+          : '',
+    );
+    setWorkDateStartPrecision((workDate?.startPrecision as WorkDatePrecision) ?? '');
+    setWorkDateEndPrecision((workDate?.endPrecision as WorkDatePrecision) ?? '');
     setDateEditing(false);
     setValuesEditing(false);
     setPendingValidations([]);
@@ -874,6 +943,8 @@ export const SidebarDatabaseTab = ({ active = false }: SidebarDatabaseTabProps) 
     setEditNewName('');
     setEditNewNameType('');
     setNamesExpanded(false);
+    setTitlesExpanded(false);
+    setNewTitle({ dynasty: '', fief: '', posthumousName: '', title: '' });
   };
 
   const queueValidation = useCallback(
@@ -918,6 +989,34 @@ export const SidebarDatabaseTab = ({ active = false }: SidebarDatabaseTabProps) 
     });
   };
 
+  const refreshWorkDetails = async (entity: EntitySummary) => {
+    const wikidata = entity.authorities.find((ref) => ref.type.toLowerCase() === 'wikidata');
+    const qid = extractWikidataId(wikidata?.value ?? '');
+    if (!qid) return;
+    const targetStore = resolveStoreFor(entity.id);
+    if (!targetStore) return;
+    await runMutation(
+      targetStore,
+      'Refreshing work details…',
+      async (doc) => {
+        const details = await enrichWikidataWorkEntity(
+          doc,
+          entity.id,
+          qid,
+          projectLang,
+          i18n.language,
+        );
+        if (details && targetStore === store) {
+          await autoSyncEntitiesToCentral(
+            doc,
+            details.authors.map((author) => author.entityId),
+          );
+        }
+      },
+      [entity.id],
+    );
+  };
+
   const startRename = () => {
     nameBeforeRename.current = editCanonicalName;
     setEditingName(true);
@@ -934,6 +1033,21 @@ export const SidebarDatabaseTab = ({ active = false }: SidebarDatabaseTabProps) 
     setEditingName(false);
   };
 
+  const startRomanizedEdit = () => {
+    romanizedBeforeEdit.current = editRomanized;
+    setEditingRomanized(true);
+  };
+
+  const acceptRomanizedEdit = () => {
+    setEditRomanized((value) => value.trim());
+    setEditingRomanized(false);
+  };
+
+  const cancelRomanizedEdit = () => {
+    setEditRomanized(romanizedBeforeEdit.current);
+    setEditingRomanized(false);
+  };
+
   const saveEdit = () => {
     if (!editEntity) return;
     const id = editEntity.id;
@@ -944,17 +1058,22 @@ export const SidebarDatabaseTab = ({ active = false }: SidebarDatabaseTabProps) 
     const romanizedChanged = romanized !== (editEntity.romanized ?? '');
     setEditEntity(null);
     setPendingValidations([]);
-    void runMutation(resolveStoreFor(id), 'Saving entity…', (doc) => {
-      for (const validation of validations) {
-        if (validation.mode === 'date') acceptEntityDateAssertion(doc, id, validation.key);
-        else if (validation.mode === 'description') {
-          acceptEntityDescriptionAssertion(doc, id, validation.key);
-        } else validateEntityAssertion(doc, id, validation.key);
-      }
-      if (canonicalName) renameEntityName(doc, id, canonicalName);
-      setEntityDescription(doc, id, description);
-      if (romanizedChanged) setRomanizedName(doc, id, romanized, projectLang);
-    });
+    void runMutation(
+      resolveStoreFor(id),
+      'Saving entity…',
+      (doc) => {
+        for (const validation of validations) {
+          if (validation.mode === 'date') acceptEntityDateAssertion(doc, id, validation.key);
+          else if (validation.mode === 'description') {
+            acceptEntityDescriptionAssertion(doc, id, validation.key);
+          } else validateEntityAssertion(doc, id, validation.key);
+        }
+        if (canonicalName) renameEntityName(doc, id, canonicalName);
+        setEntityDescription(doc, id, description);
+        if (romanizedChanged) setRomanizedName(doc, id, romanized, projectLang);
+      },
+      [id],
+    );
   };
 
   const saveDates = () => {
@@ -973,6 +1092,25 @@ export const SidebarDatabaseTab = ({ active = false }: SidebarDatabaseTabProps) 
     });
   };
 
+  const saveWorkDates = () => {
+    if (!editEntity) return;
+    const parseYear = (value: string): number | null => {
+      const number = Number(value.trim());
+      return value.trim() && Number.isInteger(number) && number >= 0 ? number : null;
+    };
+    setDateEditing(false);
+    void runEntityMutationForId(editEntity.id, 'Saving dates…', (doc, id) =>
+      setUserWorkDate(
+        doc,
+        id,
+        parseYear(workDateStart),
+        parseYear(workDateEnd),
+        workDateStartPrecision || null,
+        workDateEndPrecision || null,
+      ),
+    );
+  };
+
   /** One tab-aligned row: label only on the first line of a field, blank thereafter. */
   interface GridRow {
     key: string;
@@ -985,132 +1123,147 @@ export const SidebarDatabaseTab = ({ active = false }: SidebarDatabaseTabProps) 
   // unrelated component state (search text, in-progress name/description edits, …) — memoized
   // so typing elsewhere in the dialog doesn't rebuild these rows (and their embedded
   // Tooltip/IconButton elements) on every keystroke.
-  const { dateGridRows, nationalityGridRows, originGridRows, descriptionGroups, nameRows } =
-    useMemo(() => {
-      const dateAssertions =
-        editEntity?.assertions.filter(
-          (assertion) =>
-            (assertion.element === 'birth' || assertion.element === 'death') &&
-            assertion.origin === 'authority' &&
-            assertion.status === 'active',
-        ) ?? [];
-      const dateYear = (assertion: EntityAssertionSummary | undefined): number | null => {
-        if (!assertion) return null;
-        const value = Number(assertion.value);
-        return Number.isFinite(value) ? value : null;
-      };
-      const userBirthAssertion = editEntity?.assertions.find(
+  const {
+    dateGridRows,
+    nationalityGridRows,
+    originGridRows,
+    descriptionGroups,
+    nameRows,
+    roleRows,
+  } = useMemo(() => {
+    const dateAssertions =
+      editEntity?.assertions.filter(
         (assertion) =>
-          assertion.element === 'birth' &&
-          assertion.origin === 'user' &&
+          (assertion.element === 'birth' || assertion.element === 'death') &&
+          assertion.origin === 'authority' &&
           assertion.status === 'active',
-      );
-      const userDeathAssertion = editEntity?.assertions.find(
-        (assertion) =>
-          assertion.element === 'death' &&
-          assertion.origin === 'user' &&
-          assertion.status === 'active',
-      );
-      const userBirthYear = dateYear(userBirthAssertion) ?? editEntity?.startYear ?? null;
-      const userDeathYear = dateYear(userDeathAssertion) ?? editEntity?.endYear ?? null;
-      const pendingDateAssertions = dateAssertions.filter((assertion) => {
-        const current = assertion.element === 'birth' ? userBirthYear : userDeathYear;
-        return (
-          assertion.status === 'active' && (current == null || dateYear(assertion) !== current)
-        );
-      });
-      const agreeingDateSources = Array.from(
+      ) ?? [];
+    const dateYear = (assertion: EntityAssertionSummary | undefined): number | null => {
+      if (!assertion) return null;
+      const value = Number(assertion.value);
+      return Number.isFinite(value) ? value : null;
+    };
+    const userBirthAssertion = editEntity?.assertions.find(
+      (assertion) =>
+        assertion.element === 'birth' &&
+        assertion.origin === 'user' &&
+        assertion.status === 'active',
+    );
+    const userDeathAssertion = editEntity?.assertions.find(
+      (assertion) =>
+        assertion.element === 'death' &&
+        assertion.origin === 'user' &&
+        assertion.status === 'active',
+    );
+    const userBirthYear = dateYear(userBirthAssertion) ?? editEntity?.startYear ?? null;
+    const userDeathYear = dateYear(userDeathAssertion) ?? editEntity?.endYear ?? null;
+    const workDate = editEntity?.kind === 'work' ? editEntity.workDate : null;
+    const pendingDateAssertions = dateAssertions.filter((assertion) => {
+      const current = assertion.element === 'birth' ? userBirthYear : userDeathYear;
+      return assertion.status === 'active' && (current == null || dateYear(assertion) !== current);
+    });
+    const agreeingDateSources = Array.from(
+      new Set(
+        dateAssertions
+          .filter((assertion) => {
+            const current = assertion.element === 'birth' ? userBirthYear : userDeathYear;
+            return (
+              assertion.status === 'active' && current != null && dateYear(assertion) === current
+            );
+          })
+          .map((assertion) => assertion.source?.split(':')[0])
+          .filter((source): source is string => Boolean(source)),
+      ),
+    );
+
+    const nationalityAssertions =
+      editEntity?.assertions.filter((assertion) => assertion.element === 'nationality') ?? [];
+    const nationalityKeyOf = (assertion: EntityAssertionSummary): string =>
+      canonicalNationalityLabel(assertion.source, assertion.ref, assertion.value);
+    const nationalityGroups = groupFieldAssertions(
+      nationalityAssertions,
+      new Set(editEntity?.nationalities ?? []),
+      false,
+      nationalityKeyOf,
+    );
+    const originAssertions =
+      editEntity?.assertions.filter((assertion) => assertion.element === 'placeName') ?? [];
+    const originGroups = groupFieldAssertions(
+      originAssertions,
+      new Set(editEntity?.placesOfOrigin ?? []),
+      false,
+    );
+    /** Distinct agreeing sources per current value, so each row gets its own badge. */
+    const sourcesForValue = (
+      assertions: EntityAssertionSummary[],
+      value: string,
+      keyOf: (assertion: EntityAssertionSummary) => string = (assertion) => assertion.value,
+    ): string[] =>
+      Array.from(
         new Set(
-          dateAssertions
-            .filter((assertion) => {
-              const current = assertion.element === 'birth' ? userBirthYear : userDeathYear;
-              return (
-                assertion.status === 'active' && current != null && dateYear(assertion) === current
-              );
-            })
+          assertions
+            .filter(
+              (assertion) =>
+                assertion.origin === 'authority' &&
+                assertion.status === 'active' &&
+                keyOf(assertion) === value,
+            )
             .map((assertion) => assertion.source?.split(':')[0])
             .filter((source): source is string => Boolean(source)),
         ),
       );
 
-      const nationalityAssertions =
-        editEntity?.assertions.filter((assertion) => assertion.element === 'nationality') ?? [];
-      const nationalityKeyOf = (assertion: EntityAssertionSummary): string =>
-        canonicalNationalityLabel(assertion.source, assertion.ref, assertion.value);
-      const nationalityGroups = groupFieldAssertions(
-        nationalityAssertions,
-        new Set(editEntity?.nationalities ?? []),
-        false,
-        nationalityKeyOf,
-      );
-      const originAssertions =
-        editEntity?.assertions.filter((assertion) => assertion.element === 'placeName') ?? [];
-      const originGroups = groupFieldAssertions(
-        originAssertions,
-        new Set(editEntity?.placesOfOrigin ?? []),
-        false,
-      );
-      /** Distinct agreeing sources per current value, so each row gets its own badge. */
-      const sourcesForValue = (
-        assertions: EntityAssertionSummary[],
-        value: string,
-        keyOf: (assertion: EntityAssertionSummary) => string = (assertion) => assertion.value,
-      ): string[] =>
-        Array.from(
-          new Set(
-            assertions
-              .filter(
-                (assertion) =>
-                  assertion.origin === 'authority' &&
-                  assertion.status === 'active' &&
-                  keyOf(assertion) === value,
-              )
-              .map((assertion) => assertion.source?.split(':')[0])
-              .filter((source): source is string => Boolean(source)),
-          ),
-        );
+    /** Every active assertion key backing a displayed value, so "remove" can clear all of them. */
+    const keysForValue = (
+      assertions: EntityAssertionSummary[],
+      value: string,
+      keyOf: (assertion: EntityAssertionSummary) => string = (assertion) => assertion.value,
+    ): string[] =>
+      assertions
+        .filter((assertion) => assertion.status === 'active' && keyOf(assertion) === value)
+        .map((assertion) => assertion.key);
 
-      /** Every active assertion key backing a displayed value, so "remove" can clear all of them. */
-      const keysForValue = (
-        assertions: EntityAssertionSummary[],
-        value: string,
-        keyOf: (assertion: EntityAssertionSummary) => string = (assertion) => assertion.value,
-      ): string[] =>
-        assertions
-          .filter((assertion) => assertion.status === 'active' && keyOf(assertion) === value)
-          .map((assertion) => assertion.key);
+    const dateMarker = (element: string): string =>
+      element === 'birth'
+        ? t('LWC.desktop.sidebar.database.date_marker_birth')
+        : t('LWC.desktop.sidebar.database.date_marker_death');
 
-      const dateMarker = (element: string): string =>
-        element === 'birth'
-          ? t('LWC.desktop.sidebar.database.date_marker_birth')
-          : t('LWC.desktop.sidebar.database.date_marker_death');
+    const factTrailingClusterSx = {
+      display: 'flex',
+      alignItems: 'center',
+      justifyContent: 'flex-end',
+      gap: 0.5,
+      width: '100%',
+      minWidth: 0,
+    };
 
-      /** One row per distinct (element, value) — every source agreeing on "d. 226" shares one line. */
-      const acceptDateGroupRow = (group: AssertionValueGroup): GridRow => {
-        const year = Number(group.value);
-        const display = Number.isFinite(year)
-          ? scholarlyYear(year, group.precision, t)
-          : group.value;
-        return {
-          key: group.keys.join('+'),
-          label: '',
-          value: `${dateMarker(group.element)} ${display}`,
-          trailing: (
-            <Stack direction="row" spacing={0.5} alignItems="center">
-              <SourceBadges label={group.sources.join('+')} />
+    /** One row per distinct (element, value) — every source agreeing on "d. 226" shares one line. */
+    const acceptDateGroupRow = (group: AssertionValueGroup): GridRow => {
+      const year = Number(group.value);
+      const display = Number.isFinite(year) ? scholarlyYear(year, group.precision, t) : group.value;
+      return {
+        key: group.keys.join('+'),
+        label: '',
+        value: `${dateMarker(group.element)} ${display}`,
+        trailing: (
+          <Stack direction="row" spacing={0.5} alignItems="center" sx={factTrailingClusterSx}>
+            <SourceBadges label={group.sources.join('+')} />
+            <Box>
               <Tooltip title={t('LWC.desktop.sidebar.database.accept_data')}>
                 <IconButton
                   size="small"
-                  color="success"
+                  sx={neutralActionButtonSx}
                   onClick={() => queueValidation([group.keys[0]!], 'date')}
                 >
                   <CheckIcon fontSize="small" />
                 </IconButton>
               </Tooltip>
+            </Box>
+            <Box>
               <Tooltip title={t('LWC.desktop.sidebar.database.reject_data')}>
                 <IconButton
                   size="small"
-                  color="error"
+                  sx={neutralActionButtonSx}
                   onClick={() =>
                     void runEntityMutationForId(
                       editEntity!.id,
@@ -1120,132 +1273,138 @@ export const SidebarDatabaseTab = ({ active = false }: SidebarDatabaseTabProps) 
                       },
                     )
                   }
-                >
+                  >
                   <ClearIcon fontSize="small" />
                 </IconButton>
               </Tooltip>
-            </Stack>
-          ),
-        };
+            </Box>
+          </Stack>
+        ),
       };
+    };
 
-      const dateGridRows: GridRow[] =
-        editEntity?.kind === 'person' && !dateEditing
-          ? [
-              {
-                key: 'dates-span',
-                label: `${t('LWC.desktop.sidebar.database.dates')}:`,
-                value: scholarlyDateRange(
-                  userBirthYear,
-                  userDeathYear,
-                  userBirthAssertion?.precision,
-                  userDeathAssertion?.precision,
-                  t,
-                ),
-                trailing: (
-                  <Stack direction="row" spacing={0.5} alignItems="center">
-                    <SourceBadges label={databaseView === 'central' ? 'CEDB' : 'PEDB'} />
-                    {agreeingDateSources.length > 0 && (
-                      <SourceBadges label={agreeingDateSources.join('+')} />
-                    )}
-                    <Tooltip title={t('LWC.desktop.sidebar.database.edit_dates')}>
-                      <IconButton size="small" onClick={() => setDateEditing(true)}>
-                        <EditOutlinedIcon fontSize="small" />
-                      </IconButton>
-                    </Tooltip>
-                  </Stack>
-                ),
-              },
-              ...groupAssertionsByValue(pendingDateAssertions).map((group) =>
-                acceptDateGroupRow(group),
+    const dateGridRows: GridRow[] =
+      (editEntity?.kind === 'person' || editEntity?.kind === 'work') && !dateEditing
+        ? [
+            {
+              key: 'dates-span',
+              label: `${t('LWC.desktop.sidebar.database.dates')}:`,
+              value:
+                editEntity?.kind === 'work'
+                  ? scholarlyDateRange(
+                      workDate?.startYear ?? null,
+                      workDate?.endYear ?? null,
+                      workDate?.startPrecision,
+                      workDate?.endPrecision,
+                      t,
+                    )
+                  : scholarlyDateRange(
+                      userBirthYear,
+                      userDeathYear,
+                      userBirthAssertion?.precision,
+                      userDeathAssertion?.precision,
+                      t,
+                    ),
+              trailing: (
+                <Stack direction="row" spacing={0.5} alignItems="center" sx={factTrailingClusterSx}>
+                  <SourceBadges label={databaseView === 'central' ? 'CEDB' : 'PEDB'} />
+                  {agreeingDateSources.length > 0 && (
+                    <SourceBadges label={agreeingDateSources.join('+')} />
+                  )}
+                </Stack>
               ),
-            ]
-          : [];
+            },
+            ...groupAssertionsByValue(pendingDateAssertions).map((group) =>
+              acceptDateGroupRow(group),
+            ),
+          ]
+        : [];
 
-      /** Turns one multi-valued field (nationality, place of origin) into tab-aligned rows. */
-      const buildValueFieldRows = (field: {
-        label: string;
-        values: string[];
-        assertions: EntityAssertionSummary[];
-        groups: FieldAssertionGroups;
-        /** Canonical grouping/display key for an assertion (e.g. dynasty-id crosswalk); keyed on raw value by default. */
-        keyOf?: (assertion: EntityAssertionSummary) => string;
-      }): GridRow[] => {
-        const keyOf = field.keyOf ?? ((assertion: EntityAssertionSummary) => assertion.value);
-        const lines: (Omit<GridRow, 'key' | 'label'> & { key: string })[] = [];
-        for (const value of field.values) {
-          const sources = sourcesForValue(field.assertions, value, keyOf);
-          const keys = keysForValue(field.assertions, value, keyOf);
-          const authorityKeys = field.assertions
-            .filter(
-              (assertion) =>
-                assertion.origin === 'authority' &&
-                assertion.status === 'active' &&
-                keyOf(assertion) === value,
-            )
-            .map((assertion) => assertion.key);
-          const hasUserAssertion = field.assertions.some(
+    /** Turns one multi-valued field (nationality, place of origin) into tab-aligned rows. */
+    const buildValueFieldRows = (field: {
+      label: string;
+      values: string[];
+      assertions: EntityAssertionSummary[];
+      groups: FieldAssertionGroups;
+      /** Canonical grouping/display key for an assertion (e.g. dynasty-id crosswalk); keyed on raw value by default. */
+      keyOf?: (assertion: EntityAssertionSummary) => string;
+    }): GridRow[] => {
+      const keyOf = field.keyOf ?? ((assertion: EntityAssertionSummary) => assertion.value);
+      const lines: (Omit<GridRow, 'key' | 'label'> & { key: string })[] = [];
+      for (const value of field.values) {
+        const sources = sourcesForValue(field.assertions, value, keyOf);
+        const keys = keysForValue(field.assertions, value, keyOf);
+        const authorityKeys = field.assertions
+          .filter(
             (assertion) =>
-              assertion.origin === 'user' &&
+              assertion.origin === 'authority' &&
               assertion.status === 'active' &&
               keyOf(assertion) === value,
-          );
-          lines.push({
-            key: `${field.label}:${value}`,
-            value,
-            trailing: (
-              <Stack direction="row" spacing={0.5} alignItems="center">
-                {sources.length > 0 && <SourceBadges label={sources.join('+')} />}
-                {hasUserAssertion && (
-                  <SourceBadges label={databaseView === 'central' ? 'CEDB' : 'PEDB'} />
-                )}
-                {authorityKeys.length > 0 && !hasUserAssertion && (
-                  <Tooltip
-                    title={`${t('LWC.desktop.sidebar.database.validate_data')}: ${field.label}`}
+          )
+          .map((assertion) => assertion.key);
+        const hasUserAssertion = field.assertions.some(
+          (assertion) =>
+            assertion.origin === 'user' &&
+            assertion.status === 'active' &&
+            keyOf(assertion) === value,
+        );
+        lines.push({
+          key: `${field.label}:${value}`,
+          value,
+          trailing: (
+            <Stack direction="row" spacing={0.5} alignItems="center" sx={factTrailingClusterSx}>
+              {hasUserAssertion && (
+                <SourceBadges label={databaseView === 'central' ? 'CEDB' : 'PEDB'} />
+              )}
+              {sources.length > 0 && <SourceBadges label={sources.join('+')} />}
+              {authorityKeys.length > 0 && !hasUserAssertion && (
+                <Tooltip
+                  title={`${t('LWC.desktop.sidebar.database.validate_data')}: ${field.label}`}
+                >
+                  <IconButton
+                    size="small"
+                    sx={neutralActionButtonSx}
+                    aria-label={`${t('LWC.desktop.sidebar.database.validate_data')}: ${field.label} ${value}`}
+                    onClick={() => queueValidation(authorityKeys)}
                   >
-                    <IconButton
-                      size="small"
-                      color="success"
-                      aria-label={`${t('LWC.desktop.sidebar.database.validate_data')}: ${field.label} ${value}`}
-                      onClick={() => queueValidation(authorityKeys)}
-                    >
-                      <CheckIcon fontSize="small" />
-                    </IconButton>
-                  </Tooltip>
-                )}
-                {keys.length > 0 && (
-                  <Tooltip title={t('LWC.desktop.sidebar.database.remove_value')}>
-                    <IconButton
-                      size="small"
-                      onClick={() =>
-                        void runEntityMutationForId(
-                          editEntity!.id,
-                          t('LWC.desktop.sidebar.database.removing_data'),
-                          (doc, id) => {
-                            for (const key of keys) removeEntityValue(doc, id, key);
-                          },
-                        )
-                      }
-                    >
-                      <ClearIcon fontSize="small" />
-                    </IconButton>
-                  </Tooltip>
-                )}
-              </Stack>
-            ),
-          });
+                    <CheckIcon fontSize="small" />
+                  </IconButton>
+                </Tooltip>
+              )}
+              {keys.length > 0 && (
+                <Tooltip title={t('LWC.desktop.sidebar.database.remove_value')}>
+                  <IconButton
+                    size="small"
+                    sx={neutralActionButtonSx}
+                    onClick={() =>
+                      void runEntityMutationForId(
+                        editEntity!.id,
+                        t('LWC.desktop.sidebar.database.removing_data'),
+                        (doc, id) => {
+                          for (const key of keys) removeEntityValue(doc, id, key);
+                        },
+                      )
+                    }
+                  >
+                    <ClearIcon fontSize="small" />
+                  </IconButton>
+                </Tooltip>
+              )}
+            </Stack>
+          ),
+        });
         }
         for (const group of groupAssertionsByValue(field.groups.pending, keyOf)) {
           lines.push({
             key: group.keys.join('+'),
             value: group.value,
             trailing: (
-              <Stack direction="row" spacing={0.5} alignItems="center">
+              <Stack direction="row" spacing={0.5} alignItems="center" sx={factTrailingClusterSx}>
                 <SourceBadges label={group.sources.join('+')} />
                 <Tooltip title={t('LWC.desktop.sidebar.database.validate_data')}>
                   <IconButton
                     size="small"
-                    color="success"
+                    sx={neutralActionButtonSx}
                     onClick={() => queueValidation(group.keys)}
                   >
                     <CheckIcon fontSize="small" />
@@ -1254,7 +1413,7 @@ export const SidebarDatabaseTab = ({ active = false }: SidebarDatabaseTabProps) 
                 <Tooltip title={t('LWC.desktop.sidebar.database.reject_data')}>
                   <IconButton
                     size="small"
-                    color="error"
+                    sx={neutralActionButtonSx}
                     onClick={() =>
                       void runEntityMutationForId(
                         editEntity!.id,
@@ -1272,92 +1431,126 @@ export const SidebarDatabaseTab = ({ active = false }: SidebarDatabaseTabProps) 
             ),
           });
         }
-        if (lines.length === 0) lines.push({ key: `${field.label}:empty`, value: '—' });
-        return lines.map((line, index) => ({
-          ...line,
-          label: index === 0 ? `${field.label}:` : '',
-        }));
+      if (lines.length === 0) lines.push({ key: `${field.label}:empty`, value: '—' });
+      return lines.map((line, index) => ({
+        ...line,
+        label: index === 0 ? `${field.label}:` : '',
+      }));
+    };
+
+    const nationalityGridRows: GridRow[] =
+      editEntity?.kind === 'person'
+        ? buildValueFieldRows({
+            label: t('LWC.desktop.sidebar.database.nationality'),
+            values: editEntity.nationalities,
+            assertions: nationalityAssertions,
+            groups: nationalityGroups,
+            keyOf: nationalityKeyOf,
+          })
+        : [];
+    const originGridRows: GridRow[] =
+      editEntity?.kind === 'person'
+        ? buildValueFieldRows({
+            label: t('LWC.desktop.sidebar.database.place_of_origin'),
+            values: editEntity.placesOfOrigin,
+            assertions: originAssertions,
+            groups: originGroups,
+          })
+        : [];
+
+    const descriptionAssertions =
+      editEntity?.assertions.filter(
+        (assertion) => assertion.element === 'note' && assertion.noteType === 'description',
+      ) ?? [];
+    const descriptionGroups = groupFieldAssertions(
+      descriptionAssertions,
+      new Set(editEntity?.description ? [editEntity.description] : []),
+      false,
+    );
+
+    /** One row per distinct name text: authority badges + accept/reject, grouped like the fields above. */
+    interface NameRow {
+      key: string;
+      text: string;
+      sources: string[];
+      keys: string[];
+      isValidated: boolean;
+      isPrimary: boolean;
+    }
+    const nameTag = editEntity ? ENTITY_KINDS[editEntity.kind].name : null;
+    const nameAssertions =
+      nameTag && editEntity
+        ? editEntity.assertions.filter(
+            (assertion) => assertion.element === nameTag && assertion.status === 'active',
+          )
+        : [];
+    const nameRows: NameRow[] = (editEntity?.nameEntries ?? [])
+      .filter((entry) => entry.text !== editEntity?.romanized)
+      .map((entry) => {
+        const matching = nameAssertions.filter(
+          (assertion) => assertion.value === entry.text && assertion.status === 'active',
+        );
+        const authorityMatching = matching.filter((assertion) => assertion.origin === 'authority');
+        const sourcedMatching = matching.filter(
+          (assertion) => assertion.status === 'active' && assertion.source,
+        );
+        return {
+          key: entry.text,
+          text: entry.text,
+          sources: Array.from(
+            new Set(
+              sourcedMatching
+                .map((assertion) => assertion.source?.split(':')[0])
+                .filter((source): source is string => Boolean(source)),
+            ),
+          ),
+          keys: authorityMatching.map((assertion) => assertion.key),
+          isValidated: matching.some(
+            (assertion) => assertion.origin === 'user' && Boolean(assertion.source),
+          ),
+          isPrimary: entry.text === editEntity?.names[0],
+        };
+      });
+
+    /** One row per distinct role text: authority badges + accept/reject, like names. */
+    interface RoleRow {
+      key: string;
+      text: string;
+      sources: string[];
+      keys: string[];
+    }
+    const roleAssertions =
+      editEntity?.assertions.filter(
+        (assertion) => assertion.element === 'affiliation' && assertion.status === 'active',
+      ) ?? [];
+    const roleRows: RoleRow[] = (editEntity?.roles ?? []).map((text) => {
+      const matching = roleAssertions.filter((assertion) => assertion.value === text);
+      const authorityMatching = matching.filter((assertion) => assertion.origin === 'authority');
+      return {
+        key: text,
+        text,
+        sources: Array.from(
+          new Set(
+            matching
+              .filter((assertion) => assertion.source)
+              .map((assertion) => assertion.source?.split(':')[0])
+              .filter((source): source is string => Boolean(source)),
+          ),
+        ),
+        keys: authorityMatching.map((assertion) => assertion.key),
       };
+    });
 
-      const nationalityGridRows: GridRow[] =
-        editEntity?.kind === 'person'
-          ? buildValueFieldRows({
-              label: t('LWC.desktop.sidebar.database.nationality'),
-              values: editEntity.nationalities,
-              assertions: nationalityAssertions,
-              groups: nationalityGroups,
-              keyOf: nationalityKeyOf,
-            })
-          : [];
-      const originGridRows: GridRow[] =
-        editEntity?.kind === 'person'
-          ? buildValueFieldRows({
-              label: t('LWC.desktop.sidebar.database.place_of_origin'),
-              values: editEntity.placesOfOrigin,
-              assertions: originAssertions,
-              groups: originGroups,
-            })
-          : [];
-
-      const descriptionAssertions =
-        editEntity?.assertions.filter(
-          (assertion) => assertion.element === 'note' && assertion.noteType === 'description',
-        ) ?? [];
-      const descriptionGroups = groupFieldAssertions(
-        descriptionAssertions,
-        new Set(editEntity?.description ? [editEntity.description] : []),
-        false,
-      );
-
-      /** One row per distinct name text: authority badges + accept/reject, grouped like the fields above. */
-      interface NameRow {
-        key: string;
-        text: string;
-        sources: string[];
-        keys: string[];
-        isValidated: boolean;
-        isPrimary: boolean;
-      }
-      const nameTag = editEntity ? ENTITY_KINDS[editEntity.kind].name : null;
-      const nameAssertions =
-        nameTag && editEntity
-          ? editEntity.assertions.filter(
-              (assertion) => assertion.element === nameTag && assertion.status === 'active',
-            )
-          : [];
-      const nameRows: NameRow[] = (editEntity?.nameEntries ?? [])
-        .filter((entry) => entry.text !== editEntity?.romanized)
-        .map((entry) => {
-          const matching = nameAssertions.filter(
-            (assertion) => assertion.value === entry.text && assertion.status === 'active',
-          );
-          const authorityMatching = matching.filter(
-            (assertion) => assertion.origin === 'authority',
-          );
-          const sourcedMatching = matching.filter(
-            (assertion) => assertion.status === 'active' && assertion.source,
-          );
-          return {
-            key: entry.text,
-            text: entry.text,
-            sources: Array.from(
-              new Set(
-                sourcedMatching
-                  .map((assertion) => assertion.source?.split(':')[0])
-                  .filter((source): source is string => Boolean(source)),
-              ),
-            ),
-            keys: authorityMatching.map((assertion) => assertion.key),
-            isValidated: matching.some(
-              (assertion) => assertion.origin === 'user' && Boolean(assertion.source),
-            ),
-            isPrimary: entry.text === editEntity?.names[0],
-          };
-        });
-
-      return { dateGridRows, nationalityGridRows, originGridRows, descriptionGroups, nameRows };
-      // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, [editEntity, dateEditing, databaseView, runEntityMutationForId, t]);
+    return {
+      dateGridRows,
+      nationalityGridRows,
+      originGridRows,
+      descriptionGroups,
+      nameRows,
+      roleRows,
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [editEntity, dateEditing, databaseView, runEntityMutationForId, t]);
 
   /** Name-type dropdown: commits immediately so curation doesn't require Save. */
   const commitNameType = (text: string, type: string) => {
@@ -1390,6 +1583,26 @@ export const SidebarDatabaseTab = ({ active = false }: SidebarDatabaseTabProps) 
     void runEntityMutation('Removing name…', (doc) => {
       removeEntityName(doc, id, text);
     });
+  };
+
+  const commitNewNobleTitle = () => {
+    if (!editEntity || editEntity.kind !== 'person') return;
+    const input = newTitle;
+    if (!Object.values(input).some((value) => value.trim())) return;
+    setNewTitle({ dynasty: '', fief: '', posthumousName: '', title: '' });
+    void runEntityMutation('Adding noble title…', (doc) =>
+      addUserNobleTitle(doc, editEntity.id, input),
+    );
+  };
+
+  const commitEditNobleTitle = (
+    key: string,
+    input: { dynasty: string; fief: string; posthumousName: string; title: string },
+  ) => {
+    if (!editEntity) return;
+    void runEntityMutation('Updating noble title…', (doc) =>
+      updateNobleTitle(doc, editEntity.id, key, input),
+    );
   };
 
   const commitAddNationality = useCallback(
@@ -1642,7 +1855,9 @@ export const SidebarDatabaseTab = ({ active = false }: SidebarDatabaseTabProps) 
           )}
           <Tooltip
             title={
-              'Backfill names from authorities — adds missing typed names (字/名/…) from CBDB/DILA packs and Wikidata. ' +
+              'Backfill from authorities — adds missing typed names (字/名/…), dates, nationality, and place of origin ' +
+              "from CBDB/DILA/Norbert packs and Wikidata, plus noble titles from Norbert's canonical person_nt data " +
+              '(Norbert has no place-of-origin data). ' +
               'Best results need a rebuilt CBDB pack with bare forms in names[]; Wikidata-linked people get live enrichment.'
             }
           >
@@ -1934,7 +2149,17 @@ export const SidebarDatabaseTab = ({ active = false }: SidebarDatabaseTabProps) 
                     entity.placesOfOrigin.length > 0) && (
                     <Typography variant="caption" color="text.secondary" component="div" noWrap>
                       {entity.startYear != null || entity.endYear != null
-                        ? `${t('LWC.desktop.sidebar.database.dates')}: ${entity.startYear ?? '—'}–${entity.endYear ?? '—'}`
+                        ? `${t('LWC.desktop.sidebar.database.dates')}: ${
+                            entity.kind === 'work' && entity.workDate
+                              ? scholarlyDateRange(
+                                  entity.startYear,
+                                  entity.endYear,
+                                  entity.workDate.startPrecision,
+                                  entity.workDate.endPrecision,
+                                  t,
+                                )
+                              : `${entity.startYear ?? '—'}–${entity.endYear ?? '—'}`
+                          }`
                         : ''}
                       {entity.nationalities.length > 0
                         ? `${entity.startYear != null || entity.endYear != null ? ' · ' : ''}${t('LWC.desktop.sidebar.database.dynasties')}: ${entity.nationalities.join(', ')}`
@@ -1945,13 +2170,16 @@ export const SidebarDatabaseTab = ({ active = false }: SidebarDatabaseTabProps) 
                     </Typography>
                   )}
                 </Box>
-                <IconButton
-                  size="small"
-                  onClick={(event) => setMenuAnchor({ el: event.currentTarget, entity })}
-                  aria-label={t('LWC.desktop.sidebar.database.actions_for', { id: entity.id })}
-                >
-                  <MoreVertIcon fontSize="small" />
-                </IconButton>
+                <Tooltip title={t('LWC.desktop.sidebar.database.open')}>
+                  <IconButton
+                    size="small"
+                    onClick={() => openEdit(entity)}
+                    aria-label={t('LWC.desktop.sidebar.database.open')}
+                    sx={{ flexShrink: 0 }}
+                  >
+                    <OpenInNewIcon fontSize="small" />
+                  </IconButton>
+                </Tooltip>
               </Box>
             );
           })
@@ -1967,97 +2195,6 @@ export const SidebarDatabaseTab = ({ active = false }: SidebarDatabaseTabProps) 
           {selected.size > 0 ? ` · ${selected.size} selected` : ''}
         </Typography>
       </Box>
-
-      {/* Per-entity menu */}
-      <Menu
-        anchorEl={menuAnchor?.el ?? null}
-        open={!!menuAnchor}
-        onClose={() => setMenuAnchor(null)}
-      >
-        <MenuItem
-          onClick={() => {
-            if (menuAnchor) openEdit(menuAnchor.entity);
-            setMenuAnchor(null);
-          }}
-        >
-          <ListItemIcon>
-            <EditOutlinedIcon fontSize="small" />
-          </ListItemIcon>
-          <ListItemText primary={t('LWC.desktop.sidebar.database.edit_description_names')} />
-        </MenuItem>
-        <MenuItem
-          onClick={() => {
-            const target = menuAnchor;
-            setMenuAnchor(null);
-            if (!target) return;
-            const keys = target.entity.assertions
-              .filter((assertion) => assertion.origin !== 'user' && assertion.status === 'active')
-              .map((assertion) => assertion.key);
-            if (editEntity?.id === target.entity.id) queueValidation(keys);
-            else {
-              void runEntityMutationForId(
-                target.entity.id,
-                t('LWC.desktop.sidebar.database.validating_data'),
-                (doc, id) => {
-                  for (const key of keys) validateEntityAssertion(doc, id, key);
-                },
-              );
-            }
-          }}
-        >
-          <ListItemIcon>
-            <CheckIcon fontSize="small" color="success" />
-          </ListItemIcon>
-          <ListItemText primary={t('LWC.desktop.sidebar.database.validate_imported')} />
-        </MenuItem>
-        <MenuItem
-          onClick={() => {
-            const target = menuAnchor;
-            setMenuAnchor(null);
-            if (!target) return;
-            void runEntityMutationForId(
-              target.entity.id,
-              t('LWC.desktop.sidebar.database.rejecting_data'),
-              (doc, id) => {
-                for (const assertion of listEntityAssertions(doc, id)) {
-                  if (assertion.origin !== 'user' && assertion.status === 'active')
-                    rejectEntityAssertion(doc, id, assertion.key);
-                }
-              },
-            );
-          }}
-        >
-          <ListItemIcon>
-            <ClearIcon fontSize="small" color="error" />
-          </ListItemIcon>
-          <ListItemText primary={t('LWC.desktop.sidebar.database.reject_imported')} />
-        </MenuItem>
-        <MenuItem
-          onClick={() => {
-            setSplitInfoOpen(true);
-            setMenuAnchor(null);
-          }}
-        >
-          <ListItemIcon>
-            <CallSplitIcon fontSize="small" />
-          </ListItemIcon>
-          <ListItemText primary={t('LWC.desktop.sidebar.database.split_entity')} />
-        </MenuItem>
-        <MenuItem
-          onClick={() => {
-            if (menuAnchor) requestDelete(menuAnchor.entity);
-            setMenuAnchor(null);
-          }}
-        >
-          <ListItemIcon>
-            <DeleteOutlineIcon fontSize="small" color="error" />
-          </ListItemIcon>
-          <ListItemText
-            primary={t('LWC.desktop.sidebar.database.delete_entity')}
-            primaryTypographyProps={{ color: 'error' }}
-          />
-        </MenuItem>
-      </Menu>
 
       {/* Generic confirm dialog (delete / detach) */}
       <Dialog open={!!confirm} onClose={() => setConfirm(null)} maxWidth="xs" fullWidth>
@@ -2169,19 +2306,98 @@ export const SidebarDatabaseTab = ({ active = false }: SidebarDatabaseTabProps) 
               />
             ) : (
               <>
-                <Typography variant="h6" component="span" sx={{ minWidth: 0 }} noWrap>
+                <Typography
+                  variant="h6"
+                  component="button"
+                  type="button"
+                  onClick={startRename}
+                  aria-label={t('LWC.desktop.sidebar.database.rename_name')}
+                  sx={{
+                    minWidth: 0,
+                    maxWidth: '100%',
+                    overflow: 'hidden',
+                    textOverflow: 'ellipsis',
+                    whiteSpace: 'nowrap',
+                    border: 0,
+                    p: 0,
+                    background: 'transparent',
+                    color: 'inherit',
+                    font: 'inherit',
+                    fontWeight: 600,
+                    textAlign: 'left',
+                    cursor: 'text',
+                  }}
+                >
                   {editCanonicalName || editEntity?.id}
                 </Typography>
-                <Tooltip title={t('LWC.desktop.sidebar.database.rename_name')}>
-                  <IconButton
+                {editingRomanized ? (
+                  <TextField
+                    autoFocus
                     size="small"
-                    onClick={startRename}
-                    aria-label={t('LWC.desktop.sidebar.database.rename_name')}
-                    sx={{ p: 0.25 }}
+                    variant="standard"
+                    value={editRomanized}
+                    onChange={(event) => setEditRomanized(event.target.value)}
+                    onBlur={acceptRomanizedEdit}
+                    onKeyDown={(event) => {
+                      if (event.key === 'Enter') {
+                        event.preventDefault();
+                        acceptRomanizedEdit();
+                      } else if (event.key === 'Escape') {
+                        event.stopPropagation();
+                        cancelRomanizedEdit();
+                      }
+                    }}
+                    inputProps={{ 'aria-label': t('LWC.desktop.sidebar.database.romanized_name') }}
+                    InputProps={{
+                      sx: { typography: 'body2' },
+                      endAdornment: canAutoRomanize(projectLang) ? (
+                        <InputAdornment position="end">
+                          <Tooltip title={t('LWC.desktop.sidebar.database.generate_romanization')}>
+                            <IconButton
+                              size="small"
+                              aria-label={t('LWC.desktop.sidebar.database.generate_romanization')}
+                              onMouseDown={(event) => event.preventDefault()}
+                              onClick={() =>
+                                setEditRomanized(
+                                  autoRomanize(
+                                    editCanonicalName || editEntity?.names[0] || '',
+                                    projectLang,
+                                  ) ?? editRomanized,
+                                )
+                              }
+                            >
+                              <AutorenewIcon fontSize="small" />
+                            </IconButton>
+                          </Tooltip>
+                        </InputAdornment>
+                      ) : undefined,
+                    }}
+                    sx={{ minWidth: 0, maxWidth: 140 }}
+                  />
+                ) : (
+                  <Typography
+                    variant="body2"
+                    component="button"
+                    type="button"
+                    onClick={startRomanizedEdit}
+                    aria-label={t('LWC.desktop.sidebar.database.romanized_name')}
+                    noWrap
+                    sx={{
+                      minWidth: 0,
+                      maxWidth: 140,
+                      overflow: 'hidden',
+                      textOverflow: 'ellipsis',
+                      border: 0,
+                      p: 0,
+                      background: 'transparent',
+                      color: 'text.secondary',
+                      textAlign: 'left',
+                      cursor: 'text',
+                    }}
                   >
-                    <EditOutlinedIcon fontSize="inherit" />
-                  </IconButton>
-                </Tooltip>
+                    {editRomanized || t('LWC.desktop.sidebar.database.romanized_name')}
+                  </Typography>
+                )}
                 <Tooltip title={t('LWC.desktop.sidebar.database.lookup_entity')}>
                   <IconButton
                     size="small"
@@ -2195,14 +2411,18 @@ export const SidebarDatabaseTab = ({ active = false }: SidebarDatabaseTabProps) 
               </>
             )}
             <Box sx={{ flex: 1 }} />
-            {editEntity?.kind === 'person' && (
+            {(editEntity?.kind === 'person' || editEntity?.kind === 'work') && (
               <Tooltip title={t('LWC.desktop.sidebar.database.refresh_authorities')}>
                 <span>
                   <IconButton
                     size="small"
                     aria-label={t('LWC.desktop.sidebar.database.refresh_authorities')}
                     disabled={backfillBusy || editEntity.authorities.length === 0}
-                    onClick={() => void runNameBackfill([editEntity.id])}
+                    onClick={() =>
+                      editEntity.kind === 'work'
+                        ? void refreshWorkDetails(editEntity)
+                        : void runNameBackfill([editEntity.id])
+                    }
                   >
                     <RefreshIcon fontSize="small" />
                   </IconButton>
@@ -2287,7 +2507,7 @@ export const SidebarDatabaseTab = ({ active = false }: SidebarDatabaseTabProps) 
                 <Tooltip title={t('LWC.desktop.sidebar.database.accept_data')}>
                   <IconButton
                     size="small"
-                    color="success"
+                    sx={neutralActionButtonSx}
                     onClick={() => {
                       const value = assertion.value;
                       queueValidation([assertion.key], 'description');
@@ -2300,7 +2520,7 @@ export const SidebarDatabaseTab = ({ active = false }: SidebarDatabaseTabProps) 
                 <Tooltip title={t('LWC.desktop.sidebar.database.reject_data')}>
                   <IconButton
                     size="small"
-                    color="error"
+                    sx={neutralActionButtonSx}
                     onClick={() =>
                       void runEntityMutationForId(
                         editEntity.id,
@@ -2314,37 +2534,93 @@ export const SidebarDatabaseTab = ({ active = false }: SidebarDatabaseTabProps) 
                 </Tooltip>
               </Stack>
             ))}
-          {(canAutoRomanize(projectLang) || editHadRomanized) && (
-            <TextField
-              fullWidth
-              size="small"
-              label={t('LWC.desktop.sidebar.database.romanized_name')}
-              value={editRomanized}
-              onChange={(event) => setEditRomanized(event.target.value)}
-              sx={{ mt: 2 }}
-              InputProps={{
-                endAdornment: canAutoRomanize(projectLang) ? (
-                  <InputAdornment position="end">
-                    <Tooltip title={t('LWC.desktop.sidebar.database.generate_romanization')}>
-                      <IconButton
-                        size="small"
-                        aria-label={t('LWC.desktop.sidebar.database.generate_romanization')}
-                        onClick={() =>
-                          setEditRomanized(
-                            autoRomanize(
-                              editCanonicalName || editEntity?.names[0] || '',
-                              projectLang,
-                            ) ?? editRomanized,
-                          )
-                        }
-                      >
-                        <AutorenewIcon fontSize="small" />
-                      </IconButton>
-                    </Tooltip>
-                  </InputAdornment>
-                ) : undefined,
-              }}
-            />
+          {editEntity?.kind === 'work' && dateEditing && (
+            <Stack spacing={0.75} sx={{ mt: 2 }}>
+              <Typography variant="body2" sx={{ fontWeight: 600 }}>
+                {t('LWC.desktop.sidebar.database.dates')}:
+              </Typography>
+              <Stack spacing={0.75}>
+                <Stack direction="row" spacing={0.5} alignItems="center">
+                  <TextField
+                    select
+                    size="small"
+                    value={workDateStartPrecision}
+                    onChange={(event) =>
+                      setWorkDateStartPrecision(event.target.value as WorkDatePrecision)
+                    }
+                    sx={{ minWidth: 140 }}
+                  >
+                    {WORK_DATE_START_PRECISION_OPTIONS.map((option) => (
+                      <MenuItem key={option || 'exact'} value={option}>
+                        {option || '—'}
+                      </MenuItem>
+                    ))}
+                  </TextField>
+                  <TextField
+                    size="small"
+                    label={t('LWC.desktop.sidebar.database.from')}
+                    value={workDateStart}
+                    onChange={(event) =>
+                      setWorkDateStart(event.target.value.replace(/[^0-9]/g, ''))
+                    }
+                    sx={{ flex: 1 }}
+                    inputProps={{ inputMode: 'numeric' }}
+                  />
+                </Stack>
+                <Stack direction="row" spacing={0.5} alignItems="center">
+                  <TextField
+                    select
+                    size="small"
+                    value={workDateEndPrecision}
+                    onChange={(event) =>
+                      setWorkDateEndPrecision(event.target.value as WorkDatePrecision)
+                    }
+                    sx={{ minWidth: 140 }}
+                  >
+                    {WORK_DATE_END_PRECISION_OPTIONS.map((option) => (
+                      <MenuItem key={option || 'exact'} value={option}>
+                        {option || '—'}
+                      </MenuItem>
+                    ))}
+                  </TextField>
+                  <TextField
+                    size="small"
+                    label={t('LWC.desktop.sidebar.database.to')}
+                    value={workDateEnd}
+                    onChange={(event) => setWorkDateEnd(event.target.value.replace(/[^0-9]/g, ''))}
+                    sx={{ flex: 1 }}
+                    inputProps={{ inputMode: 'numeric' }}
+                  />
+                </Stack>
+              </Stack>
+              <Stack direction="row" justifyContent="flex-end" spacing={1}>
+                <Button size="small" onClick={() => setDateEditing(false)}>
+                  {t('LWC.desktop.sidebar.database.dialogs.cancel')}
+                </Button>
+                <Button size="small" variant="contained" onClick={saveWorkDates}>
+                  {t('LWC.desktop.sidebar.database.save')}
+                </Button>
+              </Stack>
+            </Stack>
+          )}
+          {editEntity?.kind === 'work' && !dateEditing && (
+            <Box sx={{ mt: 2 }}>
+              <EntityLookupField
+                kind="person"
+                tag="persName"
+                label={`${t('LWC.desktop.sidebar.database.authors')}:`}
+                mode="multi"
+                values={editEntity.authors.map((author) => ({
+                  name: author.name,
+                  ref: author.ref ?? undefined,
+                }))}
+                onChange={(authors) =>
+                  void runEntityMutationForId(editEntity.id, 'Saving authors…', (doc, id) =>
+                    setUserWorkAuthors(doc, id, authors),
+                  )
+                }
+              />
+            </Box>
           )}
           {editEntity?.kind === 'person' && (
             <Stack spacing={0.75} sx={{ mt: 2 }}>
@@ -2498,7 +2774,7 @@ export const SidebarDatabaseTab = ({ active = false }: SidebarDatabaseTabProps) 
                 <Box
                   sx={{
                     display: 'grid',
-                    gridTemplateColumns: 'max-content 1fr max-content',
+                    gridTemplateColumns: 'max-content minmax(0, 1fr) minmax(0, 1fr)',
                     columnGap: 1,
                     rowGap: 0.25,
                     alignItems: 'center',
@@ -2512,26 +2788,42 @@ export const SidebarDatabaseTab = ({ active = false }: SidebarDatabaseTabProps) 
                       >
                         {row.label}
                       </Typography>
-                      <Typography variant="body2" color="text.primary">
-                        {row.value}
+                      <Typography variant="body2" color="text.primary" component="span">
+                        {row.key === dateGridRows[0]?.key ||
+                        row.key === nationalityGridRows[0]?.key ||
+                        row.key === originGridRows[0]?.key ? (
+                          <Box
+                            component="button"
+                            type="button"
+                            onClick={() =>
+                              row.key === dateGridRows[0]?.key
+                                ? setDateEditing(true)
+                                : setValuesEditing(true)
+                            }
+                            aria-label={
+                              row.key === dateGridRows[0]?.key
+                                ? t('LWC.desktop.sidebar.database.edit_dates')
+                                : t('LWC.desktop.sidebar.database.edit_values')
+                            }
+                            sx={{
+                              border: 0,
+                              p: 0,
+                              background: 'transparent',
+                              color: 'inherit',
+                              font: 'inherit',
+                              textAlign: 'left',
+                              cursor: 'text',
+                            }}
+                          >
+                            {row.value}
+                          </Box>
+                        ) : (
+                          row.value
+                        )}
                       </Typography>
-                      {row.key === nationalityGridRows[0]?.key ||
-                      row.key === originGridRows[0]?.key ? (
-                        <Stack direction="row" spacing={0.5} alignItems="center">
-                          {row.trailing}
-                          <Tooltip title={t('LWC.desktop.sidebar.database.edit_values')}>
-                            <IconButton
-                              size="small"
-                              aria-label={t('LWC.desktop.sidebar.database.edit_values')}
-                              onClick={() => setValuesEditing(true)}
-                            >
-                              <EditOutlinedIcon fontSize="small" />
-                            </IconButton>
-                          </Tooltip>
-                        </Stack>
-                      ) : (
-                        <Box>{row.trailing}</Box>
-                      )}
+                      <Box sx={{ display: 'flex', justifyContent: 'flex-end', minWidth: 0 }}>
+                        {row.trailing}
+                      </Box>
                     </Fragment>
                   ))}
                 </Box>
@@ -2557,13 +2849,17 @@ export const SidebarDatabaseTab = ({ active = false }: SidebarDatabaseTabProps) 
                 sx={{ minHeight: 0, '& .MuiAccordionSummary-content': { my: 1 } }}
               >
                 <Typography variant="subtitle2">
-                  {t('LWC.desktop.sidebar.database.names_heading')}
+                  {editEntity?.kind === 'work'
+                    ? t('LWC.desktop.sidebar.database.titles_heading')
+                    : t('LWC.desktop.sidebar.database.names_heading')}
                 </Typography>
               </AccordionSummary>
               <AccordionDetails>
                 <Stack spacing={0.75}>
                   <Typography variant="caption" color="text.secondary">
-                    {t('LWC.desktop.sidebar.database.names_hint')}
+                    {editEntity?.kind === 'work'
+                      ? t('LWC.desktop.sidebar.database.titles_hint')
+                      : t('LWC.desktop.sidebar.database.names_hint')}
                   </Typography>
                   {nameRows.map((row) => (
                     <Stack key={row.key} direction="row" spacing={1} alignItems="center">
@@ -2585,11 +2881,13 @@ export const SidebarDatabaseTab = ({ active = false }: SidebarDatabaseTabProps) 
                         <MenuItem value="">
                           <em>{t('LWC.desktop.sidebar.database.name_types.unclassified')}</em>
                         </MenuItem>
-                        {ALL_NAME_TYPES.map((type) => (
-                          <MenuItem key={type} value={type}>
-                            {nameTypeLabel(type, projectLang)}
-                          </MenuItem>
-                        ))}
+                        {(editEntity?.kind === 'work' ? WORK_TITLE_TYPES : ALL_NAME_TYPES).map(
+                          (type) => (
+                            <MenuItem key={type} value={type}>
+                              {nameTypeLabel(type, projectLang)}
+                            </MenuItem>
+                          ),
+                        )}
                       </TextField>
                       {row.sources.length > 0 && <SourceBadges label={row.sources.join('+')} />}
                       {row.isValidated && (
@@ -2598,22 +2896,22 @@ export const SidebarDatabaseTab = ({ active = false }: SidebarDatabaseTabProps) 
                       {row.keys.length > 0 && (
                         <>
                           <Tooltip title={t('LWC.desktop.sidebar.database.validate_data')}>
-                            <IconButton
-                              size="small"
-                              color="success"
-                              onClick={() => queueValidation(row.keys)}
-                            >
-                              <CheckIcon fontSize="small" />
-                            </IconButton>
+                          <IconButton
+                            size="small"
+                            sx={neutralActionButtonSx}
+                            onClick={() => queueValidation(row.keys)}
+                          >
+                            <CheckIcon fontSize="small" />
+                          </IconButton>
                           </Tooltip>
                           <Tooltip title={t('LWC.desktop.sidebar.database.reject_data')}>
-                            <IconButton
-                              size="small"
-                              color="error"
-                              onClick={() =>
-                                void runEntityMutationForId(
-                                  editEntity.id,
-                                  t('LWC.desktop.sidebar.database.rejecting_data'),
+                          <IconButton
+                            size="small"
+                            sx={neutralActionButtonSx}
+                            onClick={() =>
+                              void runEntityMutationForId(
+                                editEntity.id,
+                                t('LWC.desktop.sidebar.database.rejecting_data'),
                                   (doc, id) => {
                                     for (const key of row.keys) rejectEntityAssertion(doc, id, key);
                                   },
@@ -2631,6 +2929,7 @@ export const SidebarDatabaseTab = ({ active = false }: SidebarDatabaseTabProps) 
                             size="small"
                             aria-label={t('LWC.desktop.sidebar.database.delete_name')}
                             onClick={() => commitDeleteName(row.text)}
+                            sx={neutralActionButtonSx}
                           >
                             <ClearIcon fontSize="small" />
                           </IconButton>
@@ -2642,7 +2941,11 @@ export const SidebarDatabaseTab = ({ active = false }: SidebarDatabaseTabProps) 
                     <TextField
                       fullWidth
                       size="small"
-                      label={t('LWC.desktop.sidebar.database.add_name_placeholder')}
+                      label={
+                        editEntity?.kind === 'work'
+                          ? t('LWC.desktop.sidebar.database.add_title_placeholder')
+                          : t('LWC.desktop.sidebar.database.add_name_placeholder')
+                      }
                       value={editNewName}
                       onChange={(event) => setEditNewName(event.target.value)}
                       onKeyDown={(event) => {
@@ -2663,11 +2966,13 @@ export const SidebarDatabaseTab = ({ active = false }: SidebarDatabaseTabProps) 
                       <MenuItem value="">
                         <em>{t('LWC.desktop.sidebar.database.name_types.unclassified')}</em>
                       </MenuItem>
-                      {ALL_NAME_TYPES.map((type) => (
-                        <MenuItem key={type} value={type}>
-                          {nameTypeLabel(type, projectLang)}
-                        </MenuItem>
-                      ))}
+                      {(editEntity?.kind === 'work' ? WORK_TITLE_TYPES : ALL_NAME_TYPES).map(
+                        (type) => (
+                          <MenuItem key={type} value={type}>
+                            {nameTypeLabel(type, projectLang)}
+                          </MenuItem>
+                        ),
+                      )}
                     </TextField>
                     <Button
                       variant="outlined"
@@ -2683,6 +2988,187 @@ export const SidebarDatabaseTab = ({ active = false }: SidebarDatabaseTabProps) 
               </AccordionDetails>
             </Accordion>
           )}
+          {editEntity && editEntity.kind === 'person' && (
+            <Accordion
+              disableGutters
+              elevation={0}
+              expanded={titlesExpanded}
+              onChange={(_event, expanded) => setTitlesExpanded(expanded)}
+              sx={{
+                mt: 2,
+                border: 1,
+                borderColor: 'divider',
+                borderRadius: 1,
+                '&:before': { display: 'none' },
+              }}
+            >
+              <AccordionSummary
+                expandIcon={<ExpandMoreIcon fontSize="small" />}
+                sx={{ minHeight: 0, '& .MuiAccordionSummary-content': { my: 1 } }}
+              >
+                <Typography variant="subtitle2">
+                  {t('LWC.desktop.sidebar.database.noble_titles_heading')}
+                </Typography>
+              </AccordionSummary>
+              <AccordionDetails>
+                <Stack spacing={1}>
+                  <Typography variant="caption" color="text.secondary">
+                    {t('LWC.desktop.sidebar.database.noble_titles_hint')}
+                  </Typography>
+                  {editEntity.nobleTitles.map((title) => {
+                    const input = {
+                      dynasty: title.dynasty,
+                      fief: title.fief,
+                      posthumousName: title.posthumousName,
+                      title: title.title,
+                    };
+                    return (
+                      <Stack key={title.key} spacing={0.5}>
+                        <Stack direction="row" spacing={0.5} alignItems="center">
+                          {(['dynasty', 'fief', 'posthumousName', 'title'] as const).map(
+                            (field) => (
+                              <TextField
+                                key={field}
+                                size="small"
+                                label={t(
+                                  `LWC.desktop.sidebar.database.noble_title_fields.${field}`,
+                                )}
+                                defaultValue={input[field]}
+                                onBlur={(event) =>
+                                  commitEditNobleTitle(title.key, {
+                                    ...input,
+                                    [field]: event.target.value,
+                                  })
+                                }
+                                sx={{ flex: 1, minWidth: 0 }}
+                              />
+                            ),
+                          )}
+                          {title.source && <SourceBadges label={title.source.split(':')[0]} />}
+                          {title.origin === 'authority' && (
+                            <IconButton
+                              size="small"
+                              sx={neutralActionButtonSx}
+                              onClick={() => queueValidation([title.key])}
+                            >
+                              <CheckIcon fontSize="small" />
+                            </IconButton>
+                          )}
+                          <IconButton
+                            size="small"
+                            sx={neutralActionButtonSx}
+                            onClick={() =>
+                              void runEntityMutation('Removing noble title…', (doc) =>
+                                removeNobleTitle(doc, editEntity.id, title.key),
+                              )
+                            }
+                          >
+                            <ClearIcon fontSize="small" />
+                          </IconButton>
+                        </Stack>
+                      </Stack>
+                    );
+                  })}
+                  <Stack direction="row" spacing={0.5} alignItems="center">
+                    {(['dynasty', 'fief', 'posthumousName', 'title'] as const).map((field) => (
+                      <TextField
+                        key={field}
+                        size="small"
+                        label={t(`LWC.desktop.sidebar.database.noble_title_fields.${field}`)}
+                        value={newTitle[field]}
+                        onChange={(event) =>
+                          setNewTitle((previous) => ({ ...previous, [field]: event.target.value }))
+                        }
+                        sx={{ flex: 1, minWidth: 0 }}
+                      />
+                    ))}
+                    <Button
+                      variant="outlined"
+                      size="small"
+                      disabled={!Object.values(newTitle).some((value) => value.trim())}
+                      onClick={commitNewNobleTitle}
+                    >
+                      {t('LWC.desktop.sidebar.database.add_name')}
+                    </Button>
+                  </Stack>
+                </Stack>
+              </AccordionDetails>
+            </Accordion>
+          )}
+          {editEntity && editEntity.kind === 'person' && (
+            <Accordion
+              disableGutters
+              elevation={0}
+              expanded={rolesExpanded}
+              onChange={(_event, expanded) => setRolesExpanded(expanded)}
+              sx={{
+                mt: 2,
+                border: 1,
+                borderColor: 'divider',
+                borderRadius: 1,
+                '&:before': { display: 'none' },
+              }}
+            >
+              <AccordionSummary
+                expandIcon={<ExpandMoreIcon fontSize="small" />}
+                sx={{ minHeight: 0, '& .MuiAccordionSummary-content': { my: 1 } }}
+              >
+                <Typography variant="subtitle2">
+                  {t('LWC.desktop.sidebar.database.roles_heading')}
+                </Typography>
+              </AccordionSummary>
+              <AccordionDetails>
+                <Stack spacing={0.75}>
+                  <Typography variant="caption" color="text.secondary">
+                    {t('LWC.desktop.sidebar.database.roles_hint')}
+                  </Typography>
+                  {roleRows.length === 0 && (
+                    <Typography variant="body2" color="text.secondary">
+                      {t('LWC.desktop.sidebar.database.no_roles')}
+                    </Typography>
+                  )}
+                  {roleRows.map((row) => (
+                    <Stack key={row.key} direction="row" spacing={1} alignItems="center">
+                      <Typography variant="body2" sx={{ flex: 1 }}>
+                        {row.text}
+                      </Typography>
+                      {row.sources.length > 0 && <SourceBadges label={row.sources.join('+')} />}
+                      {row.keys.length > 0 && (
+                        <>
+                          <Tooltip title={t('LWC.desktop.sidebar.database.validate_data')}>
+                            <IconButton
+                              size="small"
+                              sx={neutralActionButtonSx}
+                              onClick={() => queueValidation(row.keys)}
+                            >
+                              <CheckIcon fontSize="small" />
+                            </IconButton>
+                          </Tooltip>
+                          <Tooltip title={t('LWC.desktop.sidebar.database.reject_data')}>
+                            <IconButton
+                              size="small"
+                              sx={neutralActionButtonSx}
+                              onClick={() =>
+                                void runEntityMutationForId(
+                                  editEntity.id,
+                                  t('LWC.desktop.sidebar.database.rejecting_data'),
+                                  (doc, id) => {
+                                    for (const key of row.keys) rejectEntityAssertion(doc, id, key);
+                                  },
+                                )
+                              }
+                            >
+                              <ClearIcon fontSize="small" />
+                            </IconButton>
+                          </Tooltip>
+                        </>
+                      )}
+                    </Stack>
+                  ))}
+                </Stack>
+              </AccordionDetails>
+            </Accordion>
+          )}
         </DialogContent>
         <DialogActions>
           <Button onClick={() => setEditEntity(null)}>
@@ -2690,21 +3176,6 @@ export const SidebarDatabaseTab = ({ active = false }: SidebarDatabaseTabProps) 
           </Button>
           <Button variant="contained" onClick={saveEdit}>
             {t('LWC.desktop.sidebar.database.save')}
-          </Button>
-        </DialogActions>
-      </Dialog>
-
-      {/* Split info */}
-      <Dialog open={splitInfoOpen} onClose={() => setSplitInfoOpen(false)} maxWidth="xs" fullWidth>
-        <DialogTitle>{t('LWC.desktop.sidebar.database.dialogs.splitting_entity')}</DialogTitle>
-        <DialogContent>
-          <DialogContentText>
-            {t('LWC.desktop.sidebar.database.dialogs.split_info_message')}
-          </DialogContentText>
-        </DialogContent>
-        <DialogActions>
-          <Button onClick={() => setSplitInfoOpen(false)}>
-            {t('LWC.desktop.sidebar.database.dialogs.got_it')}
           </Button>
         </DialogActions>
       </Dialog>

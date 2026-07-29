@@ -1,6 +1,6 @@
 import { getCentralId } from './concordance';
 import { addEntity, createEntitiesScaffold, findEntity, parseEntities } from './entities';
-import { findCentralByAuthority, promoteToCentral } from './promote';
+import { findCentralByAuthority, findCentralByNameDates, promoteToCentral } from './promote';
 import { readFields } from './reconcile';
 
 const setup = () => ({
@@ -81,5 +81,99 @@ describe('findCentralByAuthority', () => {
     addEntity(cedbDoc, 'place', { name: 'Y', authorityIds: [{ type: 'Wikidata', value: 'Q1' }] });
     expect(findCentralByAuthority(cedbDoc, 'person', [{ type: 'Wikidata', value: 'Q1' }])).toBe(person.id);
     expect(findCentralByAuthority(cedbDoc, 'person', [{ type: 'CBDB', value: '9' }])).toBeNull();
+  });
+});
+
+describe('findCentralByNameDates', () => {
+  it('returns null when no candidate shares the name', () => {
+    const cedbDoc = parseEntities(createEntitiesScaffold('cedb'));
+    addEntity(cedbDoc, 'person', { name: '張衡', startYear: 78, endYear: 139 });
+    expect(findCentralByNameDates(cedbDoc, 'person', '王充', 27, 97)).toBeNull();
+  });
+
+  it('returns null when more than one candidate matches the name (ambiguous)', () => {
+    const cedbDoc = parseEntities(createEntitiesScaffold('cedb'));
+    addEntity(cedbDoc, 'person', { name: '張衡' });
+    addEntity(cedbDoc, 'person', { name: '張衡' });
+    expect(findCentralByNameDates(cedbDoc, 'person', '張衡')).toBeNull();
+  });
+
+  it('matches the single candidate with the same name when neither side has dates', () => {
+    const cedbDoc = parseEntities(createEntitiesScaffold('cedb'));
+    const central = addEntity(cedbDoc, 'person', { name: '張衡' });
+    expect(findCentralByNameDates(cedbDoc, 'person', '張衡')).toBe(central.id);
+  });
+
+  it('matches the single candidate with the same name and matching dates', () => {
+    const cedbDoc = parseEntities(createEntitiesScaffold('cedb'));
+    const central = addEntity(cedbDoc, 'person', { name: '張衡', startYear: 78, endYear: 139 });
+    expect(findCentralByNameDates(cedbDoc, 'person', '張衡', 78, 139)).toBe(central.id);
+  });
+
+  it('matches when the candidate is missing dates the incoming entity has', () => {
+    const cedbDoc = parseEntities(createEntitiesScaffold('cedb'));
+    const central = addEntity(cedbDoc, 'person', { name: '張衡' });
+    expect(findCentralByNameDates(cedbDoc, 'person', '張衡', 78, 139)).toBe(central.id);
+  });
+
+  it('rejects a same-named candidate whose dates disagree', () => {
+    const cedbDoc = parseEntities(createEntitiesScaffold('cedb'));
+    addEntity(cedbDoc, 'person', { name: '張衡', startYear: 78, endYear: 139 });
+    expect(findCentralByNameDates(cedbDoc, 'person', '張衡', 100, 150)).toBeNull();
+  });
+
+  it('does not match across entity kinds', () => {
+    const cedbDoc = parseEntities(createEntitiesScaffold('cedb'));
+    addEntity(cedbDoc, 'place', { name: '張衡' });
+    expect(findCentralByNameDates(cedbDoc, 'person', '張衡')).toBeNull();
+  });
+});
+
+describe('promoteToCentral name+dates fallback', () => {
+  it('links to a name+dates match when there is no shared authority id', () => {
+    const { pedbDoc, cedbDoc } = setup();
+    const central = addEntity(cedbDoc, 'person', { name: '張衡', startYear: 78, endYear: 139 });
+    const { id, element } = addEntity(pedbDoc, 'person', { name: '張衡', startYear: 78, endYear: 139 });
+
+    const result = promoteToCentral(pedbDoc, id, cedbDoc, USER);
+    expect(result.created).toBe(false);
+    expect(result.centralId).toBe(central.id);
+    expect(getCentralId(element, USER)).toBe(central.id);
+    expect(cedbDoc.getElementsByTagName('person')).toHaveLength(1);
+  });
+
+  it('prefers an authority match over a name+dates match when both would apply', () => {
+    const { pedbDoc, cedbDoc } = setup();
+    const byAuthority = addEntity(cedbDoc, 'person', {
+      name: '張衡',
+      startYear: 78,
+      endYear: 139,
+      authorityIds: [{ type: 'CBDB', value: '1762' }],
+    });
+    // A same-named, same-dated decoy with no authority id: the fallback alone
+    // would be ambiguous between the two, but the authority match takes it
+    // before the fallback is ever consulted.
+    addEntity(cedbDoc, 'person', { name: '張衡', startYear: 78, endYear: 139 });
+    const { id } = addEntity(pedbDoc, 'person', {
+      name: '張衡',
+      startYear: 78,
+      endYear: 139,
+      authorityIds: [{ type: 'CBDB', value: '1762' }],
+    });
+
+    const result = promoteToCentral(pedbDoc, id, cedbDoc, USER);
+    expect(result.centralId).toBe(byAuthority.id);
+    expect(cedbDoc.getElementsByTagName('person')).toHaveLength(2);
+  });
+
+  it('mints a new central record when the name+dates fallback is ambiguous', () => {
+    const { pedbDoc, cedbDoc } = setup();
+    addEntity(cedbDoc, 'person', { name: '張衡' });
+    addEntity(cedbDoc, 'person', { name: '張衡' });
+    const { id } = addEntity(pedbDoc, 'person', { name: '張衡' });
+
+    const result = promoteToCentral(pedbDoc, id, cedbDoc, USER);
+    expect(result.created).toBe(true);
+    expect(cedbDoc.getElementsByTagName('person')).toHaveLength(3);
   });
 });

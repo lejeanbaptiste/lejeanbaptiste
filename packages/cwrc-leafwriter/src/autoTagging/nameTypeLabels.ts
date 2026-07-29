@@ -12,6 +12,7 @@ const ENGLISH_LABELS: Record<NameTypeId, string> = {
   temple: 'Temple name',
   dharma: 'Dharma name',
   pen: 'Pen name',
+  translation: 'Translation',
   variant: 'Variant',
 };
 

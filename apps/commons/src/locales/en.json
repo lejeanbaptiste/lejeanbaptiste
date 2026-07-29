@@ -631,6 +631,9 @@
           "detach_authority": "Detach authority",
           "person_facts": "Person facts",
           "dates": "Dates",
+          "from": "From",
+          "to": "To",
+          "authors": "Authors",
           "dynasties": "Dynasties",
           "origins": "Origin",
           "copy_id": "Copy ID",
@@ -661,6 +664,19 @@
           "name_types_heading": "Name types (courtesy names are excluded from auto-tagging)",
           "names_heading": "Names",
           "names_hint": "These names are deduped and used in part for automatic tagging.",
+          "titles_heading": "Titles",
+          "titles_hint": "These alternate titles are deduped and used in part for automatic tagging.",
+          "noble_titles_heading": "Noble titles",
+          "noble_titles_hint": "Titles are stored as structured fief, title, and posthumous-name records.",
+          "noble_title_fields": {
+            "dynasty": "Dynasty",
+            "fief": "Fief",
+            "posthumousName": "Posthumous name",
+            "title": "Title"
+          },
+          "roles_heading": "Roles",
+          "roles_hint": "Offices and appointments gathered from CBDB and Norbert.",
+          "no_roles": "No roles recorded.",
           "name_types": {
             "unclassified": "unclassified",
             "primary": "Full name",
@@ -676,10 +692,12 @@
             "variant": "Variant"
           },
           "add_name_placeholder": "Alternative name",
+          "add_title_placeholder": "Alternative title",
           "add_name": "Add",
           "delete_name": "Delete this name",
           "rename_name": "Rename canonical name",
           "open_project_hint": "Open a project to browse its entity database.",
+          "open": "Open",
           "invalid_regex": "Invalid regex: {{detail}}",
           "merge_selected": "Merge {{count}} entities",
           "merge_hint": "Select 2+ entities to merge, or click to add an |alternative to the search",
@@ -709,7 +727,8 @@
             "person": "Person",
             "place": "Place",
             "organization": "Organization",
-            "work": "Work"
+            "work": "Work",
+            "office": "Office"
           },
           "status_installed": "installed",
           "save": "Save",

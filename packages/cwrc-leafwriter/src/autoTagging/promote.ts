@@ -12,6 +12,7 @@
  */
 
 import { getCentralId, setCentralMapping } from './concordance';
+import { stringsMatchExactly } from './disambiguationMatch';
 import {
   addEntity,
   ENTITY_KINDS,
@@ -53,6 +54,36 @@ export function findCentralByAuthority(
     }
   }
   return null;
+}
+
+/**
+ * The single central entity of `kind` whose primary name exactly matches
+ * `name` (via `stringsMatchExactly`) and whose birth/death years, where both
+ * sides have one, agree with `startYear`/`endYear` — the conservative
+ * fallback Link candidate for entities with no shared authority id. A
+ * missing date on either side is not disqualifying (avoids over-rejecting
+ * sparsely-dated records), but *any* mismatched date is. Returns null when
+ * zero or more than one central entity qualifies — this never guesses among
+ * ambiguous candidates, it only links when there is exactly one.
+ */
+export function findCentralByNameDates(
+  cedbDoc: Document,
+  kind: EntityKind,
+  name: string,
+  startYear?: number,
+  endYear?: number,
+): string | null {
+  const matches: string[] = [];
+  for (const item of entityElements(cedbDoc, kind)) {
+    const fields = readFields(item);
+    const primary = fields.names[0];
+    if (!primary || !stringsMatchExactly(name, primary.text)) continue;
+    if (startYear != null && fields.startYear != null && fields.startYear !== startYear) continue;
+    if (endYear != null && fields.endYear != null && fields.endYear !== endYear) continue;
+    const id = item.getAttribute('xml:id');
+    if (id) matches.push(id);
+  }
+  return matches.length === 1 ? matches[0]! : null;
 }
 
 /** Reconstruct a `NewEntity` payload from an entity's fields (PEDB or CEDB item). */
@@ -107,7 +138,9 @@ export function promoteToCentral(
 
   const { kind, entity, familyName, givenName } = toNewEntity(pedbItem);
 
-  const match = findCentralByAuthority(cedbDoc, kind, entity.authorityIds ?? []);
+  const match =
+    findCentralByAuthority(cedbDoc, kind, entity.authorityIds ?? []) ??
+    findCentralByNameDates(cedbDoc, kind, entity.name, entity.startYear, entity.endYear);
   if (match) {
     const linked = linkToCentral(pedbItem, userStableId, match);
     return { centralId: match, created: false, linked };

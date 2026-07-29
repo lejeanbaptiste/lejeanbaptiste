@@ -605,6 +605,9 @@
           "detach_authority": "Détacher l’autorité",
           "person_facts": "Informations sur la personne",
           "dates": "Dates",
+          "from": "De",
+          "to": "À",
+          "authors": "Auteurs",
           "dynasties": "Dynasties",
           "origins": "Origine",
           "copy_id": "Copier l’identifiant",
@@ -635,6 +638,19 @@
           "name_types_heading": "Types de noms (les noms de courtoisie sont exclus du balisage automatique)",
           "names_heading": "Noms",
           "names_hint": "Ces noms sont dédupliqués et utilisés en partie pour le balisage automatique.",
+          "titles_heading": "Titres",
+          "titles_hint": "Ces titres alternatifs sont dédupliqués et utilisés en partie pour le balisage automatique.",
+          "noble_titles_heading": "Titres nobiliaires",
+          "noble_titles_hint": "Les titres sont conservés comme des ensembles structurés : fief, titre et nom posthume.",
+          "noble_title_fields": {
+            "dynasty": "Dynastie",
+            "fief": "Fief",
+            "posthumousName": "Nom posthume",
+            "title": "Titre"
+          },
+          "roles_heading": "Rôles",
+          "roles_hint": "Fonctions et nominations rassemblées à partir de CBDB et Norbert.",
+          "no_roles": "Aucun rôle enregistré.",
           "name_types": {
             "unclassified": "non classé",
             "primary": "Nom complet",
@@ -650,10 +666,12 @@
             "variant": "Variante"
           },
           "add_name_placeholder": "Nom alternatif",
+          "add_title_placeholder": "Titre alternatif",
           "add_name": "Ajouter",
           "delete_name": "Supprimer ce nom",
           "rename_name": "Renommer le nom canonique",
           "open_project_hint": "Ouvrez un projet pour parcourir sa base d’entités.",
+          "open": "Ouvrir",
           "invalid_regex": "Expression régulière invalide : {{detail}}",
           "merge_selected": "Fusionner {{count}} entités",
           "merge_hint": "Sélectionnez au moins 2 entités à fusionner, ou cliquez pour ajouter une |alternative à la recherche",
@@ -683,7 +701,8 @@
             "person": "Personne",
             "place": "Lieu",
             "organization": "Organisation",
-            "work": "Œuvre"
+            "work": "Œuvre",
+            "office": "Fonction"
           },
           "status_installed": "installé",
           "save": "Enregistrer",

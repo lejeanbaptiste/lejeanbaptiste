@@ -4,7 +4,13 @@ import type { AuthorityCandidate } from './authority';
 import { candidatesFromCsv } from './authority';
 import { createEntitiesScaffold, parseEntities, readOfficeRelations } from './entities';
 import { normalizeDomText } from './normalize';
-import { autoLinkUnique, bucketSeeds, compoundWrapperSuggestions, seedSuggestions, suggestionsFromSeedMatches } from './seed';
+import {
+  autoLinkUnique,
+  bucketSeeds,
+  compoundWrapperSuggestions,
+  seedSuggestions,
+  suggestionsFromSeedMatches,
+} from './seed';
 
 const parse = (xml: string) => {
   const doc = new DOMParser().parseFromString(xml, 'application/xml');
@@ -74,7 +80,9 @@ describe('seedSuggestions + bucketSeeds', () => {
   });
 
   it('turns a wrapper candidate into nested personWrapper content', () => {
-    const doc = parse('<TEI xmlns="http://www.tei-c.org/ns/1.0"><text><body><p>鄱陽王範</p></body></text></TEI>');
+    const doc = parse(
+      '<TEI xmlns="http://www.tei-c.org/ns/1.0"><text><body><p>鄱陽王範</p></body></text></TEI>',
+    );
     const candidate = cand({
       authorityId: 'noble-title:19',
       searchStrings: ['鄱陽王範'],
@@ -89,15 +97,25 @@ describe('seedSuggestions + bucketSeeds', () => {
     const [suggestion] = suggestionsFromSeedMatches(seedSuggestions(doc, [candidate], 'ignore'));
     expect(suggestion?.tag).toBe('name');
     expect(suggestion?.attributes).toEqual({ type: 'personWrapper', cert: 'unknown' });
-    expect(suggestion?.innerXml).toBe('<nobleTitle><placeName>鄱陽</placeName><roleName>王</roleName></nobleTitle><persName>範</persName>');
+    expect(suggestion?.innerXml).toBe(
+      '<nobleTitle><placeName>鄱陽</placeName><roleName>王</roleName></nobleTitle><persName>範</persName>',
+    );
   });
 
   it('finds a wrapper after its component elements already exist', () => {
-    const doc = parse('<TEI xmlns="http://www.tei-c.org/ns/1.0"><text><body><p><roleName>合州刺史</roleName><nobleTitle><placeName>鄱陽</placeName><roleName>王</roleName></nobleTitle><persName>範</persName></p></body></text></TEI>');
+    const doc = parse(
+      '<TEI xmlns="http://www.tei-c.org/ns/1.0"><text><body><p><roleName>合州刺史</roleName><nobleTitle><placeName>鄱陽</placeName><roleName>王</roleName></nobleTitle><persName>範</persName></p></body></text></TEI>',
+    );
     const candidate = cand({
       authorityId: 'noble-title:20',
       searchStrings: ['合州刺史鄱陽王範'],
-      metadata: { wrapper: { personId: '8', titleRowId: '20', components: { roleName: '合州刺史', fief: '鄱陽', persName: '範' } } },
+      metadata: {
+        wrapper: {
+          personId: '8',
+          titleRowId: '20',
+          components: { roleName: '合州刺史', fief: '鄱陽', persName: '範' },
+        },
+      },
     });
     const [match] = compoundWrapperSuggestions(doc, [candidate], 'ignore');
     expect(match?.suggestion.action).toBe('add-compound');
@@ -130,6 +148,38 @@ describe('autoLinkUnique', () => {
     expect(person.getAttribute('resp')).toBe('#ljb-autotag');
   });
 
+  it('links Norbert noble-title wrappers to the Norbert person id', async () => {
+    const doc = parse(
+      '<TEI xmlns="http://www.tei-c.org/ns/1.0"><text><body><p>漢昭烈帝劉備</p></body></text></TEI>',
+    );
+    const entitiesDoc = parseEntities(createEntitiesScaffold());
+    const candidate = cand({
+      source: 'Norbert',
+      authorityId: 'noble-title:1112',
+      primaryName: '漢昭烈帝劉備',
+      searchStrings: ['漢昭烈帝劉備'],
+      metadata: {
+        wrapper: {
+          personId: '3710',
+          titleRowId: '1112',
+          components: {
+            nationality: '漢',
+            fief: '漢',
+            roleName: '帝',
+            posthumousName: '昭烈',
+            persName: '劉備',
+          },
+        },
+        crosswalk: { norbert: '3710' },
+      },
+    });
+    const { unique } = bucketSeeds(seedSuggestions(doc, [candidate], 'ignore'));
+    await autoLinkUnique(doc, entitiesDoc, unique, { policy: 'ignore' });
+    const person = entityByAuthority(entitiesDoc, '3710');
+    expect(person).not.toBeNull();
+    expect(entityByAuthority(entitiesDoc, 'noble-title:1112')).toBe(person);
+  });
+
   it('writes xml:lang and a romanized name when a project language is supplied', async () => {
     const doc = parse(TEI);
     const entitiesDoc = parseEntities(createEntitiesScaffold());
@@ -149,7 +199,11 @@ describe('autoLinkUnique', () => {
     const person = entityByAuthority(entitiesDoc, 'p1')!;
     const personNames = Array.from(person.getElementsByTagName('persName'));
     expect(
-      personNames.map((el) => [el.textContent, el.getAttribute('xml:lang'), el.getAttribute('type')]),
+      personNames.map((el) => [
+        el.textContent,
+        el.getAttribute('xml:lang'),
+        el.getAttribute('type'),
+      ]),
     ).toEqual([
       ['張衡', 'zh-Hant', 'primary'],
       ['Zhang Heng', 'zh-Latn', null],
@@ -176,9 +230,7 @@ describe('autoLinkUnique', () => {
   });
 
   it('reuses one entity for repeated occurrences of the same authority id', async () => {
-    const doc = parse(
-      `<TEI xmlns="http://www.tei-c.org/ns/1.0"><p>李白見李白。</p></TEI>`,
-    );
+    const doc = parse(`<TEI xmlns="http://www.tei-c.org/ns/1.0"><p>李白見李白。</p></TEI>`);
     const entitiesDoc = parseEntities(createEntitiesScaffold());
     const candidates = [cand({ authorityId: 'p7', primaryName: '李白', searchStrings: ['李白'] })];
     const { unique } = bucketSeeds(seedSuggestions(doc, candidates, 'ignore'));
@@ -215,9 +267,9 @@ describe('autoLinkUnique', () => {
     const offices = Array.from(entitiesDoc.getElementsByTagName('org')).filter(
       (item) => item.getAttribute('type') === 'office',
     );
-    expect(
-      offices.map((item) => item.getElementsByTagName('orgName')[0]?.textContent),
-    ).toEqual(expect.arrayContaining(['尚書省', '吏部']));
+    expect(offices.map((item) => item.getElementsByTagName('orgName')[0]?.textContent)).toEqual(
+      expect.arrayContaining(['尚書省', '吏部']),
+    );
     expect(readOfficeRelations(entitiesDoc)).toHaveLength(1);
   });
 });

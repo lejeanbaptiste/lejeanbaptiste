@@ -94,14 +94,46 @@ export interface EntitySummary {
   givenName: string | null;
   startYear: number | null;
   endYear: number | null;
+  workDate: WorkDateSummary | null;
   nationalities: string[];
   placesOfOrigin: string[];
+  authors: EntityAuthorSummary[];
+  nobleTitles: NobleTitleSummary[];
+  /** Offices/appointments gathered from authorities (CBDB, Norbert). Persons only. */
+  roles: string[];
   /** Origins represented by active field values on this entity. */
   origins: EntityValueOrigin[];
   rejectedCount: number;
   rejectedAssertions: { element: string; value: string; source: string | null }[];
   rejectedConcordances: ConcordanceRejection[];
   assertions: EntityAssertionSummary[];
+}
+
+export interface WorkDateSummary {
+  startYear: number | null;
+  endYear: number | null;
+  startPrecision: string | null;
+  endPrecision: string | null;
+}
+
+export interface EntityAuthorSummary {
+  key: string;
+  name: string;
+  ref: string | null;
+  origin: EntityValueOrigin;
+  source: string | null;
+  status: EntityValueStatus;
+}
+
+export interface NobleTitleSummary {
+  key: string;
+  dynasty: string;
+  fief: string;
+  posthumousName: string;
+  title: string;
+  origin: EntityValueOrigin;
+  source: string | null;
+  status: EntityValueStatus;
 }
 
 export const kindOfElement = entityKindOfElement;
@@ -158,6 +190,38 @@ const activeDateYear = (item: Element, tag: 'birth' | 'death'): number | null =>
   return parseIsoYear(selected?.getAttribute('when'));
 };
 
+const activeWorkDate = (item: Element): WorkDateSummary | null => {
+  const note = Array.from(item.children).find(
+    (child) =>
+      child.localName === 'note' &&
+      child.getAttribute('type') === 'dates' &&
+      readEntityValueProvenance(child).status === 'active',
+  );
+  if (!note) return null;
+  const precision = note.getAttribute('precision');
+  const startPrecision = note.getAttribute('fromPrecision') ?? precision ?? null;
+  const endPrecision = note.getAttribute('toPrecision') ?? precision ?? null;
+  const when = note.getAttribute('when');
+  if (when) {
+    return {
+      startYear: parseIsoYear(when),
+      endYear: null,
+      startPrecision,
+      endPrecision,
+    };
+  }
+  const parts = (note.textContent ?? '').trim().split('/');
+  const startRaw =
+    note.getAttribute('from') ?? note.getAttribute('notBefore') ?? parts[0] ?? parts[1] ?? '';
+  const endRaw = note.getAttribute('to') ?? note.getAttribute('notAfter') ?? parts[1] ?? '';
+  return {
+    startYear: parseIsoYear(startRaw),
+    endYear: parseIsoYear(endRaw),
+    startPrecision,
+    endPrecision,
+  };
+};
+
 function summarize(item: Element): EntitySummary | null {
   const kind = kindOfElement(item);
   const id = item.getAttribute('xml:id');
@@ -166,6 +230,7 @@ function summarize(item: Element): EntitySummary | null {
     .filter((el) => readEntityValueProvenance(el).status === 'active')
     .map(nameEntryOf)
     .filter((entry) => entry.text);
+  const workDate = kind === 'work' ? activeWorkDate(item) : null;
   return {
     id,
     kind,
@@ -183,8 +248,9 @@ function summarize(item: Element): EntitySummary | null {
       .filter((ref) => ref.type && ref.value),
     familyName: familyNameNote(item)?.textContent?.trim() || null,
     givenName: givenNameNote(item)?.textContent?.trim() || null,
-    startYear: activeDateYear(item, 'birth'),
-    endYear: activeDateYear(item, 'death'),
+    workDate,
+    startYear: kind === 'work' ? (workDate?.startYear ?? null) : activeDateYear(item, 'birth'),
+    endYear: kind === 'work' ? (workDate?.endYear ?? null) : activeDateYear(item, 'death'),
     nationalities: Array.from(
       new Set(
         Array.from(item.children)
@@ -209,6 +275,48 @@ function summarize(item: Element): EntitySummary | null {
           .filter(Boolean),
       ),
     ),
+    roles: Array.from(
+      new Set(
+        Array.from(item.children)
+          .filter((child) => child.localName === 'affiliation')
+          .filter((child) => readEntityValueProvenance(child).status === 'active')
+          .map((child) => child.textContent?.trim() ?? '')
+          .filter(Boolean),
+      ),
+    ),
+    authors: Array.from(item.children)
+      .filter((child) => child.localName === 'author')
+      .map((child) => {
+        const person = Array.from(child.children).find((part) => part.localName === 'persName');
+        return {
+          key: entityValueKey(child),
+          name: person?.textContent?.trim() ?? child.textContent?.trim() ?? '',
+          ref: person?.getAttribute('ref') ?? child.getAttribute('ref'),
+          ...readEntityValueProvenance(child),
+        };
+      })
+      .filter((author) => author.name && author.status === 'active'),
+    nobleTitles: Array.from(item.children)
+      .filter((child) => child.localName === 'nobleTitle')
+      .map((child) => {
+        const childText = (name: string, predicate?: (el: Element) => boolean) =>
+          Array.from(child.children)
+            .find((part) => part.localName === name && (!predicate || predicate(part)))
+            ?.textContent?.trim() ?? '';
+        const provenance = readEntityValueProvenance(child);
+        return {
+          key: entityValueKey(child),
+          dynasty: child.getAttribute('dynasty') ?? '',
+          fief: childText('placeName'),
+          posthumousName: childText(
+            'persName',
+            (part) => part.getAttribute('type') === 'posthumous',
+          ),
+          title: childText('roleName'),
+          ...provenance,
+        };
+      })
+      .filter((title) => title.status === 'active'),
     origins: Array.from(
       new Set(
         Array.from(item.children)
@@ -508,6 +616,113 @@ export function addUserOrigin(
   return addUserValue(doc, id, 'placeName', label, reference);
 }
 
+export interface NobleTitleInput {
+  dynasty?: string;
+  fief?: string;
+  posthumousName?: string;
+  title?: string;
+}
+
+/** Add a user-curated noble-title record, preserving its four editable parts. */
+export function addUserNobleTitle(doc: Document, id: string, input: NobleTitleInput): boolean {
+  const item = requireEntity(doc, id);
+  if (item.localName !== 'person') return false;
+  const values = {
+    dynasty: input.dynasty?.trim() ?? '',
+    fief: input.fief?.trim() ?? '',
+    posthumousName: input.posthumousName?.trim() ?? '',
+    title: input.title?.trim() ?? '',
+  };
+  if (!values.dynasty && !values.fief && !values.posthumousName && !values.title) return false;
+  const exists = Array.from(item.children).some(
+    (child) =>
+      child.localName === 'nobleTitle' &&
+      readEntityValueProvenance(child).status === 'active' &&
+      (child.getAttribute('dynasty') ?? '') === values.dynasty &&
+      child.querySelector('placeName')?.textContent?.trim() === values.fief &&
+      child.querySelector('roleName')?.textContent?.trim() === values.title &&
+      child.querySelector('persName[type="posthumous"]')?.textContent?.trim() ===
+        values.posthumousName,
+  );
+  if (exists) return false;
+  const nobleTitle = doc.createElementNS(TEI_NS, 'nobleTitle');
+  if (values.dynasty) nobleTitle.setAttribute('dynasty', values.dynasty);
+  writeEntityValueProvenance(nobleTitle, { origin: 'user', source: null, status: 'active' });
+  if (values.fief) {
+    const el = doc.createElementNS(TEI_NS, 'placeName');
+    el.textContent = values.fief;
+    nobleTitle.appendChild(el);
+  }
+  if (values.title) {
+    const el = doc.createElementNS(TEI_NS, 'roleName');
+    el.textContent = values.title;
+    nobleTitle.appendChild(el);
+  }
+  if (values.posthumousName) {
+    const el = doc.createElementNS(TEI_NS, 'persName');
+    el.setAttribute('type', 'posthumous');
+    el.textContent = values.posthumousName;
+    nobleTitle.appendChild(el);
+  }
+  item.appendChild(nobleTitle);
+  touchEntity(item);
+  return true;
+}
+
+/** Remove/reject one noble-title assertion by its entity-value key. */
+export function removeNobleTitle(doc: Document, id: string, key: string): boolean {
+  const item = requireEntity(doc, id);
+  const target = Array.from(item.children).find(
+    (child) => child.localName === 'nobleTitle' && entityValueKey(child) === key,
+  );
+  if (!target || readEntityValueProvenance(target).status !== 'active') return false;
+  const provenance = readEntityValueProvenance(target);
+  if (provenance.origin === 'user') target.remove();
+  else writeEntityValueProvenance(target, { ...provenance, status: 'rejected' });
+  touchEntity(item);
+  return true;
+}
+
+/** Update the user-editable parts of one noble-title record. */
+export function updateNobleTitle(
+  doc: Document,
+  id: string,
+  key: string,
+  input: NobleTitleInput,
+): boolean {
+  const item = requireEntity(doc, id);
+  const target = Array.from(item.children).find(
+    (child) => child.localName === 'nobleTitle' && entityValueKey(child) === key,
+  );
+  if (!target) return false;
+  const values = {
+    dynasty: input.dynasty?.trim() ?? '',
+    fief: input.fief?.trim() ?? '',
+    posthumousName: input.posthumousName?.trim() ?? '',
+    title: input.title?.trim() ?? '',
+  };
+  target.setAttribute('dynasty', values.dynasty);
+  for (const child of Array.from(target.children)) target.removeChild(child);
+  if (values.fief) {
+    const el = doc.createElementNS(TEI_NS, 'placeName');
+    el.textContent = values.fief;
+    target.appendChild(el);
+  }
+  if (values.title) {
+    const el = doc.createElementNS(TEI_NS, 'roleName');
+    el.textContent = values.title;
+    target.appendChild(el);
+  }
+  if (values.posthumousName) {
+    const el = doc.createElementNS(TEI_NS, 'persName');
+    el.setAttribute('type', 'posthumous');
+    el.textContent = values.posthumousName;
+    target.appendChild(el);
+  }
+  touchEntity(item);
+  return true;
+}
+
 /**
  * Remove one currently-active value by its assertion key: a user-origin value
  * is deleted outright, an authority-origin one is rejected (tombstoned) so a
@@ -612,6 +827,79 @@ export function setUserEntityDate(
     else element.removeAttribute('precision');
     writeEntityValueProvenance(element, { origin: 'user', source: null, status: 'active' });
     if (!existing) item.appendChild(element);
+  }
+  touchEntity(item);
+}
+
+/** Set or clear a work's user-controlled publication date stored as note type="dates". */
+export function setUserWorkDate(
+  doc: Document,
+  id: string,
+  startYear: number | null,
+  endYear: number | null = null,
+  startPrecision: string | null = null,
+  endPrecision: string | null = null,
+): void {
+  const item = requireEntity(doc, id);
+  const existing = Array.from(item.children).find(
+    (child) =>
+      child.localName === 'note' &&
+      child.getAttribute('type') === 'dates' &&
+      readEntityValueProvenance(child).origin === 'user',
+  );
+  if (startYear == null && endYear == null) {
+    existing?.remove();
+  } else {
+    const note = existing ?? doc.createElementNS(TEI_NS, 'note');
+    note.setAttribute('type', 'dates');
+    note.removeAttribute('when');
+    note.removeAttribute('from');
+    note.removeAttribute('to');
+    note.removeAttribute('notBefore');
+    note.removeAttribute('notAfter');
+    note.removeAttribute('fromPrecision');
+    note.removeAttribute('toPrecision');
+    note.removeAttribute('precision');
+    if (startYear != null) note.setAttribute('from', isoYearString(startYear));
+    if (endYear != null) note.setAttribute('to', isoYearString(endYear));
+    if (startPrecision?.trim()) note.setAttribute('fromPrecision', startPrecision.trim());
+    if (endPrecision?.trim()) note.setAttribute('toPrecision', endPrecision.trim());
+    note.textContent = [
+      startYear != null ? isoYearString(startYear) : '',
+      endYear != null ? isoYearString(endYear) : '',
+    ].join('/');
+    writeEntityValueProvenance(note, { origin: 'user', source: null, status: 'active' });
+    if (!existing) item.appendChild(note);
+  }
+  touchEntity(item);
+}
+
+/** Replace a work's user-controlled author list with linked person entities. */
+export function setUserWorkAuthors(
+  doc: Document,
+  id: string,
+  authors: { name: string; ref?: string; key?: string }[],
+): void {
+  const item = requireEntity(doc, id);
+  for (const child of Array.from(item.children)) {
+    if (child.localName === 'author' && readEntityValueProvenance(child).origin === 'user') {
+      child.remove();
+    }
+  }
+  const seen = new Set<string>();
+  for (const author of authors) {
+    const name = author.name.trim();
+    const ref = author.key ? `#${author.key}` : author.ref?.trim();
+    const dedupe = `${name}\0${ref ?? ''}`;
+    if (!name || seen.has(dedupe)) continue;
+    seen.add(dedupe);
+    const element = doc.createElementNS(TEI_NS, 'author');
+    const person = doc.createElementNS(TEI_NS, 'persName');
+    if (ref) person.setAttribute('ref', ref);
+    person.textContent = name;
+    element.appendChild(person);
+    writeEntityValueProvenance(element, { origin: 'user', source: null, status: 'active' });
+    item.appendChild(element);
   }
   touchEntity(item);
 }

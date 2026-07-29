@@ -35,6 +35,7 @@ import {
   listConcordanceRejections,
   rejectConcordance,
   rejectEntityAssertion,
+  setUserWorkDate,
   validateEntityAssertion,
 } from './entityOps';
 
@@ -243,6 +244,31 @@ describe('EntitySummary nationalities/placesOfOrigin', () => {
 
     const summary = listEntities(doc).find((entity) => entity.id === id)!;
     expect(summary.nationalities).toEqual(['三國魏']);
+  });
+});
+
+describe('work dates', () => {
+  it('saves and summarizes structured work date precision', () => {
+    const doc = makeDoc();
+    const { id } = addEntity(doc, 'work', { name: '南齊書' });
+    setUserWorkDate(doc, id, 459, 498, 'not before', 'ca.');
+
+    const summary = listEntities(doc).find((entity) => entity.id === id)!;
+    expect(summary.workDate).toEqual({
+      startYear: 459,
+      endYear: 498,
+      startPrecision: 'not before',
+      endPrecision: 'ca.',
+    });
+
+    const note = Array.from(findEntity(doc, id)!.getElementsByTagName('note')).find(
+      (el) => el.getAttribute('type') === 'dates',
+    )!;
+    expect(note.getAttribute('type')).toBe('dates');
+    expect(note.getAttribute('from')).toBe('0459');
+    expect(note.getAttribute('to')).toBe('0498');
+    expect(note.getAttribute('fromPrecision')).toBe('not before');
+    expect(note.getAttribute('toPrecision')).toBe('ca.');
   });
 });
 

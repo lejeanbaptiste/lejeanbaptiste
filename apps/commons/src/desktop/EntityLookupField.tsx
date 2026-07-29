@@ -49,7 +49,7 @@ import {
   type EntityStore,
 } from '../../../../packages/cwrc-leafwriter/src/autoTagging/entityStore';
 import { readOrMintUserStableId } from '../../../../packages/cwrc-leafwriter/src/autoTagging/userStableId';
-import { fetchWikidataWorkDetails } from '../../../../packages/cwrc-leafwriter/src/autoTagging/wikidataWorkDetails';
+import { enrichWikidataWorkEntity } from '../../../../packages/cwrc-leafwriter/src/autoTagging/wikidataWorkDetails';
 import {
   autoRomanize,
   canAutoRomanize,
@@ -170,7 +170,7 @@ export const EntityLookupField = ({
   onPersistedChange,
   onWorkDetails,
 }: EntityLookupFieldProps) => {
-  const { t } = useTranslation();
+  const { t, i18n } = useTranslation();
   const [query, setQuery] = useState('');
   const [searching, setSearching] = useState(false);
   const [candidates, setCandidates] = useState<DisambiguationCandidate[] | null>(null);
@@ -326,29 +326,30 @@ export const EntityLookupField = ({
       );
       await autoSyncEntityToCentral(session.entitiesDoc, resolvedId);
 
-      if (kind === 'work' && onWorkDetails) {
+      if (kind === 'work') {
         const qid = extractWikidataId(merged.uri ?? '');
         if (qid) {
           try {
-            const details = await fetchWikidataWorkDetails(qid);
+            const details = await enrichWikidataWorkEntity(
+              session.entitiesDoc,
+              resolvedId,
+              qid,
+              session.projectLang,
+              i18n.language,
+            );
             if (details) {
-              const authors = await Promise.all(
-                details.authors.map(async (author) => {
-                  const authorId = resolveEntityInDocument(session.entitiesDoc, {
-                    kind: 'person',
-                    name: author.label,
-                    romanizedName: autoRomanize(author.label, session.projectLang) ?? undefined,
-                    nameLang: session.projectLang ?? undefined,
-                    authorityIds: [{ type: 'Wikidata', value: author.qid }],
-                  });
-                  await autoSyncEntityToCentral(session.entitiesDoc, authorId);
-                  return {
-                    name: author.label,
-                    ref: `https://www.wikidata.org/wiki/${author.qid}`,
-                  } as EntityLookupValue;
-                }),
+              await Promise.all(
+                details.authors.map((author) =>
+                  autoSyncEntityToCentral(session.entitiesDoc, author.entityId),
+                ),
               );
-              onWorkDetails({ workYear: details.publicationYear, authors });
+              onWorkDetails?.({
+                workYear: details.publicationYear,
+                authors: details.authors.map((author) => ({
+                  name: author.label,
+                  ref: `https://www.wikidata.org/wiki/${author.qid}`,
+                })),
+              });
             }
           } catch {
             // Best-effort enrichment; the work link itself already succeeded.

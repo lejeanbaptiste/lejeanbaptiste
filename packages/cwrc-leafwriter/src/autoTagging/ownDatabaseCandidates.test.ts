@@ -1,5 +1,5 @@
 import { addEntity, createEntitiesScaffold, parseEntities } from './entities';
-import { setNameType } from './entityOps';
+import { setNameType, setUserWorkDate } from './entityOps';
 import { candidatesFromEntityDatabase } from './ownDatabaseCandidates';
 import { resolveNameTypeTaggingPolicy } from './nameTypeTaggingPolicy';
 
@@ -44,6 +44,17 @@ describe('candidatesFromEntityDatabase', () => {
     expect(candidate!.metadata?.endYear).toBe(589);
   });
 
+  it('recovers structured work dates from note attributes', () => {
+    const doc = parseEntities(createEntitiesScaffold());
+    const { id } = addEntity(doc, 'work', { name: '南齊書' });
+    setUserWorkDate(doc, id, 459, 498, 'not before', 'ca.');
+
+    const [candidate] = candidatesFromEntityDatabase(doc, 'work', 'PEDB');
+    expect(candidate).toBeDefined();
+    expect(candidate!.metadata?.startYear).toBe(459);
+    expect(candidate!.metadata?.endYear).toBe(498);
+  });
+
   it('returns no candidates for an empty kind list', () => {
     const doc = parseEntities(createEntitiesScaffold());
     expect(candidatesFromEntityDatabase(doc, 'org', 'PEDB')).toEqual([]);
@@ -55,6 +66,29 @@ describe('candidatesFromEntityDatabase', () => {
     element.getElementsByTagName('title')[0]!.textContent = '   ';
 
     expect(candidatesFromEntityDatabase(doc, 'work', 'PEDB')).toEqual([]);
+  });
+
+  it('expands a confirmed nobleTitle into matchable strings, without a bare posthumous-name entry', () => {
+    const doc = parseEntities(createEntitiesScaffold());
+    addEntity(doc, 'person', {
+      name: '曹操',
+      nobleTitles: [
+        {
+          dynasty: '魏',
+          placeName: { text: '魏' },
+          roleName: { text: '帝' },
+          posthumousName: { text: '武' },
+        },
+      ],
+    });
+
+    const [candidate] = candidatesFromEntityDatabase(doc, 'person', 'PEDB');
+    expect(candidate!.searchStrings).toEqual(
+      expect.arrayContaining(['曹操', '魏武帝', '魏武帝曹操']),
+    );
+    // The posthumous name alone ("武") must never appear as its own bare
+    // search string — it's a title component, not a name of the person.
+    expect(candidate!.searchStrings).not.toContain('武');
   });
 
   it('filters courtesy names from phase1 searchStrings using name types on persName', () => {
@@ -69,9 +103,7 @@ describe('candidatesFromEntityDatabase', () => {
     const [candidate] = candidatesFromEntityDatabase(doc, 'person', 'PEDB', zhPolicy);
     expect(candidate!.searchStrings).toEqual(['王安石']);
     expect(candidate!.names).toEqual(
-      expect.arrayContaining([
-        expect.objectContaining({ text: '王介甫', type: 'courtesy' }),
-      ]),
+      expect.arrayContaining([expect.objectContaining({ text: '王介甫', type: 'courtesy' })]),
     );
   });
 });

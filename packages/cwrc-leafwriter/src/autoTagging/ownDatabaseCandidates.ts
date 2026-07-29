@@ -5,11 +5,50 @@ import {
   resolveNameTypeTaggingPolicy,
   type NameTypeTaggingPolicy,
 } from './nameTypeTaggingPolicy';
+import { buildNobleTitleSearchStrings } from './norbertWikiNt';
 
-/** Parse the `<note type="dates">start/end</note>` written by `addEntity` for non-person kinds. */
-function datesFromNote(note: string | null | undefined): { startYear?: number; endYear?: number } {
-  if (!note) return {};
-  const [startRaw, endRaw] = note.split('/');
+/**
+ * Confirmed noble-title search strings for one person entity: fief+rank(+
+ * posthumous-name) forms, and the same forms suffixed with each of the
+ * person's own names (e.g. "魏武帝", "魏武帝曹操"). Without this, only the raw
+ * `<persName>` text would be searchable, and a decomposed title like Cao
+ * Cao's 魏武帝 would never be recognized as a mention of him in new documents
+ * — storing the structured parts is correct for the entity record, but the
+ * tag-bomb matcher needs the concatenated forms Norbert's own expander uses.
+ */
+function nobleTitleSearchStringsForEntity(el: Element, personNames: readonly string[]): string[] {
+  const strings: string[] = [];
+  for (const child of Array.from(el.children)) {
+    if (child.localName !== 'nobleTitle') continue;
+    const textOf = (name: string, predicate?: (part: Element) => boolean) =>
+      Array.from(child.children)
+        .find((part) => part.localName === name && (!predicate || predicate(part)))
+        ?.textContent?.trim() || undefined;
+    const { titleSearchStrings, wrapperSearchStrings } = buildNobleTitleSearchStrings({
+      fief: textOf('placeName'),
+      roleName: textOf('roleName'),
+      posthumousName: textOf('persName', (part) => part.getAttribute('type') === 'posthumous'),
+      dynasty: child.getAttribute('dynasty'),
+      personNames,
+    });
+    for (const value of [...titleSearchStrings, ...wrapperSearchStrings]) {
+      if (!strings.includes(value)) strings.push(value);
+    }
+  }
+  return strings;
+}
+
+/** Parse the `<note type="dates">` written by `addEntity` for non-person kinds. */
+function datesFromNote(note: Element): { startYear?: number; endYear?: number } {
+  const when = note.getAttribute('when');
+  if (when) {
+    const startYear = parseIsoYear(when);
+    return startYear != null ? { startYear } : {};
+  }
+  const textParts = (note.textContent ?? '').trim().split('/');
+  const startRaw =
+    note.getAttribute('from') ?? note.getAttribute('notBefore') ?? textParts[0] ?? textParts[1];
+  const endRaw = note.getAttribute('to') ?? note.getAttribute('notAfter') ?? textParts[1];
   const startYear = parseIsoYear(startRaw);
   const endYear = parseIsoYear(endRaw);
   const meta: { startYear?: number; endYear?: number } = {};
@@ -47,11 +86,24 @@ export function candidatesFromEntityDatabase(
     const nameEls = el.getElementsByTagName(nameTag);
     for (let j = 0; j < nameEls.length; j++) {
       const nameEl = nameEls.item(j);
+      // A nobleTitle's posthumous-name component (e.g. "武" alone) is a title
+      // part, not a standalone name of the person — skip it here so it's
+      // never tagged as a bare one-character mention; it still participates
+      // in the concatenated noble-title strings built below.
+      if (nameEl?.parentElement?.localName === 'nobleTitle') continue;
       const text = nameEl?.textContent?.trim();
       if (!text) continue;
       const type = nameEl?.getAttribute('type') ?? undefined;
       names.push(type ? { text, type } : { text });
       if (!searchStrings.includes(text)) searchStrings.push(text);
+    }
+    if (kind === 'person') {
+      for (const value of nobleTitleSearchStringsForEntity(
+        el,
+        names.map((name) => name.text),
+      )) {
+        if (!searchStrings.includes(value)) searchStrings.push(value);
+      }
     }
     const filteredSearchStrings = phase1SearchStringsFromCandidate(
       { searchStrings, names },
@@ -68,7 +120,7 @@ export function candidatesFromEntityDatabase(
       if (type === 'description' && description == null) {
         description = noteEl.textContent?.trim() || undefined;
       } else if (type === 'dates') {
-        dates = datesFromNote(noteEl.textContent);
+        dates = datesFromNote(noteEl);
       }
     }
 

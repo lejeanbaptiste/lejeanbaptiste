@@ -82,6 +82,8 @@ export interface TitlePart {
 }
 
 export interface NobleTitleRecord {
+  /** Dynasty or court affiliation for the title. */
+  dynasty?: string;
   /** Authority id for the confirmed title combination, when available. */
   ref?: string;
   /** Provenance for the stored relation (e.g. source doc or auto-tag pass). */
@@ -597,6 +599,7 @@ export function addEntity(
       if (writtenTitles.has(dedupeKey)) continue;
 
       const nobleTitle = doc.createElementNS(TEI_NS, 'nobleTitle');
+      if (title.dynasty?.trim()) nobleTitle.setAttribute('dynasty', title.dynasty.trim());
       if (title.ref) nobleTitle.setAttribute('ref', title.ref);
       if (title.resp) nobleTitle.setAttribute('resp', title.resp);
       if (title.source) nobleTitle.setAttribute('source', title.source);
@@ -874,7 +877,7 @@ export function appendAuthorityDates(
 export function appendAuthoritySourcedValues(
   doc: Document,
   element: Element,
-  tag: 'nationality' | 'placeName' | 'note',
+  tag: 'nationality' | 'placeName' | 'note' | 'affiliation',
   values: { text: string; ref?: string; source: string; noteType?: string }[],
 ): boolean {
   let changed = false;
@@ -907,6 +910,78 @@ export function appendAuthoritySourcedValues(
     changed = true;
   }
   if (changed) touchEntity(element);
+  return changed;
+}
+
+/**
+ * Append confirmed noble-title relations from an authority (e.g. Norbert's
+ * `person_nt`) without dropping titles already asserted by another source or
+ * user. Dedupes by `ref` when the authority provides a stable id for the
+ * title row, else by the (placeName, roleName, posthumousName) text tuple,
+ * so re-running a backfill never re-adds the same title twice.
+ */
+export function appendAuthorityNobleTitles(
+  doc: Document,
+  item: Element,
+  titles: {
+    placeName: string;
+    roleName: string;
+    posthumousName?: string;
+    dynasty?: string;
+    ref?: string;
+    source: string;
+  }[],
+): boolean {
+  let changed = false;
+  const textOf = (child: Element, name: string, predicate?: (el: Element) => boolean) =>
+    Array.from(child.children)
+      .find((part) => part.localName === name && (!predicate || predicate(part)))
+      ?.textContent?.trim() ?? '';
+  const keyOf = (child: Element) =>
+    child.getAttribute('ref') ||
+    [
+      textOf(child, 'placeName'),
+      textOf(child, 'roleName'),
+      textOf(child, 'persName', (part) => part.getAttribute('type') === 'posthumous'),
+    ].join('');
+  const existing = new Set(
+    Array.from(item.children)
+      .filter((child) => child.localName === 'nobleTitle')
+      .map(keyOf),
+  );
+  for (const title of titles) {
+    const place = title.placeName.trim();
+    const role = title.roleName.trim();
+    if (!place && !role) continue;
+    const posthumous = title.posthumousName?.trim() ?? '';
+    const key = title.ref || [place, role, posthumous].join('');
+    if (existing.has(key)) continue;
+
+    const nobleTitle = doc.createElementNS(TEI_NS, 'nobleTitle');
+    if (title.dynasty?.trim()) nobleTitle.setAttribute('dynasty', title.dynasty.trim());
+    if (title.ref) nobleTitle.setAttribute('ref', title.ref);
+    writeEntityValueProvenance(nobleTitle, { origin: 'authority', source: title.source });
+
+    const placeEl = doc.createElementNS(TEI_NS, 'placeName');
+    placeEl.textContent = place;
+    nobleTitle.appendChild(placeEl);
+
+    const roleEl = doc.createElementNS(TEI_NS, 'roleName');
+    roleEl.textContent = role;
+    nobleTitle.appendChild(roleEl);
+
+    if (posthumous) {
+      const posthumousEl = doc.createElementNS(TEI_NS, 'persName');
+      posthumousEl.setAttribute('type', 'posthumous');
+      posthumousEl.textContent = posthumous;
+      nobleTitle.appendChild(posthumousEl);
+    }
+
+    item.appendChild(nobleTitle);
+    existing.add(key);
+    changed = true;
+  }
+  if (changed) touchEntity(item);
   return changed;
 }
 

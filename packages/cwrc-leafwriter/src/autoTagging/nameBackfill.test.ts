@@ -82,6 +82,109 @@ describe('backfillEntityNames', () => {
     expect(entry.nameEntries.find((row) => row.text === '介甫')?.type).toBe('variant');
   });
 
+  it('backfills names, dates, and nationality from the Norbert persons pack (no origin — Norbert has none)', async () => {
+    const doc = makeDoc();
+    const { id } = addEntity(doc, 'person', {
+      name: '劉備',
+      authorityIds: [{ type: 'Norbert', value: '3710' }],
+    });
+
+    const norbertPersonRow = JSON.stringify({
+      source: 'Norbert',
+      authorityId: '3710',
+      kind: 'person',
+      primaryName: '劉備',
+      searchStrings: ['劉備', '劉玄德'],
+      names: [
+        { text: '劉備', type: 'primary' },
+        { text: '劉玄德', type: 'courtesy' },
+      ],
+      metadata: {
+        dynasty: '三國蜀',
+        nationality: [
+          {
+            id: 'Norbert:dynasty:三國蜀',
+            canonicalId: 'Norbert:dynasty:三國蜀',
+            label: '三國蜀',
+            sourceIds: ['Norbert:dynasty:三國蜀'],
+          },
+        ],
+        startYear: 221,
+        endYear: 263,
+      },
+    });
+
+    const readPackFile = async (packId: AuthorityPackId) => {
+      if (packId === 'norbert-persons') return `${norbertPersonRow}\n`;
+      throw new Error(`unexpected pack ${packId}`);
+    };
+
+    const result = await backfillEntityNames(doc, { readPackFile });
+    expect(result.entitiesUpdated).toBe(1);
+
+    const entry = listEntities(doc).find((entity) => entity.id === id)!;
+    expect(entry.nameEntries).toEqual(
+      expect.arrayContaining([{ text: '劉玄德', lang: null, type: 'courtesy' }]),
+    );
+    expect(entry.nationalities).toEqual(['三國蜀']);
+    expect(entry.placesOfOrigin).toEqual([]);
+
+    const item = findEntity(doc, id)!;
+    const birth = Array.from(item.children).find((child) => child.localName === 'birth');
+    const death = Array.from(item.children).find((child) => child.localName === 'death');
+    expect(birth?.getAttribute('when')).toBe('0221');
+    expect(death?.getAttribute('when')).toBe('0263');
+  });
+
+  it('backfills a noble title from Norbert canonical person_nt data (no wiki match needed)', async () => {
+    const doc = makeDoc();
+    const { id } = addEntity(doc, 'person', {
+      name: '劉備',
+      authorityIds: [{ type: 'Norbert', value: '3710' }],
+    });
+
+    const norbertNtRow = JSON.stringify({
+      id: 'wnt-1610',
+      source: 'norbert-direct',
+      authorityId: 'wiki-nt:1610',
+      kind: 'person',
+      primaryName: '劉備',
+      searchStrings: ['漢昭烈帝', '漢帝'],
+      metadata: {
+        isNobleTitle: true,
+        dynasty: '漢',
+        crosswalk: { norbert: '3710' },
+        nobleTitle: { fief: '漢', roleName: '帝', posthumousName: '昭烈' },
+      },
+    });
+
+    const readPackFile = async (packId: AuthorityPackId) => {
+      if (packId === 'norbert-wiki-nt') return `${norbertNtRow}\n`;
+      throw new Error(`unexpected pack ${packId}`);
+    };
+
+    const first = await backfillEntityNames(doc, { readPackFile });
+    expect(first.entitiesUpdated).toBe(1);
+
+    const entry = listEntities(doc).find((entity) => entity.id === id)!;
+    expect(entry.nobleTitles).toEqual([
+      expect.objectContaining({
+        dynasty: '漢',
+        fief: '漢',
+        posthumousName: '昭烈',
+        title: '帝',
+        source: 'Norbert:wiki-nt:1610',
+      }),
+    ]);
+
+    // Re-running must not duplicate the title.
+    const second = await backfillEntityNames(doc, { readPackFile });
+    expect(second.entitiesUpdated).toBe(0);
+    expect(
+      listEntities(doc).find((entity) => entity.id === id)!.nobleTitles,
+    ).toHaveLength(1);
+  });
+
   it('ignores a family-prefixed composite courtesy name from authority intake', async () => {
     const doc = makeDoc();
     addEntity(doc, 'person', {

@@ -1,5 +1,9 @@
 /** Fetch publication date (P577) and author(s) (P50) from Wikidata for a work Q-id. */
 import { parseWikidataYear } from './wikidataDates';
+import { resolveEntityInDocument } from './disambiguationCandidates';
+import { setUserWorkAuthors, setUserWorkDate } from './entityOps';
+import { addEntityName } from './entityOps';
+import { autoRomanize } from '../utilities/romanize';
 
 interface WikidataTimeValue {
   time: string;
@@ -37,6 +41,12 @@ export interface WikidataWorkAuthor {
 export interface WikidataWorkDetails {
   publicationYear?: number;
   authors: WikidataWorkAuthor[];
+  titles: { language: string; label: string }[];
+}
+
+export interface WikidataWorkEnrichment {
+  publicationYear?: number;
+  authors: { qid: string; label: string; entityId: string }[];
 }
 
 function firstYearFromClaims(claims: WikidataClaimSnak[] | undefined): number | null {
@@ -81,12 +91,29 @@ async function fetchLabels(
   return labels;
 }
 
+function normalizeLabelLanguages(desktopLanguage?: string | null): string[] {
+  const languages = ['en', desktopLanguage?.trim().toLowerCase()].filter(
+    (language): language is string => Boolean(language),
+  );
+  return [
+    ...new Set(
+      languages.flatMap((language) => {
+        const normalized = language.replace('_', '-');
+        const base = normalized.split('-')[0]!;
+        return normalized === base ? [base] : [normalized, base];
+      }),
+    ),
+  ];
+}
+
 /** Fetch P577 (publication date) and P50 (author) for a work Q-id. */
 export async function fetchWikidataWorkDetails(
   qid: string,
   fetchImpl: WikidataFetchFn = fetch,
+  desktopLanguage?: string | null,
 ): Promise<WikidataWorkDetails | null> {
-  const url = `https://www.wikidata.org/w/api.php?action=wbgetentities&ids=${qid}&props=claims&format=json&origin=*`;
+  const labelLanguages = normalizeLabelLanguages(desktopLanguage);
+  const url = `https://www.wikidata.org/w/api.php?action=wbgetentities&ids=${qid}&props=claims|labels&languages=${labelLanguages.join('|')}&format=json&origin=*`;
   const response = await fetchImpl(url);
   if (!response.ok) return null;
 
@@ -105,6 +132,53 @@ export async function fetchWikidataWorkDetails(
     qid: authorQid,
     label: labels.get(authorQid) ?? authorQid,
   }));
+  const titles = labelLanguages.flatMap((language) => {
+    const label = entity.labels?.[language]?.value;
+    return label ? [{ language, label }] : [];
+  });
 
-  return { publicationYear, authors };
+  return { publicationYear, authors, titles };
+}
+
+/**
+ * Fetch and persist a work's Wikidata publication date and P50 authors.
+ * Author entities are reused by their Wikidata id, or minted when absent.
+ */
+export async function enrichWikidataWorkEntity(
+  doc: Document,
+  workEntityId: string,
+  qid: string,
+  projectLang?: string | null,
+  desktopLanguage?: string | null,
+  fetchImpl: WikidataFetchFn = fetch,
+): Promise<WikidataWorkEnrichment | null> {
+  const details = await fetchWikidataWorkDetails(qid, fetchImpl, desktopLanguage);
+  if (!details) return null;
+  const authors = details.authors.map((author) => ({
+    ...author,
+    entityId: resolveEntityInDocument(doc, {
+      kind: 'person',
+      name: author.label,
+      romanizedName: autoRomanize(author.label, projectLang ?? null) ?? undefined,
+      nameLang: projectLang ?? undefined,
+      authorityIds: [{ type: 'Wikidata', value: author.qid }],
+    }),
+  }));
+  setUserWorkAuthors(
+    doc,
+    workEntityId,
+    authors.map((author) => ({ name: author.label, key: author.entityId })),
+  );
+  for (const title of details.titles) {
+    addEntityName(doc, workEntityId, title.label, {
+      type: 'translation',
+      lang: title.language,
+      origin: 'authority',
+      source: 'Wikidata',
+    });
+  }
+  if (details.publicationYear != null) {
+    setUserWorkDate(doc, workEntityId, details.publicationYear);
+  }
+  return { publicationYear: details.publicationYear, authors };
 }

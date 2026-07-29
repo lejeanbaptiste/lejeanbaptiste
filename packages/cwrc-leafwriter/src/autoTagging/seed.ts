@@ -386,6 +386,9 @@ function resolveEntity(
       ? officeAuthorityIds(candidate)
       : [
           { type: candidate.source, value: candidate.authorityId },
+          ...(candidate.metadata?.crosswalk?.norbert
+            ? [{ type: 'Norbert', value: candidate.metadata.crosswalk.norbert }]
+            : []),
           ...(candidate.metadata?.canonicalEntityId?.startsWith(
             `${candidate.source.toLowerCase()}:person:`,
           )

@@ -41,14 +41,46 @@ function extractWikidataQid(ref: string): string | null {
   return match ? match[1]!.toUpperCase() : null;
 }
 
+// canonicalId values on nationality assertions are self-namespaced (e.g.
+// "CBDB:dynasty:53", "DILA:dynasty:蜀漢", "wikidata:Q742440") independent of
+// the assertion's own `source` attribute — a DILA-sourced assertion can carry
+// a wikidata-shaped canonical id when DILA's own dynasty id wasn't curated.
+// Parse the ref's own prefix first and only fall back to the declared source
+// for bare, unprefixed ids.
+function lookupByRefNamespace(trimmedRef: string): DynastyCrosswalkEntry | undefined {
+  const prefixed = trimmedRef.match(/^(CBDB|DILA|Norbert):dynasty:(.+)$/i);
+  if (prefixed) {
+    const [, ns, rest] = prefixed;
+    switch (ns!.toUpperCase()) {
+      case 'CBDB':
+        return byCbdbId.get(rest!.trim());
+      case 'DILA':
+        return byDilaId.get(rest!.trim());
+      case 'NORBERT':
+        return byLabel.get(rest!.trim());
+      default:
+        return undefined;
+    }
+  }
+  const qid = extractWikidataQid(trimmedRef);
+  return qid ? byWikidataQid.get(qid) : undefined;
+}
+
 /** Looks up the curated row for a nationality assertion by its source authority and ref (idno-style canonical id). */
 function lookupDynastyEntry(
   source: string | null | undefined,
   ref: string | null | undefined,
 ): DynastyCrosswalkEntry | undefined {
-  const normalizedSource = source?.split(':')[0]?.trim().toUpperCase();
   const trimmedRef = ref?.trim();
-  if (!normalizedSource || !trimmedRef) return undefined;
+  if (!trimmedRef) return undefined;
+
+  const byNamespace = lookupByRefNamespace(trimmedRef);
+  if (byNamespace) return byNamespace;
+
+  // Fall back to the declared source for bare, unprefixed ids (e.g. legacy
+  // data written before canonicalId carried its own namespace).
+  const normalizedSource = source?.split(':')[0]?.trim().toUpperCase();
+  if (!normalizedSource) return undefined;
   switch (normalizedSource) {
     case 'CBDB':
       return byCbdbId.get(trimmedRef);

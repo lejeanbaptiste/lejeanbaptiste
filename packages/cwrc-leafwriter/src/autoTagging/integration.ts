@@ -18,6 +18,7 @@ import {
   collectGivenFamilyNamesForCandidate,
   collectTypedNamesForCandidate,
   candidatesFromEntityFile,
+  extractWikidataId,
   resolveCandidateForPedb,
   resolveEntityInDocument,
 } from './disambiguationCandidates';
@@ -59,6 +60,7 @@ import { crawlDocuments } from './crawl';
 import { dictionaryTag, type DictionaryEntry } from './dictionary';
 import { compoundWrapperSuggestions, seedSuggestions, suggestionsFromSeedMatches } from './seed';
 import { DisambiguationAiCache } from './disambiguationAiCache';
+import { enrichWikidataWorkEntity } from './wikidataWorkDetails';
 import type { AiPromptProfile } from './aiPromptProfiles';
 import type { LlmClient } from './llmClient';
 import { LlmCache } from './llmCache';
@@ -480,6 +482,14 @@ export class AutoTaggingSession {
       }
     })();
     return this.projectLangPromise;
+  }
+
+  private desktopLanguage(): string | null {
+    try {
+      return window.localStorage.getItem('i18nextLng');
+    } catch {
+      return null;
+    }
   }
 
   get cache(): AuthorityCache | null {
@@ -1525,6 +1535,24 @@ export class AutoTaggingSession {
         : [];
     if (instance.tag === 'persName') {
       tagFollowingStyleNames(instance.element.ownerDocument!);
+    }
+    if (kind === 'work') {
+      const wikidata = candidate.authorityIds?.find(
+        (authority) => authority.type.trim().toUpperCase() === 'WIKIDATA',
+      );
+      const qid = extractWikidataId(candidate.uri ?? wikidata?.value ?? '');
+      if (qid) {
+        const workDetails = await enrichWikidataWorkEntity(
+          entitiesDoc,
+          entityId,
+          qid,
+          projectLang,
+          this.desktopLanguage(),
+        ).catch(() => null);
+        for (const author of workDetails?.authors ?? []) {
+          await autoSyncEntityToCentral(entitiesDoc, author.entityId);
+        }
+      }
     }
     await autoSyncEntityToCentral(entitiesDoc, entityId);
     for (const relatedId of relatedEntityIds) {

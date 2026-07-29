@@ -24,6 +24,7 @@ import {
 } from './entityOps';
 import {
   appendAuthorityDates,
+  appendAuthorityNobleTitles,
   appendAuthoritySourcedValues,
   findEntity,
   setAuthorityCache,
@@ -35,6 +36,8 @@ import { suggestPersonNameSplit, suggestPersonRomanization } from '../plugins/pe
 import { fetchWikidataLifespan } from './wikidataDates';
 import { fetchWikidataNationality } from './wikidataNationality';
 import { fetchWikidataPlaceOfBirth } from './wikidataPlaceOfBirth';
+import { enrichWikidataWorkEntity } from './wikidataWorkDetails';
+import { extractWikidataId } from './disambiguationCandidates';
 
 export interface NameBackfillProgress {
   done: number;
@@ -79,6 +82,70 @@ interface AuthorityEnrichment {
   metadata?: AuthorityCandidate['metadata'];
 }
 
+interface NorbertNobleTitleCandidate {
+  placeName: string;
+  roleName: string;
+  posthumousName?: string;
+  dynasty?: string;
+  /** The wiki-nt-links record's own authorityId, e.g. "wiki-nt:1610". */
+  ref: string;
+}
+
+/**
+ * Norbert's `person_nt` table is canonical: every title it records for a
+ * person should be backfillable regardless of whether a zh.wikipedia
+ * noble-title list page happens to cover it (most emperors/founders never
+ * are — see `norbert-direct` records in the compiled asset). Keyed by the
+ * person's Norbert authority id (`metadata.crosswalk.norbert`).
+ */
+async function buildNorbertNobleTitleIndex(
+  readPackFile: (packId: AuthorityPackId) => Promise<AuthorityPackContent>,
+): Promise<Map<string, NorbertNobleTitleCandidate[]>> {
+  const index = new Map<string, NorbertNobleTitleCandidate[]>();
+  try {
+    const content = await readPackFile('norbert-wiki-nt');
+    for (const row of iterateAuthorityNdjson(content)) {
+      const personId = row.metadata?.crosswalk?.norbert;
+      const title = row.metadata?.nobleTitle;
+      if (!personId || !title || (!title.fief && !title.roleName)) continue;
+      const list = index.get(personId) ?? [];
+      list.push({
+        placeName: title.fief ?? '',
+        roleName: title.roleName ?? '',
+        posthumousName: title.posthumousName,
+        dynasty: row.metadata?.dynasty,
+        ref: row.authorityId,
+      });
+      index.set(personId, list);
+    }
+  } catch {
+    // Pack missing or unreadable — skip silently, matching buildPackNameIndex.
+  }
+  return index;
+}
+
+/** Appends Norbert-canonical noble titles linked to an entity's Norbert authority id. */
+function applyNorbertNobleTitles(
+  doc: Document,
+  entityId: string,
+  titles: NorbertNobleTitleCandidate[],
+): boolean {
+  const item = findEntity(doc, entityId);
+  if (!item) return false;
+  return appendAuthorityNobleTitles(
+    doc,
+    item,
+    titles.map((title) => ({
+      placeName: title.placeName,
+      roleName: title.roleName,
+      posthumousName: title.posthumousName,
+      dynasty: title.dynasty,
+      ref: title.ref,
+      source: `Norbert:${title.ref}`,
+    })),
+  );
+}
+
 async function buildPackNameIndex(
   readPackFile: (packId: AuthorityPackId) => Promise<AuthorityPackContent>,
 ): Promise<Map<string, AuthorityEnrichment>> {
@@ -86,6 +153,10 @@ async function buildPackNameIndex(
   const packs: { packId: AuthorityPackId; source: string }[] = [
     { packId: 'cbdb-persons', source: 'CBDB' },
     { packId: 'dila-persons', source: 'DILA' },
+    // Norbert has no place-of-origin data, but its persons pack carries
+    // names, dates, and nationality just like CBDB/DILA; metadata.origin is
+    // simply absent on its rows, so applyAuthorityMetadata is a no-op for it.
+    { packId: 'norbert-persons', source: 'NORBERT' },
   ];
   for (const { packId, source } of packs) {
     try {
@@ -113,7 +184,10 @@ function packTypedNamesForEntity(
   if (!index) return [];
   const byText = new Map<string, TypedName>();
   for (const auth of entity.authorities) {
-    const key = `${auth.type}:${auth.value.trim()}`;
+    // Normalize casing to match buildPackNameIndex's keys (and
+    // authorityEnrichmentsForEntity's lookup below) — idno @type casing
+    // varies by source (e.g. "Norbert" vs "CBDB"/"DILA").
+    const key = `${auth.type.trim().toUpperCase()}:${auth.value.trim()}`;
     const enrichment = index.get(key);
     if (!enrichment) continue;
     for (const name of enrichment.names) {
@@ -236,6 +310,19 @@ function applyAuthorityMetadata(
       setAuthorityCache(doc, entityId, source.trim().toUpperCase(), metadata);
       changed = true;
     }
+    const rolesChanged = appendAuthoritySourcedValues(
+      doc,
+      item,
+      'affiliation',
+      metadata.appointments
+        .filter((appointment) => appointment.office?.name?.trim())
+        .map((appointment) => ({
+          text: appointment.office.name,
+          ref: appointment.office.authorityId,
+          source: appointment.source ?? normalizedSource,
+        })),
+    );
+    changed = changed || rolesChanged;
   }
   if (changed) touchEntity(item);
   return changed;
@@ -286,18 +373,27 @@ export async function backfillEntityNames(
     entityIds?: string[];
     readPackFile?: (packId: AuthorityPackId) => Promise<AuthorityPackContent>;
     projectLang?: string | null;
+    desktopLanguage?: string | null;
     signal?: AbortSignal;
     onProgress?: (p: NameBackfillProgress) => void;
     fetchImpl?: typeof fetch;
   } = {},
 ): Promise<NameBackfillResult> {
-  const { entityIds, readPackFile, projectLang, signal, onProgress, fetchImpl } = options;
+  const { entityIds, readPackFile, projectLang, desktopLanguage, signal, onProgress, fetchImpl } =
+    options;
 
   const allPersons = listEntities(doc).filter((entity) => entity.kind === 'person');
   const idFilter = entityIds ? new Set(entityIds) : null;
   const targets = allPersons.filter(
     (entity) => entity.authorities.length > 0 && (!idFilter || idFilter.has(entity.id)),
   );
+  const workTargets = listEntities(doc).filter(
+    (entity) =>
+      entity.kind === 'work' &&
+      entity.authorities.some((auth) => auth.type.trim().toUpperCase() === 'WIKIDATA') &&
+      (!idFilter || idFilter.has(entity.id)),
+  );
+  const totalTargets = targets.length + workTargets.length;
 
   const skippedNoAuthority = idFilter
     ? entityIds!.filter((id) => {
@@ -307,6 +403,7 @@ export async function backfillEntityNames(
     : allPersons.filter((entity) => entity.authorities.length === 0).length;
 
   const packIndex = readPackFile ? await buildPackNameIndex(readPackFile) : null;
+  const nobleTitleIndex = readPackFile ? await buildNorbertNobleTitleIndex(readPackFile) : null;
 
   let entitiesScanned = 0;
   let entitiesUpdated = 0;
@@ -426,6 +523,16 @@ export async function backfillEntityNames(
       }
     }
 
+    const norbertIdno = entity.authorities.find(
+      (auth) => auth.type.trim().toUpperCase() === 'NORBERT',
+    );
+    if (norbertIdno && nobleTitleIndex) {
+      const titles = nobleTitleIndex.get(norbertIdno.value.trim());
+      if (titles?.length && applyNorbertNobleTitles(doc, entity.id, titles)) {
+        entityChanged = true;
+      }
+    }
+
     // Packs only cover CBDB/DILA; a Wikidata-linked entity needs its own
     // live fetch so refresh isn't a no-op for it.
     const wikidataIdno = entity.authorities.find(
@@ -466,10 +573,42 @@ export async function backfillEntityNames(
 
     onProgress?.({
       done: entitiesScanned,
-      total: targets.length,
+      total: totalTargets,
       entityId: entity.id,
       entityLabel: entity.names[0],
       addedNames: addedThisEntity,
+    });
+  }
+
+  for (const entity of workTargets) {
+    if (signal?.aborted) {
+      cancelled = true;
+      break;
+    }
+    entitiesScanned++;
+    const wikidata = entity.authorities.find(
+      (auth) => auth.type.trim().toUpperCase() === 'WIKIDATA',
+    );
+    const qid = extractWikidataId(wikidata?.value ?? '');
+    let enriched = false;
+    if (qid) {
+      enriched = Boolean(
+        await enrichWikidataWorkEntity(
+          doc,
+          entity.id,
+          qid,
+          projectLang,
+          desktopLanguage,
+          fetchImpl,
+        ).catch(() => null),
+      );
+    }
+    if (enriched) entitiesUpdated++;
+    onProgress?.({
+      done: entitiesScanned,
+      total: totalTargets,
+      entityId: entity.id,
+      entityLabel: entity.names[0],
     });
   }
 
