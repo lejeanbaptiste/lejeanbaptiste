@@ -39,7 +39,7 @@ import {
   setGivenName,
   setRomanizedName,
 } from './entityOps';
-import { normalizeNameType, type NameTypeId } from './nameTypes';
+import { isFamilyPrefixedCourtesyName, normalizeNameType, type NameTypeId } from './nameTypes';
 import {
   isEastAsianCalendarLanguageCode,
   isLatnLang,
@@ -178,7 +178,8 @@ export function extractCbdbId(text: string): string | null {
   return match ? match[1]! : null;
 }
 
-export const CBDB_PERSON_URL = (id: string) => `https://cbdb.fas.harvard.edu/cbdbapi/person.php?id=${id}`;
+export const CBDB_PERSON_URL = (id: string) =>
+  `https://cbdb.fas.harvard.edu/cbdbapi/person.php?id=${id}`;
 export const DILA_PERSON_URL = (id: string) =>
   `https://authority.dila.edu.tw/person/?fromInner=${id}`;
 export const DILA_PLACE_URL = (id: string) =>
@@ -1019,12 +1020,17 @@ function typedNamesFromPackRow(
   names: { text: string; type?: string; lang?: string }[] | undefined,
 ): TypedName[] | undefined {
   if (!names?.length) return undefined;
+  const familyNames = names
+    .filter((name) => normalizeNameType(name.type) === 'family')
+    .map((name) => name.text?.trim())
+    .filter((text): text is string => Boolean(text));
   const out: TypedName[] = [];
   for (const name of names) {
     const text = name.text?.trim();
     if (!text) continue;
     const type = normalizeNameType(name.type) ?? 'variant';
     if (type === 'primary') continue;
+    if (type === 'courtesy' && isFamilyPrefixedCourtesyName(text, familyNames)) continue;
     out.push({ text, type, lang: name.lang });
   }
   return out.length ? out : undefined;
@@ -1263,13 +1269,25 @@ export function resolveEntityInDocument(
   candidate?: DisambiguationCandidate,
 ): string {
   const surface = input.name.normalize('NFC').trim();
+  const familyNames = [
+    ...(input.familyName ? [input.familyName] : []),
+    ...(input.typedNames ?? []).filter((name) => name.type === 'family').map((name) => name.text),
+  ];
+  const intakeTypedNames = (input.typedNames ?? []).filter(
+    (name) => name.type !== 'courtesy' || !isFamilyPrefixedCourtesyName(name.text, familyNames),
+  );
 
   /** Reuse path: keep the new surface form searchable and backfill a missing romanization. */
   const augmentExisting = (id: string): string => {
     try {
       if (surface) addEntityName(entitiesDoc, id, surface, { type: 'variant' });
-      for (const typed of input.typedNames ?? []) {
-        addEntityName(entitiesDoc, id, typed.text, { type: typed.type, lang: typed.lang });
+      for (const typed of intakeTypedNames) {
+        addEntityName(entitiesDoc, id, typed.text, {
+          type: typed.type,
+          lang: typed.lang,
+          origin: 'authority',
+          source: input.authoritySource ?? input.authorityIds?.[0]?.type,
+        });
       }
       const entity = findEntity(entitiesDoc, id);
       const hasRomanized = entity
@@ -1358,7 +1376,7 @@ export function resolveEntityInDocument(
   const surfaceIsAlt = Boolean(surface) && canonical !== surface;
   const altNames: { text: string; type?: NameTypeId; lang?: string }[] = [
     ...(surfaceIsAlt ? [{ text: surface, type: 'variant' as NameTypeId }] : []),
-    ...(input.typedNames ?? []),
+    ...intakeTypedNames,
   ];
   const { id } = addEntity(entitiesDoc, input.kind, {
     name: canonical,

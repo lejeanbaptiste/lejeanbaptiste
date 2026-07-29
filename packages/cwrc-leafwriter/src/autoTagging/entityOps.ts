@@ -309,12 +309,15 @@ export function groupFieldAssertions(
   keyOf: (assertion: EntityAssertionSummary) => string = (assertion) => assertion.value,
 ): FieldAssertionGroups {
   const active = assertions.filter(
-    (assertion) => assertion.origin === 'authority' && (showRejected || assertion.status === 'active'),
+    (assertion) =>
+      assertion.origin === 'authority' && (showRejected || assertion.status === 'active'),
   );
   const agreeingSources = Array.from(
     new Set(
       active
-        .filter((assertion) => assertion.status === 'active' && acceptedValues.has(keyOf(assertion)))
+        .filter(
+          (assertion) => assertion.status === 'active' && acceptedValues.has(keyOf(assertion)),
+        )
         .map((assertion) => assertion.source?.split(':')[0])
         .filter((source): source is string => Boolean(source)),
     ),
@@ -460,6 +463,7 @@ function addUserValue(
   id: string,
   tag: 'nationality' | 'placeName',
   label: string,
+  reference?: { ref?: string; source?: string },
 ): boolean {
   const item = requireEntity(doc, id);
   const trimmed = label.trim();
@@ -473,20 +477,35 @@ function addUserValue(
   if (exists) return false;
   const el = doc.createElementNS(TEI_NS, tag);
   el.textContent = trimmed;
-  writeEntityValueProvenance(el, { origin: 'user', source: null, status: 'active' });
+  if (reference?.ref) el.setAttribute('ref', reference.ref);
+  writeEntityValueProvenance(el, {
+    origin: 'user',
+    source: reference?.source ?? null,
+    status: 'active',
+  });
   item.appendChild(el);
   touchEntity(item);
   return true;
 }
 
 /** Add a user-typed nationality/dynasty value. */
-export function addUserNationality(doc: Document, id: string, label: string): boolean {
-  return addUserValue(doc, id, 'nationality', label);
+export function addUserNationality(
+  doc: Document,
+  id: string,
+  label: string,
+  reference?: { ref?: string; source?: string },
+): boolean {
+  return addUserValue(doc, id, 'nationality', label, reference);
 }
 
 /** Add a user-typed place-of-origin value. */
-export function addUserOrigin(doc: Document, id: string, label: string): boolean {
-  return addUserValue(doc, id, 'placeName', label);
+export function addUserOrigin(
+  doc: Document,
+  id: string,
+  label: string,
+  reference?: { ref?: string; source?: string },
+): boolean {
+  return addUserValue(doc, id, 'placeName', label, reference);
 }
 
 /**
@@ -669,6 +688,8 @@ function setNoteOfType(doc: Document, id: string, type: string, text: string): v
 export interface NameAttributes {
   lang?: string;
   type?: NameTypeId;
+  origin?: EntityValueOrigin;
+  source?: string | null;
 }
 
 /**
@@ -699,6 +720,13 @@ export function addEntityName(
       existing.setAttribute('type', attributes.type);
       upgraded = true;
     }
+    if (attributes?.origin && !existing.hasAttribute('origin')) {
+      writeEntityValueProvenance(existing, {
+        origin: attributes.origin,
+        source: attributes.source,
+      });
+      upgraded = true;
+    }
     if (upgraded) touchEntity(item);
     return false;
   }
@@ -706,6 +734,12 @@ export function addEntityName(
   el.textContent = trimmed;
   if (attributes?.lang) el.setAttributeNS(XML_NS, 'xml:lang', attributes.lang);
   if (attributes?.type) el.setAttribute('type', attributes.type);
+  if (attributes?.origin) {
+    writeEntityValueProvenance(el, {
+      origin: attributes.origin,
+      source: attributes.source,
+    });
+  }
   const last = names[names.length - 1];
   if (last?.nextSibling) item.insertBefore(el, last.nextSibling);
   else item.appendChild(el);

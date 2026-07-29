@@ -37,7 +37,10 @@ describe('disambiguationCandidates', () => {
   });
 
   it('keeps valid WGS84 coordinates and rejects projected CHGIS coordinates', () => {
-    expect(normalizeGeo({ lat: 34.76179, lon: 117.4856 })).toEqual({ lat: 34.76179, lon: 117.4856 });
+    expect(normalizeGeo({ lat: 34.76179, lon: 117.4856 })).toEqual({
+      lat: 34.76179,
+      lon: 117.4856,
+    });
     expect(normalizeGeo({ lat: 3868251.59, lon: 20103198.36 })).toBeUndefined();
     expect(normalizeGeo({ lat: Number.NaN, lon: 117 })).toBeUndefined();
   });
@@ -196,21 +199,20 @@ describe('disambiguationCandidates', () => {
       name: '王安石',
       authorityIds: [{ type: 'CBDB', value: '1762' }],
     });
-    const appointments = [{
-      source: 'CBDB',
-      authorityId: 'posting:1',
-      person: { source: 'CBDB', authorityId: '1762' },
-      office: { source: 'CBDB', authorityId: '42', name: '尚書' },
-    }];
-    const id = resolveEntityInDocument(
-      doc,
+    const appointments = [
       {
-        kind: 'person',
-        name: '王安石',
-        authorityIds: [{ type: 'CBDB', value: '1762' }],
-        authorityMetadata: { appointments },
+        source: 'CBDB',
+        authorityId: 'posting:1',
+        person: { source: 'CBDB', authorityId: '1762' },
+        office: { source: 'CBDB', authorityId: '42', name: '尚書' },
       },
-    );
+    ];
+    const id = resolveEntityInDocument(doc, {
+      kind: 'person',
+      name: '王安石',
+      authorityIds: [{ type: 'CBDB', value: '1762' }],
+      authorityMetadata: { appointments },
+    });
     const cache = Array.from(findEntity(doc, id)!.children).find(
       (child) => child.localName === 'note' && child.getAttribute('type') === 'authority-cache',
     );
@@ -292,7 +294,7 @@ describe('disambiguationCandidates', () => {
       clearWikidataTypedNamesCacheForTests();
     });
 
-    it('excludes the primary-typed pack entry from a candidate\'s typedNames', async () => {
+    it("excludes the primary-typed pack entry from a candidate's typedNames", async () => {
       mockReconcile.mockResolvedValue([]);
       const originalFetch = global.fetch;
       global.fetch = jest.fn().mockResolvedValue({ ok: false, json: async () => ({}) } as Response);
@@ -305,6 +307,8 @@ describe('disambiguationCandidates', () => {
           searchStrings: ['王安石', '王介甫'],
           names: [
             { text: '王安石', type: 'primary' },
+            { text: '王', type: 'family' },
+            { text: '介甫', type: 'courtesy' },
             { text: '王介甫', type: 'courtesy' },
           ],
           metadata: { pinyin: 'Wang Anshi' },
@@ -327,7 +331,10 @@ describe('disambiguationCandidates', () => {
         );
 
         const cbdbRow = rows.find((row) => row.sources.includes('CBDB'));
-        expect(cbdbRow?.typedNames).toEqual([{ text: '王介甫', type: 'courtesy', lang: undefined }]);
+        expect(cbdbRow?.typedNames).toEqual([
+          { text: '王', type: 'family', lang: undefined },
+          { text: '介甫', type: 'courtesy', lang: undefined },
+        ]);
       } finally {
         global.fetch = originalFetch;
       }
@@ -371,20 +378,26 @@ describe('disambiguationCandidates', () => {
 
     it('collectTypedNamesForCandidate merges pack names with Wikidata claims', async () => {
       const originalFetch = global.fetch;
-      global.fetch = jest.fn(async () =>
-        ({
-          ok: true,
-          json: async () => ({
-            entities: {
-              Q11332: {
-                claims: {
-                  P1782: [{ mainsnak: { datavalue: { value: { text: '平子', language: 'zh' } } } }],
-                  P1786: [{ mainsnak: { datavalue: { value: { text: '西鄂侯', language: 'zh' } } } }],
+      global.fetch = jest.fn(
+        async () =>
+          ({
+            ok: true,
+            json: async () => ({
+              entities: {
+                Q11332: {
+                  claims: {
+                    P1782: [
+                      { mainsnak: { datavalue: { value: { text: '平子', language: 'zh' } } } },
+                    ],
+                    P1786: [
+                      { mainsnak: { datavalue: { value: { text: '西鄂侯', language: 'zh' } } } },
+                    ],
+                  },
                 },
               },
-            },
-          }),
-        }) as unknown as Response) as unknown as typeof fetch;
+            }),
+          }) as unknown as Response,
+      ) as unknown as typeof fetch;
       try {
         const names = await collectTypedNamesForCandidate({
           id: 'wd',
@@ -438,9 +451,9 @@ describe('disambiguationCandidates', () => {
         { id: 'cbdb', label: '張衡', sources: ['CBDB'], projectLangName: '張衡' },
       ];
       expect(mergeSelectedCandidates(latinFirst)?.label).toBe('Zhang Heng');
-      expect(
-        mergeSelectedCandidates(latinFirst, { preferNonLatinLabel: true })?.label,
-      ).toBe('張衡');
+      expect(mergeSelectedCandidates(latinFirst, { preferNonLatinLabel: true })?.label).toBe(
+        '張衡',
+      );
     });
 
     it('preserves geo from whichever row carries it', () => {
@@ -473,9 +486,11 @@ describe('disambiguationCandidates', () => {
       }) as Response;
 
     it('fills project-language and Latin names from Wikidata labels', async () => {
-      const fetchImpl = jest.fn().mockResolvedValue(
-        labelsResponse({ Q11332: { 'zh-hant': '張衡', zh: '张衡', en: 'Zhang Heng' } }),
-      );
+      const fetchImpl = jest
+        .fn()
+        .mockResolvedValue(
+          labelsResponse({ Q11332: { 'zh-hant': '張衡', zh: '张衡', en: 'Zhang Heng' } }),
+        );
       const candidates: DisambiguationCandidate[] = [
         {
           id: 'wd',
@@ -492,9 +507,9 @@ describe('disambiguationCandidates', () => {
     });
 
     it('autogenerates pinyin when no Latin label exists', async () => {
-      const fetchImpl = jest.fn().mockResolvedValue(
-        labelsResponse({ Q999999: { 'zh-hant': '司馬遷' } }),
-      );
+      const fetchImpl = jest
+        .fn()
+        .mockResolvedValue(labelsResponse({ Q999999: { 'zh-hant': '司馬遷' } }));
       const candidates: DisambiguationCandidate[] = [
         {
           id: 'wd',
@@ -528,7 +543,12 @@ describe('disambiguationCandidates', () => {
     it('does nothing without a project language', async () => {
       const fetchImpl = jest.fn();
       const candidates: DisambiguationCandidate[] = [
-        { id: 'wd', label: '張衡', sources: ['Wikidata'], uri: 'https://www.wikidata.org/wiki/Q11332' },
+        {
+          id: 'wd',
+          label: '張衡',
+          sources: ['Wikidata'],
+          uri: 'https://www.wikidata.org/wiki/Q11332',
+        },
       ];
       await enrichCandidateNames(candidates, null, fetchImpl);
       expect(candidates[0]?.projectLangName).toBeUndefined();
@@ -593,7 +613,10 @@ describe('disambiguationCandidates', () => {
     global.fetch = jest.fn().mockResolvedValue({ ok: false, json: async () => ({}) } as Response);
 
     try {
-      const rows = await fetchLiveCandidates('persName', 'Example Person', cache, ['Wikidata', 'VIAF']);
+      const rows = await fetchLiveCandidates('persName', 'Example Person', cache, [
+        'Wikidata',
+        'VIAF',
+      ]);
       const row = rows[0];
       expect(row?.authorityIds).toEqual(
         expect.arrayContaining([
@@ -825,7 +848,11 @@ describe('disambiguationCandidates', () => {
         kind: 'person',
         primaryName: '桓玄',
         searchStrings: ['桓玄'],
-        metadata: { startYear: 369, endYear: 404, description: '桓玄 (Huan Xuan, 369–404, 晉 Jin)' },
+        metadata: {
+          startYear: 369,
+          endYear: 404,
+          description: '桓玄 (Huan Xuan, 369–404, 晉 Jin)',
+        },
       }),
     ].join('\n');
     const dilaPack = [
@@ -992,7 +1019,7 @@ describe('disambiguationCandidates', () => {
     expect(chgisRow?.geo).toEqual({ lat: 30.65, lon: 113.15 });
   });
 
-  it('does not leak one DILA place record\'s dates onto another record sharing the same name', async () => {
+  it("does not leak one DILA place record's dates onto another record sharing the same name", async () => {
     mockReconcile.mockResolvedValue([]);
     // DILA splits a place into one row per dynasty/era — same primaryName, distinct authorityId.
     const dilaPlacesPack = [
@@ -1103,7 +1130,7 @@ describe('disambiguationCandidates', () => {
       'placeName',
       'nonexistent',
       cache,
-      [],  // no enabled authorities to keep results deterministic
+      [], // no enabled authorities to keep results deterministic
       false,
       undefined,
       dilaDetailCache,
@@ -1195,8 +1222,12 @@ describe('disambiguationCandidates', () => {
 
     it('exclude mode drops overlapping ranges and keeps undated candidates', () => {
       const dated = { ...base, startYear: 226, endYear: 249 };
-      expect(candidatePassesYearFilter(dated, { mode: 'exclude', start: 200, end: 300 })).toBe(false);
-      expect(candidatePassesYearFilter(dated, { mode: 'exclude', start: 300, end: 400 })).toBe(true);
+      expect(candidatePassesYearFilter(dated, { mode: 'exclude', start: 200, end: 300 })).toBe(
+        false,
+      );
+      expect(candidatePassesYearFilter(dated, { mode: 'exclude', start: 300, end: 400 })).toBe(
+        true,
+      );
       expect(candidatePassesYearFilter(base, { mode: 'exclude', start: 200, end: 300 })).toBe(true);
     });
 
@@ -1214,7 +1245,9 @@ describe('disambiguationCandidates', () => {
     it('treats a single-year candidate (only startYear) as a point in time', () => {
       const born = { ...base, startYear: 1990 };
       expect(candidatePassesYearFilter(born, { mode: 'limit', start: 1980, end: 2000 })).toBe(true);
-      expect(candidatePassesYearFilter(born, { mode: 'limit', start: 2000, end: 2010 })).toBe(false);
+      expect(candidatePassesYearFilter(born, { mode: 'limit', start: 2000, end: 2010 })).toBe(
+        false,
+      );
     });
 
     it('normalizes a reversed range', () => {

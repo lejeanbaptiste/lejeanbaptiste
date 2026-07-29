@@ -1,5 +1,6 @@
 import {
   DEFAULT_UNTAGGABLE_TYPES,
+  isFamilyPrefixedCourtesyName,
   isTaggableNameType,
   normalizeNameType,
 } from './nameTypes';
@@ -64,5 +65,13 @@ describe('isTaggableNameType', () => {
     expect(isTaggableNameType('courtesy', [])).toBe(true);
     expect(isTaggableNameType('art', ['art'])).toBe(false);
     expect(isTaggableNameType(null, ['variant'])).toBe(true);
+  });
+});
+
+describe('isFamilyPrefixedCourtesyName', () => {
+  it('recognizes a family-plus-courtesy composite but keeps the bare courtesy name', () => {
+    expect(isFamilyPrefixedCourtesyName('蕭彦学', ['蕭'])).toBe(true);
+    expect(isFamilyPrefixedCourtesyName('彦学', ['蕭'])).toBe(false);
+    expect(isFamilyPrefixedCourtesyName('蕭', ['蕭'])).toBe(false);
   });
 });

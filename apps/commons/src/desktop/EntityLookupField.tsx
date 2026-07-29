@@ -143,6 +143,8 @@ interface EntityLookupFieldProps {
   values: EntityLookupValue[];
   disabled?: boolean;
   onChange: (values: EntityLookupValue[]) => void;
+  /** Called after a selected/created entity has been persisted to entities.xml. */
+  onPersistedChange?: (value: EntityLookupValue) => void;
   /**
    * kind: 'work' only — after linking to a Wikidata work, fetches P577/P50 and
    * offers the publication year + author entities for the caller to backfill
@@ -165,6 +167,7 @@ export const EntityLookupField = ({
   values,
   disabled,
   onChange,
+  onPersistedChange,
   onWorkDetails,
 }: EntityLookupFieldProps) => {
   const { t } = useTranslation();
@@ -236,7 +239,9 @@ export const EntityLookupField = ({
         undefined,
         undefined,
         session.projectLang,
-        session.central ? { doc: session.central.doc, userStableId: session.central.userStableId } : undefined,
+        session.central
+          ? { doc: session.central.doc, userStableId: session.central.userStableId }
+          : undefined,
       );
       setCandidates(rows);
       setCheckedIds(new Set());
@@ -252,7 +257,8 @@ export const EntityLookupField = ({
     if (mode === 'single') {
       onChange([item]);
     } else {
-      if (values.some((v) => v.name === item.name && v.ref === item.ref && v.key === item.key)) return;
+      if (values.some((v) => v.name === item.name && v.ref === item.ref && v.key === item.key))
+        return;
       onChange([...values, item]);
     }
     setQuery('');
@@ -278,7 +284,10 @@ export const EntityLookupField = ({
 
     try {
       const session = await getSession();
-      if (!session.store) return;
+      if (!session.store) {
+        onPersistedChange?.({ name: merged.label, ref: merged.uri });
+        return;
+      }
       // A candidate picked from the central database needs a project mirror
       // minted/linked before it can be treated as an ordinary local match.
       if (merged.centralEntityId && session.central) {
@@ -328,8 +337,7 @@ export const EntityLookupField = ({
                   const authorId = resolveEntityInDocument(session.entitiesDoc, {
                     kind: 'person',
                     name: author.label,
-                    romanizedName:
-                      autoRomanize(author.label, session.projectLang) ?? undefined,
+                    romanizedName: autoRomanize(author.label, session.projectLang) ?? undefined,
                     nameLang: session.projectLang ?? undefined,
                     authorityIds: [{ type: 'Wikidata', value: author.qid }],
                   });
@@ -349,6 +357,7 @@ export const EntityLookupField = ({
       }
 
       await session.store.saveEntities(session.entitiesDoc);
+      onPersistedChange?.({ name: merged.label, ref: merged.uri });
     } catch {
       // Entity database write failed — the field is still applied to the header.
     }
@@ -363,6 +372,7 @@ export const EntityLookupField = ({
       const description = createDescription.trim() || undefined;
       if (!session.store) {
         setValue({ name });
+        onPersistedChange?.({ name });
         return;
       }
       const romanizedName = createRomanized.trim() || undefined;
@@ -381,6 +391,7 @@ export const EntityLookupField = ({
       await autoSyncEntityToCentral(session.entitiesDoc, id);
       await session.store.saveEntities(session.entitiesDoc);
       setValue({ name, key: id });
+      onPersistedChange?.({ name, key: id });
     } catch {
       setValue({ name });
     } finally {
@@ -403,7 +414,12 @@ export const EntityLookupField = ({
           {values.map((item, index) => (
             <Tooltip
               key={`${item.name}-${index}`}
-              title={item.ref ?? (item.key ? `${t('LWC.desktop.author_pill.local_entity')}: ${item.key}` : t('LWC.desktop.author_pill.no_authority_link'))}
+              title={
+                item.ref ??
+                (item.key
+                  ? `${t('LWC.desktop.author_pill.local_entity')}: ${item.key}`
+                  : t('LWC.desktop.author_pill.no_authority_link'))
+              }
             >
               <Chip
                 color={item.ref || item.key ? 'primary' : 'default'}
@@ -535,7 +551,9 @@ export const EntityLookupField = ({
                             <Checkbox
                               checked={checked}
                               edge="start"
-                              onChange={(event) => toggleChecked(candidate.id, event.target.checked)}
+                              onChange={(event) =>
+                                toggleChecked(candidate.id, event.target.checked)
+                              }
                               onClick={(event) => event.stopPropagation()}
                               size="small"
                               tabIndex={-1}
@@ -559,7 +577,9 @@ export const EntityLookupField = ({
                       variant="contained"
                     >
                       {checkedIds.size > 1
-                        ? t('LWC.desktop.author_pill.link_selected_count', { count: checkedIds.size })
+                        ? t('LWC.desktop.author_pill.link_selected_count', {
+                            count: checkedIds.size,
+                          })
                         : t('LWC.desktop.author_pill.link_selected')}
                     </Button>
                   </Stack>

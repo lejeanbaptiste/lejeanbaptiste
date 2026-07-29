@@ -30,10 +30,11 @@ import {
   touchEntity,
 } from './entities';
 import type { AuthorityCandidate } from './authority';
-import { normalizeNameType, type NameTypeId } from './nameTypes';
+import { isFamilyPrefixedCourtesyName, normalizeNameType, type NameTypeId } from './nameTypes';
 import { suggestPersonNameSplit, suggestPersonRomanization } from '../plugins/personNameDefaults';
 import { fetchWikidataLifespan } from './wikidataDates';
 import { fetchWikidataNationality } from './wikidataNationality';
+import { fetchWikidataPlaceOfBirth } from './wikidataPlaceOfBirth';
 
 export interface NameBackfillProgress {
   done: number;
@@ -56,12 +57,17 @@ function typedNamesFromPackRow(
   names: { text: string; type?: string; lang?: string }[] | undefined,
 ): TypedName[] {
   if (!names?.length) return [];
+  const familyNames = names
+    .filter((name) => normalizeNameType(name.type) === 'family')
+    .map((name) => name.text?.trim())
+    .filter((text): text is string => Boolean(text));
   const out: TypedName[] = [];
   for (const name of names) {
     const text = name.text?.trim();
     if (!text) continue;
     const type = normalizeNameType(name.type) ?? 'variant';
     if (type === 'primary') continue;
+    if (type === 'courtesy' && isFamilyPrefixedCourtesyName(text, familyNames)) continue;
     out.push({ text, type, lang: name.lang });
   }
   return out;
@@ -249,9 +255,19 @@ function nameTypeForText(
  * Apply one typed name non-destructively. Returns true when a new name was added
  * or an existing untyped name was upgraded with `@type`.
  */
-function applyTypedName(doc: Document, entityId: string, typed: TypedName): boolean {
+function applyTypedName(
+  doc: Document,
+  entityId: string,
+  typed: TypedName,
+  source?: string,
+): boolean {
   const beforeType = nameTypeForText(doc, entityId, typed.text);
-  const added = addEntityName(doc, entityId, typed.text, { type: typed.type, lang: typed.lang });
+  const added = addEntityName(doc, entityId, typed.text, {
+    type: typed.type,
+    lang: typed.lang,
+    origin: 'authority',
+    source,
+  });
   if (added) return true;
   if (beforeType == null) {
     const afterType = nameTypeForText(doc, entityId, typed.text);
@@ -323,7 +339,14 @@ export async function backfillEntityNames(
     const firstEnrichment = firstAuthorityEnrichment(entity, packIndex);
     const primaryName = firstEnrichment?.primaryName?.trim();
     if (primaryName && primaryName !== entity.names[0]) {
-      if (applyTypedName(doc, entity.id, { text: primaryName, type: 'variant' })) {
+      if (
+        applyTypedName(
+          doc,
+          entity.id,
+          { text: primaryName, type: 'variant' },
+          entity.authorities[0]?.type,
+        )
+      ) {
         namesAdded++;
         entityChanged = true;
       }
@@ -332,15 +355,24 @@ export async function backfillEntityNames(
     candidate.endYear = metadata?.endYear;
     candidate.authorityMetadata = metadata;
 
-    const typedNames = await collectTypedNamesForCandidate(candidate, fetchImpl);
     const givenFamily = await collectGivenFamilyNamesForCandidate(
       candidate,
       projectLang,
       fetchImpl,
     );
+    const familyNames = [
+      ...(givenFamily.familyName ? [givenFamily.familyName] : []),
+      ...(getFamilyName(doc, entity.id) ? [getFamilyName(doc, entity.id)!] : []),
+      ...(candidate.typedNames ?? [])
+        .filter((name) => name.type === 'family')
+        .map((name) => name.text),
+    ];
+    const typedNames = (await collectTypedNamesForCandidate(candidate, fetchImpl)).filter(
+      (name) => name.type !== 'courtesy' || !isFamilyPrefixedCourtesyName(name.text, familyNames),
+    );
 
     for (const typed of typedNames) {
-      if (applyTypedName(doc, entity.id, typed)) {
+      if (applyTypedName(doc, entity.id, typed, entity.authorities[0]?.type)) {
         addedThisEntity++;
         entityChanged = true;
       }
@@ -400,11 +432,12 @@ export async function backfillEntityNames(
       (auth) => auth.type.trim().toUpperCase() === 'WIKIDATA',
     );
     if (wikidataIdno) {
-      const [lifespan, nationality] = await Promise.all([
-        fetchWikidataLifespan(wikidataIdno.value, fetchImpl),
-        fetchWikidataNationality(wikidataIdno.value, fetchImpl, projectLang),
+      const [lifespan, nationality, placeOfBirth] = await Promise.all([
+        fetchWikidataLifespan(wikidataIdno.value, fetchImpl).catch(() => null),
+        fetchWikidataNationality(wikidataIdno.value, fetchImpl, projectLang).catch(() => null),
+        fetchWikidataPlaceOfBirth(wikidataIdno.value, fetchImpl, projectLang).catch(() => null),
       ]);
-      if (lifespan || nationality) {
+      if (lifespan || nationality || placeOfBirth) {
         const changed = applyAuthorityMetadata(
           doc,
           entity.id,
@@ -415,6 +448,11 @@ export async function backfillEntityNames(
               id: value.canonicalId,
               canonicalId: value.canonicalId,
               label: value.label,
+            })),
+            origin: placeOfBirth?.map((value) => ({
+              placeName: value.label,
+              placeAuthorityId: value.canonicalId,
+              source: 'Wikidata',
             })),
           },
           'Wikidata',

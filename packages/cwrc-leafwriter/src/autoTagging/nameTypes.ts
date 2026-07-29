@@ -108,3 +108,21 @@ export function normalizeNameType(raw: string | null | undefined): NameTypeId | 
   if (byProp) return byProp;
   return CJK_LABEL_TO_NAME_TYPE[trimmed] ?? null;
 }
+
+/**
+ * Authority exports sometimes represent a courtesy name twice: once as the
+ * courtesy name itself and once as family name + courtesy name. The latter is
+ * a display form, not a distinct name, and should not be ingested as one.
+ */
+export function isFamilyPrefixedCourtesyName(text: string, familyNames: string[]): boolean {
+  const normalizedText = text.normalize('NFC').trim();
+  if (!normalizedText) return false;
+  return familyNames.some((familyName) => {
+    const normalizedFamily = familyName.normalize('NFC').trim();
+    return (
+      normalizedFamily.length > 0 &&
+      normalizedText.length > normalizedFamily.length &&
+      normalizedText.startsWith(normalizedFamily)
+    );
+  });
+}

@@ -270,9 +270,9 @@ describe('acceptEntityDescriptionAssertion', () => {
       (a) => a.element === 'note' && a.noteType === 'description',
     );
     expect(remaining).toHaveLength(2);
-    expect(
-      remaining.find((a) => a.value === 'Served under Emperor Ming.')?.origin,
-    ).toBe('authority');
+    expect(remaining.find((a) => a.value === 'Served under Emperor Ming.')?.origin).toBe(
+      'authority',
+    );
   });
 });
 
@@ -287,6 +287,21 @@ describe('addUserNationality / addUserOrigin / removeEntityValue', () => {
     expect(summary.nationalities).toEqual(['南齊']);
     const assertion = listEntityAssertions(doc, id).find((a) => a.element === 'nationality')!;
     expect(assertion.origin).toBe('user');
+  });
+
+  it('preserves the authority reference when a lookup-backed nationality is selected', () => {
+    const doc = makeDoc();
+    const { id } = addEntity(doc, 'person', { name: '劉備' });
+    expect(
+      addUserNationality(doc, id, 'Liu Song dynasty', {
+        ref: 'https://www.wikidata.org/wiki/Q49697',
+        source: 'Wikidata',
+      }),
+    ).toBe(true);
+
+    const assertion = listEntityAssertions(doc, id).find((a) => a.element === 'nationality')!;
+    expect(assertion.ref).toBe('https://www.wikidata.org/wiki/Q49697');
+    expect(assertion.source).toBe('Wikidata');
   });
 
   it('adds a user-origin place of origin', () => {

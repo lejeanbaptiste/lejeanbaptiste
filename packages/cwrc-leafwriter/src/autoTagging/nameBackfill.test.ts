@@ -1,7 +1,10 @@
 import { addEntity, createEntitiesScaffold, findEntity, parseEntities } from './entities';
 import { listEntities, setUserEntityDate } from './entityOps';
 import { backfillEntityNames } from './nameBackfill';
-import { clearWikidataNamesCacheForTests, clearWikidataTypedNamesCacheForTests } from './disambiguationMatch';
+import {
+  clearWikidataNamesCacheForTests,
+  clearWikidataTypedNamesCacheForTests,
+} from './disambiguationMatch';
 import type { AuthorityPackId } from './packPaths';
 
 const makeDoc = () => parseEntities(createEntitiesScaffold('test-db'));
@@ -79,6 +82,35 @@ describe('backfillEntityNames', () => {
     expect(entry.nameEntries.find((row) => row.text === '介甫')?.type).toBe('variant');
   });
 
+  it('ignores a family-prefixed composite courtesy name from authority intake', async () => {
+    const doc = makeDoc();
+    addEntity(doc, 'person', {
+      name: '蕭謂',
+      authorityIds: [{ type: 'CBDB', value: '1762' }],
+    });
+
+    const readPackFile = async (packId: AuthorityPackId) => {
+      if (packId === 'cbdb-persons') {
+        return `${cbdbPackRow('1762', [
+          { text: '蕭謂', type: 'primary' },
+          { text: '蕭', type: 'family' },
+          { text: '謂', type: 'given' },
+          { text: '彦学', type: 'courtesy' },
+          { text: '蕭彦学', type: 'courtesy' },
+        ])}\n`;
+      }
+      throw new Error(`unexpected pack ${packId}`);
+    };
+
+    await backfillEntityNames(doc, { readPackFile });
+
+    const entry = listEntities(doc)[0]!;
+    expect(entry.nameEntries).toEqual(
+      expect.arrayContaining([{ text: '彦学', lang: null, type: 'courtesy' }]),
+    );
+    expect(entry.nameEntries.some((name) => name.text === '蕭彦学')).toBe(false);
+  });
+
   it('honours abort mid-run', async () => {
     const doc = makeDoc();
     addEntity(doc, 'person', {
@@ -94,8 +126,14 @@ describe('backfillEntityNames', () => {
     const readPackFile = async (packId: AuthorityPackId) => {
       if (packId !== 'cbdb-persons') throw new Error('missing');
       return [
-        cbdbPackRow('1', [{ text: '甲', type: 'primary' }, { text: '甲字', type: 'courtesy' }]),
-        cbdbPackRow('2', [{ text: '乙', type: 'primary' }, { text: '乙字', type: 'courtesy' }]),
+        cbdbPackRow('1', [
+          { text: '甲', type: 'primary' },
+          { text: '甲字', type: 'courtesy' },
+        ]),
+        cbdbPackRow('2', [
+          { text: '乙', type: 'primary' },
+          { text: '乙字', type: 'courtesy' },
+        ]),
       ].join('\n');
     };
 
@@ -122,19 +160,21 @@ describe('backfillEntityNames', () => {
     });
 
     const originalFetch = global.fetch;
-    global.fetch = jest.fn(async () =>
-      ({
-        ok: true,
-        json: async () => ({
-          entities: {
-            Q11332: {
-              claims: {
-                P1782: [{ mainsnak: { datavalue: { value: { text: '平子', language: 'zh' } } } }],
+    global.fetch = jest.fn(
+      async () =>
+        ({
+          ok: true,
+          json: async () => ({
+            entities: {
+              Q11332: {
+                claims: {
+                  P1782: [{ mainsnak: { datavalue: { value: { text: '平子', language: 'zh' } } } }],
+                },
               },
             },
-          },
-        }),
-      }) as unknown as Response) as unknown as typeof fetch;
+          }),
+        }) as unknown as Response,
+    ) as unknown as typeof fetch;
 
     try {
       const result = await backfillEntityNames(doc, { fetchImpl: global.fetch });
@@ -211,12 +251,18 @@ describe('backfillEntityNames', () => {
     expect(entity.endYear).toBe(499);
     const birthDates = Array.from(findEntity(doc, id)!.children)
       .filter((child) => child.localName === 'birth')
-      .map((child) => [child.getAttribute('when'), child.getAttribute('origin'), child.getAttribute('source')]);
-    expect(birthDates).toEqual(expect.arrayContaining([
-      ['0420', 'user', null],
-      ['0452', 'authority', 'CBDB'],
-      ['0453', 'authority', 'DILA'],
-    ]));
+      .map((child) => [
+        child.getAttribute('when'),
+        child.getAttribute('origin'),
+        child.getAttribute('source'),
+      ]);
+    expect(birthDates).toEqual(
+      expect.arrayContaining([
+        ['0420', 'user', null],
+        ['0452', 'authority', 'CBDB'],
+        ['0453', 'authority', 'DILA'],
+      ]),
+    );
   });
 
   it('refreshes dates and nationality for a Wikidata-only-linked entity', async () => {
@@ -251,6 +297,14 @@ describe('backfillEntityNames', () => {
                       },
                     },
                   ],
+                  P19: [
+                    {
+                      mainsnak: {
+                        snaktype: 'value',
+                        datavalue: { value: { id: 'Q123' } },
+                      },
+                    },
+                  ],
                 },
                 descriptions: {},
               },
@@ -266,6 +320,7 @@ describe('backfillEntityNames', () => {
               Q1: {
                 claims: {
                   P27: [{ mainsnak: { snaktype: 'value', datavalue: { value: { id: 'Q148' } } } }],
+                  P19: [{ mainsnak: { snaktype: 'value', datavalue: { value: { id: 'Q123' } } } }],
                 },
               },
             },
@@ -275,7 +330,12 @@ describe('backfillEntityNames', () => {
       if (url.includes('props=labels')) {
         return {
           ok: true,
-          json: async () => ({ entities: { Q148: { labels: { en: { value: 'China' } } } } }),
+          json: async () => ({
+            entities: {
+              Q148: { labels: { en: { value: 'China' } } },
+              Q123: { labels: { en: { value: 'Yancheng' } } },
+            },
+          }),
         } as unknown as Response;
       }
       return { ok: true, json: async () => ({ entities: {} }) } as unknown as Response;
@@ -288,11 +348,96 @@ describe('backfillEntityNames', () => {
       expect(entity.endYear).toBe(479);
       // Q148 resolves via the curated dynasty crosswalk to its canonical label.
       expect(entity.nationalities).toEqual(['中華人民共和國']);
+      expect(entity.placesOfOrigin).toEqual(['Yancheng']);
       const birth = Array.from(findEntity(doc, id)!.children).find(
         (child) => child.localName === 'birth',
       )!;
       expect(birth.getAttribute('origin')).toBe('authority');
       expect(birth.getAttribute('source')).toBe('WIKIDATA');
+    } finally {
+      global.fetch = originalFetch;
+    }
+  });
+
+  it('refreshes Liu Bei-style Wikidata citizenship and typed names', async () => {
+    const doc = makeDoc();
+    const { id } = addEntity(doc, 'person', {
+      name: '劉備',
+      authorityIds: [{ type: 'Wikidata', value: 'Q245315' }],
+    });
+    const originalFetch = global.fetch;
+    global.fetch = jest.fn(async (url: string) => {
+      if (url.includes('props=claims|descriptions')) {
+        return {
+          ok: true,
+          json: async () => ({ entities: { Q245315: { claims: {}, descriptions: {} } } }),
+        } as unknown as Response;
+      }
+      if (url.includes('ids=Q245315') && url.includes('props=claims&format=json')) {
+        return {
+          ok: true,
+          json: async () => ({
+            entities: {
+              Q245315: {
+                claims: {
+                  P27: [{ mainsnak: { snaktype: 'value', datavalue: { value: { id: 'Q7559' } } } }],
+                  P734: [{ mainsnak: { datavalue: { value: { id: 'Q1234' } } } }],
+                  P735: [{ mainsnak: { datavalue: { value: { id: 'Q5678' } } } }],
+                  P1782: [
+                    {
+                      mainsnak: {
+                        datavalue: { value: { text: '玄德', language: 'zh' } },
+                      },
+                    },
+                  ],
+                  P1785: [
+                    {
+                      mainsnak: {
+                        datavalue: { value: { text: '烈祖', language: 'zh' } },
+                      },
+                    },
+                  ],
+                  P1786: [
+                    {
+                      mainsnak: {
+                        datavalue: { value: { text: '昭烈帝', language: 'zh' } },
+                      },
+                    },
+                  ],
+                },
+              },
+            },
+          }),
+        } as unknown as Response;
+      }
+      if (url.includes('props=labels')) {
+        return {
+          ok: true,
+          json: async () => ({
+            entities: {
+              Q7559: { labels: { en: { value: 'Shu Han' } } },
+              Q1234: { labels: { en: { value: 'Liu' } } },
+              Q5678: { labels: { en: { value: 'Bei' } } },
+            },
+          }),
+        } as unknown as Response;
+      }
+      return { ok: true, json: async () => ({ entities: {} }) } as unknown as Response;
+    }) as unknown as typeof fetch;
+
+    try {
+      await backfillEntityNames(doc, { fetchImpl: global.fetch });
+      const entity = listEntities(doc).find((row) => row.id === id)!;
+      expect(entity.nationalities).toEqual(['Shu Han']);
+      expect(entity.familyName).toBe('Liu');
+      expect(entity.givenName).toBe('Bei');
+      expect(entity.nameEntries).toEqual(
+        expect.arrayContaining([
+          { text: '玄德', lang: 'zh', type: 'courtesy' },
+          { text: '烈祖', lang: 'zh', type: 'temple' },
+          { text: '昭烈帝', lang: 'zh', type: 'posthumous' },
+        ]),
+      );
     } finally {
       global.fetch = originalFetch;
     }
