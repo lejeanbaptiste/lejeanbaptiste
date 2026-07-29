@@ -64,10 +64,14 @@ const applyChoiceDisplayMode = (mode: ChoiceDisplayMode, fontSize: number) => {
     .choiceDisplay-both .entity.correction[data-sic-text]::before {
       content: attr(data-sic-text) " [sic.] / ";
     }
-    .choiceDisplay-corrected .entity.correction[_tag="surplus"] {
+    .choiceDisplay-corrected .entity.correction[_tag="surplus"],
+    .choiceDisplay-corrected [_tag="sic"]:not(.entity.correction),
+    .choiceDisplay-corrected [_tag="surplus"] {
       font-size: 0 !important;
     }
-    .choiceDisplay-original .entity.correction[_tag="supplied"] {
+    .choiceDisplay-original .entity.correction[_tag="supplied"],
+    .choiceDisplay-original [_tag="corr"]:not(.entity.correction),
+    .choiceDisplay-original [_tag="supplied"] {
       font-size: 0 !important;
     }
   `);
