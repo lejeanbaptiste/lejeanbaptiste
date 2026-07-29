@@ -31,7 +31,23 @@ export interface KeyRemapFileOps {
 const desktopFileOps = (): KeyRemapFileOps => ({
   listXmlFiles: (projectRoot) => collectXmlFiles(projectRoot),
   readFile: (filePath) => window.electronAPI!.readFile(filePath),
-  writeFile: (filePath, content) => window.electronAPI!.writeFile(filePath, content),
+  // Arm before writing and confirm after, exactly like EntityStore does for entities.xml -
+  // otherwise the open-file watcher sees this as an external edit and, for any of these
+  // documents that happen to be open in a tab, prompts "was modified outside the app".
+  writeFile: async (filePath, content) => {
+    try {
+      await window.electronAPI!.armFileWrite(filePath);
+    } catch {
+      // best effort — worst case is the old post-write-only race, not a hard failure
+    }
+    await window.electronAPI!.writeFile(filePath, content);
+    try {
+      const { mtimeMs } = await window.electronAPI!.statFile(filePath);
+      await window.electronAPI!.ignoreFileChange(filePath, mtimeMs);
+    } catch {
+      // watcher may still fire, but the remap itself must not fail
+    }
+  },
 });
 
 export async function applyKeyRemapToRoots(

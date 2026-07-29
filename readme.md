@@ -161,28 +161,24 @@ See [apps/desktop/README.md](apps/desktop/README.md) for the compilation and pac
 
 
 - [ ] Merge divirged entities DB
-- [ ] Suggest map download, otherwise disable map disambiguate icon.
 - [ ] Auto parse and organise noble titles
 - [ ] Word plugin to handle names and dates correctly while centralising data.
 
 - [ ] Noble title and person wrapper tagging (testing).
-- [ ] Stats window (unsure)
-
-
-
-- [ ] Build document stats window with list of people, map of places, etc.
-- [ ] Official titles dictionaries, dates dictionaries for hover-over
-- [ ] Regional PMTiles download/cache flow for maps (see [map-tiles-planning.md](docs/map-tiles-planning.md))
-- [ ] Redo icons : highlight
 
 ## Future goals
 
 - [ ] Further Norbert functions
+- [ ] Official titles dictionaries, dates dictionaries for hover-over
+- [ ] Regional PMTiles download/cache flow for maps (see map-tiles-planning.md)
+- [ ] Redo icons : highlight
+- [ ] Stats window (unsure)
+- [ ] Redo lookup window
 - [ ] Option to track annotator on the tag level for collaborations.
 - [ ] Copy-and-paste export of paragraphs with translation for word processors
 - [ ] LaTeX export
 - [ ] Support for custom authorities and personal SQL databases
-- [ ] AI assist for Sanmiao to identify beginning of dynasties, reigns, eras
+- [ ] AI assist for Sanmiao to identify beginning of dynasties, reigns, era
 - [ ] Import DILA markers into Sanmiao
 - [ ] Improve translation pane word-processing features.
 - [ ] LanguageTool as a plugin

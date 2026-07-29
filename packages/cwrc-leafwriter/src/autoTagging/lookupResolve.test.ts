@@ -506,6 +506,27 @@ describe('linkLocalEntityWithoutAuthority', () => {
       wasCreated: false,
     });
   });
+
+  it('splits family/given and romanizes as one concatenated word for a Chinese person with no authority match', async () => {
+    const { store } = makeStore();
+    const result = await linkLocalEntityWithoutAuthority('person', '周世雄', {
+      store,
+      projectLang: 'zh-Hant',
+    });
+    expect(result.wasCreated).toBe(true);
+
+    const doc = await store.loadEntities();
+    const person = findEntity(doc, result.key!);
+    const romanized = Array.from(person!.getElementsByTagName('persName')).find(
+      (el) => el.getAttribute('xml:lang') === 'zh-Latn',
+    );
+    // "Zhou Shixiong", not the per-character "Zhou Shi Xiong".
+    expect(romanized?.textContent).toBe('Zhou Shixiong');
+
+    const notes = Array.from(person!.getElementsByTagName('note'));
+    expect(notes.find((n) => n.getAttribute('type') === 'familyName')?.textContent).toBe('周');
+    expect(notes.find((n) => n.getAttribute('type') === 'givenName')?.textContent).toBe('世雄');
+  });
 });
 
 describe('linkWithoutEnrichment', () => {
