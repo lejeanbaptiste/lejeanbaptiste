@@ -53,6 +53,17 @@
     "Date Picker": "",
     "Date Range": "",
     "Date type": "",
+    "dateAuthority": {
+      "day": "Zi",
+      "dynasty": "Dinastie",
+      "emperor": "Împărat",
+      "era": "Epocă",
+      "month": "Lună",
+      "new_moon_gz": "gz de lună nouă",
+      "sexagenary_day": "Zi sexagenară",
+      "sexagenary_year": "An sexagenar",
+      "year": "An"
+    },
     "Define Role": "",
     "Define Type": "",
     "Document is valid!": "",

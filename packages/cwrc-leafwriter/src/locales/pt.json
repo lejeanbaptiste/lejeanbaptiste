@@ -53,6 +53,17 @@
     "Date Picker": "LW.Seletor de data",
     "Date Range": "LW.Intervalo de datas",
     "Date type": "Tipo LW.Data",
+    "dateAuthority": {
+      "day": "Dia",
+      "dynasty": "Dinastia",
+      "emperor": "Imperador",
+      "era": "Era",
+      "month": "Mês",
+      "new_moon_gz": "gz da lua nova",
+      "sexagenary_day": "Dia sexagenário",
+      "sexagenary_year": "Ano sexagenário",
+      "year": "Ano"
+    },
     "Define Role": "LW.Definir função",
     "Define Type": "LW.Definir Tipo",
     "Document is valid!": "LW.Documento é válido!",

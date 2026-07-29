@@ -27,7 +27,11 @@ import {
   readEastAsianDateValues,
 } from '../../../../../packages/cwrc-leafwriter/src/dateAuthority/values';
 import type { EastAsianDateValues } from '../../../../../packages/cwrc-leafwriter/src/dateAuthority/types';
-import { CbdbIcon, DilaIcon, InitialsIcon } from '../../../../../packages/cwrc-leafwriter/src/icons/custom/AuthoritySource';
+import {
+  CbdbIcon,
+  DilaIcon,
+  InitialsIcon,
+} from '../../../../../packages/cwrc-leafwriter/src/icons/custom/AuthoritySource';
 import { WikipediaIcon } from '../../../../../packages/cwrc-leafwriter/src/icons/custom/Wikipedia';
 import {
   EntitySummary,
@@ -73,8 +77,7 @@ import {
 } from './tagWalkHighlight';
 
 const isVisualEditorActive = (): boolean =>
-  Boolean(window.writer?.editor) &&
-  window.writer?.overmindState?.ui?.editorViewMode !== 'source';
+  Boolean(window.writer?.editor) && window.writer?.overmindState?.ui?.editorViewMode !== 'source';
 
 const isFocusInAttributesPanel = (): boolean =>
   Boolean(document.activeElement?.closest('[data-attributes-panel]'));
@@ -123,9 +126,7 @@ export const AttributesPanel = ({ visible = true }: { visible?: boolean }) => {
   const [walkActive, setWalkActive] = useState(false);
 
   const eastAsianDates =
-    isCjkDatesEnabled() &&
-    tagName === 'date' &&
-    isEastAsianCalendarLanguageCode(sourceLanguage);
+    isCjkDatesEnabled() && tagName === 'date' && isEastAsianCalendarLanguageCode(sourceLanguage);
 
   const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const syncGenerationRef = useRef(0);
@@ -304,8 +305,10 @@ export const AttributesPanel = ({ visible = true }: { visible?: boolean }) => {
             url: authorityLookupUrl(authority),
           }))
           .filter(
-            (authority: { type: string; url: string | null }): authority is { type: string; url: string } =>
-              Boolean(authority.url),
+            (authority: {
+              type: string;
+              url: string | null;
+            }): authority is { type: string; url: string } => Boolean(authority.url),
           );
         setLinkedEntityInfo({ entity, urls });
       } catch {
@@ -337,6 +340,18 @@ export const AttributesPanel = ({ visible = true }: { visible?: boolean }) => {
           : (matchedNameEntry?.type ?? '')
       : '';
 
+  const openLinkedEntity = () => {
+    if (!linkedEntityInfo) return;
+    const type = getLookupEntityTypeForTag(tagName);
+    if (!type) return;
+
+    window.dispatchEvent(
+      new CustomEvent('desktop-database:show-entity', {
+        detail: { id: linkedEntityInfo.entity.id, type },
+      }),
+    );
+  };
+
   const nameTypeLabels: Record<NameTypeId, string> = Object.fromEntries(
     ALL_NAME_TYPES.map((type) => [type, nameTypeLabel(type, sourceLanguage)]),
   ) as Record<NameTypeId, string>;
@@ -350,7 +365,13 @@ export const AttributesPanel = ({ visible = true }: { visible?: boolean }) => {
       const store = entityStoreFromDesktop();
       if (!store) return;
       const doc = await store.loadEntities();
-      setNameType(doc, linkedEntityInfo.entity.id, mentionSurface, type, sourceLanguage ?? undefined);
+      setNameType(
+        doc,
+        linkedEntityInfo.entity.id,
+        mentionSurface,
+        type,
+        sourceLanguage ?? undefined,
+      );
       await store.saveEntities(doc);
       setEntityInfoRevision((revision) => revision + 1);
     } catch (error) {
@@ -629,50 +650,14 @@ export const AttributesPanel = ({ visible = true }: { visible?: boolean }) => {
                 }}
               >
                 <Stack spacing={0.75}>
-                  <Stack
-                    alignItems="center"
-                    direction="row"
-                    flexWrap="wrap"
-                    gap={0.75}
-                    justifyContent="space-between"
-                  >
-                    <Stack alignItems="center" direction="row" flexWrap="wrap" gap={0.75}>
-                      <Chip
-                        label={linkedEntityInfo.entity.id}
-                        size="small"
-                        sx={{ fontFamily: 'monospace', height: 20 }}
-                        variant="outlined"
-                      />
-                      <Typography variant="body2">
-                        {linkedEntityInfo.entity.names[0] ?? linkedEntityInfo.entity.id}
-                      </Typography>
-                    </Stack>
-                    {linkedEntityInfo.urls.length > 0 ? (
-                      <Stack alignItems="center" direction="row" spacing={0.25}>
-                        {linkedEntityInfo.urls.map((authority) => (
-                          <Tooltip key={`${authority.type}:${authority.url}`} title={authority.type}>
-                            <IconButton
-                              aria-label={`Open ${authority.type}`}
-                              onClick={() => openExternalUrl(authority.url)}
-                              size="small"
-                              sx={{ p: 0.25 }}
-                            >
-                              {authorityIcon(authority.type)}
-                            </IconButton>
-                          </Tooltip>
-                        ))}
-                      </Stack>
-                    ) : null}
-                  </Stack>
-                  {linkedEntityInfo.entity.description ? (
-                    <Typography color="text.secondary" variant="caption">
-                      {linkedEntityInfo.entity.description}
-                    </Typography>
-                  ) : (
-                    <Typography color="text.secondary" variant="caption">
-                      This tag is already linked to an entity in the project database.
-                    </Typography>
-                  )}
+                  <Chip
+                    component="button"
+                    label={linkedEntityInfo.entity.id}
+                    onClick={openLinkedEntity}
+                    size="small"
+                    sx={{ alignSelf: 'flex-start', fontFamily: 'monospace', height: 20 }}
+                    variant="outlined"
+                  />
                   {mentionSurface && mentionSurface !== linkedEntityInfo.entity.names[0] ? (
                     <Stack alignItems="center" direction="row" gap={0.75}>
                       <Typography color="text.secondary" variant="caption" sx={{ flexShrink: 0 }}>
@@ -710,7 +695,12 @@ export const AttributesPanel = ({ visible = true }: { visible?: boolean }) => {
                         {propagatableMatchCount === 1 ? 'match' : 'matches'} found in this file.
                       </Typography>
                       <Stack direction="row" spacing={0.75}>
-                        <Button disabled={readonly} onClick={startWalk} size="small" variant="outlined">
+                        <Button
+                          disabled={readonly}
+                          onClick={startWalk}
+                          size="small"
+                          variant="outlined"
+                        >
                           Walk
                         </Button>
                         <Button
@@ -754,10 +744,20 @@ export const AttributesPanel = ({ visible = true }: { visible?: boolean }) => {
                     Walk {walkIndex + 1} of {walkMatches.length}
                   </Typography>
                   <Stack direction="row" spacing={0.75}>
-                    <Button disabled={readonly} onClick={handleWalkApply} size="small" variant="contained">
+                    <Button
+                      disabled={readonly}
+                      onClick={handleWalkApply}
+                      size="small"
+                      variant="contained"
+                    >
                       Apply
                     </Button>
-                    <Button disabled={readonly} onClick={handleWalkSkip} size="small" variant="outlined">
+                    <Button
+                      disabled={readonly}
+                      onClick={handleWalkSkip}
+                      size="small"
+                      variant="outlined"
+                    >
                       Skip
                     </Button>
                     <Button onClick={stopWalk} size="small" variant="text">
@@ -790,8 +790,9 @@ export const AttributesPanel = ({ visible = true }: { visible?: boolean }) => {
           ) : null}
 
           {setAttributeEntries.map(([attrName, attrValue]) => {
-            const attr =
-              schemaAttributes.find((item) => item.name === attrName) ?? { name: attrName };
+            const attr = schemaAttributes.find((item) => item.name === attrName) ?? {
+              name: attrName,
+            };
 
             return (
               <Stack alignItems="center" direction="row" key={attr.name} spacing={0.5}>

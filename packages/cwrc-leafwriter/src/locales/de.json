@@ -53,6 +53,17 @@
     "Date Picker": "Datumsauswahl",
     "Date Range": "Zeitraum",
     "Date type": "Art des Datums",
+    "dateAuthority": {
+      "day": "Tag",
+      "dynasty": "Dynastie",
+      "emperor": "Kaiser",
+      "era": "Ära",
+      "month": "Monat",
+      "new_moon_gz": "Neumond-gz",
+      "sexagenary_day": "Sexagenärer Tag",
+      "sexagenary_year": "Sexagenäres Jahr",
+      "year": "Jahr"
+    },
     "Define Role": "Rolle definieren",
     "Define Type": "Typ definieren",
     "Document is valid!": "Dokument ist valide!",

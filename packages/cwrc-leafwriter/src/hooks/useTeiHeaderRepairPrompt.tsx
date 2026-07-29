@@ -69,6 +69,11 @@ export const useTeiHeaderRepairPrompt = (writer: Writer | null) => {
               if (editorViewModeRef.current === 'source') {
                 actions.ui.setSourceCurrentContent(repair.repairedXml);
               } else {
+                // Desktop visual mode validates by merging the body with the
+                // separately stored header. Updating the editor DOM alone is
+                // not enough: the next validation would reattach the stale
+                // header and immediately resurrect the same error.
+                window.__desktopStoredDocumentXml = repair.repairedXml;
                 actions.document.updateXMLHeader(repair.repairedXml);
                 actions.document.setDocumentXml(repair.repairedXml);
               }

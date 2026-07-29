@@ -163,11 +163,7 @@ export const Item = ({ authority, description, internal, isOwnDatabase, label, u
             internal ? (
               <Stack component="span" spacing={0.25}>
                 <Stack alignItems="center" component="span" direction="row" spacing={0.5}>
-                  <Typography
-                    component="span"
-                    sx={{ fontFamily: 'monospace' }}
-                    variant="caption"
-                  >
+                  <Typography component="span" sx={{ fontFamily: 'monospace' }} variant="caption">
                     {internal.id}
                   </Typography>
                   {[...new Set(internal.idnos.map((idno) => idno.type))]

@@ -2242,26 +2242,26 @@ export const SidebarDatabaseTab = ({ active = false }: SidebarDatabaseTabProps) 
                     </Typography>
                   )}
                 </Box>
-                <Tooltip title={t('LWC.desktop.sidebar.database.open')}>
-                  <IconButton
-                    size="small"
-                    onClick={() => openEdit(entity)}
-                    aria-label={t('LWC.desktop.sidebar.database.open')}
-                    sx={{ flexShrink: 0 }}
-                  >
-                    <OpenInNewIcon fontSize="small" />
-                  </IconButton>
-                </Tooltip>
-                <Tooltip title="Find in XPath panel">
-                  <IconButton
-                    size="small"
-                    onClick={() => openXPathForEntity(entity)}
-                    aria-label="Find entity in XPath panel"
-                    sx={{ flexShrink: 0 }}
-                  >
-                    <SearchIcon fontSize="small" />
-                  </IconButton>
-                </Tooltip>
+                <Stack direction="row" spacing={0} sx={{ flexShrink: 0 }}>
+                  <Tooltip title={t('LWC.desktop.sidebar.database.open')}>
+                    <IconButton
+                      size="small"
+                      onClick={() => openEdit(entity)}
+                      aria-label={t('LWC.desktop.sidebar.database.open')}
+                    >
+                      <OpenInNewIcon fontSize="small" />
+                    </IconButton>
+                  </Tooltip>
+                  <Tooltip title="Find in XPath panel">
+                    <IconButton
+                      size="small"
+                      onClick={() => openXPathForEntity(entity)}
+                      aria-label="Find entity in XPath panel"
+                    >
+                      <SearchIcon fontSize="small" />
+                    </IconButton>
+                  </Tooltip>
+                </Stack>
               </Box>
             );
           })

@@ -53,6 +53,17 @@
     "Date Picker": "",
     "Date Range": "",
     "Date type": "",
+    "dateAuthority": {
+      "day": "Día",
+      "dynasty": "Dinastía",
+      "emperor": "Emperador",
+      "era": "Era",
+      "month": "Mes",
+      "new_moon_gz": "gz de luna nueva",
+      "sexagenary_day": "Día sexagenario",
+      "sexagenary_year": "Año sexagenario",
+      "year": "Año"
+    },
     "Define Role": "",
     "Define Type": "",
     "Document is valid!": "",
