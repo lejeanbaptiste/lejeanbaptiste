@@ -6,8 +6,9 @@ export interface ProjectMetrics {
   disambiguated: number;
   placesDisambiguated: number;
   entities: number;
-  /** Distinct xml:lang values seen in the entity database. */
-  languages: number;
+  /** Distinct root-element xml:lang values seen across saved documents
+   * (source files and translation companions) - never decremented. */
+  docLanguages: string[];
 }
 
 export interface AchievementsState {
@@ -74,6 +75,18 @@ export interface SpecialAchievementDef {
   description: string;
   /** Hidden achievements are not listed until earned. */
   hidden?: boolean;
+}
+
+/**
+ * The regiment a player belongs to - determined by whichever metric ladder
+ * their highest class is in (a tie is broken randomly, see
+ * topRankedMetrics/assignedRegiment in evaluate.ts). One entry per
+ * RANK_MEDALS metric, same order.
+ */
+export interface RegimentDef {
+  metric: MetricId;
+  name: string;
+  slogan: string;
 }
 
 export interface UnlockedAchievement {

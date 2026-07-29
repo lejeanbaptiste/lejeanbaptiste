@@ -13,7 +13,9 @@ const sanitizeProjectMetrics = (value: Partial<ProjectMetrics> | undefined): Pro
   placesDisambiguated:
     typeof value?.placesDisambiguated === 'number' ? value.placesDisambiguated : 0,
   entities: typeof value?.entities === 'number' ? value.entities : 0,
-  languages: typeof value?.languages === 'number' ? value.languages : 0,
+  docLanguages: Array.isArray(value?.docLanguages)
+    ? [...new Set(value.docLanguages.filter((lang): lang is string => typeof lang === 'string'))]
+    : [],
 });
 
 const sanitizeState = (parsed: Partial<AchievementsState>): AchievementsState => {

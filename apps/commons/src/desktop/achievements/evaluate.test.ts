@@ -13,6 +13,7 @@ import {
   countEntitiesInXml,
   countUnlocked,
   determineNewUnlocks,
+  documentRootLanguage,
   emptyProjectMetrics,
   emptyState,
   metricsFromTagStats,
@@ -73,13 +74,35 @@ describe('metricsFromTagStats', () => {
 });
 
 describe('countEntitiesInXml', () => {
-  it('counts entity records and distinct languages', () => {
+  it('counts entity records', () => {
     const xml = `<TEI><standOff>
       <listPerson><person xml:id="p1"><persName xml:lang="zh-Hant">A</persName><persName xml:lang="zh-Latn">B</persName></person><person xml:id="p2"/></listPerson>
       <listPlace><place xml:id="pl1"/></listPlace>
       <listBibl><bibl xml:id="w1"/></listBibl>
     </standOff></TEI>`;
-    expect(countEntitiesInXml(xml)).toEqual({ entities: 4, languages: 2 });
+    expect(countEntitiesInXml(xml)).toEqual({ entities: 4 });
+  });
+});
+
+describe('documentRootLanguage', () => {
+  it('reads the root element xml:lang, skipping leading processing instructions', () => {
+    const xml =
+      '<?xml version="1.0" encoding="UTF-8"?><?xml-model href="schema/tei_all.rng"?>' +
+      '<TEI xmlns="http://www.tei-c.org/ns/1.0" xml:lang="fr"><teiHeader/></TEI>';
+    expect(documentRootLanguage(xml)).toBe('fr');
+  });
+
+  it('reads a translation companion file root xml:lang', () => {
+    expect(documentRootLanguage('<translation xml:lang="ja" corresp="a.xml"/>')).toBe('ja');
+  });
+
+  it('ignores xml:lang on a nested element, not the root', () => {
+    const xml = '<TEI><text><foreign xml:lang="fr">bonjour</foreign></text></TEI>';
+    expect(documentRootLanguage(xml)).toBeNull();
+  });
+
+  it('returns null when the root element declares no language', () => {
+    expect(documentRootLanguage('<TEI><teiHeader/></TEI>')).toBeNull();
   });
 });
 
@@ -99,6 +122,14 @@ describe('aggregateGlobalMetrics', () => {
     expect(global.tags).toBe(15);
     expect(global.entities).toBe(300);
     expect(global.published).toBe(2);
+  });
+
+  it('unions distinct document languages across projects rather than summing', () => {
+    const state = emptyState('2026-01-01T00:00:00.000Z');
+    state.projects['a'] = { ...emptyProjectMetrics(), docLanguages: ['fr', 'en'] };
+    state.projects['b'] = { ...emptyProjectMetrics(), docLanguages: ['en', 'zh'] };
+    const global = aggregateGlobalMetrics(state);
+    expect(global.languages).toBe(3); // fr, en, zh - "en" not double-counted
   });
 });
 
@@ -246,7 +277,7 @@ describe('catalogue', () => {
     expect(RANK_MEDALS.every((medal) => medal.thresholds.length === RANK_NAMES.length)).toBe(true);
     expect(rankCount).toBe(56);
     expect(TOTAL_ACHIEVEMENTS).toBe(rankCount + SPECIAL_ACHIEVEMENTS.length + RARE_ACHIEVEMENTS.length);
-    expect(TOTAL_ACHIEVEMENTS).toBe(79);
+    expect(TOTAL_ACHIEVEMENTS).toBe(83);
   });
 
   it('ignores retired achievement ids left in old files when counting', () => {

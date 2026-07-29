@@ -17,7 +17,7 @@ export const emptyProjectMetrics = (): ProjectMetrics => ({
   disambiguated: 0,
   placesDisambiguated: 0,
   entities: 0,
-  languages: 0,
+  docLanguages: [],
 });
 
 export const emptyState = (nowIso: string): AchievementsState => ({
@@ -80,13 +80,23 @@ export const metricsFromTagStats = (
 };
 
 /** Count entity records (person/place/org/bibl) in an entities.xml payload. */
-export const countEntitiesInXml = (xml: string): { entities: number; languages: number } => {
+export const countEntitiesInXml = (xml: string): { entities: number } => {
   const entities = (xml.match(/<(person|place|org|bibl)[\s>]/g) ?? []).length;
-  const langs = new Set<string>();
-  for (const match of xml.matchAll(/xml:lang="([^"]+)"/g)) {
-    langs.add(match[1]!);
-  }
-  return { entities, languages: langs.size };
+  return { entities };
+};
+
+/**
+ * The document's own declared language, from its root element's xml:lang
+ * (e.g. `<TEI xml:lang="fr">`, or `<translation xml:lang="ja">` for a
+ * translation companion file) - anchored to the start of the document so an
+ * unrelated `<foreign xml:lang="...">` span deep in the body never counts as
+ * "this document is in that language" (Order of Babel is about which
+ * languages you've saved *files* in, not which languages appear anywhere in
+ * one file). Returns null when the root element declares no language.
+ */
+export const documentRootLanguage = (xml: string): string | null => {
+  const match = /^\s*(?:<\?[^>]*?\?>\s*)*<[^>?!][^>]*?\bxml:lang="([^"]+)"/.exec(xml);
+  return match ? match[1]! : null;
 };
 
 /** Latin words plus CJK characters, so classical Chinese counts fairly. */
@@ -109,6 +119,7 @@ export const aggregateGlobalMetrics = (state: AchievementsState): GlobalMetrics 
     flagOfCommitment: state.githubContributions?.count ?? 0,
     languages: 0,
   };
+  const allLanguages = new Set<string>();
   for (const project of Object.values(state.projects)) {
     global.texts += project.savedDocs.length;
     global.tags += project.tagsTotal;
@@ -117,8 +128,9 @@ export const aggregateGlobalMetrics = (state: AchievementsState): GlobalMetrics 
     // A shared central database is visible from every project, so entity
     // counts take the max rather than a double-counting sum.
     global.entities = Math.max(global.entities, project.entities);
-    global.languages = Math.max(global.languages, project.languages);
+    for (const lang of project.docLanguages) allLanguages.add(lang);
   }
+  global.languages = allLanguages.size;
   return global;
 };
 
@@ -217,7 +229,7 @@ export const determineNewUnlocks = (
     earned.push('jean-baptiste-too');
   }
 
-  if (global.languages >= 5 && !has('polyglot-scholar')) earned.push('polyglot-scholar');
+  if (global.languages >= 3 && !has('polyglot-scholar')) earned.push('polyglot-scholar');
 
   if (hasEmptyElement(context.xml) && !has('empty-honour')) earned.push('empty-honour');
 
@@ -245,6 +257,22 @@ export const currentRankIndex = (state: AchievementsState, metric: string): numb
     if (state.unlocked[rankMedalAchievementId(metric, index)]) return index;
   }
   return -1;
+};
+
+/**
+ * Metrics tied for the player's single highest class across all 8 ladders -
+ * empty when nothing is ranked yet. Drives regiment assignment: the caller
+ * picks one entry at random when there's more than one (see
+ * AchievementsDialog.tsx's assignedRegiment).
+ */
+export const topRankedMetrics = (state: AchievementsState): string[] => {
+  const ranked = RANK_MEDALS.map((medal) => ({
+    metric: medal.metric as string,
+    rankIndex: currentRankIndex(state, medal.metric),
+  })).filter((entry) => entry.rankIndex >= 0);
+  if (ranked.length === 0) return [];
+  const maxRank = Math.max(...ranked.map((entry) => entry.rankIndex));
+  return ranked.filter((entry) => entry.rankIndex === maxRank).map((entry) => entry.metric);
 };
 
 /** Retired achievement ids may linger in old files; count only current ones. */

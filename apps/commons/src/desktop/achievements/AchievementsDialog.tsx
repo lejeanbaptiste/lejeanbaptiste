@@ -6,6 +6,7 @@ import {
   DialogContent,
   DialogTitle,
   FormControl,
+  IconButton,
   LinearProgress,
   MenuItem,
   Paper,
@@ -17,7 +18,7 @@ import {
 } from '@mui/material';
 import PrintIcon from '@mui/icons-material/Print';
 import EmojiEventsIcon from '@mui/icons-material/EmojiEvents';
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useActions } from '@src/overmind';
 import {
@@ -29,21 +30,27 @@ import {
   svgToPngBytes,
 } from './certificate';
 import {
-  OVERALL_RANK_NAMES,
   RANK_MEDALS,
   RANK_NAMES,
   RARE_ACHIEVEMENTS,
+  REGIMENTS,
   RIBBONS_PER_OVERALL_RANK,
   SPECIAL_ACHIEVEMENTS,
+  STARTER_RANK_NAME,
   TOTAL_ACHIEVEMENTS,
 } from './definitions';
-import { aggregateGlobalMetrics, countUnlocked, currentRankIndex, metricValue } from './evaluate';
+import {
+  aggregateGlobalMetrics,
+  countUnlocked,
+  currentRankIndex,
+  metricValue,
+  topRankedMetrics,
+} from './evaluate';
 import { recordLeaderboardPublication, refreshGithubContributions } from './engine';
 import {
   MedalIcon,
   METRIC_RIBBONS,
   SPECIAL_RIBBON,
-  tierForRankIndex,
   type MedalMetric,
 } from './MedalIcon';
 import {
@@ -105,28 +112,42 @@ const METRIC_LABELS: Record<string, string> = {
   flagOfCommitment: 'Repo contributions',
 };
 
-// Placeholder ribbon art (real art TBD) - reuses the same striped-gradient
-// technique and per-metric colorways as RibbonRack in UniformAvatar.tsx, one
-// bar per tier already earned for that metric.
-const RIBBON_WIDTH = 12 * (18 / 7);
+// Per-ladder class reached (VIIème classe, lowest, up to Ière classe,
+// highest) - distinct from RANK_NAMES/OVERALL_RANK_NAMES, which name the
+// player's *overall* rank (Fusilier..Général de brigade), earned from
+// ribbons summed across all 8 ladders, not any single ladder's own class.
+const CLASS_NAMES = [
+  'VIIème classe',
+  'VIème classe',
+  'Vème classe',
+  'IVème classe',
+  'IIIème classe',
+  'IIème classe',
+  'Ière classe',
+] as const;
 
-const RibbonStack = ({ metric, count }: { metric: MedalMetric; count: number }) => {
+// Placeholder ribbon art (real art TBD) - reuses the same striped-gradient
+// technique and per-metric colorways as RibbonRack in UniformAvatar.tsx. A
+// single fixed-size ribbon regardless of class reached - a real service
+// ribbon doesn't get bigger or multiply with seniority. A future pass will
+// add a class device (star/rosette) on top of this same fixed ribbon rather
+// than stacking more ribbons.
+const RIBBON_HEIGHT = 12;
+const RIBBON_WIDTH = RIBBON_HEIGHT * (18 / 7);
+
+const ServiceRibbon = ({ metric }: { metric: MedalMetric }) => {
   const stripes = METRIC_RIBBONS[metric] ?? SPECIAL_RIBBON;
   const [c1, c2, c3] = stripes.length === 3 ? stripes : [stripes[0], stripes[1], stripes[0]];
   return (
-    <Stack spacing={0.5} sx={{ flexShrink: 0, width: RIBBON_WIDTH }}>
-      {Array.from({ length: count }, (_, i) => (
-        <Box
-          key={i}
-          sx={{
-            background: `linear-gradient(90deg, ${c1} 0 33%, ${c2} 33% 66%, ${c3} 66%)`,
-            border: '1px solid rgba(0,0,0,0.2)',
-            height: 12,
-            width: RIBBON_WIDTH,
-          }}
-        />
-      ))}
-    </Stack>
+    <Box
+      sx={{
+        background: `linear-gradient(90deg, ${c1} 0 33%, ${c2} 33% 66%, ${c3} 66%)`,
+        border: '1px solid rgba(0,0,0,0.2)',
+        flexShrink: 0,
+        height: RIBBON_HEIGHT,
+        width: RIBBON_WIDTH,
+      }}
+    />
   );
 };
 
@@ -155,13 +176,21 @@ const totalRibbonsEarned = (state: AchievementsState): number =>
 
 /** Composite rank shown after the player's name - climbs one step per
  * RIBBONS_PER_OVERALL_RANK ribbons earned in any combination across the 8
- * metrics, independent of the per-metric classes shown in the grid below. */
+ * metrics, independent of the per-metric classes shown in the grid below.
+ * Civil is only the one-time pre-opening-scene state (no ribbon earned
+ * anywhere yet) - the very first ribbon already makes the player Fusilier,
+ * per the reference doc's "after the opening scene, the user starts as
+ * rank 1 fusilier". It must NOT be folded into the same 6-ribbons-per-step
+ * division as the 7 real ranks, or every step (Fusilier..Général de
+ * brigade) shifts one 6-ribbon bucket late and the top rank needs 42
+ * ribbons instead of the intended 36 (6 steps x 6 ribbons). */
 const calculatedRank = (state: AchievementsState): string => {
-  const overallIndex = Math.min(
-    OVERALL_RANK_NAMES.length - 1,
+  if (highestRankIndexOf(state) === -1) return STARTER_RANK_NAME;
+  const rankIndex = Math.min(
+    RANK_NAMES.length - 1,
     Math.floor(totalRibbonsEarned(state) / RIBBONS_PER_OVERALL_RANK),
   );
-  return OVERALL_RANK_NAMES[overallIndex]!;
+  return RANK_NAMES[rankIndex]!;
 };
 
 export const AchievementsDialog = ({ onClose, open }: AchievementsDialogProps) => {
@@ -279,6 +308,21 @@ export const AchievementsDialog = ({ onClose, open }: AchievementsDialogProps) =
     setCodeDraft(encodeAvatarCode(options));
   }, [codeFocused, encoderName, state]);
 
+  // Regiment = whichever metric ladder the player's single highest class is
+  // in; a tie is broken by picking at random among the tied metrics. The
+  // pick re-rolls (via useMemo's key) whenever the tied set itself changes -
+  // e.g. a new rank-up - so it "alternates" across ties rather than sticking
+  // to one arbitrarily forever. Hook order must stay unconditional, so this
+  // runs before the early return below even though `state` may be null yet.
+  const tiedMetrics = state ? topRankedMetrics(state) : [];
+  const tiedMetricsKey = tiedMetrics.join(',');
+  const assignedRegimentMetric = useMemo(() => {
+    if (tiedMetrics.length === 0) return null;
+    return tiedMetrics[Math.floor(Math.random() * tiedMetrics.length)] ?? null;
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- keyed on the tie set, not the array identity
+  }, [tiedMetricsKey]);
+  const assignedRegiment = REGIMENTS.find((r) => r.metric === assignedRegimentMetric) ?? null;
+
   if (!state || !backgroundKey || poseIndex === null) {
     return <Dialog fullWidth maxWidth="sm" onClose={onClose} open={open} />;
   }
@@ -319,21 +363,15 @@ export const AchievementsDialog = ({ onClose, open }: AchievementsDialogProps) =
   const serviceRibbons = RANK_MEDALS.filter(
     (medal) => currentRankIndex(state, medal.metric) >= 0,
   ).map((medal) => METRIC_RIBBONS[medal.metric] ?? SPECIAL_RIBBON);
-  const uniformMedals = [
-    ...RANK_MEDALS.flatMap((medal) => {
-      const rankIndex = currentRankIndex(state, medal.metric);
-      return Array.from({ length: rankIndex + 1 }, (_, earnedRankIndex) => ({
-        label: `${RANK_NAMES[earnedRankIndex]} — ${medal.medalName[locale]}`,
-        metric: medal.metric as MedalMetric,
-        tier: tierForRankIndex(earnedRankIndex),
-      }));
-    }),
-    ...decorations.map((decoration) => ({
-      label: decoration.name,
-      metric: 'special' as const,
-      tier: 'gold' as const,
-    })),
-  ];
+  // Only special/rare achievements ("decorations") are medals - rank-ladder
+  // progress is shown as ribbons (serviceRibbons/RibbonRack), not as one
+  // medal per class earned. See rank-and-medal-reference.md's "Ribbons vs
+  // medals" section: ribbons are earned toward rank, medals are separate.
+  const uniformMedals = decorations.map((decoration) => ({
+    label: decoration.name,
+    metric: 'special' as const,
+    tier: 'gold' as const,
+  }));
 
   const certificateMetrics = Object.entries(METRIC_LABELS).map(([metric, label]) => ({
     label,
@@ -369,6 +407,9 @@ export const AchievementsDialog = ({ onClose, open }: AchievementsDialogProps) =
         encoderName: encoderName.trim() || 'Unknown Encoder',
         metrics: certificateMetrics,
         portraitFragment,
+        regiment: assignedRegiment
+          ? { name: assignedRegiment.name, slogan: assignedRegiment.slogan }
+          : null,
         serviceSince,
         totalAchievements: TOTAL_ACHIEVEMENTS,
         unlockedCount,
@@ -551,27 +592,40 @@ export const AchievementsDialog = ({ onClose, open }: AchievementsDialogProps) =
               </Typography>
               <Typography color="text.secondary" variant="body2">
                 {commission}
+                {assignedRegiment ? `, ${assignedRegiment.name}` : ''}
               </Typography>
+              {assignedRegiment && (
+                <Typography
+                  color="text.secondary"
+                  component="div"
+                  sx={{ fontStyle: 'italic' }}
+                  variant="body2"
+                >
+                  « {assignedRegiment.slogan} »
+                </Typography>
+              )}
               <Typography color="text.secondary" variant="caption">
                 In service since {serviceSince}
               </Typography>
               <Stack direction="row" spacing={0.5} sx={{ mt: 0.25 }}>
-                <Button
-                  onClick={() => void printCertificate()}
-                  size="small"
-                  startIcon={<PrintIcon fontSize="small" />}
-                  sx={{ px: 0.5, minWidth: 0 }}
-                >
-                  Print certificate
-                </Button>
-                <Button
-                  onClick={() => void submitToLeaderboard()}
-                  size="small"
-                  startIcon={<EmojiEventsIcon fontSize="small" />}
-                  sx={{ px: 0.5, minWidth: 0 }}
-                >
-                  Submit to leaderboard
-                </Button>
+                <Tooltip title="Print certificate">
+                  <IconButton
+                    aria-label="Print certificate"
+                    onClick={() => void printCertificate()}
+                    size="small"
+                  >
+                    <PrintIcon fontSize="small" />
+                  </IconButton>
+                </Tooltip>
+                <Tooltip title="Submit to leaderboard">
+                  <IconButton
+                    aria-label="Submit to leaderboard"
+                    onClick={() => void submitToLeaderboard()}
+                    size="small"
+                  >
+                    <EmojiEventsIcon fontSize="small" />
+                  </IconButton>
+                </Tooltip>
               </Stack>
             </Stack>
           </Stack>
@@ -860,32 +914,35 @@ export const AchievementsDialog = ({ onClose, open }: AchievementsDialogProps) =
               const towardNext = nextThreshold
                 ? Math.min(100, ((value - prevThreshold) / (nextThreshold - prevThreshold)) * 100)
                 : 100;
+              // Ribbon sits inline with just the title; everything below it
+              // (metric line, rank line, progress bar) is indented to align
+              // with the title text, not with the ribbon.
+              const textIndent = `${RIBBON_WIDTH + 8}px`;
               return (
                 <Paper key={medal.metric} sx={{ p: 1.5 }} variant="outlined">
-                  <Stack direction="row" spacing={1.5}>
-                    <RibbonStack
-                      count={Math.max(0, rankIndex + 1)}
-                      metric={medal.metric as MedalMetric}
-                    />
-                    <Box sx={{ flex: 1, minWidth: 0 }}>
-                      <Typography variant="subtitle2">{medal.medalName[locale]}</Typography>
-                      <Typography color="text.secondary" component="div" variant="caption">
-                        {METRIC_LABELS[medal.metric]}: {value.toLocaleString()}
-                      </Typography>
-                      <Typography color="text.secondary" component="div" variant="caption">
-                        {rankIndex >= 0
-                          ? nextThreshold
-                            ? `${RANK_NAMES[rankIndex]} — ${value.toLocaleString()} / ${nextThreshold.toLocaleString()} to go`
-                            : `${RANK_NAMES[rankIndex]} — highest class attained`
-                          : `${value.toLocaleString()} / ${medal.thresholds[0]!.toLocaleString()} to go`}
-                      </Typography>
-                      <LinearProgress
-                        sx={{ height: 4, borderRadius: 1, mt: 0.5 }}
-                        value={rankIndex >= 0 || value > 0 ? towardNext : 0}
-                        variant="determinate"
-                      />
-                    </Box>
+                  <Stack alignItems="center" direction="row" spacing={1}>
+                    <ServiceRibbon metric={medal.metric as MedalMetric} />
+                    <Typography noWrap variant="subtitle2">
+                      {medal.medalName[locale]}
+                    </Typography>
                   </Stack>
+                  <Box sx={{ ml: textIndent }}>
+                    <Typography color="text.secondary" component="div" variant="caption">
+                      {METRIC_LABELS[medal.metric]}: {value.toLocaleString()}
+                    </Typography>
+                    <Typography color="text.secondary" component="div" variant="caption">
+                      {rankIndex >= 0
+                        ? nextThreshold
+                          ? `${CLASS_NAMES[rankIndex]} — ${value.toLocaleString()} / ${nextThreshold.toLocaleString()} to go`
+                          : `${CLASS_NAMES[rankIndex]} — highest class attained`
+                        : `${value.toLocaleString()} / ${medal.thresholds[0]!.toLocaleString()} to go`}
+                    </Typography>
+                    <LinearProgress
+                      sx={{ height: 4, borderRadius: 1, mt: 0.5 }}
+                      value={rankIndex >= 0 || value > 0 ? towardNext : 0}
+                      variant="determinate"
+                    />
+                  </Box>
                 </Paper>
               );
             })}

@@ -6,6 +6,7 @@ import {
   countEntitiesInXml,
   determineNewRankUnlocks,
   determineNewUnlocks,
+  documentRootLanguage,
   metricsFromTagStats,
   PRECAUTIONARY_MEASURES_THRESHOLD,
 } from './evaluate';
@@ -198,6 +199,11 @@ export const processSaveForAchievements = async (options: {
     const relativePath = toRelativePath(rootPath, filePath);
     if (!project.savedDocs.includes(relativePath)) project.savedDocs.push(relativePath);
 
+    const docLanguage = documentRootLanguage(xml);
+    if (docLanguage && !project.docLanguages.includes(docLanguage)) {
+      project.docLanguages.push(docLanguage);
+    }
+
     const tagMetrics = metricsFromTagStats(stats);
     project.tagsTotal = Math.max(project.tagsTotal, tagMetrics.tagsTotal);
     project.disambiguated = Math.max(project.disambiguated, tagMetrics.disambiguated);
@@ -210,7 +216,6 @@ export const processSaveForAchievements = async (options: {
     if (entityXml) {
       const counted = countEntitiesInXml(entityXml);
       project.entities = Math.max(project.entities, counted.entities);
-      project.languages = Math.max(project.languages, counted.languages);
     }
 
     let encoderName = '';

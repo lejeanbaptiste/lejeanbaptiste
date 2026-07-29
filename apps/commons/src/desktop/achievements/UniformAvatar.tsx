@@ -393,12 +393,18 @@ export const RIBBON_ASPECT = 18 / 7;
 export const RIBBON_BAND_FRACTION = 0.22;
 
 // packGrid always maximizes item size to fill the box, which looks right at
-// a realistic rack density but blows a single early medal or ribbon up to
-// fill the whole panel. Flooring the count it packs against to a plausible
-// early-service size (one ribbon per metric; a handful of medals) keeps
-// icons a sane size until there are actually enough to fill the rack.
-export const RIBBON_COUNT_FLOOR = 5;
+// a realistic rack density but blows a single early medal up to fill the
+// whole panel. Flooring the count it packs against to a plausible
+// early-service size (a handful of medals) keeps icons a sane size until
+// there are actually enough to fill the rack.
 export const MEDAL_COUNT_FLOOR = 6;
+
+// Ribbons are sized against this fixed count always (never the player's
+// actual ribbon count) so a real service ribbon stays a small, constant,
+// "barely visible" size on the coat regardless of how many are earned -
+// real ribbon racks don't get physically bigger stripes with seniority.
+// Extra ribbons beyond this just wrap onto more rows at the same size.
+export const RIBBON_COUNT_FLOOR = 5;
 
 const RibbonRack = ({
   itemHeight,
@@ -462,8 +468,9 @@ const MedalRack = ({
 );
 
 /** Ribbons (service-rank stripes) stacked directly above earned-medal
- * miniatures, both packed as large as they can go within DECORATION_PANEL -
- * the coat's actual empty chest area - rather than positioned by eye. */
+ * miniatures within DECORATION_PANEL - the coat's actual empty chest area -
+ * rather than positioned by eye. Ribbons are a fixed, realistic size
+ * (see RIBBON_COUNT_FLOOR); medals are packed as large as they can go. */
 const DecorationRack = ({
   coatHeight,
   coatTop,
@@ -481,12 +488,10 @@ const DecorationRack = ({
   const panelHeight = coatHeight * DECORATION_PANEL.height;
   const ribbonBoxHeight = ribbons.length > 0 ? panelHeight * RIBBON_BAND_FRACTION : 0;
   const medalBoxHeight = panelHeight - ribbonBoxHeight;
-  const ribbonGrid = packGrid(
-    ribbons.length > 0 ? Math.max(ribbons.length, RIBBON_COUNT_FLOOR) : 1,
-    panelWidth,
-    ribbonBoxHeight,
-    RIBBON_ASPECT,
-  );
+  // Always packed against the fixed floor, never the player's actual ribbon
+  // count - see RIBBON_COUNT_FLOOR. Extra ribbons beyond it wrap onto more
+  // rows at this same size instead of shrinking every ribbon to fit.
+  const ribbonGrid = packGrid(RIBBON_COUNT_FLOOR, panelWidth, ribbonBoxHeight, RIBBON_ASPECT);
   const medalGrid = packGrid(
     Math.max(medals.length, MEDAL_COUNT_FLOOR),
     panelWidth,

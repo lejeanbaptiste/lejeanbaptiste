@@ -64,6 +64,7 @@ export interface CertificatePortraitInput {
 export interface CertificateOptions {
   encoderName: string;
   commission: string | null;
+  regiment: { name: string; slogan: string } | null;
   serviceSince: string;
   metrics: CertificateMetric[];
   unlockedCount: number;
@@ -263,19 +264,20 @@ export const buildPortraitFragment = async (
   const panelTop = coatTop + coatHeight * DECORATION_PANEL.top;
   const ribbonBoxHeight = ribbons.length > 0 ? panelHeight * RIBBON_BAND_FRACTION : 0;
   const medalBoxHeight = panelHeight - ribbonBoxHeight;
-  const ribbonGrid = packGrid(
-    ribbons.length > 0 ? Math.max(ribbons.length, RIBBON_COUNT_FLOOR) : 1,
-    panelWidth,
-    ribbonBoxHeight,
-    RIBBON_ASPECT,
-  );
+  // Fixed floor, not the player's actual ribbon count - see UniformAvatar.tsx's
+  // RIBBON_COUNT_FLOOR: ribbons stay a small, constant, realistic size and
+  // extra ones wrap onto more rows instead of shrinking to fit.
+  const ribbonGrid = packGrid(RIBBON_COUNT_FLOOR, panelWidth, ribbonBoxHeight, RIBBON_ASPECT);
   const medalGrid = packGrid(
     Math.max(input.medals.length, MEDAL_COUNT_FLOOR),
     panelWidth,
     medalBoxHeight,
     MEDAL_ASPECT,
   );
-  const ribbonRackHeight = ribbons.length > 0 ? ribbonGrid.rows * ribbonGrid.itemHeight : 0;
+  // Actual rows needed for the real ribbon count at the fixed cols/size above
+  // (ribbonGrid.rows only reflects the RIBBON_COUNT_FLOOR packing).
+  const ribbonRows = ribbons.length > 0 ? Math.ceil(ribbons.length / ribbonGrid.cols) : 0;
+  const ribbonRackHeight = ribbonRows * ribbonGrid.itemHeight;
   const medalRackHeight = medalGrid.rows * medalGrid.itemHeight;
   const contentTop = panelTop + (panelHeight - ribbonRackHeight - medalRackHeight) / 2;
 
@@ -366,7 +368,8 @@ export const buildCertificateSvg = (options: CertificateAssembleOptions): string
 
   const nameY = portraitBottom + 50;
   const commissionY = nameY + 32;
-  const serviceSinceY = commissionY + 26;
+  const sloganY = options.regiment ? commissionY + 26 : commissionY;
+  const serviceSinceY = sloganY + 26;
   const dividerY = serviceSinceY + 25;
   const statsStartY = dividerY + 34;
   const statsLineHeight = 30;
@@ -387,7 +390,12 @@ export const buildCertificateSvg = (options: CertificateAssembleOptions): string
     ${options.portraitFragment.svg}
   </g>
   <text x="${CERTIFICATE_WIDTH / 2}" y="${nameY}" text-anchor="middle" font-family="Georgia, serif" font-size="32" font-weight="bold" fill="#f2ede2">${escapeXml(options.encoderName)}</text>
-  <text x="${CERTIFICATE_WIDTH / 2}" y="${commissionY}" text-anchor="middle" font-family="Georgia, serif" font-size="19" fill="#c8b98a">${escapeXml(options.commission ?? STARTER_RANK_NAME)}</text>
+  <text x="${CERTIFICATE_WIDTH / 2}" y="${commissionY}" text-anchor="middle" font-family="Georgia, serif" font-size="19" fill="#c8b98a">${escapeXml(options.commission ?? STARTER_RANK_NAME)}${options.regiment ? `, ${escapeXml(options.regiment.name)}` : ''}</text>
+  ${
+    options.regiment
+      ? `<text x="${CERTIFICATE_WIDTH / 2}" y="${sloganY}" text-anchor="middle" font-family="Georgia, serif" font-style="italic" font-size="15" fill="#8b93a6">« ${escapeXml(options.regiment.slogan)} »</text>`
+      : ''
+  }
   <text x="${CERTIFICATE_WIDTH / 2}" y="${serviceSinceY}" text-anchor="middle" font-family="Georgia, serif" font-size="14" fill="#8b93a6">In service since ${escapeXml(options.serviceSince)}</text>
   <line x1="60" y1="${dividerY}" x2="${CERTIFICATE_WIDTH - 60}" y2="${dividerY}" stroke="#3a4a63" stroke-width="1" />
   ${metricLines}
