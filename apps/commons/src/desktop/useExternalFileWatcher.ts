@@ -2,14 +2,19 @@ import { useActions, useAppState } from '@src/overmind';
 import { isDesktop } from '@src/types/desktop';
 import { useCallback, useEffect, useRef } from 'react';
 import { useTranslation } from 'react-i18next';
+import { ENTITIES_FILE } from '../../../../packages/cwrc-leafwriter/src/autoTagging/entityStore';
 import { resolveEntityStorePaths } from '../../../../packages/cwrc-leafwriter/src/autoTagging/entityStoreResolve';
 import { recoverTranslationLinksOnExternalChange } from './translationRecovery';
 
 export const useExternalFileWatcher = () => {
   const { activeTabPath, openTabs, rootPath } = useAppState().project;
   const { contentHasChanged } = useAppState().editor;
-  const { reloadTabFromDisk, setExternalChangePending, isTabContentStaleOnDisk } =
-    useActions().project;
+  const {
+    reloadTabFromDisk,
+    mergeTabWithDisk,
+    setExternalChangePending,
+    isTabContentStaleOnDisk,
+  } = useActions().project;
   const { notifyViaSnackbar } = useActions().ui;
   const { t } = useTranslation();
 
@@ -44,18 +49,41 @@ export const useExternalFileWatcher = () => {
             })
           : t('LWC.desktop.external_file_changed.message', { filename: tab.filename });
 
+        const isEntitiesFile = tab.filename === ENTITIES_FILE;
+        const buttons = [
+          t('LWC.desktop.external_file_changed.reload'),
+          t('LWC.desktop.external_file_changed.keep_editing'),
+        ];
+        if (isEntitiesFile) buttons.push(t('LWC.desktop.external_file_changed.merge'));
+
         const { response } = await window.electronAPI.showNativeMessageBox({
           type: 'question',
           title: t('LWC.desktop.external_file_changed.title'),
           message,
-          buttons: [
-            t('LWC.desktop.external_file_changed.reload'),
-            t('LWC.desktop.external_file_changed.keep_editing'),
-          ],
+          buttons,
         });
 
         if (response === 0) {
           await reloadTabFromDisk(filePath);
+        } else if (isEntitiesFile && response === 2) {
+          const result = await mergeTabWithDisk(filePath);
+          if (result.success) {
+            notifyViaSnackbar(
+              (result.conflicts ?? 0) > 0
+                ? (t('LWC.desktop.external_file_changed.merge_done_with_conflicts', {
+                    imported: result.imported ?? 0,
+                    reconciled: result.reconciled ?? 0,
+                    conflicts: result.conflicts ?? 0,
+                  }) as string)
+                : (t('LWC.desktop.external_file_changed.merge_done', {
+                    imported: result.imported ?? 0,
+                    reconciled: result.reconciled ?? 0,
+                  }) as string),
+            );
+          } else {
+            notifyViaSnackbar(t('LWC.desktop.external_file_changed.merge_failed') as string);
+          }
+          setExternalChangePending({ filePath, pending: false });
         } else {
           setExternalChangePending({ filePath, pending: false });
         }

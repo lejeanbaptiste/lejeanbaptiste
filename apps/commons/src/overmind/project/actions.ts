@@ -38,6 +38,12 @@ import { translationFilePathFor } from '@src/desktop/translationFileNaming';
 import { reindexTranslationOnSave } from '@src/desktop/translationEntry';
 import { clearWriterSession, resetDesktopEditorSession } from '@src/desktop/clearWriterSession';
 import { filterVisualCursorPositions } from '../../../../../packages/cwrc-leafwriter/src/utilities/cursorPositionFilter';
+import { mergeForkedCentral } from '../../../../../packages/cwrc-leafwriter/src/autoTagging/centralForkMerge';
+import {
+  isEntityDatabase,
+  parseEntities,
+  serializeEntities,
+} from '../../../../../packages/cwrc-leafwriter/src/autoTagging/entities';
 import {
   DESKTOP_LEFT_PANEL_EVENT,
   type DesktopLeftPanelShowDetail,
@@ -1390,6 +1396,81 @@ export const reloadTabFromDisk = async ({ state, actions }: Context, filePath: s
     return true;
   } catch {
     return false;
+  }
+};
+
+export interface MergeTabWithDiskResult {
+  success: boolean;
+  imported?: number;
+  reconciled?: number;
+  conflicts?: number;
+}
+
+/**
+ * Third option for the external-change prompt on an entities.xml tab: instead of
+ * discarding one side wholesale (Reload) or ignoring the other (Keep editing),
+ * fork-merge the on-disk copy into the in-memory one via `mergeForkedCentral`
+ * (additions union, non-conflicting fields auto-reconcile, true conflicts are
+ * left on the in-memory side and reported back for the caller to surface).
+ */
+export const mergeTabWithDisk = async (
+  { state, actions }: Context,
+  filePath: string,
+): Promise<MergeTabWithDiskResult> => {
+  if (!window.electronAPI || !state.project.isProjectReady) return { success: false };
+
+  const tab = state.project.openTabs.find((item) => item.filePath === filePath);
+  if (!tab) return { success: false };
+
+  try {
+    const diskXml = await window.electronAPI.readFile(filePath);
+    const intoDoc = parseEntities(tab.lastSavedContent || tab.content);
+    const fromDoc = parseEntities(diskXml);
+
+    if (!isEntityDatabase(intoDoc) || !isEntityDatabase(fromDoc)) return { success: false };
+
+    const result = mergeForkedCentral(intoDoc, fromDoc, { keepNewest: true });
+    const content = serializeEntities(intoDoc);
+
+    await armSavedFileWrite(filePath);
+    await window.electronAPI.writeFile(filePath, content);
+
+    state.project.openTabs = state.project.openTabs.map((item) =>
+      item.filePath === filePath
+        ? {
+            ...item,
+            content,
+            lastSavedContent: content,
+            dirty: false,
+            externalChangePending: false,
+          }
+        : item,
+    );
+
+    if (state.project.activeTabPath === filePath) {
+      state.editor.contentHasChanged = false;
+      state.editor.contentLastSaved = content;
+
+      await actions.editor.setResource({
+        content,
+        filePath,
+        filename: tab.filename,
+        isLocal: true,
+      });
+
+      pushContentToEditor(content, { resetUndo: true });
+    }
+
+    await ignoreSavedFileChange(filePath);
+
+    return {
+      success: true,
+      imported: result.imported,
+      reconciled: result.reconciled,
+      conflicts: result.conflicts.length,
+    };
+  } catch {
+    return { success: false };
   }
 };
 

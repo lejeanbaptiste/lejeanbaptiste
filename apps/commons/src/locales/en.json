@@ -423,7 +423,11 @@
         "message": "{{filename}} was modified outside the app.",
         "message_with_unsaved": "{{filename}} was modified outside the app.\n\nYou will lose any unsaved changes if you reload.",
         "reload": "Reload",
-        "keep_editing": "Keep editing"
+        "keep_editing": "Keep editing",
+        "merge": "Merge",
+        "merge_done": "Merged entity database: {{imported}} added, {{reconciled}} updated.",
+        "merge_done_with_conflicts": "Merged entity database: {{imported}} added, {{reconciled}} updated, {{conflicts}} left as your version (concurrent edits) — check entities.xml.",
+        "merge_failed": "Could not merge the entity database. Reload or keep editing instead."
       },
       "translation_links_restored_one": "Restored {{count}} translation link after external change",
       "translation_links_restored_other": "Restored {{count}} translation links after external change",
