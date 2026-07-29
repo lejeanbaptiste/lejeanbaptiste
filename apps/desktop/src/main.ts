@@ -85,7 +85,12 @@ import {
   runAuthorityLifecyclePipeline,
   setAuthorityLifecycleEnabled,
 } from './authorityLifecycle';
-import { getChgisStatus, installChgisFromArchive, removeChgisData } from './authorityChgis';
+import {
+  getChgisStatus,
+  installChgisFromArchive,
+  installChgisFromDataverse,
+  removeChgisData,
+} from './authorityChgis';
 import {
   installMapTileBundle,
   listInstalledMapTileRegions,
@@ -2195,13 +2200,48 @@ const registerIpcHandlers = () => {
       title: 'CHGIS academic license',
       message: 'Install CHGIS historical place data?',
       detail:
-        'CHGIS is free for academic research. Commercial use, resale, and redistribution are not permitted.\n\nYou must have downloaded the data yourself from Harvard Dataverse. LEAF-Writer will compile a local tagging pack on your machine only.',
+        'CHGIS is available for academic research. Commercial use, resale, and redistribution are not permitted. LEAF-Writer will compile a local tagging pack on your machine only.',
     });
     if (license.response !== 0) return { ok: false, error: 'Install cancelled.' };
 
     const result = await installChgisFromArchive({
       entityDbFolder: folder,
       archivePath,
+      onProgress: (progress) => emitChgisProgress(event, progress),
+    });
+    if (result.ok) {
+      new Notification({
+        title: 'CHGIS places ready',
+        body: `Compiled ${result.placeCount?.toLocaleString() ?? ''} historical places for auto-tagging.`,
+      }).show();
+    } else {
+      new Notification({
+        title: 'CHGIS install failed',
+        body: result.error ?? 'Compile could not complete.',
+      }).show();
+    }
+    return result;
+  });
+
+  ipcMain.handle('authorityChgis:installFromDataverse', async (event) => {
+    const folder = await getEntityDbFolderOrNull();
+    if (!folder) return { ok: false, error: 'No entity database folder configured.' };
+    if (!mainWindow) return { ok: false, error: 'Install dialog is unavailable.' };
+
+    const license = await dialog.showMessageBox(mainWindow, {
+      type: 'info',
+      buttons: ['Accept and download', 'Cancel'],
+      defaultId: 0,
+      cancelId: 1,
+      title: 'CHGIS academic license',
+      message: 'Download and install CHGIS historical place data?',
+      detail:
+        'CHGIS is available for academic research. Commercial use, resale, and redistribution are not permitted. LEAF-Writer will download the two required point-layer assets from Harvard Dataverse, store them locally, and compile a local tagging pack only.',
+    });
+    if (license.response !== 0) return { ok: false, error: 'Install cancelled.' };
+
+    const result = await installChgisFromDataverse({
+      entityDbFolder: folder,
       onProgress: (progress) => emitChgisProgress(event, progress),
     });
     if (result.ok) {

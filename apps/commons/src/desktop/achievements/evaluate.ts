@@ -26,6 +26,8 @@ export const emptyState = (nowIso: string): AchievementsState => ({
   saveCount: 0,
   timeMachineRuns: 0,
   leaderboardPublicationDays: [],
+  sourceModeSaveCount: 0,
+  githubContributions: null,
   unlocked: {},
   projects: {},
   avatar: null,
@@ -103,6 +105,8 @@ export const aggregateGlobalMetrics = (state: AchievementsState): GlobalMetrics 
     places: 0,
     entities: 0,
     published: state.leaderboardPublicationDays.length,
+    wetWork: state.sourceModeSaveCount ?? 0,
+    flagOfCommitment: state.githubContributions?.count ?? 0,
     languages: 0,
   };
   for (const project of Object.values(state.projects)) {
@@ -147,6 +151,10 @@ export const metricValue = (global: GlobalMetrics, metric: string): number => {
       return global.entities;
     case 'published':
       return global.published;
+    case 'wetWork':
+      return global.wetWork;
+    case 'flagOfCommitment':
+      return global.flagOfCommitment;
     default:
       return 0;
   }
@@ -211,21 +219,7 @@ export const determineNewUnlocks = (
 
   if (global.languages >= 5 && !has('polyglot-scholar')) earned.push('polyglot-scholar');
 
-  if (context.sourceMode && !has('wet-work')) earned.push('wet-work');
-
   if (hasEmptyElement(context.xml) && !has('empty-honour')) earned.push('empty-honour');
-
-  if (
-    !has('long-form-commitment') &&
-    approximateWordCount(context.xml) >= 10000 &&
-    context.fileCounts &&
-    Object.entries(context.fileCounts.tags).reduce(
-      (total, [tag, count]) => (ANNOTATION_TAGS.has(tag) ? total + count : total),
-      0,
-    ) >= 100
-  ) {
-    earned.push('long-form-commitment');
-  }
 
   const serviceMs = context.savedAt.getTime() - new Date(state.installedAt).getTime();
   if (serviceMs >= 30 * DAY_MS && !has('long-service-bronze')) earned.push('long-service-bronze');
@@ -260,4 +254,4 @@ export const countUnlocked = (state: AchievementsState): number =>
 export const isKnownAchievementId = (id: string): boolean =>
   SPECIAL_ACHIEVEMENTS.some((def) => def.id === id) ||
   RARE_ACHIEVEMENTS.some((def) => def.id === id) ||
-  /^rank-[a-z]+-\d+$/.test(id);
+  /^rank-[a-zA-Z]+-\d+$/.test(id);

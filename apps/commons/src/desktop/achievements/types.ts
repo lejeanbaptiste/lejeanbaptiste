@@ -19,6 +19,11 @@ export interface AchievementsState {
   timeMachineRuns: number;
   /** Distinct local calendar days on which a leaderboard submission succeeded. */
   leaderboardPublicationDays: string[];
+  /** Saves made from an edited Monaco Source-mode buffer — the Wet work ladder. */
+  sourceModeSaveCount: number;
+  /** Cached count for the Flag of Commitment ladder (GitHub issues/PRs/commits) —
+   * refreshed opportunistically since it requires a network call. */
+  githubContributions: { count: number; fetchedAt: string } | null;
   unlocked: Record<string, { at: string }>;
   projects: Record<string, ProjectMetrics>;
   avatar: { kind: 'dicebear'; options: import('./dicebear').DiceBearAvatarOptions } | null;
@@ -32,17 +37,34 @@ export interface GlobalMetrics {
   places: number;
   entities: number;
   published: number;
+  wetWork: number;
+  flagOfCommitment: number;
   languages: number;
 }
 
-export type MetricId = 'texts' | 'tags' | 'disambiguated' | 'places' | 'entities' | 'published';
+export type MetricId =
+  | 'texts'
+  | 'tags'
+  | 'disambiguated'
+  | 'places'
+  | 'entities'
+  | 'published'
+  | 'wetWork'
+  | 'flagOfCommitment';
+
+/** A name/description given in both languages — fr defaults to the en text
+ * until a real translation is written. */
+export interface LocalizedText {
+  fr: string;
+  en: string;
+}
 
 export interface RankMedalDef {
   metric: MetricId;
-  /** Medal (decoration) name, e.g. "Order of the Chevron". */
-  medalName: string;
-  description: string;
-  /** One threshold per medal-bearing rank, Fusilier → Général de brigade. */
+  /** Medal (decoration) name, e.g. "Ordre du Chevron / Order of the Chevron". */
+  medalName: LocalizedText;
+  description: LocalizedText;
+  /** One threshold per class, VIIème classe → Ière classe. */
   thresholds: number[];
 }
 

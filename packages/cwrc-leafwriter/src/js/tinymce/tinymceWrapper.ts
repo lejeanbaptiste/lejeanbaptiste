@@ -30,6 +30,7 @@ import {
 } from './pasteSpecial';
 import { initEditorZoom } from './editorZoom';
 import { DEFAULT_EDITOR_FONT_SIZE } from '../../overmind/editor/state';
+import { isChineseLanguageCode, isJapaneseLanguageCode } from '../../utilities/languageCodes';
 
 declare global {
   interface Window {
@@ -688,6 +689,13 @@ export const tinymceWrapperInit = function ({
       editor.lastKeyPress = undefined; // the last key the user pressed
 
       editor.on('init', () => {
+        const editorBody = editor.getBody();
+        const projectLanguage = window.__leafWriterProject?.getProjectSourceLanguage?.();
+        void projectLanguage?.then((language) => {
+          editorBody.classList.toggle('project-language-chinese', isChineseLanguageCode(language));
+          editorBody.classList.toggle('project-language-japanese', isJapaneseLanguageCode(language));
+        });
+
         if (writer.isReadOnly === true) {
           editor.mode.set('readonly');
         }

@@ -2,7 +2,7 @@
 // Regenerate together with resources/game-assets/assets.bin whenever the
 // source artwork in the (private) visual_design repo changes.
 
-const OBFUSCATED_KEY_HEX = 'dc0b75055de95aa2a5da7970dadaac87c99202593b573f4edcc7bcbec2155fdf';
+const OBFUSCATED_KEY_HEX = '56b465b3e8eb89ad54a46fab84853610682b27fbc31440849dcce49acad8aa09';
 const SALT = [108,101,74,101,97,110,66,97,112,116,105,115,116,101,45,103,97,109,101,45,97,115,115,101,116,115,45,118,49];
 
 export function getGameAssetKey(): Buffer {

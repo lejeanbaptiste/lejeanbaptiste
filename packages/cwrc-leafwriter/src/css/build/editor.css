@@ -48,6 +48,18 @@ body {
   background-color: transparent;
   color: #555 !important;
 }
+/* Note type labels (for example "editor" or "commentary") are metadata, not
+document text. Do not let show-tags render them into the prose; hidden-note
+placeholders are restored by the more specific rules below. */
+.showTags *[_tag='note']:not(.hide)::before,
+.showTags *[_tag='note']:not(.hide)::after {
+  content: none !important;
+  display: none !important;
+}
+.showTags *[_tag='note'].hide::before {
+  content: '' !important;
+  display: inline-block !important;
+}
 
 /* This CSS gets applied to the tinymce editor */
 /* entity colours */
@@ -324,16 +336,18 @@ body {
 /* Keep a compact anchor for bare notes while their content is hidden. */
 [_tag='note'].hide {
   display: inline !important;
-  font-size: 0 !important;
+  font-size: inherit !important;
   line-height: inherit !important;
+  visibility: hidden !important;
 }
 [_tag='note'].hide::before {
   content: '';
   display: inline-block;
-  width: 1rem;
-  height: 1rem;
+  width: 0.75em;
+  height: 0.75em;
   margin: 0 0.1em;
   vertical-align: middle;
+  visibility: visible;
   background-color: var(--note);
   background-image: url(../images/sticky-note-inline.svg);
   background-repeat: no-repeat;
@@ -345,10 +359,10 @@ body {
 .noteWrapper.note.hide::before {
   content: '';
   display: inline-block;
-  width: 1em;
-  height: 1em;
+  width: 0.75em;
+  height: 0.75em;
   margin: 0 0.1em;
-  vertical-align: baseline;
+  vertical-align: middle;
   background-color: var(--note);
   background-image: url(../images/sticky-note-inline.svg);
   background-repeat: no-repeat;
@@ -388,6 +402,15 @@ note. Match both xml:lang and HTML lang, including common legacy codes. */
     [xml\:lang|='ja'],
     [xml\:lang|='jpn']
   )::before {
+  background-color: transparent;
+  background-image: url(../images/tool_hide_notes.svg);
+  background-size: 100% 100%;
+  border-radius: 0;
+}
+/* Project metadata supplies the language even when individual notes do not
+carry an inherited lang/xml:lang attribute. */
+body.project-language-chinese :is([_tag='note'].hide, .noteWrapper.note.hide)::before,
+body.project-language-japanese :is([_tag='note'].hide, .noteWrapper.note.hide)::before {
   background-color: transparent;
   background-image: url(../images/tool_hide_notes.svg);
   background-size: 100% 100%;

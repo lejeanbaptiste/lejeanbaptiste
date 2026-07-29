@@ -34,6 +34,20 @@ const sanitizeState = (parsed: Partial<AchievementsState>): AchievementsState =>
         ),
       ].sort()
     : [];
+  state.sourceModeSaveCount =
+    typeof parsed.sourceModeSaveCount === 'number' && parsed.sourceModeSaveCount >= 0
+      ? Math.floor(parsed.sourceModeSaveCount)
+      : 0;
+  if (
+    parsed.githubContributions &&
+    typeof parsed.githubContributions.count === 'number' &&
+    typeof parsed.githubContributions.fetchedAt === 'string'
+  ) {
+    state.githubContributions = {
+      count: parsed.githubContributions.count,
+      fetchedAt: parsed.githubContributions.fetchedAt,
+    };
+  }
   if (parsed.unlocked && typeof parsed.unlocked === 'object') {
     for (const [id, entry] of Object.entries(parsed.unlocked)) {
       if (entry && typeof entry.at === 'string') state.unlocked[id] = { at: entry.at };

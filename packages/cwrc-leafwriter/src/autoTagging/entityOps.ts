@@ -37,7 +37,7 @@ import {
   type NameTypeTaggingPolicy,
 } from './nameTypeTaggingPolicy';
 import { isTaggableNameType, normalizeNameType, type NameTypeId } from './nameTypes';
-import { canonicalDynastyKey, preferredDynastyLabel } from './dynastyCrosswalk';
+import { canonicalNationalityLabel } from './dynastyCrosswalk';
 
 const TEI_NS = 'http://www.tei-c.org/ns/1.0';
 const XML_NS = 'http://www.w3.org/XML/1998/namespace';
@@ -186,14 +186,19 @@ function summarize(item: Element): EntitySummary | null {
     startYear: activeDateYear(item, 'birth'),
     endYear: activeDateYear(item, 'death'),
     nationalities: Array.from(
-      new Map(
+      new Set(
         Array.from(item.children)
           .filter((child) => child.localName === 'nationality')
           .filter((child) => readEntityValueProvenance(child).status === 'active')
-          .map((child) => child.textContent?.trim() ?? '')
-          .filter(Boolean)
-          .map((label) => [canonicalDynastyKey(label), preferredDynastyLabel(label)] as const),
-      ).values(),
+          .map((child) =>
+            canonicalNationalityLabel(
+              readEntityValueProvenance(child).source,
+              child.getAttribute('ref'),
+              child.textContent?.trim() ?? '',
+            ),
+          )
+          .filter(Boolean),
+      ),
     ),
     placesOfOrigin: Array.from(
       new Set(
@@ -238,6 +243,7 @@ function summarize(item: Element): EntitySummary | null {
             ? child.getAttribute('precision')
             : undefined,
         noteType: child.localName === 'note' ? child.getAttribute('type') : undefined,
+        ref: child.getAttribute('ref'),
       }))
       .filter((assertion) => assertion.value || assertion.element === 'idno'),
   };
@@ -253,6 +259,8 @@ export interface EntityAssertionSummary {
   precision?: string | null;
   /** `<note>`'s `@type` (e.g. "description", "authority-cache"); undefined for non-note elements. */
   noteType?: string | null;
+  /** `@ref` (e.g. a nationality's source-specific dynasty id), when the element carries one. */
+  ref: string | null;
 }
 
 /** List field-level assertions, including rejected values for the review UI. */
@@ -272,6 +280,7 @@ export function listEntityAssertions(doc: Document, id: string): EntityAssertion
             ? child.getAttribute('precision')
             : undefined,
         noteType: child.localName === 'note' ? child.getAttribute('type') : undefined,
+        ref: child.getAttribute('ref'),
       };
     })
     .filter((assertion) => assertion.value || assertion.element === 'idno');
@@ -293,25 +302,25 @@ export interface FieldAssertionGroups {
  */
 export function groupFieldAssertions(
   assertions: EntityAssertionSummary[],
+  /** Already-canonical accepted values (e.g. from `EntitySummary`, which normalizes via `keyOf`). */
   acceptedValues: Set<string>,
   showRejected: boolean,
-  /** Normalizes a value before comparison (e.g. dynasty-alias crosswalk); identity by default. */
-  valueKey: (value: string) => string = (value) => value,
+  /** Canonical grouping key for an assertion (e.g. dynasty-id crosswalk); keyed on its raw value by default. */
+  keyOf: (assertion: EntityAssertionSummary) => string = (assertion) => assertion.value,
 ): FieldAssertionGroups {
   const active = assertions.filter(
     (assertion) => assertion.origin === 'authority' && (showRejected || assertion.status === 'active'),
   );
-  const acceptedKeys = new Set(Array.from(acceptedValues, valueKey));
   const agreeingSources = Array.from(
     new Set(
       active
-        .filter((assertion) => assertion.status === 'active' && acceptedKeys.has(valueKey(assertion.value)))
+        .filter((assertion) => assertion.status === 'active' && acceptedValues.has(keyOf(assertion)))
         .map((assertion) => assertion.source?.split(':')[0])
         .filter((source): source is string => Boolean(source)),
     ),
   );
   const pending = active.filter(
-    (assertion) => assertion.status === 'active' && !acceptedKeys.has(valueKey(assertion.value)),
+    (assertion) => assertion.status === 'active' && !acceptedValues.has(keyOf(assertion)),
   );
   const rejected = active.filter((assertion) => assertion.status === 'rejected');
   return { agreeingSources, pending, rejected };

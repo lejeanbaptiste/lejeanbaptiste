@@ -14,12 +14,7 @@ declare global {
   }
 
   type DesktopRightPanelTab =
-    | 'fileMetadata'
-    | 'attributes'
-    | 'css'
-    | 'imageViewer'
-    | 'validation'
-    | 'translation';
+    'fileMetadata' | 'attributes' | 'css' | 'imageViewer' | 'validation' | 'translation';
 
   interface DesktopRightPanelBridge {
     expand: () => void;
@@ -105,17 +100,15 @@ declare global {
       regions: { id: string; sha256: string; installedAt: string }[];
     }>;
     mapTilesPromptDownload?: () => Promise<'accepted' | 'declined'>;
-    mapTilesDownloadBackground?: (
-      bundle: {
-        id: string;
-        source?: string;
-        url: string;
-        bbox?: [number, number, number, number];
-        fileName: string;
-        bytes?: number;
-        sha256?: string;
-      },
-    ) => Promise<{ ok: boolean; queued?: boolean; error?: string }>;
+    mapTilesDownloadBackground?: (bundle: {
+      id: string;
+      source?: string;
+      url: string;
+      bbox?: [number, number, number, number];
+      fileName: string;
+      bytes?: number;
+      sha256?: string;
+    }) => Promise<{ ok: boolean; queued?: boolean; error?: string }>;
     mapTilesDownload?: (bundle: {
       id: string;
       source?: string;
@@ -143,20 +136,21 @@ declare global {
       }) => void,
     ) => () => void;
     onMapTilesDownloadComplete?: (
-      callback: (result: { bundleId: string; installed: boolean; path?: string; error?: string }) => void,
+      callback: (result: {
+        bundleId: string;
+        installed: boolean;
+        path?: string;
+        error?: string;
+      }) => void,
     ) => () => void;
-    authorityPackStatuses?: () => Promise<
-      import('../autoTagging/packPaths').AuthorityPackStatus[]
-    >;
+    authorityPackStatuses?: () => Promise<import('../autoTagging/packPaths').AuthorityPackStatus[]>;
     authorityPackRead?: (
       packId: import('../autoTagging/packPaths').AuthorityPackId,
     ) => Promise<string[]>;
     authorityPackInstallFrom?: (
       sourcePacksRoot: string,
     ) => Promise<{ ok: boolean; copied?: string[]; error?: string }>;
-    pluginsGetSnapshot?: () => Promise<
-      import('../plugins/types').PluginHostSnapshotView
-    >;
+    pluginsGetSnapshot?: () => Promise<import('../plugins/types').PluginHostSnapshotView>;
     pluginsSetEnabled?: (
       pluginId: string,
       enabled: boolean,
@@ -168,7 +162,9 @@ declare global {
     pluginsDismissLanguagePrompt?: (pluginId: string) => Promise<void>;
     pluginsIsEnabled?: (pluginId: string) => Promise<boolean>;
     pluginsGetModuleUrl?: (pluginId: string) => Promise<string | null>;
-    pluginsGetRemoteIndex?: () => Promise<import('../../../../apps/commons/src/desktop/pluginRegistryTypes').PluginReleaseIndex>;
+    pluginsGetRemoteIndex?: () => Promise<
+      import('../../../../apps/commons/src/desktop/pluginRegistryTypes').PluginReleaseIndex
+    >;
     pluginsInstallRemote?: (
       entry: import('../../../../apps/commons/src/desktop/pluginRegistryTypes').PluginReleaseEntry,
     ) => Promise<import('../plugins/types').PluginHostSnapshotView>;
@@ -189,9 +185,17 @@ declare global {
     authorityChgisInstallFromArchive?: (
       archivePath: string,
     ) => Promise<{ ok: boolean; error?: string; placeCount?: number }>;
+    authorityChgisInstallFromDataverse?: () => Promise<{
+      ok: boolean;
+      error?: string;
+      placeCount?: number;
+    }>;
     authorityChgisRemove?: () => Promise<{ ok: boolean; error?: string }>;
     onAuthorityChgisProgress?: (
-      callback: (progress: { phase: 'extracting' | 'compiling' | 'idle'; message: string }) => void,
+      callback: (progress: {
+        phase: 'downloading' | 'extracting' | 'compiling' | 'idle';
+        message: string;
+      }) => void,
     ) => () => void;
   }
 

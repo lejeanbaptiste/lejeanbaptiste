@@ -76,6 +76,7 @@
         "Add Custom Authority": "Add Custom Authority",
         "chgis": {
           "download_from": "Download from",
+          "download_and_install": "Download from Dataverse & install",
           "entity_db_required": "Could not resolve a local folder for authority data. Try restarting the app.",
           "install_here": "then install here. LEAF-Writer compiles a local pack only - nothing is redistributed.",
           "install_failed": "CHGIS install failed.",

@@ -133,10 +133,7 @@ import { authorityLookupUrl } from '../entityDb/authorityLinks';
 import { BridgeInboxDialog } from './BridgeInboxDialog';
 import { MergeDocketDialog } from './MergeDocketDialog';
 import { SourceBadges } from '../../../../../packages/cwrc-leafwriter/src/autoTagging/SourceBadges';
-import {
-  canonicalDynastyKey,
-  preferredDynastyLabel,
-} from '../../../../../packages/cwrc-leafwriter/src/autoTagging/dynastyCrosswalk';
+import { canonicalNationalityLabel } from '../../../../../packages/cwrc-leafwriter/src/autoTagging/dynastyCrosswalk';
 
 /**
  * Ordinal of a legacy sequential id (`person-000042` → 42); UUID ids have none.
@@ -265,12 +262,13 @@ interface AssertionValueGroup {
 
 const groupAssertionsByValue = (
   assertions: EntityAssertionSummary[],
-  valueKey: (value: string) => string = (value) => value,
+  keyOf: (assertion: EntityAssertionSummary) => string = (assertion) => assertion.value,
 ): AssertionValueGroup[] => {
   const map = new Map<string, AssertionValueGroup>();
   for (const assertion of assertions) {
     const source = assertion.source?.split(':')[0] ?? 'authority';
-    const groupKey = `${assertion.element} ${valueKey(assertion.value)}`;
+    const canonicalValue = keyOf(assertion);
+    const groupKey = `${assertion.element} ${canonicalValue}`;
     const existing = map.get(groupKey);
     if (existing) {
       existing.keys.push(assertion.key);
@@ -278,7 +276,7 @@ const groupAssertionsByValue = (
     } else {
       map.set(groupKey, {
         element: assertion.element,
-        value: assertion.value,
+        value: canonicalValue,
         precision: assertion.precision,
         keys: [assertion.key],
         sources: [source],
@@ -996,11 +994,13 @@ export const SidebarDatabaseTab = ({ active = false }: SidebarDatabaseTabProps) 
 
     const nationalityAssertions =
       editEntity?.assertions.filter((assertion) => assertion.element === 'nationality') ?? [];
+    const nationalityKeyOf = (assertion: EntityAssertionSummary): string =>
+      canonicalNationalityLabel(assertion.source, assertion.ref, assertion.value);
     const nationalityGroups = groupFieldAssertions(
       nationalityAssertions,
       new Set(editEntity?.nationalities ?? []),
       showRejected,
-      canonicalDynastyKey,
+      nationalityKeyOf,
     );
     const originAssertions =
       editEntity?.assertions.filter((assertion) => assertion.element === 'placeName') ?? [];
@@ -1013,7 +1013,7 @@ export const SidebarDatabaseTab = ({ active = false }: SidebarDatabaseTabProps) 
     const sourcesForValue = (
       assertions: EntityAssertionSummary[],
       value: string,
-      valueKey: (v: string) => string = (v) => v,
+      keyOf: (assertion: EntityAssertionSummary) => string = (assertion) => assertion.value,
     ): string[] =>
       Array.from(
         new Set(
@@ -1022,7 +1022,7 @@ export const SidebarDatabaseTab = ({ active = false }: SidebarDatabaseTabProps) 
               (assertion) =>
                 assertion.origin === 'authority' &&
                 assertion.status === 'active' &&
-                valueKey(assertion.value) === valueKey(value),
+                keyOf(assertion) === value,
             )
             .map((assertion) => assertion.source?.split(':')[0])
             .filter((source): source is string => Boolean(source)),
@@ -1033,12 +1033,10 @@ export const SidebarDatabaseTab = ({ active = false }: SidebarDatabaseTabProps) 
     const keysForValue = (
       assertions: EntityAssertionSummary[],
       value: string,
-      valueKey: (v: string) => string = (v) => v,
+      keyOf: (assertion: EntityAssertionSummary) => string = (assertion) => assertion.value,
     ): string[] =>
       assertions
-        .filter(
-          (assertion) => assertion.status === 'active' && valueKey(assertion.value) === valueKey(value),
-        )
+        .filter((assertion) => assertion.status === 'active' && keyOf(assertion) === value)
         .map((assertion) => assertion.key);
 
     const dateMarker = (element: string): string =>
@@ -1159,17 +1157,14 @@ export const SidebarDatabaseTab = ({ active = false }: SidebarDatabaseTabProps) 
       values: string[];
       assertions: EntityAssertionSummary[];
       groups: FieldAssertionGroups;
-      /** Normalizes a value before grouping/matching (e.g. dynasty-alias crosswalk); identity by default. */
-      valueKey?: (value: string) => string;
-      /** Display text for a raw assertion value (e.g. the crosswalk's preferred dynasty label). */
-      displayLabel?: (value: string) => string;
+      /** Canonical grouping/display key for an assertion (e.g. dynasty-id crosswalk); keyed on raw value by default. */
+      keyOf?: (assertion: EntityAssertionSummary) => string;
     }): GridRow[] => {
-      const valueKey = field.valueKey ?? ((value: string) => value);
-      const displayLabel = field.displayLabel ?? ((value: string) => value);
+      const keyOf = field.keyOf ?? ((assertion: EntityAssertionSummary) => assertion.value);
       const lines: (Omit<GridRow, 'key' | 'label'> & { key: string })[] = [];
       for (const value of field.values) {
-        const sources = sourcesForValue(field.assertions, value, valueKey);
-        const keys = keysForValue(field.assertions, value, valueKey);
+        const sources = sourcesForValue(field.assertions, value, keyOf);
+        const keys = keysForValue(field.assertions, value, keyOf);
         lines.push({
           key: `${field.label}:${value}`,
           value,
@@ -1198,10 +1193,10 @@ export const SidebarDatabaseTab = ({ active = false }: SidebarDatabaseTabProps) 
           ),
         });
       }
-      for (const group of groupAssertionsByValue(field.groups.pending, valueKey)) {
+      for (const group of groupAssertionsByValue(field.groups.pending, keyOf)) {
         lines.push({
           key: group.keys.join('+'),
-          value: displayLabel(group.value),
+          value: group.value,
           trailing: (
             <Stack direction="row" spacing={0.5} alignItems="center">
               <SourceBadges label={group.sources.join('+')} />
@@ -1243,10 +1238,10 @@ export const SidebarDatabaseTab = ({ active = false }: SidebarDatabaseTabProps) 
           ),
         });
       }
-      for (const group of groupAssertionsByValue(field.groups.rejected, valueKey)) {
+      for (const group of groupAssertionsByValue(field.groups.rejected, keyOf)) {
         lines.push({
           key: group.keys.join('+'),
-          value: displayLabel(group.value),
+          value: group.value,
           muted: true,
           trailing: (
             <Tooltip title={t('LWC.desktop.sidebar.database.restore_data')}>
@@ -1279,8 +1274,7 @@ export const SidebarDatabaseTab = ({ active = false }: SidebarDatabaseTabProps) 
             values: editEntity.nationalities,
             assertions: nationalityAssertions,
             groups: nationalityGroups,
-            valueKey: canonicalDynastyKey,
-            displayLabel: preferredDynastyLabel,
+            keyOf: nationalityKeyOf,
           })
         : [];
     const originGridRows: GridRow[] =

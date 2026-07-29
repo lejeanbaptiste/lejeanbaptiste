@@ -1,17 +1,9 @@
-import {
-  Alert,
-  Box,
-  Button,
-  LinearProgress,
-  ListItem,
-  Stack,
-  Typography,
-} from '@mui/material';
+import { Alert, Box, Button, LinearProgress, ListItem, Stack, Typography } from '@mui/material';
 import { useCallback, useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 
 type ChgisInstallProgress = {
-  phase: 'extracting' | 'compiling' | 'idle';
+  phase: 'downloading' | 'extracting' | 'compiling' | 'idle';
   message: string;
 };
 
@@ -78,7 +70,39 @@ export const DesktopChgisAuthorities = () => {
           error: 'CHGIS install is unavailable in this build.',
         };
       if (!result.ok) {
-        setMessage({ severity: 'error', text: result.error ?? t('LW.settings.authorities.chgis.install_failed') });
+        setMessage({
+          severity: 'error',
+          text: result.error ?? t('LW.settings.authorities.chgis.install_failed'),
+        });
+      } else {
+        setMessage({
+          severity: 'success',
+          text: t('LW.settings.authorities.chgis.install_success', {
+            count: result.placeCount ?? 0,
+          }),
+        });
+      }
+      await refresh();
+    } finally {
+      setBusy(false);
+      setProgress(null);
+    }
+  };
+
+  const handleDataverseInstall = async () => {
+    setMessage(null);
+    setBusy(true);
+    try {
+      const result: ChgisInstallResult =
+        (await window.electronAPI?.authorityChgisInstallFromDataverse?.()) ?? {
+          ok: false,
+          error: 'CHGIS Dataverse install is unavailable in this build.',
+        };
+      if (!result.ok) {
+        setMessage({
+          severity: 'error',
+          text: result.error ?? t('LW.settings.authorities.chgis.install_failed'),
+        });
       } else {
         setMessage({
           severity: 'success',
@@ -110,7 +134,10 @@ export const DesktopChgisAuthorities = () => {
     try {
       const result = await window.electronAPI?.authorityChgisRemove?.();
       if (!result?.ok) {
-        setMessage({ severity: 'error', text: result?.error ?? t('LW.settings.authorities.chgis.remove_failed') });
+        setMessage({
+          severity: 'error',
+          text: result?.error ?? t('LW.settings.authorities.chgis.remove_failed'),
+        });
       } else {
         setMessage({ severity: 'info', text: t('LW.settings.authorities.chgis.removed') });
       }
@@ -129,7 +156,11 @@ export const DesktopChgisAuthorities = () => {
           <Typography variant="subtitle2">{t('LW.settings.authorities.chgis.title')}</Typography>
           <Typography variant="body2" color="text.secondary">
             {t('LW.settings.authorities.chgis.download_from')}{' '}
-            <a href="https://dataverse.harvard.edu/dataverse/chgis_v6" target="_blank" rel="noreferrer">
+            <a
+              href="https://dataverse.harvard.edu/dataverse/chgis_v6"
+              target="_blank"
+              rel="noreferrer"
+            >
               Harvard Dataverse
             </a>
             , {t('LW.settings.authorities.chgis.install_here')}
@@ -141,9 +172,7 @@ export const DesktopChgisAuthorities = () => {
         </Alert>
 
         {!status?.entityDbReady && (
-          <Alert severity="warning">
-            {t('LW.settings.authorities.chgis.entity_db_required')}
-          </Alert>
+          <Alert severity="warning">{t('LW.settings.authorities.chgis.entity_db_required')}</Alert>
         )}
 
         {status?.entityDbReady && (
@@ -192,6 +221,15 @@ export const DesktopChgisAuthorities = () => {
           <Button
             size="small"
             variant="contained"
+            color="secondary"
+            disabled={working || !status?.entityDbReady}
+            onClick={() => void handleDataverseInstall()}
+          >
+            {t('LW.settings.authorities.chgis.download_and_install')}
+          </Button>
+          <Button
+            size="small"
+            variant="outlined"
             disabled={working || !status?.entityDbReady}
             onClick={() => void handleInstall()}
           >

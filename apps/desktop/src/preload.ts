@@ -350,6 +350,9 @@ export interface ElectronAPI {
   authorityChgisInstallFromArchive?: (
     archivePath: string,
   ) => Promise<import('../../commons/src/desktop/authorityChgisTypes').ChgisInstallResult>;
+  authorityChgisInstallFromDataverse?: () => Promise<
+    import('../../commons/src/desktop/authorityChgisTypes').ChgisInstallResult
+  >;
   authorityChgisRemove?: () => Promise<{ ok: boolean; error?: string }>;
   onAuthorityChgisProgress?: (
     callback: (
@@ -597,6 +600,8 @@ const electronAPI: ElectronAPI = {
   pickChgisArchive: () => ipcRenderer.invoke('pickChgisArchive'),
   authorityChgisInstallFromArchive: (archivePath: string) =>
     ipcRenderer.invoke('authorityChgis:installFromArchive', archivePath),
+  authorityChgisInstallFromDataverse: () =>
+    ipcRenderer.invoke('authorityChgis:installFromDataverse'),
   authorityChgisRemove: () => ipcRenderer.invoke('authorityChgis:remove'),
   onAuthorityLifecycleProgress: (callback) => {
     const listener = (

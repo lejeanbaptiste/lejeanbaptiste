@@ -3,6 +3,7 @@ import {
   RANK_NAMES,
   RARE_ACHIEVEMENTS,
   RARE_UNLOCK_PROBABILITY,
+  SPECIAL_ACHIEVEMENTS,
   TOTAL_ACHIEVEMENTS,
   rankMedalAchievementId,
 } from './definitions';
@@ -53,6 +54,8 @@ const zeroMetrics = (): GlobalMetrics => ({
   places: 0,
   entities: 0,
   published: 0,
+  wetWork: 0,
+  flagOfCommitment: 0,
   languages: 0,
 });
 
@@ -142,17 +145,14 @@ describe('determineNewUnlocks', () => {
     );
   });
 
-  it('awards Wet Work only for a save originating in Source mode', () => {
+  it('no longer awards Wet Work as a one-time trigger (superseded by the wetWork rank ladder)', () => {
     expect(
       determineNewUnlocks(
         freshState(),
         zeroMetrics(),
         baseContext({ sourceMode: true, xml: '<TEI><text>edited</text></TEI>' }),
       ),
-    ).toContain('wet-work');
-    expect(determineNewUnlocks(freshState(), zeroMetrics(), baseContext())).not.toContain(
-      'wet-work',
-    );
+    ).not.toContain('wet-work');
   });
 
   it('awards The Empty Honour for an empty persName / placeName / date / roleName / org', () => {
@@ -242,11 +242,11 @@ describe('determineNewUnlocks', () => {
 describe('catalogue', () => {
   it('advertises the full achievement count', () => {
     const rankCount = RANK_MEDALS.reduce((total, medal) => total + medal.thresholds.length, 0);
-    expect(RANK_MEDALS).toHaveLength(6);
+    expect(RANK_MEDALS).toHaveLength(8);
     expect(RANK_MEDALS.every((medal) => medal.thresholds.length === RANK_NAMES.length)).toBe(true);
-    expect(rankCount).toBe(42);
-    expect(TOTAL_ACHIEVEMENTS).toBe(rankCount + 13 + 12);
-    expect(TOTAL_ACHIEVEMENTS).toBe(67);
+    expect(rankCount).toBe(56);
+    expect(TOTAL_ACHIEVEMENTS).toBe(rankCount + SPECIAL_ACHIEVEMENTS.length + RARE_ACHIEVEMENTS.length);
+    expect(TOTAL_ACHIEVEMENTS).toBe(79);
   });
 
   it('ignores retired achievement ids left in old files when counting', () => {

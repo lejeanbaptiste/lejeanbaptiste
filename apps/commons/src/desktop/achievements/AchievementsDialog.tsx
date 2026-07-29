@@ -18,6 +18,7 @@ import {
 import PrintIcon from '@mui/icons-material/Print';
 import EmojiEventsIcon from '@mui/icons-material/EmojiEvents';
 import { useEffect, useRef, useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import { useActions } from '@src/overmind';
 import {
   arrayBufferToBase64,
@@ -36,7 +37,7 @@ import {
   TOTAL_ACHIEVEMENTS,
 } from './definitions';
 import { aggregateGlobalMetrics, countUnlocked, currentRankIndex, metricValue } from './evaluate';
-import { recordLeaderboardPublication } from './engine';
+import { recordLeaderboardPublication, refreshGithubContributions } from './engine';
 import {
   MedalIcon,
   METRIC_RIBBONS,
@@ -99,6 +100,31 @@ const METRIC_LABELS: Record<string, string> = {
   places: 'Places disambiguated',
   entities: 'Entities on file',
   published: 'Days published to leaderboard',
+  wetWork: 'Source-mode saves',
+  flagOfCommitment: 'Repo contributions',
+};
+
+// Placeholder ribbon art (real art TBD) - reuses the same striped-gradient
+// technique and per-metric colorways as RibbonRack in UniformAvatar.tsx, one
+// bar per tier already earned for that metric.
+const RibbonStack = ({ metric, count }: { metric: MedalMetric; count: number }) => {
+  const stripes = METRIC_RIBBONS[metric] ?? SPECIAL_RIBBON;
+  const [c1, c2, c3] = stripes.length === 3 ? stripes : [stripes[0], stripes[1], stripes[0]];
+  return (
+    <Stack spacing={0.5} sx={{ flexShrink: 0 }}>
+      {Array.from({ length: count }, (_, i) => (
+        <Box
+          key={i}
+          sx={{
+            background: `linear-gradient(90deg, ${c1} 0 33%, ${c2} 33% 66%, ${c3} 66%)`,
+            border: '1px solid rgba(0,0,0,0.2)',
+            height: 12,
+            width: 12 * (18 / 7),
+          }}
+        />
+      ))}
+    </Stack>
+  );
 };
 
 const collectDecorations = (state: AchievementsState): UnlockedAchievement[] => {
@@ -118,12 +144,12 @@ const highestRankIndexOf = (state: AchievementsState): number =>
   Math.max(-1, ...RANK_MEDALS.map((medal) => currentRankIndex(state, medal.metric)));
 
 /** The highest rank held across all metrics, for the header line. */
-const highestCommission = (state: AchievementsState): string => {
+const highestCommission = (state: AchievementsState, locale: 'fr' | 'en'): string => {
   let best: { rankIndex: number; medalName: string } | null = null;
   for (const medal of RANK_MEDALS) {
     const rankIndex = currentRankIndex(state, medal.metric);
     if (rankIndex >= 0 && (!best || rankIndex > best.rankIndex)) {
-      best = { rankIndex, medalName: medal.medalName };
+      best = { rankIndex, medalName: medal.medalName[locale] };
     }
   }
   return best ? `${RANK_NAMES[best.rankIndex]}, ${best.medalName}` : STARTER_RANK_NAME;
@@ -131,6 +157,8 @@ const highestCommission = (state: AchievementsState): string => {
 
 export const AchievementsDialog = ({ onClose, open }: AchievementsDialogProps) => {
   const { notifyViaSnackbar } = useActions().ui;
+  const { i18n } = useTranslation();
+  const locale: 'fr' | 'en' = i18n.language.startsWith('fr') ? 'fr' : 'en';
   const [state, setState] = useState<AchievementsState | null>(null);
   const [encoderName, setEncoderName] = useState('');
   const [codeDraft, setCodeDraft] = useState('');
@@ -215,6 +243,10 @@ export const AchievementsDialog = ({ onClose, open }: AchievementsDialogProps) =
         return newPose;
       });
     });
+    // Best-effort, no-ops when the cached count isn't stale or there's no
+    // linked GitHub token yet - refreshes quietly in the background rather
+    // than blocking the rest of refreshPortrait's synchronous-feeling flow.
+    void refreshGithubContributions(() => {}).then(setState);
   };
 
   const didMountRef = useRef(false);
@@ -246,7 +278,7 @@ export const AchievementsDialog = ({ onClose, open }: AchievementsDialogProps) =
   const unlockedCount = countUnlocked(state);
   const percent = Math.round((unlockedCount / TOTAL_ACHIEVEMENTS) * 100);
   const decorations = collectDecorations(state);
-  const commission = highestCommission(state);
+  const commission = highestCommission(state, locale);
   const avatarOptions =
     state.avatar?.kind === 'dicebear'
       ? state.avatar.options
@@ -282,7 +314,7 @@ export const AchievementsDialog = ({ onClose, open }: AchievementsDialogProps) =
     ...RANK_MEDALS.flatMap((medal) => {
       const rankIndex = currentRankIndex(state, medal.metric);
       return Array.from({ length: rankIndex + 1 }, (_, earnedRankIndex) => ({
-        label: `${RANK_NAMES[earnedRankIndex]} — ${medal.medalName}`,
+        label: `${RANK_NAMES[earnedRankIndex]} — ${medal.medalName[locale]}`,
         metric: medal.metric as MedalMetric,
         tier: tierForRankIndex(earnedRankIndex),
       }));
@@ -809,7 +841,7 @@ export const AchievementsDialog = ({ onClose, open }: AchievementsDialogProps) =
           </Box>
 
           {/* Rank medals */}
-          <Stack spacing={1}>
+          <Box sx={{ display: 'grid', gap: 1, gridTemplateColumns: 'repeat(2, 1fr)' }}>
             {RANK_MEDALS.map((medal) => {
               const rankIndex = currentRankIndex(state, medal.metric);
               const value = metricValue(global, medal.metric);
@@ -821,29 +853,25 @@ export const AchievementsDialog = ({ onClose, open }: AchievementsDialogProps) =
                 : 100;
               return (
                 <Paper key={medal.metric} sx={{ p: 1.5 }} variant="outlined">
-                  <Stack alignItems="center" direction="row" spacing={2}>
-                    <MedalIcon
-                      dimmed={rankIndex < 0}
+                  <Stack direction="row" spacing={1.5}>
+                    <RibbonStack
+                      count={Math.max(0, rankIndex + 1)}
                       metric={medal.metric as MedalMetric}
-                      size={44}
-                      tier={tierForRankIndex(Math.max(0, rankIndex))}
                     />
                     <Box sx={{ flex: 1, minWidth: 0 }}>
-                      <Stack direction="row" justifyContent="space-between">
-                        <Typography variant="subtitle2">{medal.medalName}</Typography>
-                        <Typography color="text.secondary" variant="caption">
-                          {METRIC_LABELS[medal.metric]}: {value.toLocaleString()}
-                        </Typography>
-                      </Stack>
-                      <Typography color="text.secondary" variant="caption">
+                      <Typography variant="subtitle2">{medal.medalName[locale]}</Typography>
+                      <Typography color="text.secondary" component="div" variant="caption">
+                        {METRIC_LABELS[medal.metric]}: {value.toLocaleString()}
+                      </Typography>
+                      <Typography color="text.secondary" component="div" variant="caption">
                         {rankIndex >= 0
                           ? RANK_NAMES[rankIndex]
                           : `${STARTER_RANK_NAME} — not yet decorated`}
                         {nextThreshold
-                          ? ` — ${value.toLocaleString()} / ${nextThreshold.toLocaleString()} to ${RANK_NAMES[rankIndex + 1]}`
+                          ? ` — ${value.toLocaleString()} / ${nextThreshold.toLocaleString()} to next ribbon`
                           : rankIndex >= 0
-                            ? ' — highest rank attained'
-                            : ` — ${medal.thresholds[0]!.toLocaleString()} to ${RANK_NAMES[0]}`}
+                            ? ' — highest class attained'
+                            : ` — ${medal.thresholds[0]!.toLocaleString()} to next ribbon`}
                       </Typography>
                       <LinearProgress
                         sx={{ height: 4, borderRadius: 1, mt: 0.5 }}
@@ -855,7 +883,7 @@ export const AchievementsDialog = ({ onClose, open }: AchievementsDialogProps) =
                 </Paper>
               );
             })}
-          </Stack>
+          </Box>
 
           {/* Decorations carousel */}
           <Box>

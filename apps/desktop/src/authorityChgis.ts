@@ -6,6 +6,8 @@ import { execFile } from 'node:child_process';
 import fs from 'node:fs';
 import fsp from 'node:fs/promises';
 import path from 'node:path';
+import { Readable } from 'node:stream';
+import { pipeline } from 'node:stream/promises';
 import { promisify } from 'node:util';
 import JSZip from 'jszip';
 
@@ -22,11 +24,26 @@ import { resolveAuthorityExtractionRoot } from './authorityCompile';
 
 const execFileAsync = promisify(execFile);
 const COMPILE_TIMEOUT_MS = 30 * 60 * 1000;
+const DOWNLOAD_TIMEOUT_MS = 30 * 60 * 1000;
 const MAX_ARCHIVE_BYTES = 2 * 1024 * 1024 * 1024;
 const MAX_ENTRY_BYTES = 4 * 1024 * 1024 * 1024;
 const MAX_ARCHIVE_ENTRIES = 20_000;
 
 let chgisBusy = false;
+
+const DATAVERSE_API = 'https://dataverse.harvard.edu/api';
+export const CHGIS_DATASETS = [
+  {
+    persistentId: 'doi:10.7910/DVN/Q9VOF5',
+    fileName: 'v6_time_cnty_pts_utf_wgs84.zip',
+    folder: 'county',
+  },
+  {
+    persistentId: 'doi:10.7910/DVN/WW1PD6',
+    fileName: 'v6_time_pref_pts_utf_wgs84.zip',
+    folder: 'prefecture',
+  },
+] as const;
 
 const chgisRawRoot = (entityDbFolder: string): string =>
   path.join(entityDbFolder, AUTHORITY_DB_DIRNAME, CHGIS_RAW_SUBDIR);
@@ -156,6 +173,93 @@ const extractZipTo = async (zipPath: string, destDir: string): Promise<void> => 
   }
 };
 
+type DataverseFile = {
+  dataFile?: { id?: number; filename?: string; filesize?: number };
+};
+
+export const findDataverseFile = (
+  files: DataverseFile[],
+  fileName: string,
+): { id: number; size?: number } | null => {
+  const file = files.find((entry) => entry.dataFile?.filename === fileName);
+  const id = file?.dataFile?.id;
+  return id ? { id, size: file?.dataFile?.filesize } : null;
+};
+
+const downloadFile = async (
+  url: string,
+  destPath: string,
+  onProgress?: (receivedBytes: number, totalBytes: number | null) => void,
+): Promise<void> => {
+  const response = await fetch(url, { signal: AbortSignal.timeout(DOWNLOAD_TIMEOUT_MS) });
+  if (!response.ok || !response.body)
+    throw new Error(`HTTP ${response.status} downloading CHGIS asset.`);
+  const contentLength = Number(response.headers.get('content-length'));
+  const totalBytes = Number.isFinite(contentLength) && contentLength > 0 ? contentLength : null;
+  let receivedBytes = 0;
+  const body = Readable.fromWeb(response.body as import('node:stream/web').ReadableStream);
+  await pipeline(
+    body,
+    async function* (chunks) {
+      for await (const chunk of chunks) {
+        receivedBytes += (chunk as Buffer).length;
+        if (receivedBytes > MAX_ARCHIVE_BYTES) throw new Error('CHGIS asset is too large.');
+        onProgress?.(receivedBytes, totalBytes);
+        yield chunk;
+      }
+    },
+    fs.createWriteStream(destPath),
+  );
+};
+
+const dataverseFileId = async (
+  persistentId: string,
+  fileName: string,
+): Promise<{ id: number; size?: number }> => {
+  const url = `${DATAVERSE_API}/datasets/:persistentId?persistentId=${encodeURIComponent(persistentId)}`;
+  const response = await fetch(url, { signal: AbortSignal.timeout(DOWNLOAD_TIMEOUT_MS) });
+  if (!response.ok)
+    throw new Error(`Could not read CHGIS Dataverse metadata (HTTP ${response.status}).`);
+  const payload = (await response.json()) as {
+    data?: { latestVersion?: { files?: DataverseFile[] } };
+  };
+  const file = findDataverseFile(payload.data?.latestVersion?.files ?? [], fileName);
+  if (!file) throw new Error(`CHGIS Dataverse asset not found: ${fileName}`);
+  return file;
+};
+
+const stageDataverseInput = async (
+  entityDbFolder: string,
+  onProgress?: (progress: ChgisInstallProgress) => void,
+): Promise<string> => {
+  const rawRoot = `${chgisRawRoot(entityDbFolder)}.new`;
+  await fsp.rm(rawRoot, { recursive: true, force: true });
+  const downloadRoot = path.join(rawRoot, 'dataverse');
+  const layerRoot = path.join(downloadRoot, 'layers');
+  await fsp.mkdir(layerRoot, { recursive: true });
+
+  for (const [index, asset] of CHGIS_DATASETS.entries()) {
+    onProgress?.({
+      phase: 'downloading',
+      message: `Finding CHGIS asset ${index + 1} of ${CHGIS_DATASETS.length}…`,
+    });
+    const file = await dataverseFileId(asset.persistentId, asset.fileName);
+    const archivePath = path.join(downloadRoot, asset.fileName);
+    onProgress?.({ phase: 'downloading', message: `Downloading ${asset.fileName}…` });
+    await downloadFile(
+      `${DATAVERSE_API}/access/datafile/${file.id}`,
+      archivePath,
+      (received, total) => {
+        const suffix = total ? ` (${Math.round((received / total) * 100)}%)` : '';
+        onProgress?.({ phase: 'downloading', message: `Downloading ${asset.fileName}${suffix}` });
+      },
+    );
+    onProgress?.({ phase: 'extracting', message: `Extracting ${asset.fileName}…` });
+    await extractZipTo(archivePath, path.join(layerRoot, asset.folder));
+  }
+  return layerRoot;
+};
+
 const stageInput = async (
   archivePath: string,
   entityDbFolder: string,
@@ -202,23 +306,30 @@ export interface InstallChgisOptions {
   onProgress?: (progress: ChgisInstallProgress) => void;
 }
 
-export const installChgisFromArchive = async ({
+const installChgis = async ({
   entityDbFolder,
-  archivePath,
+  sourceArchive,
+  stage,
   onProgress,
-}: InstallChgisOptions): Promise<ChgisInstallResult> => {
+}: {
+  entityDbFolder: string;
+  sourceArchive: string;
+  stage: () => Promise<string>;
+  onProgress?: (progress: ChgisInstallProgress) => void;
+}): Promise<ChgisInstallResult> => {
   if (chgisBusy) return { ok: false, error: 'CHGIS install already in progress.' };
   if (!entityDbFolderReady(entityDbFolder)) {
     return {
       ok: false,
-      error: 'No authority-assets folder could be resolved; restart the app before installing CHGIS.',
+      error:
+        'No authority-assets folder could be resolved; restart the app before installing CHGIS.',
     };
   }
 
   chgisBusy = true;
   const stagedRawRoot = `${chgisRawRoot(entityDbFolder)}.new`;
   try {
-    const inputDir = await stageInput(archivePath, entityDbFolder, onProgress);
+    const inputDir = await stage();
     const packOut = path.join(entityDbFolder, `${AUTHORITY_PACKS_DIRNAME}.chgis-new`);
     await fsp.rm(packOut, { recursive: true, force: true });
 
@@ -265,7 +376,7 @@ export const installChgisFromArchive = async ({
     const lifecycle = {
       version: 1,
       installedAt: new Date().toISOString(),
-      sourceArchive: archivePath,
+      sourceArchive,
       lastError: undefined,
     };
     await fsp.mkdir(path.dirname(chgisManifestPath(entityDbFolder)), { recursive: true });
@@ -299,6 +410,32 @@ export const installChgisFromArchive = async ({
     chgisBusy = false;
   }
 };
+
+export const installChgisFromArchive = async ({
+  entityDbFolder,
+  archivePath,
+  onProgress,
+}: InstallChgisOptions): Promise<ChgisInstallResult> =>
+  installChgis({
+    entityDbFolder,
+    sourceArchive: archivePath,
+    stage: () => stageInput(archivePath, entityDbFolder, onProgress),
+    onProgress,
+  });
+
+export const installChgisFromDataverse = async ({
+  entityDbFolder,
+  onProgress,
+}: {
+  entityDbFolder: string;
+  onProgress?: (progress: ChgisInstallProgress) => void;
+}): Promise<ChgisInstallResult> =>
+  installChgis({
+    entityDbFolder,
+    sourceArchive: CHGIS_DATASETS.map((asset) => asset.persistentId).join(', '),
+    stage: () => stageDataverseInput(entityDbFolder, onProgress),
+    onProgress,
+  });
 
 export const removeChgisData = async (entityDbFolder: string): Promise<void> => {
   await fsp.rm(chgisRawRoot(entityDbFolder), { recursive: true, force: true });

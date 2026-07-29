@@ -346,6 +346,9 @@ export interface ElectronAPI {
   authorityChgisInstallFromArchive?: (
     archivePath: string,
   ) => Promise<import('@src/desktop/authorityChgisTypes').ChgisInstallResult>;
+  authorityChgisInstallFromDataverse?: () => Promise<
+    import('@src/desktop/authorityChgisTypes').ChgisInstallResult
+  >;
   authorityChgisRemove?: () => Promise<{ ok: boolean; error?: string }>;
   onAuthorityChgisProgress?: (
     callback: (progress: import('@src/desktop/authorityChgisTypes').ChgisInstallProgress) => void,

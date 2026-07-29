@@ -33,7 +33,7 @@ export interface WeaponRankPool {
   readonly m?: Readonly<Record<string, readonly string[]>>;
 }
 
-export const POSE_INDICES: readonly number[] = [1,2,3,4,5,6,7,8];
+export const POSE_INDICES: readonly number[] = [1,2,3,4,5,6,7];
 
 export const WEAPON_POOLS: Readonly<Record<number, ReadonlyArray<Record<number, WeaponRankPool>>>> =
   {
@@ -50,18 +50,17 @@ export const WEAPON_POOLS: Readonly<Record<number, ReadonlyArray<Record<number, 
       },
       "2": {
         "universal": [
-          "image1-83",
           "image1-9"
+        ]
+      },
+      "3": {
+        "universal": [
+          "image1-854"
         ]
       },
       "4": {
         "universal": [
           "image1-6"
-        ]
-      },
-      "5": {
-        "universal": [
-          "image1-46"
         ]
       }
     }
@@ -86,17 +85,11 @@ export const WEAPON_POOLS: Readonly<Record<number, ReadonlyArray<Record<number, 
         "f": {
           "a": [
             "image400"
-          ],
-          "b": [
-            "image14"
           ]
         },
         "m": {
           "a": [
             "image397"
-          ],
-          "b": [
-            "image15"
           ]
         }
       },
@@ -110,9 +103,6 @@ export const WEAPON_POOLS: Readonly<Record<number, ReadonlyArray<Record<number, 
         "m": {
           "a": [
             "image7"
-          ],
-          "b": [
-            "image9"
           ]
         }
       },
@@ -171,17 +161,11 @@ export const WEAPON_POOLS: Readonly<Record<number, ReadonlyArray<Record<number, 
           "a": [
             "image1-97",
             "image399"
-          ],
-          "b": [
-            "image1-02"
           ]
         },
         "m": {
           "a": [
             "image1-9"
-          ],
-          "b": [
-            "image10"
           ]
         }
       },
@@ -195,10 +179,6 @@ export const WEAPON_POOLS: Readonly<Record<number, ReadonlyArray<Record<number, 
         "m": {
           "a": [
             "image8"
-          ],
-          "b": [
-            "image4",
-            "image3"
           ]
         }
       },
@@ -245,128 +225,29 @@ export const WEAPON_POOLS: Readonly<Record<number, ReadonlyArray<Record<number, 
   "7": [
     {
       "2": {
-        "universal": [],
-        "f": {
-          "b": [
-            "image1-02",
-            "image49"
-          ],
-          "a": [
-            "image1-52",
-            "image1-97"
-          ]
-        },
-        "m": {
-          "b": [
-            "image3",
-            "image1"
-          ],
-          "a": [
-            "image4",
-            "image5"
-          ]
-        }
+        "universal": [
+          "image1-52",
+          "image1-97"
+        ]
       },
       "3": {
-        "universal": [],
-        "f": {
-          "": [
-            "image1-1",
-            "image1-22"
-          ]
-        },
-        "m": {
-          "": [
-            "image6",
-            "image7"
-          ]
-        }
-      },
-      "5": {
-        "universal": [],
-        "f": {
-          "": [
-            "image1-79",
-            "image1-70",
-            "image1-75"
-          ]
-        },
-        "m": {
-          "": [
-            "image10",
-            "image11",
-            "image12"
-          ]
-        }
-      }
-    }
-  ],
-  "8": [
-    {
-      "1": {
-        "universal": [],
-        "f": {
-          "": [
-            "image1"
-          ]
-        },
-        "m": {
-          "": [
-            "image89"
-          ]
-        }
-      },
-      "2": {
-        "universal": [],
-        "f": {
-          "a": [
-            "image1-85"
-          ],
-          "b": [
-            "image1-9"
-          ]
-        },
-        "m": {
-          "a": [
-            "image88"
-          ],
-          "b": [
-            "image90"
-          ]
-        }
-      },
-      "3": {
-        "universal": [],
-        "f": {
-          "b": [
-            "image1-00"
-          ],
-          "a": [
-            "image1-7"
-          ]
-        },
-        "m": {
-          "b": [
-            "image86"
-          ],
-          "a": [
-            "image87"
-          ]
-        }
+        "universal": [
+          "image1-1",
+          "image1-22"
+        ]
       },
       "4": {
-        "universal": [],
-        "f": {
-          "": [
-            "image1-5",
-            "image2"
-          ]
-        },
-        "m": {
-          "": [
-            "image1-02"
-          ]
-        }
+        "universal": [
+          "image1-760",
+          "image9"
+        ]
+      },
+      "5": {
+        "universal": [
+          "image1-79",
+          "image1-70",
+          "image1-75"
+        ]
       }
     }
   ]
@@ -430,19 +311,11 @@ export const BODY_COLOR_STATS: Readonly<Record<string, ColorStats>> = {
     "saturation": 0.7544283438371846
   },
   "7:m": {
-    "lightness": 0.3884940573798712,
-    "saturation": 0.6195266066501942
+    "lightness": 0.38290093700004146,
+    "saturation": 0.5517742555238363
   },
   "7:f": {
-    "lightness": 0.4163100122345364,
-    "saturation": 0.6677806421666411
-  },
-  "8:m": {
-    "lightness": 0.359233851419618,
-    "saturation": 0.6787375165328785
-  },
-  "8:f": {
-    "lightness": 0.35825902315464897,
-    "saturation": 0.6253237858265549
+    "lightness": 0.39870205560965766,
+    "saturation": 0.5794844005979924
   }
 };

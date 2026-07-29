@@ -9,6 +9,7 @@ import {
   metricsFromTagStats,
   PRECAUTIONARY_MEASURES_THRESHOLD,
 } from './evaluate';
+import { fetchFlagOfCommitmentCount } from './githubContributions';
 import { getProjectMetrics, loadAchievementsState, saveAchievementsState } from './store';
 import type { AchievementsState } from './types';
 
@@ -69,6 +70,41 @@ export const localCalendarDay = (date: Date): string => {
   const month = String(date.getMonth() + 1).padStart(2, '0');
   const day = String(date.getDate()).padStart(2, '0');
   return `${year}-${month}-${day}`;
+};
+
+const GITHUB_CONTRIBUTIONS_REFRESH_MS = 60 * 60 * 1000;
+
+/**
+ * Refreshes the Flag of Commitment count if it's missing or stale (opens of
+ * the Service Record dialog call this, not the save path - it's a network
+ * call and has no business slowing down every document save). No-ops
+ * silently when there's no cached GitHub token (leaderboard not linked yet).
+ */
+export const refreshGithubContributions = async (
+  notify: AchievementUnlockNotifier,
+): Promise<AchievementsState> => {
+  const state = await loadAchievementsState();
+  const isStale =
+    !state.githubContributions ||
+    Date.now() - new Date(state.githubContributions.fetchedAt).getTime() >
+      GITHUB_CONTRIBUTIONS_REFRESH_MS;
+  if (!isStale) return state;
+
+  const token = await window.electronAPI?.getCachedLeaderboardToken?.();
+  if (!token) return state;
+
+  const count = await fetchFlagOfCommitmentCount(token);
+  if (count === null) return state;
+
+  state.githubContributions = { count, fetchedAt: new Date().toISOString() };
+  const applied = applyUnlocks(
+    state,
+    determineNewRankUnlocks(state, aggregateGlobalMetrics(state)),
+    new Date().toISOString(),
+  );
+  await saveAchievementsState(state);
+  notifyUnlocks(applied, notify);
+  return state;
 };
 
 /** Record one successful leaderboard publication per local calendar day. */
@@ -154,6 +190,7 @@ export const processSaveForAchievements = async (options: {
     const savedAt = new Date();
 
     state.saveCount += 1;
+    if (sourceMode) state.sourceModeSaveCount = (state.sourceModeSaveCount ?? 0) + 1;
 
     const projectKey = projectId ?? normalizePathKey(rootPath);
     const project = getProjectMetrics(state, projectKey);

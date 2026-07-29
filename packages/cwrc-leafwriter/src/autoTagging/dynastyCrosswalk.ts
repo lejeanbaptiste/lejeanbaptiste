@@ -1,60 +1,82 @@
 /**
- * Manual crosswalk for dynasty/state labels used as person nationalities.
+ * ID-based crosswalk for dynasty/state nationalities, backed by the curated
+ * table in `dynastyCrosswalkData.ts`. CBDB, DILA, and Wikidata each assert a
+ * person's nationality with their own dynasty id and their own label text —
+ * unlike persons, there was previously no shared id tying "CBDB dynasty 26"
+ * to "Wikidata Q320930" to "DILA dynasty 35", so the same real-world dynasty
+ * could show up as several unmerged rows under different label spellings
+ * (e.g. CBDB's "三國魏" next to a Wikidata label for the same state).
  *
- * CBDB, DILA, and Wikidata each supply their own free-text dynasty label with
- * no shared id (unlike persons, which do have a cross-authority crosswalk —
- * see `AuthorityCandidate.metadata.crosswalk` in `authority.ts`). Two sources
- * asserting the same real-world dynasty under different names — e.g. CBDB's
- * "三國魏" vs Wikidata's "曹魏" — would otherwise show as two separate,
- * unmerged nationality rows. This table lets the UI recognize known aliases
- * as the same dynasty; anything not listed here simply falls back to exact
- * text matching (unchanged behavior).
- *
- * Seeded with the dynasties most likely to appear from CBDB/DILA/Wikidata for
- * early medieval Chinese biographical data; extend as new mismatches turn up.
+ * This module resolves an assertion's (source, ref) — or, failing that, its
+ * raw label — to the curated table's preferred label, which doubles as the
+ * canonical grouping key: two assertions that resolve to the same preferred
+ * label are the same dynasty, however differently each source spelled it.
  */
 
-export interface DynastyCrosswalkEntry {
-  /** Stable id for the canonical dynasty, unrelated to any single authority's own id. */
-  id: string;
-  /** Preferred display label shown once sources are merged. */
-  label: string;
-  /** Every known label variant across CBDB/DILA/Wikidata for this dynasty, including `label`. */
-  aliases: string[];
+import { DYNASTY_CROSSWALK, type DynastyCrosswalkEntry } from './dynastyCrosswalkData';
+
+const byCbdbId = new Map<string, DynastyCrosswalkEntry>();
+const byDilaId = new Map<string, DynastyCrosswalkEntry>();
+const byWikidataQid = new Map<string, DynastyCrosswalkEntry>();
+const byLabel = new Map<string, DynastyCrosswalkEntry>();
+
+// The curated CSV has a handful of ids (cbdb/dila/wikidata) reused across more
+// than one row — e.g. Wikidata Q320930 is listed for both 三國魏 and 北魏. Keep
+// only the first row's mapping for a given id so lookups are at least stable,
+// rather than silently depending on array order.
+function setIfAbsent<K>(map: Map<K, DynastyCrosswalkEntry>, key: K, entry: DynastyCrosswalkEntry): void {
+  if (!map.has(key)) map.set(key, entry);
 }
 
-export const DYNASTY_CROSSWALK: DynastyCrosswalkEntry[] = [
-  { id: 'cao-wei', label: '曹魏', aliases: ['曹魏', '三國魏', '魏(曹)', '魏'] },
-  { id: 'shu-han', label: '蜀漢', aliases: ['蜀漢', '三國蜀', '蜀(劉)', '蜀'] },
-  { id: 'eastern-wu', label: '東吳', aliases: ['東吳', '三國吳', '吳(孫)', '孫吳'] },
-  { id: 'western-jin', label: '西晉', aliases: ['西晉', '晉(司馬)'] },
-  { id: 'eastern-jin', label: '東晉', aliases: ['東晉'] },
-  { id: 'liu-song', label: '劉宋', aliases: ['劉宋', '宋(劉)', '南朝宋'] },
-  { id: 'southern-qi', label: '南齊', aliases: ['南齊', '南朝齊', '齊(蕭)'] },
-  { id: 'liang', label: '梁', aliases: ['梁', '南朝梁', '梁(蕭)'] },
-  { id: 'chen', label: '陳', aliases: ['陳', '南朝陳', '陳(陳)'] },
-  { id: 'northern-wei', label: '北魏', aliases: ['北魏', '後魏', '元魏'] },
-  { id: 'eastern-wei', label: '東魏', aliases: ['東魏'] },
-  { id: 'western-wei', label: '西魏', aliases: ['西魏'] },
-  { id: 'northern-qi', label: '北齊', aliases: ['北齊', '北朝齊'] },
-  { id: 'northern-zhou', label: '北周', aliases: ['北周'] },
-  { id: 'sui', label: '隋', aliases: ['隋'] },
-  { id: 'tang', label: '唐', aliases: ['唐'] },
-];
-
-const aliasToEntry = new Map<string, DynastyCrosswalkEntry>();
 for (const entry of DYNASTY_CROSSWALK) {
-  for (const alias of entry.aliases) aliasToEntry.set(alias, entry);
+  for (const id of entry.cbdbIds) setIfAbsent(byCbdbId, id, entry);
+  for (const id of entry.dilaIds) setIfAbsent(byDilaId, id, entry);
+  for (const qid of entry.wikidataQids) setIfAbsent(byWikidataQid, qid.toUpperCase(), entry);
+  setIfAbsent(byLabel, entry.label, entry);
 }
 
-/** Canonical grouping key for a dynasty label; unrecognized labels key on themselves. */
-export function canonicalDynastyKey(label: string): string {
-  const trimmed = label.trim();
-  return aliasToEntry.get(trimmed)?.id ?? trimmed;
+/** Extracts a bare Wikidata QID from either a full entity URI or a bare "Q123" string. */
+function extractWikidataQid(ref: string): string | null {
+  const match = ref.match(/(Q\d+)\s*$/i);
+  return match ? match[1]!.toUpperCase() : null;
 }
 
-/** Preferred display label once merged; unrecognized labels pass through unchanged. */
-export function preferredDynastyLabel(label: string): string {
-  const trimmed = label.trim();
-  return aliasToEntry.get(trimmed)?.label ?? trimmed;
+/** Looks up the curated row for a nationality assertion by its source authority and ref (idno-style canonical id). */
+function lookupDynastyEntry(
+  source: string | null | undefined,
+  ref: string | null | undefined,
+): DynastyCrosswalkEntry | undefined {
+  const normalizedSource = source?.split(':')[0]?.trim().toUpperCase();
+  const trimmedRef = ref?.trim();
+  if (!normalizedSource || !trimmedRef) return undefined;
+  switch (normalizedSource) {
+    case 'CBDB':
+      return byCbdbId.get(trimmedRef);
+    case 'DILA':
+      return byDilaId.get(trimmedRef);
+    case 'WIKIDATA': {
+      const qid = extractWikidataQid(trimmedRef);
+      return qid ? byWikidataQid.get(qid) : undefined;
+    }
+    default:
+      return undefined;
+  }
+}
+
+/**
+ * Canonical label for a nationality assertion: the curated table's preferred
+ * label when the assertion's (source, ref) resolves to a known dynasty,
+ * else a same-text fallback lookup by label, else the raw label unchanged.
+ * This value doubles as the grouping key — two assertions resolving to the
+ * same string are the same dynasty.
+ */
+export function canonicalNationalityLabel(
+  source: string | null | undefined,
+  ref: string | null | undefined,
+  rawLabel: string,
+): string {
+  const trimmed = rawLabel.trim();
+  const byId = lookupDynastyEntry(source, ref);
+  if (byId) return byId.label;
+  return byLabel.get(trimmed)?.label ?? trimmed;
 }

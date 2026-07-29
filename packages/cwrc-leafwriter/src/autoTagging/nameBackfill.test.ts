@@ -286,7 +286,8 @@ describe('backfillEntityNames', () => {
       const entity = listEntities(doc).find((row) => row.id === id)!;
       expect(entity.startYear).toBe(420);
       expect(entity.endYear).toBe(479);
-      expect(entity.nationalities).toEqual(['China']);
+      // Q148 resolves via the curated dynasty crosswalk to its canonical label.
+      expect(entity.nationalities).toEqual(['中華人民共和國']);
       const birth = Array.from(findEntity(doc, id)!.children).find(
         (child) => child.localName === 'birth',
       )!;

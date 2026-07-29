@@ -216,10 +216,11 @@ describe('EntitySummary nationalities/placesOfOrigin', () => {
     const doc = makeDoc();
     const { id } = addEntity(doc, 'person', { name: '劉善明' });
     const el = findEntity(doc, id)!;
+    // CBDB and DILA dynasty ids for 劉宋 (Liu Song), per the curated crosswalk.
     appendAuthoritySourcedValues(doc, el, 'nationality', [
-      { text: '宋(劉)', ref: 'dynasty:song-liu', source: 'CBDB' },
-      { text: '宋(劉)', ref: 'dynasty:song-liu', source: 'DILA' },
-      { text: '南齊', ref: 'dynasty:qi', source: 'Wikidata' },
+      { text: '劉宋', ref: '28', source: 'CBDB' },
+      { text: '宋(劉)', ref: '57', source: 'DILA' },
+      { text: '南齊', ref: 'https://www.wikidata.org/entity/Q62456', source: 'Wikidata' },
     ]);
     const rejectedKey = listEntityAssertions(doc, id).find(
       (a) => a.element === 'nationality' && a.value === '南齊',
@@ -230,17 +231,18 @@ describe('EntitySummary nationalities/placesOfOrigin', () => {
     expect(summary.nationalities).toEqual(['劉宋']);
   });
 
-  it('merges known dynasty aliases from different authorities into one canonical label', () => {
+  it('merges dynasty aliases from different authorities via the curated id crosswalk', () => {
     const doc = makeDoc();
     const { id } = addEntity(doc, 'person', { name: '曹丕' });
     const el = findEntity(doc, id)!;
+    // CBDB dynasty id 26 and DILA dynasty id 35 both crosswalk to 三國魏 (Cao Wei).
     appendAuthoritySourcedValues(doc, el, 'nationality', [
-      { text: '三國魏', ref: 'dynasty:wei', source: 'CBDB' },
-      { text: '曹魏', ref: 'https://www.wikidata.org/entity/Q6', source: 'Wikidata' },
+      { text: '三國魏', ref: '26', source: 'CBDB' },
+      { text: '曹魏', ref: '35', source: 'DILA' },
     ]);
 
     const summary = listEntities(doc).find((entity) => entity.id === id)!;
-    expect(summary.nationalities).toEqual(['曹魏']);
+    expect(summary.nationalities).toEqual(['三國魏']);
   });
 });
 

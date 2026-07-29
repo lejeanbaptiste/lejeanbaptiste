@@ -11,7 +11,7 @@ export const CHGIS_ATTRIBUTION =
 export const CHGIS_LICENSE_NOTICE =
   'CHGIS data is free for academic research. Commercial use, resale, and redistribution are not permitted. You must download from Harvard Dataverse and compile locally.';
 
-export type ChgisInstallPhase = 'extracting' | 'compiling' | 'idle';
+export type ChgisInstallPhase = 'downloading' | 'extracting' | 'compiling' | 'idle';
 
 export interface ChgisInstallProgress {
   phase: ChgisInstallPhase;
