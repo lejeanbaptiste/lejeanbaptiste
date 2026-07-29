@@ -904,6 +904,35 @@ export function setUserWorkAuthors(
   touchEntity(item);
 }
 
+/** Add an authority-backed author to a work without replacing existing authors. */
+export function appendAuthorityWorkAuthor(
+  doc: Document,
+  workId: string,
+  author: { name: string; ref: string },
+  source = 'Wikidata',
+): boolean {
+  const item = requireEntity(doc, workId);
+  const ref = author.ref.replace(/^#/, '').trim();
+  const name = author.name.trim();
+  if (!ref || !name) return false;
+  const exists = Array.from(item.children)
+    .filter((child) => child.localName === 'author')
+    .some((child) => {
+      const person = Array.from(child.children).find((part) => part.localName === 'persName');
+      return person?.getAttribute('ref')?.replace(/^#/, '') === ref;
+    });
+  if (exists) return false;
+  const element = doc.createElementNS(TEI_NS, 'author');
+  const person = doc.createElementNS(TEI_NS, 'persName');
+  person.setAttribute('ref', `#${ref}`);
+  person.textContent = name;
+  element.appendChild(person);
+  writeEntityValueProvenance(element, { origin: 'authority', source });
+  item.appendChild(element);
+  touchEntity(item);
+  return true;
+}
+
 /** Promote an authority date assertion to the user's selected date. */
 export function acceptEntityDateAssertion(doc: Document, id: string, key: string): boolean {
   const item = requireEntity(doc, id);
@@ -1085,7 +1114,7 @@ export function setNameType(
   id: string,
   nameText: string,
   type: NameTypeId | null,
-  lang?: string,
+  lang?: string | null,
 ): void {
   const item = requireEntity(doc, id);
   const kind = kindOfElement(item);
@@ -1117,10 +1146,14 @@ export function setNameType(
   if (target) {
     if (type) target.setAttribute('type', type);
     else target.removeAttribute('type');
+    if (lang !== undefined) {
+      if (lang) target.setAttributeNS(XML_NS, 'xml:lang', lang);
+      else target.removeAttribute('xml:lang');
+    }
     touchEntity(item);
     return;
   }
-  if (type) addEntityName(doc, id, trimmed, { type, lang });
+  if (type) addEntityName(doc, id, trimmed, { type, lang: lang ?? undefined });
 }
 
 /**

@@ -319,14 +319,6 @@ export const EditorToolbar = () => {
     {
       group: 'ui',
       hide: isReadonly,
-      icon: 'toolTransform',
-      onClick: () => openDialog({ type: 'tagTransform', props: { id: 'tagTransform' } }),
-      title: 'Advanced tag transform',
-      type: 'iconButton',
-    },
-    {
-      group: 'ui',
-      hide: isReadonly,
       icon: 'disambiguate',
       onClick: () => openDialog({ type: 'disambiguation', props: { id: 'disambiguation' } }),
       title: 'Disambiguate',
@@ -360,6 +352,14 @@ export const EditorToolbar = () => {
         window.open('https://www.leaf-vre.org/docs/documentation/leaf-writer-documentation');
       },
       title: t('LW.editorToolbar.Documentation'),
+      type: 'iconButton',
+    },
+    {
+      group: 'ui',
+      hide: isReadonly,
+      icon: 'toolTransform',
+      onClick: () => openDialog({ type: 'tagTransform', props: { id: 'tagTransform' } }),
+      title: 'Advanced tag transform',
       type: 'iconButton',
     },
   ];

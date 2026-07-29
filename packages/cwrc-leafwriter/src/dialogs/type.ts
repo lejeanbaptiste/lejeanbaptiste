@@ -14,6 +14,7 @@ export interface DialogActionProps {
 export interface IDialog extends Partial<Omit<MuiDialogProps, 'onClose'>> {
   actions?: DialogActionProps[];
   id?: string;
+  query?: string;
   onBeforeClose?: (action?: string) => Promise<boolean>;
   onClose?: <T>(action?: string | undefined, data?: T) => Promise<void> | void;
   preventEscape?: boolean;

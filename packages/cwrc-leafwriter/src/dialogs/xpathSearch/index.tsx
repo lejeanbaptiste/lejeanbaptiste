@@ -11,10 +11,10 @@ import {
   TextField,
   Typography,
 } from '@mui/material';
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { isElement } from '../../utilities';
-import type { IDialog } from '../type';
+import { type IDialog } from '../type';
 
 interface XPathResultItem {
   id?: string;
@@ -22,11 +22,22 @@ interface XPathResultItem {
   xpath: string;
 }
 
-export const XPathSearchDialog = ({ id, onClose, open = false }: IDialog) => {
+interface XPathSearchDialogProps extends IDialog {
+  query?: string;
+}
+
+export const XPathSearchDialog = ({ id, onClose, open = false, query: initialQuery = '' }: XPathSearchDialogProps) => {
   const { t } = useTranslation();
-  const [query, setQuery] = useState('');
+  const [query, setQuery] = useState(initialQuery);
   const [results, setResults] = useState<XPathResultItem[]>([]);
   const [error, setError] = useState<string | null>(null);
+
+  useEffect(() => {
+    if (!open) return;
+    setQuery(initialQuery);
+    setResults([]);
+    setError(null);
+  }, [initialQuery, open]);
 
   const handleClose = () => onClose && onClose(id);
 

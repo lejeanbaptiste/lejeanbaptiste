@@ -38,6 +38,7 @@ import { fetchWikidataNationality } from './wikidataNationality';
 import { fetchWikidataPlaceOfBirth } from './wikidataPlaceOfBirth';
 import { enrichWikidataWorkEntity } from './wikidataWorkDetails';
 import { extractWikidataId } from './disambiguationCandidates';
+import { enrichWikidataPersonWorks } from './wikidataPersonWorks';
 
 export interface NameBackfillProgress {
   done: number;
@@ -566,6 +567,15 @@ export async function backfillEntityNames(
         );
         if (changed) entityChanged = true;
       }
+      const personWorks = await enrichWikidataPersonWorks(
+        doc,
+        entity.id,
+        extractWikidataId(wikidataIdno.value) ?? wikidataIdno.value,
+        projectLang,
+        desktopLanguage,
+        fetchImpl,
+      ).catch(() => null);
+      if (personWorks?.authorsAdded) entityChanged = true;
     }
 
     if (entityChanged) entitiesUpdated++;

@@ -667,6 +667,7 @@
           },
           "add_name_placeholder": "Nom alternatif",
           "add_title_placeholder": "Titre alternatif",
+          "translation_language": "Langue de traduction",
           "add_name": "Ajouter",
           "delete_name": "Supprimer ce nom",
           "rename_name": "Renommer le nom canonique",

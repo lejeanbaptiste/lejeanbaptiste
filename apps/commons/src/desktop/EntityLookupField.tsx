@@ -50,6 +50,7 @@ import {
 } from '../../../../packages/cwrc-leafwriter/src/autoTagging/entityStore';
 import { readOrMintUserStableId } from '../../../../packages/cwrc-leafwriter/src/autoTagging/userStableId';
 import { enrichWikidataWorkEntity } from '../../../../packages/cwrc-leafwriter/src/autoTagging/wikidataWorkDetails';
+import { enrichWikidataPersonWorks } from '../../../../packages/cwrc-leafwriter/src/autoTagging/wikidataPersonWorks';
 import {
   autoRomanize,
   canAutoRomanize,
@@ -353,6 +354,26 @@ export const EntityLookupField = ({
             }
           } catch {
             // Best-effort enrichment; the work link itself already succeeded.
+          }
+        }
+      } else if (kind === 'person') {
+        const qid = extractWikidataId(merged.uri ?? '');
+        if (qid) {
+          try {
+            const personWorks = await enrichWikidataPersonWorks(
+              session.entitiesDoc,
+              resolvedId,
+              qid,
+              session.projectLang,
+              i18n.language,
+            );
+            await Promise.all(
+              (personWorks?.works ?? []).map((work) =>
+                autoSyncEntityToCentral(session.entitiesDoc, work.entityId),
+              ),
+            );
+          } catch {
+            // Best-effort enrichment; the person link itself already succeeded.
           }
         }
       }

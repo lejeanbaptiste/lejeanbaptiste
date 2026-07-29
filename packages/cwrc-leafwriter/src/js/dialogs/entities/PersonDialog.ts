@@ -10,7 +10,7 @@ import { namedEntityTypesSchema } from '../../../types/authority';
 import DialogForm from '../dialogForm/dialogForm';
 import type { LWDialogConfigProps } from '../types';
 import type { SchemaDialog } from './types';
-import { certaintyOptions, getSourceNameFromUrl } from './util';
+import { certaintyOptions } from './util';
 import i18next from 'i18next';
 
 const defaultJotaiStore = getDefaultStore();
@@ -20,12 +20,14 @@ const personTypeOptions = ['real', 'fictional', 'identifiable'];
 class PersonDialog implements SchemaDialog {
   readonly writer: Writer;
   readonly dialog: DialogForm;
+  readonly parentEl: JQuery<HTMLElement>;
 
   readonly id: string;
   readonly mappingID: SchemaMappingType;
 
   entry?: Entity;
   selectedText?: string;
+  currentKey?: string;
   type: EntityType = 'person';
 
   constructor({ writer, parentEl }: LWDialogConfigProps) {
@@ -33,6 +35,7 @@ class PersonDialog implements SchemaDialog {
     if (!mappingID) throw Error('Schema Mappings not found');
 
     this.writer = writer;
+    this.parentEl = parentEl;
     this.mappingID = mappingID;
 
     const idPrefix =
@@ -79,30 +82,8 @@ class PersonDialog implements SchemaDialog {
 
     // eslint-disable-next-line @typescript-eslint/ban-ts-comment
     //@ts-ignore
-    const $relinkButton = $(`#${this.id}_tagAs .relink-bt`, $el).button();
-    $relinkButton.on('click', () => {
-      parentEl.css('display', 'none');
-
-      const isNamedEntityType = namedEntityTypesSchema.safeParse(this.type);
-      if (isNamedEntityType.success) {
-        const namedEntityType = isNamedEntityType.data;
-
-        defaultJotaiStore.set(entityLookupDialogAtom, {
-          isUserAuthenticated: this.writer.overmindState.user?.uri !== '#anonymous',
-          onClose: (response) => {
-            defaultJotaiStore.set(entityLookupDialogAtom, RESET);
-            parentEl.css('display', 'block');
-            if (!response) {
-              this.updateTagAs();
-              return;
-            }
-            this.updateLink(response.name, response.uri, response.key);
-            this.updateTagAs(response.name, response.uri);
-          },
-          query: this.entry?.getContent()?.trim() ?? '',
-          type: namedEntityType,
-        });
-      }
+    $(`#${this.id}_keyPill`, $el).button().on('click', () => {
+      this.openEntityLookup();
     });
 
     this.dialog = new DialogForm({
@@ -125,6 +106,28 @@ class PersonDialog implements SchemaDialog {
     // this.dialog.$el.on('beforeSave', (_event: JQuery.Event, dialog: DialogForm) => {});
   }
 
+  private openEntityLookup() {
+    if (!this.currentKey) return;
+
+    this.parentEl.css('display', 'none');
+
+    const isNamedEntityType = namedEntityTypesSchema.safeParse(this.type);
+    if (!isNamedEntityType.success) {
+      this.parentEl.css('display', 'block');
+      return;
+    }
+
+    defaultJotaiStore.set(entityLookupDialogAtom, {
+      isUserAuthenticated: this.writer.overmindState.user?.uri !== '#anonymous',
+      onClose: () => {
+        defaultJotaiStore.set(entityLookupDialogAtom, RESET);
+        this.parentEl.css('display', 'block');
+      },
+      query: this.currentKey,
+      type: isNamedEntityType.data,
+    });
+  }
+
   private updateLink(lemma: string, uri: string, key?: string) {
     if (this.entry) {
       this.writer.entitiesManager.setURIForEntity(this.entry.getId(), uri);
@@ -132,28 +135,23 @@ class PersonDialog implements SchemaDialog {
       this.entry = this.writer.entitiesManager.getEntity(this.entry.getId());
     }
 
-    this.updateTagAs(lemma, uri);
+    this.updateTagAs(key);
 
     this.dialog.attributesWidget?.setAttribute('key', key ?? lemma);
     // Internal-only links (ljb-entity:) are keyed via @key, not @ref.
     if (/^https?:/i.test(uri)) this.dialog.attributesWidget?.setAttribute('ref', uri);
   }
 
-  private updateTagAs(lemma?: string, uri?: string) {
-    if (!lemma || !uri) {
-      $('.tagAsSource').hide();
-      $('.tagAsSourceLink').text('');
-      $('.tagAsSourceLink').attr('href', '');
+  private updateTagAs(key?: string) {
+    this.currentKey = key;
+
+    const $keyPill = $(`#${this.id}_keyPill`);
+    if (!key) {
+      $keyPill.hide().text('');
       return;
     }
 
-    $('.tagAs').text(lemma);
-
-    const source = getSourceNameFromUrl(uri);
-
-    $('.tagAsSource').show();
-    $('.tagAsSourceLink').text(source);
-    $('.tagAsSourceLink').attr('href', uri);
+    $keyPill.text(key).show();
   }
 
   private selectedTextField(id: string) {
@@ -174,29 +172,14 @@ class PersonDialog implements SchemaDialog {
   }
 
   private tagAsField(id: string) {
-    const fieldTitle = i18next.t('LW.Tag as');
-
-    const dataMapping =
-      this.mappingID === 'orlando' || this.mappingID == 'cwrcEntry'
-        ? 'STANDARD' //orlando and cwrcEntry
-        : 'prop.lemma'; //tei & teiLite
-
     return `
       <div id="${id}_tagAs" class="attribute">
-        <div style="display: flex; align-items: center; gap: 8px;">
-          <p class="fieldLabel">${fieldTitle}</p>
-          
-          <div class="relink-bt" style="cursor: pointer; padding: 4px;">
-            <i class="fas fa-edit" />
-          </div>
-        </div>
-
-        <div style="display: flex; flex-direction: column;" >
-          <span class="tagAs" data-type="label" data-mapping="${dataMapping}"></span>
-          <span class="tagAsSource" style="color: #999; display: none;">source: 
-            <a class="tagAsSourceLink" href="" target="_blank" rel="noopener noreferrer nofollow"></a>
-          </span>
-        </div>
+        <button
+          id="${id}_keyPill"
+          type="button"
+          class="entityKeyPill"
+          style="display: none;"
+        ></button>
       </div>
     `;
   }
@@ -277,9 +260,7 @@ class PersonDialog implements SchemaDialog {
     this.selectedText = config.entry ? config.entry.content : config.query;
 
     this.updateTextField(this.selectedText ?? '');
-
-    if (config.name && config.uri) this.updateTagAs(config.name, config.uri);
-    if (!config.uri) this.updateTagAs();
+    this.updateTagAs(config.entry?.getAttribute('key') ?? config.key);
 
     this.dialog.show(config);
   }

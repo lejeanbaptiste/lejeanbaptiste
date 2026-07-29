@@ -1,3 +1,4 @@
+import SearchIcon from '@mui/icons-material/Search';
 import OpenInNewIcon from '@mui/icons-material/OpenInNew';
 import {
   Checkbox,
@@ -11,7 +12,7 @@ import {
 } from '@mui/material';
 import { useAtom, useAtomValue } from 'jotai';
 import { useState } from 'react';
-import type { Authority, AuthorityLookupResult } from '../../../../types/authority';
+import { type Authority, type AuthorityLookupResult } from '../../../../types/authority';
 import { checkedEntriesAtom, lookupTypeAtom, selectedAtom } from '../../store';
 import { useEntityLookup } from '../../useEntityLookup';
 
@@ -22,6 +23,14 @@ interface Props extends AuthorityLookupResult {
 }
 
 const stopRowClick = (event: { stopPropagation: () => void }) => event.stopPropagation();
+
+const LOOKUP_TYPE_TO_XPATH_TAG: Record<string, string> = {
+  person: 'persName',
+  place: 'placeName',
+  organization: 'orgName',
+  work: 'title',
+  citation: 'title',
+};
 
 export const Item = ({ authority, description, internal, isOwnDatabase, label, uri }: Props) => {
   const lookupType = useAtomValue(lookupTypeAtom);
@@ -48,6 +57,23 @@ export const Item = ({ authority, description, internal, isOwnDatabase, label, u
     void confirmSelected();
   };
 
+  const openXPathSearch = () => {
+    if (!internal) return;
+
+    const tagType = LOOKUP_TYPE_TO_XPATH_TAG[lookupType] ?? lookupType;
+    const xpath = `TEI//${tagType}[@key="${internal.id}"]`;
+
+    window.writer?.overmindActions?.ui?.closeForegroundPopup?.();
+    window.writer?.overmindActions?.ui?.closeDialog?.('xpathSearch');
+    window.writer?.overmindActions?.ui?.openDialog?.({
+      type: 'xpathSearch',
+      props: {
+        id: 'xpathSearch',
+        query: xpath,
+      },
+    });
+  };
+
   return (
     <ListItem
       dense
@@ -57,10 +83,48 @@ export const Item = ({ authority, description, internal, isOwnDatabase, label, u
       onMouseEnter={() => setHover(true)}
       onMouseLeave={() => setHover(false)}
       secondaryAction={
-        !internal && (
-          <IconButton aria-label="open-uri" edge="end" href={uri} size="small" target="_blank">
-            {hover && <OpenInNewIcon fontSize="inherit" />}
-          </IconButton>
+        hover && (
+          <Stack direction="row" spacing={0.25}>
+            {internal && (
+              <IconButton
+                aria-label="open-xpath"
+                edge="end"
+                onClick={(event) => {
+                  stopRowClick(event);
+                  openXPathSearch();
+                }}
+                size="small"
+              >
+                <SearchIcon fontSize="inherit" />
+              </IconButton>
+            )}
+            {!internal && (
+              <IconButton
+                aria-label="open-uri"
+                edge="end"
+                href={uri}
+                onClick={stopRowClick}
+                size="small"
+                target="_blank"
+                rel="noopener noreferrer"
+              >
+                <OpenInNewIcon fontSize="inherit" />
+              </IconButton>
+            )}
+            {internal && (
+              <IconButton
+                aria-label="open-uri"
+                edge="end"
+                href={uri}
+                onClick={stopRowClick}
+                size="small"
+                target="_blank"
+                rel="noopener noreferrer"
+              >
+                <OpenInNewIcon fontSize="inherit" />
+              </IconButton>
+            )}
+          </Stack>
         )
       }
       sx={{ my: 0.5 }}

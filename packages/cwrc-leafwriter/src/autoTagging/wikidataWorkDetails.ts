@@ -1,4 +1,4 @@
-/** Fetch publication date (P577) and author(s) (P50) from Wikidata for a work Q-id. */
+/** Fetch a work date (P577 publication date, falling back to P571 inception) and author(s) (P50). */
 import { parseWikidataYear } from './wikidataDates';
 import { resolveEntityInDocument } from './disambiguationCandidates';
 import { setUserWorkAuthors, setUserWorkDate } from './entityOps';
@@ -106,7 +106,7 @@ function normalizeLabelLanguages(desktopLanguage?: string | null): string[] {
   ];
 }
 
-/** Fetch P577 (publication date) and P50 (author) for a work Q-id. */
+/** Fetch P577 (publication date), P571 (inception), and P50 (author) for a work Q-id. */
 export async function fetchWikidataWorkDetails(
   qid: string,
   fetchImpl: WikidataFetchFn = fetch,
@@ -122,7 +122,10 @@ export async function fetchWikidataWorkDetails(
   if (!entity) return null;
 
   const claims = entity.claims ?? {};
-  const publicationYear = firstYearFromClaims(claims['P577']) ?? undefined;
+  // P577 is preferred when present; historical works such as books often expose
+  // their date only as P571 (inception) on Wikidata.
+  const publicationYear =
+    firstYearFromClaims(claims['P577']) ?? firstYearFromClaims(claims['P571']) ?? undefined;
   const authorQids = authorQidsFromClaims(claims['P50']);
 
   if (publicationYear == null && authorQids.length === 0) return null;
