@@ -284,12 +284,17 @@ jobs:
 
       # Windows Defender's real-time scanner can grab a transient lock on a file right
       # after it's written, which electron-builder then hits as EBUSY while copying
-      # build output (e.g. apps/commons/public/js/app.js.map) into the packaged app.
-      # The existing retry loop below doesn't help since nothing removes the cause
-      # between attempts — excluding the workspace stops the scan from racing the copy.
+      # build output (e.g. apps/commons/public/js/app.js.map, resources/pmtiles/pmtiles.exe)
+      # into the packaged app. The existing retry loop below doesn't help since nothing
+      # removes the cause between attempts. A path exclusion alone isn't reliable for a
+      # freshly-downloaded, unsigned .exe like pmtiles.exe — Defender's cloud "block at
+      # first sight" reputation check can still grab it — so disable real-time monitoring
+      # outright for this job as well.
       - name: Exclude workspace from Windows Defender scanning
         shell: pwsh
-        run: Add-MpPreference -ExclusionPath "$env:GITHUB_WORKSPACE"
+        run: |
+          Add-MpPreference -ExclusionPath "$env:GITHUB_WORKSPACE"
+          Set-MpPreference -DisableRealtimeMonitoring $true
 
       - name: Build Windows installer (${{ matrix.arch }})
         shell: pwsh
