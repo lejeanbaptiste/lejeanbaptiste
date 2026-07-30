@@ -3,6 +3,7 @@ import {
   filterAttributeSuggestions,
   orderAttributeSuggestions,
   resolveAttributeNameForApply,
+  schemaAttributeContextKey,
   sortAttributeSuggestions,
   suggestAttributeValues,
   type SchemaAttributeDetail,
@@ -42,6 +43,17 @@ describe('attributeNameMatchRank', () => {
   test('ranks xml:id above evidence when filtering id', () => {
     expect(attributeNameMatchRank('xml:id', 'id')).toBeLessThan(
       attributeNameMatchRank('evidence', 'id'),
+    );
+  });
+});
+
+describe('schemaAttributeContextKey', () => {
+  test('reuses schema results across indexed siblings while preserving structural context', () => {
+    expect(schemaAttributeContextKey('persName', '/TEI[1]/text[1]/persName[2]')).toBe(
+      schemaAttributeContextKey('persName', '/TEI[1]/text[1]/persName[8]'),
+    );
+    expect(schemaAttributeContextKey('persName', '/TEI/text/body/persName')).not.toBe(
+      schemaAttributeContextKey('persName', '/TEI/teiHeader/persName'),
     );
   });
 });

@@ -60,14 +60,13 @@ import {
 } from './attributeCommand';
 import {
   clearKeyFromExactMatches,
-  countExactKeyedTagMatches,
-  countExactUnkeyedTagMatches,
+  countExactTagMatches,
   listExactUnkeyedTagMatches,
   propagateAttributesToExactUnkeyedMatches,
 } from './attributePropagate';
 import { authorityLookupUrl } from '../entityDb/authorityLinks';
 import { openEntityLookupForTag, getLookupEntityTypeForTag } from './attributeLookup';
-import { fetchSchemaAttributes } from './attributeSuggestions';
+import { fetchSchemaAttributes, schemaAttributeContextKey } from './attributeSuggestions';
 import type { SchemaAttributeDetail } from './attributeSuggestions';
 import { getEditorTagContext } from './tagSuggestions';
 import {
@@ -81,6 +80,18 @@ const isVisualEditorActive = (): boolean =>
 
 const isFocusInAttributesPanel = (): boolean =>
   Boolean(document.activeElement?.closest('[data-attributes-panel]'));
+
+const sameAttributeValues = (
+  left: Record<string, string>,
+  right: Record<string, string>,
+): boolean => {
+  const leftEntries = Object.entries(left);
+  const rightKeys = Object.keys(right);
+  return (
+    leftEntries.length === rightKeys.length &&
+    leftEntries.every(([name, value]) => right[name] === value)
+  );
+};
 
 interface LinkedEntityInfo {
   entity: EntitySummary;
@@ -130,12 +141,26 @@ export const AttributesPanel = ({ visible = true }: { visible?: boolean }) => {
 
   const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const syncGenerationRef = useRef(0);
+  const syncFrameRef = useRef<number | null>(null);
+  const forceScheduledSyncRef = useRef(false);
+  const lastSyncedElementRef = useRef<Element | null>(null);
+  const schemaAttributeCacheRef = useRef(
+    new Map<string, Promise<SchemaAttributeDetail[]>>(),
+  );
+  const matchCountCacheRef = useRef(
+    new Map<string, { keyed: number; unkeyed: number }>(),
+  );
+  const schemaAttributesRef = useRef(schemaAttributes);
   const valuesRef = useRef(values);
   const tagElementRef = useRef(tagElement);
 
   useEffect(() => {
     valuesRef.current = values;
   }, [values]);
+
+  useEffect(() => {
+    schemaAttributesRef.current = schemaAttributes;
+  }, [schemaAttributes]);
 
   useEffect(() => {
     tagElementRef.current = tagElement;
@@ -150,14 +175,66 @@ export const AttributesPanel = ({ visible = true }: { visible?: boolean }) => {
       cancelled = true;
     };
   }, [activeTabPath]);
-  const syncFromEditor = useCallback(async () => {
-    if (!isVisualEditorActive()) {
-      setTagElement(null);
-      setTagName('');
-      setSchemaAttributes([]);
-      setValues({});
-      setPropagatableMatchCount(0);
-      setKeyedMatchCount(0);
+  const clearEditorSelection = useCallback(() => {
+    if (!tagElementRef.current && !lastSyncedElementRef.current) return;
+    syncGenerationRef.current += 1;
+    lastSyncedElementRef.current = null;
+    tagElementRef.current = null;
+    valuesRef.current = {};
+    schemaAttributesRef.current = [];
+    setTagElement(null);
+    setTagName('');
+    setSchemaAttributes([]);
+    setValues({});
+    setPropagatableMatchCount(0);
+    setKeyedMatchCount(0);
+  }, []);
+
+  const loadSchemaAttributes = useCallback((element: Element) => {
+    const writer = window.writer;
+    const tag = element.getAttribute('_tag') ?? '';
+    const xpath = writer?.utilities.getElementXPath(element);
+    const cacheKey = schemaAttributeContextKey(tag, xpath);
+    const cached = schemaAttributeCacheRef.current.get(cacheKey);
+    if (cached) return cached;
+
+    const request = fetchSchemaAttributes(element).catch((error) => {
+      schemaAttributeCacheRef.current.delete(cacheKey);
+      throw error;
+    });
+    schemaAttributeCacheRef.current.set(cacheKey, request);
+    return request;
+  }, []);
+
+  const loadMatchCounts = useCallback(
+    (element: Element, attrs: Record<string, string>) => {
+      const matchKey = [
+        element.getAttribute('_tag') ?? '',
+        element.textContent?.trim() ?? '',
+        attrs.key ?? '',
+      ].join('\0');
+      const cached = matchCountCacheRef.current.get(matchKey);
+      if (cached) return cached;
+      const counts = countExactTagMatches(element, attrs.key);
+      matchCountCacheRef.current.set(matchKey, counts);
+      return counts;
+    },
+    [],
+  );
+
+  const refreshMatchCounts = useCallback(
+    (element: Element, attrs = readTagAttributes(element)) => {
+      matchCountCacheRef.current.clear();
+      const counts = loadMatchCounts(element, attrs);
+      setPropagatableMatchCount(counts.unkeyed);
+      setKeyedMatchCount(counts.keyed);
+    },
+    [loadMatchCounts],
+  );
+
+  const syncFromEditor = useCallback(async (force = false) => {
+    if (!visible || !isVisualEditorActive()) {
+      clearEditorSelection();
       return;
     }
 
@@ -169,58 +246,126 @@ export const AttributesPanel = ({ visible = true }: { visible?: boolean }) => {
       if (isFocusInAttributesPanel() && tagElementRef.current?.isConnected) {
         return;
       }
-      setTagElement(null);
-      setTagName('');
-      setSchemaAttributes([]);
-      setValues({});
-      setPropagatableMatchCount(0);
-      setKeyedMatchCount(0);
+      clearEditorSelection();
       return;
     }
 
+    const elementChanged = element !== lastSyncedElementRef.current;
+    if (!force && !elementChanged) return;
+
     const generation = ++syncGenerationRef.current;
+    lastSyncedElementRef.current = element;
+    tagElementRef.current = element;
     setTagElement(element);
     setTagName(name);
+
     const attrs = readTagAttributes(element);
-    setValues(attrs);
-    setPropagatableMatchCount(countExactUnkeyedTagMatches(element));
-    setKeyedMatchCount(attrs.key ? countExactKeyedTagMatches(element, attrs.key) : 0);
-    const schemaAttrs = await fetchSchemaAttributes(element);
-    if (generation !== syncGenerationRef.current) return;
-    setSchemaAttributes(schemaAttrs);
+    if (elementChanged || !sameAttributeValues(valuesRef.current, attrs)) {
+      valuesRef.current = attrs;
+      setValues(attrs);
+    }
+
+    const counts = loadMatchCounts(element, attrs);
+    setPropagatableMatchCount(counts.unkeyed);
+    setKeyedMatchCount(counts.keyed);
+
+    if (!elementChanged && schemaAttributesRef.current.length > 0) return;
+
+    try {
+      const schemaAttrs = await loadSchemaAttributes(element);
+      if (generation !== syncGenerationRef.current) return;
+      schemaAttributesRef.current = schemaAttrs;
+      setSchemaAttributes(schemaAttrs);
+    } catch {
+      if (generation !== syncGenerationRef.current) return;
+      schemaAttributesRef.current = [];
+      setSchemaAttributes([]);
+    }
+  }, [clearEditorSelection, loadMatchCounts, loadSchemaAttributes, visible]);
+
+  const scheduleEditorSync = useCallback(
+    (force = false) => {
+      forceScheduledSyncRef.current ||= force;
+      if (syncFrameRef.current !== null) return;
+      syncFrameRef.current = window.requestAnimationFrame(() => {
+        syncFrameRef.current = null;
+        const shouldForce = forceScheduledSyncRef.current;
+        forceScheduledSyncRef.current = false;
+        void syncFromEditor(shouldForce);
+      });
+    },
+    [syncFromEditor],
+  );
+
+  const cancelScheduledEditorSync = useCallback(() => {
+    if (syncFrameRef.current !== null) {
+      window.cancelAnimationFrame(syncFrameRef.current);
+      syncFrameRef.current = null;
+    }
+    forceScheduledSyncRef.current = false;
+  }, []);
+
+  const resetEditorSyncCaches = useCallback(() => {
+    syncGenerationRef.current += 1;
+    lastSyncedElementRef.current = null;
+    schemaAttributeCacheRef.current.clear();
+    matchCountCacheRef.current.clear();
+    schemaAttributesRef.current = [];
   }, []);
 
   const attachEditorSync = useCallback(() => {
     const writer = window.writer;
-    if (!writer) return undefined;
+    if (!writer || !visible) return undefined;
 
-    const events = ['selectionChanged', 'tagEdited', 'contentChanged', 'nodeChanged'] as const;
-    const handler = () => void syncFromEditor();
+    const handleSelectionSignal = () => scheduleEditorSync();
+    const handleContentChanged = () => {
+      matchCountCacheRef.current.clear();
+      scheduleEditorSync();
+    };
+    const handleTagEdited = () => {
+      matchCountCacheRef.current.clear();
+      scheduleEditorSync(true);
+    };
+    const handleSchemaChanged = () => {
+      schemaAttributeCacheRef.current.clear();
+      schemaAttributesRef.current = [];
+      setSchemaAttributes([]);
+      scheduleEditorSync(true);
+    };
     const onWriterKeyup = (event: KeyboardEvent) => {
       if (['ArrowUp', 'ArrowDown', 'ArrowLeft', 'ArrowRight'].includes(event.code)) {
-        void syncFromEditor();
+        scheduleEditorSync();
       }
     };
 
-    for (const eventName of events) {
-      writer.event(eventName).subscribe(handler);
-    }
+    writer.event('selectionChanged').subscribe(handleSelectionSignal);
+    writer.event('nodeChanged').subscribe(handleSelectionSignal);
+    writer.event('contentChanged').subscribe(handleContentChanged);
+    writer.event('tagEdited').subscribe(handleTagEdited);
+    writer.event('schemaChanged').subscribe(handleSchemaChanged);
     writer.event('writerKeyup').subscribe(onWriterKeyup);
-    void syncFromEditor();
+    scheduleEditorSync(true);
 
     return () => {
-      for (const eventName of events) {
-        writer.event(eventName).unsubscribe(handler);
-      }
+      writer.event('selectionChanged').unsubscribe(handleSelectionSignal);
+      writer.event('nodeChanged').unsubscribe(handleSelectionSignal);
+      writer.event('contentChanged').unsubscribe(handleContentChanged);
+      writer.event('tagEdited').unsubscribe(handleTagEdited);
+      writer.event('schemaChanged').unsubscribe(handleSchemaChanged);
       writer.event('writerKeyup').unsubscribe(onWriterKeyup);
+      cancelScheduledEditorSync();
     };
-  }, [syncFromEditor]);
+  }, [cancelScheduledEditorSync, scheduleEditorSync, visible]);
 
   useEffect(() => {
-    if (!leafWriter) return;
+    if (!leafWriter || !visible) {
+      cancelScheduledEditorSync();
+      return;
+    }
 
     let detach = attachEditorSync();
     const onWriterReady = () => {
+      resetEditorSyncCaches();
       detach?.();
       detach = attachEditorSync();
     };
@@ -257,12 +402,20 @@ export const AttributesPanel = ({ visible = true }: { visible?: boolean }) => {
       detach?.();
       unsubscribeReady();
     };
-  }, [activeTabPath, attachEditorSync, leafWriter]);
+  }, [
+    activeTabPath,
+    attachEditorSync,
+    cancelScheduledEditorSync,
+    leafWriter,
+    resetEditorSyncCaches,
+    visible,
+  ]);
 
   useEffect(() => {
     if (!visible) return;
-    void syncFromEditor();
-  }, [visible, syncFromEditor]);
+    resetEditorSyncCaches();
+    scheduleEditorSync(true);
+  }, [resetEditorSyncCaches, scheduleEditorSync, visible]);
 
   useEffect(() => {
     if (!walkActive) {
@@ -410,8 +563,9 @@ export const AttributesPanel = ({ visible = true }: { visible?: boolean }) => {
     const element = tagElementRef.current;
     if (!element || readonly) return;
     removeAttributeFromTag(element, attrName);
-    setValues(readTagAttributes(element));
-    if (attrName === 'key') setKeyedMatchCount(0);
+    const attrs = readTagAttributes(element);
+    setValues(attrs);
+    if (attrName === 'key') refreshMatchCounts(element, attrs);
   };
 
   const handleAddAttribute = () => {
@@ -423,7 +577,7 @@ export const AttributesPanel = ({ visible = true }: { visible?: boolean }) => {
     const attrs = readTagAttributes(element);
     setValues(attrs);
     if (addAttrName.trim() === 'key') {
-      setKeyedMatchCount(attrs.key ? countExactKeyedTagMatches(element, attrs.key) : 0);
+      refreshMatchCounts(element, attrs);
     }
   };
 
@@ -433,8 +587,7 @@ export const AttributesPanel = ({ visible = true }: { visible?: boolean }) => {
     openEntityLookupForTag(element, () => {
       const attrs = readTagAttributes(element);
       setValues(attrs);
-      setPropagatableMatchCount(countExactUnkeyedTagMatches(element));
-      setKeyedMatchCount(attrs.key ? countExactKeyedTagMatches(element, attrs.key) : 0);
+      refreshMatchCounts(element, attrs);
     });
   };
 
@@ -443,8 +596,9 @@ export const AttributesPanel = ({ visible = true }: { visible?: boolean }) => {
     const key = valuesRef.current.key?.trim();
     if (!element || readonly || !key) return;
     const { cleared } = clearKeyFromExactMatches(element, key);
-    setValues(readTagAttributes(element));
-    setKeyedMatchCount(0);
+    const attrs = readTagAttributes(element);
+    setValues(attrs);
+    refreshMatchCounts(element, attrs);
     if (cleared > 0) {
       notifyViaSnackbar({
         message: `Removed the key from ${cleared} matching ${cleared === 1 ? 'tag' : 'tags'}.`,
@@ -539,8 +693,9 @@ export const AttributesPanel = ({ visible = true }: { visible?: boolean }) => {
     const element = tagElementRef.current;
     if (!element || readonly) return;
     const result = propagateAttributesToExactUnkeyedMatches(element);
-    setValues(readTagAttributes(element));
-    setPropagatableMatchCount(countExactUnkeyedTagMatches(element));
+    const attrs = readTagAttributes(element);
+    setValues(attrs);
+    refreshMatchCounts(element, attrs);
     if (result.applied > 0) {
       notifyViaSnackbar({
         message:

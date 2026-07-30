@@ -40,9 +40,8 @@ Refresh validate results freezes the screen for several seconds while processing
 
 The disambiguation panel is actually surprisingly snappy when not in dev. The compiled pr
 
-- Open a large XML document and show the markup tree.
-- Run auto-tagging with many suggestions.
-- Open disambiguation.
-- Switch WYSIWYG/source mode repeatedly.
-- Open and close heavy panels for 10–15 minutes.
-
+- Editor keyboard input and XML-tree navigation.
+- Disambiguation memory growth.
+- Auto-tagging totals/progress rendering.
+- Validation refresh and tag application.
+- Background CPU while idle

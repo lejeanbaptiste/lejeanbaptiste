@@ -15,6 +15,10 @@ export interface SchemaAttributeDetail {
 
 const getWriter = () => window.writer;
 
+/** Schema paths are context-sensitive, but sibling indexes do not change which attributes apply. */
+export const schemaAttributeContextKey = (tagName: string, xpath?: string | null): string =>
+  `${tagName}\0${xpath?.replace(/\[\d+\]/g, '') ?? ''}`;
+
 const toSchemaAttribute = (node: NodeDetail | Record<string, unknown>): SchemaAttributeDetail | null => {
   const rawName = (node as NodeDetail).name ?? (node as { name?: string }).name;
   if (!rawName) return null;

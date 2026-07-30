@@ -60,6 +60,40 @@ export const listExactKeyedTagMatches = (tagElement: Element, key: string): Elem
 export const countExactKeyedTagMatches = (tagElement: Element, key: string): number =>
   listExactKeyedTagMatches(tagElement, key).length;
 
+export interface ExactTagMatchCounts {
+  keyed: number;
+  unkeyed: number;
+}
+
+/** Count keyed and unkeyed exact matches in one document traversal. */
+export const countExactTagMatches = (
+  tagElement: Element,
+  key?: string,
+): ExactTagMatchCounts => {
+  const writer = getWriter();
+  const body = writer?.editor?.getBody();
+  const tagName = tagElement.getAttribute('_tag');
+  const text = normalizedTagText(tagElement);
+  if (!body || !tagName || !text) return { keyed: 0, unkeyed: 0 };
+
+  let keyed = 0;
+  let unkeyed = 0;
+  const walker = body.ownerDocument.createTreeWalker(body, NodeFilter.SHOW_ELEMENT);
+  let node = walker.nextNode();
+
+  while (node) {
+    const element = node as Element;
+    if (element.getAttribute('_tag') === tagName && normalizedTagText(element) === text) {
+      const attrs = readTagAttributes(element);
+      if (element !== tagElement && !attrs.key) unkeyed += 1;
+      if (key && attrs.key === key) keyed += 1;
+    }
+    node = walker.nextNode();
+  }
+
+  return { keyed, unkeyed };
+};
+
 export const clearKeyFromExactMatches = (
   tagElement: Element,
   key: string,
