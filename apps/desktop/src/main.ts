@@ -2006,6 +2006,10 @@ const registerIpcHandlers = () => {
       ? await dialog.showOpenDialog(parent, options)
       : await dialog.showOpenDialog(options);
     if (result.canceled || result.filePaths.length === 0) return null;
+    // The renderer may create entities.xml immediately for a newly selected
+    // folder, before setEntityDbFolder persists it. Treat the explicit folder
+    // selection as approval for that initial write.
+    approveRendererWriteRoot(result.filePaths[0]);
     rememberDialogDir(result.filePaths[0], 'directory');
     return result.filePaths[0] ?? null;
   });
