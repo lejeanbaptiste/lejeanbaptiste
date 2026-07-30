@@ -49,7 +49,7 @@ export async function checkChineseProjectAssets(): Promise<ChineseProjectAssets>
   try {
     // Check map tiles
     const mapStatus = await window.electronAPI?.mapTilesStatus?.();
-    if (mapStatus?.installed) {
+    if (mapStatus?.regions?.some((region) => region.id === 'china')) {
       result.mapTilesInstalled = true;
     } else {
       result.missingAssets.push('mapTiles');
@@ -62,7 +62,15 @@ export async function checkChineseProjectAssets(): Promise<ChineseProjectAssets>
     // Check plugins — snapshot shape is `{ plugins, state: { enabled: string[] } }`,
     // not a top-level `enabled` map.
     const pluginsSnapshot = await window.electronAPI?.pluginsGetSnapshot?.();
-    if (pluginsSnapshot && pluginsSnapshot.state.enabled.length > 0) {
+    const chinesePluginEnabled = pluginsSnapshot?.plugins.some(
+      (plugin) =>
+        plugin.enabled &&
+        ((plugin.languages ?? []).some((language) => language.toLowerCase().startsWith('zh')) ||
+          (plugin.manifest?.languagePrompt?.documentLanguages ?? []).some((language) =>
+            language.toLowerCase().startsWith('zh'),
+          )),
+    );
+    if (chinesePluginEnabled) {
       result.pluginsInstalled = true;
     } else {
       result.missingAssets.push('plugins');

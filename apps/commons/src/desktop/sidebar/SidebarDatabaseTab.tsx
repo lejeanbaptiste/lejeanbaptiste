@@ -42,7 +42,7 @@ import {
   Tooltip,
   Typography,
 } from '@mui/material';
-import { Fragment, useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { Fragment, memo, useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import type { ReactNode } from 'react';
 import { useTranslation } from 'react-i18next';
 import {
@@ -334,6 +334,44 @@ interface PendingValidation {
   mode: PendingValidationMode;
 }
 
+interface EntityDescriptionEditorProps {
+  initialValue: string;
+  label: string;
+  onValueChange: (value: string) => void;
+}
+
+/**
+ * Keep the frequently edited description out of SidebarDatabaseTab's large
+ * render tree. The parent only needs the latest draft when Save is clicked.
+ */
+const EntityDescriptionEditor = memo(function EntityDescriptionEditor({
+  initialValue,
+  label,
+  onValueChange,
+}: EntityDescriptionEditorProps) {
+  const [value, setValue] = useState(initialValue);
+
+  useEffect(() => {
+    setValue(initialValue);
+    onValueChange(initialValue);
+  }, [initialValue, onValueChange]);
+
+  return (
+    <TextField
+      fullWidth
+      size="small"
+      label={label}
+      value={value}
+      onChange={(event) => {
+        const nextValue = event.target.value;
+        setValue(nextValue);
+        onValueChange(nextValue);
+      }}
+      sx={{ mt: 1 }}
+    />
+  );
+});
+
 export const SidebarDatabaseTab = ({ active = false }: SidebarDatabaseTabProps) => {
   const { t, i18n } = useTranslation();
   const { skipEntityDetachConfirm } = useAppState().ui;
@@ -368,7 +406,11 @@ export const SidebarDatabaseTab = ({ active = false }: SidebarDatabaseTabProps) 
   const nameBeforeRename = useRef('');
   const [editingRomanized, setEditingRomanized] = useState(false);
   const romanizedBeforeEdit = useRef('');
-  const [editDescription, setEditDescription] = useState('');
+  const [editDescriptionSeed, setEditDescriptionSeed] = useState('');
+  const editDescriptionRef = useRef('');
+  const handleEditDescriptionChange = useCallback((value: string) => {
+    editDescriptionRef.current = value;
+  }, []);
   const [editRomanized, setEditRomanized] = useState('');
   const [editNameTypes, setEditNameTypes] = useState<Record<string, string>>({});
   const [editNameLanguages, setEditNameLanguages] = useState<Record<string, string>>({});
@@ -994,7 +1036,9 @@ export const SidebarDatabaseTab = ({ active = false }: SidebarDatabaseTabProps) 
     setEditCanonicalName(entity.names[0] ?? '');
     setEditingName(false);
     setEditingRomanized(false);
-    setEditDescription(entity.description ?? '');
+    const description = entity.description ?? '';
+    setEditDescriptionSeed(description);
+    editDescriptionRef.current = description;
     setEditRomanized(suggestedRomanized ?? '');
     const workDate = entity.workDate;
     const birthAssertion = entity.assertions.find(
@@ -1152,7 +1196,7 @@ export const SidebarDatabaseTab = ({ active = false }: SidebarDatabaseTabProps) 
     const id = editEntity.id;
     const validations = pendingValidations;
     const canonicalName = editCanonicalName.trim();
-    const description = editDescription;
+    const description = editDescriptionRef.current;
     const romanized = editRomanized.trim();
     const romanizedChanged = romanized !== (editEntity.romanized ?? '');
     setEditEntity(null);
@@ -2633,13 +2677,10 @@ export const SidebarDatabaseTab = ({ active = false }: SidebarDatabaseTabProps) 
           )}
         </DialogTitle>
         <DialogContent>
-          <TextField
-            fullWidth
-            size="small"
+          <EntityDescriptionEditor
+            initialValue={editDescriptionSeed}
             label={t('LWC.desktop.sidebar.database.one_line_description')}
-            value={editDescription}
-            onChange={(event) => setEditDescription(event.target.value)}
-            sx={{ mt: 1 }}
+            onValueChange={handleEditDescriptionChange}
           />
           {editEntity &&
             descriptionGroups.pending.map((assertion) => (
@@ -2666,7 +2707,8 @@ export const SidebarDatabaseTab = ({ active = false }: SidebarDatabaseTabProps) 
                     onClick={() => {
                       const value = assertion.value;
                       queueValidation([assertion.key], 'description');
-                      setEditDescription(value);
+                      setEditDescriptionSeed(value);
+                      editDescriptionRef.current = value;
                     }}
                   >
                     <CheckIcon fontSize="small" />

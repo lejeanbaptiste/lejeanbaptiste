@@ -99,9 +99,11 @@ export const completePostLoadOnboarding = async (bundle: ProjectBundle): Promise
   log('ensuring entity db folder');
   await ensureEntityDbFolder();
 
-  // Non-blocking: the authority-database offer (Chinese projects only) must
-  // not hold up project open, and downloads run in the main process.
-  void maybeOfferAuthorityDatabases(current).catch(() => undefined);
+  // Chinese projects use the combined chooser below; other supported
+  // languages retain the authority-only prompt.
+  if (!(await getProjectSourceLanguage(current))?.toLowerCase().startsWith('zh')) {
+    void maybeOfferAuthorityDatabases(current).catch(() => undefined);
+  }
 
   // Non-blocking, once per project open: prompt for any remaining Chinese
   // assets (map tiles, CHGIS, …) still missing after the check above.

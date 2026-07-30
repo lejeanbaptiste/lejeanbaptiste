@@ -22,7 +22,7 @@ const assetLabels: Record<MissingAssetType, { en: string; zh: string }> = {
   authorityPacks: { en: 'Authority packs', zh: '权威人物数据库' },
   chgis: { en: 'CHGIS', zh: 'CHGIS (中国历史地理信息系统)' },
   mapTiles: { en: 'Map tiles', zh: '地图瓦片' },
-  plugins: { en: 'Plugins', zh: '插件' },
+  plugins: { en: 'Language plugins', zh: '语言插件' },
 };
 
 export const ChineseAssetsDialog = ({
