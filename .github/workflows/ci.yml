@@ -86,6 +86,13 @@ jobs:
             sleep $((10 * attempt))
           done
 
+      - name: Upload .deb artifact
+        uses: actions/upload-artifact@v7
+        with:
+          name: linux-deb-${{ matrix.arch }}
+          path: apps/desktop/release/*.deb
+          if-no-files-found: error
+
   desktop-flatpak:
     name: Build Linux desktop Flatpak
     runs-on: ubuntu-latest

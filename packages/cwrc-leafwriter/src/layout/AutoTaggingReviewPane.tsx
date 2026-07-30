@@ -278,6 +278,17 @@ export const AutoTaggingReviewPane = () => {
                   : 'success',
             );
           }
+          if (result.textIntegrityWarning) {
+            // A suggestion changed the document's text content when applied —
+            // autotagging must only ever add markup, never rewrite source
+            // text. Surfaced as loudly as a validation error, since that's
+            // exactly the severity of what it means.
+            setApplyDiagnostics(
+              (current) =>
+                `${current ? `${current}\n\n` : ''}Text integrity warning:\n${result.textIntegrityWarning}`,
+            );
+            setApplyDiagSeverity('error');
+          }
           if (result.personWrapperValidation?.errors.length) {
             const wrapperText = result.personWrapperValidation.errors.slice(0, 3).join('\n');
             setApplyDiagnostics(
