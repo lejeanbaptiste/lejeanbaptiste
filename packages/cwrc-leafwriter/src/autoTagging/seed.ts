@@ -41,14 +41,68 @@ function dedupeSourceLabels(sources: string[]): string[] {
   return [...seen.values()];
 }
 
+type NobleTitleComponents = NonNullable<
+  NonNullable<AuthorityCandidate['metadata']>['nobleTitle']
+>;
+
+/**
+ * One authority record generates several search-string forms from the same
+ * stored components — a full "fief+posthumousName+roleName" and a bare
+ * "fief+roleName" (see `buildNobleTitleSearchStrings`, norbertWikiNt.ts).
+ * Both forms share one `metadata.nobleTitle` object, so which form actually
+ * matched the document is not otherwise recoverable from the candidate.
+ *
+ * Using the full components unconditionally would splice authority-sourced
+ * text the document never contained (e.g. a full posthumous name) into a
+ * span that only matched the bare form. This reconstructs which components
+ * the *matched surface text* (`anchor.surface`) actually supports, and
+ * returns null — meaning "don't emit compound structure" — when neither
+ * known form accounts for it, rather than guessing.
+ */
+function nobleTitleComponentsForSurface(
+  nobleTitle: NobleTitleComponents,
+  surface: string,
+): NobleTitleComponents | null {
+  const { fief, posthumousName, roleName } = nobleTitle;
+  const full = [fief, posthumousName, roleName].filter(Boolean).join('');
+  if (full === surface) return { fief, posthumousName, roleName };
+  const bare = [fief, roleName].filter(Boolean).join('');
+  if (bare === surface) return { fief, roleName };
+  return null;
+}
+
+/** Same reconciliation for a person-wrapper's title + trailing name. */
+function wrapperComponentsForSurface(
+  wrapper: NonNullable<NonNullable<AuthorityCandidate['metadata']>['wrapper']>,
+  surface: string,
+): NonNullable<NonNullable<AuthorityCandidate['metadata']>['wrapper']>['components'] | null {
+  const { nationality, fief, posthumousName, roleName, templeName, persName } = wrapper.components;
+  const full = [nationality, fief, posthumousName, roleName, templeName, persName]
+    .filter(Boolean)
+    .join('');
+  if (full === surface) return wrapper.components;
+  const bare = [nationality, fief, roleName, templeName, persName].filter(Boolean).join('');
+  if (bare === surface) return { ...wrapper.components, posthumousName: undefined };
+  return null;
+}
+
 /** Convert seed matches to tag-stage suggestions (no @key — disambiguation later). */
 export function suggestionsFromSeedMatches(matches: SeedMatch[]): Suggestion[] {
   return matches.map((match) => {
-    const wrapper = match.candidates.find((candidate) => candidate.metadata?.wrapper)?.metadata
+    const surface = match.suggestion.anchor.surface;
+
+    const rawWrapper = match.candidates.find((candidate) => candidate.metadata?.wrapper)?.metadata
       ?.wrapper;
-    const nobleTitle = match.candidates.find(
+    const wrapperComponents = rawWrapper
+      ? wrapperComponentsForSurface(rawWrapper, surface)
+      : null;
+
+    const rawNobleTitle = match.candidates.find(
       (candidate) => !candidate.metadata?.wrapper && candidate.metadata?.teiTag === 'nobleTitle',
     )?.metadata?.nobleTitle;
+    const nobleTitle = rawNobleTitle
+      ? nobleTitleComponentsForSurface(rawNobleTitle, surface)
+      : null;
     const nobleTitleXml = nobleTitle
       ? [
           nobleTitle.fief ? `<placeName>${xmlEscape(nobleTitle.fief)}</placeName>` : '',
@@ -60,11 +114,11 @@ export function suggestionsFromSeedMatches(matches: SeedMatch[]): Suggestion[] {
       : undefined;
     return {
       ...match.suggestion,
-      ...(wrapper
+      ...(wrapperComponents
         ? {
             tag: 'name',
             attributes: { type: 'personWrapper', cert: 'unknown' },
-            innerXml: wrapperInnerXml(wrapper),
+            innerXml: wrapperInnerXml({ ...rawWrapper!, components: wrapperComponents }),
           }
         : nobleTitleXml
           ? {

@@ -102,6 +102,51 @@ describe('seedSuggestions + bucketSeeds', () => {
     );
   });
 
+  it('never fabricates a posthumous name the document never contained — matched the bare (fief+rank) form', () => {
+    // Reproduces a real bug: one candidate's full "fief+posthumousName+roleName"
+    // and bare "fief+roleName" search strings share one metadata.nobleTitle
+    // object. Using it unconditionally spliced a full posthumous name into a
+    // span the document only ever matched in its bare form.
+    const doc = parse(
+      '<TEI xmlns="http://www.tei-c.org/ns/1.0"><text><body><p>明帝遣使</p></body></text></TEI>',
+    );
+    const candidate = cand({
+      authorityId: 'noble-title:emperor-ming',
+      primaryName: '明欽天履道英毅帝',
+      searchStrings: ['明欽天履道英毅帝', '明帝'],
+      metadata: {
+        isNobleTitle: true,
+        teiTag: 'nobleTitle',
+        nobleTitle: { fief: '明', posthumousName: '欽天履道英毅', roleName: '帝' },
+      },
+    });
+    const [suggestion] = suggestionsFromSeedMatches(seedSuggestions(doc, [candidate], 'ignore'));
+    expect(suggestion?.anchor.surface).toBe('明帝');
+    expect(suggestion?.innerXml).toBe('<placeName>明</placeName><roleName>帝</roleName>');
+    expect(suggestion?.innerXml).not.toContain('欽天履道英毅');
+  });
+
+  it('uses the full posthumous name only when the full form is what actually matched', () => {
+    const doc = parse(
+      '<TEI xmlns="http://www.tei-c.org/ns/1.0"><text><body><p>明欽天履道英毅帝遣使</p></body></text></TEI>',
+    );
+    const candidate = cand({
+      authorityId: 'noble-title:emperor-ming',
+      primaryName: '明欽天履道英毅帝',
+      searchStrings: ['明欽天履道英毅帝', '明帝'],
+      metadata: {
+        isNobleTitle: true,
+        teiTag: 'nobleTitle',
+        nobleTitle: { fief: '明', posthumousName: '欽天履道英毅', roleName: '帝' },
+      },
+    });
+    const [suggestion] = suggestionsFromSeedMatches(seedSuggestions(doc, [candidate], 'ignore'));
+    expect(suggestion?.anchor.surface).toBe('明欽天履道英毅帝');
+    expect(suggestion?.innerXml).toBe(
+      '<placeName>明</placeName><persName type="posthumous">欽天履道英毅</persName><roleName>帝</roleName>',
+    );
+  });
+
   it('finds a wrapper after its component elements already exist', () => {
     const doc = parse(
       '<TEI xmlns="http://www.tei-c.org/ns/1.0"><text><body><p><roleName>合州刺史</roleName><nobleTitle><placeName>鄱陽</placeName><roleName>王</roleName></nobleTitle><persName>範</persName></p></body></text></TEI>',
