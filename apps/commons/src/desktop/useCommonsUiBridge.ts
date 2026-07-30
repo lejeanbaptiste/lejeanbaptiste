@@ -247,8 +247,7 @@ export const useCommonsUiBridge = () => {
         return null;
       }
       if (!(await confirmCreateEntityDb(folder))) return null;
-      await window.electronAPI?.writeFile?.(`${folder}/entities.xml`, createEntitiesScaffold());
-      await window.electronAPI?.ensureDirectory?.(`${folder}/${AUTHORITY_PACKS_DIRNAME}`);
+      await window.electronAPI?.createEntityDatabase?.(folder, createEntitiesScaffold());
     }
 
     try {

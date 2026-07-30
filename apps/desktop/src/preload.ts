@@ -254,6 +254,7 @@ export interface ElectronAPI {
   getEntityDbFolder: () => Promise<string | null>;
   setEntityDbFolder: (folder: string | null) => Promise<void>;
   pickEntityDbFolder: () => Promise<string | null>;
+  createEntityDatabase: (folder: string, content: string) => Promise<void>;
   approveEntityRegistryRoots: (roots: string[]) => Promise<boolean>;
   moveEntityDbFolder: () => Promise<{
     ok: boolean;
@@ -532,6 +533,8 @@ const electronAPI: ElectronAPI = {
   getEntityDbFolder: () => ipcRenderer.invoke('getEntityDbFolder'),
   setEntityDbFolder: (folder: string | null) => ipcRenderer.invoke('setEntityDbFolder', folder),
   pickEntityDbFolder: () => ipcRenderer.invoke('pickEntityDbFolder'),
+  createEntityDatabase: (folder, content) =>
+    ipcRenderer.invoke('createEntityDatabase', folder, content),
   approveEntityRegistryRoots: (roots: string[]) =>
     ipcRenderer.invoke('approveEntityRegistryRoots', roots),
   moveEntityDbFolder: () => ipcRenderer.invoke('moveEntityDbFolder'),

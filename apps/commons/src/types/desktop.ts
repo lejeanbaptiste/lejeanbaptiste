@@ -318,6 +318,7 @@ export interface ElectronAPI {
   getEntityDbFolder: () => Promise<string | null>;
   setEntityDbFolder: (folder: string | null) => Promise<void>;
   pickEntityDbFolder: () => Promise<string | null>;
+  createEntityDatabase: (folder: string, content: string) => Promise<void>;
   approveEntityRegistryRoots: (roots: string[]) => Promise<boolean>;
   moveEntityDbFolder: () => Promise<{
     ok: boolean;

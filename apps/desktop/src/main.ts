@@ -77,6 +77,7 @@ import {
   installAuthorityPacksFrom,
   readAuthorityPackFile,
 } from './authorityPacks';
+import { AUTHORITY_PACKS_DIRNAME } from '../../commons/src/desktop/authorityPackTypes';
 import {
   getAuthorityLifecycleStatus,
   maybeCheckAuthorityUpdates,
@@ -2322,6 +2323,24 @@ const registerIpcHandlers = () => {
     if (result.canceled || result.filePaths.length === 0) return null;
     rememberDialogDir(result.filePaths[0], 'directory');
     return result.filePaths[0] ?? null;
+  });
+
+  ipcMain.handle('createEntityDatabase', async (_event, folder: string, content: string) => {
+    const normalizedFolder = path.resolve(folder);
+    const entityFile = path.join(normalizedFolder, 'entities.xml');
+
+    // The folder must have come from the native picker in this session;
+    // assertRendererWritePath also permits the configured entity database.
+    await assertRendererWritePath(entityFile);
+    if (!statSync(normalizedFolder).isDirectory()) {
+      throw new Error('The selected entity database path is not a folder.');
+    }
+    if (existsSync(entityFile)) return;
+
+    await fs.writeFile(entityFile, content, 'utf-8');
+    await fs.mkdir(path.join(normalizedFolder, AUTHORITY_PACKS_DIRNAME), {
+      recursive: true,
+    });
   });
 
   ipcMain.handle('moveEntityDbFolder', async () => {
