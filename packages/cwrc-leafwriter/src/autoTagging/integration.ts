@@ -60,6 +60,8 @@ import {
 import { crawlDocuments } from './crawl';
 import { dictionaryTag, type DictionaryEntry } from './dictionary';
 import { compoundWrapperSuggestions, seedSuggestions, suggestionsFromSeedMatches } from './seed';
+import { runGroupAndClean, type GroupAndCleanResult } from './groupAndClean';
+import { buildNobleTitleVocabulary } from './nobleTitleSpanParser';
 import { DisambiguationAiCache } from './disambiguationAiCache';
 import { enrichWikidataWorkEntity } from './wikidataWorkDetails';
 import { enrichWikidataPersonWorks } from './wikidataPersonWorks';
@@ -695,6 +697,68 @@ export class AutoTaggingSession {
       suggestionsFromSeedMatches(matches),
     ).suggestions;
     return { suggestions, matchCount: matches.length };
+  }
+
+  /**
+   * Norbert "Group and clean": a post-validation cleanup pass over markup the
+   * user has already reviewed/accepted — merges compound `<roleName>`s, nests
+   * a governing `<placeName>` into its `<roleName>`, parses childless
+   * `<nobleTitle>`s, wraps adjacent tagged person components in a
+   * personWrapper, and gives every keyless wrapper a `@key` where it can.
+   * Mutates the document directly (not via the suggestion-review path) and
+   * persists the result. `scopeRoot` defaults to the whole document; pass the
+   * current selection's containing element to restrict the pass to it.
+   */
+  async runGroupAndClean(
+    readPackFile: (packId: AuthorityPackId) => Promise<AuthorityPackContent>,
+    scopeRoot?: Element,
+  ): Promise<GroupAndCleanResult> {
+    const doc = await this.getDocument();
+    const entitiesDoc = this.entitiesDoc ?? (await this.loadEntities());
+    const root = scopeRoot ?? doc.documentElement;
+
+    const [officeContent, wrapperCandidates, wikiNtContent] = await Promise.all([
+      readPackFile('norbert-offices').catch(() => null),
+      (this.personWrapperCandidatesPromise ??= (async () => {
+        const candidates: AuthorityCandidate[] = [];
+        const wrapperContent = await readPackFile('norbert-person-wrappers');
+        for (const candidate of iterateAuthorityNdjson(wrapperContent)) {
+          if (candidate.metadata?.wrapper || candidate.metadata?.nobleTitle) candidates.push(candidate);
+        }
+        try {
+          const wikiContent = await readPackFile('norbert-wiki-nt');
+          for (const candidate of iterateAuthorityNdjson(wikiContent)) {
+            for (const expanded of expandNorbertWikiNtCandidate(candidate)) {
+              if (expanded.metadata?.wrapper || expanded.metadata?.nobleTitle) candidates.push(expanded);
+            }
+          }
+        } catch {
+          // The wiki asset is optional; the ordinary Norbert wrapper pack still runs.
+        }
+        candidates.push(...(await collectPluginPatternTagCandidates()));
+        return candidates;
+      })()),
+      readPackFile('norbert-wiki-nt').catch(() => null),
+    ]);
+
+    const officeCandidates = officeContent ? [...iterateAuthorityNdjson(officeContent)] : [];
+    const vocabulary = buildNobleTitleVocabulary(
+      wikiNtContent ? iterateAuthorityNdjson(wikiNtContent) : [],
+    );
+
+    const result = await runGroupAndClean(
+      doc,
+      entitiesDoc,
+      root,
+      officeCandidates,
+      wrapperCandidates,
+      vocabulary,
+      this.policy,
+      this.buildApplyOptions(),
+    );
+
+    await this.persistDocument(doc);
+    return result;
   }
 
   /**

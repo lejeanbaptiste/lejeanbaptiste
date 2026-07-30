@@ -368,6 +368,63 @@ export const AutoTaggingReviewPane = () => {
     })();
   }, [busy, getSession]);
 
+  const handleGroupAndClean = useCallback(() => {
+    if (busy) return;
+    void (async () => {
+      setBusyLabel('Grouping and cleaning…');
+      setBusy(true);
+      try {
+        const readPack = cachedPackReader();
+        if (!readPack) {
+          setNotice('Norbert packs are not installed — nothing to group.');
+          return;
+        }
+        const result = await getSession().runGroupAndClean(readPack);
+        const parts: string[] = [];
+        if (result.mergedRoleNames > 0) {
+          parts.push(
+            `${result.mergedRoleNames} roleName merge${result.mergedRoleNames === 1 ? '' : 's'}`,
+          );
+        }
+        if (result.rolledPlaceNames > 0) {
+          parts.push(
+            `${result.rolledPlaceNames} placeName roll-in${result.rolledPlaceNames === 1 ? '' : 's'}`,
+          );
+        }
+        if (result.parsedNobleTitles > 0) {
+          parts.push(
+            `${result.parsedNobleTitles} nobleTitle${result.parsedNobleTitles === 1 ? '' : 's'} parsed`,
+          );
+        }
+        if (result.createdWrappers > 0) {
+          parts.push(
+            `${result.createdWrappers} person wrapper${result.createdWrappers === 1 ? '' : 's'} created`,
+          );
+        }
+        if (result.assignedKeys > 0) {
+          parts.push(`${result.assignedKeys} key${result.assignedKeys === 1 ? '' : 's'} assigned`);
+        }
+        setNotice(
+          parts.length > 0 ? `Group and clean: ${parts.join(', ')}.` : 'Group and clean: nothing to do.',
+        );
+        if (result.validation.errors.length > 0) {
+          setApplyDiagnostics(
+            `Person-wrapper validation:\n${result.validation.errors.slice(0, 5).join('\n')}`,
+          );
+          setApplyDiagSeverity('error');
+        }
+      } catch (error) {
+        console.error('[auto-tagging] group and clean failed', error);
+        setApplyDiagnostics(
+          `Group and clean failed: ${error instanceof Error ? error.message : String(error)}`,
+        );
+        setApplyDiagSeverity('error');
+      } finally {
+        setBusy(false);
+      }
+    })();
+  }, [busy, getSession]);
+
   const handleFocus = useCallback(
     (suggestion: Suggestion) => {
       try {
@@ -429,6 +486,20 @@ export const AutoTaggingReviewPane = () => {
               {t('{{count}} applied', { count: applied })}
             </Typography>
           )}
+          <Tooltip title={t('Merge/nest role and place tags, wrap and key persons, parse noble titles')}>
+            <span>
+              <Link
+                component="button"
+                variant="caption"
+                underline="hover"
+                onClick={!busy ? handleGroupAndClean : undefined}
+                sx={{ color: busy ? 'text.disabled' : undefined, whiteSpace: 'nowrap' }}
+                data-testid="group-and-clean"
+              >
+                {t('Group and clean')}
+              </Link>
+            </span>
+          </Tooltip>
           <Tooltip title={t('Revert last apply')}>
             <span>
               <Link

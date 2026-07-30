@@ -6,7 +6,8 @@ export type AutoTaggingBusyLabel =
   | 'Applying tags…'
   | 'Reverting tags…'
   | 'Running AI suggest…'
-  | 'Running AI audit…';
+  | 'Running AI audit…'
+  | 'Grouping and cleaning…';
 
 export interface AutoTaggingApplyOverlayProps {
   /** Known labels get i18n treatment; free-form progress strings are shown as-is. */

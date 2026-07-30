@@ -816,12 +816,29 @@ export interface MarkUnresolvedResult {
   element: Element;
 }
 
+/**
+ * When a persName inside a keyless Norbert person wrapper is resolved (e.g.
+ * via the normal disambiguation panel, some time after Group and Clean left
+ * it pending), copy the resolved key up to the wrapper immediately — the
+ * wrapper is otherwise never picked up by anything since it has no @key.
+ */
+function copyKeyToUnkeyedPersonWrapper(element: Element, entityId: string): void {
+  const parent = element.parentElement;
+  if (!parent) return;
+  if ((parent.localName || parent.nodeName) !== 'name') return;
+  if (parent.getAttribute('type') !== 'personWrapper') return;
+  if (parent.getAttribute('key')?.trim()) return;
+  parent.setAttribute('key', entityId);
+  parent.removeAttribute('cert');
+}
+
 /** Assign a local entity id to an already-tagged mention element. */
 export function assignEntity(input: AssignEntityInput): AssignEntityResult {
   const { element, entityId, resp } = input;
   element.setAttribute('key', entityId);
   element.removeAttribute('cert');
   if (resp) element.setAttribute('resp', resp);
+  copyKeyToUnkeyedPersonWrapper(element, entityId);
   return { action: 'assign-entity', entityId, element };
 }
 
