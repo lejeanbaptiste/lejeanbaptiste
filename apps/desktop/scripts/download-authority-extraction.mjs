@@ -29,12 +29,40 @@ const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const RESOURCES_DIR = path.join(__dirname, '../resources/authority-extraction');
 const stampPath = path.join(RESOURCES_DIR, '.version');
 const compileScript = path.join(RESOURCES_DIR, 'chgis/compile.mjs');
+const packageJsonPath = path.join(RESOURCES_DIR, 'package.json');
+const nodeModulesPath = path.join(RESOURCES_DIR, 'node_modules');
+
+const installToolchainDependencies = () => {
+  if (existsSync(nodeModulesPath)) return;
+  if (!existsSync(packageJsonPath)) {
+    throw new Error(
+      `The downloaded CHGIS toolchain is missing package.json: ${packageJsonPath}`,
+    );
+  }
+
+  // The compiler is run by Electron with ELECTRON_RUN_AS_NODE in the installed
+  // app. It cannot depend on a user's Node/npm installation, so its runtime
+  // dependencies must be installed into this staged resource before packaging.
+  const npm =
+    process.platform === 'win32' ? path.join(path.dirname(process.execPath), 'npm.cmd') : 'npm';
+  const hasLockfile = existsSync(path.join(RESOURCES_DIR, 'package-lock.json'));
+  const args = hasLockfile
+    ? ['ci', '--omit=dev', '--ignore-scripts', '--no-audit', '--no-fund']
+    : ['install', '--omit=dev', '--ignore-scripts', '--no-audit', '--no-fund'];
+  console.log(`[authority-extraction] Installing bundled compiler dependencies (${args[0]})`);
+  execFileSync(npm, args, { cwd: RESOURCES_DIR, stdio: 'inherit' });
+
+  if (!existsSync(nodeModulesPath)) {
+    throw new Error('CHGIS compiler dependency installation did not create node_modules.');
+  }
+};
 
 if (
   existsSync(compileScript) &&
   existsSync(stampPath) &&
   readFileSync(stampPath, 'utf-8').trim() === TOOLCHAIN_VERSION
 ) {
+  installToolchainDependencies();
   console.log(`[authority-extraction] Already present: ${RESOURCES_DIR} (${TOOLCHAIN_VERSION})`);
   process.exit(0);
 }
@@ -51,5 +79,6 @@ console.log(`[authority-extraction] Extracting ${asset}`);
 execFileSync('tar', ['-xzf', tarPath, '-C', RESOURCES_DIR], { stdio: 'inherit' });
 rmSync(tarPath, { force: true });
 
+installToolchainDependencies();
 writeFileSync(stampPath, `${TOOLCHAIN_VERSION}\n`);
 console.log(`[authority-extraction] Ready: ${compileScript}`);

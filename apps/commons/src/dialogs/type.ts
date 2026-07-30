@@ -1,6 +1,7 @@
 import { DialogProps as MuiDialogProps } from '@mui/material/Dialog';
 import { IconName } from '@src/icons';
 import { Options as ModalProviderOptions } from 'mui-modal-provider';
+import type { MissingAssetType } from '../../../../packages/cwrc-leafwriter/src/utilities/chineseAssetStatus';
 export declare type ModalComponentProps<P> = Omit<P, 'open'>;
 
 export type SeverityType = 'error' | 'info' | 'success' | 'warning';
@@ -21,7 +22,14 @@ export interface IDialog extends Partial<Omit<MuiDialogProps, 'onClose'>> {
   type?: DialogType;
 }
 
-export type DialogType = 'export' | 'import' | 'privacy' | 'signIn' | 'simple' | 'templates';
+export type DialogType =
+  | 'chineseAssets'
+  | 'export'
+  | 'import'
+  | 'privacy'
+  | 'signIn'
+  | 'simple'
+  | 'templates';
 
 interface SimpleDialogMessageProps {
   data?: Record<string, unknown>;
@@ -32,7 +40,11 @@ export interface SimpleDialogProps extends IDialog {
   Body?: React.FC<SimpleDialogMessageProps> | string;
 }
 
-export type DialogProps = SimpleDialogProps;
+export interface ChineseAssetsDialogProps extends IDialog {
+  missingAssets?: MissingAssetType[];
+}
+
+export type DialogProps = SimpleDialogProps & ChineseAssetsDialogProps;
 
 export interface DialogBarProps {
   dismissed?: boolean;

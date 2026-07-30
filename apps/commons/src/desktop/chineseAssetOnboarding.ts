@@ -11,6 +11,7 @@ import type { ProjectBundle } from './projectFile';
 import { isDesktop } from '@src/types/desktop';
 import { regionalBundleForLanguage } from '../../../../packages/cwrc-leafwriter/src/autoTagging/mapView/regionalBundles';
 import type { MissingAssetType } from '../../../../packages/cwrc-leafwriter/src/utilities/chineseAssetStatus';
+import type { DialogBarProps } from '../dialogs';
 
 const isChineseRelatedLanguage = (language: string): boolean =>
   language.toLowerCase().startsWith('zh');
@@ -49,19 +50,25 @@ const downloadSelectedChineseAssets = async (selected: MissingAssetType[]): Prom
   if (choices.has('authorityPacks')) {
     tasks.push(api?.authorityLifecycleSetEnabled?.({ enabled: true, profile: 'chinese' }) ?? Promise.resolve());
   }
+  if (choices.has('chgis')) {
+    tasks.push(api?.authorityChgisInstallFromDataverse?.() ?? Promise.resolve());
+  }
   if (choices.has('plugins')) tasks.push(downloadChinesePlugins());
   if (choices.has('mapTiles')) tasks.push(downloadChineseMapTiles());
   await Promise.allSettled(tasks);
 };
 
-export const maybeOfferChineseAssetDownloads = async (bundle: ProjectBundle): Promise<void> => {
+export const maybeOfferChineseAssetDownloads = async (
+  bundle: ProjectBundle,
+  openDialog: (dialog: DialogBarProps) => void,
+): Promise<void> => {
   if (!isDesktop() || !window.electronAPI) return;
   if (!(await isChineseEnabled(bundle))) return;
 
   const { missingAssets } = await checkChineseProjectAssets();
   if (missingAssets.length === 0) return;
 
-  window.writer?.overmindActions?.ui?.openDialog?.({
+  openDialog({
     type: 'chineseAssets',
     props: {
       id: 'chinese-assets-prompt',

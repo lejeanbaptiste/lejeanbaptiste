@@ -22,6 +22,18 @@
     "icon": "resources/branding/icon.filled.png",
     "extraResources": [
       {
+        "from": "resources/game-assets",
+        "to": "game-assets"
+      },
+      {
+        "from": "resources/avatar-parts",
+        "to": "avatar-parts"
+      },
+      {
+        "from": "resources/authority-extraction",
+        "to": "authority-extraction"
+      },
+      {
         "from": "resources/python",
         "to": "python",
         "filter": ["**/*", "!.deps-installed"]

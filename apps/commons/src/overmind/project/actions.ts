@@ -503,7 +503,7 @@ const loadProjectBundle = async (context: Context, bundle: ProjectBundle) => {
  * `window.writer`), which is only true once the project is already loaded.
  * Re-applies any bundle changes (e.g. entity store metadata) to state. */
 const runPostLoadOnboarding = async (context: Context, bundle: ProjectBundle) => {
-  const updated = await completePostLoadOnboarding(bundle);
+  const updated = await completePostLoadOnboarding(bundle, context.actions.ui.openDialog);
   if (updated === bundle) return;
 
   context.state.project.config = updated.config;

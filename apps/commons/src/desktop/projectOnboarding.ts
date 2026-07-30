@@ -7,6 +7,7 @@ import { openNativeProjectMetadata } from './openNativeProjectMetadata';
 import { openNativeSchemaSetup } from './openNativeSchemaSetup';
 import { ensureEntityDbFolder } from './entityDbOnboarding';
 import { isDesktop } from '@src/types/desktop';
+import type { DialogBarProps } from '../dialogs';
 
 const projectHasSchema = async (bundle: ProjectBundle): Promise<boolean> => {
   if (!bundle.config.schema?.rng || !window.electronAPI?.readFile) return false;
@@ -83,14 +84,14 @@ export const completeProjectOnboarding = async (
 };
 
 /**
- * Onboarding steps that need the app's embedded UI (e.g. the settings
- * dialog), which only exists once the project has actually loaded and
- * `<ProjectEditor>` has mounted. Must run *after* the caller has marked the
- * project ready — running it earlier (as part of `completeProjectOnboarding`)
- * deadlocks, since the embedded dialog can't open before that mount, and
- * that mount can't happen before onboarding completes.
+ * Onboarding steps that run only after the project is ready. The Chinese
+ * asset chooser uses the always-mounted desktop dialog host, so it is also
+ * available before an XML file initializes the embedded editor.
  */
-export const completePostLoadOnboarding = async (bundle: ProjectBundle): Promise<ProjectBundle> => {
+export const completePostLoadOnboarding = async (
+  bundle: ProjectBundle,
+  openDialog: (dialog: DialogBarProps) => void,
+): Promise<ProjectBundle> => {
   if (!isDesktop()) return bundle;
 
   const log = (step: string) => console.info(`[onboarding] ${step}`);
@@ -107,7 +108,7 @@ export const completePostLoadOnboarding = async (bundle: ProjectBundle): Promise
 
   // Non-blocking, once per project open: prompt for any remaining Chinese
   // assets (map tiles, CHGIS, …) still missing after the check above.
-  void maybeOfferChineseAssetDownloads(current).catch((error) =>
+  void maybeOfferChineseAssetDownloads(current, openDialog).catch((error) =>
     console.error('[onboarding] Chinese asset download prompt failed:', error),
   );
 

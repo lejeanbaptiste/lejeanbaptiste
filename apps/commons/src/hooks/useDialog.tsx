@@ -1,6 +1,7 @@
 import { useModal } from 'mui-modal-provider';
 import { useEffect } from 'react';
 import {
+  ChineseAssetsDialog,
   ImportDialog,
   PrivacyDialog,
   SignInDialog,
@@ -33,8 +34,8 @@ export const useDialog = () => {
 
       if (dismissed && displayId) {
         destroyModal(displayId);
-        // removeDisplayed(displayId);
-        // removeDialog(props.id);
+        removeDisplayed(displayId);
+        removeDialog(props.id);
         return;
       }
 
@@ -50,8 +51,7 @@ export const useDialog = () => {
           ...props,
           onClose: (action, data) => {
             if (props.onClose) props.onClose(action, data);
-            if (!props.id || !displayId) return;
-            removeDisplayed(displayId);
+            if (!props.id) return;
             removeDialog(props.id);
           },
           type,
@@ -71,5 +71,6 @@ export const useDialog = () => {
     if (type === 'templates') return TemplateDialog;
     if (type === 'privacy') return PrivacyDialog;
     if (type === 'signIn') return SignInDialog;
+    if (type === 'chineseAssets') return ChineseAssetsDialog;
   };
 };
