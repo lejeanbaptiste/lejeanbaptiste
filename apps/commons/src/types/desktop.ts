@@ -382,18 +382,6 @@ export interface ElectronAPI {
   onAuthorityLifecycleProgress?: (
     callback: (progress: AuthorityLifecycleProgress) => void,
   ) => () => void;
-  authorityChgisGet?: () => Promise<import('@src/desktop/authorityChgisTypes').ChgisStatus>;
-  pickChgisArchive?: () => Promise<string | null>;
-  authorityChgisInstallFromArchive?: (
-    archivePath: string,
-  ) => Promise<import('@src/desktop/authorityChgisTypes').ChgisInstallResult>;
-  authorityChgisInstallFromDataverse?: () => Promise<
-    import('@src/desktop/authorityChgisTypes').ChgisInstallResult
-  >;
-  authorityChgisRemove?: () => Promise<{ ok: boolean; error?: string }>;
-  onAuthorityChgisProgress?: (
-    callback: (progress: import('@src/desktop/authorityChgisTypes').ChgisInstallProgress) => void,
-  ) => () => void;
   pluginsEnsureSchemaContribution?: (
     pluginId: string,
     projectFilePath: string,

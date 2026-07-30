@@ -457,6 +457,8 @@ export interface AuthorityPackStatus {
   installed: boolean;
   bytes?: number;
   entityCount?: number;
+  source?: AuthorityPackSpec['source'];
+  attribution?: string;
 }
 
 /** Runtime packs registered by enabled plugins (see plugins/registry.ts). */

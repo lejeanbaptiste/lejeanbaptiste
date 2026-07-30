@@ -1,5 +1,4 @@
 import {
-  Alert,
   Box,
   Button,
   Checkbox,
@@ -19,7 +18,6 @@ import type { ChineseAssetsDialogProps } from './type';
 
 const assetLabels: Record<MissingAssetType, string> = {
   authorityPacks: 'Authority packs',
-  chgis: 'CHGIS',
   mapTiles: 'Map tiles',
   plugins: 'Language plugins',
 };
@@ -50,10 +48,6 @@ export const ChineseAssetsDialog = ({
             Your project uses Chinese as its source language. Download the resources that will
             enhance your editing experience.
           </Typography>
-          <Alert severity="info">
-            CHGIS (China Historical GIS) is downloaded from Harvard Dataverse and compiled
-            locally. LJB does not distribute CHGIS data.
-          </Alert>
           <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1 }}>
             {missingAssets.map((asset) => (
               <FormControlLabel

@@ -1,6 +1,7 @@
 /**
  * Prompt on Chinese-project open for the remaining downloadable assets
- * (authority packs, CHGIS, map tiles, plugins) that aren't already installed.
+ * (authority packs — CBDB/DILA/CHGIS/Wikidata —, map tiles, plugins) that
+ * aren't already installed.
  * Runs once per project open, after `<ProjectEditor>` has mounted so the
  * dialog can be shown through the embedded overmind store.
  */
@@ -49,9 +50,6 @@ const downloadSelectedChineseAssets = async (selected: MissingAssetType[]): Prom
   const tasks: Promise<unknown>[] = [];
   if (choices.has('authorityPacks')) {
     tasks.push(api?.authorityLifecycleSetEnabled?.({ enabled: true, profile: 'chinese' }) ?? Promise.resolve());
-  }
-  if (choices.has('chgis')) {
-    tasks.push(api?.authorityChgisInstallFromDataverse?.() ?? Promise.resolve());
   }
   if (choices.has('plugins')) tasks.push(downloadChinesePlugins());
   if (choices.has('mapTiles')) tasks.push(downloadChineseMapTiles());

@@ -9,7 +9,6 @@ import {
   FormControlLabel,
   Stack,
   Typography,
-  Alert,
 } from '@mui/material';
 import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
@@ -20,7 +19,6 @@ import type { MissingAssetType } from '../../utilities/chineseAssetStatus';
 
 const assetLabels: Record<MissingAssetType, { en: string; zh: string }> = {
   authorityPacks: { en: 'Authority packs', zh: '权威人物数据库' },
-  chgis: { en: 'CHGIS', zh: 'CHGIS (中国历史地理信息系统)' },
   mapTiles: { en: 'Map tiles', zh: '地图瓦片' },
   plugins: { en: 'Language plugins', zh: '语言插件' },
 };
@@ -70,12 +68,6 @@ export const ChineseAssetsDialog = ({
               ? '您打开的项目使用中文作为源语言。以下资源将增强编辑体验：'
               : 'Your project uses Chinese as the source language. The following resources will enhance your editing experience:'}
           </Typography>
-
-          <Alert severity="info">
-            {isZh
-              ? 'CHGIS（中国历史地理信息系统）由用户直接下载，不由 LJB 分发。'
-              : 'CHGIS (China Historical GIS) is downloaded directly by the user, not distributed by LJB.'}
-          </Alert>
 
           <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1 }}>
             {missingAssets.map((asset) => (

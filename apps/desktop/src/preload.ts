@@ -344,22 +344,6 @@ export interface ElectronAPI {
       progress: import('../../commons/src/desktop/authorityLifecycleTypes').AuthorityLifecycleProgress,
     ) => void,
   ) => () => void;
-  authorityChgisGet?: () => Promise<
-    import('../../commons/src/desktop/authorityChgisTypes').ChgisStatus
-  >;
-  pickChgisArchive?: () => Promise<string | null>;
-  authorityChgisInstallFromArchive?: (
-    archivePath: string,
-  ) => Promise<import('../../commons/src/desktop/authorityChgisTypes').ChgisInstallResult>;
-  authorityChgisInstallFromDataverse?: () => Promise<
-    import('../../commons/src/desktop/authorityChgisTypes').ChgisInstallResult
-  >;
-  authorityChgisRemove?: () => Promise<{ ok: boolean; error?: string }>;
-  onAuthorityChgisProgress?: (
-    callback: (
-      progress: import('../../commons/src/desktop/authorityChgisTypes').ChgisInstallProgress,
-    ) => void,
-  ) => () => void;
   updateProjectFileConfig: (
     projectFilePath: string,
     patch: Record<string, unknown>,
@@ -599,13 +583,6 @@ const electronAPI: ElectronAPI = {
     ipcRenderer.on('nativeTheme:updated', listener);
     return () => ipcRenderer.removeListener('nativeTheme:updated', listener);
   },
-  authorityChgisGet: () => ipcRenderer.invoke('authorityChgis:get'),
-  pickChgisArchive: () => ipcRenderer.invoke('pickChgisArchive'),
-  authorityChgisInstallFromArchive: (archivePath: string) =>
-    ipcRenderer.invoke('authorityChgis:installFromArchive', archivePath),
-  authorityChgisInstallFromDataverse: () =>
-    ipcRenderer.invoke('authorityChgis:installFromDataverse'),
-  authorityChgisRemove: () => ipcRenderer.invoke('authorityChgis:remove'),
   onAuthorityLifecycleProgress: (callback) => {
     const listener = (
       _event: Electron.IpcRendererEvent,
@@ -613,14 +590,6 @@ const electronAPI: ElectronAPI = {
     ) => callback(progress);
     ipcRenderer.on('authorityLifecycle:progress', listener);
     return () => ipcRenderer.removeListener('authorityLifecycle:progress', listener);
-  },
-  onAuthorityChgisProgress: (callback) => {
-    const listener = (
-      _event: Electron.IpcRendererEvent,
-      progress: import('../../commons/src/desktop/authorityChgisTypes').ChgisInstallProgress,
-    ) => callback(progress);
-    ipcRenderer.on('authorityChgis:progress', listener);
-    return () => ipcRenderer.removeListener('authorityChgis:progress', listener);
   },
   updateProjectFileConfig: (projectFilePath: string, patch: Record<string, unknown>) =>
     ipcRenderer.invoke('updateProjectFileConfig', projectFilePath, patch),

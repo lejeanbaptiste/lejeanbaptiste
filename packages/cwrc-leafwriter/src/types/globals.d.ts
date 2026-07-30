@@ -168,35 +168,6 @@ declare global {
     pluginsInstallRemote?: (
       entry: import('../../../../apps/commons/src/desktop/pluginRegistryTypes').PluginReleaseEntry,
     ) => Promise<import('../plugins/types').PluginHostSnapshotView>;
-    /** CHGIS historical-places authority (installed from a downloaded archive). */
-    authorityChgisGet?: () => Promise<{
-      installed: boolean;
-      entityDbFolder: string | null;
-      entityDbReady: boolean;
-      layers?: string[];
-      placeCount?: number;
-      crosswalkCount?: number;
-      installedAt?: string;
-      diskBytes?: number;
-      lastError?: string;
-      busy: boolean;
-    }>;
-    pickChgisArchive?: () => Promise<string | null>;
-    authorityChgisInstallFromArchive?: (
-      archivePath: string,
-    ) => Promise<{ ok: boolean; error?: string; placeCount?: number }>;
-    authorityChgisInstallFromDataverse?: () => Promise<{
-      ok: boolean;
-      error?: string;
-      placeCount?: number;
-    }>;
-    authorityChgisRemove?: () => Promise<{ ok: boolean; error?: string }>;
-    onAuthorityChgisProgress?: (
-      callback: (progress: {
-        phase: 'downloading' | 'extracting' | 'compiling' | 'idle';
-        message: string;
-      }) => void,
-    ) => () => void;
   }
 
   type WorkspaceCursorPosition =

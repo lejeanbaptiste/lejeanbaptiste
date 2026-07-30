@@ -70,6 +70,12 @@ export interface AuthorityLifecycleProfileStatus {
   packsReady: boolean;
 }
 
+export interface AuthorityLifecycleAttribution {
+  source: string;
+  label: string;
+  text: string;
+}
+
 export interface AuthorityLifecycleStatus {
   enabled: boolean;
   /** Legacy: first enabled profile (or 'chinese'). Prefer `profileStatuses`. */
@@ -80,6 +86,8 @@ export interface AuthorityLifecycleStatus {
   label: string;
   rawSources: AuthoritySourceStatus[];
   packs: AuthorityPackStatus[];
+  /** Deduped, manifest-sourced attribution/citation strings for installed packs (one per source). */
+  attributions: AuthorityLifecycleAttribution[];
   packsReady: boolean;
   diskUsage: AuthorityLifecycleDiskUsage | null;
   updateAvailable: boolean;

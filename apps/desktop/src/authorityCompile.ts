@@ -16,9 +16,10 @@ const COMPILE_TIMEOUT_MS = 30 * 60 * 1000;
 /**
  * Resolve sibling repo (dev) or bundled copy (packaged app). `marker` is a
  * script path relative to the root used to confirm the candidate is actually
- * populated — packaged builds only bundle the CHGIS toolchain (see
- * authorityChgis.ts), not the full repo, so callers must check for the
- * script they actually need rather than assuming `cbdb/compile.mjs` exists.
+ * populated. All authority packs (including CHGIS) are now pre-compiled and
+ * distributed via the authority-pack registry rather than compiled on-device,
+ * so in practice this only resolves in dev checkouts with authority-extraction
+ * as a sibling repo.
  */
 export const resolveAuthorityExtractionRoot = (marker = 'cbdb/compile.mjs'): string => {
   const candidates = [

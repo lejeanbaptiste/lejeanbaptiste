@@ -87,12 +87,6 @@ import {
   setAuthorityLifecycleEnabled,
 } from './authorityLifecycle';
 import {
-  getChgisStatus,
-  installChgisFromArchive,
-  installChgisFromDataverse,
-  removeChgisData,
-} from './authorityChgis';
-import {
   installMapTileBundle,
   listInstalledMapTileRegions,
   PMTILES_SCHEME,
@@ -2169,119 +2163,6 @@ const registerIpcHandlers = () => {
       return 'accepted';
     },
   );
-
-  const emitChgisProgress = (
-    event: Electron.IpcMainInvokeEvent,
-    progress: import('../../commons/src/desktop/authorityChgisTypes').ChgisInstallProgress,
-  ) => {
-    if (!event.sender.isDestroyed()) event.sender.send('authorityChgis:progress', progress);
-  };
-
-  ipcMain.handle('authorityChgis:get', async () => {
-    const folder = await getEntityDbFolderOrNull();
-    return getChgisStatus(folder);
-  });
-
-  ipcMain.handle('pickChgisArchive', async () => {
-    const parent = getTopNativeDialogWindow() ?? mainWindow ?? undefined;
-    const options: Electron.OpenDialogOptions = {
-      properties: ['openFile', 'openDirectory'],
-      title: 'Choose CHGIS download',
-      message: 'Select a .zip from Harvard Dataverse, an unzipped layer folder, or a .shp file.',
-      filters: [
-        { name: 'CHGIS archives', extensions: ['zip'] },
-        { name: 'Shapefiles', extensions: ['shp'] },
-        { name: 'All files', extensions: ['*'] },
-      ],
-      defaultPath: await getDialogDefaultPath(),
-    };
-    const result = parent
-      ? await dialog.showOpenDialog(parent, options)
-      : await dialog.showOpenDialog(options);
-    if (result.canceled || result.filePaths.length === 0) return null;
-    rememberDialogDir(result.filePaths[0], 'file');
-    return result.filePaths[0] ?? null;
-  });
-
-  ipcMain.handle('authorityChgis:installFromArchive', async (event, archivePath: string) => {
-    const folder = await getEntityDbFolderOrNull();
-    if (!folder) return { ok: false, error: 'No entity database folder configured.' };
-    if (!mainWindow) {
-      return { ok: false, error: 'Install dialog is unavailable.' };
-    }
-
-    const license = await dialog.showMessageBox(mainWindow, {
-      type: 'info',
-      buttons: ['Accept and install', 'Cancel'],
-      defaultId: 0,
-      cancelId: 1,
-      title: 'CHGIS academic license',
-      message: 'Install CHGIS historical place data?',
-      detail:
-        'CHGIS is available for academic research. Commercial use, resale, and redistribution are not permitted. LEAF-Writer will compile a local tagging pack on your machine only.',
-    });
-    if (license.response !== 0) return { ok: false, error: 'Install cancelled.' };
-
-    const result = await installChgisFromArchive({
-      entityDbFolder: folder,
-      archivePath,
-      onProgress: (progress) => emitChgisProgress(event, progress),
-    });
-    if (result.ok) {
-      new Notification({
-        title: 'CHGIS places ready',
-        body: `Compiled ${result.placeCount?.toLocaleString() ?? ''} historical places for auto-tagging.`,
-      }).show();
-    } else {
-      new Notification({
-        title: 'CHGIS install failed',
-        body: result.error ?? 'Compile could not complete.',
-      }).show();
-    }
-    return result;
-  });
-
-  ipcMain.handle('authorityChgis:installFromDataverse', async (event) => {
-    const folder = await getEntityDbFolderOrNull();
-    if (!folder) return { ok: false, error: 'No entity database folder configured.' };
-    if (!mainWindow) return { ok: false, error: 'Install dialog is unavailable.' };
-
-    const license = await dialog.showMessageBox(mainWindow, {
-      type: 'info',
-      buttons: ['Accept and download', 'Cancel'],
-      defaultId: 0,
-      cancelId: 1,
-      title: 'CHGIS academic license',
-      message: 'Download and install CHGIS historical place data?',
-      detail:
-        'CHGIS is available for academic research. Commercial use, resale, and redistribution are not permitted. LEAF-Writer will download the two required point-layer assets from Harvard Dataverse, store them locally, and compile a local tagging pack only.',
-    });
-    if (license.response !== 0) return { ok: false, error: 'Install cancelled.' };
-
-    const result = await installChgisFromDataverse({
-      entityDbFolder: folder,
-      onProgress: (progress) => emitChgisProgress(event, progress),
-    });
-    if (result.ok) {
-      new Notification({
-        title: 'CHGIS places ready',
-        body: `Compiled ${result.placeCount?.toLocaleString() ?? ''} historical places for auto-tagging.`,
-      }).show();
-    } else {
-      new Notification({
-        title: 'CHGIS install failed',
-        body: result.error ?? 'Compile could not complete.',
-      }).show();
-    }
-    return result;
-  });
-
-  ipcMain.handle('authorityChgis:remove', async () => {
-    const folder = await getEntityDbFolderOrNull();
-    if (!folder) return { ok: false, error: 'No entity database folder configured.' };
-    await removeChgisData(folder);
-    return { ok: true };
-  });
 
   ipcMain.handle('setEntityDbFolder', async (_event, folder: string | null) => {
     await setEntityDbFolder(folder);

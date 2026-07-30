@@ -24,6 +24,7 @@ import {
   AUTHORITY_PACKS_DIRNAME,
   type AuthorityPackId,
 } from '../../commons/src/desktop/authorityPackTypes';
+import { AUTHORITY_SOURCE_ORDER, AUTHORITY_SOURCE_LABELS } from '../../../packages/cwrc-leafwriter/src/autoTagging/packPaths';
 import { compileAuthorityPacks } from './authorityCompile';
 import {
   fetchRemotePacksIndex,
@@ -70,13 +71,14 @@ const PROFILE_SPECS: Record<
   }
 > = {
   chinese: {
-    label: 'Offline Chinese authorities (CBDB + DILA + Wikidata)',
+    label: 'Offline Chinese authorities (CBDB + DILA + CHGIS + Wikidata)',
     packIds: [
       'cbdb-persons',
       'cbdb-places',
       'cbdb-offices',
       'dila-persons',
       'dila-places',
+      'chgis-places',
       'wikidata-persons-pre-ming',
       'wikidata-persons-ming',
       'wikidata-persons-qing',
@@ -313,6 +315,20 @@ export const getAuthorityLifecycleStatus = async (
   const packIds = unionPackIds(profiles);
   const packs = allPackStatuses.filter((pack) => packIds.includes(pack.id));
 
+  const attributionBySource = new Map<string, string>();
+  for (const pack of packs) {
+    if (pack.installed && pack.source && pack.attribution && !attributionBySource.has(pack.source)) {
+      attributionBySource.set(pack.source, pack.attribution);
+    }
+  }
+  const attributions = AUTHORITY_SOURCE_ORDER.filter((source) => attributionBySource.has(source)).map(
+    (source) => ({
+      source,
+      label: AUTHORITY_SOURCE_LABELS[source],
+      text: attributionBySource.get(source)!,
+    }),
+  );
+
   const profileStatuses = ALL_AUTHORITY_PROFILES.map((id) => {
     const spec = profileSpec(id);
     const profilePacks = allPackStatuses.filter((pack) => spec.packIds.includes(pack.id));
@@ -345,6 +361,7 @@ export const getAuthorityLifecycleStatus = async (
     label: profileSpec(profile).label,
     rawSources,
     packs,
+    attributions,
     packsReady: packsReady(packs),
     diskUsage,
     updateAvailable: isUpdateAvailable(
@@ -436,6 +453,18 @@ const installPacksViaCompileFallback = async ({
   await fsp.rm(bakDir, { recursive: true, force: true });
 };
 
+/**
+ * CHGIS used to be installed on-device from a user-downloaded Dataverse
+ * archive, staging the raw shapefile ZIPs under authority-databases/chgis/raw.
+ * Now that CHGIS ships pre-compiled as part of the `chinese` pack bundle, that
+ * raw staging directory is orphaned disk space left over from the old flow —
+ * clean it up best-effort once the new bundle install succeeds.
+ */
+const cleanUpLegacyChgisRawFiles = async (entityDbFolder: string): Promise<void> => {
+  const legacyRawDir = path.join(entityDbFolder, AUTHORITY_DB_DIRNAME, 'chgis', 'raw');
+  await fsp.rm(legacyRawDir, { recursive: true, force: true }).catch(() => undefined);
+};
+
 /** Fetch GitHub pack bundle; optionally refresh raw reference databases. */
 export const runAuthorityLifecyclePipeline = async (
   options: RunAuthorityLifecyclePipelineOptions,
@@ -476,6 +505,10 @@ export const runAuthorityLifecyclePipeline = async (
       await installPacksViaCompileFallback({ ...options, profiles: targetProfiles });
     } else {
       packIndex = await installPacksFromGitHub(options, targetProfiles);
+    }
+
+    if (targetProfiles.includes('chinese')) {
+      await cleanUpLegacyChgisRawFiles(entityDbFolder);
     }
 
     if (lifecycle.referenceDataEnabled && rawSourceIds.length > 0) {

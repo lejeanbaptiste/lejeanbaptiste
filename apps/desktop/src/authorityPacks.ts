@@ -37,6 +37,7 @@ export async function getAuthorityPackStatuses(
     let installed = false;
     let bytes: number | undefined;
     let entityCount: number | undefined;
+    let attribution: string | undefined;
     try {
       const stat = await fsp.stat(file);
       installed = stat.isFile();
@@ -45,8 +46,10 @@ export async function getAuthorityPackStatuses(
       try {
         const manifest = JSON.parse(await fsp.readFile(manifestPath, 'utf8')) as {
           files?: Record<string, { entityCount?: number }>;
+          attribution?: string;
         };
         entityCount = manifest.files?.[path.basename(file)]?.entityCount;
+        attribution = manifest.attribution;
       } catch {
         // Pack files remain usable when their optional manifest is unavailable.
       }
@@ -59,6 +62,8 @@ export async function getAuthorityPackStatuses(
       installed,
       bytes,
       entityCount,
+      source: spec.source,
+      attribution,
     };
   }));
 }

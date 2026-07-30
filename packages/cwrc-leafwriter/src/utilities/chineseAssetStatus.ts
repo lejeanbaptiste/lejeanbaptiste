@@ -2,12 +2,11 @@
  * Check which assets are missing for a Chinese-language project.
  * Returns a list of missing asset types that should be downloaded.
  */
-export type MissingAssetType = 'authorityPacks' | 'chgis' | 'mapTiles' | 'plugins';
+export type MissingAssetType = 'authorityPacks' | 'mapTiles' | 'plugins';
 
 export interface ChineseProjectAssets {
   missingAssets: MissingAssetType[];
   authorityPacksInstalled: boolean;
-  chgisInstalled: boolean;
   mapTilesInstalled: boolean;
   pluginsInstalled: boolean;
 }
@@ -16,13 +15,12 @@ export async function checkChineseProjectAssets(): Promise<ChineseProjectAssets>
   const result: ChineseProjectAssets = {
     missingAssets: [],
     authorityPacksInstalled: false,
-    chgisInstalled: false,
     mapTilesInstalled: false,
     pluginsInstalled: false,
   };
 
   try {
-    // Check authority packs
+    // Check authority packs (CBDB, DILA, CHGIS, Wikidata — installed together as the `chinese` profile)
     const packStatuses = await window.electronAPI?.authorityPackStatuses?.();
     if (packStatuses && packStatuses.length > 0) {
       result.authorityPacksInstalled = packStatuses.some((p) => p.installed);
@@ -32,18 +30,6 @@ export async function checkChineseProjectAssets(): Promise<ChineseProjectAssets>
     }
   } catch {
     result.missingAssets.push('authorityPacks');
-  }
-
-  try {
-    // Check CHGIS
-    const chgisStatus = await window.electronAPI?.authorityChgisGet?.();
-    if (chgisStatus?.installed) {
-      result.chgisInstalled = true;
-    } else {
-      result.missingAssets.push('chgis');
-    }
-  } catch {
-    result.missingAssets.push('chgis');
   }
 
   try {

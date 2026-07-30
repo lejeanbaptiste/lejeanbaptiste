@@ -1,10 +1,10 @@
-# Authority data lifecycle (CBDB + DILA)
+# Authority data lifecycle (CBDB + DILA + CHGIS)
 
-**Status:** Spec (revised 2026-07-05) — two-tier model; **CI-first pack delivery** for normal users.
+**Status:** Spec (revised 2026-07-30) — two-tier model; **CI-first pack delivery** for normal users.
 
 **Related:** [authority-databases-phases.md](authority-databases-phases.md) (tracks A0–A6), [authority-databases-planning.md](authority-databases-planning.md) (field detail), [authority extraction/docs/phases.md](../../authority%20extraction/docs/phases.md) (compile + GitHub publish).
 
-**Scope (v1):** **CBDB** and **DILA**. **CHGIS** is planned as a third offline place source — see [CHGIS (planned)](#chgis-planned). These are Buddhist/Chinese **authority databases**, not CBETA corpus files.
+**Scope:** **CBDB**, **DILA**, and **CHGIS** — CHGIS is a Tier 1 (pre-compiled pack) source folded into the `chinese` profile bundle alongside CBDB/DILA/Wikidata; see [CHGIS](#chgis). These are Buddhist/Chinese **authority databases**, not CBETA corpus files.
 
 ---
 
@@ -60,7 +60,7 @@ Nothing in the **matcher** reads raw sqlite/XML. The **disambiguation panel** ma
 |--------|---------|------------------------|-------------------------|
 | **CBDB** | [CC BY-NC-SA 4.0](https://creativecommons.org/licenses/by-nc-sa/4.0/) | **OK** — attribute CBDB; release derivatives under NC-SA | User fetches from HuggingFace / Harvard (same license) |
 | **DILA** | CC-BY-SA 3.0 | **OK** — attribute DILA; share-alike on derivatives | User fetches from DILA GitHub |
-| **CHGIS** | Academic EULA — **no redistribution** | **Not OK** without permission | User fetches from [Harvard Dataverse](https://dataverse.harvard.edu/dataverse/chgis_v6); compile locally only |
+| **CHGIS** | Academic EULA — no standalone redistribution/repackaging of CHGIS datasets | **OK as a bundled derivative** — portions folded into the multi-source `chinese` pack with mandatory attribution, not a standalone CHGIS redistribution | Maintainer fetches from [Harvard Dataverse](https://dataverse.harvard.edu/dataverse/chgis_v6), compiles locally once per version bump, checks in via Git LFS (see `authority extraction/chgis/README.md`) |
 
 Pack manifests must record `license` accurately (CBDB: `CC-BY-NC-SA-4.0`, not vague “academic terms”). Settings UI shows attribution strings.
 
@@ -215,16 +215,16 @@ LJB desktop app **only downloads** this artifact for tier 1. Compile scripts rem
 
 ---
 
-## CHGIS (planned)
+## CHGIS
 
 Historical China **places** — complements CBDB places and DILA. See [authority-packs-planning.md](authority-packs-planning.md) §4.5.
 
-| Aspect | Plan |
+| Aspect | Status |
 |--------|------|
-| Pack | `authority-packs/chgis/places.ndjson` (compile in `authority extraction`) |
-| Delivery | **Reference + compile on user machine only** — Dataverse EULA forbids redistributing compiled packs via GitHub |
-| Crosswalk | CBDB `CHGIS_PT_ID`; overlap merge at match/disambiguation time |
-| UI | Extend offline authorities block when CHGIS track ships |
+| Pack | `authority-packs/chgis/places.ndjson`, compiled in `authority extraction` and shipped as part of the `chinese` profile bundle |
+| Delivery | **Tier 1, pre-compiled** — same GitHub-release pack registry as CBDB/DILA/Wikidata. Compiled once locally by a maintainer per CHGIS version bump and checked into `authority extraction` via Git LFS (not compiled on the end user's machine) |
+| Crosswalk | CBDB `CHGIS_PT_ID` (exact-id match) and DILA (name+geo fuzzy match); both crosswalks are built once locally and checked in alongside the pack — see `authority extraction/chgis/README.md` |
+| UI | No dedicated CHGIS UI — folded into the generic offline-authorities block (`DesktopOfflineAuthorities`) and its manifest-driven attributions disclosure, same as every other pack source |
 
 ---
 
@@ -250,7 +250,7 @@ Historical China **places** — complements CBDB places and DILA. See [authority
 | 4 | A5 | Reference-data checkbox + keep A1 fetcher for tier 2 | planned |
 | 5 | A6 | `authorityRef:lookup` for disambiguation / entity enrichment | planned |
 | 6 | D1 | DILA recompile (D0 `<note>`/`<add>` variants); bump policy | planned |
-| 7 | H | CHGIS compile + local-only lifecycle | planned |
+| 7 | H | CHGIS compile + fold into `chinese` Tier 1 pack bundle | done |
 
 **Exit criteria:** User enables once; packs install from GitHub without terminal; reference data optional; tag bomb works; update offers new pack bundle; disambiguation can show rich CBDB/DILA detail from local reference; disable + delete reclaims disk.
 
@@ -260,7 +260,7 @@ Historical China **places** — complements CBDB places and DILA. See [authority
 
 - Web app (no filesystem).
 - Auto-update without user confirmation.
-- Redistributing CHGIS-derived packs from GitHub.
+- Standalone redistribution of the raw CHGIS dataset itself (only a bundled derivative, folded into the multi-source `chinese` pack, is in scope).
 - CBETA corpus updates.
 - In-app editing of compile rules.
 

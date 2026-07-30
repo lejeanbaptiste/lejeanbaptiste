@@ -5,6 +5,7 @@ import { AuthorityCache } from './authorityCache';
 import {
   addEntity,
   appendAuthorityDates,
+  appendAuthorityIdnos,
   appendAuthoritySourcedValues,
   ENTITY_KINDS,
   entityElements,
@@ -21,6 +22,7 @@ import { linkedCentralIds } from './bridgeInbox';
 import type { EntityStore } from './entityStore';
 import { textWithoutHiddenReadings } from './hiddenChoiceText';
 import { adoptFromCentral } from './promote';
+import { dedupeIdnos, idnoEquals } from './lookupResolve';
 import {
   extractWikidataIdsFromText,
   fetchWikidataGivenFamilyNames,
@@ -1290,6 +1292,21 @@ export function resolveEntityInDocument(
         });
       }
       const entity = findEntity(entitiesDoc, id);
+      if (entity && input.authorityIds?.length) {
+        const existing: AuthorityId[] = [];
+        const idnoEls = entity.getElementsByTagName('idno');
+        for (let i = 0; i < idnoEls.length; i++) {
+          const idnoEl = idnoEls.item(i)!;
+          existing.push({
+            type: idnoEl.getAttribute('type') ?? 'unknown',
+            value: idnoEl.textContent?.trim() ?? '',
+          });
+        }
+        const toAdd = dedupeIdnos(input.authorityIds).filter(
+          (idno) => !existing.some((own) => idnoEquals(own, idno)),
+        );
+        if (toAdd.length > 0) appendAuthorityIdnos(entitiesDoc, entity, toAdd);
+      }
       const hasRomanized = entity
         ? Array.from(entity.children).some(
             (child) =>

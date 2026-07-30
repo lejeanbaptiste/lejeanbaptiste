@@ -41,10 +41,6 @@
       "from": "resources/pmtiles",
       "to": "pmtiles",
       "filter": ["pmtiles*"]
-    },
-    {
-      "from": "resources/authority-extraction",
-      "to": "authority-extraction"
     }
   ]
 }

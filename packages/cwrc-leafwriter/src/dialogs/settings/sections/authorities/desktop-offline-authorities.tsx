@@ -1,4 +1,8 @@
+import ExpandMoreIcon from '@mui/icons-material/ExpandMore';
 import {
+  Accordion,
+  AccordionDetails,
+  AccordionSummary,
   Alert,
   Box,
   Button,
@@ -27,6 +31,8 @@ type AuthorityLifecycleProfileStatus = {
   packsReady: boolean;
 };
 
+type AuthorityLifecycleAttribution = { source: string; label: string; text: string };
+
 type AuthorityLifecycleStatus = {
   busy: boolean;
   enabled: boolean;
@@ -43,6 +49,7 @@ type AuthorityLifecycleStatus = {
   rawSources: { id: string; installed: boolean; label: string; version?: string }[];
   updateAvailable: boolean;
   diskUsage: { packBytes: number; rawBytes: number } | null;
+  attributions?: AuthorityLifecycleAttribution[];
 };
 
 type AuthorityLifecycleRunResult = { ok: boolean; error?: string };
@@ -66,7 +73,7 @@ const PROFILE_NAMES: Record<AuthorityLifecycleProfile, string> = {
 };
 
 const PROFILE_SOURCES: Record<AuthorityLifecycleProfile, string> = {
-  chinese: 'CBDB · DILA · Wikidata',
+  chinese: 'CBDB · DILA · CHGIS · Wikidata',
   japanese: 'NDL · Wikidata',
   tibetan: 'Wikidata',
 };
@@ -303,6 +310,25 @@ export const DesktopOfflineAuthorities = () => {
             />
           </Stack>
         ))}
+
+        {enabledCount > 0 && (status?.attributions?.length ?? 0) > 0 && (
+          <Accordion disableGutters elevation={0} sx={{ '&:before': { display: 'none' } }}>
+            <AccordionSummary expandIcon={<ExpandMoreIcon fontSize="small" />} sx={{ minHeight: 0, px: 0 }}>
+              <Typography variant="caption" color="text.secondary">
+                Attributions
+              </Typography>
+            </AccordionSummary>
+            <AccordionDetails sx={{ px: 0, pt: 0 }}>
+              <Stack spacing={0.5}>
+                {status!.attributions!.map((attribution) => (
+                  <Typography key={attribution.source} variant="caption" color="text.secondary">
+                    {attribution.text}
+                  </Typography>
+                ))}
+              </Stack>
+            </AccordionDetails>
+          </Accordion>
+        )}
 
         {progress && working && (
           <Box>

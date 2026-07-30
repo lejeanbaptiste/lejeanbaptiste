@@ -400,7 +400,7 @@ Detailed action plan: **[wikidata-tag-packs-planning.md](wikidata-tag-packs-plan
 ### Phase P2 — GeoNames + CHGIS place packs
 
 1. **`geonames-places-CN`** (population filter e.g. cities5000 + alternates)  
-2. **`chgis-places-historical`** (academic license banner in UI)  
+2. **`chgis-places`** (shipped as part of the `chinese` Tier 1 pack bundle; citation covered by the generic manifest-driven attributions disclosure in `DesktopOfflineAuthorities` — no per-pack banner)  
 
 **Exit:** place tagging coverage for modern + historical Chinese toponyms.
 
