@@ -11,9 +11,17 @@
  *     (`office.followsOffice`).
  *  2. Nest a preceding `<placeName>` inside a `<roleName>` that takes one
  *     (`office.followsPlace`).
- *  3. Parse childless `<nobleTitle>` text into structured components.
- *  4. Wrap adjacent tagged person components in `<name type="personWrapper">`
- *     (reuses the existing compound-wrapper matcher/apply path).
+ *  3. Parse childless `<nobleTitle>` text into structured components,
+ *     splitting out a trailing identity name into a sibling `<persName>`
+ *     under a new wrapper (a title's own text never carries the person's
+ *     identity — see `applyNobleTitleSpan` in nobleTitleSpanApply.ts, which
+ *     this mirrors).
+ *  4. Wrap every maximal run of adjacent tagged person components
+ *     (`persName`/`roleName`/`placeName`/`nobleTitle`/`nationality`) that
+ *     includes a `persName` plus at least one other component in
+ *     `<name type="personWrapper">`. This is a purely structural rule — it
+ *     does not depend on the person being a known authority record, since
+ *     most mentions in a corpus won't be.
  *  5. Give every keyless personWrapper a `@key`: copy it down from an
  *     already-keyed inner `<persName>`, or attempt a unique entities.xml
  *     match; anything still unresolved is left for the normal disambiguation
@@ -24,8 +32,6 @@
  * re-checking the whole document.
  */
 
-import { resolveXPath } from './anchor';
-import { applySuggestions, type ApplyOptions } from './apply';
 import type { AuthorityCandidate } from './authority';
 import { candidatesFromEntityFile } from './disambiguationCandidates';
 import {
@@ -37,8 +43,6 @@ import {
   validatePersonWrapper,
   type PersonWrapperValidation,
 } from './personWrapperValidation';
-import { compoundWrapperSuggestions } from './seed';
-import type { WhitespacePolicy } from './types';
 
 /** The identity-bearing child of a person wrapper (not a posthumous/temple name). */
 function wrapperPersonName(wrapper: Element): Element | null {
@@ -49,9 +53,12 @@ function wrapperPersonName(wrapper: Element): Element | null {
   );
 }
 
+function localNameOf(node: Node): string {
+  return (node as Element).localName || node.nodeName;
+}
+
 function isPersonWrapper(element: Element): boolean {
-  return (element.localName || element.nodeName) === 'name' &&
-    element.getAttribute('type') === 'personWrapper';
+  return localNameOf(element) === 'name' && element.getAttribute('type') === 'personWrapper';
 }
 
 /** True when `second` immediately follows `first`, ignoring whitespace-only text between them. */
@@ -140,7 +147,7 @@ export function rollPlaceIntoRole(
   const placeNames = Array.from(scopeRoot.getElementsByTagName('placeName'));
   for (const place of placeNames) {
     const next = place.nextElementSibling;
-    if (!next || (next.localName || next.nodeName) !== 'roleName') continue;
+    if (!next || localNameOf(next) !== 'roleName') continue;
     if (place.parentNode !== next.parentNode || !elementsAdjacent(place, next)) continue;
     const roleText = next.textContent ?? '';
     const candidates = officeIndex.get(roleText) ?? [];
@@ -154,7 +161,12 @@ export function rollPlaceIntoRole(
   return rolled;
 }
 
-/** Parse every childless `<nobleTitle>` in scope into structured components. */
+/**
+ * Parse every childless `<nobleTitle>` in scope into structured components.
+ * A trailing identity name (the parser's `personName` slot) never becomes a
+ * `<nobleTitle>` child — it's split out into a sibling `<persName>` inside a
+ * new `<name type="personWrapper">` that replaces the title in place.
+ */
 export function parseChildlessNobleTitles(
   scopeRoot: Element,
   vocabulary: NobleTitleVocabulary,
@@ -172,49 +184,121 @@ export function parseChildlessNobleTitles(
     if (result.confidence === 'none') continue;
 
     const dynastySlot = result.slots.find((slot) => slot.role === 'dynasty');
+    const personSlot = result.slots.find((slot) => slot.role === 'personName');
     if (dynastySlot) el.setAttribute('dynasty', dynastySlot.text);
     while (el.firstChild) el.removeChild(el.firstChild);
     for (const slot of result.slots) {
-      if (slot.role === 'dynasty') continue;
+      if (slot.role === 'dynasty' || slot.role === 'personName') continue;
       const child = doc.createElementNS(ns, SLOT_TAG[slot.role]);
       if (slot.role === 'posthumousName') child.setAttribute('type', 'posthumous');
       child.textContent = slot.text;
       el.appendChild(child);
     }
-    touched.add(el);
+
+    if (personSlot) {
+      const wrapper = doc.createElementNS(ns, 'name');
+      wrapper.setAttribute('type', 'personWrapper');
+      wrapper.setAttribute('cert', 'unknown');
+      el.parentNode!.insertBefore(wrapper, el);
+      wrapper.appendChild(el);
+      const persNameEl = doc.createElementNS(ns, 'persName');
+      persNameEl.textContent = personSlot.text;
+      wrapper.appendChild(persNameEl);
+      touched.add(wrapper);
+    } else {
+      touched.add(el);
+    }
     parsed++;
   }
   return parsed;
 }
 
-/**
- * Create person wrappers for adjacent already-tagged components in scope,
- * reusing the existing compound-wrapper matcher and apply path directly
- * (rather than surfacing the matches as suggestions for review).
- */
-export async function createPersonWrappersInScope(
-  doc: Document,
-  scopeRoot: Element,
-  wrapperCandidates: readonly AuthorityCandidate[],
-  policy: WhitespacePolicy,
-  applyOptions: ApplyOptions,
-  touched: Set<Element>,
-): Promise<number> {
-  const matches = compoundWrapperSuggestions(doc, [...wrapperCandidates], policy);
-  const suggestions = matches
-    .map((match) => match.suggestion)
-    .filter((suggestion) => {
-      const node = resolveXPath(doc, suggestion.anchor.xpath);
-      return !!node && scopeRoot.contains(node);
-    });
-  if (suggestions.length === 0) return 0;
+const WRAPPER_COMPONENT_TAGS = new Set([
+  'nationality',
+  'nobleTitle',
+  'roleName',
+  'placeName',
+  'persName',
+]);
 
-  const { results } = await applySuggestions(doc, suggestions, applyOptions);
+function isWrapperComponent(node: Node): node is Element {
+  return node.nodeType === 1 && WRAPPER_COMPONENT_TAGS.has(localNameOf(node));
+}
+
+function isWhitespaceText(node: Node): boolean {
+  return node.nodeType === 3 && !(node.textContent ?? '').trim();
+}
+
+function isInsidePersonWrapper(element: Element): boolean {
+  for (let ancestor = element.parentElement; ancestor; ancestor = ancestor.parentElement) {
+    if (isPersonWrapper(ancestor)) return true;
+  }
+  return false;
+}
+
+/**
+ * Wrap each `persName` together with whatever role/place/title components
+ * immediately precede it, in `<name type="personWrapper">`. Norbert's
+ * convention is that the person's name is the *last* element of the group —
+ * a title or office always leads, never trails — so this only ever scans
+ * backward from a `persName`, collecting adjacent components (skipping
+ * whitespace-only gaps) until it hits the first non-component node. Nothing
+ * after the `persName` is ever pulled in. A lone `persName` with no such
+ * preceding component is left untouched, since wrapping it alone would
+ * group nothing. This is purely structural: it does not require the person
+ * to be a known authority record, since most mentions in a corpus won't be
+ * — key assignment (which does use authority data) happens separately
+ * afterward.
+ */
+export function createPersonWrappersInScope(scopeRoot: Element, touched: Set<Element>): number {
+  const doc = scopeRoot.ownerDocument;
+  if (!doc) return 0;
+  const ns = doc.documentElement?.namespaceURI ?? null;
+
   let created = 0;
-  for (const result of results) {
-    if (result.outcome === 'applied' && result.element) {
-      touched.add(result.element);
+  let changed = true;
+  while (changed) {
+    changed = false;
+    for (const persName of Array.from(scopeRoot.getElementsByTagName('persName'))) {
+      if (isInsidePersonWrapper(persName)) continue;
+      const parent = persName.parentElement;
+      // A persName nested inside e.g. a nobleTitle (a posthumous/temple
+      // name) isn't a grouping candidate at that level.
+      if (!parent || isWrapperComponent(parent)) continue;
+
+      let first: ChildNode = persName;
+      let precedingComponents = 0;
+      let cursor: ChildNode | null = persName.previousSibling;
+      while (cursor) {
+        if (isWrapperComponent(cursor) && localNameOf(cursor) !== 'persName') {
+          first = cursor;
+          precedingComponents++;
+          cursor = cursor.previousSibling;
+          continue;
+        }
+        if (isWhitespaceText(cursor)) {
+          cursor = cursor.previousSibling;
+          continue;
+        }
+        break;
+      }
+      if (precedingComponents === 0) continue;
+
+      const wrapper = doc.createElementNS(ns, 'name');
+      wrapper.setAttribute('type', 'personWrapper');
+      wrapper.setAttribute('cert', 'unknown');
+      parent.insertBefore(wrapper, first);
+      let node: ChildNode | null = first;
+      while (node) {
+        const next: ChildNode | null = node.nextSibling;
+        wrapper.appendChild(node);
+        if (node === persName) break;
+        node = next;
+      }
+      touched.add(wrapper);
       created++;
+      changed = true;
+      break; // DOM changed under getElementsByTagName's live list — restart the scan
     }
   }
   return created;
@@ -309,30 +393,19 @@ export interface GroupAndCleanResult {
   validation: PersonWrapperValidation;
 }
 
-export async function runGroupAndClean(
-  doc: Document,
+export function runGroupAndClean(
   entitiesDoc: Document,
   scopeRoot: Element,
   officeCandidates: readonly AuthorityCandidate[],
-  wrapperCandidates: readonly AuthorityCandidate[],
   vocabulary: NobleTitleVocabulary,
-  policy: WhitespacePolicy,
-  applyOptions: ApplyOptions,
-): Promise<GroupAndCleanResult> {
+): GroupAndCleanResult {
   const touched = new Set<Element>();
   const officeIndex = buildOfficeIndex(officeCandidates);
 
   const mergedRoleNames = mergeAdjacentRoleNames(scopeRoot, officeIndex, touched);
   const rolledPlaceNames = rollPlaceIntoRole(scopeRoot, officeIndex, touched);
   const parsedNobleTitles = parseChildlessNobleTitles(scopeRoot, vocabulary, touched);
-  const createdWrappers = await createPersonWrappersInScope(
-    doc,
-    scopeRoot,
-    wrapperCandidates,
-    policy,
-    applyOptions,
-    touched,
-  );
+  const createdWrappers = createPersonWrappersInScope(scopeRoot, touched);
   const { copied, autoResolved } = assignPersonWrapperKeys(scopeRoot, entitiesDoc, touched);
 
   return {
