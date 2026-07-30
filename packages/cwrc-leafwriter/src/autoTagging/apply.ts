@@ -54,6 +54,15 @@ export interface BatchResult {
   diagnostics?: import('./applyDiagnostics').ApplyDiagnosticsReport;
   /** LJB wrapper validation after the batch; pending cert=unknown is reported separately. */
   personWrapperValidation?: PersonWrapperValidation;
+  /**
+   * Set when the document's total text content length changed across the
+   * batch — autotagging must only add markup, never add or remove source
+   * text. The per-suggestion guard in `applyAdd` should catch this before it
+   * happens; this is the coarser net behind it, covering any other path that
+   * might someday do the same thing. Callers should surface this prominently
+   * (it means something is wrong) rather than silently swallow it.
+   */
+  textIntegrityWarning?: string;
 }
 
 const yieldToUi = (): Promise<void> =>
@@ -183,6 +192,9 @@ export async function applySuggestions(
   const spanKeyOf = (s: Suggestion) =>
     `${s.anchor.xpath}\t${s.anchor.offset}\t${s.anchor.surface}`;
 
+  const textLength = (): number => doc.documentElement?.textContent?.length ?? 0;
+  const textIntegrityIssues: string[] = [];
+
   const results: ApplyResult[] = [];
   for (let index = 0; index < ordered.length; index++) {
     const suggestion = ordered[index]!;
@@ -196,7 +208,22 @@ export async function applySuggestions(
       }
     }
 
+    const lengthBefore = textLength();
     const result = applyOne(doc, suggestion, options);
+    const delta = textLength() - lengthBefore;
+    // 'dates' (sanmiao date resolution) has its own, separately-established
+    // norms — it can legitimately drop a redundant character (e.g. a dynasty
+    // prefix already recorded elsewhere) when normalizing a ruler reference.
+    // Every other source is expected to only add markup, never change text.
+    if (result.outcome === 'applied' && delta !== 0 && suggestion.source !== 'dates') {
+      const message =
+        `Suggestion ${suggestion.id} (tag=${suggestion.tag}, source=${suggestion.source}) changed ` +
+        `the document's text length by ${delta > 0 ? '+' : ''}${delta} character(s) when applied — ` +
+        'autotagging must only add markup, never add or remove source text. This indicates a bug.';
+      console.error(`[autoTagging] ${message}`);
+      textIntegrityIssues.push(message);
+    }
+
     if (result.outcome === 'applied' && suggestion.action === 'add') {
       appliedAddSpans.set(spanKeyOf(suggestion), suggestion.tag);
     }
@@ -217,11 +244,15 @@ export async function applySuggestions(
   // cleanup again after all mutations as the final pre-validation step.
   removeNestedSameTagElements(doc);
 
+  const textIntegrityWarning =
+    textIntegrityIssues.length > 0 ? textIntegrityIssues.join('\n') : undefined;
+
   return {
     results,
     applied: results.filter((r) => r.outcome === 'applied').length,
     snapshot,
     personWrapperValidation: validatePersonWrappers(doc),
+    textIntegrityWarning,
   };
 }
 
@@ -437,6 +468,30 @@ function findAncestorTag(node: Node, tag: string): Element | null {
 }
 
 function applyAdd(doc: Document, suggestion: Suggestion, options: ApplyOptions): ApplyResult {
+  // Safety net: a compound suggestion's innerXml is built from authority
+  // metadata (see seed.ts), separately from the text the anchor actually
+  // matched. If the two ever drift — one authority record sharing several
+  // search-string forms behind one metadata object is exactly how they can —
+  // applying it would splice characters into the document that were never in
+  // the source. Verify before touching the DOM at all, rather than after.
+  if (suggestion.innerXml) {
+    const reconstructed = plainTextOfXmlFragment(doc, suggestion.innerXml);
+    if (reconstructed !== suggestion.anchor.surface) {
+      console.error(
+        '[autoTagging] Refused a compound suggestion whose innerXml text does not match the matched surface — applying it would rewrite source text.',
+        {
+          suggestionId: suggestion.id,
+          tag: suggestion.tag,
+          sourceDetail: suggestion.sourceDetail,
+          matchedSurface: suggestion.anchor.surface,
+          reconstructedFromInnerXml: reconstructed,
+          innerXml: suggestion.innerXml,
+        },
+      );
+      return { suggestion, outcome: 'conflict' };
+    }
+  }
+
   const resolved = resolveAnchor(doc, suggestion.anchor, options.policy);
   if (!resolved) return { suggestion, outcome: 'unresolvable' };
 
@@ -696,6 +751,20 @@ function replaceDateInnerStructure(
   for (const child of Array.from(wrapper.childNodes)) {
     element.appendChild(doc.importNode(child, true));
   }
+}
+
+/**
+ * Plain text a compound suggestion's `innerXml` would contribute, parsed the
+ * same way `replaceInnerStructure` parses it — so this reflects exactly what
+ * would land in the document, not an approximation of it. Returns null on a
+ * parse failure (also treated as "don't apply" by the caller).
+ */
+function plainTextOfXmlFragment(doc: Document, innerXml: string): string | null {
+  const teiNs = doc.documentElement?.namespaceURI ?? 'http://www.tei-c.org/ns/1.0';
+  const wrapped = `<wrapper xmlns="${teiNs}">${innerXml}</wrapper>`;
+  const parsed = new DOMParser().parseFromString(wrapped, 'application/xml');
+  if (!parsed.documentElement || parsed.getElementsByTagName('parsererror').length > 0) return null;
+  return parsed.documentElement.textContent;
 }
 
 /**

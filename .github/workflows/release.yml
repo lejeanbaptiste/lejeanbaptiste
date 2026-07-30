@@ -283,10 +283,59 @@ jobs:
       # after it's written, which electron-builder then hits as EBUSY while copying
       # build output (e.g. apps/commons/public/js/app.js.map) into the packaged app.
       # The existing retry loop below doesn't help since nothing removes the cause
-      # between attempts — excluding the workspace stops the scan from racing the copy.
+      # between attempts. A path exclusion alone isn't reliable for a freshly-
+      # downloaded, unsigned binary — Defender's cloud "block at first sight"
+      # reputation check can still grab it — so disable real-time monitoring
+      # outright too (mirrors ci.yml's desktop-windows job).
       - name: Exclude workspace from Windows Defender scanning
         shell: pwsh
-        run: Add-MpPreference -ExclusionPath "$env:GITHUB_WORKSPACE"
+        run: |
+          Add-MpPreference -ExclusionPath "$env:GITHUB_WORKSPACE"
+          Set-MpPreference -DisableRealtimeMonitoring $true
+
+      # Windows Search Indexer (WSearch) is the other well-known source of this
+      # same class of transient lock, independent of Defender — it walks
+      # newly-checked-out files in the background to index their content. This
+      # has caught large LFS binaries (e.g. apps/desktop/resources/game-assets/
+      # assets.bin, 56 MB) as EBUSY on every attempt of the retry loop below,
+      # since nothing in that loop stops the indexer from re-opening the file
+      # between attempts either.
+      - name: Stop Windows Search Indexer
+        shell: pwsh
+        run: |
+          Stop-Service -Name WSearch -Force -ErrorAction SilentlyContinue
+          Set-Service -Name WSearch -StartupType Disabled -ErrorAction SilentlyContinue
+
+      # Belt-and-braces for large/freshly-smudged LFS binaries specifically:
+      # read each one through once so this job — not Defender, not the
+      # indexer — is the process settling its file handle right before the
+      # packaging step needs it.
+      - name: Warm large resource files before packaging
+        shell: pwsh
+        run: |
+          $ErrorActionPreference = 'Stop'
+          Get-ChildItem -Path "apps/desktop/resources" -Recurse -File |
+            Where-Object { $_.Length -gt 5MB } |
+            ForEach-Object {
+              $path = $_.FullName
+              $sizeMb = [math]::Round($_.Length / 1MB, 1)
+              $attempts = 5
+              for ($attempt = 1; $attempt -le $attempts; $attempt++) {
+                try {
+                  $stream = [System.IO.File]::Open($path, 'Open', 'Read', 'ReadWrite')
+                  $stream.Close()
+                  Write-Host "Warmed $path ($sizeMb MB) on attempt $attempt"
+                  break
+                } catch {
+                  if ($attempt -eq $attempts) {
+                    Write-Host "Giving up warming $path after $attempts attempts: $_"
+                    break
+                  }
+                  Write-Host "$path busy on attempt $attempt ($_) — retrying..."
+                  Start-Sleep -Seconds (2 * $attempt)
+                }
+              }
+            }
 
       - name: Build Windows installer
         shell: pwsh

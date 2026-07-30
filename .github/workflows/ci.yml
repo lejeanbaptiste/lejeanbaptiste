@@ -301,6 +301,52 @@ jobs:
           Add-MpPreference -ExclusionPath "$env:GITHUB_WORKSPACE"
           Set-MpPreference -DisableRealtimeMonitoring $true
 
+      # Windows Search Indexer (WSearch) is the other well-known source of this
+      # same class of transient lock: it walks newly-checked-out files in the
+      # background to index their content, independent of Defender. It's what
+      # caught apps/desktop/resources/game-assets/assets.bin (a 56 MB LFS
+      # binary — one of the largest files LFS just checked out, so one of the
+      # slowest for the indexer to finish with) as EBUSY on every one of the
+      # existing retry loop's 3 attempts, since nothing in that loop stops the
+      # indexer from re-opening the file between attempts either.
+      - name: Stop Windows Search Indexer
+        shell: pwsh
+        run: |
+          Stop-Service -Name WSearch -Force -ErrorAction SilentlyContinue
+          Set-Service -Name WSearch -StartupType Disabled -ErrorAction SilentlyContinue
+
+      # Belt-and-braces for large/freshly-smudged LFS binaries specifically:
+      # read each one through once so this job — not Defender, not the
+      # indexer — is the process settling its file handle right before the
+      # packaging step needs it, rather than hoping the background scanners
+      # happened to finish in the intervening seconds.
+      - name: Warm large resource files before packaging
+        shell: pwsh
+        run: |
+          $ErrorActionPreference = 'Stop'
+          Get-ChildItem -Path "apps/desktop/resources" -Recurse -File |
+            Where-Object { $_.Length -gt 5MB } |
+            ForEach-Object {
+              $path = $_.FullName
+              $sizeMb = [math]::Round($_.Length / 1MB, 1)
+              $attempts = 5
+              for ($attempt = 1; $attempt -le $attempts; $attempt++) {
+                try {
+                  $stream = [System.IO.File]::Open($path, 'Open', 'Read', 'ReadWrite')
+                  $stream.Close()
+                  Write-Host "Warmed $path ($sizeMb MB) on attempt $attempt"
+                  break
+                } catch {
+                  if ($attempt -eq $attempts) {
+                    Write-Host "Giving up warming $path after $attempts attempts: $_"
+                    break
+                  }
+                  Write-Host "$path busy on attempt $attempt ($_) — retrying..."
+                  Start-Sleep -Seconds (2 * $attempt)
+                }
+              }
+            }
+
       - name: Build Windows installer (${{ matrix.arch }})
         shell: pwsh
         working-directory: apps/desktop

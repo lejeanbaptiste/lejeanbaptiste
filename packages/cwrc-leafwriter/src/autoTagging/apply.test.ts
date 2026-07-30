@@ -111,6 +111,78 @@ describe('applySuggestions', () => {
     expect(doc.getElementsByTagName('nobleTitle')[0]!.textContent).toBe('太尉');
   });
 
+  it('refuses a compound suggestion whose innerXml text does not match the matched surface — never rewrites source text', async () => {
+    // Reproduces a real bug: one authority record shares its metadata across
+    // both a "bare" (fief+rank, e.g. 明帝) and a "full" (fief+posthumousName+
+    // rank) search-string form. Applying the full form's components onto a
+    // span that only matched the bare form spliced a posthumous name into
+    // the document that was never in the source text.
+    const doc = parse(
+      '<TEI xmlns="http://www.tei-c.org/ns/1.0"><text><body><p>明帝遣使</p></body></text></TEI>',
+    );
+    const before = serialize(doc);
+    const suggestion: Suggestion = {
+      id: 'noble_title_mismatch',
+      source: 'authority',
+      action: 'add',
+      tag: 'nobleTitle',
+      innerXml:
+        '<placeName>明</placeName><persName type="posthumous">欽天履道英毅</persName><roleName>帝</roleName>',
+      anchor: createAnchor(
+        'doc',
+        doc,
+        doc.getElementsByTagName('p')[0]!.firstChild as Text,
+        0,
+        2, // matched span is "明帝" — 2 characters, not the 8 the innerXml would add
+        'ignore',
+      ),
+      status: 'pending',
+    };
+    const errorSpy = jest.spyOn(console, 'error').mockImplementation(() => {});
+    const { results, applied, textIntegrityWarning } = await applySuggestions(doc, [suggestion], {
+      policy: 'ignore',
+    });
+
+    expect(applied).toBe(0);
+    expect(results[0]!.outcome).toBe('conflict');
+    expect(serialize(doc)).toBe(before); // document is byte-for-byte untouched
+    expect(textIntegrityWarning).toBeUndefined(); // nothing was applied, so no length change either
+    expect(errorSpy).toHaveBeenCalledWith(
+      expect.stringContaining('Refused a compound suggestion'),
+      expect.objectContaining({ matchedSurface: '明帝' }),
+    );
+    errorSpy.mockRestore();
+  });
+
+  it('applies a compound suggestion normally when innerXml text matches the matched surface exactly', async () => {
+    const doc = parse(
+      '<TEI xmlns="http://www.tei-c.org/ns/1.0"><text><body><p>明帝遣使</p></body></text></TEI>',
+    );
+    const suggestion: Suggestion = {
+      id: 'noble_title_bare',
+      source: 'authority',
+      action: 'add',
+      tag: 'nobleTitle',
+      innerXml: '<placeName>明</placeName><roleName>帝</roleName>',
+      anchor: createAnchor(
+        'doc',
+        doc,
+        doc.getElementsByTagName('p')[0]!.firstChild as Text,
+        0,
+        2,
+        'ignore',
+      ),
+      status: 'pending',
+    };
+    const { results, applied, textIntegrityWarning } = await applySuggestions(doc, [suggestion], {
+      policy: 'ignore',
+    });
+    expect(applied).toBe(1);
+    expect(results[0]!.outcome).toBe('applied');
+    expect(doc.getElementsByTagName('nobleTitle')[0]!.textContent).toBe('明帝');
+    expect(textIntegrityWarning).toBeUndefined();
+  });
+
   it('does not nest a title inside an existing persName/placeName/roleName', async () => {
     const doc = parse(
       '<TEI xmlns="http://www.tei-c.org/ns/1.0"><text><body><p><persName>史記</persName></p></body></text></TEI>',
