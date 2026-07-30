@@ -26,6 +26,7 @@ export const useCommonsUiBridge = () => {
     setSkipExplorerDeleteConfirm,
     setThemeAppearance,
     switchLanguage,
+    openDialog,
   } = useActions().ui;
   const [encoderName, setEncoderNameState] = useState('');
   const [encoderNameLoaded, setEncoderNameLoaded] = useState(false);
@@ -192,6 +193,26 @@ export const useCommonsUiBridge = () => {
     setGithubConnected(false);
   }, []);
 
+  const confirmCreateEntityDb = useCallback(
+    (folder: string): Promise<boolean> =>
+      new Promise((resolve) => {
+        openDialog({
+          type: 'simple',
+          props: {
+            title: 'Create a new entity database?',
+            Body: `This folder has no entities.xml yet:\n${folder}\n\nLe Jean-Baptiste can set up a new entity database here from scratch. Compiled authority packs will go in authority-packs/ beside it.`,
+            actions: [
+              { action: 'cancel', label: 'Cancel' },
+              { action: 'create', label: 'Create entity database', variant: 'contained' },
+            ],
+            preventEscape: true,
+            onClose: (action) => resolve(action === 'create'),
+          },
+        });
+      }),
+    [openDialog],
+  );
+
   const pickEntityDbFolder = useCallback(async (): Promise<string | null> => {
     const picked = await window.electronAPI?.pickEntityDbFolder?.();
     if (!picked) return null;
@@ -225,15 +246,7 @@ export const useCommonsUiBridge = () => {
         });
         return null;
       }
-      const choice = await window.electronAPI?.showNativeMessageBox?.({
-        type: 'question',
-        title: 'Create a new entity database?',
-        message: `This folder has no entities.xml yet:\n${folder}\n\nLe Jean-Baptiste can set up a new entity database here from scratch. Compiled authority packs will go in authority-packs/ beside it.`,
-        buttons: ['Create entity database', 'Cancel'],
-        defaultId: 0,
-        cancelId: 1,
-      });
-      if (choice?.response !== 0) return null;
+      if (!(await confirmCreateEntityDb(folder))) return null;
       await window.electronAPI?.writeFile?.(`${folder}/entities.xml`, createEntitiesScaffold());
       await window.electronAPI?.ensureDirectory?.(`${folder}/${AUTHORITY_PACKS_DIRNAME}`);
     }
@@ -257,7 +270,7 @@ export const useCommonsUiBridge = () => {
     }
     setEntityDbFolderState(picked);
     return picked;
-  }, []);
+  }, [confirmCreateEntityDb]);
 
   const setRememberWorkspaceOnStartup = useCallback(async (value: boolean) => {
     setRememberWorkspaceOnStartupState(value);
@@ -360,6 +373,7 @@ export const useCommonsUiBridge = () => {
     runAuthorityLifecycleUpdate,
     revealAuthorityLifecycleFolder,
     moveEntityDbFolder,
+    openDialog,
     setAiApiSettings,
     setAuthorityLifecycleEnabled,
     setEncoderName,
