@@ -914,10 +914,6 @@ export const AchievementsDialog = ({ onClose, open }: AchievementsDialogProps) =
               const towardNext = nextThreshold
                 ? Math.min(100, ((value - prevThreshold) / (nextThreshold - prevThreshold)) * 100)
                 : 100;
-              // Ribbon sits inline with just the title; everything below it
-              // (metric line, rank line, progress bar) is indented to align
-              // with the title text, not with the ribbon.
-              const textIndent = `${RIBBON_WIDTH + 8}px`;
               return (
                 <Paper key={medal.metric} sx={{ p: 1.5 }} variant="outlined">
                   <Stack alignItems="center" direction="row" spacing={1}>
@@ -926,7 +922,7 @@ export const AchievementsDialog = ({ onClose, open }: AchievementsDialogProps) =
                       {medal.medalName[locale]}
                     </Typography>
                   </Stack>
-                  <Box sx={{ ml: textIndent }}>
+                  <Box>
                     <Typography color="text.secondary" component="div" variant="caption">
                       {METRIC_LABELS[medal.metric]}: {value.toLocaleString()}
                     </Typography>

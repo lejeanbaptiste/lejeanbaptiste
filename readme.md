@@ -156,17 +156,9 @@ See [apps/desktop/README.md](apps/desktop/README.md) for the compilation and pac
 
 ## TODO
 
-- Test
-- Get all installs working
-- Runtimes !
-
-- [ ] Test purge/propagate
-- [ ] Merge divirged entities DB
 - [ ] Auto parse and organise noble titles
 - [ ] Word plugin to handle names and dates correctly while centralising data.
 - [ ] Noble title and person wrapper tagging (testing).
-
-
 
 ## Future goals
 
