@@ -2,7 +2,14 @@ import { emptyProjectMetrics, emptyState } from './evaluate';
 import { createDefaultDiceBearAvatar } from './dicebear';
 import type { AchievementsState, ProjectMetrics } from './types';
 
-let cachedState: AchievementsState | null = null;
+// Fallback only - used when a disk read transiently fails or returns
+// unparsable content, never as a fast path. Achievements live in a file that
+// can change on disk out from under this process (cloud-sync restore, Time
+// Machine restore, a hand-edited backup), so every load must go back to
+// disk; treating a stale in-memory copy as authoritative was what let a
+// restored achievements.json get silently clobbered back to the old
+// progress on the very next document save.
+let lastKnownGoodState: AchievementsState | null = null;
 
 const sanitizeProjectMetrics = (value: Partial<ProjectMetrics> | undefined): ProjectMetrics => ({
   savedDocs: Array.isArray(value?.savedDocs)
@@ -110,9 +117,83 @@ const sanitizeState = (parsed: Partial<AchievementsState>): AchievementsState =>
   return state;
 };
 
-export const loadAchievementsState = async (): Promise<AchievementsState> => {
-  if (cachedState) return cachedState;
+const unionStrings = (a: string[], b: string[]): string[] => [...new Set([...a, ...b])].sort();
 
+const mergeProjectMetrics = (a: ProjectMetrics, b: ProjectMetrics): ProjectMetrics => ({
+  savedDocs: unionStrings(a.savedDocs, b.savedDocs),
+  tagsTotal: Math.max(a.tagsTotal, b.tagsTotal),
+  disambiguated: Math.max(a.disambiguated, b.disambiguated),
+  placesDisambiguated: Math.max(a.placesDisambiguated, b.placesDisambiguated),
+  entities: Math.max(a.entities, b.entities),
+  docLanguages: unionStrings(a.docLanguages, b.docLanguages),
+});
+
+/**
+ * Combines the state that's actually on disk right now with the state this
+ * process has been mutating in memory, so two machines sharing a cloud
+ * folder never lose progress to whichever one happens to save last. Every
+ * field here is either a high-water mark, an append-only set, or otherwise
+ * safe to take the "more advanced" side of - never a blind overwrite. Kept
+ * as a pure function (not a class/singleton) so it can be exercised the
+ * same way regardless of which side is fresher.
+ */
+export const mergeAchievementsStates = (
+  diskState: AchievementsState,
+  localState: AchievementsState,
+): AchievementsState => {
+  const projectKeys = new Set([
+    ...Object.keys(diskState.projects),
+    ...Object.keys(localState.projects),
+  ]);
+  const projects: Record<string, ProjectMetrics> = {};
+  for (const key of projectKeys) {
+    const diskMetrics = diskState.projects[key];
+    const localMetrics = localState.projects[key];
+    projects[key] =
+      diskMetrics && localMetrics
+        ? mergeProjectMetrics(diskMetrics, localMetrics)
+        : diskMetrics ?? localMetrics!;
+  }
+
+  const unlocked: AchievementsState['unlocked'] = { ...diskState.unlocked };
+  for (const [id, entry] of Object.entries(localState.unlocked)) {
+    const existing = unlocked[id];
+    // Keep whichever timestamp is earlier - that's the true first-unlock time.
+    if (!existing || entry.at.localeCompare(existing.at) < 0) unlocked[id] = entry;
+  }
+
+  const githubContributions =
+    diskState.githubContributions && localState.githubContributions
+      ? diskState.githubContributions.fetchedAt.localeCompare(
+          localState.githubContributions.fetchedAt,
+        ) >= 0
+        ? diskState.githubContributions
+        : localState.githubContributions
+      : (diskState.githubContributions ?? localState.githubContributions);
+
+  return {
+    version: 1,
+    installedAt:
+      diskState.installedAt.localeCompare(localState.installedAt) <= 0
+        ? diskState.installedAt
+        : localState.installedAt,
+    saveCount: Math.max(diskState.saveCount, localState.saveCount),
+    timeMachineRuns: Math.max(diskState.timeMachineRuns, localState.timeMachineRuns),
+    leaderboardPublicationDays: unionStrings(
+      diskState.leaderboardPublicationDays,
+      localState.leaderboardPublicationDays,
+    ),
+    sourceModeSaveCount: Math.max(diskState.sourceModeSaveCount, localState.sourceModeSaveCount),
+    githubContributions,
+    unlocked,
+    projects,
+    // Decorative and unversioned - prefer whichever side actually customized
+    // it over a side that never touched avatar settings this session.
+    avatar: localState.avatar ?? diskState.avatar,
+  };
+};
+
+export const loadAchievementsState = async (): Promise<AchievementsState> => {
   let raw: string | null = null;
   try {
     raw = (await window.electronAPI?.readAchievementsFile?.()) ?? null;
@@ -122,21 +203,40 @@ export const loadAchievementsState = async (): Promise<AchievementsState> => {
 
   if (raw) {
     try {
-      cachedState = sanitizeState(JSON.parse(raw) as Partial<AchievementsState>);
-      return cachedState;
+      const state = sanitizeState(JSON.parse(raw) as Partial<AchievementsState>);
+      lastKnownGoodState = state;
+      return state;
     } catch {
-      // Corrupt file: start over rather than crash the save pipeline.
+      // Corrupt file: fall through to the last-known-good/empty fallback
+      // below rather than crash the save pipeline.
     }
   }
 
-  cachedState = emptyState(new Date().toISOString());
-  return cachedState;
+  if (lastKnownGoodState) return lastKnownGoodState;
+
+  lastKnownGoodState = emptyState(new Date().toISOString());
+  return lastKnownGoodState;
 };
 
 export const saveAchievementsState = async (state: AchievementsState): Promise<void> => {
-  cachedState = state;
   try {
-    await window.electronAPI?.writeAchievementsFile?.(JSON.stringify(state, null, 2));
+    let raw: string | null = null;
+    try {
+      raw = (await window.electronAPI?.readAchievementsFile?.()) ?? null;
+    } catch {
+      raw = null;
+    }
+    let merged = state;
+    if (raw) {
+      try {
+        const onDisk = sanitizeState(JSON.parse(raw) as Partial<AchievementsState>);
+        merged = mergeAchievementsStates(onDisk, state);
+      } catch {
+        // Corrupt on-disk file: nothing sound to merge with, write local as-is.
+      }
+    }
+    lastKnownGoodState = merged;
+    await window.electronAPI?.writeAchievementsFile?.(JSON.stringify(merged, null, 2));
   } catch {
     // Achievements are decorative; never let them break a save.
   }
@@ -148,5 +248,5 @@ export const getProjectMetrics = (state: AchievementsState, projectKey: string):
 };
 
 export const clearAchievementsCache = () => {
-  cachedState = null;
+  lastKnownGoodState = null;
 };

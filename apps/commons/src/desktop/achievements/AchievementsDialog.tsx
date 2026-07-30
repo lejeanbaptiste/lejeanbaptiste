@@ -161,9 +161,25 @@ const totalRibbonsEarned = (state: AchievementsState): number =>
     0,
   );
 
-/** Composite rank shown after the player's name - climbs one step per
- * RIBBONS_PER_OVERALL_RANK ribbons earned in any combination across the 8
- * metrics, independent of the per-metric classes shown in the grid below.
+/** Composite rank index (0-based into RANK_NAMES), or -1 when unranked -
+ * climbs one step per RIBBONS_PER_OVERALL_RANK ribbons earned in any
+ * combination across the 8 metrics, independent of the per-metric classes
+ * shown in the grid below. This is also what drives which visual assets
+ * (m-rank/f-rank body art, backdrops, poses, weapons) are shown, so the
+ * portrait always matches the "Sergent"-style label below it - it must NOT
+ * be computed from highestRankIndexOf (the single best-performing metric
+ * ladder), which can run well ahead of the composite rank and used to make
+ * the portrait look several grades more senior than the player's actual
+ * commission. */
+const calculatedRankIndex = (state: AchievementsState): number => {
+  if (highestRankIndexOf(state) === -1) return -1;
+  return Math.min(
+    RANK_NAMES.length - 1,
+    Math.floor(totalRibbonsEarned(state) / RIBBONS_PER_OVERALL_RANK),
+  );
+};
+
+/** Composite rank shown after the player's name - see calculatedRankIndex.
  * Civil is only the one-time pre-opening-scene state (no ribbon earned
  * anywhere yet) - the very first ribbon already makes the player Fusilier,
  * per the reference doc's "after the opening scene, the user starts as
@@ -172,12 +188,8 @@ const totalRibbonsEarned = (state: AchievementsState): number =>
  * brigade) shifts one 6-ribbon bucket late and the top rank needs 42
  * ribbons instead of the intended 36 (6 steps x 6 ribbons). */
 const calculatedRank = (state: AchievementsState): string => {
-  if (highestRankIndexOf(state) === -1) return STARTER_RANK_NAME;
-  const rankIndex = Math.min(
-    RANK_NAMES.length - 1,
-    Math.floor(totalRibbonsEarned(state) / RIBBONS_PER_OVERALL_RANK),
-  );
-  return RANK_NAMES[rankIndex]!;
+  const rankIndex = calculatedRankIndex(state);
+  return rankIndex === -1 ? STARTER_RANK_NAME : RANK_NAMES[rankIndex]!;
 };
 
 export const AchievementsDialog = ({ onClose, open }: AchievementsDialogProps) => {
@@ -232,7 +244,7 @@ export const AchievementsDialog = ({ onClose, open }: AchievementsDialogProps) =
       }
       // Picked together with `state` (React batches this) so the backdrop
       // is already resolved by the time the render below needs it.
-      setBackgroundKey((previous) => pickBackgroundKey(highestRankIndexOf(loaded), previous));
+      setBackgroundKey((previous) => pickBackgroundKey(calculatedRankIndex(loaded), previous));
       // Pose and weapon are randomized the same way as the backdrop above
       // (Daniel: "pose and weapons will be random"). Weapon depends on
       // which pose just got picked and the player's current rank, so it's
@@ -249,17 +261,17 @@ export const AchievementsDialog = ({ onClose, open }: AchievementsDialogProps) =
         // generatedBodyPools.ts). Falling through to pickPose/pickWeapon
         // here for rankIndex -1 used to render a random Fusilier (rank 1)
         // uniform instead of the civilian portrait.
-        if (highestRankIndexOf(loaded) === -1) {
+        if (calculatedRankIndex(loaded) === -1) {
           setWeaponRank(null);
           setWeaponImageIds([]);
           return CIVILIAN_POSE_INDEX;
         }
-        const newPose = pickPose(previousPose, loadedBodyType, highestRankIndexOf(loaded));
+        const newPose = pickPose(previousPose, loadedBodyType, calculatedRankIndex(loaded));
         setWeaponRank((previousWeaponRank) => {
           const weapon = pickWeapon(
             newPose,
             loadedBodyType,
-            highestRankIndexOf(loaded),
+            calculatedRankIndex(loaded),
             previousWeaponRank,
           );
           setWeaponImageIds(weapon?.imageIds ?? []);
@@ -330,20 +342,20 @@ export const AchievementsDialog = ({ onClose, open }: AchievementsDialogProps) =
     ? diceBearAvatarUrl({ ...avatarOptions, ...hoverPreview })
     : avatarUrl;
   const serviceSince = new Date(state.installedAt).toLocaleDateString();
-  const highestRankIndex = highestRankIndexOf(state);
+  const displayRankIndex = calculatedRankIndex(state);
   const weaponSelection =
     weaponRank !== null ? { imageIds: weaponImageIds, rank: weaponRank } : null;
   const bodyBackUrl = buildBodyUrl(
     poseIndex,
     avatarOptions.bodyType,
-    highestRankIndex,
+    displayRankIndex,
     weaponSelection,
     'back',
   );
   const bodyFrontUrl = buildBodyUrl(
     poseIndex,
     avatarOptions.bodyType,
-    highestRankIndex,
+    displayRankIndex,
     weaponSelection,
     'front',
   );
