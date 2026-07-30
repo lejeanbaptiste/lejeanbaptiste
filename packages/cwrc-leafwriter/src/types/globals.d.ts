@@ -274,6 +274,7 @@ declare global {
       getAutoTaggingAuthoritySettings: () =>
         | {
             packs?: string[];
+            showPackStringCounts?: boolean;
             dateFilter?: 'none' | 'limit' | 'exclude';
             yearStart?: number;
             yearEnd?: number;
@@ -292,6 +293,7 @@ declare global {
         | undefined;
       setAutoTaggingAuthoritySettings: (settings: {
         packs?: string[];
+        showPackStringCounts?: boolean;
         dateFilter?: 'none' | 'limit' | 'exclude';
         yearStart?: number;
         yearEnd?: number;

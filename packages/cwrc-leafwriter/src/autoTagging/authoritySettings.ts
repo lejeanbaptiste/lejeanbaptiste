@@ -33,6 +33,8 @@ export {
 /** Per-project authority tag-bomb settings (stored in jean-baptiste.project.json). */
 export interface AutoTaggingAuthoritySettings {
   packs?: AuthorityPackId[];
+  /** Show the live authority-pack string totals in the tag-bomb panel (off by default because the scan is expensive). */
+  showPackStringCounts?: boolean;
   dateFilter?: DateFilterMode;
   yearStart?: number;
   yearEnd?: number;
@@ -148,6 +150,7 @@ export function packsRecordFromSettings(
 
 export function settingsFromUiState(input: {
   packs: Record<AuthorityPackId, boolean>;
+  showPackStringCounts: boolean;
   dateFilter: DateFilterMode;
   yearRange: [number, number];
   /** When omitted, name-type policy fields are preserved from persisted settings. */
@@ -158,6 +161,7 @@ export function settingsFromUiState(input: {
   return {
     ...preserved,
     packs: persistedPacksFromUi(input.packs),
+    showPackStringCounts: input.showPackStringCounts,
     dateFilter: input.dateFilter,
     yearStart: Math.min(yearStart, yearEnd),
     yearEnd: Math.max(yearStart, yearEnd),
@@ -170,11 +174,13 @@ export function uiStateFromSettings(
   workYear?: number | null,
 ): {
   packs: Record<AuthorityPackId, boolean>;
+  showPackStringCounts: boolean;
   dateFilter: DateFilterMode;
   yearRange: [number, number];
 } {
   return {
     packs: packsRecordFromSettings(settings),
+    showPackStringCounts: settings?.showPackStringCounts === true,
     dateFilter: migrateDateFilter(settings, workYear),
     yearRange: yearRangeFromAuthoritySettings(settings, workYear),
   };
@@ -187,6 +193,7 @@ export function readPersistedAuthoritySettings(): AutoTaggingAuthoritySettings |
     // Stored as a plain string[] in the project file; uiPacksFromPersisted/
     // packsRecordFromSettings narrow it back to known ids.
     packs: raw.packs as AuthorityPackId[] | undefined,
+    showPackStringCounts: raw.showPackStringCounts === true,
     dateFilter: raw.dateFilter,
     yearStart: raw.yearStart,
     yearEnd: raw.yearEnd,

@@ -58,6 +58,8 @@ export interface DisambiguationSettings {
 /** Persisted in jean-baptiste.project.json — mirrors cwrc-leafwriter authoritySettings. */
 export interface AutoTaggingAuthoritySettings {
   packs?: string[];
+  /** Show the live authority-pack string totals in the tag-bomb panel. */
+  showPackStringCounts?: boolean;
   dateFilter?: 'none' | 'limit' | 'exclude';
   yearStart?: number;
   yearEnd?: number;

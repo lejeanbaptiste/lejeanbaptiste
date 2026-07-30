@@ -359,6 +359,7 @@ export const AutoTaggingDialog = ({ id, onClose, open = false }: IDialog) => {
   const [busyMessage, setBusyMessage] = useState('');
   const [authorityPackCounts, setAuthorityPackCounts] = useState<AuthorityPackStringCounts>({});
   const [authorityPackCountsLoading, setAuthorityPackCountsLoading] = useState(false);
+  const [showPackStringCounts, setShowPackStringCounts] = useState(false);
   const authorityCountGeneration = useRef(0);
   const [sourceLanguage, setSourceLanguage] = useState<string | null>(null);
   const [workflowReady, setWorkflowReady] = useState(false);
@@ -464,6 +465,7 @@ export const AutoTaggingDialog = ({ id, onClose, open = false }: IDialog) => {
     );
     setAuthorityDateFilter(saved.dateFilter);
     setAuthorityYearRange(saved.yearRange);
+    setShowPackStringCounts(saved.showPackStringCounts);
   }, [open]);
 
   useEffect(() => {
@@ -535,7 +537,13 @@ export const AutoTaggingDialog = ({ id, onClose, open = false }: IDialog) => {
   );
 
   useEffect(() => {
-    if (step !== 'authority' || !entityDbFolder || busy || !isDesktopApp()) {
+    if (
+      !showPackStringCounts ||
+      step !== 'authority' ||
+      !entityDbFolder ||
+      busy ||
+      !isDesktopApp()
+    ) {
       setAuthorityPackCounts({});
       setAuthorityPackCountsLoading(false);
       return;
@@ -596,6 +604,7 @@ export const AutoTaggingDialog = ({ id, onClose, open = false }: IDialog) => {
     authorityDateFilter,
     authorityYearRange,
     visibleAuthorityPackIds,
+    showPackStringCounts,
   ]);
   const beginReview = (produced: Suggestion[], notice?: string) => {
     startAutoTaggingReview({
@@ -821,6 +830,7 @@ export const AutoTaggingDialog = ({ id, onClose, open = false }: IDialog) => {
       await persistAuthoritySettings(
         settingsFromUiState({
           packs: authorityPacks,
+          showPackStringCounts,
           dateFilter: authorityDateFilter,
           yearRange: authorityYearRange,
         }),
@@ -906,6 +916,18 @@ export const AutoTaggingDialog = ({ id, onClose, open = false }: IDialog) => {
       setAuthorityProgress('');
       setBusyMessage('');
     }
+  };
+
+  const togglePackStringCounts = (checked: boolean) => {
+    setShowPackStringCounts(checked);
+    void persistAuthoritySettings(
+      settingsFromUiState({
+        packs: authorityPacks,
+        showPackStringCounts: checked,
+        dateFilter: authorityDateFilter,
+        yearRange: authorityYearRange,
+      }),
+    );
   };
 
   const runAi = async () => {
@@ -1470,11 +1492,13 @@ export const AutoTaggingDialog = ({ id, onClose, open = false }: IDialog) => {
                             : opt.label;
                           const suffix = available
                             ? origin === 'file' || origin === 'pedb' || origin === 'cedb'
-                              ? formatPackStringCount(
-                                  authorityPackCounts,
-                                  opt.id,
-                                  authorityPackCountsLoading,
-                                )
+                              ? showPackStringCounts
+                                ? formatPackStringCount(
+                                    authorityPackCounts,
+                                    opt.id,
+                                    authorityPackCountsLoading,
+                                  )
+                                : ''
                               : ''
                             : unavailableSuffixFor(origin);
                           return (
@@ -1534,6 +1558,23 @@ export const AutoTaggingDialog = ({ id, onClose, open = false }: IDialog) => {
                   );
                 })}
               </Box>
+              <FormControlLabel
+                control={
+                  <Checkbox
+                    size="small"
+                    checked={showPackStringCounts}
+                    disabled={busy}
+                    onChange={(event) => togglePackStringCounts(event.target.checked)}
+                    sx={{ py: 0.125 }}
+                  />
+                }
+                label={
+                  <Typography variant="caption">
+                    Show live string counts (can slow opening)
+                  </Typography>
+                }
+                sx={authorityOptionSx}
+              />
               <Box sx={{ px: 0.25, pt: 0.25 }}>
                 <Stack direction="row" alignItems="center" spacing={0.5}>
                   <Tooltip

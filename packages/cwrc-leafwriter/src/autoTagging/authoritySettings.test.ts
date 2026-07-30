@@ -13,6 +13,11 @@ describe('authoritySettings', () => {
   it('defaults to the Eastern Han preset when no work year is known', () => {
     expect(migrateDateFilter(undefined)).toBe(DEFAULT_AUTHORITY_DATE_FILTER);
     expect(uiStateFromSettings(undefined).yearRange).toEqual(DEFAULT_AUTHORITY_YEAR_RANGE);
+    expect(uiStateFromSettings(undefined).showPackStringCounts).toBe(false);
+  });
+
+  it('preserves the optional live pack-count setting', () => {
+    expect(uiStateFromSettings({ showPackStringCounts: true }).showPackStringCounts).toBe(true);
   });
 
   it('defaults to excluding from the work year to the slider max once the active file has one', () => {
