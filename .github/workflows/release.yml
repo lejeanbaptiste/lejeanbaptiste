@@ -261,11 +261,22 @@ jobs:
             runner: windows-11-arm
 
     steps:
+      # Configure the runner before checkout so Windows services cannot grab
+      # the large LFS resource while it is being materialized.
+      - name: Prepare Windows workspace protection
+        shell: pwsh
+        run: |
+          Add-MpPreference -ExclusionPath "$env:GITHUB_WORKSPACE"
+          Set-MpPreference -DisableRealtimeMonitoring $true
+          Stop-Service -Name WSearch -Force -ErrorAction SilentlyContinue
+          Set-Service -Name WSearch -StartupType Disabled -ErrorAction SilentlyContinue
+
       - name: Check out repository
         uses: actions/checkout@v5
         with:
           ref: ${{ inputs.source_ref || github.ref }}
-          lfs: true
+          # Fetch the large LFS asset only after Defender/Search are stopped.
+          lfs: false
 
       - name: Set up Node.js
         uses: actions/setup-node@v5
@@ -279,32 +290,16 @@ jobs:
       - name: Set package version from release tag
         run: node scripts/set-desktop-release-version.mjs "${{ inputs.release_tag || github.ref_name }}"
 
-      # Windows Defender's real-time scanner can grab a transient lock on a file right
-      # after it's written, which electron-builder then hits as EBUSY while copying
-      # build output (e.g. apps/commons/public/js/app.js.map) into the packaged app.
-      # The existing retry loop below doesn't help since nothing removes the cause
-      # between attempts. A path exclusion alone isn't reliable for a freshly-
-      # downloaded, unsigned binary — Defender's cloud "block at first sight"
-      # reputation check can still grab it — so disable real-time monitoring
-      # outright too (mirrors ci.yml's desktop-windows job).
-      - name: Exclude workspace from Windows Defender scanning
+      - name: Fetch Windows LFS assets
         shell: pwsh
         run: |
-          Add-MpPreference -ExclusionPath "$env:GITHUB_WORKSPACE"
-          Set-MpPreference -DisableRealtimeMonitoring $true
-
-      # Windows Search Indexer (WSearch) is the other well-known source of this
-      # same class of transient lock, independent of Defender — it walks
-      # newly-checked-out files in the background to index their content. This
-      # has caught large LFS binaries (e.g. apps/desktop/resources/game-assets/
-      # assets.bin, 56 MB) as EBUSY on every attempt of the retry loop below,
-      # since nothing in that loop stops the indexer from re-opening the file
-      # between attempts either.
-      - name: Stop Windows Search Indexer
-        shell: pwsh
-        run: |
-          Stop-Service -Name WSearch -Force -ErrorAction SilentlyContinue
-          Set-Service -Name WSearch -StartupType Disabled -ErrorAction SilentlyContinue
+          $ErrorActionPreference = 'Stop'
+          git lfs pull --include="apps/desktop/resources/game-assets/assets.bin"
+          $asset = Get-Item "apps/desktop/resources/game-assets/assets.bin"
+          if ($asset.Length -lt 1MB) {
+            throw "LFS asset was not materialized: $($asset.FullName) is only $($asset.Length) bytes"
+          }
+          Write-Host "Fetched $($asset.FullName) ($([math]::Round($asset.Length / 1MB, 1)) MB)"
 
       # Belt-and-braces for large/freshly-smudged LFS binaries specifically:
       # read each one through once so this job — not Defender, not the
