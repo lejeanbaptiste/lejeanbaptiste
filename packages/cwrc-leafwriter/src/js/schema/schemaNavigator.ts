@@ -7,6 +7,7 @@ import { log } from '../../utilities';
 
 let schemaJSON: any;
 let schemaElements: any;
+const parentsForTagCache = new Map<string, { name: string; level: number }[]>();
 
 /**
  * RelaxNG structural keywords this module matches on (via $key or direct
@@ -71,11 +72,13 @@ const normalizeRelaxNgPrefixes = (node: any) => {
 };
 
 export const setSchemaJSON = (json: any) => {
+  parentsForTagCache.clear();
   if (json?.grammar) normalizeRelaxNgPrefixes(json.grammar);
   schemaJSON = json;
 };
 
 export const setSchemaElements = (elements: any) => {
+  parentsForTagCache.clear();
   schemaElements = elements;
 };
 
@@ -85,11 +88,16 @@ export const setSchemaElements = (elements: any) => {
  * @returns {Array}
  */
 export const getParentsForTag = (tag: string) => {
+  const cached = parentsForTagCache.get(tag);
+  if (cached) return cached;
+
   const elements = getEntriesForTag(tag);
 
   if (elements.length == 0) {
     log.warn(`schemaNavigator: cannot find element for ${tag}`);
-    return [];
+    const empty: { name: string; level: number }[] = [];
+    parentsForTagCache.set(tag, empty);
+    return empty;
   }
 
   let parents: { name: string; level: number }[] = [];
@@ -98,6 +106,7 @@ export const getParentsForTag = (tag: string) => {
   }
 
   sortEntries(parents);
+  parentsForTagCache.set(tag, parents);
   return parents;
 };
 
