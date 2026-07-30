@@ -8,13 +8,6 @@
     }
   ],
   "artifactName": "Le-Jean-Baptiste-win-Setup-${version}-${arch}.${ext}",
-  "extraResources": [
-    {
-      "from": "resources/python",
-      "to": "python",
-      "filter": ["**/*", "!.deps-installed"]
-    }
-  ],
   "nsis": {
     "oneClick": false,
     "perMachine": true,
@@ -26,6 +19,13 @@
   },
   "win": {
     "target": ["nsis"],
-    "icon": "resources/branding/icon.filled.png"
+    "icon": "resources/branding/icon.filled.png",
+    "extraResources": [
+      {
+        "from": "resources/python",
+        "to": "python",
+        "filter": ["**/*", "!.deps-installed"]
+      }
+    ]
   }
 }
