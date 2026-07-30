@@ -54,7 +54,6 @@ export const AutoTaggingReviewPane = () => {
   const [busy, setBusy] = useState(false);
   const [refreshing, setRefreshing] = useState(false);
   const [busyLabel, setBusyLabel] = useState<AutoTaggingBusyLabel>('Applying tags…');
-  const [progress, setProgress] = useState({ done: 0, total: 0 });
   const [notice, setNotice] = useState<string | null>(null);
   const [reviewPanelReady, setReviewPanelReady] = useState(false);
   const [applyDiagnostics, setApplyDiagnostics] = useState<string | null>(null);
@@ -215,15 +214,12 @@ export const AutoTaggingReviewPane = () => {
       const closeAfterApply = isDateCuratorBatch(accepted) || isDateCuratorBatch(suggestions);
       void (async () => {
         setBusyLabel('Applying tags…');
-        setProgress({ done: 0, total: accepted.length });
         setBusy(true);
         await new Promise<void>((resolve) => {
           requestAnimationFrame(() => requestAnimationFrame(() => resolve()));
         });
         try {
-          const result = await getSession().apply(accepted, [], (done, total) => {
-            setProgress({ done, total });
-          });
+          const result = await getSession().apply(accepted, []);
           if (accepted.some((s) => s.source === 'dates' && s.action === 'resolve-date')) {
             markDatesPassApplied(autoTaggingDocumentKey(window.writer));
           } else if (
@@ -305,7 +301,6 @@ export const AutoTaggingReviewPane = () => {
           setApplyDiagSeverity('error');
         } finally {
           setBusy(false);
-          setProgress({ done: 0, total: 0 });
         }
       })();
     },
@@ -345,7 +340,6 @@ export const AutoTaggingReviewPane = () => {
     if (busy) return;
     void (async () => {
       setBusyLabel('Reverting tags…');
-      setProgress({ done: 0, total: 0 });
       setBusy(true);
       try {
         await new Promise<void>((resolve) => {
@@ -359,7 +353,6 @@ export const AutoTaggingReviewPane = () => {
         console.error('[auto-tagging] revert failed', error);
       } finally {
         setBusy(false);
-        setProgress({ done: 0, total: 0 });
       }
     })();
   }, [busy, getSession]);
@@ -398,12 +391,7 @@ export const AutoTaggingReviewPane = () => {
 
   return (
     <>
-      <AutoTaggingApplyOverlay
-        open={busy}
-        label={busyLabel}
-        done={progress.done}
-        total={progress.total}
-      />
+      <AutoTaggingApplyOverlay open={busy} label={busyLabel} />
       <Box
         sx={{
           position: 'relative',

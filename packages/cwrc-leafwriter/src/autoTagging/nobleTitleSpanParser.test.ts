@@ -78,6 +78,17 @@ describe('parseNobleTitleSpan — plain text', () => {
     expect(result.slots.find((s) => s.role === 'posthumousName')!.unverified).toBe(true);
   });
 
+  it('exposes each slot\'s offset within its own (shared) text segment', () => {
+    // All three slots come from ONE text segment ("鄱陽王範"); a caller
+    // committing this to a document needs to cut the exact sub-range for
+    // each slot out of that single original text node.
+    const result = parseNobleTitleSpan([text('鄱陽王範')], vocabulary);
+    const byRole = Object.fromEntries(result.slots.map((s) => [s.role, s]));
+    expect(byRole.fief).toMatchObject({ segmentIndex: 0, segmentTextOffset: 0 });
+    expect(byRole.rank).toMatchObject({ segmentIndex: 0, segmentTextOffset: 2 });
+    expect(byRole.personName).toMatchObject({ segmentIndex: 0, segmentTextOffset: 3 });
+  });
+
   it('reports no parse when the span holds no recognised rank', () => {
     const result = parseNobleTitleSpan([text('曹操')], vocabulary);
     expect(result.slots).toEqual([]);

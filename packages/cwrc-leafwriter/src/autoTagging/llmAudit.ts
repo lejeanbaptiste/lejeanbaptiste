@@ -3,6 +3,7 @@ import { promptVersionWithProfile, resolveAuditCleanTaskText } from './aiPromptP
 import { buildDocIndex, createAnchor, type DocIndex } from './anchor';
 import { applySuggestions } from './apply';
 import { chunkDocument, llmChunkOptions, type Chunk, type ChunkOptions } from './chunk';
+import { findTeiBodyRoot } from './dateTeiHelpers';
 import type { LlmCache } from './llmCache';
 import type { LlmClient } from './llmClient';
 import { findOccurrenceOffset, locateInDoc, parseValidItems } from './llmParse';
@@ -106,8 +107,9 @@ async function runAuditCleanPass(
   progressTotal: number,
 ): Promise<{ suggestions: Suggestion[]; unverifiableCount: number }> {
   const { tags, client, cache, policy, onProgress, onChunk, promptProfile, signal } = options;
-  const chunks = chunkDocument(doc, llmChunkOptions(options));
-  const index = buildDocIndex(doc, policy);
+  const root = options.root ?? findTeiBodyRoot(doc);
+  const chunks = chunkDocument(doc, llmChunkOptions({ ...options, root }));
+  const index = buildDocIndex(root, policy);
   const tagSet = new Set(tags);
   const spans = collectTaggedSpans(doc, index, tagSet);
   const schema = suggestionResponseSchema(CLEAN_ACTIONS);
@@ -172,7 +174,7 @@ async function runAuditCleanPass(
           tag: item.tag,
           anchor: createAnchor(
             '',
-            doc,
+            root,
             located.node,
             located.rawStart,
             located.rawEnd,

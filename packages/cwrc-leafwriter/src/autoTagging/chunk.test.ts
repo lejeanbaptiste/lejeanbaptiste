@@ -62,6 +62,24 @@ describe('chunkDocument', () => {
     expect(chunks[0]!.text).toBe('plain text with no blocks');
   });
 
+  it('excludes <teiHeader> from chunking by default — metadata is never sent to the model', () => {
+    const doc = parse(
+      '<TEI><teiHeader><fileDesc><titleStmt><p>Smith, editor</p></titleStmt></fileDesc></teiHeader>' +
+        '<text><body><p>alpha</p></body></text></TEI>',
+    );
+    const chunks = chunkDocument(doc, { policy: 'ignore', targetChars: 100 });
+    const full = chunks.map((c) => c.text).join('');
+    expect(full).toBe('alpha');
+  });
+
+  it('honors an explicit root over the teiHeader-excluding default', () => {
+    const doc = parse('<TEI><teiHeader><p>Smith, editor</p></teiHeader><text><body><p>alpha</p></body></text></TEI>');
+    const header = doc.getElementsByTagName('teiHeader')[0]!;
+    const chunks = chunkDocument(doc, { policy: 'ignore', targetChars: 100, root: header });
+    const full = chunks.map((c) => c.text).join('');
+    expect(full).toBe('Smith,editor');
+  });
+
   it('returns no chunks for an empty document', () => {
     const doc = parse('<TEI><text></text></TEI>');
     expect(chunkDocument(doc, { policy: 'ignore' })).toEqual([]);

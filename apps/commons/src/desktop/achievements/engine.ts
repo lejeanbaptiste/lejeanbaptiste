@@ -1,3 +1,4 @@
+import i18next from 'i18next';
 import { normalizePathKey } from '../infrastructurePaths';
 import type { TagUsageStats } from '../tagging/tagStats';
 import { findAchievementDef } from './definitions';
@@ -21,8 +22,9 @@ const notifyUnlocks = (ids: string[], notify: AchievementUnlockNotifier) => {
     notify(`🎖️ ${ids.length} achievements unlocked — see your Service Record`);
     return;
   }
+  const locale: 'fr' | 'en' = i18next.language?.startsWith('fr') ? 'fr' : 'en';
   for (const id of ids) {
-    const def = findAchievementDef(id);
+    const def = findAchievementDef(id, locale);
     if (def) notify(`🎖️ Achievement unlocked: ${def.name} — ${def.description}`);
   }
 };

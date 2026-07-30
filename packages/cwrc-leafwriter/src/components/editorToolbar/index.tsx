@@ -2,16 +2,17 @@ import { Box, Divider, Paper, Stack, useTheme } from '@mui/material';
 import { AnimatePresence, motion } from 'motion/react';
 import { useCallback, useRef } from 'react';
 import { useTranslation } from 'react-i18next';
-import { getPluginToolbarItems } from '../../plugins/pluginExtensions';
+import { getPluginToolbarItems, type PluginToolbarMenuItem } from '../../plugins/pluginExtensions';
 import type { IconLeafWriter } from '../../icons';
 import { useActions, useAppState } from '../../overmind';
 import type { ChoiceDisplayMode } from '../../overmind/editor/state';
 import { EntityType } from '../../types';
 import { Button } from './Button';
 import { IconButton } from './IconButton';
+import { MenuButton } from './MenuButton';
 import { Toggle } from './Toggle';
 
-type ItemType = 'button' | 'divider' | 'iconButton' | 'toggle';
+type ItemType = 'button' | 'divider' | 'iconButton' | 'menuButton' | 'toggle';
 type ItemGroup = 'action' | 'ui' | 'panel' | 'general';
 
 const isDesktopApp = () =>
@@ -44,6 +45,8 @@ export interface MenuItem extends Item {
   selected?: boolean;
   title?: string;
   tooltip?: string;
+  /** For `type: 'menuButton'`: opens a dropdown of these instead of firing `onClick`. */
+  menuItems?: PluginToolbarMenuItem[];
 }
 
 export const EditorToolbar = () => {
@@ -296,18 +299,6 @@ export const EditorToolbar = () => {
       title: t('LW.xpathSearch.title'),
       type: 'iconButton',
     },
-    ...pluginToolbarItems.map(
-      (item) =>
-        ({
-          group: item.group ?? 'ui',
-          hide: isReadonly || !item.isAvailable(),
-          icon: item.icon as IconLeafWriter,
-          onClick: () => item.onClick({ openCalendar: openCalendarDialog }),
-          title: item.title,
-          tooltip: item.tooltip,
-          type: 'iconButton',
-        }) satisfies MenuItem,
-    ),
     {
       group: 'ui',
       hide: isReadonly,
@@ -362,12 +353,35 @@ export const EditorToolbar = () => {
       title: 'Advanced tag transform',
       type: 'iconButton',
     },
+    // Plugin-contributed items (e.g. the Norbert menu) render last, so a
+    // newly-installed plugin's toolbar entry always lands at the end rather
+    // than inserting itself into the middle of the built-in items above.
+    ...pluginToolbarItems.map((item): MenuItem => {
+      const isMenu = Boolean(item.menuItems?.length);
+      return {
+        group: item.group ?? 'ui',
+        hide: isReadonly || !item.isAvailable(),
+        icon: item.icon as IconLeafWriter,
+        menuItems: isMenu ? item.menuItems : undefined,
+        onClick: isMenu ? undefined : () => item.onClick?.({ openCalendar: openCalendarDialog }),
+        title: item.title,
+        tooltip: item.tooltip,
+        type: isMenu ? 'menuButton' : 'iconButton',
+      };
+    }),
   ];
 
   const ItemComponent = (item: MenuItem | Item) => {
     const BUTTON_TYPES: Record<ItemType, React.ReactNode> = {
       button: <Button {...(item as MenuItem)} />,
       iconButton: <IconButton {...(item as MenuItem)} />,
+      menuButton: (
+        <MenuButton
+          {...(item as MenuItem)}
+          menuItems={(item as MenuItem).menuItems ?? []}
+          openCalendar={openCalendarDialog}
+        />
+      ),
       toggle: <Toggle {...(item as MenuItem)} />,
       divider: (
         <Divider

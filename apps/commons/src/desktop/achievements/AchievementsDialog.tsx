@@ -30,6 +30,7 @@ import {
   svgToPngBytes,
 } from './certificate';
 import {
+  CLASS_NAMES,
   RANK_MEDALS,
   RANK_NAMES,
   RARE_ACHIEVEMENTS,
@@ -111,20 +112,6 @@ const METRIC_LABELS: Record<string, string> = {
   wetWork: 'Source-mode saves',
   flagOfCommitment: 'Repo contributions',
 };
-
-// Per-ladder class reached (VIIème classe, lowest, up to Ière classe,
-// highest) - distinct from RANK_NAMES/OVERALL_RANK_NAMES, which name the
-// player's *overall* rank (Fusilier..Général de brigade), earned from
-// ribbons summed across all 8 ladders, not any single ladder's own class.
-const CLASS_NAMES = [
-  'VIIème classe',
-  'VIème classe',
-  'Vème classe',
-  'IVème classe',
-  'IIIème classe',
-  'IIème classe',
-  'Ière classe',
-] as const;
 
 // Placeholder ribbon art (real art TBD) - reuses the same striped-gradient
 // technique and per-metric colorways as RibbonRack in UniformAvatar.tsx. A
@@ -929,9 +916,9 @@ export const AchievementsDialog = ({ onClose, open }: AchievementsDialogProps) =
                     <Typography color="text.secondary" component="div" variant="caption">
                       {rankIndex >= 0
                         ? nextThreshold
-                          ? `${CLASS_NAMES[rankIndex]} — ${value.toLocaleString()} / ${nextThreshold.toLocaleString()} to go`
+                          ? `${CLASS_NAMES[rankIndex]} — ${value.toLocaleString()} / ${nextThreshold.toLocaleString()} until next classe`
                           : `${CLASS_NAMES[rankIndex]} — highest class attained`
-                        : `${value.toLocaleString()} / ${medal.thresholds[0]!.toLocaleString()} to go`}
+                        : `${value.toLocaleString()} / ${medal.thresholds[0]!.toLocaleString()} until next classe`}
                     </Typography>
                     <LinearProgress
                       sx={{ height: 4, borderRadius: 1, mt: 0.5 }}

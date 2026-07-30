@@ -17,7 +17,9 @@ export function tagFollowingStyleNames(doc: Document): number {
     style.setAttribute('type', 'courtesy');
     style.setAttribute('key', key);
     style.textContent = styleName;
-    text.data = '字' + text.data.slice(1 + styleName.length);
+    const marker = doc.createTextNode('字');
+    text.data = text.data.slice(1 + styleName.length);
+    person.parentNode?.insertBefore(marker, text);
     person.parentNode?.insertBefore(style, text);
     tagged += 1;
   }

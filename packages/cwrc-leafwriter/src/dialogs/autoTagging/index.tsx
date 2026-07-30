@@ -329,7 +329,6 @@ export const AutoTaggingDialog = ({ id, onClose, open = false }: IDialog) => {
     createDefaultAiPromptProfilesState(),
   );
   const [promptEditorOpen, setPromptEditorOpen] = useState(false);
-  const [aiProgress, setAiProgress] = useState({ done: 0, total: 0 });
   const [aiValidation, setAiValidation] = useState(true);
   const [selectionRange, setSelectionRange] = useState<{ start: number; end: number } | null>(null);
   const [limitToSelection, setLimitToSelection] = useState(true);
@@ -825,7 +824,7 @@ export const AutoTaggingDialog = ({ id, onClose, open = false }: IDialog) => {
 
     setError(null);
     setBusy(true);
-    setAuthorityProgress('Starting…');
+    setAuthorityProgress('Tagging…');
     try {
       await persistAuthoritySettings(
         settingsFromUiState({
@@ -845,7 +844,6 @@ export const AutoTaggingDialog = ({ id, onClose, open = false }: IDialog) => {
               end: Math.max(yearStart, yearEnd),
             };
       const result = await getSession().runTagBomb(selected, readPack ?? (async () => ''), {
-        onProgress: setAuthorityProgress,
         ...(dateFilter ? { dateFilter } : {}),
         importedLists,
         scope: effectiveScope,
@@ -967,15 +965,11 @@ export const AutoTaggingDialog = ({ id, onClose, open = false }: IDialog) => {
     };
     const execute = async (background: boolean) => {
       if (background) startAiRunProgress(`AI ${aiMode}`, () => abortController.abort());
-      else {
-        setBusy(true);
-        setAiProgress({ done: 0, total: 0 });
-      }
+      else setBusy(true);
       try {
         const client = createLlmClientFromSettings(settings);
         const onProgress = (done: number, total: number) => {
           if (background) updateAiRunProgress(done, total);
-          else setAiProgress({ done, total });
         };
         const range = limitToSelection ? selectionRange : null;
         const result =
@@ -1024,10 +1018,7 @@ export const AutoTaggingDialog = ({ id, onClose, open = false }: IDialog) => {
         }
       } finally {
         if (background) finishAiRunProgress();
-        else {
-          setBusy(false);
-          setAiProgress({ done: 0, total: 0 });
-        }
+        else setBusy(false);
       }
     };
 
@@ -1089,8 +1080,6 @@ export const AutoTaggingDialog = ({ id, onClose, open = false }: IDialog) => {
             ? authorityProgress || 'Loading tag bomb sources…'
             : busyMessage || aiBusyLabel
         }
-        done={step === 'ai' ? aiProgress.done : 0}
-        total={step === 'ai' ? aiProgress.total : 0}
       />
       <Dialog
         open={open}

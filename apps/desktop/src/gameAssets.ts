@@ -39,11 +39,25 @@ function getBundlePath(): string {
     : path.join(__dirname, '../resources/game-assets/assets.bin');
 }
 
+// A real bundle is tens of MB; anything this small can only be a Git LFS
+// pointer file (~130 bytes of text) left behind by a checkout that didn't
+// smudge LFS content - fail loudly instead of feeding it to the decipher,
+// which throws inside a caller-facing try/catch and silently 404s every
+// body/background image.
+const MIN_PLAUSIBLE_BUNDLE_BYTES = 1024;
+
 function loadAssetMap(): Map<string, { buffer: Buffer; type: string; colorStats?: AssetColorStats }> {
   if (assetMap) return assetMap;
 
   const bundlePath = getBundlePath();
   const raw = fs.readFileSync(bundlePath);
+  if (raw.length < MIN_PLAUSIBLE_BUNDLE_BYTES) {
+    throw new Error(
+      `Game asset bundle at ${bundlePath} is only ${raw.length} bytes - looks like an ` +
+        'unfetched Git LFS pointer rather than the real bundle. Run `git lfs pull` (or ' +
+        'check the build/CI checkout fetched LFS content) and rebuild.',
+    );
+  }
   const iv = raw.subarray(0, 12);
   const authTag = raw.subarray(12, 28);
   const ciphertext = raw.subarray(28);

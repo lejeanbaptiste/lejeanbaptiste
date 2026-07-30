@@ -110,6 +110,15 @@ describe('dictionaryTag', () => {
     expect(suggestions[0]!.anchor.contextBefore).toContain('outside');
   });
 
+  it('skips text inside <teiHeader> (metadata, not corpus text)', () => {
+    const doc = parse(
+      '<TEI xmlns="http://www.tei-c.org/ns/1.0"><teiHeader><fileDesc><titleStmt><author>Smith</author></titleStmt></fileDesc></teiHeader><text><body><p>outside Smith here</p></body></text></TEI>',
+    );
+    const suggestions = dictionaryTag(doc, [{ string: 'Smith', tag: 'persName' }], 'ignore');
+    expect(suggestions).toHaveLength(1);
+    expect(suggestions[0]!.anchor.contextBefore).toContain('outside');
+  });
+
   it('emits one suggestion per tag when the same string carries several tags', () => {
     const doc = parse(TEI);
     const suggestions = dictionaryTag(

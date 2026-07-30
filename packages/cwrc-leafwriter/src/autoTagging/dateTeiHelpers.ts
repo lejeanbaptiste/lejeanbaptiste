@@ -51,6 +51,24 @@ export function isInsideDateElement(node: Node): boolean {
   return hasDateAncestor(node);
 }
 
+function hasTeiHeaderAncestor(node: Node): boolean {
+  let el: Element | null =
+    node.nodeType === Node.TEXT_NODE
+      ? (node as Text).parentElement
+      : node.nodeType === Node.ELEMENT_NODE
+        ? (node as Element)
+        : node.parentElement;
+  for (; el; el = el.parentElement) {
+    if (el.localName === 'teiHeader') return true;
+  }
+  return false;
+}
+
+/** True when `node` sits inside `<teiHeader>` — metadata, never corpus text to auto-tag. */
+export function isInsideTeiHeader(node: Node): boolean {
+  return hasTeiHeaderAncestor(node);
+}
+
 export function isEntityTagForbiddenInDate(tag: string): boolean {
   return (ENTITY_TAGS_FORBIDDEN_IN_DATE as readonly string[]).includes(tag);
 }

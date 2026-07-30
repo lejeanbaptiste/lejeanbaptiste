@@ -23,6 +23,14 @@ export type PluginReviewPanelComponent = ComponentType<{
 
 export type PluginReviewPanelMatcher = (suggestions: Suggestion[]) => boolean;
 
+export interface PluginToolbarMenuItem {
+  id: string;
+  label: string;
+  onClick: (ctx: { openCalendar: (notice?: string) => void }) => void;
+  disabled?: boolean;
+  tooltip?: string;
+}
+
 export interface PluginToolbarContribution {
   pluginId: string;
   id: string;
@@ -32,7 +40,14 @@ export interface PluginToolbarContribution {
   group?: 'action' | 'ui' | 'panel' | 'general';
   /** When true, show the toolbar button. Called on render. */
   isAvailable: () => boolean;
-  onClick: (ctx: { openCalendar: (notice?: string) => void }) => void;
+  /**
+   * A single-item contribution calls this directly. Omit it (and supply
+   * `menuItems` instead) to render a dropdown of several actions under one
+   * toolbar button.
+   */
+  onClick?: (ctx: { openCalendar: (notice?: string) => void }) => void;
+  /** When present, the toolbar button opens a dropdown of these instead of calling `onClick`. */
+  menuItems?: PluginToolbarMenuItem[];
 }
 
 const pluginDialogs = new Map<string, PluginDialogComponent>();

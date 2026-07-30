@@ -15,6 +15,7 @@
     "allowToChangeInstallationDirectory": true,
     "createDesktopShortcut": true,
     "createStartMenuShortcut": true,
+    "installerHeader": "resources/branding/installer-header.bmp",
     "include": "installer.nsh"
   },
   "win": {

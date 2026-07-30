@@ -104,7 +104,6 @@ export const CalendarDialog = ({ notice, onClose, open = false }: CalendarDialog
   });
   const [dateFuzzy, setDateFuzzy] = useState(false);
   const [datesProgress, setDatesProgress] = useState('');
-  const [datesChunkProgress, setDatesChunkProgress] = useState({ done: 0, total: 0 });
   const [sourceLanguage, setSourceLanguage] = useState<string | null>(null);
   const [workflowReady, setWorkflowReady] = useState(false);
   const [documentKey, setDocumentKey] = useState('unknown');
@@ -199,27 +198,6 @@ export const CalendarDialog = ({ notice, onClose, open = false }: CalendarDialog
     handleClose();
   };
 
-  const makeSanmiaoProgress = (
-    setProgress: (label: string) => void,
-    verb: string,
-  ): import('../../autoTagging/dates').DateTagOptions['onProgress'] => (p) => {
-    setDatesChunkProgress({ done: p.done, total: p.total });
-    if (p.phase === 'starting') {
-      setProgress(
-        p.tablesMs != null ? `Tables loaded (${p.tablesMs} ms). ${verb}…` : `${verb}…`,
-      );
-    } else if (p.phase === 'chunk') {
-      const slow = (p.ms ?? 0) > 5000 ? ' — slow' : '';
-      setProgress(
-        p.total <= 1
-          ? `${verb}… ${p.proposalsInChunk ?? 0} items, ${(p.chars ?? 0).toLocaleString()} chars, ${p.ms ?? 0} ms${slow}`
-          : `${verb} ${p.done} / ${p.total}: ${p.proposalsInChunk ?? 0} items, ${(p.chars ?? 0).toLocaleString()} chars, ${p.ms ?? 0} ms${slow}`,
-      );
-    } else if (p.phase === 'mapping') {
-      setProgress(`Mapping… ${p.suggestionsSoFar ?? 0} suggestions so far`);
-    }
-  };
-
   const selectedCiv = () => SANMIAO_CIV_OPTIONS.filter((o) => dateCiv[o.id]).map((o) => o.id);
 
   const runEastAsianDateTag = async () => {
@@ -236,7 +214,6 @@ export const CalendarDialog = ({ notice, onClose, open = false }: CalendarDialog
     setError(null);
     setBusy(true);
     setDatesProgress('Tagging dates…');
-    setDatesChunkProgress({ done: 0, total: 0 });
     try {
       const tagFn: import('../../autoTagging/dates').SanmiaoBatchTagFn = (chunks, opts, onChunk) =>
         cjkDatesTagDatesBatch(chunks, opts, onChunk);
@@ -244,7 +221,6 @@ export const CalendarDialog = ({ notice, onClose, open = false }: CalendarDialog
       const result = await getSession().runEastAsianDateTag(tagFn, {
         civ,
         fuzzy: dateFuzzy,
-        onProgress: makeSanmiaoProgress(setDatesProgress, 'Tagging'),
       });
       if (result.suggestions.length === 0) {
         markDatesPassRan(documentKey);
@@ -264,7 +240,6 @@ export const CalendarDialog = ({ notice, onClose, open = false }: CalendarDialog
     } finally {
       setBusy(false);
       setDatesProgress('');
-      setDatesChunkProgress({ done: 0, total: 0 });
     }
   };
 
@@ -282,7 +257,6 @@ export const CalendarDialog = ({ notice, onClose, open = false }: CalendarDialog
     setError(null);
     setBusy(true);
     setDatesProgress('Resolving dates…');
-    setDatesChunkProgress({ done: 0, total: 0 });
     try {
       const resolveFn: import('../../autoTagging/dates').SanmiaoBatchResolveFn = (
         dates,
@@ -294,7 +268,6 @@ export const CalendarDialog = ({ notice, onClose, open = false }: CalendarDialog
         civ,
         fuzzy: dateFuzzy,
         sequential: true,
-        onProgress: makeSanmiaoProgress(setDatesProgress, 'Resolving'),
       });
       if (result.suggestions.length === 0) {
         setError('No <date> elements in the document. Run Tag dates first.');
@@ -306,18 +279,12 @@ export const CalendarDialog = ({ notice, onClose, open = false }: CalendarDialog
     } finally {
       setBusy(false);
       setDatesProgress('');
-      setDatesChunkProgress({ done: 0, total: 0 });
     }
   };
 
   return (
     <>
-      <AutoTaggingApplyOverlay
-        open={busy}
-        label={datesProgress || 'Running sanmiao…'}
-        done={datesChunkProgress.done}
-        total={datesChunkProgress.total}
-      />
+      <AutoTaggingApplyOverlay open={busy} label={datesProgress || 'Running sanmiao…'} />
       <Dialog
         open={open}
         onClose={handleClose}

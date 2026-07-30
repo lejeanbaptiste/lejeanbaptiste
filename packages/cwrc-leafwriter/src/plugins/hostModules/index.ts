@@ -2,10 +2,12 @@ import type { PluginRegisterContext } from '../registerContext';
 
 export type PluginHostModule = {
   registerCjkDatesUi?: (context: PluginRegisterContext) => void;
+  registerNorbertNobleTitleUi?: (context: PluginRegisterContext) => void;
 };
 
 const loaders: Record<string, () => Promise<PluginHostModule>> = {
   'cjk-dates-ui': () => import('./cjkDatesUi'),
+  'norbert-noble-title-ui': () => import('./norbertNobleTitleUi'),
 };
 
 export async function loadPluginHostModule(moduleId: string): Promise<PluginHostModule> {

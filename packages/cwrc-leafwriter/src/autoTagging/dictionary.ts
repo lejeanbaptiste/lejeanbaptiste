@@ -1,5 +1,5 @@
 import { buildDocIndex, createAnchor } from './anchor';
-import { isInsideDateElement } from './dateTeiHelpers';
+import { isInsideDateElement, isInsideTeiHeader } from './dateTeiHelpers';
 import { isWrappedByEntityTag } from './suggestionFilters';
 import { MultiStringMatcher } from './matcher';
 import type { Suggestion, WhitespacePolicy } from './types';
@@ -124,6 +124,9 @@ export function dictionaryTag(
   for (const { node, search } of index.nodes) {
     // Never tag entity mentions inside <date> — reserved for sanmiao date workflow.
     if (isInsideDateElement(node)) continue;
+    // <teiHeader> is metadata, not corpus text — never a tag-bomb target, and it's
+    // not visible in the body editor so matches there looked like they came from nowhere.
+    if (isInsideTeiHeader(node)) continue;
 
     // Ancestor tag names for this node, computed once (not per match).
     const alreadyTagged = (tag: string) => isWrappedByEntityTag(node, tag);

@@ -1,4 +1,5 @@
 import { buildDocIndex, type DocIndex } from './anchor';
+import { findTeiBodyRoot } from './dateTeiHelpers';
 import type { WhitespacePolicy } from './types';
 
 /** Block-level elements used as chunk-cut points. Never cut inside one. */
@@ -78,7 +79,7 @@ export function chunkDocument(doc: Document, options: ChunkOptions): Chunk[] {
     root: rootOption,
     range,
   } = options;
-  const root = rootOption ?? doc.documentElement ?? doc;
+  const root = rootOption ?? findTeiBodyRoot(doc);
   const index = buildDocIndex(root, policy);
   if (index.text.length === 0) return [];
 

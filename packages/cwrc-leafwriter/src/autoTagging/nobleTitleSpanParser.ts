@@ -93,6 +93,14 @@ export interface ParsedSlot {
   text: string;
   /** Index of the segment this slot came from. */
   segmentIndex: number;
+  /**
+   * Character offset of this slot within its own segment's text (not the
+   * flattened span). For a `text` segment shared by several slots (e.g. an
+   * untagged "鄱陽王範" split into fief/rank/personName), this is what lets a
+   * caller cut the exact sub-range for just one slot out of the original
+   * text node when committing the parse to a document.
+   */
+  segmentTextOffset: number;
   /** Set when the slot coincides exactly with a pre-existing element. */
   existingTag?: string;
   /**
@@ -147,15 +155,17 @@ function placement(
   segments: readonly SpanSegment[],
   start: number,
   end: number,
-): { segmentIndex: number; existingTag?: string } | null {
+): { segmentIndex: number; segmentTextOffset: number; existingTag?: string } | null {
   if (start >= end) return null;
   const first = flat.owner[start]!;
   for (let i = start + 1; i < end; i++) if (flat.owner[i] !== first) return null;
   const segment = segments[first]!;
-  if (segment.kind === 'text') return { segmentIndex: first };
   const segStart = flat.starts[first]!;
+  if (segment.kind === 'text') {
+    return { segmentIndex: first, segmentTextOffset: start - segStart };
+  }
   if (start !== segStart || end !== segStart + segment.text.normalize('NFC').length) return null;
-  return { segmentIndex: first, existingTag: segment.localName };
+  return { segmentIndex: first, segmentTextOffset: 0, existingTag: segment.localName };
 }
 
 interface Candidate {

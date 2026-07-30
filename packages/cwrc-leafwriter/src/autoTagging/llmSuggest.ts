@@ -3,6 +3,7 @@ import { promptVersionWithProfile, resolveSuggestTaskText } from './aiPromptProf
 import { buildDocIndex } from './anchor';
 import { createAnchor } from './anchor';
 import { chunkDocument, llmChunkOptions, type ChunkOptions } from './chunk';
+import { findTeiBodyRoot } from './dateTeiHelpers';
 import type { LlmCache } from './llmCache';
 import type { LlmClient } from './llmClient';
 import { findOccurrenceOffset, locateInDoc, parseValidItems } from './llmParse';
@@ -41,8 +42,9 @@ export async function llmSuggest(
   options: LlmSuggestOptions,
 ): Promise<LlmSuggestResult> {
   const { tags, client, cache, policy, onProgress, onChunk, promptProfile, signal } = options;
-  const chunks = chunkDocument(doc, llmChunkOptions(options));
-  const index = buildDocIndex(doc, policy);
+  const root = options.root ?? findTeiBodyRoot(doc);
+  const chunks = chunkDocument(doc, llmChunkOptions({ ...options, root }));
+  const index = buildDocIndex(root, policy);
   const schema = suggestionResponseSchema(SUGGEST_ACTIONS);
   const promptVersion = promptVersionWithProfile(SUGGEST_PROMPT_VERSION, promptProfile);
   const suggestTaskText = resolveSuggestTaskText(promptProfile);
@@ -85,7 +87,7 @@ export async function llmSuggest(
         tag: item.tag,
         anchor: createAnchor(
           '',
-          doc,
+          root,
           located.node,
           located.rawStart,
           located.rawEnd,

@@ -5,6 +5,7 @@ import {
   type PluginDialogComponent,
   type PluginReviewPanelMatcher,
   type PluginReviewPanelComponent,
+  type PluginToolbarMenuItem,
 } from './pluginExtensions';
 import { loadPluginHostModule } from './hostModules';
 import {
@@ -43,7 +44,10 @@ export interface PluginRegisterContext {
     tooltip?: string;
     group?: 'action' | 'ui' | 'panel' | 'general';
     isAvailable: () => boolean;
-    onClick: (ctx: { openCalendar: (notice?: string) => void }) => void;
+    /** Provide this for a single-action button, or `menuItems` for a dropdown. */
+    onClick?: (ctx: { openCalendar: (notice?: string) => void }) => void;
+    /** When present, the toolbar button opens a dropdown of these instead of calling `onClick`. */
+    menuItems?: PluginToolbarMenuItem[];
   }) => void;
   /** Load UI modules bundled with LJB (webpack). Used by plugins that delegate UI to the host. */
   loadHostModule: (moduleId: string) => Promise<import('./hostModules').PluginHostModule>;
