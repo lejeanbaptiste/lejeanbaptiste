@@ -1,5 +1,6 @@
 # Unrelated
 CRUCIAL: the style name finder placed the character 字 in the wrong place, AFTER the name. The \1 and \2 capture groups appear to be reversed.
+I'm still getting tag bomb results that are in the TEI header or somewhere that is not visible, including latin characters...
 The snackbar notifications do not reflect our updated ribbon and rank system.
 We need to filter out all placeNames from all authority packs where the placename consists only of Chinese numbers. Same for <title> and persname for that matter.
 From here on out, where roleName is just a string in local matching a string in the Norbert pack, auto-associate.

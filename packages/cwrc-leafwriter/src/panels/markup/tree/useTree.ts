@@ -53,14 +53,37 @@ export const useTree = () => {
   }, [initialized]);
 
   useEffect(() => {
-    if (updatePending) {
-      const treeModel = getEditorTreeModel();
-      if (!treeModel) return;
+    if (!updatePending) return;
 
-      setItems(treeModel);
-      expandUpTo(treeModel, INTIATE_EXPANDED_UP_TO_LEVEL);
-      setUpdatePending(false);
-    }
+    let cancelled = false;
+    let attempts = 0;
+
+    // The converter clears and rebuilds TinyMCE asynchronously. If the first
+    // refresh runs between those steps, keep trying instead of leaving the old
+    // tree displayed indefinitely.
+    const refresh = () => {
+      if (cancelled) return;
+
+      const treeModel = getEditorTreeModel();
+      if (treeModel) {
+        setItems(treeModel);
+        expandUpTo(treeModel, INTIATE_EXPANDED_UP_TO_LEVEL);
+        setUpdatePending(false);
+        return;
+      }
+
+      if (attempts++ < 30) {
+        window.requestAnimationFrame(refresh);
+      } else {
+        setUpdatePending(false);
+      }
+    };
+
+    const frame = window.requestAnimationFrame(refresh);
+    return () => {
+      cancelled = true;
+      window.cancelAnimationFrame(frame);
+    };
   }, [updatePending]);
 
   useEffect(() => {
