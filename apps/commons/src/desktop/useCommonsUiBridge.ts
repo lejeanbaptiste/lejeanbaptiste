@@ -247,7 +247,19 @@ export const useCommonsUiBridge = () => {
         return null;
       }
       if (!(await confirmCreateEntityDb(folder))) return null;
-      await window.electronAPI?.createEntityDatabase?.(folder, createEntitiesScaffold());
+      try {
+        await window.electronAPI?.createEntityDatabase?.(folder, createEntitiesScaffold());
+      } catch (error) {
+        const detail = error instanceof Error ? error.message : String(error);
+        await window.electronAPI?.showNativeMessageBox?.({
+          type: 'warning',
+          title: 'Could not create entity database',
+          message: `${folder}\n\nLe Jean-Baptiste could not set up the entity database in this folder.`,
+          detail,
+          buttons: ['OK'],
+        });
+        return null;
+      }
     }
 
     try {
