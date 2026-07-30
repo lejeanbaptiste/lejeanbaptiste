@@ -8,6 +8,7 @@
     }
   ],
   "artifactName": "Le-Jean-Baptiste-win-Setup-${version}-${arch}.${ext}",
+  "beforePack": "./scripts/stage-game-assets.mjs",
   "nsis": {
     "oneClick": false,
     "perMachine": true,
@@ -24,7 +25,8 @@
     "extraResources": [
       {
         "from": "resources/game-assets",
-        "to": "game-assets"
+        "to": "game-assets",
+        "filter": ["**/*", "!assets.bin"]
       },
       {
         "from": "resources/avatar-parts",
