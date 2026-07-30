@@ -1,12 +1,18 @@
 import { applyNobleTitleForSelection } from '../../autoTagging/nobleTitleSpanEditorAdapter';
+import { applyGroupAndClean } from '../../autoTagging/groupAndCleanEditorAdapter';
 import type { PluginRegisterContext } from '../registerContext';
 
 /**
  * Registers the Norbert toolbar menu, at the end of the central toolbar.
- * Currently one action: tag the selection as a noble title (fief/rank/
- * posthumous name, plus a person wrapper if a trailing name is included).
- * See nobleTitleSpanEditorApply.ts for how this commits to the live
- * TinyMCE-controlled document via `tagger.addStructureTag`.
+ * Two actions:
+ *  - "Tag noble title": tag the selection as a noble title (fief/rank/
+ *    posthumous name, plus a person wrapper if a trailing name is
+ *    included). See nobleTitleSpanEditorApply.ts for how this commits to
+ *    the live TinyMCE-controlled document via `tagger.addStructureTag`.
+ *  - "Group and clean": a post-validation cleanup pass over already-tagged
+ *    markup (merge compound roleNames, nest placeNames into their roleName,
+ *    parse childless nobleTitles, create/key person wrappers). See
+ *    groupAndCleanEditorAdapter.ts.
  */
 export function registerNorbertNobleTitleUi(context: PluginRegisterContext): void {
   context.log('registering noble-title span tagging UI');
@@ -23,6 +29,11 @@ export function registerNorbertNobleTitleUi(context: PluginRegisterContext): voi
         id: 'tag-noble-title',
         label: 'Tag noble title',
         onClick: () => void applyNobleTitleForSelection(),
+      },
+      {
+        id: 'group-and-clean',
+        label: 'Group and clean',
+        onClick: () => void applyGroupAndClean(),
       },
     ],
   });
