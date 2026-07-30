@@ -48,15 +48,21 @@ export type BridgeAvailability =
   | { available: true; context: BridgeContext }
   | { available: false; reason: string };
 
-/** Resolve both databases and the user id, or explain why the bridge is unavailable. */
-export async function loadBridgeContext(): Promise<BridgeAvailability> {
+/**
+ * Resolve both databases and the user id, or explain why the bridge is
+ * unavailable. `overrideProjectRoot` lets a caller resolve the project store
+ * before the project is loaded into the editor (see entityStoreFromDesktop).
+ */
+export async function loadBridgeContext(overrideProjectRoot?: string): Promise<BridgeAvailability> {
   const api = desktopEntityFileApi();
-  const projectStore = entityStoreFromDesktop();
+  const projectStore = entityStoreFromDesktop(
+    overrideProjectRoot ? { projectRoot: overrideProjectRoot } : undefined,
+  );
   if (!api || !projectStore) return { available: false, reason: 'No project database is open.' };
 
   const centralFolder =
     (await window.electronAPI?.getEntityDbFolder?.().catch(() => null)) ?? null;
-  const centralStore = centralEntityStoreFromDesktop(centralFolder);
+  const centralStore = centralEntityStoreFromDesktop(centralFolder, overrideProjectRoot);
   if (!centralStore) {
     return { available: false, reason: 'No central database folder is configured (App Settings).' };
   }

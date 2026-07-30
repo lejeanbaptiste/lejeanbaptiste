@@ -371,16 +371,25 @@ export function desktopEntityFileApi(): EntityFileApi | null {
 /**
  * Build an EntityStore from the desktop globals, or null in the web app / when
  * no project is open.
+ *
+ * `overrides.projectRoot` lets callers resolve a store for a project that
+ * isn't loaded into the editor yet (e.g. the first-setup metadata dialog runs
+ * before `window.__ljbLspProject` is populated, since that only happens once
+ * `loadProjectBundle` mounts the editor — after this dialog has already
+ * closed).
  */
-export function entityStoreFromDesktop(): EntityStore | null {
+export function entityStoreFromDesktop(overrides?: {
+  projectRoot?: string;
+  entityDbFolder?: string | null;
+}): EntityStore | null {
   const api = desktopEntityFileApi();
   const project = (window as unknown as DesktopGlobals).__ljbLspProject;
-  const root = project?.projectRoot;
+  const root = overrides?.projectRoot ?? project?.projectRoot;
   if (!api || !root) return null;
   try {
     const paths = resolveEntityStorePaths({
       projectRoot: root,
-      centralFolder: project?.entityDbFolder ?? null,
+      centralFolder: overrides?.entityDbFolder ?? project?.entityDbFolder ?? null,
     });
     return EntityStore.fromPaths(api, paths);
   } catch {
@@ -392,11 +401,17 @@ export function entityStoreFromDesktop(): EntityStore | null {
  * Build a **central-mode** EntityStore (the user's personal CEDB), regardless of
  * what store the project itself uses — the second half the Bridge needs.
  * Returns null when no central folder is configured.
+ *
+ * `overrideProjectRoot` mirrors entityStoreFromDesktop's override, for
+ * callers resolving this before the project is loaded into the editor.
  */
-export function centralEntityStoreFromDesktop(centralFolder: string | null): EntityStore | null {
+export function centralEntityStoreFromDesktop(
+  centralFolder: string | null,
+  overrideProjectRoot?: string,
+): EntityStore | null {
   const api = desktopEntityFileApi();
   const project = (window as unknown as DesktopGlobals).__ljbLspProject;
-  const root = project?.projectRoot;
+  const root = overrideProjectRoot ?? project?.projectRoot;
   const folder = centralFolder ?? project?.entityDbFolder ?? null;
   if (!api || !root || !folder) return null;
   try {

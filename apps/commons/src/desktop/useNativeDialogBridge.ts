@@ -451,9 +451,13 @@ export const useNativeDialogBridge = () => {
                 // (the main window), not in the settings dialog's own
                 // separate BrowserWindow, which has no __ljbLspProject global
                 // for entityStoreFromDesktop()/centralEntityStoreFromDesktop()
-                // to read.
+                // to read. Even here, window.__ljbLspProject isn't populated
+                // yet for a brand-new project - it's only set once
+                // loadProjectBundle mounts the editor, which happens after
+                // this firstSetup dialog closes - so pass the just-resolved
+                // bundle's root explicitly instead of relying on that global.
                 if (syncToCentral && bundle.config.syncToCentral !== true) {
-                  const availability = await loadBridgeContext();
+                  const availability = await loadBridgeContext(bundle.rootPath);
                   if (!availability.available) {
                     return { ok: false, error: availability.reason };
                   }
