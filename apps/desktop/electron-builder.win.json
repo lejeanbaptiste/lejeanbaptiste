@@ -22,9 +22,30 @@
       "to": "commons/server"
     },
     {
+      "from": "resources/branding",
+      "to": "branding"
+    },
+    {
+      "from": "resources/game-assets",
+      "to": "game-assets"
+    },
+    {
+      "from": "resources/avatar-parts",
+      "to": "avatar-parts"
+    },
+    {
+      "from": "resources/pmtiles",
+      "to": "pmtiles",
+      "filter": ["pmtiles*"]
+    },
+    {
       "from": "resources/python",
       "to": "python",
       "filter": ["**/*", "!.deps-installed"]
+    },
+    {
+      "from": "resources/authority-extraction",
+      "to": "authority-extraction"
     }
   ],
   "nsis": {

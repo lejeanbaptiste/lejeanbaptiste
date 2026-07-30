@@ -2,13 +2,11 @@
  * CHGIS local install: extract user download → compile tagging pack.
  */
 
-import { execFile } from 'node:child_process';
 import fs from 'node:fs';
 import fsp from 'node:fs/promises';
 import path from 'node:path';
 import { Readable } from 'node:stream';
 import { pipeline } from 'node:stream/promises';
-import { promisify } from 'node:util';
 import JSZip from 'jszip';
 
 import {
@@ -20,10 +18,8 @@ import {
 } from '../../commons/src/desktop/authorityChgisTypes';
 import { AUTHORITY_PACKS_DIRNAME } from '../../commons/src/desktop/authorityPackTypes';
 import { AUTHORITY_DB_DIRNAME } from './authorityDatabases';
-import { resolveAuthorityExtractionRoot } from './authorityCompile';
+import { resolveAuthorityExtractionRoot, runNodeScript } from './authorityCompile';
 
-const execFileAsync = promisify(execFile);
-const COMPILE_TIMEOUT_MS = 30 * 60 * 1000;
 const DOWNLOAD_TIMEOUT_MS = 30 * 60 * 1000;
 const MAX_ARCHIVE_BYTES = 2 * 1024 * 1024 * 1024;
 const MAX_ENTRY_BYTES = 4 * 1024 * 1024 * 1024;
@@ -131,21 +127,6 @@ export const getChgisStatus = async (entityDbFolder: string | null): Promise<Chg
     lastError: lifecycle.lastError,
     busy: chgisBusy,
   };
-};
-
-const runNodeScript = async (scriptPath: string, args: string[], cwd: string): Promise<void> => {
-  const nodeModules = path.join(cwd, 'node_modules');
-  if (!fs.existsSync(nodeModules)) {
-    throw new Error(
-      `Run npm install in the authority extraction folder (${cwd}) before compiling CHGIS.`,
-    );
-  }
-  await execFileAsync('node', [scriptPath, ...args], {
-    cwd,
-    maxBuffer: 64 * 1024 * 1024,
-    timeout: COMPILE_TIMEOUT_MS,
-    env: { ...process.env, NODE_PATH: nodeModules },
-  });
 };
 
 const extractZipTo = async (zipPath: string, destDir: string): Promise<void> => {
@@ -334,7 +315,7 @@ const installChgis = async ({
     await fsp.rm(packOut, { recursive: true, force: true });
 
     const cbdbSqlite = path.join(entityDbFolder, AUTHORITY_DB_DIRNAME, 'cbdb.sqlite3');
-    const extractionRoot = resolveAuthorityExtractionRoot();
+    const extractionRoot = resolveAuthorityExtractionRoot('chgis/compile.mjs');
     const args = ['--input', inputDir, '--out', path.join(packOut, 'chgis')];
     if (fs.existsSync(cbdbSqlite)) args.push('--cbdb-sqlite', cbdbSqlite);
 

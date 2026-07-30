@@ -878,5 +878,18 @@
   "main": "",
   "module": "",
   "type": "",
-  "types": ""
+  "types": "",
+  "LW": {
+    "dateAuthority": {
+      "day": "Day",
+      "dynasty": "Dynasty",
+      "emperor": "Emperor",
+      "era": "Era",
+      "month": "Month",
+      "new_moon_gz": "New-moon gz",
+      "sexagenary_day": "Sexagenary day",
+      "sexagenary_year": "Sexagenary year",
+      "year": "Year"
+    }
+  }
 }

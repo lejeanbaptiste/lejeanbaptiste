@@ -105,7 +105,9 @@ export const completePostLoadOnboarding = async (bundle: ProjectBundle): Promise
 
   // Non-blocking, once per project open: prompt for any remaining Chinese
   // assets (map tiles, CHGIS, …) still missing after the check above.
-  void maybeOfferChineseAssetDownloads(current).catch(() => undefined);
+  void maybeOfferChineseAssetDownloads(current).catch((error) =>
+    console.error('[onboarding] Chinese asset download prompt failed:', error),
+  );
 
   log('post-load onboarding complete');
   return current;

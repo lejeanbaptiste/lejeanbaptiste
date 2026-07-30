@@ -33,7 +33,12 @@ export type PluginPythonProgressEvent =
 
 export type PluginPythonProgressCallback = (event: PluginPythonProgressEvent) => void;
 
-const pythonCache = new Map<string, string>();
+/** A python interpreter invocation: `spawn(bin, [...args, ...rest])`. */
+type PythonCommand = { bin: string; args: string[] };
+
+const commandLabel = (cmd: PythonCommand): string => [cmd.bin, ...cmd.args].join(' ');
+
+const pythonCache = new Map<string, PythonCommand>();
 const devRootCache = new Map<string, string | null>();
 
 const logPluginPython = (pluginId: string, message: string, data?: Record<string, unknown>) => {
@@ -79,39 +84,76 @@ const coreBundledPython = (): string | null => {
   return null;
 };
 
-const pythonCandidatesForPlugin = (pluginId: string): string[] => {
+const pythonCandidatesForPlugin = (pluginId: string): PythonCommand[] => {
   const fromEnv = process.env.SANMIAO_PYTHON?.trim();
-  if (fromEnv) return [fromEnv];
+  if (fromEnv) return [{ bin: fromEnv, args: [] }];
 
-  const candidates: string[] = [];
+  const candidates: PythonCommand[] = [];
   const pluginPython = resolvePluginPythonBinary(pluginId);
-  if (pluginPython) candidates.push(pluginPython);
+  if (pluginPython) candidates.push({ bin: pluginPython, args: [] });
 
   const corePython = coreBundledPython();
-  if (corePython) candidates.push(corePython);
+  if (corePython) candidates.push({ bin: corePython, args: [] });
 
   // Keep system interpreters as a last resort. In particular, do not return
   // early when a plugin-level interpreter exists: an incomplete plugin tree
   // must not mask the app-bundled interpreter that contains sanmiao.
-  candidates.push('python3', 'python');
-  return [...new Set(candidates)];
+  //
+  // On Windows, bare "python"/"python3" are frequently shadowed by the OS's
+  // App Execution Alias stubs (they open the Microsoft Store instead of
+  // running anything) even when a real interpreter is installed. The `py`
+  // launcher is a distinct binary that those stubs don't intercept, so try
+  // it first there — it finds the real interpreter without requiring the
+  // user to dig into Settings to disable the aliases.
+  if (process.platform === 'win32') {
+    candidates.push({ bin: 'py', args: ['-3'] });
+  }
+  candidates.push({ bin: 'python3', args: [] }, { bin: 'python', args: [] });
+
+  const seen = new Set<string>();
+  return candidates.filter((c) => {
+    const key = commandLabel(c);
+    if (seen.has(key)) return false;
+    seen.add(key);
+    return true;
+  });
 };
 
 const isMissingSanmiaoModule = (stderr: string): boolean =>
   /ModuleNotFoundError: No module named ['"]sanmiao['"]/.test(stderr);
 
-const tryAutoInstallSanmiao = async (pluginId: string, python: string): Promise<boolean> => {
+/**
+ * Windows ships stub executables named python.exe/python3.exe ("App execution
+ * aliases") that print this message and exit instead of running anything.
+ * They shadow a real interpreter on PATH unless the user disables them in
+ * Settings > Apps > Advanced app settings > App execution aliases.
+ */
+const isWindowsStoreStub = (output: string): boolean =>
+  process.platform === 'win32' &&
+  /install.*from|Microsoft Store|ms-windows-store:/i.test(output);
+
+/** Force UTF-8 I/O so non-ASCII (CJK) text survives on Windows, whose default
+ * console codepage otherwise mangles it and can raise UnicodeEncodeError. */
+const forceUtf8Env = (env: NodeJS.ProcessEnv): NodeJS.ProcessEnv => ({
+  ...env,
+  PYTHONUTF8: '1',
+  PYTHONIOENCODING: 'utf-8',
+});
+
+const tryAutoInstallSanmiao = async (pluginId: string, python: PythonCommand): Promise<boolean> => {
+  const label = commandLabel(python);
   try {
-    logPluginPython(pluginId, 'attempting automatic sanmiao install', { python, spec: SANMIAO_SPEC });
-    await execFileAsync(python, ['-m', 'pip', 'install', '--user', '--upgrade', SANMIAO_SPEC], {
-      timeout: 3 * 60 * 1000,
-      env: process.env,
-    });
+    logPluginPython(pluginId, 'attempting automatic sanmiao install', { python: label, spec: SANMIAO_SPEC });
+    await execFileAsync(
+      python.bin,
+      [...python.args, '-m', 'pip', 'install', '--user', '--upgrade', SANMIAO_SPEC],
+      { timeout: 3 * 60 * 1000, env: forceUtf8Env(process.env) },
+    );
     return true;
   } catch (error) {
     const stderr = (error as { stderr?: string })?.stderr ?? String(error);
     logPluginPython(pluginId, 'automatic sanmiao install failed', {
-      python,
+      python: label,
       reason: stderr.trim().slice(-500),
     });
     return false;
@@ -128,66 +170,77 @@ const SANMIAO_IMPORT_CHECK = [
     ')"',
 ].join('; ');
 
-const resolvePluginPython = async (pluginId: string): Promise<string> => {
+const resolvePluginPython = async (pluginId: string): Promise<PythonCommand> => {
   const cached = pythonCache.get(pluginId);
   if (cached) return cached;
 
   const devRoot = pluginId === 'cjk-dates' ? resolveSanmiaoDevRoot() : null;
   const failures: string[] = [];
 
-  const recordFailure = (python: string, error: unknown) => {
+  let sawWindowsStoreStub = false;
+
+  const recordFailure = (label: string, error: unknown) => {
+    const stdout = (error as { stdout?: string })?.stdout ?? '';
     const stderr = (error as { stderr?: string })?.stderr ?? String(error);
+    if (isWindowsStoreStub(stdout) || isWindowsStoreStub(stderr)) {
+      sawWindowsStoreStub = true;
+    }
     const assertion = stderr.match(/AssertionError: (.+)/)?.[1];
-    const reason = assertion ?? stderr.trim().split('\n').pop() ?? 'unknown error';
-    failures.push(`${python}: ${reason}`);
-    logPluginPython(pluginId, 'candidate rejected', { python, reason });
+    const reason = assertion ?? stderr.trim().split('\n').pop() ?? stdout.trim() ?? 'unknown error';
+    failures.push(`${label}: ${reason}`);
+    logPluginPython(pluginId, 'candidate rejected', { python: label, reason });
   };
 
   for (const python of pythonCandidatesForPlugin(pluginId)) {
+    const label = commandLabel(python);
     try {
-      await execFileAsync(python, ['-c', SANMIAO_IMPORT_CHECK], {
+      await execFileAsync(python.bin, [...python.args, '-c', SANMIAO_IMPORT_CHECK], {
         timeout: 15_000,
-        env: process.env,
+        env: forceUtf8Env(process.env),
       });
       pythonCache.set(pluginId, python);
       devRootCache.set(pluginId, null);
-      logPluginPython(pluginId, 'using python', { python, devRoot: devRoot ?? undefined });
+      logPluginPython(pluginId, 'using python', { python: label, devRoot: devRoot ?? undefined });
       return python;
     } catch (error) {
       const stderr = (error as { stderr?: string })?.stderr ?? String(error);
       if (isMissingSanmiaoModule(stderr) && (await tryAutoInstallSanmiao(pluginId, python))) {
         try {
-          await execFileAsync(python, ['-c', SANMIAO_IMPORT_CHECK], {
+          await execFileAsync(python.bin, [...python.args, '-c', SANMIAO_IMPORT_CHECK], {
             timeout: 15_000,
-            env: process.env,
+            env: forceUtf8Env(process.env),
           });
           pythonCache.set(pluginId, python);
           devRootCache.set(pluginId, null);
-          logPluginPython(pluginId, 'using python (auto-installed sanmiao)', { python });
+          logPluginPython(pluginId, 'using python (auto-installed sanmiao)', { python: label });
           return python;
         } catch (retryError) {
-          recordFailure(python, retryError);
+          recordFailure(label, retryError);
           continue;
         }
       }
-      recordFailure(python, error);
+      recordFailure(label, error);
     }
   }
 
   if (devRoot) {
-    const env = { ...process.env, PYTHONPATH: path.join(devRoot, 'src') };
-    for (const python of ['python3', 'python']) {
+    const env = forceUtf8Env({ ...process.env, PYTHONPATH: path.join(devRoot, 'src') });
+    const devCandidates: PythonCommand[] =
+      process.platform === 'win32'
+        ? [{ bin: 'py', args: ['-3'] }, { bin: 'python3', args: [] }, { bin: 'python', args: [] }]
+        : [{ bin: 'python3', args: [] }, { bin: 'python', args: [] }];
+    for (const python of devCandidates) {
       try {
-        await execFileAsync(python, ['-c', SANMIAO_IMPORT_CHECK], {
+        await execFileAsync(python.bin, [...python.args, '-c', SANMIAO_IMPORT_CHECK], {
           timeout: 15_000,
           env,
         });
         pythonCache.set(pluginId, python);
         devRootCache.set(pluginId, devRoot);
-        logPluginPython(pluginId, 'using python with PYTHONPATH', { python, devRoot });
+        logPluginPython(pluginId, 'using python with PYTHONPATH', { python: commandLabel(python), devRoot });
         return python;
       } catch (error) {
-        recordFailure(`${python} (PYTHONPATH=${devRoot}/src)`, error);
+        recordFailure(`${commandLabel(python)} (PYTHONPATH=${devRoot}/src)`, error);
       }
     }
   }
@@ -195,9 +248,14 @@ const resolvePluginPython = async (pluginId: string): Promise<string> => {
   const devHint = devRoot
     ? ` Editable setup: cd ${devRoot} && python3 -m venv .venv && .venv/bin/pip install -e ".[fuzzy]"`
     : '';
+  const storeStubHint = sawWindowsStoreStub
+    ? ' Windows is redirecting "python"/"python3" to its Microsoft Store stub instead of a real ' +
+      'interpreter. Disable this in Settings > Apps > Advanced app settings > App execution aliases ' +
+      '(turn off the python.exe / python3.exe toggles), then restart the app.'
+    : '';
   const failureHint = failures.length > 0 ? ` [${failures.join(' | ')}]` : '';
   throw new Error(
-    `Plugin ${pluginId} Python backend (sanmiao >= ${MIN_SANMIAO_VERSION}) is not available.${devHint} ` +
+    `Plugin ${pluginId} Python backend (sanmiao >= ${MIN_SANMIAO_VERSION}) is not available.${devHint}${storeStubHint} ` +
       `Run "npm run python:download" in plugin-cjk-dates, or set SANMIAO_PYTHON.${failureHint}`,
   );
 };
@@ -220,7 +278,7 @@ const runPluginPythonCli = (
   const moduleName = pythonModuleForPlugin(pluginId);
 
   return new Promise(async (resolve, reject) => {
-    let python: string;
+    let python: PythonCommand;
     try {
       python = await resolvePluginPython(pluginId);
     } catch (error) {
@@ -232,12 +290,13 @@ const runPluginPythonCli = (
     const t0 = Date.now();
     logPluginPython(pluginId, 'spawn', {
       module: moduleName,
+      python: commandLabel(python),
       stream: useStream,
       chunks: Array.isArray(payload.chunks) ? payload.chunks.length : 0,
     });
 
-    const child = spawn(python, ['-c', `from ${moduleName} import cli_main; cli_main()`], {
-      env: { ...pythonEnvForPlugin(pluginId), PYTHONWARNINGS: 'ignore::RuntimeWarning' },
+    const child = spawn(python.bin, [...python.args, '-c', `from ${moduleName} import cli_main; cli_main()`], {
+      env: forceUtf8Env({ ...pythonEnvForPlugin(pluginId), PYTHONWARNINGS: 'ignore::RuntimeWarning' }),
       stdio: ['pipe', 'pipe', 'pipe'],
     });
 

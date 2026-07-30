@@ -319,9 +319,13 @@ export const EntityLookupField = ({
             undefined,
           nameLang: session.projectLang ?? undefined,
           authorityIds: merged.authorityIds,
+          authoritySource: merged.authorityIds?.[0]
+            ? `${merged.authorityIds[0].type}:${merged.authorityIds[0].value}`
+            : undefined,
           description: merged.description,
           startYear: merged.startYear,
           endYear: merged.endYear,
+          authorityAssertions: merged.authorityAssertions,
         },
         merged,
       );

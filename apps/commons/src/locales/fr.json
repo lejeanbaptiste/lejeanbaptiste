@@ -874,5 +874,18 @@
   "main": "",
   "module": "",
   "type": "",
-  "types": ""
+  "types": "",
+  "LW": {
+    "dateAuthority": {
+      "day": "Jour",
+      "dynasty": "Dynastie",
+      "emperor": "Empereur",
+      "era": "Ère",
+      "month": "Mois",
+      "new_moon_gz": "gz de nouvelle lune",
+      "sexagenary_day": "Jour sexagésimal",
+      "sexagenary_year": "Année sexagésimale",
+      "year": "Année"
+    }
+  }
 }

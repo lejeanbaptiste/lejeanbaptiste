@@ -241,5 +241,18 @@
   "main": "",
   "module": "",
   "type": "",
-  "types": ""
+  "types": "",
+  "LW": {
+    "dateAuthority": {
+      "day": "Tag",
+      "dynasty": "Dynastie",
+      "emperor": "Kaiser",
+      "era": "Ära",
+      "month": "Monat",
+      "new_moon_gz": "Neumond-gz",
+      "sexagenary_day": "Sexagenärer Tag",
+      "sexagenary_year": "Sexagenäres Jahr",
+      "year": "Jahr"
+    }
+  }
 }

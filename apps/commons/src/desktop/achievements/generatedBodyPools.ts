@@ -438,11 +438,11 @@ export const BODY_COLOR_STATS: Readonly<Record<string, ColorStats>> = {
     "saturation": 0.6677806421666411
   },
   "8:m": {
-    "lightness": 0.359233851419618,
-    "saturation": 0.6787375165328785
+    "lightness": 0.3770245814712972,
+    "saturation": 0.7340215192945299
   },
   "8:f": {
-    "lightness": 0.35825902315464897,
-    "saturation": 0.6253237858265549
+    "lightness": 0.3772693581700683,
+    "saturation": 0.6595831214251591
   }
 };

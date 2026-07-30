@@ -587,6 +587,11 @@ const registerLjbProtocol = () => {
 };
 
 const isDev = !app.isPackaged;
+// Allow opening DevTools in a packaged build too, but only when explicitly requested via env
+// var — this keeps it unreachable for normal end users while letting us inspect release builds
+// (e.g. `set LJB_OPEN_DEVTOOLS=1 && "Le Jean-Baptiste.exe"` on Windows) where devtools would
+// otherwise be completely inaccessible.
+const devToolsEnabled = isDev || process.env.LJB_OPEN_DEVTOOLS === '1';
 const DEV_COMMONS_URL = process.env.COMMONS_URL ?? 'http://localhost:3000';
 const PROD_SERVER_PORT = process.env.LJB_SERVER_PORT ?? '3847';
 const DEV_READY_TIMEOUT_MS = 120_000;
@@ -922,7 +927,9 @@ const buildViewMenu = (): Electron.MenuItemConstructorOptions => ({
   submenu: [
     { role: 'reload' },
     { role: 'forceReload' },
-    ...(isDev ? ([{ role: 'toggleDevTools' }] as Electron.MenuItemConstructorOptions[]) : []),
+    ...(devToolsEnabled
+      ? ([{ role: 'toggleDevTools' }] as Electron.MenuItemConstructorOptions[])
+      : []),
     menuSeparator(),
     {
       label: 'Actual Size',
@@ -1308,7 +1315,13 @@ const registerIpcHandlers = () => {
 
   ipcMain.handle('readFile', async (_event, filePath: string) => {
     await assertRendererReadPath(filePath);
-    return fs.readFile(filePath, 'utf-8');
+    const text = await fs.readFile(filePath, 'utf-8');
+    // Unlike TextDecoder, Node's 'utf-8' fs encoding leaves a leading BOM in
+    // place. Project config files (project.json, project-metadata.json, …)
+    // are JSON/XML and can pick up a BOM from Windows-native tools (Notepad,
+    // some editors default to it) — an unstripped BOM makes JSON.parse throw,
+    // which callers then silently treat as "file doesn't exist".
+    return text.charCodeAt(0) === 0xfeff ? text.slice(1) : text;
   });
 
   ipcMain.handle('readFileAutoEncoding', async (_event, filePath: string) => {
@@ -2599,7 +2612,7 @@ const createWindow = async () => {
     return;
   }
 
-  if (isDev && process.env.LJB_OPEN_DEVTOOLS === '1') {
+  if (devToolsEnabled && process.env.LJB_OPEN_DEVTOOLS === '1') {
     mainWindow.webContents.openDevTools({ mode: 'detach' });
   }
 

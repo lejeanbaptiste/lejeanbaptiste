@@ -58,47 +58,60 @@ function rewriteTagDisplay(tag: string, value: 'inline' | 'none'): string {
   return tag.replace(/\/?>$/, (closing) => ` style="display:${value}"${closing}`);
 }
 
-/** Applies every label/id -> display value toggle in a single combined-regex
- * pass, rather than one full-text pass per toggle (see the perf note at the
- * top of this file). Targets every element carrying a matching
- * `inkscape:label="..."` (not just a single `<g>` wrapper - the f-rankN/
- * m-rankN groups are always exactly one `<g>` per label, but f-body/m-body,
- * the base silhouette, is NOT a single wrapping group: the label repeats
- * across an `<image>` and one or more `<path>` siblings, e.g.
- * bodies/body1.svg has 3 elements labeled "f-body", and some poses
- * (body2.svg) even repeat a rank label across two separate groups - a
- * partial set in `middle`, a full set in `foreground`) or a matching
- * `id="..."` (weapon images). Named capture groups (`label`/`id`) rather
- * than positional ones, since which alternative is present varies with
- * whether `idValues` is empty. */
-function applyDisplayToggles(
+/** One combined-regex pass toggling every element carrying a matching
+ * `inkscape:label="..."` or `id="..."`, rather than one full-text pass per
+ * toggle (see the perf note at the top of this file). */
+function applyDisplayTogglePass(
   svgText: string,
-  labelValues: ReadonlyMap<string, 'inline' | 'none'>,
-  idValues: ReadonlyMap<string, 'inline' | 'none'>,
+  attrName: 'inkscape:label' | 'id',
+  values: ReadonlyMap<string, 'inline' | 'none'>,
 ): string {
-  const alternatives: string[] = [];
-  if (labelValues.size > 0) {
-    const labelAlt = Array.from(labelValues.keys()).map(escapeRegex).join('|');
-    alternatives.push(`inkscape:label="(?<label>${labelAlt})"`);
-  }
-  if (idValues.size > 0) {
-    const idAlt = Array.from(idValues.keys()).map(escapeRegex).join('|');
-    alternatives.push(`id="(?<id>${idAlt})"`);
-  }
-  if (alternatives.length === 0) return svgText;
-
-  const tagRe = new RegExp(`<[a-zA-Z]+\\b[^>]*\\b(?:${alternatives.join('|')})[^>]*>`, 'g');
+  if (values.size === 0) return svgText;
+  const alt = Array.from(values.keys()).map(escapeRegex).join('|');
+  const tagRe = new RegExp(`<[a-zA-Z]+\\b[^>]*\\b${attrName}="(?<value>${alt})"[^>]*>`, 'g');
   let result = '';
   let lastIndex = 0;
   let match: RegExpExecArray | null;
   while ((match = tagRe.exec(svgText))) {
-    const label = match.groups?.label;
-    const value = label !== undefined ? labelValues.get(label)! : idValues.get(match.groups!.id!)!;
+    const value = values.get(match.groups!.value!)!;
     result += svgText.slice(lastIndex, match.index) + rewriteTagDisplay(match[0], value);
     lastIndex = match.index + match[0].length;
   }
   result += svgText.slice(lastIndex);
   return result;
+}
+
+/** Targets every element carrying a matching `inkscape:label="..."` (not
+ * just a single `<g>` wrapper - the f-rankN/m-rankN groups are always
+ * exactly one `<g>` per label, but f-body/m-body, the base silhouette, is
+ * NOT a single wrapping group: the label repeats across an `<image>` and
+ * one or more `<path>` siblings, e.g. bodies/body1.svg has 3 elements
+ * labeled "f-body", and some poses (body2.svg) even repeat a rank label
+ * across two separate groups - a partial set in `middle`, a full set in
+ * `foreground`) or a matching `id="..."` (weapon images), in two sequential
+ * passes rather than one combined alternation.
+ *
+ * Two passes, not one: a weapon `<image>` can carry BOTH a matching id and
+ * an `inkscape:label` that collides with a rank-decoration label being
+ * toggled here (e.g. bodies/body7.svg's rank-3 weapon pieces are labeled
+ * plainly "m-rank3", identical to the outer m-rank3 decoration group's own
+ * label, since rank 3 has no a/b variant needing a suffix). A single
+ * combined regex can only take one alternative per tag - which one depends
+ * on where the greedy backtracking lands, not on which is "correct" - so a
+ * weapon image could get hidden by the rank pass's "rank 3 isn't the
+ * current rank" instead of shown by the id pass's "this weapon was picked",
+ * with no way to fix by reordering the alternation. Running ids in a
+ * second, later pass makes an id match always win on any tag that matches
+ * both - weapon ids are a more specific, per-element intent than a shared
+ * rank label. Exported for testing only - composeBodySvg below is the real
+ * entry point. */
+export function applyDisplayToggles(
+  svgText: string,
+  labelValues: ReadonlyMap<string, 'inline' | 'none'>,
+  idValues: ReadonlyMap<string, 'inline' | 'none'>,
+): string {
+  const afterLabels = applyDisplayTogglePass(svgText, 'inkscape:label', labelValues);
+  return applyDisplayTogglePass(afterLabels, 'id', idValues);
 }
 
 /** Every <image id="..."> inside any <g inkscape:label="weapons"> block

@@ -318,8 +318,10 @@ export const UnifiedRightPanel = () => {
         return;
       }
       if (retryCount === 25) {
-        // ~5s without success: dump what actually exists so the failure mode is obvious.
-        panelTrace('rightPanel: migration still failing after 25 retries', {
+        // ~5s without success: dump what actually exists so the failure mode is obvious,
+        // then stop polling. The lw:east-tabs-ready listener stays attached, so migration
+        // still runs if the tabs show up later — this just stops the indefinite 200ms poll.
+        panelTrace('rightPanel: migration still failing after 25 retries, giving up polling', {
           editorId: window.writer?.editorId ?? null,
           panelNodeIdsInDom: Array.from(
             document.querySelectorAll('[id$="-imageViewer"], [id$="-validation"]'),
@@ -327,6 +329,7 @@ export const UnifiedRightPanel = () => {
           ),
           eastPane: describePanelNode(document.querySelector<HTMLElement>('.ui-layout-east')),
         });
+        window.clearInterval(retryId);
       }
     }, 200);
     return () => {

@@ -21,7 +21,7 @@ void i18next
     // debug: true,
     defaultNS: 'LWC',
     fallbackLng: ['en', 'fr'],
-    ns: ['LWC'],
+    ns: ['LWC', 'LW'],
     nsSeparator: '.',
     resources,
     returnEmptyString: false,

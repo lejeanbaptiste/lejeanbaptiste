@@ -7,6 +7,7 @@ Makefile
 apps/desktop/resources/lemminx/lemminx-*
 apps/desktop/resources/python/
 apps/desktop/resources/pmtiles/
+apps/desktop/resources/authority-extraction/
 
 # Map basemap glyph PBFs (downloaded via npm run glyphs:download -w leafwriter-commons)
 apps/commons/resources/fonts/

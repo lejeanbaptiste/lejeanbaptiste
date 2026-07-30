@@ -413,6 +413,47 @@ body.project-language-japanese :is([_tag='note'].hide, .noteWrapper.note.hide)::
   background-size: 100% 100%;
   border-radius: 0;
 }
+
+/* tool_hide_notes.svg is a near-black icon on a transparent background, so it
+disappears against a dark editor background. Give it the same visible box the
+Latin sticky-note marker already has in dark mode. */
+@media (prefers-color-scheme: dark) {
+  :is(
+      [lang|='zh'],
+      [lang|='lzh'],
+      [lang|='chi'],
+      [lang|='zho'],
+      [lang|='ja'],
+      [lang|='jpn'],
+      [xml\:lang|='zh'],
+      [xml\:lang|='lzh'],
+      [xml\:lang|='chi'],
+      [xml\:lang|='zho'],
+      [xml\:lang|='ja'],
+      [xml\:lang|='jpn']
+    )
+    :is([_tag='note'].hide, .noteWrapper.note.hide)::before,
+  [_tag='note'].hide:is(
+      [lang|='zh'],
+      [lang|='lzh'],
+      [lang|='chi'],
+      [lang|='zho'],
+      [lang|='ja'],
+      [lang|='jpn'],
+      [xml\:lang|='zh'],
+      [xml\:lang|='lzh'],
+      [xml\:lang|='chi'],
+      [xml\:lang|='zho'],
+      [xml\:lang|='ja'],
+      [xml\:lang|='jpn']
+    )::before,
+  body.project-language-chinese :is([_tag='note'].hide, .noteWrapper.note.hide)::before,
+  body.project-language-japanese :is([_tag='note'].hide, .noteWrapper.note.hide)::before {
+    background-color: var(--note);
+    border-radius: 2px;
+  }
+}
+
 [_tag='note'].hide > * {
   display: none !important;
 }

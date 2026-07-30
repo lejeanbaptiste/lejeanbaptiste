@@ -41,7 +41,8 @@ export const readProjectMetadata = async (
       custom: Array.isArray(parsed.custom) ? parsed.custom : [],
       lastApplied: parsed.lastApplied,
     };
-  } catch {
+  } catch (error) {
+    console.error('[projectMetadata] failed to parse project-metadata.json:', error);
     return null;
   }
 };

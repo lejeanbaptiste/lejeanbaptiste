@@ -189,5 +189,18 @@
   "main": "",
   "module": "",
   "type": "",
-  "types": ""
+  "types": "",
+  "LW": {
+    "dateAuthority": {
+      "day": "Zi",
+      "dynasty": "Dinastie",
+      "emperor": "Împărat",
+      "era": "Epocă",
+      "month": "Lună",
+      "new_moon_gz": "gz de lună nouă",
+      "sexagenary_day": "Zi sexagenară",
+      "sexagenary_year": "An sexagenar",
+      "year": "An"
+    }
+  }
 }
