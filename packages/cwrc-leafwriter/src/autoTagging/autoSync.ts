@@ -11,10 +11,14 @@
 import {
   centralEntityStoreFromDesktop,
   desktopEntityFileApi,
+  entityStoreFromDesktop,
   type DesktopEntityStoreGlobals,
 } from './entityStore';
 import { promoteToCentral } from './promote';
 import { readOrMintUserStableId } from './userStableId';
+import { findEntity } from './entities';
+import { getCentralId } from './concordance';
+import { propagateEntityTombstones } from './entityOps';
 
 /**
  * Promote `pedbId` into the central database when this project is set to
@@ -27,6 +31,36 @@ import { readOrMintUserStableId } from './userStableId';
  */
 export async function autoSyncEntityToCentral(pedbDoc: Document, pedbId: string): Promise<void> {
   return autoSyncEntitiesToCentral(pedbDoc, [pedbId]);
+}
+
+/** Propagate central-database deletion tombstones to all linked project copies. */
+export async function autoSyncCentralEntityToProjects(
+  cedbDoc: Document,
+  centralId: string,
+): Promise<void> {
+  try {
+    const api = desktopEntityFileApi();
+    if (!api) return;
+    const centralFolder = (await window.electronAPI?.getEntityDbFolder?.().catch(() => null)) ?? null;
+    const centralStore = centralEntityStoreFromDesktop(centralFolder);
+    if (!centralStore) return;
+    const { id: userStableId } = await readOrMintUserStableId(api, centralFolder);
+    for (const projectRoot of await centralStore.registryProjectRoots()) {
+      const projectStore = entityStoreFromDesktop({ projectRoot });
+      if (!projectStore || projectStore.entitiesPath === centralStore.entitiesPath) continue;
+      const pedbDoc = await projectStore.loadEntities();
+      let changed = false;
+      for (const item of Array.from(pedbDoc.getElementsByTagName('*'))) {
+        if (getCentralId(item, userStableId) !== centralId) continue;
+        const centralItem = findEntity(cedbDoc, centralId);
+        if (centralItem) changed = propagateEntityTombstones(centralItem, item) || changed;
+      }
+      if (changed) await projectStore.saveEntities(pedbDoc);
+    }
+  } catch (error) {
+    // Best-effort propagation must not prevent saving the central edit.
+    console.error('[auto-sync] failed to propagate central tombstones:', error);
+  }
 }
 
 /**
@@ -51,6 +85,10 @@ export async function autoSyncEntitiesToCentral(pedbDoc: Document, pedbIds: stri
     const cedbDoc = await centralStore.loadEntities();
     for (const pedbId of pedbIds) {
       promoteToCentral(pedbDoc, pedbId, cedbDoc, userStableId);
+      const pedbItem = findEntity(pedbDoc, pedbId);
+      const centralId = pedbItem ? getCentralId(pedbItem, userStableId) : null;
+      const centralItem = centralId ? findEntity(cedbDoc, centralId) : null;
+      if (pedbItem && centralItem) propagateEntityTombstones(pedbItem, centralItem);
     }
     await centralStore.saveEntities(cedbDoc);
   } catch (error) {

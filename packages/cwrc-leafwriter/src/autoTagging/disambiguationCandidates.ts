@@ -381,6 +381,14 @@ export function mergeSelectedCandidates(
       if (!typedByText.has(key)) typedByText.set(key, name);
     }
   }
+  const mergedFamilyNames = [...typedByText.values()]
+    .filter((name) => name.type === 'family')
+    .map((name) => name.text);
+  for (const [key, name] of typedByText) {
+    if (name.type === 'courtesy' && isFamilyPrefixedCourtesyName(name.text, mergedFamilyNames)) {
+      typedByText.delete(key);
+    }
+  }
   const nonLatinLabel = options?.preferNonLatinLabel
     ? (candidates.map((c) => c.label).find((label) => label && !isLatinSurface(label)) ??
       projectLangName)
@@ -1068,7 +1076,12 @@ export async function collectTypedNamesForCandidate(
     }
   }
 
-  return [...byText.values()];
+  const familyNames = [...byText.values()]
+    .filter((name) => name.type === 'family')
+    .map((name) => name.text);
+  return [...byText.values()].filter(
+    (name) => name.type !== 'courtesy' || !isFamilyPrefixedCourtesyName(name.text, familyNames),
+  );
 }
 
 /** Wikidata Q-ids a candidate is linked to (its URI, description, and Wikidata authority ids). */

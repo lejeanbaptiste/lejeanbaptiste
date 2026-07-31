@@ -156,10 +156,21 @@ See [apps/desktop/README.md](apps/desktop/README.md) for the compilation and pac
 
 ## TODO
 
+- [ ] CHGIS not showing up in disambiguation
+- [ ] number titles and places still not filtered from authority packs
+- [ ] Rework how Sanmiao works
+- [ ] Rewards malfunctioning.
+- [ ] 會稽 shows up as person's name, unspecified; cannot delete.
+- [ ] names, appointment, works, etc., should have authority badges, option to tombstone.
+- [ ] 竟陵王子良 shows up as persname; we are not tagging title + given name !
+
+
+
 - [ ] Auto parse and organise noble titles
-- [ ] Word plugin to handle names and dates correctly while centralising data.
 - [ ] Noble title and person wrapper tagging (testing).
 - [ ] Redo lookup window
+
+
 
 ## Future goals
 
@@ -167,7 +178,6 @@ See [apps/desktop/README.md](apps/desktop/README.md) for the compilation and pac
 - [ ] Official titles dictionaries, dates dictionaries for hover-over
 - [ ] Regional PMTiles download/cache flow for maps (see map-tiles-planning.md)
 - [ ] Redo icons : highlight
-- [ ] Stats window (unsure)
 - [ ] Option to track annotator on the tag level for collaborations.
 - [ ] Copy-and-paste export of paragraphs with translation for word processors
 - [ ] LaTeX export

@@ -91,17 +91,19 @@ export const useEntityDatabaseLifecycle = () => {
       // Replay any merge/delete orders recorded elsewhere (other machine, fresh
       // clone, a tree the eager crawl couldn't see). Idempotent; safe to run on
       // every open.
-      try {
-        const result = await applyPendingOrders(store);
-        if (result.ordersApplied > 0 && (result.summary?.filesChanged ?? 0) > 0) {
-          // eslint-disable-next-line no-console
-          console.info(
-            `[entity-orders] applied ${result.ordersApplied} order(s); ` +
-              `updated ${result.summary?.filesChanged} file(s) in this project.`,
-          );
+      if (!config?.syncToCentral) {
+        try {
+          const result = await applyPendingOrders(store);
+          if (result.ordersApplied > 0 && (result.summary?.filesChanged ?? 0) > 0) {
+            // eslint-disable-next-line no-console
+            console.info(
+              `[entity-orders] applied ${result.ordersApplied} order(s); ` +
+                `updated ${result.summary?.filesChanged} file(s) in this project.`,
+            );
+          }
+        } catch {
+          // never block project open on order replay
         }
-      } catch {
-        // never block project open on order replay
       }
 
       // Converge this project's central-database mappings against any
@@ -110,20 +112,22 @@ export const useEntityDatabaseLifecycle = () => {
       // never touches this id space), but the `ljb-central` mapping that
       // named the merged-away id would otherwise sit stale/"broken" until
       // someone opens the Bridge inbox by hand.
-      try {
-        const availability = await loadBridgeContext();
-        if (availability.available) {
-          const synced = await applyPendingCentralOrders(availability.context);
-          if (synced.repointed > 0 || synced.cleared > 0) {
-            // eslint-disable-next-line no-console
-            console.info(
-              `[central-orders] applied ${synced.ordersApplied} order(s); ` +
-                `repointed ${synced.repointed}, cleared ${synced.cleared} mapping(s).`,
-            );
+      if (!config?.syncToCentral) {
+        try {
+          const availability = await loadBridgeContext();
+          if (availability.available) {
+            const synced = await applyPendingCentralOrders(availability.context);
+            if (synced.repointed > 0 || synced.cleared > 0) {
+              // eslint-disable-next-line no-console
+              console.info(
+                `[central-orders] applied ${synced.ordersApplied} order(s); ` +
+                  `repointed ${synced.repointed}, cleared ${synced.cleared} mapping(s).`,
+              );
+            }
           }
+        } catch {
+          // never block project open on central order replay
         }
-      } catch {
-        // never block project open on central order replay
       }
 
       // Gentle orphan check: after orders have converged, surface corpus keys
@@ -157,7 +161,7 @@ export const useEntityDatabaseLifecycle = () => {
         // never block project open on the orphan sweep
       }
     })();
-  }, [config?.entityDatabaseId, projectFilePath, rootPath]);
+  }, [config?.entityDatabaseId, config?.syncToCentral, projectFilePath, rootPath]);
 
   useEffect(() => {
     if (!isDesktop() || !window.electronAPI?.onExternalFileChange) return;

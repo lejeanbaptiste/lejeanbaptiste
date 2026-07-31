@@ -63,6 +63,7 @@ export const SourceBadges = ({ label }: { label: string }) => {
   return (
     <Box
       component="span"
+      aria-label={`Sources: ${label}`}
       sx={{
         display: 'inline-flex',
         alignItems: 'center',

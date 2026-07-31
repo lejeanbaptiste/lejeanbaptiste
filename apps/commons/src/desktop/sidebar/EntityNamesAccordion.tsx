@@ -153,39 +153,26 @@ export function EntityNamesAccordion({
               {row.sources.length > 0 && <SourceBadges label={row.sources.join('+')} />}
               {row.isValidated && <SourceBadges label={validatedSourceLabel} />}
               {row.keys.length > 0 && (
-                <>
-                  <Tooltip title={t('LWC.desktop.sidebar.database.validate_data')}>
-                    <IconButton
-                      size="small"
-                      sx={neutralActionButtonSx}
-                      onClick={() => onValidate(row.keys)}
-                    >
-                      <CheckIcon fontSize="small" />
-                    </IconButton>
-                  </Tooltip>
-                  <Tooltip title={t('LWC.desktop.sidebar.database.reject_data')}>
-                    <IconButton
-                      size="small"
-                      sx={neutralActionButtonSx}
-                      onClick={() => onReject(row.keys)}
-                    >
-                      <ClearIcon fontSize="small" />
-                    </IconButton>
-                  </Tooltip>
-                </>
-              )}
-              {!row.isPrimary && row.keys.length === 0 && (
-                <Tooltip title={t('LWC.desktop.sidebar.database.delete_name')}>
+                <Tooltip title={t('LWC.desktop.sidebar.database.validate_data')}>
                   <IconButton
                     size="small"
-                    aria-label={t('LWC.desktop.sidebar.database.delete_name')}
-                    onClick={() => onDelete(row.text)}
                     sx={neutralActionButtonSx}
+                    onClick={() => onValidate(row.keys)}
                   >
-                    <ClearIcon fontSize="small" />
+                    <CheckIcon fontSize="small" />
                   </IconButton>
                 </Tooltip>
               )}
+              <Tooltip title={t('LWC.desktop.sidebar.database.delete_name')}>
+                <IconButton
+                  size="small"
+                  aria-label={t('LWC.desktop.sidebar.database.delete_name')}
+                  onClick={() => onDelete(row.text)}
+                  sx={neutralActionButtonSx}
+                >
+                  <ClearIcon fontSize="small" />
+                </IconButton>
+              </Tooltip>
             </Stack>
           ))}
           <Stack direction="row" spacing={1} alignItems="flex-start">

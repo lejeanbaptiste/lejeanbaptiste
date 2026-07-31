@@ -58,6 +58,13 @@ const SERVICES: {
     packs: { person: 'dila-persons', place: 'dila-places' },
   },
   {
+    source: 'chgis',
+    id: 'chgis',
+    name: 'CHGIS',
+    url: 'urn:ljb:authority:chgis',
+    packs: { place: 'chgis-places' },
+  },
+  {
     source: 'ndl',
     id: 'ndl',
     name: 'NDL',

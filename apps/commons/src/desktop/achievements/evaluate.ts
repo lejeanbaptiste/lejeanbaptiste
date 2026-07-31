@@ -221,7 +221,12 @@ export const determineNewUnlocks = (
   const hour = context.savedAt.getHours();
   if (hour >= 2 && hour < 5 && !has('chou-blanc')) earned.push('chou-blanc');
 
-  if (/xml:lang="ja[-"]/.test(context.xml) && !has('aspiring-sinologist')) {
+  // The easter egg has two independent routes: a Japanese-language document,
+  // or the encoder being Marina/Pandolfino. Accept either XML quote style;
+  // saved documents are not guaranteed to use the serializer's preferred one.
+  const japaneseDocument = /xml:lang\s*=\s*(["'])ja(?:-[^"']+)?\1/i.test(context.xml);
+  const aspiringSinologistName = /\b(?:marina|pandolfino)\b/i.test(context.encoderName);
+  if ((japaneseDocument || aspiringSinologistName) && !has('aspiring-sinologist')) {
     earned.push('aspiring-sinologist');
   }
 

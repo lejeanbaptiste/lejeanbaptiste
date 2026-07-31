@@ -23,7 +23,8 @@ jest.mock('./disambiguationCandidates', () => {
   const actual = jest.requireActual('./disambiguationCandidates');
   return {
     ...actual,
-    buildDisambiguationCandidates: (...args: unknown[]) => mockBuildDisambiguationCandidates(...args),
+    buildDisambiguationCandidates: (...args: unknown[]) =>
+      mockBuildDisambiguationCandidates(...args),
     collapseCrossAuthorityCandidates: (rows: unknown[]) => rows,
     enrichCandidateCrossRefs: (row: unknown) => row,
   };
@@ -36,7 +37,13 @@ jest.mock('react-virtuoso', () => ({
   }: {
     data: unknown[];
     itemContent: (index: number, row: unknown) => ReactNode;
-  }) => <div>{data.map((row, index) => <div key={index}>{itemContent(index, row)}</div>)}</div>,
+  }) => (
+    <div>
+      {data.map((row, index) => (
+        <div key={index}>{itemContent(index, row)}</div>
+      ))}
+    </div>
+  ),
 }));
 
 // The real component (and maplibre-gl underneath it) is covered by
@@ -222,7 +229,9 @@ describe('DisambiguationPanel', () => {
     });
     window.dispatchEvent(new Event('ljbCommonsUiChanged'));
 
-    expect(await screen.findByText('AI reviewed these candidates and did not pre-select any.')).toBeTruthy();
+    expect(
+      await screen.findByText('AI reviewed these candidates and did not pre-select any.'),
+    ).toBeTruthy();
   });
 
   it('labels geographically distinct place candidates with cluster letters, and ungeo\'d ones as "no geo data"', async () => {
@@ -239,7 +248,11 @@ describe('DisambiguationPanel', () => {
     });
 
     render(
-      <DisambiguationPanel session={createSession()} groups={[createPlaceGroup()]} aiCuration={false} />,
+      <DisambiguationPanel
+        session={createSession()}
+        groups={[createPlaceGroup()]}
+        aiCuration={false}
+      />,
     );
 
     expect(await screen.findByText('A')).toBeTruthy();
@@ -259,7 +272,11 @@ describe('DisambiguationPanel', () => {
     });
 
     render(
-      <DisambiguationPanel session={createSession()} groups={[createPlaceGroup()]} aiCuration={false} />,
+      <DisambiguationPanel
+        session={createSession()}
+        groups={[createPlaceGroup()]}
+        aiCuration={false}
+      />,
     );
 
     await waitFor(() => expect(mockBuildDisambiguationCandidates).toHaveBeenCalled());
@@ -272,7 +289,12 @@ describe('DisambiguationPanel', () => {
     // merging (WP1) has folded a CBDB + CHGIS hit into one row — the panel
     // itself does no merging, it just renders whatever it's given.
     mockBuildDisambiguationCandidates.mockResolvedValue([
-      { id: 'cbdb:a', label: '竟陵', sources: ['CBDB', 'CHGIS'], geo: { lat: 30.651, lon: 113.151 } },
+      {
+        id: 'cbdb:a',
+        label: '竟陵',
+        sources: ['CBDB', 'CHGIS'],
+        geo: { lat: 30.651, lon: 113.151 },
+      },
     ]);
     mockRankDisambiguationCandidates.mockResolvedValue({
       selectedCandidateIds: [],
@@ -282,11 +304,16 @@ describe('DisambiguationPanel', () => {
     });
 
     render(
-      <DisambiguationPanel session={createSession()} groups={[createPlaceGroup()]} aiCuration={false} />,
+      <DisambiguationPanel
+        session={createSession()}
+        groups={[createPlaceGroup()]}
+        aiCuration={false}
+      />,
     );
 
     await waitFor(() => expect(mockBuildDisambiguationCandidates).toHaveBeenCalled());
     expect(await screen.findAllByRole('checkbox')).toHaveLength(1);
+    expect(screen.getByLabelText('Sources: CBDB+CHGIS')).toBeTruthy();
   });
 
   it('shows a map icon only on group headers whose background prefetch cache already has ≥2 geo clusters', async () => {
@@ -335,7 +362,11 @@ describe('DisambiguationPanel', () => {
     ]);
 
     render(
-      <DisambiguationPanel session={session} groups={[createPlaceGroup('甲')]} aiCuration={false} />,
+      <DisambiguationPanel
+        session={session}
+        groups={[createPlaceGroup('甲')]}
+        aiCuration={false}
+      />,
     );
 
     (await screen.findByLabelText('Compare 甲 on map')).click();

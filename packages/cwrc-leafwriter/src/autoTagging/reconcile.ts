@@ -28,7 +28,15 @@ import {
   touchEntity,
   type AuthorityId,
 } from './entities';
-import { addEntityName, attachAuthority, setEntityDescription, setFamilyName, setGivenName } from './entityOps';
+import {
+  addEntityName,
+  attachAuthority,
+  propagateEntityTombstones,
+  setEntityDescription,
+  setFamilyName,
+  setGivenName,
+} from './entityOps';
+import { readEntityValueProvenance } from './entityProvenance';
 import { normalizeNameType } from './nameTypes';
 
 const TEI_NS = 'http://www.tei-c.org/ns/1.0';
@@ -91,7 +99,7 @@ export function readFields(item: Element): EntityFields {
   const nameTag = nameTagForItem(item);
 
   for (const child of Array.from(item.children)) {
-    if (nameTag && child.localName === nameTag) {
+    if (nameTag && child.localName === nameTag && readEntityValueProvenance(child).status === 'active') {
       const text = child.textContent?.trim();
       if (text) {
         names.push({
@@ -324,6 +332,12 @@ export function applyReconcilePlan(
 
   let pedbChanged = false;
   let cedbChanged = false;
+
+  // Tombstones are authoritative deletions. Propagate them before applying
+  // the normal union plan, otherwise an active value on the other side would
+  // immediately recreate the deleted assertion.
+  pedbChanged = propagateEntityTombstones(cedbItem, pedbItem) || pedbChanged;
+  cedbChanged = propagateEntityTombstones(pedbItem, cedbItem) || cedbChanged;
 
   const nameAttrs = (name: NameField) => ({
     lang: name.lang ?? undefined,

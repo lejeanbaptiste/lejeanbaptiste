@@ -394,7 +394,7 @@ export class AutoTaggingSession {
   private dilaPlaceDetailCacheStore: DilaPlaceDetailCache | null = null;
   private llmCache: LlmCache | null = null;
   private disambiguationAiCacheStore: DisambiguationAiCache | null = null;
-  private pendingCache: PendingCache = { version: 1, entries: {} };
+  private pendingCache: PendingCache = { version: 2, entries: {} };
   private personWrapperCandidatesPromise: Promise<AuthorityCandidate[]> | null = null;
   private documentPaths = new Map<Document, string>();
   private projectLangPromise: Promise<string | null> | null = null;

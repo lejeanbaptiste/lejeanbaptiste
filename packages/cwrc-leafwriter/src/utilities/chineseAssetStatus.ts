@@ -20,11 +20,12 @@ export async function checkChineseProjectAssets(): Promise<ChineseProjectAssets>
   };
 
   try {
-    // Check authority packs (CBDB, DILA, CHGIS, Wikidata — installed together as the `chinese` profile)
+    // The Chinese bundle contains several packs. Require CHGIS specifically so
+    // existing installations with only the older CBDB/DILA packs are prompted
+    // to receive the newly bundled CHGIS pack.
     const packStatuses = await window.electronAPI?.authorityPackStatuses?.();
-    if (packStatuses && packStatuses.length > 0) {
-      result.authorityPacksInstalled = packStatuses.some((p) => p.installed);
-    }
+    result.authorityPacksInstalled =
+      packStatuses?.some((p) => p.id === 'chgis-places' && p.installed) ?? false;
     if (!result.authorityPacksInstalled) {
       result.missingAssets.push('authorityPacks');
     }

@@ -5,6 +5,7 @@ import {
   svgStampPixelsForCssBox,
   BODY_CSS_OVERSAMPLE,
   SVG_PIXEL_OVERSAMPLE,
+  scenePhotoFilterForPose,
 } from './UniformAvatar';
 
 describe('pose rank eligibility', () => {
@@ -45,6 +46,13 @@ describe('pose rank eligibility', () => {
   });
 });
 
+describe('scene photo filter', () => {
+  it('uses the WWI photo treatment for pose 9 only', () => {
+    expect(scenePhotoFilterForPose(9)).toBe('grayscale(0.95) contrast(1.2) brightness(0.92)');
+    expect(scenePhotoFilterForPose(8)).toBeUndefined();
+  });
+});
+
 describe('stampSvgPixelSize', () => {
   it('replaces mm width/height with pixel sizes and keeps viewBox', () => {
     const input =
@@ -56,7 +64,11 @@ describe('stampSvgPixelSize', () => {
   });
 
   it('handles single-quoted attributes', () => {
-    const stamped = stampSvgPixelSize("<svg width='10' height='10' viewBox='0 0 1 1'></svg>", 20, 40);
+    const stamped = stampSvgPixelSize(
+      "<svg width='10' height='10' viewBox='0 0 1 1'></svg>",
+      20,
+      40,
+    );
     expect(stamped).toBe('<svg width="20" height="40" viewBox=\'0 0 1 1\'></svg>');
   });
 });

@@ -87,6 +87,7 @@ import {
 } from './llmClientFromSettings';
 import { rankDisambiguationCandidates } from './llmDisambiguationRank';
 import { getConfidenceLabel, getValidationColor } from './llmValidationRank';
+import { SourceBadges } from './SourceBadges';
 import {
   createDefaultAiPromptProfilesState,
   getActiveAiPromptProfile,
@@ -1250,6 +1251,9 @@ export const DisambiguationPanel = ({
                   {links.map((link) => (
                     <AuthorityLinkIcon key={link.url} link={link} />
                   ))}
+                  {candidate.sources.length > 0 && (
+                    <SourceBadges label={candidate.sources.join('+')} />
+                  )}
                   {candidate.sources.some((source) => source.toLowerCase() === 'norbert') && (
                     <Tooltip title="Norbert" arrow>
                       <Box component="span" sx={{ display: 'inline-flex', mt: 0.125 }}>

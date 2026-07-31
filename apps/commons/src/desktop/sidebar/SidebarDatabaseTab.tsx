@@ -88,6 +88,7 @@ import {
   rejectEntityAssertion,
   rejectConcordance,
   applyConcordanceAssociations,
+  summarizeEntity,
   validateEntityAssertion,
   type CentralMergeConflict,
   type DuplicateGroup,
@@ -107,7 +108,9 @@ import { backfillEntityNames } from '../../../../../packages/cwrc-leafwriter/src
 import {
   autoSyncEntitiesToCentral,
   autoSyncEntityToCentral,
+  autoSyncCentralEntityToProjects,
 } from '../../../../../packages/cwrc-leafwriter/src/autoTagging/autoSync';
+import { synchronizeMirroredProject } from '../../../../../packages/cwrc-leafwriter/src/autoTagging/synchronizedMirror';
 import { suggestPersonRomanization } from '../../../../../packages/cwrc-leafwriter/src/plugins/personNameDefaults';
 import { cachedPackReader } from '../../../../../packages/cwrc-leafwriter/src/services/authority-pack-lookup';
 import { authorityPackLines } from '../../../../../packages/cwrc-leafwriter/src/autoTagging/packLoader';
@@ -139,14 +142,12 @@ import { RESET } from 'jotai/utils';
 import { db } from '../../../../../packages/cwrc-leafwriter/src/db';
 import { applyKeyRemapAcrossProjects, type KeyRemapSummary } from '../entityDb/applyKeyRemap';
 import {
-  applyPendingCentralOrders,
   computeMergeDocket,
   loadBridgeContext,
   promoteEntities,
 } from '../entityDb/bridge';
 import type { BulkBridgeProposal } from '../../../../../packages/cwrc-leafwriter/src/autoTagging/bulkBridgeImport';
 import { setEntityIndexProgress } from '../../../../../packages/cwrc-leafwriter/src/autoTagging/entityIndexProgress';
-import { setBulkSyncProgress } from '../../../../../packages/cwrc-leafwriter/src/autoTagging/bulkSyncProgress';
 import { authorityLookupUrl } from '../entityDb/authorityLinks';
 import { BridgeInboxDialog } from './BridgeInboxDialog';
 import { MergeDocketDialog } from './MergeDocketDialog';
@@ -648,6 +649,8 @@ export const SidebarDatabaseTab = ({ active = false }: SidebarDatabaseTabProps) 
   const [dateEditing, setDateEditing] = useState(false);
   const [dateBirth, setDateBirth] = useState('');
   const [dateDeath, setDateDeath] = useState('');
+  const mirrorSyncQueueRef = useRef<Promise<void>>(Promise.resolve());
+  const mirrorSyncPendingRef = useRef(false);
   const [dateBirthQualifier, setDateBirthQualifier] = useState<DatePrecision>('');
   const [dateDeathQualifier, setDateDeathQualifier] = useState<DatePrecision>('');
   const [dateBirthBce, setDateBirthBce] = useState(false);
@@ -737,108 +740,54 @@ export const SidebarDatabaseTab = ({ active = false }: SidebarDatabaseTabProps) 
       }
     }
 
-    // Reconcile this project's ljb-central mappings on every open/visit: pick up
-    // upstream central merges/deletes, then promote+link any PEDB entity that
-    // isn't mapped yet (idempotent - promoteToCentral no-ops once linked). This
-    // is the only place this can happen when syncToCentral is on, since that
-    // flag hides the manual Bridge button (see the toolbar below).
+    // Synchronized projects use a checkpointed CEDB/PEDB mirror. This is
+    // deliberately not the manual bridge/union workflow: CEDB is canonical,
+    // an offline PEDB edit is uploaded only when CEDB is unchanged, and
+    // simultaneous edits remain explicit conflicts.
     if (syncToCentral && !resolvedCentralStore) {
       setLoadError('Central database is not configured; synchronisation did not start.');
     }
-    const rendererEntityLimit = 8 * 1024 * 1024;
-    if (syncToCentral && resolvedCentralStore && !bulkSyncInFlightRef.current) {
+    if (
+      syncToCentral &&
+      resolvedCentralStore &&
+      !bulkSyncInFlightRef.current &&
+      !mirrorSyncPendingRef.current
+    ) {
       bulkSyncInFlightRef.current = true;
-      void (async () => {
+      await (async () => {
         try {
           const api = desktopEntityFileApi();
           if (!api) return;
           const { id: userStableId } = await readOrMintUserStableId(api, centralFolder);
-          const bridgeCtx = {
-            projectStore: currentStore,
-            centralStore: resolvedCentralStore,
+          const mirror = await synchronizeMirroredProject(
+            currentStore,
+            resolvedCentralStore,
             userStableId,
-          };
-          // applyPendingCentralOrders parses both entity databases in the
-          // renderer. That is fine for ordinary projects, but it freezes
-          // Chromium for large databases before the background bridge worker
-          // even starts. Large files are handled by the worker path below.
-          const statFile = window.electronAPI?.statFile;
-          const [projectStat, centralStat] = await Promise.all([
-            statFile ? statFile(currentStore.entitiesPath).catch(() => null) : Promise.resolve(null),
-            statFile
-              ? statFile(resolvedCentralStore.entitiesPath).catch(() => null)
-              : Promise.resolve(null),
-          ]);
-          if (
-            projectStat &&
-            centralStat &&
-            projectStat.size <= rendererEntityLimit &&
-            centralStat.size <= rendererEntityLimit
-          ) {
-            await applyPendingCentralOrders(bridgeCtx);
+          );
+          if (mirror.conflicts.length > 0) {
+            setLoadError(
+              `Central synchronisation found ${mirror.conflicts.length} conflicting offline edit${mirror.conflicts.length === 1 ? '' : 's'}.`,
+            );
           }
-          const label = 'Synchronising with central database';
-          setBulkSyncProgress({ active: true, label, done: 0, total: 0 });
-          const start = window.electronAPI?.bulkBridgeStart;
-          const onProgress = window.electronAPI?.onBulkBridgeProgress;
-          if (!start || !onProgress) throw new Error('Background bulk sync is unavailable in this desktop build.');
-          await new Promise<void>(async (resolve, reject) => {
-            let jobId: string | null = null;
-            const cancel = () => {
-              if (jobId) void window.electronAPI?.bulkBridgeCancel?.(jobId);
-            };
-            const unsubscribe = onProgress((event) => {
-              if (!jobId || event.jobId !== jobId) return;
-              if (event.progress) {
-                setBulkSyncProgress({
-                  active: true,
-                  label,
-                  done: event.progress.done,
-                  total: event.progress.total,
-                  cancel,
-                });
-              }
-              if (event.status === 'complete' || event.status === 'cancelled') {
-                if (event.result?.proposals) setBulkProposals(event.result.proposals);
-                unsubscribe();
-                resolve();
-              } else if (event.status === 'error') {
-                unsubscribe();
-                reject(new Error(event.error ?? 'Background bulk sync failed.'));
-              }
-            });
-            try {
-              jobId = await start({
-                sourceEntitiesPath: currentStore.entitiesPath,
-                centralEntitiesPath: resolvedCentralStore.entitiesPath,
-                centralLjbDir: resolvedCentralStore.projectLjbDir,
-                userStableId,
-                chunkSize: 250,
-              });
-              setBulkSyncProgress({ active: true, label, done: 0, total: 0, cancel });
-            } catch (error) {
-              unsubscribe();
-              reject(error);
-            }
-          });
         } catch (error) {
-          // Best-effort: a manual edit's own auto-sync still covers that entity.
           // eslint-disable-next-line no-console
-          console.error('[bridge] catch-up sync on project open failed:', error);
+          console.error('[central-mirror] synchronisation failed:', error);
           setLoadError(
             `Central synchronisation failed: ${error instanceof Error ? error.message : String(error)}`,
           );
         } finally {
-          setBulkSyncProgress({ active: false, label: '', done: 0, total: 0 });
           bulkSyncInFlightRef.current = false;
         }
       })();
     }
 
-    // Pure view switch: browse either database, never both at once - Project
-    // falls back from Central if no central folder is configured yet.
+    const rendererEntityLimit = 8 * 1024 * 1024;
+    // Synchronized projects expose CEDB only. The PEDB is an implementation
+    // mirror for corpus keys, not an alternate database view.
     const activeStore =
-      databaseView === 'central' && resolvedCentralStore ? resolvedCentralStore : currentStore;
+      (syncToCentral || databaseView === 'central') && resolvedCentralStore
+        ? resolvedCentralStore
+        : currentStore;
 
     // Chromium's XML DOM becomes unstable well before Node does with very large
     // entity files. Keep the full-document parse out of the renderer; the
@@ -964,6 +913,11 @@ export const SidebarDatabaseTab = ({ active = false }: SidebarDatabaseTabProps) 
     }
   }, [databaseView, syncToCentral]);
 
+  // A synchronized project has one visible database: the central one.
+  useEffect(() => {
+    if (syncToCentral && databaseView !== 'central') setDatabaseView('central');
+  }, [databaseView, syncToCentral]);
+
   // Load on mount and refresh whenever the tab becomes visible (the project —
   // and with it the entity store — may not exist yet at app start).
   useEffect(() => {
@@ -991,7 +945,7 @@ export const SidebarDatabaseTab = ({ active = false }: SidebarDatabaseTabProps) 
       if (!detail?.id) return;
 
       const type = detail.type === 'org' || detail.type === 'organization' ? 'org' : detail.type;
-      setDatabaseView('project');
+      setDatabaseView(syncToCentral ? 'central' : 'project');
       setKindFilter(type as EntityKind);
       setSearch(`^${escapeRegExp(detail.id)}$`);
       setSelected(new Set([detail.id]));
@@ -1003,7 +957,7 @@ export const SidebarDatabaseTab = ({ active = false }: SidebarDatabaseTabProps) 
 
     window.addEventListener(DESKTOP_DATABASE_ENTITY_EVENT, handleShowEntity);
     return () => window.removeEventListener(DESKTOP_DATABASE_ENTITY_EVENT, handleShowEntity);
-  }, []);
+  }, [syncToCentral]);
 
   // Reload when either database changes on disk (external edit or another flow).
   useEffect(() => {
@@ -1126,14 +1080,77 @@ export const SidebarDatabaseTab = ({ active = false }: SidebarDatabaseTabProps) 
 
   /** Whichever database is currently being browsed - every visible row belongs to it. */
   const resolveStoreFor = useCallback(
-    (_id: string): EntityStore | null => (databaseView === 'central' ? centralStore : store),
-    [centralStore, databaseView, store],
+    (_id: string): EntityStore | null =>
+      syncToCentral || databaseView === 'central' ? centralStore : store,
+    [centralStore, databaseView, store, syncToCentral],
   );
 
   /** Active entity store for list/browse mutations (project PEDB or central CEDB view). */
   const activeStore = useMemo(
-    () => (databaseView === 'central' && centralStore ? centralStore : store),
-    [centralStore, databaseView, store],
+    () => (syncToCentral || databaseView === 'central') && centralStore ? centralStore : store,
+    [centralStore, databaseView, store, syncToCentral],
+  );
+
+  /**
+   * Mirror work is deliberately post-save and serialized. The Central edit is
+   * the user-visible save; rebuilding the PEDB is background maintenance and
+   * must not make the save button wait on two XML reads/writes.
+   */
+  const scheduleMirrorSync = useCallback(() => {
+    if (!syncToCentral || !store || !centralStore) return;
+    mirrorSyncPendingRef.current = true;
+    const queued = mirrorSyncQueueRef.current
+      .catch(() => undefined)
+      .then(async () => {
+        const api = desktopEntityFileApi();
+        if (!api) return;
+        const { id: userStableId } = await readOrMintUserStableId(
+          api,
+          centralStore.centralFolder,
+        );
+        const mirror = await synchronizeMirroredProject(store, centralStore, userStableId);
+        if (mirror.conflicts.length > 0) {
+          setLoadError(
+            `Central synchronisation found ${mirror.conflicts.length} conflicting offline edit${mirror.conflicts.length === 1 ? '' : 's'}.`,
+          );
+        }
+        if (mirror.downloadedCentralChanges > 0) void reload();
+      })
+      .catch((error) => {
+        console.error('[central-mirror] background synchronisation failed:', error);
+        setLoadError(
+          `Central synchronisation failed: ${error instanceof Error ? error.message : String(error)}`,
+        );
+      });
+    mirrorSyncQueueRef.current = queued;
+    void queued.finally(() => {
+      if (mirrorSyncQueueRef.current === queued) mirrorSyncPendingRef.current = false;
+    });
+  }, [centralStore, reload, store, syncToCentral]);
+
+  /** Replace one visible row from the already-loaded mutation document. */
+  const updateEntityInPanel = useCallback(
+    (doc: Document, entityId: string) => {
+      const item = findEntity(doc, entityId);
+      const summary = item ? summarizeEntity(item) : null;
+      setEntities((previous) => {
+        const index = previous.findIndex((entity) => entity.id === entityId);
+        if (!summary) return index < 0 ? previous : previous.filter((entity) => entity.id !== entityId);
+        if (index < 0) return [...previous, summary];
+        const next = previous.slice();
+        next[index] = summary;
+        return next;
+      });
+      setEditEntity((previous) => (previous?.id === entityId ? summary : previous));
+      if (summary && editEntity?.id === entityId) {
+        setEditNameTypes(
+          Object.fromEntries(
+            summary.nameEntries.map((entry) => [entry.text, entry.type ?? '']),
+          ),
+        );
+      }
+    },
+    [editEntity?.id],
   );
 
   /**
@@ -1168,6 +1185,9 @@ export const SidebarDatabaseTab = ({ active = false }: SidebarDatabaseTabProps) 
           await autoSyncEntitiesToCentral(doc, entityIds);
         }
         await activeStore.saveEntities(doc);
+        if (syncToCentral && store && centralStore && activeStore === centralStore) {
+          scheduleMirrorSync();
+        }
         if (entityIds?.length === 1) {
           const refreshed = listEntities(doc).find((entity) => entity.id === entityIds[0]);
           if (refreshed && editEntity?.id === refreshed.id) {
@@ -1208,6 +1228,9 @@ export const SidebarDatabaseTab = ({ active = false }: SidebarDatabaseTabProps) 
       projectLang,
       reload,
       store,
+      centralStore,
+      scheduleMirrorSync,
+      syncToCentral,
     ],
   );
 
@@ -1238,6 +1261,9 @@ export const SidebarDatabaseTab = ({ active = false }: SidebarDatabaseTabProps) 
           await autoSyncEntitiesToCentral(doc, syncIds);
         }
         await targetStore.saveEntities(doc);
+        if (syncToCentral && store && centralStore && targetStore === centralStore) {
+          scheduleMirrorSync();
+        }
         if (remap && Object.keys(remap).length > 0) {
           // Durable order first (so a crash mid-crawl still lets other checkouts
           // converge), then the eager cross-project crawl for this machine.
@@ -1253,7 +1279,7 @@ export const SidebarDatabaseTab = ({ active = false }: SidebarDatabaseTabProps) 
         setBusyMessage(null);
       }
     },
-    [reload, store],
+    [centralStore, reload, scheduleMirrorSync, store, syncToCentral],
   );
 
   /**
@@ -1273,24 +1299,21 @@ export const SidebarDatabaseTab = ({ active = false }: SidebarDatabaseTabProps) 
         const doc = await targetStore.loadEntities();
         mutate(doc);
         if (targetStore === store) await autoSyncEntityToCentral(doc, entityId);
-        await targetStore.saveEntities(doc);
-        const refreshed = listEntities(doc).find((entity) => entity.id === entityId) ?? null;
-        setEditEntity(refreshed);
-        if (refreshed) {
-          setEditNameTypes(
-            Object.fromEntries(
-              refreshed.nameEntries.map((entry) => [entry.text, entry.type ?? '']),
-            ),
-          );
+        else if (!syncToCentral && centralStore && targetStore === centralStore) {
+          await autoSyncCentralEntityToProjects(doc, entityId);
         }
-        await reload();
+        await targetStore.saveEntities(doc);
+        if (syncToCentral && store && centralStore && targetStore === centralStore) {
+          scheduleMirrorSync();
+        }
+        updateEntityInPanel(doc, entityId);
       } catch (error) {
         setLoadError(error instanceof Error ? error.message : String(error));
       } finally {
         setBusyMessage(null);
       }
     },
-    [editEntity, reload, resolveStoreFor, store],
+    [centralStore, editEntity, reload, resolveStoreFor, scheduleMirrorSync, store, syncToCentral, updateEntityInPanel],
   );
 
   const runEntityMutationForId = useCallback(
@@ -1302,17 +1325,21 @@ export const SidebarDatabaseTab = ({ active = false }: SidebarDatabaseTabProps) 
         const doc = await targetStore.loadEntities();
         mutate(doc, entityId);
         if (targetStore === store) await autoSyncEntityToCentral(doc, entityId);
+        else if (!syncToCentral && centralStore && targetStore === centralStore) {
+          await autoSyncCentralEntityToProjects(doc, entityId);
+        }
         await targetStore.saveEntities(doc);
-        const refreshed = listEntities(doc).find((entity) => entity.id === entityId) ?? null;
-        if (editEntity?.id === entityId) setEditEntity(refreshed);
-        await reload();
+        if (syncToCentral && store && centralStore && targetStore === centralStore) {
+          scheduleMirrorSync();
+        }
+        updateEntityInPanel(doc, entityId);
       } catch (error) {
         setLoadError(error instanceof Error ? error.message : String(error));
       } finally {
         setBusyMessage(null);
       }
     },
-    [editEntity?.id, reload, resolveStoreFor, store],
+    [centralStore, editEntity?.id, reload, resolveStoreFor, scheduleMirrorSync, store, syncToCentral, updateEntityInPanel],
   );
 
   /** Merge button: <2 selected extends the search with an alternation, ≥2 opens the merge dialog. */
@@ -2053,13 +2080,26 @@ export const SidebarDatabaseTab = ({ active = false }: SidebarDatabaseTabProps) 
         return {
           key: entry.text,
           text: entry.text,
-          sources: Array.from(
-            new Set(
-              sourcedMatching
-                .map((assertion) => assertion.source?.split(':')[0])
-                .filter((source): source is string => Boolean(source)),
-            ),
-          ),
+          sources: (() => {
+            const sources = Array.from(
+              new Set(
+                sourcedMatching
+                  .map((assertion) => assertion.source?.split(':')[0])
+                  .filter((source): source is string => Boolean(source)),
+              ),
+            );
+            // Legacy authority imports may have origin=authority but no
+            // source attribute. Still expose the authority badge and the
+            // tombstone action rather than silently treating them as plain
+            // user names.
+            if (sources.length > 0) return sources;
+            // Every displayed name gets an explicit provenance affordance.
+            // Legacy rows may not have a source attribute, so use the linked
+            // authority ids when available and a neutral authority badge as a
+            // final fallback.
+            const entitySources = (editEntity?.authorities ?? []).map((authority) => authority.type);
+            return entitySources.length > 0 ? entitySources : ['authority'];
+          })(),
           keys: authorityMatching.map((assertion) => assertion.key),
           isValidated: matching.some(
             (assertion) => assertion.origin === 'user' && Boolean(assertion.source),
@@ -2441,28 +2481,24 @@ export const SidebarDatabaseTab = ({ active = false }: SidebarDatabaseTabProps) 
               />
             )}
           />
-          <Tooltip
-            title={
-              databaseView === 'central'
-                ? 'Browsing your central database'
-                : 'Browsing this project’s database'
-            }
-          >
-            <span>
-              <Button
-                size="small"
-                variant="contained"
-                color={databaseView === 'central' ? 'error' : 'success'}
-                onClick={() =>
-                  setDatabaseView((prev) => (prev === 'central' ? 'project' : 'central'))
-                }
-                startIcon={<HubOutlinedIcon fontSize="small" />}
-                sx={{ flexShrink: 0, whiteSpace: 'nowrap' }}
-              >
-                {databaseView === 'central' ? 'Central' : 'Project'}
-              </Button>
-            </span>
-          </Tooltip>
+          {!syncToCentral && (
+            <Tooltip title={databaseView === 'central' ? 'Browsing your central database' : 'Browsing this project’s database'}>
+              <span>
+                <Button
+                  size="small"
+                  variant="contained"
+                  color={databaseView === 'central' ? 'error' : 'success'}
+                  onClick={() =>
+                    setDatabaseView((prev) => (prev === 'central' ? 'project' : 'central'))
+                  }
+                  startIcon={<HubOutlinedIcon fontSize="small" />}
+                  sx={{ flexShrink: 0, whiteSpace: 'nowrap' }}
+                >
+                  {databaseView === 'central' ? 'Central' : 'Project'}
+                </Button>
+              </span>
+            </Tooltip>
+          )}
         </Stack>
         <Stack direction="row" spacing={1} alignItems="center" sx={{ flexWrap: 'nowrap' }}>
           <Tooltip
@@ -2505,7 +2541,7 @@ export const SidebarDatabaseTab = ({ active = false }: SidebarDatabaseTabProps) 
               </Button>
             </Tooltip>
           )}
-          {centralStore && (
+          {centralStore && !syncToCentral && (
             <Tooltip
               title={
                 docketCount > 0

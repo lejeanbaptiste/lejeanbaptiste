@@ -746,6 +746,8 @@ export function removeEntityValue(doc: Document, id: string, key: string): boole
   if (provenance.origin === 'user') {
     target.remove();
   } else {
+    // Authority/XML deletions must remain as tombstones so refresh and
+    // PEDB/CEDB reconciliation cannot recreate them.
     writeEntityValueProvenance(target, {
       origin: provenance.origin,
       source: provenance.source,
@@ -1214,18 +1216,82 @@ export function renameEntityName(doc: Document, id: string, name: string): boole
   return true;
 }
 
-/** Remove an alternative name. Refuses to remove the last remaining name. */
+/** Tombstone a name, promoting another active name when the primary is removed. */
 export function removeEntityName(doc: Document, id: string, name: string): boolean {
   const item = requireEntity(doc, id);
   const kind = kindOfElement(item);
   if (!kind) throw new Error(`Unknown entity kind for: ${id}`);
   const names = nameElements(item, kind);
-  if (names.length <= 1) return false;
-  const target = names.find((el) => el.textContent?.trim() === name.trim());
-  if (!target) return false;
-  target.remove();
+  const activeNames = names.filter(
+    (el) => readEntityValueProvenance(el).status === 'active',
+  );
+  if (activeNames.length <= 1) return false;
+  const targets = activeNames.filter((el) => el.textContent?.trim() === name.trim());
+  if (targets.length === 0) return false;
+  // Keep authority assertions as tombstones. User-created alternatives retain
+  // the historical hard-delete behavior.
+  for (const target of targets) {
+    const provenance = readEntityValueProvenance(target);
+    if (provenance.origin === 'user') target.remove();
+    else {
+      writeEntityValueProvenance(target, {
+        origin: provenance.origin,
+        source: provenance.source,
+        status: 'rejected',
+      });
+    }
+  }
+  // The first name is the display name. If it was tombstoned, move the first
+  // surviving active name into its place so the entity remains addressable.
+  const survivor = Array.from(item.children).find(
+    (child) =>
+      child.localName === ENTITY_KINDS[kind].name &&
+      readEntityValueProvenance(child).status === 'active',
+  );
+  if (survivor && names[0] !== survivor) item.insertBefore(survivor, names[0] ?? null);
   touchEntity(item);
   return true;
+}
+
+/**
+ * Copy deletion tombstones for one entity to its linked counterpart.  The
+ * normal reconciliation deliberately unions active values, so deletions need
+ * this explicit one-way marker propagation before that union can run again.
+ */
+export function propagateEntityTombstones(source: Element, target: Element): boolean {
+  let changed = false;
+  const rejected = Array.from(source.children).filter(
+    (child) => readEntityValueProvenance(child).status === 'rejected',
+  );
+  if (rejected.length === 0) return false;
+  for (const child of Array.from(target.children)) {
+    const sameAssertion = rejected.some((sourceChild) => {
+      if (entityValueKey(sourceChild) === entityValueKey(child)) return true;
+      // A promoted entity may normalize the same name with the central
+      // authority's source, so the provenance key differs even though the
+      // visible assertion is the same. Name tombstones must match by value.
+      return (
+        sourceChild.localName === child.localName &&
+        (sourceChild.localName === 'persName' ||
+          sourceChild.localName === 'placeName' ||
+          sourceChild.localName === 'orgName' ||
+          sourceChild.localName === 'title') &&
+        sourceChild.textContent?.trim() === child.textContent?.trim() &&
+        sourceChild.getAttribute('type') === child.getAttribute('type')
+      );
+    });
+    if (!sameAssertion) continue;
+    const provenance = readEntityValueProvenance(child);
+    if (provenance.status !== 'active') continue;
+    writeEntityValueProvenance(child, {
+      origin: provenance.origin,
+      source: provenance.source,
+      status: 'rejected',
+    });
+    changed = true;
+  }
+  if (changed) touchEntity(target);
+  return changed;
 }
 
 /** Attach an authority idno unless the same type+value is already present. */

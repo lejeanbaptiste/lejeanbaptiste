@@ -8,7 +8,8 @@ export interface PendingEntry {
 }
 
 export interface PendingCache {
-  version: 1;
+  /** Bumped when cached rows need to be rebuilt from the current authority packs. */
+  version: 2;
   entries: Record<string, PendingEntry>;
 }
 
@@ -17,13 +18,13 @@ function entryKey(tag: string, surface: string): string {
 }
 
 export function parsePendingCache(json: string | null): PendingCache {
-  if (!json?.trim()) return { version: 1, entries: {} };
+  if (!json?.trim()) return { version: 2, entries: {} };
   try {
     const parsed = JSON.parse(json) as PendingCache;
-    if (parsed.version !== 1 || !parsed.entries) return { version: 1, entries: {} };
+    if (parsed.version !== 2 || !parsed.entries) return { version: 2, entries: {} };
     return parsed;
   } catch {
-    return { version: 1, entries: {} };
+    return { version: 2, entries: {} };
   }
 }
 

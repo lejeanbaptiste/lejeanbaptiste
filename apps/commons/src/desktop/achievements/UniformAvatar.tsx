@@ -68,6 +68,12 @@ const POSE_MIN_RANK_INDEX: Partial<Record<number, number>> = {
 const effectivePoseMinRankIndex = (poseIndex: number): number =>
   Math.max(POSE_ASSET_MIN_RANK_INDEX[poseIndex] ?? -1, POSE_MIN_RANK_INDEX[poseIndex] ?? -1);
 
+/** Filter applied to the complete scene for the deliberately photographic
+ * WWI pose. Keep this as a shared value so the live avatar and certificate
+ * export render the same treatment. */
+export const scenePhotoFilterForPose = (poseIndex: number): string | undefined =>
+  poseIndex === 9 ? 'grayscale(0.95) contrast(1.2) brightness(0.92)' : undefined;
+
 /** True when this pose may appear in the random rotation at `rankIndex`.
  * Some poses have a minimum rank (see effectivePoseMinRankIndex). Poses with
  * weapon art also require at least one weapon tier unlocked at the player's
@@ -723,9 +729,7 @@ export const UniformAvatar = ({
       return false;
     }
   }, [bodyFrontImageUrl]);
-  const scenePhotoFilter = isWwiPhotoPose
-    ? 'grayscale(0.95) contrast(1.2) brightness(0.92)'
-    : undefined;
+  const scenePhotoFilter = scenePhotoFilterForPose(isWwiPhotoPose ? 9 : -1);
   useEffect(() => {
     let cancelled = false;
     void getCachedColorStats(backgroundImageKey).then((backgroundStats) => {

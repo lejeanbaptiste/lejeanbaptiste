@@ -176,6 +176,25 @@ describe('determineNewUnlocks', () => {
     );
   });
 
+  it('awards Aspiring Sinologist for the Marina or Pandolfino names', () => {
+    for (const encoderName of ['Marina', 'Pandolfino', 'Marina Dupont', 'Dr. pandolfino']) {
+      expect(
+        determineNewUnlocks(
+          freshState(),
+          zeroMetrics(),
+          baseContext({ encoderName }),
+        ),
+      ).toContain('aspiring-sinologist');
+    }
+  });
+
+  it('accepts single-quoted Japanese language attributes', () => {
+    const context = baseContext({ xml: "<TEI><text xml:lang='ja-JP'>…</text></TEI>" });
+    expect(determineNewUnlocks(freshState(), zeroMetrics(), context)).toContain(
+      'aspiring-sinologist',
+    );
+  });
+
   it('no longer awards Wet Work as a one-time trigger (superseded by the wetWork rank ladder)', () => {
     expect(
       determineNewUnlocks(

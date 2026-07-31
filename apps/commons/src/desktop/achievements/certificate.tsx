@@ -21,6 +21,7 @@ import {
   RIBBON_ASPECT,
   RIBBON_BAND_FRACTION,
   RIBBON_COUNT_FLOOR,
+  scenePhotoFilterForPose,
 } from './UniformAvatar';
 
 type Ribbon = [string, string] | [string, string, string];
@@ -237,6 +238,7 @@ export const buildPortraitFragment = async (
   const bodyStats = BODY_COLOR_STATS[`${input.poseIndex}:${input.bodyType}`] ?? NEUTRAL_STATS;
   const uniformFilter = colorMatchFilter(bodyStats, backgroundStats);
   const headFilter = colorMatchFilter(headStats, backgroundStats);
+  const scenePhotoFilter = scenePhotoFilterForPose(input.poseIndex);
   // Already pre-padded by the local compositor (see SVG_PAD in
   // UniformAvatar.tsx) - no further viewBox surgery needed here.
   const paddedHeadMarkup = input.headSvgMarkup;
@@ -346,7 +348,16 @@ export const buildPortraitFragment = async (
     <rect x="0.5" y="0.5" width="${sceneWidth - 1}" height="${size - 1}" fill="none" stroke="${PANEL_BORDER_COLOR}" stroke-width="1" />
   </svg>`;
 
-  return { svg, width: sceneWidth, height: size };
+  // The live avatar applies the WWI photo treatment to the complete scene,
+  // not just to an individual layer. Wrapping the same fragment contents in
+  // the shared filter keeps certificate exports visually identical.
+  const filteredSvg = scenePhotoFilter
+    ? svg.replace(
+        '<svg xmlns="http://www.w3.org/2000/svg"',
+        `<svg xmlns="http://www.w3.org/2000/svg" style="filter: ${scenePhotoFilter}"`,
+      )
+    : svg;
+  return { svg: filteredSvg, width: sceneWidth, height: size };
 };
 
 export interface CertificateAssembleOptions extends CertificateOptions {
