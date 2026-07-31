@@ -17,7 +17,7 @@ import {
   type EntityStore,
 } from '../../../../../packages/cwrc-leafwriter/src/autoTagging/entityStore';
 import { deleteEntity, kindOfElement, mergeEntities } from '../../../../../packages/cwrc-leafwriter/src/autoTagging/entityOps';
-import { promoteToCentral } from '../../../../../packages/cwrc-leafwriter/src/autoTagging/promote';
+import { buildCentralPromotionIndex, promoteToCentral } from '../../../../../packages/cwrc-leafwriter/src/autoTagging/promote';
 import {
   applyReconcilePlan,
   planReconcile,
@@ -26,10 +26,16 @@ import {
 } from '../../../../../packages/cwrc-leafwriter/src/autoTagging/reconcile';
 import { readOrMintUserStableId } from '../../../../../packages/cwrc-leafwriter/src/autoTagging/userStableId';
 import {
+  ENTITY_KINDS,
+  entityElements,
   findEntity,
   getDatabaseId,
   type EntityKind,
 } from '../../../../../packages/cwrc-leafwriter/src/autoTagging/entities';
+
+/** Every entity element in a document, across all kinds. */
+const allEntityElements = (doc: Document): Element[] =>
+  (Object.keys(ENTITY_KINDS) as EntityKind[]).flatMap((kind) => entityElements(doc, kind));
 import { applyKeyRemapAcrossProjects } from './applyKeyRemap';
 
 /**
@@ -142,10 +148,23 @@ export async function promoteEntities(ctx: BridgeContext, pedbIds: string[]): Pr
   if (pedbIds.length === 0) return 0;
   const pedbDoc = await ctx.projectStore.loadEntities();
   const cedbDoc = await ctx.centralStore.loadEntities();
+  // Built once and kept current by promoteToCentral — without these, every
+  // call re-scans the whole project doc for its id and re-scans the (steadily
+  // growing) central doc for duplicates, which is O(n²) across a batch of
+  // hundreds or thousands of ids (e.g. "Accept all" on a bulk-import review).
+  const pedbIndex = new Map(
+    allEntityElements(pedbDoc)
+      .map((item): [string, Element] | null => {
+        const id = item.getAttribute('xml:id');
+        return id ? [id, item] : null;
+      })
+      .filter((entry): entry is [string, Element] => entry !== null),
+  );
+  const centralIndex = buildCentralPromotionIndex(cedbDoc);
   let promoted = 0;
   for (const id of pedbIds) {
-    if (!findEntity(pedbDoc, id)) continue;
-    promoteToCentral(pedbDoc, id, cedbDoc, ctx.userStableId);
+    if (!findEntity(pedbDoc, id, pedbIndex)) continue;
+    promoteToCentral(pedbDoc, id, cedbDoc, ctx.userStableId, pedbIndex, centralIndex);
     promoted += 1;
   }
   await ctx.centralStore.saveEntities(cedbDoc);

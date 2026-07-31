@@ -6,6 +6,7 @@ import { PrivacyDialog } from '../../dialogs/privacy-dialog';
 import { useAppState } from '../../overmind';
 import { AuthorityLoadIndicator } from './AuthorityLoadIndicator';
 import { AiRunIndicator } from './AiRunIndicator';
+import { BulkSyncIndicator } from './BulkSyncIndicator';
 import { EntityIndexIndicator } from './EntityIndexIndicator';
 import { ValdidationErrors } from './ValdidationErrors';
 import AnnotationMode from './annotationMode';
@@ -52,6 +53,7 @@ export const BottomBar = () => {
         <AuthorityLoadIndicator />
         <AiRunIndicator />
         <EntityIndexIndicator />
+        <BulkSyncIndicator />
 
         {!desktop && (
           <>

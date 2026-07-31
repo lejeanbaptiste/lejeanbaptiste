@@ -554,6 +554,11 @@ export const useNativeDialogBridge = () => {
 
             clearProjectMetadataSession(dialogId);
             session.onSave();
+            window.dispatchEvent(
+              new CustomEvent('ljb-project-config-saved', {
+                detail: { projectFilePath: bundle.projectFilePath, syncToCentral },
+              }),
+            );
             if (!applyToDocuments && session.mode === 'edition') {
               notifyViaSnackbar({
                 message: t('LWC.desktop.project_settings_saved'),

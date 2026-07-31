@@ -11,6 +11,7 @@ import type {
   BulkBridgeJobEvent,
   BulkBridgeJobRequest,
 } from '../../commons/src/desktop/bulkBridgeTypes';
+import { installBrowserDomShim } from './xmldomShim';
 
 const cancelled = new Set<string>();
 
@@ -18,11 +19,22 @@ const send = (event: BulkBridgeJobEvent): void => {
   process.send?.(event);
 };
 
+/**
+ * Mirrors `EntityStore.saveEntities`'s arm/ignore pair (see
+ * `desktopEntityFileApi`), which this worker can't call directly — a forked
+ * child process has no `window.electronAPI`. Without this, every checkpoint
+ * and final write here looks like an external edit to the main process's
+ * file watcher and pops the "entity database changed externally" prompt,
+ * even though it's this same sync writing the file.
+ */
 const atomicWrite = async (filePath: string, content: string, jobId: string): Promise<void> => {
+  process.send?.({ kind: 'arm-write', filePath });
   await fs.mkdir(path.dirname(filePath), { recursive: true });
   const temporaryPath = `${filePath}.${jobId}.${randomUUID()}.tmp`;
   await fs.writeFile(temporaryPath, content, 'utf8');
   await fs.rename(temporaryPath, filePath);
+  const { mtimeMs } = await fs.stat(filePath);
+  process.send?.({ kind: 'ignore-write', filePath, mtimeMs });
 };
 
 process.on('message', async (message: { type: 'run' | 'cancel'; jobId: string; request?: BulkBridgeJobRequest }) => {
@@ -38,6 +50,8 @@ process.on('message', async (message: { type: 'run' | 'cancel'; jobId: string; r
     (globalThis as unknown as { XMLSerializer: typeof XmldomSerializer }).XMLSerializer = XmldomSerializer;
     const sourceDoc = parseEntities(await fs.readFile(request.sourceEntitiesPath, 'utf8'));
     const centralDoc = parseEntities(await fs.readFile(request.centralEntitiesPath, 'utf8'));
+    installBrowserDomShim(sourceDoc);
+    installBrowserDomShim(centralDoc);
     const result = await bulkBridgeImport({
       sourceDoc,
       centralDoc,

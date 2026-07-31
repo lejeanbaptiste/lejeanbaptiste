@@ -226,16 +226,17 @@ const setScalar = (
   item: Element,
   field: ScalarField,
   value: string | number,
+  index?: ReadonlyMap<string, Element>,
 ): void => {
   switch (field) {
     case 'description':
-      setEntityDescription(doc, id, String(value));
+      setEntityDescription(doc, id, String(value), index);
       break;
     case 'familyName':
-      setFamilyName(doc, id, String(value));
+      setFamilyName(doc, id, String(value), index);
       break;
     case 'givenName':
-      setGivenName(doc, id, String(value));
+      setGivenName(doc, id, String(value), index);
       break;
     case 'startYear':
     case 'endYear':
@@ -286,9 +287,18 @@ export function applyReconcilePlan(
   cedbDoc: Document,
   cedbId: string,
   plan: ReconcilePlan,
+  /**
+   * Pre-built `id -> element` indexes, for bulk callers (e.g. the CEDB↔PEDB
+   * bridge import) that already resolved every entity once and would
+   * otherwise pay for a fresh full-document scan on every `findEntity`-based
+   * call this function makes — O(n) per call, so O(n²) across a full-database
+   * merge. Omit for normal single-entity edits.
+   */
+  pedbIndex?: ReadonlyMap<string, Element>,
+  cedbIndex?: ReadonlyMap<string, Element>,
 ): { pedbChanged: boolean; cedbChanged: boolean } {
-  const pedbItem = findEntity(pedbDoc, pedbId);
-  const cedbItem = findEntity(cedbDoc, cedbId);
+  const pedbItem = findEntity(pedbDoc, pedbId, pedbIndex);
+  const cedbItem = findEntity(cedbDoc, cedbId, cedbIndex);
   if (!pedbItem || !cedbItem) throw new Error('reconcile: entity not found in one of the documents');
 
   let pedbChanged = false;
@@ -299,23 +309,23 @@ export function applyReconcilePlan(
     type: normalizeNameType(name.type) ?? undefined,
   });
   for (const name of plan.addNamesToPedb) {
-    if (addEntityName(pedbDoc, pedbId, name.text, nameAttrs(name))) pedbChanged = true;
+    if (addEntityName(pedbDoc, pedbId, name.text, nameAttrs(name), pedbIndex)) pedbChanged = true;
   }
   for (const name of plan.addNamesToCedb) {
-    if (addEntityName(cedbDoc, cedbId, name.text, nameAttrs(name))) cedbChanged = true;
+    if (addEntityName(cedbDoc, cedbId, name.text, nameAttrs(name), cedbIndex)) cedbChanged = true;
   }
   for (const auth of plan.addAuthoritiesToPedb) {
-    if (attachAuthority(pedbDoc, pedbId, auth)) pedbChanged = true;
+    if (attachAuthority(pedbDoc, pedbId, auth, pedbIndex)) pedbChanged = true;
   }
   for (const auth of plan.addAuthoritiesToCedb) {
-    if (attachAuthority(cedbDoc, cedbId, auth)) cedbChanged = true;
+    if (attachAuthority(cedbDoc, cedbId, auth, cedbIndex)) cedbChanged = true;
   }
   for (const [field, value] of Object.entries(plan.fillPedb)) {
-    setScalar(pedbDoc, pedbId, pedbItem, field as ScalarField, value!);
+    setScalar(pedbDoc, pedbId, pedbItem, field as ScalarField, value!, pedbIndex);
     pedbChanged = true;
   }
   for (const [field, value] of Object.entries(plan.fillCedb)) {
-    setScalar(cedbDoc, cedbId, cedbItem, field as ScalarField, value!);
+    setScalar(cedbDoc, cedbId, cedbItem, field as ScalarField, value!, cedbIndex);
     cedbChanged = true;
   }
 

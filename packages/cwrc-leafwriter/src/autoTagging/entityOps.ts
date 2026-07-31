@@ -568,8 +568,8 @@ export function taggableEntityNames(
     .map((entry) => entry.text);
 }
 
-function requireEntity(doc: Document, id: string): Element {
-  const item = findEntity(doc, id);
+function requireEntity(doc: Document, id: string, index?: ReadonlyMap<string, Element>): Element {
+  const item = findEntity(doc, id, index);
   if (!item) throw new Error(`Entity not found: ${id}`);
   return item;
 }
@@ -761,8 +761,13 @@ export function removeEntityValue(doc: Document, id: string, key: string): boole
  * leaving any authority-sourced descriptions untouched (there may be
  * several, one per source — see `acceptEntityDescriptionAssertion`).
  */
-export function setEntityDescription(doc: Document, id: string, text: string): void {
-  const item = requireEntity(doc, id);
+export function setEntityDescription(
+  doc: Document,
+  id: string,
+  text: string,
+  index?: ReadonlyMap<string, Element>,
+): void {
+  const item = requireEntity(doc, id, index);
   const existing = Array.from(item.children).find(
     (child) =>
       child.localName === 'note' &&
@@ -793,13 +798,23 @@ export function setEntityDescription(doc: Document, id: string, text: string): v
 }
 
 /** Set (or clear, with empty text) a person's family name (surname), stored separately from the display name. */
-export function setFamilyName(doc: Document, id: string, text: string): void {
-  setNoteOfType(doc, id, 'familyName', text);
+export function setFamilyName(
+  doc: Document,
+  id: string,
+  text: string,
+  index?: ReadonlyMap<string, Element>,
+): void {
+  setNoteOfType(doc, id, 'familyName', text, index);
 }
 
 /** Set (or clear, with empty text) a person's given name, stored separately from the display name. */
-export function setGivenName(doc: Document, id: string, text: string): void {
-  setNoteOfType(doc, id, 'givenName', text);
+export function setGivenName(
+  doc: Document,
+  id: string,
+  text: string,
+  index?: ReadonlyMap<string, Element>,
+): void {
+  setNoteOfType(doc, id, 'givenName', text, index);
 }
 
 export type DatePart = 'birth' | 'death';
@@ -986,8 +1001,14 @@ export function getGivenName(doc: Document, id: string): string | null {
   return givenNameNote(requireEntity(doc, id))?.textContent?.trim() || null;
 }
 
-function setNoteOfType(doc: Document, id: string, type: string, text: string): void {
-  const item = requireEntity(doc, id);
+function setNoteOfType(
+  doc: Document,
+  id: string,
+  type: string,
+  text: string,
+  index?: ReadonlyMap<string, Element>,
+): void {
+  const item = requireEntity(doc, id, index);
   const existing = noteOfType(item, type);
   const trimmed = text.trim();
   if (!trimmed) {
@@ -1028,8 +1049,9 @@ export function addEntityName(
   id: string,
   name: string,
   attributes?: NameAttributes,
+  index?: ReadonlyMap<string, Element>,
 ): boolean {
-  const item = requireEntity(doc, id);
+  const item = requireEntity(doc, id, index);
   const kind = kindOfElement(item);
   if (!kind) throw new Error(`Unknown entity kind for: ${id}`);
   const trimmed = name.trim();
@@ -1207,8 +1229,13 @@ export function removeEntityName(doc: Document, id: string, name: string): boole
 }
 
 /** Attach an authority idno unless the same type+value is already present. */
-export function attachAuthority(doc: Document, id: string, ref: AuthorityId): boolean {
-  const item = requireEntity(doc, id);
+export function attachAuthority(
+  doc: Document,
+  id: string,
+  ref: AuthorityId,
+  index?: ReadonlyMap<string, Element>,
+): boolean {
+  const item = requireEntity(doc, id, index);
   const normalizedValue = normalizeAuthorityValue(ref.type, ref.value);
   const exists = idnoElements(item).some(
     (el) =>

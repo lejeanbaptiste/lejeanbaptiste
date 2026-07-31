@@ -37,3 +37,9 @@ export const cancelEntityIndexJob = (jobId: string): boolean => {
   worker.send({ type: 'cancel', jobId });
   return true;
 };
+
+/** Hard-kill every forked indexing worker (see killAllBulkBridgeJobs for why). */
+export const killAllEntityIndexJobs = (): void => {
+  for (const worker of jobs.values()) worker.kill();
+  jobs.clear();
+};

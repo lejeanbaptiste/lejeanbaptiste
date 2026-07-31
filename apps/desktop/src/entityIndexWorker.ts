@@ -15,6 +15,7 @@ import type {
   EntityIndexJobEvent,
   EntityIndexJobRequest,
 } from '../../commons/src/desktop/entityIndexTypes';
+import { installBrowserDomShim } from './xmldomShim';
 
 const cancelled = new Set<string>();
 const send = (event: EntityIndexJobEvent): void => {
@@ -50,27 +51,6 @@ const sendBatches = async (
     await new Promise<void>((resolve) => setTimeout(resolve, 0));
   }
   return true;
-};
-
-const installBrowserDomShim = (doc: Document): void => {
-  const elementPrototype = Object.getPrototypeOf(doc.documentElement) as {
-    children?: unknown;
-  };
-  if (!('children' in elementPrototype)) {
-    const childrenCache = new WeakMap<Element, Element[]>();
-    Object.defineProperty(elementPrototype, 'children', {
-      configurable: true,
-      get(this: Element) {
-        const cached = childrenCache.get(this);
-        if (cached) return cached;
-        const children = Array.from(this.childNodes).filter(
-          (node): node is Element => node.nodeType === 1,
-        );
-        childrenCache.set(this, children);
-        return children;
-      },
-    });
-  }
 };
 
 process.on('message', async (message: { type: 'run' | 'cancel'; jobId: string; request?: EntityIndexJobRequest }) => {

@@ -389,17 +389,39 @@ export function entityElements(doc: Document, kind: EntityKind): Element[] {
   );
 }
 
+/**
+ * Once found or created, a kind's list element never changes identity for the
+ * life of the document (it's appended to, never replaced) — cache it instead
+ * of re-running `getElementsByTagName` (a full-document scan) on every single
+ * `addEntity` call. `addEntity` is the hot path for any bulk add (bulk-bridge
+ * import, bulk promote), where this was an O(n²) cost hiding one level below
+ * the callers that already build their own id/authority indexes.
+ */
+const entityListCache = new WeakMap<Document, Map<EntityKind, Element>>();
+
 /** Get (creating if needed) the list element for a kind. */
 export function getEntityList(doc: Document, kind: EntityKind): Element {
+  let cached = entityListCache.get(doc);
+  if (!cached) {
+    cached = new Map();
+    entityListCache.set(doc, cached);
+  }
+  const existingCached = cached.get(kind);
+  if (existingCached) return existingCached;
+
   const config = ENTITY_KINDS[kind];
   const existing = Array.from(doc.getElementsByTagName(config.list)).find((list) =>
     listMatchesKind(list, kind),
   );
-  if (existing) return existing;
+  if (existing) {
+    cached.set(kind, existing);
+    return existing;
+  }
   const standOff = doc.getElementsByTagName('standOff')[0] ?? doc.documentElement;
   const el = doc.createElementNS(TEI_NS, config.list);
   if (config.listType) el.setAttribute('type', config.listType);
   standOff.appendChild(el);
+  cached.set(kind, el);
   return el;
 }
 
@@ -985,8 +1007,21 @@ export function appendAuthorityNobleTitles(
   return changed;
 }
 
-/** Find an entity element by its local id. */
-export function findEntity(doc: Document, id: string): Element | null {
+/**
+ * Find an entity element by its local id.
+ *
+ * `index` lets a caller that's resolving many ids against the same
+ * unmutated-in-structure document (e.g. a bulk merge) supply a pre-built
+ * `id -> element` map instead of paying for a fresh `TreeWalker` scan of the
+ * whole document on every call — the naive per-call scan is O(n) and turns
+ * loops over every entity in a large database into O(n²).
+ */
+export function findEntity(
+  doc: Document,
+  id: string,
+  index?: ReadonlyMap<string, Element>,
+): Element | null {
+  if (index) return index.get(id) ?? null;
   const walker = doc.createTreeWalker(doc.documentElement, NodeFilter.SHOW_ELEMENT);
   for (
     let node = walker.currentNode as Element | null;

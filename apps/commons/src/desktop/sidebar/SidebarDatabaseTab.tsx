@@ -45,7 +45,7 @@ import {
 import { Fragment, memo, useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import type { ReactNode } from 'react';
 import { useTranslation } from 'react-i18next';
-import { List, useDynamicRowHeight } from 'react-window';
+import { List } from 'react-window';
 import type { RowComponentProps } from 'react-window';
 import type { NotificationProps } from '@src/types';
 import {
@@ -138,12 +138,15 @@ import { getDefaultStore } from 'jotai';
 import { RESET } from 'jotai/utils';
 import { db } from '../../../../../packages/cwrc-leafwriter/src/db';
 import { applyKeyRemapAcrossProjects, type KeyRemapSummary } from '../entityDb/applyKeyRemap';
-import { applyPendingCentralOrders, computeMergeDocket } from '../entityDb/bridge';
-import type {
-  BulkBridgeProgress,
-  BulkBridgeProposal,
-} from '../../../../../packages/cwrc-leafwriter/src/autoTagging/bulkBridgeImport';
+import {
+  applyPendingCentralOrders,
+  computeMergeDocket,
+  loadBridgeContext,
+  promoteEntities,
+} from '../entityDb/bridge';
+import type { BulkBridgeProposal } from '../../../../../packages/cwrc-leafwriter/src/autoTagging/bulkBridgeImport';
 import { setEntityIndexProgress } from '../../../../../packages/cwrc-leafwriter/src/autoTagging/entityIndexProgress';
+import { setBulkSyncProgress } from '../../../../../packages/cwrc-leafwriter/src/autoTagging/bulkSyncProgress';
 import { authorityLookupUrl } from '../entityDb/authorityLinks';
 import { BridgeInboxDialog } from './BridgeInboxDialog';
 import { MergeDocketDialog } from './MergeDocketDialog';
@@ -392,6 +395,38 @@ interface EntityRowData {
   t: TFn;
 }
 
+/** First line always present (name/romanization/badges) plus the padding above it. */
+const ENTITY_ROW_BASE_HEIGHT = 34;
+/** Second always-present line (id + copy button). */
+const ENTITY_ROW_ID_LINE_HEIGHT = 20;
+/** Each optional line (description; dates/dynasties/origins). */
+const ENTITY_ROW_OPTIONAL_LINE_HEIGHT = 20;
+
+/**
+ * Static per-row height, computed from the entity's own fields — no
+ * measurement, no `ResizeObserver`. `react-window`'s dynamic-height mode
+ * (`useDynamicRowHeight`) observes every visible row's real layout on every
+ * scroll/render, which the library's own docs flag as meaningfully slower;
+ * that's what made hovering/scrolling the list janky. Rows only vary by
+ * whether a description and/or a dates/dynasties/origins line is present, so
+ * a cheap boolean count gives an exact height with zero runtime overhead.
+ */
+const entityRowHeight = (index: number, rowProps: EntityRowData): number => {
+  const entity = rowProps.entities[index];
+  if (!entity) return ENTITY_ROW_BASE_HEIGHT + ENTITY_ROW_ID_LINE_HEIGHT;
+  const hasDatesLine =
+    entity.startYear != null ||
+    entity.endYear != null ||
+    entity.nationalities.length > 0 ||
+    entity.placesOfOrigin.length > 0;
+  const optionalLines = (entity.description ? 1 : 0) + (hasDatesLine ? 1 : 0);
+  return (
+    ENTITY_ROW_BASE_HEIGHT +
+    ENTITY_ROW_ID_LINE_HEIGHT +
+    optionalLines * ENTITY_ROW_OPTIONAL_LINE_HEIGHT
+  );
+};
+
 /**
  * One entity row, rendered by `react-window`'s `List`. Pulled out to module
  * scope (rather than an inline closure in the render loop) so its identity is
@@ -568,7 +603,8 @@ export const SidebarDatabaseTab = ({ active = false }: SidebarDatabaseTabProps) 
   const { skipEntityDetachConfirm } = useAppState().ui;
   const { setSkipEntityDetachConfirm, notifyViaSnackbar } = useActions().ui;
   const { config } = useAppState().project;
-  const syncToCentral = config?.syncToCentral === true;
+  const [savedSyncOverride, setSavedSyncOverride] = useState<boolean | null>(null);
+  const syncToCentral = savedSyncOverride ?? config?.syncToCentral === true;
   const [databaseView, setDatabaseView] = useState<DatabaseView>('project');
   const [store, setStore] = useState<EntityStore | null>(null);
   const [centralStore, setCentralStore] = useState<EntityStore | null>(null);
@@ -635,10 +671,9 @@ export const SidebarDatabaseTab = ({ active = false }: SidebarDatabaseTabProps) 
   const [docketOpen, setDocketOpen] = useState(false);
   const [docketCount, setDocketCount] = useState(0);
   const [backfillBusy, setBackfillBusy] = useState(false);
-  const [bulkProgress, setBulkProgress] = useState<BulkBridgeProgress | null>(null);
-  const [bulkJobId, setBulkJobId] = useState<string | null>(null);
   const [bulkProposals, setBulkProposals] = useState<BulkBridgeProposal[]>([]);
   const [proposalsOpen, setProposalsOpen] = useState(false);
+  const [acceptingProposals, setAcceptingProposals] = useState(false);
   const [backfillProgress, setBackfillProgress] = useState<{
     done: number;
     total: number;
@@ -707,6 +742,9 @@ export const SidebarDatabaseTab = ({ active = false }: SidebarDatabaseTabProps) 
     // isn't mapped yet (idempotent - promoteToCentral no-ops once linked). This
     // is the only place this can happen when syncToCentral is on, since that
     // flag hides the manual Bridge button (see the toolbar below).
+    if (syncToCentral && !resolvedCentralStore) {
+      setLoadError('Central database is not configured; synchronisation did not start.');
+    }
     if (syncToCentral && resolvedCentralStore && !bulkSyncInFlightRef.current) {
       bulkSyncInFlightRef.current = true;
       void (async () => {
@@ -720,15 +758,27 @@ export const SidebarDatabaseTab = ({ active = false }: SidebarDatabaseTabProps) 
             userStableId,
           };
           await applyPendingCentralOrders(bridgeCtx);
-          setBusyMessage('Synchronising project entities with the central database…');
+          const label = 'Synchronising with central database';
+          setBulkSyncProgress({ active: true, label, done: 0, total: 0 });
           const start = window.electronAPI?.bulkBridgeStart;
           const onProgress = window.electronAPI?.onBulkBridgeProgress;
           if (!start || !onProgress) throw new Error('Background bulk sync is unavailable in this desktop build.');
           await new Promise<void>(async (resolve, reject) => {
             let jobId: string | null = null;
+            const cancel = () => {
+              if (jobId) void window.electronAPI?.bulkBridgeCancel?.(jobId);
+            };
             const unsubscribe = onProgress((event) => {
               if (!jobId || event.jobId !== jobId) return;
-              if (event.progress) setBulkProgress(event.progress);
+              if (event.progress) {
+                setBulkSyncProgress({
+                  active: true,
+                  label,
+                  done: event.progress.done,
+                  total: event.progress.total,
+                  cancel,
+                });
+              }
               if (event.status === 'complete' || event.status === 'cancelled') {
                 if (event.result?.proposals) setBulkProposals(event.result.proposals);
                 unsubscribe();
@@ -746,7 +796,7 @@ export const SidebarDatabaseTab = ({ active = false }: SidebarDatabaseTabProps) 
                 userStableId,
                 chunkSize: 250,
               });
-              setBulkJobId(jobId);
+              setBulkSyncProgress({ active: true, label, done: 0, total: 0, cancel });
             } catch (error) {
               unsubscribe();
               reject(error);
@@ -756,10 +806,11 @@ export const SidebarDatabaseTab = ({ active = false }: SidebarDatabaseTabProps) 
           // Best-effort: a manual edit's own auto-sync still covers that entity.
           // eslint-disable-next-line no-console
           console.error('[bridge] catch-up sync on project open failed:', error);
+          setLoadError(
+            `Central synchronisation failed: ${error instanceof Error ? error.message : String(error)}`,
+          );
         } finally {
-          setBulkJobId(null);
-          setBusyMessage(null);
-          setBulkProgress(null);
+          setBulkSyncProgress({ active: false, label: '', done: 0, total: 0 });
           bulkSyncInFlightRef.current = false;
         }
       })();
@@ -902,6 +953,20 @@ export const SidebarDatabaseTab = ({ active = false }: SidebarDatabaseTabProps) 
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [active, reload]);
 
+  // Native project settings are saved from a separate BrowserWindow. Refresh
+  // the sidebar immediately when that window commits syncToCentral, even
+  // before the main project state has been reloaded from project.json.
+  useEffect(() => {
+    const handleConfigSaved = (event: Event) => {
+      const detail = (event as CustomEvent<{ syncToCentral?: boolean }>).detail;
+      if (typeof detail?.syncToCentral !== 'boolean') return;
+      setSavedSyncOverride(detail.syncToCentral);
+      void reload();
+    };
+    window.addEventListener('ljb-project-config-saved', handleConfigSaved);
+    return () => window.removeEventListener('ljb-project-config-saved', handleConfigSaved);
+  }, [reload]);
+
   useEffect(() => {
     const handleShowEntity = (event: Event) => {
       const detail = (event as CustomEvent<DesktopDatabaseEntityDetail>).detail;
@@ -1019,9 +1084,16 @@ export const SidebarDatabaseTab = ({ active = false }: SidebarDatabaseTabProps) 
     return entities.filter((entity) => {
       if (kindFilter !== 'all' && entity.kind !== kindFilter) return false;
       if (!regex && !folded) return true;
-      const haystacks = [entity.id, ...entity.names, entity.description ?? ''];
-      if (regex && haystacks.some((text) => regex.test(text))) return true;
-      return Boolean(folded) && (foldedIndex.get(entity.id) ?? '').includes(folded);
+      // Check the precomputed folded blob first: a single Map lookup + substring
+      // test, versus building a fresh haystack array and running a regex against
+      // every string in it. For a typical (non-regex-metacharacter) query this
+      // resolves almost every entity without ever touching the expensive path —
+      // across ~33k entities per keystroke, that difference is the whole cost.
+      if (folded && (foldedIndex.get(entity.id) ?? '').includes(folded)) return true;
+      if (!regex) return false;
+      if (regex.test(entity.id)) return true;
+      if (entity.description && regex.test(entity.description)) return true;
+      return entity.names.some((name) => regex.test(name));
     });
   }, [entities, foldedIndex, kindFilter, regex, search]);
 
@@ -2223,9 +2295,6 @@ export const SidebarDatabaseTab = ({ active = false }: SidebarDatabaseTabProps) 
     })();
   };
 
-  /** Rows vary from 1-4 lines depending on which optional fields an entity has. */
-  const entityRowHeight = useDynamicRowHeight({ defaultRowHeight: 72 });
-
   const entityRowProps: EntityRowData = useMemo(
     () => ({
       entities: visible,
@@ -2250,6 +2319,49 @@ export const SidebarDatabaseTab = ({ active = false }: SidebarDatabaseTabProps) 
       t,
     ],
   );
+
+  const unmatchedProposals = bulkProposals.filter(
+    (proposal) => proposal.reason === 'no-authority-match',
+  );
+
+  /**
+   * Add every unambiguous ("no-authority-match", zero candidates) proposal to
+   * the central database as a new entity and link it — the same thing
+   * Promote does one-by-one elsewhere. Ambiguous proposals (candidateCentralIds
+   * has 2+ entries) are left in the list: picking the right one automatically
+   * risks silently merging into the wrong central entity.
+   */
+  const acceptAllUnmatchedProposals = async () => {
+    if (unmatchedProposals.length === 0) return;
+    setAcceptingProposals(true);
+    setLoadError(null);
+    try {
+      const availability = await loadBridgeContext();
+      if (!availability.available) throw new Error(availability.reason);
+      const promoted = await promoteEntities(
+        availability.context,
+        unmatchedProposals.map((proposal) => proposal.sourceId),
+      );
+      const remaining = bulkProposals.filter(
+        (proposal) => proposal.reason !== 'no-authority-match',
+      );
+      setBulkProposals(remaining);
+      const api = desktopEntityFileApi();
+      if (api && centralStore) {
+        const proposalPath = `${centralStore.projectLjbDir}/bulk-import-proposals.jsonl`;
+        const text = remaining.map((proposal) => JSON.stringify(proposal)).join('\n');
+        await api.writeFile(proposalPath, text ? `${text}\n` : '');
+      }
+      notifyViaSnackbar({
+        message: `Added ${promoted} ${promoted === 1 ? 'entity' : 'entities'} to the central database.`,
+      });
+      await reload();
+    } catch (error) {
+      setLoadError(error instanceof Error ? error.message : String(error));
+    } finally {
+      setAcceptingProposals(false);
+    }
+  };
 
   if (!store) {
     return (
@@ -3604,41 +3716,19 @@ export const SidebarDatabaseTab = ({ active = false }: SidebarDatabaseTabProps) 
         </DialogActions>
       </Dialog>
 
-      {/* Busy overlay */}
+      {/* Busy overlay: direct user-initiated mutations (edit/merge/backfill) only —
+          the background project<->central catch-up sync uses the non-blocking
+          bottom-bar BulkSyncIndicator instead, since it can run on every view
+          switch and shouldn't block the whole panel. */}
       <Dialog open={!!busyMessage}>
         <DialogContent>
           <Stack direction="row" spacing={2} alignItems="center">
             <CircularProgress size={20} />
             <Box sx={{ minWidth: 360 }}>
               <Typography variant="body2">{busyMessage}</Typography>
-              {bulkProgress && (
-                <>
-                  <LinearProgress
-                    variant="determinate"
-                    value={bulkProgress.total ? (bulkProgress.done / bulkProgress.total) * 100 : 0}
-                    sx={{ mt: 1 }}
-                  />
-                  <Typography variant="caption" color="text.secondary">
-                    {bulkProgress.stage}: {bulkProgress.done.toLocaleString()} / {bulkProgress.total.toLocaleString()}
-                    {' · '}{bulkProgress.matched.toLocaleString()} matched
-                    {' · '}{bulkProgress.proposed.toLocaleString()} to review
-                    {bulkProgress.ambiguous > 0 ? ` · ${bulkProgress.ambiguous} ambiguous` : ''}
-                  </Typography>
-                </>
-              )}
             </Box>
           </Stack>
         </DialogContent>
-        {bulkJobId && (
-          <DialogActions>
-            <Button
-              onClick={() => void window.electronAPI?.bulkBridgeCancel?.(bulkJobId)}
-              color="inherit"
-            >
-              Cancel after current chunk
-            </Button>
-          </DialogActions>
-        )}
       </Dialog>
 
       <BridgeInboxDialog
@@ -3676,6 +3766,23 @@ export const SidebarDatabaseTab = ({ active = false }: SidebarDatabaseTabProps) 
           </Stack>
         </DialogContent>
         <DialogActions>
+          <Tooltip
+            title={
+              unmatchedProposals.length === 0
+                ? 'No unambiguous proposals to accept'
+                : `Add ${unmatchedProposals.length} unmatched ${unmatchedProposals.length === 1 ? 'entity' : 'entities'} to the central database (ambiguous matches are left for manual review)`
+            }
+          >
+            <span>
+              <Button
+                onClick={() => void acceptAllUnmatchedProposals()}
+                disabled={unmatchedProposals.length === 0 || acceptingProposals}
+                startIcon={acceptingProposals ? <CircularProgress size={14} /> : undefined}
+              >
+                Accept all ({unmatchedProposals.length})
+              </Button>
+            </span>
+          </Tooltip>
           <Button onClick={() => setProposalsOpen(false)}>Close</Button>
         </DialogActions>
       </Dialog>

@@ -147,8 +147,8 @@ import {
   searchZoteroItems,
 } from './zoteroClient';
 import { disposeLemminx, registerLemminxIpc } from './lemminx/lspBridge';
-import { cancelBulkBridgeJob, startBulkBridgeJob } from './bulkBridgeJob';
-import { cancelEntityIndexJob, startEntityIndexJob } from './entityIndexJob';
+import { cancelBulkBridgeJob, killAllBulkBridgeJobs, startBulkBridgeJob } from './bulkBridgeJob';
+import { cancelEntityIndexJob, killAllEntityIndexJobs, startEntityIndexJob } from './entityIndexJob';
 import { checkForAppUpdatesManually, initAutoUpdater } from './updater';
 import { installCatalogSchema, installLocalSchema } from './schemaSetup';
 import { ensureSanmiaoDatesSchemaMerged } from './sanmiaoSchemaMerge';
@@ -1270,9 +1270,18 @@ const registerIpcHandlers = () => {
       await assertRendererWritePath(request.sourceEntitiesPath);
       await assertRendererWritePath(request.centralEntitiesPath);
       await assertRendererWritePath(path.join(request.centralLjbDir, 'bulk-import-proposals.jsonl'));
-      return startBulkBridgeJob(request, (progress) => {
-        if (!event.sender.isDestroyed()) event.sender.send('bulkBridge:progress', progress);
-      });
+      return startBulkBridgeJob(
+        request,
+        (progress) => {
+          if (!event.sender.isDestroyed()) event.sender.send('bulkBridge:progress', progress);
+        },
+        openFileWatcher
+          ? {
+              armWrite: (filePath) => openFileWatcher?.armWrite(filePath),
+              ignoreChange: (filePath, mtimeMs) => openFileWatcher?.ignoreChange(filePath, mtimeMs),
+            }
+          : undefined,
+      );
     },
   );
   ipcMain.handle('bulkBridge:cancel', (_event, jobId: string) => cancelBulkBridgeJob(jobId));
@@ -2671,6 +2680,8 @@ app.on('window-all-closed', () => {
     serverProcess.kill();
     serverProcess = null;
   }
+  killAllBulkBridgeJobs();
+  killAllEntityIndexJobs();
   disposeLemminx();
   if (process.platform !== 'darwin' || isQuitting) app.quit();
 });
@@ -2680,4 +2691,6 @@ app.on('will-quit', () => {
     serverProcess.kill();
     serverProcess = null;
   }
+  killAllBulkBridgeJobs();
+  killAllEntityIndexJobs();
 });

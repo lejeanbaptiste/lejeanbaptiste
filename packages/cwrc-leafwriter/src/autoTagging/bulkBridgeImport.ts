@@ -1,7 +1,10 @@
-import { entityElements, entityKindOfElement, findEntity, type EntityKind } from './entities';
+import { ENTITY_KINDS, entityElements, entityKindOfElement, type EntityKind } from './entities';
 import { getCentralId, setCentralMapping } from './concordance';
-import { listEntities } from './entityOps';
 import { applyReconcilePlan, planReconcile } from './reconcile';
+
+/** Every entity element in the document, across all kinds. */
+const allEntityElements = (doc: Document): Element[] =>
+  (Object.keys(ENTITY_KINDS) as EntityKind[]).flatMap((kind) => entityElements(doc, kind));
 
 /** A deliberately small progress contract: callers can render this in a modal or log it. */
 export interface BulkBridgeProgress {
@@ -110,12 +113,21 @@ export async function bulkBridgeImport(options: BulkBridgeOptions): Promise<Bulk
   const chunkSize = Math.max(25, options.chunkSize ?? 250);
   const centralByAuthority = new Map<string, string[]>();
   const centralItems = new Map<string, Element>();
-  const sourceItems = listEntities(options.sourceDoc)
-    .map((summary) => findEntity(options.sourceDoc, summary.id))
-    .filter((item): item is Element => !!item);
-  const centralEntities = listEntities(options.centralDoc)
-    .map((summary) => findEntity(options.centralDoc, summary.id))
-    .filter((item): item is Element => !!item);
+  const sourceItems = allEntityElements(options.sourceDoc);
+  const centralEntities = allEntityElements(options.centralDoc);
+  // Built once so `applyReconcilePlan` never re-scans either document by id
+  // while merging — a per-entity `findEntity` full-document scan here would
+  // make the merge loop O(n²) for a large database.
+  const sourceIndex = new Map<string, Element>();
+  for (const item of sourceItems) {
+    const id = item.getAttribute('xml:id');
+    if (id) sourceIndex.set(id, item);
+  }
+  const centralIndex = new Map<string, Element>();
+  for (const item of centralEntities) {
+    const id = item.getAttribute('xml:id');
+    if (id) centralIndex.set(id, item);
+  }
 
   const progress = (update: Partial<BulkBridgeProgress>) =>
     options.onProgress?.({
@@ -195,7 +207,15 @@ export async function bulkBridgeImport(options: BulkBridgeOptions): Promise<Bulk
       const central = kind ? centralItems.get(`${kind}\t${centralId}`) : undefined;
       if (!central) { done += 1; continue; }
       const plan = planReconcile(source, central);
-      const applied = applyReconcilePlan(options.sourceDoc, sourceId, options.centralDoc, centralId, plan);
+      const applied = applyReconcilePlan(
+        options.sourceDoc,
+        sourceId,
+        options.centralDoc,
+        centralId,
+        plan,
+        sourceIndex,
+        centralIndex,
+      );
       const richChanged = mergeRepeatableChildren(source, central);
       const mappingChanged = setCentralMapping(source, options.userStableId, centralId);
       sourceChanged ||= applied.pedbChanged || mappingChanged;
