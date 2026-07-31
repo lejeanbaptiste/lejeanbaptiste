@@ -42,6 +42,21 @@ export const useEntityDatabaseLifecycle = () => {
       // key propagation knows every project tree using this entities.xml.
       await store.registerProjectInRegistry().catch(() => undefined);
 
+      // The integrity/orphan checks below need the complete entities.xml DOM.
+      // Chromium cannot safely hold the Norbert-sized file; the sidebar's
+      // separate worker indexes it in batches instead. Defer these checks for
+      // large databases rather than taking down the renderer immediately after
+      // project metadata is saved.
+      const entityStat = await window.electronAPI?.statFile?.(store.entitiesPath).catch(() => null);
+      if (entityStat && entityStat.size > 8 * 1024 * 1024) {
+        // eslint-disable-next-line no-console
+        console.info('[entity-db-check] deferred for large database', {
+          entitiesPath: store.entitiesPath,
+          bytes: entityStat.size,
+        });
+        return;
+      }
+
       const checkApi = {
         listProjectXmlFiles: (path: string) => window.electronAPI!.listProjectXmlFiles(path),
         readFile: (path: string) => window.electronAPI!.readFile(path),

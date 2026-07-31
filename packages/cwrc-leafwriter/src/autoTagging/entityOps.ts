@@ -222,7 +222,10 @@ const activeWorkDate = (item: Element): WorkDateSummary | null => {
   };
 };
 
-function summarize(item: Element): EntitySummary | null {
+export function summarizeEntity(
+  item: Element,
+  allRejections?: ConcordanceRejection[],
+): EntitySummary | null {
   const kind = kindOfElement(item);
   const id = item.getAttribute('xml:id');
   if (!kind || !id) return null;
@@ -338,7 +341,12 @@ function summarize(item: Element): EntitySummary | null {
         source: readEntityValueProvenance(child).source,
       }))
       .filter((assertion) => assertion.value),
-    rejectedConcordances: listConcordanceRejectionsForEntity(item.ownerDocument, id),
+    rejectedConcordances: listConcordanceRejectionsForEntity(
+      item.ownerDocument,
+      id,
+      item,
+      allRejections,
+    ),
     assertions: Array.from(item.children)
       .filter((child) => child.localName !== 'note' || child.getAttribute('type') !== 'ljb-changed')
       .map((child) => ({
@@ -529,9 +537,10 @@ export function decoupleAuthority(doc: Document, id: string, authority: Authorit
 /** Every entity in the database, in document order. */
 export function listEntities(doc: Document): EntitySummary[] {
   const out: EntitySummary[] = [];
+  const allRejections = listConcordanceRejections(doc);
   for (const kind of Object.keys(ENTITY_KINDS) as EntityKind[]) {
     for (const item of entityElements(doc, kind)) {
-      const summary = summarize(item);
+      const summary = summarizeEntity(item, allRejections);
       if (summary) out.push(summary);
     }
   }
@@ -1481,16 +1490,25 @@ export function listConcordanceRejections(doc: Document): ConcordanceRejection[]
     .filter((rejection): rejection is ConcordanceRejection => rejection !== null);
 }
 
+/**
+ * `entity` and `allRejections` let batch callers (e.g. `listEntities`) pass in
+ * the already-known item and a doc-wide rejection list computed once, instead
+ * of re-scanning the whole document (getElementsByTagName + entity lookup)
+ * for every single entity — that rescan is O(n) per call and made indexing a
+ * large database (tens of thousands of entities) quadratic.
+ */
 function listConcordanceRejectionsForEntity(
   doc: Document,
   entityId: string,
+  entity?: Element,
+  allRejections?: ConcordanceRejection[],
 ): ConcordanceRejection[] {
-  const entity = allEntityElements(doc).find(
-    (candidate) => candidate.getAttribute('xml:id') === entityId,
-  );
-  if (!entity) return [];
-  const refs = new Set(activeAuthorityRefs(entity));
-  return listConcordanceRejections(doc).filter(
+  const target =
+    entity ??
+    allEntityElements(doc).find((candidate) => candidate.getAttribute('xml:id') === entityId);
+  if (!target) return [];
+  const refs = new Set(activeAuthorityRefs(target));
+  return (allRejections ?? listConcordanceRejections(doc)).filter(
     (rejection) => refs.has(rejection.leftId) || refs.has(rejection.rightId),
   );
 }

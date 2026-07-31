@@ -319,6 +319,20 @@ export interface ElectronAPI {
   setEntityDbFolder: (folder: string | null) => Promise<void>;
   pickEntityDbFolder: () => Promise<string | null>;
   createEntityDatabase: (folder: string, content: string) => Promise<void>;
+  bulkBridgeStart?: (
+    request: import('../desktop/bulkBridgeTypes').BulkBridgeJobRequest,
+  ) => Promise<string>;
+  bulkBridgeCancel?: (jobId: string) => Promise<boolean>;
+  onBulkBridgeProgress?: (
+    callback: (event: import('../desktop/bulkBridgeTypes').BulkBridgeJobEvent) => void,
+  ) => () => void;
+  entityIndexStart?: (
+    request: import('../desktop/entityIndexTypes').EntityIndexJobRequest,
+  ) => Promise<string>;
+  entityIndexCancel?: (jobId: string) => Promise<boolean>;
+  onEntityIndexProgress?: (
+    callback: (event: import('../desktop/entityIndexTypes').EntityIndexJobEvent) => void,
+  ) => () => void;
   approveEntityRegistryRoots: (roots: string[]) => Promise<boolean>;
   moveEntityDbFolder: () => Promise<{
     ok: boolean;

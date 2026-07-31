@@ -233,6 +233,14 @@ export const writeLastProjectFile = async (projectFilePath: string) => {
   });
 };
 
+/** Forget a project that was moved or renamed, allowing startup to recover normally. */
+export const clearMissingProjectReferences = async (): Promise<void> => {
+  await mutateAppPrefs((prefs) => {
+    prefs.lastProjectFile = null;
+    prefs.workspaceSession = undefined;
+  });
+};
+
 export const getValidLastProjectFile = async (): Promise<string | null> => {
   const prefs = await readAppPrefs();
   if (!prefs.lastProjectFile) return null;

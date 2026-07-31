@@ -45,6 +45,9 @@ import {
 import { Fragment, memo, useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import type { ReactNode } from 'react';
 import { useTranslation } from 'react-i18next';
+import { List, useDynamicRowHeight } from 'react-window';
+import type { RowComponentProps } from 'react-window';
+import type { NotificationProps } from '@src/types';
 import {
   ENTITY_KINDS,
   findEntity,
@@ -135,7 +138,12 @@ import { getDefaultStore } from 'jotai';
 import { RESET } from 'jotai/utils';
 import { db } from '../../../../../packages/cwrc-leafwriter/src/db';
 import { applyKeyRemapAcrossProjects, type KeyRemapSummary } from '../entityDb/applyKeyRemap';
-import { applyPendingCentralOrders, computeMergeDocket, promoteEntities } from '../entityDb/bridge';
+import { applyPendingCentralOrders, computeMergeDocket } from '../entityDb/bridge';
+import type {
+  BulkBridgeProgress,
+  BulkBridgeProposal,
+} from '../../../../../packages/cwrc-leafwriter/src/autoTagging/bulkBridgeImport';
+import { setEntityIndexProgress } from '../../../../../packages/cwrc-leafwriter/src/autoTagging/entityIndexProgress';
 import { authorityLookupUrl } from '../entityDb/authorityLinks';
 import { BridgeInboxDialog } from './BridgeInboxDialog';
 import { MergeDocketDialog } from './MergeDocketDialog';
@@ -372,6 +380,189 @@ const EntityDescriptionEditor = memo(function EntityDescriptionEditor({
   );
 });
 
+interface EntityRowData {
+  entities: EntitySummary[];
+  selected: Set<string>;
+  toggleSelected: (id: string) => void;
+  romanizedOf: (entity: EntitySummary) => string | null;
+  authorityOrder: Record<string, string[]>;
+  openEdit: (entity: EntitySummary) => void;
+  openXPathForEntity: (entity: EntitySummary) => void;
+  notifyViaSnackbar: (notification: NotificationProps | string) => void;
+  t: TFn;
+}
+
+/**
+ * One entity row, rendered by `react-window`'s `List`. Pulled out to module
+ * scope (rather than an inline closure in the render loop) so its identity is
+ * stable across renders — required for the virtualized list to avoid
+ * remounting every row on every parent re-render. A large database can have
+ * tens of thousands of entities, so rendering every row as a real DOM/React
+ * element at once (the previous approach) was enough to OOM the renderer.
+ */
+function EntityRow({
+  index,
+  style,
+  entities,
+  selected,
+  toggleSelected,
+  romanizedOf,
+  authorityOrder,
+  openEdit,
+  openXPathForEntity,
+  notifyViaSnackbar,
+  t,
+}: RowComponentProps<EntityRowData>) {
+  const entity = entities[index];
+  if (!entity) return null;
+  const romanized = romanizedOf(entity);
+  const authorities = sortAuthoritiesByPreference(
+    normalizedAuthorityRefs(entity.authorities),
+    authorityOrder,
+    entity.kind,
+  );
+  return (
+    <Box
+      style={style}
+      sx={{
+        display: 'flex',
+        alignItems: 'flex-start',
+        gap: 0.5,
+        px: 1,
+        py: 0.75,
+        borderBottom: 1,
+        borderColor: 'divider',
+        bgcolor: selected.has(entity.id) ? 'action.selected' : undefined,
+      }}
+    >
+      <Checkbox
+        size="small"
+        checked={selected.has(entity.id)}
+        onChange={() => toggleSelected(entity.id)}
+        sx={{ p: 0.25, mt: 0.125 }}
+      />
+      <Box sx={{ flex: 1, minWidth: 0 }}>
+        <Stack direction="row" spacing={0.75} alignItems="baseline">
+          <Typography variant="body2" sx={{ fontWeight: 600 }} noWrap>
+            {entity.names[0] ?? '(unnamed)'}
+          </Typography>
+          {romanized && romanized !== entity.names[0] && (
+            <Typography variant="caption" color="text.secondary" noWrap>
+              {romanized}
+            </Typography>
+          )}
+          {authorities.length > 0 && (
+            <Box
+              component="span"
+              sx={{
+                display: 'flex',
+                alignItems: 'center',
+                gap: 0.5,
+                minWidth: 0,
+                flex: 1,
+                overflow: 'hidden',
+                whiteSpace: 'nowrap',
+              }}
+            >
+              {authorityBadgeGroups(authorities).map(({ ref, count }) => {
+                const url = authorityLookupUrl(ref);
+                return (
+                  <Box
+                    key={`${ref.type}-${ref.value}`}
+                    component="span"
+                    onClick={url ? () => openExternalUrl(url) : undefined}
+                    sx={{
+                      cursor: url ? 'pointer' : 'default',
+                      display: 'inline-flex',
+                      flexShrink: 0,
+                    }}
+                    title={ref.value}
+                  >
+                    <SourceBadges label={Array(count).fill(ref.type).join('+')} />
+                  </Box>
+                );
+              })}
+            </Box>
+          )}
+        </Stack>
+        <Stack direction="row" alignItems="center" spacing={0.5}>
+          <Typography variant="caption" color="text.secondary" component="div" noWrap>
+            {entity.id}
+          </Typography>
+          <Tooltip title={t('LWC.desktop.sidebar.database.copy_id')}>
+            <IconButton
+              size="small"
+              aria-label={t('LWC.desktop.sidebar.database.copy_id')}
+              onClick={() =>
+                void navigator.clipboard.writeText(entity.id).then(() => {
+                  notifyViaSnackbar({
+                    message: t('LWC.desktop.sidebar.database.id_copied'),
+                    options: { variant: 'success' },
+                  });
+                })
+              }
+              sx={{ p: 0.25, flexShrink: 0 }}
+            >
+              <ContentCopyIcon sx={{ fontSize: 14 }} />
+            </IconButton>
+          </Tooltip>
+        </Stack>
+        {entity.description && (
+          <Typography variant="caption" color="text.secondary" component="div" noWrap>
+            {entity.description}
+          </Typography>
+        )}
+        {(entity.startYear != null ||
+          entity.endYear != null ||
+          entity.nationalities.length > 0 ||
+          entity.placesOfOrigin.length > 0) && (
+          <Typography variant="caption" color="text.secondary" component="div" noWrap>
+            {entity.startYear != null || entity.endYear != null
+              ? `${t('LWC.desktop.sidebar.database.dates')}: ${
+                  entity.kind === 'work' && entity.workDate
+                    ? scholarlyDateRange(
+                        entity.startYear,
+                        entity.endYear,
+                        entity.workDate.startPrecision,
+                        entity.workDate.endPrecision,
+                        t,
+                      )
+                    : `${entity.startYear ?? '—'}–${entity.endYear ?? '—'}`
+                }`
+              : ''}
+            {entity.nationalities.length > 0
+              ? `${entity.startYear != null || entity.endYear != null ? ' · ' : ''}${t('LWC.desktop.sidebar.database.dynasties')}: ${entity.nationalities.join(', ')}`
+              : ''}
+            {entity.placesOfOrigin.length > 0
+              ? `${entity.startYear != null || entity.endYear != null || entity.nationalities.length > 0 ? ' · ' : ''}${t('LWC.desktop.sidebar.database.origins')}: ${entity.placesOfOrigin.join(', ')}`
+              : ''}
+          </Typography>
+        )}
+      </Box>
+      <Stack direction="row" spacing={0} sx={{ flexShrink: 0 }}>
+        <Tooltip title={t('LWC.desktop.sidebar.database.open')}>
+          <IconButton
+            size="small"
+            onClick={() => openEdit(entity)}
+            aria-label={t('LWC.desktop.sidebar.database.open')}
+          >
+            <OpenInNewIcon fontSize="small" />
+          </IconButton>
+        </Tooltip>
+        <Tooltip title="Find in XPath panel">
+          <IconButton
+            size="small"
+            onClick={() => openXPathForEntity(entity)}
+            aria-label="Find entity in XPath panel"
+          >
+            <SearchIcon fontSize="small" />
+          </IconButton>
+        </Tooltip>
+      </Stack>
+    </Box>
+  );
+}
+
 export const SidebarDatabaseTab = ({ active = false }: SidebarDatabaseTabProps) => {
   const { t, i18n } = useTranslation();
   const { skipEntityDetachConfirm } = useAppState().ui;
@@ -444,6 +635,10 @@ export const SidebarDatabaseTab = ({ active = false }: SidebarDatabaseTabProps) 
   const [docketOpen, setDocketOpen] = useState(false);
   const [docketCount, setDocketCount] = useState(0);
   const [backfillBusy, setBackfillBusy] = useState(false);
+  const [bulkProgress, setBulkProgress] = useState<BulkBridgeProgress | null>(null);
+  const [bulkJobId, setBulkJobId] = useState<string | null>(null);
+  const [bulkProposals, setBulkProposals] = useState<BulkBridgeProposal[]>([]);
+  const [proposalsOpen, setProposalsOpen] = useState(false);
   const [backfillProgress, setBackfillProgress] = useState<{
     done: number;
     total: number;
@@ -452,6 +647,7 @@ export const SidebarDatabaseTab = ({ active = false }: SidebarDatabaseTabProps) 
   const backfillAbortRef = useRef<AbortController | null>(null);
   /** Guards against overlapping bulk catch-up sync passes across successive reload() calls. */
   const bulkSyncInFlightRef = useRef(false);
+  const entityIndexInFlightRef = useRef(false);
 
   const searchInputRef = useRef<HTMLInputElement | null>(null);
 
@@ -489,6 +685,22 @@ export const SidebarDatabaseTab = ({ active = false }: SidebarDatabaseTabProps) 
       (await window.electronAPI?.getEntityDbFolder?.().catch(() => null)) ?? null;
     const resolvedCentralStore = centralEntityStoreFromDesktop(centralFolder);
     setCentralStore(resolvedCentralStore);
+    if (resolvedCentralStore) {
+      const api = desktopEntityFileApi();
+      const proposalPath = `${resolvedCentralStore.projectLjbDir}/bulk-import-proposals.jsonl`;
+      if (api && (await api.pathExists(proposalPath))) {
+        const rows = (await api.readFile(proposalPath)).split(/\r?\n/).filter(Boolean);
+        setBulkProposals(
+          rows.flatMap((row) => {
+            try {
+              return [JSON.parse(row) as BulkBridgeProposal];
+            } catch {
+              return [];
+            }
+          }),
+        );
+      }
+    }
 
     // Reconcile this project's ljb-central mappings on every open/visit: pick up
     // upstream central merges/deletes, then promote+link any PEDB entity that
@@ -508,15 +720,46 @@ export const SidebarDatabaseTab = ({ active = false }: SidebarDatabaseTabProps) 
             userStableId,
           };
           await applyPendingCentralOrders(bridgeCtx);
-          const pedbIds = listEntities(await currentStore.loadEntities()).map(
-            (entity) => entity.id,
-          );
-          await promoteEntities(bridgeCtx, pedbIds);
+          setBusyMessage('Synchronising project entities with the central database…');
+          const start = window.electronAPI?.bulkBridgeStart;
+          const onProgress = window.electronAPI?.onBulkBridgeProgress;
+          if (!start || !onProgress) throw new Error('Background bulk sync is unavailable in this desktop build.');
+          await new Promise<void>(async (resolve, reject) => {
+            let jobId: string | null = null;
+            const unsubscribe = onProgress((event) => {
+              if (!jobId || event.jobId !== jobId) return;
+              if (event.progress) setBulkProgress(event.progress);
+              if (event.status === 'complete' || event.status === 'cancelled') {
+                if (event.result?.proposals) setBulkProposals(event.result.proposals);
+                unsubscribe();
+                resolve();
+              } else if (event.status === 'error') {
+                unsubscribe();
+                reject(new Error(event.error ?? 'Background bulk sync failed.'));
+              }
+            });
+            try {
+              jobId = await start({
+                sourceEntitiesPath: currentStore.entitiesPath,
+                centralEntitiesPath: resolvedCentralStore.entitiesPath,
+                centralLjbDir: resolvedCentralStore.projectLjbDir,
+                userStableId,
+                chunkSize: 250,
+              });
+              setBulkJobId(jobId);
+            } catch (error) {
+              unsubscribe();
+              reject(error);
+            }
+          });
         } catch (error) {
           // Best-effort: a manual edit's own auto-sync still covers that entity.
           // eslint-disable-next-line no-console
           console.error('[bridge] catch-up sync on project open failed:', error);
         } finally {
+          setBulkJobId(null);
+          setBusyMessage(null);
+          setBulkProgress(null);
           bulkSyncInFlightRef.current = false;
         }
       })();
@@ -526,6 +769,74 @@ export const SidebarDatabaseTab = ({ active = false }: SidebarDatabaseTabProps) 
     // falls back from Central if no central folder is configured yet.
     const activeStore =
       databaseView === 'central' && resolvedCentralStore ? resolvedCentralStore : currentStore;
+
+    // Chromium's XML DOM becomes unstable well before Node does with very large
+    // entity files. Keep the full-document parse out of the renderer; the
+    // background bridge worker can still process these files safely.
+    const activeStat = await window.electronAPI?.statFile?.(activeStore.entitiesPath).catch(() => null);
+    const rendererEntityLimit = 8 * 1024 * 1024;
+    if (activeStat && activeStat.size > rendererEntityLimit) {
+      setEntities([]);
+      setDuplicates([]);
+      setConcordanceConflicts([]);
+      setWarnings([]);
+      setLoading(true);
+      setLoadError(null);
+      const startIndex = window.electronAPI?.entityIndexStart;
+      const onIndexProgress = window.electronAPI?.onEntityIndexProgress;
+      if (startIndex && onIndexProgress && !entityIndexInFlightRef.current) {
+        entityIndexInFlightRef.current = true;
+        let jobId: string | null = null;
+        const unsubscribe = onIndexProgress((event) => {
+          if (!jobId || event.jobId !== jobId) return;
+          const done = event.done ?? 0;
+          const total = event.total ?? 0;
+          if (event.batch?.length) setEntities((previous) => [...previous, ...event.batch!]);
+          setEntityIndexProgress({
+            active: event.status === 'progress',
+            done,
+            total,
+            label:
+              event.phase === 'parsing'
+                ? 'Parsing entities'
+                : event.phase === 'cache'
+                  ? 'Loading entity index'
+                  : 'Indexing entities',
+            cancel: jobId ? () => void window.electronAPI?.entityIndexCancel?.(jobId!) : undefined,
+          });
+          if (event.status === 'complete' || event.status === 'cancelled' || event.status === 'error') {
+            unsubscribe();
+            entityIndexInFlightRef.current = false;
+            setLoading(false);
+            if (event.status === 'error') setLoadError(event.error ?? 'Could not index the entity database.');
+            setEntityIndexProgress({ active: false, done, total, label: '' });
+          }
+        });
+        void startIndex({
+          entitiesPath: activeStore.entitiesPath,
+          indexCachePath: `${activeStore.projectLjbDir}/entity-index-cache.json`,
+          chunkSize: 250,
+        })
+          .then((startedJobId) => {
+            jobId = startedJobId;
+            setEntityIndexProgress({
+              active: true,
+              done: 0,
+              total: 0,
+              label: 'Parsing entities',
+              cancel: () => void window.electronAPI?.entityIndexCancel?.(startedJobId),
+            });
+          })
+          .catch((error) => {
+            unsubscribe();
+            entityIndexInFlightRef.current = false;
+            setLoading(false);
+            setEntityIndexProgress({ active: false, done: 0, total: 0, label: '' });
+            setLoadError(error instanceof Error ? error.message : String(error));
+          });
+      }
+      return;
+    }
 
     // Viewing Central means activeStore.loadEntities() below already parses the
     // same doc the docket needs - kick the docket off only once that doc is in
@@ -667,20 +978,38 @@ export const SidebarDatabaseTab = ({ active = false }: SidebarDatabaseTabProps) 
   /**
    * Script-insensitive search blob per entity: "zhangheng" matches "Zhāng
    * Héng", "Zhang Heng", and (via stored/generated romanization) 張衡.
+   *
+   * Romanization (pinyin/Wylie/kana conversion) isn't free, and while a large
+   * database indexes, `entities` grows in ~250-row batches — without caching,
+   * this useMemo would redo romanization for every already-processed entity
+   * on every batch (O(n²) across the whole load). The WeakMap caches each
+   * entity summary's folded blob by object identity, so re-summarized/edited
+   * entities (new object) still recompute, but unchanged ones never do twice.
    */
+  const foldedIndexCacheRef = useRef({
+    projectLang,
+    cache: new WeakMap<EntitySummary, string>(),
+  });
   const foldedIndex = useMemo(() => {
+    const state = foldedIndexCacheRef.current;
+    if (state.projectLang !== projectLang) {
+      state.projectLang = projectLang;
+      state.cache = new WeakMap<EntitySummary, string>();
+    }
     const index = new Map<string, string>();
     for (const entity of entities) {
-      const romanizations = [
-        entity.romanized ?? '',
-        ...entity.names.map((name) => autoRomanize(name, projectLang) ?? ''),
-      ];
-      index.set(
-        entity.id,
-        foldForSearch(
+      let folded = state.cache.get(entity);
+      if (folded === undefined) {
+        const romanizations = [
+          entity.romanized ?? '',
+          ...entity.names.map((name) => autoRomanize(name, projectLang) ?? ''),
+        ];
+        folded = foldForSearch(
           [entity.id, ...entity.names, entity.description ?? '', ...romanizations].join('\n'),
-        ),
-      );
+        );
+        state.cache.set(entity, folded);
+      }
+      index.set(entity.id, folded);
     }
     return index;
   }, [entities, projectLang]);
@@ -1894,6 +2223,34 @@ export const SidebarDatabaseTab = ({ active = false }: SidebarDatabaseTabProps) 
     })();
   };
 
+  /** Rows vary from 1-4 lines depending on which optional fields an entity has. */
+  const entityRowHeight = useDynamicRowHeight({ defaultRowHeight: 72 });
+
+  const entityRowProps: EntityRowData = useMemo(
+    () => ({
+      entities: visible,
+      selected,
+      toggleSelected,
+      romanizedOf,
+      authorityOrder,
+      openEdit,
+      openXPathForEntity,
+      notifyViaSnackbar,
+      t,
+    }),
+    [
+      visible,
+      selected,
+      toggleSelected,
+      romanizedOf,
+      authorityOrder,
+      openEdit,
+      openXPathForEntity,
+      notifyViaSnackbar,
+      t,
+    ],
+  );
+
   if (!store) {
     return (
       <Box sx={{ p: 2 }}>
@@ -2009,6 +2366,13 @@ export const SidebarDatabaseTab = ({ active = false }: SidebarDatabaseTabProps) 
               >
                 <HubOutlinedIcon fontSize="small" />
               </IconButton>
+            </Tooltip>
+          )}
+          {bulkProposals.length > 0 && (
+            <Tooltip title="Review entities that were not added automatically">
+              <Button size="small" startIcon={<PlaylistAddIcon />} onClick={() => setProposalsOpen(true)}>
+                Review ({bulkProposals.length})
+              </Button>
             </Tooltip>
           )}
           {centralStore && (
@@ -2211,7 +2575,7 @@ export const SidebarDatabaseTab = ({ active = false }: SidebarDatabaseTabProps) 
       )}
 
       {/* Entity list */}
-      <Box sx={{ flex: 1, minHeight: 0, overflow: 'auto' }}>
+      <Box sx={{ flex: 1, minHeight: 0 }}>
         {loading ? (
           <Box sx={{ display: 'flex', justifyContent: 'center', p: 3 }}>
             <CircularProgress size={20} />
@@ -2223,154 +2587,13 @@ export const SidebarDatabaseTab = ({ active = false }: SidebarDatabaseTabProps) 
               : t('LWC.desktop.sidebar.database.no_matches')}
           </Typography>
         ) : (
-          visible.map((entity) => {
-            const romanized = romanizedOf(entity);
-            const authorities = sortAuthoritiesByPreference(
-              normalizedAuthorityRefs(entity.authorities),
-              authorityOrder,
-              entity.kind,
-            );
-            return (
-              <Box
-                key={entity.id}
-                sx={{
-                  display: 'flex',
-                  alignItems: 'flex-start',
-                  gap: 0.5,
-                  px: 1,
-                  py: 0.75,
-                  borderBottom: 1,
-                  borderColor: 'divider',
-                  bgcolor: selected.has(entity.id) ? 'action.selected' : undefined,
-                }}
-              >
-                <Checkbox
-                  size="small"
-                  checked={selected.has(entity.id)}
-                  onChange={() => toggleSelected(entity.id)}
-                  sx={{ p: 0.25, mt: 0.125 }}
-                />
-                <Box sx={{ flex: 1, minWidth: 0 }}>
-                  <Stack direction="row" spacing={0.75} alignItems="baseline">
-                    <Typography variant="body2" sx={{ fontWeight: 600 }} noWrap>
-                      {entity.names[0] ?? '(unnamed)'}
-                    </Typography>
-                    {romanized && romanized !== entity.names[0] && (
-                      <Typography variant="caption" color="text.secondary" noWrap>
-                        {romanized}
-                      </Typography>
-                    )}
-                    {authorities.length > 0 && (
-                      <Box
-                        component="span"
-                        sx={{
-                          display: 'flex',
-                          alignItems: 'center',
-                          gap: 0.5,
-                          minWidth: 0,
-                          flex: 1,
-                          overflow: 'hidden',
-                          whiteSpace: 'nowrap',
-                        }}
-                      >
-                        {authorityBadgeGroups(authorities).map(({ ref, count }) => {
-                          const url = authorityLookupUrl(ref);
-                          return (
-                            <Box
-                              key={`${ref.type}-${ref.value}`}
-                              component="span"
-                              onClick={url ? () => openExternalUrl(url) : undefined}
-                              sx={{
-                                cursor: url ? 'pointer' : 'default',
-                                display: 'inline-flex',
-                                flexShrink: 0,
-                              }}
-                              title={ref.value}
-                            >
-                              <SourceBadges label={Array(count).fill(ref.type).join('+')} />
-                            </Box>
-                          );
-                        })}
-                      </Box>
-                    )}
-                  </Stack>
-                  <Stack direction="row" alignItems="center" spacing={0.5}>
-                    <Typography variant="caption" color="text.secondary" component="div" noWrap>
-                      {entity.id}
-                    </Typography>
-                    <Tooltip title={t('LWC.desktop.sidebar.database.copy_id')}>
-                      <IconButton
-                        size="small"
-                        aria-label={t('LWC.desktop.sidebar.database.copy_id')}
-                        onClick={() =>
-                          void navigator.clipboard.writeText(entity.id).then(() => {
-                            notifyViaSnackbar({
-                              message: t('LWC.desktop.sidebar.database.id_copied'),
-                              options: { variant: 'success' },
-                            });
-                          })
-                        }
-                        sx={{ p: 0.25, flexShrink: 0 }}
-                      >
-                        <ContentCopyIcon sx={{ fontSize: 14 }} />
-                      </IconButton>
-                    </Tooltip>
-                  </Stack>
-                  {entity.description && (
-                    <Typography variant="caption" color="text.secondary" component="div" noWrap>
-                      {entity.description}
-                    </Typography>
-                  )}
-                  {(entity.startYear != null ||
-                    entity.endYear != null ||
-                    entity.nationalities.length > 0 ||
-                    entity.placesOfOrigin.length > 0) && (
-                    <Typography variant="caption" color="text.secondary" component="div" noWrap>
-                      {entity.startYear != null || entity.endYear != null
-                        ? `${t('LWC.desktop.sidebar.database.dates')}: ${
-                            entity.kind === 'work' && entity.workDate
-                              ? scholarlyDateRange(
-                                  entity.startYear,
-                                  entity.endYear,
-                                  entity.workDate.startPrecision,
-                                  entity.workDate.endPrecision,
-                                  t,
-                                )
-                              : `${entity.startYear ?? '—'}–${entity.endYear ?? '—'}`
-                          }`
-                        : ''}
-                      {entity.nationalities.length > 0
-                        ? `${entity.startYear != null || entity.endYear != null ? ' · ' : ''}${t('LWC.desktop.sidebar.database.dynasties')}: ${entity.nationalities.join(', ')}`
-                        : ''}
-                      {entity.placesOfOrigin.length > 0
-                        ? `${entity.startYear != null || entity.endYear != null || entity.nationalities.length > 0 ? ' · ' : ''}${t('LWC.desktop.sidebar.database.origins')}: ${entity.placesOfOrigin.join(', ')}`
-                        : ''}
-                    </Typography>
-                  )}
-                </Box>
-                <Stack direction="row" spacing={0} sx={{ flexShrink: 0 }}>
-                  <Tooltip title={t('LWC.desktop.sidebar.database.open')}>
-                    <IconButton
-                      size="small"
-                      onClick={() => openEdit(entity)}
-                      aria-label={t('LWC.desktop.sidebar.database.open')}
-                    >
-                      <OpenInNewIcon fontSize="small" />
-                    </IconButton>
-                  </Tooltip>
-                  <Tooltip title="Find in XPath panel">
-                    <IconButton
-                      size="small"
-                      onClick={() => openXPathForEntity(entity)}
-                      aria-label="Find entity in XPath panel"
-                    >
-                      <SearchIcon fontSize="small" />
-                    </IconButton>
-                  </Tooltip>
-                </Stack>
-              </Box>
-            );
-          })
+          <List
+            rowComponent={EntityRow}
+            rowCount={visible.length}
+            rowHeight={entityRowHeight}
+            rowProps={entityRowProps}
+            style={{ height: '100%' }}
+          />
         )}
       </Box>
 
@@ -3386,9 +3609,36 @@ export const SidebarDatabaseTab = ({ active = false }: SidebarDatabaseTabProps) 
         <DialogContent>
           <Stack direction="row" spacing={2} alignItems="center">
             <CircularProgress size={20} />
-            <Typography variant="body2">{busyMessage}</Typography>
+            <Box sx={{ minWidth: 360 }}>
+              <Typography variant="body2">{busyMessage}</Typography>
+              {bulkProgress && (
+                <>
+                  <LinearProgress
+                    variant="determinate"
+                    value={bulkProgress.total ? (bulkProgress.done / bulkProgress.total) * 100 : 0}
+                    sx={{ mt: 1 }}
+                  />
+                  <Typography variant="caption" color="text.secondary">
+                    {bulkProgress.stage}: {bulkProgress.done.toLocaleString()} / {bulkProgress.total.toLocaleString()}
+                    {' · '}{bulkProgress.matched.toLocaleString()} matched
+                    {' · '}{bulkProgress.proposed.toLocaleString()} to review
+                    {bulkProgress.ambiguous > 0 ? ` · ${bulkProgress.ambiguous} ambiguous` : ''}
+                  </Typography>
+                </>
+              )}
+            </Box>
           </Stack>
         </DialogContent>
+        {bulkJobId && (
+          <DialogActions>
+            <Button
+              onClick={() => void window.electronAPI?.bulkBridgeCancel?.(bulkJobId)}
+              color="inherit"
+            >
+              Cancel after current chunk
+            </Button>
+          </DialogActions>
+        )}
       </Dialog>
 
       <BridgeInboxDialog
@@ -3396,6 +3646,39 @@ export const SidebarDatabaseTab = ({ active = false }: SidebarDatabaseTabProps) 
         onClose={() => setBridgeOpen(false)}
         onChanged={() => void reload()}
       />
+
+      <Dialog open={proposalsOpen} onClose={() => setProposalsOpen(false)} maxWidth="md" fullWidth>
+        <DialogTitle>Bulk-import proposals</DialogTitle>
+        <DialogContent dividers>
+          <DialogContentText sx={{ mb: 2 }}>
+            These source entities were not added automatically. Review them in the project and
+            central databases, then merge or add them manually. Ambiguous authority matches are
+            listed with their possible central IDs.
+          </DialogContentText>
+          <Stack spacing={1}>
+            {bulkProposals.map((proposal) => (
+              <Box key={`${proposal.kind}:${proposal.sourceId}`} sx={{ borderBottom: 1, borderColor: 'divider', pb: 1 }}>
+                <Typography variant="body2">
+                  <strong>{proposal.name ?? proposal.sourceId}</strong> ({proposal.kind}) — {proposal.reason}
+                </Typography>
+                {proposal.authorities.length > 0 && (
+                  <Typography variant="caption" color="text.secondary" component="div">
+                    Authorities: {proposal.authorities.map((authority) => `${authority.type}:${authority.value}`).join(', ')}
+                  </Typography>
+                )}
+                {proposal.candidateCentralIds.length > 0 && (
+                  <Typography variant="caption" color="warning.main" component="div">
+                    Candidates: {proposal.candidateCentralIds.join(', ')}
+                  </Typography>
+                )}
+              </Box>
+            ))}
+          </Stack>
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={() => setProposalsOpen(false)}>Close</Button>
+        </DialogActions>
+      </Dialog>
 
       <MergeDocketDialog
         open={docketOpen}

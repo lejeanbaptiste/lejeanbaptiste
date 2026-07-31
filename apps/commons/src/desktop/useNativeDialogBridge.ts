@@ -13,7 +13,6 @@ import {
   resolveNameTypeTaggingPolicy,
   type NameTypeTaggingBucket,
 } from '../../../../packages/cwrc-leafwriter/src/autoTagging/nameTypeTaggingPolicy';
-import { computeBridgeInbox, loadBridgeContext, promoteEntities, syncEntities } from './entityDb/bridge';
 import { getActiveTabXml } from './fileMetadata';
 import { buildProjectSchemas, type ProjectBundle } from './projectFile';
 import { getProjectSourceLanguage } from './projectLanguage';
@@ -446,38 +445,10 @@ export const useNativeDialogBridge = () => {
             try {
               await writeProjectMetadata(bundle, draft);
               if (typeof syncToCentral === 'boolean' && electronAPI.updateProjectFileConfig) {
-                // Turning sync on for the first time bulk-promotes/syncs
-                // everything before persisting the flag - this must run here
-                // (the main window), not in the settings dialog's own
-                // separate BrowserWindow, which has no __ljbLspProject global
-                // for entityStoreFromDesktop()/centralEntityStoreFromDesktop()
-                // to read. Even here, window.__ljbLspProject isn't populated
-                // yet for a brand-new project - it's only set once
-                // loadProjectBundle mounts the editor, which happens after
-                // this firstSetup dialog closes - so pass the just-resolved
-                // bundle's root explicitly instead of relying on that global.
-                if (syncToCentral && bundle.config.syncToCentral !== true) {
-                  const availability = await loadBridgeContext(bundle.rootPath);
-                  if (!availability.available) {
-                    return { ok: false, error: availability.reason };
-                  }
-                  // First-time bulk sync rewrites the whole central database
-                  // file - snapshot it first so a bad sync is always a
-                  // one-click Time Machine restore, not a support incident.
-                  const centralFolder = availability.context.centralStore.centralFolder;
-                  if (centralFolder && electronAPI.createTimeMachineSnapshot) {
-                    await electronAPI
-                      .createTimeMachineSnapshot(centralFolder, 'Central database (auto, before sync)')
-                      .catch(() => undefined);
-                  }
-                  const report = await computeBridgeInbox(availability.context);
-                  await promoteEntities(availability.context, report.unlinked.map((item) => item.id));
-                  await syncEntities(
-                    availability.context,
-                    report.syncable.map((item) => ({ pedbId: item.id, centralId: item.centralId })),
-                  );
-                  syncReport = { broken: report.broken.length, conflicts: report.conflicts.length };
-                }
+                // The first-time bulk pass is intentionally deferred until the
+                // project window is mounted. SidebarDatabaseTab runs the
+                // chunked importer and renders determinate progress; doing it
+                // here used to freeze this settings window and the main window.
                 await electronAPI.updateProjectFileConfig(bundle.projectFilePath, {
                   syncToCentral,
                 });

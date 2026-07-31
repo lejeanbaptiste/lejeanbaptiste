@@ -9,7 +9,14 @@ const shared: Options = {
   shims: true,
   watch: isDev,
   // Bundle runtime deps so the packaged desktop app doesn't need node_modules.
-  noExternal: ['compression', 'express', 'helmet', 'kleur'],
+  noExternal: [
+    'compression',
+    'express',
+    'helmet',
+    'kleur',
+    '@xmldom/xmldom',
+    'office-addin-dev-certs',
+  ],
 };
 
 export default defineConfig([

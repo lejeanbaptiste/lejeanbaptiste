@@ -255,6 +255,20 @@ export interface ElectronAPI {
   setEntityDbFolder: (folder: string | null) => Promise<void>;
   pickEntityDbFolder: () => Promise<string | null>;
   createEntityDatabase: (folder: string, content: string) => Promise<void>;
+  bulkBridgeStart: (
+    request: import('../../commons/src/desktop/bulkBridgeTypes').BulkBridgeJobRequest,
+  ) => Promise<string>;
+  bulkBridgeCancel: (jobId: string) => Promise<boolean>;
+  onBulkBridgeProgress: (
+    callback: (event: import('../../commons/src/desktop/bulkBridgeTypes').BulkBridgeJobEvent) => void,
+  ) => () => void;
+  entityIndexStart: (
+    request: import('../../commons/src/desktop/entityIndexTypes').EntityIndexJobRequest,
+  ) => Promise<string>;
+  entityIndexCancel: (jobId: string) => Promise<boolean>;
+  onEntityIndexProgress: (
+    callback: (event: import('../../commons/src/desktop/entityIndexTypes').EntityIndexJobEvent) => void,
+  ) => () => void;
   approveEntityRegistryRoots: (roots: string[]) => Promise<boolean>;
   moveEntityDbFolder: () => Promise<{
     ok: boolean;
@@ -519,6 +533,22 @@ const electronAPI: ElectronAPI = {
   pickEntityDbFolder: () => ipcRenderer.invoke('pickEntityDbFolder'),
   createEntityDatabase: (folder, content) =>
     ipcRenderer.invoke('createEntityDatabase', folder, content),
+  bulkBridgeStart: (request) => ipcRenderer.invoke('bulkBridge:start', request),
+  bulkBridgeCancel: (jobId) => ipcRenderer.invoke('bulkBridge:cancel', jobId),
+  onBulkBridgeProgress: (callback) => {
+    const listener = (_event: Electron.IpcRendererEvent, progress: import('../../commons/src/desktop/bulkBridgeTypes').BulkBridgeJobEvent) =>
+      callback(progress);
+    ipcRenderer.on('bulkBridge:progress', listener);
+    return () => ipcRenderer.removeListener('bulkBridge:progress', listener);
+  },
+  entityIndexStart: (request) => ipcRenderer.invoke('entityIndex:start', request),
+  entityIndexCancel: (jobId) => ipcRenderer.invoke('entityIndex:cancel', jobId),
+  onEntityIndexProgress: (callback) => {
+    const listener = (_event: Electron.IpcRendererEvent, progress: import('../../commons/src/desktop/entityIndexTypes').EntityIndexJobEvent) =>
+      callback(progress);
+    ipcRenderer.on('entityIndex:progress', listener);
+    return () => ipcRenderer.removeListener('entityIndex:progress', listener);
+  },
   approveEntityRegistryRoots: (roots: string[]) =>
     ipcRenderer.invoke('approveEntityRegistryRoots', roots),
   moveEntityDbFolder: () => ipcRenderer.invoke('moveEntityDbFolder'),

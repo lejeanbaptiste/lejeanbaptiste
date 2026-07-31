@@ -15,9 +15,14 @@ import {
   systemPreferences,
 } from 'electron';
 import { fork, type ChildProcess } from 'child_process';
+import { randomUUID } from 'crypto';
 import { existsSync, statSync } from 'fs';
 import fs from 'fs/promises';
 import path from 'path';
+import {
+  resolvePluginApiStateFilePath,
+  writePluginApiState,
+} from '../../commons/src/desktop/pluginApiState';
 import {
   closeAllNativeDialogs,
   getTopNativeDialogWindow,
@@ -54,6 +59,7 @@ import {
   getMapTilesDir,
   getRememberWorkspaceOnStartup,
   getValidLastProjectFile,
+  clearMissingProjectReferences,
   setLastDialogDir,
   getWorkspaceSession,
   saveWorkspaceSession,
@@ -141,6 +147,8 @@ import {
   searchZoteroItems,
 } from './zoteroClient';
 import { disposeLemminx, registerLemminxIpc } from './lemminx/lspBridge';
+import { cancelBulkBridgeJob, startBulkBridgeJob } from './bulkBridgeJob';
+import { cancelEntityIndexJob, startEntityIndexJob } from './entityIndexJob';
 import { checkForAppUpdatesManually, initAutoUpdater } from './updater';
 import { installCatalogSchema, installLocalSchema } from './schemaSetup';
 import { ensureSanmiaoDatesSchemaMerged } from './sanmiaoSchemaMerge';
@@ -614,8 +622,30 @@ let activeProjectRoot: string | null = null;
 const approvedRendererReadRoots = new Set<string>();
 const approvedRendererWriteRoots = new Set<string>();
 
+// Read-only pairing token for the external Word add-in's local API (see
+// apps/commons/src-server/routes/plugins.ts). Regenerated each launch — the
+// add-in re-pairs rather than expecting a stable token across restarts.
+const pluginApiToken = randomUUID();
+
+const syncPluginApiState = (): void => {
+  void (async () => {
+    try {
+      const centralEntitiesFolder = await getEntityDbFolder();
+      await writePluginApiState(resolvePluginApiStateFilePath(app.getPath('userData')), {
+        token: pluginApiToken,
+        projectRoot: activeProjectRoot,
+        centralEntitiesFolder,
+        updatedAt: new Date().toISOString(),
+      });
+    } catch (error) {
+      console.error('[plugin-api] failed to write plugin API state:', error);
+    }
+  })();
+};
+
 const setActiveProjectRoot = (rootPath: string | null): void => {
   activeProjectRoot = rootPath ? path.resolve(rootPath) : null;
+  syncPluginApiState();
 };
 
 const activateProjectBundle = (bundle: ProjectBundle | null): void => {
@@ -1232,6 +1262,32 @@ const registerIpcHandlers = () => {
     resolvers.forEach((resolve) => resolve());
   });
 
+  ipcMain.handle(
+    'bulkBridge:start',
+    async (event, request: import('./bulkBridgeJob').BulkBridgeJobRequest) => {
+      await assertRendererReadPath(request.sourceEntitiesPath);
+      await assertRendererReadPath(request.centralEntitiesPath);
+      await assertRendererWritePath(request.sourceEntitiesPath);
+      await assertRendererWritePath(request.centralEntitiesPath);
+      await assertRendererWritePath(path.join(request.centralLjbDir, 'bulk-import-proposals.jsonl'));
+      return startBulkBridgeJob(request, (progress) => {
+        if (!event.sender.isDestroyed()) event.sender.send('bulkBridge:progress', progress);
+      });
+    },
+  );
+  ipcMain.handle('bulkBridge:cancel', (_event, jobId: string) => cancelBulkBridgeJob(jobId));
+  ipcMain.handle(
+    'entityIndex:start',
+    async (event, request: import('../../commons/src/desktop/entityIndexTypes').EntityIndexJobRequest) => {
+      await assertRendererReadPath(request.entitiesPath);
+      if (request.indexCachePath) await assertRendererWritePath(request.indexCachePath);
+      return startEntityIndexJob(request, (progress) => {
+        if (!event.sender.isDestroyed()) event.sender.send('entityIndex:progress', progress);
+      });
+    },
+  );
+  ipcMain.handle('entityIndex:cancel', (_event, jobId: string) => cancelEntityIndexJob(jobId));
+
   ipcMain.handle('openProject', openProjectFromDialog);
   ipcMain.handle('openProjectFolder', openProjectFromDialog);
 
@@ -1259,6 +1315,17 @@ const registerIpcHandlers = () => {
     const session = await getWorkspaceSession();
     const projectFilePath = session?.projectFilePath ?? (await getValidLastProjectFile());
     if (!projectFilePath) return null;
+
+    try {
+      const stat = await fs.stat(projectFilePath);
+      if (!stat.isFile()) {
+        await clearMissingProjectReferences();
+        return null;
+      }
+    } catch {
+      await clearMissingProjectReferences();
+      return null;
+    }
 
     const bundle = await loadProjectFile(projectFilePath);
     if (!bundle) return null;
@@ -2568,6 +2635,7 @@ app.whenReady().then(() => {
     if (icon) app.dock?.setIcon(icon);
   }
 
+  syncPluginApiState();
   registerLjbProtocol();
   registerGameAssetProtocol();
   registerAvatarProtocol();

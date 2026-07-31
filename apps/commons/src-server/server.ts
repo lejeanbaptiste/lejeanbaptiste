@@ -3,6 +3,7 @@ import express from 'express';
 import helmet from 'helmet';
 import path from 'path';
 import { api } from './routes';
+import { pluginsApi } from './routes/plugins';
 
 const publicPath = path.join(__dirname, '..', 'public');
 const isDevelopment = process.env.NODE_ENV === 'development';
@@ -12,6 +13,7 @@ export const server = express();
 server.use(express.json({ limit: '5mb' })); // support json encoded bodies
 server.use(compression());
 server.use('/api', api);
+server.use('/api/plugins', pluginsApi);
 server.use(helmet.frameguard({ action: 'sameorigin' }));
 server.use(
   express.static(publicPath, {
