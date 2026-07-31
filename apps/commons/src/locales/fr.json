@@ -424,6 +424,8 @@
         "app_update_downloading": "Une nouvelle version ({{version}}) a été trouvée et est en cours de téléchargement. Elle s'installera à la prochaine fermeture de l'application.",
         "app_update_check_failed_title": "Échec de la vérification des mises à jour",
         "app_update_check_failed": "Impossible de vérifier les mises à jour de l'application : {{error}}",
+        "plugin_updates_available": "{{count}} mise(s) à jour de plugin disponible(s).",
+        "open_plugins_button": "Ouvrir les plugins",
         "no_file_open": "Ouvrez un fichier pour commencer l'édition. Vous pouvez aussi créer un nouveau fichier avec {{shortcut}} ou importer vos fichiers depuis le menu système.",
         "settings": "Projet settings",
         "schema_setup": "Projet schema setup",

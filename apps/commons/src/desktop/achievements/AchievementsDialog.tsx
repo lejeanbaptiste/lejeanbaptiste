@@ -259,7 +259,15 @@ export const AchievementsDialog = ({ onClose, open }: AchievementsDialogProps) =
         .catch(() => setEncoderName(''));
       return;
     }
-    if (!open) refreshPortrait();
+    // Wait out the dialog's own close transition (keepMounted means the DOM
+    // - and this effect - fire the instant `open` flips false, mid-fade)
+    // before re-rolling the portrait; otherwise the player sees the next
+    // pose/backdrop/weapon build itself layer by layer while the dialog is
+    // still visibly closing.
+    if (!open) {
+      const timer = setTimeout(refreshPortrait, 1000);
+      return () => clearTimeout(timer);
+    }
   }, [open]);
 
   useEffect(() => {

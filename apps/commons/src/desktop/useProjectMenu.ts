@@ -11,8 +11,9 @@ import { checkSchemaUpdateManually } from '@src/desktop/schemaUpdateCheck';
 import { leafwriterAtom } from '@src/jotai';
 import { useActions, useAppState } from '@src/overmind';
 import { isDesktop } from '@src/types/desktop';
+import Button from '@mui/material/Button';
 import { useAtom } from 'jotai';
-import { useCallback, useEffect, useState } from 'react';
+import { createElement, useCallback, useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { mergeEditorBodyWithStoredHeader, stripTeiHeaderForVisualEditor } from './teiHeaderXml';
 
@@ -332,6 +333,43 @@ export const useProjectMenu = () => {
                 buttons: [t('LWC.desktop.project.dialogs.ok_button')],
                 defaultId: 0,
               });
+            }
+          }
+
+          if (window.electronAPI?.pluginsGetSnapshot && window.electronAPI?.pluginsGetRemoteIndex) {
+            try {
+              const [installed, remote] = await Promise.all([
+                window.electronAPI.pluginsGetSnapshot(),
+                window.electronAPI.pluginsGetRemoteIndex(),
+              ]);
+              const installedVersionById = new Map(
+                installed.plugins.map((plugin) => [plugin.id, plugin.version]),
+              );
+              const availableCount = remote.plugins.filter((entry) => {
+                const installedVersion = installedVersionById.get(entry.id);
+                return installedVersion === undefined || installedVersion !== entry.version;
+              }).length;
+              if (availableCount > 0) {
+                notifyViaSnackbar({
+                  message: t('LWC.desktop.project.plugin_updates_available', {
+                    count: availableCount,
+                  }),
+                  options: {
+                    action: () =>
+                      createElement(
+                        Button,
+                        {
+                          color: 'inherit',
+                          size: 'small',
+                          onClick: () => openPluginsDialog(),
+                        },
+                        t('LWC.desktop.project.open_plugins_button'),
+                      ),
+                  },
+                });
+              }
+            } catch {
+              // Plugin index check is best-effort — the app-update check above already ran.
             }
           }
 

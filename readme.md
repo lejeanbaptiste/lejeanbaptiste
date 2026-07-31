@@ -159,6 +159,7 @@ See [apps/desktop/README.md](apps/desktop/README.md) for the compilation and pac
 - [ ] Auto parse and organise noble titles
 - [ ] Word plugin to handle names and dates correctly while centralising data.
 - [ ] Noble title and person wrapper tagging (testing).
+- [ ] Redo lookup window
 
 ## Future goals
 
@@ -167,7 +168,6 @@ See [apps/desktop/README.md](apps/desktop/README.md) for the compilation and pac
 - [ ] Regional PMTiles download/cache flow for maps (see map-tiles-planning.md)
 - [ ] Redo icons : highlight
 - [ ] Stats window (unsure)
-- [ ] Redo lookup window
 - [ ] Option to track annotator on the tag level for collaborations.
 - [ ] Copy-and-paste export of paragraphs with translation for word processors
 - [ ] LaTeX export
