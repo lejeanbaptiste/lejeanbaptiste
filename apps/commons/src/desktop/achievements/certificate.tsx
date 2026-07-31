@@ -414,11 +414,26 @@ export const buildCertificateSvg = (options: CertificateAssembleOptions): string
  * that size - then handing the browser an equally large `data:` URI to
  * parse - is both slow and the kind of thing that can silently fail beyond
  * some size the data: scheme was never really meant for. Blob/
- * createObjectURL has no such encoding step and no practical size limit. */
+ * createObjectURL has no such encoding step and no practical size limit.
+ *
+ * `oversample` (default 1) draws into an oversample-times-larger canvas than
+ * `width`/`height` before encoding - a plain <img>/canvas draw of an SVG
+ * only rasterizes at the destination pixel size given to drawImage, so a 1x
+ * draw leaves every diagonal/curved edge in the body art visibly staircased
+ * (the same problem stampSvgPixelSize/SVG_PIXEL_OVERSAMPLE in
+ * UniformAvatar.tsx exists to avoid for the live portrait). The source is a
+ * vector SVG, so oversampling is genuinely denser rasterization, not a
+ * blurry upscale - pass a higher value for anything meant to be printed or
+ * saved at full size (see the certificate call site); leave it at 1 for
+ * anything with an upload size budget to respect (see the leaderboard-avatar
+ * call site). */
+const PNG_OVERSAMPLE_DEFAULT = 1;
+
 export const svgToPngBytes = (
   svgMarkup: string,
   width: number,
   height: number,
+  oversample: number = PNG_OVERSAMPLE_DEFAULT,
 ): Promise<Uint8Array> =>
   new Promise((resolve, reject) => {
     const blobUrl = URL.createObjectURL(
@@ -429,15 +444,15 @@ export const svgToPngBytes = (
     img.onload = () => {
       try {
         const canvas = document.createElement('canvas');
-        canvas.width = width;
-        canvas.height = height;
+        canvas.width = width * oversample;
+        canvas.height = height * oversample;
         const ctx = canvas.getContext('2d');
         if (!ctx) {
           revoke();
           reject(new Error('2d canvas context unavailable'));
           return;
         }
-        ctx.drawImage(img, 0, 0, width, height);
+        ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
         revoke();
         canvas.toBlob((blob) => {
           if (!blob) {

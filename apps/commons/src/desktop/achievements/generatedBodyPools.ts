@@ -21,9 +21,19 @@
 // nothing without the encrypted artwork itself.
 //
 // BODY_COLOR_STATS: one precomputed lightness/saturation stat per
-// "<poseIndex>:<bodyType>" key, sampled from a representative rank-1, no-
-// weapon render - see colorMatch.ts/getHeadColorStats for the equivalent
-// head-side table this mirrors. Includes pose 0 (civilian).
+// "<poseIndex>:<bodyType>" key, sampled from a representative render at the
+// pose's own lowest available rank (usually rank 1; see
+// POSE_ASSET_MIN_RANK_INDEX below for poses where that isn't 1), no weapon -
+// see colorMatch.ts/getHeadColorStats for the equivalent head-side table
+// this mirrors. Includes pose 0 (civilian).
+//
+// POSE_ASSET_MIN_RANK_INDEX: 0-based rank index below which a pose has no
+// art at all (e.g. body9.svg only has rank2..7 groups, so its entry here is
+// 1) - sparse, only poses that don't start at rank 1. This is a hard floor
+// from what the SVG actually contains; UniformAvatar.tsx's own
+// POSE_MIN_RANK_INDEX layers additional *design* gating on top (a pose that
+// has full art from rank 1 but is deliberately held back for pacing
+// reasons) - the two are independent and combined at call sites.
 
 import type { ColorStats } from './colorMatch';
 
@@ -33,7 +43,12 @@ export interface WeaponRankPool {
   readonly m?: Readonly<Record<string, readonly string[]>>;
 }
 
-export const POSE_INDICES: readonly number[] = [1,2,3,4,5,6,7,8];
+export const POSE_INDICES: readonly number[] = [1,2,3,4,5,6,7,8,9];
+
+export const POSE_ASSET_MIN_RANK_INDEX: Readonly<Record<number, number>> =
+  {
+  "9": 1
+};
 
 export const WEAPON_POOLS: Readonly<Record<number, ReadonlyArray<Record<number, WeaponRankPool>>>> =
   {
@@ -134,6 +149,7 @@ export const WEAPON_POOLS: Readonly<Record<number, ReadonlyArray<Record<number, 
         "f": {
           "a": [
             "image391",
+            "image16",
             "image392"
           ],
           "b": [
@@ -143,7 +159,8 @@ export const WEAPON_POOLS: Readonly<Record<number, ReadonlyArray<Record<number, 
         "m": {
           "a": [
             "image11",
-            "image12"
+            "image12",
+            "image43"
           ],
           "b": [
             "image415"
@@ -369,7 +386,8 @@ export const WEAPON_POOLS: Readonly<Record<number, ReadonlyArray<Record<number, 
         }
       }
     }
-  ]
+  ],
+  "9": []
 };
 
 export const BODY_COLOR_STATS: Readonly<Record<string, ColorStats>> = {
@@ -390,12 +408,12 @@ export const BODY_COLOR_STATS: Readonly<Record<string, ColorStats>> = {
     "saturation": 0.71501128502576
   },
   "2:m": {
-    "lightness": 0.3462723927919635,
-    "saturation": 0.7467161106363289
+    "lightness": 0.3335627464944711,
+    "saturation": 0.6959022119843489
   },
   "2:f": {
-    "lightness": 0.32935814610414493,
-    "saturation": 0.6711772346884606
+    "lightness": 0.3422078934404294,
+    "saturation": 0.7272106428790185
   },
   "3:m": {
     "lightness": 0.3284507615123122,
@@ -444,5 +462,13 @@ export const BODY_COLOR_STATS: Readonly<Record<string, ColorStats>> = {
   "8:f": {
     "lightness": 0.3772693581700683,
     "saturation": 0.6595831214251591
+  },
+  "9:m": {
+    "lightness": 0.3964620149426836,
+    "saturation": 0.2721175655601418
+  },
+  "9:f": {
+    "lightness": 0.3960751005106694,
+    "saturation": 0.2702974267836754
   }
 };

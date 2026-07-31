@@ -102,7 +102,12 @@ export const buildProjectMetadataDialogState = async (
       value: row.value,
     })),
     translation,
-    syncToCentral: bundle.config.syncToCentral === true,
+    // New projects default to syncing; existing projects keep whatever they
+    // were explicitly set to (or false, if never touched).
+    syncToCentral:
+      mode === 'firstSetup'
+        ? bundle.config.syncToCentral !== false
+        : bundle.config.syncToCentral === true,
   };
 };
 

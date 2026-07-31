@@ -350,7 +350,7 @@ export const ProjectEditor = () => {
             >
               {hasProject && (
                 <Typography color="text.secondary" variant="body1">
-                  Open a folder and select an XML file to begin editing.
+                  {t('LWC.desktop.project.no_file_open', { shortcut: modShortcut('N') })}
                 </Typography>
               )}
             </Box>

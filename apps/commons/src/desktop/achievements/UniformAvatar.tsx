@@ -1,7 +1,12 @@
 import { useEffect, useMemo, useRef, useState, type CSSProperties } from 'react';
 import { colorMatchFilter, type ColorStats } from './colorMatch';
 import { BG_POOL_BY_RANK } from './generatedBackgroundPools';
-import { BODY_COLOR_STATS, POSE_INDICES, WEAPON_POOLS } from './generatedBodyPools';
+import {
+  BODY_COLOR_STATS,
+  POSE_ASSET_MIN_RANK_INDEX,
+  POSE_INDICES,
+  WEAPON_POOLS,
+} from './generatedBodyPools';
 import { getHeadColorStats } from './headColorStats';
 import { MedalIcon, type MedalMetric, type MedalTier } from './MedalIcon';
 
@@ -48,15 +53,23 @@ interface UniformAvatarProps {
 }
 
 /** Minimum player rank index (0-based into RANK_NAMES) before a pose may
- * enter the random rotation. Poses not listed here are available from
- * unranked upward. */
+ * enter the random rotation, for *design* reasons - the art itself is
+ * complete from rank 1, it's just held back for pacing. Poses not listed
+ * here have no design-driven floor. Combined with POSE_ASSET_MIN_RANK_INDEX
+ * (generatedBodyPools.ts - a *hard* floor for poses whose art genuinely
+ * doesn't exist below some rank, e.g. body9.svg) by effectivePoseMinRankIndex
+ * below; the two are independent and this one alone is never sufficient to
+ * know when a pose can first appear. */
 const POSE_MIN_RANK_INDEX: Partial<Record<number, number>> = {
   3: 2, // body3.svg — rank 3 (Caporal) and above
   4: 2, // body4.svg — rank 3 (Caporal) and above
 };
 
+const effectivePoseMinRankIndex = (poseIndex: number): number =>
+  Math.max(POSE_ASSET_MIN_RANK_INDEX[poseIndex] ?? -1, POSE_MIN_RANK_INDEX[poseIndex] ?? -1);
+
 /** True when this pose may appear in the random rotation at `rankIndex`.
- * Some poses have a minimum rank (see POSE_MIN_RANK_INDEX). Poses with
+ * Some poses have a minimum rank (see effectivePoseMinRankIndex). Poses with
  * weapon art also require at least one weapon tier unlocked at the player's
  * rank - the same cumulative rule as pickWeapon below (e.g. body7.svg only
  * has weapons from rank 2 up, so it stays out of rotation for rank 1 and
@@ -66,7 +79,7 @@ export const poseEligibleForRank = (
   bodyType: 'm' | 'f',
   rankIndex: number,
 ): boolean => {
-  const minRankIndex = POSE_MIN_RANK_INDEX[poseIndex] ?? -1;
+  const minRankIndex = effectivePoseMinRankIndex(poseIndex);
   if (rankIndex < minRankIndex) return false;
 
   const channels = WEAPON_POOLS[poseIndex] ?? [];
@@ -162,13 +175,15 @@ export const pickWeapon = (
   const unlockedRanks = new Set<number>();
   for (const channel of channels) {
     for (const rank of Object.keys(channel).map(Number)) {
-      if (rank <= rankIndex + 1 && channelHasRankFor(channel, rank, bodyType)) unlockedRanks.add(rank);
+      if (rank <= rankIndex + 1 && channelHasRankFor(channel, rank, bodyType))
+        unlockedRanks.add(rank);
     }
   }
   if (unlockedRanks.size === 0) return null;
 
   const pool = Array.from(unlockedRanks);
-  const choices = previousRank !== null && pool.length > 1 ? pool.filter((rank) => rank !== previousRank) : pool;
+  const choices =
+    previousRank !== null && pool.length > 1 ? pool.filter((rank) => rank !== previousRank) : pool;
   const rank = choices[Math.floor(Math.random() * choices.length)]!;
 
   // Variant keys the bodyType has at this rank, per channel (only channels
@@ -180,8 +195,8 @@ export const pickWeapon = (
 
   let variant: string | null = null;
   if (variantKeySetsPerChannel.length > 0) {
-    const intersection = variantKeySetsPerChannel.reduce((acc, keys) =>
-      new Set(Array.from(acc).filter((key) => keys.has(key))),
+    const intersection = variantKeySetsPerChannel.reduce(
+      (acc, keys) => new Set(Array.from(acc).filter((key) => keys.has(key))),
     );
     const union = new Set(variantKeySetsPerChannel.flatMap((keys) => Array.from(keys)));
     const candidates = Array.from(intersection.size > 0 ? intersection : union);
@@ -239,16 +254,34 @@ export const buildBodyUrl = (
 // at pack time - see visual_design/scripts/pack-assets.mjs), not hand-listed
 // here, so a new backdrop file doesn't need a code change to show up.
 
+// Some poses pair with only a specific subset of backdrops rather than the
+// full rank-cumulative pool - e.g. body9.svg (a WWI-photo-styled pose, see
+// its filter treatment in UniformAvatar below) only ever shows against
+// bg_2f/bg_3f/bg_4e/bg_4f, still gated by rank the same as everything else
+// (a rank-2 player who rolls body9 only has bg_2f available; bg_3f/4e/4f
+// join as they rank up to 3 and 4).
+const POSE_BACKGROUND_OVERRIDE: Partial<Record<number, readonly string[]>> = {
+  9: ['bg/2f', 'bg/3f', 'bg/4e', 'bg/4f'],
+};
+
 /** Every backdrop unlocked at or below `rankIndex` (-1/unranked still gets
- * the rank-1 pool, so there's always something to show). */
-export const backgroundPoolForRank = (rankIndex: number): string[] =>
-  BG_POOL_BY_RANK.slice(0, Math.max(0, rankIndex) + 1).flat();
+ * the rank-1 pool, so there's always something to show), narrowed to
+ * `poseIndex`'s own pool when it has one (see POSE_BACKGROUND_OVERRIDE). */
+export const backgroundPoolForRank = (rankIndex: number, poseIndex?: number): string[] => {
+  const cumulative = BG_POOL_BY_RANK.slice(0, Math.max(0, rankIndex) + 1).flat();
+  const override = poseIndex !== undefined ? POSE_BACKGROUND_OVERRIDE[poseIndex] : undefined;
+  return override ? cumulative.filter((key) => override.includes(key)) : cumulative;
+};
 
 /** Picks a random backdrop from the unlocked pool, excluding whichever key
  * was shown last (when the pool has more than one option) so the same
  * image never appears twice in a row. */
-export const pickBackgroundKey = (rankIndex: number, previousKey: string | null): string => {
-  const pool = backgroundPoolForRank(rankIndex);
+export const pickBackgroundKey = (
+  rankIndex: number,
+  previousKey: string | null,
+  poseIndex?: number,
+): string => {
+  const pool = backgroundPoolForRank(rankIndex, poseIndex);
   const choices = previousKey && pool.length > 1 ? pool.filter((key) => key !== previousKey) : pool;
   return choices[Math.floor(Math.random() * choices.length)]!;
 };
@@ -333,8 +366,10 @@ const HEAD_CONTENT_FRACTION_OF_SQUARE = {
   top: (138.1 + SVG_PAD) / PADDED_VIEWBOX_SIZE,
   width: 502.5 / PADDED_VIEWBOX_SIZE,
 };
-export const HEAD_FALLBACK_LEFT_FRAC = HEAD_LEFT_FRAC + HEAD_CONTENT_FRACTION_OF_SQUARE.left * HEAD_WIDTH_FRAC;
-export const HEAD_FALLBACK_TOP_FRAC = HEAD_TOP_FRAC + HEAD_CONTENT_FRACTION_OF_SQUARE.top * HEAD_HEIGHT_FRAC;
+export const HEAD_FALLBACK_LEFT_FRAC =
+  HEAD_LEFT_FRAC + HEAD_CONTENT_FRACTION_OF_SQUARE.left * HEAD_WIDTH_FRAC;
+export const HEAD_FALLBACK_TOP_FRAC =
+  HEAD_TOP_FRAC + HEAD_CONTENT_FRACTION_OF_SQUARE.top * HEAD_HEIGHT_FRAC;
 export const HEAD_FALLBACK_WIDTH_FRAC = HEAD_CONTENT_FRACTION_OF_SQUARE.width * HEAD_WIDTH_FRAC;
 export const HEAD_FALLBACK_HEIGHT_FRAC = HEAD_CONTENT_FRACTION_OF_SQUARE.height * HEAD_HEIGHT_FRAC;
 
@@ -670,6 +705,27 @@ export const UniformAvatar = ({
       return NEUTRAL_STATS;
     }
   }, [bodyFrontImageUrl]);
+  // body9.svg is deliberately styled as an old WWI-era photograph rather
+  // than a normal color uniform render - applied once, on the outer scene
+  // container, so backdrop/head/body all end up looking like one coherent
+  // antique photo rather than a desaturated figure standing in front of a
+  // full-color backdrop. Layered on top of (not instead of) the per-layer
+  // colorMatchFilter values above - a CSS filter on a parent applies to its
+  // already-filtered children as a whole, which is exactly what's wanted
+  // here. A grittier film-grain/washed-blacks version (a real SVG filter -
+  // feTurbulence/feComponentTransfer, since plain CSS filter functions can't
+  // add noise or lift blacks asymmetrically) was tried and shelved for now;
+  // revisit before relying on this being the final look.
+  const isWwiPhotoPose = useMemo(() => {
+    try {
+      return new URL(bodyFrontImageUrl).searchParams.get('pose') === '9';
+    } catch {
+      return false;
+    }
+  }, [bodyFrontImageUrl]);
+  const scenePhotoFilter = isWwiPhotoPose
+    ? 'grayscale(0.95) contrast(1.2) brightness(0.92)'
+    : undefined;
   useEffect(() => {
     let cancelled = false;
     void getCachedColorStats(backgroundImageKey).then((backgroundStats) => {
@@ -732,6 +788,7 @@ export const UniformAvatar = ({
         backgroundPosition: 'center',
         backgroundRepeat: 'no-repeat',
         backgroundSize: 'cover',
+        filter: scenePhotoFilter,
         height: size,
         overflow: 'hidden',
         position: 'relative',

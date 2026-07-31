@@ -37,7 +37,6 @@ import {
   REGIMENTS,
   RIBBONS_PER_OVERALL_RANK,
   SPECIAL_ACHIEVEMENTS,
-  STARTER_RANK_NAME,
   TOTAL_ACHIEVEMENTS,
 } from './definitions';
 import {
@@ -48,12 +47,7 @@ import {
   topRankedMetrics,
 } from './evaluate';
 import { recordLeaderboardPublication, refreshGithubContributions } from './engine';
-import {
-  MedalIcon,
-  METRIC_RIBBONS,
-  SPECIAL_RIBBON,
-  type MedalMetric,
-} from './MedalIcon';
+import { MedalIcon, METRIC_RIBBONS, SPECIAL_RIBBON, type MedalMetric } from './MedalIcon';
 import {
   BODY_TYPES,
   createDefaultDiceBearAvatar,
@@ -95,12 +89,6 @@ const LEADERBOARD_WORKER_URL = 'https://ljb-leaderboard.lejeanbaptiste.workers.d
 // full size - keeps the upload quick and comfortably under the Worker's
 // avatar size cap.
 const LEADERBOARD_AVATAR_SIZE = 140;
-
-// bodies/body0.svg - the plain civilian body, deliberately excluded from
-// POSE_INDICES/the random pose pool (see generatedBodyPools.ts) since it has
-// no per-rank uniform kit. Shown fixed, never randomized, for unranked
-// ("Civil") players in place of a picked pose.
-const CIVILIAN_POSE_INDEX = 0;
 
 const METRIC_LABELS: Record<string, string> = {
   texts: 'Documents saved',
@@ -149,11 +137,6 @@ const collectDecorations = (state: AchievementsState): UnlockedAchievement[] => 
   return decorations.sort((a, b) => b.at.localeCompare(a.at));
 };
 
-/** Highest rank index (0-based into RANK_NAMES) held across all metrics,
- * -1 when unranked. Drives which portrait backdrops are unlocked. */
-const highestRankIndexOf = (state: AchievementsState): number =>
-  Math.max(-1, ...RANK_MEDALS.map((medal) => currentRankIndex(state, medal.metric)));
-
 /** Total ribbons (classes) earned across every metric ladder. */
 const totalRibbonsEarned = (state: AchievementsState): number =>
   RANK_MEDALS.reduce(
@@ -161,36 +144,23 @@ const totalRibbonsEarned = (state: AchievementsState): number =>
     0,
   );
 
-/** Composite rank index (0-based into RANK_NAMES), or -1 when unranked -
- * climbs one step per RIBBONS_PER_OVERALL_RANK ribbons earned in any
- * combination across the 8 metrics, independent of the per-metric classes
- * shown in the grid below. This is also what drives which visual assets
- * (m-rank/f-rank body art, backdrops, poses, weapons) are shown, so the
- * portrait always matches the "Sergent"-style label below it - it must NOT
- * be computed from highestRankIndexOf (the single best-performing metric
- * ladder), which can run well ahead of the composite rank and used to make
- * the portrait look several grades more senior than the player's actual
- * commission. */
-const calculatedRankIndex = (state: AchievementsState): number => {
-  if (highestRankIndexOf(state) === -1) return -1;
-  return Math.min(
-    RANK_NAMES.length - 1,
-    Math.floor(totalRibbonsEarned(state) / RIBBONS_PER_OVERALL_RANK),
-  );
-};
+/** Composite rank index (0-based into RANK_NAMES) - every player starts at
+ * index 0 (Fusilier) with zero ribbons; there is no separate Civil/rank-0
+ * state and no opening-scene gate to cross first. Climbs one step per
+ * RIBBONS_PER_OVERALL_RANK ribbons earned in any combination across the 8
+ * metrics, independent of the per-metric classes shown in the grid below.
+ * This is also what drives which visual assets (m-rank/f-rank body art,
+ * backdrops, poses, weapons) are shown, so the portrait always matches the
+ * "Sergent"-style label below it - it must NOT be computed from the single
+ * best-performing metric ladder, which can run well ahead of the composite
+ * rank and used to make the portrait look several grades more senior than
+ * the player's actual commission. */
+const calculatedRankIndex = (state: AchievementsState): number =>
+  Math.min(RANK_NAMES.length - 1, Math.floor(totalRibbonsEarned(state) / RIBBONS_PER_OVERALL_RANK));
 
-/** Composite rank shown after the player's name - see calculatedRankIndex.
- * Civil is only the one-time pre-opening-scene state (no ribbon earned
- * anywhere yet) - the very first ribbon already makes the player Fusilier,
- * per the reference doc's "after the opening scene, the user starts as
- * rank 1 fusilier". It must NOT be folded into the same 6-ribbons-per-step
- * division as the 7 real ranks, or every step (Fusilier..Général de
- * brigade) shifts one 6-ribbon bucket late and the top rank needs 42
- * ribbons instead of the intended 36 (6 steps x 6 ribbons). */
-const calculatedRank = (state: AchievementsState): string => {
-  const rankIndex = calculatedRankIndex(state);
-  return rankIndex === -1 ? STARTER_RANK_NAME : RANK_NAMES[rankIndex]!;
-};
+/** Composite rank shown after the player's name - see calculatedRankIndex. */
+const calculatedRank = (state: AchievementsState): string =>
+  RANK_NAMES[calculatedRankIndex(state)]!;
 
 export const AchievementsDialog = ({ onClose, open }: AchievementsDialogProps) => {
   const { notifyViaSnackbar } = useActions().ui;
@@ -242,31 +212,23 @@ export const AchievementsDialog = ({ onClose, open }: AchievementsDialogProps) =
         autoOpenCheckedRef.current = true;
         if (loaded.avatar === null) setPortraitEditorOpen(true);
       }
-      // Picked together with `state` (React batches this) so the backdrop
-      // is already resolved by the time the render below needs it.
-      setBackgroundKey((previous) => pickBackgroundKey(calculatedRankIndex(loaded), previous));
-      // Pose and weapon are randomized the same way as the backdrop above
-      // (Daniel: "pose and weapons will be random"). Weapon depends on
-      // which pose just got picked and the player's current rank, so it's
-      // resolved from the new pose, not the stale one still in state.
+      // Pose, backdrop, and weapon are all randomized together (Daniel:
+      // "pose and weapons will be random"), picked together with `state`
+      // (React batches this) so everything's already resolved by the time
+      // the render below needs it. Pose is picked first: the backdrop and
+      // weapon both depend on which pose just got rolled (some poses pair
+      // with only a specific backdrop subset - see POSE_BACKGROUND_OVERRIDE
+      // in UniformAvatar.tsx - and weapon art is pose-specific), not the
+      // stale pose still in state.
       const loadedBodyType =
         loaded.avatar?.kind === 'dicebear'
           ? loaded.avatar.options.bodyType
           : createDefaultDiceBearAvatar(encoderName).bodyType;
       setPoseIndex((previousPose) => {
-        // Unranked players ("Civil") show the fixed civilian body (pose 0,
-        // no rank kit/weapon) rather than a random ranked pose - pose 0 has
-        // no f-rank/m-rank decoration to speak of, and is intentionally
-        // excluded from POSE_INDICES for exactly that reason (see
-        // generatedBodyPools.ts). Falling through to pickPose/pickWeapon
-        // here for rankIndex -1 used to render a random Fusilier (rank 1)
-        // uniform instead of the civilian portrait.
-        if (calculatedRankIndex(loaded) === -1) {
-          setWeaponRank(null);
-          setWeaponImageIds([]);
-          return CIVILIAN_POSE_INDEX;
-        }
         const newPose = pickPose(previousPose, loadedBodyType, calculatedRankIndex(loaded));
+        setBackgroundKey((previousBackground) =>
+          pickBackgroundKey(calculatedRankIndex(loaded), previousBackground, newPose),
+        );
         setWeaponRank((previousWeaponRank) => {
           const weapon = pickWeapon(
             newPose,
@@ -303,7 +265,9 @@ export const AchievementsDialog = ({ onClose, open }: AchievementsDialogProps) =
   useEffect(() => {
     if (!state || codeFocused) return;
     const options =
-      state.avatar?.kind === 'dicebear' ? state.avatar.options : createDefaultDiceBearAvatar(encoderName);
+      state.avatar?.kind === 'dicebear'
+        ? state.avatar.options
+        : createDefaultDiceBearAvatar(encoderName);
     setCodeDraft(encodeAvatarCode(options));
   }, [codeFocused, encoderName, state]);
 
@@ -413,7 +377,11 @@ export const AchievementsDialog = ({ onClose, open }: AchievementsDialogProps) =
         totalAchievements: TOTAL_ACHIEVEMENTS,
         unlockedCount,
       });
-      const bytes = await svgToPngBytes(svg, CERTIFICATE_WIDTH, CERTIFICATE_HEIGHT);
+      // Oversampled (see svgToPngBytes's doc comment) - this PNG is meant to
+      // be printed or shared at full size, so denser rasterization avoids
+      // the staircased edges a plain 1x canvas draw leaves on diagonal/
+      // curved body art.
+      const bytes = await svgToPngBytes(svg, CERTIFICATE_WIDTH, CERTIFICATE_HEIGHT, 3);
       const now = new Date();
       const pad = (value: number) => String(value).padStart(2, '0');
       const dateTimeSuffix = `${now.getFullYear()}-${pad(now.getMonth() + 1)}-${pad(now.getDate())} ${pad(now.getHours())}h${pad(now.getMinutes())}`;
