@@ -31,6 +31,20 @@ describe('planReconcile', () => {
     expect(plan.conflicts).toHaveLength(0);
   });
 
+  it("does not mistake a person's place of origin for a name", () => {
+    const { pedbDoc, cedbDoc } = setup();
+    const p = addEntity(pedbDoc, 'person', { name: '張衡' }).element;
+    const c = addEntity(cedbDoc, 'person', { name: '張衡' }).element;
+    const origin = pedbDoc.createElementNS('http://www.tei-c.org/ns/1.0', 'placeName');
+    origin.setAttribute('type', 'jiguan');
+    origin.textContent = '蓨縣';
+    p.appendChild(origin);
+
+    const plan = planReconcile(p, c);
+    expect(plan.addNamesToCedb).toEqual([]);
+    expect(readFields(p).names.map((name) => name.text)).toEqual(['張衡']);
+  });
+
   it('fills an empty scalar from the other side', () => {
     const { pedbDoc, cedbDoc } = setup();
     const p = addEntity(pedbDoc, 'person', { name: '張衡', description: 'Han polymath' }).element;

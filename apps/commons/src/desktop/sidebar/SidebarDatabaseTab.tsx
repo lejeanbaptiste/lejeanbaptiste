@@ -745,6 +745,7 @@ export const SidebarDatabaseTab = ({ active = false }: SidebarDatabaseTabProps) 
     if (syncToCentral && !resolvedCentralStore) {
       setLoadError('Central database is not configured; synchronisation did not start.');
     }
+    const rendererEntityLimit = 8 * 1024 * 1024;
     if (syncToCentral && resolvedCentralStore && !bulkSyncInFlightRef.current) {
       bulkSyncInFlightRef.current = true;
       void (async () => {
@@ -757,7 +758,25 @@ export const SidebarDatabaseTab = ({ active = false }: SidebarDatabaseTabProps) 
             centralStore: resolvedCentralStore,
             userStableId,
           };
-          await applyPendingCentralOrders(bridgeCtx);
+          // applyPendingCentralOrders parses both entity databases in the
+          // renderer. That is fine for ordinary projects, but it freezes
+          // Chromium for large databases before the background bridge worker
+          // even starts. Large files are handled by the worker path below.
+          const statFile = window.electronAPI?.statFile;
+          const [projectStat, centralStat] = await Promise.all([
+            statFile ? statFile(currentStore.entitiesPath).catch(() => null) : Promise.resolve(null),
+            statFile
+              ? statFile(resolvedCentralStore.entitiesPath).catch(() => null)
+              : Promise.resolve(null),
+          ]);
+          if (
+            projectStat &&
+            centralStat &&
+            projectStat.size <= rendererEntityLimit &&
+            centralStat.size <= rendererEntityLimit
+          ) {
+            await applyPendingCentralOrders(bridgeCtx);
+          }
           const label = 'Synchronising with central database';
           setBulkSyncProgress({ active: true, label, done: 0, total: 0 });
           const start = window.electronAPI?.bulkBridgeStart;
@@ -825,7 +844,6 @@ export const SidebarDatabaseTab = ({ active = false }: SidebarDatabaseTabProps) 
     // entity files. Keep the full-document parse out of the renderer; the
     // background bridge worker can still process these files safely.
     const activeStat = await window.electronAPI?.statFile?.(activeStore.entitiesPath).catch(() => null);
-    const rendererEntityLimit = 8 * 1024 * 1024;
     if (activeStat && activeStat.size > rendererEntityLimit) {
       setEntities([]);
       setDuplicates([]);

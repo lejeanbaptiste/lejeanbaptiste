@@ -255,7 +255,7 @@ const ensureHighlightStyles = () => {
       border-radius: 1px;
     }
   `;
-  document.head.appendChild(style);
+  document.head?.appendChild(style);
 };
 
 export const replaceRangeInSourceEditor = ({

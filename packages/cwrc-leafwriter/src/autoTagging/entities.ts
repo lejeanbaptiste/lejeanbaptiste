@@ -900,7 +900,7 @@ export function appendAuthoritySourcedValues(
   doc: Document,
   element: Element,
   tag: 'nationality' | 'placeName' | 'note' | 'affiliation',
-  values: { text: string; ref?: string; source: string; noteType?: string }[],
+  values: { text: string; ref?: string; source: string; noteType?: string; type?: string }[],
 ): boolean {
   let changed = false;
   const keyOf = (child: Element) => {
@@ -925,6 +925,7 @@ export function appendAuthoritySourcedValues(
     const el = doc.createElementNS(TEI_NS, tag);
     el.textContent = text;
     if (value.ref) el.setAttribute('ref', value.ref);
+    if (tag === 'placeName' && value.type) el.setAttribute('type', value.type);
     if (tag === 'note' && value.noteType) el.setAttribute('type', value.noteType);
     writeEntityValueProvenance(el, { origin: 'authority', source: normalizedSource });
     element.appendChild(el);

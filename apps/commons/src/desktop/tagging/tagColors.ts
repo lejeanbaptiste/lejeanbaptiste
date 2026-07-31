@@ -219,7 +219,7 @@ export const injectTagColorsCss = (css: string): boolean => {
     style = doc.createElement('style');
     style.id = 'tagColors';
     style.type = 'text/css';
-    doc.head.appendChild(style);
+  doc.head?.appendChild(style);
   }
   style.textContent = css;
   return true;

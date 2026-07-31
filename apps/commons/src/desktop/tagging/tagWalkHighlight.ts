@@ -29,7 +29,7 @@ const ensureHighlightStyles = (doc: Document) => {
       outline-offset: 2px;
     }
   `;
-  doc.head.appendChild(style);
+  doc.head?.appendChild(style);
 };
 
 export const clearTagWalkHighlight = () => {

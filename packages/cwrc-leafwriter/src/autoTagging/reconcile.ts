@@ -52,7 +52,27 @@ export interface EntityFields {
   changed: string | null;
 }
 
-const NAME_TAGS = new Set(['persName', 'placeName', 'orgName', 'title']);
+/**
+ * The entity database uses direct child name elements for both an entity's
+ * names and some other repeatable fields. In particular, a person's place of
+ * origin is a direct `<placeName>` child of `<person>`, but it is not a name.
+ * Keep the name field tied to the entity kind so reconciliation cannot turn
+ * an origin into a (usually untyped) alternative name.
+ */
+const nameTagForItem = (item: Element): string | null => {
+  switch (item.localName) {
+    case 'person':
+      return 'persName';
+    case 'place':
+      return 'placeName';
+    case 'org':
+      return 'orgName';
+    case 'bibl':
+      return 'title';
+    default:
+      return null;
+  }
+};
 
 const childText = (item: Element, predicate: (el: Element) => boolean): string | null => {
   const el = Array.from(item.children).find(predicate);
@@ -68,9 +88,10 @@ export function readFields(item: Element): EntityFields {
   const authorities: AuthorityId[] = [];
   let startYear: number | null = null;
   let endYear: number | null = null;
+  const nameTag = nameTagForItem(item);
 
   for (const child of Array.from(item.children)) {
-    if (NAME_TAGS.has(child.localName)) {
+    if (nameTag && child.localName === nameTag) {
       const text = child.textContent?.trim();
       if (text) {
         names.push({

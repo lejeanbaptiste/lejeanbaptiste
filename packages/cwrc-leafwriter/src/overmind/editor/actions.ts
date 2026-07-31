@@ -104,7 +104,7 @@ const applyFontFamiliesToEditor = (latinFont: string, asianFont: string) => {
   if (!style) {
     style = doc.createElement('style');
     style.id = FONT_FAMILY_STYLE_ID;
-    doc.head.appendChild(style);
+    doc.head?.appendChild(style);
   }
 
   style.textContent = `

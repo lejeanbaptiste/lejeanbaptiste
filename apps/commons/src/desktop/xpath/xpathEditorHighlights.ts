@@ -13,7 +13,7 @@ const ensureHighlightStyles = (doc: Document) => {
       background-color: rgba(66, 165, 245, 0.12);
     }
   `;
-  doc.head.appendChild(style);
+  doc.head?.appendChild(style);
 };
 
 export const clearXPathHighlights = () => {

@@ -82,7 +82,7 @@ describe('backfillEntityNames', () => {
     expect(entry.nameEntries.find((row) => row.text === '介甫')?.type).toBe('variant');
   });
 
-  it('backfills names, dates, and nationality from the Norbert persons pack (no origin — Norbert has none)', async () => {
+  it('backfills names, dates, nationality, and origin from the Norbert persons pack', async () => {
     const doc = makeDoc();
     const { id } = addEntity(doc, 'person', {
       name: '劉備',
@@ -109,6 +109,9 @@ describe('backfillEntityNames', () => {
             sourceIds: ['Norbert:dynasty:三國蜀'],
           },
         ],
+        origin: [
+          { source: 'Norbert', originType: 'jiguan', placeName: '涿郡' },
+        ],
         startYear: 221,
         endYear: 263,
       },
@@ -127,13 +130,15 @@ describe('backfillEntityNames', () => {
       expect.arrayContaining([{ text: '劉玄德', lang: null, type: 'courtesy' }]),
     );
     expect(entry.nationalities).toEqual(['三國蜀']);
-    expect(entry.placesOfOrigin).toEqual([]);
+    expect(entry.placesOfOrigin).toEqual(['涿郡']);
 
     const item = findEntity(doc, id)!;
     const birth = Array.from(item.children).find((child) => child.localName === 'birth');
     const death = Array.from(item.children).find((child) => child.localName === 'death');
     expect(birth?.getAttribute('when')).toBe('0221');
     expect(death?.getAttribute('when')).toBe('0263');
+    const origin = Array.from(item.children).find((child) => child.localName === 'placeName');
+    expect(origin?.getAttribute('type')).toBe('jiguan');
   });
 
   it('backfills a noble title from Norbert canonical person_nt data (no wiki match needed)', async () => {

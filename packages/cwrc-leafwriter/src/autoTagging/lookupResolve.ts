@@ -615,6 +615,7 @@ export async function applyLookupResolution(
                   text: value.placeName,
                   ref: value.placeAuthorityId,
                   source: value.source ?? assertion.source,
+                  type: value.originType,
                 })),
               );
             }

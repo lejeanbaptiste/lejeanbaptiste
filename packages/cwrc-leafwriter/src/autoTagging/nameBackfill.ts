@@ -154,9 +154,8 @@ async function buildPackNameIndex(
   const packs: { packId: AuthorityPackId; source: string }[] = [
     { packId: 'cbdb-persons', source: 'CBDB' },
     { packId: 'dila-persons', source: 'DILA' },
-    // Norbert has no place-of-origin data, but its persons pack carries
-    // names, dates, and nationality just like CBDB/DILA; metadata.origin is
-    // simply absent on its rows, so applyAuthorityMetadata is a no-op for it.
+    // Norbert's persons pack carries names, dates, nationality, and
+    // place-of-origin assertions alongside CBDB/DILA-style metadata.
     { packId: 'norbert-persons', source: 'NORBERT' },
   ];
   for (const { packId, source } of packs) {
@@ -294,6 +293,7 @@ function applyAuthorityMetadata(
           text: value.placeName,
           ref: value.placeAuthorityId,
           source: value.source ?? normalizedSource,
+          type: value.originType,
         })),
     );
     changed = changed || originChanged;

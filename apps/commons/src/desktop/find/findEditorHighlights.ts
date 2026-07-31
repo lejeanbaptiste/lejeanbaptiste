@@ -48,7 +48,7 @@ const ensureHighlightStyles = (doc: Document) => {
       border-radius: 1px;
     }
   `;
-  doc.head.appendChild(style);
+  doc.head?.appendChild(style);
 };
 
 const collectTextNodes = (root: Node): Text[] => {
