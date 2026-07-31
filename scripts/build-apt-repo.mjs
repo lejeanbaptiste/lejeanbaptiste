@@ -112,6 +112,7 @@ async function main() {
 
   const architectures = new Set();
   const packageNamesByArchitecture = new Map();
+  const debFilesByArchitecture = new Map();
   for (const debFile of debFiles) {
     const sourcePath = path.join(inputDir, debFile);
     const architecture = run('dpkg-deb', ['-f', sourcePath, 'Architecture']).trim();
@@ -121,20 +122,46 @@ async function main() {
       packageNamesByArchitecture.set(architecture, new Set());
     }
     packageNamesByArchitecture.get(architecture).add(packageName);
+    if (!debFilesByArchitecture.has(architecture)) {
+      debFilesByArchitecture.set(architecture, []);
+    }
+    debFilesByArchitecture.get(architecture).push(debFile);
     await fs.copyFile(sourcePath, path.join(poolDir, debFile));
   }
 
+  const scanRoot = path.join(repoDir, '.scan');
+  const poolPathRelative = path.relative(repoDir, poolDir);
   for (const architecture of architectures) {
     const architectureDir = path.join(releaseDir, `binary-${architecture}`);
     await fs.mkdir(architectureDir, { recursive: true });
     const packagesPath = path.join(architectureDir, 'Packages');
-    // dpkg-scanpackages scans the directory passed to it, but does not
-    // reliably recurse through the pool hierarchy. Point it at the package
-    // directory itself so the generated index cannot silently be empty.
-    const packagePool = path.relative(repoDir, poolDir);
-    const packages = run('dpkg-scanpackages', ['-a', architecture, packagePool, '/dev/null'], {
+    // Scan a directory containing ONLY this architecture's .deb files -
+    // never the shared multi-arch pool - even though the pool is where the
+    // files are actually published from (see the Filename rewrite below).
+    // Our amd64 and arm64 builds share the exact same Package name and
+    // Version (only Architecture differs), and dpkg-scanpackages' "two
+    // packages with the same name+version but no --multiversion" collision
+    // guard doesn't reliably key on architecture too - depending on the
+    // dpkg-scanpackages version on the runner, scanning the shared pool with
+    // `-a <arch>` silently produced an EMPTY Packages file for one or both
+    // architectures (confirmed live: the previously "successful" apt-repo
+    // publish deployed 0-byte Packages for amd64 and arm64 both, which is
+    // why `apt install` had nothing to find). Physically isolating each
+    // architecture's .deb(s) before scanning makes the collision structurally
+    // impossible, independent of dpkg-scanpackages' exact version behavior.
+    const scanDir = path.join(scanRoot, architecture);
+    await fs.mkdir(scanDir, { recursive: true });
+    for (const debFile of debFilesByArchitecture.get(architecture) ?? []) {
+      await fs.link(path.join(poolDir, debFile), path.join(scanDir, debFile));
+    }
+    const scanPathRelative = path.relative(repoDir, scanDir);
+    let packages = run('dpkg-scanpackages', [scanPathRelative, '/dev/null'], {
       cwd: repoDir,
     });
+    // dpkg-scanpackages records Filename as <path-we-gave-it>/<debFile>; point
+    // it back at the real published pool location, not the scratch scan dir
+    // (which gets deleted below, before this ever reaches GitHub Pages).
+    packages = packages.split(`Filename: ${scanPathRelative}/`).join(`Filename: ${poolPathRelative}/`);
     for (const packageName of packageNamesByArchitecture.get(architecture) ?? []) {
       if (!packages.split(/\r?\n/).includes(`Package: ${packageName}`)) {
         throw new Error(`APT index for ${architecture} is missing ${packageName}`);
@@ -146,6 +173,7 @@ async function main() {
       zlib.gzipSync(Buffer.from(packages), { mtime: 0 }),
     );
   }
+  await fs.rm(scanRoot, { recursive: true, force: true });
 
   const aptFtpArchiveConfig = path.join(repoDir, 'apt-ftparchive.conf');
   await fs.writeFile(
