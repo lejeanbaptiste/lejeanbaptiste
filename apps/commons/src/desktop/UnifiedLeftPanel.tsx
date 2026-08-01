@@ -85,6 +85,10 @@ export const UnifiedLeftPanel = () => {
     setCollapsed(false);
   }, []);
 
+  const collapse = useCallback(() => {
+    setCollapsed(true);
+  }, []);
+
   const handleWidthChange = useCallback(
     (nextWidth: number) => {
       const clamped = clampWidth(nextWidth, panelMinWidth);
@@ -99,7 +103,7 @@ export const UnifiedLeftPanel = () => {
   );
 
   useEffect(() => {
-    window.__desktopLeftPanel = { showTab, expand };
+    window.__desktopLeftPanel = { showTab, expand, collapse };
 
     const onShowEvent = (event: Event) => {
       const detail = (event as CustomEvent<DesktopLeftPanelShowDetail>).detail;
@@ -112,7 +116,7 @@ export const UnifiedLeftPanel = () => {
       delete window.__desktopLeftPanel;
       window.removeEventListener(DESKTOP_LEFT_PANEL_EVENT, onShowEvent);
     };
-  }, [expand, showTab]);
+  }, [collapse, expand, showTab]);
 
   // Hide the left panel while a docked review pane is open; restore if it was
   // expanded. Driven by the CustomEvent's `detail.active` (the authoritative

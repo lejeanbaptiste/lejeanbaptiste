@@ -489,6 +489,7 @@ declare global {
   interface Window {
     electronAPI?: ElectronAPI;
     __desktopRightPanel?: {
+      collapse: () => void;
       expand: () => void;
       showTab: (tab: DesktopRightPanelTab) => void;
       dismissTab: (tab: DesktopRightPanelTab) => void;

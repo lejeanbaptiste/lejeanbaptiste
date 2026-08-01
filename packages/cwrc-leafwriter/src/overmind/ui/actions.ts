@@ -329,6 +329,12 @@ export const setEditorViewMode = ({ state }: Context, mode: EditorViewMode) => {
   if (state.ui.editorViewMode === mode) return;
 
   state.ui.editorViewMode = mode;
+  if (mode === 'source') {
+    // Source mode is most useful as a focused, full-width editing surface.
+    // Keep the icon strips available so either panel can still be reopened.
+    window.__desktopLeftPanel?.collapse();
+    window.__desktopRightPanel?.collapse();
+  }
   window.writer?.layoutManager?.setEditorViewMode(mode);
   window.dispatchEvent(new CustomEvent('desktop:editor-view-mode-changed', { detail: { mode } }));
 };

@@ -238,7 +238,14 @@ const App = ({ document, settings, user }: LeafWriterOptions) => {
           actions.document.setDocumentXml(document.xml);
         }
 
-        _writer.setDocument(document.xml);
+        // The desktop shell waits for TinyMCE and then loads the active tab
+        // through loadDocumentInWriter().  Loading here as well used to run
+        // the expensive XML → editor-DOM conversion twice on every cold
+        // desktop start.  The standalone/web embedding still owns its first
+        // document load here.
+        if (!isDesktopApp()) {
+          _writer.setDocument(document.xml);
+        }
 
         setWriter(window.writer);
 

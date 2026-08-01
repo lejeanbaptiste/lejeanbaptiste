@@ -9,6 +9,7 @@ declare global {
   type DesktopLeftPanelTab = 'explorer' | 'find' | 'xpath' | 'toc' | 'markup';
 
   interface DesktopLeftPanelBridge {
+    collapse: () => void;
     expand: () => void;
     showTab: (tab: DesktopLeftPanelTab) => void;
   }
@@ -17,6 +18,7 @@ declare global {
     'fileMetadata' | 'attributes' | 'css' | 'imageViewer' | 'validation' | 'translation';
 
   interface DesktopRightPanelBridge {
+    collapse: () => void;
     expand: () => void;
     showTab: (tab: DesktopRightPanelTab) => void;
   }

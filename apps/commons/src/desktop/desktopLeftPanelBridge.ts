@@ -1,6 +1,7 @@
 import type { SidebarTabId } from '@src/icons/tab';
 
 export interface DesktopLeftPanelBridge {
+  collapse: () => void;
   expand: () => void;
   showTab: (tab: SidebarTabId) => void;
 }

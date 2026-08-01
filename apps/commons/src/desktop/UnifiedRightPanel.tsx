@@ -171,6 +171,10 @@ export const UnifiedRightPanel = () => {
     setCollapsed(false);
   }, []);
 
+  const collapse = useCallback(() => {
+    setCollapsed(true);
+  }, []);
+
   // Dismiss a tab if it's the one currently showing (e.g. the validation tab when
   // the tab it was reporting on gets closed), falling back to whatever tab was
   // open before it took over, same as the collapse-button restore.
@@ -184,7 +188,7 @@ export const UnifiedRightPanel = () => {
   }, []);
 
   useEffect(() => {
-    window.__desktopRightPanel = { showTab, expand, dismissTab };
+    window.__desktopRightPanel = { showTab, expand, collapse, dismissTab };
 
     if (window.__desktopRightPanelPendingTab) {
       setActiveTab(window.__desktopRightPanelPendingTab);
@@ -195,7 +199,7 @@ export const UnifiedRightPanel = () => {
     return () => {
       delete window.__desktopRightPanel;
     };
-  }, [showTab, expand, dismissTab]);
+  }, [showTab, expand, collapse, dismissTab]);
 
   // Hide the right panel while a docked review pane is open; restore if it was
   // expanded. Driven by the CustomEvent's `detail.active` (the authoritative

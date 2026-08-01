@@ -181,13 +181,20 @@ class Writer extends EventManager {
         this.layoutManager.$loadingMask.fadeOut(350);
       };
 
-      setTimeout(() => {
+      // TinyMCE has already reported that its iframe is ready.  We only need
+      // to give the layout a paint before measuring it; the old 1000ms + 350ms
+      // timeout was a fixed 1.35 second delay on every cold editor start.
+      const afterLayoutPaint = (callback: () => void) => {
+        window.requestAnimationFrame(() => {
+          window.requestAnimationFrame(callback);
+        });
+      };
+
+      afterLayoutPaint(() => {
         this.layoutManager.resizeAll();
-        setTimeout(() => {
-          this.isInitialized = true;
-          this.event('writerInitialized').publish(this);
-        }, 350);
-      }, 1000);
+        this.isInitialized = true;
+        this.event('writerInitialized').publish(this);
+      });
     });
 
     this.utilities = new Utilities(this);

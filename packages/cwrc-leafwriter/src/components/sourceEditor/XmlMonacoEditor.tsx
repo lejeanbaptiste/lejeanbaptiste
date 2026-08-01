@@ -164,7 +164,35 @@ export const XmlMonacoEditor = ({
       wordWrap: 'wordWrapColumn',
       wordWrapColumn: 100,
       wrappingIndent: 'indent',
+      // Keep a little room below the last line without allowing a whole empty
+      // editor viewport to be scrolled past the document.
+      scrollBeyondLastLine: false,
+      padding: { bottom: 32 },
     });
+
+    // Monaco can be created while the Source pane is still hidden. Its
+    // automatic layout observer then records the pane's zero/stale size and
+    // occasionally leaves the editor compressed into a strip when the pane
+    // becomes visible. Explicitly lay it out after the flex row has painted,
+    // and whenever that host changes size.
+    let layoutFrame: number | null = null;
+    const layoutWhenVisible = () => {
+      if (layoutFrame !== null) return;
+      layoutFrame = window.requestAnimationFrame(() => {
+        layoutFrame = null;
+        const host = divEl.current;
+        if (!host || host.clientWidth === 0 || host.clientHeight === 0) return;
+        monacoEditor.layout({ width: host.clientWidth, height: host.clientHeight });
+      });
+    };
+    const resizeObserver = new ResizeObserver(layoutWhenVisible);
+    resizeObserver.observe(divEl.current);
+    const onEditorViewModeChanged = (event: Event) => {
+      const mode = (event as CustomEvent<{ mode?: string }>).detail?.mode;
+      if (mode === 'source') layoutWhenVisible();
+    };
+    window.addEventListener('desktop:editor-view-mode-changed', onEditorViewModeChanged);
+    layoutWhenVisible();
 
     const unsubscribeFontZoom = sourceFontZoom.subscribe((size) => {
       monacoEditor.updateOptions({ fontSize: size });
@@ -319,6 +347,9 @@ export const XmlMonacoEditor = ({
     onEditorInstanceRef.current?.(monacoEditor);
 
     return () => {
+      resizeObserver.disconnect();
+      window.removeEventListener('desktop:editor-view-mode-changed', onEditorViewModeChanged);
+      if (layoutFrame !== null) window.cancelAnimationFrame(layoutFrame);
       closingTagDisposable.dispose();
       linkedTagDisposable.dispose();
       pairedTagUnwrapDisposable.dispose();
