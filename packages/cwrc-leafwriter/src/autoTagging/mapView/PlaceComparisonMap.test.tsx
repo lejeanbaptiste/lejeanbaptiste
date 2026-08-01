@@ -14,67 +14,74 @@ const mockSetStyle = jest.fn();
 let onLoadCallback: (() => void) | null = null;
 let onMoveEndCallback: (() => void) | null = null;
 let mockCenter = { lat: 30.65, lng: 113.15 };
+let mockMapOptions: unknown = null;
 
-jest.mock('maplibre-gl', () => {
-  class MockMap {
-    constructor(public options: unknown) {}
-    on(event: string, cb: () => void) {
-      if (event === 'load') onLoadCallback = cb;
-      if (event === 'moveend') onMoveEndCallback = cb;
+jest.mock(
+  'maplibre-gl',
+  () => {
+    class MockMap {
+      constructor(public options: unknown) {
+        mockMapOptions = options;
+      }
+      on(event: string, cb: () => void) {
+        if (event === 'load') onLoadCallback = cb;
+        if (event === 'moveend') onMoveEndCallback = cb;
+      }
+      fitBounds(...args: unknown[]) {
+        mockFitBounds(...args);
+      }
+      jumpTo(...args: unknown[]) {
+        mockJumpTo(...args);
+      }
+      remove() {
+        mockRemove();
+      }
+      setStyle(...args: unknown[]) {
+        mockSetStyle(...args);
+      }
+      getCenter() {
+        return mockCenter;
+      }
     }
-    fitBounds(...args: unknown[]) {
-      mockFitBounds(...args);
+    class MockMarker {
+      setLngLat(...args: unknown[]) {
+        mockSetLngLat(...args);
+        return this;
+      }
+      setPopup(...args: unknown[]) {
+        mockSetPopup(...args);
+        return this;
+      }
+      addTo(...args: unknown[]) {
+        mockAddTo(...args);
+        return this;
+      }
+      remove() {
+        mockMarkerRemove();
+      }
     }
-    jumpTo(...args: unknown[]) {
-      mockJumpTo(...args);
+    class MockPopup {
+      setHTML() {
+        return this;
+      }
     }
-    remove() {
-      mockRemove();
+    class MockLngLatBounds {
+      extend(...args: unknown[]) {
+        mockExtend(...args);
+        return this;
+      }
     }
-    setStyle(...args: unknown[]) {
-      mockSetStyle(...args);
-    }
-    getCenter() {
-      return mockCenter;
-    }
-  }
-  class MockMarker {
-    setLngLat(...args: unknown[]) {
-      mockSetLngLat(...args);
-      return this;
-    }
-    setPopup(...args: unknown[]) {
-      mockSetPopup(...args);
-      return this;
-    }
-    addTo(...args: unknown[]) {
-      mockAddTo(...args);
-      return this;
-    }
-    remove() {
-      mockMarkerRemove();
-    }
-  }
-  class MockPopup {
-    setHTML() {
-      return this;
-    }
-  }
-  class MockLngLatBounds {
-    extend(...args: unknown[]) {
-      mockExtend(...args);
-      return this;
-    }
-  }
-  return {
-    __esModule: true,
-    MapLibreMap: MockMap,
-    Marker: MockMarker,
-    Popup: MockPopup,
-    LngLatBounds: MockLngLatBounds,
-    setWorkerUrl: jest.fn(),
-  };
-}, { virtual: true });
+    return {
+      __esModule: true,
+      MapLibreMap: MockMap,
+      Marker: MockMarker,
+      Popup: MockPopup,
+      LngLatBounds: MockLngLatBounds,
+      setWorkerUrl: jest.fn(),
+    };
+  },
+  { virtual: true },
+);
 
 function makePin(overrides: Partial<MapPin> = {}): MapPin {
   return {
@@ -94,11 +101,21 @@ describe('PlaceComparisonMap', () => {
     onLoadCallback = null;
     onMoveEndCallback = null;
     mockCenter = { lat: 30.65, lng: 113.15 };
+    mockMapOptions = null;
     delete (window as { electronAPI?: unknown }).electronAPI;
   });
 
+  it('limits map zoom to the maximum zoom supported by the tile source', () => {
+    render(<PlaceComparisonMap open pins={[makePin()]} title="Single place" onClose={jest.fn()} />);
+
+    expect(mockMapOptions).toEqual(expect.objectContaining({ maxZoom: 15 }));
+  });
+
   it('creates one marker per pin and fits bounds to all of them once the map loads', () => {
-    const pins = [makePin({ id: 'a', lat: 30.65, lon: 113.15 }), makePin({ id: 'b', lat: 39.9, lon: 116.4 })];
+    const pins = [
+      makePin({ id: 'a', lat: 30.65, lon: 113.15 }),
+      makePin({ id: 'b', lat: 39.9, lon: 116.4 }),
+    ];
     render(
       <PlaceComparisonMap open pins={pins} title="竟陵 — compare clusters" onClose={jest.fn()} />,
     );
@@ -114,7 +131,12 @@ describe('PlaceComparisonMap', () => {
 
   it('refreshes the rendered markers when the pins change while the dialog stays open', async () => {
     const { rerender } = render(
-      <PlaceComparisonMap open pins={[makePin({ id: 'a' })]} title="Single place" onClose={jest.fn()} />,
+      <PlaceComparisonMap
+        open
+        pins={[makePin({ id: 'a' })]}
+        title="Single place"
+        onClose={jest.fn()}
+      />,
     );
     await act(async () => {
       onLoadCallback?.();
@@ -154,7 +176,14 @@ describe('PlaceComparisonMap', () => {
 
   it('renders the dialog title and closes via the close button', () => {
     const onClose = jest.fn();
-    render(<PlaceComparisonMap open pins={[makePin()]} title="竟陵 — compare clusters" onClose={onClose} />);
+    render(
+      <PlaceComparisonMap
+        open
+        pins={[makePin()]}
+        title="竟陵 — compare clusters"
+        onClose={onClose}
+      />,
+    );
 
     expect(screen.getByText('竟陵 — compare clusters')).toBeTruthy();
     screen.getByLabelText('Close map').click();

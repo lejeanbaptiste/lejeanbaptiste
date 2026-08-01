@@ -87,6 +87,7 @@ const LABEL_LANG_BY_BUNDLE: Record<string, { lang: string; script?: string }> = 
   japan: { lang: 'ja' },
 };
 const DEFAULT_LABEL_LANG = { lang: 'zh-Hant', script: 'Han' };
+const MAP_TILE_MAX_ZOOM = 15;
 
 /**
  * Real vector basemap once a local PMTiles regional bundle is installed,
@@ -109,7 +110,7 @@ function vectorStyle(bundleId: string): StyleSpecification {
       protomaps: {
         type: 'vector',
         tiles: [`pmtiles://${bundleId}/{z}/{x}/{y}.mvt`],
-        maxzoom: 15,
+        maxzoom: MAP_TILE_MAX_ZOOM,
       },
     },
     layers: protomapsLayers('protomaps', 'light', lang, script) as StyleSpecification['layers'],
@@ -144,6 +145,7 @@ export function PlaceComparisonMap({ open, onClose, pins, title }: PlaceComparis
       style: blankStyle(),
       center: [0, 0],
       zoom: 2,
+      maxZoom: MAP_TILE_MAX_ZOOM,
       attributionControl: false,
     });
     mapRef.current = map;
