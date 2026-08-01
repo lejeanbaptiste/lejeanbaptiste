@@ -12,6 +12,7 @@ v0.0.4-rc.7, Alpha
 
 NanQiShu_bio_013_j_22_YuZhangWenXianWangYi_clean.xml (34k)
 
+
 # Cold launch
 
 Situation: file in open tab
@@ -35,6 +36,10 @@ CPU: 15% max, no change
 RAM: 850 Mo max, no change
 Time: VERY SLOW - 20s
 
+### Virtualised tag bomb candidates, monaco persist, tree flattening
+
+Impression: it looks worse, and more choppy, less reactive, but I may be imagining it.
+
 # Switch visual - source
 
 visual - source - visual
@@ -42,7 +47,9 @@ visual - source - visual
 CPU: 5%-20% (brief peak), same every time 
 RAM: 0.8-1.2 GB, same every time
 Time: 17s, 13s, 11s
+### Virtualised tag bomb candidates, monaco persist, tree flattening
 
+This feels a lot faster. I just wish we could go from source back to visual this quickly...
 # Manual tagging
 
 CPU: no impact
