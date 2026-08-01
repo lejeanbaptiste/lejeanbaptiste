@@ -543,7 +543,7 @@ export const UnifiedRightPanel = () => {
         }}
       >
         <Box sx={panelSx('fileMetadata')}>
-          <FileMetadataPanel />
+          <FileMetadataPanel visible={activeTab === 'fileMetadata' && !collapsed} />
         </Box>
         <Box sx={panelSx('attributes')}>
           <AttributesPanel visible={activeTab === 'attributes' && !collapsed} />

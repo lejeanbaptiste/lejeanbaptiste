@@ -1370,7 +1370,7 @@ export const DatabaseWindow = () => {
             </>
           )}
 
-          {mainPane === 'detail' && leftCard && <EntityCompareCard model={leftCard} />}
+          {mainPane === 'detail' && leftCard && <EntityCompareCard model={leftCard} detail />}
           {mainPane === 'detail' && !leftCard && (
             <Typography color="text.secondary">Select an entity</Typography>
           )}

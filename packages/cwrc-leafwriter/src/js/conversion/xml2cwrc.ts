@@ -138,9 +138,11 @@ class XML2CWRC {
       if (!matchCsss) await schemaManager.loadSchemaCSS(docSchema.css);
     }
 
-    // Same schema id and path, but the validator worker may still hold a stale
-    // grammar (e.g. after a sanmiao merge upgraded the on-disk RNG in place).
-    await this.writer.utilities.sendSchemaToWorkerValidator({ silent: true });
+    // The validator is initialized by loadSchema(). We reach this branch only
+    // after the URL and on-disk revision match the schema already loaded there,
+    // so re-reading and posting the RelaxNG file to the worker would be pure
+    // per-document load overhead. A changed revision takes the needsSchemaLoad
+    // branch above and reloads/reinitializes the worker correctly.
 
     this.doProcessing(schemaProcess.doc);
   }

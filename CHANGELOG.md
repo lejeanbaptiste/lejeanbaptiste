@@ -15,6 +15,7 @@
 - Tree panel work: Tried to improve performance, but with minimal gains. Added a switch to turn off live tracking for older hardware.
 - Cut out intentional 1.5-second wait before loading the editor while at once racing with the XML it is trying to load.
 - In Windows, command to quit is now carried out with but a slight delay.
+- Lazy load panels to keep memory usage down.
 
 ### Functionality
 

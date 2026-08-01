@@ -1,6 +1,6 @@
 # Performance Optimization — planning notes
 
-**Status (2026-08-01):** The markup tree and the top-level review/disambiguation lists are virtualized. Monaco no longer recreates on theme changes. Source mode keeps its Monaco instance across Visual ↔ Source switches and avoids reloading TinyMCE when the source buffer is unchanged. The markup tree's flattening, visible-row pass, and XPath sibling indexes are linear and do not recompute on selection alone. Live markup-tree synchronization is optional: users can choose Live, On demand, or Off. On the slow Windows baseline, tab switching is green at 109 ms; tree navigation is improved but intentionally not a priority while live synchronization can be disabled. Desktop-panel mounting is now event-driven, with a short-lived DOM observer only for the mount-order race.
+**Status (2026-08-01):** The performance scope for this release is complete. The markup tree and the top-level review/disambiguation lists are virtualized; Monaco is retained across Visual ↔ Source switches; document loading no longer repeats desktop schema preparation or validator schema initialization for an unchanged schema. Live markup-tree synchronization is optional: users can choose Live, On demand, or Off. On the slow Windows baseline, tab switching is green at 109 ms; tree navigation is improved but intentionally not a priority while live synchronization can be disabled. Desktop-panel mounting is event-driven, with a short-lived DOM observer only for the mount-order race.
 
 ## Summary
 
@@ -12,8 +12,8 @@ default and more about targeting the remaining hotspots:
 - hidden-but-mounted panels that retain memory,
 - polling-based desktop bridge code that adds idle work.
 
-This document proposes a phased plan that prioritizes user-visible responsiveness first, then memory
-retention, then lower-level structural cleanup.
+The remaining items below are deferred to the next release unless a packaged regression makes one
+urgent.
 
 ---
 
@@ -29,10 +29,11 @@ That is good news because it avoids wasting time on a problem that has already b
 
 ### Remaining candidates
 
-#### 1. Document loading remains the next user-visible editor cost
+#### 1. Document loading — initial duplicate work removed
 
-Cold document loads still do significant XML conversion and editor work. It is worth revisiting once
-the beta is stable, but it is not currently a release blocker.
+Cold document loads still do significant XML conversion and editor work. This release removes the
+duplicate desktop document/schema preparation on first load and avoids re-posting an unchanged RelaxNG
+schema to the validator worker. Further conversion work is deferred.
 
 #### 2. Hidden panels can retain memory and subscriptions
 
@@ -160,7 +161,7 @@ eagerly, and they are directly tied to workflows where the user can generate hun
 
 ## Phase 3 — Make tree-model work more incremental
 
-**Priority:** Medium/high  
+**Status:** Deferred to next release  
 **Expected payoff:** High on very large documents, moderate otherwise
 
 ### Target
@@ -197,7 +198,7 @@ could be large, but only for sufficiently big documents.
 
 ## Phase 4 — Trim retained memory in inactive panels
 
-**Priority:** Medium  
+**Status:** Initial inactive-work pass complete; deeper work deferred to next release  
 **Expected payoff:** Better memory behavior over long sessions
 
 ### Targets
@@ -206,13 +207,13 @@ could be large, but only for sufficiently big documents.
 - right-panel desktop panel containers
 - React-only inactive tabs and auxiliary panes
 
-### Plan
+### Implemented
 
-- Distinguish between mount points that must remain alive for legacy portals and panels whose heavy
-  internals can safely suspend.
-- Keep the outer container mounted where necessary, but allow expensive children to unmount or pause
-  subscriptions when hidden.
-- Audit global `window` bridges and listeners for panels that are often inactive.
+- Kept legacy portal mount points and editable panel state alive, rather than risking lost forms or
+  missed cross-panel events.
+- Paused file-metadata XML parsing while its right-panel tab is hidden.
+- Paused the sidebar database's filesystem-change subscription and background full-list reload while
+  hidden; it refreshes when the tab is opened again.
 
 ### Success criteria
 
@@ -241,7 +242,7 @@ could be large, but only for sufficiently big documents.
 
 ### Follow-up
 
-- Clean up any per-icon React roots or transient mounts that lack explicit teardown.
+- Clean up any per-icon React roots or transient mounts that lack explicit teardown (next release).
 
 ### Success criteria
 

@@ -1075,11 +1075,14 @@ export const SidebarDatabaseTab = ({ active = false }: SidebarDatabaseTabProps) 
       const detail = (event as CustomEvent<{ syncToCentral?: boolean }>).detail;
       if (typeof detail?.syncToCentral !== 'boolean') return;
       setSavedSyncOverride(detail.syncToCentral);
-      void reload();
+      // A hidden database tab will refresh when it becomes active. Avoid a
+      // full entity-list reload in the background just because settings were
+      // changed in the separate project window.
+      if (active) void reload();
     };
     window.addEventListener('ljb-project-config-saved', handleConfigSaved);
     return () => window.removeEventListener('ljb-project-config-saved', handleConfigSaved);
-  }, [reload]);
+  }, [active, reload]);
 
   useEffect(() => {
     const handleShowEntity = (event: Event) => {
@@ -1124,7 +1127,10 @@ export const SidebarDatabaseTab = ({ active = false }: SidebarDatabaseTabProps) 
 
   // Reload when either database changes on disk (external edit or another flow).
   useEffect(() => {
-    if (!window.electronAPI?.onExternalFileChange || !store) return;
+    // Keep the selected entity and any in-progress form edits in memory, but
+    // do not retain a live filesystem subscription or rebuild the full list
+    // while this sidebar tab is hidden. Re-entering the tab calls reload().
+    if (!active || !window.electronAPI?.onExternalFileChange || !store) return;
     const watchedPaths = new Set(
       [store.entitiesPath, centralStore?.entitiesPath]
         .filter((path): path is string => Boolean(path))
@@ -1133,7 +1139,7 @@ export const SidebarDatabaseTab = ({ active = false }: SidebarDatabaseTabProps) 
     return window.electronAPI.onExternalFileChange((filePath: string) => {
       if (watchedPaths.has(filePath.replace(/\\/g, '/'))) void reload();
     });
-  }, [reload, store, centralStore]);
+  }, [active, reload, store, centralStore]);
 
   const { regex, regexError } = useMemo(() => {
     const trimmed = search.trim();

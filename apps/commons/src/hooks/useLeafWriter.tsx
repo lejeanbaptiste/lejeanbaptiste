@@ -24,7 +24,7 @@ import type { Resource } from '@src/types';
 import { isDesktop } from '@src/types/desktop';
 import { changeFileExtension } from '@src/utilities';
 import { useAtom, useSetAtom } from 'jotai';
-import { useEffect } from 'react';
+import { useEffect, useRef } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useNavigate } from 'react-router';
 import { useAnalytics } from './useAnalytics';
@@ -34,6 +34,7 @@ import { schemas } from '@src/config/schemas';
 import type { WorkspaceCursorPosition } from '@src/types/desktop';
 
 type LeafWriterOptionsSettings = Types.LeafWriterOptionsSettings;
+type PreparedDesktopDocument = Awaited<ReturnType<typeof prepareDesktopDocument>>;
 
 const SETTINGS_BOOTSTRAP_XML =
   '<TEI xmlns="http://www.tei-c.org/ns/1.0"><text><body><p/></body></text></TEI>';
@@ -128,6 +129,33 @@ export const useLeafWriter = () => {
   const [leafWriterEvent, setLeafWriterEvents] = useAtom(leafWriterEventsAtom);
   const [tapDocumentTimer, setTapDocumentTimer] = useAtom(tapDocumentTimerAtom);
   const bumpEditorSession = useSetAtom(leafWriterSessionKeyAtom);
+  // Project schema resolution reads schema/CSS files and may rewrite processing
+  // instructions. The first editor load previously prepared the active tab in
+  // initLeafWriter and immediately prepared it again in loadDocumentInWriter.
+  // Cache by project + file + exact content so the two stages share that work;
+  // a saved or externally changed document naturally misses the cache.
+  const preparedDocumentsRef = useRef(
+    new Map<string, { source: string; prepared: PreparedDesktopDocument }>(),
+  );
+
+  const prepareProjectDocument = async (filePath: string, content: string) => {
+    const cacheKey = `${rootPath ?? ''}\u0000${filePath}`;
+    const cached = preparedDocumentsRef.current.get(cacheKey);
+    if (cached && (cached.source === content || cached.prepared.content === content)) {
+      return cached.prepared;
+    }
+
+    const prepared = await prepareDesktopDocument(filePath, content, rootPath, config?.schema);
+    if (
+      !preparedDocumentsRef.current.has(cacheKey) &&
+      preparedDocumentsRef.current.size >= 4
+    ) {
+      const oldestKey = preparedDocumentsRef.current.keys().next().value;
+      if (oldestKey) preparedDocumentsRef.current.delete(oldestKey);
+    }
+    preparedDocumentsRef.current.set(cacheKey, { source: content, prepared });
+    return prepared;
+  };
 
   useEffect(() => {
     if (!isDesktop() || !rootPath || !leafWriter) return;
@@ -217,7 +245,7 @@ export const useLeafWriter = () => {
     let documentSchemas = schemas;
 
     if (isDesktop() && filePath && rootPath) {
-      const prepared = await prepareDesktopDocument(filePath, xml, rootPath, config?.schema);
+      const prepared = await prepareProjectDocument(filePath, xml);
       if (override?.shouldApply && !override.shouldApply()) return false;
       xml = prepared.content;
       documentSchemas = [...projectSchemas, ...prepared.schemas];
@@ -342,7 +370,7 @@ export const useLeafWriter = () => {
     if (!window.writer) return false;
 
     if (isDesktop() && rootPath && config?.schema) {
-      const prepared = await prepareDesktopDocument(filePath, content, rootPath, config.schema);
+      const prepared = await prepareProjectDocument(filePath, content);
       content = prepared.content;
       registerDesktopSchemas([
         ...getEnabledCatalogSchemas(),

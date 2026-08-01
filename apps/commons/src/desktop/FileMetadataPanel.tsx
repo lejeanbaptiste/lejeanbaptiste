@@ -381,7 +381,7 @@ const SourceProfileControls = ({
   );
 };
 
-export const FileMetadataPanel = () => {
+export const FileMetadataPanel = ({ visible = true }: { visible?: boolean }) => {
   const { t } = useTranslation();
   const { activeTabPath, config, openTabs, rootPath } = useAppState().project;
   const { readonly } = useAppState().editor;
@@ -428,6 +428,7 @@ export const FileMetadataPanel = () => {
   }, [sourceValues]);
 
   useEffect(() => {
+    if (!visible) return;
     if (!activeTabPath || !xml) {
       setValues({});
       setSourceValues(emptySourceDescription());
@@ -444,7 +445,7 @@ export const FileMetadataPanel = () => {
     } else {
       setValues(readFileMetadataFromXml(xml, catalogId, fieldsTemplate?.file));
     }
-  }, [activeTabPath, activeTab?.content, catalogId, fieldsTemplate, structured, xml]);
+  }, [activeTabPath, activeTab?.content, catalogId, fieldsTemplate, structured, visible, xml]);
 
   const pushUpdatedXml = useCallback(
     (nextXml: string, currentXml: string) => {
