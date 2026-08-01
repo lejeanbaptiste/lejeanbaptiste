@@ -1,4 +1,5 @@
 import { readFileSync } from 'node:fs';
+import { join } from 'node:path';
 import { EntitySqliteRepository } from './repository';
 import {
   backfillDecisionTargetsFromXml,
@@ -9,7 +10,10 @@ import {
 
 describe('entity XML codec', () => {
   it('imports the legacy entity database and exports a re-importable database', () => {
-    const xml = readFileSync('test_project/entities.xml', 'utf8');
+    const xml = readFileSync(
+      join(__dirname, 'fixtures/legacy-entities.xml'),
+      'utf8',
+    );
     const first = new EntitySqliteRepository();
     const imported = importEntitiesXml(first, xml);
 

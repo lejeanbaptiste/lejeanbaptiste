@@ -138,16 +138,23 @@ cd leaf-writer && node scripts/sync-authority-packs.mjs /path/to/entityDbFolder
 
 **Spec:** [authority-data-lifecycle.md](authority-data-lifecycle.md) § two tiers.
 
-**Purpose:** When the user picks or inspects a CBDB/DILA candidate in Phase 4b, show **rich fields** from the raw database (beyond the pack clue line) and optionally write `<note type="authority-cache">` on `entities.xml`.
+**Purpose:** When linking or backfilling a person with a CBDB / DILA / Norbert idno, pull rich fields from the reference tier and write them into the user entity database.
 
-**Prepare:**
+**Done (2026-08-01):**
 
-- [ ] `authorityRef:lookup(source, authorityId)` IPC — targeted sqlite query (CBDB) or TEI slice (DILA); no full-table load
-- [ ] Renderer types + disambiguation panel hook (detail pane below candidate list)
-- [ ] Field set v1: dates, dynasty, description/notes, birthplace/postings (CBDB); DILA `<note>`, placeOfOrigin ref
-- [ ] Graceful degrade: pack-only clue when reference tier not installed
+- [x] `authorityRef:lookup(source, authorityId)` IPC — targeted sqlite (CBDB slim / Norbert) or TEI slice (DILA)
+- [x] Field set v1: typed names, nationality, origin/籍貫, appointments; Norbert noble titles from `person_nt`
+- [x] Backfill / link callers pass `lookupAuthorityRef`; reference wins over pack when both present
+- [x] Graceful degrade: pack-only when reference tier not installed
+- [ ] Disambiguation detail pane UI (optional follow-up; enrichment already writes on accept/backfill)
 
-**Done when:** with reference data installed, selecting a CBDB person in disambiguation shows posting/dates not present in NDJSON; works offline.
+**Reference artifacts:**
+
+| File | Origin |
+|------|--------|
+| `cbdb-person.sqlite3` | Stripped from full CBDB (person/names/dynasty/addr/postings/offices only) |
+| `norbert.sqlite3` | Public allowlisted SQL → sqlite + `dynasty_labels` |
+| `dila-person.xml` (+ place/districts) | DILA Open Content / GitHub mirror |
 
 ## Phase H — CHGIS
 

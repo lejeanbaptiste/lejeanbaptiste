@@ -23,6 +23,8 @@ import {
   type SqliteMergeResult,
   type AuthorityBackfillPatch,
   type AuthorityBackfillPatchResult,
+  type XmlExtractedRefreshInput,
+  type XmlExtractedRefreshResult,
 } from './repository';
 
 export interface EntitySqliteReadRequest {
@@ -512,6 +514,14 @@ export async function rejectEntitySqliteAssertion(
   return repositoryFor(request.databasePath).rejectAssertion(request.entityId, request.key);
 }
 
+export async function restoreEntitySqliteAssertion(
+  request: EntitySqliteAssertionRequest,
+): Promise<boolean> {
+  if (!validDatabasePath(request.databasePath))
+    throw new Error('Invalid entity SQLite database path.');
+  return repositoryFor(request.databasePath).restoreAssertion(request.entityId, request.key);
+}
+
 export async function removeEntitySqliteAssertion(
   request: EntitySqliteAssertionRequest,
 ): Promise<boolean> {
@@ -597,6 +607,15 @@ export async function applyEntitySqliteAuthorityBackfillPatch(
     throw new Error('Invalid entity SQLite database path.');
   const { databasePath: _databasePath, ...patch } = request;
   return repositoryFor(request.databasePath).applyAuthorityBackfillPatch(patch);
+}
+
+export async function reconcileEntitySqliteXmlExtractedData(
+  request: XmlExtractedRefreshInput & { databasePath: string },
+): Promise<XmlExtractedRefreshResult> {
+  if (!validDatabasePath(request.databasePath))
+    throw new Error('Invalid entity SQLite database path.');
+  const { databasePath: _databasePath, ...input } = request;
+  return repositoryFor(request.databasePath).reconcileXmlExtractedData(input);
 }
 
 export async function getEntitySqliteContentHash(request: {
@@ -716,6 +735,33 @@ export async function listEntitySqliteLinkedCentralIds(request: {
     return null;
   }
   return repositoryFor(request.databasePath).listLinkedCentralIds(request.userStableId);
+}
+
+export async function countEntitySqliteUnlinked(request: {
+  databasePath: string;
+  userStableId: string;
+}): Promise<number | null> {
+  if (!validDatabasePath(request.databasePath))
+    throw new Error('Invalid entity SQLite database path.');
+  try {
+    await fs.access(request.databasePath);
+  } catch {
+    return null;
+  }
+  return repositoryFor(request.databasePath).countUnlinkedForUser(request.userStableId);
+}
+
+export async function countEntitySqliteEntities(request: {
+  databasePath: string;
+}): Promise<number | null> {
+  if (!validDatabasePath(request.databasePath))
+    throw new Error('Invalid entity SQLite database path.');
+  try {
+    await fs.access(request.databasePath);
+  } catch {
+    return null;
+  }
+  return repositoryFor(request.databasePath).countActiveEntities();
 }
 
 export async function findEntitySqliteByAuthority(

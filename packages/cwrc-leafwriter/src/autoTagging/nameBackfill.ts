@@ -36,9 +36,10 @@ import { suggestPersonNameSplit, suggestPersonRomanization } from '../plugins/pe
 import { fetchWikidataLifespan } from './wikidataDates';
 import { fetchWikidataNationality } from './wikidataNationality';
 import { fetchWikidataPlaceOfBirth } from './wikidataPlaceOfBirth';
-import { enrichWikidataWorkEntity } from './wikidataWorkDetails';
-import { extractWikidataId } from './disambiguationCandidates';
-import { enrichWikidataPersonWorks } from './wikidataPersonWorks';
+import {
+  formatNorbertAuthorityValue,
+  norbertAuthorityLookupValues,
+} from './norbertAuthorityId';
 
 export interface NameBackfillProgress {
   done: number;
@@ -100,9 +101,10 @@ export async function buildNorbertNobleTitleIndex(
   try {
     const content = await readPackFile('norbert-wiki-nt');
     for (const row of iterateAuthorityNdjson(content)) {
-      const personId = row.metadata?.crosswalk?.norbert;
+      const rawPersonId = row.metadata?.crosswalk?.norbert;
       const title = row.metadata?.nobleTitle;
-      if (!personId || !title || (!title.fief && !title.roleName)) continue;
+      if (!rawPersonId || !title || (!title.fief && !title.roleName)) continue;
+      const personId = formatNorbertAuthorityValue('person', rawPersonId);
       const list = index.get(personId) ?? [];
       list.push({
         placeName: title.fief ?? '',
@@ -112,6 +114,10 @@ export async function buildNorbertNobleTitleIndex(
         ref: row.authorityId,
       });
       index.set(personId, list);
+      // Also index bare id so older packs still resolve during migration.
+      for (const key of norbertAuthorityLookupValues(personId)) {
+        if (key !== personId) index.set(key, list);
+      }
     }
   } catch {
     // Pack missing or unreadable — skip silently, matching buildPackNameIndex.
@@ -194,7 +200,7 @@ export async function buildUniqueOfficeAuthorityByName(
         if (!name || !value) continue;
         const typeMap = byName.get(name) ?? new Map();
         const ids = typeMap.get(type) ?? new Set();
-        ids.add(value);
+        ids.add(type === 'NORBERT' ? formatNorbertAuthorityValue('office', value) : value);
         typeMap.set(type, ids);
         byName.set(name, typeMap);
       }
@@ -224,11 +230,17 @@ export function packTypedNamesForEntity(
     // Normalize casing to match buildPackNameIndex's keys (and
     // authorityEnrichmentsForEntity's lookup below) — idno @type casing
     // varies by source (e.g. "Norbert" vs "CBDB"/"DILA").
-    const key = `${auth.type.trim().toUpperCase()}:${auth.value.trim()}`;
-    const enrichment = index.get(key);
-    if (!enrichment) continue;
-    for (const name of enrichment.names) {
-      byText.set(name.text.normalize('NFC'), name);
+    const source = auth.type.trim().toUpperCase();
+    const values =
+      source === 'NORBERT'
+        ? norbertAuthorityLookupValues(auth.value)
+        : [auth.value.trim()];
+    for (const value of values) {
+      const enrichment = index.get(`${source}:${value}`);
+      if (!enrichment) continue;
+      for (const name of enrichment.names) {
+        byText.set(name.text.normalize('NFC'), name);
+      }
     }
   }
   return [...byText.values()];
@@ -279,8 +291,15 @@ export function authorityEnrichmentsForEntity(
   if (!index) return [];
   return entity.authorities.flatMap((auth) => {
     const source = auth.type.trim().toUpperCase();
-    const enrichment = index.get(`${source}:${auth.value.trim()}`);
-    return enrichment ? [{ source, enrichment }] : [];
+    const values =
+      source === 'NORBERT'
+        ? norbertAuthorityLookupValues(auth.value)
+        : [auth.value.trim()];
+    for (const value of values) {
+      const enrichment = index.get(`${source}:${value}`);
+      if (enrichment) return [{ source, enrichment }];
+    }
+    return [];
   });
 }
 
@@ -417,21 +436,15 @@ export async function backfillEntityNames(
     fetchImpl?: typeof fetch;
   } = {},
 ): Promise<NameBackfillResult> {
-  const { entityIds, readPackFile, projectLang, desktopLanguage, signal, onProgress, fetchImpl } =
-    options;
+  const { entityIds, readPackFile, projectLang, signal, onProgress, fetchImpl } = options;
 
   const allPersons = listEntities(doc).filter((entity) => entity.kind === 'person');
   const idFilter = entityIds ? new Set(entityIds) : null;
   const targets = allPersons.filter(
     (entity) => entity.authorities.length > 0 && (!idFilter || idFilter.has(entity.id)),
   );
-  const workTargets = listEntities(doc).filter(
-    (entity) =>
-      entity.kind === 'work' &&
-      entity.authorities.some((auth) => auth.type.trim().toUpperCase() === 'WIKIDATA') &&
-      (!idFilter || idFilter.has(entity.id)),
-  );
-  const totalTargets = targets.length + workTargets.length;
+  // Work / person→works minting lives on SQLite backfill (`sqliteAuthorityBackfill`).
+  const totalTargets = targets.length;
 
   const skippedNoAuthority = idFilter
     ? entityIds!.filter((id) => {
@@ -566,7 +579,11 @@ export async function backfillEntityNames(
       (auth) => auth.type.trim().toUpperCase() === 'NORBERT',
     );
     if (norbertIdno && nobleTitleIndex) {
-      const titles = nobleTitleIndex.get(norbertIdno.value.trim());
+      let titles: NorbertNobleTitleCandidate[] | undefined;
+      for (const key of norbertAuthorityLookupValues(norbertIdno.value)) {
+        titles = nobleTitleIndex.get(key);
+        if (titles?.length) break;
+      }
       if (titles?.length && applyNorbertNobleTitles(doc, entity.id, titles)) {
         entityChanged = true;
       }
@@ -605,15 +622,6 @@ export async function backfillEntityNames(
         );
         if (changed) entityChanged = true;
       }
-      const personWorks = await enrichWikidataPersonWorks(
-        doc,
-        entity.id,
-        extractWikidataId(wikidataIdno.value) ?? wikidataIdno.value,
-        projectLang,
-        desktopLanguage,
-        fetchImpl,
-      ).catch(() => null);
-      if (personWorks?.authorsAdded) entityChanged = true;
     }
 
     if (entityChanged) entitiesUpdated++;
@@ -625,38 +633,6 @@ export async function backfillEntityNames(
       entityId: entity.id,
       entityLabel: entity.names[0],
       addedNames: addedThisEntity,
-    });
-  }
-
-  for (const entity of workTargets) {
-    if (signal?.aborted) {
-      cancelled = true;
-      break;
-    }
-    entitiesScanned++;
-    const wikidata = entity.authorities.find(
-      (auth) => auth.type.trim().toUpperCase() === 'WIKIDATA',
-    );
-    const qid = extractWikidataId(wikidata?.value ?? '');
-    let enriched = false;
-    if (qid) {
-      enriched = Boolean(
-        await enrichWikidataWorkEntity(
-          doc,
-          entity.id,
-          qid,
-          projectLang,
-          desktopLanguage,
-          fetchImpl,
-        ).catch(() => null),
-      );
-    }
-    if (enriched) entitiesUpdated++;
-    onProgress?.({
-      done: entitiesScanned,
-      total: totalTargets,
-      entityId: entity.id,
-      entityLabel: entity.names[0],
     });
   }
 

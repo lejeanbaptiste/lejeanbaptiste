@@ -108,4 +108,18 @@ describe('normalizeTypedNamesForIntake', () => {
       ),
     ).toEqual([{ text: '廣明', type: 'courtesy' }]);
   });
+
+  it('strips family prefix from art and dharma names too', () => {
+    expect(
+      normalizeTypedNamesForIntake([
+        { text: '王', type: 'family' },
+        { text: '王摩詰', type: 'art' },
+        { text: '王法號', type: 'dharma' },
+      ]),
+    ).toEqual([
+      { text: '王', type: 'family' },
+      { text: '摩詰', type: 'art' },
+      { text: '法號', type: 'dharma' },
+    ]);
+  });
 });

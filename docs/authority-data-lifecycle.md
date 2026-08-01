@@ -1,66 +1,72 @@
-# Authority data lifecycle (CBDB + DILA + CHGIS)
+# Authority data lifecycle (CBDB + DILA + Norbert + CHGIS)
 
-**Status:** Spec (revised 2026-07-30) — two-tier model; **CI-first pack delivery** for normal users.
+**Status:** Spec (revised 2026-08-01) — two-tier model; **CI-first pack delivery** for normal users; **A6 reference lookup** wired for person enrichment.
 
 **Related:** [authority-databases-phases.md](authority-databases-phases.md) (tracks A0–A6), [authority-databases-planning.md](authority-databases-planning.md) (field detail), [authority extraction/docs/phases.md](../../authority%20extraction/docs/phases.md) (compile + GitHub publish).
 
-**Scope:** **CBDB**, **DILA**, and **CHGIS** — CHGIS is a Tier 1 (pre-compiled pack) source folded into the `chinese` profile bundle alongside CBDB/DILA/Wikidata; see [CHGIS](#chgis). These are Buddhist/Chinese **authority databases**, not CBETA corpus files.
+**Scope:** **CBDB**, **DILA**, **Norbert**, and **CHGIS** — CHGIS is a Tier 1 (pre-compiled pack) source folded into the `chinese` profile bundle; see [CHGIS](#chgis).
 
 ---
 
 ## Problem
 
-Tag bomb and disambiguation need **fast, versioned tagging packs**, but scholars also need the **full relational / TEI record** when tying authorities to `entities.xml` (posting history, kinship, coordinates, DILA notes, crosswalks, etc.). Those are different jobs and should not be conflated.
+Tag bomb and disambiguation need **fast, versioned tagging packs**, but scholars also need the **richer person record** when tying authorities to the user entity database (typed names, nationality, 籍貫, appointments, Norbert noble titles, etc.). Those are different jobs and should not be conflated.
 
 **Goal:** One user-controlled lifecycle: enable → install packs + optional reference data → use → update → (optional) disable and delete.
 
 ---
 
-## Two tiers (decision 2026-07-05)
+## Two tiers (decision 2026-07-05; reference shipping revised 2026-08-01)
 
 | Tier | Path | Source | Purpose |
 |------|------|--------|---------|
-| **Tagging packs** | `<entityDbFolder>/authority-packs/` | **GitHub repo + Actions** (pre-compiled NDJSON + manifest) | Tag bomb; offline disambiguation **shortlist** (names, ids, dynasty, dates, clue lines) |
-| **Reference databases** | `<entityDbFolder>/authority-databases/` | **Official upstream** (HuggingFace CBDB, DILA GitHub, etc.) | Rich lookup when minting/enriching project entities — posting history, full TEI, coords, `CHGIS_PT_ID`, etc. |
+| **Tagging packs** | `…/authority-packs/` | **GitHub `authoritypacks` releases** (NDJSON + manifest) | Tag bomb; offline disambiguation **shortlist** |
+| **Reference databases** | `…/authority-databases/` | **GitHub** co-ships **Norbert sqlite + stripped CBDB person sqlite**; **DILA** TEI from Open Content / GitHub mirror | Rich lookup when minting/enriching — names, nationality, origin, appointments, Norbert titles |
+
+**Not done:** merging CBDB + Norbert + DILA into one sqlite. Each source keeps its native (or slimmed) format; `authorityRef:lookup(source, id)` knows how to query each.
 
 ```text
-GitHub Actions (compile on tag / upstream pin change)
+GitHub Actions
         ↓
-Pack registry (manifest + NDJSON tarballs, sha256)
+Tagging: authority-packs-*.tar.gz + packs-index.json
+Reference: authority-reference-person-*.zip + reference-index.json
         ↓
-LJB downloads → authority-packs/          ← tag bomb + candidate shortlist
-
-Official upstream (HuggingFace / GitHub / Dataverse)
+LJB → authority-packs/          ← tag bomb + shortlist
+LJB → authority-databases/      ← cbdb-person.sqlite3, norbert.sqlite3, dila-*.xml
         ↓
-LJB downloads → authority-databases/      ← reference layer (optional but recommended)
+authorityRef:lookup(source, id) ← A6
         ↓
-authorityRef:lookup(source, id)         ← disambiguation detail pane (A6, planned)
-        ↓
-entities.xml (<idno> + optional authority-cache note)
+User entity SQLite (names, nationality, origin, appointments, noble titles)
 ```
-
-**Why both:** Compiled packs are **lossy by design** — they keep only what string matching and one-line clues need. CBDB sqlite alone has dozens of tables; DILA XML has full `<note>`, `<placeOfOrigin>`, district hierarchy. Users building a serious entity database will want the reference layer even when packs come from GitHub.
 
 **Runtime rules:**
 
 | Feature | Reads |
 |---------|--------|
-| Tag bomb | `authority-packs/` only |
+| Tag bomb | `authority-packs/` only (never SQL/XML) |
 | Offline disambiguation shortlist | `authority-packs/` only |
-| Disambiguation detail / entity enrichment | `authority-databases/` (via `authorityRef:lookup`, planned) + optional online LINCS |
-| Online reconcile (VIAF, Wikidata, …) | LINCS API — separate from both tiers |
+| Link / backfill enrichment | Prefer `authorityRef:lookup` when reference installed; else pack metadata; Wikidata may enrich live |
+| Online reconcile (VIAF, Wikidata, …) | LINCS / live APIs — separate from both tiers |
 
-Nothing in the **matcher** reads raw sqlite/XML. The **disambiguation panel** may query raw on demand by `authorityId`.
+### What LJB reads when
+
+| Need | Pack NDJSON | Reference DB | Live Wikidata |
+|------|-------------|--------------|---------------|
+| Tag-bomb seeds (`searchStrings`) | Yes | No | No |
+| Typed names / 姓名字 on entity | Prefer reference; else pack | Yes | Fallback |
+| Nationality, 籍貫, appointments | Prefer reference; else pack | Yes | Nationality / PoB |
+| Norbert noble titles | Pack wiki-nt index and/or reference `person_nt` | Yes | — |
 
 ---
 
 ## Licenses (distribution constraints)
 
-| Source | License | Tagging packs (GitHub releases) | Raw reference download |
+| Source | License | Tagging packs (GitHub releases) | Reference download |
 |--------|---------|------------------------|-------------------------|
-| **CBDB** | [CC BY-NC-SA 4.0](https://creativecommons.org/licenses/by-nc-sa/4.0/) | **OK** — attribute CBDB; release derivatives under NC-SA | User fetches from HuggingFace / Harvard (same license) |
-| **DILA** | CC-BY-SA 3.0 | **OK** — attribute DILA; share-alike on derivatives | User fetches from DILA GitHub |
-| **CHGIS** | Academic EULA — no standalone redistribution/repackaging of CHGIS datasets | **OK as a bundled derivative** — portions folded into the multi-source `chinese` pack with mandatory attribution, not a standalone CHGIS redistribution | Maintainer fetches from [Harvard Dataverse](https://dataverse.harvard.edu/dataverse/chgis_v6), compiles locally once per version bump, checks in via Git LFS (see `authority extraction/chgis/README.md`) |
+| **CBDB** | [CC BY-NC-SA 4.0](https://creativecommons.org/licenses/by-nc-sa/4.0/) | **OK** — attribute CBDB; release derivatives under NC-SA | **Stripped person sqlite** in `authority-reference-person-*.zip` (not full HuggingFace dump) |
+| **Norbert** | internal-derived-public | **OK** — attribution in manifest | Same reference zip (`norbert.sqlite3`) |
+| **DILA** | CC-BY-SA 3.0 | **OK** — attribute DILA | Browse [Open Content Downloads](https://authority.dila.edu.tw/docs/open_content/download.php); LJB fetches the GitHub TEI mirror of that data |
+| **CHGIS** | Academic EULA — no standalone redistribution | **OK as bundled derivative** in chinese pack | Local Dataverse compile only |
 
 Pack manifests must record `license` accurately (CBDB: `CC-BY-NC-SA-4.0`, not vague “academic terms”). Settings UI shows attribution strings.
 
@@ -75,7 +81,7 @@ Pack manifests must record `license` accurately (CBDB: `CC-BY-NC-SA-4.0`, not va
 | Control | Behavior |
 |---------|----------|
 | **Enable** (master toggle) | Download tagging packs from the GitHub `authoritypacks` repo; optionally download reference databases from upstream. Weekly update checks. |
-| **Reference databases** (checkbox, default **on**) | Also fetch raw CBDB sqlite + DILA XML into `authority-databases/` for disambiguation enrichment. Can turn off to save ~685 MB if user only tags. |
+| **Reference databases** (checkbox) | Fetch slim CBDB + Norbert from GitHub reference zip; fetch DILA TEI (Open Content mirror). Turn off to save disk if user only tags. |
 | **Status** | Per tier: pack version, reference version, disk use, last check, update available / downloading / error. |
 | **Update now** | Refresh packs from GitHub; refresh reference data from upstream if enabled. |
 | **Open folder** | Reveal `<entityDbFolder>` in the file manager. |

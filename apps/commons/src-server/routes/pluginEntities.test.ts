@@ -7,6 +7,8 @@ import {
   readCombinedStatus,
   searchEntities,
 } from './pluginEntities';
+import { EntitySqliteRepository } from '../../../desktop/src/entityDbSqlite/repository';
+import { importEntitiesXml } from '../../../desktop/src/entityDbSqlite/xmlCodec';
 
 const FIXTURE_DATABASE_ID = 'b1e98777-6266-413b-b125-7f6d5ec5bcc8';
 
@@ -61,24 +63,33 @@ const CENTRAL_FIXTURE_XML = `<?xml version="1.0" encoding="UTF-8"?><TEI xmlns="h
   </standOff>
 </TEI>`;
 
+const seedSqliteRoot = (root: string, xml: string): void => {
+  const repository = new EntitySqliteRepository(path.join(root, 'entities.sqlite'));
+  try {
+    importEntitiesXml(repository, xml);
+  } finally {
+    repository.close();
+  }
+};
+
 describe('pluginEntities', () => {
   let projectRoot: string;
 
   beforeEach(async () => {
     projectRoot = await fs.mkdtemp(path.join(os.tmpdir(), 'ljb-plugin-entities-'));
-    await fs.writeFile(path.join(projectRoot, 'entities.xml'), FIXTURE_XML, 'utf8');
+    seedSqliteRoot(projectRoot, FIXTURE_XML);
   });
 
   afterEach(async () => {
     await fs.rm(projectRoot, { recursive: true, force: true });
   });
 
-  test('readCombinedStatus reports the database id when entities.xml exists', async () => {
+  test('readCombinedStatus reports the database id when entities.sqlite exists', async () => {
     const status = await readCombinedStatus([projectRoot]);
     expect(status).toEqual({ entitiesFound: true, databaseId: FIXTURE_DATABASE_ID });
   });
 
-  test('readCombinedStatus reports entitiesFound: false when no root has entities.xml', async () => {
+  test('readCombinedStatus reports entitiesFound: false when no root has entities.sqlite', async () => {
     const emptyRoot = await fs.mkdtemp(path.join(os.tmpdir(), 'ljb-plugin-empty-'));
     try {
       const status = await readCombinedStatus([emptyRoot]);
@@ -88,7 +99,19 @@ describe('pluginEntities', () => {
     }
   });
 
-  test('readCombinedStatus reports the database id when only a later root has entities.xml', async () => {
+  test('readCombinedStatus ignores entities.xml-only roots', async () => {
+    const xmlOnly = await fs.mkdtemp(path.join(os.tmpdir(), 'ljb-plugin-xml-only-'));
+    try {
+      await fs.writeFile(path.join(xmlOnly, 'entities.xml'), FIXTURE_XML, 'utf8');
+      const status = await readCombinedStatus([xmlOnly]);
+      expect(status).toEqual({ entitiesFound: false, databaseId: null });
+      await expect(searchEntities([xmlOnly], 'liu', ['person'], 20)).resolves.toEqual([]);
+    } finally {
+      await fs.rm(xmlOnly, { recursive: true, force: true });
+    }
+  });
+
+  test('readCombinedStatus reports the database id when only a later root has entities.sqlite', async () => {
     const emptyRoot = await fs.mkdtemp(path.join(os.tmpdir(), 'ljb-plugin-empty-'));
     try {
       const status = await readCombinedStatus([emptyRoot, projectRoot]);
@@ -174,7 +197,7 @@ describe('pluginEntities', () => {
     expect(entity).toBeNull();
   });
 
-  test('searchEntities and getEntityById return empty/null (not an error) when no root has entities.xml', async () => {
+  test('searchEntities and getEntityById return empty/null when no root has entities.sqlite', async () => {
     const emptyRoot = await fs.mkdtemp(path.join(os.tmpdir(), 'ljb-plugin-empty-'));
     try {
       await expect(searchEntities([emptyRoot], 'liu', ['person'], 20)).resolves.toEqual([]);
@@ -189,7 +212,7 @@ describe('pluginEntities', () => {
 
     beforeEach(async () => {
       centralRoot = await fs.mkdtemp(path.join(os.tmpdir(), 'ljb-plugin-central-'));
-      await fs.writeFile(path.join(centralRoot, 'entities.xml'), CENTRAL_FIXTURE_XML, 'utf8');
+      seedSqliteRoot(centralRoot, CENTRAL_FIXTURE_XML);
     });
 
     afterEach(async () => {
@@ -210,8 +233,6 @@ describe('pluginEntities', () => {
       const results = await searchEntities([projectRoot, centralRoot], 'liu xuan', ['person'], 20);
       expect(results).toHaveLength(1);
       expect(results[0]?.id).toBe('person-liu-xuan');
-      // The project fixture's Liu Xuan carries a Wikidata idno; the central one doesn't —
-      // confirms the project copy won (first root in the list), not the central one.
       expect(results[0]?.authorityIds).toEqual([{ type: 'Wikidata', value: 'Q120698544' }]);
     });
 
@@ -220,7 +241,7 @@ describe('pluginEntities', () => {
       expect(entity?.primaryName).toBe('中央');
     });
 
-    test('readCombinedStatus prefers the project database id when both roots have entities.xml', async () => {
+    test('readCombinedStatus prefers the project database id when both roots have SQLite', async () => {
       const status = await readCombinedStatus([projectRoot, centralRoot]);
       expect(status.databaseId).toBe(FIXTURE_DATABASE_ID);
     });

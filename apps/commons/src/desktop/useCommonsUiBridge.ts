@@ -9,8 +9,20 @@ import type {
 } from '@src/desktop/authorityLifecycleTypes';
 import { useCallback, useEffect, useState } from 'react';
 import { createEntitiesScaffold } from '../../../../packages/cwrc-leafwriter/src/autoTagging/entities';
+import { refreshCbdbConcordanceAfterPackLifecycle } from '../../../../packages/cwrc-leafwriter/src/autoTagging/cbdbConcordance';
+import { clearPackContentCache } from '../../../../packages/cwrc-leafwriter/src/services/authority-pack-lookup';
 import { AUTHORITY_PACKS_DIRNAME } from '@src/desktop/authorityPackTypes';
 import { PROJECT_FILE_NAME } from '@src/desktop/projectFile';
+
+const afterAuthorityPackLifecycleSuccess = async (): Promise<void> => {
+  clearPackContentCache();
+  // PEDB only — matches Database panel reload. Failures are non-fatal; reload is the safety net.
+  try {
+    await refreshCbdbConcordanceAfterPackLifecycle();
+  } catch {
+    // Pack install already succeeded; concordance can wait for panel reload.
+  }
+};
 
 export const useCommonsUiBridge = () => {
   const {
@@ -294,6 +306,9 @@ export const useCommonsUiBridge = () => {
         ok: false,
         error: 'Authority lifecycle bridge is unavailable.',
       };
+      if (result.ok && options.enabled) {
+        await afterAuthorityPackLifecycleSuccess();
+      }
       await refreshAuthorityLifecycle();
       return result;
     },
@@ -306,6 +321,9 @@ export const useCommonsUiBridge = () => {
         ok: false,
         error: 'Authority lifecycle bridge is unavailable.',
       };
+      if (result.ok) {
+        await afterAuthorityPackLifecycleSuccess();
+      }
       await refreshAuthorityLifecycle();
       return result;
     }, [refreshAuthorityLifecycle]);

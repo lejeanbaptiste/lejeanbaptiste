@@ -4,6 +4,7 @@
  * export → DOM mutate → re-import.
  */
 
+import type { AuthorityCandidate } from './authority';
 import type { AuthorityPackId } from './packPaths';
 import type { AuthorityPackContent } from './packLoader';
 import {
@@ -14,7 +15,7 @@ import {
 } from './disambiguationCandidates';
 import { mintEntityId, type EntityKind } from './entities';
 import type { EntityStore } from './entityStore';
-import { normalizeTypedNamesForIntake } from './nameTypes';
+import { normalizeNameType, normalizeTypedNamesForIntake, type TypedName } from './nameTypes';
 import {
   authorityEnrichmentForEntity,
   authorityEnrichmentsForEntity,
@@ -23,16 +24,83 @@ import {
   buildUniqueOfficeAuthorityByName,
   firstAuthorityEnrichment,
   packTypedNamesForEntity,
+  type AuthorityEnrichment,
   type NameBackfillProgress,
   type NameBackfillResult,
+  type NorbertNobleTitleCandidate,
 } from './nameBackfill';
 import { suggestPersonNameSplit, suggestPersonRomanization } from '../plugins/personNameDefaults';
 import { autoRomanize } from '../utilities/romanize';
+import { norbertAuthorityLookupValues } from './norbertAuthorityId';
 import { fetchWikidataLifespan } from './wikidataDates';
 import { fetchWikidataNationality } from './wikidataNationality';
 import { fetchWikidataPlaceOfBirth } from './wikidataPlaceOfBirth';
 import { fetchWikidataPersonWorks } from './wikidataPersonWorks';
 import { fetchWikidataWorkDetails } from './wikidataWorkDetails';
+
+type AuthorityRefLookupFn = (request: {
+  source: 'cbdb' | 'dila' | 'norbert';
+  authorityId: string;
+}) => Promise<{
+  source?: string;
+  authorityId?: string;
+  primaryName?: string;
+  names?: Array<{ text: string; type?: string; lang?: string }>;
+  metadata?: AuthorityCandidate['metadata'] & { nobleTitles?: unknown[] };
+} | null>;
+
+const REF_SOURCE_BY_AUTHORITY: Record<string, 'cbdb' | 'dila' | 'norbert'> = {
+  CBDB: 'cbdb',
+  DILA: 'dila',
+  NORBERT: 'norbert',
+};
+
+async function referenceEnrichmentsForEntity(
+  entity: { authorities: Array<{ type: string; value: string }> },
+  lookupAuthorityRef: AuthorityRefLookupFn,
+): Promise<Array<{ source: string; enrichment: AuthorityEnrichment }>> {
+  const out: Array<{ source: string; enrichment: AuthorityEnrichment }> = [];
+  for (const auth of entity.authorities) {
+    const sourceKey = REF_SOURCE_BY_AUTHORITY[auth.type.trim().toUpperCase()];
+    if (!sourceKey) continue;
+    try {
+      const hit = await lookupAuthorityRef({
+        source: sourceKey,
+        authorityId: auth.value,
+      });
+      if (!hit) continue;
+      const names: TypedName[] = [];
+      for (const name of hit.names ?? []) {
+        const text = name.text?.trim();
+        if (!text) continue;
+        const type = normalizeNameType(name.type) ?? 'variant';
+        if (type === 'primary') continue;
+        names.push({ text, type, lang: name.lang });
+      }
+      out.push({
+        source: auth.type.trim().toUpperCase(),
+        enrichment: {
+          names: normalizeTypedNamesForIntake(names),
+          primaryName: hit.primaryName,
+          metadata: hit.metadata as AuthorityCandidate['metadata'],
+        },
+      });
+    } catch {
+      // Reference tier optional — pack/Wikidata still apply.
+    }
+  }
+  return out;
+}
+
+function mergeEnrichmentRows(
+  packRows: Array<{ source: string; enrichment: AuthorityEnrichment }>,
+  refRows: Array<{ source: string; enrichment: AuthorityEnrichment }>,
+): Array<{ source: string; enrichment: AuthorityEnrichment }> {
+  const bySource = new Map<string, { source: string; enrichment: AuthorityEnrichment }>();
+  for (const row of packRows) bySource.set(row.source, row);
+  for (const row of refRows) bySource.set(row.source, row); // reference wins
+  return [...bySource.values()];
+}
 
 interface PanelPerson {
   id: string;
@@ -112,10 +180,40 @@ export async function backfillEntitiesSqlite(
     signal?: AbortSignal;
     onProgress?: (p: NameBackfillProgress) => void;
     fetchImpl?: typeof fetch;
+    /**
+     * When true, expand each Wikidata-linked person into their works (many
+     * network round-trips). Default false — the Database Window bulk job skips
+     * this; pass true for a deep single-entity refresh.
+     */
+    expandWikidataWorks?: boolean;
+    /**
+     * When false, never call live Wikidata for names/dates/nationality/PoB.
+     * Default true, but pack data is preferred: live calls are skipped when
+     * packs already supply typed names / lifespan / nationality / origins.
+     */
+    liveWikidata?: boolean;
+    /**
+     * Optional A6 reference lookup (CBDB/DILA/Norbert sqlite/XML). When present,
+     * results take precedence over pack metadata for the same authority id.
+     */
+    lookupAuthorityRef?: AuthorityRefLookupFn;
+    /** Yield between entities so the UI can paint progress (default: microtask). */
+    yieldFn?: () => Promise<void>;
   } = {},
 ): Promise<NameBackfillResult> {
-  const { entityIds, readPackFile, projectLang, desktopLanguage, signal, onProgress, fetchImpl } =
-    options;
+  const {
+    entityIds,
+    readPackFile,
+    projectLang,
+    desktopLanguage,
+    signal,
+    onProgress,
+    fetchImpl,
+    expandWikidataWorks = false,
+    liveWikidata = true,
+    lookupAuthorityRef,
+    yieldFn = () => new Promise((resolve) => setTimeout(resolve, 0)),
+  } = options;
 
   const personSummaries = ((await store.sqlitePanelSummaries('person')) ?? []) as PanelPerson[];
   const workSummaries = ((await store.sqlitePanelSummaries('work')) ?? []) as PanelPerson[];
@@ -238,20 +336,30 @@ export async function backfillEntitiesSqlite(
     candidate.endYear = metadata?.endYear;
     candidate.authorityMetadata = metadata;
 
-    const givenFamily = await collectGivenFamilyNamesForCandidate(
-      candidate,
-      projectLang,
-      fetchImpl,
-    );
+    const packTypedNames = candidate.typedNames ?? [];
+    const refRows = lookupAuthorityRef
+      ? await referenceEnrichmentsForEntity(entity, lookupAuthorityRef)
+      : [];
+    const refTypedNames = refRows.flatMap((row) => row.enrichment.names ?? []);
+    const mergedTypedNames = refTypedNames.length > 0 ? refTypedNames : packTypedNames;
+    const packHasTypedNames = mergedTypedNames.length > 0;
+    const packHasFamily = mergedTypedNames.some((name) => name.type === 'family');
+    const packHasGiven = mergedTypedNames.some((name) => name.type === 'given');
+
+    const givenFamily =
+      liveWikidata && !(entity.familyName && entity.givenName) && !(packHasFamily && packHasGiven)
+        ? await collectGivenFamilyNamesForCandidate(candidate, projectLang, fetchImpl)
+        : {};
     const familyNames = [
       ...(givenFamily.familyName ? [givenFamily.familyName] : []),
       ...(entity.familyName ? [entity.familyName] : []),
-      ...(candidate.typedNames ?? [])
-        .filter((name) => name.type === 'family')
-        .map((name) => name.text),
+      ...mergedTypedNames.filter((name) => name.type === 'family').map((name) => name.text),
     ];
+    // Prefer reference/pack typed names when present; only hit Wikidata when empty.
     const typedNames = normalizeTypedNamesForIntake(
-      await collectTypedNamesForCandidate(candidate, fetchImpl),
+      packHasTypedNames || !liveWikidata
+        ? mergedTypedNames
+        : await collectTypedNamesForCandidate(candidate, fetchImpl),
       familyNames,
     );
     for (const typed of typedNames) {
@@ -300,7 +408,10 @@ export async function backfillEntitiesSqlite(
       payload: unknown;
     }> = [];
 
-    for (const { source, enrichment } of authorityEnrichmentsForEntity(entity, packIndex)) {
+    for (const { source, enrichment } of mergeEnrichmentRows(
+      authorityEnrichmentsForEntity(entity, packIndex),
+      refRows,
+    )) {
       const meta = enrichment.metadata;
       if (!meta) continue;
       const normalizedSource = source.trim().toUpperCase();
@@ -356,7 +467,12 @@ export async function backfillEntitiesSqlite(
       (auth) => auth.type.trim().toUpperCase() === 'NORBERT',
     );
     if (norbertIdno && nobleTitleIndex) {
-      for (const title of nobleTitleIndex.get(norbertIdno.value.trim()) ?? []) {
+      let titles: ReturnType<typeof nobleTitleIndex.get> = undefined;
+      for (const key of norbertAuthorityLookupValues(norbertIdno.value)) {
+        titles = nobleTitleIndex.get(key);
+        if (titles?.length) break;
+      }
+      for (const title of titles ?? []) {
         nobleTitles.push({
           placeName: title.placeName,
           roleName: title.roleName,
@@ -367,79 +483,116 @@ export async function backfillEntitiesSqlite(
         });
       }
     }
+    for (const row of refRows) {
+      const titles = (row.enrichment.metadata as {
+        nobleTitles?: Array<{
+          fief?: string;
+          rank?: string;
+          posthumous?: string;
+          dynasty?: string;
+          id?: string;
+        }>;
+      } | undefined)?.nobleTitles;
+      for (const title of titles ?? []) {
+        if (!title.fief && !title.rank) continue;
+        nobleTitles.push({
+          placeName: title.fief ?? '',
+          roleName: title.rank ?? '',
+          posthumousName: title.posthumous,
+          dynasty: title.dynasty,
+          ref: title.id ? `NORBERT:person_nt:${title.id}` : null,
+          source: 'NORBERT',
+        });
+      }
+    }
 
     const wikidataIdno = entity.authorities.find(
       (auth) => auth.type.trim().toUpperCase() === 'WIKIDATA',
     );
-    if (wikidataIdno) {
-      const [lifespan, nationality, placeOfBirth] = await Promise.all([
-        fetchWikidataLifespan(wikidataIdno.value, fetchImpl).catch(() => null),
-        fetchWikidataNationality(wikidataIdno.value, fetchImpl, projectLang).catch(() => null),
-        fetchWikidataPlaceOfBirth(wikidataIdno.value, fetchImpl, projectLang).catch(() => null),
-      ]);
-      if (lifespan?.birthYear != null || lifespan?.deathYear != null) {
-        dates.push({
-          source: 'WIKIDATA',
-          startYear: lifespan?.birthYear,
-          endYear: lifespan?.deathYear,
-        });
-      }
-      for (const value of nationality ?? []) {
-        nationalities.push({
-          label: value.label,
-          ref: value.canonicalId,
-          source: 'WIKIDATA',
-        });
-      }
-      for (const value of placeOfBirth ?? []) {
-        origins.push({
-          label: value.label,
-          ref: value.canonicalId,
-          source: 'WIKIDATA',
-        });
+    if (wikidataIdno && liveWikidata) {
+      const needDates = dates.length === 0;
+      const needNationality = nationalities.length === 0;
+      const needOrigin = origins.length === 0;
+      if (needDates || needNationality || needOrigin) {
+        const [lifespan, nationality, placeOfBirth] = await Promise.all([
+          needDates
+            ? fetchWikidataLifespan(wikidataIdno.value, fetchImpl).catch(() => null)
+            : Promise.resolve(null),
+          needNationality
+            ? fetchWikidataNationality(wikidataIdno.value, fetchImpl, projectLang).catch(() => null)
+            : Promise.resolve(null),
+          needOrigin
+            ? fetchWikidataPlaceOfBirth(wikidataIdno.value, fetchImpl, projectLang).catch(
+                () => null,
+              )
+            : Promise.resolve(null),
+        ]);
+        if (lifespan?.birthYear != null || lifespan?.deathYear != null) {
+          dates.push({
+            source: 'WIKIDATA',
+            startYear: lifespan?.birthYear,
+            endYear: lifespan?.deathYear,
+          });
+        }
+        for (const value of nationality ?? []) {
+          nationalities.push({
+            label: value.label,
+            ref: value.canonicalId,
+            source: 'WIKIDATA',
+          });
+        }
+        for (const value of placeOfBirth ?? []) {
+          origins.push({
+            label: value.label,
+            ref: value.canonicalId,
+            source: 'WIKIDATA',
+          });
+        }
       }
 
-      const qid = extractWikidataId(wikidataIdno.value) ?? wikidataIdno.value;
-      const personWorks = await fetchWikidataPersonWorks(qid, fetchImpl, projectLang).catch(
-        () => [],
-      );
-      for (const work of personWorks) {
-        const workId = await resolveOrCreateByAuthority(
-          store,
-          'work',
-          work.label,
-          'Wikidata',
-          work.qid,
+      if (expandWikidataWorks) {
+        const qid = extractWikidataId(wikidataIdno.value) ?? wikidataIdno.value;
+        const personWorks = await fetchWikidataPersonWorks(qid, fetchImpl, projectLang).catch(
+          () => [],
         );
-        const workDetails = await fetchWikidataWorkDetails(
-          work.qid,
-          fetchImpl,
-          desktopLanguage,
-        ).catch(() => null);
-        const workPatchNames =
-          workDetails?.titles.map((title) => ({
-            text: title.label,
-            nameType: 'translation',
-            language: title.language,
-            source: 'Wikidata',
-          })) ?? [];
-        const workResult = await store.sqliteApplyAuthorityBackfillPatch({
-          entityId: workId,
-          names: workPatchNames,
-          workAuthors: [
-            {
-              name: entity.names[0] ?? entity.id,
-              personId: entity.id,
-              ref: `#${entity.id}`,
+        for (const work of personWorks) {
+          const workId = await resolveOrCreateByAuthority(
+            store,
+            'work',
+            work.label,
+            'Wikidata',
+            work.qid,
+          );
+          const workDetails = await fetchWikidataWorkDetails(
+            work.qid,
+            fetchImpl,
+            desktopLanguage,
+          ).catch(() => null);
+          const workPatchNames =
+            workDetails?.titles.map((title) => ({
+              text: title.label,
+              nameType: 'translation',
+              language: title.language,
               source: 'Wikidata',
-            },
-          ],
-          workDate:
-            workDetails?.publicationYear != null
-              ? { source: 'WIKIDATA', startYear: workDetails.publicationYear, endYear: null }
-              : null,
-        });
-        if (workResult.changed) entityChanged = true;
+            })) ?? [];
+          const workResult = await store.sqliteApplyAuthorityBackfillPatch({
+            entityId: workId,
+            names: workPatchNames,
+            workAuthors: [
+              {
+                name: entity.names[0] ?? entity.id,
+                personId: entity.id,
+                ref: `#${entity.id}`,
+                source: 'Wikidata',
+              },
+            ],
+            workDate:
+              workDetails?.publicationYear != null
+                ? { source: 'WIKIDATA', startYear: workDetails.publicationYear, endYear: null }
+                : null,
+          });
+          if (workResult.changed) entityChanged = true;
+        }
       }
     }
 
@@ -468,6 +621,7 @@ export async function backfillEntitiesSqlite(
       entityLabel: entity.names[0],
       addedNames: addedThisEntity,
     });
+    await yieldFn();
   }
 
   for (const entity of workTargets) {
@@ -530,6 +684,7 @@ export async function backfillEntitiesSqlite(
       entityId: entity.id,
       entityLabel: entity.names[0],
     });
+    await yieldFn();
   }
 
   return {

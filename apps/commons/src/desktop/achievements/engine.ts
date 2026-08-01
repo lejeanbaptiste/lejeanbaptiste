@@ -139,27 +139,42 @@ const toRelativePath = (rootPath: string, filePath: string): string => {
     : normalizedFile;
 };
 
-/** entities.xml at project root (project store) or central DB folder. */
-const readEntityDatabaseXml = async (rootPath: string): Promise<string | null> => {
+/** entities.sqlite (preferred) or entities.xml at project root / central folder. */
+const countEntityDatabase = async (rootPath: string): Promise<number | null> => {
   const api = window.electronAPI;
   if (!api) return null;
 
-  const candidates: string[] = [`${rootPath.replace(/[/\\]+$/, '')}/entities.xml`];
+  const root = rootPath.replace(/[/\\]+$/, '');
+  const sqliteCandidates: string[] = [`${root}/entities.sqlite`];
+  const xmlCandidates: string[] = [`${root}/entities.xml`];
   try {
     const central = await api.getEntityDbFolder();
-    if (central) candidates.push(`${central.replace(/[/\\]+$/, '')}/entities.xml`);
+    if (central) {
+      const centralRoot = central.replace(/[/\\]+$/, '');
+      sqliteCandidates.push(`${centralRoot}/entities.sqlite`);
+      xmlCandidates.push(`${centralRoot}/entities.xml`);
+    }
   } catch {
     // No central folder configured.
   }
 
-  for (const candidate of candidates) {
-    // Most projects have no entity database yet (never onboarded, or the
-    // project store is 'central' with nothing configured) - checking first
-    // avoids a doomed readFile that Electron logs as an unhandled IPC error
-    // in the terminal even though the rejection itself is caught below.
+  if (api.entitySqliteCountEntities) {
+    for (const candidate of sqliteCandidates) {
+      try {
+        if (!(await api.pathExists(candidate))) continue;
+        const count = await api.entitySqliteCountEntities({ databasePath: candidate });
+        if (typeof count === 'number') return count;
+      } catch {
+        // Try the next candidate.
+      }
+    }
+  }
+
+  for (const candidate of xmlCandidates) {
     try {
       if (!(await api.pathExists(candidate))) continue;
-      return await api.readFile(candidate);
+      const xml = await api.readFile(candidate);
+      return countEntitiesInXml(xml).entities;
     } catch {
       // Try the next candidate.
     }
@@ -214,10 +229,9 @@ export const processSaveForAchievements = async (options: {
       tagMetrics.placesDisambiguated,
     );
 
-    const entityXml = await readEntityDatabaseXml(rootPath);
-    if (entityXml) {
-      const counted = countEntitiesInXml(entityXml);
-      project.entities = Math.max(project.entities, counted.entities);
+    const entityCount = await countEntityDatabase(rootPath);
+    if (entityCount != null) {
+      project.entities = Math.max(project.entities, entityCount);
     }
 
     let encoderName = '';

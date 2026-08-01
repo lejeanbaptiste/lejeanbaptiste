@@ -13,6 +13,8 @@ import { isDesktop } from '@src/types/desktop';
 import { regionalBundleForLanguage } from '../../../../packages/cwrc-leafwriter/src/autoTagging/mapView/regionalBundles';
 import type { MissingAssetType } from '../../../../packages/cwrc-leafwriter/src/utilities/chineseAssetStatus';
 import type { DialogBarProps } from '../dialogs';
+import { refreshCbdbConcordanceAfterPackLifecycle } from '../../../../packages/cwrc-leafwriter/src/autoTagging/cbdbConcordance';
+import { clearPackContentCache } from '../../../../packages/cwrc-leafwriter/src/services/authority-pack-lookup';
 
 const isChineseRelatedLanguage = (language: string): boolean =>
   language.toLowerCase().startsWith('zh');
@@ -49,7 +51,18 @@ const downloadSelectedChineseAssets = async (selected: MissingAssetType[]): Prom
   const choices = new Set(selected);
   const tasks: Promise<unknown>[] = [];
   if (choices.has('authorityPacks')) {
-    tasks.push(api?.authorityLifecycleSetEnabled?.({ enabled: true, profile: 'chinese' }) ?? Promise.resolve());
+    tasks.push(
+      (async () => {
+        await (api?.authorityLifecycleSetEnabled?.({ enabled: true, profile: 'chinese' }) ??
+          Promise.resolve());
+        clearPackContentCache();
+        try {
+          await refreshCbdbConcordanceAfterPackLifecycle();
+        } catch {
+          // Pack enable succeeded; panel reload remains the safety net.
+        }
+      })(),
+    );
   }
   if (choices.has('plugins')) tasks.push(downloadChinesePlugins());
   if (choices.has('mapTiles')) tasks.push(downloadChineseMapTiles());

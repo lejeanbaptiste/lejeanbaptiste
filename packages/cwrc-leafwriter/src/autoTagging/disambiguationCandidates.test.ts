@@ -16,7 +16,6 @@ import {
   mergeCandidates,
   mergeSelectedCandidates,
   normalizeGeo,
-  resolveEntityInDocument,
   type DisambiguationCandidate,
 } from './disambiguationCandidates';
 import { AuthorityCache } from './authorityCache';
@@ -25,9 +24,7 @@ import {
   clearWikidataNamesCacheForTests,
   clearWikidataTypedNamesCacheForTests,
 } from './disambiguationMatch';
-import { addEntity, createEntitiesScaffold, findEntity, parseEntities } from './entities';
-import { readEntityValueProvenance } from './entityProvenance';
-import { listEntities } from './entityOps';
+import { addEntity, createEntitiesScaffold, parseEntities } from './entities';
 
 jest.mock('../services/lincs-api', () => ({ reconcile: jest.fn() }));
 const mockReconcile = reconcile as jest.MockedFunction<typeof reconcile>;
@@ -124,125 +121,6 @@ describe('disambiguationCandidates', () => {
     expect(rows[0]?.label).toBe('章衡');
   });
 
-  it('stores and reads back a one-line description for a manually created entity', () => {
-    const doc = parseEntities(createEntitiesScaffold());
-    const id = resolveEntityInDocument(doc, {
-      kind: 'person',
-      name: '禹',
-      description: 'legendary flood-taming ruler, founder of the Xia dynasty',
-    });
-
-    const rows = candidatesFromEntityFile(doc, 'persName', '禹');
-    expect(rows).toHaveLength(1);
-    expect(rows[0]?.localEntityId).toBe(id);
-    expect(rows[0]?.description).toBe('legendary flood-taming ruler, founder of the Xia dynasty');
-  });
-
-  it('stores and reads back life dates for a resolved entity', () => {
-    const doc = parseEntities(createEntitiesScaffold());
-    const id = resolveEntityInDocument(doc, {
-      kind: 'person',
-      name: '張衡',
-      description: '(78–139) Han dynasty polymath',
-      startYear: 78,
-      endYear: 139,
-    });
-
-    const rows = candidatesFromEntityFile(doc, 'persName', '張衡');
-    expect(rows).toHaveLength(1);
-    expect(rows[0]?.localEntityId).toBe(id);
-    expect(rows[0]?.startYear).toBe(78);
-    expect(rows[0]?.endYear).toBe(139);
-  });
-
-  it('reads back non-person years from the dates note', () => {
-    const doc = parseEntities(createEntitiesScaffold());
-    resolveEntityInDocument(doc, { kind: 'place', name: '洛陽', startYear: -1036, endYear: 938 });
-
-    const rows = candidatesFromEntityFile(doc, 'placeName', '洛陽');
-    expect(rows).toHaveLength(1);
-    expect(rows[0]?.startYear).toBe(-1036);
-    expect(rows[0]?.endYear).toBe(938);
-  });
-
-  it('writes distinct per-source elements when resolving with authorityAssertions', () => {
-    const doc = parseEntities(createEntitiesScaffold());
-    const id = resolveEntityInDocument(doc, {
-      kind: 'person',
-      name: '劉善明',
-      authorityAssertions: [
-        {
-          id: 'dila-a003126',
-          label: '劉善明',
-          sources: ['DILA'],
-          authorityIds: [{ type: 'DILA', value: 'A003126' }],
-          startYear: 420,
-          authorityMetadata: {
-            nationality: [{ id: 'song', canonicalId: 'dynasty:song-liu', label: '宋(劉)' }],
-          },
-        },
-        {
-          id: 'wikidata-Q1',
-          label: '劉善明',
-          sources: ['Wikidata'],
-          authorityIds: [{ type: 'Wikidata', value: 'Q1' }],
-          startYear: 425,
-          authorityMetadata: {
-            nationality: [{ id: 'song', canonicalId: 'dynasty:song-liu', label: '宋(劉)' }],
-          },
-        },
-      ],
-    });
-
-    const el = findEntity(doc, id)!;
-    const births = Array.from(el.getElementsByTagName('birth'));
-    expect(births).toHaveLength(2);
-    expect(births.map((b) => readEntityValueProvenance(b).source).sort()).toEqual([
-      'DILA',
-      'WIKIDATA',
-    ]);
-    const nationalities = Array.from(el.getElementsByTagName('nationality'));
-    expect(nationalities).toHaveLength(2);
-    expect(nationalities.map((n) => readEntityValueProvenance(n).source).sort()).toEqual([
-      'DILA',
-      'WIKIDATA',
-    ]);
-  });
-
-  it('applies authorityAssertions when re-linking to an existing entity', () => {
-    const doc = parseEntities(createEntitiesScaffold());
-    const id = resolveEntityInDocument(doc, {
-      kind: 'person',
-      name: '劉善明',
-      authorityIds: [{ type: 'DILA', value: 'A003126' }],
-      authorityAssertions: [
-        { id: 'dila-a003126', label: '劉善明', sources: ['DILA'], startYear: 420 },
-      ],
-    });
-
-    resolveEntityInDocument(
-      doc,
-      {
-        kind: 'person',
-        name: '劉善明',
-        authorityIds: [{ type: 'Wikidata', value: 'Q1' }],
-        authorityMetadata: { startYear: 425 },
-        authorityAssertions: [
-          { id: 'wikidata-Q1', label: '劉善明', sources: ['Wikidata'], startYear: 425 },
-        ],
-      },
-      { id, label: '劉善明', sources: [], localEntityId: id },
-    );
-
-    const el = findEntity(doc, id)!;
-    const births = Array.from(el.getElementsByTagName('birth'));
-    expect(births).toHaveLength(2);
-    expect(births.map((b) => readEntityValueProvenance(b).source).sort()).toEqual([
-      'DILA',
-      'WIKIDATA',
-    ]);
-  });
-
   it('prefers the description note over an authority-cache note on the same entity', () => {
     const doc = parseEntities(createEntitiesScaffold());
     addEntity(doc, 'person', {
@@ -254,32 +132,6 @@ describe('disambiguationCandidates', () => {
     const rows = candidatesFromEntityFile(doc, 'persName', '桓玄');
     expect(rows).toHaveLength(1);
     expect(rows[0]?.description).toBe('Jin-dynasty usurper');
-  });
-
-  it('refreshes appointment metadata when an authority-linked person is reused', () => {
-    const doc = parseEntities(createEntitiesScaffold());
-    addEntity(doc, 'person', {
-      name: '王安石',
-      authorityIds: [{ type: 'CBDB', value: '1762' }],
-    });
-    const appointments = [
-      {
-        source: 'CBDB',
-        authorityId: 'posting:1',
-        person: { source: 'CBDB', authorityId: '1762' },
-        office: { source: 'CBDB', authorityId: '42', name: '尚書' },
-      },
-    ];
-    const id = resolveEntityInDocument(doc, {
-      kind: 'person',
-      name: '王安石',
-      authorityIds: [{ type: 'CBDB', value: '1762' }],
-      authorityMetadata: { appointments },
-    });
-    const cache = Array.from(findEntity(doc, id)!.children).find(
-      (child) => child.localName === 'note' && child.getAttribute('type') === 'authority-cache',
-    );
-    expect(JSON.parse(cache?.textContent ?? '{}').appointments).toEqual(appointments);
   });
 
   it('matches local entities on alternative names, keeping the display name as label', () => {
@@ -298,57 +150,6 @@ describe('disambiguationCandidates', () => {
       expect(rows[0]?.projectLangName).toBe('張衡');
       expect(rows[0]?.romanizedName).toBe('Zhang Heng');
     }
-  });
-
-  describe('dual-script resolve', () => {
-    it('mints with the authority project-language name as canonical and the surface as variant', () => {
-      const doc = parseEntities(createEntitiesScaffold());
-      const id = resolveEntityInDocument(doc, {
-        kind: 'person',
-        name: '平子',
-        projectLangName: '張衡',
-        romanizedName: 'Zhang Heng',
-        nameLang: 'zh-Hant',
-        authorityIds: [{ type: 'CBDB', value: '1762' }],
-      });
-
-      expect(listEntities(doc).find((e) => e.id === id)?.nameEntries).toEqual([
-        { text: '張衡', lang: 'zh-Hant', type: 'primary' },
-        { text: 'Zhang Heng', lang: 'zh-Latn', type: null },
-        { text: '平子', lang: null, type: 'variant' },
-      ]);
-    });
-
-    it('falls back to legacy shape when no dual-script fields are provided', () => {
-      const doc = parseEntities(createEntitiesScaffold());
-      const id = resolveEntityInDocument(doc, { kind: 'person', name: '禹' });
-      const name = findEntity(doc, id)!.getElementsByTagName('persName')[0]!;
-      expect(name.textContent).toBe('禹');
-      expect(name.getAttribute('xml:lang')).toBeNull();
-      expect(name.getAttribute('type')).toBeNull();
-    });
-
-    it('backfills romanization and records the new surface on entity reuse', () => {
-      const doc = parseEntities(createEntitiesScaffold());
-      addEntity(doc, 'person', {
-        name: '張衡',
-        authorityIds: [{ type: 'CBDB', value: '1762' }],
-      });
-
-      const id = resolveEntityInDocument(doc, {
-        kind: 'person',
-        name: '平子',
-        projectLangName: '張衡',
-        romanizedName: 'Zhang Heng',
-        nameLang: 'zh-Hant',
-        authorityIds: [{ type: 'CBDB', value: '1762' }],
-      });
-
-      const entity = listEntities(doc).find((e) => e.id === id)!;
-      expect(entity.names).toEqual(['張衡', 'Zhang Heng', '平子']);
-      expect(entity.romanized).toBe('Zhang Heng');
-      expect(entity.nameEntries[2]).toEqual({ text: '平子', lang: null, type: 'variant' });
-    });
   });
 
   describe('typed names ingestion', () => {
@@ -401,42 +202,6 @@ describe('disambiguationCandidates', () => {
       } finally {
         global.fetch = originalFetch;
       }
-    });
-
-    it('writes authority typed names on mint and on reuse', () => {
-      const doc = parseEntities(createEntitiesScaffold());
-      const typedNames = [
-        { text: '平子', type: 'courtesy' as const, lang: 'zh-Hant' },
-        { text: '西鄂侯', type: 'posthumous' as const },
-      ];
-      const id = resolveEntityInDocument(doc, {
-        kind: 'person',
-        name: '張衡',
-        projectLangName: '張衡',
-        romanizedName: 'Zhang Heng',
-        nameLang: 'zh-Hant',
-        typedNames,
-        authorityIds: [{ type: 'CBDB', value: '1762' }],
-      });
-
-      let entity = listEntities(doc).find((e) => e.id === id)!;
-      expect(entity.nameEntries).toEqual([
-        { text: '張衡', lang: 'zh-Hant', type: 'primary' },
-        { text: 'Zhang Heng', lang: 'zh-Latn', type: null },
-        { text: '平子', lang: 'zh-Hant', type: 'courtesy' },
-        { text: '西鄂侯', lang: null, type: 'posthumous' },
-      ]);
-
-      // reuse with a new typed name: appended, existing ones deduped
-      resolveEntityInDocument(doc, {
-        kind: 'person',
-        name: '張衡',
-        typedNames: [...typedNames, { text: '張平子', type: 'variant' as const }],
-        authorityIds: [{ type: 'CBDB', value: '1762' }],
-      });
-      entity = listEntities(doc).find((e) => e.id === id)!;
-      expect(entity.names).toEqual(['張衡', 'Zhang Heng', '平子', '西鄂侯', '張平子']);
-      expect(listEntities(doc)).toHaveLength(1);
     });
 
     it('collectTypedNamesForCandidate merges pack names with Wikidata claims', async () => {
@@ -725,14 +490,14 @@ describe('disambiguationCandidates', () => {
         sources: ['entity-file'],
         fromEntityFile: true,
         localEntityId: 'office-norbert-4135',
-        authorityIds: [{ type: 'NORBERT', value: '4135' }],
+        authorityIds: [{ type: 'NORBERT', value: 'office-4135' }],
       },
       {
         id: 'urn:ljb:authority:norbert:office:4135',
         label: '吳郡太守',
         sources: ['NORBERT'],
         uri: 'urn:ljb:authority:norbert:office:4135',
-        authorityIds: [{ type: 'NORBERT', value: '4135' }],
+        authorityIds: [{ type: 'NORBERT', value: 'office-4135' }],
       },
     ]);
     expect(rows).toHaveLength(1);
@@ -1088,7 +853,7 @@ describe('disambiguationCandidates', () => {
     expect(rows).toHaveLength(1);
     expect(rows[0]).toMatchObject({
       sources: ['NORBERT'],
-      authorityIds: [{ type: 'NORBERT', value: '11' }],
+      authorityIds: [{ type: 'NORBERT', value: 'office-11' }],
       authorityMetadata: { followsOffice: true, parentOffice },
     });
   });

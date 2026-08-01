@@ -1,14 +1,26 @@
 /**
- * Authority-database download manager (auto-tagging Phase A1).
+ * Authority-database download manager (reference tier / A1 + A6).
  *
- * CBDB and DILA are fetched on demand into `<entityDbFolder>/authority-databases/`
- * (alongside the user's central entity database). Each installed source gets a
+ * Two tiers of authority data:
+ *   1. Tagging packs — NDJSON bundles from the authoritypacks GitHub release
+ *      (handled elsewhere).
+ *   2. Reference databases — optional full records for disambiguation enrichment
+ *      via authorityRef:lookup.
+ *
+ * Reference sources installed here:
+ *   - CBDB + Norbert person sqlite — downloaded together as a slim zip from the
+ *     same GitHub release channel (`reference-index.json`), not the full
+ *     HuggingFace CBDB dump.
+ *   - DILA TEI — human browse/download page is Open Content
+ *     (DILA_OPEN_CONTENT_DOWNLOAD_PAGE); the machine mirror used here is the
+ *     pinned GitHub commit of DILA-edu/Authority-Databases.
+ *
+ * Files land in `<entityDbFolder>/authority-databases/`. Each source gets an
  * `<id>.manifest.json`; a source counts as available only when its manifest
- * parses and every listed file is present with the recorded size. Nothing else
- * in the app reads the raw files — later phases consume compiled artifacts.
+ * parses and every listed file is present with the recorded size.
  *
- * Electron-free: callers inject the base directory (main.ts composes with
- * getEntityDbFolder), so the pure parts are unit-testable.
+ * Electron-free: callers inject the base directory (main.ts composes with the
+ * local authority-assets folder), so the pure parts are unit-testable.
  */
 
 import { createHash } from 'node:crypto';
@@ -20,12 +32,7 @@ import { pipeline } from 'node:stream/promises';
 
 import JSZip from 'jszip';
 
-const MAX_ARCHIVE_BYTES = 2 * 1024 * 1024 * 1024;
-const MAX_ENTRY_BYTES = 4 * 1024 * 1024 * 1024;
-const MAX_ARCHIVE_ENTRIES = 20_000;
-const MAX_DOWNLOAD_BYTES = 8 * 1024 * 1024 * 1024;
-const DOWNLOAD_TIMEOUT_MS = 30 * 60 * 1000;
-
+import { AUTHORITY_PACK_REGISTRY } from '../../commons/src/desktop/authorityPackRegistryTypes';
 import type {
   AuthorityDownloadProgress,
   AuthoritySourceId,
@@ -38,7 +45,21 @@ export type {
   AuthoritySourceStatus,
 } from '../../commons/src/desktop/authorityDbTypes';
 
+const MAX_ARCHIVE_BYTES = 2 * 1024 * 1024 * 1024;
+const MAX_ENTRY_BYTES = 4 * 1024 * 1024 * 1024;
+const MAX_ARCHIVE_ENTRIES = 20_000;
+const MAX_DOWNLOAD_BYTES = 8 * 1024 * 1024 * 1024;
+const DOWNLOAD_TIMEOUT_MS = 30 * 60 * 1000;
+const FETCH_USER_AGENT = 'LeJeanBaptiste-authority/1.0';
+
+/** Combined pin: CBDB release + Norbert reduced-authority export. */
+const REFERENCE_PERSON_BUNDLE_VERSION = '20260627+2026-07-25-reduced-authority';
+
 export const AUTHORITY_DB_DIRNAME = 'authority-databases';
+
+/** Human-facing DILA Open Content download page (browse / manual download). */
+export const DILA_OPEN_CONTENT_DOWNLOAD_PAGE =
+  'https://authority.dila.edu.tw/docs/open_content/download.php';
 
 interface AuthorityFileSpec {
   url: string;
@@ -67,17 +88,16 @@ const dilaRawUrl = (repoPath: string) =>
 export const AUTHORITY_SOURCES: AuthoritySourceSpec[] = [
   {
     id: 'cbdb',
-    label: 'CBDB — China Biographical Database',
-    version: '20260627',
-    files: [
-      {
-        url: 'https://huggingface.co/datasets/cbdb/cbdb-sqlite/resolve/main/history/cbdb_202606/cbdb_20260627.zip',
-        fileName: 'cbdb.sqlite3',
-        // sha256 of the extracted sqlite, from the dataset's release manifest.
-        sha256: '193d6fc3f979524abb678728ad1139472638b17aedaa695fa2f331b0a3086496',
-        unzipEntrySuffix: '.sqlite3',
-      },
-    ],
+    label: 'CBDB — China Biographical Database (person reference)',
+    version: REFERENCE_PERSON_BUNDLE_VERSION,
+    // Installed via downloadReferencePersonBundle, not per-file URLs.
+    files: [],
+  },
+  {
+    id: 'norbert',
+    label: 'Norbert — person & office authority (reference)',
+    version: REFERENCE_PERSON_BUNDLE_VERSION,
+    files: [],
   },
   {
     id: 'dila',
@@ -114,13 +134,28 @@ export interface AuthorityManifest {
   installedAt: string;
 }
 
+export interface ReferencePersonIndex {
+  version: string;
+  artifact: string;
+  sha256: string;
+  bytes: number;
+  manifest?: {
+    files?: Record<string, { sha256?: string; bytes?: number; sourceVersion?: string }>;
+  };
+}
+
 export const manifestPath = (baseDir: string, id: AuthoritySourceId): string =>
   path.join(baseDir, `${id}.manifest.json`);
+
+export const referenceIndexUrl = (): string =>
+  `${AUTHORITY_PACK_REGISTRY.releaseDownloadBaseUrl}/reference-index.json`;
 
 export const parseAuthorityManifest = (raw: string): AuthorityManifest | null => {
   try {
     const parsed = JSON.parse(raw) as Partial<AuthorityManifest>;
-    if (parsed.source !== 'cbdb' && parsed.source !== 'dila') return null;
+    if (parsed.source !== 'cbdb' && parsed.source !== 'dila' && parsed.source !== 'norbert') {
+      return null;
+    }
     if (typeof parsed.version !== 'string' || !parsed.version) return null;
     if (typeof parsed.installedAt !== 'string') return null;
     if (!Array.isArray(parsed.files) || parsed.files.length === 0) return null;
@@ -131,6 +166,19 @@ export const parseAuthorityManifest = (raw: string): AuthorityManifest | null =>
       if (typeof file?.upstreamUrl !== 'string') return null;
     }
     return parsed as AuthorityManifest;
+  } catch {
+    return null;
+  }
+};
+
+const parseReferencePersonIndex = (raw: string): ReferencePersonIndex | null => {
+  try {
+    const parsed = JSON.parse(raw) as Partial<ReferencePersonIndex>;
+    if (typeof parsed.version !== 'string' || !parsed.version) return null;
+    if (typeof parsed.artifact !== 'string' || !parsed.artifact) return null;
+    if (typeof parsed.sha256 !== 'string' || !/^[0-9a-f]{64}$/.test(parsed.sha256)) return null;
+    if (typeof parsed.bytes !== 'number' || parsed.bytes <= 0) return null;
+    return parsed as ReferencePersonIndex;
   } catch {
     return null;
   }
@@ -198,7 +246,10 @@ const downloadToFile = async (
   onChunk: (receivedBytes: number, totalBytes: number | null) => void,
   maxBytes = MAX_DOWNLOAD_BYTES,
 ): Promise<void> => {
-  const response = await fetch(url, { signal: AbortSignal.timeout(DOWNLOAD_TIMEOUT_MS) });
+  const response = await fetch(url, {
+    signal: AbortSignal.timeout(DOWNLOAD_TIMEOUT_MS),
+    headers: { 'User-Agent': FETCH_USER_AGENT },
+  });
   if (!response.ok || !response.body) {
     throw new Error(`HTTP ${response.status} for ${url}`);
   }
@@ -262,16 +313,152 @@ const extractZipEntry = async (
   );
 };
 
+const writeSourceManifest = async (
+  baseDir: string,
+  manifest: AuthorityManifest,
+): Promise<void> => {
+  await fsp.writeFile(manifestPath(baseDir, manifest.source), JSON.stringify(manifest, null, 2), 'utf-8');
+};
+
 /**
- * Download and install one source. Files land under temp names and are renamed
- * into place only after checksum verification; the manifest is written last,
- * so a crashed or failed download never yields an "installed" source.
+ * Fetch reference-index.json, download the person-reference zip, verify sha256,
+ * extract cbdb-person.sqlite3 + norbert.sqlite3, copy CBDB to cbdb.sqlite3 for
+ * the legacy compile path, and write both manifests.
+ */
+export const downloadReferencePersonBundle = async (
+  baseDir: string,
+  onProgress?: (progress: AuthorityDownloadProgress) => void,
+): Promise<{ cbdb: AuthorityManifest; norbert: AuthorityManifest }> => {
+  await fsp.mkdir(baseDir, { recursive: true });
+
+  const indexUrl = referenceIndexUrl();
+  const indexResponse = await fetch(indexUrl, {
+    signal: AbortSignal.timeout(DOWNLOAD_TIMEOUT_MS),
+    headers: { 'User-Agent': FETCH_USER_AGENT },
+  });
+  if (!indexResponse.ok) {
+    throw new Error(`HTTP ${indexResponse.status} fetching reference index`);
+  }
+  const index = parseReferencePersonIndex(await indexResponse.text());
+  if (!index) throw new Error('Reference person index is missing or malformed.');
+
+  const artifactUrl = `${AUTHORITY_PACK_REGISTRY.releaseDownloadBaseUrl}/${index.artifact}`;
+  const zipTempPath = path.join(baseDir, `${index.artifact}.download`);
+  const cbdbTemp = path.join(baseDir, 'cbdb-person.sqlite3.download');
+  const norbertTemp = path.join(baseDir, 'norbert.sqlite3.download');
+  const tempPaths = [zipTempPath, cbdbTemp, norbertTemp];
+
+  try {
+    await downloadToFile(artifactUrl, zipTempPath, (receivedBytes, totalBytes) =>
+      onProgress?.({
+        sourceId: 'cbdb',
+        fileName: index.artifact,
+        phase: 'downloading',
+        receivedBytes,
+        totalBytes,
+      }),
+    );
+
+    const zipDigest = await sha256File(zipTempPath);
+    if (zipDigest !== index.sha256) {
+      throw new Error(`Checksum mismatch for ${index.artifact}`);
+    }
+
+    await extractZipEntry(zipTempPath, 'cbdb-person.sqlite3', cbdbTemp, (receivedBytes) =>
+      onProgress?.({
+        sourceId: 'cbdb',
+        fileName: 'cbdb-person.sqlite3',
+        phase: 'extracting',
+        receivedBytes,
+        totalBytes: null,
+      }),
+    );
+    await extractZipEntry(zipTempPath, 'norbert.sqlite3', norbertTemp, (receivedBytes) =>
+      onProgress?.({
+        sourceId: 'norbert',
+        fileName: 'norbert.sqlite3',
+        phase: 'extracting',
+        receivedBytes,
+        totalBytes: null,
+      }),
+    );
+
+    const cbdbDigest = await sha256File(cbdbTemp);
+    const norbertDigest = await sha256File(norbertTemp);
+    const expectedCbdb = index.manifest?.files?.['cbdb-person.sqlite3']?.sha256;
+    const expectedNorbert = index.manifest?.files?.['norbert.sqlite3']?.sha256;
+    if (expectedCbdb && cbdbDigest !== expectedCbdb) {
+      throw new Error('Checksum mismatch for cbdb-person.sqlite3');
+    }
+    if (expectedNorbert && norbertDigest !== expectedNorbert) {
+      throw new Error('Checksum mismatch for norbert.sqlite3');
+    }
+
+    const cbdbStat = await fsp.stat(cbdbTemp);
+    const norbertStat = await fsp.stat(norbertTemp);
+
+    await fsp.rename(cbdbTemp, path.join(baseDir, 'cbdb-person.sqlite3'));
+    await fsp.rename(norbertTemp, path.join(baseDir, 'norbert.sqlite3'));
+    // Legacy compile path still looks for cbdb.sqlite3.
+    await fsp.copyFile(path.join(baseDir, 'cbdb-person.sqlite3'), path.join(baseDir, 'cbdb.sqlite3'));
+    await fsp.rm(zipTempPath, { force: true });
+
+    const installedAt = new Date().toISOString();
+    const cbdbManifest: AuthorityManifest = {
+      source: 'cbdb',
+      version: index.version,
+      files: [
+        {
+          fileName: 'cbdb-person.sqlite3',
+          sha256: cbdbDigest,
+          bytes: cbdbStat.size,
+          upstreamUrl: artifactUrl,
+        },
+      ],
+      installedAt,
+    };
+    const norbertManifest: AuthorityManifest = {
+      source: 'norbert',
+      version: index.version,
+      files: [
+        {
+          fileName: 'norbert.sqlite3',
+          sha256: norbertDigest,
+          bytes: norbertStat.size,
+          upstreamUrl: artifactUrl,
+        },
+      ],
+      installedAt,
+    };
+
+    await writeSourceManifest(baseDir, cbdbManifest);
+    await writeSourceManifest(baseDir, norbertManifest);
+    return { cbdb: cbdbManifest, norbert: norbertManifest };
+  } catch (error) {
+    for (const tempPath of tempPaths) {
+      await fsp.rm(tempPath, { force: true }).catch(() => undefined);
+    }
+    throw error;
+  }
+};
+
+/**
+ * Download and install one source. CBDB and Norbert share the reference-person
+ * zip; DILA still downloads its three TEI files individually. Files land under
+ * temp names and are renamed into place only after checksum verification; the
+ * manifest is written last, so a crashed download never yields an "installed"
+ * source.
  */
 export const downloadAuthoritySource = async (
   baseDir: string,
   id: AuthoritySourceId,
   onProgress?: (progress: AuthorityDownloadProgress) => void,
 ): Promise<AuthorityManifest> => {
+  if (id === 'cbdb' || id === 'norbert') {
+    const manifests = await downloadReferencePersonBundle(baseDir, onProgress);
+    return manifests[id];
+  }
+
   const spec = AUTHORITY_SOURCES.find((source) => source.id === id);
   if (!spec) throw new Error(`Unknown authority source: ${id}`);
 
@@ -344,7 +531,7 @@ export const downloadAuthoritySource = async (
       files: installedFiles,
       installedAt: new Date().toISOString(),
     };
-    await fsp.writeFile(manifestPath(baseDir, id), JSON.stringify(manifest, null, 2), 'utf-8');
+    await writeSourceManifest(baseDir, manifest);
     return manifest;
   } catch (error) {
     for (const tempPath of tempPaths) {

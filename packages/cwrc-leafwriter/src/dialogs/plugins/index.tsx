@@ -20,6 +20,7 @@ import {
   type PluginRecordView,
 } from '../../plugins';
 import { clearPackContentCache } from '../../services/authority-pack-lookup';
+import { refreshCbdbConcordanceAfterPackLifecycle } from '../../autoTagging/cbdbConcordance';
 import type { IDialog } from '../type';
 import type { PluginReleaseEntry } from '../../../../../apps/commons/src/desktop/pluginRegistryTypes';
 
@@ -134,6 +135,13 @@ export const PluginsDialog = ({ onClose, open = false }: IDialog) => {
       // Enabling a plugin can (re)copy its authority packs to disk — drop any
       // cached pack contents so the tag-bomb dialog picks up the new files.
       clearPackContentCache();
+      if (enabled) {
+        try {
+          await refreshCbdbConcordanceAfterPackLifecycle();
+        } catch {
+          // Plugin enable succeeded; panel reload remains the safety net.
+        }
+      }
       if (next) {
         setSnapshot(next);
         setPluginRegistrySnapshot(next);

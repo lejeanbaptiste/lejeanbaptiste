@@ -36,6 +36,12 @@ import { TAG_TO_KIND, type EntityKind } from './entities';
 import type { AuthorityCandidate } from './authority';
 import { collectPluginPatternTagCandidates } from '../plugins/patternTagProducers';
 import { suggestPersonNameSplit, suggestPersonRomanization } from '../plugins/personNameDefaults';
+import { extractRegisteredEntityData } from '../plugins/entityDataExtractors';
+import { personWrapperSource } from './entityExtraction';
+import {
+  ingestExtractedEntityDataSqlite,
+  refreshExtractedEntityDataForDocumentSqlite,
+} from './sqliteEntityExtraction';
 import { autoRomanize } from '../utilities/romanize';
 import { checkWellFormedness } from '../utilities/checkWellFormedness';
 import { applyPurge, type PurgeOptions } from './purge';
@@ -1283,7 +1289,12 @@ export class AutoTaggingSession {
           await this.persistDocument(doc);
           groups = collectMentions(doc, this.policy, documentId, options);
         }
-        // Extracted-data SQLite ingest is follow-on; do not mutate/save DOM entities.xml.
+        await refreshExtractedEntityDataForDocumentSqlite(
+          this.store,
+          doc,
+          documentId,
+          (wrapper, key) => extractRegisteredEntityData({ wrapper, documentKey: key }),
+        );
       }
       options.onProgress?.(1, 1);
       return groups;
@@ -1319,7 +1330,12 @@ export class AutoTaggingSession {
           await this.persistDocument(doc);
           documentGroups = collectMentions(doc, this.policy, documentId, options);
         }
-        // Extracted-data SQLite ingest is follow-on; do not mutate/save DOM entities.xml.
+        await refreshExtractedEntityDataForDocumentSqlite(
+          this.store,
+          doc,
+          documentId,
+          (wrapper, key) => extractRegisteredEntityData({ wrapper, documentKey: key }),
+        );
       }
       groups.push(...documentGroups);
       if (i < documents.length - 1) await yieldToUi();
@@ -1592,6 +1608,20 @@ export class AutoTaggingSession {
 
     assignEntity({ element: instance.element, entityId });
     if (wrapperPerson) assignEntity({ element: wrapperPerson, entityId });
+    if (instance.tag === 'name' && instance.element.getAttribute('type') === 'personWrapper') {
+      const documentKey = instance.documentId;
+      const wrappers = Array.from(instance.element.ownerDocument!.getElementsByTagName('name')).filter(
+        (candidate) => candidate.getAttribute('type') === 'personWrapper',
+      );
+      const source = personWrapperSource(documentKey, wrappers.indexOf(instance.element) + 1);
+      const assertions = extractRegisteredEntityData({
+        wrapper: instance.element,
+        documentKey,
+      });
+      if (assertions.length > 0) {
+        await ingestExtractedEntityDataSqlite(this.store, documentKey, entityId, source, assertions);
+      }
+    }
     if (instance.tag === 'persName') {
       tagFollowingStyleNames(instance.element.ownerDocument!);
     }
@@ -1605,6 +1635,8 @@ export class AutoTaggingSession {
           entityIds: [entityId],
           projectLang,
           desktopLanguage: this.desktopLanguage(),
+          expandWikidataWorks: kind === 'person',
+          lookupAuthorityRef: window.electronAPI?.authorityRefLookup,
         }).catch(() => undefined);
       }
     }

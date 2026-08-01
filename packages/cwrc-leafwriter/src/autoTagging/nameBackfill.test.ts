@@ -704,7 +704,7 @@ describe('buildUniqueOfficeAuthorityByName', () => {
     const index = await buildUniqueOfficeAuthorityByName(readPackFile);
     expect(index.get('吳郡太守')).toEqual(
       expect.arrayContaining([
-        { type: 'NORBERT', value: '4135' },
+        { type: 'NORBERT', value: 'office-4135' },
         { type: 'CBDB', value: '99' },
       ]),
     );

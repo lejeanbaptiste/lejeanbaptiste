@@ -1,5 +1,4 @@
 import type { EntityStore } from './entityStore';
-import { promoteToCentralSqlite } from './sqliteBridgeOps';
 
 const CHECKPOINT_FILE = 'central-sync-checkpoint.json';
 const CENTRAL_MAPPING_TYPE = 'ljb-central';
@@ -108,6 +107,27 @@ async function writeCheckpoint(
   await store.writeProjectLjbFile(CHECKPOINT_FILE, `${JSON.stringify(checkpoint, null, 2)}\n`);
 }
 
+/**
+ * How many PEDB entities still lack a central mapping for this user.
+ * Cheap SQL count — used to decide whether to ask before catch-up sync.
+ */
+export async function countUnlinkedPedbEntities(
+  projectStore: EntityStore,
+  userStableId: string,
+): Promise<number> {
+  if (!(await projectStore.hasSqliteDatabase())) return 0;
+  const counted = await projectStore.sqliteCountUnlinked(userStableId);
+  if (typeof counted === 'number') return counted;
+  // Fallback when the dedicated IPC is unavailable: list ids + mappings.
+  const [ids, mappings] = await Promise.all([
+    projectStore.sqliteEntityIds(),
+    projectStore.sqliteListAllCentralMappings(userStableId),
+  ]);
+  if (!ids) return 0;
+  const linked = new Set((mappings ?? []).map((row) => row.projectEntityId));
+  return ids.reduce((count, id) => count + (linked.has(id) ? 0 : 1), 0);
+}
+
 async function synchronizeMirroredProjectSqlite(
   projectStore: EntityStore,
   centralStore: EntityStore,
@@ -123,32 +143,18 @@ async function synchronizeMirroredProjectSqlite(
     unavailable: false,
   };
 
-  const createdCentralIds = new Set<string>();
+  // Catch-up (promote/link/mint for unlinked PEDB rows) is an explicit
+  // background job — this path only converges already-linked pairs.
+
+  const checkpoint = await readCheckpoint(projectStore);
+  const nextPairs: Record<string, SyncPairCheckpoint> = {};
+  let pedbIds: string[];
   try {
-    const pedbIds = (await projectStore.sqliteEntityIds()) ?? [];
-    for (const pedbId of pedbIds) {
-      const existing = await projectStore.sqliteGetCentralId(pedbId, userStableId);
-      if (existing) continue;
-      const promoted = await promoteToCentralSqlite(
-        projectStore,
-        centralStore,
-        pedbId,
-        userStableId,
-      );
-      if (!promoted) continue;
-      if (promoted.created) {
-        createdCentralIds.add(promoted.centralId);
-        result.centralChanged = true;
-      }
-    }
+    pedbIds = (await projectStore.sqliteEntityIds()) ?? [];
   } catch {
     result.unavailable = true;
     return result;
   }
-
-  const checkpoint = await readCheckpoint(projectStore);
-  const nextPairs: Record<string, SyncPairCheckpoint> = {};
-  const pedbIds = (await projectStore.sqliteEntityIds()) ?? [];
 
   for (const pedbId of pedbIds) {
     const centralId = await projectStore.sqliteGetCentralId(pedbId, userStableId);
@@ -189,9 +195,7 @@ async function synchronizeMirroredProjectSqlite(
       nextPedbHash = (await projectStore.sqliteEntityContentHash(pedbId)) ?? pedbHash;
     };
 
-    if (createdCentralIds.has(centralId)) {
-      await copyToCentral();
-    } else if (prior && prior.centralId === centralId) {
+    if (prior && prior.centralId === centralId) {
       const pedbChanged = pedbHash !== prior.pedbHash;
       const centralChanged = centralHash !== prior.centralHash;
       if (pedbChanged && centralChanged && pedbHash !== centralHash) {

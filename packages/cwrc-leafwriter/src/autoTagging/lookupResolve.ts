@@ -28,6 +28,10 @@ import {
   mintEntitySqlite,
 } from './sqliteLookupMint';
 import { isLatinSurface } from './disambiguationMatch';
+import {
+  bareNorbertAuthorityValue,
+  formatNorbertAuthorityValue,
+} from './norbertAuthorityId';
 import { romanizeFromAuthorityMetadata } from '../utilities/romanize';
 import { suggestPersonNameSplit, suggestPersonRomanization } from '../plugins/personNameDefaults';
 import type { AuthorityPackId } from './packPaths';
@@ -85,10 +89,17 @@ export function parseAuthorityUri(uri: string): ParsedAuthorityRef | null {
   );
   if (localPack) {
     const source = localPack[1]!.toLowerCase();
+    const entityType = localPack[2]!.toLowerCase();
+    const bareId = localPack[3]!;
+    // Norbert person/office tables share a numeric id space — store typed
+    // values (`person-12`) so authority-duplicate checks stay honest.
+    // CBDB keeps bare ids (its person/office spaces do not collide in LJB).
+    const value =
+      source === 'norbert' ? `${entityType}-${bareId}` : bareId;
     return {
       idnoType: source === 'cbdb' ? 'CBDB' : 'NORBERT',
       crosswalkKey: source,
-      value: localPack[3]!,
+      value,
     };
   }
   for (const { pattern, idnoType, crosswalkKey, transform } of URI_PATTERNS) {
@@ -162,25 +173,50 @@ interface PackRow {
 
 function rowMatchesRef(row: PackRow, ref: ParsedAuthorityRef): boolean {
   const sourceType = row.source ? SOURCE_IDNO_TYPES[row.source.toLowerCase()] : undefined;
-  if (sourceType === ref.idnoType && String(row.authorityId) === ref.value) return true;
+  if (sourceType === ref.idnoType) {
+    const rowId = String(row.authorityId);
+    if (rowId === ref.value) return true;
+    // Typed Norbert idnos (`person-12`) still match bare pack authorityIds.
+    if (
+      ref.idnoType === 'NORBERT' &&
+      bareNorbertAuthorityValue(ref.value) === bareNorbertAuthorityValue(rowId)
+    ) {
+      return true;
+    }
+  }
 
   if (!ref.crosswalkKey) return false;
   const entry = row.metadata?.crosswalk?.[ref.crosswalkKey];
   if (entry == null) return false;
-  return Array.isArray(entry) ? entry.includes(ref.value) : String(entry) === ref.value;
+  const want = bareNorbertAuthorityValue(ref.value);
+  return Array.isArray(entry)
+    ? entry.some((v) => bareNorbertAuthorityValue(String(v)) === want)
+    : bareNorbertAuthorityValue(String(entry)) === want;
 }
 
 function idnosFromRow(row: PackRow): AuthorityId[] {
   const out: AuthorityId[] = [];
   const sourceType = row.source ? SOURCE_IDNO_TYPES[row.source.toLowerCase()] : undefined;
   if (sourceType && row.authorityId != null) {
-    out.push({ type: sourceType, value: String(row.authorityId) });
+    const bare = String(row.authorityId);
+    const value =
+      sourceType === 'NORBERT'
+        ? formatNorbertAuthorityValue(row.kind, bare)
+        : bare;
+    out.push({ type: sourceType, value });
   }
   for (const [key, entry] of Object.entries(row.metadata?.crosswalk ?? {})) {
     const type = CROSSWALK_IDNO_TYPES[key];
     if (!type || entry == null) continue;
     const values = Array.isArray(entry) ? entry : [entry];
-    for (const value of values) out.push({ type, value: String(value) });
+    for (const value of values) {
+      // Crosswalk norbert ids are bare person ids from other packs.
+      const formatted =
+        type === 'NORBERT' && key === 'norbert'
+          ? formatNorbertAuthorityValue('person', value)
+          : String(value);
+      out.push({ type, value: formatted });
+    }
   }
   return out;
 }

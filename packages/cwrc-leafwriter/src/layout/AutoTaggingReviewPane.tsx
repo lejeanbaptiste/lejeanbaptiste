@@ -24,6 +24,7 @@ import {
 } from '../autoTagging';
 import { findPluginReviewPanel } from '../plugins/pluginExtensions';
 import { cachedPackReader } from '../services/authority-pack-lookup';
+import { currentUserRules } from '../autoTagging/autoTaggingExclusions';
 import { useActions, useAppState } from '../overmind';
 import { AutoTaggingApplyOverlay, type AutoTaggingBusyLabel } from './AutoTaggingApplyOverlay';
 import { DockedResizeHandle, useStoredPanelWidth } from './DockedResizeHandle';
@@ -219,7 +220,7 @@ export const AutoTaggingReviewPane = () => {
           requestAnimationFrame(() => requestAnimationFrame(() => resolve()));
         });
         try {
-          const result = await getSession().apply(accepted, []);
+          const result = await getSession().apply(accepted, currentUserRules());
           if (accepted.some((s) => s.source === 'dates' && s.action === 'resolve-date')) {
             markDatesPassApplied(autoTaggingDocumentKey(window.writer));
           } else if (

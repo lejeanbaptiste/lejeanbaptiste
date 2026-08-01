@@ -156,8 +156,6 @@ See [apps/desktop/README.md](apps/desktop/README.md) for the compilation and pac
 
 ## TODO
 
-- [ ] finish sql transition (see doc)
-- [ ] retry absorbing all of norbert.
 - [ ] Rewards malfunctioning.
 - [ ] names, appointment, works, etc., should have authority badges, option to tombstone.
 

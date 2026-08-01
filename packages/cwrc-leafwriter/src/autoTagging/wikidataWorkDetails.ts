@@ -1,9 +1,5 @@
 /** Fetch a work date (P577 publication date, falling back to P571 inception) and author(s) (P50). */
 import { parseWikidataYear } from './wikidataDates';
-import { resolveEntityInDocument } from './disambiguationCandidates';
-import { setUserWorkAuthors, setUserWorkDate } from './entityOps';
-import { addEntityName } from './entityOps';
-import { autoRomanize } from '../utilities/romanize';
 
 interface WikidataTimeValue {
   time: string;
@@ -42,11 +38,6 @@ export interface WikidataWorkDetails {
   publicationYear?: number;
   authors: WikidataWorkAuthor[];
   titles: { language: string; label: string }[];
-}
-
-export interface WikidataWorkEnrichment {
-  publicationYear?: number;
-  authors: { qid: string; label: string; entityId: string }[];
 }
 
 function firstYearFromClaims(claims: WikidataClaimSnak[] | undefined): number | null {
@@ -141,47 +132,4 @@ export async function fetchWikidataWorkDetails(
   });
 
   return { publicationYear, authors, titles };
-}
-
-/**
- * Fetch and persist a work's Wikidata publication date and P50 authors.
- * Author entities are reused by their Wikidata id, or minted when absent.
- */
-export async function enrichWikidataWorkEntity(
-  doc: Document,
-  workEntityId: string,
-  qid: string,
-  projectLang?: string | null,
-  desktopLanguage?: string | null,
-  fetchImpl: WikidataFetchFn = fetch,
-): Promise<WikidataWorkEnrichment | null> {
-  const details = await fetchWikidataWorkDetails(qid, fetchImpl, desktopLanguage);
-  if (!details) return null;
-  const authors = details.authors.map((author) => ({
-    ...author,
-    entityId: resolveEntityInDocument(doc, {
-      kind: 'person',
-      name: author.label,
-      romanizedName: autoRomanize(author.label, projectLang ?? null) ?? undefined,
-      nameLang: projectLang ?? undefined,
-      authorityIds: [{ type: 'Wikidata', value: author.qid }],
-    }),
-  }));
-  setUserWorkAuthors(
-    doc,
-    workEntityId,
-    authors.map((author) => ({ name: author.label, key: author.entityId })),
-  );
-  for (const title of details.titles) {
-    addEntityName(doc, workEntityId, title.label, {
-      type: 'translation',
-      lang: title.language,
-      origin: 'authority',
-      source: 'Wikidata',
-    });
-  }
-  if (details.publicationYear != null) {
-    setUserWorkDate(doc, workEntityId, details.publicationYear);
-  }
-  return { publicationYear: details.publicationYear, authors };
 }

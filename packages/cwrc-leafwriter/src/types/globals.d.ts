@@ -106,6 +106,7 @@ declare global {
       label: string;
       ref?: string | null;
       source?: string | null;
+      origin?: 'user' | 'authority' | 'xml';
     }) => Promise<boolean>;
     entitySqliteAddOrigin?: (request: {
       databasePath: string;
@@ -113,6 +114,7 @@ declare global {
       label: string;
       ref?: string | null;
       source?: string | null;
+      origin?: 'user' | 'authority' | 'xml';
     }) => Promise<boolean>;
     entitySqliteAddNobleTitle?: (request: {
       databasePath: string;
@@ -122,6 +124,8 @@ declare global {
         fief?: string;
         posthumousName?: string;
         title?: string;
+        source?: string | null;
+        origin?: 'user' | 'authority' | 'xml';
       };
     }) => Promise<boolean>;
     entitySqliteUpdateNobleTitle?: (request: {
@@ -321,6 +325,21 @@ declare global {
         endYear?: number | null;
       } | null;
     }) => Promise<{ changed: boolean; namesAdded: number }>;
+    entitySqliteReconcileXmlExtractedData?: (request: {
+      databasePath: string;
+      documentKey: string;
+      wrappers: Array<{
+        entityId: string;
+        source: string;
+        assertions: Array<{
+          element: string;
+          value: string;
+          ref?: string | null;
+          children?: Array<{ element: string; value: string; ref?: string | null }>;
+        }>;
+      }>;
+      purgeOrphanSources?: boolean;
+    }) => Promise<{ wrappers: number; added: number; removed: number; retained: number }>;
     entitySqliteEntityContentHash?: (request: {
       databasePath: string;
       entityId: string;
@@ -360,6 +379,13 @@ declare global {
       databasePath: string;
       userStableId: string;
     }) => Promise<string[] | null>;
+    entitySqliteCountUnlinked?: (request: {
+      databasePath: string;
+      userStableId: string;
+    }) => Promise<number | null>;
+    entitySqliteCountEntities?: (request: {
+      databasePath: string;
+    }) => Promise<number | null>;
     entitySqliteFindByAuthority?: (request: {
       databasePath: string;
       kind: 'person' | 'place' | 'work' | 'office' | 'org';

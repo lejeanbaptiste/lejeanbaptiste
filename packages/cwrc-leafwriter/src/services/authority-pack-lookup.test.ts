@@ -163,16 +163,24 @@ describe('searchPackContent', () => {
 
 describe('packResultUri round-trips through parseAuthorityUri', () => {
   it.each([
-    ['cbdb' as const, 'person' as const, '31305', 'CBDB'],
-    ['cbdb' as const, 'place' as const, '900123', 'CBDB'],
-    ['dila' as const, 'person' as const, 'A001492', 'DILA'],
-    ['dila' as const, 'place' as const, 'PL000123', 'DILA'],
-    ['ndl' as const, 'person' as const, '00270123', 'NDL'],
-    ['cbdb' as const, 'office' as const, '1234', 'CBDB'],
-    ['norbert' as const, 'office' as const, '5678', 'NORBERT'],
-  ])('%s %s %s → %s', (source, entityType, id, idnoType) => {
+    ['cbdb' as const, 'person' as const, '31305', 'CBDB', '31305'],
+    ['cbdb' as const, 'place' as const, '900123', 'CBDB', '900123'],
+    ['dila' as const, 'person' as const, 'A001492', 'DILA', 'A001492'],
+    ['dila' as const, 'place' as const, 'PL000123', 'DILA', 'PL000123'],
+    ['ndl' as const, 'person' as const, '00270123', 'NDL', '00270123'],
+    ['cbdb' as const, 'office' as const, '1234', 'CBDB', '1234'],
+    // Norbert idnos are kind-prefixed so person/office numeric spaces cannot collide.
+    ['norbert' as const, 'office' as const, '5678', 'NORBERT', 'office-5678'],
+    ['norbert' as const, 'person' as const, '12', 'NORBERT', 'person-12'],
+  ])('%s %s %s → %s %s', (source, entityType, id, idnoType, value) => {
     const parsed = parseAuthorityUri(packResultUri(source, entityType, id));
-    expect(parsed).toMatchObject({ idnoType, value: id });
+    expect(parsed).toMatchObject({ idnoType, value });
+  });
+
+  it('strips an already-typed Norbert pack id when building the URN', () => {
+    expect(packResultUri('norbert', 'office', 'office-42')).toBe(
+      'urn:ljb:authority:norbert:office:42',
+    );
   });
 });
 

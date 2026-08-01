@@ -93,6 +93,10 @@ import {
   setAuthorityLifecycleEnabled,
 } from './authorityLifecycle';
 import {
+  lookupAuthorityRef,
+  type AuthorityRefLookupRequest,
+} from './authorityRefLookup';
+import {
   installMapTileBundle,
   listInstalledMapTileRegions,
   PMTILES_SCHEME,
@@ -179,6 +183,7 @@ import {
   backfillEntitySqliteDecisionTargets,
   createPopulatedEntitySqlite,
   applyEntitySqliteAuthorityBackfillPatch,
+  reconcileEntitySqliteXmlExtractedData,
   getEntitySqliteContentHash,
   replaceEntitySqliteContent,
   findEntitySqliteByAuthority,
@@ -197,6 +202,7 @@ import {
   markEntitySqliteDuplicateIntentional,
   mergeEntitySqlite,
   rejectEntitySqliteAssertion,
+  restoreEntitySqliteAssertion,
   rejectEntitySqliteConcordance,
   removeEntitySqliteAssertion,
   removeEntitySqliteName,
@@ -211,6 +217,8 @@ import {
   listEntitySqliteMappingsByCentralIds,
   listEntitySqliteAllCentralMappings,
   listEntitySqliteLinkedCentralIds,
+  countEntitySqliteUnlinked,
+  countEntitySqliteEntities,
   softDeleteEntitySqlite,
   tombstoneEntitySqliteNames,
   updateEntitySqliteDescription,
@@ -1484,6 +1492,19 @@ const registerIpcHandlers = () => {
     },
   );
   ipcMain.handle(
+    'entitySqlite:reconcileXmlExtractedData',
+    async (
+      _event,
+      request: import('./entityDbSqlite/repository').XmlExtractedRefreshInput & {
+        databasePath: string;
+      },
+    ) => {
+      await assertRendererReadPath(request.databasePath);
+      await assertRendererWritePath(request.databasePath);
+      return reconcileEntitySqliteXmlExtractedData(request);
+    },
+  );
+  ipcMain.handle(
     'entitySqlite:entityContentHash',
     async (
       _event,
@@ -1580,6 +1601,31 @@ const registerIpcHandlers = () => {
     ) => {
       await assertRendererReadPath(request.databasePath);
       return listEntitySqliteLinkedCentralIds(request);
+    },
+  );
+  ipcMain.handle(
+    'entitySqlite:countUnlinked',
+    async (
+      _event,
+      request: {
+        databasePath: string;
+        userStableId: string;
+      },
+    ) => {
+      await assertRendererReadPath(request.databasePath);
+      return countEntitySqliteUnlinked(request);
+    },
+  );
+  ipcMain.handle(
+    'entitySqlite:countEntities',
+    async (
+      _event,
+      request: {
+        databasePath: string;
+      },
+    ) => {
+      await assertRendererReadPath(request.databasePath);
+      return countEntitySqliteEntities(request);
     },
   );
   ipcMain.handle(
@@ -1783,6 +1829,17 @@ const registerIpcHandlers = () => {
       await assertRendererReadPath(request.databasePath);
       await assertRendererWritePath(request.databasePath);
       return rejectEntitySqliteAssertion(request);
+    },
+  );
+  ipcMain.handle(
+    'entitySqlite:restoreAssertion',
+    async (
+      _event,
+      request: import('./entityDbSqlite/readService').EntitySqliteAssertionRequest,
+    ) => {
+      await assertRendererReadPath(request.databasePath);
+      await assertRendererWritePath(request.databasePath);
+      return restoreEntitySqliteAssertion(request);
     },
   );
   ipcMain.handle(
@@ -2277,6 +2334,12 @@ const registerIpcHandlers = () => {
 
   ipcMain.handle('authorityDb:statuses', async () =>
     getAuthorityStatuses(await getAuthorityDbDir()),
+  );
+
+  ipcMain.handle(
+    'authorityRef:lookup',
+    async (_event, request: AuthorityRefLookupRequest) =>
+      lookupAuthorityRef(await getAuthorityDbDir(), request),
   );
 
   const activeAuthorityDownloads = new Set<AuthoritySourceId>();

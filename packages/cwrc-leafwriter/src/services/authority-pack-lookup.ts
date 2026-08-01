@@ -15,6 +15,7 @@ import { packReadFinished, packReadStarted } from '../autoTagging/authorityLoadP
 import { stringsMatchExactly } from '../autoTagging/disambiguationMatch';
 import type { AuthorityCandidate } from '../autoTagging/authority';
 import type { AuthorityPackContent } from '../autoTagging/packLoader';
+import { bareNorbertAuthorityValue } from '../autoTagging/norbertAuthorityId';
 
 export interface PackRow {
   authorityId?: string;
@@ -103,11 +104,12 @@ export function packResultUri(source: PackSource, entityType: NamedEntityType, i
       // Assumes name authorities (ndlna); refine if a pack ships ndlsh ids.
       return `https://id.ndl.go.jp/auth/ndlna/${id}`;
     case 'norbert':
-      return `urn:ljb:authority:norbert:${entityType}:${id}`;
+      // Packs store typed ids (`office-4135`); URN keeps kind + bare numeric.
+      return `urn:ljb:authority:norbert:${entityType}:${bareNorbertAuthorityValue(id)}`;
   }
 }
 
-function describeRow(row: PackRow): string | undefined {
+export function describePackRow(row: PackRow): string | undefined {
   const meta = row.metadata;
   if (!meta) return undefined;
   if (meta.description) return meta.description;
@@ -117,6 +119,10 @@ function describeRow(row: PackRow): string | undefined {
       : undefined;
   const parts = [meta.dynasty, years, meta.pinyin ?? meta.yomi, meta.translation].filter(Boolean);
   return parts.length ? parts.join(' · ') : undefined;
+}
+
+function describeRow(row: PackRow): string | undefined {
+  return describePackRow(row);
 }
 
 /**

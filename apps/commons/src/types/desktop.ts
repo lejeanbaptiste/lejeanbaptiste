@@ -9,6 +9,10 @@ import type {
   AuthorityLifecycleSetEnabledOptions,
   AuthorityLifecycleStatus,
 } from '@src/desktop/authorityLifecycleTypes';
+import type {
+  AuthorityRefLookupRequest,
+  AuthorityRefLookupResult,
+} from '@src/desktop/authorityRefTypes';
 import type { ProjectBundle } from '@src/desktop/projectFile';
 import type {
   SchemaUpdateApplyResult,
@@ -344,6 +348,9 @@ export interface ElectronAPI {
   authorityDbStatuses?: () => Promise<AuthoritySourceStatus[]>;
   authorityDbDownload?: (sourceId: AuthoritySourceId) => Promise<{ ok: boolean; error?: string }>;
   authorityDbPromptDownload?: () => Promise<'accepted' | 'declined'>;
+  authorityRefLookup?: (
+    request: AuthorityRefLookupRequest,
+  ) => Promise<AuthorityRefLookupResult | null>;
   onAuthorityDbProgress?: (callback: (progress: AuthorityDownloadProgress) => void) => () => void;
   authorityPackStatuses?: () => Promise<
     import('@src/desktop/authorityPackTypes').AuthorityPackStatus[]

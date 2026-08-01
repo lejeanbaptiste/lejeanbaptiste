@@ -1,0 +1,1327 @@
+import Autocomplete from '@mui/material/Autocomplete';
+import Box from '@mui/material/Box';
+import Button from '@mui/material/Button';
+import Chip from '@mui/material/Chip';
+import CircularProgress from '@mui/material/CircularProgress';
+import HubOutlinedIcon from '@mui/icons-material/HubOutlined';
+import ListItemButton from '@mui/material/ListItemButton';
+import ListItemText from '@mui/material/ListItemText';
+import Stack from '@mui/material/Stack';
+import TextField from '@mui/material/TextField';
+import Typography from '@mui/material/Typography';
+import { memo, useCallback, useEffect, useMemo, useRef, useState, startTransition } from 'react';
+import { useTranslation } from 'react-i18next';
+import { List as VirtualList } from 'react-window';
+import type { RowComponentProps } from 'react-window';
+import type { EntityKind } from '../../../../../packages/cwrc-leafwriter/src/autoTagging/entities';
+import type { EntitySummary } from '../../../../../packages/cwrc-leafwriter/src/autoTagging/entityOps';
+import type { EntityStore } from '../../../../../packages/cwrc-leafwriter/src/autoTagging/entityStore';
+import {
+  applyHygieneFinding,
+  authorityPeerToCompareCard,
+  entityToCompareCard,
+  harvestProposalToCompareCard,
+  findingsFromAuthorityDuplicates,
+  findingsFromHarvest,
+  collectHarvestedWrappers,
+  buildPersonPackLookupIndex,
+  descriptionFromPackIndex,
+  lookupPackPeers,
+  scanBadPrimary,
+  scanBadRomanization,
+  scanEmptyDescription,
+  scanFamilyPrefixedAltNames,
+  scanMissingFamilyOrGiven,
+  scanNearDuplicates,
+  scanRejectedBlockingGoodName,
+  scanUnlinkedAuthorityHits,
+  corroboratePackPeer,
+  type HygieneFinding,
+  type HygienePeer,
+} from '../../../../../packages/cwrc-leafwriter/src/autoTagging/hygiene';
+import { extractRegisteredEntityData } from '../../../../../packages/cwrc-leafwriter/src/plugins/entityDataExtractors';
+import { backfillEntitiesSqlite } from '../../../../../packages/cwrc-leafwriter/src/autoTagging/sqliteAuthorityBackfill';
+import { refreshCbdbConcordanceSqlite } from '../../../../../packages/cwrc-leafwriter/src/autoTagging/cbdbConcordance';
+import { AUTHORITY_PACKS } from '../../../../../packages/cwrc-leafwriter/src/autoTagging/packPaths';
+import { useActions, useAppState } from '@src/overmind';
+import {
+  BackgroundJobBanner,
+  useBackgroundJob,
+  yieldToUi,
+} from './BackgroundJobBanner';
+import { EntityCompareCard } from './EntityCompareCard';
+import { loadDatabaseWindowEntities } from './loadEntities';
+
+type DatabaseView = 'project' | 'central';
+type MainPane = 'detail' | 'issues';
+
+/** Cheap yield for CPU-bound loops (no forced double paint). */
+const yieldCpu = (): Promise<void> => new Promise((resolve) => setTimeout(resolve, 0));
+
+const hasCbdbOrDila = (entity: EntitySummary): boolean =>
+  entity.authorities.some((auth) => {
+    const type = auth.type.toLowerCase();
+    return type === 'cbdb' || type === 'dila';
+  });
+
+/** Dense two-line entity row height (name + romanization/id). */
+const DATABASE_ENTITY_ROW_HEIGHT = 56;
+
+type DatabaseEntityRowData = {
+  entities: EntitySummary[];
+  selectedId: string | null;
+  onSelect: (id: string) => void;
+};
+
+/** Stable row component for react-window (must not be recreated each render). */
+function DatabaseEntityRow({
+  index,
+  style,
+  entities,
+  selectedId,
+  onSelect,
+}: RowComponentProps<DatabaseEntityRowData>) {
+  const entity = entities[index];
+  if (!entity) return null;
+  return (
+    <ListItemButton
+      style={style}
+      dense
+      selected={selectedId === entity.id}
+      onClick={() => onSelect(entity.id)}
+      sx={{
+        alignItems: 'flex-start',
+        borderBottom: 1,
+        borderColor: 'divider',
+        py: 0.75,
+      }}
+    >
+      <ListItemText
+        primary={entity.names[0] ?? entity.id}
+        secondary={entity.romanized ?? entity.projectKey ?? entity.id}
+        primaryTypographyProps={{ noWrap: true }}
+        secondaryTypographyProps={{ noWrap: true }}
+      />
+    </ListItemButton>
+  );
+}
+
+/**
+ * Virtualized sidebar list — only ~20–40 DOM rows exist at once.
+ * Mounting tens of thousands of ListItemButtons made every click a multi-second
+ * hit-test / React reconcile (see Performance panel “Hit test” ~1s).
+ */
+const DatabaseEntityList = memo(function DatabaseEntityList({
+  entities,
+  filtered,
+  selectedId,
+  loading,
+  onSelect,
+}: {
+  entities: EntitySummary[];
+  filtered: EntitySummary[];
+  selectedId: string | null;
+  loading: boolean;
+  onSelect: (id: string) => void;
+}) {
+  const rowProps = useMemo(
+    () => ({ entities: filtered, selectedId, onSelect }),
+    [filtered, selectedId, onSelect],
+  );
+
+  if (entities.length === 0 && loading) {
+    return (
+      <Box sx={{ p: 2, display: 'flex', justifyContent: 'center' }}>
+        <CircularProgress size={24} />
+      </Box>
+    );
+  }
+  if (filtered.length === 0) {
+    return (
+      <Typography variant="body2" color="text.secondary" sx={{ p: 2 }}>
+        No entities
+      </Typography>
+    );
+  }
+  return (
+    <VirtualList
+      rowComponent={DatabaseEntityRow}
+      rowCount={filtered.length}
+      rowHeight={DATABASE_ENTITY_ROW_HEIGHT}
+      rowProps={rowProps}
+      style={{ height: '100%', width: '100%' }}
+    />
+  );
+});
+
+const KIND_LABEL: Record<EntityKind, string> = {
+  person: 'Person',
+  place: 'Place',
+  org: 'Organization',
+  work: 'Work',
+  office: 'Office',
+};
+
+const findingKindLabel = (kind: HygieneFinding['kind']): string => {
+  switch (kind) {
+    case 'familyPrefixedAltName':
+      return '姓 on 字/號/法號';
+    case 'missingFamilyOrGiven':
+      return 'Missing 姓/名';
+    case 'badRomanization':
+      return 'Romanization';
+    case 'badPrimary':
+      return 'Primary name';
+    case 'emptyDescription':
+      return 'Empty description';
+    case 'rejectedBlockingGoodName':
+      return 'Rejected name';
+    case 'authorityIdDuplicate':
+      return 'Authority duplicate';
+    case 'nearDuplicate':
+      return 'Near duplicate';
+    case 'unlinkedAuthorityHit':
+      return 'Unlinked authority';
+    case 'harvestWrapper':
+      return 'Harvest';
+    default:
+      return kind;
+  }
+};
+
+const highlightForFinding = (finding: HygieneFinding): string[] => {
+  switch (finding.kind) {
+    case 'familyPrefixedAltName':
+      return ['otherNames'];
+    case 'missingFamilyOrGiven':
+      return ['familyName', 'givenName'];
+    case 'badRomanization':
+      return ['romanized'];
+    case 'badPrimary':
+      return ['primary'];
+    case 'emptyDescription':
+      return ['description'];
+    case 'rejectedBlockingGoodName':
+      return ['otherNames'];
+    case 'unlinkedAuthorityHit':
+      return ['authorities'];
+    case 'harvestWrapper':
+      return ['nationalities', 'origins', 'roles', 'nobleTitles'];
+    default:
+      return [];
+  }
+};
+
+type PendingApply = {
+  finding: HygieneFinding;
+  keepId?: string;
+};
+
+/**
+ * Issue kinds safe to accept en masse without per-item judgment.
+ * 姓 on 字/號/法號 is mechanical once the scanner has identified the prefix.
+ */
+const BULK_ACCEPT_KINDS = new Set<HygieneFinding['kind']>(['familyPrefixedAltName']);
+
+/** Optimistic in-memory update so the review cards stay accurate before Save. */
+function applyFindingLocally(entity: EntitySummary, finding: HygieneFinding): EntitySummary {
+  const p = finding.proposal;
+  if (p.action === 'stripAltName') {
+    return {
+      ...entity,
+      names: entity.names.map((name) => (name === p.fromText ? p.toText : name)),
+      nameEntries: entity.nameEntries.map((entry) =>
+        entry.text === p.fromText ? { ...entry, text: p.toText } : entry,
+      ),
+    };
+  }
+  if (p.action === 'setRomanized') {
+    return { ...entity, romanized: p.text };
+  }
+  if (p.action === 'renamePrimary') {
+    return {
+      ...entity,
+      names: [p.text, ...entity.names.slice(1)],
+      nameEntries:
+        entity.nameEntries.length > 0
+          ? [{ ...entity.nameEntries[0]!, text: p.text }, ...entity.nameEntries.slice(1)]
+          : entity.nameEntries,
+    };
+  }
+  if (p.action === 'setDescription') {
+    return { ...entity, description: p.text };
+  }
+  if (p.action === 'setFamilyGiven') {
+    return {
+      ...entity,
+      familyName: p.familyName,
+      givenName: p.givenName,
+      romanized: p.romanizedName ?? entity.romanized,
+    };
+  }
+  if (p.action === 'attachAuthority') {
+    if (
+      entity.authorities.some(
+        (auth) =>
+          auth.type.toLowerCase() === p.authorityType.toLowerCase() &&
+          auth.value === p.authorityValue,
+      )
+    ) {
+      return entity;
+    }
+    return {
+      ...entity,
+      authorities: [...entity.authorities, { type: p.authorityType, value: p.authorityValue }],
+    };
+  }
+  return entity;
+}
+
+function idsRemovedByMerge(finding: HygieneFinding, keepId: string): string[] {
+  const related =
+    finding.relatedEntityIds ??
+    (finding.peer?.kind === 'entity' ? [finding.entityId, finding.peer.entityId] : [finding.entityId]);
+  return related.filter((id) => id !== keepId);
+}
+
+export const DatabaseWindow = () => {
+  const { t } = useTranslation();
+  const { config, rootPath } = useAppState().project;
+  const { notifyViaSnackbar } = useActions().ui;
+  const syncToCentral = config?.syncToCentral === true;
+
+  const [databaseView, setDatabaseView] = useState<DatabaseView>(
+    syncToCentral ? 'central' : 'project',
+  );
+  const [entities, setEntities] = useState<EntitySummary[]>([]);
+  const [activeStore, setActiveStore] = useState<EntityStore | null>(null);
+  const [projectStore, setProjectStore] = useState<EntityStore | null>(null);
+  const [applyBusy, setApplyBusy] = useState(false);
+  const [loadError, setLoadError] = useState<string | null>(null);
+  const [search, setSearch] = useState('');
+  const [kindFilter, setKindFilter] = useState<EntityKind>('person');
+  const [selectedId, setSelectedId] = useState<string | null>(null);
+  const [mainPane, setMainPane] = useState<MainPane>('detail');
+  const [findings, setFindings] = useState<HygieneFinding[]>([]);
+  const [findingIndex, setFindingIndex] = useState(0);
+  const [projectLang, setProjectLang] = useState<string | null>(null);
+  const [mergeKeepId, setMergeKeepId] = useState<string | null>(null);
+  const [reloadBusy, setReloadBusy] = useState(false);
+  const [pendingCount, setPendingCount] = useState(0);
+  const pendingAppliesRef = useRef<PendingApply[]>([]);
+
+  const { jobRunning, beginJob, updateJob, endJob, cancelJob } = useBackgroundJob();
+
+  useEffect(() => {
+    if (syncToCentral) setDatabaseView('central');
+  }, [syncToCentral]);
+
+  useEffect(() => {
+    void (async () => {
+      const globals = window as Window & {
+        __leafWriterProject?: { getProjectSourceLanguage?: () => Promise<string | null> };
+      };
+      setProjectLang((await globals.__leafWriterProject?.getProjectSourceLanguage?.()) ?? null);
+    })();
+  }, []);
+
+  const reload = useCallback(async () => {
+    const controller = beginJob('Reloading entities');
+    setReloadBusy(true);
+    setLoadError(null);
+    try {
+      const result = await loadDatabaseWindowEntities(databaseView, syncToCentral);
+      if (controller.signal.aborted) return;
+      setEntities(result.entities);
+      setActiveStore(result.activeStore);
+      setProjectStore(result.projectStore);
+      setLoadError(result.error);
+      if (result.entities.length > 0 && !selectedId) {
+        setSelectedId(result.entities[0]!.id);
+      }
+    } catch (error) {
+      if (!controller.signal.aborted) {
+        setLoadError(error instanceof Error ? error.message : String(error));
+      }
+    } finally {
+      setReloadBusy(false);
+      endJob();
+    }
+  }, [beginJob, databaseView, endJob, selectedId, syncToCentral]);
+
+  useEffect(() => {
+    void reload();
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- reload on view change only
+  }, [databaseView, syncToCentral]);
+
+  const entityById = useMemo(() => {
+    const map = new Map<string, EntitySummary>();
+    for (const entity of entities) map.set(entity.id, entity);
+    return map;
+  }, [entities]);
+
+  const filtered = useMemo(() => {
+    let list = entities.filter((entity) => entity.kind === kindFilter);
+    const trimmed = search.trim();
+    if (!trimmed) return list;
+    try {
+      const regex = new RegExp(trimmed, 'iu');
+      list = list.filter(
+        (entity) =>
+          entity.names.some((name) => regex.test(name)) ||
+          (entity.romanized && regex.test(entity.romanized)) ||
+          (entity.projectKey && regex.test(entity.projectKey)) ||
+          regex.test(entity.id),
+      );
+    } catch {
+      // invalid regex — show unfiltered kind list
+    }
+    return list;
+  }, [entities, kindFilter, search]);
+
+  const selectedEntity = selectedId ? entityById.get(selectedId) ?? null : null;
+  const currentFinding = findings[findingIndex] ?? null;
+
+  const leftCard = useMemo(() => {
+    if (mainPane === 'issues' && currentFinding) {
+      const entity = entityById.get(currentFinding.entityId);
+      if (!entity) return null;
+      return entityToCompareCard(entity, {
+        title: syncToCentral || databaseView === 'central' ? 'Central' : 'Project',
+        highlightFields: highlightForFinding(currentFinding),
+      });
+    }
+    if (selectedEntity) {
+      return entityToCompareCard(selectedEntity, {
+        title: syncToCentral || databaseView === 'central' ? 'Central' : 'Project',
+      });
+    }
+    return null;
+  }, [currentFinding, databaseView, entityById, mainPane, selectedEntity, syncToCentral]);
+
+  const rightCard = useMemo(() => {
+    if (mainPane !== 'issues' || !currentFinding) return null;
+    if (currentFinding.kind === 'harvestWrapper') {
+      const entity = entityById.get(currentFinding.entityId);
+      return harvestProposalToCompareCard(currentFinding, entity?.names[0]);
+    }
+    if (currentFinding.peer?.kind === 'authority') {
+      return authorityPeerToCompareCard(currentFinding.peer);
+    }
+    if (currentFinding.proposal.action === 'merge' || currentFinding.peer?.kind === 'entity') {
+      const peerId =
+        currentFinding.peer?.kind === 'entity'
+          ? currentFinding.peer.entityId
+          : currentFinding.relatedEntityIds?.find((id) => id !== currentFinding.entityId);
+      const peer = peerId ? entityById.get(peerId) : null;
+      if (!peer) return null;
+      return entityToCompareCard(peer, { title: 'Compare' });
+    }
+    // Proposed fix preview as a synthetic right card for single-entity fixes
+    const entity = entityById.get(currentFinding.entityId);
+    if (!entity) return null;
+    const proposed = { ...entity };
+    const p = currentFinding.proposal;
+    if (p.action === 'setRomanized') proposed.romanized = p.text;
+    if (p.action === 'renamePrimary') proposed.names = [p.text, ...entity.names.slice(1)];
+    if (p.action === 'setDescription') proposed.description = p.text;
+    if (p.action === 'setFamilyGiven') {
+      proposed.familyName = p.familyName;
+      proposed.givenName = p.givenName;
+      if (p.romanizedName) proposed.romanized = p.romanizedName;
+    }
+    if (p.action === 'stripAltName') {
+      proposed.nameEntries = entity.nameEntries.map((entry) =>
+        entry.text === p.fromText ? { ...entry, text: p.toText } : entry,
+      );
+    }
+    return entityToCompareCard(proposed, {
+      title: 'Proposed',
+      highlightFields: highlightForFinding(currentFinding),
+    });
+  }, [currentFinding, entityById, mainPane]);
+
+  const runScans = useCallback(async () => {
+    if (!activeStore || jobRunning) return;
+    // Starting a new scan abandons unsaved accepts from the previous review.
+    pendingAppliesRef.current = [];
+    setPendingCount(0);
+    // Phases: name hygiene → near-dupes → authority dupes → pack index → pack match
+    const controller = beginJob('Scanning entities', 6);
+    try {
+      updateJob({ done: 0, detail: 'Name hygiene…' });
+      await yieldToUi();
+      const nameHygiene: HygieneFinding[] = [
+        ...scanFamilyPrefixedAltNames(entities),
+        ...scanMissingFamilyOrGiven(entities, projectLang),
+        ...scanBadRomanization(entities, projectLang),
+        ...scanBadPrimary(entities),
+        ...scanEmptyDescription(entities),
+      ];
+      if (controller.signal.aborted) return;
+
+      updateJob({ done: 1, detail: 'Near-duplicates…' });
+      await yieldToUi();
+      const nearDupes = scanNearDuplicates(entities);
+      if (controller.signal.aborted) return;
+      const deterministic = [...nameHygiene, ...nearDupes];
+
+      let authorityDupes: HygieneFinding[] = [];
+      try {
+        updateJob({ done: 2, detail: 'Authority duplicates…' });
+        await yieldToUi();
+        const groups = await activeStore.sqliteAuthorityDuplicates();
+        if (controller.signal.aborted) return;
+        authorityDupes = findingsFromAuthorityDuplicates(
+          (groups ?? []) as Array<{ type: string; value: string; entityIds: string[] }>,
+        );
+      } catch {
+        // optional
+      }
+
+      const readPack = window.electronAPI?.authorityPackRead;
+      const preferredByEntity = new Map<string, string[]>();
+      const unlinkedInputs: Array<{
+        entity: EntitySummary;
+        peers: Extract<HygienePeer, { kind: 'authority' }>[];
+      }> = [];
+      const emptyDescEnriched: HygieneFinding[] = [];
+
+      if (readPack) {
+        updateJob({ done: 3, detail: 'Loading authority packs…' });
+        await yieldToUi();
+        const personPacks = AUTHORITY_PACKS.filter(
+          (pack) => pack.id === 'cbdb-persons' || pack.id === 'dila-persons',
+        );
+        const packContents = await Promise.all(
+          personPacks.map(async (pack) => {
+            try {
+              const content = await readPack(pack.id);
+              const source = pack.id.startsWith('cbdb')
+                ? 'cbdb'
+                : pack.id.startsWith('dila')
+                  ? 'dila'
+                  : null;
+              return source && content ? { source, content } : null;
+            } catch {
+              return null;
+            }
+          }),
+        );
+        if (controller.signal.aborted) return;
+        const usable = packContents.filter(Boolean) as Array<{
+          source: 'cbdb' | 'dila';
+          content: string | string[];
+        }>;
+
+        updateJob({ done: 4, detail: 'Indexing packs…' });
+        await yieldToUi();
+        const packIndex = await buildPersonPackLookupIndex(usable, {
+          yieldEvery: 8_000,
+          yieldFn: yieldCpu,
+          signal: controller.signal,
+        });
+        if (controller.signal.aborted) return;
+
+        const people = entities.filter((entity) => entity.kind === 'person');
+        const emptyById = new Map(
+          deterministic
+            .filter((f) => f.kind === 'emptyDescription')
+            .map((f) => [f.entityId, f] as const),
+        );
+
+        // Preferred alt names for rejected-name scan — no pack I/O needed.
+        for (const entity of people) {
+          if (!hasCbdbOrDila(entity)) continue;
+          const preferred: string[] = [];
+          for (const entry of entity.nameEntries) {
+            if (entry.type === 'courtesy' || entry.type === 'art' || entry.type === 'dharma') {
+              preferred.push(entry.text);
+            }
+          }
+          if (entity.givenName) preferred.push(entity.givenName);
+          if (preferred.length) preferredByEntity.set(entity.id, preferred);
+        }
+
+        // Empty-description enrichment: only entities already flagged.
+        for (const [entityId, emptyFinding] of emptyById) {
+          const entity = entityById.get(entityId);
+          if (!entity || entity.description?.trim()) continue;
+          let description: string | undefined;
+          for (const auth of entity.authorities) {
+            description = descriptionFromPackIndex(packIndex, auth.type, auth.value);
+            if (description) break;
+          }
+          if (description) {
+            emptyDescEnriched.push({
+              ...emptyFinding,
+              peer: undefined,
+              evidence: 'Empty description; authority text available',
+              proposal: { action: 'setDescription', text: description },
+            });
+          }
+        }
+
+        // Pack matching: only unlinked people (the expensive-looking counter).
+        const unlinkedPeople = people.filter((entity) => !hasCbdbOrDila(entity));
+        updateJob({
+          total: Math.max(unlinkedPeople.length, 1),
+          done: 0,
+          detail: 'Matching packs…',
+        });
+        await yieldToUi();
+
+        let lastPaint = 0;
+        for (let index = 0; index < unlinkedPeople.length; index += 1) {
+          if (controller.signal.aborted) return;
+          const entity = unlinkedPeople[index]!;
+          const now = performance.now();
+          if (now - lastPaint >= 250) {
+            lastPaint = now;
+            updateJob({
+              done: index,
+              detail: entity.names[0] ?? entity.id,
+            });
+            await yieldToUi();
+          } else if (index > 0 && index % 500 === 0) {
+            await yieldCpu();
+          }
+
+          const queryNames: string[] = [];
+          const seenNames = new Set<string>();
+          for (const name of entity.names) {
+            if (!/\p{Script=Han}/u.test(name)) continue;
+            const key = name.normalize('NFC').trim();
+            if (!key || seenNames.has(key)) continue;
+            seenNames.add(key);
+            queryNames.push(key);
+            if (queryNames.length >= 3) break;
+          }
+          if (queryNames.length === 0) continue;
+          const peers = lookupPackPeers(packIndex, queryNames).filter((peer) =>
+            corroboratePackPeer(entity, peer),
+          );
+          if (peers.length > 0) unlinkedInputs.push({ entity, peers });
+        }
+        updateJob({ done: unlinkedPeople.length, detail: 'Finishing…' });
+      } else {
+        // Still collect preferred names when packs are unavailable.
+        for (const entity of entities) {
+          if (entity.kind !== 'person' || !hasCbdbOrDila(entity)) continue;
+          const preferred: string[] = [];
+          for (const entry of entity.nameEntries) {
+            if (entry.type === 'courtesy' || entry.type === 'art' || entry.type === 'dharma') {
+              preferred.push(entry.text);
+            }
+          }
+          if (entity.givenName) preferred.push(entity.givenName);
+          if (preferred.length) preferredByEntity.set(entity.id, preferred);
+        }
+        updateJob({ done: 5, detail: 'Finishing…' });
+      }
+
+      if (controller.signal.aborted) return;
+      const rejected = scanRejectedBlockingGoodName(entities, preferredByEntity);
+      const unlinked = scanUnlinkedAuthorityHits(unlinkedInputs);
+
+      const withoutEmpty = deterministic.filter((f) => f.kind !== 'emptyDescription');
+      const next = [
+        ...authorityDupes,
+        ...withoutEmpty,
+        ...emptyDescEnriched,
+        ...rejected,
+        ...unlinked,
+      ];
+      startTransition(() => {
+        setFindings(next);
+        setFindingIndex(0);
+        setMainPane('issues');
+        if (next[0]?.proposal.action === 'merge') {
+          setMergeKeepId(next[0].proposal.keepId);
+        }
+      });
+      notifyViaSnackbar({
+        message: `Found ${next.length} issue${next.length === 1 ? '' : 's'}`,
+        options: { variant: next.length ? 'info' : 'success' },
+      });
+    } catch (error) {
+      if (!controller.signal.aborted) {
+        notifyViaSnackbar({
+          message: error instanceof Error ? error.message : String(error),
+          options: { variant: 'error' },
+        });
+      }
+    } finally {
+      endJob();
+    }
+  }, [
+    activeStore,
+    beginJob,
+    endJob,
+    entities,
+    entityById,
+    jobRunning,
+    notifyViaSnackbar,
+    projectLang,
+    updateJob,
+  ]);
+
+  const runHarvest = useCallback(async () => {
+    if (!activeStore || !rootPath || jobRunning) {
+      if (!rootPath) {
+        notifyViaSnackbar({
+          message: 'Open a project to harvest person wrappers.',
+          options: { variant: 'warning' },
+        });
+      }
+      return;
+    }
+    const listFiles = window.electronAPI?.listProjectXmlFiles;
+    const readFile = window.electronAPI?.readFile;
+    if (!listFiles || !readFile) {
+      notifyViaSnackbar({
+        message: 'File APIs unavailable for Harvest.',
+        options: { variant: 'error' },
+      });
+      return;
+    }
+    const controller = beginJob('Harvesting wrappers');
+    try {
+      updateJob({ detail: 'Listing project files…' });
+      await yieldToUi();
+      const files = await listFiles(rootPath);
+      if (controller.signal.aborted) return;
+      updateJob({ total: Math.max(files.length, 1), done: 0 });
+      const wrappers = [];
+      for (let index = 0; index < files.length; index += 1) {
+        if (controller.signal.aborted) return;
+        const file = files[index]!;
+        updateJob({ done: index, detail: file.name });
+        if (index % 5 === 0) await yieldToUi();
+        try {
+          const xml = await readFile(file.path);
+          const doc = new DOMParser().parseFromString(xml, 'application/xml');
+          if (doc.getElementsByTagName('parsererror').length > 0) continue;
+          const relative = file.path.startsWith(rootPath)
+            ? file.path.slice(rootPath.length).replace(/^[/\\]/, '')
+            : file.name;
+          const documentKey = relative.replace(/\\/g, '/');
+          wrappers.push(
+            ...collectHarvestedWrappers(doc, documentKey, (wrapper, key) =>
+              extractRegisteredEntityData({ wrapper, documentKey: key }),
+            ),
+          );
+        } catch {
+          // skip unreadable / unparseable files
+        }
+      }
+      if (controller.signal.aborted) return;
+      updateJob({ done: files.length, detail: 'Building review queue…' });
+      await yieldToUi();
+      const next = findingsFromHarvest(wrappers, entityById);
+      startTransition(() => {
+        setFindings(next);
+        setFindingIndex(0);
+        setMainPane('issues');
+      });
+      notifyViaSnackbar({
+        message: `Harvest found ${next.length} wrapper${next.length === 1 ? '' : 's'} with new facts`,
+        options: { variant: next.length ? 'info' : 'success' },
+      });
+    } catch (error) {
+      if (!controller.signal.aborted) {
+        notifyViaSnackbar({
+          message: error instanceof Error ? error.message : String(error),
+          options: { variant: 'error' },
+        });
+      }
+    } finally {
+      endJob();
+    }
+  }, [
+    activeStore,
+    beginJob,
+    endJob,
+    entityById,
+    jobRunning,
+    notifyViaSnackbar,
+    rootPath,
+    updateJob,
+  ]);
+
+  const acceptFinding = useCallback(() => {
+    if (!currentFinding) return;
+    const keepId =
+      currentFinding.proposal.action === 'merge'
+        ? (mergeKeepId ?? currentFinding.proposal.keepId)
+        : undefined;
+    pendingAppliesRef.current.push({ finding: currentFinding, keepId });
+    setPendingCount(pendingAppliesRef.current.length);
+
+    // Optimistic local update for the review cards (DB write waits for Save).
+    if (
+      currentFinding.proposal.action !== 'merge' &&
+      currentFinding.proposal.action !== 'markDuplicateIntentional' &&
+      currentFinding.proposal.action !== 'ingestHarvest'
+    ) {
+      setEntities((prev) =>
+        prev.map((entity) =>
+          entity.id === currentFinding.entityId
+            ? applyFindingLocally(entity, currentFinding)
+            : entity,
+        ),
+      );
+    }
+
+    const dropIds =
+      currentFinding.proposal.action === 'merge' && keepId
+        ? new Set(idsRemovedByMerge(currentFinding, keepId))
+        : null;
+
+    setFindings((prev) => {
+      const withoutCurrent = prev.filter((_, i) => i !== findingIndex);
+      if (!dropIds || dropIds.size === 0) return withoutCurrent;
+      return withoutCurrent.filter((finding) => {
+        if (dropIds.has(finding.entityId)) return false;
+        if (finding.relatedEntityIds?.some((id) => dropIds.has(id))) return false;
+        if (finding.peer?.kind === 'entity' && dropIds.has(finding.peer.entityId)) return false;
+        return true;
+      });
+    });
+    setFindingIndex((i) => Math.max(0, Math.min(i, findings.length - 2)));
+  }, [currentFinding, findingIndex, findings.length, mergeKeepId]);
+
+  const bulkAcceptCounts = useMemo(() => {
+    const counts = new Map<HygieneFinding['kind'], number>();
+    for (const finding of findings) {
+      if (!BULK_ACCEPT_KINDS.has(finding.kind)) continue;
+      counts.set(finding.kind, (counts.get(finding.kind) ?? 0) + 1);
+    }
+    return [...counts.entries()].filter(([, count]) => count > 0);
+  }, [findings]);
+
+  const acceptAllOfKind = useCallback(
+    (kind: HygieneFinding['kind']) => {
+      if (!BULK_ACCEPT_KINDS.has(kind)) return;
+      const batch = findings.filter((finding) => finding.kind === kind);
+      if (batch.length === 0) return;
+
+      for (const finding of batch) {
+        pendingAppliesRef.current.push({ finding });
+      }
+      setPendingCount(pendingAppliesRef.current.length);
+
+      const byEntity = new Map<string, HygieneFinding[]>();
+      for (const finding of batch) {
+        const list = byEntity.get(finding.entityId);
+        if (list) list.push(finding);
+        else byEntity.set(finding.entityId, [finding]);
+      }
+      setEntities((prev) =>
+        prev.map((entity) => {
+          const fixes = byEntity.get(entity.id);
+          if (!fixes) return entity;
+          return fixes.reduce((next, finding) => applyFindingLocally(next, finding), entity);
+        }),
+      );
+
+      startTransition(() => {
+        setFindings((prev) => prev.filter((finding) => finding.kind !== kind));
+        setFindingIndex(0);
+      });
+      notifyViaSnackbar({
+        message: `Queued ${batch.length} “${findingKindLabel(kind)}” fix${batch.length === 1 ? '' : 'es'} — Save & exit to write`,
+        options: { variant: 'success' },
+      });
+    },
+    [findings, notifyViaSnackbar],
+  );
+
+  const skipFinding = useCallback(() => {
+    setFindings((prev) => prev.filter((_, i) => i !== findingIndex));
+    setFindingIndex((i) => Math.max(0, Math.min(i, findings.length - 2)));
+  }, [findingIndex, findings.length]);
+
+  const markIntentional = useCallback(() => {
+    if (!currentFinding?.relatedEntityIds) return;
+    pendingAppliesRef.current.push({
+      finding: {
+        ...currentFinding,
+        proposal: {
+          action: 'markDuplicateIntentional',
+          entityIds: currentFinding.relatedEntityIds,
+        },
+      },
+    });
+    setPendingCount(pendingAppliesRef.current.length);
+    skipFinding();
+  }, [currentFinding, skipFinding]);
+
+  const flushPendingApplies = useCallback(async () => {
+    if (!activeStore) return 0;
+    const queued = pendingAppliesRef.current;
+    if (queued.length === 0) return 0;
+    const controller = beginJob('Saving accepted fixes', queued.length);
+    let saved = 0;
+    try {
+      for (let index = 0; index < queued.length; index += 1) {
+        if (controller.signal.aborted) break;
+        const item = queued[index]!;
+        updateJob({
+          done: index,
+          detail: item.finding.evidence.slice(0, 80),
+        });
+        if (index % 25 === 0) await yieldToUi();
+        await applyHygieneFinding(activeStore, item.finding, { keepId: item.keepId });
+        saved += 1;
+      }
+    } finally {
+      pendingAppliesRef.current = queued.slice(saved);
+      setPendingCount(pendingAppliesRef.current.length);
+      endJob();
+    }
+    return saved;
+  }, [activeStore, beginJob, endJob, updateJob]);
+
+  const saveAndExitReview = useCallback(async () => {
+    setApplyBusy(true);
+    try {
+      const saved = await flushPendingApplies();
+      setFindings([]);
+      setFindingIndex(0);
+      setMainPane('detail');
+      if (saved > 0) {
+        notifyViaSnackbar({
+          message: `Saved ${saved} fix${saved === 1 ? '' : 'es'}`,
+          options: { variant: 'success' },
+        });
+        await reload();
+      }
+    } catch (error) {
+      notifyViaSnackbar({
+        message: error instanceof Error ? error.message : String(error),
+        options: { variant: 'error' },
+      });
+    } finally {
+      setApplyBusy(false);
+    }
+  }, [flushPendingApplies, notifyViaSnackbar, reload]);
+
+  const leaveReview = useCallback(() => {
+    const abandoned = pendingAppliesRef.current.length;
+    pendingAppliesRef.current = [];
+    setPendingCount(0);
+    setFindings([]);
+    setFindingIndex(0);
+    setMainPane('detail');
+    if (abandoned > 0) {
+      notifyViaSnackbar({
+        message: `Left review — discarded ${abandoned} unsaved accept${abandoned === 1 ? '' : 's'}`,
+        options: { variant: 'warning' },
+      });
+    }
+  }, [notifyViaSnackbar]);
+
+  const runBackfill = useCallback(async () => {
+    if (!activeStore || jobRunning) return;
+    const controller = beginJob('Backfilling from authorities');
+    try {
+      const readPack = window.electronAPI?.authorityPackRead;
+      if (!readPack) throw new Error('Authority packs unavailable');
+      updateJob({ detail: 'Concordance…' });
+      await yieldToUi();
+      if (projectStore && databaseView !== 'central') {
+        try {
+          await refreshCbdbConcordanceSqlite(projectStore, readPack);
+        } catch {
+          // non-fatal
+        }
+      }
+      if (controller.signal.aborted) return;
+      updateJob({ detail: 'Reading packs…' });
+      const result = await backfillEntitiesSqlite(activeStore, {
+        readPackFile: readPack,
+        projectLang,
+        signal: controller.signal,
+        expandWikidataWorks: false,
+        lookupAuthorityRef: window.electronAPI?.authorityRefLookup,
+        yieldFn: yieldToUi,
+        onProgress: (progress) => {
+          updateJob({
+            done: progress.done,
+            total: Math.max(progress.total, 1),
+            detail: progress.entityLabel ?? undefined,
+          });
+        },
+      });
+      if (controller.signal.aborted) return;
+      if (projectStore && databaseView !== 'central') {
+        try {
+          updateJob({ detail: 'Re-applying concordance…' });
+          await refreshCbdbConcordanceSqlite(projectStore, readPack);
+        } catch {
+          // non-fatal
+        }
+      }
+      notifyViaSnackbar({
+        message: `Backfill: ${result.namesAdded} names on ${result.entitiesUpdated} entities`,
+        options: { variant: 'success' },
+      });
+      await reload();
+    } catch (error) {
+      if (!controller.signal.aborted) {
+        notifyViaSnackbar({
+          message: error instanceof Error ? error.message : String(error),
+          options: { variant: 'error' },
+        });
+      }
+    } finally {
+      endJob();
+    }
+  }, [
+    activeStore,
+    beginJob,
+    databaseView,
+    endJob,
+    jobRunning,
+    notifyViaSnackbar,
+    projectLang,
+    projectStore,
+    reload,
+    updateJob,
+  ]);
+
+  const selectEntity = useCallback((id: string) => {
+    setSelectedId(id);
+    setMainPane('detail');
+  }, []);
+
+  useEffect(() => {
+    if (currentFinding?.proposal.action === 'merge') {
+      setMergeKeepId(currentFinding.proposal.keepId);
+    } else {
+      setMergeKeepId(null);
+    }
+  }, [currentFinding]);
+
+  const listLoading = reloadBusy;
+
+  return (
+    <Box
+      sx={{
+        display: 'flex',
+        flexDirection: 'column',
+        flex: 1,
+        minHeight: 0,
+        bgcolor: 'background.default',
+        position: 'relative',
+      }}
+    >
+      <BackgroundJobBanner onCancel={jobRunning ? cancelJob : undefined} />
+      <Stack
+        direction="row"
+        spacing={1}
+        alignItems="center"
+        sx={{
+          px: 1.5,
+          py: 1,
+          borderBottom: 1,
+          borderColor: 'divider',
+          bgcolor: 'background.paper',
+          flexShrink: 0,
+          flexWrap: 'wrap',
+          gap: 1,
+        }}
+      >
+        <Typography variant="subtitle2" sx={{ mr: 1 }}>
+          {t('LWC.desktop.database_window.title', { defaultValue: 'Database' })}
+        </Typography>
+        {!syncToCentral && (
+          <Button
+            size="small"
+            variant="contained"
+            color={databaseView === 'central' ? 'error' : 'success'}
+            onClick={() =>
+              setDatabaseView((prev) => (prev === 'central' ? 'project' : 'central'))
+            }
+            startIcon={<HubOutlinedIcon fontSize="small" />}
+            disabled={jobRunning}
+          >
+            {databaseView === 'central' ? 'Central' : 'Project'}
+          </Button>
+        )}
+        <Autocomplete
+          size="small"
+          options={(Object.keys(KIND_LABEL) as EntityKind[]).map((value) => ({
+            value,
+            label: KIND_LABEL[value],
+          }))}
+          value={{ value: kindFilter, label: KIND_LABEL[kindFilter] }}
+          onChange={(_e, option) => option && setKindFilter(option.value)}
+          getOptionLabel={(option) => option.label}
+          isOptionEqualToValue={(a, b) => a.value === b.value}
+          sx={{ width: 140 }}
+          renderInput={(params) => <TextField {...params} label="Type" />}
+        />
+        <TextField
+          size="small"
+          placeholder={t('LWC.desktop.sidebar.database.search_placeholder')}
+          value={search}
+          onChange={(e) => setSearch(e.target.value)}
+          sx={{ minWidth: 220, flex: 1 }}
+        />
+        <Button
+          size="small"
+          variant="outlined"
+          onClick={() => void reload()}
+          disabled={jobRunning}
+        >
+          Reload
+        </Button>
+        <Button
+          size="small"
+          variant="outlined"
+          onClick={() => void runBackfill()}
+          disabled={jobRunning || !activeStore}
+        >
+          Backfill
+        </Button>
+        <Button
+          size="small"
+          variant="contained"
+          onClick={() => void runScans()}
+          disabled={jobRunning || !activeStore}
+        >
+          Run scans
+        </Button>
+        <Button
+          size="small"
+          variant="contained"
+          color="secondary"
+          onClick={() => void runHarvest()}
+          disabled={jobRunning || !activeStore || !rootPath}
+        >
+          Harvest
+        </Button>
+        <Chip
+          size="small"
+          label={
+            pendingCount > 0
+              ? `Issues ${findings.length} · ${pendingCount} to save`
+              : `Issues ${findings.length}`
+          }
+          color={findings.length || pendingCount ? 'warning' : 'default'}
+          onClick={() => setMainPane('issues')}
+          variant={mainPane === 'issues' ? 'filled' : 'outlined'}
+        />
+        <Chip
+          size="small"
+          label="Detail"
+          onClick={() => setMainPane('detail')}
+          variant={mainPane === 'detail' ? 'filled' : 'outlined'}
+        />
+        {(mainPane === 'issues' || findings.length > 0 || pendingCount > 0) && (
+          <>
+            <Button
+              size="small"
+              variant="contained"
+              onClick={() => void saveAndExitReview()}
+              disabled={applyBusy || jobRunning || (findings.length === 0 && pendingCount === 0)}
+            >
+              {pendingCount > 0 ? `Save ${pendingCount} & exit` : 'Exit review'}
+            </Button>
+            <Button
+              size="small"
+              variant="outlined"
+              color="inherit"
+              onClick={leaveReview}
+              disabled={applyBusy || jobRunning}
+            >
+              Leave without saving
+            </Button>
+          </>
+        )}
+      </Stack>
+
+      {loadError && (
+        <Typography color="error" sx={{ px: 2, py: 1 }}>
+          {loadError}
+        </Typography>
+      )}
+
+      <Box sx={{ display: 'flex', flex: 1, minHeight: 0 }}>
+        <Box
+          sx={{
+            width: 300,
+            flexShrink: 0,
+            borderRight: 1,
+            borderColor: 'divider',
+            bgcolor: 'background.paper',
+            display: 'flex',
+            flexDirection: 'column',
+            minHeight: 0,
+            overflow: 'hidden',
+          }}
+        >
+          <DatabaseEntityList
+            entities={entities}
+            filtered={filtered}
+            selectedId={selectedId}
+            loading={listLoading}
+            onSelect={selectEntity}
+          />
+        </Box>
+
+        <Box sx={{ flex: 1, minWidth: 0, display: 'flex', flexDirection: 'column', p: 2, gap: 2, overflow: 'auto' }}>
+          {mainPane === 'issues' && (
+            <>
+              <Stack direction="row" spacing={1} alignItems="center" flexWrap="wrap" useFlexGap>
+                <Typography variant="subtitle2">
+                  {currentFinding
+                    ? `${findingIndex + 1}/${findings.length}: ${findingKindLabel(currentFinding.kind)}`
+                    : pendingCount > 0
+                      ? `Queue empty — ${pendingCount} accepted, not saved yet`
+                      : 'No issues'}
+                </Typography>
+                {currentFinding && (
+                  <Typography variant="body2" color="text.secondary">
+                    {currentFinding.evidence}
+                  </Typography>
+                )}
+                <Box sx={{ flex: 1 }} />
+                {bulkAcceptCounts.map(([kind, count]) => (
+                  <Button
+                    key={kind}
+                    size="small"
+                    variant="contained"
+                    color="secondary"
+                    onClick={() => acceptAllOfKind(kind)}
+                    disabled={applyBusy}
+                  >
+                    {`Accept all ${count} ${findingKindLabel(kind)}`}
+                  </Button>
+                ))}
+                {findings.length > 0 && (
+                  <>
+                    <Button
+                      size="small"
+                      onClick={() => setFindingIndex((i) => Math.max(0, i - 1))}
+                      disabled={applyBusy || findingIndex <= 0}
+                    >
+                      Prev
+                    </Button>
+                    <Button
+                      size="small"
+                      onClick={() =>
+                        setFindingIndex((i) => Math.min(findings.length - 1, i + 1))
+                      }
+                      disabled={applyBusy || findingIndex >= findings.length - 1}
+                    >
+                      Next
+                    </Button>
+                  </>
+                )}
+                {currentFinding && (
+                  <>
+                    {(currentFinding.kind === 'authorityIdDuplicate' ||
+                      currentFinding.kind === 'nearDuplicate') && (
+                      <Button size="small" onClick={markIntentional} disabled={applyBusy}>
+                        Mark intentional
+                      </Button>
+                    )}
+                    <Button size="small" onClick={skipFinding} disabled={applyBusy}>
+                      Skip
+                    </Button>
+                    <Button
+                      size="small"
+                      variant="contained"
+                      onClick={acceptFinding}
+                      disabled={applyBusy || !currentFinding}
+                    >
+                      {currentFinding.proposal.action === 'merge'
+                        ? 'Merge'
+                        : currentFinding.proposal.action === 'attachAuthority'
+                          ? 'Link'
+                          : currentFinding.proposal.action === 'restoreName'
+                            ? 'Restore'
+                            : currentFinding.proposal.action === 'ingestHarvest'
+                              ? 'Insert'
+                              : 'Accept'}
+                    </Button>
+                  </>
+                )}
+              </Stack>
+
+              {currentFinding?.proposal.action === 'merge' && currentFinding.relatedEntityIds && (
+                <Stack direction="row" spacing={1}>
+                  {currentFinding.relatedEntityIds.map((id) => (
+                    <Chip
+                      key={id}
+                      label={`Keep ${entityById.get(id)?.names[0] ?? id}`}
+                      color={mergeKeepId === id ? 'primary' : 'default'}
+                      onClick={() => setMergeKeepId(id)}
+                      variant={mergeKeepId === id ? 'filled' : 'outlined'}
+                    />
+                  ))}
+                </Stack>
+              )}
+
+              <Stack direction={{ xs: 'column', md: 'row' }} spacing={2} alignItems="stretch">
+                {leftCard && (
+                  <EntityCompareCard
+                    model={leftCard}
+                    selected={
+                      currentFinding?.proposal.action === 'merge' &&
+                      mergeKeepId === currentFinding.entityId
+                    }
+                    onSelect={
+                      currentFinding?.proposal.action === 'merge'
+                        ? () => setMergeKeepId(currentFinding.entityId)
+                        : undefined
+                    }
+                  />
+                )}
+                {rightCard && (
+                  <EntityCompareCard
+                    model={rightCard}
+                    selected={
+                      currentFinding?.proposal.action === 'merge' &&
+                      Boolean(
+                        mergeKeepId &&
+                          mergeKeepId !== currentFinding.entityId &&
+                          currentFinding.relatedEntityIds?.includes(mergeKeepId),
+                      )
+                    }
+                    onSelect={
+                      currentFinding?.proposal.action === 'merge' &&
+                      currentFinding.peer?.kind === 'entity'
+                        ? (() => {
+                            const peerId =
+                              currentFinding.peer?.kind === 'entity'
+                                ? currentFinding.peer.entityId
+                                : null;
+                            return peerId ? () => setMergeKeepId(peerId) : undefined;
+                          })()
+                        : undefined
+                    }
+                  />
+                )}
+              </Stack>
+
+              {pendingCount > 0 && (
+                <Typography variant="caption" color="text.secondary">
+                  Accepted fixes stay local until you click Save &amp; exit.
+                </Typography>
+              )}
+            </>
+          )}
+
+          {mainPane === 'detail' && leftCard && <EntityCompareCard model={leftCard} />}
+          {mainPane === 'detail' && !leftCard && (
+            <Typography color="text.secondary">Select an entity</Typography>
+          )}
+        </Box>
+      </Box>
+    </Box>
+  );
+};

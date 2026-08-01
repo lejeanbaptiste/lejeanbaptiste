@@ -50,6 +50,17 @@ import {
   persistAuthoritySettings,
   readAiPromptProfilesFromDesktop,
   readPersistedAuthoritySettings,
+  readPersistedExclusions,
+  persistExclusions,
+  emptyExclusions,
+  exclusionsHaveContent,
+  filterSuggestionsByExclusions,
+  nestingPathsToUserRules,
+  linesToSurfaces,
+  surfacesToLines,
+  EXCLUSION_SURFACE_TAGS,
+  type AutoTaggingExclusions,
+  type ExclusionSurfaceTag,
   readSpreadsheet,
   resolveAutoTaggingSourceLanguage,
   settingsFromUiState,
@@ -96,6 +107,7 @@ import type { IDialog } from '../type';
 import { AiPromptEditorDialog } from './AiPromptEditorDialog';
 import { AiTagChipPicker } from './AiTagChipPicker';
 import { cachedPackReader, clearPackContentCache } from '../../services/authority-pack-lookup';
+import { refreshCbdbConcordanceAfterPackLifecycle } from '../../autoTagging/cbdbConcordance';
 
 const SPREADSHEET_RE = /\.(xlsx|xlsm|ods)$/i;
 type DialogStep = 'methods' | 'ai' | 'authority';
@@ -365,6 +377,9 @@ export const AutoTaggingDialog = ({ id, onClose, open = false }: IDialog) => {
   const [tagBombQueue, setTagBombQueueLocal] = useState<TagBombDocumentResult[] | null>(null);
   const [queueBusyPath, setQueueBusyPath] = useState<string | null>(null);
   const [shortFormFromFirstAppearance, setShortFormFromFirstAppearance] = useState(true);
+  const [exclusionsOpen, setExclusionsOpen] = useState(false);
+  const [exclusionsDraft, setExclusionsDraft] = useState<AutoTaggingExclusions>(emptyExclusions);
+  const [exclusionsActive, setExclusionsActive] = useState(false);
   const [busyMessage, setBusyMessage] = useState('');
   const [authorityPackCounts, setAuthorityPackCounts] = useState<AuthorityPackStringCounts>({});
   const [authorityPackCountsLoading, setAuthorityPackCountsLoading] = useState(false);
@@ -492,8 +507,24 @@ export const AutoTaggingDialog = ({ id, onClose, open = false }: IDialog) => {
     if (!open) return;
     const validationSettings = readPersistedValidationSettings();
     setAiValidation(aiValidationFromSettings(validationSettings));
+    const exclusions = readPersistedExclusions();
+    setExclusionsDraft(exclusions);
+    setExclusionsActive(exclusionsHaveContent(exclusions));
   }, [open]);
 
+  const applyExclusionsToSuggestions = (produced: Suggestion[]): Suggestion[] =>
+    filterSuggestionsByExclusions(produced, readPersistedExclusions());
+
+  const openExclusionsDialog = () => {
+    setExclusionsDraft(readPersistedExclusions());
+    setExclusionsOpen(true);
+  };
+
+  const saveExclusionsDialog = () => {
+    persistExclusions(exclusionsDraft);
+    setExclusionsActive(exclusionsHaveContent(exclusionsDraft));
+    setExclusionsOpen(false);
+  };
   useEffect(() => {
     if (!open || step !== 'ai') return;
     const options = listAiTagOptions(window.writer);
@@ -617,7 +648,7 @@ export const AutoTaggingDialog = ({ id, onClose, open = false }: IDialog) => {
   ]);
   const beginReview = (produced: Suggestion[], notice?: string) => {
     startAutoTaggingReview({
-      suggestions: produced,
+      suggestions: applyExclusionsToSuggestions(produced),
       notice,
       aiValidation: aiValidation && aiReady,
     });
@@ -723,6 +754,11 @@ export const AutoTaggingDialog = ({ id, onClose, open = false }: IDialog) => {
         return;
       }
       clearPackContentCache();
+      try {
+        await refreshCbdbConcordanceAfterPackLifecycle();
+      } catch {
+        // Install succeeded; panel reload remains the safety net.
+      }
       await refreshAuthoritySetup();
     } catch (e) {
       setError(e instanceof Error ? e.message : String(e));
@@ -766,7 +802,12 @@ export const AutoTaggingDialog = ({ id, onClose, open = false }: IDialog) => {
     setQueueBusyPath(doc.filePath);
     setError(null);
     try {
-      const result = await getSession().applyTagBombDocument(doc.filePath, doc.suggestions);
+      const exclusions = readPersistedExclusions();
+      const result = await getSession().applyTagBombDocument(
+        doc.filePath,
+        filterSuggestionsByExclusions(doc.suggestions, exclusions),
+        nestingPathsToUserRules(exclusions.nestingPaths),
+      );
       notifyViaSnackbar({
         message: t('LW.autoTagging.tag_bomb_queue.applied', { count: result.applied }),
       });
@@ -895,11 +936,14 @@ export const AutoTaggingDialog = ({ id, onClose, open = false }: IDialog) => {
       if (skipReview) {
         setBusyMessage(t('LW.autoTagging.tag_bomb_queue.applying'));
         let appliedTotal = 0;
+        const exclusions = readPersistedExclusions();
+        const userRules = nestingPathsToUserRules(exclusions.nestingPaths);
         for (const docResult of matchedDocs) {
           // eslint-disable-next-line no-await-in-loop
           const applied = await getSession().applyTagBombDocument(
             docResult.filePath,
-            docResult.suggestions,
+            filterSuggestionsByExclusions(docResult.suggestions, exclusions),
+            userRules,
           );
           appliedTotal += applied.applied;
         }
@@ -1132,41 +1176,50 @@ export const AutoTaggingDialog = ({ id, onClose, open = false }: IDialog) => {
                     !isDesktopApp(),
                     !isDesktopApp() ? 'Desktop app only' : undefined,
                   )}
-                  {methodButton(
-                    'Short-form names',
-                    () => void runShortFormTag(),
-                    !isDesktopApp() || !entityDbFolder,
-                    !isDesktopApp()
-                      ? 'Desktop app only'
-                      : !entityDbFolder
-                        ? 'Configure an entity database in App Settings'
-                        : undefined,
-                  )}
-                  <FormControlLabel
-                    control={
-                      <Checkbox
-                        size="small"
-                        checked={shortFormFromFirstAppearance}
-                        disabled={!isDesktopApp() || !entityDbFolder || busy}
-                        onChange={(event) => setShortFormFromFirstAppearance(event.target.checked)}
-                      />
-                    }
-                    label={
-                      <Typography
-                        variant="caption"
-                        color={
-                          !isDesktopApp() || !entityDbFolder ? 'text.disabled' : 'text.primary'
-                        }
-                      >
-                        Start from first appearance (short-form)
-                      </Typography>
-                    }
-                    sx={{
-                      ml: 0,
-                      mb: 0.5,
-                      ...(!isDesktopApp() || !entityDbFolder ? { opacity: 0.6 } : {}),
-                    }}
-                  />
+                  <Stack
+                    direction="row"
+                    alignItems="center"
+                    spacing={0.5}
+                    sx={{ mb: 0.25, flexWrap: 'wrap' }}
+                  >
+                    {methodButton(
+                      'Short-form names',
+                      () => void runShortFormTag(),
+                      !isDesktopApp() || !entityDbFolder,
+                      !isDesktopApp()
+                        ? 'Desktop app only'
+                        : !entityDbFolder
+                          ? 'Configure an entity database in App Settings'
+                          : undefined,
+                    )}
+                    <FormControlLabel
+                      control={
+                        <Checkbox
+                          size="small"
+                          checked={shortFormFromFirstAppearance}
+                          disabled={!isDesktopApp() || !entityDbFolder || busy}
+                          onChange={(event) =>
+                            setShortFormFromFirstAppearance(event.target.checked)
+                          }
+                        />
+                      }
+                      label={
+                        <Typography
+                          variant="caption"
+                          color={
+                            !isDesktopApp() || !entityDbFolder ? 'text.disabled' : 'text.primary'
+                          }
+                        >
+                          from first appearance
+                        </Typography>
+                      }
+                      sx={{
+                        ml: 0,
+                        mr: 0,
+                        ...(!isDesktopApp() || !entityDbFolder ? { opacity: 0.6 } : {}),
+                      }}
+                    />
+                  </Stack>
                   <FormControlLabel
                     control={
                       <Checkbox
@@ -1214,7 +1267,24 @@ export const AutoTaggingDialog = ({ id, onClose, open = false }: IDialog) => {
                   )}
                 </>
               )}
-              <Box sx={{ display: 'flex', justifyContent: 'flex-end', mt: 0.5 }}>
+              <Box
+                sx={{
+                  display: 'flex',
+                  justifyContent: 'space-between',
+                  alignItems: 'center',
+                  mt: 0.5,
+                }}
+              >
+                <Tooltip title="Exclusions — nesting and string filters">
+                  <IconButton
+                    size="small"
+                    aria-label="Auto-tagging exclusions"
+                    onClick={openExclusionsDialog}
+                    sx={{ color: 'error.main', opacity: exclusionsActive ? 1 : 0.55, p: 0.25 }}
+                  >
+                    <FilterAltIcon sx={{ fontSize: 18 }} />
+                  </IconButton>
+                </Tooltip>
                 <Link component="button" variant="caption" underline="hover" onClick={handleClose}>
                   Close
                 </Link>
@@ -1750,6 +1820,86 @@ export const AutoTaggingDialog = ({ id, onClose, open = false }: IDialog) => {
               </Stack>
             </Stack>
           )}
+        </DialogContent>
+      </Dialog>
+      <Dialog
+        open={exclusionsOpen}
+        onClose={() => setExclusionsOpen(false)}
+        PaperProps={{ sx: { width: 420, m: 1, borderRadius: 1 } }}
+      >
+        <DialogContent sx={{ p: 1.5 }}>
+          <Typography variant="overline" color="text.secondary" sx={{ lineHeight: 1.6 }}>
+            Exclusions
+          </Typography>
+          <Typography variant="caption" color="text.secondary" sx={{ display: 'block', mb: 1 }}>
+            Nesting bans use <code>//ancestor//child</code> (one per line). String bans are exact
+            surfaces for each tag — one string per line.
+          </Typography>
+          <TextField
+            label="Nesting (XPath-style)"
+            value={exclusionsDraft.nestingPaths.join('\n')}
+            onChange={(event) =>
+              setExclusionsDraft((current) => ({
+                ...current,
+                nestingPaths: event.target.value.split(/\r?\n/),
+              }))
+            }
+            multiline
+            minRows={3}
+            fullWidth
+            size="small"
+            placeholder={'//persName//title\n//placeName//title'}
+            sx={{ mb: 1.5 }}
+          />
+          <Typography variant="caption" color="text.secondary" sx={{ display: 'block', mb: 0.5 }}>
+            Strings by tag
+          </Typography>
+          <Stack spacing={1}>
+            {EXCLUSION_SURFACE_TAGS.map((tag) => (
+              <TextField
+                key={tag}
+                label={tag}
+                value={surfacesToLines(exclusionsDraft.surfacesByTag[tag])}
+                onChange={(event) => {
+                  const surfaces = linesToSurfaces(event.target.value);
+                  setExclusionsDraft((current) => {
+                    const next: AutoTaggingExclusions = {
+                      ...current,
+                      surfacesByTag: { ...current.surfacesByTag },
+                    };
+                    if (surfaces.length === 0) delete next.surfacesByTag[tag as ExclusionSurfaceTag];
+                    else next.surfacesByTag[tag as ExclusionSurfaceTag] = surfaces;
+                    return next;
+                  });
+                }}
+                multiline
+                minRows={1}
+                maxRows={4}
+                fullWidth
+                size="small"
+                placeholder={tag === 'placeName' ? '將軍' : undefined}
+              />
+            ))}
+          </Stack>
+          <Stack direction="row" justifyContent="flex-end" spacing={1.5} sx={{ mt: 1.5 }}>
+            <Link
+              component="button"
+              variant="caption"
+              underline="hover"
+              onClick={() => setExclusionsOpen(false)}
+            >
+              Cancel
+            </Link>
+            <Link
+              component="button"
+              variant="caption"
+              underline="hover"
+              onClick={saveExclusionsDialog}
+              sx={{ fontWeight: 600 }}
+            >
+              Save
+            </Link>
+          </Stack>
         </DialogContent>
       </Dialog>
       <AiPromptEditorDialog

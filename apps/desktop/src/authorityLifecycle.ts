@@ -1,5 +1,5 @@
 /**
- * Offline CBDB/DILA lifecycle: fetch packs from GitHub → optional raw reference data.
+ * Offline CBDB/DILA/Norbert lifecycle: fetch packs from GitHub → optional raw reference data.
  */
 
 import fs from 'node:fs';
@@ -66,12 +66,12 @@ const PROFILE_SPECS: Record<
   {
     label: string;
     packIds: AuthorityPackId[];
-    rawSourceIds: ('cbdb' | 'dila')[];
+    rawSourceIds: ('cbdb' | 'dila' | 'norbert')[];
     supportsReferenceData: boolean;
   }
 > = {
   chinese: {
-    label: 'Offline Chinese authorities (CBDB + DILA + CHGIS + Wikidata)',
+    label: 'Offline Chinese authorities (CBDB + DILA + Norbert + CHGIS + Wikidata)',
     packIds: [
       'cbdb-persons',
       'cbdb-places',
@@ -85,7 +85,7 @@ const PROFILE_SPECS: Record<
       'wikidata-orgs-zh-hant',
       'wikidata-works-zh-hant',
     ],
-    rawSourceIds: ['cbdb', 'dila'],
+    rawSourceIds: ['cbdb', 'dila', 'norbert'],
     supportsReferenceData: true,
   },
   japanese: {
@@ -149,8 +149,10 @@ const unionPackIds = (profiles: AuthorityLifecycleProfile[]): AuthorityPackId[] 
   return [...ids];
 };
 
-const unionRawSourceIds = (profiles: AuthorityLifecycleProfile[]): ('cbdb' | 'dila')[] => {
-  const ids = new Set<'cbdb' | 'dila'>();
+const unionRawSourceIds = (
+  profiles: AuthorityLifecycleProfile[],
+): ('cbdb' | 'dila' | 'norbert')[] => {
+  const ids = new Set<'cbdb' | 'dila' | 'norbert'>();
   for (const profile of profiles) {
     for (const id of profileSpec(profile).rawSourceIds) ids.add(id);
   }
@@ -512,13 +514,19 @@ export const runAuthorityLifecyclePipeline = async (
     }
 
     if (lifecycle.referenceDataEnabled && rawSourceIds.length > 0) {
-      const statuses = await getAuthorityStatuses(rawDir);
+      let statuses = await getAuthorityStatuses(rawDir);
+      // CBDB + Norbert share one reference zip; download that group at most once per run.
+      const completedGroups = new Set<string>();
+      const groupOf = (id: string) =>
+        id === 'cbdb' || id === 'norbert' ? 'reference-person' : id;
+
       for (const sourceSpec of AUTHORITY_SOURCES.filter((source) =>
         rawSourceIds.includes(source.id),
       )) {
+        const group = groupOf(sourceSpec.id);
         const status = statuses.find((source) => source.id === sourceSpec.id);
-        const needsDownload =
-          forceDownload || !status?.installed || status.version !== sourceSpec.version;
+        const stale = !status?.installed || status.version !== sourceSpec.version;
+        const needsDownload = stale || (forceDownload && !completedGroups.has(group));
         if (!needsDownload) continue;
 
         onProgress?.({
@@ -527,6 +535,8 @@ export const runAuthorityLifecyclePipeline = async (
           sourceId: sourceSpec.id,
         });
         await downloadAuthoritySource(rawDir, sourceSpec.id, emitDownload);
+        completedGroups.add(group);
+        statuses = await getAuthorityStatuses(rawDir);
       }
     }
 

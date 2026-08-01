@@ -139,6 +139,7 @@ export interface EntityFileApi {
     label: string;
     ref?: string | null;
     source?: string | null;
+    origin?: 'user' | 'authority' | 'xml';
   }) => Promise<boolean>;
   entitySqliteAddOrigin?: (input: {
     databasePath: string;
@@ -146,6 +147,7 @@ export interface EntityFileApi {
     label: string;
     ref?: string | null;
     source?: string | null;
+    origin?: 'user' | 'authority' | 'xml';
   }) => Promise<boolean>;
   entitySqliteAddNobleTitle?: (input: {
     databasePath: string;
@@ -155,6 +157,8 @@ export interface EntityFileApi {
       fief?: string;
       posthumousName?: string;
       title?: string;
+      source?: string | null;
+      origin?: 'user' | 'authority' | 'xml';
     };
   }) => Promise<boolean>;
   entitySqliteUpdateNobleTitle?: (input: {
@@ -186,6 +190,11 @@ export interface EntityFileApi {
     value: string;
   }) => Promise<number>;
   entitySqliteRejectAssertion?: (input: {
+    databasePath: string;
+    entityId: string;
+    key: string;
+  }) => Promise<boolean>;
+  entitySqliteRestoreAssertion?: (input: {
     databasePath: string;
     entityId: string;
     key: string;
@@ -354,6 +363,21 @@ export interface EntityFileApi {
       endYear?: number | null;
     } | null;
   }) => Promise<{ changed: boolean; namesAdded: number }>;
+  entitySqliteReconcileXmlExtractedData?: (input: {
+    databasePath: string;
+    documentKey: string;
+    wrappers: Array<{
+      entityId: string;
+      source: string;
+      assertions: Array<{
+        element: string;
+        value: string;
+        ref?: string | null;
+        children?: Array<{ element: string; value: string; ref?: string | null }>;
+      }>;
+    }>;
+    purgeOrphanSources?: boolean;
+  }) => Promise<{ wrappers: number; added: number; removed: number; retained: number }>;
   entitySqliteEntityContentHash?: (input: {
     databasePath: string;
     entityId: string;
@@ -393,6 +417,10 @@ export interface EntityFileApi {
     databasePath: string;
     userStableId: string;
   }) => Promise<string[] | null>;
+  entitySqliteCountUnlinked?: (input: {
+    databasePath: string;
+    userStableId: string;
+  }) => Promise<number | null>;
   entitySqliteFindByAuthority?: (input: {
     databasePath: string;
     kind: 'person' | 'place' | 'work' | 'office' | 'org';
@@ -697,6 +725,7 @@ export class EntityStore {
     label: string;
     ref?: string | null;
     source?: string | null;
+    origin?: 'user' | 'authority' | 'xml';
   }): Promise<boolean> {
     if (!this.api.entitySqliteAddNationality)
       throw new Error('SQLite nationality updates are unavailable.');
@@ -708,6 +737,7 @@ export class EntityStore {
     label: string;
     ref?: string | null;
     source?: string | null;
+    origin?: 'user' | 'authority' | 'xml';
   }): Promise<boolean> {
     if (!this.api.entitySqliteAddOrigin) throw new Error('SQLite origin updates are unavailable.');
     return this.api.entitySqliteAddOrigin({ databasePath: this.sqlitePath, ...input });
@@ -719,6 +749,8 @@ export class EntityStore {
     fief?: string;
     posthumousName?: string;
     title?: string;
+    source?: string | null;
+    origin?: 'user' | 'authority' | 'xml';
   }): Promise<boolean> {
     if (!this.api.entitySqliteAddNobleTitle)
       throw new Error('SQLite noble-title updates are unavailable.');
@@ -789,6 +821,16 @@ export class EntityStore {
     if (!this.api.entitySqliteRejectAssertion)
       throw new Error('SQLite assertion rejection is unavailable.');
     return this.api.entitySqliteRejectAssertion({
+      databasePath: this.sqlitePath,
+      entityId,
+      key,
+    });
+  }
+
+  async sqliteRestoreAssertion(entityId: string, key: string): Promise<boolean> {
+    if (!this.api.entitySqliteRestoreAssertion)
+      throw new Error('SQLite assertion restore is unavailable.');
+    return this.api.entitySqliteRestoreAssertion({
       databasePath: this.sqlitePath,
       entityId,
       key,
@@ -1035,6 +1077,29 @@ export class EntityStore {
     });
   }
 
+  async sqliteReconcileXmlExtractedData(input: {
+    documentKey: string;
+    wrappers: Array<{
+      entityId: string;
+      source: string;
+      assertions: Array<{
+        element: string;
+        value: string;
+        ref?: string | null;
+        children?: Array<{ element: string; value: string; ref?: string | null }>;
+      }>;
+    }>;
+    purgeOrphanSources?: boolean;
+  }): Promise<{ wrappers: number; added: number; removed: number; retained: number }> {
+    if (!this.api.entitySqliteReconcileXmlExtractedData) {
+      return { wrappers: 0, added: 0, removed: 0, retained: 0 };
+    }
+    return this.api.entitySqliteReconcileXmlExtractedData({
+      databasePath: this.sqlitePath,
+      ...input,
+    });
+  }
+
   async sqliteEntityContentHash(entityId: string): Promise<string | null> {
     if (!this.api.entitySqliteEntityContentHash) return null;
     return this.api.entitySqliteEntityContentHash({
@@ -1119,6 +1184,14 @@ export class EntityStore {
     if (!this.api.entitySqliteListLinkedCentralIds || !(await this.hasSqliteDatabase()))
       return null;
     return this.api.entitySqliteListLinkedCentralIds({
+      databasePath: this.sqlitePath,
+      userStableId,
+    });
+  }
+
+  async sqliteCountUnlinked(userStableId: string): Promise<number | null> {
+    if (!this.api.entitySqliteCountUnlinked || !(await this.hasSqliteDatabase())) return null;
+    return this.api.entitySqliteCountUnlinked({
       databasePath: this.sqlitePath,
       userStableId,
     });
@@ -1436,6 +1509,9 @@ export function desktopEntityFileApi(): EntityFileApi | null {
     entitySqliteRejectAssertion: rawApi.entitySqliteRejectAssertion
       ? (input) => rawApi.entitySqliteRejectAssertion!(input)
       : undefined,
+    entitySqliteRestoreAssertion: rawApi.entitySqliteRestoreAssertion
+      ? (input) => rawApi.entitySqliteRestoreAssertion!(input)
+      : undefined,
     entitySqliteRemoveAssertion: rawApi.entitySqliteRemoveAssertion
       ? (input) => rawApi.entitySqliteRemoveAssertion!(input)
       : undefined,
@@ -1478,6 +1554,9 @@ export function desktopEntityFileApi(): EntityFileApi | null {
     entitySqliteApplyAuthorityBackfillPatch: rawApi.entitySqliteApplyAuthorityBackfillPatch
       ? (input) => rawApi.entitySqliteApplyAuthorityBackfillPatch!(input)
       : undefined,
+    entitySqliteReconcileXmlExtractedData: rawApi.entitySqliteReconcileXmlExtractedData
+      ? (input) => rawApi.entitySqliteReconcileXmlExtractedData!(input)
+      : undefined,
     entitySqliteEntityContentHash: rawApi.entitySqliteEntityContentHash
       ? (input) => rawApi.entitySqliteEntityContentHash!(input)
       : undefined,
@@ -1501,6 +1580,9 @@ export function desktopEntityFileApi(): EntityFileApi | null {
       : undefined,
     entitySqliteListLinkedCentralIds: rawApi.entitySqliteListLinkedCentralIds
       ? (input) => rawApi.entitySqliteListLinkedCentralIds!(input)
+      : undefined,
+    entitySqliteCountUnlinked: rawApi.entitySqliteCountUnlinked
+      ? (input) => rawApi.entitySqliteCountUnlinked!(input)
       : undefined,
     entitySqliteFindByAuthority: rawApi.entitySqliteFindByAuthority
       ? (input) => rawApi.entitySqliteFindByAuthority!(input)

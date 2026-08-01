@@ -1,19 +1,12 @@
-import { DOMParser as XmldomParser, XMLSerializer as XmldomSerializer } from '@xmldom/xmldom';
 import fs from 'fs/promises';
 import path from 'path';
 import { randomUUID } from 'crypto';
-import {
-  parseEntities,
-  serializeEntities,
-} from '../../../packages/cwrc-leafwriter/src/autoTagging/entities';
-import { bulkBridgeImport } from '../../../packages/cwrc-leafwriter/src/autoTagging/bulkBridgeImport';
 import type {
   BulkBridgeJobEvent,
   BulkBridgeJobRequest,
 } from '../../commons/src/desktop/bulkBridgeTypes';
-import { installBrowserDomShim } from './xmldomShim';
+import { bulkBridgeImportSqlite } from './bulkBridgeImportSqlite';
 import { EntitySqliteRepository } from './entityDbSqlite/repository';
-import { exportEntitiesXml, importEntitiesXml } from './entityDbSqlite/xmlCodec';
 
 const cancelled = new Set<string>();
 
@@ -39,39 +32,23 @@ const atomicWrite = async (filePath: string, content: string, jobId: string): Pr
   process.send?.({ kind: 'ignore-write', filePath, mtimeMs });
 };
 
-const sqlitePathFor = (xmlPath: string): string =>
-  xmlPath.replace(/entities\.xml$/i, 'entities.sqlite');
+const sqlitePathFor = (entitiesPath: string): string =>
+  entitiesPath.replace(/entities\.xml$/i, 'entities.sqlite');
 
-const readEntityXml = async (xmlPath: string): Promise<string> => {
-  const sqlitePath = sqlitePathFor(xmlPath);
-  let hasSqlite = true;
+const requireSqlitePath = async (entitiesPath: string, label: string): Promise<string> => {
+  const sqlitePath = sqlitePathFor(entitiesPath);
   try {
     await fs.access(sqlitePath);
   } catch {
-    hasSqlite = false;
+    throw new Error(
+      `${label} SQLite entity database is missing (expected ${sqlitePath}). Catch-up sync requires migrated entities.sqlite files.`,
+    );
   }
-  if (!hasSqlite) return fs.readFile(xmlPath, 'utf8');
-  const repository = new EntitySqliteRepository(sqlitePath);
-  const xml = exportEntitiesXml(repository);
-  repository.close();
-  return xml;
+  return sqlitePath;
 };
 
-const writeEntity = async (xmlPath: string, xml: string, jobId: string): Promise<void> => {
-  const sqlitePath = sqlitePathFor(xmlPath);
-  let hasSqlite = true;
-  try {
-    await fs.access(sqlitePath);
-  } catch {
-    hasSqlite = false;
-  }
-  if (!hasSqlite) {
-    await atomicWrite(xmlPath, xml, jobId);
-    return;
-  }
-  const repository = new EntitySqliteRepository(sqlitePath);
-  importEntitiesXml(repository, xml, { replace: true });
-  repository.close();
+/** Tell the main-process file watcher to ignore our in-place SQLite mutations. */
+const ignoreSqliteWrite = async (sqlitePath: string): Promise<void> => {
   const { mtimeMs } = await fs.stat(sqlitePath);
   process.send?.({ kind: 'ignore-write', filePath: sqlitePath, mtimeMs });
 };
@@ -86,35 +63,41 @@ process.on(
     const request = message.request;
     if (!request) return;
     const jobId = message.jobId;
+    let sourceRepo: EntitySqliteRepository | null = null;
+    let centralRepo: EntitySqliteRepository | null = null;
     try {
-      (globalThis as unknown as { DOMParser: typeof XmldomParser }).DOMParser = XmldomParser;
-      (globalThis as unknown as { XMLSerializer: typeof XmldomSerializer }).XMLSerializer =
-        XmldomSerializer;
-      const sourceDoc = parseEntities(await readEntityXml(request.sourceEntitiesPath));
-      const centralDoc = parseEntities(await readEntityXml(request.centralEntitiesPath));
-      installBrowserDomShim(sourceDoc);
-      installBrowserDomShim(centralDoc);
-      const result = await bulkBridgeImport({
-        sourceDoc,
-        centralDoc,
+      const sourceSqlitePath = await requireSqlitePath(request.sourceEntitiesPath, 'Project');
+      const centralSqlitePath = await requireSqlitePath(request.centralEntitiesPath, 'Central');
+      sourceRepo = new EntitySqliteRepository(sourceSqlitePath);
+      centralRepo = new EntitySqliteRepository(centralSqlitePath);
+
+      const result = await bulkBridgeImportSqlite({
+        source: sourceRepo,
+        central: centralRepo,
         userStableId: request.userStableId,
         chunkSize: request.chunkSize,
         shouldCancel: () => cancelled.has(jobId),
         onProgress: (progress) => send({ jobId, status: 'progress', progress }),
         onCheckpoint: async () => {
-          await writeEntity(request.sourceEntitiesPath, serializeEntities(sourceDoc), jobId);
-          await writeEntity(request.centralEntitiesPath, serializeEntities(centralDoc), jobId);
+          await ignoreSqliteWrite(sourceSqlitePath);
+          await ignoreSqliteWrite(centralSqlitePath);
         },
       });
+
       const proposalPath = path.join(request.centralLjbDir, 'bulk-import-proposals.jsonl');
       const proposalText = result.proposals.map((proposal) => JSON.stringify(proposal)).join('\n');
       await atomicWrite(proposalPath, proposalText ? `${proposalText}\n` : '', jobId);
+
+      sourceRepo.close();
+      sourceRepo = null;
+      centralRepo.close();
+      centralRepo = null;
+
       if (!cancelled.has(jobId)) {
-        if (result.sourceChanged)
-          await writeEntity(request.sourceEntitiesPath, serializeEntities(sourceDoc), jobId);
-        if (result.centralChanged)
-          await writeEntity(request.centralEntitiesPath, serializeEntities(centralDoc), jobId);
+        await ignoreSqliteWrite(sourceSqlitePath);
+        await ignoreSqliteWrite(centralSqlitePath);
       }
+
       send({ jobId, status: cancelled.has(jobId) ? 'cancelled' : 'complete', result });
     } catch (error) {
       send({
@@ -123,6 +106,16 @@ process.on(
         error: error instanceof Error ? error.message : String(error),
       });
     } finally {
+      try {
+        sourceRepo?.close();
+      } catch {
+        // already closed
+      }
+      try {
+        centralRepo?.close();
+      } catch {
+        // already closed
+      }
       cancelled.delete(jobId);
     }
   },

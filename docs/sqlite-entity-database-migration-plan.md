@@ -88,9 +88,10 @@ The SQLite foundation and several runtime slices are implemented in
 - Pending central-order remaps (merge/delete survivors → PEDB `ljb-central`
   mappings) use SQLite `central_mappings` when the project database is
   migrated; order JSONL and applied-id cursors remain file-based.
-- Synchronized mirror promotes unmapped PEDB entities via SQLite when both
-  databases are migrated, then still uses the XML compatibility export for
-  content-hash upload/download and checkpointing.
+- Synchronized mirror steady-state sync converges already-linked CEDB/PEDB
+  pairs via SQLite content hashes and body replace. Catch-up for *unlinked*
+  PEDB entities is an explicit SQLite worker job (`bulkBridgeImportSqlite` +
+  BulkSyncIndicator), started only after user confirm — not on every reload.
 - Authority backfill/refresh ("Backfill from authorities" / Refresh) writes
   typed SQLite patches for migrated databases: names, family/given/romanized,
   source-keyed dates, nationalities, origins, offices, Norbert noble titles,
@@ -108,6 +109,11 @@ The SQLite foundation and several runtime slices are implemented in
 - Disambiguation (panel + authority prefetch) loads PEDB/CEDB surface matches
   via SQLite name search + linked `central_mappings` ids when migrated; it no
   longer full-exports both databases on every mention-group review.
+- **Wordprocessor integration (reads):** the Word/plugin HTTPS API
+  (`apps/commons/src-server/routes/pluginEntities.ts`) serves status/search/
+  get-by-id from sibling `entities.sqlite` only (no XML fallback). The add-in
+  in `/Users/daniel/Code/leJeanBaptiste/wordprocessor/` stays a thin client;
+  entity edits remain in LJB.
 
 **Live verification** of the real CEDB/PEDB (restart, tombstone persistence,
 synchronization, no-resurrection) is done for this installation. Ordinary
@@ -119,29 +125,29 @@ on the paths above). New folders from `createEntityDatabase` mint both
 
 ### Explicit unfinished work
 
-Only open items:
+- General-purpose first-run migration automation beyond this single-user
+  install.
+- Multi-machine offline sync scenarios beyond the current mirror path.
 
-- **Phase 7 (done through slice 2):** slice 1 killed live DOM write/soft-read
-  paths; slice 2 gates `EntityStore.saveEntities` (full SQLite reimport only
-  with `{ allowSqliteFullReimport: true }`), deletes orphaned DOM helpers
-  (`adoptFromCentral`, `ensureDatabaseLinked`, dead office-import wrapper,
-  session `saveEntities`), stops order fingerprint / external-change watch
-  soft-paths through sibling XML when SQLite is present. DOM
-  `promoteToCentral` / `resolveEntityInDocument` remain as test/reference
-  helpers (live promote/mint is SQLite). Extracted-data ingest from
-  `scanMentions` is still deferred (no DOM persist).
-- **Wordprocessor integration** for the SQLite-backed entity database, using
-  the same database UUID, stable entity IDs, authority mappings, provenance,
-  and tombstone semantics as desktop — without reintroducing `entities.xml` as
-  a second live authority. Working tree:
-  `/Users/daniel/Code/leJeanBaptiste/wordprocessor/`.
-- **Deferred / out of scope for now:** general-purpose first-run migration
-  automation beyond this single-user install; CEDB concordance apply and
-  pack-lifecycle hooks beyond panel reload + SQLite authority backfill;
-  multi-machine offline sync scenarios beyond the current mirror path;
-  achievements reading sibling XML counts; bulk-bridge DOM import still uses
-  explicit SQLite replace (tooling); further deletion of DOM promote/resolve
-  once their unit tests are rewritten onto SQLite fixtures.
+### Recently implemented
+
+- After authority pack install/update (lifecycle enable/update, onboarding,
+  and manual pack install), CBDB person-concordance is re-applied to the
+  open project PEDB via `refreshCbdbConcordanceAfterPackLifecycle` without
+  waiting for Database panel reload. Panel reload and post-backfill apply
+  remain as safety nets; a short debounce avoids double-cost when reload
+  follows immediately.
+- Extracted-data ingest from `scanMentions` / `resolveMention` writes
+  Norbert wrapper facts (nationality, origin, office, noble title) into
+  SQLite with `origin=xml` and `xml:<doc>#personWrapper:<n>` sources via
+  `reconcileXmlExtractedData` / `sqliteEntityExtraction.ts`. Refresh adds
+  new assertions, removes vanished unvalidated XML rows, and leaves
+  user/rejected values alone. Live `saveEntities` is not used.
+- DOM `promoteToCentral` / `resolveEntityInDocument` helpers deleted after
+  unit tests were rewritten onto SQLite fixtures (`promoteToCentralSqlite`,
+  `mintOrLinkEntitySqlite`); Wikidata enrich paths are fetch-only.
+- Achievements entity counts prefer sibling `entities.sqlite`
+  (`entitySqlite:countEntities`); XML is last-resort for unmigrated folders.
 
 Pre-Step 3 schema coverage now also includes:
 

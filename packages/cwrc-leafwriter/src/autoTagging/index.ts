@@ -56,6 +56,7 @@ export * from './disambiguationContext';
 export * from './documentDateRange';
 export * from './llmDisambiguationRank';
 export * from './validationSettings';
+export * from './autoTaggingExclusions';
 export * from './llmValidationRank';
 export * from './validationCache';
 export * from './validationHarness';

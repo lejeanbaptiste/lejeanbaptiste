@@ -11,12 +11,12 @@ export type { BulkBridgeJobEvent, BulkBridgeJobRequest } from '../../commons/src
 const workers = new Map<string, ChildProcess>();
 
 /**
- * The worker writes `entities.xml` directly (no `window.electronAPI` in a
- * forked child process, so it can't arm/ignore its own writes the way the
- * renderer does via `EntityStore.saveEntities`). Route its arm/ignore
- * requests to the main process's own file watcher instead, or every
- * checkpoint/final write during a sync looks like an external edit and pops
- * the "entity database changed externally" prompt.
+ * The worker mutates sibling `entities.sqlite` files directly (no
+ * `window.electronAPI` in a forked child process, so it can't arm/ignore its
+ * own writes the way the renderer does via `EntityStore`). Route its
+ * arm/ignore requests to the main process's own file watcher instead, or
+ * every checkpoint/final write during a sync looks like an external edit
+ * and pops the "entity database changed externally" prompt.
  */
 export interface FileWriteWatcher {
   armWrite: (filePath: string) => void;
@@ -28,7 +28,7 @@ type WorkerToMainMessage =
   | { kind: 'arm-write'; filePath: string }
   | { kind: 'ignore-write'; filePath: string; mtimeMs: number };
 
-/** Keep XML parsing and reconciliation out of both Chromium and Electron's UI process. */
+/** Keep SQLite catch-up linking/minting out of both Chromium and Electron's UI process. */
 export function startBulkBridgeJob(
   request: BulkBridgeJobRequest,
   emit: (event: BulkBridgeJobEvent) => void,

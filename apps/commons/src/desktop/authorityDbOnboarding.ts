@@ -15,6 +15,8 @@ import { getProjectSourceLanguage } from './projectLanguage';
 import type { ProjectBundle } from './projectFile';
 import type { AuthorityLifecyclePromptStrings } from './authorityLifecycleTypes';
 import { isDesktop } from '@src/types/desktop';
+import { refreshCbdbConcordanceAfterPackLifecycle } from '../../../../packages/cwrc-leafwriter/src/autoTagging/cbdbConcordance';
+import { clearPackContentCache } from '../../../../packages/cwrc-leafwriter/src/services/authority-pack-lookup';
 
 const { t } = i18next;
 
@@ -61,6 +63,12 @@ export const maybeOfferAuthorityDatabases = async (bundle: ProjectBundle): Promi
     )
       return;
     await api.authorityLifecycleSetEnabled({ enabled: true, profile });
+    clearPackContentCache();
+    try {
+      await refreshCbdbConcordanceAfterPackLifecycle();
+    } catch {
+      // Pack enable succeeded; panel reload remains the safety net.
+    }
     return;
   }
 

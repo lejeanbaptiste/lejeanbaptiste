@@ -18,6 +18,7 @@ import { romanizeFromAuthorityMetadata } from '../utilities/romanize';
 import { rationaleForCandidates } from './packLoader';
 import type { Suggestion, WhitespacePolicy } from './types';
 import { extractPluginOfficeRelations } from '../plugins/officeRelationExtractors';
+import { formatNorbertAuthorityValue } from './norbertAuthorityId';
 
 /**
  * Dedupe source labels for the pill display. Each input may itself already be
@@ -439,9 +440,23 @@ function resolveEntity(
     candidate.kind === 'office'
       ? officeAuthorityIds(candidate)
       : [
-          { type: candidate.source, value: candidate.authorityId },
+          {
+            type: candidate.source,
+            value:
+              candidate.source.trim().toUpperCase() === 'NORBERT'
+                ? formatNorbertAuthorityValue('person', candidate.authorityId)
+                : candidate.authorityId,
+          },
           ...(candidate.metadata?.crosswalk?.norbert
-            ? [{ type: 'NORBERT', value: candidate.metadata.crosswalk.norbert }]
+            ? [
+                {
+                  type: 'NORBERT',
+                  value: formatNorbertAuthorityValue(
+                    'person',
+                    candidate.metadata.crosswalk.norbert,
+                  ),
+                },
+              ]
             : []),
           ...(candidate.metadata?.canonicalEntityId?.startsWith(
             `${candidate.source.toLowerCase()}:person:`,
@@ -529,9 +544,16 @@ function officeAuthorityIds(candidate: AuthorityCandidate) {
   };
   // Canonical idno types match SOURCE_IDNO_TYPES / SQLite canonicalizeAuthorityType.
   const sourceType = candidate.source.trim().toUpperCase();
-  if (!candidate.source.includes('+') && sourceType) add(sourceType, candidate.authorityId);
+  if (!candidate.source.includes('+') && sourceType) {
+    const value =
+      sourceType === 'NORBERT'
+        ? formatNorbertAuthorityValue('office', candidate.authorityId)
+        : candidate.authorityId;
+    add(sourceType, value);
+  }
   add('CBDB', candidate.metadata?.crosswalk?.cbdb);
-  add('NORBERT', candidate.metadata?.crosswalk?.norbert);
+  const norbertCross = candidate.metadata?.crosswalk?.norbert;
+  if (norbertCross) add('NORBERT', formatNorbertAuthorityValue('office', norbertCross));
   return ids;
 }
 

@@ -390,6 +390,8 @@ export const EntityLookupField = ({
           entityIds: [resolvedId],
           projectLang: session.projectLang,
           desktopLanguage: i18n.language,
+          expandWikidataWorks: kind === 'person',
+          lookupAuthorityRef: window.electronAPI?.authorityRefLookup,
         }).catch(() => undefined);
         if (kind === 'work') {
           const summary = await session.store.sqliteEntitySummary(resolvedId);

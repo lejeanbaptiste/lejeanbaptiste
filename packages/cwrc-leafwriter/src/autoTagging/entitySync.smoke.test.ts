@@ -38,6 +38,8 @@ import type { KeyRemapFileOps } from '../../../../apps/commons/src/desktop/entit
 class SharedCentralFolder implements EntityFileApi {
   files = new Map<string, string>();
   dirs = new Set<string>(['/shared-central']);
+  /** Fingerprint returned by sqliteDatabaseId once the sibling SQLite file exists. */
+  sqliteDatabaseIdValue: string | null = null;
   ensureDirectory = async (dir: string) => {
     this.dirs.add(dir);
   };
@@ -50,6 +52,7 @@ class SharedCentralFolder implements EntityFileApi {
   writeFile = async (path: string, content: string) => {
     this.files.set(path, content);
   };
+  entitySqliteDatabaseId = async (_databasePath: string) => this.sqliteDatabaseIdValue;
 }
 
 /**
@@ -76,7 +79,12 @@ describe('SMOKE TEST — two-machine merge convergence (the bug this redesign fi
     const keep = addEntity(seedDoc, 'person', { name: '張衡' }).id;
     const duplicate = addEntity(seedDoc, 'person', { name: '張衡' }).id;
     cloud.files.set('/shared-central/entities.xml', serializeEntities(seedDoc));
+    // applyPendingOrders requires a sibling entities.sqlite (SQLite-first runtime).
+    // The smoke test only needs the file to exist + a stable fingerprint; order
+    // logs and corpus remaps still go through the fake filesystem APIs.
     const dbId = getDatabaseId(seedDoc)!;
+    cloud.sqliteDatabaseIdValue = dbId;
+    cloud.files.set('/shared-central/entities.sqlite', 'sqlite-placeholder');
     // Both machines' project folders exist on their own local disks — the
     // registry's existence check (pathExists) is a local-disk check in the real
     // app, simplified here onto the same fake filesystem as the cloud folder.

@@ -12,6 +12,9 @@ import OpenInNewIcon from '@mui/icons-material/OpenInNew';
 import PlaylistAddIcon from '@mui/icons-material/PlaylistAdd';
 import RefreshIcon from '@mui/icons-material/Refresh';
 import SearchIcon from '@mui/icons-material/Search';
+import UndoIcon from '@mui/icons-material/Undo';
+import VisibilityIcon from '@mui/icons-material/Visibility';
+import VisibilityOffIcon from '@mui/icons-material/VisibilityOff';
 import WarningAmberIcon from '@mui/icons-material/WarningAmber';
 import {
   Accordion,
@@ -64,7 +67,9 @@ import {
   type FieldAssertionGroups,
   normalizeAuthorityValue,
 } from '../../../../../packages/cwrc-leafwriter/src/autoTagging/entityOps';
-import { refreshCbdbConcordanceSqlite } from '../../../../../packages/cwrc-leafwriter/src/autoTagging/cbdbConcordance';
+import {
+  refreshCbdbConcordanceSqliteDebounced,
+} from '../../../../../packages/cwrc-leafwriter/src/autoTagging/cbdbConcordance';
 import { SQLITE_REQUIRED_PANEL_MESSAGE as SQLITE_REQUIRED_MESSAGE, SQLITE_REQUIRED_MESSAGE as SQLITE_REQUIRED_BRIDGE_MESSAGE } from '../../../../../packages/cwrc-leafwriter/src/autoTagging/sqliteRequired';
 import {
   ALL_NAME_TYPES,
@@ -74,7 +79,11 @@ import { parseAuthorityUri } from '../../../../../packages/cwrc-leafwriter/src/a
 import { backfillEntitiesSqlite } from '../../../../../packages/cwrc-leafwriter/src/autoTagging/sqliteAuthorityBackfill';
 import { entitySummaryFromSqlite } from '../../../../../packages/cwrc-leafwriter/src/autoTagging/sqliteSummary';
 import { autoSyncEntitiesToCentral } from '../../../../../packages/cwrc-leafwriter/src/autoTagging/autoSync';
-import { synchronizeMirroredProject } from '../../../../../packages/cwrc-leafwriter/src/autoTagging/synchronizedMirror';
+import {
+  countUnlinkedPedbEntities,
+  synchronizeMirroredProject,
+} from '../../../../../packages/cwrc-leafwriter/src/autoTagging/synchronizedMirror';
+import { setBulkSyncProgress, getBulkSyncProgress } from '../../../../../packages/cwrc-leafwriter/src/autoTagging/bulkSyncProgress';
 import { suggestPersonRomanization } from '../../../../../packages/cwrc-leafwriter/src/plugins/personNameDefaults';
 import { cachedPackReader } from '../../../../../packages/cwrc-leafwriter/src/services/authority-pack-lookup';
 import {
@@ -444,6 +453,7 @@ interface EntityRowData {
   openEdit: (entity: EntitySummary) => void;
   openXPathForEntity: (entity: EntitySummary) => void;
   notifyViaSnackbar: (notification: NotificationProps | string) => void;
+  showRejected: boolean;
   t: TFn;
 }
 
@@ -471,7 +481,11 @@ const entityRowHeight = (index: number, rowProps: EntityRowData): number => {
     entity.endYear != null ||
     entity.nationalities.length > 0 ||
     entity.placesOfOrigin.length > 0;
-  const optionalLines = (entity.description ? 1 : 0) + (hasDatesLine ? 1 : 0);
+  const hasRejectedLine =
+    rowProps.showRejected &&
+    (entity.rejectedCount > 0 || (entity.rejectedConcordances?.length ?? 0) > 0);
+  const optionalLines =
+    (entity.description ? 1 : 0) + (hasDatesLine ? 1 : 0) + (hasRejectedLine ? 1 : 0);
   return (
     ENTITY_ROW_BASE_HEIGHT +
     ENTITY_ROW_ID_LINE_HEIGHT +
@@ -498,6 +512,7 @@ function EntityRow({
   openEdit,
   openXPathForEntity,
   notifyViaSnackbar,
+  showRejected,
   t,
 }: RowComponentProps<EntityRowData>) {
   const entity = entities[index];
@@ -629,6 +644,54 @@ function EntityRow({
               : ''}
           </Typography>
         )}
+        {showRejected &&
+          (entity.rejectedCount > 0 || (entity.rejectedConcordances?.length ?? 0) > 0) && (
+            <Stack direction="row" spacing={0.5} useFlexGap flexWrap="wrap" sx={{ mt: 0.25 }}>
+              {entity.rejectedCount > 0 && (
+                <Chip
+                  label={t('LWC.desktop.sidebar.database.rejected_count', {
+                    count: entity.rejectedCount,
+                  })}
+                  size="small"
+                  color="error"
+                  variant="outlined"
+                  sx={{
+                    height: 20,
+                    textDecoration: 'line-through',
+                    '& .MuiChip-label': { px: 0.75, fontSize: 11 },
+                  }}
+                />
+              )}
+              {entity.rejectedAssertions.slice(0, 6).map((assertion) => (
+                <Chip
+                  key={`${assertion.element}-${assertion.value}-${assertion.source ?? ''}`}
+                  label={`${assertion.element}: ${assertion.value}`}
+                  size="small"
+                  color="error"
+                  variant="outlined"
+                  sx={{
+                    height: 20,
+                    textDecoration: 'line-through',
+                    '& .MuiChip-label': { px: 0.75, fontSize: 11 },
+                  }}
+                />
+              ))}
+              {(entity.rejectedConcordances ?? []).slice(0, 3).map((rejection) => (
+                <Chip
+                  key={`${rejection.leftId}-${rejection.rightId}`}
+                  label={`${rejection.leftId} ↔ ${rejection.rightId}`}
+                  size="small"
+                  color="error"
+                  variant="outlined"
+                  sx={{
+                    height: 20,
+                    textDecoration: 'line-through',
+                    '& .MuiChip-label': { px: 0.75, fontSize: 11 },
+                  }}
+                />
+              ))}
+            </Stack>
+          )}
       </Box>
       <Stack direction="row" spacing={0} sx={{ flexShrink: 0 }}>
         <Tooltip title={t('LWC.desktop.sidebar.database.open')}>
@@ -657,7 +720,7 @@ function EntityRow({
 export const SidebarDatabaseTab = ({ active = false }: SidebarDatabaseTabProps) => {
   const { t, i18n } = useTranslation();
   const { skipEntityDetachConfirm } = useAppState().ui;
-  const { setSkipEntityDetachConfirm, notifyViaSnackbar } = useActions().ui;
+  const { setSkipEntityDetachConfirm, notifyViaSnackbar, setDesktopWindowMode } = useActions().ui;
   const { config } = useAppState().project;
   const [savedSyncOverride, setSavedSyncOverride] = useState<boolean | null>(null);
   const syncToCentral = savedSyncOverride ?? config?.syncToCentral === true;
@@ -683,6 +746,7 @@ export const SidebarDatabaseTab = ({ active = false }: SidebarDatabaseTabProps) 
     writeStoredKindFilter(kind);
   }, []);
   const [selected, setSelected] = useState<Set<string>>(() => new Set());
+  const [showRejected, setShowRejected] = useState(false);
   const [confirm, setConfirm] = useState<ConfirmState | null>(null);
   const [skipDetachChecked, setSkipDetachChecked] = useState(false);
   const [mergeIds, setMergeIds] = useState<string[] | null>(null);
@@ -744,6 +808,8 @@ export const SidebarDatabaseTab = ({ active = false }: SidebarDatabaseTabProps) 
   const backfillAbortRef = useRef<AbortController | null>(null);
   /** Guards against overlapping bulk catch-up sync passes across successive reload() calls. */
   const bulkSyncInFlightRef = useRef(false);
+  /** After we ask once (accept or decline), do not re-prompt until the tab remounts. */
+  const catchUpPromptedRef = useRef(false);
 
   const searchInputRef = useRef<HTMLInputElement | null>(null);
 
@@ -829,6 +895,79 @@ export const SidebarDatabaseTab = ({ active = false }: SidebarDatabaseTabProps) 
               `Central synchronisation found ${mirror.conflicts.length} conflicting offline edit${mirror.conflicts.length === 1 ? '' : 's'}.`,
             );
           }
+
+          const unlinked = await countUnlinkedPedbEntities(currentStore, userStableId);
+          if (unlinked > 0 && !getBulkSyncProgress().active && !catchUpPromptedRef.current) {
+            catchUpPromptedRef.current = true;
+            const confirmed = window.confirm(
+              `This project has ${unlinked} entit${unlinked === 1 ? 'y' : 'ies'} not yet linked to the central database.\n\n` +
+                `Link and mint them into the central database now? ` +
+                `Ambiguous matches will be listed as proposals for review.`,
+            );
+            if (confirmed) {
+              const label = 'Catching up unlinked entities';
+              const start = window.electronAPI?.bulkBridgeStart;
+              const onProgress = window.electronAPI?.onBulkBridgeProgress;
+              if (!start || !onProgress) {
+                throw new Error('Background catch-up sync is unavailable in this desktop build.');
+              }
+              void (async () => {
+                try {
+                  await new Promise<void>(async (resolve, reject) => {
+                    let jobId: string | null = null;
+                    const cancel = () => {
+                      if (jobId) void window.electronAPI?.bulkBridgeCancel?.(jobId);
+                    };
+                    const unsubscribe = onProgress((event) => {
+                      if (!jobId || event.jobId !== jobId) return;
+                      if (event.progress) {
+                        setBulkSyncProgress({
+                          active: true,
+                          label,
+                          done: event.progress.done,
+                          total: event.progress.total,
+                          cancel,
+                        });
+                      }
+                      if (event.status === 'complete' || event.status === 'cancelled') {
+                        if (event.result?.proposals) setBulkProposals(event.result.proposals);
+                        setBulkSyncProgress({ active: false, label: '', done: 0, total: 0 });
+                        unsubscribe();
+                        resolve();
+                      } else if (event.status === 'error') {
+                        setBulkSyncProgress({ active: false, label: '', done: 0, total: 0 });
+                        unsubscribe();
+                        reject(new Error(event.error ?? 'Background catch-up sync failed.'));
+                      }
+                    });
+                    try {
+                      jobId = await start({
+                        sourceEntitiesPath: currentStore.entitiesPath,
+                        centralEntitiesPath: resolvedCentralStore.entitiesPath,
+                        centralLjbDir: resolvedCentralStore.projectLjbDir,
+                        userStableId,
+                        chunkSize: 250,
+                      });
+                      setBulkSyncProgress({ active: true, label, done: 0, total: 0, cancel });
+                    } catch (error) {
+                      unsubscribe();
+                      reject(error);
+                    }
+                  });
+                  // Refresh the CEDB panel so minted/linked rows appear; prompt is suppressed.
+                  void reload();
+                } catch (error) {
+                  // eslint-disable-next-line no-console
+                  console.error('[central-mirror] catch-up sync failed:', error);
+                  setBulkSyncProgress({ active: false, label: '', done: 0, total: 0 });
+                  setLoadError(
+                    `Catch-up synchronisation failed: ${error instanceof Error ? error.message : String(error)}`,
+                  );
+                }
+              })();
+            }
+            // On decline: leave unlinked and continue browsing CEDB.
+          }
         } catch (error) {
           // eslint-disable-next-line no-console
           console.error('[central-mirror] synchronisation failed:', error);
@@ -873,9 +1012,11 @@ export const SidebarDatabaseTab = ({ active = false }: SidebarDatabaseTabProps) 
         activeStore === currentStore &&
         window.electronAPI?.entitySqliteApplyConcordance
       ) {
-        const imported = await refreshCbdbConcordanceSqlite(
+        // Debounced: pack-lifecycle refresh may have just applied the same pack.
+        const imported = await refreshCbdbConcordanceSqliteDebounced(
           activeStore,
           cachedPackReader(),
+          { clearCache: false },
         );
         if (imported) conflicts = imported.conflicts;
       }
@@ -1167,12 +1308,22 @@ export const SidebarDatabaseTab = ({ active = false }: SidebarDatabaseTabProps) 
           setLoadError(SQLITE_REQUIRED_MESSAGE);
           return;
         }
+        // Expand concordance first so newly linked merged-from CBDB ids are
+        // present before pack/Wikidata backfill reads authorities.
+        if (activeStore === store) {
+          await refreshCbdbConcordanceSqliteDebounced(activeStore, readPack, {
+            force: true,
+            clearCache: false,
+          });
+        }
         const result = await backfillEntitiesSqlite(activeStore, {
           entityIds,
           readPackFile: readPack,
           projectLang,
           desktopLanguage: i18n.language,
           signal: controller.signal,
+          expandWikidataWorks: false,
+          lookupAuthorityRef: window.electronAPI?.authorityRefLookup,
           onProgress: (progress) =>
             setBackfillProgress({
               done: progress.done,
@@ -1191,9 +1342,10 @@ export const SidebarDatabaseTab = ({ active = false }: SidebarDatabaseTabProps) 
           activeStore === store &&
           window.electronAPI?.entitySqliteApplyConcordance
         ) {
-          const imported = await refreshCbdbConcordanceSqlite(
+          const imported = await refreshCbdbConcordanceSqliteDebounced(
             activeStore,
             cachedPackReader(),
+            { force: true, clearCache: false },
           );
           if (imported) setConcordanceConflicts(imported.conflicts);
         }
@@ -1387,8 +1539,19 @@ export const SidebarDatabaseTab = ({ active = false }: SidebarDatabaseTabProps) 
   const rejectAssertionKeys = useCallback(
     (entityId: string, keys: string[], message: string) => {
       void (async () => {
-        const handled = await runSqliteEntityMutation(entityId, message, async (targetStore) => {
+        await runSqliteEntityMutation(entityId, message, async (targetStore) => {
           for (const key of keys) await targetStore.sqliteRejectAssertion(entityId, key);
+        });
+      })();
+    },
+    [runSqliteEntityMutation],
+  );
+
+  const restoreAssertionKeys = useCallback(
+    (entityId: string, keys: string[], message: string) => {
+      void (async () => {
+        await runSqliteEntityMutation(entityId, message, async (targetStore) => {
+          for (const key of keys) await targetStore.sqliteRestoreAssertion(entityId, key);
         });
       })();
     },
@@ -1398,7 +1561,7 @@ export const SidebarDatabaseTab = ({ active = false }: SidebarDatabaseTabProps) 
   const removeAssertionKeys = useCallback(
     (entityId: string, keys: string[], message: string) => {
       void (async () => {
-        const handled = await runSqliteEntityMutation(entityId, message, async (targetStore) => {
+        await runSqliteEntityMutation(entityId, message, async (targetStore) => {
           for (const key of keys) await targetStore.sqliteRemoveAssertion(entityId, key);
         });
       })();
@@ -1684,6 +1847,7 @@ export const SidebarDatabaseTab = ({ active = false }: SidebarDatabaseTabProps) 
           entityIds: [entity.id],
           projectLang,
           desktopLanguage: i18n.language,
+          lookupAuthorityRef: window.electronAPI?.authorityRefLookup,
         });
         if (result.entitiesUpdated > 0 && targetStore === store) {
           // Authors minted during work refresh are promoted when sync is on.
@@ -1824,9 +1988,10 @@ export const SidebarDatabaseTab = ({ active = false }: SidebarDatabaseTabProps) 
     label: string;
     value: ReactNode;
     trailing?: ReactNode;
+    muted?: boolean;
   }
 
-  // All of this only depends on editEntity/dateEditing/databaseView, not on
+  // All of this only depends on editEntity/showRejected/dateEditing/databaseView, not on
   // unrelated component state (search text, in-progress name/description edits, …) — memoized
   // so typing elsewhere in the dialog doesn't rebuild these rows (and their embedded
   // Tooltip/IconButton elements) on every keystroke.
@@ -1843,7 +2008,7 @@ export const SidebarDatabaseTab = ({ active = false }: SidebarDatabaseTabProps) 
         (assertion) =>
           (assertion.element === 'birth' || assertion.element === 'death') &&
           assertion.origin === 'authority' &&
-          assertion.status === 'active',
+          (showRejected || assertion.status === 'active'),
       ) ?? [];
     const dateYear = (assertion: EntityAssertionSummary | undefined): number | null => {
       if (!assertion) return null;
@@ -1869,6 +2034,9 @@ export const SidebarDatabaseTab = ({ active = false }: SidebarDatabaseTabProps) 
       const current = assertion.element === 'birth' ? userBirthYear : userDeathYear;
       return assertion.status === 'active' && (current == null || dateYear(assertion) !== current);
     });
+    const rejectedDateAssertions = dateAssertions.filter(
+      (assertion) => assertion.status === 'rejected',
+    );
     const agreeingDateSources = Array.from(
       new Set(
         dateAssertions
@@ -1890,7 +2058,7 @@ export const SidebarDatabaseTab = ({ active = false }: SidebarDatabaseTabProps) 
     const nationalityGroups = groupFieldAssertions(
       nationalityAssertions,
       new Set(editEntity?.nationalities ?? []),
-      false,
+      showRejected,
       nationalityKeyOf,
     );
     const originAssertions =
@@ -1898,7 +2066,7 @@ export const SidebarDatabaseTab = ({ active = false }: SidebarDatabaseTabProps) 
     const originGroups = groupFieldAssertions(
       originAssertions,
       new Set(editEntity?.placesOfOrigin ?? []),
-      false,
+      showRejected,
     );
     /** Distinct agreeing sources per current value, so each row gets its own badge. */
     const sourcesForValue = (
@@ -1945,14 +2113,31 @@ export const SidebarDatabaseTab = ({ active = false }: SidebarDatabaseTabProps) 
     };
 
     /** One row per distinct (element, value) — every source agreeing on "d. 226" shares one line. */
-    const acceptDateGroupRow = (group: AssertionValueGroup): GridRow => {
+    const acceptDateGroupRow = (group: AssertionValueGroup, muted = false): GridRow => {
       const year = Number(group.value);
       const display = Number.isFinite(year) ? scholarlyYear(year, group.precision, t) : group.value;
       return {
         key: group.keys.join('+'),
         label: '',
         value: `${dateMarker(group.element)} ${display}`,
-        trailing: (
+        muted,
+        trailing: muted ? (
+          <Tooltip title={t('LWC.desktop.sidebar.database.restore_data')}>
+            <IconButton
+              size="small"
+              sx={neutralActionButtonSx}
+              onClick={() =>
+                restoreAssertionKeys(
+                  editEntity!.id,
+                  group.keys,
+                  t('LWC.desktop.sidebar.database.restoring_data'),
+                )
+              }
+            >
+              <UndoIcon fontSize="small" />
+            </IconButton>
+          </Tooltip>
+        ) : (
           <Stack direction="row" spacing={0.5} alignItems="center" sx={factTrailingClusterSx}>
             <SourceBadges label={group.sources.join('+')} />
             <Box>
@@ -2023,6 +2208,9 @@ export const SidebarDatabaseTab = ({ active = false }: SidebarDatabaseTabProps) 
             },
             ...groupAssertionsByValue(pendingDateAssertions).map((group) =>
               acceptDateGroupRow(group),
+            ),
+            ...groupAssertionsByValue(rejectedDateAssertions).map((group) =>
+              acceptDateGroupRow(group, true),
             ),
           ]
         : [];
@@ -2134,6 +2322,30 @@ export const SidebarDatabaseTab = ({ active = false }: SidebarDatabaseTabProps) 
           ),
         });
       }
+      for (const group of groupAssertionsByValue(field.groups.rejected, keyOf)) {
+        lines.push({
+          key: `rejected:${group.keys.join('+')}`,
+          value: group.value,
+          muted: true,
+          trailing: (
+            <Tooltip title={t('LWC.desktop.sidebar.database.restore_data')}>
+              <IconButton
+                size="small"
+                sx={neutralActionButtonSx}
+                onClick={() =>
+                  restoreAssertionKeys(
+                    editEntity!.id,
+                    group.keys,
+                    t('LWC.desktop.sidebar.database.restoring_data'),
+                  )
+                }
+              >
+                <UndoIcon fontSize="small" />
+              </IconButton>
+            </Tooltip>
+          ),
+        });
+      }
       if (lines.length === 0) lines.push({ key: `${field.label}:empty`, value: '—' });
       return lines.map((line, index) => ({
         ...line,
@@ -2168,7 +2380,7 @@ export const SidebarDatabaseTab = ({ active = false }: SidebarDatabaseTabProps) 
     const descriptionGroups = groupFieldAssertions(
       descriptionAssertions,
       new Set(editEntity?.description ? [editEntity.description] : []),
-      false,
+      showRejected,
     );
 
     /** One row per distinct name text: authority badges + accept/reject, grouped like the fields above. */
@@ -2236,7 +2448,10 @@ export const SidebarDatabaseTab = ({ active = false }: SidebarDatabaseTabProps) 
       new Set([
         ...(editEntity?.roles ?? []),
         ...roleAssertions
-          .filter((assertion) => assertion.status === 'active' || assertion.status === 'rejected')
+          .filter(
+            (assertion) =>
+              assertion.status === 'active' || (showRejected && assertion.status === 'rejected'),
+          )
           .map((assertion) => assertion.value)
           .filter(Boolean),
       ]),
@@ -2276,7 +2491,7 @@ export const SidebarDatabaseTab = ({ active = false }: SidebarDatabaseTabProps) 
       roleRows,
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [editEntity, dateEditing, databaseView, rejectAssertionKeys, removeAssertionKeys, t]);
+  }, [editEntity, showRejected, dateEditing, databaseView, rejectAssertionKeys, restoreAssertionKeys, removeAssertionKeys, t]);
 
   const commitNameType = (text: string, type: string) => {
     if (!editEntity) return;
@@ -2632,6 +2847,7 @@ export const SidebarDatabaseTab = ({ active = false }: SidebarDatabaseTabProps) 
       openEdit,
       openXPathForEntity,
       notifyViaSnackbar,
+      showRejected,
       t,
     }),
     [
@@ -2643,6 +2859,7 @@ export const SidebarDatabaseTab = ({ active = false }: SidebarDatabaseTabProps) 
       openEdit,
       openXPathForEntity,
       notifyViaSnackbar,
+      showRejected,
       t,
     ],
   );
@@ -2859,6 +3076,16 @@ export const SidebarDatabaseTab = ({ active = false }: SidebarDatabaseTabProps) 
                 <PlaylistAddIcon fontSize="small" />
               </IconButton>
             </span>
+          </Tooltip>
+          <Tooltip title={t('LWC.desktop.database_window.open', { defaultValue: 'Open Database Window' })}>
+            <IconButton
+              size="small"
+              onClick={() => setDesktopWindowMode('database')}
+              aria-label={t('LWC.desktop.database_window.open', { defaultValue: 'Open Database Window' })}
+              sx={{ flexShrink: 0 }}
+            >
+              <OpenInNewIcon fontSize="small" />
+            </IconButton>
           </Tooltip>
           <Tooltip title={t('LWC.desktop.sidebar.database.reload_entities')}>
             <IconButton
@@ -3272,6 +3499,33 @@ export const SidebarDatabaseTab = ({ active = false }: SidebarDatabaseTabProps) 
               </>
             )}
             <Box sx={{ flex: 1 }} />
+            {editEntity && (
+              <Tooltip
+                title={t(
+                  showRejected
+                    ? 'LWC.desktop.sidebar.database.hide_rejected'
+                    : 'LWC.desktop.sidebar.database.show_rejected',
+                )}
+              >
+                <IconButton
+                  size="small"
+                  aria-label={t(
+                    showRejected
+                      ? 'LWC.desktop.sidebar.database.hide_rejected'
+                      : 'LWC.desktop.sidebar.database.show_rejected',
+                  )}
+                  aria-pressed={showRejected}
+                  color={showRejected ? 'primary' : 'default'}
+                  onClick={() => setShowRejected((previous) => !previous)}
+                >
+                  {showRejected ? (
+                    <VisibilityIcon fontSize="small" />
+                  ) : (
+                    <VisibilityOffIcon fontSize="small" />
+                  )}
+                </IconButton>
+              </Tooltip>
+            )}
             {editEntity && (
               <Tooltip title={t('LWC.desktop.sidebar.database.delete_entity')}>
                 <IconButton
@@ -3802,7 +4056,12 @@ export const SidebarDatabaseTab = ({ active = false }: SidebarDatabaseTabProps) 
                       >
                         {row.label}
                       </Typography>
-                      <Typography variant="body2" color="text.primary" component="span">
+                      <Typography
+                        variant="body2"
+                        color={row.muted ? 'text.secondary' : 'text.primary'}
+                        component="span"
+                        sx={{ textDecoration: row.muted ? 'line-through' : undefined }}
+                      >
                         {row.key === dateGridRows[0]?.key ||
                         row.key === nationalityGridRows[0]?.key ||
                         row.key === originGridRows[0]?.key ? (
@@ -4043,7 +4302,7 @@ export const SidebarDatabaseTab = ({ active = false }: SidebarDatabaseTabProps) 
                         {row.text}
                       </Typography>
                       {row.sources.length > 0 && <SourceBadges label={row.sources.join('+')} />}
-                      {row.keys.length > 0 && (
+                      {row.keys.length > 0 && row.status === 'active' && (
                         <>
                           <Tooltip title={t('LWC.desktop.sidebar.database.validate_data')}>
                             <IconButton
@@ -4054,24 +4313,39 @@ export const SidebarDatabaseTab = ({ active = false }: SidebarDatabaseTabProps) 
                               <CheckIcon fontSize="small" />
                             </IconButton>
                           </Tooltip>
-                          {row.status === 'active' && (
-                            <Tooltip title={t('LWC.desktop.sidebar.database.reject_data')}>
-                              <IconButton
-                                size="small"
-                                sx={neutralActionButtonSx}
-                                onClick={() =>
-                                  rejectAssertionKeys(
-                                    editEntity.id,
-                                    row.keys,
-                                    t('LWC.desktop.sidebar.database.rejecting_data'),
-                                  )
-                                }
-                              >
-                                <ClearIcon fontSize="small" />
-                              </IconButton>
-                            </Tooltip>
-                          )}
+                          <Tooltip title={t('LWC.desktop.sidebar.database.reject_data')}>
+                            <IconButton
+                              size="small"
+                              sx={neutralActionButtonSx}
+                              onClick={() =>
+                                rejectAssertionKeys(
+                                  editEntity.id,
+                                  row.keys,
+                                  t('LWC.desktop.sidebar.database.rejecting_data'),
+                                )
+                              }
+                            >
+                              <ClearIcon fontSize="small" />
+                            </IconButton>
+                          </Tooltip>
                         </>
+                      )}
+                      {row.keys.length > 0 && row.status === 'rejected' && (
+                        <Tooltip title={t('LWC.desktop.sidebar.database.restore_data')}>
+                          <IconButton
+                            size="small"
+                            sx={neutralActionButtonSx}
+                            onClick={() =>
+                              restoreAssertionKeys(
+                                editEntity.id,
+                                row.keys,
+                                t('LWC.desktop.sidebar.database.restoring_data'),
+                              )
+                            }
+                          >
+                            <UndoIcon fontSize="small" />
+                          </IconButton>
+                        </Tooltip>
                       )}
                     </Stack>
                   ))}

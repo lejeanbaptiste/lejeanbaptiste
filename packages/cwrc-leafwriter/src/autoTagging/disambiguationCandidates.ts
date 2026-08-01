@@ -3,25 +3,19 @@ import type { NamedEntityType } from '../types';
 import type { AuthorityLookupResult } from '../types/authority';
 import { AuthorityCache } from './authorityCache';
 import {
-  addEntity,
-  appendAuthorityDates,
-  appendAuthorityIdnos,
-  appendAuthoritySourcedValues,
   ENTITY_KINDS,
   entityElements,
-  findEntity,
   parseIsoYear,
   TAG_TO_KIND,
-  setAuthorityCache,
   type AuthorityId,
   type AuthoritySourcedFields,
   type EntityKind,
 } from './entities';
+import { formatNorbertAuthorityValue } from './norbertAuthorityId';
 import { linkedCentralIds } from './bridgeInbox';
 import type { EntityStore } from './entityStore';
 import { textWithoutHiddenReadings } from './hiddenChoiceText';
 import { adoptFromCentralSqlite } from './sqliteBridgeOps';
-import { dedupeIdnos, idnoEquals } from './lookupResolve';
 import {
   extractWikidataIdsFromText,
   fetchWikidataGivenFamilyNames,
@@ -33,14 +27,6 @@ import {
   wikidataLabelsByQid,
   type WikidataGivenFamilyNames,
 } from './disambiguationMatch';
-import {
-  addEntityName,
-  getFamilyName,
-  getGivenName,
-  setFamilyName,
-  setGivenName,
-  setRomanizedName,
-} from './entityOps';
 import { normalizeNameType, normalizeTypedNamesForIntake, type NameTypeId } from './nameTypes';
 import {
   isEastAsianCalendarLanguageCode,
@@ -288,7 +274,16 @@ function authorityKeysForCandidate(candidate: DisambiguationCandidate): string[]
     // Case-insensitive so PEDB idnos (NORBERT/CBDB) collapse with pack rows.
     if (type === 'cbdb') keys.add(`cbdb:${value}`);
     if (type === 'dila') keys.add(`dila:${value}`);
-    if (type === 'norbert') keys.add(`norbert:${value}`);
+    if (type === 'norbert') {
+      keys.add(`norbert:${value}`);
+      // Typed (`office-4135`) and bare (`4135`) forms must collapse for the
+      // same kind during the migration window.
+      const kindPrefixed = value.match(/^(person|office|place)[-:](.+)$/i);
+      if (kindPrefixed) {
+        keys.add(`norbert:${kindPrefixed[2]}`);
+        keys.add(`norbert:${kindPrefixed[1]!.toLowerCase()}-${kindPrefixed[2]}`);
+      }
+    }
   }
   return [...keys];
 }
@@ -897,8 +892,18 @@ async function candidatesFromAuthorityPacks(
               // The bare authorityId, not match.uri — auth.value must be an id a
               // *_URL() builder can format, not an already-fully-formed URL (which
               // would otherwise get wrapped inside another URL and break the link).
+              // Norbert values are kind-prefixed (`office-4135`) so person/office
+              // numeric ids cannot collide in the entity DB.
               authorityIdsFromCrossRefs(
-                [{ type: packSource.toUpperCase(), value: row?.authorityId ?? match.uri }],
+                [
+                  {
+                    type: packSource.toUpperCase(),
+                    value:
+                      packSource === 'norbert' && row?.authorityId != null
+                        ? formatNorbertAuthorityValue(entityType, row.authorityId)
+                        : (row?.authorityId ?? match.uri),
+                  },
+                ],
                 match.description,
               ),
             ),
@@ -1325,40 +1330,7 @@ export async function buildDisambiguationCandidates(
   return merged;
 }
 
-export interface ResolveEntityInput {
-  kind: EntityKind;
-  /** Document surface form (or user-typed name for create-new). */
-  name: string;
-  /** Authority full name in the project language; becomes the canonical name when present. */
-  projectLangName?: string;
-  /** Latin-script name, stored as an xml:lang -Latn name element. */
-  romanizedName?: string;
-  /** Project source language, written as xml:lang on the canonical name. */
-  nameLang?: string;
-  /** Authority typed names (courtesy/posthumous/…), all stored on the entity. */
-  typedNames?: TypedName[];
-  /** Person's family name (P734), backfilled only when the entity has none yet. */
-  familyName?: string;
-  /** Person's given name (P735), backfilled only when the entity has none yet. */
-  givenName?: string;
-  /** Source-preserving place-of-origin assertions. */
-  origin?: NonNullable<AuthorityCandidate['metadata']>['origin'];
-  authorityIds?: AuthorityId[];
-  authoritySource?: string;
-  description?: string;
-  startYear?: number;
-  endYear?: number;
-  authorityMetadata?: AuthorityCandidate['metadata'];
-  /**
-   * Per-authority raw values retained through merge (see
-   * `mergeSelectedCandidates`'s `authorityAssertions`) — when set,
-   * `resolveEntityInDocument` writes one element per (field, source) instead
-   * of collapsing to a single value with a single source.
-   */
-  authorityAssertions?: DisambiguationCandidate[];
-}
-
-/** Map raw per-authority candidates into the shape SQLite enrich / DOM append expect. */
+/** Map raw per-authority candidates into the shape SQLite enrich expects. */
 export function toAuthoritySourcedFields(
   candidates: DisambiguationCandidate[] | undefined,
 ): AuthoritySourcedFields[] | undefined {
@@ -1395,11 +1367,10 @@ export function toAuthoritySourcedFields(
 }
 
 /**
- * `resolveEntityInDocument` only knows about the PEDB, so a CEDB-origin
- * candidate (from a syncToCentral project's merged disambiguation search)
- * must be adopted into the PEDB first - this mints/reuses a linked project
- * mirror and rewrites the candidate to look like an ordinary local match
- * (`localEntityId` set, `centralEntityId` cleared). Candidates without a
+ * A CEDB-origin candidate (from a syncToCentral project's merged disambiguation
+ * search) must be adopted into the PEDB first — this mints/reuses a linked
+ * project mirror and rewrites the candidate to look like an ordinary local
+ * match (`localEntityId` set, `centralEntityId` cleared). Candidates without a
  * `centralEntityId` pass through unchanged.
  */
 export async function resolveCandidateForPedb(
@@ -1417,178 +1388,4 @@ export async function resolveCandidateForPedb(
   );
   if (!adopted) throw new Error(`adopt: central entity not found: ${candidate.centralEntityId}`);
   return { ...candidate, localEntityId: adopted.pedbId, centralEntityId: undefined };
-}
-
-/** Mint or reuse entity in a DOM entities document; returns local id.
- *
- * Live mint/link uses {@link mintOrLinkEntitySqlite}. This DOM helper remains
- * for unit tests and DOM nameBackfill fixtures — not for live authority writes.
- */
-export function resolveEntityInDocument(
-  entitiesDoc: Document,
-  input: ResolveEntityInput,
-  candidate?: DisambiguationCandidate,
-): string {
-  const surface = input.name.normalize('NFC').trim();
-  const familyNames = [
-    ...(input.familyName ? [input.familyName] : []),
-    ...(input.typedNames ?? []).filter((name) => name.type === 'family').map((name) => name.text),
-  ];
-  const intakeTypedNames = normalizeTypedNamesForIntake(input.typedNames ?? [], familyNames);
-
-  /** Reuse path: keep the new surface form searchable and backfill a missing romanization. */
-  const augmentExisting = (id: string): string => {
-    try {
-      if (surface) addEntityName(entitiesDoc, id, surface, { type: 'variant' });
-      for (const typed of intakeTypedNames) {
-        addEntityName(entitiesDoc, id, typed.text, {
-          type: typed.type,
-          lang: typed.lang,
-          origin: 'authority',
-          source: input.authoritySource ?? input.authorityIds?.[0]?.type,
-        });
-      }
-      const entity = findEntity(entitiesDoc, id);
-      if (entity && input.authorityIds?.length) {
-        const existing: AuthorityId[] = [];
-        const idnoEls = entity.getElementsByTagName('idno');
-        for (let i = 0; i < idnoEls.length; i++) {
-          const idnoEl = idnoEls.item(i)!;
-          existing.push({
-            type: idnoEl.getAttribute('type') ?? 'unknown',
-            value: idnoEl.textContent?.trim() ?? '',
-          });
-        }
-        const toAdd = dedupeIdnos(input.authorityIds).filter(
-          (idno) => !existing.some((own) => idnoEquals(own, idno)),
-        );
-        if (toAdd.length > 0) appendAuthorityIdnos(entitiesDoc, entity, toAdd);
-      }
-      const hasRomanized = entity
-        ? Array.from(entity.children).some(
-            (child) =>
-              child.localName === ENTITY_KINDS[input.kind].name &&
-              isLatnLang(child.getAttribute('xml:lang')),
-          )
-        : true;
-      if (!hasRomanized && input.romanizedName) {
-        setRomanizedName(entitiesDoc, id, input.romanizedName, input.nameLang);
-      }
-      if (input.familyName && !getFamilyName(entitiesDoc, id)) {
-        setFamilyName(entitiesDoc, id, input.familyName);
-      }
-      if (input.givenName && !getGivenName(entitiesDoc, id)) {
-        setGivenName(entitiesDoc, id, input.givenName);
-      }
-      if (input.authorityMetadata) {
-        setAuthorityCache(
-          entitiesDoc,
-          id,
-          input.authoritySource ?? input.authorityIds?.[0]?.type ?? 'authority-pack',
-          input.authorityMetadata,
-        );
-        if (input.kind === 'person') {
-          const entity = findEntity(entitiesDoc, id);
-          const perSourceAssertions = toAuthoritySourcedFields(input.authorityAssertions);
-          if (entity && perSourceAssertions?.length) {
-            for (const assertion of perSourceAssertions) {
-              appendAuthorityDates(entitiesDoc, entity, assertion.source, {
-                startYear: assertion.startYear,
-                endYear: assertion.endYear,
-              });
-              if (assertion.nationality?.length) {
-                appendAuthoritySourcedValues(
-                  entitiesDoc,
-                  entity,
-                  'nationality',
-                  assertion.nationality.map((value) => ({
-                    text: value.label,
-                    ref: value.canonicalId,
-                    source: assertion.source,
-                  })),
-                );
-              }
-              if (assertion.origin?.length) {
-                appendAuthoritySourcedValues(
-                  entitiesDoc,
-                  entity,
-                  'placeName',
-                  assertion.origin.map((value) => ({
-                    text: value.placeName,
-                    ref: value.placeAuthorityId,
-                    source: value.source ?? assertion.source,
-                  })),
-                );
-              }
-            }
-          } else if (entity) {
-            appendAuthorityDates(
-              entitiesDoc,
-              entity,
-              input.authoritySource ?? input.authorityIds?.[0]?.type ?? 'authority-pack',
-              input.authorityMetadata,
-            );
-          }
-        }
-      }
-    } catch {
-      // best-effort enrichment; reuse must never fail because of it
-    }
-    return id;
-  };
-
-  if (candidate?.localEntityId && findEntity(entitiesDoc, candidate.localEntityId)) {
-    return augmentExisting(candidate.localEntityId);
-  }
-
-  for (const auth of input.authorityIds ?? []) {
-    const existingId = findEntityByAuthorityId(entitiesDoc, auth);
-    if (existingId) return augmentExisting(existingId);
-  }
-
-  const canonical = input.projectLangName?.normalize('NFC').trim() || surface;
-  const surfaceIsAlt = Boolean(surface) && canonical !== surface;
-  const altNames: { text: string; type?: NameTypeId; lang?: string }[] = [
-    ...(surfaceIsAlt ? [{ text: surface, type: 'variant' as NameTypeId }] : []),
-    ...intakeTypedNames,
-  ];
-  const { id } = addEntity(entitiesDoc, input.kind, {
-    name: canonical,
-    // Don't mislabel a Latin canonical name (create-new in a zh project) as project-script.
-    nameLang: canonical && !isLatinSurface(canonical) ? input.nameLang : undefined,
-    romanizedName: input.romanizedName,
-    altNames: altNames.length > 0 ? altNames : undefined,
-    authorityIds: input.authorityIds,
-    authoritySource: input.authoritySource,
-    description: input.description,
-    startYear: input.startYear,
-    endYear: input.endYear,
-    origin: input.origin,
-    authorityAssertions:
-      input.kind === 'person' ? toAuthoritySourcedFields(input.authorityAssertions) : undefined,
-    cache: input.authorityMetadata
-      ? {
-          source: input.authoritySource ?? input.authorityIds?.[0]?.type ?? 'authority-pack',
-          data: input.authorityMetadata,
-        }
-      : undefined,
-    officeTypeIds: input.kind === 'office' ? input.authorityMetadata?.officeTypeIds : undefined,
-  });
-  if (input.familyName) setFamilyName(entitiesDoc, id, input.familyName);
-  if (input.givenName) setGivenName(entitiesDoc, id, input.givenName);
-  return id;
-}
-
-function findEntityByAuthorityId(doc: Document, auth: AuthorityId): string | null {
-  const idnos = doc.getElementsByTagName('idno');
-  for (let i = 0; i < idnos.length; i++) {
-    const idno = idnos.item(i);
-    if (!idno) continue;
-    if (idno.getAttribute('type') !== auth.type) continue;
-    if (idno.textContent?.trim() !== auth.value) continue;
-    const parent = idno.parentElement;
-    const id = parent?.getAttribute('xml:id');
-    if (id) return id;
-  }
-  return null;
 }

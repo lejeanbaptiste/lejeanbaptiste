@@ -195,6 +195,8 @@ export interface AddLabeledValueInput {
   label: string;
   ref?: string | null;
   source?: string | null;
+  /** Defaults to `user` for panel edits; XML ingest passes `xml`. */
+  origin?: SqliteValueOrigin;
   now?: string;
 }
 
@@ -203,6 +205,54 @@ export interface NobleTitleMutationInput {
   fief?: string;
   posthumousName?: string;
   title?: string;
+  source?: string | null;
+  /** Defaults to `user` for panel edits; XML ingest passes `xml`. */
+  origin?: SqliteValueOrigin;
+}
+
+export interface AddOfficeValueInput {
+  entityId: string;
+  label: string;
+  ref?: string | null;
+  source?: string | null;
+  origin?: SqliteValueOrigin;
+  now?: string;
+}
+
+/**
+ * One person-wrapper's extracted TEI assertions, keyed by the stable
+ * `xml:<document>#personWrapper:<n>` source used in entities.xml provenance.
+ */
+export interface XmlExtractedAssertionInput {
+  element: string;
+  value: string;
+  ref?: string | null;
+  children?: Array<{ element: string; value: string; ref?: string | null }>;
+}
+
+export interface XmlExtractedWrapperInput {
+  entityId: string;
+  source: string;
+  assertions: XmlExtractedAssertionInput[];
+}
+
+export interface XmlExtractedRefreshInput {
+  documentKey: string;
+  wrappers: XmlExtractedWrapperInput[];
+  /**
+   * When true (default), drop active xml rows for personWrapper sources in
+   * this document that are not among `wrappers`. Pass false for one-shot
+   * resolveMention ingest so sibling wrappers are left alone.
+   */
+  purgeOrphanSources?: boolean;
+  now?: string;
+}
+
+export interface XmlExtractedRefreshResult {
+  wrappers: number;
+  added: number;
+  removed: number;
+  retained: number;
 }
 
 export interface SetUserWorkAuthorsInput {
@@ -1114,6 +1164,34 @@ export class EntitySqliteRepository {
         )
         .all(userStableId) as { central_entity_id: string }[]
     ).map((row) => String(row.central_entity_id));
+  }
+
+  /**
+   * Active PEDB entities with no central mapping for `userStableId`.
+   * Used to decide whether catch-up sync is needed without promoting.
+   */
+  countUnlinkedForUser(userStableId: string): number {
+    const row = this.db
+      .prepare(
+        `SELECT COUNT(*) AS count
+         FROM entities e
+         WHERE e.deleted_at IS NULL
+           AND NOT EXISTS (
+             SELECT 1 FROM central_mappings m
+             WHERE m.project_entity_id = e.id
+               AND m.user_stable_id = ?
+           )`,
+      )
+      .get(userStableId) as { count: number | bigint } | undefined;
+    return Number(row?.count ?? 0);
+  }
+
+  /** Active (non-deleted) entity count — cheap for achievements / status UI. */
+  countActiveEntities(): number {
+    const row = this.db
+      .prepare(`SELECT COUNT(*) AS count FROM entities WHERE deleted_at IS NULL`)
+      .get() as { count: number | bigint } | undefined;
+    return Number(row?.count ?? 0);
   }
 
   /**
@@ -2513,6 +2591,8 @@ export class EntitySqliteRepository {
       title: input.title?.trim() ?? '',
     };
     if (!values.dynasty && !values.fief && !values.posthumousName && !values.title) return false;
+    const origin = input.origin ?? 'user';
+    const source = input.source ?? null;
     return this.transaction(() => {
       if (!this.getEntity(entityId) || this.getEntity(entityId)?.kind !== 'person') return false;
       const exists = this.db
@@ -2531,7 +2611,7 @@ export class EntitySqliteRepository {
           `INSERT INTO person_titles
              (person_id, dynasty, place_name, role_name, posthumous_name,
               origin, source, status, created_at, updated_at)
-           VALUES (?, ?, ?, ?, ?, 'user', NULL, 'active', ?, ?)`,
+           VALUES (?, ?, ?, ?, ?, ?, ?, 'active', ?, ?)`,
         )
         .run(
           entityId,
@@ -2539,11 +2619,118 @@ export class EntitySqliteRepository {
           values.fief,
           values.title,
           values.posthumousName || null,
+          origin,
+          source,
           now,
           now,
         );
       this.bumpEntity(entityId, now);
       return true;
+    });
+  }
+
+  addOffice(input: AddOfficeValueInput): boolean {
+    const label = input.label.trim();
+    if (!label) return false;
+    const now = input.now ?? nowIso();
+    const origin = input.origin ?? 'user';
+    return this.transaction(() => {
+      if (this.getEntity(input.entityId)?.kind !== 'person') return false;
+      const exists = this.db
+        .prepare(
+          `SELECT 1 FROM person_offices
+           WHERE person_id = ? AND status = 'active' AND office_label = ?`,
+        )
+        .get(input.entityId, label);
+      if (exists) return false;
+      const officeId = input.ref?.replace(/^#/, '').trim() || null;
+      const officeExists =
+        officeId &&
+        this.db.prepare("SELECT 1 FROM entities WHERE id = ? AND kind = 'office'").get(officeId)
+          ? officeId
+          : null;
+      this.db
+        .prepare(
+          `INSERT INTO person_offices
+             (person_id, office_id, office_label, reference, origin, source, status, created_at, updated_at)
+           VALUES (?, ?, ?, ?, ?, ?, 'active', ?, ?)`,
+        )
+        .run(
+          input.entityId,
+          officeExists,
+          label,
+          input.ref ?? null,
+          origin,
+          input.source ?? null,
+          now,
+          now,
+        );
+      this.bumpEntity(input.entityId, now);
+      return true;
+    });
+  }
+
+  /**
+   * Reconcile Norbert/XML person-wrapper facts into typed person tables.
+   * Mirrors DOM `refreshExtractedEntityDataForDocument`: add missing
+   * origin=xml rows, delete vanished unvalidated xml rows for live sources,
+   * and purge orphaned xml sources for wrappers that left the document.
+   * Rejected and user (validated) rows are left alone.
+   */
+  reconcileXmlExtractedData(input: XmlExtractedRefreshInput): XmlExtractedRefreshResult {
+    const now = input.now ?? nowIso();
+    const liveSources = new Set(input.wrappers.map((wrapper) => wrapper.source));
+    let wrappers = 0;
+    let added = 0;
+    let removed = 0;
+    let retained = 0;
+
+    return this.transaction(() => {
+      for (const wrapper of input.wrappers) {
+        const result = this.ingestXmlExtractedForSource(wrapper, now);
+        wrappers += 1;
+        added += result.added;
+        removed += result.removed;
+        retained += result.retained;
+      }
+
+      if (input.purgeOrphanSources !== false) {
+        const sourcePrefix = `xml:${input.documentKey}#personWrapper:`;
+        const orphanTables: Array<{ table: string; ownerCol: string }> = [
+          { table: 'person_nationalities', ownerCol: 'person_id' },
+          { table: 'person_origins', ownerCol: 'person_id' },
+          { table: 'person_offices', ownerCol: 'person_id' },
+          { table: 'person_titles', ownerCol: 'person_id' },
+        ];
+        const touched = new Set<string>();
+        for (const { table, ownerCol } of orphanTables) {
+          const rows = this.db
+            .prepare(
+              `SELECT id, ${ownerCol} AS owner_id, source, status
+               FROM ${table}
+               WHERE origin = 'xml' AND source LIKE ?`,
+            )
+            .all(`${sourcePrefix}%`) as Array<{
+            id: number;
+            owner_id: string;
+            source: string | null;
+            status: string;
+          }>;
+          for (const row of rows) {
+            if (!row.source || liveSources.has(row.source)) continue;
+            if (row.status !== 'active') {
+              retained += 1;
+              continue;
+            }
+            this.db.prepare(`DELETE FROM ${table} WHERE id = ?`).run(row.id);
+            removed += 1;
+            touched.add(row.owner_id);
+          }
+        }
+        for (const entityId of touched) this.bumpEntity(entityId, now);
+      }
+
+      return { wrappers, added, removed, retained };
     });
   }
 
@@ -2738,6 +2925,10 @@ export class EntitySqliteRepository {
 
   rejectAssertion(entityId: string, key: string, now = nowIso()): boolean {
     return this.mutateAssertion(entityId, key, 'reject', now);
+  }
+
+  restoreAssertion(entityId: string, key: string, now = nowIso()): boolean {
+    return this.mutateAssertion(entityId, key, 'restore', now);
   }
 
   removeAssertion(entityId: string, key: string, now = nowIso()): boolean {
@@ -3613,6 +3804,7 @@ export class EntitySqliteRepository {
     const label = input.label.trim();
     if (!label) return false;
     const now = input.now ?? nowIso();
+    const origin = input.origin ?? 'user';
     return this.transaction(() => {
       if (this.getEntity(input.entityId)?.kind !== 'person') return false;
       const exists = this.db
@@ -3626,18 +3818,293 @@ export class EntitySqliteRepository {
         .prepare(
           `INSERT INTO ${table}
              (person_id, label, reference, origin, source, status, created_at, updated_at)
-           VALUES (?, ?, ?, 'user', ?, 'active', ?, ?)`,
+           VALUES (?, ?, ?, ?, ?, 'active', ?, ?)`,
         )
-        .run(input.entityId, label, input.ref ?? null, input.source ?? null, now, now);
+        .run(input.entityId, label, input.ref ?? null, origin, input.source ?? null, now, now);
       this.bumpEntity(input.entityId, now);
       return true;
     });
   }
 
+  /**
+   * Reconcile one wrapper source against person_* rows. Identity is
+   * element+source+value (or structured title parts), matching DOM
+   * `entityValueKey` so validated (origin=user) and rejected rows block
+   * re-inserts without being deleted by refresh.
+   */
+  private ingestXmlExtractedForSource(
+    wrapper: XmlExtractedWrapperInput,
+    now: string,
+  ): { added: number; removed: number; retained: number } {
+    if (this.getEntity(wrapper.entityId)?.kind !== 'person') {
+      return { added: 0, removed: 0, retained: 0 };
+    }
+
+    type Mapped =
+      | { kind: 'nationality' | 'origin' | 'office'; label: string; ref: string | null }
+      | {
+          kind: 'title';
+          place: string;
+          role: string;
+          posthumous: string;
+          ref: string | null;
+          placeRef: string | null;
+          roleRef: string | null;
+          posthumousRef: string | null;
+        };
+
+    const mapped: Mapped[] = [];
+    const currentKeys = new Set<string>();
+    const addKey = (element: string, value: string) => {
+      currentKeys.add([element, wrapper.source, value].join('\u001f'));
+    };
+
+    for (const assertion of wrapper.assertions) {
+      const element = assertion.element.trim();
+      const value = assertion.value.trim();
+      const ref = assertion.ref?.trim() || null;
+      if (element === 'nationality' && value) {
+        addKey('nationality', value);
+        mapped.push({ kind: 'nationality', label: value, ref });
+      } else if (element === 'placeName' && value) {
+        addKey('placeName', value);
+        mapped.push({ kind: 'origin', label: value, ref });
+      } else if ((element === 'state' || element === 'affiliation') && value) {
+        // Norbert emits `state` for officeName; TEI export uses `affiliation`.
+        addKey('state', value);
+        addKey('affiliation', value);
+        mapped.push({ kind: 'office', label: value, ref });
+      } else if (element === 'nobleTitle' && value) {
+        addKey('nobleTitle', value);
+        const place = assertion.children?.find((part) => part.element === 'placeName');
+        const role = assertion.children?.find((part) => part.element === 'roleName');
+        const posthumous = assertion.children?.find((part) => part.element === 'persName');
+        mapped.push({
+          kind: 'title',
+          place: place?.value.trim() ?? '',
+          role: role?.value.trim() ?? '',
+          posthumous: posthumous?.value.trim() ?? '',
+          ref,
+          placeRef: place?.ref?.trim() || null,
+          roleRef: role?.ref?.trim() || null,
+          posthumousRef: posthumous?.ref?.trim() || null,
+        });
+      }
+    }
+
+    let added = 0;
+    let removed = 0;
+    let retained = 0;
+    let changed = false;
+
+    const withdrawLabeled = (
+      table: 'person_nationalities' | 'person_origins' | 'person_offices',
+      elements: string[],
+      labelCol: string,
+    ) => {
+      const rows = this.db
+        .prepare(
+          `SELECT id, ${labelCol} AS label, origin, status
+           FROM ${table}
+           WHERE person_id = ? AND source = ?`,
+        )
+        .all(wrapper.entityId, wrapper.source) as Array<{
+        id: number;
+        label: string;
+        origin: string;
+        status: string;
+      }>;
+      for (const row of rows) {
+        const label = String(row.label).trim();
+        const present = elements.some((element) =>
+          currentKeys.has([element, wrapper.source, label].join('\u001f')),
+        );
+        if (row.origin !== 'xml' || row.status !== 'active') {
+          retained += 1;
+          continue;
+        }
+        if (!present) {
+          this.db.prepare(`DELETE FROM ${table} WHERE id = ?`).run(row.id);
+          removed += 1;
+          changed = true;
+        } else {
+          retained += 1;
+        }
+      }
+    };
+
+    withdrawLabeled('person_nationalities', ['nationality'], 'label');
+    withdrawLabeled('person_origins', ['placeName'], 'label');
+    withdrawLabeled('person_offices', ['state', 'affiliation'], 'office_label');
+
+    {
+      const rows = this.db
+        .prepare(
+          `SELECT id, place_name, role_name, posthumous_name, origin, status
+           FROM person_titles
+           WHERE person_id = ? AND source = ?`,
+        )
+        .all(wrapper.entityId, wrapper.source) as Array<{
+        id: number;
+        place_name: string | null;
+        role_name: string | null;
+        posthumous_name: string | null;
+        origin: string;
+        status: string;
+      }>;
+      for (const row of rows) {
+        if (row.origin !== 'xml' || row.status !== 'active') {
+          retained += 1;
+          continue;
+        }
+        const place = String(row.place_name ?? '').trim();
+        const role = String(row.role_name ?? '').trim();
+        const posthumous = String(row.posthumous_name ?? '').trim();
+        const stillPresent = mapped.some(
+          (item) =>
+            item.kind === 'title' &&
+            item.place === place &&
+            item.role === role &&
+            item.posthumous === posthumous,
+        );
+        if (!stillPresent) {
+          this.db.prepare(`DELETE FROM person_titles WHERE id = ?`).run(row.id);
+          removed += 1;
+          changed = true;
+        } else {
+          retained += 1;
+        }
+      }
+    }
+
+    const rowExists = (sql: string, ...params: unknown[]) =>
+      Boolean(this.db.prepare(sql).get(...params));
+
+    for (const item of mapped) {
+      if (item.kind === 'nationality') {
+        if (
+          rowExists(
+            `SELECT 1 FROM person_nationalities
+             WHERE person_id = ? AND source = ? AND label = ?`,
+            wrapper.entityId,
+            wrapper.source,
+            item.label,
+          )
+        )
+          continue;
+        this.db
+          .prepare(
+            `INSERT INTO person_nationalities
+               (person_id, label, reference, origin, source, status, created_at, updated_at)
+             VALUES (?, ?, ?, 'xml', ?, 'active', ?, ?)`,
+          )
+          .run(wrapper.entityId, item.label, item.ref, wrapper.source, now, now);
+        added += 1;
+        changed = true;
+      } else if (item.kind === 'origin') {
+        if (
+          rowExists(
+            `SELECT 1 FROM person_origins
+             WHERE person_id = ? AND source = ? AND label = ?`,
+            wrapper.entityId,
+            wrapper.source,
+            item.label,
+          )
+        )
+          continue;
+        this.db
+          .prepare(
+            `INSERT INTO person_origins
+               (person_id, label, reference, origin, source, status, created_at, updated_at)
+             VALUES (?, ?, ?, 'xml', ?, 'active', ?, ?)`,
+          )
+          .run(wrapper.entityId, item.label, item.ref, wrapper.source, now, now);
+        added += 1;
+        changed = true;
+      } else if (item.kind === 'office') {
+        if (
+          rowExists(
+            `SELECT 1 FROM person_offices
+             WHERE person_id = ? AND source = ? AND office_label = ?`,
+            wrapper.entityId,
+            wrapper.source,
+            item.label,
+          )
+        )
+          continue;
+        const officeId = item.ref?.replace(/^#/, '') || null;
+        const officeExists =
+          officeId &&
+          this.db.prepare("SELECT 1 FROM entities WHERE id = ? AND kind = 'office'").get(officeId)
+            ? officeId
+            : null;
+        this.db
+          .prepare(
+            `INSERT INTO person_offices
+               (person_id, office_id, office_label, reference, origin, source, status, created_at, updated_at)
+             VALUES (?, ?, ?, ?, 'xml', ?, 'active', ?, ?)`,
+          )
+          .run(
+            wrapper.entityId,
+            officeExists,
+            item.label,
+            item.ref,
+            wrapper.source,
+            now,
+            now,
+          );
+        added += 1;
+        changed = true;
+      } else {
+        if (
+          rowExists(
+            `SELECT 1 FROM person_titles
+             WHERE person_id = ? AND source = ?
+               AND COALESCE(place_name, '') = ?
+               AND COALESCE(role_name, '') = ?
+               AND COALESCE(posthumous_name, '') = ?`,
+            wrapper.entityId,
+            wrapper.source,
+            item.place,
+            item.role,
+            item.posthumous,
+          )
+        )
+          continue;
+        this.db
+          .prepare(
+            `INSERT INTO person_titles
+               (person_id, dynasty, place_name, role_name, posthumous_name, reference,
+                place_reference, role_reference, posthumous_reference,
+                origin, source, status, created_at, updated_at)
+             VALUES (?, NULL, ?, ?, ?, ?, ?, ?, ?, 'xml', ?, 'active', ?, ?)`,
+          )
+          .run(
+            wrapper.entityId,
+            item.place || null,
+            item.role || null,
+            item.posthumous || null,
+            item.ref,
+            item.placeRef,
+            item.roleRef,
+            item.posthumousRef,
+            wrapper.source,
+            now,
+            now,
+          );
+        added += 1;
+        changed = true;
+      }
+    }
+
+    if (changed) this.bumpEntity(wrapper.entityId, now);
+    return { added, removed, retained };
+  }
+
   private mutateAssertion(
     entityId: string,
     key: string,
-    mode: 'reject' | 'remove' | 'validate',
+    mode: 'reject' | 'remove' | 'validate' | 'restore',
     now: string,
   ): boolean {
     const parsed = parseAssertionKey(key);
@@ -3665,6 +4132,18 @@ export class EntitySqliteRepository {
           .prepare(
             `UPDATE ${parsed.table}
              SET origin = 'user', status = 'active', updated_at = ?
+             WHERE id = ?`,
+          )
+          .run(now, parsed.rowId);
+        this.bumpEntity(entityId, now);
+        return true;
+      }
+      if (mode === 'restore') {
+        if (status !== 'rejected' || origin === 'user') return false;
+        this.db
+          .prepare(
+            `UPDATE ${parsed.table}
+             SET status = 'active', updated_at = ?
              WHERE id = ?`,
           )
           .run(now, parsed.rowId);

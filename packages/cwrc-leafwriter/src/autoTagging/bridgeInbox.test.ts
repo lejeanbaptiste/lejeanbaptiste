@@ -1,7 +1,6 @@
 import { bridgeAttentionCount, buildBridgeInbox, buildBridgeInboxFromFields } from './bridgeInbox';
 import { getCentralId, setCentralMapping } from './concordance';
-import { addEntity, createEntitiesScaffold, findEntity, parseEntities, touchEntity } from './entities';
-import { promoteToCentral } from './promote';
+import { addEntity, createEntitiesScaffold, parseEntities, touchEntity } from './entities';
 import { readFields } from './reconcile';
 
 const USER = 'user-a';
@@ -10,6 +9,18 @@ const setup = () => ({
   pedbDoc: parseEntities(createEntitiesScaffold('pedb')),
   cedbDoc: parseEntities(createEntitiesScaffold('cedb')),
 });
+
+/** Mint matching PEDB + CEDB rows and hand-seed the per-user central mapping. */
+const seedLinkedPair = (
+  pedbDoc: Document,
+  cedbDoc: Document,
+  entity: Parameters<typeof addEntity>[2],
+) => {
+  const pedb = addEntity(pedbDoc, 'person', entity);
+  const cedb = addEntity(cedbDoc, 'person', entity);
+  setCentralMapping(pedb.element, USER, cedb.id);
+  return { pedb, cedb };
+};
 
 describe('buildBridgeInbox', () => {
   it('reports an unmapped project entity as unlinked', () => {
@@ -32,8 +43,10 @@ describe('buildBridgeInbox', () => {
 
   it('counts a linked, agreeing pair as in-sync', () => {
     const { pedbDoc, cedbDoc } = setup();
-    const { id } = addEntity(pedbDoc, 'person', { name: '張衡', authorityIds: [{ type: 'CBDB', value: '1' }] });
-    promoteToCentral(pedbDoc, id, cedbDoc, USER); // creates + links + copies fields
+    seedLinkedPair(pedbDoc, cedbDoc, {
+      name: '張衡',
+      authorityIds: [{ type: 'CBDB', value: '1' }],
+    });
     const report = buildBridgeInbox(pedbDoc, cedbDoc, USER);
     expect(report.inSyncCount).toBe(1);
     expect(bridgeAttentionCount(report)).toBe(0);
@@ -41,17 +54,18 @@ describe('buildBridgeInbox', () => {
 
   it('reports a linked pair with non-conflicting differences as syncable', () => {
     const { pedbDoc, cedbDoc } = setup();
-    const p = addEntity(pedbDoc, 'person', { name: '張衡', description: 'Han polymath' });
-    const promoted = promoteToCentral(pedbDoc, p.id, cedbDoc, USER);
+    const { pedb, cedb } = seedLinkedPair(pedbDoc, cedbDoc, {
+      name: '張衡',
+      description: 'Han polymath',
+    });
     // add a new authority on the project side only → non-conflicting diff
-    const pItem = pedbDoc.getElementsByTagName('person')[0]!;
     const idno = pedbDoc.createElementNS('http://www.tei-c.org/ns/1.0', 'idno');
     idno.setAttribute('type', 'Wikidata');
     idno.textContent = 'Q11332';
-    pItem.appendChild(idno);
+    pedb.element.appendChild(idno);
     const report = buildBridgeInbox(pedbDoc, cedbDoc, USER);
     expect(report.syncable).toEqual([
-      { id: p.id, name: '張衡', kind: 'person', centralId: promoted.centralId },
+      { id: pedb.id, name: '張衡', kind: 'person', centralId: cedb.id },
     ]);
     expect(report.conflicts).toHaveLength(0);
     expect(bridgeAttentionCount(report)).toBe(0); // syncable is routine, not attention
@@ -59,15 +73,16 @@ describe('buildBridgeInbox', () => {
 
   it('reports a linked pair that disagrees on a field as a conflict', () => {
     const { pedbDoc, cedbDoc } = setup();
-    const p = addEntity(pedbDoc, 'person', { name: '張衡', startYear: 78 });
-    const promoted = promoteToCentral(pedbDoc, p.id, cedbDoc, USER);
+    const { pedb, cedb } = seedLinkedPair(pedbDoc, cedbDoc, {
+      name: '張衡',
+      startYear: 78,
+    });
     // diverge the central record's birth year, and make the timestamps differ
-    const cItem = cedbDoc.getElementsByTagName('person')[0]!;
-    cItem.getElementsByTagName('birth')[0]!.setAttribute('when', '0079');
-    touchEntity(cItem, '2026-01-01T00:00:00Z');
+    cedb.element.getElementsByTagName('birth')[0]!.setAttribute('when', '0079');
+    touchEntity(cedb.element, '2026-01-01T00:00:00Z');
     const report = buildBridgeInbox(pedbDoc, cedbDoc, USER);
     expect(report.conflicts).toEqual([
-      { id: p.id, name: '張衡', kind: 'person', centralId: promoted.centralId, fields: ['startYear'] },
+      { id: pedb.id, name: '張衡', kind: 'person', centralId: cedb.id, fields: ['startYear'] },
     ]);
   });
 });
@@ -79,19 +94,15 @@ describe('buildBridgeInboxFromFields', () => {
     const broken = addEntity(pedbDoc, 'person', { name: 'Broken' });
     setCentralMapping(broken.element, USER, 'missing-central');
 
-    const syncable = addEntity(pedbDoc, 'person', { name: 'Syncable' });
-    const syncableCentral = promoteToCentral(pedbDoc, syncable.id, cedbDoc, USER);
-    const syncableItem = findEntity(pedbDoc, syncable.id)!;
+    const syncable = seedLinkedPair(pedbDoc, cedbDoc, { name: 'Syncable' });
     const idno = pedbDoc.createElementNS('http://www.tei-c.org/ns/1.0', 'idno');
     idno.setAttribute('type', 'Wikidata');
     idno.textContent = 'Q11332';
-    syncableItem.appendChild(idno);
+    syncable.pedb.element.appendChild(idno);
 
-    const conflict = addEntity(pedbDoc, 'person', { name: 'Conflict', startYear: 78 });
-    const conflictCentral = promoteToCentral(pedbDoc, conflict.id, cedbDoc, USER);
-    const cItem = findEntity(cedbDoc, conflictCentral.centralId)!;
-    cItem.getElementsByTagName('birth')[0]!.setAttribute('when', '0079');
-    touchEntity(cItem, '2026-01-01T00:00:00Z');
+    const conflict = seedLinkedPair(pedbDoc, cedbDoc, { name: 'Conflict', startYear: 78 });
+    conflict.cedb.element.getElementsByTagName('birth')[0]!.setAttribute('when', '0079');
+    touchEntity(conflict.cedb.element, '2026-01-01T00:00:00Z');
 
     const cedbFieldsById = new Map(
       Array.from(cedbDoc.getElementsByTagName('person')).flatMap((item) => {
@@ -118,7 +129,7 @@ describe('buildBridgeInboxFromFields', () => {
     expect(fromFields).toEqual(fromDom);
     expect(fromFields.unlinked.map((row) => row.name)).toContain('Unlinked');
     expect(fromFields.broken.map((row) => row.name)).toContain('Broken');
-    expect(fromFields.syncable.map((row) => row.centralId)).toContain(syncableCentral.centralId);
-    expect(fromFields.conflicts.map((row) => row.centralId)).toContain(conflictCentral.centralId);
+    expect(fromFields.syncable.map((row) => row.centralId)).toContain(syncable.cedb.id);
+    expect(fromFields.conflicts.map((row) => row.centralId)).toContain(conflict.cedb.id);
   });
 });

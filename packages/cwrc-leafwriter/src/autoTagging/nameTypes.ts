@@ -111,11 +111,18 @@ export function normalizeNameType(raw: string | null | undefined): NameTypeId | 
   return CJK_LABEL_TO_NAME_TYPE[trimmed] ?? null;
 }
 
+/** Name types that often appear as 姓+bare-form display composites in authority exports. */
+export const FAMILY_PREFIX_STRIP_TYPES: ReadonlySet<NameTypeId> = new Set([
+  'courtesy',
+  'art',
+  'dharma',
+]);
+
 /**
- * Authority exports sometimes represent a courtesy name twice: once as the
- * courtesy name itself and once as family name + courtesy name. The composite
- * is a display form; strip the longest matching family prefix so intake keeps
- * the bare 字 (and later dedupe collapses 蕭彦学 + 彦学 → 彦学).
+ * Authority exports sometimes represent a courtesy/art/dharma name twice: once
+ * as the bare form and once as family name + bare form. The composite is a
+ * display form; strip the longest matching family prefix so intake keeps the
+ * bare 字/號/法號 (and later dedupe collapses 蕭彦学 + 彦学 → 彦学).
  */
 export function isFamilyPrefixedCourtesyName(text: string, familyNames: string[]): boolean {
   return stripFamilyPrefixFromCourtesyName(text, familyNames) !== text.normalize('NFC').trim();
@@ -123,7 +130,7 @@ export function isFamilyPrefixedCourtesyName(text: string, familyNames: string[]
 
 /**
  * If `text` begins with a known family name and has more characters after it,
- * return the remainder (bare 字). Otherwise return the trimmed text unchanged.
+ * return the remainder (bare 字/號/法號). Otherwise return the trimmed text unchanged.
  * Prefers the longest matching family prefix (e.g. 司馬 over 司).
  */
 export function stripFamilyPrefixFromCourtesyName(text: string, familyNames: string[]): string {
@@ -150,8 +157,8 @@ export type IntakeTypedName = {
 };
 
 /**
- * Normalize typed names for entity intake: strip 姓 from courtesy composites,
- * then dedupe by NFC text so bare and composite forms collapse to one entry.
+ * Normalize typed names for entity intake: strip 姓 from courtesy/art/dharma
+ * composites, then dedupe by NFC text so bare and composite forms collapse.
  */
 export function normalizeTypedNamesForIntake(
   names: Array<{ text: string; type: NameTypeId; lang?: string }>,
@@ -168,7 +175,7 @@ export function normalizeTypedNamesForIntake(
   for (const name of names) {
     let text = name.text.normalize('NFC').trim();
     if (!text) continue;
-    if (name.type === 'courtesy') {
+    if (FAMILY_PREFIX_STRIP_TYPES.has(name.type)) {
       text = stripFamilyPrefixFromCourtesyName(text, familyNames);
       if (!text) continue;
     }

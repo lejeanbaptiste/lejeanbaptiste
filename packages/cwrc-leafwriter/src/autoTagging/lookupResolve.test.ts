@@ -259,6 +259,21 @@ describe('parseAuthorityUri', () => {
       idnoType: 'NDL',
       value: '00270123',
     });
+    expect(parseAuthorityUri('urn:ljb:authority:norbert:office:4135')).toEqual({
+      idnoType: 'NORBERT',
+      crosswalkKey: 'norbert',
+      value: 'office-4135',
+    });
+    expect(parseAuthorityUri('urn:ljb:authority:norbert:person:12')).toEqual({
+      idnoType: 'NORBERT',
+      crosswalkKey: 'norbert',
+      value: 'person-12',
+    });
+    expect(parseAuthorityUri('urn:ljb:authority:cbdb:office:42')).toEqual({
+      idnoType: 'CBDB',
+      crosswalkKey: 'cbdb',
+      value: '42',
+    });
   });
 
   it('returns null for unknown URIs', () => {

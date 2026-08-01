@@ -16,7 +16,8 @@ const DEFAULT_SEARCH_LIMIT = 20;
 const MAX_SEARCH_LIMIT = 100;
 
 /**
- * Read-only API for the Word add-in ("connecting to entities.xml via LJB").
+ * Read-only API for the Word add-in ("connecting to the entity database via LJB").
+ * Reads sibling `entities.sqlite` only — no `entities.xml` fallback.
  * No mutation endpoints exist here on purpose — all entity edits stay in LJB.
  */
 export const pluginsApi = Router();

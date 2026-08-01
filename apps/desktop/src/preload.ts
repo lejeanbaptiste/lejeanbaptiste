@@ -12,6 +12,10 @@ import type {
   AuthoritySourceId,
   AuthoritySourceStatus,
 } from './authorityDatabases';
+import type {
+  AuthorityRefLookupRequest,
+  AuthorityRefLookupResult,
+} from './authorityRefLookup';
 import type { ProjectBundle } from './projectFile';
 import type { MapTileBundleSpec } from './mapTiles';
 
@@ -337,6 +341,9 @@ export interface ElectronAPI {
   entitySqliteRejectAssertion: (
     request: import('./entityDbSqlite/readService').EntitySqliteAssertionRequest,
   ) => Promise<boolean>;
+  entitySqliteRestoreAssertion: (
+    request: import('./entityDbSqlite/readService').EntitySqliteAssertionRequest,
+  ) => Promise<boolean>;
   entitySqliteRemoveAssertion: (
     request: import('./entityDbSqlite/readService').EntitySqliteAssertionRequest,
   ) => Promise<boolean>;
@@ -381,6 +388,11 @@ export interface ElectronAPI {
       databasePath: string;
     },
   ) => Promise<import('./entityDbSqlite/repository').AuthorityBackfillPatchResult>;
+  entitySqliteReconcileXmlExtractedData: (
+    request: import('./entityDbSqlite/repository').XmlExtractedRefreshInput & {
+      databasePath: string;
+    },
+  ) => Promise<import('./entityDbSqlite/repository').XmlExtractedRefreshResult>;
   entitySqliteEntityContentHash: (request: {
     databasePath: string;
     entityId: string;
@@ -409,6 +421,17 @@ export interface ElectronAPI {
     databasePath: string;
     userStableId: string;
   }) => Promise<Array<{ projectEntityId: string; centralId: string }>>;
+  entitySqliteListLinkedCentralIds: (request: {
+    databasePath: string;
+    userStableId: string;
+  }) => Promise<string[] | null>;
+  entitySqliteCountUnlinked: (request: {
+    databasePath: string;
+    userStableId: string;
+  }) => Promise<number | null>;
+  entitySqliteCountEntities: (request: {
+    databasePath: string;
+  }) => Promise<number | null>;
   entitySqliteFindByAuthority: (
     request: import('./entityDbSqlite/readService').EntitySqliteFindByAuthorityRequest,
   ) => Promise<string[]>;
@@ -435,6 +458,9 @@ export interface ElectronAPI {
   authorityDbStatuses: () => Promise<AuthoritySourceStatus[]>;
   authorityDbDownload: (sourceId: AuthoritySourceId) => Promise<{ ok: boolean; error?: string }>;
   authorityDbPromptDownload: () => Promise<'accepted' | 'declined'>;
+  authorityRefLookup: (
+    request: AuthorityRefLookupRequest,
+  ) => Promise<AuthorityRefLookupResult | null>;
   onAuthorityDbProgress: (callback: (progress: AuthorityDownloadProgress) => void) => () => void;
   mapTilesStatus: () => Promise<{
     installed: boolean;
@@ -743,6 +769,8 @@ const electronAPI: ElectronAPI = {
     ipcRenderer.invoke('entitySqlite:decoupleAuthority', request),
   entitySqliteRejectAssertion: (request) =>
     ipcRenderer.invoke('entitySqlite:rejectAssertion', request),
+  entitySqliteRestoreAssertion: (request) =>
+    ipcRenderer.invoke('entitySqlite:restoreAssertion', request),
   entitySqliteRemoveAssertion: (request) =>
     ipcRenderer.invoke('entitySqlite:removeAssertion', request),
   entitySqliteValidateAssertion: (request) =>
@@ -769,6 +797,8 @@ const electronAPI: ElectronAPI = {
     ipcRenderer.invoke('entitySqlite:createPopulated', request),
   entitySqliteApplyAuthorityBackfillPatch: (request) =>
     ipcRenderer.invoke('entitySqlite:applyAuthorityBackfillPatch', request),
+  entitySqliteReconcileXmlExtractedData: (request) =>
+    ipcRenderer.invoke('entitySqlite:reconcileXmlExtractedData', request),
   entitySqliteEntityContentHash: (request) =>
     ipcRenderer.invoke('entitySqlite:entityContentHash', request),
   entitySqliteReplaceEntityContent: (request) =>
@@ -784,6 +814,10 @@ const electronAPI: ElectronAPI = {
     ipcRenderer.invoke('entitySqlite:listAllCentralMappings', request),
   entitySqliteListLinkedCentralIds: (request) =>
     ipcRenderer.invoke('entitySqlite:listLinkedCentralIds', request),
+  entitySqliteCountUnlinked: (request) =>
+    ipcRenderer.invoke('entitySqlite:countUnlinked', request),
+  entitySqliteCountEntities: (request) =>
+    ipcRenderer.invoke('entitySqlite:countEntities', request),
   entitySqliteFindByAuthority: (request) =>
     ipcRenderer.invoke('entitySqlite:findByAuthority', request),
   entitySqliteFindByNameDates: (request) =>
@@ -800,6 +834,8 @@ const electronAPI: ElectronAPI = {
   authorityDbDownload: (sourceId: AuthoritySourceId) =>
     ipcRenderer.invoke('authorityDb:download', sourceId),
   authorityDbPromptDownload: () => ipcRenderer.invoke('authorityDb:promptDownload'),
+  authorityRefLookup: (request: AuthorityRefLookupRequest) =>
+    ipcRenderer.invoke('authorityRef:lookup', request),
   onAuthorityDbProgress: (callback: (progress: AuthorityDownloadProgress) => void) => {
     const listener = (_event: Electron.IpcRendererEvent, progress: AuthorityDownloadProgress) =>
       callback(progress);

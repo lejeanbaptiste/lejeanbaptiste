@@ -1,11 +1,11 @@
 /**
- * SQLite-native Bridge promote/sync — mirrors DOM promoteToCentral /
- * applyReconcilePlan without exporting the whole entity database to XML.
+ * SQLite-native Bridge promote/sync — promote, adopt, and pair sync without
+ * exporting the whole entity database to XML.
  */
 
 import { mintEntityId, type EntityKind } from './entities';
 import { normalizeNameType } from './nameTypes';
-import type { AdoptResult, PromoteResult } from './promote';
+import type { AdoptResult, PromoteResult } from './bridgeTypes';
 import {
   planReconcileFields,
   type EntityFields,

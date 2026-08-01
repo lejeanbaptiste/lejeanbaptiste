@@ -1,6 +1,9 @@
 import MilitaryTechIcon from '@mui/icons-material/MilitaryTech';
-import { Box, IconButton, Tooltip, Typography } from '@mui/material';
+import OpenInNewIcon from '@mui/icons-material/OpenInNew';
+import { Box, Button, IconButton, Tooltip, Typography } from '@mui/material';
 import { useEffect, useState } from 'react';
+import { useTranslation } from 'react-i18next';
+import { useActions, useAppState } from '@src/overmind';
 import { AchievementsDialog } from './achievements/AchievementsDialog';
 import { DocumentTabBar } from './DocumentTabBar';
 
@@ -23,6 +26,9 @@ const noDragStyle = { WebkitAppRegion: 'no-drag' } as React.CSSProperties;
 
 export const TitleBar = () => {
   const mac = isMacOS();
+  const { t } = useTranslation();
+  const { desktopWindowMode } = useAppState().ui;
+  const { setDesktopWindowMode } = useActions().ui;
   const [isMaximized, setIsMaximized] = useState(false);
   const [achievementsOpen, setAchievementsOpen] = useState(false);
 
@@ -32,6 +38,8 @@ export const TitleBar = () => {
     const off = window.electronAPI?.onWindowMaximized(setIsMaximized);
     return off;
   }, [mac]);
+
+  const inDatabase = desktopWindowMode === 'database';
 
   return (
     <Box
@@ -49,10 +57,8 @@ export const TitleBar = () => {
       style={dragStyle}
       onDoubleClick={() => void window.electronAPI?.maximizeWindow()}
     >
-      {/* Space for macOS traffic lights, or a small left pad on other platforms */}
       <Box sx={{ width: mac ? MAC_TRAFFIC_LIGHT_WIDTH : 8, flexShrink: 0 }} />
 
-      {/* App menu button for Windows / Linux (macOS uses the system menu bar) */}
       {!mac && (
         <Box sx={{ flexShrink: 0 }} style={noDragStyle}>
           <IconButton
@@ -64,12 +70,13 @@ export const TitleBar = () => {
             }}
             sx={{ borderRadius: 0, width: 40, height: TITLEBAR_HEIGHT }}
           >
-            <Typography variant="caption" sx={{ lineHeight: 1 }}>☰</Typography>
+            <Typography variant="caption" sx={{ lineHeight: 1 }}>
+              ☰
+            </Typography>
           </IconButton>
         </Box>
       )}
 
-      {/* Document tabs — background stays draggable; individual tab buttons set no-drag */}
       <Box
         sx={{ flex: 1, minWidth: 0, overflow: 'hidden' }}
         onDoubleClick={(e) => e.stopPropagation()}
@@ -77,7 +84,31 @@ export const TitleBar = () => {
         <DocumentTabBar />
       </Box>
 
-      {/* Service record (achievements) */}
+      <Box sx={{ flexShrink: 0, px: 0.5 }} style={noDragStyle}>
+        <Button
+          size="small"
+          variant="contained"
+          color="primary"
+          onClick={() => setDesktopWindowMode(inDatabase ? 'editor' : 'database')}
+          endIcon={<OpenInNewIcon sx={{ fontSize: 14 }} />}
+          sx={{
+            textTransform: 'none',
+            borderRadius: 5,
+            px: 1.5,
+            py: 0.25,
+            minHeight: 26,
+            fontSize: 12,
+            fontWeight: 600,
+            boxShadow: 'none',
+            whiteSpace: 'nowrap',
+          }}
+        >
+          {inDatabase
+            ? t('LWC.desktop.database_window.editor_pill', { defaultValue: 'Editor' })
+            : t('LWC.desktop.database_window.pill', { defaultValue: 'Database Window' })}
+        </Button>
+      </Box>
+
       <Box sx={{ flexShrink: 0 }} style={noDragStyle}>
         <Tooltip title="Service Record">
           <IconButton
@@ -90,12 +121,8 @@ export const TitleBar = () => {
           </IconButton>
         </Tooltip>
       </Box>
-      <AchievementsDialog
-        onClose={() => setAchievementsOpen(false)}
-        open={achievementsOpen}
-      />
+      <AchievementsDialog onClose={() => setAchievementsOpen(false)} open={achievementsOpen} />
 
-      {/* Custom window controls for Windows / Linux */}
       {!mac && (
         <Box sx={{ display: 'flex', flexShrink: 0 }} style={noDragStyle}>
           <IconButton
@@ -103,7 +130,9 @@ export const TitleBar = () => {
             onClick={() => void window.electronAPI?.minimizeWindow()}
             sx={{ borderRadius: 0, width: 40, height: TITLEBAR_HEIGHT }}
           >
-            <Typography variant="caption" sx={{ lineHeight: 1 }}>—</Typography>
+            <Typography variant="caption" sx={{ lineHeight: 1 }}>
+              —
+            </Typography>
           </IconButton>
           <IconButton
             size="small"
@@ -124,7 +153,9 @@ export const TitleBar = () => {
               '&:hover': { bgcolor: '#e81123', color: 'white' },
             }}
           >
-            <Typography variant="caption" sx={{ lineHeight: 1 }}>✕</Typography>
+            <Typography variant="caption" sx={{ lineHeight: 1 }}>
+              ✕
+            </Typography>
           </IconButton>
         </Box>
       )}

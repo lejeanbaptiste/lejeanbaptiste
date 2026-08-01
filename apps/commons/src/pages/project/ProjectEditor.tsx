@@ -10,6 +10,7 @@ import {
   useProjectMenu,
   registerApplicationSettingsBootstrap,
 } from '@src/desktop';
+import { DatabaseWindow } from '@src/desktop/databaseWindow';
 import {
   LEFT_PANEL_COLLAPSED_WIDTH,
   SIDEBAR_TAB_BUTTON_SIZE,
@@ -43,6 +44,7 @@ export const ProjectEditor = () => {
   const { contentHasChanged, readonly, resource } = useAppState().editor;
   const { cursorPositions, isProjectReady, openTabs, projectFilePath, rootPath } =
     useAppState().project;
+  const { desktopWindowMode } = useAppState().ui;
   const { markTabDirty, openProject } = useActions().project;
   const { notifyViaSnackbar, openDialog } = useActions().ui;
   const { t } = useTranslation();
@@ -279,6 +281,28 @@ export const ProjectEditor = () => {
       <UserNamePromptDialog />
       <TagCommandProvider />
       <CorrectionProvider />
+      {desktopWindowMode === 'database' && (
+        <Box
+          sx={{
+            position: 'absolute',
+            inset: 0,
+            zIndex: 20,
+            display: 'flex',
+            bgcolor: 'background.default',
+          }}
+        >
+          <DatabaseWindow />
+        </Box>
+      )}
+      <Box
+        sx={{
+          display: desktopWindowMode === 'database' ? 'none' : 'flex',
+          flex: 1,
+          minHeight: 0,
+          width: '100%',
+          position: 'relative',
+        }}
+      >
       <UnifiedLeftPanel />
       {!resource && !hasProject && (
         // A floating callout rather than a plain inline hint, so it visually
@@ -394,6 +418,7 @@ export const ProjectEditor = () => {
         }}
       />
       <UnifiedRightPanel />
+      </Box>
     </Box>
   );
 };

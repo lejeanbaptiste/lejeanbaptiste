@@ -4,7 +4,7 @@
  * apps/desktop/src/authorityDatabases.ts.
  */
 
-export type AuthoritySourceId = 'cbdb' | 'dila';
+export type AuthoritySourceId = 'cbdb' | 'dila' | 'norbert';
 
 export interface AuthoritySourceStatus {
   id: AuthoritySourceId;

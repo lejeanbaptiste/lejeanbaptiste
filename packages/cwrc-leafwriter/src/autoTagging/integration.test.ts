@@ -422,6 +422,12 @@ describe('AutoTaggingSession', () => {
         ...(g.window.electronAPI ?? {}),
         entitySqliteCreatePopulated: async () => ({}),
         entitySqliteAttachAuthority: async () => true,
+        entitySqliteReconcileXmlExtractedData: async () => ({
+          wrappers: 0,
+          added: 0,
+          removed: 0,
+          retained: 0,
+        }),
       };
 
       jest.spyOn(store, 'sqliteCreatePopulated').mockImplementation(async (input) => {

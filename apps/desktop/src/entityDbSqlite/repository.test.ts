@@ -451,6 +451,7 @@ describe('EntitySqliteRepository', () => {
     expect(repository.getCentralId('person-keep', 'user-1')).toBe('central-keep');
     expect(repository.listLinkedCentralIds('user-1')).toEqual(['central-keep']);
     expect(repository.listLinkedCentralIds('user-2')).toEqual(['central-only-drop']);
+    expect(repository.countActiveEntities()).toBe(1);
     expect(repository.getPanelSummary('person-keep')?.familyName).toBe('甲氏');
 
     expect(repository.softDeleteEntity('person-keep')).toBe(true);
@@ -913,6 +914,121 @@ describe('EntitySqliteRepository', () => {
     );
     source.close();
     target.close();
+  });
+
+  it('accepts origin=xml on nationality, origin, office, and noble-title adds', () => {
+    const repository = new EntitySqliteRepository();
+    repository.createEntity({ id: 'person-xml-add', kind: 'person' });
+    const source = 'xml:ch1#personWrapper:1';
+    expect(
+      repository.addNationality({
+        entityId: 'person-xml-add',
+        label: '齊',
+        origin: 'xml',
+        source,
+      }),
+    ).toBe(true);
+    expect(
+      repository.addOrigin({
+        entityId: 'person-xml-add',
+        label: '建康',
+        origin: 'xml',
+        source,
+      }),
+    ).toBe(true);
+    expect(
+      repository.addNobleTitle('person-xml-add', {
+        fief: '鄱陽',
+        title: '王',
+        origin: 'xml',
+        source,
+      }),
+    ).toBe(true);
+    expect(
+      repository.addOffice({
+        entityId: 'person-xml-add',
+        label: '尚書',
+        origin: 'xml',
+        source,
+      }),
+    ).toBe(true);
+    expect(
+      repository.getPanelSummary('person-xml-add')?.assertions.filter((row) => row.origin === 'xml'),
+    ).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({ element: 'nationality', value: '齊', origin: 'xml', source }),
+        expect.objectContaining({ element: 'placeName', value: '建康', origin: 'xml', source }),
+        expect.objectContaining({ element: 'nobleTitle', origin: 'xml', source }),
+        expect.objectContaining({ element: 'affiliation', value: '尚書', origin: 'xml', source }),
+      ]),
+    );
+    repository.close();
+  });
+
+  it('reconciles XML-extracted nationality/office/title with orphan wrapper cleanup', () => {
+    const repository = new EntitySqliteRepository();
+    repository.createEntity({ id: 'person-xml-1', kind: 'person' });
+    repository.addName({ entityId: 'person-xml-1', text: '範', isPrimary: true });
+
+    const first = repository.reconcileXmlExtractedData({
+      documentKey: 'chapter-1',
+      wrappers: [
+        {
+          entityId: 'person-xml-1',
+          source: 'xml:chapter-1#personWrapper:1',
+          assertions: [
+            { element: 'nationality', value: '漢' },
+            { element: 'state', value: '侍中' },
+          ],
+        },
+      ],
+    });
+    expect(first).toMatchObject({ wrappers: 1, added: 2, removed: 0 });
+    expect(repository.getPanelSummary('person-xml-1')).toMatchObject({
+      nationalities: ['漢'],
+      roles: ['侍中'],
+    });
+
+    // Validated nationality survives refresh that drops it from the wrapper.
+    const nationalityKey = repository
+      .getPanelSummary('person-xml-1')!
+      .assertions.find((row) => row.element === 'nationality')!.key;
+    expect(repository.validateAssertion('person-xml-1', nationalityKey)).toBe(true);
+
+    const second = repository.reconcileXmlExtractedData({
+      documentKey: 'chapter-1',
+      wrappers: [
+        {
+          entityId: 'person-xml-1',
+          source: 'xml:chapter-1#personWrapper:1',
+          assertions: [],
+        },
+      ],
+    });
+    expect(second.removed).toBe(1); // office only
+    expect(repository.getPanelSummary('person-xml-1')?.nationalities).toEqual(['漢']);
+    expect(repository.getPanelSummary('person-xml-1')?.roles).toEqual([]);
+
+    // Re-add office, then drop the whole wrapper from the document refresh.
+    repository.reconcileXmlExtractedData({
+      documentKey: 'chapter-1',
+      wrappers: [
+        {
+          entityId: 'person-xml-1',
+          source: 'xml:chapter-1#personWrapper:1',
+          assertions: [{ element: 'state', value: '侍中' }],
+        },
+      ],
+    });
+    const orphaned = repository.reconcileXmlExtractedData({
+      documentKey: 'chapter-1',
+      wrappers: [],
+    });
+    expect(orphaned.removed).toBe(1);
+    expect(repository.getPanelSummary('person-xml-1')?.roles).toEqual([]);
+    // Validated nationality still present.
+    expect(repository.getPanelSummary('person-xml-1')?.nationalities).toEqual(['漢']);
+    repository.close();
   });
 
   it('rolls back a failed transaction', () => {

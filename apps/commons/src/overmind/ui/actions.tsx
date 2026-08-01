@@ -75,6 +75,14 @@ export const setPage = async ({ state }: Context, value: string) => {
   state.ui.page = value;
 };
 
+/** Switch between the document editor and the full-width Database Window. */
+export const setDesktopWindowMode = (
+  { state }: Context,
+  value: 'editor' | 'database',
+) => {
+  state.ui.desktopWindowMode = value;
+};
+
 /**
  * Gets Google Analitics ID from the our local sercer API
  */

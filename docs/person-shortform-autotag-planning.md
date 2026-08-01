@@ -14,6 +14,8 @@ Full-form person names (`王安石`, `Daniel Morgan`) are safe enough to bombard
 
 So tagging is split into three buckets per name type, not two.
 
+**Compile-time name model (CBDB / Norbert, 2026-08):** pack `names[]` holds all typed forms (including single-character 姓/名). At compile, expand surfaces that should seed tagging (e.g. CBDB 姓+字), then apply length/block filters only to `searchStrings`. The tag bomb uses those seeds — never bare 字 alone at phase 1. Phase 2 (below) hunts given/字 after the person is keyed.
+
 ## Core idea — three buckets
 
 Every canonical `NameTypeId` falls into exactly one bucket (project setting, language-aware labels):
