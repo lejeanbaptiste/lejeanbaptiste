@@ -40,6 +40,9 @@ Time: VERY SLOW - 20s
 
 Impression: it looks worse, and more choppy, less reactive, but I may be imagining it.
 
+### Tree flattening
+
+It felt snappier navigating in the panel, but in text, it's a disaster on old windows.
 # Switch visual - source
 
 visual - source - visual
