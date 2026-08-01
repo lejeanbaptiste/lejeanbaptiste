@@ -107,6 +107,15 @@ export interface EntitySummary {
   rejectedAssertions: { element: string; value: string; source: string | null }[];
   rejectedConcordances: ConcordanceRejection[];
   assertions: EntityAssertionSummary[];
+  /**
+   * Corpus / PEDB `@key` when known. Set by the database viewer after joining
+   * central_mappings. Equals `id` when the row itself is a project entity.
+   */
+  projectKey?: string | null;
+  /**
+   * CEDB id when known. Equals `id` when the row itself is a central entity.
+   */
+  centralKey?: string | null;
 }
 
 export interface WorkDateSummary {
@@ -1302,16 +1311,17 @@ export function attachAuthority(
   index?: ReadonlyMap<string, Element>,
 ): boolean {
   const item = requireEntity(doc, id, index);
-  const normalizedValue = normalizeAuthorityValue(ref.type, ref.value);
+  const type = ref.type.trim();
+  const normalizedValue = normalizeAuthorityValue(type, ref.value);
   const exists = idnoElements(item).some(
     (el) =>
-      el.getAttribute('type') === ref.type &&
-      normalizeAuthorityValue(ref.type, el.textContent?.trim() ?? '') === normalizedValue,
+      (el.getAttribute('type') ?? '').toLowerCase() === type.toLowerCase() &&
+      normalizeAuthorityValue(type, el.textContent?.trim() ?? '') === normalizedValue,
   );
   if (exists) return false;
   const idno = doc.createElementNS(TEI_NS, 'idno');
-  idno.setAttribute('type', ref.type);
-  idno.textContent = ref.value.trim();
+  idno.setAttribute('type', type);
+  idno.textContent = normalizedValue;
   item.appendChild(idno);
   touchEntity(item);
   return true;
@@ -1320,8 +1330,12 @@ export function attachAuthority(
 /** Detach an authority idno (exact type+value match). */
 export function detachAuthority(doc: Document, id: string, ref: AuthorityId): boolean {
   const item = requireEntity(doc, id);
+  const type = ref.type.trim();
+  const normalizedValue = normalizeAuthorityValue(type, ref.value);
   const target = idnoElements(item).find(
-    (el) => el.getAttribute('type') === ref.type && el.textContent?.trim() === ref.value.trim(),
+    (el) =>
+      (el.getAttribute('type') ?? '').toLowerCase() === type.toLowerCase() &&
+      normalizeAuthorityValue(type, el.textContent?.trim() ?? '') === normalizedValue,
   );
   if (!target) return false;
   target.remove();

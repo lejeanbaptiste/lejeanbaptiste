@@ -77,13 +77,13 @@ function typedNamesFromPackRow(
   return out;
 }
 
-interface AuthorityEnrichment {
+export interface AuthorityEnrichment {
   names: TypedName[];
   primaryName?: string;
   metadata?: AuthorityCandidate['metadata'];
 }
 
-interface NorbertNobleTitleCandidate {
+export interface NorbertNobleTitleCandidate {
   placeName: string;
   roleName: string;
   posthumousName?: string;
@@ -92,14 +92,13 @@ interface NorbertNobleTitleCandidate {
   ref: string;
 }
 
-/**
- * Norbert's `person_nt` table is canonical: every title it records for a
+/** Norbert's `person_nt` table is canonical: every title it records for a
  * person should be backfillable regardless of whether a zh.wikipedia
  * noble-title list page happens to cover it (most emperors/founders never
  * are — see `norbert-direct` records in the compiled asset). Keyed by the
  * person's Norbert authority id (`metadata.crosswalk.norbert`).
  */
-async function buildNorbertNobleTitleIndex(
+export async function buildNorbertNobleTitleIndex(
   readPackFile: (packId: AuthorityPackId) => Promise<AuthorityPackContent>,
 ): Promise<Map<string, NorbertNobleTitleCandidate[]>> {
   const index = new Map<string, NorbertNobleTitleCandidate[]>();
@@ -147,7 +146,7 @@ function applyNorbertNobleTitles(
   );
 }
 
-async function buildPackNameIndex(
+export async function buildPackNameIndex(
   readPackFile: (packId: AuthorityPackId) => Promise<AuthorityPackContent>,
 ): Promise<Map<string, AuthorityEnrichment>> {
   const index = new Map<string, AuthorityEnrichment>();
@@ -177,8 +176,8 @@ async function buildPackNameIndex(
   return index;
 }
 
-function packTypedNamesForEntity(
-  entity: EntitySummary,
+export function packTypedNamesForEntity(
+  entity: Pick<EntitySummary, 'authorities'>,
   index: Map<string, AuthorityEnrichment> | null,
 ): TypedName[] {
   if (!index) return [];
@@ -197,8 +196,8 @@ function packTypedNamesForEntity(
   return [...byText.values()];
 }
 
-function authorityEnrichmentForEntity(
-  entity: EntitySummary,
+export function authorityEnrichmentForEntity(
+  entity: Pick<EntitySummary, 'authorities'>,
   index: Map<string, AuthorityEnrichment> | null,
 ): AuthorityCandidate['metadata'] | undefined {
   if (!index) return undefined;
@@ -235,8 +234,8 @@ function authorityEnrichmentForEntity(
 }
 
 /** Return every pack enrichment linked to an entity, retaining its source. */
-function authorityEnrichmentsForEntity(
-  entity: EntitySummary,
+export function authorityEnrichmentsForEntity(
+  entity: Pick<EntitySummary, 'authorities'>,
   index: Map<string, AuthorityEnrichment> | null,
 ): Array<{ source: string; enrichment: AuthorityEnrichment }> {
   if (!index) return [];
@@ -247,8 +246,8 @@ function authorityEnrichmentsForEntity(
   });
 }
 
-function firstAuthorityEnrichment(
-  entity: EntitySummary,
+export function firstAuthorityEnrichment(
+  entity: Pick<EntitySummary, 'authorities'>,
   index: Map<string, AuthorityEnrichment> | null,
 ): AuthorityEnrichment | undefined {
   return authorityEnrichmentsForEntity(entity, index)[0]?.enrichment;

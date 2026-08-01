@@ -2,11 +2,7 @@ import { getDatabaseId, TAG_TO_KIND } from './entities';
 import { listEntities } from './entityOps';
 import type { EntityStore } from './entityStore';
 import { purgeEntityKeys } from './mentions';
-import {
-  orphanPurgeRemap,
-  sweepOrphans,
-  type OrphanSweepReport,
-} from './orphanSweep';
+import { orphanPurgeRemap, sweepOrphans, type OrphanSweepReport } from './orphanSweep';
 import { rewriteMentionKeys } from './rewriteMentionKeys';
 
 export interface EntityDatabaseCheckInput {
@@ -44,8 +40,13 @@ export async function checkEntityDatabaseFingerprint(
   store: EntityStore,
   input: EntityDatabaseCheckInput,
 ): Promise<{ databaseId: string | null; mismatch: boolean }> {
-  const doc = await store.loadEntities();
-  const databaseId = getDatabaseId(doc);
+  let databaseId: string | null = null;
+  if (await store.hasSqliteDatabase()) {
+    databaseId = await store.sqliteDatabaseId();
+  } else {
+    const doc = await store.loadEntities();
+    databaseId = getDatabaseId(doc);
+  }
   const mismatch = Boolean(
     input.projectDatabaseId && databaseId && input.projectDatabaseId !== databaseId,
   );
@@ -95,9 +96,12 @@ export async function sweepProjectOrphans(
   api: EntityDatabaseCheckApi,
   projectRoot: string,
 ): Promise<OrphanSweepReport> {
-  const doc = await store.loadEntities();
-  const pedbIds = new Set(listEntities(doc).map((entity) => entity.id));
-  const fingerprint = getDatabaseId(doc) ?? '';
+  const sqliteIds = (await store.hasSqliteDatabase()) ? await store.sqliteEntityIds() : null;
+  const pedbIds = new Set(
+    sqliteIds ?? listEntities(await store.loadEntities()).map((entity) => entity.id),
+  );
+  const fingerprint =
+    (sqliteIds ? await store.sqliteDatabaseId() : getDatabaseId(await store.loadEntities())) ?? '';
   const files = await api.listProjectXmlFiles(projectRoot);
   const corpus: { path: string; xml: string }[] = [];
   for (const file of files) {

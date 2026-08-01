@@ -156,15 +156,19 @@ See [apps/desktop/README.md](apps/desktop/README.md) for the compilation and pac
 
 ## TODO
 
-- [ ] CHGIS not showing up in disambiguation
+- [ ] sqlite migration
+- [ ] retry absorbing all of norbert.
+- [ ] filter out authority packs again for: dynasty dates as person dates; curtousey names carrying family name; place of origin entering as an undefined person name.
+
+
+
+- [ ] FIXED (?): CHGIS not showing up in disambiguation
 - [ ] number titles and places still not filtered from authority packs
 - [ ] Rework how Sanmiao works
 - [ ] Rewards malfunctioning.
-- [ ] 會稽 shows up as person's name, unspecified; cannot delete.
+- [ ] clean db of faulty imports ?
 - [ ] names, appointment, works, etc., should have authority badges, option to tombstone.
 - [ ] 竟陵王子良 shows up as persname; we are not tagging title + given name !
-
-
 
 - [ ] Auto parse and organise noble titles
 - [ ] Noble title and person wrapper tagging (testing).

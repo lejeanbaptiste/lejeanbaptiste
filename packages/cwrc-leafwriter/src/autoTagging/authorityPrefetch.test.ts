@@ -42,6 +42,7 @@ function makeSession(options: { hasCache?: boolean; seedPending?: Record<string,
       session.savePendingCacheCalls += 1;
     },
     candidateSearchCentralContext: async () => null,
+    disambiguationDbSources: async () => ({ local: [], entitiesDoc: doc }),
     savePendingCacheCalls: 0,
     pendingEntries,
   };
@@ -110,6 +111,7 @@ describe('runAuthorityPrefetch', () => {
       undefined,
       undefined, // no central context (syncToCentral off in this session mock)
       5, // default placeProximityKm from settings
+      [], // precomputed local PEDB/CEDB matches from disambiguationDbSources
     );
   });
 

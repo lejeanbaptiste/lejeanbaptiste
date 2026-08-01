@@ -555,7 +555,7 @@ describe('authority attach/detach', () => {
 
     expect(attachAuthority(doc, id, ref)).toBe(true);
     expect(attachAuthority(doc, id, ref)).toBe(false);
-    expect(listEntities(doc)[0]!.authorities).toEqual([ref]);
+    expect(listEntities(doc)[0]!.authorities).toEqual([{ type: 'Wikidata', value: 'Q967998' }]);
 
     expect(detachAuthority(doc, id, ref)).toBe(true);
     expect(detachAuthority(doc, id, ref)).toBe(false);
@@ -591,7 +591,7 @@ describe('mergeEntities', () => {
     });
     expect(entities[0]!.authorities).toEqual([
       { type: 'CBDB', value: '25788' },
-      { type: 'Wikidata', value: 'http://www.wikidata.org/entity/Q3274914' },
+      { type: 'Wikidata', value: 'Q3274914' },
     ]);
   });
 

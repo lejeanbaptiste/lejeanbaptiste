@@ -10,7 +10,7 @@
 import { getCentralId } from './concordance';
 import { findEntity, type EntityKind } from './entities';
 import { listEntities } from './entityOps';
-import { planReconcile, type ScalarField } from './reconcile';
+import { planReconcile, planReconcileFields, type EntityFields, type ScalarField } from './reconcile';
 
 export interface BridgeItem {
   id: string;
@@ -44,6 +44,55 @@ export interface BridgeInboxReport {
   conflicts: ConflictItem[];
   /** Mapped pairs that already fully agree (nothing to do). */
   inSyncCount: number;
+}
+
+export interface BridgeInboxFieldRow {
+  id: string;
+  name: string;
+  kind: EntityKind;
+  centralId: string | null;
+  fields: EntityFields;
+}
+
+/** Build the Bridge inbox from typed field snapshots (SQLite panel path). */
+export function buildBridgeInboxFromFields(
+  pedbRows: BridgeInboxFieldRow[],
+  cedbFieldsById: Map<string, EntityFields>,
+): BridgeInboxReport {
+  const report: BridgeInboxReport = {
+    unlinked: [],
+    broken: [],
+    syncable: [],
+    conflicts: [],
+    inSyncCount: 0,
+  };
+
+  for (const row of pedbRows) {
+    const base: BridgeItem = { id: row.id, name: row.name, kind: row.kind };
+    if (!row.centralId) {
+      report.unlinked.push(base);
+      continue;
+    }
+    const cedbFields = cedbFieldsById.get(row.centralId);
+    if (!cedbFields) {
+      report.broken.push({ ...base, centralId: row.centralId });
+      continue;
+    }
+    const plan = planReconcileFields(row.fields, cedbFields);
+    if (plan.conflicts.length > 0) {
+      report.conflicts.push({
+        ...base,
+        centralId: row.centralId,
+        fields: plan.conflicts.map((c) => c.field),
+      });
+    } else if (plan.identical) {
+      report.inSyncCount += 1;
+    } else {
+      report.syncable.push({ ...base, centralId: row.centralId });
+    }
+  }
+
+  return report;
 }
 
 /** Build the Bridge inbox for one user from the two databases. */

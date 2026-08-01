@@ -8,7 +8,12 @@
  * `ljb-entity://`) is how the disambiguation dialog tells the two apart.
  */
 import { centralEntityStoreFromDesktop } from '../autoTagging/entityStore';
-import type { AuthorityLookupParams, AuthorityLookupResult, AuthorityService, NamedEntityType } from '../types';
+import type {
+  AuthorityLookupParams,
+  AuthorityLookupResult,
+  AuthorityService,
+  NamedEntityType,
+} from '../types';
 import {
   internalEntityIdFromUri,
   LOOKUP_TYPE_TO_KIND,
@@ -35,12 +40,32 @@ export function isCentralEntityUri(uri: string): boolean {
   return centralEntityIdFromUri(uri) !== null;
 }
 
-async function search({ query, entityType }: AuthorityLookupParams): Promise<AuthorityLookupResult[]> {
+async function search({
+  query,
+  entityType,
+}: AuthorityLookupParams): Promise<AuthorityLookupResult[]> {
   const kind = LOOKUP_TYPE_TO_KIND[entityType];
   if (!kind) return [];
 
   const store = centralEntityStoreFromDesktop(null);
   if (!store) return [];
+
+  const sqliteSearch = window.electronAPI?.entitySqliteSearch;
+  if (sqliteSearch) {
+    const sqliteResults = await sqliteSearch({ databasePath: store.sqlitePath, kind, query });
+    if (sqliteResults !== null) {
+      return sqliteResults.map((result) => ({
+        label: result.label,
+        ...(result.description ? { description: result.description } : {}),
+        uri: centralEntityUri(result.id),
+        internal: {
+          id: result.id,
+          idnos: result.idnos,
+          ...(result.description ? { description: result.description } : {}),
+        },
+      }));
+    }
+  }
 
   const doc = await store.loadEntities();
   return searchEntityDocument(doc, kind, query).map((result) => {

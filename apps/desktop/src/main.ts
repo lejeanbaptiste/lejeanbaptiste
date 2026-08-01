@@ -148,7 +148,11 @@ import {
 } from './zoteroClient';
 import { disposeLemminx, registerLemminxIpc } from './lemminx/lspBridge';
 import { cancelBulkBridgeJob, killAllBulkBridgeJobs, startBulkBridgeJob } from './bulkBridgeJob';
-import { cancelEntityIndexJob, killAllEntityIndexJobs, startEntityIndexJob } from './entityIndexJob';
+import {
+  cancelEntityIndexJob,
+  killAllEntityIndexJobs,
+  startEntityIndexJob,
+} from './entityIndexJob';
 import { checkForAppUpdatesManually, initAutoUpdater } from './updater';
 import { installCatalogSchema, installLocalSchema } from './schemaSetup';
 import { ensureSanmiaoDatesSchemaMerged } from './sanmiaoSchemaMerge';
@@ -162,6 +166,58 @@ import {
   restoreTimeMachineSnapshotToDirectory,
 } from './timeMachine';
 import { invokePluginPython } from './pluginPythonBridge';
+import {
+  closeEntitySqliteReadRepositories,
+  acceptEntitySqliteDateAssertion,
+  acceptEntitySqliteDescriptionAssertion,
+  addEntitySqliteName,
+  addEntitySqliteNationality,
+  addEntitySqliteNobleTitle,
+  addEntitySqliteOrigin,
+  attachEntitySqliteAuthority,
+  applyEntitySqliteConcordance,
+  backfillEntitySqliteDecisionTargets,
+  createPopulatedEntitySqlite,
+  applyEntitySqliteAuthorityBackfillPatch,
+  getEntitySqliteContentHash,
+  replaceEntitySqliteContent,
+  findEntitySqliteByAuthority,
+  findEntitySqliteByNameDates,
+  forceRejectEntitySqliteAssertion,
+  decoupleEntitySqliteAuthority,
+  exportEntitySqliteXml,
+  getEntitySqlite,
+  getEntitySqliteCentralId,
+  getEntitySqliteDatabaseId,
+  importEntitySqliteXml,
+  listEntitySqliteCandidates,
+  listEntitySqliteIds,
+  listEntitySqlitePanelSummaries,
+  listEntitySqliteAuthorityDuplicates,
+  markEntitySqliteDuplicateIntentional,
+  mergeEntitySqlite,
+  rejectEntitySqliteAssertion,
+  rejectEntitySqliteConcordance,
+  removeEntitySqliteAssertion,
+  removeEntitySqliteName,
+  renameEntitySqlitePrimaryName,
+  searchEntitySqlite,
+  setEntitySqliteRomanizedName,
+  setEntitySqliteUserDate,
+  setEntitySqliteUserWorkAuthors,
+  setEntitySqliteUserWorkDate,
+  setEntitySqliteCentralMapping,
+  clearEntitySqliteCentralMapping,
+  listEntitySqliteMappingsByCentralIds,
+  listEntitySqliteAllCentralMappings,
+  listEntitySqliteLinkedCentralIds,
+  softDeleteEntitySqlite,
+  tombstoneEntitySqliteNames,
+  updateEntitySqliteDescription,
+  updateEntitySqliteNames,
+  updateEntitySqliteNobleTitle,
+  validateEntitySqliteAssertion,
+} from './entityDbSqlite/readService';
 
 const APP_NAME = 'Le Jean-Baptiste';
 
@@ -1269,7 +1325,9 @@ const registerIpcHandlers = () => {
       await assertRendererReadPath(request.centralEntitiesPath);
       await assertRendererWritePath(request.sourceEntitiesPath);
       await assertRendererWritePath(request.centralEntitiesPath);
-      await assertRendererWritePath(path.join(request.centralLjbDir, 'bulk-import-proposals.jsonl'));
+      await assertRendererWritePath(
+        path.join(request.centralLjbDir, 'bulk-import-proposals.jsonl'),
+      );
       return startBulkBridgeJob(
         request,
         (progress) => {
@@ -1287,7 +1345,10 @@ const registerIpcHandlers = () => {
   ipcMain.handle('bulkBridge:cancel', (_event, jobId: string) => cancelBulkBridgeJob(jobId));
   ipcMain.handle(
     'entityIndex:start',
-    async (event, request: import('../../commons/src/desktop/entityIndexTypes').EntityIndexJobRequest) => {
+    async (
+      event,
+      request: import('../../commons/src/desktop/entityIndexTypes').EntityIndexJobRequest,
+    ) => {
       await assertRendererReadPath(request.entitiesPath);
       if (request.indexCachePath) await assertRendererWritePath(request.indexCachePath);
       return startEntityIndexJob(request, (progress) => {
@@ -1296,6 +1357,518 @@ const registerIpcHandlers = () => {
     },
   );
   ipcMain.handle('entityIndex:cancel', (_event, jobId: string) => cancelEntityIndexJob(jobId));
+  ipcMain.handle(
+    'entitySqlite:search',
+    async (_event, request: import('./entityDbSqlite/readService').EntitySqliteReadRequest) => {
+      await assertRendererReadPath(request.databasePath);
+      return searchEntitySqlite(request);
+    },
+  );
+  ipcMain.handle(
+    'entitySqlite:get',
+    async (_event, request: import('./entityDbSqlite/readService').EntitySqliteGetRequest) => {
+      await assertRendererReadPath(request.databasePath);
+      return getEntitySqlite(request);
+    },
+  );
+  ipcMain.handle('entitySqlite:databaseId', async (_event, databasePath: string) => {
+    await assertRendererReadPath(databasePath);
+    return getEntitySqliteDatabaseId(databasePath);
+  });
+  ipcMain.handle(
+    'entitySqlite:listIds',
+    async (_event, request: import('./entityDbSqlite/readService').EntitySqliteListIdsRequest) => {
+      await assertRendererReadPath(request.databasePath);
+      return listEntitySqliteIds(request);
+    },
+  );
+  ipcMain.handle(
+    'entitySqlite:listPanelSummaries',
+    async (_event, request: import('./entityDbSqlite/readService').EntitySqliteListIdsRequest) => {
+      await assertRendererReadPath(request.databasePath);
+      return listEntitySqlitePanelSummaries(request);
+    },
+  );
+  ipcMain.handle(
+    'entitySqlite:authorityDuplicates',
+    async (_event, databasePath: string) => {
+      await assertRendererReadPath(databasePath);
+      return listEntitySqliteAuthorityDuplicates(databasePath);
+    },
+  );
+  ipcMain.handle(
+    'entitySqlite:applyConcordance',
+    async (
+      _event,
+      request: import('./entityDbSqlite/readService').EntitySqliteApplyConcordanceRequest,
+    ) => {
+      await assertRendererReadPath(request.databasePath);
+      await assertRendererWritePath(request.databasePath);
+      return applyEntitySqliteConcordance(request);
+    },
+  );
+  ipcMain.handle(
+    'entitySqlite:rejectConcordance',
+    async (
+      _event,
+      request: import('./entityDbSqlite/readService').EntitySqliteRejectConcordanceRequest,
+    ) => {
+      await assertRendererReadPath(request.databasePath);
+      await assertRendererWritePath(request.databasePath);
+      return rejectEntitySqliteConcordance(request);
+    },
+  );
+  ipcMain.handle(
+    'entitySqlite:markDuplicateIntentional',
+    async (
+      _event,
+      request: import('./entityDbSqlite/readService').EntitySqliteMarkDuplicateIntentionalRequest,
+    ) => {
+      await assertRendererReadPath(request.databasePath);
+      await assertRendererWritePath(request.databasePath);
+      return markEntitySqliteDuplicateIntentional(request);
+    },
+  );
+  ipcMain.handle(
+    'entitySqlite:backfillDecisionTargets',
+    async (
+      _event,
+      request: import('./entityDbSqlite/readService').EntitySqliteBackfillDecisionTargetsRequest,
+    ) => {
+      await assertRendererReadPath(request.databasePath);
+      await assertRendererWritePath(request.databasePath);
+      return backfillEntitySqliteDecisionTargets(request);
+    },
+  );
+  ipcMain.handle(
+    'entitySqlite:softDelete',
+    async (
+      _event,
+      request: import('./entityDbSqlite/readService').EntitySqliteSoftDeleteRequest,
+    ) => {
+      await assertRendererReadPath(request.databasePath);
+      await assertRendererWritePath(request.databasePath);
+      return softDeleteEntitySqlite(request);
+    },
+  );
+  ipcMain.handle(
+    'entitySqlite:merge',
+    async (_event, request: import('./entityDbSqlite/readService').EntitySqliteMergeRequest) => {
+      await assertRendererReadPath(request.databasePath);
+      await assertRendererWritePath(request.databasePath);
+      return mergeEntitySqlite(request);
+    },
+  );
+  ipcMain.handle(
+    'entitySqlite:createPopulated',
+    async (
+      _event,
+      request: import('./entityDbSqlite/readService').EntitySqliteCreatePopulatedRequest,
+    ) => {
+      await assertRendererReadPath(request.databasePath);
+      await assertRendererWritePath(request.databasePath);
+      return createPopulatedEntitySqlite(request);
+    },
+  );
+  ipcMain.handle(
+    'entitySqlite:applyAuthorityBackfillPatch',
+    async (
+      _event,
+      request: import('./entityDbSqlite/repository').AuthorityBackfillPatch & {
+        databasePath: string;
+      },
+    ) => {
+      await assertRendererReadPath(request.databasePath);
+      await assertRendererWritePath(request.databasePath);
+      return applyEntitySqliteAuthorityBackfillPatch(request);
+    },
+  );
+  ipcMain.handle(
+    'entitySqlite:entityContentHash',
+    async (
+      _event,
+      request: { databasePath: string; entityId: string },
+    ) => {
+      await assertRendererReadPath(request.databasePath);
+      return getEntitySqliteContentHash(request);
+    },
+  );
+  ipcMain.handle(
+    'entitySqlite:replaceEntityContent',
+    async (
+      _event,
+      request: {
+        sourceDatabasePath: string;
+        sourceEntityId: string;
+        targetDatabasePath: string;
+        targetEntityId: string;
+      },
+    ) => {
+      await assertRendererReadPath(request.sourceDatabasePath);
+      await assertRendererReadPath(request.targetDatabasePath);
+      await assertRendererWritePath(request.targetDatabasePath);
+      return replaceEntitySqliteContent(request);
+    },
+  );
+  ipcMain.handle(
+    'entitySqlite:getCentralId',
+    async (
+      _event,
+      request: import('./entityDbSqlite/readService').EntitySqliteGetCentralIdRequest,
+    ) => {
+      await assertRendererReadPath(request.databasePath);
+      return getEntitySqliteCentralId(request);
+    },
+  );
+  ipcMain.handle(
+    'entitySqlite:setCentralMapping',
+    async (
+      _event,
+      request: import('./entityDbSqlite/readService').EntitySqliteSetCentralMappingRequest,
+    ) => {
+      await assertRendererReadPath(request.databasePath);
+      await assertRendererWritePath(request.databasePath);
+      return setEntitySqliteCentralMapping(request);
+    },
+  );
+  ipcMain.handle(
+    'entitySqlite:clearCentralMapping',
+    async (
+      _event,
+      request: import('./entityDbSqlite/readService').EntitySqliteGetCentralIdRequest,
+    ) => {
+      await assertRendererReadPath(request.databasePath);
+      await assertRendererWritePath(request.databasePath);
+      return clearEntitySqliteCentralMapping(request);
+    },
+  );
+  ipcMain.handle(
+    'entitySqlite:listMappingsByCentralIds',
+    async (
+      _event,
+      request: {
+        databasePath: string;
+        userStableId: string;
+        centralIds: string[];
+      },
+    ) => {
+      await assertRendererReadPath(request.databasePath);
+      return listEntitySqliteMappingsByCentralIds(request);
+    },
+  );
+  ipcMain.handle(
+    'entitySqlite:listAllCentralMappings',
+    async (
+      _event,
+      request: {
+        databasePath: string;
+        userStableId: string;
+      },
+    ) => {
+      await assertRendererReadPath(request.databasePath);
+      return listEntitySqliteAllCentralMappings(request);
+    },
+  );
+  ipcMain.handle(
+    'entitySqlite:listLinkedCentralIds',
+    async (
+      _event,
+      request: {
+        databasePath: string;
+        userStableId: string;
+      },
+    ) => {
+      await assertRendererReadPath(request.databasePath);
+      return listEntitySqliteLinkedCentralIds(request);
+    },
+  );
+  ipcMain.handle(
+    'entitySqlite:findByAuthority',
+    async (
+      _event,
+      request: import('./entityDbSqlite/readService').EntitySqliteFindByAuthorityRequest,
+    ) => {
+      await assertRendererReadPath(request.databasePath);
+      return findEntitySqliteByAuthority(request);
+    },
+  );
+  ipcMain.handle(
+    'entitySqlite:findByNameDates',
+    async (
+      _event,
+      request: import('./entityDbSqlite/readService').EntitySqliteFindByNameDatesRequest,
+    ) => {
+      await assertRendererReadPath(request.databasePath);
+      return findEntitySqliteByNameDates(request);
+    },
+  );
+  ipcMain.handle(
+    'entitySqlite:forceRejectAssertion',
+    async (
+      _event,
+      request: import('./entityDbSqlite/readService').EntitySqliteForceRejectAssertionRequest,
+    ) => {
+      await assertRendererReadPath(request.databasePath);
+      await assertRendererWritePath(request.databasePath);
+      return forceRejectEntitySqliteAssertion(request);
+    },
+  );
+  ipcMain.handle(
+    'entitySqlite:candidates',
+    async (
+      _event,
+      request: import('./entityDbSqlite/readService').EntitySqliteCandidatesRequest,
+    ) => {
+      await assertRendererReadPath(request.databasePath);
+      return listEntitySqliteCandidates(request);
+    },
+  );
+  ipcMain.handle(
+    'entitySqlite:updateNames',
+    async (
+      _event,
+      request: import('./entityDbSqlite/readService').EntitySqliteUpdateNamesRequest,
+    ) => {
+      await assertRendererReadPath(request.databasePath);
+      await assertRendererWritePath(request.databasePath);
+      return updateEntitySqliteNames(request);
+    },
+  );
+  ipcMain.handle(
+    'entitySqlite:tombstoneNames',
+    async (
+      _event,
+      request: import('./entityDbSqlite/readService').EntitySqliteTombstoneNamesRequest,
+    ) => {
+      await assertRendererReadPath(request.databasePath);
+      await assertRendererWritePath(request.databasePath);
+      return tombstoneEntitySqliteNames(request);
+    },
+  );
+  ipcMain.handle(
+    'entitySqlite:updateDescription',
+    async (
+      _event,
+      request: import('./entityDbSqlite/readService').EntitySqliteUpdateDescriptionRequest,
+    ) => {
+      await assertRendererReadPath(request.databasePath);
+      await assertRendererWritePath(request.databasePath);
+      return updateEntitySqliteDescription(request);
+    },
+  );
+  ipcMain.handle(
+    'entitySqlite:removeName',
+    async (
+      _event,
+      request: import('./entityDbSqlite/readService').EntitySqliteRemoveNameRequest,
+    ) => {
+      await assertRendererReadPath(request.databasePath);
+      await assertRendererWritePath(request.databasePath);
+      return removeEntitySqliteName(request);
+    },
+  );
+  ipcMain.handle(
+    'entitySqlite:addName',
+    async (_event, request: import('./entityDbSqlite/readService').EntitySqliteAddNameRequest) => {
+      await assertRendererReadPath(request.databasePath);
+      await assertRendererWritePath(request.databasePath);
+      return addEntitySqliteName(request);
+    },
+  );
+  ipcMain.handle(
+    'entitySqlite:setUserDate',
+    async (
+      _event,
+      request: import('./entityDbSqlite/readService').EntitySqliteSetUserEntityDateRequest,
+    ) => {
+      await assertRendererReadPath(request.databasePath);
+      await assertRendererWritePath(request.databasePath);
+      return setEntitySqliteUserDate(request);
+    },
+  );
+  ipcMain.handle(
+    'entitySqlite:setUserWorkDate',
+    async (
+      _event,
+      request: import('./entityDbSqlite/readService').EntitySqliteSetUserWorkDateRequest,
+    ) => {
+      await assertRendererReadPath(request.databasePath);
+      await assertRendererWritePath(request.databasePath);
+      return setEntitySqliteUserWorkDate(request);
+    },
+  );
+  ipcMain.handle(
+    'entitySqlite:addNationality',
+    async (
+      _event,
+      request: import('./entityDbSqlite/readService').EntitySqliteAddLabeledValueRequest,
+    ) => {
+      await assertRendererReadPath(request.databasePath);
+      await assertRendererWritePath(request.databasePath);
+      return addEntitySqliteNationality(request);
+    },
+  );
+  ipcMain.handle(
+    'entitySqlite:addOrigin',
+    async (
+      _event,
+      request: import('./entityDbSqlite/readService').EntitySqliteAddLabeledValueRequest,
+    ) => {
+      await assertRendererReadPath(request.databasePath);
+      await assertRendererWritePath(request.databasePath);
+      return addEntitySqliteOrigin(request);
+    },
+  );
+  ipcMain.handle(
+    'entitySqlite:addNobleTitle',
+    async (
+      _event,
+      request: import('./entityDbSqlite/readService').EntitySqliteNobleTitleRequest,
+    ) => {
+      await assertRendererReadPath(request.databasePath);
+      await assertRendererWritePath(request.databasePath);
+      return addEntitySqliteNobleTitle(request);
+    },
+  );
+  ipcMain.handle(
+    'entitySqlite:updateNobleTitle',
+    async (
+      _event,
+      request: import('./entityDbSqlite/readService').EntitySqliteUpdateNobleTitleRequest,
+    ) => {
+      await assertRendererReadPath(request.databasePath);
+      await assertRendererWritePath(request.databasePath);
+      return updateEntitySqliteNobleTitle(request);
+    },
+  );
+  ipcMain.handle(
+    'entitySqlite:setUserWorkAuthors',
+    async (
+      _event,
+      request: import('./entityDbSqlite/readService').EntitySqliteSetUserWorkAuthorsRequest,
+    ) => {
+      await assertRendererReadPath(request.databasePath);
+      await assertRendererWritePath(request.databasePath);
+      return setEntitySqliteUserWorkAuthors(request);
+    },
+  );
+  ipcMain.handle(
+    'entitySqlite:attachAuthority',
+    async (
+      _event,
+      request: import('./entityDbSqlite/readService').EntitySqliteAuthorityRefRequest,
+    ) => {
+      await assertRendererReadPath(request.databasePath);
+      await assertRendererWritePath(request.databasePath);
+      return attachEntitySqliteAuthority(request);
+    },
+  );
+  ipcMain.handle(
+    'entitySqlite:decoupleAuthority',
+    async (
+      _event,
+      request: import('./entityDbSqlite/readService').EntitySqliteAuthorityRefRequest,
+    ) => {
+      await assertRendererReadPath(request.databasePath);
+      await assertRendererWritePath(request.databasePath);
+      return decoupleEntitySqliteAuthority(request);
+    },
+  );
+  ipcMain.handle(
+    'entitySqlite:rejectAssertion',
+    async (
+      _event,
+      request: import('./entityDbSqlite/readService').EntitySqliteAssertionRequest,
+    ) => {
+      await assertRendererReadPath(request.databasePath);
+      await assertRendererWritePath(request.databasePath);
+      return rejectEntitySqliteAssertion(request);
+    },
+  );
+  ipcMain.handle(
+    'entitySqlite:removeAssertion',
+    async (
+      _event,
+      request: import('./entityDbSqlite/readService').EntitySqliteAssertionRequest,
+    ) => {
+      await assertRendererReadPath(request.databasePath);
+      await assertRendererWritePath(request.databasePath);
+      return removeEntitySqliteAssertion(request);
+    },
+  );
+  ipcMain.handle(
+    'entitySqlite:validateAssertion',
+    async (
+      _event,
+      request: import('./entityDbSqlite/readService').EntitySqliteAssertionRequest,
+    ) => {
+      await assertRendererReadPath(request.databasePath);
+      await assertRendererWritePath(request.databasePath);
+      return validateEntitySqliteAssertion(request);
+    },
+  );
+  ipcMain.handle(
+    'entitySqlite:acceptDateAssertion',
+    async (
+      _event,
+      request: import('./entityDbSqlite/readService').EntitySqliteAssertionRequest,
+    ) => {
+      await assertRendererReadPath(request.databasePath);
+      await assertRendererWritePath(request.databasePath);
+      return acceptEntitySqliteDateAssertion(request);
+    },
+  );
+  ipcMain.handle(
+    'entitySqlite:acceptDescriptionAssertion',
+    async (
+      _event,
+      request: import('./entityDbSqlite/readService').EntitySqliteAssertionRequest,
+    ) => {
+      await assertRendererReadPath(request.databasePath);
+      await assertRendererWritePath(request.databasePath);
+      return acceptEntitySqliteDescriptionAssertion(request);
+    },
+  );
+  ipcMain.handle(
+    'entitySqlite:renamePrimaryName',
+    async (
+      _event,
+      request: import('./entityDbSqlite/readService').EntitySqliteRenamePrimaryNameRequest,
+    ) => {
+      await assertRendererReadPath(request.databasePath);
+      await assertRendererWritePath(request.databasePath);
+      return renameEntitySqlitePrimaryName(request);
+    },
+  );
+  ipcMain.handle(
+    'entitySqlite:setRomanizedName',
+    async (
+      _event,
+      request: import('./entityDbSqlite/readService').EntitySqliteSetRomanizedNameRequest,
+    ) => {
+      await assertRendererReadPath(request.databasePath);
+      await assertRendererWritePath(request.databasePath);
+      return setEntitySqliteRomanizedName(request);
+    },
+  );
+  ipcMain.handle(
+    'entitySqlite:exportXml',
+    async (_event, request: import('./entityDbSqlite/readService').EntitySqliteXmlRequest) => {
+      await assertRendererReadPath(request.databasePath);
+      return exportEntitySqliteXml(request);
+    },
+  );
+  ipcMain.handle(
+    'entitySqlite:importXml',
+    async (
+      _event,
+      request: import('./entityDbSqlite/readService').EntitySqliteImportXmlRequest,
+    ) => {
+      await assertRendererReadPath(request.databasePath);
+      await assertRendererWritePath(request.databasePath);
+      return importEntitySqliteXml(request);
+    },
+  );
 
   ipcMain.handle('openProject', openProjectFromDialog);
   ipcMain.handle('openProjectFolder', openProjectFromDialog);
@@ -2668,6 +3241,7 @@ app.whenReady().then(() => {
 });
 
 app.on('before-quit', () => {
+  closeEntitySqliteReadRepositories();
   isQuitting = true;
   closeAllNativeDialogs();
   if (mainWindow && !mainWindow.isDestroyed() && !mainWindow.webContents.isDestroyed()) {

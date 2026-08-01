@@ -19,12 +19,19 @@ const setupCedb = () => {
   return { doc, a, b };
 };
 
+const idsOf = (doc: Document) =>
+  new Set(
+    Array.from(doc.getElementsByTagName('*'))
+      .map((el) => el.getAttribute('xml:id'))
+      .filter((id): id is string => Boolean(id)),
+  );
+
 describe('pendingMergeSuggestions', () => {
   it('surfaces a fresh suggestion naming both still-existing central ids', () => {
     const { doc, a, b } = setupCedb();
     const suggestion = makeMergeSuggestion('pedb-1', [a, b]);
 
-    const pending = pendingMergeSuggestions([suggestion], [], [], CEDB_ID, doc);
+    const pending = pendingMergeSuggestions([suggestion], [], [], CEDB_ID, idsOf(doc));
     expect(pending).toEqual([{ id: suggestion.id, when: suggestion.when, centralIds: [a, b] }]);
   });
 
@@ -33,7 +40,7 @@ describe('pendingMergeSuggestions', () => {
     const suggestion = makeMergeSuggestion('pedb-1', [a, b]);
     const resolution = makeMergeSuggestionResolution(suggestion.id, 'ignored');
 
-    expect(pendingMergeSuggestions([suggestion], [resolution], [], CEDB_ID, doc)).toEqual([]);
+    expect(pendingMergeSuggestions([suggestion], [resolution], [], CEDB_ID, idsOf(doc))).toEqual([]);
   });
 
   it('drops a suggestion already satisfied by a regular Absorb order', () => {
@@ -41,7 +48,7 @@ describe('pendingMergeSuggestions', () => {
     const suggestion = makeMergeSuggestion('pedb-1', [a, b]);
     const order = makeOrder(CEDB_ID, { [a]: b });
 
-    expect(pendingMergeSuggestions([suggestion], [], [order], CEDB_ID, doc)).toEqual([]);
+    expect(pendingMergeSuggestions([suggestion], [], [order], CEDB_ID, idsOf(doc))).toEqual([]);
   });
 
   it('resolves through an order chain to the current surviving pair', () => {
@@ -51,7 +58,7 @@ describe('pendingMergeSuggestions', () => {
     // b was itself later merged into c by an ordinary Absorb.
     const order = makeOrder(CEDB_ID, { [b]: c });
 
-    const pending = pendingMergeSuggestions([suggestion], [], [order], CEDB_ID, doc);
+    const pending = pendingMergeSuggestions([suggestion], [], [order], CEDB_ID, idsOf(doc));
     expect(pending).toEqual([{ id: suggestion.id, when: suggestion.when, centralIds: [a, c] }]);
   });
 
@@ -60,14 +67,14 @@ describe('pendingMergeSuggestions', () => {
     const suggestion = makeMergeSuggestion('pedb-1', [a, b]);
     const order = makeOrder(CEDB_ID, { [b]: null });
 
-    expect(pendingMergeSuggestions([suggestion], [], [order], CEDB_ID, doc)).toEqual([]);
+    expect(pendingMergeSuggestions([suggestion], [], [order], CEDB_ID, idsOf(doc))).toEqual([]);
   });
 
   it('drops a suggestion whose id no longer exists in the central database', () => {
     const { doc, a } = setupCedb();
     const suggestion = makeMergeSuggestion('pedb-1', [a, 'work-does-not-exist']);
 
-    expect(pendingMergeSuggestions([suggestion], [], [], CEDB_ID, doc)).toEqual([]);
+    expect(pendingMergeSuggestions([suggestion], [], [], CEDB_ID, idsOf(doc))).toEqual([]);
   });
 
   it('collapses two suggestions that resolve to the same unordered pair', () => {
@@ -75,7 +82,7 @@ describe('pendingMergeSuggestions', () => {
     const first = makeMergeSuggestion('pedb-1', [a, b], '2026-01-01T00:00:00.000Z');
     const second = makeMergeSuggestion('pedb-2', [b, a], '2026-01-02T00:00:00.000Z');
 
-    const pending = pendingMergeSuggestions([first, second], [], [], CEDB_ID, doc);
+    const pending = pendingMergeSuggestions([first, second], [], [], CEDB_ID, idsOf(doc));
     expect(pending).toHaveLength(1);
     expect(pending[0]!.id).toBe(first.id);
   });
@@ -85,19 +92,19 @@ describe('pendingMergeSuggestions', () => {
     const suggestion = makeMergeSuggestion('pedb-1', [a, b]);
     const foreignOrder = makeOrder('cedb-OTHER', { [a]: b });
 
-    const pending = pendingMergeSuggestions([suggestion], [], [foreignOrder], CEDB_ID, doc);
+    const pending = pendingMergeSuggestions([suggestion], [], [foreignOrder], CEDB_ID, idsOf(doc));
     expect(pending).toEqual([{ id: suggestion.id, when: suggestion.when, centralIds: [a, b] }]);
   });
 
   it('is empty with no suggestions', () => {
     const { doc } = setupCedb();
-    expect(pendingMergeSuggestions([], [], [], CEDB_ID, doc)).toEqual([]);
+    expect(pendingMergeSuggestions([], [], [], CEDB_ID, idsOf(doc))).toEqual([]);
   });
 
   it('ignores delete-kind suggestions mixed into the same log', () => {
     const { doc, a } = setupCedb();
     const del = makeDeleteSuggestion('pedb-1', a);
-    expect(pendingMergeSuggestions([del], [], [], CEDB_ID, doc)).toEqual([]);
+    expect(pendingMergeSuggestions([del], [], [], CEDB_ID, idsOf(doc))).toEqual([]);
   });
 });
 
@@ -106,7 +113,7 @@ describe('pendingDeleteSuggestions', () => {
     const { doc, a } = setupCedb();
     const suggestion = makeDeleteSuggestion('pedb-1', a);
 
-    const pending = pendingDeleteSuggestions([suggestion], [], [], CEDB_ID, doc);
+    const pending = pendingDeleteSuggestions([suggestion], [], [], CEDB_ID, idsOf(doc));
     expect(pending).toEqual([{ id: suggestion.id, when: suggestion.when, centralId: a }]);
   });
 
@@ -115,7 +122,7 @@ describe('pendingDeleteSuggestions', () => {
     const suggestion = makeDeleteSuggestion('pedb-1', a);
     const resolution = makeMergeSuggestionResolution(suggestion.id, 'ignored');
 
-    expect(pendingDeleteSuggestions([suggestion], [resolution], [], CEDB_ID, doc)).toEqual([]);
+    expect(pendingDeleteSuggestions([suggestion], [resolution], [], CEDB_ID, idsOf(doc))).toEqual([]);
   });
 
   it('drops a delete suggestion once the central entity was actually deleted', () => {
@@ -123,7 +130,7 @@ describe('pendingDeleteSuggestions', () => {
     const suggestion = makeDeleteSuggestion('pedb-1', a);
     const order = makeOrder(CEDB_ID, { [a]: null });
 
-    expect(pendingDeleteSuggestions([suggestion], [], [order], CEDB_ID, doc)).toEqual([]);
+    expect(pendingDeleteSuggestions([suggestion], [], [order], CEDB_ID, idsOf(doc))).toEqual([]);
   });
 
   it('resolves through a later merge to the surviving id', () => {
@@ -131,7 +138,7 @@ describe('pendingDeleteSuggestions', () => {
     const suggestion = makeDeleteSuggestion('pedb-1', a);
     const order = makeOrder(CEDB_ID, { [a]: b });
 
-    const pending = pendingDeleteSuggestions([suggestion], [], [order], CEDB_ID, doc);
+    const pending = pendingDeleteSuggestions([suggestion], [], [order], CEDB_ID, idsOf(doc));
     expect(pending).toEqual([{ id: suggestion.id, when: suggestion.when, centralId: b }]);
   });
 
@@ -139,7 +146,7 @@ describe('pendingDeleteSuggestions', () => {
     const { doc } = setupCedb();
     const suggestion = makeDeleteSuggestion('pedb-1', 'work-does-not-exist');
 
-    expect(pendingDeleteSuggestions([suggestion], [], [], CEDB_ID, doc)).toEqual([]);
+    expect(pendingDeleteSuggestions([suggestion], [], [], CEDB_ID, idsOf(doc))).toEqual([]);
   });
 
   it('collapses two delete suggestions that resolve to the same central id', () => {
@@ -147,7 +154,7 @@ describe('pendingDeleteSuggestions', () => {
     const first = makeDeleteSuggestion('pedb-1', a, '2026-01-01T00:00:00.000Z');
     const second = makeDeleteSuggestion('pedb-2', a, '2026-01-02T00:00:00.000Z');
 
-    const pending = pendingDeleteSuggestions([first, second], [], [], CEDB_ID, doc);
+    const pending = pendingDeleteSuggestions([first, second], [], [], CEDB_ID, idsOf(doc));
     expect(pending).toHaveLength(1);
     expect(pending[0]!.id).toBe(first.id);
   });
@@ -155,12 +162,12 @@ describe('pendingDeleteSuggestions', () => {
   it('ignores merge-kind suggestions mixed into the same log', () => {
     const { doc, a, b } = setupCedb();
     const merge = makeMergeSuggestion('pedb-1', [a, b]);
-    expect(pendingDeleteSuggestions([merge], [], [], CEDB_ID, doc)).toEqual([]);
+    expect(pendingDeleteSuggestions([merge], [], [], CEDB_ID, idsOf(doc))).toEqual([]);
   });
 
   it('is empty with no suggestions', () => {
     const { doc } = setupCedb();
-    expect(pendingDeleteSuggestions([], [], [], CEDB_ID, doc)).toEqual([]);
+    expect(pendingDeleteSuggestions([], [], [], CEDB_ID, idsOf(doc))).toEqual([]);
   });
 });
 

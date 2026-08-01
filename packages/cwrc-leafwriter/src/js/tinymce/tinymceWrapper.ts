@@ -46,12 +46,19 @@ interface TinymceWrapperConfig {
   layoutContainerId: string;
 }
 
+/** Join writer.baseUrl (often trailing `/`) with a root-relative asset path. */
+const writerAssetUrl = (baseUrl: string, assetPath: string): string => {
+  const root = baseUrl.replace(/\/+$/, '');
+  const path = assetPath.startsWith('/') ? assetPath : `/${assetPath}`;
+  return `${root}${path}`;
+};
+
 export const tinymceWrapperInit = function ({
   writer,
   editorId,
   layoutContainerId,
 }: TinymceWrapperConfig) {
-  tinymce.baseURL = `${writer.baseUrl}/js`;
+  tinymce.baseURL = writerAssetUrl(writer.baseUrl, '/js');
 
   const toolbar = document.querySelector('#editor-toolbar');
   const toolbarHeight = toolbar?.getBoundingClientRect().height ?? 0;
@@ -606,19 +613,19 @@ export const tinymceWrapperInit = function ({
     selector: `#${editorId}`,
     ui_container: `#${layoutContainerId}`,
     skin_url: window.matchMedia('(prefers-color-scheme: dark)').matches
-      ? `${writer.baseUrl}/css/tinymce/skins/ui/oxide-dark`
-      : `${writer.baseUrl}/css/tinymce/skins/ui/oxide`,
+      ? writerAssetUrl(writer.baseUrl, '/css/tinymce/skins/ui/oxide-dark')
+      : writerAssetUrl(writer.baseUrl, '/css/tinymce/skins/ui/oxide'),
 
     height: `calc(100% - ${toolbarHeight}px)`,
     width: '100%',
     content_css: window.matchMedia('(prefers-color-scheme: dark)').matches
       ? [
-          `${writer.baseUrl}/css/tinymce/skins/content/dark/content.min.css`,
-          `${writer.baseUrl}/css/editor.css`,
+          writerAssetUrl(writer.baseUrl, '/css/tinymce/skins/content/dark/content.min.css'),
+          writerAssetUrl(writer.baseUrl, '/css/editor.css'),
         ]
       : [
-          `${writer.baseUrl}/css/tinymce/skins/content/writer/content.min.css`,
-          `${writer.baseUrl}/css/editor.css`,
+          writerAssetUrl(writer.baseUrl, '/css/tinymce/skins/content/writer/content.min.css'),
+          writerAssetUrl(writer.baseUrl, '/css/editor.css'),
         ],
     content_style: visualBodyStyle,
     doctype: `<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">`,

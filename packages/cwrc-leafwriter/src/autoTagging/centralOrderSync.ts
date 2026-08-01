@@ -20,6 +20,7 @@ import { clearCentralMapping, getCentralId, setCentralMapping } from './concorda
 import { findEntity } from './entities';
 import { listEntities } from './entityOps';
 import { composeRemap, pendingOrders, type EntityOrder } from './entityOrders';
+import type { EntityStore } from './entityStore';
 
 export interface CentralOrderSyncItem {
   /** The PEDB entity's own id. */
@@ -82,6 +83,45 @@ export function applyCentralRemapToPedb(
     } else if (!target) {
       clearCentralMapping(item, userStableId);
       result.cleared.push({ id: entity.id, name, from: centralId, to: null });
+    }
+  }
+  return result;
+}
+
+/** SQLite equivalent of {@link applyCentralRemapToPedb}. */
+export async function applyCentralRemapToPedbSqlite(
+  projectStore: EntityStore,
+  remap: Record<string, string | null>,
+  userStableId: string,
+): Promise<CentralOrderSyncResult> {
+  const fromIds = Object.keys(remap);
+  if (fromIds.length === 0) return EMPTY_RESULT;
+
+  const mappings = await projectStore.sqliteListMappingsByCentralIds(userStableId, fromIds);
+  const result: CentralOrderSyncResult = { repointed: [], cleared: [] };
+  for (const mapping of mappings) {
+    const target = remap[mapping.centralId] ?? null;
+    const name = mapping.label ?? mapping.projectEntityId;
+    if (target && target !== mapping.centralId) {
+      await projectStore.sqliteSetCentralMapping(
+        mapping.projectEntityId,
+        userStableId,
+        target,
+      );
+      result.repointed.push({
+        id: mapping.projectEntityId,
+        name,
+        from: mapping.centralId,
+        to: target,
+      });
+    } else if (!target) {
+      await projectStore.sqliteClearCentralMapping(mapping.projectEntityId, userStableId);
+      result.cleared.push({
+        id: mapping.projectEntityId,
+        name,
+        from: mapping.centralId,
+        to: null,
+      });
     }
   }
   return result;

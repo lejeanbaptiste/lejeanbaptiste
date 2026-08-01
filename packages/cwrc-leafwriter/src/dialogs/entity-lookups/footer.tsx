@@ -3,8 +3,8 @@ import { useAtomValue } from 'jotai';
 import { useTranslation } from 'react-i18next';
 import type { EntityLink } from '../../types/authority';
 import {
+  attachToEntityIdAtom,
   checkedEntriesAtom,
-  entityTypeAtom,
   isUriValidAtom,
   manualInputAtom,
   onCloseAtom,
@@ -17,7 +17,6 @@ import { useEntityLookup } from './useEntityLookup';
 export const Footer = () => {
   const { t } = useTranslation();
 
-  const entityType = useAtomValue(entityTypeAtom);
   const isUriValid = useAtomValue(isUriValidAtom);
   const manualInput = useAtomValue(manualInputAtom);
   const onClose = useAtomValue(onCloseAtom);
@@ -25,6 +24,7 @@ export const Footer = () => {
   const resolution = useAtomValue(resolutionAtom);
   const selected = useAtomValue(selectedAtom);
   const checkedEntries = useAtomValue(checkedEntriesAtom);
+  const attachToEntityId = useAtomValue(attachToEntityIdAtom);
 
   const { confirmSelected, tagWithoutLinking } = useEntityLookup();
 
@@ -46,13 +46,17 @@ export const Footer = () => {
       <Button onClick={() => handleClose()} variant="text">
         {t('LW.commons.cancel')}
       </Button>
-      <Button
-        disabled={!query.trim() || resolution !== null}
-        onClick={() => void tagWithoutLinking()}
-        variant="text"
-      >
-        {t('LW.lookups.tag without linking')}
-      </Button>
+      {!attachToEntityId ? (
+        <Button
+          disabled={!query.trim() || resolution !== null}
+          onClick={() => void tagWithoutLinking()}
+          variant="text"
+        >
+          {t('LW.lookups.tag without linking')}
+        </Button>
+      ) : (
+        <span />
+      )}
       <Button
         autoFocus
         disabled={

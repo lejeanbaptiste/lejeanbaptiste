@@ -575,6 +575,94 @@ export function candidatesFromEntityFile(
   return out;
 }
 
+/** Minimal entity snapshot for building disambiguation candidates from SQLite. */
+export interface SqliteDisambiguationEntityInput {
+  id: string;
+  label: string;
+  description?: string | null;
+  authorities?: AuthorityId[];
+  names: { text: string; language?: string | null }[];
+  startYear?: number | null;
+  endYear?: number | null;
+}
+
+/**
+ * Same surface-matching behaviour as `candidatesFromEntityFile`, but from typed
+ * SQLite rows (search + panel summary) instead of a full XML export.
+ */
+export function candidatesFromSqliteEntities(
+  entities: readonly SqliteDisambiguationEntityInput[],
+  surface: string,
+  origin: 'pedb' | 'cedb' = 'pedb',
+): DisambiguationCandidate[] {
+  const out: DisambiguationCandidate[] = [];
+  for (const entity of entities) {
+    const nameTexts = entity.names.map((name) => name.text.trim()).filter(Boolean);
+    if (!nameTexts.some((text) => stringsMatchExactly(surface, text))) continue;
+    const romanizedName = entity.names.find((name) => isLatnLang(name.language ?? null))?.text.trim();
+    out.push({
+      id: entity.id,
+      label: entity.label || nameTexts[0] || surface,
+      description: entity.description ?? undefined,
+      sources: origin === 'cedb' ? ['central-database'] : ['entity-file'],
+      localEntityId: origin === 'pedb' ? entity.id : undefined,
+      centralEntityId: origin === 'cedb' ? entity.id : undefined,
+      authorityIds: entity.authorities ?? [],
+      fromEntityFile: true,
+      startYear: entity.startYear ?? undefined,
+      endYear: entity.endYear ?? undefined,
+      projectLangName: nameTexts.find((text) => !isLatinSurface(text)),
+      romanizedName: romanizedName || undefined,
+    });
+  }
+  return out;
+}
+
+/** How many same-surface PEDB/CEDB hits disambiguation will load from SQLite. */
+const SQLITE_DISAMBIGUATION_SEARCH_LIMIT = 200;
+
+/**
+ * Load surface-matching disambiguation candidates from a migrated SQLite store.
+ * Returns null when SQLite is unavailable so callers can fall back to XML.
+ */
+export async function loadSqliteDisambiguationCandidates(
+  store: EntityStore,
+  tag: string,
+  surface: string,
+  origin: 'pedb' | 'cedb' = 'pedb',
+): Promise<DisambiguationCandidate[] | null> {
+  const kind = tag === 'name' ? 'person' : TAG_TO_KIND[tag];
+  if (!kind) return [];
+  const hits = await store.sqliteSearchNames(kind, surface, SQLITE_DISAMBIGUATION_SEARCH_LIMIT);
+  if (hits == null) return null;
+
+  const entities: SqliteDisambiguationEntityInput[] = [];
+  for (const hit of hits) {
+    const summary = (await store.sqliteEntitySummary(hit.id)) as {
+      id?: string;
+      description?: string | null;
+      authorities?: AuthorityId[];
+      names?: { text: string; language?: string | null; status?: string }[];
+      startYear?: number | null;
+      endYear?: number | null;
+    } | null;
+    if (!summary) continue;
+    const names = (summary.names ?? [])
+      .filter((name) => name.status !== 'rejected' && name.status !== 'withdrawn')
+      .map((name) => ({ text: name.text, language: name.language ?? null }));
+    entities.push({
+      id: summary.id ?? hit.id,
+      label: hit.label,
+      description: summary.description ?? hit.description ?? null,
+      authorities: summary.authorities ?? hit.idnos,
+      names: names.length > 0 ? names : [{ text: hit.label, language: null }],
+      startYear: summary.startYear ?? null,
+      endYear: summary.endYear ?? null,
+    });
+  }
+  return candidatesFromSqliteEntities(entities, surface, origin);
+}
+
 function mergeIntoExisting(
   existing: DisambiguationCandidate,
   candidate: DisambiguationCandidate,
@@ -746,96 +834,102 @@ async function candidatesFromAuthorityPacks(
     ],
     entityType,
   );
-  const results: DisambiguationCandidate[] = [];
   const pendingDilaFetches: Promise<void>[] = [];
-  for (const packId of packIds) {
-    try {
-      const content = await readPackFile(packId);
-      const spec = AUTHORITY_PACKS.find((item) => item.id === packId);
-      if (!spec) continue;
-      const packSource = spec.source as 'cbdb' | 'dila' | 'chgis' | 'ndl' | 'norbert';
-      // searchPackRows hands back each match's parsed ndjson row, so the
-      // metadata (years, dynasty, authorityId) comes straight from the ≤10
-      // matched lines — no full-pack parse per lookup.
-      for (const { result: match, row } of searchPackRows(
-        content,
-        packSource,
-        entityType,
-        surface,
-      )) {
-        let description = match.description;
-        let startYear = row?.metadata?.startYear;
-        let endYear = row?.metadata?.endYear;
-        let dynasty: string | undefined;
+  // Read packs in parallel — sequential awaits made lookup feel much slower
+  // than the legacy per-authority popup (which also fired searches together).
+  const perPack = await Promise.all(
+    packIds.map(async (packId): Promise<DisambiguationCandidate[]> => {
+      try {
+        const content = await readPackFile(packId);
+        const spec = AUTHORITY_PACKS.find((item) => item.id === packId);
+        if (!spec) return [];
+        const packSource = spec.source as 'cbdb' | 'dila' | 'chgis' | 'ndl' | 'norbert';
+        const results: DisambiguationCandidate[] = [];
+        // searchPackRows hands back each match's parsed ndjson row, so the
+        // metadata (years, dynasty, authorityId) comes straight from the ≤10
+        // matched lines — no full-pack parse per lookup.
+        for (const { result: match, row } of searchPackRows(
+          content,
+          packSource,
+          entityType,
+          surface,
+        )) {
+          let description = match.description;
+          let startYear = row?.metadata?.startYear;
+          let endYear = row?.metadata?.endYear;
+          let dynasty: string | undefined;
 
-        if (
-          packSource === 'dila' &&
-          entityType === 'place' &&
-          dilaDetailCache &&
-          row?.authorityId &&
-          startYear == null &&
-          endYear == null
-        ) {
-          const cached = await dilaDetailCache.get(row.authorityId);
-          if (cached) {
-            startYear = cached.startYear ?? startYear;
-            endYear = cached.endYear ?? endYear;
-            if (cached.remark) description = cached.remark;
-            // DILA splits a place into one record per dynasty — lead with it so
-            // same-named candidates read as distinct entries, and keep it on the
-            // candidate/cache for a future dynasty filter/picker.
-            if (cached.dynasty) {
-              dynasty = cached.dynasty;
-              description = description ? `${cached.dynasty}：${description}` : cached.dynasty;
+          if (
+            packSource === 'dila' &&
+            entityType === 'place' &&
+            dilaDetailCache &&
+            row?.authorityId &&
+            startYear == null &&
+            endYear == null
+          ) {
+            const cached = await dilaDetailCache.get(row.authorityId);
+            if (cached) {
+              startYear = cached.startYear ?? startYear;
+              endYear = cached.endYear ?? endYear;
+              if (cached.remark) description = cached.remark;
+              // DILA splits a place into one record per dynasty — lead with it so
+              // same-named candidates read as distinct entries, and keep it on the
+              // candidate/cache for a future dynasty filter/picker.
+              if (cached.dynasty) {
+                dynasty = cached.dynasty;
+                description = description ? `${cached.dynasty}：${description}` : cached.dynasty;
+              }
+            } else {
+              // Don't block opening the panel on a live scrape; queue it and
+              // let the caller refresh once every queued id has resolved.
+              pendingDilaFetches.push(
+                fetchAndCacheDilaPlaceDetail(row.authorityId, dilaDetailCache, dilaFetchImpl),
+              );
             }
-          } else {
-            // Don't block opening the panel on a live scrape; queue it and
-            // let the caller refresh once every queued id has resolved.
-            pendingDilaFetches.push(
-              fetchAndCacheDilaPlaceDetail(row.authorityId, dilaDetailCache, dilaFetchImpl),
-            );
           }
-        }
 
-        results.push({
-          id: match.uri,
-          label: match.label,
-          description,
-          sources: [spec.source.toUpperCase()],
-          uri: match.uri,
-          authorityIds: dedupeAuthorityIds(
-            // The bare authorityId, not match.uri — auth.value must be an id a
-            // *_URL() builder can format, not an already-fully-formed URL (which
-            // would otherwise get wrapped inside another URL and break the link).
-            authorityIdsFromCrossRefs(
-              [{ type: packSource.toUpperCase(), value: row?.authorityId ?? match.uri }],
-              match.description,
+          results.push({
+            id: match.uri,
+            label: match.label,
+            description,
+            sources: [spec.source.toUpperCase()],
+            uri: match.uri,
+            authorityIds: dedupeAuthorityIds(
+              // The bare authorityId, not match.uri — auth.value must be an id a
+              // *_URL() builder can format, not an already-fully-formed URL (which
+              // would otherwise get wrapped inside another URL and break the link).
+              authorityIdsFromCrossRefs(
+                [{ type: packSource.toUpperCase(), value: row?.authorityId ?? match.uri }],
+                match.description,
+              ),
             ),
-          ),
-          startYear,
-          endYear,
-          dynasty,
-          projectLangName:
-            row?.primaryName && !isLatinSurface(row.primaryName) ? row.primaryName : undefined,
-          romanizedName:
-            romanizeFromAuthorityMetadata(
-              row?.metadata,
-              row?.primaryName ?? match.label,
-              projectLang,
-            ) ?? undefined,
-          typedNames: typedNamesFromPackRow(row?.names),
-          geo: normalizeGeo(row?.metadata?.geo),
-          authorityMetadata: row?.metadata,
-        });
+            startYear,
+            endYear,
+            dynasty,
+            projectLangName:
+              row?.primaryName && !isLatinSurface(row.primaryName) ? row.primaryName : undefined,
+            romanizedName:
+              romanizeFromAuthorityMetadata(
+                row?.metadata,
+                row?.primaryName ?? match.label,
+                projectLang,
+              ) ?? undefined,
+            typedNames: typedNamesFromPackRow(row?.names),
+            geo: normalizeGeo(row?.metadata?.geo),
+            authorityMetadata: row?.metadata,
+          });
+        }
+        return results;
+      } catch {
+        // Missing or unreadable pack; skip it.
+        return [];
       }
-    } catch {
-      // Missing or unreadable pack; skip it.
-    }
-  }
+    }),
+  );
   if (pendingDilaFetches.length > 0 && onDilaDatesReady) {
     void Promise.all(pendingDilaFetches).then(onDilaDatesReady);
   }
-  return results;
+  return perPack.flat();
 }
 
 /**
@@ -877,6 +971,15 @@ async function lifespanForQid(qid: string, cache: AuthorityCache) {
   return lifespan;
 }
 
+export interface FetchLiveCandidatesOptions {
+  /**
+   * Fetch Wikidata birth/death years for each hit. Each call is throttled (~1s),
+   * so enabling this for many QIDs is slow. Lookup dialogs should pass false;
+   * the disambiguation panel keeps the default (true).
+   */
+  enrichLifespans?: boolean;
+}
+
 export async function fetchLiveCandidates(
   tag: string,
   surface: string,
@@ -884,85 +987,90 @@ export async function fetchLiveCandidates(
   enabledAuthorities: Array<keyof typeof AUTHORITY_MAP>,
   forceRefresh = false,
   readPackFile?: ReadAuthorityPackFile,
+  options: FetchLiveCandidatesOptions = {},
 ): Promise<DisambiguationCandidate[]> {
+  const enrichLifespans = options.enrichLifespans !== false;
   const entityType = TAG_TO_ENTITY_TYPE[tag] ?? 'person';
   const entityKind = tag === 'name' ? 'person' : TAG_TO_KIND[tag];
-  const results: DisambiguationCandidate[] = [];
   const chgisYears =
     tag === 'placeName' && readPackFile ? await chgisYearsForSurface(surface, readPackFile) : null;
 
-  for (const name of enabledAuthorities) {
-    const authorityId = AUTHORITY_MAP[name];
-    if (!authorityId) continue;
+  // Fire Wikidata + VIAF (etc.) together, like the legacy lookup popup.
+  const perAuthority = await Promise.all(
+    enabledAuthorities.map(async (name): Promise<DisambiguationCandidate[]> => {
+      const authorityId = AUTHORITY_MAP[name];
+      if (!authorityId) return [];
 
-    let cached = await cache.get(name, entityType, surface, forceRefresh);
-    let matches: AuthorityLookupResult[] = cached?.results ?? [];
+      let cached = await cache.get(name, entityType, surface, forceRefresh);
+      let matches: AuthorityLookupResult[] = cached?.results ?? [];
 
-    if (!cached) {
-      await cache.throttle();
-      try {
-        matches = await reconcile({
-          query: surface,
-          entityType,
-          options: { authorityId, isUserAuthenticated: false },
-        });
-        await cache.set({
-          authority: name,
-          entityType,
-          query: surface,
-          fetchedAt: new Date().toISOString(),
-          results: matches,
-        });
-      } catch {
-        matches = [];
-      }
-    }
-
-    if (name === 'Wikidata') {
-      if (entityKind) {
-        matches = await filterWikidataByKind(matches, entityKind, cache);
-      }
-      // Exact-surface matching only makes sense against Wikidata: its reconcile rows
-      // reliably return the queried script as label/alias. VIAF/DBpedia/Getty/GND
-      // headings are authority-specific (often romanized, "Surname, Given, dates")
-      // and rarely equal the raw surface text — filtering them the same way silently
-      // dropped every non-Wikidata authority.
-      await cache.throttle();
-      matches = await filterReconcileByExactSurface(matches, surface);
-    }
-
-    for (const match of matches) {
-      let description = match.description;
-      let startYear: number | undefined;
-      let endYear: number | undefined;
-      if (entityType === 'person') {
-        const qid = extractWikidataId(match.uri) ?? extractWikidataId(match.description ?? '');
-        if (qid) {
-          const lifespan = await lifespanForQid(qid, cache);
-          description = prefixDescriptionWithLifespan(description, lifespan);
-          startYear = lifespan?.birthYear;
-          endYear = lifespan?.deathYear;
+      if (!cached) {
+        await cache.throttle();
+        try {
+          matches = await reconcile({
+            query: surface,
+            entityType,
+            options: { authorityId, isUserAuthenticated: false },
+          });
+          await cache.set({
+            authority: name,
+            entityType,
+            query: surface,
+            fetchedAt: new Date().toISOString(),
+            results: matches,
+          });
+        } catch {
+          matches = [];
         }
-      } else if (entityType === 'place' && chgisYears) {
-        startYear = chgisYears.startYear;
-        endYear = chgisYears.endYear;
       }
-      results.push({
-        id: match.uri,
-        label: match.label,
-        description,
-        sources: [name],
-        uri: match.uri,
-        authorityIds: dedupeAuthorityIds(
-          authorityIdsFromCrossRefs([{ type: name, value: match.uri }], match.description),
-        ),
-        startYear,
-        endYear,
-      });
-    }
-  }
 
-  return results;
+      if (name === 'Wikidata') {
+        if (entityKind) {
+          matches = await filterWikidataByKind(matches, entityKind, cache);
+        }
+        // Exact-surface matching only makes sense against Wikidata: its reconcile rows
+        // reliably return the queried script as label/alias. VIAF/DBpedia/Getty/GND
+        // headings are authority-specific (often romanized, "Surname, Given, dates")
+        // and rarely equal the raw surface text — filtering them the same way silently
+        // dropped every non-Wikidata authority.
+        matches = await filterReconcileByExactSurface(matches, surface);
+      }
+
+      const results: DisambiguationCandidate[] = [];
+      for (const match of matches) {
+        let description = match.description;
+        let startYear: number | undefined;
+        let endYear: number | undefined;
+        if (enrichLifespans && entityType === 'person') {
+          const qid = extractWikidataId(match.uri) ?? extractWikidataId(match.description ?? '');
+          if (qid) {
+            const lifespan = await lifespanForQid(qid, cache);
+            description = prefixDescriptionWithLifespan(description, lifespan);
+            startYear = lifespan?.birthYear;
+            endYear = lifespan?.deathYear;
+          }
+        } else if (entityType === 'place' && chgisYears) {
+          startYear = chgisYears.startYear;
+          endYear = chgisYears.endYear;
+        }
+        results.push({
+          id: match.uri,
+          label: match.label,
+          description,
+          sources: [name],
+          uri: match.uri,
+          authorityIds: dedupeAuthorityIds(
+            authorityIdsFromCrossRefs([{ type: name, value: match.uri }], match.description),
+          ),
+          startYear,
+          endYear,
+        });
+      }
+      return results;
+    }),
+  );
+
+  return perAuthority.flat();
 }
 
 /**
@@ -1126,8 +1234,17 @@ const mergeOptionsForLang = (projectLang?: string | null): MergeCandidateOptions
     ? { preferNonLatinLabel: true }
     : undefined;
 
+export interface BuildDisambiguationCandidatesOptions {
+  /** Wikidata lifespan enrichment for live hits (default true). */
+  enrichLifespans?: boolean;
+  /** Fill dual-script names via Wikidata (default true). */
+  enrichNames?: boolean;
+  /** Called once pack/local rows are ready, before live authorities finish. */
+  onPartialResults?: (candidates: DisambiguationCandidate[]) => void;
+}
+
 export async function buildDisambiguationCandidates(
-  entitiesDoc: Document,
+  entitiesDoc: Document | null,
   tag: string,
   surface: string,
   cache: AuthorityCache,
@@ -1139,21 +1256,36 @@ export async function buildDisambiguationCandidates(
   onDilaDatesReady?: () => void,
   projectLang?: string | null,
   /** Present only for a syncToCentral project - merges in matching CEDB entities. */
-  central?: { doc: Document; userStableId: string },
+  central?: {
+    doc?: Document;
+    userStableId: string;
+    /** Precomputed CEDB matches (already excluding PEDB-linked ids). */
+    candidates?: DisambiguationCandidate[];
+  },
   /** Proximity radius (km) for collapsing place candidates into geo clusters — see Phase 6. */
   placeProximityKm?: number,
+  /** Precomputed PEDB matches; when set, `entitiesDoc` is not scanned. */
+  localCandidates?: DisambiguationCandidate[],
+  buildOptions?: BuildDisambiguationCandidatesOptions,
 ): Promise<DisambiguationCandidate[]> {
-  const local = candidatesFromEntityFile(entitiesDoc, tag, surface);
+  const local =
+    localCandidates ??
+    (entitiesDoc ? candidatesFromEntityFile(entitiesDoc, tag, surface) : []);
   const centralCandidates = central
-    ? (() => {
+    ? (central.candidates ??
+      (() => {
+        if (!central.doc || !entitiesDoc) return [];
         const linked = linkedCentralIds(entitiesDoc, central.userStableId);
         return candidatesFromEntityFile(central.doc, tag, surface, 'cedb').filter(
           (candidate) => !linked.has(candidate.centralEntityId!),
         );
-      })()
+      })())
     : [];
-  const packLocal = readPackFile
-    ? await candidatesFromAuthorityPacks(
+  const liveOptions: FetchLiveCandidatesOptions = {
+    enrichLifespans: buildOptions?.enrichLifespans,
+  };
+  const packPromise = readPackFile
+    ? candidatesFromAuthorityPacks(
         tag,
         surface,
         readPackFile,
@@ -1162,27 +1294,41 @@ export async function buildDisambiguationCandidates(
         onDilaDatesReady,
         projectLang,
       )
-    : [];
-  const live = await fetchLiveCandidates(
+    : Promise.resolve([] as DisambiguationCandidate[]);
+  // Start live fetch immediately so it overlaps pack reads.
+  const livePromise = fetchLiveCandidates(
     tag,
     surface,
     cache,
     enabledAuthorities,
     forceRefresh,
     readPackFile,
+    liveOptions,
   );
-  const options: MergeCandidateOptions = {
+
+  const mergeOpts: MergeCandidateOptions = {
     ...mergeOptionsForLang(projectLang),
     tag,
     placeProximityKm,
   };
-  const merged = collapseCrossAuthorityCandidates(
-    mergeCandidates([local, centralCandidates, packLocal, live], options).map(
-      enrichCandidateCrossRefs,
-    ),
-    options,
-  );
-  await enrichCandidateNames(merged, projectLang);
+  const finalize = (packLocal: DisambiguationCandidate[], live: DisambiguationCandidate[]) =>
+    collapseCrossAuthorityCandidates(
+      mergeCandidates([local, centralCandidates, packLocal, live], mergeOpts).map(
+        enrichCandidateCrossRefs,
+      ),
+      mergeOpts,
+    );
+
+  const packLocal = await packPromise;
+  if (buildOptions?.onPartialResults) {
+    buildOptions.onPartialResults(finalize(packLocal, []));
+  }
+
+  const live = await livePromise;
+  const merged = finalize(packLocal, live);
+  if (buildOptions?.enrichNames !== false) {
+    await enrichCandidateNames(merged, projectLang);
+  }
   return merged;
 }
 

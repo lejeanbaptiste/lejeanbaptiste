@@ -10,7 +10,10 @@ export default defineConfig({
   format: ['cjs'],
   outDir: 'dist',
   clean: true,
-  external: ['electron'],
+  // Keep Node's built-in SQLite module as a built-in import. Without this,
+  // esbuild rewrites `node:sqlite` to `sqlite`, which is not an installed
+  // dependency and prevents the packaged main process from starting.
+  external: ['electron', 'node:sqlite'],
   noExternal: ['mammoth', 'jszip', '@xmldom/xmldom', 'electron-updater', 'pmtiles'],
   splitting: false,
   sourcemap: true,

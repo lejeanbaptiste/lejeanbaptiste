@@ -1,7 +1,12 @@
-import { applyCentralRemapToPedb, pendingCentralRemap } from './centralOrderSync';
+import {
+  applyCentralRemapToPedb,
+  applyCentralRemapToPedbSqlite,
+  pendingCentralRemap,
+} from './centralOrderSync';
 import { getCentralId, setCentralMapping } from './concordance';
 import { addEntity, createEntitiesScaffold, parseEntities } from './entities';
 import { makeOrder } from './entityOrders';
+import type { EntityStore } from './entityStore';
 
 const USER = 'user-a';
 
@@ -102,5 +107,54 @@ describe('applyCentralRemapToPedb', () => {
 
     expect(result).toEqual({ repointed: [], cleared: [] });
     expect(getCentralId(element, USER)).toBe('person-old-central');
+  });
+});
+
+describe('applyCentralRemapToPedbSqlite', () => {
+  it('repoints and clears via store methods without touching the DOM', async () => {
+    const setCalls: Array<{ entityId: string; centralId: string }> = [];
+    const clearCalls: string[] = [];
+    const store = {
+      sqliteListMappingsByCentralIds: async () => [
+        { projectEntityId: 'person-p1', centralId: 'person-old', label: '南齊書' },
+        { projectEntityId: 'person-p2', centralId: 'person-gone', label: 'Gone' },
+      ],
+      sqliteSetCentralMapping: async (entityId: string, _user: string, centralId: string) => {
+        setCalls.push({ entityId, centralId });
+        return true;
+      },
+      sqliteClearCentralMapping: async (entityId: string) => {
+        clearCalls.push(entityId);
+        return true;
+      },
+    } as unknown as EntityStore;
+
+    const result = await applyCentralRemapToPedbSqlite(
+      store,
+      { 'person-old': 'person-new', 'person-gone': null },
+      USER,
+    );
+
+    expect(result.repointed).toEqual([
+      { id: 'person-p1', name: '南齊書', from: 'person-old', to: 'person-new' },
+    ]);
+    expect(result.cleared).toEqual([
+      { id: 'person-p2', name: 'Gone', from: 'person-gone', to: null },
+    ]);
+    expect(setCalls).toEqual([{ entityId: 'person-p1', centralId: 'person-new' }]);
+    expect(clearCalls).toEqual(['person-p2']);
+  });
+
+  it('is a no-op with an empty remap', async () => {
+    const store = {
+      sqliteListMappingsByCentralIds: async () => {
+        throw new Error('should not list');
+      },
+    } as unknown as EntityStore;
+
+    await expect(applyCentralRemapToPedbSqlite(store, {}, USER)).resolves.toEqual({
+      repointed: [],
+      cleared: [],
+    });
   });
 });

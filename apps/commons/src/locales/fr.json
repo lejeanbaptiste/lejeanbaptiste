@@ -580,7 +580,7 @@
           "xpath_placeholder": "TEI/text/body//p"
         },
         "database": {
-          "search_placeholder": "Recherche (regex) — nom, id, description",
+          "search_placeholder": "Recherche (regex) — nom, romanisation, clé projet",
           "clear_search": "Effacer la recherche",
           "reload_entities": "Recharger les entités",
           "origin_user": "Utilisateur",
@@ -620,6 +620,10 @@
           "origins": "Origine",
           "copy_id": "Copier l’identifiant",
           "id_copied": "Identifiant copié",
+          "project_key": "Projet",
+          "central_key": "Centrale",
+          "no_key": "(aucune)",
+          "no_project_key": "Cette entité n’existe que dans la base centrale — elle n’a pas de clé projet dans le corpus.",
           "edit_dates": "Modifier les dates",
           "edit_values": "Modifier la nationalité et le lieu d’origine",
           "birth": "Naissance",

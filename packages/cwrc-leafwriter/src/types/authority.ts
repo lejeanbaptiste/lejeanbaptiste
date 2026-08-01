@@ -126,6 +126,12 @@ export interface EntityLookupDialogProps {
   onClose: (response?: EntityLink) => void;
   query: string;
   type: NamedEntityType;
+  /**
+   * When set (database-panel "link authority" flow), selecting an authority
+   * only returns the URI for attachment — it must not mint or re-link a
+   * different project entity.
+   */
+  attachToEntityId?: string;
 }
 
 export interface EntryLink {
@@ -152,4 +158,9 @@ export interface EntityLink {
   key?: string;
   /** True when the resolution minted a new entity in entities.xml. */
   wasCreated?: boolean;
+  /**
+   * Additional authority URIs checked alongside the primary (multi-select).
+   * Used when attaching several authorities to one entity in one confirm.
+   */
+  extraUris?: string[];
 }

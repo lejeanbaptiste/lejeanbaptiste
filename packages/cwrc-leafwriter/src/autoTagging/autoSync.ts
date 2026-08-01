@@ -15,9 +15,10 @@ import {
   type DesktopEntityStoreGlobals,
 } from './entityStore';
 import { promoteToCentral } from './promote';
+import { promoteToCentralSqlite, propagateTombstonesToSqlite } from './sqliteBridgeOps';
 import { readOrMintUserStableId } from './userStableId';
 import { findEntity } from './entities';
-import { getCentralId } from './concordance';
+import { getCentralId, setCentralMapping } from './concordance';
 import { propagateEntityTombstones } from './entityOps';
 
 /**
@@ -79,9 +80,38 @@ export async function autoSyncEntitiesToCentral(pedbDoc: Document, pedbIds: stri
     if (!api) return;
     const centralFolder = project.entityDbFolder ?? null;
     const centralStore = centralEntityStoreFromDesktop(centralFolder);
-    if (!centralStore) return;
+    const projectStore = entityStoreFromDesktop();
+    if (!centralStore || !projectStore) return;
 
     const { id: userStableId } = await readOrMintUserStableId(api, centralFolder);
+
+    if (
+      (await projectStore.hasSqliteDatabase()) &&
+      (await centralStore.hasSqliteDatabase()) &&
+      window.electronAPI?.entitySqliteCreatePopulated
+    ) {
+      for (const pedbId of pedbIds) {
+        const result = await promoteToCentralSqlite(
+          projectStore,
+          centralStore,
+          pedbId,
+          userStableId,
+        );
+        if (!result) continue;
+        // Keep the caller's in-memory PEDB doc in sync: they typically
+        // saveEntities(pedbDoc) after this, which re-imports XML into SQLite.
+        const pedbItem = findEntity(pedbDoc, pedbId);
+        if (pedbItem) setCentralMapping(pedbItem, userStableId, result.centralId);
+        await propagateTombstonesToSqlite(
+          projectStore,
+          pedbId,
+          centralStore,
+          result.centralId,
+        );
+      }
+      return;
+    }
+
     const cedbDoc = await centralStore.loadEntities();
     for (const pedbId of pedbIds) {
       promoteToCentral(pedbDoc, pedbId, cedbDoc, userStableId);

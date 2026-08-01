@@ -57,6 +57,70 @@ function datesFromNote(note: Element): { startYear?: number; endYear?: number } 
   return meta;
 }
 
+export interface EntityDatabaseCandidateRecord {
+  id: string;
+  kind: EntityKind;
+  names: { text: string; type?: string }[];
+  description?: string;
+  startYear?: number;
+  endYear?: number;
+  nobleTitles: {
+    fief?: string;
+    roleName?: string;
+    posthumousName?: string;
+    dynasty?: string;
+  }[];
+}
+
+/** Generate tag-bomb candidates directly from typed SQLite rows. */
+export function candidatesFromEntityDatabaseRecords(
+  records: readonly EntityDatabaseCandidateRecord[],
+  source: 'PEDB' | 'CEDB',
+  policy?: NameTypeTaggingPolicy,
+): AuthorityCandidate[] {
+  const namePolicy = policy ?? resolveNameTypeTaggingPolicy(undefined, null);
+  return records.flatMap((record) => {
+    const searchStrings = record.names.map((name) => name.text).filter(Boolean);
+    if (record.kind === 'person') {
+      for (const title of record.nobleTitles) {
+        const expanded = buildNobleTitleSearchStrings({
+          fief: title.fief,
+          roleName: title.roleName,
+          posthumousName: title.posthumousName,
+          dynasty: title.dynasty,
+          personNames: record.names.map((name) => name.text),
+        });
+        searchStrings.push(...expanded.titleSearchStrings, ...expanded.wrapperSearchStrings);
+      }
+    }
+    const uniqueSearchStrings = [...new Set(searchStrings)];
+    const filteredSearchStrings = phase1SearchStringsFromCandidate(
+      { searchStrings: uniqueSearchStrings, names: record.names },
+      namePolicy,
+    );
+    if (filteredSearchStrings.length === 0) return [];
+    return [
+      {
+        source,
+        authorityId: record.id,
+        kind: record.kind,
+        primaryName: filteredSearchStrings[0]!,
+        searchStrings: filteredSearchStrings,
+        ...(record.kind === 'person' && record.names.length > 0 ? { names: record.names } : {}),
+        ...(record.description || record.startYear != null || record.endYear != null
+          ? {
+              metadata: {
+                ...(record.description ? { description: record.description } : {}),
+                ...(record.startYear != null ? { startYear: record.startYear } : {}),
+                ...(record.endYear != null ? { endYear: record.endYear } : {}),
+              },
+            }
+          : {}),
+      },
+    ];
+  });
+}
+
 /**
  * Bulk-convert one entity kind's items in a PEDB/CEDB `entities.xml` document
  * into {@link AuthorityCandidate}s, so the project/central databases can feed

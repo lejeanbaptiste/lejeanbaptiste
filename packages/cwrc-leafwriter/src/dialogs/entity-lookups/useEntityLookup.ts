@@ -24,6 +24,7 @@ import type { AuthorityLookupResult, EntityLink, NamedEntityType } from '../../t
 import { log } from '../../utilities';
 import {
   authoritiesAtom,
+  attachToEntityIdAtom,
   checkedEntriesAtom,
   entityTypeAtom,
   isUriValidAtom,
@@ -37,6 +38,7 @@ import {
   selectedAtom,
 } from './store';
 import type { EntryLink } from '../../types/authority';
+import { parseAuthorityUri } from '../../autoTagging/lookupResolve';
 
 /** Installed (non-virtual) authority packs, for concordance expansion. */
 const installedPackIds = async (): Promise<AuthorityPackId[]> => {
@@ -107,6 +109,7 @@ export const useEntityLookup = () => {
   const [selected, setSelected] = useAtom(selectedAtom);
   const [checkedEntries, setCheckedEntries] = useAtom(checkedEntriesAtom);
   const setResolution = useSetAtom(resolutionAtom);
+  const attachToEntityId = useAtomValue(attachToEntityIdAtom);
 
   const buildLink = (
     over: Partial<EntityLink> & Pick<EntityLink, 'name' | 'uri' | 'repository'>,
@@ -116,7 +119,7 @@ export const useEntityLookup = () => {
     query,
     type: entityType,
     ...over,
-  });
+  } as EntityLink);
 
   /**
    * When one or more candidates are checked, the primary is whichever one is
@@ -185,6 +188,22 @@ export const useEntityLookup = () => {
         uri: input.uri,
         repository: active ? active.authority : 'custom',
       });
+
+    // Database-panel "attach authority to this entity" mode: never mint or
+    // re-link a different entity — just hand the URI(s) back for attachment.
+    if (attachToEntityId) {
+      const parsed = parseAuthorityUri(input.uri);
+      closeWith(
+        buildLink({
+          name: input.label,
+          uri: input.uri,
+          repository: parsed?.idnoType ?? (active ? String(active.authority) : 'custom'),
+          key: attachToEntityId,
+          ...(extraUris.length > 0 ? { extraUris } : {}),
+        }),
+      );
+      return;
+    }
 
     // Picking a project-entity result links directly — no resolution needed.
     if (active?.internal) {

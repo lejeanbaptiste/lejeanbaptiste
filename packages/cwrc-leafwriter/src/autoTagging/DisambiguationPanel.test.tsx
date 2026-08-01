@@ -128,6 +128,10 @@ function createSession() {
     disambiguationAiCache: null,
     getDocument: jest.fn().mockResolvedValue(entitiesDoc),
     candidateSearchCentralContext: jest.fn().mockResolvedValue(null),
+    disambiguationDbSources: jest.fn().mockResolvedValue({
+      local: [],
+      entitiesDoc,
+    }),
   } as any;
 }
 

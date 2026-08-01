@@ -6,6 +6,7 @@ import { synchronizeMirroredProject } from './synchronizedMirror';
 const fakeStore = (doc: Document) => {
   const files = new Map<string, string>();
   return {
+    hasSqliteDatabase: async () => false,
     loadEntities: async () => doc,
     saveEntities: async (next: Document) => {
       doc = next;

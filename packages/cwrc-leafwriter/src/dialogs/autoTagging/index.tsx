@@ -28,6 +28,7 @@ import {
   AutoTaggingSession,
   aiApiSettingsFromDesktop,
   candidatesFromEntityDatabase,
+  candidatesFromEntityDatabaseRecords,
   centralEntityStoreFromDesktop,
   countAuthorityPackStrings,
   countCandidatesUniqueStrings,
@@ -82,6 +83,7 @@ import {
   consumeTagBombQueueEntry,
   clearTagBombQueue,
 } from '../../autoTagging';
+import type { EntityDatabaseCandidateRecord } from '../../autoTagging/ownDatabaseCandidates';
 import {
   isChineseLanguageCode,
   isJapaneseLanguageCode,
@@ -280,12 +282,17 @@ const countOwnDatabasePackStrings = async (
   if (pedbIds.length > 0) {
     const store = entityStoreFromDesktop();
     if (store) {
-      const doc = await store.loadEntities();
       for (const id of pedbIds) {
         const kind = OWN_DATABASE_KIND_BY_PACK_ID[id];
         if (!kind) continue;
+        const records = await store.sqliteCandidateRecords(kind);
         out[id] = countCandidatesUniqueStrings(
-          candidatesFromEntityDatabase(doc, kind, 'PEDB'),
+          records
+            ? candidatesFromEntityDatabaseRecords(
+                records as EntityDatabaseCandidateRecord[],
+                'PEDB',
+              )
+            : candidatesFromEntityDatabase(await store.loadEntities(), kind, 'PEDB'),
           range,
         );
       }
@@ -296,12 +303,17 @@ const countOwnDatabasePackStrings = async (
   if (cedbIds.length > 0) {
     const store = centralEntityStoreFromDesktop(null);
     if (store) {
-      const doc = await store.loadEntities();
       for (const id of cedbIds) {
         const kind = OWN_DATABASE_KIND_BY_PACK_ID[id];
         if (!kind) continue;
+        const records = await store.sqliteCandidateRecords(kind);
         out[id] = countCandidatesUniqueStrings(
-          candidatesFromEntityDatabase(doc, kind, 'CEDB'),
+          records
+            ? candidatesFromEntityDatabaseRecords(
+                records as EntityDatabaseCandidateRecord[],
+                'CEDB',
+              )
+            : candidatesFromEntityDatabase(await store.loadEntities(), kind, 'CEDB'),
           range,
         );
       }

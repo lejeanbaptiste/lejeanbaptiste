@@ -610,7 +610,7 @@
           "xpath_placeholder": "TEI/text/body//p"
         },
         "database": {
-          "search_placeholder": "Search (regex) — name, id, description",
+          "search_placeholder": "Search (regex) — name, romanization, project key",
           "clear_search": "Clear search",
           "reload_entities": "Reload entities",
           "origin_user": "User",
@@ -650,6 +650,10 @@
           "origins": "Origin",
           "copy_id": "Copy ID",
           "id_copied": "ID copied",
+          "project_key": "Project",
+          "central_key": "Central",
+          "no_key": "(none)",
+          "no_project_key": "This entity is central-only — it has no project key in the corpus.",
           "edit_dates": "Edit dates",
           "edit_values": "Edit nationality and place of origin",
           "birth": "Birth",

@@ -1,6 +1,6 @@
 import type { DecisionRecord } from './decisionLog';
 import { parseLog } from './decisionLog';
-import { addEntity, findEntity, getDatabaseId } from './entities';
+import { addEntity, createEntitiesScaffold, findEntity, getDatabaseId } from './entities';
 import { EntityStore, type EntityFileApi } from './entityStore';
 import { resolveEntityStorePaths } from './entityStoreResolve';
 
@@ -114,6 +114,26 @@ describe('EntityStore', () => {
 
     const reloaded = await store.loadEntities();
     expect(findEntity(reloaded, id)?.getElementsByTagName('persName')[0]?.textContent).toBe('張衡');
+  });
+
+  it('uses the sibling SQLite database as the runtime authority when present', async () => {
+    const fs = new FakeFs();
+    const xml = createEntitiesScaffold('sqlite-test');
+    fs.files.set('/proj/entities.xml', xml);
+    fs.files.set('/proj/entities.sqlite', 'sqlite-placeholder');
+    let importedXml: string | null = null;
+    fs.entitySqliteExportXml = async () => xml;
+    fs.entitySqliteImportXml = async (_databasePath, content) => {
+      importedXml = content;
+    };
+    const store = EntityStore.fromPaths(fs, projectPaths());
+
+    const doc = await store.loadEntities();
+    addEntity(doc, 'person', { name: 'SQLite 人物' });
+    await store.saveEntities(doc);
+
+    expect(importedXml).toContain('SQLite 人物');
+    expect(fs.files.get('/proj/entities.xml')).toBe(xml);
   });
 
   it('appends decision records under .ljb/', async () => {

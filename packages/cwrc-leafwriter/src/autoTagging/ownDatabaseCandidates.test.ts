@@ -1,9 +1,39 @@
 import { addEntity, createEntitiesScaffold, parseEntities } from './entities';
 import { setNameType, setUserWorkDate } from './entityOps';
-import { candidatesFromEntityDatabase } from './ownDatabaseCandidates';
+import {
+  candidatesFromEntityDatabase,
+  candidatesFromEntityDatabaseRecords,
+} from './ownDatabaseCandidates';
 import { resolveNameTypeTaggingPolicy } from './nameTypeTaggingPolicy';
 
 describe('candidatesFromEntityDatabase', () => {
+  it('generates the same candidate shape directly from SQLite records', () => {
+    const [candidate] = candidatesFromEntityDatabaseRecords(
+      [
+        {
+          id: 'person-sqlite-1',
+          kind: 'person',
+          names: [
+            { text: '王安石', type: 'primary' },
+            { text: '介甫', type: 'courtesy' },
+          ],
+          description: 'Song dynasty statesman',
+          startYear: 1021,
+          endYear: 1086,
+          nobleTitles: [{ fief: '荊國', roleName: '公', dynasty: '宋' }],
+        },
+      ],
+      'PEDB',
+    );
+    expect(candidate).toMatchObject({
+      authorityId: 'person-sqlite-1',
+      primaryName: '王安石',
+      source: 'PEDB',
+      metadata: { description: 'Song dynasty statesman', startYear: 1021, endYear: 1086 },
+    });
+    expect(candidate!.searchStrings).toEqual(expect.arrayContaining(['王安石', '宋荊國公王安石']));
+  });
+
   it('recovers search strings, dates, and description for a person', () => {
     const doc = parseEntities(createEntitiesScaffold());
     addEntity(doc, 'person', {

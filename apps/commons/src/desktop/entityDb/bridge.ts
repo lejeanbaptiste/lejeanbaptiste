@@ -1,9 +1,11 @@
 import {
   buildBridgeInbox,
+  buildBridgeInboxFromFields,
   type BridgeInboxReport,
 } from '../../../../../packages/cwrc-leafwriter/src/autoTagging/bridgeInbox';
 import {
   applyCentralRemapToPedb,
+  applyCentralRemapToPedbSqlite,
   pendingCentralRemap,
 } from '../../../../../packages/cwrc-leafwriter/src/autoTagging/centralOrderSync';
 import {
@@ -24,6 +26,12 @@ import {
   readFields,
   type EntityFields,
 } from '../../../../../packages/cwrc-leafwriter/src/autoTagging/reconcile';
+import {
+  entityFieldsFromSqlitePanel,
+  promoteToCentralSqlite,
+  syncEntityPairSqlite,
+} from '../../../../../packages/cwrc-leafwriter/src/autoTagging/sqliteBridgeOps';
+import type { SqlitePanelSummaryLike } from '../../../../../packages/cwrc-leafwriter/src/autoTagging/sqliteSummary';
 import { readOrMintUserStableId } from '../../../../../packages/cwrc-leafwriter/src/autoTagging/userStableId';
 import {
   ENTITY_KINDS,
@@ -32,11 +40,23 @@ import {
   getDatabaseId,
   type EntityKind,
 } from '../../../../../packages/cwrc-leafwriter/src/autoTagging/entities';
+import { applyKeyRemapAcrossProjects } from './applyKeyRemap';
 
 /** Every entity element in a document, across all kinds. */
 const allEntityElements = (doc: Document): Element[] =>
   (Object.keys(ENTITY_KINDS) as EntityKind[]).flatMap((kind) => entityElements(doc, kind));
-import { applyKeyRemapAcrossProjects } from './applyKeyRemap';
+
+const entityIdsFromDoc = (doc: Document): Set<string> =>
+  new Set(
+    allEntityElements(doc)
+      .map((item) => item.getAttribute('xml:id'))
+      .filter((id): id is string => Boolean(id)),
+  );
+
+type PanelSnapshot = SqlitePanelSummaryLike & { updatedAt?: string };
+
+const asPanelSnapshots = (rows: unknown[] | null): PanelSnapshot[] =>
+  (rows ?? []) as PanelSnapshot[];
 
 /**
  * Desktop wiring for the Bridge (Link/Promote/Sync between the project database
@@ -87,6 +107,35 @@ export async function loadBridgeContext(overrideProjectRoot?: string): Promise<B
 
 /** Compute the current inbox from disk. */
 export async function computeBridgeInbox(ctx: BridgeContext): Promise<BridgeInboxReport> {
+  if (
+    (await ctx.projectStore.hasSqliteDatabase()) &&
+    (await ctx.centralStore.hasSqliteDatabase()) &&
+    window.electronAPI?.entitySqliteListPanelSummaries &&
+    window.electronAPI?.entitySqliteGetCentralId
+  ) {
+    const [pedbRows, cedbRows] = await Promise.all([
+      ctx.projectStore.sqlitePanelSummaries(),
+      ctx.centralStore.sqlitePanelSummaries(),
+    ]);
+    const cedbFieldsById = new Map<string, EntityFields>();
+    for (const row of asPanelSnapshots(cedbRows)) {
+      cedbFieldsById.set(row.id, entityFieldsFromSqlitePanel(row));
+    }
+    const pedbFieldRows = [];
+    for (const row of asPanelSnapshots(pedbRows)) {
+      const centralId = await ctx.projectStore.sqliteGetCentralId(row.id, ctx.userStableId);
+      const activeName = row.names.find((name) => name.status === 'active');
+      pedbFieldRows.push({
+        id: row.id,
+        name: activeName?.text ?? row.id,
+        kind: row.kind,
+        centralId,
+        fields: entityFieldsFromSqlitePanel(row),
+      });
+    }
+    return buildBridgeInboxFromFields(pedbFieldRows, cedbFieldsById);
+  }
+
   const [pedbDoc, cedbDoc] = await Promise.all([
     ctx.projectStore.loadEntities(),
     ctx.centralStore.loadEntities(),
@@ -117,24 +166,40 @@ export async function applyPendingCentralOrders(
 ): Promise<CentralOrderSyncSummary> {
   const none: CentralOrderSyncSummary = { ordersApplied: 0, repointed: 0, cleared: 0 };
 
-  const [pedbDoc, cedbDoc, cedbOrders, applied] = await Promise.all([
-    ctx.projectStore.loadEntities(),
-    ctx.centralStore.loadEntities(),
+  const [cedbOrders, applied] = await Promise.all([
     ctx.centralStore.readEntityOrders(),
     ctx.projectStore.readAppliedOrderIds(),
   ]);
-  const cedbDbId = getDatabaseId(cedbDoc);
+
+  const useSqlite =
+    (await ctx.projectStore.hasSqliteDatabase()) &&
+    Boolean(window.electronAPI?.entitySqliteClearCentralMapping);
+
+  let cedbDbId: string | null = null;
+  if (useSqlite) {
+    cedbDbId = await ctx.centralStore.sqliteDatabaseId();
+  } else {
+    const cedbDoc = await ctx.centralStore.loadEntities();
+    cedbDbId = getDatabaseId(cedbDoc);
+  }
   if (!cedbDbId) return none;
 
   const { pending, remap } = pendingCentralRemap(cedbOrders, cedbDbId, applied);
   if (pending.length === 0) return none;
 
-  const result = applyCentralRemapToPedb(pedbDoc, remap, ctx.userStableId);
+  let result;
+  if (useSqlite) {
+    result = await applyCentralRemapToPedbSqlite(ctx.projectStore, remap, ctx.userStableId);
+  } else {
+    const pedbDoc = await ctx.projectStore.loadEntities();
+    result = applyCentralRemapToPedb(pedbDoc, remap, ctx.userStableId);
+    if (result.repointed.length > 0 || result.cleared.length > 0) {
+      await ctx.projectStore.saveEntities(pedbDoc);
+    }
+  }
+
   for (const order of pending) applied.add(order.id);
   await ctx.projectStore.writeAppliedOrderIds(applied);
-  if (result.repointed.length > 0 || result.cleared.length > 0) {
-    await ctx.projectStore.saveEntities(pedbDoc);
-  }
 
   return {
     ordersApplied: pending.length,
@@ -146,6 +211,26 @@ export async function applyPendingCentralOrders(
 /** Promote the given project entity ids into the central database and link them. */
 export async function promoteEntities(ctx: BridgeContext, pedbIds: string[]): Promise<number> {
   if (pedbIds.length === 0) return 0;
+
+  if (
+    (await ctx.projectStore.hasSqliteDatabase()) &&
+    (await ctx.centralStore.hasSqliteDatabase()) &&
+    window.electronAPI?.entitySqliteCreatePopulated &&
+    window.electronAPI?.entitySqliteSetCentralMapping
+  ) {
+    let promoted = 0;
+    for (const id of pedbIds) {
+      const result = await promoteToCentralSqlite(
+        ctx.projectStore,
+        ctx.centralStore,
+        id,
+        ctx.userStableId,
+      );
+      if (result) promoted += 1;
+    }
+    return promoted;
+  }
+
   const pedbDoc = await ctx.projectStore.loadEntities();
   const cedbDoc = await ctx.centralStore.loadEntities();
   // Built once and kept current by promoteToCentral — without these, every
@@ -181,6 +266,25 @@ export async function syncEntities(
   pairs: { pedbId: string; centralId: string }[],
 ): Promise<{ synced: number }> {
   if (pairs.length === 0) return { synced: 0 };
+
+  if (
+    (await ctx.projectStore.hasSqliteDatabase()) &&
+    (await ctx.centralStore.hasSqliteDatabase()) &&
+    window.electronAPI?.entitySqliteAttachAuthority
+  ) {
+    let synced = 0;
+    for (const { pedbId, centralId } of pairs) {
+      const result = await syncEntityPairSqlite(
+        ctx.projectStore,
+        ctx.centralStore,
+        pedbId,
+        centralId,
+      );
+      if (result) synced += 1;
+    }
+    return { synced };
+  }
+
   const pedbDoc = await ctx.projectStore.loadEntities();
   const cedbDoc = await ctx.centralStore.loadEntities();
   let synced = 0;
@@ -226,6 +330,71 @@ export async function computeMergeDocket(
   /** Pass an already-loaded central doc (e.g. from a sibling load) to skip re-parsing it. */
   preloadedDoc?: Document,
 ): Promise<MergeDocketEntry[]> {
+  const useSqlite =
+    !preloadedDoc &&
+    (await centralStore.hasSqliteDatabase()) &&
+    Boolean(window.electronAPI?.entitySqliteListPanelSummaries);
+
+  if (useSqlite) {
+    const [suggestions, resolutions, cedbOrders, cedbDbId, summaries] = await Promise.all([
+      centralStore.readMergeSuggestions(),
+      centralStore.readMergeSuggestionResolutions(),
+      centralStore.readEntityOrders(),
+      centralStore.sqliteDatabaseId(),
+      centralStore.sqlitePanelSummaries(),
+    ]);
+    if (!cedbDbId) return [];
+
+    const snapshots = asPanelSnapshots(summaries);
+    const byId = new Map(snapshots.map((row) => [row.id, row]));
+    const existingIds = new Set(byId.keys());
+    const entries: MergeDocketEntry[] = [];
+
+    const pendingMerges = pendingMergeSuggestions(
+      suggestions,
+      resolutions,
+      cedbOrders,
+      cedbDbId,
+      existingIds,
+    );
+    for (const item of pendingMerges) {
+      const [aId, bId] = item.centralIds;
+      const aRow = byId.get(aId);
+      const bRow = byId.get(bId);
+      if (!aRow || !bRow) continue;
+      entries.push({
+        kind: 'merge',
+        suggestionId: item.id,
+        when: item.when,
+        sides: [
+          { id: aId, kind: aRow.kind, fields: entityFieldsFromSqlitePanel(aRow) },
+          { id: bId, kind: bRow.kind, fields: entityFieldsFromSqlitePanel(bRow) },
+        ],
+      });
+    }
+
+    const pendingDeletes = pendingDeleteSuggestions(
+      suggestions,
+      resolutions,
+      cedbOrders,
+      cedbDbId,
+      existingIds,
+    );
+    for (const item of pendingDeletes) {
+      const row = byId.get(item.centralId);
+      if (!row) continue;
+      entries.push({
+        kind: 'delete',
+        suggestionId: item.id,
+        when: item.when,
+        side: { id: item.centralId, kind: row.kind, fields: entityFieldsFromSqlitePanel(row) },
+      });
+    }
+
+    entries.sort((a, b) => a.when.localeCompare(b.when));
+    return entries;
+  }
+
   const [cedbDoc, suggestions, resolutions, cedbOrders] = await Promise.all([
     preloadedDoc ?? centralStore.loadEntities(),
     centralStore.readMergeSuggestions(),
@@ -235,16 +404,23 @@ export async function computeMergeDocket(
   const cedbDbId = getDatabaseId(cedbDoc);
   if (!cedbDbId) return [];
 
+  const existingIds = entityIdsFromDoc(cedbDoc);
   const entries: MergeDocketEntry[] = [];
 
-  const pendingMerges = pendingMergeSuggestions(suggestions, resolutions, cedbOrders, cedbDbId, cedbDoc);
+  const pendingMerges = pendingMergeSuggestions(
+    suggestions,
+    resolutions,
+    cedbOrders,
+    cedbDbId,
+    existingIds,
+  );
   for (const item of pendingMerges) {
     const [aId, bId] = item.centralIds;
     const aItem = findEntity(cedbDoc, aId);
     const bItem = findEntity(cedbDoc, bId);
     const aKind = aItem && kindOfElement(aItem);
     const bKind = bItem && kindOfElement(bItem);
-    if (!aItem || !bItem || !aKind || !bKind) continue; // shouldn't happen; already checked by pendingMergeSuggestions
+    if (!aItem || !bItem || !aKind || !bKind) continue;
     entries.push({
       kind: 'merge',
       suggestionId: item.id,
@@ -256,11 +432,17 @@ export async function computeMergeDocket(
     });
   }
 
-  const pendingDeletes = pendingDeleteSuggestions(suggestions, resolutions, cedbOrders, cedbDbId, cedbDoc);
+  const pendingDeletes = pendingDeleteSuggestions(
+    suggestions,
+    resolutions,
+    cedbOrders,
+    cedbDbId,
+    existingIds,
+  );
   for (const item of pendingDeletes) {
     const centralItem = findEntity(cedbDoc, item.centralId);
     const centralKind = centralItem && kindOfElement(centralItem);
-    if (!centralItem || !centralKind) continue; // shouldn't happen; already checked by pendingDeleteSuggestions
+    if (!centralItem || !centralKind) continue;
     entries.push({
       kind: 'delete',
       suggestionId: item.id,
@@ -296,6 +478,31 @@ export async function resolveMergeSuggestion(
 ): Promise<void> {
   if (decision.action === 'ignore') {
     await centralStore.recordMergeSuggestionResolution(suggestionId, 'ignored');
+    return;
+  }
+
+  if (
+    (await centralStore.hasSqliteDatabase()) &&
+    window.electronAPI?.entitySqliteSoftDelete &&
+    window.electronAPI?.entitySqliteMerge
+  ) {
+    const dbId = (await centralStore.sqliteDatabaseId()) ?? undefined;
+    if (decision.action === 'delete') {
+      await centralStore.sqliteSoftDelete(decision.centralId);
+      const remap = { [decision.centralId]: null };
+      await centralStore.recordEntityOrder(remap, dbId);
+      await applyKeyRemapAcrossProjects(centralStore, remap).catch(() => undefined);
+      await centralStore.recordMergeSuggestionResolution(suggestionId, 'deleted');
+      return;
+    }
+
+    const mergeResult = await centralStore.sqliteMerge(decision.keepId, [decision.dropId]);
+    const remap = mergeResult.remap;
+    if (Object.keys(remap).length > 0) {
+      await centralStore.recordEntityOrder(remap, dbId);
+      await applyKeyRemapAcrossProjects(centralStore, remap).catch(() => undefined);
+    }
+    await centralStore.recordMergeSuggestionResolution(suggestionId, 'merged');
     return;
   }
 

@@ -39,12 +39,10 @@ import { CbdbIcon, DilaIcon, InitialsIcon, NorbertIcon } from '../icons/custom/A
 import { WikipediaIcon } from '../icons/custom/Wikipedia';
 import { openExternalUrl } from '../utilities/DOM';
 import { cachedPackReader } from '../services/authority-pack-lookup';
-import { linkedCentralIds } from './bridgeInbox';
 import {
   buildDisambiguationCandidates,
   candidateLinks,
   candidatePassesYearFilter,
-  candidatesFromEntityFile,
   collapseCrossAuthorityCandidates,
   enrichCandidateCrossRefs,
   extractWikidataId,
@@ -585,14 +583,20 @@ export const DisambiguationPanel = ({
     async (
       targetGroup: MentionGroup,
       cache: AuthorityCache,
-      entitiesDoc: Document,
+      dbSources: {
+        local: DisambiguationCandidate[];
+        central?: {
+          userStableId: string;
+          candidates: DisambiguationCandidate[];
+        };
+        entitiesDoc: Document | null;
+      },
       retryWhenPending = false,
     ) => {
       const groupKey = mentionGroupKey(targetGroup);
       try {
-        const central = await session.candidateSearchCentralContext();
         const rows = await buildDisambiguationCandidates(
-          entitiesDoc,
+          dbSources.entitiesDoc,
           targetGroup.tag,
           targetGroup.surface,
           cache,
@@ -607,12 +611,13 @@ export const DisambiguationPanel = ({
           retryWhenPending
             ? () => {
                 if (currentKeyRef.current !== groupKey) return;
-                void refreshDilaDates(targetGroup, cache, entitiesDoc, false);
+                void refreshDilaDates(targetGroup, cache, dbSources, false);
               }
             : undefined,
           projectLang,
-          central ?? undefined,
+          dbSources.central,
           placeProximityKm,
+          dbSources.local,
         );
         if (currentKeyRef.current !== groupKey) return;
         setCandidates(rows);
@@ -652,30 +657,13 @@ export const DisambiguationPanel = ({
           : session.getPendingCandidates(targetGroup.tag, targetGroup.surface);
         if (cached && !forceRefresh) {
           // The cache only exists to avoid re-querying external authorities;
-          // the project's own entity file is cheap to re-read, so always
-          // merge in fresh local matches (e.g. an entity added after this
-          // group was last cached, possibly from another view entirely).
-          const entitiesDoc = await session.loadEntities();
-          const freshLocal = candidatesFromEntityFile(
-            entitiesDoc,
+          // the project's own entity database is cheap to re-read (SQLite name
+          // search, or XML fallback), so always merge in fresh local matches.
+          const dbSources = await session.disambiguationDbSources(
             targetGroup.tag,
             targetGroup.surface,
           );
-          const central = await session.candidateSearchCentralContext();
-          const freshCentral = central
-            ? candidatesFromEntityFile(
-                central.doc,
-                targetGroup.tag,
-                targetGroup.surface,
-                'cedb',
-              ).filter(
-                (candidate) =>
-                  !linkedCentralIds(entitiesDoc, central.userStableId).has(
-                    candidate.centralEntityId!,
-                  ),
-              )
-            : [];
-          const rows = mergeCandidates([freshLocal, freshCentral, cached], {
+          const rows = mergeCandidates([dbSources.local, dbSources.central?.candidates ?? [], cached], {
             tag: targetGroup.tag,
             placeProximityKm,
           });
@@ -697,19 +685,21 @@ export const DisambiguationPanel = ({
           if (needsDilaDates && session.cache) {
             const cacheForRefresh = session.cache;
             void (async () => {
-              void refreshDilaDates(targetGroup, cacheForRefresh, entitiesDoc, true);
+              void refreshDilaDates(targetGroup, cacheForRefresh, dbSources, true);
             })();
           }
           const inst = targetInstance ?? controllerRef.current?.currentInstance();
           if (inst) await applyAiRank(targetGroup, rows, inst);
           return;
         }
-        const entitiesDoc = session.getEntitiesDocument() ?? (await session.loadEntities());
         const cache = session.cache;
         if (!cache) throw new Error('Authority cache is unavailable.');
-        const central = await session.candidateSearchCentralContext();
+        const dbSources = await session.disambiguationDbSources(
+          targetGroup.tag,
+          targetGroup.surface,
+        );
         const rows = await buildDisambiguationCandidates(
-          entitiesDoc,
+          dbSources.entitiesDoc,
           targetGroup.tag,
           targetGroup.surface,
           cache,
@@ -720,11 +710,12 @@ export const DisambiguationPanel = ({
           undefined,
           () => {
             if (currentKeyRef.current !== groupKey) return;
-            void refreshDilaDates(targetGroup, cache, entitiesDoc);
+            void refreshDilaDates(targetGroup, cache, dbSources);
           },
           projectLang,
-          central ?? undefined,
+          dbSources.central,
           placeProximityKm,
+          dbSources.local,
         );
         if (!cacheDisabled) {
           session.rememberPendingCandidates(targetGroup.tag, targetGroup.surface, rows);

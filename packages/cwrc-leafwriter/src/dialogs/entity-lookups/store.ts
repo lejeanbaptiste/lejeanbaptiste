@@ -81,3 +81,7 @@ export const onCloseAtom = atom<
   ((response?: EntityLink | Pick<EntityLink, 'query' | 'type'>) => void) | undefined
 >(undefined);
 onCloseAtom.debugLabel = 'onClose.Atom';
+
+/** When set, lookup returns a URI for attachment instead of minting/resolving. */
+export const attachToEntityIdAtom = atom<string | null>(null);
+attachToEntityIdAtom.debugLabel = 'attachToEntityId.Atom';

@@ -19,9 +19,11 @@ import {
   collectTypedNamesForCandidate,
   candidatesFromEntityFile,
   extractWikidataId,
+  loadSqliteDisambiguationCandidates,
   resolveCandidateForPedb,
   resolveEntityInDocument,
 } from './disambiguationCandidates';
+import { linkedCentralIds } from './bridgeInbox';
 import {
   parsePendingCache,
   serializePendingCache,
@@ -52,7 +54,11 @@ import {
   type EntityStore,
 } from './entityStore';
 import { readOrMintUserStableId } from './userStableId';
-import { candidatesFromEntityDatabase } from './ownDatabaseCandidates';
+import {
+  candidatesFromEntityDatabase,
+  candidatesFromEntityDatabaseRecords,
+  type EntityDatabaseCandidateRecord,
+} from './ownDatabaseCandidates';
 import {
   nameTypeTaggingPolicyFromSettings,
   readPersistedAuthoritySettings,
@@ -466,11 +472,130 @@ export class AutoTaggingSession {
   }
 
   /** The `central` argument buildDisambiguationCandidates expects, or null when syncToCentral is off. */
-  async candidateSearchCentralContext(): Promise<{ doc: Document; userStableId: string } | null> {
+  async candidateSearchCentralContext(): Promise<{
+    doc?: Document;
+    userStableId: string;
+  } | null> {
     const central = await this.centralContext();
     if (!central) return null;
+    // Migrated CEDB: skip full export. Callers that need surface matches should
+    // use `disambiguationDbSources` instead of scanning `doc`.
+    if (await central.store.hasSqliteDatabase()) {
+      return { userStableId: central.userStableId };
+    }
     const doc = await central.store.loadEntities();
     return { doc, userStableId: central.userStableId };
+  }
+
+  /**
+   * PEDB/CEDB surface matches for disambiguation without a full XML export when
+   * the sibling SQLite database is present.
+   */
+  async disambiguationDbSources(
+    tag: string,
+    surface: string,
+  ): Promise<{
+    local: DisambiguationCandidate[];
+    central?: {
+      userStableId: string;
+      candidates: DisambiguationCandidate[];
+    };
+    entitiesDoc: Document | null;
+  }> {
+    if (!this.store) {
+      return { local: [], entitiesDoc: null };
+    }
+
+    const sqliteLocal = await loadSqliteDisambiguationCandidates(
+      this.store,
+      tag,
+      surface,
+      'pedb',
+    );
+    const central = await this.centralContext();
+
+    if (sqliteLocal != null) {
+      if (!central) {
+        return { local: sqliteLocal, entitiesDoc: this.getEntitiesDocument() };
+      }
+      const sqliteCentral = await loadSqliteDisambiguationCandidates(
+        central.store,
+        tag,
+        surface,
+        'cedb',
+      );
+      if (sqliteCentral != null) {
+        const linked =
+          (await this.store.sqliteListLinkedCentralIds(central.userStableId)) ?? [];
+        const linkedSet = new Set(linked);
+        return {
+          local: sqliteLocal,
+          central: {
+            userStableId: central.userStableId,
+            candidates: sqliteCentral.filter(
+              (candidate) =>
+                !candidate.centralEntityId || !linkedSet.has(candidate.centralEntityId),
+            ),
+          },
+          entitiesDoc: this.getEntitiesDocument(),
+        };
+      }
+      // PEDB is SQLite but CEDB is still XML — export only CEDB.
+      const centralDoc = await central.store.loadEntities();
+      const linked =
+        (await this.store.sqliteListLinkedCentralIds(central.userStableId)) ?? [];
+      const linkedSet = new Set(linked);
+      return {
+        local: sqliteLocal,
+        central: {
+          userStableId: central.userStableId,
+          candidates: candidatesFromEntityFile(centralDoc, tag, surface, 'cedb').filter(
+            (candidate) =>
+              !candidate.centralEntityId || !linkedSet.has(candidate.centralEntityId),
+          ),
+        },
+        entitiesDoc: this.getEntitiesDocument(),
+      };
+    }
+
+    const entitiesDoc = this.getEntitiesDocument() ?? (await this.loadEntities());
+    const local = candidatesFromEntityFile(entitiesDoc, tag, surface);
+    if (!central) {
+      return { local, entitiesDoc };
+    }
+    const sqliteCentral = await loadSqliteDisambiguationCandidates(
+      central.store,
+      tag,
+      surface,
+      'cedb',
+    );
+    if (sqliteCentral != null) {
+      const linked = linkedCentralIds(entitiesDoc, central.userStableId);
+      return {
+        local,
+        central: {
+          userStableId: central.userStableId,
+          candidates: sqliteCentral.filter(
+            (candidate) =>
+              !candidate.centralEntityId || !linked.has(candidate.centralEntityId),
+          ),
+        },
+        entitiesDoc,
+      };
+    }
+    const centralDoc = await central.store.loadEntities();
+    const linked = linkedCentralIds(entitiesDoc, central.userStableId);
+    return {
+      local,
+      central: {
+        userStableId: central.userStableId,
+        candidates: candidatesFromEntityFile(centralDoc, tag, surface, 'cedb').filter(
+          (candidate) =>
+            !candidate.centralEntityId || !linked.has(candidate.centralEntityId),
+        ),
+      },
+      entitiesDoc,
+    };
   }
 
   /** Project source language (BCP-47) from the desktop bridge; cached for the session. */
@@ -811,26 +936,48 @@ export class AutoTaggingSession {
       candidates: ReturnType<typeof candidatesFromEntityDatabase>;
     }[] = [];
     if (pedbIds.length > 0 && this.store) {
-      const pedbDoc = await this.store.loadEntities();
       for (const id of pedbIds) {
         const kind = OWN_DATABASE_KIND_BY_PACK_ID[id];
         if (!kind) continue;
+        const records = await this.store.sqliteCandidateRecords(kind);
         extraCandidates.push({
           groupLabel: id,
-          candidates: candidatesFromEntityDatabase(pedbDoc, kind, 'PEDB', nameTypePolicy),
+          candidates: records
+            ? candidatesFromEntityDatabaseRecords(
+                records as EntityDatabaseCandidateRecord[],
+                'PEDB',
+                nameTypePolicy,
+              )
+            : candidatesFromEntityDatabase(
+                await this.store.loadEntities(),
+                kind,
+                'PEDB',
+                nameTypePolicy,
+              ),
         });
       }
     }
     if (cedbIds.length > 0) {
       const centralStore = centralEntityStoreFromDesktop(null);
       if (centralStore) {
-        const cedbDoc = await centralStore.loadEntities();
         for (const id of cedbIds) {
           const kind = OWN_DATABASE_KIND_BY_PACK_ID[id];
           if (!kind) continue;
+          const records = await centralStore.sqliteCandidateRecords(kind);
           extraCandidates.push({
             groupLabel: id,
-            candidates: candidatesFromEntityDatabase(cedbDoc, kind, 'CEDB', nameTypePolicy),
+            candidates: records
+              ? candidatesFromEntityDatabaseRecords(
+                  records as EntityDatabaseCandidateRecord[],
+                  'CEDB',
+                  nameTypePolicy,
+                )
+              : candidatesFromEntityDatabase(
+                  await centralStore.loadEntities(),
+                  kind,
+                  'CEDB',
+                  nameTypePolicy,
+                ),
           });
         }
       }

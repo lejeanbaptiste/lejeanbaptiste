@@ -25,7 +25,15 @@ export interface AuthorityPrefetchSession {
   getEntitiesDocument(): Document | null;
   loadEntities(): Promise<Document>;
   savePendingCache(): Promise<void>;
-  candidateSearchCentralContext(): Promise<{ doc: Document; userStableId: string } | null>;
+  candidateSearchCentralContext(): Promise<{ doc?: Document; userStableId: string } | null>;
+  disambiguationDbSources(tag: string, surface: string): Promise<{
+    local: DisambiguationCandidate[];
+    central?: {
+      userStableId: string;
+      candidates: DisambiguationCandidate[];
+    };
+    entitiesDoc: Document | null;
+  }>;
 }
 
 export interface AuthorityPrefetchHandle {
@@ -121,12 +129,11 @@ export function runAuthorityPrefetch(
     try {
       // A foreground lookup may have already resolved this group since it was queued.
       if (session.getPendingCandidates(group.tag, group.surface) == null) {
-        const entitiesDoc = session.getEntitiesDocument() ?? (await session.loadEntities());
+        const dbSources = await session.disambiguationDbSources(group.tag, group.surface);
         if (stopped) return;
-        const central = (await session.candidateSearchCentralContext()) ?? undefined;
         const placeProximityKm = placeProximityKmFromSettings(readPersistedDisambiguationSettings());
         const rows = await buildDisambiguationCandidates(
-          entitiesDoc,
+          dbSources.entitiesDoc,
           group.tag,
           group.surface,
           cache,
@@ -145,7 +152,7 @@ export function runAuthorityPrefetch(
             void (async () => {
               try {
                 const refreshed = await buildDisambiguationCandidates(
-                  entitiesDoc,
+                  dbSources.entitiesDoc,
                   group.tag,
                   group.surface,
                   cache,
@@ -156,8 +163,9 @@ export function runAuthorityPrefetch(
                   undefined,
                   undefined,
                   undefined,
-                  central,
+                  dbSources.central,
                   placeProximityKm,
+                  dbSources.local,
                 );
                 if (stopped) return;
                 session.rememberPendingCandidates(group.tag, group.surface, refreshed);
@@ -168,8 +176,9 @@ export function runAuthorityPrefetch(
             })();
           },
           undefined,
-          central,
+          dbSources.central,
           placeProximityKm,
+          dbSources.local,
         );
         if (stopped) return;
         session.rememberPendingCandidates(group.tag, group.surface, rows);

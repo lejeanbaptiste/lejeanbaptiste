@@ -195,8 +195,11 @@ const scalarOf = (fields: EntityFields, field: ScalarField): string | number | n
  * pass the two entity elements (already located via the concordance).
  */
 export function planReconcile(pedbItem: Element, cedbItem: Element): ReconcilePlan {
-  const pedb = readFields(pedbItem);
-  const cedb = readFields(cedbItem);
+  return planReconcileFields(readFields(pedbItem), readFields(cedbItem));
+}
+
+/** Field-based planner for SQLite (and any non-DOM) callers. */
+export function planReconcileFields(pedb: EntityFields, cedb: EntityFields): ReconcilePlan {
   const newer = compareChanged(pedb.changed, cedb.changed);
 
   const plan: ReconcilePlan = {

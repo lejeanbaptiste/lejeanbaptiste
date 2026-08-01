@@ -1,0 +1,3745 @@
+import { createRequire } from 'node:module';
+import type { DatabaseSync as DatabaseSyncType } from 'node:sqlite';
+import { stringsMatchExactly } from '../../../../packages/cwrc-leafwriter/src/autoTagging/disambiguationMatch';
+import { applyEntityDbMigrations } from './schema';
+
+const nodeRequire = createRequire(__filename);
+const { DatabaseSync } = nodeRequire('node:sqlite') as {
+  DatabaseSync: typeof DatabaseSyncType;
+};
+
+export type SqliteEntityKind = 'person' | 'place' | 'work' | 'office' | 'org';
+export type SqliteValueOrigin = 'user' | 'authority' | 'xml';
+export type SqliteValueStatus = 'active' | 'rejected' | 'withdrawn';
+
+export interface SqliteEntity {
+  id: string;
+  kind: SqliteEntityKind;
+  description: string | null;
+  createdAt: string;
+  updatedAt: string;
+  revision: number;
+  deletedAt: string | null;
+}
+
+export interface SqliteName {
+  id: number;
+  entityId: string;
+  text: string;
+  nameType: string | null;
+  nameRole: string;
+  language: string | null;
+  isPrimary: boolean;
+  origin: SqliteValueOrigin;
+  source: string | null;
+  status: SqliteValueStatus;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface SqliteEntitySummary extends SqliteEntity {
+  names: SqliteName[];
+}
+
+export interface SqliteEntityLookupResult {
+  id: string;
+  label: string;
+  description?: string;
+  idnos: { type: string; value: string }[];
+}
+
+export interface SqliteEntityCandidateRecord {
+  id: string;
+  kind: SqliteEntityKind;
+  names: { text: string; type?: string }[];
+  description?: string;
+  startYear?: number;
+  endYear?: number;
+  nobleTitles: {
+    fief?: string;
+    roleName?: string;
+    posthumousName?: string;
+    dynasty?: string;
+  }[];
+}
+
+export interface SqliteEntityAssertion {
+  key: string;
+  element: string;
+  value: string;
+  origin: SqliteValueOrigin;
+  source: string | null;
+  status: SqliteValueStatus;
+  precision?: string | null;
+  noteType?: string | null;
+  ref: string | null;
+}
+
+export interface SqliteConcordanceAssociation {
+  source: string;
+  canonicalId: string;
+  mergedFromId: string;
+  notes?: string;
+  sourceRef?: string;
+}
+
+export interface SqliteConcordanceRejection {
+  source: string;
+  leftId: string;
+  rightId: string;
+  reason: string | null;
+  entityId: string | null;
+}
+
+export interface SqliteConcordanceImportResult {
+  applied: number;
+  alreadyPresent: number;
+  rejected: number;
+  unresolved: number;
+  conflicts: { association: SqliteConcordanceAssociation; entityIds: string[] }[];
+}
+
+export interface SqliteEntityPanelSummary extends SqliteEntitySummary {
+  authorities: { type: string; value: string }[];
+  familyName: string | null;
+  givenName: string | null;
+  startYear: number | null;
+  endYear: number | null;
+  workDate: {
+    startYear: number | null;
+    endYear: number | null;
+    startPrecision: string | null;
+    endPrecision: string | null;
+  } | null;
+  nationalities: string[];
+  placesOfOrigin: string[];
+  roles: string[];
+  origins: SqliteValueOrigin[];
+  authors: {
+    key: string;
+    name: string;
+    ref: string | null;
+    origin: SqliteValueOrigin;
+    source: string | null;
+    status: SqliteValueStatus;
+  }[];
+  nobleTitles: {
+    key: string;
+    dynasty: string;
+    fief: string;
+    posthumousName: string;
+    title: string;
+    origin: SqliteValueOrigin;
+    source: string | null;
+    status: SqliteValueStatus;
+  }[];
+  assertions: SqliteEntityAssertion[];
+  rejectedConcordances: SqliteConcordanceRejection[];
+}
+
+export interface SqliteDuplicateGroup {
+  type: string;
+  value: string;
+  entityIds: string[];
+}
+
+export interface CreateEntityInput {
+  id: string;
+  kind: SqliteEntityKind;
+  description?: string | null;
+  now?: string;
+}
+
+export interface AddNameInput {
+  entityId: string;
+  text: string;
+  nameType?: string | null;
+  nameRole?: string;
+  language?: string | null;
+  isPrimary?: boolean;
+  origin?: SqliteValueOrigin;
+  source?: string | null;
+  status?: SqliteValueStatus;
+  now?: string;
+}
+
+export interface UpdateNamesByTextInput {
+  entityId: string;
+  text: string;
+  nameType?: string | null;
+  language?: string | null;
+  now?: string;
+}
+
+export type SqliteDatePart = 'birth' | 'death';
+
+export interface SetUserEntityDateInput {
+  entityId: string;
+  part: SqliteDatePart;
+  year: number | null;
+  precision?: string | null;
+  now?: string;
+}
+
+export interface SetUserWorkDateInput {
+  entityId: string;
+  startYear: number | null;
+  endYear?: number | null;
+  startPrecision?: string | null;
+  endPrecision?: string | null;
+  now?: string;
+}
+
+export interface AddLabeledValueInput {
+  entityId: string;
+  label: string;
+  ref?: string | null;
+  source?: string | null;
+  now?: string;
+}
+
+export interface NobleTitleMutationInput {
+  dynasty?: string;
+  fief?: string;
+  posthumousName?: string;
+  title?: string;
+}
+
+export interface SetUserWorkAuthorsInput {
+  entityId: string;
+  authors: { name: string; ref?: string | null; key?: string | null }[];
+  now?: string;
+}
+
+export interface AuthorityRefInput {
+  entityId: string;
+  type: string;
+  value: string;
+  now?: string;
+  origin?: SqliteValueOrigin;
+  source?: string | null;
+}
+
+export interface DecisionTargetBackfillEntry {
+  entityId: string;
+  decisionType: 'duplicate-ok' | 'concordance-rejected';
+  targetRefs: string;
+  source?: string | null;
+  payloadJson?: string | null;
+}
+
+export interface DecisionTargetBackfillReport {
+  updated: number;
+  inserted: number;
+  unchanged: number;
+}
+
+export interface SqliteCentralMapping {
+  userStableId: string;
+  centralId: string;
+}
+
+export interface SqliteCentralMergeConflict {
+  userStableId: string;
+  keptCentralId: string;
+  droppedCentralId: string;
+}
+
+export interface SqliteMergeResult {
+  keepId: string;
+  remap: Record<string, string>;
+  centralConflicts: SqliteCentralMergeConflict[];
+}
+
+export interface CreatePopulatedEntityInput {
+  id: string;
+  kind: SqliteEntityKind;
+  description?: string | null;
+  names?: Array<{
+    text: string;
+    nameType?: string | null;
+    language?: string | null;
+    isPrimary?: boolean;
+    origin?: SqliteValueOrigin;
+    source?: string | null;
+  }>;
+  authorities?: Array<{ type: string; value: string; origin?: SqliteValueOrigin; source?: string | null }>;
+  familyName?: string | null;
+  givenName?: string | null;
+  now?: string;
+}
+
+/**
+ * One-entity enrichment payload for authority refresh/backfill.
+ * Mirrors DOM helpers in `nameBackfill.ts` / `entities.ts` (non-destructive,
+ * source-keyed dates, skip when a tombstoned row already claims the identity).
+ */
+export interface AuthorityBackfillPatch {
+  entityId: string;
+  names?: Array<{
+    text: string;
+    nameType?: string | null;
+    language?: string | null;
+    source?: string | null;
+  }>;
+  /** Set only when the person has no family name yet. */
+  familyName?: string | null;
+  /** Set only when the person has no given name yet. */
+  givenName?: string | null;
+  /** Set only when the entity has no Latin-script name yet. */
+  romanized?: { text: string; language?: string | null } | null;
+  dates?: Array<{
+    source: string;
+    startYear?: number | null;
+    endYear?: number | null;
+  }>;
+  nationalities?: Array<{ label: string; ref?: string | null; source: string }>;
+  origins?: Array<{
+    label: string;
+    ref?: string | null;
+    source: string;
+    nameType?: string | null;
+  }>;
+  offices?: Array<{ label: string; ref?: string | null; source: string }>;
+  nobleTitles?: Array<{
+    placeName: string;
+    roleName: string;
+    posthumousName?: string | null;
+    dynasty?: string | null;
+    ref?: string | null;
+    source: string;
+  }>;
+  authorityCaches?: Array<{
+    authorityType: string;
+    source?: string | null;
+    payload: unknown;
+  }>;
+  workAuthors?: Array<{
+    name: string;
+    personId?: string | null;
+    ref?: string | null;
+    source?: string | null;
+  }>;
+  /** Authority-origin work date (`date_kind = dates`), keyed by source. */
+  workDate?: {
+    source: string;
+    startYear?: number | null;
+    endYear?: number | null;
+  } | null;
+  now?: string;
+}
+
+export interface AuthorityBackfillPatchResult {
+  changed: boolean;
+  namesAdded: number;
+}
+
+/** Match the XML concordance helper: CBDB ids drop leading zeros; refs are SOURCE:id. */
+function concordanceRef(source: string, id: string): string {
+  const value = /^cbdb$/i.test(source) ? id.replace(/^0+(?=\d)/, '') : id;
+  return `${source.trim().toUpperCase()}:${value.trim()}`;
+}
+
+function concordanceRefs(association: SqliteConcordanceAssociation): [string, string] {
+  return [
+    concordanceRef(association.source, association.canonicalId),
+    concordanceRef(association.source, association.mergedFromId),
+  ].sort() as [string, string];
+}
+
+const CENTRAL_AUTHORITY_TYPE = 'ljb-central';
+
+const ASSERTION_OWNER: Record<string, string> = {
+  entity_names: 'entity_id',
+  entity_authorities: 'entity_id',
+  entity_dates: 'entity_id',
+  entity_metadata: 'entity_id',
+  person_nationalities: 'person_id',
+  person_origins: 'person_id',
+  person_titles: 'person_id',
+  person_offices: 'person_id',
+  work_authors: 'work_id',
+};
+
+function nowIso(): string {
+  return new Date().toISOString();
+}
+
+function isoYearString(year: number): string {
+  const abs = String(Math.abs(year)).padStart(4, '0');
+  return year < 0 ? `-${abs}` : abs;
+}
+
+function normalizeAuthorityValue(type: string, value: string): string {
+  const trimmed = value.trim();
+  if (/^wikidata$/i.test(type)) {
+    const match = trimmed.match(/(Q\d+)\s*$/i);
+    if (match) return match[1]!.toUpperCase();
+  }
+  if (/^viaf$/i.test(type)) {
+    const match = trimmed.match(/(\d+)\s*\/?\s*$/);
+    if (match) return match[1]!;
+  }
+  return trimmed;
+}
+
+/** Store authority types with the conventional casing used in TEI idnos. */
+function canonicalizeAuthorityType(type: string): string {
+  const trimmed = type.trim();
+  const known: Record<string, string> = {
+    wikidata: 'Wikidata',
+    viaf: 'VIAF',
+    cbdb: 'CBDB',
+    dila: 'DILA',
+    geonames: 'Geonames',
+    getty: 'Getty',
+    gnd: 'GND',
+    norbert: 'NORBERT',
+    ndl: 'NDL',
+  };
+  return known[trimmed.toLowerCase()] ?? trimmed;
+}
+
+function parseAssertionKey(
+  key: string,
+):
+  | { kind: 'row'; table: string; rowId: number }
+  | { kind: 'description'; entityId: string }
+  | null {
+  if (key.startsWith('entities:description:')) {
+    return { kind: 'description', entityId: key.slice('entities:description:'.length) };
+  }
+  const separator = key.lastIndexOf(':');
+  if (separator <= 0) return null;
+  const table = key.slice(0, separator);
+  const rowId = Number(key.slice(separator + 1));
+  if (!ASSERTION_OWNER[table] || !Number.isInteger(rowId) || rowId < 1) return null;
+  return { kind: 'row', table, rowId };
+}
+
+function rowEntity(row: Record<string, unknown>): SqliteEntity {
+  return {
+    id: String(row.id),
+    kind: row.kind as SqliteEntityKind,
+    description: (row.description as string | null) ?? null,
+    createdAt: String(row.created_at),
+    updatedAt: String(row.updated_at),
+    revision: Number(row.revision),
+    deletedAt: (row.deleted_at as string | null) ?? null,
+  };
+}
+
+function groupRowsByKey(
+  rows: Record<string, unknown>[],
+  key: string,
+): Map<string, Record<string, unknown>[]> {
+  const grouped = new Map<string, Record<string, unknown>[]>();
+  for (const row of rows) {
+    const id = String(row[key]);
+    const list = grouped.get(id);
+    if (list) list.push(row);
+    else grouped.set(id, [row]);
+  }
+  return grouped;
+}
+
+/** Assemble one Database-tab snapshot from already-fetched row bags (no extra queries). */
+function assemblePanelSummary(
+  entity: SqliteEntity,
+  names: SqliteName[],
+  bags: {
+    activeAuthorities: { type: string; value: string }[];
+    allAuthorities: Record<string, unknown>[];
+    person: { family_name: string | null; given_name: string | null } | undefined;
+    dates: Record<string, unknown>[];
+    nationalityRows: Record<string, unknown>[];
+    originRows: Record<string, unknown>[];
+    officeRows: Record<string, unknown>[];
+    authorRows: Record<string, unknown>[];
+    titleRows: Record<string, unknown>[];
+    nameAssertionRows: Record<string, unknown>[];
+    descriptionRows: Record<string, unknown>[];
+  },
+  allRejections: SqliteConcordanceRejection[],
+): SqliteEntityPanelSummary {
+  const authorities = bags.activeAuthorities;
+  const authorityRefs = new Set(
+    authorities
+      .filter((authority) => authority.type !== CENTRAL_AUTHORITY_TYPE)
+      .map((authority) => concordanceRef(authority.type, authority.value)),
+  );
+  const rejectedConcordances = allRejections.filter(
+    (rejection) => authorityRefs.has(rejection.leftId) || authorityRefs.has(rejection.rightId),
+  );
+  const familyFromNames =
+    names.find((name) => name.nameRole === 'family' || name.nameType === 'family')?.text ?? null;
+  const givenFromNames =
+    names.find((name) => name.nameRole === 'given' || name.nameType === 'given')?.text ?? null;
+  const dates = bags.dates;
+  const nationalities = bags.nationalityRows
+    .filter((row) => row.status === 'active')
+    .map((row) => String(row.label));
+  const origins = bags.originRows
+    .filter((row) => row.status === 'active')
+    .map((row) => String(row.label));
+  const roles = bags.officeRows
+    .filter((row) => row.status === 'active')
+    .map((row) => String(row.office_label));
+  const offices = bags.officeRows;
+  const authors = bags.authorRows;
+  const nobleTitles = bags.titleRows;
+
+  const assertions: SqliteEntityAssertion[] = [];
+  const addAssertion = (assertion: SqliteEntityAssertion) => {
+    if (assertion.value || assertion.element === 'idno') assertions.push(assertion);
+  };
+  for (const name of bags.nameAssertionRows) {
+    addAssertion({
+      key: `entity_names:${name.id}`,
+      element:
+        entity.kind === 'person'
+          ? 'persName'
+          : entity.kind === 'place'
+            ? 'placeName'
+            : entity.kind === 'work'
+              ? 'title'
+              : 'orgName',
+      value: String(name.text),
+      origin: name.origin as SqliteValueOrigin,
+      source: (name.source as string | null) ?? null,
+      status: name.status as SqliteValueStatus,
+      ref: null,
+    });
+  }
+  for (const authority of bags.allAuthorities) {
+    addAssertion({
+      key: `entity_authorities:${authority.id}`,
+      element: 'idno',
+      value: String(authority.authority_value),
+      origin: authority.origin as SqliteValueOrigin,
+      source: (authority.source as string | null) ?? null,
+      status: authority.status as SqliteValueStatus,
+      ref: String(authority.authority_type),
+    });
+  }
+  for (const date of dates) {
+    const kind = String(date.date_kind);
+    const value = String(date.when_value ?? date.raw_text ?? date.start_year ?? date.end_year ?? '');
+    addAssertion({
+      key: `entity_dates:${date.id}`,
+      element: kind === 'birth' || kind === 'death' ? kind : 'note',
+      value,
+      origin: date.origin as SqliteValueOrigin,
+      source: (date.source as string | null) ?? null,
+      status: date.status as SqliteValueStatus,
+      precision: (date.start_precision as string | null) ?? null,
+      noteType: kind === 'birth' || kind === 'death' ? null : 'dates',
+      ref: null,
+    });
+  }
+  for (const row of bags.nationalityRows) {
+    addAssertion({
+      key: `person_nationalities:${row.id}`,
+      element: 'nationality',
+      value: String(row.label),
+      origin: row.origin as SqliteValueOrigin,
+      source: (row.source as string | null) ?? null,
+      status: row.status as SqliteValueStatus,
+      ref: (row.reference as string | null) ?? null,
+    });
+  }
+  for (const row of bags.originRows) {
+    addAssertion({
+      key: `person_origins:${row.id}`,
+      element: 'placeName',
+      value: String(row.label),
+      origin: row.origin as SqliteValueOrigin,
+      source: (row.source as string | null) ?? null,
+      status: row.status as SqliteValueStatus,
+      ref: (row.reference as string | null) ?? null,
+    });
+  }
+  for (const row of offices) {
+    addAssertion({
+      key: `person_offices:${row.id}`,
+      element: 'affiliation',
+      value: String(row.office_label),
+      origin: row.origin as SqliteValueOrigin,
+      source: (row.source as string | null) ?? null,
+      status: row.status as SqliteValueStatus,
+      ref: (row.reference as string | null) ?? null,
+    });
+  }
+  for (const row of nobleTitles) {
+    addAssertion({
+      key: `person_titles:${row.id}`,
+      element: 'nobleTitle',
+      value: String(row.role_name ?? row.place_name ?? ''),
+      origin: row.origin as SqliteValueOrigin,
+      source: (row.source as string | null) ?? null,
+      status: row.status as SqliteValueStatus,
+      ref: (row.reference as string | null) ?? null,
+    });
+  }
+  for (const row of authors) {
+    addAssertion({
+      key: `work_authors:${row.id}`,
+      element: 'author',
+      value: String(row.label),
+      origin: row.origin as SqliteValueOrigin,
+      source: (row.source as string | null) ?? null,
+      status: row.status as SqliteValueStatus,
+      ref: (row.reference as string | null) ?? null,
+    });
+  }
+  for (const row of bags.descriptionRows) {
+    addAssertion({
+      key: `entity_metadata:${row.id}`,
+      element: 'note',
+      value: String(row.value),
+      origin: row.origin as SqliteValueOrigin,
+      source: (row.source as string | null) ?? null,
+      status: row.status as SqliteValueStatus,
+      noteType: 'description',
+      ref: null,
+    });
+  }
+  if (
+    entity.description &&
+    !assertions.some(
+      (assertion) =>
+        assertion.noteType === 'description' &&
+        assertion.origin === 'user' &&
+        assertion.value === entity.description,
+    )
+  ) {
+    addAssertion({
+      key: `entities:description:${entity.id}`,
+      element: 'note',
+      value: entity.description,
+      origin: 'user',
+      source: null,
+      status: 'active',
+      noteType: 'description',
+      ref: null,
+    });
+  }
+  const activeDates = dates.filter((date) => date.status === 'active');
+  const firstDate = (kind: string) =>
+    activeDates.find((date) => date.date_kind === kind) as Record<string, unknown> | undefined;
+  const workDateRow =
+    entity.kind === 'work' ? (firstDate('dates') ?? firstDate('work') ?? undefined) : undefined;
+  const startDate = entity.kind === 'work' ? workDateRow : firstDate('birth');
+  const endDate = entity.kind === 'work' ? workDateRow : firstDate('death');
+  const workDate =
+    entity.kind === 'work' && workDateRow
+      ? {
+          startYear: (workDateRow.start_year as number | null) ?? null,
+          endYear: (workDateRow.end_year as number | null) ?? null,
+          startPrecision: (workDateRow.start_precision as string | null) ?? null,
+          endPrecision: (workDateRow.end_precision as string | null) ?? null,
+        }
+      : null;
+  return {
+    ...entity,
+    names,
+    authorities,
+    familyName: bags.person?.family_name ?? familyFromNames,
+    givenName: bags.person?.given_name ?? givenFromNames,
+    startYear:
+      entity.kind === 'work'
+        ? (workDate?.startYear ?? null)
+        : ((startDate?.start_year as number | null) ?? null),
+    endYear:
+      entity.kind === 'work'
+        ? (workDate?.endYear ?? null)
+        : ((endDate?.start_year as number | null) ?? null),
+    workDate,
+    nationalities: Array.from(new Set(nationalities)),
+    placesOfOrigin: Array.from(new Set(origins)),
+    roles: Array.from(new Set(roles)),
+    origins: Array.from(
+      new Set(assertions.filter((item) => item.status === 'active').map((item) => item.origin)),
+    ),
+    authors: authors.map((row) => ({
+      key: `work_authors:${row.id}`,
+      name: String(row.label),
+      ref: (row.reference as string | null) ?? null,
+      origin: row.origin as SqliteValueOrigin,
+      source: (row.source as string | null) ?? null,
+      status: row.status as SqliteValueStatus,
+    })),
+    nobleTitles: nobleTitles.map((row) => ({
+      key: `person_titles:${row.id}`,
+      dynasty: String(row.dynasty ?? ''),
+      fief: String(row.place_name ?? ''),
+      posthumousName: String(row.posthumous_name ?? ''),
+      title: String(row.role_name ?? ''),
+      origin: row.origin as SqliteValueOrigin,
+      source: (row.source as string | null) ?? null,
+      status: row.status as SqliteValueStatus,
+    })),
+    assertions,
+    rejectedConcordances,
+  };
+}
+
+function rowName(row: Record<string, unknown>): SqliteName {
+  const rawType = (row.name_type as string | null) ?? null;
+  const nameType =
+    rawType === 'familyName' ? 'family' : rawType === 'givenName' ? 'given' : rawType;
+  const rawRole = String(row.name_role ?? 'variant');
+  const nameRole =
+    rawRole === 'familyName'
+      ? 'family'
+      : rawRole === 'givenName'
+        ? 'given'
+        : nameType === 'family' || nameType === 'given'
+          ? nameType
+          : rawRole;
+  return {
+    id: Number(row.id),
+    entityId: String(row.entity_id),
+    text: String(row.text),
+    nameType,
+    nameRole,
+    language: (row.language as string | null) ?? null,
+    isPrimary: Number(row.is_primary) === 1,
+    origin: row.origin as SqliteValueOrigin,
+    source: (row.source as string | null) ?? null,
+    status: row.status as SqliteValueStatus,
+    createdAt: String(row.created_at),
+    updatedAt: String(row.updated_at),
+  };
+}
+
+function normalizePersonNameType(
+  nameType: string | null | undefined,
+): 'family' | 'given' | string | null {
+  if (!nameType) return null;
+  if (nameType === 'familyName' || nameType === 'family') return 'family';
+  if (nameType === 'givenName' || nameType === 'given') return 'given';
+  return nameType;
+}
+
+export class EntitySqliteRepository {
+  readonly db: DatabaseSyncType;
+
+  constructor(databasePath = ':memory:') {
+    this.db = new DatabaseSync(databasePath);
+    applyEntityDbMigrations(this.db);
+  }
+
+  close(): void {
+    this.db.close();
+  }
+
+  integrityCheck(): string[] {
+    return this.db
+      .prepare('PRAGMA integrity_check')
+      .all()
+      .map((row) => String((row as Record<string, unknown>).integrity_check));
+  }
+
+  getDatabaseId(): string | null {
+    const row = this.db
+      .prepare("SELECT value FROM database_metadata WHERE key = 'database_id'")
+      .get() as { value?: string } | undefined;
+    return row?.value ? String(row.value) : null;
+  }
+
+  getMetadata(key: string): string | null {
+    const row = this.db.prepare('SELECT value FROM database_metadata WHERE key = ?').get(key) as
+      | { value?: string }
+      | undefined;
+    return row?.value != null ? String(row.value) : null;
+  }
+
+  setMetadata(key: string, value: string): void {
+    this.db
+      .prepare('INSERT OR REPLACE INTO database_metadata (key, value) VALUES (?, ?)')
+      .run(key, value);
+  }
+
+  transaction<T>(work: () => T): T {
+    this.db.exec('BEGIN IMMEDIATE;');
+    try {
+      const result = work();
+      this.db.exec('COMMIT;');
+      return result;
+    } catch (error) {
+      this.db.exec('ROLLBACK;');
+      throw error;
+    }
+  }
+
+  createEntity(input: CreateEntityInput): SqliteEntity {
+    const now = input.now ?? nowIso();
+    this.transaction(() => {
+      this.db
+        .prepare(
+          `INSERT INTO entities (id, kind, description, created_at, updated_at)
+           VALUES (?, ?, ?, ?, ?)`,
+        )
+        .run(input.id, input.kind, input.description ?? null, now, now);
+      const tableByKind: Record<SqliteEntityKind, string> = {
+        person: 'people',
+        place: 'places',
+        work: 'works',
+        office: 'offices',
+        org: 'organizations',
+      };
+      const table = tableByKind[input.kind];
+      this.db.prepare(`INSERT INTO ${table} (entity_id) VALUES (?)`).run(input.id);
+    });
+    return this.getEntity(input.id)!;
+  }
+
+  /**
+   * Create an entity and populate common seed fields in one transaction.
+   * Soft-deleted ids cannot be reused (no-resurrection).
+   */
+  createPopulatedEntity(input: CreatePopulatedEntityInput): SqliteEntity {
+    const now = input.now ?? nowIso();
+    const existing = this.getEntity(input.id);
+    if (existing) {
+      if (existing.deletedAt) {
+        throw new Error(`Cannot resurrect soft-deleted entity: ${input.id}`);
+      }
+      throw new Error(`Entity already exists: ${input.id}`);
+    }
+    return this.transaction(() => {
+      this.db
+        .prepare(
+          `INSERT INTO entities (id, kind, description, created_at, updated_at)
+           VALUES (?, ?, ?, ?, ?)`,
+        )
+        .run(input.id, input.kind, input.description ?? null, now, now);
+      const tableByKind: Record<SqliteEntityKind, string> = {
+        person: 'people',
+        place: 'places',
+        work: 'works',
+        office: 'offices',
+        org: 'organizations',
+      };
+      this.db.prepare(`INSERT INTO ${tableByKind[input.kind]} (entity_id) VALUES (?)`).run(input.id);
+
+      const insertName = (
+        text: string,
+        nameType: string | null,
+        isPrimary: boolean,
+        language: string | null,
+        origin: SqliteValueOrigin,
+        source: string | null,
+      ) => {
+        const normalizedType = normalizePersonNameType(nameType);
+        const nameRole =
+          normalizedType === 'family' || normalizedType === 'given'
+            ? normalizedType
+            : isPrimary
+              ? 'primary'
+              : 'variant';
+        if (isPrimary) {
+          this.db.prepare('UPDATE entity_names SET is_primary = 0 WHERE entity_id = ?').run(input.id);
+        }
+        this.db
+          .prepare(
+            `INSERT INTO entity_names
+               (entity_id, text, name_type, name_role, language, is_primary, origin, source, status, created_at, updated_at)
+             VALUES (?, ?, ?, ?, ?, ?, ?, ?, 'active', ?, ?)`,
+          )
+          .run(
+            input.id,
+            text,
+            normalizedType,
+            nameRole,
+            language,
+            isPrimary ? 1 : 0,
+            origin,
+            source,
+            now,
+            now,
+          );
+        this.syncPersonNameScalars(input.id, text, normalizedType, now);
+      };
+
+      for (const [index, name] of (input.names ?? []).entries()) {
+        const text = name.text.trim();
+        if (!text) continue;
+        insertName(
+          text,
+          name.nameType ?? null,
+          name.isPrimary ?? index === 0,
+          name.language ?? null,
+          name.origin ?? 'user',
+          name.source ?? null,
+        );
+      }
+      if (input.kind === 'person') {
+        if (input.familyName?.trim()) {
+          insertName(input.familyName.trim(), 'family', false, null, 'user', null);
+        }
+        if (input.givenName?.trim()) {
+          insertName(input.givenName.trim(), 'given', false, null, 'user', null);
+        }
+      }
+      for (const authority of input.authorities ?? []) {
+        const type = authority.type.trim();
+        const value = authority.value.trim();
+        if (!type || !value) continue;
+        this.db
+          .prepare(
+            `INSERT INTO entity_authorities
+               (entity_id, authority_type, authority_value, origin, source, status, created_at, updated_at)
+             VALUES (?, ?, ?, ?, ?, 'active', ?, ?)`,
+          )
+          .run(
+            input.id,
+            type,
+            value,
+            authority.origin ?? 'user',
+            authority.source ?? null,
+            now,
+            now,
+          );
+      }
+      this.bumpEntity(input.id, now);
+      return this.getEntity(input.id)!;
+    });
+  }
+
+  /** Soft-delete: hide from lists/exports while preserving tombstone history. */
+  softDeleteEntity(entityId: string, now = nowIso()): boolean {
+    const entity = this.getEntity(entityId);
+    if (!entity || entity.deletedAt) return false;
+    this.db
+      .prepare(
+        `UPDATE entities
+         SET deleted_at = ?, updated_at = ?, revision = revision + 1
+         WHERE id = ?`,
+      )
+      .run(now, now, entityId);
+    return true;
+  }
+
+  /** First active non-deleted entity of `kind` sharing an authority type+value. */
+  findEntityIdByAuthority(
+    kind: SqliteEntityKind,
+    type: string,
+    value: string,
+  ): string | null {
+    const wantedType = type.trim().toLowerCase();
+    const wantedValue = value.trim();
+    if (!wantedType || !wantedValue) return null;
+    const rows = this.db
+      .prepare(
+        `SELECT a.entity_id, a.authority_type, a.authority_value
+         FROM entity_authorities a
+         JOIN entities e ON e.id = a.entity_id
+         WHERE e.kind = ? AND e.deleted_at IS NULL AND a.status = 'active'`,
+      )
+      .all(kind) as { entity_id: string; authority_type: string; authority_value: string }[];
+    for (const row of rows) {
+      if (row.authority_type.toLowerCase() !== wantedType) continue;
+      if (row.authority_value.trim() !== wantedValue) continue;
+      return row.entity_id;
+    }
+    return null;
+  }
+
+  /**
+   * Exactly one active entity whose primary name matches and whose years do
+   * not conflict — same rule as DOM `findCentralByNameDates`.
+   */
+  findEntityIdByNameDates(
+    kind: SqliteEntityKind,
+    name: string,
+    startYear?: number | null,
+    endYear?: number | null,
+  ): string | null {
+    if (!name.trim()) return null;
+    const ids = this.listEntityIds(kind);
+    const matches: string[] = [];
+    for (const id of ids) {
+      const summary = this.getPanelSummary(id, []);
+      if (!summary) continue;
+      const primary = summary.names[0]?.text;
+      if (!primary || !stringsMatchExactly(name, primary)) continue;
+      if (startYear != null && summary.startYear != null && summary.startYear !== startYear) {
+        continue;
+      }
+      if (endYear != null && summary.endYear != null && summary.endYear !== endYear) continue;
+      matches.push(id);
+    }
+    return matches.length === 1 ? matches[0]! : null;
+  }
+
+  /** Force an assertion to rejected (tombstone propagation across databases). */
+  forceRejectAssertion(entityId: string, key: string, now = nowIso()): boolean {
+    const parsed = parseAssertionKey(key);
+    if (!parsed || parsed.kind !== 'row') return false;
+    const ownerCol = ASSERTION_OWNER[parsed.table];
+    if (!ownerCol) return false;
+    return this.transaction(() => {
+      const row = this.db
+        .prepare(`SELECT * FROM ${parsed.table} WHERE id = ?`)
+        .get(parsed.rowId) as Record<string, unknown> | undefined;
+      if (!row || String(row[ownerCol]) !== entityId) return false;
+      if (String(row.status) === 'rejected') return false;
+      this.db
+        .prepare(
+          `UPDATE ${parsed.table}
+           SET status = 'rejected', updated_at = ?
+           WHERE id = ?`,
+        )
+        .run(now, parsed.rowId);
+      this.db
+        .prepare(
+          `INSERT OR IGNORE INTO entity_tombstones
+             (entity_id, table_name, row_id, reason, created_at)
+           VALUES (?, ?, ?, 'propagated-rejected', ?)`,
+        )
+        .run(entityId, parsed.table, parsed.rowId, now);
+      this.bumpEntity(entityId, now);
+      return true;
+    });
+  }
+
+  listCentralMappings(entityId: string): SqliteCentralMapping[] {
+    return (
+      this.db
+        .prepare(
+          `SELECT user_stable_id, central_entity_id
+           FROM central_mappings WHERE project_entity_id = ? ORDER BY user_stable_id`,
+        )
+        .all(entityId) as { user_stable_id: string; central_entity_id: string }[]
+    ).map((row) => ({
+      userStableId: row.user_stable_id,
+      centralId: row.central_entity_id,
+    }));
+  }
+
+  getCentralId(entityId: string, userStableId: string): string | null {
+    const row = this.db
+      .prepare(
+        `SELECT central_entity_id FROM central_mappings
+         WHERE project_entity_id = ? AND user_stable_id = ?`,
+      )
+      .get(entityId, userStableId) as { central_entity_id?: string } | undefined;
+    return row?.central_entity_id ? String(row.central_entity_id) : null;
+  }
+
+  setCentralMapping(
+    entityId: string,
+    userStableId: string,
+    centralId: string,
+    now = nowIso(),
+  ): boolean {
+    const entity = this.getEntity(entityId);
+    if (!entity || entity.deletedAt) throw new Error(`Unknown entity id: ${entityId}`);
+    const existing = this.getCentralId(entityId, userStableId);
+    if (existing === centralId) return false;
+    this.db
+      .prepare(
+        `INSERT INTO central_mappings
+           (project_entity_id, central_entity_id, user_stable_id, created_at, updated_at)
+         VALUES (?, ?, ?, ?, ?)
+         ON CONFLICT(project_entity_id, user_stable_id) DO UPDATE SET
+           central_entity_id = excluded.central_entity_id,
+           updated_at = excluded.updated_at`,
+      )
+      .run(entityId, centralId, userStableId, now, now);
+    // Concordance writes deliberately do not bump entity revision/updated_at.
+    return true;
+  }
+
+  clearCentralMapping(entityId: string, userStableId: string): boolean {
+    const result = this.db
+      .prepare(
+        `DELETE FROM central_mappings
+         WHERE project_entity_id = ? AND user_stable_id = ?`,
+      )
+      .run(entityId, userStableId);
+    return Number(result.changes) > 0;
+  }
+
+  /**
+   * Central entity ids already linked from this PEDB for `userStableId`.
+   * Used to hide mirrored CEDB rows from disambiguation candidate lists.
+   */
+  listLinkedCentralIds(userStableId: string): string[] {
+    return (
+      this.db
+        .prepare(
+          `SELECT DISTINCT m.central_entity_id
+           FROM central_mappings m
+           JOIN entities e ON e.id = m.project_entity_id
+           WHERE m.user_stable_id = ?
+             AND e.deleted_at IS NULL
+           ORDER BY m.central_entity_id`,
+        )
+        .all(userStableId) as { central_entity_id: string }[]
+    ).map((row) => String(row.central_entity_id));
+  }
+
+  /**
+   * Project entities for this user whose central mapping is one of `centralIds`.
+   * Used to apply CEDB merge/delete orders to PEDB concordance rows.
+   */
+  listMappingsByCentralIds(
+    userStableId: string,
+    centralIds: string[],
+  ): Array<{ projectEntityId: string; centralId: string; label: string | null }> {
+    if (centralIds.length === 0) return [];
+    const placeholders = centralIds.map(() => '?').join(', ');
+    const rows = this.db
+      .prepare(
+        `SELECT m.project_entity_id, m.central_entity_id,
+                (SELECT n.text FROM entity_names n
+                 WHERE n.entity_id = m.project_entity_id AND n.status = 'active'
+                 ORDER BY n.is_primary DESC, n.id LIMIT 1) AS label
+         FROM central_mappings m
+         JOIN entities e ON e.id = m.project_entity_id
+         WHERE m.user_stable_id = ?
+           AND e.deleted_at IS NULL
+           AND m.central_entity_id IN (${placeholders})`,
+      )
+      .all(userStableId, ...centralIds) as {
+      project_entity_id: string;
+      central_entity_id: string;
+      label: string | null;
+    }[];
+    return rows.map((row) => ({
+      projectEntityId: row.project_entity_id,
+      centralId: row.central_entity_id,
+      label: row.label,
+    }));
+  }
+
+  /**
+   * Every active PEDB↔CEDB mapping for one user. Used by the database viewer to
+   * show project keys when browsing central (and the reverse on the project view).
+   */
+  listAllCentralMappingsForUser(
+    userStableId: string,
+  ): Array<{ projectEntityId: string; centralId: string }> {
+    const rows = this.db
+      .prepare(
+        `SELECT m.project_entity_id, m.central_entity_id
+         FROM central_mappings m
+         JOIN entities e ON e.id = m.project_entity_id
+         WHERE m.user_stable_id = ?
+           AND e.deleted_at IS NULL`,
+      )
+      .all(userStableId) as {
+      project_entity_id: string;
+      central_entity_id: string;
+    }[];
+    return rows.map((row) => ({
+      projectEntityId: row.project_entity_id,
+      centralId: row.central_entity_id,
+    }));
+  }
+
+  /**
+   * Merge dropIds into keepId. Dropped entities are soft-deleted.
+   * Mirrors XML mergeEntities for names, authorities, central mappings,
+   * description, family/given, and authority caches.
+   */
+  mergeEntities(keepId: string, dropIds: string[]): SqliteMergeResult {
+    const keeper = this.getEntity(keepId);
+    if (!keeper || keeper.deletedAt) throw new Error(`Unknown entity id: ${keepId}`);
+    const remap: Record<string, string> = {};
+    const centralConflicts: SqliteCentralMergeConflict[] = [];
+    this.transaction(() => {
+      const now = nowIso();
+      for (const dropId of dropIds) {
+        if (dropId === keepId) continue;
+        const dropped = this.getEntity(dropId);
+        if (!dropped || dropped.deletedAt) throw new Error(`Unknown entity id: ${dropId}`);
+        if (dropped.kind !== keeper.kind) {
+          throw new Error(
+            `Cannot merge ${dropId} (${dropped.kind}) into ${keepId} (${keeper.kind}): different kinds.`,
+          );
+        }
+
+        const keepNames = new Set(
+          (
+            this.db
+              .prepare(
+                `SELECT text FROM entity_names WHERE entity_id = ? AND status = 'active'`,
+              )
+              .all(keepId) as { text: string }[]
+          ).map((row) => row.text),
+        );
+        for (const name of this.db
+          .prepare(
+            `SELECT text, name_type, language, origin, source FROM entity_names
+             WHERE entity_id = ? AND status = 'active' ORDER BY id`,
+          )
+          .all(dropId) as {
+          text: string;
+          name_type: string | null;
+          language: string | null;
+          origin: SqliteValueOrigin;
+          source: string | null;
+        }[]) {
+          if (keepNames.has(name.text)) continue;
+          const rawType = normalizePersonNameType(name.name_type);
+          const nameType = rawType === 'primary' ? 'variant' : rawType;
+          const nameRole =
+            nameType === 'family' || nameType === 'given' ? nameType : 'variant';
+          this.db
+            .prepare(
+              `INSERT INTO entity_names
+                 (entity_id, text, name_type, name_role, language, is_primary, origin, source, status, created_at, updated_at)
+               VALUES (?, ?, ?, ?, ?, 0, ?, ?, 'active', ?, ?)`,
+            )
+            .run(
+              keepId,
+              name.text,
+              nameType,
+              nameRole,
+              name.language,
+              name.origin,
+              name.source,
+              now,
+              now,
+            );
+          this.syncPersonNameScalars(keepId, name.text, nameType, now);
+          keepNames.add(name.text);
+        }
+
+        for (const authority of this.db
+          .prepare(
+            `SELECT authority_type AS type, authority_value AS value, origin, source
+             FROM entity_authorities
+             WHERE entity_id = ? AND status = 'active' AND authority_type != ?`,
+          )
+          .all(dropId, CENTRAL_AUTHORITY_TYPE) as {
+          type: string;
+          value: string;
+          origin: SqliteValueOrigin;
+          source: string | null;
+        }[]) {
+          const normalized = normalizeAuthorityValue(authority.type, authority.value);
+          const existing = this.db
+            .prepare(
+              `SELECT id, authority_value, status FROM entity_authorities
+               WHERE entity_id = ? AND authority_type = ?`,
+            )
+            .all(keepId, authority.type) as {
+            id: number;
+            authority_value: string;
+            status: string;
+          }[];
+          const match = existing.find(
+            (row) => normalizeAuthorityValue(authority.type, row.authority_value) === normalized,
+          );
+          if (match) {
+            if (match.status !== 'active') {
+              this.db
+                .prepare(
+                  `UPDATE entity_authorities
+                   SET authority_value = ?, status = 'active', origin = ?, source = ?, updated_at = ?
+                   WHERE id = ?`,
+                )
+                .run(authority.value, authority.origin, authority.source, now, match.id);
+            }
+          } else {
+            this.db
+              .prepare(
+                `INSERT INTO entity_authorities
+                   (entity_id, authority_type, authority_value, origin, source, status, created_at, updated_at)
+                 VALUES (?, ?, ?, ?, ?, 'active', ?, ?)`,
+              )
+              .run(
+                keepId,
+                authority.type,
+                authority.value,
+                authority.origin,
+                authority.source,
+                now,
+                now,
+              );
+          }
+        }
+
+        for (const mapping of this.listCentralMappings(dropId)) {
+          const keptCentralId = this.getCentralId(keepId, mapping.userStableId);
+          if (!keptCentralId) {
+            this.db
+              .prepare(
+                `INSERT INTO central_mappings
+                   (project_entity_id, central_entity_id, user_stable_id, created_at, updated_at)
+                 VALUES (?, ?, ?, ?, ?)
+                 ON CONFLICT(project_entity_id, user_stable_id) DO UPDATE SET
+                   central_entity_id = excluded.central_entity_id,
+                   updated_at = excluded.updated_at`,
+              )
+              .run(keepId, mapping.centralId, mapping.userStableId, now, now);
+          } else if (keptCentralId !== mapping.centralId) {
+            centralConflicts.push({
+              userStableId: mapping.userStableId,
+              keptCentralId,
+              droppedCentralId: mapping.centralId,
+            });
+          }
+        }
+
+        const freshKeeper = this.getEntity(keepId);
+        if (!freshKeeper?.description && dropped.description) {
+          this.db
+            .prepare('UPDATE entities SET description = ?, updated_at = ? WHERE id = ?')
+            .run(dropped.description, now, keepId);
+        }
+
+        if (keeper.kind === 'person') {
+          const keepPerson = this.db
+            .prepare('SELECT family_name, given_name FROM people WHERE entity_id = ?')
+            .get(keepId) as { family_name: string | null; given_name: string | null } | undefined;
+          const dropPerson = this.db
+            .prepare('SELECT family_name, given_name FROM people WHERE entity_id = ?')
+            .get(dropId) as { family_name: string | null; given_name: string | null } | undefined;
+          if (!keepPerson?.family_name && dropPerson?.family_name && !keepNames.has(dropPerson.family_name)) {
+            this.db
+              .prepare(
+                `INSERT INTO entity_names
+                   (entity_id, text, name_type, name_role, language, is_primary, origin, source, status, created_at, updated_at)
+                 VALUES (?, ?, 'family', 'family', NULL, 0, 'xml', NULL, 'active', ?, ?)`,
+              )
+              .run(keepId, dropPerson.family_name, now, now);
+            this.syncPersonNameScalars(keepId, dropPerson.family_name, 'family', now);
+            keepNames.add(dropPerson.family_name);
+          }
+          if (!keepPerson?.given_name && dropPerson?.given_name && !keepNames.has(dropPerson.given_name)) {
+            this.db
+              .prepare(
+                `INSERT INTO entity_names
+                   (entity_id, text, name_type, name_role, language, is_primary, origin, source, status, created_at, updated_at)
+                 VALUES (?, ?, 'given', 'given', NULL, 0, 'xml', NULL, 'active', ?, ?)`,
+              )
+              .run(keepId, dropPerson.given_name, now, now);
+            this.syncPersonNameScalars(keepId, dropPerson.given_name, 'given', now);
+            keepNames.add(dropPerson.given_name);
+          }
+        }
+
+        const keepCacheSources = new Set(
+          (
+            this.db
+              .prepare(`SELECT authority_type, source FROM authority_caches WHERE entity_id = ?`)
+              .all(keepId) as { authority_type: string; source: string | null }[]
+          ).map((row) => `${row.authority_type}\t${row.source ?? ''}`),
+        );
+        for (const cache of this.db
+          .prepare(
+            `SELECT authority_type, source, payload_json, retrieved_at, status
+             FROM authority_caches WHERE entity_id = ?`,
+          )
+          .all(dropId) as {
+          authority_type: string;
+          source: string | null;
+          payload_json: string;
+          retrieved_at: string | null;
+          status: string;
+        }[]) {
+          const key = `${cache.authority_type}\t${cache.source ?? ''}`;
+          if (keepCacheSources.has(key)) continue;
+          this.db
+            .prepare(
+              `INSERT OR REPLACE INTO authority_caches
+                 (entity_id, authority_type, source, payload_json, retrieved_at, status)
+               VALUES (?, ?, ?, ?, ?, ?)`,
+            )
+            .run(
+              keepId,
+              cache.authority_type,
+              cache.source,
+              cache.payload_json,
+              cache.retrieved_at,
+              cache.status,
+            );
+          keepCacheSources.add(key);
+        }
+
+        this.db
+          .prepare(
+            `UPDATE entities
+             SET deleted_at = ?, updated_at = ?, revision = revision + 1
+             WHERE id = ?`,
+          )
+          .run(now, now, dropId);
+        remap[dropId] = keepId;
+      }
+      if (Object.keys(remap).length > 0) this.bumpEntity(keepId, nowIso());
+    });
+    return { keepId, remap, centralConflicts };
+  }
+
+  getEntity(id: string): SqliteEntity | null {
+    const row = this.db.prepare('SELECT * FROM entities WHERE id = ?').get(id) as
+      Record<string, unknown> | undefined;
+    return row ? rowEntity(row) : null;
+  }
+
+  getSummary(id: string): SqliteEntitySummary | null {
+    const entity = this.getEntity(id);
+    if (!entity) return null;
+    return { ...entity, names: this.listNames(id) };
+  }
+
+  getPanelSummary(
+    id: string,
+    allRejections?: SqliteConcordanceRejection[],
+  ): SqliteEntityPanelSummary | null {
+    const entity = this.getEntity(id);
+    if (!entity || entity.deletedAt) return null;
+    const names = this.listNames(id);
+    const activeAuthorities = this.db
+      .prepare(
+        `SELECT authority_type AS type, authority_value AS value
+         FROM entity_authorities WHERE entity_id = ? AND status = 'active' ORDER BY id`,
+      )
+      .all(id) as { type: string; value: string }[];
+    return assemblePanelSummary(
+      entity,
+      names,
+      {
+        activeAuthorities,
+        allAuthorities: this.db
+          .prepare(
+            `SELECT id, authority_type, authority_value, origin, source, status
+             FROM entity_authorities WHERE entity_id = ? ORDER BY id`,
+          )
+          .all(id) as Record<string, unknown>[],
+        person: this.db
+          .prepare('SELECT family_name, given_name FROM people WHERE entity_id = ?')
+          .get(id) as { family_name: string | null; given_name: string | null } | undefined,
+        dates: this.db
+          .prepare(
+            `SELECT id, date_kind, start_year, end_year, start_precision, end_precision,
+                    when_value, not_before, not_after, from_value, to_value,
+                    raw_text, origin, source, status
+             FROM entity_dates WHERE entity_id = ? ORDER BY id`,
+          )
+          .all(id) as Record<string, unknown>[],
+        nationalityRows: this.db
+          .prepare(
+            `SELECT id, label, reference, origin, source, status
+             FROM person_nationalities WHERE person_id = ? ORDER BY id`,
+          )
+          .all(id) as Record<string, unknown>[],
+        originRows: this.db
+          .prepare(
+            `SELECT id, label, reference, origin, source, status
+             FROM person_origins WHERE person_id = ? ORDER BY id`,
+          )
+          .all(id) as Record<string, unknown>[],
+        officeRows: this.db
+          .prepare(
+            `SELECT id, office_label, reference, origin, source, status
+             FROM person_offices WHERE person_id = ? ORDER BY id`,
+          )
+          .all(id) as Record<string, unknown>[],
+        authorRows: this.db
+          .prepare(
+            `SELECT id, label, reference, origin, source, status
+             FROM work_authors WHERE work_id = ? ORDER BY id`,
+          )
+          .all(id) as Record<string, unknown>[],
+        titleRows: this.db
+          .prepare(
+            `SELECT id, dynasty, place_name, role_name, posthumous_name,
+                    reference, origin, source, status
+             FROM person_titles WHERE person_id = ? ORDER BY id`,
+          )
+          .all(id) as Record<string, unknown>[],
+        nameAssertionRows: this.db
+          .prepare(
+            `SELECT id, text, origin, source, status, name_type FROM entity_names
+             WHERE entity_id = ? ORDER BY is_primary DESC, id`,
+          )
+          .all(id) as Record<string, unknown>[],
+        descriptionRows: this.db
+          .prepare(
+            `SELECT id, value, origin, source, status
+             FROM entity_metadata
+             WHERE entity_id = ? AND key = 'description'
+             ORDER BY id`,
+          )
+          .all(id) as Record<string, unknown>[],
+      },
+      allRejections ?? this.listConcordanceRejections(),
+    );
+  }
+
+  /**
+   * Load every Database-tab snapshot with a handful of bulk queries.
+   * Prefer this over mapping `getPanelSummary` across tens of thousands of
+   * entities — that path runs N+1 SQLite calls on Electron's main thread and
+   * freezes Reload / DevTools while the spinner spins.
+   */
+  listPanelSummaries(
+    kind?: SqliteEntityKind,
+    allRejections?: SqliteConcordanceRejection[],
+  ): SqliteEntityPanelSummary[] {
+    const rejections = allRejections ?? this.listConcordanceRejections();
+    const entityRows = (
+      kind
+        ? this.db
+            .prepare('SELECT * FROM entities WHERE kind = ? AND deleted_at IS NULL ORDER BY id')
+            .all(kind)
+        : this.db.prepare('SELECT * FROM entities WHERE deleted_at IS NULL ORDER BY id').all()
+    ) as Record<string, unknown>[];
+    if (entityRows.length === 0) return [];
+
+    const namesByEntity = groupRowsByKey(
+      this.db
+        .prepare('SELECT * FROM entity_names ORDER BY is_primary DESC, id')
+        .all() as Record<string, unknown>[],
+      'entity_id',
+    );
+    const authoritiesByEntity = groupRowsByKey(
+      this.db
+        .prepare(
+          `SELECT id, entity_id, authority_type, authority_value, origin, source, status
+           FROM entity_authorities ORDER BY id`,
+        )
+        .all() as Record<string, unknown>[],
+      'entity_id',
+    );
+    const peopleByEntity = new Map(
+      (
+        this.db
+          .prepare('SELECT entity_id, family_name, given_name FROM people')
+          .all() as Record<string, unknown>[]
+      ).map((row) => [
+        String(row.entity_id),
+        {
+          family_name: (row.family_name as string | null) ?? null,
+          given_name: (row.given_name as string | null) ?? null,
+        },
+      ]),
+    );
+    const datesByEntity = groupRowsByKey(
+      this.db
+        .prepare(
+          `SELECT id, entity_id, date_kind, start_year, end_year, start_precision, end_precision,
+                  when_value, not_before, not_after, from_value, to_value,
+                  raw_text, origin, source, status
+           FROM entity_dates ORDER BY id`,
+        )
+        .all() as Record<string, unknown>[],
+      'entity_id',
+    );
+    const nationalityByPerson = groupRowsByKey(
+      this.db
+        .prepare(
+          `SELECT id, person_id, label, reference, origin, source, status
+           FROM person_nationalities ORDER BY id`,
+        )
+        .all() as Record<string, unknown>[],
+      'person_id',
+    );
+    const originByPerson = groupRowsByKey(
+      this.db
+        .prepare(
+          `SELECT id, person_id, label, reference, origin, source, status
+           FROM person_origins ORDER BY id`,
+        )
+        .all() as Record<string, unknown>[],
+      'person_id',
+    );
+    const officeByPerson = groupRowsByKey(
+      this.db
+        .prepare(
+          `SELECT id, person_id, office_label, reference, origin, source, status
+           FROM person_offices ORDER BY id`,
+        )
+        .all() as Record<string, unknown>[],
+      'person_id',
+    );
+    const authorByWork = groupRowsByKey(
+      this.db
+        .prepare(
+          `SELECT id, work_id, label, reference, origin, source, status
+           FROM work_authors ORDER BY id`,
+        )
+        .all() as Record<string, unknown>[],
+      'work_id',
+    );
+    const titleByPerson = groupRowsByKey(
+      this.db
+        .prepare(
+          `SELECT id, person_id, dynasty, place_name, role_name, posthumous_name,
+                  reference, origin, source, status
+           FROM person_titles ORDER BY id`,
+        )
+        .all() as Record<string, unknown>[],
+      'person_id',
+    );
+    const descriptionByEntity = groupRowsByKey(
+      this.db
+        .prepare(
+          `SELECT id, entity_id, value, origin, source, status
+           FROM entity_metadata WHERE key = 'description' ORDER BY id`,
+        )
+        .all() as Record<string, unknown>[],
+      'entity_id',
+    );
+
+    const empty: Record<string, unknown>[] = [];
+    return entityRows.map((row) => {
+      const entity = rowEntity(row);
+      const id = entity.id;
+      const nameRows = namesByEntity.get(id) ?? empty;
+      const authorityRows = authoritiesByEntity.get(id) ?? empty;
+      const names = nameRows
+        .filter((name) => name.status === 'active')
+        .map((name) => rowName(name));
+      return assemblePanelSummary(
+        entity,
+        names,
+        {
+          activeAuthorities: authorityRows
+            .filter((authority) => authority.status === 'active')
+            .map((authority) => ({
+              type: String(authority.authority_type),
+              value: String(authority.authority_value),
+            })),
+          allAuthorities: authorityRows,
+          person: peopleByEntity.get(id),
+          dates: datesByEntity.get(id) ?? empty,
+          nationalityRows: nationalityByPerson.get(id) ?? empty,
+          originRows: originByPerson.get(id) ?? empty,
+          officeRows: officeByPerson.get(id) ?? empty,
+          authorRows: authorByWork.get(id) ?? empty,
+          titleRows: titleByPerson.get(id) ?? empty,
+          nameAssertionRows: nameRows,
+          descriptionRows: descriptionByEntity.get(id) ?? empty,
+        },
+        rejections,
+      );
+    });
+  }
+
+  listEntities(kind?: SqliteEntityKind): SqliteEntity[] {
+    const rows = kind
+      ? this.db.prepare('SELECT * FROM entities WHERE kind = ? ORDER BY id').all(kind)
+      : this.db.prepare('SELECT * FROM entities ORDER BY kind, id').all();
+    return rows.map((row) => rowEntity(row as Record<string, unknown>));
+  }
+
+  listEntityIds(kind?: SqliteEntityKind): string[] {
+    const rows = kind
+      ? this.db
+          .prepare('SELECT id FROM entities WHERE kind = ? AND deleted_at IS NULL ORDER BY id')
+          .all(kind)
+      : this.db.prepare('SELECT id FROM entities WHERE deleted_at IS NULL ORDER BY id').all();
+    return rows.map((row) => String((row as Record<string, unknown>).id));
+  }
+
+  searchNames(kind: SqliteEntityKind, query: string, limit = 20): SqliteEntityLookupResult[] {
+    const normalized = query.trim().toLowerCase().replace(/\s+/g, ' ');
+    if (!normalized) return [];
+    const rows = this.db
+      .prepare(
+        `SELECT e.id, e.description,
+              (SELECT n2.text FROM entity_names n2
+               WHERE n2.entity_id = e.id AND n2.status = 'active'
+               ORDER BY n2.is_primary DESC, n2.id LIMIT 1) AS label
+       FROM entities e
+       JOIN entity_names n ON n.entity_id = e.id
+       WHERE e.kind = ? AND e.deleted_at IS NULL AND n.status = 'active'
+         AND lower(trim(n.text)) = ?
+       GROUP BY e.id, e.description
+       ORDER BY MAX(n.is_primary) DESC, e.id
+       LIMIT ?`,
+      )
+      .all(kind, normalized, limit) as Record<string, unknown>[];
+    return rows.map((row) => ({
+      id: String(row.id),
+      label: String(row.label),
+      ...(row.description ? { description: String(row.description) } : {}),
+      idnos: this.db
+        .prepare(
+          "SELECT authority_type AS type, authority_value AS value FROM entity_authorities WHERE entity_id = ? AND status = 'active' ORDER BY id",
+        )
+        .all(String(row.id)) as { type: string; value: string }[],
+    }));
+  }
+
+  listAuthorityDuplicates(): SqliteDuplicateGroup[] {
+    const rows = this.db
+      .prepare(
+        `SELECT a.authority_type, a.authority_value, a.entity_id
+         FROM entity_authorities a
+         JOIN entities e ON e.id = a.entity_id
+         WHERE a.status = 'active' AND e.deleted_at IS NULL
+         ORDER BY a.authority_type, a.authority_value, a.entity_id`,
+      )
+      .all() as { authority_type: string; authority_value: string; entity_id: string }[];
+    const groups = new Map<string, SqliteDuplicateGroup>();
+    for (const row of rows) {
+      const value = /^wikidata$/i.test(row.authority_type)
+        ? (row.authority_value.match(/(Q\d+)\s*$/i)?.[1]?.toUpperCase() ??
+          row.authority_value.trim())
+        : /^viaf$/i.test(row.authority_type)
+          ? (row.authority_value.match(/(\d+)\s*\/?\s*$/)?.[1] ?? row.authority_value.trim())
+          : row.authority_value.trim();
+      const key = `${row.authority_type.toLowerCase()}\t${value}`;
+      const group = groups.get(key) ?? {
+        type: row.authority_type,
+        value,
+        entityIds: [],
+      };
+      if (!group.entityIds.includes(row.entity_id)) group.entityIds.push(row.entity_id);
+      groups.set(key, group);
+    }
+    const intentional = this.db
+      .prepare(
+        `SELECT target_refs FROM entity_decisions
+         WHERE decision_type = 'duplicate-ok' AND target_refs IS NOT NULL`,
+      )
+      .all()
+      .map((row) =>
+        String((row as { target_refs: string }).target_refs)
+          .split(/\s+/)
+          .map((id) => id.replace(/^#/, ''))
+          .filter(Boolean),
+      )
+      .filter((ids) => ids.length > 1);
+    return Array.from(groups.values()).filter(
+      (group) =>
+        group.entityIds.length > 1 &&
+        !intentional.some((ids) => group.entityIds.every((id) => ids.includes(id))),
+    );
+  }
+
+  listConcordanceRejections(): SqliteConcordanceRejection[] {
+    const rows = this.db
+      .prepare(
+        `SELECT entity_id, source, target_refs, payload_json
+         FROM entity_decisions
+         WHERE decision_type = 'concordance-rejected' AND target_refs IS NOT NULL
+         ORDER BY id`,
+      )
+      .all() as {
+      entity_id: string;
+      source: string | null;
+      target_refs: string;
+      payload_json: string | null;
+    }[];
+    const rejections: SqliteConcordanceRejection[] = [];
+    for (const row of rows) {
+      const parts = row.target_refs.split(/\s+/).filter(Boolean).sort();
+      if (parts.length !== 2) continue;
+      let reason: string | null = null;
+      const payload = row.payload_json?.trim() || null;
+      if (payload) {
+        try {
+          const parsed = JSON.parse(payload) as { reason?: string | null };
+          if (parsed && typeof parsed === 'object' && 'reason' in parsed) {
+            reason = parsed.reason ?? null;
+          }
+        } catch {
+          // Plain-text payload is concordance notes, not a reason.
+        }
+      }
+      rejections.push({
+        source: row.source ?? parts[0]!.split(':')[0] ?? '',
+        leftId: parts[0]!,
+        rightId: parts[1]!,
+        reason,
+        entityId: row.entity_id,
+      });
+    }
+    return rejections;
+  }
+
+  isConcordanceRejected(association: SqliteConcordanceAssociation): boolean {
+    const [left, right] = concordanceRefs(association);
+    return this.listConcordanceRejections().some(
+      (rejection) => rejection.leftId === left && rejection.rightId === right,
+    );
+  }
+
+  rejectConcordance(
+    association: SqliteConcordanceAssociation,
+    entityId?: string,
+    reason = 'user',
+  ): boolean {
+    if (this.isConcordanceRejected(association)) return false;
+    const [left, right] = concordanceRefs(association);
+    const ownerId =
+      entityId ??
+      this.db
+        .prepare(
+          `SELECT a.entity_id AS id
+           FROM entity_authorities a
+           JOIN entities e ON e.id = a.entity_id
+           WHERE a.status = 'active' AND e.deleted_at IS NULL
+             AND a.authority_type != ?
+           ORDER BY a.id`,
+        )
+        .all(CENTRAL_AUTHORITY_TYPE)
+        .map((row) => row as { id: string })
+        .find((row) => {
+          const refs = this.activeAuthorityRefs(row.id);
+          return refs.includes(left) || refs.includes(right);
+        })?.id;
+    if (!ownerId || !this.getEntity(ownerId)) return false;
+    const now = nowIso();
+    const payload =
+      association.notes || reason
+        ? JSON.stringify({ reason, notes: association.notes ?? null })
+        : null;
+    this.db
+      .prepare(
+        `INSERT INTO entity_decisions
+           (entity_id, decision_type, target_refs, payload_json, origin, source, created_at)
+         VALUES (?, 'concordance-rejected', ?, ?, 'user', ?, ?)`,
+      )
+      .run(ownerId, `${left} ${right}`, payload, association.source, now);
+    this.bumpEntity(ownerId, now);
+    return true;
+  }
+
+  /**
+   * Record that a set of entities intentionally share an authority id.
+   * Mirrors XML `note type="duplicate-ok" target="#a #b"`.
+   */
+  markDuplicateIntentional(ids: string[]): boolean {
+    const unique = Array.from(new Set(ids.map((id) => id.trim()).filter(Boolean)));
+    if (unique.length < 2) {
+      throw new Error('An intentional-duplicate group needs at least two ids.');
+    }
+    for (const id of unique) {
+      if (!this.getEntity(id)) throw new Error(`Unknown entity id: ${id}`);
+    }
+    const ownerId = unique[0]!;
+    const targetRefs = unique.map((id) => `#${id}`).join(' ');
+    const existing = this.db
+      .prepare(
+        `SELECT id FROM entity_decisions
+         WHERE entity_id = ? AND decision_type = 'duplicate-ok' AND target_refs = ?`,
+      )
+      .get(ownerId, targetRefs) as { id: number } | undefined;
+    if (existing) return false;
+    const now = nowIso();
+    this.db
+      .prepare(
+        `INSERT INTO entity_decisions
+           (entity_id, decision_type, target_refs, payload_json, origin, source, created_at)
+         VALUES (?, 'duplicate-ok', ?, NULL, 'user', NULL, ?)`,
+      )
+      .run(ownerId, targetRefs, now);
+    this.bumpEntity(ownerId, now);
+    return true;
+  }
+
+  /**
+   * Restore missing `target_refs` (and insert absent decision rows) from a
+   * sibling XML parse. Idempotent: matching target_refs are left alone.
+   */
+  backfillDecisionTargets(
+    entries: DecisionTargetBackfillEntry[],
+  ): DecisionTargetBackfillReport {
+    const report: DecisionTargetBackfillReport = { updated: 0, inserted: 0, unchanged: 0 };
+    return this.transaction(() => {
+      for (const entry of entries) {
+        if (!this.getEntity(entry.entityId)) continue;
+        const targetRefs = entry.targetRefs.trim();
+        if (!targetRefs) continue;
+        const same = this.db
+          .prepare(
+            `SELECT id FROM entity_decisions
+             WHERE entity_id = ? AND decision_type = ? AND target_refs = ?`,
+          )
+          .get(entry.entityId, entry.decisionType, targetRefs) as { id: number } | undefined;
+        if (same) {
+          report.unchanged += 1;
+          continue;
+        }
+        const missing = this.db
+          .prepare(
+            `SELECT id FROM entity_decisions
+             WHERE entity_id = ? AND decision_type = ?
+               AND (target_refs IS NULL OR trim(target_refs) = '')
+             ORDER BY id LIMIT 1`,
+          )
+          .get(entry.entityId, entry.decisionType) as { id: number } | undefined;
+        if (missing) {
+          this.db
+            .prepare(
+              `UPDATE entity_decisions
+               SET target_refs = ?,
+                   source = COALESCE(?, source),
+                   payload_json = COALESCE(?, payload_json)
+               WHERE id = ?`,
+            )
+            .run(
+              targetRefs,
+              entry.source ?? null,
+              entry.payloadJson ?? null,
+              missing.id,
+            );
+          report.updated += 1;
+          continue;
+        }
+        this.db
+          .prepare(
+            `INSERT INTO entity_decisions
+               (entity_id, decision_type, target_refs, payload_json, origin, source, created_at)
+             VALUES (?, ?, ?, ?, 'xml', ?, ?)`,
+          )
+          .run(
+            entry.entityId,
+            entry.decisionType,
+            targetRefs,
+            entry.payloadJson ?? null,
+            entry.source ?? null,
+            nowIso(),
+          );
+        report.inserted += 1;
+      }
+      return report;
+    });
+  }
+
+  applyConcordanceAssociations(
+    associations: SqliteConcordanceAssociation[],
+  ): SqliteConcordanceImportResult {
+    const result: SqliteConcordanceImportResult = {
+      applied: 0,
+      alreadyPresent: 0,
+      rejected: 0,
+      unresolved: 0,
+      conflicts: [],
+    };
+    const ownersByRef = new Map<string, string[]>();
+    const authorityRows = this.db
+      .prepare(
+        `SELECT a.entity_id, a.authority_type, a.authority_value
+         FROM entity_authorities a
+         JOIN entities e ON e.id = a.entity_id
+         WHERE a.status = 'active' AND e.deleted_at IS NULL
+           AND a.authority_type != ?`,
+      )
+      .all(CENTRAL_AUTHORITY_TYPE) as {
+      entity_id: string;
+      authority_type: string;
+      authority_value: string;
+    }[];
+    for (const row of authorityRows) {
+      const ref = concordanceRef(row.authority_type, row.authority_value);
+      const owners = ownersByRef.get(ref) ?? [];
+      if (!owners.includes(row.entity_id)) owners.push(row.entity_id);
+      ownersByRef.set(ref, owners);
+    }
+
+    const rejectedPairs = new Set(
+      this.listConcordanceRejections().map((rejection) => `${rejection.leftId}\t${rejection.rightId}`),
+    );
+
+    for (const association of associations) {
+      const [left, right] = concordanceRefs(association);
+      if (rejectedPairs.has(`${left}\t${right}`)) {
+        result.rejected += 1;
+        continue;
+      }
+      const owners = Array.from(
+        new Set([...(ownersByRef.get(left) ?? []), ...(ownersByRef.get(right) ?? [])]),
+      );
+      if (owners.length === 0) {
+        result.unresolved += 1;
+        continue;
+      }
+      if (owners.length > 1) {
+        result.conflicts.push({ association, entityIds: owners });
+        continue;
+      }
+      const ownerId = owners[0]!;
+      const refs = new Set(this.activeAuthorityRefs(ownerId));
+      const missing = [
+        [association.source, association.canonicalId],
+        [association.source, association.mergedFromId],
+      ].filter(([, id]) => !refs.has(concordanceRef(association.source, id))) as [
+        string,
+        string,
+      ][];
+      if (!missing.length) {
+        result.alreadyPresent += 1;
+        continue;
+      }
+      for (const [type, value] of missing) {
+        this.attachAuthority({
+          entityId: ownerId,
+          type,
+          value,
+          origin: 'authority',
+          source: association.source,
+        });
+        const ref = concordanceRef(type, value);
+        const mapped = ownersByRef.get(ref) ?? [];
+        if (!mapped.includes(ownerId)) mapped.push(ownerId);
+        ownersByRef.set(ref, mapped);
+      }
+      result.applied += 1;
+    }
+    return result;
+  }
+
+  private activeAuthorityRefs(entityId: string): string[] {
+    return (
+      this.db
+        .prepare(
+          `SELECT authority_type AS type, authority_value AS value
+           FROM entity_authorities
+           WHERE entity_id = ? AND status = 'active' AND authority_type != ?`,
+        )
+        .all(entityId, CENTRAL_AUTHORITY_TYPE) as { type: string; value: string }[]
+    ).map((row) => concordanceRef(row.type, row.value));
+  }
+
+  listCandidateRecords(kind: SqliteEntityKind): SqliteEntityCandidateRecord[] {
+    const entities = this.db
+      .prepare(
+        `SELECT e.id, e.kind, e.description
+         FROM entities e
+         WHERE e.kind = ? AND e.deleted_at IS NULL
+         ORDER BY e.id`,
+      )
+      .all(kind) as Record<string, unknown>[];
+    const names = this.db.prepare(
+      `SELECT text, name_type FROM entity_names
+       WHERE entity_id = ? AND status = 'active'
+       ORDER BY is_primary DESC, id`,
+    );
+    const dates = this.db.prepare(
+      `SELECT date_kind, start_year, end_year FROM entity_dates
+       WHERE entity_id = ? AND status = 'active'
+       ORDER BY id`,
+    );
+    const titles = this.db.prepare(
+      `SELECT place_name, role_name, posthumous_name, dynasty
+       FROM person_titles WHERE person_id = ? AND status = 'active' ORDER BY id`,
+    );
+    return entities.map((entity) => {
+      const id = String(entity.id);
+      const entityNames = names.all(id) as Record<string, unknown>[];
+      const entityDates = dates.all(id) as Record<string, unknown>[];
+      const startYears = entityDates
+        .map((date) => date.start_year)
+        .filter((value): value is number => typeof value === 'number');
+      const endYears = entityDates
+        .map((date) => date.end_year)
+        .filter((value): value is number => typeof value === 'number');
+      const entityTitles = titles.all(id) as Record<string, unknown>[];
+      return {
+        id,
+        kind: entity.kind as SqliteEntityKind,
+        names: entityNames.map((name) => ({
+          text: String(name.text),
+          ...(name.name_type ? { type: String(name.name_type) } : {}),
+        })),
+        ...(entity.description ? { description: String(entity.description) } : {}),
+        ...(startYears.length ? { startYear: Math.min(...startYears) } : {}),
+        ...(endYears.length ? { endYear: Math.max(...endYears) } : {}),
+        nobleTitles: entityTitles.map((title) => ({
+          ...(title.place_name ? { fief: String(title.place_name) } : {}),
+          ...(title.role_name ? { roleName: String(title.role_name) } : {}),
+          ...(title.posthumous_name ? { posthumousName: String(title.posthumous_name) } : {}),
+          ...(title.dynasty ? { dynasty: String(title.dynasty) } : {}),
+        })),
+      };
+    });
+  }
+
+  listNames(entityId: string, includeInactive = false): SqliteName[] {
+    const statement = includeInactive
+      ? this.db.prepare(
+          'SELECT * FROM entity_names WHERE entity_id = ? ORDER BY is_primary DESC, id',
+        )
+      : this.db.prepare(
+          `SELECT * FROM entity_names
+           WHERE entity_id = ? AND status = 'active'
+           ORDER BY is_primary DESC, id`,
+        );
+    return statement.all(entityId).map((row) => rowName(row as Record<string, unknown>));
+  }
+
+  addName(input: AddNameInput): SqliteName {
+    const text = input.text.trim();
+    if (!text) throw new Error('Entity names cannot be empty.');
+    const now = input.now ?? nowIso();
+    const nameType = normalizePersonNameType(input.nameType ?? null);
+    const nameRole =
+      input.nameRole ??
+      (nameType === 'family' || nameType === 'given'
+        ? nameType
+        : input.isPrimary
+          ? 'primary'
+          : 'variant');
+    return this.transaction(() => {
+      if (input.isPrimary) {
+        this.db
+          .prepare('UPDATE entity_names SET is_primary = 0 WHERE entity_id = ?')
+          .run(input.entityId);
+      }
+      const result = this.db
+        .prepare(
+          `INSERT INTO entity_names
+             (entity_id, text, name_type, name_role, language, is_primary, origin, source, status, created_at, updated_at)
+           VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+        )
+        .run(
+          input.entityId,
+          text,
+          nameType,
+          nameRole,
+          input.language ?? null,
+          input.isPrimary ? 1 : 0,
+          input.origin ?? 'user',
+          input.source ?? null,
+          input.status ?? 'active',
+          now,
+          now,
+        );
+      this.syncPersonNameScalars(input.entityId, text, nameType, now);
+      this.bumpEntity(input.entityId, now);
+      return this.getName(Number(result.lastInsertRowid))!;
+    });
+  }
+
+  updateNamesByText(input: UpdateNamesByTextInput): number {
+    const text = input.text.trim();
+    if (!text) throw new Error('Entity names cannot be empty.');
+    const now = input.now ?? nowIso();
+    const nameType =
+      input.nameType === undefined ? undefined : normalizePersonNameType(input.nameType);
+    return this.transaction(() => {
+      const existing = this.db
+        .prepare(
+          `SELECT id, name_type, language FROM entity_names
+           WHERE entity_id = ? AND text = ? AND status = 'active'`,
+        )
+        .all(input.entityId, text) as {
+        id: number;
+        name_type: string | null;
+        language: string | null;
+      }[];
+
+      if (existing.length === 0) {
+        if (nameType !== 'family' && nameType !== 'given') return 0;
+        const nameRole = nameType;
+        const result = this.db
+          .prepare(
+            `INSERT INTO entity_names
+               (entity_id, text, name_type, name_role, language, is_primary, origin, source, status, created_at, updated_at)
+             VALUES (?, ?, ?, ?, ?, 0, 'user', NULL, 'active', ?, ?)`,
+          )
+          .run(input.entityId, text, nameType, nameRole, input.language ?? null, now, now);
+        this.syncPersonNameScalars(input.entityId, text, nameType, now);
+        this.bumpEntity(input.entityId, now);
+        return Number(result.changes);
+      }
+
+      for (const row of existing) {
+        const previousType = normalizePersonNameType(row.name_type);
+        const nextType = nameType === undefined ? previousType : nameType;
+        const nextRole =
+          nextType === 'family' || nextType === 'given'
+            ? nextType
+            : nextType === 'primary'
+              ? 'primary'
+              : previousType === 'family' || previousType === 'given'
+                ? 'variant'
+                : undefined;
+        const nextLanguage = input.language === undefined ? row.language : input.language;
+        this.db
+          .prepare(
+            `UPDATE entity_names
+             SET name_type = ?, name_role = COALESCE(?, name_role), language = ?, updated_at = ?
+             WHERE id = ?`,
+          )
+          .run(nextType, nextRole ?? null, nextLanguage, now, row.id);
+        this.syncPersonNameScalarsAfterTypeChange(
+          input.entityId,
+          text,
+          previousType,
+          nextType,
+          now,
+        );
+      }
+      this.bumpEntity(input.entityId, now);
+      return existing.length;
+    });
+  }
+
+  tombstoneName(nameId: number, reason = 'user-deleted', now = nowIso()): void {
+    this.transaction(() => {
+      const row = this.db
+        .prepare('SELECT entity_id, status FROM entity_names WHERE id = ?')
+        .get(nameId) as Record<string, unknown> | undefined;
+      if (!row) throw new Error(`Name not found: ${nameId}`);
+      if (row.status === 'active') {
+        this.db
+          .prepare(`UPDATE entity_names SET status = 'withdrawn', updated_at = ? WHERE id = ?`)
+          .run(now, nameId);
+        this.db
+          .prepare(
+            `INSERT OR IGNORE INTO entity_tombstones
+               (entity_id, table_name, row_id, reason, created_at)
+             VALUES (?, 'entity_names', ?, ?, ?)`,
+          )
+          .run(String(row.entity_id), nameId, reason, now);
+        this.bumpEntity(String(row.entity_id), now);
+      }
+    });
+  }
+
+  tombstoneNamesByText(
+    entityId: string,
+    text: string,
+    reason = 'user-deleted',
+    now = nowIso(),
+  ): number {
+    const normalized = text.trim();
+    if (!normalized) return 0;
+    return this.transaction(() => {
+      const rows = this.db
+        .prepare(
+          `SELECT id FROM entity_names
+           WHERE entity_id = ? AND text = ? AND status = 'active'`,
+        )
+        .all(entityId, normalized) as { id: number }[];
+      for (const row of rows) {
+        this.db
+          .prepare(`UPDATE entity_names SET status = 'withdrawn', updated_at = ? WHERE id = ?`)
+          .run(now, row.id);
+        this.db
+          .prepare(
+            `INSERT OR IGNORE INTO entity_tombstones
+               (entity_id, table_name, row_id, reason, created_at)
+             VALUES (?, 'entity_names', ?, ?, ?)`,
+          )
+          .run(entityId, row.id, reason, now);
+      }
+      if (rows.length > 0) this.bumpEntity(entityId, now);
+      return rows.length;
+    });
+  }
+
+  removeNameByText(entityId: string, text: string, now = nowIso()): boolean {
+    const normalized = text.trim();
+    if (!normalized) return false;
+    return this.transaction(() => {
+      const active = this.db
+        .prepare(
+          `SELECT id, origin, is_primary, name_type, name_role FROM entity_names
+           WHERE entity_id = ? AND status = 'active' ORDER BY is_primary DESC, id`,
+        )
+        .all(entityId) as {
+        id: number;
+        origin: SqliteValueOrigin;
+        is_primary: number;
+        name_type: string | null;
+        name_role: string;
+      }[];
+      if (active.length <= 1) return false;
+      const targets = this.db
+        .prepare(
+          `SELECT id, origin, is_primary, name_type, name_role FROM entity_names
+           WHERE entity_id = ? AND text = ? AND status = 'active'`,
+        )
+        .all(entityId, normalized) as {
+        id: number;
+        origin: SqliteValueOrigin;
+        is_primary: number;
+        name_type: string | null;
+        name_role: string;
+      }[];
+      if (targets.length === 0) return false;
+
+      for (const target of targets) {
+        if (target.origin === 'user') {
+          this.db.prepare('DELETE FROM entity_names WHERE id = ?').run(target.id);
+        } else {
+          this.db
+            .prepare(`UPDATE entity_names SET status = 'rejected', updated_at = ? WHERE id = ?`)
+            .run(now, target.id);
+          this.db
+            .prepare(
+              `INSERT OR IGNORE INTO entity_tombstones
+                 (entity_id, table_name, row_id, reason, created_at)
+               VALUES (?, 'entity_names', ?, 'user-deleted', ?)`,
+            )
+            .run(entityId, target.id, now);
+        }
+        const removedType =
+          normalizePersonNameType(target.name_type) ??
+          (target.name_role === 'family' || target.name_role === 'given'
+            ? target.name_role
+            : null);
+        if (removedType === 'family' || removedType === 'given') {
+          this.syncPersonNameScalarsAfterTypeChange(
+            entityId,
+            normalized,
+            removedType,
+            null,
+            now,
+          );
+        }
+      }
+
+      const survivor = this.db
+        .prepare(
+          `SELECT id FROM entity_names
+           WHERE entity_id = ? AND status = 'active'
+           ORDER BY is_primary DESC, id LIMIT 1`,
+        )
+        .get(entityId) as { id: number } | undefined;
+      if (survivor) {
+        this.db.prepare('UPDATE entity_names SET is_primary = 0 WHERE entity_id = ?').run(entityId);
+        this.db.prepare('UPDATE entity_names SET is_primary = 1 WHERE id = ?').run(survivor.id);
+      }
+      this.bumpEntity(entityId, now);
+      return true;
+    });
+  }
+
+  updateDescription(entityId: string, description: string | null, now = nowIso()): void {
+    this.transaction(() => {
+      const trimmed = description?.trim() || null;
+      this.db
+        .prepare(
+          'UPDATE entities SET description = ?, updated_at = ?, revision = revision + 1 WHERE id = ?',
+        )
+        .run(trimmed, now, entityId);
+      const existing = this.db
+        .prepare(
+          `SELECT id FROM entity_metadata
+           WHERE entity_id = ? AND key = 'description' AND origin = 'user'
+           ORDER BY id LIMIT 1`,
+        )
+        .get(entityId) as { id: number } | undefined;
+      if (!trimmed) {
+        if (existing) this.db.prepare('DELETE FROM entity_metadata WHERE id = ?').run(existing.id);
+        return;
+      }
+      if (existing) {
+        this.db
+          .prepare(
+            `UPDATE entity_metadata
+             SET value = ?, status = 'active', updated_at = ?
+             WHERE id = ?`,
+          )
+          .run(trimmed, now, existing.id);
+      } else {
+        this.db
+          .prepare(
+            `INSERT INTO entity_metadata
+               (entity_id, key, value, origin, source, status, created_at, updated_at)
+             VALUES (?, 'description', ?, 'user', NULL, 'active', ?, ?)`,
+          )
+          .run(entityId, trimmed, now, now);
+      }
+    });
+  }
+
+  setUserEntityDate(input: SetUserEntityDateInput): void {
+    const now = input.now ?? nowIso();
+    this.transaction(() => {
+      const existing = this.db
+        .prepare(
+          `SELECT id FROM entity_dates
+           WHERE entity_id = ? AND date_kind = ? AND origin = 'user' AND status = 'active'
+           ORDER BY id LIMIT 1`,
+        )
+        .get(input.entityId, input.part) as { id: number } | undefined;
+      if (input.year == null) {
+        if (existing) {
+          this.db.prepare('DELETE FROM entity_dates WHERE id = ?').run(existing.id);
+          this.bumpEntity(input.entityId, now);
+        }
+        return;
+      }
+      const whenValue = isoYearString(input.year);
+      const precision = input.precision?.trim() || null;
+      if (existing) {
+        this.db
+          .prepare(
+            `UPDATE entity_dates
+             SET start_year = ?, when_value = ?, start_precision = ?, updated_at = ?
+             WHERE id = ?`,
+          )
+          .run(input.year, whenValue, precision, now, existing.id);
+      } else {
+        this.db
+          .prepare(
+            `INSERT INTO entity_dates
+               (entity_id, date_kind, start_year, when_value, start_precision,
+                origin, source, status, created_at, updated_at)
+             VALUES (?, ?, ?, ?, ?, 'user', NULL, 'active', ?, ?)`,
+          )
+          .run(input.entityId, input.part, input.year, whenValue, precision, now, now);
+      }
+      this.bumpEntity(input.entityId, now);
+    });
+  }
+
+  setUserWorkDate(input: SetUserWorkDateInput): void {
+    const now = input.now ?? nowIso();
+    this.transaction(() => {
+      const existing = this.db
+        .prepare(
+          `SELECT id FROM entity_dates
+           WHERE entity_id = ? AND date_kind IN ('dates', 'work') AND origin = 'user' AND status = 'active'
+           ORDER BY CASE date_kind WHEN 'dates' THEN 0 ELSE 1 END, id
+           LIMIT 1`,
+        )
+        .get(input.entityId) as { id: number } | undefined;
+      if (input.startYear == null && (input.endYear == null || input.endYear === undefined)) {
+        if (existing) {
+          this.db.prepare('DELETE FROM entity_dates WHERE id = ?').run(existing.id);
+          this.bumpEntity(input.entityId, now);
+        }
+        return;
+      }
+      const startPrecision = input.startPrecision?.trim() || null;
+      const endPrecision = input.endPrecision?.trim() || null;
+      const rawText = [
+        input.startYear != null ? isoYearString(input.startYear) : '',
+        input.endYear != null ? isoYearString(input.endYear) : '',
+      ].join('/');
+      if (existing) {
+        this.db
+          .prepare(
+            `UPDATE entity_dates
+             SET date_kind = 'dates', start_year = ?, end_year = ?,
+                 from_value = ?, to_value = ?, start_precision = ?, end_precision = ?,
+                 raw_text = ?, updated_at = ?
+             WHERE id = ?`,
+          )
+          .run(
+            input.startYear,
+            input.endYear ?? null,
+            input.startYear != null ? isoYearString(input.startYear) : null,
+            input.endYear != null ? isoYearString(input.endYear) : null,
+            startPrecision,
+            endPrecision,
+            rawText,
+            now,
+            existing.id,
+          );
+      } else {
+        this.db
+          .prepare(
+            `INSERT INTO entity_dates
+               (entity_id, date_kind, start_year, end_year, from_value, to_value,
+                start_precision, end_precision, raw_text, origin, source, status, created_at, updated_at)
+             VALUES (?, 'dates', ?, ?, ?, ?, ?, ?, ?, 'user', NULL, 'active', ?, ?)`,
+          )
+          .run(
+            input.entityId,
+            input.startYear,
+            input.endYear ?? null,
+            input.startYear != null ? isoYearString(input.startYear) : null,
+            input.endYear != null ? isoYearString(input.endYear) : null,
+            startPrecision,
+            endPrecision,
+            rawText,
+            now,
+            now,
+          );
+      }
+      this.bumpEntity(input.entityId, now);
+    });
+  }
+
+  addNationality(input: AddLabeledValueInput): boolean {
+    return this.addPersonLabeledValue('person_nationalities', input);
+  }
+
+  addOrigin(input: AddLabeledValueInput): boolean {
+    return this.addPersonLabeledValue('person_origins', input);
+  }
+
+  addNobleTitle(entityId: string, input: NobleTitleMutationInput, now = nowIso()): boolean {
+    const values = {
+      dynasty: input.dynasty?.trim() ?? '',
+      fief: input.fief?.trim() ?? '',
+      posthumousName: input.posthumousName?.trim() ?? '',
+      title: input.title?.trim() ?? '',
+    };
+    if (!values.dynasty && !values.fief && !values.posthumousName && !values.title) return false;
+    return this.transaction(() => {
+      if (!this.getEntity(entityId) || this.getEntity(entityId)?.kind !== 'person') return false;
+      const exists = this.db
+        .prepare(
+          `SELECT 1 FROM person_titles
+           WHERE person_id = ? AND status = 'active'
+             AND COALESCE(dynasty, '') = ?
+             AND COALESCE(place_name, '') = ?
+             AND COALESCE(role_name, '') = ?
+             AND COALESCE(posthumous_name, '') = ?`,
+        )
+        .get(entityId, values.dynasty, values.fief, values.title, values.posthumousName);
+      if (exists) return false;
+      this.db
+        .prepare(
+          `INSERT INTO person_titles
+             (person_id, dynasty, place_name, role_name, posthumous_name,
+              origin, source, status, created_at, updated_at)
+           VALUES (?, ?, ?, ?, ?, 'user', NULL, 'active', ?, ?)`,
+        )
+        .run(
+          entityId,
+          values.dynasty || null,
+          values.fief,
+          values.title,
+          values.posthumousName || null,
+          now,
+          now,
+        );
+      this.bumpEntity(entityId, now);
+      return true;
+    });
+  }
+
+  updateNobleTitle(
+    entityId: string,
+    key: string,
+    input: NobleTitleMutationInput,
+    now = nowIso(),
+  ): boolean {
+    const parsed = parseAssertionKey(key);
+    if (!parsed || parsed.kind !== 'row' || parsed.table !== 'person_titles') return false;
+    const values = {
+      dynasty: input.dynasty?.trim() ?? '',
+      fief: input.fief?.trim() ?? '',
+      posthumousName: input.posthumousName?.trim() ?? '',
+      title: input.title?.trim() ?? '',
+    };
+    return this.transaction(() => {
+      const row = this.db
+        .prepare('SELECT person_id FROM person_titles WHERE id = ?')
+        .get(parsed.rowId) as { person_id: string } | undefined;
+      if (!row || row.person_id !== entityId) return false;
+      this.db
+        .prepare(
+          `UPDATE person_titles
+           SET dynasty = ?, place_name = ?, role_name = ?, posthumous_name = ?, updated_at = ?
+           WHERE id = ?`,
+        )
+        .run(
+          values.dynasty || null,
+          values.fief,
+          values.title,
+          values.posthumousName || null,
+          now,
+          parsed.rowId,
+        );
+      this.bumpEntity(entityId, now);
+      return true;
+    });
+  }
+
+  setUserWorkAuthors(input: SetUserWorkAuthorsInput): void {
+    const now = input.now ?? nowIso();
+    this.transaction(() => {
+      this.db
+        .prepare(`DELETE FROM work_authors WHERE work_id = ? AND origin = 'user'`)
+        .run(input.entityId);
+      const seen = new Set<string>();
+      for (const author of input.authors) {
+        const name = author.name.trim();
+        const ref = (author.key ? `#${author.key.replace(/^#/, '')}` : author.ref?.trim()) || null;
+        const dedupe = `${name}\0${ref ?? ''}`;
+        if (!name || seen.has(dedupe)) continue;
+        seen.add(dedupe);
+        const personId = author.key?.replace(/^#/, '') || null;
+        this.db
+          .prepare(
+            `INSERT INTO work_authors
+               (work_id, person_id, label, reference, origin, source, status, created_at, updated_at)
+             VALUES (?, ?, ?, ?, 'user', NULL, 'active', ?, ?)`,
+          )
+          .run(input.entityId, personId, name, ref, now, now);
+      }
+      this.bumpEntity(input.entityId, now);
+    });
+  }
+
+  attachAuthority(input: AuthorityRefInput): boolean {
+    const now = input.now ?? nowIso();
+    const type = canonicalizeAuthorityType(input.type);
+    const rawValue = input.value.trim();
+    if (!type || !rawValue) return false;
+    const origin = input.origin ?? 'user';
+    const source = input.source ?? null;
+    const value = normalizeAuthorityValue(type, rawValue);
+    const normalized = value;
+    return this.transaction(() => {
+      const existing = this.db
+        .prepare(
+          `SELECT id, authority_type, authority_value, status FROM entity_authorities
+           WHERE entity_id = ? AND lower(authority_type) = lower(?)`,
+        )
+        .all(input.entityId, type) as {
+        id: number;
+        authority_type: string;
+        authority_value: string;
+        status: string;
+      }[];
+      const match = existing.find(
+        (row) => normalizeAuthorityValue(type, row.authority_value) === normalized,
+      );
+      if (match) {
+        if (match.status === 'active' && match.authority_type === type && match.authority_value === value)
+          return false;
+        this.db
+          .prepare(
+            `UPDATE entity_authorities
+             SET authority_type = ?, authority_value = ?, status = 'active',
+                 origin = ?, source = ?, updated_at = ?
+             WHERE id = ?`,
+          )
+          .run(type, value, origin, source, now, match.id);
+        this.bumpEntity(input.entityId, now);
+        return true;
+      }
+      this.db
+        .prepare(
+          `INSERT INTO entity_authorities
+             (entity_id, authority_type, authority_value, origin, source, status, created_at, updated_at)
+           VALUES (?, ?, ?, ?, ?, 'active', ?, ?)`,
+        )
+        .run(input.entityId, type, value, origin, source, now, now);
+      this.bumpEntity(input.entityId, now);
+      return true;
+    });
+  }
+
+  decoupleAuthority(input: AuthorityRefInput): number {
+    const now = input.now ?? nowIso();
+    const type = input.type.trim();
+    const value = input.value.trim();
+    if (!type || !value) return 0;
+    const normalized = normalizeAuthorityValue(type, value);
+    return this.transaction(() => {
+      let removed = 0;
+      const authorities = this.db
+        .prepare(
+          `SELECT id, authority_value, origin, status FROM entity_authorities WHERE entity_id = ?`,
+        )
+        .all(input.entityId) as {
+        id: number;
+        authority_value: string;
+        origin: SqliteValueOrigin;
+        status: string;
+      }[];
+      for (const row of authorities) {
+        if (normalizeAuthorityValue(type, row.authority_value) !== normalized) continue;
+        if (row.origin === 'authority' || row.status !== 'active') {
+          this.db.prepare('DELETE FROM entity_authorities WHERE id = ?').run(row.id);
+          removed += 1;
+        } else {
+          this.db.prepare('DELETE FROM entity_authorities WHERE id = ?').run(row.id);
+          removed += 1;
+        }
+      }
+
+      const sourcePrefix = `${type}:`;
+      const purgeBySource = (table: string, ownerCol: string) => {
+        const rows = this.db
+          .prepare(
+            `SELECT id, origin, source, status FROM ${table} WHERE ${ownerCol} = ?`,
+          )
+          .all(input.entityId) as {
+          id: number;
+          origin: SqliteValueOrigin;
+          source: string | null;
+          status: string;
+        }[];
+        for (const row of rows) {
+          if (!row.source?.startsWith(sourcePrefix)) continue;
+          const sourceValue = row.source.slice(sourcePrefix.length);
+          if (normalizeAuthorityValue(type, sourceValue) !== normalized) continue;
+          if (row.origin !== 'authority') continue;
+          if (
+            row.status === 'active' ||
+            (row.status === 'rejected' && table === 'entity_dates')
+          ) {
+            this.db.prepare(`DELETE FROM ${table} WHERE id = ?`).run(row.id);
+            removed += 1;
+          }
+        }
+      };
+      purgeBySource('entity_names', 'entity_id');
+      purgeBySource('entity_dates', 'entity_id');
+      purgeBySource('person_nationalities', 'person_id');
+      purgeBySource('person_origins', 'person_id');
+      purgeBySource('person_titles', 'person_id');
+      purgeBySource('person_offices', 'person_id');
+      purgeBySource('work_authors', 'work_id');
+
+      this.db
+        .prepare(
+          `DELETE FROM authority_caches
+           WHERE entity_id = ? AND (authority_type = ? OR source = ? OR source = ?)`,
+        )
+        .run(input.entityId, type, type, `${type}:${value}`);
+
+      if (removed > 0) this.bumpEntity(input.entityId, now);
+      return removed;
+    });
+  }
+
+  rejectAssertion(entityId: string, key: string, now = nowIso()): boolean {
+    return this.mutateAssertion(entityId, key, 'reject', now);
+  }
+
+  removeAssertion(entityId: string, key: string, now = nowIso()): boolean {
+    return this.mutateAssertion(entityId, key, 'remove', now);
+  }
+
+  validateAssertion(entityId: string, key: string, now = nowIso()): boolean {
+    return this.mutateAssertion(entityId, key, 'validate', now);
+  }
+
+  acceptDateAssertion(entityId: string, key: string, now = nowIso()): boolean {
+    const parsed = parseAssertionKey(key);
+    if (!parsed || parsed.kind !== 'row' || parsed.table !== 'entity_dates') return false;
+    return this.transaction(() => {
+      const row = this.db
+        .prepare('SELECT * FROM entity_dates WHERE id = ?')
+        .get(parsed.rowId) as Record<string, unknown> | undefined;
+      if (!row || String(row.entity_id) !== entityId) return false;
+      const kind = String(row.date_kind);
+      if (kind !== 'birth' && kind !== 'death') return false;
+      const others = this.db
+        .prepare(
+          `SELECT id FROM entity_dates
+           WHERE entity_id = ? AND date_kind = ? AND origin = 'user' AND id != ?`,
+        )
+        .all(entityId, kind, parsed.rowId) as { id: number }[];
+      for (const other of others) {
+        this.db.prepare('DELETE FROM entity_dates WHERE id = ?').run(other.id);
+      }
+      this.db
+        .prepare(
+          `UPDATE entity_dates
+           SET origin = 'user', source = NULL, status = 'active', updated_at = ?
+           WHERE id = ?`,
+        )
+        .run(now, parsed.rowId);
+      this.bumpEntity(entityId, now);
+      return true;
+    });
+  }
+
+  acceptDescriptionAssertion(entityId: string, key: string, now = nowIso()): boolean {
+    const parsed = parseAssertionKey(key);
+    if (parsed?.kind === 'description') {
+      if (parsed.entityId !== entityId) return false;
+      return true;
+    }
+    if (!parsed || parsed.kind !== 'row' || parsed.table !== 'entity_metadata') return false;
+    return this.transaction(() => {
+      const row = this.db
+        .prepare('SELECT * FROM entity_metadata WHERE id = ?')
+        .get(parsed.rowId) as Record<string, unknown> | undefined;
+      if (!row || String(row.entity_id) !== entityId || String(row.key) !== 'description') {
+        return false;
+      }
+      const value = String(row.value ?? '').trim();
+      if (!value) return false;
+      const others = this.db
+        .prepare(
+          `SELECT id FROM entity_metadata
+           WHERE entity_id = ? AND key = 'description' AND origin = 'user' AND id != ?`,
+        )
+        .all(entityId, parsed.rowId) as { id: number }[];
+      for (const other of others) {
+        this.db.prepare('DELETE FROM entity_metadata WHERE id = ?').run(other.id);
+      }
+      this.db
+        .prepare(
+          `UPDATE entity_metadata
+           SET origin = 'user', source = NULL, status = 'active', updated_at = ?
+           WHERE id = ?`,
+        )
+        .run(now, parsed.rowId);
+      this.db
+        .prepare(
+          'UPDATE entities SET description = ?, updated_at = ?, revision = revision + 1 WHERE id = ?',
+        )
+        .run(value, now, entityId);
+      return true;
+    });
+  }
+
+  renamePrimaryName(entityId: string, text: string, now = nowIso()): boolean {
+    const trimmed = text.trim();
+    if (!trimmed) return false;
+    return this.transaction(() => {
+      const primary = this.db
+        .prepare(
+          `SELECT id, text FROM entity_names
+           WHERE entity_id = ? AND status = 'active'
+           ORDER BY is_primary DESC, id LIMIT 1`,
+        )
+        .get(entityId) as { id: number; text: string } | undefined;
+      if (!primary || primary.text === trimmed) return false;
+      this.db
+        .prepare('UPDATE entity_names SET text = ?, updated_at = ? WHERE id = ?')
+        .run(trimmed, now, primary.id);
+      const duplicates = this.db
+        .prepare(
+          `SELECT id FROM entity_names
+           WHERE entity_id = ? AND text = ? AND status = 'active' AND id != ?`,
+        )
+        .all(entityId, trimmed, primary.id) as { id: number }[];
+      for (const duplicate of duplicates) {
+        this.db.prepare('DELETE FROM entity_names WHERE id = ?').run(duplicate.id);
+      }
+      this.bumpEntity(entityId, now);
+      return true;
+    });
+  }
+
+  setRomanizedName(
+    entityId: string,
+    text: string,
+    language = 'und-Latn',
+    now = nowIso(),
+  ): void {
+    const trimmed = text.trim();
+    this.transaction(() => {
+      const existing = this.db
+        .prepare(
+          `SELECT id FROM entity_names
+           WHERE entity_id = ? AND status = 'active' AND language LIKE '%-Latn'
+           ORDER BY id LIMIT 1`,
+        )
+        .get(entityId) as { id: number } | undefined;
+      if (!trimmed) {
+        if (existing) {
+          this.db.prepare('DELETE FROM entity_names WHERE id = ?').run(existing.id);
+          this.bumpEntity(entityId, now);
+        }
+        return;
+      }
+      if (existing) {
+        this.db
+          .prepare('UPDATE entity_names SET text = ?, language = ?, updated_at = ? WHERE id = ?')
+          .run(trimmed, language, now, existing.id);
+      } else {
+        this.db
+          .prepare(
+            `INSERT INTO entity_names
+               (entity_id, text, name_type, name_role, language, is_primary, origin, source, status, created_at, updated_at)
+             VALUES (?, ?, NULL, 'variant', ?, 0, 'user', NULL, 'active', ?, ?)`,
+          )
+          .run(entityId, trimmed, language, now, now);
+      }
+      this.bumpEntity(entityId, now);
+    });
+  }
+
+  /**
+   * Replace this entity's body with another entity's body (same kind).
+   * Preserves the target id, kind, and `central_mappings`. Used by synchronized
+   * mirror content sync — equivalent to DOM `copyEntityContent`.
+   */
+  replaceEntityContentFrom(
+    source: EntitySqliteRepository,
+    sourceId: string,
+    targetId: string,
+    now = nowIso(),
+  ): boolean {
+    const sourceEntity = source.getEntity(sourceId);
+    const targetEntity = this.getEntity(targetId);
+    if (!sourceEntity || sourceEntity.deletedAt || !targetEntity || targetEntity.deletedAt) {
+      return false;
+    }
+    if (sourceEntity.kind !== targetEntity.kind) return false;
+
+    return this.transaction(() => {
+      this.clearEntityBody(targetId);
+      this.copyEntityBodyFrom(source, sourceId, targetId);
+      this.db
+        .prepare(
+          `UPDATE entities
+           SET description = ?, updated_at = ?, revision = revision + 1
+           WHERE id = ?`,
+        )
+        .run(sourceEntity.description, now, targetId);
+      return true;
+    });
+  }
+
+  /** Delete all content rows for an entity, keeping the entity row and central mappings. */
+  private clearEntityBody(entityId: string): void {
+    const tables: Array<[string, string]> = [
+      ['entity_names', 'entity_id'],
+      ['entity_authorities', 'entity_id'],
+      ['entity_dates', 'entity_id'],
+      ['entity_metadata', 'entity_id'],
+      ['authority_caches', 'entity_id'],
+      ['entity_decisions', 'entity_id'],
+      ['entity_attributes', 'entity_id'],
+      ['entity_extensions', 'entity_id'],
+      ['entity_xml_fragments', 'entity_id'],
+      ['person_nationalities', 'person_id'],
+      ['person_origins', 'person_id'],
+      ['person_titles', 'person_id'],
+      ['person_offices', 'person_id'],
+      ['work_authors', 'work_id'],
+      ['office_classifications', 'office_id'],
+    ];
+    for (const [table, ownerCol] of tables) {
+      try {
+        this.db.prepare(`DELETE FROM ${table} WHERE ${ownerCol} = ?`).run(entityId);
+      } catch {
+        // Older schema may lack a table (e.g. entity_xml_fragments already migrated away).
+      }
+    }
+    this.db.prepare('DELETE FROM entity_tombstones WHERE entity_id = ?').run(entityId);
+    this.db.prepare('DELETE FROM entity_provenance WHERE entity_id = ?').run(entityId);
+    const kind = this.getEntity(entityId)?.kind;
+    if (kind === 'person') {
+      this.db
+        .prepare('UPDATE people SET family_name = NULL, given_name = NULL WHERE entity_id = ?')
+        .run(entityId);
+    }
+  }
+
+  private copyEntityBodyFrom(
+    source: EntitySqliteRepository,
+    sourceId: string,
+    targetId: string,
+  ): void {
+    const insertRows = (
+      table: string,
+      ownerCol: string,
+      rows: Record<string, unknown>[],
+      remap?: (row: Record<string, unknown>) => Record<string, unknown> | null,
+    ) => {
+      for (const row of rows) {
+        const next: Record<string, unknown> = { ...row, [ownerCol]: targetId };
+        delete next.id;
+        const mapped = remap ? remap(next) : next;
+        if (!mapped) continue;
+        const columns = Object.keys(mapped);
+        if (columns.length === 0) continue;
+        this.db
+          .prepare(
+            `INSERT INTO ${table} (${columns.join(', ')})
+             VALUES (${columns.map(() => '?').join(', ')})`,
+          )
+          .run(...columns.map((column) => mapped[column] as string | number | null | bigint));
+      }
+    };
+
+    const sourceRows = (table: string, ownerCol: string) =>
+      source.db.prepare(`SELECT * FROM ${table} WHERE ${ownerCol} = ?`).all(sourceId) as Record<
+        string,
+        unknown
+      >[];
+
+    const dateIdMap = new Map<number, number>();
+    for (const row of sourceRows('entity_dates', 'entity_id')) {
+      const oldId = Number(row.id);
+      const next: Record<string, unknown> = { ...row, entity_id: targetId };
+      delete next.id;
+      const columns = Object.keys(next);
+      const result = this.db
+        .prepare(
+          `INSERT INTO entity_dates (${columns.join(', ')})
+           VALUES (${columns.map(() => '?').join(', ')})`,
+        )
+        .run(...columns.map((column) => next[column] as string | number | null | bigint));
+      dateIdMap.set(oldId, Number(result.lastInsertRowid));
+    }
+
+    insertRows('entity_names', 'entity_id', sourceRows('entity_names', 'entity_id'));
+    insertRows(
+      'entity_authorities',
+      'entity_id',
+      sourceRows('entity_authorities', 'entity_id'),
+      (row) =>
+        String(row.authority_type) === CENTRAL_AUTHORITY_TYPE ? null : row,
+    );
+    insertRows('entity_metadata', 'entity_id', sourceRows('entity_metadata', 'entity_id'));
+    insertRows('authority_caches', 'entity_id', sourceRows('authority_caches', 'entity_id'));
+    insertRows('entity_decisions', 'entity_id', sourceRows('entity_decisions', 'entity_id'));
+    insertRows('entity_attributes', 'entity_id', sourceRows('entity_attributes', 'entity_id'));
+    try {
+      insertRows('entity_extensions', 'entity_id', sourceRows('entity_extensions', 'entity_id'));
+    } catch {
+      /* optional */
+    }
+    try {
+      insertRows(
+        'entity_xml_fragments',
+        'entity_id',
+        sourceRows('entity_xml_fragments', 'entity_id'),
+      );
+    } catch {
+      /* optional */
+    }
+
+    const entityExists = (id: string | null | undefined) =>
+      Boolean(id && this.db.prepare('SELECT 1 FROM entities WHERE id = ?').get(id));
+
+    insertRows(
+      'person_nationalities',
+      'person_id',
+      sourceRows('person_nationalities', 'person_id'),
+      (row) => {
+        const nationalityId = row.nationality_entity_id
+          ? String(row.nationality_entity_id)
+          : null;
+        return {
+          ...row,
+          nationality_entity_id: entityExists(nationalityId) ? nationalityId : null,
+        };
+      },
+    );
+    insertRows('person_origins', 'person_id', sourceRows('person_origins', 'person_id'));
+    insertRows('person_titles', 'person_id', sourceRows('person_titles', 'person_id'));
+    insertRows(
+      'person_offices',
+      'person_id',
+      sourceRows('person_offices', 'person_id'),
+      (row) => {
+        const officeId = row.office_id ? String(row.office_id) : null;
+        const startDateId = row.start_date_id != null ? dateIdMap.get(Number(row.start_date_id)) : null;
+        const endDateId = row.end_date_id != null ? dateIdMap.get(Number(row.end_date_id)) : null;
+        return {
+          ...row,
+          office_id: entityExists(officeId) ? officeId : null,
+          start_date_id: startDateId ?? null,
+          end_date_id: endDateId ?? null,
+        };
+      },
+    );
+    insertRows(
+      'work_authors',
+      'work_id',
+      sourceRows('work_authors', 'work_id'),
+      (row) => {
+        const personId = row.person_id ? String(row.person_id) : null;
+        return {
+          ...row,
+          person_id: entityExists(personId) ? personId : null,
+        };
+      },
+    );
+    insertRows(
+      'office_classifications',
+      'office_id',
+      sourceRows('office_classifications', 'office_id'),
+    );
+
+    const kind = this.getEntity(targetId)?.kind;
+    if (kind === 'person') {
+      const person = source.db
+        .prepare('SELECT family_name, given_name FROM people WHERE entity_id = ?')
+        .get(sourceId) as { family_name: string | null; given_name: string | null } | undefined;
+      if (person) {
+        this.db
+          .prepare('UPDATE people SET family_name = ?, given_name = ? WHERE entity_id = ?')
+          .run(person.family_name, person.given_name, targetId);
+      }
+    }
+
+    // Rebuild audit tables from copied provenance/status (same as XML import).
+    for (const [table, entityColumn] of [
+      ['entity_names', 'entity_id'],
+      ['entity_authorities', 'entity_id'],
+      ['entity_dates', 'entity_id'],
+      ['person_nationalities', 'person_id'],
+      ['person_origins', 'person_id'],
+      ['person_titles', 'person_id'],
+      ['work_authors', 'work_id'],
+      ['person_offices', 'person_id'],
+      ['office_classifications', 'office_id'],
+      ['entity_metadata', 'entity_id'],
+    ] as const) {
+      this.db
+        .prepare(
+          `INSERT OR IGNORE INTO entity_tombstones (entity_id, table_name, row_id, reason, created_at)
+           SELECT ${entityColumn}, ?, id, ?, updated_at
+           FROM ${table}
+           WHERE ${entityColumn} = ? AND status <> 'active'`,
+        )
+        .run(table, `mirror-copy-${table}-status`, targetId);
+      this.db
+        .prepare(
+          `INSERT OR IGNORE INTO entity_provenance (entity_id, table_name, row_id, origin, source, recorded_at)
+           SELECT ${entityColumn}, ?, id, origin, source, updated_at
+           FROM ${table}
+           WHERE ${entityColumn} = ?`,
+        )
+        .run(table, targetId);
+    }
+  }
+
+  /**
+   * Apply authority-sourced enrichment for one entity in a single transaction.
+   * Skips identities that already exist at any status (including rejected
+   * tombstones) so refresh cannot silently resurrect rejected values.
+   */
+  applyAuthorityBackfillPatch(patch: AuthorityBackfillPatch): AuthorityBackfillPatchResult {
+    const now = patch.now ?? nowIso();
+    return this.transaction(() => {
+      const entity = this.getEntity(patch.entityId);
+      if (!entity || entity.deletedAt) {
+        return { changed: false, namesAdded: 0 };
+      }
+
+      let changed = false;
+      let namesAdded = 0;
+
+      const upsertAuthorityDate = (
+        dateKind: 'birth' | 'death' | 'dates',
+        source: string,
+        startYear: number | null | undefined,
+        endYear: number | null | undefined,
+      ) => {
+        const normalizedSource = source.trim().toUpperCase();
+        if (dateKind === 'dates') {
+          if (startYear == null && endYear == null) return;
+          const existing = this.db
+            .prepare(
+              `SELECT id, start_year, end_year, status FROM entity_dates
+               WHERE entity_id = ? AND date_kind IN ('dates', 'work')
+                 AND origin = 'authority' AND UPPER(COALESCE(source, '')) = ?
+               ORDER BY id`,
+            )
+            .all(patch.entityId, normalizedSource) as {
+            id: number;
+            start_year: number | null;
+            end_year: number | null;
+            status: string;
+          }[];
+          const exact = existing.find(
+            (row) => row.start_year === (startYear ?? null) && row.end_year === (endYear ?? null),
+          );
+          if (exact) return;
+          for (const row of existing) {
+            this.db.prepare('DELETE FROM entity_dates WHERE id = ?').run(row.id);
+          }
+          const rawText = [
+            startYear != null ? isoYearString(startYear) : '',
+            endYear != null ? isoYearString(endYear) : '',
+          ].join('/');
+          this.db
+            .prepare(
+              `INSERT INTO entity_dates
+                 (entity_id, date_kind, start_year, end_year, from_value, to_value, raw_text,
+                  origin, source, status, created_at, updated_at)
+               VALUES (?, 'dates', ?, ?, ?, ?, ?, 'authority', ?, 'active', ?, ?)`,
+            )
+            .run(
+              patch.entityId,
+              startYear ?? null,
+              endYear ?? null,
+              startYear != null ? isoYearString(startYear) : null,
+              endYear != null ? isoYearString(endYear) : null,
+              rawText,
+              normalizedSource,
+              now,
+              now,
+            );
+          changed = true;
+          return;
+        }
+
+        if (startYear == null) return;
+        const existing = this.db
+          .prepare(
+            `SELECT id, start_year, status FROM entity_dates
+             WHERE entity_id = ? AND date_kind = ? AND origin = 'authority'
+               AND UPPER(COALESCE(source, '')) = ?
+             ORDER BY id`,
+          )
+          .all(patch.entityId, dateKind, normalizedSource) as {
+          id: number;
+          start_year: number | null;
+          status: string;
+        }[];
+        const exact = existing.find((row) => row.start_year === startYear);
+        if (exact) return;
+        for (const row of existing) {
+          this.db.prepare('DELETE FROM entity_dates WHERE id = ?').run(row.id);
+        }
+        this.db
+          .prepare(
+            `INSERT INTO entity_dates
+               (entity_id, date_kind, start_year, when_value, origin, source, status, created_at, updated_at)
+             VALUES (?, ?, ?, ?, 'authority', ?, 'active', ?, ?)`,
+          )
+          .run(
+            patch.entityId,
+            dateKind,
+            startYear,
+            isoYearString(startYear),
+            normalizedSource,
+            now,
+            now,
+          );
+        changed = true;
+      };
+
+      for (const name of patch.names ?? []) {
+        const text = name.text.trim();
+        if (!text) continue;
+        const nameType = normalizePersonNameType(name.nameType ?? null);
+        const existing = this.db
+          .prepare(
+            `SELECT id, name_type, language, status FROM entity_names
+             WHERE entity_id = ? AND text = ?
+             ORDER BY CASE status WHEN 'active' THEN 0 ELSE 1 END, id`,
+          )
+          .all(patch.entityId, text) as {
+          id: number;
+          name_type: string | null;
+          language: string | null;
+          status: string;
+        }[];
+        const active = existing.find((row) => row.status === 'active');
+        if (active) {
+          let upgraded = false;
+          if (nameType && !active.name_type) {
+            this.db
+              .prepare(
+                `UPDATE entity_names
+                 SET name_type = ?, name_role = CASE
+                   WHEN ? IN ('family', 'given') THEN ?
+                   ELSE name_role
+                 END, updated_at = ?
+                 WHERE id = ?`,
+              )
+              .run(nameType, nameType, nameType, now, active.id);
+            this.syncPersonNameScalars(patch.entityId, text, nameType, now);
+            upgraded = true;
+          }
+          if (name.language && !active.language) {
+            this.db
+              .prepare('UPDATE entity_names SET language = ?, updated_at = ? WHERE id = ?')
+              .run(name.language, now, active.id);
+            upgraded = true;
+          }
+          if (upgraded) changed = true;
+          continue;
+        }
+        if (existing.length > 0) {
+          // Tombstoned (or withdrawn) name with same text — do not resurrect.
+          continue;
+        }
+        const nameRole =
+          nameType === 'family' || nameType === 'given' ? nameType : 'variant';
+        this.db
+          .prepare(
+            `INSERT INTO entity_names
+               (entity_id, text, name_type, name_role, language, is_primary, origin, source, status, created_at, updated_at)
+             VALUES (?, ?, ?, ?, ?, 0, 'authority', ?, 'active', ?, ?)`,
+          )
+          .run(
+            patch.entityId,
+            text,
+            nameType,
+            nameRole,
+            name.language ?? null,
+            name.source?.trim() || null,
+            now,
+            now,
+          );
+        this.syncPersonNameScalars(patch.entityId, text, nameType, now);
+        namesAdded += 1;
+        changed = true;
+      }
+
+      if (entity.kind === 'person') {
+        const person = this.db
+          .prepare('SELECT family_name, given_name FROM people WHERE entity_id = ?')
+          .get(patch.entityId) as { family_name: string | null; given_name: string | null } | undefined;
+        if (patch.familyName?.trim() && !person?.family_name) {
+          const text = patch.familyName.trim();
+          const hasName = this.db
+            .prepare(
+              `SELECT 1 FROM entity_names WHERE entity_id = ? AND text = ? AND status = 'active'`,
+            )
+            .get(patch.entityId, text);
+          if (!hasName) {
+            this.db
+              .prepare(
+                `INSERT INTO entity_names
+                   (entity_id, text, name_type, name_role, language, is_primary, origin, source, status, created_at, updated_at)
+                 VALUES (?, ?, 'family', 'family', NULL, 0, 'authority', NULL, 'active', ?, ?)`,
+              )
+              .run(patch.entityId, text, now, now);
+          }
+          this.db
+            .prepare('UPDATE people SET family_name = ? WHERE entity_id = ?')
+            .run(text, patch.entityId);
+          changed = true;
+        }
+        if (patch.givenName?.trim() && !person?.given_name) {
+          const text = patch.givenName.trim();
+          const hasName = this.db
+            .prepare(
+              `SELECT 1 FROM entity_names WHERE entity_id = ? AND text = ? AND status = 'active'`,
+            )
+            .get(patch.entityId, text);
+          if (!hasName) {
+            this.db
+              .prepare(
+                `INSERT INTO entity_names
+                   (entity_id, text, name_type, name_role, language, is_primary, origin, source, status, created_at, updated_at)
+                 VALUES (?, ?, 'given', 'given', NULL, 0, 'authority', NULL, 'active', ?, ?)`,
+              )
+              .run(patch.entityId, text, now, now);
+          }
+          this.db
+            .prepare('UPDATE people SET given_name = ? WHERE entity_id = ?')
+            .run(text, patch.entityId);
+          changed = true;
+        }
+      }
+
+      if (patch.romanized?.text?.trim()) {
+        const hasLatn = this.db
+          .prepare(
+            `SELECT 1 FROM entity_names
+             WHERE entity_id = ? AND status = 'active' AND language LIKE '%-Latn'`,
+          )
+          .get(patch.entityId);
+        if (!hasLatn) {
+          const language = patch.romanized.language?.trim() || 'und-Latn';
+          const latnLang = language.includes('-Latn') ? language : `${language}-Latn`;
+          this.db
+            .prepare(
+              `INSERT INTO entity_names
+                 (entity_id, text, name_type, name_role, language, is_primary, origin, source, status, created_at, updated_at)
+               VALUES (?, ?, NULL, 'variant', ?, 0, 'authority', NULL, 'active', ?, ?)`,
+            )
+            .run(patch.entityId, patch.romanized.text.trim(), latnLang, now, now);
+          changed = true;
+        }
+      }
+
+      for (const date of patch.dates ?? []) {
+        upsertAuthorityDate('birth', date.source, date.startYear, undefined);
+        upsertAuthorityDate('death', date.source, date.endYear, undefined);
+      }
+
+      if (patch.workDate) {
+        upsertAuthorityDate(
+          'dates',
+          patch.workDate.source,
+          patch.workDate.startYear,
+          patch.workDate.endYear,
+        );
+      }
+
+      for (const value of patch.nationalities ?? []) {
+        const label = value.label.trim();
+        if (!label) continue;
+        const source = value.source.trim().toUpperCase();
+        const identity = (value.ref?.trim() || label).trim();
+        const exists = this.db
+          .prepare(
+            `SELECT 1 FROM person_nationalities
+             WHERE person_id = ?
+               AND UPPER(COALESCE(source, '')) = ?
+               AND COALESCE(reference, label) = ?`,
+          )
+          .get(patch.entityId, source, identity);
+        if (exists) continue;
+        this.db
+          .prepare(
+            `INSERT INTO person_nationalities
+               (person_id, label, reference, origin, source, status, created_at, updated_at)
+             VALUES (?, ?, ?, 'authority', ?, 'active', ?, ?)`,
+          )
+          .run(patch.entityId, label, value.ref?.trim() || null, source, now, now);
+        changed = true;
+      }
+
+      for (const value of patch.origins ?? []) {
+        const label = value.label.trim();
+        if (!label) continue;
+        const source = value.source.trim().toUpperCase();
+        const identity = (value.ref?.trim() || label).trim();
+        const exists = this.db
+          .prepare(
+            `SELECT 1 FROM person_origins
+             WHERE person_id = ?
+               AND UPPER(COALESCE(source, '')) = ?
+               AND COALESCE(reference, label) = ?`,
+          )
+          .get(patch.entityId, source, identity);
+        if (exists) continue;
+        this.db
+          .prepare(
+            `INSERT INTO person_origins
+               (person_id, label, reference, name_type, origin, source, status, created_at, updated_at)
+             VALUES (?, ?, ?, ?, 'authority', ?, 'active', ?, ?)`,
+          )
+          .run(
+            patch.entityId,
+            label,
+            value.ref?.trim() || null,
+            value.nameType?.trim() || null,
+            source,
+            now,
+            now,
+          );
+        changed = true;
+      }
+
+      for (const office of patch.offices ?? []) {
+        const label = office.label.trim();
+        if (!label) continue;
+        const source = office.source.trim().toUpperCase();
+        const identity = (office.ref?.trim() || label).trim();
+        const exists = this.db
+          .prepare(
+            `SELECT 1 FROM person_offices
+             WHERE person_id = ?
+               AND UPPER(COALESCE(source, '')) = ?
+               AND COALESCE(reference, office_label) = ?`,
+          )
+          .get(patch.entityId, source, identity);
+        if (exists) continue;
+        const officeId = office.ref?.replace(/^#/, '').trim() || null;
+        const officeExists =
+          officeId &&
+          this.db.prepare("SELECT 1 FROM entities WHERE id = ? AND kind = 'office'").get(officeId)
+            ? officeId
+            : null;
+        this.db
+          .prepare(
+            `INSERT INTO person_offices
+               (person_id, office_id, office_label, reference, origin, source, status, created_at, updated_at)
+             VALUES (?, ?, ?, ?, 'authority', ?, 'active', ?, ?)`,
+          )
+          .run(
+            patch.entityId,
+            officeExists,
+            label,
+            office.ref?.trim() || null,
+            source,
+            now,
+            now,
+          );
+        changed = true;
+      }
+
+      for (const title of patch.nobleTitles ?? []) {
+        const place = title.placeName.trim();
+        const role = title.roleName.trim();
+        if (!place && !role) continue;
+        const posthumous = title.posthumousName?.trim() ?? '';
+        const dynasty = title.dynasty?.trim() ?? '';
+        const key = title.ref?.trim() || [place, role, posthumous].join('\u001f');
+        const exists = this.db
+          .prepare(
+            `SELECT 1 FROM person_titles
+             WHERE person_id = ?
+               AND (
+                 (reference IS NOT NULL AND reference = ?)
+                 OR (
+                   COALESCE(place_name, '') = ?
+                   AND COALESCE(role_name, '') = ?
+                   AND COALESCE(posthumous_name, '') = ?
+                 )
+               )`,
+          )
+          .get(patch.entityId, key, place, role, posthumous);
+        if (exists) continue;
+        this.db
+          .prepare(
+            `INSERT INTO person_titles
+               (person_id, dynasty, place_name, role_name, posthumous_name, reference,
+                origin, source, status, created_at, updated_at)
+             VALUES (?, ?, ?, ?, ?, ?, 'authority', ?, 'active', ?, ?)`,
+          )
+          .run(
+            patch.entityId,
+            dynasty || null,
+            place,
+            role,
+            posthumous || null,
+            title.ref?.trim() || null,
+            title.source.trim(),
+            now,
+            now,
+          );
+        changed = true;
+      }
+
+      for (const cache of patch.authorityCaches ?? []) {
+        const authorityType = cache.authorityType.trim();
+        if (!authorityType) continue;
+        const source = cache.source?.trim() || null;
+        const payload = JSON.stringify(cache.payload ?? null);
+        const previous = this.db
+          .prepare(
+            `SELECT id, payload_json FROM authority_caches
+             WHERE entity_id = ? AND authority_type = ? AND COALESCE(source, '') = COALESCE(?, '')`,
+          )
+          .get(patch.entityId, authorityType, source) as
+          | { id: number; payload_json: string }
+          | undefined;
+        if (previous?.payload_json === payload) continue;
+        if (previous) {
+          this.db
+            .prepare(
+              `UPDATE authority_caches
+               SET payload_json = ?, retrieved_at = ?, status = 'active'
+               WHERE id = ?`,
+            )
+            .run(payload, now, previous.id);
+        } else {
+          this.db
+            .prepare(
+              `INSERT INTO authority_caches
+                 (entity_id, authority_type, source, payload_json, retrieved_at, status)
+               VALUES (?, ?, ?, ?, ?, 'active')`,
+            )
+            .run(patch.entityId, authorityType, source, payload, now);
+        }
+        changed = true;
+      }
+
+      for (const author of patch.workAuthors ?? []) {
+        const name = author.name.trim();
+        if (!name) continue;
+        const personId = author.personId?.replace(/^#/, '').trim() || null;
+        const reference =
+          author.ref?.trim() || (personId ? `#${personId}` : null);
+        const exists = this.db
+          .prepare(
+            `SELECT 1 FROM work_authors
+             WHERE work_id = ?
+               AND (
+                 (person_id IS NOT NULL AND person_id = ?)
+                 OR (reference IS NOT NULL AND reference = ?)
+               )`,
+          )
+          .get(patch.entityId, personId, reference);
+        if (exists) continue;
+        // Also skip tombstoned same-label+ref identities without person_id.
+        const tombstoned = this.db
+          .prepare(
+            `SELECT 1 FROM work_authors
+             WHERE work_id = ? AND label = ? AND COALESCE(reference, '') = ? AND status != 'active'`,
+          )
+          .get(patch.entityId, name, reference ?? '');
+        if (tombstoned) continue;
+        this.db
+          .prepare(
+            `INSERT INTO work_authors
+               (work_id, person_id, label, reference, origin, source, status, created_at, updated_at)
+             VALUES (?, ?, ?, ?, 'authority', ?, 'active', ?, ?)`,
+          )
+          .run(
+            patch.entityId,
+            personId,
+            name,
+            reference,
+            author.source?.trim() || 'Wikidata',
+            now,
+            now,
+          );
+        changed = true;
+      }
+
+      if (changed) this.bumpEntity(patch.entityId, now);
+      return { changed, namesAdded };
+    });
+  }
+
+  private addPersonLabeledValue(
+    table: 'person_nationalities' | 'person_origins',
+    input: AddLabeledValueInput,
+  ): boolean {
+    const label = input.label.trim();
+    if (!label) return false;
+    const now = input.now ?? nowIso();
+    return this.transaction(() => {
+      if (this.getEntity(input.entityId)?.kind !== 'person') return false;
+      const exists = this.db
+        .prepare(
+          `SELECT 1 FROM ${table}
+           WHERE person_id = ? AND status = 'active' AND label = ?`,
+        )
+        .get(input.entityId, label);
+      if (exists) return false;
+      this.db
+        .prepare(
+          `INSERT INTO ${table}
+             (person_id, label, reference, origin, source, status, created_at, updated_at)
+           VALUES (?, ?, ?, 'user', ?, 'active', ?, ?)`,
+        )
+        .run(input.entityId, label, input.ref ?? null, input.source ?? null, now, now);
+      this.bumpEntity(input.entityId, now);
+      return true;
+    });
+  }
+
+  private mutateAssertion(
+    entityId: string,
+    key: string,
+    mode: 'reject' | 'remove' | 'validate',
+    now: string,
+  ): boolean {
+    const parsed = parseAssertionKey(key);
+    if (!parsed) return false;
+    if (parsed.kind === 'description') {
+      if (parsed.entityId !== entityId) return false;
+      if (mode === 'remove' || mode === 'reject') {
+        this.updateDescription(entityId, null, now);
+        return true;
+      }
+      return false;
+    }
+    const ownerCol = ASSERTION_OWNER[parsed.table];
+    if (!ownerCol) return false;
+    return this.transaction(() => {
+      const row = this.db
+        .prepare(`SELECT * FROM ${parsed.table} WHERE id = ?`)
+        .get(parsed.rowId) as Record<string, unknown> | undefined;
+      if (!row || String(row[ownerCol]) !== entityId) return false;
+      const origin = String(row.origin) as SqliteValueOrigin;
+      const status = String(row.status) as SqliteValueStatus;
+      if (mode === 'validate') {
+        if (origin === 'user' && status === 'active') return false;
+        this.db
+          .prepare(
+            `UPDATE ${parsed.table}
+             SET origin = 'user', status = 'active', updated_at = ?
+             WHERE id = ?`,
+          )
+          .run(now, parsed.rowId);
+        this.bumpEntity(entityId, now);
+        return true;
+      }
+      if (mode === 'reject') {
+        if (origin === 'user' || status === 'rejected') return false;
+        this.db
+          .prepare(
+            `UPDATE ${parsed.table}
+             SET status = 'rejected', updated_at = ?
+             WHERE id = ?`,
+          )
+          .run(now, parsed.rowId);
+        this.db
+          .prepare(
+            `INSERT OR IGNORE INTO entity_tombstones
+               (entity_id, table_name, row_id, reason, created_at)
+             VALUES (?, ?, ?, 'user-rejected', ?)`,
+          )
+          .run(entityId, parsed.table, parsed.rowId, now);
+        this.bumpEntity(entityId, now);
+        return true;
+      }
+      // remove
+      if (status !== 'active') return false;
+      if (origin === 'user') {
+        this.db.prepare(`DELETE FROM ${parsed.table} WHERE id = ?`).run(parsed.rowId);
+      } else {
+        this.db
+          .prepare(
+            `UPDATE ${parsed.table}
+             SET status = 'rejected', updated_at = ?
+             WHERE id = ?`,
+          )
+          .run(now, parsed.rowId);
+        this.db
+          .prepare(
+            `INSERT OR IGNORE INTO entity_tombstones
+               (entity_id, table_name, row_id, reason, created_at)
+             VALUES (?, ?, ?, 'user-deleted', ?)`,
+          )
+          .run(entityId, parsed.table, parsed.rowId, now);
+      }
+      this.bumpEntity(entityId, now);
+      return true;
+    });
+  }
+
+  private syncPersonNameScalars(
+    entityId: string,
+    text: string,
+    nameType: string | null,
+    _now: string,
+  ): void {
+    if (nameType !== 'family' && nameType !== 'given') return;
+    if (this.getEntity(entityId)?.kind !== 'person') return;
+    const column = nameType === 'family' ? 'family_name' : 'given_name';
+    this.db.prepare(`UPDATE people SET ${column} = ? WHERE entity_id = ?`).run(text, entityId);
+  }
+
+  private syncPersonNameScalarsAfterTypeChange(
+    entityId: string,
+    text: string,
+    previousType: string | null,
+    nextType: string | null,
+    now: string,
+  ): void {
+    if (this.getEntity(entityId)?.kind !== 'person') return;
+    if (nextType === 'family' || nextType === 'given') {
+      this.syncPersonNameScalars(entityId, text, nextType, now);
+    }
+    for (const role of ['family', 'given'] as const) {
+      if (previousType !== role || nextType === role) continue;
+      const column = role === 'family' ? 'family_name' : 'given_name';
+      const current = this.db
+        .prepare(`SELECT ${column} AS value FROM people WHERE entity_id = ?`)
+        .get(entityId) as { value: string | null } | undefined;
+      if ((current?.value ?? null) !== text) continue;
+      const replacement = this.db
+        .prepare(
+          `SELECT text FROM entity_names
+           WHERE entity_id = ? AND status = 'active'
+             AND (name_type IN (?, ?) OR name_role IN (?, ?))
+           ORDER BY id LIMIT 1`,
+        )
+        .get(
+          entityId,
+          role,
+          role === 'family' ? 'familyName' : 'givenName',
+          role,
+          role === 'family' ? 'familyName' : 'givenName',
+        ) as { text: string } | undefined;
+      this.db
+        .prepare(`UPDATE people SET ${column} = ? WHERE entity_id = ?`)
+        .run(replacement?.text ?? null, entityId);
+    }
+  }
+
+  private getName(id: number): SqliteName | null {
+    const row = this.db.prepare('SELECT * FROM entity_names WHERE id = ?').get(id) as
+      Record<string, unknown> | undefined;
+    return row ? rowName(row) : null;
+  }
+
+  private bumpEntity(entityId: string, now: string): void {
+    this.db
+      .prepare('UPDATE entities SET revision = revision + 1, updated_at = ? WHERE id = ?')
+      .run(now, entityId);
+  }
+}
+
+export function openEntitySqliteRepository(databasePath: string): EntitySqliteRepository {
+  return new EntitySqliteRepository(databasePath);
+}

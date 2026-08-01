@@ -101,12 +101,32 @@ export function searchEntityDocument(
   return results;
 }
 
-async function search({ query, entityType }: AuthorityLookupParams): Promise<AuthorityLookupResult[]> {
+async function search({
+  query,
+  entityType,
+}: AuthorityLookupParams): Promise<AuthorityLookupResult[]> {
   const kind = LOOKUP_TYPE_TO_KIND[entityType];
   if (!kind) return [];
 
   const store = entityStoreFromDesktop();
   if (!store) return [];
+
+  const sqliteSearch = window.electronAPI?.entitySqliteSearch;
+  if (sqliteSearch) {
+    const sqliteResults = await sqliteSearch({ databasePath: store.sqlitePath, kind, query });
+    if (sqliteResults !== null) {
+      return sqliteResults.map((result) => ({
+        label: result.label,
+        ...(result.description ? { description: result.description } : {}),
+        uri: internalEntityUri(result.id),
+        internal: {
+          id: result.id,
+          idnos: result.idnos,
+          ...(result.description ? { description: result.description } : {}),
+        },
+      }));
+    }
+  }
 
   const doc = await store.loadEntities();
   return searchEntityDocument(doc, kind, query);

@@ -260,15 +260,170 @@ export interface ElectronAPI {
   ) => Promise<string>;
   bulkBridgeCancel: (jobId: string) => Promise<boolean>;
   onBulkBridgeProgress: (
-    callback: (event: import('../../commons/src/desktop/bulkBridgeTypes').BulkBridgeJobEvent) => void,
+    callback: (
+      event: import('../../commons/src/desktop/bulkBridgeTypes').BulkBridgeJobEvent,
+    ) => void,
   ) => () => void;
   entityIndexStart: (
     request: import('../../commons/src/desktop/entityIndexTypes').EntityIndexJobRequest,
   ) => Promise<string>;
   entityIndexCancel: (jobId: string) => Promise<boolean>;
   onEntityIndexProgress: (
-    callback: (event: import('../../commons/src/desktop/entityIndexTypes').EntityIndexJobEvent) => void,
+    callback: (
+      event: import('../../commons/src/desktop/entityIndexTypes').EntityIndexJobEvent,
+    ) => void,
   ) => () => void;
+  entitySqliteSearch: (
+    request: import('./entityDbSqlite/readService').EntitySqliteReadRequest,
+  ) => Promise<import('./entityDbSqlite/repository').SqliteEntityLookupResult[] | null>;
+  entitySqliteGet: (
+    request: import('./entityDbSqlite/readService').EntitySqliteGetRequest,
+  ) => Promise<import('./entityDbSqlite/repository').SqliteEntityPanelSummary | null>;
+  entitySqliteDatabaseId: (databasePath: string) => Promise<string | null>;
+  entitySqliteListIds: (
+    request: import('./entityDbSqlite/readService').EntitySqliteListIdsRequest,
+  ) => Promise<string[] | null>;
+  entitySqliteListPanelSummaries: (
+    request: import('./entityDbSqlite/readService').EntitySqliteListIdsRequest,
+  ) => Promise<import('./entityDbSqlite/repository').SqliteEntityPanelSummary[] | null>;
+  entitySqliteAuthorityDuplicates: (
+    databasePath: string,
+  ) => Promise<import('./entityDbSqlite/repository').SqliteDuplicateGroup[] | null>;
+  entitySqliteCandidates: (
+    request: import('./entityDbSqlite/readService').EntitySqliteCandidatesRequest,
+  ) => Promise<import('./entityDbSqlite/repository').SqliteEntityCandidateRecord[] | null>;
+  entitySqliteUpdateNames: (
+    request: import('./entityDbSqlite/readService').EntitySqliteUpdateNamesRequest,
+  ) => Promise<number>;
+  entitySqliteTombstoneNames: (
+    request: import('./entityDbSqlite/readService').EntitySqliteTombstoneNamesRequest,
+  ) => Promise<number>;
+  entitySqliteUpdateDescription: (
+    request: import('./entityDbSqlite/readService').EntitySqliteUpdateDescriptionRequest,
+  ) => Promise<void>;
+  entitySqliteRemoveName: (
+    request: import('./entityDbSqlite/readService').EntitySqliteRemoveNameRequest,
+  ) => Promise<boolean>;
+  entitySqliteAddName: (
+    request: import('./entityDbSqlite/readService').EntitySqliteAddNameRequest,
+  ) => Promise<import('./entityDbSqlite/repository').SqliteName>;
+  entitySqliteSetUserDate: (
+    request: import('./entityDbSqlite/readService').EntitySqliteSetUserEntityDateRequest,
+  ) => Promise<void>;
+  entitySqliteSetUserWorkDate: (
+    request: import('./entityDbSqlite/readService').EntitySqliteSetUserWorkDateRequest,
+  ) => Promise<void>;
+  entitySqliteAddNationality: (
+    request: import('./entityDbSqlite/readService').EntitySqliteAddLabeledValueRequest,
+  ) => Promise<boolean>;
+  entitySqliteAddOrigin: (
+    request: import('./entityDbSqlite/readService').EntitySqliteAddLabeledValueRequest,
+  ) => Promise<boolean>;
+  entitySqliteAddNobleTitle: (
+    request: import('./entityDbSqlite/readService').EntitySqliteNobleTitleRequest,
+  ) => Promise<boolean>;
+  entitySqliteUpdateNobleTitle: (
+    request: import('./entityDbSqlite/readService').EntitySqliteUpdateNobleTitleRequest,
+  ) => Promise<boolean>;
+  entitySqliteSetUserWorkAuthors: (
+    request: import('./entityDbSqlite/readService').EntitySqliteSetUserWorkAuthorsRequest,
+  ) => Promise<void>;
+  entitySqliteAttachAuthority: (
+    request: import('./entityDbSqlite/readService').EntitySqliteAuthorityRefRequest,
+  ) => Promise<boolean>;
+  entitySqliteDecoupleAuthority: (
+    request: import('./entityDbSqlite/readService').EntitySqliteAuthorityRefRequest,
+  ) => Promise<number>;
+  entitySqliteRejectAssertion: (
+    request: import('./entityDbSqlite/readService').EntitySqliteAssertionRequest,
+  ) => Promise<boolean>;
+  entitySqliteRemoveAssertion: (
+    request: import('./entityDbSqlite/readService').EntitySqliteAssertionRequest,
+  ) => Promise<boolean>;
+  entitySqliteValidateAssertion: (
+    request: import('./entityDbSqlite/readService').EntitySqliteAssertionRequest,
+  ) => Promise<boolean>;
+  entitySqliteAcceptDateAssertion: (
+    request: import('./entityDbSqlite/readService').EntitySqliteAssertionRequest,
+  ) => Promise<boolean>;
+  entitySqliteAcceptDescriptionAssertion: (
+    request: import('./entityDbSqlite/readService').EntitySqliteAssertionRequest,
+  ) => Promise<boolean>;
+  entitySqliteRenamePrimaryName: (
+    request: import('./entityDbSqlite/readService').EntitySqliteRenamePrimaryNameRequest,
+  ) => Promise<boolean>;
+  entitySqliteSetRomanizedName: (
+    request: import('./entityDbSqlite/readService').EntitySqliteSetRomanizedNameRequest,
+  ) => Promise<void>;
+  entitySqliteApplyConcordance: (
+    request: import('./entityDbSqlite/readService').EntitySqliteApplyConcordanceRequest,
+  ) => Promise<import('./entityDbSqlite/repository').SqliteConcordanceImportResult>;
+  entitySqliteRejectConcordance: (
+    request: import('./entityDbSqlite/readService').EntitySqliteRejectConcordanceRequest,
+  ) => Promise<boolean>;
+  entitySqliteMarkDuplicateIntentional: (
+    request: import('./entityDbSqlite/readService').EntitySqliteMarkDuplicateIntentionalRequest,
+  ) => Promise<boolean>;
+  entitySqliteBackfillDecisionTargets: (
+    request: import('./entityDbSqlite/readService').EntitySqliteBackfillDecisionTargetsRequest,
+  ) => Promise<import('./entityDbSqlite/repository').DecisionTargetBackfillReport | null>;
+  entitySqliteSoftDelete: (
+    request: import('./entityDbSqlite/readService').EntitySqliteSoftDeleteRequest,
+  ) => Promise<boolean>;
+  entitySqliteMerge: (
+    request: import('./entityDbSqlite/readService').EntitySqliteMergeRequest,
+  ) => Promise<import('./entityDbSqlite/repository').SqliteMergeResult>;
+  entitySqliteCreatePopulated: (
+    request: import('./entityDbSqlite/readService').EntitySqliteCreatePopulatedRequest,
+  ) => Promise<unknown>;
+  entitySqliteApplyAuthorityBackfillPatch: (
+    request: import('./entityDbSqlite/repository').AuthorityBackfillPatch & {
+      databasePath: string;
+    },
+  ) => Promise<import('./entityDbSqlite/repository').AuthorityBackfillPatchResult>;
+  entitySqliteEntityContentHash: (request: {
+    databasePath: string;
+    entityId: string;
+  }) => Promise<string | null>;
+  entitySqliteReplaceEntityContent: (request: {
+    sourceDatabasePath: string;
+    sourceEntityId: string;
+    targetDatabasePath: string;
+    targetEntityId: string;
+  }) => Promise<{ changed: boolean }>;
+  entitySqliteGetCentralId: (
+    request: import('./entityDbSqlite/readService').EntitySqliteGetCentralIdRequest,
+  ) => Promise<string | null>;
+  entitySqliteSetCentralMapping: (
+    request: import('./entityDbSqlite/readService').EntitySqliteSetCentralMappingRequest,
+  ) => Promise<boolean>;
+  entitySqliteClearCentralMapping: (
+    request: import('./entityDbSqlite/readService').EntitySqliteGetCentralIdRequest,
+  ) => Promise<boolean>;
+  entitySqliteListMappingsByCentralIds: (request: {
+    databasePath: string;
+    userStableId: string;
+    centralIds: string[];
+  }) => Promise<Array<{ projectEntityId: string; centralId: string; label: string | null }>>;
+  entitySqliteListAllCentralMappings: (request: {
+    databasePath: string;
+    userStableId: string;
+  }) => Promise<Array<{ projectEntityId: string; centralId: string }>>;
+  entitySqliteFindByAuthority: (
+    request: import('./entityDbSqlite/readService').EntitySqliteFindByAuthorityRequest,
+  ) => Promise<string | null>;
+  entitySqliteFindByNameDates: (
+    request: import('./entityDbSqlite/readService').EntitySqliteFindByNameDatesRequest,
+  ) => Promise<string | null>;
+  entitySqliteForceRejectAssertion: (
+    request: import('./entityDbSqlite/readService').EntitySqliteForceRejectAssertionRequest,
+  ) => Promise<boolean>;
+  entitySqliteExportXml: (
+    request: import('./entityDbSqlite/readService').EntitySqliteXmlRequest,
+  ) => Promise<string | null>;
+  entitySqliteImportXml: (
+    request: import('./entityDbSqlite/readService').EntitySqliteImportXmlRequest,
+  ) => Promise<import('./entityDbSqlite/xmlCodec').XmlImportReport>;
   approveEntityRegistryRoots: (roots: string[]) => Promise<boolean>;
   moveEntityDbFolder: () => Promise<{
     ok: boolean;
@@ -536,19 +691,107 @@ const electronAPI: ElectronAPI = {
   bulkBridgeStart: (request) => ipcRenderer.invoke('bulkBridge:start', request),
   bulkBridgeCancel: (jobId) => ipcRenderer.invoke('bulkBridge:cancel', jobId),
   onBulkBridgeProgress: (callback) => {
-    const listener = (_event: Electron.IpcRendererEvent, progress: import('../../commons/src/desktop/bulkBridgeTypes').BulkBridgeJobEvent) =>
-      callback(progress);
+    const listener = (
+      _event: Electron.IpcRendererEvent,
+      progress: import('../../commons/src/desktop/bulkBridgeTypes').BulkBridgeJobEvent,
+    ) => callback(progress);
     ipcRenderer.on('bulkBridge:progress', listener);
     return () => ipcRenderer.removeListener('bulkBridge:progress', listener);
   },
   entityIndexStart: (request) => ipcRenderer.invoke('entityIndex:start', request),
   entityIndexCancel: (jobId) => ipcRenderer.invoke('entityIndex:cancel', jobId),
   onEntityIndexProgress: (callback) => {
-    const listener = (_event: Electron.IpcRendererEvent, progress: import('../../commons/src/desktop/entityIndexTypes').EntityIndexJobEvent) =>
-      callback(progress);
+    const listener = (
+      _event: Electron.IpcRendererEvent,
+      progress: import('../../commons/src/desktop/entityIndexTypes').EntityIndexJobEvent,
+    ) => callback(progress);
     ipcRenderer.on('entityIndex:progress', listener);
     return () => ipcRenderer.removeListener('entityIndex:progress', listener);
   },
+  entitySqliteSearch: (request) => ipcRenderer.invoke('entitySqlite:search', request),
+  entitySqliteGet: (request) => ipcRenderer.invoke('entitySqlite:get', request),
+  entitySqliteDatabaseId: (databasePath) =>
+    ipcRenderer.invoke('entitySqlite:databaseId', databasePath),
+  entitySqliteListIds: (request) => ipcRenderer.invoke('entitySqlite:listIds', request),
+  entitySqliteListPanelSummaries: (request) =>
+    ipcRenderer.invoke('entitySqlite:listPanelSummaries', request),
+  entitySqliteAuthorityDuplicates: (databasePath) =>
+    ipcRenderer.invoke('entitySqlite:authorityDuplicates', databasePath),
+  entitySqliteCandidates: (request) => ipcRenderer.invoke('entitySqlite:candidates', request),
+  entitySqliteUpdateNames: (request) => ipcRenderer.invoke('entitySqlite:updateNames', request),
+  entitySqliteTombstoneNames: (request) =>
+    ipcRenderer.invoke('entitySqlite:tombstoneNames', request),
+  entitySqliteUpdateDescription: (request) =>
+    ipcRenderer.invoke('entitySqlite:updateDescription', request),
+  entitySqliteRemoveName: (request) => ipcRenderer.invoke('entitySqlite:removeName', request),
+  entitySqliteAddName: (request) => ipcRenderer.invoke('entitySqlite:addName', request),
+  entitySqliteSetUserDate: (request) => ipcRenderer.invoke('entitySqlite:setUserDate', request),
+  entitySqliteSetUserWorkDate: (request) =>
+    ipcRenderer.invoke('entitySqlite:setUserWorkDate', request),
+  entitySqliteAddNationality: (request) =>
+    ipcRenderer.invoke('entitySqlite:addNationality', request),
+  entitySqliteAddOrigin: (request) => ipcRenderer.invoke('entitySqlite:addOrigin', request),
+  entitySqliteAddNobleTitle: (request) =>
+    ipcRenderer.invoke('entitySqlite:addNobleTitle', request),
+  entitySqliteUpdateNobleTitle: (request) =>
+    ipcRenderer.invoke('entitySqlite:updateNobleTitle', request),
+  entitySqliteSetUserWorkAuthors: (request) =>
+    ipcRenderer.invoke('entitySqlite:setUserWorkAuthors', request),
+  entitySqliteAttachAuthority: (request) =>
+    ipcRenderer.invoke('entitySqlite:attachAuthority', request),
+  entitySqliteDecoupleAuthority: (request) =>
+    ipcRenderer.invoke('entitySqlite:decoupleAuthority', request),
+  entitySqliteRejectAssertion: (request) =>
+    ipcRenderer.invoke('entitySqlite:rejectAssertion', request),
+  entitySqliteRemoveAssertion: (request) =>
+    ipcRenderer.invoke('entitySqlite:removeAssertion', request),
+  entitySqliteValidateAssertion: (request) =>
+    ipcRenderer.invoke('entitySqlite:validateAssertion', request),
+  entitySqliteAcceptDateAssertion: (request) =>
+    ipcRenderer.invoke('entitySqlite:acceptDateAssertion', request),
+  entitySqliteAcceptDescriptionAssertion: (request) =>
+    ipcRenderer.invoke('entitySqlite:acceptDescriptionAssertion', request),
+  entitySqliteRenamePrimaryName: (request) =>
+    ipcRenderer.invoke('entitySqlite:renamePrimaryName', request),
+  entitySqliteSetRomanizedName: (request) =>
+    ipcRenderer.invoke('entitySqlite:setRomanizedName', request),
+  entitySqliteApplyConcordance: (request) =>
+    ipcRenderer.invoke('entitySqlite:applyConcordance', request),
+  entitySqliteRejectConcordance: (request) =>
+    ipcRenderer.invoke('entitySqlite:rejectConcordance', request),
+  entitySqliteMarkDuplicateIntentional: (request) =>
+    ipcRenderer.invoke('entitySqlite:markDuplicateIntentional', request),
+  entitySqliteBackfillDecisionTargets: (request) =>
+    ipcRenderer.invoke('entitySqlite:backfillDecisionTargets', request),
+  entitySqliteSoftDelete: (request) => ipcRenderer.invoke('entitySqlite:softDelete', request),
+  entitySqliteMerge: (request) => ipcRenderer.invoke('entitySqlite:merge', request),
+  entitySqliteCreatePopulated: (request) =>
+    ipcRenderer.invoke('entitySqlite:createPopulated', request),
+  entitySqliteApplyAuthorityBackfillPatch: (request) =>
+    ipcRenderer.invoke('entitySqlite:applyAuthorityBackfillPatch', request),
+  entitySqliteEntityContentHash: (request) =>
+    ipcRenderer.invoke('entitySqlite:entityContentHash', request),
+  entitySqliteReplaceEntityContent: (request) =>
+    ipcRenderer.invoke('entitySqlite:replaceEntityContent', request),
+  entitySqliteGetCentralId: (request) => ipcRenderer.invoke('entitySqlite:getCentralId', request),
+  entitySqliteSetCentralMapping: (request) =>
+    ipcRenderer.invoke('entitySqlite:setCentralMapping', request),
+  entitySqliteClearCentralMapping: (request) =>
+    ipcRenderer.invoke('entitySqlite:clearCentralMapping', request),
+  entitySqliteListMappingsByCentralIds: (request) =>
+    ipcRenderer.invoke('entitySqlite:listMappingsByCentralIds', request),
+  entitySqliteListAllCentralMappings: (request) =>
+    ipcRenderer.invoke('entitySqlite:listAllCentralMappings', request),
+  entitySqliteListLinkedCentralIds: (request) =>
+    ipcRenderer.invoke('entitySqlite:listLinkedCentralIds', request),
+  entitySqliteFindByAuthority: (request) =>
+    ipcRenderer.invoke('entitySqlite:findByAuthority', request),
+  entitySqliteFindByNameDates: (request) =>
+    ipcRenderer.invoke('entitySqlite:findByNameDates', request),
+  entitySqliteForceRejectAssertion: (request) =>
+    ipcRenderer.invoke('entitySqlite:forceRejectAssertion', request),
+  entitySqliteExportXml: (request) => ipcRenderer.invoke('entitySqlite:exportXml', request),
+  entitySqliteImportXml: (request) => ipcRenderer.invoke('entitySqlite:importXml', request),
   approveEntityRegistryRoots: (roots: string[]) =>
     ipcRenderer.invoke('approveEntityRegistryRoots', roots),
   moveEntityDbFolder: () => ipcRenderer.invoke('moveEntityDbFolder'),

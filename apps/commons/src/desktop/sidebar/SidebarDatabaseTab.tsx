@@ -105,6 +105,9 @@ import {
   type NameTypeId,
 } from '../../../../../packages/cwrc-leafwriter/src/autoTagging/nameTypes';
 import { backfillEntityNames } from '../../../../../packages/cwrc-leafwriter/src/autoTagging/nameBackfill';
+import { parseAuthorityUri } from '../../../../../packages/cwrc-leafwriter/src/autoTagging/lookupResolve';
+import { backfillEntitiesSqlite } from '../../../../../packages/cwrc-leafwriter/src/autoTagging/sqliteAuthorityBackfill';
+import { entitySummaryFromSqlite } from '../../../../../packages/cwrc-leafwriter/src/autoTagging/sqliteSummary';
 import {
   autoSyncEntitiesToCentral,
   autoSyncEntityToCentral,
@@ -141,11 +144,7 @@ import { getDefaultStore } from 'jotai';
 import { RESET } from 'jotai/utils';
 import { db } from '../../../../../packages/cwrc-leafwriter/src/db';
 import { applyKeyRemapAcrossProjects, type KeyRemapSummary } from '../entityDb/applyKeyRemap';
-import {
-  computeMergeDocket,
-  loadBridgeContext,
-  promoteEntities,
-} from '../entityDb/bridge';
+import { computeMergeDocket, loadBridgeContext, promoteEntities } from '../entityDb/bridge';
 import type { BulkBridgeProposal } from '../../../../../packages/cwrc-leafwriter/src/autoTagging/bulkBridgeImport';
 import { setEntityIndexProgress } from '../../../../../packages/cwrc-leafwriter/src/autoTagging/entityIndexProgress';
 import { authorityLookupUrl } from '../entityDb/authorityLinks';
@@ -181,6 +180,79 @@ const oldestId = (ids: string[]): string =>
   [...ids].sort((a, b) => idOrdinal(a) - idOrdinal(b) || a.localeCompare(b))[0]!;
 
 const escapeRegExp = (text: string): string => text.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+
+/**
+ * Attach corpus (PEDB) and central (CEDB) keys to summaries for the database
+ * viewer. Concordance lives on the project store; when browsing central we join
+ * it so the list can show project keys (and search them) without exposing
+ * central ids in the find field.
+ */
+const attachProjectCentralKeys = async (
+  summaries: EntitySummary[],
+  options: {
+    viewingCentral: boolean;
+    projectStore: EntityStore | null;
+    centralFolder: string | null | undefined;
+  },
+): Promise<EntitySummary[]> => {
+  if (summaries.length === 0) return summaries;
+
+  if (!options.viewingCentral) {
+    const api = desktopEntityFileApi();
+    if (!options.projectStore || !api) {
+      return summaries.map((summary) => ({
+        ...summary,
+        projectKey: summary.projectKey ?? summary.id,
+        centralKey: summary.centralKey ?? null,
+      }));
+    }
+    try {
+      const { id: userStableId } = await readOrMintUserStableId(api, options.centralFolder ?? null);
+      const mappings = await options.projectStore.sqliteListAllCentralMappings(userStableId);
+      const byProject = new Map(mappings.map((row) => [row.projectEntityId, row.centralId]));
+      return summaries.map((summary) => ({
+        ...summary,
+        projectKey: summary.id,
+        centralKey: byProject.get(summary.id) ?? null,
+      }));
+    } catch {
+      return summaries.map((summary) => ({
+        ...summary,
+        projectKey: summary.id,
+        centralKey: summary.centralKey ?? null,
+      }));
+    }
+  }
+
+  const api = desktopEntityFileApi();
+  if (!options.projectStore || !api) {
+    return summaries.map((summary) => ({
+      ...summary,
+      projectKey: summary.projectKey ?? null,
+      centralKey: summary.id,
+    }));
+  }
+  try {
+    const { id: userStableId } = await readOrMintUserStableId(api, options.centralFolder ?? null);
+    const mappings = await options.projectStore.sqliteListAllCentralMappings(userStableId);
+    const byCentral = new Map(mappings.map((row) => [row.centralId, row.projectEntityId]));
+    return summaries.map((summary) => ({
+      ...summary,
+      projectKey: byCentral.get(summary.id) ?? null,
+      centralKey: summary.id,
+    }));
+  } catch {
+    return summaries.map((summary) => ({
+      ...summary,
+      projectKey: summary.projectKey ?? null,
+      centralKey: summary.id,
+    }));
+  }
+};
+
+/** Project / corpus key shown in the list (null → "(central)" only). */
+const listProjectKey = (entity: EntitySummary): string | null =>
+  entity.projectKey ?? null;
 
 const normalizedAuthorityRefs = (refs: AuthorityId[]): AuthorityId[] =>
   refs
@@ -523,25 +595,29 @@ function EntityRow({
         </Stack>
         <Stack direction="row" alignItems="center" spacing={0.5}>
           <Typography variant="caption" color="text.secondary" component="div" noWrap>
-            {entity.id}
+            {listProjectKey(entity) ?? '(central)'}
           </Typography>
-          <Tooltip title={t('LWC.desktop.sidebar.database.copy_id')}>
-            <IconButton
-              size="small"
-              aria-label={t('LWC.desktop.sidebar.database.copy_id')}
-              onClick={() =>
-                void navigator.clipboard.writeText(entity.id).then(() => {
-                  notifyViaSnackbar({
-                    message: t('LWC.desktop.sidebar.database.id_copied'),
-                    options: { variant: 'success' },
+          {listProjectKey(entity) && (
+            <Tooltip title={t('LWC.desktop.sidebar.database.copy_id')}>
+              <IconButton
+                size="small"
+                aria-label={t('LWC.desktop.sidebar.database.copy_id')}
+                onClick={() => {
+                  const key = listProjectKey(entity);
+                  if (!key) return;
+                  void navigator.clipboard.writeText(key).then(() => {
+                    notifyViaSnackbar({
+                      message: t('LWC.desktop.sidebar.database.id_copied'),
+                      options: { variant: 'success' },
+                    });
                   });
-                })
-              }
-              sx={{ p: 0.25, flexShrink: 0 }}
-            >
-              <ContentCopyIcon sx={{ fontSize: 14 }} />
-            </IconButton>
-          </Tooltip>
+                }}
+                sx={{ p: 0.25, flexShrink: 0 }}
+              >
+                <ContentCopyIcon sx={{ fontSize: 14 }} />
+              </IconButton>
+            </Tooltip>
+          )}
         </Stack>
         {entity.description && (
           <Typography variant="caption" color="text.secondary" component="div" noWrap>
@@ -789,70 +865,157 @@ export const SidebarDatabaseTab = ({ active = false }: SidebarDatabaseTabProps) 
         ? resolvedCentralStore
         : currentStore;
 
+    if (
+      (await activeStore.hasSqliteDatabase()) &&
+      window.electronAPI?.entitySqliteListPanelSummaries
+    ) {
+      setLoading(true);
+      setLoadError(null);
+      try {
+        if (resolvedCentralStore && activeStore !== resolvedCentralStore) {
+          computeMergeDocket(resolvedCentralStore)
+            .then((docket) => setDocketCount(docket.length))
+            .catch(() => setDocketCount(0));
+        } else if (!resolvedCentralStore) {
+          setDocketCount(0);
+        }
+
+        let conflicts: ConcordanceImportResult['conflicts'] = [];
+        if (
+          activeStore === currentStore &&
+          window.electronAPI?.entitySqliteApplyConcordance
+        ) {
+          const readPack = cachedPackReader();
+          if (readPack) {
+            try {
+              const content = await readPack('cbdb-concordance');
+              const associations = authorityPackLines(content)
+                .map((line) => {
+                  try {
+                    return JSON.parse(line) as ConcordanceAssociation;
+                  } catch {
+                    return null;
+                  }
+                })
+                .filter((row): row is ConcordanceAssociation =>
+                  Boolean(row?.source && row.canonicalId && row.mergedFromId),
+                );
+              const imported = await activeStore.sqliteApplyConcordance(associations);
+              conflicts = imported.conflicts;
+            } catch {
+              // Older installations may not yet have the concordance file.
+            }
+          }
+        }
+
+        const snapshots = await activeStore.sqlitePanelSummaries();
+        if (snapshots === null) throw new Error('SQLite entity database is unavailable.');
+        const summaries = await attachProjectCentralKeys(
+          snapshots.map((snapshot) =>
+            entitySummaryFromSqlite(snapshot as Parameters<typeof entitySummaryFromSqlite>[0]),
+          ),
+          {
+            viewingCentral: activeStore === resolvedCentralStore,
+            projectStore: currentStore,
+            centralFolder: resolvedCentralStore?.centralFolder,
+          },
+        );
+        const duplicateRows = window.electronAPI?.entitySqliteAuthorityDuplicates
+          ? await activeStore.sqliteAuthorityDuplicates()
+          : null;
+        if (resolvedCentralStore && activeStore === resolvedCentralStore) {
+          computeMergeDocket(resolvedCentralStore)
+            .then((docket) => setDocketCount(docket.length))
+            .catch(() => setDocketCount(0));
+        }
+        setEntities(summaries);
+        setDuplicates((duplicateRows ?? []) as DuplicateGroup[]);
+        setConcordanceConflicts(activeStore === currentStore ? conflicts : []);
+        setWarnings(activeStore === currentStore ? await loadOpenWarnings(currentStore) : []);
+      } catch (error) {
+        setLoadError(error instanceof Error ? error.message : String(error));
+      } finally {
+        setLoading(false);
+      }
+      return;
+    }
+
     // Chromium's XML DOM becomes unstable well before Node does with very large
     // entity files. Keep the full-document parse out of the renderer; the
     // background bridge worker can still process these files safely.
-    const activeStat = await window.electronAPI?.statFile?.(activeStore.entitiesPath).catch(() => null);
+    const activeStat = await window.electronAPI
+      ?.statFile?.(activeStore.entitiesPath)
+      .catch(() => null);
     if (activeStat && activeStat.size > rendererEntityLimit) {
       setEntities([]);
       setDuplicates([]);
       setConcordanceConflicts([]);
       setWarnings([]);
-      setLoading(true);
-      setLoadError(null);
       const startIndex = window.electronAPI?.entityIndexStart;
       const onIndexProgress = window.electronAPI?.onEntityIndexProgress;
-      if (startIndex && onIndexProgress && !entityIndexInFlightRef.current) {
-        entityIndexInFlightRef.current = true;
-        let jobId: string | null = null;
-        const unsubscribe = onIndexProgress((event) => {
-          if (!jobId || event.jobId !== jobId) return;
-          const done = event.done ?? 0;
-          const total = event.total ?? 0;
-          if (event.batch?.length) setEntities((previous) => [...previous, ...event.batch!]);
-          setEntityIndexProgress({
-            active: event.status === 'progress',
-            done,
-            total,
-            label:
-              event.phase === 'parsing'
-                ? 'Parsing entities'
-                : event.phase === 'cache'
-                  ? 'Loading entity index'
-                  : 'Indexing entities',
-            cancel: jobId ? () => void window.electronAPI?.entityIndexCancel?.(jobId!) : undefined,
-          });
-          if (event.status === 'complete' || event.status === 'cancelled' || event.status === 'error') {
-            unsubscribe();
-            entityIndexInFlightRef.current = false;
-            setLoading(false);
-            if (event.status === 'error') setLoadError(event.error ?? 'Could not index the entity database.');
-            setEntityIndexProgress({ active: false, done, total, label: '' });
-          }
-        });
-        void startIndex({
-          entitiesPath: activeStore.entitiesPath,
-          indexCachePath: `${activeStore.projectLjbDir}/entity-index-cache.json`,
-          chunkSize: 250,
-        })
-          .then((startedJobId) => {
-            jobId = startedJobId;
-            setEntityIndexProgress({
-              active: true,
-              done: 0,
-              total: 0,
-              label: 'Parsing entities',
-              cancel: () => void window.electronAPI?.entityIndexCancel?.(startedJobId),
-            });
-          })
-          .catch((error) => {
-            unsubscribe();
-            entityIndexInFlightRef.current = false;
-            setLoading(false);
-            setEntityIndexProgress({ active: false, done: 0, total: 0, label: '' });
-            setLoadError(error instanceof Error ? error.message : String(error));
-          });
+      if (!startIndex || !onIndexProgress) {
+        setLoading(false);
+        setLoadError('Entity indexing is unavailable in this build.');
+        return;
       }
+      // A previous reload already owns the in-flight job; keep its spinner.
+      if (entityIndexInFlightRef.current) return;
+      setLoading(true);
+      setLoadError(null);
+      entityIndexInFlightRef.current = true;
+      let jobId: string | null = null;
+      const unsubscribe = onIndexProgress((event) => {
+        if (!jobId || event.jobId !== jobId) return;
+        const done = event.done ?? 0;
+        const total = event.total ?? 0;
+        if (event.batch?.length) setEntities((previous) => [...previous, ...event.batch!]);
+        setEntityIndexProgress({
+          active: event.status === 'progress',
+          done,
+          total,
+          label:
+            event.phase === 'parsing'
+              ? 'Parsing entities'
+              : event.phase === 'cache'
+                ? 'Loading entity index'
+                : 'Indexing entities',
+          cancel: jobId ? () => void window.electronAPI?.entityIndexCancel?.(jobId!) : undefined,
+        });
+        if (
+          event.status === 'complete' ||
+          event.status === 'cancelled' ||
+          event.status === 'error'
+        ) {
+          unsubscribe();
+          entityIndexInFlightRef.current = false;
+          setLoading(false);
+          if (event.status === 'error')
+            setLoadError(event.error ?? 'Could not index the entity database.');
+          setEntityIndexProgress({ active: false, done, total, label: '' });
+        }
+      });
+      void startIndex({
+        entitiesPath: activeStore.entitiesPath,
+        indexCachePath: `${activeStore.projectLjbDir}/entity-index-cache.json`,
+        chunkSize: 250,
+      })
+        .then((startedJobId) => {
+          jobId = startedJobId;
+          setEntityIndexProgress({
+            active: true,
+            done: 0,
+            total: 0,
+            label: 'Parsing entities',
+            cancel: () => void window.electronAPI?.entityIndexCancel?.(startedJobId),
+          });
+        })
+        .catch((error) => {
+          unsubscribe();
+          entityIndexInFlightRef.current = false;
+          setLoading(false);
+          setEntityIndexProgress({ active: false, done: 0, total: 0, label: '' });
+          setLoadError(error instanceof Error ? error.message : String(error));
+        });
       return;
     }
 
@@ -901,7 +1064,13 @@ export const SidebarDatabaseTab = ({ active = false }: SidebarDatabaseTabProps) 
           }
         }
       }
-      setEntities(listEntities(doc));
+      setEntities(
+        await attachProjectCentralKeys(listEntities(doc), {
+          viewingCentral: activeStore === resolvedCentralStore,
+          projectStore: currentStore,
+          centralFolder: resolvedCentralStore?.centralFolder,
+        }),
+      );
       // Duplicate-authority detection and lookup warnings are project-only concerns.
       setDuplicates(activeStore === currentStore ? findAuthorityDuplicates(doc) : []);
       setConcordanceConflicts(activeStore === currentStore ? conflicts : []);
@@ -945,19 +1114,40 @@ export const SidebarDatabaseTab = ({ active = false }: SidebarDatabaseTabProps) 
       if (!detail?.id) return;
 
       const type = detail.type === 'org' || detail.type === 'organization' ? 'org' : detail.type;
+      const projectKey = detail.id;
       setDatabaseView(syncToCentral ? 'central' : 'project');
       setKindFilter(type as EntityKind);
-      setSearch(`^${escapeRegExp(detail.id)}$`);
-      setSelected(new Set([detail.id]));
+      // Always search by the corpus / project key (never by central id).
+      setSearch(`^${escapeRegExp(projectKey)}$`);
       window.dispatchEvent(
         new CustomEvent(DESKTOP_LEFT_PANEL_EVENT, { detail: { tab: 'database' } }),
       );
       requestAnimationFrame(() => searchInputRef.current?.focus());
+
+      void (async () => {
+        let selectId = projectKey;
+        if (syncToCentral && store) {
+          const api = desktopEntityFileApi();
+          if (api) {
+            try {
+              const { id: userStableId } = await readOrMintUserStableId(
+                api,
+                centralStore?.centralFolder ?? null,
+              );
+              const centralId = await store.sqliteGetCentralId(projectKey, userStableId);
+              if (centralId) selectId = centralId;
+            } catch {
+              // Fall through: select the project key; list filter still uses projectKey.
+            }
+          }
+        }
+        setSelected(new Set([selectId]));
+      })();
     };
 
     window.addEventListener(DESKTOP_DATABASE_ENTITY_EVENT, handleShowEntity);
     return () => window.removeEventListener(DESKTOP_DATABASE_ENTITY_EVENT, handleShowEntity);
-  }, [syncToCentral]);
+  }, [centralStore?.centralFolder, store, syncToCentral]);
 
   // Reload when either database changes on disk (external edit or another flow).
   useEffect(() => {
@@ -1041,9 +1231,9 @@ export const SidebarDatabaseTab = ({ active = false }: SidebarDatabaseTabProps) 
           entity.romanized ?? '',
           ...entity.names.map((name) => autoRomanize(name, projectLang) ?? ''),
         ];
-        folded = foldForSearch(
-          [entity.id, ...entity.names, entity.description ?? '', ...romanizations].join('\n'),
-        );
+        // Names + romanization + project key only — not description, not central id.
+        const projectKey = entity.projectKey ?? '';
+        folded = foldForSearch([...entity.names, ...romanizations, projectKey].join('\n'));
         state.cache.set(entity, folded);
       }
       index.set(entity.id, folded);
@@ -1063,8 +1253,9 @@ export const SidebarDatabaseTab = ({ active = false }: SidebarDatabaseTabProps) 
       // across ~33k entities per keystroke, that difference is the whole cost.
       if (folded && (foldedIndex.get(entity.id) ?? '').includes(folded)) return true;
       if (!regex) return false;
-      if (regex.test(entity.id)) return true;
-      if (entity.description && regex.test(entity.description)) return true;
+      const projectKey = entity.projectKey;
+      if (projectKey && regex.test(projectKey)) return true;
+      if (entity.romanized && regex.test(entity.romanized)) return true;
       return entity.names.some((name) => regex.test(name));
     });
   }, [entities, foldedIndex, kindFilter, regex, search]);
@@ -1087,7 +1278,7 @@ export const SidebarDatabaseTab = ({ active = false }: SidebarDatabaseTabProps) 
 
   /** Active entity store for list/browse mutations (project PEDB or central CEDB view). */
   const activeStore = useMemo(
-    () => (syncToCentral || databaseView === 'central') && centralStore ? centralStore : store,
+    () => ((syncToCentral || databaseView === 'central') && centralStore ? centralStore : store),
     [centralStore, databaseView, store, syncToCentral],
   );
 
@@ -1104,10 +1295,7 @@ export const SidebarDatabaseTab = ({ active = false }: SidebarDatabaseTabProps) 
       .then(async () => {
         const api = desktopEntityFileApi();
         if (!api) return;
-        const { id: userStableId } = await readOrMintUserStableId(
-          api,
-          centralStore.centralFolder,
-        );
+        const { id: userStableId } = await readOrMintUserStableId(api, centralStore.centralFolder);
         const mirror = await synchronizeMirroredProject(store, centralStore, userStableId);
         if (mirror.conflicts.length > 0) {
           setLoadError(
@@ -1135,18 +1323,30 @@ export const SidebarDatabaseTab = ({ active = false }: SidebarDatabaseTabProps) 
       const summary = item ? summarizeEntity(item) : null;
       setEntities((previous) => {
         const index = previous.findIndex((entity) => entity.id === entityId);
-        if (!summary) return index < 0 ? previous : previous.filter((entity) => entity.id !== entityId);
-        if (index < 0) return [...previous, summary];
+        if (!summary)
+          return index < 0 ? previous : previous.filter((entity) => entity.id !== entityId);
+        const previousKeys = previous[index];
+        const withKeys: EntitySummary = {
+          ...summary,
+          projectKey: previousKeys?.projectKey ?? summary.projectKey ?? null,
+          centralKey: previousKeys?.centralKey ?? summary.centralKey ?? null,
+        };
+        if (index < 0) return [...previous, withKeys];
         const next = previous.slice();
-        next[index] = summary;
+        next[index] = withKeys;
         return next;
       });
-      setEditEntity((previous) => (previous?.id === entityId ? summary : previous));
+      setEditEntity((previous) => {
+        if (previous?.id !== entityId || !summary) return previous;
+        return {
+          ...summary,
+          projectKey: previous.projectKey ?? summary.projectKey ?? null,
+          centralKey: previous.centralKey ?? summary.centralKey ?? null,
+        };
+      });
       if (summary && editEntity?.id === entityId) {
         setEditNameTypes(
-          Object.fromEntries(
-            summary.nameEntries.map((entry) => [entry.text, entry.type ?? '']),
-          ),
+          Object.fromEntries(summary.nameEntries.map((entry) => [entry.text, entry.type ?? ''])),
         );
       }
     },
@@ -1166,39 +1366,70 @@ export const SidebarDatabaseTab = ({ active = false }: SidebarDatabaseTabProps) 
       setBackfillBusy(true);
       setBackfillProgress({ done: 0, total: 0 });
       try {
-        const doc = await activeStore.loadEntities();
         const readPack = cachedPackReader();
-        const result = await backfillEntityNames(doc, {
-          entityIds,
-          readPackFile: readPack,
-          projectLang,
-          desktopLanguage: i18n.language,
-          signal: controller.signal,
-          onProgress: (progress) =>
-            setBackfillProgress({
-              done: progress.done,
-              total: progress.total,
-              entityLabel: progress.entityLabel,
-            }),
-        });
-        if (entityIds && entityIds.length > 0 && activeStore === store) {
-          await autoSyncEntitiesToCentral(doc, entityIds);
-        }
-        await activeStore.saveEntities(doc);
-        if (syncToCentral && store && centralStore && activeStore === centralStore) {
+        const useSqlite =
+          (await activeStore.hasSqliteDatabase()) &&
+          Boolean(window.electronAPI?.entitySqliteApplyAuthorityBackfillPatch);
+        const result = useSqlite
+          ? await backfillEntitiesSqlite(activeStore, {
+              entityIds,
+              readPackFile: readPack,
+              projectLang,
+              desktopLanguage: i18n.language,
+              signal: controller.signal,
+              onProgress: (progress) =>
+                setBackfillProgress({
+                  done: progress.done,
+                  total: progress.total,
+                  entityLabel: progress.entityLabel,
+                }),
+            })
+          : await (async () => {
+              const doc = await activeStore.loadEntities();
+              const filled = await backfillEntityNames(doc, {
+                entityIds,
+                readPackFile: readPack,
+                projectLang,
+                desktopLanguage: i18n.language,
+                signal: controller.signal,
+                onProgress: (progress) =>
+                  setBackfillProgress({
+                    done: progress.done,
+                    total: progress.total,
+                    entityLabel: progress.entityLabel,
+                  }),
+              });
+              if (entityIds && entityIds.length > 0 && activeStore === store) {
+                await autoSyncEntitiesToCentral(doc, entityIds);
+              }
+              await activeStore.saveEntities(doc);
+              if (entityIds?.length === 1) {
+                const refreshed = listEntities(doc).find((entity) => entity.id === entityIds[0]);
+                if (refreshed && editEntity?.id === refreshed.id) {
+                  setEditEntity(refreshed);
+                  setEditNameTypes(
+                    Object.fromEntries(
+                      refreshed.nameEntries.map((entry) => [entry.text, entry.type ?? '']),
+                    ),
+                  );
+                }
+              }
+              return filled;
+            })();
+
+        if (useSqlite) {
+          if (entityIds && entityIds.length > 0 && activeStore === store) {
+            // Promote still works without a meaningful DOM when both DBs are SQLite.
+            const doc = await activeStore.loadEntities();
+            await autoSyncEntitiesToCentral(doc, entityIds);
+          }
+          if (syncToCentral && store && centralStore && activeStore === centralStore) {
+            scheduleMirrorSync();
+          }
+        } else if (syncToCentral && store && centralStore && activeStore === centralStore) {
           scheduleMirrorSync();
         }
-        if (entityIds?.length === 1) {
-          const refreshed = listEntities(doc).find((entity) => entity.id === entityIds[0]);
-          if (refreshed && editEntity?.id === refreshed.id) {
-            setEditEntity(refreshed);
-            setEditNameTypes(
-              Object.fromEntries(
-                refreshed.nameEntries.map((entry) => [entry.text, entry.type ?? '']),
-              ),
-            );
-          }
-        }
+
         await reload();
         const scope =
           entityIds?.length === 1 ? 'this person' : `${result.entitiesScanned} linked persons`;
@@ -1283,6 +1514,45 @@ export const SidebarDatabaseTab = ({ active = false }: SidebarDatabaseTabProps) 
   );
 
   /**
+   * Identity-changing SQLite mutation (merge/delete): mutate via typed IPC,
+   * then apply the same order log + corpus `@key` remap as the XML path.
+   */
+  const runSqliteRemapMutation = useCallback(
+    async (
+      targetStore: EntityStore,
+      message: string,
+      mutate: () => Promise<Record<string, string | null>>,
+    ): Promise<boolean> => {
+      const sqliteAvailable =
+        Boolean(window.electronAPI?.entitySqliteSoftDelete) &&
+        (await targetStore.hasSqliteDatabase());
+      if (!sqliteAvailable) return false;
+      setBusyMessage(message);
+      try {
+        const dbId = (await targetStore.sqliteDatabaseId()) ?? undefined;
+        const remap = await mutate();
+        if (syncToCentral && store && centralStore && targetStore === centralStore) {
+          scheduleMirrorSync();
+        }
+        if (Object.keys(remap).length > 0) {
+          await targetStore.recordEntityOrder(remap, dbId);
+          const summary = await applyKeyRemapAcrossProjects(targetStore, remap);
+          setLastSummary(summary);
+        }
+        setSelected(new Set());
+        await reload();
+        return true;
+      } catch (error) {
+        setLoadError(error instanceof Error ? error.message : String(error));
+        return true;
+      } finally {
+        setBusyMessage(null);
+      }
+    },
+    [centralStore, reload, scheduleMirrorSync, store, syncToCentral],
+  );
+
+  /**
    * Run a mutation scoped to the entity currently open in the edit dialog:
    * load fresh, mutate, save, refresh both the background list and the
    * dialog's own snapshot (so the names list updates immediately without
@@ -1313,7 +1583,16 @@ export const SidebarDatabaseTab = ({ active = false }: SidebarDatabaseTabProps) 
         setBusyMessage(null);
       }
     },
-    [centralStore, editEntity, reload, resolveStoreFor, scheduleMirrorSync, store, syncToCentral, updateEntityInPanel],
+    [
+      centralStore,
+      editEntity,
+      reload,
+      resolveStoreFor,
+      scheduleMirrorSync,
+      store,
+      syncToCentral,
+      updateEntityInPanel,
+    ],
   );
 
   const runEntityMutationForId = useCallback(
@@ -1339,7 +1618,146 @@ export const SidebarDatabaseTab = ({ active = false }: SidebarDatabaseTabProps) 
         setBusyMessage(null);
       }
     },
-    [centralStore, editEntity?.id, reload, resolveStoreFor, scheduleMirrorSync, store, syncToCentral, updateEntityInPanel],
+    [
+      centralStore,
+      editEntity?.id,
+      reload,
+      resolveStoreFor,
+      scheduleMirrorSync,
+      store,
+      syncToCentral,
+      updateEntityInPanel,
+    ],
+  );
+
+  const refreshEditEntityFromSqlite = async (targetStore: EntityStore, entityId: string) => {
+    const raw = (await targetStore.sqliteEntitySummary(entityId)) as {
+      names?: Array<{
+        text: string;
+        nameType?: string | null;
+        language?: string | null;
+      }>;
+      description?: string | null;
+      authorities?: EntitySummary['authorities'];
+      familyName?: string | null;
+      givenName?: string | null;
+      startYear?: number | null;
+      endYear?: number | null;
+      workDate?: EntitySummary['workDate'];
+      nationalities?: string[];
+      placesOfOrigin?: string[];
+      roles?: string[];
+      origins?: EntitySummary['origins'];
+      authors?: EntitySummary['authors'];
+      nobleTitles?: EntitySummary['nobleTitles'];
+      assertions?: EntitySummary['assertions'];
+    } | null;
+    if (!raw?.names) return;
+    const names = raw.names.filter((name) => name.text.trim());
+    const nameTexts = new Set(names.map((name) => name.text));
+    setEditEntity((previous) => {
+      if (!previous || previous.id !== entityId) return previous;
+      const nameTag = ENTITY_KINDS[previous.kind].name;
+      return {
+        ...previous,
+        names: names.map((name) => name.text),
+        nameEntries: names.map((name) => ({
+          text: name.text,
+          lang: name.language ?? null,
+          type: (name.nameType || null) as NameTypeId | null,
+        })),
+        romanized: names.find((name) => name.language?.endsWith('-Latn'))?.text ?? null,
+        description: raw.description ?? null,
+        authorities: raw.authorities ?? previous.authorities,
+        familyName: raw.familyName ?? null,
+        givenName: raw.givenName ?? null,
+        startYear: raw.startYear ?? null,
+        endYear: raw.endYear ?? null,
+        workDate: raw.workDate ?? null,
+        nationalities: raw.nationalities ?? [],
+        placesOfOrigin: raw.placesOfOrigin ?? [],
+        roles: raw.roles ?? [],
+        origins: raw.origins ?? [],
+        authors: raw.authors ?? [],
+        nobleTitles: raw.nobleTitles ?? [],
+        rejectedCount:
+          raw.assertions?.filter((assertion) => assertion.status === 'rejected').length ?? 0,
+        rejectedAssertions:
+          raw.assertions
+            ?.filter((assertion) => assertion.status === 'rejected')
+            .map((assertion) => ({
+              element: assertion.element,
+              value: assertion.value,
+              source: assertion.source,
+            })) ?? [],
+        assertions:
+          raw.assertions?.filter(
+            (assertion) => assertion.element !== nameTag || nameTexts.has(assertion.value),
+          ) ?? previous.assertions,
+      };
+    });
+    setEditNameTypes(Object.fromEntries(names.map((name) => [name.text, name.nameType ?? ''])));
+    setEditNameLanguages(Object.fromEntries(names.map((name) => [name.text, name.language ?? ''])));
+  };
+
+  /** Prefer a typed SQLite transaction when the migrated sibling database is present. */
+  const runSqliteEntityMutation = useCallback(
+    async (
+      entityId: string,
+      message: string,
+      mutate: (targetStore: EntityStore) => Promise<void>,
+    ): Promise<boolean> => {
+      const targetStore = resolveStoreFor(entityId);
+      if (!targetStore) return false;
+      const sqliteAvailable =
+        Boolean(window.electronAPI?.entitySqliteGet) && (await targetStore.hasSqliteDatabase());
+      if (!sqliteAvailable) return false;
+      setBusyMessage(message);
+      try {
+        await mutate(targetStore);
+        await refreshEditEntityFromSqlite(targetStore, entityId);
+        await reload();
+        return true;
+      } catch (error) {
+        setLoadError(error instanceof Error ? error.message : String(error));
+        return true;
+      } finally {
+        setBusyMessage(null);
+      }
+    },
+    [reload, resolveStoreFor],
+  );
+
+  const rejectAssertionKeys = useCallback(
+    (entityId: string, keys: string[], message: string) => {
+      void (async () => {
+        const handled = await runSqliteEntityMutation(entityId, message, async (targetStore) => {
+          for (const key of keys) await targetStore.sqliteRejectAssertion(entityId, key);
+        });
+        if (!handled) {
+          void runEntityMutationForId(entityId, message, (doc, id) => {
+            for (const key of keys) rejectEntityAssertion(doc, id, key);
+          });
+        }
+      })();
+    },
+    [runEntityMutationForId, runSqliteEntityMutation],
+  );
+
+  const removeAssertionKeys = useCallback(
+    (entityId: string, keys: string[], message: string) => {
+      void (async () => {
+        const handled = await runSqliteEntityMutation(entityId, message, async (targetStore) => {
+          for (const key of keys) await targetStore.sqliteRemoveAssertion(entityId, key);
+        });
+        if (!handled) {
+          void runEntityMutationForId(entityId, message, (doc, id) => {
+            for (const key of keys) removeEntityValue(doc, id, key);
+          });
+        }
+      })();
+    },
+    [runEntityMutationForId, runSqliteEntityMutation],
   );
 
   /** Merge button: <2 selected extends the search with an alternation, ≥2 opens the merge dialog. */
@@ -1363,20 +1781,33 @@ export const SidebarDatabaseTab = ({ active = false }: SidebarDatabaseTabProps) 
     // central-to-central merge has no PEDB counterpart to raise a suggestion for.
     const isProjectMerge = targetStore === store;
     setMergeIds(null);
+    if (!targetStore) return;
 
-    let sourceDbId: string | null = null;
-    let centralConflicts: CentralMergeConflict[] = [];
-    void runMutation(
-      targetStore,
-      'Merging entities…',
-      (doc) => {
-        sourceDbId = getDatabaseId(doc);
-        const result = mergeEntities(doc, mergeKeepId, dropIds);
+    void (async () => {
+      let sourceDbId: string | null = null;
+      let centralConflicts: CentralMergeConflict[] = [];
+
+      const handled = await runSqliteRemapMutation(targetStore, 'Merging entities…', async () => {
+        sourceDbId = await targetStore.sqliteDatabaseId();
+        const result = await targetStore.sqliteMerge(mergeKeepId, dropIds);
         centralConflicts = result.centralConflicts;
         return result.remap;
-      },
-      [mergeKeepId],
-    ).then(async () => {
+      });
+
+      if (!handled) {
+        await runMutation(
+          targetStore,
+          'Merging entities…',
+          (doc) => {
+            sourceDbId = getDatabaseId(doc);
+            const result = mergeEntities(doc, mergeKeepId, dropIds);
+            centralConflicts = result.centralConflicts;
+            return result.remap;
+          },
+          [mergeKeepId],
+        );
+      }
+
       if (!isProjectMerge || !centralStore || centralConflicts.length === 0) return;
       for (const conflict of centralConflicts) {
         await centralStore
@@ -1389,19 +1820,30 @@ export const SidebarDatabaseTab = ({ active = false }: SidebarDatabaseTabProps) 
       computeMergeDocket(centralStore)
         .then((docket) => setDocketCount(docket.length))
         .catch(() => undefined);
-    });
+    })();
   };
 
   const requestDetach = (entity: EntitySummary, ref: AuthorityId) => {
     const detach = () =>
-      void runMutation(
-        resolveStoreFor(entity.id),
-        'Detaching authority…',
-        (doc) => {
-          decoupleAuthority(doc, entity.id, ref);
-        },
-        [entity.id],
-      );
+      void (async () => {
+        const handled = await runSqliteEntityMutation(
+          entity.id,
+          'Detaching authority…',
+          async (targetStore) => {
+            await targetStore.sqliteDecoupleAuthority(entity.id, ref.type, ref.value);
+          },
+        );
+        if (!handled) {
+          void runMutation(
+            resolveStoreFor(entity.id),
+            'Detaching authority…',
+            (doc) => {
+              decoupleAuthority(doc, entity.id, ref);
+            },
+            [entity.id],
+          );
+        }
+      })();
     if (skipEntityDetachConfirm) {
       detach();
       return;
@@ -1436,28 +1878,56 @@ export const SidebarDatabaseTab = ({ active = false }: SidebarDatabaseTabProps) 
       confirmLabel: t('LWC.desktop.sidebar.database.delete_entity_confirm'),
       destructive: true,
       onConfirm: () => {
-        let sourceDbId: string | null = null;
-        let centralIdToPurge: string | null = null;
-        void runMutation(
-          targetStore,
-          t('LWC.desktop.sidebar.database.deleting_entity'),
-          async (doc) => {
-            sourceDbId = getDatabaseId(doc);
-            if (isProjectEntity && centralStore) {
-              const element = findEntity(doc, entity.id);
-              const api = desktopEntityFileApi();
-              if (element && api) {
-                const { id: userStableId } = await readOrMintUserStableId(
-                  api,
-                  centralStore.centralFolder,
-                );
-                centralIdToPurge = getCentralId(element, userStableId);
+        void (async () => {
+          let sourceDbId: string | null = null;
+          let centralIdToPurge: string | null = null;
+
+          const handled = await runSqliteRemapMutation(
+            targetStore,
+            t('LWC.desktop.sidebar.database.deleting_entity'),
+            async () => {
+              sourceDbId = await targetStore.sqliteDatabaseId();
+              if (isProjectEntity && centralStore) {
+                const api = desktopEntityFileApi();
+                if (api) {
+                  const { id: userStableId } = await readOrMintUserStableId(
+                    api,
+                    centralStore.centralFolder,
+                  );
+                  centralIdToPurge = await targetStore.sqliteGetCentralId(
+                    entity.id,
+                    userStableId,
+                  );
+                }
               }
-            }
-            deleteEntity(doc, entity.id);
-            return { [entity.id]: null };
-          },
-        ).then(async () => {
+              await targetStore.sqliteSoftDelete(entity.id);
+              return { [entity.id]: null };
+            },
+          );
+
+          if (!handled) {
+            await runMutation(
+              targetStore,
+              t('LWC.desktop.sidebar.database.deleting_entity'),
+              async (doc) => {
+                sourceDbId = getDatabaseId(doc);
+                if (isProjectEntity && centralStore) {
+                  const element = findEntity(doc, entity.id);
+                  const api = desktopEntityFileApi();
+                  if (element && api) {
+                    const { id: userStableId } = await readOrMintUserStableId(
+                      api,
+                      centralStore.centralFolder,
+                    );
+                    centralIdToPurge = getCentralId(element, userStableId);
+                  }
+                }
+                deleteEntity(doc, entity.id);
+                return { [entity.id]: null };
+              },
+            );
+          }
+
           setEditEntity(null);
           if (centralIdToPurge && centralStore && sourceDbId) {
             await centralStore
@@ -1467,7 +1937,7 @@ export const SidebarDatabaseTab = ({ active = false }: SidebarDatabaseTabProps) 
               .then((docket) => setDocketCount(docket.length))
               .catch(() => undefined);
           }
-        });
+        })();
       },
     });
   };
@@ -1568,12 +2038,36 @@ export const SidebarDatabaseTab = ({ active = false }: SidebarDatabaseTabProps) 
       isUserAuthenticated: window.writer?.overmindState?.user?.uri !== '#anonymous',
       query: entity.names[0] ?? '',
       type: entity.kind === 'org' ? 'organization' : entity.kind,
+      attachToEntityId: entity.id,
       onClose: (response) => {
         lookupStore.set(entityLookupDialogAtom, RESET);
         if (!response || response.repository === 'entity-database') return;
-        void runEntityMutationForId(entity.id, 'Linking authority…', (doc, id) => {
-          attachAuthority(doc, id, { type: response.repository, value: response.uri });
-        });
+        void (async () => {
+          const uris = [response.uri, ...(response.extraUris ?? [])];
+          const refs = uris.map((uri) => {
+            const parsed = parseAuthorityUri(uri);
+            return {
+              type: parsed?.idnoType ?? response.repository,
+              value: parsed?.value ?? uri,
+            };
+          });
+          const handled = await runSqliteEntityMutation(
+            entity.id,
+            'Linking authority…',
+            async (targetStore) => {
+              for (const ref of refs) {
+                await targetStore.sqliteAttachAuthority(entity.id, ref.type, ref.value);
+              }
+            },
+          );
+          if (!handled) {
+            void runEntityMutationForId(entity.id, 'Linking authority…', (doc, id) => {
+              for (const ref of refs) {
+                attachAuthority(doc, id, ref);
+              }
+            });
+          }
+        })();
       },
     });
   };
@@ -1584,6 +2078,33 @@ export const SidebarDatabaseTab = ({ active = false }: SidebarDatabaseTabProps) 
     if (!qid) return;
     const targetStore = resolveStoreFor(entity.id);
     if (!targetStore) return;
+    if (
+      (await targetStore.hasSqliteDatabase()) &&
+      window.electronAPI?.entitySqliteApplyAuthorityBackfillPatch
+    ) {
+      setBusyMessage('Refreshing work details…');
+      try {
+        const result = await backfillEntitiesSqlite(targetStore, {
+          entityIds: [entity.id],
+          projectLang,
+          desktopLanguage: i18n.language,
+        });
+        if (result.entitiesUpdated > 0 && targetStore === store) {
+          const doc = await targetStore.loadEntities();
+          // Authors minted during work refresh are promoted when sync is on.
+          await autoSyncEntitiesToCentral(doc, [entity.id]);
+        }
+        if (syncToCentral && store && centralStore && targetStore === centralStore) {
+          scheduleMirrorSync();
+        }
+        await reload();
+      } catch (error) {
+        setLoadError(error instanceof Error ? error.message : String(error));
+      } finally {
+        setBusyMessage(null);
+      }
+      return;
+    }
     await runMutation(
       targetStore,
       'Refreshing work details…',
@@ -1647,22 +2168,39 @@ export const SidebarDatabaseTab = ({ active = false }: SidebarDatabaseTabProps) 
     const romanizedChanged = romanized !== (editEntity.romanized ?? '');
     setEditEntity(null);
     setPendingValidations([]);
-    void runMutation(
-      resolveStoreFor(id),
-      'Saving entity…',
-      (doc) => {
+    void (async () => {
+      const handled = await runSqliteEntityMutation(id, 'Saving entity…', async (targetStore) => {
         for (const validation of validations) {
-          if (validation.mode === 'date') acceptEntityDateAssertion(doc, id, validation.key);
-          else if (validation.mode === 'description') {
-            acceptEntityDescriptionAssertion(doc, id, validation.key);
-          } else validateEntityAssertion(doc, id, validation.key);
+          if (validation.mode === 'date') {
+            await targetStore.sqliteAcceptDateAssertion(id, validation.key);
+          } else if (validation.mode === 'description') {
+            await targetStore.sqliteAcceptDescriptionAssertion(id, validation.key);
+          } else {
+            await targetStore.sqliteValidateAssertion(id, validation.key);
+          }
         }
-        if (canonicalName) renameEntityName(doc, id, canonicalName);
-        setEntityDescription(doc, id, description);
-        if (romanizedChanged) setRomanizedName(doc, id, romanized, projectLang);
-      },
-      [id],
-    );
+        if (canonicalName) await targetStore.sqliteRenamePrimaryName(id, canonicalName);
+        await targetStore.sqliteUpdateDescription(id, description);
+        if (romanizedChanged) await targetStore.sqliteSetRomanizedName(id, romanized);
+      });
+      if (handled) return;
+      void runMutation(
+        resolveStoreFor(id),
+        'Saving entity…',
+        (doc) => {
+          for (const validation of validations) {
+            if (validation.mode === 'date') acceptEntityDateAssertion(doc, id, validation.key);
+            else if (validation.mode === 'description') {
+              acceptEntityDescriptionAssertion(doc, id, validation.key);
+            } else validateEntityAssertion(doc, id, validation.key);
+          }
+          if (canonicalName) renameEntityName(doc, id, canonicalName);
+          setEntityDescription(doc, id, description);
+          if (romanizedChanged) setRomanizedName(doc, id, romanized, projectLang);
+        },
+        [id],
+      );
+    })();
   };
 
   const saveDates = () => {
@@ -1674,11 +2212,32 @@ export const SidebarDatabaseTab = ({ active = false }: SidebarDatabaseTabProps) 
     };
     const birth = parseYear(dateBirth, dateBirthBce);
     const death = dateBirthQualifier === 'fl.' ? null : parseYear(dateDeath, dateDeathBce);
+    const birthPrecision = dateBirthQualifier;
+    const deathPrecision = dateDeathQualifier;
+    const entityId = editEntity.id;
     setDateEditing(false);
-    void runEntityMutationForId(editEntity.id, 'Saving dates…', (doc, id) => {
-      setUserEntityDate(doc, id, 'birth', birth, dateBirthQualifier);
-      setUserEntityDate(doc, id, 'death', death, dateDeathQualifier);
-    });
+    void (async () => {
+      const handled = await runSqliteEntityMutation(entityId, 'Saving dates…', async (targetStore) => {
+        await targetStore.sqliteSetUserDate({
+          entityId,
+          part: 'birth',
+          year: birth,
+          precision: birthPrecision,
+        });
+        await targetStore.sqliteSetUserDate({
+          entityId,
+          part: 'death',
+          year: death,
+          precision: deathPrecision,
+        });
+      });
+      if (!handled) {
+        void runEntityMutationForId(entityId, 'Saving dates…', (doc, id) => {
+          setUserEntityDate(doc, id, 'birth', birth, birthPrecision);
+          setUserEntityDate(doc, id, 'death', death, deathPrecision);
+        });
+      }
+    })();
   };
 
   const saveWorkDates = () => {
@@ -1687,17 +2246,28 @@ export const SidebarDatabaseTab = ({ active = false }: SidebarDatabaseTabProps) 
       const number = Number(value.trim());
       return value.trim() && Number.isInteger(number) && number >= 0 ? number : null;
     };
+    const startYear = parseYear(workDateStart);
+    const endYear = parseYear(workDateEnd);
+    const startPrecision = workDateStartPrecision || null;
+    const endPrecision = workDateEndPrecision || null;
+    const entityId = editEntity.id;
     setDateEditing(false);
-    void runEntityMutationForId(editEntity.id, 'Saving dates…', (doc, id) =>
-      setUserWorkDate(
-        doc,
-        id,
-        parseYear(workDateStart),
-        parseYear(workDateEnd),
-        workDateStartPrecision || null,
-        workDateEndPrecision || null,
-      ),
-    );
+    void (async () => {
+      const handled = await runSqliteEntityMutation(entityId, 'Saving dates…', async (targetStore) => {
+        await targetStore.sqliteSetUserWorkDate({
+          entityId,
+          startYear,
+          endYear,
+          startPrecision,
+          endPrecision,
+        });
+      });
+      if (!handled) {
+        void runEntityMutationForId(entityId, 'Saving dates…', (doc, id) =>
+          setUserWorkDate(doc, id, startYear, endYear, startPrecision, endPrecision),
+        );
+      }
+    })();
   };
 
   /** One tab-aligned row: label only on the first line of a field, blank thereafter. */
@@ -1854,12 +2424,10 @@ export const SidebarDatabaseTab = ({ active = false }: SidebarDatabaseTabProps) 
                   size="small"
                   sx={neutralActionButtonSx}
                   onClick={() =>
-                    void runEntityMutationForId(
+                    rejectAssertionKeys(
                       editEntity!.id,
+                      group.keys,
                       t('LWC.desktop.sidebar.database.rejecting_data'),
-                      (doc, id) => {
-                        for (const key of group.keys) rejectEntityAssertion(doc, id, key);
-                      },
                     )
                   }
                 >
@@ -1968,13 +2536,11 @@ export const SidebarDatabaseTab = ({ active = false }: SidebarDatabaseTabProps) 
                     size="small"
                     sx={neutralActionButtonSx}
                     onClick={() =>
-                      void runEntityMutationForId(
-                        editEntity!.id,
-                        t('LWC.desktop.sidebar.database.removing_data'),
-                        (doc, id) => {
-                          for (const key of keys) removeEntityValue(doc, id, key);
-                        },
-                      )
+                      removeAssertionKeys(
+                      editEntity!.id,
+                      keys,
+                      t('LWC.desktop.sidebar.database.removing_data'),
+                    )
                     }
                   >
                     <ClearIcon fontSize="small" />
@@ -2006,12 +2572,10 @@ export const SidebarDatabaseTab = ({ active = false }: SidebarDatabaseTabProps) 
                   size="small"
                   sx={neutralActionButtonSx}
                   onClick={() =>
-                    void runEntityMutationForId(
+                    rejectAssertionKeys(
                       editEntity!.id,
+                      group.keys,
                       t('LWC.desktop.sidebar.database.rejecting_data'),
-                      (doc, id) => {
-                        for (const key of group.keys) rejectEntityAssertion(doc, id, key);
-                      },
                     )
                   }
                 >
@@ -2097,7 +2661,9 @@ export const SidebarDatabaseTab = ({ active = false }: SidebarDatabaseTabProps) 
             // Legacy rows may not have a source attribute, so use the linked
             // authority ids when available and a neutral authority badge as a
             // final fallback.
-            const entitySources = (editEntity?.authorities ?? []).map((authority) => authority.type);
+            const entitySources = (editEntity?.authorities ?? []).map(
+              (authority) => authority.type,
+            );
             return entitySources.length > 0 ? entitySources : ['authority'];
           })(),
           keys: authorityMatching.map((assertion) => assertion.key),
@@ -2114,26 +2680,42 @@ export const SidebarDatabaseTab = ({ active = false }: SidebarDatabaseTabProps) 
       text: string;
       sources: string[];
       keys: string[];
+      status: 'active' | 'rejected';
     }
     const roleAssertions =
-      editEntity?.assertions.filter(
-        (assertion) => assertion.element === 'affiliation' && assertion.status === 'active',
-      ) ?? [];
-    const roleRows: RoleRow[] = (editEntity?.roles ?? []).map((text) => {
+      editEntity?.assertions.filter((assertion) => assertion.element === 'affiliation') ?? [];
+    const roleTexts = Array.from(
+      new Set([
+        ...(editEntity?.roles ?? []),
+        ...roleAssertions
+          .filter((assertion) => assertion.status === 'active' || assertion.status === 'rejected')
+          .map((assertion) => assertion.value)
+          .filter(Boolean),
+      ]),
+    );
+    const roleRows: RoleRow[] = roleTexts.map((text) => {
       const matching = roleAssertions.filter((assertion) => assertion.value === text);
-      const authorityMatching = matching.filter((assertion) => assertion.origin === 'authority');
+      const activeMatching = matching.filter((assertion) => assertion.status === 'active');
+      const authorityMatching = activeMatching.filter(
+        (assertion) => assertion.origin === 'authority',
+      );
+      const rejectedMatching = matching.filter((assertion) => assertion.status === 'rejected');
       return {
         key: text,
         text,
         sources: Array.from(
           new Set(
-            matching
+            [...activeMatching, ...rejectedMatching]
               .filter((assertion) => assertion.source)
               .map((assertion) => assertion.source?.split(':')[0])
               .filter((source): source is string => Boolean(source)),
           ),
         ),
-        keys: authorityMatching.map((assertion) => assertion.key),
+        keys:
+          authorityMatching.length > 0
+            ? authorityMatching.map((assertion) => assertion.key)
+            : rejectedMatching.map((assertion) => assertion.key),
+        status: activeMatching.length > 0 ? 'active' : 'rejected',
       };
     });
 
@@ -2146,25 +2728,72 @@ export const SidebarDatabaseTab = ({ active = false }: SidebarDatabaseTabProps) 
       roleRows,
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [editEntity, dateEditing, databaseView, runEntityMutationForId, t]);
+  }, [editEntity, dateEditing, databaseView, rejectAssertionKeys, removeAssertionKeys, t]);
 
-  /** Name-type dropdown: commits immediately so curation doesn't require Save. */
   const commitNameType = (text: string, type: string) => {
     if (!editEntity) return;
     const id = editEntity.id;
     setEditNameTypes((previous) => ({ ...previous, [text]: type }));
-    void runEntityMutation('Updating name type…', (doc) => {
-      setNameType(doc, id, text, (type || null) as NameTypeId | null);
-    });
+    const targetStore = resolveStoreFor(id);
+    void (async () => {
+      const sqliteAvailable = Boolean(
+        targetStore &&
+        window.electronAPI?.entitySqliteUpdateNames &&
+        (await window.electronAPI.pathExists(targetStore.sqlitePath)),
+      );
+      if (!sqliteAvailable || !targetStore) {
+        runEntityMutation('Updating name type…', (doc) => {
+          setNameType(doc, id, text, (type || null) as NameTypeId | null);
+        });
+        return;
+      }
+      setBusyMessage('Updating name type…');
+      try {
+        await targetStore.sqliteUpdateNames({ entityId: id, text, nameType: type || null });
+        await refreshEditEntityFromSqlite(targetStore, id);
+        await reload();
+      } catch (error) {
+        setLoadError(error instanceof Error ? error.message : String(error));
+      } finally {
+        setBusyMessage(null);
+      }
+    })();
   };
 
   const commitNameLanguage = (text: string, lang: string) => {
     if (!editEntity) return;
     const id = editEntity.id;
     setEditNameLanguages((previous) => ({ ...previous, [text]: lang }));
-    void runEntityMutation('Updating name language…', (doc) => {
-      setNameType(doc, id, text, (editNameTypes[text] || null) as NameTypeId | null, lang || null);
-    });
+    const targetStore = resolveStoreFor(id);
+    void (async () => {
+      const sqliteAvailable = Boolean(
+        targetStore &&
+        window.electronAPI?.entitySqliteUpdateNames &&
+        (await window.electronAPI.pathExists(targetStore.sqlitePath)),
+      );
+      const currentType = editNameTypes[text] || '';
+      if (!sqliteAvailable || !targetStore) {
+        runEntityMutation('Updating name language…', (doc) => {
+          setNameType(doc, id, text, (currentType || null) as NameTypeId | null, lang || null);
+        });
+        return;
+      }
+      setBusyMessage('Updating name language…');
+      try {
+        await targetStore.sqliteUpdateNames({
+          entityId: id,
+          text,
+          nameType: currentType || null,
+          language: lang || null,
+        });
+        await refreshEditEntityFromSqlite(targetStore, id);
+        await reload();
+      } catch (error) {
+        setLoadError(error instanceof Error ? error.message : String(error));
+      } finally {
+        setBusyMessage(null);
+      }
+    })();
   };
 
   /** Add-name row: text + type commit together as one new name element. */
@@ -2178,40 +2807,101 @@ export const SidebarDatabaseTab = ({ active = false }: SidebarDatabaseTabProps) 
     setEditNewName('');
     setEditNewNameType('');
     setEditNewNameLanguage('');
-    void runEntityMutation('Adding name…', (doc) => {
-      addEntityName(
-        doc,
-        id,
-        text,
-        type
-          ? {
-              type,
-              ...(type === 'translation' && editNewNameLanguage
-                ? { lang: editNewNameLanguage }
-                : {}),
-            }
-          : undefined,
+    const targetStore = resolveStoreFor(id);
+    void (async () => {
+      const sqliteAvailable = Boolean(
+        targetStore &&
+        window.electronAPI?.entitySqliteAddName &&
+        (await window.electronAPI.pathExists(targetStore.sqlitePath)),
       );
-    });
+      if (!sqliteAvailable || !targetStore) {
+        runEntityMutation('Adding name…', (doc) => {
+          addEntityName(
+            doc,
+            id,
+            text,
+            type
+              ? {
+                  type,
+                  ...(type === 'translation' && editNewNameLanguage
+                    ? { lang: editNewNameLanguage }
+                    : {}),
+                }
+              : undefined,
+          );
+        });
+        return;
+      }
+      setBusyMessage('Adding name…');
+      try {
+        await targetStore.sqliteAddName({
+          entityId: id,
+          text,
+          nameType: type,
+          language: editNewNameLanguage || null,
+          nameRole: 'variant',
+          origin: 'user',
+        });
+        await refreshEditEntityFromSqlite(targetStore, id);
+        await reload();
+      } catch (error) {
+        setLoadError(error instanceof Error ? error.message : String(error));
+      } finally {
+        setBusyMessage(null);
+      }
+    })();
   };
 
   /** Delete button on a name row: removes it immediately. */
   const commitDeleteName = (text: string) => {
     if (!editEntity) return;
     const id = editEntity.id;
-    void runEntityMutation('Removing name…', (doc) => {
-      removeEntityName(doc, id, text);
-    });
+    const targetStore = resolveStoreFor(id);
+    void (async () => {
+      const sqliteAvailable = Boolean(
+        targetStore &&
+        window.electronAPI?.entitySqliteRemoveName &&
+        (await window.electronAPI.pathExists(targetStore.sqlitePath)),
+      );
+      if (!sqliteAvailable || !targetStore) {
+        runEntityMutation('Removing name…', (doc) => {
+          removeEntityName(doc, id, text);
+        });
+        return;
+      }
+      setBusyMessage('Removing name…');
+      try {
+        await targetStore.sqliteRemoveName(id, text);
+        await refreshEditEntityFromSqlite(targetStore, id);
+        await reload();
+      } catch (error) {
+        setLoadError(error instanceof Error ? error.message : String(error));
+      } finally {
+        setBusyMessage(null);
+      }
+    })();
   };
 
   const commitNewNobleTitle = () => {
     if (!editEntity || editEntity.kind !== 'person') return;
     const input = newTitle;
     if (!Object.values(input).some((value) => value.trim())) return;
+    const entityId = editEntity.id;
     setNewTitle({ dynasty: '', fief: '', posthumousName: '', title: '' });
-    void runEntityMutation('Adding noble title…', (doc) =>
-      addUserNobleTitle(doc, editEntity.id, input),
-    );
+    void (async () => {
+      const handled = await runSqliteEntityMutation(
+        entityId,
+        'Adding noble title…',
+        async (targetStore) => {
+          await targetStore.sqliteAddNobleTitle({ entityId, ...input });
+        },
+      );
+      if (!handled) {
+        void runEntityMutation('Adding noble title…', (doc) =>
+          addUserNobleTitle(doc, entityId, input),
+        );
+      }
+    })();
   };
 
   const commitEditNobleTitle = (
@@ -2219,41 +2909,87 @@ export const SidebarDatabaseTab = ({ active = false }: SidebarDatabaseTabProps) 
     input: { dynasty: string; fief: string; posthumousName: string; title: string },
   ) => {
     if (!editEntity) return;
-    void runEntityMutation('Updating noble title…', (doc) =>
-      updateNobleTitle(doc, editEntity.id, key, input),
-    );
+    const entityId = editEntity.id;
+    void (async () => {
+      const handled = await runSqliteEntityMutation(
+        entityId,
+        'Updating noble title…',
+        async (targetStore) => {
+          await targetStore.sqliteUpdateNobleTitle(entityId, key, input);
+        },
+      );
+      if (!handled) {
+        void runEntityMutation('Updating noble title…', (doc) =>
+          updateNobleTitle(doc, entityId, key, input),
+        );
+      }
+    })();
   };
 
   const commitAddNationality = useCallback(
     (input: EntityLookupValue) => {
       if (!editEntity) return;
-      void runEntityMutationForId(
-        editEntity.id,
-        t('LWC.desktop.sidebar.database.adding_data'),
-        (doc, id) =>
-          addUserNationality(doc, id, input.name, {
-            ref: input.ref,
-            source: authoritySourceFromLookupRef(input.ref),
-          }),
-      );
+      const entityId = editEntity.id;
+      void (async () => {
+        const handled = await runSqliteEntityMutation(
+          entityId,
+          t('LWC.desktop.sidebar.database.adding_data'),
+          async (targetStore) => {
+            await targetStore.sqliteAddNationality({
+              entityId,
+              label: input.name,
+              ref: input.ref,
+              source: authoritySourceFromLookupRef(input.ref),
+            });
+          },
+        );
+        if (!handled) {
+          void runEntityMutationForId(
+            entityId,
+            t('LWC.desktop.sidebar.database.adding_data'),
+            (doc, id) =>
+              addUserNationality(doc, id, input.name, {
+                ref: input.ref,
+                source: authoritySourceFromLookupRef(input.ref),
+              }),
+          );
+        }
+      })();
     },
-    [editEntity, runEntityMutationForId, t],
+    [editEntity, runEntityMutationForId, runSqliteEntityMutation, t],
   );
 
   const commitAddOrigin = useCallback(
     (input: EntityLookupValue) => {
       if (!editEntity) return;
-      void runEntityMutationForId(
-        editEntity.id,
-        t('LWC.desktop.sidebar.database.adding_data'),
-        (doc, id) =>
-          addUserOrigin(doc, id, input.name, {
-            ref: input.ref,
-            source: authoritySourceFromLookupRef(input.ref),
-          }),
-      );
+      const entityId = editEntity.id;
+      void (async () => {
+        const handled = await runSqliteEntityMutation(
+          entityId,
+          t('LWC.desktop.sidebar.database.adding_data'),
+          async (targetStore) => {
+            await targetStore.sqliteAddOrigin({
+              entityId,
+              label: input.name,
+              ref: input.ref,
+              source: authoritySourceFromLookupRef(input.ref),
+            });
+          },
+        );
+        if (!handled) {
+          void runEntityMutationForId(
+            entityId,
+            t('LWC.desktop.sidebar.database.adding_data'),
+            (doc, id) =>
+              addUserOrigin(doc, id, input.name, {
+                ref: input.ref,
+                source: authoritySourceFromLookupRef(input.ref),
+              }),
+          );
+        }
+      })();
     },
-    [editEntity, runEntityMutationForId, t],
+    [editEntity, runEntityMutationForId, runSqliteEntityMutation, t],
   );
 
   const removeEditedValues = useCallback(
@@ -2276,15 +3012,13 @@ export const SidebarDatabaseTab = ({ active = false }: SidebarDatabaseTabProps) 
         )
         .map((assertion) => assertion.key);
       if (keys.length === 0) return;
-      void runEntityMutationForId(
+      removeAssertionKeys(
         editEntity.id,
+        keys,
         t('LWC.desktop.sidebar.database.removing_data'),
-        (doc, id) => {
-          for (const key of keys) removeEntityValue(doc, id, key);
-        },
       );
     },
-    [editEntity, runEntityMutationForId, t],
+    [editEntity, removeAssertionKeys, t],
   );
 
   const mergeDuplicateGroup = (group: DuplicateGroup) => {
@@ -2294,27 +3028,66 @@ export const SidebarDatabaseTab = ({ active = false }: SidebarDatabaseTabProps) 
 
   const markGroupIntentional = (group: DuplicateGroup) => {
     // Duplicate-authority detection is PEDB-only (see reload), so this always targets the project store.
-    void runMutation(store, 'Marking as intentional…', (doc) => {
-      markDuplicateIntentional(doc, group.entityIds);
-    });
+    void (async () => {
+      const entityId = group.entityIds[0];
+      if (!entityId || !store) return;
+      const handled = await runSqliteEntityMutation(
+        entityId,
+        'Marking as intentional…',
+        async (targetStore) => {
+          await targetStore.sqliteMarkDuplicateIntentional(group.entityIds);
+        },
+      );
+      if (!handled) {
+        void runMutation(store, 'Marking as intentional…', (doc) => {
+          markDuplicateIntentional(doc, group.entityIds);
+        });
+      }
+    })();
   };
 
   const rejectConcordanceConflict = (conflict: ConcordanceImportResult['conflicts'][number]) => {
-    void runMutation(store, 'Rejecting concordance…', (doc) => {
-      rejectConcordance(doc, conflict.association, conflict.entityIds[0]);
-    });
+    void (async () => {
+      const entityId = conflict.entityIds[0];
+      if (!entityId) return;
+      const handled = await runSqliteEntityMutation(
+        entityId,
+        'Rejecting concordance…',
+        async (targetStore) => {
+          await targetStore.sqliteRejectConcordance(conflict.association, entityId);
+        },
+      );
+      if (!handled) {
+        void runMutation(store, 'Rejecting concordance…', (doc) => {
+          rejectConcordance(doc, conflict.association, entityId);
+        });
+      }
+    })();
   };
 
   const entityById = (id: string) => entities.find((entity) => entity.id === id);
 
-  /** Jump the list to one entity (search pins it, checkbox selects it). */
+  /** Jump the list to one entity (search pins it by project key, checkbox selects it). */
   const jumpToEntity = (id: string) => {
+    const entity = entities.find((row) => row.id === id);
+    const projectKey = entity?.projectKey;
     setKindFilter('all');
-    setSearch(`^${escapeRegExp(id)}$`);
+    if (projectKey) setSearch(`^${escapeRegExp(projectKey)}$`);
+    else setSearch('');
     setSelected(new Set([id]));
   };
 
   const openXPathForEntity = (entity: EntitySummary) => {
+    const projectKey = entity.projectKey;
+    if (!projectKey) {
+      notifyViaSnackbar({
+        message: t('LWC.desktop.sidebar.database.no_project_key', {
+          defaultValue: 'This entity is central-only — it has no project key in the corpus.',
+        }),
+        options: { variant: 'info' },
+      });
+      return;
+    }
     const tagType =
       entity.kind === 'person'
         ? 'persName'
@@ -2327,7 +3100,7 @@ export const SidebarDatabaseTab = ({ active = false }: SidebarDatabaseTabProps) 
               : entity.kind;
     window.dispatchEvent(
       new CustomEvent(DESKTOP_XPATH_SEARCH_EVENT, {
-        detail: { query: `TEI//${tagType}[@key="${entity.id}"]` },
+        detail: { query: `TEI//${tagType}[@key="${projectKey}"]` },
       }),
     );
   };
@@ -2335,7 +3108,14 @@ export const SidebarDatabaseTab = ({ active = false }: SidebarDatabaseTabProps) 
   /** Show every implicated entity together, preselected so Merge is one click away. */
   const reviewWarningEntities = (warning: LookupWarning) => {
     setKindFilter('all');
-    setSearch(`^(${warning.entityIds.map(escapeRegExp).join('|')})$`);
+    const projectKeys = warning.entityIds
+      .map((id) => entities.find((entity) => entity.id === id)?.projectKey ?? id)
+      .filter(Boolean);
+    setSearch(
+      projectKeys.length > 0
+        ? `^(${projectKeys.map(escapeRegExp).join('|')})$`
+        : '',
+    );
     setSelected(new Set(warning.entityIds));
   };
 
@@ -2482,7 +3262,13 @@ export const SidebarDatabaseTab = ({ active = false }: SidebarDatabaseTabProps) 
             )}
           />
           {!syncToCentral && (
-            <Tooltip title={databaseView === 'central' ? 'Browsing your central database' : 'Browsing this project’s database'}>
+            <Tooltip
+              title={
+                databaseView === 'central'
+                  ? 'Browsing your central database'
+                  : 'Browsing this project’s database'
+              }
+            >
               <span>
                 <Button
                   size="small"
@@ -2536,7 +3322,11 @@ export const SidebarDatabaseTab = ({ active = false }: SidebarDatabaseTabProps) 
           )}
           {bulkProposals.length > 0 && (
             <Tooltip title="Review entities that were not added automatically">
-              <Button size="small" startIcon={<PlaylistAddIcon />} onClick={() => setProposalsOpen(true)}>
+              <Button
+                size="small"
+                startIcon={<PlaylistAddIcon />}
+                onClick={() => setProposalsOpen(true)}
+              >
                 Review ({bulkProposals.length})
               </Button>
             </Tooltip>
@@ -2936,10 +3726,15 @@ export const SidebarDatabaseTab = ({ active = false }: SidebarDatabaseTabProps) 
                               onMouseDown={(event) => event.preventDefault()}
                               onClick={() =>
                                 setEditRomanized(
-                                  autoRomanize(
-                                    editCanonicalName || editEntity?.names[0] || '',
-                                    projectLang,
-                                  ) ?? editRomanized,
+                                  (editEntity?.kind === 'person'
+                                    ? suggestPersonRomanization(
+                                        editCanonicalName || editEntity?.names[0] || '',
+                                        projectLang,
+                                      )
+                                    : autoRomanize(
+                                        editCanonicalName || editEntity?.names[0] || '',
+                                        projectLang,
+                                      )) ?? editRomanized,
                                 )
                               }
                             >
@@ -3018,9 +3813,60 @@ export const SidebarDatabaseTab = ({ active = false }: SidebarDatabaseTabProps) 
               </Tooltip>
             )}
           </Stack>
-          <Typography variant="caption" color="text.secondary" component="div">
-            {editEntity?.id}
-          </Typography>
+          <Stack spacing={0.25} sx={{ mt: 0.25 }}>
+            <Stack direction="row" alignItems="center" spacing={0.5}>
+              <Typography variant="caption" color="text.secondary" component="div" noWrap>
+                {t('LWC.desktop.sidebar.database.project_key', { defaultValue: 'Project' })}:{' '}
+                {editEntity?.projectKey ??
+                  t('LWC.desktop.sidebar.database.no_key', { defaultValue: '(none)' })}
+              </Typography>
+              {editEntity?.projectKey && (
+                <Tooltip title={t('LWC.desktop.sidebar.database.copy_id')}>
+                  <IconButton
+                    size="small"
+                    aria-label={t('LWC.desktop.sidebar.database.copy_id')}
+                    onClick={() =>
+                      void navigator.clipboard.writeText(editEntity.projectKey!).then(() => {
+                        notifyViaSnackbar({
+                          message: t('LWC.desktop.sidebar.database.id_copied'),
+                          options: { variant: 'success' },
+                        });
+                      })
+                    }
+                    sx={{ p: 0.25 }}
+                  >
+                    <ContentCopyIcon sx={{ fontSize: 14 }} />
+                  </IconButton>
+                </Tooltip>
+              )}
+            </Stack>
+            <Stack direction="row" alignItems="center" spacing={0.5}>
+              <Typography variant="caption" color="text.secondary" component="div" noWrap>
+                {t('LWC.desktop.sidebar.database.central_key', { defaultValue: 'Central' })}:{' '}
+                {editEntity?.centralKey ??
+                  t('LWC.desktop.sidebar.database.no_key', { defaultValue: '(none)' })}
+              </Typography>
+              {editEntity?.centralKey && (
+                <Tooltip title={t('LWC.desktop.sidebar.database.copy_id')}>
+                  <IconButton
+                    size="small"
+                    aria-label={t('LWC.desktop.sidebar.database.copy_id')}
+                    onClick={() =>
+                      void navigator.clipboard.writeText(editEntity.centralKey!).then(() => {
+                        notifyViaSnackbar({
+                          message: t('LWC.desktop.sidebar.database.id_copied'),
+                          options: { variant: 'success' },
+                        });
+                      })
+                    }
+                    sx={{ p: 0.25 }}
+                  >
+                    <ContentCopyIcon sx={{ fontSize: 14 }} />
+                  </IconButton>
+                </Tooltip>
+              )}
+            </Stack>
+          </Stack>
           {editEntity && normalizedAuthorityRefs(editEntity.authorities).length > 0 && (
             <Box
               sx={{ display: 'flex', flexWrap: 'wrap', gap: 0.5, alignItems: 'center', mt: 0.5 }}
@@ -3108,11 +3954,11 @@ export const SidebarDatabaseTab = ({ active = false }: SidebarDatabaseTabProps) 
                     size="small"
                     sx={neutralActionButtonSx}
                     onClick={() =>
-                      void runEntityMutationForId(
-                        editEntity.id,
-                        t('LWC.desktop.sidebar.database.rejecting_data'),
-                        (doc, id) => rejectEntityAssertion(doc, id, assertion.key),
-                      )
+                      rejectAssertionKeys(
+                      editEntity.id,
+                      [assertion.key],
+                      t('LWC.desktop.sidebar.database.rejecting_data'),
+                    )
                     }
                   >
                     <ClearIcon fontSize="small" />
@@ -3263,11 +4109,11 @@ export const SidebarDatabaseTab = ({ active = false }: SidebarDatabaseTabProps) 
                           size="small"
                           sx={neutralActionButtonSx}
                           onClick={() =>
-                            void runEntityMutationForId(
-                              editEntity.id,
-                              t('LWC.desktop.sidebar.database.rejecting_data'),
-                              (doc, id) => rejectEntityAssertion(doc, id, author.key),
-                            )
+                            rejectAssertionKeys(
+                      editEntity.id,
+                      [author.key],
+                      t('LWC.desktop.sidebar.database.rejecting_data'),
+                    )
                           }
                         >
                           <ClearIcon fontSize="small" />
@@ -3287,9 +4133,22 @@ export const SidebarDatabaseTab = ({ active = false }: SidebarDatabaseTabProps) 
                       ref: author.ref ?? undefined,
                     }))}
                   onChange={(authors) =>
-                    void runEntityMutationForId(editEntity.id, 'Saving authors…', (doc, id) =>
-                      setUserWorkAuthors(doc, id, authors),
-                    )
+                    void (async () => {
+                      const handled = await runSqliteEntityMutation(
+                        editEntity.id,
+                        'Saving authors…',
+                        async (targetStore) => {
+                          await targetStore.sqliteSetUserWorkAuthors(editEntity.id, authors);
+                        },
+                      );
+                      if (!handled) {
+                        void runEntityMutationForId(
+                          editEntity.id,
+                          'Saving authors…',
+                          (doc, id) => setUserWorkAuthors(doc, id, authors),
+                        );
+                      }
+                    })()
                   }
                 />
               </Box>
@@ -3517,13 +4376,11 @@ export const SidebarDatabaseTab = ({ active = false }: SidebarDatabaseTabProps) 
               onNameLanguageChange={commitNameLanguage}
               onValidate={queueValidation}
               onReject={(keys) =>
-                void runEntityMutationForId(
-                  editEntity.id,
-                  t('LWC.desktop.sidebar.database.rejecting_data'),
-                  (doc, id) => {
-                    for (const key of keys) rejectEntityAssertion(doc, id, key);
-                  },
-                )
+                rejectAssertionKeys(
+                      editEntity.id,
+                      keys,
+                      t('LWC.desktop.sidebar.database.rejecting_data'),
+                    )
               }
               onDelete={commitDeleteName}
               newName={editNewName}
@@ -3691,7 +4548,14 @@ export const SidebarDatabaseTab = ({ active = false }: SidebarDatabaseTabProps) 
                   )}
                   {roleRows.map((row) => (
                     <Stack key={row.key} direction="row" spacing={1} alignItems="center">
-                      <Typography variant="body2" sx={{ flex: 1 }}>
+                      <Typography
+                        variant="body2"
+                        sx={{
+                          flex: 1,
+                          color: row.status === 'rejected' ? 'text.secondary' : undefined,
+                          textDecoration: row.status === 'rejected' ? 'line-through' : undefined,
+                        }}
+                      >
                         {row.text}
                       </Typography>
                       {row.sources.length > 0 && <SourceBadges label={row.sources.join('+')} />}
@@ -3706,23 +4570,23 @@ export const SidebarDatabaseTab = ({ active = false }: SidebarDatabaseTabProps) 
                               <CheckIcon fontSize="small" />
                             </IconButton>
                           </Tooltip>
-                          <Tooltip title={t('LWC.desktop.sidebar.database.reject_data')}>
-                            <IconButton
-                              size="small"
-                              sx={neutralActionButtonSx}
-                              onClick={() =>
-                                void runEntityMutationForId(
-                                  editEntity.id,
-                                  t('LWC.desktop.sidebar.database.rejecting_data'),
-                                  (doc, id) => {
-                                    for (const key of row.keys) rejectEntityAssertion(doc, id, key);
-                                  },
-                                )
-                              }
-                            >
-                              <ClearIcon fontSize="small" />
-                            </IconButton>
-                          </Tooltip>
+                          {row.status === 'active' && (
+                            <Tooltip title={t('LWC.desktop.sidebar.database.reject_data')}>
+                              <IconButton
+                                size="small"
+                                sx={neutralActionButtonSx}
+                                onClick={() =>
+                                  rejectAssertionKeys(
+                                    editEntity.id,
+                                    row.keys,
+                                    t('LWC.desktop.sidebar.database.rejecting_data'),
+                                  )
+                                }
+                              >
+                                <ClearIcon fontSize="small" />
+                              </IconButton>
+                            </Tooltip>
+                          )}
                         </>
                       )}
                     </Stack>
@@ -3801,13 +4665,20 @@ export const SidebarDatabaseTab = ({ active = false }: SidebarDatabaseTabProps) 
           </DialogContentText>
           <Stack spacing={1}>
             {bulkProposals.map((proposal) => (
-              <Box key={`${proposal.kind}:${proposal.sourceId}`} sx={{ borderBottom: 1, borderColor: 'divider', pb: 1 }}>
+              <Box
+                key={`${proposal.kind}:${proposal.sourceId}`}
+                sx={{ borderBottom: 1, borderColor: 'divider', pb: 1 }}
+              >
                 <Typography variant="body2">
-                  <strong>{proposal.name ?? proposal.sourceId}</strong> ({proposal.kind}) — {proposal.reason}
+                  <strong>{proposal.name ?? proposal.sourceId}</strong> ({proposal.kind}) —{' '}
+                  {proposal.reason}
                 </Typography>
                 {proposal.authorities.length > 0 && (
                   <Typography variant="caption" color="text.secondary" component="div">
-                    Authorities: {proposal.authorities.map((authority) => `${authority.type}:${authority.value}`).join(', ')}
+                    Authorities:{' '}
+                    {proposal.authorities
+                      .map((authority) => `${authority.type}:${authority.value}`)
+                      .join(', ')}
                   </Typography>
                 )}
                 {proposal.candidateCentralIds.length > 0 && (

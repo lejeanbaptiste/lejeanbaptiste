@@ -38,11 +38,12 @@ export const configureAuthorityServices = async (
 
   const validCustomServices = validateAuthorityServiceConfig(customAuthorityServices);
 
-  // The project's own entity database always comes first (desktop only).
+  // The project's own entity database and/or central database are registered
+  // here; the lookup dialog filters which of them appear (attach mode: none;
+  // sync on: CEDB only; sync off: PEDB only).
   const entityDbService = entityDatabaseLookupService();
   if (entityDbService) authorityServices.set(entityDbService.id, entityDbService);
 
-  // The user's central entity database — always consulted alongside PEDB.
   const centralDbService = centralEntityDatabaseLookupService();
   if (centralDbService) authorityServices.set(centralDbService.id, centralDbService);
 

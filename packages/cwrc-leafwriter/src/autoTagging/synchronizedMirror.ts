@@ -2,14 +2,14 @@ import {
   ENTITY_KINDS,
   entityElements,
   entityKindOfElement,
-  findEntity,
   getDatabaseId,
   touchEntity,
   type EntityKind,
 } from './entities';
-import { getCentralId, setCentralMapping } from './concordance';
+import { getCentralId } from './concordance';
 import type { EntityStore } from './entityStore';
 import { promoteToCentral } from './promote';
+import { promoteToCentralSqlite } from './sqliteBridgeOps';
 
 const CHECKPOINT_FILE = 'central-sync-checkpoint.json';
 const CENTRAL_MAPPING_TYPE = 'ljb-central';
@@ -149,6 +149,127 @@ function indexById(doc: Document): Map<string, Element> {
   );
 }
 
+async function synchronizeMirroredProjectSqlite(
+  projectStore: EntityStore,
+  centralStore: EntityStore,
+  userStableId: string,
+): Promise<SynchronizedMirrorResult> {
+  const result: SynchronizedMirrorResult = {
+    centralChanged: false,
+    projectChanged: false,
+    checkpointChanged: false,
+    uploadedProjectChanges: 0,
+    downloadedCentralChanges: 0,
+    conflicts: [],
+    unavailable: false,
+  };
+
+  const createdCentralIds = new Set<string>();
+  try {
+    const pedbIds = (await projectStore.sqliteEntityIds()) ?? [];
+    for (const pedbId of pedbIds) {
+      const existing = await projectStore.sqliteGetCentralId(pedbId, userStableId);
+      if (existing) continue;
+      const promoted = await promoteToCentralSqlite(
+        projectStore,
+        centralStore,
+        pedbId,
+        userStableId,
+      );
+      if (!promoted) continue;
+      if (promoted.created) {
+        createdCentralIds.add(promoted.centralId);
+        result.centralChanged = true;
+      }
+    }
+  } catch {
+    result.unavailable = true;
+    return result;
+  }
+
+  const checkpoint = await readCheckpoint(projectStore);
+  const nextPairs: Record<string, SyncPairCheckpoint> = {};
+  const pedbIds = (await projectStore.sqliteEntityIds()) ?? [];
+
+  for (const pedbId of pedbIds) {
+    const centralId = await projectStore.sqliteGetCentralId(pedbId, userStableId);
+    if (!centralId) continue;
+
+    const [pedbSummary, centralSummary] = await Promise.all([
+      projectStore.sqliteEntitySummary(pedbId) as Promise<{ kind?: string } | null>,
+      centralStore.sqliteEntitySummary(centralId) as Promise<{ kind?: string } | null>,
+    ]);
+    if (!pedbSummary?.kind || !centralSummary?.kind || pedbSummary.kind !== centralSummary.kind) {
+      continue;
+    }
+
+    const pedbHash = await projectStore.sqliteEntityContentHash(pedbId);
+    const centralHash = await centralStore.sqliteEntityContentHash(centralId);
+    if (!pedbHash || !centralHash) continue;
+
+    const prior = checkpoint.pairs[pedbId];
+    let nextPedbHash = pedbHash;
+    let nextCentralHash = centralHash;
+
+    const copyToCentral = async () => {
+      const changed = await centralStore.sqliteReplaceEntityContentFrom(
+        projectStore.sqlitePath,
+        pedbId,
+        centralId,
+      );
+      if (changed) result.centralChanged = true;
+      nextCentralHash = (await centralStore.sqliteEntityContentHash(centralId)) ?? centralHash;
+    };
+    const copyToProject = async () => {
+      const changed = await projectStore.sqliteReplaceEntityContentFrom(
+        centralStore.sqlitePath,
+        centralId,
+        pedbId,
+      );
+      if (changed) result.projectChanged = true;
+      nextPedbHash = (await projectStore.sqliteEntityContentHash(pedbId)) ?? pedbHash;
+    };
+
+    if (createdCentralIds.has(centralId)) {
+      await copyToCentral();
+    } else if (prior && prior.centralId === centralId) {
+      const pedbChanged = pedbHash !== prior.pedbHash;
+      const centralChanged = centralHash !== prior.centralHash;
+      if (pedbChanged && centralChanged && pedbHash !== centralHash) {
+        result.conflicts.push({ pedbId, centralId, reason: 'both-sides-changed' });
+        continue;
+      }
+      if (pedbChanged && !centralChanged) {
+        await copyToCentral();
+        result.uploadedProjectChanges += 1;
+      } else if (!pedbChanged && centralChanged) {
+        await copyToProject();
+        result.downloadedCentralChanges += 1;
+      }
+    } else if (pedbHash !== centralHash) {
+      await copyToProject();
+      result.downloadedCentralChanges += 1;
+    }
+
+    nextPairs[pedbId] = {
+      centralId,
+      pedbHash: nextPedbHash,
+      centralHash: nextCentralHash,
+    };
+  }
+
+  const nextCheckpoint: SynchronizedMirrorCheckpoint = {
+    version: 1,
+    centralDatabaseId: (await centralStore.sqliteDatabaseId()) ?? null,
+    pairs: nextPairs,
+  };
+  if (JSON.stringify(nextCheckpoint) !== JSON.stringify(checkpoint)) {
+    await writeCheckpoint(projectStore, nextCheckpoint);
+    result.checkpointChanged = true;
+  }
+  return result;
+}
+
 /**
  * Synchronize a project mirror against CEDB using the last checkpoint as the
  * common ancestor. CEDB wins only when PEDB is unchanged; an offline PEDB edit
@@ -159,6 +280,17 @@ export async function synchronizeMirroredProject(
   centralStore: EntityStore,
   userStableId: string,
 ): Promise<SynchronizedMirrorResult> {
+  const useSqliteContent =
+    (await projectStore.hasSqliteDatabase()) &&
+    (await centralStore.hasSqliteDatabase()) &&
+    typeof window !== 'undefined' &&
+    Boolean(window.electronAPI?.entitySqliteReplaceEntityContent) &&
+    Boolean(window.electronAPI?.entitySqliteEntityContentHash);
+
+  if (useSqliteContent) {
+    return synchronizeMirroredProjectSqlite(projectStore, centralStore, userStableId);
+  }
+
   const result: SynchronizedMirrorResult = {
     centralChanged: false,
     projectChanged: false,
@@ -256,4 +388,3 @@ export async function synchronizeMirroredProject(
   }
   return result;
 }
-

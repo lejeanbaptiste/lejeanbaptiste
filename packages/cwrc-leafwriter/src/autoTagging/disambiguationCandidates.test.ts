@@ -2,6 +2,7 @@ import { reconcile } from '../services/lincs-api';
 import {
   buildDisambiguationCandidates,
   candidatesFromEntityFile,
+  candidatesFromSqliteEntities,
   candidateLinks,
   candidatePassesYearFilter,
   clearPersonPackIndexForTests,
@@ -59,6 +60,43 @@ describe('disambiguationCandidates', () => {
     expect(rows).toHaveLength(1);
     expect(rows[0]?.localEntityId).toBe('person-000001');
     expect(rows[0]?.sources).toContain('entity-file');
+  });
+
+  it('builds the same shape of candidates from SQLite entity snapshots', () => {
+    const rows = candidatesFromSqliteEntities(
+      [
+        {
+          id: 'person-000001',
+          label: '張衡',
+          description: 'Eastern Han polymath',
+          authorities: [{ type: 'CBDB', value: '376' }],
+          names: [
+            { text: '張衡', language: 'zh-Hant' },
+            { text: 'Zhang Heng', language: 'zh-Latn' },
+          ],
+          startYear: 78,
+          endYear: 139,
+        },
+        {
+          id: 'person-other',
+          label: '其他',
+          names: [{ text: '其他', language: 'zh-Hant' }],
+        },
+      ],
+      '張衡',
+      'pedb',
+    );
+    expect(rows).toHaveLength(1);
+    expect(rows[0]).toMatchObject({
+      localEntityId: 'person-000001',
+      label: '張衡',
+      startYear: 78,
+      endYear: 139,
+      projectLangName: '張衡',
+      romanizedName: 'Zhang Heng',
+      sources: ['entity-file'],
+    });
+    expect(rows[0]?.authorityIds).toEqual([{ type: 'CBDB', value: '376' }]);
   });
 
   it('matches an entity-file name that carries a <choice><sic>/<corr>', () => {

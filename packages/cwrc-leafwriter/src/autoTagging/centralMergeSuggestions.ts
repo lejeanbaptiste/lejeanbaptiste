@@ -28,7 +28,6 @@
  * still worth showing the user.
  */
 
-import { findEntity } from './entities';
 import type { EntityFileApi } from './entityStore';
 import { composeRemap, type EntityOrder } from './entityOrders';
 
@@ -244,7 +243,7 @@ export function pendingMergeSuggestions(
   resolutions: MergeSuggestionResolution[],
   cedbOrders: EntityOrder[],
   cedbDbId: string,
-  cedbDoc: Document,
+  existingIds: ReadonlySet<string>,
 ): PendingMergeSuggestion[] {
   const resolvedIds = new Set(resolutions.map((resolution) => resolution.suggestionId));
   const remap = composeRemap(cedbOrders.filter((order) => order.dbId === cedbDbId));
@@ -261,7 +260,7 @@ export function pendingMergeSuggestions(
     const b = resolve(rawB);
     if (!a || !b) continue; // one side was deleted outright — nothing to merge
     if (a === b) continue; // already unified by a regular Absorb
-    if (!findEntity(cedbDoc, a) || !findEntity(cedbDoc, b)) continue; // stale
+    if (!existingIds.has(a) || !existingIds.has(b)) continue; // stale
 
     const pairKey = [a, b].sort().join(' ');
     if (seenPairs.has(pairKey)) continue;
@@ -289,7 +288,7 @@ export function pendingDeleteSuggestions(
   resolutions: MergeSuggestionResolution[],
   cedbOrders: EntityOrder[],
   cedbDbId: string,
-  cedbDoc: Document,
+  existingIds: ReadonlySet<string>,
 ): PendingDeleteSuggestion[] {
   const resolvedIds = new Set(resolutions.map((resolution) => resolution.suggestionId));
   const remap = composeRemap(cedbOrders.filter((order) => order.dbId === cedbDbId));
@@ -303,7 +302,7 @@ export function pendingDeleteSuggestions(
 
     const resolved = resolve(suggestion.centralId);
     if (!resolved) continue; // already deleted/merged away upstream — nothing to purge
-    if (!findEntity(cedbDoc, resolved)) continue; // stale
+    if (!existingIds.has(resolved)) continue; // stale
     if (seen.has(resolved)) continue;
     seen.add(resolved);
     out.push({ id: suggestion.id, when: suggestion.when, centralId: resolved });

@@ -56,15 +56,15 @@ export const ManualEntryField = ({ setAuthorityInView }: ManualEntryFieldProps) 
         <Typography
           sx={{
             color: (theme) => theme.vars.palette.text.secondary,
-            fontSize: '0.875rem',
-            lineHeight: 2.5,
+            fontSize: '0.75rem',
+            lineHeight: 2,
             textTransform: 'uppercase',
           }}
         >
           {t('LW.commons.other')} / {t('LW.commons.manual input')}
         </Typography>
       </Box>
-      <Box my={1.5} ml={2} pr={2}>
+      <Box my={0.75} ml={1.5} pr={1.5}>
         <FormControl fullWidth variant="standard">
           <InputLabel htmlFor="manual-uri">URI</InputLabel>
           <Input

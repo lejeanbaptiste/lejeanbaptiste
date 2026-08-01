@@ -32,6 +32,377 @@ declare global {
   };
 
   interface LeafWriterElectronApi {
+    entitySqliteExportXml?: (request: { databasePath: string }) => Promise<string | null>;
+    entitySqliteImportXml?: (request: { databasePath: string; xml: string }) => Promise<unknown>;
+    entitySqliteCandidates?: (request: {
+      databasePath: string;
+      kind: 'person' | 'place' | 'work' | 'office' | 'org';
+    }) => Promise<Array<{
+      id: string;
+      kind: 'person' | 'place' | 'work' | 'office' | 'org';
+      names: Array<{ text: string; type?: string }>;
+      description?: string;
+      startYear?: number;
+      endYear?: number;
+      nobleTitles: Array<{
+        fief?: string;
+        roleName?: string;
+        posthumousName?: string;
+        dynasty?: string;
+      }>;
+    }> | null>;
+    entitySqliteUpdateNames?: (request: {
+      databasePath: string;
+      entityId: string;
+      text: string;
+      nameType?: string | null;
+      language?: string | null;
+    }) => Promise<number>;
+    entitySqliteTombstoneNames?: (request: {
+      databasePath: string;
+      entityId: string;
+      text: string;
+      reason?: string;
+    }) => Promise<number>;
+    entitySqliteUpdateDescription?: (request: {
+      databasePath: string;
+      entityId: string;
+      description: string | null;
+    }) => Promise<void>;
+    entitySqliteRemoveName?: (request: {
+      databasePath: string;
+      entityId: string;
+      text: string;
+    }) => Promise<boolean>;
+    entitySqliteAddName?: (request: {
+      databasePath: string;
+      entityId: string;
+      text: string;
+      nameType?: string | null;
+      nameRole?: string;
+      language?: string | null;
+      isPrimary?: boolean;
+      origin?: 'user' | 'authority' | 'xml';
+      source?: string | null;
+    }) => Promise<unknown>;
+    entitySqliteSetUserDate?: (request: {
+      databasePath: string;
+      entityId: string;
+      part: 'birth' | 'death';
+      year: number | null;
+      precision?: string | null;
+    }) => Promise<void>;
+    entitySqliteSetUserWorkDate?: (request: {
+      databasePath: string;
+      entityId: string;
+      startYear: number | null;
+      endYear?: number | null;
+      startPrecision?: string | null;
+      endPrecision?: string | null;
+    }) => Promise<void>;
+    entitySqliteAddNationality?: (request: {
+      databasePath: string;
+      entityId: string;
+      label: string;
+      ref?: string | null;
+      source?: string | null;
+    }) => Promise<boolean>;
+    entitySqliteAddOrigin?: (request: {
+      databasePath: string;
+      entityId: string;
+      label: string;
+      ref?: string | null;
+      source?: string | null;
+    }) => Promise<boolean>;
+    entitySqliteAddNobleTitle?: (request: {
+      databasePath: string;
+      entityId: string;
+      input: {
+        dynasty?: string;
+        fief?: string;
+        posthumousName?: string;
+        title?: string;
+      };
+    }) => Promise<boolean>;
+    entitySqliteUpdateNobleTitle?: (request: {
+      databasePath: string;
+      entityId: string;
+      key: string;
+      input: {
+        dynasty?: string;
+        fief?: string;
+        posthumousName?: string;
+        title?: string;
+      };
+    }) => Promise<boolean>;
+    entitySqliteSetUserWorkAuthors?: (request: {
+      databasePath: string;
+      entityId: string;
+      authors: Array<{ name: string; ref?: string | null; key?: string | null }>;
+    }) => Promise<void>;
+    entitySqliteAttachAuthority?: (request: {
+      databasePath: string;
+      entityId: string;
+      type: string;
+      value: string;
+    }) => Promise<boolean>;
+    entitySqliteDecoupleAuthority?: (request: {
+      databasePath: string;
+      entityId: string;
+      type: string;
+      value: string;
+    }) => Promise<number>;
+    entitySqliteRejectAssertion?: (request: {
+      databasePath: string;
+      entityId: string;
+      key: string;
+    }) => Promise<boolean>;
+    entitySqliteRemoveAssertion?: (request: {
+      databasePath: string;
+      entityId: string;
+      key: string;
+    }) => Promise<boolean>;
+    entitySqliteValidateAssertion?: (request: {
+      databasePath: string;
+      entityId: string;
+      key: string;
+    }) => Promise<boolean>;
+    entitySqliteAcceptDateAssertion?: (request: {
+      databasePath: string;
+      entityId: string;
+      key: string;
+    }) => Promise<boolean>;
+    entitySqliteAcceptDescriptionAssertion?: (request: {
+      databasePath: string;
+      entityId: string;
+      key: string;
+    }) => Promise<boolean>;
+    entitySqliteRenamePrimaryName?: (request: {
+      databasePath: string;
+      entityId: string;
+      text: string;
+    }) => Promise<boolean>;
+    entitySqliteSetRomanizedName?: (request: {
+      databasePath: string;
+      entityId: string;
+      text: string;
+      language?: string;
+    }) => Promise<void>;
+    entitySqliteApplyConcordance?: (request: {
+      databasePath: string;
+      associations: Array<{
+        source: string;
+        canonicalId: string;
+        mergedFromId: string;
+        notes?: string;
+        sourceRef?: string;
+      }>;
+    }) => Promise<{
+      applied: number;
+      alreadyPresent: number;
+      rejected: number;
+      unresolved: number;
+      conflicts: Array<{
+        association: {
+          source: string;
+          canonicalId: string;
+          mergedFromId: string;
+          notes?: string;
+          sourceRef?: string;
+        };
+        entityIds: string[];
+      }>;
+    }>;
+    entitySqliteRejectConcordance?: (request: {
+      databasePath: string;
+      association: {
+        source: string;
+        canonicalId: string;
+        mergedFromId: string;
+        notes?: string;
+        sourceRef?: string;
+      };
+      entityId?: string;
+      reason?: string;
+    }) => Promise<boolean>;
+    entitySqliteMarkDuplicateIntentional?: (request: {
+      databasePath: string;
+      entityIds: string[];
+    }) => Promise<boolean>;
+    entitySqliteBackfillDecisionTargets?: (request: {
+      databasePath: string;
+    }) => Promise<{ updated: number; inserted: number; unchanged: number } | null>;
+    entitySqliteSoftDelete?: (request: {
+      databasePath: string;
+      entityId: string;
+    }) => Promise<boolean>;
+    entitySqliteMerge?: (request: {
+      databasePath: string;
+      keepId: string;
+      dropIds: string[];
+    }) => Promise<{
+      keepId: string;
+      remap: Record<string, string>;
+      centralConflicts: Array<{
+        userStableId: string;
+        keptCentralId: string;
+        droppedCentralId: string;
+      }>;
+    }>;
+    entitySqliteCreatePopulated?: (request: {
+      databasePath: string;
+      id: string;
+      kind: 'person' | 'place' | 'work' | 'office' | 'org';
+      description?: string | null;
+      names?: Array<{
+        text: string;
+        nameType?: string | null;
+        language?: string | null;
+        isPrimary?: boolean;
+        origin?: 'user' | 'authority' | 'xml';
+        source?: string | null;
+      }>;
+      authorities?: Array<{
+        type: string;
+        value: string;
+        origin?: 'user' | 'authority' | 'xml';
+        source?: string | null;
+      }>;
+      familyName?: string | null;
+      givenName?: string | null;
+    }) => Promise<unknown>;
+    entitySqliteApplyAuthorityBackfillPatch?: (request: {
+      databasePath: string;
+      entityId: string;
+      names?: Array<{
+        text: string;
+        nameType?: string | null;
+        language?: string | null;
+        source?: string | null;
+      }>;
+      familyName?: string | null;
+      givenName?: string | null;
+      romanized?: { text: string; language?: string | null } | null;
+      dates?: Array<{
+        source: string;
+        startYear?: number | null;
+        endYear?: number | null;
+      }>;
+      nationalities?: Array<{ label: string; ref?: string | null; source: string }>;
+      origins?: Array<{
+        label: string;
+        ref?: string | null;
+        source: string;
+        nameType?: string | null;
+      }>;
+      offices?: Array<{ label: string; ref?: string | null; source: string }>;
+      nobleTitles?: Array<{
+        placeName: string;
+        roleName: string;
+        posthumousName?: string | null;
+        dynasty?: string | null;
+        ref?: string | null;
+        source: string;
+      }>;
+      authorityCaches?: Array<{
+        authorityType: string;
+        source?: string | null;
+        payload: unknown;
+      }>;
+      workAuthors?: Array<{
+        name: string;
+        personId?: string | null;
+        ref?: string | null;
+        source?: string | null;
+      }>;
+      workDate?: {
+        source: string;
+        startYear?: number | null;
+        endYear?: number | null;
+      } | null;
+    }) => Promise<{ changed: boolean; namesAdded: number }>;
+    entitySqliteEntityContentHash?: (request: {
+      databasePath: string;
+      entityId: string;
+    }) => Promise<string | null>;
+    entitySqliteReplaceEntityContent?: (request: {
+      sourceDatabasePath: string;
+      sourceEntityId: string;
+      targetDatabasePath: string;
+      targetEntityId: string;
+    }) => Promise<{ changed: boolean }>;
+    entitySqliteGetCentralId?: (request: {
+      databasePath: string;
+      entityId: string;
+      userStableId: string;
+    }) => Promise<string | null>;
+    entitySqliteSetCentralMapping?: (request: {
+      databasePath: string;
+      entityId: string;
+      userStableId: string;
+      centralId: string;
+    }) => Promise<boolean>;
+    entitySqliteClearCentralMapping?: (request: {
+      databasePath: string;
+      entityId: string;
+      userStableId: string;
+    }) => Promise<boolean>;
+    entitySqliteListMappingsByCentralIds?: (request: {
+      databasePath: string;
+      userStableId: string;
+      centralIds: string[];
+    }) => Promise<Array<{ projectEntityId: string; centralId: string; label: string | null }>>;
+    entitySqliteListAllCentralMappings?: (request: {
+      databasePath: string;
+      userStableId: string;
+    }) => Promise<Array<{ projectEntityId: string; centralId: string }>>;
+    entitySqliteListLinkedCentralIds?: (request: {
+      databasePath: string;
+      userStableId: string;
+    }) => Promise<string[] | null>;
+    entitySqliteFindByAuthority?: (request: {
+      databasePath: string;
+      kind: 'person' | 'place' | 'work' | 'office' | 'org';
+      type: string;
+      value: string;
+    }) => Promise<string | null>;
+    entitySqliteFindByNameDates?: (request: {
+      databasePath: string;
+      kind: 'person' | 'place' | 'work' | 'office' | 'org';
+      name: string;
+      startYear?: number | null;
+      endYear?: number | null;
+    }) => Promise<string | null>;
+    entitySqliteForceRejectAssertion?: (request: {
+      databasePath: string;
+      entityId: string;
+      key: string;
+    }) => Promise<boolean>;
+    entitySqliteSearch?: (request: {
+      databasePath: string;
+      kind: 'person' | 'place' | 'work' | 'office' | 'org';
+      query: string;
+      limit?: number;
+    }) => Promise<Array<{
+      id: string;
+      label: string;
+      description?: string;
+      idnos: Array<{ type: string; value: string }>;
+    }> | null>;
+    entitySqliteGet?: (request: {
+      databasePath: string;
+      entityId: string;
+    }) => Promise<unknown | null>;
+    entitySqliteDatabaseId?: (databasePath: string) => Promise<string | null>;
+    entitySqliteListIds?: (request: {
+      databasePath: string;
+      kind?: 'person' | 'place' | 'work' | 'office' | 'org';
+    }) => Promise<string[] | null>;
+    entitySqliteListPanelSummaries?: (request: {
+      databasePath: string;
+      kind?: 'person' | 'place' | 'work' | 'office' | 'org';
+    }) => Promise<unknown[] | null>;
+    entitySqliteAuthorityDuplicates?: (databasePath: string) => Promise<unknown[] | null>;
     lspStart: (options?: {
       defaultSchemaRng?: string;
       projectRoot?: string;
