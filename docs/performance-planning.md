@@ -217,6 +217,7 @@ could be large, but only for sufficiently big documents.
 - Flattening the tree no longer creates a new array at every node.
 - Visible rows are derived in one pass and are not recalculated when only the active selection changes.
 - XPath sibling positions are counted once per parent instead of scanning every prior sibling for every tree node.
+- Full tree rebuilds are debounced during ordinary editing and deferred until a mass update completes.
 
 ---
 

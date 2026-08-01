@@ -11,6 +11,8 @@ import {
 } from './store';
 import type { FlattenedItem } from './types';
 
+const TREE_REBUILD_DEBOUNCE_MS = 150;
+
 export const useEditor = (flattenedTree: FlattenedItem[]) => {
   const { writer } = window;
 
@@ -65,7 +67,7 @@ export const useEditor = (flattenedTree: FlattenedItem[]) => {
     updateTimerRef.current = window.setTimeout(() => {
       updateTimerRef.current = null;
       setUpdatePending(true);
-    }, 1);
+    }, TREE_REBUILD_DEBOUNCE_MS);
   };
 
   useEffect(() => {
@@ -254,11 +256,22 @@ export const useEditor = (flattenedTree: FlattenedItem[]) => {
   };
 
   const handleContentChanged = () => {
+    if (!enabled) return;
     scheduleUpdatePending();
   };
 
-  const handleMassUpdateStarted = () => setEnabled(false);
-  const handleMassUpdateCompleted = () => setEnabled(true);
+  const handleMassUpdateStarted = () => {
+    setEnabled(false);
+    if (updateTimerRef.current !== null) {
+      window.clearTimeout(updateTimerRef.current);
+      updateTimerRef.current = null;
+    }
+  };
+
+  const handleMassUpdateCompleted = () => {
+    setEnabled(true);
+    scheduleUpdatePending();
+  };
 
   const handleNodeChange = (node?: Element) => {
     if (!initialized) {
