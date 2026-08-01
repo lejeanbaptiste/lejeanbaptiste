@@ -1,6 +1,6 @@
 # Performance Optimization — planning notes
 
-**Status (2026-08-01):** The markup tree and the top-level review/disambiguation lists are virtualized. Monaco no longer recreates on theme changes. Source mode now keeps its Monaco instance across Visual ↔ Source switches and avoids reloading TinyMCE when the source buffer is unchanged. The next measured targets are tree/panel work, changed-source reloads, idle panel memory, and desktop bridge polling.
+**Status (2026-08-01):** The markup tree and the top-level review/disambiguation lists are virtualized. Monaco no longer recreates on theme changes. Source mode now keeps its Monaco instance across Visual ↔ Source switches and avoids reloading TinyMCE when the source buffer is unchanged. The markup tree's flattening and visible-row pass are now linear and do not recompute on selection alone. The next measured targets are remaining tree rebuilds, changed-source reloads, idle panel memory, and desktop bridge polling.
 
 ## Summary
 
@@ -211,6 +211,11 @@ could be large, but only for sufficiently big documents.
 - Large documents no longer stall when the markup panel refreshes.
 - Tree navigation remains correct after edits.
 - Rebuild frequency and rebuild duration are measurably lower.
+
+### Completed first pass
+
+- Flattening the tree no longer creates a new array at every node.
+- Visible rows are derived in one pass and are not recalculated when only the active selection changes.
 
 ---
 
