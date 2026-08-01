@@ -124,4 +124,20 @@ describe('collectHarvestedWrappers / filter / findings', () => {
       'origin 洛陽',
     );
   });
+
+  it('does not associate harvested facts with non-person or unresolved entities', () => {
+    const doc = parse(
+      `<TEI><text><name type="personWrapper" key="place-1">
+        <nationality>漢</nationality><placeOfOrigin>洛陽</placeOfOrigin>
+      </name><name type="personWrapper" key="missing-1">
+        <nationality>魏</nationality>
+      </name></text></TEI>`,
+    );
+    const wrappers = collectHarvestedWrappers(doc, 'chapter-1.xml');
+    const place = basePerson({ id: 'place-1' });
+    const nonPerson = { ...place, kind: 'place' as const };
+
+    expect(findingsFromHarvest(wrappers, new Map([['place-1', nonPerson]]))).toEqual([]);
+    expect(findingsFromHarvest(wrappers, new Map())).toEqual([]);
+  });
 });

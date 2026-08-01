@@ -232,6 +232,11 @@ export function findingsFromHarvest(
   const findings: HygieneFinding[] = [];
   for (const wrapper of wrappers) {
     const entity = entitiesById.get(wrapper.entityId);
+    // A personWrapper is the source syntax, but its key can still be stale or
+    // point at a different entity kind. These facts belong only on people;
+    // skip unresolved/non-person targets instead of offering an invalid
+    // harvest proposal in the database viewer.
+    if (!entity || entity.kind !== 'person') continue;
     const novel = filterNewHarvestAssertions(entity, wrapper.assertions);
     if (novel.length === 0) continue;
     findings.push({

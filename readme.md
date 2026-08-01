@@ -134,7 +134,7 @@ Near-term work pulled from the planning docs ([docs/README.md](docs/README.md)).
 ### Beta / reliability
 
 - [ ] Packaged smoke each release (clean build → edit/save/relaunch; Sanmiao, icons, updates)
-- [ ] Sign off blank-editor-on-startup fix on slow machines
+- [x] Sign off blank-editor-on-startup fix on slow machines
 - [x] Release hygiene: versioning, notes, tester instructions
 - [ ] Full packaged regression pass ([beta-plan.md](docs/beta-plan.md))
 

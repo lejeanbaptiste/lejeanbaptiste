@@ -24,24 +24,6 @@ const EAST_PANELS: Record<string, ComponentType> = {
   attributes: AttributesPanel,
 };
 
-const waitForElement = (selector: string, timeoutMs = 5000): Promise<Element> =>
-  new Promise((resolve, reject) => {
-    const started = Date.now();
-    const check = () => {
-      const element = document.querySelector(selector);
-      if (element) {
-        resolve(element);
-        return;
-      }
-      if (Date.now() - started > timeoutMs) {
-        reject(new Error(`Element not found: ${selector}`));
-        return;
-      }
-      requestAnimationFrame(check);
-    };
-    check();
-  });
-
 const decorateEastTabIcons = () => {
   const tabItems = document.querySelectorAll('.cwrc-east-icon-tabs > ul > li');
   tabItems.forEach((item) => {
@@ -67,24 +49,25 @@ export const DesktopEastPanels = () => {
   const [leafWriter] = useAtom(leafwriterAtom);
   const [panelContainers, setPanelContainers] = useState<Record<string, Element>>({});
 
-  const mountEastPanels = useCallback(async (editorId?: string) => {
+  const mountEastPanels = useCallback((editorId?: string): boolean => {
     const id = editorId ?? window.writer?.editorId;
-    if (!isDesktop() || !id) return;
+    if (!isDesktop() || !id) return false;
 
     const next: Record<string, Element> = {};
-    await Promise.all(
-      Object.keys(EAST_PANELS).map(async (moduleId) => {
-        try {
-          next[moduleId] = await waitForElement(`#${id}-${moduleId}`);
-        } catch {
-          // Writer layout may not be ready yet.
-        }
-      }),
-    );
+    for (const moduleId of Object.keys(EAST_PANELS)) {
+      const container = document.getElementById(`${id}-${moduleId}`);
+      if (container) next[moduleId] = container;
+    }
 
     if (Object.keys(next).length > 0) {
-      setPanelContainers((current) => ({ ...current, ...next }));
+      setPanelContainers((current) => {
+        const changed = Object.entries(next).some(([moduleId, container]) =>
+          current[moduleId] !== container,
+        );
+        return changed ? { ...current, ...next } : current;
+      });
     }
+    return Object.keys(next).length === Object.keys(EAST_PANELS).length;
   }, []);
 
   useEffect(() => {
@@ -93,26 +76,38 @@ export const DesktopEastPanels = () => {
       return;
     }
 
+    let observer: MutationObserver | undefined;
+    let fallbackTimeout: number | undefined;
+    const stopObserving = () => {
+      observer?.disconnect();
+      observer = undefined;
+      if (fallbackTimeout !== undefined) window.clearTimeout(fallbackTimeout);
+      fallbackTimeout = undefined;
+    };
+
+    const tryMount = (editorId?: string) => {
+      if (mountEastPanels(editorId)) stopObserving();
+    };
+
     const onEastTabsReady = (event: Event) => {
       const detail = (event as CustomEvent<{ editorId: string }>).detail;
       decorateEastTabIcons();
-      void mountEastPanels(detail?.editorId);
+      tryMount(detail?.editorId);
     };
 
     window.addEventListener('lw:east-tabs-ready', onEastTabsReady);
     decorateEastTabIcons();
-    void mountEastPanels();
-
-    const retryId = window.setInterval(() => {
-      if (window.writer?.editorId) {
-        void mountEastPanels();
-        window.clearInterval(retryId);
-      }
-    }, 200);
+    if (!mountEastPanels()) {
+      // Normally lw:east-tabs-ready handles this. If React mounts first, watch only
+      // until the legacy containers appear instead of polling every 200 ms.
+      observer = new MutationObserver(() => tryMount());
+      observer.observe(document.body, { childList: true, subtree: true });
+      fallbackTimeout = window.setTimeout(stopObserving, 5000);
+    }
 
     return () => {
       window.removeEventListener('lw:east-tabs-ready', onEastTabsReady);
-      window.clearInterval(retryId);
+      stopObserving();
     };
   }, [leafWriter, mountEastPanels]);
 

@@ -1,6 +1,6 @@
 # Performance Optimization — planning notes
 
-**Status (2026-08-01):** The markup tree and the top-level review/disambiguation lists are virtualized. Monaco no longer recreates on theme changes. Source mode now keeps its Monaco instance across Visual ↔ Source switches and avoids reloading TinyMCE when the source buffer is unchanged. The markup tree's flattening, visible-row pass, and XPath sibling indexes are now linear and do not recompute on selection alone. Live markup-tree synchronization is now optional: users can choose Live, On demand, or Off. The next measured targets are changed-source reloads, idle panel memory, and desktop bridge polling.
+**Status (2026-08-01):** The markup tree and the top-level review/disambiguation lists are virtualized. Monaco no longer recreates on theme changes. Source mode keeps its Monaco instance across Visual ↔ Source switches and avoids reloading TinyMCE when the source buffer is unchanged. The markup tree's flattening, visible-row pass, and XPath sibling indexes are linear and do not recompute on selection alone. Live markup-tree synchronization is optional: users can choose Live, On demand, or Off. On the slow Windows baseline, tab switching is green at 109 ms; tree navigation is improved but intentionally not a priority while live synchronization can be disabled. Desktop-panel mounting is now event-driven, with a short-lived DOM observer only for the mount-order race.
 
 ## Summary
 
@@ -8,9 +8,7 @@ The app already has one important optimization in place: the markup tree is virt
 `react-virtuoso`. That means the next wins are less about adding virtualization everywhere by
 default and more about targeting the remaining hotspots:
 
-- long review/disambiguation lists that still render eagerly,
-- heavyweight editor lifecycle churn,
-- full tree-model rebuilds for large XML documents,
+- document loading and changed-source reloads,
 - hidden-but-mounted panels that retain memory,
 - polling-based desktop bridge code that adds idle work.
 
@@ -29,44 +27,19 @@ The markup tree panel is already virtualized:
 
 That is good news because it avoids wasting time on a problem that has already been addressed.
 
-### Highest-value remaining candidates
+### Remaining candidates
 
-#### 1. Auto-tagging review panel still renders the full list
+#### 1. Document loading remains the next user-visible editor cost
 
-The review pane maps every pending group directly into the DOM:
+Cold document loads still do significant XML conversion and editor work. It is worth revisiting once
+the beta is stable, but it is not currently a release blocker.
 
-- `packages/cwrc-leafwriter/src/autoTagging/ReviewPanel.tsx`
+#### 2. Hidden panels can retain memory and subscriptions
 
-This is likely to hurt when a document produces many suggestions, especially because each row
-contains multiple MUI components, buttons, chips, and conditional status UI.
+Some legacy portal mount points must stay alive, but React-only tab content should be able to pause or
+unmount when inactive without making reopening a panel feel slow.
 
-#### 2. Disambiguation panel still renders the full list
-
-The disambiguation pane eagerly renders:
-
-- all pending groups,
-- all resolved groups,
-- all visible instances in expanded groups,
-- all candidate rows for the selected group.
-
-Key file:
-
-- `packages/cwrc-leafwriter/src/autoTagging/DisambiguationPanel.tsx`
-
-This is a strong candidate for virtualization or staged rendering because the panel can grow with
-project size and authority density.
-
-#### 3. Monaco editor is recreated on theme changes
-
-The source editor creation effect depends on theme state:
-
-- `packages/cwrc-leafwriter/src/components/sourceEditor/XmlMonacoEditor.tsx`
-
-That means a theme switch tears down and recreates the Monaco instance, which is expensive in both
-CPU and transient memory. The editor can instead be created once and updated in place when the theme
-changes.
-
-#### 4. Markup tree virtualization does not remove tree rebuild cost
+#### 3. Markup tree rebuilds are deliberately lower priority
 
 The tree UI is virtualized, but the underlying tree model is still:
 
@@ -251,7 +224,7 @@ could be large, but only for sufficiently big documents.
 
 ## Phase 5 — Replace polling with event-driven mounting where possible
 
-**Priority:** Medium  
+**Status:** Initial desktop-panel pass complete (2026-08-01)  
 **Expected payoff:** Lower idle CPU, cleaner lifecycle code
 
 ### Targets
@@ -260,11 +233,14 @@ could be large, but only for sufficiently big documents.
 - `apps/commons/src/desktop/DesktopEastPanels.tsx`
 - `apps/commons/src/desktop/UnifiedRightPanel.tsx`
 
-### Plan
+### Implemented
 
-- Replace `setInterval` retry loops with explicit lifecycle events where available.
-- Use `MutationObserver` only where true event wiring is not feasible.
-- Avoid repeated `querySelector(...)` scans once a container has been found and validated.
+- Replaced the 200 ms retry loops for right-panel migration and East-panel portal mounting with the existing `lw:east-tabs-ready` lifecycle event.
+- Kept a bounded `MutationObserver` fallback for the small race where React mounts after the event or before legacy containers exist.
+- Stopped observing as soon as the relevant containers are found, or after five seconds.
+
+### Follow-up
+
 - Clean up any per-icon React roots or transient mounts that lack explicit teardown.
 
 ### Success criteria

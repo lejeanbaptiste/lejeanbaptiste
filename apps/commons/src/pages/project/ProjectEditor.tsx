@@ -165,9 +165,13 @@ export const ProjectEditor = () => {
     // as the project shell exists: the editor cannot display anything until an
     // active resource has arrived, and overlapping the two has left slow
     // startup runs with a half-initialized editor.  Waiting for the prepared
-    // active document makes the hand-off deterministic.
+    // active document makes the hand-off deterministic.  Likewise, do not
+    // initialize TinyMCE while the full-width Database Window hides this
+    // container with display:none: TinyMCE can then wait indefinitely for
+    // dimensions that will not exist until the user returns to the editor.
     if (
       divEl.current &&
+      desktopWindowMode === 'editor' &&
       isProjectReady &&
       resource?.filePath &&
       resource.content &&
@@ -186,6 +190,7 @@ export const ProjectEditor = () => {
       })();
     }
   }, [
+    desktopWindowMode,
     isProjectReady,
     leafWriter,
     loadLib,

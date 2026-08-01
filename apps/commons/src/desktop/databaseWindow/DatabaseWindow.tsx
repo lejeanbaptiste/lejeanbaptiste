@@ -43,12 +43,9 @@ import { backfillEntitiesSqlite } from '../../../../../packages/cwrc-leafwriter/
 import { refreshCbdbConcordanceSqlite } from '../../../../../packages/cwrc-leafwriter/src/autoTagging/cbdbConcordance';
 import { AUTHORITY_PACKS } from '../../../../../packages/cwrc-leafwriter/src/autoTagging/packPaths';
 import { useActions, useAppState } from '@src/overmind';
-import {
-  BackgroundJobBanner,
-  useBackgroundJob,
-  yieldToUi,
-} from './BackgroundJobBanner';
+import { BackgroundJobBanner, useBackgroundJob, yieldToUi } from './BackgroundJobBanner';
 import { EntityCompareCard } from './EntityCompareCard';
+import { databaseEntityLabel } from './databaseEntityLabel';
 import { loadDatabaseWindowEntities } from './loadEntities';
 
 type DatabaseView = 'project' | 'central';
@@ -96,10 +93,8 @@ function DatabaseEntityRow({
       }}
     >
       <ListItemText
-        primary={entity.names[0] ?? entity.id}
-        secondary={entity.romanized ?? entity.projectKey ?? entity.id}
+        primary={databaseEntityLabel(entity)}
         primaryTypographyProps={{ noWrap: true }}
-        secondaryTypographyProps={{ noWrap: true }}
       />
     </ListItemButton>
   );
@@ -279,7 +274,9 @@ function applyFindingLocally(entity: EntitySummary, finding: HygieneFinding): En
 function idsRemovedByMerge(finding: HygieneFinding, keepId: string): string[] {
   const related =
     finding.relatedEntityIds ??
-    (finding.peer?.kind === 'entity' ? [finding.entityId, finding.peer.entityId] : [finding.entityId]);
+    (finding.peer?.kind === 'entity'
+      ? [finding.entityId, finding.peer.entityId]
+      : [finding.entityId]);
   return related.filter((id) => id !== keepId);
 }
 
@@ -378,7 +375,7 @@ export const DatabaseWindow = () => {
     return list;
   }, [entities, kindFilter, search]);
 
-  const selectedEntity = selectedId ? entityById.get(selectedId) ?? null : null;
+  const selectedEntity = selectedId ? (entityById.get(selectedId) ?? null) : null;
   const currentFinding = findings[findingIndex] ?? null;
 
   const leftCard = useMemo(() => {
@@ -1088,9 +1085,7 @@ export const DatabaseWindow = () => {
             size="small"
             variant="contained"
             color={databaseView === 'central' ? 'error' : 'success'}
-            onClick={() =>
-              setDatabaseView((prev) => (prev === 'central' ? 'project' : 'central'))
-            }
+            onClick={() => setDatabaseView((prev) => (prev === 'central' ? 'project' : 'central'))}
             startIcon={<HubOutlinedIcon fontSize="small" />}
             disabled={jobRunning}
           >
@@ -1117,12 +1112,7 @@ export const DatabaseWindow = () => {
           onChange={(e) => setSearch(e.target.value)}
           sx={{ minWidth: 220, flex: 1 }}
         />
-        <Button
-          size="small"
-          variant="outlined"
-          onClick={() => void reload()}
-          disabled={jobRunning}
-        >
+        <Button size="small" variant="outlined" onClick={() => void reload()} disabled={jobRunning}>
           Reload
         </Button>
         <Button
@@ -1228,7 +1218,17 @@ export const DatabaseWindow = () => {
           />
         </Box>
 
-        <Box sx={{ flex: 1, minWidth: 0, display: 'flex', flexDirection: 'column', p: 2, gap: 2, overflow: 'auto' }}>
+        <Box
+          sx={{
+            flex: 1,
+            minWidth: 0,
+            display: 'flex',
+            flexDirection: 'column',
+            p: 2,
+            gap: 2,
+            overflow: 'auto',
+          }}
+        >
           {mainPane === 'issues' && (
             <>
               <Stack direction="row" spacing={1} alignItems="center" flexWrap="wrap" useFlexGap>
@@ -1268,9 +1268,7 @@ export const DatabaseWindow = () => {
                     </Button>
                     <Button
                       size="small"
-                      onClick={() =>
-                        setFindingIndex((i) => Math.min(findings.length - 1, i + 1))
-                      }
+                      onClick={() => setFindingIndex((i) => Math.min(findings.length - 1, i + 1))}
                       disabled={applyBusy || findingIndex >= findings.length - 1}
                     >
                       Next
@@ -1344,8 +1342,8 @@ export const DatabaseWindow = () => {
                       currentFinding?.proposal.action === 'merge' &&
                       Boolean(
                         mergeKeepId &&
-                          mergeKeepId !== currentFinding.entityId &&
-                          currentFinding.relatedEntityIds?.includes(mergeKeepId),
+                        mergeKeepId !== currentFinding.entityId &&
+                        currentFinding.relatedEntityIds?.includes(mergeKeepId),
                       )
                     }
                     onSelect={

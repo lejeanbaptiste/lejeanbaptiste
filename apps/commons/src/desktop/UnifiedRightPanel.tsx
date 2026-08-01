@@ -302,30 +302,34 @@ export const UnifiedRightPanel = () => {
       return foundAll;
     };
 
+    let observer: MutationObserver | undefined;
+    let fallbackTimeout: number | undefined;
+    const stopObserving = () => {
+      observer?.disconnect();
+      observer = undefined;
+      if (fallbackTimeout !== undefined) window.clearTimeout(fallbackTimeout);
+      fallbackTimeout = undefined;
+    };
+
+    const tryMigrate = (reason: string) => {
+      if (migrate(reason)) stopObserving();
+    };
+
     const onEastTabsReady = () => {
       panelTrace('rightPanel: lw:east-tabs-ready received');
       // Give jQuery UI a frame to finish tab initialization before we move nodes
-      requestAnimationFrame(() => migrate('east-tabs-ready'));
+      requestAnimationFrame(() => tryMigrate('east-tabs-ready'));
     };
 
     window.addEventListener('lw:east-tabs-ready', onEastTabsReady);
-    // The ready event may already have fired before this effect ran (e.g. this panel
-    // remounted after a route change while the editor instance survived). The validation
-    // and image viewer modules can also appear shortly after the React panel, so retry
-    // briefly rather than leaving an empty slot if the timing is unlucky.
-    const initialAttempt = requestAnimationFrame(() => migrate('initial'));
-    let retryCount = 0;
-    const retryId = window.setInterval(() => {
-      retryCount += 1;
-      if (migrate(`retry #${retryCount}`)) {
-        window.clearInterval(retryId);
-        return;
-      }
-      if (retryCount === 25) {
-        // ~5s without success: dump what actually exists so the failure mode is obvious,
-        // then stop polling. The lw:east-tabs-ready listener stays attached, so migration
-        // still runs if the tabs show up later — this just stops the indefinite 200ms poll.
-        panelTrace('rightPanel: migration still failing after 25 retries, giving up polling', {
+    // The event may have fired just before this effect mounted. Observe that narrow
+    // timing window instead of rescanning the document on a fixed interval.
+    const initialAttempt = requestAnimationFrame(() => {
+      if (migrate('initial')) return;
+      observer = new MutationObserver(() => tryMigrate('DOM mutation'));
+      observer.observe(document.body, { childList: true, subtree: true });
+      fallbackTimeout = window.setTimeout(() => {
+        panelTrace('rightPanel: migration did not complete within 5 seconds', {
           editorId: window.writer?.editorId ?? null,
           panelNodeIdsInDom: Array.from(
             document.querySelectorAll('[id$="-imageViewer"], [id$="-validation"]'),
@@ -333,13 +337,13 @@ export const UnifiedRightPanel = () => {
           ),
           eastPane: describePanelNode(document.querySelector<HTMLElement>('.ui-layout-east')),
         });
-        window.clearInterval(retryId);
-      }
-    }, 200);
+        stopObserving();
+      }, 5000);
+    });
     return () => {
       window.removeEventListener('lw:east-tabs-ready', onEastTabsReady);
       cancelAnimationFrame(initialAttempt);
-      window.clearInterval(retryId);
+      stopObserving();
       for (const { node, originalParent } of migratedNodesRef.current) {
         if (originalParent?.isConnected) originalParent.appendChild(node);
       }

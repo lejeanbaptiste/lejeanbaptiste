@@ -1,6 +1,6 @@
 # Beta Plan
 
-**Status (2026-08-01):** Packaging and blocker cleanup are done. I am finishing release hygiene and the final packaged regression pass.
+**Status (2026-08-01):** The slow-machine startup race and Windows shutdown issue have both passed packaged Windows testing. I am finishing release hygiene and the final packaged regression pass.
 
 I am aiming for a beta of the current feature set by September 2026.
 
@@ -23,8 +23,8 @@ I am not adding new features for the beta unless they are needed to make an exis
 
 ### Reliability blockers
 
-- [ ] Fix the intermittent startup race that leaves a loading window with no editor pane. It must not require `Ctrl+R` to recover.
-- [ ] Fix Windows shutdown so the application quits normally from the window controls and menu, without needing Task Manager.
+- [x] Fix the intermittent startup race that leaves a loading window with no editor pane. It must not require `Ctrl+R` to recover.
+- [x] Fix Windows shutdown so the application quits normally from the window controls and menu, without needing Task Manager. A short (about one-second) shutdown delay is acceptable.
 
 ### Release hygiene
 

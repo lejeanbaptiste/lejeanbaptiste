@@ -37,6 +37,8 @@ const mergeSnackbarOptions = (options: OptionsObject = {}): OptionsObject => {
 // useTranslation()
 const { t } = i18next;
 
+const DESKTOP_WINDOW_MODE_STORAGE_KEY = 'desktopWindowMode';
+
 //* INITIALIZE
 /**
  * Run during initialization
@@ -66,6 +68,13 @@ export const onInitializeOvermind = async (
     effects.storage.api.getFromLocalStorage<boolean>('skipCopyPasteHelp') ?? false;
   state.ui.skipEntityDetachConfirm =
     effects.storage.api.getFromLocalStorage<boolean>('skipEntityDetachConfirm') ?? false;
+
+  const storedDesktopWindowMode = effects.storage.api.getFromLocalStorage<string>(
+    DESKTOP_WINDOW_MODE_STORAGE_KEY,
+  );
+  if (storedDesktopWindowMode === 'editor' || storedDesktopWindowMode === 'database') {
+    state.ui.desktopWindowMode = storedDesktopWindowMode;
+  }
 };
 
 /**
@@ -77,10 +86,11 @@ export const setPage = async ({ state }: Context, value: string) => {
 
 /** Switch between the document editor and the full-width Database Window. */
 export const setDesktopWindowMode = (
-  { state }: Context,
+  { state, effects }: Context,
   value: 'editor' | 'database',
 ) => {
   state.ui.desktopWindowMode = value;
+  effects.storage.api.saveToLocalStorage(DESKTOP_WINDOW_MODE_STORAGE_KEY, value);
 };
 
 /**
