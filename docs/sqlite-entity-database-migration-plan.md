@@ -1,6 +1,6 @@
 # SQLite entity database migration plan
 
-**Status (2026-08-01):** **Mostly shipped** for this install — SQLite is the live store for panel/Bridge/sync paths. Remaining: generalized first-run migration, conflict UX, drop leftover XML fallbacks after confidence, finish wordprocessor write paths.
+**Status (2026-08-02):** **Mostly shipped** for this install — SQLite is the live store for panel/Bridge/sync paths. Remaining: generalized first-run migration and the eventual removal of legacy XML-only fallbacks after wider migration confidence.
 
 **Decision:** SQLite becomes the authoritative storage format for the Central
 Entity Database (CEDB) and Project Entity Databases (PEDBs). The existing XML
@@ -82,7 +82,7 @@ The SQLite foundation and several runtime slices are implemented in
   mappings) use SQLite `central_mappings` when the project database is
   migrated; order JSONL and applied-id cursors remain file-based.
 - Synchronized mirror steady-state sync converges already-linked CEDB/PEDB
-  pairs via SQLite content hashes and body replace. Catch-up for *unlinked*
+  pairs via SQLite content hashes and body replace. Catch-up for _unlinked_
   PEDB entities is an explicit SQLite worker job (`bulkBridgeImportSqlite` +
   BulkSyncIndicator), started only after user confirm — not on every reload.
 - Authority backfill/refresh ("Backfill from authorities" / Refresh) writes
@@ -92,7 +92,7 @@ The SQLite foundation and several runtime slices are implemented in
   tombstones are not resurrected. After a successful SQLite backfill on the
   project database, CBDB person-concordance is re-applied so newly attached
   CBDB ids pick up merged-from links in the same action.
-- Synchronized mirror *content* sync (hash, upload, download, conflict) uses
+- Synchronized mirror _content_ sync (hash, upload, download, conflict) uses
   per-entity SQLite content hashes and body replace when both databases are
   migrated; it no longer full-export/re-import on the happy path. Central
   mappings and entity ids are preserved. Checkpoint JSON remains file-based.
@@ -107,6 +107,12 @@ The SQLite foundation and several runtime slices are implemented in
   get-by-id from sibling `entities.sqlite` only (no XML fallback). The add-in
   in `/Users/daniel/Code/leJeanBaptiste/wordprocessor/` stays a thin client;
   entity edits remain in LJB.
+- **Wordprocessor writes:** Word content-control insertion, reflow, formatting,
+  and "Sync with LJB" are already separate Office-document writes; they use
+  SQLite-backed plugin reads and never write entity XML.
+- Single-field edits in the database sidebar re-read and patch only the
+  changed SQLite entity row. Full list reloads are reserved for bulk jobs,
+  merge/delete remaps, and external database changes.
 
 **Live verification** of the real CEDB/PEDB (restart, tombstone persistence,
 synchronization, no-resurrection) is done for this installation. Ordinary
@@ -505,7 +511,7 @@ and stale-path problems.
 - Replace sidebar list and search reads.
 - Replace entity detail reads.
 - [x] Replace disambiguation and authority candidate reads (surface search +
-  linked-central filter via SQLite; tag-bomb already used candidate records).
+      linked-central filter via SQLite; tag-bomb already used candidate records).
 - Add query indexes and measure performance.
 
 The focused single-user implementation has begun this phase: lookup, entity
@@ -516,13 +522,13 @@ database exists.
 
 - [x] Replace name edits and tombstones.
 - [x] Replace dates, descriptions, titles, origins, nationalities, authors, and
-  authorities in the database panel (SQLite when migrated; XML fallback
-  otherwise). Family/given-name panel edits use `people` scalars plus
-  `entity_names`.
+      authorities in the database panel (SQLite when migrated; XML fallback
+      otherwise). Family/given-name panel edits use `people` scalars plus
+      `entity_names`.
 - [x] Return updated summaries from IPC / refresh the open edit row after
-  ordinary field mutations.
+      ordinary field mutations.
 - [ ] Remove full reloads after ordinary edits where a single-row list patch is
-  enough.
+      enough.
 
 ### Phase 5 — Synchronization
 

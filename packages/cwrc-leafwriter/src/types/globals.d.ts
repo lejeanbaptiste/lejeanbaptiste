@@ -75,6 +75,15 @@ declare global {
       entityId: string;
       description: string | null;
     }) => Promise<void>;
+    entitySqliteGetNotes?: (request: {
+      databasePath: string;
+      entityId: string;
+    }) => Promise<Array<{ xml: string }>>;
+    entitySqliteSetNote?: (request: {
+      databasePath: string;
+      entityId: string;
+      xml: string;
+    }) => Promise<void>;
     entitySqliteRemoveName?: (request: {
       databasePath: string;
       entityId: string;
@@ -198,9 +207,7 @@ declare global {
       text: string;
       language?: string;
     }) => Promise<void>;
-    entitySqliteAutoCleanNames?: (request: {
-      databasePath: string;
-    }) => Promise<{
+    entitySqliteAutoCleanNames?: (request: { databasePath: string }) => Promise<{
       dedupedNames: number;
       removedUntyped: number;
       promotedRomanizations: number;
@@ -396,9 +403,7 @@ declare global {
       databasePath: string;
       userStableId: string;
     }) => Promise<number | null>;
-    entitySqliteCountEntities?: (request: {
-      databasePath: string;
-    }) => Promise<number | null>;
+    entitySqliteCountEntities?: (request: { databasePath: string }) => Promise<number | null>;
     entitySqliteFindByAuthority?: (request: {
       databasePath: string;
       kind: 'person' | 'place' | 'work' | 'office' | 'org';

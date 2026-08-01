@@ -1,6 +1,6 @@
 # Entity sync — manual test plan
 
-**Status (2026-08-01):** **Ready-to-run QA checklist** — sync features largely built. Product gaps called out here: fork-merge menu, Bridge conflict “pick a value” UI, i18n for new strings.
+**Status (2026-08-01):** **Ready-to-run packaged QA checklist.** Automated coverage for the core sync layer is green: 8 suites / 50 tests covering merge-order replay, synchronized mirrors, Bridge promotion/inbox, orphan handling, and fork-merge. Product gaps called out here: fork-merge menu and i18n for new strings.
 
 ## Before you start
 
@@ -19,7 +19,7 @@ idea whether the two folders are really on different hardware.
    same person mentioned by name (any name is fine — pick something you'll
    recognize, like "Zhang Heng" 張衡).
 4. Open Project A first. Tag "Zhang Heng" as a new entity in the sidebar
-   database tab. Then open Project B and tag the *same* name as a **second,
+   database tab. Then open Project B and tag the _same_ name as a **second,
    separate** entity — you now have an intentional duplicate, one entity per
    project, both linked to the same central database.
 
@@ -64,11 +64,11 @@ forever. This scenario proves that no longer happens.
    now-dead id**. This is expected and correct at this point — Project B hasn't
    had a chance to catch up yet.
 6. **Now open Project B in the app.**
-7. **Check:** Project B's chapter files should now show the *surviving* id —
+7. **Check:** Project B's chapter files should now show the _surviving_ id —
    the dead id is gone, and you never touched Project B's database or files by
    hand. Look at the console/dev tools log for a line starting
    `[entity-orders] applied …` confirming the replay happened.
-8. **Close and reopen Project B a second time.** The log line should *not*
+8. **Close and reopen Project B a second time.** The log line should _not_
    reappear (or should show 0 orders applied) — the app remembers it already
    caught up.
 
@@ -102,9 +102,14 @@ personal central-database index.
 7. **Check:** the entity now shows under "to sync," not "in sync." Click
    **Sync**. **Check:** the description now also appears on the project side.
 8. **Optional — provoke a conflict:** set a birth year on the project side and
-   a *different* birth year on the central side for the same linked person.
+   a _different_ birth year on the central side for the same linked person.
    Reopen the inbox — the entity should now appear under **Conflicts**, listing
    the disagreeing field, and Sync should skip it.
+9. Click **Resolve**. **Check:** the side panels collapse and a focused view
+   shows just the disputed values: project on the left, central on the right.
+   Choose a side for each value (or leave it as **Defer**) and click **Apply
+   choices**. Reopen the inbox: resolved fields should be in sync; deferred
+   fields should remain in the conflicts list.
 
 ---
 
@@ -129,7 +134,7 @@ project" with a precise, classified warning.
    time click **Strip orphan keys**. **Check:** only the specific dangling
    `key=` attribute you'd expect is gone from the chapter file — the tag itself
    (e.g. `<persName>`) remains, just without the id.
-8. **Bonus — stray-file check:** copy a chapter file from a *different*
+8. **Bonus — stray-file check:** copy a chapter file from a _different_
    project (one using a different central/project database) into this
    project's folder. Reopen. **Check:** the warning should mention that some
    file(s) "appear to belong to a different project database and were left
@@ -158,7 +163,7 @@ central database doesn't erase the propagation record from Scenario 2.
 7. **Check the important part:** open `entity-orders.jsonl` in your central
    folder — it should **still contain every order recorded before the
    restore**, including the one from Scenario 2, even though the rest of the
-   database rolled back. If you made any *new* orders between the backup and
+   database rolled back. If you made any _new_ orders between the backup and
    the restore, those should still be present too (nothing is lost, only the
    entity records themselves rolled back).
 
@@ -171,9 +176,6 @@ central database doesn't erase the propagation record from Scenario 2.
   point wired up yet** — there's nothing to click in the app for this one.
 - New dialog copy is plain English, not yet run through the i18n/translation
   pipeline.
-- Conflict resolution from the Bridge inbox is "go edit one of the two records
-  yourself" — there's no in-dialog "pick a value" UI yet, just the list of what
-  disagrees.
 
 If you hit anything that doesn't match this plan, the first place to look is
 whichever file this plan told you to inspect by hand (`entity-orders.jsonl`,

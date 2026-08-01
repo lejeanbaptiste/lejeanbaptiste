@@ -15,6 +15,7 @@ import {
   Typography,
 } from '@mui/material';
 import { useCallback, useEffect, useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import type { BridgeInboxReport } from '../../../../../packages/cwrc-leafwriter/src/autoTagging/bridgeInbox';
 import {
   applyPendingCentralOrders,
@@ -24,6 +25,7 @@ import {
   syncEntities,
   type BridgeContext,
 } from '../entityDb/bridge';
+import { BridgeConflictResolver } from './BridgeConflictResolver';
 
 interface Props {
   open: boolean;
@@ -39,6 +41,7 @@ interface Props {
  * listed for the user; corpus keys are never touched here.
  */
 export const BridgeInboxDialog = ({ open, onClose, onChanged }: Props) => {
+  const { t } = useTranslation();
   const [loading, setLoading] = useState(false);
   const [busy, setBusy] = useState<string | null>(null);
   const [unavailable, setUnavailable] = useState<string | null>(null);
@@ -46,6 +49,10 @@ export const BridgeInboxDialog = ({ open, onClose, onChanged }: Props) => {
   const [context, setContext] = useState<BridgeContext | null>(null);
   const [report, setReport] = useState<BridgeInboxReport | null>(null);
   const [centralOrdersNote, setCentralOrdersNote] = useState<string | null>(null);
+  const [selectedConflict, setSelectedConflict] = useState<{
+    pedbId: string;
+    centralId: string;
+  } | null>(null);
 
   const refresh = useCallback(async (ctx: BridgeContext) => {
     setLoading(true);
@@ -65,6 +72,7 @@ export const BridgeInboxDialog = ({ open, onClose, onChanged }: Props) => {
     setUnavailable(null);
     setError(null);
     setCentralOrdersNote(null);
+    setSelectedConflict(null);
     void (async () => {
       const availability = await loadBridgeContext();
       if (!availability.available) {
@@ -80,7 +88,11 @@ export const BridgeInboxDialog = ({ open, onClose, onChanged }: Props) => {
         const synced = await applyPendingCentralOrders(availability.context);
         if (synced.repointed > 0 || synced.cleared > 0) {
           setCentralOrdersNote(
-            `Applied ${synced.ordersApplied} central update(s): ${synced.repointed} link(s) repointed, ${synced.cleared} cleared.`,
+            t('LWC.desktop.sidebar.database.bridge.central_updates', {
+              orders: synced.ordersApplied,
+              repointed: synced.repointed,
+              cleared: synced.cleared,
+            }),
           );
         }
       } catch (e) {
@@ -88,7 +100,7 @@ export const BridgeInboxDialog = ({ open, onClose, onChanged }: Props) => {
       }
       await refresh(availability.context);
     })();
-  }, [open, refresh]);
+  }, [open, refresh, t]);
 
   const runAction = async (label: string, action: (ctx: BridgeContext) => Promise<unknown>) => {
     if (!context) return;
@@ -106,10 +118,15 @@ export const BridgeInboxDialog = ({ open, onClose, onChanged }: Props) => {
   };
 
   const promoteAll = () =>
-    runAction('Promoting…', (ctx) => promoteEntities(ctx, report!.unlinked.map((u) => u.id)));
+    runAction(t('LWC.desktop.sidebar.database.bridge.promoting'), (ctx) =>
+      promoteEntities(
+        ctx,
+        report!.unlinked.map((u) => u.id),
+      ),
+    );
 
   const syncAll = () =>
-    runAction('Syncing…', (ctx) =>
+    runAction(t('LWC.desktop.sidebar.database.bridge.syncing'), (ctx) =>
       syncEntities(
         ctx,
         report!.syncable.map((s) => ({ pedbId: s.id, centralId: s.centralId })),
@@ -117,88 +134,133 @@ export const BridgeInboxDialog = ({ open, onClose, onChanged }: Props) => {
     );
 
   return (
-    <Dialog open={open} onClose={onClose} maxWidth="sm" fullWidth>
-      <DialogTitle>Bridge to central database</DialogTitle>
-      <DialogContent dividers>
-        {unavailable && <Alert severity="info">{unavailable}</Alert>}
-        {centralOrdersNote && (
-          <Alert severity="success" sx={{ mb: 2 }} onClose={() => setCentralOrdersNote(null)}>
-            {centralOrdersNote}
-          </Alert>
-        )}
-        {error && (
-          <Alert severity="error" sx={{ mb: 2 }}>
-            {error}
-          </Alert>
-        )}
-        {!unavailable && (loading || busy) && (
-          <Stack direction="row" spacing={1} alignItems="center" sx={{ py: 2 }}>
-            <CircularProgress size={18} />
-            <Typography variant="body2">{busy ?? 'Loading…'}</Typography>
-          </Stack>
-        )}
-        {report && !loading && !busy && (
-          <Stack spacing={2}>
-            <Typography variant="body2" color="text.secondary">
-              {report.inSyncCount} in sync · {report.syncable.length} to sync ·{' '}
-              {report.unlinked.length} unlinked · {report.conflicts.length} conflicts ·{' '}
-              {report.broken.length} broken
-            </Typography>
-
-            <Stack direction="row" spacing={1}>
-              <Button
-                variant="contained"
-                size="small"
-                disabled={report.unlinked.length === 0}
-                onClick={promoteAll}
-              >
-                Promote {report.unlinked.length} unlinked
-              </Button>
-              <Button
-                variant="outlined"
-                size="small"
-                disabled={report.syncable.length === 0}
-                onClick={syncAll}
-              >
-                Sync {report.syncable.length}
-              </Button>
+    <>
+      <Dialog open={open} onClose={onClose} maxWidth="sm" fullWidth>
+        <DialogTitle>{t('LWC.desktop.sidebar.database.bridge.title')}</DialogTitle>
+        <DialogContent dividers>
+          {unavailable && <Alert severity="info">{unavailable}</Alert>}
+          {centralOrdersNote && (
+            <Alert severity="success" sx={{ mb: 2 }} onClose={() => setCentralOrdersNote(null)}>
+              {centralOrdersNote}
+            </Alert>
+          )}
+          {error && (
+            <Alert severity="error" sx={{ mb: 2 }}>
+              {error}
+            </Alert>
+          )}
+          {!unavailable && (loading || busy) && (
+            <Stack direction="row" spacing={1} alignItems="center" sx={{ py: 2 }}>
+              <CircularProgress size={18} />
+              <Typography variant="body2">
+                {busy ?? t('LWC.desktop.sidebar.database.bridge.loading')}
+              </Typography>
             </Stack>
+          )}
+          {report && !loading && !busy && (
+            <Stack spacing={2}>
+              <Typography variant="body2" color="text.secondary">
+                {t('LWC.desktop.sidebar.database.bridge.summary', {
+                  inSync: report.inSyncCount,
+                  syncable: report.syncable.length,
+                  unlinked: report.unlinked.length,
+                  conflicts: report.conflicts.length,
+                  broken: report.broken.length,
+                })}
+              </Typography>
 
-            {report.conflicts.length > 0 && (
-              <Box>
-                <Divider textAlign="left" sx={{ mb: 1 }}>
-                  <Typography variant="caption">Conflicts (resolve in the entity editor)</Typography>
-                </Divider>
-                <List dense disablePadding>
-                  {report.conflicts.map((c) => (
-                    <ListItem key={c.id} disableGutters>
-                      <ListItemText primary={c.name} secondary={`Disagrees on: ${c.fields.join(', ')}`} />
-                    </ListItem>
-                  ))}
-                </List>
-              </Box>
-            )}
+              <Stack direction="row" spacing={1}>
+                <Button
+                  variant="contained"
+                  size="small"
+                  disabled={report.unlinked.length === 0}
+                  onClick={promoteAll}
+                >
+                  {t('LWC.desktop.sidebar.database.bridge.promote', {
+                    count: report.unlinked.length,
+                  })}
+                </Button>
+                <Button
+                  variant="outlined"
+                  size="small"
+                  disabled={report.syncable.length === 0}
+                  onClick={syncAll}
+                >
+                  {t('LWC.desktop.sidebar.database.bridge.sync', { count: report.syncable.length })}
+                </Button>
+              </Stack>
 
-            {report.broken.length > 0 && (
-              <Box>
-                <Divider textAlign="left" sx={{ mb: 1 }}>
-                  <Typography variant="caption">Broken links (central id missing)</Typography>
-                </Divider>
-                <List dense disablePadding>
-                  {report.broken.map((b) => (
-                    <ListItem key={b.id} disableGutters>
-                      <ListItemText primary={b.name} secondary={b.centralId} />
-                    </ListItem>
-                  ))}
-                </List>
-              </Box>
-            )}
-          </Stack>
-        )}
-      </DialogContent>
-      <DialogActions>
-        <Button onClick={onClose}>Close</Button>
-      </DialogActions>
-    </Dialog>
+              {report.conflicts.length > 0 && (
+                <Box>
+                  <Divider textAlign="left" sx={{ mb: 1 }}>
+                    <Typography variant="caption">
+                      {t('LWC.desktop.sidebar.database.bridge.conflicts')}
+                    </Typography>
+                  </Divider>
+                  <List dense disablePadding>
+                    {report.conflicts.map((c) => (
+                      <ListItem
+                        key={c.id}
+                        disableGutters
+                        secondaryAction={
+                          <Button
+                            size="small"
+                            onClick={() =>
+                              setSelectedConflict({ pedbId: c.id, centralId: c.centralId })
+                            }
+                          >
+                            {t('LWC.desktop.sidebar.database.bridge.resolve')}
+                          </Button>
+                        }
+                      >
+                        <ListItemText
+                          primary={c.name}
+                          secondary={t('LWC.desktop.sidebar.database.bridge.disagrees_on', {
+                            fields: c.fields.join(', '),
+                          })}
+                        />
+                      </ListItem>
+                    ))}
+                  </List>
+                </Box>
+              )}
+
+              {report.broken.length > 0 && (
+                <Box>
+                  <Divider textAlign="left" sx={{ mb: 1 }}>
+                    <Typography variant="caption">
+                      {t('LWC.desktop.sidebar.database.bridge.broken_links')}
+                    </Typography>
+                  </Divider>
+                  <List dense disablePadding>
+                    {report.broken.map((b) => (
+                      <ListItem key={b.id} disableGutters>
+                        <ListItemText primary={b.name} secondary={b.centralId} />
+                      </ListItem>
+                    ))}
+                  </List>
+                </Box>
+              )}
+            </Stack>
+          )}
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={onClose}>{t('LWC.desktop.sidebar.database.bridge.close')}</Button>
+        </DialogActions>
+      </Dialog>
+      {selectedConflict && context && (
+        <BridgeConflictResolver
+          context={context}
+          pedbId={selectedConflict.pedbId}
+          centralId={selectedConflict.centralId}
+          onClose={() => setSelectedConflict(null)}
+          onResolved={() => {
+            setSelectedConflict(null);
+            void refresh(context);
+            onChanged?.();
+          }}
+        />
+      )}
+    </>
   );
 };

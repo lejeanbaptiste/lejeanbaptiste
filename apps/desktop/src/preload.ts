@@ -12,10 +12,7 @@ import type {
   AuthoritySourceId,
   AuthoritySourceStatus,
 } from './authorityDatabases';
-import type {
-  AuthorityRefLookupRequest,
-  AuthorityRefLookupResult,
-} from './authorityRefLookup';
+import type { AuthorityRefLookupRequest, AuthorityRefLookupResult } from './authorityRefLookup';
 import type { ProjectBundle } from './projectFile';
 import type { MapTileBundleSpec } from './mapTiles';
 
@@ -305,6 +302,12 @@ export interface ElectronAPI {
   entitySqliteUpdateDescription: (
     request: import('./entityDbSqlite/readService').EntitySqliteUpdateDescriptionRequest,
   ) => Promise<void>;
+  entitySqliteGetNotes: (
+    request: import('./entityDbSqlite/readService').EntitySqliteNotesRequest,
+  ) => Promise<import('./entityDbSqlite/repository').SqliteEntityNote[]>;
+  entitySqliteSetNote: (
+    request: import('./entityDbSqlite/readService').EntitySqliteSetNoteRequest,
+  ) => Promise<void>;
   entitySqliteRemoveName: (
     request: import('./entityDbSqlite/readService').EntitySqliteRemoveNameRequest,
   ) => Promise<boolean>;
@@ -432,9 +435,7 @@ export interface ElectronAPI {
     databasePath: string;
     userStableId: string;
   }) => Promise<number | null>;
-  entitySqliteCountEntities: (request: {
-    databasePath: string;
-  }) => Promise<number | null>;
+  entitySqliteCountEntities: (request: { databasePath: string }) => Promise<number | null>;
   entitySqliteFindByAuthority: (
     request: import('./entityDbSqlite/readService').EntitySqliteFindByAuthorityRequest,
   ) => Promise<string[]>;
@@ -759,6 +760,8 @@ const electronAPI: ElectronAPI = {
     ipcRenderer.invoke('entitySqlite:tombstoneNames', request),
   entitySqliteUpdateDescription: (request) =>
     ipcRenderer.invoke('entitySqlite:updateDescription', request),
+  entitySqliteGetNotes: (request) => ipcRenderer.invoke('entitySqlite:getNotes', request),
+  entitySqliteSetNote: (request) => ipcRenderer.invoke('entitySqlite:setNote', request),
   entitySqliteRemoveName: (request) => ipcRenderer.invoke('entitySqlite:removeName', request),
   entitySqliteAddName: (request) => ipcRenderer.invoke('entitySqlite:addName', request),
   entitySqliteSetUserDate: (request) => ipcRenderer.invoke('entitySqlite:setUserDate', request),
@@ -767,8 +770,7 @@ const electronAPI: ElectronAPI = {
   entitySqliteAddNationality: (request) =>
     ipcRenderer.invoke('entitySqlite:addNationality', request),
   entitySqliteAddOrigin: (request) => ipcRenderer.invoke('entitySqlite:addOrigin', request),
-  entitySqliteAddNobleTitle: (request) =>
-    ipcRenderer.invoke('entitySqlite:addNobleTitle', request),
+  entitySqliteAddNobleTitle: (request) => ipcRenderer.invoke('entitySqlite:addNobleTitle', request),
   entitySqliteUpdateNobleTitle: (request) =>
     ipcRenderer.invoke('entitySqlite:updateNobleTitle', request),
   entitySqliteSetUserWorkAuthors: (request) =>
@@ -826,10 +828,8 @@ const electronAPI: ElectronAPI = {
     ipcRenderer.invoke('entitySqlite:listAllCentralMappings', request),
   entitySqliteListLinkedCentralIds: (request) =>
     ipcRenderer.invoke('entitySqlite:listLinkedCentralIds', request),
-  entitySqliteCountUnlinked: (request) =>
-    ipcRenderer.invoke('entitySqlite:countUnlinked', request),
-  entitySqliteCountEntities: (request) =>
-    ipcRenderer.invoke('entitySqlite:countEntities', request),
+  entitySqliteCountUnlinked: (request) => ipcRenderer.invoke('entitySqlite:countUnlinked', request),
+  entitySqliteCountEntities: (request) => ipcRenderer.invoke('entitySqlite:countEntities', request),
   entitySqliteFindByAuthority: (request) =>
     ipcRenderer.invoke('entitySqlite:findByAuthority', request),
   entitySqliteFindByNameDates: (request) =>

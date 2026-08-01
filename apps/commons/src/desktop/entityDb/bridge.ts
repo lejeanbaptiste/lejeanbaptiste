@@ -22,6 +22,11 @@ import {
   promoteToCentralSqlite,
   syncEntityPairSqlite,
 } from '../../../../../packages/cwrc-leafwriter/src/autoTagging/sqliteBridgeOps';
+import {
+  planReconcileFields,
+  type FieldConflict,
+  type ScalarField,
+} from '../../../../../packages/cwrc-leafwriter/src/autoTagging/reconcile';
 import { SQLITE_REQUIRED_MESSAGE } from '../../../../../packages/cwrc-leafwriter/src/autoTagging/sqliteRequired';
 import type { SqlitePanelSummaryLike } from '../../../../../packages/cwrc-leafwriter/src/autoTagging/sqliteSummary';
 import { readOrMintUserStableId } from '../../../../../packages/cwrc-leafwriter/src/autoTagging/userStableId';
@@ -45,9 +50,16 @@ export interface BridgeContext {
   userStableId: string;
 }
 
+export interface BridgeConflictPair {
+  pedbId: string;
+  centralId: string;
+  name: string;
+  kind: EntityKind;
+  conflicts: FieldConflict[];
+}
+
 export type BridgeAvailability =
-  | { available: true; context: BridgeContext }
-  | { available: false; reason: string };
+  { available: true; context: BridgeContext } | { available: false; reason: string };
 
 /**
  * Resolve both databases and the user id, or explain why the bridge is
@@ -61,8 +73,7 @@ export async function loadBridgeContext(overrideProjectRoot?: string): Promise<B
   );
   if (!api || !projectStore) return { available: false, reason: 'No project database is open.' };
 
-  const centralFolder =
-    (await window.electronAPI?.getEntityDbFolder?.().catch(() => null)) ?? null;
+  const centralFolder = (await window.electronAPI?.getEntityDbFolder?.().catch(() => null)) ?? null;
   const centralStore = centralEntityStoreFromDesktop(centralFolder, overrideProjectRoot);
   if (!centralStore) {
     return { available: false, reason: 'No central database folder is configured (App Settings).' };
@@ -73,7 +84,10 @@ export async function loadBridgeContext(overrideProjectRoot?: string): Promise<B
     projectStore.entitiesPath.replace(/\\/g, '/').toLowerCase() ===
     centralStore.entitiesPath.replace(/\\/g, '/').toLowerCase();
   if (samePath) {
-    return { available: false, reason: 'This project uses the central database directly — nothing to bridge.' };
+    return {
+      available: false,
+      reason: 'This project uses the central database directly — nothing to bridge.',
+    };
   }
 
   const { id: userStableId } = await readOrMintUserStableId(api, centralFolder);
@@ -112,6 +126,103 @@ export async function computeBridgeInbox(ctx: BridgeContext): Promise<BridgeInbo
     });
   }
   return buildBridgeInboxFromFields(pedbFieldRows, cedbFieldsById);
+}
+
+/** Load just the disputed scalar fields for the focused Bridge resolver. */
+export async function loadBridgeConflictPair(
+  ctx: BridgeContext,
+  pedbId: string,
+  centralId: string,
+): Promise<BridgeConflictPair | null> {
+  const [pedb, central] = await Promise.all([
+    ctx.projectStore.sqliteEntitySummary(pedbId),
+    ctx.centralStore.sqliteEntitySummary(centralId),
+  ]);
+  if (!pedb || !central) return null;
+  const project = pedb as PanelSnapshot;
+  const centralRow = central as PanelSnapshot;
+  const plan = planReconcileFields(
+    entityFieldsFromSqlitePanel(project),
+    entityFieldsFromSqlitePanel(centralRow),
+  );
+  const name = project.names.find((entry) => entry.status === 'active')?.text ?? pedbId;
+  return { pedbId, centralId, name, kind: project.kind, conflicts: plan.conflicts };
+}
+
+export type BridgeConflictChoice = 'pedb' | 'cedb' | 'defer';
+
+const applyConflictValue = async (
+  store: EntityStore,
+  entityId: string,
+  kind: EntityKind,
+  field: ScalarField,
+  value: string | number,
+) => {
+  switch (field) {
+    case 'description':
+      await store.sqliteUpdateDescription(entityId, String(value));
+      return;
+    case 'familyName':
+      await store.sqliteUpdateNames({ entityId, text: String(value), nameType: 'family' });
+      return;
+    case 'givenName':
+      await store.sqliteUpdateNames({ entityId, text: String(value), nameType: 'given' });
+      return;
+    case 'startYear':
+      if (kind === 'person')
+        await store.sqliteSetUserDate({ entityId, part: 'birth', year: Number(value) });
+      else if (kind === 'work') {
+        const panel = (await store.sqliteEntitySummary(entityId)) as PanelSnapshot | null;
+        await store.sqliteSetUserWorkDate({
+          entityId,
+          startYear: Number(value),
+          endYear: panel?.endYear ?? null,
+        });
+      }
+      return;
+    case 'endYear':
+      if (kind === 'person')
+        await store.sqliteSetUserDate({ entityId, part: 'death', year: Number(value) });
+      else if (kind === 'work') {
+        const panel = (await store.sqliteEntitySummary(entityId)) as PanelSnapshot | null;
+        await store.sqliteSetUserWorkDate({
+          entityId,
+          startYear: panel?.startYear ?? null,
+          endYear: Number(value),
+        });
+      }
+      return;
+  }
+};
+
+/** Apply explicit scalar choices, then let ordinary Bridge sync propagate the non-conflicting fields. */
+export async function resolveBridgeConflict(
+  ctx: BridgeContext,
+  pair: BridgeConflictPair,
+  choices: Partial<Record<ScalarField, BridgeConflictChoice>>,
+) {
+  for (const conflict of pair.conflicts) {
+    const choice = choices[conflict.field];
+    if (!choice || choice === 'defer') continue;
+    if (choice === 'pedb') {
+      await applyConflictValue(
+        ctx.centralStore,
+        pair.centralId,
+        pair.kind,
+        conflict.field,
+        conflict.pedbValue,
+      );
+    } else {
+      await applyConflictValue(
+        ctx.projectStore,
+        pair.pedbId,
+        pair.kind,
+        conflict.field,
+        conflict.cedbValue,
+      );
+    }
+  }
+  await syncEntityPairSqlite(ctx.projectStore, ctx.centralStore, pair.pedbId, pair.centralId);
 }
 
 export interface CentralOrderSyncSummary {
@@ -250,9 +361,7 @@ export type MergeDocketEntry =
   | { kind: 'merge'; suggestionId: string; when: string; sides: [MergeDocketSide, MergeDocketSide] }
   | { kind: 'delete'; suggestionId: string; when: string; side: MergeDocketSide };
 
-export async function computeMergeDocket(
-  centralStore: EntityStore,
-): Promise<MergeDocketEntry[]> {
+export async function computeMergeDocket(centralStore: EntityStore): Promise<MergeDocketEntry[]> {
   if (
     !(await centralStore.hasSqliteDatabase()) ||
     !window.electronAPI?.entitySqliteListPanelSummaries ||

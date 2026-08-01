@@ -53,7 +53,9 @@ export const useEntityDatabaseLifecycle = () => {
       // Integrity checks use SQLite when present; defer only for huge XML-only
       // interchange files (legacy). Migrated DBs skip this size gate.
       if (!(await store.hasSqliteDatabase())) {
-        const entityStat = await window.electronAPI?.statFile?.(store.entitiesPath).catch(() => null);
+        const entityStat = await window.electronAPI
+          ?.statFile?.(store.entitiesPath)
+          .catch(() => null);
         if (entityStat && entityStat.size > 8 * 1024 * 1024) {
           // eslint-disable-next-line no-console
           console.info('[entity-db-check] deferred for large database', {
@@ -68,8 +70,9 @@ export const useEntityDatabaseLifecycle = () => {
         listProjectXmlFiles: (path: string) => window.electronAPI!.listProjectXmlFiles(path),
         readFile: (path: string) => window.electronAPI!.readFile(path),
         writeFile: (path: string, content: string) => window.electronAPI!.writeFile(path, content),
-        showNativeMessageBox: (options: Parameters<typeof window.electronAPI.showNativeMessageBox>[0]) =>
-          window.electronAPI!.showNativeMessageBox(options),
+        showNativeMessageBox: (
+          options: Parameters<typeof window.electronAPI.showNativeMessageBox>[0],
+        ) => window.electronAPI!.showNativeMessageBox(options),
         updateProjectFileConfig: (path: string, patch: Record<string, unknown>) =>
           window.electronAPI!.updateProjectFileConfig(path, patch),
       };
@@ -93,7 +96,10 @@ export const useEntityDatabaseLifecycle = () => {
       );
 
       // eslint-disable-next-line no-console
-      console.info('[entity-db-check] check completed', { status: checkResult.status, databaseId: checkResult.databaseId });
+      console.info('[entity-db-check] check completed', {
+        status: checkResult.status,
+        databaseId: checkResult.databaseId,
+      });
 
       // Replay any merge/delete orders recorded elsewhere (other machine, fresh
       // clone, a tree the eager crawl couldn't see). Idempotent; safe to run on
@@ -143,24 +149,39 @@ export const useEntityDatabaseLifecycle = () => {
       // that resolve to nothing — but only the genuine orphans (stray files from
       // another edition are reported separately and never auto-stripped).
       try {
-        const report = await sweepProjectOrphans(store, checkApi, rootPath);
+        let report = await sweepProjectOrphans(store, checkApi, rootPath);
         if (report.orphanKeyCount > 0) {
+          // A cloud drive can deliver changed corpus XML before the matching
+          // SQLite PEDB update. Give that paired update a short chance to land,
+          // then re-read the live database before telling the user anything is
+          // missing. This is deliberately a re-scan, not a cached result.
+          await new Promise<void>((resolve) => window.setTimeout(resolve, 1500));
+          report = await sweepProjectOrphans(store, checkApi, rootPath);
+        }
+        if (report.orphanKeyCount > 0) {
+          const bridge = await loadBridgeContext().catch(() => ({ available: false }));
+          const mayArriveFromLinkedDatabase = config?.syncToCentral === true || bridge.available;
           const strayNote =
             report.strayFiles.length > 0
-              ? `\n\n${report.strayFiles.length} file(s) appear to belong to a different project database and were left untouched.`
+              ? t('LWC.desktop.orphan_keys.stray_note', { count: report.strayFiles.length })
               : '';
           const { response } = await window.electronAPI!.showNativeMessageBox({
             type: 'warning',
-            title: 'Unresolved entity keys found',
-            message: `${report.orphanKeyCount} tag key(s) in ${report.orphanFiles.length} file(s) no longer match any entity in this database.`,
-            detail:
-              'This usually means the database was rolled back or hand-edited. You can strip these keys (tags are kept), or cancel and restore from Time Machine instead.' +
-              strayNote,
-            buttons: ['Cancel', 'Strip orphan keys'],
+            title: t('LWC.desktop.orphan_keys.title'),
+            message: t('LWC.desktop.orphan_keys.message', {
+              keys: report.orphanKeyCount,
+              files: report.orphanFiles.length,
+            }),
+            detail: mayArriveFromLinkedDatabase
+              ? t('LWC.desktop.orphan_keys.linked_detail', { strayNote })
+              : t('LWC.desktop.orphan_keys.local_detail', { strayNote }),
+            buttons: mayArriveFromLinkedDatabase
+              ? [t('LWC.desktop.orphan_keys.ok')]
+              : [t('LWC.desktop.orphan_keys.cancel'), t('LWC.desktop.orphan_keys.strip')],
             defaultId: 0,
             cancelId: 0,
           });
-          if (response === 1) {
+          if (!mayArriveFromLinkedDatabase && response === 1) {
             const purged = await purgeReportedOrphans(checkApi, report);
             // eslint-disable-next-line no-console
             console.info(`[orphan-sweep] stripped ${purged} orphan key(s).`);
@@ -170,7 +191,7 @@ export const useEntityDatabaseLifecycle = () => {
         // never block project open on the orphan sweep
       }
     })();
-  }, [config?.entityDatabaseId, config?.syncToCentral, projectFilePath, rootPath]);
+  }, [config?.entityDatabaseId, config?.syncToCentral, projectFilePath, rootPath, t]);
 
   useEffect(() => {
     if (!isDesktop() || !window.electronAPI?.onExternalFileChange) return;
@@ -185,17 +206,19 @@ export const useEntityDatabaseLifecycle = () => {
       unsubscribe = window.electronAPI.onExternalFileChange((filePath) => {
         if (filePath.replace(/\\/g, '/') !== pathToWatch.replace(/\\/g, '/')) return;
         staleEntitiesRef.current = true;
-        void window.electronAPI?.showNativeMessageBox?.({
-          type: 'question',
-          title: t('LWC.desktop.entity_database_changed.title'),
-          message: t('LWC.desktop.entity_database_changed.message'),
-          buttons: [
-            t('LWC.desktop.entity_database_changed.reload'),
-            t('LWC.desktop.entity_database_changed.keep'),
-          ],
-        }).then(({ response }) => {
-          if (response === 0) staleEntitiesRef.current = false;
-        });
+        void window.electronAPI
+          ?.showNativeMessageBox?.({
+            type: 'question',
+            title: t('LWC.desktop.entity_database_changed.title'),
+            message: t('LWC.desktop.entity_database_changed.message'),
+            buttons: [
+              t('LWC.desktop.entity_database_changed.reload'),
+              t('LWC.desktop.entity_database_changed.keep'),
+            ],
+          })
+          .then(({ response }) => {
+            if (response === 0) staleEntitiesRef.current = false;
+          });
       });
     })();
 

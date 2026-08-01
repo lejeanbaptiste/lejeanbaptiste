@@ -3,16 +3,20 @@ import Box from '@mui/material/Box';
 import Button from '@mui/material/Button';
 import Chip from '@mui/material/Chip';
 import CircularProgress from '@mui/material/CircularProgress';
+import Divider from '@mui/material/Divider';
 import HubOutlinedIcon from '@mui/icons-material/HubOutlined';
 import ListItemButton from '@mui/material/ListItemButton';
 import ListItemText from '@mui/material/ListItemText';
 import Stack from '@mui/material/Stack';
 import TextField from '@mui/material/TextField';
+import Tab from '@mui/material/Tab';
+import Tabs from '@mui/material/Tabs';
 import Typography from '@mui/material/Typography';
 import { memo, useCallback, useEffect, useMemo, useRef, useState, startTransition } from 'react';
 import { useTranslation } from 'react-i18next';
 import { List as VirtualList } from 'react-window';
 import type { RowComponentProps } from 'react-window';
+import { foldForSearch } from '../../../../../packages/cwrc-leafwriter/src/utilities/romanize';
 import type { EntityKind } from '../../../../../packages/cwrc-leafwriter/src/autoTagging/entities';
 import type { EntitySummary } from '../../../../../packages/cwrc-leafwriter/src/autoTagging/entityOps';
 import type { EntityStore } from '../../../../../packages/cwrc-leafwriter/src/autoTagging/entityStore';
@@ -45,6 +49,7 @@ import { AUTHORITY_PACKS } from '../../../../../packages/cwrc-leafwriter/src/aut
 import { useActions, useAppState } from '@src/overmind';
 import { BackgroundJobBanner, useBackgroundJob, yieldToUi } from './BackgroundJobBanner';
 import { EntityCompareCard } from './EntityCompareCard';
+import { EntityNoteEditor } from './EntityNoteEditor';
 import { databaseEntityLabel } from './databaseEntityLabel';
 import { loadDatabaseWindowEntities } from './loadEntities';
 
@@ -298,6 +303,7 @@ export const DatabaseWindow = () => {
   const [kindFilter, setKindFilter] = useState<EntityKind>('person');
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const [mainPane, setMainPane] = useState<MainPane>('detail');
+  const [rightTab, setRightTab] = useState('cleaning');
   const [findings, setFindings] = useState<HygieneFinding[]>([]);
   const [findingIndex, setFindingIndex] = useState(0);
   const [projectLang, setProjectLang] = useState<string | null>(null);
@@ -360,6 +366,15 @@ export const DatabaseWindow = () => {
     let list = entities.filter((entity) => entity.kind === kindFilter);
     const trimmed = search.trim();
     if (!trimmed) return list;
+    const foldedQuery = foldForSearch(trimmed);
+    if (foldedQuery) {
+      list = list.filter((entity) =>
+        [...entity.names, entity.romanized ?? '', entity.projectKey ?? '', entity.id].some(
+          (value) => foldForSearch(value).includes(foldedQuery),
+        ),
+      );
+      if (list.length > 0) return list;
+    }
     try {
       const regex = new RegExp(trimmed, 'iu');
       list = list.filter(
@@ -1115,40 +1130,6 @@ export const DatabaseWindow = () => {
         <Button size="small" variant="outlined" onClick={() => void reload()} disabled={jobRunning}>
           Reload
         </Button>
-        <Button
-          size="small"
-          variant="outlined"
-          onClick={() => void runBackfill()}
-          disabled={jobRunning || !activeStore}
-        >
-          Backfill
-        </Button>
-        <Button
-          size="small"
-          variant="outlined"
-          color="warning"
-          onClick={() => void runAutoClean()}
-          disabled={jobRunning || !activeStore}
-        >
-          Auto-clean
-        </Button>
-        <Button
-          size="small"
-          variant="contained"
-          onClick={() => void runScans()}
-          disabled={jobRunning || !activeStore}
-        >
-          Run scans
-        </Button>
-        <Button
-          size="small"
-          variant="contained"
-          color="secondary"
-          onClick={() => void runHarvest()}
-          disabled={jobRunning || !activeStore || !rootPath}
-        >
-          Harvest
-        </Button>
         <Chip
           size="small"
           label={
@@ -1373,6 +1354,105 @@ export const DatabaseWindow = () => {
           {mainPane === 'detail' && leftCard && <EntityCompareCard model={leftCard} detail />}
           {mainPane === 'detail' && !leftCard && (
             <Typography color="text.secondary">Select an entity</Typography>
+          )}
+        </Box>
+
+        <Box
+          sx={{
+            width: 300,
+            flexShrink: 0,
+            borderLeft: 1,
+            borderColor: 'divider',
+            bgcolor: 'background.paper',
+            display: 'flex',
+            flexDirection: 'column',
+            minHeight: 0,
+          }}
+        >
+          <Tabs
+            value={rightTab}
+            onChange={(_event, value: string) => setRightTab(value)}
+            variant="fullWidth"
+            sx={{ minHeight: 42 }}
+          >
+            <Tab value="cleaning" label="Cleaning" sx={{ minHeight: 42 }} />
+            <Tab value="notes" label="Notes" sx={{ minHeight: 42 }} />
+          </Tabs>
+          <Divider />
+          {rightTab === 'cleaning' && (
+            <Stack spacing={1.5} sx={{ p: 1.5, overflow: 'auto' }}>
+              <Typography variant="subtitle2">Database maintenance</Typography>
+              <Typography variant="body2" color="text.secondary">
+                Run cleanup and enrichment operations on the selected database.
+              </Typography>
+
+              <Stack spacing={0.5}>
+                <Button
+                  fullWidth
+                  size="small"
+                  variant="outlined"
+                  onClick={() => void runBackfill()}
+                  disabled={jobRunning || !activeStore}
+                >
+                  Backfill
+                </Button>
+                <Typography variant="caption" color="text.secondary">
+                  Add missing names and biographical data from installed authorities.
+                </Typography>
+              </Stack>
+
+              <Stack spacing={0.5}>
+                <Button
+                  fullWidth
+                  size="small"
+                  variant="outlined"
+                  color="warning"
+                  onClick={() => void runAutoClean()}
+                  disabled={jobRunning || !activeStore}
+                >
+                  Auto-clean
+                </Button>
+                <Typography variant="caption" color="text.secondary">
+                  Normalize names, remove duplicates, and repair common romanization issues.
+                </Typography>
+              </Stack>
+
+              <Stack spacing={0.5}>
+                <Button
+                  fullWidth
+                  size="small"
+                  variant="contained"
+                  onClick={() => void runScans()}
+                  disabled={jobRunning || !activeStore}
+                >
+                  Run scans
+                </Button>
+                <Typography variant="caption" color="text.secondary">
+                  Find duplicates, missing fields, bad names, and unlinked authority matches.
+                </Typography>
+              </Stack>
+
+              <Stack spacing={0.5}>
+                <Button
+                  fullWidth
+                  size="small"
+                  variant="contained"
+                  color="secondary"
+                  onClick={() => void runHarvest()}
+                  disabled={jobRunning || !activeStore || !rootPath}
+                >
+                  Harvest
+                </Button>
+                <Typography variant="caption" color="text.secondary">
+                  Extract new person facts from tagged wrappers in the current document.
+                </Typography>
+              </Stack>
+            </Stack>
+          )}
+          {rightTab === 'notes' && (
+            <Box sx={{ flex: 1, minHeight: 0, p: 1.5 }}>
+              <EntityNoteEditor store={activeStore} entityId={selectedId} />
+            </Box>
           )}
         </Box>
       </Box>

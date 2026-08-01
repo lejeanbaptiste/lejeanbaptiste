@@ -102,6 +102,15 @@ export interface EntityFileApi {
     entityId: string;
     description: string | null;
   }) => Promise<void>;
+  entitySqliteGetNotes?: (input: {
+    databasePath: string;
+    entityId: string;
+  }) => Promise<Array<{ xml: string }>>;
+  entitySqliteSetNote?: (input: {
+    databasePath: string;
+    entityId: string;
+    xml: string;
+  }) => Promise<void>;
   entitySqliteRemoveName?: (input: {
     databasePath: string;
     entityId: string;
@@ -230,9 +239,7 @@ export interface EntityFileApi {
     text: string;
     language?: string;
   }) => Promise<void>;
-  entitySqliteAutoCleanNames?: (input: {
-    databasePath: string;
-  }) => Promise<{
+  entitySqliteAutoCleanNames?: (input: { databasePath: string }) => Promise<{
     dedupedNames: number;
     removedUntyped: number;
     promotedRomanizations: number;
@@ -281,10 +288,7 @@ export interface EntityFileApi {
   entitySqliteBackfillDecisionTargets?: (input: {
     databasePath: string;
   }) => Promise<{ updated: number; inserted: number; unchanged: number } | null>;
-  entitySqliteSoftDelete?: (input: {
-    databasePath: string;
-    entityId: string;
-  }) => Promise<boolean>;
+  entitySqliteSoftDelete?: (input: { databasePath: string; entityId: string }) => Promise<boolean>;
   entitySqliteMerge?: (input: {
     databasePath: string;
     keepId: string;
@@ -686,6 +690,20 @@ export class EntityStore {
     });
   }
 
+  async sqliteGetNote(entityId: string): Promise<string | null> {
+    if (!this.api.entitySqliteGetNotes) return null;
+    const notes = await this.api.entitySqliteGetNotes({
+      databasePath: this.sqlitePath,
+      entityId,
+    });
+    return notes[0]?.xml ?? null;
+  }
+
+  async sqliteSetNote(entityId: string, xml: string): Promise<void> {
+    if (!this.api.entitySqliteSetNote) throw new Error('SQLite entity notes are unavailable.');
+    await this.api.entitySqliteSetNote({ databasePath: this.sqlitePath, entityId, xml });
+  }
+
   async sqliteRemoveName(entityId: string, text: string): Promise<boolean> {
     if (!this.api.entitySqliteRemoveName) throw new Error('SQLite name removal is unavailable.');
     return this.api.entitySqliteRemoveName({ databasePath: this.sqlitePath, entityId, text });
@@ -894,11 +912,7 @@ export class EntityStore {
     });
   }
 
-  async sqliteSetRomanizedName(
-    entityId: string,
-    text: string,
-    language?: string,
-  ): Promise<void> {
+  async sqliteSetRomanizedName(entityId: string, text: string, language?: string): Promise<void> {
     if (!this.api.entitySqliteSetRomanizedName)
       throw new Error('SQLite romanized-name updates are unavailable.');
     await this.api.entitySqliteSetRomanizedName({
@@ -914,8 +928,7 @@ export class EntityStore {
     removedUntyped: number;
     promotedRomanizations: number;
   }> {
-    if (!this.api.entitySqliteAutoCleanNames)
-      throw new Error('SQLite auto-clean is unavailable.');
+    if (!this.api.entitySqliteAutoCleanNames) throw new Error('SQLite auto-clean is unavailable.');
     return this.api.entitySqliteAutoCleanNames({ databasePath: this.sqlitePath });
   }
 
@@ -1464,6 +1477,12 @@ export function desktopEntityFileApi(): EntityFileApi | null {
       : undefined,
     entitySqliteCandidates: rawApi.entitySqliteCandidates
       ? (databasePath, kind) => rawApi.entitySqliteCandidates!(databasePath, kind)
+      : undefined,
+    entitySqliteGetNotes: rawApi.entitySqliteGetNotes
+      ? (input) => rawApi.entitySqliteGetNotes!(input)
+      : undefined,
+    entitySqliteSetNote: rawApi.entitySqliteSetNote
+      ? (input) => rawApi.entitySqliteSetNote!(input)
       : undefined,
     entitySqliteGet: rawApi.entitySqliteGet ? (input) => rawApi.entitySqliteGet!(input) : undefined,
     entitySqliteDatabaseId: rawApi.entitySqliteDatabaseId

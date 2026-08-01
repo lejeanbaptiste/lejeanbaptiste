@@ -14,6 +14,23 @@ describe('EntitySqliteRepository', () => {
     repository.close();
   });
 
+  it('stores and replaces rich entity note fragments without touching descriptions', () => {
+    const repository = new EntitySqliteRepository();
+    repository.createEntity({ id: 'person-note-1', kind: 'person', description: 'Short bio' });
+    const first =
+      '<div type="ljb-entity-note"><note type="body" xml:lang="fr">Bonjour <note place="foot">Source</note></note></div>';
+    const second = '<div type="ljb-entity-note"><note type="body" xml:lang="zh">你好</note></div>';
+
+    repository.setEntityNote('person-note-1', first);
+    expect(repository.getEntityNotes('person-note-1')).toEqual([{ xml: first }]);
+    expect(repository.getEntity('person-note-1')?.description).toBe('Short bio');
+
+    repository.setEntityNote('person-note-1', second);
+    expect(repository.getEntityNotes('person-note-1')).toEqual([{ xml: second }]);
+    expect(repository.getEntity('person-note-1')?.description).toBe('Short bio');
+    repository.close();
+  });
+
   it('searches active names without scanning the XML document', () => {
     const repository = new EntitySqliteRepository();
     repository.createEntity({ id: 'person-search-1', kind: 'person', description: 'A person' });
@@ -611,7 +628,9 @@ describe('EntitySqliteRepository', () => {
 
     // Authority rows attached by the user are removable; re-attach as authority-origin for reject.
     repository.db
-      .prepare(`UPDATE entity_authorities SET origin = 'authority', source = 'Wikidata' WHERE entity_id = ?`)
+      .prepare(
+        `UPDATE entity_authorities SET origin = 'authority', source = 'Wikidata' WHERE entity_id = ?`,
+      )
       .run('person-mut-1');
     const authorityAssertion = repository
       .getPanelSummary('person-mut-1')!
@@ -619,7 +638,9 @@ describe('EntitySqliteRepository', () => {
     expect(repository.rejectAssertion('person-mut-1', authorityAssertion.key)).toBe(true);
     expect(repository.getPanelSummary('person-mut-1')?.authorities).toEqual([]);
 
-    expect(repository.decoupleAuthority({ entityId: 'person-mut-1', type: 'Wikidata', value: 'Q42' })).toBeGreaterThanOrEqual(0);
+    expect(
+      repository.decoupleAuthority({ entityId: 'person-mut-1', type: 'Wikidata', value: 'Q42' }),
+    ).toBeGreaterThanOrEqual(0);
     repository.close();
   });
 
@@ -664,7 +685,9 @@ describe('EntitySqliteRepository', () => {
     });
     expect(repository.getPanelSummary('person-fg-1')?.familyName).toBeNull();
     expect(
-      repository.db.prepare('SELECT family_name FROM people WHERE entity_id = ?').get('person-fg-1'),
+      repository.db
+        .prepare('SELECT family_name FROM people WHERE entity_id = ?')
+        .get('person-fg-1'),
     ).toEqual({ family_name: null });
 
     repository.close();
@@ -697,15 +720,7 @@ describe('EntitySqliteRepository', () => {
           (person_id, office_label, origin, source, status, created_at, updated_at)
          VALUES (?, ?, ?, ?, ?, ?, ?)`,
       )
-      .run(
-        'person-office-1',
-        '舊職',
-        'authority',
-        'DILA',
-        'rejected',
-        '2026-01-01',
-        '2026-01-01',
-      );
+      .run('person-office-1', '舊職', 'authority', 'DILA', 'rejected', '2026-01-01', '2026-01-01');
 
     const snapshot = repository.getPanelSummary('person-office-1')!;
     expect(snapshot.roles).toEqual(['尚書令']);
@@ -728,9 +743,12 @@ describe('EntitySqliteRepository', () => {
         }),
       ]),
     );
-    expect(repository.rejectAssertion('person-office-1', snapshot.assertions.find((a) => a.value === '尚書令')!.key)).toBe(
-      true,
-    );
+    expect(
+      repository.rejectAssertion(
+        'person-office-1',
+        snapshot.assertions.find((a) => a.value === '尚書令')!.key,
+      ),
+    ).toBe(true);
     expect(repository.getPanelSummary('person-office-1')?.roles).toEqual([]);
     repository.close();
   });
@@ -1000,7 +1018,9 @@ describe('EntitySqliteRepository', () => {
       }),
     ).toBe(true);
     expect(
-      repository.getPanelSummary('person-xml-add')?.assertions.filter((row) => row.origin === 'xml'),
+      repository
+        .getPanelSummary('person-xml-add')
+        ?.assertions.filter((row) => row.origin === 'xml'),
     ).toEqual(
       expect.arrayContaining([
         expect.objectContaining({ element: 'nationality', value: '齊', origin: 'xml', source }),

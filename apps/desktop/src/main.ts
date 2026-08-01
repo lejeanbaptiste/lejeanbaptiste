@@ -93,10 +93,7 @@ import {
   setAuthorityLifecycleEnabled,
   setAuthorityLifecycleReferenceDataEnabled,
 } from './authorityLifecycle';
-import {
-  lookupAuthorityRef,
-  type AuthorityRefLookupRequest,
-} from './authorityRefLookup';
+import { lookupAuthorityRef, type AuthorityRefLookupRequest } from './authorityRefLookup';
 import {
   installMapTileBundle,
   listInstalledMapTileRegions,
@@ -224,6 +221,8 @@ import {
   softDeleteEntitySqlite,
   tombstoneEntitySqliteNames,
   updateEntitySqliteDescription,
+  getEntitySqliteNotes,
+  setEntitySqliteNote,
   updateEntitySqliteNames,
   updateEntitySqliteNobleTitle,
   validateEntitySqliteAssertion,
@@ -1421,13 +1420,10 @@ const registerIpcHandlers = () => {
       return listEntitySqlitePanelSummaries(request);
     },
   );
-  ipcMain.handle(
-    'entitySqlite:authorityDuplicates',
-    async (_event, databasePath: string) => {
-      await assertRendererReadPath(databasePath);
-      return listEntitySqliteAuthorityDuplicates(databasePath);
-    },
-  );
+  ipcMain.handle('entitySqlite:authorityDuplicates', async (_event, databasePath: string) => {
+    await assertRendererReadPath(databasePath);
+    return listEntitySqliteAuthorityDuplicates(databasePath);
+  });
   ipcMain.handle(
     'entitySqlite:applyConcordance',
     async (
@@ -1530,10 +1526,7 @@ const registerIpcHandlers = () => {
   );
   ipcMain.handle(
     'entitySqlite:entityContentHash',
-    async (
-      _event,
-      request: { databasePath: string; entityId: string },
-    ) => {
+    async (_event, request: { databasePath: string; entityId: string }) => {
       await assertRendererReadPath(request.databasePath);
       return getEntitySqliteContentHash(request);
     },
@@ -1724,6 +1717,21 @@ const registerIpcHandlers = () => {
       await assertRendererReadPath(request.databasePath);
       await assertRendererWritePath(request.databasePath);
       return updateEntitySqliteDescription(request);
+    },
+  );
+  ipcMain.handle(
+    'entitySqlite:getNotes',
+    async (_event, request: import('./entityDbSqlite/readService').EntitySqliteNotesRequest) => {
+      await assertRendererReadPath(request.databasePath);
+      return getEntitySqliteNotes(request);
+    },
+  );
+  ipcMain.handle(
+    'entitySqlite:setNote',
+    async (_event, request: import('./entityDbSqlite/readService').EntitySqliteSetNoteRequest) => {
+      await assertRendererReadPath(request.databasePath);
+      await assertRendererWritePath(request.databasePath);
+      return setEntitySqliteNote(request);
     },
   );
   ipcMain.handle(
@@ -2371,10 +2379,8 @@ const registerIpcHandlers = () => {
     getAuthorityStatuses(await getAuthorityDbDir()),
   );
 
-  ipcMain.handle(
-    'authorityRef:lookup',
-    async (_event, request: AuthorityRefLookupRequest) =>
-      lookupAuthorityRef(await getAuthorityDbDir(), request),
+  ipcMain.handle('authorityRef:lookup', async (_event, request: AuthorityRefLookupRequest) =>
+    lookupAuthorityRef(await getAuthorityDbDir(), request),
   );
 
   const activeAuthorityDownloads = new Set<AuthoritySourceId>();
@@ -2833,29 +2839,26 @@ const registerIpcHandlers = () => {
     },
   );
 
-  ipcMain.handle(
-    'authorityLifecycle:setReferenceDataEnabled',
-    async (event, enabled: boolean) => {
-      const folder = await getEntityDbFolderOrNull();
-      const result = await setAuthorityLifecycleReferenceDataEnabled(
-        folder,
-        Boolean(enabled),
-        (progress) => emitAuthorityLifecycleProgress(event, progress),
-      );
-      if (result.ok && enabled) {
-        new Notification({
-          title: 'Reference databases ready',
-          body: 'CBDB, Norbert, and DILA reference data were installed for enrichment.',
-        }).show();
-      } else if (!result.ok) {
-        new Notification({
-          title: 'Reference data setup failed',
-          body: result.error ?? 'Could not download reference databases.',
-        }).show();
-      }
-      return result;
-    },
-  );
+  ipcMain.handle('authorityLifecycle:setReferenceDataEnabled', async (event, enabled: boolean) => {
+    const folder = await getEntityDbFolderOrNull();
+    const result = await setAuthorityLifecycleReferenceDataEnabled(
+      folder,
+      Boolean(enabled),
+      (progress) => emitAuthorityLifecycleProgress(event, progress),
+    );
+    if (result.ok && enabled) {
+      new Notification({
+        title: 'Reference databases ready',
+        body: 'CBDB, Norbert, and DILA reference data were installed for enrichment.',
+      }).show();
+    } else if (!result.ok) {
+      new Notification({
+        title: 'Reference data setup failed',
+        body: result.error ?? 'Could not download reference databases.',
+      }).show();
+    }
+    return result;
+  });
 
   ipcMain.handle('authorityLifecycle:update', async (event) => {
     const folder = await getEntityDbFolderOrNull();

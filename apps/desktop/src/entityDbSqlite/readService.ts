@@ -1,6 +1,13 @@
 import fs from 'fs/promises';
 import path from 'path';
-import { exportEntitiesXml, importEntitiesXml, backfillDecisionTargetsFromXml, computeEntityContentHash, replaceEntityContentBetween, type XmlImportReport } from './xmlCodec';
+import {
+  exportEntitiesXml,
+  importEntitiesXml,
+  backfillDecisionTargetsFromXml,
+  computeEntityContentHash,
+  replaceEntityContentBetween,
+  type XmlImportReport,
+} from './xmlCodec';
 import {
   EntitySqliteRepository,
   type SqliteEntityKind,
@@ -25,6 +32,7 @@ import {
   type AuthorityBackfillPatchResult,
   type XmlExtractedRefreshInput,
   type XmlExtractedRefreshResult,
+  type SqliteEntityNote,
 } from './repository';
 
 export interface EntitySqliteReadRequest {
@@ -73,6 +81,15 @@ export interface EntitySqliteUpdateDescriptionRequest {
   databasePath: string;
   entityId: string;
   description: string | null;
+}
+
+export interface EntitySqliteNotesRequest {
+  databasePath: string;
+  entityId: string;
+}
+
+export interface EntitySqliteSetNoteRequest extends EntitySqliteNotesRequest {
+  xml: string;
 }
 
 export interface EntitySqliteRemoveNameRequest {
@@ -424,6 +441,16 @@ export async function updateEntitySqliteDescription(
   repositoryFor(request.databasePath).updateDescription(request.entityId, request.description);
 }
 
+export async function getEntitySqliteNotes(
+  request: EntitySqliteNotesRequest,
+): Promise<SqliteEntityNote[]> {
+  return repositoryFor(request.databasePath).getEntityNotes(request.entityId);
+}
+
+export async function setEntitySqliteNote(request: EntitySqliteSetNoteRequest): Promise<void> {
+  repositoryFor(request.databasePath).setEntityNote(request.entityId, request.xml);
+}
+
 export async function removeEntitySqliteName(
   request: EntitySqliteRemoveNameRequest,
 ): Promise<boolean> {
@@ -603,7 +630,9 @@ export async function softDeleteEntitySqlite(
   return repositoryFor(request.databasePath).softDeleteEntity(request.entityId);
 }
 
-export async function mergeEntitySqlite(request: EntitySqliteMergeRequest): Promise<SqliteMergeResult> {
+export async function mergeEntitySqlite(
+  request: EntitySqliteMergeRequest,
+): Promise<SqliteMergeResult> {
   if (!validDatabasePath(request.databasePath))
     throw new Error('Invalid entity SQLite database path.');
   return repositoryFor(request.databasePath).mergeEntities(request.keepId, request.dropIds);
@@ -822,10 +851,7 @@ export async function forceRejectEntitySqliteAssertion(
 ): Promise<boolean> {
   if (!validDatabasePath(request.databasePath))
     throw new Error('Invalid entity SQLite database path.');
-  return repositoryFor(request.databasePath).forceRejectAssertion(
-    request.entityId,
-    request.key,
-  );
+  return repositoryFor(request.databasePath).forceRejectAssertion(request.entityId, request.key);
 }
 
 export async function exportEntitySqliteXml(

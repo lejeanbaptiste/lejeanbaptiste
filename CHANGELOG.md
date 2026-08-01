@@ -16,10 +16,17 @@
 - Cut out intentional 1.5-second wait before loading the editor while at once racing with the XML it is trying to load.
 - In Windows, command to quit is now carried out with but a slight delay.
 - Lazy load panels to keep memory usage down.
+- Share desktop schema/document preparation between initial editor setup and the first actual document load.
 
 ### Functionality
 
 - Rebuilt Sanmiao date validation panel to work _with_ the script, setting fixed waypoints to calculate around and allowing the user to enter missing date data (needs testing.)
+
+### Data
+
+- New items in shared, synchronised project now hydrade an older central database by default rather than insisting that tags be stripped 🤦‍♂️
+- Consolidated the database viewer, added note taking.
+- Worked out merge conflict mechanics and wiring.
 
 ### UI
 

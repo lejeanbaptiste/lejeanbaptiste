@@ -67,10 +67,11 @@ import {
   type FieldAssertionGroups,
   normalizeAuthorityValue,
 } from '../../../../../packages/cwrc-leafwriter/src/autoTagging/entityOps';
+import { refreshCbdbConcordanceSqliteDebounced } from '../../../../../packages/cwrc-leafwriter/src/autoTagging/cbdbConcordance';
 import {
-  refreshCbdbConcordanceSqliteDebounced,
-} from '../../../../../packages/cwrc-leafwriter/src/autoTagging/cbdbConcordance';
-import { SQLITE_REQUIRED_PANEL_MESSAGE as SQLITE_REQUIRED_MESSAGE, SQLITE_REQUIRED_MESSAGE as SQLITE_REQUIRED_BRIDGE_MESSAGE } from '../../../../../packages/cwrc-leafwriter/src/autoTagging/sqliteRequired';
+  SQLITE_REQUIRED_PANEL_MESSAGE as SQLITE_REQUIRED_MESSAGE,
+  SQLITE_REQUIRED_MESSAGE as SQLITE_REQUIRED_BRIDGE_MESSAGE,
+} from '../../../../../packages/cwrc-leafwriter/src/autoTagging/sqliteRequired';
 import {
   ALL_NAME_TYPES,
   type NameTypeId,
@@ -83,7 +84,10 @@ import {
   countUnlinkedPedbEntities,
   synchronizeMirroredProject,
 } from '../../../../../packages/cwrc-leafwriter/src/autoTagging/synchronizedMirror';
-import { setBulkSyncProgress, getBulkSyncProgress } from '../../../../../packages/cwrc-leafwriter/src/autoTagging/bulkSyncProgress';
+import {
+  setBulkSyncProgress,
+  getBulkSyncProgress,
+} from '../../../../../packages/cwrc-leafwriter/src/autoTagging/bulkSyncProgress';
 import { suggestPersonRomanization } from '../../../../../packages/cwrc-leafwriter/src/plugins/personNameDefaults';
 import { cachedPackReader } from '../../../../../packages/cwrc-leafwriter/src/services/authority-pack-lookup';
 import {
@@ -239,8 +243,7 @@ const attachProjectCentralKeys = async (
 };
 
 /** Project / corpus key shown in the list (null → "(central)" only). */
-const listProjectKey = (entity: EntitySummary): string | null =>
-  entity.projectKey ?? null;
+const listProjectKey = (entity: EntitySummary): string | null => entity.projectKey ?? null;
 
 const normalizedAuthorityRefs = (refs: AuthorityId[]): AuthorityId[] =>
   refs
@@ -1011,10 +1014,7 @@ export const SidebarDatabaseTab = ({ active = false }: SidebarDatabaseTabProps) 
       }
 
       let conflicts: ConcordanceImportResult['conflicts'] = [];
-      if (
-        activeStore === currentStore &&
-        window.electronAPI?.entitySqliteApplyConcordance
-      ) {
+      if (activeStore === currentStore && window.electronAPI?.entitySqliteApplyConcordance) {
         // Debounced: pack-lifecycle refresh may have just applied the same pack.
         const imported = await refreshCbdbConcordanceSqliteDebounced(
           activeStore,
@@ -1347,10 +1347,7 @@ export const SidebarDatabaseTab = ({ active = false }: SidebarDatabaseTabProps) 
         }
         // Newly attached CBDB ids from backfill should pick up concordance links
         // in the same user action (not only on a later panel reload).
-        if (
-          activeStore === store &&
-          window.electronAPI?.entitySqliteApplyConcordance
-        ) {
+        if (activeStore === store && window.electronAPI?.entitySqliteApplyConcordance) {
           const imported = await refreshCbdbConcordanceSqliteDebounced(
             activeStore,
             cachedPackReader(),
@@ -1516,9 +1513,30 @@ export const SidebarDatabaseTab = ({ active = false }: SidebarDatabaseTabProps) 
     setEditNameTypes(Object.fromEntries(names.map((name) => [name.text, name.nameType ?? ''])));
     setEditNameLanguages(Object.fromEntries(names.map((name) => [name.text, name.language ?? ''])));
     // Header romanization is separate state — keep it current after link/backfill.
-    const refreshedRomanized =
-      names.find((name) => name.language?.endsWith('-Latn'))?.text ?? null;
+    const refreshedRomanized = names.find((name) => name.language?.endsWith('-Latn'))?.text ?? null;
     if (refreshedRomanized) setEditRomanized(refreshedRomanized);
+  };
+
+  /**
+   * A direct field edit changes one entity, not the entire database. Keep the
+   * virtualized list stable by replacing that one row; full reloads remain for
+   * bulk jobs, identity changes, and external filesystem changes.
+   */
+  const refreshListEntityFromSqlite = async (targetStore: EntityStore, entityId: string) => {
+    const raw = await targetStore.sqliteEntitySummary(entityId);
+    if (!raw) return;
+    const refreshed = entitySummaryFromSqlite(raw as Parameters<typeof entitySummaryFromSqlite>[0]);
+    setEntities((previous) =>
+      previous.map((entity) =>
+        entity.id === entityId
+          ? {
+              ...refreshed,
+              projectKey: entity.projectKey,
+              centralKey: entity.centralKey,
+            }
+          : entity,
+      ),
+    );
   };
 
   /**
@@ -1546,7 +1564,7 @@ export const SidebarDatabaseTab = ({ active = false }: SidebarDatabaseTabProps) 
       try {
         await mutate(targetStore);
         await refreshEditEntityFromSqlite(targetStore, entityId);
-        await reload();
+        await refreshListEntityFromSqlite(targetStore, entityId);
         return true;
       } catch (error) {
         setLoadError(error instanceof Error ? error.message : String(error));
@@ -1555,7 +1573,7 @@ export const SidebarDatabaseTab = ({ active = false }: SidebarDatabaseTabProps) 
         setBusyMessage(null);
       }
     },
-    [reload, resolveStoreFor],
+    [resolveStoreFor],
   );
 
   const rejectAssertionKeys = useCallback(
@@ -1703,10 +1721,7 @@ export const SidebarDatabaseTab = ({ active = false }: SidebarDatabaseTabProps) 
                     api,
                     centralStore.centralFolder,
                   );
-                  centralIdToPurge = await targetStore.sqliteGetCentralId(
-                    entity.id,
-                    userStableId,
-                  );
+                  centralIdToPurge = await targetStore.sqliteGetCentralId(entity.id, userStableId);
                 }
               }
               await targetStore.sqliteSoftDelete(entity.id);
@@ -1839,33 +1854,29 @@ export const SidebarDatabaseTab = ({ active = false }: SidebarDatabaseTabProps) 
               value: parsed?.value ?? uri,
             };
           });
-          await runSqliteEntityMutation(
-            entity.id,
-            'Linking authority…',
-            async (targetStore) => {
-              for (const ref of refs) {
-                await targetStore.sqliteAttachAuthority(entity.id, ref.type, ref.value);
+          await runSqliteEntityMutation(entity.id, 'Linking authority…', async (targetStore) => {
+            for (const ref of refs) {
+              await targetStore.sqliteAttachAuthority(entity.id, ref.type, ref.value);
+            }
+            // Mirror EntityLookupField: enrich names/dates from packs + Wikidata
+            // so the open card shows badges and new data without a second Refresh.
+            if (
+              (entity.kind === 'person' || entity.kind === 'work') &&
+              window.electronAPI?.entitySqliteApplyAuthorityBackfillPatch
+            ) {
+              await backfillEntitiesSqlite(targetStore, {
+                entityIds: [entity.id],
+                readPackFile: cachedPackReader(),
+                projectLang,
+                desktopLanguage: i18n.language,
+                expandWikidataWorks: entity.kind === 'person',
+                lookupAuthorityRef: window.electronAPI?.authorityRefLookup,
+              }).catch(() => undefined);
+              if (targetStore === store) {
+                await autoSyncEntitiesToCentral(null, [entity.id]).catch(() => undefined);
               }
-              // Mirror EntityLookupField: enrich names/dates from packs + Wikidata
-              // so the open card shows badges and new data without a second Refresh.
-              if (
-                (entity.kind === 'person' || entity.kind === 'work') &&
-                window.electronAPI?.entitySqliteApplyAuthorityBackfillPatch
-              ) {
-                await backfillEntitiesSqlite(targetStore, {
-                  entityIds: [entity.id],
-                  readPackFile: cachedPackReader(),
-                  projectLang,
-                  desktopLanguage: i18n.language,
-                  expandWikidataWorks: entity.kind === 'person',
-                  lookupAuthorityRef: window.electronAPI?.authorityRefLookup,
-                }).catch(() => undefined);
-                if (targetStore === store) {
-                  await autoSyncEntitiesToCentral(null, [entity.id]).catch(() => undefined);
-                }
-              }
-            },
-          );
+            }
+          });
         })();
       },
     });
@@ -1983,20 +1994,24 @@ export const SidebarDatabaseTab = ({ active = false }: SidebarDatabaseTabProps) 
     const entityId = editEntity.id;
     setDateEditing(false);
     void (async () => {
-      const handled = await runSqliteEntityMutation(entityId, 'Saving dates…', async (targetStore) => {
-        await targetStore.sqliteSetUserDate({
-          entityId,
-          part: 'birth',
-          year: birth,
-          precision: birthPrecision,
-        });
-        await targetStore.sqliteSetUserDate({
-          entityId,
-          part: 'death',
-          year: death,
-          precision: deathPrecision,
-        });
-      });
+      const handled = await runSqliteEntityMutation(
+        entityId,
+        'Saving dates…',
+        async (targetStore) => {
+          await targetStore.sqliteSetUserDate({
+            entityId,
+            part: 'birth',
+            year: birth,
+            precision: birthPrecision,
+          });
+          await targetStore.sqliteSetUserDate({
+            entityId,
+            part: 'death',
+            year: death,
+            precision: deathPrecision,
+          });
+        },
+      );
     })();
   };
 
@@ -2013,15 +2028,19 @@ export const SidebarDatabaseTab = ({ active = false }: SidebarDatabaseTabProps) 
     const entityId = editEntity.id;
     setDateEditing(false);
     void (async () => {
-      const handled = await runSqliteEntityMutation(entityId, 'Saving dates…', async (targetStore) => {
-        await targetStore.sqliteSetUserWorkDate({
-          entityId,
-          startYear,
-          endYear,
-          startPrecision,
-          endPrecision,
-        });
-      });
+      const handled = await runSqliteEntityMutation(
+        entityId,
+        'Saving dates…',
+        async (targetStore) => {
+          await targetStore.sqliteSetUserWorkDate({
+            entityId,
+            startYear,
+            endYear,
+            startPrecision,
+            endPrecision,
+          });
+        },
+      );
     })();
   };
 
@@ -2316,10 +2335,10 @@ export const SidebarDatabaseTab = ({ active = false }: SidebarDatabaseTabProps) 
                     sx={neutralActionButtonSx}
                     onClick={() =>
                       removeAssertionKeys(
-                      editEntity!.id,
-                      keys,
-                      t('LWC.desktop.sidebar.database.removing_data'),
-                    )
+                        editEntity!.id,
+                        keys,
+                        t('LWC.desktop.sidebar.database.removing_data'),
+                      )
                     }
                   >
                     <ClearIcon fontSize="small" />
@@ -2534,7 +2553,16 @@ export const SidebarDatabaseTab = ({ active = false }: SidebarDatabaseTabProps) 
       roleRows,
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [editEntity, showRejected, dateEditing, databaseView, rejectAssertionKeys, restoreAssertionKeys, removeAssertionKeys, t]);
+  }, [
+    editEntity,
+    showRejected,
+    dateEditing,
+    databaseView,
+    rejectAssertionKeys,
+    restoreAssertionKeys,
+    removeAssertionKeys,
+    t,
+  ]);
 
   const commitNameType = (text: string, type: string) => {
     if (!editEntity) return;
@@ -2555,7 +2583,7 @@ export const SidebarDatabaseTab = ({ active = false }: SidebarDatabaseTabProps) 
       try {
         await targetStore.sqliteUpdateNames({ entityId: id, text, nameType: type || null });
         await refreshEditEntityFromSqlite(targetStore, id);
-        await reload();
+        await refreshListEntityFromSqlite(targetStore, id);
       } catch (error) {
         setLoadError(error instanceof Error ? error.message : String(error));
       } finally {
@@ -2589,7 +2617,7 @@ export const SidebarDatabaseTab = ({ active = false }: SidebarDatabaseTabProps) 
           language: lang || null,
         });
         await refreshEditEntityFromSqlite(targetStore, id);
-        await reload();
+        await refreshListEntityFromSqlite(targetStore, id);
       } catch (error) {
         setLoadError(error instanceof Error ? error.message : String(error));
       } finally {
@@ -2631,7 +2659,7 @@ export const SidebarDatabaseTab = ({ active = false }: SidebarDatabaseTabProps) 
           origin: 'user',
         });
         await refreshEditEntityFromSqlite(targetStore, id);
-        await reload();
+        await refreshListEntityFromSqlite(targetStore, id);
       } catch (error) {
         setLoadError(error instanceof Error ? error.message : String(error));
       } finally {
@@ -2659,7 +2687,7 @@ export const SidebarDatabaseTab = ({ active = false }: SidebarDatabaseTabProps) 
       try {
         await targetStore.sqliteRemoveName(id, text);
         await refreshEditEntityFromSqlite(targetStore, id);
-        await reload();
+        await refreshListEntityFromSqlite(targetStore, id);
       } catch (error) {
         setLoadError(error instanceof Error ? error.message : String(error));
       } finally {
@@ -2766,11 +2794,7 @@ export const SidebarDatabaseTab = ({ active = false }: SidebarDatabaseTabProps) 
         )
         .map((assertion) => assertion.key);
       if (keys.length === 0) return;
-      removeAssertionKeys(
-        editEntity.id,
-        keys,
-        t('LWC.desktop.sidebar.database.removing_data'),
-      );
+      removeAssertionKeys(editEntity.id, keys, t('LWC.desktop.sidebar.database.removing_data'));
     },
     [editEntity, removeAssertionKeys, t],
   );
@@ -2855,14 +2879,8 @@ export const SidebarDatabaseTab = ({ active = false }: SidebarDatabaseTabProps) 
       .map((id) => entities.find((entity) => entity.id === id))
       .filter((entity): entity is EntitySummary => Boolean(entity));
     if (implicated[0]) setKindFilter(implicated[0].kind);
-    const projectKeys = implicated
-      .map((entity) => entity.projectKey ?? entity.id)
-      .filter(Boolean);
-    setSearch(
-      projectKeys.length > 0
-        ? `^(${projectKeys.map(escapeRegExp).join('|')})$`
-        : '',
-    );
+    const projectKeys = implicated.map((entity) => entity.projectKey ?? entity.id).filter(Boolean);
+    setSearch(projectKeys.length > 0 ? `^(${projectKeys.map(escapeRegExp).join('|')})$` : '');
     setSelected(new Set(warning.entityIds));
   };
 
@@ -3120,11 +3138,15 @@ export const SidebarDatabaseTab = ({ active = false }: SidebarDatabaseTabProps) 
               </IconButton>
             </span>
           </Tooltip>
-          <Tooltip title={t('LWC.desktop.database_window.open', { defaultValue: 'Open Database Window' })}>
+          <Tooltip
+            title={t('LWC.desktop.database_window.open', { defaultValue: 'Open Database Window' })}
+          >
             <IconButton
               size="small"
               onClick={() => setDesktopWindowMode('database')}
-              aria-label={t('LWC.desktop.database_window.open', { defaultValue: 'Open Database Window' })}
+              aria-label={t('LWC.desktop.database_window.open', {
+                defaultValue: 'Open Database Window',
+              })}
               sx={{ flexShrink: 0 }}
             >
               <OpenInNewIcon fontSize="small" />
@@ -3741,10 +3763,10 @@ export const SidebarDatabaseTab = ({ active = false }: SidebarDatabaseTabProps) 
                     sx={neutralActionButtonSx}
                     onClick={() =>
                       rejectAssertionKeys(
-                      editEntity.id,
-                      [assertion.key],
-                      t('LWC.desktop.sidebar.database.rejecting_data'),
-                    )
+                        editEntity.id,
+                        [assertion.key],
+                        t('LWC.desktop.sidebar.database.rejecting_data'),
+                      )
                     }
                   >
                     <ClearIcon fontSize="small" />
@@ -3896,10 +3918,10 @@ export const SidebarDatabaseTab = ({ active = false }: SidebarDatabaseTabProps) 
                           sx={neutralActionButtonSx}
                           onClick={() =>
                             rejectAssertionKeys(
-                      editEntity.id,
-                      [author.key],
-                      t('LWC.desktop.sidebar.database.rejecting_data'),
-                    )
+                              editEntity.id,
+                              [author.key],
+                              t('LWC.desktop.sidebar.database.rejecting_data'),
+                            )
                           }
                         >
                           <ClearIcon fontSize="small" />
@@ -4161,10 +4183,10 @@ export const SidebarDatabaseTab = ({ active = false }: SidebarDatabaseTabProps) 
               onValidate={queueValidation}
               onReject={(keys) =>
                 rejectAssertionKeys(
-                      editEntity.id,
-                      keys,
-                      t('LWC.desktop.sidebar.database.rejecting_data'),
-                    )
+                  editEntity.id,
+                  keys,
+                  t('LWC.desktop.sidebar.database.rejecting_data'),
+                )
               }
               onDelete={commitDeleteName}
               newName={editNewName}

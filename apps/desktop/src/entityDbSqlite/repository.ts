@@ -75,6 +75,10 @@ export interface SqliteEntityAssertion {
   ref: string | null;
 }
 
+export interface SqliteEntityNote {
+  xml: string;
+}
+
 export interface SqliteConcordanceAssociation {
   source: string;
   canonicalId: string;
@@ -313,7 +317,12 @@ export interface CreatePopulatedEntityInput {
     origin?: SqliteValueOrigin;
     source?: string | null;
   }>;
-  authorities?: Array<{ type: string; value: string; origin?: SqliteValueOrigin; source?: string | null }>;
+  authorities?: Array<{
+    type: string;
+    value: string;
+    origin?: SqliteValueOrigin;
+    source?: string | null;
+  }>;
   familyName?: string | null;
   givenName?: string | null;
   now?: string;
@@ -453,9 +462,7 @@ function canonicalizeAuthorityType(type: string): string {
 function parseAssertionKey(
   key: string,
 ):
-  | { kind: 'row'; table: string; rowId: number }
-  | { kind: 'description'; entityId: string }
-  | null {
+  { kind: 'row'; table: string; rowId: number } | { kind: 'description'; entityId: string } | null {
   if (key.startsWith('entities:description:')) {
     return { kind: 'description', entityId: key.slice('entities:description:'.length) };
   }
@@ -574,7 +581,9 @@ function assemblePanelSummary(
   }
   for (const date of dates) {
     const kind = String(date.date_kind);
-    const value = String(date.when_value ?? date.raw_text ?? date.start_year ?? date.end_year ?? '');
+    const value = String(
+      date.when_value ?? date.raw_text ?? date.start_year ?? date.end_year ?? '',
+    );
     addAssertion({
       key: `entity_dates:${date.id}`,
       element: kind === 'birth' || kind === 'death' ? kind : 'note',
@@ -800,8 +809,7 @@ export class EntitySqliteRepository {
 
   getMetadata(key: string): string | null {
     const row = this.db.prepare('SELECT value FROM database_metadata WHERE key = ?').get(key) as
-      | { value?: string }
-      | undefined;
+      { value?: string } | undefined;
     return row?.value != null ? String(row.value) : null;
   }
 
@@ -886,7 +894,9 @@ export class EntitySqliteRepository {
         office: 'offices',
         org: 'organizations',
       };
-      this.db.prepare(`INSERT INTO ${tableByKind[input.kind]} (entity_id) VALUES (?)`).run(input.id);
+      this.db
+        .prepare(`INSERT INTO ${tableByKind[input.kind]} (entity_id) VALUES (?)`)
+        .run(input.id);
 
       const insertName = (
         text: string,
@@ -904,7 +914,9 @@ export class EntitySqliteRepository {
               ? 'primary'
               : 'variant';
         if (isPrimary) {
-          this.db.prepare('UPDATE entity_names SET is_primary = 0 WHERE entity_id = ?').run(input.id);
+          this.db
+            .prepare('UPDATE entity_names SET is_primary = 0 WHERE entity_id = ?')
+            .run(input.id);
         }
         this.db
           .prepare(
@@ -991,11 +1003,7 @@ export class EntitySqliteRepository {
    * Used by lookup planning for conflict detection; single-id callers use
    * {@link findEntityIdByAuthority}.
    */
-  findAllEntityIdsByAuthority(
-    kind: SqliteEntityKind,
-    type: string,
-    value: string,
-  ): string[] {
+  findAllEntityIdsByAuthority(kind: SqliteEntityKind, type: string, value: string): string[] {
     const wantedType = type.trim();
     const wantedValue = normalizeAuthorityValue(wantedType, value);
     if (!wantedType || !wantedValue) return [];
@@ -1023,11 +1031,7 @@ export class EntitySqliteRepository {
   }
 
   /** First active non-deleted entity of `kind` sharing an authority type+value. */
-  findEntityIdByAuthority(
-    kind: SqliteEntityKind,
-    type: string,
-    value: string,
-  ): string | null {
+  findEntityIdByAuthority(kind: SqliteEntityKind, type: string, value: string): string | null {
     return this.findAllEntityIdsByAuthority(kind, type, value)[0] ?? null;
   }
 
@@ -1278,9 +1282,7 @@ export class EntitySqliteRepository {
         const keepNames = new Set(
           (
             this.db
-              .prepare(
-                `SELECT text FROM entity_names WHERE entity_id = ? AND status = 'active'`,
-              )
+              .prepare(`SELECT text FROM entity_names WHERE entity_id = ? AND status = 'active'`)
               .all(keepId) as { text: string }[]
           ).map((row) => row.text),
         );
@@ -1299,8 +1301,7 @@ export class EntitySqliteRepository {
           if (keepNames.has(name.text)) continue;
           const rawType = normalizePersonNameType(name.name_type);
           const nameType = rawType === 'primary' ? 'variant' : rawType;
-          const nameRole =
-            nameType === 'family' || nameType === 'given' ? nameType : 'variant';
+          const nameRole = nameType === 'family' || nameType === 'given' ? nameType : 'variant';
           this.db
             .prepare(
               `INSERT INTO entity_names
@@ -1413,7 +1414,11 @@ export class EntitySqliteRepository {
           const dropPerson = this.db
             .prepare('SELECT family_name, given_name FROM people WHERE entity_id = ?')
             .get(dropId) as { family_name: string | null; given_name: string | null } | undefined;
-          if (!keepPerson?.family_name && dropPerson?.family_name && !keepNames.has(dropPerson.family_name)) {
+          if (
+            !keepPerson?.family_name &&
+            dropPerson?.family_name &&
+            !keepNames.has(dropPerson.family_name)
+          ) {
             this.db
               .prepare(
                 `INSERT INTO entity_names
@@ -1424,7 +1429,11 @@ export class EntitySqliteRepository {
             this.syncPersonNameScalars(keepId, dropPerson.family_name, 'family', now);
             keepNames.add(dropPerson.family_name);
           }
-          if (!keepPerson?.given_name && dropPerson?.given_name && !keepNames.has(dropPerson.given_name)) {
+          if (
+            !keepPerson?.given_name &&
+            dropPerson?.given_name &&
+            !keepNames.has(dropPerson.given_name)
+          ) {
             this.db
               .prepare(
                 `INSERT INTO entity_names
@@ -1607,9 +1616,10 @@ export class EntitySqliteRepository {
     if (entityRows.length === 0) return [];
 
     const namesByEntity = groupRowsByKey(
-      this.db
-        .prepare('SELECT * FROM entity_names ORDER BY is_primary DESC, id')
-        .all() as Record<string, unknown>[],
+      this.db.prepare('SELECT * FROM entity_names ORDER BY is_primary DESC, id').all() as Record<
+        string,
+        unknown
+      >[],
       'entity_id',
     );
     const authoritiesByEntity = groupRowsByKey(
@@ -1623,9 +1633,10 @@ export class EntitySqliteRepository {
     );
     const peopleByEntity = new Map(
       (
-        this.db
-          .prepare('SELECT entity_id, family_name, given_name FROM people')
-          .all() as Record<string, unknown>[]
+        this.db.prepare('SELECT entity_id, family_name, given_name FROM people').all() as Record<
+          string,
+          unknown
+        >[]
       ).map((row) => [
         String(row.entity_id),
         {
@@ -1955,9 +1966,7 @@ export class EntitySqliteRepository {
    * Restore missing `target_refs` (and insert absent decision rows) from a
    * sibling XML parse. Idempotent: matching target_refs are left alone.
    */
-  backfillDecisionTargets(
-    entries: DecisionTargetBackfillEntry[],
-  ): DecisionTargetBackfillReport {
+  backfillDecisionTargets(entries: DecisionTargetBackfillEntry[]): DecisionTargetBackfillReport {
     const report: DecisionTargetBackfillReport = { updated: 0, inserted: 0, unchanged: 0 };
     return this.transaction(() => {
       for (const entry of entries) {
@@ -1991,12 +2000,7 @@ export class EntitySqliteRepository {
                    payload_json = COALESCE(?, payload_json)
                WHERE id = ?`,
             )
-            .run(
-              targetRefs,
-              entry.source ?? null,
-              entry.payloadJson ?? null,
-              missing.id,
-            );
+            .run(targetRefs, entry.source ?? null, entry.payloadJson ?? null, missing.id);
           report.updated += 1;
           continue;
         }
@@ -2396,17 +2400,9 @@ export class EntitySqliteRepository {
         }
         const removedType =
           normalizePersonNameType(target.name_type) ??
-          (target.name_role === 'family' || target.name_role === 'given'
-            ? target.name_role
-            : null);
+          (target.name_role === 'family' || target.name_role === 'given' ? target.name_role : null);
         if (removedType === 'family' || removedType === 'given') {
-          this.syncPersonNameScalarsAfterTypeChange(
-            entityId,
-            normalized,
-            removedType,
-            null,
-            now,
-          );
+          this.syncPersonNameScalarsAfterTypeChange(entityId, normalized, removedType, null, now);
         }
       }
 
@@ -2462,6 +2458,55 @@ export class EntitySqliteRepository {
           )
           .run(entityId, trimmed, now, now);
       }
+    });
+  }
+
+  getEntityNotes(entityId: string): SqliteEntityNote[] {
+    const rows = [
+      ...(this.db
+        .prepare(
+          `SELECT xml FROM entity_xml_fragments
+           WHERE entity_id = ? AND xml LIKE '%ljb-entity-note%'
+           ORDER BY ordinal`,
+        )
+        .all(entityId) as Array<{ xml: string }>),
+      ...(this.db
+        .prepare(
+          `SELECT xml FROM entity_extensions
+           WHERE entity_id = ? AND xml LIKE '%ljb-entity-note%'
+           ORDER BY ordinal`,
+        )
+        .all(entityId) as Array<{ xml: string }>),
+    ];
+    return rows.map((row) => ({ xml: String(row.xml) }));
+  }
+
+  setEntityNote(entityId: string, xml: string, now = nowIso()): void {
+    this.transaction(() => {
+      this.db
+        .prepare(
+          `DELETE FROM entity_xml_fragments
+           WHERE entity_id = ? AND xml LIKE '%ljb-entity-note%'`,
+        )
+        .run(entityId);
+      this.db
+        .prepare(
+          `DELETE FROM entity_extensions
+           WHERE entity_id = ? AND xml LIKE '%ljb-entity-note%'`,
+        )
+        .run(entityId);
+      const ordinal = this.db
+        .prepare(
+          'SELECT COALESCE(MAX(ordinal), -1) + 1 AS ordinal FROM entity_xml_fragments WHERE entity_id = ?',
+        )
+        .get(entityId) as { ordinal: number };
+      this.db
+        .prepare(
+          `INSERT INTO entity_xml_fragments (entity_id, ordinal, xml)
+           VALUES (?, ?, ?)`,
+        )
+        .run(entityId, ordinal.ordinal, xml);
+      this.bumpEntity(entityId, now);
     });
   }
 
@@ -2823,7 +2868,11 @@ export class EntitySqliteRepository {
         (row) => normalizeAuthorityValue(type, row.authority_value) === normalized,
       );
       if (match) {
-        if (match.status === 'active' && match.authority_type === type && match.authority_value === value)
+        if (
+          match.status === 'active' &&
+          match.authority_type === type &&
+          match.authority_value === value
+        )
           return false;
         this.db
           .prepare(
@@ -2880,9 +2929,7 @@ export class EntitySqliteRepository {
       const sourcePrefix = `${type}:`;
       const purgeBySource = (table: string, ownerCol: string) => {
         const rows = this.db
-          .prepare(
-            `SELECT id, origin, source, status FROM ${table} WHERE ${ownerCol} = ?`,
-          )
+          .prepare(`SELECT id, origin, source, status FROM ${table} WHERE ${ownerCol} = ?`)
           .all(input.entityId) as {
           id: number;
           origin: SqliteValueOrigin;
@@ -2894,10 +2941,7 @@ export class EntitySqliteRepository {
           const sourceValue = row.source.slice(sourcePrefix.length);
           if (normalizeAuthorityValue(type, sourceValue) !== normalized) continue;
           if (row.origin !== 'authority') continue;
-          if (
-            row.status === 'active' ||
-            (row.status === 'rejected' && table === 'entity_dates')
-          ) {
+          if (row.status === 'active' || (row.status === 'rejected' && table === 'entity_dates')) {
             this.db.prepare(`DELETE FROM ${table} WHERE id = ?`).run(row.id);
             removed += 1;
           }
@@ -2943,9 +2987,8 @@ export class EntitySqliteRepository {
     const parsed = parseAssertionKey(key);
     if (!parsed || parsed.kind !== 'row' || parsed.table !== 'entity_dates') return false;
     return this.transaction(() => {
-      const row = this.db
-        .prepare('SELECT * FROM entity_dates WHERE id = ?')
-        .get(parsed.rowId) as Record<string, unknown> | undefined;
+      const row = this.db.prepare('SELECT * FROM entity_dates WHERE id = ?').get(parsed.rowId) as
+        Record<string, unknown> | undefined;
       if (!row || String(row.entity_id) !== entityId) return false;
       const kind = String(row.date_kind);
       if (kind !== 'birth' && kind !== 'death') return false;
@@ -3040,12 +3083,7 @@ export class EntitySqliteRepository {
     });
   }
 
-  setRomanizedName(
-    entityId: string,
-    text: string,
-    language = 'und-Latn',
-    now = nowIso(),
-  ): void {
+  setRomanizedName(entityId: string, text: string, language = 'und-Latn', now = nowIso()): void {
     const trimmed = text.trim();
     this.transaction(() => {
       const existing = this.db
@@ -3109,9 +3147,7 @@ export class EntitySqliteRepository {
         .all() as Array<{ id: number; entityId: string }>;
       for (const row of latnUntyped) {
         this.db
-          .prepare(
-            `UPDATE entity_names SET name_type = 'translation', updated_at = ? WHERE id = ?`,
-          )
+          .prepare(`UPDATE entity_names SET name_type = 'translation', updated_at = ? WHERE id = ?`)
           .run(now, row.id);
         touched.add(row.entityId);
       }
@@ -3329,8 +3365,7 @@ export class EntitySqliteRepository {
       'entity_authorities',
       'entity_id',
       sourceRows('entity_authorities', 'entity_id'),
-      (row) =>
-        String(row.authority_type) === CENTRAL_AUTHORITY_TYPE ? null : row,
+      (row) => (String(row.authority_type) === CENTRAL_AUTHORITY_TYPE ? null : row),
     );
     insertRows('entity_metadata', 'entity_id', sourceRows('entity_metadata', 'entity_id'));
     insertRows('authority_caches', 'entity_id', sourceRows('authority_caches', 'entity_id'));
@@ -3359,9 +3394,7 @@ export class EntitySqliteRepository {
       'person_id',
       sourceRows('person_nationalities', 'person_id'),
       (row) => {
-        const nationalityId = row.nationality_entity_id
-          ? String(row.nationality_entity_id)
-          : null;
+        const nationalityId = row.nationality_entity_id ? String(row.nationality_entity_id) : null;
         return {
           ...row,
           nationality_entity_id: entityExists(nationalityId) ? nationalityId : null,
@@ -3370,34 +3403,25 @@ export class EntitySqliteRepository {
     );
     insertRows('person_origins', 'person_id', sourceRows('person_origins', 'person_id'));
     insertRows('person_titles', 'person_id', sourceRows('person_titles', 'person_id'));
-    insertRows(
-      'person_offices',
-      'person_id',
-      sourceRows('person_offices', 'person_id'),
-      (row) => {
-        const officeId = row.office_id ? String(row.office_id) : null;
-        const startDateId = row.start_date_id != null ? dateIdMap.get(Number(row.start_date_id)) : null;
-        const endDateId = row.end_date_id != null ? dateIdMap.get(Number(row.end_date_id)) : null;
-        return {
-          ...row,
-          office_id: entityExists(officeId) ? officeId : null,
-          start_date_id: startDateId ?? null,
-          end_date_id: endDateId ?? null,
-        };
-      },
-    );
-    insertRows(
-      'work_authors',
-      'work_id',
-      sourceRows('work_authors', 'work_id'),
-      (row) => {
-        const personId = row.person_id ? String(row.person_id) : null;
-        return {
-          ...row,
-          person_id: entityExists(personId) ? personId : null,
-        };
-      },
-    );
+    insertRows('person_offices', 'person_id', sourceRows('person_offices', 'person_id'), (row) => {
+      const officeId = row.office_id ? String(row.office_id) : null;
+      const startDateId =
+        row.start_date_id != null ? dateIdMap.get(Number(row.start_date_id)) : null;
+      const endDateId = row.end_date_id != null ? dateIdMap.get(Number(row.end_date_id)) : null;
+      return {
+        ...row,
+        office_id: entityExists(officeId) ? officeId : null,
+        start_date_id: startDateId ?? null,
+        end_date_id: endDateId ?? null,
+      };
+    });
+    insertRows('work_authors', 'work_id', sourceRows('work_authors', 'work_id'), (row) => {
+      const personId = row.person_id ? String(row.person_id) : null;
+      return {
+        ...row,
+        person_id: entityExists(personId) ? personId : null,
+      };
+    });
     insertRows(
       'office_classifications',
       'office_id',
@@ -3603,8 +3627,7 @@ export class EntitySqliteRepository {
           // Tombstoned (or withdrawn) name with same text — do not resurrect.
           continue;
         }
-        const nameRole =
-          nameType === 'family' || nameType === 'given' ? nameType : 'variant';
+        const nameRole = nameType === 'family' || nameType === 'given' ? nameType : 'variant';
         this.db
           .prepare(
             `INSERT INTO entity_names
@@ -3634,7 +3657,8 @@ export class EntitySqliteRepository {
       if (entity.kind === 'person') {
         const person = this.db
           .prepare('SELECT family_name, given_name FROM people WHERE entity_id = ?')
-          .get(patch.entityId) as { family_name: string | null; given_name: string | null } | undefined;
+          .get(patch.entityId) as
+          { family_name: string | null; given_name: string | null } | undefined;
         const familyVariants = new Set(
           (patch.names ?? [])
             .filter((name) => normalizePersonNameType(name.nameType ?? null) === 'family')
@@ -3820,15 +3844,7 @@ export class EntitySqliteRepository {
                (person_id, office_id, office_label, reference, origin, source, status, created_at, updated_at)
              VALUES (?, ?, ?, ?, 'authority', ?, 'active', ?, ?)`,
           )
-          .run(
-            patch.entityId,
-            officeExists,
-            label,
-            office.ref?.trim() || null,
-            source,
-            now,
-            now,
-          );
+          .run(patch.entityId, officeExists, label, office.ref?.trim() || null, source, now, now);
         changed = true;
       }
 
@@ -3886,8 +3902,7 @@ export class EntitySqliteRepository {
              WHERE entity_id = ? AND authority_type = ? AND COALESCE(source, '') = COALESCE(?, '')`,
           )
           .get(patch.entityId, authorityType, source) as
-          | { id: number; payload_json: string }
-          | undefined;
+          { id: number; payload_json: string } | undefined;
         if (previous?.payload_json === payload) continue;
         if (previous) {
           this.db
@@ -3913,8 +3928,7 @@ export class EntitySqliteRepository {
         const name = author.name.trim();
         if (!name) continue;
         const personId = author.personId?.replace(/^#/, '').trim() || null;
-        const reference =
-          author.ref?.trim() || (personId ? `#${personId}` : null);
+        const reference = author.ref?.trim() || (personId ? `#${personId}` : null);
         const exists = this.db
           .prepare(
             `SELECT 1 FROM work_authors
@@ -4204,15 +4218,7 @@ export class EntitySqliteRepository {
                (person_id, office_id, office_label, reference, origin, source, status, created_at, updated_at)
              VALUES (?, ?, ?, ?, 'xml', ?, 'active', ?, ?)`,
           )
-          .run(
-            wrapper.entityId,
-            officeExists,
-            item.label,
-            item.ref,
-            wrapper.source,
-            now,
-            now,
-          );
+          .run(wrapper.entityId, officeExists, item.label, item.ref, wrapper.source, now, now);
         added += 1;
         changed = true;
       } else {
