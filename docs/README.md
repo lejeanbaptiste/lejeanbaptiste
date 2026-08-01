@@ -11,6 +11,7 @@ Active product TODOs live in the root [`readme.md`](../readme.md) (`## TODO` / `
 
 | Doc | Topic |
 |-----|--------|
+| [beta-tester-guide.md](beta-tester-guide.md) | Packaged beta testing checklist |
 | [keyboard-shortcuts.md](keyboard-shortcuts.md) | Markup and app shortcuts |
 | [smoke_test.md](smoke_test.md) | Manual smoke checklist |
 | [entity-sync-manual-test-plan.md](entity-sync-manual-test-plan.md) | Manual QA for entity sync (until SQLite migration is signed off) |

@@ -1,62 +1,39 @@
 # Beta Plan
 
-**Status (2026-08-01):** **In progress** — installers ship on macOS/Windows/Linux. Remaining for beta: blocker cleanup sign-off, release hygiene, packaged regression.
+**Status (2026-08-01):** Packaging and blocker cleanup are done. I am finishing release hygiene and the final packaged regression pass.
 
-Target: a shippable beta for the current feature set by September 2026.
+I am aiming for a beta of the current feature set by September 2026.
 
-## Beta Definition
+## Ship criteria
 
-The beta is done when a new user can:
+I will consider the beta ready when a new user can:
 
 1. Install and launch the desktop app.
-2. Open a local project folder.
-3. Browse and edit XML files.
-4. Save changes safely to disk.
-5. Use the core navigation and search features already built.
-6. Quit and relaunch without data loss or startup failure.
+2. Open a local project.
+3. Browse and edit XML.
+4. Save changes safely.
+5. Use the existing navigation and search features.
+6. Quit and relaunch without losing work or hitting a startup failure.
 
-## Scope Rule
+## Scope
 
-- Keep all already-built features in scope.
-- Do not add new features unless they are required to ship the existing feature set safely.
-- If a feature is unstable, either fix it or hide it behind a clear gate.
+I am not adding new features for the beta unless they are needed to make an existing feature safe to ship. Unstable features need to be fixed or clearly gated.
 
-## Work Plan
+## Remaining work
 
-### Step 1: Packaging smoke test — largely done
+### Release hygiene
 
-Goal: confirm the alpha/beta packaging path is real and repeatable.
+- Settle versioning and release commands.
+- Start the changelog from the next release.
+- Keep the build and packaging instructions current in [apps/desktop/README.md](../apps/desktop/README.md).
+- Use the [beta tester guide](beta-tester-guide.md) for packaged testing.
 
-**Current status (2026-08-01):** Installers ship for **macOS** (signed/notarized `.pkg`), **Windows** (NSIS), and **Linux** (`.deb`, APT repo, Flatpak). See root [readme.md](../readme.md) and [apps/desktop/README.md](../apps/desktop/README.md). Older notes about Electron missing from the local workspace are obsolete for release packaging.
+### Final packaged regression
 
-Still worth repeating before each release:
+Before each release I will build from a clean tree, install the packaged app, and run the core workflow:
 
-- Build from a clean tree (`npm run build:desktop` / platform package scripts).
-- Launch the **packaged** app, open a real project, edit, save, relaunch.
-- Confirm bundled Python/Sanmiao, icons, and update checks behave in the packaged environment.
+> Open a real project → edit → save → quit → relaunch → reopen.
 
-### Step 2: Blocker cleanup
+I will also check bundled Python/Sanmiao, language assets and plugins, icons, updates, and the main entity/tagging workflows. The [smoke-test checklist](smoke_test.md) remains the more detailed regression reference.
 
-Goal: fix anything that prevents startup, editing, saving, or reopening.
-
-Recent reliability work (editor pane sometimes blank on startup; plugin enable without restart) belongs here until signed off on slow machines.
-
-### Step 3: Release hygiene
-
-Goal: make it easy to produce and share beta builds.
-
-Includes:
-
-- Versioning
-- Basic release notes
-- A repeatable build command
-- Simple tester instructions
-
-### Step 4: Regression pass
-
-Goal: run the core workflow end to end one more time on the packaged build.
-
-## Notes
-
-- macOS was the first release target; Linux and Windows packaging now ship as well.
-- Dev build testing is valuable, but packaged testing remains the final gate.
+Packaged builds are the final gate; development builds are useful during implementation but do not replace this pass.
