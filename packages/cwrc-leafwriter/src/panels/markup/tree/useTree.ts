@@ -1,6 +1,6 @@
 import { useAtom, useAtomValue } from 'jotai';
 import { useEffect, useMemo } from 'react';
-import { activeIdAtom, displayTextNodesAtom, expandedItemsAtom, itemsAtom } from './store';
+import { displayTextNodesAtom, expandedItemsAtom, itemsAtom } from './store';
 import type { TreeItems } from './types';
 import { useEditor } from './useEditor';
 import { flattenTree, getNodes, processElement } from './utilities';
@@ -13,35 +13,29 @@ export const useTree = () => {
 
   const [expandedItems, setExpandedItems] = useAtom(expandedItemsAtom);
 
-  const activeId = useAtomValue(activeIdAtom);
   const displayTextNodes = useAtomValue(displayTextNodesAtom);
 
   const { initialized, setUpdatePending, updatePending } = useEditor(flattenedTree);
 
   const visibleTree = useMemo(() => {
-    let cloneExpandedItems = [...expandedItems];
+    const expanded = new Set(expandedItems);
+    if (items[0]?.id) expanded.add(items[0].id);
 
-    if (items[0]?.id && !cloneExpandedItems.includes(items[0].id)) {
-      cloneExpandedItems.unshift(items[0]?.id);
+    const visibleIds = new Set<(typeof flattenedTree)[number]['id']>();
+    const visible: typeof flattenedTree = [];
+
+    for (const item of flattenedTree) {
+      const parentIsVisible =
+        item.parentId === null ||
+        (visibleIds.has(item.parentId) && expanded.has(item.parentId));
+      if (!parentIsVisible) continue;
+
+      visible.push(item);
+      visibleIds.add(item.id);
     }
 
-    const visible = flattenedTree.filter(({ id, parentId, children }) => {
-      const shouldShow = cloneExpandedItems.includes(id);
-      if (!shouldShow) {
-        const childrenIds = children.map((child) => child.id);
-        childrenIds.forEach(
-          (childId) =>
-            (cloneExpandedItems = cloneExpandedItems.filter(
-              (expandedItemId) => expandedItemId !== childId,
-            )),
-        );
-        return parentId && cloneExpandedItems.includes(parentId);
-      }
-      return shouldShow;
-    });
-
     return visible;
-  }, [activeId, expandedItems, flattenedTree]);
+  }, [expandedItems, flattenedTree, items]);
 
   useEffect(() => {
     if (initialized) {

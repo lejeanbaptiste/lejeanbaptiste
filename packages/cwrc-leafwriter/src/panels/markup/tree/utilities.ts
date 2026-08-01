@@ -73,22 +73,18 @@ const getMinDepth = ({ nextItem }: { nextItem: FlattenedItem }) => {
   return 0;
 };
 
-const flatten = (
-  items: TreeItems,
-  parentId: UniqueIdentifier | null = null,
-  depth = 0,
-): FlattenedItem[] => {
-  return items.reduce<FlattenedItem[]>((acc, item, index) => {
-    return [
-      ...acc,
-      { ...item, parentId, depth, index },
-      ...flatten(item?.children, item.id, depth + 1),
-    ];
-  }, []);
-};
-
 export const flattenTree = (items: TreeItems): FlattenedItem[] => {
-  return flatten(items);
+  const flattened: FlattenedItem[] = [];
+
+  const visit = (nodes: TreeItems, parentId: UniqueIdentifier | null, depth: number) => {
+    nodes.forEach((item, index) => {
+      flattened.push({ ...item, parentId, depth, index });
+      visit(item.children, item.id, depth + 1);
+    });
+  };
+
+  visit(items, null, 0);
+  return flattened;
 };
 
 export const findItem = (items: TreeItem[], itemId: UniqueIdentifier) => {

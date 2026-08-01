@@ -1,6 +1,6 @@
 # Performance Optimization — planning notes
 
-**Status (2026-08-01):** **Planning only** — markup tree virtualized; next wins: review/disambiguation list virtualization, Monaco theme churn, incremental tree rebuilds, idle panel memory, event-driven bridges.
+**Status (2026-08-01):** The markup tree and the top-level review/disambiguation lists are virtualized. Monaco no longer recreates on theme changes. Source mode now keeps its Monaco instance across Visual ↔ Source switches and avoids reloading TinyMCE when the source buffer is unchanged. The markup tree's flattening and visible-row pass are now linear and do not recompute on selection alone. The next measured targets are remaining tree rebuilds, changed-source reloads, idle panel memory, and desktop bridge polling.
 
 ## Summary
 
@@ -117,7 +117,7 @@ We should optimize for the following, in order:
 
 ## Proposed phases
 
-## Phase 1 — Virtualize the biggest remaining lists
+## Phase 1 — Virtualize the biggest remaining lists — complete
 
 **Priority:** High  
 **Expected payoff:** High user-visible responsiveness improvement
@@ -153,7 +153,7 @@ eagerly, and they are directly tied to workflows where the user can generate hun
 
 ---
 
-## Phase 2 — Reduce Monaco churn
+## Phase 2 — Reduce Monaco churn — largely complete
 
 **Priority:** High  
 **Expected payoff:** Medium/high for source-mode users
@@ -169,10 +169,13 @@ eagerly, and they are directly tied to workflows where the user can generate hun
 - Review marker/decoration updates to avoid unnecessary collection recreation.
 - Confirm listeners and disposables are cleaned up exactly once.
 
-### Notes
+### Completed
 
-The current code already has a separate effect for theme updates, which makes this a good candidate
-for a focused refactor with limited behavior change.
+- Theme changes update Monaco in place.
+- Monaco is retained after its first Source-mode mount, so an unchanged Visual ↔ Source round trip
+  does not destroy and recreate the editor.
+- Leaving Source mode without edits returns directly to the visual editor instead of validating and
+  rebuilding the unchanged TinyMCE document.
 
 ### Success criteria
 
@@ -208,6 +211,11 @@ could be large, but only for sufficiently big documents.
 - Large documents no longer stall when the markup panel refreshes.
 - Tree navigation remains correct after edits.
 - Rebuild frequency and rebuild duration are measurably lower.
+
+### Completed first pass
+
+- Flattening the tree no longer creates a new array at every node.
+- Visible rows are derived in one pass and are not recalculated when only the active selection changes.
 
 ---
 
@@ -297,12 +305,10 @@ Before and during implementation, we should gather a small baseline for the main
 
 If we want the best return with the least risk, the order should be:
 
-1. Virtualize `ReviewPanel`
-2. Virtualize top-level `DisambiguationPanel` lists
-3. Stop recreating Monaco on theme changes
-4. Measure and reduce full tree rebuild work
-5. Reduce memory retained by inactive tabs
-6. Replace polling-based desktop bridge code with event-driven wiring
+1. Measure and reduce full tree rebuild work
+2. Investigate the remaining cost of changed-source reloads
+3. Reduce memory retained by inactive tabs
+4. Replace polling-based desktop bridge code with event-driven wiring
 
 ---
 

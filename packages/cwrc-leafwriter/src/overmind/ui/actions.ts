@@ -676,14 +676,22 @@ const resolveInvalidSourceMode = async (
 };
 
 export const exitSourceMode = async ({ state, actions }: Context): Promise<boolean> => {
+  const finalContent = state.ui.sourceCurrentContent;
+  const leavingWithEdits = finalContent !== state.ui.sourceOriginalContent;
+
+  // The visual editor already contains the exact document that Source mode
+  // received. Returning without editing therefore needs neither validation
+  // nor a full TinyMCE reload; both are costly on large documents.
+  if (!leavingWithEdits) {
+    actions.ui.setEditorViewMode('visual');
+    return true;
+  }
+
   const result = await resolveInvalidSourceMode(
     { state, actions } as Context,
     { allowLeaveAnyway: true },
   );
   if (result === 'blocked') return false;
-
-  const finalContent = state.ui.sourceCurrentContent;
-  const leavingWithEdits = finalContent !== state.ui.sourceOriginalContent;
 
   // Persist the Source buffer into the tab/stored snapshot whenever we leave
   // with that buffer (valid edits or explicit leave-anyway). Skip when the
@@ -704,8 +712,8 @@ export const exitSourceMode = async ({ state, actions }: Context): Promise<boole
     }
   }
 
-  // Source-mode save does not refresh the hidden WYSIWYG tree; reload so markup
-  // panel and visual mode match the XML buffer (even when source text unchanged).
+  // Source edits do not refresh the hidden WYSIWYG tree; reload so the markup
+  // panel and visual mode match the changed XML buffer.
   actions.document.setIsReload(true);
   actions.document.loadDocumentXML(finalContent);
   actions.ui.setEditorViewMode('visual');

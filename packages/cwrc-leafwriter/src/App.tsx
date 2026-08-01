@@ -115,7 +115,16 @@ const App = ({ document, settings, user }: LeafWriterOptions) => {
   );
 
   const [ready, setReady] = useState(false);
+  // Monaco is expensive to create, especially on older machines. Load it only
+  // when Source mode is first used, then keep that instance alive while the
+  // visual editor is shown so a Visual → Source round trip does not rebuild it.
+  // The document key below still recreates it when the active document changes.
+  const [sourceEditorHasMounted, setSourceEditorHasMounted] = useState(false);
   const setupInProgressRef = useRef(false);
+
+  useEffect(() => {
+    if (editorViewMode === 'source') setSourceEditorHasMounted(true);
+  }, [editorViewMode]);
 
   useEffect(() => {
     i18n.changeLanguage(state.ui.currentLocale);
@@ -307,7 +316,7 @@ const App = ({ document, settings, user }: LeafWriterOptions) => {
             createPortal(<EditorToolbar />, editorToobarContainer)}
           {sourceEditorPaneContainer &&
             !isReadonly &&
-            editorViewMode === 'source' &&
+            (editorViewMode === 'source' || sourceEditorHasMounted) &&
             createPortal(
               <Suspense fallback={null}>
                 <SourceEditorPane key={state.document.url ?? state.document.schemaId ?? 'source'} />
