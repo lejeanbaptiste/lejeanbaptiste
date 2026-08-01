@@ -4,6 +4,12 @@ export interface DesktopTaggingBridge {
   changeTag?: (tagId: string, newTagName: string) => void;
   handleEditorKeyDown: (event: KeyboardEvent) => boolean;
   /**
+   * True while the tag or attribute popup is open. The visual editor must not
+   * accept IME composition or typing then — otherwise Chinese IME can replace
+   * a wrap selection before Esc cancels composition and the string vanishes.
+   */
+  isPopupOpen?: () => boolean;
+  /**
    * Open the rename/wrap tag popup from outside the editor (e.g. the markup tree panel),
    * anchored at anchorOverride instead of the editor caret. Requires the editor's own
    * selection to already reflect the target tag/content (rename needs a tag at the resolved

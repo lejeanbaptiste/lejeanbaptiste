@@ -8,6 +8,7 @@
  * `ljb-entity://`) is how the disambiguation dialog tells the two apart.
  */
 import { centralEntityStoreFromDesktop } from '../autoTagging/entityStore';
+import { SQLITE_REQUIRED_LOOKUP_MESSAGE } from '../autoTagging/sqliteRequired';
 import type {
   AuthorityLookupParams,
   AuthorityLookupResult,
@@ -15,9 +16,7 @@ import type {
   NamedEntityType,
 } from '../types';
 import {
-  internalEntityIdFromUri,
   LOOKUP_TYPE_TO_KIND,
-  searchEntityDocument,
 } from './entity-database-lookup';
 
 export const CENTRAL_ENTITY_DATABASE_SERVICE_ID = 'central-entities';
@@ -51,27 +50,25 @@ async function search({
   if (!store) return [];
 
   const sqliteSearch = window.electronAPI?.entitySqliteSearch;
-  if (sqliteSearch) {
-    const sqliteResults = await sqliteSearch({ databasePath: store.sqlitePath, kind, query });
-    if (sqliteResults !== null) {
-      return sqliteResults.map((result) => ({
-        label: result.label,
-        ...(result.description ? { description: result.description } : {}),
-        uri: centralEntityUri(result.id),
-        internal: {
-          id: result.id,
-          idnos: result.idnos,
-          ...(result.description ? { description: result.description } : {}),
-        },
-      }));
-    }
+  if (!sqliteSearch || !(await store.hasSqliteDatabase())) {
+    throw new Error(SQLITE_REQUIRED_LOOKUP_MESSAGE);
   }
 
-  const doc = await store.loadEntities();
-  return searchEntityDocument(doc, kind, query).map((result) => {
-    const id = internalEntityIdFromUri(result.uri) ?? result.internal?.id;
-    return id ? { ...result, uri: centralEntityUri(id) } : result;
-  });
+  const sqliteResults = await sqliteSearch({ databasePath: store.sqlitePath, kind, query });
+  if (sqliteResults === null) {
+    throw new Error(SQLITE_REQUIRED_LOOKUP_MESSAGE);
+  }
+
+  return sqliteResults.map((result) => ({
+    label: result.label,
+    ...(result.description ? { description: result.description } : {}),
+    uri: centralEntityUri(result.id),
+    internal: {
+      id: result.id,
+      idnos: result.idnos,
+      ...(result.description ? { description: result.description } : {}),
+    },
+  }));
 }
 
 /** The central-database lookup service, or null when not running on desktop. */

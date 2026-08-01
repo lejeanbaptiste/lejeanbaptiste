@@ -33,17 +33,15 @@ import {
   InitialsIcon,
 } from '../../../../../packages/cwrc-leafwriter/src/icons/custom/AuthoritySource';
 import { WikipediaIcon } from '../../../../../packages/cwrc-leafwriter/src/icons/custom/Wikipedia';
-import {
-  EntitySummary,
-  listEntities,
-  setNameType,
-} from '../../../../../packages/cwrc-leafwriter/src/autoTagging/entityOps';
+import { EntitySummary } from '../../../../../packages/cwrc-leafwriter/src/autoTagging/entityOps';
 import {
   ALL_NAME_TYPES,
   type NameTypeId,
 } from '../../../../../packages/cwrc-leafwriter/src/autoTagging/nameTypes';
 import { nameTypeLabel } from '../../../../../packages/cwrc-leafwriter/src/autoTagging/nameTypeLabels';
 import { entityStoreFromDesktop } from '../../../../../packages/cwrc-leafwriter/src/autoTagging/entityStore';
+import { entitySummaryFromSqlite } from '../../../../../packages/cwrc-leafwriter/src/autoTagging/sqliteSummary';
+import { SQLITE_REQUIRED_PANEL_MESSAGE } from '../../../../../packages/cwrc-leafwriter/src/autoTagging/sqliteRequired';
 import { foldForSearch } from '../../../../../packages/cwrc-leafwriter/src/utilities/romanize';
 
 const LazyAttributesEastAsianSection = lazy(() =>
@@ -445,13 +443,23 @@ export const AttributesPanel = ({ visible = true }: { visible?: boolean }) => {
       }
 
       try {
-        const doc = await store.loadEntities();
+        if (
+          !(await store.hasSqliteDatabase()) ||
+          !window.electronAPI?.entitySqliteGet ||
+          !window.electronAPI?.entitySqliteUpdateNames
+        ) {
+          if (!cancelled) setLinkedEntityInfo(null);
+          return;
+        }
+        const snapshot = await store.sqliteEntitySummary(key);
         if (cancelled) return;
-        const entity = listEntities(doc).find((item: EntitySummary) => item.id === key) ?? null;
-        if (!entity) {
+        if (!snapshot) {
           setLinkedEntityInfo(null);
           return;
         }
+        const entity = entitySummaryFromSqlite(
+          snapshot as Parameters<typeof entitySummaryFromSqlite>[0],
+        );
         const urls = entity.authorities
           .map((authority: EntitySummary['authorities'][number]) => ({
             type: authority.type,
@@ -509,7 +517,7 @@ export const AttributesPanel = ({ visible = true }: { visible?: boolean }) => {
     ALL_NAME_TYPES.map((type) => [type, nameTypeLabel(type, sourceLanguage)]),
   ) as Record<NameTypeId, string>;
 
-  /** Write the chosen name type for this surface onto the entity record (entities.xml only). */
+  /** Write the chosen name type for this surface onto the linked entity (SQLite). */
   const commitNameType = async (raw: string) => {
     if (!linkedEntityInfo || !mentionSurface) return;
     const type = raw === '' ? null : (raw as NameTypeId);
@@ -517,15 +525,18 @@ export const AttributesPanel = ({ visible = true }: { visible?: boolean }) => {
     try {
       const store = entityStoreFromDesktop();
       if (!store) return;
-      const doc = await store.loadEntities();
-      setNameType(
-        doc,
-        linkedEntityInfo.entity.id,
-        mentionSurface,
-        type,
-        sourceLanguage ?? undefined,
-      );
-      await store.saveEntities(doc);
+      if (
+        !(await store.hasSqliteDatabase()) ||
+        !window.electronAPI?.entitySqliteUpdateNames
+      ) {
+        throw new Error(SQLITE_REQUIRED_PANEL_MESSAGE);
+      }
+      await store.sqliteUpdateNames({
+        entityId: linkedEntityInfo.entity.id,
+        text: mentionSurface,
+        nameType: type,
+        language: sourceLanguage ?? null,
+      });
       setEntityInfoRevision((revision) => revision + 1);
     } catch (error) {
       notifyViaSnackbar({

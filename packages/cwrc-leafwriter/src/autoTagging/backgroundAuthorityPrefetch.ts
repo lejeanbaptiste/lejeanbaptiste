@@ -36,8 +36,6 @@ export function startBackgroundAuthorityPrefetch(
     try {
       const session = new AutoTaggingSession(writer);
       if (!session.entityStore) return;
-      await session.loadEntities();
-      if (startedGeneration !== generation) return;
       const groups = await session.scanMentions();
       if (startedGeneration !== generation) return;
       handle = runAuthorityPrefetch(session, groups, { paceMs: BACKGROUND_PACE_MS });

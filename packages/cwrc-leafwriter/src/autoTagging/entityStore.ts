@@ -15,7 +15,6 @@ import {
 import { appendRecords, type DecisionRecord } from './decisionLog';
 import {
   createEntitiesScaffold,
-  getDatabaseId,
   isEntityDatabase,
   parseEntities,
   serializeEntities,
@@ -36,6 +35,7 @@ import {
   type EntityStoreResolveInput,
 } from './entityStoreResolve';
 import { joinPath } from './pathJoin';
+import { SQLITE_SAVE_REQUIRES_IMPORT_FLAG_MESSAGE } from './sqliteRequired';
 
 /**
  * Persistence for the entity authority file and per-project hidden infra
@@ -398,7 +398,7 @@ export interface EntityFileApi {
     kind: 'person' | 'place' | 'work' | 'office' | 'org';
     type: string;
     value: string;
-  }) => Promise<string | null>;
+  }) => Promise<string[]>;
   entitySqliteFindByNameDates?: (input: {
     databasePath: string;
     kind: 'person' | 'place' | 'work' | 'office' | 'org';
@@ -540,13 +540,26 @@ export class EntityStore {
     return false;
   }
 
-  /** Write the entity document back to disk. */
-  async saveEntities(doc: Document): Promise<void> {
+  /**
+   * Write the entity document back to disk.
+   *
+   * When a sibling `entities.sqlite` exists, this would full-reimport SQLite
+   * from the DOM XML — which clobbers live typed edits. That path is refused
+   * unless `options.allowSqliteFullReimport` is set (import/export tooling
+   * and fixtures only). Without SQLite, writes the interchange `entities.xml`.
+   */
+  async saveEntities(
+    doc: Document,
+    options?: { allowSqliteFullReimport?: boolean },
+  ): Promise<void> {
     this.assertEntitiesPathForMode();
     if (!isEntityDatabase(doc)) {
       throw new Error('Refusing to save: document is not a valid entity database.');
     }
     if (this.api.entitySqliteImportXml && (await this.api.pathExists(this.sqlitePath))) {
+      if (!options?.allowSqliteFullReimport) {
+        throw new Error(SQLITE_SAVE_REQUIRES_IMPORT_FLAG_MESSAGE);
+      }
       await this.api.entitySqliteImportXml(this.sqlitePath, serializeEntities(doc));
       return;
     }
@@ -1130,18 +1143,27 @@ export class EntityStore {
     });
   }
 
-  async sqliteFindByAuthority(
+  async sqliteFindAllByAuthority(
     kind: 'person' | 'place' | 'work' | 'office' | 'org',
     type: string,
     value: string,
-  ): Promise<string | null> {
-    if (!this.api.entitySqliteFindByAuthority) return null;
+  ): Promise<string[]> {
+    if (!this.api.entitySqliteFindByAuthority) return [];
     return this.api.entitySqliteFindByAuthority({
       databasePath: this.sqlitePath,
       kind,
       type,
       value,
     });
+  }
+
+  async sqliteFindByAuthority(
+    kind: 'person' | 'place' | 'work' | 'office' | 'org',
+    type: string,
+    value: string,
+  ): Promise<string | null> {
+    const ids = await this.sqliteFindAllByAuthority(kind, type, value);
+    return ids[0] ?? null;
   }
 
   async sqliteFindByNameDates(
@@ -1181,17 +1203,27 @@ export class EntityStore {
   }
 
   /**
-   * Record a merge/delete as a durable order beside `entities.xml`, so projects
-   * not reachable right now converge on their next open (see `entityOrders.ts`).
-   * `dbId` defaults to the attached database's fingerprint; pass it when the doc
-   * is already loaded to avoid a re-read.
+   * Record a merge/delete as a durable order beside the entity database, so
+   * projects not reachable right now converge on their next open (see
+   * `entityOrders.ts`). Prefer passing `dbId` from `sqliteDatabaseId()`;
+   * without it, SQLite databases resolve the fingerprint from metadata (no
+   * DOM `loadEntities` fallthrough).
    */
   async recordEntityOrder(
     remap: Record<string, string | null>,
     dbId?: string,
   ): Promise<EntityOrder | null> {
     if (Object.keys(remap).length === 0) return null;
-    const fingerprint = dbId ?? getDatabaseId(await this.loadEntities());
+    let fingerprint = dbId ?? null;
+    if (!fingerprint) {
+      if (await this.hasSqliteDatabase()) {
+        fingerprint = await this.sqliteDatabaseId();
+      } else {
+        throw new Error(
+          'recordEntityOrder requires a database fingerprint. Pass dbId from sqliteDatabaseId().',
+        );
+      }
+    }
     if (!fingerprint) return null;
     const order = makeOrder(fingerprint, remap);
     await recordOrder(this.api, this.entitiesPath, order);

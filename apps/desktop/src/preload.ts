@@ -411,7 +411,7 @@ export interface ElectronAPI {
   }) => Promise<Array<{ projectEntityId: string; centralId: string }>>;
   entitySqliteFindByAuthority: (
     request: import('./entityDbSqlite/readService').EntitySqliteFindByAuthorityRequest,
-  ) => Promise<string | null>;
+  ) => Promise<string[]>;
   entitySqliteFindByNameDates: (
     request: import('./entityDbSqlite/readService').EntitySqliteFindByNameDatesRequest,
   ) => Promise<string | null>;

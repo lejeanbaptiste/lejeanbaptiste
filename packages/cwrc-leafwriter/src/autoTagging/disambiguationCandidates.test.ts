@@ -717,6 +717,50 @@ describe('disambiguationCandidates', () => {
     expect(rows[0]?.authorityIds).toHaveLength(2);
   });
 
+  it('collapses local PEDB offices with Norbert pack hits that share a NORBERT id', () => {
+    const rows = collapseCrossAuthorityCandidates([
+      {
+        id: 'office-norbert-4135',
+        label: '吳郡太守',
+        sources: ['entity-file'],
+        fromEntityFile: true,
+        localEntityId: 'office-norbert-4135',
+        authorityIds: [{ type: 'NORBERT', value: '4135' }],
+      },
+      {
+        id: 'urn:ljb:authority:norbert:office:4135',
+        label: '吳郡太守',
+        sources: ['NORBERT'],
+        uri: 'urn:ljb:authority:norbert:office:4135',
+        authorityIds: [{ type: 'NORBERT', value: '4135' }],
+      },
+    ]);
+    expect(rows).toHaveLength(1);
+    expect(rows[0]?.sources).toEqual(expect.arrayContaining(['entity-file', 'NORBERT']));
+    expect(rows[0]?.localEntityId).toBe('office-norbert-4135');
+    expect(rows[0]?.fromEntityFile).toBe(true);
+  });
+
+  it('does not collapse same-named offices that lack a shared authority id', () => {
+    const rows = collapseCrossAuthorityCandidates([
+      {
+        id: 'office-local-1',
+        label: '吳郡太守',
+        sources: ['entity-file'],
+        fromEntityFile: true,
+        localEntityId: 'office-local-1',
+      },
+      {
+        id: 'urn:ljb:authority:norbert:office:4135',
+        label: '吳郡太守',
+        sources: ['NORBERT'],
+        uri: 'urn:ljb:authority:norbert:office:4135',
+        authorityIds: [{ type: 'NORBERT', value: '4135' }],
+      },
+    ]);
+    expect(rows).toHaveLength(2);
+  });
+
   it('retains pre-deduplication authority assertions in the pending projection', () => {
     const cached = collapseCrossAuthorityCandidates([
       {

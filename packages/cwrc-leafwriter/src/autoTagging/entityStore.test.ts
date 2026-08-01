@@ -110,7 +110,7 @@ describe('EntityStore', () => {
       name: '張衡',
       authorityIds: [{ type: 'CBDB', value: '1762' }],
     });
-    await store.saveEntities(doc);
+    await store.saveEntities(doc, { allowSqliteFullReimport: true });
 
     const reloaded = await store.loadEntities();
     expect(findEntity(reloaded, id)?.getElementsByTagName('persName')[0]?.textContent).toBe('張衡');
@@ -130,7 +130,8 @@ describe('EntityStore', () => {
 
     const doc = await store.loadEntities();
     addEntity(doc, 'person', { name: 'SQLite 人物' });
-    await store.saveEntities(doc);
+    await expect(store.saveEntities(doc)).rejects.toThrow(/allowSqliteFullReimport/);
+    await store.saveEntities(doc, { allowSqliteFullReimport: true });
 
     expect(importedXml).toContain('SQLite 人物');
     expect(fs.files.get('/proj/entities.xml')).toBe(xml);

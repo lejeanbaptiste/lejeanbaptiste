@@ -13,6 +13,7 @@ import {
   type SchemaAttributeDetail,
 } from '../tagging/attributeSuggestions';
 import { getCaretScreenPosition } from '../tagging/editorAnchor';
+import { isImeKeyboardEvent } from '../tagging/ime';
 
 const TAG_FOR_KIND: Record<CorrectionKind, string> = {
   substitution: 'choice',
@@ -302,6 +303,8 @@ export const useCorrectionController = () => {
 
   const handlePopupKeyDown = useCallback(
     (event: React.KeyboardEvent) => {
+      if (isImeKeyboardEvent(event)) return;
+
       if (event.key === 'Escape') {
         event.preventDefault();
         closePopup();

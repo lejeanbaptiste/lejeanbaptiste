@@ -3,6 +3,8 @@ import {
   isFamilyPrefixedCourtesyName,
   isTaggableNameType,
   normalizeNameType,
+  normalizeTypedNamesForIntake,
+  stripFamilyPrefixFromCourtesyName,
 } from './nameTypes';
 
 describe('normalizeNameType', () => {
@@ -73,5 +75,37 @@ describe('isFamilyPrefixedCourtesyName', () => {
     expect(isFamilyPrefixedCourtesyName('蕭彦学', ['蕭'])).toBe(true);
     expect(isFamilyPrefixedCourtesyName('彦学', ['蕭'])).toBe(false);
     expect(isFamilyPrefixedCourtesyName('蕭', ['蕭'])).toBe(false);
+  });
+});
+
+describe('stripFamilyPrefixFromCourtesyName', () => {
+  it('strips the longest matching family prefix', () => {
+    expect(stripFamilyPrefixFromCourtesyName('蕭彦学', ['蕭'])).toBe('彦学');
+    expect(stripFamilyPrefixFromCourtesyName('司馬長卿', ['司', '司馬'])).toBe('長卿');
+    expect(stripFamilyPrefixFromCourtesyName('彦学', ['蕭'])).toBe('彦学');
+  });
+});
+
+describe('normalizeTypedNamesForIntake', () => {
+  it('strips and dedupes family-prefixed courtesy names', () => {
+    expect(
+      normalizeTypedNamesForIntake([
+        { text: '蕭', type: 'family' },
+        { text: '彦学', type: 'courtesy' },
+        { text: '蕭彦学', type: 'courtesy' },
+      ]),
+    ).toEqual([
+      { text: '蕭', type: 'family' },
+      { text: '彦学', type: 'courtesy' },
+    ]);
+  });
+
+  it('recovers a bare courtesy name when only the composite is present', () => {
+    expect(
+      normalizeTypedNamesForIntake(
+        [{ text: '成公廣明', type: 'courtesy' }],
+        ['成公'],
+      ),
+    ).toEqual([{ text: '廣明', type: 'courtesy' }]);
   });
 });

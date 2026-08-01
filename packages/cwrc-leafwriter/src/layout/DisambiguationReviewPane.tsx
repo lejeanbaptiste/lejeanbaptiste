@@ -81,9 +81,6 @@ export const DisambiguationReviewPane = () => {
           setError('Open a desktop project with an entity database configured.');
           return;
         }
-        await activeSession.loadEntities();
-        if (generation !== scanGeneration.current) return;
-
         const scanned = await activeSession.scanMentions({ includeResolved: true });
         if (generation !== scanGeneration.current) return;
         setGroups(scanned);

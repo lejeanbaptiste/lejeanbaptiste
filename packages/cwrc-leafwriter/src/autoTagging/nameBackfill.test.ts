@@ -190,7 +190,7 @@ describe('backfillEntityNames', () => {
     ).toHaveLength(1);
   });
 
-  it('ignores a family-prefixed composite courtesy name from authority intake', async () => {
+  it('strips a family-prefixed composite courtesy name from authority intake', async () => {
     const doc = makeDoc();
     addEntity(doc, 'person', {
       name: '蕭謂',
@@ -217,6 +217,40 @@ describe('backfillEntityNames', () => {
       expect.arrayContaining([{ text: '彦学', lang: null, type: 'courtesy' }]),
     );
     expect(entry.nameEntries.some((name) => name.text === '蕭彦学')).toBe(false);
+  });
+
+  it('recovers a bare courtesy name when the pack only has 姓+字', async () => {
+    const doc = makeDoc();
+    addEntity(doc, 'person', {
+      name: '成公廣',
+      authorityIds: [{ type: 'Norbert', value: 'n1' }],
+    });
+
+    const readPackFile = async (packId: AuthorityPackId) => {
+      if (packId === 'norbert-persons') {
+        return `${JSON.stringify({
+          source: 'Norbert',
+          authorityId: 'n1',
+          kind: 'person',
+          primaryName: '成公廣',
+          searchStrings: ['成公廣'],
+          names: [
+            { text: '成公廣', type: 'primary' },
+            { text: '成公', type: 'family' },
+            { text: '成公廣明', type: 'courtesy' },
+          ],
+        })}\n`;
+      }
+      throw new Error(`unexpected pack ${packId}`);
+    };
+
+    await backfillEntityNames(doc, { readPackFile });
+
+    const entry = listEntities(doc)[0]!;
+    expect(entry.nameEntries).toEqual(
+      expect.arrayContaining([{ text: '廣明', lang: null, type: 'courtesy' }]),
+    );
+    expect(entry.nameEntries.some((name) => name.text === '成公廣明')).toBe(false);
   });
 
   it('honours abort mid-run', async () => {
@@ -623,5 +657,57 @@ describe('backfillEntityNames', () => {
     } finally {
       global.fetch = originalFetch;
     }
+  });
+});
+
+describe('buildUniqueOfficeAuthorityByName', () => {
+  it('keeps unique office names and drops homonyms', async () => {
+    const { buildUniqueOfficeAuthorityByName } = await import('./nameBackfill');
+    const readPackFile = jest.fn(async (packId: AuthorityPackId) => {
+      if (packId === 'norbert-offices') {
+        return [
+          JSON.stringify({
+            source: 'norbert',
+            authorityId: '4135',
+            kind: 'office',
+            primaryName: '吳郡太守',
+            searchStrings: ['吳郡太守'],
+          }),
+          JSON.stringify({
+            source: 'norbert',
+            authorityId: '1',
+            kind: 'office',
+            primaryName: '同名官',
+            searchStrings: ['同名官'],
+          }),
+          JSON.stringify({
+            source: 'norbert',
+            authorityId: '2',
+            kind: 'office',
+            primaryName: '同名官',
+            searchStrings: ['同名官'],
+          }),
+        ].join('\n');
+      }
+      if (packId === 'cbdb-offices') {
+        return JSON.stringify({
+          source: 'cbdb',
+          authorityId: '99',
+          kind: 'office',
+          primaryName: '吳郡太守',
+          searchStrings: ['吳郡太守'],
+        });
+      }
+      throw new Error(`unexpected pack ${packId}`);
+    });
+
+    const index = await buildUniqueOfficeAuthorityByName(readPackFile);
+    expect(index.get('吳郡太守')).toEqual(
+      expect.arrayContaining([
+        { type: 'NORBERT', value: '4135' },
+        { type: 'CBDB', value: '99' },
+      ]),
+    );
+    expect(index.has('同名官')).toBe(false);
   });
 });

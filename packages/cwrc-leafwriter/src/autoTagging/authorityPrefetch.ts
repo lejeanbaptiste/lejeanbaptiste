@@ -23,7 +23,6 @@ export interface AuthorityPrefetchSession {
   getPendingCandidates(tag: string, surface: string): DisambiguationCandidate[] | null;
   rememberPendingCandidates(tag: string, surface: string, candidates: DisambiguationCandidate[]): void;
   getEntitiesDocument(): Document | null;
-  loadEntities(): Promise<Document>;
   savePendingCache(): Promise<void>;
   candidateSearchCentralContext(): Promise<{ doc?: Document; userStableId: string } | null>;
   disambiguationDbSources(tag: string, surface: string): Promise<{

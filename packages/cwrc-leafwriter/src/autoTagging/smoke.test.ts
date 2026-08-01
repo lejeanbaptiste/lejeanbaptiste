@@ -81,7 +81,7 @@ describe('auto-tagging smoke test (real corpus)', () => {
       name: samplePerson.string,
       authorityIds: [{ type: 'CBDB', value: '0000' }],
     });
-    await store.saveEntities(entitiesDoc);
+    await store.saveEntities(entitiesDoc, { allowSqliteFullReimport: true });
     const reloaded = await store.loadEntities();
     expect(findEntity(reloaded, id)?.getElementsByTagName('persName')[0]?.textContent).toBe(
       samplePerson.string,

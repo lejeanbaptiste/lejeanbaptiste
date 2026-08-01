@@ -608,6 +608,29 @@ export const tinymceWrapperInit = function ({
     updateSelection(selectedMode);
   };
 
+  const shouldBlockEditorTextInput = (): boolean =>
+    writer.isTextLocked === true || Boolean(window.__desktopTagging?.isPopupOpen?.());
+
+  /**
+   * Chromium refuses to cancel `insertCompositionText`, so Lock text must take
+   * contenteditable away. Tagging still works: keydown capture listeners remain.
+   */
+  const applyTextLockDomGuard = () => {
+    const body = writer.editor?.getBody();
+    if (!body || writer.isReadOnly === true) return;
+    if (writer.isTextLocked === true) {
+      // contenteditable=false is the only reliable Chromium IME block.
+      // Keep the body focusable so Enter/F2 tagging shortcuts still work.
+      body.contentEditable = 'false';
+      body.setAttribute('tabindex', '0');
+      body.setAttribute('data-ljb-text-locked', 'true');
+    } else {
+      body.contentEditable = 'true';
+      body.removeAttribute('data-ljb-text-locked');
+    }
+  };
+  writer.applyTextLockDomGuard = applyTextLockDomGuard;
+
   void tinymce.init({
     license_key: 'gpl',
     selector: `#${editorId}`,
@@ -741,6 +764,7 @@ export const tinymceWrapperInit = function ({
         }) as typeof editor.dom.isBlock;
 
         writer.overmindActions.editor.applyInitialSettings();
+        applyTextLockDomGuard();
 
         initEditorZoom(editor);
 
@@ -757,7 +781,7 @@ export const tinymceWrapperInit = function ({
         body.addEventListener(
           'beforeinput',
           (event: InputEvent) => {
-            if (writer.isTextLocked === true) {
+            if (shouldBlockEditorTextInput()) {
               const type = event.inputType ?? '';
               if (type.startsWith('insert') || type.startsWith('delete')) {
                 event.preventDefault();
@@ -777,6 +801,56 @@ export const tinymceWrapperInit = function ({
           },
           true,
         );
+        // Chromium will not cancel insertCompositionText. When Lock text (or a
+        // tag popup) must block editing, snapshot on compositionstart and revert
+        // on compositionend if the IME still mutated the DOM.
+        let blockedCompositionSnapshot: string | null = null;
+        body.addEventListener(
+          'compositionstart',
+          (event) => {
+            if (!shouldBlockEditorTextInput()) {
+              blockedCompositionSnapshot = null;
+              return;
+            }
+            blockedCompositionSnapshot = editor.getContent({ format: 'raw' });
+            event.preventDefault();
+            // contenteditable=false should stop IME; if composition still began
+            // (race / popup-open path), blur to force the IME to abort.
+            if (writer.isTextLocked === true) {
+              const bookmark = editor.selection.getBookmark(2);
+              body.blur();
+              window.setTimeout(() => {
+                applyTextLockDomGuard();
+                editor.focus();
+                try {
+                  editor.selection.moveToBookmark(bookmark);
+                } catch {
+                  // Selection may be gone if the IME already replaced it.
+                }
+              }, 0);
+            }
+          },
+          true,
+        );
+        body.addEventListener(
+          'compositionend',
+          () => {
+            if (blockedCompositionSnapshot === null) return;
+            const snapshot = blockedCompositionSnapshot;
+            blockedCompositionSnapshot = null;
+            if (!shouldBlockEditorTextInput()) return;
+            if (editor.getContent({ format: 'raw' }) === snapshot) return;
+            editor.undoManager.ignore(() => {
+              editor.setContent(snapshot, { format: 'raw' });
+            });
+          },
+          true,
+        );
+
+        // TinyMCE can reset contenteditable on some operations — re-assert lock.
+        editor.on('SetContent LoadContent', () => {
+          applyTextLockDomGuard();
+        });
 
         // attach mouseUp to doc because body doesn't always extend to full height of editor panel
         if (editor.iframeElement?.contentDocument) {
@@ -1256,7 +1330,7 @@ export const tinymceWrapperInit = function ({
 
   const shouldBlockWhenTextLocked = (event: KeyboardEvent): boolean => {
     if (writer.isTextLocked !== true) return false;
-    if (event.isComposing) return false;
+    // Composition is blocked by contenteditable=false + composition guards below.
     if (NAVIGATION_KEYS.has(event.code)) return false;
 
     const mod = tinymce.Env.os.isMacOS() ? event.metaKey : event.ctrlKey;

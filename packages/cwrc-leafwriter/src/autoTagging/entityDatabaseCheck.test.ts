@@ -1,6 +1,6 @@
 import { stampProjectDatabase } from './corpusStamp';
-import { addEntity, createEntitiesScaffold, getDatabaseId, parseEntities, serializeEntities } from './entities';
-import { EntityStore } from './entityStore';
+import { createEntitiesScaffold, getDatabaseId } from './entities';
+import { EntityStore, type EntityFileApi } from './entityStore';
 import { resolveEntityStorePaths } from './entityStoreResolve';
 import {
   checkEntityDatabaseFingerprint,
@@ -8,32 +8,57 @@ import {
   purgeReportedOrphans,
   sweepProjectOrphans,
 } from './entityDatabaseCheck';
+import { SQLITE_REQUIRED_LOOKUP_MESSAGE } from './sqliteRequired';
 
-const makeApi = (files: Record<string, string>) => ({
+const makeApi = (files: Record<string, string>, extras: Partial<EntityFileApi> = {}): EntityFileApi => ({
   ensureDirectory: async () => undefined,
   pathExists: async (path: string) => path in files,
   readFile: async (path: string) => files[path] ?? '',
   writeFile: async (path: string, content: string) => {
     files[path] = content;
   },
+  ...extras,
 });
 
 describe('entityDatabaseCheck', () => {
-  it('detects fingerprint mismatch', async () => {
+  it('detects fingerprint mismatch via SQLite metadata', async () => {
     const paths = resolveEntityStorePaths({
       projectRoot: '/proj',
       entityStore: 'project',
     });
-    const api = makeApi({});
+    const sqlitePath = paths.entitiesPath.replace(/entities\.xml$/i, 'entities.sqlite');
+    const files: Record<string, string> = {
+      [sqlitePath]: '',
+    };
+    const api = makeApi(files, {
+      entitySqliteDatabaseId: async () => 'new-id',
+    });
     const store = EntityStore.fromPaths(api, paths);
     const { databaseId, mismatch } = await checkEntityDatabaseFingerprint(store, {
       projectDatabaseId: 'old-id',
       projectRoot: '/proj',
       projectFilePath: '/proj/jean-baptiste.project.json',
     });
-    expect(databaseId).toBeTruthy();
+    expect(databaseId).toBe('new-id');
     expect(mismatch).toBe(true);
-    expect(getDatabaseId(new DOMParser().parseFromString(createEntitiesScaffold('x'), 'application/xml'))).toBe('x');
+    expect(
+      getDatabaseId(new DOMParser().parseFromString(createEntitiesScaffold('x'), 'application/xml')),
+    ).toBe('x');
+  });
+
+  it('fails loud when SQLite is missing', async () => {
+    const paths = resolveEntityStorePaths({
+      projectRoot: '/proj',
+      entityStore: 'project',
+    });
+    const store = EntityStore.fromPaths(makeApi({}), paths);
+    await expect(
+      checkEntityDatabaseFingerprint(store, {
+        projectDatabaseId: 'old-id',
+        projectRoot: '/proj',
+        projectFilePath: '/proj/jean-baptiste.project.json',
+      }),
+    ).rejects.toThrow(SQLITE_REQUIRED_LOOKUP_MESSAGE);
   });
 
   it('purges keys across project xml files', async () => {
@@ -62,25 +87,26 @@ describe('entityDatabaseCheck', () => {
 
 describe('orphan sweep + classified purge', () => {
   const buildProject = () => {
-    const pedbDoc = parseEntities(createEntitiesScaffold('pedb-fp'));
-    const keep = addEntity(pedbDoc, 'person', { name: 'Keep' }).id;
+    const keep = 'person-keep';
     const wrap = (body: string, stamp?: string) => {
       const xml = `<?xml version="1.0"?><TEI xmlns="http://www.tei-c.org/ns/1.0"><teiHeader><fileDesc><titleStmt><title>c</title></titleStmt><publicationStmt><p>x</p></publicationStmt><sourceDesc><p>x</p></sourceDesc></fileDesc></teiHeader><text><body>${body}</body></text></TEI>`;
       return stamp ? stampProjectDatabase(xml, stamp).xml : xml;
     };
+    const paths = resolveEntityStorePaths({ projectRoot: '/proj', entityStore: 'project' });
+    const sqlitePath = paths.entitiesPath.replace(/entities\.xml$/i, 'entities.sqlite');
     const files: Record<string, string> = {
-      '/proj/entities.xml': serializeEntities(pedbDoc),
-      '/proj/good.xml': wrap(`<persName key="${keep}">Keep</persName><persName key="person-orphan">Gone</persName>`, 'pedb-fp'),
+      [sqlitePath]: '',
+      '/proj/entities.xml': createEntitiesScaffold('pedb-fp'),
+      '/proj/good.xml': wrap(
+        `<persName key="${keep}">Keep</persName><persName key="person-orphan">Gone</persName>`,
+        'pedb-fp',
+      ),
       '/proj/stray.xml': wrap('<persName key="person-elsewhere">Other</persName>', 'other-fp'),
     };
-    const storeApi = {
-      ensureDirectory: async () => undefined,
-      pathExists: async (path: string) => path in files,
-      readFile: async (path: string) => files[path] ?? '',
-      writeFile: async (path: string, content: string) => {
-        files[path] = content;
-      },
-    };
+    const storeApi = makeApi(files, {
+      entitySqliteDatabaseId: async () => 'pedb-fp',
+      entitySqliteListIds: async () => [keep],
+    });
     const checkApi = {
       listProjectXmlFiles: async () => [
         { name: 'entities.xml', path: '/proj/entities.xml' },
@@ -92,10 +118,7 @@ describe('orphan sweep + classified purge', () => {
         files[path] = content;
       },
     };
-    const store = EntityStore.fromPaths(
-      storeApi,
-      resolveEntityStorePaths({ projectRoot: '/proj', entityStore: 'project' }),
-    );
+    const store = EntityStore.fromPaths(storeApi, paths);
     return { store, checkApi, files, keep };
   };
 

@@ -113,18 +113,68 @@ export function normalizeNameType(raw: string | null | undefined): NameTypeId | 
 
 /**
  * Authority exports sometimes represent a courtesy name twice: once as the
- * courtesy name itself and once as family name + courtesy name. The latter is
- * a display form, not a distinct name, and should not be ingested as one.
+ * courtesy name itself and once as family name + courtesy name. The composite
+ * is a display form; strip the longest matching family prefix so intake keeps
+ * the bare 字 (and later dedupe collapses 蕭彦学 + 彦学 → 彦学).
  */
 export function isFamilyPrefixedCourtesyName(text: string, familyNames: string[]): boolean {
+  return stripFamilyPrefixFromCourtesyName(text, familyNames) !== text.normalize('NFC').trim();
+}
+
+/**
+ * If `text` begins with a known family name and has more characters after it,
+ * return the remainder (bare 字). Otherwise return the trimmed text unchanged.
+ * Prefers the longest matching family prefix (e.g. 司馬 over 司).
+ */
+export function stripFamilyPrefixFromCourtesyName(text: string, familyNames: string[]): string {
   const normalizedText = text.normalize('NFC').trim();
-  if (!normalizedText) return false;
-  return familyNames.some((familyName) => {
+  if (!normalizedText) return normalizedText;
+  let bestPrefix = '';
+  for (const familyName of familyNames) {
     const normalizedFamily = familyName.normalize('NFC').trim();
-    return (
-      normalizedFamily.length > 0 &&
+    if (
+      normalizedFamily.length > bestPrefix.length &&
       normalizedText.length > normalizedFamily.length &&
       normalizedText.startsWith(normalizedFamily)
-    );
-  });
+    ) {
+      bestPrefix = normalizedFamily;
+    }
+  }
+  return bestPrefix ? normalizedText.slice(bestPrefix.length) : normalizedText;
+}
+
+export type IntakeTypedName = {
+  text: string;
+  type: NameTypeId;
+  lang?: string;
+};
+
+/**
+ * Normalize typed names for entity intake: strip 姓 from courtesy composites,
+ * then dedupe by NFC text so bare and composite forms collapse to one entry.
+ */
+export function normalizeTypedNamesForIntake(
+  names: Array<{ text: string; type: NameTypeId; lang?: string }>,
+  extraFamilyNames: string[] = [],
+): IntakeTypedName[] {
+  const familyNames = [
+    ...extraFamilyNames,
+    ...names.filter((name) => name.type === 'family').map((name) => name.text),
+  ]
+    .map((name) => name.normalize('NFC').trim())
+    .filter(Boolean);
+
+  const byText = new Map<string, IntakeTypedName>();
+  for (const name of names) {
+    let text = name.text.normalize('NFC').trim();
+    if (!text) continue;
+    if (name.type === 'courtesy') {
+      text = stripFamilyPrefixFromCourtesyName(text, familyNames);
+      if (!text) continue;
+    }
+    if (!byText.has(text)) {
+      byText.set(text, { text, type: name.type, ...(name.lang ? { lang: name.lang } : {}) });
+    }
+  }
+  return [...byText.values()];
 }

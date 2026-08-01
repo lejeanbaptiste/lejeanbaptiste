@@ -156,32 +156,28 @@ See [apps/desktop/README.md](apps/desktop/README.md) for the compilation and pac
 
 ## TODO
 
-- [ ] sqlite migration
+- [ ] finish sql transition (see doc)
 - [ ] retry absorbing all of norbert.
-- [ ] filter out authority packs again for: dynasty dates as person dates; curtousey names carrying family name; place of origin entering as an undefined person name.
-
-
-
-- [ ] FIXED (?): CHGIS not showing up in disambiguation
-- [ ] number titles and places still not filtered from authority packs
-- [ ] Rework how Sanmiao works
 - [ ] Rewards malfunctioning.
-- [ ] clean db of faulty imports ?
 - [ ] names, appointment, works, etc., should have authority badges, option to tombstone.
-- [ ] 竟陵王子良 shows up as persname; we are not tagging title + given name !
 
+### Noble titles
+
+- [ ] 竟陵王子良 shows up as persname; we are not tagging title + given name !
 - [ ] Auto parse and organise noble titles
 - [ ] Noble title and person wrapper tagging (testing).
-- [ ] Redo lookup window
 
+## Next release
 
-
-## Future goals
-
+- [ ] Rework Sanmiao date resolution works
 - [ ] Further Norbert functions
+- [ ] Redo icons : highlight
+
+## Future
+
+- [ ] Full CBETA integration
 - [ ] Official titles dictionaries, dates dictionaries for hover-over
 - [ ] Regional PMTiles download/cache flow for maps (see map-tiles-planning.md)
-- [ ] Redo icons : highlight
 - [ ] Option to track annotator on the tag level for collaborations.
 - [ ] Copy-and-paste export of paragraphs with translation for word processors
 - [ ] LaTeX export

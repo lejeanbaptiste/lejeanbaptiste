@@ -31,7 +31,7 @@ import {
   touchEntity,
 } from './entities';
 import type { AuthorityCandidate } from './authority';
-import { isFamilyPrefixedCourtesyName, normalizeNameType, type NameTypeId } from './nameTypes';
+import { normalizeNameType, normalizeTypedNamesForIntake, type NameTypeId } from './nameTypes';
 import { suggestPersonNameSplit, suggestPersonRomanization } from '../plugins/personNameDefaults';
 import { fetchWikidataLifespan } from './wikidataDates';
 import { fetchWikidataNationality } from './wikidataNationality';
@@ -61,20 +61,15 @@ function typedNamesFromPackRow(
   names: { text: string; type?: string; lang?: string }[] | undefined,
 ): TypedName[] {
   if (!names?.length) return [];
-  const familyNames = names
-    .filter((name) => normalizeNameType(name.type) === 'family')
-    .map((name) => name.text?.trim())
-    .filter((text): text is string => Boolean(text));
-  const out: TypedName[] = [];
+  const raw: TypedName[] = [];
   for (const name of names) {
     const text = name.text?.trim();
     if (!text) continue;
     const type = normalizeNameType(name.type) ?? 'variant';
     if (type === 'primary') continue;
-    if (type === 'courtesy' && isFamilyPrefixedCourtesyName(text, familyNames)) continue;
-    out.push({ text, type, lang: name.lang });
+    raw.push({ text, type, lang: name.lang });
   }
-  return out;
+  return normalizeTypedNamesForIntake(raw);
 }
 
 export interface AuthorityEnrichment {
@@ -174,6 +169,49 @@ export async function buildPackNameIndex(
     }
   }
   return index;
+}
+
+/**
+ * Unique office primary-name → authority id map for safe PEDB backfill.
+ * Homonyms (same name, multiple pack rows) are dropped — never attach by name
+ * alone when the match is ambiguous.
+ */
+export async function buildUniqueOfficeAuthorityByName(
+  readPackFile: (packId: AuthorityPackId) => Promise<AuthorityPackContent>,
+): Promise<Map<string, { type: 'NORBERT' | 'CBDB'; value: string }[]>> {
+  const packs: { packId: AuthorityPackId; type: 'NORBERT' | 'CBDB' }[] = [
+    { packId: 'norbert-offices', type: 'NORBERT' },
+    { packId: 'cbdb-offices', type: 'CBDB' },
+  ];
+  /** name → type → set of authority ids seen */
+  const byName = new Map<string, Map<string, Set<string>>>();
+  for (const { packId, type } of packs) {
+    try {
+      const content = await readPackFile(packId);
+      for (const row of iterateAuthorityNdjson(content)) {
+        const name = row.primaryName?.normalize('NFC').trim();
+        const value = row.authorityId == null ? '' : String(row.authorityId).trim();
+        if (!name || !value) continue;
+        const typeMap = byName.get(name) ?? new Map();
+        const ids = typeMap.get(type) ?? new Set();
+        ids.add(value);
+        typeMap.set(type, ids);
+        byName.set(name, typeMap);
+      }
+    } catch {
+      // Pack missing or unreadable — skip silently.
+    }
+  }
+  const out = new Map<string, { type: 'NORBERT' | 'CBDB'; value: string }[]>();
+  for (const [name, typeMap] of byName) {
+    const unique: { type: 'NORBERT' | 'CBDB'; value: string }[] = [];
+    for (const [type, ids] of typeMap) {
+      if (ids.size !== 1) continue;
+      unique.push({ type: type as 'NORBERT' | 'CBDB', value: [...ids][0]! });
+    }
+    if (unique.length) out.set(name, unique);
+  }
+  return out;
 }
 
 export function packTypedNamesForEntity(
@@ -464,8 +502,9 @@ export async function backfillEntityNames(
         .filter((name) => name.type === 'family')
         .map((name) => name.text),
     ];
-    const typedNames = (await collectTypedNamesForCandidate(candidate, fetchImpl)).filter(
-      (name) => name.type !== 'courtesy' || !isFamilyPrefixedCourtesyName(name.text, familyNames),
+    const typedNames = normalizeTypedNamesForIntake(
+      await collectTypedNamesForCandidate(candidate, fetchImpl),
+      familyNames,
     );
 
     for (const typed of typedNames) {

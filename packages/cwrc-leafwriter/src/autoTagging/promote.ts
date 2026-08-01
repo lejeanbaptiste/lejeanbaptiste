@@ -2,13 +2,10 @@
  * Bridge verbs **Link** and **Promote** (Absorb lives in `entityOps`/the order
  * log). Neither touches corpus `@key`s.
  *
- *   - **Link**: record that a project (PEDB) entity is the same person as an
- *     existing central (CEDB) entity, by writing the per-user `ljb-central`
- *     concordance row.
- *   - **Promote**: make a project entity known to the central database. Prefer
- *     an authority match (same CBDB/Wikidata/… id) so we Link to an existing
- *     central record instead of minting a duplicate; otherwise create a central
- *     record from the project entity's content, then Link.
+ * Live promote uses {@link promoteToCentralSqlite}. The DOM helpers in this
+ * file (`promoteToCentral`, index builders) remain for unit tests and as the
+ * reference algorithm SQLite promote mirrors — they are not live authority
+ * writes.
  */
 
 import { getCentralId, setCentralMapping } from './concordance';
@@ -270,38 +267,4 @@ export interface AdoptResult {
   pedbId: string;
   /** True when a new project record was minted; false when an already-linked one was reused. */
   created: boolean;
-}
-
-/** The project entity (if any) this user has already linked to `centralId`. */
-function findLinkedPedbEntity(pedbDoc: Document, kind: EntityKind, centralId: string, userStableId: string): string | null {
-  for (const item of entityElements(pedbDoc, kind)) {
-    if (getCentralId(item, userStableId) === centralId) return item.getAttribute('xml:id');
-  }
-  return null;
-}
-
-/**
- * The reverse of `promoteToCentral`: ensure the central entity `centralId` is
- * represented in the project database and linked for `userStableId`.
- * Idempotent: an already-linked central entity returns its existing project id.
- */
-export function adoptFromCentral(
-  pedbDoc: Document,
-  centralId: string,
-  cedbDoc: Document,
-  userStableId: string,
-): AdoptResult {
-  const cedbItem = findEntity(cedbDoc, centralId);
-  if (!cedbItem) throw new Error(`adopt: central entity not found: ${centralId}`);
-
-  const { kind, entity, familyName, givenName } = toNewEntity(cedbItem);
-
-  const existingPedbId = findLinkedPedbEntity(pedbDoc, kind, centralId, userStableId);
-  if (existingPedbId) return { pedbId: existingPedbId, created: false };
-
-  const { id: pedbId, element: pedbItem } = addEntity(pedbDoc, kind, entity);
-  if (familyName) setFamilyName(pedbDoc, pedbId, familyName);
-  if (givenName) setGivenName(pedbDoc, pedbId, givenName);
-  linkToCentral(pedbItem, userStableId, centralId);
-  return { pedbId, created: true };
 }

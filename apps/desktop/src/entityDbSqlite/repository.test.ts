@@ -480,8 +480,39 @@ describe('EntitySqliteRepository', () => {
       names: [{ text: '別人', isPrimary: true }],
     });
     expect(repository.findEntityIdByAuthority('person', 'CBDB', '42')).toBe('person-auth');
+    expect(repository.findAllEntityIdsByAuthority('person', 'CBDB', '42')).toEqual(['person-auth']);
+    expect(repository.findAllEntityIdsByAuthority('place', 'CBDB', '42')).toEqual([]);
     expect(repository.findEntityIdByNameDates('person', '孔遺', 479, null)).toBe('person-auth');
     expect(repository.findEntityIdByNameDates('person', '孔遺', 480, null)).toBeNull();
+    repository.close();
+  });
+
+  it('returns every entity sharing an authority for lookup conflict planning', () => {
+    const repository = new EntitySqliteRepository();
+    repository.createPopulatedEntity({
+      id: 'person-a',
+      kind: 'person',
+      names: [{ text: 'A', isPrimary: true }],
+      authorities: [{ type: 'Wikidata', value: 'Q1' }],
+    });
+    repository.createPopulatedEntity({
+      id: 'person-b',
+      kind: 'person',
+      names: [{ text: 'B', isPrimary: true }],
+      authorities: [{ type: 'Wikidata', value: 'Q1' }],
+    });
+    repository.createPopulatedEntity({
+      id: 'place-q1',
+      kind: 'place',
+      names: [{ text: 'Somewhere', isPrimary: true }],
+      authorities: [{ type: 'Wikidata', value: 'Q1' }],
+    });
+    expect(repository.findAllEntityIdsByAuthority('person', 'Wikidata', 'Q1')).toEqual([
+      'person-a',
+      'person-b',
+    ]);
+    expect(repository.findEntityIdByAuthority('person', 'Wikidata', 'Q1')).toBe('person-a');
+    expect(repository.findAllEntityIdsByAuthority('person', 'Wikidata', 'Q999')).toEqual([]);
     repository.close();
   });
 
@@ -729,6 +760,36 @@ describe('EntitySqliteRepository', () => {
       expect.arrayContaining([
         { type: 'CBDB', value: '141' },
         { type: 'CBDB', value: '96120' },
+      ]),
+    );
+
+    // Multi-association apply stays batched in one outer transaction.
+    repository.createEntity({ id: 'person-conc-3', kind: 'person' });
+    repository.attachAuthority({
+      entityId: 'person-conc-3',
+      type: 'CBDB',
+      value: '31',
+      origin: 'authority',
+      source: 'CBDB',
+    });
+    expect(
+      repository.applyConcordanceAssociations([
+        {
+          source: 'CBDB',
+          canonicalId: '31',
+          mergedFromId: '98561',
+        },
+        {
+          source: 'CBDB',
+          canonicalId: '55',
+          mergedFromId: '468758',
+        },
+      ]),
+    ).toMatchObject({ applied: 1, unresolved: 1 });
+    expect(repository.getPanelSummary('person-conc-3')?.authorities).toEqual(
+      expect.arrayContaining([
+        { type: 'CBDB', value: '31' },
+        { type: 'CBDB', value: '98561' },
       ]),
     );
 

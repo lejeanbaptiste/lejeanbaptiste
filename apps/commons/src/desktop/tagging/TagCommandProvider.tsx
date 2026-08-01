@@ -72,12 +72,20 @@ export const TagCommandProvider = () => {
     registerDesktopTaggingBridge({
       changeTag,
       handleEditorKeyDown,
+      isPopupOpen: () => tagController.open || attrController.open,
       openTagPopup: (mode, anchorOverride) => tagController.openPopup(mode, anchorOverride),
       openAttributePopup: (anchorOverride) => attrController.openPopup(anchorOverride),
     });
 
     return () => unregisterDesktopTaggingBridge();
-  }, [changeTag, handleEditorKeyDown, tagController.openPopup, attrController.openPopup]);
+  }, [
+    attrController.open,
+    attrController.openPopup,
+    changeTag,
+    handleEditorKeyDown,
+    tagController.open,
+    tagController.openPopup,
+  ]);
 
   return (
     <>

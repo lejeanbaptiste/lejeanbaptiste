@@ -102,6 +102,32 @@ export function candidatePassesDateFilter(
  */
 export type AuthorityPackContent = string | readonly string[];
 
+/** Chinese numeral characters used as ordinal/enumeration junk in place/title packs. */
+const CHINESE_NUMERAL_ONLY_RE = /^[一二三四五六七八九十百千萬]+$/;
+
+export function isChineseNumeralOnlySurface(surface: string): boolean {
+  const s = surface.normalize('NFC').replace(/\s+/g, ' ').trim();
+  return s.length > 0 && CHINESE_NUMERAL_ONLY_RE.test(s);
+}
+
+/**
+ * Drop numeral-only place/work/org/office headwords and search strings so
+ * Chinese/Japanese packs cannot tag-bomb 一八 / 十二 as real names. Person
+ * packs already exclude these at compile time via personStringPolicy.
+ */
+function sanitizeAuthorityCandidate(row: AuthorityCandidate): AuthorityCandidate | null {
+  const kind = row.kind;
+  const scrubPlacesAndTitles =
+    kind === 'place' || kind === 'work' || kind === 'org' || kind === 'office';
+  if (scrubPlacesAndTitles && isChineseNumeralOnlySurface(row.primaryName)) return null;
+  const searchStrings = (row.searchStrings ?? []).filter(
+    (surface) => !isChineseNumeralOnlySurface(surface),
+  );
+  if (!searchStrings.length) return null;
+  if (searchStrings.length === row.searchStrings.length) return row;
+  return { ...row, searchStrings };
+}
+
 /** Normalize pack content into a line array, only splitting when given raw text. */
 export function authorityPackLines(content: AuthorityPackContent): readonly string[] {
   return Array.isArray(content) ? content : (content as string).split(/\r?\n/);
@@ -122,7 +148,8 @@ export function* iterateAuthorityNdjson(content: AuthorityPackContent): Generato
       if (!trimmed) continue;
       const row = JSON.parse(trimmed) as AuthorityCandidate;
       if (row.source && row.authorityId && row.kind && row.primaryName && row.searchStrings?.length) {
-        yield row;
+        const sanitized = sanitizeAuthorityCandidate(row);
+        if (sanitized) yield sanitized;
       }
     }
     return;
@@ -138,7 +165,8 @@ export function* iterateAuthorityNdjson(content: AuthorityPackContent): Generato
     if (!trimmed) continue;
     const row = JSON.parse(trimmed) as AuthorityCandidate;
     if (row.source && row.authorityId && row.kind && row.primaryName && row.searchStrings?.length) {
-      yield row;
+      const sanitized = sanitizeAuthorityCandidate(row);
+      if (sanitized) yield sanitized;
     }
   }
 }
@@ -208,6 +236,7 @@ export function countCandidatesUniqueStrings(
     entities += 1;
     const tag = teiTagForCandidate(candidate);
     for (const surface of candidate.searchStrings) {
+      if (isChineseNumeralOnlySurface(surface)) continue;
       if ([...surface].length < minLength) continue;
       strings.add(`${tag}\0${surface}`);
     }

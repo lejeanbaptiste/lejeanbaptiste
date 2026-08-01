@@ -14,12 +14,13 @@ import {
 } from './disambiguationCandidates';
 import { mintEntityId, type EntityKind } from './entities';
 import type { EntityStore } from './entityStore';
-import { isFamilyPrefixedCourtesyName } from './nameTypes';
+import { normalizeTypedNamesForIntake } from './nameTypes';
 import {
   authorityEnrichmentForEntity,
   authorityEnrichmentsForEntity,
   buildNorbertNobleTitleIndex,
   buildPackNameIndex,
+  buildUniqueOfficeAuthorityByName,
   firstAuthorityEnrichment,
   packTypedNamesForEntity,
   type NameBackfillProgress,
@@ -141,14 +142,61 @@ export async function backfillEntitiesSqlite(
 
   const packIndex = readPackFile ? await buildPackNameIndex(readPackFile) : null;
   const nobleTitleIndex = readPackFile ? await buildNorbertNobleTitleIndex(readPackFile) : null;
+  const officeAuthorityByName = readPackFile
+    ? await buildUniqueOfficeAuthorityByName(readPackFile)
+    : null;
 
   let entitiesScanned = 0;
   let entitiesUpdated = 0;
   let namesAdded = 0;
   let cancelled = false;
 
+  // Attach missing NORBERT/CBDB idnos to offices that uniquely match a pack
+  // primary name. Homonyms are skipped. This closes the historical gap where
+  // offices were minted locally without authority links.
+  if (officeAuthorityByName && (!idFilter || entityIds?.some((id) => id.startsWith('office-')))) {
+    try {
+      const officeSummaries = ((await store.sqlitePanelSummaries('office')) ?? []) as PanelPerson[];
+      for (const summary of officeSummaries) {
+        if (signal?.aborted) {
+          cancelled = true;
+          break;
+        }
+        if (idFilter && !idFilter.has(summary.id)) continue;
+        const primary =
+          summary.names.find((name) => name.nameType === 'primary')?.text?.normalize('NFC').trim() ||
+          summary.names[0]?.text?.normalize('NFC').trim();
+        if (!primary) continue;
+        const candidates = officeAuthorityByName.get(primary);
+        if (!candidates?.length) continue;
+        entitiesScanned++;
+        let attached = false;
+        for (const hit of candidates) {
+          const already = summary.authorities.some(
+            (auth) =>
+              auth.type.trim().toUpperCase() === hit.type && auth.value.trim() === hit.value,
+          );
+          if (already) continue;
+          const claimed = await store.sqliteFindByAuthority('office', hit.type, hit.value);
+          if (claimed && claimed !== summary.id) continue;
+          const ok = await store.sqliteAttachAuthority(summary.id, hit.type, hit.value);
+          if (ok) attached = true;
+        }
+        if (attached) entitiesUpdated++;
+        onProgress?.({
+          done: entitiesScanned,
+          total: totalTargets + officeSummaries.length,
+          entityId: summary.id,
+          entityLabel: primary,
+        });
+      }
+    } catch {
+      // Attach/panel APIs unavailable — skip office idno backfill silently.
+    }
+  }
+
   for (const entity of targets) {
-    if (signal?.aborted) {
+    if (signal?.aborted || cancelled) {
       cancelled = true;
       break;
     }
@@ -202,8 +250,9 @@ export async function backfillEntitiesSqlite(
         .filter((name) => name.type === 'family')
         .map((name) => name.text),
     ];
-    const typedNames = (await collectTypedNamesForCandidate(candidate, fetchImpl)).filter(
-      (name) => name.type !== 'courtesy' || !isFamilyPrefixedCourtesyName(name.text, familyNames),
+    const typedNames = normalizeTypedNamesForIntake(
+      await collectTypedNamesForCandidate(candidate, fetchImpl),
+      familyNames,
     );
     for (const typed of typedNames) {
       namePatches.push({

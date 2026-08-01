@@ -40,7 +40,8 @@ import {
 import { findParagraphAncestor } from './tagInsert';
 import { getProjectTagCounts, loadTagStats, updateTagStatsForFile } from './tagStats';
 import { getCaretScreenPosition } from './editorAnchor';
-import { getBookmark } from './taggerRuntime';
+import { isImeKeyboardEvent } from './ime';
+import { getBookmark, moveToBookmark } from './taggerRuntime';
 
 const LAST_USED_TAG_KEY = 'ljb:lastUsedTag';
 
@@ -123,14 +124,27 @@ export const useTagCommandController = () => {
     setTagCounts(getProjectTagCounts(stats));
   }, [activeTabPath, rootPath]);
 
-  const closePopup = useCallback(() => {
+  const closePopup = useCallback((options?: { restoreSelection?: boolean }) => {
     clearTagWalkHighlight();
     walkPreviewActiveRef.current = false;
     setOpen(false);
     setFilter('');
     queueWalkRef.current = null;
+    const editor = window.writer?.editor;
+    const bookmark = bookmarkRef.current;
     bookmarkRef.current = null;
-    window.writer?.editor?.focus();
+    if (editor) {
+      // Only restore on cancel (Esc). After a successful apply the document
+      // changed and the wrap bookmark is stale.
+      if (options?.restoreSelection && bookmark) {
+        try {
+          moveToBookmark(editor, bookmark);
+        } catch {
+          // Bookmark can go stale if the document changed while the popup was open.
+        }
+      }
+      editor.focus();
+    }
   }, []);
 
   const exitWalkMode = useCallback(() => {
@@ -193,6 +207,13 @@ export const useTagCommandController = () => {
       const editor = window.writer?.editor;
       if (editor) {
         bookmarkRef.current = getBookmark(editor);
+        // Collapse the live selection after bookmarking. While the popup is
+        // open, Chinese IME composition in the still-focused editor would
+        // otherwise replace the selected string; Esc then cancels composition
+        // and the original text is gone. Apply still uses the bookmark.
+        if (nextMode === 'wrap' && !ctx.rng.collapsed) {
+          editor.selection.collapse(false);
+        }
       }
 
       const text =
@@ -545,9 +566,14 @@ export const useTagCommandController = () => {
 
   const handlePopupKeyDown = useCallback(
     (event: React.KeyboardEvent) => {
+      // Let the IME own Esc (cancel candidate) and Enter (confirm candidate).
+      // Stealing Esc here closes the popup and refocuses the editor mid-IME,
+      // which is what deletes the wrap selection for Chinese input.
+      if (isImeKeyboardEvent(event)) return;
+
       if (event.key === 'Escape') {
         event.preventDefault();
-        closePopup();
+        closePopup({ restoreSelection: true });
         return;
       }
 
@@ -597,7 +623,7 @@ export const useTagCommandController = () => {
   const handleEditorKeyDown = useCallback(
     (event: KeyboardEvent): boolean => {
       const visualActive = isVisualEditorActive();
-      if (event.isComposing || !visualActive) return false;
+      if (isImeKeyboardEvent(event) || !visualActive) return false;
 
       if (walkMode) {
         if (event.key === 'Escape') {
@@ -618,7 +644,7 @@ export const useTagCommandController = () => {
 
       if (open) {
         if (event.key === 'Escape') {
-          closePopup();
+          closePopup({ restoreSelection: true });
           return true;
         }
         if (matchesTagPopupPropagate(event)) {

@@ -720,15 +720,15 @@ export async function listEntitySqliteLinkedCentralIds(request: {
 
 export async function findEntitySqliteByAuthority(
   request: EntitySqliteFindByAuthorityRequest,
-): Promise<string | null> {
+): Promise<string[]> {
   if (!validDatabasePath(request.databasePath))
     throw new Error('Invalid entity SQLite database path.');
   try {
     await fs.access(request.databasePath);
   } catch {
-    return null;
+    return [];
   }
-  return repositoryFor(request.databasePath).findEntityIdByAuthority(
+  return repositoryFor(request.databasePath).findAllEntityIdsByAuthority(
     request.kind,
     request.type,
     request.value,

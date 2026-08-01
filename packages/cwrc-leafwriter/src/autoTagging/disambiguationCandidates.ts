@@ -10,7 +10,6 @@ import {
   ENTITY_KINDS,
   entityElements,
   findEntity,
-  getDatabaseId,
   parseIsoYear,
   TAG_TO_KIND,
   setAuthorityCache,
@@ -21,7 +20,7 @@ import {
 import { linkedCentralIds } from './bridgeInbox';
 import type { EntityStore } from './entityStore';
 import { textWithoutHiddenReadings } from './hiddenChoiceText';
-import { adoptFromCentral } from './promote';
+import { adoptFromCentralSqlite } from './sqliteBridgeOps';
 import { dedupeIdnos, idnoEquals } from './lookupResolve';
 import {
   extractWikidataIdsFromText,
@@ -42,7 +41,7 @@ import {
   setGivenName,
   setRomanizedName,
 } from './entityOps';
-import { isFamilyPrefixedCourtesyName, normalizeNameType, type NameTypeId } from './nameTypes';
+import { normalizeNameType, normalizeTypedNamesForIntake, type NameTypeId } from './nameTypes';
 import {
   isEastAsianCalendarLanguageCode,
   isLatnLang,
@@ -275,16 +274,21 @@ function authorityKeysForCandidate(candidate: DisambiguationCandidate): string[]
   scan(candidate.label);
   for (const auth of candidate.authorityIds ?? []) {
     scan(auth.value);
-    if (auth.type.toLowerCase().includes('wikidata')) {
+    const type = auth.type.trim().toLowerCase();
+    const value = auth.value.trim();
+    if (!value) continue;
+    if (type.includes('wikidata')) {
       const wd = extractWikidataId(auth.value);
       if (wd) keys.add(`wikidata:${wd}`);
     }
-    if (auth.type.toLowerCase() === 'viaf') {
+    if (type === 'viaf') {
       const viaf = extractViafId(auth.value);
       if (viaf) keys.add(`viaf:${viaf}`);
     }
-    if (auth.type === 'CBDB') keys.add(`cbdb:${auth.value}`);
-    if (auth.type === 'DILA') keys.add(`dila:${auth.value}`);
+    // Case-insensitive so PEDB idnos (NORBERT/CBDB) collapse with pack rows.
+    if (type === 'cbdb') keys.add(`cbdb:${value}`);
+    if (type === 'dila') keys.add(`dila:${value}`);
+    if (type === 'norbert') keys.add(`norbert:${value}`);
   }
   return [...keys];
 }
@@ -381,14 +385,8 @@ export function mergeSelectedCandidates(
       if (!typedByText.has(key)) typedByText.set(key, name);
     }
   }
-  const mergedFamilyNames = [...typedByText.values()]
-    .filter((name) => name.type === 'family')
-    .map((name) => name.text);
-  for (const [key, name] of typedByText) {
-    if (name.type === 'courtesy' && isFamilyPrefixedCourtesyName(name.text, mergedFamilyNames)) {
-      typedByText.delete(key);
-    }
-  }
+  const normalizedTypedNames = normalizeTypedNamesForIntake([...typedByText.values()]);
+  const typedNames = normalizedTypedNames.length ? normalizedTypedNames : undefined;
   const nonLatinLabel = options?.preferNonLatinLabel
     ? (candidates.map((c) => c.label).find((label) => label && !isLatinSurface(label)) ??
       projectLangName)
@@ -408,7 +406,7 @@ export function mergeSelectedCandidates(
     label: fromFile?.label ?? nonLatinLabel ?? first.label,
     projectLangName,
     romanizedName,
-    typedNames: typedByText.size > 0 ? [...typedByText.values()] : undefined,
+    typedNames,
     description:
       candidates
         .map((c) => c.description)
@@ -623,7 +621,8 @@ const SQLITE_DISAMBIGUATION_SEARCH_LIMIT = 200;
 
 /**
  * Load surface-matching disambiguation candidates from a migrated SQLite store.
- * Returns null when SQLite is unavailable so callers can fall back to XML.
+ * Returns null when SQLite search is unavailable — callers must fail loud,
+ * not fall back to XML/`loadEntities`.
  */
 export async function loadSqliteDisambiguationCandidates(
   store: EntityStore,
@@ -1138,19 +1137,15 @@ function typedNamesFromPackRow(
   names: { text: string; type?: string; lang?: string }[] | undefined,
 ): TypedName[] | undefined {
   if (!names?.length) return undefined;
-  const familyNames = names
-    .filter((name) => normalizeNameType(name.type) === 'family')
-    .map((name) => name.text?.trim())
-    .filter((text): text is string => Boolean(text));
-  const out: TypedName[] = [];
+  const raw: TypedName[] = [];
   for (const name of names) {
     const text = name.text?.trim();
     if (!text) continue;
     const type = normalizeNameType(name.type) ?? 'variant';
     if (type === 'primary') continue;
-    if (type === 'courtesy' && isFamilyPrefixedCourtesyName(text, familyNames)) continue;
-    out.push({ text, type, lang: name.lang });
+    raw.push({ text, type, lang: name.lang });
   }
+  const out = normalizeTypedNamesForIntake(raw);
   return out.length ? out : undefined;
 }
 
@@ -1187,9 +1182,7 @@ export async function collectTypedNamesForCandidate(
   const familyNames = [...byText.values()]
     .filter((name) => name.type === 'family')
     .map((name) => name.text);
-  return [...byText.values()].filter(
-    (name) => name.type !== 'courtesy' || !isFamilyPrefixedCourtesyName(name.text, familyNames),
-  );
+  return normalizeTypedNamesForIntake([...byText.values()], familyNames);
 }
 
 /** Wikidata Q-ids a candidate is linked to (its URI, description, and Wikidata authority ids). */
@@ -1365,8 +1358,8 @@ export interface ResolveEntityInput {
   authorityAssertions?: DisambiguationCandidate[];
 }
 
-/** Map raw per-authority candidates into the shape `addEntity`/`appendAuthoritySourcedValues` expect. */
-function toAuthoritySourcedFields(
+/** Map raw per-authority candidates into the shape SQLite enrich / DOM append expect. */
+export function toAuthoritySourcedFields(
   candidates: DisambiguationCandidate[] | undefined,
 ): AuthoritySourcedFields[] | undefined {
   if (!candidates?.length) return undefined;
@@ -1411,19 +1404,26 @@ function toAuthoritySourcedFields(
  */
 export async function resolveCandidateForPedb(
   candidate: DisambiguationCandidate,
-  pedbDoc: Document,
+  projectStore: EntityStore,
   centralStore: EntityStore,
   userStableId: string,
 ): Promise<DisambiguationCandidate> {
   if (!candidate.centralEntityId) return candidate;
-  // adoptFromCentral only reads cedbDoc (to copy fields) and mutates pedbDoc
-  // (mint + link) - the caller already owns saving pedbDoc afterward.
-  const cedbDoc = await centralStore.loadEntities();
-  const { pedbId } = adoptFromCentral(pedbDoc, candidate.centralEntityId, cedbDoc, userStableId);
-  return { ...candidate, localEntityId: pedbId, centralEntityId: undefined };
+  const adopted = await adoptFromCentralSqlite(
+    projectStore,
+    centralStore,
+    candidate.centralEntityId,
+    userStableId,
+  );
+  if (!adopted) throw new Error(`adopt: central entity not found: ${candidate.centralEntityId}`);
+  return { ...candidate, localEntityId: adopted.pedbId, centralEntityId: undefined };
 }
 
-/** Mint or reuse entity in database; returns local id. */
+/** Mint or reuse entity in a DOM entities document; returns local id.
+ *
+ * Live mint/link uses {@link mintOrLinkEntitySqlite}. This DOM helper remains
+ * for unit tests and DOM nameBackfill fixtures — not for live authority writes.
+ */
 export function resolveEntityInDocument(
   entitiesDoc: Document,
   input: ResolveEntityInput,
@@ -1434,9 +1434,7 @@ export function resolveEntityInDocument(
     ...(input.familyName ? [input.familyName] : []),
     ...(input.typedNames ?? []).filter((name) => name.type === 'family').map((name) => name.text),
   ];
-  const intakeTypedNames = (input.typedNames ?? []).filter(
-    (name) => name.type !== 'courtesy' || !isFamilyPrefixedCourtesyName(name.text, familyNames),
-  );
+  const intakeTypedNames = normalizeTypedNamesForIntake(input.typedNames ?? [], familyNames);
 
   /** Reuse path: keep the new surface form searchable and backfill a missing romanization. */
   const augmentExisting = (id: string): string => {
@@ -1579,18 +1577,6 @@ export function resolveEntityInDocument(
   if (input.familyName) setFamilyName(entitiesDoc, id, input.familyName);
   if (input.givenName) setGivenName(entitiesDoc, id, input.givenName);
   return id;
-}
-
-export async function ensureDatabaseLinked(
-  store: EntityStore,
-  projectDatabaseId: string | undefined,
-): Promise<{ databaseId: string; mismatch: boolean }> {
-  const doc = await store.loadEntities();
-  const databaseId = getDatabaseId(doc) ?? '';
-  return {
-    databaseId,
-    mismatch: Boolean(projectDatabaseId && databaseId && projectDatabaseId !== databaseId),
-  };
 }
 
 function findEntityByAuthorityId(doc: Document, auth: AuthorityId): string | null {

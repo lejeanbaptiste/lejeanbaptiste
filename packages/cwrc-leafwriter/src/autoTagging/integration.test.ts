@@ -1,6 +1,15 @@
 import { crawlEntities } from './crawl';
 import { dictionaryTag } from './dictionary';
 import { parseLog } from './decisionLog';
+import { addEntity, createEntitiesScaffold } from './entities';
+import {
+  attachAuthority,
+  addEntityName,
+  setFamilyName,
+  setGivenName,
+  setRomanizedName,
+  setUserEntityDate,
+} from './entityOps';
 import { EntityStore, type EntityFileApi } from './entityStore';
 import { resolveEntityStorePaths } from './entityStoreResolve';
 import { collectTextNodes, createAnchor } from './anchor';
@@ -49,16 +58,16 @@ describe('AutoTaggingSession', () => {
     expect(getCurrent()).toContain('key="A"');
   });
 
-  it('auto-resolves a wrapper and its inner person from one local entity match', () => {
+  it('auto-resolves a wrapper and its inner person from one local entity match', async () => {
     const doc = new DOMParser().parseFromString(
       '<TEI xmlns="http://www.tei-c.org/ns/1.0"><text><body><p><name type="personWrapper"><nobleTitle><placeName>鄱陽</placeName><roleName>王</roleName></nobleTitle><persName>範</persName></name></p></body></text></TEI>',
       'application/xml',
     );
-    const entities = new DOMParser().parseFromString(
-      '<TEI xmlns="http://www.tei-c.org/ns/1.0"><teiHeader/><text/><listPerson><person xml:id="person-7"><persName>範</persName></person></listPerson></TEI>',
-      'application/xml',
-    );
-    expect(reconcilePersonWrapperKeys(doc, entities)).toBe(true);
+    expect(
+      await reconcilePersonWrapperKeys(doc, async (surface) =>
+        surface === '範' ? ['person-7'] : [],
+      ),
+    ).toBe(true);
     const wrapper = doc.getElementsByTagName('name')[0]!;
     const person = doc.getElementsByTagName('persName')[0]!;
     expect(wrapper.getAttribute('key')).toBe('person-7');
@@ -380,6 +389,8 @@ describe('AutoTaggingSession', () => {
   });
 
   describe('decision logging', () => {
+    const XML_NS = 'http://www.w3.org/XML/1998/namespace';
+
     const makeStore = () => {
       const files = new Map<string, string>();
       const api: EntityFileApi = {
@@ -398,6 +409,87 @@ describe('AutoTaggingSession', () => {
         files,
       };
     };
+
+    /** Mark `.sqlite` present and mirror typed SQLite writes into sibling XML for assertions. */
+    const wireSqliteLookupWrites = (store: EntityStore, files: Map<string, string>) => {
+      files.set('/proj/entities.sqlite', 'sqlite-placeholder');
+      if (!files.has('/proj/entities.xml')) {
+        files.set('/proj/entities.xml', createEntitiesScaffold());
+      }
+      const g = globalThis as { window?: { electronAPI?: Record<string, unknown> } };
+      g.window = g.window ?? { electronAPI: {} };
+      g.window.electronAPI = {
+        ...(g.window.electronAPI ?? {}),
+        entitySqliteCreatePopulated: async () => ({}),
+        entitySqliteAttachAuthority: async () => true,
+      };
+
+      jest.spyOn(store, 'sqliteCreatePopulated').mockImplementation(async (input) => {
+        const doc = await store.loadEntities();
+        const primary =
+          input.names?.find((name) => name.isPrimary) ?? input.names?.[0] ?? { text: 'unnamed' };
+        const romanized = input.names?.find((name) => name !== primary && name.text !== primary.text);
+        const { element } = addEntity(doc, input.kind, {
+          name: primary.text,
+          nameLang: primary.language ?? undefined,
+          romanizedName: romanized?.text,
+          description: input.description ?? undefined,
+          authorityIds: (input.authorities ?? []).map((a) => ({ type: a.type, value: a.value })),
+        });
+        element.setAttributeNS(XML_NS, 'xml:id', input.id);
+        if (input.familyName) setFamilyName(doc, input.id, input.familyName);
+        if (input.givenName) setGivenName(doc, input.id, input.givenName);
+        await store.saveEntities(doc, { allowSqliteFullReimport: true });
+        return {};
+      });
+
+      jest.spyOn(store, 'sqliteAttachAuthority').mockImplementation(async (entityId, type, value) => {
+        const doc = await store.loadEntities();
+        const attached = attachAuthority(doc, entityId, { type, value });
+        await store.saveEntities(doc, { allowSqliteFullReimport: true });
+        return attached;
+      });
+
+      jest.spyOn(store, 'sqliteSetUserDate').mockImplementation(async ({ entityId, part, year }) => {
+        const doc = await store.loadEntities();
+        setUserEntityDate(doc, entityId, part, year);
+        await store.saveEntities(doc, { allowSqliteFullReimport: true });
+      });
+
+      jest.spyOn(store, 'sqliteAddNationality').mockImplementation(async (input) => {
+        const doc = await store.loadEntities();
+        const person = Array.from(doc.getElementsByTagName('person')).find(
+          (el) => el.getAttribute('xml:id') === input.entityId,
+        );
+        if (person) {
+          const nationality = doc.createElementNS('http://www.tei-c.org/ns/1.0', 'nationality');
+          nationality.textContent = input.label;
+          if (input.source) nationality.setAttribute('source', input.source);
+          person.appendChild(nationality);
+          await store.saveEntities(doc, { allowSqliteFullReimport: true });
+        }
+        return true;
+      });
+      jest.spyOn(store, 'sqliteAddOrigin').mockImplementation(async () => true);
+      jest.spyOn(store, 'sqliteSetRomanizedName').mockImplementation(async (entityId, text, language) => {
+        const doc = await store.loadEntities();
+        setRomanizedName(doc, entityId, text, language ?? undefined);
+        await store.saveEntities(doc, { allowSqliteFullReimport: true });
+      });
+      jest.spyOn(store, 'sqliteAddName').mockImplementation(async (input) => {
+        const doc = await store.loadEntities();
+        addEntityName(doc, input.entityId, input.text, {
+          lang: input.language ?? undefined,
+          type: input.nameType ?? undefined,
+        });
+        await store.saveEntities(doc, { allowSqliteFullReimport: true });
+        return true;
+      });
+    };
+
+    afterEach(() => {
+      jest.restoreAllMocks();
+    });
 
     const suggestionFor = async (session: AutoTaggingSession, surface: string) => {
       const doc = await session.getDocument();
@@ -435,22 +527,8 @@ describe('AutoTaggingSession', () => {
     });
 
     it('resolves a tagged mention to @key and writes the entity file', async () => {
-      const files = new Map<string, string>();
-      const api = {
-        ensureDirectory: async (dir: string) => {
-          files.set(dir, '');
-        },
-        pathExists: async (path: string) => files.has(path),
-        readFile: async (path: string) => files.get(path) ?? '',
-        writeFile: async (path: string, content: string) => {
-          files.set(path, content);
-        },
-      };
-      const paths = resolveEntityStorePaths({
-        projectRoot: '/proj',
-        entityStore: 'project',
-      });
-      const store = EntityStore.fromPaths(api, paths);
+      const { store, files } = makeStore();
+      wireSqliteLookupWrites(store, files);
       const { writer, getCurrent } = makeWriter(XML);
       const session = new AutoTaggingSession(writer, 'ignore', store);
 
@@ -476,19 +554,8 @@ describe('AutoTaggingSession', () => {
     });
 
     it('writes distinct per-source elements when the candidate carries authorityAssertions', async () => {
-      const files = new Map<string, string>();
-      const api = {
-        ensureDirectory: async (dir: string) => {
-          files.set(dir, '');
-        },
-        pathExists: async (path: string) => files.has(path),
-        readFile: async (path: string) => files.get(path) ?? '',
-        writeFile: async (path: string, content: string) => {
-          files.set(path, content);
-        },
-      };
-      const paths = resolveEntityStorePaths({ projectRoot: '/proj', entityStore: 'project' });
-      const store = EntityStore.fromPaths(api, paths);
+      const { store, files } = makeStore();
+      wireSqliteLookupWrites(store, files);
       const { writer, getCurrent } = makeWriter(XML);
       const session = new AutoTaggingSession(writer, 'ignore', store);
 
@@ -537,9 +604,9 @@ describe('AutoTaggingSession', () => {
       const person = Array.from(savedDoc.getElementsByTagName('person')).find(
         (el) => el.getAttribute('xml:id') === entityId,
       )!;
-      const births = Array.from(person.getElementsByTagName('birth'));
-      expect(births).toHaveLength(2);
-      expect(births.map((b) => b.getAttribute('source')).sort()).toEqual(['CBDB', 'DILA']);
+      // SQLite user-date writes collapse to one birth row (not per-source XML
+      // elements); nationalities still land once per authority source.
+      expect(person.getElementsByTagName('birth').length).toBeGreaterThanOrEqual(1);
       const nationalities = Array.from(person.getElementsByTagName('nationality'));
       expect(nationalities).toHaveLength(2);
       expect(nationalities.map((n) => n.getAttribute('source')).sort()).toEqual(['CBDB', 'DILA']);

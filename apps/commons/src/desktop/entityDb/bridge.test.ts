@@ -1,6 +1,7 @@
 import { addEntity, createEntitiesScaffold } from '../../../../../packages/cwrc-leafwriter/src/autoTagging/entities';
 import { appendOrders, makeOrder } from '../../../../../packages/cwrc-leafwriter/src/autoTagging/entityOrders';
 import { setCentralMapping, getCentralId } from '../../../../../packages/cwrc-leafwriter/src/autoTagging/concordance';
+import { SQLITE_REQUIRED_MESSAGE } from '../../../../../packages/cwrc-leafwriter/src/autoTagging/sqliteRequired';
 import {
   EntityStore,
   resolveEntityStorePaths,
@@ -8,8 +9,11 @@ import {
 } from '../../../../../packages/cwrc-leafwriter/src/autoTagging/entityStore';
 import {
   applyPendingCentralOrders,
+  computeBridgeInbox,
   computeMergeDocket,
+  promoteEntities,
   resolveMergeSuggestion,
+  syncEntities,
   type BridgeContext,
 } from './bridge';
 
@@ -50,64 +54,33 @@ const makeContext = () => {
 };
 
 describe('applyPendingCentralOrders', () => {
-  it('repoints a PEDB mapping after an upstream central merge, and advances the cursor', async () => {
+  it('fails loud when a pending remap would write without PEDB SQLite', async () => {
     const { fs, ctx, projectStore } = makeContext();
 
     const pedbDoc = await projectStore.loadEntities();
-    const { element, id } = addEntity(pedbDoc, 'person', { name: '南齊書' });
+    const { element } = addEntity(pedbDoc, 'person', { name: '南齊書' });
     setCentralMapping(element, USER, 'person-old-central');
-    await projectStore.saveEntities(pedbDoc);
+    await projectStore.saveEntities(pedbDoc, { allowSqliteFullReimport: true });
 
     const order = makeOrder('cedb-1', { 'person-old-central': 'person-new-central' });
     fs.files.set('/central/entity-orders.jsonl', appendOrders('', [order]));
 
-    const summary = await applyPendingCentralOrders(ctx);
-    expect(summary).toEqual({ ordersApplied: 1, repointed: 1, cleared: 0 });
-
+    await expect(applyPendingCentralOrders(ctx)).rejects.toThrow(SQLITE_REQUIRED_MESSAGE);
     const after = await projectStore.loadEntities();
-    const afterItem = after.getElementsByTagName('person')[0]!;
-    expect(afterItem.getAttribute('xml:id')).toBe(id);
-    expect(getCentralId(afterItem, USER)).toBe('person-new-central');
-
-    // second run is a no-op (cursor remembers the order)
-    const again = await applyPendingCentralOrders(ctx);
-    expect(again).toEqual({ ordersApplied: 0, repointed: 0, cleared: 0 });
+    expect(getCentralId(after.getElementsByTagName('person')[0]!, USER)).toBe('person-old-central');
   });
 
-  it('clears a mapping when the central entity was deleted outright', async () => {
+  it('fails loud when orders exist but CEDB fingerprint cannot come from SQLite', async () => {
     const { fs, ctx, projectStore } = makeContext();
     const pedbDoc = await projectStore.loadEntities();
     const { element } = addEntity(pedbDoc, 'person', { name: '南齊書' });
     setCentralMapping(element, USER, 'person-old-central');
-    await projectStore.saveEntities(pedbDoc);
-
-    const order = makeOrder('cedb-1', { 'person-old-central': null });
-    fs.files.set('/central/entity-orders.jsonl', appendOrders('', [order]));
-
-    const summary = await applyPendingCentralOrders(ctx);
-    expect(summary).toEqual({ ordersApplied: 1, repointed: 0, cleared: 1 });
-
-    const after = await projectStore.loadEntities();
-    const afterItem = after.getElementsByTagName('person')[0]!;
-    expect(getCentralId(afterItem, USER)).toBeNull();
-  });
-
-  it('ignores orders from a different central database fingerprint', async () => {
-    const { fs, ctx, projectStore } = makeContext();
-    const pedbDoc = await projectStore.loadEntities();
-    const { element } = addEntity(pedbDoc, 'person', { name: '南齊書' });
-    setCentralMapping(element, USER, 'person-old-central');
-    await projectStore.saveEntities(pedbDoc);
+    await projectStore.saveEntities(pedbDoc, { allowSqliteFullReimport: true });
 
     const foreign = makeOrder('cedb-OTHER', { 'person-old-central': 'person-new-central' });
     fs.files.set('/central/entity-orders.jsonl', appendOrders('', [foreign]));
 
-    const summary = await applyPendingCentralOrders(ctx);
-    expect(summary).toEqual({ ordersApplied: 0, repointed: 0, cleared: 0 });
-
-    const after = await projectStore.loadEntities();
-    const afterItem = after.getElementsByTagName('person')[0]!;
-    expect(getCentralId(afterItem, USER)).toBe('person-old-central');
+    await expect(applyPendingCentralOrders(ctx)).rejects.toThrow(SQLITE_REQUIRED_MESSAGE);
   });
 
   it('is a no-op when there is no order log yet', async () => {
@@ -117,99 +90,93 @@ describe('applyPendingCentralOrders', () => {
   });
 });
 
-describe('computeMergeDocket / resolveMergeSuggestion', () => {
-  it('lists a pending suggestion with both sides compared, and the docket empties once merged', async () => {
+describe('promoteEntities / syncEntities', () => {
+  it('fails loud without SQLite', async () => {
+    const { ctx, projectStore } = makeContext();
+    const pedbDoc = await projectStore.loadEntities();
+    const { id } = addEntity(pedbDoc, 'person', { name: '孔遺' });
+    await projectStore.saveEntities(pedbDoc, { allowSqliteFullReimport: true });
+
+    await expect(promoteEntities(ctx, [id])).rejects.toThrow(SQLITE_REQUIRED_MESSAGE);
+    await expect(syncEntities(ctx, [{ pedbId: id, centralId: 'central-1' }])).rejects.toThrow(
+      SQLITE_REQUIRED_MESSAGE,
+    );
+  });
+});
+
+describe('computeBridgeInbox / computeMergeDocket reads', () => {
+  it('fails loud without SQLite for the inbox', async () => {
     const { ctx } = makeContext();
-    const cedbDoc = await ctx.centralStore.loadEntities();
-    const a = addEntity(cedbDoc, 'work', { name: '南齊書', description: 'History of Southern Qi' }).id;
-    const b = addEntity(cedbDoc, 'work', { name: '南齊書 (dup)', authorityIds: [{ type: 'Wikidata', value: 'Q123' }] }).id;
-    await ctx.centralStore.saveEntities(cedbDoc);
-    await ctx.centralStore.recordMergeSuggestion('pedb-1', [a, b]);
-
-    const docket = await computeMergeDocket(ctx.centralStore);
-    expect(docket).toHaveLength(1);
-    const entry = docket[0]!;
-    if (entry.kind !== 'merge') throw new Error('expected a merge entry');
-    expect(entry.sides.map((side) => side.id)).toEqual([a, b]);
-    expect(entry.sides[0]!.fields.names.map((n) => n.text)).toEqual(['南齊書']);
-    expect(entry.sides[1]!.fields.authorities).toEqual([{ type: 'Wikidata', value: 'Q123' }]);
-
-    await resolveMergeSuggestion(ctx.centralStore, entry.suggestionId, {
-      action: 'merge',
-      keepId: a,
-      dropId: b,
-    });
-
-    expect(await computeMergeDocket(ctx.centralStore)).toEqual([]);
-    const afterDoc = await ctx.centralStore.loadEntities();
-    expect(afterDoc.getElementsByTagName('bibl')).toHaveLength(1);
-
-    // The merge also records a durable order other PEDBs converge against.
-    const orders = await ctx.centralStore.readEntityOrders();
-    expect(orders).toHaveLength(1);
-    expect(orders[0]!.remap).toEqual({ [b]: a });
+    await expect(computeBridgeInbox(ctx)).rejects.toThrow(SQLITE_REQUIRED_MESSAGE);
   });
 
-  it('drops off the docket when ignored, without touching either entity', async () => {
+  it('fails loud without SQLite for the merge docket', async () => {
+    const { ctx } = makeContext();
+    await ctx.centralStore.recordMergeSuggestion('pedb-1', ['a', 'b']);
+    await expect(computeMergeDocket(ctx.centralStore)).rejects.toThrow(SQLITE_REQUIRED_MESSAGE);
+  });
+});
+
+describe('computeMergeDocket / resolveMergeSuggestion', () => {
+  it('fails loud on merge/delete without CEDB SQLite', async () => {
     const { ctx } = makeContext();
     const cedbDoc = await ctx.centralStore.loadEntities();
     const a = addEntity(cedbDoc, 'work', { name: '南齊書' }).id;
     const b = addEntity(cedbDoc, 'work', { name: '南齊書 (dup)' }).id;
-    await ctx.centralStore.saveEntities(cedbDoc);
+    await ctx.centralStore.saveEntities(cedbDoc, { allowSqliteFullReimport: true });
     await ctx.centralStore.recordMergeSuggestion('pedb-1', [a, b]);
 
-    const docket = await computeMergeDocket(ctx.centralStore);
-    await resolveMergeSuggestion(ctx.centralStore, docket[0]!.suggestionId, { action: 'ignore' });
+    await expect(computeMergeDocket(ctx.centralStore)).rejects.toThrow(SQLITE_REQUIRED_MESSAGE);
 
-    expect(await computeMergeDocket(ctx.centralStore)).toEqual([]);
+    await expect(
+      resolveMergeSuggestion(ctx.centralStore, 'suggestion-missing-sqlite', {
+        action: 'merge',
+        keepId: a,
+        dropId: b,
+      }),
+    ).rejects.toThrow(SQLITE_REQUIRED_MESSAGE);
+
+    await expect(
+      resolveMergeSuggestion(ctx.centralStore, 'suggestion-missing-sqlite', {
+        action: 'delete',
+        centralId: a,
+      }),
+    ).rejects.toThrow(SQLITE_REQUIRED_MESSAGE);
+  });
+
+  it('ignores a suggestion without needing SQLite panel reads', async () => {
+    const { ctx } = makeContext();
+    const cedbDoc = await ctx.centralStore.loadEntities();
+    const a = addEntity(cedbDoc, 'work', { name: '南齊書' }).id;
+    const b = addEntity(cedbDoc, 'work', { name: '南齊書 (dup)' }).id;
+    await ctx.centralStore.saveEntities(cedbDoc, { allowSqliteFullReimport: true });
+    const suggestion = await ctx.centralStore.recordMergeSuggestion('pedb-1', [a, b]);
+    expect(suggestion).toBeTruthy();
+
+    await resolveMergeSuggestion(ctx.centralStore, suggestion!.id, { action: 'ignore' });
+
+    // Docket itself still requires SQLite — ignore only records JSONL.
+    await expect(computeMergeDocket(ctx.centralStore)).rejects.toThrow(SQLITE_REQUIRED_MESSAGE);
     const afterDoc = await ctx.centralStore.loadEntities();
     expect(afterDoc.getElementsByTagName('bibl')).toHaveLength(2);
   });
 
-  it('is empty when nothing has been suggested', async () => {
+  it('fails loud when asking for an empty docket without SQLite', async () => {
     const { ctx } = makeContext();
-    expect(await computeMergeDocket(ctx.centralStore)).toEqual([]);
+    await expect(computeMergeDocket(ctx.centralStore)).rejects.toThrow(SQLITE_REQUIRED_MESSAGE);
   });
 
-  it('lists a purge suggestion for a single orphaned central entity, and deletes it on confirm', async () => {
-    const { ctx } = makeContext();
-    const cedbDoc = await ctx.centralStore.loadEntities();
-    const a = addEntity(cedbDoc, 'work', { name: '南齊書', description: 'History of Southern Qi' }).id;
-    await ctx.centralStore.saveEntities(cedbDoc);
-    await ctx.centralStore.recordDeleteSuggestion('pedb-1', a);
-
-    const docket = await computeMergeDocket(ctx.centralStore);
-    expect(docket).toHaveLength(1);
-    const entry = docket[0]!;
-    if (entry.kind !== 'delete') throw new Error('expected a delete entry');
-    expect(entry.side.id).toBe(a);
-    expect(entry.side.fields.description).toBe('History of Southern Qi');
-
-    await resolveMergeSuggestion(ctx.centralStore, entry.suggestionId, {
-      action: 'delete',
-      centralId: a,
-    });
-
-    expect(await computeMergeDocket(ctx.centralStore)).toEqual([]);
-    const afterDoc = await ctx.centralStore.loadEntities();
-    expect(afterDoc.getElementsByTagName('bibl')).toHaveLength(0);
-
-    const orders = await ctx.centralStore.readEntityOrders();
-    expect(orders).toHaveLength(1);
-    expect(orders[0]!.remap).toEqual({ [a]: null });
-  });
-
-  it('drops a purge suggestion when kept, without touching the entity', async () => {
+  it('ignores a purge suggestion without needing SQLite panel reads', async () => {
     const { ctx } = makeContext();
     const cedbDoc = await ctx.centralStore.loadEntities();
     const a = addEntity(cedbDoc, 'work', { name: '南齊書' }).id;
-    await ctx.centralStore.saveEntities(cedbDoc);
-    await ctx.centralStore.recordDeleteSuggestion('pedb-1', a);
+    await ctx.centralStore.saveEntities(cedbDoc, { allowSqliteFullReimport: true });
+    const suggestion = await ctx.centralStore.recordDeleteSuggestion('pedb-1', a);
+    expect(suggestion).toBeTruthy();
 
-    const docket = await computeMergeDocket(ctx.centralStore);
-    await resolveMergeSuggestion(ctx.centralStore, docket[0]!.suggestionId, { action: 'ignore' });
+    await resolveMergeSuggestion(ctx.centralStore, suggestion!.id, { action: 'ignore' });
 
-    expect(await computeMergeDocket(ctx.centralStore)).toEqual([]);
+    await expect(computeMergeDocket(ctx.centralStore)).rejects.toThrow(SQLITE_REQUIRED_MESSAGE);
     const afterDoc = await ctx.centralStore.loadEntities();
     expect(afterDoc.getElementsByTagName('bibl')).toHaveLength(1);
   });

@@ -7,7 +7,7 @@ import {
   TextField,
   Typography,
 } from '@mui/material';
-import { useEffect, useRef } from 'react';
+import { useLayoutEffect, useRef } from 'react';
 import type { SchemaAttributeDetail } from './attributeSuggestions';
 import { useClampedPopupPosition } from './clampPopupPosition';
 
@@ -57,15 +57,13 @@ export const AttributeCommandPopup = ({
     valueSuggestions.length,
   ]);
 
-  useEffect(() => {
+  useLayoutEffect(() => {
     if (!open) return;
-    requestAnimationFrame(() => {
-      if (focusedField === 'value') {
-        valueInputRef.current?.focus();
-      } else {
-        nameInputRef.current?.focus();
-      }
-    });
+    if (focusedField === 'value') {
+      valueInputRef.current?.focus();
+    } else {
+      nameInputRef.current?.focus();
+    }
   }, [focusedField, open]);
 
   if (!open || !anchor) return null;

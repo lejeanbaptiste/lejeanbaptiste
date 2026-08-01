@@ -23,6 +23,7 @@ class FakeFs implements EntityFileApi {
   writeFile = async (path: string, content: string) => {
     this.files.set(path, content);
   };
+  entitySqliteDatabaseId = async () => 'db1';
 }
 
 const makeStore = () => {
@@ -30,6 +31,7 @@ const makeStore = () => {
   fs.dirs.add('/proj');
   fs.dirs.add('/central');
   fs.files.set('/central/entities.xml', createEntitiesScaffold('db1'));
+  fs.files.set('/central/entities.sqlite', '');
   fs.files.set('/central/entity-projects.json', JSON.stringify({ version: 1, projects: ['/proj'] }));
   const paths = resolveEntityStorePaths({
     projectRoot: '/proj',

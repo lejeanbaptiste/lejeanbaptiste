@@ -1,10 +1,8 @@
 import {
-  buildBridgeInbox,
   buildBridgeInboxFromFields,
   type BridgeInboxReport,
 } from '../../../../../packages/cwrc-leafwriter/src/autoTagging/bridgeInbox';
 import {
-  applyCentralRemapToPedb,
   applyCentralRemapToPedbSqlite,
   pendingCentralRemap,
 } from '../../../../../packages/cwrc-leafwriter/src/autoTagging/centralOrderSync';
@@ -18,40 +16,17 @@ import {
   entityStoreFromDesktop,
   type EntityStore,
 } from '../../../../../packages/cwrc-leafwriter/src/autoTagging/entityStore';
-import { deleteEntity, kindOfElement, mergeEntities } from '../../../../../packages/cwrc-leafwriter/src/autoTagging/entityOps';
-import { buildCentralPromotionIndex, promoteToCentral } from '../../../../../packages/cwrc-leafwriter/src/autoTagging/promote';
-import {
-  applyReconcilePlan,
-  planReconcile,
-  readFields,
-  type EntityFields,
-} from '../../../../../packages/cwrc-leafwriter/src/autoTagging/reconcile';
+import type { EntityFields } from '../../../../../packages/cwrc-leafwriter/src/autoTagging/reconcile';
 import {
   entityFieldsFromSqlitePanel,
   promoteToCentralSqlite,
   syncEntityPairSqlite,
 } from '../../../../../packages/cwrc-leafwriter/src/autoTagging/sqliteBridgeOps';
+import { SQLITE_REQUIRED_MESSAGE } from '../../../../../packages/cwrc-leafwriter/src/autoTagging/sqliteRequired';
 import type { SqlitePanelSummaryLike } from '../../../../../packages/cwrc-leafwriter/src/autoTagging/sqliteSummary';
 import { readOrMintUserStableId } from '../../../../../packages/cwrc-leafwriter/src/autoTagging/userStableId';
-import {
-  ENTITY_KINDS,
-  entityElements,
-  findEntity,
-  getDatabaseId,
-  type EntityKind,
-} from '../../../../../packages/cwrc-leafwriter/src/autoTagging/entities';
+import { type EntityKind } from '../../../../../packages/cwrc-leafwriter/src/autoTagging/entities';
 import { applyKeyRemapAcrossProjects } from './applyKeyRemap';
-
-/** Every entity element in a document, across all kinds. */
-const allEntityElements = (doc: Document): Element[] =>
-  (Object.keys(ENTITY_KINDS) as EntityKind[]).flatMap((kind) => entityElements(doc, kind));
-
-const entityIdsFromDoc = (doc: Document): Set<string> =>
-  new Set(
-    allEntityElements(doc)
-      .map((item) => item.getAttribute('xml:id'))
-      .filter((id): id is string => Boolean(id)),
-  );
 
 type PanelSnapshot = SqlitePanelSummaryLike & { updatedAt?: string };
 
@@ -105,42 +80,38 @@ export async function loadBridgeContext(overrideProjectRoot?: string): Promise<B
   return { available: true, context: { projectStore, centralStore, userStableId } };
 }
 
-/** Compute the current inbox from disk. */
+/** Compute the current inbox from disk. Requires PEDB + CEDB SQLite. */
 export async function computeBridgeInbox(ctx: BridgeContext): Promise<BridgeInboxReport> {
   if (
-    (await ctx.projectStore.hasSqliteDatabase()) &&
-    (await ctx.centralStore.hasSqliteDatabase()) &&
-    window.electronAPI?.entitySqliteListPanelSummaries &&
-    window.electronAPI?.entitySqliteGetCentralId
+    !(await ctx.projectStore.hasSqliteDatabase()) ||
+    !(await ctx.centralStore.hasSqliteDatabase()) ||
+    !window.electronAPI?.entitySqliteListPanelSummaries ||
+    !window.electronAPI?.entitySqliteGetCentralId
   ) {
-    const [pedbRows, cedbRows] = await Promise.all([
-      ctx.projectStore.sqlitePanelSummaries(),
-      ctx.centralStore.sqlitePanelSummaries(),
-    ]);
-    const cedbFieldsById = new Map<string, EntityFields>();
-    for (const row of asPanelSnapshots(cedbRows)) {
-      cedbFieldsById.set(row.id, entityFieldsFromSqlitePanel(row));
-    }
-    const pedbFieldRows = [];
-    for (const row of asPanelSnapshots(pedbRows)) {
-      const centralId = await ctx.projectStore.sqliteGetCentralId(row.id, ctx.userStableId);
-      const activeName = row.names.find((name) => name.status === 'active');
-      pedbFieldRows.push({
-        id: row.id,
-        name: activeName?.text ?? row.id,
-        kind: row.kind,
-        centralId,
-        fields: entityFieldsFromSqlitePanel(row),
-      });
-    }
-    return buildBridgeInboxFromFields(pedbFieldRows, cedbFieldsById);
+    throw new Error(SQLITE_REQUIRED_MESSAGE);
   }
 
-  const [pedbDoc, cedbDoc] = await Promise.all([
-    ctx.projectStore.loadEntities(),
-    ctx.centralStore.loadEntities(),
+  const [pedbRows, cedbRows] = await Promise.all([
+    ctx.projectStore.sqlitePanelSummaries(),
+    ctx.centralStore.sqlitePanelSummaries(),
   ]);
-  return buildBridgeInbox(pedbDoc, cedbDoc, ctx.userStableId);
+  const cedbFieldsById = new Map<string, EntityFields>();
+  for (const row of asPanelSnapshots(cedbRows)) {
+    cedbFieldsById.set(row.id, entityFieldsFromSqlitePanel(row));
+  }
+  const pedbFieldRows = [];
+  for (const row of asPanelSnapshots(pedbRows)) {
+    const centralId = await ctx.projectStore.sqliteGetCentralId(row.id, ctx.userStableId);
+    const activeName = row.names.find((name) => name.status === 'active');
+    pedbFieldRows.push({
+      id: row.id,
+      name: activeName?.text ?? row.id,
+      kind: row.kind,
+      centralId,
+      fields: entityFieldsFromSqlitePanel(row),
+    });
+  }
+  return buildBridgeInboxFromFields(pedbFieldRows, cedbFieldsById);
 }
 
 export interface CentralOrderSyncSummary {
@@ -160,6 +131,9 @@ export interface CentralOrderSyncSummary {
  * is a different `entities.xml` with its own id space — the mapping is the
  * only bridge between the two, so it's the only thing that needs to move.
  * Idempotent and safe to call on every project open or Bridge-dialog visit.
+ *
+ * Remap writes and CEDB fingerprint both require SQLite; missing SQLite fails
+ * loud (no DOM load/save).
  */
 export async function applyPendingCentralOrders(
   ctx: BridgeContext,
@@ -170,33 +144,24 @@ export async function applyPendingCentralOrders(
     ctx.centralStore.readEntityOrders(),
     ctx.projectStore.readAppliedOrderIds(),
   ]);
+  if (cedbOrders.length === 0) return none;
 
-  const useSqlite =
-    (await ctx.projectStore.hasSqliteDatabase()) &&
-    Boolean(window.electronAPI?.entitySqliteClearCentralMapping);
-
-  let cedbDbId: string | null = null;
-  if (useSqlite) {
-    cedbDbId = await ctx.centralStore.sqliteDatabaseId();
-  } else {
-    const cedbDoc = await ctx.centralStore.loadEntities();
-    cedbDbId = getDatabaseId(cedbDoc);
+  if (
+    !(await ctx.projectStore.hasSqliteDatabase()) ||
+    !(await ctx.centralStore.hasSqliteDatabase()) ||
+    !window.electronAPI?.entitySqliteClearCentralMapping ||
+    !window.electronAPI?.entitySqliteDatabaseId
+  ) {
+    throw new Error(SQLITE_REQUIRED_MESSAGE);
   }
+
+  const cedbDbId = await ctx.centralStore.sqliteDatabaseId();
   if (!cedbDbId) return none;
 
   const { pending, remap } = pendingCentralRemap(cedbOrders, cedbDbId, applied);
   if (pending.length === 0) return none;
 
-  let result;
-  if (useSqlite) {
-    result = await applyCentralRemapToPedbSqlite(ctx.projectStore, remap, ctx.userStableId);
-  } else {
-    const pedbDoc = await ctx.projectStore.loadEntities();
-    result = applyCentralRemapToPedb(pedbDoc, remap, ctx.userStableId);
-    if (result.repointed.length > 0 || result.cleared.length > 0) {
-      await ctx.projectStore.saveEntities(pedbDoc);
-    }
-  }
+  const result = await applyCentralRemapToPedbSqlite(ctx.projectStore, remap, ctx.userStableId);
 
   for (const order of pending) applied.add(order.id);
   await ctx.projectStore.writeAppliedOrderIds(applied);
@@ -213,47 +178,24 @@ export async function promoteEntities(ctx: BridgeContext, pedbIds: string[]): Pr
   if (pedbIds.length === 0) return 0;
 
   if (
-    (await ctx.projectStore.hasSqliteDatabase()) &&
-    (await ctx.centralStore.hasSqliteDatabase()) &&
-    window.electronAPI?.entitySqliteCreatePopulated &&
-    window.electronAPI?.entitySqliteSetCentralMapping
+    !(await ctx.projectStore.hasSqliteDatabase()) ||
+    !(await ctx.centralStore.hasSqliteDatabase()) ||
+    !window.electronAPI?.entitySqliteCreatePopulated ||
+    !window.electronAPI?.entitySqliteSetCentralMapping
   ) {
-    let promoted = 0;
-    for (const id of pedbIds) {
-      const result = await promoteToCentralSqlite(
-        ctx.projectStore,
-        ctx.centralStore,
-        id,
-        ctx.userStableId,
-      );
-      if (result) promoted += 1;
-    }
-    return promoted;
+    throw new Error(SQLITE_REQUIRED_MESSAGE);
   }
 
-  const pedbDoc = await ctx.projectStore.loadEntities();
-  const cedbDoc = await ctx.centralStore.loadEntities();
-  // Built once and kept current by promoteToCentral — without these, every
-  // call re-scans the whole project doc for its id and re-scans the (steadily
-  // growing) central doc for duplicates, which is O(n²) across a batch of
-  // hundreds or thousands of ids (e.g. "Accept all" on a bulk-import review).
-  const pedbIndex = new Map(
-    allEntityElements(pedbDoc)
-      .map((item): [string, Element] | null => {
-        const id = item.getAttribute('xml:id');
-        return id ? [id, item] : null;
-      })
-      .filter((entry): entry is [string, Element] => entry !== null),
-  );
-  const centralIndex = buildCentralPromotionIndex(cedbDoc);
   let promoted = 0;
   for (const id of pedbIds) {
-    if (!findEntity(pedbDoc, id, pedbIndex)) continue;
-    promoteToCentral(pedbDoc, id, cedbDoc, ctx.userStableId, pedbIndex, centralIndex);
-    promoted += 1;
+    const result = await promoteToCentralSqlite(
+      ctx.projectStore,
+      ctx.centralStore,
+      id,
+      ctx.userStableId,
+    );
+    if (result) promoted += 1;
   }
-  await ctx.centralStore.saveEntities(cedbDoc);
-  await ctx.projectStore.saveEntities(pedbDoc);
   return promoted;
 }
 
@@ -268,40 +210,23 @@ export async function syncEntities(
   if (pairs.length === 0) return { synced: 0 };
 
   if (
-    (await ctx.projectStore.hasSqliteDatabase()) &&
-    (await ctx.centralStore.hasSqliteDatabase()) &&
-    window.electronAPI?.entitySqliteAttachAuthority
+    !(await ctx.projectStore.hasSqliteDatabase()) ||
+    !(await ctx.centralStore.hasSqliteDatabase()) ||
+    !window.electronAPI?.entitySqliteAttachAuthority
   ) {
-    let synced = 0;
-    for (const { pedbId, centralId } of pairs) {
-      const result = await syncEntityPairSqlite(
-        ctx.projectStore,
-        ctx.centralStore,
-        pedbId,
-        centralId,
-      );
-      if (result) synced += 1;
-    }
-    return { synced };
+    throw new Error(SQLITE_REQUIRED_MESSAGE);
   }
 
-  const pedbDoc = await ctx.projectStore.loadEntities();
-  const cedbDoc = await ctx.centralStore.loadEntities();
   let synced = 0;
-  let pedbTouched = false;
-  let cedbTouched = false;
   for (const { pedbId, centralId } of pairs) {
-    const pedbItem = findEntity(pedbDoc, pedbId);
-    const cedbItem = findEntity(cedbDoc, centralId);
-    if (!pedbItem || !cedbItem) continue;
-    const plan = planReconcile(pedbItem, cedbItem);
-    const { pedbChanged, cedbChanged } = applyReconcilePlan(pedbDoc, pedbId, cedbDoc, centralId, plan);
-    pedbTouched ||= pedbChanged;
-    cedbTouched ||= cedbChanged;
-    synced += 1;
+    const result = await syncEntityPairSqlite(
+      ctx.projectStore,
+      ctx.centralStore,
+      pedbId,
+      centralId,
+    );
+    if (result) synced += 1;
   }
-  if (cedbTouched) await ctx.centralStore.saveEntities(cedbDoc);
-  if (pedbTouched) await ctx.projectStore.saveEntities(pedbDoc);
   return { synced };
 }
 
@@ -327,84 +252,27 @@ export type MergeDocketEntry =
 
 export async function computeMergeDocket(
   centralStore: EntityStore,
-  /** Pass an already-loaded central doc (e.g. from a sibling load) to skip re-parsing it. */
-  preloadedDoc?: Document,
 ): Promise<MergeDocketEntry[]> {
-  const useSqlite =
-    !preloadedDoc &&
-    (await centralStore.hasSqliteDatabase()) &&
-    Boolean(window.electronAPI?.entitySqliteListPanelSummaries);
-
-  if (useSqlite) {
-    const [suggestions, resolutions, cedbOrders, cedbDbId, summaries] = await Promise.all([
-      centralStore.readMergeSuggestions(),
-      centralStore.readMergeSuggestionResolutions(),
-      centralStore.readEntityOrders(),
-      centralStore.sqliteDatabaseId(),
-      centralStore.sqlitePanelSummaries(),
-    ]);
-    if (!cedbDbId) return [];
-
-    const snapshots = asPanelSnapshots(summaries);
-    const byId = new Map(snapshots.map((row) => [row.id, row]));
-    const existingIds = new Set(byId.keys());
-    const entries: MergeDocketEntry[] = [];
-
-    const pendingMerges = pendingMergeSuggestions(
-      suggestions,
-      resolutions,
-      cedbOrders,
-      cedbDbId,
-      existingIds,
-    );
-    for (const item of pendingMerges) {
-      const [aId, bId] = item.centralIds;
-      const aRow = byId.get(aId);
-      const bRow = byId.get(bId);
-      if (!aRow || !bRow) continue;
-      entries.push({
-        kind: 'merge',
-        suggestionId: item.id,
-        when: item.when,
-        sides: [
-          { id: aId, kind: aRow.kind, fields: entityFieldsFromSqlitePanel(aRow) },
-          { id: bId, kind: bRow.kind, fields: entityFieldsFromSqlitePanel(bRow) },
-        ],
-      });
-    }
-
-    const pendingDeletes = pendingDeleteSuggestions(
-      suggestions,
-      resolutions,
-      cedbOrders,
-      cedbDbId,
-      existingIds,
-    );
-    for (const item of pendingDeletes) {
-      const row = byId.get(item.centralId);
-      if (!row) continue;
-      entries.push({
-        kind: 'delete',
-        suggestionId: item.id,
-        when: item.when,
-        side: { id: item.centralId, kind: row.kind, fields: entityFieldsFromSqlitePanel(row) },
-      });
-    }
-
-    entries.sort((a, b) => a.when.localeCompare(b.when));
-    return entries;
+  if (
+    !(await centralStore.hasSqliteDatabase()) ||
+    !window.electronAPI?.entitySqliteListPanelSummaries ||
+    !window.electronAPI?.entitySqliteDatabaseId
+  ) {
+    throw new Error(SQLITE_REQUIRED_MESSAGE);
   }
 
-  const [cedbDoc, suggestions, resolutions, cedbOrders] = await Promise.all([
-    preloadedDoc ?? centralStore.loadEntities(),
+  const [suggestions, resolutions, cedbOrders, cedbDbId, summaries] = await Promise.all([
     centralStore.readMergeSuggestions(),
     centralStore.readMergeSuggestionResolutions(),
     centralStore.readEntityOrders(),
+    centralStore.sqliteDatabaseId(),
+    centralStore.sqlitePanelSummaries(),
   ]);
-  const cedbDbId = getDatabaseId(cedbDoc);
   if (!cedbDbId) return [];
 
-  const existingIds = entityIdsFromDoc(cedbDoc);
+  const snapshots = asPanelSnapshots(summaries);
+  const byId = new Map(snapshots.map((row) => [row.id, row]));
+  const existingIds = new Set(byId.keys());
   const entries: MergeDocketEntry[] = [];
 
   const pendingMerges = pendingMergeSuggestions(
@@ -416,18 +284,16 @@ export async function computeMergeDocket(
   );
   for (const item of pendingMerges) {
     const [aId, bId] = item.centralIds;
-    const aItem = findEntity(cedbDoc, aId);
-    const bItem = findEntity(cedbDoc, bId);
-    const aKind = aItem && kindOfElement(aItem);
-    const bKind = bItem && kindOfElement(bItem);
-    if (!aItem || !bItem || !aKind || !bKind) continue;
+    const aRow = byId.get(aId);
+    const bRow = byId.get(bId);
+    if (!aRow || !bRow) continue;
     entries.push({
       kind: 'merge',
       suggestionId: item.id,
       when: item.when,
       sides: [
-        { id: aId, kind: aKind, fields: readFields(aItem) },
-        { id: bId, kind: bKind, fields: readFields(bItem) },
+        { id: aId, kind: aRow.kind, fields: entityFieldsFromSqlitePanel(aRow) },
+        { id: bId, kind: bRow.kind, fields: entityFieldsFromSqlitePanel(bRow) },
       ],
     });
   }
@@ -440,14 +306,13 @@ export async function computeMergeDocket(
     existingIds,
   );
   for (const item of pendingDeletes) {
-    const centralItem = findEntity(cedbDoc, item.centralId);
-    const centralKind = centralItem && kindOfElement(centralItem);
-    if (!centralItem || !centralKind) continue;
+    const row = byId.get(item.centralId);
+    if (!row) continue;
     entries.push({
       kind: 'delete',
       suggestionId: item.id,
       when: item.when,
-      side: { id: item.centralId, kind: centralKind, fields: readFields(centralItem) },
+      side: { id: item.centralId, kind: row.kind, fields: entityFieldsFromSqlitePanel(row) },
     });
   }
 
@@ -470,6 +335,8 @@ export type MergeSuggestionDecision =
  * mapping the next time it opens or visits its Bridge inbox) and eagerly
  * rewrites any project still using this file directly, exactly like a
  * manual central merge/delete from the database panel.
+ *
+ * Merge/delete require CEDB SQLite; missing SQLite fails loud (no DOM save).
  */
 export async function resolveMergeSuggestion(
   centralStore: EntityStore,
@@ -482,36 +349,16 @@ export async function resolveMergeSuggestion(
   }
 
   if (
-    (await centralStore.hasSqliteDatabase()) &&
-    window.electronAPI?.entitySqliteSoftDelete &&
-    window.electronAPI?.entitySqliteMerge
+    !(await centralStore.hasSqliteDatabase()) ||
+    !window.electronAPI?.entitySqliteSoftDelete ||
+    !window.electronAPI?.entitySqliteMerge
   ) {
-    const dbId = (await centralStore.sqliteDatabaseId()) ?? undefined;
-    if (decision.action === 'delete') {
-      await centralStore.sqliteSoftDelete(decision.centralId);
-      const remap = { [decision.centralId]: null };
-      await centralStore.recordEntityOrder(remap, dbId);
-      await applyKeyRemapAcrossProjects(centralStore, remap).catch(() => undefined);
-      await centralStore.recordMergeSuggestionResolution(suggestionId, 'deleted');
-      return;
-    }
-
-    const mergeResult = await centralStore.sqliteMerge(decision.keepId, [decision.dropId]);
-    const remap = mergeResult.remap;
-    if (Object.keys(remap).length > 0) {
-      await centralStore.recordEntityOrder(remap, dbId);
-      await applyKeyRemapAcrossProjects(centralStore, remap).catch(() => undefined);
-    }
-    await centralStore.recordMergeSuggestionResolution(suggestionId, 'merged');
-    return;
+    throw new Error(SQLITE_REQUIRED_MESSAGE);
   }
 
-  const cedbDoc = await centralStore.loadEntities();
-  const dbId = getDatabaseId(cedbDoc) ?? undefined;
-
+  const dbId = (await centralStore.sqliteDatabaseId()) ?? undefined;
   if (decision.action === 'delete') {
-    deleteEntity(cedbDoc, decision.centralId);
-    await centralStore.saveEntities(cedbDoc);
+    await centralStore.sqliteSoftDelete(decision.centralId);
     const remap = { [decision.centralId]: null };
     await centralStore.recordEntityOrder(remap, dbId);
     await applyKeyRemapAcrossProjects(centralStore, remap).catch(() => undefined);
@@ -519,8 +366,8 @@ export async function resolveMergeSuggestion(
     return;
   }
 
-  const { remap } = mergeEntities(cedbDoc, decision.keepId, [decision.dropId]);
-  await centralStore.saveEntities(cedbDoc);
+  const mergeResult = await centralStore.sqliteMerge(decision.keepId, [decision.dropId]);
+  const remap = mergeResult.remap;
   if (Object.keys(remap).length > 0) {
     await centralStore.recordEntityOrder(remap, dbId);
     await applyKeyRemapAcrossProjects(centralStore, remap).catch(() => undefined);

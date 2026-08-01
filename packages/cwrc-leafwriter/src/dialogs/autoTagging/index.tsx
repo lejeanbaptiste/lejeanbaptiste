@@ -27,7 +27,6 @@ import { NorbertIcon } from '../../icons/custom/AuthoritySource';
 import {
   AutoTaggingSession,
   aiApiSettingsFromDesktop,
-  candidatesFromEntityDatabase,
   candidatesFromEntityDatabaseRecords,
   centralEntityStoreFromDesktop,
   countAuthorityPackStrings,
@@ -84,6 +83,7 @@ import {
   clearTagBombQueue,
 } from '../../autoTagging';
 import type { EntityDatabaseCandidateRecord } from '../../autoTagging/ownDatabaseCandidates';
+import { SQLITE_REQUIRED_LOOKUP_MESSAGE } from '../../autoTagging/sqliteRequired';
 import {
   isChineseLanguageCode,
   isJapaneseLanguageCode,
@@ -269,7 +269,7 @@ const unavailableSuffixFor = (origin: ReturnType<typeof authorityPackOrigin>): s
 
 /**
  * Live "· N strings" preview for PEDB/CEDB rows, mirroring the NDJSON pack
- * preview but reading straight from entities.xml — one load per database,
+ * preview but reading from migrated SQLite — one load per database,
  * reused across every requested kind.
  */
 const countOwnDatabasePackStrings = async (
@@ -286,13 +286,12 @@ const countOwnDatabasePackStrings = async (
         const kind = OWN_DATABASE_KIND_BY_PACK_ID[id];
         if (!kind) continue;
         const records = await store.sqliteCandidateRecords(kind);
+        if (records == null) throw new Error(SQLITE_REQUIRED_LOOKUP_MESSAGE);
         out[id] = countCandidatesUniqueStrings(
-          records
-            ? candidatesFromEntityDatabaseRecords(
-                records as EntityDatabaseCandidateRecord[],
-                'PEDB',
-              )
-            : candidatesFromEntityDatabase(await store.loadEntities(), kind, 'PEDB'),
+          candidatesFromEntityDatabaseRecords(
+            records as EntityDatabaseCandidateRecord[],
+            'PEDB',
+          ),
           range,
         );
       }
@@ -307,13 +306,12 @@ const countOwnDatabasePackStrings = async (
         const kind = OWN_DATABASE_KIND_BY_PACK_ID[id];
         if (!kind) continue;
         const records = await store.sqliteCandidateRecords(kind);
+        if (records == null) throw new Error(SQLITE_REQUIRED_LOOKUP_MESSAGE);
         out[id] = countCandidatesUniqueStrings(
-          records
-            ? candidatesFromEntityDatabaseRecords(
-                records as EntityDatabaseCandidateRecord[],
-                'CEDB',
-              )
-            : candidatesFromEntityDatabase(await store.loadEntities(), kind, 'CEDB'),
+          candidatesFromEntityDatabaseRecords(
+            records as EntityDatabaseCandidateRecord[],
+            'CEDB',
+          ),
           range,
         );
       }

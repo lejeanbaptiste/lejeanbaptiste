@@ -65,6 +65,11 @@ class Writer extends EventManager {
   isReadOnly = false; // is the editor in readonly mode
   /** WYSIWYG text entry/delete/paste blocked; tagging shortcuts still work. */
   isTextLocked = false;
+  /**
+   * Sync the editor DOM with {@link isTextLocked}. Chromium will not cancel
+   * Chinese/Japanese/Korean IME via preventDefault; locking flips contenteditable.
+   */
+  applyTextLockDomGuard?: () => void;
   isAnnotator = false; // is the editor in annotate (entities) only mode
 
   mode: number = this.XMLRDF; // editor mode

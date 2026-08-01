@@ -23,8 +23,9 @@
  *     does not depend on the person being a known authority record, since
  *     most mentions in a corpus won't be.
  *  5. Give every keyless personWrapper a `@key`: copy it down from an
- *     already-keyed inner `<persName>`, or attempt a unique entities.xml
- *     match; anything still unresolved is left for the normal disambiguation
+ *     already-keyed inner `<persName>`, or attempt a unique local-entity
+ *     match (SQLite search in the live app; tests pass a finder callback);
+ *     anything still unresolved is left for the normal disambiguation
  *     panel to pick up on its next scan.
  *
  * Every element the pass actually mutates or creates is collected so the
@@ -33,7 +34,6 @@
  */
 
 import type { AuthorityCandidate } from './authority';
-import { candidatesFromEntityFile } from './disambiguationCandidates';
 import {
   parseNobleTitleSpan,
   SLOT_TAG,
@@ -312,17 +312,17 @@ export interface AssignPersonWrapperKeysResult {
 /**
  * Give every keyless `<name type="personWrapper">` in scope a `@key`: copy
  * it down from an already-keyed inner `<persName>`, or — when the persName
- * itself has no key — attempt a unique match against local entities.xml and
- * assign both. A wrapper that's still ambiguous or unmatched is left alone;
- * its inner persName stays keyless/`cert="unknown"`, which is exactly what
- * the normal disambiguation panel already scans for, so it surfaces there
- * without any extra queueing step here.
+ * itself has no key — attempt a unique match against the local entity
+ * database and assign both. A wrapper that's still ambiguous or unmatched
+ * is left alone; its inner persName stays keyless/`cert="unknown"`, which
+ * is exactly what the normal disambiguation panel already scans for, so it
+ * surfaces there without any extra queueing step here.
  */
-export function assignPersonWrapperKeys(
+export async function assignPersonWrapperKeys(
   scopeRoot: Element,
-  entitiesDoc: Document,
+  findLocalIds: (surface: string) => Promise<string[]> | string[],
   touched: Set<Element>,
-): AssignPersonWrapperKeysResult {
+): Promise<AssignPersonWrapperKeysResult> {
   let copied = 0;
   let autoResolved = 0;
   const wrappers = Array.from(scopeRoot.getElementsByTagName('name')).filter(
@@ -335,10 +335,9 @@ export function assignPersonWrapperKeys(
     if (!key) {
       const surface = persName.textContent?.trim() ?? '';
       if (surface) {
-        const candidates = candidatesFromEntityFile(entitiesDoc, 'persName', surface);
-        const unique = candidates.length === 1 ? candidates[0] : undefined;
-        if (unique?.localEntityId) {
-          key = unique.localEntityId;
+        const ids = [...new Set(await Promise.resolve(findLocalIds(surface)))];
+        if (ids.length === 1) {
+          key = ids[0]!;
           persName.setAttribute('key', key);
           persName.removeAttribute('cert');
           autoResolved++;
@@ -393,12 +392,12 @@ export interface GroupAndCleanResult {
   validation: PersonWrapperValidation;
 }
 
-export function runGroupAndClean(
-  entitiesDoc: Document,
+export async function runGroupAndClean(
+  findLocalIds: (surface: string) => Promise<string[]> | string[],
   scopeRoot: Element,
   officeCandidates: readonly AuthorityCandidate[],
   vocabulary: NobleTitleVocabulary,
-): GroupAndCleanResult {
+): Promise<GroupAndCleanResult> {
   const touched = new Set<Element>();
   const officeIndex = buildOfficeIndex(officeCandidates);
 
@@ -406,7 +405,7 @@ export function runGroupAndClean(
   const rolledPlaceNames = rollPlaceIntoRole(scopeRoot, officeIndex, touched);
   const parsedNobleTitles = parseChildlessNobleTitles(scopeRoot, vocabulary, touched);
   const createdWrappers = createPersonWrappersInScope(scopeRoot, touched);
-  const { copied, autoResolved } = assignPersonWrapperKeys(scopeRoot, entitiesDoc, touched);
+  const { copied, autoResolved } = await assignPersonWrapperKeys(scopeRoot, findLocalIds, touched);
 
   return {
     mergedRoleNames,

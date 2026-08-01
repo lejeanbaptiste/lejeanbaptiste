@@ -25,20 +25,25 @@ import {
   collectGivenFamilyNamesForCandidate,
   collectTypedNamesForCandidate,
   extractWikidataId,
+  loadSqliteDisambiguationCandidates,
   mergeSelectedCandidates,
   resolveCandidateForPedb,
-  resolveEntityInDocument,
   type DisambiguationCandidate,
 } from '../../../../packages/cwrc-leafwriter/src/autoTagging/disambiguationCandidates';
 import { autoSyncEntityToCentral } from '../../../../packages/cwrc-leafwriter/src/autoTagging/autoSync';
 import {
-  addEntity,
+  mintEntitySqlite,
+  mintOrLinkEntitySqlite,
+} from '../../../../packages/cwrc-leafwriter/src/autoTagging/sqliteLookupMint';
+import { backfillEntitiesSqlite } from '../../../../packages/cwrc-leafwriter/src/autoTagging/sqliteAuthorityBackfill';
+import { SQLITE_REQUIRED_LOOKUP_MESSAGE } from '../../../../packages/cwrc-leafwriter/src/autoTagging/sqliteRequired';
+import {
   createEntitiesScaffold,
   parseEntities,
   type EntityKind,
 } from '../../../../packages/cwrc-leafwriter/src/autoTagging/entities';
 import {
-  applyPersonNameSplitToEntity,
+  suggestPersonNameSplit,
   suggestPersonRomanization,
 } from '../../../../packages/cwrc-leafwriter/src/plugins/personNameDefaults';
 import {
@@ -49,8 +54,6 @@ import {
   type EntityStore,
 } from '../../../../packages/cwrc-leafwriter/src/autoTagging/entityStore';
 import { readOrMintUserStableId } from '../../../../packages/cwrc-leafwriter/src/autoTagging/userStableId';
-import { enrichWikidataWorkEntity } from '../../../../packages/cwrc-leafwriter/src/autoTagging/wikidataWorkDetails';
-import { enrichWikidataPersonWorks } from '../../../../packages/cwrc-leafwriter/src/autoTagging/wikidataPersonWorks';
 import {
   autoRomanize,
   canAutoRomanize,
@@ -95,9 +98,13 @@ const resolveCentralLookupContext = async (): Promise<LookupSession['central']> 
     const centralFolder = project.entityDbFolder ?? null;
     const centralStore = centralEntityStoreFromDesktop(centralFolder);
     if (!centralStore) return null;
+    if (!(await centralStore.hasSqliteDatabase())) return null;
     const { id: userStableId } = await readOrMintUserStableId(api, centralFolder);
-    const doc = await centralStore.loadEntities();
-    return { store: centralStore, doc, userStableId };
+    return {
+      store: centralStore,
+      doc: parseEntities(createEntitiesScaffold()),
+      userStableId,
+    };
   } catch {
     return null;
   }
@@ -106,10 +113,11 @@ const resolveCentralLookupContext = async (): Promise<LookupSession['central']> 
 const createLookupSession = async (): Promise<LookupSession> => {
   const store = entityStoreFromDesktop();
   const projectLang = await projectSourceLanguage();
+  const emptyDoc = parseEntities(createEntitiesScaffold());
   if (!store) {
     return {
       store: null,
-      entitiesDoc: parseEntities(createEntitiesScaffold()),
+      entitiesDoc: emptyDoc,
       cache: new AuthorityCache(null, null),
       projectLang,
       central: null,
@@ -126,7 +134,8 @@ const createLookupSession = async (): Promise<LookupSession> => {
     : null;
   return {
     store,
-    entitiesDoc: await store.loadEntities(),
+    // Search/mint use SQLite; keep an empty scaffold only for the session shape.
+    entitiesDoc: emptyDoc,
     cache: new AuthorityCache(cacheApi, cacheApi ? store.authorityCacheDir : null),
     projectLang,
     central: await resolveCentralLookupContext(),
@@ -228,8 +237,42 @@ export const EntityLookupField = ({
     setLookupError(null);
     try {
       const session = await getSession();
+      if (!session.store) {
+        setLookupError(SQLITE_REQUIRED_LOOKUP_MESSAGE);
+        setCandidates(null);
+        return;
+      }
+
+      let localCandidates: DisambiguationCandidate[] = [];
+      let central:
+        | { userStableId: string; candidates: DisambiguationCandidate[] }
+        | undefined;
+
+      if (session.central) {
+        const candidates = await loadSqliteDisambiguationCandidates(
+          session.central.store,
+          tag,
+          surface,
+          'cedb',
+        );
+        if (candidates == null) throw new Error(SQLITE_REQUIRED_LOOKUP_MESSAGE);
+        central = {
+          userStableId: session.central.userStableId,
+          candidates,
+        };
+      } else {
+        const sqliteLocal = await loadSqliteDisambiguationCandidates(
+          session.store,
+          tag,
+          surface,
+          'pedb',
+        );
+        if (sqliteLocal == null) throw new Error(SQLITE_REQUIRED_LOOKUP_MESSAGE);
+        localCandidates = sqliteLocal;
+      }
+
       const rows = await buildDisambiguationCandidates(
-        session.entitiesDoc,
+        null,
         tag,
         surface,
         session.cache,
@@ -240,14 +283,20 @@ export const EntityLookupField = ({
         undefined,
         undefined,
         session.projectLang,
-        session.central
-          ? { doc: session.central.doc, userStableId: session.central.userStableId }
-          : undefined,
+        central,
+        undefined,
+        localCandidates,
+        {
+          enrichLifespans: false,
+          enrichNames: false,
+        },
       );
       setCandidates(rows);
       setCheckedIds(new Set());
-    } catch {
-      setLookupError(t('LWC.desktop.author_pill.lookup_failed'));
+    } catch (error) {
+      setLookupError(
+        error instanceof Error ? error.message : t('LWC.desktop.author_pill.lookup_failed'),
+      );
       setCandidates(null);
     } finally {
       setSearching(false);
@@ -294,7 +343,7 @@ export const EntityLookupField = ({
       if (merged.centralEntityId && session.central) {
         merged = await resolveCandidateForPedb(
           merged,
-          session.entitiesDoc,
+          session.store,
           session.central.store,
           session.central.userStableId,
         );
@@ -304,85 +353,61 @@ export const EntityLookupField = ({
         merged,
         session.projectLang,
       ).catch(() => undefined);
-      const resolvedId = resolveEntityInDocument(
-        session.entitiesDoc,
-        {
-          kind,
-          name: merged.label,
-          typedNames,
-          familyName: givenFamilyNames?.familyName,
-          givenName: givenFamilyNames?.givenName,
-          projectLangName: merged.projectLangName,
-          romanizedName:
-            merged.romanizedName ??
-            autoRomanize(merged.projectLangName ?? merged.label, session.projectLang) ??
-            undefined,
-          nameLang: session.projectLang ?? undefined,
-          authorityIds: merged.authorityIds,
-          authoritySource: merged.authorityIds?.[0]
-            ? `${merged.authorityIds[0].type}:${merged.authorityIds[0].value}`
-            : undefined,
-          description: merged.description,
-          startYear: merged.startYear,
-          endYear: merged.endYear,
-          authorityAssertions: merged.authorityAssertions,
-        },
-        merged,
-      );
-      await autoSyncEntityToCentral(session.entitiesDoc, resolvedId);
+      const { id: resolvedId } = await mintOrLinkEntitySqlite(session.store, {
+        kind,
+        name: merged.projectLangName ?? merged.label,
+        familyName: givenFamilyNames?.familyName,
+        givenName: givenFamilyNames?.givenName,
+        nameLang: session.projectLang ?? undefined,
+        romanizedName:
+          merged.romanizedName ??
+          autoRomanize(merged.projectLangName ?? merged.label, session.projectLang) ??
+          undefined,
+        authorityIds: merged.authorityIds,
+        authoritySource: merged.authorityIds?.[0]
+          ? `${merged.authorityIds[0].type}:${merged.authorityIds[0].value}`
+          : undefined,
+        description: merged.description,
+        startYear: merged.startYear,
+        endYear: merged.endYear,
+        authorityAssertions: merged.authorityAssertions,
+        localEntityId: merged.localEntityId,
+      });
+      for (const typed of typedNames ?? []) {
+        await session.store.sqliteAddName({
+          entityId: resolvedId,
+          text: typed.text,
+          nameType: typed.type,
+          language: typed.lang,
+          origin: 'authority',
+          source: merged.authorityIds?.[0]?.type,
+        });
+      }
+      await autoSyncEntityToCentral(null, resolvedId);
 
-      if (kind === 'work') {
-        const qid = extractWikidataId(merged.uri ?? '');
-        if (qid) {
-          try {
-            const details = await enrichWikidataWorkEntity(
-              session.entitiesDoc,
-              resolvedId,
-              qid,
-              session.projectLang,
-              i18n.language,
-            );
-            if (details) {
-              await Promise.all(
-                details.authors.map((author) =>
-                  autoSyncEntityToCentral(session.entitiesDoc, author.entityId),
-                ),
-              );
-              onWorkDetails?.({
-                workYear: details.publicationYear,
-                authors: details.authors.map((author) => ({
-                  name: author.label,
-                  ref: `https://www.wikidata.org/wiki/${author.qid}`,
-                })),
-              });
-            }
-          } catch {
-            // Best-effort enrichment; the work link itself already succeeded.
-          }
-        }
-      } else if (kind === 'person') {
-        const qid = extractWikidataId(merged.uri ?? '');
-        if (qid) {
-          try {
-            const personWorks = await enrichWikidataPersonWorks(
-              session.entitiesDoc,
-              resolvedId,
-              qid,
-              session.projectLang,
-              i18n.language,
-            );
-            await Promise.all(
-              (personWorks?.works ?? []).map((work) =>
-                autoSyncEntityToCentral(session.entitiesDoc, work.entityId),
-              ),
-            );
-          } catch {
-            // Best-effort enrichment; the person link itself already succeeded.
+      if ((kind === 'work' || kind === 'person') && extractWikidataId(merged.uri ?? '')) {
+        await backfillEntitiesSqlite(session.store, {
+          entityIds: [resolvedId],
+          projectLang: session.projectLang,
+          desktopLanguage: i18n.language,
+        }).catch(() => undefined);
+        if (kind === 'work') {
+          const summary = await session.store.sqliteEntitySummary(resolvedId);
+          const workDate = (summary as { workDate?: { startYear?: number | null } } | null)?.workDate;
+          const authors = (summary as { authors?: Array<{ name: string; ref?: string | null }> } | null)
+            ?.authors;
+          if (workDate?.startYear != null || authors?.length) {
+            onWorkDetails?.({
+              workYear: workDate?.startYear ?? null,
+              authors: (authors ?? []).map((author) => ({
+                name: author.name,
+                ref: author.ref ?? undefined,
+              })),
+            });
           }
         }
       }
 
-      await session.store.saveEntities(session.entitiesDoc);
       onPersistedChange?.({ name: merged.label, ref: merged.uri });
     } catch {
       // Entity database write failed — the field is still applied to the header.
@@ -402,20 +427,24 @@ export const EntityLookupField = ({
         return;
       }
       const romanizedName = createRomanized.trim() || undefined;
-      const { id } = addEntity(session.entitiesDoc, kind, {
+      const split = kind === 'person' ? suggestPersonNameSplit(name, session.projectLang) : null;
+      const id = await mintEntitySqlite(session.store, {
+        kind,
         name,
         nameLang:
           session.projectLang && romanizedName && name !== romanizedName
             ? session.projectLang
             : undefined,
-        romanizedName,
+        romanizedName:
+          romanizedName ||
+          (kind === 'person'
+            ? suggestPersonRomanization(name, session.projectLang) ?? undefined
+            : undefined),
         description,
+        familyName: split?.familyName,
+        givenName: split?.givenName,
       });
-      if (kind === 'person') {
-        applyPersonNameSplitToEntity(session.entitiesDoc, id, name, session.projectLang);
-      }
-      await autoSyncEntityToCentral(session.entitiesDoc, id);
-      await session.store.saveEntities(session.entitiesDoc);
+      await autoSyncEntityToCentral(null, id);
       setValue({ name, key: id });
       onPersistedChange?.({ name, key: id });
     } catch {

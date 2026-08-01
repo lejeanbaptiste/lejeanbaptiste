@@ -28,6 +28,14 @@ export const useEntityDatabaseLifecycle = () => {
     }
   }, [rootPath]);
 
+  /** Live authority path: sibling SQLite when migrated, else interchange XML. */
+  const resolveWatchedEntityDbPath = useCallback(async (): Promise<string | null> => {
+    const store = entityStoreFromDesktop();
+    if (!store) return resolveEntitiesPath();
+    if (await store.hasSqliteDatabase()) return store.sqlitePath;
+    return store.entitiesPath;
+  }, [resolveEntitiesPath]);
+
   useEffect(() => {
     if (!isDesktop() || !projectFilePath || !rootPath) return;
     if (checkedProjectRef.current === projectFilePath) return;
@@ -42,19 +50,18 @@ export const useEntityDatabaseLifecycle = () => {
       // key propagation knows every project tree using this entities.xml.
       await store.registerProjectInRegistry().catch(() => undefined);
 
-      // The integrity/orphan checks below need the complete entities.xml DOM.
-      // Chromium cannot safely hold the Norbert-sized file; the sidebar's
-      // separate worker indexes it in batches instead. Defer these checks for
-      // large databases rather than taking down the renderer immediately after
-      // project metadata is saved.
-      const entityStat = await window.electronAPI?.statFile?.(store.entitiesPath).catch(() => null);
-      if (entityStat && entityStat.size > 8 * 1024 * 1024) {
-        // eslint-disable-next-line no-console
-        console.info('[entity-db-check] deferred for large database', {
-          entitiesPath: store.entitiesPath,
-          bytes: entityStat.size,
-        });
-        return;
+      // Integrity checks use SQLite when present; defer only for huge XML-only
+      // interchange files (legacy). Migrated DBs skip this size gate.
+      if (!(await store.hasSqliteDatabase())) {
+        const entityStat = await window.electronAPI?.statFile?.(store.entitiesPath).catch(() => null);
+        if (entityStat && entityStat.size > 8 * 1024 * 1024) {
+          // eslint-disable-next-line no-console
+          console.info('[entity-db-check] deferred for large database', {
+            entitiesPath: store.entitiesPath,
+            bytes: entityStat.size,
+          });
+          return;
+        }
       }
 
       const checkApi = {
@@ -125,8 +132,10 @@ export const useEntityDatabaseLifecycle = () => {
               );
             }
           }
-        } catch {
+        } catch (error) {
           // never block project open on central order replay
+          // eslint-disable-next-line no-console
+          console.error('[central-orders] skipped (SQLite required or apply failed):', error);
         }
       }
 
@@ -165,25 +174,36 @@ export const useEntityDatabaseLifecycle = () => {
 
   useEffect(() => {
     if (!isDesktop() || !window.electronAPI?.onExternalFileChange) return;
-    const entitiesPath = resolveEntitiesPath();
-    if (!entitiesPath) return;
+    let watchedPath: string | null = null;
+    let unsubscribe: (() => void) | undefined;
+    let cancelled = false;
 
-    return window.electronAPI.onExternalFileChange((filePath) => {
-      if (filePath.replace(/\\/g, '/') !== entitiesPath.replace(/\\/g, '/')) return;
-      staleEntitiesRef.current = true;
-      void window.electronAPI?.showNativeMessageBox?.({
-        type: 'question',
-        title: t('LWC.desktop.entity_database_changed.title'),
-        message: t('LWC.desktop.entity_database_changed.message'),
-        buttons: [
-          t('LWC.desktop.entity_database_changed.reload'),
-          t('LWC.desktop.entity_database_changed.keep'),
-        ],
-      }).then(({ response }) => {
-        if (response === 0) staleEntitiesRef.current = false;
+    void (async () => {
+      watchedPath = await resolveWatchedEntityDbPath();
+      if (cancelled || !watchedPath || !window.electronAPI?.onExternalFileChange) return;
+      const pathToWatch = watchedPath;
+      unsubscribe = window.electronAPI.onExternalFileChange((filePath) => {
+        if (filePath.replace(/\\/g, '/') !== pathToWatch.replace(/\\/g, '/')) return;
+        staleEntitiesRef.current = true;
+        void window.electronAPI?.showNativeMessageBox?.({
+          type: 'question',
+          title: t('LWC.desktop.entity_database_changed.title'),
+          message: t('LWC.desktop.entity_database_changed.message'),
+          buttons: [
+            t('LWC.desktop.entity_database_changed.reload'),
+            t('LWC.desktop.entity_database_changed.keep'),
+          ],
+        }).then(({ response }) => {
+          if (response === 0) staleEntitiesRef.current = false;
+        });
       });
-    });
-  }, [resolveEntitiesPath, t]);
+    })();
+
+    return () => {
+      cancelled = true;
+      unsubscribe?.();
+    };
+  }, [resolveWatchedEntityDbPath, t]);
 
   return { entitiesPath: resolveEntitiesPath(), staleEntitiesRef };
 };

@@ -292,7 +292,11 @@ export const toggleTextLocked = ({ state, effects }: Context, value?: boolean) =
   const next = value ?? !state.editor.textLocked;
   state.editor.textLocked = next;
   effects.editor.api.saveToLocalStorage(TEXT_LOCKED_KEY, next);
-  if (window.writer) window.writer.isTextLocked = next;
+  if (window.writer) {
+    window.writer.isTextLocked = next;
+    // Chromium cannot cancel IME via preventDefault; flip contenteditable instead.
+    window.writer.applyTextLockDomGuard?.();
+  }
 };
 
 export const toggleShowTags = ({ state }: Context, value?: boolean) => {

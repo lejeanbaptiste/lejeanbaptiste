@@ -19,7 +19,7 @@ const fakeStore = (doc: Document) => {
 };
 
 describe('synchronized CEDB/PEDB mirror', () => {
-  it('uploads an offline PEDB change when CEDB is unchanged', async () => {
+  it('reports unavailable without SQLite instead of DOM sync', async () => {
     const central = parseEntities(createEntitiesScaffold('central'));
     const project = parseEntities(createEntitiesScaffold('project'));
     const centralId = addEntity(central, 'person', { name: '孔遺' }).id;
@@ -28,16 +28,15 @@ describe('synchronized CEDB/PEDB mirror', () => {
 
     const centralStore = fakeStore(central);
     const projectStore = fakeStore(project);
-    await synchronizeMirroredProject(projectStore, centralStore, 'user-a');
-
     addEntityName(project, projectId, '世遠', { type: 'courtesy', origin: 'authority', source: 'Norbert' });
-    const result = await synchronizeMirroredProject(projectStore, centralStore, 'user-a');
 
-    expect(result.uploadedProjectChanges).toBe(1);
-    expect(central.getElementsByTagName('persName').length).toBe(2);
+    const result = await synchronizeMirroredProject(projectStore, centralStore, 'user-a');
+    expect(result.unavailable).toBe(true);
+    expect(result.uploadedProjectChanges).toBe(0);
+    expect(central.getElementsByTagName('persName').length).toBe(1);
   });
 
-  it('reports simultaneous edits instead of overwriting either side', async () => {
+  it('does not overwrite either side when SQLite is missing', async () => {
     const central = parseEntities(createEntitiesScaffold('central'));
     const project = parseEntities(createEntitiesScaffold('project'));
     const centralId = addEntity(central, 'person', { name: '孔遺' }).id;
@@ -46,13 +45,11 @@ describe('synchronized CEDB/PEDB mirror', () => {
 
     const centralStore = fakeStore(central);
     const projectStore = fakeStore(project);
-    await synchronizeMirroredProject(projectStore, centralStore, 'user-a');
     addEntityName(project, projectId, '世遠', { type: 'variant', origin: 'user' });
     addEntityName(central, centralId, '世遺', { type: 'variant', origin: 'user' });
 
     const result = await synchronizeMirroredProject(projectStore, centralStore, 'user-a');
-    expect(result.conflicts).toEqual([
-      { pedbId: projectId, centralId, reason: 'both-sides-changed' },
-    ]);
+    expect(result.unavailable).toBe(true);
+    expect(result.conflicts).toEqual([]);
   });
 });

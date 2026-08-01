@@ -115,7 +115,7 @@ describe('SMOKE TEST — two-machine merge convergence (the bug this redesign fi
     // --- Machine A merges the duplicate ------------------------------------
     const doc = await storeA.loadEntities();
     const { remap } = mergeEntities(doc, keep, [duplicate]);
-    await storeA.saveEntities(doc);
+    await storeA.saveEntities(doc, { allowSqliteFullReimport: true });
 
     // This is the new behavior: a durable order is recorded FIRST...
     await storeA.recordEntityOrder(remap, dbId);

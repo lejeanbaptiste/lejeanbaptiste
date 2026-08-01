@@ -23,7 +23,6 @@ import { AuthorityCache } from '../../autoTagging/authorityCache';
 import {
   buildDisambiguationCandidates,
   candidateLinks,
-  candidatesFromEntityFile,
   loadSqliteDisambiguationCandidates,
   type DisambiguationCandidate,
 } from '../../autoTagging/disambiguationCandidates';
@@ -32,6 +31,7 @@ import {
   desktopEntityFileApi,
   entityStoreFromDesktop,
 } from '../../autoTagging/entityStore';
+import { SQLITE_REQUIRED_LOOKUP_MESSAGE } from '../../autoTagging/sqliteRequired';
 import { SourceBadges } from '../../autoTagging/SourceBadges';
 import { readOrMintUserStableId } from '../../autoTagging/userStableId';
 import { cachedPackReader } from '../../services/authority-pack-lookup';
@@ -199,18 +199,13 @@ export const MergedLookupMain = () => {
             const centralStore = centralEntityStoreFromDesktop(null);
             if (api && centralStore) {
               const { id: userStableId } = await readOrMintUserStableId(api, null);
-              const sqliteCentral = await loadSqliteDisambiguationCandidates(
+              const candidates = await loadSqliteDisambiguationCandidates(
                 centralStore,
                 tag,
                 surface,
                 'cedb',
               );
-              let candidates = sqliteCentral;
-              // SQLite unavailable → same exact-surface scan as the legacy CEDB column.
-              if (candidates == null) {
-                const doc = await centralStore.loadEntities();
-                candidates = candidatesFromEntityFile(doc, tag, surface, 'cedb');
-              }
+              if (candidates == null) throw new Error(SQLITE_REQUIRED_LOOKUP_MESSAGE);
               central = {
                 userStableId,
                 candidates,
@@ -223,12 +218,8 @@ export const MergedLookupMain = () => {
               surface,
               'pedb',
             );
-            if (sqliteLocal != null) {
-              localCandidates = sqliteLocal;
-            } else {
-              const doc = await pedbStore.loadEntities();
-              localCandidates = candidatesFromEntityFile(doc, tag, surface, 'pedb');
-            }
+            if (sqliteLocal == null) throw new Error(SQLITE_REQUIRED_LOOKUP_MESSAGE);
+            localCandidates = sqliteLocal;
           }
         }
 

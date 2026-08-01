@@ -761,7 +761,19 @@ export class EntitySqliteRepository {
       .run(key, value);
   }
 
+  /** Nesting depth so bulk callers can wrap helpers that also use `transaction`. */
+  private txDepth = 0;
+
   transaction<T>(work: () => T): T {
+    if (this.txDepth > 0) {
+      this.txDepth += 1;
+      try {
+        return work();
+      } finally {
+        this.txDepth -= 1;
+      }
+    }
+    this.txDepth = 1;
     this.db.exec('BEGIN IMMEDIATE;');
     try {
       const result = work();
@@ -770,6 +782,8 @@ export class EntitySqliteRepository {
     } catch (error) {
       this.db.exec('ROLLBACK;');
       throw error;
+    } finally {
+      this.txDepth = 0;
     }
   }
 
@@ -922,29 +936,49 @@ export class EntitySqliteRepository {
     return true;
   }
 
+  /**
+   * Every active non-deleted entity of `kind` sharing an authority type+value.
+   * Used by lookup planning for conflict detection; single-id callers use
+   * {@link findEntityIdByAuthority}.
+   */
+  findAllEntityIdsByAuthority(
+    kind: SqliteEntityKind,
+    type: string,
+    value: string,
+  ): string[] {
+    const wantedType = type.trim();
+    const wantedValue = normalizeAuthorityValue(wantedType, value);
+    if (!wantedType || !wantedValue) return [];
+    const rows = this.db
+      .prepare(
+        `SELECT a.entity_id, a.authority_value
+         FROM entity_authorities a
+         JOIN entities e ON e.id = a.entity_id
+         WHERE e.kind = ?
+           AND e.deleted_at IS NULL
+           AND a.status = 'active'
+           AND lower(a.authority_type) = lower(?)
+         ORDER BY a.entity_id`,
+      )
+      .all(kind, wantedType) as { entity_id: string; authority_value: string }[];
+    const ids: string[] = [];
+    const seen = new Set<string>();
+    for (const row of rows) {
+      if (normalizeAuthorityValue(wantedType, row.authority_value) !== wantedValue) continue;
+      if (seen.has(row.entity_id)) continue;
+      seen.add(row.entity_id);
+      ids.push(row.entity_id);
+    }
+    return ids;
+  }
+
   /** First active non-deleted entity of `kind` sharing an authority type+value. */
   findEntityIdByAuthority(
     kind: SqliteEntityKind,
     type: string,
     value: string,
   ): string | null {
-    const wantedType = type.trim().toLowerCase();
-    const wantedValue = value.trim();
-    if (!wantedType || !wantedValue) return null;
-    const rows = this.db
-      .prepare(
-        `SELECT a.entity_id, a.authority_type, a.authority_value
-         FROM entity_authorities a
-         JOIN entities e ON e.id = a.entity_id
-         WHERE e.kind = ? AND e.deleted_at IS NULL AND a.status = 'active'`,
-      )
-      .all(kind) as { entity_id: string; authority_type: string; authority_value: string }[];
-    for (const row of rows) {
-      if (row.authority_type.toLowerCase() !== wantedType) continue;
-      if (row.authority_value.trim() !== wantedValue) continue;
-      return row.entity_id;
-    }
-    return null;
+    return this.findAllEntityIdsByAuthority(kind, type, value)[0] ?? null;
   }
 
   /**
@@ -1911,84 +1945,88 @@ export class EntitySqliteRepository {
   applyConcordanceAssociations(
     associations: SqliteConcordanceAssociation[],
   ): SqliteConcordanceImportResult {
-    const result: SqliteConcordanceImportResult = {
-      applied: 0,
-      alreadyPresent: 0,
-      rejected: 0,
-      unresolved: 0,
-      conflicts: [],
-    };
-    const ownersByRef = new Map<string, string[]>();
-    const authorityRows = this.db
-      .prepare(
-        `SELECT a.entity_id, a.authority_type, a.authority_value
-         FROM entity_authorities a
-         JOIN entities e ON e.id = a.entity_id
-         WHERE a.status = 'active' AND e.deleted_at IS NULL
-           AND a.authority_type != ?`,
-      )
-      .all(CENTRAL_AUTHORITY_TYPE) as {
-      entity_id: string;
-      authority_type: string;
-      authority_value: string;
-    }[];
-    for (const row of authorityRows) {
-      const ref = concordanceRef(row.authority_type, row.authority_value);
-      const owners = ownersByRef.get(ref) ?? [];
-      if (!owners.includes(row.entity_id)) owners.push(row.entity_id);
-      ownersByRef.set(ref, owners);
-    }
-
-    const rejectedPairs = new Set(
-      this.listConcordanceRejections().map((rejection) => `${rejection.leftId}\t${rejection.rightId}`),
-    );
-
-    for (const association of associations) {
-      const [left, right] = concordanceRefs(association);
-      if (rejectedPairs.has(`${left}\t${right}`)) {
-        result.rejected += 1;
-        continue;
+    return this.transaction(() => {
+      const result: SqliteConcordanceImportResult = {
+        applied: 0,
+        alreadyPresent: 0,
+        rejected: 0,
+        unresolved: 0,
+        conflicts: [],
+      };
+      const ownersByRef = new Map<string, string[]>();
+      const authorityRows = this.db
+        .prepare(
+          `SELECT a.entity_id, a.authority_type, a.authority_value
+           FROM entity_authorities a
+           JOIN entities e ON e.id = a.entity_id
+           WHERE a.status = 'active' AND e.deleted_at IS NULL
+             AND a.authority_type != ?`,
+        )
+        .all(CENTRAL_AUTHORITY_TYPE) as {
+        entity_id: string;
+        authority_type: string;
+        authority_value: string;
+      }[];
+      for (const row of authorityRows) {
+        const ref = concordanceRef(row.authority_type, row.authority_value);
+        const owners = ownersByRef.get(ref) ?? [];
+        if (!owners.includes(row.entity_id)) owners.push(row.entity_id);
+        ownersByRef.set(ref, owners);
       }
-      const owners = Array.from(
-        new Set([...(ownersByRef.get(left) ?? []), ...(ownersByRef.get(right) ?? [])]),
+
+      const rejectedPairs = new Set(
+        this.listConcordanceRejections().map(
+          (rejection) => `${rejection.leftId}\t${rejection.rightId}`,
+        ),
       );
-      if (owners.length === 0) {
-        result.unresolved += 1;
-        continue;
+
+      for (const association of associations) {
+        const [left, right] = concordanceRefs(association);
+        if (rejectedPairs.has(`${left}\t${right}`)) {
+          result.rejected += 1;
+          continue;
+        }
+        const owners = Array.from(
+          new Set([...(ownersByRef.get(left) ?? []), ...(ownersByRef.get(right) ?? [])]),
+        );
+        if (owners.length === 0) {
+          result.unresolved += 1;
+          continue;
+        }
+        if (owners.length > 1) {
+          result.conflicts.push({ association, entityIds: owners });
+          continue;
+        }
+        const ownerId = owners[0]!;
+        const refs = new Set(this.activeAuthorityRefs(ownerId));
+        const missing = [
+          [association.source, association.canonicalId],
+          [association.source, association.mergedFromId],
+        ].filter(([, id]) => !refs.has(concordanceRef(association.source, id))) as [
+          string,
+          string,
+        ][];
+        if (!missing.length) {
+          result.alreadyPresent += 1;
+          continue;
+        }
+        for (const [type, value] of missing) {
+          this.attachAuthority({
+            entityId: ownerId,
+            type,
+            value,
+            origin: 'authority',
+            source: association.source,
+          });
+          const ref = concordanceRef(type, value);
+          const mapped = ownersByRef.get(ref) ?? [];
+          if (!mapped.includes(ownerId)) mapped.push(ownerId);
+          ownersByRef.set(ref, mapped);
+        }
+        result.applied += 1;
       }
-      if (owners.length > 1) {
-        result.conflicts.push({ association, entityIds: owners });
-        continue;
-      }
-      const ownerId = owners[0]!;
-      const refs = new Set(this.activeAuthorityRefs(ownerId));
-      const missing = [
-        [association.source, association.canonicalId],
-        [association.source, association.mergedFromId],
-      ].filter(([, id]) => !refs.has(concordanceRef(association.source, id))) as [
-        string,
-        string,
-      ][];
-      if (!missing.length) {
-        result.alreadyPresent += 1;
-        continue;
-      }
-      for (const [type, value] of missing) {
-        this.attachAuthority({
-          entityId: ownerId,
-          type,
-          value,
-          origin: 'authority',
-          source: association.source,
-        });
-        const ref = concordanceRef(type, value);
-        const mapped = ownersByRef.get(ref) ?? [];
-        if (!mapped.includes(ownerId)) mapped.push(ownerId);
-        ownersByRef.set(ref, mapped);
-      }
-      result.applied += 1;
-    }
-    return result;
+      return result;
+    });
   }
 
   private activeAuthorityRefs(entityId: string): string[] {

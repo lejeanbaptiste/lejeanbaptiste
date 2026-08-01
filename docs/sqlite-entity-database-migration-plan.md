@@ -95,45 +95,53 @@ The SQLite foundation and several runtime slices are implemented in
   typed SQLite patches for migrated databases: names, family/given/romanized,
   source-keyed dates, nationalities, origins, offices, Norbert noble titles,
   authority-cache payloads, Wikidata person→works, and work details. Rejected
-  tombstones are not resurrected. XML export→DOM→re-import remains the
-  fallback when no sibling `.sqlite` is present.
+  tombstones are not resurrected. After a successful SQLite backfill on the
+  project database, CBDB person-concordance is re-applied so newly attached
+  CBDB ids pick up merged-from links in the same action.
 - Synchronized mirror *content* sync (hash, upload, download, conflict) uses
   per-entity SQLite content hashes and body replace when both databases are
   migrated; it no longer full-export/re-import on the happy path. Central
   mappings and entity ids are preserved. Checkpoint JSON remains file-based.
 - Bridge inbox classification and merge-docket display/resolve use SQLite panel
-  summaries and `sqliteMerge` / `sqliteSoftDelete` when the relevant databases
-  are migrated (XML fallback otherwise). Pending suggestion filters take an
-  id set rather than a DOM document.
+  summaries and `sqliteMerge` / `sqliteSoftDelete` (SQLite required). Pending
+  suggestion filters take an id set rather than a DOM document.
 - Disambiguation (panel + authority prefetch) loads PEDB/CEDB surface matches
   via SQLite name search + linked `central_mappings` ids when migrated; it no
-  longer full-exports both databases on every mention-group review. XML
-  remains the fallback when no sibling `.sqlite` is present.
+  longer full-exports both databases on every mention-group review.
 
-Pending central-order application, synchronized-mirror promote + content sync,
-authority backfill/refresh, Bridge inbox, merge-docket, and disambiguation
-candidate search now use typed SQLite paths when the relevant databases are
-migrated (with XML fallback). The next slice is end-to-end verification on the
-live CEDB/PEDB, then removal of unused XML runtime fallbacks.
+**Live verification** of the real CEDB/PEDB (restart, tombstone persistence,
+synchronization, no-resurrection) is done for this installation. Ordinary
+runtime entity reads and writes now require a migrated `entities.sqlite`
+(fail loud / `unavailable` — no DOM `loadEntities`/`saveEntities` soft-gates
+on the paths above). New folders from `createEntityDatabase` mint both
+`entities.xml` (interchange scaffold) and sibling `entities.sqlite`.
+**Next work:** see Explicit unfinished work below.
 
 ### Explicit unfinished work
 
-The following items remain intentionally open:
+Only open items:
 
-- Broader concordance application as part of a refresh pipeline remains open;
-  panel-time CBDB concordance apply/reject already uses SQLite. Authority
-  backfill/refresh itself now uses direct SQLite writes for migrated databases.
-- Remove XML fallback reads/writes from normal runtime paths after the above
-  operations pass end-to-end tests.
-- Verify the real CEDB and PEDB in the desktop application, including restart,
-  tombstone persistence, synchronization, and no-resurrection behavior.
-- Retain and separately test XML import/export, backup, and recovery tooling;
-  these are not runtime compatibility work and should remain supported.
-- Add wordprocessor integration for the SQLite-backed entity database. The
-  integration must use the same database UUID, stable entity IDs, authority
-  mappings, provenance, and tombstone semantics as the desktop application;
-  it must not reintroduce `entities.xml` as a second live authority. The
-  working wordprocessor codebase is `/Users/daniel/Code/leJeanBaptiste/wordprocessor/`.
+- **Phase 7 (done through slice 2):** slice 1 killed live DOM write/soft-read
+  paths; slice 2 gates `EntityStore.saveEntities` (full SQLite reimport only
+  with `{ allowSqliteFullReimport: true }`), deletes orphaned DOM helpers
+  (`adoptFromCentral`, `ensureDatabaseLinked`, dead office-import wrapper,
+  session `saveEntities`), stops order fingerprint / external-change watch
+  soft-paths through sibling XML when SQLite is present. DOM
+  `promoteToCentral` / `resolveEntityInDocument` remain as test/reference
+  helpers (live promote/mint is SQLite). Extracted-data ingest from
+  `scanMentions` is still deferred (no DOM persist).
+- **Wordprocessor integration** for the SQLite-backed entity database, using
+  the same database UUID, stable entity IDs, authority mappings, provenance,
+  and tombstone semantics as desktop — without reintroducing `entities.xml` as
+  a second live authority. Working tree:
+  `/Users/daniel/Code/leJeanBaptiste/wordprocessor/`.
+- **Deferred / out of scope for now:** general-purpose first-run migration
+  automation beyond this single-user install; CEDB concordance apply and
+  pack-lifecycle hooks beyond panel reload + SQLite authority backfill;
+  multi-machine offline sync scenarios beyond the current mirror path;
+  achievements reading sibling XML counts; bulk-bridge DOM import still uses
+  explicit SQLite replace (tooling); further deletion of DOM promote/resolve
+  once their unit tests are rewritten onto SQLite fixtures.
 
 Pre-Step 3 schema coverage now also includes:
 
@@ -538,10 +546,17 @@ general-purpose migration automation is explicitly deferred.
 
 ### Phase 7 — Cleanup
 
-- Remove normal XML entity runtime paths.
-- Remove XML checkpoint synchronization.
-- Remove stale registry-based renderer writes.
-- Retain XML compatibility tools and documentation.
+- **Slice 1 (done):** kill remaining live DOM write/soft-read paths
+  (AttributesPanel name-type, `scanMentions` persist, lookup services,
+  tag-bomb / short-form / group-and-clean, auto-tag pack counts, entity DB
+  fingerprint/orphan sweep, order replay). Fail loud without SQLite.
+- **Slice 2 (done):** gate `EntityStore.saveEntities` behind
+  `allowSqliteFullReimport`; delete orphaned DOM helpers
+  (`adoptFromCentral`, `ensureDatabaseLinked`, dead session/office wrappers);
+  SQLite-aware external-change watch and order fingerprinting; document
+  remaining DOM promote/resolve as test/reference only.
+- Retain XML compatibility tools and documentation (`reimport-entity-sqlite`,
+  xmlCodec, optional further DOM-helper deletion after test rewrite).
 - Update existing planning documents to point here as the authoritative plan.
 
 ## Testing and acceptance criteria

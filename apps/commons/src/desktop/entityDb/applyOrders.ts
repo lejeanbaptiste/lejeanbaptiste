@@ -1,9 +1,9 @@
-import { getDatabaseId } from '../../../../../packages/cwrc-leafwriter/src/autoTagging/entities';
+import type { EntityStore } from '../../../../../packages/cwrc-leafwriter/src/autoTagging/entityStore';
 import {
   composeRemap,
   pendingOrders,
 } from '../../../../../packages/cwrc-leafwriter/src/autoTagging/entityOrders';
-import type { EntityStore } from '../../../../../packages/cwrc-leafwriter/src/autoTagging/entityStore';
+import { SQLITE_REQUIRED_LOOKUP_MESSAGE } from '../../../../../packages/cwrc-leafwriter/src/autoTagging/sqliteRequired';
 import {
   applyKeyRemapToRoots,
   type KeyRemapFileOps,
@@ -39,7 +39,10 @@ export async function applyPendingOrders(
   store: EntityStore,
   ops: KeyRemapFileOps = desktopFileOps(),
 ): Promise<ApplyOrdersResult> {
-  const dbId = getDatabaseId(await store.loadEntities());
+  if (!(await store.hasSqliteDatabase())) {
+    throw new Error(SQLITE_REQUIRED_LOOKUP_MESSAGE);
+  }
+  const dbId = await store.sqliteDatabaseId();
   if (!dbId) return { ordersApplied: 0, summary: null };
 
   const [orders, applied] = await Promise.all([

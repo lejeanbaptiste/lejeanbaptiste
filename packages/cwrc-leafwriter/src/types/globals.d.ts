@@ -365,7 +365,7 @@ declare global {
       kind: 'person' | 'place' | 'work' | 'office' | 'org';
       type: string;
       value: string;
-    }) => Promise<string | null>;
+    }) => Promise<string[]>;
     entitySqliteFindByNameDates?: (request: {
       databasePath: string;
       kind: 'person' | 'place' | 'work' | 'office' | 'org';
@@ -548,6 +548,8 @@ declare global {
   interface DesktopTaggingBridge {
     changeTag?: (tagId: string, newTagName: string) => void;
     handleEditorKeyDown: (event: KeyboardEvent) => boolean;
+    /** True while tag/attribute popup is open — editor must not accept IME/typing. */
+    isPopupOpen?: () => boolean;
     openAttributePopup?: (anchorOverride: { left: number; top: number }) => Promise<boolean>;
     openTagPopup?: (
       mode: string,

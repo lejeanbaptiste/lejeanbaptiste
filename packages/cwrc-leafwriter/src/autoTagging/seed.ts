@@ -441,7 +441,7 @@ function resolveEntity(
       : [
           { type: candidate.source, value: candidate.authorityId },
           ...(candidate.metadata?.crosswalk?.norbert
-            ? [{ type: 'Norbert', value: candidate.metadata.crosswalk.norbert }]
+            ? [{ type: 'NORBERT', value: candidate.metadata.crosswalk.norbert }]
             : []),
           ...(candidate.metadata?.canonicalEntityId?.startsWith(
             `${candidate.source.toLowerCase()}:person:`,
@@ -468,12 +468,14 @@ function resolveEntity(
   const already = minted.get(memo);
   if (already) return { id: already, created: false };
 
-  // Scan the entity file for an existing idno match.
+  // Scan the entity file for an existing idno match (type compare is case-insensitive).
   for (const idno of Array.from(entitiesDoc.getElementsByTagName('idno'))) {
     if (
       authorityIds.some(
         (authority) =>
-          idno.getAttribute('type') === authority.type && idno.textContent === authority.value,
+          (idno.getAttribute('type') ?? '').trim().toLowerCase() ===
+            authority.type.trim().toLowerCase() &&
+          idno.textContent === authority.value,
       )
     ) {
       const owner = idno.parentElement;
@@ -525,9 +527,11 @@ function officeAuthorityIds(candidate: AuthorityCandidate) {
     if (!value || ids.some((id) => id.type === type && id.value === value)) return;
     ids.push({ type, value });
   };
-  if (!candidate.source.includes('+')) add(candidate.source, candidate.authorityId);
+  // Canonical idno types match SOURCE_IDNO_TYPES / SQLite canonicalizeAuthorityType.
+  const sourceType = candidate.source.trim().toUpperCase();
+  if (!candidate.source.includes('+') && sourceType) add(sourceType, candidate.authorityId);
   add('CBDB', candidate.metadata?.crosswalk?.cbdb);
-  add('Norbert', candidate.metadata?.crosswalk?.norbert);
+  add('NORBERT', candidate.metadata?.crosswalk?.norbert);
   return ids;
 }
 

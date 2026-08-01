@@ -83,8 +83,8 @@ export const BridgeInboxDialog = ({ open, onClose, onChanged }: Props) => {
             `Applied ${synced.ordersApplied} central update(s): ${synced.repointed} link(s) repointed, ${synced.cleared} cleared.`,
           );
         }
-      } catch {
-        // never block the inbox on this — worst case, the entry still shows as broken
+      } catch (e) {
+        setError(e instanceof Error ? e.message : String(e));
       }
       await refresh(availability.context);
     })();

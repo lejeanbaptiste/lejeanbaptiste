@@ -15,20 +15,18 @@ import { autoRomanize } from '../utilities/romanize';
 import { LOOKUP_TYPE_TO_KIND } from '../services/entity-database-lookup';
 import { autoSyncEntityToCentral } from './autoSync';
 import {
-  addEntity,
-  appendAuthorityIdnos,
-  appendAuthorityDates,
-  appendAuthoritySourcedValues,
   ENTITY_KINDS,
-  entityElements,
-  findEntity,
   type AuthorityId,
   type AuthoritySourcedFields,
   type EntityKind,
 } from './entities';
 import type { OriginAssertion } from './authority';
 import type { EntityStore } from './entityStore';
-import { listEntities, setFamilyName, setGivenName } from './entityOps';
+import {
+  assertLookupSqliteStore,
+  enrichEntitySqlite,
+  mintEntitySqlite,
+} from './sqliteLookupMint';
 import { isLatinSurface } from './disambiguationMatch';
 import { romanizeFromAuthorityMetadata } from '../utilities/romanize';
 import { suggestPersonNameSplit, suggestPersonRomanization } from '../plugins/personNameDefaults';
@@ -36,6 +34,7 @@ import type { AuthorityPackId } from './packPaths';
 import { authorityPackLines, type AuthorityPackContent } from './packLoader';
 import { WARNINGS_FILE } from './lookupWarnings';
 import type { LookupWarning } from './lookupWarnings';
+import type { SqlitePanelSummaryLike } from './sqliteSummary';
 
 export const LJB_LOOKUP_RESP = '#ljb-lookup';
 
@@ -322,39 +321,58 @@ interface EntityRecord {
   idnos: AuthorityId[];
 }
 
-function readEntitiesOfKind(doc: Document, kind: EntityKind): EntityRecord[] {
-  const { name: nameTag } = ENTITY_KINDS[kind];
-  const out: EntityRecord[] = [];
-  const items = entityElements(doc, kind);
-  for (const el of items) {
-    const key = el.getAttribute('xml:id');
-    if (!key) continue;
-    const idnos: AuthorityId[] = [];
-    const idnoEls = el.getElementsByTagName('idno');
-    for (let j = 0; j < idnoEls.length; j++) {
-      const idnoEl = idnoEls.item(j)!;
-      idnos.push({
-        type: idnoEl.getAttribute('type') ?? 'unknown',
-        value: idnoEl.textContent?.trim() ?? '',
-      });
+async function collectEntityIdsByAuthorities(
+  store: EntityStore,
+  kind: EntityKind,
+  authorities: AuthorityId[],
+): Promise<string[]> {
+  const ids: string[] = [];
+  const seen = new Set<string>();
+  for (const authority of authorities) {
+    const matches = await store.sqliteFindAllByAuthority(
+      kind,
+      authority.type,
+      authority.value,
+    );
+    for (const id of matches) {
+      if (seen.has(id)) continue;
+      seen.add(id);
+      ids.push(id);
     }
-    let description: string | undefined;
-    const noteEls = el.getElementsByTagName('note');
-    for (let j = 0; j < noteEls.length; j++) {
-      const noteEl = noteEls.item(j)!;
-      if (noteEl.getAttribute('type') === 'description') {
-        description = noteEl.textContent?.trim() || undefined;
-        break;
-      }
-    }
-    out.push({
-      key,
-      name: el.getElementsByTagName(nameTag)[0]?.textContent?.trim() ?? key,
-      description,
-      idnos,
-    });
   }
-  return out;
+  return ids;
+}
+
+async function entityRecordFromSqlite(
+  store: EntityStore,
+  entityId: string,
+): Promise<EntityRecord | null> {
+  const raw = (await store.sqliteEntitySummary(entityId)) as SqlitePanelSummaryLike | null;
+  if (!raw) return null;
+  const primary =
+    raw.names.find((name) => name.status === 'active' && name.nameType === 'primary') ??
+    raw.names.find((name) => name.status === 'active');
+  return {
+    key: raw.id,
+    name: primary?.text?.trim() || raw.id,
+    description: raw.description?.trim() || undefined,
+    idnos: (raw.authorities ?? []).map((authority) => ({
+      type: authority.type,
+      value: authority.value,
+    })),
+  };
+}
+
+async function hydrateEntityRecords(
+  store: EntityStore,
+  entityIds: string[],
+): Promise<EntityRecord[]> {
+  const records: EntityRecord[] = [];
+  for (const id of entityIds) {
+    const record = await entityRecordFromSqlite(store, id);
+    if (record) records.push(record);
+  }
+  return records;
 }
 
 export const idnoEquals = (a: AuthorityId, b: AuthorityId) =>
@@ -388,6 +406,8 @@ export async function planLookupResolution(
 ): Promise<LookupResolutionPlan> {
   const kind = LOOKUP_TYPE_TO_KIND[input.entityType];
   if (!kind) return { action: 'passthrough' };
+
+  await assertLookupSqliteStore(deps.store);
 
   const refs: ParsedAuthorityRef[] = [input.uri, ...(input.extraUris ?? [])].map(
     (uri) => parseAuthorityUri(uri) ?? { idnoType: 'URI', value: uri },
@@ -429,12 +449,12 @@ export async function planLookupResolution(
         )
     : undefined;
 
-  const doc = await deps.store.loadEntities();
-  const entities = readEntitiesOfKind(doc, kind);
-
-  const direct = entities.filter((entity) =>
-    refs.some((ref) => entityHasIdno(entity, { type: ref.idnoType, value: ref.value })),
+  const directIds = await collectEntityIdsByAuthorities(
+    deps.store,
+    kind,
+    refs.map((ref) => ({ type: ref.idnoType, value: ref.value })),
   );
+  const direct = await hydrateEntityRecords(deps.store, directIds);
 
   if (direct.length > 1) {
     // Pre-existing duplicate — a curation problem, never a merge-by-lookup.
@@ -458,9 +478,8 @@ export async function planLookupResolution(
     };
   }
 
-  const viaCrosswalk = entities.filter((entity) =>
-    idnos.some((idno) => entityHasIdno(entity, idno)),
-  );
+  const viaCrosswalkIds = await collectEntityIdsByAuthorities(deps.store, kind, idnos);
+  const viaCrosswalk = await hydrateEntityRecords(deps.store, viaCrosswalkIds);
 
   if (viaCrosswalk.length > 1) {
     return {
@@ -576,6 +595,8 @@ export async function applyLookupResolution(
     return { status: 'conflict', candidates: plan.candidates };
   }
 
+  await assertLookupSqliteStore(deps.store);
+
   if (plan.action === 'link') {
     if (
       plan.addIdnos.length > 0 ||
@@ -584,66 +605,15 @@ export async function applyLookupResolution(
       plan.endYear != null ||
       plan.authorityAssertions?.length
     ) {
-      const doc = await deps.store.loadEntities();
-      const element = findEntity(doc, plan.key);
-      if (element) {
-        appendAuthorityIdnos(doc, element, plan.addIdnos);
-        if (plan.authorityAssertions?.length) {
-          for (const assertion of plan.authorityAssertions) {
-            appendAuthorityDates(doc, element, assertion.source, {
-              startYear: assertion.startYear,
-              endYear: assertion.endYear,
-            });
-            if (assertion.nationality?.length) {
-              appendAuthoritySourcedValues(
-                doc,
-                element,
-                'nationality',
-                assertion.nationality.map((value) => ({
-                  text: value.label,
-                  ref: value.canonicalId,
-                  source: assertion.source,
-                })),
-              );
-            }
-            if (assertion.origin?.length) {
-              appendAuthoritySourcedValues(
-                doc,
-                element,
-                'placeName',
-                assertion.origin.map((value) => ({
-                  text: value.placeName,
-                  ref: value.placeAuthorityId,
-                  source: value.source ?? assertion.source,
-                  type: value.originType,
-                })),
-              );
-            }
-          }
-        } else {
-          const source =
-            plan.authoritySource ?? parseAuthorityUri(input.uri)?.idnoType ?? 'authority';
-          if (plan.nationality?.length) {
-            appendAuthoritySourcedValues(
-              doc,
-              element,
-              'nationality',
-              plan.nationality.map((value) => ({
-                text: value.label,
-                ref: value.canonicalId,
-                source: value.sourceIds?.[0] ?? source,
-              })),
-            );
-          }
-          if (plan.startYear != null || plan.endYear != null) {
-            appendAuthorityDates(doc, element, source, {
-              startYear: plan.startYear,
-              endYear: plan.endYear,
-            });
-          }
-        }
-        await deps.store.saveEntities(doc);
-      }
+      await enrichEntitySqlite(deps.store, plan.key, {
+        kind,
+        authorityIds: plan.addIdnos,
+        startYear: plan.startYear,
+        endYear: plan.endYear,
+        nationality: plan.nationality,
+        authorityAssertions: plan.authorityAssertions,
+        authoritySource: plan.authoritySource ?? parseAuthorityUri(input.uri)?.idnoType ?? 'authority',
+      });
     }
     if (plan.idnoConflicts.length > 0) {
       await appendWarnings(
@@ -663,40 +633,28 @@ export async function applyLookupResolution(
   }
 
   // mint
-  const doc = await deps.store.loadEntities();
-  const { id } = addEntity(
-    doc,
+  const id = await mintEntitySqlite(deps.store, {
     kind,
-    {
-      name: plan.entityName,
-      nameLang:
-        deps.projectLang && !isLatinSurface(plan.entityName) ? deps.projectLang : undefined,
-      romanizedName: plan.romanizedName,
-      authorityIds: plan.idnos,
-      authoritySource: plan.authoritySource,
-      description: plan.description,
-      startYear: kind === 'person' && plan.authorityAssertions?.length ? undefined : plan.startYear,
-      endYear: kind === 'person' && plan.authorityAssertions?.length ? undefined : plan.endYear,
-      nationality:
-        kind === 'person' && plan.authorityAssertions?.length ? undefined : plan.nationality,
-      authorityAssertions: kind === 'person' ? plan.authorityAssertions : undefined,
-      importedOrigin: 'authority',
-    },
-    LJB_LOOKUP_RESP,
-  );
-  if (plan.familyName) setFamilyName(doc, id, plan.familyName);
-  if (plan.givenName) setGivenName(doc, id, plan.givenName);
-  await autoSyncEntityToCentral(doc, id);
-  await deps.store.saveEntities(doc);
+    name: plan.entityName,
+    nameLang:
+      deps.projectLang && !isLatinSurface(plan.entityName) ? deps.projectLang : undefined,
+    romanizedName: plan.romanizedName,
+    authorityIds: plan.idnos,
+    authoritySource: plan.authoritySource,
+    description: plan.description,
+    startYear: kind === 'person' && plan.authorityAssertions?.length ? undefined : plan.startYear,
+    endYear: kind === 'person' && plan.authorityAssertions?.length ? undefined : plan.endYear,
+    nationality:
+      kind === 'person' && plan.authorityAssertions?.length ? undefined : plan.nationality,
+    authorityAssertions: kind === 'person' ? plan.authorityAssertions : undefined,
+    familyName: plan.familyName,
+    givenName: plan.givenName,
+  });
+  await autoSyncEntityToCentral(null, id);
   await logDecision(input, deps, kind, id);
   return { status: 'linked', key: id, entityName: plan.entityName, wasCreated: true };
 }
 
-/**
- * Attach extra authority URIs (checked alongside a project/central entity
- * that's linked directly, bypassing the plan/mint pipeline) onto that entity
- * as additional idnos. Existing same-type idnos are left untouched.
- */
 export async function appendExtraAuthorityIds(
   key: string,
   extraUris: string[],
@@ -705,27 +663,12 @@ export async function appendExtraAuthorityIds(
   const refs = extraUris.map(parseAuthorityUri).filter((ref): ref is ParsedAuthorityRef => !!ref);
   if (refs.length === 0) return;
 
-  const doc = await deps.store.loadEntities();
-  const element = findEntity(doc, key);
-  if (!element) return;
-
-  const existing: AuthorityId[] = [];
-  const idnoEls = element.getElementsByTagName('idno');
-  for (let i = 0; i < idnoEls.length; i++) {
-    const idnoEl = idnoEls.item(i)!;
-    existing.push({
-      type: idnoEl.getAttribute('type') ?? 'unknown',
-      value: idnoEl.textContent?.trim() ?? '',
-    });
-  }
-
-  const toAdd = dedupeIdnos(refs.map((ref) => ({ type: ref.idnoType, value: ref.value }))).filter(
-    (idno) => !existing.some((own) => idnoEquals(own, idno)),
-  );
+  await assertLookupSqliteStore(deps.store);
+  const toAdd = dedupeIdnos(refs.map((ref) => ({ type: ref.idnoType, value: ref.value })));
   if (toAdd.length === 0) return;
-
-  appendAuthorityIdnos(doc, element, toAdd);
-  await deps.store.saveEntities(doc);
+  for (const authority of toAdd) {
+    await deps.store.sqliteAttachAuthority(key, authority.type, authority.value);
+  }
 }
 
 /**
@@ -771,7 +714,7 @@ export async function linkLocalEntityWithoutAuthority(
   const surface = query.normalize('NFC').trim();
   if (!kind || !surface) return { status: 'passthrough' };
 
-  const doc = await deps.store.loadEntities();
+  await assertLookupSqliteStore(deps.store);
   const input: LookupSelectionInput = {
     uri: '',
     label: surface,
@@ -779,47 +722,34 @@ export async function linkLocalEntityWithoutAuthority(
     query: surface,
   };
 
-  const existing = listEntities(doc).find(
-    (entity) =>
-      entity.kind === kind &&
-      entity.nameEntries.some((entry) => entry.text.normalize('NFC') === surface),
-  );
-
+  const hits = await deps.store.sqliteSearchNames(kind, surface, 20);
+  const existing = hits.find((hit) => hit.label.normalize('NFC') === surface);
   if (existing) {
     await logDecision(input, deps, kind, existing.id);
     return {
       status: 'linked',
       key: existing.id,
-      entityName: existing.names[0] ?? surface,
+      entityName: existing.label,
       wasCreated: false,
     };
   }
 
-  // Persons get a family/given split (Norbert, or the built-in surname-table
-  // fallback) before romanization, so a multi-syllable given name comes out
-  // as one word ("Zhou Shixiong") instead of the whole-string fallback's
-  // per-character "Zhou Shi Xiong".
   const personSplit =
     kind === 'person' ? suggestPersonNameSplit(surface, deps.projectLang ?? null) : null;
   const romanizedName = personSplit
     ? (suggestPersonRomanization(surface, deps.projectLang ?? null) ?? undefined)
     : (autoRomanize(surface, deps.projectLang) ?? undefined);
 
-  const { id } = addEntity(
-    doc,
+  const id = await mintEntitySqlite(deps.store, {
     kind,
-    {
-      name: surface,
-      nameLang:
-        deps.projectLang && !isLatinSurface(surface) ? deps.projectLang : undefined,
-      romanizedName,
-    },
-    LJB_LOOKUP_RESP,
-  );
-  if (personSplit?.familyName) setFamilyName(doc, id, personSplit.familyName);
-  if (personSplit?.givenName) setGivenName(doc, id, personSplit.givenName);
-  await autoSyncEntityToCentral(doc, id);
-  await deps.store.saveEntities(doc);
+    name: surface,
+    nameLang:
+      deps.projectLang && !isLatinSurface(surface) ? deps.projectLang : undefined,
+    romanizedName,
+    familyName: personSplit?.familyName,
+    givenName: personSplit?.givenName,
+  });
+  await autoSyncEntityToCentral(null, id);
   await logDecision(input, deps, kind, id);
   return { status: 'linked', key: id, entityName: surface, wasCreated: true };
 }

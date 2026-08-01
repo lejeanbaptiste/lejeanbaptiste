@@ -1,4 +1,6 @@
-import { searchEntityDocument } from './entity-database-lookup';
+import { searchEntityDocument, entityDatabaseLookupService } from './entity-database-lookup';
+import { SQLITE_REQUIRED_LOOKUP_MESSAGE } from '../autoTagging/sqliteRequired';
+import * as entityStoreModule from '../autoTagging/entityStore';
 
 const TEI_NS = 'http://www.tei-c.org/ns/1.0';
 
@@ -36,5 +38,28 @@ describe('searchEntityDocument', () => {
 
     expect(results).toHaveLength(1);
     expect(results[0]?.label).toBe('John Doe');
+  });
+});
+
+describe('entityDatabaseLookupService search', () => {
+  afterEach(() => {
+    jest.restoreAllMocks();
+    delete (window as unknown as { electronAPI?: unknown }).electronAPI;
+  });
+
+  it('fails loud when SQLite search is unavailable', async () => {
+    (window as unknown as { electronAPI: { readFile: () => Promise<string> } }).electronAPI = {
+      readFile: async () => '',
+    };
+    jest.spyOn(entityStoreModule, 'entityStoreFromDesktop').mockReturnValue({
+      sqlitePath: '/proj/entities.sqlite',
+      hasSqliteDatabase: async () => false,
+    } as unknown as entityStoreModule.EntityStore);
+
+    const service = entityDatabaseLookupService();
+    expect(service).not.toBeNull();
+    await expect(service!.search({ query: '張衡', entityType: 'person' })).rejects.toThrow(
+      SQLITE_REQUIRED_LOOKUP_MESSAGE,
+    );
   });
 });

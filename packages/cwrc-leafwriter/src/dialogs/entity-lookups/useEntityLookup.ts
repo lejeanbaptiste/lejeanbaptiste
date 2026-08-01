@@ -15,7 +15,8 @@ import {
   type LookupSelectionInput,
 } from '../../autoTagging/lookupResolve';
 import type { AuthorityPackId } from '../../autoTagging/packPaths';
-import { adoptFromCentral } from '../../autoTagging/promote';
+import { adoptFromCentralSqlite } from '../../autoTagging/sqliteBridgeOps';
+import { SQLITE_REQUIRED_LOOKUP_MESSAGE } from '../../autoTagging/sqliteRequired';
 import { readOrMintUserStableId } from '../../autoTagging/userStableId';
 import { packIdsForEntityType, readPackCached } from '../../services/authority-pack-lookup';
 import { centralEntityIdFromUri } from '../../services/central-entity-database-lookup';
@@ -76,14 +77,21 @@ const adoptCentralEntity = async (centralId: string): Promise<string | null> => 
   const centralStore = centralEntityStoreFromDesktop(centralFolder);
   if (!centralStore) return null;
 
+  if (
+    !(await projectStore.hasSqliteDatabase()) ||
+    !(await centralStore.hasSqliteDatabase())
+  ) {
+    throw new Error(SQLITE_REQUIRED_LOOKUP_MESSAGE);
+  }
+
   const { id: userStableId } = await readOrMintUserStableId(api, centralFolder);
-  const [pedbDoc, cedbDoc] = await Promise.all([
-    projectStore.loadEntities(),
-    centralStore.loadEntities(),
-  ]);
-  const { pedbId, created } = adoptFromCentral(pedbDoc, centralId, cedbDoc, userStableId);
-  if (created) await projectStore.saveEntities(pedbDoc);
-  return pedbId;
+  const adopted = await adoptFromCentralSqlite(
+    projectStore,
+    centralStore,
+    centralId,
+    userStableId,
+  );
+  return adopted?.pedbId ?? null;
 };
 
 const resolveDeps = async (entityType: NamedEntityType): Promise<LookupResolveDeps | null> => {

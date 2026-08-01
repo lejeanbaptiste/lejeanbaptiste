@@ -17,13 +17,14 @@ import type { DisambiguationCandidate } from './disambiguationCandidates';
 import {
   collectGivenFamilyNamesForCandidate,
   collectTypedNamesForCandidate,
-  candidatesFromEntityFile,
-  extractWikidataId,
   loadSqliteDisambiguationCandidates,
   resolveCandidateForPedb,
-  resolveEntityInDocument,
+  toAuthoritySourcedFields,
 } from './disambiguationCandidates';
-import { linkedCentralIds } from './bridgeInbox';
+import { mintOrLinkEntitySqlite } from './sqliteLookupMint';
+import { backfillEntitiesSqlite } from './sqliteAuthorityBackfill';
+import { SQLITE_REQUIRED_LOOKUP_MESSAGE } from './sqliteRequired';
+import { entitySummaryFromSqlite } from './sqliteSummary';
 import {
   parsePendingCache,
   serializePendingCache,
@@ -31,17 +32,10 @@ import {
   type PendingCache,
 } from './disambiguationPending';
 import { DecisionLogBuffer, type DecisionRecord } from './decisionLog';
-import { addOfficeRelation, findEntity, TAG_TO_KIND, type EntityKind } from './entities';
+import { TAG_TO_KIND, type EntityKind } from './entities';
 import type { AuthorityCandidate } from './authority';
-import { extractPluginOfficeRelations } from '../plugins/officeRelationExtractors';
-import { extractRegisteredEntityData } from '../plugins/entityDataExtractors';
 import { collectPluginPatternTagCandidates } from '../plugins/patternTagProducers';
 import { suggestPersonNameSplit, suggestPersonRomanization } from '../plugins/personNameDefaults';
-import {
-  ingestExtractedEntityData,
-  personWrapperSource,
-  refreshExtractedEntityDataForDocument,
-} from './entityExtraction';
 import { autoRomanize } from '../utilities/romanize';
 import { checkWellFormedness } from '../utilities/checkWellFormedness';
 import { applyPurge, type PurgeOptions } from './purge';
@@ -55,7 +49,6 @@ import {
 } from './entityStore';
 import { readOrMintUserStableId } from './userStableId';
 import {
-  candidatesFromEntityDatabase,
   candidatesFromEntityDatabaseRecords,
   type EntityDatabaseCandidateRecord,
 } from './ownDatabaseCandidates';
@@ -69,13 +62,10 @@ import { compoundWrapperSuggestions, seedSuggestions, suggestionsFromSeedMatches
 import { runGroupAndClean, type GroupAndCleanResult } from './groupAndClean';
 import { buildNobleTitleVocabulary } from './nobleTitleSpanParser';
 import { DisambiguationAiCache } from './disambiguationAiCache';
-import { enrichWikidataWorkEntity } from './wikidataWorkDetails';
-import { enrichWikidataPersonWorks } from './wikidataPersonWorks';
 import type { AiPromptProfile } from './aiPromptProfiles';
 import type { LlmClient } from './llmClient';
 import { LlmCache } from './llmCache';
 import { llmSuggest, type LlmSuggestResult } from './llmSuggest';
-import { listEntities } from './entityOps';
 import { collectTaggedSpans, prepareSuggestionsForReview } from './suggestionFilters';
 import { keyedPersNameFloors, phase2StringsForEntity, shortFormTag } from './shortFormTag';
 import { llmAudit, type LlmAuditResult } from './llmAudit';
@@ -132,7 +122,10 @@ function wrapperPersonName(wrapper: Element): Element | null {
  * This is intentionally conservative: an exact local-name match must resolve
  * to one project entity. Conflicts are left untouched for the validation UI.
  */
-export function reconcilePersonWrapperKeys(doc: Document, entitiesDoc: Document): boolean {
+export async function reconcilePersonWrapperKeys(
+  doc: Document,
+  findLocalIds: (surface: string) => Promise<string[]> | string[],
+): Promise<boolean> {
   let changed = false;
   for (const wrapper of Array.from(doc.getElementsByTagName('name'))) {
     if (wrapper.getAttribute('type') !== 'personWrapper') continue;
@@ -161,10 +154,7 @@ export function reconcilePersonWrapperKeys(doc: Document, entitiesDoc: Document)
 
     const surface = person.textContent?.trim() ?? '';
     if (!surface) continue;
-    const local = candidatesFromEntityFile(entitiesDoc, 'persName', surface)
-      .map((candidate) => candidate.localEntityId)
-      .filter((id): id is string => !!id);
-    const ids = [...new Set(local)];
+    const ids = [...new Set(await Promise.resolve(findLocalIds(surface)))];
     if (ids.length !== 1) {
       if (wrapper.getAttribute('cert') !== 'unknown') {
         wrapper.setAttribute('cert', 'unknown');
@@ -303,86 +293,6 @@ const yieldToUi = (): Promise<void> =>
     requestAnimationFrame(() => requestAnimationFrame(() => resolve()));
   });
 
-function previousAdjacentElement(element: Element): Element | null {
-  let cursor = element.previousSibling;
-  while (cursor?.nodeType === 3 && !(cursor.textContent ?? '').trim()) {
-    cursor = cursor.previousSibling;
-  }
-  return cursor?.nodeType === 1 ? (cursor as Element) : null;
-}
-
-function candidateSourceRef(candidate: DisambiguationCandidate): {
-  source: string;
-  authorityId: string;
-} | null {
-  const norbert = candidate.authorityIds?.find((id) => id.type.toLowerCase() === 'norbert');
-  if (norbert) return { source: 'Norbert', authorityId: norbert.value };
-  const first = candidate.authorityIds?.[0];
-  return first ? { source: first.type, authorityId: first.value } : null;
-}
-
-function importResolvedOfficeStructure(
-  entitiesDoc: Document,
-  element: Element,
-  childId: string,
-  candidate: DisambiguationCandidate,
-): string[] {
-  const relatedEntityIds: string[] = [];
-  const childRef = candidateSourceRef(candidate);
-  const parent = candidate.authorityMetadata?.parentOffice;
-  if (parent) {
-    const parentId = resolveEntityInDocument(entitiesDoc, {
-      kind: 'office',
-      name: parent.name,
-      authorityIds: [{ type: parent.source, value: parent.authorityId }],
-    });
-    addOfficeRelation(entitiesDoc, {
-      parentId,
-      childId,
-      source: 'norbert',
-      rule: 'explicit-parent-string',
-      sourceIds: [parent.authorityId, childRef?.authorityId].filter((id): id is string =>
-        Boolean(id),
-      ),
-      confidence: 'inferred',
-    });
-    relatedEntityIds.push(parentId);
-  }
-
-  const previous = previousAdjacentElement(element);
-  const previousId = previous?.localName === 'roleName' ? previous.getAttribute('key') : null;
-  const previousEntity = previousId ? findEntity(entitiesDoc, previousId) : null;
-  const firstIdno = previousEntity?.getElementsByTagName('idno')[0];
-  if (!previousId || !previousEntity || !firstIdno || !childRef) return relatedEntityIds;
-
-  const first: AuthorityCandidate = {
-    source: firstIdno.getAttribute('type') ?? 'unknown',
-    authorityId: firstIdno.textContent?.trim() ?? previousId,
-    kind: 'office',
-    primaryName:
-      previousEntity.getElementsByTagName('orgName')[0]?.textContent?.trim() ??
-      previous?.textContent?.trim() ??
-      previousId,
-    searchStrings: [],
-  };
-  const second: AuthorityCandidate = {
-    source: childRef.source,
-    authorityId: childRef.authorityId,
-    kind: 'office',
-    primaryName: element.textContent?.trim() ?? childRef.authorityId,
-    searchStrings: [],
-    metadata: candidate.authorityMetadata,
-  };
-  for (const relation of extractPluginOfficeRelations({ first, second, adjacent: true })) {
-    addOfficeRelation(entitiesDoc, {
-      parentId: previousId,
-      childId,
-      ...relation,
-    });
-  }
-  return relatedEntityIds;
-}
-
 /**
  * One auto-tagging run against a live document (Phase 2 integration).
  *
@@ -478,18 +388,16 @@ export class AutoTaggingSession {
   } | null> {
     const central = await this.centralContext();
     if (!central) return null;
-    // Migrated CEDB: skip full export. Callers that need surface matches should
-    // use `disambiguationDbSources` instead of scanning `doc`.
-    if (await central.store.hasSqliteDatabase()) {
-      return { userStableId: central.userStableId };
+    // Migrated CEDB only — surface matches come from `disambiguationDbSources`.
+    if (!(await central.store.hasSqliteDatabase())) {
+      throw new Error(SQLITE_REQUIRED_LOOKUP_MESSAGE);
     }
-    const doc = await central.store.loadEntities();
-    return { doc, userStableId: central.userStableId };
+    return { userStableId: central.userStableId };
   }
 
   /**
-   * PEDB/CEDB surface matches for disambiguation without a full XML export when
-   * the sibling SQLite database is present.
+   * PEDB/CEDB surface matches for disambiguation. Requires SQLite on each
+   * store being searched — no XML/`loadEntities` fallthrough.
    */
   async disambiguationDbSources(
     tag: string,
@@ -512,89 +420,34 @@ export class AutoTaggingSession {
       surface,
       'pedb',
     );
+    if (sqliteLocal == null) throw new Error(SQLITE_REQUIRED_LOOKUP_MESSAGE);
+
     const central = await this.centralContext();
-
-    if (sqliteLocal != null) {
-      if (!central) {
-        return { local: sqliteLocal, entitiesDoc: this.getEntitiesDocument() };
-      }
-      const sqliteCentral = await loadSqliteDisambiguationCandidates(
-        central.store,
-        tag,
-        surface,
-        'cedb',
-      );
-      if (sqliteCentral != null) {
-        const linked =
-          (await this.store.sqliteListLinkedCentralIds(central.userStableId)) ?? [];
-        const linkedSet = new Set(linked);
-        return {
-          local: sqliteLocal,
-          central: {
-            userStableId: central.userStableId,
-            candidates: sqliteCentral.filter(
-              (candidate) =>
-                !candidate.centralEntityId || !linkedSet.has(candidate.centralEntityId),
-            ),
-          },
-          entitiesDoc: this.getEntitiesDocument(),
-        };
-      }
-      // PEDB is SQLite but CEDB is still XML — export only CEDB.
-      const centralDoc = await central.store.loadEntities();
-      const linked =
-        (await this.store.sqliteListLinkedCentralIds(central.userStableId)) ?? [];
-      const linkedSet = new Set(linked);
-      return {
-        local: sqliteLocal,
-        central: {
-          userStableId: central.userStableId,
-          candidates: candidatesFromEntityFile(centralDoc, tag, surface, 'cedb').filter(
-            (candidate) =>
-              !candidate.centralEntityId || !linkedSet.has(candidate.centralEntityId),
-          ),
-        },
-        entitiesDoc: this.getEntitiesDocument(),
-      };
-    }
-
-    const entitiesDoc = this.getEntitiesDocument() ?? (await this.loadEntities());
-    const local = candidatesFromEntityFile(entitiesDoc, tag, surface);
     if (!central) {
-      return { local, entitiesDoc };
+      return { local: sqliteLocal, entitiesDoc: this.getEntitiesDocument() };
     }
+
     const sqliteCentral = await loadSqliteDisambiguationCandidates(
       central.store,
       tag,
       surface,
       'cedb',
     );
-    if (sqliteCentral != null) {
-      const linked = linkedCentralIds(entitiesDoc, central.userStableId);
-      return {
-        local,
-        central: {
-          userStableId: central.userStableId,
-          candidates: sqliteCentral.filter(
-            (candidate) =>
-              !candidate.centralEntityId || !linked.has(candidate.centralEntityId),
-          ),
-        },
-        entitiesDoc,
-      };
-    }
-    const centralDoc = await central.store.loadEntities();
-    const linked = linkedCentralIds(entitiesDoc, central.userStableId);
+    if (sqliteCentral == null) throw new Error(SQLITE_REQUIRED_LOOKUP_MESSAGE);
+
+    const linked =
+      (await this.store.sqliteListLinkedCentralIds(central.userStableId)) ?? [];
+    const linkedSet = new Set(linked);
     return {
-      local,
+      local: sqliteLocal,
       central: {
         userStableId: central.userStableId,
-        candidates: candidatesFromEntityFile(centralDoc, tag, surface, 'cedb').filter(
+        candidates: sqliteCentral.filter(
           (candidate) =>
-            !candidate.centralEntityId || !linked.has(candidate.centralEntityId),
+            !candidate.centralEntityId || !linkedSet.has(candidate.centralEntityId),
         ),
       },
-      entitiesDoc,
+      entitiesDoc: this.getEntitiesDocument(),
     };
   }
 
@@ -838,8 +691,10 @@ export class AutoTaggingSession {
     readPackFile: (packId: AuthorityPackId) => Promise<AuthorityPackContent>,
     scopeRoot?: Element,
   ): Promise<GroupAndCleanResult> {
+    if (!this.store || !(await this.store.hasSqliteDatabase())) {
+      throw new Error(SQLITE_REQUIRED_LOOKUP_MESSAGE);
+    }
     const doc = await this.getDocument();
-    const entitiesDoc = this.entitiesDoc ?? (await this.loadEntities());
     const root = scopeRoot ?? doc.documentElement;
 
     const [officeContent, wikiNtContent] = await Promise.all([
@@ -852,7 +707,24 @@ export class AutoTaggingSession {
       wikiNtContent ? iterateAuthorityNdjson(wikiNtContent) : [],
     );
 
-    const result = runGroupAndClean(entitiesDoc, root, officeCandidates, vocabulary);
+    const findLocalIds = async (surface: string): Promise<string[]> => {
+      const candidates = await loadSqliteDisambiguationCandidates(
+        this.store!,
+        'persName',
+        surface,
+        'pedb',
+      );
+      if (candidates == null) throw new Error(SQLITE_REQUIRED_LOOKUP_MESSAGE);
+      return [
+        ...new Set(
+          candidates
+            .map((candidate) => candidate.localEntityId)
+            .filter((id): id is string => Boolean(id)),
+        ),
+      ];
+    };
+
+    const result = await runGroupAndClean(findLocalIds, root, officeCandidates, vocabulary);
 
     await this.persistDocument(doc);
     return result;
@@ -940,20 +812,14 @@ export class AutoTaggingSession {
         const kind = OWN_DATABASE_KIND_BY_PACK_ID[id];
         if (!kind) continue;
         const records = await this.store.sqliteCandidateRecords(kind);
+        if (records == null) throw new Error(SQLITE_REQUIRED_LOOKUP_MESSAGE);
         extraCandidates.push({
           groupLabel: id,
-          candidates: records
-            ? candidatesFromEntityDatabaseRecords(
-                records as EntityDatabaseCandidateRecord[],
-                'PEDB',
-                nameTypePolicy,
-              )
-            : candidatesFromEntityDatabase(
-                await this.store.loadEntities(),
-                kind,
-                'PEDB',
-                nameTypePolicy,
-              ),
+          candidates: candidatesFromEntityDatabaseRecords(
+            records as EntityDatabaseCandidateRecord[],
+            'PEDB',
+            nameTypePolicy,
+          ),
         });
       }
     }
@@ -964,20 +830,14 @@ export class AutoTaggingSession {
           const kind = OWN_DATABASE_KIND_BY_PACK_ID[id];
           if (!kind) continue;
           const records = await centralStore.sqliteCandidateRecords(kind);
+          if (records == null) throw new Error(SQLITE_REQUIRED_LOOKUP_MESSAGE);
           extraCandidates.push({
             groupLabel: id,
-            candidates: records
-              ? candidatesFromEntityDatabaseRecords(
-                  records as EntityDatabaseCandidateRecord[],
-                  'CEDB',
-                  nameTypePolicy,
-                )
-              : candidatesFromEntityDatabase(
-                  await centralStore.loadEntities(),
-                  kind,
-                  'CEDB',
-                  nameTypePolicy,
-                ),
+            candidates: candidatesFromEntityDatabaseRecords(
+              records as EntityDatabaseCandidateRecord[],
+              'CEDB',
+              nameTypePolicy,
+            ),
           });
         }
       }
@@ -1077,8 +937,8 @@ export class AutoTaggingSession {
     stringCount: number;
     notice?: string;
   }> {
-    if (!this.store) {
-      throw new Error('Entity database is not configured.');
+    if (!this.store || !(await this.store.hasSqliteDatabase())) {
+      throw new Error(SQLITE_REQUIRED_LOOKUP_MESSAGE);
     }
 
     const doc = await this.getDocument();
@@ -1095,12 +955,15 @@ export class AutoTaggingSession {
       };
     }
 
-    const entitiesDoc = await this.store.loadEntities();
-    const entitiesById = new Map(
-      listEntities(entitiesDoc)
-        .filter((entity) => entity.kind === 'person' && floors.has(entity.id))
-        .map((entity) => [entity.id, entity] as const),
-    );
+    const entitiesById = new Map<string, ReturnType<typeof entitySummaryFromSqlite>>();
+    for (const entityId of floors.keys()) {
+      const snapshot = await this.store.sqliteEntitySummary(entityId);
+      if (!snapshot) continue;
+      const entity = entitySummaryFromSqlite(
+        snapshot as Parameters<typeof entitySummaryFromSqlite>[0],
+      );
+      if (entity.kind === 'person') entitiesById.set(entityId, entity);
+    }
 
     const sourceLang = await this.projectLanguage();
     const nameTypePolicy = nameTypeTaggingPolicyFromSettings(
@@ -1358,11 +1221,6 @@ export class AutoTaggingSession {
     return this.entitiesDoc;
   }
 
-  async saveEntities(): Promise<void> {
-    if (!this.store || !this.entitiesDoc) return;
-    await this.store.saveEntities(this.entitiesDoc);
-  }
-
   async savePendingCache(): Promise<void> {
     if (!this.store) return;
     await this.store.writeDisambiguationPending(serializePendingCache(this.pendingCache));
@@ -1404,16 +1262,28 @@ export class AutoTaggingSession {
       const documentId = globals.writer?.overmindState?.editor?.resource?.filePath ?? 'current';
       this.documentPaths.set(doc, documentId);
       let groups = collectMentions(doc, this.policy, documentId, options);
-      if (this.store) {
-        const entitiesDoc = this.entitiesDoc ?? (await this.loadEntities());
-        if (reconcilePersonWrapperKeys(doc, entitiesDoc)) {
+      if (this.store && (await this.store.hasSqliteDatabase())) {
+        const findLocalIds = async (surface: string): Promise<string[]> => {
+          const candidates = await loadSqliteDisambiguationCandidates(
+            this.store!,
+            'persName',
+            surface,
+            'pedb',
+          );
+          if (candidates == null) throw new Error(SQLITE_REQUIRED_LOOKUP_MESSAGE);
+          return [
+            ...new Set(
+              candidates
+                .map((candidate) => candidate.localEntityId)
+                .filter((id): id is string => Boolean(id)),
+            ),
+          ];
+        };
+        if (await reconcilePersonWrapperKeys(doc, findLocalIds)) {
           await this.persistDocument(doc);
           groups = collectMentions(doc, this.policy, documentId, options);
         }
-        refreshExtractedEntityDataForDocument(entitiesDoc, doc, documentId, (wrapper, key) =>
-          extractRegisteredEntityData({ wrapper, documentKey: key }),
-        );
-        await this.saveEntities();
+        // Extracted-data SQLite ingest is follow-on; do not mutate/save DOM entities.xml.
       }
       options.onProgress?.(1, 1);
       return groups;
@@ -1428,16 +1298,28 @@ export class AutoTaggingSession {
       options.onProgress?.(i, total);
       const documentId = this.documentPaths.get(doc) ?? `doc-${i}`;
       let documentGroups = collectMentions(doc, this.policy, documentId, options);
-      if (this.store) {
-        const entitiesDoc = this.entitiesDoc ?? (await this.loadEntities());
-        if (reconcilePersonWrapperKeys(doc, entitiesDoc)) {
+      if (this.store && (await this.store.hasSqliteDatabase())) {
+        const findLocalIds = async (surface: string): Promise<string[]> => {
+          const candidates = await loadSqliteDisambiguationCandidates(
+            this.store!,
+            'persName',
+            surface,
+            'pedb',
+          );
+          if (candidates == null) throw new Error(SQLITE_REQUIRED_LOOKUP_MESSAGE);
+          return [
+            ...new Set(
+              candidates
+                .map((candidate) => candidate.localEntityId)
+                .filter((id): id is string => Boolean(id)),
+            ),
+          ];
+        };
+        if (await reconcilePersonWrapperKeys(doc, findLocalIds)) {
           await this.persistDocument(doc);
           documentGroups = collectMentions(doc, this.policy, documentId, options);
         }
-        refreshExtractedEntityDataForDocument(entitiesDoc, doc, documentId, (wrapper, key) =>
-          extractRegisteredEntityData({ wrapper, documentKey: key }),
-        );
-        await this.saveEntities();
+        // Extracted-data SQLite ingest is follow-on; do not mutate/save DOM entities.xml.
       }
       groups.push(...documentGroups);
       if (i < documents.length - 1) await yieldToUi();
@@ -1637,7 +1519,6 @@ export class AutoTaggingSession {
     } = {},
   ): Promise<string> {
     if (!this.store) throw new Error('No entity store available');
-    const entitiesDoc = this.entitiesDoc ?? (await this.loadEntities());
     const kind = options.kind ?? (instance.tag === 'name' ? 'person' : TAG_TO_KIND[instance.tag]);
     if (!kind) throw new Error(`Unsupported tag: ${instance.tag}`);
 
@@ -1649,7 +1530,7 @@ export class AutoTaggingSession {
       if (central) {
         candidate = await resolveCandidateForPedb(
           candidate,
-          entitiesDoc,
+          this.store,
           central.store,
           central.userStableId,
         );
@@ -1661,20 +1542,10 @@ export class AutoTaggingSession {
     const name = options.name ?? wrapperPerson?.textContent?.trim() ?? instance.surface;
     const projectLangName = options.createNew ? undefined : candidate.projectLangName;
     const nameForSplit = projectLangName ?? name;
-    // Pull every typed name (courtesy 字, posthumous 諡號, birth name, …) plus
-    // given/family name the chosen authority knows, so the entity record
-    // carries them from day one — this runs even for createNew (e.g. a
-    // manually-pasted Wikidata link with no reconcile candidate) since the
-    // candidate still carries the authority id to look up.
     const [typedNames, authorityGivenFamilyNames] = await Promise.all([
       collectTypedNamesForCandidate(candidate),
       collectGivenFamilyNamesForCandidate(candidate, projectLang),
     ]);
-    // A freshly-minted person (create-new, or an authority match with no
-    // P734/P735) gets its family/given split from a registered plugin
-    // segmenter (e.g. Norbert's Chinese surname table) when one is active,
-    // with a correctly concatenated romanization ("Li Chunfeng", not
-    // "Li Chun Feng") — used only as a fallback after authority values.
     const pluginSplit =
       !authorityGivenFamilyNames.familyName && !authorityGivenFamilyNames.givenName
         ? suggestPersonNameSplit(nameForSplit, projectLang)
@@ -1690,96 +1561,54 @@ export class AutoTaggingSession {
       autoRomanize(nameForSplit, projectLang) ??
       undefined;
 
-    const entityId = resolveEntityInDocument(
-      entitiesDoc,
-      {
-        kind,
-        name,
-        projectLangName,
-        romanizedName,
-        nameLang: projectLang ?? undefined,
-        typedNames,
-        familyName: givenFamilyNames.familyName,
-        givenName: givenFamilyNames.givenName,
-        authorityIds: candidate.authorityIds,
-        authoritySource: candidate.authorityIds?.[0]
-          ? `${candidate.authorityIds[0].type}:${candidate.authorityIds[0].value}`
-          : undefined,
-        description: options.description ?? candidate.description,
-        startYear: candidate.startYear,
-        endYear: candidate.endYear,
-        origin: candidate.authorityMetadata?.origin,
-        authorityMetadata: candidate.authorityMetadata,
-        authorityAssertions: candidate.authorityAssertions,
-      },
-      options.createNew ? undefined : candidate,
-    );
+    const { id: entityId } = await mintOrLinkEntitySqlite(this.store, {
+      kind,
+      name: projectLangName ?? name,
+      nameLang: projectLang ?? undefined,
+      romanizedName,
+      familyName: givenFamilyNames.familyName,
+      givenName: givenFamilyNames.givenName,
+      authorityIds: candidate.authorityIds,
+      authoritySource: candidate.authorityIds?.[0]
+        ? `${candidate.authorityIds[0].type}:${candidate.authorityIds[0].value}`
+        : undefined,
+      description: options.description ?? candidate.description,
+      startYear: candidate.startYear,
+      endYear: candidate.endYear,
+      origin: candidate.authorityMetadata?.origin,
+      authorityAssertions: toAuthoritySourcedFields(candidate.authorityAssertions),
+      localEntityId: options.createNew ? undefined : candidate.localEntityId,
+    });
+    for (const typed of typedNames ?? []) {
+      await this.store.sqliteAddName({
+        entityId,
+        text: typed.text,
+        nameType: typed.type,
+        language: typed.lang,
+        origin: 'authority',
+        source: candidate.authorityIds?.[0]?.type,
+      });
+    }
 
     assignEntity({ element: instance.element, entityId });
     if (wrapperPerson) assignEntity({ element: wrapperPerson, entityId });
-    if (wrapperPerson) {
-      const documentKey = this.documentPaths.get(instance.element.ownerDocument!) ?? 'current';
-      const wrappers = Array.from(
-        instance.element.ownerDocument!.getElementsByTagName('name'),
-      ).filter((candidate) => candidate.getAttribute('type') === 'personWrapper');
-      const source = personWrapperSource(documentKey, wrappers.indexOf(instance.element) + 1);
-      const assertions = extractRegisteredEntityData({
-        wrapper: instance.element,
-        documentKey,
-      });
-      if (assertions.length > 0) {
-        ingestExtractedEntityData(entitiesDoc, entityId, source, assertions);
-      }
-    }
-    const relatedEntityIds =
-      kind === 'office'
-        ? importResolvedOfficeStructure(entitiesDoc, instance.element, entityId, candidate)
-        : [];
     if (instance.tag === 'persName') {
       tagFollowingStyleNames(instance.element.ownerDocument!);
     }
-    if (kind === 'work') {
+    // Wikidata work/person side-mint stays on backfill for SQLite-first installs.
+    if (kind === 'work' || kind === 'person') {
       const wikidata = candidate.authorityIds?.find(
         (authority) => authority.type.trim().toUpperCase() === 'WIKIDATA',
       );
-      const qid = extractWikidataId(candidate.uri ?? wikidata?.value ?? '');
-      if (qid) {
-        const workDetails = await enrichWikidataWorkEntity(
-          entitiesDoc,
-          entityId,
-          qid,
+      if (wikidata && window.electronAPI?.entitySqliteApplyAuthorityBackfillPatch) {
+        await backfillEntitiesSqlite(this.store, {
+          entityIds: [entityId],
           projectLang,
-          this.desktopLanguage(),
-        ).catch(() => null);
-        for (const author of workDetails?.authors ?? []) {
-          await autoSyncEntityToCentral(entitiesDoc, author.entityId);
-        }
-      }
-    } else if (kind === 'person') {
-      const wikidata = candidate.authorityIds?.find(
-        (authority) => authority.type.trim().toUpperCase() === 'WIKIDATA',
-      );
-      const qid = extractWikidataId(candidate.uri ?? wikidata?.value ?? '');
-      if (qid) {
-        const personWorks = await enrichWikidataPersonWorks(
-          entitiesDoc,
-          entityId,
-          qid,
-          projectLang,
-          this.desktopLanguage(),
-        ).catch(() => null);
-        for (const work of personWorks?.works ?? []) {
-          await autoSyncEntityToCentral(entitiesDoc, work.entityId);
-        }
+          desktopLanguage: this.desktopLanguage(),
+        }).catch(() => undefined);
       }
     }
-    await autoSyncEntityToCentral(entitiesDoc, entityId);
-    for (const relatedId of relatedEntityIds) {
-      if (relatedId !== entityId) {
-        await autoSyncEntityToCentral(entitiesDoc, relatedId);
-      }
-    }
-    await this.saveEntities();
+    await autoSyncEntityToCentral(null, entityId);
     await this.persistDocument(instance.element.ownerDocument!);
     this.logResolution(instance, 'resolved', entityId);
     return entityId;

@@ -14,54 +14,26 @@ import {
   entityStoreFromDesktop,
   type DesktopEntityStoreGlobals,
 } from './entityStore';
-import { promoteToCentral } from './promote';
 import { promoteToCentralSqlite, propagateTombstonesToSqlite } from './sqliteBridgeOps';
+import { SQLITE_REQUIRED_MESSAGE } from './sqliteRequired';
 import { readOrMintUserStableId } from './userStableId';
 import { findEntity } from './entities';
-import { getCentralId, setCentralMapping } from './concordance';
-import { propagateEntityTombstones } from './entityOps';
+import { setCentralMapping } from './concordance';
 
 /**
  * Promote `pedbId` into the central database when this project is set to
- * auto-sync. Idempotent (`promoteToCentral` no-ops if already linked), so
+ * auto-sync. Idempotent (`promoteToCentralSqlite` no-ops if already linked), so
  * callers can call this unconditionally after every create/resolve without
  * needing to know whether the entity was actually new. Desktop-only and
  * best-effort: a missing central folder, no electronAPI (web), or any
  * failure along the way is swallowed - auto-sync must never block the
  * entity creation it's piggybacking on.
  */
-export async function autoSyncEntityToCentral(pedbDoc: Document, pedbId: string): Promise<void> {
-  return autoSyncEntitiesToCentral(pedbDoc, [pedbId]);
-}
-
-/** Propagate central-database deletion tombstones to all linked project copies. */
-export async function autoSyncCentralEntityToProjects(
-  cedbDoc: Document,
-  centralId: string,
+export async function autoSyncEntityToCentral(
+  pedbDoc: Document | null,
+  pedbId: string,
 ): Promise<void> {
-  try {
-    const api = desktopEntityFileApi();
-    if (!api) return;
-    const centralFolder = (await window.electronAPI?.getEntityDbFolder?.().catch(() => null)) ?? null;
-    const centralStore = centralEntityStoreFromDesktop(centralFolder);
-    if (!centralStore) return;
-    const { id: userStableId } = await readOrMintUserStableId(api, centralFolder);
-    for (const projectRoot of await centralStore.registryProjectRoots()) {
-      const projectStore = entityStoreFromDesktop({ projectRoot });
-      if (!projectStore || projectStore.entitiesPath === centralStore.entitiesPath) continue;
-      const pedbDoc = await projectStore.loadEntities();
-      let changed = false;
-      for (const item of Array.from(pedbDoc.getElementsByTagName('*'))) {
-        if (getCentralId(item, userStableId) !== centralId) continue;
-        const centralItem = findEntity(cedbDoc, centralId);
-        if (centralItem) changed = propagateEntityTombstones(centralItem, item) || changed;
-      }
-      if (changed) await projectStore.saveEntities(pedbDoc);
-    }
-  } catch (error) {
-    // Best-effort propagation must not prevent saving the central edit.
-    console.error('[auto-sync] failed to propagate central tombstones:', error);
-  }
+  return autoSyncEntitiesToCentral(pedbDoc, [pedbId]);
 }
 
 /**
@@ -69,8 +41,14 @@ export async function autoSyncCentralEntityToProjects(
  * round trip for every id instead of one per entity. Use this after minting
  * many entities at once (e.g. seed/import auto-linking a whole corpus sweep)
  * rather than calling the single-entity form in a loop.
+ *
+ * Requires both PEDB and CEDB SQLite. Missing SQLite is logged and skipped —
+ * never falls back to DOM promote/`saveEntities`.
  */
-export async function autoSyncEntitiesToCentral(pedbDoc: Document, pedbIds: string[]): Promise<void> {
+export async function autoSyncEntitiesToCentral(
+  pedbDoc: Document | null,
+  pedbIds: string[],
+): Promise<void> {
   if (pedbIds.length === 0) return;
   const project = (window as unknown as DesktopEntityStoreGlobals).__ljbLspProject;
   if (!project?.syncToCentral) return;
@@ -86,41 +64,34 @@ export async function autoSyncEntitiesToCentral(pedbDoc: Document, pedbIds: stri
     const { id: userStableId } = await readOrMintUserStableId(api, centralFolder);
 
     if (
-      (await projectStore.hasSqliteDatabase()) &&
-      (await centralStore.hasSqliteDatabase()) &&
-      window.electronAPI?.entitySqliteCreatePopulated
+      !(await projectStore.hasSqliteDatabase()) ||
+      !(await centralStore.hasSqliteDatabase()) ||
+      !window.electronAPI?.entitySqliteCreatePopulated
     ) {
-      for (const pedbId of pedbIds) {
-        const result = await promoteToCentralSqlite(
-          projectStore,
-          centralStore,
-          pedbId,
-          userStableId,
-        );
-        if (!result) continue;
-        // Keep the caller's in-memory PEDB doc in sync: they typically
-        // saveEntities(pedbDoc) after this, which re-imports XML into SQLite.
-        const pedbItem = findEntity(pedbDoc, pedbId);
-        if (pedbItem) setCentralMapping(pedbItem, userStableId, result.centralId);
-        await propagateTombstonesToSqlite(
-          projectStore,
-          pedbId,
-          centralStore,
-          result.centralId,
-        );
-      }
+      // eslint-disable-next-line no-console
+      console.error(`[auto-sync] ${SQLITE_REQUIRED_MESSAGE}`);
       return;
     }
 
-    const cedbDoc = await centralStore.loadEntities();
     for (const pedbId of pedbIds) {
-      promoteToCentral(pedbDoc, pedbId, cedbDoc, userStableId);
-      const pedbItem = findEntity(pedbDoc, pedbId);
-      const centralId = pedbItem ? getCentralId(pedbItem, userStableId) : null;
-      const centralItem = centralId ? findEntity(cedbDoc, centralId) : null;
-      if (pedbItem && centralItem) propagateEntityTombstones(pedbItem, centralItem);
+      const result = await promoteToCentralSqlite(
+        projectStore,
+        centralStore,
+        pedbId,
+        userStableId,
+      );
+      if (!result) continue;
+      if (pedbDoc) {
+        const pedbItem = findEntity(pedbDoc, pedbId);
+        if (pedbItem) setCentralMapping(pedbItem, userStableId, result.centralId);
+      }
+      await propagateTombstonesToSqlite(
+        projectStore,
+        pedbId,
+        centralStore,
+        result.centralId,
+      );
     }
-    await centralStore.saveEntities(cedbDoc);
   } catch (error) {
     // eslint-disable-next-line no-console
     console.error('[auto-sync] failed to promote new entities to central database:', error);

@@ -158,14 +158,13 @@ describe('createPersonWrappersInScope', () => {
 });
 
 describe('runGroupAndClean (integration, user-reported case)', () => {
-  it('merges/nests office tags and wraps every person in a real passage', () => {
+  it('merges/nests office tags and wraps every person in a real passage', async () => {
     const xml = `${TEI_OPEN}<p>詔王公<roleName key="office-9">卿士</roleName>薦讜言。以<roleName key="office-1">平北將軍</roleName><persName key="person-1">陳顯達</persName>為<placeName>益州</placeName><roleName key="office-2">刺史</roleName>，<nobleTitle><roleName><placeName>貞陽</placeName>公</roleName></nobleTitle><persName key="person-2">柳世隆</persName>為<roleName key="office-3">南兖州刺史</roleName>，皇子<persName key="person-3">鋒</persName>為<nobleTitle><roleName><placeName>江夏</placeName>王</roleName></nobleTitle>。<roleName key="office-4">領軍將軍</roleName><persName key="person-4">李安民</persName>等破虜於<placeName>淮陽</placeName>。</p>${TEI_CLOSE}`;
     const doc = parse(xml);
-    const entitiesDoc = parse('<TEI xmlns="http://www.tei-c.org/ns/1.0"/>');
     const officeCandidates: AuthorityCandidate[] = [];
     const vocabulary = buildNobleTitleVocabulary([]);
 
-    const result = runGroupAndClean(entitiesDoc, doc.documentElement, officeCandidates, vocabulary);
+    const result = await runGroupAndClean(async () => [], doc.documentElement, officeCandidates, vocabulary);
 
     expect(result.createdWrappers).toBe(3);
     const wrappers = Array.from(doc.getElementsByTagName('name')).filter(
@@ -188,13 +187,12 @@ describe('runGroupAndClean (integration, user-reported case)', () => {
 });
 
 describe('assignPersonWrapperKeys', () => {
-  it('copies an already-keyed persName key up to its keyless wrapper', () => {
+  it('copies an already-keyed persName key up to its keyless wrapper', async () => {
     const doc = parse(
       `${TEI_OPEN}<p><name type="personWrapper" cert="unknown"><persName key="p1">張行成</persName></name></p>${TEI_CLOSE}`,
     );
-    const entitiesDoc = parse('<TEI xmlns="http://www.tei-c.org/ns/1.0"/>');
     const touched = new Set<Element>();
-    const result = assignPersonWrapperKeys(doc.documentElement, entitiesDoc, touched);
+    const result = await assignPersonWrapperKeys(doc.documentElement, async () => [], touched);
 
     const wrapper = doc.getElementsByTagName('name')[0]!;
     expect(result.copied).toBe(1);
@@ -203,12 +201,11 @@ describe('assignPersonWrapperKeys', () => {
     expect(touched.has(wrapper)).toBe(true);
   });
 
-  it('leaves an unresolvable wrapper pending rather than blocking', () => {
+  it('leaves an unresolvable wrapper pending rather than blocking', async () => {
     const doc = parse(
       `${TEI_OPEN}<p><name type="personWrapper" cert="unknown"><persName>無名氏</persName></name></p>${TEI_CLOSE}`,
     );
-    const entitiesDoc = parse('<TEI xmlns="http://www.tei-c.org/ns/1.0"/>');
-    const result = assignPersonWrapperKeys(doc.documentElement, entitiesDoc, new Set());
+    const result = await assignPersonWrapperKeys(doc.documentElement, async () => [], new Set());
 
     const wrapper = doc.getElementsByTagName('name')[0]!;
     expect(result.copied).toBe(0);

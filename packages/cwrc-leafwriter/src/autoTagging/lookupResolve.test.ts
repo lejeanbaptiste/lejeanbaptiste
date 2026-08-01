@@ -1,4 +1,14 @@
 import { addEntity, findEntity } from './entities';
+import {
+  attachAuthority,
+  addEntityName,
+  listEntities,
+  listEntityAssertions,
+  setFamilyName,
+  setGivenName,
+  setRomanizedName,
+  setUserEntityDate,
+} from './entityOps';
 import { EntityStore, type EntityFileApi } from './entityStore';
 import { resolveEntityStorePaths } from './entityStoreResolve';
 import {
@@ -11,8 +21,8 @@ import {
   planLookupResolution,
   type LookupSelectionInput,
 } from './lookupResolve';
-import { listEntityAssertions } from './entityOps';
 import type { AuthorityPackId } from './packPaths';
+import { SQLITE_REQUIRED_LOOKUP_MESSAGE } from './sqliteRequired';
 
 class FakeFs implements EntityFileApi {
   files = new Map<string, string>();
@@ -31,9 +41,139 @@ class FakeFs implements EntityFileApi {
   };
 }
 
-const makeStore = () => {
+const XML_NS = 'http://www.w3.org/XML/1998/namespace';
+
+/** Mark `.sqlite` present and mirror typed SQLite writes into the sibling XML for assertions. */
+const wireSqliteLookupWrites = (store: EntityStore, fs: FakeFs) => {
+  fs.files.set('/proj/entities.sqlite', 'sqlite-placeholder');
+  const g = globalThis as { window?: { electronAPI?: Record<string, unknown> } };
+  g.window = g.window ?? { electronAPI: {} };
+  g.window.electronAPI = {
+    ...(g.window.electronAPI ?? {}),
+    entitySqliteCreatePopulated: async () => ({}),
+    entitySqliteAttachAuthority: async () => true,
+  };
+
+  jest.spyOn(store, 'sqliteCreatePopulated').mockImplementation(async (input) => {
+    const doc = await store.loadEntities();
+    const primary =
+      input.names?.find((name) => name.isPrimary) ?? input.names?.[0] ?? { text: 'unnamed' };
+    const romanized = input.names?.find((name) => name !== primary && name.text !== primary.text);
+    const { element } = addEntity(doc, input.kind, {
+      name: primary.text,
+      nameLang: primary.language ?? undefined,
+      romanizedName: romanized?.text,
+      description: input.description ?? undefined,
+      authorityIds: (input.authorities ?? []).map((a) => ({ type: a.type, value: a.value })),
+    });
+    element.setAttributeNS(XML_NS, 'xml:id', input.id);
+    if (input.familyName) setFamilyName(doc, input.id, input.familyName);
+    if (input.givenName) setGivenName(doc, input.id, input.givenName);
+    await store.saveEntities(doc, { allowSqliteFullReimport: true });
+    return {};
+  });
+
+  jest.spyOn(store, 'sqliteAttachAuthority').mockImplementation(async (entityId, type, value) => {
+    const doc = await store.loadEntities();
+    const attached = attachAuthority(doc, entityId, { type, value });
+    await store.saveEntities(doc, { allowSqliteFullReimport: true });
+    return attached;
+  });
+
+  jest.spyOn(store, 'sqliteSetUserDate').mockImplementation(async ({ entityId, part, year }) => {
+    const doc = await store.loadEntities();
+    setUserEntityDate(doc, entityId, part, year);
+    await store.saveEntities(doc, { allowSqliteFullReimport: true });
+  });
+
+  jest.spyOn(store, 'sqliteAddNationality').mockImplementation(async () => true);
+  jest.spyOn(store, 'sqliteAddOrigin').mockImplementation(async () => true);
+
+  jest.spyOn(store, 'sqliteSetRomanizedName').mockImplementation(async (entityId, text, language) => {
+    const doc = await store.loadEntities();
+    setRomanizedName(doc, entityId, text, language ?? undefined);
+    await store.saveEntities(doc, { allowSqliteFullReimport: true });
+  });
+
+  jest.spyOn(store, 'sqliteAddName').mockImplementation(async (input) => {
+    const doc = await store.loadEntities();
+    addEntityName(doc, input.entityId, input.text, {
+      type: input.nameType as 'family' | 'given' | 'variant' | 'courtesy' | 'posthumous' | undefined,
+      lang: input.language ?? undefined,
+      origin: input.origin,
+      source: input.source ?? undefined,
+    });
+    if (input.nameType === 'family') setFamilyName(doc, input.entityId, input.text);
+    if (input.nameType === 'given') setGivenName(doc, input.entityId, input.text);
+    await store.saveEntities(doc, { allowSqliteFullReimport: true });
+    return true;
+  });
+
+  jest.spyOn(store, 'sqliteSearchNames').mockImplementation(async (kind, query) => {
+    const doc = await store.loadEntities();
+    const surface = query.normalize('NFC');
+    return listEntities(doc)
+      .filter((row) => row.kind === kind)
+      .filter((row) => row.names.some((name) => name.normalize('NFC') === surface))
+      .slice(0, 20)
+      .map((row) => ({
+        id: row.id,
+        label: row.names[0] ?? row.id,
+        description: row.description ?? undefined,
+        idnos: row.authorities,
+      }));
+  });
+
+  jest.spyOn(store, 'sqliteFindAllByAuthority').mockImplementation(async (kind, type, value) => {
+    const doc = await store.loadEntities();
+    const wantedType = type.trim().toLowerCase();
+    const wantedValue = value.trim();
+    return listEntities(doc)
+      .filter((row) => row.kind === kind)
+      .filter((row) =>
+        row.authorities.some(
+          (authority) =>
+            authority.type.toLowerCase() === wantedType && authority.value.trim() === wantedValue,
+        ),
+      )
+      .map((row) => row.id);
+  });
+
+  jest.spyOn(store, 'sqliteEntitySummary').mockImplementation(async (entityId) => {
+    const doc = await store.loadEntities();
+    const summary = listEntities(doc).find((row) => row.id === entityId);
+    if (!summary) return null;
+    return {
+      id: summary.id,
+      kind: summary.kind,
+      description: summary.description,
+      names: summary.nameEntries.map((entry) => ({
+        text: entry.text,
+        nameType: entry.type,
+        language: entry.lang,
+        status: 'active' as const,
+      })),
+      authorities: summary.authorities,
+      familyName: summary.familyName,
+      givenName: summary.givenName,
+      startYear: summary.startYear,
+      endYear: summary.endYear,
+      workDate: summary.workDate,
+      nationalities: summary.nationalities,
+      placesOfOrigin: summary.placesOfOrigin,
+      roles: summary.roles,
+      origins: summary.origins,
+      authors: summary.authors,
+      nobleTitles: summary.nobleTitles,
+      assertions: summary.assertions ?? [],
+    };
+  });
+};
+
+const makeStore = (opts: { sqlite?: boolean } = { sqlite: true }) => {
   const fs = new FakeFs();
   const store = new EntityStore(fs, resolveEntityStorePaths({ projectRoot: '/proj' }));
+  if (opts.sqlite !== false) wireSqliteLookupWrites(store, fs);
   return { fs, store };
 };
 
@@ -156,6 +296,17 @@ describe('crosswalkForRef', () => {
 });
 
 describe('planLookupResolution / applyLookupResolution', () => {
+  afterEach(() => {
+    jest.restoreAllMocks();
+  });
+
+  it('fails loud when SQLite is missing', async () => {
+    const { store } = makeStore({ sqlite: false });
+    await expect(applyLookupResolution(input(), { store, packIds, readPackFile })).rejects.toThrow(
+      SQLITE_REQUIRED_LOOKUP_MESSAGE,
+    );
+  });
+
   it('mints a new entity when nothing matches, carrying crosswalk idnos', async () => {
     const { store } = makeStore();
     const result = await applyLookupResolution(input(), { store, packIds, readPackFile });
@@ -173,13 +324,11 @@ describe('planLookupResolution / applyLookupResolution', () => {
     expect(person.getElementsByTagName('persName')[0]?.textContent).toBe('沈攸之');
     const assertions = listEntityAssertions(doc, result.key);
     expect(assertions.find((a) => a.element === 'birth')).toMatchObject({
-      origin: 'authority',
-      source: 'CBDB',
+      origin: 'user',
       status: 'active',
     });
     expect(assertions.find((a) => a.element === 'death')).toMatchObject({
-      origin: 'authority',
-      source: 'CBDB',
+      origin: 'user',
       status: 'active',
     });
   });
@@ -191,7 +340,7 @@ describe('planLookupResolution / applyLookupResolution', () => {
       name: '沈攸之',
       authorityIds: [{ type: 'Wikidata', value: 'Q712570' }],
     });
-    await store.saveEntities(doc);
+    await store.saveEntities(doc, { allowSqliteFullReimport: true });
 
     const plan = await planLookupResolution(input(), { store, packIds, readPackFile });
     expect(plan).toMatchObject({ action: 'link', key: id, matchedBy: 'direct' });
@@ -219,7 +368,7 @@ describe('planLookupResolution / applyLookupResolution', () => {
       name: '徐孝嗣',
       authorityIds: [{ type: 'DILA', value: 'A003126' }],
     });
-    await store.saveEntities(doc);
+    await store.saveEntities(doc, { allowSqliteFullReimport: true });
 
     const result = await applyLookupResolution(
       input({
@@ -234,18 +383,18 @@ describe('planLookupResolution / applyLookupResolution', () => {
     const after = await store.loadEntities();
     const assertions = listEntityAssertions(after, id);
     expect(assertions.find((a) => a.element === 'birth')).toMatchObject({
-      origin: 'authority',
-      source: 'DILA',
+      origin: 'user',
       status: 'active',
+      value: '0453',
     });
     expect(assertions.find((a) => a.element === 'death')).toMatchObject({
-      origin: 'authority',
-      source: 'DILA',
+      origin: 'user',
       status: 'active',
+      value: '0499',
     });
   });
 
-  it('mints per-source birth elements when two checked references each crosswalk independently', async () => {
+  it('writes birth/death years from authority assertions via SQLite (single user date each)', async () => {
     const { store } = makeStore();
     const combinedReadPackFile = async (packId: AuthorityPackId) =>
       packId === 'cbdb-persons' ? packRow + '\n' : dilaPackRow + '\n';
@@ -262,10 +411,11 @@ describe('planLookupResolution / applyLookupResolution', () => {
 
     const doc = await store.loadEntities();
     const assertions = listEntityAssertions(doc, result.key);
-    const births = assertions.filter((a) => a.element === 'birth');
-    expect(births).toHaveLength(2);
-    expect(births.map((a) => a.source).sort()).toEqual(['CBDB', 'DILA']);
-    expect(births.map((a) => a.value).sort()).toEqual(['0420', '0453']);
+    // SQLite typed dates keep one user birth/death (last assertion wins), not
+    // the multi-element authority provenance DOM writer used to produce.
+    expect(assertions.filter((a) => a.element === 'birth')).toHaveLength(1);
+    expect(assertions.filter((a) => a.element === 'death')).toHaveLength(1);
+    expect(assertions.find((a) => a.element === 'birth')?.origin).toBe('user');
   });
 
   it('links via crosswalk when the entity only carries a CBDB idno', async () => {
@@ -275,7 +425,7 @@ describe('planLookupResolution / applyLookupResolution', () => {
       name: '沈攸之',
       authorityIds: [{ type: 'CBDB', value: '31305' }],
     });
-    await store.saveEntities(doc);
+    await store.saveEntities(doc, { allowSqliteFullReimport: true });
 
     const plan = await planLookupResolution(input(), { store, packIds, readPackFile });
     expect(plan).toMatchObject({ action: 'link', key: id, matchedBy: 'crosswalk' });
@@ -286,7 +436,7 @@ describe('planLookupResolution / applyLookupResolution', () => {
     const doc = await store.loadEntities();
     addEntity(doc, 'person', { name: 'A', authorityIds: [{ type: 'Wikidata', value: 'Q712570' }] });
     addEntity(doc, 'person', { name: 'B', authorityIds: [{ type: 'Wikidata', value: 'Q712570' }] });
-    await store.saveEntities(doc);
+    await store.saveEntities(doc, { allowSqliteFullReimport: true });
     const before = await store.loadEntities().then((d) => d.getElementsByTagName('idno').length);
 
     const result = await applyLookupResolution(input(), { store, packIds, readPackFile });
@@ -303,7 +453,7 @@ describe('planLookupResolution / applyLookupResolution', () => {
     const doc = await store.loadEntities();
     addEntity(doc, 'person', { name: 'A', authorityIds: [{ type: 'CBDB', value: '31305' }] });
     addEntity(doc, 'person', { name: 'B', authorityIds: [{ type: 'DILA', value: 'A001492' }] });
-    await store.saveEntities(doc);
+    await store.saveEntities(doc, { allowSqliteFullReimport: true });
 
     const plan = await planLookupResolution(input(), { store, packIds, readPackFile });
     expect(plan.action).toBe('conflict');
@@ -319,7 +469,7 @@ describe('planLookupResolution / applyLookupResolution', () => {
         { type: 'CBDB', value: '99999' },
       ],
     });
-    await store.saveEntities(doc);
+    await store.saveEntities(doc, { allowSqliteFullReimport: true });
 
     const result = await applyLookupResolution(input(), { store, packIds, readPackFile });
     expect(result).toMatchObject({ status: 'linked', key: id });
@@ -392,7 +542,7 @@ describe('planLookupResolution / applyLookupResolution', () => {
       name: '沈攸之',
       authorityIds: [{ type: 'VIAF', value: '12345' }],
     });
-    await store.saveEntities(doc);
+    await store.saveEntities(doc, { allowSqliteFullReimport: true });
 
     const result = await applyLookupResolution(
       input({ extraUris: ['https://viaf.org/viaf/12345/'] }),
@@ -420,7 +570,7 @@ describe('appendExtraAuthorityIds', () => {
     const { store } = makeStore();
     const doc = await store.loadEntities();
     const { id } = addEntity(doc, 'person', { name: '沈攸之' });
-    await store.saveEntities(doc);
+    await store.saveEntities(doc, { allowSqliteFullReimport: true });
 
     await appendExtraAuthorityIds(
       id,
@@ -449,7 +599,7 @@ describe('appendExtraAuthorityIds', () => {
       name: '沈攸之',
       authorityIds: [{ type: 'Wikidata', value: 'Q712570' }],
     });
-    await store.saveEntities(doc);
+    await store.saveEntities(doc, { allowSqliteFullReimport: true });
 
     await appendExtraAuthorityIds(id, ['https://www.wikidata.org/wiki/Q712570'], { store });
 
@@ -465,7 +615,7 @@ describe('appendExtraAuthorityIds', () => {
     const { store } = makeStore();
     const doc = await store.loadEntities();
     const { id } = addEntity(doc, 'person', { name: '沈攸之' });
-    await store.saveEntities(doc);
+    await store.saveEntities(doc, { allowSqliteFullReimport: true });
 
     await appendExtraAuthorityIds(id, ['https://example.org/people/42'], { store });
 
@@ -496,7 +646,7 @@ describe('linkLocalEntityWithoutAuthority', () => {
     const { store } = makeStore();
     const doc = await store.loadEntities();
     const { id } = addEntity(doc, 'person', { name: '江祀' });
-    await store.saveEntities(doc);
+    await store.saveEntities(doc, { allowSqliteFullReimport: true });
 
     const result = await linkLocalEntityWithoutAuthority('person', '江祀', { store });
     expect(result).toMatchObject({
@@ -535,7 +685,7 @@ describe('linkWithoutEnrichment', () => {
     const doc = await store.loadEntities();
     const a = addEntity(doc, 'person', { name: 'A', authorityIds: [{ type: 'CBDB', value: '31305' }] });
     const b = addEntity(doc, 'person', { name: 'B', authorityIds: [{ type: 'DILA', value: 'A001492' }] });
-    await store.saveEntities(doc);
+    await store.saveEntities(doc, { allowSqliteFullReimport: true });
     const before = await store.loadEntities().then((d) => d.getElementsByTagName('idno').length);
 
     const result = await linkWithoutEnrichment(

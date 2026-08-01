@@ -5,6 +5,7 @@
  */
 import { ENTITY_KINDS, entityElements, type EntityKind } from '../autoTagging/entities';
 import { entityStoreFromDesktop } from '../autoTagging/entityStore';
+import { SQLITE_REQUIRED_LOOKUP_MESSAGE } from '../autoTagging/sqliteRequired';
 import type {
   AuthorityLookupParams,
   AuthorityLookupResult,
@@ -112,24 +113,25 @@ async function search({
   if (!store) return [];
 
   const sqliteSearch = window.electronAPI?.entitySqliteSearch;
-  if (sqliteSearch) {
-    const sqliteResults = await sqliteSearch({ databasePath: store.sqlitePath, kind, query });
-    if (sqliteResults !== null) {
-      return sqliteResults.map((result) => ({
-        label: result.label,
-        ...(result.description ? { description: result.description } : {}),
-        uri: internalEntityUri(result.id),
-        internal: {
-          id: result.id,
-          idnos: result.idnos,
-          ...(result.description ? { description: result.description } : {}),
-        },
-      }));
-    }
+  if (!sqliteSearch || !(await store.hasSqliteDatabase())) {
+    throw new Error(SQLITE_REQUIRED_LOOKUP_MESSAGE);
   }
 
-  const doc = await store.loadEntities();
-  return searchEntityDocument(doc, kind, query);
+  const sqliteResults = await sqliteSearch({ databasePath: store.sqlitePath, kind, query });
+  if (sqliteResults === null) {
+    throw new Error(SQLITE_REQUIRED_LOOKUP_MESSAGE);
+  }
+
+  return sqliteResults.map((result) => ({
+    label: result.label,
+    ...(result.description ? { description: result.description } : {}),
+    uri: internalEntityUri(result.id),
+    internal: {
+      id: result.id,
+      idnos: result.idnos,
+      ...(result.description ? { description: result.description } : {}),
+    },
+  }));
 }
 
 /** The entity-database lookup service, or null when not running on desktop. */

@@ -11,6 +11,7 @@ import {
   type SchemaAttributeDetail,
 } from './attributeSuggestions';
 import { matchesEditorAttribute } from './keybindings';
+import { isImeKeyboardEvent } from './ime';
 import { getEditorTagContext } from './tagSuggestions';
 import { loadTagStats, updateTagStatsForFile } from './tagStats';
 
@@ -177,6 +178,8 @@ export const useAttributeCommandController = (): AttributeCommandController => {
 
   const handlePopupKeyDown = useCallback(
     (event: React.KeyboardEvent) => {
+      if (isImeKeyboardEvent(event)) return;
+
       if (event.key === 'Escape') {
         event.preventDefault();
         closePopup();
@@ -229,7 +232,7 @@ export const useAttributeCommandController = (): AttributeCommandController => {
 
   const handleEditorKeyDown = useCallback(
     (event: KeyboardEvent, options: { tagPopupOpen: boolean; walkMode: boolean }): boolean => {
-      if (event.isComposing || !isVisualEditorActive()) return false;
+      if (isImeKeyboardEvent(event) || !isVisualEditorActive()) return false;
       if (options.tagPopupOpen || options.walkMode) return false;
 
       if (open) {

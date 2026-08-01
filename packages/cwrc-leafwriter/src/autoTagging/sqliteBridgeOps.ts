@@ -5,7 +5,7 @@
 
 import { mintEntityId, type EntityKind } from './entities';
 import { normalizeNameType } from './nameTypes';
-import type { PromoteResult } from './promote';
+import type { AdoptResult, PromoteResult } from './promote';
 import {
   planReconcileFields,
   type EntityFields,
@@ -153,6 +153,106 @@ export async function promoteToCentralSqlite(
 
   const linked = await projectStore.sqliteSetCentralMapping(pedbId, userStableId, centralId);
   return { centralId, created: true, linked };
+}
+
+/**
+ * Reverse of {@link promoteToCentralSqlite}: ensure `centralId` has a linked
+ * PEDB mirror for `userStableId`. Idempotent when a mapping already exists.
+ */
+export async function adoptFromCentralSqlite(
+  projectStore: EntityStore,
+  centralStore: EntityStore,
+  centralId: string,
+  userStableId: string,
+): Promise<AdoptResult | null> {
+  const cedb = await loadPanel(centralStore, centralId);
+  if (!cedb) return null;
+
+  const existing = await projectStore.sqliteListMappingsByCentralIds(userStableId, [centralId]);
+  const mapped = existing.find((row) => row.centralId === centralId);
+  if (mapped) {
+    const pedb = await loadPanel(projectStore, mapped.projectEntityId);
+    if (pedb) return { pedbId: mapped.projectEntityId, created: false };
+  }
+
+  const fields = panelFields(cedb);
+  const primary = fields.names[0];
+  if (!primary) throw new Error(`adopt: central entity has no name: ${centralId}`);
+
+  let match: string | null = null;
+  for (const authority of fields.authorities) {
+    match = await projectStore.sqliteFindByAuthority(cedb.kind, authority.type, authority.value);
+    if (match) break;
+  }
+  if (!match) {
+    match = await projectStore.sqliteFindByNameDates(
+      cedb.kind,
+      primary.text,
+      fields.startYear,
+      fields.endYear,
+    );
+  }
+  if (match) {
+    await projectStore.sqliteSetCentralMapping(match, userStableId, centralId);
+    return { pedbId: match, created: false };
+  }
+
+  const pedbId = mintEntityId(cedb.kind as EntityKind);
+  const altNames = fields.names.slice(1).map((name) => ({
+    text: name.text,
+    nameType: name.type,
+    language: name.lang,
+    isPrimary: false,
+    origin: 'xml' as const,
+  }));
+  await projectStore.sqliteCreatePopulated({
+    id: pedbId,
+    kind: cedb.kind,
+    description: fields.description,
+    names: [
+      {
+        text: primary.text,
+        nameType: primary.type ?? 'primary',
+        language: primary.lang,
+        isPrimary: true,
+        origin: 'xml',
+      },
+      ...altNames,
+    ],
+    authorities: fields.authorities.map((a) => ({
+      type: a.type,
+      value: a.value,
+      origin: 'xml' as const,
+    })),
+    familyName: fields.familyName,
+    givenName: fields.givenName,
+  });
+
+  if (cedb.kind === 'person') {
+    if (fields.startYear != null) {
+      await projectStore.sqliteSetUserDate({
+        entityId: pedbId,
+        part: 'birth',
+        year: fields.startYear,
+      });
+    }
+    if (fields.endYear != null) {
+      await projectStore.sqliteSetUserDate({
+        entityId: pedbId,
+        part: 'death',
+        year: fields.endYear,
+      });
+    }
+  } else if (cedb.kind === 'work' && (fields.startYear != null || fields.endYear != null)) {
+    await projectStore.sqliteSetUserWorkDate({
+      entityId: pedbId,
+      startYear: fields.startYear,
+      endYear: fields.endYear,
+    });
+  }
+
+  await projectStore.sqliteSetCentralMapping(pedbId, userStableId, centralId);
+  return { pedbId, created: true };
 }
 
 const nameAttrs = (name: NameField) => ({

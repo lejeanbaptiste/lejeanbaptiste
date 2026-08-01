@@ -2862,16 +2862,22 @@ const registerIpcHandlers = () => {
   ipcMain.handle('createEntityDatabase', async (_event, folder: string, content: string) => {
     const normalizedFolder = path.resolve(folder);
     const entityFile = path.join(normalizedFolder, 'entities.xml');
+    const sqliteFile = path.join(normalizedFolder, 'entities.sqlite');
 
     // The folder must have come from the native picker in this session;
     // assertRendererWritePath also permits the configured entity database.
     await assertRendererWritePath(entityFile);
+    await assertRendererWritePath(sqliteFile);
     if (!statSync(normalizedFolder).isDirectory()) {
       throw new Error('The selected entity database path is not a folder.');
     }
     if (existsSync(entityFile)) return;
 
     await fs.writeFile(entityFile, content, 'utf-8');
+    // Sibling SQLite is the live runtime store; XML remains interchange scaffold.
+    if (!existsSync(sqliteFile)) {
+      await importEntitySqliteXml({ databasePath: sqliteFile, xml: content });
+    }
     await fs.mkdir(path.join(normalizedFolder, AUTHORITY_PACKS_DIRNAME), {
       recursive: true,
     });

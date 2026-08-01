@@ -9,7 +9,7 @@ import {
   TextField,
   Typography,
 } from '@mui/material';
-import { useEffect, useRef } from 'react';
+import { useEffect, useLayoutEffect, useRef } from 'react';
 import type { TagCommandMode } from './tagCommand';
 import { useClampedPopupPosition } from './clampPopupPosition';
 
@@ -60,9 +60,9 @@ export const TagCommandPopup = ({
     matchCount,
   ]);
 
-  useEffect(() => {
+  useLayoutEffect(() => {
     if (open) {
-      requestAnimationFrame(() => inputRef.current?.focus());
+      inputRef.current?.focus();
     }
   }, [open]);
 
