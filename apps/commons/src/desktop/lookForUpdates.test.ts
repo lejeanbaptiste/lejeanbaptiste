@@ -1,5 +1,3 @@
-import { describe, expect, it } from 'vitest';
-
 import { everythingIsUpToDate, type LookForUpdatesReport } from './lookForUpdates';
 
 const base = (): LookForUpdatesReport => ({
