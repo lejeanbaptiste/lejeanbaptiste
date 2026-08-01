@@ -4,9 +4,11 @@
 
 - Production and testing of alpha version, distribution chanels, automatic updates, and sibling repos until infrastructure stabilised. 
 
-## 0.0.5-beta
+## Downstream
 
 - Cleaned and provided public-facing documentation, including beta tester guide.
+- Established performence baseline on slow Windows test machine
+- Virtualised the auto-tagging review list
 
 
 ### Patch Changes
