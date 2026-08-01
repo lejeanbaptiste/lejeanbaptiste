@@ -141,8 +141,9 @@ interface GetNodesParams {
   level?: number;
   node: Node;
   parent?: TreeItem;
+  /** One-based XPath sibling position, already known by the parent traversal. */
+  xpathIndex?: number;
   treeType: TreeItemType;
-  xpath?: string;
 }
 
 /**
@@ -154,12 +155,19 @@ interface GetNodesParams {
  *
  * @returns A TreeItem with children.
  */
-export const getNodes = ({ index = 0, level = 0, node, parent, treeType }: GetNodesParams) => {
+export const getNodes = ({
+  index = 0,
+  level = 0,
+  node,
+  parent,
+  treeType,
+  xpathIndex,
+}: GetNodesParams) => {
   const { schemaManager } = window.writer;
 
   const item = isElement(node)
-    ? processElement(node, parent, index)
-    : processNode(node, parent, index);
+    ? processElement(node, parent, index, xpathIndex)
+    : processNode(node, parent, index, xpathIndex);
 
   if (!item) return;
 
@@ -170,9 +178,28 @@ export const getNodes = ({ index = 0, level = 0, node, parent, treeType }: GetNo
 
   const nodeChildren =
     isElement(node) && treeType === 'tag' ? Array.from(node.children) : Array.from(node.childNodes);
+  const siblingCounts = new Map<string, number>();
 
   nodeChildren.forEach((child, index) => {
-    const childItem = getNodes({ index, level: level + 1, node: child, parent: item, treeType });
+    const xpathName = isElement(child) ? child.getAttribute('_tag') : child.nodeName;
+    // Elements and text nodes account for almost all editor content. Carry
+    // their position down from this traversal instead of scanning every prior
+    // sibling again in processElement/processNode. Preserve the older fallback
+    // for unusual node kinds (comments, processing instructions, etc.).
+    const childXpathIndex =
+      xpathName && (isElement(child) || xpathName === '#text')
+        ? (siblingCounts.get(xpathName) ?? 0) + 1
+        : undefined;
+    if (childXpathIndex && xpathName) siblingCounts.set(xpathName, childXpathIndex);
+
+    const childItem = getNodes({
+      index,
+      level: level + 1,
+      node: child,
+      parent: item,
+      treeType,
+      xpathIndex: childXpathIndex,
+    });
     if (childItem) item.children.push(childItem);
   });
 
@@ -184,7 +211,12 @@ export const getNodes = ({ index = 0, level = 0, node, parent, treeType }: GetNo
  * @param {Element} element - element node to process
  * @returns A treeItem object
  */
-export const processElement = (element: Element, parent?: TreeItem, index = 0) => {
+export const processElement = (
+  element: Element,
+  parent?: TreeItem,
+  index = 0,
+  xpathIndex?: number,
+) => {
   const id = element.getAttribute('id') ?? element.getAttribute('name');
   const tagName = element.getAttribute('_tag');
 
@@ -196,8 +228,8 @@ export const processElement = (element: Element, parent?: TreeItem, index = 0) =
   const isEntity = !!element.getAttribute('_entity');
   const content = element.textContent ?? '';
 
-  const xpathIndex = getXpathIndex(element, tagName);
-  const xpathIndexSelector = xpathIndex > 1 ? `[${xpathIndex}]` : '';
+  const resolvedXpathIndex = xpathIndex ?? getXpathIndex(element, tagName);
+  const xpathIndexSelector = resolvedXpathIndex > 1 ? `[${resolvedXpathIndex}]` : '';
   const xpath = parent ? `${parent.xpath}/${tagName}${xpathIndexSelector}` : `${tagName}`;
 
   const item: TreeItem = {
@@ -221,7 +253,12 @@ export const processElement = (element: Element, parent?: TreeItem, index = 0) =
  * @param {Node} node - the node to process
  * @returns A treeItem object
  */
-export const processNode = (node: Node, parent?: TreeItem, index = 0) => {
+export const processNode = (
+  node: Node,
+  parent?: TreeItem,
+  index = 0,
+  xpathIndex?: number,
+) => {
   // * remove comments to ignore nodes with tab and line-breaks
   // const trimmedContent = node.textContent.replaceAll(/\\n|\\t|\\r/g, '').trim();
   // if (trimmedContent === '') return;
@@ -231,8 +268,8 @@ export const processNode = (node: Node, parent?: TreeItem, index = 0) => {
 
   const content = node.textContent ?? '';
 
-  const xpathIndex = getXpathIndex(node, '#text');
-  const xpathIndexSelector = `[${xpathIndex}]`;
+  const resolvedXpathIndex = xpathIndex ?? getXpathIndex(node, '#text');
+  const xpathIndexSelector = `[${resolvedXpathIndex}]`;
   const xpath = `${parent?.xpath}/text()${xpathIndexSelector}`;
 
   const item: TreeItem = {
