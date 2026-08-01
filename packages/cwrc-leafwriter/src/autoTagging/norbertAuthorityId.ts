@@ -11,14 +11,18 @@ export function formatNorbertAuthorityValue(
   kind: string | undefined | null,
   bareId: string | number,
 ): string {
-  const bare = String(bareId).trim();
+  const bare = String(bareId ?? '').trim();
   const k = String(kind ?? '')
     .trim()
     .toLowerCase();
   if (!bare) return bare;
   const existing = bare.match(KIND_PREFIX);
   if (existing) return `${existing[1]!.toLowerCase()}-${existing[2]}`;
-  if (k === 'person' || k === 'office' || k === 'place') return `${k}-${bare}`;
+  // Only namespace numeric person/office/place ids. Leave noble-title / wiki-nt /
+  // other URN-like authority ids alone (never `person-noble-title:…`).
+  if ((k === 'person' || k === 'office' || k === 'place') && /^\d+$/.test(bare)) {
+    return `${k}-${bare}`;
+  }
   return bare;
 }
 

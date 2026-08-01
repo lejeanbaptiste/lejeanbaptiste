@@ -220,7 +220,9 @@ describe('autoLinkUnique', () => {
     });
     const { unique } = bucketSeeds(seedSuggestions(doc, [candidate], 'ignore'));
     await autoLinkUnique(doc, entitiesDoc, unique, { policy: 'ignore' });
-    const person = entityByAuthority(entitiesDoc, '3710');
+    // Norbert person idnos are namespaced (`person-3710`); wrapper row id stays
+    // as `noble-title:…` on the same entity.
+    const person = entityByAuthority(entitiesDoc, 'person-3710');
     expect(person).not.toBeNull();
     expect(entityByAuthority(entitiesDoc, 'noble-title:1112')).toBe(person);
   });
