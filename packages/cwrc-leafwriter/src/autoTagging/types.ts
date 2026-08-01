@@ -1,10 +1,5 @@
 export type SuggestionSource =
-  | 'dictionary'
-  | 'authority'
-  | 'dates'
-  | 'ai'
-  | 'ner'
-  | 'disambiguation';
+  'dictionary' | 'authority' | 'dates' | 'ai' | 'ner' | 'disambiguation';
 
 export type SuggestionAction =
   | 'add'
@@ -106,6 +101,8 @@ export interface DateResolution {
   attachToDateIndex?: number;
   /** Full `<date>` text for curator display/focus; anchor.surface stays on the first text node for apply. */
   displaySurface?: string;
+  /** Inline curator edits, kept separate from Sanmiao's original candidate attrs. */
+  editorAttributes?: Record<string, string>;
 }
 
 /** A resolved anchor: the concrete text node and raw offsets to act on. */

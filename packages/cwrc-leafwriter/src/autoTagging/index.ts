@@ -10,6 +10,7 @@ export * from './dictionary';
 export * from './spreadsheet';
 export * from './crawl';
 export * from './dateWorkflow';
+export * from './dates';
 export * from './dateCurator';
 export * from './entities';
 export * from './decisionLog';

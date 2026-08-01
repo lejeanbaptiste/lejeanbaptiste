@@ -6,7 +6,13 @@ import {
   startBackgroundAuthorityPrefetch,
   stopBackgroundAuthorityPrefetch,
 } from '../autoTagging/backgroundAuthorityPrefetch';
-import { takeAutoTaggingBatch, takeAutoTaggingNotice } from '../autoTagging/batchHolder';
+import {
+  takeAutoTaggingBatch,
+  takeAutoTaggingNotice,
+  takeDateReviewRecalculate,
+  takeDateAuthorityCiv,
+} from '../autoTagging/batchHolder';
+import type { DateReviewRecalculate } from '../autoTagging/batchHolder';
 import {
   AutoTaggingSession,
   ReviewPanel,
@@ -62,6 +68,8 @@ export const AutoTaggingReviewPane = () => {
     'error' | 'warning' | 'success' | 'info'
   >('info');
   const session = useRef<AutoTaggingSession | null>(null);
+  const dateRecalculate = useRef<DateReviewRecalculate | null>(null);
+  const dateAuthorityCiv = useRef<readonly string[] | null>(null);
   const [panelWidth, setPanelWidth] = useStoredPanelWidth(
     'lw.autoTagging.panelWidth',
     AUTO_TAGGING_PANEL_WIDTH,
@@ -99,12 +107,16 @@ export const AutoTaggingReviewPane = () => {
       setNotice(null);
       setApplyDiagnostics(null);
       setApplyDiagSeverity('info');
+      dateRecalculate.current = null;
+      dateAuthorityCiv.current = null;
       if (session.current) void session.current.flushDecisions();
       session.current = null;
       return;
     }
 
     const batch = takeAutoTaggingBatch();
+    dateRecalculate.current = takeDateReviewRecalculate();
+    dateAuthorityCiv.current = takeDateAuthorityCiv();
     setNotice(takeAutoTaggingNotice());
     setApplyDiagnostics(null);
     setApplyDiagSeverity('info');
@@ -348,6 +360,21 @@ export const AutoTaggingReviewPane = () => {
     })();
   }, [busy, refreshing, getSession, suggestions]);
 
+  const handleDateRecalculate = useCallback(() => {
+    const recalculate = dateRecalculate.current;
+    if (!recalculate || busy || refreshing) return;
+    void (async () => {
+      setRefreshing(true);
+      try {
+        setSuggestions(await recalculate(suggestions));
+      } catch (error) {
+        console.warn('[auto-tagging] date recalculation failed:', error);
+      } finally {
+        setRefreshing(false);
+      }
+    })();
+  }, [busy, refreshing, suggestions]);
+
   const handleRevert = useCallback(() => {
     if (busy) return;
     void (async () => {
@@ -497,6 +524,9 @@ export const AutoTaggingReviewPane = () => {
                     onFocus={handleFocus}
                     onDecision={handleDecision}
                     onClose={handleClose}
+                    onRecalculate={dateRecalculate.current ? handleDateRecalculate : undefined}
+                    refreshing={refreshing}
+                    authorityCiv={dateAuthorityCiv.current ?? undefined}
                   />
                 );
               }

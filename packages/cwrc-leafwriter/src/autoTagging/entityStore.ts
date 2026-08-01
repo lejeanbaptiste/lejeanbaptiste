@@ -1457,13 +1457,13 @@ export function desktopEntityFileApi(): EntityFileApi | null {
     readFile: (filePath) => rawApi.readFile!(filePath),
     writeFile: (filePath, content) => rawApi.writeFile!(filePath, content),
     entitySqliteExportXml: rawApi.entitySqliteExportXml
-      ? (databasePath) => rawApi.entitySqliteExportXml!({ databasePath })
+      ? (databasePath) => rawApi.entitySqliteExportXml!(databasePath)
       : undefined,
     entitySqliteImportXml: rawApi.entitySqliteImportXml
-      ? (databasePath, xml) => rawApi.entitySqliteImportXml!({ databasePath, xml })
+      ? (databasePath, xml) => rawApi.entitySqliteImportXml!(databasePath, xml)
       : undefined,
     entitySqliteCandidates: rawApi.entitySqliteCandidates
-      ? (databasePath, kind) => rawApi.entitySqliteCandidates!({ databasePath, kind })
+      ? (databasePath, kind) => rawApi.entitySqliteCandidates!(databasePath, kind)
       : undefined,
     entitySqliteGet: rawApi.entitySqliteGet ? (input) => rawApi.entitySqliteGet!(input) : undefined,
     entitySqliteDatabaseId: rawApi.entitySqliteDatabaseId

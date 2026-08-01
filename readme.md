@@ -51,6 +51,8 @@ Tracked here as mirrored or generated assets:
 - `apps/desktop/src/generated/gameAssetKey.ts`
 - `apps/desktop/resources/avatar-parts/**` (Adventurer avatar-part layers — not spoiler-protected, mirrored as plain SVG files)
 
+
+
 ## What is built
 
 Le Jean-Baptiste is the desktop, offline-first fork of LEAF-Writer. The current build already supports:
@@ -67,6 +69,8 @@ Le Jean-Baptiste is the desktop, offline-first fork of LEAF-Writer. The current 
 - Working with translation companions in split-pane form for paired source/translation editing.
 - Auto-tagging and disambiguation with local authority packs (CBDB, DILA, Wikidata, NDL, …) and plugins such as Sanmiao and Norbert.
 
+
+
 ## Install
 
 Download the installer for your platform from the [latest release](https://github.com/lejeanbaptiste/lejeanbaptiste/releases/latest). All release assets can be verified as described in [SECURITY.md](SECURITY.md).
@@ -78,12 +82,16 @@ Download the installer for your platform from the [latest release](https://githu
 3. The application will be installed to `/Applications/Le Jean-Baptiste.app`.
 4. Signed updates are checked automatically when the application starts and every four hours. A downloaded update is installed when the application quits. The `.pkg` is only needed for the first installation.
 
+
+
 ### Windows
 
 1. Download the installer for your machine: `arm64` for Windows on Arm or `x64` for Intel/AMD (`Le-Jean-Baptiste-win-Setup-<version>-<arch>.exe`).
 2. Run the installer and follow the prompts. Choose your installation directory and start-menu shortcut preferences.
 3. **Note:** The installer is not signed by a certificate authority. Windows Defender SmartScreen may show a warning. To proceed, click "More info" → "Run anyway". A signed package through the Microsoft Store is planned.
 4. Updates are checked automatically when the application starts and every four hours. A downloaded update is installed when the application quits.
+
+
 
 ### Linux
 
@@ -127,8 +135,10 @@ Near-term work pulled from the planning docs ([docs/README.md](docs/README.md)).
 
 - [ ] Packaged smoke each release (clean build → edit/save/relaunch; Sanmiao, icons, updates)
 - [ ] Sign off blank-editor-on-startup fix on slow machines
-- [ ] Release hygiene: versioning, notes, tester instructions
+- [x] Release hygiene: versioning, notes, tester instructions
 - [ ] Full packaged regression pass ([beta-plan.md](docs/beta-plan.md))
+
+
 
 ### Tagging / Norbert / Sanmiao
 
@@ -138,12 +148,11 @@ Near-term work pulled from the planning docs ([docs/README.md](docs/README.md)).
 - [ ] Noble title and person wrapper tagging (testing).
 - [ ] Norbert personWrapper: resolve accepted wrappers to exactly one person key; validation for missing/ambiguous keys
 - [ ] Norbert expander cache + refresh/startup scheduling; include wrappers/`roleName` in validation panel
-- [ ] Rework Sanmiao date resolution
 - [ ] Finish Sanmiao date curator (ambiguous + sequential re-resolve)
-- [ ] Further Norbert functions
-- [ ] AI auto-tag: apply audit actions beyond `add` (remove/retag/redraw); schema-driven tag picker; prompt-profile UI
 - [ ] Redo icons : highlight
 - [ ] Finish word plugin
+
+
 
 ### Entity database / sync
 
@@ -156,6 +165,8 @@ Near-term work pulled from the planning docs ([docs/README.md](docs/README.md)).
 - [ ] SQLite: avoid full panel reloads on single-field edits
 - [ ] Finish wordprocessor write paths against SQLite
 
+
+
 ### Editor / UX polish
 
 - [ ] Tag-boundary Bugs B/C/H (typing/delete at edges); remove debug logs
@@ -163,7 +174,18 @@ Near-term work pulled from the planning docs ([docs/README.md](docs/README.md)).
 - [ ] Memory-profile full CBDB pack load, chunk ?
 - [ ] Import Phase 1 leftovers: md `{{header}}`, batch/folder UI, validator + provenance
 
+
+
 ## Future
+
+
+
+### De prioritised
+
+- [ ] Further Norbert functions
+- [ ] AI auto-tag: apply audit actions beyond `add` (remove/retag/redraw); schema-driven tag picker; prompt-profile UI
+
+
 
 ### UX
 
@@ -177,6 +199,8 @@ Near-term work pulled from the planning docs ([docs/README.md](docs/README.md)).
 - [ ] Find/replace Phase 2b: WYSIWYG visible-text replace across markup
 - [ ] Match-case / persist last find query (optional)
 
+
+
 ### Import
 
 - [ ] Full CBETA integration
@@ -186,18 +210,24 @@ Near-term work pulled from the planning docs ([docs/README.md](docs/README.md)).
 - [ ] AI-inferred import profiles
 - [ ] Browser-extension / URL corpus→TEI extraction (E0–E5 — [corpus-extraction-planning.md](docs/corpus-extraction-planning.md))
 
+
+
 ### Maps
 
-- [ ] Block zooming to bounds of map tiles
+- [ ] VALIDATE: Block zooming to bounds of map tiles
 - [ ] Labels
 - [ ] Click to disambiguate
 - [ ] Placename Phase 4–5: persisted coordinate/id place entities; mint from merged periods ([placename-geo-disambiguation-planning.md](docs/placename-geo-disambiguation-planning.md))
+
+
 
 ### Dates
 
 - [ ] Parallel Chinese / Japanese dates
 - [ ] Import DILA markers into Sanmiao
 - [ ] AI assist for Sanmiao to identify beginning of dynasties, reigns, era
+
+
 
 ### Authority packs
 
@@ -208,9 +238,13 @@ Near-term work pulled from the planning docs ([docs/README.md](docs/README.md)).
 - [ ] TEI appointment encoding for office/role context
 - [ ] AI Phase 6 ranking; MARKUS-style multi-source tag bomb paradigm
 
+
+
 ### Collaboration
 
 - [ ] Option to track annotator on the tag level for collaborations.
+
+
 
 ### Technical
 

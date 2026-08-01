@@ -1,5 +1,8 @@
 import type { ComponentType } from 'react';
-import { clearPluginPersonNameSegmentersForPlugin, clearAllPluginPersonNameSegmenters } from './personNameSegmenters';
+import {
+  clearPluginPersonNameSegmentersForPlugin,
+  clearAllPluginPersonNameSegmenters,
+} from './personNameSegmenters';
 import type { DecisionEvent } from '../autoTagging/reviewController';
 import type { Suggestion } from '../autoTagging/types';
 import type { IDialog } from '../dialogs/type';
@@ -19,6 +22,9 @@ export type PluginReviewPanelComponent = ComponentType<{
   onFocus?: (suggestion: Suggestion) => void;
   onDecision?: (event: DecisionEvent) => void;
   onClose?: () => void;
+  onRecalculate?: () => void;
+  refreshing?: boolean;
+  authorityCiv?: readonly string[];
 }>;
 
 export type PluginReviewPanelMatcher = (suggestions: Suggestion[]) => boolean;

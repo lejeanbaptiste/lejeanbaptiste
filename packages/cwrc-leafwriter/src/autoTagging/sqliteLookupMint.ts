@@ -169,7 +169,13 @@ export async function mintEntitySqlite(
 ): Promise<string> {
   await assertLookupSqliteStore(store);
   const id = mintEntityId(input.kind);
-  const names = [
+  const names: Array<{
+    text: string;
+    nameType: 'primary' | 'variant';
+    language: string | null;
+    isPrimary: boolean;
+    origin: 'authority';
+  }> = [
     {
       text: input.name,
       nameType: 'primary' as const,

@@ -812,7 +812,7 @@ export class AutoTaggingSession {
 
     const extraCandidates: {
       groupLabel: string;
-      candidates: ReturnType<typeof candidatesFromEntityDatabase>;
+      candidates: ReturnType<typeof candidatesFromEntityDatabaseRecords>;
     }[] = [];
     if (pedbIds.length > 0 && this.store) {
       for (const id of pedbIds) {

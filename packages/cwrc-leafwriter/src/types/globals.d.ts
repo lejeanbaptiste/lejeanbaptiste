@@ -32,6 +32,10 @@ declare global {
   };
 
   interface LeafWriterElectronApi {
+    authorityRefLookup?: (request: {
+      source: 'cbdb' | 'dila' | 'norbert';
+      authorityId: string;
+    }) => Promise<any>;
     entitySqliteExportXml?: (request: { databasePath: string }) => Promise<string | null>;
     entitySqliteImportXml?: (request: { databasePath: string; xml: string }) => Promise<unknown>;
     entitySqliteCandidates?: (request: {

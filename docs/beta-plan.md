@@ -21,6 +21,11 @@ I am not adding new features for the beta unless they are needed to make an exis
 
 ## Remaining work
 
+### Reliability blockers
+
+- [ ] Fix the intermittent startup race that leaves a loading window with no editor pane. It must not require `Ctrl+R` to recover.
+- [ ] Fix Windows shutdown so the application quits normally from the window controls and menu, without needing Task Manager.
+
 ### Release hygiene
 
 - Settle versioning and release commands.

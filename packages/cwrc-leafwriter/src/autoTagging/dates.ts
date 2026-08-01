@@ -9,6 +9,7 @@ import {
   isInsideDateElement,
 } from './dateTeiHelpers';
 import type { Anchor, DateCandidate, DateResolution, Suggestion, WhitespacePolicy } from './types';
+import type { DateReviewRecalculate } from './batchHolder';
 import type {
   DateTagOptions,
   SanmiaoBatchProposeFn,
@@ -367,7 +368,10 @@ function firstTextNodeIn(element: Element): Text | null {
   return null;
 }
 
-function anchorRangeForDateText(text: Text, policy: WhitespacePolicy): { rawStart: number; rawEnd: number } {
+function anchorRangeForDateText(
+  text: Text,
+  policy: WhitespacePolicy,
+): { rawStart: number; rawEnd: number } {
   const search = buildSearchText(text.data, policy);
   if (search.text.length === 0) return { rawStart: 0, rawEnd: 0 };
   const parentName = text.parentElement?.localName;
@@ -484,9 +488,7 @@ export async function dateResolveFromDocument(
     const anchor = anchorForDateElement(entry.element, bodyRoot, policy, index);
     if (!anchor) continue;
     const displaySurface = proposal.date_string || entry.surface;
-    suggestions.push(
-      resolveProposalToSuggestion(proposal, anchor, counter++, displaySurface),
-    );
+    suggestions.push(resolveProposalToSuggestion(proposal, anchor, counter++, displaySurface));
   }
 
   onProgress?.({
@@ -504,4 +506,70 @@ export async function dateResolveFromDocument(
   });
 
   return suggestions;
+}
+
+/**
+ * Build the in-panel recalculation operation. Confirmed rows are copied onto
+ * a working document as hard Sanmiao attributes; excluded rows become empty
+ * date elements so they do not alter sequential implied state. The live
+ * document is never mutated until the user presses Apply.
+ */
+export function createDateReviewRecalculator(
+  doc: Document,
+  policy: WhitespacePolicy,
+  batchResolve: SanmiaoBatchResolveFn,
+  options: DateTagOptions = {},
+): DateReviewRecalculate {
+  return async (current) => {
+    const sourceBody = findTeiBodyRoot(doc);
+    const sourceEntries = collectBodyDatesInOrder(sourceBody, policy);
+    const workingDoc = doc.cloneNode(true) as Document;
+    const workingBody = findTeiBodyRoot(workingDoc);
+    const workingEntries = collectBodyDatesInOrder(workingBody, policy);
+    const sourceAnchors = sourceEntries.map((entry) =>
+      anchorForDateElement(entry.element, sourceBody, policy),
+    );
+    const byAnchor = new Map(current.map((suggestion) => [suggestion.anchor.xpath, suggestion]));
+
+    for (let i = 0; i < workingEntries.length; i++) {
+      const suggestion = sourceAnchors[i] ? byAnchor.get(sourceAnchors[i]!.xpath) : undefined;
+      const element = workingEntries[i]?.element;
+      if (!element) continue;
+      if (suggestion?.status === 'rejected') {
+        while (element.firstChild) element.removeChild(element.firstChild);
+        continue;
+      }
+      if (suggestion?.status === 'accepted') {
+        for (const [name, value] of Object.entries(suggestion.attributes ?? {})) {
+          if (value) element.setAttribute(name, value);
+        }
+      }
+    }
+
+    const fresh = await dateResolveFromDocument(workingDoc, policy, batchResolve, options);
+    const freshByAnchor = new Map(fresh.map((suggestion) => [suggestion.anchor.xpath, suggestion]));
+    const merged: Suggestion[] = [];
+
+    for (const suggestion of current) {
+      if (suggestion.status === 'rejected') {
+        merged.push(suggestion);
+        continue;
+      }
+      const next = freshByAnchor.get(suggestion.anchor.xpath);
+      if (!next) continue;
+      if (suggestion.status === 'accepted') {
+        next.status = 'accepted';
+        next.attributes = { ...(suggestion.attributes ?? {}) };
+        if (suggestion.dateResolution?.editorAttributes) {
+          next.dateResolution!.editorAttributes = {
+            ...suggestion.dateResolution.editorAttributes,
+          };
+        }
+      }
+      merged.push(next);
+      freshByAnchor.delete(suggestion.anchor.xpath);
+    }
+    merged.push(...freshByAnchor.values());
+    return merged;
+  };
 }

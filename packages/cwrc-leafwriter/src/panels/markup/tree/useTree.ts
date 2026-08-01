@@ -106,7 +106,6 @@ export const useTree = () => {
     const treeModel = getNodes({
       node: documentRootNode,
       treeType: displayTextNodes ? 'text' : 'tag',
-      xpath: '',
     });
 
     if (!treeModel) return;

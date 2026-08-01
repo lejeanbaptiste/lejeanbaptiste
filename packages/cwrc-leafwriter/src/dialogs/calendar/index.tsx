@@ -11,7 +11,11 @@ import {
   Typography,
 } from '@mui/material';
 import { useCallback, useEffect, useRef, useState } from 'react';
-import { isCjkDatesEnabled, getRegisteredAutoTaggingProducers, cjkDatesStepForProducer } from '../../plugins';
+import {
+  isCjkDatesEnabled,
+  getRegisteredAutoTaggingProducers,
+  cjkDatesStepForProducer,
+} from '../../plugins';
 import {
   cjkDatesResolveDatesBatch,
   cjkDatesTagDatesBatch,
@@ -21,6 +25,7 @@ import {
   AutoTaggingSession,
   autoTaggingDocumentKey,
   countDocumentDates,
+  createDateReviewRecalculator,
   defaultSanmiaoCivSelection,
   inferEastAsianLanguageFromDocument,
   isEastAsianDatesMethodAvailable,
@@ -29,10 +34,8 @@ import {
   markDatesPassRan,
   resolveAutoTaggingSourceLanguage,
   SANMIAO_CIV_OPTIONS,
-  type DocumentDateCounts,
-  type SanmiaoCivId,
-  type Suggestion,
 } from '../../autoTagging';
+import type { DocumentDateCounts, SanmiaoCivId, Suggestion } from '../../autoTagging';
 import { languageLabelForCode } from '../../utilities/languageCodes';
 import { AutoTaggingApplyOverlay } from '../../layout/AutoTaggingApplyOverlay';
 import { useActions } from '../../overmind';
@@ -135,8 +138,9 @@ export const CalendarDialog = ({ notice, onClose, open = false }: CalendarDialog
 
   const refreshWorkflowState = useCallback(async () => {
     const doc = await getSession().getDocument();
-    const lang = await resolveAutoTaggingSourceLanguage(doc, () =>
-      window.__leafWriterProject?.getProjectSourceLanguage?.() ?? Promise.resolve(null),
+    const lang = await resolveAutoTaggingSourceLanguage(
+      doc,
+      () => window.__leafWriterProject?.getProjectSourceLanguage?.() ?? Promise.resolve(null),
     );
     const docKey = autoTaggingDocumentKey(window.writer);
     setSourceLanguage(lang);
@@ -193,8 +197,13 @@ export const CalendarDialog = ({ notice, onClose, open = false }: CalendarDialog
     onClose?.();
   };
 
-  const beginReview = (produced: Suggestion[], reviewNotice?: string) => {
-    startAutoTaggingReview({ suggestions: produced, notice: reviewNotice });
+  const beginReview = (
+    produced: Suggestion[],
+    reviewNotice?: string,
+    recalculate?: import('../../autoTagging/batchHolder').DateReviewRecalculate,
+    authorityCiv?: readonly string[],
+  ) => {
+    startAutoTaggingReview({ suggestions: produced, notice: reviewNotice, recalculate, authorityCiv });
     handleClose();
   };
 
@@ -258,6 +267,7 @@ export const CalendarDialog = ({ notice, onClose, open = false }: CalendarDialog
     setBusy(true);
     setDatesProgress('Resolving dates…');
     try {
+      const resolveDoc = await getSession().getDocument();
       const resolveFn: import('../../autoTagging/dates').SanmiaoBatchResolveFn = (
         dates,
         opts,
@@ -273,7 +283,16 @@ export const CalendarDialog = ({ notice, onClose, open = false }: CalendarDialog
         setError('No <date> elements in the document. Run Tag dates first.');
         return;
       }
-      beginReview(result.suggestions);
+      beginReview(
+        result.suggestions,
+        undefined,
+        createDateReviewRecalculator(resolveDoc, getSession().policy, resolveFn, {
+          civ,
+          fuzzy: dateFuzzy,
+          sequential: true,
+        }),
+        civ,
+      );
     } catch (e) {
       setError(e instanceof Error ? e.message : String(e));
     } finally {
@@ -320,9 +339,7 @@ export const CalendarDialog = ({ notice, onClose, open = false }: CalendarDialog
             <Typography variant="body2" color="text.secondary" sx={{ mt: 0.5 }}>
               Calendar tagging is available for Chinese, Japanese, and Korean documents in the
               desktop app with sanmiao installed.
-              {sourceLanguage
-                ? ` This document is ${languageLabelForCode(sourceLanguage)}.`
-                : ''}
+              {sourceLanguage ? ` This document is ${languageLabelForCode(sourceLanguage)}.` : ''}
             </Typography>
           ) : (
             <Stack spacing={1.25} sx={{ mt: 0.5 }}>

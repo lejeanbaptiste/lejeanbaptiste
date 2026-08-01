@@ -160,6 +160,7 @@ export interface CrosswalkResult {
 }
 
 interface PackRow {
+  kind?: string;
   source?: string;
   authorityId?: string;
   primaryName?: string;
@@ -834,7 +835,7 @@ export async function linkLocalEntityWithoutAuthority(
     query: surface,
   };
 
-  const hits = await deps.store.sqliteSearchNames(kind, surface, 20);
+  const hits = (await deps.store.sqliteSearchNames(kind, surface, 20)) ?? [];
   const existing = hits.find((hit) => hit.label.normalize('NFC') === surface);
   if (existing) {
     await logDecision(input, deps, kind, existing.id);

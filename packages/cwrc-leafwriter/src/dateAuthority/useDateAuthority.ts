@@ -7,6 +7,7 @@ import type { DateAuthorityIndex } from './types';
 let cachedIndex: DateAuthorityIndex | null = null;
 let cacheKey = '';
 let inflight: Promise<DateAuthorityIndex | null> | null = null;
+let inflightKey = '';
 
 const defaultCiv = ['c', 'j', 'k'] as const;
 
@@ -18,7 +19,8 @@ export async function loadDateAuthority(
 
   if (!isCjkDatesPythonAvailable() || !isCjkDatesEnabled()) return null;
 
-  if (!inflight) {
+  if (!inflight || inflightKey !== key) {
+    inflightKey = key;
     inflight = cjkDatesListDateAuthority({ civ: [...civ] })
       .then((raw) => {
         const index = enrichDateAuthorityIndex(raw);
@@ -27,22 +29,26 @@ export async function loadDateAuthority(
         return index;
       })
       .finally(() => {
-        inflight = null;
+        if (inflightKey === key) {
+          inflight = null;
+          inflightKey = '';
+        }
       });
   }
 
   return inflight;
 }
 
-export function useDateAuthority(enabled: boolean): {
+export function useDateAuthority(enabled: boolean, civ: readonly string[] = defaultCiv): {
   authority: DateAuthorityIndex | null;
   loading: boolean;
   error: string | null;
 } {
+  const civKey = civ.join(',');
   const [authority, setAuthority] = useState<DateAuthorityIndex | null>(
-    enabled && cachedIndex ? cachedIndex : null,
+    enabled && cachedIndex && cacheKey === civKey ? cachedIndex : null,
   );
-  const [loading, setLoading] = useState(enabled && !cachedIndex);
+  const [loading, setLoading] = useState(enabled && (!cachedIndex || cacheKey !== civKey));
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
@@ -52,10 +58,10 @@ export function useDateAuthority(enabled: boolean): {
     }
 
     let cancelled = false;
-    setLoading(!cachedIndex);
+    setLoading(!cachedIndex || cacheKey !== civKey);
     setError(null);
 
-    void loadDateAuthority()
+    void loadDateAuthority(civ)
       .then((index) => {
         if (cancelled) return;
         if (!index) {
@@ -77,7 +83,7 @@ export function useDateAuthority(enabled: boolean): {
     return () => {
       cancelled = true;
     };
-  }, [enabled]);
+  }, [enabled, civKey]);
 
   return { authority, loading, error };
 }

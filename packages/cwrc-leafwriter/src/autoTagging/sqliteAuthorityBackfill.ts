@@ -12,10 +12,11 @@ import {
   collectTypedNamesForCandidate,
   extractWikidataId,
   type DisambiguationCandidate,
+  type TypedName,
 } from './disambiguationCandidates';
 import { mintEntityId, type EntityKind } from './entities';
 import type { EntityStore } from './entityStore';
-import { normalizeNameType, normalizeTypedNamesForIntake, preferCanonicalFamilyGiven, type TypedName } from './nameTypes';
+import { normalizeNameType, normalizeTypedNamesForIntake, preferCanonicalFamilyGiven } from './nameTypes';
 import {
   authorityEnrichmentForEntity,
   authorityEnrichmentsForEntity,

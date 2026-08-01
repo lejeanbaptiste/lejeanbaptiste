@@ -6,10 +6,8 @@ import { entityLookupDialogAtom } from '../../jotai/entity-lookup';
 import { Context } from '../';
 import { db } from '../../db';
 import type { DialogBarProps, PopupProps } from '../../dialogs';
-import {
-  clearAutoTaggingBatch,
-  stashAutoTaggingBatch,
-} from '../../autoTagging/batchHolder';
+import { clearAutoTaggingBatch, stashAutoTaggingBatch } from '../../autoTagging/batchHolder';
+import type { DateReviewRecalculate } from '../../autoTagging/batchHolder';
 import type { Suggestion } from '../../autoTagging/types';
 import i18n, { Locales, localesSchema } from '../../i18n';
 import type { ContextMenuState, NotificationProps, PaletteMode, PanelId, Side } from '../../types';
@@ -175,8 +173,7 @@ export const closeForegroundPopup = ({ state, actions }: Context): boolean => {
   }
 
   const messageDialog = window.writer?.dialogManager?.getDialog('message') as
-    | { openDialogs?: unknown[] }
-    | undefined;
+    { openDialogs?: unknown[] } | undefined;
   if (messageDialog?.openDialogs?.length) {
     const $message = messageDialog.openDialogs[messageDialog.openDialogs.length - 1] as {
       dialog: (command: string) => void;
@@ -380,15 +377,29 @@ const dockedReviewActiveDetail = (state: Context['state']) => ({
 
 export const startAutoTaggingReview = (
   { state, actions }: Context,
-  { suggestions, notice, aiValidation }: { suggestions: Suggestion[]; notice?: string; aiValidation?: boolean },
+  {
+    suggestions,
+    notice,
+    aiValidation,
+    recalculate,
+    authorityCiv,
+  }: {
+    suggestions: Suggestion[];
+    notice?: string;
+    aiValidation?: boolean;
+    recalculate?: DateReviewRecalculate;
+    authorityCiv?: readonly string[];
+  },
 ) => {
   if (state.ui.disambiguationReview.active) actions.ui.exitDisambiguationReview();
-  stashAutoTaggingBatch(suggestions, notice);
+  stashAutoTaggingBatch(suggestions, notice, recalculate, authorityCiv);
   state.ui.autoTaggingReview.active = true;
   state.ui.autoTaggingReview.batchId += 1;
   state.ui.autoTaggingReview.aiValidation = aiValidation;
   window.dispatchEvent(
-    new CustomEvent('desktop:auto-tagging-review-open', { detail: dockedReviewActiveDetail(state) }),
+    new CustomEvent('desktop:auto-tagging-review-open', {
+      detail: dockedReviewActiveDetail(state),
+    }),
   );
 };
 
@@ -396,7 +407,9 @@ export const exitAutoTaggingReview = ({ state }: Context) => {
   clearAutoTaggingBatch();
   state.ui.autoTaggingReview.active = false;
   window.dispatchEvent(
-    new CustomEvent('desktop:auto-tagging-review-close', { detail: dockedReviewActiveDetail(state) }),
+    new CustomEvent('desktop:auto-tagging-review-close', {
+      detail: dockedReviewActiveDetail(state),
+    }),
   );
 };
 
@@ -410,14 +423,18 @@ export const startDisambiguationReview = (
   state.ui.disambiguationReview.active = true;
   state.ui.disambiguationReview.aiCuration = options?.aiCuration ?? true;
   window.dispatchEvent(
-    new CustomEvent('desktop:disambiguation-review-open', { detail: dockedReviewActiveDetail(state) }),
+    new CustomEvent('desktop:disambiguation-review-open', {
+      detail: dockedReviewActiveDetail(state),
+    }),
   );
 };
 
 export const exitDisambiguationReview = ({ state }: Context) => {
   state.ui.disambiguationReview.active = false;
   window.dispatchEvent(
-    new CustomEvent('desktop:disambiguation-review-close', { detail: dockedReviewActiveDetail(state) }),
+    new CustomEvent('desktop:disambiguation-review-close', {
+      detail: dockedReviewActiveDetail(state),
+    }),
   );
 };
 
@@ -687,10 +704,9 @@ export const exitSourceMode = async ({ state, actions }: Context): Promise<boole
     return true;
   }
 
-  const result = await resolveInvalidSourceMode(
-    { state, actions } as Context,
-    { allowLeaveAnyway: true },
-  );
+  const result = await resolveInvalidSourceMode({ state, actions } as Context, {
+    allowLeaveAnyway: true,
+  });
   if (result === 'blocked') return false;
 
   // Persist the Source buffer into the tab/stored snapshot whenever we leave
@@ -736,10 +752,9 @@ export const guardSourceModeSave = async ({
     return { proceed: true, content: state.ui.sourceCurrentContent, reverted: false };
   }
 
-  const result = await resolveInvalidSourceMode(
-    { state, actions } as Context,
-    { allowLeaveAnyway: false },
-  );
+  const result = await resolveInvalidSourceMode({ state, actions } as Context, {
+    allowLeaveAnyway: false,
+  });
   if (result === 'blocked' || result === 'leaveAnyway') {
     return { proceed: false, content: state.ui.sourceCurrentContent, reverted: false };
   }

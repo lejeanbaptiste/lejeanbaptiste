@@ -13,7 +13,8 @@ Use a clean test project where possible. Record the application version, operati
 - [ ] Reopen a project containing an entities database.
 - [ ] Install language assets and plugins, where applicable.
 - [ ] Edit and save XML.
-- [ ] Quit and relaunch the application.
+- [ ] Quit from both the window controls and application menu; on Windows, this must not require Task Manager.
+- [ ] Relaunch the application.
 - [ ] Reopen the project and verify that edits, entities, and settings persist.
 - [ ] Confirm that there are no broken images or icons.
 

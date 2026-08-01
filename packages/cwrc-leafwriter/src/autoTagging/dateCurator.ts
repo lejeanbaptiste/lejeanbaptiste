@@ -33,7 +33,8 @@ export function isDateTagOnlyBatch(suggestions: Suggestion[]): boolean {
 /** Default candidate index for a date row (unique → 0; ambiguous/unresolved → none until chosen). */
 export function defaultDateCandidateIndex(resolution: DateResolution): number | null {
   if (resolution.status === 'unique') return 0;
-  if (typeof resolution.selectedCandidateIndex === 'number') return resolution.selectedCandidateIndex;
+  if (typeof resolution.selectedCandidateIndex === 'number')
+    return resolution.selectedCandidateIndex;
   return null;
 }
 
@@ -89,6 +90,7 @@ export function finalizeDateSuggestion(
       resp: SANMIAO_RESP,
       cert: resolution.status === 'unresolved' ? 'low' : 'high',
       ...(candidate.attrs ?? {}),
+      ...(resolution.editorAttributes ?? {}),
     };
     resolution.selectedCandidateIndex = index;
   }
@@ -98,9 +100,7 @@ export function finalizeDateSuggestion(
 
 function priorDateLabel(s: Suggestion): string {
   const resolution = s.dateResolution;
-  const pick =
-    resolution?.selectedCandidateIndex ??
-    (resolution?.status === 'unique' ? 0 : null);
+  const pick = resolution?.selectedCandidateIndex ?? (resolution?.status === 'unique' ? 0 : null);
   if (pick != null && resolution?.candidates?.[pick]?.displayLine) {
     return resolution.candidates[pick]!.displayLine;
   }

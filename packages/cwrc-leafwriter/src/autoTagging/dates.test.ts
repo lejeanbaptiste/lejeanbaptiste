@@ -2,6 +2,7 @@ import {
   buildDateTagChunks,
   buildTaggableDocIndex,
   collectBodyDatesInOrder,
+  createDateReviewRecalculator,
   dateResolveFromDocument,
   dateTagOnlyFromSanmiao,
   findTeiBodyRoot,
@@ -165,11 +166,44 @@ describe('dateResolveFromDocument', () => {
   });
 });
 
+describe('createDateReviewRecalculator', () => {
+  it('sends confirmed attributes as anchors and excludes rejected rows from sequence state', async () => {
+    const doc = docFromBody(
+      '<p><date><era>建元</era><year>元年</year></date><date><month>四月</month></date></p>',
+    );
+    let recalculationInput: string[] = [];
+    const current = await dateResolveFromDocument(doc, policy, async (dates) =>
+      dates.map((_date, index) => ({
+        date_index: index,
+        date_string: index === 0 ? '建元元年' : '四月',
+        status: 'unique' as const,
+        candidates: [{ displayLine: index === 0 ? '建元元年' : '四月', attrs: {} }],
+      })),
+    );
+    current[0]!.status = 'accepted';
+    current[0]!.attributes = { era_id: '12', year: '1', cert: 'high' };
+    current[1]!.status = 'rejected';
+
+    const recalculate = createDateReviewRecalculator(doc, policy, async (dates) => {
+      recalculationInput = dates;
+      return dates.map((_date, index) => ({
+        date_index: index,
+        date_string: index === 0 ? '建元元年' : '四月',
+        status: 'unique' as const,
+        candidates: [{ displayLine: index === 0 ? '建元元年' : '四月', attrs: {} }],
+      }));
+    });
+    const result = await recalculate(current);
+
+    expect(recalculationInput[0]).toContain('era_id="12"');
+    expect(recalculationInput[1]).toBe('<date xmlns="http://www.tei-c.org/ns/1.0"/>');
+    expect(result.map((suggestion) => suggestion.status)).toEqual(['accepted', 'rejected']);
+  });
+});
+
 describe('collectBodyDatesInOrder', () => {
   it('excludes sic/surplus text from the serialized outerXml sent to sanmiao', () => {
-    const doc = docFromBody(
-      '<date><choice><sic>太</sic><corr>建</corr></choice>元元年</date>',
-    );
+    const doc = docFromBody('<date><choice><sic>太</sic><corr>建</corr></choice>元元年</date>');
     const entries = collectBodyDatesInOrder(findTeiBodyRoot(doc), policy);
     expect(entries).toHaveLength(1);
     expect(entries[0]!.outerXml).not.toContain('太');
