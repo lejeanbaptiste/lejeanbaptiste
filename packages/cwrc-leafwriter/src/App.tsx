@@ -87,7 +87,7 @@ const observeElement = (
 const App = ({ document, settings, user }: LeafWriterOptions) => {
   const actions = useActions();
   const state = useAppState();
-  const { editorViewMode, autoTaggingReview, disambiguationReview } = state.ui;
+  const { editorViewMode, autoTaggingReview, disambiguationReview, markupPanel } = state.ui;
   const autoTaggingActive = autoTaggingReview?.active ?? false;
   const disambiguationActive = disambiguationReview?.active ?? false;
   const { isReadonly, showRawXmlPanel } = state.editor;
@@ -326,7 +326,7 @@ const App = ({ document, settings, user }: LeafWriterOptions) => {
           {tocPanelContainer && createPortal(<TocPanel />, tocPanelContainer)}
           {structureTreePanelContainer &&
             !isReadonly &&
-            createPortal(<MarkupPanel />, structureTreePanelContainer)}
+            createPortal(<MarkupPanel syncMode={markupPanel.syncMode} />, structureTreePanelContainer)}
           {codePanelContainer &&
             !isReadonly &&
             showRawXmlPanel &&

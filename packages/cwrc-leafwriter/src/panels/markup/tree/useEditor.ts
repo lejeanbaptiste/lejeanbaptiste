@@ -10,10 +10,14 @@ import {
   selectedItemsAtom,
 } from './store';
 import type { FlattenedItem } from './types';
+import type { MarkupTreeSyncMode } from '../../../overmind/ui/state';
 
 const TREE_REBUILD_DEBOUNCE_MS = 150;
 
-export const useEditor = (flattenedTree: FlattenedItem[]) => {
+export const useEditor = (
+  flattenedTree: FlattenedItem[],
+  syncMode: Exclude<MarkupTreeSyncMode, 'off'>,
+) => {
   const { writer } = window;
 
   const [nodeChanged, setNodeChanged] = useAtom(nodeChangedAtom);
@@ -72,16 +76,17 @@ export const useEditor = (flattenedTree: FlattenedItem[]) => {
 
   useEffect(() => {
     writer.event('documentLoaded').subscribe(handleDocumentLoaded);
-    writer.event('selectionChanged').subscribe(handleSelectionChange);
-    writer.event('contentChanged').subscribe(handleContentChanged);
-    writer.event('nodeChanged').subscribe(handleNodeChange);
-    writer.event('massUpdateStarted').subscribe(handleMassUpdateStarted);
-    writer.event('massUpdateCompleted').subscribe(handleMassUpdateCompleted);
-
-    writer.event('writerKeyup').subscribe(handleWriterKeyup);
+    if (syncMode === 'live') {
+      writer.event('selectionChanged').subscribe(handleSelectionChange);
+      writer.event('contentChanged').subscribe(handleContentChanged);
+      writer.event('nodeChanged').subscribe(handleNodeChange);
+      writer.event('massUpdateStarted').subscribe(handleMassUpdateStarted);
+      writer.event('massUpdateCompleted').subscribe(handleMassUpdateCompleted);
+      writer.event('writerKeyup').subscribe(handleWriterKeyup);
+    }
 
     const onViewModeChanged = () => {
-      if (window.writer?.overmindState?.ui?.editorViewMode === 'visual') {
+      if (syncMode === 'live' && window.writer?.overmindState?.ui?.editorViewMode === 'visual') {
         scheduleUpdatePending();
       }
     };
@@ -99,19 +104,21 @@ export const useEditor = (flattenedTree: FlattenedItem[]) => {
 
     return () => {
       writer.event('documentLoaded').unsubscribe(handleDocumentLoaded);
-      writer.event('selectionChanged').unsubscribe(handleSelectionChange);
-      writer.event('contentChanged').unsubscribe(handleContentChanged);
-      writer.event('nodeChanged').unsubscribe(handleNodeChange);
-      writer.event('massUpdateStarted').unsubscribe(handleMassUpdateStarted);
-      writer.event('massUpdateCompleted').unsubscribe(handleMassUpdateCompleted);
-      writer.event('writerKeyup').unsubscribe(handleWriterKeyup);
+      if (syncMode === 'live') {
+        writer.event('selectionChanged').unsubscribe(handleSelectionChange);
+        writer.event('contentChanged').unsubscribe(handleContentChanged);
+        writer.event('nodeChanged').unsubscribe(handleNodeChange);
+        writer.event('massUpdateStarted').unsubscribe(handleMassUpdateStarted);
+        writer.event('massUpdateCompleted').unsubscribe(handleMassUpdateCompleted);
+        writer.event('writerKeyup').unsubscribe(handleWriterKeyup);
+      }
       window.removeEventListener('desktop:editor-view-mode-changed', onViewModeChanged);
       if (updateTimerRef.current !== null) {
         window.clearTimeout(updateTimerRef.current);
         updateTimerRef.current = null;
       }
     };
-  }, [initialized, enabled, items]);
+  }, [initialized, enabled, items, syncMode]);
 
   useEffect(() => {
     if (nodeChanged) {

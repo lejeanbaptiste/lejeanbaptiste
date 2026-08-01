@@ -1,15 +1,33 @@
-import { List } from '@mui/material';
+import { FormControl, FormHelperText, InputLabel, List, MenuItem, Select } from '@mui/material';
 import { useTranslation } from 'react-i18next';
 import { useActions, useAppState } from '../../../overmind';
 import { Toggler } from '../components';
 
 export const MarkupPanel = () => {
   const { markupPanel: structurePanel } = useAppState().ui;
-  const { allowTagDragAndDrop, showTextNodes } = useActions().ui;
+  const { allowTagDragAndDrop, setMarkupTreeSyncMode, showTextNodes } = useActions().ui;
   const { t } = useTranslation();
 
   return (
     <List dense>
+      <FormControl fullWidth size="small" sx={{ mb: 1.5 }}>
+        <InputLabel id="markup-tree-sync-mode-label">
+          {t('LW.settings.markupPanel.Tree synchronization')}
+        </InputLabel>
+        <Select
+          label={t('LW.settings.markupPanel.Tree synchronization')}
+          labelId="markup-tree-sync-mode-label"
+          onChange={(event) =>
+            setMarkupTreeSyncMode(event.target.value as 'live' | 'manual' | 'off')
+          }
+          value={structurePanel.syncMode}
+        >
+          <MenuItem value="live">{t('LW.settings.markupPanel.Live')}</MenuItem>
+          <MenuItem value="manual">{t('LW.settings.markupPanel.On demand')}</MenuItem>
+          <MenuItem value="off">{t('LW.settings.markupPanel.Off')}</MenuItem>
+        </Select>
+        <FormHelperText>{t('LW.settings.markupPanel.Tree synchronization description')}</FormHelperText>
+      </FormControl>
       <Toggler
         description={`${t('LW.settings.markupPanel.message.Text Nodes must be displayed for better accuracy')} (${t('LW.commons.experimental')})`}
         disabled={!structurePanel.showTextNodes}

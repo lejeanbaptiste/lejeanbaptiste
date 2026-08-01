@@ -28,6 +28,10 @@ export interface DisambiguationReviewState {
   aiCuration: boolean;
 }
 
+export type MarkupTreeSyncMode = 'live' | 'manual' | 'off';
+
+export const MARKUP_TREE_SYNC_MODE_STORAGE_KEY = 'markupTreeSyncMode';
+
 // eslint-disable-next-line @typescript-eslint/consistent-type-definitions
 type State = {
   contextMenu: ContextMenuState;
@@ -47,6 +51,7 @@ type State = {
   markupPanel: {
     allowDragAndDrop: boolean;
     showTextNodes: boolean;
+    syncMode: MarkupTreeSyncMode;
   };
   notifications: NotificationProps[];
   popupProps: PopupProps;
@@ -99,6 +104,7 @@ export const state: State = {
   markupPanel: {
     allowDragAndDrop: false,
     showTextNodes: false,
+    syncMode: 'live',
   },
   notifications: [],
   popupProps: { open: false },

@@ -202,6 +202,11 @@
       "markupPanel": {
         "Allow drag and drop": "Allow drag and drop",
         "Show Text Nodes": "Show Text Nodes",
+        "Tree synchronization": "Tree synchronization",
+        "Tree synchronization description": "Live follows the editor. On demand refreshes only when requested. Off removes the tree from the editing session.",
+        "Live": "Live",
+        "On demand": "On demand",
+        "Off": "Off",
         "title": "Markup panel",
         "message": {
           "Text Nodes must be displayed for better accuracy": "Text Nodes must be displayed for better accuracy"

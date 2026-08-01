@@ -11,7 +11,7 @@ import type { DateReviewRecalculate } from '../../autoTagging/batchHolder';
 import type { Suggestion } from '../../autoTagging/types';
 import i18n, { Locales, localesSchema } from '../../i18n';
 import type { ContextMenuState, NotificationProps, PaletteMode, PanelId, Side } from '../../types';
-import type { EditorViewMode } from './state';
+import { MARKUP_TREE_SYNC_MODE_STORAGE_KEY, type EditorViewMode } from './state';
 import { checkWellFormedness } from '../../utilities/checkWellFormedness';
 import {
   getVisualCaretForSourceSync,
@@ -43,6 +43,11 @@ export const onInitializeOvermind = ({ state, actions, effects }: Context, _over
   const showTagBubble = effects.editor.api.getFromLocalStorage<boolean>('showTagBubble');
   // Default true (only false if explicitly saved as false)
   state.editor.showTagBubble = showTagBubble !== false;
+
+  const treeSyncMode = effects.editor.api.getFromLocalStorage<string>(MARKUP_TREE_SYNC_MODE_STORAGE_KEY);
+  if (treeSyncMode === 'live' || treeSyncMode === 'manual' || treeSyncMode === 'off') {
+    state.ui.markupPanel.syncMode = treeSyncMode;
+  }
 };
 
 export const setThemeAppearance = ({ state, actions, effects }: Context, value: PaletteMode) => {
@@ -298,6 +303,17 @@ export const showTextNodes = ({ state, actions }: Context, value?: boolean) => {
   };
 
   actions.ui.allowTagDragAndDrop(value);
+};
+
+export const setMarkupTreeSyncMode = (
+  { state, effects }: Context,
+  mode: 'live' | 'manual' | 'off',
+) => {
+  state.ui.markupPanel = {
+    ...state.ui.markupPanel,
+    syncMode: mode,
+  };
+  effects.editor.api.saveToLocalStorage(MARKUP_TREE_SYNC_MODE_STORAGE_KEY, mode);
 };
 
 export const changePanel = (

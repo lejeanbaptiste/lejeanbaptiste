@@ -1,6 +1,6 @@
 # Performance Optimization — planning notes
 
-**Status (2026-08-01):** The markup tree and the top-level review/disambiguation lists are virtualized. Monaco no longer recreates on theme changes. Source mode now keeps its Monaco instance across Visual ↔ Source switches and avoids reloading TinyMCE when the source buffer is unchanged. The markup tree's flattening, visible-row pass, and XPath sibling indexes are now linear and do not recompute on selection alone. The next measured targets are remaining tree rebuilds, changed-source reloads, idle panel memory, and desktop bridge polling.
+**Status (2026-08-01):** The markup tree and the top-level review/disambiguation lists are virtualized. Monaco no longer recreates on theme changes. Source mode now keeps its Monaco instance across Visual ↔ Source switches and avoids reloading TinyMCE when the source buffer is unchanged. The markup tree's flattening, visible-row pass, and XPath sibling indexes are now linear and do not recompute on selection alone. Live markup-tree synchronization is now optional: users can choose Live, On demand, or Off. The next measured targets are changed-source reloads, idle panel memory, and desktop bridge polling.
 
 ## Summary
 
@@ -218,6 +218,7 @@ could be large, but only for sufficiently big documents.
 - Visible rows are derived in one pass and are not recalculated when only the active selection changes.
 - XPath sibling positions are counted once per parent instead of scanning every prior sibling for every tree node.
 - Full tree rebuilds are debounced during ordinary editing and deferred until a mass update completes.
+- Live synchronization can be disabled or changed to manual refresh from **Settings → Markup panel**, so the tree no longer has to tax ordinary editing on slower machines.
 
 ---
 

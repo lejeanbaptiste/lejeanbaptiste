@@ -3,11 +3,15 @@ import { useEffect, useMemo } from 'react';
 import { displayTextNodesAtom, expandedItemsAtom, itemsAtom } from './store';
 import type { TreeItems } from './types';
 import { useEditor } from './useEditor';
+import type { MarkupTreeSyncMode } from '../../../overmind/ui/state';
 import { flattenTree, getNodes, processElement } from './utilities';
 
 const INTIATE_EXPANDED_UP_TO_LEVEL = 4; //2;
 
-export const useTree = () => {
+export const useTree = (
+  syncMode: Exclude<MarkupTreeSyncMode, 'off'>,
+  refreshVersion: number,
+) => {
   const [items, setItems] = useAtom(itemsAtom);
   const flattenedTree = useMemo(() => flattenTree(items), [items]);
 
@@ -15,7 +19,7 @@ export const useTree = () => {
 
   const displayTextNodes = useAtomValue(displayTextNodesAtom);
 
-  const { initialized, setUpdatePending, updatePending } = useEditor(flattenedTree);
+  const { initialized, setUpdatePending, updatePending } = useEditor(flattenedTree, syncMode);
 
   const visibleTree = useMemo(() => {
     const expanded = new Set(expandedItems);
@@ -45,6 +49,14 @@ export const useTree = () => {
       setItems(treeModel);
     }
   }, [initialized]);
+
+  useEffect(() => {
+    if (!initialized || refreshVersion === 0) return;
+    const treeModel = getEditorTreeModel();
+    if (!treeModel) return;
+    setItems(treeModel);
+    expandUpTo(treeModel, INTIATE_EXPANDED_UP_TO_LEVEL);
+  }, [initialized, refreshVersion]);
 
   useEffect(() => {
     if (!updatePending) return;

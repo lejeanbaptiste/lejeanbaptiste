@@ -37,7 +37,13 @@ import {
 
 const INDENTATION_WIDTH = 16;
 
-export const SortableTree = () => {
+export const SortableTree = ({
+  refreshVersion,
+  syncMode,
+}: {
+  refreshVersion: number;
+  syncMode: 'live' | 'manual';
+}) => {
   const { writer } = window;
 
   const { showContextMenu } = useActions().ui;
@@ -62,7 +68,7 @@ export const SortableTree = () => {
   const [multiselectAnchor, setMultiselectAnchor] = useState<UniqueIdentifier | null>(null);
   const [overId, setOverId] = useState<UniqueIdentifier | null>(null);
 
-  const { visibleTree } = useTree();
+  const { visibleTree } = useTree(syncMode, refreshVersion);
 
   const sortedIds = useMemo(() => visibleTree.map(({ id }) => id), [visibleTree]);
 
