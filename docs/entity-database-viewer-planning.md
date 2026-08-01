@@ -1,11 +1,6 @@
 # Entity database & the case for a "database viewer"
 
-Status: planning (2026-07-07).
-Companion to [authority-packs-planning.md](authority-packs-planning.md), [Auto-tagging-phases.md](Auto-tagging-phases.md).
-
-This document describes the **current** entity database mechanism (`entities.xml` + `EntityStore`) and lays out how to extend it into a human-facing **database viewer** — a smaller, project-scoped analogue of DILA's person authority cards (see screenshot discussion, 2026-07-07 session) — without reviving the legacy CWRC entities panel.
-
----
+**Status (2026-08-01):** **Shipped** — SQLite database panel + entity card viewer cover the V0–V4 intent (query, normalized fields, browse/search, backlinks where implemented, inline edit). This doc is historical design context. Companion to [authority-packs-planning.md](authority-packs-planning.md), [Auto-tagging-phases.md](Auto-tagging-phases.md).
 
 ## 1. Why this doc exists
 
@@ -71,6 +66,8 @@ Alongside the entity file, `EntityStore` also owns a project-local `.ljb/` folde
 
 ### 2.4 What's missing for a viewer today
 
+> **Historical note (2026-08-01):** The gaps below motivated V0–V4; they are addressed in the shipped SQLite panel / entity cards. Kept for design context.
+
 - **No read/query API** beyond `findEntity(doc, id)` (linear TreeWalker scan) and the raw DOM. No index by kind, by authority type, or by partial name; no cross-reference from an entity id back to which documents/spans mention it.
 - **No normalized fields** for alternate names, dates, or freeform notes-with-citation — only a single `<persName>` (surface form used at creation) and the opaque `cache` blob. A DILA-style card needs alt names and dates as first-class, source-agnostic data, not something the UI has to know how to parse out of arbitrary VIAF vs. Wikidata JSON shapes.
 - **No UI** at all — nothing renders `entities.xml`. The closest analogue in the codebase (`DesktopEntitiesPanel`) belongs to the legacy, unrelated system.
@@ -114,38 +111,23 @@ This is additive — existing `entities.xml` files with only `<persName>` + `<id
 
 ### Phase V0 — Query layer (no UI)
 
-- Add an indexed read API over a parsed `entities.xml` Document: `listEntities(doc, kind?, filter?)`, `getEntity(doc, id)` (replace linear `findEntity` scan with a `Map` built once per load), `searchEntities(doc, query)`.
-- Keep this in `autoTagging/entities.ts` or a new `autoTagging/entityQuery.ts` — pure functions over a `Document`, testable without Electron, same discipline as the rest of the module.
-
-**Exit:** something can answer "give me all persons with a Wikidata link" without a UI.
+**Done.** Indexed read / list / search over the entity store (SQLite panel path).
 
 ### Phase V1 — Schema extension (normalized fields)
 
-- Implement §4 option B: extend `NewEntity`, `addEntity`; add `updateEntity(doc, id, patch)`.
-- No migration script needed (fields are optional/additive); old entities just show as sparse cards.
-
-**Exit:** disambiguation phase (or a future manual "edit entity" action) can write alt names/dates/notes, not just name + idno.
+**Done.** Typed names, dates, nationality/origin, notes/assertions as first-class fields (not only opaque authority-cache).
 
 ### Phase V2 — Viewer UI (read-first)
 
-- A panel/dialog (new component, not `DesktopEntitiesPanel`) listing entities by kind with search, rendering a card per entity from the Phase V0/V1 data — DILA-card-shaped: name, alt names, dates, authority links (as clickable out-links), notes.
-- Read-only first: proves the query layer and card layout before adding edit affordances.
-- Lives wherever the project's other side panels live in the current (non-legacy) UI shell — **not** wired through `entitiesManager`/`Writer`.
-
-**Exit:** user can open "database" for the active project (or central store) and browse/search resolved entities.
+**Done.** Database sidebar + database window: list/search by kind, entity cards with names, dates, authority links.
 
 ### Phase V3 — Backlinks (documents that mention this entity)
 
-- On demand (not stored/duplicated on the entity itself, to avoid a second sync problem): scan project XML files for `@key="‹id›"` and show the hit list/snippets in the card. Same scan shape as `purgeEntityKeysInProject` already uses to walk project files.
-- For central-mode databases shared across projects, this needs a bit more thought — "which project(s)" the backlink search covers should probably default to the currently open project only, not every project that ever pointed at the central store.
-
-**Exit:** card answers "where does this person appear," not just "who are they."
+**Done where scoped** — corpus/PEDB keys and project mention context in the viewer; full multi-project central aggregation remains out of scope (see below).
 
 ### Phase V4 — Inline editing
 
-- Add edit affordances to the V2 cards backed by `updateEntity` (V1). Include provenance display (`resp`, and optionally the matching entries from `entity-decisions.jsonl` — "resolved from mention 'X' in file Y on date Z") so users can judge trust like DILA's 出處 citations.
-
-**Exit:** viewer is a genuine authoring surface for the entity database, not read-only.
+**Done.** Card edit affordances (names, types, dates, authorities, detach/link, backfill).
 
 ### Explicitly out of scope here
 
@@ -167,4 +149,4 @@ This is additive — existing `entities.xml` files with only `<persName>` + `<id
 
 ## 7. One-line summary
 
-`entities.xml` already is the right kind of store — TEI standoff, tag-only mentions, central/project modes. What's missing is a query layer, a few normalized fields (alt names, dates, notes) alongside the opaque authority-cache blob, and a UI to browse it — not a new identity model, and not the legacy entities panel.
+`entities.xml` / SQLite entity store was already the right kind of store — TEI standoff, tag-only mentions, central/project modes. The viewer (query + normalized fields + browse/edit UI) has shipped; this doc remains the original design rationale.

@@ -31,4 +31,9 @@ describe('defaultChineseNameSegmenter', () => {
       defaultChineseNameSegmenter({ name: '一二三四五', projectLang: 'zh-Hant', romanize }),
     ).toBeNull();
   });
+
+  it('returns null for Latin dump placeholders like nan (not 姓 n + 名 an)', () => {
+    expect(defaultChineseNameSegmenter({ name: 'nan', projectLang: 'zh-Hant', romanize })).toBeNull();
+    expect(defaultChineseNameSegmenter({ name: 'NaN', projectLang: 'zh-Hant', romanize })).toBeNull();
+  });
 });

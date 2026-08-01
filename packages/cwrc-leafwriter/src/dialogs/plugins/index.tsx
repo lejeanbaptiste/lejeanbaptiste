@@ -142,12 +142,12 @@ export const PluginsDialog = ({ onClose, open = false }: IDialog) => {
           // Plugin enable succeeded; panel reload remains the safety net.
         }
       }
-      if (next) {
-        setSnapshot(next);
-        setPluginRegistrySnapshot(next);
-      } else {
-        await load();
-      }
+      if (next) setSnapshot(next);
+      // Load/unload JS modules (toolbar, dialogs) — setPluginRegistrySnapshot alone
+      // only updates pack lists and leaves Norbert invisible until restart.
+      await refreshPluginRegistry();
+      const refreshed = await window.electronAPI?.pluginsGetSnapshot?.();
+      if (refreshed) setSnapshot(refreshed);
     } catch (err) {
       setError(err instanceof Error ? err.message : String(err));
     } finally {

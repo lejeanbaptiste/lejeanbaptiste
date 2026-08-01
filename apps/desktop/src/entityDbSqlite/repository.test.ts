@@ -852,7 +852,7 @@ describe('EntitySqliteRepository', () => {
       familyName: '孔',
       givenName: '遺',
     });
-    expect(first).toEqual({ changed: true, namesAdded: 1 });
+    expect(first).toEqual({ changed: true, namesAdded: 3 });
     const allNames = repository.listNames('person-bf', true).map((name) => name.text);
     expect(allNames).toEqual(expect.arrayContaining(['仲達', '孔遺', '世遠', '孔', '遺']));
     expect(
@@ -870,6 +870,53 @@ describe('EntitySqliteRepository', () => {
       nationalities: [{ label: '漢', ref: 'Q7209', source: 'CBDB' }],
     });
     expect(second).toEqual({ changed: false, namesAdded: 0 });
+    repository.close();
+  });
+
+  it('keeps all family variants but sets canonical 姓 from the preferred patch field', () => {
+    const repository = new EntitySqliteRepository();
+    repository.createEntity({ id: 'person-tuoba', kind: 'person' });
+    repository.addName({
+      entityId: 'person-tuoba',
+      text: '拓拔建',
+      isPrimary: true,
+      origin: 'authority',
+      source: 'NORBERT',
+    });
+
+    const result = repository.applyAuthorityBackfillPatch({
+      entityId: 'person-tuoba',
+      names: [
+        { text: '元', nameType: 'family', source: 'NORBERT' },
+        { text: '拓拔', nameType: 'family', source: 'NORBERT' },
+        { text: '托跋', nameType: 'family', source: 'NORBERT' },
+        { text: '建', nameType: 'given', source: 'NORBERT' },
+      ],
+      familyName: '拓拔',
+      givenName: '建',
+    });
+    expect(result.namesAdded).toBe(4);
+    const names = repository.listNames('person-tuoba').map((name) => name.text);
+    expect(names).toEqual(expect.arrayContaining(['拓拔建', '元', '拓拔', '托跋', '建']));
+    expect(repository.getPanelSummary('person-tuoba')?.familyName).toBe('拓拔');
+    expect(repository.getPanelSummary('person-tuoba')?.givenName).toBe('建');
+
+    // Re-backfill can correct a previously wrong scalar that is still one of the variants.
+    repository.db
+      .prepare('UPDATE people SET family_name = ? WHERE entity_id = ?')
+      .run('元', 'person-tuoba');
+    const corrected = repository.applyAuthorityBackfillPatch({
+      entityId: 'person-tuoba',
+      names: [
+        { text: '元', nameType: 'family', source: 'NORBERT' },
+        { text: '拓拔', nameType: 'family', source: 'NORBERT' },
+        { text: '托跋', nameType: 'family', source: 'NORBERT' },
+      ],
+      familyName: '拓拔',
+      givenName: '建',
+    });
+    expect(corrected.changed).toBe(true);
+    expect(repository.getPanelSummary('person-tuoba')?.familyName).toBe('拓拔');
     repository.close();
   });
 
@@ -1045,6 +1092,57 @@ describe('EntitySqliteRepository', () => {
       }),
     ).toThrow('abort');
     expect(repository.getEntity('nested-not-supported')).toBeNull();
+    repository.close();
+  });
+
+  it('autoCleanNames promotes Latn, dedupes typed names, and removes untyped', () => {
+    const repository = new EntitySqliteRepository();
+    repository.createEntity({ id: 'person-auto-clean', kind: 'person' });
+    repository.addName({
+      entityId: 'person-auto-clean',
+      text: '王維',
+      isPrimary: true,
+      nameType: 'primary',
+    });
+    repository.addName({
+      entityId: 'person-auto-clean',
+      text: '摩詰',
+      nameType: 'courtesy',
+      origin: 'authority',
+      source: 'Norbert',
+    });
+    repository.addName({
+      entityId: 'person-auto-clean',
+      text: '摩詰',
+      nameType: 'courtesy',
+      origin: 'authority',
+      source: 'Norbert',
+    });
+    repository.setRomanizedName('person-auto-clean', 'Wang Wei', 'zh-Latn');
+    // Force an older untyped Latn (setRomanized now writes translation).
+    repository.db
+      .prepare(
+        `UPDATE entity_names SET name_type = NULL
+         WHERE entity_id = ? AND language LIKE '%-Latn'`,
+      )
+      .run('person-auto-clean');
+    repository.addName({
+      entityId: 'person-auto-clean',
+      text: 'orphan-untyped',
+      origin: 'user',
+    });
+
+    const report = repository.autoCleanNames();
+    expect(report.promotedRomanizations).toBe(1);
+    expect(report.dedupedNames).toBe(1);
+    expect(report.removedUntyped).toBe(1);
+
+    const names = repository.listNames('person-auto-clean');
+    expect(names.filter((n) => n.text === '摩詰')).toHaveLength(1);
+    expect(names.find((n) => n.language?.includes('Latn'))).toEqual(
+      expect.objectContaining({ nameType: 'translation', text: 'Wang Wei' }),
+    );
+    expect(names.some((n) => n.text === 'orphan-untyped')).toBe(false);
     repository.close();
   });
 });

@@ -49,6 +49,8 @@ export function segmentPersonNameWithPlugins(
 ): PluginPersonNameSegmentResult | null {
   const trimmed = name.normalize('NFC').trim();
   if (!trimmed) return null;
+  // Pandas/NumPy missing-value token — never a personal name in any language.
+  if (/^nan$/i.test(trimmed)) return null;
   for (const segmenter of segmenters.values()) {
     const result = segmenter({ name: trimmed, projectLang, romanize });
     if (result?.familyName && result.givenName) return result;

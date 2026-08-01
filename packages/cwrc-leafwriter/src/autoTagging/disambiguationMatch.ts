@@ -13,6 +13,7 @@ interface WikidataLabelEntry {
 interface WikidataEntityNames {
   labels?: Record<string, WikidataLabelEntry>;
   aliases?: Record<string, WikidataLabelEntry[]>;
+  sitelinks?: Record<string, { title?: string }>;
 }
 
 interface WikidataEntitiesResponse {
@@ -53,6 +54,43 @@ export function stringsMatchExactly(surface: string, candidate: string): boolean
   return false;
 }
 
+/**
+ * Strip Wikipedia disambiguation suffixes from a sitelink title.
+ * `崔諲 (十六國到劉宋)` → `崔諲`.
+ */
+export function cleanWikipediaSitelinkTitle(title: string): string {
+  return title
+    .normalize('NFC')
+    .trim()
+    .replace(/_?\([^)]*\)\s*$/u, '')
+    .replace(/_?（[^）]*）\s*$/u, '')
+    .trim();
+}
+
+/**
+ * When Wikidata has no Chinese (etc.) label, borrow the Wikipedia article title
+ * from sitelinks — e.g. Q45421892 has only English "Cui Yin" but zhwiki 崔諲.
+ */
+function labelsFromSitelinks(entity: WikidataEntityNames | undefined): Record<string, string> {
+  const out: Record<string, string> = {};
+  if (!entity?.sitelinks) return out;
+  const inject = (langs: string[], site: string) => {
+    const raw = entity.sitelinks?.[site]?.title;
+    if (!raw) return;
+    const cleaned = cleanWikipediaSitelinkTitle(raw);
+    if (!cleaned) return;
+    for (const lang of langs) {
+      if (!out[lang]) out[lang] = cleaned;
+    }
+  };
+  inject(['zh-hant', 'zh', 'zh-hans'], 'zhwiki');
+  inject(['ja'], 'jawiki');
+  inject(['ko'], 'kowiki');
+  inject(['bo'], 'bowiki');
+  inject(['en'], 'enwiki');
+  return out;
+}
+
 function collectEntityNames(entity: WikidataEntityNames | undefined): string[] {
   if (!entity) return [];
   const names = new Set<string>();
@@ -66,6 +104,9 @@ function collectEntityNames(entity: WikidataEntityNames | undefined): string[] {
   for (const label of Object.values(entity.labels ?? {})) {
     if (label.value) names.add(label.value);
   }
+  for (const title of Object.values(labelsFromSitelinks(entity))) {
+    names.add(title);
+  }
   return [...names];
 }
 
@@ -73,6 +114,10 @@ function collectEntityLabels(entity: WikidataEntityNames | undefined): Record<st
   const labels: Record<string, string> = {};
   for (const [lang, entry] of Object.entries(entity?.labels ?? {})) {
     if (entry.value) labels[lang.toLowerCase()] = entry.value;
+  }
+  // Sitelink titles fill gaps only — never overwrite a real Wikidata label.
+  for (const [lang, title] of Object.entries(labelsFromSitelinks(entity))) {
+    if (!labels[lang]) labels[lang] = title;
   }
   return labels;
 }
@@ -86,7 +131,7 @@ async function fetchWikidataNamesBatchUncached(
 
   const langs = WIKIDATA_NAME_LANGS.join('|');
   const ids = qids.join('|');
-  const url = `https://www.wikidata.org/w/api.php?action=wbgetentities&ids=${ids}&props=labels|aliases&languages=${langs}&format=json&origin=*`;
+  const url = `https://www.wikidata.org/w/api.php?action=wbgetentities&ids=${ids}&props=labels|aliases|sitelinks&languages=${langs}&format=json&origin=*`;
   const response = await fetchImpl(url);
   if (!response.ok) {
     for (const qid of qids) out.set(qid, { names: [], labels: {} });

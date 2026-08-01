@@ -12,6 +12,14 @@ export {
 } from './types';
 export { applyHygieneFinding } from './apply';
 export {
+  autoCleanEntities,
+  collapseRomanizationSpaces,
+  isJoinableRomanizationDiff,
+  scanJoinableRomanizations,
+  scanOrphanShortNameSplits,
+  type AutoCleanReport,
+} from './autoClean';
+export {
   collectHarvestedWrappers,
   extractPersonWrapperFacts,
   filterNewHarvestAssertions,

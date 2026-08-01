@@ -1,5 +1,7 @@
 # Tag boundary keyboard navigation
 
+**Status (2026-08-01):** **Mostly shipped** — three-position tag-boundary nav live. Still open: Bugs B/C/H (typing/delete edges); Bug G likely accept-as-is; remove debug `console.log`s.
+
 ## Goal
 
 Three-position cursor model for XML tag brackets in show-tags mode.

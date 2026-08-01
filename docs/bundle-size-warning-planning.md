@@ -1,8 +1,6 @@
-# Bundle Size Warning - Planning Note
+# Bundle size warning — planning notes
 
-**Status:** Planning only  
-**Scope:** Desktop and shared webpack bundles  
-**Related:** `docs/todo.md`, `docs/versioning-planning.md`
+**Status (2026-08-01):** **Planning only** — webpack entry ~32 MB; prioritize icon barrel / storage-service CJS waste, strip prod jotai-devtools, lazy dialogs/Monaco.
 
 ## What the warning means
 

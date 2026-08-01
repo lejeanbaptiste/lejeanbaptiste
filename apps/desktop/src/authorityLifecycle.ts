@@ -78,6 +78,11 @@ const PROFILE_SPECS: Record<
       'cbdb-offices',
       'dila-persons',
       'dila-places',
+      'norbert-persons',
+      'norbert-person-wrappers',
+      'norbert-offices',
+      // wiki-nt-links ships with the Norbert plugin / local compile, not the
+      // GitHub chinese pack tarball — do not require it for packsReady.
       'chgis-places',
       'wikidata-persons-pre-ming',
       'wikidata-persons-ming',
@@ -560,6 +565,27 @@ export const runAuthorityLifecyclePipeline = async (
   }
 };
 
+/**
+ * Turn the optional reference-database tier on or off (CBDB/Norbert sqlite + DILA TEI).
+ * When enabling, run the lifecycle pipeline so missing reference files download immediately.
+ */
+export const setAuthorityLifecycleReferenceDataEnabled = async (
+  entityDbFolder: string | null,
+  enabled: boolean,
+  onProgress?: (progress: AuthorityLifecycleProgress) => void,
+): Promise<AuthorityLifecycleRunResult> => {
+  if (!entityDbFolder) {
+    return { ok: false, error: 'No entity database folder configured.' };
+  }
+  const current = await readLifecycleConfig(entityDbFolder);
+  if (!enabledProfiles(current).length) {
+    return { ok: false, error: 'Enable a language pack before downloading reference data.' };
+  }
+  await writeLifecycleConfig(entityDbFolder, { referenceDataEnabled: enabled, lastError: undefined });
+  if (!enabled) return { ok: true };
+  return runAuthorityLifecyclePipeline({ entityDbFolder, onProgress });
+};
+
 export const setAuthorityLifecycleEnabled = async (
   entityDbFolder: string | null,
   options: AuthorityLifecycleSetEnabledOptions,
@@ -633,18 +659,22 @@ export const recordDeclinedFirstPrompt = async (
 
 export const maybeCheckAuthorityUpdates = async (
   entityDbFolder: string | null,
+  options?: { force?: boolean },
 ): Promise<AuthorityLifecycleStatus | null> => {
   if (!entityDbFolderReady(entityDbFolder)) return null;
 
   const lifecycle = await readLifecycleConfig(entityDbFolder);
   if (!lifecycle.enabled) return null;
 
+  const force = options?.force === true;
   const lastCheck = lifecycle.lastCheckAt ? Date.parse(lifecycle.lastCheckAt) : 0;
-  if (Date.now() - lastCheck < WEEK_MS) {
+  if (!force && Date.now() - lastCheck < WEEK_MS) {
     return getAuthorityLifecycleStatus(entityDbFolder);
   }
 
+  // Drop the cached remote index so status reflects the latest registry.
   cachedRemoteIndex = null;
+  cachedRemoteIndexAt = 0;
   await writeLifecycleConfig(entityDbFolder!, { lastCheckAt: new Date().toISOString() });
   return getAuthorityLifecycleStatus(entityDbFolder);
 };

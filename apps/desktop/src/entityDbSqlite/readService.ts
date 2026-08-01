@@ -134,6 +134,16 @@ export interface EntitySqliteSetRomanizedNameRequest {
   language?: string;
 }
 
+export interface EntitySqliteAutoCleanNamesRequest {
+  databasePath: string;
+}
+
+export type EntitySqliteAutoCleanNamesResult = {
+  dedupedNames: number;
+  removedUntyped: number;
+  promotedRomanizations: number;
+};
+
 export interface EntitySqliteApplyConcordanceRequest {
   databasePath: string;
   associations: SqliteConcordanceAssociation[];
@@ -575,6 +585,14 @@ export async function setEntitySqliteRomanizedName(
     request.text,
     request.language,
   );
+}
+
+export async function autoCleanEntitySqliteNames(
+  request: EntitySqliteAutoCleanNamesRequest,
+): Promise<EntitySqliteAutoCleanNamesResult> {
+  if (!validDatabasePath(request.databasePath))
+    throw new Error('Invalid entity SQLite database path.');
+  return repositoryFor(request.databasePath).autoCleanNames();
 }
 
 export async function softDeleteEntitySqlite(

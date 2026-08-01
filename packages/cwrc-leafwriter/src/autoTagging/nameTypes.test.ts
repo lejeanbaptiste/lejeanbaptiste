@@ -4,6 +4,7 @@ import {
   isTaggableNameType,
   normalizeNameType,
   normalizeTypedNamesForIntake,
+  preferCanonicalFamilyGiven,
   stripFamilyPrefixFromCourtesyName,
 } from './nameTypes';
 
@@ -121,5 +122,37 @@ describe('normalizeTypedNamesForIntake', () => {
       { text: '摩詰', type: 'art' },
       { text: '法號', type: 'dharma' },
     ]);
+  });
+
+  it('drops dump placeholder nan in any language', () => {
+    expect(
+      normalizeTypedNamesForIntake([
+        { text: 'nan', type: 'primary' },
+        { text: '息齋道人', type: 'dharma' },
+      ]),
+    ).toEqual([{ text: '息齋道人', type: 'dharma' }]);
+  });
+});
+
+describe('preferCanonicalFamilyGiven', () => {
+  it('prefers the family that prefixes the primary headword', () => {
+    expect(
+      preferCanonicalFamilyGiven('拓拔建', [
+        { text: '元', type: 'family' },
+        { text: '拓拔', type: 'family' },
+        { text: '托跋', type: 'family' },
+        { text: '建', type: 'given' },
+      ]),
+    ).toEqual({ familyName: '拓拔', givenName: '建' });
+  });
+
+  it('falls back to the first family/given when primary does not help', () => {
+    expect(
+      preferCanonicalFamilyGiven('無名氏', [
+        { text: '張', type: 'family' },
+        { text: '李', type: 'family' },
+        { text: '某', type: 'given' },
+      ]),
+    ).toEqual({ familyName: '張', givenName: '某' });
   });
 });

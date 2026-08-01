@@ -192,6 +192,13 @@ declare global {
       text: string;
       language?: string;
     }) => Promise<void>;
+    entitySqliteAutoCleanNames?: (request: {
+      databasePath: string;
+    }) => Promise<{
+      dedupedNames: number;
+      removedUntyped: number;
+      promotedRomanizations: number;
+    }>;
     entitySqliteApplyConcordance?: (request: {
       databasePath: string;
       associations: Array<{

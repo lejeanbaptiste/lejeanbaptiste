@@ -1,13 +1,13 @@
 # XPath sidebar — planning & debug notes
 
-**Status:** Partially shipped, **cross-file jump/highlight still broken** (March 2026)  
-**Scope:** Desktop app sidebar XPath tab (`Explorer | Find | XPath`)
+**Status (2026-08-01):** Shipped for day-to-day use. Cross-file jump uses `openFile` + a pending jump with retries on `documentLoaded` (`useXPathJump.ts`). Treat older “still broken (March 2026)” notes below as **historical debug diary**, not current product status. Re-open this file only if jump/highlight regresses.  
+**Scope:** Desktop app sidebar XPath tab (`Explorer | Find | XPath | …`)
 
 ---
 
 ## What we built
 
-The single-purpose project sidebar was replaced with three tabs. The **XPath** tab provides inline search (no modal dialog on desktop):
+The single-purpose project sidebar was replaced with tabs. The **XPath** tab provides inline search (no modal dialog on desktop):
 
 - Query field + scope dropdown: **Current file**, **Open tabs**, **Project**, **Custom**
 - Results grouped by file, collapsible
@@ -24,8 +24,10 @@ The single-purpose project sidebar was replaced with three tabs. The **XPath** t
 | `apps/commons/src/desktop/sidebar/SidebarXPathTab.tsx` | XPath UI + keyboard nav |
 | `apps/commons/src/desktop/xpath/searchXPath.ts` | Multi-scope search orchestration |
 | `apps/commons/src/desktop/xpath/evaluateXPathAll.ts` | Raw XML xpath evaluation + path building |
-| `apps/commons/src/desktop/xpath/useXPathJump.ts` | Open tab, wait for editor, select node |
+| `apps/commons/src/desktop/xpath/useXPathJump.ts` | Open tab, wait for editor, select node (pending jump + retries) |
 | `apps/commons/src/desktop/xpath/teiXPathWalker.ts` | Walk editor DOM by `_tag` to match stored TEI xpath |
+| `apps/commons/src/desktop/xpath/editorTeiXPath.ts` | Fallback TEI xpath match in editor |
+| `apps/commons/src/desktop/xpath/xpathSourceJump.ts` | Jump when Source (Monaco) view is active |
 | `packages/cwrc-leafwriter/src/js/conversion/xml2cwrc.ts` | XML → editor HTML conversion (strips original `id`) |
 | `packages/cwrc-leafwriter/src/js/utilities.ts` | `selectNode`, `getElementXPath`, `evaluateXPathAll` |
 
@@ -35,30 +37,34 @@ The single-purpose project sidebar was replaced with three tabs. The **XPath** t
 
 | Feature | Status |
 |---------|--------|
-| Tabbed sidebar (Explorer / Find stub / XPath) | Done |
+| Tabbed sidebar (Explorer / Find / XPath / …) | Done |
 | XPath search across four scopes | Done |
 | File-grouped, collapsible results | Done |
 | Results show xpath path only | Done |
-| Keyboard nav + highlight **in the active file** | Confirmed working |
+| Keyboard nav + highlight **in the active file** | Done |
+| **Cross-file jump** — `openFile` then pending jump after load | Done (retry schedule in `useXPathJump`) |
+| **Cross-file highlight** after tab switch | Done (same path; report if flaky) |
 | Sidebar keeps focus after jump (`focusEditor: false`) | Done |
-| Tab content caching (`editorReady` on open tabs) | Done |
+| Source-mode jump | Done (`xpathSourceJump.ts`) |
 | Toolbar XPath hidden on desktop | Done |
 
 ---
 
-## What is still broken
+## Historical: what was broken (March 2026 debug)
 
-| Feature | Status |
+> Kept for the DOM-tree analysis below. Do not treat as current bugs.
+
+| Feature | Status then |
 |---------|--------|
-| **Cross-file jump** — switching tabs when selecting a result in another file | Unreliable / regressed during debug |
-| **Cross-file highlight** — element selection in editor after tab switch | Not working |
-| Debug instrumentation logs | Fetch to local debug server did not produce log files in Electron (instrumentation unverified) |
+| **Cross-file jump** | Unreliable / regressed during debug |
+| **Cross-file highlight** | Not working |
+| Debug instrumentation logs | Fetch to local debug server did not produce log files in Electron |
 
-User-reported behaviour at time of writing:
+User-reported behaviour at time of writing (March 2026):
 
 1. Earlier: tab switched but wrong/no highlight in the other file.
 2. After ref-based “fixes”: **tabs stopped switching entirely**; user stayed on one file with no highlight.
-3. v8 fix reverted ref pre-setting and uses React state for `isActive`; **still broken** at last check.
+3. v8 fix reverted ref pre-setting and uses React state for `isActive`; **still broken** at last check then.
 
 ---
 

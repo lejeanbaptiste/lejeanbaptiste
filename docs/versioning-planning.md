@@ -1,10 +1,6 @@
 # Local file history & rollback — implementation plan
 
-**Status:** Planning complete; **medium priority** (after core Open Project + save flow)  
-**Scope:** Desktop app — deduplicated snapshots on save, per-file and project rollback, offline-first  
-**Related:** `docs/todo.md`, `docs/project-schema-planning.md`
-
----
+**Status (2026-08-01):** **Mostly shipped** as Time Machine (snapshot/restore). Still open: diff preview, optional non-XML scope, export history zip, optional `revisionDesc` on restore.
 
 ## Summary
 
@@ -188,7 +184,7 @@ export interface ProjectFileConfig {
 - Optional diff preview (Monaco or simple unified diff).
 - Include selected non-XML project files in snapshot scope (settings).
 - Export history as zip for archival.
-- Relation to **`revisionDesc` / last-edited in TEI** (`docs/todo.md` Metadata)—orthogonal; optional note in header on restore, off by default.
+- Relation to **`revisionDesc` / last-edited in TEI** (header metadata) — orthogonal; optional note in header on restore, off by default.
 
 ---
 

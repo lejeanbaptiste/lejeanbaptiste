@@ -1,9 +1,6 @@
 # Dual entity database & bridge — planning
 
-**Status:** Largely implemented (2026-07-23) — see "Implementation status" below  
-**Original status:** Planning (2026-07-22)
-
----
+**Status (2026-08-01):** **Largely shipped** — bridge/orders/inbox live. Storage model partly superseded by [sqlite-entity-database-migration-plan.md](sqlite-entity-database-migration-plan.md). Still open: fork-merge menu, richer conflict UI, i18n, pedagogy copy.
 
 ## Implementation status (2026-07-23)
 

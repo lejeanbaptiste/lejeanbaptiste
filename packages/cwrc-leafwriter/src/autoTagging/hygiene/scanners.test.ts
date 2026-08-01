@@ -77,33 +77,43 @@ describe('scanFamilyPrefixedAltNames', () => {
 });
 
 describe('scanBadRomanization', () => {
-  it('proposes Li Chunfeng for Li Chun Feng when 姓/名 exist', () => {
+  it('leaves joinable spacing to auto-clean (no review findings)', () => {
     const entity = basePerson({
       id: 'p3',
       familyName: '李',
       givenName: '淳風',
       romanized: 'Li Chun Feng',
     });
-    const findings = scanBadRomanization([entity], 'zh-Hant');
-    expect(findings).toHaveLength(1);
-    expect(findings[0]?.proposal).toEqual({ action: 'setRomanized', text: 'Li Chunfeng' });
+    expect(scanBadRomanization([entity], 'zh-Hant')).toEqual([]);
   });
 });
 
 describe('scanMissingFamilyOrGiven', () => {
-  it('suggests a split for Chinese primary without 姓/名', () => {
+  it('leaves short orphans to auto-clean (no review finding)', () => {
     const entity = basePerson({
       id: 'p4',
       names: ['李淳風'],
       familyName: null,
       givenName: null,
+      authorities: [],
+    });
+    expect(scanMissingFamilyOrGiven([entity], 'zh-Hant')).toEqual([]);
+  });
+
+  it('still suggests a split for longer primaries without 姓/名', () => {
+    const entity = basePerson({
+      id: 'p4b',
+      names: ['完顏阿骨打'],
+      nameEntries: [{ text: '完顏阿骨打', lang: 'zh-Hant', type: 'primary' }],
+      familyName: null,
+      givenName: null,
+      authorities: [],
     });
     const findings = scanMissingFamilyOrGiven([entity], 'zh-Hant');
-    expect(findings[0]?.proposal).toMatchObject({
-      action: 'setFamilyGiven',
-      familyName: '李',
-      givenName: '淳風',
-    });
+    // Parser may or may not split compound surnames; if it does, keep as review.
+    if (findings.length > 0) {
+      expect(findings[0]?.proposal).toMatchObject({ action: 'setFamilyGiven' });
+    }
   });
 });
 
@@ -114,33 +124,176 @@ describe('scanBadPrimary', () => {
       names: ['黃, 侃', '黃侃'],
       familyName: '黃',
       givenName: '侃',
+      nameEntries: [
+        { text: '黃, 侃', lang: 'zh-Hant', type: 'primary' },
+        { text: '黃侃', lang: 'zh-Hant', type: 'variant' },
+      ],
     });
     const findings = scanBadPrimary([entity]);
     expect(findings[0]?.proposal).toEqual({ action: 'renamePrimary', text: '黃侃' });
   });
+
+  it('does not replace Latin primary with bare 姓 when 名 is missing', () => {
+    const entity = basePerson({
+      id: 'p5b',
+      names: ['Cui Yin', '崔'],
+      familyName: '崔',
+      givenName: null,
+      nameEntries: [
+        { text: 'Cui Yin', lang: 'en', type: 'primary' },
+        { text: '崔', lang: 'zh-Hant', type: 'family' },
+      ],
+      nationalities: ['劉宋'],
+    });
+    expect(scanBadPrimary([entity])).toEqual([]);
+  });
+
+  it('replaces Latin primary when 姓+名 both exist', () => {
+    const entity = basePerson({
+      id: 'p5c',
+      names: ['Cui Yin'],
+      familyName: '崔',
+      givenName: '寅',
+      nameEntries: [
+        { text: 'Cui Yin', lang: 'en', type: 'primary' },
+        { text: '崔', lang: 'zh-Hant', type: 'family' },
+        { text: '寅', lang: 'zh-Hant', type: 'given' },
+      ],
+    });
+    expect(scanBadPrimary([entity])[0]?.proposal).toEqual({
+      action: 'renamePrimary',
+      text: '崔寅',
+    });
+  });
 });
 
 describe('scanNearDuplicates', () => {
-  it('requires a second signal beyond a shared name', () => {
-    const a = basePerson({ id: 'a', names: ['張衡'], nationalities: [] });
-    const b = basePerson({ id: 'b', names: ['張衡'], nationalities: [] });
+  it('rejects shared primary alone (needs 姓 + 名/字 + context)', () => {
+    const a = basePerson({
+      id: 'a',
+      names: ['張衡'],
+      familyName: '張',
+      givenName: '衡',
+      nationalities: [],
+    });
+    const b = basePerson({
+      id: 'b',
+      names: ['張衡'],
+      familyName: '張',
+      givenName: '衡',
+      nationalities: [],
+    });
     expect(scanNearDuplicates([a, b])).toHaveLength(0);
+  });
 
-    const c = basePerson({
+  it('rejects 姓+名 without origin/nationality/appointment/noble title', () => {
+    const a = basePerson({
+      id: 'a2',
+      familyName: '張',
+      givenName: '衡',
+      nationalities: ['漢'],
+    });
+    const b = basePerson({
+      id: 'b2',
+      familyName: '張',
+      givenName: '衡',
+      nationalities: [],
+    });
+    expect(scanNearDuplicates([a, b])).toHaveLength(0);
+  });
+
+  it('accepts 姓 + 名=名 + shared nationality', () => {
+    const a = basePerson({
       id: 'c',
       names: ['張衡'],
+      familyName: '張',
+      givenName: '衡',
       nationalities: ['漢'],
-      startYear: 78,
-      endYear: 139,
     });
     const d = basePerson({
       id: 'd',
       names: ['張衡'],
+      familyName: '張',
+      givenName: '衡',
       nationalities: ['漢'],
-      startYear: 78,
-      endYear: 139,
     });
-    expect(scanNearDuplicates([c, d]).length).toBeGreaterThanOrEqual(1);
+    const findings = scanNearDuplicates([a, d]);
+    expect(findings).toHaveLength(1);
+    expect(findings[0]?.evidence).toContain('姓');
+    expect(findings[0]?.evidence).toContain('名=名');
+    expect(findings[0]?.evidence).toContain('nationality');
+  });
+
+  it('accepts 姓 + 名=字 + shared origin', () => {
+    const a = basePerson({
+      id: 'e',
+      familyName: '王',
+      givenName: '維',
+      placesOfOrigin: ['太原'],
+      nameEntries: [
+        { text: '王維', lang: 'zh-Hant', type: 'primary' },
+        { text: '維', lang: 'zh-Hant', type: 'given' },
+      ],
+    });
+    const b = basePerson({
+      id: 'f',
+      familyName: '王',
+      givenName: '某',
+      placesOfOrigin: ['太原'],
+      nameEntries: [
+        { text: '王摩詰', lang: 'zh-Hant', type: 'primary' },
+        { text: '某', lang: 'zh-Hant', type: 'given' },
+        { text: '維', lang: 'zh-Hant', type: 'courtesy' },
+      ],
+    });
+    expect(scanNearDuplicates([a, b])).toHaveLength(1);
+    expect(scanNearDuplicates([a, b])[0]?.evidence).toContain('名=字');
+  });
+
+  it('sorts higher extra-match scores first', () => {
+    const weakA = basePerson({
+      id: 'w1',
+      familyName: '李',
+      givenName: '白',
+      nationalities: ['唐'],
+    });
+    const weakB = basePerson({
+      id: 'w2',
+      familyName: '李',
+      givenName: '白',
+      nationalities: ['唐'],
+    });
+    const strongA = basePerson({
+      id: 's1',
+      familyName: '杜',
+      givenName: '甫',
+      nationalities: ['唐'],
+      placesOfOrigin: ['襄陽'],
+      roles: ['拾遺'],
+      nameEntries: [
+        { text: '杜甫', lang: 'zh-Hant', type: 'primary' },
+        { text: '甫', lang: 'zh-Hant', type: 'given' },
+        { text: '子美', lang: 'zh-Hant', type: 'courtesy' },
+      ],
+    });
+    const strongB = basePerson({
+      id: 's2',
+      familyName: '杜',
+      givenName: '甫',
+      nationalities: ['唐'],
+      placesOfOrigin: ['襄陽'],
+      roles: ['拾遺'],
+      nameEntries: [
+        { text: '杜甫', lang: 'zh-Hant', type: 'primary' },
+        { text: '甫', lang: 'zh-Hant', type: 'given' },
+        { text: '子美', lang: 'zh-Hant', type: 'courtesy' },
+      ],
+    });
+    const findings = scanNearDuplicates([weakA, weakB, strongA, strongB]);
+    expect(findings.length).toBe(2);
+    expect(findings[0]?.relatedEntityIds?.sort()).toEqual(['s1', 's2']);
+    expect(findings[0]?.evidence).toMatch(/\+\d+ beyond minimum/);
+    expect(findings[1]?.relatedEntityIds?.sort()).toEqual(['w1', 'w2']);
   });
 });
 

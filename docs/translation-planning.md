@@ -1,32 +1,6 @@
 # Translation Mode — Phased Implementation Plan
 
-**Status:** Phase A implemented (settings/storage foundation). Phase B implemented and revised after in-app testing:
-- Translation languages + alignment unit are configured in the **Edition metadata** dialog (not a separate modal) — see the "Translation" section in `NativeProjectMetadataPage.tsx`, persisted via `translationSettings.ts`.
-- The **Translation tab is persistent** in the right panel (`UnifiedRightPanel.tsx`), alongside File Metadata/Attributes/etc., like Attributes — not conditionally shown.
-- `TranslationTabContent.tsx` owns the language dropdown and auto-indexes (bootstraps xml:id + creates the companion file) the first time the tab is active for a given (file, language) pair — fully automatic, no confirmation dialogs.
-- The toolbar's translate icon just switches to that tab (`window.__desktopRightPanel.showTab('translation')`).
-- `TranslationPane` (cwrc-leafwriter package) still renders the actual per-unit editing surface, portaled into the tab's `#desktop-panel-translation` mount point via `App.tsx`.
-- Fixed: `splitParagraphAtCaret` (`tagInsert.ts`) now inserts a fresh empty sibling paragraph (no id copied) instead of extracting-and-splitting when the caret is at the very end of a paragraph — fixes both the "can't split at the end" bug and avoids duplicate `xml:id`s at the source.
-- Added: `reindexTranslationOnSave` (`translationEntry.ts`) — runs automatically after every file save (gated on the Translation tab being open, via `window.__desktopTranslationTabActive`, to cost nothing otherwise). Silently fixes duplicate/missing ids from any other cause (e.g. copy-paste) and resyncs every configured language's companion file, preserving existing translated content by `@corresp` match.
-
-Phase C implemented:
-- XPath search (`searchXPath.ts`) now excludes companion translation files from `project`/`custom` scope enumeration, and refuses `currentFile`/`openTabs` scope if the target is a translation file — XPath only makes sense against schema-validated documents.
-- Find/Replace (`searchText.ts`) already included translation files by virtue of an unfiltered file crawl. Added a second "Documents" scope dropdown (Source / Translation / Both) in `SidebarFindTab.tsx`, threaded through `searchText`/`useFindReplace` via `docScope.ts`, so results (and replace-all) can be restricted independently of the existing currentFile/openTabs/project/custom scope.
-- Clicking a Find result inside a translation file (`translationHitJump.ts`, `useTranslationHitJump.ts`) opens the source file, switches the right panel to the Translation tab, requests the matching language (`desktop:translation-request-language` event, handled in `TranslationTabContent.tsx`), and best-effort selects the source paragraph the match falls in (by walking up from the matched XML node to the nearest `@corresp` ancestor, then selecting that `xml:id` in the source editor) — so source and translation end up shown side by side at the right unit.
-
-Phase C additions (after in-app testing):
-- Find panel has a second "Documents" scope dropdown (Source / Translation / Both) — `docScope.ts`, threaded through `searchText.ts`/`useFindReplace.ts`. `currentFile`/`openTabs` scope also fetches companion files directly from disk (they're never open as tabs) via `translationCompanionResults.ts`.
-- Clicking a translation-file Find result (`useTranslationHitJump.ts` + `translationHitJump.ts`) opens the source, switches to the Translation tab, requests the language, selects the source unit (focusEditor=false so panel keyboard nav survives), and highlights the exact matched occurrence in the pane by decoded-character offset (`desktop:translation-highlight-text` event).
-
-Phase D implemented:
-- `translationCompanionOps.ts` (`findCompanionTranslationFiles`) — thin resolver: expected companion paths from the naming convention × configured languages, filtered by on-disk existence. No manifest.
-- Rename/move/delete cascade in `renameExplorerItem`/`moveExplorerItem`/`deleteExplorerItem` (overmind actions layer, which has project context) — companions follow the source silently; per-companion failures warn to console without failing the main operation. Directory operations don't cascade (companions inside move/delete with the directory itself).
-
-Phase E implemented: deleted `packages/cwrc-leafwriter/src/js/dialogs/translation.ts`, its `dialogManager` registration, and the now-unused `iso-639-2` dependency. The toolbar's translate icon survives and opens the Translation tab. **All phases (A–E) complete.**
-**Scope:** Desktop app — parallel source/translation editing, companion-file storage, project-level alignment setting.
-**Related:** `docs/todo.md`
-
----
+**Status (2026-08-01):** **Shipped** — Phases A–E complete (companions, tab, find scope, cascades, old dialog removed). Richer translation-pane word-processing is a separate Future item, not part of this plan.
 
 ## Context
 

@@ -1,10 +1,6 @@
 # Performance Optimization — planning notes
 
-**Status:** Planning only  
-**Scope:** Desktop app and shared LEAF-Writer runtime  
-**Related:** `docs/bundle-size-warning-planning.md`, `docs/find-replace-planning.md`, `docs/tagging-planning.md`
-
----
+**Status (2026-08-01):** **Planning only** — markup tree virtualized; next wins: review/disambiguation list virtualization, Monaco theme churn, incremental tree rebuilds, idle panel memory, event-driven bridges.
 
 ## Summary
 

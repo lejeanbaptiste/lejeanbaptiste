@@ -1138,7 +1138,7 @@ export async function enrichCandidateNames(
  * would risk a second `type="primary"` name element if normalization ever
  * puts it a character apart from the chosen canonical text.
  */
-function typedNamesFromPackRow(
+export function typedNamesFromPackRow(
   names: { text: string; type?: string; lang?: string }[] | undefined,
 ): TypedName[] | undefined {
   if (!names?.length) return undefined;

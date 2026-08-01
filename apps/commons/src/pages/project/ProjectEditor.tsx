@@ -1,4 +1,4 @@
-import { Box, Typography } from '@mui/material';
+import { Box, Button, Typography } from '@mui/material';
 import WestIcon from '@mui/icons-material/West';
 import {
   TagCommandProvider,
@@ -21,13 +21,14 @@ import { TimeMachineDialog } from '@src/desktop/TimeMachineDialog';
 import { UserNamePromptDialog } from '@src/desktop/UserNamePromptDialog';
 import { openFindPanel, DESKTOP_OPEN_FIND_EVENT } from '@src/desktop/desktopLeftPanelBridge';
 import { openNativeSchemaPicker } from '@src/desktop/openNativeSchemaPicker';
-import { useLeafWriter, waitForWriter } from '@src/hooks';
+import { resetDesktopEditorSession } from '@src/desktop/clearWriterSession';
+import { isWriterReady, useLeafWriter, waitForWriter } from '@src/hooks';
 import { leafwriterAtom, leafWriterSessionKeyAtom } from '@src/jotai';
 import { useActions, useAppState } from '@src/overmind';
 import { isDesktop } from '@src/types/desktop';
 import { modShortcut } from '@src/utils/platform';
 import { useAtom } from 'jotai';
-import { useCallback, useEffect, useRef } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 
 // Vertical center of the sidebar's folder/explorer icon in its collapsed
@@ -55,6 +56,8 @@ export const ProjectEditor = () => {
   const initStartedForRef = useRef<string | null>(null);
   const loadLibStartedForRef = useRef<number | null>(null);
   const loadGenerationRef = useRef(0);
+  const [editorLoadFailed, setEditorLoadFailed] = useState(false);
+  const [retryToken, setRetryToken] = useState(0);
 
   const { initLeafWriter, loadDocumentInWriter, loadLib, ensureLeafWriterReadyForSettings } =
     useLeafWriter();
@@ -135,6 +138,27 @@ export const ProjectEditor = () => {
     return () => registerApplicationSettingsBootstrap(async () => false);
   }, [ensureLeafWriterReadyForSettings]);
 
+  const markEditorLoadFailed = useCallback(() => {
+    setEditorLoadFailed(true);
+    notifyViaSnackbar({
+      message: t('LWC.desktop.project.messages.editor_failed_to_load'),
+      options: { variant: 'error', persist: true },
+    });
+  }, [notifyViaSnackbar, t]);
+
+  const retryEditorLoad = useCallback(() => {
+    setEditorLoadFailed(false);
+    loadLibStartedForRef.current = null;
+    initStartedForRef.current = null;
+    previousTabRef.current = null;
+    // Half-booted writer (object exists, TinyMCE never finished) needs a full
+    // remount; a plain retry would call init again with the same URL and skip setup.
+    if (window.writer && !isWriterReady()) {
+      resetDesktopEditorSession();
+    }
+    setRetryToken((token) => token + 1);
+  }, []);
+
   useEffect(() => {
     if (
       divEl.current &&
@@ -142,11 +166,18 @@ export const ProjectEditor = () => {
       !leafWriter &&
       loadLibStartedForRef.current !== sessionKey
     ) {
+      const container = divEl.current;
       loadLibStartedForRef.current = sessionKey;
-      divEl.current.style.height = '100%';
-      void loadLib(divEl.current);
+      container.style.height = '100%';
+      void (async () => {
+        const ok = await loadLib(container);
+        if (!ok) {
+          loadLibStartedForRef.current = null;
+          markEditorLoadFailed();
+        }
+      })();
     }
-  }, [isProjectReady, leafWriter, loadLib, sessionKey]);
+  }, [isProjectReady, leafWriter, loadLib, markEditorLoadFailed, retryToken, sessionKey]);
 
   useEffect(() => {
     if (!leafWriter) {
@@ -177,20 +208,32 @@ export const ProjectEditor = () => {
 
       const shouldApply = () => !cancelled && loadGenerationRef.current === generation;
 
-      if (!window.writer) {
+      if (!isWriterReady()) {
         if (initStartedForRef.current !== leafWriter.id) {
           initStartedForRef.current = leafWriter.id;
-          await initLeafWriter({
+          const ready = await initLeafWriter({
             filePath: targetPath,
             content: targetContent,
             shouldApply,
           });
+          if (!shouldApply()) return;
+          if (!ready) {
+            initStartedForRef.current = null;
+            markEditorLoadFailed();
+            return;
+          }
         } else {
-          await waitForWriter();
+          const ready = await waitForWriter();
+          if (!shouldApply()) return;
+          if (!ready) {
+            initStartedForRef.current = null;
+            markEditorLoadFailed();
+            return;
+          }
         }
       }
 
-      if (!shouldApply() || !window.writer) return;
+      if (!shouldApply() || !isWriterReady()) return;
       if (previousTabRef.current === targetPath) return;
 
       const restoreDirty = openTabs.find((tab) => tab.filePath === targetPath)?.dirty ?? false;
@@ -203,6 +246,9 @@ export const ProjectEditor = () => {
       );
       if (shouldApply() && loaded) {
         previousTabRef.current = targetPath;
+        setEditorLoadFailed(false);
+      } else if (shouldApply() && !loaded) {
+        markEditorLoadFailed();
       }
     };
 
@@ -218,7 +264,9 @@ export const ProjectEditor = () => {
     leafWriter,
     initLeafWriter,
     loadDocumentInWriter,
+    markEditorLoadFailed,
     openTabs,
+    retryToken,
   ]);
 
   useEffect(() => {
@@ -377,6 +425,29 @@ export const ProjectEditor = () => {
                   {t('LWC.desktop.project.no_file_open', { shortcut: modShortcut('N') })}
                 </Typography>
               )}
+            </Box>
+          )}
+          {editorLoadFailed && resource && (
+            <Box
+              sx={{
+                alignItems: 'center',
+                bgcolor: 'background.default',
+                display: 'flex',
+                flexDirection: 'column',
+                gap: 2,
+                height: '100%',
+                inset: 0,
+                justifyContent: 'center',
+                position: 'absolute',
+                zIndex: 2,
+              }}
+            >
+              <Typography color="text.secondary" variant="body1">
+                {t('LWC.desktop.project.messages.editor_failed_to_load')}
+              </Typography>
+              <Button onClick={retryEditorLoad} variant="contained">
+                {t('LWC.commons.retry')}
+              </Button>
             </Box>
           )}
           <Box

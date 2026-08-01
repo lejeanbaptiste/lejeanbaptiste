@@ -253,10 +253,6 @@ export const AchievementsDialog = ({ onClose, open }: AchievementsDialogProps) =
     if (!didMountRef.current) {
       didMountRef.current = true;
       refreshPortrait();
-      void window.electronAPI
-        ?.getEncoderName()
-        .then(setEncoderName)
-        .catch(() => setEncoderName(''));
       return;
     }
     // Wait out the dialog's own close transition (keepMounted means the DOM
@@ -269,6 +265,26 @@ export const AchievementsDialog = ({ onClose, open }: AchievementsDialogProps) =
       return () => clearTimeout(timer);
     }
   }, [open]);
+
+  // Keep the Service Record name in sync with the splash name prompt.
+  // TitleBar mounts this dialog early (empty name); without this listener the
+  // header stays "Unknown Encoder" until a full remount.
+  useEffect(() => {
+    const syncEncoderName = () => {
+      const fromBridge = window.__ljbCommonsUi?.encoderName;
+      if (typeof fromBridge === 'string') {
+        setEncoderName(fromBridge);
+        return;
+      }
+      void window.electronAPI
+        ?.getEncoderName()
+        .then(setEncoderName)
+        .catch(() => setEncoderName(''));
+    };
+    syncEncoderName();
+    window.addEventListener('ljbCommonsUiChanged', syncEncoderName);
+    return () => window.removeEventListener('ljbCommonsUiChanged', syncEncoderName);
+  }, []);
 
   useEffect(() => {
     if (!state || codeFocused) return;

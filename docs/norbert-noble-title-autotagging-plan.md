@@ -1,13 +1,6 @@
 # Norbert noble-title autotagging and person-context data
 
-**Status:** Implemented in the authority-tagging path; UI validation and live
-data-refresh scheduling remain follow-up work.
-
-This document records the agreed direction for bringing Norbert's contextual
-person matching into the Norbert plugin. The goal is to preserve the useful
-parts of Norbert's existing workflow—especially concatenated Chinese person
-descriptions—without importing hypothetical combinations into the user's
-entity database.
+**Status (2026-08-01):** **Mostly shipped** — wrapper pack + concatenation path live in the authority-tagging flow. Follow-ups: personWrapper key resolution/validation, expander cache/scheduling, panel inclusion of wrappers/`roleName`.
 
 ## Problem
 

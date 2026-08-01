@@ -1,14 +1,6 @@
-# Entity sync manual test plan
+# Entity sync — manual test plan
 
-**Status:** Ready to run (2026-07-23)
-**Purpose:** a checklist for testing the CEDB↔PEDB sync work in the real desktop
-app by hand — the automated suite (`entitySync.smoke.test.ts` and the ~30 unit
-test files under `packages/cwrc-leafwriter/src/autoTagging/`) already proves the
-underlying logic; this plan is for the parts only the running app can show you:
-dialogs, timing, and whether it *feels* right.
-**Companion docs:** [`dual-entity-database-planning.md`](dual-entity-database-planning.md) (§ Implementation status has the full module map), [`entity-registry-merges-and-splits.md`](entity-registry-merges-and-splits.md)
-
----
+**Status (2026-08-01):** **Ready-to-run QA checklist** — sync features largely built. Product gaps called out here: fork-merge menu, Bridge conflict “pick a value” UI, i18n for new strings.
 
 ## Before you start
 

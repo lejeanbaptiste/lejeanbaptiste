@@ -29,6 +29,8 @@ export function defaultChineseNameSegmenter(
 ): PluginPersonNameSegmentResult | null {
   if (!isChineseLanguageCode(input.projectLang)) return null;
   const { name, romanize } = input;
+  // Dump placeholders like "nan" (and any Latin) are not Chinese personal names.
+  if (!/^[\u4e00-\u9fff]+$/u.test(name)) return null;
   if (name.length < 2 || name.length > 4) return null;
 
   const compound = COMPOUND_SURNAMES.find((surname) => name.startsWith(surname));

@@ -91,6 +91,7 @@ import {
   recordDeclinedFirstPrompt,
   runAuthorityLifecyclePipeline,
   setAuthorityLifecycleEnabled,
+  setAuthorityLifecycleReferenceDataEnabled,
 } from './authorityLifecycle';
 import {
   lookupAuthorityRef,
@@ -209,6 +210,7 @@ import {
   renameEntitySqlitePrimaryName,
   searchEntitySqlite,
   setEntitySqliteRomanizedName,
+  autoCleanEntitySqliteNames,
   setEntitySqliteUserDate,
   setEntitySqliteUserWorkAuthors,
   setEntitySqliteUserWorkDate,
@@ -1909,6 +1911,17 @@ const registerIpcHandlers = () => {
     },
   );
   ipcMain.handle(
+    'entitySqlite:autoCleanNames',
+    async (
+      _event,
+      request: import('./entityDbSqlite/readService').EntitySqliteAutoCleanNamesRequest,
+    ) => {
+      await assertRendererReadPath(request.databasePath);
+      await assertRendererWritePath(request.databasePath);
+      return autoCleanEntitySqliteNames(request);
+    },
+  );
+  ipcMain.handle(
     'entitySqlite:exportXml',
     async (_event, request: import('./entityDbSqlite/readService').EntitySqliteXmlRequest) => {
       await assertRendererReadPath(request.databasePath);
@@ -2745,10 +2758,13 @@ const registerIpcHandlers = () => {
     return getAuthorityLifecycleStatus(folder);
   });
 
-  ipcMain.handle('authorityLifecycle:maybeCheckUpdates', async () => {
-    const folder = await getEntityDbFolderOrNull();
-    return maybeCheckAuthorityUpdates(folder);
-  });
+  ipcMain.handle(
+    'authorityLifecycle:maybeCheckUpdates',
+    async (_event, options?: { force?: boolean }) => {
+      const folder = await getEntityDbFolderOrNull();
+      return maybeCheckAuthorityUpdates(folder, options);
+    },
+  );
 
   ipcMain.handle('authorityLifecycle:revealFolder', async () => {
     // Reveals the local authority-assets folder (packs/databases), not the
@@ -2789,6 +2805,30 @@ const registerIpcHandlers = () => {
         new Notification({
           title: 'Authority setup failed',
           body: result.error ?? 'Could not download or compile authority data.',
+        }).show();
+      }
+      return result;
+    },
+  );
+
+  ipcMain.handle(
+    'authorityLifecycle:setReferenceDataEnabled',
+    async (event, enabled: boolean) => {
+      const folder = await getEntityDbFolderOrNull();
+      const result = await setAuthorityLifecycleReferenceDataEnabled(
+        folder,
+        Boolean(enabled),
+        (progress) => emitAuthorityLifecycleProgress(event, progress),
+      );
+      if (result.ok && enabled) {
+        new Notification({
+          title: 'Reference databases ready',
+          body: 'CBDB, Norbert, and DILA reference data were installed for enrichment.',
+        }).show();
+      } else if (!result.ok) {
+        new Notification({
+          title: 'Reference data setup failed',
+          body: result.error ?? 'Could not download reference databases.',
         }).show();
       }
       return result;
@@ -2855,7 +2895,7 @@ const registerIpcHandlers = () => {
             : 'Download Chinese authority databases?';
       const fallbackDetail =
         profile === 'japanese'
-          ? 'This project uses Japanese as its source language. LEAF-Writer can download NDL and Wikidata authority packs for automated tagging. They are stored locally on this machine, not synced with your entity database.'
+          ? 'This project uses Japanese as its source language. LEAF-Writer can download NDL and Wikidata authority packs for automated tagging, and install Sanmiao (East Asian dates) for date tagging. They are stored locally on this machine, not synced with your entity database.'
           : profile === 'tibetan'
             ? 'This project uses Tibetan as its source language. LEAF-Writer can download Wikidata authority packs for automated tagging. They are stored locally on this machine, not synced with your entity database.'
             : 'This project uses Chinese as its source language. LEAF-Writer can download CBDB (China Biographical Database, ~600 MB), the DILA Buddhist Studies authorities (~85 MB), and Wikidata authority packs for automated tagging. They are stored locally on this machine, not synced with your entity database.';
@@ -3295,7 +3335,9 @@ app.whenReady().then(() => {
   registerIpcHandlers();
   registerNativeDialogIpc();
   registerLemminxIpc(() => mainWindow);
-  initAutoUpdater();
+  initAutoUpdater({
+    onCompanionNotifyClick: () => sendMenuAction('look-for-updates'),
+  });
   void (async () => {
     await seedDevPluginsIfEmpty();
     await getPluginHostSnapshot();

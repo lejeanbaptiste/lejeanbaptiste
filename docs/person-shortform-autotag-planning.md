@@ -1,8 +1,6 @@
 # Person short-form auto-tag (phase 2) — Planning
 
-*2026-07-25. Follows from the name-type vocabulary in [`nameTypes.ts`](../packages/cwrc-leafwriter/src/autoTagging/nameTypes.ts), Tag bomb / disambiguation in `autoTagging/`, and the CBDB/Wikidata person-string policy in the sibling `authority extraction` repo.*
-
-*Updated same day with three-bucket policy, custom name types, entities-panel backfill, and zh/ja/bo/en presets.*
+**Status (2026-08-01):** **Shipped** — three-bucket policy, Phase 2 mode, entities-panel backfill, and Phase B link enrichment from recompiled pack `names[]` (bare 字/名/姓 at link + Attributes Lookup mint).
 
 ## Problem
 
@@ -65,7 +63,7 @@ Threshold: start at **3** code points (matching the spirit of CBDB’s “longer
 
 | Source | What lands today | Gap |
 |--------|------------------|-----|
-| CBDB pack `names[]` | `王介甫` as `courtesy` (姓+字), longer art/…, **plus bare 字/名/姓** (pack B — compile in `authority extraction`) | Recompile installed CBDB pack into your entity DB folder to pick this up |
+| CBDB pack `names[]` | Bare 字/名/姓 (and typed alts) → entity at **link** (disambiguation accept + Attributes Lookup mint/link) and via backfill | Recompile installed CBDB pack into your entity DB folder to pick this up |
 | Wikidata live fetch | P1782 bare 字, P735/P734 given/family | Offline / CBDB-only miss |
 | Manual panel | `setNameType` / add typed name | Escape hatch |
 
@@ -172,7 +170,7 @@ Scope of keyed entities for Phase 2 seed: **active document / selection** for v1
 | Phase | Work |
 |-------|------|
 | **A — Settings + three buckets** | **Done (2026-07-25).** Policy model + Tag bomb/PEDB filtering + Settings UI (`desktop-name-type-policy.tsx`). |
-| **B — Link enrichment** | Bare 字/名/姓 onto entities at link (pack `names[]` and/or CBDB fields); can follow pack rebuild. |
+| **B — Link enrichment** | **Done (2026-08-01).** Bare 字/名/姓 onto entities at link from pack `names[]` (`preferCanonicalFamilyGiven` + typed `sqliteAddName`); Attributes Lookup mint/link uses the same pack fields. |
 | **C — Phase 2 mode** | **Done (2026-07-25).** Dialog method; min-length 1; first-appearance checkbox; **always** review; name-type-filtered candidates. |
 | **D — Backfill + labels** | **Done (2026-07-25).** Entities-panel backfill button; ja/bo label glosses in dropdowns; per-entity refresh in edit dialog. |
 
@@ -195,10 +193,12 @@ Scope of keyed entities for Phase 2 seed: **active document / selection** for v1
 
 | Piece | Role |
 |-------|------|
-| `autoTagging/nameTypes.ts` | Canonical types; today only binary `DEFAULT_UNTAGGABLE_TYPES` |
+| `autoTagging/nameTypes.ts` | Canonical types; `preferCanonicalFamilyGiven` for pack 姓/名 |
 | `autoTagging/authoritySettings.ts` | Persists policy map + custom types; legacy `excludedNameTypes` migration |
 | `autoTagging/nameTypeTaggingPolicy.ts` | Three-bucket model, presets, phase-1 seed filtering |
 | `autoTagging/entityOps.ts` | `taggableEntityNames`, `setNameType` |
-| `autoTagging/disambiguationCandidates.ts` | Link-time typed names |
+| `autoTagging/disambiguationCandidates.ts` | Pack `typedNames` on candidates; `collectTypedNamesForCandidate` |
+| `autoTagging/integration.ts` | Disambiguation `resolveMention` — Phase B link enrichment |
+| `autoTagging/lookupResolve.ts` | Attributes Lookup mint/link — pack `names[]` enrichment |
 | `autoTagging/ownDatabaseCandidates.ts` | PEDB→candidates; ignores name types today |
 | `authority extraction/cbdb/personAltNames.mjs` | `buildPersonNamesFromAlts`: 姓+字 in searchStrings; bare 字/名/姓 in `names[]` only |

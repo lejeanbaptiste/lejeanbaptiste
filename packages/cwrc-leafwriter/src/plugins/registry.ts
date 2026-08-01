@@ -82,6 +82,9 @@ export async function refreshPluginRegistry(): Promise<PluginHostSnapshotView | 
   rebuildPackSpecs(snapshot);
   rebuildContributions(snapshot);
   await loadEnabledPluginModules(snapshot, previousEnabled);
+  if (typeof window !== 'undefined') {
+    window.dispatchEvent(new CustomEvent('ljbPluginRegistryChanged'));
+  }
   return snapshot;
 }
 

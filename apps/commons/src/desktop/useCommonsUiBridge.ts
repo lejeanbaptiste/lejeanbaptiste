@@ -315,6 +315,22 @@ export const useCommonsUiBridge = () => {
     [refreshAuthorityLifecycle],
   );
 
+  const setAuthorityLifecycleReferenceDataEnabled = useCallback(
+    async (enabled: boolean): Promise<AuthorityLifecycleRunResult> => {
+      const result =
+        (await window.electronAPI?.authorityLifecycleSetReferenceDataEnabled?.(enabled)) ?? {
+          ok: false,
+          error: 'Authority lifecycle bridge is unavailable.',
+        };
+      if (result.ok && enabled) {
+        await afterAuthorityPackLifecycleSuccess();
+      }
+      await refreshAuthorityLifecycle();
+      return result;
+    },
+    [refreshAuthorityLifecycle],
+  );
+
   const runAuthorityLifecycleUpdate =
     useCallback(async (): Promise<AuthorityLifecycleRunResult> => {
       const result = (await window.electronAPI?.authorityLifecycleUpdate?.()) ?? {
@@ -377,6 +393,7 @@ export const useCommonsUiBridge = () => {
       testAiConnection,
       refreshAuthorityLifecycle,
       setAuthorityLifecycleEnabled,
+      setAuthorityLifecycleReferenceDataEnabled,
       runAuthorityLifecycleUpdate,
       revealAuthorityLifecycleFolder,
       moveEntityDbFolder,
@@ -405,6 +422,7 @@ export const useCommonsUiBridge = () => {
     openDialog,
     setAiApiSettings,
     setAuthorityLifecycleEnabled,
+    setAuthorityLifecycleReferenceDataEnabled,
     setEncoderName,
     setRememberWorkspaceOnStartup,
     setSkipCopyPasteHelp,

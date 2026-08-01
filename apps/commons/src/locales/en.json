@@ -48,6 +48,7 @@
       "privacy_settings": "Privacy Settings",
       "recent": "recent",
       "reject_all": "Reject all",
+      "retry": "Retry",
       "request expired": "request expired",
       "sample_document": "sample document",
       "samples": "samples",
@@ -358,9 +359,17 @@
         "refreshing": "Refreshing…",
         "schema_is_up_to_date": "Schema is up to date.",
         "app_is_up_to_date": "App is up to date.",
+        "checking_for_updates": "Checking for updates…",
+        "everything_up_to_date": "Everything is up to date.",
+        "update_check_unavailable": "Update check is unavailable. Restart the desktop app.",
         "app_update_downloading": "A new version ({{version}}) was found and is downloading. It will install the next time you quit the app.",
         "app_update_check_failed_title": "Update check failed",
         "app_update_check_failed": "Could not check for app updates: {{error}}",
+        "authority_updates_available": "Authority pack updates are available.",
+        "authority_updating": "Updating authority packs…",
+        "authority_updated": "Authority packs updated.",
+        "authority_update_failed": "Authority pack update failed.",
+        "update_now_button": "Update now",
         "plugin_updates_available": "{{count}} plugin update(s) available.",
         "open_plugins_button": "Open plugins",
         "no_file_open": "Open a file to begin editing. Otherwise, create a new file with {{shortcut}} or import your files from the system menu.",
@@ -407,7 +416,8 @@
           "project_not_fully_loaded": "Project is not fully loaded.",
           "imported_documents_success": "Imported {{documentCount}} document{{documentCount, plural, one {} other {s}}}.",
           "imported_documents_success_with_keys": "Imported {{documentCount}} document{{documentCount, plural, one {} other {s}}}; moved {{keyCount}} foreign entity key{{keyCount, plural, one {} other {s}}} to backup (@ana).",
-          "imported_documents_with_problems_snackbar": "Imported {{documentCount}} document{{documentCount, plural, one {} other {s}}}; {{problemCount}} problem file{{problemCount, plural, one {} other {s}}}. See console for details."
+          "imported_documents_with_problems_snackbar": "Imported {{documentCount}} document{{documentCount, plural, one {} other {s}}}; {{problemCount}} problem file{{problemCount, plural, one {} other {s}}}. See console for details.",
+          "editor_failed_to_load": "The editor failed to load. You can try again."
         },
         "select_language": "Select language…",
         "use_local_schema_file": "Use local schema file…",
@@ -471,7 +481,7 @@
         },
         "japanese": {
           "message": "Download Japanese authority packs?",
-          "detail": "This project uses Japanese as its source language. LEAF-Writer can download NDL and Wikidata authority packs for automated tagging. They are stored next to your central entity database."
+          "detail": "This project uses Japanese as its source language. LEAF-Writer can download NDL and Wikidata authority packs for automated tagging, and install Sanmiao (East Asian dates) for date tagging. They are stored next to your central entity database."
         },
         "tibetan": {
           "message": "Download Tibetan authority packs?",

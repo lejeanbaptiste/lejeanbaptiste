@@ -5,6 +5,8 @@ import { addEntity, createEntitiesScaffold } from './entities';
 import {
   attachAuthority,
   addEntityName,
+  getFamilyName,
+  getGivenName,
   setFamilyName,
   setGivenName,
   setRomanizedName,
@@ -488,6 +490,8 @@ describe('AutoTaggingSession', () => {
           lang: input.language ?? undefined,
           type: input.nameType ?? undefined,
         });
+        if (input.nameType === 'family') setFamilyName(doc, input.entityId, input.text);
+        if (input.nameType === 'given') setGivenName(doc, input.entityId, input.text);
         await store.saveEntities(doc, { allowSqliteFullReimport: true });
         return true;
       });
@@ -557,6 +561,51 @@ describe('AutoTaggingSession', () => {
 
       expect(getCurrent()).toContain(`key="${entityId}"`);
       expect(files.get('/proj/entities.xml')).toContain(entityId);
+    });
+
+    it('enriches family/given and typed short forms from pack names at link', async () => {
+      const { store, files } = makeStore();
+      wireSqliteLookupWrites(store, files);
+      const { writer } = makeWriter(XML);
+      const session = new AutoTaggingSession(writer, 'ignore', store);
+
+      const doc = await session.getDocument();
+      const suggestions = dictionaryTag(doc, [{ string: '張衡', tag: 'persName' }], 'ignore');
+      await session.apply(suggestions);
+
+      const groups = await session.scanMentions();
+      const instance = groups.find((item) => item.surface === '張衡')?.instances[0];
+      if (!instance) throw new Error('missing mention instance');
+
+      const entityId = await session.resolveMention(
+        instance,
+        {
+          id: 'new',
+          label: '張衡',
+          sources: ['CBDB'],
+          authorityIds: [{ type: 'CBDB', value: '376' }],
+          typedNames: [
+            { text: '張', type: 'family' },
+            { text: '衡', type: 'given' },
+            { text: '平子', type: 'courtesy' },
+          ],
+        },
+        { createNew: true },
+      );
+
+      const entitiesDoc = new DOMParser().parseFromString(
+        files.get('/proj/entities.xml')!,
+        'application/xml',
+      );
+      expect(getFamilyName(entitiesDoc, entityId)).toBe('張');
+      expect(getGivenName(entitiesDoc, entityId)).toBe('衡');
+      const person = Array.from(entitiesDoc.getElementsByTagName('person')).find(
+        (el) => el.getAttribute('xml:id') === entityId,
+      )!;
+      const nameTexts = Array.from(person.getElementsByTagName('persName')).map(
+        (el) => el.textContent,
+      );
+      expect(nameTexts).toEqual(expect.arrayContaining(['平子', '張', '衡']));
     });
 
     it('writes distinct per-source elements when the candidate carries authorityAssertions', async () => {

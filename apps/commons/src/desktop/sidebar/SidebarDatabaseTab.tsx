@@ -752,6 +752,9 @@ export const SidebarDatabaseTab = ({ active = false }: SidebarDatabaseTabProps) 
   const [mergeIds, setMergeIds] = useState<string[] | null>(null);
   const [mergeKeepId, setMergeKeepId] = useState<string>('');
   const [editEntity, setEditEntity] = useState<EntitySummary | null>(null);
+  /** Tracks the open card id across async backfill so we can refresh it after list reload. */
+  const editEntityIdRef = useRef<string | null>(null);
+  editEntityIdRef.current = editEntity?.id ?? null;
   const [editCanonicalName, setEditCanonicalName] = useState('');
   const [editingName, setEditingName] = useState(false);
   const nameBeforeRename = useRef('');
@@ -1354,6 +1357,15 @@ export const SidebarDatabaseTab = ({ active = false }: SidebarDatabaseTabProps) 
         }
 
         await reload();
+        // Keep the open entity card in sync with newly backfilled names/dates/badges.
+        const openId = editEntityIdRef.current;
+        if (
+          openId &&
+          activeStore &&
+          (!entityIds || entityIds.length === 0 || entityIds.includes(openId))
+        ) {
+          await refreshEditEntityFromSqlite(activeStore, openId);
+        }
         const scope =
           entityIds?.length === 1 ? 'this person' : `${result.entitiesScanned} linked persons`;
         notifyViaSnackbar({
@@ -1497,6 +1509,10 @@ export const SidebarDatabaseTab = ({ active = false }: SidebarDatabaseTabProps) 
     });
     setEditNameTypes(Object.fromEntries(names.map((name) => [name.text, name.nameType ?? ''])));
     setEditNameLanguages(Object.fromEntries(names.map((name) => [name.text, name.language ?? ''])));
+    // Header romanization is separate state — keep it current after link/backfill.
+    const refreshedRomanized =
+      names.find((name) => name.language?.endsWith('-Latn'))?.text ?? null;
+    if (refreshedRomanized) setEditRomanized(refreshedRomanized);
   };
 
   /**
@@ -1817,12 +1833,30 @@ export const SidebarDatabaseTab = ({ active = false }: SidebarDatabaseTabProps) 
               value: parsed?.value ?? uri,
             };
           });
-          const handled = await runSqliteEntityMutation(
+          await runSqliteEntityMutation(
             entity.id,
             'Linking authority…',
             async (targetStore) => {
               for (const ref of refs) {
                 await targetStore.sqliteAttachAuthority(entity.id, ref.type, ref.value);
+              }
+              // Mirror EntityLookupField: enrich names/dates from packs + Wikidata
+              // so the open card shows badges and new data without a second Refresh.
+              if (
+                (entity.kind === 'person' || entity.kind === 'work') &&
+                window.electronAPI?.entitySqliteApplyAuthorityBackfillPatch
+              ) {
+                await backfillEntitiesSqlite(targetStore, {
+                  entityIds: [entity.id],
+                  readPackFile: cachedPackReader(),
+                  projectLang,
+                  desktopLanguage: i18n.language,
+                  expandWikidataWorks: entity.kind === 'person',
+                  lookupAuthorityRef: window.electronAPI?.authorityRefLookup,
+                }).catch(() => undefined);
+                if (targetStore === store) {
+                  await autoSyncEntitiesToCentral(null, [entity.id]).catch(() => undefined);
+                }
               }
             },
           );
@@ -1857,6 +1891,9 @@ export const SidebarDatabaseTab = ({ active = false }: SidebarDatabaseTabProps) 
           scheduleMirrorSync();
         }
         await reload();
+        if (editEntityIdRef.current === entity.id) {
+          await refreshEditEntityFromSqlite(targetStore, entity.id);
+        }
       } catch (error) {
         setLoadError(error instanceof Error ? error.message : String(error));
       } finally {

@@ -1,11 +1,6 @@
 # Wikidata tag packs — action plan
 
-Status: planning (2026-07-05).  
-Parent: [authority-packs-planning.md](authority-packs-planning.md).  
-Build phases (human checkpoints): [authority extraction/docs/phases.md](../authority%20extraction/docs/phases.md).  
-Scope: mine Wikidata into **offline tag string databases** for LEAF/LJB entity types **person, place, organization, work** (not `thing`). Surface forms only at tag time; **Q-id retained in the pack** for disambiguation lookup later (LINCS/Wikidata reconcile already wired in the app).
-
----
+**Status (2026-08-01):** **Planning / paused on dump** — extract/compile scripts exist in `authority extraction`; full pack builds and LJB compile path still open. Parent: [authority-packs-planning.md](authority-packs-planning.md).
 
 ## 1. Goal
 
@@ -421,7 +416,7 @@ The pack’s **`qindex.ndjson`** is the offline shortlist so you are not queryin
    Recommendation: exclude unless pack flag `includeFictional=true`.
 
 4. **Where build tools live?**  
-   Recommendation: [`authority extraction`](../authority%20extraction/) sibling repo; CI builds packs on release tag only (not every commit). See [authority-extraction.md](authority-extraction.md) and [phases.md](../authority%20extraction/docs/phases.md).
+   Recommendation: [`authority extraction`](../../authority%20extraction/) sibling repo; CI builds packs on release tag only (not every commit). See [authority-extraction.md](authority-extraction.md) and [phases.md](../../authority%20extraction/docs/phases.md).
 
 5. **Overlap with CBDB packs?**  
    Recommendation: ship both; dedupe at disambiguation via shared Q-id / CBDB idno on Wikidata items ([~2k DILA↔Wikidata links](authority-databases-planning.md) show the pattern).

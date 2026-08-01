@@ -72,7 +72,7 @@ On **TEI catalog schema install** (TEI All, TEI Lite, Simple Print, jTEI) and on
 
 **Trigger:** automatic for TEI catalog installs; `ensureSanmiaoDatesSchema` patches legacy projects on open.
 
-**Debugging:** see `docs/sanmiao-schema-debugging-session.md` for the full bug list and diagnostic techniques.
+**Debugging:** see [archive/sanmiao-schema-debugging-session.md](archive/sanmiao-schema-debugging-session.md) for the full bug list and diagnostic techniques.
 
 ---
 

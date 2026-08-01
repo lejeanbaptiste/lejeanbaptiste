@@ -1,7 +1,7 @@
 # Find & Replace — planning notes
 
-**Status:** Find shipped. Replace phase 2a (raw XML text-run replace) shipped. Replace phase 2b (WYSIWYG visible-text) not yet started.  
-**Scope:** Desktop sidebar **Find** tab (`Explorer | Find | XPath`)
+**Status (2026-08-01):** **Mostly shipped** — Find + raw XML replace/all + well-formedness checks done. Phase **2b** (WYSIWYG visible-text replace across markup) not started.  
+**Scope:** Desktop sidebar **Find** tab (`Explorer | Find | XPath | …`)
 
 ---
 
@@ -9,7 +9,8 @@
 
 ### UI
 
-- **Find** and **Replace** text fields (Replace disabled until phase 2)
+- **Find** and **Replace** text fields
+- **Replace** / **Replace all** (phase 2a)
 - **Scope** dropdown — same as XPath: Current file / Open tabs / Project / Custom
 - **Use regular expression** checkbox
 - **Find** button; Enter in Find field runs search
@@ -85,6 +86,8 @@ Find/replace on **visible text** only (tags invisible), preserving inline markup
 ---
 
 ## Phase 3 — Editor highlight
+
+**Status:** Largely done for Find (jump + selection / highlight helpers under `apps/commons/src/desktop/find/`). XPath has its own highlight path. Remaining nuance is shared with XPath (raw XML offsets ≠ editor DOM).
 
 - Map `line` / `column` / `start` offset → scroll Raw XML or WYSIWYG selection
 - Options: Monaco in edit-source dialog, future full-file code view, or TEI xpath parent for coarse WYSIWYG highlight

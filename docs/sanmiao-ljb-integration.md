@@ -1,7 +1,7 @@
 # Sanmiao ↔ LJB integration — source code audit
 
-**Status:** Planning  
-**Related:** `docs/Auto-tagging.md`, `docs/sanmiao-dates-schema.md`
+**Status (2026-08-01):** **Shipped** on desktop via the **`cjk-dates`** plugin (`sanmiao.tei_bridge`). Japanese pack onboarding installs/enables it; Chinese assets dialog can too. This file is the original design audit (namespace risks + fragment-bridge recommendation) — keep for Sanmiao internals; do not treat “Planning” sections below as unfinished product work.  
+**Related:** [Auto-tagging.md](Auto-tagging.md), [sanmiao-dates-schema.md](sanmiao-dates-schema.md)
 
 ---
 

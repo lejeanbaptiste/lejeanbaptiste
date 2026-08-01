@@ -1,13 +1,13 @@
 # Auto-tagging & Disambiguation — Work Phases
 
-Companion to [Auto-tagging.md](Auto-tagging.md). Each phase lists what must be **decided** or **prepared** before starting, and what "done" looks like. Phases are ordered so that every later phase only produces or consumes suggestion objects — the machinery from Phases 0–1 is never rebuilt.
+**Status (2026-08-01):** **In progress** — Phases 0–1, review UI, tag bomb / disambiguation, and AI suggest are built. Still open: date curator polish (2b), AI audit apply / prompt profiles (5), Phase 6 ranking. Companion to [Auto-tagging.md](Auto-tagging.md).
 
 ## Phase 0 — Foundations: suggestion object, anchoring, apply engine
 
 The invisible layer everything else sits on. No user-facing feature yet.
 
 **Decide first:**
-- [x] Final schema of the suggestion object (fields, action vocabulary, status vocabulary) — freeze it, since every method will emit it. **DPM:** OK for Claude's suggestion in [Auto-tagging](Auto-tagging).
+- [x] Final schema of the suggestion object (fields, action vocabulary, status vocabulary) — freeze it, since every method will emit it. **DPM:** OK for Claude's suggestion in [Auto-tagging](Auto-tagging.md).
 - [x] Anchor verification policy: exact-match only, or tolerate whitespace/normalization differences? What normalization (Unicode NFC?) is applied before matching? **DPM:** tolerate whitespace and normalisation, NFC.
 - [x] Temporary-id scheme for in-session anchoring: attribute name, id format, and the guarantee that they are flushed on session end / never serialized to disk. **DPM:** agreed, we just need to make sure that it is compatible with different schemata.
 - [x] Where suggestion batches live while pending (memory only, or persisted so a review can be resumed?). **DPM:** maybe a hidden cache folder to be emptied after so many days.. 
@@ -273,8 +273,8 @@ The panel for the leftovers 4a couldn't auto-resolve, plus live authority lookup
 - 32 new tests across `chunk`, `llmCache`, `llmParse`, `llmSuggest`, `llmAudit` (fake in-memory `LlmClient` implementations — no network in tests); all pass, typecheck clean (pre-existing unrelated `integration.ts` TS2774 and pre-existing React-act failures in `mentions`/`reviewController`/`ReviewPanel` untouched).
 - **Still open:** auto-accept rules storage/UI; apply-side handling for `remove`/`retag`/`redraw-boundary` actions in `apply.ts` (today only `add` is applied — audit's other actions reach the review walk correctly shaped but still need an apply-engine branch); hand-testing audit prompts against a running local Ministral model.
 - **UI wired (2026-07-04):** Auto-tagging dialog → **AI suggest** (desktop only) reads Application Settings → AI API, runs `llmSuggest` with `suggest.v3`, persists chunk cache under `.ljb/ai-cache/`, hands off to the docked review panel. Tag picker: `persName` / `placeName` (bootstrap only — see **Immediate future** below).
-- **Validation harness (2026-07-04): built and run live.** `validationHarness.ts` + opt-in `validationHarness.live.test.ts`. **Gold-standard (`gold_test.xml`, 65 mentions):** Groq Qwen3.6-27B + `suggest.v3` **F1=.74 R=.68** (~5 s) — best run; prompt v1→v3 nearly doubled recall. Earlier: local Ministral F1=.37; hosted Mistral F1=.35. Full numbers in [phase5-validation-results.md](phase5-validation-results.md).
-- **Provider/free-tier options (2026-07-04):** surveyed beyond the local Ministral instance — Groq's free tier hosts a genuine Qwen3-32B at 60 RPM/500K TPD (official docs), enough for ~8 full-document runs/day at zero cost, and speaks the same OpenAI-compatible shape `MistralLlmClient` already handles (model/baseUrl swap only). Mistral's own hosted free tier no longer publishes exact numbers; third-party estimates (~2 RPM) would make it no faster than local for full-document runs. GuwenBERT and similar encoder-only classical-Chinese models don't fit this architecture at all — they'd need a token-classification head, i.e. the deferred NER path, not another `LlmClient`. Full write-up and the recommended next comparison (Groq Qwen3-32B once a properly complete gold document exists) in [phase5-ai-integration-log.md](phase5-ai-integration-log.md).
+- **Validation harness (2026-07-04): built and run live.** `validationHarness.ts` + opt-in `validationHarness.live.test.ts`. **Gold-standard (`gold_test.xml`, 65 mentions):** Groq Qwen3.6-27B + `suggest.v3` **F1=.74 R=.68** (~5 s) — best run; prompt v1→v3 nearly doubled recall. Earlier: local Ministral F1=.37; hosted Mistral F1=.35. Full numbers in [phase5-validation-results.md](archive/phase5-validation-results.md).
+- **Provider/free-tier options (2026-07-04):** surveyed beyond the local Ministral instance — Groq's free tier hosts a genuine Qwen3-32B at 60 RPM/500K TPD (official docs), enough for ~8 full-document runs/day at zero cost, and speaks the same OpenAI-compatible shape `MistralLlmClient` already handles (model/baseUrl swap only). Mistral's own hosted free tier no longer publishes exact numbers; third-party estimates (~2 RPM) would make it no faster than local for full-document runs. GuwenBERT and similar encoder-only classical-Chinese models don't fit this architecture at all — they'd need a token-classification head, i.e. the deferred NER path, not another `LlmClient`. Full write-up and the recommended next comparison (Groq Qwen3-32B once a properly complete gold document exists) in [phase5-ai-integration-log.md](archive/phase5-ai-integration-log.md).
 
 ### Immediate future (2026-07) — build next
 
@@ -286,7 +286,7 @@ Full spec in [Auto-tagging.md](Auto-tagging.md) → AI mode → **Immediate futu
 - [ ] **UI:** AI suggest step shows active profile; “Edit prompt…” without editing repo files. Auto-match profile to configured model (e.g. Qwen3.6 vs Ministral).
 - [ ] **Assembly:** keep locator/JSON rules locked (`preamble.txt`); user edits task bias and tag definitions only. Wire optional reuse of App Settings `customInstructions` for suggest (today translation-only).
 - [ ] **Cache:** profile `version` (or profile id) participates in LLM cache key alongside `SUGGEST_PROMPT_VERSION`.
-- [ ] **Validation loop:** harness run per profile/model; record in `phase5-validation-results.md`. Known need: shorter/alternate profile for local Ministral (v3 regressed vs v1).
+- [ ] **Validation loop:** harness run per profile/model; record in `archive/phase5-validation-results.md`. Known need: shorter/alternate profile for local Ministral (v3 regressed vs v1).
 
 **B. Expandable tag types (schema- and project-driven)**
 

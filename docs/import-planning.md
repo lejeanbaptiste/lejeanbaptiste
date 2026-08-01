@@ -1,6 +1,6 @@
 # Document Import — Planning
 
-*2026-07-03. Follows from notes in [document IO.md](document%20IO.md). Phase 1 is underway in `apps/commons/src/desktop/documentImport.ts`.*
+**Status (2026-08-01):** **In progress** — blind import + same-family XML import exist (`documentImport.ts`). Still open: Phase 1 leftovers (md headers, batch/folder UI, validator/provenance); Phases 2–4 (profiles, docx, AI inference). Early notes: [archive/document-io.md](archive/document-io.md).
 
 ## Goal
 
@@ -25,9 +25,9 @@ The profile replaces the per-corpus scripts we currently write by hand, but the 
 
 Key architectural point: **import runs as a file-level pipeline and writes XML into the project folder directly** — it does not round-trip through TinyMCE. The editor's paste path is for fragments; a batch of 400 files needs the main-process path. The schema predicates in `normalizePastedParagraphs` are pure functions over the schema manager and can be extracted for headless use.
 
-## Test corpora (in `docs/doc import/`)
+## Test corpora
 
-Each sample exercises a different profile feature:
+Keep sample files with the project or a private corpus folder (not committed under `docs/`). Each sample exercises a different profile feature:
 
 1. **`KR1a0145_002.txt`** — Kanseki Repository / mandoku format. Org-mode metadata lines (`#+TITLE:`, `#+PROPERTY: JUAN …`), `<pb:KR1a0145_WYG_002-1a>` page-break markers, `¶` end-of-line pilcrows where a *missing* pilcrow means the paragraph continues across the page break. Needs: line-pattern rules → `<pb/>`, metadata capture → header, pilcrow-based line joining.
 2. **`nihonshoki.md`** — Wikisource-style markdown. `{{header}}` template block carrying title/section metadata (currently passes through the md stripper as literal text — needs a rule), blank-line paragraphs, `〈…〉` interlinear notes and `★`/`■` editorial symbols as inline-rule candidates.

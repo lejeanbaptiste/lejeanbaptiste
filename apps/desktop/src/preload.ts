@@ -362,6 +362,9 @@ export interface ElectronAPI {
   entitySqliteSetRomanizedName: (
     request: import('./entityDbSqlite/readService').EntitySqliteSetRomanizedNameRequest,
   ) => Promise<void>;
+  entitySqliteAutoCleanNames: (
+    request: import('./entityDbSqlite/readService').EntitySqliteAutoCleanNamesRequest,
+  ) => Promise<import('./entityDbSqlite/readService').EntitySqliteAutoCleanNamesResult>;
   entitySqliteApplyConcordance: (
     request: import('./entityDbSqlite/readService').EntitySqliteApplyConcordanceRequest,
   ) => Promise<import('./entityDbSqlite/repository').SqliteConcordanceImportResult>;
@@ -521,10 +524,17 @@ export interface ElectronAPI {
   ) => Promise<
     import('../../commons/src/desktop/authorityLifecycleTypes').AuthorityLifecycleRunResult
   >;
+  authorityLifecycleSetReferenceDataEnabled?: (
+    enabled: boolean,
+  ) => Promise<
+    import('../../commons/src/desktop/authorityLifecycleTypes').AuthorityLifecycleRunResult
+  >;
   authorityLifecycleUpdate?: () => Promise<
     import('../../commons/src/desktop/authorityLifecycleTypes').AuthorityLifecycleRunResult
   >;
-  authorityLifecycleMaybeCheckUpdates?: () => Promise<
+  authorityLifecycleMaybeCheckUpdates?: (options?: {
+    force?: boolean;
+  }) => Promise<
     import('../../commons/src/desktop/authorityLifecycleTypes').AuthorityLifecycleStatus | null
   >;
   authorityLifecyclePromptEnable?: (
@@ -783,6 +793,8 @@ const electronAPI: ElectronAPI = {
     ipcRenderer.invoke('entitySqlite:renamePrimaryName', request),
   entitySqliteSetRomanizedName: (request) =>
     ipcRenderer.invoke('entitySqlite:setRomanizedName', request),
+  entitySqliteAutoCleanNames: (request) =>
+    ipcRenderer.invoke('entitySqlite:autoCleanNames', request),
   entitySqliteApplyConcordance: (request) =>
     ipcRenderer.invoke('entitySqlite:applyConcordance', request),
   entitySqliteRejectConcordance: (request) =>
@@ -879,9 +891,11 @@ const electronAPI: ElectronAPI = {
   authorityLifecycleGet: () => ipcRenderer.invoke('authorityLifecycle:get'),
   authorityLifecycleSetEnabled: (options) =>
     ipcRenderer.invoke('authorityLifecycle:setEnabled', options),
+  authorityLifecycleSetReferenceDataEnabled: (enabled) =>
+    ipcRenderer.invoke('authorityLifecycle:setReferenceDataEnabled', enabled),
   authorityLifecycleUpdate: () => ipcRenderer.invoke('authorityLifecycle:update'),
-  authorityLifecycleMaybeCheckUpdates: () =>
-    ipcRenderer.invoke('authorityLifecycle:maybeCheckUpdates'),
+  authorityLifecycleMaybeCheckUpdates: (options) =>
+    ipcRenderer.invoke('authorityLifecycle:maybeCheckUpdates', options),
   authorityLifecyclePromptEnable: (profile, strings) =>
     ipcRenderer.invoke('authorityLifecycle:promptEnable', profile, strings),
   authorityLifecycleRevealFolder: () => ipcRenderer.invoke('authorityLifecycle:revealFolder'),

@@ -230,7 +230,7 @@ AI suggest is wired in the desktop app (dialog → review panel → `.ljb/ai-cac
    - **Editable per profile:** task wording, recall/precision bias, corpus genre note (`suggest.system.txt` body or suffix).
    - **Editable per tag:** one-line definitions (`tag-definitions.json` or UI equivalent).
 4. **Version bump on save** — any semantic profile change bumps effective `SUGGEST_PROMPT_VERSION` (or a profile-specific suffix in the cache key) so `.ljb/ai-cache/` does not serve stale chunks.
-5. **Harness loop** — re-run `validationHarness.live.test` after profile edits; document P/R/F1 in `phase5-validation-results.md` per profile/model pair.
+5. **Harness loop** — re-run `validationHarness.live.test` after profile edits; document P/R/F1 in `archive/phase5-validation-results.md` per profile/model pair.
 
 **Out of scope for v1 prompt UI:** stacking suggest + audit in one request; user-editable JSON schema; sharing profiles across projects (export/import can come later).
 

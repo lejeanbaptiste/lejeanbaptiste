@@ -175,6 +175,8 @@ export function normalizeTypedNamesForIntake(
   for (const name of names) {
     let text = name.text.normalize('NFC').trim();
     if (!text) continue;
+    // Dump placeholder — never keep as a typed name in any language.
+    if (/^nan$/i.test(text)) continue;
     if (FAMILY_PREFIX_STRIP_TYPES.has(name.type)) {
       text = stripFamilyPrefixFromCourtesyName(text, familyNames);
       if (!text) continue;
@@ -184,4 +186,43 @@ export function normalizeTypedNamesForIntake(
     }
   }
   return [...byText.values()];
+}
+
+/**
+ * Pick the 姓/名 pair that best explains a primary headword when an authority
+ * lists several family or given variants (e.g. 拓拔 / 托跋 / 元 for 拓拔建).
+ * Prefers the longest family that prefixes the primary, then a given that
+ * matches the remainder (or the first given if none fit).
+ */
+export function preferCanonicalFamilyGiven(
+  primaryName: string | null | undefined,
+  typedNames: Array<{ text: string; type: NameTypeId }>,
+): { familyName: string | null; givenName: string | null } {
+  const primary = primaryName?.normalize('NFC').trim() || '';
+  const families = typedNames
+    .filter((name) => name.type === 'family')
+    .map((name) => name.text.normalize('NFC').trim())
+    .filter(Boolean);
+  const givens = typedNames
+    .filter((name) => name.type === 'given')
+    .map((name) => name.text.normalize('NFC').trim())
+    .filter(Boolean);
+
+  let familyName: string | null = families[0] ?? null;
+  if (primary && families.length) {
+    const prefixHits = families
+      .filter((family) => primary.startsWith(family) && primary.length > family.length)
+      .sort((a, b) => b.length - a.length || a.localeCompare(b, 'zh'));
+    if (prefixHits[0]) familyName = prefixHits[0];
+  }
+
+  let givenName: string | null = givens[0] ?? null;
+  if (primary && familyName && givens.length) {
+    const remainder = primary.slice(familyName.length);
+    const exact = givens.find((given) => given === remainder);
+    if (exact) givenName = exact;
+    else if (remainder) givenName = givens.find((given) => remainder.endsWith(given)) ?? givenName;
+  }
+
+  return { familyName, givenName };
 }

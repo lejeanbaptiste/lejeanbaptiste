@@ -18,6 +18,7 @@ import type { EntitySummary } from '../../../../../packages/cwrc-leafwriter/src/
 import type { EntityStore } from '../../../../../packages/cwrc-leafwriter/src/autoTagging/entityStore';
 import {
   applyHygieneFinding,
+  autoCleanEntities,
   authorityPeerToCompareCard,
   entityToCompareCard,
   harvestProposalToCompareCard,
@@ -28,9 +29,7 @@ import {
   descriptionFromPackIndex,
   lookupPackPeers,
   scanBadPrimary,
-  scanBadRomanization,
   scanEmptyDescription,
-  scanFamilyPrefixedAltNames,
   scanMissingFamilyOrGiven,
   scanNearDuplicates,
   scanRejectedBlockingGoodName,
@@ -451,10 +450,10 @@ export const DatabaseWindow = () => {
     try {
       updateJob({ done: 0, detail: 'Name hygiene…' });
       await yieldToUi();
+      // Mechanical rules (姓+字 strip, orphan short parse, joinable pinyin,
+      // dedupe, untyped) run via Auto-clean — not this review queue.
       const nameHygiene: HygieneFinding[] = [
-        ...scanFamilyPrefixedAltNames(entities),
         ...scanMissingFamilyOrGiven(entities, projectLang),
-        ...scanBadRomanization(entities, projectLang),
         ...scanBadPrimary(entities),
         ...scanEmptyDescription(entities),
       ];
@@ -991,6 +990,54 @@ export const DatabaseWindow = () => {
     updateJob,
   ]);
 
+  const runAutoClean = useCallback(async () => {
+    if (!activeStore || jobRunning) return;
+    const controller = beginJob('Auto-cleaning names');
+    try {
+      const report = await autoCleanEntities(activeStore, entities, projectLang, {
+        signal: controller.signal,
+        onProgress: (done, total, detail) => {
+          updateJob({ done, total: Math.max(total, 1), detail });
+        },
+      });
+      if (controller.signal.aborted) return;
+      const total =
+        report.strippedFamilyPrefixed +
+        report.parsedFamilyGiven +
+        report.dedupedNames +
+        report.removedUntyped +
+        report.promotedRomanizations +
+        report.fixedRomanization;
+      notifyViaSnackbar({
+        message:
+          total === 0
+            ? 'Auto-clean: nothing to fix'
+            : `Auto-clean: ${report.strippedFamilyPrefixed} 姓+字, ${report.parsedFamilyGiven} parsed, ${report.dedupedNames} dupes, ${report.removedUntyped} untyped, ${report.promotedRomanizations} Latn typed, ${report.fixedRomanization} pinyin joins`,
+        options: { variant: 'success' },
+      });
+      await reload();
+    } catch (error) {
+      if (!controller.signal.aborted) {
+        notifyViaSnackbar({
+          message: error instanceof Error ? error.message : String(error),
+          options: { variant: 'error' },
+        });
+      }
+    } finally {
+      endJob();
+    }
+  }, [
+    activeStore,
+    beginJob,
+    endJob,
+    entities,
+    jobRunning,
+    notifyViaSnackbar,
+    projectLang,
+    reload,
+    updateJob,
+  ]);
+
   const selectEntity = useCallback((id: string) => {
     setSelectedId(id);
     setMainPane('detail');
@@ -1085,6 +1132,15 @@ export const DatabaseWindow = () => {
           disabled={jobRunning || !activeStore}
         >
           Backfill
+        </Button>
+        <Button
+          size="small"
+          variant="outlined"
+          color="warning"
+          onClick={() => void runAutoClean()}
+          disabled={jobRunning || !activeStore}
+        >
+          Auto-clean
         </Button>
         <Button
           size="small"

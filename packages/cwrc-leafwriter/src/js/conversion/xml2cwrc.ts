@@ -25,8 +25,13 @@ class XML2CWRC {
   }
 
   private async clearDocument() {
-    return new Promise((resolve) => {
-      if (!this.writer.editor) return;
+    return new Promise<void>((resolve) => {
+      // Resolve even when TinyMCE is not ready yet — a bare `return` left the
+      // promise pending forever and hung document load on slow startups.
+      if (!this.writer.editor) {
+        resolve();
+        return;
+      }
       $(this.writer.editor.getBody()).empty();
       setTimeout(resolve, 0);
     });

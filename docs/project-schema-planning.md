@@ -1,10 +1,6 @@
 # Project schema & onboarding — implementation plan
 
-**Status:** Planning complete (**#15** and **#18** locked); ready for implementation  
-**Scope:** Desktop app — Open Project + schema setup, project metadata, New File skeleton, schema update alerts  
-**Related:** `docs/schema_handling.md` (original vision), `docs/todo.md`, `docs/tagging-planning.md`, `docs/versioning-planning.md`
-
----
+**Status (2026-08-01):** **Shipped** — Open Project, schema setup, metadata, New File, update alerts. Use [schema_handling.md](schema_handling.md) for current behaviour; this file is historical design notes.
 
 ## Summary
 

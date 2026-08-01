@@ -15,7 +15,7 @@ import {
 } from './disambiguationCandidates';
 import { mintEntityId, type EntityKind } from './entities';
 import type { EntityStore } from './entityStore';
-import { normalizeNameType, normalizeTypedNamesForIntake, type TypedName } from './nameTypes';
+import { normalizeNameType, normalizeTypedNamesForIntake, preferCanonicalFamilyGiven, type TypedName } from './nameTypes';
 import {
   authorityEnrichmentForEntity,
   authorityEnrichmentsForEntity,
@@ -371,24 +371,52 @@ export async function backfillEntitiesSqlite(
       });
     }
 
+    const preferred = preferCanonicalFamilyGiven(
+      primaryName || entity.names[0] || null,
+      typedNames,
+    );
     let familyName = !entity.familyName
       ? givenFamily.familyName ||
-        typedNames.find((name) => name.type === 'family')?.text ||
+        preferred.familyName ||
         suggestPersonNameSplit(entity.names[0] ?? '', projectLang ?? null)?.familyName ||
         null
       : null;
     let givenName = !entity.givenName
       ? givenFamily.givenName ||
-        typedNames.find((name) => name.type === 'given')?.text ||
+        preferred.givenName ||
         suggestPersonNameSplit(entity.names[0] ?? '', projectLang ?? null)?.givenName ||
         null
       : null;
 
+    // When the entity already has a 姓/名 that is merely one of several pack
+    // variants (e.g. 元 instead of 拓拔 for 拓拔建), still propose the preferred
+    // pair so the scalar fields can be corrected on re-backfill.
+    if (entity.familyName && preferred.familyName && entity.familyName !== preferred.familyName) {
+      const packFamilies = new Set(
+        typedNames.filter((name) => name.type === 'family').map((name) => name.text),
+      );
+      if (packFamilies.has(entity.familyName)) familyName = preferred.familyName;
+    }
+    if (entity.givenName && preferred.givenName && entity.givenName !== preferred.givenName) {
+      const packGivens = new Set(
+        typedNames.filter((name) => name.type === 'given').map((name) => name.text),
+      );
+      if (packGivens.has(entity.givenName)) givenName = preferred.givenName;
+    }
+
     let romanized: { text: string; language?: string | null } | null = null;
     if (!entity.romanized) {
       const authorityRomanized = metadata?.pinyin ?? metadata?.yomi;
+      const familyRom =
+        preferred.familyName &&
+        autoRomanize(preferred.familyName, projectLang ?? null, { concatenate: true });
+      const givenRom =
+        preferred.givenName &&
+        autoRomanize(preferred.givenName, projectLang ?? null, { concatenate: true });
+      const fromParts = familyRom && givenRom ? `${familyRom} ${givenRom}` : '';
       const text =
         authorityRomanized?.trim() ||
+        fromParts ||
         suggestPersonRomanization(entity.names[0] ?? '', projectLang ?? null);
       if (text) romanized = { text, language: projectLang ?? null };
     }

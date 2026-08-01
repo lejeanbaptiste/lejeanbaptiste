@@ -4,6 +4,8 @@ import {
   addEntityName,
   listEntities,
   listEntityAssertions,
+  getFamilyName,
+  getGivenName,
   setFamilyName,
   setGivenName,
   setRomanizedName,
@@ -193,6 +195,11 @@ const packRow = ndjsonLine({
   kind: 'person',
   primaryName: '沈攸之',
   searchStrings: ['沈攸之', '攸之'],
+  names: [
+    { text: '沈攸之', type: 'primary' },
+    { text: '沈', type: 'family' },
+    { text: '攸之', type: 'given' },
+  ],
   metadata: {
     description: 'Liu-Song general, d. 478',
     startYear: 420,
@@ -296,6 +303,10 @@ describe('crosswalkForRef', () => {
       ]),
     );
     expect(result.candidate?.primaryName).toBe('沈攸之');
+    expect(result.candidate?.typedNames).toEqual([
+      { text: '沈', type: 'family' },
+      { text: '攸之', type: 'given' },
+    ]);
   });
 
   it('matches a ref by the pack row own id', async () => {
@@ -337,6 +348,13 @@ describe('planLookupResolution / applyLookupResolution', () => {
     expect(idnoTypes).toEqual(expect.arrayContaining(['Wikidata', 'CBDB', 'DILA']));
     // Pack primary name preferred over the clicked label
     expect(person.getElementsByTagName('persName')[0]?.textContent).toBe('沈攸之');
+    // Phase B: bare 姓/名 from pack names[] land at mint
+    expect(getFamilyName(doc, result.key)).toBe('沈');
+    expect(getGivenName(doc, result.key)).toBe('攸之');
+    const nameTexts = Array.from(person.getElementsByTagName('persName')).map(
+      (el) => el.textContent,
+    );
+    expect(nameTexts).toEqual(expect.arrayContaining(['沈', '攸之']));
     const assertions = listEntityAssertions(doc, result.key);
     expect(assertions.find((a) => a.element === 'birth')).toMatchObject({
       origin: 'user',
@@ -374,6 +392,9 @@ describe('planLookupResolution / applyLookupResolution', () => {
         ['DILA', 'A001492'],
       ]),
     );
+    // Phase B: linking an existing person also pulls pack short forms
+    expect(getFamilyName(after, id)).toBe('沈');
+    expect(getGivenName(after, id)).toBe('攸之');
   });
 
   it('hydrates authority dates when linking an existing DILA entity', async () => {

@@ -1,13 +1,6 @@
 # Regional PMTiles download and cache plan
 
-Status: implemented in the desktop acquisition path; regional assets are
-published by the `authoritypacks` GitHub release pipeline (2026-07-27)
-
-Related:
-- [placename-geo-disambiguation-planning.md](placename-geo-disambiguation-planning.md)
-- [map-app.md](map-app.md)
-- [`apps/desktop/src/mapTiles.ts`](../apps/desktop/src/mapTiles.ts)
-- [`packages/cwrc-leafwriter/src/autoTagging/mapView/regionalBundles.ts`](../packages/cwrc-leafwriter/src/autoTagging/mapView/regionalBundles.ts)
+**Status (2026-08-01):** **Shipped** — regional PMTiles download/cache/serve implemented; assets via `authoritypacks` releases. Remaining map work is UX polish (zoom bounds, labels, click-to-disambiguate), not acquisition.
 
 ## Goal
 
@@ -20,7 +13,9 @@ The app already has the storage and serving layer:
 - The `pmtiles://<bundleId>/{z}/{x}/{y}.mvt` protocol handler serves tiles from the cached archive.
 - The map UI already switches to that local protocol when a bundle is installed.
 
-What remains is the acquisition workflow:
+> **Note:** The numbered “acquisition workflow” list below was the original plan; steps 1–3 are done via the authoritypacks pipeline. Keep the rest of this file as implementation notes.
+
+What the original plan called for:
 
 1. Identify a real upstream PMTiles source.
 2. Extract regional cutouts from that source.

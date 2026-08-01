@@ -172,6 +172,7 @@ describe('disambiguationCandidates', () => {
           names: [
             { text: '王安石', type: 'primary' },
             { text: '王', type: 'family' },
+            { text: '安石', type: 'given' },
             { text: '介甫', type: 'courtesy' },
             { text: '王介甫', type: 'courtesy' },
           ],
@@ -197,6 +198,7 @@ describe('disambiguationCandidates', () => {
         const cbdbRow = rows.find((row) => row.sources.includes('CBDB'));
         expect(cbdbRow?.typedNames).toEqual([
           { text: '王', type: 'family', lang: undefined },
+          { text: '安石', type: 'given', lang: undefined },
           { text: '介甫', type: 'courtesy', lang: undefined },
         ]);
       } finally {

@@ -38,9 +38,17 @@ type LeafWriterOptionsSettings = Types.LeafWriterOptionsSettings;
 const SETTINGS_BOOTSTRAP_XML =
   '<TEI xmlns="http://www.tei-c.org/ns/1.0"><text><body><p/></body></text></TEI>';
 
-export const waitForWriter = async (timeoutMs = 5000): Promise<boolean> => {
+/** True once TinyMCE has finished booting (not merely when `window.writer` exists). */
+export const isWriterReady = (): boolean => Boolean(window.writer?.isInitialized);
+
+/**
+ * Wait until the visual editor is actually ready to load documents.
+ * `window.writer` is assigned before TinyMCE finishes; callers must wait for
+ * `isInitialized` or document load can hang in `clearDocument`.
+ */
+export const waitForWriter = async (timeoutMs = 15_000): Promise<boolean> => {
   const started = Date.now();
-  while (!window.writer) {
+  while (!isWriterReady()) {
     if (Date.now() - started > timeoutMs) return false;
     await new Promise((resolve) => window.setTimeout(resolve, 50));
   }
@@ -179,20 +187,26 @@ export const useLeafWriter = () => {
     };
   }, [leafWriter, rootPath]);
 
-  const loadLib = async (element: HTMLElement) => {
-    const lw = await loadLeafWriter(element);
-    setLeafWriter(lw);
+  const loadLib = async (element: HTMLElement): Promise<boolean> => {
+    try {
+      const lw = await loadLeafWriter(element);
+      setLeafWriter(lw);
+      return true;
+    } catch (error) {
+      console.error('[editor] Failed to load Leaf-Writer library', error);
+      return false;
+    }
   };
 
   const initLeafWriter = async (override?: {
     filePath: string;
     content: string;
     shouldApply?: () => boolean;
-  }) => {
+  }): Promise<boolean> => {
     const filePath = override?.filePath ?? resource?.filePath;
     const rawContent = override?.content ?? resource?.content;
-    if (!leafWriter || !rawContent || !filePath) return;
-    if (override?.shouldApply && !override.shouldApply()) return;
+    if (!leafWriter || !rawContent || !filePath) return false;
+    if (override?.shouldApply && !override.shouldApply()) return false;
 
     const author = user && {
       name: user.identities.get(user.preferredID)?.name ?? `${user.firstName} ${user.lastName}`,
@@ -204,7 +218,7 @@ export const useLeafWriter = () => {
 
     if (isDesktop() && filePath && rootPath) {
       const prepared = await prepareDesktopDocument(filePath, xml, rootPath, config?.schema);
-      if (override?.shouldApply && !override.shouldApply()) return;
+      if (override?.shouldApply && !override.shouldApply()) return false;
       xml = prepared.content;
       documentSchemas = [...projectSchemas, ...prepared.schemas];
       registerDesktopSchemas([
@@ -218,7 +232,7 @@ export const useLeafWriter = () => {
       }
     }
 
-    if (override?.shouldApply && !override.shouldApply()) return;
+    if (override?.shouldApply && !override.shouldApply()) return false;
 
     const settings: LeafWriterOptionsSettings = {
       locale: currentLocale,
@@ -264,13 +278,13 @@ export const useLeafWriter = () => {
       analytics.page();
     }
 
-    await waitForWriter();
+    return waitForWriter();
   };
 
   /** Minimal editor bootstrap so settings and preferences work before any file is open. */
   const ensureLeafWriterReadyForSettings = async (): Promise<boolean> => {
     if (!isDesktop() || !leafWriter) return false;
-    if (window.writer) return true;
+    if (isWriterReady()) return true;
 
     registerLeafWriterCommonsI18n();
     registerDesktopSchemas([...getEnabledCatalogSchemas(), ...projectSchemas]);
@@ -320,6 +334,11 @@ export const useLeafWriter = () => {
     restoreDirty = false,
     shouldApply?: () => boolean,
   ): Promise<boolean> => {
+    if (!isWriterReady()) {
+      const ready = await waitForWriter();
+      if (!ready) return false;
+    }
+
     if (!window.writer) return false;
 
     if (isDesktop() && rootPath && config?.schema) {

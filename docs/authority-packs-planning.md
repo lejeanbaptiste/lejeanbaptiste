@@ -1,8 +1,6 @@
 # Authority packs & the tag-bomb strategy
 
-Status: planning, with office and appointment disambiguation implemented
-(2026-07-26).
-Companion to [Auto-tagging.md](Auto-tagging.md), [authority-databases-planning.md](authority-databases-planning.md), [authority-databases-phases.md](authority-databases-phases.md), [authority-extraction.md](authority-extraction.md).
+**Status (2026-08-01):** **Chinese packs mostly live**; office/appointment disambiguation implemented (2026-07-26). Still open: Wikidata/NDL/GeoNames pack phases (P1–P3b), TEI appointment encoding, pack-release QA.
 
 ## Implementation update: offices and appointments
 
@@ -27,7 +25,9 @@ Implemented outputs include:
 The appointment records deliberately omit year spans and biographical order.
 They are disambiguation clues, not yet TEI appointment/event encoding. The
 operational refresh and publication checklist lives in
-[`authoritypacks/docs/extraction-todo.md`](../../authoritypacks/docs/extraction-todo.md).
+See [authority-extraction.md](authority-extraction.md) and the sibling
+[`authority extraction`](../../authority%20extraction/) repo for compile/publish
+pipelines and extraction TODOs.
 
 **Current handoff:** implementation is complete for this phase. Local build,
 integration testing, and bug fixing are the next validation gate before the

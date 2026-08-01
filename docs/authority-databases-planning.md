@@ -1,13 +1,6 @@
+# Authority databases: CBDB + DILA — field reference
 
-# Vague base plan (superseded in part — see [authority-packs-planning.md](authority-packs-planning.md))
-
-We should look into offering to scrape all names for persons, places, orgs, etc. from the base authorities (WikiData, VIAF, etc.) if possible. Unclear whether the user should do this OR if pre-ship. **Updated 2026-07-05:** prefer **official dumps → compiled authority packs → tag bomb**; see the new planning doc for source-by-source feasibility. Wikidata/VIAF are pack inputs, not live scrape targets.
-
-# Authority databases: CBDB + DILA integration plan
-
-Status: planning (studied 2026-07-04 against the files in `databases/`).
-Scope: Chinese-language authority sources for the auto-tagging "authority" mode
-(Phase 4a matching; entity/id minting stays in Phase 4b per the tagging-only rule).
+**Status (2026-08-01):** **Reference only** — CBDB/DILA field notes. Product delivery is tracked in [authority-databases-phases.md](authority-databases-phases.md) and [authority-packs-planning.md](authority-packs-planning.md).
 
 ## 1. What we have on disk
 

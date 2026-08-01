@@ -48,6 +48,7 @@ type AuthorityLifecycleStatus = {
   packsReady: boolean;
   rawSources: { id: string; installed: boolean; label: string; version?: string }[];
   updateAvailable: boolean;
+  referenceDataEnabled?: boolean;
   diskUsage: { packBytes: number; rawBytes: number } | null;
   attributions?: AuthorityLifecycleAttribution[];
 };
@@ -62,6 +63,7 @@ type CommonsUiBridge = {
     profile?: AuthorityLifecycleProfile;
     deleteFiles?: boolean;
   }) => Promise<AuthorityLifecycleRunResult>;
+  setAuthorityLifecycleReferenceDataEnabled: (enabled: boolean) => Promise<AuthorityLifecycleRunResult>;
   runAuthorityLifecycleUpdate: () => Promise<AuthorityLifecycleRunResult>;
   revealAuthorityLifecycleFolder: () => Promise<void>;
 };
@@ -73,7 +75,7 @@ const PROFILE_NAMES: Record<AuthorityLifecycleProfile, string> = {
 };
 
 const PROFILE_SOURCES: Record<AuthorityLifecycleProfile, string> = {
-  chinese: 'CBDB · DILA · CHGIS · Wikidata',
+  chinese: 'CBDB · DILA · Norbert · CHGIS · Wikidata',
   japanese: 'NDL · Wikidata',
   tibetan: 'Wikidata',
 };
@@ -249,9 +251,41 @@ export const DesktopOfflineAuthorities = () => {
     }
   };
 
+  const handleReferenceDataToggle = async (checked: boolean) => {
+    if (!bridge) return;
+    setBusy(true);
+    setMessage(null);
+    try {
+      const result = await bridge.setAuthorityLifecycleReferenceDataEnabled(checked);
+      if (!result.ok) {
+        setMessage({
+          severity: 'error',
+          text: result.error ?? 'Could not change reference database setting.',
+        });
+      } else if (checked) {
+        setMessage({
+          severity: 'success',
+          text: 'Reference databases installed (CBDB, Norbert, DILA).',
+        });
+      } else {
+        setMessage({
+          severity: 'info',
+          text: 'Reference databases will no longer update. Existing files were kept.',
+        });
+      }
+      await refresh();
+    } finally {
+      setBusy(false);
+      setProgress(null);
+    }
+  };
+
   const working = busy || status?.busy;
   const disk = status?.diskUsage;
   const totalDisk = disk ? disk.rawBytes + disk.packBytes : 0;
+  const chineseEnabled =
+    status?.profileStatuses?.some((profile) => profile.id === 'chinese' && profile.enabled) ??
+    false;
 
   const profileCaption = (profile: AuthorityLifecycleProfileStatus): string => {
     const sources = PROFILE_SOURCES[profile.id];
@@ -310,6 +344,31 @@ export const DesktopOfflineAuthorities = () => {
             />
           </Stack>
         ))}
+
+        {chineseEnabled && (
+          <Stack
+            direction="row"
+            alignItems="center"
+            justifyContent="space-between"
+            gap={1}
+            sx={{ pl: 0.5 }}
+          >
+            <Box sx={{ minWidth: 0 }}>
+              <Typography variant="body2">Reference databases</Typography>
+              <Typography variant="caption" color="text.secondary">
+                Extra ~250&nbsp;MB (CBDB + Norbert sqlite, DILA TEI) for richer backfill —
+                family/given names, titles, appointments
+              </Typography>
+            </Box>
+            <Switch
+              size="small"
+              checked={Boolean(status?.referenceDataEnabled)}
+              disabled={working || !status?.entityDbReady}
+              onChange={(_event, checked) => void handleReferenceDataToggle(checked)}
+              inputProps={{ 'aria-label': 'Reference databases for enrichment' }}
+            />
+          </Stack>
+        )}
 
         {enabledCount > 0 && (status?.attributions?.length ?? 0) > 0 && (
           <Accordion disableGutters elevation={0} sx={{ '&:before': { display: 'none' } }}>

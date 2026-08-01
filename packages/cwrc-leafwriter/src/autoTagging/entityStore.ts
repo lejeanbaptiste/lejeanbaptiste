@@ -230,6 +230,13 @@ export interface EntityFileApi {
     text: string;
     language?: string;
   }) => Promise<void>;
+  entitySqliteAutoCleanNames?: (input: {
+    databasePath: string;
+  }) => Promise<{
+    dedupedNames: number;
+    removedUntyped: number;
+    promotedRomanizations: number;
+  }>;
   entitySqliteApplyConcordance?: (input: {
     databasePath: string;
     associations: Array<{
@@ -902,6 +909,16 @@ export class EntityStore {
     });
   }
 
+  async sqliteAutoCleanNames(): Promise<{
+    dedupedNames: number;
+    removedUntyped: number;
+    promotedRomanizations: number;
+  }> {
+    if (!this.api.entitySqliteAutoCleanNames)
+      throw new Error('SQLite auto-clean is unavailable.');
+    return this.api.entitySqliteAutoCleanNames({ databasePath: this.sqlitePath });
+  }
+
   async sqliteApplyConcordance(
     associations: Array<{
       source: string;
@@ -1529,6 +1546,9 @@ export function desktopEntityFileApi(): EntityFileApi | null {
       : undefined,
     entitySqliteSetRomanizedName: rawApi.entitySqliteSetRomanizedName
       ? (input) => rawApi.entitySqliteSetRomanizedName!(input)
+      : undefined,
+    entitySqliteAutoCleanNames: rawApi.entitySqliteAutoCleanNames
+      ? (input) => rawApi.entitySqliteAutoCleanNames!(input)
       : undefined,
     entitySqliteApplyConcordance: rawApi.entitySqliteApplyConcordance
       ? (input) => rawApi.entitySqliteApplyConcordance!(input)

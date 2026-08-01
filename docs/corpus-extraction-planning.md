@@ -1,14 +1,6 @@
 # Corpus extraction — planning
 
-Status: **draft** (2026-07-05).  
-**Consumer:** [LEAF/LJB](../) import path (TEI XML → editor → auto-tagging).  
-**Related:** [Auto-tagging.md](Auto-tagging.md), [authority-extraction.md](authority-extraction.md).
-
-This document plans a **corpus extraction** layer: tools that read text from online DH repositories (browser page, API, or bulk download) and produce **structured TEI** with metadata, paragraph boundaries, page breaks, and source pointers — ready for leaf-writer or FairCopy.
-
-The primary deliverable is probably a **browser extension** (“Extract to TEI”), but the same adapter code should run headless (CLI, future leaf-writer “Import from URL”).
-
----
+**Status (2026-08-01):** **Draft / future** — browser-extension / URL→TEI layer not started; phases E0–E5 all open.
 
 ## Problem statement
 

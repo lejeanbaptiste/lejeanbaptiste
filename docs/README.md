@@ -1,0 +1,84 @@
+# Documentation
+
+Working notes and specs for **Le Jean-Baptiste** (desktop LEAF-Writer).  
+User install / build instructions live in the [root readme](../readme.md) and [apps/desktop/README.md](../apps/desktop/README.md).
+
+Active product TODOs live in the root [`readme.md`](../readme.md) (`## TODO` / `## Future`). Plan/phases docs below carry a **Status (2026-08-01)** line at the top — start there before reading the body.
+
+---
+
+## User reference
+
+| Doc | Topic |
+|-----|--------|
+| [keyboard-shortcuts.md](keyboard-shortcuts.md) | Markup and app shortcuts |
+| [smoke_test.md](smoke_test.md) | Manual smoke checklist |
+| [entity-sync-manual-test-plan.md](entity-sync-manual-test-plan.md) | Manual QA for entity sync (until SQLite migration is signed off) |
+| [translation-smoke-tests.md](translation-smoke-tests.md) / [smoke-test-translation-ids.md](smoke-test-translation-ids.md) | Translation pane checks |
+
+---
+
+## Architecture & implemented reference
+
+| Doc | Topic |
+|-----|--------|
+| [Auto-tagging.md](Auto-tagging.md) | Auto-tagging / disambiguation architecture |
+| [Auto-tagging-phases.md](Auto-tagging-phases.md) | Phase checklist (companion to above) |
+| [schema_handling.md](schema_handling.md) | Project schema behaviour (phases 1–6) |
+| [ljb-tei-extensions.md](ljb-tei-extensions.md) | TEI extensions used by the app |
+| [sanmiao-dates-schema.md](sanmiao-dates-schema.md) | East Asian date schema |
+| [entity-data-provenance.md](entity-data-provenance.md) | Entity `origin` / `source` / `status` |
+| [entity-registry-merges-and-splits.md](entity-registry-merges-and-splits.md) | Merge / split behaviour |
+| [authority-extraction.md](authority-extraction.md) | Pointer to the sibling **authority extraction** repo |
+
+---
+
+## Authority packs & entity database
+
+Read in roughly this order:
+
+1. [authority-data-lifecycle.md](authority-data-lifecycle.md) — current product model (tiers, download, enable)
+2. [authority-databases-phases.md](authority-databases-phases.md) — A0–A6 tracker
+3. [authority-packs-planning.md](authority-packs-planning.md) — pack strategy and sources
+4. [sqlite-entity-database-migration-plan.md](sqlite-entity-database-migration-plan.md) — SQLite migration (current)
+
+Supporting / deeper:
+
+| Doc | Notes |
+|-----|--------|
+| [authority-databases-planning.md](authority-databases-planning.md) | CBDB/DILA field detail (partially superseded by packs plan — keep for field reference) |
+| [wikidata-tag-packs-planning.md](wikidata-tag-packs-planning.md) | Wikidata pack deep dive |
+| [dual-entity-database-planning.md](dual-entity-database-planning.md) | Historical dual-DB / bridge design; SQLite plan supersedes parts of this |
+| [entity-database-viewer-planning.md](entity-database-viewer-planning.md) | Database window / viewer (**shipped** — historical) |
+
+---
+
+## Feature plans (active or recent)
+
+| Doc | Topic |
+|-----|--------|
+| [person-shortform-autotag-planning.md](person-shortform-autotag-planning.md) | Short-form person names (phase 2) |
+| [norbert-noble-title-autotagging-plan.md](norbert-noble-title-autotagging-plan.md) | Norbert noble titles |
+| [placename-geo-disambiguation-planning.md](placename-geo-disambiguation-planning.md) | Place geo disambiguation + map (authoritative for maps) |
+| [map-tiles-planning.md](map-tiles-planning.md) | Regional PMTiles download / cache |
+| [import-planning.md](import-planning.md) | Document import (blind + profiled) |
+| [find-replace-planning.md](find-replace-planning.md) | Find / replace |
+| [xpath-sidebar-planning.md](xpath-sidebar-planning.md) | XPath sidebar |
+| [translation-planning.md](translation-planning.md) | Translation pane (phases A–E largely done — reference) |
+| [tagging-planning.md](tagging-planning.md) | Keyboard tagging (mostly shipped — historical plan) |
+| [project-schema-planning.md](project-schema-planning.md) | Schema onboarding plan (mostly shipped — see schema_handling) |
+| [sanmiao-ljb-integration.md](sanmiao-ljb-integration.md) | Sanmiao bridge design notes |
+| [versioning-planning.md](versioning-planning.md) | Local history / time machine |
+| [performance-planning.md](performance-planning.md) / [bundle-size-warning-planning.md](bundle-size-warning-planning.md) | Perf / first-load size |
+| [corpus-extraction-planning.md](corpus-extraction-planning.md) | Future browser / corpus extract |
+| [beta-plan.md](beta-plan.md) | Ship criteria |
+
+Related script notes: [scripts/extract-map-tile-bundles.md](../scripts/extract-map-tile-bundles.md).
+
+Pack index JSON (schema + example): `authoritypacks-packs-index.schema.json`, `authoritypacks-packs-index.example.json`.
+
+---
+
+## Archive
+
+Session logs, scratch notes, and superseded drafts: **[archive/](archive/)**.

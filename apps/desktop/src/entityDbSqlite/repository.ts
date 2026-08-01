@@ -3064,18 +3064,147 @@ export class EntitySqliteRepository {
       }
       if (existing) {
         this.db
-          .prepare('UPDATE entity_names SET text = ?, language = ?, updated_at = ? WHERE id = ?')
+          .prepare(
+            `UPDATE entity_names
+             SET text = ?, language = ?, name_type = COALESCE(name_type, 'translation'),
+                 updated_at = ?
+             WHERE id = ?`,
+          )
           .run(trimmed, language, now, existing.id);
       } else {
         this.db
           .prepare(
             `INSERT INTO entity_names
                (entity_id, text, name_type, name_role, language, is_primary, origin, source, status, created_at, updated_at)
-             VALUES (?, ?, NULL, 'variant', ?, 0, 'user', NULL, 'active', ?, ?)`,
+             VALUES (?, ?, 'translation', 'variant', ?, 0, 'user', NULL, 'active', ?, ?)`,
           )
           .run(entityId, trimmed, language, now, now);
       }
       this.bumpEntity(entityId, now);
+    });
+  }
+
+  /**
+   * Batch mechanical name cleanup:
+   * 1. Promote untyped Latn rows to `translation` (romanizations)
+   * 2. Deduplicate identical text+type within an entity (keep best row)
+   * 3. Remove remaining non-primary rows with no name type
+   */
+  autoCleanNames(now = nowIso()): {
+    dedupedNames: number;
+    removedUntyped: number;
+    promotedRomanizations: number;
+  } {
+    return this.transaction(() => {
+      const touched = new Set<string>();
+
+      const latnUntyped = this.db
+        .prepare(
+          `SELECT id, entity_id AS entityId FROM entity_names
+           WHERE status = 'active'
+             AND (name_type IS NULL OR TRIM(name_type) = '')
+             AND language LIKE '%-Latn'
+             AND is_primary = 0`,
+        )
+        .all() as Array<{ id: number; entityId: string }>;
+      for (const row of latnUntyped) {
+        this.db
+          .prepare(
+            `UPDATE entity_names SET name_type = 'translation', updated_at = ? WHERE id = ?`,
+          )
+          .run(now, row.id);
+        touched.add(row.entityId);
+      }
+      const promotedRomanizations = latnUntyped.length;
+
+      const dupGroups = this.db
+        .prepare(
+          `SELECT entity_id AS entityId, text,
+                  COALESCE(name_type, '') AS nameTypeKey,
+                  COUNT(*) AS c
+           FROM entity_names
+           WHERE status = 'active'
+           GROUP BY entity_id, text, COALESCE(name_type, '')
+           HAVING c > 1`,
+        )
+        .all() as Array<{ entityId: string; text: string; nameTypeKey: string; c: number }>;
+
+      let dedupedNames = 0;
+      for (const group of dupGroups) {
+        const rows = this.db
+          .prepare(
+            `SELECT id, origin, is_primary AS isPrimary, name_type AS nameType
+             FROM entity_names
+             WHERE entity_id = ? AND text = ? AND status = 'active'
+               AND COALESCE(name_type, '') = ?
+             ORDER BY is_primary DESC,
+                      CASE WHEN name_type IS NULL OR TRIM(name_type) = '' THEN 1 ELSE 0 END,
+                      id ASC`,
+          )
+          .all(group.entityId, group.text, group.nameTypeKey) as Array<{
+          id: number;
+          origin: SqliteValueOrigin;
+          isPrimary: number;
+          nameType: string | null;
+        }>;
+        const [, ...extras] = rows;
+        for (const extra of extras) {
+          if (extra.origin === 'user') {
+            this.db.prepare('DELETE FROM entity_names WHERE id = ?').run(extra.id);
+          } else {
+            this.db
+              .prepare(`UPDATE entity_names SET status = 'withdrawn', updated_at = ? WHERE id = ?`)
+              .run(now, extra.id);
+            this.db
+              .prepare(
+                `INSERT OR IGNORE INTO entity_tombstones
+                   (entity_id, table_name, row_id, reason, created_at)
+                 VALUES (?, 'entity_names', ?, 'auto-clean-duplicate', ?)`,
+              )
+              .run(group.entityId, extra.id, now);
+          }
+          dedupedNames += 1;
+          touched.add(group.entityId);
+        }
+      }
+
+      const untyped = this.db
+        .prepare(
+          `SELECT id, entity_id AS entityId, origin
+           FROM entity_names
+           WHERE status = 'active'
+             AND (name_type IS NULL OR TRIM(name_type) = '')
+             AND is_primary = 0`,
+        )
+        .all() as Array<{ id: number; entityId: string; origin: SqliteValueOrigin }>;
+
+      let removedUntyped = 0;
+      for (const row of untyped) {
+        if (row.origin === 'user') {
+          this.db.prepare('DELETE FROM entity_names WHERE id = ?').run(row.id);
+        } else {
+          this.db
+            .prepare(`UPDATE entity_names SET status = 'rejected', updated_at = ? WHERE id = ?`)
+            .run(now, row.id);
+          this.db
+            .prepare(
+              `INSERT OR IGNORE INTO entity_tombstones
+                 (entity_id, table_name, row_id, reason, created_at)
+               VALUES (?, 'entity_names', ?, 'auto-clean-untyped', ?)`,
+            )
+            .run(row.entityId, row.id, now);
+        }
+        removedUntyped += 1;
+        touched.add(row.entityId);
+      }
+
+      for (const entityId of touched) this.bumpEntity(entityId, now);
+
+      return {
+        dedupedNames,
+        removedUntyped,
+        promotedRomanizations,
+      };
     });
   }
 
@@ -3456,7 +3585,9 @@ export class EntitySqliteRepository {
                  WHERE id = ?`,
               )
               .run(nameType, nameType, nameType, now, active.id);
-            this.syncPersonNameScalars(patch.entityId, text, nameType, now);
+            if (nameType !== 'family' && nameType !== 'given') {
+              this.syncPersonNameScalars(patch.entityId, text, nameType, now);
+            }
             upgraded = true;
           }
           if (name.language && !active.language) {
@@ -3490,7 +3621,12 @@ export class EntitySqliteRepository {
             now,
             now,
           );
-        this.syncPersonNameScalars(patch.entityId, text, nameType, now);
+        // Do not sync 姓/名 scalars here: multiple family/given variants may be
+        // inserted in one patch, and the dedicated familyName/givenName fields
+        // below choose the canonical pair.
+        if (nameType !== 'family' && nameType !== 'given') {
+          this.syncPersonNameScalars(patch.entityId, text, nameType, now);
+        }
         namesAdded += 1;
         changed = true;
       }
@@ -3499,47 +3635,71 @@ export class EntitySqliteRepository {
         const person = this.db
           .prepare('SELECT family_name, given_name FROM people WHERE entity_id = ?')
           .get(patch.entityId) as { family_name: string | null; given_name: string | null } | undefined;
-        if (patch.familyName?.trim() && !person?.family_name) {
+        const familyVariants = new Set(
+          (patch.names ?? [])
+            .filter((name) => normalizePersonNameType(name.nameType ?? null) === 'family')
+            .map((name) => name.text.trim())
+            .filter(Boolean),
+        );
+        const givenVariants = new Set(
+          (patch.names ?? [])
+            .filter((name) => normalizePersonNameType(name.nameType ?? null) === 'given')
+            .map((name) => name.text.trim())
+            .filter(Boolean),
+        );
+        if (patch.familyName?.trim()) {
           const text = patch.familyName.trim();
-          const hasName = this.db
-            .prepare(
-              `SELECT 1 FROM entity_names WHERE entity_id = ? AND text = ? AND status = 'active'`,
-            )
-            .get(patch.entityId, text);
-          if (!hasName) {
-            this.db
+          const current = person?.family_name?.trim() || null;
+          // Set when empty, or when the current scalar is merely another pack
+          // family variant (re-backfill can correct 元 → 拓拔 for 拓拔建).
+          const shouldSet = !current || (current !== text && familyVariants.has(current));
+          if (shouldSet) {
+            const hasName = this.db
               .prepare(
-                `INSERT INTO entity_names
-                   (entity_id, text, name_type, name_role, language, is_primary, origin, source, status, created_at, updated_at)
-                 VALUES (?, ?, 'family', 'family', NULL, 0, 'authority', NULL, 'active', ?, ?)`,
+                `SELECT 1 FROM entity_names WHERE entity_id = ? AND text = ? AND status = 'active'`,
               )
-              .run(patch.entityId, text, now, now);
+              .get(patch.entityId, text);
+            if (!hasName) {
+              this.db
+                .prepare(
+                  `INSERT INTO entity_names
+                     (entity_id, text, name_type, name_role, language, is_primary, origin, source, status, created_at, updated_at)
+                   VALUES (?, ?, 'family', 'family', NULL, 0, 'authority', NULL, 'active', ?, ?)`,
+                )
+                .run(patch.entityId, text, now, now);
+              namesAdded += 1;
+            }
+            this.db
+              .prepare('UPDATE people SET family_name = ? WHERE entity_id = ?')
+              .run(text, patch.entityId);
+            changed = true;
           }
-          this.db
-            .prepare('UPDATE people SET family_name = ? WHERE entity_id = ?')
-            .run(text, patch.entityId);
-          changed = true;
         }
-        if (patch.givenName?.trim() && !person?.given_name) {
+        if (patch.givenName?.trim()) {
           const text = patch.givenName.trim();
-          const hasName = this.db
-            .prepare(
-              `SELECT 1 FROM entity_names WHERE entity_id = ? AND text = ? AND status = 'active'`,
-            )
-            .get(patch.entityId, text);
-          if (!hasName) {
-            this.db
+          const current = person?.given_name?.trim() || null;
+          const shouldSet = !current || (current !== text && givenVariants.has(current));
+          if (shouldSet) {
+            const hasName = this.db
               .prepare(
-                `INSERT INTO entity_names
-                   (entity_id, text, name_type, name_role, language, is_primary, origin, source, status, created_at, updated_at)
-                 VALUES (?, ?, 'given', 'given', NULL, 0, 'authority', NULL, 'active', ?, ?)`,
+                `SELECT 1 FROM entity_names WHERE entity_id = ? AND text = ? AND status = 'active'`,
               )
-              .run(patch.entityId, text, now, now);
+              .get(patch.entityId, text);
+            if (!hasName) {
+              this.db
+                .prepare(
+                  `INSERT INTO entity_names
+                     (entity_id, text, name_type, name_role, language, is_primary, origin, source, status, created_at, updated_at)
+                   VALUES (?, ?, 'given', 'given', NULL, 0, 'authority', NULL, 'active', ?, ?)`,
+                )
+                .run(patch.entityId, text, now, now);
+              namesAdded += 1;
+            }
+            this.db
+              .prepare('UPDATE people SET given_name = ? WHERE entity_id = ?')
+              .run(text, patch.entityId);
+            changed = true;
           }
-          this.db
-            .prepare('UPDATE people SET given_name = ? WHERE entity_id = ?')
-            .run(text, patch.entityId);
-          changed = true;
         }
       }
 

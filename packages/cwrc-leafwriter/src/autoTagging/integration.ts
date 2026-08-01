@@ -38,6 +38,7 @@ import { collectPluginPatternTagCandidates } from '../plugins/patternTagProducer
 import { suggestPersonNameSplit, suggestPersonRomanization } from '../plugins/personNameDefaults';
 import { extractRegisteredEntityData } from '../plugins/entityDataExtractors';
 import { personWrapperSource } from './entityExtraction';
+import { preferCanonicalFamilyGiven } from './nameTypes';
 import {
   ingestExtractedEntityDataSqlite,
   refreshExtractedEntityDataForDocumentSqlite,
@@ -1562,13 +1563,27 @@ export class AutoTaggingSession {
       collectTypedNamesForCandidate(candidate),
       collectGivenFamilyNamesForCandidate(candidate, projectLang),
     ]);
-    const pluginSplit =
-      !authorityGivenFamilyNames.familyName && !authorityGivenFamilyNames.givenName
-        ? suggestPersonNameSplit(nameForSplit, projectLang)
-        : null;
+    // Pack `names[]` (bare 姓/名/字) → scalar family/given when Wikidata did not.
+    // Same preference order as entities-panel backfill.
+    const preferredFromPack = preferCanonicalFamilyGiven(
+      projectLangName ?? name,
+      typedNames,
+    );
+    const needsPluginSplit =
+      !(authorityGivenFamilyNames.familyName || preferredFromPack.familyName) ||
+      !(authorityGivenFamilyNames.givenName || preferredFromPack.givenName);
+    const pluginSplit = needsPluginSplit
+      ? suggestPersonNameSplit(nameForSplit, projectLang)
+      : null;
     const givenFamilyNames = {
-      familyName: authorityGivenFamilyNames.familyName ?? pluginSplit?.familyName,
-      givenName: authorityGivenFamilyNames.givenName ?? pluginSplit?.givenName,
+      familyName:
+        authorityGivenFamilyNames.familyName ??
+        preferredFromPack.familyName ??
+        pluginSplit?.familyName,
+      givenName:
+        authorityGivenFamilyNames.givenName ??
+        preferredFromPack.givenName ??
+        pluginSplit?.givenName,
     };
     const romanizedName =
       options.romanizedName ??

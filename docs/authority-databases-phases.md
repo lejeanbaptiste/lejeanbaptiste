@@ -1,9 +1,6 @@
 # Authority databases (CBDB + DILA) — Work Phases
 
-Companion to [authority-databases-planning.md](authority-databases-planning.md).
-This slots into the auto-tagging Phase 4a "authority" mode; the no-ids-at-tag-stage
-rule holds throughout — authority ids travel on suggestions but nothing is minted
-until Phase 4b.
+**Status (2026-08-01):** **Mostly shipped** — A0–A3 and pack lifecycle live; A5/A6 reference lookup in use. Remaining: A4 polish (look-alikes, per-source counts), memory profiling, disable-tier cleanup. Companion to [authority-databases-planning.md](authority-databases-planning.md).
 
 ## Phase A0 — Language codes & gating
 
@@ -127,9 +124,9 @@ cd leaf-writer && node scripts/sync-authority-packs.mjs /path/to/entityDbFolder
 
 1. [x] **C3/D3** — GitHub Actions in `authoritypacks`: compile → tarball + `packs-index.json`
 2. [x] LJB pack fetcher: `authorityPackRegistry.ts` — download bundle from GitHub release assets, verify sha256, extract
-3. [ ] **Reference data** checkbox (default off): keep A1 fetcher for `authority-databases/` when enabled
-4. [ ] Throttled check (≤ weekly): pack registry manifest + upstream pins (if reference enabled)
-5. [ ] “Update available” badge; on accept: refresh packs (+ raw if enabled). Never auto-replace mid-review
+3. [x] **Reference data** checkbox (default off): keep A1 fetcher for `authority-databases/` when enabled
+4. [x] **Look for Updates** (menu) + background poll (same 4h cadence as app updater): force-checks authority packs and plugins; OS notification when available
+5. [x] “Update available” via per-bundle sha256; Settings → Update now / Look for Updates snackbar refreshes packs (+ reference if enabled)
 6. [ ] Disable: delete or keep both tiers
 
 **Done when:** per [authority-data-lifecycle.md](authority-data-lifecycle.md) exit criteria — packs from GitHub, reference optional, no terminal for normal users.
@@ -162,7 +159,7 @@ Historical place pack + **local-only** delivery (Dataverse EULA — no GitHub re
 
 ## Deferred / future
 
-- Wikipedia/VIAF/Wikidata: not a match source at tag time — use **authority packs** built in the [`authority extraction`](../authority%20extraction/) repo (see [authority-extraction.md](authority-extraction.md), [phases.md](../authority%20extraction/docs/phases.md)). VIAF/Wikidata idnos remain Phase 4b reconciliation when minting entities.
+- Wikipedia/VIAF/Wikidata: not a match source at tag time — use **authority packs** built in the [`authority extraction`](../../authority%20extraction/) repo (see [authority-extraction.md](authority-extraction.md), [phases.md](../../authority%20extraction/docs/phases.md)). VIAF/Wikidata idnos remain Phase 4b reconciliation when minting entities.
 - **VIAF↔Wikidata precompiled concordance (long-term)** — 2026-07-07: the Phase 4b disambiguation panel (live LINCS reconcile, not the packs) currently cross-links VIAF/Wikidata/CBDB rows by regex-scraping ids out of free-text reconcile descriptions (`extractWikidataId`/`extractViafId`/`extractCbdbId` in `disambiguationCandidates.ts`) — fragile by construction (e.g. a locale-prefixed VIAF permalink `viaf.org/fr/viaf/…` silently broke merging until patched 2026-07-07). The correct fix is a precompiled crosswalk, same pattern as the CBDB/DILA `metadata.crosswalk` baked in at pack-compile time. Blocked on a Wikidata-persons pack recompile (not scheduled yet) and on VIAF bulk-dump access being gated/unstable post the Jan 2025 OCLC interface overhaul (see research notes, 2026-07-07 session). **For now: keep the regex-based runtime cross-linking** in the live panel; revisit as part of the next Wikidata pack recompile.
 - Web-app support (databases are desktop-filesystem for now).
 - DILA `ana` values other than `historical` — flag mythical/uncertain in the clue?

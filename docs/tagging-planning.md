@@ -1,8 +1,8 @@
 # Tagging infrastructure — implementation plan
 
-**Status:** Phase 1 implemented (Enter-tag popup, F2 rename, insert/split, propagate, queue-walk, tag stats). Phase 2 implemented (Alt+Enter attribute popup, attributes panel, Lookup, tag colours, attr stats).  
+**Status (2026-08-01):** Phase 1–2 tagging UX **shipped**. Auto-tagging / disambiguation / Sanmiao / Norbert live in-app (see [Auto-tagging.md](Auto-tagging.md)); this doc remains the keyboard-tagging design notes. Optional leftovers: queue-walk polish, resolution-file attribute propagate.  
 **Scope:** Desktop app — fast structural/semantic tagging, attributes, later disambiguation and bulk ID propagation  
-**Related:** `docs/todo.md`, `docs/project-schema-planning.md`, `docs/schema_handling.md`
+**Related:** [project-schema-planning.md](project-schema-planning.md), [schema_handling.md](schema_handling.md), [Auto-tagging.md](Auto-tagging.md)
 
 ---
 
@@ -10,7 +10,7 @@
 
 LEAF-Writer today conflates **identifying** a string (`persName`), **linking** it to an authority (`@ref`), and **managing entities** (dialogs, RDF) in one slow path. LJB replaces that with a **phased workflow** inspired by Markus and especially **Norbert**:
 
-1. **Automated markup** — regex, lists, DB scripts, XPath cleanup — **outside LJB** (Python), for the foreseeable future.
+1. **Automated markup** — in-app tag bomb / date propose / plugins (Norbert, Sanmiao/`cjk-dates`), plus optional external scripts for corpus prep.
 2. **Identify** — wrap text in schema-valid tags **without attributes**; fast, keyboard-driven.
 3. **Disambiguate** — batch negative filtering against project databases (wrong 1:1 match, pick among homonyms, mark new entities).
 4. **Propagate attributes** — table-driven bulk update of `@ref`, `person_id`, etc., then push new records to the database.
@@ -396,7 +396,7 @@ Schema validity remains authoritative; settings tune **behaviour**, not RelaxNG 
 
 - Customisable chords UI with conflict warnings.
 - Source editor parity (optional).
-- Project-wide propagate opt-in; AI assist (`docs/todo.md` — exploratory).
+- Project-wide propagate opt-in; AI assist (exploratory).
 
 ---
 

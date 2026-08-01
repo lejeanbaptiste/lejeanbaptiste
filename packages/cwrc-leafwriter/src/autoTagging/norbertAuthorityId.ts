@@ -37,6 +37,14 @@ export function bareNorbertAuthorityValue(value: string): string {
 export function norbertAuthorityLookupValues(value: string): string[] {
   const trimmed = value.trim();
   if (!trimmed) return [];
-  const bare = bareNorbertAuthorityValue(trimmed);
-  return bare === trimmed ? [trimmed] : [trimmed, bare];
+  const match = trimmed.match(KIND_PREFIX);
+  const bare = match ? match[2]! : trimmed;
+  const values = new Set<string>([trimmed]);
+  if (bare !== trimmed) values.add(bare);
+  // Packs now store `person-N` / `office-N`; older entity idnos may still be bare digits.
+  if (/^\d+$/.test(bare)) {
+    const kind = match?.[1]?.toLowerCase() ?? 'person';
+    values.add(`${kind}-${bare}`);
+  }
+  return [...values];
 }

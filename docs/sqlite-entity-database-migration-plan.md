@@ -1,13 +1,6 @@
 # SQLite entity database migration plan
 
-**Status:** CEDB and the single test PEDB are migrated. SQLite is the live
-runtime authority for panel reads/mutations, Bridge promote/sync/inbox,
-merge-docket display and resolve, synchronized mirror, central-order remaps,
-authority backfill/refresh, disambiguation PEDB/CEDB candidate search, and the
-other migrated panel paths. Remaining work is end-to-end verification on the
-live databases, dropping leftover XML fallback branches once that passes, and
-wordprocessor integration. Further work should target this installation, not a
-generalized deployment system.
+**Status (2026-08-01):** **Mostly shipped** for this install — SQLite is the live store for panel/Bridge/sync paths. Remaining: generalized first-run migration, conflict UX, drop leftover XML fallbacks after confidence, finish wordprocessor write paths.
 
 **Decision:** SQLite becomes the authoritative storage format for the Central
 Entity Database (CEDB) and Project Entity Databases (PEDBs). The existing XML

@@ -47,6 +47,7 @@
       "privacy_settings": "Paramètres de confidentialité",
       "recent": "récent",
       "reject_all": "tout rejeter",
+      "retry": "Réessayer",
       "request expired": "demande expirée",
       "sample_document": "exemple de document",
       "samples": "exemples",
@@ -400,7 +401,7 @@
         },
         "japanese": {
           "message": "Télécharger les paquets d'autorité japonais ?",
-          "detail": "Ce projet utilise le japonais comme langue source. LEAF-Writer peut télécharger les paquets d'autorité NDL et Wikidata pour l'étiquetage automatisé. Ils sont stockés à côté de votre base de données d'entités centrale."
+          "detail": "Ce projet utilise le japonais comme langue source. LEAF-Writer peut télécharger les paquets d'autorité NDL et Wikidata pour l'étiquetage automatisé, et installer Sanmiao (dates est-asiatiques). Ils sont stockés à côté de votre base de données d'entités centrale."
         },
         "tibetan": {
           "message": "Télécharger les paquets d'autorité tibétains ?",
@@ -421,9 +422,17 @@
         "refreshing": "Actualisation…",
         "schema_is_up_to_date": "Le schéma est déjà à jour.",
         "app_is_up_to_date": "L'application est à jour.",
+        "checking_for_updates": "Recherche de mises à jour…",
+        "everything_up_to_date": "Tout est à jour.",
+        "update_check_unavailable": "La vérification des mises à jour est indisponible. Redémarrez l'application.",
         "app_update_downloading": "Une nouvelle version ({{version}}) a été trouvée et est en cours de téléchargement. Elle s'installera à la prochaine fermeture de l'application.",
         "app_update_check_failed_title": "Échec de la vérification des mises à jour",
         "app_update_check_failed": "Impossible de vérifier les mises à jour de l'application : {{error}}",
+        "authority_updates_available": "Des mises à jour des paquets d'autorité sont disponibles.",
+        "authority_updating": "Mise à jour des paquets d'autorité…",
+        "authority_updated": "Paquets d'autorité mis à jour.",
+        "authority_update_failed": "Échec de la mise à jour des paquets d'autorité.",
+        "update_now_button": "Mettre à jour",
         "plugin_updates_available": "{{count}} mise(s) à jour de plugin disponible(s).",
         "open_plugins_button": "Ouvrir les plugins",
         "no_file_open": "Ouvrez un fichier pour commencer l'édition. Vous pouvez aussi créer un nouveau fichier avec {{shortcut}} ou importer vos fichiers depuis le menu système.",
@@ -472,7 +481,8 @@
           "project_not_fully_loaded": "Projet is not fully loaded.",
           "imported_documents_success": "Imported {{documentCount}} document{{documentCount, plural, one {} other {s}}}.",
           "imported_documents_success_with_keys": "Imported {{documentCount}} document{{documentCount, plural, one {} other {s}}}; moved {{keyCount}} foreign entity key{{keyCount, plural, one {} other {s}}} to backup (@ana).",
-          "imported_documents_with_problems_snackbar": "Imported {{documentCount}} document{{documentCount, plural, one {} other {s}}}; {{problemCount}} problem file{{problemCount, plural, one {} other {s}}}. See console for details."
+          "imported_documents_with_problems_snackbar": "Imported {{documentCount}} document{{documentCount, plural, one {} other {s}}}; {{problemCount}} problem file{{problemCount, plural, one {} other {s}}}. See console for details.",
+          "editor_failed_to_load": "L’éditeur n’a pas pu se charger. Vous pouvez réessayer."
         },
         "select_language": "Select language…",
         "use_local_schema_file": "Use local schema file…",

@@ -391,8 +391,13 @@ export interface ElectronAPI {
   authorityLifecycleSetEnabled?: (
     options: AuthorityLifecycleSetEnabledOptions,
   ) => Promise<AuthorityLifecycleRunResult>;
+  authorityLifecycleSetReferenceDataEnabled?: (
+    enabled: boolean,
+  ) => Promise<AuthorityLifecycleRunResult>;
   authorityLifecycleUpdate?: () => Promise<AuthorityLifecycleRunResult>;
-  authorityLifecycleMaybeCheckUpdates?: () => Promise<AuthorityLifecycleStatus | null>;
+  authorityLifecycleMaybeCheckUpdates?: (options?: {
+    force?: boolean;
+  }) => Promise<AuthorityLifecycleStatus | null>;
   authorityLifecyclePromptEnable?: (
     profile?: import('@src/desktop/authorityLifecycleTypes').AuthorityLifecycleProfile,
     strings?: import('@src/desktop/authorityLifecycleTypes').AuthorityLifecyclePromptStrings,
@@ -522,6 +527,9 @@ declare global {
       refreshAuthorityLifecycle: () => Promise<void>;
       setAuthorityLifecycleEnabled: (
         options: AuthorityLifecycleSetEnabledOptions,
+      ) => Promise<AuthorityLifecycleRunResult>;
+      setAuthorityLifecycleReferenceDataEnabled: (
+        enabled: boolean,
       ) => Promise<AuthorityLifecycleRunResult>;
       runAuthorityLifecycleUpdate: () => Promise<AuthorityLifecycleRunResult>;
       revealAuthorityLifecycleFolder: () => Promise<void>;

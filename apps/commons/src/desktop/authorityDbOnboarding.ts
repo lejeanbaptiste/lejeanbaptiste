@@ -17,6 +17,7 @@ import type { AuthorityLifecyclePromptStrings } from './authorityLifecycleTypes'
 import { isDesktop } from '@src/types/desktop';
 import { refreshCbdbConcordanceAfterPackLifecycle } from '../../../../packages/cwrc-leafwriter/src/autoTagging/cbdbConcordance';
 import { clearPackContentCache } from '../../../../packages/cwrc-leafwriter/src/services/authority-pack-lookup';
+import { ensureLanguagePlugins } from './ensureLanguagePlugins';
 
 const { t } = i18next;
 
@@ -37,6 +38,8 @@ const promptStringsForProfile = (
   downloadButton: t('LWC.desktop.authority_prompt.download_button'),
   notNowButton: t('LWC.desktop.authority_prompt.not_now_button'),
 });
+
+const isJapanesePluginLanguage = (language: string): boolean => isJapaneseLanguageCode(language);
 
 /**
  * Offer offline authority assets if this is a supported East Asian project and
@@ -68,6 +71,19 @@ export const maybeOfferAuthorityDatabases = async (bundle: ProjectBundle): Promi
       await refreshCbdbConcordanceAfterPackLifecycle();
     } catch {
       // Pack enable succeeded; panel reload remains the safety net.
+    }
+
+    // Japan pack accept also installs Sanmiao (cjk-dates) so East Asian date
+    // tagging is available without a separate Plugins step.
+    if (profile === 'japanese') {
+      try {
+        await ensureLanguagePlugins(isJapanesePluginLanguage);
+        if (api.pluginsEnsureSchemaContribution) {
+          await api.pluginsEnsureSchemaContribution('cjk-dates', bundle.projectFilePath);
+        }
+      } catch (error) {
+        console.warn('[onboarding] Failed to install Sanmiao with Japan pack', error);
+      }
     }
     return;
   }

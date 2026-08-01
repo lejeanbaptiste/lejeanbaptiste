@@ -1,6 +1,6 @@
 import { Box, Divider, Paper, Stack, useTheme } from '@mui/material';
 import { AnimatePresence, motion } from 'motion/react';
-import { useCallback, useRef } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { getPluginToolbarItems, type PluginToolbarMenuItem } from '../../plugins/pluginExtensions';
 import type { IconLeafWriter } from '../../icons';
@@ -64,7 +64,14 @@ export const EditorToolbar = () => {
     toggleTextLocked,
   } = useActions().editor;
   const { openDialog, showContextMenu } = useActions().ui;
-  const pluginToolbarItems = getPluginToolbarItems();
+  // Re-render when plugins load/unload so Norbert (etc.) appear without restart.
+  const [pluginToolbarEpoch, setPluginToolbarEpoch] = useState(0);
+  useEffect(() => {
+    const onRegistryChanged = () => setPluginToolbarEpoch((n) => n + 1);
+    window.addEventListener('ljbPluginRegistryChanged', onRegistryChanged);
+    return () => window.removeEventListener('ljbPluginRegistryChanged', onRegistryChanged);
+  }, []);
+  const pluginToolbarItems = pluginToolbarEpoch >= 0 ? getPluginToolbarItems() : [];
 
   const openCalendarDialog = useCallback(
     (notice?: string) => {

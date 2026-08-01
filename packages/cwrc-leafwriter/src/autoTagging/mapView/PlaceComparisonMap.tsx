@@ -31,7 +31,7 @@ setWorkerUrl('/maplibre-gl-worker.mjs');
  * A single pin to compare on the map. Deliberately generic — not
  * `DisambiguationCandidate`/`MentionGroup` — so this component can later
  * serve the document-wide "map of disambiguated places" view
- * (docs/map-app.md §1.1) without a rewrite. `color`/`label` should match
+ * (docs/archive/map-app.md §1.1) without a rewrite. `color`/`label` should match
  * whatever cluster badge the caller already showed elsewhere (row chips,
  * group-header icon) so the map and the list read as one visual system.
  */

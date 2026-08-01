@@ -1,10 +1,12 @@
-# Authority data lifecycle (CBDB + DILA + Norbert + CHGIS)
+# Authority data lifecycle (CBDB + DILA + Norbert + CHGIS + NDL)
 
-**Status:** Spec (revised 2026-08-01) — two-tier model; **CI-first pack delivery** for normal users; **A6 reference lookup** wired for person enrichment.
+**Status:** Spec (revised 2026-08-01) — two-tier model; **CI-first pack delivery** for normal users; **A6 reference lookup** wired for person enrichment. Profiles: **`chinese`**, **`japanese`**, **`tibetan`**.
 
 **Related:** [authority-databases-phases.md](authority-databases-phases.md) (tracks A0–A6), [authority-databases-planning.md](authority-databases-planning.md) (field detail), [authority extraction/docs/phases.md](../../authority%20extraction/docs/phases.md) (compile + GitHub publish).
 
-**Scope:** **CBDB**, **DILA**, **Norbert**, and **CHGIS** — CHGIS is a Tier 1 (pre-compiled pack) source folded into the `chinese` profile bundle; see [CHGIS](#chgis).
+**Scope:** **CBDB**, **DILA**, **Norbert**, and **CHGIS** under the Chinese profile; **NDL + Wikidata-ja** under Japanese; Wikidata-focused packs under Tibetan. CHGIS is a Tier 1 (pre-compiled pack) source folded into the `chinese` profile bundle; see [CHGIS](#chgis).
+
+**Plugins (related, not packs):** Accepting the **Japanese** first-project download also installs and enables **Sanmiao** via the `cjk-dates` plugin (`ensureLanguagePlugins` in Commons). Chinese projects still use the Chinese assets dialog for plugins (Norbert, `cjk-dates`, …).
 
 ---
 
@@ -88,7 +90,7 @@ Pack manifests must record `license` accurately (CBDB: `CC-BY-NC-SA-4.0`, not va
 
 **Not in scope:** Entity Lookups bubble order (VIAF, Wikidata) — online lookup at mint time (Phase 4b). Tag bomb source checkboxes stay in the auto-tag dialog.
 
-**First-project prompt:** Wire to the same enable flag. On accept: enable + install packs (+ reference data if checkbox on).
+**First-project prompt:** Wire to the same enable flag. On accept: enable + install packs (+ reference data if checkbox on). **Japanese** accept also installs Sanmiao (`cjk-dates`). Chinese projects may get a separate assets dialog (packs / plugins / map tiles).
 
 ---
 
@@ -253,8 +255,8 @@ Historical China **places** — complements CBDB places and DILA. See [authority
 | 1 | A5 | This spec; lifecycle IPC + Settings UI (spike) | partial |
 | 2 | C3/D3 | GitHub Actions → publish pack bundle + `packs-index.json` | done |
 | 3 | A5 | LJB: fetch packs from GitHub contents (`authorityPackRegistry.ts`) | done |
-| 4 | A5 | Reference-data checkbox + keep A1 fetcher for tier 2 | planned |
-| 5 | A6 | `authorityRef:lookup` for disambiguation / entity enrichment | planned |
+| 4 | A5 | Reference-data checkbox + keep A1 fetcher for tier 2 | done / in use |
+| 5 | A6 | `authorityRef:lookup` for disambiguation / entity enrichment | done (person enrichment) |
 | 6 | D1 | DILA recompile (D0 `<note>`/`<add>` variants); bump policy | planned |
 | 7 | H | CHGIS compile + fold into `chinese` Tier 1 pack bundle | done |
 

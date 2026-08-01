@@ -42,7 +42,7 @@ export interface SchemaUpdateFlowOptions {
   onBundleUpdated?: (bundle: ProjectBundle) => void;
 }
 
-const promptAndApplySchemaUpdate = async (
+export const promptAndApplySchemaUpdate = async (
   projectFilePath: string,
   result: Extract<SchemaUpdateCheckResult, { status: 'updateAvailable' }>,
   { notify, onBundleUpdated }: Pick<SchemaUpdateFlowOptions, 'notify' | 'onBundleUpdated'>,

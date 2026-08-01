@@ -15,30 +15,10 @@ import type { MissingAssetType } from '../../../../packages/cwrc-leafwriter/src/
 import type { DialogBarProps } from '../dialogs';
 import { refreshCbdbConcordanceAfterPackLifecycle } from '../../../../packages/cwrc-leafwriter/src/autoTagging/cbdbConcordance';
 import { clearPackContentCache } from '../../../../packages/cwrc-leafwriter/src/services/authority-pack-lookup';
+import { ensureLanguagePlugins } from './ensureLanguagePlugins';
 
 const isChineseRelatedLanguage = (language: string): boolean =>
-  language.toLowerCase().startsWith('zh');
-
-const downloadChinesePlugins = async (): Promise<void> => {
-  const api = window.electronAPI;
-  if (!api?.pluginsGetSnapshot) return;
-  let snapshot = await api.pluginsGetSnapshot();
-  const installed = snapshot.plugins.filter((plugin) =>
-    (plugin.languages ?? []).some(isChineseRelatedLanguage) ||
-    (plugin.manifest?.languagePrompt?.documentLanguages ?? []).some(isChineseRelatedLanguage),
-  );
-  for (const plugin of installed) {
-    if (!plugin.enabled) snapshot = await api.pluginsSetEnabled?.(plugin.id, true) ?? snapshot;
-  }
-  const remote = await api.pluginsGetRemoteIndex?.();
-  if (!remote || !api.pluginsInstallRemote) return;
-  for (const entry of remote.plugins) {
-    if (!(entry.languages ?? []).some(isChineseRelatedLanguage)) continue;
-    if (snapshot.plugins.some((plugin) => plugin.id === entry.id)) continue;
-    snapshot = await api.pluginsInstallRemote(entry);
-    snapshot = await api.pluginsSetEnabled?.(entry.id, true) ?? snapshot;
-  }
-};
+  language.toLowerCase().startsWith('zh') || language.toLowerCase() === 'lzh';
 
 const downloadChineseMapTiles = async (): Promise<void> => {
   const api = window.electronAPI;
@@ -64,7 +44,7 @@ const downloadSelectedChineseAssets = async (selected: MissingAssetType[]): Prom
       })(),
     );
   }
-  if (choices.has('plugins')) tasks.push(downloadChinesePlugins());
+  if (choices.has('plugins')) tasks.push(ensureLanguagePlugins(isChineseRelatedLanguage));
   if (choices.has('mapTiles')) tasks.push(downloadChineseMapTiles());
   await Promise.allSettled(tasks);
 };

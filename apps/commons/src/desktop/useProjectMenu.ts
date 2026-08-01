@@ -7,7 +7,13 @@ import {
   dispatchPluginToolAction,
   isKnownPluginToolAction,
 } from '../../../../packages/cwrc-leafwriter/src/plugins';
-import { checkSchemaUpdateManually } from '@src/desktop/schemaUpdateCheck';
+import {
+  promptAndApplySchemaUpdate,
+} from '@src/desktop/schemaUpdateCheck';
+import {
+  everythingIsUpToDate,
+  gatherUpdateReport,
+} from '@src/desktop/lookForUpdates';
 import { leafwriterAtom } from '@src/jotai';
 import { useActions, useAppState } from '@src/overmind';
 import { isDesktop } from '@src/types/desktop';
@@ -315,66 +321,97 @@ export const useProjectMenu = () => {
 
       if (action === 'look-for-updates') {
         void (async () => {
-          if (window.electronAPI?.checkForAppUpdates) {
-            const result = await window.electronAPI.checkForAppUpdates();
-            if (result.status === 'current') {
-              notifyViaSnackbar(t('LWC.desktop.project.app_is_up_to_date'));
-            } else if (result.status === 'updateAvailable') {
-              notifyViaSnackbar(
-                t('LWC.desktop.project.app_update_downloading', { version: result.version }),
-              );
-            } else if (result.status === 'error') {
-              await window.electronAPI?.showNativeMessageBox({
-                type: 'warning',
-                title: t('LWC.desktop.project.app_update_check_failed_title'),
-                message: t('LWC.desktop.project.app_update_check_failed', {
-                  error: result.message,
-                }),
-                buttons: [t('LWC.desktop.project.dialogs.ok_button')],
-                defaultId: 0,
-              });
-            }
+          notifyViaSnackbar(t('LWC.desktop.project.checking_for_updates'));
+
+          const api = window.electronAPI;
+          if (!api) {
+            notifyViaSnackbar(t('LWC.desktop.project.update_check_unavailable'));
+            return;
           }
 
-          if (window.electronAPI?.pluginsGetSnapshot && window.electronAPI?.pluginsGetRemoteIndex) {
-            try {
-              const [installed, remote] = await Promise.all([
-                window.electronAPI.pluginsGetSnapshot(),
-                window.electronAPI.pluginsGetRemoteIndex(),
-              ]);
-              const installedVersionById = new Map(
-                installed.plugins.map((plugin) => [plugin.id, plugin.version]),
-              );
-              const availableCount = remote.plugins.filter((entry) => {
-                const installedVersion = installedVersionById.get(entry.id);
-                return installedVersion === undefined || installedVersion !== entry.version;
-              }).length;
-              if (availableCount > 0) {
-                notifyViaSnackbar({
-                  message: t('LWC.desktop.project.plugin_updates_available', {
-                    count: availableCount,
-                  }),
-                  options: {
-                    action: () =>
-                      createElement(
-                        Button,
-                        {
-                          color: 'inherit',
-                          size: 'small',
-                          onClick: () => openPluginsDialog(),
-                        },
-                        t('LWC.desktop.project.open_plugins_button'),
-                      ),
-                  },
-                });
-              }
-            } catch {
-              // Plugin index check is best-effort — the app-update check above already ran.
-            }
+          const report = await gatherUpdateReport(api, {
+            projectFilePath: isProjectReady ? projectFilePath : null,
+          });
+
+          if (everythingIsUpToDate(report)) {
+            notifyViaSnackbar(t('LWC.desktop.project.everything_up_to_date'));
+            return;
           }
 
-          if (isProjectReady && projectFilePath) {
-            void checkSchemaUpdateManually(projectFilePath, {
+          const app = report.app;
+          if (app?.status === 'updateAvailable') {
+            notifyViaSnackbar(
+              t('LWC.desktop.project.app_update_downloading', { version: app.version }),
+            );
+          } else if (app?.status === 'error') {
+            await api.showNativeMessageBox?.({
+              type: 'warning',
+              title: t('LWC.desktop.project.app_update_check_failed_title'),
+              message: t('LWC.desktop.project.app_update_check_failed', {
+                error: app.message,
+              }),
+              buttons: [t('LWC.desktop.project.dialogs.ok_button')],
+              defaultId: 0,
+            });
+          }
+
+          if (report.authority?.enabled && report.authority.updateAvailable) {
+            notifyViaSnackbar({
+              message: t('LWC.desktop.project.authority_updates_available'),
+              options: {
+                action: () =>
+                  createElement(
+                    Button,
+                    {
+                      color: 'inherit',
+                      size: 'small',
+                      onClick: () => {
+                        void (async () => {
+                          notifyViaSnackbar(t('LWC.desktop.project.authority_updating'));
+                          const result = await api.authorityLifecycleUpdate?.();
+                          if (result?.ok) {
+                            notifyViaSnackbar(t('LWC.desktop.project.authority_updated'));
+                          } else {
+                            notifyViaSnackbar(
+                              result?.error ??
+                                t('LWC.desktop.project.authority_update_failed'),
+                            );
+                          }
+                        })();
+                      },
+                    },
+                    t('LWC.desktop.project.update_now_button'),
+                  ),
+              },
+            });
+          }
+
+          if (report.pluginUpdates > 0) {
+            notifyViaSnackbar({
+              message: t('LWC.desktop.project.plugin_updates_available', {
+                count: report.pluginUpdates,
+              }),
+              options: {
+                action: () =>
+                  createElement(
+                    Button,
+                    {
+                      color: 'inherit',
+                      size: 'small',
+                      onClick: () => openPluginsDialog(),
+                    },
+                    t('LWC.desktop.project.open_plugins_button'),
+                  ),
+              },
+            });
+          }
+
+          if (
+            report.schema?.status === 'updateAvailable' &&
+            isProjectReady &&
+            projectFilePath
+          ) {
+            await promptAndApplySchemaUpdate(projectFilePath, report.schema, {
               notify: (message) => notifyViaSnackbar(message),
               onBundleUpdated: (bundle) => refreshProjectSchemaConfig(bundle),
             });

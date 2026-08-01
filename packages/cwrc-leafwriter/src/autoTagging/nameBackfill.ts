@@ -31,7 +31,7 @@ import {
   touchEntity,
 } from './entities';
 import type { AuthorityCandidate } from './authority';
-import { normalizeNameType, normalizeTypedNamesForIntake, type NameTypeId } from './nameTypes';
+import { normalizeNameType, normalizeTypedNamesForIntake, preferCanonicalFamilyGiven, type NameTypeId } from './nameTypes';
 import { suggestPersonNameSplit, suggestPersonRomanization } from '../plugins/personNameDefaults';
 import { fetchWikidataLifespan } from './wikidataDates';
 import { fetchWikidataNationality } from './wikidataNationality';
@@ -164,11 +164,18 @@ export async function buildPackNameIndex(
       for (const row of iterateAuthorityNdjson(content)) {
         const typed = typedNamesFromPackRow(row.names);
         if (typed.length === 0 && !row.metadata) continue;
-        index.set(`${source}:${row.authorityId}`, {
+        const enrichment = {
           names: typed,
           primaryName: row.primaryName,
           metadata: row.metadata,
-        });
+        };
+        const idKeys =
+          source === 'NORBERT'
+            ? norbertAuthorityLookupValues(String(row.authorityId ?? ''))
+            : [String(row.authorityId ?? '').trim()].filter(Boolean);
+        for (const idKey of idKeys) {
+          index.set(`${source}:${idKey}`, enrichment);
+        }
       }
     } catch {
       // Pack missing or unreadable — skip silently.
@@ -525,23 +532,48 @@ export async function backfillEntityNames(
         addedThisEntity++;
         entityChanged = true;
       }
-      if (typed.type === 'family' && !getFamilyName(doc, entity.id)) {
-        setFamilyName(doc, entity.id, typed.text);
-        entityChanged = true;
-      }
-      if (typed.type === 'given' && !getGivenName(doc, entity.id)) {
-        setGivenName(doc, entity.id, typed.text);
-        entityChanged = true;
-      }
     }
 
-    if (givenFamily.familyName && !getFamilyName(doc, entity.id)) {
-      setFamilyName(doc, entity.id, givenFamily.familyName);
+    const preferred = preferCanonicalFamilyGiven(entity.names[0] ?? null, typedNames);
+    const nextFamily =
+      givenFamily.familyName ||
+      preferred.familyName ||
+      null;
+    const nextGiven =
+      givenFamily.givenName ||
+      preferred.givenName ||
+      null;
+    if (nextFamily && !getFamilyName(doc, entity.id)) {
+      setFamilyName(doc, entity.id, nextFamily);
       entityChanged = true;
+    } else if (
+      nextFamily &&
+      getFamilyName(doc, entity.id) &&
+      getFamilyName(doc, entity.id) !== nextFamily
+    ) {
+      const packFamilies = new Set(
+        typedNames.filter((name) => name.type === 'family').map((name) => name.text),
+      );
+      if (packFamilies.has(getFamilyName(doc, entity.id)!)) {
+        setFamilyName(doc, entity.id, nextFamily);
+        entityChanged = true;
+      }
     }
-    if (givenFamily.givenName && !getGivenName(doc, entity.id)) {
-      setGivenName(doc, entity.id, givenFamily.givenName);
+    if (nextGiven && !getGivenName(doc, entity.id)) {
+      setGivenName(doc, entity.id, nextGiven);
       entityChanged = true;
+    } else if (
+      nextGiven &&
+      getGivenName(doc, entity.id) &&
+      getGivenName(doc, entity.id) !== nextGiven
+    ) {
+      const packGivens = new Set(
+        typedNames.filter((name) => name.type === 'given').map((name) => name.text),
+      );
+      if (packGivens.has(getGivenName(doc, entity.id)!)) {
+        setGivenName(doc, entity.id, nextGiven);
+        entityChanged = true;
+      }
     }
 
     // Norbert supplies the historically appropriate surname boundary when its

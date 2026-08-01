@@ -136,6 +136,30 @@ describe('disambiguationMatch', () => {
     expect(preferredLabelForLang(labels, null)).toBeNull();
   });
 
+  it('falls back to cleaned zhwiki sitelink title when Chinese labels are missing', async () => {
+    const fetchImpl = async (url: string) => {
+      expect(url).toContain('sitelinks');
+      return {
+        ok: true,
+        json: async () => ({
+          entities: {
+            Q45421892: {
+              labels: { en: { value: 'Cui Yin' } },
+              sitelinks: { zhwiki: { title: '崔諲 (十六國到劉宋)' } },
+            },
+          },
+        }),
+      } as Response;
+    };
+
+    const labels = (await wikidataLabelsByQid(['Q45421892'], fetchImpl)).get('Q45421892')!;
+    expect(labels.en).toBe('Cui Yin');
+    expect(labels['zh-hant']).toBe('崔諲');
+    expect(preferredLabelForLang(labels, 'zh-Hant')).toBe('崔諲');
+    const names = (await wikidataNamesByQid(['Q45421892'], fetchImpl)).get('Q45421892')!;
+    expect(names).toEqual(expect.arrayContaining(['Cui Yin', '崔諲']));
+  });
+
   it('fetches typed names from Wikidata name-property claims', async () => {
     const claim = (text: string, language = 'zh') => ({
       mainsnak: { datavalue: { value: { text, language } } },

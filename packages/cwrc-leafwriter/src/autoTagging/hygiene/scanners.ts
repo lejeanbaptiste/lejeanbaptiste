@@ -5,7 +5,7 @@ import {
   type NameTypeId,
 } from '../nameTypes';
 import { suggestPersonNameSplit } from '../../plugins/personNameDefaults';
-import { autoRomanize, isLatinScript } from '../../utilities/romanize';
+import { isLatinScript } from '../../utilities/romanize';
 import { isChineseLanguageCode } from '../../utilities/languageCodes';
 import type { HygieneFinding, HygienePeer } from './types';
 
@@ -13,23 +13,11 @@ const hasCjk = (text: string): boolean => /\p{Script=Han}/u.test(text);
 
 const nfc = (text: string): string => text.normalize('NFC').trim();
 
-const internalSpaceCount = (text: string): number => (text.trim().match(/ /g) ?? []).length;
+const codePointLength = (value: string): number => [...nfc(value)].length;
 
 /** Comma-junk primaries like "黃, 侃" or "Huang, Kan". */
 const looksLikeCommaJunkPrimary = (text: string): boolean =>
   /[,，]\s*\S/.test(text) || /^\S+\s*,\s*\S+$/.test(text);
-
-const expectedRomanized = (
-  familyName: string | null,
-  givenName: string | null,
-  projectLang: string | null,
-): string | null => {
-  if (!familyName || !givenName) return null;
-  const family = autoRomanize(familyName, projectLang, { concatenate: true });
-  const given = autoRomanize(givenName, projectLang, { concatenate: true });
-  if (family && given) return `${family} ${given}`;
-  return null;
-};
 
 const yearsOverlapOrUnknown = (
   a: { startYear: number | null; endYear: number | null },
@@ -59,8 +47,60 @@ const courtesyTexts = (entity: EntitySummary): string[] =>
     .map((entry) => nfc(entry.text))
     .filter(Boolean);
 
+const familyTexts = (entity: EntitySummary): string[] => {
+  const out = new Set<string>();
+  if (entity.familyName) out.add(nfc(entity.familyName));
+  for (const entry of entity.nameEntries) {
+    if (entry.type === 'family') {
+      const text = nfc(entry.text);
+      if (text) out.add(text);
+    }
+  }
+  return [...out];
+};
+
+const givenTexts = (entity: EntitySummary): string[] => {
+  const out = new Set<string>();
+  if (entity.givenName) out.add(nfc(entity.givenName));
+  for (const entry of entity.nameEntries) {
+    if (entry.type === 'given') {
+      const text = nfc(entry.text);
+      if (text) out.add(text);
+    }
+  }
+  return [...out];
+};
+
 const nationalitySet = (entity: EntitySummary): Set<string> =>
   new Set(entity.nationalities.map((label) => nfc(label)).filter(Boolean));
+
+const originSet = (entity: EntitySummary): Set<string> =>
+  new Set(entity.placesOfOrigin.map((label) => nfc(label)).filter(Boolean));
+
+const appointmentSet = (entity: EntitySummary): Set<string> =>
+  new Set(entity.roles.map((label) => nfc(label)).filter(Boolean));
+
+const nobleTitleSet = (entity: EntitySummary): Set<string> =>
+  new Set(
+    entity.nobleTitles
+      .map((title) =>
+        nfc([title.fief, title.posthumousName, title.title].filter(Boolean).join('')),
+      )
+      .filter(Boolean),
+  );
+
+const setsIntersect = (a: Set<string>, b: Set<string>): boolean => {
+  for (const value of a) {
+    if (b.has(value)) return true;
+  }
+  return false;
+};
+
+const listsIntersect = (a: string[], b: string[]): boolean => {
+  if (a.length === 0 || b.length === 0) return false;
+  const other = new Set(b);
+  return a.some((value) => other.has(value));
+};
 
 export function scanFamilyPrefixedAltNames(entities: EntitySummary[]): HygieneFinding[] {
   const findings: HygieneFinding[] = [];
@@ -112,6 +152,15 @@ export function scanMissingFamilyOrGiven(
     if (entity.kind !== 'person') continue;
     if (entity.familyName && entity.givenName) continue;
 
+    // 2–4 character orphans without authorities are owned by autoCleanEntities.
+    if (entity.authorities.length === 0 && !entity.familyName && !entity.givenName) {
+      const primary = entity.names.find((name) => hasCjk(name));
+      if (primary) {
+        const len = codePointLength(primary);
+        if (len >= 2 && len <= 4) continue;
+      }
+    }
+
     const fromPack = options?.packFamilyGiven?.(entity) ?? null;
     if (fromPack) {
       findings.push({
@@ -148,46 +197,19 @@ export function scanMissingFamilyOrGiven(
   return findings;
 }
 
+/**
+ * Manual-review romanization issues.
+ *
+ * Pinyin that matches any family×given pair (letter-for-letter, ignoring only
+ * joinable spaces) is treated as OK. Spacing/capital joins like
+ * "Li Chun Feng" → "Li Chunfeng" are handled by {@link autoCleanEntities}, not
+ * the review queue — so this scanner returns nothing for that case.
+ */
 export function scanBadRomanization(
-  entities: EntitySummary[],
-  projectLang: string | null,
+  _entities: EntitySummary[],
+  _projectLang: string | null,
 ): HygieneFinding[] {
-  const findings: HygieneFinding[] = [];
-  for (const entity of entities) {
-    if (entity.kind !== 'person') continue;
-    const romanized = entity.romanized?.trim();
-    if (!romanized || !isLatinScript(romanized)) continue;
-
-    const expected = expectedRomanized(entity.familyName, entity.givenName, projectLang);
-    const multiSpace = internalSpaceCount(romanized) >= 2;
-    const mismatchesExpected = Boolean(expected && nfc(romanized) !== nfc(expected));
-
-    if (!multiSpace && !mismatchesExpected) continue;
-    // Only auto-propose when we can compute the concatenated form from 姓+名
-    if (!expected) {
-      if (multiSpace) {
-        findings.push({
-          id: `badRomanization:${entity.id}`,
-          kind: 'badRomanization',
-          entityId: entity.id,
-          evidence: `Romanization “${romanized}” has 2+ spaces; add 姓/名 to auto-fix`,
-          proposal: { action: 'setRomanized', text: romanized.replace(/\s+/g, ' ').trim() },
-        });
-      }
-      continue;
-    }
-    if (nfc(romanized) === nfc(expected)) continue;
-    findings.push({
-      id: `badRomanization:${entity.id}`,
-      kind: 'badRomanization',
-      entityId: entity.id,
-      evidence: multiSpace
-        ? `Romanization “${romanized}” should be “${expected}”`
-        : `Romanization “${romanized}” ≠ concatenated 姓+名 “${expected}”`,
-      proposal: { action: 'setRomanized', text: expected },
-    });
-  }
-  return findings;
+  return [];
 }
 
 export function scanBadPrimary(entities: EntitySummary[]): HygieneFinding[] {
@@ -199,11 +221,25 @@ export function scanBadPrimary(entities: EntitySummary[]): HygieneFinding[] {
 
     const family = entity.familyName ? nfc(entity.familyName) : '';
     const given = entity.givenName ? nfc(entity.givenName) : '';
+    // Only 姓+名 is a trustworthy reconstructed primary. Bare 姓 (common when
+    // Wikidata has P734 but no Chinese label/名) is not a full personal name.
     const fromParts = family && given ? `${family}${given}` : null;
+
     const betterCjk =
       fromParts && hasCjk(fromParts)
         ? fromParts
-        : entity.names.find((name) => hasCjk(name) && name !== primary) ?? null;
+        : entity.nameEntries.find((entry) => {
+            const text = nfc(entry.text);
+            if (!text || !hasCjk(text) || text === nfc(primary)) return false;
+            // Structural parts are not display primaries.
+            if (entry.type === 'family' || entry.type === 'given') return false;
+            // Same surface as bare 姓 / 名 alone — still not a full headword.
+            if (family && text === family) return false;
+            if (given && text === given) return false;
+            // Single-character CJK is almost always a surname fragment here.
+            if (codePointLength(text) < 2) return false;
+            return true;
+          })?.text ?? null;
 
     const latinOnly = isLatinScript(primary) && !hasCjk(primary);
     const commaJunk = looksLikeCommaJunkPrimary(primary);
@@ -294,10 +330,16 @@ export function findingsFromAuthorityDuplicates(
 }
 
 /**
- * Near-duplicates: require ≥2 agreeing signals among
- * primary/alt name, 姓+名, 姓+字, nationality, year overlap.
+ * Near-duplicates (persons). All three gates are required:
+ *   1. 姓 = 姓
+ *   2. 名 = 名  OR  名 = 字  OR  字 = 字
+ *   3. shared place of origin OR nationality OR appointment OR noble title
  *
- * Indexed by shared-name buckets so cost is ~sum(bucket²) instead of n².
+ * Score = number of atomic matches beyond that minimum of three; findings are
+ * sorted highest score first. Year overlap is not a positive signal; birth
+ * years >40 apart still veto a pair.
+ *
+ * Indexed by 姓, then by 名/字, so cost stays near sum(bucket²) not n².
  */
 export function scanNearDuplicates(entities: EntitySummary[]): HygieneFinding[] {
   const people = entities.filter((entity) => entity.kind === 'person');
@@ -311,108 +353,144 @@ export function scanNearDuplicates(entities: EntitySummary[]): HygieneFinding[] 
     else buckets.set(key, [entity]);
   };
 
-  const bySharedName = new Map<string, EntitySummary[]>();
-  const byFamilyGiven = new Map<string, EntitySummary[]>();
-  const byFamilyZi = new Map<string, EntitySummary[]>();
-
+  /** family → people who carry that 姓 */
+  const byFamily = new Map<string, EntitySummary[]>();
   for (const person of people) {
-    for (const name of person.names) {
-      const key = nfc(name);
-      if (key && hasCjk(key)) addToBucket(bySharedName, key, person);
-    }
-    if (person.familyName && person.givenName) {
-      addToBucket(
-        byFamilyGiven,
-        `${nfc(person.familyName)}\0${nfc(person.givenName)}`,
-        person,
-      );
-    }
-    if (person.familyName) {
-      const family = nfc(person.familyName);
-      for (const zi of courtesyTexts(person)) {
-        addToBucket(byFamilyZi, `${family}\0${zi}`, person);
-      }
+    for (const family of familyTexts(person)) {
+      addToBucket(byFamily, family, person);
     }
   }
 
-  const candidatePairs: Array<[EntitySummary, EntitySummary]> = [];
-  const pushPairsFromBucket = (bucket: EntitySummary[]) => {
-    if (bucket.length < 2 || bucket.length > 80) return; // huge buckets are too noisy / costly
-    for (let i = 0; i < bucket.length; i += 1) {
-      for (let j = i + 1; j < bucket.length; j += 1) {
-        candidatePairs.push([bucket[i]!, bucket[j]!]);
-      }
-    }
+  type ScoredPair = {
+    a: EntitySummary;
+    b: EntitySummary;
+    score: number;
+    reasons: string[];
   };
-  for (const bucket of bySharedName.values()) pushPairsFromBucket(bucket);
-  for (const bucket of byFamilyGiven.values()) pushPairsFromBucket(bucket);
-  for (const bucket of byFamilyZi.values()) pushPairsFromBucket(bucket);
+  const scored: ScoredPair[] = [];
 
-  for (const [a, b] of candidatePairs) {
-    if (yearsConflict(a, b)) continue;
+  for (const familyBucket of byFamily.values()) {
+    if (familyBucket.length < 2) continue;
 
-    let signals = 0;
-    const reasons: string[] = [];
+    // Dedup people who appear twice under the same 姓 via nameEntries.
+    const unique = [...new Map(familyBucket.map((p) => [p.id, p])).values()];
+    if (unique.length < 2) continue;
 
-    const aPrimary = nfc(a.names[0] ?? '');
-    const bPrimary = nfc(b.names[0] ?? '');
-    const aNames = new Set(a.names.map(nfc).filter(Boolean));
-    const bNames = new Set(b.names.map(nfc).filter(Boolean));
-    const sharedName =
-      (aPrimary && bNames.has(aPrimary)) ||
-      (bPrimary && aNames.has(bPrimary)) ||
-      [...aNames].some((name) => bNames.has(name) && hasCjk(name));
-    if (sharedName) {
-      signals += 1;
-      reasons.push('shared name form');
+    const byGiven = new Map<string, EntitySummary[]>();
+    const byZi = new Map<string, EntitySummary[]>();
+    for (const person of unique) {
+      for (const given of givenTexts(person)) addToBucket(byGiven, given, person);
+      for (const zi of courtesyTexts(person)) addToBucket(byZi, zi, person);
     }
 
-    if (a.familyName && a.givenName && b.familyName && b.givenName) {
-      if (nfc(a.familyName) === nfc(b.familyName) && nfc(a.givenName) === nfc(b.givenName)) {
-        signals += 1;
-        reasons.push('same 姓+名');
+    /** Candidate pairs that already share 姓 and at least one 名/字 link. */
+    const candidatePairs: Array<[EntitySummary, EntitySummary]> = [];
+    const pushPairs = (bucket: EntitySummary[]) => {
+      const members = [...new Map(bucket.map((p) => [p.id, p])).values()];
+      if (members.length < 2 || members.length > 120) return;
+      for (let i = 0; i < members.length; i += 1) {
+        for (let j = i + 1; j < members.length; j += 1) {
+          candidatePairs.push([members[i]!, members[j]!]);
+        }
+      }
+    };
+    for (const bucket of byGiven.values()) pushPairs(bucket);
+    for (const bucket of byZi.values()) pushPairs(bucket);
+
+    // 名 = 字 cross-links (A's 名 equals B's 字, and vice versa).
+    for (const [surface, givenHolders] of byGiven) {
+      const ziHolders = byZi.get(surface);
+      if (!ziHolders?.length) continue;
+      for (const a of givenHolders) {
+        for (const b of ziHolders) {
+          if (a.id === b.id) continue;
+          candidatePairs.push(a.id < b.id ? [a, b] : [b, a]);
+        }
       }
     }
 
-    if (a.familyName && b.familyName && nfc(a.familyName) === nfc(b.familyName)) {
+    for (const [a, b] of candidatePairs) {
+      if (yearsConflict(a, b)) continue;
+
+      const pairKey = [a.id, b.id].sort().join('\0');
+      if (seenPairs.has(pairKey)) continue;
+
+      const aFamily = familyTexts(a);
+      const bFamily = familyTexts(b);
+      if (!listsIntersect(aFamily, bFamily)) continue;
+
+      const aGiven = givenTexts(a);
+      const bGiven = givenTexts(b);
       const aZi = courtesyTexts(a);
       const bZi = courtesyTexts(b);
-      if (aZi.some((zi) => bZi.includes(zi))) {
-        signals += 1;
-        reasons.push('same 姓+字');
+
+      const givenGiven = listsIntersect(aGiven, bGiven);
+      const givenZi =
+        listsIntersect(aGiven, bZi) || listsIntersect(bGiven, aZi);
+      const ziZi = listsIntersect(aZi, bZi);
+      if (!givenGiven && !givenZi && !ziZi) continue;
+
+      const sharedOrigin = setsIntersect(originSet(a), originSet(b));
+      const sharedNationality = setsIntersect(nationalitySet(a), nationalitySet(b));
+      const sharedAppointment = setsIntersect(appointmentSet(a), appointmentSet(b));
+      const sharedNoble = setsIntersect(nobleTitleSet(a), nobleTitleSet(b));
+      if (!sharedOrigin && !sharedNationality && !sharedAppointment && !sharedNoble) {
+        continue;
       }
+
+      seenPairs.add(pairKey);
+
+      const reasons: string[] = ['姓'];
+      let atomic = 1; // 姓 gate
+      if (givenGiven) {
+        atomic += 1;
+        reasons.push('名=名');
+      }
+      if (givenZi) {
+        atomic += 1;
+        reasons.push('名=字');
+      }
+      if (ziZi) {
+        atomic += 1;
+        reasons.push('字=字');
+      }
+      if (sharedOrigin) {
+        atomic += 1;
+        reasons.push('origin');
+      }
+      if (sharedNationality) {
+        atomic += 1;
+        reasons.push('nationality');
+      }
+      if (sharedAppointment) {
+        atomic += 1;
+        reasons.push('appointment');
+      }
+      if (sharedNoble) {
+        atomic += 1;
+        reasons.push('noble title');
+      }
+
+      // Minimum is three atomic matches (姓 + one name-part + one context).
+      const score = atomic - 3;
+      scored.push({ a, b, score, reasons });
     }
+  }
 
-    const aNat = nationalitySet(a);
-    const bNat = nationalitySet(b);
-    if ([...aNat].some((label) => bNat.has(label))) {
-      signals += 1;
-      reasons.push('shared dynasty/nationality');
-    }
+  scored.sort((left, right) => right.score - left.score || left.a.id.localeCompare(right.a.id));
 
-    if (
-      yearsOverlapOrUnknown(a, b) &&
-      (a.startYear != null || a.endYear != null) &&
-      (b.startYear != null || b.endYear != null)
-    ) {
-      signals += 1;
-      reasons.push('overlapping years');
-    }
-
-    if (signals < 2) continue;
-
-    const pairKey = [a.id, b.id].sort().join('\0');
-    if (seenPairs.has(pairKey)) continue;
-    seenPairs.add(pairKey);
-
+  for (const { a, b, score, reasons } of scored) {
     const [keepId, dropId] = [a.id, b.id].sort();
     findings.push({
-      id: `nearDuplicate:${pairKey}`,
+      id: `nearDuplicate:${[a.id, b.id].sort().join('\0')}`,
       kind: 'nearDuplicate',
       entityId: keepId!,
       relatedEntityIds: [a.id, b.id],
       peer: { kind: 'entity', entityId: dropId! },
-      evidence: reasons.join('; '),
+      evidence:
+        score > 0
+          ? `${reasons.join('; ')} (+${score} beyond minimum)`
+          : reasons.join('; '),
       proposal: { action: 'merge', keepId: keepId!, dropIds: [dropId!] },
     });
   }
@@ -495,10 +573,10 @@ export function runDeterministicScanners(
   entities: EntitySummary[],
   projectLang: string | null,
 ): HygieneFinding[] {
+  // familyPrefixedAltName + joinable romanization + orphan short splits are
+  // applied by autoCleanEntities (mechanical), not the review queue.
   return [
-    ...scanFamilyPrefixedAltNames(entities),
     ...scanMissingFamilyOrGiven(entities, projectLang),
-    ...scanBadRomanization(entities, projectLang),
     ...scanBadPrimary(entities),
     ...scanEmptyDescription(entities),
     ...scanNearDuplicates(entities),

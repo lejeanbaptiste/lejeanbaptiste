@@ -1,5 +1,7 @@
 # Beta Plan
 
+**Status (2026-08-01):** **In progress** — installers ship on macOS/Windows/Linux. Remaining for beta: blocker cleanup sign-off, release hygiene, packaged regression.
+
 Target: a shippable beta for the current feature set by September 2026.
 
 ## Beta Definition
@@ -19,41 +21,25 @@ The beta is done when a new user can:
 - Do not add new features unless they are required to ship the existing feature set safely.
 - If a feature is unstable, either fix it or hide it behind a clear gate.
 
-## First Step
-
-Prove the packaged executable matches the dev build for the main workflow.
-
-### Checklist
-
-- Build the desktop app from a clean tree.
-- Launch the packaged app, not only the dev shell.
-- Open a real project folder.
-- Edit a file and save it.
-- Reopen the app and confirm the change persisted.
-- Verify bundled resources load correctly in the packaged environment.
-- Record any packaging-only failures as beta blockers.
-
 ## Work Plan
 
-### Step 1: Packaging smoke test
+### Step 1: Packaging smoke test — largely done
 
 Goal: confirm the alpha/beta packaging path is real and repeatable.
 
-Deliverables:
+**Current status (2026-08-01):** Installers ship for **macOS** (signed/notarized `.pkg`), **Windows** (NSIS), and **Linux** (`.deb`, APT repo, Flatpak). See root [readme.md](../readme.md) and [apps/desktop/README.md](../apps/desktop/README.md). Older notes about Electron missing from the local workspace are obsolete for release packaging.
 
-- A successful packaged build command.
-- A short list of packaging-specific bugs, if any.
-- A known-good launch and save/reopen workflow.
+Still worth repeating before each release:
 
-Current status:
-
-- `npm run build -w le-jean-baptiste-desktop` succeeds.
-- `npm run package -w le-jean-baptiste-desktop` currently fails because Electron is not installed in the local workspace, so Electron Builder cannot resolve the Electron version.
-- The next action is to restore the desktop app dependencies and rerun the package smoke test.
+- Build from a clean tree (`npm run build:desktop` / platform package scripts).
+- Launch the **packaged** app, open a real project, edit, save, relaunch.
+- Confirm bundled Python/Sanmiao, icons, and update checks behave in the packaged environment.
 
 ### Step 2: Blocker cleanup
 
 Goal: fix anything that prevents startup, editing, saving, or reopening.
+
+Recent reliability work (editor pane sometimes blank on startup; plugin enable without restart) belongs here until signed off on slow machines.
 
 ### Step 3: Release hygiene
 
@@ -72,6 +58,5 @@ Goal: run the core workflow end to end one more time on the packaged build.
 
 ## Notes
 
-- macOS is the first release target.
-- Linux and Windows packaging can follow after macOS is stable.
-- Dev build testing is valuable, but packaged testing is the final gate.
+- macOS was the first release target; Linux and Windows packaging now ship as well.
+- Dev build testing is valuable, but packaged testing remains the final gate.
