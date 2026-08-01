@@ -160,9 +160,17 @@ export const ProjectEditor = () => {
   }, []);
 
   useEffect(() => {
+    // Project restoration first reads and normalizes every remembered tab.  Do
+    // not compete with that work by importing and initializing TinyMCE as soon
+    // as the project shell exists: the editor cannot display anything until an
+    // active resource has arrived, and overlapping the two has left slow
+    // startup runs with a half-initialized editor.  Waiting for the prepared
+    // active document makes the hand-off deterministic.
     if (
       divEl.current &&
       isProjectReady &&
+      resource?.filePath &&
+      resource.content &&
       !leafWriter &&
       loadLibStartedForRef.current !== sessionKey
     ) {
@@ -177,7 +185,16 @@ export const ProjectEditor = () => {
         }
       })();
     }
-  }, [isProjectReady, leafWriter, loadLib, markEditorLoadFailed, retryToken, sessionKey]);
+  }, [
+    isProjectReady,
+    leafWriter,
+    loadLib,
+    markEditorLoadFailed,
+    resource?.content,
+    resource?.filePath,
+    retryToken,
+    sessionKey,
+  ]);
 
   useEffect(() => {
     if (!leafWriter) {
