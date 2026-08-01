@@ -682,6 +682,7 @@ if (isDev) {
 
 let mainWindow: BrowserWindow | null = null;
 let isQuitting = false;
+let quitPreparationInProgress = false;
 let serverProcess: ChildProcess | null = null;
 let openFileWatcher: OpenFileWatcher | null = null;
 let activeProjectRoot: string | null = null;
@@ -914,6 +915,27 @@ const sendMenuAction = (action: string) => {
 };
 
 const isMainWindowLive = (): boolean => mainWindow !== null && !mainWindow.isDestroyed();
+
+/**
+ * The editor's `beforeunload` handler deliberately permits an application
+ * quit after this flag is set. It must be acknowledged by the renderer before
+ * Electron starts closing windows; merely firing executeJavaScript and then
+ * returning from `before-quit` races the renderer and can leave Windows quit
+ * blocked by the unload guard.
+ */
+const prepareRendererForQuit = async (): Promise<void> => {
+  const window = mainWindow;
+  if (!window || window.isDestroyed() || window.webContents.isDestroyed()) return;
+
+  try {
+    await window.webContents.executeJavaScript('window.__ljbAppQuitting = true');
+  } catch (error) {
+    // A renderer that is already gone cannot block window shutdown. Continue
+    // with Electron's normal quit path; the error is useful when diagnosing a
+    // genuinely unresponsive renderer but should never trap the user in app.
+    console.warn('[le-jean-baptiste] could not prepare renderer for quit:', error);
+  }
+};
 
 const waitForMainWindowLoad = (window: BrowserWindow): Promise<void> =>
   new Promise((resolve) => {
@@ -3223,6 +3245,16 @@ const createWindow = async () => {
     prewarmNativeDialog('projectMetadata');
   });
 
+  // On Windows, clicking the title-bar close button otherwise starts closing
+  // the renderer before `before-quit` can prepare it. Route it through
+  // app.quit() so menu Quit, Alt+F4, and the title-bar button share one
+  // reliable shutdown path.
+  mainWindow.on('close', (event) => {
+    if (process.platform !== 'win32' || isQuitting) return;
+    event.preventDefault();
+    app.quit();
+  });
+
   // A bare Alt press-and-release opens the app menu (standard menu-bar
   // behavior on Linux/Windows); any other key in between cancels it.
   let altMenuPending = false;
@@ -3351,13 +3383,30 @@ app.whenReady().then(() => {
   });
 });
 
-app.on('before-quit', () => {
-  closeEntitySqliteReadRepositories();
-  isQuitting = true;
-  closeAllNativeDialogs();
-  if (mainWindow && !mainWindow.isDestroyed() && !mainWindow.webContents.isDestroyed()) {
-    void mainWindow.webContents.executeJavaScript('window.__ljbAppQuitting = true');
+app.on('before-quit', (event) => {
+  if (!isQuitting) {
+    event.preventDefault();
+    isQuitting = true;
+    quitPreparationInProgress = true;
+    closeEntitySqliteReadRepositories();
+    closeAllNativeDialogs();
+
+    void prepareRendererForQuit().finally(() => {
+      quitPreparationInProgress = false;
+      app.quit();
+    });
+    return;
   }
+
+  // If another quit request arrives while the renderer preparation is still
+  // in flight, keep the original request paused until it completes.
+  if (quitPreparationInProgress) {
+    event.preventDefault();
+    return;
+  }
+
+  closeEntitySqliteReadRepositories();
+  closeAllNativeDialogs();
 });
 
 app.on('window-all-closed', () => {
