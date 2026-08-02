@@ -304,10 +304,7 @@ const countOwnDatabasePackStrings = async (
         const records = await store.sqliteCandidateRecords(kind);
         if (records == null) throw new Error(SQLITE_REQUIRED_LOOKUP_MESSAGE);
         out[id] = countCandidatesUniqueStrings(
-          candidatesFromEntityDatabaseRecords(
-            records as EntityDatabaseCandidateRecord[],
-            'PEDB',
-          ),
+          candidatesFromEntityDatabaseRecords(records as EntityDatabaseCandidateRecord[], 'PEDB'),
           range,
         );
       }
@@ -324,10 +321,7 @@ const countOwnDatabasePackStrings = async (
         const records = await store.sqliteCandidateRecords(kind);
         if (records == null) throw new Error(SQLITE_REQUIRED_LOOKUP_MESSAGE);
         out[id] = countCandidatesUniqueStrings(
-          candidatesFromEntityDatabaseRecords(
-            records as EntityDatabaseCandidateRecord[],
-            'CEDB',
-          ),
+          candidatesFromEntityDatabaseRecords(records as EntityDatabaseCandidateRecord[], 'CEDB'),
           range,
         );
       }
@@ -1148,7 +1142,13 @@ export const AutoTaggingDialog = ({ id, onClose, open = false }: IDialog) => {
         onClose={handleClose}
         PaperProps={{
           sx: {
-            width: step === 'methods' ? 340 : step === 'authority' ? 680 : 380,
+            width:
+              step === 'methods'
+                ? 340
+                : step === 'authority'
+                  ? { xs: 'calc(100vw - 16px)', sm: 680 }
+                  : 380,
+            maxWidth: 'calc(100vw - 16px)',
             m: 1,
             borderRadius: 1,
           },
@@ -1504,7 +1504,7 @@ export const AutoTaggingDialog = ({ id, onClose, open = false }: IDialog) => {
               <Box
                 sx={{
                   display: 'grid',
-                  gridTemplateColumns: '1fr 1fr',
+                  gridTemplateColumns: 'repeat(3, minmax(0, 1fr))',
                   columnGap: 2,
                   rowGap: 0.25,
                   alignItems: 'start',
@@ -1531,7 +1531,7 @@ export const AutoTaggingDialog = ({ id, onClose, open = false }: IDialog) => {
                     checkedInGroup.length > 0 &&
                     checkedInGroup.length < availableGroupPackIds.length;
                   return (
-                    <Box key={group.tag}>
+                    <Box key={group.tag} sx={{ minWidth: 0 }}>
                       <Stack direction="row" alignItems="center" spacing={0.25}>
                         <Checkbox
                           size="small"
@@ -1626,7 +1626,14 @@ export const AutoTaggingDialog = ({ id, onClose, open = false }: IDialog) => {
                                   `${rowLabel}${suffix}`
                                 )
                               }
-                              sx={authorityOptionSx}
+                              sx={{
+                                ...authorityOptionSx,
+                                minWidth: 0,
+                                '& .MuiFormControlLabel-label': {
+                                  ...authorityOptionSx['& .MuiFormControlLabel-label'],
+                                  overflowWrap: 'anywhere',
+                                },
+                              }}
                             />
                           );
                         })}
@@ -1875,7 +1882,8 @@ export const AutoTaggingDialog = ({ id, onClose, open = false }: IDialog) => {
                       ...current,
                       surfacesByTag: { ...current.surfacesByTag },
                     };
-                    if (surfaces.length === 0) delete next.surfacesByTag[tag as ExclusionSurfaceTag];
+                    if (surfaces.length === 0)
+                      delete next.surfacesByTag[tag as ExclusionSurfaceTag];
                     else next.surfacesByTag[tag as ExclusionSurfaceTag] = surfaces;
                     return next;
                   });

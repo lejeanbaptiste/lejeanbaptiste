@@ -2,6 +2,24 @@ import { EntitySqliteRepository } from './repository';
 import { computeEntityContentHash, replaceEntityContentBetween } from './xmlCodec';
 
 describe('EntitySqliteRepository', () => {
+  it('shows cross-authority dynasty labels once while retaining their source rows', () => {
+    const repository = new EntitySqliteRepository();
+    repository.createEntity({ id: 'person-nationality-merge', kind: 'person' });
+    const insert = repository.db.prepare(
+      `INSERT INTO person_nationalities
+       (person_id, label, reference, origin, source, status, created_at, updated_at)
+       VALUES (?, ?, ?, 'authority', ?, 'active', ?, ?)`,
+    );
+    insert.run('person-nationality-merge', '唐', 'CBDB:dynasty:6', 'CBDB', '2026-08-02', '2026-08-02');
+    insert.run('person-nationality-merge', '唐朝', null, 'Norbert', '2026-08-02', '2026-08-02');
+
+    expect(repository.getPanelSummary('person-nationality-merge')?.nationalities).toEqual(['唐']);
+    expect(
+      repository.db.prepare('SELECT COUNT(*) AS count FROM person_nationalities').get(),
+    ).toEqual({ count: 2 });
+    repository.close();
+  });
+
   it('creates subtype records and returns typed summaries', () => {
     const repository = new EntitySqliteRepository();
     const entity = repository.createEntity({ id: 'person-test-1', kind: 'person' });

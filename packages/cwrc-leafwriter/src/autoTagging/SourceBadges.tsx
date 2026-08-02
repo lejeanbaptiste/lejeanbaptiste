@@ -46,7 +46,7 @@ const OWN_DATABASE_LABEL: Partial<Record<string, { label: string; color: string;
  * small icon per source, tooltipped with its name. Sources without an icon
  * keep their text label so nothing is lost for custom packs.
  */
-export const SourceBadges = ({ label }: { label: string }) => {
+export const SourceBadges = ({ label, compact = false }: { label: string; compact?: boolean }) => {
   const parts = label
     .split('+')
     .map((part) => part.trim())
@@ -68,11 +68,15 @@ export const SourceBadges = ({ label }: { label: string }) => {
         display: 'inline-flex',
         alignItems: 'center',
         gap: 0.5,
-        px: 0.75,
-        height: 20,
-        border: '1px solid',
-        borderColor: 'divider',
-        borderRadius: '10px',
+        ...(compact
+          ? { px: 0, height: 16 }
+          : {
+              px: 0.75,
+              height: 20,
+              border: '1px solid',
+              borderColor: 'divider',
+              borderRadius: '10px',
+            }),
         color: 'text.secondary',
         flexShrink: 0,
       }}

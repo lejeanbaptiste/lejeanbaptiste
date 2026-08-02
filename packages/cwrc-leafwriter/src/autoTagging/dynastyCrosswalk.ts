@@ -110,5 +110,11 @@ export function canonicalNationalityLabel(
   const trimmed = rawLabel.trim();
   const byId = lookupDynastyEntry(source, ref);
   if (byId) return byId.label;
-  return byLabel.get(trimmed)?.label ?? trimmed;
+  const byExactLabel = byLabel.get(trimmed);
+  if (byExactLabel) return byExactLabel.label;
+  // Several authorities append the generic dynasty suffix (唐朝, 漢朝) while
+  // the curated label intentionally omits it. Only strip it when the shorter
+  // surface is an explicit curated label; this avoids guessing at state names.
+  const withoutDynastySuffix = trimmed.endsWith('朝') ? trimmed.slice(0, -1) : '';
+  return byLabel.get(withoutDynastySuffix)?.label ?? trimmed;
 }

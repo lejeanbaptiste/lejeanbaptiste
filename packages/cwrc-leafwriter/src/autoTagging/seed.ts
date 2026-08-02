@@ -512,17 +512,18 @@ function resolveEntity(
     }
   }
 
+  const displayName = candidate.displayName?.trim() || candidate.primaryName;
   const romanizedName = romanizeFromAuthorityMetadata(
     candidate.metadata,
-    candidate.primaryName,
+    displayName,
     projectLang,
   );
   const { id } = addEntity(
     entitiesDoc,
     candidate.kind,
     {
-      name: candidate.primaryName,
-      nameLang: projectLang && !isLatinSurface(candidate.primaryName) ? projectLang : undefined,
+      name: displayName,
+      nameLang: projectLang && !isLatinSurface(displayName) ? projectLang : undefined,
       romanizedName: romanizedName ?? undefined,
       authorityIds,
       officeTypeIds: candidate.kind === 'office' ? candidate.metadata?.officeTypeIds : undefined,

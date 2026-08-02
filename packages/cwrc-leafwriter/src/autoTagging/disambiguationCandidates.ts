@@ -910,12 +910,14 @@ async function candidatesFromAuthorityPacks(
             startYear,
             endYear,
             dynasty,
-            projectLangName:
-              row?.primaryName && !isLatinSurface(row.primaryName) ? row.primaryName : undefined,
+            projectLangName: (() => {
+              const displayName = row?.displayName?.trim() || row?.primaryName;
+              return displayName && !isLatinSurface(displayName) ? displayName : undefined;
+            })(),
             romanizedName:
               romanizeFromAuthorityMetadata(
                 row?.metadata,
-                row?.primaryName ?? match.label,
+                (row?.displayName?.trim() || row?.primaryName) ?? match.label,
                 projectLang,
               ) ?? undefined,
             typedNames: typedNamesFromPackRow(row?.names),

@@ -127,6 +127,8 @@ Near-term work pulled from the planning docs ([docs/README.md](docs/README.md)).
 
 - [ ] VALIDATE: Sanmiao date curator (ambiguous + sequential re-resolve)
 - [ ] VALIDATE: Block zooming to bounds of map tiles
+- [ ] VALIDATE: Norbert functions in add tag palette
+- [ ] VALIDATE: 壽王瑁 mess, princesses, in database viewer
 
 ### Performance and stability
 
@@ -135,8 +137,6 @@ this beta-ready, run the packaged manual sync checklist. The only remaining
 work in this area is packaged verification.
 
 - [ ] Run entity-sync manual scenarios ([entity-sync-manual-test-plan.md](docs/entity-sync-manual-test-plan.md))
-- [ ] Clean my own database and update Norbert accordingly
-- [ ] **Profile regenerated CBDB packs with range-aware chunk loading against the slow-machine baseline.**
 
 **Next:** run the packaged scenarios in
 [entity-sync-manual-test-plan.md](docs/entity-sync-manual-test-plan.md).
@@ -151,7 +151,6 @@ work in this area is packaged verification.
 - [ ] Noble title and person wrapper tagging (testing).
 - [ ] Norbert personWrapper: resolve accepted wrappers to exactly one person key; validation for missing/ambiguous keys
 - [ ] include wrappers/`roleName` in validation panel
-- [ ] This shouldn't live in the toolbar but as a special class of 'tag'
 
 ### AI
 

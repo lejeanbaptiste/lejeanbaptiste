@@ -147,6 +147,7 @@ export interface CrosswalkResult {
   candidate?: {
     source: string;
     primaryName: string;
+    displayName?: string;
     description?: string;
     startYear?: number;
     endYear?: number;
@@ -164,6 +165,7 @@ interface PackRow {
   source?: string;
   authorityId?: string;
   primaryName?: string;
+  displayName?: string;
   names?: { text: string; type?: string; lang?: string }[];
   metadata?: {
     description?: string;
@@ -271,6 +273,7 @@ export async function crosswalkForRef(
         candidate = {
           source: (row.source ?? 'authority').toUpperCase(),
           primaryName: row.primaryName,
+          displayName: row.displayName,
           description: row.metadata?.description,
           startYear: row.metadata?.startYear,
           endYear: row.metadata?.endYear,
@@ -445,14 +448,13 @@ function personEnrichmentFromPackCandidate(
   if (!candidate) return {};
   const typedNames = candidate.typedNames;
   const preferred = preferCanonicalFamilyGiven(candidate.primaryName, typedNames ?? []);
-  const needsSplit = !preferred.familyName || !preferred.givenName;
-  const split = needsSplit
-    ? suggestPersonNameSplit(candidate.primaryName, projectLang ?? null)
-    : null;
   return {
     ...(typedNames?.length ? { typedNames } : {}),
-    familyName: preferred.familyName ?? split?.familyName,
-    givenName: preferred.givenName ?? split?.givenName,
+    // Authority display labels can be titles (e.g. 孝元皇后), not persName
+    // surfaces.  Populate these fields only from the authority's typed name
+    // assertions; never infer them from a display/headword string.
+    familyName: preferred.familyName ?? undefined,
+    givenName: preferred.givenName ?? undefined,
   };
 }
 

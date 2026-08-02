@@ -10,6 +10,7 @@ import {
 } from '@mui/material';
 import type { ReactNode } from 'react';
 import type { CompareCardModel } from '../../../../../packages/cwrc-leafwriter/src/autoTagging/hygiene';
+import { SourceBadges } from '../../../../../packages/cwrc-leafwriter/src/autoTagging/SourceBadges';
 
 const Field = ({
   label,
@@ -130,7 +131,8 @@ export const EntityCompareCard = ({
                     key={`${auth.type}-${auth.value}-${index}`}
                     size="small"
                     variant="outlined"
-                    label={`${auth.type}: ${auth.value}`}
+                    icon={<SourceBadges label={auth.type} compact />}
+                    label={auth.value}
                   />
                 ))}
           </Stack>
@@ -306,11 +308,12 @@ export const EntityCompareCard = ({
               {model.authorities.length === 0
                 ? dash
                 : model.authorities.map((auth, index) => (
-                    <Chip
-                      key={`${auth.type}-${auth.value}-${index}`}
-                      size="small"
-                      variant="outlined"
-                      label={`${auth.type}: ${auth.value}`}
+                  <Chip
+                    key={`${auth.type}-${auth.value}-${index}`}
+                    size="small"
+                    variant="outlined"
+                    icon={<SourceBadges label={auth.type} compact />}
+                    label={auth.value}
                     />
                   ))}
             </Stack>

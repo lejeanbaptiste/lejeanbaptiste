@@ -1,6 +1,6 @@
 # Authority databases (CBDB + DILA) — Work Phases
 
-**Status (2026-08-01):** **Mostly shipped** — A0–A3 and pack lifecycle live; A5/A6 reference lookup in use. Remaining: memory profiling. Companion to [authority-databases-planning.md](authority-databases-planning.md).
+**Status (2026-08-02):** **Mostly shipped** — A0–A3 and pack lifecycle live; A5/A6 reference lookup in use. Date-filtered tag-bomb memory profiling is now substantially improved; an unfiltered/full-pack profile remains. Companion to [authority-databases-planning.md](authority-databases-planning.md).
 
 ## Phase A0 — Language codes & gating
 
@@ -67,7 +67,8 @@ cd leaf-writer && node scripts/sync-authority-packs.mjs /path/to/entityDbFolder
 
 - [x] Year-range slider + hide undated (A4)
 - [ ] In-app compile from downloaded sqlite/XML — **superseded**: GitHub release packs + optional raw reference ([authority-data-lifecycle.md](authority-data-lifecycle.md))
-- [ ] Progress / memory profile on full 659k-person load
+- [x] Date-filtered memory profile: tag-bomb peak fell from about 1.1 GB to 236 MB after uncaching one-shot pack reads
+- [ ] Progress / memory profile on full 659k-person load without a date filter
 
 **Done when:** each downloaded source yields NDJSON artifacts; a golden test compiles a fixture slice of each source and snapshots the candidates (including clue lines). → **Met via authority extraction tests + packLoader tests.**
 
@@ -84,7 +85,8 @@ cd leaf-writer && node scripts/sync-authority-packs.mjs /path/to/entityDbFolder
 - [x] Wire into seed matcher; suggestions carry `sourceDetail` + `rationale` clue.
 
 **Still to do:**
-- [ ] Formal memory/time profile on full pack load in desktop app.
+- [x] Formal filtered memory check in the desktop app: a cutoff through 530 CE peaked at about 236 MB after the one-shot read path was added
+- [ ] Formal full-pack memory/time profile without a date filter
 
 **Done when:** with CBDB persons + DILA persons both selected and a date range set, a real document produces deduped suggestions with correct clue lines, at acceptable load time and memory. → **Met in app + opt-in harness (`authorityTagBombHarness.live.test`).**
 

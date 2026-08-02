@@ -1,7 +1,10 @@
 # Date-chunked authority packs
 
-**Status (2026-08-02):** Runtime reader and pack contract in progress. The
+**Status (2026-08-02):** Runtime reader and pack contract are implemented. The
 existing one-file NDJSON layout remains supported until regenerated packs ship.
+Tag bomb uses a one-shot, uncached reader so raw line arrays are released while
+the parsed seed index is built. A cutoff through 530 CE measured about 236 MB
+peak memory on the development machine, down from about 1.1 GB.
 
 ## Purpose
 
@@ -43,6 +46,9 @@ a restrictive `limit` filter (for sources such as timeless place records).
   undated records and avoids accidentally treating a partial chunk list as a
   complete exclusion result.
 - The reader deduplicates repeated boundary rows before crossing IPC.
+- Selected chunks are read sequentially to avoid temporary nested/flattened
+  arrays. Tag bomb does not retain the raw arrays in the reusable session cache;
+  ordinary lookup and disambiguation still do.
 
 The guard band is a safety margin, not the correctness guarantee. A dated
 record is emitted into every block its effective interval overlaps. Long-lived

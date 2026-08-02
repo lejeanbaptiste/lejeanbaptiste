@@ -15,8 +15,14 @@ export interface AuthorityCandidate {
   /** Id within that source (becomes an <idno> on the minted entity). */
   authorityId: string;
   kind: AuthorityKind;
-  /** Display/primary name for the entity. */
+  /** Stable authority headword / database title for the entity. */
   primaryName: string;
+  /**
+   * Surface shown when LJB creates or labels an entity.  Older packs do not
+   * carry this field, in which case `primaryName` remains the display name.
+   * This keeps an authority title from being mistaken for a personal name.
+   */
+  displayName?: string;
   /** All strings that should match this entity in the corpus (primary + variants). */
   searchStrings: string[];
   /**
@@ -122,6 +128,12 @@ export interface AuthorityCandidate {
       roleName?: string;
       posthumousName?: string;
     };
+    /** Canonical noble titles carried by a Norbert person record. */
+    nobleTitles?: {
+      fief?: string;
+      roleName?: string;
+      posthumousName?: string;
+    }[];
     /** Runtime-only partitions; the shipped asset remains compact and unexpanded. */
     wrapperSearchStrings?: string[];
     titleSearchStrings?: string[];

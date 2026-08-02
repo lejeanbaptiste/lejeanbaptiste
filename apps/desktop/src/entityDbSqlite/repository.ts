@@ -1,6 +1,7 @@
 import { createRequire } from 'node:module';
 import type { DatabaseSync as DatabaseSyncType } from 'node:sqlite';
 import { stringsMatchExactly } from '../../../../packages/cwrc-leafwriter/src/autoTagging/disambiguationMatch';
+import { canonicalNationalityLabel } from '../../../../packages/cwrc-leafwriter/src/autoTagging/dynastyCrosswalk';
 import { applyEntityDbMigrations } from './schema';
 
 const nodeRequire = createRequire(__filename);
@@ -535,7 +536,13 @@ function assemblePanelSummary(
   const dates = bags.dates;
   const nationalities = bags.nationalityRows
     .filter((row) => row.status === 'active')
-    .map((row) => String(row.label));
+    .map((row) =>
+      canonicalNationalityLabel(
+        typeof row.source === 'string' ? row.source : null,
+        typeof row.reference === 'string' ? row.reference : null,
+        String(row.label),
+      ),
+    );
   const origins = bags.originRows
     .filter((row) => row.status === 'active')
     .map((row) => String(row.label));

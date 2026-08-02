@@ -99,6 +99,34 @@ export async function buildNorbertNobleTitleIndex(
 ): Promise<Map<string, NorbertNobleTitleCandidate[]>> {
   const index = new Map<string, NorbertNobleTitleCandidate[]>();
   try {
+    const content = await readPackFile('norbert-persons');
+    for (const row of iterateAuthorityNdjson(content)) {
+      const rawPersonId = row.authorityId;
+      const titles = row.metadata?.nobleTitles;
+      if (!rawPersonId || !Array.isArray(titles)) continue;
+      const personId = formatNorbertAuthorityValue('person', rawPersonId);
+      const list = index.get(personId) ?? [];
+      for (const title of titles) {
+        if (!title?.fief && !title?.roleName) continue;
+        list.push({
+          placeName: title.fief ?? '',
+          roleName: title.roleName ?? '',
+          posthumousName: title.posthumousName,
+          dynasty: row.metadata?.dynasty,
+          ref: `person:${personId}`,
+        });
+      }
+      if (!list.length) continue;
+      index.set(personId, list);
+      for (const key of norbertAuthorityLookupValues(personId)) {
+        if (key !== personId) index.set(key, list);
+      }
+    }
+  } catch {
+    // Older packs lack person-level title metadata; fall back to the
+    // dedicated canonical-title asset below.
+  }
+  try {
     const content = await readPackFile('norbert-wiki-nt');
     for (const row of iterateAuthorityNdjson(content)) {
       const rawPersonId = row.metadata?.crosswalk?.norbert;

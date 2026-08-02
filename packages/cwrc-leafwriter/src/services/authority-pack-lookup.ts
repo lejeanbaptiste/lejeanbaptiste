@@ -25,6 +25,7 @@ import { clearNorbertExpanderCache } from '../autoTagging/norbertExpanderCache';
 export interface PackRow {
   authorityId?: string;
   primaryName?: string;
+  displayName?: string;
   searchStrings?: string[];
   /** Typed names, when the pack export preserves name categories (字/號/…). */
   names?: { text: string; type?: string; lang?: string }[];
@@ -213,10 +214,11 @@ export function searchPackRows(
     if (seen.has(uri)) return;
     seen.add(uri);
 
+    const displayName = row.displayName?.trim() || row.primaryName;
     const label =
-      entityType === 'place' && matchedString !== row.primaryName
-        ? `${row.primaryName}（${matchedString}）`
-        : row.primaryName;
+      entityType === 'place' && matchedString !== displayName
+        ? `${displayName}（${matchedString}）`
+        : displayName;
 
     exact.push({
       result: {
