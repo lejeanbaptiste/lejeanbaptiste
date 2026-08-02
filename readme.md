@@ -125,18 +125,12 @@ Near-term work pulled from the planning docs ([docs/README.md](docs/README.md)).
 
 ### Tagging / Norbert / Sanmiao
 
+- [ ] VALIDATE: Sanmiao date curator (ambiguous + sequential re-resolve)
 - [ ] f asset raise needs repositioning. -> recompile (throw in more bw assets)
 - [ ] Re-assess thresholds
-- [ ] 竟陵王子良 shows up as persname; we are not tagging title + given name ! Also clean up primary name / display name.
-- [ ] Auto parse and organise noble titles
-- [ ] nt 'abr'
-- [ ] Noble title and person wrapper tagging (testing).
-- [ ] Norbert personWrapper: resolve accepted wrappers to exactly one person key; validation for missing/ambiguous keys
-- [ ] include wrappers/`roleName` in validation panel
-- [ ] Finish Sanmiao date curator (ambiguous + sequential re-resolve)
 - [ ] Redo icons : highlight
 - [ ] Finish word plugin
-
+- [ ] Propagate command will work with nested VISIBLE tags, e.g. `<roleName><placeName>揚州</placeName>刺史<roleName>` but not reproduce hidden tags like `<pb>`, `<lb>` or `<supplied>` editing.
 ### Entity database / sync
 
 **Current state (2026-08-02):** Before calling
@@ -144,17 +138,30 @@ this beta-ready, run the packaged manual sync checklist. The only remaining
 work in this area is packaged verification.
 
 - [ ] Run entity-sync manual scenarios ([entity-sync-manual-test-plan.md](docs/entity-sync-manual-test-plan.md))
+- [ ] Clean my own database and update Norbert accordingly
 
 **Next:** run the packaged scenarios in
 [entity-sync-manual-test-plan.md](docs/entity-sync-manual-test-plan.md).
 
 ### Editor / UX polish
 
-- [ ] Tag-boundary Bugs B/C/H (typing/delete at edges); remove debug logs
-- [ ] Authority UI: per-source pre-run match counts; DILA look-alikes when both match; disable-tier cleanup
 - [ ] **Profile regenerated CBDB packs with range-aware chunk loading against the slow-machine baseline.**
 - [ ] Import Phase 1 leftovers: md `{{header}}`, batch/folder UI, validator + provenance
 - [ ] VALIDATE: Block zooming to bounds of map tiles
+
+### Norbert: Noble titles and wrappers
+
+- [ ] 竟陵王子良 shows up as persname; we are not tagging title + given name ! Also clean up primary name / display name.
+- [ ] Auto parse and organise noble titles
+- [ ] nt 'abr'
+- [ ] Noble title and person wrapper tagging (testing).
+- [ ] Norbert personWrapper: resolve accepted wrappers to exactly one person key; validation for missing/ambiguous keys
+- [ ] include wrappers/`roleName` in validation panel
+- [ ] This shouldn't live in the toolbar but as a special class of 'tag'
+
+### AI
+
+- [ ] Add 'AI curate' to tag bomb, feed chunks of text with tags, ask 'which of these is obviously wrong', produce certainty score; Give user a range selector for automatic filtering.
 
 ## Future
 
@@ -174,6 +181,7 @@ work in this area is packaged verification.
 - [ ] Time Machine polish: diff preview, export history zip, optional `revisionDesc` on restore, delete (?)
 - [ ] Find/replace Phase 2b: WYSIWYG visible-text replace across markup
 - [ ] Match-case / persist last find query (optional)
+- [ ] Tag-boundary Bugs B/C/H (typing/delete at edges)
 
 ### Import
 

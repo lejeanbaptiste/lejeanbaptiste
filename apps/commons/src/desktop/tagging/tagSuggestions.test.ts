@@ -39,6 +39,11 @@ describe('filterTagSuggestions', () => {
     const filtered = filterTagSuggestions([tag('persName'), tag('placeName'), tag('p')], 'place');
     expect(filtered.map((item) => item.name)).toEqual(['placeName']);
   });
+
+  test('ranks tag-name prefixes ahead of partial matches', () => {
+    const filtered = filterTagSuggestions([tag('persName'), tag('name'), tag('placeName')], 'name');
+    expect(filtered.map((item) => item.name)).toEqual(['name', 'persName', 'placeName']);
+  });
 });
 
 describe('pinParagraphInsertOption', () => {

@@ -104,13 +104,13 @@ import {
 } from './mapTiles';
 import {
   dismissPluginLanguagePrompt,
-  getEnabledPluginToolsMenuItems,
   getPluginEntryModuleUrl,
   getPluginHostSnapshot,
   installPluginFromDirectory,
   isPluginEnabledInMain,
   seedDevPluginsIfEmpty,
   setPluginEnabled,
+  setPluginProject,
   syncEnabledPluginContributions,
 } from './plugins';
 import { fetchRemotePluginIndex, installRemotePlugin } from './plugins/pluginRegistry';
@@ -716,6 +716,7 @@ const setActiveProjectRoot = (rootPath: string | null): void => {
 
 const activateProjectBundle = (bundle: ProjectBundle | null): void => {
   setActiveProjectRoot(bundle?.rootPath ?? null);
+  setPluginProject(bundle?.projectFilePath ?? null, bundle?.config.plugins ?? []);
 };
 
 const isPathWithin = (root: string, candidate: string): boolean => {
@@ -1072,7 +1073,6 @@ const buildViewMenu = (): Electron.MenuItemConstructorOptions => ({
 });
 
 const buildToolsMenu = (): Electron.MenuItemConstructorOptions => {
-  const pluginItems = getEnabledPluginToolsMenuItems();
   const submenu: Electron.MenuItemConstructorOptions[] = [
     {
       id: 'open-plugins',
@@ -1080,18 +1080,7 @@ const buildToolsMenu = (): Electron.MenuItemConstructorOptions => {
       click: () => sendMenuAction('open-plugins'),
       visible: false,
     },
-    menuSeparator(),
   ];
-
-  for (const item of pluginItems) {
-    if (item.separatorBefore) submenu.push(menuSeparator());
-    submenu.push({
-      label: item.label,
-      click: () => sendMenuAction(item.action),
-    });
-  }
-
-  if (pluginItems.length > 0) submenu.push(menuSeparator());
 
   submenu.push(
     {

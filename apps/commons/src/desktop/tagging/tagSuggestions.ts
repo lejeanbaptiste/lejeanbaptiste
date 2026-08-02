@@ -320,11 +320,21 @@ export const sortTagSuggestions = (
 export const filterTagSuggestions = (tags: NodeDetail[], query: string): NodeDetail[] => {
   const trimmed = query.trim().toLowerCase();
   if (!trimmed) return tags;
-  return tags.filter(
-    (tag) =>
-      tag.name.toLowerCase().includes(trimmed) ||
-      tag.fullName?.toLowerCase().includes(trimmed),
-  );
+  const matchRank = (tag: NodeDetail): number | null => {
+    const name = tag.name.toLowerCase();
+    const fullName = tag.fullName?.toLowerCase();
+    if (name.startsWith(trimmed)) return 0;
+    if (fullName?.startsWith(trimmed)) return 1;
+    if (name.includes(trimmed)) return 2;
+    if (fullName?.includes(trimmed)) return 3;
+    return null;
+  };
+
+  return tags
+    .map((tag, index) => ({ index, rank: matchRank(tag), tag }))
+    .filter((entry): entry is { index: number; rank: number; tag: NodeDetail } => entry.rank !== null)
+    .sort((a, b) => a.rank - b.rank || a.index - b.index)
+    .map((entry) => entry.tag);
 };
 
 export const getDefaultHighlightIndex = (

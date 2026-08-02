@@ -8,7 +8,7 @@
 
 ### Performance and stability
 
-- Established performence baseline on slow Windows test machine
+- Established performance baseline on slow Windows test machine
 - Virtualised the auto-tagging review list
 - App.tsx now keeps Monaco alive after its first Source-mode use, so subsequent Visual ↔ Source switches do not recreate it. Tested, big improvement.
 - ui/actions.ts now returns directly to Visual mode when the source buffer is unchanged—skipping both validation and the expensive TinyMCE reload. Tested, big improvement.
@@ -41,7 +41,10 @@
 ### UI
 
 - Monaco now opens with the panels collapsed, cannot scroll down to infinity.
-
+- Made plugin enablement project-specific, filtered the Plugins panel by the project's source
+  language, and removed plugin-specific entries from the native Tools menu.
+- Removed the tag-boundary undo/redo debug logs.
+- Ranked tag-command prefix matches ahead of partial tag-name matches.
 ### Documentation
 
 - Cleaned and provided public-facing documentation, including beta tester guide.

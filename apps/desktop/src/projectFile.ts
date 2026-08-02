@@ -112,6 +112,12 @@ const normalizeAutoTaggingValidation = (
   return Object.keys(out).length ? out : undefined;
 };
 
+const normalizePlugins = (raw: unknown): string[] | undefined => {
+  if (!Array.isArray(raw)) return undefined;
+  const plugins = [...new Set(raw.filter((id): id is string => typeof id === 'string' && id.trim()))];
+  return plugins.length ? plugins : undefined;
+};
+
 const normalizeConfig = (raw: Partial<ProjectFileConfig>, rootPath: string): ProjectFileConfig => ({
   version: 1,
   name: typeof raw.name === 'string' && raw.name.trim() ? raw.name : path.basename(rootPath),
@@ -132,6 +138,7 @@ const normalizeConfig = (raw: Partial<ProjectFileConfig>, rootPath: string): Pro
   autoTaggingAuthority: normalizeAutoTaggingAuthority(raw.autoTaggingAuthority),
   autoTaggingValidation: normalizeAutoTaggingValidation(raw.autoTaggingValidation),
   disambiguation: normalizeDisambiguationSettings(raw.disambiguation),
+  plugins: normalizePlugins(raw.plugins),
 });
 
 const writeConfigFile = async (projectFilePath: string, config: ProjectFileConfig): Promise<void> => {

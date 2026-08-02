@@ -38,6 +38,8 @@ export interface ProjectFileConfig {
   autoTaggingValidation?: AutoTaggingValidationSettings;
   /** Disambiguation panel preferences for this project. */
   disambiguation?: DisambiguationSettings;
+  /** Plugin ids enabled for this project (plugins remain installed app-wide). */
+  plugins?: string[];
 }
 
 /** Persisted in jean-baptiste.project.json — mirrors cwrc-leafwriter validationSettings. */

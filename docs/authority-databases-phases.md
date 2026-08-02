@@ -1,6 +1,6 @@
 # Authority databases (CBDB + DILA) — Work Phases
 
-**Status (2026-08-01):** **Mostly shipped** — A0–A3 and pack lifecycle live; A5/A6 reference lookup in use. Remaining: A4 polish (look-alikes, per-source counts), memory profiling, disable-tier cleanup. Companion to [authority-databases-planning.md](authority-databases-planning.md).
+**Status (2026-08-01):** **Mostly shipped** — A0–A3 and pack lifecycle live; A5/A6 reference lookup in use. Remaining: memory profiling. Companion to [authority-databases-planning.md](authority-databases-planning.md).
 
 ## Phase A0 — Language codes & gating
 
@@ -101,11 +101,7 @@ cd leaf-writer && node scripts/sync-authority-packs.mjs /path/to/entityDbFolder
 - [x] Post-run notice: per-pack entry counts + match count.
 - [x] Persist source + date selection per project (`autoTaggingAuthority` in project JSON).
 
-**Still to do:**
-- [ ] Review-panel: surface DILA disambiguation when **both** look-alikes match same span (needs candidate list on suggestion, not just merged clue).
-- [ ] Per-source match counts in dialog (Markus-style), before run.
-
-**Done when:** the full flow — pick sources, set period, run, review with clues — works end to end and unavailable sources are absent (not greyed). → **Mostly met; polish items above remain.**
+**Done when:** the full flow — pick sources, set period, run, review with clues — works end to end and unavailable sources are absent (not greyed). → **Mostly met; memory profiling remains.**
 
 ## Phase A5 — Update checking & lifecycle
 

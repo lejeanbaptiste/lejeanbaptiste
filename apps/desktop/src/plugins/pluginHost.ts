@@ -4,6 +4,7 @@ import fs from 'node:fs';
 import fsp from 'node:fs/promises';
 import path from 'node:path';
 import { packPath, packsRoot } from '../authorityPacks';
+import { loadProjectFile, writeProjectConfig } from '../projectFile';
 import { toLocalFileUrl } from '../../../commons/src/desktop/localFileUrl';
 import {
   PLUGIN_MANIFEST_FILENAME,
@@ -17,13 +18,14 @@ const STATE_FILENAME = 'plugin-state.json';
 
 let cachedState: PluginHostState | null = null;
 let cachedSnapshot: PluginHostSnapshot | null = null;
+let activeProjectFilePath: string | null = null;
+let activeEnabledPluginIds: string[] = [];
 
-export interface PluginToolsMenuContribution {
-  pluginId: string;
-  id: string;
-  label: string;
-  action: string;
-  separatorBefore?: boolean;
+/** Plugins are installed for the app, but their enabled state belongs to the open project. */
+export function setPluginProject(projectFilePath: string | null, enabledPluginIds: string[] = []): void {
+  activeProjectFilePath = projectFilePath;
+  activeEnabledPluginIds = enabledPluginIds;
+  cachedSnapshot = null;
 }
 
 function pluginsRoot(): string {
@@ -58,7 +60,7 @@ async function saveState(state: PluginHostState): Promise<void> {
 
 /** Sync check for main-process backends (sanmiao bridge, schema merge). */
 export function isPluginEnabledInMain(pluginId: string): boolean {
-  return cachedState?.enabled.includes(pluginId) ?? false;
+  return activeEnabledPluginIds.includes(pluginId);
 }
 
 export function resolvePluginPythonBinary(pluginId: string): string | null {
@@ -158,7 +160,13 @@ async function listInstalledPluginDirs(): Promise<string[]> {
 }
 
 export async function getPluginHostSnapshot(): Promise<PluginHostSnapshot> {
-  const state = await loadState();
+  const storedState = await loadState();
+  const project = activeProjectFilePath ? await loadProjectFile(activeProjectFilePath) : null;
+  const state: PluginHostState = {
+    ...storedState,
+    enabled: project?.config.plugins ?? [],
+  };
+  activeEnabledPluginIds = state.enabled;
   const dirs = await listInstalledPluginDirs();
   /** @type {PluginRecord[]} */
   const plugins: PluginRecord[] = [];
@@ -229,26 +237,8 @@ export function getPluginEntryModuleUrl(pluginId: string): string | null {
   return toLocalFileUrl(filePath);
 }
 
-/** Tools menu items from enabled plugins (for native menu build). */
-export function getEnabledPluginToolsMenuItems(): PluginToolsMenuContribution[] {
-  if (!cachedSnapshot) return [];
-  const items: PluginToolsMenuContribution[] = [];
-  for (const plugin of cachedSnapshot.plugins) {
-    if (!plugin.enabled || plugin.manifestError) continue;
-    for (const item of plugin.manifest.contributions?.toolsMenu ?? []) {
-      items.push({
-        pluginId: plugin.id,
-        id: item.id,
-        label: item.label,
-        action: item.action ?? `${plugin.id}.${item.id}`,
-        separatorBefore: item.separatorBefore,
-      });
-    }
-  }
-  return items;
-}
-
 export async function setPluginEnabled(pluginId: string, enabled: boolean): Promise<PluginHostSnapshot> {
+  if (!activeProjectFilePath) throw new Error('Open a project before changing plugin settings.');
   const snapshot = await getPluginHostSnapshot();
   const plugin = snapshot.plugins.find((p) => p.id === pluginId);
   if (!plugin || plugin.manifestError) {
@@ -259,11 +249,8 @@ export async function setPluginEnabled(pluginId: string, enabled: boolean): Prom
   if (enabled) enabledSet.add(pluginId);
   else enabledSet.delete(pluginId);
 
-  const state: PluginHostState = {
-    ...snapshot.state,
-    enabled: [...enabledSet],
-  };
-  await saveState(state);
+  await writeProjectConfig(activeProjectFilePath, { plugins: [...enabledSet] });
+  activeEnabledPluginIds = [...enabledSet];
 
   if (enabled) {
     await ensurePluginBundledAssets(plugin);
@@ -357,11 +344,8 @@ export async function seedDevPluginsIfEmpty(): Promise<void> {
     break;
   }
 
-  const snapshot = await getPluginHostSnapshot();
-  const cjkDates = snapshot.plugins.find((p) => p.id === 'cjk-dates' && !p.manifestError);
-  if (cjkDates && !cjkDates.enabled) {
-    await setPluginEnabled('cjk-dates', true);
-  }
+  // Installed plugins deliberately start disabled. Each project opts in through
+  // the Plugins panel, so opening one project never changes another project's tools.
 }
 
 async function applyPluginContributions(plugin: PluginRecord): Promise<void> {

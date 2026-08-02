@@ -24,6 +24,19 @@ import { refreshCbdbConcordanceAfterPackLifecycle } from '../../autoTagging/cbdb
 import type { IDialog } from '../type';
 import type { PluginReleaseEntry } from '../../../../../apps/commons/src/desktop/pluginRegistryTypes';
 
+const pluginSupportsLanguage = (
+  plugin: Pick<PluginRecordView, 'id' | 'languages'>,
+  language: string | null,
+): boolean => {
+  if (!language || plugin.languages.length === 0) return true;
+  const normalized = language.toLowerCase();
+  if (plugin.id === 'norbert') return normalized.startsWith('zh') || normalized === 'lzh';
+  if (plugin.id === 'cjk-dates') {
+    return normalized.startsWith('zh') || normalized === 'lzh' || normalized.startsWith('ja');
+  }
+  return plugin.languages.some((candidate) => normalized.startsWith(candidate.toLowerCase()));
+};
+
 function PluginRow({
   plugin,
   busy,
@@ -110,6 +123,7 @@ export const PluginsDialog = ({ onClose, open = false }: IDialog) => {
   const [remotePlugins, setRemotePlugins] = useState<PluginReleaseEntry[]>([]);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [projectLanguage, setProjectLanguage] = useState<string | null>(null);
 
   const load = useCallback(async () => {
     setError(null);
@@ -124,8 +138,16 @@ export const PluginsDialog = ({ onClose, open = false }: IDialog) => {
   }, []);
 
   useEffect(() => {
-    if (open) void load();
+    if (!open) return;
+    void load();
+    void window.__leafWriterProject?.getProjectSourceLanguage?.().then((language) =>
+      setProjectLanguage(language ?? null),
+    );
   }, [load, open]);
+
+  const availablePlugins = snapshot?.plugins.filter((plugin) =>
+    pluginSupportsLanguage(plugin, projectLanguage),
+  );
 
   const handleToggle = async (pluginId: string, enabled: boolean) => {
     setBusy(true);
@@ -197,9 +219,14 @@ export const PluginsDialog = ({ onClose, open = false }: IDialog) => {
       <DialogContent>
         <Stack spacing={2}>
           <Typography variant="body2" color="text.secondary">
-            Optional tools for specific languages and periods. Enable a plugin to add its authority
-            packs and auto-tagging methods to Le Jean-Baptiste.
+            Optional tools for this project. Enabled plugins are saved with the project and only
+            affect its authority packs and auto-tagging methods.
           </Typography>
+          {projectLanguage && (
+            <Typography variant="caption" color="text.secondary">
+              Showing plugins available for {projectLanguage}.
+            </Typography>
+          )}
           {error && <Alert severity="error">{error}</Alert>}
           {!snapshot?.plugins.length && (
             <Alert severity="info">
@@ -207,7 +234,7 @@ export const PluginsDialog = ({ onClose, open = false }: IDialog) => {
               <code>plugins/packages</code> folder are copied automatically on first launch.
             </Alert>
           )}
-          {snapshot?.plugins.map((plugin) => (
+          {availablePlugins?.map((plugin) => (
             <PluginRow
               key={plugin.id}
               plugin={plugin}
@@ -221,7 +248,11 @@ export const PluginsDialog = ({ onClose, open = false }: IDialog) => {
             />
           ))}
           {remotePlugins
-            .filter((entry) => !snapshot?.plugins.some((plugin) => plugin.id === entry.id))
+            .filter(
+              (entry) =>
+                !snapshot?.plugins.some((plugin) => plugin.id === entry.id) &&
+                pluginSupportsLanguage(entry, projectLanguage),
+            )
             .map((entry) => (
               <Box key={entry.id} sx={{ border: 1, borderColor: 'divider', borderRadius: 2, p: 2 }}>
                 <Stack

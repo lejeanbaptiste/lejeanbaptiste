@@ -1291,13 +1291,11 @@ export const tinymceWrapperInit = function ({
     writer.event('selectionChanged').publish();
   };
 
-  const onUndoHandler = (event: any) => {
-    log.info('undoHandler', event);
+  const onUndoHandler = () => {
     writer.event('contentChanged').publish();
   };
 
-  const onRedoHandler = (event: any) => {
-    log.info('redoHandler', event);
+  const onRedoHandler = () => {
     writer.event('contentChanged').publish();
   };
 
