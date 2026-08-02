@@ -47,7 +47,7 @@ type AuthorityRefLookupFn = (request: {
   authorityId?: string;
   primaryName?: string;
   names?: Array<{ text: string; type?: string; lang?: string }>;
-  metadata?: AuthorityCandidate['metadata'] & { nobleTitles?: unknown[] };
+  metadata?: Record<string, unknown>;
 } | null>;
 
 const REF_SOURCE_BY_AUTHORITY: Record<string, 'cbdb' | 'dila' | 'norbert'> = {

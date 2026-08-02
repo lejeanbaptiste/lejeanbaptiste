@@ -13,12 +13,14 @@ export function buildNobleTitleSearchStrings(params: {
   fief?: string | null;
   roleName?: string | null;
   posthumousName?: string | null;
+  posthumousNameAbbr?: string | null;
   dynasty?: string | null;
   personNames?: readonly string[];
 }): { titleSearchStrings: string[]; wrapperSearchStrings: string[] } {
   const fief = params.fief?.trim();
   const roleName = params.roleName?.trim();
   const posthumousName = params.posthumousName?.trim();
+  const posthumousNameAbbr = params.posthumousNameAbbr?.trim();
   const dynasty = params.dynasty?.trim();
   const uniqueNames = [
     ...new Set((params.personNames ?? []).map((name) => name.trim()).filter(Boolean)),
@@ -29,6 +31,7 @@ export function buildNobleTitleSearchStrings(params: {
 
   const titleForms: string[] = [];
   add(titleForms, [posthumousName, roleName].filter(Boolean).join(''));
+  add(titleForms, [posthumousNameAbbr, roleName].filter(Boolean).join(''));
   add(titleForms, roleName ?? '');
 
   // Skip the dynasty-prefixed variants when dynasty === fief (e.g. Liu Bei's
@@ -87,6 +90,7 @@ export function expandNorbertWikiNtCandidate(
     fief: title.fief,
     roleName: title.roleName,
     posthumousName: title.posthumousName,
+    posthumousNameAbbr: title.posthumousNameAbbr,
     dynasty: metadata.dynasty,
     personNames,
   });

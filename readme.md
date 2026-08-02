@@ -130,6 +130,11 @@ Near-term work pulled from the planning docs ([docs/README.md](docs/README.md)).
 - [ ] VALIDATE: Norbert functions in add tag palette
 - [ ] VALIDATE: 壽王瑁 mess, princesses, in database viewer
 
+### Norbert: Noble titles and wrappers
+
+- [ ] Norbert personWrapper: resolve accepted wrappers to exactly one person key; validation for missing/ambiguous keys
+- [ ] include wrappers/`roleName` in validation panel
+
 ### Performance and stability
 
 **Current state (2026-08-02):** Before calling
@@ -142,15 +147,6 @@ work in this area is packaged verification.
 [entity-sync-manual-test-plan.md](docs/entity-sync-manual-test-plan.md).
 
 ## Future
-
-### Norbert: Noble titles and wrappers
-
-- [ ] 竟陵王子良 shows up as persname; we are not tagging title + given name ! Also clean up primary name / display name.
-- [ ] Auto parse and organise noble titles
-- [ ] nt 'abr'
-- [ ] Noble title and person wrapper tagging (testing).
-- [ ] Norbert personWrapper: resolve accepted wrappers to exactly one person key; validation for missing/ambiguous keys
-- [ ] include wrappers/`roleName` in validation panel
 
 ### AI
 
@@ -174,6 +170,7 @@ work in this area is packaged verification.
 - [ ] Time Machine polish: diff preview, export history zip, optional `revisionDesc` on restore, delete (?)
 - [ ] Find/replace Phase 2b: WYSIWYG visible-text replace across markup
 - [ ] Match-case / persist last find query (optional)
+- [ ] Ignore page breaks, line breaks, and corrections in tagging and disambiguation?
 - [ ] Tag-boundary Bugs B/C/H (typing/delete at edges)
 - [ ] Import Phase 1 leftovers: md `{{header}}`, batch/folder UI, validator + provenance
 

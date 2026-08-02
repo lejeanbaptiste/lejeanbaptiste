@@ -45,6 +45,11 @@ export async function applyGroupAndClean(): Promise<void> {
         `${result.parsedNobleTitles} nobleTitle${result.parsedNobleTitles === 1 ? '' : 's'} parsed`,
       );
     }
+    if (result.reparsedApprovedNobleTitles > 0) {
+      parts.push(
+        `${result.reparsedApprovedNobleTitles} reviewed title${result.reparsedApprovedNobleTitles === 1 ? '' : 's'} repaired`,
+      );
+    }
     if (result.createdWrappers > 0) {
       parts.push(
         `${result.createdWrappers} person wrapper${result.createdWrappers === 1 ? '' : 's'} created`,

@@ -83,6 +83,7 @@ export interface NorbertNobleTitleCandidate {
   placeName: string;
   roleName: string;
   posthumousName?: string;
+  posthumousNameAbbr?: string;
   dynasty?: string;
   /** The wiki-nt-links record's own authorityId, e.g. "wiki-nt:1610". */
   ref: string;
@@ -112,6 +113,7 @@ export async function buildNorbertNobleTitleIndex(
           placeName: title.fief ?? '',
           roleName: title.roleName ?? '',
           posthumousName: title.posthumousName,
+          posthumousNameAbbr: title.posthumousNameAbbr,
           dynasty: row.metadata?.dynasty,
           ref: `person:${personId}`,
         });
@@ -138,6 +140,7 @@ export async function buildNorbertNobleTitleIndex(
         placeName: title.fief ?? '',
         roleName: title.roleName ?? '',
         posthumousName: title.posthumousName,
+        posthumousNameAbbr: title.posthumousNameAbbr,
         dynasty: row.metadata?.dynasty,
         ref: row.authorityId,
       });

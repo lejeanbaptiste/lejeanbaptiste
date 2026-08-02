@@ -115,8 +115,10 @@ export interface AuthorityCandidate {
       components: {
         nationality?: string;
         fief?: string;
+        familyName?: string;
         roleName?: string;
         posthumousName?: string;
+        posthumousNameAbbr?: string;
         templeName?: string;
         persName: string;
       };
@@ -125,15 +127,26 @@ export interface AuthorityCandidate {
     /** Structured noble-title components used by the Norbert wiki runtime. */
     nobleTitle?: {
       fief?: string;
+      familyName?: string;
       roleName?: string;
       posthumousName?: string;
+      posthumousNameAbbr?: string;
     };
     /** Canonical noble titles carried by a Norbert person record. */
     nobleTitles?: {
       fief?: string;
+      familyName?: string;
       roleName?: string;
       posthumousName?: string;
+      posthumousNameAbbr?: string;
     }[];
+    /** Provenance for an exact reviewed title reclassification. Never an entity identity. */
+    nobleTitleFilter?: {
+      ruleId?: string;
+      source?: string;
+      authorityId?: string;
+      filteredSurfaces?: string[];
+    };
     /** Runtime-only partitions; the shipped asset remains compact and unexpanded. */
     wrapperSearchStrings?: string[];
     titleSearchStrings?: string[];

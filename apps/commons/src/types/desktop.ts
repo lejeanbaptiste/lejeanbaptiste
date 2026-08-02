@@ -190,6 +190,8 @@ export interface WorkspaceSessionRestore {
 }
 
 export interface ElectronAPI {
+  /** IPC methods are versioned independently from the shared renderer contract. */
+  [method: string]: any;
   openProject: () => Promise<ProjectBundle | null>;
   /** @deprecated Use openProject */
   openProjectFolder: () => Promise<ProjectBundle | null>;

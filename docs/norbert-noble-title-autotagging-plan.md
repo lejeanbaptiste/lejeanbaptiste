@@ -1,6 +1,27 @@
 # Norbert noble-title autotagging and person-context data
 
-**Status (2026-08-02):** **Mostly shipped** — wrapper pack, concatenation, shared expander cache, and idle warm-up are live in the authority-tagging flow. Follow-ups: personWrapper key resolution/validation and panel inclusion of wrappers/`roleName`.
+**Status (2026-08-02):** **Shipped** — wrapper pack, concatenation, reviewed noble-title filtering, shared expander cache, and idle warm-up are wired into the authority-tagging flow. The reviewed filter is source-specific and exact-match only; the authority bundle now includes the generated policy pack.
+
+## Reviewed noble-title filter
+
+The authority-extraction review table
+`authority extraction/reports/noble-title-authority-review.csv` is the curation
+source. Its accepted rows are compiled into the `noble-title-filter` authority
+pack. Deferred and rejected rows are not loaded as title rules.
+
+At runtime LJB loads this policy pack automatically when present. For every
+authority candidate, an exact approved `persName`/`roleName` surface is removed
+from generic name matching and replaced by the derived structural candidate:
+
+```xml
+<nobleTitle><placeName>海鹽</placeName><roleName>公主</roleName></nobleTitle>
+```
+
+Title candidates never mint person or office entities. The same filter is
+applied to extra candidates supplied by project/central databases and imported
+authority lists. Group & Clean uses the exact same reviewed candidates to
+repair already-tagged title-shaped `persName`/`roleName` elements, preserving
+an existing person key on a generated wrapper.
 
 ## Problem
 

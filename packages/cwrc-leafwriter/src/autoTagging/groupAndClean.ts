@@ -213,6 +213,76 @@ export function parseChildlessNobleTitles(
   return parsed;
 }
 
+/**
+ * Repair a previously accepted `<persName>`/`<roleName>` only when a shipped
+ * reviewed-filter record names that *exact* surface. This is intentionally
+ * narrower than the vocabulary parser: a rank-looking personal name must not
+ * be rewritten merely because it happens to end in 王 or 子.
+ */
+export function reparseApprovedNobleTitleNames(
+  scopeRoot: Element,
+  candidates: readonly AuthorityCandidate[],
+  touched: Set<Element>,
+): number {
+  const bySurface = new Map<string, AuthorityCandidate>();
+  for (const candidate of candidates) {
+    if (!candidate.metadata?.isNobleTitle || !candidate.metadata?.nobleTitleFilter) continue;
+    for (const surface of candidate.searchStrings) bySurface.set(surface, candidate);
+  }
+  if (!bySurface.size) return 0;
+  const doc = scopeRoot.ownerDocument;
+  if (!doc) return 0;
+  const ns = doc.documentElement?.namespaceURI ?? null;
+  let repaired = 0;
+  for (const original of [
+    ...Array.from(scopeRoot.getElementsByTagName('persName')),
+    ...Array.from(scopeRoot.getElementsByTagName('roleName')),
+  ]) {
+    if (original.children.length || isInsidePersonWrapper(original)) continue;
+    const candidate = bySurface.get(original.textContent?.trim() ?? '');
+    const title = candidate?.metadata?.nobleTitle;
+    if (!candidate || !title || !original.parentNode) continue;
+    if (!title.roleName) continue;
+    const nobleTitle = doc.createElementNS(ns, 'nobleTitle');
+    if (candidate.metadata?.dynasty) nobleTitle.setAttribute('dynasty', candidate.metadata.dynasty);
+    if (title.fief) {
+      const el = doc.createElementNS(ns, 'placeName');
+      el.textContent = title.fief;
+      nobleTitle.appendChild(el);
+    }
+    if (title.posthumousName) {
+      const el = doc.createElementNS(ns, 'persName');
+      el.setAttribute('type', 'posthumous');
+      el.textContent = title.posthumousName;
+      nobleTitle.appendChild(el);
+    }
+    const role = doc.createElementNS(ns, 'roleName');
+    role.textContent = title.roleName;
+    nobleTitle.appendChild(role);
+
+    const wrapperInfo = candidate.metadata?.wrapper;
+    if (wrapperInfo?.components.persName) {
+      const wrapper = doc.createElementNS(ns, 'name');
+      wrapper.setAttribute('type', 'personWrapper');
+      const key = original.getAttribute('key')?.trim();
+      if (key) wrapper.setAttribute('key', key);
+      else wrapper.setAttribute('cert', 'unknown');
+      wrapper.appendChild(nobleTitle);
+      const person = doc.createElementNS(ns, 'persName');
+      if (key) person.setAttribute('key', key);
+      person.textContent = wrapperInfo.components.persName;
+      wrapper.appendChild(person);
+      original.parentNode.replaceChild(wrapper, original);
+      touched.add(wrapper);
+    } else {
+      original.parentNode.replaceChild(nobleTitle, original);
+      touched.add(nobleTitle);
+    }
+    repaired++;
+  }
+  return repaired;
+}
+
 const WRAPPER_COMPONENT_TAGS = new Set([
   'nationality',
   'nobleTitle',
@@ -385,6 +455,7 @@ export interface GroupAndCleanResult {
   mergedRoleNames: number;
   rolledPlaceNames: number;
   parsedNobleTitles: number;
+  reparsedApprovedNobleTitles: number;
   createdWrappers: number;
   assignedKeys: number;
   autoResolvedKeys: number;
@@ -397,6 +468,7 @@ export async function runGroupAndClean(
   scopeRoot: Element,
   officeCandidates: readonly AuthorityCandidate[],
   vocabulary: NobleTitleVocabulary,
+  approvedNobleTitleCandidates: readonly AuthorityCandidate[] = [],
 ): Promise<GroupAndCleanResult> {
   const touched = new Set<Element>();
   const officeIndex = buildOfficeIndex(officeCandidates);
@@ -404,6 +476,11 @@ export async function runGroupAndClean(
   const mergedRoleNames = mergeAdjacentRoleNames(scopeRoot, officeIndex, touched);
   const rolledPlaceNames = rollPlaceIntoRole(scopeRoot, officeIndex, touched);
   const parsedNobleTitles = parseChildlessNobleTitles(scopeRoot, vocabulary, touched);
+  const reparsedApprovedNobleTitles = reparseApprovedNobleTitleNames(
+    scopeRoot,
+    approvedNobleTitleCandidates,
+    touched,
+  );
   const createdWrappers = createPersonWrappersInScope(scopeRoot, touched);
   const { copied, autoResolved } = await assignPersonWrapperKeys(scopeRoot, findLocalIds, touched);
 
@@ -411,6 +488,7 @@ export async function runGroupAndClean(
     mergedRoleNames,
     rolledPlaceNames,
     parsedNobleTitles,
+    reparsedApprovedNobleTitles,
     createdWrappers,
     assignedKeys: copied,
     autoResolvedKeys: autoResolved,

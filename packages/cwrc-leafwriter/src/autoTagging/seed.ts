@@ -64,11 +64,11 @@ function nobleTitleComponentsForSurface(
   nobleTitle: NobleTitleComponents,
   surface: string,
 ): NobleTitleComponents | null {
-  const { fief, posthumousName, roleName } = nobleTitle;
-  const full = [fief, posthumousName, roleName].filter(Boolean).join('');
-  if (full === surface) return { fief, posthumousName, roleName };
-  const bare = [fief, roleName].filter(Boolean).join('');
-  if (bare === surface) return { fief, roleName };
+  const { fief, familyName, posthumousName, roleName } = nobleTitle;
+  const full = [fief, familyName, posthumousName, roleName].filter(Boolean).join('');
+  if (full === surface) return { fief, familyName, posthumousName, roleName };
+  const bare = [fief, familyName, roleName].filter(Boolean).join('');
+  if (bare === surface) return { fief, familyName, roleName };
   return null;
 }
 
@@ -77,12 +77,12 @@ function wrapperComponentsForSurface(
   wrapper: NonNullable<NonNullable<AuthorityCandidate['metadata']>['wrapper']>,
   surface: string,
 ): NonNullable<NonNullable<AuthorityCandidate['metadata']>['wrapper']>['components'] | null {
-  const { nationality, fief, posthumousName, roleName, templeName, persName } = wrapper.components;
-  const full = [nationality, fief, posthumousName, roleName, templeName, persName]
+  const { nationality, fief, familyName, posthumousName, roleName, templeName, persName } = wrapper.components;
+  const full = [nationality, fief, familyName, posthumousName, roleName, templeName, persName]
     .filter(Boolean)
     .join('');
   if (full === surface) return wrapper.components;
-  const bare = [nationality, fief, roleName, templeName, persName].filter(Boolean).join('');
+  const bare = [nationality, fief, familyName, roleName, templeName, persName].filter(Boolean).join('');
   if (bare === surface) return { ...wrapper.components, posthumousName: undefined };
   return null;
 }
@@ -109,6 +109,9 @@ export function suggestionsFromSeedMatches(matches: SeedMatch[]): Suggestion[] {
           nobleTitle.fief ? `<placeName>${xmlEscape(nobleTitle.fief)}</placeName>` : '',
           nobleTitle.posthumousName
             ? `<persName type="posthumous">${xmlEscape(nobleTitle.posthumousName)}</persName>`
+            : '',
+          nobleTitle.familyName
+            ? `<persName type="family">${xmlEscape(nobleTitle.familyName)}</persName>`
             : '',
           nobleTitle.roleName ? `<roleName>${xmlEscape(nobleTitle.roleName)}</roleName>` : '',
         ].join('')
@@ -235,6 +238,7 @@ export function wrapperInnerXml(
     : '';
   const titleParts = [
     components.fief ? `<placeName>${xmlEscape(components.fief)}</placeName>` : '',
+    components.familyName ? `<persName type="family">${xmlEscape(components.familyName)}</persName>` : '',
     components.posthumousName
       ? `<persName type="posthumous">${xmlEscape(components.posthumousName)}</persName>`
       : '',
@@ -618,6 +622,10 @@ export async function autoLinkUnique(
   for (const match of matches) {
     const candidate = match.candidates[0];
     if (!candidate) continue;
+    // A curated title replacement is structural markup, not an authority
+    // entity. Applying it must never mint a fictional person/office whose
+    // only "name" is a noble title.
+    if (candidate.metadata?.isNobleTitle && candidate.metadata?.nobleTitleFilter) continue;
     const { id, created } = resolveEntity(entitiesDoc, candidate, minted, projectLang);
     if (created) {
       entitiesCreated += 1;

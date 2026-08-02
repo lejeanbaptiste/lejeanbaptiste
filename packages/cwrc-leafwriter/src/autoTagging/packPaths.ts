@@ -32,6 +32,7 @@ export type AuthorityPackId =
   | 'norbert-person-wrappers'
   | 'norbert-offices'
   | 'norbert-wiki-nt'
+  | 'noble-title-filter'
   /** Project entity database (PEDB) — read live from entities.xml, not a file pack. */
   | 'pedb-persons'
   | 'pedb-places'
@@ -300,6 +301,13 @@ export const AUTHORITY_PACKS: AuthorityPackSpec[] = [
     defaultTag: 'persName',
   },
   {
+    id: 'noble-title-filter',
+    label: 'Reviewed noble titles',
+    source: 'norbert',
+    relativePath: 'noble-title-filter/noble-titles.ndjson',
+    defaultTag: 'persName',
+  },
+  {
     id: 'pedb-persons',
     label: 'PEDB persons',
     source: 'pedb',
@@ -523,6 +531,7 @@ export const UI_AUTHORITY_PACK_IDS: AuthorityPackId[] = [
   'norbert-person-wrappers',
   'norbert-offices',
   'norbert-wiki-nt',
+  'noble-title-filter',
   'pedb-persons',
   'pedb-places',
   'pedb-orgs',
@@ -681,6 +690,7 @@ export const AUTHORITY_PACK_SHORT_LABELS: Partial<Record<AuthorityPackId, string
   'norbert-person-wrappers': 'Persons',
   'norbert-offices': 'Offices',
   'norbert-wiki-nt': 'Persons',
+  'noble-title-filter': 'Reviewed titles',
   'pedb-persons': 'Persons',
   'pedb-places': 'Places',
   'pedb-orgs': 'Organizations',

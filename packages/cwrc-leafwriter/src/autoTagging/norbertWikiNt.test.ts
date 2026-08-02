@@ -22,6 +22,20 @@ const candidate: AuthorityCandidate = {
 };
 
 describe('Norbert Wikipedia noble-title runtime', () => {
+  it('uses an explicit posthumous abbreviation as an additional title form', () => {
+    const abbreviated: AuthorityCandidate = {
+      ...candidate,
+      metadata: {
+        ...candidate.metadata,
+        nobleTitle: { fief: '宋', roleName: '帝', posthumousName: '孝武', posthumousNameAbbr: '武' },
+      },
+    };
+    const title = expandNorbertWikiNtCandidate(abbreviated).find(
+      (item) => item.metadata?.teiTag === 'nobleTitle',
+    );
+    expect(title?.searchStrings).toEqual(expect.arrayContaining(['宋孝武帝', '宋武帝']));
+  });
+
   it('expands compact components into separate wrapper and title candidates', () => {
     const expanded = expandNorbertWikiNtCandidate(
       candidate,

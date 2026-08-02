@@ -25,10 +25,10 @@ import type { IDialog } from '../type';
 import type { PluginReleaseEntry } from '../../../../../apps/commons/src/desktop/pluginRegistryTypes';
 
 const pluginSupportsLanguage = (
-  plugin: Pick<PluginRecordView, 'id' | 'languages'>,
+  plugin: Pick<PluginRecordView, 'id'> & { languages?: string[] },
   language: string | null,
 ): boolean => {
-  if (!language || plugin.languages.length === 0) return true;
+  if (!language || !plugin.languages || plugin.languages.length === 0) return true;
   const normalized = language.toLowerCase();
   if (plugin.id === 'norbert') return normalized.startsWith('zh') || normalized === 'lzh';
   if (plugin.id === 'cjk-dates') {

@@ -44,6 +44,7 @@ const PACK_LOAD_ORDER: AuthorityPackId[] = [
   'norbert-persons',
   'norbert-person-wrappers',
   'norbert-wiki-nt',
+  'noble-title-filter',
   'norbert-offices',
 ];
 
@@ -58,6 +59,7 @@ import {
 import { dedupeSuggestionsByLocation } from './suggestionFilters';
 import type { Suggestion, WhitespacePolicy } from './types';
 import { expandNorbertWikiNtCandidate } from './norbertWikiNt';
+import { applyNobleTitleFilter, buildNobleTitleFilterIndex } from './nobleTitleFilter';
 
 /** Review panel cap in the app; harness runs should omit this. */
 export const MAX_AUTHORITY_SUGGESTIONS = 2000;
@@ -119,6 +121,21 @@ export async function runAuthorityTagBombOnDocument(
   const loaded: Partial<Record<AuthorityPackId, number>> = {};
   let candidateCount = 0;
   const norbertNamesByAuthorityId = new Map<string, string[]>();
+  // The reviewed replacement pack is always loaded when installed. It is a
+  // policy layer, not a user-selected authority source: otherwise an approved
+  // title could re-enter as a generic persName whenever the source checkbox
+  // changed.
+  let nobleTitleFilter = buildNobleTitleFilterIndex([]);
+  try {
+    const filterContent = await readPackFile('noble-title-filter');
+    const filterCandidates = [...iterateAuthorityNdjson(filterContent)].filter(
+      (candidate) => Boolean(candidate.metadata?.nobleTitleFilter),
+    );
+    nobleTitleFilter = buildNobleTitleFilterIndex(filterCandidates);
+    for (const candidate of filterCandidates) addCandidateToSeedIndex(index, candidate);
+  } catch {
+    // Older installations do not have the new pack; preserve legacy behavior.
+  }
 
   // Non-file origins (pedb/cedb/project/list) have no NDJSON to stream —
   // callers route those to `extraCandidates` instead.
@@ -139,9 +156,15 @@ export async function runAuthorityTagBombOnDocument(
           ? expandNorbertWikiNtCandidate(candidate, norbertNamesByAuthorityId)
           : [candidate];
       for (const runtimeCandidate of runtimeCandidates) {
-        if (dateFilter && !candidatePassesDateFilter(runtimeCandidate, dateFilter)) continue;
-        const filtered = filterCandidateForPhase1(runtimeCandidate, nameTypePolicy);
-        if (filtered.searchStrings.length === 0) continue;
+        const titleFilterResult = applyNobleTitleFilter(runtimeCandidate, nobleTitleFilter);
+        const candidatesToAdd = [
+          ...(titleFilterResult.candidate ? [titleFilterResult.candidate] : []),
+          ...titleFilterResult.titleCandidates,
+        ];
+        for (const filteredCandidate of candidatesToAdd) {
+          if (dateFilter && !candidatePassesDateFilter(filteredCandidate, dateFilter)) continue;
+          const filtered = filterCandidateForPhase1(filteredCandidate, nameTypePolicy);
+          if (filtered.searchStrings.length === 0) continue;
         if (packId === 'norbert-persons') {
           const names = [
             filtered.primaryName,
@@ -149,9 +172,10 @@ export async function runAuthorityTagBombOnDocument(
           ].filter(Boolean);
           norbertNamesByAuthorityId.set(filtered.authorityId, [...new Set(names)]);
         }
-        addCandidateToSeedIndex(index, filtered);
-        packCount += 1;
-        candidateCount += 1;
+          addCandidateToSeedIndex(index, filtered);
+          packCount += 1;
+          candidateCount += 1;
+        }
       }
     }
     loaded[packId] = packCount;
@@ -160,12 +184,19 @@ export async function runAuthorityTagBombOnDocument(
   for (const group of options.extraCandidates ?? []) {
     let groupCount = 0;
     for (const candidate of group.candidates) {
-      if (dateFilter && !candidatePassesDateFilter(candidate, dateFilter)) continue;
-      const filtered = filterCandidateForPhase1(candidate, nameTypePolicy);
-      if (filtered.searchStrings.length === 0) continue;
-      addCandidateToSeedIndex(index, filtered);
-      groupCount += 1;
-      candidateCount += 1;
+      const titleFilterResult = applyNobleTitleFilter(candidate, nobleTitleFilter);
+      const candidatesToAdd = [
+        ...(titleFilterResult.candidate ? [titleFilterResult.candidate] : []),
+        ...titleFilterResult.titleCandidates,
+      ];
+      for (const replacement of candidatesToAdd) {
+        if (dateFilter && !candidatePassesDateFilter(replacement, dateFilter)) continue;
+        const filtered = filterCandidateForPhase1(replacement, nameTypePolicy);
+        if (filtered.searchStrings.length === 0) continue;
+        addCandidateToSeedIndex(index, filtered);
+        groupCount += 1;
+        candidateCount += 1;
+      }
     }
     loaded[group.groupLabel as AuthorityPackId] = groupCount;
   }

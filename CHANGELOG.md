@@ -38,6 +38,7 @@
 - Avoid full panel reloads on single-field edits
 - Finished wordprocessor write paths against SQLite
 - Automatically keep ordinary entity-name writes clean: deduplicate same text/type rows, discard literal `nan` placeholders, and remove the malformed `n` + `an` family/given pair. The Clean command still catches older data too.
+- Isolated and parsed 3,142 names in authority packs constituting noble titles.
 
 ### UI
 
@@ -49,6 +50,7 @@
 - Propagate now matches across visible inline markup, reproduces nested visible tag structure, preserves existing hidden/correction markup, and skips partially pre-tagged occurrences.
 - Added a Norbert-branded noble-title action to the selection tag popup when the Norbert plugin is enabled.
 - Added a matching Norbert-branded person-wrapper action; filtering for “person” or “wrapper” finds it.
+- Database viewer now shows authority badges
 
 ### Documentation
 

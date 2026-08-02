@@ -692,9 +692,10 @@ export class AutoTaggingSession {
     const doc = await this.getDocument();
     const root = scopeRoot ?? doc.documentElement;
 
-    const [officeContent, wikiNtContent] = await Promise.all([
+    const [officeContent, wikiNtContent, reviewedTitleContent] = await Promise.all([
       readPackFile('norbert-offices').catch(() => null),
       readPackFile('norbert-wiki-nt').catch(() => null),
+      readPackFile('noble-title-filter').catch(() => null),
     ]);
 
     const officeCandidates = officeContent ? [...iterateAuthorityNdjson(officeContent)] : [];
@@ -719,7 +720,16 @@ export class AutoTaggingSession {
       ];
     };
 
-    const result = await runGroupAndClean(findLocalIds, root, officeCandidates, vocabulary);
+    const reviewedTitleCandidates = reviewedTitleContent
+      ? [...iterateAuthorityNdjson(reviewedTitleContent)]
+      : [];
+    const result = await runGroupAndClean(
+      findLocalIds,
+      root,
+      officeCandidates,
+      vocabulary,
+      reviewedTitleCandidates,
+    );
 
     await this.persistDocument(doc);
     return result;
