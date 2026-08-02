@@ -160,10 +160,18 @@ export async function readAuthorityPackFile(
       if (chunkLayout.undatedPath && (!requested || chunkLayout.includeUndatedForLimit)) {
         paths.push(chunkLayout.undatedPath);
       }
-      const lines = await Promise.all(
-        paths.map((relative) => readAuthorityPackLines(path.resolve(path.dirname(file), relative))),
-      );
-      return [...new Set(lines.flat())];
+      // Read selected chunks one at a time. Promise.all + flat() briefly held
+      // the same large pack as nested arrays, a flattened array, and a Set;
+      // with a broad undated section that could push the renderer over V8's
+      // large-string/memory limits even though the date filter was working.
+      const uniqueLines = new Set<string>();
+      for (const relative of paths) {
+        const chunkLines = await readAuthorityPackLines(
+          path.resolve(path.dirname(file), relative),
+        );
+        for (const line of chunkLines) uniqueLines.add(line);
+      }
+      return [...uniqueLines];
     }
   } catch (error) {
     if ((error as NodeJS.ErrnoException)?.code !== 'ENOENT') throw error;
