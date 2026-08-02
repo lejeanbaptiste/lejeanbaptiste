@@ -1480,7 +1480,7 @@ export function desktopEntityFileApi(): EntityFileApi | null {
       ? (databasePath, xml) => rawApi.entitySqliteImportXml!(databasePath, xml)
       : undefined,
     entitySqliteCandidates: rawApi.entitySqliteCandidates
-      ? (databasePath, kind) => rawApi.entitySqliteCandidates!(databasePath, kind)
+      ? (databasePath, kind) => rawApi.entitySqliteCandidates!({ databasePath, kind })
       : undefined,
     entitySqliteGetNotes: rawApi.entitySqliteGetNotes
       ? (input) => rawApi.entitySqliteGetNotes!(input)
