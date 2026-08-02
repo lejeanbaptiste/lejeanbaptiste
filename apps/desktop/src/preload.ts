@@ -551,6 +551,7 @@ export interface ElectronAPI {
       progress: import('../../commons/src/desktop/authorityLifecycleTypes').AuthorityLifecycleProgress,
     ) => void,
   ) => () => void;
+  onAuthorityLifecycleUpdated?: (callback: () => void) => () => void;
   updateProjectFileConfig: (
     projectFilePath: string,
     patch: Record<string, unknown>,
@@ -915,6 +916,11 @@ const electronAPI: ElectronAPI = {
     ) => callback(progress);
     ipcRenderer.on('authorityLifecycle:progress', listener);
     return () => ipcRenderer.removeListener('authorityLifecycle:progress', listener);
+  },
+  onAuthorityLifecycleUpdated: (callback) => {
+    const listener = () => callback();
+    ipcRenderer.on('authorityLifecycle:updated', listener);
+    return () => ipcRenderer.removeListener('authorityLifecycle:updated', listener);
   },
   updateProjectFileConfig: (projectFilePath: string, patch: Record<string, unknown>) =>
     ipcRenderer.invoke('updateProjectFileConfig', projectFilePath, patch),

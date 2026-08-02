@@ -58,6 +58,7 @@ export const ProjectEditor = () => {
   const loadGenerationRef = useRef(0);
   const [editorLoadFailed, setEditorLoadFailed] = useState(false);
   const [retryToken, setRetryToken] = useState(0);
+  const [settingsBootstrapRequested, setSettingsBootstrapRequested] = useState(false);
 
   const { initLeafWriter, loadDocumentInWriter, loadLib, ensureLeafWriterReadyForSettings } =
     useLeafWriter();
@@ -133,10 +134,29 @@ export const ProjectEditor = () => {
     }
   }, [sessionKey]);
 
+  const ensureApplicationSettingsReady = useCallback(async (): Promise<boolean> => {
+    // The normal editor path deliberately waits for a document before loading
+    // TinyMCE. Settings must also work for an open project with no document,
+    // so make the otherwise-hidden editor container usable just for this
+    // minimal bootstrap.
+    setSettingsBootstrapRequested(true);
+    await new Promise<void>((resolve) => window.requestAnimationFrame(() => resolve()));
+
+    if (!leafWriter) {
+      if (!divEl.current || desktopWindowMode !== 'editor') return false;
+      // Let the next bootstrap attempt use the freshly stored LeafWriter
+      // instance to initialize TinyMCE before opening its dialog.
+      await loadLib(divEl.current);
+      return false;
+    }
+
+    return ensureLeafWriterReadyForSettings();
+  }, [desktopWindowMode, ensureLeafWriterReadyForSettings, leafWriter, loadLib]);
+
   useEffect(() => {
-    registerApplicationSettingsBootstrap(ensureLeafWriterReadyForSettings);
+    registerApplicationSettingsBootstrap(ensureApplicationSettingsReady);
     return () => registerApplicationSettingsBootstrap(async () => false);
-  }, [ensureLeafWriterReadyForSettings]);
+  }, [ensureApplicationSettingsReady]);
 
   const markEditorLoadFailed = useCallback(() => {
     setEditorLoadFailed(true);
@@ -482,7 +502,7 @@ export const ProjectEditor = () => {
               height: '100%',
               minHeight: 0,
               width: '100%',
-              visibility: resource ? 'visible' : 'hidden',
+              visibility: resource || settingsBootstrapRequested ? 'visible' : 'hidden',
             }}
           />
         </Box>

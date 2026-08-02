@@ -11,6 +11,7 @@ import { ensureEntityDbFolder } from '@src/desktop/entityDbOnboarding';
 import {
   mergeMetadataIntoHeader,
   metadataFileExists,
+  getProjectEncoderName,
   readProjectMetadata,
 } from '@src/desktop/projectMetadata';
 import { getDefaultSaveAsPath as buildDefaultSaveAsPath } from '@src/desktop/saveAsDefaults';
@@ -532,6 +533,21 @@ export const openProject = async (context: Context) => {
 
     const bundle = await invokeOpenProjectDialog();
     if (!bundle) return;
+
+    // Encoder identity is portable with a project. A fresh installation has no
+    // local preference yet, so inherit the name already recorded in the root
+    // instead of prompting for a divergent one. Never replace an existing
+    // machine-local identity.
+    const localEncoderName = await window.electronAPI.getEncoderName?.();
+    if (!localEncoderName?.trim()) {
+      const projectEncoderName = await getProjectEncoderName(bundle);
+      if (projectEncoderName) {
+        await window.electronAPI.setEncoderName?.(projectEncoderName);
+        window.dispatchEvent(
+          new CustomEvent('ljbEncoderNameInherited', { detail: projectEncoderName }),
+        );
+      }
+    }
 
     const onboarded = await completeProjectOnboarding(bundle);
     if (!onboarded) {

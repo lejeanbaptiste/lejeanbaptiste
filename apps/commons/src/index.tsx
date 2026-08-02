@@ -13,6 +13,10 @@ import { BrowserRouter } from 'react-router';
 import App from './App';
 import './i18n';
 import { config } from './overmind';
+import {
+  clearChunkLoadRecoveryGuard,
+  recoverFromChunkLoadFailure,
+} from '../../../packages/cwrc-leafwriter/src/plugins/chunkLoadRecovery';
 import './utilities/devtoolsLog';
 import './utilities/log';
 
@@ -22,22 +26,10 @@ import './utilities/log';
 // name while the new asset is being written. Reload once so the page obtains
 // the current app manifest instead of leaving the desktop renderer broken.
 if (typeof window !== 'undefined') {
-  const reloadKey = 'leafwriter:chunk-reload';
-  const isChunkLoadFailure = (value: unknown): boolean => {
-    const message = value instanceof Error ? value.message : String(value);
-    return message.includes('ChunkLoadError') || message.includes('Loading chunk');
-  };
-
   window.addEventListener('unhandledrejection', (event) => {
-    if (!isChunkLoadFailure(event.reason)) return;
-    if (sessionStorage.getItem(reloadKey) === '1') {
-      sessionStorage.removeItem(reloadKey);
-      return;
-    }
-    sessionStorage.setItem(reloadKey, '1');
-    window.setTimeout(() => window.location.reload(), 100);
+    recoverFromChunkLoadFailure(event.reason);
   });
-  window.setTimeout(() => sessionStorage.removeItem(reloadKey), 5000);
+  window.setTimeout(clearChunkLoadRecoveryGuard, 5000);
 }
 
 const isNativeDialogRoute =

@@ -409,6 +409,7 @@ export interface ElectronAPI {
   onAuthorityLifecycleProgress?: (
     callback: (progress: AuthorityLifecycleProgress) => void,
   ) => () => void;
+  onAuthorityLifecycleUpdated?: (callback: () => void) => () => void;
   pluginsEnsureSchemaContribution?: (
     pluginId: string,
     projectFilePath: string,

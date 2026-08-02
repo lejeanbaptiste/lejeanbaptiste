@@ -3363,6 +3363,10 @@ app.whenReady().then(() => {
   registerLemminxIpc(() => mainWindow);
   initAutoUpdater({
     onCompanionNotifyClick: () => sendMenuAction('look-for-updates'),
+    onAuthorityUpdated: () => {
+      if (!mainWindow || mainWindow.isDestroyed()) return;
+      mainWindow.webContents.send('authorityLifecycle:updated');
+    },
   });
   void (async () => {
     await seedDevPluginsIfEmpty();

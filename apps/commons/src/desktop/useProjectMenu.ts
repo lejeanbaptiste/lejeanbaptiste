@@ -212,9 +212,10 @@ export const useProjectMenu = () => {
   useEffect(() => {
     if (!isDesktop() || !window.electronAPI?.onAppMenuAction) return;
 
-    void window.electronAPI.setPluginsMenuVisible?.(
-      isProjectReady && Boolean(leafWriter || window.writer),
-    );
+    // Plugin management is useful even while the editor is still being
+    // prepared (or the user starts in the database view). Do not let the
+    // TinyMCE/LeafWriter loading race hide the only entry to the dialog.
+    void window.electronAPI.setPluginsMenuVisible?.(isProjectReady);
 
     const unsubscribe = window.electronAPI.onAppMenuAction((action) => {
       if (action === 'new-file') {

@@ -2,7 +2,7 @@ import { Notification, app } from 'electron';
 import { autoUpdater } from 'electron-updater';
 
 import type { AppUpdateCheckResult } from '../../commons/src/desktop/appUpdateTypes';
-import { maybeCheckAuthorityUpdates } from './authorityLifecycle';
+import { maybeCheckAuthorityUpdates, runAuthorityLifecyclePipeline } from './authorityLifecycle';
 import { getLocalAuthorityAssetsDir } from './projectPrefs';
 import { getPluginHostSnapshot } from './plugins/pluginHost';
 import { fetchRemotePluginIndex } from './plugins/pluginRegistry';
@@ -26,8 +26,10 @@ const configureAutoUpdater = (): void => {
 };
 
 export type InitAutoUpdaterOptions = {
-  /** Invoked when the user clicks a companion-update (packs/plugins) notification. */
+  /** Invoked when the user clicks a plugin-update notification. */
   onCompanionNotifyClick?: () => void;
+  /** Invoked after authority packs have been replaced in the background. */
+  onAuthorityUpdated?: () => void;
 };
 
 let lastAuthorityNotifyKey = '';
@@ -54,7 +56,8 @@ const countPluginUpdates = async (): Promise<{ count: number; key: string }> => 
 
 /**
  * Background check for authority packs + plugins (same cadence as the app updater).
- * Notifies once per distinct available update set; silent on network errors.
+ * Installed authority packs update themselves; plugin updates still require the
+ * user to review and enable the new plugin version. Both are silent on network errors.
  */
 export const checkCompanionUpdatesInBackground = async (
   options?: InitAutoUpdaterOptions,
@@ -63,20 +66,23 @@ export const checkCompanionUpdatesInBackground = async (
     const folder = await getLocalAuthorityAssetsDir();
     const status = await maybeCheckAuthorityUpdates(folder, { force: true });
     if (status?.enabled && status.updateAvailable) {
-      const key =
-        status.packBundleVersion ??
-        status.rawSources.map((source) => `${source.id}:${source.version ?? ''}`).join('|') ??
-        'authority-update';
-      if (key !== lastAuthorityNotifyKey) {
-        lastAuthorityNotifyKey = key;
+      const result = await runAuthorityLifecyclePipeline({ entityDbFolder: folder });
+      if (result.ok) {
+        options?.onAuthorityUpdated?.();
         const notification = new Notification({
-          title: 'Authority pack updates available',
-          body: 'New tagging / reference data is ready. Choose Look for Updates to install.',
+          title: 'Authority packs updated',
+          body: 'New tagging and reference data is ready to use.',
         });
-        if (options?.onCompanionNotifyClick) {
-          notification.on('click', () => options.onCompanionNotifyClick?.());
-        }
         notification.show();
+      } else {
+        const key =
+          status.packBundleVersion ??
+          status.rawSources.map((source) => `${source.id}:${source.version ?? ''}`).join('|') ??
+          'authority-update';
+        if (key !== lastAuthorityNotifyKey) {
+          lastAuthorityNotifyKey = key;
+          console.warn('[updater] authority pack update failed:', result.error ?? 'Unknown error');
+        }
       }
     }
   } catch (error) {

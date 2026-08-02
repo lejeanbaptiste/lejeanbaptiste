@@ -11,6 +11,7 @@ import {
 } from '@mui/material';
 import { useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
+import { useAppState } from '@src/overmind';
 
 /** Full dialog width; height follows the image aspect ratio so nothing is cropped. */
 const SplashImage = () => (
@@ -45,6 +46,7 @@ const getCommonsUiBridge = () =>
  */
 export const UserNamePromptDialog = () => {
   const { t } = useTranslation();
+  const { rootPath } = useAppState().project;
   const [open, setOpen] = useState(false);
   const [name, setName] = useState('');
   const [entityDbFolder, setEntityDbFolder] = useState<string | null>(null);
@@ -53,12 +55,19 @@ export const UserNamePromptDialog = () => {
   useEffect(() => {
     const checkOpen = () => {
       const bridge = getCommonsUiBridge();
-      if (bridge?.encoderNameLoaded && !bridge.encoderName.trim()) setOpen(true);
+      // Let a first-run user open an existing root before asking for a name:
+      // that project may already have a portable encoder identity to inherit.
+      if (!rootPath) {
+        setOpen(false);
+        return;
+      }
+      if (!bridge?.encoderNameLoaded) return;
+      setOpen(!bridge.encoderName.trim());
     };
     checkOpen();
     window.addEventListener('ljbCommonsUiChanged', checkOpen);
     return () => window.removeEventListener('ljbCommonsUiChanged', checkOpen);
-  }, []);
+  }, [rootPath]);
 
   const handleChooseFolder = async () => {
     setChoosing(true);
@@ -100,7 +109,9 @@ export const UserNamePromptDialog = () => {
           </Stack>
 
           <Stack spacing={1}>
-            <Typography variant="body2">{t('LWC.desktop.database_setup_prompt.message')}</Typography>
+            <Typography variant="body2">
+              {t('LWC.desktop.database_setup_prompt.message')}
+            </Typography>
             <TextField
               InputProps={{ readOnly: true }}
               fullWidth

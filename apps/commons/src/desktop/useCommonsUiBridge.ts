@@ -59,6 +59,15 @@ export const useCommonsUiBridge = () => {
   }, []);
 
   useEffect(() => {
+    const syncInheritedEncoderName = (event: Event) => {
+      const name = (event as CustomEvent<string>).detail?.trim();
+      if (name) setEncoderNameState(name);
+    };
+    window.addEventListener('ljbEncoderNameInherited', syncInheritedEncoderName);
+    return () => window.removeEventListener('ljbEncoderNameInherited', syncInheritedEncoderName);
+  }, []);
+
+  useEffect(() => {
     if (!isDesktop() || !window.electronAPI?.getAiApiSettings) return;
 
     void window.electronAPI.getAiApiSettings().then((settings) => {
@@ -112,6 +121,15 @@ export const useCommonsUiBridge = () => {
       if (status) setAuthorityLifecycleStatusState(status);
     });
   }, [entityDbFolder]);
+
+  useEffect(() => {
+    const api = window.electronAPI;
+    if (!isDesktop() || !api?.onAuthorityLifecycleUpdated) return;
+    return api.onAuthorityLifecycleUpdated(() => {
+      void afterAuthorityPackLifecycleSuccess();
+      void refreshAuthorityLifecycle();
+    });
+  }, [refreshAuthorityLifecycle]);
 
   useEffect(() => {
     if (!isDesktop()) return;
@@ -317,11 +335,12 @@ export const useCommonsUiBridge = () => {
 
   const setAuthorityLifecycleReferenceDataEnabled = useCallback(
     async (enabled: boolean): Promise<AuthorityLifecycleRunResult> => {
-      const result =
-        (await window.electronAPI?.authorityLifecycleSetReferenceDataEnabled?.(enabled)) ?? {
-          ok: false,
-          error: 'Authority lifecycle bridge is unavailable.',
-        };
+      const result = (await window.electronAPI?.authorityLifecycleSetReferenceDataEnabled?.(
+        enabled,
+      )) ?? {
+        ok: false,
+        error: 'Authority lifecycle bridge is unavailable.',
+      };
       if (result.ok && enabled) {
         await afterAuthorityPackLifecycleSuccess();
       }

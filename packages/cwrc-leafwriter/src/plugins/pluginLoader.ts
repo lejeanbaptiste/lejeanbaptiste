@@ -1,4 +1,5 @@
 import { clearPluginExtensionsForPlugin } from './pluginExtensions';
+import { recoverFromChunkLoadFailure } from './chunkLoadRecovery';
 import { createPluginRegisterContext } from './registerContext';
 import type { PluginHostSnapshotView } from './types';
 
@@ -54,6 +55,10 @@ export async function loadEnabledPluginModules(
     } catch (error) {
       loadedPluginIds.delete(plugin.id);
       clearPluginExtensionsForPlugin(plugin.id);
+      // This error is normally caught here for per-plugin resilience, so it
+      // never reaches the application's global unhandled-rejection handler.
+      // A stale dev-server lazy chunk needs one full-page retry instead.
+      recoverFromChunkLoadFailure(error);
       console.warn(`[plugins] Failed to load ${plugin.id}:`, error);
     }
   }

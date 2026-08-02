@@ -10,15 +10,6 @@ export const registerApplicationSettingsBootstrap = (ensureReady: EnsureLeafWrit
   ensureLeafWriterReady = ensureReady;
 };
 
-const waitForLeafWriterLib = async (timeoutMs = 8000): Promise<boolean> => {
-  const started = Date.now();
-  while (Date.now() - started < timeoutMs) {
-    if (getDefaultStore().get(leafwriterAtom)) return true;
-    await new Promise((resolve) => window.setTimeout(resolve, 50));
-  }
-  return false;
-};
-
 // On cold start this can be called before ProjectEditor has mounted and
 // registered the bootstrap (registration happens in a useEffect, one tick
 // after isProjectReady flips true), so poll instead of failing immediately.
@@ -74,7 +65,8 @@ export const openApplicationSettings = async (
   if (window.writer) return openDialog();
 
   if (!(await waitForBootstrapRegistered())) return false;
-  if (!(await waitForLeafWriterLib())) return false;
+  // The registered bootstrap also loads LeafWriter when no document is open.
+  // Waiting for the library first would deadlock that no-file case.
   if (!(await callEnsureLeafWriterReady())) return false;
 
   return openDialog();

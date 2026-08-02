@@ -12,10 +12,7 @@ import {
   type MetadataFieldDefinition,
 } from './schemaMetadataFields';
 import type { ProjectMetadataFile } from './projectTypes';
-import {
-  buildLastAppliedSnapshot,
-  filterEntriesForFile,
-} from './metadataApplyOverrides';
+import { buildLastAppliedSnapshot, filterEntriesForFile } from './metadataApplyOverrides';
 import { applyOrlandoHeaderPathUpdates } from './orlandoHeaderXml';
 import { applyHeaderPathUpdates } from './teiHeaderXml';
 
@@ -25,6 +22,21 @@ const emptyMetadata = (catalogId?: string): ProjectMetadataFile => ({
   fields: {},
   custom: [],
 });
+
+const ENCODER_NAME_PATHS = [
+  'titleStmt/principal',
+  'publicationStmt/distributor',
+  'REVISIONDESC/RESPONSIBILITY',
+];
+
+/** Returns the identity recorded when the project was first set up, if any. */
+export const encoderNameFromMetadata = (metadata: ProjectMetadataFile | null): string | null => {
+  for (const path of ENCODER_NAME_PATHS) {
+    const name = metadata?.fields?.[path]?.trim();
+    if (name) return name;
+  }
+  return null;
+};
 
 export const readProjectMetadata = async (
   bundle: ProjectBundle,
@@ -50,9 +62,10 @@ export const readProjectMetadata = async (
 export const metadataFileExists = async (bundle: ProjectBundle): Promise<boolean> =>
   (await readProjectFileIfExists(getMetadataAbsolutePath(bundle))) !== null;
 
-export const sanitizeMetadataForSave = (
-  draft: ProjectMetadataFile,
-): ProjectMetadataFile => {
+export const getProjectEncoderName = async (bundle: ProjectBundle): Promise<string | null> =>
+  encoderNameFromMetadata(await readProjectMetadata(bundle));
+
+export const sanitizeMetadataForSave = (draft: ProjectMetadataFile): ProjectMetadataFile => {
   const fields: Record<string, string> = {};
   for (const [key, value] of Object.entries(draft.fields ?? {})) {
     const trimmed = value?.trim();
@@ -205,9 +218,7 @@ export const applyMetadataToProjectFiles = async (
       updated += 1;
     } catch (error) {
       skipped += 1;
-      errors.push(
-        `${file.name}: ${error instanceof Error ? error.message : 'Failed to update'}`,
-      );
+      errors.push(`${file.name}: ${error instanceof Error ? error.message : 'Failed to update'}`);
     }
   }
 
