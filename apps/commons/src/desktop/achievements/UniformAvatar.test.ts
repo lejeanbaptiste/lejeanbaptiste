@@ -6,6 +6,7 @@ import {
   BODY_CSS_OVERSAMPLE,
   SVG_PIXEL_OVERSAMPLE,
   scenePhotoFilterForPose,
+  backgroundPoolForRank,
 } from './UniformAvatar';
 
 describe('pose rank eligibility', () => {
@@ -50,6 +51,15 @@ describe('scene photo filter', () => {
   it('uses the WWI photo treatment for pose 9 only', () => {
     expect(scenePhotoFilterForPose(9)).toBe('grayscale(0.95) contrast(1.2) brightness(0.92)');
     expect(scenePhotoFilterForPose(8)).toBeUndefined();
+  });
+});
+
+describe('pose-specific backgrounds', () => {
+  it('keeps body9 backgrounds exclusive to body9', () => {
+    expect(backgroundPoolForRank(3, 9)).toEqual(['bg/2f', 'bg/3f', 'bg/4e', 'bg/4f']);
+    expect(backgroundPoolForRank(3, 8)).not.toEqual(
+      expect.arrayContaining(['bg/2f', 'bg/3f', 'bg/4e', 'bg/4f']),
+    );
   });
 });
 

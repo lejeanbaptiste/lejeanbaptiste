@@ -270,13 +270,17 @@ const POSE_BACKGROUND_OVERRIDE: Partial<Record<number, readonly string[]>> = {
   9: ['bg/2f', 'bg/3f', 'bg/4e', 'bg/4f'],
 };
 
+const POSE_EXCLUSIVE_BACKGROUND_KEYS = new Set(Object.values(POSE_BACKGROUND_OVERRIDE).flat());
+
 /** Every backdrop unlocked at or below `rankIndex` (-1/unranked still gets
  * the rank-1 pool, so there's always something to show), narrowed to
  * `poseIndex`'s own pool when it has one (see POSE_BACKGROUND_OVERRIDE). */
 export const backgroundPoolForRank = (rankIndex: number, poseIndex?: number): string[] => {
   const cumulative = BG_POOL_BY_RANK.slice(0, Math.max(0, rankIndex) + 1).flat();
   const override = poseIndex !== undefined ? POSE_BACKGROUND_OVERRIDE[poseIndex] : undefined;
-  return override ? cumulative.filter((key) => override.includes(key)) : cumulative;
+  return override
+    ? cumulative.filter((key) => override.includes(key))
+    : cumulative.filter((key) => !POSE_EXCLUSIVE_BACKGROUND_KEYS.has(key));
 };
 
 /** Picks a random backdrop from the unlocked pool, excluding whichever key

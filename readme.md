@@ -126,8 +126,6 @@ Near-term work pulled from the planning docs ([docs/README.md](docs/README.md)).
 ### Tagging / Norbert / Sanmiao
 
 - [ ] VALIDATE: Sanmiao date curator (ambiguous + sequential re-resolve)
-- [ ] f asset raise needs repositioning. -> recompile (throw in more bw assets)
-- [ ] Re-assess thresholds
 
 ### Entity database / sync
 

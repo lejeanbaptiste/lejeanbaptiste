@@ -318,6 +318,18 @@ export function cachedPackReader():
 }
 
 /**
+ * Reader for one-shot operations such as tag bomb. Do not retain the raw
+ * NDJSON arrays in the session cache while the operation builds its own
+ * parsed index; that doubles the live memory for the duration of the run.
+ */
+export function uncachedPackReader():
+  | ((packId: AuthorityPackId, dateFilter?: AuthorityPackDateFilter) => Promise<AuthorityPackContent>)
+  | undefined {
+  const readPack = window.electronAPI?.authorityPackRead;
+  return readPack ? (packId, dateFilter) => readPack(packId, dateFilter) : undefined;
+}
+
+/**
  * Drop cached pack contents so a subsequent read re-fetches from disk.
  * Call after any (re)install so the tag-bomb dialog and lookup services pick
  * up new file contents without requiring an app restart. Omit `packIds` to

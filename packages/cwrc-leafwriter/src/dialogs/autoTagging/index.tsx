@@ -106,7 +106,11 @@ import { useActions, useAppState } from '../../overmind';
 import type { IDialog } from '../type';
 import { AiPromptEditorDialog } from './AiPromptEditorDialog';
 import { AiTagChipPicker } from './AiTagChipPicker';
-import { cachedPackReader, clearPackContentCache } from '../../services/authority-pack-lookup';
+import {
+  cachedPackReader,
+  clearPackContentCache,
+  uncachedPackReader,
+} from '../../services/authority-pack-lookup';
 import { refreshCbdbConcordanceAfterPackLifecycle } from '../../autoTagging/cbdbConcordance';
 
 const SPREADSHEET_RE = /\.(xlsx|xlsm|ods)$/i;
@@ -867,7 +871,11 @@ export const AutoTaggingDialog = ({ id, onClose, open = false }: IDialog) => {
       return;
     }
     const needsFileReader = selected.some((id) => originOf(id) === 'file');
-    const readPack = cachedPackReader();
+    // Tag bomb builds its own seed index and only reads each pack once. Keep
+    // raw NDJSON arrays out of the reusable lookup cache while that index is
+    // alive; retaining both representations can exceed the renderer's memory
+    // limit on large authority bundles.
+    const readPack = uncachedPackReader();
     if (needsFileReader && !readPack) {
       setError('Authority pack API is not available.');
       return;
