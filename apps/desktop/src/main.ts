@@ -2604,12 +2604,14 @@ const registerIpcHandlers = () => {
     return await getAuthorityPackStatuses(folder);
   });
 
-  ipcMain.handle('authorityPack:read', async (_event, packId: string) => {
+  ipcMain.handle('authorityPack:read', async (_event, packId: string, dateFilter?: unknown) => {
     const folder = await getEntityDbFolderOrNull();
     if (!folder) throw new Error('No entity database folder configured.');
     return readAuthorityPackFile(
       folder,
       packId as import('../../commons/src/desktop/authorityPackTypes').AuthorityPackId,
+      dateFilter as
+        import('../../commons/src/desktop/authorityPackTypes').AuthorityPackDateFilter | undefined,
     );
   });
 

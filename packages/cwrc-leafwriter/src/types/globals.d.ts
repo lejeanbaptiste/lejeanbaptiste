@@ -563,6 +563,7 @@ declare global {
     authorityPackStatuses?: () => Promise<import('../autoTagging/packPaths').AuthorityPackStatus[]>;
     authorityPackRead?: (
       packId: import('../autoTagging/packPaths').AuthorityPackId,
+      dateFilter?: import('../autoTagging/packPaths').AuthorityPackDateFilter,
     ) => Promise<string[]>;
     authorityPackInstallFrom?: (
       sourcePacksRoot: string,

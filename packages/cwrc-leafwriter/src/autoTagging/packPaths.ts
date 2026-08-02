@@ -451,6 +451,13 @@ export interface AuthorityPackSelection {
   hideUndated?: boolean;
 }
 
+/** Date range supplied to the desktop pack reader for range-aware chunk selection. */
+export interface AuthorityPackDateFilter {
+  mode: 'none' | 'limit' | 'exclude';
+  start: number;
+  end: number;
+}
+
 export interface AuthorityPackStatus {
   id: AuthorityPackId;
   label: string;

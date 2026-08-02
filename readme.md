@@ -152,7 +152,7 @@ work in this area is packaged verification.
 
 - [ ] Tag-boundary Bugs B/C/H (typing/delete at edges); remove debug logs
 - [ ] Authority UI: per-source pre-run match counts; DILA look-alikes when both match; disable-tier cleanup
-- [ ] Memory-profile full CBDB pack load, chunk ?
+- [ ] **Profile regenerated CBDB packs with range-aware chunk loading against the slow-machine baseline.**
 - [ ] Import Phase 1 leftovers: md `{{header}}`, batch/folder UI, validator + provenance
 - [ ] VALIDATE: Block zooming to bounds of map tiles
 

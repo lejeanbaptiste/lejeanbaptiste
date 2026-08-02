@@ -10,7 +10,11 @@ import type {
   AuthorityService,
   NamedEntityType,
 } from '../types';
-import { AUTHORITY_PACKS, type AuthorityPackId } from '../autoTagging/packPaths';
+import {
+  AUTHORITY_PACKS,
+  type AuthorityPackDateFilter,
+  type AuthorityPackId,
+} from '../autoTagging/packPaths';
 import { packReadFinished, packReadStarted } from '../autoTagging/authorityLoadProgress';
 import { stringsMatchExactly } from '../autoTagging/disambiguationMatch';
 import type { AuthorityCandidate } from '../autoTagging/authority';
@@ -274,21 +278,30 @@ export function packIdsForEntityType(
 }
 
 /** Session-lifetime cache of pack contents (packs only change on reinstall). */
-const packContentCache = new Map<AuthorityPackId, Promise<AuthorityPackContent>>();
+const packContentCache = new Map<string, Promise<AuthorityPackContent>>();
 
-export function readPackCached(packId: AuthorityPackId): Promise<AuthorityPackContent> {
+const cacheKey = (packId: AuthorityPackId, dateFilter?: AuthorityPackDateFilter): string =>
+  dateFilter
+    ? `${packId}:${dateFilter.mode}:${Math.min(dateFilter.start, dateFilter.end)}:${Math.max(dateFilter.start, dateFilter.end)}`
+    : packId;
+
+export function readPackCached(
+  packId: AuthorityPackId,
+  dateFilter?: AuthorityPackDateFilter,
+): Promise<AuthorityPackContent> {
   const readPack = window.electronAPI?.authorityPackRead;
   if (!readPack) return Promise.reject(new Error('Authority packs unavailable'));
-  let cached = packContentCache.get(packId);
+  const key = cacheKey(packId, dateFilter);
+  let cached = packContentCache.get(key);
   if (!cached) {
     packReadStarted();
-    cached = readPack(packId)
+    cached = readPack(packId, dateFilter)
       .catch((error: unknown) => {
-        packContentCache.delete(packId);
+        packContentCache.delete(key);
         throw error;
       })
       .finally(packReadFinished);
-    packContentCache.set(packId, cached);
+    packContentCache.set(key, cached);
   }
   return cached;
 }
@@ -318,7 +331,11 @@ export function clearPackContentCache(packIds?: AuthorityPackId[]): void {
     packContentCache.clear();
     return;
   }
-  for (const packId of packIds) packContentCache.delete(packId);
+  for (const packId of packIds) {
+    for (const key of packContentCache.keys()) {
+      if (key === packId || key.startsWith(`${packId}:`)) packContentCache.delete(key);
+    }
+  }
 }
 
 async function installedPackIds(): Promise<Set<AuthorityPackId>> {

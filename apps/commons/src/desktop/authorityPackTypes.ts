@@ -6,6 +6,7 @@ export {
   packPath,
   packsRoot,
   type AuthorityPackId,
+  type AuthorityPackDateFilter,
   type AuthorityPackSelection,
   type AuthorityPackSpec,
   type AuthorityPackStatus,

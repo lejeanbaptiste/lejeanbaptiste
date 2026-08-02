@@ -487,6 +487,7 @@ export interface ElectronAPI {
   >;
   authorityPackRead?: (
     packId: import('../../commons/src/desktop/authorityPackTypes').AuthorityPackId,
+    dateFilter?: import('../../commons/src/desktop/authorityPackTypes').AuthorityPackDateFilter,
   ) => Promise<string[]>;
   authorityPackInstallFrom?: (
     sourcePacksRoot: string,
@@ -874,7 +875,8 @@ const electronAPI: ElectronAPI = {
     return () => ipcRenderer.removeListener('mapTiles:downloadComplete', listener);
   },
   authorityPackStatuses: () => ipcRenderer.invoke('authorityPack:statuses'),
-  authorityPackRead: (packId: string) => ipcRenderer.invoke('authorityPack:read', packId),
+  authorityPackRead: (packId: string, dateFilter?: unknown) =>
+    ipcRenderer.invoke('authorityPack:read', packId, dateFilter),
   authorityPackInstallFrom: (sourcePacksRoot: string) =>
     ipcRenderer.invoke('authorityPack:installFrom', sourcePacksRoot),
   pluginsGetSnapshot: () => ipcRenderer.invoke('plugins:getSnapshot'),

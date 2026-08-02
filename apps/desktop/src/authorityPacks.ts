@@ -11,13 +11,15 @@ import {
   AUTHORITY_PACKS,
   authorityPackOrigin,
   type AuthorityPackId,
+  type AuthorityPackDateFilter,
   type AuthorityPackStatus,
   packPath,
   packsRoot,
 } from '../../commons/src/desktop/authorityPackTypes';
 
 /** File-backed specs only — pedb/cedb/project/list packs are read live, never on disk. */
-const filePacks = () => AUTHORITY_PACKS.filter((spec) => !spec.virtual && authorityPackOrigin(spec) === 'file');
+const filePacks = () =>
+  AUTHORITY_PACKS.filter((spec) => !spec.virtual && authorityPackOrigin(spec) === 'file');
 
 export {
   AUTHORITY_PACKS_DIRNAME,
@@ -29,43 +31,43 @@ export {
   packsRoot,
 } from '../../commons/src/desktop/authorityPackTypes';
 
-export async function getAuthorityPackStatuses(
-  baseFolder: string,
-): Promise<AuthorityPackStatus[]> {
-  return Promise.all(filePacks().map(async (spec) => {
-    const file = packPath(baseFolder, spec.id);
-    let installed = false;
-    let bytes: number | undefined;
-    let entityCount: number | undefined;
-    let attribution: string | undefined;
-    try {
-      const stat = await fsp.stat(file);
-      installed = stat.isFile();
-      bytes = stat.size;
-      const manifestPath = path.join(path.dirname(file), 'manifest.json');
+export async function getAuthorityPackStatuses(baseFolder: string): Promise<AuthorityPackStatus[]> {
+  return Promise.all(
+    filePacks().map(async (spec) => {
+      const file = packPath(baseFolder, spec.id);
+      let installed = false;
+      let bytes: number | undefined;
+      let entityCount: number | undefined;
+      let attribution: string | undefined;
       try {
-        const manifest = JSON.parse(await fsp.readFile(manifestPath, 'utf8')) as {
-          files?: Record<string, { entityCount?: number }>;
-          attribution?: string;
-        };
-        entityCount = manifest.files?.[path.basename(file)]?.entityCount;
-        attribution = manifest.attribution;
+        const stat = await fsp.stat(file);
+        installed = stat.isFile();
+        bytes = stat.size;
+        const manifestPath = path.join(path.dirname(file), 'manifest.json');
+        try {
+          const manifest = JSON.parse(await fsp.readFile(manifestPath, 'utf8')) as {
+            files?: Record<string, { entityCount?: number }>;
+            attribution?: string;
+          };
+          entityCount = manifest.files?.[path.basename(file)]?.entityCount;
+          attribution = manifest.attribution;
+        } catch {
+          // Pack files remain usable when their optional manifest is unavailable.
+        }
       } catch {
-        // Pack files remain usable when their optional manifest is unavailable.
+        installed = false;
       }
-    } catch {
-      installed = false;
-    }
-    return {
-      id: spec.id,
-      label: spec.label,
-      installed,
-      bytes,
-      entityCount,
-      source: spec.source,
-      attribution,
-    };
-  }));
+      return {
+        id: spec.id,
+        label: spec.label,
+        installed,
+        bytes,
+        entityCount,
+        source: spec.source,
+        attribution,
+      };
+    }),
+  );
 }
 
 export async function installAuthorityPacksFrom(
@@ -85,10 +87,7 @@ export async function installAuthorityPacksFrom(
 
     const srcManifest = path.join(path.dirname(srcFile), 'manifest.json');
     if (fs.existsSync(srcManifest)) {
-      await fsp.copyFile(
-        srcManifest,
-        path.join(path.dirname(destFile), 'manifest.json'),
-      );
+      await fsp.copyFile(srcManifest, path.join(path.dirname(destFile), 'manifest.json'));
     }
   }
 
@@ -108,10 +107,75 @@ export async function installAuthorityPacksFrom(
 export async function readAuthorityPackFile(
   entityDbFolder: string,
   packId: AuthorityPackId,
+  dateFilter?: AuthorityPackDateFilter,
 ): Promise<string[]> {
+  const file = packPath(entityDbFolder, packId);
+  try {
+    const manifestPath = path.join(path.dirname(file), 'manifest.json');
+    const manifest = JSON.parse(await fsp.readFile(manifestPath, 'utf8')) as {
+      files?: Record<
+        string,
+        {
+          dateChunks?: {
+            version: 1;
+            blockYears: number;
+            chunks: Array<{ path: string; start: number; end: number }>;
+            undatedPath?: string;
+            includeUndatedForLimit?: boolean;
+          };
+        }
+      >;
+    };
+    const chunkLayout = manifest.files?.[path.basename(file)]?.dateChunks;
+    if (chunkLayout) {
+      const sorted = [...chunkLayout.chunks].sort((a, b) => a.start - b.start);
+      const requested =
+        dateFilter?.mode === 'limit'
+          ? {
+              start: Math.min(dateFilter.start, dateFilter.end),
+              end: Math.max(dateFilter.start, dateFilter.end),
+            }
+          : null;
+      const selectedIndexes = requested
+        ? sorted
+            .map((chunk, index) =>
+              chunk.start <= requested.end && chunk.end >= requested.start ? index : -1,
+            )
+            .filter((index) => index >= 0)
+        : sorted.map((_, index) => index);
+      const selected = new Set<number>();
+      for (const index of selectedIndexes) {
+        for (
+          let candidate = Math.max(0, index - 2);
+          candidate <= Math.min(sorted.length - 1, index + 2);
+          candidate += 1
+        ) {
+          selected.add(candidate);
+        }
+      }
+      // A restrictive interval outside all known chunks has no dated rows; do
+      // not accidentally read the whole pack. The explicit undated policy
+      // below still applies.
+      const paths = [...selected].sort((a, b) => a - b).map((index) => sorted[index]!.path);
+      if (chunkLayout.undatedPath && (!requested || chunkLayout.includeUndatedForLimit)) {
+        paths.push(chunkLayout.undatedPath);
+      }
+      const lines = await Promise.all(
+        paths.map((relative) => readAuthorityPackLines(path.resolve(path.dirname(file), relative))),
+      );
+      return [...new Set(lines.flat())];
+    }
+  } catch (error) {
+    if ((error as NodeJS.ErrnoException)?.code !== 'ENOENT') throw error;
+    // Legacy layouts have no manifest; fall through to the single file.
+  }
+  return readAuthorityPackLines(file);
+}
+
+async function readAuthorityPackLines(file: string): Promise<string[]> {
   try {
     const rl = readline.createInterface({
-      input: fs.createReadStream(packPath(entityDbFolder, packId), { encoding: 'utf8' }),
+      input: fs.createReadStream(file, { encoding: 'utf8' }),
       crlfDelay: Infinity,
     });
     const lines: string[] = [];

@@ -357,6 +357,7 @@ export interface ElectronAPI {
   >;
   authorityPackRead?: (
     packId: import('@src/desktop/authorityPackTypes').AuthorityPackId,
+    dateFilter?: import('@src/desktop/authorityPackTypes').AuthorityPackDateFilter,
   ) => Promise<string[]>;
   authorityPackInstallFrom?: (
     sourcePacksRoot: string,

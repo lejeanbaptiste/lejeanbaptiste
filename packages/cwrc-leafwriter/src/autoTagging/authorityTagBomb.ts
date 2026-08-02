@@ -48,9 +48,7 @@ const PACK_LOAD_ORDER: AuthorityPackId[] = [
 ];
 
 const sortPackIds = (packIds: AuthorityPackId[]): AuthorityPackId[] =>
-  [...packIds].sort(
-    (a, b) => PACK_LOAD_ORDER.indexOf(a) - PACK_LOAD_ORDER.indexOf(b),
-  );
+  [...packIds].sort((a, b) => PACK_LOAD_ORDER.indexOf(a) - PACK_LOAD_ORDER.indexOf(b));
 import {
   addCandidateToSeedIndex,
   createAuthoritySeedIndex,
@@ -99,7 +97,10 @@ export interface AuthorityTagBombResult {
 export async function runAuthorityTagBombOnDocument(
   doc: Document,
   packIds: AuthorityPackId[],
-  readPackFile: (packId: AuthorityPackId) => Promise<AuthorityPackContent>,
+  readPackFile: (
+    packId: AuthorityPackId,
+    dateFilter?: DateRangeFilter,
+  ) => Promise<AuthorityPackContent>,
   policy: WhitespacePolicy,
   options: AuthorityTagBombOptions = {},
 ): Promise<AuthorityTagBombResult> {
@@ -114,8 +115,7 @@ export async function runAuthorityTagBombOnDocument(
       : undefined);
 
   const index = createAuthoritySeedIndex();
-  const nameTypePolicy =
-    options.nameTypePolicy ?? resolveNameTypeTaggingPolicy(undefined, null);
+  const nameTypePolicy = options.nameTypePolicy ?? resolveNameTypeTaggingPolicy(undefined, null);
   const loaded: Partial<Record<AuthorityPackId, number>> = {};
   let candidateCount = 0;
   const norbertNamesByAuthorityId = new Map<string, string[]>();
@@ -130,7 +130,9 @@ export async function runAuthorityTagBombOnDocument(
   for (const packId of sortPackIds(filePackIds)) {
     options.onProgress?.(`Loading ${packId}…`);
     let packCount = 0;
-    const content = await readPackFile(packId);
+    // The desktop cached reader may select date chunks before crossing IPC;
+    // plain/test readers can ignore the optional second argument.
+    const content = await readPackFile(packId, dateFilter);
     for (const candidate of iterateAuthorityNdjson(content)) {
       const runtimeCandidates =
         packId === 'norbert-wiki-nt'
@@ -178,8 +180,7 @@ export async function runAuthorityTagBombOnDocument(
 
   const cap = options.maxSuggestions;
   const truncated = cap != null && deduped.length > cap;
-  const suggestions =
-    truncated && cap != null ? deduped.slice(0, cap) : deduped;
+  const suggestions = truncated && cap != null ? deduped.slice(0, cap) : deduped;
 
   return {
     suggestions,
