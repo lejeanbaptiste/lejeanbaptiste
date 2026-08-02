@@ -342,6 +342,13 @@ export const AutoTaggingReviewPane = () => {
         });
         try {
           const result = await getSession().apply(accepted, currentUserRules());
+          // Drop committed suggestions from the parent docket. ReviewPanel already
+          // removes them from its controller, but when Norbert appends new rows we
+          // were rebuilding from the stale parent list and re-queuing dates that
+          // had just been written (already-tagged / content-hash errors).
+          const committedIds = new Set(accepted.map((suggestion) => suggestion.id));
+          const withoutCommitted = (list: Suggestion[]) =>
+            list.filter((suggestion) => !committedIds.has(suggestion.id));
           if (accepted.some((s) => s.source === 'dates' && s.action === 'resolve-date')) {
             markDatesPassApplied(autoTaggingDocumentKey(window.writer));
           } else if (
@@ -355,17 +362,19 @@ export const AutoTaggingReviewPane = () => {
           // Norbert's second pass runs only after component tags have landed.
           // It is intentionally best-effort: projects without the optional
           // wrapper pack simply continue with the ordinary review batch.
+          let nextSuggestions: Suggestion[] | null = null;
           if (result.applied > 0) {
             const readPack = cachedPackReader();
             if (readPack) {
               try {
+                const remaining = withoutCommitted(suggestions);
                 if (mandatoryStage) {
                   // Mandatory Norbert stages must be rebuilt against the live
                   // document after each apply. This removes accepted compound
                   // children from the pool and exposes the next stage only
                   // after the current one has been resolved.
-                  const refreshed = await getSession().refreshReviewBatch(suggestions, readPack);
-                  setSuggestions(refreshed.suggestions);
+                  const refreshed = await getSession().refreshReviewBatch(remaining, readPack);
+                  nextSuggestions = refreshed.suggestions;
                   if (refreshed.wrapperMatchCount > 0) {
                     setNotice(
                       `${refreshed.wrapperMatchCount} Norbert person-wrapper candidate${refreshed.wrapperMatchCount === 1 ? '' : 's'} found after component tagging.`,
@@ -375,13 +384,11 @@ export const AutoTaggingReviewPane = () => {
                   const wrapperBatch = await getSession().runPersonWrapperConcatenation(readPack);
                   if (wrapperBatch.suggestions.length > 0) {
                     const currentDoc = await getSession().getDocument();
-                    setSuggestions(
-                      (current) =>
-                        prepareSuggestionsForReview(currentDoc, getSession().policy, [
-                          ...current,
-                          ...wrapperBatch.suggestions,
-                        ]).suggestions,
-                    );
+                    nextSuggestions = prepareSuggestionsForReview(
+                      currentDoc,
+                      getSession().policy,
+                      [...remaining, ...wrapperBatch.suggestions],
+                    ).suggestions;
                     setNotice(
                       `${wrapperBatch.matchCount} Norbert person-wrapper candidate${wrapperBatch.matchCount === 1 ? '' : 's'} found after component tagging.`,
                     );
@@ -391,6 +398,9 @@ export const AutoTaggingReviewPane = () => {
                 console.warn('[auto-tagging] Norbert wrapper concatenation failed:', error);
               }
             }
+          }
+          if (!closeAfterApply || result.applied === 0) {
+            setSuggestions((current) => nextSuggestions ?? withoutCommitted(current));
           }
           // Warm the disambiguation caches for the freshly applied tags while
           // the user reviews — gently paced so the editor stays responsive.
