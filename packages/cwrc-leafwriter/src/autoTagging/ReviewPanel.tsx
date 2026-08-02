@@ -52,6 +52,8 @@ export interface ReviewPanelProps {
    */
   onRefresh?: () => void;
   refreshing?: boolean;
+  /** Norbert prerequisite stage; category filtering stays locked until it is complete. */
+  mandatoryStage?: 'nobleTitle' | 'personWrapper';
 }
 
 const statusColor: Record<Suggestion['status'], 'default' | 'success' | 'error' | 'warning'> = {
@@ -439,6 +441,7 @@ export const ReviewPanel = ({
   busy = false,
   onRefresh,
   refreshing = false,
+  mandatoryStage,
 }: ReviewPanelProps) => {
   const { t } = useTranslation('LW');
   const [, forceRender] = useReducer((n: number) => n + 1, 0);
@@ -594,12 +597,21 @@ export const ReviewPanel = ({
         )}
       </Box>
 
+      {mandatoryStage && (
+        <Typography variant="caption" color="warning.main" sx={{ px: 1, pb: 0.5 }}>
+          Norbert prerequisite: review all{' '}
+          {mandatoryStage === 'nobleTitle' ? 'noble-title' : 'person-wrapper'} suggestions before
+          choosing another category.
+        </Typography>
+      )}
+
       <Box sx={{ display: 'flex', gap: 0.5, alignItems: 'center', px: 1, pb: 0.5, flexShrink: 0 }}>
         <Select
           size="small"
           value={tagFilter}
           displayEmpty
           onChange={(event) => setTagFilter(event.target.value)}
+          disabled={mandatoryStage !== undefined}
           sx={{ flex: 1, fontSize: 12 }}
         >
           <MenuItem value="">All tags</MenuItem>

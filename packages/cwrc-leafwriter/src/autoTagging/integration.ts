@@ -132,6 +132,7 @@ function wrapperPersonName(wrapper: Element): Element | null {
 export async function reconcilePersonWrapperKeys(
   doc: Document,
   findLocalIds: (surface: string) => Promise<string[]> | string[],
+  entityExists?: (entityId: string) => Promise<boolean> | boolean,
 ): Promise<boolean> {
   let changed = false;
   for (const wrapper of Array.from(doc.getElementsByTagName('name'))) {
@@ -142,18 +143,37 @@ export async function reconcilePersonWrapperKeys(
     const personKey = person.getAttribute('key')?.trim() ?? '';
     if (wrapperKey && personKey) {
       // A disagreement is evidence of a real disambiguation conflict.
-      if (wrapperKey !== personKey && wrapper.getAttribute('cert') !== 'unknown') {
+      if (
+        (wrapperKey !== personKey ||
+          (entityExists && !(await Promise.resolve(entityExists(wrapperKey)))) ||
+          (entityExists && !(await Promise.resolve(entityExists(personKey))))) &&
+        wrapper.getAttribute('cert') !== 'unknown'
+      ) {
         wrapper.setAttribute('cert', 'unknown');
         changed = true;
       }
       continue;
     }
     if (wrapperKey) {
+      if (entityExists && !(await Promise.resolve(entityExists(wrapperKey)))) {
+        if (wrapper.getAttribute('cert') !== 'unknown') {
+          wrapper.setAttribute('cert', 'unknown');
+          changed = true;
+        }
+        continue;
+      }
       assignEntity({ element: person, entityId: wrapperKey });
       changed = true;
       continue;
     }
     if (personKey) {
+      if (entityExists && !(await Promise.resolve(entityExists(personKey)))) {
+        if (wrapper.getAttribute('cert') !== 'unknown') {
+          wrapper.setAttribute('cert', 'unknown');
+          changed = true;
+        }
+        continue;
+      }
       assignEntity({ element: wrapper, entityId: personKey });
       changed = true;
       continue;
@@ -1284,7 +1304,13 @@ export class AutoTaggingSession {
             ),
           ];
         };
-        if (await reconcilePersonWrapperKeys(doc, findLocalIds)) {
+        if (
+          await reconcilePersonWrapperKeys(
+            doc,
+            findLocalIds,
+            async (entityId) => (await this.store!.sqliteEntitySummary(entityId)) != null,
+          )
+        ) {
           await this.persistDocument(doc);
           groups = collectMentions(doc, this.policy, documentId, options);
         }
@@ -1325,7 +1351,13 @@ export class AutoTaggingSession {
             ),
           ];
         };
-        if (await reconcilePersonWrapperKeys(doc, findLocalIds)) {
+        if (
+          await reconcilePersonWrapperKeys(
+            doc,
+            findLocalIds,
+            async (entityId) => (await this.store!.sqliteEntitySummary(entityId)) != null,
+          )
+        ) {
           await this.persistDocument(doc);
           documentGroups = collectMentions(doc, this.policy, documentId, options);
         }

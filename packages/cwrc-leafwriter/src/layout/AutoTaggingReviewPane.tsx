@@ -29,6 +29,7 @@ import {
   type Suggestion,
 } from '../autoTagging';
 import { findPluginReviewPanel } from '../plugins/pluginExtensions';
+import { isPluginEnabled } from '../plugins/registry';
 import { cachedPackReader } from '../services/authority-pack-lookup';
 import { currentUserRules } from '../autoTagging/autoTaggingExclusions';
 import { useActions, useAppState } from '../overmind';
@@ -63,6 +64,7 @@ export const AutoTaggingReviewPane = () => {
   const [busyLabel, setBusyLabel] = useState<AutoTaggingBusyLabel>('Applying tags…');
   const [notice, setNotice] = useState<string | null>(null);
   const [reviewPanelReady, setReviewPanelReady] = useState(false);
+  const [norbertEnabled, setNorbertEnabled] = useState(false);
   const [applyDiagnostics, setApplyDiagnostics] = useState<string | null>(null);
   const [applyDiagSeverity, setApplyDiagSeverity] = useState<
     'error' | 'warning' | 'success' | 'info'
@@ -74,6 +76,48 @@ export const AutoTaggingReviewPane = () => {
     'lw.autoTagging.panelWidth',
     AUTO_TAGGING_PANEL_WIDTH,
   );
+
+  useEffect(() => {
+    const syncNorbertState = () => setNorbertEnabled(isPluginEnabled('norbert'));
+    syncNorbertState();
+    window.addEventListener('ljbPluginRegistryChanged', syncNorbertState);
+    return () => window.removeEventListener('ljbPluginRegistryChanged', syncNorbertState);
+  }, []);
+
+  const mandatoryStage = useMemo<'nobleTitle' | 'personWrapper' | undefined>(() => {
+    if (!norbertEnabled) return undefined;
+    if (
+      suggestions.some(
+        (suggestion) => suggestion.status === 'pending' && suggestion.tag === 'nobleTitle',
+      )
+    ) {
+      return 'nobleTitle';
+    }
+    if (
+      suggestions.some(
+        (suggestion) =>
+          suggestion.status === 'pending' &&
+          suggestion.tag === 'name' &&
+          suggestion.attributes?.type === 'personWrapper',
+      )
+    ) {
+      return 'personWrapper';
+    }
+    return undefined;
+  }, [norbertEnabled, suggestions]);
+
+  const visibleSuggestions = useMemo(() => {
+    if (mandatoryStage === 'nobleTitle') {
+      return suggestions.filter((suggestion) => suggestion.tag === 'nobleTitle');
+    }
+    if (mandatoryStage === 'personWrapper') {
+      return suggestions.filter(
+        (suggestion) =>
+          suggestion.tag === 'name' && suggestion.attributes?.type === 'personWrapper',
+      );
+    }
+    return suggestions;
+  }, [mandatoryStage, suggestions]);
 
   // Let the dock/header paint before mounting the suggestion list. The review
   // list can contain many rows and mounting it in the same task as opening
@@ -285,19 +329,33 @@ export const AutoTaggingReviewPane = () => {
             const readPack = cachedPackReader();
             if (readPack) {
               try {
-                const wrapperBatch = await getSession().runPersonWrapperConcatenation(readPack);
-                if (wrapperBatch.suggestions.length > 0) {
-                  const currentDoc = await getSession().getDocument();
-                  setSuggestions(
-                    (current) =>
-                      prepareSuggestionsForReview(currentDoc, getSession().policy, [
-                        ...current,
-                        ...wrapperBatch.suggestions,
-                      ]).suggestions,
-                  );
-                  setNotice(
-                    `${wrapperBatch.matchCount} Norbert person-wrapper candidate${wrapperBatch.matchCount === 1 ? '' : 's'} found after component tagging.`,
-                  );
+                if (mandatoryStage) {
+                  // Mandatory Norbert stages must be rebuilt against the live
+                  // document after each apply. This removes accepted compound
+                  // children from the pool and exposes the next stage only
+                  // after the current one has been resolved.
+                  const refreshed = await getSession().refreshReviewBatch(suggestions, readPack);
+                  setSuggestions(refreshed.suggestions);
+                  if (refreshed.wrapperMatchCount > 0) {
+                    setNotice(
+                      `${refreshed.wrapperMatchCount} Norbert person-wrapper candidate${refreshed.wrapperMatchCount === 1 ? '' : 's'} found after component tagging.`,
+                    );
+                  }
+                } else {
+                  const wrapperBatch = await getSession().runPersonWrapperConcatenation(readPack);
+                  if (wrapperBatch.suggestions.length > 0) {
+                    const currentDoc = await getSession().getDocument();
+                    setSuggestions(
+                      (current) =>
+                        prepareSuggestionsForReview(currentDoc, getSession().policy, [
+                          ...current,
+                          ...wrapperBatch.suggestions,
+                        ]).suggestions,
+                    );
+                    setNotice(
+                      `${wrapperBatch.matchCount} Norbert person-wrapper candidate${wrapperBatch.matchCount === 1 ? '' : 's'} found after component tagging.`,
+                    );
+                  }
                 }
               } catch (error) {
                 console.warn('[auto-tagging] Norbert wrapper concatenation failed:', error);
@@ -363,7 +421,7 @@ export const AutoTaggingReviewPane = () => {
         }
       })();
     },
-    [busy, exitAutoTaggingReview, getSession, suggestions],
+    [busy, exitAutoTaggingReview, getSession, mandatoryStage, suggestions],
   );
 
   const handleRefresh = useCallback(() => {
@@ -554,7 +612,7 @@ export const AutoTaggingReviewPane = () => {
                     autoFocus={false}
                     busy={busy}
                     finishWhenIdle={pluginPanel.finishWhenIdle}
-                    suggestions={suggestions}
+                    suggestions={visibleSuggestions}
                     onApply={handleApply}
                     onFocus={handleFocus}
                     onDecision={handleDecision}
@@ -577,6 +635,7 @@ export const AutoTaggingReviewPane = () => {
                   aiValidationEnabled={aiValidationEnabled}
                   onRefresh={handleRefresh}
                   refreshing={refreshing}
+                  mandatoryStage={mandatoryStage}
                 />
               );
             })()

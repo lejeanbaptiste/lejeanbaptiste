@@ -1,6 +1,6 @@
 # Norbert noble-title autotagging and person-context data
 
-**Status (2026-08-02):** **Shipped** — wrapper pack, concatenation, reviewed noble-title filtering, shared expander cache, and idle warm-up are wired into the authority-tagging flow. The reviewed filter is source-specific and exact-match only; the authority bundle now includes the generated policy pack.
+**Status (2026-08-02):** **Shipped** — wrapper pack, concatenation, reviewed noble-title filtering, shared expander cache, idle warm-up, staged Norbert review, and live PEDB wrapper-key checks are wired into the authority-tagging flow. The reviewed filter is source-specific and exact-match only; the authority bundle now includes the generated policy pack.
 
 ## Reviewed noble-title filter
 
@@ -468,16 +468,26 @@ element boundaries cannot be inserted by the ordinary single-text-node tagger.
 
 ## Remaining next steps
 
-1. Resolve accepted wrappers to exactly one person key; do not create a
-   wrapper entity or populate `entities.xml` from hypothetical candidates.
-2. Add validation that rejects wrappers with missing/ambiguous keys and checks
-   that each noble-title combination remains a distinct fief/role/name record.
+The two core wrapper-resolution items are implemented. The live document scan
+copies a single known PEDB person key between the wrapper and its identity
+`persName`, and marks missing, conflicting, stale, or ambiguous cases as
+unresolved. The wrapper is still contextual markup: hypothetical Norbert
+candidates never become entities.
+
+Remaining work is testing and polish: exercise the staged workflow in a
+packaged build, verify the full noble-title relation data after save/reload,
+and finish any validator-specific presentation for `roleName` and wrappers.
 
 ## Validation-panel follow-up
 
-- Include `name[@type="personWrapper"]` in the validation/disambiguation panel
-  as a person mention, without exposing it as a separate entity category.
-- Include `roleName` mentions in the same panel for office and title review.
+- `name[@type="personWrapper"]` is included as a person mention, without
+  exposing it as a separate entity category.
+- `roleName` mentions are included in the same panel for office and title
+  review.
+- With Norbert enabled, the review order is mandatory: `nobleTitle`, then
+  `personWrapper`, then the user's category choice. Each completed stage is
+  refreshed against the current document so accepted child tags leave the
+  pending pool.
 - Build the tag-type dropdown from the tag types represented by the current
   document scan, and clear a stale selection when that type disappears.
 

@@ -129,11 +129,7 @@ Near-term work pulled from the planning docs ([docs/README.md](docs/README.md)).
 - [ ] VALIDATE: Block zooming to bounds of map tiles
 - [ ] VALIDATE: Norbert functions in add tag palette
 - [ ] VALIDATE: 壽王瑁 mess, princesses, in database viewer
-
-### Norbert: Noble titles and wrappers
-
-- [ ] Norbert personWrapper: resolve accepted wrappers to exactly one person key; validation for missing/ambiguous keys
-- [ ] include wrappers/`roleName` in validation panel
+- [ ] VALIDATE: Norbert-specific tag validator working as expected
 
 ### Performance and stability
 
@@ -157,31 +153,36 @@ work in this area is packaged verification.
 - [ ] Further Norbert functions
 - [ ] AI auto-tag: apply audit actions beyond `add` (remove/retag/redraw); schema-driven tag picker; prompt-profile UI
 
-### UX
+### Translation pane
 
-- [ ] finish localisations
-- [ ] Redo icons : highlight
-- [ ] Finish word plugin
 - [ ] Improve translation pane word-processing features.
-- [ ] LanguageTool as a plugin
-- [ ] Official titles dictionaries, dates dictionaries for hover-over
+- [ ] Integrate entity-Zotero ?
 - [ ] Copy-and-paste export of paragraphs with translation for word processors
-- [ ] LaTeX export
-- [ ] Time Machine polish: diff preview, export history zip, optional `revisionDesc` on restore, delete (?)
-- [ ] Find/replace Phase 2b: WYSIWYG visible-text replace across markup
-- [ ] Match-case / persist last find query (optional)
-- [ ] Ignore page breaks, line breaks, and corrections in tagging and disambiguation?
-- [ ] Tag-boundary Bugs B/C/H (typing/delete at edges)
-- [ ] Import Phase 1 leftovers: md `{{header}}`, batch/folder UI, validator + provenance
+- [ ] (BIG ENGINEERING) LanguageTool as a plugin
 
-### Import
+### I/O
 
+- [ ] (IF someone actually uses markdown) Import Phase 1 leftovers: md `{{header}}`, batch/folder UI, validator + provenance
+- [ ] (IF grows to point where relevant) LaTeX export
 - [ ] Full CBETA integration
 - [ ] Kanripo
 - [ ] Import profiles (rule engine + mandoku hand profile)
 - [ ] Docx / Mammoth import
 - [ ] AI-inferred import profiles
 - [ ] Browser-extension / URL corpus→TEI extraction (E0–E5 — [corpus-extraction-planning.md](docs/corpus-extraction-planning.md))
+
+### UX
+
+- [ ] finish localisations
+- [ ] Redo icons : highlight
+- [ ] Finish word plugin
+- [ ] Official titles dictionaries, dates dictionaries for hover-over
+- [ ] Time Machine polish: diff preview, export history zip, optional `revisionDesc` on restore, delete (?)
+- [ ] Find/replace Phase 2b: WYSIWYG visible-text replace across markup
+- [ ] Match-case / persist last find query (optional)
+- [ ] Ignore page breaks, line breaks, and corrections in tagging and disambiguation?
+- [ ] (DREAM): reproduce Oxygen functionalities in Monaco
+- [ ] (ABANDONNED as hopeless) Tag-boundary Bugs B/C/H (typing/delete at edges)
 
 ### Maps
 

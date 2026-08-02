@@ -15,11 +15,7 @@ import {
 import { EntityStore, type EntityFileApi } from './entityStore';
 import { resolveEntityStorePaths } from './entityStoreResolve';
 import { collectTextNodes, createAnchor } from './anchor';
-import {
-  AutoTaggingSession,
-  reconcilePersonWrapperKeys,
-  type WriterLike,
-} from './integration';
+import { AutoTaggingSession, reconcilePersonWrapperKeys, type WriterLike } from './integration';
 import type { AuthorityPackId } from './packPaths';
 
 const XML = `<TEI xmlns="http://www.tei-c.org/ns/1.0"><text><body>
@@ -46,7 +42,9 @@ const makeWriter = (initial: string, forbid?: { parent: string; child: string })
 
 describe('AutoTaggingSession', () => {
   it('runs a text-preserving transform through the session boundary', async () => {
-    const { writer, getCurrent } = makeWriter('<root><p><persName key="B">劉備</persName></p></root>');
+    const { writer, getCurrent } = makeWriter(
+      '<root><p><persName key="B">劉備</persName></p></root>',
+    );
     writer.overmindState = { editor: { resource: { filePath: 'current' } } };
     (window as unknown as { writer: WriterLike }).writer = writer;
     const session = new AutoTaggingSession(writer);
@@ -77,6 +75,21 @@ describe('AutoTaggingSession', () => {
     expect(wrapper.hasAttribute('cert')).toBe(false);
   });
 
+  it('leaves wrappers unresolved when an existing key is not a live person entity', async () => {
+    const doc = new DOMParser().parseFromString(
+      '<TEI xmlns="http://www.tei-c.org/ns/1.0"><text><body><p><name type="personWrapper" key="missing"><persName key="missing">範</persName></name></p></body></text></TEI>',
+      'application/xml',
+    );
+    expect(
+      await reconcilePersonWrapperKeys(
+        doc,
+        () => [],
+        () => false,
+      ),
+    ).toBe(true);
+    expect(doc.getElementsByTagName('name')[0]!.getAttribute('cert')).toBe('unknown');
+  });
+
   it('produces, applies, and reloads the editor with the tagged XML', async () => {
     const { writer, loads, getCurrent } = makeWriter(XML);
     const session = new AutoTaggingSession(writer);
@@ -98,10 +111,18 @@ describe('AutoTaggingSession', () => {
     let storedContent: string | undefined;
     const { writer, getCurrent } = makeWriter(XML);
     writer.overmindActions = {
-      editor: { setContentHasChanged: (value) => { contentHasChanged = value; } },
+      editor: {
+        setContentHasChanged: (value) => {
+          contentHasChanged = value;
+        },
+      },
       project: {
-        markTabDirty: (dirty) => { tabDirty = dirty; },
-        updateTabContent: ({ content }) => { storedContent = content; },
+        markTabDirty: (dirty) => {
+          tabDirty = dirty;
+        },
+        updateTabContent: ({ content }) => {
+          storedContent = content;
+        },
       },
     };
     writer.overmindState = {
@@ -136,8 +157,7 @@ describe('AutoTaggingSession', () => {
     const dateXml = `<TEI xmlns="http://www.tei-c.org/ns/1.0"><text><body><p>少帝即位</p></body></text></TEI>`;
     const { writer, loads, getCurrent } = makeWriter(dateXml);
     writer.schemaManager = {
-      isTagValidChildOfParent: (child, parent) =>
-        parent === 'p' && child === 'persName',
+      isTagValidChildOfParent: (child, parent) => parent === 'p' && child === 'persName',
     };
     const session = new AutoTaggingSession(writer);
     const doc = await session.getDocument();
@@ -281,7 +301,9 @@ describe('AutoTaggingSession', () => {
 
       expect(available).toBe(true);
       expect(documents).toHaveLength(2);
-      const surfaces = documents.flatMap((doc) => crawlEntities(doc, 'ignore').map((e) => e.string));
+      const surfaces = documents.flatMap((doc) =>
+        crawlEntities(doc, 'ignore').map((e) => e.string),
+      );
       expect(surfaces).toContain('甲');
       expect(surfaces).toContain('乙');
       expect(surfaces).not.toContain('舊');
@@ -351,9 +373,13 @@ describe('AutoTaggingSession', () => {
       });
       const readPackFile = async () => dilaPack;
 
-      const result = await session.runTagBomb(['dila-persons', 'project-places', 'list-works'], readPackFile, {
-        importedLists: [{ name: 'my.csv', entries: [{ string: '渾天儀', tag: 'title' }] }],
-      });
+      const result = await session.runTagBomb(
+        ['dila-persons', 'project-places', 'list-works'],
+        readPackFile,
+        {
+          importedLists: [{ name: 'my.csv', entries: [{ string: '渾天儀', tag: 'title' }] }],
+        },
+      );
 
       const byTag = (tag: string) => result.suggestions.filter((s) => s.tag === tag);
       expect(byTag('persName')).toHaveLength(2); // 張衡 appears twice
@@ -434,9 +460,11 @@ describe('AutoTaggingSession', () => {
 
       jest.spyOn(store, 'sqliteCreatePopulated').mockImplementation(async (input) => {
         const doc = await store.loadEntities();
-        const primary =
-          input.names?.find((name) => name.isPrimary) ?? input.names?.[0] ?? { text: 'unnamed' };
-        const romanized = input.names?.find((name) => name !== primary && name.text !== primary.text);
+        const primary = input.names?.find((name) => name.isPrimary) ??
+          input.names?.[0] ?? { text: 'unnamed' };
+        const romanized = input.names?.find(
+          (name) => name !== primary && name.text !== primary.text,
+        );
         const { element } = addEntity(doc, input.kind, {
           name: primary.text,
           nameLang: primary.language ?? undefined,
@@ -451,18 +479,22 @@ describe('AutoTaggingSession', () => {
         return {};
       });
 
-      jest.spyOn(store, 'sqliteAttachAuthority').mockImplementation(async (entityId, type, value) => {
-        const doc = await store.loadEntities();
-        const attached = attachAuthority(doc, entityId, { type, value });
-        await store.saveEntities(doc, { allowSqliteFullReimport: true });
-        return attached;
-      });
+      jest
+        .spyOn(store, 'sqliteAttachAuthority')
+        .mockImplementation(async (entityId, type, value) => {
+          const doc = await store.loadEntities();
+          const attached = attachAuthority(doc, entityId, { type, value });
+          await store.saveEntities(doc, { allowSqliteFullReimport: true });
+          return attached;
+        });
 
-      jest.spyOn(store, 'sqliteSetUserDate').mockImplementation(async ({ entityId, part, year }) => {
-        const doc = await store.loadEntities();
-        setUserEntityDate(doc, entityId, part, year);
-        await store.saveEntities(doc, { allowSqliteFullReimport: true });
-      });
+      jest
+        .spyOn(store, 'sqliteSetUserDate')
+        .mockImplementation(async ({ entityId, part, year }) => {
+          const doc = await store.loadEntities();
+          setUserEntityDate(doc, entityId, part, year);
+          await store.saveEntities(doc, { allowSqliteFullReimport: true });
+        });
 
       jest.spyOn(store, 'sqliteAddNationality').mockImplementation(async (input) => {
         const doc = await store.loadEntities();
@@ -479,11 +511,13 @@ describe('AutoTaggingSession', () => {
         return true;
       });
       jest.spyOn(store, 'sqliteAddOrigin').mockImplementation(async () => true);
-      jest.spyOn(store, 'sqliteSetRomanizedName').mockImplementation(async (entityId, text, language) => {
-        const doc = await store.loadEntities();
-        setRomanizedName(doc, entityId, text, language ?? undefined);
-        await store.saveEntities(doc, { allowSqliteFullReimport: true });
-      });
+      jest
+        .spyOn(store, 'sqliteSetRomanizedName')
+        .mockImplementation(async (entityId, text, language) => {
+          const doc = await store.loadEntities();
+          setRomanizedName(doc, entityId, text, language ?? undefined);
+          await store.saveEntities(doc, { allowSqliteFullReimport: true });
+        });
       jest.spyOn(store, 'sqliteAddName').mockImplementation(async (input) => {
         const doc = await store.loadEntities();
         addEntityName(doc, input.entityId, input.text, {
@@ -553,11 +587,15 @@ describe('AutoTaggingSession', () => {
 
       const instance = group!.instances[0];
       if (!instance) throw new Error('missing mention instance');
-      const entityId = await session.resolveMention(instance, {
-        id: 'new',
-        label: '張衡',
-        sources: ['manual'],
-      }, { createNew: true });
+      const entityId = await session.resolveMention(
+        instance,
+        {
+          id: 'new',
+          label: '張衡',
+          sources: ['manual'],
+        },
+        { createNew: true },
+      );
 
       expect(getCurrent()).toContain(`key="${entityId}"`);
       expect(files.get('/proj/entities.xml')).toContain(entityId);
