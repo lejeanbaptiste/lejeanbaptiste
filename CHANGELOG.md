@@ -46,6 +46,8 @@
 - Removed the tag-boundary undo/redo debug logs.
 - Ranked tag-command prefix matches ahead of partial tag-name matches.
 - Propagate now matches across visible inline markup, reproduces nested visible tag structure, preserves existing hidden/correction markup, and skips partially pre-tagged occurrences.
+- Added a Norbert-branded noble-title action to the selection tag popup when the Norbert plugin is enabled.
+- Added a matching Norbert-branded person-wrapper action; filtering for “person” or “wrapper” finds it.
 
 ### Documentation
 

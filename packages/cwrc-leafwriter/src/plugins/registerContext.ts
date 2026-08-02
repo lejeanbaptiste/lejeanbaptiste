@@ -2,10 +2,12 @@ import {
   registerPluginDialog,
   registerPluginReviewPanel,
   registerPluginToolbarItem,
+  registerPluginTagCommandItem,
   type PluginDialogComponent,
   type PluginReviewPanelMatcher,
   type PluginReviewPanelComponent,
   type PluginToolbarMenuItem,
+  type PluginTagCommandItem,
 } from './pluginExtensions';
 import { loadPluginHostModule } from './hostModules';
 import {
@@ -49,6 +51,7 @@ export interface PluginRegisterContext {
     /** When present, the toolbar button opens a dropdown of these instead of calling `onClick`. */
     menuItems?: PluginToolbarMenuItem[];
   }) => void;
+  registerTagCommandItem: (item: Omit<PluginTagCommandItem, 'id'> & { id: string }) => void;
   /** Load UI modules bundled with LJB (webpack). Used by plugins that delegate UI to the host. */
   loadHostModule: (moduleId: string) => Promise<import('./hostModules').PluginHostModule>;
   /** Split a Chinese person name into family + given (e.g. Norbert surname table). */
@@ -82,6 +85,9 @@ export function createPluginRegisterContext(pluginId: string): PluginRegisterCon
     },
     registerToolbarItem: (item) => {
       registerPluginToolbarItem({ pluginId, ...item });
+    },
+    registerTagCommandItem: (item) => {
+      registerPluginTagCommandItem({ ...item, id: `${pluginId}:${item.id}` });
     },
     loadHostModule: loadPluginHostModule,
     registerPersonNameSegmenter: (segmenter) => {

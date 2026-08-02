@@ -1,6 +1,9 @@
 import {
   clearAllPluginExtensions,
+  clearPluginExtensionsForPlugin,
+  getPluginTagCommandItems,
   getPluginToolbarItems,
+  registerPluginTagCommandItem,
   registerPluginToolbarItem,
 } from './pluginExtensions';
 
@@ -40,5 +43,29 @@ describe('plugin toolbar contributions — menu items', () => {
     expect(item!.menuItems).toBeUndefined();
     item!.onClick!({ openCalendar: () => {} });
     expect(onClick).toHaveBeenCalled();
+  });
+});
+
+describe('plugin tag-command contributions', () => {
+  afterEach(() => clearAllPluginExtensions());
+
+  it('exposes only available items and removes them when the plugin is disabled', () => {
+    registerPluginTagCommandItem({
+      id: 'norbert:noble-title',
+      label: 'Tag noble title',
+      icon: 'norbert',
+      onClick: () => {},
+    });
+    registerPluginTagCommandItem({
+      id: 'norbert:person-wrapper',
+      label: 'Tag person wrapper',
+      icon: 'norbert',
+      onClick: () => {},
+      isAvailable: () => false,
+    });
+
+    expect(getPluginTagCommandItems().map((item) => item.id)).toEqual(['norbert:noble-title']);
+    clearPluginExtensionsForPlugin('norbert');
+    expect(getPluginTagCommandItems()).toEqual([]);
   });
 });

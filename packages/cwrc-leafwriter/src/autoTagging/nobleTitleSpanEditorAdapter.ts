@@ -72,3 +72,38 @@ export async function applyNobleTitleForSelection(): Promise<void> {
     });
   }
 }
+
+/** Wrap the current selection in a pending Norbert person wrapper. */
+export async function applyPersonWrapperForSelection(): Promise<void> {
+  const writer = window.writer;
+  const editor = writer?.editor;
+  const dialogManager = writer?.dialogManager;
+  if (!writer || !editor || !dialogManager) return;
+
+  //@ts-ignore — TinyMCE's real getRng(normalized?: boolean) isn't in this codebase's Editor type.
+  const range: Range | undefined = editor.selection?.getRng(true);
+  if (!range || range.collapsed) {
+    dialogManager.show('message', {
+      title: 'Norbert',
+      msg: 'Select some text before creating a person wrapper.',
+      type: 'error',
+    });
+    return;
+  }
+
+  //@ts-ignore — the runtime accepts the standard bookmark shape used by tagger.addStructureTag.
+  const bookmark = editor.selection.getBookmark(1);
+  const wrapped = writer.tagger.addStructureTag({
+    action: 'add',
+    attributes: { type: 'personWrapper', cert: 'unknown' },
+    bookmark,
+    tagName: 'name',
+  });
+  if (!wrapped) {
+    dialogManager.show('message', {
+      title: 'Norbert — person wrapper failed',
+      msg: 'The selected text could not be wrapped as a person.',
+      type: 'error',
+    });
+  }
+}

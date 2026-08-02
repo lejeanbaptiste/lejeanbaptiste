@@ -1,4 +1,7 @@
-import { applyNobleTitleForSelection } from '../../autoTagging/nobleTitleSpanEditorAdapter';
+import {
+  applyNobleTitleForSelection,
+  applyPersonWrapperForSelection,
+} from '../../autoTagging/nobleTitleSpanEditorAdapter';
 import { applyGroupAndClean } from '../../autoTagging/groupAndCleanEditorAdapter';
 import type { PluginRegisterContext } from '../registerContext';
 
@@ -36,5 +39,18 @@ export function registerNorbertNobleTitleUi(context: PluginRegisterContext): voi
         onClick: () => void applyGroupAndClean(),
       },
     ],
+  });
+
+  context.registerTagCommandItem({
+    id: 'noble-title',
+    label: 'Tag noble title',
+    icon: 'norbert',
+    onClick: () => applyNobleTitleForSelection(),
+  });
+  context.registerTagCommandItem({
+    id: 'person-wrapper',
+    label: 'Tag person wrapper',
+    icon: 'norbert',
+    onClick: () => applyPersonWrapperForSelection(),
   });
 }

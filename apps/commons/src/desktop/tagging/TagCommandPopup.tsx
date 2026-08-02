@@ -12,6 +12,8 @@ import {
 import { useEffect, useLayoutEffect, useRef } from 'react';
 import type { TagCommandMode } from './tagCommand';
 import { useClampedPopupPosition } from './clampPopupPosition';
+import norbertMiniPng from '../../assets/images/norbert-mini.png';
+import type { PluginTagCommandItem } from '../../../../../packages/cwrc-leafwriter/src/plugins/pluginExtensions';
 
 export interface TagCommandPopupProps {
   anchor: { left: number; top: number } | null;
@@ -23,6 +25,7 @@ export interface TagCommandPopupProps {
   onApplySingle: () => void;
   onApplyTag: (tag: NodeDetail) => void;
   onApplyPropagate: () => void;
+  onApplyPluginTagCommand: (item: PluginTagCommandItem) => void;
   onClose: () => void;
   onFilterChange: (value: string) => void;
   onHighlightChange: (index: number) => void;
@@ -30,6 +33,7 @@ export interface TagCommandPopupProps {
   open: boolean;
   selectedText: string;
   suggestions: NodeDetail[];
+  pluginItems: PluginTagCommandItem[];
 }
 
 export const TagCommandPopup = ({
@@ -42,6 +46,7 @@ export const TagCommandPopup = ({
   onApplySingle,
   onApplyTag,
   onApplyPropagate,
+  onApplyPluginTagCommand,
   onClose,
   onFilterChange,
   onHighlightChange,
@@ -49,10 +54,15 @@ export const TagCommandPopup = ({
   open,
   selectedText,
   suggestions,
+  pluginItems,
 }: TagCommandPopupProps) => {
   const inputRef = useRef<HTMLInputElement>(null);
   const selectedItemRef = useRef<HTMLDivElement>(null);
-  const { ref: popupRef, left, top } = useClampedPopupPosition(anchor, open, [
+  const {
+    ref: popupRef,
+    left,
+    top,
+  } = useClampedPopupPosition(anchor, open, [
     filter,
     highlightedIndex,
     mode,
@@ -99,7 +109,9 @@ export const TagCommandPopup = ({
       <Box sx={{ p: 1, borderBottom: 1, borderColor: 'divider' }}>
         <Typography variant="caption" color="text.secondary" sx={{ display: 'block', mb: 0.5 }}>
           {modeLabel}
-          {selectedText ? ` — "${selectedText.length > 40 ? `${selectedText.slice(0, 40)}…` : selectedText}"` : ''}
+          {selectedText
+            ? ` — "${selectedText.length > 40 ? `${selectedText.slice(0, 40)}…` : selectedText}"`
+            : ''}
         </Typography>
         <TextField
           inputRef={inputRef}
@@ -147,6 +159,36 @@ export const TagCommandPopup = ({
         )}
       </List>
 
+      {mode === 'wrap' && selectedText && pluginItems.length > 0 ? (
+        <Box sx={{ borderTop: 1, borderColor: 'divider', py: 0.25 }}>
+          {pluginItems
+            .filter((item) => {
+              const query = filter.trim().toLowerCase();
+              return !query || item.label.toLowerCase().includes(query);
+            })
+            .map((item) => (
+              <ListItemButton
+                key={item.id}
+                onClick={() => onApplyPluginTagCommand(item)}
+                sx={{ py: 0.25, minHeight: 30 }}
+              >
+                {item.icon === 'norbert' ? (
+                  <Box
+                    component="img"
+                    src={norbertMiniPng}
+                    alt="Norbert"
+                    sx={{ width: 20, height: 20, objectFit: 'contain', mr: 1 }}
+                  />
+                ) : null}
+                <ListItemText
+                  primary={item.label}
+                  primaryTypographyProps={{ fontSize: '0.8125rem', fontWeight: 600 }}
+                />
+              </ListItemButton>
+            ))}
+        </Box>
+      ) : null}
+
       {mode === 'wrap' || mode === 'rename' ? (
         <Box sx={{ p: 0.75, borderTop: 1, borderColor: 'divider' }}>
           <Typography variant="caption" color="text.secondary" sx={{ display: 'block', mb: 0.5 }}>
@@ -183,7 +225,12 @@ export const TagCommandPopup = ({
         </Box>
       ) : (
         <Box sx={{ p: 0.75, borderTop: 1, borderColor: 'divider', display: 'flex', gap: 0.5 }}>
-          <Button size="small" variant="contained" onClick={onApplySingle} sx={{ fontSize: '0.75rem' }}>
+          <Button
+            size="small"
+            variant="contained"
+            onClick={onApplySingle}
+            sx={{ fontSize: '0.75rem' }}
+          >
             Apply
           </Button>
           <Button size="small" onClick={onClose} sx={{ fontSize: '0.75rem' }}>

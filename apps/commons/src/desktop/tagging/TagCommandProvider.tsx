@@ -98,6 +98,7 @@ export const TagCommandProvider = () => {
         onApplyPropagate={tagController.onApplyPropagate}
         onApplySingle={tagController.onApplySingle}
         onApplyTag={tagController.onApplyTag}
+        onApplyPluginTagCommand={tagController.onApplyPluginTagCommand}
         onEnterWalkMode={tagController.onEnterWalkMode}
         onClose={tagController.closePopup}
         onFilterChange={tagController.setFilter}
@@ -106,6 +107,7 @@ export const TagCommandProvider = () => {
         open={tagController.open}
         selectedText={tagController.selectedText}
         suggestions={tagController.suggestions}
+        pluginItems={tagController.pluginItems}
       />
       <AttributeCommandPopup
         anchor={attrController.anchor}

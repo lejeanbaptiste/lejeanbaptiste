@@ -56,6 +56,14 @@ export interface PluginToolbarContribution {
   menuItems?: PluginToolbarMenuItem[];
 }
 
+export interface PluginTagCommandItem {
+  id: string;
+  label: string;
+  icon?: 'norbert';
+  onClick: () => void | Promise<void>;
+  isAvailable?: () => boolean;
+}
+
 const pluginDialogs = new Map<string, PluginDialogComponent>();
 const pluginReviewPanels: Array<{
   pluginId: string;
@@ -64,6 +72,7 @@ const pluginReviewPanels: Array<{
   finishWhenIdle?: boolean | ((suggestions: Suggestion[]) => boolean);
 }> = [];
 const pluginToolbarItems: PluginToolbarContribution[] = [];
+const pluginTagCommandItems: PluginTagCommandItem[] = [];
 
 export function registerPluginDialog(type: string, component: PluginDialogComponent): void {
   pluginDialogs.set(type, component);
@@ -111,6 +120,14 @@ export function getPluginToolbarItems(): PluginToolbarContribution[] {
   return pluginToolbarItems;
 }
 
+export function registerPluginTagCommandItem(item: PluginTagCommandItem): void {
+  pluginTagCommandItems.push(item);
+}
+
+export function getPluginTagCommandItems(): PluginTagCommandItem[] {
+  return pluginTagCommandItems.filter((item) => item.isAvailable?.() ?? true);
+}
+
 export function clearPluginExtensionsForPlugin(pluginId: string): void {
   for (const [type, component] of pluginDialogs.entries()) {
     if ((component as { __pluginId?: string }).__pluginId === pluginId) {
@@ -123,6 +140,9 @@ export function clearPluginExtensionsForPlugin(pluginId: string): void {
   for (let i = pluginToolbarItems.length - 1; i >= 0; i -= 1) {
     if (pluginToolbarItems[i]?.pluginId === pluginId) pluginToolbarItems.splice(i, 1);
   }
+  for (let i = pluginTagCommandItems.length - 1; i >= 0; i -= 1) {
+    if (pluginTagCommandItems[i]?.id.startsWith(`${pluginId}:`)) pluginTagCommandItems.splice(i, 1);
+  }
   clearPluginPersonNameSegmentersForPlugin(pluginId);
   clearPluginOfficeRelationExtractor(pluginId);
 }
@@ -131,6 +151,7 @@ export function clearAllPluginExtensions(): void {
   pluginDialogs.clear();
   pluginReviewPanels.length = 0;
   pluginToolbarItems.length = 0;
+  pluginTagCommandItems.length = 0;
   clearAllPluginPersonNameSegmenters();
   clearAllPluginOfficeRelationExtractors();
 }

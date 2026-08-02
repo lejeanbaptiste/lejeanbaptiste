@@ -42,6 +42,10 @@ import { getProjectTagCounts, loadTagStats, updateTagStatsForFile } from './tagS
 import { getCaretScreenPosition } from './editorAnchor';
 import { isImeKeyboardEvent } from './ime';
 import { getBookmark, getSelectionRange, moveToBookmark } from './taggerRuntime';
+import {
+  getPluginTagCommandItems,
+  type PluginTagCommandItem,
+} from '../../../../../packages/cwrc-leafwriter/src/plugins/pluginExtensions';
 
 const LAST_USED_TAG_KEY = 'ljb:lastUsedTag';
 
@@ -87,6 +91,7 @@ export const useTagCommandController = () => {
   const [matchCount, setMatchCount] = useState(0);
   const [tagCounts, setTagCounts] = useState<Record<string, number>>({});
   const [walkMode, setWalkMode] = useState<WalkModeState | null>(null);
+  const [pluginItemsVersion, setPluginItemsVersion] = useState(0);
 
   const bookmarkRef = useRef<unknown>(null);
   const sourceRangeRef = useRef<Range | null>(null);
@@ -115,6 +120,13 @@ export const useTagCommandController = () => {
   );
 
   const highlightedTag = visibleSuggestions[highlightedIndex] ?? null;
+  const pluginItems = useMemo(() => getPluginTagCommandItems(), [pluginItemsVersion]);
+
+  useEffect(() => {
+    const refresh = () => setPluginItemsVersion((version) => version + 1);
+    window.addEventListener('ljbPluginRegistryChanged', refresh);
+    return () => window.removeEventListener('ljbPluginRegistryChanged', refresh);
+  }, []);
 
   const refreshStatsForActiveFile = useCallback(async () => {
     if (!rootPath || !activeTabPath || !window.writer?.getContent) return;
@@ -337,6 +349,16 @@ export const useTagCommandController = () => {
       }
     },
     [closePopup, mode, notifyApplyResult, tagElement],
+  );
+
+  const applyPluginTagCommand = useCallback(
+    (item: PluginTagCommandItem) => {
+      const editor = window.writer?.editor;
+      if (editor && bookmarkRef.current) moveToBookmark(editor, bookmarkRef.current);
+      closePopup();
+      void item.onClick();
+    },
+    [closePopup],
   );
 
   const applyHighlighted = useCallback(async () => {
@@ -726,6 +748,7 @@ export const useTagCommandController = () => {
     onEnterWalkMode: enterWalkMode,
     onApplySingle: () => void applyHighlighted(),
     onApplyTag: (tag: NodeDetail) => void applyTag(tag),
+    onApplyPluginTagCommand: applyPluginTagCommand,
     onSkipWalkStep: skipWalkStep,
     open,
     openPopup,
@@ -733,6 +756,7 @@ export const useTagCommandController = () => {
     setFilter,
     setHighlightedIndex,
     suggestions: visibleSuggestions,
+    pluginItems,
     walkMode,
   };
 };

@@ -123,11 +123,12 @@ See [apps/desktop/README.md](apps/desktop/README.md) for the compilation and pac
 
 Near-term work pulled from the planning docs ([docs/README.md](docs/README.md)). Larger later items stay under **Future**.
 
-### Tagging / Norbert / Sanmiao
+### Testing
 
 - [ ] VALIDATE: Sanmiao date curator (ambiguous + sequential re-resolve)
+- [ ] VALIDATE: Block zooming to bounds of map tiles
 
-### Entity database / sync
+### Performance and stability
 
 **Current state (2026-08-02):** Before calling
 this beta-ready, run the packaged manual sync checklist. The only remaining
@@ -135,14 +136,10 @@ work in this area is packaged verification.
 
 - [ ] Run entity-sync manual scenarios ([entity-sync-manual-test-plan.md](docs/entity-sync-manual-test-plan.md))
 - [ ] Clean my own database and update Norbert accordingly
+- [ ] **Profile regenerated CBDB packs with range-aware chunk loading against the slow-machine baseline.**
 
 **Next:** run the packaged scenarios in
 [entity-sync-manual-test-plan.md](docs/entity-sync-manual-test-plan.md).
-
-### Editor / UX polish
-
-- [ ] **Profile regenerated CBDB packs with range-aware chunk loading against the slow-machine baseline.**
-- [ ] VALIDATE: Block zooming to bounds of map tiles
 
 ## Future
 
