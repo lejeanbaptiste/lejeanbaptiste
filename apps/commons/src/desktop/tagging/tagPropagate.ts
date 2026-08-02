@@ -15,6 +15,139 @@ export interface PropagateResult {
 
 const getWriter = () => window.writer;
 
+const TEMPLATE_EXCLUDED_TAGS = new Set([
+  'pb',
+  'lb',
+  'supplied',
+  'surplus',
+  'choice',
+  'sic',
+  'corr',
+]);
+
+interface VisibleTextSegment {
+  node: Text;
+  start: number;
+  end: number;
+}
+
+interface NestedTagTemplate {
+  end: number;
+  start: number;
+  tagName: string;
+}
+
+const ignoredVisibleTextAncestor = (node: Node): boolean => {
+  let current: Node | null = node.parentNode;
+  while (current?.nodeType === Node.ELEMENT_NODE) {
+    const tag = (current as Element).getAttribute('_tag')?.toLowerCase();
+    if (tag === 'sic') return true;
+    if (tag === 'teiheader') return true;
+    current = current.parentNode;
+  }
+  return false;
+};
+
+const collectVisibleTextSegments = (
+  root: Element,
+): { segments: VisibleTextSegment[]; text: string } => {
+  const segments: VisibleTextSegment[] = [];
+  let text = '';
+  const walker = root.ownerDocument.createTreeWalker(root, NodeFilter.SHOW_TEXT);
+  let node = walker.nextNode() as Text | null;
+  while (node) {
+    if (!ignoredVisibleTextAncestor(node)) {
+      const value = node.textContent ?? '';
+      if (value) {
+        segments.push({ node, start: text.length, end: text.length + value.length });
+        text += value;
+      }
+    }
+    node = walker.nextNode() as Text | null;
+  }
+  return { segments, text };
+};
+
+const rangeForTextOffsets = (
+  root: Element,
+  segments: VisibleTextSegment[],
+  start: number,
+  end: number,
+): Range | null => {
+  const first = segments.find((segment) => start >= segment.start && start < segment.end);
+  const last = segments.find((segment) => end > segment.start && end <= segment.end);
+  if (!first || !last) return null;
+  const range = root.ownerDocument.createRange();
+  range.setStart(first.node, start - first.start);
+  range.setEnd(last.node, end - last.start);
+  return range;
+};
+
+const tagNameFor = (element: Element): string | null => {
+  const tagName = element.getAttribute('_tag')?.trim();
+  if (!tagName || TEMPLATE_EXCLUDED_TAGS.has(tagName.toLowerCase())) return null;
+  if (element.hasAttribute('_entity') || element.classList.contains('correction')) return null;
+  return tagName;
+};
+
+const extractNestedTagTemplate = (
+  sourceRange: Range | null | undefined,
+  outerTagName: string,
+): NestedTagTemplate[] => {
+  if (!sourceRange || sourceRange.collapsed) return [];
+  const fragment = sourceRange.cloneContents();
+  const root = sourceRange.startContainer.ownerDocument!.createElement('div');
+  root.appendChild(fragment);
+  const { segments, text } = collectVisibleTextSegments(root);
+  if (!text) return [];
+
+  const templates: NestedTagTemplate[] = [];
+  for (const element of Array.from(root.querySelectorAll('[_tag]'))) {
+    const tagName = tagNameFor(element);
+    if (!tagName || tagName === outerTagName) continue;
+    let start = Number.POSITIVE_INFINITY;
+    let end = -1;
+    for (const segment of segments) {
+      if (!element.contains(segment.node)) continue;
+      start = Math.min(start, segment.start);
+      end = Math.max(end, segment.end);
+    }
+    if (Number.isFinite(start) && end > start) templates.push({ tagName, start, end });
+  }
+  return templates.sort((a, b) => a.end - a.start - (b.end - b.start));
+};
+
+const collectTextMatches = (
+  root: Element,
+  search: string,
+): Array<{ end: number; start: number }> => {
+  const { text } = collectVisibleTextSegments(root);
+  const matches: Array<{ end: number; start: number }> = [];
+  let start = 0;
+  while (start <= text.length) {
+    const index = text.indexOf(search, start);
+    if (index === -1) break;
+    matches.push({ start: index, end: index + search.length });
+    start = index + search.length;
+  }
+  return matches;
+};
+
+const tagOverlap = (
+  range: Range,
+  root: Element,
+  tagName: string,
+): 'complete' | 'conflict' | null => {
+  for (const element of Array.from(root.querySelectorAll('[_tag]'))) {
+    if (element.getAttribute('_tag') !== tagName || !range.intersectsNode(element)) continue;
+    const containsStart =
+      element === range.startContainer || element.contains(range.startContainer);
+    const containsEnd = element === range.endContainer || element.contains(range.endContainer);
+    return containsStart && containsEnd ? 'complete' : 'conflict';
+  }
+  return null;
+};
+
 const isInsideStructuralHeader = (node: Node): boolean => {
   const headerTag = getWriter()?.schemaManager?.getHeader();
   if (!headerTag) return false;
@@ -34,53 +167,14 @@ const isInsideStructuralHeader = (node: Node): boolean => {
 
 const collectTextRanges = (root: Element, search: string): Range[] => {
   if (!search) return [];
-
-  const ranges: Range[] = [];
-  const walker = root.ownerDocument.createTreeWalker(root, NodeFilter.SHOW_TEXT);
-  let textNode = walker.nextNode();
-
-  while (textNode) {
-    if (!isInsideStructuralHeader(textNode)) {
-      const text = textNode.textContent ?? '';
-      let start = 0;
-      while (start <= text.length) {
-        const index = text.indexOf(search, start);
-        if (index === -1) break;
-
-        const range = root.ownerDocument.createRange();
-        range.setStart(textNode, index);
-        range.setEnd(textNode, index + search.length);
-        ranges.push(range);
-        start = index + search.length;
-      }
-    }
-    textNode = walker.nextNode();
-  }
-
-  return ranges;
+  const { segments } = collectVisibleTextSegments(root);
+  return collectTextMatches(root, search)
+    .map(({ start, end }) => rangeForTextOffsets(root, segments, start, end))
+    .filter((range): range is Range => Boolean(range))
+    .filter((range) => !isInsideStructuralHeader(range.startContainer));
 };
 
-const isInsideTagNamed = (range: Range, tagName: string): boolean => {
-  let node: Node | null = range.startContainer;
-  if (node.nodeType === Node.TEXT_NODE) node = node.parentNode;
-
-  while (node && node.nodeType === Node.ELEMENT_NODE) {
-    const element = node as Element;
-    const currentTag = element.getAttribute('_tag');
-    if (currentTag === tagName) return true;
-    if (currentTag) return false;
-    if (element.id === 'tinymce' || element.classList.contains('mce-content-body')) break;
-    node = node.parentNode;
-  }
-
-  return false;
-};
-
-const collectTaggedElements = (
-  root: Element,
-  tagName: string,
-  textContent?: string,
-): Element[] => {
+const collectTaggedElements = (root: Element, tagName: string, textContent?: string): Element[] => {
   const matches: Element[] = [];
   const walker = root.ownerDocument.createTreeWalker(root, NodeFilter.SHOW_ELEMENT);
   let node = walker.nextNode();
@@ -108,7 +202,7 @@ export const countPropagatableMatches = (search: string, tagName: string): numbe
   const body = writer?.editor?.getBody();
   if (!body || !search) return 0;
 
-  return collectTextRanges(body, search).filter((range) => !isInsideTagNamed(range, tagName))
+  return collectTextRanges(body, search).filter((range) => !tagOverlap(range, body, tagName))
     .length;
 };
 
@@ -120,24 +214,95 @@ export const countRenamableMatches = (oldTagName: string, textContent: string): 
   return collectTaggedElements(body, oldTagName, textContent || undefined).length;
 };
 
-export const propagateTagInFile = (search: string, tagName: string): PropagateResult => {
+export const propagateTagInFile = (
+  search: string,
+  tagName: string,
+  sourceRange?: Range | null,
+): PropagateResult => {
   const writer = getWriter();
   const editor = writer?.editor;
   const body = editor?.getBody();
   if (!editor || !body || !search) return { applied: 0, skipped: 0 };
 
-  const ranges = collectTextRanges(body, search);
+  const templates = extractNestedTagTemplate(sourceRange, tagName);
+  const matches = collectTextMatches(body, search);
+  const occurrences = matches
+    .map((match) => {
+      const { segments } = collectVisibleTextSegments(body);
+      return { ...match, range: rangeForTextOffsets(body, segments, match.start, match.end) };
+    })
+    .filter((match): match is typeof match & { range: Range } => Boolean(match.range))
+    .reverse();
+  const ranges = templates.length
+    ? occurrences
+    : collectTextRanges(body, search)
+        .reverse()
+        .map((range) => ({ start: 0, end: 0, range }));
   let applied = 0;
   let skipped = 0;
 
   editor.undoManager.transact(() => {
-    for (const range of ranges) {
-      if (isInsideTagNamed(range, tagName)) {
+    for (const occurrence of ranges) {
+      const range = occurrence.range;
+      const outerOverlap = tagOverlap(range, body, tagName);
+      if (outerOverlap) {
         skipped += 1;
         continue;
       }
 
-      editor.selection.setRng(range);
+      const matchStart = occurrence.start;
+      let valid = matchStart >= 0;
+      if (valid && templates.length) {
+        for (const template of templates) {
+          const { segments } = collectVisibleTextSegments(body);
+          const nestedRange = rangeForTextOffsets(
+            body,
+            segments,
+            matchStart + template.start,
+            matchStart + template.end,
+          );
+          if (!nestedRange || tagOverlap(nestedRange, body, template.tagName) === 'conflict') {
+            valid = false;
+            break;
+          }
+        }
+      }
+      if (!valid) {
+        skipped += 1;
+        continue;
+      }
+
+      if (templates.length) {
+        for (const template of templates) {
+          const { segments } = collectVisibleTextSegments(body);
+          const nestedRange = rangeForTextOffsets(
+            body,
+            segments,
+            matchStart + template.start,
+            matchStart + template.end,
+          );
+          if (!nestedRange || tagOverlap(nestedRange, body, template.tagName) === 'complete')
+            continue;
+          editor.selection.setRng(nestedRange);
+          const nestedResult = applyWrapTag(template.tagName, getBookmark(editor), 'add', true);
+          if (!nestedResult.applied) valid = false;
+        }
+      }
+      if (!valid) {
+        skipped += 1;
+        continue;
+      }
+
+      const { segments } = collectVisibleTextSegments(body);
+      const currentRange =
+        templates.length && matchStart >= 0
+          ? rangeForTextOffsets(body, segments, matchStart, matchStart + search.length)
+          : range;
+      if (!currentRange) {
+        skipped += 1;
+        continue;
+      }
+      editor.selection.setRng(currentRange);
       const bookmark = getBookmark(editor);
       const result = applyWrapTag(tagName, bookmark, 'add', true);
       if (result.applied) {
@@ -183,7 +348,7 @@ export const listUntaggedRanges = (search: string, tagName: string): Range[] => 
   const body = writer?.editor?.getBody();
   if (!body || !search) return [];
 
-  return collectTextRanges(body, search).filter((range) => !isInsideTagNamed(range, tagName));
+  return collectTextRanges(body, search).filter((range) => !tagOverlap(range, body, tagName));
 };
 
 export const listRenamableElements = (oldTagName: string, textContent?: string): Element[] => {

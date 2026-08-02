@@ -45,6 +45,8 @@
   language, and removed plugin-specific entries from the native Tools menu.
 - Removed the tag-boundary undo/redo debug logs.
 - Ranked tag-command prefix matches ahead of partial tag-name matches.
+- Propagate now matches across visible inline markup, reproduces nested visible tag structure, preserves existing hidden/correction markup, and skips partially pre-tagged occurrences.
+
 ### Documentation
 
 - Cleaned and provided public-facing documentation, including beta tester guide.

@@ -41,13 +41,12 @@ import { findParagraphAncestor } from './tagInsert';
 import { getProjectTagCounts, loadTagStats, updateTagStatsForFile } from './tagStats';
 import { getCaretScreenPosition } from './editorAnchor';
 import { isImeKeyboardEvent } from './ime';
-import { getBookmark, moveToBookmark } from './taggerRuntime';
+import { getBookmark, getSelectionRange, moveToBookmark } from './taggerRuntime';
 
 const LAST_USED_TAG_KEY = 'ljb:lastUsedTag';
 
 const isVisualEditorActive = (): boolean =>
-  Boolean(window.writer?.editor) &&
-  window.writer?.overmindState?.ui?.editorViewMode !== 'source';
+  Boolean(window.writer?.editor) && window.writer?.overmindState?.ui?.editorViewMode !== 'source';
 
 const readLastUsedTag = (): string | null => {
   try {
@@ -90,6 +89,7 @@ export const useTagCommandController = () => {
   const [walkMode, setWalkMode] = useState<WalkModeState | null>(null);
 
   const bookmarkRef = useRef<unknown>(null);
+  const sourceRangeRef = useRef<Range | null>(null);
   const applyingRef = useRef(false);
   const walkCurrentRangeRef = useRef<Range | null>(null);
   const walkCurrentElementRef = useRef<Element | null>(null);
@@ -133,6 +133,7 @@ export const useTagCommandController = () => {
     const editor = window.writer?.editor;
     const bookmark = bookmarkRef.current;
     bookmarkRef.current = null;
+    sourceRangeRef.current = null;
     if (editor) {
       // Only restore on cancel (Esc). After a successful apply the document
       // changed and the wrap bookmark is stale.
@@ -166,20 +167,22 @@ export const useTagCommandController = () => {
       const pinned = pinParagraphInsertOption(withFallbacks, nextMode, ctx);
       const sortPreferred =
         nextMode === 'wrap'
-          ? readLastUsedTag() ?? undefined
+          ? (readLastUsedTag() ?? undefined)
           : nextMode === 'insert' || nextMode === 'lineBreak'
             ? DEFAULT_INSERT_TAG
             : undefined;
       const highlightPreferred =
         nextMode === 'rename'
-          ? ctx.tagElement?.getAttribute('_tag') ?? undefined
+          ? (ctx.tagElement?.getAttribute('_tag') ?? undefined)
           : nextMode === 'insert' || nextMode === 'lineBreak'
             ? DEFAULT_INSERT_TAG
-            : readLastUsedTag() ?? undefined;
+            : (readLastUsedTag() ?? undefined);
       const sorted = sortTagSuggestions(pinned, tagCounts, sortPreferred);
       setSuggestions(sorted);
       setHighlightedIndex(
-        nextMode === 'insert' || nextMode === 'lineBreak' ? 0 : getDefaultHighlightIndex(sorted, nextMode, highlightPreferred ?? null),
+        nextMode === 'insert' || nextMode === 'lineBreak'
+          ? 0
+          : getDefaultHighlightIndex(sorted, nextMode, highlightPreferred ?? null),
       );
     },
     [tagCounts],
@@ -207,6 +210,7 @@ export const useTagCommandController = () => {
       const editor = window.writer?.editor;
       if (editor) {
         bookmarkRef.current = getBookmark(editor);
+        sourceRangeRef.current = getSelectionRange(editor).cloneRange();
         // Collapse the live selection after bookmarking. While the popup is
         // open, Chinese IME composition in the still-focused editor would
         // otherwise replace the selected string; Esc then cancels composition
@@ -227,7 +231,7 @@ export const useTagCommandController = () => {
       setMode(nextMode);
       setSuggestions([]);
       setHighlightedIndex(0);
-      setFilter(nextMode === 'rename' ? ctx.tagElement?.getAttribute('_tag') ?? '' : '');
+      setFilter(nextMode === 'rename' ? (ctx.tagElement?.getAttribute('_tag') ?? '') : '');
       setAnchor(getCaretScreenPosition(anchorOverride));
       if (nextMode === 'rename') {
         const oldName = ctx.tagElement?.getAttribute('_tag') ?? '';
@@ -301,8 +305,7 @@ export const useTagCommandController = () => {
       };
     }
     const name =
-      filter.trim() ||
-      ((mode === 'insert' || mode === 'lineBreak') ? DEFAULT_INSERT_TAG : '');
+      filter.trim() || (mode === 'insert' || mode === 'lineBreak' ? DEFAULT_INSERT_TAG : '');
     if (!name) return null;
     const fromList = suggestions.find((tag) => tag.name === name && !tag.invalid);
     if (fromList) return fromList;
@@ -376,7 +379,7 @@ export const useTagCommandController = () => {
     }
 
     if (!selectedText) return;
-    const { applied, skipped } = propagateTagInFile(selectedText, tag.name);
+    const { applied, skipped } = propagateTagInFile(selectedText, tag.name, sourceRangeRef.current);
     notifyApplyResult(
       { applied: applied > 0, tagName: tag.name },
       applied > 0
@@ -442,15 +445,7 @@ export const useTagCommandController = () => {
     walkIndexRef.current = 0;
     walkCurrentRangeRef.current = previewQueueWalkTarget(selectedText, tag.name, 0);
     window.writer?.editor?.focus();
-  }, [
-    closePopup,
-    filter,
-    mode,
-    notifyViaSnackbar,
-    resolveTagForApply,
-    selectedText,
-    tagElement,
-  ]);
+  }, [closePopup, filter, mode, notifyViaSnackbar, resolveTagForApply, selectedText, tagElement]);
 
   const applyWalkStep = useCallback(() => {
     if (!walkMode) return;
@@ -600,7 +595,9 @@ export const useTagCommandController = () => {
         event.preventDefault();
         event.stopPropagation();
         setHighlightedIndex((current) => {
-          const next = visibleSuggestions.findIndex((suggestion, i) => i > current && !suggestion.invalid);
+          const next = visibleSuggestions.findIndex(
+            (suggestion, i) => i > current && !suggestion.invalid,
+          );
           return next === -1 ? current : next;
         });
         return;
@@ -687,14 +684,21 @@ export const useTagCommandController = () => {
 
       return false;
     },
-    [applyWalkStep, closePopup, exitWalkMode, notifyApplyResult, open, openPopup, skipWalkStep, walkMode],
+    [
+      applyWalkStep,
+      closePopup,
+      exitWalkMode,
+      notifyApplyResult,
+      open,
+      openPopup,
+      skipWalkStep,
+      walkMode,
+    ],
   );
 
   useEffect(() => {
     if (!open) return;
-    setHighlightedIndex((current) =>
-      Math.min(current, Math.max(visibleSuggestions.length - 1, 0)),
-    );
+    setHighlightedIndex((current) => Math.min(current, Math.max(visibleSuggestions.length - 1, 0)));
   }, [open, visibleSuggestions.length]);
 
   useEffect(() => {

@@ -52,4 +52,14 @@ describe('countPropagatableMatches', () => {
 
     expect(countPropagatableMatches('Jean', 'persName')).toBe(1);
   });
+
+  test('counts matches spanning visible inline elements and ignores page breaks', () => {
+    document.body.innerHTML = `
+      <div id="tinymce-body" class="mce-content-body">
+        <p _tag="p"><placeName _tag="placeName">揚州</placeName>刺<pb _tag="pb" n="34"/>史</p>
+      </div>
+    `;
+
+    expect(countPropagatableMatches('揚州刺史', 'roleName')).toBe(1);
+  });
 });
