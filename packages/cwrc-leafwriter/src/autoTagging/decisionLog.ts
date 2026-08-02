@@ -4,8 +4,8 @@ import type { Suggestion } from './types';
 /**
  * Append-only decision log (Phase 3), stored as JSONL at
  * `/.leaf/entity-decisions.jsonl`. Every accept/reject/resolve is one line;
- * counts and "user's past decisions" (feeding AI ranking later) are derived
- * from the log, not stored separately.
+ * counts and "user's past decisions" are derived from the log, not stored
+ * separately. (Optional polish: feed decision-log stats into AI ranking prompts.)
  */
 
 export type DecisionAction =

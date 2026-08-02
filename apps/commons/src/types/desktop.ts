@@ -215,6 +215,8 @@ export interface ElectronAPI {
   findXmlFilesByName: (rootPath: string, query: string) => Promise<NamedPath[]>;
   listProjectXmlFiles: (rootPath: string) => Promise<NamedPath[]>;
   reloadProjectBundle: (projectFilePath: string) => Promise<ProjectBundle | null>;
+  /** Undo main-process project activation when renderer onboarding is cancelled. */
+  clearActiveProject?: () => Promise<boolean>;
   installCatalogSchema: (projectFilePath: string, catalogId: string) => Promise<ProjectBundle>;
   installLocalSchema: (
     projectFilePath: string,

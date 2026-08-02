@@ -29,6 +29,10 @@ export interface ValidateSuggestionsOptions {
   /** Suggestions per LLM call — keeps requests under small-tier token-per-minute limits. Default 8. */
   batchSize?: number;
   onProgress?: (done: number, total: number) => void;
+  /** Called after each batch so the UI can show scores without waiting for the full run. */
+  onBatch?: (batch: Map<string, AiValidationResult>, done: number, total: number) => void;
+  /** Abort between batches (in-flight request is not cancelled). */
+  signal?: AbortSignal;
 }
 
 /**
@@ -105,10 +109,15 @@ function buildValidationUserPrompt(params: {
 }): string {
   const langLabel = params.language ? `${params.language} ` : '';
   const lines: string[] = [
-    `Validate the following auto-tagging suggestions for ${langLabel}historical texts. For each suggestion, assess:`,
-    '1. Whether the tag is semantically correct for the surface string in its local context',
-    '2. Whether the boundary spans are accurate',
+    `Curate the following dictionary/auto-tag suggestions for ${langLabel}historical texts.`,
+    'Goal: flag tags that are *obviously wrong* (wrong entity type, nonsense boundary, common-word false positive).',
+    'Do not reject merely ambiguous or hard cases — leave those recommended=true with mid confidence.',
+    'For each suggestion, assess:',
+    '1. Whether the tag is semantically plausible for the surface string in its local context',
+    '2. Whether the boundary spans look accurate',
     '3. Score each suggestion independently, even when the same surface appears with multiple tags',
+    '4. confidence = how sure you are the tag is correct (0=clearly wrong, 1=clearly right)',
+    '5. recommended=false only when the tag is clearly wrong',
     '',
     'Suggestions (use exact id in your response):',
   ];
@@ -198,6 +207,8 @@ export async function validateSuggestions(
     language,
     batchSize = DEFAULT_VALIDATION_BATCH_SIZE,
     onProgress,
+    onBatch,
+    signal,
   } = options;
 
   if (suggestions.length === 0) {
@@ -210,6 +221,7 @@ export async function validateSuggestions(
   const batches = chunkSuggestions(suggestions, Math.max(1, batchSize));
 
   for (let i = 0; i < batches.length; i++) {
+    if (signal?.aborted) break;
     const batch = batches[i]!;
     const batchIds = new Set(batch.map((s) => s.id));
     const userPrompt = buildValidationUserPrompt({
@@ -219,6 +231,7 @@ export async function validateSuggestions(
     });
 
     if (i > 0) await sleep(BATCH_PACING_MS);
+    if (signal?.aborted) break;
 
     try {
       const response = await client.complete({
@@ -231,6 +244,7 @@ export async function validateSuggestions(
       for (const [id, validation] of parsed) {
         result.set(id, validation);
       }
+      if (parsed.size > 0) onBatch?.(parsed, i + 1, batches.length);
     } catch (error) {
       // Silent fail per batch - one failed batch shouldn't stop the rest.
       console.warn('AI validation batch failed:', error);
@@ -240,6 +254,11 @@ export async function validateSuggestions(
   }
 
   return result;
+}
+
+/** Effective curation confidence: AI score when present, else producer confidence. */
+export function suggestionCurateConfidence(suggestion: Suggestion): number | undefined {
+  return suggestion.aiValidation?.confidence ?? suggestion.confidence;
 }
 
 /**

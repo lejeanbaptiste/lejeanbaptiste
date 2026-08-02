@@ -531,12 +531,15 @@ export const AttributesPanel = ({ visible = true }: { visible?: boolean }) => {
       ) {
         throw new Error(SQLITE_REQUIRED_PANEL_MESSAGE);
       }
-      await store.sqliteUpdateNames({
+      const changed = await store.sqliteUpdateNames({
         entityId: linkedEntityInfo.entity.id,
         text: mentionSurface,
         nameType: type,
         language: sourceLanguage ?? null,
       });
+      if (type && changed === 0) {
+        throw new Error(`Could not save name type for “${mentionSurface}”.`);
+      }
       setEntityInfoRevision((revision) => revision + 1);
     } catch (error) {
       notifyViaSnackbar({

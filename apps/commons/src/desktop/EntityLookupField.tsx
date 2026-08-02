@@ -28,6 +28,7 @@ import {
   loadSqliteDisambiguationCandidates,
   mergeSelectedCandidates,
   resolveCandidateForPedb,
+  toAuthoritySourcedFields,
   type DisambiguationCandidate,
 } from '../../../../packages/cwrc-leafwriter/src/autoTagging/disambiguationCandidates';
 import { autoSyncEntityToCentral } from '../../../../packages/cwrc-leafwriter/src/autoTagging/autoSync';
@@ -370,7 +371,7 @@ export const EntityLookupField = ({
         description: merged.description,
         startYear: merged.startYear,
         endYear: merged.endYear,
-        authorityAssertions: merged.authorityAssertions,
+        authorityAssertions: toAuthoritySourcedFields(merged.authorityAssertions),
         localEntityId: merged.localEntityId,
       });
       for (const typed of typedNames ?? []) {
@@ -400,7 +401,7 @@ export const EntityLookupField = ({
             ?.authors;
           if (workDate?.startYear != null || authors?.length) {
             onWorkDetails?.({
-              workYear: workDate?.startYear ?? null,
+              workYear: workDate?.startYear ?? undefined,
               authors: (authors ?? []).map((author) => ({
                 name: author.name,
                 ref: author.ref ?? undefined,

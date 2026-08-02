@@ -685,6 +685,10 @@ let quitPreparationInProgress = false;
 let serverProcess: ChildProcess | null = null;
 let openFileWatcher: OpenFileWatcher | null = null;
 let activeProjectRoot: string | null = null;
+/** Every project root opened this session. Keeps in-flight entity-DB work on a
+ * just-left project from being rejected when the active root flips early
+ * (open-project IPC activates before renderer onboarding finishes). */
+const sessionProjectRoots = new Set<string>();
 const approvedRendererReadRoots = new Set<string>();
 const approvedRendererWriteRoots = new Set<string>();
 
@@ -711,6 +715,7 @@ const syncPluginApiState = (): void => {
 
 const setActiveProjectRoot = (rootPath: string | null): void => {
   activeProjectRoot = rootPath ? path.resolve(rootPath) : null;
+  if (activeProjectRoot) sessionProjectRoots.add(activeProjectRoot);
   syncPluginApiState();
 };
 
@@ -724,11 +729,16 @@ const isPathWithin = (root: string, candidate: string): boolean => {
   return relative === '' || (!relative.startsWith('..') && !path.isAbsolute(relative));
 };
 
-const assertRendererWritePath = async (candidate: string): Promise<void> => {
-  const roots = [app.getPath('temp'), app.getPath('userData')];
+const collectRendererPathRoots = async (): Promise<string[]> => {
+  const roots = [app.getPath('temp'), app.getPath('userData'), ...sessionProjectRoots];
   if (activeProjectRoot) roots.push(activeProjectRoot);
   const entityDbFolder = await getEntityDbFolder();
   if (entityDbFolder) roots.push(entityDbFolder);
+  return roots;
+};
+
+const assertRendererWritePath = async (candidate: string): Promise<void> => {
+  const roots = await collectRendererPathRoots();
   if (roots.some((root) => isPathWithin(root, candidate))) return;
   if ([...approvedRendererWriteRoots].some((root) => isPathWithin(root, candidate))) return;
   console.error('[writeFile] rejected path outside approved roots:', {
@@ -751,10 +761,7 @@ const approveRendererWriteRoot = (root: string): void => {
 };
 
 const assertRendererReadPath = async (candidate: string): Promise<void> => {
-  const roots = [app.getPath('temp'), app.getPath('userData')];
-  if (activeProjectRoot) roots.push(activeProjectRoot);
-  const entityDbFolder = await getEntityDbFolder();
-  if (entityDbFolder) roots.push(entityDbFolder);
+  const roots = await collectRendererPathRoots();
   if (roots.some((root) => isPathWithin(root, candidate))) return;
   if ([...approvedRendererReadRoots].some((root) => isPathWithin(root, candidate))) return;
   // Logged rather than only thrown: this has been hard to pin down from user
@@ -764,6 +771,7 @@ const assertRendererReadPath = async (candidate: string): Promise<void> => {
     candidate,
     activeProjectRoot,
     roots,
+    sessionProjectRoots: [...sessionProjectRoots],
     approvedRendererReadRoots: [...approvedRendererReadRoots],
   });
   throw new Error('Renderer file reads are restricted to approved application paths.');
@@ -2171,6 +2179,11 @@ const registerIpcHandlers = () => {
     const bundle = await loadProjectFile(projectFilePath);
     if (bundle) activateProjectBundle(bundle);
     return bundle;
+  });
+
+  ipcMain.handle('clearActiveProject', async () => {
+    activateProjectBundle(null);
+    return true;
   });
 
   ipcMain.handle(

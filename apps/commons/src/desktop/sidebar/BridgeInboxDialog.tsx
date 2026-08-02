@@ -17,6 +17,7 @@ import {
 import { useCallback, useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import type { BridgeInboxReport } from '../../../../../packages/cwrc-leafwriter/src/autoTagging/bridgeInbox';
+import { useAppState } from '@src/overmind';
 import {
   applyPendingCentralOrders,
   computeBridgeInbox,
@@ -42,6 +43,7 @@ interface Props {
  */
 export const BridgeInboxDialog = ({ open, onClose, onChanged }: Props) => {
   const { t } = useTranslation();
+  const { rootPath } = useAppState().project;
   const [loading, setLoading] = useState(false);
   const [busy, setBusy] = useState<string | null>(null);
   const [unavailable, setUnavailable] = useState<string | null>(null);
@@ -73,6 +75,7 @@ export const BridgeInboxDialog = ({ open, onClose, onChanged }: Props) => {
     setError(null);
     setCentralOrdersNote(null);
     setSelectedConflict(null);
+    setBusy(null);
     void (async () => {
       const availability = await loadBridgeContext();
       if (!availability.available) {
@@ -100,7 +103,7 @@ export const BridgeInboxDialog = ({ open, onClose, onChanged }: Props) => {
       }
       await refresh(availability.context);
     })();
-  }, [open, refresh, t]);
+  }, [open, refresh, rootPath, t]);
 
   const runAction = async (label: string, action: (ctx: BridgeContext) => Promise<unknown>) => {
     if (!context) return;
@@ -108,11 +111,13 @@ export const BridgeInboxDialog = ({ open, onClose, onChanged }: Props) => {
     setError(null);
     try {
       await action(context);
+      // Promote/sync itself is cheap; drop the action spinner before the inbox
+      // refresh so a large central database never looks like "still promoting".
+      setBusy(null);
       await refresh(context);
       onChanged?.();
     } catch (e) {
       setError(e instanceof Error ? e.message : String(e));
-    } finally {
       setBusy(null);
     }
   };

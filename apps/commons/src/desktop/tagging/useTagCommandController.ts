@@ -221,12 +221,11 @@ export const useTagCommandController = () => {
 
       const editor = window.writer?.editor;
       if (editor) {
+        // Snapshot first (getBookmark clones the live Range). Then collapse the
+        // visible selection so Chinese IME composition cannot replace the
+        // selected string while the popup is open. Apply restores the bookmark.
         bookmarkRef.current = getBookmark(editor);
         sourceRangeRef.current = getSelectionRange(editor).cloneRange();
-        // Collapse the live selection after bookmarking. While the popup is
-        // open, Chinese IME composition in the still-focused editor would
-        // otherwise replace the selected string; Esc then cancels composition
-        // and the original text is gone. Apply still uses the bookmark.
         if (nextMode === 'wrap' && !ctx.rng.collapsed) {
           editor.selection.collapse(false);
         }

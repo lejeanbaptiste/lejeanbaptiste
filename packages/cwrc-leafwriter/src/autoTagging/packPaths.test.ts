@@ -45,5 +45,11 @@ describe('authority pack UI helpers', () => {
     expect(AUTHORITY_PACKS.find((pack) => pack.id === 'wikidata-places-zh-hant')?.label).toBe(
       'Wikidata places (zh-hant)',
     );
+    expect(AUTHORITY_PACKS.find((pack) => pack.id === 'wikidata-places-ja')?.label).toBe(
+      'Wikidata places (ja)',
+    );
+    expect(AUTHORITY_PACKS.find((pack) => pack.id === 'wikidata-places-ja')?.relativePath).toBe(
+      'wikidata/place-ja/places.ndjson',
+    );
   });
 });

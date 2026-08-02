@@ -113,6 +113,29 @@ describe('ReviewController', () => {
     expect(decisions).toEqual(['hi']);
   });
 
+  it('applyCurateRejectBelow rejects scored pending items under the floor', () => {
+    const c = new ReviewController([
+      make('bad', {
+        aiValidation: {
+          confidence: 0.2,
+          recommended: false,
+          validatedAt: '2026-08-02T00:00:00.000Z',
+        },
+      }),
+      make('ok', {
+        aiValidation: {
+          confidence: 0.9,
+          recommended: true,
+          validatedAt: '2026-08-02T00:00:00.000Z',
+        },
+      }),
+      make('unscored'),
+    ]);
+    c.applyCurateRejectBelow(0.5);
+    expect(c.counts()).toMatchObject({ pending: 2, rejected: 1 });
+    expect(c.rejectedVisible().map((s) => s.id)).toEqual(['bad']);
+  });
+
   it('takeAccepted supports partial apply: accepted leave, pending remain', () => {
     const c = new ReviewController([make('a'), make('b'), make('c')]);
     c.accept(); // a

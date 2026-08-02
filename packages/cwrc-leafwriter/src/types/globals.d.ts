@@ -484,6 +484,7 @@ declare global {
     reloadProjectBundle?: (
       projectFilePath: string,
     ) => Promise<import('../../../../apps/commons/src/desktop/projectTypes').ProjectBundle | null>;
+    clearActiveProject?: () => Promise<boolean>;
     installCatalogSchema?: (
       projectFilePath: string,
       catalogId: string,
@@ -704,11 +705,13 @@ declare global {
         | {
             aiValidation?: boolean;
             autoAcceptThreshold?: number;
+            curateRejectBelow?: number;
           }
         | undefined;
       setAutoTaggingValidationSettings: (settings: {
         aiValidation?: boolean;
         autoAcceptThreshold?: number;
+        curateRejectBelow?: number;
       }) => void;
       getDisambiguationSettings: () =>
         | {

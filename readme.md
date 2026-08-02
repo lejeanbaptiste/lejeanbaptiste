@@ -130,54 +130,45 @@ Near-term work pulled from the planning docs ([docs/README.md](docs/README.md)).
 - [ ] VALIDATE: Norbert functions in add tag palette
 - [ ] VALIDATE: 壽王瑁 mess, princesses, in database viewer
 - [ ] VALIDATE: Norbert-specific tag validator working as expected
-
-### Performance and stability
-
-**Current state (2026-08-02):** Before calling
-this beta-ready, run the packaged manual sync checklist. The only remaining
-work in this area is packaged verification.
-
 - [ ] Run entity-sync manual scenarios ([entity-sync-manual-test-plan.md](docs/entity-sync-manual-test-plan.md))
 
-**Next:** run the packaged scenarios in
-[entity-sync-manual-test-plan.md](docs/entity-sync-manual-test-plan.md).
+
+### Build
+
+- [ ] Hook in full VIAF, Wikidata, NDL, CBDB concordance when scan is finished.
+- [x] Add 'AI curate' to tag bomb, feed chunks of text with tags, ask 'which of these is obviously wrong', produce certainty score; Give user a range selector for automatic filtering.
+
+## Next release
+
+- [ ] Time Machine polish: diff preview, export history zip, optional `revisionDesc` on restore, delete (?)
+- [ ] Japanese pack: clean garbage entries
+- [ ] Finish word plugin
+- [ ] (BIG ENGINEERING) LanguageTool as a plugin (?)
 
 ## Future
-
-### AI
-
-- [ ] Add 'AI curate' to tag bomb, feed chunks of text with tags, ask 'which of these is obviously wrong', produce certainty score; Give user a range selector for automatic filtering.
-
-### Deprioritised
-
-- [ ] Further Norbert functions
-- [ ] AI auto-tag: apply audit actions beyond `add` (remove/retag/redraw); schema-driven tag picker; prompt-profile UI
 
 ### Translation pane
 
 - [ ] Improve translation pane word-processing features.
 - [ ] Integrate entity-Zotero ?
 - [ ] Copy-and-paste export of paragraphs with translation for word processors
-- [ ] (BIG ENGINEERING) LanguageTool as a plugin
 
 ### I/O
 
-- [ ] (IF someone actually uses markdown) Import Phase 1 leftovers: md `{{header}}`, batch/folder UI, validator + provenance
-- [ ] (IF grows to point where relevant) LaTeX export
 - [ ] Full CBETA integration
 - [ ] Kanripo
 - [ ] Import profiles (rule engine + mandoku hand profile)
 - [ ] Docx / Mammoth import
 - [ ] AI-inferred import profiles
 - [ ] Browser-extension / URL corpus→TEI extraction (E0–E5 — [corpus-extraction-planning.md](docs/corpus-extraction-planning.md))
+- [ ] (IF someone actually uses markdown) Import Phase 1 leftovers: md `{{header}}`, batch/folder UI, validator + provenance
+- [ ] (IF grows to point where relevant) LaTeX export
 
 ### UX
 
 - [ ] finish localisations
 - [ ] Redo icons : highlight
-- [ ] Finish word plugin
 - [ ] Official titles dictionaries, dates dictionaries for hover-over
-- [ ] Time Machine polish: diff preview, export history zip, optional `revisionDesc` on restore, delete (?)
 - [ ] Find/replace Phase 2b: WYSIWYG visible-text replace across markup
 - [ ] Match-case / persist last find query (optional)
 - [ ] Ignore page breaks, line breaks, and corrections in tagging and disambiguation?
@@ -198,19 +189,19 @@ work in this area is packaged verification.
 
 ### Authority packs
 
-- [ ] Wikidata tag packs (dump extract → LJB packs; zh-hant places)
-- [ ] NDL / Japanese pack polish beyond first download
-- [ ] GeoNames packs
-- [ ] VIAF↔Wikidata precompiled concordance
 - [ ] TEI appointment encoding for office/role context
-- [ ] AI Phase 6 ranking; MARKUS-style multi-source tag bomb paradigm
 
 ### Collaboration
 
 - [ ] Option to track annotator on the tag level for collaborations.
 
+### AI
+
+- [ ] AI auto-tag: apply audit actions beyond `add` (remove/retag/redraw); schema-driven tag picker; prompt-profile UI
+
 ### Technical
 
+- [ ] Further Norbert functions
 - [ ] Support for custom authorities and personal SQL databases
 - [ ] Multi-machine offline sync beyond current mirror
 - [ ] Performance: virtualize review + disambiguation lists; Monaco theme without recreate ([performance-planning.md](docs/performance-planning.md))

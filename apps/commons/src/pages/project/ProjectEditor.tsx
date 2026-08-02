@@ -47,7 +47,7 @@ export const ProjectEditor = () => {
     useAppState().project;
   const { desktopWindowMode } = useAppState().ui;
   const { markTabDirty, openProject } = useActions().project;
-  const { notifyViaSnackbar, openDialog } = useActions().ui;
+  const { notifyViaSnackbar } = useActions().ui;
   const { t } = useTranslation();
   const hasProject = Boolean(rootPath);
 
@@ -67,36 +67,7 @@ export const ProjectEditor = () => {
   const [leafWriter] = useAtom(leafwriterAtom);
   const [sessionKey] = useAtom(leafWriterSessionKeyAtom);
   useExternalFileWatcher();
-  const showPluginPrompt = useCallback(
-    (prompt: { message: string }) => {
-      openDialog({
-        type: 'simple',
-        props: {
-          title: t('LWC.commons.plugins_available_title'),
-          Body: `${t('LWC.commons.plugins_available_message')}\n\n${prompt.message}`,
-          severity: 'info',
-          actions: [
-            {
-              action: 'open-plugins',
-              label: t('LWC.commons.open_plugins'),
-              variant: 'contained',
-            },
-            { action: 'later', label: t('LWC.commons.not_now') },
-          ],
-          onClose: (action) => {
-            if (action === 'open-plugins') {
-              window.writer?.overmindActions?.ui?.openDialog?.({
-                type: 'plugins',
-                props: { id: 'plugins' },
-              });
-            }
-          },
-        },
-      });
-    },
-    [openDialog, t],
-  );
-  usePluginBootstrap(undefined, showPluginPrompt);
+  usePluginBootstrap();
 
   useEffect(() => {
     if (!isDesktop()) return;
@@ -144,6 +115,10 @@ export const ProjectEditor = () => {
 
     if (!leafWriter) {
       if (!divEl.current || desktopWindowMode !== 'editor') return false;
+      // window.writer can outlive the leafWriter atom (e.g. after a remount
+      // whose container swap the atom missed) — calling loadLib here would
+      // wipe out that live, attached container out from under it.
+      if (window.writer) return false;
       // Let the next bootstrap attempt use the freshly stored LeafWriter
       // instance to initialize TinyMCE before opening its dialog.
       await loadLib(divEl.current);
@@ -196,6 +171,7 @@ export const ProjectEditor = () => {
       resource?.filePath &&
       resource.content &&
       !leafWriter &&
+      !window.writer &&
       loadLibStartedForRef.current !== sessionKey
     ) {
       const container = divEl.current;

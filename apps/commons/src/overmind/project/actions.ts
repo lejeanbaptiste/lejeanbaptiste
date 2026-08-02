@@ -517,6 +517,16 @@ const runPostLoadOnboarding = async (context: Context, bundle: ProjectBundle) =>
   }
 };
 
+/** Re-sync main-process active project after cancelled onboarding. */
+const restoreMainActiveProject = async (previousProjectFilePath: string | null) => {
+  if (!window.electronAPI) return;
+  if (previousProjectFilePath && window.electronAPI.reloadProjectBundle) {
+    await window.electronAPI.reloadProjectBundle(previousProjectFilePath).catch(() => null);
+    return;
+  }
+  await window.electronAPI.clearActiveProject?.().catch(() => undefined);
+};
+
 export const openProject = async (context: Context) => {
   const { notifyViaSnackbar } = context.actions.ui;
 
@@ -530,6 +540,8 @@ export const openProject = async (context: Context) => {
       const guard = await promptUnsavedBeforeProjectSwitch(context);
       if (guard === 'abort') return;
     }
+
+    const previousProjectFilePath = context.state.project.projectFilePath;
 
     const bundle = await invokeOpenProjectDialog();
     if (!bundle) return;
@@ -551,6 +563,9 @@ export const openProject = async (context: Context) => {
 
     const onboarded = await completeProjectOnboarding(bundle);
     if (!onboarded) {
+      // openProject IPC already activated the new root in main; put the old
+      // (or empty) root back so entity-DB path checks match the still-open UI.
+      await restoreMainActiveProject(previousProjectFilePath);
       notifyViaSnackbar(t('LWC.desktop.project.messages.could_not_open_project_folder'));
       return;
     }
@@ -611,6 +626,8 @@ export const closeProject = async (context: Context) => {
   state.project.tree = [];
   state.project.explorerFocusedPath = null;
   state.project.explorerFocusedIsDirectory = false;
+
+  await window.electronAPI?.clearActiveProject?.().catch(() => undefined);
 };
 
 export const restoreLastProject = async (context: Context) => {
@@ -641,6 +658,9 @@ export const restoreLastProject = async (context: Context) => {
 
     const onboarded = await completeProjectOnboarding(bundle);
     if (!onboarded) {
+      // restore* IPC already activated this bundle in main; clear so we don't
+      // leave path guards pointed at a project the UI never loaded.
+      await window.electronAPI.clearActiveProject?.().catch(() => undefined);
       context.state.project.isProjectReady = true;
       return;
     }

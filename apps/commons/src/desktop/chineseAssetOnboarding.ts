@@ -56,7 +56,18 @@ export const maybeOfferChineseAssetDownloads = async (
   if (!isDesktop() || !window.electronAPI) return;
   if (!(await isChineseEnabled(bundle))) return;
 
-  const { missingAssets } = await checkChineseProjectAssets();
+  const { missingAssets, pluginsInstalled } = await checkChineseProjectAssets();
+
+  // Already on disk for the app: enable for this project's config without a
+  // "download plugins" prompt (enable is per-project; install is app-wide).
+  if (pluginsInstalled) {
+    try {
+      await ensureLanguagePlugins(isChineseRelatedLanguage);
+    } catch (error) {
+      console.warn('[onboarding] Failed to enable Chinese language plugins', error);
+    }
+  }
+
   if (missingAssets.length === 0) return;
 
   openDialog({

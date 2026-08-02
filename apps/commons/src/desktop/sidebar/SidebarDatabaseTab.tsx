@@ -117,7 +117,7 @@ import { getDefaultStore } from 'jotai';
 import { RESET } from 'jotai/utils';
 import { db } from '../../../../../packages/cwrc-leafwriter/src/db';
 import { applyKeyRemapAcrossProjects, type KeyRemapSummary } from '../entityDb/applyKeyRemap';
-import { computeMergeDocket, loadBridgeContext, promoteEntities } from '../entityDb/bridge';
+import { computeMergeDocket, loadBridgeContext, promoteEntities, syncNonConflictingLinkedEntities } from '../entityDb/bridge';
 import type { BulkBridgeProposal } from '../../../../../packages/cwrc-leafwriter/src/autoTagging/bulkBridgeImport';
 import { authorityLookupUrl } from '../entityDb/authorityLinks';
 import { BridgeInboxDialog } from './BridgeInboxDialog';
@@ -146,6 +146,12 @@ const idOrdinal = (id: string): number => {
 /** Default merge survivor: lowest sequential ordinal, then lexby id for a stable UUID default. */
 const oldestId = (ids: string[]): string =>
   [...ids].sort((a, b) => idOrdinal(a) - idOrdinal(b) || a.localeCompare(b))[0]!;
+
+/** Drop ids that are not in the currently loaded list (e.g. leftover Project↔Central selections). */
+const pruneToKnownEntityIds = (ids: Iterable<string>, known: EntitySummary[]): string[] => {
+  const knownIds = new Set(known.map((entity) => entity.id));
+  return [...ids].filter((id) => knownIds.has(id));
+};
 
 const escapeRegExp = (text: string): string => text.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
 
@@ -297,7 +303,7 @@ const sortAuthoritiesByPreference = (
     .map(({ ref }) => ref);
 };
 
-type TFn = (key: string) => string;
+type TFn = (key: string, options?: Record<string, unknown>) => string;
 
 /** Localization keys for each stored DatePrecision code — the stored XML value stays the English canonical code; only the display text is localized. */
 const PRECISION_LABEL_KEYS: Partial<Record<DatePrecision, string>> = {
@@ -724,7 +730,7 @@ export const SidebarDatabaseTab = ({ active = false }: SidebarDatabaseTabProps) 
   const { t, i18n } = useTranslation();
   const { skipEntityDetachConfirm } = useAppState().ui;
   const { setSkipEntityDetachConfirm, notifyViaSnackbar, setDesktopWindowMode } = useActions().ui;
-  const { config } = useAppState().project;
+  const { config, rootPath } = useAppState().project;
   const [savedSyncOverride, setSavedSyncOverride] = useState<boolean | null>(null);
   const syncToCentral = savedSyncOverride ?? config?.syncToCentral === true;
   const [databaseView, setDatabaseView] = useState<DatabaseView>('project');
@@ -877,6 +883,28 @@ export const SidebarDatabaseTab = ({ active = false }: SidebarDatabaseTabProps) 
     if (syncToCentral && !resolvedCentralStore) {
       setLoadError('Central database is not configured; synchronisation did not start.');
     }
+
+    // Unsynchronized projects: on Refresh / tab load, pull non-conflicting
+    // central content (new courtesy names, authorities, empty scalars) into
+    // linked PEDB entities. Conflicts stay in the Bridge inbox.
+    if (!syncToCentral && resolvedCentralStore) {
+      try {
+        const availability = await loadBridgeContext();
+        if (availability.available) {
+          const pulled = await syncNonConflictingLinkedEntities(availability.context);
+          if (pulled.synced > 0) {
+            notifyViaSnackbar({
+              message: `Updated ${pulled.synced} linked entit${pulled.synced === 1 ? 'y' : 'ies'} from the central database.`,
+              options: { variant: 'info' },
+            });
+          }
+        }
+      } catch (error) {
+        // Never block the entity list on a bridge pull failure.
+        console.error('[bridge] auto-sync on reload failed:', error);
+      }
+    }
+
     if (
       syncToCentral &&
       resolvedCentralStore &&
@@ -1045,6 +1073,27 @@ export const SidebarDatabaseTab = ({ active = false }: SidebarDatabaseTabProps) 
           .catch(() => setDocketCount(0));
       }
       setEntities(summaries);
+      // Selection can outlive a Project↔Central switch or a project change.
+      // Prune to ids that still exist in this database so Fusionner(N) matches
+      // the visible checkboxes and merge never sends a foreign id to SQLite.
+      setSelected((previous) => {
+        if (previous.size === 0) return previous;
+        const knownIds = new Set(summaries.map((summary) => summary.id));
+        let changed = false;
+        const next = new Set<string>();
+        for (const id of previous) {
+          if (knownIds.has(id)) next.add(id);
+          else changed = true;
+        }
+        return changed ? next : previous;
+      });
+      setMergeIds((previous) => {
+        if (!previous) return previous;
+        const knownIds = new Set(summaries.map((summary) => summary.id));
+        const next = previous.filter((id) => knownIds.has(id));
+        if (next.length < 2) return null;
+        return next.length === previous.length ? previous : next;
+      });
       setDuplicates((duplicateRows ?? []) as DuplicateGroup[]);
       setConcordanceConflicts(activeStore === currentStore ? conflicts : []);
       setWarnings(activeStore === currentStore ? await loadOpenWarnings(currentStore) : []);
@@ -1053,7 +1102,14 @@ export const SidebarDatabaseTab = ({ active = false }: SidebarDatabaseTabProps) 
     } finally {
       setLoading(false);
     }
-  }, [databaseView, syncToCentral]);
+  }, [databaseView, notifyViaSnackbar, syncToCentral]);
+
+  // Drop cross-database selection when the browse target changes. Reload also
+  // prunes, but clearing immediately avoids a Fusionner(3) flash with ghost ids.
+  useEffect(() => {
+    setSelected(new Set());
+    setMergeIds(null);
+  }, [databaseView, rootPath]);
 
   // A synchronized project has one visible database: the central one.
   useEffect(() => {
@@ -1061,11 +1117,13 @@ export const SidebarDatabaseTab = ({ active = false }: SidebarDatabaseTabProps) 
   }, [databaseView, syncToCentral]);
 
   // Load on mount and refresh whenever the tab becomes visible (the project —
-  // and with it the entity store — may not exist yet at app start).
+  // and with it the entity store — may not exist yet at app start). Also reload
+  // when the open project root changes so we never keep a stale EntityStore
+  // pointed at a previous folder after a switch.
   useEffect(() => {
     if (active || !store) void reload();
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [active, reload]);
+  }, [active, reload, rootPath]);
 
   // Native project settings are saved from a separate BrowserWindow. Refresh
   // the sidebar immediately when that window commits syncToCentral, even
@@ -1611,8 +1669,18 @@ export const SidebarDatabaseTab = ({ active = false }: SidebarDatabaseTabProps) 
 
   /** Merge button: <2 selected extends the search with an alternation, ≥2 opens the merge dialog. */
   const handleMergeClick = () => {
-    if (selected.size >= 2) {
-      const ids = [...selected];
+    const ids = pruneToKnownEntityIds(selected, entities);
+    if (ids.length !== selected.size) {
+      setSelected(new Set(ids));
+      if (ids.length < selected.size) {
+        notifyViaSnackbar({
+          message:
+            'Dropped selected ids that are not in this database (often leftover after switching Project/Central).',
+          options: { variant: 'info' },
+        });
+      }
+    }
+    if (ids.length >= 2) {
       setMergeIds(ids);
       setMergeKeepId(oldestId(ids));
       return;
@@ -1623,7 +1691,18 @@ export const SidebarDatabaseTab = ({ active = false }: SidebarDatabaseTabProps) 
 
   const confirmMerge = () => {
     if (!mergeIds || !mergeKeepId) return;
-    const dropIds = mergeIds.filter((id) => id !== mergeKeepId);
+    const ids = pruneToKnownEntityIds(mergeIds, entities);
+    if (ids.length < 2 || !ids.includes(mergeKeepId)) {
+      setMergeIds(null);
+      setSelected(new Set(ids));
+      notifyViaSnackbar({
+        message:
+          'Cannot merge: one or more selected entities are not in this database. Selection was cleaned — try again.',
+        options: { variant: 'warning' },
+      });
+      return;
+    }
+    const dropIds = ids.filter((id) => id !== mergeKeepId);
     const targetStore = resolveStoreFor(mergeKeepId);
     // A conflict only matters for a PEDB merge: it's the signal that two
     // *central* entities might also be duplicates (see mergeEntities). A
@@ -2800,8 +2879,16 @@ export const SidebarDatabaseTab = ({ active = false }: SidebarDatabaseTabProps) 
   );
 
   const mergeDuplicateGroup = (group: DuplicateGroup) => {
-    setMergeIds(group.entityIds);
-    setMergeKeepId(oldestId(group.entityIds));
+    const ids = pruneToKnownEntityIds(group.entityIds, entities);
+    if (ids.length < 2) {
+      notifyViaSnackbar({
+        message: 'Cannot merge this duplicate group: some entities are not in the current database list.',
+        options: { variant: 'warning' },
+      });
+      return;
+    }
+    setMergeIds(ids);
+    setMergeKeepId(oldestId(ids));
   };
 
   const markGroupIntentional = (group: DuplicateGroup) => {
@@ -2842,7 +2929,8 @@ export const SidebarDatabaseTab = ({ active = false }: SidebarDatabaseTabProps) 
     if (entity) setKindFilter(entity.kind);
     if (projectKey) setSearch(`^${escapeRegExp(projectKey)}$`);
     else setSearch('');
-    setSelected(new Set([id]));
+    // Never plant a ghost id that is not in the loaded list.
+    setSelected(entity ? new Set([id]) : new Set());
   };
 
   const openXPathForEntity = (entity: EntitySummary) => {
@@ -2881,7 +2969,9 @@ export const SidebarDatabaseTab = ({ active = false }: SidebarDatabaseTabProps) 
     if (implicated[0]) setKindFilter(implicated[0].kind);
     const projectKeys = implicated.map((entity) => entity.projectKey ?? entity.id).filter(Boolean);
     setSearch(projectKeys.length > 0 ? `^(${projectKeys.map(escapeRegExp).join('|')})$` : '');
-    setSelected(new Set(warning.entityIds));
+    // Only select entities actually present in this database list — never the
+    // raw warning id set, which can include stale / cross-database ids.
+    setSelected(new Set(implicated.map((entity) => entity.id)));
   };
 
   const dismissWarning = (warning: LookupWarning) => {

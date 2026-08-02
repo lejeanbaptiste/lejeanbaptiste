@@ -144,7 +144,12 @@ const App = ({ document, settings, user }: LeafWriterOptions) => {
   useEffect(() => {
     if (document.url === undefined) return;
 
-    const alreadyLoaded = state.document.url === document.url && !!window.writer;
+    const existingContainer = window.writer?.layoutManager?.getContainer?.()?.[0];
+    const alreadyLoaded =
+      state.document.url === document.url &&
+      !!window.writer &&
+      !!existingContainer &&
+      window.document.body.contains(existingContainer);
     const shouldSetup = !alreadyLoaded;
     if (!shouldSetup) return;
 

@@ -1,17 +1,19 @@
 # Wikidata tag packs — action plan
 
-**Status (2026-08-01):** **Planning / paused on dump** — extract/compile scripts exist in `authority extraction`; full pack builds and LJB compile path still open. Parent: [authority-packs-planning.md](authority-packs-planning.md).
+**Status (2026-08-02):** **Shipped for Chinese persons** — LJB Chinese lifecycle uses `wikidata-persons-{pre-ming,ming,qing}`. Song/Yuan people are in **pre-ming** (date/P2348 membership), not empty `P27` song/yuan packs. Places/orgs/works also built. Parent: [authority-packs-planning.md](authority-packs-planning.md).
 
 ## 1. Goal
 
 Build **versioned, downloadable packs** such as:
 
 ```
-wikidata-person-zh-hant-tang/
-wikidata-person-zh-hans-song/
-wikidata-place-zh-hant-all/
+wikidata-person-zh-hant-pre-ming/   # Song, Yuan, and earlier (canonical)
+wikidata-person-zh-hant-ming/
+wikidata-person-zh-hant-qing/
+wikidata-person-zh-hant-tang/       # optional Tang P27 slice
+wikidata-place-zh-hant/
 wikidata-org-ja/
-wikidata-work-zh-hant-classical/
+wikidata-work-zh-hant/
 ```
 
 Each pack contains:
@@ -48,13 +50,16 @@ wikidata-{kind}-{language}[-{period}]
 |---------|--------|
 | `kind` | `person` \| `place` \| `org` \| `work` |
 | `language` | BCP-47: `zh-hant`, `zh-hans`, `ja`, `bo`, `en`, … |
-| `period` (optional) | Dynasty slug: `tang`, `song`, `ming`, … or year range `-220_1911` |
+| `period` (optional) | Dynasty/membership slug: `pre-ming`, `tang`, `ming`, `qing`, … or year range `-220_1911` |
 
 Examples:
 
-- `wikidata-person-zh-hant-tang` — humans with a `zh-hant` label/alias and P27 = Tang dynasty (or overlapping floruit)
+- `wikidata-person-zh-hant-pre-ming` — Song/Yuan and earlier via dates / P2348 / pre-Ming P27 (canonical for Song/Yuan)
+- `wikidata-person-zh-hant-tang` — optional Tang-only `P27` slice
 - `wikidata-person-zh-hans` — all simplified-Chinese names (period filter applied at load time via metadata)
 - `wikidata-place-zh-hant` — geographic entities with traditional-Chinese names (historical + modern)
+
+Do **not** treat `wikidata-person-zh-hant-song` / `-yuan` as ship targets — Wikidata rarely puts Song/Yuan on `P27`.
 
 ### 3.2 `manifest.json`
 
@@ -153,7 +158,7 @@ Wikidata models pre-modern Chinese persons with **dynasty as `country of citizen
 - `P31` → one of: `place`, `human settlement`, `administrative territorial entity`, `historical country`, `mountain`, `river`, … (maintain an allowlist of Q-ids, inspired by [WikiProject Chinese Culture and Heritage place model](https://www.wikidata.org/wiki/Wikidata:WikiProject_Chinese_Culture_and_Heritage))
 - Label/alias in target language
 - For **historical** packs: `P1480` valid in period, or `P131` chain under China, or `P4711` CHGIS id present
-- For **modern** packs: `P17` country code or GeoNames overlap (optional cross-check)
+- For **modern** packs: `P17` country code (optional). Do **not** depend on a GeoNames pack cross-check — GeoNames packs are out of scope.
 
 **Period:** `P1480` (valid in period) strongly preferred for 縣/州/府; else dynasty from statement qualifiers.
 
@@ -358,14 +363,18 @@ Ship small, validate, expand.
 
 | Pack id | Est. strings | Priority |
 |---------|--------------|----------|
-| `wikidata-person-zh-hant-tang` | 5k–15k | **P0** — classical DH corpus |
-| `wikidata-person-zh-hant-song` | 10k–25k | P0 |
+| `wikidata-person-zh-hant-pre-ming` | 50k+ | **P0** — Song, Yuan, and earlier (canonical; not separate Song/Yuan packs) |
+| `wikidata-person-zh-hant-tang` | 5k–15k | P0 optional — Tang `P27` slice |
+| `wikidata-person-zh-hant-ming` / `-qing` | tens of k | P0 |
 | `wikidata-person-zh-hans` (all periods, metadata filter) | 100k+ | P1 — modern/simple |
 | `wikidata-work-zh-hant` | 5k–20k | P1 — **title** tag for classical Chinese corpora |
-| `wikidata-place-zh-hant` | 20k–80k | P2 — noisy; compare CHGIS |
+| `wikidata-place-zh-hant` | 254k | P2 — noisy; compare CHGIS; **opt-in** in LJB |
+| `wikidata-place-ja` | 514k | P2 — noisy; compare NDL; **opt-in** in LJB (`wikidata-places-ja`) |
 | `wikidata-org-zh-hant` | 5k–15k | P2 |
 | `wikidata-person-ja` | 50k+ | P3 — **supplement** to NDL persons (not replacement) |
 | `wikidata-work-ja` | varies | P2 — **title**; NDL works batch is small (~900) |
+
+**Obsolete:** `wikidata-person-zh-hant-song` / `-yuan` as standalone packs — Wikidata `P27` coverage is too thin; those people are in **pre-Ming**.
 
 **Do not v1:** full multilingual all humans, `thing`, lexemes, Wikipedia sitelink titles as aliases.
 

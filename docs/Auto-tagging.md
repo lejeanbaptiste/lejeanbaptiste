@@ -261,7 +261,7 @@ AI suggest is wired in the desktop app (dialog → review panel → `.ljb/ai-cac
 
 **Auto-accept rules**: let users define per-tag trust (e.g., "auto-accept AI `<date>` suggestions above 0.9, always review `<persName>`").
 
-**Authority packs & tag bomb (2026-07-05):** the primary throughput path for tagging quantity is offline **authority packs** (CBDB, DILA, Wikidata subsets, GeoNames, NDL, …) compiled to match strings and fired through the dictionary/seed matcher — not LLM suggest. AI remains the long-tail supplement. Strategic plan and source feasibility: [authority-packs-planning.md](authority-packs-planning.md).
+**Authority packs & tag bomb (2026-07-05):** the primary throughput path for tagging quantity is offline **authority packs** (CBDB, DILA, Wikidata subsets, NDL, CHGIS, …) compiled to match strings and fired through the dictionary/seed matcher — not LLM suggest. AI remains the long-tail supplement. **GeoNames offline packs are out of scope** (live GeoNames via LINCS remains). Strategic plan and source feasibility: [authority-packs-planning.md](authority-packs-planning.md).
 
 **User feedback**: no trained classifier. A simple decision log (surface form → chosen tag/entity, with counts) in the project entity file gets 90% of the value: it drives defaults ("user corrected 張衡→persName twice, so default to that") and doubles as context for AI ranking.
 
@@ -497,25 +497,16 @@ Technical:
 
 **LLM prompts** (Phase 5 suggest/audit) live as editable text in `packages/cwrc-leafwriter/src/autoTagging/prompt-templates/` — not inline in TypeScript. Bump `versions.json` when wording changes enough to invalidate the AI cache.
 
-## AI-assisted ranking
+## AI-assisted ranking — **done**
 
-We will also integrate AI via API to provide guided choices with a short summary as to why for each case. It draws on the project entity file, cached authority data, and the decision log:
+Integrated via API for guided choices with a short summary per case. Implementation: `rankDisambiguationCandidates` + DisambiguationPanel AI curation. Context today includes document date range and nearby names (plus candidate labels/descriptions); decision-log feed is optional polish.
 
-- date range;
-- genre;
-- nearby names;
-- known corpus topic;
-- place context;
-- dynasty/period words;
-- already-resolved entities;
-- user's past decisions (the decision log).
-
-The AI outputs a ranking to help the reader make a quick decision, e.g.:
+Example shape of guidance:
 ```
 1. 張衡, Eastern Han astronomer — likely, because nearby text discusses calendrical instruments.
 2. 張衡, Tang official — unlikely, date mismatch.
 ```
-He can click, accept locally or for the whole document, as above. Same caching/batching economy rules as AI mode.
+User accepts locally or for the whole document as in Phase 4b. Same caching economy as other AI modes.
 
 ## Anchoring
 

@@ -78,4 +78,23 @@ describe('validateSuggestions', () => {
     expect(result.get('role')).not.toHaveProperty('preferredTag');
     expect(result.get('place')).not.toHaveProperty('preferredTag');
   });
+
+  it('streams batch results via onBatch without waiting for the full run', async () => {
+    const batches: number[] = [];
+    const client = new FakeClient(() =>
+      JSON.stringify({
+        validations: [{ id: 'a', confidence: 0.7, recommended: true }],
+      }),
+    );
+    await validateSuggestions({
+      suggestions: [makeSuggestion('a', 'persName'), makeSuggestion('b', 'persName')],
+      client,
+      batchSize: 1,
+      onBatch: (_batch, done) => {
+        batches.push(done);
+      },
+    });
+    expect(batches.length).toBeGreaterThanOrEqual(1);
+    expect(batches[0]).toBe(1);
+  });
 });

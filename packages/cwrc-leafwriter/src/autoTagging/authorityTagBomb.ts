@@ -31,6 +31,7 @@ const PACK_LOAD_ORDER: AuthorityPackId[] = [
   'wikidata-persons-ja',
   'wikidata-persons-bo',
   'wikidata-places-zh-hant',
+  'wikidata-places-ja',
   'wikidata-places-bo',
   'wikidata-orgs-zh-hant',
   'wikidata-orgs-ja',

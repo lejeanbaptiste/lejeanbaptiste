@@ -536,6 +536,12 @@ class LayoutManager {
   }
 
   resizeAll() {
+    // A stale writer's container can be detached (e.g. replaced by a second
+    // loadLeafWriter() call while this instance was still live) — calling
+    // into the jquery.layout plugin on a detached container throws
+    // "containerMissing".
+    if (!this.$container?.[0] || !document.body.contains(this.$container[0])) return;
+
     //@ts-ignore
     this.$outerLayout?.resizeAll();
     //@ts-ignore

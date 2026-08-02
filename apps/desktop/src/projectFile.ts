@@ -2,6 +2,8 @@ import { randomUUID } from 'crypto';
 import fs from 'fs/promises';
 import path from 'path';
 import { writeFileAtomic } from './atomicWrite';
+import { createEntitiesScaffold } from '../../../packages/cwrc-leafwriter/src/autoTagging/entities';
+import { importEntitySqliteXml } from './entityDbSqlite/readService';
 
 import {
   DEFAULT_METADATA_PATH,
@@ -109,12 +111,17 @@ const normalizeAutoTaggingValidation = (
   if (typeof value.autoAcceptThreshold === 'number') {
     out.autoAcceptThreshold = value.autoAcceptThreshold;
   }
+  if (typeof value.curateRejectBelow === 'number') {
+    out.curateRejectBelow = value.curateRejectBelow;
+  }
   return Object.keys(out).length ? out : undefined;
 };
 
 const normalizePlugins = (raw: unknown): string[] | undefined => {
   if (!Array.isArray(raw)) return undefined;
-  const plugins = [...new Set(raw.filter((id): id is string => typeof id === 'string' && id.trim()))];
+  const plugins = [
+    ...new Set(raw.filter((id): id is string => typeof id === 'string' && id.trim().length > 0)),
+  ];
   return plugins.length ? plugins : undefined;
 };
 
@@ -207,6 +214,42 @@ const detectSchema = async (rootPath: string): Promise<ProjectSchemaConfig | und
   return undefined;
 };
 
+/**
+ * A project's live entity database (entities.xml + entities.sqlite) lives
+ * directly in the project root — see resolveEntityStorePaths's 'project'
+ * mode in packages/cwrc-leafwriter/src/autoTagging/entityStoreResolve.ts,
+ * which every EntityStore consumer defaults to unless a caller explicitly
+ * asks for the separate central/personal database. Nothing used to scaffold
+ * these files for a brand-new project, so lookup/disambiguation failed with
+ * "Entity database is not migrated to SQLite" the first time a new project
+ * touched them. Idempotent (checks entities.xml first) so it is also safe to
+ * call for existing projects that predate this fix.
+ */
+const ensureProjectEntityDatabase = async (rootPath: string): Promise<void> => {
+  const entitiesXmlPath = path.join(rootPath, 'entities.xml');
+  try {
+    await fs.access(entitiesXmlPath);
+    return;
+  } catch {
+    // fall through and scaffold below
+  }
+
+  // Never let a scaffold failure (e.g. a read-only project folder) block
+  // project load/restore entirely — callers propagate this as a bundle-load
+  // failure otherwise, which is a much worse outcome than a missing database
+  // that Settings > Entity database can still recover from later.
+  try {
+    const scaffold = createEntitiesScaffold();
+    await writeFileAtomic(entitiesXmlPath, scaffold);
+    await importEntitySqliteXml({
+      databasePath: path.join(rootPath, 'entities.sqlite'),
+      xml: scaffold,
+    });
+  } catch (error) {
+    console.error(`[project] Failed to scaffold entity database in ${rootPath}:`, error);
+  }
+};
+
 export const loadOrCreateProject = async (rootPath: string): Promise<ProjectBundle> => {
   const projectFilePath = path.join(rootPath, PROJECT_FILE_NAME);
 
@@ -223,6 +266,7 @@ export const loadOrCreateProject = async (rootPath: string): Promise<ProjectBund
       metadata: DEFAULT_METADATA_PATH,
     };
     await writeConfigFile(projectFilePath, config);
+    await ensureProjectEntityDatabase(rootPath);
     return { rootPath, projectFilePath, config };
   }
 
@@ -238,6 +282,7 @@ export const loadOrCreateProject = async (rootPath: string): Promise<ProjectBund
     dirty = true;
   }
   if (dirty) await writeConfigFile(projectFilePath, config);
+  await ensureProjectEntityDatabase(rootPath);
   return { rootPath, projectFilePath, config };
 };
 
@@ -270,6 +315,7 @@ export const loadProjectFile = async (projectFilePath: string): Promise<ProjectB
     }
 
     if (dirty) await writeConfigFile(projectFilePath, config);
+    await ensureProjectEntityDatabase(rootPath);
 
     return { rootPath, projectFilePath, config };
   } catch {

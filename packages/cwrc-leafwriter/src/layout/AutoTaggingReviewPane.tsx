@@ -1,6 +1,6 @@
 import CloseIcon from '@mui/icons-material/Close';
 import { Alert, Box, IconButton, Link, Stack, Tooltip, Typography } from '@mui/material';
-import { useCallback, useEffect, useRef, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import {
   startBackgroundAuthorityPrefetch,
@@ -19,11 +19,14 @@ import {
   aiApiSettingsFromDesktop,
   autoTaggingDocumentKey,
   createLlmClientFromSettings,
+  curateRejectBelowFromSettings,
   isAiSuggestReady,
   isDateCuratorBatch,
   isDateTagOnlyBatch,
   markDatesPassApplied,
   markDatesPassRan,
+  persistValidationSettings,
+  readPersistedValidationSettings,
   validateSuggestions,
   prepareSuggestionsForReview,
   type Suggestion,
@@ -54,7 +57,7 @@ export const AutoTaggingReviewPane = () => {
   const { t } = useTranslation('LW');
   const active = useAppState().ui.autoTaggingReview?.active ?? false;
   const batchId = useAppState().ui.autoTaggingReview?.batchId ?? 0;
-  const aiValidationEnabled = useAppState().ui.autoTaggingReview?.aiValidation ?? true;
+  const aiValidationEnabled = useAppState().ui.autoTaggingReview?.aiValidation ?? false;
   const { exitAutoTaggingReview } = useActions().ui;
   const [suggestions, setSuggestions] = useState<Suggestion[]>([]);
   const [applied, setApplied] = useState(0);
@@ -69,7 +72,13 @@ export const AutoTaggingReviewPane = () => {
   const [applyDiagSeverity, setApplyDiagSeverity] = useState<
     'error' | 'warning' | 'success' | 'info'
   >('info');
+  const [aiCurating, setAiCurating] = useState(false);
+  const [aiCurateProgress, setAiCurateProgress] = useState<{ done: number; total: number } | null>(
+    null,
+  );
+  const [curateRejectBelow, setCurateRejectBelow] = useState(0);
   const session = useRef<AutoTaggingSession | null>(null);
+  const curateAbort = useRef<AbortController | null>(null);
   const dateRecalculate = useRef<DateReviewRecalculate | null>(null);
   const dateAuthorityCiv = useRef<readonly string[] | null>(null);
   const [panelWidth, setPanelWidth] = useStoredPanelWidth(
@@ -201,6 +210,11 @@ export const AutoTaggingReviewPane = () => {
     setApplyDiagSeverity('info');
     setApplied(0);
     setCanRevert(false);
+    setAiCurating(false);
+    setAiCurateProgress(null);
+    setCurateRejectBelow(curateRejectBelowFromSettings(readPersistedValidationSettings()));
+    curateAbort.current?.abort();
+    curateAbort.current = null;
 
     let cancelled = false;
     void (async () => {
@@ -222,26 +236,42 @@ export const AutoTaggingReviewPane = () => {
         const settings = aiApiSettingsFromDesktop();
         if (!settings || !isAiSuggestReady(settings)) return;
 
+        const abort = new AbortController();
+        curateAbort.current = abort;
+        setAiCurating(true);
         const client = createLlmClientFromSettings(settings);
-        const results = await validateSuggestions({
+        await validateSuggestions({
           suggestions: prepared,
           client,
+          signal: abort.signal,
+          onProgress: (done, total) => {
+            if (!cancelled) setAiCurateProgress({ done, total });
+          },
+          onBatch: (batchResults) => {
+            if (cancelled || batchResults.size === 0) return;
+            setSuggestions((current) =>
+              current.map((s) => {
+                const validation = batchResults.get(s.id);
+                return validation ? { ...s, aiValidation: validation } : s;
+              }),
+            );
+          },
         });
-        if (cancelled || results.size === 0) return;
-        setSuggestions((current) =>
-          current.map((s) => {
-            const validation = results.get(s.id);
-            return validation ? { ...s, aiValidation: validation } : s;
-          }),
-        );
       } catch (error) {
         console.warn('[auto-tagging] Failed to prepare review batch:', error);
         if (!cancelled) setSuggestions(batch);
+      } finally {
+        if (!cancelled) {
+          setAiCurating(false);
+          setAiCurateProgress(null);
+        }
       }
     })();
 
     return () => {
       cancelled = true;
+      curateAbort.current?.abort();
+      curateAbort.current = null;
     };
     // batchId reloads when a new run starts while the panel is already open
     // (e.g. tag dates → resolve dates). aiValidation is fixed per batch.
@@ -633,6 +663,13 @@ export const AutoTaggingReviewPane = () => {
                   onDecision={handleDecision}
                   onClose={handleClose}
                   aiValidationEnabled={aiValidationEnabled}
+                  aiCurating={aiCurating}
+                  aiCurateProgress={aiCurateProgress}
+                  curateRejectBelow={curateRejectBelow}
+                  onCurateRejectBelowChange={(value) => {
+                    setCurateRejectBelow(value);
+                    void persistValidationSettings({ curateRejectBelow: value });
+                  }}
                   onRefresh={handleRefresh}
                   refreshing={refreshing}
                   mandatoryStage={mandatoryStage}

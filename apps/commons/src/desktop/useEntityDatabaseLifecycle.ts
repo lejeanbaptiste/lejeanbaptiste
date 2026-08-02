@@ -1,6 +1,6 @@
 import { entityStoreFromDesktop } from '../../../../packages/cwrc-leafwriter/src/autoTagging/entityStore';
 import { applyPendingOrders } from '@src/desktop/entityDb/applyOrders';
-import { applyPendingCentralOrders, loadBridgeContext } from '@src/desktop/entityDb/bridge';
+import { applyPendingCentralOrders, loadBridgeContext, syncNonConflictingLinkedEntities } from '@src/desktop/entityDb/bridge';
 import {
   purgeReportedOrphans,
   runEntityDatabaseCheck,
@@ -118,6 +118,15 @@ export const useEntityDatabaseLifecycle = () => {
               console.info(
                 `[central-orders] applied ${synced.ordersApplied} order(s); ` +
                   `repointed ${synced.repointed}, cleared ${synced.cleared} mapping(s).`,
+              );
+            }
+            // Pull non-conflicting central content (new courtesy names, etc.)
+            // into linked PEDB entities. Does not overwrite scalar conflicts.
+            const pulled = await syncNonConflictingLinkedEntities(availability.context);
+            if (pulled.synced > 0) {
+              // eslint-disable-next-line no-console
+              console.info(
+                `[bridge] auto-synced ${pulled.synced} linked entit${pulled.synced === 1 ? 'y' : 'ies'} from central.`,
               );
             }
           }

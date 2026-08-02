@@ -521,6 +521,19 @@ describe('EntitySqliteRepository', () => {
     expect(repository.findAllEntityIdsByAuthority('place', 'CBDB', '42')).toEqual([]);
     expect(repository.findEntityIdByNameDates('person', '孔遺', 479, null)).toBe('person-auth');
     expect(repository.findEntityIdByNameDates('person', '孔遺', 480, null)).toBeNull();
+    // Latin names match case-insensitively; duplicates stay ambiguous (null).
+    repository.createPopulatedEntity({
+      id: 'person-latin',
+      kind: 'person',
+      names: [{ text: 'Kong Yi', isPrimary: true }],
+    });
+    expect(repository.findEntityIdByNameDates('person', 'kong yi', null, null)).toBe('person-latin');
+    repository.createPopulatedEntity({
+      id: 'person-latin-dup',
+      kind: 'person',
+      names: [{ text: 'Kong Yi', isPrimary: true }],
+    });
+    expect(repository.findEntityIdByNameDates('person', 'Kong Yi', null, null)).toBeNull();
     repository.close();
   });
 
@@ -708,6 +721,51 @@ describe('EntitySqliteRepository', () => {
         .prepare('SELECT family_name FROM people WHERE entity_id = ?')
         .get('person-fg-1'),
     ).toEqual({ family_name: null });
+
+    repository.close();
+  });
+
+  it('inserts a typed name when classifying a mention surface not yet on the entity', () => {
+    const repository = new EntitySqliteRepository();
+    repository.createEntity({ id: 'person-zi-1', kind: 'person' });
+    repository.addName({
+      entityId: 'person-zi-1',
+      text: '蕭滴冽',
+      isPrimary: true,
+    });
+
+    expect(
+      repository.updateNamesByText({
+        entityId: 'person-zi-1',
+        text: '圖寧',
+        nameType: 'courtesy',
+      }),
+    ).toBe(1);
+
+    const summary = repository.getPanelSummary('person-zi-1');
+    expect(summary?.names.map((name) => [name.text, name.nameType])).toEqual(
+      expect.arrayContaining([
+        ['蕭滴冽', null],
+        ['圖寧', 'courtesy'],
+      ]),
+    );
+    expect(
+      repository.db
+        .prepare(
+          `SELECT name_type, name_role FROM entity_names
+           WHERE entity_id = ? AND text = ? AND status = 'active'`,
+        )
+        .get('person-zi-1', '圖寧'),
+    ).toEqual({ name_type: 'courtesy', name_role: 'variant' });
+
+    // Clearing a type that was never stored remains a quiet no-op.
+    expect(
+      repository.updateNamesByText({
+        entityId: 'person-zi-1',
+        text: '未知',
+        nameType: null,
+      }),
+    ).toBe(0);
 
     repository.close();
   });

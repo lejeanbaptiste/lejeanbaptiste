@@ -16,6 +16,7 @@ import {
   entityStoreFromDesktop,
   type EntityStore,
 } from '../../../../../packages/cwrc-leafwriter/src/autoTagging/entityStore';
+import { composeRemap } from '../../../../../packages/cwrc-leafwriter/src/autoTagging/entityOrders';
 import type { EntityFields } from '../../../../../packages/cwrc-leafwriter/src/autoTagging/reconcile';
 import {
   entityFieldsFromSqlitePanel,
@@ -105,26 +106,47 @@ export async function computeBridgeInbox(ctx: BridgeContext): Promise<BridgeInbo
     throw new Error(SQLITE_REQUIRED_MESSAGE);
   }
 
-  const [pedbRows, cedbRows] = await Promise.all([
+  // PEDB is small (this project). CEDB can be tens of thousands of rows — never
+  // dump the whole central panel list just to classify a handful of mappings.
+  const [pedbRows, mappings] = await Promise.all([
     ctx.projectStore.sqlitePanelSummaries(),
-    ctx.centralStore.sqlitePanelSummaries(),
+    ctx.projectStore.sqliteListAllCentralMappings(ctx.userStableId),
   ]);
+  const centralIdByProject = new Map(
+    mappings.map((row) => [row.projectEntityId, row.centralId] as const),
+  );
+
+  const neededCentralIds = [
+    ...new Set(
+      [...centralIdByProject.values()].filter((id): id is string => Boolean(id?.trim())),
+    ),
+  ];
   const cedbFieldsById = new Map<string, EntityFields>();
-  for (const row of asPanelSnapshots(cedbRows)) {
-    cedbFieldsById.set(row.id, entityFieldsFromSqlitePanel(row));
+  // Bounded parallelism: one IPC get per linked central id (typically ≪ CEDB size).
+  const CONCURRENCY = 16;
+  for (let i = 0; i < neededCentralIds.length; i += CONCURRENCY) {
+    const chunk = neededCentralIds.slice(i, i + CONCURRENCY);
+    const panels = await Promise.all(
+      chunk.map(async (id) => {
+        const panel = (await ctx.centralStore.sqliteEntitySummary(id)) as PanelSnapshot | null;
+        return panel ? ([id, entityFieldsFromSqlitePanel(panel)] as const) : null;
+      }),
+    );
+    for (const entry of panels) {
+      if (entry) cedbFieldsById.set(entry[0], entry[1]);
+    }
   }
-  const pedbFieldRows = [];
-  for (const row of asPanelSnapshots(pedbRows)) {
-    const centralId = await ctx.projectStore.sqliteGetCentralId(row.id, ctx.userStableId);
+
+  const pedbFieldRows = asPanelSnapshots(pedbRows).map((row) => {
     const activeName = row.names.find((name) => name.status === 'active');
-    pedbFieldRows.push({
+    return {
       id: row.id,
       name: activeName?.text ?? row.id,
       kind: row.kind,
-      centralId,
+      centralId: centralIdByProject.get(row.id) ?? null,
       fields: entityFieldsFromSqlitePanel(row),
-    });
-  }
+    };
+  });
   return buildBridgeInboxFromFields(pedbFieldRows, cedbFieldsById);
 }
 
@@ -342,6 +364,30 @@ export async function syncEntities(
 }
 
 /**
+ * For unsynchronized projects: Bridge-Sync every linked pair. Pulls new central
+ * names (e.g. a courtesy name added from another project) and authorities into
+ * the PEDB, and fills empty scalars both ways. Disagreeing scalars (two
+ * different birth years, etc.) are left untouched for the Bridge inbox —
+ * `syncEntityPairSqlite` never overwrites them.
+ *
+ * Safe to call on project open and Database Refresh — identical pairs are a
+ * no-op. Synchronized projects should use `synchronizeMirroredProject` instead.
+ */
+export async function syncNonConflictingLinkedEntities(
+  ctx: BridgeContext,
+): Promise<{ synced: number }> {
+  const inbox = await computeBridgeInbox(ctx);
+  const pairs = [
+    ...inbox.syncable.map((item) => ({ pedbId: item.id, centralId: item.centralId })),
+    // Conflict pairs still get name/authority unions; only scalar disagreements
+    // remain for the user.
+    ...inbox.conflicts.map((item) => ({ pedbId: item.id, centralId: item.centralId })),
+  ];
+  if (pairs.length === 0) return { synced: 0 };
+  return syncEntities(ctx, pairs);
+}
+
+/**
  * The merge docket: central-database merge and delete (purge) suggestions
  * still worth a decision (see `centralMergeSuggestions.ts`). Central-only —
  * unlike the Bridge inbox above, this doesn't need a project database at
@@ -364,34 +410,66 @@ export type MergeDocketEntry =
 export async function computeMergeDocket(centralStore: EntityStore): Promise<MergeDocketEntry[]> {
   if (
     !(await centralStore.hasSqliteDatabase()) ||
-    !window.electronAPI?.entitySqliteListPanelSummaries ||
+    !window.electronAPI?.entitySqliteGet ||
     !window.electronAPI?.entitySqliteDatabaseId
   ) {
     throw new Error(SQLITE_REQUIRED_MESSAGE);
   }
 
-  const [suggestions, resolutions, cedbOrders, cedbDbId, summaries] = await Promise.all([
+  const [suggestions, resolutions, cedbOrders, cedbDbId] = await Promise.all([
     centralStore.readMergeSuggestions(),
     centralStore.readMergeSuggestionResolutions(),
     centralStore.readEntityOrders(),
     centralStore.sqliteDatabaseId(),
-    centralStore.sqlitePanelSummaries(),
   ]);
   if (!cedbDbId) return [];
 
-  const snapshots = asPanelSnapshots(summaries);
-  const byId = new Map(snapshots.map((row) => [row.id, row]));
+  // CEDB can be tens of thousands of rows — only fetch panels named by still-
+  // open suggestions (usually a handful), never dump the whole catalogue.
+  // Resolve through the order log first so merge survivors are included.
+  const resolvedSuggestionIds = new Set(resolutions.map((row) => row.suggestionId));
+  const remap = composeRemap(cedbOrders.filter((order) => order.dbId === cedbDbId));
+  const resolveId = (id: string): string | null => (id in remap ? remap[id]! : id);
+  const candidateIds = new Set<string>();
+  for (const suggestion of suggestions) {
+    if (resolvedSuggestionIds.has(suggestion.id)) continue;
+    if (suggestion.kind === 'delete') {
+      const id = resolveId(suggestion.centralId);
+      if (id) candidateIds.add(id);
+      continue;
+    }
+    for (const raw of suggestion.centralIds ?? []) {
+      const id = resolveId(raw);
+      if (id) candidateIds.add(id);
+    }
+  }
+
+  const byId = new Map<string, PanelSnapshot>();
+  const CONCURRENCY = 16;
+  const idList = [...candidateIds];
+  for (let i = 0; i < idList.length; i += CONCURRENCY) {
+    const chunk = idList.slice(i, i + CONCURRENCY);
+    const panels = await Promise.all(
+      chunk.map(async (id) => {
+        const panel = (await centralStore.sqliteEntitySummary(id)) as PanelSnapshot | null;
+        return panel ? ([id, panel] as const) : null;
+      }),
+    );
+    for (const entry of panels) {
+      if (entry) byId.set(entry[0], entry[1]);
+    }
+  }
+
   const existingIds = new Set(byId.keys());
   const entries: MergeDocketEntry[] = [];
 
-  const pendingMerges = pendingMergeSuggestions(
+  for (const item of pendingMergeSuggestions(
     suggestions,
     resolutions,
     cedbOrders,
     cedbDbId,
     existingIds,
-  );
-  for (const item of pendingMerges) {
+  )) {
     const [aId, bId] = item.centralIds;
     const aRow = byId.get(aId);
     const bRow = byId.get(bId);
@@ -407,14 +485,13 @@ export async function computeMergeDocket(centralStore: EntityStore): Promise<Mer
     });
   }
 
-  const pendingDeletes = pendingDeleteSuggestions(
+  for (const item of pendingDeleteSuggestions(
     suggestions,
     resolutions,
     cedbOrders,
     cedbDbId,
     existingIds,
-  );
-  for (const item of pendingDeletes) {
+  )) {
     const row = byId.get(item.centralId);
     if (!row) continue;
     entries.push({

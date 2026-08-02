@@ -64,6 +64,39 @@ describe('mentions', () => {
     expect(groups.map((group) => group.tag)).toEqual(expect.arrayContaining(['name', 'roleName']));
     expect(groups.find((group) => group.tag === 'name')?.surface).toBe('合州刺史範');
   });
+
+  it('ignores entity tags inside teiHeader', () => {
+    const document = new DOMParser().parseFromString(
+      `<TEI xmlns="http://www.tei-c.org/ns/1.0">
+        <teiHeader>
+          <fileDesc>
+            <titleStmt><title><persName>沈攸之</persName></title></titleStmt>
+          </fileDesc>
+        </teiHeader>
+        <text><body><p><persName>張衡</persName></p></body></text>
+      </TEI>`,
+      'application/xml',
+    );
+    const groups = collectMentions(document, 'ignore');
+    expect(groups.map((group) => group.surface)).toEqual(['張衡']);
+  });
+
+  it('does not purge @key from teiHeader entities', () => {
+    const document = new DOMParser().parseFromString(
+      `<TEI xmlns="http://www.tei-c.org/ns/1.0">
+        <teiHeader>
+          <fileDesc>
+            <titleStmt><title><persName key="header-person">沈攸之</persName></title></titleStmt>
+          </fileDesc>
+        </teiHeader>
+        <text><body><p><persName key="body-person">張衡</persName></p></body></text>
+      </TEI>`,
+      'application/xml',
+    );
+    expect(purgeEntityKeys(document)).toBe(1);
+    expect(document.querySelector('teiHeader persName')?.getAttribute('key')).toBe('header-person');
+    expect(document.querySelector('text persName')?.getAttribute('key')).toBeNull();
+  });
 });
 
 describe('entity apply', () => {

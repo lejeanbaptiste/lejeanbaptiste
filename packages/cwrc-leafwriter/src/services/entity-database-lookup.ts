@@ -122,16 +122,23 @@ async function search({
     throw new Error(SQLITE_REQUIRED_LOOKUP_MESSAGE);
   }
 
-  return sqliteResults.map((result) => ({
-    label: result.label,
-    ...(result.description ? { description: result.description } : {}),
-    uri: internalEntityUri(result.id),
-    internal: {
-      id: result.id,
-      idnos: result.idnos,
+  return sqliteResults.map(
+    (result: {
+      id: string;
+      label: string;
+      description?: string;
+      idnos: Array<{ type: string; value: string }>;
+    }) => ({
+      label: result.label,
       ...(result.description ? { description: result.description } : {}),
-    },
-  }));
+      uri: internalEntityUri(result.id),
+      internal: {
+        id: result.id,
+        idnos: result.idnos,
+        ...(result.description ? { description: result.description } : {}),
+      },
+    }),
+  );
 }
 
 /** The entity-database lookup service, or null when not running on desktop. */

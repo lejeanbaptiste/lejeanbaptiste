@@ -144,6 +144,7 @@ const visibleAuthorityPackIdsForLanguage = (language: string | null): AuthorityP
           'ndl-orgs',
           'ndl-works',
           'wikidata-persons-ja',
+          'wikidata-places-ja',
           'wikidata-orgs-ja',
           'wikidata-works-ja',
         ]
@@ -349,7 +350,7 @@ export const AutoTaggingDialog = ({ id, onClose, open = false }: IDialog) => {
     createDefaultAiPromptProfilesState(),
   );
   const [promptEditorOpen, setPromptEditorOpen] = useState(false);
-  const [aiValidation, setAiValidation] = useState(true);
+  const [aiValidation, setAiValidation] = useState(false);
   const [selectionRange, setSelectionRange] = useState<{ start: number; end: number } | null>(null);
   const [limitToSelection, setLimitToSelection] = useState(true);
   const [authorityPacks, setAuthorityPacks] = useState<Record<AuthorityPackId, boolean>>(
@@ -644,11 +645,15 @@ export const AutoTaggingDialog = ({ id, onClose, open = false }: IDialog) => {
     visibleAuthorityPackIds,
     showPackStringCounts,
   ]);
-  const beginReview = (produced: Suggestion[], notice?: string) => {
+  const beginReview = (
+    produced: Suggestion[],
+    notice?: string,
+    options?: { aiCurate?: boolean },
+  ) => {
     startAutoTaggingReview({
       suggestions: applyExclusionsToSuggestions(produced),
       notice,
-      aiValidation: aiValidation && aiReady,
+      aiValidation: Boolean(options?.aiCurate && aiReady),
     });
     handleClose();
   };
@@ -828,7 +833,9 @@ export const AutoTaggingDialog = ({ id, onClose, open = false }: IDialog) => {
       }
       const remaining = consumeTagBombQueueEntry(doc.filePath);
       setTagBombQueueLocal(remaining);
-      beginReview(doc.suggestions, `${doc.filePath} · ${doc.matchCount} matches`);
+      beginReview(doc.suggestions, `${doc.filePath} · ${doc.matchCount} matches`, {
+        aiCurate: aiValidation && aiReady,
+      });
     } catch (e) {
       setError(e instanceof Error ? e.message : String(e));
     } finally {
@@ -957,7 +964,9 @@ export const AutoTaggingDialog = ({ id, onClose, open = false }: IDialog) => {
       }
 
       if (matchedDocs.length === 1) {
-        beginReview(matchedDocs[0]!.suggestions);
+        beginReview(matchedDocs[0]!.suggestions, undefined, {
+          aiCurate: aiValidation && aiReady,
+        });
         return;
       }
 
@@ -1228,37 +1237,14 @@ export const AutoTaggingDialog = ({ id, onClose, open = false }: IDialog) => {
                       }}
                     />
                   </Stack>
-                  <FormControlLabel
-                    control={
-                      <Checkbox
-                        size="small"
-                        checked={aiValidation}
-                        disabled={aiDisabled}
-                        onChange={(event) => {
-                          setAiValidation(event.target.checked);
-                          void persistValidationSettings({ aiValidation: event.target.checked });
-                        }}
-                      />
-                    }
-                    label={
-                      <Typography
-                        variant="caption"
-                        color={aiDisabled ? 'text.disabled' : 'text.primary'}
-                      >
-                        AI validation (pre-select best candidates, show warnings)
-                      </Typography>
-                    }
-                    title={aiDisabledReason}
-                    sx={{ ml: 0, mb: 0.5, ...(aiDisabled ? { opacity: 0.6 } : {}) }}
-                  />
                   {isDesktopApp() && !aiReady && (
                     <Typography
                       variant="caption"
                       color="text.secondary"
                       sx={{ px: 1, py: 0.125, fontSize: '0.6875rem', lineHeight: 1.35 }}
                     >
-                      AI suggest, audit, and validation need a tested API connection — configure and
-                      test it in Application Settings.
+                      AI suggest and audit need a tested API connection — configure and test it in
+                      Application Settings. AI curate lives on the tag bomb screen.
                     </Typography>
                   )}
                   {methodButton(
@@ -1762,6 +1748,41 @@ export const AutoTaggingDialog = ({ id, onClose, open = false }: IDialog) => {
                   Run tag bomb
                 </Button>
               </Stack>
+              <FormControlLabel
+                control={
+                  <Checkbox
+                    size="small"
+                    checked={aiValidation && aiReady}
+                    disabled={aiDisabled || busy}
+                    onChange={(event) => {
+                      setAiValidation(event.target.checked);
+                      void persistValidationSettings({ aiValidation: event.target.checked });
+                    }}
+                  />
+                }
+                label={
+                  <Typography
+                    variant="caption"
+                    color={aiDisabled ? 'text.disabled' : 'text.primary'}
+                  >
+                    AI curate (score hits in review; reject-below slider)
+                  </Typography>
+                }
+                title={
+                  aiDisabledReason ??
+                  'After tagging, score suggestions in the background and filter obviously wrong hits.'
+                }
+                sx={{ ml: 0, mt: 0.25, ...(aiDisabled ? { opacity: 0.6 } : {}) }}
+              />
+              {aiDisabled && isDesktopApp() && (
+                <Typography
+                  variant="caption"
+                  color="text.secondary"
+                  sx={{ fontSize: '0.6875rem', lineHeight: 1.35 }}
+                >
+                  Configure and test an AI API in Application Settings to enable AI curate.
+                </Typography>
+              )}
             </Stack>
           ) : (
             <Stack spacing={1} sx={{ mt: 0.5 }}>

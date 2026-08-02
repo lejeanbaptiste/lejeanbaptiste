@@ -11,6 +11,24 @@ export interface ChineseProjectAssets {
   pluginsInstalled: boolean;
 }
 
+const isChineseRelatedLanguage = (language: string): boolean => {
+  const normalized = language.toLowerCase();
+  return normalized.startsWith('zh') || normalized === 'lzh';
+};
+
+/** True when a plugin declares Chinese / literary Chinese support. */
+export function pluginSupportsChinese(plugin: {
+  languages?: string[];
+  manifest?: { languagePrompt?: { documentLanguages?: string[] } };
+  manifestError?: string | null;
+}): boolean {
+  if (plugin.manifestError) return false;
+  return (
+    (plugin.languages ?? []).some(isChineseRelatedLanguage) ||
+    (plugin.manifest?.languagePrompt?.documentLanguages ?? []).some(isChineseRelatedLanguage)
+  );
+}
+
 export async function checkChineseProjectAssets(): Promise<ChineseProjectAssets> {
   const result: ChineseProjectAssets = {
     missingAssets: [],
@@ -46,20 +64,14 @@ export async function checkChineseProjectAssets(): Promise<ChineseProjectAssets>
   }
 
   try {
-    // Check plugins — snapshot shape is `{ plugins, state: { enabled: string[] } }`,
-    // not a top-level `enabled` map.
+    // Plugins are installed app-wide; `enabled` is per-project. Only prompt to
+    // *download* when no matching Chinese plugin is on disk — a fresh Chinese
+    // project that simply hasn't enabled Norbert/cjk-dates yet is not "missing"
+    // the plugins.
     const pluginsSnapshot = await window.electronAPI?.pluginsGetSnapshot?.();
-    const chinesePluginEnabled = pluginsSnapshot?.plugins.some(
-      (plugin) =>
-        plugin.enabled &&
-        ((plugin.languages ?? []).some((language) => language.toLowerCase().startsWith('zh')) ||
-          (plugin.manifest?.languagePrompt?.documentLanguages ?? []).some((language) =>
-            language.toLowerCase().startsWith('zh'),
-          )),
-    );
-    if (chinesePluginEnabled) {
-      result.pluginsInstalled = true;
-    } else {
+    result.pluginsInstalled =
+      pluginsSnapshot?.plugins.some((plugin) => pluginSupportsChinese(plugin)) ?? false;
+    if (!result.pluginsInstalled) {
       result.missingAssets.push('plugins');
     }
   } catch {

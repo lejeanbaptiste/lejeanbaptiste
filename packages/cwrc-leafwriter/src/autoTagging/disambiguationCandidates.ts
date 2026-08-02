@@ -29,6 +29,13 @@ import {
 } from './disambiguationMatch';
 import { normalizeNameType, normalizeTypedNamesForIntake, type NameTypeId } from './nameTypes';
 import {
+  authorityIdsFromPackCrosswalk,
+  enrichCandidatesWithViafWikidataConcordance,
+  loadViafWikidataConcordance,
+  normalizeViafId,
+  normalizeWikidataQid,
+} from './viafWikidataConcordance';
+import {
   isEastAsianCalendarLanguageCode,
   isLatnLang,
   isTibetanLanguageCode,
@@ -247,9 +254,9 @@ function authorityKeysForCandidate(candidate: DisambiguationCandidate): string[]
   const keys = new Set<string>();
   const scan = (text: string | undefined) => {
     if (!text) return;
-    const wd = extractWikidataId(text);
+    const wd = normalizeWikidataQid(text) ?? extractWikidataId(text);
     if (wd) keys.add(`wikidata:${wd}`);
-    const viaf = extractViafId(text);
+    const viaf = normalizeViafId(text) ?? extractViafId(text);
     if (viaf) keys.add(`viaf:${viaf}`);
     const cbdb = extractCbdbId(text);
     if (cbdb) keys.add(`cbdb:${cbdb}`);
@@ -264,11 +271,11 @@ function authorityKeysForCandidate(candidate: DisambiguationCandidate): string[]
     const value = auth.value.trim();
     if (!value) continue;
     if (type.includes('wikidata')) {
-      const wd = extractWikidataId(auth.value);
+      const wd = normalizeWikidataQid(auth.value) ?? extractWikidataId(auth.value);
       if (wd) keys.add(`wikidata:${wd}`);
     }
     if (type === 'viaf') {
-      const viaf = extractViafId(auth.value);
+      const viaf = normalizeViafId(auth.value) ?? extractViafId(auth.value);
       if (viaf) keys.add(`viaf:${viaf}`);
     }
     // Case-insensitive so PEDB idnos (NORBERT/CBDB) collapse with pack rows.
@@ -894,6 +901,8 @@ async function candidatesFromAuthorityPacks(
               // would otherwise get wrapped inside another URL and break the link).
               // Norbert values are kind-prefixed (`office-4135`) so person/office
               // numeric ids cannot collide in the entity DB.
+              // Pack crosswalk (incl. VIAF P214 / Wikidata Q) is first-class —
+              // do not rely on scraping description text for those ids.
               authorityIdsFromCrossRefs(
                 [
                   {
@@ -903,6 +912,7 @@ async function candidatesFromAuthorityPacks(
                         ? formatNorbertAuthorityValue(entityType, row.authorityId)
                         : (row?.authorityId ?? match.uri),
                   },
+                  ...authorityIdsFromPackCrosswalk(row?.metadata?.crosswalk),
                 ],
                 match.description,
               ),
@@ -1311,21 +1321,29 @@ export async function buildDisambiguationCandidates(
     tag,
     placeProximityKm,
   };
-  const finalize = (packLocal: DisambiguationCandidate[], live: DisambiguationCandidate[]) =>
-    collapseCrossAuthorityCandidates(
-      mergeCandidates([local, centralCandidates, packLocal, live], mergeOpts).map(
-        enrichCandidateCrossRefs,
-      ),
-      mergeOpts,
+  const concordancePromise = readPackFile
+    ? loadViafWikidataConcordance(readPackFile)
+    : Promise.resolve(null);
+
+  const finalize = async (
+    packLocal: DisambiguationCandidate[],
+    live: DisambiguationCandidate[],
+  ) => {
+    const index = (await concordancePromise) ?? null;
+    const merged = mergeCandidates([local, centralCandidates, packLocal, live], mergeOpts).map(
+      enrichCandidateCrossRefs,
     );
+    const enriched = index ? enrichCandidatesWithViafWikidataConcordance(merged, index) : merged;
+    return collapseCrossAuthorityCandidates(enriched, mergeOpts);
+  };
 
   const packLocal = await packPromise;
   if (buildOptions?.onPartialResults) {
-    buildOptions.onPartialResults(finalize(packLocal, []));
+    buildOptions.onPartialResults(await finalize(packLocal, []));
   }
 
   const live = await livePromise;
-  const merged = finalize(packLocal, live);
+  const merged = await finalize(packLocal, live);
   if (buildOptions?.enrichNames !== false) {
     await enrichCandidateNames(merged, projectLang);
   }

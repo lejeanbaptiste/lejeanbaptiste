@@ -51,6 +51,7 @@ import {
   type CandidateLink,
   type DisambiguationCandidate,
 } from './disambiguationCandidates';
+import { suggestPersonRomanization } from '../plugins/personNameDefaults';
 import { autoRomanize, canAutoRomanize } from '../utilities/romanize';
 import { AUTHORITY_YEAR_MAX, AUTHORITY_YEAR_MIN } from './authoritySettings';
 import {
@@ -1744,9 +1745,16 @@ export const DisambiguationPanel = ({
                   disabled={currentWrapperNeedsPerson}
                   onClick={() => {
                     setNewEntityDescription('');
-                    setNewEntityRomanized(
-                      (instance && autoRomanize(instance.surface, projectLang)) ?? '',
-                    );
+                    // People: Norbert (or default) surname split first, then
+                    // romanize each part — "Xiao Dilie", not "Xiao Di Lie".
+                    const kind =
+                      instance?.tag === 'name' ? 'person' : TAG_TO_KIND[instance?.tag ?? ''];
+                    const suggested =
+                      instance &&
+                      (kind === 'person'
+                        ? suggestPersonRomanization(instance.surface, projectLang)
+                        : autoRomanize(instance.surface, projectLang));
+                    setNewEntityRomanized(suggested ?? '');
                     setNewEntityDialogOpen(true);
                   }}
                 >

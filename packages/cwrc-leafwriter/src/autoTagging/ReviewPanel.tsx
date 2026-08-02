@@ -12,6 +12,8 @@ import Collapse from '@mui/material/Collapse';
 import IconButton from '@mui/material/IconButton';
 import MenuItem from '@mui/material/MenuItem';
 import Select from '@mui/material/Select';
+import Slider from '@mui/material/Slider';
+import Stack from '@mui/material/Stack';
 import Tooltip from '@mui/material/Tooltip';
 import Typography from '@mui/material/Typography';
 import {
@@ -45,6 +47,13 @@ export interface ReviewPanelProps {
   busy?: boolean;
   /** When true, show AI validation warnings and pre-selections. */
   aiValidationEnabled?: boolean;
+  /** Background AI curate still running (scores stream in). */
+  aiCurating?: boolean;
+  /** Batches completed / total for the AI curate progress label. */
+  aiCurateProgress?: { done: number; total: number } | null;
+  /** Reject-below confidence threshold (0–1). */
+  curateRejectBelow?: number;
+  onCurateRejectBelowChange?: (value: number) => void;
   /**
    * Re-check pending suggestions against the live document (drop ones
    * already tagged or now schema-blocked) and pull in freshly available
@@ -439,6 +448,11 @@ export const ReviewPanel = ({
   onClose,
   autoFocus = true,
   busy = false,
+  aiValidationEnabled = false,
+  aiCurating = false,
+  aiCurateProgress = null,
+  curateRejectBelow = 0,
+  onCurateRejectBelowChange,
   onRefresh,
   refreshing = false,
   mandatoryStage,
@@ -460,6 +474,13 @@ export const ReviewPanel = ({
     () => new ReviewController(filteredSuggestions, { onFocus, onDecision }),
     [filteredSuggestions, onFocus, onDecision],
   );
+
+  // Re-apply reject-below whenever the threshold or AI scores change.
+  useEffect(() => {
+    if (!aiValidationEnabled) return;
+    controller.applyCurateRejectBelow(curateRejectBelow);
+    forceRender();
+  }, [aiValidationEnabled, curateRejectBelow, suggestions, controller]);
 
   const tagOptions = useMemo(
     () => [...new Set(suggestions.map((suggestion) => suggestion.tag))],
@@ -622,6 +643,51 @@ export const ReviewPanel = ({
           ))}
         </Select>
       </Box>
+
+      {aiValidationEnabled && (
+        <Box sx={{ px: 1, pb: 0.75, flexShrink: 0 }}>
+          {aiCurating && (
+            <Typography variant="caption" color="text.secondary" sx={{ display: 'block', mb: 0.25 }}>
+              AI curating
+              {aiCurateProgress && aiCurateProgress.total > 0
+                ? `… ${aiCurateProgress.done}/${aiCurateProgress.total} batches`
+                : '…'}{' '}
+              — you can review scored items now
+            </Typography>
+          )}
+          <Stack direction="row" spacing={1} alignItems="center">
+            <Typography
+              variant="caption"
+              color="text.secondary"
+              sx={{ flexShrink: 0, whiteSpace: 'nowrap' }}
+            >
+              Reject below
+            </Typography>
+            <Slider
+              size="small"
+              min={0}
+              max={100}
+              step={5}
+              value={Math.round(curateRejectBelow * 100)}
+              onChange={(_event, value) =>
+                onCurateRejectBelowChange?.(Math.max(0, Math.min(1, (value as number) / 100)))
+              }
+              valueLabelDisplay="auto"
+              valueLabelFormat={(value) => `${value}%`}
+              disabled={!onCurateRejectBelowChange}
+              sx={{ flex: 1, minWidth: 0 }}
+              aria-label="Reject suggestions below AI confidence"
+            />
+            <Typography
+              variant="caption"
+              color="text.secondary"
+              sx={{ flexShrink: 0, width: 32, textAlign: 'right' }}
+            >
+              {Math.round(curateRejectBelow * 100)}%
+            </Typography>
+          </Stack>
+        </Box>
+      )}
 
       <Box
         ref={listRef}

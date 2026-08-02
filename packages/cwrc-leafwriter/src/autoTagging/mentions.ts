@@ -1,4 +1,5 @@
 import { buildDocIndex, createAnchor, type DocIndex, type OccurrenceCache } from './anchor';
+import { isInsideTeiHeader } from './dateTeiHelpers';
 import { TAG_TO_KIND } from './entities';
 import { textWithoutHiddenReadings } from './hiddenChoiceText';
 import type { Anchor, WhitespacePolicy } from './types';
@@ -97,6 +98,9 @@ export function collectMentions(
     for (let i = 0; i < elements.length; i++) {
       const el = elements.item(i);
       if (!el) continue;
+      // Metadata only — never surface header mentions for disambiguation
+      // (the editor body omits teiHeader; merge-for-validation puts it back).
+      if (isInsideTeiHeader(el)) continue;
       if (tag === 'name' && el.getAttribute('type') !== 'personWrapper') continue;
       const mention = mentionFromElement(el, doc, policy, documentId, index, occurrenceCache);
       if (!mention) continue;
@@ -146,6 +150,7 @@ export function purgeEntityKeys(doc: Document): number {
     for (let i = 0; i < elements.length; i++) {
       const el = elements.item(i);
       if (!el?.hasAttribute('key')) continue;
+      if (isInsideTeiHeader(el)) continue;
       el.removeAttribute('key');
       count += 1;
     }

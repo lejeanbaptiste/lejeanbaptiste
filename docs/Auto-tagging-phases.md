@@ -1,6 +1,6 @@
 # Auto-tagging & Disambiguation — Work Phases
 
-**Status (2026-08-01):** **In progress** — Phases 0–1, review UI, tag bomb / disambiguation, and AI suggest are built. Still open: date curator polish (2b), AI audit apply / prompt profiles (5), Phase 6 ranking. Companion to [Auto-tagging.md](Auto-tagging.md).
+**Status (2026-08-02):** Phases 0–1, review UI, MARKUS-style multi-source tag bomb, disambiguation, AI suggest, **Phase 6 AI ranking**, and **tag-bomb AI curate** (opt-in checkbox + reject-below slider; scores stream in during review) are built. Still open: date curator polish (2b), AI audit apply / prompt profiles (5). Companion to [Auto-tagging.md](Auto-tagging.md).
 
 ## Phase 0 — Foundations: suggestion object, anchoring, apply engine
 
@@ -193,7 +193,7 @@ DPM's primary bootstrap (Norbert phase-one): fire big authority sets (his own DB
 
 ### ⚠️ Open problems — from DPM live testing (raised 2026-07-04 eve)
 
-Four items. **(1) and (2) done 2026-07-05; (3) done; (4) is future.**
+Four items. **(1)–(4) done** (MARKUS multi-source tag bomb shipped with pack checkboxes + date filter + combined pass).
 
 **Resolved 2026-07-05:**
 - **(1) single-char matching** — fixed centrally: `dictionaryTag` takes `minLength` (default `DEFAULT_MIN_MATCH_LENGTH = 2`) and drops shorter strings before matching; the seed/crawl paths inherit it (they route through `dictionaryTag`). Per-dialog filters removed.
@@ -208,7 +208,7 @@ Four items. **(1) and (2) done 2026-07-05; (3) done; (4) is future.**
 
 3. **UI is far too big/bulky — "Japanese apartment".** Design directive for the whole auto-tagging UI (and a model for LJB generally): **minimal, unobtrusive, left-aligned, small.** Not full-screen. The current dialog is `fullWidth maxWidth="md"` with large centered full-width stacked buttons and heavy padding — the opposite of what's wanted. Redo compact: left-aligned, small type, tight spacing, modest width, dense method list. (A previous compact pass was reverted; reinstate deliberately.)
 
-4. **Later: adopt the MARKUS paradigm for dictionary/list tagging.** Not now, but the eventual paradigm for list-based tagging should mirror MARKUS: **checkboxes to select which authorities to use, a date slider/filter, and a combined pass that tags from the chosen set together** — rather than importing one list at a time. This is the natural home for multi-authority + date-scoped tagging once 4a/4b settle.
+4. **[x] MARKUS paradigm for dictionary/list tagging (shipped).** Pack/source checkboxes, date/year filter (slider + dynasty presets), and one combined `runTagBomb` over the chosen set — not one-list-at-a-time import. See auto-tagging dialog + `runTagBomb` / `authorityTagBomb`.
 
 ## Phase 4b — Interactive disambiguation panel
 
@@ -299,18 +299,20 @@ Full spec in [Auto-tagging.md](Auto-tagging.md) → AI mode → **Immediate futu
 
 **Done when (Phase 5 overall):** AI suggest and audit both emit verified suggestion objects through the same review walk; re-running on an unchanged document hits cache and costs nothing; unverifiable model output is dropped, never applied.
 
-## Phase 6 — AI-assisted disambiguation ranking
+## Phase 6 — AI-assisted disambiguation ranking — **done (2026-08-02)**
+
+Shipped: when AI curation is on, the disambiguation panel runs `rankDisambiguationCandidates` (`llmDisambiguationRank.ts`) with document date span + nearby names; pre-checks selected candidates; shows one-line AI rationales and confidence. Accepting is unchanged from Phase 4b. Editable prompt profile: `disambiguation-rank`.
 
 **Decide first:**
-- [ ] Context recipe: which signals (date range, nearby names, resolved entities, decision log…) go into the prompt, and their size budget.
-- [ ] Ranking output contract (ordered candidates + one-line reasons) and how it merges into the Phase 4 candidate list.
-- [ ] When ranking fires: automatically per string, on demand per string, or batched for the whole panel launch (cost).
+- [x] Context recipe: date span from document `<date>`, co-mentioned names in the same block, surface/context, candidate labels — see `disambiguationContext.ts`. (Decision log in the prompt remains optional polish, not required for done.)
+- [x] Ranking output contract: selected ids + rationales + confidences + optional create-new; merges into the Phase 4b candidate checklist (pre-check, not visual reorder).
+- [x] When ranking fires: automatically per opened string when AI curation is enabled (cached).
 
 **Prepare:**
-- [ ] Prompt drafts tested against known-hard cases (the 張衡 problem).
-- [ ] Reuse Phase 5's caching/batching layer — confirm its key shape covers this use.
+- [x] Prompt drafts + tests (`llmDisambiguationRank.test.ts`, panel wiring tests); live replay harness available.
+- [x] Reuses Phase 5 LLM client / cache patterns (`ai-disambiguation-cache`).
 
-**Done when:** candidate lists arrive pre-ranked with rationales; accepting works exactly as in Phase 4.
+**Done when:** candidate lists arrive with AI guidance (selected + rationales); accepting works exactly as in Phase 4 — **met**.
 
 ## Deferred / future (revisit, no work now)
 

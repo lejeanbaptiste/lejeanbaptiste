@@ -45,6 +45,8 @@ export interface ProjectFileConfig {
 export interface AutoTaggingValidationSettings {
   aiValidation?: boolean;
   autoAcceptThreshold?: number;
+  /** Reject AI-curated suggestions below this confidence (0–1). */
+  curateRejectBelow?: number;
 }
 
 export interface DisambiguationSettings {

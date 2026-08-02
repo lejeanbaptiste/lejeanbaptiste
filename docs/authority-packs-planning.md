@@ -1,6 +1,6 @@
 # Authority packs & the tag-bomb strategy
 
-**Status (2026-08-01):** **Chinese packs mostly live**; office/appointment disambiguation implemented (2026-07-26). Still open: Wikidata/NDL/GeoNames pack phases (P1–P3b), TEI appointment encoding, pack-release QA.
+**Status (2026-08-02):** **Chinese packs mostly live**; office/appointment disambiguation implemented (2026-07-26). Still open: Wikidata/NDL pack phases (P1, P3–P3b), TEI appointment encoding, pack-release QA. **GeoNames offline packs: out of scope** (live GeoNames lookup via LINCS remains; no dump → pack work).
 
 ## Implementation update: offices and appointments
 
@@ -148,7 +148,7 @@ provenance preserved. See
 
 | Who builds packs | When |
 |------------------|------|
-| **LJB project (pre-ship)** | Chinese: CBDB + DILA + one Wikidata subset; Japanese: NDL name sample; global places: GeoNames subset |
+| **LJB project (pre-ship)** | Chinese: CBDB + DILA + one Wikidata subset; Japanese: NDL name sample. **Not shipping:** GeoNames place packs (decision 2026-08-02) |
 | **User import** | CSV/TSV/xlsx (already works) |
 | **Future: pack builder CLI** | Power users compile custom packs from SQL/Wikidata SPARQL |
 
@@ -209,7 +209,7 @@ Legend: **Tag** = good for string matching; **Link** = better for disambiguation
 | **IDs** | `geonameId` |
 | **Dates** | **None** (modern gazetteer) |
 | **License** | **CC-BY 4.0** — attribution to GeoNames |
-| **Verdict** | **High for modern geographic `placeName`/`geogName` packs**, especially per-country (`CN.zip`, `JP.zip`, `IN.zip`). Poor for historical Chinese toponyms — pair with CHGIS. Filter by feature class (PPL, ADM, …) to reduce noise. |
+| **Verdict** | **Feasible technically, not planned.** Product decision (2026-08-02): **no GeoNames offline packs.** Live place lookup via LINCS reconcile stays. Historical Chinese places: CBDB + CHGIS (+ Wikidata subsets), not GeoNames dumps. |
 
 ### 4.5 CHGIS / TGAZ (historical China places)
 
@@ -220,7 +220,7 @@ Legend: **Tag** = good for string matching; **Link** = better for disambiguation
 | **IDs** | CHGIS / `hvd_*` TGAZ ids |
 | **Dates** | **Core feature** — year ranges, dynasties |
 | **License** | **Academic free; no commercial redistribution** (read Dataverse terms) |
-| **Verdict** | **High for Chinese historical place packs**; complements CBDB places + GeoNames modern names. Not a person source. |
+| **Verdict** | **High for Chinese historical place packs**; complements CBDB places (modern place coverage via live GeoNames lookup / Wikidata, not a GeoNames pack). Not a person source. |
 
 ### 4.6 Web NDL Authorities (Japan)
 
@@ -266,7 +266,7 @@ Legend: **Tag** = good for string matching; **Link** = better for disambiguation
 | CBDB | ✅ | Low (compile only) | ✅ | — | — | ✅ |
 | DILA | ✅ | Low | ✅ (Buddhist bias) | — | — | Partial |
 | Wikidata subsets | ✅ | Medium | ✅ | ✅ | Partial | Partial |
-| GeoNames | ✅ places | Low | ✅ | ✅ | Partial | ❌ |
+| GeoNames | ❌ **won't pack** | — | — | — | — | — |
 | CHGIS | ✅ places | Medium | ✅ | — | — | ✅ |
 | NDL | ✅ | Medium | Partial | ✅ | — | Partial |
 | VIAF | ⚠️ link | Medium | Weak | Weak | — | Partial |
@@ -281,7 +281,7 @@ Legend: **Tag** = good for string matching; **Link** = better for disambiguation
 
 | Approach | Use when |
 |----------|----------|
-| **Official dump + compile script** | CBDB, DILA, GeoNames, Wikidata, Getty NTriples, NDL batch files |
+| **Official dump + compile script** | CBDB, DILA, Wikidata, Getty NTriples, NDL batch files (not GeoNames — packs cancelled) |
 | **SPARQL / API export (batch)** | Custom Wikidata slices, NDL, Getty — run offline builder, ship result as pack |
 | **Partnership / manual export** | THL, proprietary gazetteers |
 | **Live API at tag time** | **Avoid** for tag bomb (latency, rate limits, non-determinism) — reserve for disambiguation |
@@ -302,8 +302,9 @@ You cannot anticipate every project’s tag set. **Ship packs by language + kind
    disambiguated office entities and hierarchy metadata
 4. **`dila-persons-zh` / `dila-places-zh`** — Buddhist-studies corpora  
 5. **`wikidata-persons-zh`** — WDumper or custom dump: humans with zh labels  
-6. **`geonames-places-{CC}`** — per-country geographic names (CN, JP, TW, …)  
-7. **`ndl-persons-ja` / `ndl-places-ja`** — when Japanese projects ship  
+6. **`ndl-persons-ja` / `ndl-places-ja`** — when Japanese projects ship  
+
+~~`geonames-places-{CC}`~~ — **cancelled** (2026-08-02); do not build or ship.
 
 Tibetan: **`wikidata-places-tibetan-labels`** as interim; pursue THL separately.
 
@@ -329,7 +330,7 @@ Tibetan: **`wikidata-places-tibetan-labels`** as interim; pursue THL separately.
 |-----|----------|
 | Mentions **not in any pack** | Medium |
 | **Cleanup** after dumb tag (audit remove/add) | Medium — fix retag semantics first |
-| **Disambiguation ranking** (Phase 4b+) | High long-term |
+| **Disambiguation ranking** (Phase 6) | **Done** — AI curation in disambiguation panel |
 | Primary tagging of 10k+ names | **Low** |
 
 ### 7.2 Audit issues observed (2026-07-05)
@@ -397,12 +398,12 @@ Detailed action plan: **[wikidata-tag-packs-planning.md](wikidata-tag-packs-plan
 
 **Exit:** demonstrates non-Chinese-specific pipeline; Japanese pack reuses tooling.
 
-### Phase P2 — GeoNames + CHGIS place packs
+### Phase P2 — CHGIS place packs (GeoNames packs cancelled)
 
-1. **`geonames-places-CN`** (population filter e.g. cities5000 + alternates)  
+1. ~~`geonames-places-CN`~~ — **out of scope** (2026-08-02). No GeoNames dump extract, compile, install UI, or language gating.  
 2. **`chgis-places`** (shipped as part of the `chinese` Tier 1 pack bundle; citation covered by the generic manifest-driven attributions disclosure in `DesktopOfflineAuthorities` — no per-pack banner)  
 
-**Exit:** place tagging coverage for modern + historical Chinese toponyms.
+**Exit:** historical Chinese toponym coverage via CHGIS (+ CBDB places). Modern places: live GeoNames via LINCS, not an offline pack.
 
 ### Phase P3 — Japanese (NDL + optional Wikidata)
 
@@ -422,8 +423,9 @@ Detailed action plan: **[wikidata-tag-packs-planning.md](wikidata-tag-packs-plan
 2. Optional prompt profile UI + automated tuning lab  
 3. AI suggest only as “fill gaps” button after pack run  
 
-### Explicitly deferred
+### Explicitly deferred / cancelled
 
+- **GeoNames offline packs** — **cancelled** (2026-08-02); live LINCS GeoNames lookup stays  
 - THL bulk pack without partnership  
 - VIAF-as-tag-source (use at disambiguation)  
 - Full Wikidata dump in-app  

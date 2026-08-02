@@ -5,14 +5,17 @@
  */
 
 export interface ValidationSettings {
-  /** When true, run AI validation on suggestions before human review. */
+  /** When true, run AI curation on tag-bomb suggestions during review. */
   aiValidation?: boolean;
   /** Minimum confidence to auto-accept suggestions (0-1). Default 0.8. */
   autoAcceptThreshold?: number;
+  /** Auto-reject curated suggestions below this confidence (0-1). Default 0. */
+  curateRejectBelow?: number;
 }
 
-export const DEFAULT_AI_VALIDATION = true;
+export const DEFAULT_AI_VALIDATION = false;
 export const DEFAULT_AUTO_ACCEPT_THRESHOLD = 0.8;
+export const DEFAULT_CURATE_REJECT_BELOW = 0;
 
 /** Read validation settings from project configuration. */
 export function aiValidationFromSettings(settings?: ValidationSettings): boolean {
@@ -22,6 +25,12 @@ export function aiValidationFromSettings(settings?: ValidationSettings): boolean
 /** Read auto-accept threshold from settings. */
 export function autoAcceptThresholdFromSettings(settings?: ValidationSettings): number {
   return settings?.autoAcceptThreshold ?? DEFAULT_AUTO_ACCEPT_THRESHOLD;
+}
+
+/** Read reject-below threshold for AI curate. */
+export function curateRejectBelowFromSettings(settings?: ValidationSettings): number {
+  const value = settings?.curateRejectBelow ?? DEFAULT_CURATE_REJECT_BELOW;
+  return Number.isFinite(value) ? Math.min(1, Math.max(0, value)) : DEFAULT_CURATE_REJECT_BELOW;
 }
 
 /** Read validation settings from desktop project API. */
@@ -35,6 +44,10 @@ export function readPersistedValidationSettings(): ValidationSettings | undefine
       typeof raw.autoAcceptThreshold === 'number'
         ? raw.autoAcceptThreshold
         : DEFAULT_AUTO_ACCEPT_THRESHOLD,
+    curateRejectBelow:
+      typeof raw.curateRejectBelow === 'number'
+        ? raw.curateRejectBelow
+        : DEFAULT_CURATE_REJECT_BELOW,
   };
 }
 

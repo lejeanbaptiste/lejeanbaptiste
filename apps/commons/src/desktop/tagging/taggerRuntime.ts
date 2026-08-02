@@ -16,8 +16,15 @@ export interface RuntimeTagger {
   splitTag: () => void;
 }
 
-export const getBookmark = (editor: { selection: unknown }): RuntimeBookmark =>
-  (editor.selection as SelectionWithBookmarks).getBookmark(1);
+export const getBookmark = (editor: { selection: unknown }): RuntimeBookmark => {
+  const bookmark = (editor.selection as SelectionWithBookmarks).getBookmark(1) as BookmarkLike;
+  // TinyMCE type-1 bookmarks keep the live Selection Range. Clone it so a later
+  // selection.collapse() (e.g. wrap popup IME guard) cannot shrink the saved range.
+  if (bookmark?.rng) {
+    return { ...bookmark, rng: bookmark.rng.cloneRange() };
+  }
+  return bookmark;
+};
 
 export const moveToBookmark = (
   editor: { selection: unknown },

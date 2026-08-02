@@ -18,12 +18,15 @@ export type AuthorityPackId =
   | 'wikidata-persons-ja'
   | 'wikidata-persons-bo'
   | 'wikidata-places-zh-hant'
+  | 'wikidata-places-ja'
   | 'wikidata-places-bo'
   | 'wikidata-orgs-zh-hant'
   | 'wikidata-orgs-ja'
   | 'wikidata-orgs-bo'
   | 'wikidata-works-zh-hant'
   | 'wikidata-works-ja'
+  /** Precompiled VIAF ↔ Wikidata pairs (P214) for live disambiguation merge. */
+  | 'wikidata-viaf-concordance'
   | 'ndl-persons'
   | 'ndl-places'
   | 'ndl-orgs'
@@ -202,6 +205,13 @@ export const AUTHORITY_PACKS: AuthorityPackSpec[] = [
     defaultTag: 'placeName',
   },
   {
+    id: 'wikidata-places-ja',
+    label: 'Wikidata places (ja)',
+    source: 'wikidata',
+    relativePath: 'wikidata/place-ja/places.ndjson',
+    defaultTag: 'placeName',
+  },
+  {
     id: 'wikidata-places-bo',
     label: 'Wikidata places (bo)',
     source: 'wikidata',
@@ -242,6 +252,13 @@ export const AUTHORITY_PACKS: AuthorityPackSpec[] = [
     source: 'wikidata',
     relativePath: 'wikidata/work-ja/works.ndjson',
     defaultTag: 'title',
+  },
+  {
+    id: 'wikidata-viaf-concordance',
+    label: 'Wikidata ↔ VIAF concordance',
+    source: 'wikidata',
+    relativePath: 'wikidata/viaf-wikidata-concordance.ndjson',
+    defaultTag: '',
   },
   {
     id: 'ndl-persons',
@@ -517,6 +534,7 @@ export const UI_AUTHORITY_PACK_IDS: AuthorityPackId[] = [
   'wikidata-persons-ja',
   'wikidata-persons-bo',
   'wikidata-places-zh-hant',
+  'wikidata-places-ja',
   'wikidata-places-bo',
   'wikidata-orgs-zh-hant',
   'wikidata-orgs-ja',
@@ -676,6 +694,7 @@ export const AUTHORITY_PACK_SHORT_LABELS: Partial<Record<AuthorityPackId, string
   'wikidata-persons-ja': 'Persons (ja)',
   'wikidata-persons-bo': 'Persons (bo)',
   'wikidata-places-zh-hant': 'Places (zh-hant)',
+  'wikidata-places-ja': 'Places (ja)',
   'wikidata-places-bo': 'Places (bo)',
   'wikidata-orgs-zh-hant': 'Organizations (zh-hant)',
   'wikidata-orgs-ja': 'Organizations (ja)',

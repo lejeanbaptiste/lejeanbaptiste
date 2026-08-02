@@ -1,4 +1,5 @@
 import { compareAnchorsByDocumentPosition } from './anchor';
+import { suggestionCurateConfidence } from './llmValidationRank';
 import type { Suggestion, SuggestionSource } from './types';
 
 function sortSuggestionsByDocumentPosition(suggestions: Suggestion[]): Suggestion[] {
@@ -166,7 +167,10 @@ export class ReviewController {
     return this.suggestions.filter(
       (s) =>
         (this.filters.sources.size === 0 || this.filters.sources.has(s.source)) &&
-        (s.confidence === undefined || s.confidence >= this.filters.minConfidence) &&
+        (() => {
+          const confidence = suggestionCurateConfidence(s);
+          return confidence === undefined || confidence >= this.filters.minConfidence;
+        })() &&
         (!this.filters.tag || s.tag === this.filters.tag),
     );
   }
@@ -414,13 +418,35 @@ export class ReviewController {
   acceptAllAbove(confidence: number) {
     for (const s of this.pending()) {
       if (s.status !== 'pending') continue; // rejected as an alternative earlier in this loop
-      if (s.confidence !== undefined && s.confidence >= confidence) {
+      const score = suggestionCurateConfidence(s);
+      if (score !== undefined && score >= confidence) {
         s.status = 'accepted';
         this.options.onDecision?.({ suggestion: s, decision: 'accepted' });
         this.rejectAlternativesOf(s);
       }
     }
     this.clampCursor();
+  }
+
+  /**
+   * Reject pending suggestions with AI/producer confidence strictly below the
+   * threshold. Unscored items stay pending. Does not undo manual rejects.
+   */
+  applyCurateRejectBelow(confidence: number) {
+    if (confidence <= 0) return;
+    for (const s of this.suggestions) {
+      if (s.status !== 'pending') continue;
+      const score = suggestionCurateConfidence(s);
+      if (score === undefined || score >= confidence) continue;
+      s.status = 'rejected';
+      this.options.onDecision?.({ suggestion: s, decision: 'rejected' });
+    }
+    this.clampCursor();
+  }
+
+  /** @deprecated Prefer {@link applyCurateRejectBelow}. */
+  rejectBelowConfidence(confidence: number) {
+    this.applyCurateRejectBelow(confidence);
   }
 
   takeAccepted(): Suggestion[] {

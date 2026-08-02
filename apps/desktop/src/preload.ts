@@ -173,6 +173,7 @@ export interface ElectronAPI {
   findXmlFilesByName: (rootPath: string, query: string) => Promise<NamedPath[]>;
   listProjectXmlFiles: (rootPath: string) => Promise<NamedPath[]>;
   reloadProjectBundle: (projectFilePath: string) => Promise<ProjectBundle | null>;
+  clearActiveProject?: () => Promise<boolean>;
   installCatalogSchema: (projectFilePath: string, catalogId: string) => Promise<ProjectBundle>;
   installLocalSchema: (
     projectFilePath: string,
@@ -650,6 +651,7 @@ const electronAPI: ElectronAPI = {
   listProjectXmlFiles: (rootPath: string) => ipcRenderer.invoke('listProjectXmlFiles', rootPath),
   reloadProjectBundle: (projectFilePath: string) =>
     ipcRenderer.invoke('reloadProjectBundle', projectFilePath),
+  clearActiveProject: () => ipcRenderer.invoke('clearActiveProject'),
   installCatalogSchema: (projectFilePath: string, catalogId: string) =>
     ipcRenderer.invoke('installCatalogSchema', projectFilePath, catalogId),
   installLocalSchema: (projectFilePath: string, rngPath: string, cssPath?: string | null) =>

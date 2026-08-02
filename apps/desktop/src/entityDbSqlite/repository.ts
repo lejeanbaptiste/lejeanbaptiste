@@ -1046,6 +1046,10 @@ export class EntitySqliteRepository {
   /**
    * Exactly one active entity whose primary name matches and whose years do
    * not conflict — same rule as DOM `findCentralByNameDates`.
+   *
+   * Uses one bulk SQL read of primary names + years for `kind`, then filters
+   * in memory. Never maps `getPanelSummary` across the catalogue: on a large
+   * CEDB that N+1 path takes on the order of a minute per promote.
    */
   findEntityIdByNameDates(
     kind: SqliteEntityKind,
@@ -1054,18 +1058,65 @@ export class EntitySqliteRepository {
     endYear?: number | null,
   ): string | null {
     if (!name.trim()) return null;
-    const ids = this.listEntityIds(kind);
+    // Primary name = first active name by is_primary DESC, id (same as listNames).
+    // Person years: birth/death `start_year`. Work years: first active dates|work row.
+    const rows = this.db
+      .prepare(
+        `SELECT e.id AS id,
+                n.text AS primary_name,
+                CASE
+                  WHEN e.kind = 'work' THEN (
+                    SELECT d.start_year FROM entity_dates d
+                    WHERE d.entity_id = e.id AND d.status = 'active'
+                      AND d.date_kind IN ('dates', 'work')
+                    ORDER BY CASE d.date_kind WHEN 'dates' THEN 0 ELSE 1 END, d.id
+                    LIMIT 1
+                  )
+                  ELSE (
+                    SELECT d.start_year FROM entity_dates d
+                    WHERE d.entity_id = e.id AND d.status = 'active' AND d.date_kind = 'birth'
+                    ORDER BY d.id LIMIT 1
+                  )
+                END AS start_year,
+                CASE
+                  WHEN e.kind = 'work' THEN (
+                    SELECT d.end_year FROM entity_dates d
+                    WHERE d.entity_id = e.id AND d.status = 'active'
+                      AND d.date_kind IN ('dates', 'work')
+                    ORDER BY CASE d.date_kind WHEN 'dates' THEN 0 ELSE 1 END, d.id
+                    LIMIT 1
+                  )
+                  ELSE (
+                    SELECT d.start_year FROM entity_dates d
+                    WHERE d.entity_id = e.id AND d.status = 'active' AND d.date_kind = 'death'
+                    ORDER BY d.id LIMIT 1
+                  )
+                END AS end_year
+         FROM entities e
+         JOIN entity_names n
+           ON n.entity_id = e.id
+          AND n.status = 'active'
+          AND n.id = (
+            SELECT n2.id FROM entity_names n2
+            WHERE n2.entity_id = e.id AND n2.status = 'active'
+            ORDER BY n2.is_primary DESC, n2.id
+            LIMIT 1
+          )
+         WHERE e.kind = ? AND e.deleted_at IS NULL`,
+      )
+      .all(kind) as {
+      id: string;
+      primary_name: string;
+      start_year: number | null;
+      end_year: number | null;
+    }[];
+
     const matches: string[] = [];
-    for (const id of ids) {
-      const summary = this.getPanelSummary(id, []);
-      if (!summary) continue;
-      const primary = summary.names[0]?.text;
-      if (!primary || !stringsMatchExactly(name, primary)) continue;
-      if (startYear != null && summary.startYear != null && summary.startYear !== startYear) {
-        continue;
-      }
-      if (endYear != null && summary.endYear != null && summary.endYear !== endYear) continue;
-      matches.push(id);
+    for (const row of rows) {
+      if (!stringsMatchExactly(name, row.primary_name)) continue;
+      if (startYear != null && row.start_year != null && row.start_year !== startYear) continue;
+      if (endYear != null && row.end_year != null && row.end_year !== endYear) continue;
+      matches.push(row.id);
     }
     return matches.length === 1 ? matches[0]! : null;
   }
@@ -2244,7 +2295,7 @@ export class EntitySqliteRepository {
   }
 
   updateNamesByText(input: UpdateNamesByTextInput): number {
-    const text = input.text.trim();
+    const text = input.text.normalize('NFC').trim();
     if (!text) throw new Error('Entity names cannot be empty.');
     const now = input.now ?? nowIso();
     const nameType =
@@ -2262,8 +2313,16 @@ export class EntitySqliteRepository {
       }[];
 
       if (existing.length === 0) {
-        if (nameType !== 'family' && nameType !== 'given') return 0;
-        const nameRole = nameType;
+        // Classify-from-mention (Attributes panel): insert any typed name that
+        // isn't already on the entity. Clearing (null) with no row is a no-op.
+        // Matches legacy XML setNameType → addEntityName.
+        if (!nameType) return 0;
+        const nameRole =
+          nameType === 'family' || nameType === 'given'
+            ? nameType
+            : nameType === 'primary'
+              ? 'primary'
+              : 'variant';
         const result = this.db
           .prepare(
             `INSERT INTO entity_names
@@ -4194,7 +4253,7 @@ export class EntitySqliteRepository {
       }
     }
 
-    const rowExists = (sql: string, ...params: unknown[]) =>
+    const rowExists = (sql: string, ...params: Array<string | number | bigint | null>) =>
       Boolean(this.db.prepare(sql).get(...params));
 
     for (const item of mapped) {
@@ -4264,7 +4323,7 @@ export class EntitySqliteRepository {
           .run(wrapper.entityId, officeExists, item.label, item.ref, wrapper.source, now, now);
         added += 1;
         changed = true;
-      } else {
+      } else if (item.kind === 'title') {
         if (
           rowExists(
             `SELECT 1 FROM person_titles

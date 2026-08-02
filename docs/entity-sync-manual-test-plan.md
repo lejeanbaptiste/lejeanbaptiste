@@ -81,6 +81,8 @@ This is the scenario to show anyone skeptical that the redesign works: step 5
 proves the old failure mode still exists in principle (an unreachable checkout
 starts out stale), and step 7 proves it now heals itself.
 
+DPM: passed.
+
 ---
 
 ## Scenario 3 — Bridge inbox (Promote / Link / Sync)

@@ -57,6 +57,16 @@ describe('suggestPersonNameSplit / suggestPersonRomanization', () => {
     expect(suggestPersonRomanization('李淳風', 'zh-Hant')).toBe('Li Chunfeng');
   });
 
+  it('romanizes a 3-character name as surname + concatenated given name (蕭滴冽 → Xiao Dilie)', () => {
+    registerMockSurnameSegmenter(['蕭']);
+
+    const split = suggestPersonNameSplit('蕭滴冽', 'zh-Hant');
+    expect(split?.familyName).toBe('蕭');
+    expect(split?.givenName).toBe('滴冽');
+    // Not "Xiao Di Lie" — that is syllable-by-syllable autoRomanize of the whole string.
+    expect(suggestPersonRomanization('蕭滴冽', 'zh-Hant')).toBe('Xiao Dilie');
+  });
+
   it('falls back to the default split when a registered plugin has no entry for this name (e.g. Norbert without a stored pinyin reading)', () => {
     // Norbert-like plugin that only recognizes 李, declining every other name.
     registerMockSurnameSegmenter(['李']);

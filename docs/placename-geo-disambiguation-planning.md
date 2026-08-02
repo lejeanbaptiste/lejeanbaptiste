@@ -1,6 +1,6 @@
 # Placename geo-disambiguation — Planning
 
-**Status (2026-08-01):** **Mostly shipped** — geo clustering + map comparison live. Still open: Phase 4–5 persisted place entities / mint from merged periods; Wikidata zh-hant place pack; CHGIS recompile smoke on real shapefiles.
+**Status (2026-08-02):** **Mostly shipped** — geo clustering + map comparison live; Wikidata `place-zh-hant` compiled. Still open: Phase 4–5 persisted place entities / mint from merged periods; CHGIS recompile smoke on real shapefiles.
 
 ## Problem
 
@@ -91,7 +91,7 @@ Dependencies: Admin vocabulary (Phase A) → Coordinate source data fixes (Phase
 
 There's an existing, working Wikidata extraction pipeline at `/authority extraction/wikidata/` (`sparqlClient.mjs`, `entityParse.mjs`, `compile.mjs`, `compileKind.mjs`), following the same dump-extract → compiled-NDJSON-pack pattern as CBDB/CHGIS. Two things confirmed by direct inspection, correcting an earlier assumption:
 
-- **No Chinese place pack exists.** `packs/wikidata/` has `person-zh-hant-{tang,song,yuan,ming,qing,pre-ming}`, `org-zh-hant`, `work-zh-hant` — but no `place-zh-hant`. The only compiled place pack is `place-bo` (Tibetan, 472 records). The raw zh-hant extracts (`raw-zh-hant-priority1/persons.raw.ndjson`, `raw-zh-hant-pre-ming/persons.raw.ndjson`) contain persons only — no place raw file was ever extracted for zh-hant. **The Chinese tag pack does not currently include any Wikidata place names.**
+- **Chinese Wikidata person packs:** `person-zh-hant-{pre-ming,ming,qing}` (+ optional `tang`). Song/Yuan people are in **pre-ming**, not separate song/yuan packs. Also `org-zh-hant`, `work-zh-hant`, and **`place-zh-hant`** (~254k). Japanese Wikidata places: **`place-ja`** (~514k), wired in LJB as opt-in `wikidata-places-ja` (NDL places remain default). Older notes that claimed “no place-zh-hant” are obsolete.
 - **No crosswalk ids reach compiled place packs, even where a place pack exists.** `identifierProperties.json` and `identifierClaims.mjs` map Wikidata external-id properties (P497 → CBDB id, P4711 → CHGIS id, plus DILA/VIAF/BDRC) into `metadata.crosswalk` — but that machinery is wired only into the *person* compile path (`compile.mjs`). The place/org/work compile path (`compileKind.mjs:19-45`, `kindCandidateFromRaw`) builds `metadata` from only `description`/`startYear`/`endYear` and never touches identifier claims. Confirmed empty in the one real sample: `place-bo/places.ndjson` records carry no `crosswalk` field at all.
 
 **Decision (this session):** coordinates will not be extracted from Wikidata into the compiled pack — they'll be pulled live from the Wikidata API at disambiguation time instead, so Wikidata place-pack compilation does not need P625 handling. What's still needed to make Wikidata a usable fourth place-tagging source:
