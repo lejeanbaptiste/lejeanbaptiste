@@ -126,20 +126,20 @@ Near-term work pulled from the planning docs ([docs/README.md](docs/README.md)).
 ### Tagging / Norbert / Sanmiao
 
 - [ ] f asset raise needs repositioning. -> recompile (throw in more bw assets)
+- [ ] Re-assess thresholds
 - [ ] 竟陵王子良 shows up as persname; we are not tagging title + given name ! Also clean up primary name / display name.
 - [ ] Auto parse and organise noble titles
 - [ ] nt 'abr'
 - [ ] Noble title and person wrapper tagging (testing).
 - [ ] Norbert personWrapper: resolve accepted wrappers to exactly one person key; validation for missing/ambiguous keys
-- [ ] Norbert expander cache + refresh/startup scheduling; include wrappers/`roleName` in validation panel
+- [ ] include wrappers/`roleName` in validation panel
 - [ ] Finish Sanmiao date curator (ambiguous + sequential re-resolve)
 - [ ] Redo icons : highlight
 - [ ] Finish word plugin
 
 ### Entity database / sync
 
-**Current state (2026-08-02):** The SQLite runtime, Bridge conflict resolver,
-incremental panel updates, and Word-plugin path are in place. Before calling
+**Current state (2026-08-02):** Before calling
 this beta-ready, run the packaged manual sync checklist. The only remaining
 work in this area is packaged verification.
 
@@ -154,6 +154,7 @@ work in this area is packaged verification.
 - [ ] Authority UI: per-source pre-run match counts; DILA look-alikes when both match; disable-tier cleanup
 - [ ] Memory-profile full CBDB pack load, chunk ?
 - [ ] Import Phase 1 leftovers: md `{{header}}`, batch/folder UI, validator + provenance
+- [ ] VALIDATE: Block zooming to bounds of map tiles
 
 ## Future
 
@@ -185,7 +186,6 @@ work in this area is packaged verification.
 
 ### Maps
 
-- [ ] VALIDATE: Block zooming to bounds of map tiles
 - [ ] Labels
 - [ ] Click to disambiguate
 - [ ] Placename Phase 4–5: persisted coordinate/id place entities; mint from merged periods ([placename-geo-disambiguation-planning.md](docs/placename-geo-disambiguation-planning.md))

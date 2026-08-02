@@ -94,7 +94,7 @@ import {
   type AuthorityPackContent,
   type DateRangeFilter,
 } from './packLoader';
-import { expandNorbertWikiNtCandidate } from './norbertWikiNt';
+import { getCachedNorbertExpanderCandidates, type ReadAuthorityPack } from './norbertExpanderCache';
 import type { SearchTextRange } from './chunk';
 import { resolveCurrentDocumentXml } from './documentContent';
 import { findSelectionRangeInDocument, searchTextForDomRange } from './selectionScope';
@@ -421,12 +421,7 @@ export class AutoTaggingSession {
       return { local: [], entitiesDoc: null };
     }
 
-    const sqliteLocal = await loadSqliteDisambiguationCandidates(
-      this.store,
-      tag,
-      surface,
-      'pedb',
-    );
+    const sqliteLocal = await loadSqliteDisambiguationCandidates(this.store, tag, surface, 'pedb');
     if (sqliteLocal == null) throw new Error(SQLITE_REQUIRED_LOOKUP_MESSAGE);
 
     const central = await this.centralContext();
@@ -442,16 +437,14 @@ export class AutoTaggingSession {
     );
     if (sqliteCentral == null) throw new Error(SQLITE_REQUIRED_LOOKUP_MESSAGE);
 
-    const linked =
-      (await this.store.sqliteListLinkedCentralIds(central.userStableId)) ?? [];
+    const linked = (await this.store.sqliteListLinkedCentralIds(central.userStableId)) ?? [];
     const linkedSet = new Set(linked);
     return {
       local: sqliteLocal,
       central: {
         userStableId: central.userStableId,
         candidates: sqliteCentral.filter(
-          (candidate) =>
-            !candidate.centralEntityId || !linkedSet.has(candidate.centralEntityId),
+          (candidate) => !candidate.centralEntityId || !linkedSet.has(candidate.centralEntityId),
         ),
       },
       entitiesDoc: this.getEntitiesDocument(),
@@ -644,25 +637,10 @@ export class AutoTaggingSession {
   ): Promise<{ suggestions: Suggestion[]; matchCount: number }> {
     const doc = await this.getDocument();
     this.personWrapperCandidatesPromise ??= (async () => {
-      const candidates: AuthorityCandidate[] = [];
-      const wrapperContent = await readPackFile('norbert-person-wrappers');
-      for (const candidate of iterateAuthorityNdjson(wrapperContent)) {
-        if (candidate.metadata?.wrapper || candidate.metadata?.nobleTitle)
-          candidates.push(candidate);
-      }
-      try {
-        const wikiContent = await readPackFile('norbert-wiki-nt');
-        for (const candidate of iterateAuthorityNdjson(wikiContent)) {
-          for (const expanded of expandNorbertWikiNtCandidate(candidate)) {
-            if (expanded.metadata?.wrapper || expanded.metadata?.nobleTitle)
-              candidates.push(expanded);
-          }
-        }
-      } catch {
-        // The wiki asset is optional; the ordinary Norbert wrapper pack still runs.
-      }
-      candidates.push(...(await collectPluginPatternTagCandidates()));
-      return candidates;
+      const packCandidates = await getCachedNorbertExpanderCandidates(
+        readPackFile as ReadAuthorityPack,
+      );
+      return [...packCandidates, ...(await collectPluginPatternTagCandidates())];
     })();
     const candidates = await this.personWrapperCandidatesPromise;
 
@@ -682,6 +660,16 @@ export class AutoTaggingSession {
       suggestionsFromSeedMatches(matches),
     ).suggestions;
     return { suggestions, matchCount: matches.length };
+  }
+
+  /**
+   * Warm Norbert's pack-derived second-pass candidates while the review panel
+   * is idle, so Apply/Refresh never have to begin by parsing the packs.
+   */
+  async warmPersonWrapperCandidates(
+    readPackFile: (packId: AuthorityPackId) => Promise<AuthorityPackContent>,
+  ): Promise<void> {
+    await getCachedNorbertExpanderCandidates(readPackFile as ReadAuthorityPack);
   }
 
   /**
@@ -1565,16 +1553,11 @@ export class AutoTaggingSession {
     ]);
     // Pack `names[]` (bare 姓/名/字) → scalar family/given when Wikidata did not.
     // Same preference order as entities-panel backfill.
-    const preferredFromPack = preferCanonicalFamilyGiven(
-      projectLangName ?? name,
-      typedNames,
-    );
+    const preferredFromPack = preferCanonicalFamilyGiven(projectLangName ?? name, typedNames);
     const needsPluginSplit =
       !(authorityGivenFamilyNames.familyName || preferredFromPack.familyName) ||
       !(authorityGivenFamilyNames.givenName || preferredFromPack.givenName);
-    const pluginSplit = needsPluginSplit
-      ? suggestPersonNameSplit(nameForSplit, projectLang)
-      : null;
+    const pluginSplit = needsPluginSplit ? suggestPersonNameSplit(nameForSplit, projectLang) : null;
     const givenFamilyNames = {
       familyName:
         authorityGivenFamilyNames.familyName ??
@@ -1625,16 +1608,22 @@ export class AutoTaggingSession {
     if (wrapperPerson) assignEntity({ element: wrapperPerson, entityId });
     if (instance.tag === 'name' && instance.element.getAttribute('type') === 'personWrapper') {
       const documentKey = instance.documentId;
-      const wrappers = Array.from(instance.element.ownerDocument!.getElementsByTagName('name')).filter(
-        (candidate) => candidate.getAttribute('type') === 'personWrapper',
-      );
+      const wrappers = Array.from(
+        instance.element.ownerDocument!.getElementsByTagName('name'),
+      ).filter((candidate) => candidate.getAttribute('type') === 'personWrapper');
       const source = personWrapperSource(documentKey, wrappers.indexOf(instance.element) + 1);
       const assertions = extractRegisteredEntityData({
         wrapper: instance.element,
         documentKey,
       });
       if (assertions.length > 0) {
-        await ingestExtractedEntityDataSqlite(this.store, documentKey, entityId, source, assertions);
+        await ingestExtractedEntityDataSqlite(
+          this.store,
+          documentKey,
+          entityId,
+          source,
+          assertions,
+        );
       }
     }
     if (instance.tag === 'persName') {

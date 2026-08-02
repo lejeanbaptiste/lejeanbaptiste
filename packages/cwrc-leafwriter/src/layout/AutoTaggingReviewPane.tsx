@@ -101,6 +101,41 @@ export const AutoTaggingReviewPane = () => {
     return session.current;
   }, []);
 
+  // Norbert's compact noble-title pack needs a small expansion pass before it
+  // can produce wrapper candidates. Start it only once the review pane has
+  // painted and the browser is idle: it makes the first Apply/Refresh quick
+  // without competing with editor startup or the panel's first interaction.
+  useEffect(() => {
+    if (!active) return;
+    const readPack = cachedPackReader();
+    if (!readPack) return;
+    let cancelled = false;
+    const warm = () => {
+      if (cancelled) return;
+      void getSession()
+        .warmPersonWrapperCandidates(readPack)
+        .catch(() => {
+          // Optional Norbert packs are allowed to be absent.
+        });
+    };
+    const idle = globalThis as typeof globalThis & {
+      requestIdleCallback?: (callback: () => void, options?: { timeout: number }) => number;
+      cancelIdleCallback?: (handle: number) => void;
+    };
+    const handle =
+      typeof idle.requestIdleCallback === 'function'
+        ? idle.requestIdleCallback(warm, { timeout: 1500 })
+        : window.setTimeout(warm, 750);
+    return () => {
+      cancelled = true;
+      if (typeof idle.cancelIdleCallback === 'function' && typeof handle === 'number') {
+        idle.cancelIdleCallback(handle);
+      } else {
+        window.clearTimeout(handle);
+      }
+    };
+  }, [active, batchId, getSession]);
+
   useEffect(() => {
     if (!active) {
       setSuggestions([]);

@@ -1,6 +1,6 @@
 # Norbert noble-title autotagging and person-context data
 
-**Status (2026-08-01):** **Mostly shipped** — wrapper pack + concatenation path live in the authority-tagging flow. Follow-ups: personWrapper key resolution/validation, expander cache/scheduling, panel inclusion of wrappers/`roleName`.
+**Status (2026-08-02):** **Mostly shipped** — wrapper pack, concatenation, shared expander cache, and idle warm-up are live in the authority-tagging flow. Follow-ups: personWrapper key resolution/validation and panel inclusion of wrappers/`roleName`.
 
 ## Problem
 
@@ -134,14 +134,14 @@ wrapper should not flatten office, place, title, and personal name into one
 Before implementing the full noble-title autotagger, the plugin needs stable
 local lookup data for:
 
-| Domain | Required use |
-|---|---|
-| Persons and names | Resolve the personal-name component and alternate forms |
-| Nationality/dynasty/court | Restrict candidates by historical polity and period |
-| Places | Resolve origin places and fiefs, but keep those relations distinct |
-| Noble titles | Match fief + rank combinations and link them to persons |
-| Official posts | Resolve office strings and person–office relationships |
-| Dates/ranges | Reject historically impossible person/title/office matches |
+| Domain                    | Required use                                                       |
+| ------------------------- | ------------------------------------------------------------------ |
+| Persons and names         | Resolve the personal-name component and alternate forms            |
+| Nationality/dynasty/court | Restrict candidates by historical polity and period                |
+| Places                    | Resolve origin places and fiefs, but keep those relations distinct |
+| Noble titles              | Match fief + rank combinations and link them to persons            |
+| Official posts            | Resolve office strings and person–office relationships             |
+| Dates/ranges              | Reject historically impossible person/title/office matches         |
 
 The data should be compiled into authority-pack records with stable authority
 IDs, names, search strings, and minimal contextual metadata. The pack is used
@@ -451,8 +451,6 @@ element boundaries cannot be inserted by the ordinary single-text-node tagger.
    wrapper entity or populate `entities.xml` from hypothetical candidates.
 2. Add validation that rejects wrappers with missing/ambiguous keys and checks
    that each noble-title combination remains a distinct fief/role/name record.
-3. Add the lightweight cache and refresh/startup scheduling for the person and
-   noble-title expanders.
 
 ## Validation-panel follow-up
 
@@ -482,8 +480,8 @@ entity. During a validation scan:
 Resolving a wrapper through the person candidate list uses the inner person's
 surface when creating/updating the entity and writes the selected key to both
 elements. It therefore cannot accidentally create an entity named with the
-entire concatenated title string. The wrapper-pack records are cached for the
-session; the local entity file remains the source of truth for automatic
+entire concatenated title string. The wrapper-pack records are cached across
+review sessions and cleared whenever authority packs refresh; the local entity file remains the source of truth for automatic
 resolution.
 
 When a wrapper is resolved, the enabled plugin entity-data extractors receive

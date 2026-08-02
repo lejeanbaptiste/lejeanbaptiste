@@ -16,6 +16,7 @@ import { stringsMatchExactly } from '../autoTagging/disambiguationMatch';
 import type { AuthorityCandidate } from '../autoTagging/authority';
 import type { AuthorityPackContent } from '../autoTagging/packLoader';
 import { bareNorbertAuthorityValue } from '../autoTagging/norbertAuthorityId';
+import { clearNorbertExpanderCache } from '../autoTagging/norbertExpanderCache';
 
 export interface PackRow {
   authorityId?: string;
@@ -90,8 +91,8 @@ export function packResultUri(source: PackSource, entityType: NamedEntityType, i
       return entityType === 'office'
         ? `urn:ljb:authority:cbdb:office:${id}`
         : entityType === 'place'
-        ? `https://cbdb.fas.harvard.edu/cbdbapi/place.php?id=${id}`
-        : `https://cbdb.fas.harvard.edu/cbdbapi/person.php?id=${id}`;
+          ? `https://cbdb.fas.harvard.edu/cbdbapi/place.php?id=${id}`
+          : `https://cbdb.fas.harvard.edu/cbdbapi/person.php?id=${id}`;
     case 'dila':
       return entityType === 'place'
         ? `https://authority.dila.edu.tw/place/?fromInner=${id}`
@@ -269,9 +270,7 @@ export function packIdsForEntityType(
 ): AuthorityPackId[] {
   const tag = ENTITY_TYPE_TAG[entityType];
   if (!tag) return [];
-  return packIds.filter(
-    (id) => AUTHORITY_PACKS.find((spec) => spec.id === id)?.defaultTag === tag,
-  );
+  return packIds.filter((id) => AUTHORITY_PACKS.find((spec) => spec.id === id)?.defaultTag === tag);
 }
 
 /** Session-lifetime cache of pack contents (packs only change on reinstall). */
@@ -300,7 +299,8 @@ export function readPackCached(packId: AuthorityPackId): Promise<AuthorityPackCo
  * `window.electronAPI?.authorityPackRead` directly — the raw bridge call
  * re-reads the multi-megabyte ndjson file over IPC on every invocation.
  */
-export function cachedPackReader(): ((packId: AuthorityPackId) => Promise<AuthorityPackContent>) | undefined {
+export function cachedPackReader():
+  ((packId: AuthorityPackId) => Promise<AuthorityPackContent>) | undefined {
   return window.electronAPI?.authorityPackRead ? readPackCached : undefined;
 }
 
@@ -312,6 +312,8 @@ export function cachedPackReader(): ((packId: AuthorityPackId) => Promise<Author
  * touched packs isn't known to the caller).
  */
 export function clearPackContentCache(packIds?: AuthorityPackId[]): void {
+  // Norbert's derived wrapper/title candidates depend on the same pack files.
+  clearNorbertExpanderCache();
   if (!packIds) {
     packContentCache.clear();
     return;

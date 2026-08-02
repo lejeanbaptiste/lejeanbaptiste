@@ -17,6 +17,7 @@
 - In Windows, command to quit is now carried out with but a slight delay.
 - Lazy load panels to keep memory usage down.
 - Share desktop schema/document preparation between initial editor setup and the first actual document load.
+- Cache Norbert wrapper/noble-title expansion across review sessions, invalidate it with authority-pack refreshes, and warm it only after the review pane is idle.
 
 ### Functionality
 
