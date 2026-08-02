@@ -2,7 +2,7 @@
 
 ## 0.0.1–0.0.4-rc.7
 
-- Production and testing of alpha version, distribution chanels, automatic updates, and sibling repos until infrastructure stabilised. 
+- Production and testing of alpha version, distribution chanels, automatic updates, and sibling repos until infrastructure stabilised.
 
 ## Upstream
 
@@ -31,15 +31,18 @@
 - Wired fork-merge menu entry
 - Bridge conflict “pick a value” UI
 - i18n for new sync/dialog strings
+- SQLite is now required for live entity indexing, lifecycle checks, and entity counts; XML remains explicit interchange/import-export material
+- Avoid full panel reloads on single-field edits
+- Finished wordprocessor write paths against SQLite
+- Automatically keep ordinary entity-name writes clean: deduplicate same text/type rows, discard literal `nan` placeholders, and remove the malformed `n` + `an` family/given pair. The Clean command still catches older data too.
 
 ### UI
 
 - Monaco now opens with the panels collapsed, cannot scroll down to infinity.
 
-### Documentation 
+### Documentation
 
 - Cleaned and provided public-facing documentation, including beta tester guide.
-
 
 ### Patch Changes
 

@@ -170,7 +170,8 @@ describe('EntitySqliteRepository', () => {
       ]),
     );
 
-    expect(repository.tombstoneNamesByText('person-name-ops', '孔遺')).toBe(2);
+    // Ordinary type edits now collapse same-text/same-type rows immediately.
+    expect(repository.tombstoneNamesByText('person-name-ops', '孔遺')).toBe(1);
     expect(repository.listNames('person-name-ops')).toEqual([]);
     expect(
       repository.db
@@ -1131,13 +1132,6 @@ describe('EntitySqliteRepository', () => {
       origin: 'authority',
       source: 'Norbert',
     });
-    repository.addName({
-      entityId: 'person-auto-clean',
-      text: '摩詰',
-      nameType: 'courtesy',
-      origin: 'authority',
-      source: 'Norbert',
-    });
     repository.setRomanizedName('person-auto-clean', 'Wang Wei', 'zh-Latn');
     // Force an older untyped Latn (setRomanized now writes translation).
     repository.db
@@ -1151,6 +1145,16 @@ describe('EntitySqliteRepository', () => {
       text: 'orphan-untyped',
       origin: 'user',
     });
+    // Simulate a duplicate left by an older database version; ordinary writes
+    // now normalize the same artifact immediately.
+    repository.db
+      .prepare(
+        `INSERT INTO entity_names
+           (entity_id, text, name_type, name_role, language, is_primary, origin, source, status, created_at, updated_at)
+         SELECT entity_id, text, name_type, name_role, language, 0, origin, source, status, created_at, updated_at
+         FROM entity_names WHERE entity_id = ? AND text = ? LIMIT 1`,
+      )
+      .run('person-auto-clean', '摩詰');
 
     const report = repository.autoCleanNames();
     expect(report.promotedRomanizations).toBe(1);
@@ -1163,6 +1167,38 @@ describe('EntitySqliteRepository', () => {
       expect.objectContaining({ nameType: 'translation', text: 'Wang Wei' }),
     );
     expect(names.some((n) => n.text === 'orphan-untyped')).toBe(false);
+    repository.close();
+  });
+
+  it('normalizes mechanical name artifacts during ordinary name writes', () => {
+    const repository = new EntitySqliteRepository();
+    repository.createEntity({ id: 'person-name-integrity', kind: 'person' });
+    repository.addName({
+      entityId: 'person-name-integrity',
+      text: '王維',
+      isPrimary: true,
+      nameType: 'primary',
+    });
+
+    repository.addName({ entityId: 'person-name-integrity', text: '摩詰', nameType: 'courtesy' });
+    repository.addName({ entityId: 'person-name-integrity', text: '摩詰', nameType: 'courtesy' });
+    repository.addName({ entityId: 'person-name-integrity', text: 'nan', nameType: 'variant' });
+    repository.addName({ entityId: 'person-name-integrity', text: 'n', nameType: 'family' });
+    repository.addName({ entityId: 'person-name-integrity', text: 'an', nameType: 'given' });
+
+    const active = repository.listNames('person-name-integrity');
+    expect(
+      active.filter((name) => name.text === '摩詰' && name.nameType === 'courtesy'),
+    ).toHaveLength(1);
+    expect(active.some((name) => name.text === 'nan')).toBe(false);
+    expect(active.some((name) => name.text === 'n' || name.text === 'an')).toBe(false);
+    expect(
+      repository.db
+        .prepare(
+          'SELECT family_name AS familyName, given_name AS givenName FROM people WHERE entity_id = ?',
+        )
+        .get('person-name-integrity'),
+    ).toEqual({ familyName: null, givenName: null });
     repository.close();
   });
 });

@@ -157,6 +157,8 @@ export interface EntitySqliteAutoCleanNamesRequest {
 
 export type EntitySqliteAutoCleanNamesResult = {
   dedupedNames: number;
+  removedNan: number;
+  removedInvalidFamilyGiven: number;
   removedUntyped: number;
   promotedRomanizations: number;
 };

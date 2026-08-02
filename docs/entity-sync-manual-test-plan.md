@@ -176,10 +176,8 @@ central database doesn't erase the propagation record from Scenario 2.
 
 ## After this checklist
 
-If all five scenarios pass in a packaged build, the next SQLite task is not a
-new sync feature: it is a generalized first-run migration for old XML-only
-entity databases. Until that exists and has been exercised on real synced
-folders, the XML-only compatibility paths remain intentionally.
+If all five scenarios pass in a packaged build, record the result in the beta
+plan and changelog. There is no further sync work required for this beta.
 
 If you hit anything that doesn't match this plan, the first place to look is
 whichever file this plan told you to inspect by hand (`entity-orders.jsonl`,

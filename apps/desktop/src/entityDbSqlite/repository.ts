@@ -979,6 +979,7 @@ export class EntitySqliteRepository {
             now,
           );
       }
+      this.normalizeEntityNameIntegrity(input.id, now);
       this.bumpEntity(input.id, now);
       return this.getEntity(input.id)!;
     });
@@ -2228,8 +2229,10 @@ export class EntitySqliteRepository {
           now,
         );
       this.syncPersonNameScalars(input.entityId, text, nameType, now);
+      const inserted = this.getName(Number(result.lastInsertRowid))!;
+      this.normalizeEntityNameIntegrity(input.entityId, now);
       this.bumpEntity(input.entityId, now);
-      return this.getName(Number(result.lastInsertRowid))!;
+      return inserted;
     });
   }
 
@@ -2262,6 +2265,7 @@ export class EntitySqliteRepository {
           )
           .run(input.entityId, text, nameType, nameRole, input.language ?? null, now, now);
         this.syncPersonNameScalars(input.entityId, text, nameType, now);
+        this.normalizeEntityNameIntegrity(input.entityId, now);
         this.bumpEntity(input.entityId, now);
         return Number(result.changes);
       }
@@ -2293,6 +2297,7 @@ export class EntitySqliteRepository {
           now,
         );
       }
+      this.normalizeEntityNameIntegrity(input.entityId, now);
       this.bumpEntity(input.entityId, now);
       return existing.length;
     });
@@ -3078,6 +3083,7 @@ export class EntitySqliteRepository {
       for (const duplicate of duplicates) {
         this.db.prepare('DELETE FROM entity_names WHERE id = ?').run(duplicate.id);
       }
+      this.normalizeEntityNameIntegrity(entityId, now);
       this.bumpEntity(entityId, now);
       return true;
     });
@@ -3118,6 +3124,7 @@ export class EntitySqliteRepository {
           )
           .run(entityId, trimmed, language, now, now);
       }
+      this.normalizeEntityNameIntegrity(entityId, now);
       this.bumpEntity(entityId, now);
     });
   }
@@ -3125,11 +3132,15 @@ export class EntitySqliteRepository {
   /**
    * Batch mechanical name cleanup:
    * 1. Promote untyped Latn rows to `translation` (romanizations)
-   * 2. Deduplicate identical text+type within an entity (keep best row)
-   * 3. Remove remaining non-primary rows with no name type
+   * 2. Remove literal `nan` placeholder rows
+   * 3. Deduplicate identical text+type within an entity (keep best row)
+   * 4. Remove the invalid family/given pair `n` + `an`
+   * 5. Remove remaining non-primary rows with no name type
    */
   autoCleanNames(now = nowIso()): {
     dedupedNames: number;
+    removedNan: number;
+    removedInvalidFamilyGiven: number;
     removedUntyped: number;
     promotedRomanizations: number;
   } {
@@ -3204,6 +3215,21 @@ export class EntitySqliteRepository {
         }
       }
 
+      let removedNan = 0;
+      let removedInvalidFamilyGiven = 0;
+      const entityIds = this.db
+        .prepare(
+          `SELECT id FROM entities
+           WHERE id IN (SELECT DISTINCT entity_id FROM entity_names) OR kind = 'person'`,
+        )
+        .all() as Array<{ id: string }>;
+      for (const { id: entityId } of entityIds) {
+        const result = this.normalizeEntityNameIntegrity(entityId, now);
+        removedNan += result.removedNan;
+        removedInvalidFamilyGiven += result.removedInvalidFamilyGiven;
+        if (result.removedNan || result.removedInvalidFamilyGiven) touched.add(entityId);
+      }
+
       const untyped = this.db
         .prepare(
           `SELECT id, entity_id AS entityId, origin
@@ -3238,6 +3264,8 @@ export class EntitySqliteRepository {
 
       return {
         dedupedNames,
+        removedNan,
+        removedInvalidFamilyGiven,
         removedUntyped,
         promotedRomanizations,
       };
@@ -3966,6 +3994,14 @@ export class EntitySqliteRepository {
         changed = true;
       }
 
+      const normalizedNames = this.normalizeEntityNameIntegrity(patch.entityId, now);
+      if (
+        normalizedNames.dedupedNames ||
+        normalizedNames.removedNan ||
+        normalizedNames.removedInvalidFamilyGiven
+      ) {
+        changed = true;
+      }
       if (changed) this.bumpEntity(patch.entityId, now);
       return { changed, namesAdded };
     });
@@ -4408,6 +4444,95 @@ export class EntitySqliteRepository {
         .prepare(`UPDATE people SET ${column} = ? WHERE entity_id = ?`)
         .run(replacement?.text ?? null, entityId);
     }
+  }
+
+  /**
+   * Keep mechanical name artifacts out of normal editing paths as well as the
+   * explicit Auto-clean command. This method deliberately does not bump the
+   * entity revision: its caller is already completing the enclosing write.
+   */
+  private normalizeEntityNameIntegrity(
+    entityId: string,
+    now: string,
+  ): { dedupedNames: number; removedNan: number; removedInvalidFamilyGiven: number } {
+    const remove = (row: { id: number; origin: SqliteValueOrigin }, reason: string): void => {
+      if (row.origin === 'user') {
+        this.db.prepare('DELETE FROM entity_names WHERE id = ?').run(row.id);
+        return;
+      }
+      this.db
+        .prepare(`UPDATE entity_names SET status = 'rejected', updated_at = ? WHERE id = ?`)
+        .run(now, row.id);
+      this.db
+        .prepare(
+          `INSERT OR IGNORE INTO entity_tombstones
+             (entity_id, table_name, row_id, reason, created_at)
+           VALUES (?, 'entity_names', ?, ?, ?)`,
+        )
+        .run(entityId, row.id, reason, now);
+    };
+
+    const nanRows = this.db
+      .prepare(
+        `SELECT id, origin FROM entity_names
+         WHERE entity_id = ? AND status = 'active' AND TRIM(text) = 'nan'`,
+      )
+      .all(entityId) as Array<{ id: number; origin: SqliteValueOrigin }>;
+    for (const row of nanRows) remove(row, 'auto-clean-nan');
+
+    let dedupedNames = 0;
+    const groups = this.db
+      .prepare(
+        `SELECT text, COALESCE(name_type, '') AS nameTypeKey
+         FROM entity_names
+         WHERE entity_id = ? AND status = 'active'
+         GROUP BY text, COALESCE(name_type, '')
+         HAVING COUNT(*) > 1`,
+      )
+      .all(entityId) as Array<{ text: string; nameTypeKey: string }>;
+    for (const group of groups) {
+      const rows = this.db
+        .prepare(
+          `SELECT id, origin FROM entity_names
+           WHERE entity_id = ? AND text = ? AND status = 'active'
+             AND COALESCE(name_type, '') = ?
+           ORDER BY is_primary DESC,
+                    CASE WHEN name_type IS NULL OR TRIM(name_type) = '' THEN 1 ELSE 0 END,
+                    id ASC`,
+        )
+        .all(entityId, group.text, group.nameTypeKey) as Array<{
+        id: number;
+        origin: SqliteValueOrigin;
+      }>;
+      for (const row of rows.slice(1)) {
+        remove(row, 'auto-clean-duplicate');
+        dedupedNames += 1;
+      }
+    }
+
+    const person = this.db
+      .prepare(
+        `SELECT family_name AS familyName, given_name AS givenName
+         FROM people WHERE entity_id = ?`,
+      )
+      .get(entityId) as { familyName: string | null; givenName: string | null } | undefined;
+    let removedInvalidFamilyGiven = 0;
+    if (person?.familyName?.trim() === 'n' && person.givenName?.trim() === 'an') {
+      const invalidRows = this.db
+        .prepare(
+          `SELECT id, origin FROM entity_names
+           WHERE entity_id = ? AND status = 'active'
+             AND ((name_type IN ('family', 'familyName') OR name_role IN ('family', 'familyName')) AND TRIM(text) = 'n'
+               OR (name_type IN ('given', 'givenName') OR name_role IN ('given', 'givenName')) AND TRIM(text) = 'an')`,
+        )
+        .all(entityId) as Array<{ id: number; origin: SqliteValueOrigin }>;
+      for (const row of invalidRows) remove(row, 'auto-clean-invalid-family-given');
+      this.syncPersonNameScalarsAfterTypeChange(entityId, 'n', 'family', null, now);
+      this.syncPersonNameScalarsAfterTypeChange(entityId, 'an', 'given', null, now);
+      removedInvalidFamilyGiven = 1;
+    }
+
+    return { dedupedNames, removedNan: nanRows.length, removedInvalidFamilyGiven };
   }
 
   private getName(id: number): SqliteName | null {

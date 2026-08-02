@@ -209,6 +209,8 @@ declare global {
     }) => Promise<void>;
     entitySqliteAutoCleanNames?: (request: { databasePath: string }) => Promise<{
       dedupedNames: number;
+      removedNan: number;
+      removedInvalidFamilyGiven: number;
       removedUntyped: number;
       promotedRomanizations: number;
     }>;

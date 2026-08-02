@@ -141,22 +141,12 @@ Near-term work pulled from the planning docs ([docs/README.md](docs/README.md)).
 **Current state (2026-08-02):** The SQLite runtime, Bridge conflict resolver,
 incremental panel updates, and Word-plugin path are in place. Before calling
 this beta-ready, run the packaged manual sync checklist. The only remaining
-engineering follow-up in this area is a general first-run SQLite migration
-for older databases. XML remains interchange/export material, not a live
-runtime fallback.
+work in this area is packaged verification.
 
-- [x] Add notes to all elements, e.g. to explain how one knows a date of death.
-- [x] Wire fork-merge menu entry
-- [x] Bridge conflict “pick a value” UI (beyond inbox list)
 - [ ] Run entity-sync manual scenarios ([entity-sync-manual-test-plan.md](docs/entity-sync-manual-test-plan.md))
-- [x] i18n for new sync/dialog strings
-- [x] SQLite: drop leftover XML soft-fallbacks after confidence
-- [x] SQLite: avoid full panel reloads on single-field edits
-- [x] Finish wordprocessor write paths against SQLite
 
 **Next:** run the packaged scenarios in
-[entity-sync-manual-test-plan.md](docs/entity-sync-manual-test-plan.md), then
-design the generalized first-run migration for older XML-only databases.
+[entity-sync-manual-test-plan.md](docs/entity-sync-manual-test-plan.md).
 
 ### Editor / UX polish
 
@@ -222,7 +212,6 @@ design the generalized first-run migration for older XML-only databases.
 ### Technical
 
 - [ ] Support for custom authorities and personal SQL databases
-- [ ] Generalized first-run SQLite migration (beyond this install)
 - [ ] Multi-machine offline sync beyond current mirror
 - [ ] Performance: virtualize review + disambiguation lists; Monaco theme without recreate ([performance-planning.md](docs/performance-planning.md))
 - [ ] Bundle size: icon barrel / storage-service; strip prod jotai-devtools; lazy dialogs/Monaco ([bundle-size-warning-planning.md](docs/bundle-size-warning-planning.md))

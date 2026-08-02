@@ -5,8 +5,9 @@
  * 1. 字/號/法號 that begin with 姓 → strip 姓, tombstone the compound form
  * 2. 2–4 character primary, no authorities, missing 姓/名 → Norbert/plugin parser
  * 3. Duplicate rows with the same text + name type → keep one, tombstone the rest
- * 4. Names with no name type (after promoting Latn romanizations to `translation`) → remove
- * 5. Romanization that only differs by joinable spaces/capitals → set preferred 姓+名 form
+ * 4. Literal `nan` rows and the invalid `n` + `an` family/given pair → remove
+ * 5. Names with no name type (after promoting Latn romanizations to `translation`) → remove
+ * 6. Romanization that only differs by joinable spaces/capitals → set preferred 姓+名 form
  */
 
 import type { EntityStore } from '../entityStore';
@@ -22,6 +23,8 @@ export type AutoCleanReport = {
   strippedFamilyPrefixed: number;
   parsedFamilyGiven: number;
   dedupedNames: number;
+  removedNan: number;
+  removedInvalidFamilyGiven: number;
   removedUntyped: number;
   promotedRomanizations: number;
   fixedRomanization: number;
@@ -134,6 +137,8 @@ export async function autoCleanEntities(
     strippedFamilyPrefixed: 0,
     parsedFamilyGiven: 0,
     dedupedNames: 0,
+    removedNan: 0,
+    removedInvalidFamilyGiven: 0,
     removedUntyped: 0,
     promotedRomanizations: 0,
     fixedRomanization: 0,
@@ -176,6 +181,8 @@ export async function autoCleanEntities(
   if (typeof store.sqliteAutoCleanNames === 'function') {
     const batch = await store.sqliteAutoCleanNames();
     report.dedupedNames = batch.dedupedNames;
+    report.removedNan = batch.removedNan;
+    report.removedInvalidFamilyGiven = batch.removedInvalidFamilyGiven;
     report.removedUntyped = batch.removedUntyped;
     report.promotedRomanizations = batch.promotedRomanizations;
   }

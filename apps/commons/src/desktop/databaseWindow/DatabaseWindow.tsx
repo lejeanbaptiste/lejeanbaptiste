@@ -1017,6 +1017,8 @@ export const DatabaseWindow = () => {
         report.strippedFamilyPrefixed +
         report.parsedFamilyGiven +
         report.dedupedNames +
+        report.removedNan +
+        report.removedInvalidFamilyGiven +
         report.removedUntyped +
         report.promotedRomanizations +
         report.fixedRomanization;
@@ -1024,7 +1026,7 @@ export const DatabaseWindow = () => {
         message:
           total === 0
             ? 'Auto-clean: nothing to fix'
-            : `Auto-clean: ${report.strippedFamilyPrefixed} 姓+字, ${report.parsedFamilyGiven} parsed, ${report.dedupedNames} dupes, ${report.removedUntyped} untyped, ${report.promotedRomanizations} Latn typed, ${report.fixedRomanization} pinyin joins`,
+            : `Auto-clean: ${report.strippedFamilyPrefixed} 姓+字, ${report.parsedFamilyGiven} parsed, ${report.dedupedNames} dupes, ${report.removedNan} nan, ${report.removedInvalidFamilyGiven} n+an, ${report.removedUntyped} untyped, ${report.promotedRomanizations} Latn typed, ${report.fixedRomanization} pinyin joins`,
         options: { variant: 'success' },
       });
       await reload();

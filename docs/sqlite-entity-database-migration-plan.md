@@ -1,6 +1,9 @@
 # SQLite entity database migration plan
 
-**Status (2026-08-02):** **Mostly shipped** for this install — SQLite is the live store for panel/Bridge/sync paths. Runtime XML soft-fallbacks have been removed; remaining work is generalized first-run migration for older databases.
+**Status (2026-08-02):** **Shipped for the current beta.** SQLite is the live
+store for panel/Bridge/sync paths, and runtime XML soft-fallbacks have been
+removed. This document is now architectural record and future reference, not
+an active beta-work plan.
 
 **Decision:** SQLite becomes the authoritative storage format for the Central
 Entity Database (CEDB) and Project Entity Databases (PEDBs). The existing XML
@@ -120,19 +123,10 @@ runtime entity reads and writes now require a migrated `entities.sqlite`
 (fail loud / `unavailable` — no DOM `loadEntities`/`saveEntities` soft-gates
 on the paths above). New folders from `createEntityDatabase` mint both
 `entities.xml` (interchange scaffold) and sibling `entities.sqlite`.
-**Next work:** see Explicit unfinished work below.
-
-### Explicit unfinished work
-
-1. **Run the packaged sync checklist.** Use
-   [entity-sync-manual-test-plan.md](entity-sync-manual-test-plan.md) on
-   scratch folders before treating the current sync/Bridge work as beta-ready.
-2. **General-purpose first-run migration.** New or existing XML-only entity
-   databases need a clear, resumable migration path that creates and validates
-   `entities.sqlite` without relying on this installation's prior setup.
-3. **Later:** broaden multi-machine offline-sync QA beyond the current mirror
-   path. This is not required for the present beta after the manual checklist
-   passes.
+**Remaining beta verification:** run
+[entity-sync-manual-test-plan.md](entity-sync-manual-test-plan.md) in a
+packaged build. Broader migration automation and multi-machine offline-sync
+research are future work, not current release requirements.
 
 ### Recently implemented
 

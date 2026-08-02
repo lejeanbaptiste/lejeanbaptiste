@@ -241,6 +241,8 @@ export interface EntityFileApi {
   }) => Promise<void>;
   entitySqliteAutoCleanNames?: (input: { databasePath: string }) => Promise<{
     dedupedNames: number;
+    removedNan: number;
+    removedInvalidFamilyGiven: number;
     removedUntyped: number;
     promotedRomanizations: number;
   }>;
@@ -925,6 +927,8 @@ export class EntityStore {
 
   async sqliteAutoCleanNames(): Promise<{
     dedupedNames: number;
+    removedNan: number;
+    removedInvalidFamilyGiven: number;
     removedUntyped: number;
     promotedRomanizations: number;
   }> {
