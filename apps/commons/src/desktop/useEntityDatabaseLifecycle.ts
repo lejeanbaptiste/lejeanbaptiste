@@ -28,13 +28,12 @@ export const useEntityDatabaseLifecycle = () => {
     }
   }, [rootPath]);
 
-  /** Live authority path: sibling SQLite when migrated, else interchange XML. */
+  /** SQLite is the live authority; entities.xml is interchange only. */
   const resolveWatchedEntityDbPath = useCallback(async (): Promise<string | null> => {
     const store = entityStoreFromDesktop();
-    if (!store) return resolveEntitiesPath();
-    if (await store.hasSqliteDatabase()) return store.sqlitePath;
-    return store.entitiesPath;
-  }, [resolveEntitiesPath]);
+    if (!store || !(await store.hasSqliteDatabase())) return null;
+    return store.sqlitePath;
+  }, []);
 
   useEffect(() => {
     if (!isDesktop() || !projectFilePath || !rootPath) return;
@@ -49,22 +48,6 @@ export const useEntityDatabaseLifecycle = () => {
       // Check this project into the shared-database registry so merge/delete
       // key propagation knows every project tree using this entities.xml.
       await store.registerProjectInRegistry().catch(() => undefined);
-
-      // Integrity checks use SQLite when present; defer only for huge XML-only
-      // interchange files (legacy). Migrated DBs skip this size gate.
-      if (!(await store.hasSqliteDatabase())) {
-        const entityStat = await window.electronAPI
-          ?.statFile?.(store.entitiesPath)
-          .catch(() => null);
-        if (entityStat && entityStat.size > 8 * 1024 * 1024) {
-          // eslint-disable-next-line no-console
-          console.info('[entity-db-check] deferred for large database', {
-            entitiesPath: store.entitiesPath,
-            bytes: entityStat.size,
-          });
-          return;
-        }
-      }
 
       const checkApi = {
         listProjectXmlFiles: (path: string) => window.electronAPI!.listProjectXmlFiles(path),

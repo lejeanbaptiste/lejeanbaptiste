@@ -1,6 +1,11 @@
 # Entity sync — manual test plan
 
-**Status (2026-08-01):** **Ready-to-run packaged QA checklist.** Automated coverage for the core sync layer is green: 8 suites / 50 tests covering merge-order replay, synchronized mirrors, Bridge promotion/inbox, orphan handling, and fork-merge. Product gaps called out here: fork-merge menu and i18n for new strings.
+**Status (2026-08-02):** **Ready-to-run packaged QA checklist.** Automated
+coverage for the core sync layer is green: 8 suites / 50 tests covering
+merge-order replay, synchronized mirrors, Bridge promotion/inbox, orphan
+handling, and fork-merge. The packaged scenarios below are the remaining
+release gate; the Bridge resolver, fork-merge entry point, and new dialog
+strings are implemented.
 
 ## Before you start
 
@@ -169,13 +174,12 @@ central database doesn't erase the propagation record from Scenario 2.
 
 ---
 
-## What's intentionally NOT covered yet
+## After this checklist
 
-- **Fork-merge of two central database copies** (the Unison-style "two forked
-  CEDBs" story) has a tested engine (`centralForkMerge.ts`) but **no menu entry
-  point wired up yet** — there's nothing to click in the app for this one.
-- New dialog copy is plain English, not yet run through the i18n/translation
-  pipeline.
+If all five scenarios pass in a packaged build, the next SQLite task is not a
+new sync feature: it is a generalized first-run migration for old XML-only
+entity databases. Until that exists and has been exercised on real synced
+folders, the XML-only compatibility paths remain intentionally.
 
 If you hit anything that doesn't match this plan, the first place to look is
 whichever file this plan told you to inspect by hand (`entity-orders.jsonl`,

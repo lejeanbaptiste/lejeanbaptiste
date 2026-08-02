@@ -126,8 +126,9 @@ Near-term work pulled from the planning docs ([docs/README.md](docs/README.md)).
 ### Tagging / Norbert / Sanmiao
 
 - [ ] f asset raise needs repositioning. -> recompile (throw in more bw assets)
-- [ ] 竟陵王子良 shows up as persname; we are not tagging title + given name !
+- [ ] 竟陵王子良 shows up as persname; we are not tagging title + given name ! Also clean up primary name / display name.
 - [ ] Auto parse and organise noble titles
+- [ ] nt 'abr'
 - [ ] Noble title and person wrapper tagging (testing).
 - [ ] Norbert personWrapper: resolve accepted wrappers to exactly one person key; validation for missing/ambiguous keys
 - [ ] Norbert expander cache + refresh/startup scheduling; include wrappers/`roleName` in validation panel
@@ -137,14 +138,25 @@ Near-term work pulled from the planning docs ([docs/README.md](docs/README.md)).
 
 ### Entity database / sync
 
+**Current state (2026-08-02):** The SQLite runtime, Bridge conflict resolver,
+incremental panel updates, and Word-plugin path are in place. Before calling
+this beta-ready, run the packaged manual sync checklist. The only remaining
+engineering follow-up in this area is a general first-run SQLite migration
+for older databases. XML remains interchange/export material, not a live
+runtime fallback.
+
 - [x] Add notes to all elements, e.g. to explain how one knows a date of death.
 - [x] Wire fork-merge menu entry
 - [x] Bridge conflict “pick a value” UI (beyond inbox list)
 - [ ] Run entity-sync manual scenarios ([entity-sync-manual-test-plan.md](docs/entity-sync-manual-test-plan.md))
 - [x] i18n for new sync/dialog strings
-- [ ] SQLite: drop leftover XML soft-fallbacks after confidence
+- [x] SQLite: drop leftover XML soft-fallbacks after confidence
 - [x] SQLite: avoid full panel reloads on single-field edits
 - [x] Finish wordprocessor write paths against SQLite
+
+**Next:** run the packaged scenarios in
+[entity-sync-manual-test-plan.md](docs/entity-sync-manual-test-plan.md), then
+design the generalized first-run migration for older XML-only databases.
 
 ### Editor / UX polish
 

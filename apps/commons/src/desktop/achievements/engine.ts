@@ -4,7 +4,6 @@ import type { TagUsageStats } from '../tagging/tagStats';
 import { findAchievementDef } from './definitions';
 import {
   aggregateGlobalMetrics,
-  countEntitiesInXml,
   determineNewRankUnlocks,
   determineNewUnlocks,
   documentRootLanguage,
@@ -139,20 +138,18 @@ const toRelativePath = (rootPath: string, filePath: string): string => {
     : normalizedFile;
 };
 
-/** entities.sqlite (preferred) or entities.xml at project root / central folder. */
+/** Count the live SQLite entity database at the project root or central folder. */
 const countEntityDatabase = async (rootPath: string): Promise<number | null> => {
   const api = window.electronAPI;
   if (!api) return null;
 
   const root = rootPath.replace(/[/\\]+$/, '');
   const sqliteCandidates: string[] = [`${root}/entities.sqlite`];
-  const xmlCandidates: string[] = [`${root}/entities.xml`];
   try {
     const central = await api.getEntityDbFolder();
     if (central) {
       const centralRoot = central.replace(/[/\\]+$/, '');
       sqliteCandidates.push(`${centralRoot}/entities.sqlite`);
-      xmlCandidates.push(`${centralRoot}/entities.xml`);
     }
   } catch {
     // No central folder configured.
@@ -170,15 +167,6 @@ const countEntityDatabase = async (rootPath: string): Promise<number | null> => 
     }
   }
 
-  for (const candidate of xmlCandidates) {
-    try {
-      if (!(await api.pathExists(candidate))) continue;
-      const xml = await api.readFile(candidate);
-      return countEntitiesInXml(xml).entities;
-    } catch {
-      // Try the next candidate.
-    }
-  }
   return null;
 };
 

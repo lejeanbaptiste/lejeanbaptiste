@@ -1,6 +1,9 @@
 # Beta Plan
 
-**Status (2026-08-01):** The slow-machine startup race and Windows shutdown issue have both passed packaged Windows testing. I am finishing release hygiene and the final packaged regression pass.
+**Status (2026-08-02):** The slow-machine startup race and Windows shutdown
+issue have both passed packaged Windows testing. The remaining beta work is
+release hygiene and one clean packaged regression pass, including the entity
+sync scenarios below.
 
 I am aiming for a beta of the current feature set by September 2026.
 
@@ -32,6 +35,9 @@ I am not adding new features for the beta unless they are needed to make an exis
 - Start the changelog from the next release.
 - Keep the build and packaging instructions current in [apps/desktop/README.md](../apps/desktop/README.md).
 - Use the [beta tester guide](beta-tester-guide.md) for packaged testing.
+- Run the entity database/sync scenarios in
+  [entity-sync-manual-test-plan.md](entity-sync-manual-test-plan.md) against
+  scratch project folders before declaring the build ready.
 
 ### Final packaged regression
 

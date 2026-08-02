@@ -27,6 +27,10 @@
 - New items in shared, synchronised project now hydrade an older central database by default rather than insisting that tags be stripped 🤦‍♂️
 - Consolidated the database viewer, added note taking.
 - Worked out merge conflict mechanics and wiring.
+- Added notes to database elements
+- Wired fork-merge menu entry
+- Bridge conflict “pick a value” UI
+- i18n for new sync/dialog strings
 
 ### UI
 

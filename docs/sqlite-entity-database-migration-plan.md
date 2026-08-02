@@ -1,6 +1,6 @@
 # SQLite entity database migration plan
 
-**Status (2026-08-02):** **Mostly shipped** for this install — SQLite is the live store for panel/Bridge/sync paths. Remaining: generalized first-run migration and the eventual removal of legacy XML-only fallbacks after wider migration confidence.
+**Status (2026-08-02):** **Mostly shipped** for this install — SQLite is the live store for panel/Bridge/sync paths. Runtime XML soft-fallbacks have been removed; remaining work is generalized first-run migration for older databases.
 
 **Decision:** SQLite becomes the authoritative storage format for the Central
 Entity Database (CEDB) and Project Entity Databases (PEDBs). The existing XML
@@ -124,9 +124,15 @@ on the paths above). New folders from `createEntityDatabase` mint both
 
 ### Explicit unfinished work
 
-- General-purpose first-run migration automation beyond this single-user
-  install.
-- Multi-machine offline sync scenarios beyond the current mirror path.
+1. **Run the packaged sync checklist.** Use
+   [entity-sync-manual-test-plan.md](entity-sync-manual-test-plan.md) on
+   scratch folders before treating the current sync/Bridge work as beta-ready.
+2. **General-purpose first-run migration.** New or existing XML-only entity
+   databases need a clear, resumable migration path that creates and validates
+   `entities.sqlite` without relying on this installation's prior setup.
+3. **Later:** broaden multi-machine offline-sync QA beyond the current mirror
+   path. This is not required for the present beta after the manual checklist
+   passes.
 
 ### Recently implemented
 
