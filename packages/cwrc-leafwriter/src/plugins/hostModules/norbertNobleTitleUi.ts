@@ -45,6 +45,7 @@ export function registerNorbertNobleTitleUi(context: PluginRegisterContext): voi
     id: 'noble-title',
     label: 'Tag noble title',
     icon: 'norbert',
+    schemaTag: 'nobleTitle',
     onClick: () => applyNobleTitleForSelection(),
   });
   context.registerTagCommandItem({

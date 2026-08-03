@@ -1015,6 +1015,60 @@ describe('EntitySqliteRepository', () => {
     repository.close();
   });
 
+  it('rewrites unvalidated invented 姓名 on re-backfill and clears missing given', () => {
+    const repository = new EntitySqliteRepository();
+    repository.createEntity({ id: 'person-empress', kind: 'person' });
+    repository.addName({
+      entityId: 'person-empress',
+      text: '孝武昭路太后',
+      isPrimary: true,
+      origin: 'authority',
+      source: 'NORBERT',
+    });
+    repository.addName({
+      entityId: 'person-empress',
+      text: '孝',
+      nameType: 'family',
+      origin: 'authority',
+      source: 'NORBERT',
+    });
+    repository.addName({
+      entityId: 'person-empress',
+      text: '武昭路太后',
+      nameType: 'given',
+      origin: 'authority',
+      source: 'NORBERT',
+    });
+    repository.addName({
+      entityId: 'person-empress',
+      text: '路',
+      nameType: 'family',
+      origin: 'authority',
+      source: 'NORBERT',
+    });
+    repository.db
+      .prepare('UPDATE people SET family_name = ?, given_name = ? WHERE entity_id = ?')
+      .run('孝', '武昭路太后', 'person-empress');
+
+    const result = repository.applyAuthorityBackfillPatch({
+      entityId: 'person-empress',
+      names: [{ text: '路', nameType: 'family', source: 'NORBERT' }],
+      familyName: '路',
+      givenName: null,
+      rewriteUnvalidatedPersonNames: true,
+    });
+    expect(result.changed).toBe(true);
+    const activeTexts = repository
+      .listNames('person-empress')
+      .filter((name) => name.status === 'active')
+      .map((name) => name.text)
+      .sort();
+    expect(activeTexts).toEqual(['孝武昭路太后', '路'].sort());
+    expect(repository.getPanelSummary('person-empress')?.familyName).toBe('路');
+    expect(repository.getPanelSummary('person-empress')?.givenName).toBeNull();
+    repository.close();
+  });
+
   it('copies entity content between databases while preserving central mappings', () => {
     const source = new EntitySqliteRepository();
     const target = new EntitySqliteRepository();

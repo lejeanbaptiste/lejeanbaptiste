@@ -10,6 +10,8 @@ const mockRemove = jest.fn();
 const mockMarkerRemove = jest.fn();
 const mockExtend = jest.fn();
 const mockSetStyle = jest.fn();
+const mockSetMaxBounds = jest.fn();
+const mockSetMaxZoom = jest.fn();
 
 let onLoadCallback: (() => void) | null = null;
 let onMoveEndCallback: (() => void) | null = null;
@@ -38,6 +40,12 @@ jest.mock(
       }
       setStyle(...args: unknown[]) {
         mockSetStyle(...args);
+      }
+      setMaxBounds(...args: unknown[]) {
+        mockSetMaxBounds(...args);
+      }
+      setMaxZoom(...args: unknown[]) {
+        mockSetMaxZoom(...args);
       }
       getCenter() {
         return mockCenter;
@@ -108,7 +116,9 @@ describe('PlaceComparisonMap', () => {
   it('limits map zoom to the maximum zoom supported by the tile source', () => {
     render(<PlaceComparisonMap open pins={[makePin()]} title="Single place" onClose={jest.fn()} />);
 
-    expect(mockMapOptions).toEqual(expect.objectContaining({ maxZoom: 15 }));
+    expect(mockMapOptions).toEqual(
+      expect.objectContaining({ maxZoom: 15, renderWorldCopies: false }),
+    );
   });
 
   it('creates one marker per pin and fits bounds to all of them once the map loads', () => {
@@ -208,7 +218,15 @@ describe('PlaceComparisonMap', () => {
       mapTilesStatus: jest.fn().mockResolvedValue({
         installed: true,
         path: '/tiles',
-        regions: [{ id: 'china', sha256: 'a'.repeat(64), installedAt: '2026-07-26T00:00:00Z' }],
+        regions: [
+          {
+            id: 'china',
+            sha256: 'a'.repeat(64),
+            installedAt: '2026-07-26T00:00:00Z',
+            // Regional extracts often top out below full Protomaps z15.
+            maxZoom: 8,
+          },
+        ],
       }),
     };
 
@@ -218,9 +236,15 @@ describe('PlaceComparisonMap', () => {
       await Promise.resolve();
     });
 
+    expect(mockSetMaxZoom).toHaveBeenCalledWith(8);
     expect(mockSetStyle).toHaveBeenCalledTimes(1);
     const [style] = mockSetStyle.mock.calls[0];
     expect(style.sources.protomaps.tiles[0]).toBe('pmtiles://china/{z}/{x}/{y}.mvt');
+    expect(style.sources.protomaps.maxzoom).toBe(8);
+    expect(mockSetMaxBounds).toHaveBeenCalledWith([
+      [73.5, 15.8],
+      [134.8, 53.6],
+    ]);
   });
 
   it('leaves the blank background and shows the region warning when no bundle covering the pins is installed', async () => {
@@ -256,12 +280,28 @@ describe('PlaceComparisonMap', () => {
     expect(screen.queryByText(/isn't downloaded/)).toBeNull();
   });
 
-  it('shows the region warning after panning into an area no installed bundle covers', async () => {
+  it('does not constrain camera bounds when no covering tile bundle is installed', async () => {
+    (window as unknown as { electronAPI: unknown }).electronAPI = {
+      mapTilesStatus: jest.fn().mockResolvedValue({ installed: false, path: null, regions: [] }),
+    };
+
+    render(<PlaceComparisonMap open pins={[makePin()]} title="Single place" onClose={jest.fn()} />);
+    await act(async () => {
+      onLoadCallback?.();
+      await Promise.resolve();
+    });
+
+    expect(mockSetMaxBounds).not.toHaveBeenCalled();
+  });
+
+  it('warns without constraining when only a non-covering region is installed', async () => {
     (window as unknown as { electronAPI: unknown }).electronAPI = {
       mapTilesStatus: jest.fn().mockResolvedValue({
         installed: true,
         path: '/tiles',
-        regions: [{ id: 'china', sha256: 'a'.repeat(64), installedAt: '2026-07-26T00:00:00Z' }],
+        // Japan tiles only — 竟陵 (China) is not covered, so warning stays on
+        // and maxBounds is not applied for this pin set.
+        regions: [{ id: 'japan', sha256: 'a'.repeat(64), installedAt: '2026-07-26T00:00:00Z' }],
       }),
     };
 
@@ -270,12 +310,7 @@ describe('PlaceComparisonMap', () => {
       onLoadCallback?.();
       await Promise.resolve();
     });
-    expect(screen.queryByText(/isn't downloaded/)).toBeNull();
-
-    // Pan to the middle of the Atlantic — outside every registered bundle.
-    mockCenter = { lat: 30, lng: -40 };
-    act(() => onMoveEndCallback?.());
-
     expect(screen.getByText(/isn't downloaded/)).toBeTruthy();
+    expect(mockSetMaxBounds).not.toHaveBeenCalled();
   });
 });

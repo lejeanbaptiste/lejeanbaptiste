@@ -56,12 +56,15 @@ export interface EntityFileApi {
   /** Tell the desktop file watcher to ignore the next change at this path (our own write). */
   notifyOwnWrite?: (filePath: string) => Promise<void>;
   /** Runtime entity database bridge; XML remains only the DOM compatibility layer. */
-  entitySqliteExportXml?: (databasePath: string) => Promise<string | null>;
-  entitySqliteImportXml?: (databasePath: string, xml: string) => Promise<unknown>;
-  entitySqliteCandidates?: (
-    databasePath: string,
-    kind: 'person' | 'place' | 'work' | 'office' | 'org',
-  ) => Promise<unknown[] | null>;
+  entitySqliteExportXml?: (request: { databasePath: string }) => Promise<string | null>;
+  entitySqliteImportXml?: (request: {
+    databasePath: string;
+    xml: string;
+  }) => Promise<unknown>;
+  entitySqliteCandidates?: (request: {
+    databasePath: string;
+    kind: 'person' | 'place' | 'work' | 'office' | 'org';
+  }) => Promise<unknown[] | null>;
   entitySqliteGet?: (input: { databasePath: string; entityId: string }) => Promise<unknown | null>;
   entitySqliteDatabaseId?: (databasePath: string) => Promise<string | null>;
   entitySqliteListIds?: (input: {
@@ -337,6 +340,7 @@ export interface EntityFileApi {
     }>;
     familyName?: string | null;
     givenName?: string | null;
+    rewriteUnvalidatedPersonNames?: boolean;
     romanized?: { text: string; language?: string | null } | null;
     dates?: Array<{
       source: string;
@@ -548,7 +552,7 @@ export class EntityStore {
   async loadEntities(): Promise<Document> {
     this.assertEntitiesPathForMode();
     if (this.api.entitySqliteExportXml && (await this.api.pathExists(this.sqlitePath))) {
-      const xml = await this.api.entitySqliteExportXml(this.sqlitePath);
+      const xml = await this.api.entitySqliteExportXml({ databasePath: this.sqlitePath });
       if (xml) {
         const doc = parseEntities(xml);
         if (!isEntityDatabase(doc))
@@ -601,7 +605,10 @@ export class EntityStore {
       if (!options?.allowSqliteFullReimport) {
         throw new Error(SQLITE_SAVE_REQUIRES_IMPORT_FLAG_MESSAGE);
       }
-      await this.api.entitySqliteImportXml(this.sqlitePath, serializeEntities(doc));
+      await this.api.entitySqliteImportXml({
+        databasePath: this.sqlitePath,
+        xml: serializeEntities(doc),
+      });
       return;
     }
     const entitiesDir = this.entitiesPath.replace(/[/\\][^/\\]+$/, '');
@@ -616,7 +623,7 @@ export class EntityStore {
   ): Promise<unknown[] | null> {
     if (!this.api.entitySqliteCandidates || !(await this.api.pathExists(this.sqlitePath)))
       return null;
-    return this.api.entitySqliteCandidates(this.sqlitePath, kind);
+    return this.api.entitySqliteCandidates({ databasePath: this.sqlitePath, kind });
   }
 
   async sqliteEntitySummary(entityId: string): Promise<unknown | null> {
@@ -1064,6 +1071,7 @@ export class EntityStore {
     }>;
     familyName?: string | null;
     givenName?: string | null;
+    rewriteUnvalidatedPersonNames?: boolean;
     romanized?: { text: string; language?: string | null } | null;
     dates?: Array<{
       source: string;
@@ -1474,13 +1482,13 @@ export function desktopEntityFileApi(): EntityFileApi | null {
     readFile: (filePath) => rawApi.readFile!(filePath),
     writeFile: (filePath, content) => rawApi.writeFile!(filePath, content),
     entitySqliteExportXml: rawApi.entitySqliteExportXml
-      ? (databasePath) => rawApi.entitySqliteExportXml!(databasePath)
+      ? (request) => rawApi.entitySqliteExportXml!(request)
       : undefined,
     entitySqliteImportXml: rawApi.entitySqliteImportXml
-      ? (databasePath, xml) => rawApi.entitySqliteImportXml!(databasePath, xml)
+      ? (request) => rawApi.entitySqliteImportXml!(request)
       : undefined,
     entitySqliteCandidates: rawApi.entitySqliteCandidates
-      ? (databasePath, kind) => rawApi.entitySqliteCandidates!(databasePath, kind)
+      ? (request) => rawApi.entitySqliteCandidates!(request)
       : undefined,
     entitySqliteGetNotes: rawApi.entitySqliteGetNotes
       ? (input) => rawApi.entitySqliteGetNotes!(input)

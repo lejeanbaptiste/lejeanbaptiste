@@ -43,6 +43,10 @@ export interface LlmClient {
 
 export type FetchFn = typeof fetch;
 
+/** Keep fetch's global receiver — bare `fetch` stored then called throws Illegal invocation. */
+const defaultFetch: FetchFn = ((...args: Parameters<FetchFn>) =>
+  globalThis.fetch(...args)) as FetchFn;
+
 export interface OllamaClientOptions {
   /** e.g. http://localhost:11434 */
   baseUrl: string;
@@ -63,7 +67,7 @@ export class OllamaLlmClient implements LlmClient {
   constructor(options: OllamaClientOptions) {
     this.modelId = `ollama:${options.model}`;
     this.baseUrl = options.baseUrl.replace(/\/$/, '');
-    this.fetchImpl = options.fetchImpl ?? fetch;
+    this.fetchImpl = options.fetchImpl ?? defaultFetch;
   }
 
   async complete(request: LlmRequest): Promise<LlmResponse> {
@@ -193,7 +197,7 @@ export class MistralLlmClient implements LlmClient {
     this.modelId = `mistral:${options.model}`;
     this.apiKey = options.apiKey;
     this.baseUrl = (options.baseUrl ?? 'https://api.mistral.ai').replace(/\/$/, '');
-    this.fetchImpl = options.fetchImpl ?? fetch;
+    this.fetchImpl = options.fetchImpl ?? defaultFetch;
     this.isGroq = this.baseUrl.includes('groq.com');
     this.structuredOutput =
       options.structuredOutput ??

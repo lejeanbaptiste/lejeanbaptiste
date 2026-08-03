@@ -38,6 +38,21 @@ describe('viafWikidataConcordance', () => {
     );
   });
 
+  it('emits CBDB / DILA / Norbert crosswalk ids for person packs', () => {
+    expect(
+      authorityIdsFromPackCrosswalk(
+        { cbdb: '1762', dila: 'A002401', norbert: '4135' },
+        { norbertKind: 'person' },
+      ),
+    ).toEqual(
+      expect.arrayContaining([
+        { type: 'CBDB', value: '1762' },
+        { type: 'DILA', value: 'A002401' },
+        { type: 'NORBERT', value: 'person-4135' },
+      ]),
+    );
+  });
+
   it('enriches live Wikidata + VIAF rows so collapse merges them without description scraping', () => {
     const index = emptyViafWikidataIndex();
     addViafWikidataPair(index, 'Q1137864', '404064183');

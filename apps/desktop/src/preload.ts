@@ -470,7 +470,13 @@ export interface ElectronAPI {
   mapTilesStatus: () => Promise<{
     installed: boolean;
     path: string | null;
-    regions: { id: string; sha256: string; installedAt: string }[];
+    regions: {
+      id: string;
+      sha256: string;
+      installedAt: string;
+      maxZoom?: number;
+      minZoom?: number;
+    }[];
   }>;
   mapTilesPromptDownload: () => Promise<'accepted' | 'declined'>;
   mapTilesDownload: (

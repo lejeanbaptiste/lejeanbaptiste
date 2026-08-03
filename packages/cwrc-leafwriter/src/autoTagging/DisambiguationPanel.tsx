@@ -35,7 +35,7 @@ import {
 import { useCallback, useEffect, useMemo, useReducer, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Virtuoso, type VirtuosoHandle } from 'react-virtuoso';
-import { CbdbIcon, DilaIcon, InitialsIcon, NorbertIcon } from '../icons/custom/AuthoritySource';
+import { CbdbIcon, DilaIcon, InitialsIcon } from '../icons/custom/AuthoritySource';
 import { WikipediaIcon } from '../icons/custom/Wikipedia';
 import { openExternalUrl } from '../utilities/DOM';
 import { cachedPackReader } from '../services/authority-pack-lookup';
@@ -149,6 +149,27 @@ const AuthorityLinkIcon = ({ link }: { link: CandidateLink }) => (
     )}
   </IconButton>
 );
+
+/**
+ * Provenance labels that are not already visible as a clickable authority
+ * link or the green "local" chip. Without this filter, CBDB/VIAF/Wikidata
+ * appear twice (AuthorityLinkIcon + SourceBadges).
+ */
+function provenanceSourcesForBadges(
+  candidate: DisambiguationCandidate,
+  links: CandidateLink[],
+): string[] {
+  const linked = new Set(links.map((link) => link.kind));
+  return candidate.sources.filter((source) => {
+    const key = source.trim().toLowerCase();
+    if (key === 'cbdb' && linked.has('cbdb')) return false;
+    if (key === 'viaf' && linked.has('viaf')) return false;
+    if ((key === 'wikidata' || key === 'wikipedia') && linked.has('wikidata')) return false;
+    if (key === 'dila' && linked.has('dila')) return false;
+    if (key === 'entity-file' && candidate.fromEntityFile) return false;
+    return true;
+  });
+}
 
 interface SectionHeaderRowProps {
   title: string;
@@ -1196,6 +1217,7 @@ export const DisambiguationPanel = ({
         {displayCandidates.map((candidate) => {
           const checked = checkedIds.has(candidate.id);
           const links = candidateLinks(candidate);
+          const badgeSources = provenanceSourcesForBadges(candidate, links);
           const confidence = aiConfidences[candidate.id];
           const appearsInDocument =
             !!candidate.localEntityId && keyedEntityIds.has(candidate.localEntityId);
@@ -1243,15 +1265,8 @@ export const DisambiguationPanel = ({
                   {links.map((link) => (
                     <AuthorityLinkIcon key={link.url} link={link} />
                   ))}
-                  {candidate.sources.length > 0 && (
-                    <SourceBadges label={candidate.sources.join('+')} />
-                  )}
-                  {candidate.sources.some((source) => source.toLowerCase() === 'norbert') && (
-                    <Tooltip title="Norbert" arrow>
-                      <Box component="span" sx={{ display: 'inline-flex', mt: 0.125 }}>
-                        <NorbertIcon />
-                      </Box>
-                    </Tooltip>
+                  {badgeSources.length > 0 && (
+                    <SourceBadges label={badgeSources.join('+')} />
                   )}
                   {candidate.fromEntityFile && (
                     <Chip

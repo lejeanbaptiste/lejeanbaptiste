@@ -19,6 +19,10 @@ import { rationaleForCandidates } from './packLoader';
 import type { Suggestion, WhitespacePolicy } from './types';
 import { extractPluginOfficeRelations } from '../plugins/officeRelationExtractors';
 import { formatNorbertAuthorityValue } from './norbertAuthorityId';
+import {
+  nobleTitlesFromMetadata,
+  preferredEntityPrimaryName,
+} from './nobleTitleHeadword';
 
 /**
  * Dedupe source labels for the pill display. Each input may itself already be
@@ -443,41 +447,7 @@ function resolveEntity(
   const authorityIds =
     candidate.kind === 'office'
       ? officeAuthorityIds(candidate)
-      : [
-          {
-            type: candidate.source,
-            value:
-              candidate.source.trim().toUpperCase() === 'NORBERT'
-                ? formatNorbertAuthorityValue('person', candidate.authorityId)
-                : candidate.authorityId,
-          },
-          ...(candidate.metadata?.crosswalk?.norbert
-            ? [
-                {
-                  type: 'NORBERT',
-                  value: formatNorbertAuthorityValue(
-                    'person',
-                    candidate.metadata.crosswalk.norbert,
-                  ),
-                },
-              ]
-            : []),
-          ...(candidate.metadata?.canonicalEntityId?.startsWith(
-            `${candidate.source.toLowerCase()}:person:`,
-          )
-            ? [
-                {
-                  type: candidate.source,
-                  value: candidate.metadata.canonicalEntityId.slice(
-                    `${candidate.source.toLowerCase()}:person:`.length,
-                  ),
-                },
-              ]
-            : []),
-        ].filter(
-          (id, index, all) =>
-            all.findIndex((other) => other.type === id.type && other.value === id.value) === index,
-        );
+      : personAuthorityIds(candidate);
   const memo =
     candidate.metadata?.canonicalEntityId ??
     authorityIds
@@ -517,17 +487,24 @@ function resolveEntity(
   }
 
   const displayName = candidate.displayName?.trim() || candidate.primaryName;
+  const typedNames = candidate.names ?? [];
+  const titleParts = nobleTitlesFromMetadata(candidate.metadata);
+  // Prefer pack personal primary / 姓+名; keep title headwords only as fallback label.
+  const mintName =
+    candidate.kind === 'person'
+      ? preferredEntityPrimaryName(displayName, typedNames, titleParts)
+      : displayName;
   const romanizedName = romanizeFromAuthorityMetadata(
     candidate.metadata,
-    displayName,
+    mintName,
     projectLang,
   );
   const { id } = addEntity(
     entitiesDoc,
     candidate.kind,
     {
-      name: displayName,
-      nameLang: projectLang && !isLatinSurface(displayName) ? projectLang : undefined,
+      name: mintName,
+      nameLang: projectLang && !isLatinSurface(mintName) ? projectLang : undefined,
       romanizedName: romanizedName ?? undefined,
       authorityIds,
       officeTypeIds: candidate.kind === 'office' ? candidate.metadata?.officeTypeIds : undefined,
@@ -559,6 +536,43 @@ function officeAuthorityIds(candidate: AuthorityCandidate) {
   add('CBDB', candidate.metadata?.crosswalk?.cbdb);
   const norbertCross = candidate.metadata?.crosswalk?.norbert;
   if (norbertCross) add('NORBERT', formatNorbertAuthorityValue('office', norbertCross));
+  return ids;
+}
+
+/** Person idnos: primary source plus every pack crosswalk (Norbert ↔ CBDB/DILA/…). */
+function personAuthorityIds(candidate: AuthorityCandidate) {
+  const ids: { type: string; value: string }[] = [];
+  const add = (type: string, value: string | undefined) => {
+    if (!value || ids.some((id) => id.type === type && id.value === value)) return;
+    ids.push({ type, value });
+  };
+  const sourceType = candidate.source.trim().toUpperCase();
+  if (!candidate.source.includes('+') && sourceType) {
+    const value =
+      sourceType === 'NORBERT'
+        ? formatNorbertAuthorityValue('person', candidate.authorityId)
+        : candidate.authorityId;
+    add(sourceType, value);
+  }
+  const crosswalk = candidate.metadata?.crosswalk;
+  add('CBDB', crosswalk?.cbdb);
+  add('DILA', crosswalk?.dila);
+  add('CHGIS', crosswalk?.chgis);
+  add('NDL', crosswalk?.ndl);
+  add('BDRC', crosswalk?.bdrc);
+  add('VIAF', crosswalk?.viaf);
+  if (crosswalk?.wikidata) {
+    for (const qid of Array.isArray(crosswalk.wikidata) ? crosswalk.wikidata : [crosswalk.wikidata]) {
+      add('Wikidata', qid);
+    }
+  }
+  if (crosswalk?.norbert) {
+    add('NORBERT', formatNorbertAuthorityValue('person', crosswalk.norbert));
+  }
+  const canonical = candidate.metadata?.canonicalEntityId;
+  if (canonical?.startsWith(`${candidate.source.toLowerCase()}:person:`)) {
+    add(candidate.source, canonical.slice(`${candidate.source.toLowerCase()}:person:`.length));
+  }
   return ids;
 }
 

@@ -981,18 +981,6 @@ export const AutoTaggingDialog = ({ id, onClose, open = false }: IDialog) => {
     }
   };
 
-  const togglePackStringCounts = (checked: boolean) => {
-    setShowPackStringCounts(checked);
-    void persistAuthoritySettings(
-      settingsFromUiState({
-        packs: authorityPacks,
-        showPackStringCounts: checked,
-        dateFilter: authorityDateFilter,
-        yearRange: authorityYearRange,
-      }),
-    );
-  };
-
   const runAi = async () => {
     const tags = aiSelectedTags;
     if (tags.length === 0) {
@@ -1435,6 +1423,32 @@ export const AutoTaggingDialog = ({ id, onClose, open = false }: IDialog) => {
                     }
                     sx={{ ml: 0 }}
                   />
+                  <FormControlLabel
+                    control={
+                      <Checkbox
+                        size="small"
+                        checked={aiValidation && aiReady}
+                        disabled={aiDisabled || busy}
+                        onChange={(event) => {
+                          setAiValidation(event.target.checked);
+                          void persistValidationSettings({ aiValidation: event.target.checked });
+                        }}
+                      />
+                    }
+                    label={
+                      <Typography
+                        variant="caption"
+                        color={aiDisabled ? 'text.disabled' : 'text.primary'}
+                      >
+                        {t('LW.autoTagging.ai_curate')}
+                      </Typography>
+                    }
+                    title={
+                      aiDisabledReason ??
+                      'After tagging, score suggestions in the background and filter obviously wrong hits.'
+                    }
+                    sx={{ ml: 0, ...(aiDisabled ? { opacity: 0.6 } : {}) }}
+                  />
                 </Stack>
               </Box>
               <Box sx={{ px: 0.25 }}>
@@ -1628,23 +1642,6 @@ export const AutoTaggingDialog = ({ id, onClose, open = false }: IDialog) => {
                   );
                 })}
               </Box>
-              <FormControlLabel
-                control={
-                  <Checkbox
-                    size="small"
-                    checked={showPackStringCounts}
-                    disabled={busy}
-                    onChange={(event) => togglePackStringCounts(event.target.checked)}
-                    sx={{ py: 0.125 }}
-                  />
-                }
-                label={
-                  <Typography variant="caption">
-                    Show live string counts (can slow opening)
-                  </Typography>
-                }
-                sx={authorityOptionSx}
-              />
               <Box sx={{ px: 0.25, pt: 0.25 }}>
                 <Stack direction="row" alignItems="center" spacing={0.5}>
                   <Tooltip
@@ -1748,32 +1745,6 @@ export const AutoTaggingDialog = ({ id, onClose, open = false }: IDialog) => {
                   Run tag bomb
                 </Button>
               </Stack>
-              <FormControlLabel
-                control={
-                  <Checkbox
-                    size="small"
-                    checked={aiValidation && aiReady}
-                    disabled={aiDisabled || busy}
-                    onChange={(event) => {
-                      setAiValidation(event.target.checked);
-                      void persistValidationSettings({ aiValidation: event.target.checked });
-                    }}
-                  />
-                }
-                label={
-                  <Typography
-                    variant="caption"
-                    color={aiDisabled ? 'text.disabled' : 'text.primary'}
-                  >
-                    AI curate (score hits in review; reject-below slider)
-                  </Typography>
-                }
-                title={
-                  aiDisabledReason ??
-                  'After tagging, score suggestions in the background and filter obviously wrong hits.'
-                }
-                sx={{ ml: 0, mt: 0.25, ...(aiDisabled ? { opacity: 0.6 } : {}) }}
-              />
               {aiDisabled && isDesktopApp() && (
                 <Typography
                   variant="caption"

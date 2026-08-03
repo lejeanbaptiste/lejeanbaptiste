@@ -1,6 +1,7 @@
 import {
   boundsContain,
   findBundleForPoint,
+  lngLatBoundsLike,
   regionalBundleForLanguage,
   REGIONAL_BUNDLES,
   type MapTileBundleSpec,
@@ -14,6 +15,13 @@ describe('regionalBundles', () => {
     expect(boundsContain(bounds, 10, 10)).toBe(true);
     expect(boundsContain(bounds, -1, 5)).toBe(false);
     expect(boundsContain(bounds, 5, 11)).toBe(false);
+  });
+
+  it('lngLatBoundsLike uses MapLibre [[west,south],[east,north]] order', () => {
+    expect(lngLatBoundsLike({ north: 53.6, south: 15.8, east: 134.8, west: 73.5 })).toEqual([
+      [73.5, 15.8],
+      [134.8, 53.6],
+    ]);
   });
 
   it('finds the china bundle for a point in Beijing', () => {

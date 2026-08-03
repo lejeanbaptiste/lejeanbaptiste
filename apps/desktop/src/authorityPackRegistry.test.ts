@@ -1,3 +1,7 @@
+import fs from 'node:fs/promises';
+import os from 'node:os';
+import path from 'node:path';
+
 import {
   artifactRawUrl,
   parsePacksIndex,
@@ -6,7 +10,11 @@ import {
   AUTHORITY_PACK_REGISTRY,
   type AuthorityPacksIndex,
 } from '../../commons/src/desktop/authorityPackRegistryTypes';
-import { bundleForProfile, remotePackUpdateAvailable } from './authorityPackRegistry';
+import {
+  bundleForProfile,
+  remotePackUpdateAvailable,
+  restoreFilesAbsentFromSource,
+} from './authorityPackRegistry';
 
 describe('authorityPackRegistryTypes', () => {
   it('builds GitHub release asset URLs', () => {
@@ -169,5 +177,28 @@ describe('remotePackUpdateAvailable', () => {
         'tibetan',
       ),
     ).toBe(true);
+  });
+});
+
+describe('restoreFilesAbsentFromSource', () => {
+  it('keeps plugin-only files when a release tree replaces a shared folder', async () => {
+    const root = await fs.mkdtemp(path.join(os.tmpdir(), 'ljb-pack-preserve-'));
+    const previous = path.join(root, 'previous');
+    const next = path.join(root, 'next');
+    await fs.mkdir(path.join(previous, 'norbert'), { recursive: true });
+    await fs.mkdir(path.join(next, 'norbert'), { recursive: true });
+    await fs.writeFile(path.join(previous, 'norbert', 'persons.ndjson'), 'old-persons\n');
+    await fs.writeFile(path.join(previous, 'norbert', 'wiki-nt-links.ndjson'), 'wiki-titles\n');
+    await fs.writeFile(path.join(next, 'norbert', 'persons.ndjson'), 'new-persons\n');
+
+    const restored = await restoreFilesAbsentFromSource(previous, next);
+
+    expect(restored).toEqual(['norbert/wiki-nt-links.ndjson']);
+    expect(await fs.readFile(path.join(next, 'norbert', 'persons.ndjson'), 'utf8')).toBe(
+      'new-persons\n',
+    );
+    expect(await fs.readFile(path.join(next, 'norbert', 'wiki-nt-links.ndjson'), 'utf8')).toBe(
+      'wiki-titles\n',
+    );
   });
 });

@@ -52,10 +52,12 @@ describe('ReviewPanel', () => {
   it('renders the batch and walks it with the keyboard', async () => {
     const { doc, suggestions } = setup();
     const applied: string[] = [];
+    const rejected: string[] = [];
     render(
       <ReviewPanel
         suggestions={suggestions}
-        onApply={async (accepted) => {
+        onApply={async (accepted, dismissed = []) => {
+          rejected.push(...dismissed.map((s) => s.id));
           const { results } = await applySuggestions(doc, accepted, { policy: 'ignore' });
           applied.push(...results.filter((r) => r.outcome === 'applied').map((r) => r.suggestion.id));
         }}
@@ -65,19 +67,13 @@ describe('ReviewPanel', () => {
     expect(suggestions).toHaveLength(3); // 上陽子 ×2, 老君 ×1
     const panel = screen.getByTestId('review-panel');
 
-    // accept first, reject second, accept third
+    // accept first, reject second, accept third — last judgement auto-commits
     fireEvent.keyDown(panel, { key: 'a' });
     fireEvent.keyDown(panel, { key: 'r' });
     fireEvent.keyDown(panel, { key: 'Enter' });
 
-    expect(screen.getByTestId('review-counts').textContent).toContain('2 accepted');
-    expect(screen.getByTestId('review-counts').textContent).toContain('1 rejected');
-
-    fireEvent.click(screen.getByTestId('review-apply'));
     await waitFor(() => expect(applied).toHaveLength(2));
-
-    // applied items leave the walk; the rejected one remains
-    expect(screen.getAllByRole('listitem')).toHaveLength(1);
+    expect(rejected).toHaveLength(1);
 
     // the document actually got tagged
     const tagged = collectTextNodes(doc, 'ignore').filter(
@@ -114,15 +110,16 @@ describe('ReviewPanel', () => {
     fireEvent.click(screen.getByTestId(`reject-${suggestions[1]!.id}`));
     expect(screen.getByTestId('review-counts').textContent).toContain('1 accepted');
     expect(screen.getByTestId('review-counts').textContent).toContain('1 rejected');
+    // One item still pending — no auto-commit yet.
+    expect(screen.getByTestId('review-counts').textContent).toContain('1 pending');
 
     // Backspace rejects the current row when the panel has focus
     fireEvent.keyDown(panel, { key: 'k' });
     fireEvent.keyDown(panel, { key: 'Backspace' });
-    expect(screen.getByTestId('review-counts').textContent).toContain('2 rejected');
-
-    // a decided row offers undo, restoring it to pending
-    fireEvent.click(screen.getByTestId(`undo-${suggestions[0]!.id}`));
+    // Last judgement auto-commits and clears the walk.
+    expect(screen.getByTestId('review-counts').textContent).toContain('0 pending');
     expect(screen.getByTestId('review-counts').textContent).toContain('0 accepted');
+    expect(screen.getByTestId('review-counts').textContent).toContain('0 rejected');
   });
 
   it('shows an empty state', () => {
@@ -133,10 +130,12 @@ describe('ReviewPanel', () => {
   it('apply all remaining accepts pending items and skips rejected ones', async () => {
     const { doc, suggestions } = setup();
     const applied: string[] = [];
+    const rejected: string[] = [];
     render(
       <ReviewPanel
         suggestions={suggestions}
-        onApply={async (accepted) => {
+        onApply={async (accepted, dismissed = []) => {
+          rejected.push(...dismissed.map((s) => s.id));
           const { results } = await applySuggestions(doc, accepted, { policy: 'ignore' });
           applied.push(...results.filter((r) => r.outcome === 'applied').map((r) => r.suggestion.id));
         }}
@@ -146,10 +145,9 @@ describe('ReviewPanel', () => {
     fireEvent.click(screen.getByTestId(`reject-${suggestions[1]!.id}`));
     fireEvent.click(screen.getByTestId('review-apply-all'));
 
-    await new Promise((resolve) => setTimeout(resolve, 0));
-
-    expect(applied).toHaveLength(2);
-    expect(screen.getAllByRole('listitem')).toHaveLength(1);
+    await waitFor(() => expect(applied).toHaveLength(2));
+    expect(rejected).toEqual([suggestions[1]!.id]);
+    expect(screen.getByText('Nothing to review.')).toBeTruthy();
   });
 
   it('can flip a decision from the expanded accepted group', () => {
@@ -213,30 +211,32 @@ describe('ReviewPanel', () => {
       const pers = suggestions.find((s) => s.tag === 'persName')!;
       const title = suggestions.find((s) => s.tag === 'title')!;
 
-      // check the title alternative, then accept the pair
+      // check the title alternative, then accept the pair — auto-commits
       fireEvent.click(screen.getByTestId(`alt-select-${title.id}`));
       fireEvent.click(screen.getByTestId(`accept-group-${pers.id}`));
 
-      expect(screen.getByTestId('review-counts').textContent).toContain('1 accepted');
-      expect(screen.getByTestId('review-counts').textContent).toContain('1 rejected');
-
-      fireEvent.click(screen.getByTestId('review-apply'));
-      await new Promise((resolve) => setTimeout(resolve, 0));
-
-      expect(applied).toEqual([title.id]);
+      await waitFor(() => expect(applied).toEqual([title.id]));
       expect(doc.getElementsByTagName('title')).toHaveLength(1);
       expect(doc.getElementsByTagName('persName')).toHaveLength(0);
     });
 
-    it('rejecting drops the whole pair, not just one alternative', () => {
+    it('rejecting drops the whole pair, not just one alternative', async () => {
       const { suggestions } = setupAlternatives();
-      render(<ReviewPanel suggestions={suggestions} onApply={() => {}} />);
+      const rejected: string[] = [];
+      render(
+        <ReviewPanel
+          suggestions={suggestions}
+          onApply={(_accepted, dismissed = []) => {
+            rejected.push(...dismissed.map((s) => s.id));
+          }}
+        />,
+      );
 
       const pers = suggestions.find((s) => s.tag === 'persName')!;
       fireEvent.click(screen.getByTestId(`reject-group-${pers.id}`));
 
-      expect(screen.getByTestId('review-counts').textContent).toContain('2 rejected');
-      expect(screen.getByTestId('review-counts').textContent).toContain('0 pending');
+      await waitFor(() => expect(rejected).toHaveLength(2));
+      expect(screen.getByText('Nothing to review.')).toBeTruthy();
     });
 
     it('Space cycles the checked alternative via the keyboard', () => {
@@ -253,6 +253,103 @@ describe('ReviewPanel', () => {
       expect(checkboxInput(pers.id).checked).toBe(true);
       fireEvent.keyDown(panel, { key: ' ' });
       expect(checkboxInput(title.id).checked).toBe(true);
+    });
+  });
+
+  describe('Norbert mandatory stage', () => {
+    it('shows only nobleTitle rows when that stage is locked', () => {
+      const { suggestions } = setup();
+      const withNoble = [
+        ...suggestions,
+        {
+          ...suggestions[0]!,
+          id: 'noble-1',
+          tag: 'nobleTitle',
+          status: 'pending' as const,
+        },
+      ];
+
+      render(
+        <ReviewPanel
+          suggestions={withNoble}
+          onApply={() => {}}
+          mandatoryStage="nobleTitle"
+        />,
+      );
+
+      expect(screen.getByText('nobleTitle')).toBeTruthy();
+      expect(screen.queryByText('All tags')).toBeNull();
+      // Only the noble-title row is listed; the original persName rows are hidden.
+      expect(screen.getAllByRole('listitem')).toHaveLength(1);
+      expect(screen.getByTestId('review-item-noble-1')).toBeTruthy();
+      expect(screen.getByTestId('review-counts').textContent).toContain('1 pending');
+    });
+
+    it('shows only personWrapper rows when that stage is locked', () => {
+      const { suggestions } = setup();
+      const withWrapper = [
+        ...suggestions,
+        {
+          ...suggestions[0]!,
+          id: 'wrapper-1',
+          tag: 'name',
+          attributes: { type: 'personWrapper' },
+          status: 'pending' as const,
+        },
+      ];
+
+      render(
+        <ReviewPanel
+          suggestions={withWrapper}
+          onApply={() => {}}
+          mandatoryStage="personWrapper"
+        />,
+      );
+
+      expect(screen.getByText('personWrapper')).toBeTruthy();
+      expect(screen.getAllByRole('listitem')).toHaveLength(1);
+      expect(screen.getByTestId('review-item-wrapper-1')).toBeTruthy();
+    });
+
+    it('auto-commits when the last pending item is judged', async () => {
+      const { suggestions } = setup();
+      const nobleOnly = [
+        {
+          ...suggestions[0]!,
+          id: 'noble-1',
+          tag: 'nobleTitle',
+          status: 'pending' as const,
+        },
+        {
+          ...suggestions[0]!,
+          id: 'noble-2',
+          tag: 'nobleTitle',
+          status: 'pending' as const,
+          anchor: { ...suggestions[0]!.anchor, surface: '魏王' },
+        },
+      ];
+      const applied: { accepted: string[]; rejected: string[] }[] = [];
+
+      render(
+        <ReviewPanel
+          suggestions={nobleOnly}
+          onApply={(accepted, rejected = []) => {
+            applied.push({
+              accepted: accepted.map((s) => s.id),
+              rejected: rejected.map((s) => s.id),
+            });
+          }}
+          mandatoryStage="nobleTitle"
+        />,
+      );
+
+      fireEvent.click(screen.getByTestId('reject-noble-1'));
+      expect(applied).toHaveLength(0);
+
+      fireEvent.click(screen.getByTestId('reject-noble-2'));
+      await waitFor(() => expect(applied).toHaveLength(1));
+      expect(applied[0]!.accepted).toEqual([]);
+      expect([...applied[0]!.rejected].sort()).toEqual(['noble-1', 'noble-2']);
     });
   });
 });

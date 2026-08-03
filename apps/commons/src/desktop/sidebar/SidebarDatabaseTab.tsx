@@ -729,7 +729,7 @@ function EntityRow({
 export const SidebarDatabaseTab = ({ active = false }: SidebarDatabaseTabProps) => {
   const { t, i18n } = useTranslation();
   const { skipEntityDetachConfirm } = useAppState().ui;
-  const { setSkipEntityDetachConfirm, notifyViaSnackbar, setDesktopWindowMode } = useActions().ui;
+  const { setSkipEntityDetachConfirm, notifyViaSnackbar } = useActions().ui;
   const { config, rootPath } = useAppState().project;
   const [savedSyncOverride, setSavedSyncOverride] = useState<boolean | null>(null);
   const syncToCentral = savedSyncOverride ?? config?.syncToCentral === true;
@@ -809,6 +809,8 @@ export const SidebarDatabaseTab = ({ active = false }: SidebarDatabaseTabProps) 
   const [docketOpen, setDocketOpen] = useState(false);
   const [docketCount, setDocketCount] = useState(0);
   const [backfillBusy, setBackfillBusy] = useState(false);
+  /** Ids being enriched; `null` means bulk (all linked persons). */
+  const [backfillScopeIds, setBackfillScopeIds] = useState<string[] | null>(null);
   const [bulkProposals, setBulkProposals] = useState<BulkBridgeProposal[]>([]);
   const [proposalsOpen, setProposalsOpen] = useState(false);
   const [acceptingProposals, setAcceptingProposals] = useState(false);
@@ -817,6 +819,8 @@ export const SidebarDatabaseTab = ({ active = false }: SidebarDatabaseTabProps) 
     total: number;
     entityLabel?: string;
   } | null>(null);
+  /** Bumped when the open card is rehydrated so uncontrolled fields remount. */
+  const [editFormEpoch, setEditFormEpoch] = useState(0);
   const backfillAbortRef = useRef<AbortController | null>(null);
   /** Guards against overlapping bulk catch-up sync passes across successive reload() calls. */
   const bulkSyncInFlightRef = useRef(false);
@@ -1365,7 +1369,10 @@ export const SidebarDatabaseTab = ({ active = false }: SidebarDatabaseTabProps) 
       const controller = new AbortController();
       backfillAbortRef.current = controller;
       setBackfillBusy(true);
+      setBackfillScopeIds(entityIds ?? null);
       setBackfillProgress({ done: 0, total: 0 });
+      const cardScoped =
+        entityIds?.length === 1 && editEntityIdRef.current === entityIds[0];
       try {
         const readPack = cachedPackReader();
         if (
@@ -1375,9 +1382,10 @@ export const SidebarDatabaseTab = ({ active = false }: SidebarDatabaseTabProps) 
           setLoadError(SQLITE_REQUIRED_MESSAGE);
           return;
         }
-        // Expand concordance first so newly linked merged-from CBDB ids are
-        // present before pack/Wikidata backfill reads authorities.
-        if (activeStore === store) {
+        // Concordance is a whole-database apply. Skip it for scoped refresh —
+        // panel reload / bulk backfill remain the safety net for new CBDB links.
+        const scopedRefresh = Boolean(entityIds && entityIds.length > 0);
+        if (!scopedRefresh && activeStore === store) {
           await refreshCbdbConcordanceSqliteDebounced(activeStore, readPack, {
             force: true,
             clearCache: false,
@@ -1403,9 +1411,7 @@ export const SidebarDatabaseTab = ({ active = false }: SidebarDatabaseTabProps) 
           // Promote still works without a meaningful DOM when both DBs are SQLite.
           await autoSyncEntitiesToCentral(null, entityIds);
         }
-        // Newly attached CBDB ids from backfill should pick up concordance links
-        // in the same user action (not only on a later panel reload).
-        if (activeStore === store && window.electronAPI?.entitySqliteApplyConcordance) {
+        if (!scopedRefresh && activeStore === store && window.electronAPI?.entitySqliteApplyConcordance) {
           const imported = await refreshCbdbConcordanceSqliteDebounced(
             activeStore,
             cachedPackReader(),
@@ -1417,15 +1423,20 @@ export const SidebarDatabaseTab = ({ active = false }: SidebarDatabaseTabProps) 
           scheduleMirrorSync();
         }
 
-        await reload();
-        // Keep the open entity card in sync with newly backfilled names/dates/badges.
-        const openId = editEntityIdRef.current;
-        if (
-          openId &&
-          activeStore &&
-          (!entityIds || entityIds.length === 0 || entityIds.includes(openId))
-        ) {
-          await refreshEditEntityFromSqlite(activeStore, openId);
+        // In-card refresh: rehydrate that one card + list row. Avoid a full list
+        // reload (progress belongs on the card, not the panel underneath).
+        if (cardScoped && entityIds?.[0]) {
+          await refreshEditEntityFromSqlite(activeStore, entityIds[0], { remount: true });
+          await refreshListEntityFromSqlite(activeStore, entityIds[0]);
+        } else {
+          await reload();
+          const openId = editEntityIdRef.current;
+          if (
+            openId &&
+            (!entityIds || entityIds.length === 0 || entityIds.includes(openId))
+          ) {
+            await refreshEditEntityFromSqlite(activeStore, openId, { remount: true });
+          }
         }
         const scope =
           entityIds?.length === 1 ? 'this person' : `${result.entitiesScanned} linked persons`;
@@ -1443,6 +1454,7 @@ export const SidebarDatabaseTab = ({ active = false }: SidebarDatabaseTabProps) 
       } finally {
         backfillAbortRef.current = null;
         setBackfillBusy(false);
+        setBackfillScopeIds(null);
         setBackfillProgress(null);
       }
     },
@@ -1502,77 +1514,106 @@ export const SidebarDatabaseTab = ({ active = false }: SidebarDatabaseTabProps) 
     [centralStore, reload, scheduleMirrorSync, store, syncToCentral],
   );
 
-  const refreshEditEntityFromSqlite = async (targetStore: EntityStore, entityId: string) => {
-    const raw = (await targetStore.sqliteEntitySummary(entityId)) as {
-      names?: Array<{
-        text: string;
-        nameType?: string | null;
-        language?: string | null;
-      }>;
-      description?: string | null;
-      authorities?: EntitySummary['authorities'];
-      familyName?: string | null;
-      givenName?: string | null;
-      startYear?: number | null;
-      endYear?: number | null;
-      workDate?: EntitySummary['workDate'];
-      nationalities?: string[];
-      placesOfOrigin?: string[];
-      roles?: string[];
-      origins?: EntitySummary['origins'];
-      authors?: EntitySummary['authors'];
-      nobleTitles?: EntitySummary['nobleTitles'];
-      assertions?: EntitySummary['assertions'];
-    } | null;
-    if (!raw?.names) return;
-    const names = raw.names.filter((name) => name.text.trim());
-    const nameTexts = new Set(names.map((name) => name.text));
+  const refreshEditEntityFromSqlite = async (
+    targetStore: EntityStore,
+    entityId: string,
+    options?: { remount?: boolean },
+  ) => {
+    const raw = await targetStore.sqliteEntitySummary(entityId);
+    if (!raw) return;
+    const refreshed = entitySummaryFromSqlite(
+      raw as Parameters<typeof entitySummaryFromSqlite>[0],
+    );
+    // Keep project/central key badges from the open card / list row.
     setEditEntity((previous) => {
       if (!previous || previous.id !== entityId) return previous;
-      const nameTag = ENTITY_KINDS[previous.kind].name;
       return {
-        ...previous,
-        names: names.map((name) => name.text),
-        nameEntries: names.map((name) => ({
-          text: name.text,
-          lang: name.language ?? null,
-          type: (name.nameType || null) as NameTypeId | null,
-        })),
-        romanized: names.find((name) => name.language?.endsWith('-Latn'))?.text ?? null,
-        description: raw.description ?? null,
-        authorities: raw.authorities ?? previous.authorities,
-        familyName: raw.familyName ?? null,
-        givenName: raw.givenName ?? null,
-        startYear: raw.startYear ?? null,
-        endYear: raw.endYear ?? null,
-        workDate: raw.workDate ?? null,
-        nationalities: raw.nationalities ?? [],
-        placesOfOrigin: raw.placesOfOrigin ?? [],
-        roles: raw.roles ?? [],
-        origins: raw.origins ?? [],
-        authors: raw.authors ?? [],
-        nobleTitles: raw.nobleTitles ?? [],
-        rejectedCount:
-          raw.assertions?.filter((assertion) => assertion.status === 'rejected').length ?? 0,
-        rejectedAssertions:
-          raw.assertions
-            ?.filter((assertion) => assertion.status === 'rejected')
-            .map((assertion) => ({
-              element: assertion.element,
-              value: assertion.value,
-              source: assertion.source,
-            })) ?? [],
-        assertions:
-          raw.assertions?.filter(
-            (assertion) => assertion.element !== nameTag || nameTexts.has(assertion.value),
-          ) ?? previous.assertions,
+        ...refreshed,
+        projectKey: previous.projectKey,
+        centralKey: previous.centralKey,
       };
     });
-    setEditNameTypes(Object.fromEntries(names.map((name) => [name.text, name.nameType ?? ''])));
-    setEditNameLanguages(Object.fromEntries(names.map((name) => [name.text, name.language ?? ''])));
-    // Header romanization is separate state — keep it current after link/backfill.
-    const refreshedRomanized = names.find((name) => name.language?.endsWith('-Latn'))?.text ?? null;
-    if (refreshedRomanized) setEditRomanized(refreshedRomanized);
+    if (editEntityIdRef.current !== entityId) return;
+    syncEditFormFields(refreshed, {
+      resetAccordions: false,
+      remount: options?.remount === true,
+    });
+  };
+
+  /**
+   * Re-apply form fields from an EntitySummary. Used by openEdit and by
+   * in-place refresh after authority backfill so the open card shows new data
+   * without close/reopen (including uncontrolled TextFields via editFormEpoch).
+   */
+  const syncEditFormFields = (
+    entity: EntitySummary,
+    options?: { resetAccordions?: boolean; remount?: boolean },
+  ) => {
+    const suggestedRomanized =
+      entity.romanized ??
+      (entity.kind === 'person'
+        ? suggestPersonRomanization(entity.names[0] ?? '', projectLang)
+        : null);
+    setEditCanonicalName(entity.names[0] ?? '');
+    setEditingName(false);
+    setEditingRomanized(false);
+    const description = entity.description ?? '';
+    setEditDescriptionSeed(description);
+    editDescriptionRef.current = description;
+    setEditRomanized(suggestedRomanized ?? '');
+    const workDate = entity.workDate;
+    const birthAssertion = entity.assertions.find(
+      (assertion) => assertion.element === 'birth' && assertion.origin === 'user',
+    );
+    const deathAssertion = entity.assertions.find(
+      (assertion) => assertion.element === 'death' && assertion.origin === 'user',
+    );
+    setDateBirth(entity.startYear != null ? String(Math.abs(entity.startYear)) : '');
+    setDateDeath(entity.endYear != null ? String(Math.abs(entity.endYear)) : '');
+    setDateBirthBce(entity.startYear != null && entity.startYear < 0);
+    setDateDeathBce(entity.endYear != null && entity.endYear < 0);
+    setDateBirthQualifier((birthAssertion?.precision as DatePrecision) ?? '');
+    setDateDeathQualifier((deathAssertion?.precision as DatePrecision) ?? '');
+    setWorkDateStart(
+      workDate?.startYear != null
+        ? String(Math.abs(workDate.startYear))
+        : entity.startYear != null
+          ? String(Math.abs(entity.startYear))
+          : '',
+    );
+    setWorkDateEnd(
+      workDate?.endYear != null
+        ? String(Math.abs(workDate.endYear))
+        : entity.endYear != null
+          ? String(Math.abs(entity.endYear))
+          : '',
+    );
+    setWorkDateStartPrecision((workDate?.startPrecision as WorkDatePrecision) ?? '');
+    setWorkDateEndPrecision((workDate?.endPrecision as WorkDatePrecision) ?? '');
+    setDateEditing(false);
+    setValuesEditing(false);
+    setPendingValidations([]);
+    setEditNameTypes(
+      Object.fromEntries(entity.nameEntries.map((entry) => [entry.text, entry.type ?? ''])),
+    );
+    setEditNameLanguages(
+      Object.fromEntries(
+        entity.nameEntries
+          .filter((entry) => entry.lang)
+          .map((entry) => [entry.text, entry.lang!] as const),
+      ),
+    );
+    setEditNewName('');
+    setEditNewNameType('');
+    setEditNewNameLanguage('');
+    setNewTitle({ dynasty: '', fief: '', posthumousName: '', title: '' });
+    if (options?.resetAccordions !== false) {
+      setNamesExpanded(false);
+      setTitlesExpanded(false);
+    }
+    if (options?.remount) {
+      setEditFormEpoch((epoch) => epoch + 1);
+    }
   };
 
   /**
@@ -1773,119 +1814,114 @@ export const SidebarDatabaseTab = ({ active = false }: SidebarDatabaseTabProps) 
    * after review in the merge docket, never automatically.
    */
   const requestDeleteEntity = (entity: EntitySummary) => {
-    const targetStore = resolveStoreFor(entity.id);
-    if (!targetStore) return;
-    const isProjectEntity = targetStore === store;
+    requestDeleteEntities([entity]);
+  };
+
+  const requestDeleteEntities = (targets: EntitySummary[]) => {
+    const entitiesToDelete = targets.filter((entity) => resolveStoreFor(entity.id));
+    if (entitiesToDelete.length === 0) return;
+    const single = entitiesToDelete.length === 1 ? entitiesToDelete[0]! : null;
     setConfirm({
-      title: t('LWC.desktop.sidebar.database.delete_entity_title', {
-        name: entity.names[0] ?? entity.id,
-      }),
+      title: single
+        ? t('LWC.desktop.sidebar.database.delete_entity_title', {
+            name: single.names[0] ?? single.id,
+          })
+        : t('LWC.desktop.sidebar.database.delete_selected_title', {
+            count: entitiesToDelete.length,
+            defaultValue: `Delete ${entitiesToDelete.length} entities?`,
+          }),
       body: t('LWC.desktop.sidebar.database.delete_entity_body'),
       confirmLabel: t('LWC.desktop.sidebar.database.delete_entity_confirm'),
       destructive: true,
       onConfirm: () => {
         void (async () => {
-          let sourceDbId: string | null = null;
-          let centralIdToPurge: string | null = null;
-
-          const handled = await runSqliteRemapMutation(
-            targetStore,
-            t('LWC.desktop.sidebar.database.deleting_entity'),
-            async () => {
-              sourceDbId = await targetStore.sqliteDatabaseId();
-              if (isProjectEntity && centralStore) {
-                const api = desktopEntityFileApi();
-                if (api) {
-                  const { id: userStableId } = await readOrMintUserStableId(
-                    api,
-                    centralStore.centralFolder,
-                  );
-                  centralIdToPurge = await targetStore.sqliteGetCentralId(entity.id, userStableId);
-                }
-              }
-              await targetStore.sqliteSoftDelete(entity.id);
-              return { [entity.id]: null };
-            },
-          );
-
-          if (!handled) return;
-
-          setEditEntity(null);
-          if (centralIdToPurge && centralStore && sourceDbId) {
-            await centralStore
-              .recordDeleteSuggestion(sourceDbId, centralIdToPurge)
-              .catch(() => undefined);
-            computeMergeDocket(centralStore)
-              .then((docket) => setDocketCount(docket.length))
-              .catch(() => undefined);
+          // Group by store so project and central rows stay on their own DB.
+          const byStore = new Map<EntityStore, EntitySummary[]>();
+          for (const entity of entitiesToDelete) {
+            const targetStore = resolveStoreFor(entity.id);
+            if (!targetStore) continue;
+            const list = byStore.get(targetStore) ?? [];
+            list.push(entity);
+            byStore.set(targetStore, list);
           }
+
+          let anyHandled = false;
+          const deletedIds = new Set<string>();
+          for (const [targetStore, group] of byStore) {
+            const isProjectEntity = targetStore === store;
+            const centralPurges: Array<{ sourceDbId: string; centralId: string }> = [];
+            const handled = await runSqliteRemapMutation(
+              targetStore,
+              group.length === 1
+                ? t('LWC.desktop.sidebar.database.deleting_entity')
+                : t('LWC.desktop.sidebar.database.deleting_selected', {
+                    count: group.length,
+                    defaultValue: `Deleting ${group.length} entities…`,
+                  }),
+              async () => {
+                const sourceDbId = await targetStore.sqliteDatabaseId();
+                const remap: Record<string, string | null> = {};
+                for (const entity of group) {
+                  if (isProjectEntity && centralStore && sourceDbId) {
+                    const api = desktopEntityFileApi();
+                    if (api) {
+                      const { id: userStableId } = await readOrMintUserStableId(
+                        api,
+                        centralStore.centralFolder,
+                      );
+                      const centralId = await targetStore.sqliteGetCentralId(
+                        entity.id,
+                        userStableId,
+                      );
+                      if (centralId) {
+                        centralPurges.push({ sourceDbId, centralId });
+                      }
+                    }
+                  }
+                  await targetStore.sqliteSoftDelete(entity.id);
+                  remap[entity.id] = null;
+                  deletedIds.add(entity.id);
+                }
+                return remap;
+              },
+            );
+            if (!handled) continue;
+            anyHandled = true;
+            if (centralStore && centralPurges.length > 0) {
+              for (const purge of centralPurges) {
+                await centralStore
+                  .recordDeleteSuggestion(purge.sourceDbId, purge.centralId)
+                  .catch(() => undefined);
+              }
+              computeMergeDocket(centralStore)
+                .then((docket) => setDocketCount(docket.length))
+                .catch(() => undefined);
+            }
+          }
+
+          if (!anyHandled) return;
+          setEditEntity((previous) =>
+            previous && deletedIds.has(previous.id) ? null : previous,
+          );
         })();
       },
     });
   };
 
+  const requestDeleteSelected = () => {
+    const ids = pruneToKnownEntityIds(selected, entities);
+    if (ids.length !== selected.size) {
+      setSelected(new Set(ids));
+    }
+    const targets = ids
+      .map((id) => entities.find((entity) => entity.id === id))
+      .filter((entity): entity is EntitySummary => Boolean(entity));
+    requestDeleteEntities(targets);
+  };
+
   const openEdit = (entity: EntitySummary) => {
-    const suggestedRomanized =
-      entity.romanized ??
-      (entity.kind === 'person'
-        ? suggestPersonRomanization(entity.names[0] ?? '', projectLang)
-        : null);
     setEditEntity(entity);
-    setEditCanonicalName(entity.names[0] ?? '');
-    setEditingName(false);
-    setEditingRomanized(false);
-    const description = entity.description ?? '';
-    setEditDescriptionSeed(description);
-    editDescriptionRef.current = description;
-    setEditRomanized(suggestedRomanized ?? '');
-    const workDate = entity.workDate;
-    const birthAssertion = entity.assertions.find(
-      (assertion) => assertion.element === 'birth' && assertion.origin === 'user',
-    );
-    const deathAssertion = entity.assertions.find(
-      (assertion) => assertion.element === 'death' && assertion.origin === 'user',
-    );
-    setDateBirth(entity.startYear != null ? String(Math.abs(entity.startYear)) : '');
-    setDateDeath(entity.endYear != null ? String(Math.abs(entity.endYear)) : '');
-    setDateBirthBce(entity.startYear != null && entity.startYear < 0);
-    setDateDeathBce(entity.endYear != null && entity.endYear < 0);
-    setDateBirthQualifier((birthAssertion?.precision as DatePrecision) ?? '');
-    setDateDeathQualifier((deathAssertion?.precision as DatePrecision) ?? '');
-    setWorkDateStart(
-      workDate?.startYear != null
-        ? String(Math.abs(workDate.startYear))
-        : entity.startYear != null
-          ? String(Math.abs(entity.startYear))
-          : '',
-    );
-    setWorkDateEnd(
-      workDate?.endYear != null
-        ? String(Math.abs(workDate.endYear))
-        : entity.endYear != null
-          ? String(Math.abs(entity.endYear))
-          : '',
-    );
-    setWorkDateStartPrecision((workDate?.startPrecision as WorkDatePrecision) ?? '');
-    setWorkDateEndPrecision((workDate?.endPrecision as WorkDatePrecision) ?? '');
-    setDateEditing(false);
-    setValuesEditing(false);
-    setPendingValidations([]);
-    setEditNameTypes(
-      Object.fromEntries(entity.nameEntries.map((entry) => [entry.text, entry.type ?? ''])),
-    );
-    setEditNameLanguages(
-      Object.fromEntries(
-        entity.nameEntries
-          .filter((entry) => entry.lang)
-          .map((entry) => [entry.text, entry.lang!] as const),
-      ),
-    );
-    setEditNewName('');
-    setEditNewNameType('');
-    setEditNewNameLanguage('');
-    setNamesExpanded(false);
-    setTitlesExpanded(false);
-    setNewTitle({ dynasty: '', fief: '', posthumousName: '', title: '' });
+    syncEditFormFields(entity, { resetAccordions: true });
   };
 
   const queueValidation = useCallback(
@@ -1971,13 +2007,25 @@ export const SidebarDatabaseTab = ({ active = false }: SidebarDatabaseTabProps) 
       (await targetStore.hasSqliteDatabase()) &&
       window.electronAPI?.entitySqliteApplyAuthorityBackfillPatch
     ) {
-      setBusyMessage('Refreshing work details…');
+      if (backfillBusy) return;
+      const controller = new AbortController();
+      backfillAbortRef.current = controller;
+      setBackfillBusy(true);
+      setBackfillScopeIds([entity.id]);
+      setBackfillProgress({ done: 0, total: 1, entityLabel: entity.names[0] });
       try {
         const result = await backfillEntitiesSqlite(targetStore, {
           entityIds: [entity.id],
           projectLang,
           desktopLanguage: i18n.language,
+          signal: controller.signal,
           lookupAuthorityRef: window.electronAPI?.authorityRefLookup,
+          onProgress: (progress) =>
+            setBackfillProgress({
+              done: progress.done,
+              total: progress.total,
+              entityLabel: progress.entityLabel,
+            }),
         });
         if (result.entitiesUpdated > 0 && targetStore === store) {
           // Authors minted during work refresh are promoted when sync is on.
@@ -1986,14 +2034,19 @@ export const SidebarDatabaseTab = ({ active = false }: SidebarDatabaseTabProps) 
         if (syncToCentral && store && centralStore && targetStore === centralStore) {
           scheduleMirrorSync();
         }
-        await reload();
         if (editEntityIdRef.current === entity.id) {
-          await refreshEditEntityFromSqlite(targetStore, entity.id);
+          await refreshEditEntityFromSqlite(targetStore, entity.id, { remount: true });
+          await refreshListEntityFromSqlite(targetStore, entity.id);
+        } else {
+          await reload();
         }
       } catch (error) {
         setLoadError(error instanceof Error ? error.message : String(error));
       } finally {
-        setBusyMessage(null);
+        backfillAbortRef.current = null;
+        setBackfillBusy(false);
+        setBackfillScopeIds(null);
+        setBackfillProgress(null);
       }
       return;
     }
@@ -3164,6 +3217,33 @@ export const SidebarDatabaseTab = ({ active = false }: SidebarDatabaseTabProps) 
               </Button>
             </span>
           </Tooltip>
+          <Tooltip
+            title={
+              selected.size > 0
+                ? t('LWC.desktop.sidebar.database.delete_selected', {
+                    count: selected.size,
+                    defaultValue: `Delete ${selected.size} selected`,
+                  })
+                : t('LWC.desktop.sidebar.database.delete_selected_hint', {
+                    defaultValue: 'Select one or more entities to delete',
+                  })
+            }
+          >
+            <span>
+              <Button
+                size="small"
+                color="error"
+                startIcon={<DeleteOutlineIcon />}
+                variant="outlined"
+                disabled={selected.size === 0}
+                onClick={requestDeleteSelected}
+                sx={{ flexShrink: 0, whiteSpace: 'nowrap' }}
+              >
+                {t('LWC.desktop.sidebar.database.delete_entity')}
+                {selected.size > 0 ? ` (${selected.size})` : ''}
+              </Button>
+            </span>
+          </Tooltip>
           <Box sx={{ flex: 1, minWidth: 0 }} />
           {!syncToCentral && (
             <Tooltip title="Bridge to central database">
@@ -3228,20 +3308,6 @@ export const SidebarDatabaseTab = ({ active = false }: SidebarDatabaseTabProps) 
               </IconButton>
             </span>
           </Tooltip>
-          <Tooltip
-            title={t('LWC.desktop.database_window.open', { defaultValue: 'Open Database Window' })}
-          >
-            <IconButton
-              size="small"
-              onClick={() => setDesktopWindowMode('database')}
-              aria-label={t('LWC.desktop.database_window.open', {
-                defaultValue: 'Open Database Window',
-              })}
-              sx={{ flexShrink: 0 }}
-            >
-              <OpenInNewIcon fontSize="small" />
-            </IconButton>
-          </Tooltip>
           <Tooltip title={t('LWC.desktop.sidebar.database.reload_entities')}>
             <IconButton
               size="small"
@@ -3253,7 +3319,12 @@ export const SidebarDatabaseTab = ({ active = false }: SidebarDatabaseTabProps) 
             </IconButton>
           </Tooltip>
         </Stack>
-        {backfillBusy && (
+        {backfillBusy &&
+          !(
+            editEntity &&
+            backfillScopeIds?.length === 1 &&
+            backfillScopeIds[0] === editEntity.id
+          ) && (
           <Stack spacing={0.5}>
             <LinearProgress
               variant={
@@ -3517,7 +3588,15 @@ export const SidebarDatabaseTab = ({ active = false }: SidebarDatabaseTabProps) 
       </Dialog>
 
       {/* Edit dialog */}
-      <Dialog open={!!editEntity} onClose={() => setEditEntity(null)} maxWidth="xs" fullWidth>
+      <Dialog
+        open={!!editEntity}
+        onClose={() => {
+          if (backfillBusy) return;
+          setEditEntity(null);
+        }}
+        maxWidth="xs"
+        fullWidth
+      >
         <DialogTitle>
           <Stack direction="row" alignItems="center" spacing={0.5}>
             {editingName ? (
@@ -3705,12 +3784,56 @@ export const SidebarDatabaseTab = ({ active = false }: SidebarDatabaseTabProps) 
                         : void runNameBackfill([editEntity.id])
                     }
                   >
-                    <RefreshIcon fontSize="small" />
+                    {backfillBusy &&
+                    backfillScopeIds?.length === 1 &&
+                    backfillScopeIds[0] === editEntity.id ? (
+                      <CircularProgress size={16} />
+                    ) : (
+                      <RefreshIcon fontSize="small" />
+                    )}
                   </IconButton>
                 </span>
               </Tooltip>
             )}
           </Stack>
+          {backfillBusy &&
+            editEntity &&
+            backfillScopeIds?.length === 1 &&
+            backfillScopeIds[0] === editEntity.id && (
+              <Stack spacing={0.5} sx={{ mt: 1 }}>
+                <LinearProgress
+                  variant={
+                    backfillProgress && backfillProgress.total > 0
+                      ? 'determinate'
+                      : 'indeterminate'
+                  }
+                  value={
+                    backfillProgress && backfillProgress.total > 0
+                      ? (backfillProgress.done / backfillProgress.total) * 100
+                      : undefined
+                  }
+                />
+                <Stack direction="row" spacing={1} alignItems="center" justifyContent="space-between">
+                  <Typography
+                    variant="caption"
+                    color="text.secondary"
+                    noWrap
+                    sx={{ flex: 1, minWidth: 0 }}
+                  >
+                    {backfillProgress?.entityLabel
+                      ? `Enriching ${backfillProgress.entityLabel}… (${backfillProgress.done}/${backfillProgress.total || '…'})`
+                      : 'Refreshing from authorities…'}
+                  </Typography>
+                  <Button
+                    size="small"
+                    onClick={() => backfillAbortRef.current?.abort()}
+                    sx={{ flexShrink: 0 }}
+                  >
+                    Cancel
+                  </Button>
+                </Stack>
+              </Stack>
+            )}
           <Stack spacing={0.25} sx={{ mt: 0.25 }}>
             <Stack direction="row" alignItems="center" spacing={0.5}>
               <Typography variant="caption" color="text.secondary" component="div" noWrap>
@@ -3809,7 +3932,7 @@ export const SidebarDatabaseTab = ({ active = false }: SidebarDatabaseTabProps) 
             </Box>
           )}
         </DialogTitle>
-        <DialogContent>
+        <DialogContent key={editFormEpoch}>
           <EntityDescriptionEditor
             initialValue={editDescriptionSeed}
             label={t('LWC.desktop.sidebar.database.one_line_description')}
@@ -4510,10 +4633,10 @@ export const SidebarDatabaseTab = ({ active = false }: SidebarDatabaseTabProps) 
           )}
         </DialogContent>
         <DialogActions>
-          <Button onClick={() => setEditEntity(null)}>
+          <Button onClick={() => setEditEntity(null)} disabled={backfillBusy}>
             {t('LWC.desktop.sidebar.database.dialogs.cancel')}
           </Button>
-          <Button variant="contained" onClick={saveEdit}>
+          <Button variant="contained" onClick={saveEdit} disabled={backfillBusy}>
             {t('LWC.desktop.sidebar.database.save')}
           </Button>
         </DialogActions>

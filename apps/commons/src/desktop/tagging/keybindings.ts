@@ -2,7 +2,7 @@ export const DEFAULT_INSERT_TAG = 'p';
 export const DEFAULT_LINE_BREAK_TAG = 'lb';
 
 export const matchesTagPopupOpen = (event: KeyboardEvent): boolean =>
-  event.code === 'Enter' || event.code === 'NumpadEnter';
+  (event.code === 'Enter' || event.code === 'NumpadEnter') && !event.shiftKey && !event.altKey;
 
 export const matchesTagPopupPropagate = (event: KeyboardEvent): boolean =>
   (event.code === 'Enter' || event.code === 'NumpadEnter') && event.shiftKey;

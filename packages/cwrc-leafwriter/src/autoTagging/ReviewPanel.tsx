@@ -39,7 +39,11 @@ import { getValidationColor, getConfidenceLabel } from './llmValidationRank';
 
 export interface ReviewPanelProps {
   suggestions: Suggestion[];
-  onApply: (accepted: Suggestion[]) => void;
+  /**
+   * Commit a review pass. `accepted` are written to the document; `rejected`
+   * are dropped from the queue so the walk can advance (e.g. Norbert stages).
+   */
+  onApply: (accepted: Suggestion[], rejected?: Suggestion[]) => void;
   onFocus?: (suggestion: Suggestion) => void;
   onDecision?: (event: DecisionEvent) => void;
   onClose?: () => void;
@@ -61,7 +65,7 @@ export interface ReviewPanelProps {
    */
   onRefresh?: () => void;
   refreshing?: boolean;
-  /** Norbert prerequisite stage; category filtering stays locked until it is complete. */
+  /** Norbert prerequisite stage; list is already stage-filtered and the category control stays locked. */
   mandatoryStage?: 'nobleTitle' | 'personWrapper';
 }
 
@@ -462,18 +466,34 @@ export const ReviewPanel = ({
   const containerRef = useRef<HTMLDivElement>(null);
   const listRef = useRef<HTMLDivElement>(null);
   const pendingListRef = useRef<VirtuosoHandle>(null);
+  const autoCommitLock = useRef(false);
   const [acceptedOpen, setAcceptedOpen] = useState(false);
   const [rejectedOpen, setRejectedOpen] = useState(false);
   const [tagFilter, setTagFilter] = useState<string>('');
-  const filteredSuggestions = useMemo(
-    () => suggestions.filter((suggestion) => !tagFilter || suggestion.tag === tagFilter),
-    [suggestions, tagFilter],
-  );
+  const filteredSuggestions = useMemo(() => {
+    // Parent usually stage-filters already; keep the same rules here so the
+    // locked Norbert dropdown always matches the list the user can act on.
+    if (mandatoryStage === 'nobleTitle') {
+      return suggestions.filter((suggestion) => suggestion.tag === 'nobleTitle');
+    }
+    if (mandatoryStage === 'personWrapper') {
+      return suggestions.filter(
+        (suggestion) =>
+          suggestion.tag === 'name' && suggestion.attributes?.type === 'personWrapper',
+      );
+    }
+    return suggestions.filter((suggestion) => !tagFilter || suggestion.tag === tagFilter);
+  }, [suggestions, tagFilter, mandatoryStage]);
 
   const controller = useMemo(
     () => new ReviewController(filteredSuggestions, { onFocus, onDecision }),
     [filteredSuggestions, onFocus, onDecision],
   );
+
+  // Parent replaced the batch — allow another idle auto-commit.
+  useEffect(() => {
+    autoCommitLock.current = false;
+  }, [filteredSuggestions]);
 
   // Re-apply reject-below whenever the threshold or AI scores change.
   useEffect(() => {
@@ -505,30 +525,46 @@ export const ReviewPanel = ({
     forceRender();
   };
 
+  /** Apply accepted tags and drop rejected ones once every visible row is judged. */
+  const finishIfIdle = () => {
+    if (busy || autoCommitLock.current) return;
+    if (controller.pendingGroups().length > 0) return;
+    const judged = controller.takeJudged();
+    if (judged.accepted.length === 0 && judged.rejected.length === 0) return;
+    autoCommitLock.current = true;
+    onApply(judged.accepted, judged.rejected);
+    forceRender();
+  };
+
   const handleKeyDown = useCallback(
     (event: React.KeyboardEvent) => {
       if (handleReviewKey(controller, event.key, { shift: event.shiftKey })) {
         event.preventDefault();
-        forceRender();
+        rerender();
+        finishIfIdle();
       }
     },
-    [controller],
+    // finishIfIdle closes over controller/busy — intentional per keypress
+    [controller, busy],
   );
 
   const decidePending = (index: number, decision: 'accepted' | 'rejected') => {
     controller.moveToPendingIndex(index);
     controller.decide(decision);
     rerender();
+    finishIfIdle();
   };
 
   const undecideItem = (suggestion: Suggestion) => {
     controller.undecideSuggestion(suggestion);
+    autoCommitLock.current = false;
     rerender();
   };
 
   const changeDecision = (suggestion: Suggestion, decision: 'accepted' | 'rejected') => {
     controller.changeDecision(suggestion, decision);
     rerender();
+    finishIfIdle();
   };
 
   const selectAlternative = (suggestion: Suggestion) => {
@@ -537,12 +573,22 @@ export const ReviewPanel = ({
   };
 
   const apply = () => {
-    onApply(controller.takeAccepted());
+    // Partial apply while items remain pending: keep rejected for undo.
+    // Once nothing is pending, dismiss rejected too so the queue can advance.
+    if (controller.pendingGroups().length === 0) {
+      const judged = controller.takeJudged();
+      onApply(judged.accepted, judged.rejected);
+    } else {
+      onApply(controller.takeAccepted(), []);
+    }
     forceRender();
   };
 
   const applyAllRemaining = () => {
-    onApply(controller.takeAllExceptRejected());
+    // takeAllExceptRejected already removes accepted from the walk.
+    const accepted = controller.takeAllExceptRejected();
+    const rejected = controller.takeRejected();
+    onApply(accepted, rejected);
     forceRender();
   };
 
@@ -621,26 +667,37 @@ export const ReviewPanel = ({
       {mandatoryStage && (
         <Typography variant="caption" color="warning.main" sx={{ px: 1, pb: 0.5 }}>
           Norbert prerequisite: review all{' '}
-          {mandatoryStage === 'nobleTitle' ? 'noble-title' : 'person-wrapper'} suggestions before
-          choosing another category.
+          {mandatoryStage === 'nobleTitle' ? 'noble-title' : 'person-wrapper'} suggestions shown
+          below before continuing to other tags.
         </Typography>
       )}
 
       <Box sx={{ display: 'flex', gap: 0.5, alignItems: 'center', px: 1, pb: 0.5, flexShrink: 0 }}>
         <Select
           size="small"
-          value={tagFilter}
+          value={
+            mandatoryStage === 'nobleTitle'
+              ? 'nobleTitle'
+              : mandatoryStage === 'personWrapper'
+                ? 'personWrapper'
+                : tagFilter
+          }
           displayEmpty
           onChange={(event) => setTagFilter(event.target.value)}
           disabled={mandatoryStage !== undefined}
           sx={{ flex: 1, fontSize: 12 }}
         >
-          <MenuItem value="">All tags</MenuItem>
-          {tagOptions.map((tag) => (
-            <MenuItem key={tag} value={tag}>
-              {tag}
-            </MenuItem>
-          ))}
+          {mandatoryStage === 'nobleTitle' && <MenuItem value="nobleTitle">nobleTitle</MenuItem>}
+          {mandatoryStage === 'personWrapper' && (
+            <MenuItem value="personWrapper">personWrapper</MenuItem>
+          )}
+          {!mandatoryStage && <MenuItem value="">All tags</MenuItem>}
+          {!mandatoryStage &&
+            tagOptions.map((tag) => (
+              <MenuItem key={tag} value={tag}>
+                {tag}
+              </MenuItem>
+            ))}
         </Select>
       </Box>
 
@@ -739,7 +796,7 @@ export const ReviewPanel = ({
           </Typography>
         ) : (
           <Typography variant="body2" sx={{ p: 2 }} color="text.secondary">
-            No pending items — apply tags or expand groups below to review decisions.
+            No pending items — committing decisions…
           </Typography>
         )}
 

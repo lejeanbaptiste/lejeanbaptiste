@@ -91,6 +91,18 @@ export const TagCommandPopup = ({
           ? 'Line break'
           : 'Wrap selection';
 
+  const footerPluginItems =
+    mode === 'wrap' && selectedText
+      ? pluginItems.filter((item) => {
+          // Schema-linked items appear on their tag row above — don't duplicate.
+          if (item.schemaTag && suggestions.some((tag) => tag.name === item.schemaTag)) {
+            return false;
+          }
+          const query = filter.trim().toLowerCase();
+          return !query || item.label.toLowerCase().includes(query);
+        })
+      : [];
+
   return (
     <Paper
       ref={popupRef}
@@ -136,56 +148,63 @@ export const TagCommandPopup = ({
             />
           </ListItemButton>
         ) : (
-          suggestions.map((tag, index) => (
-            <ListItemButton
-              key={`${tag.name}-${tag.fullName ?? ''}`}
-              ref={index === highlightedIndex ? selectedItemRef : undefined}
-              selected={index === highlightedIndex}
-              disabled={Boolean(tag.invalid)}
-              onClick={() => {
-                onHighlightChange(index);
-                onApplyTag(tag);
-              }}
-              sx={{ py: 0.25, minHeight: 28 }}
-            >
-              <ListItemText
-                primary={tag.name}
-                secondary={tag.invalid ? 'Not valid here' : tag.fullName}
-                primaryTypographyProps={{ fontSize: '0.8125rem' }}
-                secondaryTypographyProps={{ fontSize: '0.7rem' }}
-              />
-            </ListItemButton>
-          ))
-        )}
-      </List>
-
-      {mode === 'wrap' && selectedText && pluginItems.length > 0 ? (
-        <Box sx={{ borderTop: 1, borderColor: 'divider', py: 0.25 }}>
-          {pluginItems
-            .filter((item) => {
-              const query = filter.trim().toLowerCase();
-              return !query || item.label.toLowerCase().includes(query);
-            })
-            .map((item) => (
+          suggestions.map((tag, index) => {
+            const pluginForTag = pluginItems.find((item) => item.schemaTag === tag.name);
+            return (
               <ListItemButton
-                key={item.id}
-                onClick={() => onApplyPluginTagCommand(item)}
-                sx={{ py: 0.25, minHeight: 30 }}
+                key={`${tag.name}-${tag.fullName ?? ''}`}
+                ref={index === highlightedIndex ? selectedItemRef : undefined}
+                selected={index === highlightedIndex}
+                disabled={Boolean(tag.invalid)}
+                onClick={() => {
+                  onHighlightChange(index);
+                  if (pluginForTag && !tag.invalid) onApplyPluginTagCommand(pluginForTag);
+                  else onApplyTag(tag);
+                }}
+                sx={{ py: 0.25, minHeight: 28 }}
               >
-                {item.icon === 'norbert' ? (
+                {pluginForTag?.icon === 'norbert' ? (
                   <Box
                     component="img"
                     src={norbertMiniPng}
                     alt="Norbert"
-                    sx={{ width: 20, height: 20, objectFit: 'contain', mr: 1 }}
+                    sx={{ width: 16, height: 16, objectFit: 'contain', mr: 0.75, flexShrink: 0 }}
                   />
                 ) : null}
                 <ListItemText
-                  primary={item.label}
-                  primaryTypographyProps={{ fontSize: '0.8125rem', fontWeight: 600 }}
+                  primary={tag.name}
+                  secondary={tag.invalid ? 'Not valid here' : tag.fullName}
+                  primaryTypographyProps={{ fontSize: '0.8125rem' }}
+                  secondaryTypographyProps={{ fontSize: '0.7rem' }}
                 />
               </ListItemButton>
-            ))}
+            );
+          })
+        )}
+      </List>
+
+      {footerPluginItems.length > 0 ? (
+        <Box sx={{ borderTop: 1, borderColor: 'divider', py: 0.25 }}>
+          {footerPluginItems.map((item) => (
+            <ListItemButton
+              key={item.id}
+              onClick={() => onApplyPluginTagCommand(item)}
+              sx={{ py: 0.25, minHeight: 30 }}
+            >
+              {item.icon === 'norbert' ? (
+                <Box
+                  component="img"
+                  src={norbertMiniPng}
+                  alt="Norbert"
+                  sx={{ width: 20, height: 20, objectFit: 'contain', mr: 1 }}
+                />
+              ) : null}
+              <ListItemText
+                primary={item.label}
+                primaryTypographyProps={{ fontSize: '0.8125rem', fontWeight: 600 }}
+              />
+            </ListItemButton>
+          ))}
         </Box>
       ) : null}
 

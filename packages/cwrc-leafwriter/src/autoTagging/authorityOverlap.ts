@@ -1,5 +1,6 @@
 import type { AuthorityCandidate } from './authority';
 import { haversineDistanceKm } from './geoCluster';
+import { bareNorbertAuthorityValue } from './norbertAuthorityId';
 
 /** CBDB ids are sometimes zero-padded in DILA crosswalks. */
 export function normalizeCbdbId(id: string): string {
@@ -91,6 +92,11 @@ function mergeIntoList(
     list[keyIdx] = mergeAuthorityCandidates(list[keyIdx]!, candidate);
     return;
   }
+  const personIdx = list.findIndex((c) => shouldMergePersonPackCandidates(c, candidate));
+  if (personIdx >= 0) {
+    list[personIdx] = mergeAuthorityCandidates(list[personIdx]!, candidate);
+    return;
+  }
   const mergeIdx = list.findIndex((c) => shouldMergePlacePackCandidates(c, candidate, proximityKm));
   if (mergeIdx >= 0) {
     list[mergeIdx] = mergeAuthorityCandidates(list[mergeIdx]!, candidate);
@@ -128,6 +134,59 @@ export function canonicalEntityKey(candidate: AuthorityCandidate): string {
     return `place:CHGIS:${candidate.authorityId}`;
   }
   return `${candidate.kind}:${candidate.source}:${candidate.authorityId}`;
+}
+
+function personCbdbId(candidate: AuthorityCandidate): string | undefined {
+  if (candidate.kind !== 'person') return undefined;
+  if (candidate.metadata?.crosswalk?.cbdb) {
+    return normalizeCbdbId(candidate.metadata.crosswalk.cbdb);
+  }
+  if (candidate.source === 'CBDB') return normalizeCbdbId(candidate.authorityId);
+  return undefined;
+}
+
+function personNorbertId(candidate: AuthorityCandidate): string | undefined {
+  if (candidate.kind !== 'person') return undefined;
+  if (candidate.metadata?.crosswalk?.norbert) {
+    return bareNorbertAuthorityValue(String(candidate.metadata.crosswalk.norbert));
+  }
+  if (candidate.source === 'Norbert') {
+    return bareNorbertAuthorityValue(candidate.authorityId);
+  }
+  return undefined;
+}
+
+function personDilaId(candidate: AuthorityCandidate): string | undefined {
+  if (candidate.kind !== 'person') return undefined;
+  if (candidate.metadata?.crosswalk?.dila) return String(candidate.metadata.crosswalk.dila);
+  if (candidate.source === 'DILA') return candidate.authorityId;
+  return undefined;
+}
+
+/**
+ * Whether two person-authority rows describe the same person across packs
+ * (Norbert ↔ CBDB ↔ DILA) via shared crosswalk or primary ids.
+ */
+export function shouldMergePersonPackCandidates(
+  a: AuthorityCandidate,
+  b: AuthorityCandidate,
+): boolean {
+  if (a.kind !== 'person' || b.kind !== 'person') return false;
+  if (canonicalEntityKey(a) === canonicalEntityKey(b)) return true;
+
+  const aCbdb = personCbdbId(a);
+  const bCbdb = personCbdbId(b);
+  if (aCbdb && bCbdb && aCbdb === bCbdb) return true;
+
+  const aNorbert = personNorbertId(a);
+  const bNorbert = personNorbertId(b);
+  if (aNorbert && bNorbert && aNorbert === bNorbert) return true;
+
+  const aDila = personDilaId(a);
+  const bDila = personDilaId(b);
+  if (aDila && bDila && aDila === bDila) return true;
+
+  return false;
 }
 
 function minDefined(a?: number, b?: number): number | undefined {
@@ -187,10 +246,16 @@ export function mergeAuthorityCandidates(
   if (incoming.source === 'DILA' && incoming.kind === 'place') {
     crosswalk.dila = incoming.authorityId;
   }
-  if (existing.source === 'Norbert' && existing.kind === 'office') {
+  if (existing.source === 'DILA' && existing.kind === 'person') {
+    crosswalk.dila = existing.authorityId;
+  }
+  if (incoming.source === 'DILA' && incoming.kind === 'person') {
+    crosswalk.dila = incoming.authorityId;
+  }
+  if (existing.source === 'Norbert') {
     crosswalk.norbert = existing.authorityId;
   }
-  if (incoming.source === 'Norbert' && incoming.kind === 'office') {
+  if (incoming.source === 'Norbert') {
     crosswalk.norbert = incoming.authorityId;
   }
   const appointments = [
@@ -235,6 +300,11 @@ export function collapseLinkedCandidates(
     const keyIdx = merged.findIndex((c) => canonicalEntityKey(c) === canonicalEntityKey(candidate));
     if (keyIdx >= 0) {
       merged[keyIdx] = mergeAuthorityCandidates(merged[keyIdx]!, candidate);
+      continue;
+    }
+    const personIdx = merged.findIndex((c) => shouldMergePersonPackCandidates(c, candidate));
+    if (personIdx >= 0) {
+      merged[personIdx] = mergeAuthorityCandidates(merged[personIdx]!, candidate);
       continue;
     }
     const packIdx = merged.findIndex((c) =>

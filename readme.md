@@ -119,44 +119,40 @@ For detailed build and packaging information, see [apps/desktop/README.md](apps/
 
 See [apps/desktop/README.md](apps/desktop/README.md) for the compilation and packaging instructions.
 
-## TODO
+## Plans
 
-Near-term work pulled from the planning docs ([docs/README.md](docs/README.md)). Larger later items stay under **Future**.
+### Next release
 
-### Testing
-
-- [ ] VALIDATE: Sanmiao date curator (ambiguous + sequential re-resolve)
-- [ ] VALIDATE: Block zooming to bounds of map tiles
-- [ ] VALIDATE: Norbert functions in add tag palette
-- [ ] VALIDATE: 壽王瑁 mess, princesses, in database viewer
-- [ ] VALIDATE: Norbert-specific tag validator working as expected
-- [ ] Run entity-sync manual scenarios ([entity-sync-manual-test-plan.md](docs/entity-sync-manual-test-plan.md))
-
-
-### Build
-
-- [ ] Hook in full VIAF, Wikidata, NDL, CBDB concordance when scan is finished.
-- [x] Add 'AI curate' to tag bomb, feed chunks of text with tags, ask 'which of these is obviously wrong', produce certainty score; Give user a range selector for automatic filtering.
-
-## Next release
-
+- [ ] Japanese pack: ask AI to identify patterns to the garbage, then clean asset packs
+- [ ] Thorough localisation sweep
+- [ ] More BW visual assets
+- Finish word plugin
+  - [ ] Different name forms
+  - [ ] Production version 
+- [ ] Explore LanguageTool plugin for translation and note surfaces.
+- [ ] Make AI assist actually useful
 - [ ] Time Machine polish: diff preview, export history zip, optional `revisionDesc` on restore, delete (?)
-- [ ] Japanese pack: clean garbage entries
-- [ ] Finish word plugin
-- [ ] (BIG ENGINEERING) LanguageTool as a plugin (?)
 
-## Future
+### Future
 
-### Translation pane
+#### Translation pane
 
 - [ ] Improve translation pane word-processing features.
 - [ ] Integrate entity-Zotero ?
 - [ ] Copy-and-paste export of paragraphs with translation for word processors
 
-### I/O
+#### I/O
 
-- [ ] Full CBETA integration
-- [ ] Kanripo
+- Full CBETA integration
+  - [ ] Custom schema / conversion ?
+  - [ ] Include Bingenheimer's tagged bios
+  - [ ] Search tool imitating CBETA
+  - [ ] Bookmarks ?
+- Kanripo
+  - [ ] Importer
+  - [ ] Parser
+  - [ ] Normaliser
+  - [ ] Punctuator
 - [ ] Import profiles (rule engine + mandoku hand profile)
 - [ ] Docx / Mammoth import
 - [ ] AI-inferred import profiles
@@ -164,7 +160,7 @@ Near-term work pulled from the planning docs ([docs/README.md](docs/README.md)).
 - [ ] (IF someone actually uses markdown) Import Phase 1 leftovers: md `{{header}}`, batch/folder UI, validator + provenance
 - [ ] (IF grows to point where relevant) LaTeX export
 
-### UX
+#### UX
 
 - [ ] finish localisations
 - [ ] Redo icons : highlight
@@ -175,31 +171,31 @@ Near-term work pulled from the planning docs ([docs/README.md](docs/README.md)).
 - [ ] (DREAM): reproduce Oxygen functionalities in Monaco
 - [ ] (ABANDONNED as hopeless) Tag-boundary Bugs B/C/H (typing/delete at edges)
 
-### Maps
+#### Maps
 
 - [ ] Labels
 - [ ] Click to disambiguate
 - [ ] Placename Phase 4–5: persisted coordinate/id place entities; mint from merged periods ([placename-geo-disambiguation-planning.md](docs/placename-geo-disambiguation-planning.md))
 
-### Dates
+#### Dates
 
 - [ ] Parallel Chinese / Japanese dates
 - [ ] Import DILA markers into Sanmiao
 - [ ] AI assist for Sanmiao to identify beginning of dynasties, reigns, era
 
-### Authority packs
+#### Authority packs
 
 - [ ] TEI appointment encoding for office/role context
 
-### Collaboration
+#### Collaboration
 
 - [ ] Option to track annotator on the tag level for collaborations.
 
-### AI
+#### AI
 
 - [ ] AI auto-tag: apply audit actions beyond `add` (remove/retag/redraw); schema-driven tag picker; prompt-profile UI
 
-### Technical
+#### Technical
 
 - [ ] Further Norbert functions
 - [ ] Support for custom authorities and personal SQL databases

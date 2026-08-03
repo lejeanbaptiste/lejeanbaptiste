@@ -40,6 +40,11 @@ import { extractRegisteredEntityData } from '../plugins/entityDataExtractors';
 import { personWrapperSource } from './entityExtraction';
 import { preferCanonicalFamilyGiven } from './nameTypes';
 import {
+  nobleTitlesFromMetadata,
+  personalNameForSegmentation,
+  preferredEntityPrimaryName,
+} from './nobleTitleHeadword';
+import {
   ingestExtractedEntityDataSqlite,
   refreshExtractedEntityDataForDocumentSqlite,
 } from './sqliteEntityExtraction';
@@ -1588,18 +1593,23 @@ export class AutoTaggingSession {
     const wrapperPerson = instance.tag === 'name' ? wrapperPersonName(instance.element) : null;
     const name = options.name ?? wrapperPerson?.textContent?.trim() ?? instance.surface;
     const projectLangName = options.createNew ? undefined : candidate.projectLangName;
-    const nameForSplit = projectLangName ?? name;
     const [typedNames, authorityGivenFamilyNames] = await Promise.all([
       collectTypedNamesForCandidate(candidate),
       collectGivenFamilyNamesForCandidate(candidate, projectLang),
     ]);
+    const titleParts = nobleTitlesFromMetadata(candidate.authorityMetadata);
+    const headword = projectLangName ?? name;
+    // Prefer pack personal primary / 姓+名 over a display-only title headword.
+    const mintName = preferredEntityPrimaryName(headword, typedNames ?? [], titleParts);
+    const nameForSplit = personalNameForSegmentation(headword, typedNames ?? [], titleParts);
     // Pack `names[]` (bare 姓/名/字) → scalar family/given when Wikidata did not.
     // Same preference order as entities-panel backfill.
-    const preferredFromPack = preferCanonicalFamilyGiven(projectLangName ?? name, typedNames);
+    const preferredFromPack = preferCanonicalFamilyGiven(nameForSplit, typedNames);
     const needsPluginSplit =
-      !(authorityGivenFamilyNames.familyName || preferredFromPack.familyName) ||
-      !(authorityGivenFamilyNames.givenName || preferredFromPack.givenName);
-    const pluginSplit = needsPluginSplit ? suggestPersonNameSplit(nameForSplit, projectLang) : null;
+      Boolean(nameForSplit) &&
+      (!(authorityGivenFamilyNames.familyName || preferredFromPack.familyName) ||
+        !(authorityGivenFamilyNames.givenName || preferredFromPack.givenName));
+    const pluginSplit = needsPluginSplit ? suggestPersonNameSplit(nameForSplit!, projectLang) : null;
     const givenFamilyNames = {
       familyName:
         authorityGivenFamilyNames.familyName ??
@@ -1613,13 +1623,15 @@ export class AutoTaggingSession {
     const romanizedName =
       options.romanizedName ??
       candidate.romanizedName ??
-      (pluginSplit ? suggestPersonRomanization(nameForSplit, projectLang) : null) ??
-      autoRomanize(nameForSplit, projectLang) ??
+      (nameForSplit
+        ? (pluginSplit ? suggestPersonRomanization(nameForSplit, projectLang) : null) ??
+          autoRomanize(nameForSplit, projectLang)
+        : null) ??
       undefined;
 
     const { id: entityId } = await mintOrLinkEntitySqlite(this.store, {
       kind,
-      name: projectLangName ?? name,
+      name: mintName,
       nameLang: projectLang ?? undefined,
       romanizedName,
       familyName: givenFamilyNames.familyName,
@@ -1635,6 +1647,18 @@ export class AutoTaggingSession {
       authorityAssertions: toAuthoritySourcedFields(candidate.authorityAssertions),
       localEntityId: options.createNew ? undefined : candidate.localEntityId,
     });
+    // Keep display-only title headwords as searchable variants when we minted
+    // a reconstructed personal name instead.
+    if (headword && mintName !== headword.normalize('NFC').trim()) {
+      await this.store.sqliteAddName({
+        entityId,
+        text: headword,
+        nameType: 'variant',
+        language: projectLang ?? undefined,
+        origin: 'authority',
+        source: candidate.authorityIds?.[0]?.type,
+      });
+    }
     for (const typed of typedNames ?? []) {
       await this.store.sqliteAddName({
         entityId,

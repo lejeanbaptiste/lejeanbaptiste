@@ -65,6 +65,37 @@ describe('authorityOverlap', () => {
     expect(merged.metadata?.crosswalk?.cbdb).toBe('1762');
   });
 
+  it('merges Norbert and CBDB person candidates via crosswalk and stamps both ids', () => {
+    const norbertWang: AuthorityCandidate = {
+      source: 'Norbert',
+      authorityId: '9001',
+      kind: 'person',
+      primaryName: '王安石',
+      searchStrings: ['王安石'],
+      metadata: { crosswalk: { cbdb: '1762' } },
+    };
+    const merged = mergeAuthorityCandidates(cbdbWang, norbertWang);
+    expect(merged.source).toBe('CBDB+Norbert');
+    expect(merged.metadata?.crosswalk?.cbdb).toBe('1762');
+    expect(merged.metadata?.crosswalk?.norbert).toBe('9001');
+
+    const cbdbWithNorbert: AuthorityCandidate = {
+      ...cbdbWang,
+      metadata: { ...cbdbWang.metadata, crosswalk: { norbert: '9001' } },
+    };
+    const norbertOnly: AuthorityCandidate = {
+      source: 'Norbert',
+      authorityId: '9001',
+      kind: 'person',
+      primaryName: '王安石',
+      searchStrings: ['王安石'],
+    };
+    const collapsed = collapseLinkedCandidates([cbdbWithNorbert, norbertOnly]);
+    expect(collapsed).toHaveLength(1);
+    expect(collapsed[0]?.source).toBe('CBDB+Norbert');
+    expect(collapsed[0]?.metadata?.crosswalk?.norbert).toBe('9001');
+  });
+
   it('unions appointment assertions when person candidates overlap', () => {
     const merged = mergeAuthorityCandidates(
       {

@@ -1,4 +1,4 @@
-import { TAG_TO_KIND } from './entities';
+import { TAG_TO_KIND, type EntityKind } from './entities';
 import type { EntityStore } from './entityStore';
 import { purgeEntityKeys } from './mentions';
 import { orphanPurgeRemap, sweepOrphans, type OrphanSweepReport } from './orphanSweep';
@@ -132,6 +132,86 @@ export async function purgeReportedOrphans(
     }
   }
   return total;
+}
+
+export interface OrphanStubSpec {
+  id: string;
+  kind: EntityKind;
+  /** Best-effort display name from tagged surface text in the corpus. */
+  name: string;
+}
+
+/** Infer entity kind from a local id prefix (`person-…`, `place-…`, …). */
+export function kindFromEntityId(id: string): EntityKind | null {
+  const match = /^(person|place|work|office|org)-/i.exec(id);
+  if (!match) return null;
+  return match[1]!.toLowerCase() as EntityKind;
+}
+
+/**
+ * Build stub specs for genuine orphan keys: keep the corpus `@key` string and
+ * mint a minimal PEDB row (id + primary name from surface text). Authority
+ * links cannot be recovered from the corpus alone.
+ */
+export async function collectOrphanStubSpecs(
+  api: EntityDatabaseCheckApi,
+  report: OrphanSweepReport,
+): Promise<OrphanStubSpec[]> {
+  const byId = new Map<string, OrphanStubSpec>();
+  for (const file of report.orphanFiles) {
+    if (file.orphanKeys.every((key) => byId.has(key))) continue;
+    const xml = await api.readFile(file.path);
+    const doc = new DOMParser().parseFromString(xml, 'application/xml');
+    const walker = doc.createTreeWalker(doc, NodeFilter.SHOW_ELEMENT);
+    let node = walker.nextNode();
+    while (node) {
+      const el = node as Element;
+      const key = el.getAttribute('key');
+      if (key && file.orphanKeys.includes(key) && !byId.has(key)) {
+        const kind =
+          TAG_TO_KIND[el.localName] ?? kindFromEntityId(key) ?? ('person' as EntityKind);
+        const raw = (el.textContent ?? '').replace(/\s+/g, ' ').trim();
+        byId.set(key, { id: key, kind, name: raw || key });
+      }
+      node = walker.nextNode();
+    }
+    // Keys present in the report but not found as elements (unusual) still get stubs.
+    for (const key of file.orphanKeys) {
+      if (byId.has(key)) continue;
+      byId.set(key, {
+        id: key,
+        kind: kindFromEntityId(key) ?? 'person',
+        name: key,
+      });
+    }
+  }
+  return [...byId.values()];
+}
+
+/**
+ * Mint stub entities for genuine orphan keys so corpus `@key`s resolve again.
+ * Does not rewrite corpus XML. Returns how many stubs were created.
+ */
+export async function reconstituteReportedOrphans(
+  store: EntityStore,
+  api: EntityDatabaseCheckApi,
+  report: OrphanSweepReport,
+): Promise<number> {
+  if (!(await store.hasSqliteDatabase())) {
+    throw new Error(SQLITE_REQUIRED_LOOKUP_MESSAGE);
+  }
+  const specs = await collectOrphanStubSpecs(api, report);
+  let created = 0;
+  for (const spec of specs) {
+    await store.sqliteCreatePopulated({
+      id: spec.id,
+      kind: spec.kind,
+      description: 'Reconstituted from corpus after missing entity (orphan recovery).',
+      names: [{ text: spec.name, isPrimary: true, origin: 'xml', source: 'orphan-reconstitute' }],
+    });
+    created += 1;
+  }
+  return created;
 }
 
 /**

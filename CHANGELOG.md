@@ -4,7 +4,7 @@
 
 - Production and testing of alpha version, distribution chanels, automatic updates, and sibling repos until infrastructure stabilised.
 
-## Upstream
+## 0.1.0-beta.1
 
 ### Performance and stability
 
@@ -21,6 +21,7 @@
 - Tag-bomb pack reads now bypass the reusable lookup cache, and chunk reads avoid temporary flattened copies. On the slow-machine cutoff test, peak memory fell from about 1.1 GB to 236 MB and the run became visibly faster.
 - Cache Norbert wrapper/noble-title expansion across review sessions, invalidate it with authority-pack refreshes, and warm it only after the review pane is idle.
 - Norbert review now requires noble titles first and person wrappers second; each stage refreshes against the edited document before ordinary category review is unlocked. Wrapper reconciliation now checks that both sides point to one live PEDB person key and leaves missing, conflicting, or ambiguous cases unresolved.
+- Asset and plugin packs no longer overwrite one another for no reason 🤦‍♂️
 
 ### Functionality
 
@@ -40,6 +41,9 @@
 - Finished wordprocessor write paths against SQLite
 - Automatically keep ordinary entity-name writes clean: deduplicate same text/type rows, discard literal `nan` placeholders, and remove the malformed `n` + `an` family/given pair. The Clean command still catches older data too.
 - Isolated and parsed 3,142 names in authority packs constituting noble titles.
+- Rewired database intake process to distinguish between 'display' and 'primary name' and to treat noble titles as distinct from 姓名.
+- Ran entity sync test to ensure data integrity under different synchronisation scenarios.
+- Compiled full CBDB, Wikidata, VIAF, NDL concordance for authority packs.
 
 ### UI
 
@@ -52,6 +56,12 @@
 - Added a Norbert-branded noble-title action to the selection tag popup when the Norbert plugin is enabled.
 - Added a matching Norbert-branded person-wrapper action; filtering for “person” or “wrapper” finds it.
 - Database viewer now shows authority badges
+- Blocked disambiguation map from zooming outside of tile range
+- Cleaned up entities viewer UI a little.
+
+### Rewards system
+
+- Lowered bar on two items. Rules should be fixed moving forward.
 
 ### Documentation
 

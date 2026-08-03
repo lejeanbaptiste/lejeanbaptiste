@@ -480,7 +480,8 @@
         "entire_corpus": "Tout le corpus",
         "folder_placeholder": "Chemin du dossier"
       },
-      "skip_review": "Ignorer la relecture (appliquer directement)",
+      "skip_review": "Auto-accept",
+      "ai_curate": "AI curate",
       "tag_bomb_queue": {
         "title": "{{count}} document{{count, plural, one {} other {s}}} trouvé{{count, plural, one {} other {s}}}",
         "review": "Relire",
@@ -513,6 +514,8 @@
       },
       "authorities": {
         "Add Custom Authority": "Ajouter une autorité personnalisée",
+        "show_pack_string_counts": "Afficher le nombre de chaînes dans Tag Bomb",
+        "show_pack_string_counts_description": "Compte les chaînes de chaque pack d'autorité à l'ouverture de Tag Bomb. Peut ralentir l'ouverture.",
         "messages": {
           "Are you sure you want to delete the authority -value": "<0>Voulez-vous vraiment supprimer l'autorité </0><1>{{name}}</1><2> ?</2>",
           "Authority deleted successfully": "Autorité supprimée avec succès",

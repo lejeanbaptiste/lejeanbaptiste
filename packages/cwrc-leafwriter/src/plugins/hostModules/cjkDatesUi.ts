@@ -1,5 +1,6 @@
 import { CalendarDialog } from '../../dialogs/calendar';
 import { DateCuratorPanel } from '../../autoTagging/DateCuratorPanel';
+import { DateTagReviewPanel } from '../../autoTagging/DateTagReviewPanel';
 import {
   isDateCuratorBatch,
   isDateTagOnlyBatch,
@@ -19,11 +20,13 @@ export function registerCjkDatesUi(context: PluginRegisterContext): void {
 
   context.registerDialog('calendar', CalendarDialog);
 
+  // Resolve pass: full curator (candidate pick + inline authority editor).
   context.registerReviewPanel(isDateCuratorBatch, DateCuratorPanel, {
     finishWhenIdle: (suggestions) => isDateCuratorBatch(suggestions),
   });
-  context.registerReviewPanel(isDateTagOnlyBatch, DateCuratorPanel, {
-    finishWhenIdle: false,
+  // Tag pass: simpler accept/reject list (no resolve chrome).
+  context.registerReviewPanel(isDateTagOnlyBatch, DateTagReviewPanel, {
+    finishWhenIdle: true,
   });
 
   context.registerToolbarItem({

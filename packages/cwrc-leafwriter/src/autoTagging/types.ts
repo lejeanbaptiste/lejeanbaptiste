@@ -97,6 +97,11 @@ export interface DateResolution {
   parseXml?: string;
   /** User's pick when status is ambiguous or unresolved with multiple candidates. */
   selectedCandidateIndex?: number;
+  /**
+   * True once the curator picks/locks an interpretation. Recalculation must not
+   * replace this row when a later date is disambiguated.
+   */
+  userLocked?: boolean;
   /** Prior accepted date in this batch used as sequential context (Phase 2b). */
   attachToDateIndex?: number;
   /** Full `<date>` text for curator display/focus; anchor.surface stays on the first text node for apply. */

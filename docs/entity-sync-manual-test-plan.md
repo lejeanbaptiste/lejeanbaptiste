@@ -134,19 +134,24 @@ project" with a precise, classified warning.
 4. **Reopen the project in the app.**
 5. **Check:** you should see a warning dialog — "Unresolved entity keys
    found" — with a count, **not** the old "purge everything" prompt. It should
-   offer **Cancel** or **Strip orphan keys**.
-6. Click **Cancel** first, verify the corpus files are untouched (the tag
+   offer **Leave intact**, **Ingest stubs**, or **Strip orphan keys**
+   (including for projects linked to a central database).
+6. Click **Leave intact** first, verify the corpus files are untouched (the tag
    stays, the `key=` stays).
 7. Reopen the project again (should re-prompt, since nothing changed), this
-   time click **Strip orphan keys**. **Check:** only the specific dangling
+   time click **Ingest stubs**. **Check:** the dangling `key=` values remain on
+   the tags, and matching stub entities appear in the entity database (same
+   ids, names taken from the tagged surface text; no authority idnos).
+8. Optionally undo that recovery (delete the stubs / restore DB), reopen, and
+   click **Strip orphan keys**. **Check:** only the specific dangling
    `key=` attribute you'd expect is gone from the chapter file — the tag itself
    (e.g. `<persName>`) remains, just without the id.
-8. **Bonus — stray-file check:** copy a chapter file from a _different_
+9. **Bonus — stray-file check:** copy a chapter file from a _different_
    project (one using a different central/project database) into this
    project's folder. Reopen. **Check:** the warning should mention that some
    file(s) "appear to belong to a different project database and were left
-   untouched" — and that file's keys must NOT be stripped even if you click
-   Strip.
+   untouched" — and that file's keys must NOT be stripped or ingested even if
+   you click Strip / Ingest.
 
 ---
 

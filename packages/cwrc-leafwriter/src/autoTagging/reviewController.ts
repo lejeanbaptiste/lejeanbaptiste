@@ -456,6 +456,27 @@ export class ReviewController {
     return accepted;
   }
 
+  /**
+   * Remove every judged row from the walk. Used when a review pass is complete
+   * (nothing pending): accepted go to apply, rejected are dropped from the queue.
+   */
+  takeJudged(): { accepted: Suggestion[]; rejected: Suggestion[] } {
+    const accepted = this.suggestions.filter((s) => s.status === 'accepted');
+    const rejected = this.suggestions.filter((s) => s.status === 'rejected');
+    this.suggestions = this.suggestions.filter(
+      (s) => s.status !== 'accepted' && s.status !== 'rejected',
+    );
+    this.clampCursor();
+    return { accepted, rejected };
+  }
+
+  takeRejected(): Suggestion[] {
+    const rejected = this.suggestions.filter((s) => s.status === 'rejected');
+    this.suggestions = this.suggestions.filter((s) => s.status !== 'rejected');
+    this.clampCursor();
+    return rejected;
+  }
+
   takeAllExceptRejected(): Suggestion[] {
     // Snapshot first: statuses change as we go, and pendingGroups() is derived live.
     for (const group of this.pendingGroups()) {

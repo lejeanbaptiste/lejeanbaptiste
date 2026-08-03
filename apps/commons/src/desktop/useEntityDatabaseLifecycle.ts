@@ -3,6 +3,7 @@ import { applyPendingOrders } from '@src/desktop/entityDb/applyOrders';
 import { applyPendingCentralOrders, loadBridgeContext, syncNonConflictingLinkedEntities } from '@src/desktop/entityDb/bridge';
 import {
   purgeReportedOrphans,
+  reconstituteReportedOrphans,
   runEntityDatabaseCheck,
   sweepProjectOrphans,
 } from '../../../../packages/cwrc-leafwriter/src/autoTagging/entityDatabaseCheck';
@@ -167,13 +168,19 @@ export const useEntityDatabaseLifecycle = () => {
             detail: mayArriveFromLinkedDatabase
               ? t('LWC.desktop.orphan_keys.linked_detail', { strayNote })
               : t('LWC.desktop.orphan_keys.local_detail', { strayNote }),
-            buttons: mayArriveFromLinkedDatabase
-              ? [t('LWC.desktop.orphan_keys.ok')]
-              : [t('LWC.desktop.orphan_keys.cancel'), t('LWC.desktop.orphan_keys.strip')],
+            buttons: [
+              t('LWC.desktop.orphan_keys.leave_intact'),
+              t('LWC.desktop.orphan_keys.ingest'),
+              t('LWC.desktop.orphan_keys.strip'),
+            ],
             defaultId: 0,
             cancelId: 0,
           });
-          if (!mayArriveFromLinkedDatabase && response === 1) {
+          if (response === 1) {
+            const created = await reconstituteReportedOrphans(store, checkApi, report);
+            // eslint-disable-next-line no-console
+            console.info(`[orphan-sweep] ingested ${created} stub entit${created === 1 ? 'y' : 'ies'}.`);
+          } else if (response === 2) {
             const purged = await purgeReportedOrphans(checkApi, report);
             // eslint-disable-next-line no-console
             console.info(`[orphan-sweep] stripped ${purged} orphan key(s).`);

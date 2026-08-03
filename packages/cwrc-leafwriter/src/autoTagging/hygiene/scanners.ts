@@ -7,6 +7,7 @@ import {
 import { suggestPersonNameSplit } from '../../plugins/personNameDefaults';
 import { isLatinScript } from '../../utilities/romanize';
 import { isChineseLanguageCode } from '../../utilities/languageCodes';
+import { isNobleTitleHeadword } from '../nobleTitleHeadword';
 import type { HygieneFinding, HygienePeer } from './types';
 
 const hasCjk = (text: string): boolean => /\p{Script=Han}/u.test(text);
@@ -179,6 +180,7 @@ export function scanMissingFamilyOrGiven(
 
     const primary = entity.names.find((name) => hasCjk(name));
     if (!primary) continue;
+    if (isNobleTitleHeadword(primary)) continue;
     const split = suggestPersonNameSplit(primary, projectLang);
     if (!split) continue;
     findings.push({

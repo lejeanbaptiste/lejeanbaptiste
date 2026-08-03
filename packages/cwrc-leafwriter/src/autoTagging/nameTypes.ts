@@ -221,7 +221,11 @@ export function preferCanonicalFamilyGiven(
     const remainder = primary.slice(familyName.length);
     const exact = givens.find((given) => given === remainder);
     if (exact) givenName = exact;
-    else if (remainder) givenName = givens.find((given) => remainder.endsWith(given)) ?? givenName;
+    else if (primary.startsWith(familyName) && remainder) {
+      // Headword is prefixed by this family but remainder is not a pack given —
+      // do not invent a 名 (common with noble-title headwords).
+      givenName = null;
+    }
   }
 
   return { familyName, givenName };

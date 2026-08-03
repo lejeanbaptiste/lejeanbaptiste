@@ -2,6 +2,7 @@ import {
   canAcceptDateSuggestion,
   finalizeDateSuggestion,
   isDateCuratorBatch,
+  preAcceptUniqueDateSuggestions,
   priorAcceptedDates,
 } from './dateCurator';
 import { Suggestion } from './types';
@@ -95,6 +96,34 @@ describe('finalizeDateSuggestion', () => {
       when: '200-01-01',
     });
     expect(suggestion.dateResolution?.selectedCandidateIndex).toBe(1);
+    expect(suggestion.dateResolution?.userLocked).toBe(true);
+  });
+
+  it('does not lock unique auto-finalization', () => {
+    const suggestion = dateSuggestion();
+    finalizeDateSuggestion(suggestion, 0);
+    expect(suggestion.dateResolution?.userLocked).toBeUndefined();
+  });
+});
+
+describe('preAcceptUniqueDateSuggestions', () => {
+  it('marks unique rows accepted and leaves ambiguous pending', () => {
+    const unique = dateSuggestion({ id: 'u', action: 'resolve-date' });
+    const ambiguous = dateSuggestion({
+      id: 'a',
+      action: 'resolve-date',
+      dateResolution: {
+        status: 'ambiguous',
+        candidates: [
+          { displayLine: 'A', attrs: { when: '100-01-01' } },
+          { displayLine: 'B', attrs: { when: '200-01-01' } },
+        ],
+      },
+    });
+    preAcceptUniqueDateSuggestions([unique, ambiguous]);
+    expect(unique.status).toBe('accepted');
+    expect(unique.dateResolution?.selectedCandidateIndex).toBe(0);
+    expect(ambiguous.status).toBe('pending');
   });
 });
 

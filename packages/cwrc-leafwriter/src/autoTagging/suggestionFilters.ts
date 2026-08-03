@@ -194,12 +194,17 @@ function docSpanAt(
 }
 
 /** Deduplicate suggestions by their document location (tag, surface, xpath, offset, entity key). */
+export function suggestionLocationKey(suggestion: Suggestion): string {
+  const anchor = suggestion.anchor;
+  const entityKey = suggestion.attributes?.key ?? '';
+  const typeAttr = suggestion.attributes?.type ?? '';
+  return `${suggestion.tag}\t${typeAttr}\t${anchor.surface}\t${anchor.xpath}\t${anchor.offset}\t${entityKey}`;
+}
+
 export function dedupeSuggestionsByLocation(suggestions: Suggestion[]): Suggestion[] {
   const seen = new Map<string, Suggestion>();
   for (const suggestion of suggestions) {
-    const anchor = suggestion.anchor;
-    const entityKey = suggestion.attributes?.key ?? '';
-    const key = `${suggestion.tag}\t${anchor.surface}\t${anchor.xpath}\t${anchor.offset}\t${entityKey}`;
+    const key = suggestionLocationKey(suggestion);
     if (!seen.has(key)) seen.set(key, suggestion);
   }
   return [...seen.values()];

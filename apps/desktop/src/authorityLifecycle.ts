@@ -31,6 +31,7 @@ import {
   installPackBundle,
   readInstalledPacksManifest,
   remotePackUpdateAvailable,
+  restoreFilesAbsentFromSource,
 } from './authorityPackRegistry';
 import {
   AUTHORITY_DB_DIRNAME,
@@ -453,6 +454,9 @@ const installPacksViaCompileFallback = async ({
   if (fs.existsSync(liveDir)) await fsp.rename(liveDir, bakDir);
   try {
     await fsp.rename(newPacksDir, liveDir);
+    if (fs.existsSync(bakDir)) {
+      await restoreFilesAbsentFromSource(bakDir, liveDir);
+    }
   } catch (error) {
     if (fs.existsSync(bakDir) && !fs.existsSync(liveDir)) await fsp.rename(bakDir, liveDir);
     throw error;
@@ -554,6 +558,16 @@ export const runAuthorityLifecyclePipeline = async (
       lastCheckAt: new Date().toISOString(),
       lastError: undefined,
     });
+
+    // Chinese (and other) pack bundles replace whole source folders such as
+    // `norbert/`. Bundled plugin assets (e.g. wiki-nt-links.ndjson) live in
+    // those folders and would otherwise disappear until the next app launch.
+    try {
+      const { syncEnabledPluginContributions } = await import('./plugins/pluginHost');
+      await syncEnabledPluginContributions();
+    } catch {
+      // Plugin host may be unavailable in tests / headless compile fallback.
+    }
 
     return { ok: true };
   } catch (error) {

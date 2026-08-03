@@ -28,6 +28,43 @@ import {
 } from '../../commons/src/desktop/authorityPackRegistryTypes';
 
 const execFileAsync = promisify(execFile);
+
+/**
+ * After a pack folder is replaced by a release/compile tree, copy back any
+ * files that existed only in the previous live tree. Plugin-bundled assets
+ * (e.g. `norbert/wiki-nt-links.ndjson`) share the same directory as release
+ * packs and must not vanish when `norbert/` is swapped.
+ *
+ * Incoming files always win for shared paths.
+ */
+export async function restoreFilesAbsentFromSource(
+  previousDir: string,
+  nextDir: string,
+): Promise<string[]> {
+  const restored: string[] = [];
+  if (!fs.existsSync(previousDir) || !fs.existsSync(nextDir)) return restored;
+
+  const walk = async (relative = ''): Promise<void> => {
+    const fromDir = relative ? path.join(previousDir, relative) : previousDir;
+    const entries = await fsp.readdir(fromDir, { withFileTypes: true });
+    for (const entry of entries) {
+      const childRelative = relative ? path.join(relative, entry.name) : entry.name;
+      const previousPath = path.join(previousDir, childRelative);
+      const nextPath = path.join(nextDir, childRelative);
+      if (entry.isDirectory()) {
+        await walk(childRelative);
+        continue;
+      }
+      if (fs.existsSync(nextPath)) continue;
+      await fsp.mkdir(path.dirname(nextPath), { recursive: true });
+      await fsp.copyFile(previousPath, nextPath);
+      restored.push(childRelative.replace(/\\/g, '/'));
+    }
+  };
+
+  await walk();
+  return restored;
+}
 const MAX_PACK_DOWNLOAD_BYTES = 8 * 1024 * 1024 * 1024;
 const DOWNLOAD_TIMEOUT_MS = 30 * 60 * 1000;
 
@@ -213,6 +250,8 @@ export const installPackBundle = async ({
 
   // Merge per top-level entry rather than swapping the whole folder: profile
   // bundles are disjoint (cbdb/, ndl/, …) and must not clobber each other.
+  // Within a source folder (e.g. norbert/), keep live-only files that the
+  // tarball does not ship — typically plugin-bundled packs.
   const liveDir = path.join(entityDbFolder, 'authority-packs');
   await fsp.mkdir(liveDir, { recursive: true });
   for (const entry of await fsp.readdir(extractedRoot)) {
@@ -229,6 +268,9 @@ export const installPackBundle = async ({
     }
     try {
       await fsp.rename(src, dest);
+      if (fs.existsSync(bak)) {
+        await restoreFilesAbsentFromSource(bak, dest);
+      }
     } catch (error) {
       if (fs.existsSync(bak) && !fs.existsSync(dest)) {
         await fsp.rename(bak, dest);

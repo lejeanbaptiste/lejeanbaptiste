@@ -125,14 +125,36 @@ const writeInstalledMapTilesManifest = async (
 /** Every installed, verified bundle — for settings UI and the region-availability warning banner. */
 export const listInstalledMapTileRegions = async (
   mapTilesDir: string,
-): Promise<{ id: string; sha256: string; installedAt: string }[]> => {
+): Promise<{ id: string; sha256: string; installedAt: string; maxZoom?: number; minZoom?: number }[]> => {
   const manifest = await readInstalledMapTilesManifest(mapTilesDir);
   if (!manifest) return [];
-  return Object.entries(manifest.bundles).map(([id, entry]) => ({
-    id,
-    sha256: entry.sha256,
-    installedAt: entry.installedAt,
-  }));
+  const regions: { id: string; sha256: string; installedAt: string; maxZoom?: number; minZoom?: number }[] = [];
+  for (const [id, entry] of Object.entries(manifest.bundles)) {
+    const region: {
+      id: string;
+      sha256: string;
+      installedAt: string;
+      maxZoom?: number;
+      minZoom?: number;
+    } = {
+      id,
+      sha256: entry.sha256,
+      installedAt: entry.installedAt,
+    };
+    try {
+      const filePath = path.join(mapTilesDir, entry.fileName);
+      if (fs.existsSync(filePath)) {
+        const archive = new PMTiles(new NodeFileSource(filePath), undefined, nodeDecompress);
+        const header = await archive.getHeader();
+        region.maxZoom = header.maxZoom;
+        region.minZoom = header.minZoom;
+      }
+    } catch {
+      // Fake/corrupt test fixtures and mid-download files have no header — omit zooms.
+    }
+    regions.push(region);
+  }
+  return regions;
 };
 
 /** True when the given bundle is already installed and verified by manifest. */

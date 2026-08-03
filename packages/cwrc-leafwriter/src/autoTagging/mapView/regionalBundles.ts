@@ -78,6 +78,14 @@ export function boundsContain(bounds: GeoBounds, lat: number, lon: number): bool
   return lat <= bounds.north && lat >= bounds.south && lon <= bounds.east && lon >= bounds.west;
 }
 
+/** MapLibre `maxBounds` / `LngLatBoundsLike`: `[[west, south], [east, north]]`. */
+export function lngLatBoundsLike(bounds: GeoBounds): [[number, number], [number, number]] {
+  return [
+    [bounds.west, bounds.south],
+    [bounds.east, bounds.north],
+  ];
+}
+
 /** First bundle (from the given list) whose bounds contain the point — bundles may legitimately overlap. */
 export function findBundleForPoint(
   bundles: MapTileBundleSpec[],

@@ -39,6 +39,8 @@ const sourceIcon = (label: string): ReactElement | null => {
 const OWN_DATABASE_LABEL: Partial<Record<string, { label: string; color: string; bg: string }>> = {
   pedb: { label: 'Local', color: '#0b5fa5', bg: '#e3f0fb' },
   cedb: { label: 'Central', color: '#7a3ea1', bg: '#f2e8f8' },
+  'entity-file': { label: 'Local', color: '#0b5fa5', bg: '#e3f0fb' },
+  'central-database': { label: 'Central', color: '#7a3ea1', bg: '#f2e8f8' },
 };
 
 /**

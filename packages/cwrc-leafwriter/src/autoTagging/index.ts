@@ -66,3 +66,4 @@ export * from './batchHolder';
 export * from './nameTypeLabels';
 export * from './NameTypePolicyPanel';
 export * from './nameBackfill';
+export * from './nobleTitleHeadword';

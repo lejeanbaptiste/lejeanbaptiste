@@ -308,6 +308,7 @@ declare global {
       }>;
       familyName?: string | null;
       givenName?: string | null;
+      rewriteUnvalidatedPersonNames?: boolean;
       romanized?: { text: string; language?: string | null } | null;
       dates?: Array<{
         source: string;
@@ -515,7 +516,14 @@ declare global {
     mapTilesStatus?: () => Promise<{
       installed: boolean;
       path: string | null;
-      regions: { id: string; sha256: string; installedAt: string }[];
+      regions: {
+        id: string;
+        sha256: string;
+        installedAt: string;
+        /** Highest zoom present in the installed .pmtiles (from the archive header). */
+        maxZoom?: number;
+        minZoom?: number;
+      }[];
     }>;
     mapTilesPromptDownload?: () => Promise<'accepted' | 'declined'>;
     mapTilesDownloadBackground?: (bundle: {

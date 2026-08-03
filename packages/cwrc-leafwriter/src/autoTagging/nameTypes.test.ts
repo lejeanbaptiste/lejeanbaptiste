@@ -155,4 +155,13 @@ describe('preferCanonicalFamilyGiven', () => {
       ]),
     ).toEqual({ familyName: '張', givenName: '某' });
   });
+
+  it('does not invent a given name from a title-like primary remainder', () => {
+    expect(
+      preferCanonicalFamilyGiven('孝武昭路太后', [
+        { text: '孝', type: 'family' },
+        { text: '路', type: 'family' },
+      ]),
+    ).toEqual({ familyName: '孝', givenName: null });
+  });
 });

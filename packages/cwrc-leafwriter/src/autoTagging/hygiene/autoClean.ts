@@ -15,6 +15,7 @@ import type { EntitySummary } from '../entityOps';
 import { suggestPersonNameSplit } from '../../plugins/personNameDefaults';
 import { autoRomanize, isLatinScript } from '../../utilities/romanize';
 import { isChineseLanguageCode } from '../../utilities/languageCodes';
+import { isNobleTitleHeadword } from '../nobleTitleHeadword';
 import { applyHygieneFinding } from './apply';
 import { scanFamilyPrefixedAltNames } from './scanners';
 import type { HygieneFinding } from './types';
@@ -78,6 +79,7 @@ export function scanOrphanShortNameSplits(
     if (!primary) continue;
     const len = codePointLength(primary);
     if (len < 2 || len > 4) continue;
+    if (isNobleTitleHeadword(primary)) continue;
     const split = suggestPersonNameSplit(primary, projectLang);
     if (!split) continue;
     findings.push({

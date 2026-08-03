@@ -21,6 +21,7 @@ import type { AuthorityCandidate } from '../autoTagging/authority';
 import type { AuthorityPackContent } from '../autoTagging/packLoader';
 import { bareNorbertAuthorityValue } from '../autoTagging/norbertAuthorityId';
 import { clearNorbertExpanderCache } from '../autoTagging/norbertExpanderCache';
+import { clearAuthorityPackEnrichmentCaches } from '../autoTagging/nameBackfill';
 
 export interface PackRow {
   authorityId?: string;
@@ -341,6 +342,8 @@ export function uncachedPackReader():
 export function clearPackContentCache(packIds?: AuthorityPackId[]): void {
   // Norbert's derived wrapper/title candidates depend on the same pack files.
   clearNorbertExpanderCache();
+  // Backfill enrichment indexes are built from the same packs.
+  clearAuthorityPackEnrichmentCaches();
   if (!packIds) {
     packContentCache.clear();
     return;

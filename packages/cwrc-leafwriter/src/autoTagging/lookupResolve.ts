@@ -41,6 +41,12 @@ import type { LookupWarning } from './lookupWarnings';
 import type { SqlitePanelSummaryLike } from './sqliteSummary';
 import { typedNamesFromPackRow, type TypedName } from './disambiguationCandidates';
 import { preferCanonicalFamilyGiven } from './nameTypes';
+import {
+  isNobleTitleHeadword,
+  nobleTitlesFromMetadata,
+  personalNameForSegmentation,
+  preferredEntityPrimaryName,
+} from './nobleTitleHeadword';
 
 export const LJB_LOOKUP_RESP = '#ljb-lookup';
 
@@ -157,6 +163,20 @@ export interface CrosswalkResult {
     origin?: OriginAssertion[];
     /** Pack `names[]` short forms (bare 姓/名/字, …) for link-time enrichment. */
     typedNames?: TypedName[];
+    nobleTitle?: {
+      fief?: string | null;
+      familyName?: string | null;
+      posthumousName?: string | null;
+      posthumousNameAbbr?: string | null;
+      roleName?: string | null;
+    };
+    nobleTitles?: Array<{
+      fief?: string | null;
+      familyName?: string | null;
+      posthumousName?: string | null;
+      posthumousNameAbbr?: string | null;
+      roleName?: string | null;
+    }>;
   };
 }
 
@@ -176,6 +196,20 @@ interface PackRow {
     pinyin?: string;
     yomi?: string;
     crosswalk?: Record<string, string | string[] | undefined>;
+    nobleTitle?: {
+      fief?: string | null;
+      familyName?: string | null;
+      posthumousName?: string | null;
+      posthumousNameAbbr?: string | null;
+      roleName?: string | null;
+    };
+    nobleTitles?: Array<{
+      fief?: string | null;
+      familyName?: string | null;
+      posthumousName?: string | null;
+      posthumousNameAbbr?: string | null;
+      roleName?: string | null;
+    }>;
   };
 }
 
@@ -282,6 +316,8 @@ export async function crosswalkForRef(
           nationality: row.metadata?.nationality,
           origin: row.metadata?.origin,
           typedNames: typedNamesFromPackRow(row.names),
+          nobleTitle: row.metadata?.nobleTitle,
+          nobleTitles: row.metadata?.nobleTitles,
         };
       }
     }
@@ -443,11 +479,16 @@ function toConflictCandidates(entities: EntityRecord[]): LookupConflictCandidate
  */
 function personEnrichmentFromPackCandidate(
   candidate: CrosswalkResult['candidate'] | undefined,
-  projectLang?: string | null,
+  _projectLang?: string | null,
 ): { typedNames?: TypedName[]; familyName?: string; givenName?: string } {
   if (!candidate) return {};
   const typedNames = candidate.typedNames;
-  const preferred = preferCanonicalFamilyGiven(candidate.primaryName, typedNames ?? []);
+  const titleParts = nobleTitlesFromMetadata(candidate);
+  // Prefer pack typed 姓/名; never surname-segment a noble-title headword.
+  const preferred = preferCanonicalFamilyGiven(
+    personalNameForSegmentation(candidate.primaryName, typedNames ?? [], titleParts),
+    typedNames ?? [],
+  );
   return {
     ...(typedNames?.length ? { typedNames } : {}),
     // Authority display labels can be titles (e.g. 孝元皇后), not persName
@@ -589,29 +630,42 @@ export async function planLookupResolution(
     };
   }
 
-  const entityName = candidateMeta?.primaryName ?? input.label;
-  // Authority-provided pinyin/yomi wins outright. Otherwise, for persons,
-  // split family/given first (Norbert, or the built-in surname-table
-  // fallback) and romanize from the split — "Zhou Shixiong", not the
-  // per-character "Zhou Shi Xiong" a whole-string fallback would produce.
+  const headword = candidateMeta?.primaryName ?? input.label;
+  const titleParts = nobleTitlesFromMetadata(candidateMeta);
   const packPerson =
     kind === 'person'
       ? personEnrichmentFromPackCandidate(candidateMeta, deps.projectLang)
       : {};
+  // Prefer pack personal primary / 姓+名 over a display-only title headword.
+  const entityName =
+    kind === 'person'
+      ? preferredEntityPrimaryName(headword, packPerson.typedNames ?? [], titleParts)
+      : headword;
+  const splitSurface =
+    kind === 'person'
+      ? personalNameForSegmentation(headword, packPerson.typedNames ?? [], titleParts)
+      : headword;
+  // Authority-provided pinyin/yomi wins outright. Otherwise, for persons,
+  // split family/given first (Norbert, or the built-in surname-table
+  // fallback) and romanize from the split — "Zhou Shixiong", not the
+  // per-character "Zhou Shi Xiong" a whole-string fallback would produce.
   const hasAuthorityRomanization = Boolean(
     candidateMeta?.pinyin?.trim() || candidateMeta?.yomi?.trim(),
   );
   const personSplit =
     !hasAuthorityRomanization &&
     kind === 'person' &&
+    Boolean(splitSurface) &&
     !packPerson.familyName &&
     !packPerson.givenName
-      ? suggestPersonNameSplit(entityName, deps.projectLang ?? null)
+      ? suggestPersonNameSplit(splitSurface!, deps.projectLang ?? null)
       : null;
   const romanizedName = hasAuthorityRomanization
     ? (romanizeFromAuthorityMetadata(candidateMeta, entityName, deps.projectLang) ?? undefined)
     : personSplit || packPerson.familyName
-      ? (suggestPersonRomanization(entityName, deps.projectLang ?? null) ?? undefined)
+      ? (splitSurface
+          ? (suggestPersonRomanization(splitSurface, deps.projectLang ?? null) ?? undefined)
+          : undefined)
       : (autoRomanize(entityName, deps.projectLang) ?? undefined);
   return {
     action: 'mint',
@@ -850,7 +904,9 @@ export async function linkLocalEntityWithoutAuthority(
   }
 
   const personSplit =
-    kind === 'person' ? suggestPersonNameSplit(surface, deps.projectLang ?? null) : null;
+    kind === 'person' && !isNobleTitleHeadword(surface)
+      ? suggestPersonNameSplit(surface, deps.projectLang ?? null)
+      : null;
   const romanizedName = personSplit
     ? (suggestPersonRomanization(surface, deps.projectLang ?? null) ?? undefined)
     : (autoRomanize(surface, deps.projectLang) ?? undefined);

@@ -10,7 +10,7 @@ import {
   type StyleSpecification,
 } from 'maplibre-gl';
 import protomapsLayers from 'protomaps-themes-base';
-import { findBundleForPoint, REGIONAL_BUNDLES } from './regionalBundles';
+import { findBundleForPoint, lngLatBoundsLike, REGIONAL_BUNDLES } from './regionalBundles';
 
 // MapLibre computes its worker's URL from `import.meta.url` at the moment it
 // first needs a worker (lazily, inside an async callback — not at module
@@ -101,7 +101,7 @@ const MAP_TILE_MAX_ZOOM = 15;
  * exists (see `map.setStyle` below) rather than chosen up front, so pins
  * never wait on this check.
  */
-function vectorStyle(bundleId: string): StyleSpecification {
+function vectorStyle(bundleId: string, maxZoom = MAP_TILE_MAX_ZOOM): StyleSpecification {
   const { lang, script } = LABEL_LANG_BY_BUNDLE[bundleId] ?? DEFAULT_LABEL_LANG;
   return {
     version: 8,
@@ -110,7 +110,7 @@ function vectorStyle(bundleId: string): StyleSpecification {
       protomaps: {
         type: 'vector',
         tiles: [`pmtiles://${bundleId}/{z}/{x}/{y}.mvt`],
-        maxzoom: MAP_TILE_MAX_ZOOM,
+        maxzoom: maxZoom,
       },
     },
     layers: protomapsLayers('protomaps', 'light', lang, script) as StyleSpecification['layers'],
@@ -146,6 +146,9 @@ export function PlaceComparisonMap({ open, onClose, pins, title }: PlaceComparis
       center: [0, 0],
       zoom: 2,
       maxZoom: MAP_TILE_MAX_ZOOM,
+      // Regional PMTiles only cover their extract bbox — don't wrap the world
+      // or let the camera drift into empty ocean beyond downloaded tiles.
+      renderWorldCopies: false,
       attributionControl: false,
     });
     mapRef.current = map;
@@ -175,12 +178,24 @@ export function PlaceComparisonMap({ open, onClose, pins, title }: PlaceComparis
         installedBundleIds = status?.regions?.map((r) => r.id) ?? [];
 
         const centroid = centroidOfPins(pins);
+        const installedBundles = REGIONAL_BUNDLES.filter((bundle) =>
+          installedBundleIds.includes(bundle.id),
+        );
         const matchingInstalled =
-          centroid &&
-          installedBundleIds
-            .map((id) => REGIONAL_BUNDLES.find((b) => b.id === id))
-            .find((bundle) => bundle && findBundleForPoint([bundle], centroid.lat, centroid.lon));
-        if (matchingInstalled) map.setStyle(vectorStyle(matchingInstalled.id));
+          centroid && findBundleForPoint(installedBundles, centroid.lat, centroid.lon);
+        if (matchingInstalled) {
+          // Cap camera zoom to the installed archive's max zoom (regional extracts
+          // are often z≤8 even though full Protomaps goes to 15).
+          const regionMeta = status?.regions?.find((r) => r.id === matchingInstalled.id);
+          const tileMaxZoom =
+            typeof regionMeta?.maxZoom === 'number' && regionMeta.maxZoom >= 0
+              ? Math.min(regionMeta.maxZoom, MAP_TILE_MAX_ZOOM)
+              : MAP_TILE_MAX_ZOOM;
+          map.setMaxZoom(tileMaxZoom);
+          map.setStyle(vectorStyle(matchingInstalled.id, tileMaxZoom));
+          // Keep pan/zoom inside the tile extract so users can't leave coverage.
+          map.setMaxBounds(lngLatBoundsLike(matchingInstalled.bounds));
+        }
 
         // Checked against the pins' own location, not map.getCenter(): at
         // this point the camera may still be sitting at its [0, 0] initial

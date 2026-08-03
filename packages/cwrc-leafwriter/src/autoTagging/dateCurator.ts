@@ -93,9 +93,26 @@ export function finalizeDateSuggestion(
       ...(resolution.editorAttributes ?? {}),
     };
     resolution.selectedCandidateIndex = index;
+    // Unique auto-accept must stay refreshable; user picks on ambiguous/unresolved lock.
+    if (resolution.status !== 'unique') {
+      resolution.userLocked = true;
+    }
   }
 
   return suggestion;
+}
+
+/**
+ * Unique resolutions are already decided — mark them accepted so the curator
+ * opens with green “ready” rows and no accept/reject affordance.
+ */
+export function preAcceptUniqueDateSuggestions(suggestions: Suggestion[]): void {
+  for (const suggestion of suggestions) {
+    if (suggestion.status !== 'pending') continue;
+    if (suggestion.dateResolution?.status !== 'unique') continue;
+    finalizeDateSuggestion(suggestion, 0);
+    suggestion.status = 'accepted';
+  }
 }
 
 function priorDateLabel(s: Suggestion): string {

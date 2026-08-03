@@ -36,7 +36,8 @@
         "entire_corpus": "Entire corpus",
         "folder_placeholder": "Folder path"
       },
-      "skip_review": "Skip review (apply matches directly)",
+      "skip_review": "Auto-accept",
+      "ai_curate": "AI curate",
       "tag_bomb_queue": {
         "title": "{{count}} document{{count, plural, one {} other {s}}} matched",
         "review": "Review",
@@ -110,6 +111,9 @@
           "update_failed": "Update failed.",
           "updated": "Authority data updated."
         },
+        "show_pack_string_counts": "Show live string counts in Tag Bomb",
+        "show_pack_string_counts_description": "Counts strings in each authority pack when Tag Bomb opens. Can slow opening.",
+
         "messages": {
           "Are you sure you want to delete the authority -value": "<0>Are you sure you want to delete the authority </0><1>{{name}}</1><2>?</2>",
           "Authority deleted successfully": "Authority deleted successfully",

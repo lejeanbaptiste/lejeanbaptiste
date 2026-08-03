@@ -70,8 +70,8 @@ const DATABASE_ENTITY_ROW_HEIGHT = 56;
 
 type DatabaseEntityRowData = {
   entities: EntitySummary[];
-  selectedId: string | null;
-  onSelect: (id: string) => void;
+  selectedIdSet: Set<string>;
+  onSelect: (id: string, event: React.MouseEvent) => void;
 };
 
 /** Stable row component for react-window (must not be recreated each render). */
@@ -79,7 +79,7 @@ function DatabaseEntityRow({
   index,
   style,
   entities,
-  selectedId,
+  selectedIdSet,
   onSelect,
 }: RowComponentProps<DatabaseEntityRowData>) {
   const entity = entities[index];
@@ -88,8 +88,8 @@ function DatabaseEntityRow({
     <ListItemButton
       style={style}
       dense
-      selected={selectedId === entity.id}
-      onClick={() => onSelect(entity.id)}
+      selected={selectedIdSet.has(entity.id)}
+      onClick={(event) => onSelect(entity.id, event)}
       sx={{
         alignItems: 'flex-start',
         borderBottom: 1,
@@ -113,19 +113,28 @@ function DatabaseEntityRow({
 const DatabaseEntityList = memo(function DatabaseEntityList({
   entities,
   filtered,
-  selectedId,
+  selectedIds,
   loading,
   onSelect,
+  onSelectAllFiltered,
+  onClearSelection,
 }: {
   entities: EntitySummary[];
   filtered: EntitySummary[];
-  selectedId: string | null;
+  selectedIds: string[];
   loading: boolean;
-  onSelect: (id: string) => void;
+  onSelect: (id: string, event: React.MouseEvent) => void;
+  onSelectAllFiltered: () => void;
+  onClearSelection: () => void;
 }) {
+  const selectedIdSet = useMemo(() => new Set(selectedIds), [selectedIds]);
   const rowProps = useMemo(
-    () => ({ entities: filtered, selectedId, onSelect }),
-    [filtered, selectedId, onSelect],
+    () => ({ entities: filtered, selectedIdSet, onSelect }),
+    [filtered, selectedIdSet, onSelect],
+  );
+  const selectedInFilter = useMemo(
+    () => filtered.filter((entity) => selectedIdSet.has(entity.id)).length,
+    [filtered, selectedIdSet],
   );
 
   if (entities.length === 0 && loading) {
@@ -143,13 +152,40 @@ const DatabaseEntityList = memo(function DatabaseEntityList({
     );
   }
   return (
-    <VirtualList
-      rowComponent={DatabaseEntityRow}
-      rowCount={filtered.length}
-      rowHeight={DATABASE_ENTITY_ROW_HEIGHT}
-      rowProps={rowProps}
-      style={{ height: '100%', width: '100%' }}
-    />
+    <Box sx={{ display: 'flex', flexDirection: 'column', height: '100%', minHeight: 0 }}>
+      <Stack
+        direction="row"
+        spacing={0.5}
+        alignItems="center"
+        sx={{ px: 1, py: 0.5, borderBottom: 1, borderColor: 'divider', flexShrink: 0 }}
+      >
+        <Typography variant="caption" color="text.secondary" sx={{ flex: 1 }}>
+          {selectedInFilter > 0
+            ? `${selectedInFilter} selected`
+            : `${filtered.length} shown`}
+        </Typography>
+        <Button size="small" onClick={onSelectAllFiltered} sx={{ minWidth: 0, px: 0.75 }}>
+          All
+        </Button>
+        <Button
+          size="small"
+          onClick={onClearSelection}
+          disabled={selectedIds.length === 0}
+          sx={{ minWidth: 0, px: 0.75 }}
+        >
+          Clear
+        </Button>
+      </Stack>
+      <Box sx={{ flex: 1, minHeight: 0 }}>
+        <VirtualList
+          rowComponent={DatabaseEntityRow}
+          rowCount={filtered.length}
+          rowHeight={DATABASE_ENTITY_ROW_HEIGHT}
+          rowProps={rowProps}
+          style={{ height: '100%', width: '100%' }}
+        />
+      </Box>
+    </Box>
   );
 });
 
@@ -302,6 +338,8 @@ export const DatabaseWindow = () => {
   const [search, setSearch] = useState('');
   const [kindFilter, setKindFilter] = useState<EntityKind>('person');
   const [selectedId, setSelectedId] = useState<string | null>(null);
+  const [selectedIds, setSelectedIds] = useState<string[]>([]);
+  const selectionAnchorRef = useRef<string | null>(null);
   const [mainPane, setMainPane] = useState<MainPane>('detail');
   const [rightTab, setRightTab] = useState('cleaning');
   const [findings, setFindings] = useState<HygieneFinding[]>([]);
@@ -339,7 +377,10 @@ export const DatabaseWindow = () => {
       setProjectStore(result.projectStore);
       setLoadError(result.error);
       if (result.entities.length > 0 && !selectedId) {
-        setSelectedId(result.entities[0]!.id);
+        const firstId = result.entities[0]!.id;
+        setSelectedId(firstId);
+        setSelectedIds([firstId]);
+        selectionAnchorRef.current = firstId;
       }
     } catch (error) {
       if (!controller.signal.aborted) {
@@ -935,13 +976,21 @@ export const DatabaseWindow = () => {
 
   const runBackfill = useCallback(async () => {
     if (!activeStore || jobRunning) return;
-    const controller = beginJob('Backfilling from authorities');
+    const scopedIds = selectedIds.length > 0 ? selectedIds : undefined;
+    const controller = beginJob(
+      scopedIds && scopedIds.length === 1
+        ? 'Backfilling 1 selected entity'
+        : scopedIds
+          ? `Backfilling ${scopedIds.length} selected entities`
+          : 'Backfilling from authorities',
+    );
     try {
       const readPack = window.electronAPI?.authorityPackRead;
       if (!readPack) throw new Error('Authority packs unavailable');
-      updateJob({ detail: 'Concordance…' });
+      updateJob({ detail: scopedIds ? 'Reading entity…' : 'Concordance…' });
       await yieldToUi();
-      if (projectStore && databaseView !== 'central') {
+      // Concordance is a whole-database apply — skip for selected-entity refresh.
+      if (!scopedIds && projectStore && databaseView !== 'central') {
         try {
           await refreshCbdbConcordanceSqlite(projectStore, readPack);
         } catch {
@@ -951,6 +1000,7 @@ export const DatabaseWindow = () => {
       if (controller.signal.aborted) return;
       updateJob({ detail: 'Reading packs…' });
       const result = await backfillEntitiesSqlite(activeStore, {
+        entityIds: scopedIds,
         readPackFile: readPack,
         projectLang,
         signal: controller.signal,
@@ -966,7 +1016,7 @@ export const DatabaseWindow = () => {
         },
       });
       if (controller.signal.aborted) return;
-      if (projectStore && databaseView !== 'central') {
+      if (!scopedIds && projectStore && databaseView !== 'central') {
         try {
           updateJob({ detail: 'Re-applying concordance…' });
           await refreshCbdbConcordanceSqlite(projectStore, readPack);
@@ -999,6 +1049,7 @@ export const DatabaseWindow = () => {
     projectLang,
     projectStore,
     reload,
+    selectedIds,
     updateJob,
   ]);
 
@@ -1052,9 +1103,56 @@ export const DatabaseWindow = () => {
     updateJob,
   ]);
 
-  const selectEntity = useCallback((id: string) => {
-    setSelectedId(id);
-    setMainPane('detail');
+  const selectEntity = useCallback(
+    (id: string, event?: React.MouseEvent) => {
+      const additive = Boolean(event?.metaKey || event?.ctrlKey);
+      const range = Boolean(event?.shiftKey);
+
+      if (range && selectionAnchorRef.current) {
+        const anchorIdx = filtered.findIndex((entity) => entity.id === selectionAnchorRef.current);
+        const targetIdx = filtered.findIndex((entity) => entity.id === id);
+        if (anchorIdx >= 0 && targetIdx >= 0) {
+          const [lo, hi] = anchorIdx < targetIdx ? [anchorIdx, targetIdx] : [targetIdx, anchorIdx];
+          const rangeIds = filtered.slice(lo, hi + 1).map((entity) => entity.id);
+          setSelectedIds((prev) =>
+            additive ? [...new Set([...prev, ...rangeIds])] : rangeIds,
+          );
+          setSelectedId(id);
+          setMainPane('detail');
+          return;
+        }
+      }
+
+      if (additive) {
+        setSelectedIds((prev) => {
+          const next = new Set(prev);
+          if (next.has(id)) next.delete(id);
+          else next.add(id);
+          return [...next];
+        });
+      } else {
+        setSelectedIds([id]);
+      }
+      setSelectedId(id);
+      selectionAnchorRef.current = id;
+      setMainPane('detail');
+    },
+    [filtered],
+  );
+
+  const selectAllFiltered = useCallback(() => {
+    const ids = filtered.map((entity) => entity.id);
+    setSelectedIds(ids);
+    if (ids[0]) {
+      setSelectedId(ids[0]);
+      selectionAnchorRef.current = ids[0];
+    }
+  }, [filtered]);
+
+  const clearSelection = useCallback(() => {
+    setSelectedIds([]);
+    setSelectedId(null);
+    selectionAnchorRef.current = null;
   }, []);
 
   useEffect(() => {
@@ -1195,9 +1293,11 @@ export const DatabaseWindow = () => {
           <DatabaseEntityList
             entities={entities}
             filtered={filtered}
-            selectedId={selectedId}
+            selectedIds={selectedIds}
             loading={listLoading}
             onSelect={selectEntity}
+            onSelectAllFiltered={selectAllFiltered}
+            onClearSelection={clearSelection}
           />
         </Box>
 
@@ -1385,7 +1485,8 @@ export const DatabaseWindow = () => {
             <Stack spacing={1.5} sx={{ p: 1.5, overflow: 'auto' }}>
               <Typography variant="subtitle2">Database maintenance</Typography>
               <Typography variant="body2" color="text.secondary">
-                Run cleanup and enrichment operations on the selected database.
+                Backfill uses the sidebar selection. ⌘/Ctrl-click or Shift-click to
+                multi-select; All selects the current filter.
               </Typography>
 
               <Stack spacing={0.5}>
@@ -1394,12 +1495,17 @@ export const DatabaseWindow = () => {
                   size="small"
                   variant="outlined"
                   onClick={() => void runBackfill()}
-                  disabled={jobRunning || !activeStore}
+                  disabled={jobRunning || !activeStore || selectedIds.length === 0}
                 >
-                  Backfill
+                  {selectedIds.length > 0
+                    ? `Backfill (${selectedIds.length})`
+                    : 'Backfill'}
                 </Button>
                 <Typography variant="caption" color="text.secondary">
-                  Add missing names and biographical data from installed authorities.
+                  Add missing names and biographical data from installed authorities
+                  {selectedIds.length > 0
+                    ? ` for ${selectedIds.length} selected entit${selectedIds.length === 1 ? 'y' : 'ies'}.`
+                    : '. Select entities in the list first.'}
                 </Typography>
               </Stack>
 

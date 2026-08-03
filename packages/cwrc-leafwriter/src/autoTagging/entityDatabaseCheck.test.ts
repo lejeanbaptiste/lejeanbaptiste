@@ -4,8 +4,11 @@ import { EntityStore, type EntityFileApi } from './entityStore';
 import { resolveEntityStorePaths } from './entityStoreResolve';
 import {
   checkEntityDatabaseFingerprint,
+  collectOrphanStubSpecs,
+  kindFromEntityId,
   purgeEntityKeysInProject,
   purgeReportedOrphans,
+  reconstituteReportedOrphans,
   sweepProjectOrphans,
 } from './entityDatabaseCheck';
 import { SQLITE_REQUIRED_LOOKUP_MESSAGE } from './sqliteRequired';
@@ -139,5 +142,34 @@ describe('orphan sweep + classified purge', () => {
     expect(files['/proj/good.xml']).toContain(`key="${keep}"`); // resolved key kept
     expect(files['/proj/good.xml']).not.toContain('person-orphan'); // orphan stripped
     expect(files['/proj/stray.xml']).toContain('person-elsewhere'); // stray untouched
+  });
+
+  it('collects stub specs from genuine orphans only', async () => {
+    expect(kindFromEntityId('place-000042')).toBe('place');
+    const { store, checkApi } = buildProject();
+    const report = await sweepProjectOrphans(store, checkApi, '/proj');
+    const specs = await collectOrphanStubSpecs(checkApi, report);
+    expect(specs).toEqual([
+      { id: 'person-orphan', kind: 'person', name: 'Gone' },
+    ]);
+  });
+
+  it('reconstitutes genuine orphans as stub entities without rewriting corpus keys', async () => {
+    const { store, checkApi, files } = buildProject();
+    const created: Array<{ id: string; kind: string; name: string }> = [];
+    jest.spyOn(store, 'sqliteCreatePopulated').mockImplementation(async (input) => {
+      created.push({
+        id: input.id,
+        kind: input.kind,
+        name: input.names?.[0]?.text ?? '',
+      });
+      return {};
+    });
+    const report = await sweepProjectOrphans(store, checkApi, '/proj');
+    const count = await reconstituteReportedOrphans(store, checkApi, report);
+    expect(count).toBe(1);
+    expect(created).toEqual([{ id: 'person-orphan', kind: 'person', name: 'Gone' }]);
+    expect(files['/proj/good.xml']).toContain('key="person-orphan"');
+    expect(files['/proj/stray.xml']).toContain('person-elsewhere');
   });
 });

@@ -342,10 +342,16 @@ export interface AuthorityBackfillPatch {
     language?: string | null;
     source?: string | null;
   }>;
-  /** Set only when the person has no family name yet. */
+  /** Set only when the person has no family name yet (unless rewriteUnvalidatedPersonNames). */
   familyName?: string | null;
-  /** Set only when the person has no given name yet. */
+  /** Set only when the person has no given name yet (unless rewriteUnvalidatedPersonNames). */
   givenName?: string | null;
+  /**
+   * When true, withdraw active origin=authority family/given name rows that are
+   * not in this patch, and force people.family_name / given_name from the patch
+   * (empty/null clears unvalidated scalars). Never touches origin=user rows.
+   */
+  rewriteUnvalidatedPersonNames?: boolean;
   /** Set only when the entity has no Latin-script name yet. */
   romanized?: { text: string; language?: string | null } | null;
   dates?: Array<{
@@ -3765,58 +3771,170 @@ export class EntitySqliteRepository {
             .map((name) => name.text.trim())
             .filter(Boolean),
         );
-        if (patch.familyName?.trim()) {
-          const text = patch.familyName.trim();
-          const current = person?.family_name?.trim() || null;
-          // Set when empty, or when the current scalar is merely another pack
-          // family variant (re-backfill can correct 元 → 拓拔 for 拓拔建).
-          const shouldSet = !current || (current !== text && familyVariants.has(current));
-          if (shouldSet) {
-            const hasName = this.db
+
+        if (patch.rewriteUnvalidatedPersonNames) {
+          const authorityNameRows = this.db
+            .prepare(
+              `SELECT id, text, name_type, name_role, origin FROM entity_names
+               WHERE entity_id = ? AND status = 'active'
+                 AND origin IN ('authority', 'xml')
+                 AND (
+                   name_type IN ('family', 'given', 'familyName', 'givenName')
+                   OR name_role IN ('family', 'given', 'familyName', 'givenName')
+                 )`,
+            )
+            .all(patch.entityId) as Array<{
+            id: number;
+            text: string;
+            name_type: string | null;
+            name_role: string | null;
+            origin: string;
+          }>;
+          for (const row of authorityNameRows) {
+            const type = normalizePersonNameType(row.name_type) ?? row.name_role;
+            const text = row.text.trim();
+            if (!text) continue;
+            const keep =
+              type === 'family'
+                ? familyVariants.has(text)
+                : type === 'given'
+                  ? givenVariants.has(text)
+                  : true;
+            if (keep) continue;
+            this.db
+              .prepare(`UPDATE entity_names SET status = 'withdrawn', updated_at = ? WHERE id = ?`)
+              .run(now, row.id);
+            this.db
               .prepare(
-                `SELECT 1 FROM entity_names WHERE entity_id = ? AND text = ? AND status = 'active'`,
+                `INSERT OR IGNORE INTO entity_tombstones
+                   (entity_id, table_name, row_id, reason, created_at)
+                 VALUES (?, 'entity_names', ?, 'authority-backfill-rewrite', ?)`,
               )
-              .get(patch.entityId, text);
-            if (!hasName) {
-              this.db
+              .run(patch.entityId, row.id, now);
+            changed = true;
+          }
+
+          const userValidatedFamily = this.db
+            .prepare(
+              `SELECT 1 FROM entity_names
+               WHERE entity_id = ? AND status = 'active' AND origin = 'user'
+                 AND text = ? AND (name_type IN ('family', 'familyName') OR name_role IN ('family', 'familyName'))`,
+            )
+            .get(patch.entityId, person?.family_name?.trim() || '') as { 1?: number } | undefined;
+          const userValidatedGiven = this.db
+            .prepare(
+              `SELECT 1 FROM entity_names
+               WHERE entity_id = ? AND status = 'active' AND origin = 'user'
+                 AND text = ? AND (name_type IN ('given', 'givenName') OR name_role IN ('given', 'givenName'))`,
+            )
+            .get(patch.entityId, person?.given_name?.trim() || '') as { 1?: number } | undefined;
+
+          const nextFamily = patch.familyName?.trim() || null;
+          const nextGiven = patch.givenName?.trim() || null;
+          const currentFamily = person?.family_name?.trim() || null;
+          const currentGiven = person?.given_name?.trim() || null;
+
+          if (!userValidatedFamily && currentFamily !== nextFamily) {
+            if (nextFamily) {
+              const hasName = this.db
                 .prepare(
-                  `INSERT INTO entity_names
-                     (entity_id, text, name_type, name_role, language, is_primary, origin, source, status, created_at, updated_at)
-                   VALUES (?, ?, 'family', 'family', NULL, 0, 'authority', NULL, 'active', ?, ?)`,
+                  `SELECT 1 FROM entity_names WHERE entity_id = ? AND text = ? AND status = 'active'`,
                 )
-                .run(patch.entityId, text, now, now);
-              namesAdded += 1;
+                .get(patch.entityId, nextFamily);
+              if (!hasName) {
+                this.db
+                  .prepare(
+                    `INSERT INTO entity_names
+                       (entity_id, text, name_type, name_role, language, is_primary, origin, source, status, created_at, updated_at)
+                     VALUES (?, ?, 'family', 'family', NULL, 0, 'authority', NULL, 'active', ?, ?)`,
+                  )
+                  .run(patch.entityId, nextFamily, now, now);
+                namesAdded += 1;
+              }
             }
             this.db
               .prepare('UPDATE people SET family_name = ? WHERE entity_id = ?')
-              .run(text, patch.entityId);
+              .run(nextFamily, patch.entityId);
             changed = true;
           }
-        }
-        if (patch.givenName?.trim()) {
-          const text = patch.givenName.trim();
-          const current = person?.given_name?.trim() || null;
-          const shouldSet = !current || (current !== text && givenVariants.has(current));
-          if (shouldSet) {
-            const hasName = this.db
-              .prepare(
-                `SELECT 1 FROM entity_names WHERE entity_id = ? AND text = ? AND status = 'active'`,
-              )
-              .get(patch.entityId, text);
-            if (!hasName) {
-              this.db
+
+          if (!userValidatedGiven && currentGiven !== nextGiven) {
+            if (nextGiven) {
+              const hasName = this.db
                 .prepare(
-                  `INSERT INTO entity_names
-                     (entity_id, text, name_type, name_role, language, is_primary, origin, source, status, created_at, updated_at)
-                   VALUES (?, ?, 'given', 'given', NULL, 0, 'authority', NULL, 'active', ?, ?)`,
+                  `SELECT 1 FROM entity_names WHERE entity_id = ? AND text = ? AND status = 'active'`,
                 )
-                .run(patch.entityId, text, now, now);
-              namesAdded += 1;
+                .get(patch.entityId, nextGiven);
+              if (!hasName) {
+                this.db
+                  .prepare(
+                    `INSERT INTO entity_names
+                       (entity_id, text, name_type, name_role, language, is_primary, origin, source, status, created_at, updated_at)
+                     VALUES (?, ?, 'given', 'given', NULL, 0, 'authority', NULL, 'active', ?, ?)`,
+                  )
+                  .run(patch.entityId, nextGiven, now, now);
+                namesAdded += 1;
+              }
             }
             this.db
               .prepare('UPDATE people SET given_name = ? WHERE entity_id = ?')
-              .run(text, patch.entityId);
+              .run(nextGiven, patch.entityId);
             changed = true;
+          }
+        } else {
+          if (patch.familyName?.trim()) {
+            const text = patch.familyName.trim();
+            const current = person?.family_name?.trim() || null;
+            // Set when empty, or when the current scalar is merely another pack
+            // family variant (re-backfill can correct 元 → 拓拔 for 拓拔建).
+            const shouldSet = !current || (current !== text && familyVariants.has(current));
+            if (shouldSet) {
+              const hasName = this.db
+                .prepare(
+                  `SELECT 1 FROM entity_names WHERE entity_id = ? AND text = ? AND status = 'active'`,
+                )
+                .get(patch.entityId, text);
+              if (!hasName) {
+                this.db
+                  .prepare(
+                    `INSERT INTO entity_names
+                       (entity_id, text, name_type, name_role, language, is_primary, origin, source, status, created_at, updated_at)
+                     VALUES (?, ?, 'family', 'family', NULL, 0, 'authority', NULL, 'active', ?, ?)`,
+                  )
+                  .run(patch.entityId, text, now, now);
+                namesAdded += 1;
+              }
+              this.db
+                .prepare('UPDATE people SET family_name = ? WHERE entity_id = ?')
+                .run(text, patch.entityId);
+              changed = true;
+            }
+          }
+          if (patch.givenName?.trim()) {
+            const text = patch.givenName.trim();
+            const current = person?.given_name?.trim() || null;
+            const shouldSet = !current || (current !== text && givenVariants.has(current));
+            if (shouldSet) {
+              const hasName = this.db
+                .prepare(
+                  `SELECT 1 FROM entity_names WHERE entity_id = ? AND text = ? AND status = 'active'`,
+                )
+                .get(patch.entityId, text);
+              if (!hasName) {
+                this.db
+                  .prepare(
+                    `INSERT INTO entity_names
+                       (entity_id, text, name_type, name_role, language, is_primary, origin, source, status, created_at, updated_at)
+                     VALUES (?, ?, 'given', 'given', NULL, 0, 'authority', NULL, 'active', ?, ?)`,
+                  )
+                  .run(patch.entityId, text, now, now);
+                namesAdded += 1;
+              }
+              this.db
+                .prepare('UPDATE people SET given_name = ? WHERE entity_id = ?')
+                .run(text, patch.entityId);
+              changed = true;
+            }
           }
         }
       }

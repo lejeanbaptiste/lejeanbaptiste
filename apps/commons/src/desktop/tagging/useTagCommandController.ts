@@ -220,20 +220,23 @@ export const useTagCommandController = () => {
       }
 
       const editor = window.writer?.editor;
+      // Snapshot wrap text/range BEFORE collapsing the live selection for IME.
+      // ctx.rng is TinyMCE's live Range — collapse() would empty toString() and
+      // break Shift+Enter / All / Walk (they need selectedText).
+      const wrapRangeSnapshot =
+        nextMode === 'wrap' && !ctx.rng.collapsed ? ctx.rng.cloneRange() : null;
       if (editor) {
-        // Snapshot first (getBookmark clones the live Range). Then collapse the
-        // visible selection so Chinese IME composition cannot replace the
-        // selected string while the popup is open. Apply restores the bookmark.
         bookmarkRef.current = getBookmark(editor);
-        sourceRangeRef.current = getSelectionRange(editor).cloneRange();
-        if (nextMode === 'wrap' && !ctx.rng.collapsed) {
+        sourceRangeRef.current =
+          wrapRangeSnapshot ?? getSelectionRange(editor).cloneRange();
+        if (wrapRangeSnapshot) {
           editor.selection.collapse(false);
         }
       }
 
       const text =
         nextMode === 'wrap'
-          ? ctx.rng.toString()
+          ? (wrapRangeSnapshot?.toString() ?? ctx.rng.toString())
           : nextMode === 'rename'
             ? (ctx.tagElement?.textContent ?? '').trim()
             : '';
@@ -251,7 +254,9 @@ export const useTagCommandController = () => {
         setMatchCount(text ? countPropagatableMatches(text, readLastUsedTag() ?? '') : 0);
       }
       setOpen(true);
-      await loadSuggestions(nextMode, ctx);
+      const suggestionCtx =
+        wrapRangeSnapshot && nextMode === 'wrap' ? { ...ctx, rng: wrapRangeSnapshot } : ctx;
+      await loadSuggestions(nextMode, suggestionCtx);
       return true;
     },
     [loadSuggestions, notifyViaSnackbar],
@@ -335,9 +340,26 @@ export const useTagCommandController = () => {
     return null;
   }, [filter, highlightedTag, mode, suggestions]);
 
+  const applyPluginTagCommand = useCallback(
+    (item: PluginTagCommandItem) => {
+      const editor = window.writer?.editor;
+      if (editor && bookmarkRef.current) moveToBookmark(editor, bookmarkRef.current);
+      closePopup();
+      void item.onClick();
+    },
+    [closePopup],
+  );
+
   const applyTag = useCallback(
     async (tag: NodeDetail) => {
       if (applyingRef.current || tag.invalid) return;
+      if (mode === 'wrap') {
+        const pluginForTag = pluginItems.find((item) => item.schemaTag === tag.name);
+        if (pluginForTag) {
+          applyPluginTagCommand(pluginForTag);
+          return;
+        }
+      }
       applyingRef.current = true;
       try {
         const result = await applyTagFromPopup(mode, tag, bookmarkRef.current, tagElement);
@@ -347,17 +369,7 @@ export const useTagCommandController = () => {
         applyingRef.current = false;
       }
     },
-    [closePopup, mode, notifyApplyResult, tagElement],
-  );
-
-  const applyPluginTagCommand = useCallback(
-    (item: PluginTagCommandItem) => {
-      const editor = window.writer?.editor;
-      if (editor && bookmarkRef.current) moveToBookmark(editor, bookmarkRef.current);
-      closePopup();
-      void item.onClick();
-    },
-    [closePopup],
+    [applyPluginTagCommand, closePopup, mode, notifyApplyResult, pluginItems, tagElement],
   );
 
   const applyHighlighted = useCallback(async () => {

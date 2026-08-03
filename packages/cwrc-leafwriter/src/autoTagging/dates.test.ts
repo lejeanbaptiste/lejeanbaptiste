@@ -7,6 +7,7 @@ import {
   dateTagOnlyFromSanmiao,
   findTeiBodyRoot,
   offsetToRawRange,
+  sequenceSuppressedIndices,
   sequentialMatchOffsets,
   type SanmiaoProposal,
 } from './dates';
@@ -198,6 +199,312 @@ describe('createDateReviewRecalculator', () => {
     expect(recalculationInput[0]).toContain('era_id="12"');
     expect(recalculationInput[1]).toBe('<date xmlns="http://www.tei-c.org/ns/1.0"/>');
     expect(result.map((suggestion) => suggestion.status)).toEqual(['accepted', 'rejected']);
+  });
+
+  it('treats a pending row with a chosen candidate as a sequence anchor for later relatives', async () => {
+    // 建元元年 (chosen, still pending) should re-anchor 四年 even before Accept.
+    const doc = docFromBody(
+      '<p><date><era>建元</era><year>元年</year></date><date><year>四年</year></date></p>',
+    );
+    let recalculationInput: string[] = [];
+    const current = await dateResolveFromDocument(doc, policy, async (dates) =>
+      dates.map((_date, index) => ({
+        date_index: index,
+        date_string: index === 0 ? '建元元年' : '四年',
+        status: (index === 0 ? 'ambiguous' : 'unique') as 'ambiguous' | 'unique',
+        candidates:
+          index === 0
+            ? [
+                {
+                  displayLine: '劉宋昇明…',
+                  attrs: { era_id: '271', year: '1', ind_year: '477' },
+                },
+                {
+                  displayLine: '南齊建元元年（479）',
+                  attrs: { era_id: '272', year: '1', ind_year: '479' },
+                },
+              ]
+            : [{ displayLine: '劉宋昇明四年（480）', attrs: { era_id: '271', year: '4' } }],
+      })),
+    );
+    // User picks Southern Qi Jianyuan without accepting yet.
+    current[0]!.status = 'pending';
+    current[0]!.dateResolution!.selectedCandidateIndex = 1;
+    current[0]!.dateResolution!.userLocked = true;
+    current[0]!.attributes = {
+      resp: '#ljb-sanmiao',
+      cert: 'high',
+      era_id: '272',
+      year: '1',
+      ind_year: '479',
+    };
+
+    const recalculate = createDateReviewRecalculator(doc, policy, async (dates) => {
+      recalculationInput = dates;
+      return dates.map((_date, index) => ({
+        date_index: index,
+        date_string: index === 0 ? '建元元年' : '四年',
+        status: 'unique' as const,
+        candidates: [
+          {
+            displayLine:
+              index === 0 ? '南齊建元元年（479）' : '南齊太祖高皇帝蕭道成建元四年（482）',
+            attrs:
+              index === 0
+                ? { era_id: '272', year: '1', ind_year: '479' }
+                : { era_id: '272', year: '4', ind_year: '482' },
+          },
+        ],
+      }));
+    });
+    const result = await recalculate(current);
+
+    expect(recalculationInput[0]).toContain('era_id="272"');
+    expect(recalculationInput[0]).toContain('year="1"');
+    // Chosen pending row is preserved; open relative is refreshed from the new sequence.
+    expect(result[0]).toBe(current[0]);
+    expect(result[0]!.status).toBe('pending');
+    expect(result[1]!.dateResolution?.candidates?.[0]?.displayLine).toContain('建元四年');
+    expect(result[1]!.status).toBe('pending');
+  });
+
+  it('strips stale attrs from later auto-unique dates so they re-resolve after an earlier choice', async () => {
+    const doc = docFromBody(
+      '<p><date><era>建元</era><year>元年</year></date><date><year>四年</year></date></p>',
+    );
+    let recalculationInput: string[] = [];
+    const current = await dateResolveFromDocument(doc, policy, async (dates) =>
+      dates.map((_date, index) => ({
+        date_index: index,
+        date_string: index === 0 ? '建元元年' : '四年',
+        status: (index === 0 ? 'ambiguous' : 'unique') as 'ambiguous' | 'unique',
+        candidates:
+          index === 0
+            ? [
+                {
+                  displayLine: '劉宋昇明…',
+                  attrs: { era_id: '271', year: '1', ind_year: '477' },
+                },
+                {
+                  displayLine: '南齊建元元年（479）',
+                  attrs: { era_id: '272', year: '1', ind_year: '479' },
+                },
+              ]
+            : [
+                {
+                  displayLine: '劉宋昇明四年（480）',
+                  attrs: { era_id: '271', year: '4', ind_year: '480' },
+                },
+              ],
+      })),
+    );
+    // User picks Southern Qi; 四年 was auto-accepted with the wrong era attrs.
+    current[0]!.status = 'pending';
+    current[0]!.dateResolution!.selectedCandidateIndex = 1;
+    current[0]!.dateResolution!.userLocked = true;
+    current[0]!.attributes = {
+      resp: '#ljb-sanmiao',
+      cert: 'high',
+      era_id: '272',
+      year: '1',
+      ind_year: '479',
+    };
+    current[1]!.status = 'accepted';
+    current[1]!.attributes = {
+      resp: '#ljb-sanmiao',
+      cert: 'high',
+      era_id: '271',
+      year: '4',
+      ind_year: '480',
+    };
+
+    const recalculate = createDateReviewRecalculator(doc, policy, async (dates) => {
+      recalculationInput = dates;
+      return dates.map((_date, index) => ({
+        date_index: index,
+        date_string: index === 0 ? '建元元年' : '四年',
+        status: 'unique' as const,
+        candidates: [
+          {
+            displayLine:
+              index === 0 ? '南齊建元元年（479）' : '南齊太祖高皇帝蕭道成建元四年（482）',
+            attrs:
+              index === 0
+                ? { era_id: '272', year: '1', ind_year: '479' }
+                : { era_id: '272', year: '4', ind_year: '482' },
+          },
+        ],
+      }));
+    });
+    const result = await recalculate(current);
+
+    expect(recalculationInput[0]).toContain('era_id="272"');
+    // Stale 昇明 attrs must not be sent — only parse children.
+    expect(recalculationInput[1]).not.toContain('era_id="271"');
+    expect(recalculationInput[1]).toContain('<year');
+    expect(result[1]!.dateResolution?.candidates?.[0]?.displayLine).toContain('建元四年');
+    expect(result[1]!.status).toBe('pending');
+  });
+
+  it('keeps a locked 建元元年 row when a later date is disambiguated', async () => {
+    const doc = docFromBody(
+      '<p><date><era>建元</era><year>元年</year></date><date>明年</date></p>',
+    );
+    const current = await dateResolveFromDocument(doc, policy, async (dates) =>
+      dates.map((_date, index) => ({
+        date_index: index,
+        date_string: index === 0 ? '建元元年' : '明年',
+        status: 'ambiguous' as const,
+        candidates:
+          index === 0
+            ? [
+                {
+                  displayLine: '劉宋昇明元年',
+                  attrs: { era_id: '271', year: '1', ind_year: '477' },
+                },
+                {
+                  displayLine: '南齊建元元年（479）',
+                  attrs: { era_id: '272', year: '1', ind_year: '479' },
+                },
+              ]
+            : [
+                {
+                  displayLine: 'Insufficient data',
+                  attrs: {},
+                },
+                {
+                  displayLine: '南齊建元二年（480）',
+                  attrs: { era_id: '272', year: '2', ind_year: '480' },
+                },
+              ],
+      })),
+    );
+    // User locked 建元 (accepted after pick).
+    current[0]!.status = 'accepted';
+    current[0]!.dateResolution!.selectedCandidateIndex = 1;
+    current[0]!.dateResolution!.userLocked = true;
+    current[0]!.attributes = {
+      resp: '#ljb-sanmiao',
+      cert: 'high',
+      era_id: '272',
+      year: '1',
+      ind_year: '479',
+    };
+    // Then picks 明年 — must not undo 建元.
+    current[1]!.status = 'pending';
+    current[1]!.dateResolution!.selectedCandidateIndex = 1;
+    current[1]!.dateResolution!.userLocked = true;
+    current[1]!.attributes = {
+      resp: '#ljb-sanmiao',
+      cert: 'high',
+      era_id: '272',
+      year: '2',
+      ind_year: '480',
+    };
+
+    const recalculate = createDateReviewRecalculator(doc, policy, async (dates) =>
+      dates.map((_date, index) => ({
+        date_index: index,
+        date_string: index === 0 ? '建元元年' : '明年',
+        status: 'unique' as const,
+        candidates: [
+          {
+            displayLine:
+              index === 0 ? 'WRONG — should not replace locked 建元' : '南齊建元二年（480）',
+            attrs:
+              index === 0
+                ? { era_id: '999', year: '1', ind_year: '1' }
+                : { era_id: '272', year: '2', ind_year: '480' },
+          },
+        ],
+      })),
+    );
+    const result = await recalculate(current);
+
+    expect(result[0]).toBe(current[0]);
+    expect(result[0]!.attributes?.era_id).toBe('272');
+    expect(result[0]!.dateResolution?.userLocked).toBe(true);
+    expect(result[0]!.dateResolution?.candidates?.[1]?.displayLine).toContain('建元元年');
+    expect(result[1]).toBe(current[1]);
+  });
+
+  it('skips intervening flashback dates when attachToDateIndex points at an earlier prior', async () => {
+    // 1 建元元年 → 2 flashback 漢 → 3 四年 should inherit from 1, not 2.
+    const doc = docFromBody(
+      '<p><date>建元元年</date><date>漢高祖元年</date><date>四年</date></p>',
+    );
+    let recalculationInput: string[] = [];
+    const current = await dateResolveFromDocument(doc, policy, async (dates) =>
+      dates.map((_date, index) => ({
+        date_index: index,
+        date_string: index === 0 ? '建元元年' : index === 1 ? '漢高祖元年' : '四年',
+        status: 'unique' as const,
+        candidates: [
+          {
+            displayLine:
+              index === 0
+                ? '南齊建元元年（479）'
+                : index === 1
+                  ? '漢高祖元年'
+                  : '漢高祖四年',
+            attrs:
+              index === 0
+                ? { era_id: '272', year: '1', ind_year: '479' }
+                : index === 1
+                  ? { era_id: '1', year: '1', ind_year: '-206' }
+                  : { era_id: '1', year: '4' },
+          },
+        ],
+      })),
+    );
+    current[0]!.status = 'accepted';
+    current[0]!.attributes = { era_id: '272', year: '1', ind_year: '479', cert: 'high' };
+    current[1]!.status = 'accepted';
+    current[1]!.attributes = { era_id: '1', year: '1', ind_year: '-206', cert: 'high' };
+    current[2]!.status = 'pending';
+    current[2]!.dateResolution!.attachToDateIndex = 0;
+    delete current[2]!.attributes;
+
+    const recalculate = createDateReviewRecalculator(doc, policy, async (dates) => {
+      recalculationInput = dates;
+      return dates.map((_date, index) => ({
+        date_index: index,
+        date_string: index === 0 ? '建元元年' : index === 1 ? '' : '四年',
+        status: 'unique' as const,
+        candidates: [
+          {
+            displayLine:
+              index === 2 ? '南齊建元四年（482）' : index === 0 ? '南齊建元元年（479）' : '',
+            attrs:
+              index === 2
+                ? { era_id: '272', year: '4', ind_year: '482' }
+                : index === 0
+                  ? { era_id: '272', year: '1', ind_year: '479' }
+                  : {},
+          },
+        ],
+      }));
+    });
+    const result = await recalculate(current);
+
+    expect(sequenceSuppressedIndices(current).has(1)).toBe(true);
+    // Flashback blanked for sequence; anchor date keeps attrs; relative refreshes.
+    expect(recalculationInput[0]).toContain('era_id="272"');
+    expect(recalculationInput[1]).toBe('<date xmlns="http://www.tei-c.org/ns/1.0"/>');
+    expect(result[1]).toBe(current[1]);
+    expect(result[2]!.dateResolution?.attachToDateIndex).toBe(0);
+    expect(result[2]!.dateResolution?.candidates?.[0]?.displayLine).toContain('建元四年');
+  });
+});
+
+describe('sequenceSuppressedIndices', () => {
+  it('marks indices strictly between attach target and the attaching row', () => {
+    const current = [
+      { dateResolution: {} },
+      { dateResolution: {} },
+      { dateResolution: { attachToDateIndex: 0 } },
+    ] as import('./types').Suggestion[];
+    expect([...sequenceSuppressedIndices(current)].sort()).toEqual([1]);
   });
 });
 

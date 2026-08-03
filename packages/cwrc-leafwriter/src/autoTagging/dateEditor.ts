@@ -19,12 +19,35 @@ export type DateEditorKey =
   | 'lp'
   | 'nmd_gz';
 
+/** How a slot behaves in the resolve curator. */
+export type DateFieldKind =
+  /** Present in the source parse — immutable. */
+  | 'locked'
+  /** Filled by resolution / a chosen candidate — not free-typed here. */
+  | 'resolved'
+  /** Finer than the source wording allows — unavailable in this panel. */
+  | 'out-of-bounds';
+
 export interface DateEditorField {
   key: DateEditorKey;
   label: string;
   value: string;
+  kind: DateFieldKind;
+  /** True only for rare toggle slots that remain interactive when resolved empty. */
   editable: boolean;
 }
+
+/** Slots shown beside the dynasty–emperor–era package (not part of that package). */
+export const DATE_DETAIL_KEYS: DateEditorKey[] = [
+  'year',
+  'sex_year',
+  'month',
+  'intercalary',
+  'day',
+  'gz',
+  'lp',
+  'nmd_gz',
+];
 
 const XML_FIELD_BY_KEY: Partial<Record<DateEditorKey, string>> = {
   dyn: 'dyn',
@@ -102,7 +125,7 @@ function displayValue(
 ): string {
   const attr = ATTR_BY_KEY[key];
   const isAuthorityKey = key === 'dyn' || key === 'ruler' || key === 'era';
-  if (attr && attrs[attr] != null && (!isAuthorityKey || !!authority)) {
+  if (attr && attrs[attr] != null && attrs[attr] !== '' && (!isAuthorityKey || !!authority)) {
     if (key === 'dyn' && authority) {
       return (
         authority.dynasties.find((entry) => String(entry.dynId) === attrs[attr])?.label ??
@@ -130,6 +153,17 @@ function displayValue(
   return '';
 }
 
+function fieldKind(
+  key: DateEditorKey,
+  value: string,
+  xml: Map<string, string>,
+): DateFieldKind {
+  const xmlKey = XML_FIELD_BY_KEY[key];
+  if (xmlKey && xml.has(xmlKey)) return 'locked';
+  if (value) return 'resolved';
+  return 'out-of-bounds';
+}
+
 export function dateEditorFields(
   suggestion: Suggestion,
   selectedIndex: number | null,
@@ -150,16 +184,47 @@ export function dateEditorFields(
     'lp',
     'nmd_gz',
   ];
-  return keys.map((key) => ({
-    key,
-    label: LABELS[key],
-    value: displayValue(key, attrs, xml, authority),
-    // Source parse elements are immutable; resolved attributes are the editable layer.
-    editable:
-      key === 'dyn' || key === 'ruler' || key === 'era'
-        ? !!authority
-        : !xml.has(XML_FIELD_BY_KEY[key] ?? '') || key === 'intercalary' || key === 'lp',
-  }));
+  return keys.map((key) => {
+    const value = displayValue(key, attrs, xml, authority);
+    const kind = fieldKind(key, value, xml);
+    return {
+      key,
+      label: LABELS[key],
+      value,
+      kind,
+      // Toggles stay interactive only when the slot is not locked/out-of-bounds.
+      editable: (key === 'intercalary' || key === 'lp') && kind !== 'locked' && kind !== 'out-of-bounds',
+    };
+  });
+}
+
+/** Dynasty · era · ruler label for the interpretation package chip. */
+export function dateAuthorityPackageLabel(
+  suggestion: Suggestion,
+  selectedIndex: number | null,
+  authority?: DateAuthorityIndex | null,
+): string {
+  const fields = dateEditorFields(suggestion, selectedIndex, authority);
+  const byKey = (key: DateEditorKey) =>
+    fields.find((field) => field.key === key)?.value?.trim() || '';
+
+  // Prefer authority era.rulerLabel (can-name) when the selected era is known.
+  let ruler = byKey('ruler');
+  const era = byKey('era');
+  if (authority) {
+    const attrs = selectedAttributes(suggestion, selectedIndex);
+    const eraId = attrs.era_id;
+    if (eraId) {
+      const eraEntry = authority.eras.find((entry) => String(entry.eraId) === eraId);
+      if (eraEntry?.rulerLabel) ruler = eraEntry.rulerLabel;
+    }
+  }
+
+  // Emperor before era for the compact package chip.
+  const parts = [ruler, era].filter(Boolean);
+  if (parts.length > 0) return parts.join(' · ');
+  const surface = suggestion.dateResolution?.displaySurface ?? suggestion.anchor.surface;
+  return surface || 'choose interpretation';
 }
 
 function setWorkingAttribute(suggestion: Suggestion, name: string, value: string): void {

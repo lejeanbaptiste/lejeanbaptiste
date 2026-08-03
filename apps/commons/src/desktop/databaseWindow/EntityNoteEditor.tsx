@@ -2,11 +2,9 @@ import FormatBoldIcon from '@mui/icons-material/FormatBold';
 import FormatItalicIcon from '@mui/icons-material/FormatItalic';
 import FormatQuoteIcon from '@mui/icons-material/FormatQuote';
 import LinkIcon from '@mui/icons-material/Link';
-import SaveIcon from '@mui/icons-material/Save';
 import StickyNote2Icon from '@mui/icons-material/StickyNote2';
 import {
   Box,
-  Button,
   Divider,
   IconButton,
   MenuItem,
@@ -81,6 +79,18 @@ const prepareCitations = (root: ParentNode): void => {
   }
 };
 
+const serializeCurrentNote = (
+  editor: HTMLDivElement,
+  doc: Document,
+  language: string,
+): string => {
+  const body = noteBody(doc);
+  body.setAttribute('xml:lang', language);
+  body.innerHTML = editor.innerHTML;
+  prepareCitations(body);
+  return new XMLSerializer().serializeToString(doc.documentElement);
+};
+
 export const EntityNoteEditor = ({
   store,
   entityId,
@@ -91,11 +101,21 @@ export const EntityNoteEditor = ({
   const editorRef = useRef<HTMLDivElement>(null);
   const noteDocRef = useRef<Document>(emptyNoteDocument());
   const rangeRef = useRef<Range | null>(null);
+  const dirtyRef = useRef(false);
+  const savingRef = useRef(false);
+  const loadedEntityIdRef = useRef<string | null>(null);
+  const entityIdRef = useRef(entityId);
+  const languageRef = useRef('');
+  const saveGenerationRef = useRef(0);
   const [language, setLanguage] = useState(() => languageState()?.selectedLang ?? '');
   const [dirty, setDirty] = useState(false);
   const [loading, setLoading] = useState(false);
   const [saving, setSaving] = useState(false);
   const [message, setMessage] = useState<string | null>(null);
+
+  entityIdRef.current = entityId;
+  languageRef.current = language;
+  dirtyRef.current = dirty;
 
   useEffect(() => installCitationBridge(), []);
 
@@ -106,18 +126,101 @@ export const EntityNoteEditor = ({
     return () => window.removeEventListener('desktop:translation-language-state-changed', sync);
   }, []);
 
+  const markDirty = useCallback(() => {
+    dirtyRef.current = true;
+    setDirty(true);
+    setMessage(null);
+  }, []);
+
+  const save = useCallback(
+    async (reason: 'autosave' | 'flush' = 'autosave') => {
+      const targetId = entityIdRef.current;
+      if (!store || !targetId || !editorRef.current || loading) return false;
+      if (!dirtyRef.current) return true;
+      if (savingRef.current && reason === 'autosave') return false;
+
+      savingRef.current = true;
+      setSaving(true);
+      const generation = ++saveGenerationRef.current;
+      try {
+        const xml = serializeCurrentNote(
+          editorRef.current,
+          noteDocRef.current,
+          languageRef.current,
+        );
+        await store.sqliteSetNote(targetId, xml);
+        // Ignore stale completions after a newer save or entity switch.
+        if (generation !== saveGenerationRef.current || entityIdRef.current !== targetId) {
+          return false;
+        }
+        dirtyRef.current = false;
+        setDirty(false);
+        setMessage('Autosaved');
+        return true;
+      } catch (error) {
+        if (generation === saveGenerationRef.current) {
+          setMessage(error instanceof Error ? error.message : String(error));
+        }
+        return false;
+      } finally {
+        if (generation === saveGenerationRef.current) {
+          savingRef.current = false;
+          setSaving(false);
+        }
+      }
+    },
+    [loading, store],
+  );
+
+  // Debounced autosave while editing.
+  useEffect(() => {
+    if (!dirty || loading || !store || !entityId) return;
+    const timer = window.setTimeout(() => {
+      void save('autosave');
+    }, 900);
+    return () => window.clearTimeout(timer);
+  }, [dirty, entityId, loading, save, store]);
+
   useEffect(() => {
     let cancelled = false;
-    setDirty(false);
+    const previousId = loadedEntityIdRef.current;
+
     setMessage(null);
+    saveGenerationRef.current += 1;
+
     if (!store || !entityId) {
+      if (dirtyRef.current && store && previousId && editorRef.current) {
+        void store.sqliteSetNote(
+          previousId,
+          serializeCurrentNote(editorRef.current, noteDocRef.current, languageRef.current),
+        );
+      }
+      dirtyRef.current = false;
+      setDirty(false);
+      loadedEntityIdRef.current = null;
       if (editorRef.current) editorRef.current.innerHTML = '';
       return;
     }
+
     setLoading(true);
-    void store
-      .sqliteGetNote(entityId)
-      .then((xml) => {
+    void (async () => {
+      if (dirtyRef.current && previousId && previousId !== entityId && editorRef.current) {
+        try {
+          await store.sqliteSetNote(
+            previousId,
+            serializeCurrentNote(editorRef.current, noteDocRef.current, languageRef.current),
+          );
+        } catch {
+          // Keep the editor usable; the next autosave/manual save will surface errors.
+        }
+      }
+      if (cancelled) return;
+
+      dirtyRef.current = false;
+      setDirty(false);
+
+      try {
+        const xml = await store.sqliteGetNote(entityId);
         if (cancelled) return;
         const doc = parseNoteDocument(xml);
         noteDocRef.current = doc;
@@ -125,17 +228,29 @@ export const EntityNoteEditor = ({
         if (body.getAttribute('xml:lang')) setLanguage(body.getAttribute('xml:lang') ?? '');
         if (editorRef.current) editorRef.current.innerHTML = body.innerHTML;
         prepareCitations(editorRef.current ?? body);
-      })
-      .catch((error: unknown) => {
+        loadedEntityIdRef.current = entityId;
+      } catch (error: unknown) {
         if (!cancelled) setMessage(error instanceof Error ? error.message : String(error));
-      })
-      .finally(() => {
+      } finally {
         if (!cancelled) setLoading(false);
-      });
+      }
+    })();
+
     return () => {
       cancelled = true;
     };
   }, [entityId, store]);
+
+  // Flush on unmount if still dirty.
+  useEffect(() => {
+    return () => {
+      if (!dirtyRef.current || !store || !loadedEntityIdRef.current || !editorRef.current) return;
+      void store.sqliteSetNote(
+        loadedEntityIdRef.current,
+        serializeCurrentNote(editorRef.current, noteDocRef.current, languageRef.current),
+      );
+    };
+  }, [store]);
 
   const rememberRange = useCallback(() => {
     const selection = window.getSelection();
@@ -145,7 +260,7 @@ export const EntityNoteEditor = ({
   const format = (command: string) => {
     editorRef.current?.focus();
     document.execCommand(command);
-    setDirty(true);
+    markDirty();
   };
 
   const insertFootnote = () => {
@@ -159,7 +274,7 @@ export const EntityNoteEditor = ({
     range.deleteContents();
     range.insertNode(note);
     selection.collapseToEnd();
-    setDirty(true);
+    markDirty();
   };
 
   const insertLink = () => {
@@ -167,7 +282,7 @@ export const EntityNoteEditor = ({
     if (!url) return;
     editorRef.current?.focus();
     document.execCommand('createLink', false, url);
-    setDirty(true);
+    markDirty();
   };
 
   const insertCitation = async () => {
@@ -205,29 +320,7 @@ export const EntityNoteEditor = ({
     } else {
       editorRef.current.appendChild(fragment);
     }
-    setDirty(true);
-  };
-
-  const save = async () => {
-    if (!store || !entityId || !editorRef.current) return;
-    setSaving(true);
-    try {
-      const doc = noteDocRef.current;
-      const body = noteBody(doc);
-      body.setAttribute('xml:lang', language);
-      body.innerHTML = editorRef.current.innerHTML;
-      prepareCitations(body);
-      await store.sqliteSetNote(
-        entityId,
-        new XMLSerializer().serializeToString(doc.documentElement),
-      );
-      setDirty(false);
-      setMessage('Saved');
-    } catch (error) {
-      setMessage(error instanceof Error ? error.message : String(error));
-    } finally {
-      setSaving(false);
-    }
+    markDirty();
   };
 
   if (!entityId) {
@@ -235,6 +328,18 @@ export const EntityNoteEditor = ({
   }
 
   const languages = languageState()?.languages ?? [];
+  const statusColor =
+    message && message !== 'Autosaved'
+      ? 'error'
+      : dirty
+        ? 'warning.main'
+        : 'text.secondary';
+  const statusText = saving
+    ? 'Saving…'
+    : dirty
+      ? 'Unsaved…'
+      : message ?? null;
+
   return (
     <Stack spacing={1} sx={{ height: '100%', minHeight: 0 }}>
       <Stack direction="row" spacing={0.5} alignItems="center" sx={{ flexShrink: 0 }}>
@@ -247,7 +352,7 @@ export const EntityNoteEditor = ({
               const next = String(event.target.value);
               setLanguage(next);
               languageState()?.setSelectedLang(next);
-              setDirty(true);
+              markDirty();
             }}
             sx={{ minWidth: 84 }}
           >
@@ -264,7 +369,7 @@ export const EntityNoteEditor = ({
             value={language}
             onChange={(event) => {
               setLanguage(event.target.value);
-              setDirty(true);
+              markDirty();
             }}
             sx={{ width: 110 }}
           />
@@ -295,15 +400,11 @@ export const EntityNoteEditor = ({
           </IconButton>
         </Tooltip>
         <Box sx={{ flex: 1 }} />
-        <Button
-          size="small"
-          variant="contained"
-          startIcon={<SaveIcon />}
-          onClick={() => void save()}
-          disabled={!dirty || saving || loading}
-        >
-          {saving ? 'Saving…' : 'Save'}
-        </Button>
+        {statusText && (
+          <Typography variant="caption" color={statusColor}>
+            {statusText}
+          </Typography>
+        )}
       </Stack>
       <Divider />
       <Box
@@ -312,7 +413,10 @@ export const EntityNoteEditor = ({
         suppressContentEditableWarning
         spellCheck
         lang={language || undefined}
-        onInput={() => setDirty(true)}
+        onInput={() => markDirty()}
+        onBlur={() => {
+          if (dirtyRef.current) void save('flush');
+        }}
         onKeyUp={rememberRange}
         onMouseUp={rememberRange}
         sx={{
@@ -336,11 +440,6 @@ export const EntityNoteEditor = ({
           },
         }}
       />
-      {message && (
-        <Typography variant="caption" color={message === 'Saved' ? 'success.main' : 'error'}>
-          {message}
-        </Typography>
-      )}
     </Stack>
   );
 };

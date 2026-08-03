@@ -18,6 +18,11 @@ import { mintEntityId, type EntityKind } from './entities';
 import type { EntityStore } from './entityStore';
 import { normalizeNameType, normalizeTypedNamesForIntake, preferCanonicalFamilyGiven } from './nameTypes';
 import {
+  inventedTitleSplitCleanup,
+  nobleTitlesFromMetadata,
+  personalNameForSegmentation,
+} from './nobleTitleHeadword';
+import {
   authorityEnrichmentForEntity,
   authorityEnrichmentsForEntity,
   buildNorbertNobleTitleIndex,
@@ -133,6 +138,68 @@ function toBackfillEntity(summary: PanelPerson) {
   };
 }
 
+/** Map one SQLite panel/entity summary into the slim shape backfill needs. */
+function panelPersonFromSummary(raw: unknown): PanelPerson | null {
+  if (!raw || typeof raw !== 'object') return null;
+  const row = raw as {
+    id?: unknown;
+    kind?: unknown;
+    names?: Array<{
+      text?: unknown;
+      nameType?: unknown;
+      language?: unknown;
+      status?: unknown;
+    }>;
+    authorities?: Array<{ type?: unknown; value?: unknown }>;
+    familyName?: unknown;
+    givenName?: unknown;
+  };
+  if (typeof row.id !== 'string' || typeof row.kind !== 'string') return null;
+  const names = (row.names ?? [])
+    .filter((name) => name.status == null || name.status === 'active')
+    .map((name) => ({
+      text: String(name.text ?? ''),
+      nameType: (name.nameType as string | null | undefined) ?? null,
+      language: (name.language as string | null | undefined) ?? null,
+    }))
+    .filter((name) => name.text.trim());
+  return {
+    id: row.id,
+    kind: row.kind,
+    names,
+    authorities: (row.authorities ?? [])
+      .map((auth) => ({ type: String(auth.type ?? ''), value: String(auth.value ?? '') }))
+      .filter((auth) => auth.type && auth.value),
+    familyName: typeof row.familyName === 'string' ? row.familyName : null,
+    givenName: typeof row.givenName === 'string' ? row.givenName : null,
+  };
+}
+
+/**
+ * Prefer per-id summaries when the caller scoped the job — loading every
+ * person/work via `sqlitePanelSummaries` rebuilds the whole catalogue.
+ */
+async function loadBackfillPanelPeople(
+  store: EntityStore,
+  entityIds: string[] | undefined,
+): Promise<{ personSummaries: PanelPerson[]; workSummaries: PanelPerson[] }> {
+  if (entityIds && entityIds.length > 0) {
+    const personSummaries: PanelPerson[] = [];
+    const workSummaries: PanelPerson[] = [];
+    for (const id of entityIds) {
+      const summary = panelPersonFromSummary(await store.sqliteEntitySummary(id));
+      if (!summary) continue;
+      if (summary.kind === 'person') personSummaries.push(summary);
+      else if (summary.kind === 'work') workSummaries.push(summary);
+    }
+    return { personSummaries, workSummaries };
+  }
+  return {
+    personSummaries: ((await store.sqlitePanelSummaries('person')) ?? []) as PanelPerson[],
+    workSummaries: ((await store.sqlitePanelSummaries('work')) ?? []) as PanelPerson[],
+  };
+}
+
 async function resolveOrCreateByAuthority(
   store: EntityStore,
   kind: 'person' | 'work',
@@ -216,8 +283,7 @@ export async function backfillEntitiesSqlite(
     yieldFn = () => new Promise((resolve) => setTimeout(resolve, 0)),
   } = options;
 
-  const personSummaries = ((await store.sqlitePanelSummaries('person')) ?? []) as PanelPerson[];
-  const workSummaries = ((await store.sqlitePanelSummaries('work')) ?? []) as PanelPerson[];
+  const { personSummaries, workSummaries } = await loadBackfillPanelPeople(store, entityIds);
   const idFilter = entityIds ? new Set(entityIds) : null;
 
   const targets = personSummaries
@@ -239,10 +305,20 @@ export async function backfillEntitiesSqlite(
       }).length
     : personSummaries.filter((entity) => entity.authorities.length === 0).length;
 
-  const packIndex = readPackFile ? await buildPackNameIndex(readPackFile) : null;
+  // Scoped refresh with A6 reference lookup does not need the multi-megabyte
+  // CBDB/DILA/Norbert name index (reference tier wins for those sources).
+  // Title index stays — Norbert person_nt is keyed separately.
+  const packIndex =
+    readPackFile && !(entityIds?.length && lookupAuthorityRef)
+      ? await buildPackNameIndex(readPackFile)
+      : null;
   const nobleTitleIndex = readPackFile ? await buildNorbertNobleTitleIndex(readPackFile) : null;
-  const officeAuthorityByName = readPackFile
-    ? await buildUniqueOfficeAuthorityByName(readPackFile)
+  // Office name→authority attach is a catalogue-wide scan — only for bulk or
+  // explicitly selected office ids.
+  const needsOfficeAttach =
+    Boolean(readPackFile) && (!idFilter || entityIds!.some((id) => id.startsWith('office-')));
+  const officeAuthorityByName = needsOfficeAttach
+    ? await buildUniqueOfficeAuthorityByName(readPackFile!)
     : null;
 
   let entitiesScanned = 0;
@@ -372,37 +448,45 @@ export async function backfillEntitiesSqlite(
       });
     }
 
-    const preferred = preferCanonicalFamilyGiven(
-      primaryName || entity.names[0] || null,
-      typedNames,
-    );
-    let familyName = !entity.familyName
-      ? givenFamily.familyName ||
-        preferred.familyName ||
-        suggestPersonNameSplit(entity.names[0] ?? '', projectLang ?? null)?.familyName ||
-        null
-      : null;
-    let givenName = !entity.givenName
-      ? givenFamily.givenName ||
-        preferred.givenName ||
-        suggestPersonNameSplit(entity.names[0] ?? '', projectLang ?? null)?.givenName ||
-        null
-      : null;
+    const titleParts = nobleTitlesFromMetadata(metadata);
+    const headword = primaryName || entity.names[0] || null;
+    const splitSurface = personalNameForSegmentation(headword, typedNames, titleParts);
+    const preferred = preferCanonicalFamilyGiven(splitSurface, typedNames);
+    // Authority backfill rewrites unvalidated 姓/名 to pack truth (or clears them).
+    // Never invent a split from a noble-title headword.
+    let familyName =
+      givenFamily.familyName ||
+      preferred.familyName ||
+      (splitSurface
+        ? suggestPersonNameSplit(splitSurface, projectLang ?? null)?.familyName
+        : null) ||
+      null;
+    let givenName =
+      givenFamily.givenName ||
+      preferred.givenName ||
+      (splitSurface
+        ? suggestPersonNameSplit(splitSurface, projectLang ?? null)?.givenName
+        : null) ||
+      null;
 
-    // When the entity already has a 姓/名 that is merely one of several pack
-    // variants (e.g. 元 instead of 拓拔 for 拓拔建), still propose the preferred
-    // pair so the scalar fields can be corrected on re-backfill.
-    if (entity.familyName && preferred.familyName && entity.familyName !== preferred.familyName) {
-      const packFamilies = new Set(
-        typedNames.filter((name) => name.type === 'family').map((name) => name.text),
-      );
-      if (packFamilies.has(entity.familyName)) familyName = preferred.familyName;
-    }
-    if (entity.givenName && preferred.givenName && entity.givenName !== preferred.givenName) {
-      const packGivens = new Set(
-        typedNames.filter((name) => name.type === 'given').map((name) => name.text),
-      );
-      if (packGivens.has(entity.givenName)) givenName = preferred.givenName;
+    const titleCleanup = inventedTitleSplitCleanup({
+      headword,
+      nameEntries: entity.nameEntries,
+      familyName: entity.familyName,
+      givenName: entity.givenName,
+      typedNames,
+      nobleTitles: titleParts,
+    });
+    if (titleCleanup.preferredFamily) familyName = titleCleanup.preferredFamily;
+    if (titleCleanup.clearGivenName) givenName = null;
+    // Drop invented title-split texts from the additive name list — rewrite
+    // withdraws leftover authority family/given rows not in this patch.
+    if (titleCleanup.tombstoneTexts.length) {
+      const drop = new Set(titleCleanup.tombstoneTexts);
+      for (let i = namePatches.length - 1; i >= 0; i -= 1) {
+        const patch = namePatches[i]!;
+        if (drop.has(patch.text.normalize('NFC').trim())) namePatches.splice(i, 1);
+      }
     }
 
     let romanized: { text: string; language?: string | null } | null = null;
@@ -418,7 +502,7 @@ export async function backfillEntitiesSqlite(
       const text =
         authorityRomanized?.trim() ||
         fromParts ||
-        suggestPersonRomanization(entity.names[0] ?? '', projectLang ?? null);
+        (splitSurface ? suggestPersonRomanization(splitSurface, projectLang ?? null) : null);
       if (text) romanized = { text, language: projectLang ?? null };
     }
 
@@ -630,6 +714,7 @@ export async function backfillEntitiesSqlite(
       names: namePatches,
       familyName,
       givenName,
+      rewriteUnvalidatedPersonNames: true,
       romanized,
       dates,
       nationalities,

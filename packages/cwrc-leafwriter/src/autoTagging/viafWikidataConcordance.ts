@@ -5,9 +5,13 @@
  * concordance NDJSON ships the same pairs without scanning every person pack
  * on each lookup. Live LINCS rows are enriched from this index so Wikidata and
  * VIAF hits merge without scraping free-text descriptions.
+ *
+ * `authorityIdsFromPackCrosswalk` also maps CBDB / DILA / Norbert / … so pack
+ * crosswalks collapse the same way lookupResolve's `idnosFromRow` does.
  */
 
 import type { AuthorityId } from './entities';
+import { formatNorbertAuthorityValue } from './norbertAuthorityId';
 import { authorityPackLines, type AuthorityPackContent } from './packLoader';
 import type { AuthorityPackId } from './packPaths';
 
@@ -226,21 +230,49 @@ export function enrichCandidatesWithViafWikidataConcordance<T extends ViafWikida
 }
 
 /** Authority ids implied by a pack row's crosswalk (for pack match rows). */
+const CROSSWALK_IDNO_TYPES: Record<string, string> = {
+  cbdb: 'CBDB',
+  chgis: 'CHGIS',
+  dila: 'DILA',
+  wikidata: 'Wikidata',
+  viaf: 'VIAF',
+  ndl: 'NDL',
+  bdrc: 'BDRC',
+  norbert: 'NORBERT',
+};
+
+/**
+ * Emit every authority id carried on a pack row's `metadata.crosswalk`.
+ * VIAF/Wikidata are normalized; Norbert ids are kind-prefixed (`person-12`).
+ */
 export function authorityIdsFromPackCrosswalk(
   crosswalk: Record<string, string | string[] | undefined> | undefined,
+  options?: { norbertKind?: string | null },
 ): AuthorityId[] {
   if (!crosswalk) return [];
   const out: AuthorityId[] = [];
-  const viaf = normalizeViafId(
-    Array.isArray(crosswalk.viaf) ? crosswalk.viaf[0] : crosswalk.viaf,
-  );
-  if (viaf) out.push({ type: 'VIAF', value: viaf });
+  const norbertKind = options?.norbertKind ?? 'person';
 
-  const wdRaw = crosswalk.wikidata;
-  if (wdRaw != null) {
-    for (const entry of Array.isArray(wdRaw) ? wdRaw : [wdRaw]) {
-      const qid = normalizeWikidataQid(String(entry));
-      if (qid) out.push({ type: 'Wikidata', value: qid });
+  for (const [key, entry] of Object.entries(crosswalk)) {
+    const type = CROSSWALK_IDNO_TYPES[key];
+    if (!type || entry == null) continue;
+    for (const raw of Array.isArray(entry) ? entry : [entry]) {
+      if (raw == null || String(raw).trim() === '') continue;
+      if (type === 'VIAF') {
+        const viaf = normalizeViafId(String(raw));
+        if (viaf) out.push({ type, value: viaf });
+        continue;
+      }
+      if (type === 'Wikidata') {
+        const qid = normalizeWikidataQid(String(raw));
+        if (qid) out.push({ type, value: qid });
+        continue;
+      }
+      if (type === 'NORBERT') {
+        out.push({ type, value: formatNorbertAuthorityValue(norbertKind, raw) });
+        continue;
+      }
+      out.push({ type, value: String(raw).trim() });
     }
   }
   return out;

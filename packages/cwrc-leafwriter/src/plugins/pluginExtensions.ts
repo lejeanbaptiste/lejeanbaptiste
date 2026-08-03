@@ -18,7 +18,7 @@ export type PluginReviewPanelComponent = ComponentType<{
   busy?: boolean;
   finishWhenIdle?: boolean;
   suggestions: Suggestion[];
-  onApply: (accepted: Suggestion[]) => void;
+  onApply: (accepted: Suggestion[], rejected?: Suggestion[]) => void;
   onFocus?: (suggestion: Suggestion) => void;
   onDecision?: (event: DecisionEvent) => void;
   onClose?: () => void;
@@ -60,6 +60,12 @@ export interface PluginTagCommandItem {
   id: string;
   label: string;
   icon?: 'norbert';
+  /**
+   * When set, the wrap-selection palette shows this plugin’s icon on the matching
+   * schema tag row (e.g. `nobleTitle`) and routes that wrap through `onClick`
+   * instead of a plain structure tag. The separate footer row is omitted.
+   */
+  schemaTag?: string;
   onClick: () => void | Promise<void>;
   isAvailable?: () => boolean;
 }

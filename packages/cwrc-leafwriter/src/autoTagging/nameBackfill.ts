@@ -32,6 +32,7 @@ import {
 } from './entities';
 import type { AuthorityCandidate } from './authority';
 import { normalizeNameType, normalizeTypedNamesForIntake, preferCanonicalFamilyGiven, type NameTypeId } from './nameTypes';
+import { personalNameForSegmentation, nobleTitlesFromMetadata } from './nobleTitleHeadword';
 import { suggestPersonNameSplit, suggestPersonRomanization } from '../plugins/personNameDefaults';
 import { fetchWikidataLifespan } from './wikidataDates';
 import { fetchWikidataNationality } from './wikidataNationality';
@@ -95,7 +96,35 @@ export interface NorbertNobleTitleCandidate {
  * are — see `norbert-direct` records in the compiled asset). Keyed by the
  * person's Norbert authority id (`metadata.crosswalk.norbert`).
  */
+let norbertNobleTitleIndexPromise: Promise<Map<string, NorbertNobleTitleCandidate[]>> | null =
+  null;
+let packNameIndexPromise: Promise<Map<string, AuthorityEnrichment>> | null = null;
+let officeAuthorityByNamePromise: Promise<
+  Map<string, { type: 'NORBERT' | 'CBDB'; value: string }[]>
+> | null = null;
+
+/** Drop memoized pack enrichment indexes (call when packs are reinstalled). */
+export function clearAuthorityPackEnrichmentCaches(): void {
+  norbertNobleTitleIndexPromise = null;
+  packNameIndexPromise = null;
+  officeAuthorityByNamePromise = null;
+}
+
 export async function buildNorbertNobleTitleIndex(
+  readPackFile: (packId: AuthorityPackId) => Promise<AuthorityPackContent>,
+): Promise<Map<string, NorbertNobleTitleCandidate[]>> {
+  if (!norbertNobleTitleIndexPromise) {
+    norbertNobleTitleIndexPromise = buildNorbertNobleTitleIndexUncached(readPackFile).catch(
+      (error) => {
+        norbertNobleTitleIndexPromise = null;
+        throw error;
+      },
+    );
+  }
+  return norbertNobleTitleIndexPromise;
+}
+
+async function buildNorbertNobleTitleIndexUncached(
   readPackFile: (packId: AuthorityPackId) => Promise<AuthorityPackContent>,
 ): Promise<Map<string, NorbertNobleTitleCandidate[]>> {
   const index = new Map<string, NorbertNobleTitleCandidate[]>();
@@ -181,6 +210,18 @@ function applyNorbertNobleTitles(
 export async function buildPackNameIndex(
   readPackFile: (packId: AuthorityPackId) => Promise<AuthorityPackContent>,
 ): Promise<Map<string, AuthorityEnrichment>> {
+  if (!packNameIndexPromise) {
+    packNameIndexPromise = buildPackNameIndexUncached(readPackFile).catch((error) => {
+      packNameIndexPromise = null;
+      throw error;
+    });
+  }
+  return packNameIndexPromise;
+}
+
+async function buildPackNameIndexUncached(
+  readPackFile: (packId: AuthorityPackId) => Promise<AuthorityPackContent>,
+): Promise<Map<string, AuthorityEnrichment>> {
   const index = new Map<string, AuthorityEnrichment>();
   const packs: { packId: AuthorityPackId; source: string }[] = [
     { packId: 'cbdb-persons', source: 'CBDB' },
@@ -221,6 +262,20 @@ export async function buildPackNameIndex(
  * alone when the match is ambiguous.
  */
 export async function buildUniqueOfficeAuthorityByName(
+  readPackFile: (packId: AuthorityPackId) => Promise<AuthorityPackContent>,
+): Promise<Map<string, { type: 'NORBERT' | 'CBDB'; value: string }[]>> {
+  if (!officeAuthorityByNamePromise) {
+    officeAuthorityByNamePromise = buildUniqueOfficeAuthorityByNameUncached(readPackFile).catch(
+      (error) => {
+        officeAuthorityByNamePromise = null;
+        throw error;
+      },
+    );
+  }
+  return officeAuthorityByNamePromise;
+}
+
+async function buildUniqueOfficeAuthorityByNameUncached(
   readPackFile: (packId: AuthorityPackId) => Promise<AuthorityPackContent>,
 ): Promise<Map<string, { type: 'NORBERT' | 'CBDB'; value: string }[]>> {
   const packs: { packId: AuthorityPackId; type: 'NORBERT' | 'CBDB' }[] = [
@@ -565,7 +620,14 @@ export async function backfillEntityNames(
       }
     }
 
-    const preferred = preferCanonicalFamilyGiven(entity.names[0] ?? null, typedNames);
+    const preferred = preferCanonicalFamilyGiven(
+      personalNameForSegmentation(
+        entity.names[0] ?? null,
+        typedNames,
+        nobleTitlesFromMetadata(metadata),
+      ),
+      typedNames,
+    );
     const nextFamily =
       givenFamily.familyName ||
       preferred.familyName ||
@@ -585,7 +647,19 @@ export async function backfillEntityNames(
       const packFamilies = new Set(
         typedNames.filter((name) => name.type === 'family').map((name) => name.text),
       );
-      if (packFamilies.has(getFamilyName(doc, entity.id)!)) {
+      const currentFamily = getFamilyName(doc, entity.id)!;
+      if (packFamilies.has(currentFamily)) {
+        setFamilyName(doc, entity.id, nextFamily);
+        entityChanged = true;
+      } else if (
+        !personalNameForSegmentation(
+          entity.names[0] ?? null,
+          typedNames,
+          nobleTitlesFromMetadata(metadata),
+        ) &&
+        packFamilies.size > 0
+      ) {
+        // Title headword: replace an invented family with the pack surname.
         setFamilyName(doc, entity.id, nextFamily);
         entityChanged = true;
       }
@@ -607,9 +681,15 @@ export async function backfillEntityNames(
       }
     }
 
-    // Norbert supplies the historically appropriate surname boundary when its
-    // plugin is active; use it only as a fallback after authority values.
-    const norbertSplit = suggestPersonNameSplit(entity.names[0] ?? '', projectLang ?? null);
+    // Norbert surname segmenter — only on personal names, never on title headwords.
+    const splitSurface = personalNameForSegmentation(
+      entity.names[0] ?? '',
+      typedNames,
+      nobleTitlesFromMetadata(metadata),
+    );
+    const norbertSplit = splitSurface
+      ? suggestPersonNameSplit(splitSurface, projectLang ?? null)
+      : null;
     if (norbertSplit?.familyName && !getFamilyName(doc, entity.id)) {
       setFamilyName(doc, entity.id, norbertSplit.familyName);
       entityChanged = true;
@@ -622,7 +702,9 @@ export async function backfillEntityNames(
       const authorityRomanized = metadata?.pinyin ?? metadata?.yomi;
       const romanized =
         authorityRomanized?.trim() ||
-        suggestPersonRomanization(entity.names[0] ?? '', projectLang ?? null);
+        (splitSurface
+          ? suggestPersonRomanization(splitSurface, projectLang ?? null)
+          : null);
       if (romanized) {
         setRomanizedName(doc, entity.id, romanized, projectLang ?? null);
         entityChanged = true;

@@ -31,11 +31,14 @@ import {
   isEastAsianDatesMethodAvailable,
   isResolveDatesPassComplete,
   isTagDatesPassComplete,
+  markDatesPassApplied,
   markDatesPassRan,
+  preAcceptUniqueDateSuggestions,
   resolveAutoTaggingSourceLanguage,
   SANMIAO_CIV_OPTIONS,
 } from '../../autoTagging';
 import type { DocumentDateCounts, SanmiaoCivId, Suggestion } from '../../autoTagging';
+import { currentUserRules } from '../../autoTagging/autoTaggingExclusions';
 import { languageLabelForCode } from '../../utilities/languageCodes';
 import { AutoTaggingApplyOverlay } from '../../layout/AutoTaggingApplyOverlay';
 import { useActions } from '../../overmind';
@@ -114,7 +117,7 @@ export const CalendarDialog = ({ notice, onClose, open = false }: CalendarDialog
   const [tagPassComplete, setTagPassComplete] = useState(false);
   const [resolvePassComplete, setResolvePassComplete] = useState(false);
   const session = useRef<AutoTaggingSession | null>(null);
-  const { startAutoTaggingReview } = useActions().ui;
+  const { startAutoTaggingReview, notifyViaSnackbar } = useActions().ui;
 
   const sanmiaoAvailable = isCjkDatesPythonAvailable();
   const dateProducers = getRegisteredAutoTaggingProducers('cjk-dates');
@@ -280,9 +283,40 @@ export const CalendarDialog = ({ notice, onClose, open = false }: CalendarDialog
         sequential: true,
       });
       if (result.suggestions.length === 0) {
-        setError('No <date> elements in the document. Run Tag dates first.');
+        notifyViaSnackbar({
+          message: 'No <date> elements to resolve. Run Tag dates first.',
+          options: { variant: 'info' },
+        });
+        handleClose();
         return;
       }
+
+      preAcceptUniqueDateSuggestions(result.suggestions);
+      const needsReview = result.suggestions.some(
+        (suggestion) => suggestion.status === 'pending',
+      );
+      if (!needsReview) {
+        const accepted = result.suggestions.filter(
+          (suggestion) => suggestion.status === 'accepted',
+        );
+        if (accepted.length > 0) {
+          setDatesProgress('Applying resolved dates…');
+          await getSession().apply(accepted, currentUserRules());
+          markDatesPassApplied(documentKey);
+          setResolvePassComplete(true);
+          await refreshWorkflowState();
+        }
+        notifyViaSnackbar({
+          message:
+            accepted.length === 1
+              ? '1 date resolved uniquely — applied.'
+              : `${accepted.length} dates resolved uniquely — applied.`,
+          options: { variant: 'success' },
+        });
+        handleClose();
+        return;
+      }
+
       beginReview(
         result.suggestions,
         undefined,

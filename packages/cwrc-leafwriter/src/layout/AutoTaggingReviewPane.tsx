@@ -29,6 +29,7 @@ import {
   readPersistedValidationSettings,
   validateSuggestions,
   prepareSuggestionsForReview,
+  suggestionLocationKey,
   type Suggestion,
 } from '../autoTagging';
 import { findPluginReviewPanel } from '../plugins/pluginExtensions';
@@ -81,6 +82,8 @@ export const AutoTaggingReviewPane = () => {
   const curateAbort = useRef<AbortController | null>(null);
   const dateRecalculate = useRef<DateReviewRecalculate | null>(null);
   const dateAuthorityCiv = useRef<readonly string[] | null>(null);
+  /** Locations rejected this review session — keep refresh from resurrecting them. */
+  const dismissedLocations = useRef<Set<string>>(new Set());
   const [panelWidth, setPanelWidth] = useStoredPanelWidth(
     'lw.autoTagging.panelWidth',
     AUTO_TAGGING_PANEL_WIDTH,
@@ -197,6 +200,7 @@ export const AutoTaggingReviewPane = () => {
       setApplyDiagSeverity('info');
       dateRecalculate.current = null;
       dateAuthorityCiv.current = null;
+      dismissedLocations.current = new Set();
       if (session.current) void session.current.flushDecisions();
       session.current = null;
       return;
@@ -205,6 +209,7 @@ export const AutoTaggingReviewPane = () => {
     const batch = takeAutoTaggingBatch();
     dateRecalculate.current = takeDateReviewRecalculate();
     dateAuthorityCiv.current = takeDateAuthorityCiv();
+    dismissedLocations.current = new Set();
     setNotice(takeAutoTaggingNotice());
     setApplyDiagnostics(null);
     setApplyDiagSeverity('info');
@@ -331,24 +336,42 @@ export const AutoTaggingReviewPane = () => {
   }, [busy, exitAutoTaggingReview]);
 
   const handleApply = useCallback(
-    (accepted: Suggestion[]) => {
+    (accepted: Suggestion[], rejected: Suggestion[] = []) => {
       if (busy) return;
+      if (accepted.length === 0 && rejected.length === 0) return;
       const closeAfterApply = isDateCuratorBatch(accepted) || isDateCuratorBatch(suggestions);
       void (async () => {
-        setBusyLabel('Applying tags…');
+        setBusyLabel(accepted.length > 0 ? 'Applying tags…' : 'Updating review…');
         setBusy(true);
         await new Promise<void>((resolve) => {
           requestAnimationFrame(() => requestAnimationFrame(() => resolve()));
         });
         try {
-          const result = await getSession().apply(accepted, currentUserRules());
-          // Drop committed suggestions from the parent docket. ReviewPanel already
-          // removes them from its controller, but when Norbert appends new rows we
-          // were rebuilding from the stale parent list and re-queuing dates that
-          // had just been written (already-tagged / content-hash errors).
-          const committedIds = new Set(accepted.map((suggestion) => suggestion.id));
-          const withoutCommitted = (list: Suggestion[]) =>
-            list.filter((suggestion) => !committedIds.has(suggestion.id));
+          const result =
+            accepted.length > 0
+              ? await getSession().apply(accepted, currentUserRules())
+              : {
+                  applied: 0,
+                  diagnostics: undefined,
+                  textIntegrityWarning: undefined,
+                  personWrapperValidation: undefined,
+                };
+          // Drop committed and rejected suggestions from the parent docket.
+          // Rejected rows never hit the document, but they must leave the queue
+          // so Norbert stages (and ordinary review) can advance.
+          const droppedIds = new Set([
+            ...accepted.map((suggestion) => suggestion.id),
+            ...rejected.map((suggestion) => suggestion.id),
+          ]);
+          for (const suggestion of rejected) {
+            dismissedLocations.current.add(suggestionLocationKey(suggestion));
+          }
+          const withoutDropped = (list: Suggestion[]) =>
+            list.filter(
+              (suggestion) =>
+                !droppedIds.has(suggestion.id) &&
+                !dismissedLocations.current.has(suggestionLocationKey(suggestion)),
+            );
           if (accepted.some((s) => s.source === 'dates' && s.action === 'resolve-date')) {
             markDatesPassApplied(autoTaggingDocumentKey(window.writer));
           } else if (
@@ -362,19 +385,21 @@ export const AutoTaggingReviewPane = () => {
           // Norbert's second pass runs only after component tags have landed.
           // It is intentionally best-effort: projects without the optional
           // wrapper pack simply continue with the ordinary review batch.
+          // Reject-only commits must NOT refresh: refresh re-seeds the same
+          // noble-title matches under new ids and loops the Norbert stage.
           let nextSuggestions: Suggestion[] | null = null;
           if (result.applied > 0) {
             const readPack = cachedPackReader();
             if (readPack) {
               try {
-                const remaining = withoutCommitted(suggestions);
+                const remaining = withoutDropped(suggestions);
                 if (mandatoryStage) {
                   // Mandatory Norbert stages must be rebuilt against the live
                   // document after each apply. This removes accepted compound
                   // children from the pool and exposes the next stage only
                   // after the current one has been resolved.
                   const refreshed = await getSession().refreshReviewBatch(remaining, readPack);
-                  nextSuggestions = refreshed.suggestions;
+                  nextSuggestions = withoutDropped(refreshed.suggestions);
                   if (refreshed.wrapperMatchCount > 0) {
                     setNotice(
                       `${refreshed.wrapperMatchCount} Norbert person-wrapper candidate${refreshed.wrapperMatchCount === 1 ? '' : 's'} found after component tagging.`,
@@ -384,11 +409,12 @@ export const AutoTaggingReviewPane = () => {
                   const wrapperBatch = await getSession().runPersonWrapperConcatenation(readPack);
                   if (wrapperBatch.suggestions.length > 0) {
                     const currentDoc = await getSession().getDocument();
-                    nextSuggestions = prepareSuggestionsForReview(
-                      currentDoc,
-                      getSession().policy,
-                      [...remaining, ...wrapperBatch.suggestions],
-                    ).suggestions;
+                    nextSuggestions = withoutDropped(
+                      prepareSuggestionsForReview(currentDoc, getSession().policy, [
+                        ...remaining,
+                        ...wrapperBatch.suggestions,
+                      ]).suggestions,
+                    );
                     setNotice(
                       `${wrapperBatch.matchCount} Norbert person-wrapper candidate${wrapperBatch.matchCount === 1 ? '' : 's'} found after component tagging.`,
                     );
@@ -400,7 +426,7 @@ export const AutoTaggingReviewPane = () => {
             }
           }
           if (!closeAfterApply || result.applied === 0) {
-            setSuggestions((current) => nextSuggestions ?? withoutCommitted(current));
+            setSuggestions((current) => nextSuggestions ?? withoutDropped(current));
           }
           // Warm the disambiguation caches for the freshly applied tags while
           // the user reviews — gently paced so the editor stays responsive.
@@ -472,7 +498,11 @@ export const AutoTaggingReviewPane = () => {
         const readPack = cachedPackReader();
         if (!readPack) return;
         const result = await getSession().refreshReviewBatch(suggestions, readPack);
-        setSuggestions(result.suggestions);
+        setSuggestions(
+          result.suggestions.filter(
+            (suggestion) => !dismissedLocations.current.has(suggestionLocationKey(suggestion)),
+          ),
+        );
         const parts: string[] = [];
         if (result.staleCount > 0) {
           parts.push(
@@ -667,7 +697,7 @@ export const AutoTaggingReviewPane = () => {
                 <ReviewPanel
                   autoFocus={false}
                   busy={busy}
-                  suggestions={suggestions}
+                  suggestions={visibleSuggestions}
                   onApply={handleApply}
                   onFocus={handleFocus}
                   onDecision={handleDecision}

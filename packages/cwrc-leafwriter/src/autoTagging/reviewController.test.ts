@@ -145,6 +145,17 @@ describe('ReviewController', () => {
     expect(c.current()).not.toBeNull();
   });
 
+  it('takeJudged returns accepted and rejected and clears both from the walk', () => {
+    const c = new ReviewController([make('a'), make('b'), make('c')]);
+    c.accept(); // a
+    c.reject(); // b
+    const judged = c.takeJudged();
+    expect(judged.accepted.map((s) => s.id)).toEqual(['a']);
+    expect(judged.rejected.map((s) => s.id)).toEqual(['b']);
+    expect(c.visible().map((s) => s.id)).toEqual(['c']);
+    expect(c.counts()).toMatchObject({ pending: 1, accepted: 0, rejected: 0 });
+  });
+
   it('takeAllExceptRejected accepts pending, keeps rejected, and returns all non-rejected', () => {
     const decisions: string[] = [];
     const c = new ReviewController([make('a'), make('b'), make('c'), make('d')], {

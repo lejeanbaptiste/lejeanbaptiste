@@ -6,6 +6,7 @@ import { authorityServicesAtom } from '../../../../jotai/entity-lookup';
 import { Authority } from './authority';
 import { DesktopOfflineAuthorities } from './desktop-offline-authorities';
 import { DesktopMapTilesSettings } from './desktop-maptiles-settings';
+import { ShowPackStringCounts } from './show-pack-string-counts';
 
 export const Authorities = () => {
   const authorityServices = useAtomValue(authorityServicesAtom);
@@ -24,6 +25,7 @@ export const Authorities = () => {
       {isDesktop && (
         <>
           <DesktopOfflineAuthorities />
+          <ShowPackStringCounts />
           <DesktopMapTilesSettings />
           <Divider sx={{ my: 1 }} />
         </>

@@ -123,7 +123,7 @@ describe('EntityStore', () => {
     fs.files.set('/proj/entities.sqlite', 'sqlite-placeholder');
     let importedXml: string | null = null;
     fs.entitySqliteExportXml = async () => xml;
-    fs.entitySqliteImportXml = async (_databasePath, content) => {
+    fs.entitySqliteImportXml = async ({ xml: content }) => {
       importedXml = content;
     };
     const store = EntityStore.fromPaths(fs, projectPaths());

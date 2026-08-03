@@ -410,10 +410,8 @@ export function mergeSelectedCandidates(
     romanizedName,
     typedNames,
     description:
-      candidates
-        .map((c) => c.description)
-        .filter(Boolean)
-        .join(' · ') || first.description,
+      [...new Set(candidates.map((c) => c.description).filter(Boolean))].join(' · ') ||
+      first.description,
     sources: [...new Set(candidates.flatMap((c) => c.sources))],
     uri: fromFile?.uri ?? first.uri,
     localEntityId: fromFile?.localEntityId ?? first.localEntityId,
@@ -912,7 +910,9 @@ async function candidatesFromAuthorityPacks(
                         ? formatNorbertAuthorityValue(entityType, row.authorityId)
                         : (row?.authorityId ?? match.uri),
                   },
-                  ...authorityIdsFromPackCrosswalk(row?.metadata?.crosswalk),
+                  ...authorityIdsFromPackCrosswalk(row?.metadata?.crosswalk, {
+                    norbertKind: entityType,
+                  }),
                 ],
                 match.description,
               ),

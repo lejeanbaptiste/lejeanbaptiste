@@ -1,6 +1,6 @@
 # Regional PMTiles download and cache plan
 
-**Status (2026-08-01):** **Shipped** — regional PMTiles download/cache/serve implemented; assets via `authoritypacks` releases. Remaining map work is UX polish (zoom bounds, labels, click-to-disambiguate), not acquisition.
+**Status (2026-08-03):** **Shipped** — regional PMTiles download/cache/serve implemented; assets via `authoritypacks` releases. Camera is constrained with MapLibre `maxBounds` to the active regional extract. Remaining map work is UX polish (labels, click-to-disambiguate), not acquisition.
 
 ## Goal
 
