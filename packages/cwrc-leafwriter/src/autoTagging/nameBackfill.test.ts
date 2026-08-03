@@ -1,6 +1,6 @@
 import { addEntity, createEntitiesScaffold, findEntity, parseEntities } from './entities';
 import { listEntities, setUserEntityDate } from './entityOps';
-import { backfillEntityNames } from './nameBackfill';
+import { backfillEntityNames, clearAuthorityPackEnrichmentCaches } from './nameBackfill';
 import {
   clearWikidataNamesCacheForTests,
   clearWikidataTypedNamesCacheForTests,
@@ -24,6 +24,8 @@ describe('backfillEntityNames', () => {
   afterEach(() => {
     clearWikidataNamesCacheForTests();
     clearWikidataTypedNamesCacheForTests();
+    // Each test supplies its own mock packs; don't reuse a prior index.
+    clearAuthorityPackEnrichmentCaches();
   });
 
   it('adds bare courtesy 字 from a CBDB pack row; second run is a no-op', async () => {
