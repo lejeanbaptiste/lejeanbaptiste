@@ -143,7 +143,6 @@
     "Sequential": "Séquentiel",
     "Settings": "Paramètres",
     "Show": "Afficher",
-    "Show Entities": "Afficher les entités",
     "Show Raw XML": "Afficher le XML brut",
     "Show Tags": "Afficher les balises",
     "Show Text Nodes": "Afficher les nœuds de texte",
@@ -527,8 +526,6 @@
         }
       },
       "editor": {
-        "Show Entities": "Afficher les entités",
-        "show_entities": "Afficher les entités",
         "Show Raw XML panel": "Afficher le panneau XML brut",
         "strip_east_asian_whitespace": "Supprimer les espaces entre les caractères asiatiques",
         "asian font": "Police asiatique",
@@ -543,15 +540,15 @@
         "font_size_slider": "Curseur de taille de police",
         "interface_zoom": "Zoom de l'interface",
         "interface_zoom_slider": "Curseur de zoom de l'interface",
-        "show_tag_bubble": "Afficher la bulle du nom de balise",
-        "validate_xml_on_replace": "Exiger un XML bien formé pour Rechercher et remplacer",
-        "validate_xml_on_replace_description": "Lorsque cette option est activée, un remplacement est bloqué s'il rend le XML du document mal formé (par exemple, modifier une balise ouvrante sans sa balise fermante)."
+        "show_tag_bubble": "Afficher la bulle du nom de balise"
       },
       "guardrails": {
         "title": "Garde-fous",
         "description": "Même en étant expert·e, vous ferez des erreurs catastrophiques sur votre corpus. Activez les protections suivantes pour l'éviter.",
         "enable_xml_editing": "Autoriser l'édition directe du code XML",
         "allow_source_mode_schema_violations": "Autoriser l'enregistrement et la sortie du mode Source malgré des violations du schéma",
+        "validate_xml_on_replace": "Exiger un XML bien formé pour Rechercher et remplacer",
+        "validate_xml_on_replace_description": "Lorsque cette option est activée, un remplacement est bloqué s'il rend le XML du document mal formé (par exemple, modifier une balise ouvrante sans sa balise fermante).",
         "enable_multi_file_automation": "Autoriser les modifications automatisées sur plusieurs fichiers",
         "snapshot_before": "Enregistrer automatiquement un instantané de la machine à remonter le temps avant :",
         "snapshot_before_options": {
@@ -621,7 +618,6 @@
         "system": "système"
       },
       "warnings": {
-        "skip_copy_paste_help": "Ne pas afficher l’aide copier-coller",
         "skip_delete_confirm": "Supprimer fichiers et dossiers sans confirmation",
         "skip_entity_detach_confirm": "Détacher les identifiants d’autorité des entités sans confirmation",
         "title": "Avertissements"
@@ -642,15 +638,6 @@
         "user_name": "Nom d’utilisateur",
         "your_name": "Votre nom"
       }
-    },
-    "copyPasteHelp": {
-      "title": "Aide copier-coller",
-      "ok": "Ok",
-      "documentationLink": "Documentation copier-coller",
-      "copyIntro": "Il semble que vous essayiez de copier du contenu.",
-      "pasteIntro": "Il semble que vous essayiez de coller depuis l’extérieur de LEAF-Writer.",
-      "pasteParagraphNote": "La plupart de la mise en forme est supprimée. Les sauts de paragraphe sont convertis en éléments TEI &lt;p&gt;.",
-      "considerReading": "Consultez la"
     },
     "settlement": "établissement",
     "show only valid tags": "afficher uniquement les balises valides",

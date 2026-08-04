@@ -124,10 +124,10 @@ const getWriterSchemasList = (): Array<{
 
 export const useNativeDialogBridge = () => {
   const { t } = useTranslation();
-  const { currentLocale, skipCopyPasteHelp, skipExplorerDeleteConfirm, themeAppearance } =
+  const { currentLocale, skipExplorerDeleteConfirm, themeAppearance } =
     useAppState().ui;
   const { activeTabPath, config, openTabs, projectFilePath, rootPath } = useAppState().project;
-  const { setSkipCopyPasteHelp, setSkipExplorerDeleteConfirm, setThemeAppearance, switchLanguage, notifyViaSnackbar } =
+  const { setSkipExplorerDeleteConfirm, setThemeAppearance, switchLanguage, notifyViaSnackbar } =
     useActions().ui;
   const { openFile, reloadTabFromDisk } = useActions().project;
   const [leafWriter] = useAtom(leafwriterAtom);
@@ -235,7 +235,6 @@ export const useNativeDialogBridge = () => {
           case 'getInterfaceSettings':
             return {
               currentLocale,
-              skipCopyPasteHelp,
               skipExplorerDeleteConfirm,
               themeAppearance,
             };
@@ -282,10 +281,6 @@ export const useNativeDialogBridge = () => {
           }
           case 'setSkipExplorerDeleteConfirm': {
             setSkipExplorerDeleteConfirm(Boolean(args));
-            return true;
-          }
-          case 'setSkipCopyPasteHelp': {
-            setSkipCopyPasteHelp(Boolean(args));
             return true;
           }
           case 'getSchemaPickerState': {
@@ -649,10 +644,8 @@ export const useNativeDialogBridge = () => {
     projectFilePath,
     reloadTabFromDisk,
     rootPath,
-    setSkipCopyPasteHelp,
     setSkipExplorerDeleteConfirm,
     setThemeAppearance,
-    skipCopyPasteHelp,
     skipExplorerDeleteConfirm,
     switchLanguage,
     themeAppearance,

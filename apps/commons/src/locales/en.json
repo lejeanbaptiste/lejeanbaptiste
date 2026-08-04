@@ -540,7 +540,6 @@
       "settings": {
         "editor_options_hint": "Schema, authorities, and other editor options are available from the ⚙ toolbar while a document is open.",
         "remember_workspace_on_startup": "Reopen project and tabs on startup",
-        "skip_copy_paste_help": "Don't show copy and paste help",
         "skip_delete_confirm": "Delete files and folders without asking",
         "startup": "Startup",
         "title": "Settings",
@@ -711,6 +710,7 @@
           "add_origin_placeholder": "Add place of origin",
           "dont_warn_detach": "Don't warn me about detaching again",
           "one_line_description": "One-line description",
+          "card_wip_note": "Work in progress — this card type is still unfinished.",
           "romanized_name": "Romanized name",
           "refresh_authorities": "Refresh data from authorities",
           "lookup_entity": "Look up this entity",

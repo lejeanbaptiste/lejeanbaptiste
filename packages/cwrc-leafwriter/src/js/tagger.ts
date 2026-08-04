@@ -1545,7 +1545,7 @@ class Tagger {
     this.processNewContent(element);
 
     this.writer.editor?.undoManager.add();
-    this.writer.event('contentChanged').publish(); // don't use contentPasted since we don't want to trigger copyPaste dialog
+    this.writer.event('contentChanged').publish(); // don't use contentPasted (legacy copy/paste help dialog removed)
   }
 
   private showInvalidDeleteConfirm(

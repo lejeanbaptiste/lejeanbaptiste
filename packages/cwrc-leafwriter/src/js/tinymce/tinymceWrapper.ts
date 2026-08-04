@@ -631,25 +631,55 @@ export const tinymceWrapperInit = function ({
   };
   writer.applyTextLockDomGuard = applyTextLockDomGuard;
 
+  /** Prefer Settings → Appearance (via overmind darkMode); fall back to OS. */
+  const editorPrefersDark = () => {
+    if (typeof writer.overmindState?.ui?.darkMode === 'boolean') {
+      return writer.overmindState.ui.darkMode;
+    }
+    return window.matchMedia('(prefers-color-scheme: dark)').matches;
+  };
+
+  const tinymceContentThemeCss = (dark: boolean) =>
+    dark
+      ? writerAssetUrl(writer.baseUrl, '/css/tinymce/skins/content/dark/content.min.css')
+      : writerAssetUrl(writer.baseUrl, '/css/tinymce/skins/content/writer/content.min.css');
+
+  const tinymceSkinUrl = (dark: boolean) =>
+    dark
+      ? writerAssetUrl(writer.baseUrl, '/css/tinymce/skins/ui/oxide-dark')
+      : writerAssetUrl(writer.baseUrl, '/css/tinymce/skins/ui/oxide');
+
+  /** Swap the document-pane content stylesheet when Appearance changes. */
+  const syncEditorContentTheme = (editor: LeafWriterEditor) => {
+    const doc = editor.getDoc();
+    if (!doc) return;
+    const dark = editorPrefersDark();
+    const nextHref = tinymceContentThemeCss(dark);
+    for (const link of Array.from(doc.querySelectorAll('link[rel="stylesheet"]'))) {
+      const href = link.getAttribute('href') ?? '';
+      if (
+        href.includes('/skins/content/dark/') ||
+        href.includes('/skins/content/writer/')
+      ) {
+        if (href !== nextHref) link.setAttribute('href', nextHref);
+      }
+    }
+  };
+
+  const initialDark = editorPrefersDark();
+
   void tinymce.init({
     license_key: 'gpl',
     selector: `#${editorId}`,
     ui_container: `#${layoutContainerId}`,
-    skin_url: window.matchMedia('(prefers-color-scheme: dark)').matches
-      ? writerAssetUrl(writer.baseUrl, '/css/tinymce/skins/ui/oxide-dark')
-      : writerAssetUrl(writer.baseUrl, '/css/tinymce/skins/ui/oxide'),
+    skin_url: tinymceSkinUrl(initialDark),
 
     height: `calc(100% - ${toolbarHeight}px)`,
     width: '100%',
-    content_css: window.matchMedia('(prefers-color-scheme: dark)').matches
-      ? [
-          writerAssetUrl(writer.baseUrl, '/css/tinymce/skins/content/dark/content.min.css'),
-          writerAssetUrl(writer.baseUrl, '/css/editor.css'),
-        ]
-      : [
-          writerAssetUrl(writer.baseUrl, '/css/tinymce/skins/content/writer/content.min.css'),
-          writerAssetUrl(writer.baseUrl, '/css/editor.css'),
-        ],
+    content_css: [
+      tinymceContentThemeCss(initialDark),
+      writerAssetUrl(writer.baseUrl, '/css/editor.css'),
+    ],
     content_style: visualBodyStyle,
     doctype: `<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">`,
     element_format: 'xhtml',
@@ -765,6 +795,11 @@ export const tinymceWrapperInit = function ({
 
         writer.overmindActions.editor.applyInitialSettings();
         applyTextLockDomGuard();
+        syncEditorContentTheme(editor);
+
+        const onThemeChange = () => syncEditorContentTheme(editor);
+        window.addEventListener('changeTheme', onThemeChange);
+        editor.on('remove', () => window.removeEventListener('changeTheme', onThemeChange));
 
         initEditorZoom(editor);
 

@@ -111,6 +111,10 @@ import {
 import { openExternalUrl } from '../../../../../packages/cwrc-leafwriter/src/utilities/DOM';
 import { useActions, useAppState } from '@src/overmind';
 import { EntityLookupField, type EntityLookupValue } from '@src/desktop/EntityLookupField';
+import {
+  readStoredKindFilter,
+  writeStoredKindFilter,
+} from '../databaseViewPrefs';
 import { EntityNamesAccordion, type NameRow } from './EntityNamesAccordion';
 import { entityLookupDialogAtom } from '@cwrc/leafwriter';
 import { getDefaultStore } from 'jotai';
@@ -154,30 +158,6 @@ const pruneToKnownEntityIds = (ids: Iterable<string>, known: EntitySummary[]): s
 };
 
 const escapeRegExp = (text: string): string => text.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
-
-const KIND_FILTER_STORAGE_KEY = 'ljb:databaseKindFilter';
-const KIND_FILTER_VALUES = Object.keys(ENTITY_KINDS) as EntityKind[];
-const DEFAULT_KIND_FILTER: EntityKind = 'person';
-
-const readStoredKindFilter = (): EntityKind => {
-  try {
-    const stored = localStorage.getItem(KIND_FILTER_STORAGE_KEY);
-    if (stored && (KIND_FILTER_VALUES as string[]).includes(stored)) {
-      return stored as EntityKind;
-    }
-  } catch {
-    // Ignore storage access errors (private mode, etc.).
-  }
-  return DEFAULT_KIND_FILTER;
-};
-
-const writeStoredKindFilter = (kind: EntityKind) => {
-  try {
-    localStorage.setItem(KIND_FILTER_STORAGE_KEY, kind);
-  } catch {
-    // Ignore storage access errors.
-  }
-};
 
 /**
  * Attach corpus (PEDB) and central (CEDB) keys to summaries for the database
@@ -3933,6 +3913,13 @@ export const SidebarDatabaseTab = ({ active = false }: SidebarDatabaseTabProps) 
           )}
         </DialogTitle>
         <DialogContent key={editFormEpoch}>
+          {(editEntity?.kind === 'place' ||
+            editEntity?.kind === 'office' ||
+            editEntity?.kind === 'work') && (
+            <Alert severity="info" sx={{ mb: 1.5, py: 0 }}>
+              {t('LWC.desktop.sidebar.database.card_wip_note')}
+            </Alert>
+          )}
           <EntityDescriptionEditor
             initialValue={editDescriptionSeed}
             label={t('LWC.desktop.sidebar.database.one_line_description')}

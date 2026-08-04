@@ -299,14 +299,6 @@ export class Leafwriter {
     overmind.actions.editor.toggleShowTags(value);
   }
 
-  getShowEntities() {
-    overmind.state.editor.showEntities;
-  }
-
-  setShowEntities(value: boolean) {
-    overmind.actions.editor.setShowEntities(value);
-  }
-
   getContentHasChanged() {
     overmind.state.editor.contentHasChanged;
   }

@@ -26,14 +26,12 @@ const afterAuthorityPackLifecycleSuccess = async (): Promise<void> => {
 
 export const useCommonsUiBridge = () => {
   const {
-    skipCopyPasteHelp,
     skipEntityDetachConfirm,
     skipExplorerDeleteConfirm,
     themeAppearance,
     currentLocale,
   } = useAppState().ui;
   const {
-    setSkipCopyPasteHelp,
     setSkipEntityDetachConfirm,
     setSkipExplorerDeleteConfirm,
     setThemeAppearance,
@@ -398,14 +396,12 @@ export const useCommonsUiBridge = () => {
       disconnectGithub,
       entityDbFolder,
       rememberWorkspaceOnStartup,
-      skipCopyPasteHelp,
       skipEntityDetachConfirm,
       skipExplorerDeleteConfirm,
       authorityLifecycleStatus,
       setAiApiSettings,
       setEncoderName,
       setRememberWorkspaceOnStartup,
-      setSkipCopyPasteHelp,
       setSkipEntityDetachConfirm,
       setSkipExplorerDeleteConfirm,
       pickEntityDbFolder,
@@ -444,10 +440,8 @@ export const useCommonsUiBridge = () => {
     setAuthorityLifecycleReferenceDataEnabled,
     setEncoderName,
     setRememberWorkspaceOnStartup,
-    setSkipCopyPasteHelp,
     setSkipEntityDetachConfirm,
     setSkipExplorerDeleteConfirm,
-    skipCopyPasteHelp,
     skipEntityDetachConfirm,
     skipExplorerDeleteConfirm,
     testAiConnection,

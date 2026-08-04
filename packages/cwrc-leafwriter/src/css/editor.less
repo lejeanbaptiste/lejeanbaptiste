@@ -57,7 +57,7 @@ body {
   color: darken(@color, 25%) !important;
 }
 
-.showEntities .entity,
+.entity,
 .ui-dialog-content .entity {
   padding: 2px 4px 4px 4px;
   color: #888;
@@ -66,7 +66,7 @@ body {
   border-radius: 4px;
 }
 
-.showEntities .entityHighlight > .entity {
+.entityHighlight > .entity {
   border-width: 2px;
 }
 
@@ -145,42 +145,42 @@ body {
   background-color: fade(@entity-link, 20%);
 }
 
-.showEntities .person,
+.entity.person,
 .ui-dialog-content .person {
   .entity-colored-pill(@entity-person);
 }
 
-.showEntities .date,
+.entity.date,
 .ui-dialog-content .date {
   .entity-colored-pill(@entity-date);
 }
 
-.showEntities .place,
+.entity.place,
 .ui-dialog-content .place {
   .entity-colored-pill(@entity-place);
 }
 
-.showEntities .thing,
+.entity.thing,
 .ui-dialog-content .thing {
   .entity-colored-pill(@entity-thing);
 }
 
-.showEntities .organization,
+.entity.organization,
 .ui-dialog-content .organization {
   .entity-colored-pill(@entity-organization);
 }
 
-.showEntities .work,
+.entity.work,
 .ui-dialog-content .work {
   .entity-colored-pill(@entity-work);
 }
 
-.showEntities .correction,
+.entity.correction,
 .ui-dialog-content .correction {
   .entity-colored-pill(@entity-correction);
 }
 
-.showEntities .link,
+.entity.link,
 .ui-dialog-content .link {
   .entity-colored-pill(@entity-link);
 }
@@ -435,9 +435,9 @@ body.project-language-japanese {
   color: green;
 }
 
-.showEntities .citation.start,
-.showEntities .note.start,
-.showEntities .keyword.start {
+.entity.citation.start,
+.entity.note.start,
+.entity.keyword.start {
   border: none !important;
 }
 

@@ -1,8 +1,6 @@
 import { Typography } from '@mui/material';
-import { FC } from 'react';
 import { Trans } from 'react-i18next';
 import { TextEmphasis } from '../../components';
-import { SimpleDialogMessageProps } from '../../dialogs';
 import i18next from '../../i18n';
 import { Schema } from '../../types';
 import Writer from '../Writer';
@@ -285,74 +283,3 @@ export const promptAddSchema = (params: ProcessSchemaProps) => {
   });
 };
 
-export const openEditorModeDialog = async (writer: Writer) => {
-  const { allowOverlap, mode, overmindActions } = writer;
-
-  const dialogTitle = 'Editor Mode';
-  const shouldDisplayDialog = await overmindActions.ui.shouldDisplayDialog(dialogTitle);
-  if (!shouldDisplayDialog) return;
-
-  let Body: FC<SimpleDialogMessageProps>;
-
-  if (mode === writer.XML) {
-    Body = () => (
-      <>
-        <TextEmphasis color="info">{`Markup ${t('LW.commons.only')}`}</TextEmphasis>
-        <Typography>{`${t('LW.Only XML tags No RDF Semantic Web annotations will be created')}.`}</Typography>
-        <Typography mt={3} variant="caption">
-          <b>{`${t('LW.commons.hint')}: `}</b>
-          {`${t('LW.You can change the editor mode anytime in the status bar')}`}
-        </Typography>
-      </>
-    );
-  } else {
-    if (allowOverlap) {
-      Body = () => (
-        <>
-          <TextEmphasis color="info">{`Markup & Linking with overlap`}</TextEmphasis>
-          <Typography>
-            {`${t(
-              'LW.XML tags and RDF - Semantic Web annotations equivalent to the XML tags will be created consistent with the hierarchy of the XML schema so annotations will not be allowed to overlap',
-            )} ${t(
-              'LW.Annotations that overlap will be created in RDF only with no equivalent XML tags',
-            )}.`}
-          </Typography>
-          <Typography mt={3} variant="caption">
-            <b>{`${t('LW.commons.hint')}: `}</b>
-            {`${t('LW.You can change the editor mode anytime in the status bar')}.`}
-          </Typography>
-        </>
-      );
-    } else {
-      Body = () => (
-        <>
-          <TextEmphasis color="info">{`Markup & Linking`}</TextEmphasis>
-          <Typography>
-            {`${t(
-              'LW.XML tags and RDF - Semantic Web annotations equivalent to the XML tags will be created consistent with the hierarchy of the XML schema so annotations will not be allowed to overlap',
-            )}`}
-          </Typography>
-          <Typography mt={3} variant="caption">
-            <b>{`${t('LW.commons.hint')}: `}</b>
-            {`${t('LW.You can change the editor mode anytime in the status bar')}.`}
-          </Typography>
-        </>
-      );
-    }
-  }
-
-  overmindActions.ui.openDialog({
-    props: {
-      severity: 'info',
-      title: t('LW.Editor Mode'),
-      Body,
-      actions: [
-        { action: 'notShowAgain', label: t('LW.dont show again') },
-        { action: 'ok', label: t('LW.commons.ok') },
-      ],
-      onClose: async (action: string) => {
-        if (action === 'notShowAgain') await overmindActions.ui.doNotDisplayDialog(dialogTitle);
-      },
-    },
-  });
-};

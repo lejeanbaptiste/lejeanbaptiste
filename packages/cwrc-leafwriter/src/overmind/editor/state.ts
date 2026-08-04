@@ -59,7 +59,6 @@ export type EditorStateType = {
   proxyLoaderCssEndpoint?: string;
   resource?: { filePath?: string | null };
   settings?: any;
-  showEntities: boolean;
   showRawXmlPanel: boolean;
   showTagBubble: boolean;
   showTags: boolean;
@@ -114,7 +113,6 @@ export const state: EditorStateType = {
   textLocked: false,
   LWChangeEventSuspended: false,
   mode: 0,
-  showEntities: true,
   showRawXmlPanel: false,
   showTagBubble: true,
   showTags: false,

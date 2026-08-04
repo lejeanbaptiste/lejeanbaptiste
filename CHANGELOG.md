@@ -83,3 +83,4 @@
 ## Upstream
 
 - Welcome splash now includes toggle to activate/disactivate advanced features
+- Removed legacy popups ('Hey, looks like you're copying... Do you want to learn about copying?')

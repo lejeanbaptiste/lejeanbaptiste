@@ -170,7 +170,6 @@ export const applyInitialSettings = ({ state, actions, effects }: Context) => {
   );
   actions.editor.applyFontFamilies();
   const body = window.writer.editor.getBody();
-  if (state.editor.showEntities) $(body).addClass('showEntities');
   if (state.editor.showTags) $(body).addClass('showTags');
   if (!state.editor.showBreaks) $(body).addClass('hideBreaks');
   if (state.editor.showTagBubble) $(body).addClass('showTagBubble');
@@ -356,13 +355,6 @@ export const toggleShowTagBubble = ({ state, effects }: Context, value?: boolean
   $('body', window.writer.editor.getDoc()).toggleClass('showTagBubble', next);
   state.editor.showTagBubble = next;
   effects.editor.api.saveToLocalStorage<boolean>('showTagBubble', next);
-};
-
-export const setShowEntities = ({ state }: Context, value: boolean) => {
-  if (!window.writer?.editor) return;
-
-  $('body', window.writer.editor.getDoc()).toggleClass('showEntities');
-  state.editor.showEntities = value;
 };
 
 export const setStripCjkWhitespace = ({ state, effects }: Context, value: boolean) => {
@@ -598,7 +590,6 @@ export const resetPreferences = async ({ actions }: Context) => {
   actions.editor.setLatinFont(DEFAULT_LATIN_FONT);
   actions.editor.setAsianFont(DEFAULT_ASIAN_FONT);
   actions.editor.toggleShowTags(false);
-  actions.editor.setShowEntities(true);
   actions.editor.setShowRawXmlPanel(false);
   actions.editor.setValidateXmlOnReplace(true);
   actions.editor.setEditorMode('xmlrdf');
@@ -680,8 +671,6 @@ export const clear = ({ state }: Context) => {
   state.editor.isAnnotator = false;
   state.editor.isReadonly = false;
   state.editor.mode = 0;
-  state.editor.showEntities = true;
-  state.editor.showEntities = true;
   state.editor.showTags = false;
   state.editor.showNotes = true;
   state.editor.showBreaks = true;

@@ -13,7 +13,6 @@ export interface State {
   dialogBar: DialogBarProps[];
   notifications: NotificationProps[];
   page: string;
-  skipCopyPasteHelp: boolean;
   skipEntityDetachConfirm: boolean;
   skipExplorerDeleteConfirm: boolean;
   themeAppearance: PaletteMode;
@@ -27,7 +26,6 @@ export const state: State = {
   dialogBar: [],
   notifications: [],
   page: 'home',
-  skipCopyPasteHelp: false,
   skipEntityDetachConfirm: false,
   skipExplorerDeleteConfirm: false,
   themeAppearance: 'system',

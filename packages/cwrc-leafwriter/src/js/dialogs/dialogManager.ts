@@ -10,7 +10,6 @@ import { namedEntityTypesSchema, type EntityLink } from '../../types';
 import { log } from '../../utilities';
 import Writer from '../Writer';
 import AttributesEditor from './attributesEditor/attributesEditor';
-import CopyPaste from './copyPaste';
 import EntitiesDialogs from './entities';
 import type { SchemaDialog } from './entities/types';
 import LoadingIndicator from './loadingIndicator/loadingIndicator';
@@ -179,7 +178,6 @@ interface DefaultDialogConfig {
 
 const defaultDialogs = new Map<string, DefaultDialogConfig>([
   ['attributesEditor', { dialogClass: AttributesEditor }],
-  ['copyPaste', { dialogClass: CopyPaste }],
   ['loadingindicator', { dialogClass: LoadingIndicator }],
   ['message', { dialogClass: Message }],
   ['popup', { dialogClass: Popup }],

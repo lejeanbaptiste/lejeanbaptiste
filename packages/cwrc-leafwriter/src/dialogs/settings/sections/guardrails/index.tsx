@@ -13,6 +13,7 @@ export const Guardrails = () => {
     enableXmlEditing,
     multiFileSnapshotBefore,
     validateMultiFileAutomation,
+    validateXmlOnReplace,
   } = useAppState().editor;
   const {
     setAllowSourceModeSchemaViolations,
@@ -20,6 +21,7 @@ export const Guardrails = () => {
     setEnableXmlEditing,
     setMultiFileSnapshotBefore,
     setValidateMultiFileAutomation,
+    setValidateXmlOnReplace,
   } = useActions().editor;
   const { t } = useTranslation();
 
@@ -41,6 +43,14 @@ export const Guardrails = () => {
           value={allowSourceModeSchemaViolations}
         />
       )}
+      <Toggler
+        description={t('LW.settings.guardrails.validate_xml_on_replace_description')}
+        icon="correction"
+        onChange={setValidateXmlOnReplace}
+        title={t('LW.settings.guardrails.validate_xml_on_replace')}
+        type="toggle"
+        value={validateXmlOnReplace}
+      />
       <Toggler
         icon="insertTag"
         onChange={setEnableMultiFileAutomation}

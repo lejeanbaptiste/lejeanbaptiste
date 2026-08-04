@@ -524,7 +524,6 @@
       "settings": {
         "editor_options_hint": "Les schémas, autorités et autres options d’édition sont disponibles via la barre d’outils ⚙ lorsqu’un document est ouvert.",
         "remember_workspace_on_startup": "Rouvrir le projet et les onglets au démarrage",
-        "skip_copy_paste_help": "Ne pas afficher l’aide copier-coller",
         "skip_delete_confirm": "Supprimer fichiers et dossiers sans confirmation",
         "startup": "Démarrage",
         "title": "Paramètres",
@@ -616,6 +615,7 @@
           "add_origin_placeholder": "Ajouter un lieu d'origine",
           "dont_warn_detach": "Ne plus m’avertir lors du détachement",
           "one_line_description": "Description en une ligne",
+          "card_wip_note": "En cours — ce type de fiche n’est pas encore achevé.",
           "romanized_name": "Nom romanisé",
           "refresh_authorities": "Actualiser les données des autorités",
           "lookup_entity": "Rechercher cette entité",

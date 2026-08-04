@@ -144,7 +144,6 @@
     "Sequential": "",
     "Settings": "",
     "Show": "",
-    "Show Entities": "",
     "Show Raw XML": "",
     "Show Tags": "",
     "Show Text Nodes": "",
@@ -395,7 +394,6 @@
         }
       },
       "editor": {
-        "Show Entities": "",
         "Show Raw XML panel": "",
         "asian font": "",
         "default fonts": "",

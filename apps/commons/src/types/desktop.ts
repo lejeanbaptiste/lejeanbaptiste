@@ -508,7 +508,6 @@ declare global {
       encoderNameLoaded: boolean;
       entityDbFolder: string | null;
       rememberWorkspaceOnStartup: boolean;
-      skipCopyPasteHelp: boolean;
       skipEntityDetachConfirm: boolean;
       skipExplorerDeleteConfirm: boolean;
       pickEntityDbFolder: () => Promise<string | null>;
@@ -526,7 +525,6 @@ declare global {
       disconnectGithub: () => Promise<void>;
       setEncoderName: (name: string) => void | Promise<void>;
       setRememberWorkspaceOnStartup: (value: boolean) => void | Promise<void>;
-      setSkipCopyPasteHelp: (value: boolean) => void;
       setSkipEntityDetachConfirm: (value: boolean) => void;
       setSkipExplorerDeleteConfirm: (value: boolean) => void;
       testAiConnection: (settings: Partial<AiApiSettings>) => Promise<AiConnectionResult>;

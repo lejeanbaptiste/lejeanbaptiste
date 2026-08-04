@@ -207,7 +207,6 @@
       "settings": {
         "editor_options_hint": "Schema, Autoritäten und andere Editoroptionen sind über die ⚙-Symbolleiste verfügbar, wenn ein Dokument geöffnet ist.",
         "remember_workspace_on_startup": "Projekt und Tabs beim Start erneut öffnen",
-        "skip_copy_paste_help": "Kopieren-Einfügen-Hilfe nicht anzeigen",
         "skip_delete_confirm": "Dateien und Ordner ohne Rückfrage löschen",
         "startup": "Start",
         "title": "Einstellungen",

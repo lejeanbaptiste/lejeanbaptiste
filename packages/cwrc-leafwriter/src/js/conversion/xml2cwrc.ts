@@ -8,7 +8,7 @@ import { EntityConfig } from '../entities/Entity';
 import { syncCorrectionEntityDom, syncAllCorrectionEntities } from '../entities/correctionDom';
 import { RESERVED_ATTRIBUTES } from '../schema/mapper';
 import Writer from '../Writer';
-import { openEditorModeDialog, openProcessIssueDialog, type ProcessSchemaProps } from './prompts';
+import { openProcessIssueDialog, type ProcessSchemaProps } from './prompts';
 
 /**
  * @class XML2CWRC
@@ -169,7 +169,7 @@ class XML2CWRC {
       }
     }
 
-    this.doProcessing(doc, { skipEditorModeDialog: true });
+    this.doProcessing(doc);
   }
 
   /**
@@ -271,7 +271,7 @@ class XML2CWRC {
     this.writer.event('documentLoaded').publish(false, this.writer.editor?.getBody());
   }
 
-  doProcessing(doc: Document, options?: { skipEditorModeDialog?: boolean }) {
+  doProcessing(doc: Document) {
     this.writer.event('processingDocument').publish();
 
     this._isLegacyDocument = this.isLegacyDocument(doc);
@@ -281,9 +281,6 @@ class XML2CWRC {
     this.buildDocumentAndInsertEntities(doc)
       .then(() => {
         this.writer.event('documentLoaded').publish(true, this.writer.editor?.getBody());
-
-        if (this.writer.isReadOnly || options?.skipEditorModeDialog) return;
-        openEditorModeDialog(this.writer);
       })
       .catch((error: unknown) => {
         log.error('xml2cwrc.doProcessing failed', error);

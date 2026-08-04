@@ -21,6 +21,12 @@ import type { EntityKind } from '../../../../../packages/cwrc-leafwriter/src/aut
 import type { EntitySummary } from '../../../../../packages/cwrc-leafwriter/src/autoTagging/entityOps';
 import type { EntityStore } from '../../../../../packages/cwrc-leafwriter/src/autoTagging/entityStore';
 import {
+  pickDefaultEntityId,
+  readStoredKindFilter,
+  writeLastEntityId,
+  writeStoredKindFilter,
+} from '../databaseViewPrefs';
+import {
   applyHygieneFinding,
   autoCleanEntities,
   authorityPeerToCompareCard,
@@ -336,10 +342,16 @@ export const DatabaseWindow = () => {
   const [applyBusy, setApplyBusy] = useState(false);
   const [loadError, setLoadError] = useState<string | null>(null);
   const [search, setSearch] = useState('');
-  const [kindFilter, setKindFilter] = useState<EntityKind>('person');
+  const [kindFilter, setKindFilterState] = useState<EntityKind>(() => readStoredKindFilter());
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const [selectedIds, setSelectedIds] = useState<string[]>([]);
   const selectionAnchorRef = useRef<string | null>(null);
+
+  const setKindFilter = useCallback((kind: EntityKind) => {
+    setKindFilterState(kind);
+    writeStoredKindFilter(kind);
+  }, []);
+
   const [mainPane, setMainPane] = useState<MainPane>('detail');
   const [rightTab, setRightTab] = useState('cleaning');
   const [findings, setFindings] = useState<HygieneFinding[]>([]);
@@ -376,12 +388,6 @@ export const DatabaseWindow = () => {
       setActiveStore(result.activeStore);
       setProjectStore(result.projectStore);
       setLoadError(result.error);
-      if (result.entities.length > 0 && !selectedId) {
-        const firstId = result.entities[0]!.id;
-        setSelectedId(firstId);
-        setSelectedIds([firstId]);
-        selectionAnchorRef.current = firstId;
-      }
     } catch (error) {
       if (!controller.signal.aborted) {
         setLoadError(error instanceof Error ? error.message : String(error));
@@ -390,7 +396,7 @@ export const DatabaseWindow = () => {
       setReloadBusy(false);
       endJob();
     }
-  }, [beginJob, databaseView, endJob, selectedId, syncToCentral]);
+  }, [beginJob, databaseView, endJob, syncToCentral]);
 
   useEffect(() => {
     void reload();
@@ -402,6 +408,25 @@ export const DatabaseWindow = () => {
     for (const entity of entities) map.set(entity.id, entity);
     return map;
   }, [entities]);
+
+  // Keep the detail pane on an entity in the active Type filter (last opened, else first).
+  // Depends on entities/kindFilter only so an intentional empty selection can stick.
+  useEffect(() => {
+    if (entities.length === 0) {
+      setSelectedId(null);
+      setSelectedIds([]);
+      selectionAnchorRef.current = null;
+      return;
+    }
+    setSelectedId((prev) => {
+      const current = prev ? entityById.get(prev) : undefined;
+      if (current && current.kind === kindFilter) return prev;
+      const next = pickDefaultEntityId(entities, kindFilter);
+      setSelectedIds(next ? [next] : []);
+      selectionAnchorRef.current = next;
+      return next;
+    });
+  }, [entities, entityById, kindFilter]);
 
   const filtered = useMemo(() => {
     let list = entities.filter((entity) => entity.kind === kindFilter);
@@ -1107,6 +1132,7 @@ export const DatabaseWindow = () => {
     (id: string, event?: React.MouseEvent) => {
       const additive = Boolean(event?.metaKey || event?.ctrlKey);
       const range = Boolean(event?.shiftKey);
+      const selected = entityById.get(id);
 
       if (range && selectionAnchorRef.current) {
         const anchorIdx = filtered.findIndex((entity) => entity.id === selectionAnchorRef.current);
@@ -1118,6 +1144,7 @@ export const DatabaseWindow = () => {
             additive ? [...new Set([...prev, ...rangeIds])] : rangeIds,
           );
           setSelectedId(id);
+          if (selected) writeLastEntityId(selected.kind, id);
           setMainPane('detail');
           return;
         }
@@ -1135,9 +1162,10 @@ export const DatabaseWindow = () => {
       }
       setSelectedId(id);
       selectionAnchorRef.current = id;
+      if (selected) writeLastEntityId(selected.kind, id);
       setMainPane('detail');
     },
-    [filtered],
+    [entityById, filtered],
   );
 
   const selectAllFiltered = useCallback(() => {
