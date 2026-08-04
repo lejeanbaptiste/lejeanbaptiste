@@ -515,6 +515,7 @@
         "Add Custom Authority": "Ajouter une autorité personnalisée",
         "show_pack_string_counts": "Afficher le nombre de chaînes dans Tag Bomb",
         "show_pack_string_counts_description": "Compte les chaînes de chaque pack d'autorité à l'ouverture de Tag Bomb. Peut ralentir l'ouverture.",
+        "asset_packs_note": "Les packs d’autorités hors ligne et les tuiles cartographiques se trouvent maintenant dans l’onglet Packs de ressources.",
         "messages": {
           "Are you sure you want to delete the authority -value": "<0>Voulez-vous vraiment supprimer l'autorité </0><1>{{name}}</1><2> ?</2>",
           "Authority deleted successfully": "Autorité supprimée avec succès",
@@ -584,12 +585,68 @@
         "no_matches": "Aucun contenu correspondant trouvé.",
         "applied": "{{count}} modifications appliquées dans {{files}} fichier(s)."
       },
+      "ai_prompts": {
+        "title": "Prompts IA",
+        "description": "Modifier le libellé des tâches pour la suggestion, l’audit et la désambiguïsation. Les autres instructions de l’application et le format JSON restent fixes.",
+        "profile": "Profil",
+        "profile_label": "Libellé du profil",
+        "suggest_task_text": "Texte de la tâche de suggestion",
+        "audit_clean_task_text": "Texte de la tâche d’audit",
+        "disambiguation_rank_task_text": "Texte de la tâche de classement pour la désambiguïsation",
+        "save_as_new_profile": "Enregistrer comme nouveau profil",
+        "new_profile_placeholder": "Biographie classique Groq",
+        "delete_profile": "Supprimer le profil",
+        "revert_to_default_text": "Revenir au texte par défaut",
+        "save_as_new": "Enregistrer comme nouveau…",
+        "enter_new_profile_name": "Saisissez un nom pour le nouveau profil."
+      },
+      "asset_packs": {
+        "offline_authorities": "Autorités hors ligne",
+        "map_tiles": "Tuiles cartographiques hors ligne"
+      },
+      "interface": {
+        "show_pack_string_counts_warning": "Attention : afficher le nombre de chaînes des packs peut être lent sur de gros packs."
+      },
+      "privacy": {
+        "description": "Ce que LEAF-Writer conserve localement et ce qu’il n’envoie que si vous choisissez d’utiliser une fonction en réseau.",
+        "summary": "LEAF-Writer fonctionne principalement en local dans l’usage normal de l’application de bureau. Vos fichiers, bases de données et paramètres restent sur votre machine, sauf si vous utilisez une fonction qui contacte explicitement un autre service.",
+        "local_first": "L’édition normale, les bases d’entités locales, les packs hors ligne et la plupart des paramètres restent sur votre ordinateur.",
+        "documents_title": "Métadonnées des documents",
+        "documents_body": "Le nom d’utilisateur saisi dans les Paramètres peut être écrit dans vos documents comme métadonnée de projet ou de document. Ce nom voyage avec le fichier parce qu’il fait partie du document lui-même, et non parce que l’application le téléverse automatiquement quelque part.",
+        "leaderboard_title": "Envoi au classement",
+        "leaderboard_body": "Si vous choisissez d’envoyer votre fiche de service au classement, LEAF-Writer transmet votre jeton d’identité GitHub pour vérification, votre nom affiché et votre contexte de grade, les totaux de vos indicateurs d’accomplissement et votre image d’avatar facultative au service de classement.",
+        "telemetry_title": "Rapports d’erreur et de plantage",
+        "telemetry_body": "Le code de l’éditeur prend en charge des rapports optionnels d’erreurs et de plantages via Sentry si une version les active. Cela dépend donc de la configuration de la version, et non de l’édition normale.",
+        "web_title": "Mesure d’audience dans la version web",
+        "web_body": "Dans l’application web, des événements anonymisés Google Analytics (pages et ouverture de l’éditeur) peuvent être envoyés seulement si les cookies de mesure sont acceptés. L’application de bureau n’utilise pas ce flux d’analyse fondé sur le consentement aux cookies."
+      },
       "markupPanel": {
         "Allow drag and drop": "Autoriser le glisser-déposer",
         "Show Text Nodes": "Afficher les nœuds de texte",
         "message": {
           "Text Nodes must be displayed for better accuracy": "Les nœuds de texte doivent être affichés pour une meilleure précision"
         }
+      },
+      "plugins": {
+        "description": "Les plugins sont propres au projet. Les plugins activés modifient les packs d’autorités et les méthodes d’auto-annotation de ce projet.",
+        "filtered_for_language": "Affichage des plugins disponibles pour {{language}}.",
+        "installed_tab": "Installés ({{count}})",
+        "available_tab": "Rechercher des plugins ({{count}})",
+        "none_installed": "Aucun plugin installé pour le moment.",
+        "none_available": "Aucun plugin compatible trouvé.",
+        "install_from_folder": "Installer depuis un dossier…",
+        "install": "Installer",
+        "documentation": "Documentation",
+        "update_to_version": "Mettre à jour vers v{{version}}",
+        "enable_plugin": "Activer {{name}}",
+        "plugin_settings": "Paramètres du plugin",
+        "auto_tagging_methods": "{{count}} méthode(s) d’auto-annotation",
+        "authority_packs": "{{count}} pack(s) d’autorités"
+      },
+      "project": {
+        "open_existing_description": "Les paramètres du projet utilisent encore leur panneau de paramètres actuel.",
+        "current_panel_note": "Les paramètres du projet restent propres au projet et conservent ici leur flux de travail actuel, tandis que le reste des paramètres est unifié.",
+        "open_button": "Ouvrir les paramètres actuels du projet"
       },
       "reset": {
         "Clear Cache": "Vider le cache",
@@ -621,6 +678,16 @@
         "skip_delete_confirm": "Supprimer fichiers et dossiers sans confirmation",
         "skip_entity_detach_confirm": "Détacher les identifiants d’autorité des entités sans confirmation",
         "title": "Avertissements"
+      },
+      "tabs": {
+        "project": "Projet",
+        "github": "GitHub",
+        "appearance": "Apparence",
+        "behaviour": "Comportement",
+        "privacy": "Confidentialité",
+        "asset_packs": "Packs de ressources",
+        "plugins": "Plugins",
+        "ai": "IA"
       }
     },
     "desktop": {
@@ -633,7 +700,7 @@
         "entity_database_move": "Déplacer…",
         "entity_database_move_success": "Base d’entités déplacée.",
         "entity_database_move_error": "Impossible de déplacer la base d’entités.",
-        "entity_database_reveal": "Afficher dans le gestionnaire de fichiers",
+        "entity_database_reveal": "Afficher",
         "remember_workspace_on_startup": "Rouvrir le projet et les onglets au démarrage",
         "user_name": "Nom d’utilisateur",
         "your_name": "Votre nom"

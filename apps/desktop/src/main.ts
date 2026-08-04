@@ -1052,45 +1052,13 @@ const buildViewMenu = (): Electron.MenuItemConstructorOptions => ({
       ? ([{ role: 'toggleDevTools' }] as Electron.MenuItemConstructorOptions[])
       : []),
     menuSeparator(),
-    {
-      label: 'Actual Size',
-      accelerator: 'CommandOrControl+0',
-      click: () => sendMenuAction('editor-zoom-reset'),
-    },
-    {
-      label: 'Zoom In',
-      accelerator: 'CommandOrControl+Plus',
-      click: () => sendMenuAction('editor-zoom-in'),
-    },
-    {
-      // Hidden twin so the unshifted =/+ key also zooms in, like the built-in role.
-      label: 'Zoom In (hidden)',
-      accelerator: 'CommandOrControl+=',
-      visible: false,
-      acceleratorWorksWhenHidden: true,
-      click: () => sendMenuAction('editor-zoom-in'),
-    },
-    {
-      label: 'Zoom Out',
-      accelerator: 'CommandOrControl+-',
-      click: () => sendMenuAction('editor-zoom-out'),
-    },
-    menuSeparator(),
     { role: 'togglefullscreen' },
   ],
 });
 
-const buildToolsMenu = (): Electron.MenuItemConstructorOptions => {
-  const submenu: Electron.MenuItemConstructorOptions[] = [
-    {
-      id: 'open-plugins',
-      label: 'Plugins…',
-      click: () => sendMenuAction('open-plugins'),
-      visible: false,
-    },
-  ];
-
-  submenu.push(
+const buildToolsMenu = (): Electron.MenuItemConstructorOptions => ({
+  label: 'Tools',
+  submenu: [
     {
       label: 'Zotero Preferences',
       click: () => sendMenuAction('zotero-preferences'),
@@ -1098,18 +1066,6 @@ const buildToolsMenu = (): Electron.MenuItemConstructorOptions => {
     {
       label: 'Zotero Refresh',
       click: () => sendMenuAction('zotero-refresh'),
-    },
-  );
-
-  return { label: 'Tools', submenu };
-};
-
-const buildHelpMenu = (): Electron.MenuItemConstructorOptions => ({
-  label: 'Help',
-  submenu: [
-    {
-      label: 'Documentation',
-      click: () => sendMenuAction('open-documentation'),
     },
   ],
 });
@@ -1150,11 +1106,6 @@ const buildApplicationMenu = () => {
     label: 'Close Tab',
     accelerator: 'CommandOrControl+W',
     click: () => sendMenuAction('close-tab'),
-  };
-
-  const editionMetadataItem: Electron.MenuItemConstructorOptions = {
-    label: 'Project settings',
-    click: () => sendMenuAction('edition-metadata'),
   };
 
   const lookForUpdatesItem: Electron.MenuItemConstructorOptions = {
@@ -1223,7 +1174,6 @@ const buildApplicationMenu = () => {
         menuSeparator(),
         openProjectItem,
         closeProjectItem,
-        editionMetadataItem,
         lookForUpdatesItem,
         timeMachineItem,
         menuSeparator(),
@@ -1246,10 +1196,9 @@ const buildApplicationMenu = () => {
           : { role: 'quit' },
       ],
     },
-    buildEditMenu(),
+    ...(process.platform === 'darwin' ? [buildEditMenu()] : []),
     buildToolsMenu(),
     buildViewMenu(),
-    buildHelpMenu(),
   ];
 
   Menu.setApplicationMenu(Menu.buildFromTemplate(template));
@@ -3205,10 +3154,6 @@ const registerIpcHandlers = () => {
         ? { x: Math.round(x), y: Math.round(y) }
         : {}),
     });
-  });
-  ipcMain.handle('set-plugins-menu-visible', (_event, visible: boolean) => {
-    const item = Menu.getApplicationMenu()?.getMenuItemById('open-plugins');
-    if (item) item.visible = visible === true;
   });
 };
 

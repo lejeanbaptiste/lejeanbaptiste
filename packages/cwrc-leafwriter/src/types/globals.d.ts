@@ -737,6 +737,40 @@ declare global {
         yearStart?: number;
         yearEnd?: number;
       }) => void;
+      loadProjectMetadataState?: (
+        mode?: 'firstSetup' | 'edition',
+      ) => Promise<import('../../../../apps/commons/src/desktop/projectMetadataDialogState').ProjectMetadataDialogState | null>;
+      saveProjectMetadata?: (payload: {
+        projectFilePath: string;
+        values: Record<string, string>;
+        custom: Array<{ path: string; label: string; value: string }>;
+        applyToDocuments: boolean;
+        translationAlignmentUnit?: 'div' | 'p';
+        translationLanguages?: Array<{ code: string; label: string }>;
+        syncToCentral?: boolean;
+        mode?: 'firstSetup' | 'edition';
+      }) => Promise<{
+        ok: boolean;
+        error?: string;
+        summary?: string;
+        syncReport?: { broken: number; conflicts: number };
+      }>;
+      getNameTypeTaggingPolicyState?: () => Promise<{
+        buckets: Record<string, 'phase1' | 'phase2' | 'never'>;
+        customTypes: Array<{ id: string; label: string; bucket: 'phase1' | 'phase2' | 'never' }>;
+        artMinCodePoints: number;
+        sourceLanguage: string | null;
+      } | null>;
+      persistNameTypeTaggingPolicy?: (payload: {
+        buckets: Record<string, 'phase1' | 'phase2' | 'never'>;
+        customTypes?: Array<{
+          id: string;
+          label: string;
+          labelsByLang?: Record<string, string>;
+          bucket: 'phase1' | 'phase2' | 'never';
+        }>;
+        artMinCodePoints?: number;
+      }) => Promise<{ ok: boolean; error?: string }>;
     };
     __lwPanelTrace?: { t: string; tag: string; data?: Record<string, unknown> }[];
   }

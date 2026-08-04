@@ -1,30 +1,47 @@
 import { Alert, Dialog, DialogContent, List, Stack } from '@mui/material';
 import { motion } from 'motion/react';
-import { useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { useAppState } from '../../overmind';
+import { useActions, useAppState } from '../../overmind';
 import { AddCustomAuthority } from '../custom-authority-dialog/add-custom-authority';
-import type { IDialog } from '../type';
+import type { SettingsDialogProps } from './types';
 import { Section } from './components';
 import { Header } from './header';
 import {
   Authorities,
-  Editor,
   EntityLookups,
   Guardrails,
   MarkupPanel,
-  Profile,
   Reset,
-  UI,
 } from './sections';
+import { Toggler } from './components/toggler';
+import { DesktopOfflineAuthorities } from './sections/authorities/desktop-offline-authorities';
+import { DesktopMapTilesSettings } from './sections/authorities/desktop-maptiles-settings';
+import { ShowPackStringCounts } from './sections/authorities/show-pack-string-counts';
+import { FontFamily } from './sections/editor/font-family';
+import { FontSize } from './sections/editor/font-size';
+import { DesktopEncoderName } from './sections/profile/desktop-encoder-name';
+import { DesktopEntityDatabase } from './sections/profile/desktop-entity-database';
 import { DesktopAiApi } from './sections/ui/desktop-ai-api';
 import { DesktopGithub } from './sections/ui/desktop-github';
-import { SettingsValidationContext } from './settingsValidationContext';
-import { SideMenu } from './side-menu';
+import { DesktopStartup } from './sections/ui/desktop-startup';
+import { DesktopWarnings } from './sections/ui/desktop-warnings';
+import { Language } from './sections/ui/language';
+import { TagBubble } from './sections/ui/tag-bubble';
+import { ThemeAppearance } from './sections/ui/theme-appearance';
+import { SideMenu, type MenuItemProps } from './side-menu';
 import { useRequiredFieldsValidity } from './useRequiredFieldsValidity';
+import { PluginsSettingsPanel } from './plugins-settings-panel';
+import { AiPromptProfilesPanel } from './ai-prompt-profiles-panel';
+import { ProjectSettingsPanel } from './project-settings-panel';
+import { PrivacySettingsPanel } from './privacy-settings-panel';
+import { SettingsValidationContext } from './settingsValidationContext';
+import type { SettingsDialogProps, SettingsTabId } from './types';
 
-export const SettingsDialog = ({ onClose, open = false }: IDialog) => {
+export const SettingsDialog = ({ onClose, open = false, initialTab }: SettingsDialogProps) => {
   const { isReadonly, settings } = useAppState().editor;
+  const { stripCjkWhitespace } = useAppState().editor;
+  const { setStripCjkWhitespace } = useActions().editor;
   const { t } = useTranslation();
   const validity = useRequiredFieldsValidity();
   const [closeAttempted, setCloseAttempted] = useState(false);
@@ -39,10 +56,52 @@ export const SettingsDialog = ({ onClose, open = false }: IDialog) => {
 
   const isDesktop =
     typeof window !== 'undefined' && !!(window as Window & { electronAPI?: unknown }).electronAPI;
+  const projectFilePath = window.__leafWriterProject?.getProjectFilePath?.() ?? null;
+  const hasProject = Boolean(projectFilePath);
 
   const dialogContainer = isDesktop
     ? undefined
     : (document.getElementById(`${settings?.container}`) ?? undefined);
+
+  const items = useMemo<MenuItemProps[]>(
+    () => [
+      { id: 'project', label: t('LW.settings.tabs.project'), hide: !isDesktop || !hasProject },
+      { id: 'profile', label: t('LW.commons.profile'), hide: !isDesktop },
+      { id: 'interface', label: t('LW.commons.interface') },
+      { id: 'privacy', label: t('LW.settings.tabs.privacy') },
+      { id: 'guardrails', label: t('LW.settings.guardrails.title') },
+      { id: 'authorities', label: t('LW.commons.authorities'), hide: isReadonly },
+      { id: 'asset-packs', label: t('LW.settings.tabs.asset_packs'), hide: !isDesktop || isReadonly },
+      { id: 'plugins', label: t('LW.settings.tabs.plugins'), hide: !isDesktop },
+      { id: 'ai', label: t('LW.settings.tabs.ai'), hide: !isDesktop },
+    ],
+    [hasProject, isDesktop, isReadonly, t],
+  );
+  const visibleItems = items.filter(({ hide }) => !hide);
+  const defaultTab = (initialTab ?? visibleItems[0]?.id ?? 'interface') as SettingsTabId;
+  const [activeId, setActiveId] = useState<SettingsTabId>(defaultTab);
+
+  useEffect(() => {
+    if (!open) return;
+    if (initialTab && visibleItems.some(({ id }) => id === initialTab)) {
+      setActiveId(initialTab);
+    }
+  }, [initialTab, open, visibleItems]);
+
+  useEffect(() => {
+    if (!visibleItems.some(({ id }) => id === activeId)) {
+      setActiveId(visibleItems[0]?.id ?? 'interface');
+    }
+  }, [activeId, visibleItems]);
+
+  useEffect(() => {
+    if (!closeAttempted || validity.allValid) return;
+    if (validity.isDesktop && !validity.encoderNameValid && visibleItems.some(({ id }) => id === 'profile')) {
+      setActiveId('profile');
+      return;
+    }
+    setActiveId('interface');
+  }, [closeAttempted, validity, visibleItems]);
 
   return (
     <Dialog
@@ -66,75 +125,156 @@ export const SettingsDialog = ({ onClose, open = false }: IDialog) => {
     >
       <Header onClose={handleClose} />
       <Stack direction="row" overflow="hidden" px={0.75} pb={0.75}>
-        <SideMenu
-          items={[
-            { id: 'profile', label: t('LW.commons.profile'), hide: !isDesktop },
-            { id: 'interface', label: t('LW.commons.interface') },
-            { id: 'github', label: 'GitHub', hide: !isDesktop },
-            { id: 'ai-api', label: t('LW.settings.ai_api.title'), hide: !isDesktop },
-            { id: 'editor', label: t('LW.commons.editor') },
-            { id: 'guardrails', label: t('LW.settings.guardrails.title') },
-            { id: 'authorities', label: t('LW.commons.authorities'), hide: isReadonly },
-            { id: 'entityLookups', label: t('LW.commons.entity_types'), hide: isReadonly },
-            { id: 'markup-panel', label: t('LW.settings.markupPanel.title'), hide: isReadonly },
-            { id: 'reset', label: t('LW.commons.reset'), hide: isReadonly },
-          ]}
-        />
-        <DialogContent sx={{ pt: 0.25, px: 1, pb: 1, minWidth: 0 }}>
+        <SideMenu activeId={activeId} items={items} onChange={setActiveId} />
+        <DialogContent sx={{ pt: 0.25, px: 1, pb: 1, minWidth: 0, overflowY: 'auto' }}>
           <SettingsValidationContext.Provider value={{ ...validity, attempted: closeAttempted }}>
             <Stack component={motion.div} layout spacing={1.75}>
               {closeAttempted && !validity.allValid && (
                 <Alert severity="error">{t('LW.desktop.settings.setup_incomplete')}</Alert>
               )}
-              {isDesktop && (
-                <Section id="profile" title={t('LW.commons.profile')}>
-                  <Profile />
+              {activeId === 'project' && isDesktop && hasProject && (
+                <Section id="project" title={t('LW.settings.tabs.project')}>
+                  <ProjectSettingsPanel active={activeId === 'project'} />
                 </Section>
               )}
-              <Section id="interface" title={t('LW.commons.interface')}>
-                <UI />
-              </Section>
-              {isDesktop && (
-                <Section id="github" title="GitHub">
-                  <List dense>
-                    <DesktopGithub />
-                  </List>
-                </Section>
-              )}
-              {isDesktop && (
-                <Section id="ai-api" title={t('LW.settings.ai_api.title')}>
-                  <List dense>
-                    <DesktopAiApi />
-                  </List>
-                </Section>
-              )}
-              <Section id="editor" title={t('LW.commons.editor')}>
-                <Editor />
-              </Section>
-              <Section
-                id="guardrails"
-                title={t('LW.settings.guardrails.title')}
-                description={t('LW.settings.guardrails.description')}
-              >
-                <Guardrails />
-              </Section>
-              {!isReadonly && (
+
+              {activeId === 'profile' && isDesktop && (
                 <>
-                  <Section
-                    endDecorator={<AddCustomAuthority />}
-                    id="authorities"
-                    title={t('LW.commons.authorities')}
-                  >
-                    <Authorities />
+                  <Section id="profile-main" title={t('LW.commons.profile')}>
+                    <List dense>
+                      <DesktopEncoderName />
+                      <DesktopEntityDatabase />
+                    </List>
                   </Section>
-                  <Section id="entityLookups" title={t('LW.commons.entity_types')}>
-                    <EntityLookups />
+                  <Section id="profile-github" title={t('LW.settings.tabs.github')}>
+                    <List dense>
+                      <DesktopGithub />
+                    </List>
                   </Section>
-                  <Section id="markup-panel" title={t('LW.settings.markupPanel.title')}>
-                    <MarkupPanel />
+                </>
+              )}
+
+              {activeId === 'interface' && (
+                <>
+                  <Section id="appearance" title={t('LW.settings.tabs.appearance')}>
+                    <List dense>
+                      <ThemeAppearance />
+                      <Language />
+                      <TagBubble />
+                      <FontSize />
+                      <FontFamily />
+                    </List>
                   </Section>
+                  <Section id="behaviour" title={t('LW.settings.tabs.behaviour')}>
+                    <List dense>
+                      {isDesktop && <DesktopStartup />}
+                      <Toggler
+                        icon="translate"
+                        onChange={setStripCjkWhitespace}
+                        title={t('LW.settings.editor.strip_east_asian_whitespace')}
+                        type="toggle"
+                        value={stripCjkWhitespace}
+                      />
+                      {isDesktop && (
+                        <>
+                          <Alert severity="warning" sx={{ mt: 0.5 }}>
+                            {t('LW.settings.interface.show_pack_string_counts_warning')}
+                          </Alert>
+                          <ShowPackStringCounts />
+                        </>
+                      )}
+                    </List>
+                  </Section>
+                  {!isReadonly && (
+                    <Section id="markup-panel" title={t('LW.settings.markupPanel.title')}>
+                      <MarkupPanel />
+                    </Section>
+                  )}
                   <Section id="reset" title={t('LW.commons.reset')}>
                     <Reset />
+                  </Section>
+                </>
+              )}
+
+              {activeId === 'privacy' && (
+                <Section
+                  id="privacy"
+                  title={t('LW.settings.tabs.privacy')}
+                  description={t('LW.settings.privacy.description')}
+                >
+                  <PrivacySettingsPanel />
+                </Section>
+              )}
+
+              {activeId === 'guardrails' && (
+                <>
+                  <Section
+                    id="guardrails-main"
+                    title={t('LW.settings.guardrails.title')}
+                    description={t('LW.settings.guardrails.description')}
+                  >
+                    <Guardrails />
+                  </Section>
+                  {isDesktop && (
+                    <Section id="guardrails-warnings" title={t('LW.settings.warnings.title')}>
+                      <List dense>
+                        <DesktopWarnings />
+                      </List>
+                    </Section>
+                  )}
+                </>
+              )}
+
+              {activeId === 'authorities' && !isReadonly && (
+                <>
+                  {isDesktop && (
+                    <Alert severity="info">
+                      {t('LW.settings.authorities.asset_packs_note')}
+                    </Alert>
+                  )}
+                  <Section
+                    endDecorator={<AddCustomAuthority />}
+                    id="authorities-services"
+                    title={t('LW.commons.authorities')}
+                  >
+                    <Authorities includeDesktopAssets={false} />
+                  </Section>
+                  <Section id="entity-lookups" title={t('LW.commons.entity_types')}>
+                    <EntityLookups />
+                  </Section>
+                </>
+              )}
+
+              {activeId === 'asset-packs' && isDesktop && !isReadonly && (
+                <>
+                  <Section id="asset-authorities" title={t('LW.settings.asset_packs.offline_authorities')}>
+                    <List dense>
+                      <DesktopOfflineAuthorities />
+                    </List>
+                  </Section>
+                  <Section id="asset-map-tiles" title={t('LW.settings.asset_packs.map_tiles')}>
+                    <List dense>
+                      <DesktopMapTilesSettings />
+                    </List>
+                  </Section>
+                </>
+              )}
+
+              {activeId === 'plugins' && isDesktop && (
+                <Section id="plugins" title={t('LW.settings.tabs.plugins')}>
+                  <PluginsSettingsPanel active={activeId === 'plugins'} />
+                </Section>
+              )}
+
+              {activeId === 'ai' && isDesktop && (
+                <>
+                  <Section id="ai-api" title={t('LW.settings.ai_api.title')}>
+                    <List dense>
+                      <DesktopAiApi />
+                    </List>
+                  </Section>
+                  <Section id="ai-prompts" title={t('LW.settings.ai_prompts.title')}>
+                    <AiPromptProfilesPanel active={activeId === 'ai'} />
                   </Section>
                 </>
               )}

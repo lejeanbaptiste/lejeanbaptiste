@@ -8,23 +8,21 @@ import { useEffect, useRef } from 'react';
 import { useTranslation } from 'react-i18next';
 
 import { parseIsoYear } from '../../../../packages/cwrc-leafwriter/src/autoTagging/entities';
-import { ALL_NAME_TYPES, type NameTypeId } from '../../../../packages/cwrc-leafwriter/src/autoTagging/nameTypes';
-import {
-  resolveNameTypeTaggingPolicy,
-  type NameTypeTaggingBucket,
-} from '../../../../packages/cwrc-leafwriter/src/autoTagging/nameTypeTaggingPolicy';
+import type { NameTypeTaggingBucket } from '../../../../packages/cwrc-leafwriter/src/autoTagging/nameTypeTaggingPolicy';
+import type { NameTypeId } from '../../../../packages/cwrc-leafwriter/src/autoTagging/nameTypes';
 import { getActiveTabXml } from './fileMetadata';
 import { buildProjectSchemas, type ProjectBundle } from './projectFile';
 import { getProjectSourceLanguage } from './projectLanguage';
 import { readSourceDescriptionFromXml } from './sourceDescription';
 import {
-  applyMetadataToProjectFiles,
-  buildLastAppliedSnapshot,
-  readProjectMetadata,
-  sanitizeMetadataForSave,
-  writeProjectMetadata,
-} from './projectMetadata';
-import { invalidateMetadataDialogStateCache, warmMetadataDialogStateCache } from './projectMetadataDialogState';
+  loadNameTypeTaggingPolicyState,
+  loadProjectMetadataDialogState,
+  persistNameTypeTaggingPolicyChanges,
+  saveProjectMetadataChanges,
+  type ProjectMetadataSaveDeps,
+  type ProjectMetadataSavePayload,
+} from './projectMetadataSave';
+import type { ProjectMetadataDialogMode } from './projectMetadataSession';
 import {
   clearProjectMetadataSession,
   getProjectMetadataSession,
@@ -48,13 +46,7 @@ import type {
   AutoTaggingAuthoritySettings,
   AutoTaggingValidationSettings,
   DisambiguationSettings,
-  ProjectMetadataFile,
 } from './projectTypes';
-import {
-  addTranslationLanguage,
-  readTranslationSettings,
-  writeTranslationSettings,
-} from './translationSettings';
 
 declare global {
   interface Window {
@@ -80,6 +72,20 @@ declare global {
       setAutoTaggingValidationSettings: (settings: AutoTaggingValidationSettings) => void;
       getDisambiguationSettings: () => DisambiguationSettings | undefined;
       setDisambiguationSettings: (settings: DisambiguationSettings) => void;
+      loadProjectMetadataState?: (
+        mode?: ProjectMetadataDialogMode,
+      ) => ReturnType<typeof loadProjectMetadataDialogState>;
+      saveProjectMetadata?: (
+        payload: ProjectMetadataSavePayload,
+      ) => ReturnType<typeof saveProjectMetadataChanges>;
+      getNameTypeTaggingPolicyState?: () => ReturnType<typeof loadNameTypeTaggingPolicyState>;
+      persistNameTypeTaggingPolicy?: (
+        payload: {
+          buckets: Record<NameTypeId, NameTypeTaggingBucket>;
+          customTypes?: AutoTaggingAuthoritySettings['customNameTypes'];
+          artMinCodePoints?: number;
+        },
+      ) => ReturnType<typeof persistNameTypeTaggingPolicyChanges>;
     };
   }
 }
@@ -134,6 +140,14 @@ export const useNativeDialogBridge = () => {
   const authoritySettingsCache = useRef<AutoTaggingAuthoritySettings | undefined>(undefined);
   const validationSettingsCache = useRef<AutoTaggingValidationSettings | undefined>(undefined);
   const disambiguationSettingsCache = useRef<DisambiguationSettings | undefined>(undefined);
+  const metadataSaveDepsRef = useRef<() => ProjectMetadataSaveDeps>(() => {
+    throw new Error('Project metadata save is not ready.');
+  });
+  const policySaveDepsRef = useRef<
+    () => Pick<ProjectMetadataSaveDeps, 'electronAPI' | 'getAuthoritySettings' | 'setAuthoritySettings'>
+  >(() => {
+    throw new Error('Name-type policy save is not ready.');
+  });
   const activeTabPathRef = useRef(activeTabPath);
   const openTabsRef = useRef(openTabs);
   useEffect(() => {
@@ -168,6 +182,29 @@ export const useNativeDialogBridge = () => {
     validationSettingsCache.current = undefined;
     disambiguationSettingsCache.current = undefined;
     setActiveProjectBundle({ rootPath, projectFilePath, config });
+
+    const getAuthoritySettings = (bundle: ProjectBundle) =>
+      authoritySettingsCache.current ?? bundle.config.autoTaggingAuthority;
+    const setAuthoritySettings = (settings: AutoTaggingAuthoritySettings) => {
+      authoritySettingsCache.current = settings;
+    };
+    const metadataSaveDeps = () => ({
+      electronAPI: window.electronAPI!,
+      openTabs,
+      reloadTabFromDisk,
+      notifyViaSnackbar,
+      t,
+      getAuthoritySettings,
+      setAuthoritySettings,
+    });
+    const policySaveDeps = () => ({
+      electronAPI: window.electronAPI!,
+      getAuthoritySettings,
+      setAuthoritySettings,
+    });
+    metadataSaveDepsRef.current = metadataSaveDeps;
+    policySaveDepsRef.current = policySaveDeps;
+
     window.__leafWriterProject = {
       getProjectFilePath: () => projectFilePath,
       getProjectSourceLanguage: () =>
@@ -214,11 +251,18 @@ export const useNativeDialogBridge = () => {
       setDisambiguationSettings: (settings) => {
         disambiguationSettingsCache.current = settings;
       },
+      loadProjectMetadataState: (mode = 'edition') =>
+        loadProjectMetadataDialogState(projectFilePath, mode),
+      saveProjectMetadata: (payload) => saveProjectMetadataChanges(metadataSaveDeps(), payload),
+      getNameTypeTaggingPolicyState: () =>
+        loadNameTypeTaggingPolicyState(projectFilePath, getAuthoritySettings),
+      persistNameTypeTaggingPolicy: (payload) =>
+        persistNameTypeTaggingPolicyChanges(projectFilePath, payload, policySaveDeps()),
     };
     return () => {
       delete window.__leafWriterProject;
     };
-  }, [rootPath, projectFilePath, config, openFile, reloadTabFromDisk, notifyViaSnackbar, t]);
+  }, [rootPath, projectFilePath, config, openFile, openTabs, reloadTabFromDisk, notifyViaSnackbar, t]);
 
   useEffect(() => {
     if (!isDesktop()) return;
@@ -421,147 +465,21 @@ export const useNativeDialogBridge = () => {
               return { ok: false, error: 'Invalid metadata session.' };
             }
 
-            const bundle = await resolveProjectBundle(session.projectFilePath);
-            if (!bundle) return { ok: false, error: 'Project not found.' };
-
-            const previous = await readProjectMetadata(bundle);
-            const draft: ProjectMetadataFile = {
-              version: 1,
-              catalogId: bundle.config.schema?.catalogId,
-              fields: values ?? {},
-              custom: (custom ?? []).map((row) => ({
-                path: row.path?.trim() ?? '',
-                label: row.label?.trim() || row.path?.trim() || 'Custom field',
-                value: row.value?.trim() ?? '',
-              })),
-            };
-
-            let syncReport: { broken: number; conflicts: number } | undefined;
-            try {
-              await writeProjectMetadata(bundle, draft);
-              if (typeof syncToCentral === 'boolean' && electronAPI.updateProjectFileConfig) {
-                // The first-time bulk pass is intentionally deferred until the
-                // project window is mounted. SidebarDatabaseTab runs the
-                // chunked importer and renders determinate progress; doing it
-                // here used to freeze this settings window and the main window.
-                await electronAPI.updateProjectFileConfig(bundle.projectFilePath, {
-                  syncToCentral,
-                });
-              }
-              invalidateMetadataDialogStateCache(bundle.projectFilePath);
-              void warmMetadataDialogStateCache(bundle, session.mode);
-            } catch (error) {
-              return {
-                ok: false,
-                error: error instanceof Error ? error.message : t('LWC.desktop.could_not_save_metadata'),
-              };
-            }
-
-            if (translationAlignmentUnit) {
-              try {
-                // Re-read current disk state rather than trusting a stale snapshot — a
-                // prior save within the same dialog session may have already locked
-                // alignmentUnit.
-                const existingTranslationSettings = await readTranslationSettings(bundle);
-                if (!existingTranslationSettings) {
-                  await writeTranslationSettings(bundle, {
-                    alignmentUnit: translationAlignmentUnit,
-                    languages: translationLanguages ?? [],
-                  });
-                } else {
-                  const existingCodes = new Set(
-                    existingTranslationSettings.languages.map((lang) => lang.code),
-                  );
-                  for (const lang of translationLanguages ?? []) {
-                    if (!existingCodes.has(lang.code)) {
-                      // eslint-disable-next-line no-await-in-loop
-                      await addTranslationLanguage(bundle, lang);
-                    }
-                  }
-                }
-
-              } catch (error) {
-                  return {
-                  ok: false,
-                  error:
-                    error instanceof Error
-                      ? error.message
-                      : t('LWC.desktop.could_not_save_translation_settings'),
-                };
-              }
-            }
-
-            const sanitized = sanitizeMetadataForSave(draft);
-            let summary: string | undefined;
-
-            if (applyToDocuments) {
-              const dirtyTabs = openTabs.filter((tab) => tab.dirty);
-              if (dirtyTabs.length > 0) {
-                const warn = await electronAPI.showNativeMessageBox({
-                  type: 'warning',
-                  title: t('LWC.desktop.unsaved_documents'),
-                  message: t('LWC.desktop.bulk_update_warning', { count: dirtyTabs.length }),
-                  buttons: [t('LWC.commons.continue'), t('LWC.commons.cancel')],
-                  cancelId: 1,
-                  defaultId: 1,
-                });
-                if (warn.response !== 0) {
-                  return { ok: false, error: 'cancelled' };
-                }
-              }
-
-              const result = await applyMetadataToProjectFiles(bundle, sanitized, {
-                previous,
-                clearRemovedFromFiles: false,
-              });
-
-              const withLastApplied = {
-                ...sanitized,
-                lastApplied: buildLastAppliedSnapshot(sanitized),
-              };
-              await writeProjectMetadata(bundle, withLastApplied);
-              invalidateMetadataDialogStateCache(bundle.projectFilePath);
-              void warmMetadataDialogStateCache(bundle, session.mode);
-
-              for (const tab of openTabs) {
-                await reloadTabFromDisk(tab.filePath);
-              }
-
-              summary = t('LWC.desktop.updated_files_summary', {
-                updated: result.updated,
-                skipped: result.skipped,
-              });
-              if (result.overridesSkipped > 0) {
-                summary += ` ${t('LWC.desktop.updated_files_overrides_skipped', { count: result.overridesSkipped })}`;
-              }
-              if (result.errors.length > 0) {
-                notifyViaSnackbar({
-                  message: result.errors[0],
-                  options: { variant: 'error' },
-                });
-              } else {
-                notifyViaSnackbar({
-                  message: summary,
-                  options: { variant: 'success' },
-                });
-              }
-            }
+            const result = await saveProjectMetadataChanges(metadataSaveDepsRef.current(), {
+              projectFilePath: session.projectFilePath,
+              mode: session.mode,
+              values: values ?? {},
+              custom: custom ?? [],
+              applyToDocuments: Boolean(applyToDocuments),
+              translationAlignmentUnit,
+              translationLanguages,
+              syncToCentral,
+            });
+            if (!result.ok) return result;
 
             clearProjectMetadataSession(dialogId);
             session.onSave();
-            window.dispatchEvent(
-              new CustomEvent('ljb-project-config-saved', {
-                detail: { projectFilePath: bundle.projectFilePath, syncToCentral },
-              }),
-            );
-            if (!applyToDocuments && session.mode === 'edition') {
-              notifyViaSnackbar({
-                message: t('LWC.desktop.project_settings_saved'),
-                options: { variant: 'success' },
-              });
-            }
-
-            return { ok: true, summary, syncReport };
+            return result;
           }
           case 'cancelProjectMetadata': {
             const dialogId = getStringArg(args, 'dialogId');
@@ -577,28 +495,15 @@ export const useNativeDialogBridge = () => {
             const dialogId = getStringArg(args, 'dialogId');
             const session = dialogId ? getProjectMetadataSession(dialogId) : undefined;
             if (!session) return null;
-            const bundle = await resolveProjectBundle(session.projectFilePath);
-            if (!bundle) return null;
-            const settings =
-              authoritySettingsCache.current ?? bundle.config.autoTaggingAuthority;
-            const sourceLanguage = await getProjectSourceLanguage(bundle);
-            const policy = resolveNameTypeTaggingPolicy(settings, sourceLanguage);
-            return {
-              buckets: policy.buckets,
-              customTypes: policy.customTypes,
-              artMinCodePoints: policy.artMinCodePoints,
-              sourceLanguage,
-            };
+            return loadNameTypeTaggingPolicyState(
+              session.projectFilePath,
+              (bundle) => authoritySettingsCache.current ?? bundle.config.autoTaggingAuthority,
+            );
           }
           case 'persistNameTypeTaggingPolicy': {
             const dialogId = getStringArg(args, 'dialogId');
             const session = dialogId ? getProjectMetadataSession(dialogId) : undefined;
             if (!session) return { ok: false, error: 'Invalid metadata session.' };
-            const bundle = await resolveProjectBundle(session.projectFilePath);
-            if (!bundle) return { ok: false, error: 'Project not found.' };
-            if (!electronAPI.updateProjectFileConfig) {
-              return { ok: false, error: 'Could not update project settings.' };
-            }
 
             const payload = (args ?? {}) as {
               buckets?: Record<NameTypeId, NameTypeTaggingBucket>;
@@ -609,22 +514,15 @@ export const useNativeDialogBridge = () => {
               return { ok: false, error: 'Missing name-type policy.' };
             }
 
-            const current =
-              authoritySettingsCache.current ?? bundle.config.autoTaggingAuthority ?? {};
-            const next: AutoTaggingAuthoritySettings = {
-              ...current,
-              nameTypeTaggingPolicy: Object.fromEntries(
-                ALL_NAME_TYPES.map((type) => [type, payload.buckets![type]]),
-              ),
-              customNameTypes: payload.customTypes ?? current.customNameTypes,
-              artMinCodePoints: payload.artMinCodePoints ?? current.artMinCodePoints,
-            };
-            await electronAPI.updateProjectFileConfig(bundle.projectFilePath, {
-              autoTaggingAuthority: next,
-            });
-            authoritySettingsCache.current = next;
-            window.__leafWriterProject?.setAutoTaggingAuthoritySettings?.(next);
-            return { ok: true };
+            return persistNameTypeTaggingPolicyChanges(
+              session.projectFilePath,
+              {
+                buckets: payload.buckets,
+                customTypes: payload.customTypes,
+                artMinCodePoints: payload.artMinCodePoints,
+              },
+              policySaveDepsRef.current(),
+            );
           }
           default:
             return null;

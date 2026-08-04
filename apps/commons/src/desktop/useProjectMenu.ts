@@ -1,6 +1,5 @@
 import { clearFindHighlights } from '@src/desktop/find/findEditorHighlights';
 import { openFindPanel } from '@src/desktop/desktopLeftPanelBridge';
-import { openEditionMetadataDialog } from '@src/desktop/projectOnboarding';
 import { openApplicationSettings } from '@src/desktop/openApplicationSettings';
 import { openPluginsDialog } from '@src/desktop/usePluginBootstrap';
 import {
@@ -212,11 +211,6 @@ export const useProjectMenu = () => {
   useEffect(() => {
     if (!isDesktop() || !window.electronAPI?.onAppMenuAction) return;
 
-    // Plugin management is useful even while the editor is still being
-    // prepared (or the user starts in the database view). Do not let the
-    // TinyMCE/LeafWriter loading race hide the only entry to the dialog.
-    void window.electronAPI.setPluginsMenuVisible?.(isProjectReady);
-
     const unsubscribe = window.electronAPI.onAppMenuAction((action) => {
       if (action === 'new-file') {
         void newFile();
@@ -277,25 +271,8 @@ export const useProjectMenu = () => {
         return;
       }
 
-      if (action === 'open-plugins') {
-        if (!openPluginsDialog()) {
-          notifyViaSnackbar('Could not open Plugins dialog.');
-        }
-        return;
-      }
-
       if (isKnownPluginToolAction(action)) {
         void dispatchPluginToolAction(action, { notify: notifyViaSnackbar });
-        return;
-      }
-
-      if (action === 'edition-metadata') {
-        if (!isProjectReady || !projectFilePath) {
-          notifyViaSnackbar(t('LWC.desktop.project.messages.open_project_first'));
-          return;
-        }
-
-        void openEditionMetadataDialog(projectFilePath);
         return;
       }
 
@@ -423,7 +400,6 @@ export const useProjectMenu = () => {
 
     return () => {
       unsubscribe();
-      void window.electronAPI?.setPluginsMenuVisible?.(false);
     };
   }, [
     activeTabPath,

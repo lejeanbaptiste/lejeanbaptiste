@@ -48,7 +48,10 @@ export function usePluginBootstrap(
 
 export function openPluginsDialog() {
   if (window.writer?.overmindActions?.ui?.openDialog) {
-    window.writer.overmindActions.ui.openDialog({ type: 'plugins' });
+    window.writer.overmindActions.ui.openDialog({
+      type: 'settings',
+      props: { initialTab: 'plugins' },
+    });
     return true;
   }
   return false;

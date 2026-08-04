@@ -3,6 +3,7 @@ import { maybeOfferChineseAssetDownloads } from './chineseAssetOnboarding';
 import { joinProjectPath, type ProjectBundle } from './projectFile';
 import { metadataFileExists } from './projectMetadata';
 import { getProjectSourceLanguage, projectRequiresSourceLanguage } from './projectLanguage';
+import { openApplicationSettings } from './openApplicationSettings';
 import { openNativeProjectMetadata } from './openNativeProjectMetadata';
 import { openNativeSchemaSetup } from './openNativeSchemaSetup';
 import { ensureEntityDbFolder } from './entityDbOnboarding';
@@ -117,5 +118,8 @@ export const completePostLoadOnboarding = async (
 };
 
 export const openEditionMetadataDialog = async (
-  projectFilePath: string,
-): Promise<'saved' | 'cancelled'> => openNativeProjectMetadata(projectFilePath, 'edition');
+  _projectFilePath: string,
+): Promise<'saved' | 'cancelled'> => {
+  const opened = await openApplicationSettings({ initialTab: 'project' });
+  return opened ? 'cancelled' : 'cancelled';
+};

@@ -4,21 +4,6 @@ import { useActions } from '@src/overmind';
 import { isDesktop } from '@src/types/desktop';
 import { useEffect } from 'react';
 
-const LEAF_WRITER_DOCS_URL =
-  'https://www.leaf-vre.org/docs/documentation/leaf-writer-documentation';
-
-/**
- * Cmd/Ctrl +/-/0 zooms whatever text context is active: the translation pane
- * when it has focus, the source (Monaco) view when it's mounted (source mode
- * or the edit-source dialog), otherwise the visual editor.
- */
-const activeZoomBridge = () => {
-  if (window.__leafWriterTranslationPane?.isActive() && window.__leafWriterTranslationZoom) {
-    return window.__leafWriterTranslationZoom;
-  }
-  return window.__leafWriterSourceZoom ?? window.__leafWriterEditorZoom;
-};
-
 /** App-wide Electron menu shortcuts (registered once, survives route changes). */
 export const useDesktopAppMenuBridge = () => {
   const { closeProject, openProject } = useActions().project;
@@ -57,25 +42,6 @@ export const useDesktopAppMenuBridge = () => {
       if (action === 'redo') {
         void redoDocumentEditor();
         return;
-      }
-
-      if (action === 'editor-zoom-in') {
-        activeZoomBridge()?.zoomIn();
-        return;
-      }
-
-      if (action === 'editor-zoom-out') {
-        activeZoomBridge()?.zoomOut();
-        return;
-      }
-
-      if (action === 'editor-zoom-reset') {
-        activeZoomBridge()?.reset();
-        return;
-      }
-
-      if (action === 'open-documentation') {
-        window.open(LEAF_WRITER_DOCS_URL, '_blank', 'noopener,noreferrer');
       }
     });
 

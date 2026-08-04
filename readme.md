@@ -129,12 +129,16 @@ See [apps/desktop/README.md](apps/desktop/README.md) for the compilation and pac
 - [x] Add a note in place, office, and work database cards: 'Awaiting reflection/user input'
 - [x] Database window should not always default to an office name on opening (first entity in database?), especially when set to the person category-maybe load the last entity opened, or the first from the category chosen.
 - [x] Norbert: tag noble title not needed anymore in the central toolbar, since it is integrated into the add tag palette.
+- [x] Complete overhaul of settings, integrating all settings into single tab-separated panel.
+- [x] Data privacy tab
+- [x] Simplify hamburger menu.
+
+TEST
 
 - [ ] TinyMCE still failing to load on start up half the time in macOS
 - [ ] Stupid validation error when saving in Source mode 
-- [ ] I'd really like to split settings into separate tabs...
 - [ ] Instead of all the loading nonsense, let's have a welcome screen on startup: 'Welcome back XX'... maybe
-- [ ] Data privacy
+
 
 ## Plans
 

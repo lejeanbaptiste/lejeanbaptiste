@@ -113,6 +113,7 @@
         },
         "show_pack_string_counts": "Show live string counts in Tag Bomb",
         "show_pack_string_counts_description": "Counts strings in each authority pack when Tag Bomb opens. Can slow opening.",
+        "asset_packs_note": "Offline authority packs and map tiles now live in the Asset packs tab.",
 
         "messages": {
           "Are you sure you want to delete the authority -value": "<0>Are you sure you want to delete the authority </0><1>{{name}}</1><2>?</2>",
@@ -201,6 +202,41 @@
         "translation_instructions_placeholder": "Describe the translation guidance to apply here.",
         "title": "AI API"
       },
+      "ai_prompts": {
+        "title": "AI prompts",
+        "description": "Edit task wording for suggest, audit, and disambiguation curation. The surrounding app instructions and JSON shape stay fixed.",
+        "profile": "Profile",
+        "profile_label": "Profile label",
+        "suggest_task_text": "Suggest task text",
+        "audit_clean_task_text": "Audit clean task text",
+        "disambiguation_rank_task_text": "Disambiguation rank task text",
+        "save_as_new_profile": "Save as new profile",
+        "new_profile_placeholder": "Groq classical biography",
+        "delete_profile": "Delete profile",
+        "revert_to_default_text": "Revert to default text",
+        "save_as_new": "Save as new…",
+        "enter_new_profile_name": "Enter a name for the new profile."
+      },
+      "asset_packs": {
+        "offline_authorities": "Offline authorities",
+        "map_tiles": "Offline map tiles"
+      },
+      "interface": {
+        "show_pack_string_counts_warning": "Warning: showing pack string counts can be slow on large packs."
+      },
+      "privacy": {
+        "description": "What LEAF-Writer stores locally and what it only sends if you choose to use a networked feature.",
+        "summary": "LEAF-Writer is mostly local-first in normal desktop use. Your files, databases, and settings stay on your machine unless you use a feature that explicitly talks to another service.",
+        "local_first": "Normal editing, local entity databases, offline packs, and most settings remain on your computer.",
+        "documents_title": "Document metadata",
+        "documents_body": "The user name you enter in Settings can be written into your documents as project/document metadata. That name travels with the file because it becomes part of the document itself, not because the app uploads it somewhere automatically.",
+        "leaderboard_title": "Leaderboard submission",
+        "leaderboard_body": "If you choose to submit your service record to the leaderboard, LEAF-Writer sends your GitHub identity token for verification, your displayed user name/rank context, your achievement metrics counts, and your optional avatar image to the leaderboard service.",
+        "telemetry_title": "Crash and error reporting",
+        "telemetry_body": "The editor code supports optional Sentry crash/error reporting if a build enables it. That is configuration-dependent rather than a normal editing requirement.",
+        "web_title": "Web-only measurement cookies",
+        "web_body": "In the web app, anonymous Google Analytics page/editor events can be sent only if measurement cookies are accepted. The desktop app does not use that cookie-consent analytics flow."
+      },
       "markupPanel": {
         "Allow drag and drop": "Allow drag and drop",
         "Show Text Nodes": "Show Text Nodes",
@@ -244,6 +280,37 @@
         "skip_delete_confirm": "Delete files and folders without asking",
         "skip_entity_detach_confirm": "Detach authority ids from entities without asking",
         "title": "Warnings"
+      },
+      "plugins": {
+        "description": "Plugins are project-specific. Enabled plugins affect this project's authority packs and auto-tagging methods.",
+        "filtered_for_language": "Showing plugins available for {{language}}.",
+        "installed_tab": "Installed ({{count}})",
+        "available_tab": "Search available plugins ({{count}})",
+        "none_installed": "No plugins installed yet.",
+        "none_available": "No compatible plugins found.",
+        "install_from_folder": "Install from folder…",
+        "install": "Install",
+        "documentation": "Documentation",
+        "update_to_version": "Update to v{{version}}",
+        "enable_plugin": "Enable {{name}}",
+        "plugin_settings": "Plugin settings",
+        "auto_tagging_methods": "{{count}} auto-tagging method(s)",
+        "authority_packs": "{{count}} authority pack(s)"
+      },
+      "project": {
+        "open_existing_description": "The current project settings still use the existing project settings panel.",
+        "current_panel_note": "Project settings stay project-scoped and keep their current workflow here while the rest of Settings is unified.",
+        "open_button": "Open current project settings"
+      },
+      "tabs": {
+        "project": "Project",
+        "github": "GitHub",
+        "appearance": "Appearance",
+        "behaviour": "Behaviour",
+        "privacy": "Data privacy",
+        "asset_packs": "Asset packs",
+        "plugins": "Plugins",
+        "ai": "AI"
       }
     },
     "desktop": {
@@ -256,7 +323,7 @@
         "entity_database_move": "Move…",
         "entity_database_move_success": "Entity database moved.",
         "entity_database_move_error": "Could not move the entity database.",
-        "entity_database_reveal": "Reveal in file browser",
+        "entity_database_reveal": "Reveal",
         "field_required": "This field is required.",
         "remember_workspace_on_startup": "Reopen project and tabs on startup",
         "setup_incomplete": "Set your language, user name, and database folder before closing settings.",

@@ -1,5 +1,4 @@
 import { Box, MenuItem, MenuList } from '@mui/material';
-import { useRef } from 'react';
 import { useTranslation } from 'react-i18next';
 
 export type MenuItemProps = {
@@ -10,21 +9,15 @@ export type MenuItemProps = {
 
 interface SideMenuProps {
   items: MenuItemProps[];
+  activeId: string;
+  onChange: (id: string) => void;
 }
 
-export const SideMenu = ({ items }: SideMenuProps) => {
+export const SideMenu = ({ items, activeId, onChange }: SideMenuProps) => {
   const { t } = useTranslation();
-  const refElemennt = useRef<HTMLDivElement>();
-
-  const handleClick = (section: string) => {
-    refElemennt.current?.parentElement
-      ?.querySelector?.(`#${section}`)
-      ?.scrollIntoView({ behavior: 'smooth' });
-  };
 
   return (
     <Box
-      ref={refElemennt}
       aria-label={t('LW.commons.side_menu')}
       minWidth={148}
       mt={0.75}
@@ -43,7 +36,8 @@ export const SideMenu = ({ items }: SideMenuProps) => {
             <MenuItem
               key={id}
               dense
-              onClick={() => handleClick(id)}
+              onClick={() => onChange(id)}
+              selected={activeId === id}
               sx={{
                 borderRadius: 1,
                 fontSize: '0.875rem',
@@ -51,6 +45,13 @@ export const SideMenu = ({ items }: SideMenuProps) => {
                 mx: 0.25,
                 my: 0.15,
                 py: 0.1,
+                '&.Mui-selected': {
+                  bgcolor: 'action.selected',
+                  fontWeight: 600,
+                },
+                '&.Mui-selected:hover': {
+                  bgcolor: 'action.selected',
+                },
               }}
             >
               {label}

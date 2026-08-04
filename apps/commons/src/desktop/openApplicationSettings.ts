@@ -37,6 +37,7 @@ const callEnsureLeafWriterReady = async (timeoutMs = 3000): Promise<boolean> => 
 };
 
 interface OpenApplicationSettingsOptions {
+  initialTab?: import('../../../../packages/cwrc-leafwriter/src/dialogs/settings/types').SettingsTabId;
   onClose?: (action?: string) => void;
 }
 
@@ -45,11 +46,17 @@ export const openApplicationSettings = async (
 ): Promise<boolean> => {
   if (!isDesktop()) return false;
 
-  const dialogProps = options?.onClose ? { onClose: options.onClose } : undefined;
+  const dialogProps = {
+    ...(options?.initialTab ? { initialTab: options.initialTab } : {}),
+    ...(options?.onClose ? { onClose: options.onClose } : {}),
+  };
 
   const openDialog = () => {
     if (window.writer) {
-      window.writer.overmindActions.ui.openDialog({ type: 'settings', props: dialogProps });
+      window.writer.overmindActions.ui.openDialog({
+        type: 'settings',
+        props: Object.keys(dialogProps).length > 0 ? dialogProps : undefined,
+      });
       return true;
     }
 

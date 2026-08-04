@@ -588,7 +588,6 @@ export interface ElectronAPI {
   isWindowMaximized: () => Promise<boolean>;
   onWindowMaximized: (callback: (maximized: boolean) => void) => () => void;
   onAppMenuAction: (callback: (action: string) => void) => () => void;
-  setPluginsMenuVisible: (visible: boolean) => Promise<void>;
   signalRendererReady: () => Promise<void>;
   onExternalFileChange: (callback: (filePath: string) => void) => () => void;
   showNativeMessageBox: (
@@ -972,8 +971,6 @@ const electronAPI: ElectronAPI = {
     ipcRenderer.on('app:menu-action', listener);
     return () => ipcRenderer.removeListener('app:menu-action', listener);
   },
-  setPluginsMenuVisible: (visible: boolean) =>
-    ipcRenderer.invoke('set-plugins-menu-visible', visible),
   signalRendererReady: () => ipcRenderer.invoke('signalRendererReady'),
   onExternalFileChange: (callback: (filePath: string) => void) => {
     const listener = (_event: Electron.IpcRendererEvent, payload: { filePath: string }) => {
