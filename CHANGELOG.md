@@ -85,3 +85,5 @@
 - Welcome splash now includes toggle to activate/disactivate advanced features
 - Removed legacy popups ('Hey, looks like you're copying... Do you want to learn about copying?')
 - Settings panel overhaul
+- Removed legacy help pop-ups
+- Editor pane now follows programme's light/dark choice, rather than independantly following the OS.

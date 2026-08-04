@@ -8,7 +8,6 @@ import {
   ListItemIcon,
   ListItemText,
 } from '@mui/material';
-import { useColorScheme } from '@mui/material/styles';
 import { Icon } from '@src/icons';
 import { useActions, useAppState } from '@src/overmind';
 import type { PaletteMode } from '@src/types';
@@ -17,8 +16,6 @@ import { useTranslation } from 'react-i18next';
 import type { OptionProps, SubMenu } from '../types';
 
 export const Appearance = ({ onBack, onClose }: SubMenu) => {
-  const { setMode } = useColorScheme();
-
   const { themeAppearance } = useAppState().ui;
   const { setThemeAppearance } = useActions().ui;
 
@@ -26,7 +23,8 @@ export const Appearance = ({ onBack, onClose }: SubMenu) => {
 
   const handleSelect = (event: MouseEvent, value: string) => {
     event.stopPropagation();
-    setMode(value as PaletteMode);
+    // Resolve light/dark in Overmind; SyncColorScheme updates MUI. Never call
+    // setMode('system') — that makes MUI follow the OS and flicker.
     setThemeAppearance(value as PaletteMode);
     onClose();
   };

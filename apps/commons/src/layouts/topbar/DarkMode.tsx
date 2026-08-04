@@ -1,7 +1,6 @@
 import Brightness7Icon from '@mui/icons-material/Brightness7';
 import DarkModeIcon from '@mui/icons-material/DarkMode';
 import { IconButton } from '@mui/material';
-import { useColorScheme } from '@mui/material/styles';
 import { useActions, useAppState } from '@src/overmind';
 import { motion, type Variants } from 'motion/react';
 import { useTranslation } from 'react-i18next';
@@ -11,11 +10,8 @@ export const DarkMode = () => {
   const { themeAppearance } = useAppState().ui;
   const { setThemeAppearance } = useActions().ui;
 
-  const { setMode } = useColorScheme();
-
   const switchAppearenceMode = () => {
     const value = themeAppearance === 'dark' ? 'light' : 'dark';
-    setMode(value);
     setThemeAppearance(value);
   };
 

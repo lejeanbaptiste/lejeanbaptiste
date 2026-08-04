@@ -13,7 +13,12 @@ export const Header = ({ onClose }: { onClose: () => void }) => {
       alignItems="center"
       py={1.25}
       spacing={1}
-      sx={{ borderBottom: 1, borderColor: 'divider', bgcolor: 'background.paper' }}
+      sx={{
+        flexShrink: 0,
+        borderBottom: 1,
+        borderColor: 'divider',
+        bgcolor: 'background.paper',
+      }}
     >
       <Icon name="settings" sx={{ height: 18, width: 18 }} />
       <Typography sx={{ fontWeight: 600 }} variant="h6">

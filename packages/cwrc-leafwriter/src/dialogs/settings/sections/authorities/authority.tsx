@@ -58,9 +58,19 @@ export const Authority = ({ authorityService }: { authorityService: AuthoritySer
       >
         <AccordionSummary
           aria-controls={`panel-${id}-content`}
-          expandIcon={<ExpandMoreIcon />}
+          expandIcon={<ExpandMoreIcon fontSize="small" />}
           id={`panel-${id}-header`}
-          sx={{ span: { justifyContent: 'space-between' } }}
+          sx={{
+            minHeight: 36,
+            px: 0.75,
+            '& .MuiAccordionSummary-content': {
+              my: 0.25,
+              gap: 1,
+              alignItems: 'center',
+              justifyContent: 'flex-start',
+            },
+            '& .MuiAccordionSummary-content.Mui-expanded': { my: 0.25 },
+          }}
         >
           <Header
             expanded={!!expanded}

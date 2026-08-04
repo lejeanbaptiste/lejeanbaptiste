@@ -203,7 +203,7 @@
       "advanced options": "Options avancées",
       "annotation": "annotation",
       "appearance": "apparence",
-      "authorities": "autorités",
+      "authorities": "Autorités",
       "authority": "Autorité",
       "beta": "bêta",
       "cancel": "annuler",
@@ -218,11 +218,12 @@
       "leave_source_anyway": "quitter le mode Source quand même",
       "edit": "modifier",
       "editor": "éditeur",
-      "entity types": "types d'entités",
+      "entity types": "Types d'entités",
+      "entity_types": "Types d'entités",
       "experimental": "expérimental",
       "hint": "indice",
       "instructions": "Instructions",
-      "interface": "interface",
+      "interface": "Interface",
       "language": "langue",
       "manual input": "saisie manuelle",
       "markup panel": "panneau de balisage",
@@ -235,13 +236,14 @@
       "On this page": "Sur cette page",
       "other": "autre",
       "Privacy Policy": "Politique de confidentialité",
+      "profile": "Profil",
       "reset": "réinitialiser",
       "save": "sauvegarder",
       "schema": "schéma",
       "schemas": "schémas",
       "search": "recherche",
       "select": "sélectionner",
-      "settings": "paramètres",
+      "settings": "Paramètres",
       "side menu": "menu latéral",
       "undo": "annuler",
       "update": "mise à jour"
@@ -604,9 +606,6 @@
         "offline_authorities": "Autorités hors ligne",
         "map_tiles": "Tuiles cartographiques hors ligne"
       },
-      "interface": {
-        "show_pack_string_counts_warning": "Attention : afficher le nombre de chaînes des packs peut être lent sur de gros packs."
-      },
       "privacy": {
         "description": "Ce que LEAF-Writer conserve localement et ce qu’il n’envoie que si vous choisissez d’utiliser une fonction en réseau.",
         "summary": "LEAF-Writer fonctionne principalement en local dans l’usage normal de l’application de bureau. Vos fichiers, bases de données et paramètres restent sur votre machine, sauf si vous utilisez une fonction qui contacte explicitement un autre service.",
@@ -681,13 +680,18 @@
       },
       "tabs": {
         "project": "Projet",
+        "profile": "Profil",
+        "interface": "Interface",
+        "guardrails": "Garde-fous",
+        "authorities": "Autorités",
         "github": "GitHub",
         "appearance": "Apparence",
         "behaviour": "Comportement",
-        "privacy": "Confidentialité",
         "asset_packs": "Packs de ressources",
         "plugins": "Plugins",
-        "ai": "IA"
+        "ai": "IA",
+        "privacy": "Confidentialité",
+        "entity_types": "Types d'entités"
       }
     },
     "desktop": {

@@ -221,9 +221,6 @@
         "offline_authorities": "Offline authorities",
         "map_tiles": "Offline map tiles"
       },
-      "interface": {
-        "show_pack_string_counts_warning": "Warning: showing pack string counts can be slow on large packs."
-      },
       "privacy": {
         "description": "What LEAF-Writer stores locally and what it only sends if you choose to use a networked feature.",
         "summary": "LEAF-Writer is mostly local-first in normal desktop use. Your files, databases, and settings stay on your machine unless you use a feature that explicitly talks to another service.",
@@ -304,13 +301,18 @@
       },
       "tabs": {
         "project": "Project",
+        "profile": "Profile",
+        "interface": "Interface",
+        "guardrails": "Guardrails",
+        "authorities": "Authorities",
         "github": "GitHub",
         "appearance": "Appearance",
         "behaviour": "Behaviour",
-        "privacy": "Data privacy",
         "asset_packs": "Asset packs",
         "plugins": "Plugins",
-        "ai": "AI"
+        "ai": "AI",
+        "privacy": "Data privacy",
+        "entity_types": "Entity types"
       }
     },
     "desktop": {
@@ -570,7 +572,7 @@
       "addon by": "Addon by",
       "advanced options": "Advanced options",
       "annotation": "annotation",
-      "authorities": "authorities",
+      "authorities": "Authorities",
       "authority": "Authority",
       "added_by": "Added by",
       "appearance": "Appearance",
@@ -591,7 +593,7 @@
       "experimental": "experimental",
       "hint": "hint",
       "instructions": "Instructions",
-      "interface": "interface",
+      "interface": "Interface",
       "language": "language",
       "loading": "Loading…",
       "manual input": "manual input",
@@ -613,7 +615,7 @@
       "search": "search",
       "select": "select",
       "select_language": "Select language…",
-      "settings": "settings",
+      "settings": "Settings",
       "side_menu": "Side menu",
       "undo": "undo",
       "update": "update"

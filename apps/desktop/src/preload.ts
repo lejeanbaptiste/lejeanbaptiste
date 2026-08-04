@@ -552,6 +552,7 @@ export interface ElectronAPI {
   ) => Promise<'accepted' | 'declined'>;
   authorityLifecycleRevealFolder?: () => Promise<boolean>;
   getShouldUseDarkColors?: () => Promise<boolean>;
+  setNativeThemeSource?: (source: 'system' | 'light' | 'dark') => Promise<boolean>;
   onNativeThemeChanged?: (callback: (shouldUseDarkColors: boolean) => void) => () => void;
   onAuthorityLifecycleProgress?: (
     callback: (
@@ -910,6 +911,8 @@ const electronAPI: ElectronAPI = {
     ipcRenderer.invoke('authorityLifecycle:promptEnable', profile, strings),
   authorityLifecycleRevealFolder: () => ipcRenderer.invoke('authorityLifecycle:revealFolder'),
   getShouldUseDarkColors: () => ipcRenderer.invoke('nativeTheme:shouldUseDarkColors'),
+  setNativeThemeSource: (source: 'system' | 'light' | 'dark') =>
+    ipcRenderer.invoke('nativeTheme:setThemeSource', source),
   onNativeThemeChanged: (callback) => {
     const listener = (_event: Electron.IpcRendererEvent, shouldUseDarkColors: boolean) =>
       callback(shouldUseDarkColors);

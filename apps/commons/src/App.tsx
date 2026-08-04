@@ -4,7 +4,7 @@ import { Storage } from '@src/dialogs';
 import { isDesktop } from '@src/types/desktop';
 import ModalProvider from 'mui-modal-provider';
 import { SnackbarProvider } from 'notistack';
-import { useEffect } from 'react';
+import { useEffect, useLayoutEffect } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useLocation, useRoutes } from 'react-router';
 import { useDesktopAppMenuBridge } from './desktop/useDesktopAppMenuBridge';
@@ -14,14 +14,13 @@ import { routes } from './routes';
 import { theme } from './theme';
 
 /**
- * `ThemeProvider`'s `defaultMode` prop only seeds MUI's CSS-variable color
- * scheme once, at mount — updating it on a later render is a no-op. Anything
- * reading mode via `useColorScheme()` (e.g. TabIcon's PNG selection) needs
- * this explicit sync to actually follow `darkMode` after the first render.
+ * Drive MUI's CSS-variable scheme from Overmind `darkMode` only.
+ * Never leave MUI in `system` mode — that follows the OS and flickers when
+ * the app preference is light/dark while the OS is the opposite.
  */
 const SyncColorScheme = ({ darkMode }: { darkMode: boolean }) => {
   const { setMode } = useColorScheme();
-  useEffect(() => {
+  useLayoutEffect(() => {
     setMode(darkMode ? 'dark' : 'light');
   }, [darkMode, setMode]);
   return null;
@@ -86,7 +85,13 @@ export const App = () => {
   }, [themeAppearance]);
 
   return (
-    <ThemeProvider theme={theme} defaultMode={darkMode ? 'dark' : 'light'}>
+    <ThemeProvider
+      theme={theme}
+      defaultMode={darkMode ? 'dark' : 'light'}
+      // Overmind owns the preference; do not let MUI rehydrate `mui-mode=system`
+      // from localStorage (that causes light-mode chrome to flash dark on OS dark).
+      storageManager={null}
+    >
       <SyncColorScheme darkMode={darkMode} />
       <ModalProvider>
         <SnackbarProvider autoHideDuration={5000} disableWindowBlurListener>

@@ -409,6 +409,7 @@ export interface ElectronAPI {
   ) => Promise<'accepted' | 'declined'>;
   authorityLifecycleRevealFolder?: () => Promise<boolean>;
   getShouldUseDarkColors?: () => Promise<boolean>;
+  setNativeThemeSource?: (source: 'system' | 'light' | 'dark') => Promise<boolean>;
   onNativeThemeChanged?: (callback: (shouldUseDarkColors: boolean) => void) => () => void;
   onAuthorityLifecycleProgress?: (
     callback: (progress: AuthorityLifecycleProgress) => void,

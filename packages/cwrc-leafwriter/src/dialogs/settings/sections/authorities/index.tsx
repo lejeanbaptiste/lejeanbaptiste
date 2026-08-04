@@ -21,7 +21,7 @@ export const Authorities = ({ includeDesktopAssets = true }: { includeDesktopAss
     typeof window !== 'undefined' && !!(window as Window & { electronAPI?: unknown }).electronAPI;
 
   return (
-    <Stack width="100%" mt={1} py={1} gap={0.5}>
+    <Stack width="100%" mt={0.25} gap={0.25}>
       {isDesktop && includeDesktopAssets && (
         <>
           <DesktopOfflineAuthorities />

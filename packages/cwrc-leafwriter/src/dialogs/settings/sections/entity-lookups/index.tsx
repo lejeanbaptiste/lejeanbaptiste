@@ -1,5 +1,5 @@
 import InfoOutlinedIcon from '@mui/icons-material/InfoOutlined';
-import { Stack, Grid, Typography } from '@mui/material';
+import { Stack, Typography } from '@mui/material';
 import { useLiveQuery } from 'dexie-react-hooks';
 import { useTranslation } from 'react-i18next';
 import { db } from '../../../../db';
@@ -20,10 +20,10 @@ export const EntityLookups = () => {
   );
 
   return (
-    <Stack width="100%" py={1} spacing={2}>
-      <Stack direction="row" mx={1} gap={1.5}>
-        <InfoOutlinedIcon sx={{ height: 16, width: 16, ml: 1, mt: '2px' }} />
-        <Typography color="textSecondary" variant="body2">
+    <Stack width="100%" py={0.5} spacing={1.25}>
+      <Stack direction="row" mx={0.5} gap={1}>
+        <InfoOutlinedIcon sx={{ height: 16, width: 16, mt: '2px', flexShrink: 0 }} />
+        <Typography color="textSecondary" variant="body2" sx={{ fontSize: '0.8rem', lineHeight: 1.35 }}>
           {t('LW.settings.authorities.messages.rearrange authorities to prioritize results')}.{' '}
           {t(
             'LW.settings.authorities.messages.activate or deactivate authorities for each entity type',
@@ -35,13 +35,19 @@ export const EntityLookups = () => {
           .
         </Typography>
       </Stack>
-      <Grid container spacing={1}>
+      <Stack
+        direction="row"
+        flexWrap="wrap"
+        useFlexGap
+        spacing={1}
+        sx={{ alignItems: 'stretch' }}
+      >
         {entityTypes?.map((service) => (
-          <Grid key={service} size={4}>
+          <Stack key={service} sx={{ flex: '1 1 180px', minWidth: 160, maxWidth: 240 }}>
             <EntityType entityType={service} />
-          </Grid>
+          </Stack>
         ))}
-      </Grid>
+      </Stack>
     </Stack>
   );
 };

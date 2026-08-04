@@ -60,26 +60,26 @@ export const EntityType = ({ entityType }: { entityType: NamedEntityType }) => {
   return (
     <Stack
       height="100%"
-      p={1}
-      gap={1}
+      p={0.75}
+      gap={0.5}
       border={(theme) => `1px solid ${theme.vars.palette.divider}`}
       borderRadius={1}
     >
       <Stack
         direction="row"
         alignItems="center"
-        gap={1}
-        mx={1}
-        pb={0.5}
+        gap={0.75}
+        mx={0.5}
+        pb={0.35}
         borderBottom={1}
         borderColor="divider"
       >
         <Icon color="primary" fontSize="small" name={entityType} />
-        <Typography color="primary" fontWeight={700} variant="body1">
+        <Typography color="primary" fontWeight={700} variant="body2">
           {capitalizeString(t(`LW.entity.${entityType}`))}
         </Typography>
       </Stack>
-      <Stack gap={0.25}>
+      <Stack gap={0}>
         <DndContext
           collisionDetection={closestCenter}
           onDragEnd={handleDragEnd}

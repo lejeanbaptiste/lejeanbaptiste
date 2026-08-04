@@ -53,18 +53,48 @@ export const onInitializeOvermind = ({ state, actions, effects }: Context, _over
 export const setThemeAppearance = ({ state, actions, effects }: Context, value: PaletteMode) => {
   state.ui.themeAppearance = value;
 
-  const darkMode =
-    value === 'system'
-      ? window.matchMedia('(prefers-color-scheme: dark)').matches
-      : value === 'light'
-        ? false
-        : true;
-
-  actions.ui.setDarkMode(darkMode);
-
   effects.editor.api.saveToLocalStorage<PaletteMode>('themeAppearance', value);
 
-  setTimeout(() => window.dispatchEvent(new Event('changeTheme')), 0);
+  try {
+    window.localStorage.removeItem('mui-mode');
+  } catch {
+    // ignore
+  }
+
+  const applyResolvedDarkMode = (darkMode: boolean) => {
+    actions.ui.setDarkMode(darkMode);
+    setTimeout(() => window.dispatchEvent(new Event('changeTheme')), 0);
+  };
+
+  const electronAPI = (
+    window as Window & {
+      electronAPI?: {
+        setNativeThemeSource?: (source: PaletteMode) => Promise<boolean>;
+        getShouldUseDarkColors?: () => Promise<boolean>;
+      };
+    }
+  ).electronAPI;
+
+  if (electronAPI?.setNativeThemeSource) {
+    void electronAPI.setNativeThemeSource(value).then(async () => {
+      if (value === 'system') {
+        const osDark = await electronAPI.getShouldUseDarkColors?.();
+        applyResolvedDarkMode(
+          osDark ?? window.matchMedia('(prefers-color-scheme: dark)').matches,
+        );
+        return;
+      }
+      applyResolvedDarkMode(value === 'dark');
+    });
+    if (value !== 'system') applyResolvedDarkMode(value === 'dark');
+    return;
+  }
+
+  applyResolvedDarkMode(
+    value === 'system'
+      ? window.matchMedia('(prefers-color-scheme: dark)').matches
+      : value === 'dark',
+  );
 };
 
 export const listenChangeLanguage = async ({ state, effects }: Context) => {

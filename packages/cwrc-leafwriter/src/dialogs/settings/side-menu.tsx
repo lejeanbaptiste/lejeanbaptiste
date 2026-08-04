@@ -24,6 +24,12 @@ export const SideMenu = ({ items, activeId, onChange }: SideMenuProps) => {
       gap={0.25}
       ml={-0.25}
       sx={{
+        alignSelf: 'stretch',
+        overflowY: 'auto',
+        flexShrink: 0,
+        borderRight: 1,
+        borderColor: 'divider',
+        pr: 0.5,
         '& .MuiMenuList-root': {
           py: 0,
         },

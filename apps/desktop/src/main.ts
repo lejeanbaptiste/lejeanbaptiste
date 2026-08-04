@@ -1281,6 +1281,16 @@ const registerIpcHandlers = () => {
   // Electron's nativeTheme module tracks it through the native APIs instead,
   // so we rebroadcast its 'updated' event to the renderer.
   ipcMain.handle('nativeTheme:shouldUseDarkColors', () => nativeTheme.shouldUseDarkColors);
+  ipcMain.handle(
+    'nativeTheme:setThemeSource',
+    (_event, source: 'system' | 'light' | 'dark') => {
+      if (source !== 'system' && source !== 'light' && source !== 'dark') return false;
+      // Pin Chromium's prefers-color-scheme to the app preference so OS dark
+      // does not briefly restyle chrome when the user chose light (and vice versa).
+      nativeTheme.themeSource = source;
+      return true;
+    },
+  );
   nativeTheme.on('updated', () => {
     for (const window of BrowserWindow.getAllWindows()) {
       if (!window.isDestroyed()) {

@@ -106,19 +106,44 @@ export const setCookieConsent = ({ state }: Context, values?: string[]) => {
 export const setThemeAppearance = ({ state, actions, effects }: Context, value: PaletteMode) => {
   state.ui.themeAppearance = value;
 
-  const darkMode =
-    value === 'system'
-      ? window.matchMedia('(prefers-color-scheme: dark)').matches
-      : value === 'light'
-        ? false
-        : true;
-
-  actions.ui.setDarkMode(darkMode);
-
   effects.storage.api.saveToLocalStorage('themeAppearance', value);
 
-  // Propagate the changes to other modules that might be listening in the page
-  setTimeout(() => window.dispatchEvent(new Event('changeTheme')), 0);
+  // Drop any stale MUI-persisted mode from earlier builds.
+  try {
+    window.localStorage.removeItem('mui-mode');
+  } catch {
+    // ignore
+  }
+
+  const applyResolvedDarkMode = (darkMode: boolean) => {
+    actions.ui.setDarkMode(darkMode);
+    setTimeout(() => window.dispatchEvent(new Event('changeTheme')), 0);
+  };
+
+  // Align Chromium prefers-color-scheme with the app preference so leftover
+  // @media (prefers-color-scheme) CSS and OS listeners cannot flash the chrome.
+  const electronAPI = window.electronAPI;
+  if (electronAPI?.setNativeThemeSource) {
+    void electronAPI.setNativeThemeSource(value).then(async () => {
+      if (value === 'system') {
+        const osDark = await electronAPI.getShouldUseDarkColors?.();
+        applyResolvedDarkMode(
+          osDark ?? window.matchMedia('(prefers-color-scheme: dark)').matches,
+        );
+        return;
+      }
+      applyResolvedDarkMode(value === 'dark');
+    });
+    // Optimistic update for light/dark so the UI reacts immediately.
+    if (value !== 'system') applyResolvedDarkMode(value === 'dark');
+    return;
+  }
+
+  applyResolvedDarkMode(
+    value === 'system'
+      ? window.matchMedia('(prefers-color-scheme: dark)').matches
+      : value === 'dark',
+  );
 };
 
 export const setSkipExplorerDeleteConfirm = (
