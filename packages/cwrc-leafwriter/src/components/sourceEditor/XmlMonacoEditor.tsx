@@ -14,6 +14,7 @@ import {
   SOURCE_CURSOR_MOVED_EVENT,
   type SourceCursorMovedDetail,
 } from '../editorLocationBar';
+import { registerClosingTagAutoInsert } from './closingTagAutoInsert';
 import { registerClosingTagCompletion } from './closingTagCompletion';
 import { findEnclosingTagPair, getUnwrapEdits } from './closingTagParser';
 import { registerLinkedTagEditing } from './linkedTagEditing';
@@ -155,6 +156,10 @@ export const XmlMonacoEditor = ({
 
     const monacoEditor = monaco.editor.create(divEl.current, {
       automaticLayout: true,
+      // XML language config already pairs <…> and quotes; make that explicit so
+      // typing `<` inserts `>` after the cursor (Oxygen-style bracket close).
+      autoClosingBrackets: 'languageDefined',
+      autoClosingQuotes: 'languageDefined',
       fontSize: sourceFontZoom.get(),
       lineNumbers: 'on',
       language: 'xml',
@@ -333,6 +338,7 @@ export const XmlMonacoEditor = ({
 
     registerSourceFindEditor(monacoEditor);
     const pairedTagUnwrapDisposable = registerPairedTagUnwrap(monacoEditor);
+    const closingTagAutoInsertDisposable = registerClosingTagAutoInsert(monacoEditor);
     lastEditorValueRef.current = value;
     const model = monacoEditor.getModel();
     if (model) {
@@ -353,6 +359,7 @@ export const XmlMonacoEditor = ({
       closingTagDisposable.dispose();
       linkedTagDisposable.dispose();
       pairedTagUnwrapDisposable.dispose();
+      closingTagAutoInsertDisposable.dispose();
       unsubscribeFontZoom();
       if (window.__leafWriterSourceZoom === zoomBridge) {
         delete window.__leafWriterSourceZoom;

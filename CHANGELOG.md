@@ -90,3 +90,4 @@
 - Fixed: save timestamp was not putting @version on <application>, causing validation error in Source mode. 
 - Serialised boots to avoid TinyMCE load race that leaves LJB without an editor pane.
 - Simplified slideshow of loading screens on startup.
+- Have Monaco auto insert appropriate closing tag on `</`

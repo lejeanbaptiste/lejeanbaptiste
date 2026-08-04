@@ -123,13 +123,14 @@ See [apps/desktop/README.md](apps/desktop/README.md) for the compilation and pac
 
 - [x] Welcome splash: include toggle to activate/disactivate advanced features (direct XML editing), 
 - [x] Simplify hamburger menu.
+- [ ] Fully reproduce Oxgen typing experience in Source mode: 
+  - when you type an opening bracket, the closing one is automatically inserted after it (not fill suggest, automatic insert)
+  - Typing `</` automatically inserts a closing bracket to whatever the current opening one is, including, and especially, when there is an unclosed opening bracket.
+
 
 ## Big crazy ambitious dreams
 
-- [ ] Offer LanguageTool plugin for translation and note surfaces.
-- [ ] Fully reproduce Oxgen typing experience in Source mode: 
-  - when you type an opening bracket, the closing one is automatically inserted after it (not fill suggest, automatic insert)
-  - Typing `</` automatically inserts a closing bracket to whatever the current opening one is, including, and especially, when there is an unclosed opening bracket. 
+- [ ] Offer LanguageTool plugin for translation and note surfaces. 
 - Finish word plugin
   - [ ] Tool to manage name forms (I'll explain)
   - [ ] Production version, ready for install and distribution 
