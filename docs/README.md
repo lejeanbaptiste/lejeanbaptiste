@@ -66,7 +66,8 @@ Supporting / deeper:
 | [import-planning.md](import-planning.md)                                                                                | Document import (blind + profiled)                            |
 | [find-replace-planning.md](find-replace-planning.md)                                                                    | Find / replace                                                |
 | [xpath-sidebar-planning.md](xpath-sidebar-planning.md)                                                                  | XPath sidebar                                                 |
-| [translation-planning.md](translation-planning.md)                                                                      | Translation pane (phases A–E largely done — reference)        |
+| [translation-planning.md](translation-planning.md)                                                                      | Translation pane (phases A–E + card reader — reference)       |
+| [live-passage-citation-planning.md](live-passage-citation-planning.md)                                                  | Future Word/LO live passage citations (dream)                 |
 | [tagging-planning.md](tagging-planning.md)                                                                              | Keyboard tagging (mostly shipped — historical plan)           |
 | [project-schema-planning.md](project-schema-planning.md)                                                                | Schema onboarding plan (mostly shipped — see schema_handling) |
 | [sanmiao-ljb-integration.md](sanmiao-ljb-integration.md)                                                                | Sanmiao bridge design notes                                   |

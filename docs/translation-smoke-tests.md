@@ -38,6 +38,14 @@ To reset a file's translation state: delete its `*.translation.xml` companions a
 - [x] Open a file, don't move the cursor, open the Translation tab — pane shows the unit the cursor is already in (initial-sync check).
 - [x] Cursor in a heading or outside any paragraph — pane shows the "select a paragraph" placeholder, not stale content.
 
+### 3b. Card reader (continuous unit list)
+
+- [ ] Translation pane shows **all** linked units open in one scrollable column (full text for inactive units; one shared toolbar — no per-card buttons or visible xml:ids).
+- [ ] Active unit has a red left-edge bar and hosts the rich editor + footnotes.
+- [ ] Edit unit A, click unit B (or use prev/next in the toolbar), return to A — A's text is still saved on the correct `@corresp` unit.
+- [ ] Clicking a card selects the matching paragraph in the source; moving the caret in the source scrolls/highlights the matching card.
+- [ ] Find jump to a translation hit still opens the right card and highlights the match.
+
 ## 4. Splitting & reindex (⚠ linking — highest corruption risk)
 
 - [x] **Split at very end of a paragraph** (Enter with caret after the last character): a new empty sibling paragraph is created, cursor moves into it, and it has **no** `xml:id` until save (never a copy of the original's).

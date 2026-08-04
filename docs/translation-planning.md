@@ -1,6 +1,6 @@
 # Translation Mode — Phased Implementation Plan
 
-**Status (2026-08-01):** **Shipped** — Phases A–E complete (companions, tab, find scope, cascades, old dialog removed). Richer translation-pane word-processing is a separate Future item, not part of this plan.
+**Status (2026-08-01):** **Shipped** — Phases A–E complete (companions, tab, find scope, cascades, old dialog removed). Richer translation-pane word-processing is a separate Future item, not part of this plan. **Card reader (2026-08-04):** continuous unit list in the translation pane — see Future section below.
 
 ## Context
 
@@ -181,3 +181,9 @@ Optional grammar checking for translations:
 5. Latin-script entity names / romanisations from the central entity DB are filtered out of matches.
 
 Managed server starts on first check, not at app launch, and stops on quit.
+
+## Future — card reader (shipped in UI)
+
+The translation pane is a **continuous card list** inside one panel chrome (shared toolbar, LanguageTool, formatting). Every unit stays visually open (full text for inactive units; the active unit hosts the single `contentEditable`). A red left edge marks the selected unit. Technical `xml:id` values stay off the cards (position shown as `n / total` only). Source caret and card clicks stay linked via `selectedUnitId` / `@corresp`; prev/next jump units. Dual facing-page columns with scroll-sync on the source remain an explicit non-goal.
+
+Downstream Word/LibreOffice **live passage citations** (Zotero-like fields for source + translation + bibl + page) are planned separately in [live-passage-citation-planning.md](live-passage-citation-planning.md) — no new TEI tags required.

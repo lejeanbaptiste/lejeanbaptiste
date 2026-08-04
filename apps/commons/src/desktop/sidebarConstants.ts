@@ -25,6 +25,15 @@ export const LEFT_PANEL_WIDTH_STORAGE_KEY = 'ljb-left-panel-width';
 export const RIGHT_PANEL_MIN_WIDTH = 240;
 export const RIGHT_PANEL_DEFAULT_WIDTH = 280;
 export const RIGHT_PANEL_MAX_WIDTH = 520;
+/** While the Translation tab is open the right panel may grow further. */
+export const RIGHT_PANEL_TRANSLATION_MAX_WIDTH = 900;
 export const RIGHT_PANEL_COLLAPSED_WIDTH = 48;
 
 export const RIGHT_PANEL_WIDTH_STORAGE_KEY = 'ljb-right-panel-width';
+
+/** Target width for the translation pane (~45% of the window, capped). */
+export const preferredTranslationPanelWidth = (): number => {
+  if (typeof window === 'undefined') return 640;
+  const target = Math.floor(window.innerWidth * 0.45);
+  return Math.min(RIGHT_PANEL_TRANSLATION_MAX_WIDTH, Math.max(480, target));
+};

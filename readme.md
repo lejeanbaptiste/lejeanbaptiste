@@ -123,16 +123,15 @@ See [apps/desktop/README.md](apps/desktop/README.md) for the compilation and pac
 
 - [x] Welcome splash: include toggle to activate/disactivate advanced features (direct XML editing), 
 - [x] Simplify hamburger menu.
-- [ ] how much chinese-only stuff seeped into non-chinese 
+- [ ] how much chinese-only stuff seeped into non-chinese, and norbert-specific into general chinese options?
 
 #### Translation pane
 
 - [ ] Integrate entity-Zotero: automatically picks up entities, formats them according to what's in the text.
 - [ ] Zdic and hucker for office names 
 - [ ] Copy-and-paste export of paragraphs with translation for word processors
-- [ ] polish feeling of parallel reading?
+- [x] Card reader: continuous units in the translation pane (shared chrome, prev/next; [translation-planning.md](docs/translation-planning.md))
 - [ ] Notes, glosses, doubt markes in translation only?
-- [ ] translation consistency check
 - [ ] Attractive typography
 - [ ] Official titles dictionaries, dates dictionaries for hover-over
 
@@ -140,9 +139,8 @@ See [apps/desktop/README.md](apps/desktop/README.md) for the compilation and pac
 
 - Finish word plugin
   - [ ] Tool to manage name forms (I'll explain)
-  - [ ] Production version, ready for install and distribution 
-- [ ] Make AI assist actually useful: set up a test paragraph with a test set of tagging candidates, tweak the prompt until it gives useful results.
-
+  - [ ] Production version, ready for install and distribution
+  - [ ] Live passage citations (source + translation + bibl + page fields, Sync like entities — [live-passage-citation-planning.md](docs/live-passage-citation-planning.md)) 
 
 ## Plans
 
@@ -206,6 +204,8 @@ See [apps/desktop/README.md](apps/desktop/README.md) for the compilation and pac
 #### AI
 
 - [ ] AI auto-tag: apply audit actions beyond `add` (remove/retag/redraw); schema-driven tag picker; prompt-profile UI
+- [ ] Make AI assist actually useful: set up a test paragraph with a test set of tagging candidates, tweak the prompt until it gives useful results.
+- [ ] Translation panel: check for translation consistency across the document
 
 #### Technical / collaboration
 

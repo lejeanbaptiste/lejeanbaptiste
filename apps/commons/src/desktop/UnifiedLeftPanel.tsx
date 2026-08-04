@@ -52,6 +52,8 @@ export const UnifiedLeftPanel = () => {
   const collapsedRef = useRef(collapsed);
   const suppressedByDockedReviewRef = useRef(false);
   const restoreExpandedAfterDockedReviewRef = useRef(false);
+  const suppressedByTranslationRef = useRef(false);
+  const restoreExpandedAfterTranslationRef = useRef(false);
 
   collapsedRef.current = collapsed;
 
@@ -150,6 +152,28 @@ export const UnifiedLeftPanel = () => {
     return () => {
       for (const eventName of events) window.removeEventListener(eventName, onDockedReviewChange);
     };
+  }, []);
+
+  // Translation mode wants a wide reading surface: collapse the explorer strip
+  // while the Translation tab is open, then restore if it was expanded.
+  useEffect(() => {
+    const onTranslationLayout = (event: Event) => {
+      const active = (event as CustomEvent<{ active: boolean }>).detail?.active ?? false;
+      if (active === suppressedByTranslationRef.current) return;
+      suppressedByTranslationRef.current = active;
+      if (active) {
+        if (suppressedByDockedReviewRef.current) return;
+        setCollapsed((prev) => {
+          restoreExpandedAfterTranslationRef.current = !prev;
+          return true;
+        });
+      } else if (!suppressedByDockedReviewRef.current) {
+        if (restoreExpandedAfterTranslationRef.current) setCollapsed(false);
+        restoreExpandedAfterTranslationRef.current = false;
+      }
+    };
+    window.addEventListener('desktop:translation-layout', onTranslationLayout);
+    return () => window.removeEventListener('desktop:translation-layout', onTranslationLayout);
   }, []);
 
   useEffect(() => {

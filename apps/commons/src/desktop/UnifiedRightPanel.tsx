@@ -22,10 +22,12 @@ import {
   RIGHT_PANEL_DEFAULT_WIDTH,
   RIGHT_PANEL_MAX_WIDTH,
   RIGHT_PANEL_MIN_WIDTH,
+  RIGHT_PANEL_TRANSLATION_MAX_WIDTH,
   RIGHT_PANEL_WIDTH_STORAGE_KEY,
   SIDEBAR_TAB_BUTTON_SIZE,
   SIDEBAR_TAB_ICON_SIZE,
   TOOLBAR_ROW_HEIGHT,
+  preferredTranslationPanelWidth,
 } from './sidebarConstants';
 
 type RightTabId =
@@ -73,8 +75,8 @@ const TAB_ORDER: RightTabId[] = [
 
 const JQUERY_TABS: RightTabId[] = ['imageViewer', 'validation'];
 
-const clampWidth = (width: number) =>
-  Math.min(RIGHT_PANEL_MAX_WIDTH, Math.max(RIGHT_PANEL_MIN_WIDTH, width));
+const clampWidth = (width: number, maxWidth = RIGHT_PANEL_MAX_WIDTH) =>
+  Math.min(maxWidth, Math.max(RIGHT_PANEL_MIN_WIDTH, width));
 
 const readStoredWidth = () => {
   try {
@@ -129,6 +131,8 @@ export const UnifiedRightPanel = () => {
   // overrides whatever the user had open; cleared once restored or once the user
   // makes a manual tab choice of their own.
   const restoreTabRef = useRef<RightTabId | null>(null);
+  /** Width before opening Translation — restored when leaving the tab. */
+  const widthBeforeTranslationRef = useRef<number | null>(null);
 
   collapsedRef.current = collapsed;
 
@@ -366,15 +370,53 @@ export const UnifiedRightPanel = () => {
     return () => cancelAnimationFrame(id);
   }, [activeTab, collapsed]);
 
-  const handleWidthChange = useCallback((nextWidth: number) => {
-    const clamped = clampWidth(nextWidth);
-    setPanelWidth(clamped);
-    try {
-      localStorage.setItem(RIGHT_PANEL_WIDTH_STORAGE_KEY, String(clamped));
-    } catch {
-      // ignore
+  const handleWidthChange = useCallback(
+    (nextWidth: number) => {
+      const maxWidth =
+        activeTab === 'translation' ? RIGHT_PANEL_TRANSLATION_MAX_WIDTH : RIGHT_PANEL_MAX_WIDTH;
+      const clamped = clampWidth(nextWidth, maxWidth);
+      setPanelWidth(clamped);
+      // Persist only ordinary tab widths so Translation's wide layout does not
+      // stick as the default for Attributes / Metadata.
+      if (activeTab !== 'translation') {
+        try {
+          localStorage.setItem(RIGHT_PANEL_WIDTH_STORAGE_KEY, String(clamped));
+        } catch {
+          // ignore
+        }
+      }
+    },
+    [activeTab],
+  );
+
+  // Translation tab: collapse the left explorer and widen this panel for parallel reading.
+  useEffect(() => {
+    const active = activeTab === 'translation';
+    window.dispatchEvent(
+      new CustomEvent('desktop:translation-layout', { detail: { active } }),
+    );
+
+    if (active) {
+      if (widthBeforeTranslationRef.current === null) {
+        widthBeforeTranslationRef.current = panelWidth;
+      }
+      setPanelWidth(preferredTranslationPanelWidth());
+      setCollapsed(false);
+    } else if (widthBeforeTranslationRef.current !== null) {
+      setPanelWidth(widthBeforeTranslationRef.current);
+      widthBeforeTranslationRef.current = null;
     }
-  }, []);
+
+    return () => {
+      if (active) {
+        window.dispatchEvent(
+          new CustomEvent('desktop:translation-layout', { detail: { active: false } }),
+        );
+      }
+    };
+    // panelWidth intentionally omitted — we only snapshot it when entering translation.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [activeTab]);
 
   useEffect(() => {
     const id = requestAnimationFrame(resizeEditor);
@@ -382,6 +424,9 @@ export const UnifiedRightPanel = () => {
   }, [collapsed, panelWidth]);
 
   if (!leafWriter) return null;
+
+  const panelMaxWidth =
+    activeTab === 'translation' ? RIGHT_PANEL_TRANSLATION_MAX_WIDTH : RIGHT_PANEL_MAX_WIDTH;
 
   const panelSx = (tab: RightTabId) => ({
     display: activeTab === tab ? 'flex' : 'none',
@@ -520,7 +565,7 @@ export const UnifiedRightPanel = () => {
       sx={{
         width: collapsed ? RIGHT_PANEL_COLLAPSED_WIDTH : panelWidth,
         minWidth: collapsed ? RIGHT_PANEL_COLLAPSED_WIDTH : RIGHT_PANEL_MIN_WIDTH,
-        maxWidth: collapsed ? RIGHT_PANEL_COLLAPSED_WIDTH : RIGHT_PANEL_MAX_WIDTH,
+        maxWidth: collapsed ? RIGHT_PANEL_COLLAPSED_WIDTH : panelMaxWidth,
         flexShrink: 0,
         display: 'flex',
         flexDirection: 'column',

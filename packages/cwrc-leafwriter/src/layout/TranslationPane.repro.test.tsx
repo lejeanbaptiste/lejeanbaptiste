@@ -26,6 +26,7 @@ import { TranslationPane } from './TranslationPane';
 
 const TRANSLATION_XML = `<TEI xmlns="http://www.tei-c.org/ns/1.0"><text><body>
 <div corresp="source.xml#d1"><p>Hello <note place="foot">a footnote</note> world.</p></div>
+<div corresp="source.xml#d2"><p>Second unit</p></div>
 </body></text></TEI>`;
 
 const flush = async () => {
@@ -79,5 +80,24 @@ describe('TranslationPane opening', () => {
       console.log('CONSOLE ERRORS:', JSON.stringify(errors, null, 2).slice(0, 4000));
 
     expect(document.querySelector('[data-leaf-footnote-editor]')).not.toBeNull();
+  });
+
+  test('renders a continuous card list for all companion units', async () => {
+    translationMode = {
+      active: true,
+      alignmentUnit: 'div',
+      sourcePath: '/proj/source.xml',
+      translationPath: '/proj/source.fr.xml',
+      selectedUnitId: 'd1',
+      lang: 'fr',
+    };
+
+    render(<TranslationPane />);
+    await flush();
+
+    expect(document.querySelector('[data-unit-id="d1"]')).not.toBeNull();
+    expect(document.querySelector('[data-unit-id="d2"]')).not.toBeNull();
+    expect(document.querySelector('[data-unit-id="d2"]')?.textContent).toContain('Second unit');
+    expect(document.querySelector('[data-active="true"]')).not.toBeNull();
   });
 });

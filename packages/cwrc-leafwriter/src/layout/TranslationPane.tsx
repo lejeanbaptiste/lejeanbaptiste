@@ -35,6 +35,8 @@ import LinkIcon from '@mui/icons-material/Link';
 import LockIcon from '@mui/icons-material/Lock';
 import LockOpenIcon from '@mui/icons-material/LockOpen';
 import MoreVertIcon from '@mui/icons-material/MoreVert';
+import NavigateBeforeIcon from '@mui/icons-material/NavigateBefore';
+import NavigateNextIcon from '@mui/icons-material/NavigateNext';
 import SpellcheckIcon from '@mui/icons-material/Spellcheck';
 import FactCheckIcon from '@mui/icons-material/FactCheck';
 import StickyNote2Icon from '@mui/icons-material/StickyNote2';
@@ -44,6 +46,7 @@ import TextFieldsIcon from '@mui/icons-material/TextFields';
 import {
   useCallback,
   useEffect,
+  useMemo,
   useRef,
   useState,
   type ClipboardEvent,
@@ -57,6 +60,16 @@ import { useActions, useAppState } from '../overmind';
 import { isMacOS } from '../utils/platform';
 import { applyTextContentReplacement, shiftLanguageToolMatchViews, type LanguageToolMatchView } from './languageToolApply';
 import { collectMatchOverlayRects, type TextRangeRect } from './languageToolOverlays';
+import {
+  FN_BODY_ATTR,
+  FN_MARK_ATTR,
+  flattenFootnoteNotesForPersist,
+  footnoteBodyHtml,
+  footnoteBodyOf,
+  normalizeFootnoteNotes,
+} from './translationFootnotes';
+import { convertMarkdownInXmlFragment, looksLikeInlineMarkdown } from './markdownToTei';
+import { collectTranslationUnitCards } from './translationUnitCards';
 
 const TEI_NS = 'http://www.tei-c.org/ns/1.0';
 const DEFAULT_CITATION_STYLE_ID = 'chicago-note-bibliography';
@@ -111,6 +124,78 @@ const findUnitByCorrespId = (
 const fileNameOf = (filePath: string): string => {
   const idx = Math.max(filePath.lastIndexOf('/'), filePath.lastIndexOf('\\'));
   return idx === -1 ? filePath : filePath.slice(idx + 1);
+};
+
+const isDomElement = (node: unknown): node is Element =>
+  !!node && typeof node === 'object' && (node as Node).nodeType === Node.ELEMENT_NODE;
+
+const ACTIVE_SOURCE_UNIT_CLASS = 'ljb-translation-active-unit';
+
+/** Select the source alignment unit in TinyMCE and broadcast NodeChange (same as Find jump). */
+const selectSourceUnitInEditor = (unitId: string): boolean => {
+  const writer = window.writer as
+    | {
+        editor?: {
+          getBody?: () => HTMLElement | null;
+          nodeChanged?: () => void;
+        };
+        utilities?: {
+          evaluateXPath?: (root: Node, xpath: string) => unknown;
+          getElementXPath?: (element: Element) => string | null;
+          selectNode?: (
+            target: { xpath: string },
+            scrollIntoView?: boolean,
+            focusEditor?: boolean,
+          ) => void;
+        };
+      }
+    | undefined;
+  if (!writer?.editor) return false;
+
+  const body = writer.editor.getBody?.();
+  if (!body) return false;
+
+  const evaluate = writer.utilities?.evaluateXPath;
+  const getXPath = writer.utilities?.getElementXPath;
+  const selectNode = writer.utilities?.selectNode;
+  if (!evaluate || !getXPath || !selectNode) return false;
+
+  const node = evaluate(body, `//*[@xml:id="${unitId}"]`);
+  if (!isDomElement(node)) {
+    const fallback = evaluate(body, `//*[@id="${unitId}"]`);
+    if (!isDomElement(fallback)) return false;
+    const xpath = getXPath(fallback);
+    if (!xpath) return false;
+    selectNode({ xpath }, false, false);
+    writer.editor.nodeChanged?.();
+    return true;
+  }
+
+  const xpath = getXPath(node);
+  if (!xpath) return false;
+  selectNode({ xpath }, false, false);
+  writer.editor.nodeChanged?.();
+  return true;
+};
+
+const markActiveSourceUnit = (unitId: string | null): void => {
+  const body = window.writer?.editor?.getBody?.();
+  if (!body) return;
+  for (const el of Array.from(body.querySelectorAll(`.${ACTIVE_SOURCE_UNIT_CLASS}`))) {
+    el.classList.remove(ACTIVE_SOURCE_UNIT_CLASS);
+  }
+  if (!unitId) return;
+  const schemaId = getSchemaIdAttributeName();
+  const candidates = Array.from(body.querySelectorAll(`[_tag]`)).filter((el) => {
+    const attrs = window.writer?.tagger?.getAttributesForTag?.(el as Element) ?? {};
+    const id = attrs[schemaId] ?? (schemaId !== 'id' ? attrs.id : undefined);
+    return id === unitId;
+  });
+  const target =
+    candidates[0] ??
+    (body.querySelector(`[xml\\:id="${CSS.escape(unitId)}"]`) as Element | null) ??
+    (body.querySelector(`#${CSS.escape(unitId)}`) as Element | null);
+  target?.classList.add(ACTIVE_SOURCE_UNIT_CLASS);
 };
 
 /** Looks up the tagger's schema id attribute name (xml:id or id), matching attributeIdHelpers.ts. */
@@ -225,11 +310,14 @@ const stripInvisibleCaretSpacers = (root: ParentNode): void => {
 
   while ((node = walker.nextNode())) {
     const textNode = node as Text;
-    if (textNode.textContent?.includes('\uFEFF')) textNodes.push(textNode);
+    if (textNode.textContent?.includes('\uFEFF') || textNode.textContent?.includes('\u200B')) {
+      textNodes.push(textNode);
+    }
   }
 
   for (const textNode of textNodes) {
-    textNode.textContent = textNode.textContent?.replace(/\uFEFF/g, '') ?? '';
+    textNode.textContent =
+      textNode.textContent?.replace(/\uFEFF/g, '').replace(/\u200B/g, '') ?? '';
   }
 };
 
@@ -367,6 +455,26 @@ const validateGeneratedFragment = (fragmentXml: string): { error?: string; xml?:
       .map((node) => new XMLSerializer().serializeToString(node))
       .join(''),
   };
+};
+
+/** After schema validation, turn leftover **markdown** in text nodes into <hi>. */
+const applyMarkdownCleanupToFragment = (fragmentXml: string): string => {
+  const wrapped = `<fragment>${fragmentXml}</fragment>`;
+  const doc = new DOMParser().parseFromString(wrapped, 'text/html');
+  const root = doc.body.querySelector('fragment') ?? doc.body;
+  convertMarkdownInXmlFragment(root as Element);
+  // Prefer the fragment wrapper children when present.
+  const fragment = doc.body.querySelector('fragment');
+  const source = fragment ?? doc.body;
+  return Array.from(source.childNodes)
+    .map((node) => {
+      if (node.nodeType === Node.TEXT_NODE) return node.textContent ?? '';
+      if (node.nodeType === Node.ELEMENT_NODE) {
+        return (node as Element).outerHTML;
+      }
+      return '';
+    })
+    .join('');
 };
 
 interface TextIndex {
@@ -511,6 +619,18 @@ export const TranslationPane = () => {
   const focusedRef = useRef(false);
   const blurTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const activeCitationStyle = pendingCitationStyle || translationMode.citationStyle || undefined;
+  const cardNodeRefs = useRef(new Map<string, HTMLElement>());
+  const listScrollRef = useRef<HTMLDivElement>(null);
+  const [cardsEpoch, setCardsEpoch] = useState(0);
+
+  const unitCards = useMemo(() => {
+    if (!translationDoc || !alignmentUnit || !sourcePath) return [];
+    return collectTranslationUnitCards(translationDoc, alignmentUnit, fileNameOf(sourcePath));
+  }, [translationDoc, alignmentUnit, sourcePath, cardsEpoch]);
+
+  const selectedUnitIndex = selectedUnitId
+    ? unitCards.findIndex((card) => card.unitId === selectedUnitId)
+    : -1;
 
   const setTranslationDocument = useCallback((doc: Document) => {
     docRef.current = doc;
@@ -741,7 +861,12 @@ export const TranslationPane = () => {
       fileNameOf(sourcePath),
       selectedUnitId,
     );
-    setUnitHtml(unit?.innerHTML ?? '');
+    let html = unit?.innerHTML ?? '';
+    const plain = html.replace(/<[^>]+>/g, '');
+    if (looksLikeInlineMarkdown(plain)) {
+      html = applyMarkdownCleanupToFragment(html);
+    }
+    setUnitHtml(html);
     setLocked(unit?.getAttribute('data-leaf-locked') === 'true');
   }, [translationDoc, alignmentUnit, sourcePath, selectedUnitId]);
 
@@ -753,12 +878,14 @@ export const TranslationPane = () => {
       setFootnotes([]);
       return;
     }
+    normalizeFootnoteNotes(editable);
     const notes = Array.from(editable.querySelectorAll('note'));
     for (const note of notes) {
-      note.setAttribute('contenteditable', 'false');
-      prepareAtomicCitationFields(note, zoteroCitationLabel);
+      const body = footnoteBodyOf(note);
+      if (body) prepareAtomicCitationFields(body, zoteroCitationLabel);
+      else prepareAtomicCitationFields(note, zoteroCitationLabel);
     }
-    setFootnotes(notes.map((note) => note.innerHTML));
+    setFootnotes(notes.map((note) => footnoteBodyHtml(note)));
   }, [zoteroCitationLabel]);
 
   const renderCitationRefs = useCallback(
@@ -819,11 +946,73 @@ export const TranslationPane = () => {
       bibl.removeAttribute('title');
     }
     stripInvisibleCaretSpacers(clone);
+    flattenFootnoteNotesForPersist(clone);
     unit.innerHTML = clone.innerHTML;
     getCitationBridge()?.garbageCollectBibl(doc);
     const nextXml = new XMLSerializer().serializeToString(doc);
     await getDesktopApi()?.writeFile?.(translationPath, nextXml);
+    setCardsEpoch((n) => n + 1);
   }, [alignmentUnit, sourcePath, selectedUnitId, translationPath]);
+
+  const navigateToUnit = useCallback(
+    async (nextUnitId: string, options?: { selectSource?: boolean }) => {
+      if (!nextUnitId) return;
+      const selectSource = options?.selectSource !== false;
+      if (nextUnitId !== selectedUnitIdRef.current) {
+        await persist();
+        setSelectedTranslationUnit(nextUnitId);
+      }
+      if (selectSource) selectSourceUnitInEditor(nextUnitId);
+    },
+    [persist, setSelectedTranslationUnit],
+  );
+
+  const goToAdjacentUnit = useCallback(
+    (delta: -1 | 1) => {
+      if (unitCards.length === 0) return;
+      const current =
+        selectedUnitIndex >= 0
+          ? selectedUnitIndex
+          : delta > 0
+            ? -1
+            : unitCards.length;
+      const nextIndex = Math.min(unitCards.length - 1, Math.max(0, current + delta));
+      const next = unitCards[nextIndex];
+      if (!next) return;
+      void navigateToUnit(next.unitId);
+    },
+    [navigateToUnit, selectedUnitIndex, unitCards],
+  );
+
+  // Keep the active card visible when the source caret (or Find) changes the unit.
+  useEffect(() => {
+    if (!selectedUnitId) return;
+    const node = cardNodeRefs.current.get(selectedUnitId);
+    if (typeof node?.scrollIntoView === 'function') {
+      node.scrollIntoView({ block: 'nearest', behavior: 'smooth' });
+    }
+  }, [selectedUnitId]);
+
+  // Soft wash on the matching source unit while translation mode is active.
+  useEffect(() => {
+    markActiveSourceUnit(selectedUnitId);
+    return () => markActiveSourceUnit(null);
+  }, [selectedUnitId, sourcePath]);
+
+  useEffect(() => {
+    const doc = window.writer?.editor?.getDoc?.() ?? document;
+    const styleId = 'ljb-translation-active-unit-style';
+    if (doc.getElementById(styleId)) return;
+    const style = doc.createElement('style');
+    style.id = styleId;
+    style.textContent = `
+      .${ACTIVE_SOURCE_UNIT_CLASS} {
+        background-color: rgba(25, 118, 210, 0.08) !important;
+        box-shadow: inset 3px 0 0 rgba(25, 118, 210, 0.55);
+      }
+    `;
+    (doc.head ?? doc.documentElement).appendChild(style);
+  }, [sourcePath]);
 
   const refreshCurrentCitationFields = useCallback(
     async (styleId = activeCitationStyle) => {
@@ -1043,7 +1232,8 @@ export const TranslationPane = () => {
         return;
       }
 
-      const replaceResult = await replaceCurrentUnit(validated.xml);
+      const cleanedXml = applyMarkdownCleanupToFragment(validated.xml);
+      const replaceResult = await replaceCurrentUnit(cleanedXml);
       if (replaceResult.error) {
         setAiStatus({ severity: 'error', message: replaceResult.error });
         return;
@@ -1476,33 +1666,49 @@ export const TranslationPane = () => {
     const range = getEditableRange();
     if (!range) return;
 
+    // Optional Word-like "footnote from selection": only when the selection is
+    // short. A long selection usually means the caret accidentally selected the
+    // rest of the paragraph — that used to swallow body text into the note.
+    let initialHtml = '';
+    if (!range.collapsed) {
+      const selectedText = range.toString();
+      if (selectedText.length > 0 && selectedText.length <= 80) {
+        const extracted = range.extractContents();
+        const holder = document.createElement('div');
+        holder.appendChild(extracted);
+        initialHtml = holder.innerHTML;
+      } else {
+        range.collapse(true);
+      }
+    }
+
     const note = document.createElement('note');
     note.setAttribute('place', 'foot');
     note.setAttribute('contenteditable', 'false');
-    // A selection becomes the footnote text, like Word's "insert from selection".
-    if (!range.collapsed) note.appendChild(range.extractContents());
+
+    const mark = document.createElement('span');
+    mark.setAttribute(FN_MARK_ATTR, 'true');
+    mark.setAttribute('contenteditable', 'false');
+    mark.textContent = '1';
+
+    const body = document.createElement('span');
+    body.setAttribute(FN_BODY_ATTR, 'true');
+    if (initialHtml) body.innerHTML = initialHtml;
+
+    note.appendChild(mark);
+    note.appendChild(body);
     range.insertNode(note);
 
-    // Leave the caret right after the new anchor.
+    // Guard node after the note so the next keystroke cannot be absorbed into it.
+    const guard = document.createTextNode('\u200B');
+    note.after(guard);
     const selection = window.getSelection();
     const after = document.createRange();
-    after.setStartAfter(note);
+    after.setStartAfter(guard);
     after.collapse(true);
     selection?.removeAllRanges();
     selection?.addRange(after);
 
-    // Give the browser a real text node to anchor the next keystroke outside the note.
-    note.after(document.createTextNode('\uFEFF'));
-    const spacer = note.nextSibling;
-    if (spacer?.nodeType === Node.TEXT_NODE) {
-      const spacerRange = document.createRange();
-      spacerRange.setStartAfter(spacer);
-      spacerRange.collapse(true);
-      selection?.removeAllRanges();
-      selection?.addRange(spacerRange);
-    }
-
-    // Focus the new footnote's text field so the user can type its content.
     const notes = Array.from(editableRef.current?.querySelectorAll('note') ?? []);
     focusFootnoteIndexRef.current = notes.indexOf(note);
     refreshFootnotes();
@@ -1725,10 +1931,12 @@ export const TranslationPane = () => {
 
   const updateFootnote = (index: number, html: string) => {
     const note = editableRef.current?.querySelectorAll('note')[index];
-    if (note) {
-      note.innerHTML = html;
-      prepareAtomicCitationFields(note, zoteroCitationLabel);
-    }
+    if (!note || !editableRef.current) return;
+    normalizeFootnoteNotes(editableRef.current);
+    const body = footnoteBodyOf(note);
+    if (!body) return;
+    body.innerHTML = html;
+    prepareAtomicCitationFields(body, zoteroCitationLabel);
   };
 
   const removeFootnote = (index: number) => {
@@ -2149,13 +2357,53 @@ export const TranslationPane = () => {
           </DialogActions>
         </Dialog>
 
+        <Tooltip title={t('LW.translationPane.previousUnit')}>
+          <span>
+            <IconButton
+              aria-label={t('LW.translationPane.previousUnit')}
+              disabled={unitCards.length === 0 || selectedUnitIndex <= 0}
+              onClick={() => goToAdjacentUnit(-1)}
+              size="small"
+            >
+              <NavigateBeforeIcon fontSize="small" />
+            </IconButton>
+          </span>
+        </Tooltip>
+
+        <Tooltip title={t('LW.translationPane.nextUnit')}>
+          <span>
+            <IconButton
+              aria-label={t('LW.translationPane.nextUnit')}
+              disabled={
+                unitCards.length === 0 ||
+                selectedUnitIndex < 0 ||
+                selectedUnitIndex >= unitCards.length - 1
+              }
+              onClick={() => goToAdjacentUnit(1)}
+              size="small"
+            >
+              <NavigateNextIcon fontSize="small" />
+            </IconButton>
+          </span>
+        </Tooltip>
+
         <Typography
           color="text.secondary"
           noWrap
           variant="caption"
           sx={{ flex: 1, minWidth: 0, textAlign: 'right' }}
         >
-          {selectedUnitId ? selectedUnitId : t('LW.translationPane.noUnit')}
+          {selectedUnitId
+            ? selectedUnitIndex >= 0
+              ? t('LW.translationPane.unitPosition', {
+                  current: selectedUnitIndex + 1,
+                  total: unitCards.length,
+                })
+              : t('LW.translationPane.unitPosition', {
+                  current: '?',
+                  total: unitCards.length || '?',
+                })
+            : t('LW.translationPane.noUnit')}
         </Typography>
       </Stack>
 
@@ -2236,8 +2484,9 @@ export const TranslationPane = () => {
         </Box>
       ) : null}
 
-      {selectedUnitId ? (
+      {unitCards.length > 0 || selectedUnitId ? (
         <Box
+          ref={listScrollRef}
           onKeyDown={(event) => {
             if (!(event.metaKey || event.ctrlKey) || event.altKey) return;
             if (event.key === '=' || event.key === '+') translationFontZoom.zoomIn();
@@ -2251,15 +2500,158 @@ export const TranslationPane = () => {
             flex: 1,
             minHeight: 0,
             overflow: 'auto',
-            display: 'flex',
-            flexDirection: 'column',
             fontSize: `${paneFontSize}px`,
           }}
         >
-          <Box sx={{ position: 'relative', flex: '0 0 auto' }}>
+          {caretInUnindexedUnit && !selectedUnitId ? (
+            <Alert severity="info" sx={{ borderRadius: 0 }}>
+              {t('LW.translationPane.unindexedUnitMessage')}
+            </Alert>
+          ) : null}
+          {(unitCards.length > 0
+            ? unitCards
+            : selectedUnitId
+              ? [{ unitId: selectedUnitId, previewText: '', previewHtml: '', noteCount: 0 }]
+              : []
+          ).map((card) => {
+            const isActive = card.unitId === selectedUnitId;
+            const unitBodySx = {
+              p: 1.5,
+              outline: 'none',
+              textAlign: 'justify' as const,
+              counterReset: 'footnote',
+              '& hi[rend="small-caps"]': { fontVariant: 'small-caps' },
+              '& hi[rend="bold"]': { fontWeight: 'bold' },
+              '& hi[rend="italic"]': { fontStyle: 'italic' },
+              '& hi[rend="underline"]': { textDecoration: 'underline' },
+              '& hi[rend="strikethrough"]': { textDecoration: 'line-through' },
+              '& ref': { color: 'primary.main', textDecoration: 'underline' },
+              '& note': {
+                // Wrapper only when structured; flat TEI notes (read-only cards) get a pill via ::after.
+                counterIncrement: 'footnote',
+                display: 'inline-flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                verticalAlign: 'super',
+                position: 'relative',
+                // Fixed rem box — never grow with hidden/transparent footnote text.
+                boxSizing: 'border-box',
+                width: '1.15rem',
+                height: '1.15rem',
+                minWidth: '1.15rem',
+                maxWidth: '1.15rem',
+                flexShrink: 0,
+                mx: '0.15rem',
+                p: 0,
+                borderRadius: '999px',
+                bgcolor: 'primary.main',
+                color: 'transparent',
+                fontSize: 0,
+                lineHeight: 0,
+                overflow: 'hidden',
+                cursor: 'default',
+                userSelect: 'none',
+                whiteSpace: 'nowrap',
+                [`& [${FN_MARK_ATTR}]`]: {
+                  display: 'inline-flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  boxSizing: 'border-box',
+                  width: '1.15rem',
+                  height: '1.15rem',
+                  minWidth: '1.15rem',
+                  maxWidth: '1.15rem',
+                  flexShrink: 0,
+                  p: 0,
+                  borderRadius: '999px',
+                  bgcolor: 'primary.main',
+                  color: 'primary.contrastText',
+                  fontSize: '0.65rem',
+                  fontWeight: 700,
+                  lineHeight: 1,
+                  overflow: 'hidden',
+                },
+                [`& [${FN_BODY_ATTR}]`]: {
+                  display: 'none',
+                },
+              },
+              // Structured notes: the mark span is the pill; clear the wrapper chrome.
+              [`& note:has([${FN_MARK_ATTR}])`]: {
+                width: 'auto',
+                height: 'auto',
+                minWidth: 0,
+                maxWidth: 'none',
+                bgcolor: 'transparent',
+                overflow: 'visible',
+                color: 'inherit',
+                fontSize: 'inherit',
+                lineHeight: 'inherit',
+              },
+              // Flat notes (inactive card HTML from TEI): paint the number with ::after.
+              [`& note:not(:has([${FN_MARK_ATTR}]))::after`]: {
+                content: 'counter(footnote)',
+                position: 'absolute',
+                inset: 0,
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                color: 'primary.contrastText',
+                fontSize: '0.65rem',
+                fontWeight: 700,
+                lineHeight: 1,
+              },
+              // Hide raw footnote children inside flat notes.
+              [`& note:not(:has([${FN_MARK_ATTR}])) > *`]: {
+                display: 'none',
+              },
+            };
+            return (
+              <Box
+                key={card.unitId}
+                data-unit-id={card.unitId}
+                data-active={isActive ? 'true' : undefined}
+                ref={(el: HTMLDivElement | null) => {
+                  if (el) cardNodeRefs.current.set(card.unitId, el);
+                  else cardNodeRefs.current.delete(card.unitId);
+                }}
+                onClick={() => {
+                  if (!isActive) void navigateToUnit(card.unitId);
+                }}
+                sx={{
+                  borderBottom: 1,
+                  borderColor: 'divider',
+                  borderLeft: 3,
+                  borderLeftColor: isActive ? 'error.main' : 'transparent',
+                  bgcolor: isActive ? 'background.paper' : 'transparent',
+                  cursor: isActive ? 'text' : 'pointer',
+                  '&:hover': isActive ? undefined : { bgcolor: 'action.hover' },
+                }}
+              >
+                {!isActive ? (
+                  card.previewHtml.trim() || card.previewText ? (
+                    <Box
+                      dangerouslySetInnerHTML={{
+                        __html: looksLikeInlineMarkdown(card.previewText)
+                          ? applyMarkdownCleanupToFragment(card.previewHtml)
+                          : card.previewHtml,
+                      }}
+                      sx={unitBodySx}
+                    />
+                  ) : (
+                    <Typography
+                      color="text.disabled"
+                      sx={{ px: 1.5, py: 1.5 }}
+                      variant="body2"
+                    >
+                      {t('LW.translationPane.emptyUnitPreview')}
+                    </Typography>
+                  )
+                ) : (
+                  <>
+                    <Box sx={{ position: 'relative', flex: '0 0 auto' }}>
           <Box
             ref={editableRef}
-            contentEditable
+            contentEditable={!locked}
             lang={spellcheckLang}
             spellCheck={spellcheckEnabled && !languageToolLive}
             suppressContentEditableWarning
@@ -2298,9 +2690,6 @@ export const TranslationPane = () => {
                 | null = null;
               if (event.shiftKey && key === 'k') command = 'smallCaps';
               else if (!event.shiftKey && !event.altKey && key === 'k') command = 'link';
-              // With Alt held, macOS reports the Option-layer character in `key`
-              // (Option+F = 'ƒ' on any layout, since the Option layer follows the
-              // logical letter). Match it too, plus a physical-key fallback.
               else if (
                 event.altKey &&
                 !event.shiftKey &&
@@ -2320,42 +2709,8 @@ export const TranslationPane = () => {
               rememberBodyRange();
             }}
             sx={{
+              ...unitBodySx,
               flex: '1 0 auto',
-              p: 1.5,
-              outline: 'none',
-              textAlign: 'justify',
-              counterReset: 'footnote',
-              // <hi> is a TEI element unknown to HTML, so its rend values need
-              // explicit styling to be visible while editing.
-              '& hi[rend="small-caps"]': { fontVariant: 'small-caps' },
-              '& hi[rend="bold"]': { fontWeight: 'bold' },
-              '& hi[rend="italic"]': { fontStyle: 'italic' },
-              '& hi[rend="underline"]': { textDecoration: 'underline' },
-              '& hi[rend="strikethrough"]': { textDecoration: 'line-through' },
-              '& ref': { color: 'primary.main', textDecoration: 'underline' },
-              // Footnotes render as numbered superscript anchors; their text is
-              // collapsed here and edited in the numbered list below the text.
-              '& note': {
-                counterIncrement: 'footnote',
-                display: 'inline-block',
-                fontSize: '0px',
-                position: 'relative',
-                userSelect: 'none',
-                width: 0,
-              },
-              '& note::after': {
-                content: 'counter(footnote)',
-                fontSize: '0.7rem',
-                lineHeight: 0,
-                // vertical-align: super is relative to the parent's font metrics,
-                // which are 0px here (the note text is collapsed) — raise manually.
-                position: 'absolute',
-                left: 0,
-                top: '-0.5em',
-                fontWeight: 600,
-                color: 'primary.main',
-                px: '1px',
-              },
               '&:empty::before': {
                 content: `"${t('LW.translationPane.startTypingPlaceholder')}"`,
                 color: 'text.disabled',
@@ -2389,7 +2744,7 @@ export const TranslationPane = () => {
               title={languageToolMatches[rect.matchIndex]?.shortMessage}
             />
           ))}
-          </Box>
+                    </Box>
 
           {footnotes.length > 0 && (
             <Box sx={{ px: 1.5, pb: 1.5 }}>
@@ -2443,7 +2798,6 @@ export const TranslationPane = () => {
                       suppressContentEditableWarning
                       sx={{
                         flex: 1,
-                        // em, not rem — footnotes scale with the pane's text zoom.
                         fontSize: '0.85em',
                         lineHeight: 1.4,
                         minHeight: 22,
@@ -2480,6 +2834,11 @@ export const TranslationPane = () => {
               </Stack>
             </Box>
           )}
+                  </>
+                )}
+              </Box>
+            );
+          })}
         </Box>
       ) : (
         <Box sx={{ flex: 1, p: 1.5 }}>
