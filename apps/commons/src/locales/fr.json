@@ -482,7 +482,8 @@
           "imported_documents_success": "Imported {{documentCount}} document{{documentCount, plural, one {} other {s}}}.",
           "imported_documents_success_with_keys": "Imported {{documentCount}} document{{documentCount, plural, one {} other {s}}}; moved {{keyCount}} foreign entity key{{keyCount, plural, one {} other {s}}} to backup (@ana).",
           "imported_documents_with_problems_snackbar": "Imported {{documentCount}} document{{documentCount, plural, one {} other {s}}}; {{problemCount}} problem file{{problemCount, plural, one {} other {s}}}. See console for details.",
-          "editor_failed_to_load": "L’éditeur n’a pas pu se charger. Vous pouvez réessayer."
+          "editor_failed_to_load": "L’éditeur n’a pas pu se charger. Vous pouvez réessayer.",
+          "loading_document": "Chargement du document…"
         },
         "select_language": "Select language…",
         "use_local_schema_file": "Use local schema file…",

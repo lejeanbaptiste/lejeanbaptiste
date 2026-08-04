@@ -80,7 +80,13 @@ class LayoutManager {
     if (config.name) this.name = config.name;
     this.editorId = config.editorId;
 
-    const loadingMaskHtml = `
+    const isDesktopApp =
+      typeof window !== 'undefined' &&
+      !!(window as Window & { electronAPI?: unknown }).electronAPI;
+
+    const loadingMaskHtml = isDesktopApp
+      ? `<div class="cwrc cwrcLoadingMask" style="display:none" aria-hidden="true"></div>`
+      : `
       <div
         class="cwrc cwrcLoadingMask"
         style="

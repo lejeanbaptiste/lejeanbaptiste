@@ -31,9 +31,25 @@
   border: 0px solid #ccc !important;
 }
 
+/*
+ * We never use TinyMCE's own toolbar/menubar (desktop chrome lives above).
+ * An empty `.tox-editor-header` still keeps `padding: 4px 0` unless TinyMCE
+ * marks it `--empty`, which leaves a stubborn white strip under the
+ * location/address bar. Kill that chrome entirely.
+ */
+.cwrc .tox:not(.tox-tinymce-inline) .tox-editor-header {
+  background: none !important;
+  border: none !important;
+  box-shadow: none !important;
+  display: none !important;
+  min-height: 0 !important;
+  padding: 0 !important;
+}
+
 .tox-sidebar-wrap {
   background-color: #f5f5f5 !important;
-  padding: 0 4px 4px;
+  /* top must stay 0 — any top padding reopens the address-bar gap */
+  padding: 0 4px 4px !important;
 }
 
 .tox-edit-area {

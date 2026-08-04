@@ -417,7 +417,8 @@
           "imported_documents_success": "Imported {{documentCount}} document{{documentCount, plural, one {} other {s}}}.",
           "imported_documents_success_with_keys": "Imported {{documentCount}} document{{documentCount, plural, one {} other {s}}}; moved {{keyCount}} foreign entity key{{keyCount, plural, one {} other {s}}} to backup (@ana).",
           "imported_documents_with_problems_snackbar": "Imported {{documentCount}} document{{documentCount, plural, one {} other {s}}}; {{problemCount}} problem file{{problemCount, plural, one {} other {s}}}. See console for details.",
-          "editor_failed_to_load": "The editor failed to load. You can try again."
+          "editor_failed_to_load": "The editor failed to load. You can try again.",
+          "loading_document": "Loading document…"
         },
         "select_language": "Select language…",
         "use_local_schema_file": "Use local schema file…",

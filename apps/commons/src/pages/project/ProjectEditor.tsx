@@ -3,6 +3,7 @@ import WestIcon from '@mui/icons-material/West';
 import {
   TagCommandProvider,
   CorrectionProvider,
+  DocumentLoadingCover,
   UnifiedLeftPanel,
   UnifiedRightPanel,
   useExternalFileWatcher,
@@ -60,6 +61,8 @@ export const ProjectEditor = () => {
   const [editorLoadFailed, setEditorLoadFailed] = useState(false);
   const [retryToken, setRetryToken] = useState(0);
   const [settingsBootstrapRequested, setSettingsBootstrapRequested] = useState(false);
+  /** Path whose content is actually on screen; cover stays up until this matches the active tab. */
+  const [documentReadyPath, setDocumentReadyPath] = useState<string | null>(null);
 
   const { initLeafWriter, loadDocumentInWriter, loadLib, ensureLeafWriterReadyForSettings } =
     useLeafWriter();
@@ -136,6 +139,7 @@ export const ProjectEditor = () => {
 
   const retryEditorLoad = useCallback(() => {
     setEditorLoadFailed(false);
+    setDocumentReadyPath(null);
     loadLibStartedForRef.current = null;
     initStartedForRef.current = null;
     previousTabRef.current = null;
@@ -166,7 +170,17 @@ export const ProjectEditor = () => {
 
   useEffect(() => {
     autoRetryUsedRef.current = false;
+    setDocumentReadyPath(null);
   }, [projectFilePath, sessionKey]);
+
+  useEffect(() => {
+    if (!resource?.filePath) setDocumentReadyPath(null);
+  }, [resource?.filePath]);
+
+  const showDocumentCover =
+    Boolean(resource?.filePath && resource.content) &&
+    !editorLoadFailed &&
+    documentReadyPath !== resource?.filePath;
 
   useEffect(() => {
     // Project restoration first reads and normalizes every remembered tab.  Do
@@ -279,6 +293,7 @@ export const ProjectEditor = () => {
       if (shouldApply() && loaded) {
         previousTabRef.current = targetPath;
         autoRetryUsedRef.current = false;
+        setDocumentReadyPath(targetPath);
         setEditorLoadFailed(false);
       } else if (shouldApply() && !loaded) {
         markEditorLoadFailed();
@@ -440,6 +455,7 @@ export const ProjectEditor = () => {
           }}
         />
         <Box sx={{ flex: 1, minHeight: 0, position: 'relative' }}>
+          <DocumentLoadingCover visible={showDocumentCover} />
           {!resource && (
             <Box
               sx={{

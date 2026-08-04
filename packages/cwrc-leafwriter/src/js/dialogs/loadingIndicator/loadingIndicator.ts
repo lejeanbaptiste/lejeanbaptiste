@@ -3,10 +3,15 @@ import 'jquery-ui/ui/widgets/dialog';
 import 'jquery-ui/ui/widgets/progressbar';
 import type { LWDialogProps, LWDialogConfigProps } from '../types';
 
+const isDesktopApp = () =>
+  typeof window !== 'undefined' && !!(window as Window & { electronAPI?: unknown }).electronAPI;
+
 class LoadingIndicator implements LWDialogProps {
   readonly $loadingIndicator: JQuery<HTMLElement>;
   readonly $progressBar: JQuery<HTMLElement>;
   readonly $progressLabel: JQuery<HTMLElement>;
+  /** Desktop covers document open with DocumentLoadingCover; only allow save feedback. */
+  private allowDesktopShow = false;
 
   constructor({ writer, parentEl }: LWDialogConfigProps) {
     this.$loadingIndicator = $(
@@ -41,6 +46,8 @@ class LoadingIndicator implements LWDialogProps {
     this.$progressLabel = this.$loadingIndicator.find('.progressLabel');
 
     writer.event('loadingDocument').subscribe(() => {
+      // Desktop uses DocumentLoadingCover over the editor pane instead.
+      if (isDesktopApp()) return;
       writer.dialogManager.show('loadingindicator');
       this.$progressLabel.text('Loading Document');
       //@ts-ignore
@@ -48,6 +55,7 @@ class LoadingIndicator implements LWDialogProps {
     });
 
     writer.event('loadingSchema').subscribe(() => {
+      if (isDesktopApp()) return;
       writer.dialogManager.show('loadingindicator');
       this.$progressLabel.text('Loading Schema');
       //@ts-ignore
@@ -68,6 +76,7 @@ class LoadingIndicator implements LWDialogProps {
     });
 
     writer.event('savingDocument').subscribe(() => {
+      this.allowDesktopShow = true;
       writer.dialogManager.show('loadingindicator');
       this.$progressLabel.text('Saving Document');
       //@ts-ignore
@@ -81,17 +90,18 @@ class LoadingIndicator implements LWDialogProps {
       if (success === true) {
         //@ts-ignore
         this.$loadingIndicator.dialog('close');
+        this.allowDesktopShow = false;
         return;
-        // FIXME need to close immediately because of problems if there's another modal showing
-        // this.$progressLabel.text('Document Loaded');
-        // this.$loadingIndicator.fadeOut(1000, () => this.$loadingIndicator.dialog('close'));
       }
 
       this.$progressLabel.text('Error Saving Document');
       //@ts-ignore
       this.$loadingIndicator.dialog('option', 'buttons', {
         //@ts-ignore
-        Ok: () => this.$loadingIndicator.dialog('close'),
+        Ok: () => {
+          this.allowDesktopShow = false;
+          this.$loadingIndicator.dialog('close');
+        },
       });
     });
   }
@@ -106,6 +116,7 @@ class LoadingIndicator implements LWDialogProps {
   }
 
   show() {
+    if (isDesktopApp() && !this.allowDesktopShow) return;
     //@ts-ignore
     this.$loadingIndicator.dialog('open');
   }
@@ -113,6 +124,7 @@ class LoadingIndicator implements LWDialogProps {
   hide() {
     //@ts-ignore
     this.$loadingIndicator.dialog('close');
+    this.allowDesktopShow = false;
   }
 
   destroy() {

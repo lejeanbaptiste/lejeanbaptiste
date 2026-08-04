@@ -4,6 +4,7 @@ export * from './FileMetadataPanel';
 export * from './focusFirstBodyParagraph';
 export * from './clearWriterSession';
 export * from './editorBootQueue';
+export * from './DocumentLoadingCover';
 export * from './DocumentTabBar';
 export * from './UnifiedLeftPanel';
 export * from './UnifiedRightPanel';

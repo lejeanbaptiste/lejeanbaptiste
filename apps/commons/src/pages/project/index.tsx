@@ -1,5 +1,11 @@
-import { Box, CircularProgress } from '@mui/material';
-import { useCommonsUiBridge, useEntityDatabaseLifecycle, useLspProjectBridge, useNativeDialogBridge } from '@src/desktop';
+import { Box } from '@mui/material';
+import {
+  DocumentLoadingCover,
+  useCommonsUiBridge,
+  useEntityDatabaseLifecycle,
+  useLspProjectBridge,
+  useNativeDialogBridge,
+} from '@src/desktop';
 import { Page } from '@src/layouts';
 import { useActions, useAppState } from '@src/overmind';
 import { isDesktop } from '@src/types/desktop';
@@ -56,13 +62,12 @@ export const ProjectEditPage = () => {
       <Page>
         <Box
           sx={{
-            alignItems: 'center',
             display: 'flex',
+            flexDirection: 'column',
             height: 'calc(100vh - var(--titlebar-height, 0px))',
-            justifyContent: 'center',
           }}
         >
-          <CircularProgress size={32} />
+          <DocumentLoadingCover absolute={false} visible />
         </Box>
       </Page>
     );
@@ -70,7 +75,13 @@ export const ProjectEditPage = () => {
 
   return (
     <Page>
-      <Box sx={{ display: 'flex', flexDirection: 'column', height: 'calc(100vh - var(--titlebar-height, 0px))' }}>
+      <Box
+        sx={{
+          display: 'flex',
+          flexDirection: 'column',
+          height: 'calc(100vh - var(--titlebar-height, 0px))',
+        }}
+      >
         <ProjectEditor />
       </Box>
     </Page>

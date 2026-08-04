@@ -124,42 +124,37 @@ See [apps/desktop/README.md](apps/desktop/README.md) for the compilation and pac
 - [x] Welcome splash: include toggle to activate/disactivate advanced features (direct XML editing), 
 - [x] Simplify hamburger menu.
 
-## Bugs / work in progress
-
-- [ ] TinyMCE still failing to load on start up half the time in macOS 
-
 ## Big crazy ambitious dreams
 
 - [ ] Offer LanguageTool plugin for translation and note surfaces.
-- [ ] Cut TinyMCE startup in half AGAIN
-- [ ] Fully reproduce Oxgen
+- [ ] Fully reproduce Oxgen typing experience in Source mode: 
+  - when you type an opening bracket, the closing one is automatically inserted after it (not fill suggest, automatic insert)
+  - Typing `</` automatically inserts a closing bracket to whatever the current opening one is, including, and especially, when there is an unclosed opening bracket. 
+- Finish word plugin
+  - [ ] Tool to manage name forms (I'll explain)
+  - [ ] Production version, ready for install and distribution 
+- [ ] Make AI assist actually useful: set up a test paragraph with a test set of tagging candidates, tweak the prompt until it gives useful results.
 
-
-## Plans
-
-### Next release
-
-#### Asset packs
+## TODO
 
 - [ ] Rerun Norbert concordance test: zi + dynasty + family name + given name ON WIKIDATA + CBDB (?)
 - [ ] Import current matches
 - [ ] Filter + chunk concordance for smoother loading into memory
 - [ ] Japanese pack: ask AI to identify patterns to the garbage, then clean asset packs
 
+
+
+## Plans
+
+### Next release
+
 #### Push limits
 
-
-- [ ] Fully reproduce Oxygen source editing experience?
 - [ ] Navigate xml tree in-editor with some sort of dead key ?
 
 #### Other
 
-- Finish word plugin
-  - [ ] Different name forms
-  - [ ] Production version 
-- [ ] Make AI assist actually useful
 - [ ] Time Machine polish: diff preview, export history zip, optional `revisionDesc` on restore, delete (?)
-- [ ] Instead of all the loading nonsense, let's have a welcome screen on startup: 'Welcome back XX'... maybe
 
 ### Future
 

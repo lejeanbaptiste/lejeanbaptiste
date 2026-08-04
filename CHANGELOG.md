@@ -88,3 +88,5 @@
 - Removed legacy help pop-ups
 - Editor pane now follows programme's light/dark choice, rather than independantly following the OS.
 - Fixed: save timestamp was not putting @version on <application>, causing validation error in Source mode. 
+- Serialised boots to avoid TinyMCE load race that leaves LJB without an editor pane.
+- Simplified slideshow of loading screens on startup.

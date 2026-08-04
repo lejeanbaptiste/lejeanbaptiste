@@ -195,7 +195,6 @@ export const EditorLocationBar = () => {
 
   return (
     <Box
-      id={EDITOR_LOCATION_BAR_ID}
       sx={[
         {
           alignItems: 'center',
