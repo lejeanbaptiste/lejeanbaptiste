@@ -2,7 +2,7 @@ import { leafwriterAtom } from '@src/jotai';
 import { useActions, useAppState } from '@src/overmind';
 import type { Locales } from '@src/i18n';
 import type { PaletteMode } from '@src/types';
-import { isDesktop, type AiApiSettings } from '@src/types/desktop';
+import { isDesktop, type AiApiSettings, type LanguageToolSettings } from '@src/types/desktop';
 import { useAtom } from 'jotai';
 import { useEffect, useRef } from 'react';
 import { useTranslation } from 'react-i18next';
@@ -299,6 +299,13 @@ export const useNativeDialogBridge = () => {
           case 'setAiApiSettings':
             await electronAPI.setAiApiSettings((args ?? {}) as Partial<AiApiSettings>);
             return true;
+          case 'getLanguageToolSettings':
+            return electronAPI.getLanguageToolSettings?.() ?? null;
+          case 'setLanguageToolSettings':
+            await electronAPI.setLanguageToolSettings?.(
+              (args ?? {}) as Partial<LanguageToolSettings>,
+            );
+            return true;
           case 'getRememberWorkspaceOnStartup':
             return (await electronAPI.getRememberWorkspaceOnStartup?.()) ?? true;
           case 'setRememberWorkspaceOnStartup':
@@ -309,6 +316,15 @@ export const useNativeDialogBridge = () => {
               (await electronAPI.testAiConnection?.((args ?? {}) as Partial<AiApiSettings>)) ?? {
                 ok: false,
                 error: t('LWC.desktop.ai_api_bridge_unavailable'),
+              }
+            );
+          case 'testLanguageToolConnection':
+            return (
+              (await electronAPI.testLanguageToolConnection?.(
+                (args ?? {}) as Partial<LanguageToolSettings>,
+              )) ?? {
+                ok: false,
+                error: 'Desktop LanguageTool bridge is unavailable.',
               }
             );
           case 'setThemeAppearance': {

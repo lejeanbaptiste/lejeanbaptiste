@@ -1,6 +1,6 @@
 import { useActions, useAppState } from '@src/overmind';
 import { registerLeafWriterCommonsI18n } from '@src/desktop/registerLeafWriterCommonsI18n';
-import { isDesktop, type AiApiSettings } from '@src/types/desktop';
+import { isDesktop, type AiApiSettings, type LanguageToolSettings } from '@src/types/desktop';
 import { clearAchievementsCache } from '@src/desktop/achievements/store';
 import type {
   AuthorityLifecycleRunResult,
@@ -41,6 +41,8 @@ export const useCommonsUiBridge = () => {
   const [encoderName, setEncoderNameState] = useState('');
   const [encoderNameLoaded, setEncoderNameLoaded] = useState(false);
   const [aiApiSettings, setAiApiSettingsState] = useState<AiApiSettings | null>(null);
+  const [languageToolSettings, setLanguageToolSettingsState] =
+    useState<LanguageToolSettings | null>(null);
   const [githubConnected, setGithubConnected] = useState(false);
   const [entityDbFolder, setEntityDbFolderState] = useState<string | null>(null);
   const [rememberWorkspaceOnStartup, setRememberWorkspaceOnStartupState] = useState(true);
@@ -70,6 +72,14 @@ export const useCommonsUiBridge = () => {
 
     void window.electronAPI.getAiApiSettings().then((settings) => {
       setAiApiSettingsState(settings);
+    });
+  }, []);
+
+  useEffect(() => {
+    if (!isDesktop() || !window.electronAPI?.getLanguageToolSettings) return;
+
+    void window.electronAPI.getLanguageToolSettings().then((settings) => {
+      setLanguageToolSettingsState(settings);
     });
   }, []);
 
@@ -188,6 +198,39 @@ export const useCommonsUiBridge = () => {
       }
     );
   }, []);
+
+  const setLanguageToolSettings = useCallback(
+    async (settings: Partial<LanguageToolSettings>) => {
+      const next = {
+        ...(languageToolSettings ?? {
+          enabled: false,
+          baseUrl: 'http://localhost:8010',
+          verifiedAt: null,
+          verifiedBaseUrl: '',
+          checkMode: 'onDemand' as const,
+          managedInstall: false,
+          ngramsEnabled: false,
+          installedVersion: null,
+        }),
+        ...settings,
+      };
+      setLanguageToolSettingsState(next);
+      await window.electronAPI?.setLanguageToolSettings?.(next);
+    },
+    [languageToolSettings],
+  );
+
+  const testLanguageToolConnection = useCallback(
+    async (settings: Partial<LanguageToolSettings>) => {
+      return (
+        (await window.electronAPI?.testLanguageToolConnection?.(settings)) ?? {
+          ok: false,
+          error: 'Desktop LanguageTool bridge is unavailable.',
+        }
+      );
+    },
+    [],
+  );
 
   const connectGithub = useCallback(async (onStarted?: (userCode: string) => void) => {
     const api = window.electronAPI;
@@ -391,6 +434,7 @@ export const useCommonsUiBridge = () => {
       encoderName,
       encoderNameLoaded,
       aiApiSettings,
+      languageToolSettings,
       githubConnected,
       connectGithub,
       disconnectGithub,
@@ -400,12 +444,14 @@ export const useCommonsUiBridge = () => {
       skipExplorerDeleteConfirm,
       authorityLifecycleStatus,
       setAiApiSettings,
+      setLanguageToolSettings,
       setEncoderName,
       setRememberWorkspaceOnStartup,
       setSkipEntityDetachConfirm,
       setSkipExplorerDeleteConfirm,
       pickEntityDbFolder,
       testAiConnection,
+      testLanguageToolConnection,
       refreshAuthorityLifecycle,
       setAuthorityLifecycleEnabled,
       setAuthorityLifecycleReferenceDataEnabled,
@@ -421,6 +467,7 @@ export const useCommonsUiBridge = () => {
     };
   }, [
     aiApiSettings,
+    languageToolSettings,
     connectGithub,
     disconnectGithub,
     githubConnected,
@@ -436,6 +483,7 @@ export const useCommonsUiBridge = () => {
     moveEntityDbFolder,
     openDialog,
     setAiApiSettings,
+    setLanguageToolSettings,
     setAuthorityLifecycleEnabled,
     setAuthorityLifecycleReferenceDataEnabled,
     setEncoderName,
@@ -445,5 +493,6 @@ export const useCommonsUiBridge = () => {
     skipEntityDetachConfirm,
     skipExplorerDeleteConfirm,
     testAiConnection,
+    testLanguageToolConnection,
   ]);
 };

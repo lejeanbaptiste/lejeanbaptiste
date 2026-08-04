@@ -2,6 +2,7 @@ import {
   Alert,
   Box,
   Button,
+  Chip,
   CircularProgress,
   Dialog,
   DialogActions,
@@ -9,6 +10,8 @@ import {
   DialogTitle,
   Divider,
   IconButton,
+  List,
+  ListItem,
   ListItemIcon,
   ListItemText,
   Menu,
@@ -33,6 +36,7 @@ import LockIcon from '@mui/icons-material/Lock';
 import LockOpenIcon from '@mui/icons-material/LockOpen';
 import MoreVertIcon from '@mui/icons-material/MoreVert';
 import SpellcheckIcon from '@mui/icons-material/Spellcheck';
+import FactCheckIcon from '@mui/icons-material/FactCheck';
 import StickyNote2Icon from '@mui/icons-material/StickyNote2';
 import SubscriptIcon from '@mui/icons-material/Subscript';
 import SuperscriptIcon from '@mui/icons-material/Superscript';
@@ -51,6 +55,8 @@ import { copyUnitsForExport } from '../js/conversion/copyForExport';
 import { translationFontZoom } from '../js/fontSizeZoom';
 import { useActions, useAppState } from '../overmind';
 import { isMacOS } from '../utils/platform';
+import { applyTextContentReplacement, shiftLanguageToolMatchViews, type LanguageToolMatchView } from './languageToolApply';
+import { collectMatchOverlayRects, type TextRangeRect } from './languageToolOverlays';
 
 const TEI_NS = 'http://www.tei-c.org/ns/1.0';
 const DEFAULT_CITATION_STYLE_ID = 'chicago-note-bibliography';
@@ -460,6 +466,18 @@ export const TranslationPane = () => {
   );
   const [locked, setLocked] = useState(false);
   const [spellcheckEnabled, setSpellcheckEnabled] = useState(() => readSpellcheckEnabled());
+  const [languageToolEnabled, setLanguageToolEnabled] = useState(false);
+  const [languageToolLive, setLanguageToolLive] = useState(false);
+  const [languageToolChecking, setLanguageToolChecking] = useState(false);
+  const [languageToolMatches, setLanguageToolMatches] = useState<LanguageToolMatchView[]>([]);
+  const [languageToolSnapshot, setLanguageToolSnapshot] = useState<string | null>(null);
+  const [languageToolOverlays, setLanguageToolOverlays] = useState<TextRangeRect[]>([]);
+  const [languageToolStatus, setLanguageToolStatus] = useState<{
+    message: string;
+    severity: 'error' | 'info' | 'success';
+  } | null>(null);
+  const languageToolSeqRef = useRef(0);
+  const languageToolDebounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const [formatAnchor, setFormatAnchor] = useState<HTMLElement | null>(null);
   const [paneFontSize, setPaneFontSize] = useState(() => translationFontZoom.get());
   const editableRef = useRef<HTMLDivElement>(null);
@@ -507,16 +525,41 @@ export const TranslationPane = () => {
       window.removeEventListener('desktop:translation-language-state-changed', syncLanguageState);
   }, []);
 
-  // Chromium spellcheck: toggle lives in the pane; dictionary language follows
-  // the current translation target (e.g. fr → French Hunspell / macOS dict).
+  // Chromium spellcheck: live LanguageTool mode turns it off to avoid double underlines.
   useEffect(() => {
     const setSpellcheck = window.electronAPI?.setTranslationSpellcheck;
     if (!setSpellcheck) return;
     const languageCodes = [
       languageState?.selectedLang || translationMode.lang || '',
     ].filter(Boolean);
-    void setSpellcheck({ enabled: spellcheckEnabled, languageCodes });
-  }, [languageState?.selectedLang, spellcheckEnabled, translationMode.lang]);
+    const enabled = spellcheckEnabled && !languageToolLive;
+    void setSpellcheck({ enabled, languageCodes });
+  }, [languageState?.selectedLang, languageToolLive, spellcheckEnabled, translationMode.lang]);
+
+  useEffect(() => {
+    const load = window.electronAPI?.getLanguageToolSettings;
+    if (!load) return;
+    const apply = (settings: {
+      enabled?: boolean;
+      checkMode?: 'onDemand' | 'live';
+    } | null) => {
+      setLanguageToolEnabled(settings?.enabled === true);
+      setLanguageToolLive(settings?.enabled === true && settings?.checkMode === 'live');
+    };
+    void load().then(apply);
+    const onPrefs = () => {
+      void load().then(apply);
+    };
+    window.addEventListener('ljbCommonsUiChanged', onPrefs);
+    return () => window.removeEventListener('ljbCommonsUiChanged', onPrefs);
+  }, []);
+
+  useEffect(() => {
+    setLanguageToolMatches([]);
+    setLanguageToolSnapshot(null);
+    setLanguageToolStatus(null);
+    setLanguageToolOverlays([]);
+  }, [selectedUnitId]);
 
   // Pane text zoom (8–24px): keyboard Cmd/Ctrl +/-/0 while the pane has focus,
   // plus a window bridge so the desktop menu accelerators can drive it.
@@ -1016,6 +1059,164 @@ export const TranslationPane = () => {
       setGenerating(false);
     }
   }, [alignmentUnit, locked, replaceCurrentUnit, selectedUnitId, sourcePath, translationMode.lang]);
+
+  const refreshLanguageToolOverlays = useCallback((matches: LanguageToolMatchView[]) => {
+    const root = editableRef.current;
+    if (!root || matches.length === 0) {
+      setLanguageToolOverlays([]);
+      return;
+    }
+    setLanguageToolOverlays(collectMatchOverlayRects(root, matches));
+  }, []);
+
+  const runLanguageToolCheck = useCallback(async (options?: { quiet?: boolean }) => {
+    const check = window.electronAPI?.checkLanguageTool;
+    if (!check) {
+      if (!options?.quiet) {
+        setLanguageToolStatus({
+          severity: 'error',
+          message: t('LW.translationPane.languageToolUnavailable'),
+        });
+      }
+      return;
+    }
+    if (!languageToolEnabled) {
+      if (!options?.quiet) {
+        setLanguageToolStatus({
+          severity: 'info',
+          message: t('LW.translationPane.languageToolDisabled'),
+        });
+      }
+      return;
+    }
+    if (!selectedUnitId || !editableRef.current || locked) return;
+
+    const seq = ++languageToolSeqRef.current;
+    const text = editableRef.current.textContent ?? '';
+    setLanguageToolChecking(true);
+    if (!options?.quiet) setLanguageToolStatus(null);
+    try {
+      const result = await check({
+        text,
+        language: languageState?.selectedLang || translationMode.lang || 'auto',
+      });
+      if (seq !== languageToolSeqRef.current) return;
+      if (!result.ok) {
+        setLanguageToolMatches([]);
+        setLanguageToolSnapshot(null);
+        setLanguageToolOverlays([]);
+        if (!options?.quiet) {
+          setLanguageToolStatus({
+            severity: 'error',
+            message: result.error ?? t('LW.settings.language_tool.connection_failed'),
+          });
+        }
+        return;
+      }
+      const matches = (result.matches ?? []) as LanguageToolMatchView[];
+      const liveText = editableRef.current?.textContent ?? '';
+      if (liveText !== text) return;
+      setLanguageToolSnapshot(text);
+      setLanguageToolMatches(matches);
+      refreshLanguageToolOverlays(matches);
+      if (!options?.quiet || matches.length > 0) {
+        setLanguageToolStatus({
+          severity: matches.length === 0 ? 'success' : 'info',
+          message:
+            matches.length === 0
+              ? t('LW.translationPane.languageToolNoMatches')
+              : t('LW.translationPane.languageToolMatches', { count: matches.length }),
+        });
+      } else if (matches.length === 0) {
+        setLanguageToolStatus(null);
+      }
+    } catch (error) {
+      if (seq !== languageToolSeqRef.current) return;
+      if (!options?.quiet) {
+        setLanguageToolStatus({
+          severity: 'error',
+          message:
+            error instanceof Error
+              ? error.message
+              : t('LW.settings.language_tool.connection_failed'),
+        });
+      }
+    } finally {
+      if (seq === languageToolSeqRef.current) setLanguageToolChecking(false);
+    }
+  }, [
+    languageState?.selectedLang,
+    languageToolEnabled,
+    locked,
+    refreshLanguageToolOverlays,
+    selectedUnitId,
+    t,
+    translationMode.lang,
+  ]);
+
+  const scheduleLiveLanguageToolCheck = useCallback(() => {
+    if (!languageToolLive || !languageToolEnabled || locked) return;
+    if (languageToolDebounceRef.current) clearTimeout(languageToolDebounceRef.current);
+    languageToolDebounceRef.current = setTimeout(() => {
+      void runLanguageToolCheck({ quiet: true });
+    }, 700);
+  }, [languageToolEnabled, languageToolLive, locked, runLanguageToolCheck]);
+
+  const dismissLanguageToolMatch = useCallback(
+    (match: LanguageToolMatchView) => {
+      setLanguageToolMatches((current) => {
+        const next = current.filter(
+          (item) => item.offset !== match.offset || item.length !== match.length,
+        );
+        refreshLanguageToolOverlays(next);
+        return next;
+      });
+    },
+    [refreshLanguageToolOverlays],
+  );
+
+  const applyLanguageToolReplacement = useCallback(
+    async (match: LanguageToolMatchView, replacement: string) => {
+      const root = editableRef.current;
+      if (!root) return;
+      const liveText = root.textContent ?? '';
+      if (languageToolSnapshot !== null && liveText !== languageToolSnapshot) {
+        setLanguageToolStatus({
+          severity: 'error',
+          message: t('LW.translationPane.languageToolTextChanged'),
+        });
+        setLanguageToolMatches([]);
+        setLanguageToolSnapshot(null);
+        setLanguageToolOverlays([]);
+        return;
+      }
+
+      const ok = applyTextContentReplacement(root, match.offset, match.length, replacement);
+      if (!ok) {
+        setLanguageToolStatus({
+          severity: 'error',
+          message: t('LW.translationPane.languageToolApplyFailed'),
+        });
+        return;
+      }
+
+      const nextText = root.textContent ?? '';
+      setLanguageToolSnapshot(nextText);
+      setLanguageToolMatches((current) => {
+        const next = shiftLanguageToolMatchViews(
+          current,
+          match.offset,
+          match.length,
+          replacement.length,
+        );
+        refreshLanguageToolOverlays(next);
+        return next;
+      });
+      refreshFootnotes();
+      await persist();
+    },
+    [languageToolSnapshot, persist, refreshFootnotes, refreshLanguageToolOverlays, t],
+  );
 
   const getEditableRange = (): Range | null => {
     const selection = window.getSelection();
@@ -1786,19 +1987,48 @@ export const TranslationPane = () => {
 
         <Tooltip
           title={
-            spellcheckEnabled
-              ? t('LW.translationPane.disableSpellcheck')
-              : t('LW.translationPane.enableSpellcheck')
+            languageToolLive
+              ? t('LW.translationPane.spellcheckOffForLiveLt')
+              : spellcheckEnabled
+                ? t('LW.translationPane.disableSpellcheck')
+                : t('LW.translationPane.enableSpellcheck')
           }
         >
-          <IconButton
-            aria-pressed={spellcheckEnabled}
-            color={spellcheckEnabled ? 'primary' : 'default'}
-            onClick={toggleSpellcheck}
-            size="small"
-          >
-            <SpellcheckIcon fontSize="small" />
-          </IconButton>
+          <span>
+            <IconButton
+              aria-pressed={spellcheckEnabled && !languageToolLive}
+              color={spellcheckEnabled && !languageToolLive ? 'primary' : 'default'}
+              disabled={languageToolLive}
+              onClick={toggleSpellcheck}
+              size="small"
+            >
+              <SpellcheckIcon fontSize="small" />
+            </IconButton>
+          </span>
+        </Tooltip>
+
+        <Tooltip
+          title={
+            languageToolEnabled
+              ? t('LW.translationPane.languageToolCheck')
+              : t('LW.translationPane.languageToolDisabled')
+          }
+        >
+          <span>
+            <IconButton
+              aria-label={t('LW.translationPane.languageToolCheck')}
+              color={languageToolMatches.length > 0 ? 'primary' : 'default'}
+              disabled={!selectedUnitId || locked || languageToolChecking}
+              onClick={() => void runLanguageToolCheck()}
+              size="small"
+            >
+              {languageToolChecking ? (
+                <CircularProgress size={18} />
+              ) : (
+                <FactCheckIcon fontSize="small" />
+              )}
+            </IconButton>
+          </span>
         </Tooltip>
 
         <Tooltip title={t('LW.translationPane.formatting')}>
@@ -1935,6 +2165,77 @@ export const TranslationPane = () => {
         </Alert>
       ) : null}
 
+      {languageToolStatus ? (
+        <Alert
+          action={
+            languageToolMatches.length > 0 ? (
+              <Button
+                color="inherit"
+                onClick={() => {
+                  setLanguageToolMatches([]);
+                  setLanguageToolSnapshot(null);
+                  setLanguageToolStatus(null);
+                }}
+                size="small"
+              >
+                {t('LW.translationPane.languageToolCloseResults')}
+              </Button>
+            ) : undefined
+          }
+          severity={languageToolStatus.severity}
+          sx={{ borderRadius: 0 }}
+        >
+          {languageToolStatus.message}
+        </Alert>
+      ) : null}
+
+      {languageToolMatches.length > 0 ? (
+        <Box
+          sx={{
+            borderBottom: 1,
+            borderColor: 'divider',
+            maxHeight: 180,
+            overflow: 'auto',
+            px: 1,
+            py: 0.5,
+          }}
+        >
+          <List dense disablePadding>
+            {languageToolMatches.map((match) => (
+              <ListItem
+                alignItems="flex-start"
+                disableGutters
+                key={`${match.offset}-${match.length}-${match.ruleId ?? match.message}`}
+                sx={{ flexDirection: 'column', py: 0.5 }}
+              >
+                <Typography variant="body2">{match.message}</Typography>
+                <Typography color="text.secondary" variant="caption">
+                  “{(languageToolSnapshot ?? '').slice(match.offset, match.offset + match.length)}”
+                </Typography>
+                <Stack direction="row" flexWrap="wrap" spacing={0.5} sx={{ mt: 0.5 }}>
+                  {match.replacements.map((replacement) => (
+                    <Chip
+                      key={`${match.offset}-${replacement}`}
+                      label={replacement === ' ' ? '␣' : replacement || '∅'}
+                      onClick={() => void applyLanguageToolReplacement(match, replacement)}
+                      size="small"
+                      variant="outlined"
+                    />
+                  ))}
+                  <Button
+                    onClick={() => dismissLanguageToolMatch(match)}
+                    size="small"
+                    sx={{ minWidth: 0 }}
+                  >
+                    {t('LW.translationPane.languageToolDismiss')}
+                  </Button>
+                </Stack>
+              </ListItem>
+            ))}
+          </List>
+        </Box>
+      ) : null}
+
       {selectedUnitId ? (
         <Box
           onKeyDown={(event) => {
@@ -1955,11 +2256,12 @@ export const TranslationPane = () => {
             fontSize: `${paneFontSize}px`,
           }}
         >
+          <Box sx={{ position: 'relative', flex: '0 0 auto' }}>
           <Box
             ref={editableRef}
             contentEditable
             lang={spellcheckLang}
-            spellCheck={spellcheckEnabled}
+            spellCheck={spellcheckEnabled && !languageToolLive}
             suppressContentEditableWarning
             onBlur={() => {
               void persist();
@@ -1976,7 +2278,9 @@ export const TranslationPane = () => {
             onInput={() => {
               refreshFootnotes();
               rememberBodyRange();
+              scheduleLiveLanguageToolCheck();
             }}
+            onScroll={() => refreshLanguageToolOverlays(languageToolMatches)}
             onKeyUp={rememberBodyRange}
             onMouseUp={rememberBodyRange}
             onKeyDown={(event) => {
@@ -2058,6 +2362,34 @@ export const TranslationPane = () => {
               },
             }}
           />
+          {languageToolOverlays.map((rect, index) => (
+            <Box
+              key={`lt-overlay-${rect.matchIndex}-${index}`}
+              onClick={() => {
+                const match = languageToolMatches[rect.matchIndex];
+                if (!match) return;
+                setLanguageToolStatus({
+                  severity: 'info',
+                  message: match.message,
+                });
+              }}
+              sx={{
+                position: 'absolute',
+                top: rect.top,
+                left: rect.left,
+                width: rect.width,
+                height: rect.height,
+                bgcolor: 'error.main',
+                opacity: 0.85,
+                borderRadius: 1,
+                pointerEvents: 'auto',
+                cursor: 'pointer',
+                zIndex: 1,
+              }}
+              title={languageToolMatches[rect.matchIndex]?.shortMessage}
+            />
+          ))}
+          </Box>
 
           {footnotes.length > 0 && (
             <Box sx={{ px: 1.5, pb: 1.5 }}>
@@ -2077,7 +2409,7 @@ export const TranslationPane = () => {
                       data-leaf-footnote-editor={index}
                       dangerouslySetInnerHTML={{ __html: text }}
                       lang={spellcheckLang}
-                      spellCheck={spellcheckEnabled}
+                      spellCheck={spellcheckEnabled && !languageToolLive}
                       onBlur={(event) => {
                         rememberFootnoteRange(index, event.currentTarget);
                         updateFootnote(index, event.currentTarget.innerHTML);

@@ -123,14 +123,10 @@ See [apps/desktop/README.md](apps/desktop/README.md) for the compilation and pac
 
 - [x] Welcome splash: include toggle to activate/disactivate advanced features (direct XML editing), 
 - [x] Simplify hamburger menu.
-- [ ] Fully reproduce Oxgen typing experience in Source mode: 
-  - when you type an opening bracket, the closing one is automatically inserted after it (not fill suggest, automatic insert)
-  - Typing `</` automatically inserts a closing bracket to whatever the current opening one is, including, and especially, when there is an unclosed opening bracket.
-
 
 ## Big crazy ambitious dreams
 
-- [ ] Offer LanguageTool plugin for translation and note surfaces. 
+- [x] Offer LanguageTool for translation pane (managed install + on-demand/live check; Chromium spellcheck remains available when not in live mode).
 - Finish word plugin
   - [ ] Tool to manage name forms (I'll explain)
   - [ ] Production version, ready for install and distribution 
@@ -143,7 +139,17 @@ See [apps/desktop/README.md](apps/desktop/README.md) for the compilation and pac
 - [ ] Filter + chunk concordance for smoother loading into memory
 - [ ] Japanese pack: ask AI to identify patterns to the garbage, then clean asset packs
 
+#### Translation pane
 
+- [ ] Improve translation pane word-processing features.
+- [ ]
+- [ ] Integrate entity-Zotero: automatically picks up entities, formats them according to what's in the text.
+- [ ] Zdic and hucker for office names 
+- [ ] Copy-and-paste export of paragraphs with translation for word processors
+- [ ] polish feeling of parallel reading?
+- [ ] Notes, glosses, doubt markes in translation only?
+- [ ] translation consistency check
+- [ ] Attractive typography
 
 ## Plans
 
@@ -159,11 +165,7 @@ See [apps/desktop/README.md](apps/desktop/README.md) for the compilation and pac
 
 ### Future
 
-#### Translation pane
 
-- [ ] Improve translation pane word-processing features.
-- [ ] Integrate entity-Zotero ?
-- [ ] Copy-and-paste export of paragraphs with translation for word processors
 
 #### I/O
 

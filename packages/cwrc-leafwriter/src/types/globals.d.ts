@@ -464,6 +464,46 @@ declare global {
       enabled: boolean;
       languageCodes?: string[];
     }) => Promise<void>;
+    getLanguageToolSettings?: () => Promise<{
+      enabled: boolean;
+      baseUrl: string;
+      verifiedAt: string | null;
+      verifiedBaseUrl: string;
+      checkMode: 'onDemand' | 'live';
+      managedInstall: boolean;
+      ngramsEnabled: boolean;
+      installedVersion: string | null;
+    }>;
+    checkLanguageTool?: (request: {
+      text: string;
+      language?: string | null;
+      databasePaths?: string[];
+    }) => Promise<{
+      ok: boolean;
+      error?: string;
+      language?: string;
+      matches?: Array<{
+        message: string;
+        shortMessage: string;
+        offset: number;
+        length: number;
+        replacements: string[];
+        ruleId?: string;
+      }>;
+    }>;
+    languageToolGetInstallStatus?: () => Promise<unknown>;
+    languageToolInstall?: () => Promise<unknown>;
+    languageToolRemove?: () => Promise<unknown>;
+    languageToolInstallNgrams?: () => Promise<unknown>;
+    languageToolEnsureServer?: () => Promise<{ ok: boolean; error?: string; port?: number }>;
+    onLanguageToolInstallProgress?: (
+      callback: (progress: {
+        phase: 'download' | 'extract' | 'done';
+        receivedBytes?: number;
+        totalBytes?: number;
+        message?: string;
+      }) => void,
+    ) => () => void;
     pluginsEnsureSchemaContribution?: (
       pluginId: string,
       projectFilePath: string,

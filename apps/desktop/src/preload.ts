@@ -119,6 +119,63 @@ export interface AiConnectionResult {
   ok: boolean;
 }
 
+export interface LanguageToolSettings {
+  enabled: boolean;
+  baseUrl: string;
+  verifiedAt: string | null;
+  verifiedBaseUrl: string;
+  checkMode: 'onDemand' | 'live';
+  managedInstall: boolean;
+  ngramsEnabled: boolean;
+  installedVersion: string | null;
+}
+
+export interface LanguageToolConnectionResult {
+  error?: string;
+  languageCount?: number;
+  ok: boolean;
+}
+
+export interface LanguageToolMatch {
+  message: string;
+  shortMessage: string;
+  offset: number;
+  length: number;
+  replacements: string[];
+  ruleId?: string;
+}
+
+export interface LanguageToolCheckRequest {
+  text: string;
+  language?: string | null;
+  databasePaths?: string[];
+}
+
+export interface LanguageToolCheckResult {
+  error?: string;
+  language?: string;
+  matches?: LanguageToolMatch[];
+  ok: boolean;
+}
+
+export interface LanguageToolInstallStatus {
+  installed: boolean;
+  version: string | null;
+  path: string | null;
+  port: number;
+  ngrams: { en: boolean };
+  java: { ok: boolean; version?: string; major?: number; error?: string };
+  server: 'stopped' | 'starting' | 'running' | 'failed';
+  serverError?: string;
+}
+
+export interface LanguageToolInstallProgress {
+  phase: 'download' | 'extract' | 'done';
+  receivedBytes?: number;
+  totalBytes?: number;
+  message?: string;
+}
+
 export interface AiTranslationRequest {
   alignmentUnit: 'div' | 'p';
   sourceUnitXml: string;
@@ -567,6 +624,20 @@ export interface ElectronAPI {
   getAiApiSettings: () => Promise<AiApiSettings>;
   setAiApiSettings: (settings: Partial<AiApiSettings>) => Promise<void>;
   testAiConnection: (settings: Partial<AiApiSettings>) => Promise<AiConnectionResult>;
+  getLanguageToolSettings: () => Promise<LanguageToolSettings>;
+  setLanguageToolSettings: (settings: Partial<LanguageToolSettings>) => Promise<void>;
+  testLanguageToolConnection: (
+    settings: Partial<LanguageToolSettings>,
+  ) => Promise<LanguageToolConnectionResult>;
+  checkLanguageTool: (request: LanguageToolCheckRequest) => Promise<LanguageToolCheckResult>;
+  languageToolGetInstallStatus: () => Promise<LanguageToolInstallStatus>;
+  languageToolInstall: () => Promise<LanguageToolInstallStatus>;
+  languageToolRemove: () => Promise<LanguageToolInstallStatus>;
+  languageToolInstallNgrams: () => Promise<LanguageToolInstallStatus>;
+  languageToolEnsureServer: () => Promise<{ ok: boolean; error?: string; port?: number }>;
+  onLanguageToolInstallProgress: (
+    callback: (progress: LanguageToolInstallProgress) => void,
+  ) => () => void;
   generateAiTranslation: (request: AiTranslationRequest) => Promise<AiTranslationResult>;
   zoteroCheckAvailability: () => Promise<ZoteroAvailability>;
   zoteroSearchItems: (query: string) => Promise<ZoteroSearchResult[]>;
@@ -939,6 +1010,26 @@ const electronAPI: ElectronAPI = {
     ipcRenderer.invoke('setAiApiSettings', settings),
   testAiConnection: (settings: Partial<AiApiSettings>) =>
     ipcRenderer.invoke('testAiConnection', settings),
+  getLanguageToolSettings: () => ipcRenderer.invoke('getLanguageToolSettings'),
+  setLanguageToolSettings: (settings: Partial<LanguageToolSettings>) =>
+    ipcRenderer.invoke('setLanguageToolSettings', settings),
+  testLanguageToolConnection: (settings: Partial<LanguageToolSettings>) =>
+    ipcRenderer.invoke('testLanguageToolConnection', settings),
+  checkLanguageTool: (request: LanguageToolCheckRequest) =>
+    ipcRenderer.invoke('checkLanguageTool', request),
+  languageToolGetInstallStatus: () => ipcRenderer.invoke('languageToolGetInstallStatus'),
+  languageToolInstall: () => ipcRenderer.invoke('languageToolInstall'),
+  languageToolRemove: () => ipcRenderer.invoke('languageToolRemove'),
+  languageToolInstallNgrams: () => ipcRenderer.invoke('languageToolInstallNgrams'),
+  languageToolEnsureServer: () => ipcRenderer.invoke('languageToolEnsureServer'),
+  onLanguageToolInstallProgress: (callback) => {
+    const listener = (
+      _event: Electron.IpcRendererEvent,
+      progress: LanguageToolInstallProgress,
+    ) => callback(progress);
+    ipcRenderer.on('languageTool:installProgress', listener);
+    return () => ipcRenderer.removeListener('languageTool:installProgress', listener);
+  },
   generateAiTranslation: (request: AiTranslationRequest) =>
     ipcRenderer.invoke('generateAiTranslation', request),
   zoteroCheckAvailability: () => ipcRenderer.invoke('zoteroCheckAvailability'),

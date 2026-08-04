@@ -111,6 +111,63 @@ export interface AiConnectionResult {
   ok: boolean;
 }
 
+export interface LanguageToolSettings {
+  enabled: boolean;
+  baseUrl: string;
+  verifiedAt: string | null;
+  verifiedBaseUrl: string;
+  checkMode: 'onDemand' | 'live';
+  managedInstall: boolean;
+  ngramsEnabled: boolean;
+  installedVersion: string | null;
+}
+
+export interface LanguageToolConnectionResult {
+  error?: string;
+  languageCount?: number;
+  ok: boolean;
+}
+
+export interface LanguageToolMatch {
+  message: string;
+  shortMessage: string;
+  offset: number;
+  length: number;
+  replacements: string[];
+  ruleId?: string;
+}
+
+export interface LanguageToolCheckRequest {
+  text: string;
+  language?: string | null;
+  databasePaths?: string[];
+}
+
+export interface LanguageToolCheckResult {
+  error?: string;
+  language?: string;
+  matches?: LanguageToolMatch[];
+  ok: boolean;
+}
+
+export interface LanguageToolInstallStatus {
+  installed: boolean;
+  version: string | null;
+  path: string | null;
+  port: number;
+  ngrams: { en: boolean };
+  java: { ok: boolean; version?: string; major?: number; error?: string };
+  server: 'stopped' | 'starting' | 'running' | 'failed';
+  serverError?: string;
+}
+
+export interface LanguageToolInstallProgress {
+  phase: 'download' | 'extract' | 'done';
+  receivedBytes?: number;
+  totalBytes?: number;
+  message?: string;
+}
+
 export interface AiTranslationRequest {
   alignmentUnit: 'div' | 'p';
   sourceUnitXml: string;
@@ -433,6 +490,20 @@ export interface ElectronAPI {
   getAiApiSettings: () => Promise<AiApiSettings>;
   setAiApiSettings: (settings: Partial<AiApiSettings>) => Promise<void>;
   testAiConnection: (settings: Partial<AiApiSettings>) => Promise<AiConnectionResult>;
+  getLanguageToolSettings: () => Promise<LanguageToolSettings>;
+  setLanguageToolSettings: (settings: Partial<LanguageToolSettings>) => Promise<void>;
+  testLanguageToolConnection: (
+    settings: Partial<LanguageToolSettings>,
+  ) => Promise<LanguageToolConnectionResult>;
+  checkLanguageTool: (request: LanguageToolCheckRequest) => Promise<LanguageToolCheckResult>;
+  languageToolGetInstallStatus?: () => Promise<LanguageToolInstallStatus>;
+  languageToolInstall?: () => Promise<LanguageToolInstallStatus>;
+  languageToolRemove?: () => Promise<LanguageToolInstallStatus>;
+  languageToolInstallNgrams?: () => Promise<LanguageToolInstallStatus>;
+  languageToolEnsureServer?: () => Promise<{ ok: boolean; error?: string; port?: number }>;
+  onLanguageToolInstallProgress?: (
+    callback: (progress: LanguageToolInstallProgress) => void,
+  ) => () => void;
   generateAiTranslation: (request: AiTranslationRequest) => Promise<AiTranslationResult>;
   zoteroListStyles: () => Promise<ZoteroStyle[]>;
   renamePath: (oldPath: string, newPath: string) => Promise<string>;
@@ -504,6 +575,7 @@ declare global {
     __desktopValidatorInstrumentation?: DesktopValidatorInstrumentation;
     __ljbCommonsUi?: {
       aiApiSettings: AiApiSettings | null;
+      languageToolSettings: LanguageToolSettings | null;
       encoderName: string;
       encoderNameLoaded: boolean;
       entityDbFolder: string | null;
@@ -518,6 +590,7 @@ declare global {
         folder?: string;
       }>;
       setAiApiSettings: (settings: Partial<AiApiSettings>) => void | Promise<void>;
+      setLanguageToolSettings: (settings: Partial<LanguageToolSettings>) => void | Promise<void>;
       githubConnected: boolean;
       connectGithub: (
         onStarted?: (userCode: string) => void,
@@ -528,6 +601,9 @@ declare global {
       setSkipEntityDetachConfirm: (value: boolean) => void;
       setSkipExplorerDeleteConfirm: (value: boolean) => void;
       testAiConnection: (settings: Partial<AiApiSettings>) => Promise<AiConnectionResult>;
+      testLanguageToolConnection: (
+        settings: Partial<LanguageToolSettings>,
+      ) => Promise<LanguageToolConnectionResult>;
       authorityLifecycleStatus: AuthorityLifecycleStatus | null;
       refreshAuthorityLifecycle: () => Promise<void>;
       setAuthorityLifecycleEnabled: (

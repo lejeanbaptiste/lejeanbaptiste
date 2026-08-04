@@ -54,6 +54,7 @@ import {
   getAiApiSettings,
   getEncoderName,
   getEntityDbFolder,
+  getLanguageToolSettings,
   getLastDialogDir,
   getLocalAuthorityAssetsDir,
   getMapTilesDir,
@@ -67,11 +68,28 @@ import {
   setAiApiSettings,
   setEncoderName,
   setEntityDbFolder,
+  setLanguageToolSettings,
   setRememberWorkspaceOnStartup,
   writeLastProjectFile,
   type AiApiSettings,
+  type LanguageToolSettings,
   type WorkspaceSession,
 } from './projectPrefs';
+import { checkLanguageToolText, testLanguageToolConnection } from './languageToolClient';
+import { applyWhitelistToMatches, loadLanguageToolEntityWhitelist } from './languageToolWhitelist';
+import {
+  resolveLanguageToolCheckBaseUrl,
+  sanitizeLanguageToolSettings,
+} from './languageTool';
+import {
+  downloadAndInstallLanguageTool,
+  downloadEnglishNgrams,
+  ensureManagedLanguageToolServer,
+  getLanguageToolInstallStatus,
+  LANGUAGE_TOOL_MANAGED_PORT,
+  removeManagedLanguageTool,
+  stopManagedLanguageToolServer,
+} from './languageToolManaged';
 import {
   AUTHORITY_DB_DIRNAME,
   downloadAuthoritySource,
@@ -3070,6 +3088,111 @@ const registerIpcHandlers = () => {
     return testAiConnection(settings);
   });
 
+  ipcMain.handle('getLanguageToolSettings', async () => getLanguageToolSettings());
+
+  ipcMain.handle(
+    'setLanguageToolSettings',
+    async (_event, settings: Partial<LanguageToolSettings>) => {
+      await setLanguageToolSettings(settings);
+    },
+  );
+
+  ipcMain.handle('languageToolGetInstallStatus', async () => getLanguageToolInstallStatus());
+
+  ipcMain.handle('languageToolInstall', async (event) => {
+    const status = await downloadAndInstallLanguageTool((progress) => {
+      event.sender.send('languageTool:installProgress', progress);
+    });
+    await setLanguageToolSettings({
+      managedInstall: true,
+      enabled: true,
+      installedVersion: status.version,
+      baseUrl: `http://127.0.0.1:${LANGUAGE_TOOL_MANAGED_PORT}`,
+      verifiedAt: new Date().toISOString(),
+      verifiedBaseUrl: `http://127.0.0.1:${LANGUAGE_TOOL_MANAGED_PORT}`,
+    });
+    return status;
+  });
+
+  ipcMain.handle('languageToolRemove', async () => {
+    const status = await removeManagedLanguageTool();
+    await setLanguageToolSettings({
+      managedInstall: false,
+      installedVersion: null,
+      ngramsEnabled: false,
+    });
+    return status;
+  });
+
+  ipcMain.handle('languageToolInstallNgrams', async (event) => {
+    const status = await downloadEnglishNgrams((progress) => {
+      event.sender.send('languageTool:installProgress', progress);
+    });
+    await setLanguageToolSettings({ ngramsEnabled: true });
+    return status;
+  });
+
+  ipcMain.handle('languageToolEnsureServer', async () => {
+    const settings = await getLanguageToolSettings();
+    if (!settings.managedInstall) {
+      return { ok: true, port: LANGUAGE_TOOL_MANAGED_PORT };
+    }
+    return ensureManagedLanguageToolServer({ ngramsEnabled: settings.ngramsEnabled });
+  });
+
+  ipcMain.handle(
+    'testLanguageToolConnection',
+    async (_event, settings: Partial<LanguageToolSettings>) => {
+      const merged = sanitizeLanguageToolSettings({
+        ...(await getLanguageToolSettings()),
+        ...settings,
+      });
+      if (merged.managedInstall) {
+        const ensured = await ensureManagedLanguageToolServer({
+          ngramsEnabled: merged.ngramsEnabled,
+        });
+        if (!ensured.ok) return { ok: false, error: ensured.error };
+      }
+      const baseUrl = resolveLanguageToolCheckBaseUrl(merged, LANGUAGE_TOOL_MANAGED_PORT);
+      return testLanguageToolConnection(baseUrl);
+    },
+  );
+
+  ipcMain.handle(
+    'checkLanguageTool',
+    async (
+      _event,
+      request: { text: string; language?: string | null; databasePaths?: string[] },
+    ) => {
+      const settings = await getLanguageToolSettings();
+      if (!settings.enabled) {
+        return {
+          ok: false,
+          error: 'LanguageTool is disabled in Settings.',
+        };
+      }
+      if (settings.managedInstall) {
+        const ensured = await ensureManagedLanguageToolServer({
+          ngramsEnabled: settings.ngramsEnabled,
+        });
+        if (!ensured.ok) {
+          return { ok: false, error: ensured.error ?? 'Could not start LanguageTool.' };
+        }
+      }
+      const baseUrl = resolveLanguageToolCheckBaseUrl(settings, LANGUAGE_TOOL_MANAGED_PORT);
+      const result = await checkLanguageToolText(baseUrl, {
+        text: request.text ?? '',
+        language: request.language,
+      });
+      if (!result.ok || !result.matches) return result;
+      const whitelist = await loadLanguageToolEntityWhitelist(request.databasePaths ?? []);
+      return {
+        ...result,
+        matches: applyWhitelistToMatches(request.text ?? '', result.matches, whitelist),
+      };
+    },
+  );
+
   ipcMain.handle('generateAiTranslation', async (_event, request: AiTranslationRequest) => {
     return generateAiTranslation(request);
   });
@@ -3376,6 +3499,7 @@ app.on('before-quit', (event) => {
 });
 
 app.on('window-all-closed', () => {
+  void stopManagedLanguageToolServer();
   if (serverProcess) {
     serverProcess.kill();
     serverProcess = null;
@@ -3387,6 +3511,7 @@ app.on('window-all-closed', () => {
 });
 
 app.on('will-quit', () => {
+  void stopManagedLanguageToolServer();
   if (serverProcess) {
     serverProcess.kill();
     serverProcess = null;

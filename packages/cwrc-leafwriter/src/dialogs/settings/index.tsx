@@ -22,6 +22,7 @@ import { FontSize } from './sections/editor/font-size';
 import { DesktopEncoderName } from './sections/profile/desktop-encoder-name';
 import { DesktopEntityDatabase } from './sections/profile/desktop-entity-database';
 import { DesktopAiApi } from './sections/ui/desktop-ai-api';
+import { DesktopLanguageTool } from './sections/ui/desktop-language-tool';
 import { DesktopGithub } from './sections/ui/desktop-github';
 import { DesktopStartup } from './sections/ui/desktop-startup';
 import { DesktopWarnings } from './sections/ui/desktop-warnings';
@@ -293,6 +294,11 @@ export const SettingsDialog = ({ onClose, open = false, initialTab }: SettingsDi
                     <Section id="ai-api" title={t('LW.settings.ai_api.title')}>
                       <List dense>
                         <DesktopAiApi />
+                      </List>
+                    </Section>
+                    <Section id="language-tool" title={t('LW.settings.language_tool.title')}>
+                      <List dense>
+                        <DesktopLanguageTool />
                       </List>
                     </Section>
                     <Section id="ai-prompts" title={t('LW.settings.ai_prompts.title')}>

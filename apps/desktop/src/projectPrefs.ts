@@ -2,11 +2,19 @@ import { app, dialog } from 'electron';
 import fs from 'fs/promises';
 import path from 'path';
 import { recoverFromFailedAtomicWrite, writeFileAtomic } from './atomicWrite';
+import {
+  DEFAULT_LANGUAGE_TOOL_SETTINGS,
+  sanitizeLanguageToolSettings,
+  type LanguageToolSettings,
+} from './languageTool';
+
+export type { LanguageToolSettings };
 
 interface AppPrefs {
   lastProjectFile: string | null;
   encoderName?: string;
   aiApi?: AiApiSettings;
+  languageTool?: LanguageToolSettings;
   rememberWorkspaceOnStartup?: boolean;
   workspaceSession?: WorkspaceSession;
   entityDbFolder?: string | null;
@@ -127,6 +135,7 @@ const defaultAppPrefs = (): AppPrefs => ({
   lastProjectFile: null,
   encoderName: '',
   aiApi: DEFAULT_AI_API_SETTINGS,
+  languageTool: DEFAULT_LANGUAGE_TOOL_SETTINGS,
   rememberWorkspaceOnStartup: true,
   workspaceSession: sanitizeWorkspaceSession(undefined),
   entityDbFolder: null,
@@ -138,6 +147,7 @@ const readCommonPrefs = (
 ): Omit<AppPrefs, 'lastProjectFile'> => ({
   encoderName: typeof parsed.encoderName === 'string' ? parsed.encoderName : '',
   aiApi: sanitizeAiApiSettings(parsed.aiApi),
+  languageTool: sanitizeLanguageToolSettings(parsed.languageTool),
   rememberWorkspaceOnStartup: parsed.rememberWorkspaceOnStartup !== false,
   workspaceSession: sanitizeWorkspaceSession(parsed.workspaceSession),
   entityDbFolder:
@@ -460,6 +470,18 @@ export const getAiApiSettings = async (): Promise<AiApiSettings> => {
 export const setAiApiSettings = async (settings: Partial<AiApiSettings>) => {
   await mutateAppPrefs((prefs) => {
     prefs.aiApi = sanitizeAiApiSettings(settings);
+  });
+};
+
+export const getLanguageToolSettings = async (): Promise<LanguageToolSettings> => {
+  const prefs = await readAppPrefs();
+  return sanitizeLanguageToolSettings(prefs.languageTool);
+};
+
+export const setLanguageToolSettings = async (settings: Partial<LanguageToolSettings>) => {
+  await mutateAppPrefs((prefs) => {
+    const current = sanitizeLanguageToolSettings(prefs.languageTool);
+    prefs.languageTool = sanitizeLanguageToolSettings({ ...current, ...settings });
   });
 };
 

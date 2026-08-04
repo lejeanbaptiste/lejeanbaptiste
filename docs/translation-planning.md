@@ -169,3 +169,15 @@ The goal is a proper **translation mode**: a project-level feature where each so
 - New `translationFileNaming.test.ts` — pure string-transform round-trips (cheap, high-value given Phase D's cascade logic depends on it being exactly right).
 - New `translationCompanionOps.test.ts` (Phase D) — temp-dir fixture verifying rename/move/delete cascades, including "no companions exist" and "zero configured languages" no-op cases.
 - Check for an existing schema-update-confirmation test near `checkSchemaUpdate.ts` to mirror for the new xml:id-confirmation flow's underlying logic (`findAlignmentUnitsMissingIds`/`assignMissingIds`, already covered above).
+
+## LanguageTool (translation pane)
+
+Optional grammar checking for translations:
+
+1. **Java 17+** on the machine (Temurin / Homebrew `openjdk@17`).
+2. **Settings → AI → LanguageTool:** Download & install (LanguageTool 6.6 into app userData), or leave managed install off and point at a BYO server URL.
+3. Enable LanguageTool; choose **On demand** (Check button) or **Live** (underlines while typing; Chromium spelling is muted in live mode).
+4. Optional: download **English n-grams** (several GB) and enable them for better confusion detection.
+5. Latin-script entity names / romanisations from the central entity DB are filtered out of matches.
+
+Managed server starts on first check, not at app launch, and stops on quit.
