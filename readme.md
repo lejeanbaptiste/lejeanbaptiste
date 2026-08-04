@@ -123,26 +123,10 @@ See [apps/desktop/README.md](apps/desktop/README.md) for the compilation and pac
 
 - [x] Welcome splash: include toggle to activate/disactivate advanced features (direct XML editing), 
 - [x] Simplify hamburger menu.
-
-## Big crazy ambitious dreams
-
-- [x] Offer LanguageTool for translation pane (managed install + on-demand/live check; Chromium spellcheck remains available when not in live mode).
-- Finish word plugin
-  - [ ] Tool to manage name forms (I'll explain)
-  - [ ] Production version, ready for install and distribution 
-- [ ] Make AI assist actually useful: set up a test paragraph with a test set of tagging candidates, tweak the prompt until it gives useful results.
-
-## TODO
-
-- [ ] Rerun Norbert concordance test: zi + dynasty + family name + given name ON WIKIDATA + CBDB (?)
-- [ ] Import current matches
-- [ ] Filter + chunk concordance for smoother loading into memory
-- [ ] Japanese pack: ask AI to identify patterns to the garbage, then clean asset packs
+- [ ] how much chinese-only stuff seeped into non-chinese 
 
 #### Translation pane
 
-- [ ] Improve translation pane word-processing features.
-- [ ]
 - [ ] Integrate entity-Zotero: automatically picks up entities, formats them according to what's in the text.
 - [ ] Zdic and hucker for office names 
 - [ ] Copy-and-paste export of paragraphs with translation for word processors
@@ -150,6 +134,15 @@ See [apps/desktop/README.md](apps/desktop/README.md) for the compilation and pac
 - [ ] Notes, glosses, doubt markes in translation only?
 - [ ] translation consistency check
 - [ ] Attractive typography
+- [ ] Official titles dictionaries, dates dictionaries for hover-over
+
+## Big crazy ambitious dreams
+
+- Finish word plugin
+  - [ ] Tool to manage name forms (I'll explain)
+  - [ ] Production version, ready for install and distribution 
+- [ ] Make AI assist actually useful: set up a test paragraph with a test set of tagging candidates, tweak the prompt until it gives useful results.
+
 
 ## Plans
 
@@ -163,9 +156,9 @@ See [apps/desktop/README.md](apps/desktop/README.md) for the compilation and pac
 
 - [ ] Time Machine polish: diff preview, export history zip, optional `revisionDesc` on restore, delete (?)
 
+---
+
 ### Future
-
-
 
 #### I/O
 
@@ -180,7 +173,6 @@ See [apps/desktop/README.md](apps/desktop/README.md) for the compilation and pac
   - [ ] Normaliser
   - [ ] Punctuator
 - [ ] Import profiles (rule engine + mandoku hand profile)
-- [ ] Docx / Mammoth import
 - [ ] AI-inferred import profiles
 - [ ] Browser-extension / URL corpus→TEI extraction (E0–E5 — [corpus-extraction-planning.md](docs/corpus-extraction-planning.md))
 - [ ] (IF someone actually uses markdown) Import Phase 1 leftovers: md `{{header}}`, batch/folder UI, validator + provenance
@@ -190,11 +182,9 @@ See [apps/desktop/README.md](apps/desktop/README.md) for the compilation and pac
 
 - [ ] finish localisations
 - [ ] Redo icons : highlight
-- [ ] Official titles dictionaries, dates dictionaries for hover-over
 - [ ] Find/replace Phase 2b: WYSIWYG visible-text replace across markup
 - [ ] Match-case / persist last find query (optional)
 - [ ] Ignore page breaks, line breaks, and corrections in tagging and disambiguation?
-- [ ] (DREAM): reproduce Oxygen functionalities in Monaco
 - [ ] (ABANDONNED as hopeless) Tag-boundary Bugs B/C/H (typing/delete at edges)
 
 #### Maps
@@ -213,18 +203,18 @@ See [apps/desktop/README.md](apps/desktop/README.md) for the compilation and pac
 
 - [ ] TEI appointment encoding for office/role context
 
-#### Collaboration
-
-- [ ] Option to track annotator on the tag level for collaborations.
-
 #### AI
 
 - [ ] AI auto-tag: apply audit actions beyond `add` (remove/retag/redraw); schema-driven tag picker; prompt-profile UI
 
-#### Technical
+#### Technical / collaboration
 
 - [ ] Further Norbert functions
 - [ ] Support for custom authorities and personal SQL databases
 - [ ] Multi-machine offline sync beyond current mirror
-- [ ] Performance: virtualize review + disambiguation lists; Monaco theme without recreate ([performance-planning.md](docs/performance-planning.md))
+- [ ] Option to track annotator on the tag level for collaborations.
+
+### Unimportant
+
+- [ ] Docx / Mammoth import
 - [ ] Bundle size: icon barrel / storage-service; strip prod jotai-devtools; lazy dialogs/Monaco ([bundle-size-warning-planning.md](docs/bundle-size-warning-planning.md))

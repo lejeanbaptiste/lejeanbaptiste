@@ -91,3 +91,4 @@
 - Serialised boots to avoid TinyMCE load race that leaves LJB without an editor pane.
 - Simplified slideshow of loading screens on startup.
 - Have Monaco auto insert appropriate closing tag on `</`
+- Added LanguageTool spelling and grammar correction to the translation panel.
