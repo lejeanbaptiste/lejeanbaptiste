@@ -119,17 +119,47 @@ For detailed build and packaging information, see [apps/desktop/README.md](apps/
 
 See [apps/desktop/README.md](apps/desktop/README.md) for the compilation and packaging instructions.
 
+## Bugs / work in progress
+
+- [ ] Remove legacy help pop-ups all together: 'copying for first time', 'welcome to editor'
+- [ ] 'Exiger un XML bien... ' goes in the Garde-fous section
+- [ ] Editor pane follows system style regardless of settings choice; it should follow the choice made in the settings panel, like everything else (one of which is follow system style).
+- [x] Welcome splash: include toggle to activate/disactivate advanced features (direct XML editing), 
+- [ ] What does 'afficher les entités' even do anymore?
+- [ ] Database window should not always default to an office name on opening, especially when set to the person category-maybe load the last entity opened, or the first from the category chosen.
+- [ ] Norbert: tag noble title not needed anymore in the central toolbar, since integrated into add tag palette.
+
+
+- [ ] TinyMCE still failing to load on start up half the time in macOS
+- [ ] Stupid validation error when saving in Source mode 
+- [ ] Add notes in place, office, and work database cards: 'Awaiting reflection/user input'
+- [ ] I'd really like to split settings into separate tabs...
+- [ ] Instead of all the loading nonsense, let's have a welcome screen on startup: 'Welcome back XX'... maybe
+- [ ] Data privacy
+
 ## Plans
 
 ### Next release
 
+#### Asset packs
+
+- [ ] Rerun Norbert concordance test: zi + dynasty + family name + given name ON WIKIDATA + CBDB (?)
+- [ ] Import current matches
+- [ ] Filter + chunk concordance for smoother loading into memory
 - [ ] Japanese pack: ask AI to identify patterns to the garbage, then clean asset packs
-- [ ] Thorough localisation sweep
-- [ ] More BW visual assets
+
+#### Push limits
+
+- [ ] Cut TinyMCE startup in half again?
+- [ ] Fully reproduce Oxygen source editing experience?
+- [ ] Explore LanguageTool plugin for translation and note surfaces.
+- [ ] Navigate xml tree in-editor with some sort of dead key ?
+
+#### Other
+
 - Finish word plugin
   - [ ] Different name forms
   - [ ] Production version 
-- [ ] Explore LanguageTool plugin for translation and note surfaces.
 - [ ] Make AI assist actually useful
 - [ ] Time Machine polish: diff preview, export history zip, optional `revisionDesc` on restore, delete (?)
 

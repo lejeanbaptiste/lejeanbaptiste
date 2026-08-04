@@ -79,3 +79,7 @@
 - Updated dependencies
   - @cwrc/leafwriter@1.2.0
   - @cwrc/leafwriter-storage-service@1.1.0
+
+## Upstream
+
+- Welcome splash now includes toggle to activate/disactivate advanced features

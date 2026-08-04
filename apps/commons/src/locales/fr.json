@@ -832,6 +832,7 @@
         "title": "Votre nom",
         "message": "Entrez le nom sous lequel vous annoterez.",
         "placeholder": "Votre nom",
+        "enable_xml_editing": "Activer les fonctions avancées (édition directe du XML)",
         "save": "Enregistrer",
         "next": "Suivant"
       },

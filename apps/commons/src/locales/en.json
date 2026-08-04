@@ -574,6 +574,7 @@
         "title": "Your name",
         "message": "Enter the name you'll be tagging as.",
         "placeholder": "Your name",
+        "enable_xml_editing": "Enable advanced features (direct XML editing)",
         "save": "Save",
         "next": "Next"
       },
