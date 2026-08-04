@@ -292,5 +292,55 @@ export const installPackBundle = async ({
     installedAt,
   });
 
+  // Queue developer purge-orders from this bundle into the local review docket.
+  try {
+    const { added } = await ingestPackPurgeOrdersFromInstall(entityDbFolder, liveDir);
+    if (added > 0) {
+      onProgress?.(`Queued ${added} developer pack review notice(s)…`);
+    }
+  } catch (error) {
+    console.warn('Could not ingest pack purge orders', error);
+  }
+
   return { swapped: true };
 };
+
+/**
+ * Read `authority-packs/purge-orders/purge-orders.ndjson` (if present) and
+ * append new developer orders into the local pack-purge docket.
+ */
+export async function ingestPackPurgeOrdersFromInstall(
+  entityDbFolder: string,
+  packsLiveDir: string = path.join(entityDbFolder, 'authority-packs'),
+): Promise<{ added: number }> {
+  const {
+    mergeShippedOrdersIntoDocket,
+    parseShippedPurgeOrders,
+    packPurgeDocketPaths,
+  } = await import(
+    '../../../packages/cwrc-leafwriter/src/autoTagging/packPurgeDocket'
+  );
+  const candidates = [
+    path.join(packsLiveDir, 'purge-orders', 'purge-orders.ndjson'),
+    path.join(packsLiveDir, 'purge-orders.ndjson'),
+  ];
+  const shippedPath = candidates.find((p) => fs.existsSync(p));
+  if (!shippedPath) return { added: 0 };
+
+  const shipped = parseShippedPurgeOrders(await fsp.readFile(shippedPath, 'utf8'));
+  if (!shipped.length) return { added: 0 };
+
+  const paths = packPurgeDocketPaths(entityDbFolder);
+  await fsp.mkdir(path.dirname(paths.orders), { recursive: true });
+  let existing = '';
+  try {
+    existing = await fsp.readFile(paths.orders, 'utf8');
+  } catch {
+    existing = '';
+  }
+  const merged = mergeShippedOrdersIntoDocket(existing, shipped);
+  if (merged.added > 0) {
+    await writeFileAtomic(paths.orders, merged.text);
+  }
+  return { added: merged.added };
+}
