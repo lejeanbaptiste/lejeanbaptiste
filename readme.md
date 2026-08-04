@@ -126,9 +126,13 @@ See [apps/desktop/README.md](apps/desktop/README.md) for the compilation and pac
 
 ## Bugs / work in progress
 
-- [ ] TinyMCE still failing to load on start up half the time in macOS
-- [ ] Stupid validation error when saving in Source mode 
-- [ ] Instead of all the loading nonsense, let's have a welcome screen on startup: 'Welcome back XX'... maybe
+- [ ] TinyMCE still failing to load on start up half the time in macOS 
+
+## Big crazy ambitious dreams
+
+- [ ] Offer LanguageTool plugin for translation and note surfaces.
+- [ ] Cut TinyMCE startup in half AGAIN
+- [ ] Fully reproduce Oxgen
 
 
 ## Plans
@@ -144,9 +148,8 @@ See [apps/desktop/README.md](apps/desktop/README.md) for the compilation and pac
 
 #### Push limits
 
-- [ ] Cut TinyMCE startup in half again?
+
 - [ ] Fully reproduce Oxygen source editing experience?
-- [ ] Explore LanguageTool plugin for translation and note surfaces.
 - [ ] Navigate xml tree in-editor with some sort of dead key ?
 
 #### Other
@@ -156,6 +159,7 @@ See [apps/desktop/README.md](apps/desktop/README.md) for the compilation and pac
   - [ ] Production version 
 - [ ] Make AI assist actually useful
 - [ ] Time Machine polish: diff preview, export history zip, optional `revisionDesc` on restore, delete (?)
+- [ ] Instead of all the loading nonsense, let's have a welcome screen on startup: 'Welcome back XX'... maybe
 
 ### Future
 

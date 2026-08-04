@@ -56,6 +56,7 @@ export const ProjectEditor = () => {
   const initStartedForRef = useRef<string | null>(null);
   const loadLibStartedForRef = useRef<number | null>(null);
   const loadGenerationRef = useRef(0);
+  const autoRetryUsedRef = useRef(false);
   const [editorLoadFailed, setEditorLoadFailed] = useState(false);
   const [retryToken, setRetryToken] = useState(0);
   const [settingsBootstrapRequested, setSettingsBootstrapRequested] = useState(false);
@@ -133,14 +134,6 @@ export const ProjectEditor = () => {
     return () => registerApplicationSettingsBootstrap(async () => false);
   }, [ensureApplicationSettingsReady]);
 
-  const markEditorLoadFailed = useCallback(() => {
-    setEditorLoadFailed(true);
-    notifyViaSnackbar({
-      message: t('LWC.desktop.project.messages.editor_failed_to_load'),
-      options: { variant: 'error', persist: true },
-    });
-  }, [notifyViaSnackbar, t]);
-
   const retryEditorLoad = useCallback(() => {
     setEditorLoadFailed(false);
     loadLibStartedForRef.current = null;
@@ -153,6 +146,27 @@ export const ProjectEditor = () => {
     }
     setRetryToken((token) => token + 1);
   }, []);
+
+  const markEditorLoadFailed = useCallback(() => {
+    // Desktop has no browser reload affordance users think to use. Retry once
+    // automatically with the same teardown path as the Retry button.
+    if (!autoRetryUsedRef.current) {
+      autoRetryUsedRef.current = true;
+      console.warn('[editor] Boot failed; auto-retrying once');
+      retryEditorLoad();
+      return;
+    }
+
+    setEditorLoadFailed(true);
+    notifyViaSnackbar({
+      message: t('LWC.desktop.project.messages.editor_failed_to_load'),
+      options: { variant: 'error', persist: true },
+    });
+  }, [notifyViaSnackbar, retryEditorLoad, t]);
+
+  useEffect(() => {
+    autoRetryUsedRef.current = false;
+  }, [projectFilePath, sessionKey]);
 
   useEffect(() => {
     // Project restoration first reads and normalizes every remembered tab.  Do
@@ -264,6 +278,7 @@ export const ProjectEditor = () => {
       );
       if (shouldApply() && loaded) {
         previousTabRef.current = targetPath;
+        autoRetryUsedRef.current = false;
         setEditorLoadFailed(false);
       } else if (shouldApply() && !loaded) {
         markEditorLoadFailed();

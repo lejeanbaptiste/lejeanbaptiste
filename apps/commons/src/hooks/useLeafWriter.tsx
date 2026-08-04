@@ -1,5 +1,6 @@
 import { reapplyCachedTagColors, scheduleTagColorsInjection } from '@src/desktop/tagging/tagColors';
 import { DESKTOP_APP_DISPLAY_NAME } from '@src/desktop/desktopBranding';
+import { runEditorBoot } from '@src/desktop/editorBootQueue';
 import { registerLeafWriterCommonsI18n } from '@src/desktop/registerLeafWriterCommonsI18n';
 import { focusFirstBodyParagraph } from '@src/desktop/focusFirstBodyParagraph';
 import { prepareDesktopDocument } from '@src/desktop/resolveDocumentSchemas';
@@ -23,7 +24,7 @@ import { convertDocument } from '@src/services/leaf-te';
 import type { Resource } from '@src/types';
 import { isDesktop } from '@src/types/desktop';
 import { changeFileExtension } from '@src/utilities';
-import { useAtom, useSetAtom } from 'jotai';
+import { getDefaultStore, useAtom, useSetAtom } from 'jotai';
 import { useEffect, useRef } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useNavigate } from 'react-router';
@@ -216,14 +217,19 @@ export const useLeafWriter = () => {
   }, [leafWriter, rootPath]);
 
   const loadLib = async (element: HTMLElement): Promise<boolean> => {
-    try {
-      const lw = await loadLeafWriter(element);
-      setLeafWriter(lw);
-      return true;
-    } catch (error) {
-      console.error('[editor] Failed to load Leaf-Writer library', error);
-      return false;
-    }
+    return runEditorBoot('loadLib', async () => {
+      // Another queued boot may have finished while we waited.
+      if (getDefaultStore().get(leafwriterAtom) || window.writer) return true;
+
+      try {
+        const lw = await loadLeafWriter(element);
+        setLeafWriter(lw);
+        return true;
+      } catch (error) {
+        console.error('[editor] Failed to load Leaf-Writer library', error);
+        return false;
+      }
+    });
   };
 
   const initLeafWriter = async (override?: {
@@ -231,127 +237,140 @@ export const useLeafWriter = () => {
     content: string;
     shouldApply?: () => boolean;
   }): Promise<boolean> => {
-    const filePath = override?.filePath ?? resource?.filePath;
-    const rawContent = override?.content ?? resource?.content;
-    if (!leafWriter || !rawContent || !filePath) return false;
-    if (override?.shouldApply && !override.shouldApply()) return false;
-
-    const author = user && {
-      name: user.identities.get(user.preferredID)?.name ?? `${user.firstName} ${user.lastName}`,
-      uri: user?.identities.get(user.preferredID)?.uri ?? '',
-    };
-
-    let xml = rawContent;
-    let documentSchemas = schemas;
-
-    if (isDesktop() && filePath && rootPath) {
-      const prepared = await prepareProjectDocument(filePath, xml);
+    return runEditorBoot('initLeafWriter', async () => {
+      const filePath = override?.filePath ?? resource?.filePath;
+      const rawContent = override?.content ?? resource?.content;
+      const activeLeafWriter = getDefaultStore().get(leafwriterAtom) ?? leafWriter;
+      if (!activeLeafWriter || !rawContent || !filePath) return false;
       if (override?.shouldApply && !override.shouldApply()) return false;
-      xml = prepared.content;
-      documentSchemas = [...projectSchemas, ...prepared.schemas];
-      registerDesktopSchemas([
-        ...getEnabledCatalogSchemas(),
-        ...projectSchemas,
-        ...prepared.schemas,
-      ]);
-      if (resource && xml !== resource.content && resource.filePath === filePath) {
-        await setResource({ ...resource, content: xml });
-        updateTabContent({ filePath, content: xml });
+
+      // A half-booted writer with the same URL used to skip App.setup. Signal
+      // failure so the shell can tear down and remount cleanly.
+      if (window.writer && !isWriterReady()) {
+        console.warn('[editor-boot] refusing init on half-booted writer');
+        return false;
       }
-    }
 
-    if (override?.shouldApply && !override.shouldApply()) return false;
+      const author = user && {
+        name: user.identities.get(user.preferredID)?.name ?? `${user.firstName} ${user.lastName}`,
+        uri: user?.identities.get(user.preferredID)?.uri ?? '',
+      };
 
-    const settings: LeafWriterOptionsSettings = {
-      locale: currentLocale,
-      readonly,
-      schemas: documentSchemas,
-      ...(isDesktop()
-        ? {
-            baseUrl: `${window.location.origin}/`,
-            schemasId: [...ENABLED_CATALOG_IDS],
-            appDisplayName: DESKTOP_APP_DISPLAY_NAME,
-            modules: {
-              east: [
-                { id: 'fileMetadata', title: 'File metadata' },
-                { id: 'attributes', title: 'Attributes' },
-                { id: 'validation', title: 'Validation' },
-              ],
-            },
-          }
-        : {}),
-      // Telemetry is handled by the LWC. If want to test it on LW, you must disabled it on LWC (just do not initialize it)
-    };
+      let xml = rawContent;
+      let documentSchemas = schemas;
 
-    const visualXml = isDesktop() ? stripTeiHeaderForVisualEditor(xml) : xml;
+      if (isDesktop() && filePath && rootPath) {
+        const prepared = await prepareProjectDocument(filePath, xml);
+        if (override?.shouldApply && !override.shouldApply()) return false;
+        xml = prepared.content;
+        documentSchemas = [...projectSchemas, ...prepared.schemas];
+        registerDesktopSchemas([
+          ...getEnabledCatalogSchemas(),
+          ...projectSchemas,
+          ...prepared.schemas,
+        ]);
+        if (resource && xml !== resource.content && resource.filePath === filePath) {
+          await setResource({ ...resource, content: xml });
+          updateTabContent({ filePath, content: xml });
+        }
+      }
 
-    leafWriter.init({
-      document: {
-        url: filePath ?? resource?.url,
-        xml: visualXml,
-      },
-      settings,
-      user: author,
+      if (override?.shouldApply && !override.shouldApply()) return false;
+
+      const settings: LeafWriterOptionsSettings = {
+        locale: currentLocale,
+        readonly,
+        schemas: documentSchemas,
+        ...(isDesktop()
+          ? {
+              baseUrl: `${window.location.origin}/`,
+              schemasId: [...ENABLED_CATALOG_IDS],
+              appDisplayName: DESKTOP_APP_DISPLAY_NAME,
+              modules: {
+                east: [
+                  { id: 'fileMetadata', title: 'File metadata' },
+                  { id: 'attributes', title: 'Attributes' },
+                  { id: 'validation', title: 'Validation' },
+                ],
+              },
+            }
+          : {}),
+      };
+
+      const visualXml = isDesktop() ? stripTeiHeaderForVisualEditor(xml) : xml;
+
+      activeLeafWriter.init({
+        document: {
+          url: filePath ?? resource?.url,
+          xml: visualXml,
+        },
+        settings,
+        user: author,
+      });
+
+      if (isDesktop()) {
+        window.__desktopStoredDocumentXml = xml;
+        window.writer?.overmindActions?.document?.setDocumentXml?.(xml);
+      }
+
+      setEditorEvents();
+
+      if (analytics) {
+        analytics.track('editor', { opened: true });
+        analytics.page();
+      }
+
+      return waitForWriter();
     });
-
-    if (isDesktop()) {
-      window.__desktopStoredDocumentXml = xml;
-      window.writer?.overmindActions?.document?.setDocumentXml?.(xml);
-    }
-
-    setEditorEvents();
-
-    if (analytics) {
-      analytics.track('editor', { opened: true });
-      analytics.page();
-    }
-
-    return waitForWriter();
   };
 
   /** Minimal editor bootstrap so settings and preferences work before any file is open. */
   const ensureLeafWriterReadyForSettings = async (): Promise<boolean> => {
-    if (!isDesktop() || !leafWriter) return false;
-    if (isWriterReady()) return true;
+    return runEditorBoot('ensureLeafWriterReadyForSettings', async () => {
+      if (!isDesktop()) return false;
+      const activeLeafWriter = getDefaultStore().get(leafwriterAtom) ?? leafWriter;
+      if (!activeLeafWriter) return false;
+      if (isWriterReady()) return true;
 
-    registerLeafWriterCommonsI18n();
-    registerDesktopSchemas([...getEnabledCatalogSchemas(), ...projectSchemas]);
+      registerLeafWriterCommonsI18n();
+      registerDesktopSchemas([...getEnabledCatalogSchemas(), ...projectSchemas]);
 
-    const author = user && {
-      name: user.identities.get(user.preferredID)?.name ?? `${user.firstName} ${user.lastName}`,
-      uri: user?.identities.get(user.preferredID)?.uri ?? '',
-    };
+      const author = user && {
+        name: user.identities.get(user.preferredID)?.name ?? `${user.firstName} ${user.lastName}`,
+        uri: user?.identities.get(user.preferredID)?.uri ?? '',
+      };
 
-    const settings: LeafWriterOptionsSettings = {
-      locale: currentLocale,
-      readonly: false,
-      schemas: [...projectSchemas, ...schemas],
-      baseUrl: `${window.location.origin}/`,
-      schemasId: [...ENABLED_CATALOG_IDS],
-      appDisplayName: DESKTOP_APP_DISPLAY_NAME,
-      modules: {
-        east: [
-          { id: 'fileMetadata', title: 'File metadata' },
-          { id: 'attributes', title: 'Attributes' },
-          { id: 'validation', title: 'Validation' },
-        ],
-      },
-    };
+      const settings: LeafWriterOptionsSettings = {
+        locale: currentLocale,
+        readonly: false,
+        schemas: [...projectSchemas, ...schemas],
+        baseUrl: `${window.location.origin}/`,
+        schemasId: [...ENABLED_CATALOG_IDS],
+        appDisplayName: DESKTOP_APP_DISPLAY_NAME,
+        modules: {
+          east: [
+            { id: 'fileMetadata', title: 'File metadata' },
+            { id: 'attributes', title: 'Attributes' },
+            { id: 'validation', title: 'Validation' },
+          ],
+        },
+      };
 
-    leafWriter.init({
-      document: {
-        url: SETTINGS_BOOTSTRAP_URL,
-        xml: stripTeiHeaderForVisualEditor(SETTINGS_BOOTSTRAP_XML),
-      },
-      settings,
-      user: author,
+      activeLeafWriter.init({
+        document: {
+          url: SETTINGS_BOOTSTRAP_URL,
+          xml: stripTeiHeaderForVisualEditor(SETTINGS_BOOTSTRAP_XML),
+        },
+        settings,
+        user: author,
+      });
+
+      if (!activeLeafWriter.onLoad.observed) {
+        setEditorEvents();
+      }
+
+      return waitForWriter();
     });
-
-    if (!leafWriter.onLoad.observed) {
-      setEditorEvents();
-    }
-
-    return waitForWriter();
   };
 
   /** Load a different project file into an already-running editor (tab switch / second file). */

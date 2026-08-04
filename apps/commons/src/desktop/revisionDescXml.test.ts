@@ -1,6 +1,23 @@
 import { buildOrlandoSkeletonXml, buildTeiSkeletonXml } from './schemaTemplates';
 import { DESKTOP_APP_DISPLAY_NAME, DESKTOP_APP_IDENT } from './desktopBranding';
-import { stampLastEditedInXml } from './revisionDescXml';
+import { stampLastEditedInXml, toTeiApplicationVersion } from './revisionDescXml';
+
+describe('toTeiApplicationVersion', () => {
+  test('keeps numeric semver cores that TEI accepts', () => {
+    expect(toTeiApplicationVersion('1.2.3')).toBe('1.2.3');
+    expect(toTeiApplicationVersion('0.1.0')).toBe('0.1.0');
+  });
+
+  test('strips prerelease / build metadata that break the TEI pattern', () => {
+    expect(toTeiApplicationVersion('0.1.0-beta.1')).toBe('0.1.0');
+    expect(toTeiApplicationVersion('1.4.2+build.7')).toBe('1.4.2');
+  });
+
+  test('falls back when the value is unusable', () => {
+    expect(toTeiApplicationVersion('')).toBe('0.1.0');
+    expect(toTeiApplicationVersion('nightly')).toBe('0.1.0');
+  });
+});
 
 describe('stampLastEditedInXml', () => {
   test('adds Le Jean-Baptiste application stamp to TEI skeleton', () => {
@@ -12,15 +29,16 @@ describe('stampLastEditedInXml', () => {
       catalogId: 'teiLite',
       encoderName: 'Ada Lovelace',
       savedAt: new Date('2026-06-28T15:00:00.000Z'),
+      appVersion: '0.1.0-beta.1',
     });
 
     expect(stamped).toContain('<encodingDesc>');
     expect(stamped).toContain(`<application ident="${DESKTOP_APP_IDENT}"`);
+    expect(stamped).toContain('version="0.1.0"');
     expect(stamped).toContain('when="2026-06-28"');
     expect(stamped).toContain(`<label>${DESKTOP_APP_DISPLAY_NAME} (Ada Lovelace)</label>`);
     expect(stamped).not.toContain('<name>');
     expect(stamped).not.toContain('<date');
-    expect(stamped).not.toContain('<version');
     expect(stamped).not.toContain('<revisionDesc>');
   });
 

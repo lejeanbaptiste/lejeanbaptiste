@@ -121,6 +121,7 @@ const App = ({ document, settings, user }: LeafWriterOptions) => {
   // The document key below still recreates it when the active document changes.
   const [sourceEditorHasMounted, setSourceEditorHasMounted] = useState(false);
   const setupInProgressRef = useRef(false);
+  const setupWaitersRef = useRef<Array<() => void>>([]);
 
   useEffect(() => {
     if (editorViewMode === 'source') setSourceEditorHasMounted(true);
@@ -145,18 +146,19 @@ const App = ({ document, settings, user }: LeafWriterOptions) => {
     if (document.url === undefined) return;
 
     const existingContainer = window.writer?.layoutManager?.getContainer?.()?.[0];
+    // Require TinyMCE finished (`isInitialized`), not merely that Writer exists.
+    // Otherwise a half-boot with the same URL permanently skips setup.
     const alreadyLoaded =
       state.document.url === document.url &&
-      !!window.writer &&
+      Boolean(window.writer?.isInitialized) &&
       !!existingContainer &&
       window.document.body.contains(existingContainer);
-    const shouldSetup = !alreadyLoaded;
-    if (!shouldSetup) return;
+    if (alreadyLoaded) return;
 
     actions.document.setDocumentTouched(false);
     actions.document.setLoaded(false);
     setWriter(null);
-    setup();
+    void setup();
   }, [document.url]);
 
   useEffect(() => {
@@ -198,11 +200,34 @@ const App = ({ document, settings, user }: LeafWriterOptions) => {
   const fullscreenchanged = () => actions.ui.setFullscreen(!!window.document.fullscreenElement);
 
   const setup = async () => {
+    // Serialize Writer/TinyMCE construction. A second init (settings → document)
+    // used to bail while the first was still running and leave a half-boot.
     if (setupInProgressRef.current) {
-      return;
+      await new Promise<void>((resolve) => {
+        setupWaitersRef.current.push(resolve);
+      });
+      const existingContainer = window.writer?.layoutManager?.getContainer?.()?.[0];
+      const alreadyLoaded =
+        state.document.url === document.url &&
+        Boolean(window.writer?.isInitialized) &&
+        !!existingContainer &&
+        window.document.body.contains(existingContainer);
+      if (alreadyLoaded) return;
     }
+
     setupInProgressRef.current = true;
     try {
+      // Replace any previous Writer (settings bootstrap or failed half-boot)
+      // before constructing a new TinyMCE instance on the same host.
+      if (window.writer) {
+        try {
+          window.writer.destroy();
+        } catch {
+          // ignore teardown errors
+        }
+        window.writer = undefined as unknown as Writer;
+      }
+
       const config = await createConfig(settings);
 
       config.container = CONTAINER;
@@ -310,6 +335,8 @@ const App = ({ document, settings, user }: LeafWriterOptions) => {
       setReady(true);
     } finally {
       setupInProgressRef.current = false;
+      const waiters = setupWaitersRef.current.splice(0);
+      waiters.forEach((resolve) => resolve());
     }
   };
 

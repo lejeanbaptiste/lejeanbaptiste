@@ -3,6 +3,18 @@ import { DESKTOP_APP_DISPLAY_NAME, DESKTOP_APP_IDENT } from './desktopBranding';
 import { isOrlandoCatalog } from './schemaMetadataFields';
 import { findTeiHeader, hasTeiHeader, TEI_NS } from './teiHeaderXml';
 
+/**
+ * TEI `@version` on `application` must match:
+ * `[\d]+[a-z]*[\d]*(\.[\d]+[a-z]*[\d]*){0,3}`
+ * Semver prerelease tags like `0.1.0-beta.1` are invalid; keep the numeric core.
+ */
+export const toTeiApplicationVersion = (raw: string | undefined | null): string => {
+  const trimmed = (raw ?? '').trim();
+  const core = trimmed.split(/[-+]/, 2)[0]?.trim() ?? '';
+  if (/^\d+[a-z]*\d*(\.\d+[a-z]*\d*){0,3}$/.test(core)) return core;
+  return '0.1.0';
+};
+
 const findChildByLocalName = (parent: Element, name: string): Element | null => {
   for (let i = 0; i < parent.children.length; i += 1) {
     const child = parent.children[i];
@@ -24,8 +36,14 @@ const findTeiApplication = (appInfo: Element): Element | null => {
   return apps.find((app) => app.getAttribute('ident') === DESKTOP_APP_IDENT) ?? null;
 };
 
-const stampTeiApplication = (application: Element, who: string, when: string) => {
+const stampTeiApplication = (
+  application: Element,
+  who: string,
+  when: string,
+  version: string,
+) => {
   application.setAttribute('when', when);
+  application.setAttribute('version', toTeiApplicationVersion(version));
   Array.from(application.childNodes).forEach((child) => {
     application.removeChild(child);
   });
@@ -35,7 +53,12 @@ const stampTeiApplication = (application: Element, who: string, when: string) =>
   application.appendChild(label);
 };
 
-const stampTeiLastSaved = (xml: string, encoderName: string, savedAt: Date): string => {
+const stampTeiLastSaved = (
+  xml: string,
+  encoderName: string,
+  savedAt: Date,
+  appVersion: string,
+): string => {
   const parser = new DOMParser();
   const doc = parser.parseFromString(xml, 'application/xml');
   if (doc.querySelector('parsererror')) return xml;
@@ -70,7 +93,7 @@ const stampTeiLastSaved = (xml: string, encoderName: string, savedAt: Date): str
     appInfo.appendChild(application);
   }
 
-  stampTeiApplication(application, who, when);
+  stampTeiApplication(application, who, when, appVersion);
 
   return new XMLSerializer().serializeToString(doc);
 };
@@ -123,7 +146,12 @@ const stampOrlandoLastSaved = (xml: string, encoderName: string, savedAt: Date):
 
 export const stampLastEditedInXml = (
   xml: string,
-  options: { catalogId?: string | null; encoderName?: string; savedAt?: Date },
+  options: {
+    catalogId?: string | null;
+    encoderName?: string;
+    savedAt?: Date;
+    appVersion?: string;
+  },
 ): string => {
   const savedAt = options.savedAt ?? new Date();
   const encoderName = options.encoderName ?? 'Unknown';
@@ -134,7 +162,7 @@ export const stampLastEditedInXml = (
 
   if (!hasTeiHeader(xml)) return xml;
 
-  return stampTeiLastSaved(xml, encoderName, savedAt);
+  return stampTeiLastSaved(xml, encoderName, savedAt, options.appVersion ?? '0.1.0');
 };
 
 export const stampContentBeforeSave = async (
@@ -150,5 +178,14 @@ export const stampContentBeforeSave = async (
     }
   }
 
-  return stampLastEditedInXml(content, { catalogId, encoderName });
+  let appVersion = '0.1.0';
+  if (window.electronAPI?.getAppVersion) {
+    try {
+      appVersion = (await window.electronAPI.getAppVersion()) || appVersion;
+    } catch {
+      // keep fallback
+    }
+  }
+
+  return stampLastEditedInXml(content, { catalogId, encoderName, appVersion });
 };

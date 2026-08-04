@@ -87,3 +87,4 @@
 - Settings panel overhaul
 - Removed legacy help pop-ups
 - Editor pane now follows programme's light/dark choice, rather than independantly following the OS.
+- Fixed: save timestamp was not putting @version on <application>, causing validation error in Source mode. 
