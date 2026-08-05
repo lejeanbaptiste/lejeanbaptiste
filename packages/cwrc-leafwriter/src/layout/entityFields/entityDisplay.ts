@@ -1,5 +1,12 @@
 import type { EntityDates, EntitySummary } from './entitySummary';
-import { ENGLISH_DEFAULTS, type DateFormatSettings } from './dateFormatSettings';
+import {
+  ENGLISH_DEFAULTS,
+  titleConventionForLang,
+  type DateFormatSettings,
+  type TitleConvention,
+} from './dateFormatSettings';
+
+export type { TitleConvention } from './dateFormatSettings';
 
 export type DisplayFormatOverride =
   | 'family_only'
@@ -16,6 +23,7 @@ export type EntityPartId =
   | 'name'
   | 'classification'
   | 'chinese'
+  | 'original'
   | 'translation'
   | 'dates';
 
@@ -50,12 +58,18 @@ export interface EntityDisplaySpec {
   bracketsAround: EntityPartId | null;
   /** Append ’s after the last visible name part ({family, given} for a person, else {name}). */
   possessive: boolean;
+  /**
+   * Per-mention title order. `null` inherits the language-bucket default from
+   * translation policy (`titleConventionForLang`).
+   */
+  titleConvention: TitleConvention | null;
 }
 
 export const EMPTY_DISPLAY_SPEC: EntityDisplaySpec = {
   hidden: [],
   bracketsAround: null,
   possessive: false,
+  titleConvention: null,
 };
 
 /** How (or whether) to mark possession on a name mention for a target language. */
@@ -98,6 +112,7 @@ const PART_IDS: EntityPartId[] = [
   'name',
   'classification',
   'chinese',
+  'original',
   'translation',
   'dates',
 ];
@@ -151,9 +166,9 @@ export const chineseNameOf = (entity: EntitySummary): string | null =>
     ?.text ?? null;
 
 /**
- * Translated gloss for the target language (nameType `translation`), if any.
- * Matches on the primary language subtag (`fr` ↔ `fr-FR`).
- * Never treats `romanization` (or legacy Latn/`translation` romanizations) as a gloss.
+ * Translated gloss for the target language, if any.
+ * Prefers `entity.translations` (entity_translations table); falls back to
+ * legacy `names` with type `translation`.
  */
 export const translatedNameOf = (
   entity: EntitySummary,
@@ -161,11 +176,17 @@ export const translatedNameOf = (
 ): string | null => {
   const wanted = primaryLangSubtag(lang);
   if (!wanted) return null;
+
+  const fromTable = (entity.translations ?? []).find(
+    (entry) =>
+      Boolean(entry.text?.trim()) && primaryLangSubtag(entry.lang) === wanted,
+  );
+  if (fromTable?.text?.trim()) return fromTable.text.trim();
+
   const hit = entity.names.find((name) => {
     if (name.type !== 'translation' || !name.text?.trim()) return false;
     if (primaryLangSubtag(name.lang) !== wanted) return false;
     if (isRomanizationLang(name.lang)) return false;
-    // Legacy: Latin text under zh/und was a mis-tagged romanization, not a gloss.
     if (looksLikeRomanizationText(name.text)) {
       const primary = primaryLangSubtag(name.lang);
       if (!primary || primary === 'zh' || primary === 'und' || primary === 'lzh') return false;
@@ -174,6 +195,43 @@ export const translatedNameOf = (
   });
   return hit?.text?.trim() || null;
 };
+
+/**
+ * Among `languageCodes` (e.g. project translation languages), return those
+ * with no vernacular gloss yet. Empty / blank codes are skipped.
+ */
+export const missingTranslationLangs = (
+  entity: Pick<EntitySummary, 'translations' | 'names'>,
+  languageCodes: string[],
+): string[] => {
+  const seen = new Set<string>();
+  const missing: string[] = [];
+  for (const code of languageCodes) {
+    const trimmed = code.trim();
+    if (!trimmed) continue;
+    const key = primaryLangSubtag(trimmed);
+    if (!key || seen.has(key)) continue;
+    seen.add(key);
+    if (!translatedNameOf(entity as EntitySummary, trimmed)) missing.push(trimmed);
+  }
+  return missing;
+};
+
+/**
+ * Build a gloss-check shape from sidebar `nameEntries` (translations are merged
+ * into names as type `translation` after migration 9).
+ */
+export const entityLikeFromNameEntries = (
+  nameEntries: Array<{ text: string; lang?: string | null; type?: string | null }>,
+): Pick<EntitySummary, 'translations' | 'names'> => ({
+  translations: [],
+  names: nameEntries.map((entry) => ({
+    text: entry.text,
+    lang: entry.lang ?? null,
+    type: entry.type ?? null,
+  })),
+});
+
 
 /**
  * Split the romanized short name into family + given.
@@ -327,7 +385,10 @@ export const formatDates = (
 };
 
 export const isEmptyDisplaySpec = (spec: EntityDisplaySpec): boolean =>
-  spec.hidden.length === 0 && spec.bracketsAround === null && !spec.possessive;
+  spec.hidden.length === 0 &&
+  spec.bracketsAround === null &&
+  !spec.possessive &&
+  spec.titleConvention == null;
 
 export const parseDisplaySpec = (raw: string | null | undefined): EntityDisplaySpec | null => {
   if (!raw) return null;
@@ -341,10 +402,16 @@ export const parseDisplaySpec = (raw: string | null | undefined): EntityDisplayS
       parsed.bracketsAround && PART_IDS.includes(parsed.bracketsAround as EntityPartId)
         ? (parsed.bracketsAround as EntityPartId)
         : null;
+    const titleConvention =
+      parsed.titleConvention === 'romanization-first' ||
+      parsed.titleConvention === 'translation-first'
+        ? parsed.titleConvention
+        : null;
     return {
       hidden,
       bracketsAround,
       possessive: Boolean(parsed.possessive),
+      titleConvention,
     };
   } catch {
     return null;
@@ -357,6 +424,7 @@ export const serializeDisplaySpec = (spec: EntityDisplaySpec): string | null => 
     hidden: spec.hidden,
     bracketsAround: spec.bracketsAround,
     possessive: spec.possessive,
+    titleConvention: spec.titleConvention,
   } satisfies EntityDisplaySpec);
 };
 
@@ -398,6 +466,26 @@ export const displaySpecFromLegacyOverride = (
   }
 };
 
+/** Effective title order: explicit mention override, else language-bucket default. */
+export const effectiveTitleConvention = (
+  spec: EntityDisplaySpec,
+  lang?: string | null,
+): TitleConvention => spec.titleConvention ?? titleConventionForLang(lang);
+
+/**
+ * Romanization + Chinese bundled for translation-first parenthetical:
+ * "Jinshu 晉書" (omit either half when missing or identical).
+ */
+const originalFormsText = (entity: EntitySummary): string | null => {
+  const short = shortNameOf(entity);
+  const chinese = chineseNameOf(entity);
+  if (chinese && chinese !== short) {
+    const bits = [short !== '[Unknown entity]' ? short : null, chinese].filter(Boolean);
+    return bits.length ? bits.join(' ') : null;
+  }
+  return short !== '[Unknown entity]' ? short : null;
+};
+
 const partValue = (
   id: EntityPartId,
   entity: EntitySummary,
@@ -419,6 +507,8 @@ const partValue = (
       if (!chinese || chinese === short) return null;
       return chinese;
     }
+    case 'original':
+      return originalFormsText(entity);
     case 'translation': {
       const gloss = translatedNameOf(entity, lang);
       if (!gloss) return null;
@@ -435,13 +525,10 @@ const partValue = (
 
 /**
  * Base parts from occurrence, minus user-hidden parts, minus missing values.
- * Person: first occurrence adds chinese + translation + dates; later keeps family + given only
- * (order family → given → chinese → translation → dates). Every other kind uses a single
- * 'name' part instead of family/given (their names aren't family+given shaped).
- * Dates only make sense for person (birth/death) and work (publication/composition) —
- * place/org/office don't get a dates part even on first occurrence.
- * Translation gloss (nameType `translation` for the target language) appears in parentheses
- * after the Chinese characters on first occurrence: _Jinshu_ 晉書 (Livre des Jin).
+ *
+ * Romanization-first (default): _Jinshu_ 晉書 (Livre des Jin)
+ * Translation-first (when a gloss exists): _Livre des Jin_ (Jinshu 晉書)
+ * Without a gloss, always romanization-first regardless of settings.
  */
 export const resolveEntityParts = (
   entity: EntitySummary,
@@ -454,15 +541,28 @@ export const resolveEntityParts = (
   const first = occurrenceIndex <= 1;
   const isPerson = entity.kind === 'person';
   const hasDates = entity.kind === 'person' || entity.kind === 'work';
-  const baseIds: EntityPartId[] = isPerson
-    ? first
-      ? ['family', 'given', 'chinese', 'translation', 'dates']
-      : ['family', 'given']
-    : first
-      ? (['name', 'classification', 'chinese', 'translation'] as EntityPartId[]).concat(
+  const gloss = partValue('translation', entity, settings, lang);
+  const convention =
+    first && gloss && effectiveTitleConvention(spec, lang) === 'translation-first'
+      ? 'translation-first'
+      : 'romanization-first';
+
+  let baseIds: EntityPartId[];
+  if (!first) {
+    baseIds = isPerson ? ['family', 'given'] : ['name'];
+  } else if (convention === 'translation-first') {
+    baseIds = isPerson
+      ? (['translation', 'original', 'dates'] as EntityPartId[])
+      : (['translation', 'original', 'classification'] as EntityPartId[]).concat(
           hasDates ? ['dates'] : [],
-        )
-      : ['name'];
+        );
+  } else {
+    baseIds = isPerson
+      ? ['family', 'given', 'chinese', 'translation', 'dates']
+      : (['name', 'classification', 'chinese', 'translation'] as EntityPartId[]).concat(
+          hasDates ? ['dates'] : [],
+        );
+  }
 
   const parts: ResolvedEntityPart[] = [];
   for (const id of baseIds) {
@@ -480,15 +580,23 @@ const wrapSquareBrackets = (text: string): string => {
   return `[${text}]`;
 };
 
-/** Round parentheses for the dates part’s normal presentation. */
+/** Round parentheses for dates / gloss / original-forms. */
 const wrapParenDates = (text: string): string => {
   if (text.startsWith('(') && text.endsWith(')')) return text;
   return `(${text})`;
 };
 
+const isParenPart = (id: EntityPartId): boolean =>
+  id === 'dates' || id === 'translation' || id === 'original';
+
+const isNamePartId = (id: EntityPartId): boolean =>
+  id === 'family' || id === 'given' || id === 'name' || id === 'translation';
+
 /**
  * Compose visible parts with square brackets + language-aware possessive.
- * Dates and translation glosses render as `(…)`; if brackets are on that part, use `[…]`.
+ * Dates, translation glosses (romanization-first), and original forms
+ * (translation-first) render as `(…)`; if brackets are on that part, use `[…]`.
+ * Leading translation under translation-first is not parenthesized.
  */
 export const renderEntityFromSpec = (
   entity: EntitySummary,
@@ -503,20 +611,28 @@ export const renderEntityFromSpec = (
   const possessiveStyle = possessiveStyleForLang(lang);
   const tokens: string[] = [];
   let possessiveApplied = false;
+  const convention =
+    parts[0]?.id === 'translation' &&
+    effectiveTitleConvention(spec, lang) === 'translation-first'
+      ? 'translation-first'
+      : 'romanization-first';
 
   parts.forEach((part, index) => {
     let text = part.text;
-    if (part.id === 'dates' || part.id === 'translation') {
+    const leadTranslation = convention === 'translation-first' && part.id === 'translation';
+    if (isParenPart(part.id) && !leadTranslation) {
       text =
         spec.bracketsAround === part.id ? wrapSquareBrackets(text) : wrapParenDates(text);
     } else if (spec.bracketsAround === part.id) {
       text = wrapSquareBrackets(text);
     }
 
-    const isNamePart = part.id === 'family' || part.id === 'given' || part.id === 'name';
+    const isNamePart = isNamePartId(part.id) && !(part.id === 'translation' && !leadTranslation);
     const next = parts[index + 1];
     const nextIsName =
-      next && (next.id === 'family' || next.id === 'given' || next.id === 'name');
+      next &&
+      isNamePartId(next.id) &&
+      !(convention === 'translation-first' && next.id === 'translation' && index > 0);
     if (
       spec.possessive &&
       possessiveStyle !== 'none' &&

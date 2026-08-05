@@ -12,8 +12,14 @@ export interface EntityDates {
 export interface EntityNameEntry {
   lang: string | null;
   text: string;
-  /** `primary` | `translation` | `variant` | person name types, etc. */
+  /** `primary` | `romanization` | `variant` | person name types, etc. */
   type?: string | null;
+}
+
+/** Vernacular gloss for a target language (fr/en/…), from entity_translations. */
+export interface EntityTranslationEntry {
+  lang: string;
+  text: string;
 }
 
 export interface EntitySummary {
@@ -22,6 +28,8 @@ export interface EntitySummary {
   names: EntityNameEntry[];
   primaryName: string | null;
   romanizedName: string | null;
+  /** Target-language glosses (not romanizations). */
+  translations: EntityTranslationEntry[];
   description: string | null;
   dates: EntityDates | null;
   familyName: string | null;
@@ -52,6 +60,11 @@ export interface SqlitePanelLike {
     language: string | null;
     nameType?: string | null;
     nameRole?: string | null;
+    status?: string | null;
+  }>;
+  translations?: Array<{
+    text: string;
+    language: string;
     status?: string | null;
   }>;
   assertions?: Array<{
@@ -118,9 +131,20 @@ export const pickRomanizedFromPanelNames = (
 
 export const summaryFromSqlitePanel = (panel: SqlitePanelLike): EntitySummary => {
   const activeNames = panel.names.filter((name) => !name.status || name.status === 'active');
+  // Names list may include merged translation rows for the editor; ignore them for primary.
+  const nameOnly = activeNames.filter((name) => name.nameType !== 'translation');
   const primary =
-    activeNames.find((name) => name.nameType === 'primary' || name.nameRole === 'primary') ??
+    nameOnly.find((name) => name.nameType === 'primary' || name.nameRole === 'primary') ??
+    nameOnly[0] ??
     activeNames[0];
+  const fromTable = (panel.translations ?? [])
+    .filter((row) => !row.status || row.status === 'active')
+    .map((row) => ({ lang: row.language, text: row.text }));
+  const fromNames = activeNames
+    .filter((name) => name.nameType === 'translation' && name.language && name.text?.trim())
+    .map((name) => ({ lang: name.language!, text: name.text }));
+  // Prefer the dedicated table; fall back to legacy name rows still typed translation.
+  const translations = fromTable.length > 0 ? fromTable : fromNames;
   return {
     id: panel.id,
     kind: panel.kind as EntityKind,
@@ -130,7 +154,10 @@ export const summaryFromSqlitePanel = (panel: SqlitePanelLike): EntitySummary =>
       type: name.nameType ?? null,
     })),
     primaryName: primary?.text ?? null,
+    // Still scan all active names: legacy mis-tagged Latin under zh + type=translation
+    // must remain pickable as romanization (pickRomanizedFromPanelNames ignores fr/en glosses).
     romanizedName: pickRomanizedFromPanelNames(activeNames),
+    translations,
     description: panel.description,
     dates: datesFromPanel(panel),
     familyName: panel.familyName,

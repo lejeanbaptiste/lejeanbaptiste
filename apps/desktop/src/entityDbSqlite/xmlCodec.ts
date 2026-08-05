@@ -317,6 +317,20 @@ export function importEntitiesXml(
                 : explicitNameType === 'givenName'
                   ? 'given'
                   : explicitNameType;
+            const lang = attr(child, 'xml:lang');
+            if (
+              normalizedType === 'translation' &&
+              lang &&
+              !/(^|-)Latn($|-)/i.test(lang)
+            ) {
+              db.prepare(
+                `INSERT INTO entity_translations
+                  (entity_id, text, language, origin, source, status, created_at, updated_at)
+                 VALUES (?, ?, ?, ?, ?, ?, ?, ?)`,
+              ).run(id, childText, lang, p.origin, p.source, p.status, childNow, childNow);
+              report.namesImported += 1;
+              continue;
+            }
             const inferredPrimary = !normalizedType && importedNameCount === 0;
             const nameRole =
               normalizedType === 'primary'
@@ -335,7 +349,7 @@ export function importEntitiesXml(
               childText,
               normalizedType,
               nameRole,
-              attr(child, 'xml:lang'),
+              lang,
               nameRole === 'primary' ? 1 : 0,
               p.origin,
               p.source,
@@ -804,6 +818,21 @@ function entityXml(db: DatabaseSync, entity: Record<string, unknown>): string {
     const attrs = [
       row.language ? ` xml:lang="${attrEscape(String(row.language))}"` : '',
       row.name_type ? ` type="${attrEscape(String(row.name_type))}"` : '',
+      row.origin !== 'user' ? ` origin="${attrEscape(String(row.origin))}"` : '',
+      row.source ? ` source="${attrEscape(String(row.source))}"` : '',
+      row.status !== 'active' ? ` status="${attrEscape(String(row.status))}"` : '',
+    ].join('');
+    parts.push(`<${nameTag}${attrs}>${xmlEscape(String(row.text))}</${nameTag}>`);
+  }
+  for (const row of rows(
+    db,
+    `SELECT * FROM entity_translations WHERE entity_id = ? ORDER BY id`,
+    id,
+  )) {
+    if (row.status !== 'active' && row.status !== 'rejected') continue;
+    const attrs = [
+      ` xml:lang="${attrEscape(String(row.language))}"`,
+      ` type="translation"`,
       row.origin !== 'user' ? ` origin="${attrEscape(String(row.origin))}"` : '',
       row.source ? ` source="${attrEscape(String(row.source))}"` : '',
       row.status !== 'active' ? ` status="${attrEscape(String(row.status))}"` : '',

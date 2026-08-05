@@ -2,8 +2,10 @@ import { ENGLISH_DEFAULTS } from './dateFormatSettings';
 import {
   EMPTY_DISPLAY_SPEC,
   applyPossessiveSuffix,
+  entityLikeFromNameEntries,
   familyAndGivenOf,
   formatDates,
+  missingTranslationLangs,
   parseDisplaySpec,
   possessiveStyleForLang,
   renderEntityFromSpec,
@@ -22,6 +24,7 @@ const person = (overrides: Partial<EntitySummary> = {}): EntitySummary => ({
   ],
   primaryName: '崔祖思',
   romanizedName: 'Cui Zusi',
+  translations: [],
   description: null,
   dates: { startYear: 440, endYear: 483, startPrecision: null, endPrecision: null },
   familyName: 'Cui',
@@ -51,6 +54,7 @@ const place = (overrides: Partial<EntitySummary> = {}): EntitySummary => ({
   names: [{ lang: 'zh-Hant', text: '建康' }, { lang: 'zh-Latn', text: 'Jiankang' }],
   primaryName: '建康',
   romanizedName: 'Jiankang',
+  translations: [],
   description: null,
   dates: null,
   familyName: null,
@@ -66,6 +70,7 @@ const org = (overrides: Partial<EntitySummary> = {}): EntitySummary => ({
   names: [{ lang: 'en', text: 'Hanlin Academy' }],
   primaryName: 'Hanlin Academy',
   romanizedName: 'Hanlin Academy',
+  translations: [],
   description: null,
   dates: { startYear: 738, endYear: 907, startPrecision: null, endPrecision: null },
   familyName: null,
@@ -81,6 +86,7 @@ const office = (overrides: Partial<EntitySummary> = {}): EntitySummary => ({
   names: [{ lang: 'en', text: 'Prefect of Jiankang' }],
   primaryName: 'Prefect of Jiankang',
   romanizedName: 'Prefect of Jiankang',
+  translations: [],
   description: null,
   dates: null,
   familyName: null,
@@ -96,6 +102,7 @@ const work = (overrides: Partial<EntitySummary> = {}): EntitySummary => ({
   names: [{ lang: 'en', text: 'Book of Song' }],
   primaryName: 'Book of Song',
   romanizedName: 'Book of Song',
+  translations: [],
   description: null,
   dates: { startYear: 488, endYear: null, startPrecision: null, endPrecision: null },
   familyName: null,
@@ -156,6 +163,7 @@ describe('renderEntityFromSpec', () => {
     hidden: [],
     bracketsAround: 'family',
     possessive: false,
+    titleConvention: null,
   };
 
   test('brackets use square brackets around romanized family', () => {
@@ -170,11 +178,55 @@ describe('renderEntityFromSpec', () => {
 
   test('first occurrence appends a translation gloss for the target language', () => {
     const entity = person({
+      translations: [{ lang: 'fr', text: 'Cui le Patriote' }],
+    });
+    expect(renderEntityFromSpec(entity, 1, EMPTY_DISPLAY_SPEC, ENGLISH_DEFAULTS, 'fr')).toBe(
+      'Cui Zusi 崔祖思 (Cui le Patriote) (440–483)',
+    );
+  });
+
+  test('translation-first leads with the gloss and parenthesizes original forms', () => {
+    const entity = person({
+      translations: [{ lang: 'fr', text: 'Cui le Patriote' }],
+    });
+    const spec: EntityDisplaySpec = {
+      ...EMPTY_DISPLAY_SPEC,
+      titleConvention: 'translation-first',
+    };
+    expect(renderEntityFromSpec(entity, 1, spec, ENGLISH_DEFAULTS, 'fr')).toBe(
+      'Cui le Patriote (Cui Zusi 崔祖思) (440–483)',
+    );
+  });
+
+  test('translation-first for a work title', () => {
+    const entity = work({
+      names: [
+        { lang: 'zh-Hant', text: '晉書' },
+        { lang: 'zh-Latn', text: 'Jinshu' },
+      ],
+      primaryName: '晉書',
+      romanizedName: 'Jinshu',
+      translations: [{ lang: 'fr', text: 'Livre des Jin' }],
+      workType: 'book',
+      dates: null,
+    });
+    const spec: EntityDisplaySpec = {
+      ...EMPTY_DISPLAY_SPEC,
+      titleConvention: 'translation-first',
+    };
+    expect(renderEntityFromSpec(entity, 1, spec, ENGLISH_DEFAULTS, 'fr')).toBe(
+      'Livre des Jin (Jinshu 晉書)',
+    );
+  });
+
+  test('legacy nameType=translation gloss still works when translations[] is empty', () => {
+    const entity = person({
       names: [
         { lang: 'zh-Hant', text: '崔祖思', type: null },
         { lang: 'zh-Latn', text: 'Cui Zusi', type: null },
         { lang: 'fr', text: 'Cui le Patriote', type: 'translation' },
       ],
+      translations: [],
     });
     expect(renderEntityFromSpec(entity, 1, EMPTY_DISPLAY_SPEC, ENGLISH_DEFAULTS, 'fr')).toBe(
       'Cui Zusi 崔祖思 (Cui le Patriote) (440–483)',
@@ -245,6 +297,7 @@ describe('renderEntityFromSpec', () => {
       hidden: ['dates'],
       bracketsAround: 'family',
       possessive: false,
+      titleConvention: null,
     };
     expect(renderEntityFromSpec(luShao(), 1, spec, ENGLISH_DEFAULTS)).toBe('[Lu] Shao 陸邵');
   });
@@ -281,6 +334,7 @@ describe('renderEntityFromSpec', () => {
       hidden: ['chinese'],
       bracketsAround: 'family',
       possessive: false,
+      titleConvention: null,
     };
     expect(renderEntityFromSpec(person(), 1, spec, ENGLISH_DEFAULTS)).toBe('[Cui] Zusi (440–483)');
   });
@@ -299,6 +353,15 @@ describe('renderEntityFromSpec', () => {
     const raw = serializeDisplaySpec(familyInBrackets);
     expect(raw).toEqual(expect.any(String));
     expect(parseDisplaySpec(raw)).toEqual(familyInBrackets);
+  });
+
+  test('serialize/parse round-trips an explicit titleConvention', () => {
+    const spec: EntityDisplaySpec = {
+      ...EMPTY_DISPLAY_SPEC,
+      titleConvention: 'translation-first',
+    };
+    const raw = serializeDisplaySpec(spec);
+    expect(parseDisplaySpec(raw)).toEqual(spec);
   });
 
   test('parse drops legacy nameOrder field', () => {
@@ -362,7 +425,12 @@ describe('non-person kinds render a single name part, not family/given', () => {
   });
 
   test('possessive still applies to the name part for a place', () => {
-    const spec: EntityDisplaySpec = { hidden: ['chinese'], bracketsAround: null, possessive: true };
+    const spec: EntityDisplaySpec = {
+      hidden: ['chinese'],
+      bracketsAround: null,
+      possessive: true,
+      titleConvention: null,
+    };
     expect(renderEntityFromSpec(place(), 1, spec, ENGLISH_DEFAULTS, 'en')).toBe('Jiankang’s');
   });
 
@@ -387,5 +455,36 @@ describe('non-person kinds render a single name part, not family/given', () => {
       'Book of Song (488)',
     );
     expect(renderEntityFromSpec(work(), 2, EMPTY_DISPLAY_SPEC, ENGLISH_DEFAULTS)).toBe('Book of Song');
+  });
+});
+
+describe('missingTranslationLangs', () => {
+  test('lists configured languages that lack a gloss', () => {
+    const entity = work({
+      translations: [{ lang: 'fr', text: 'Livre des Jin' }],
+      dates: null,
+    });
+    expect(missingTranslationLangs(entity, ['fr', 'en', 'de'])).toEqual(['en', 'de']);
+  });
+
+  test('treats fr-FR as satisfied by a fr gloss', () => {
+    const entity = work({
+      translations: [{ lang: 'fr', text: 'Livre des Jin' }],
+      dates: null,
+    });
+    expect(missingTranslationLangs(entity, ['fr-FR'])).toEqual([]);
+  });
+
+  test('reads legacy nameType=translation via entityLikeFromNameEntries', () => {
+    const like = entityLikeFromNameEntries([
+      { text: '晉書', lang: 'zh-Hant', type: 'primary' },
+      { text: 'Livre des Jin', lang: 'fr', type: 'translation' },
+    ]);
+    expect(missingTranslationLangs(like, ['fr', 'en'])).toEqual(['en']);
+  });
+
+  test('skips blank codes and dedupes primary subtags', () => {
+    const entity = person();
+    expect(missingTranslationLangs(entity, ['', 'en', 'en-GB', 'fr'])).toEqual(['en', 'fr']);
   });
 });

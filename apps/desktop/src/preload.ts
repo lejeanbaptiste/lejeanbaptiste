@@ -199,6 +199,21 @@ export interface AiTranslationResult {
   translationXml?: string;
 }
 
+export interface AiEntityGlossRequest {
+  kind: string;
+  primaryName: string | null;
+  romanizedName: string | null;
+  chineseName?: string | null;
+  description?: string | null;
+  targetLanguage: string;
+}
+
+export interface AiEntityGlossResult {
+  error?: string;
+  ok: boolean;
+  gloss?: string;
+}
+
 export interface WorkspaceSession {
   activeFilePath: string | null;
   cursorPositions?: Record<string, WorkspaceCursorPosition>;
@@ -653,6 +668,7 @@ export interface ElectronAPI {
     callback: (progress: LanguageToolInstallProgress) => void,
   ) => () => void;
   generateAiTranslation: (request: AiTranslationRequest) => Promise<AiTranslationResult>;
+  suggestEntityGloss: (request: AiEntityGlossRequest) => Promise<AiEntityGlossResult>;
   zoteroCheckAvailability: () => Promise<ZoteroAvailability>;
   zoteroSearchItems: (query: string) => Promise<ZoteroSearchResult[]>;
   zoteroListStyles: () => Promise<ZoteroStyle[]>;
@@ -1047,6 +1063,8 @@ const electronAPI: ElectronAPI = {
   },
   generateAiTranslation: (request: AiTranslationRequest) =>
     ipcRenderer.invoke('generateAiTranslation', request),
+  suggestEntityGloss: (request: AiEntityGlossRequest) =>
+    ipcRenderer.invoke('suggestEntityGloss', request),
   zoteroCheckAvailability: () => ipcRenderer.invoke('zoteroCheckAvailability'),
   zoteroSearchItems: (query: string) => ipcRenderer.invoke('zoteroSearchItems', query),
   zoteroListStyles: () => ipcRenderer.invoke('zoteroListStyles'),

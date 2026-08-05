@@ -20,6 +20,7 @@ const person = (): EntitySummary => ({
   ],
   primaryName: '崔祖思',
   romanizedName: 'Cui Zusi',
+  translations: [],
   description: null,
   dates: { startYear: 440, endYear: 483, startPrecision: null, endPrecision: null },
   familyName: 'Cui',
@@ -37,6 +38,7 @@ const work = (overrides: Partial<EntitySummary> = {}): EntitySummary => ({
   ],
   primaryName: '七志',
   romanizedName: 'Qi zhi',
+  translations: [],
   description: null,
   dates: null,
   familyName: null,
@@ -99,11 +101,13 @@ describe('translationEntityFields', () => {
         names: [
           { lang: 'zh-Latn', text: 'Jinshu', type: 'primary' },
           { lang: 'zh-Hant', text: '晉書', type: null },
-          { lang: 'fr', text: 'Livre des Jin', type: 'translation' },
-          { lang: 'en', text: 'Book of Jin', type: 'translation' },
         ],
         primaryName: '晉書',
         romanizedName: 'Jinshu',
+        translations: [
+          { lang: 'fr', text: 'Livre des Jin' },
+          { lang: 'en', text: 'Book of Jin' },
+        ],
       }),
       1,
       EMPTY_DISPLAY_SPEC,
@@ -114,6 +118,27 @@ describe('translationEntityFields', () => {
     expect(italicText(field)).toBe('Jinshu');
   });
 
+  test('translation-first italicizes the gloss and parenthesizes original forms', () => {
+    const field = createEntityFieldElement(
+      work({
+        workType: 'book',
+        names: [
+          { lang: 'zh-Latn', text: 'Jinshu', type: 'primary' },
+          { lang: 'zh-Hant', text: '晉書', type: null },
+        ],
+        primaryName: '晉書',
+        romanizedName: 'Jinshu',
+        translations: [{ lang: 'fr', text: 'Livre des Jin' }],
+      }),
+      1,
+      { ...EMPTY_DISPLAY_SPEC, titleConvention: 'translation-first' },
+      undefined,
+      'fr',
+    );
+    expect(field.textContent).toBe('Livre des Jin (Jinshu 晉書)');
+    expect(italicText(field)).toBe('Livre des Jin');
+  });
+
   test('omits the translation gloss when the target language has none', () => {
     const field = createEntityFieldElement(
       work({
@@ -121,10 +146,10 @@ describe('translationEntityFields', () => {
         names: [
           { lang: 'zh-Latn', text: 'Jinshu', type: 'primary' },
           { lang: 'zh-Hant', text: '晉書', type: null },
-          { lang: 'fr', text: 'Livre des Jin', type: 'translation' },
         ],
         primaryName: '晉書',
         romanizedName: 'Jinshu',
+        translations: [{ lang: 'fr', text: 'Livre des Jin' }],
       }),
       1,
       EMPTY_DISPLAY_SPEC,
@@ -208,7 +233,7 @@ describe('translationEntityFields', () => {
         romanizedName: 'Qi zhi 七志',
       }),
       1,
-      { hidden: ['chinese'], bracketsAround: null, possessive: false },
+      { ...EMPTY_DISPLAY_SPEC, hidden: ['chinese'] },
     );
     expect(field.textContent).toBe('Qi zhi 七志');
     expect(italicText(field)).toBe('Qi zhi ');

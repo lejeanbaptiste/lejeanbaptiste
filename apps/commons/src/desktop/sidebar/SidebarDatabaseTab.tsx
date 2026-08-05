@@ -89,6 +89,7 @@ import {
   getBulkSyncProgress,
 } from '../../../../../packages/cwrc-leafwriter/src/autoTagging/bulkSyncProgress';
 import { suggestPersonRomanization } from '../../../../../packages/cwrc-leafwriter/src/plugins/personNameDefaults';
+import { isAiUiFeatureEnabled } from '../../../../../packages/cwrc-leafwriter/src/autoTagging/aiUiFeatures';
 import { cachedPackReader } from '../../../../../packages/cwrc-leafwriter/src/services/authority-pack-lookup';
 import {
   centralEntityStoreFromDesktop,
@@ -127,6 +128,14 @@ import { authorityLookupUrl } from '../entityDb/authorityLinks';
 import { BridgeInboxDialog } from './BridgeInboxDialog';
 import { MergeDocketDialog } from './MergeDocketDialog';
 import { SourceBadges } from '../../../../../packages/cwrc-leafwriter/src/autoTagging/SourceBadges';
+import {
+  entityLikeFromNameEntries,
+  missingTranslationLangs,
+} from '../../../../../packages/cwrc-leafwriter/src/layout/entityFields/entityDisplay';
+import { languageLabelForCode } from '../../../../../packages/cwrc-leafwriter/src/utilities/languageCodes';
+import { getActiveProjectBundle } from '../activeProjectBundle';
+import { readTranslationSettings } from '../translationSettings';
+import type { TranslationLanguage } from '../translationTypes';
 import {
   DESKTOP_DATABASE_ENTITY_EVENT,
   DESKTOP_LEFT_PANEL_EVENT,
@@ -762,6 +771,12 @@ export const SidebarDatabaseTab = ({ active = false }: SidebarDatabaseTabProps) 
   const [editNewName, setEditNewName] = useState('');
   const [editNewNameType, setEditNewNameType] = useState<string>('');
   const [editNewNameLanguage, setEditNewNameLanguage] = useState('');
+  const [focusAddNameToken, setFocusAddNameToken] = useState(0);
+  const [suggestGlossBusy, setSuggestGlossBusy] = useState(false);
+  const [suggestGlossError, setSuggestGlossError] = useState<string | null>(null);
+  const [projectTranslationLanguages, setProjectTranslationLanguages] = useState<
+    TranslationLanguage[]
+  >([]);
   const [pendingValidations, setPendingValidations] = useState<PendingValidation[]>([]);
   const [dateEditing, setDateEditing] = useState(false);
   const [dateBirth, setDateBirth] = useState('');
@@ -1110,6 +1125,24 @@ export const SidebarDatabaseTab = ({ active = false }: SidebarDatabaseTabProps) 
     if (active || !store) void reload();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [active, reload, rootPath]);
+
+  // Project translation languages for empty-gloss nudge chips in the names editor.
+  useEffect(() => {
+    let cancelled = false;
+    void (async () => {
+      const bundle = getActiveProjectBundle();
+      if (!bundle) {
+        if (!cancelled) setProjectTranslationLanguages([]);
+        return;
+      }
+      const settings = await readTranslationSettings(bundle);
+      if (cancelled) return;
+      setProjectTranslationLanguages(settings?.languages ?? []);
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, [rootPath, active]);
 
   // Native project settings are saved from a separate BrowserWindow. Refresh
   // the sidebar immediately when that window commits syncToCentral, even
@@ -2690,6 +2723,86 @@ export const SidebarDatabaseTab = ({ active = false }: SidebarDatabaseTabProps) 
     removeAssertionKeys,
     t,
   ]);
+
+  const missingTranslationNudges = useMemo(() => {
+    if (!editEntity || projectTranslationLanguages.length === 0) return [];
+    // Prefer live editor state so a just-added gloss hides its chip immediately.
+    const liveEntries = Object.keys(editNameTypes).map((text) => ({
+      text,
+      type: editNameTypes[text] || null,
+      lang: editNameLanguages[text] || null,
+    }));
+    const entries =
+      liveEntries.length > 0
+        ? liveEntries
+        : editEntity.nameEntries.map((entry) => ({
+            text: entry.text,
+            type: entry.type ?? null,
+            lang: entry.lang ?? null,
+          }));
+    const missing = missingTranslationLangs(
+      entityLikeFromNameEntries(entries),
+      projectTranslationLanguages.map((lang) => lang.code),
+    );
+    return missing.map((code) => {
+      const configured = projectTranslationLanguages.find((lang) => lang.code === code);
+      return {
+        code,
+        label: configured?.label || languageLabelForCode(code),
+      };
+    });
+  }, [editEntity, editNameLanguages, editNameTypes, projectTranslationLanguages]);
+
+  const requestAddTranslation = useCallback((langCode: string) => {
+    setNamesExpanded(true);
+    setEditNewName('');
+    setEditNewNameType('translation');
+    setEditNewNameLanguage(langCode);
+    setSuggestGlossError(null);
+    setFocusAddNameToken((token) => token + 1);
+  }, []);
+
+  const suggestNewTranslationGloss = useCallback(async () => {
+    if (!isAiUiFeatureEnabled('entityGlossSuggest')) return;
+    if (!editEntity || editNewNameType !== 'translation' || !editNewNameLanguage.trim()) return;
+    const suggest = window.electronAPI?.suggestEntityGloss;
+    if (!suggest) {
+      setSuggestGlossError(t('LWC.desktop.sidebar.database.suggest_translation_error'));
+      return;
+    }
+    setSuggestGlossBusy(true);
+    setSuggestGlossError(null);
+    try {
+      const chineseName =
+        editEntity.nameEntries.find((entry) => (entry.lang ?? '').startsWith('zh'))?.text ??
+        editEntity.names.find((name) => /[\u3400-\u9FFF]/.test(name)) ??
+        null;
+      const result = await suggest({
+        kind: editEntity.kind,
+        primaryName: editEntity.names[0] ?? null,
+        romanizedName: editEntity.romanized,
+        chineseName,
+        description: editEntity.description,
+        targetLanguage: editNewNameLanguage,
+      });
+      if (!result.ok || !result.gloss?.trim()) {
+        setSuggestGlossError(
+          result.error?.trim() || t('LWC.desktop.sidebar.database.suggest_translation_error'),
+        );
+        return;
+      }
+      setEditNewName(result.gloss.trim());
+      setFocusAddNameToken((token) => token + 1);
+    } catch (error) {
+      setSuggestGlossError(
+        error instanceof Error
+          ? error.message
+          : t('LWC.desktop.sidebar.database.suggest_translation_error'),
+      );
+    } finally {
+      setSuggestGlossBusy(false);
+    }
+  }, [editEntity, editNewNameLanguage, editNewNameType, t]);
 
   const commitNameType = (text: string, type: string) => {
     if (!editEntity) return;
@@ -4428,6 +4541,16 @@ export const SidebarDatabaseTab = ({ active = false }: SidebarDatabaseTabProps) 
               newNameLanguage={editNewNameLanguage}
               onNewNameLanguageChange={setEditNewNameLanguage}
               onAdd={commitNewName}
+              missingTranslations={missingTranslationNudges}
+              onRequestAddTranslation={requestAddTranslation}
+              focusAddFieldToken={focusAddNameToken}
+              onSuggestTranslation={
+                isAiUiFeatureEnabled('entityGlossSuggest') && window.electronAPI?.suggestEntityGloss
+                  ? suggestNewTranslationGloss
+                  : undefined
+              }
+              suggestBusy={suggestGlossBusy}
+              suggestError={suggestGlossError}
               title={
                 editEntity.kind === 'work'
                   ? t('LWC.desktop.sidebar.database.titles_heading')

@@ -80,6 +80,7 @@ import {
   type EntityPickerSearchHit,
   type SourceUnitEntityHit,
 } from './entityFields/sourceUnitEntities';
+import { entityStoreFromDesktop } from '../autoTagging/entityStore';
 import {
   buildSuggestionsAtCaret,
   candidateFromEntity,
@@ -100,12 +101,13 @@ import {
   readDisplaySpecFromField,
   writeDisplaySpecToField,
 } from './entityFields/translationEntityFields';
-import { EMPTY_DISPLAY_SPEC, formatDates, type EntityDisplaySpec } from './entityFields/entityDisplay';
+import { EMPTY_DISPLAY_SPEC, chineseNameOf, formatDates, type EntityDisplaySpec } from './entityFields/entityDisplay';
 import type { EntitySummary } from './entityFields/entitySummary';
 import { EntityDisplayPopup } from './entityFields/EntityDisplayPopup';
 import { TRANSLATION_POLICY_CHANGED_EVENT } from './entityFields/dateFormatSettings';
 import { applyEditorialCleanupToRoot, applyEditorialCleanupToRootPreservingSelection } from './translationEditorialCleanup';
 import { collectTranslationUnitCards, footnoteStartIndexForUnit, isTranslationUnitBlank } from './translationUnitCards';
+import { isAiUiFeatureEnabled } from '../autoTagging/aiUiFeatures';
 
 const TEI_NS = 'http://www.tei-c.org/ns/1.0';
 const DEFAULT_CITATION_STYLE_ID = 'chicago-note-bibliography';
@@ -249,6 +251,14 @@ interface DesktopElectronApi {
       description: string | null;
     }>;
   }) => Promise<{ error?: string; ok: boolean; translationXml?: string }>;
+  suggestEntityGloss?: (request: {
+    kind: string;
+    primaryName: string | null;
+    romanizedName: string | null;
+    chineseName?: string | null;
+    description?: string | null;
+    targetLanguage: string;
+  }) => Promise<{ error?: string; ok: boolean; gloss?: string }>;
   readFile?: (filePath: string) => Promise<string>;
   writeFile?: (filePath: string, content: string) => Promise<void>;
 }
@@ -2408,6 +2418,63 @@ export const TranslationPane = () => {
     await persist();
   };
 
+  const saveEntityTranslationFromPopup = async (text: string, lang: string): Promise<boolean> => {
+    const entity = entityFormatEntity;
+    const editable = editableRef.current;
+    if (!entity) return false;
+    const store = entityStoreFromDesktop();
+    if (!store || !(await store.hasSqliteDatabase())) return false;
+    try {
+      await store.sqliteAddName({
+        entityId: entity.id,
+        text,
+        nameType: 'translation',
+        language: lang,
+      });
+      const refreshed = await fetchEntitySummary(entity.id);
+      if (!refreshed) return false;
+      setEntityFormatEntity(refreshed);
+      if (editable) {
+        recalculateEntityFieldsInRoot(
+          editable,
+          refreshed.id,
+          refreshed,
+          undefined,
+          selectedLanguage,
+        );
+        prepareAtomicEntityFields(editable);
+        refreshFootnotes();
+        await persist();
+      }
+      return true;
+    } catch {
+      return false;
+    }
+  };
+
+  const suggestEntityTranslationFromPopup = async (): Promise<string | null> => {
+    if (!isAiUiFeatureEnabled('entityGlossSuggest')) return null;
+    const entity = entityFormatEntity;
+    const lang = selectedLanguage?.trim();
+    if (!entity || !lang) return null;
+    const api = getDesktopApi();
+    if (!api?.suggestEntityGloss) return null;
+    try {
+      const result = await api.suggestEntityGloss({
+        kind: entity.kind,
+        primaryName: entity.primaryName,
+        romanizedName: entity.romanizedName,
+        chineseName: chineseNameOf(entity),
+        description: entity.description,
+        targetLanguage: lang,
+      });
+      if (!result.ok || !result.gloss?.trim()) return null;
+      return result.gloss.trim();
+    } catch {
+      return null;
+    }
+  };
+
   const resetEntityDisplaySpec = async () => {
     await applyEntityDisplaySpec({ ...EMPTY_DISPLAY_SPEC });
   };
@@ -2897,36 +2964,40 @@ export const TranslationPane = () => {
           </span>
         </Tooltip>
 
-        {toolbarDivider}
+        {isAiUiFeatureEnabled('translationGenerate') && (
+          <>
+            {toolbarDivider}
 
-        <Button
-          aria-controls={aiMenuAnchor ? 'translation-ai-menu' : undefined}
-          aria-haspopup="menu"
-          disabled={!selectedUnitId}
-          onClick={(event) => setAiMenuAnchor(event.currentTarget)}
-          size="small"
-          sx={{ flexShrink: 0, fontWeight: 600, minWidth: 0, px: 1, textTransform: 'none' }}
-          variant="text"
-        >
-          {generating ? <CircularProgress size={16} /> : 'AI'}
-        </Button>
+            <Button
+              aria-controls={aiMenuAnchor ? 'translation-ai-menu' : undefined}
+              aria-haspopup="menu"
+              disabled={!selectedUnitId}
+              onClick={(event) => setAiMenuAnchor(event.currentTarget)}
+              size="small"
+              sx={{ flexShrink: 0, fontWeight: 600, minWidth: 0, px: 1, textTransform: 'none' }}
+              variant="text"
+            >
+              {generating ? <CircularProgress size={16} /> : 'AI'}
+            </Button>
 
-        <Menu
-          anchorEl={aiMenuAnchor}
-          id="translation-ai-menu"
-          onClose={() => setAiMenuAnchor(null)}
-          open={Boolean(aiMenuAnchor)}
-        >
-          <MenuItem
-            disabled={generating}
-            onClick={() => {
-              setAiMenuAnchor(null);
-              void generateTranslation();
-            }}
-          >
-            <ListItemText primary={t('LW.translationPane.generateTranslation')} />
-          </MenuItem>
-        </Menu>
+            <Menu
+              anchorEl={aiMenuAnchor}
+              id="translation-ai-menu"
+              onClose={() => setAiMenuAnchor(null)}
+              open={Boolean(aiMenuAnchor)}
+            >
+              <MenuItem
+                disabled={generating}
+                onClick={() => {
+                  setAiMenuAnchor(null);
+                  void generateTranslation();
+                }}
+              >
+                <ListItemText primary={t('LW.translationPane.generateTranslation')} />
+              </MenuItem>
+            </Menu>
+          </>
+        )}
 
         <Tooltip title={t('LW.translationPane.formatting')}>
           <span>
@@ -3623,10 +3694,15 @@ export const TranslationPane = () => {
           onReset={() => {
             void resetEntityDisplaySpec();
           }}
+          onSaveTranslation={saveEntityTranslationFromPopup}
+          onSuggestTranslation={
+            isAiUiFeatureEnabled('entityGlossSuggest') && getDesktopApi()?.suggestEntityGloss
+              ? suggestEntityTranslationFromPopup
+              : undefined
+          }
           open={entityFormatOpen}
           spec={entityFormatSpec}
-        />
-      ) : null}
+        />      ) : null}
       </Box>
     </>
   );

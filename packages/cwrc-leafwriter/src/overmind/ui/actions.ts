@@ -8,6 +8,7 @@ import { db } from '../../db';
 import type { DialogBarProps, PopupProps } from '../../dialogs';
 import { clearAutoTaggingBatch, stashAutoTaggingBatch } from '../../autoTagging/batchHolder';
 import type { DateReviewRecalculate } from '../../autoTagging/batchHolder';
+import { isAiUiFeatureEnabled } from '../../autoTagging/aiUiFeatures';
 import type { Suggestion } from '../../autoTagging/types';
 import i18n, { Locales, localesSchema } from '../../i18n';
 import type { ContextMenuState, NotificationProps, PaletteMode, PanelId, Side } from '../../types';
@@ -447,7 +448,10 @@ export const startAutoTaggingReview = (
   stashAutoTaggingBatch(suggestions, notice, recalculate, authorityCiv);
   state.ui.autoTaggingReview.active = true;
   state.ui.autoTaggingReview.batchId += 1;
-  state.ui.autoTaggingReview.aiValidation = aiValidation;
+  // Hidden unfinished AI: never start background curate while the UI flag is off.
+  state.ui.autoTaggingReview.aiValidation = isAiUiFeatureEnabled('tagBombCurate')
+    ? aiValidation
+    : false;
   window.dispatchEvent(
     new CustomEvent('desktop:auto-tagging-review-open', {
       detail: dockedReviewActiveDetail(state),
@@ -473,7 +477,10 @@ export const startDisambiguationReview = (
   // Disambiguation needs to see mentions that may live inside folded notes.
   if (!state.editor.showNotes) actions.editor.toggleShowNotes(true);
   state.ui.disambiguationReview.active = true;
-  state.ui.disambiguationReview.aiCuration = options?.aiCuration ?? true;
+  // Hidden unfinished AI: never enable curation while the UI flag is off.
+  state.ui.disambiguationReview.aiCuration = isAiUiFeatureEnabled('disambiguationCurate')
+    ? (options?.aiCuration ?? true)
+    : false;
   window.dispatchEvent(
     new CustomEvent('desktop:disambiguation-review-open', {
       detail: dockedReviewActiveDetail(state),

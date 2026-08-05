@@ -21,6 +21,7 @@ import {
   createLlmClientFromSettings,
   curateRejectBelowFromSettings,
   isAiSuggestReady,
+  isAiUiFeatureEnabled,
   isDateCuratorBatch,
   isDateTagOnlyBatch,
   markDatesPassApplied,
@@ -58,7 +59,9 @@ export const AutoTaggingReviewPane = () => {
   const { t } = useTranslation('LW');
   const active = useAppState().ui.autoTaggingReview?.active ?? false;
   const batchId = useAppState().ui.autoTaggingReview?.batchId ?? 0;
-  const aiValidationEnabled = useAppState().ui.autoTaggingReview?.aiValidation ?? false;
+  const aiValidationRequested = useAppState().ui.autoTaggingReview?.aiValidation ?? false;
+  const aiValidationEnabled =
+    isAiUiFeatureEnabled('tagBombCurate') && aiValidationRequested;
   const { exitAutoTaggingReview } = useActions().ui;
   const [suggestions, setSuggestions] = useState<Suggestion[]>([]);
   const [applied, setApplied] = useState(0);

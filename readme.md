@@ -180,6 +180,7 @@ Two switches to keep straight: **plugin on/off** (per project → toolbar, tag a
 
 #### AI
 
+- [ ] AI translate work names
 - [ ] AI auto-tag: apply audit actions beyond `add` (remove/retag/redraw); schema-driven tag picker; prompt-profile UI
 - [ ] Make AI assist actually useful: set up a test paragraph with a test set of tagging candidates, tweak the prompt until it gives useful results.
 - [ ] Translation panel: check for translation consistency across the document

@@ -24,6 +24,7 @@ const person = (id: string, romanizedName: string): EntitySummary => ({
   names: [{ lang: 'zh-Latn', text: romanizedName }],
   primaryName: romanizedName,
   romanizedName,
+  translations: [],
   description: null,
   dates: { startYear: 440, endYear: 483, startPrecision: null, endPrecision: null },
   familyName: romanizedName.split(' ')[0] ?? null,

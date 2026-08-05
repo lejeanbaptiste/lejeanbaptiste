@@ -10,6 +10,11 @@ const STORAGE_KEY = 'ljb.translationPolicy.dateFormat.v1';
 export type YearNumbering = 'astronomical' | 'historical';
 export type EraDisplay = 'none' | 'bce_only' | 'always';
 
+/** How first-occurrence titles lead: romanization or vernacular gloss. */
+export type TitleConvention = 'romanization-first' | 'translation-first';
+
+export const DEFAULT_TITLE_CONVENTION: TitleConvention = 'romanization-first';
+
 export interface DateFormatSettings {
   birthWord: string;
   deathWord: string;
@@ -26,6 +31,11 @@ export interface DateFormatSettings {
    * `historical` converts to traditional counting with no year zero.
    */
   yearNumbering: YearNumbering;
+  /**
+   * Default first-occurrence title order for this language bucket.
+   * Per-mention EntityDisplaySpec.titleConvention overrides when set.
+   */
+  titleConvention: TitleConvention;
 }
 
 export const ENGLISH_DEFAULTS: DateFormatSettings = {
@@ -39,6 +49,7 @@ export const ENGLISH_DEFAULTS: DateFormatSettings = {
   bceLabel: 'BCE',
   eraDisplay: 'none',
   yearNumbering: 'astronomical',
+  titleConvention: DEFAULT_TITLE_CONVENTION,
 };
 
 export const FRENCH_DEFAULTS: DateFormatSettings = {
@@ -52,6 +63,7 @@ export const FRENCH_DEFAULTS: DateFormatSettings = {
   bceLabel: 'av. J.-C.',
   eraDisplay: 'none',
   yearNumbering: 'astronomical',
+  titleConvention: DEFAULT_TITLE_CONVENTION,
 };
 
 export const GERMAN_DEFAULTS: DateFormatSettings = {
@@ -65,6 +77,7 @@ export const GERMAN_DEFAULTS: DateFormatSettings = {
   bceLabel: 'v. Chr.',
   eraDisplay: 'none',
   yearNumbering: 'astronomical',
+  titleConvention: DEFAULT_TITLE_CONVENTION,
 };
 
 export const LANGUAGE_PRESETS = {
@@ -103,21 +116,32 @@ export interface StoredDateFormatState {
   byLanguage: DateFormatSettingsByLanguage;
 }
 
-const DEFAULT_STATE: StoredDateFormatState = {
-  byLanguage: {
-    en: { ...ENGLISH_DEFAULTS },
-    fr: { ...FRENCH_DEFAULTS },
-    de: { ...GERMAN_DEFAULTS },
-  },
+const parseTitleConvention = (value: unknown): TitleConvention | undefined => {
+  if (value === 'romanization-first' || value === 'translation-first') return value;
+  return undefined;
 };
 
 const mergeLanguage = (
   preset: DateFormatSettings,
   stored: Partial<DateFormatSettings> | undefined,
-): DateFormatSettings => ({ ...preset, ...stored });
+): DateFormatSettings => ({
+  ...preset,
+  ...stored,
+  titleConvention:
+    parseTitleConvention(stored?.titleConvention) ?? preset.titleConvention,
+});
 
 export const loadDateFormatState = (): StoredDateFormatState => {
   try {
+    if (typeof window === 'undefined' || !window.localStorage) {
+      return {
+        byLanguage: {
+          en: { ...ENGLISH_DEFAULTS },
+          fr: { ...FRENCH_DEFAULTS },
+          de: { ...GERMAN_DEFAULTS },
+        },
+      };
+    }
     const raw = window.localStorage.getItem(STORAGE_KEY);
     if (raw) {
       const parsed = JSON.parse(raw) as Partial<StoredDateFormatState>;
@@ -164,5 +188,12 @@ export const dateFormatSettingsForLang = (
   lang: string | null | undefined,
   state: StoredDateFormatState = loadDateFormatState(),
 ): DateFormatSettings => state.byLanguage[dateFormatLanguageForCode(lang)];
+
+/** Language-bucket default for title order (overridable per mention). */
+export const titleConventionForLang = (
+  lang: string | null | undefined,
+  state: StoredDateFormatState = loadDateFormatState(),
+): TitleConvention =>
+  dateFormatSettingsForLang(lang, state).titleConvention ?? DEFAULT_TITLE_CONVENTION;
 
 export const TRANSLATION_POLICY_CHANGED_EVENT = 'desktop:translation-policy-changed';

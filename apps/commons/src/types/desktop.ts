@@ -191,6 +191,21 @@ export interface AiTranslationResult {
   translationXml?: string;
 }
 
+export interface AiEntityGlossRequest {
+  kind: string;
+  primaryName: string | null;
+  romanizedName: string | null;
+  chineseName?: string | null;
+  description?: string | null;
+  targetLanguage: string;
+}
+
+export interface AiEntityGlossResult {
+  error?: string;
+  ok: boolean;
+  gloss?: string;
+}
+
 export interface ZoteroStyle {
   id: string;
   label: string;
@@ -516,6 +531,7 @@ export interface ElectronAPI {
     callback: (progress: LanguageToolInstallProgress) => void,
   ) => () => void;
   generateAiTranslation: (request: AiTranslationRequest) => Promise<AiTranslationResult>;
+  suggestEntityGloss: (request: AiEntityGlossRequest) => Promise<AiEntityGlossResult>;
   zoteroListStyles: () => Promise<ZoteroStyle[]>;
   renamePath: (oldPath: string, newPath: string) => Promise<string>;
   movePath: (sourcePath: string, destDir: string) => Promise<string>;

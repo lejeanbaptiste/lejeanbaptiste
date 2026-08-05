@@ -1,6 +1,6 @@
 # Entity display: work types, title translations, period-filtered role translations
 
-**Status (2026-08-05):** **Phase 0 shipped** (`work_type` + citation styling — schema migration6, repository, IPC chain, entity-editor UI, translation-pane italic/quote styling, tests). Phases 1–4 are still planning only. Follows the kind-aware entity display baseline (`entityDisplay.ts`, `EntityDisplayPopup.tsx`, `entityAutocomplete.ts`, dates restricted to person/work, `office_classifications` wired up) shipped earlier the same day.
+**Status (2026-08-06):** **Phase 0–2 shipped** (`work_type`, `entity_translations` + title convention, empty-state translation nudge). Still open: period-filtered office glosses (Phase 3). Follows the kind-aware entity display baseline (`entityDisplay.ts`, `EntityDisplayPopup.tsx`, `entityAutocomplete.ts`, dates restricted to person/work, `office_classifications` wired up).
 
 ## Context
 
@@ -22,8 +22,8 @@ The kind-aware formatter fixed the mechanical problem (place/org/office/work no 
 
 These block their respective phase, not Phase 0:
 
-- **Translation storage shape.** Leaning toward a new `entity_translations` table (same shape as `entity_names`: text/language/origin/source/status) rather than overloading `entity_names`, so translations don't pollute name-search/autocomplete matching. Not yet confirmed.
-- **"TRANSLATION"/"TRADUCTION" prefill UX.** Daniel wants to nudge users to fill out empty translations. Risk flagged: literal insertable placeholder text risks shipping inside a real translation by accident (the translation pane is the one place a stray "TRADUCTION" could actually end up in output). Leaning toward a visually distinct empty-state affordance (dashed chip, "translate me") instead of typeable placeholder text — not decided.
+- ~~**Translation storage shape.**~~ **Decided (2026-08-06):** dedicated `entity_translations` table (schema migration 9). Same origin/source/status conventions as names; glosses are out of name-search/autocomplete; the editor still merges them into the names list as `nameType: 'translation'`.
+- ~~**"TRANSLATION"/"TRADUCTION" prefill UX.**~~ **Decided (2026-08-06):** dashed non-typeable affordance on both the entity editor and the translation-pane display popup — never insert literal placeholder text into the document or entity store.
 - **"Whose date?" for period-filtered office translations.** An office mention in running prose doesn't always carry its own date. Candidates: the citing passage's date, the tagged office-holder's tenure, or falling back to "most recent variant" when no date is available. Needs a concrete rule before `renderEntityFromSpec` can take a date parameter.
 - **Grand Ricci sourcing.** Daniel wants Grand Ricci title translations but has no known source/license path yet. Parked — not an engineering task until he has something to point at.
 
@@ -50,18 +50,20 @@ Confirmed fixed: #1 (no XML error). #2–#4 (correct placement) — deeper caret
 
 **Blank pane after leaving translation (2026-08-05 evening):** Leaving the translation tab calls `exitTranslationMode` (`active: false`), but `TranslationTabContent` kept its `resolvedKeyRef` so returning to the tab skipped `enterTranslationMode` — `TranslationPane` then rendered `null` into an empty portal. Fixed by clearing `resolvedKeyRef` when translation mode exits.
 
-### Phase 1 — Title translations (storage, convention, display) — **PARTIAL (2026-08-05)**
+### Phase 1 — Title translations (storage, convention, display) — **SHIPPED (2026-08-06)**
 **Goal:** a title can have an English/French translated form, shown in either display convention.
-- **Shipped now (romanization-first only):** `entity_names` with `nameType: 'translation'` + language (already in the entity editor) is carried through `EntitySummary.names[].type`. First-occurrence display appends `(gloss)` after Chinese for the active translation-pane language: `_Jinshu_ 晉書 (Livre des Jin)`. Gloss is upright (not italic). Hideable via the entity-display popup chip.
-- **Storage fix:** romanizations are a distinct `nameType: 'romanization'` with a `*-Latn` language tag (schema migration 8 + `setRomanizedName` / auto-clean). Vernacular title glosses remain `translation`. Display still tolerates legacy mis-tagged rows.
-- Still open / not built: separate `entity_translations` table (vs overloading names), translation-first convention toggle on `EntityDisplaySpec`, project-level default per target language, Wikidata pull (Phase 1b).
-- **Depends on:** Phase 0 landing first is not required, but sharing the same "new part on `EntitySummary`" pattern makes this easier once Phase 0's plumbing (repository → panel summary → `EntitySummary` → `entityDisplay.ts`) is fresh/proven.
+- **Display:** First-occurrence can be romanization-first (`_Jinshu_ 晉書 (Livre des Jin)`) or translation-first (`_Livre des Jin_ (Jinshu 晉書)`). Gloss / leading title italics follow the convention. Hideable via the entity-display popup chip; “Lead with translation” switch writes an explicit per-mention override.
+- **Storage:** vernacular glosses live in `entity_translations` (schema migration 9). Romanizations stay in `entity_names` as `nameType: 'romanization'` + `*-Latn` (migration 8). Editor UI still edits glosses as Translation name rows; repository routes those writes to the translations table. Display prefers `EntitySummary.translations`, with a dual-read fallback for any leftover `nameType: 'translation'` name rows.
+- **Language default:** personal translation-policy setting (`titleConvention` per en/fr/de bucket in localStorage), same store as date wording — not edition/project XML. Default remains romanization-first.
+- Still open / not built: Wikidata pull (Phase 1b).
 - Wikidata pull (translated labels, CC0, no licensing concern unlike Hucker) is a natural Phase 1b — separate PR, not blocking core display.
 
-### Phase 2 — "TRANSLATION"/"TRADUCTION" empty-state nudge
+### Phase 2 — "TRANSLATION"/"TRADUCTION" empty-state nudge — **SHIPPED (2026-08-06)**
 **Goal:** encourage users to fill out missing translations without risking stray placeholder text shipping in real output.
-- Depends on Phase 1's UI existing to prototype against.
-- Blocked on the UX decision above.
+- **Entity editor:** dashed chips under the names/titles list for each configured project translation language that lacks a gloss; click prefills Add as type Translation + that language and focuses the text field.
+- **Translation pane:** dashed “Add translation…” chip in the entity-display popup when the pane language has no gloss; opens a dialog that saves via `sqliteAddName` → `entity_translations`, then refreshes the mention.
+- No literal “TRANSLATION”/“TRADUCTION” text is ever written into the document or the entity store.
+- **AI suggest on nudge (2026-08-06):** “Suggest with AI” on both surfaces fills the draft gloss only (popup dialog + editor Add row when type is Translation and a language is set). User still edits and clicks Save/Add. Gated by `entityGlossSuggest` (on by default); separate from unfinished full-unit `translationGenerate`.
 
 ### Phase 3 — Org/role period-filtered translations (Hucker data model)
 **Goal:** office/org labels carry period-appropriate English glosses.
@@ -82,9 +84,7 @@ Confirmed fixed: #1 (no XML error). #2–#4 (correct placement) — deeper caret
 
 ## Sequencing
 
-- **Phase 0** has no open dependencies and is ready to plan/build now.
-- **Phase 1** is the next real build — bigger than Phase 0 (new table, new UI, new convention logic) but not blocked by anything except its own open question (storage shape).
-- **Phase 2** depends on Phase 1's UI.
+- **Phases 0–2** are shipped.
 - **Phase 3** depends on Phase 1's infrastructure and its own open question ("whose date?").
 - **Phase 4** depends on Phase 3's schema and is lowest priority — a build-tool project, not an in-app feature.
 - **"Belongs to"** and **Grand Ricci** run on their own track, not gating or gated by 0–4.

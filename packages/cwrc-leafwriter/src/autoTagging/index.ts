@@ -23,6 +23,7 @@ export * from './integration';
 export * from './tagBombScope';
 export * from './tagBombQueue';
 export * from './purge';
+export * from './aiUiFeatures';
 export { DisambiguationPanel, type DisambiguationPanelProps } from './DisambiguationPanel';
 export * from './mentions';
 export * from './authorityCache';

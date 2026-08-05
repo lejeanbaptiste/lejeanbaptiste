@@ -20,6 +20,7 @@ import {
   type DateFormatSettings,
   type EraDisplay,
   type StoredDateFormatState,
+  type TitleConvention,
   type YearNumbering,
 } from '../../layout/entityFields/dateFormatSettings';
 
@@ -168,6 +169,27 @@ export const TranslationPolicyPanel = () => {
           {t('LW.settings.translationPolicy.resetDefaults', { language: languageLabel(language) })}
         </Button>
       </Box>
+
+      <FormControl fullWidth size="small">
+        <InputLabel>{t('LW.settings.translationPolicy.titleConvention')}</InputLabel>
+        <Select
+          label={t('LW.settings.translationPolicy.titleConvention')}
+          onChange={(event) =>
+            setDraft({
+              ...draft,
+              titleConvention: event.target.value as TitleConvention,
+            })
+          }
+          value={draft.titleConvention}
+        >
+          <MenuItem value="romanization-first">
+            {t('LW.settings.translationPolicy.titleConventionRomanizationFirst')}
+          </MenuItem>
+          <MenuItem value="translation-first">
+            {t('LW.settings.translationPolicy.titleConventionTranslationFirst')}
+          </MenuItem>
+        </Select>
+      </FormControl>
 
       <Stack spacing={1.25}>
         {FIELD_KEYS.map(({ key, labelKey }) => (

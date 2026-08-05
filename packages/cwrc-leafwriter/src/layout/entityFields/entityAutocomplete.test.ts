@@ -20,6 +20,7 @@ const person = (overrides: Partial<EntitySummary> = {}): EntitySummary => ({
   ],
   primaryName: '崔祖思',
   romanizedName: 'Cui Zusi',
+  translations: [],
   description: null,
   dates: null,
   familyName: 'Cui',
@@ -37,12 +38,13 @@ describe('candidateFromEntity', () => {
       names: [{ lang: 'zh-Latn', text: 'Jiankang' }],
       primaryName: 'Jiankang',
       romanizedName: 'Jiankang',
+      translations: [],
       description: null,
       dates: null,
       familyName: null,
       authorityIds: [],
       classification: null,
-  workType: null,
+      workType: null,
     };
     const candidate = candidateFromEntity(place);
     expect(candidate.aliases).toEqual(['Jiankang']);

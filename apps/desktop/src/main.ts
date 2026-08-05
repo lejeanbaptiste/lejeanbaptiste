@@ -46,6 +46,12 @@ import {
   type StructuredOutputMode,
 } from './aiTranslationLlm';
 import {
+  buildEntityGlossRequestBody,
+  parseEntityGlossContent,
+  type EntityGlossSuggestPayload,
+  type EntityGlossSuggestResult,
+} from './aiEntityGlossLlm';
+import {
   applyTranslationSpellcheck,
   attachTranslationSpellcheckContextMenu,
 } from './translationSpellcheck';
@@ -287,6 +293,9 @@ interface AiTranslationResult {
   ok: boolean;
   translationXml?: string;
 }
+
+type AiEntityGlossRequest = EntityGlossSuggestPayload;
+type AiEntityGlossResult = EntityGlossSuggestResult;
 
 type ImportableDocumentFormat = 'txt' | 'md' | 'rtf' | 'docx' | 'odt' | 'xml';
 
@@ -592,6 +601,128 @@ const generateAiTranslation = async ({
     return {
       ok: false,
       error: error instanceof Error ? error.message : 'AI translation failed.',
+    };
+  } finally {
+    clearTimeout(timeout);
+  }
+};
+
+const postAiEntityGloss = async (
+  baseUrl: string,
+  settings: AiApiSettings,
+  request: AiEntityGlossRequest,
+  model: string,
+  signal: AbortSignal,
+  mode: StructuredOutputMode,
+): Promise<Response> => {
+  const headers: Record<string, string> = {
+    Accept: 'application/json',
+    'Content-Type': 'application/json',
+  };
+  if (settings.apiKey.trim()) headers.Authorization = `Bearer ${settings.apiKey.trim()}`;
+
+  return fetch(`${baseUrl}/chat/completions`, {
+    body: JSON.stringify(buildEntityGlossRequestBody(model, settings, request, baseUrl, mode)),
+    headers,
+    method: 'POST',
+    signal,
+  });
+};
+
+const postAiEntityGlossWithStructuredOutputFallback = async (
+  baseUrl: string,
+  settings: AiApiSettings,
+  request: AiEntityGlossRequest,
+  model: string,
+  signal: AbortSignal,
+): Promise<Response> => {
+  const modes = translationStructuredOutputModes(baseUrl);
+  let response = await postAiEntityGloss(baseUrl, settings, request, model, signal, modes[0]!);
+
+  if (!response.ok) {
+    let error = await readErrorResponse(response.clone());
+    for (let i = 1; i < modes.length; i++) {
+      if (!isStructuredOutputRetryable(response.status, error)) break;
+      response = await postAiEntityGloss(baseUrl, settings, request, model, signal, modes[i]!);
+      if (response.ok) break;
+      error = await readErrorResponse(response.clone());
+    }
+  }
+
+  return response;
+};
+
+const suggestEntityGloss = async (
+  request: AiEntityGlossRequest,
+): Promise<AiEntityGlossResult> => {
+  if (!request.targetLanguage?.trim()) {
+    return { ok: false, error: 'A target language is required.' };
+  }
+
+  const settings = await getAiApiSettings();
+  let baseUrl: string;
+
+  try {
+    baseUrl = normalizeOpenAiBaseUrl(settings.baseUrl);
+  } catch (error) {
+    return { ok: false, error: error instanceof Error ? error.message : 'Invalid base URL.' };
+  }
+
+  let model = settings.model.trim();
+  if (!model) {
+    const models = await listAiModels(settings).catch(() => []);
+    model = models[0] ?? '';
+  }
+  if (!model) {
+    return { ok: false, error: 'Choose an AI model in Settings before generating.' };
+  }
+
+  const controller = new AbortController();
+  const timeout = setTimeout(() => controller.abort(), 45000);
+
+  try {
+    let response = await postAiEntityGlossWithStructuredOutputFallback(
+      baseUrl,
+      settings,
+      request,
+      model,
+      controller.signal,
+    );
+
+    if (response.status === 404 && settings.model.trim()) {
+      const models = await listAiModels(settings).catch(() => []);
+      const fallbackModel = models.find((candidate) => candidate !== model);
+      if (fallbackModel) {
+        response = await postAiEntityGlossWithStructuredOutputFallback(
+          baseUrl,
+          settings,
+          request,
+          fallbackModel,
+          controller.signal,
+        );
+      }
+    }
+
+    if (!response.ok) {
+      return { ok: false, error: await readErrorResponse(response) };
+    }
+
+    const body = (await response.json()) as {
+      choices?: Array<{ message?: { content?: unknown } }>;
+    };
+    const content = body.choices?.[0]?.message?.content;
+    const gloss = parseEntityGlossContent(content);
+    if (!gloss) {
+      return { ok: false, error: 'AI response did not include a gloss.' };
+    }
+    return { ok: true, gloss };
+  } catch (error) {
+    if (error instanceof Error && error.name === 'AbortError') {
+      return { ok: false, error: 'Gloss suggestion timed out.' };
+    }
+    return {
+      ok: false,
+      error: error instanceof Error ? error.message : 'AI gloss suggestion failed.',
     };
   } finally {
     clearTimeout(timeout);
@@ -3206,6 +3337,10 @@ const registerIpcHandlers = () => {
 
   ipcMain.handle('generateAiTranslation', async (_event, request: AiTranslationRequest) => {
     return generateAiTranslation(request);
+  });
+
+  ipcMain.handle('suggestEntityGloss', async (_event, request: AiEntityGlossRequest) => {
+    return suggestEntityGloss(request);
   });
 
   ipcMain.handle('zoteroCheckAvailability', async () => checkZoteroAvailability());

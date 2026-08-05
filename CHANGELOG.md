@@ -105,7 +105,11 @@
 - Fixed the translation pane opening blank after leaving the tab (e.g. to edit the entity database) and coming back — re-enter translation mode when the tab is selected again.
 - Work entities now default to type `book` (italics) when unset; existing nulls are backfilled on schema migration 7.
 - Work-title italics apply only to the romanization: Chinese characters and an English possessive ’s stay upright.
-- Work (and other) mentions now append a matching-language translation gloss in parentheses after the Chinese characters, e.g. _Jinshu_ 晉書 (Livre des Jin), using names typed `translation` in the entity database.
+- Work (and other) mentions now append a matching-language translation gloss in parentheses after the Chinese characters, e.g. _Jinshu_ 晉書 (Livre des Jin), from the `entity_translations` table (with a dual-read fallback for legacy `translation` name rows).
 - Place (and other) romanizations still lead the display when stored as `translation` + `*-Latn`, and when Latin text was mis-tagged under `zh-Hant`; those rows are no longer mistaken for the parenthetical gloss.
 - Romanizations are now stored as name type `romanization` with a `*-Latn` language (schema migration 8 retags legacy `translation`/mis-tagged rows). Vernacular glosses stay `translation`.
 - Automatic romanization is kind-aware: persons stay syllable Title Case (`Zhang Heng`); works/orgs/offices concatenate (`Jinshu`); places use a concatenated stem plus a lowercase admin suffix when recognized (`Jiankang jun`).
+- Vernacular glosses (fr/en/…) now live in a dedicated `entity_translations` table (schema migration 9), so they no longer pollute name search/autocomplete. The entity editor still shows them as Translation rows; display prefers this table and still accepts legacy `nameType=translation` name rows.
+- First-occurrence titles can lead with the vernacular gloss instead of the romanization (`Livre des Jin (Jinshu 晉書)`): per-mention toggle on the entity-display popup, plus a personal per-language default in Translation policy settings. Work italics follow the leading title.
+- Missing translations get a dashed “add translation…” nudge in the entity editor (one chip per configured project language) and in the entity-display popup (for the active pane language). Neither inserts placeholder text into the document.
+- On those nudge surfaces, “Suggest with AI” can fill the draft gloss for review; the user still saves or adds it. Never auto-writes to the entity store.

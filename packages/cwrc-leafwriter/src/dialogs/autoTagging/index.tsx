@@ -92,6 +92,7 @@ import {
   setTagBombQueue,
   consumeTagBombQueueEntry,
   clearTagBombQueue,
+  isAiUiFeatureEnabled,
 } from '../../autoTagging';
 import type { EntityDatabaseCandidateRecord } from '../../autoTagging/ownDatabaseCandidates';
 import { SQLITE_REQUIRED_LOOKUP_MESSAGE } from '../../autoTagging/sqliteRequired';
@@ -653,7 +654,9 @@ export const AutoTaggingDialog = ({ id, onClose, open = false }: IDialog) => {
     startAutoTaggingReview({
       suggestions: applyExclusionsToSuggestions(produced),
       notice,
-      aiValidation: Boolean(options?.aiCurate && aiReady),
+      aiValidation: Boolean(
+        options?.aiCurate && aiReady && isAiUiFeatureEnabled('tagBombCurate'),
+      ),
     });
     handleClose();
   };
@@ -1225,7 +1228,7 @@ export const AutoTaggingDialog = ({ id, onClose, open = false }: IDialog) => {
                       }}
                     />
                   </Stack>
-                  {isDesktopApp() && !aiReady && (
+                  {isAiUiFeatureEnabled('suggestAndAudit') && isDesktopApp() && !aiReady && (
                     <Typography
                       variant="caption"
                       color="text.secondary"
@@ -1235,18 +1238,20 @@ export const AutoTaggingDialog = ({ id, onClose, open = false }: IDialog) => {
                       Application Settings. AI curate lives on the tag bomb screen.
                     </Typography>
                   )}
-                  {methodButton(
-                    'AI suggest',
-                    () => openAiStep('suggest'),
-                    aiDisabled,
-                    aiDisabledReason,
-                  )}
-                  {methodButton(
-                    'AI audit',
-                    () => openAiStep('audit'),
-                    aiDisabled,
-                    aiDisabledReason,
-                  )}
+                  {isAiUiFeatureEnabled('suggestAndAudit') &&
+                    methodButton(
+                      'AI suggest',
+                      () => openAiStep('suggest'),
+                      aiDisabled,
+                      aiDisabledReason,
+                    )}
+                  {isAiUiFeatureEnabled('suggestAndAudit') &&
+                    methodButton(
+                      'AI audit',
+                      () => openAiStep('audit'),
+                      aiDisabled,
+                      aiDisabledReason,
+                    )}
                 </>
               )}
               <Box
@@ -1423,32 +1428,34 @@ export const AutoTaggingDialog = ({ id, onClose, open = false }: IDialog) => {
                     }
                     sx={{ ml: 0 }}
                   />
-                  <FormControlLabel
-                    control={
-                      <Checkbox
-                        size="small"
-                        checked={aiValidation && aiReady}
-                        disabled={aiDisabled || busy}
-                        onChange={(event) => {
-                          setAiValidation(event.target.checked);
-                          void persistValidationSettings({ aiValidation: event.target.checked });
-                        }}
-                      />
-                    }
-                    label={
-                      <Typography
-                        variant="caption"
-                        color={aiDisabled ? 'text.disabled' : 'text.primary'}
-                      >
-                        {t('LW.autoTagging.ai_curate')}
-                      </Typography>
-                    }
-                    title={
-                      aiDisabledReason ??
-                      'After tagging, score suggestions in the background and filter obviously wrong hits.'
-                    }
-                    sx={{ ml: 0, ...(aiDisabled ? { opacity: 0.6 } : {}) }}
-                  />
+                  {isAiUiFeatureEnabled('tagBombCurate') && (
+                    <FormControlLabel
+                      control={
+                        <Checkbox
+                          size="small"
+                          checked={aiValidation && aiReady}
+                          disabled={aiDisabled || busy}
+                          onChange={(event) => {
+                            setAiValidation(event.target.checked);
+                            void persistValidationSettings({ aiValidation: event.target.checked });
+                          }}
+                        />
+                      }
+                      label={
+                        <Typography
+                          variant="caption"
+                          color={aiDisabled ? 'text.disabled' : 'text.primary'}
+                        >
+                          {t('LW.autoTagging.ai_curate')}
+                        </Typography>
+                      }
+                      title={
+                        aiDisabledReason ??
+                        'After tagging, score suggestions in the background and filter obviously wrong hits.'
+                      }
+                      sx={{ ml: 0, ...(aiDisabled ? { opacity: 0.6 } : {}) }}
+                    />
+                  )}
                 </Stack>
               </Box>
               <Box sx={{ px: 0.25 }}>
@@ -1745,7 +1752,7 @@ export const AutoTaggingDialog = ({ id, onClose, open = false }: IDialog) => {
                   Run tag bomb
                 </Button>
               </Stack>
-              {aiDisabled && isDesktopApp() && (
+              {isAiUiFeatureEnabled('tagBombCurate') && aiDisabled && isDesktopApp() && (
                 <Typography
                   variant="caption"
                   color="text.secondary"

@@ -2,16 +2,23 @@ import {
   Box,
   Button,
   Chip,
+  Dialog,
+  DialogActions,
+  DialogContent,
+  DialogTitle,
   FormControlLabel,
   Popover,
   Stack,
   Switch,
+  TextField,
   Typography,
 } from '@mui/material';
+import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { dateFormatSettingsForLang } from './dateFormatSettings';
 import {
   chineseNameOf,
+  effectiveTitleConvention,
   familyAndGivenOf,
   formatDates,
   possessiveStyleForLang,
@@ -22,16 +29,40 @@ import {
   type EntityPartId,
 } from './entityDisplay';
 import type { EntitySummary } from './entitySummary';
+import { languageLabelForCode } from '../../utilities/languageCodes';
 
-const PERSON_PART_ORDER: EntityPartId[] = ['family', 'given', 'chinese', 'translation', 'dates'];
-const WORK_PART_ORDER: EntityPartId[] = ['name', 'chinese', 'translation', 'dates'];
-const OTHER_PART_ORDER: EntityPartId[] = ['name', 'classification', 'chinese', 'translation'];
+const PERSON_ROMANIZATION_FIRST: EntityPartId[] = [
+  'family',
+  'given',
+  'chinese',
+  'translation',
+  'dates',
+];
+const PERSON_TRANSLATION_FIRST: EntityPartId[] = ['translation', 'original', 'dates'];
+const WORK_ROMANIZATION_FIRST: EntityPartId[] = ['name', 'chinese', 'translation', 'dates'];
+const WORK_TRANSLATION_FIRST: EntityPartId[] = ['translation', 'original', 'dates'];
+const OTHER_ROMANIZATION_FIRST: EntityPartId[] = [
+  'name',
+  'classification',
+  'chinese',
+  'translation',
+];
+const OTHER_TRANSLATION_FIRST: EntityPartId[] = ['translation', 'original', 'classification'];
 
 /** Dates only make sense for person (birth/death) and work (publication/composition). */
-const partOrderFor = (entity: EntitySummary): EntityPartId[] => {
-  if (entity.kind === 'person') return PERSON_PART_ORDER;
-  if (entity.kind === 'work') return WORK_PART_ORDER;
-  return OTHER_PART_ORDER;
+const partOrderFor = (
+  entity: EntitySummary,
+  convention: 'romanization-first' | 'translation-first',
+): EntityPartId[] => {
+  if (entity.kind === 'person') {
+    return convention === 'translation-first'
+      ? PERSON_TRANSLATION_FIRST
+      : PERSON_ROMANIZATION_FIRST;
+  }
+  if (entity.kind === 'work') {
+    return convention === 'translation-first' ? WORK_TRANSLATION_FIRST : WORK_ROMANIZATION_FIRST;
+  }
+  return convention === 'translation-first' ? OTHER_TRANSLATION_FIRST : OTHER_ROMANIZATION_FIRST;
 };
 
 export interface EntityDisplayPopupProps {
@@ -46,6 +77,15 @@ export interface EntityDisplayPopupProps {
   onChange: (spec: EntityDisplaySpec) => void;
   onClose: () => void;
   onReset: () => void;
+  /** Persist a vernacular gloss for the pane language; returns false on failure. */
+  onSaveTranslation?: (text: string, lang: string) => Promise<boolean>;
+  /**
+   * Fill the draft gloss via AI for the pane language.
+   * Returns the suggested text, or null on failure / cancel.
+   */
+  onSuggestTranslation?: () => Promise<string | null>;
+  /** True while a suggest request is in flight (disables the button). */
+  suggestBusy?: boolean;
 }
 
 const partLabel = (id: EntityPartId, entity: EntitySummary, lang?: string | null): string => {
@@ -60,6 +100,12 @@ const partLabel = (id: EntityPartId, entity: EntitySummary, lang?: string | null
       return entity.classification ?? '—';
     case 'chinese':
       return chineseNameOf(entity) ?? '—';
+    case 'original': {
+      const short = shortNameOf(entity);
+      const chinese = chineseNameOf(entity);
+      if (chinese && chinese !== short) return `(${short} ${chinese})`;
+      return short ? `(${short})` : '—';
+    }
     case 'translation': {
       const gloss = translatedNameOf(entity, lang);
       return gloss ? `(${gloss})` : '—';
@@ -83,11 +129,21 @@ const partTitleKey = (id: EntityPartId): string => {
       return 'LW.translationPane.entityFormat.classification';
     case 'chinese':
       return 'LW.translationPane.entityFormat.chinese';
+    case 'original':
+      return 'LW.translationPane.entityFormat.original';
     case 'translation':
       return 'LW.translationPane.entityFormat.translation';
     case 'dates':
       return 'LW.translationPane.entityFormat.dates';
   }
+};
+
+const dashedChipSx = {
+  borderStyle: 'dashed',
+  borderColor: 'warning.main',
+  color: 'text.secondary',
+  bgcolor: 'transparent',
+  '&:hover': { bgcolor: 'action.hover', borderStyle: 'dashed' },
 };
 
 export const EntityDisplayPopup = ({
@@ -100,6 +156,9 @@ export const EntityDisplayPopup = ({
   onChange,
   onClose,
   onReset,
+  onSaveTranslation,
+  onSuggestTranslation,
+  suggestBusy = false,
 }: EntityDisplayPopupProps) => {
   const { t } = useTranslation();
   const dateSettings = dateFormatSettingsForLang(lang);
@@ -107,6 +166,20 @@ export const EntityDisplayPopup = ({
   const hidden = new Set(spec.hidden);
   const possessiveStyle = possessiveStyleForLang(lang);
   const showPossessive = possessiveStyle !== 'none';
+  const gloss = translatedNameOf(entity, lang);
+  const hasGloss = Boolean(gloss);
+  const convention = hasGloss
+    ? effectiveTitleConvention(spec, lang)
+    : 'romanization-first';
+  const leadWithTranslation = convention === 'translation-first';
+  const langLabel = lang ? languageLabelForCode(lang) : '';
+
+  const [addOpen, setAddOpen] = useState(false);
+  const [draftTranslation, setDraftTranslation] = useState('');
+  const [saving, setSaving] = useState(false);
+  const [saveError, setSaveError] = useState<string | null>(null);
+  const [suggestError, setSuggestError] = useState<string | null>(null);
+  const [suggesting, setSuggesting] = useState(false);
 
   const toggleHidden = (id: EntityPartId) => {
     const nextHidden = hidden.has(id)
@@ -122,113 +195,266 @@ export const EntityDisplayPopup = ({
     });
   };
 
+  const setLeadWithTranslation = (checked: boolean) => {
+    onChange({
+      ...spec,
+      titleConvention: checked ? 'translation-first' : 'romanization-first',
+    });
+  };
+
+  const openAddDialog = () => {
+    setDraftTranslation('');
+    setSaveError(null);
+    setSuggestError(null);
+    setAddOpen(true);
+  };
+
+  const closeAddDialog = () => {
+    if (saving || suggesting || suggestBusy) return;
+    setAddOpen(false);
+    setDraftTranslation('');
+    setSaveError(null);
+    setSuggestError(null);
+  };
+
+  const saveTranslation = async () => {
+    const text = draftTranslation.trim();
+    if (!text || !lang || !onSaveTranslation) return;
+    setSaving(true);
+    setSaveError(null);
+    try {
+      const ok = await onSaveTranslation(text, lang);
+      if (!ok) {
+        setSaveError(t('LW.translationPane.entityFormat.addTranslationError'));
+        return;
+      }
+      setAddOpen(false);
+      setDraftTranslation('');
+      setSuggestError(null);
+    } catch {
+      setSaveError(t('LW.translationPane.entityFormat.addTranslationError'));
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  const suggestTranslation = async () => {
+    if (!onSuggestTranslation || suggesting || suggestBusy || saving) return;
+    setSuggesting(true);
+    setSuggestError(null);
+    try {
+      const glossText = await onSuggestTranslation();
+      if (glossText == null) {
+        setSuggestError(t('LW.translationPane.entityFormat.suggestTranslationError'));
+        return;
+      }
+      setDraftTranslation(glossText);
+    } catch {
+      setSuggestError(t('LW.translationPane.entityFormat.suggestTranslationError'));
+    } finally {
+      setSuggesting(false);
+    }
+  };
+
+  const suggestInFlight = suggesting || suggestBusy;
+
   const possessiveLabel =
     possessiveStyle === 'de-genitive-s'
       ? t('LW.translationPane.entityFormat.possessiveGerman')
       : t('LW.translationPane.entityFormat.possessive');
 
+  const chipIds = partOrderFor(entity, convention).filter((id) => {
+    // Missing gloss: hide the blank Translation chip; show dashed nudge instead.
+    if (id === 'translation' && !hasGloss) return false;
+    return true;
+  });
+
   return (
-    <Popover
-      anchorReference="anchorPosition"
-      anchorPosition={anchorPosition ?? undefined}
-      onClose={onClose}
-      open={open && Boolean(anchorPosition)}
-      slotProps={{
-        paper: {
-          sx: { p: 1.5, maxWidth: 360 },
-        },
-      }}
-    >
-      <Stack spacing={1.25}>
-        <Typography variant="subtitle2">{t('LW.translationPane.entityFormat.title')}</Typography>
+    <>
+      <Popover
+        anchorReference="anchorPosition"
+        anchorPosition={anchorPosition ?? undefined}
+        onClose={onClose}
+        open={open && Boolean(anchorPosition)}
+        slotProps={{
+          paper: {
+            sx: { p: 1.5, maxWidth: 360 },
+          },
+        }}
+      >
+        <Stack spacing={1.25}>
+          <Typography variant="subtitle2">{t('LW.translationPane.entityFormat.title')}</Typography>
 
-        <Stack direction="row" flexWrap="wrap" gap={0.75} useFlexGap>
-          {partOrderFor(entity).map((id) => {
-            const label = partLabel(id, entity, lang);
-            const available = label !== '—';
-            const isHidden = hidden.has(id);
-            const hasBrackets = spec.bracketsAround === id;
-            return (
-              <Chip
-                key={id}
-                color={isHidden ? 'default' : 'primary'}
-                disabled={!available}
-                label={
-                  <Box component="span" sx={{ display: 'inline-flex', alignItems: 'center', gap: 0.5 }}>
-                    <span>{t(partTitleKey(id))}</span>
-                    <Box
-                      component="span"
-                      sx={{ opacity: 0.75, fontWeight: 400, textTransform: 'none' }}
-                    >
-                      {label}
+          <Stack direction="row" flexWrap="wrap" gap={0.75} useFlexGap>
+            {chipIds.map((id) => {
+              const label = partLabel(id, entity, lang);
+              const available = label !== '—';
+              const isHidden = hidden.has(id);
+              const hasBrackets = spec.bracketsAround === id;
+              return (
+                <Chip
+                  key={id}
+                  color={isHidden ? 'default' : 'primary'}
+                  disabled={!available}
+                  label={
+                    <Box component="span" sx={{ display: 'inline-flex', alignItems: 'center', gap: 0.5 }}>
+                      <span>{t(partTitleKey(id))}</span>
+                      <Box
+                        component="span"
+                        sx={{ opacity: 0.75, fontWeight: 400, textTransform: 'none' }}
+                      >
+                        {label}
+                      </Box>
+                      {hasBrackets ? <span>[ ]</span> : null}
                     </Box>
-                    {hasBrackets ? <span>[ ]</span> : null}
-                  </Box>
-                }
-                onClick={() => available && toggleHidden(id)}
-                onDelete={available ? () => toggleBrackets(id) : undefined}
-                deleteIcon={
-                  <Box
-                    aria-label={t('LW.translationPane.entityFormat.brackets')}
-                    component="span"
-                    sx={{ px: 0.5, fontSize: '0.75rem', lineHeight: 1 }}
-                    title={t('LW.translationPane.entityFormat.brackets')}
-                  >
-                    [ ]
-                  </Box>
-                }
+                  }
+                  onClick={() => available && toggleHidden(id)}
+                  onDelete={available ? () => toggleBrackets(id) : undefined}
+                  deleteIcon={
+                    <Box
+                      aria-label={t('LW.translationPane.entityFormat.brackets')}
+                      component="span"
+                      sx={{ px: 0.5, fontSize: '0.75rem', lineHeight: 1 }}
+                      title={t('LW.translationPane.entityFormat.brackets')}
+                    >
+                      [ ]
+                    </Box>
+                  }
+                  size="small"
+                  variant={isHidden ? 'outlined' : 'filled'}
+                  sx={{
+                    opacity: isHidden ? 0.55 : 1,
+                    textDecoration: isHidden ? 'line-through' : 'none',
+                    '& .MuiChip-deleteIcon': {
+                      color: hasBrackets ? 'primary.contrastText' : 'inherit',
+                    },
+                  }}
+                />
+              );
+            })}
+            {!hasGloss && lang && onSaveTranslation ? (
+              <Chip
+                clickable
+                label={t('LW.translationPane.entityFormat.addTranslation')}
+                onClick={openAddDialog}
                 size="small"
-                variant={isHidden ? 'outlined' : 'filled'}
-                sx={{
-                  opacity: isHidden ? 0.55 : 1,
-                  textDecoration: isHidden ? 'line-through' : 'none',
-                  '& .MuiChip-deleteIcon': { color: hasBrackets ? 'primary.contrastText' : 'inherit' },
-                }}
+                variant="outlined"
+                sx={dashedChipSx}
               />
-            );
-          })}
-        </Stack>
+            ) : null}
+          </Stack>
 
-        <Typography color="text.secondary" variant="caption">
-          {t('LW.translationPane.entityFormat.chipHint')}
-        </Typography>
+          <Typography color="text.secondary" variant="caption">
+            {t('LW.translationPane.entityFormat.chipHint')}
+          </Typography>
 
-        {showPossessive ? (
           <FormControlLabel
             control={
               <Switch
-                checked={spec.possessive}
-                onChange={(event) => onChange({ ...spec, possessive: event.target.checked })}
+                checked={leadWithTranslation}
+                disabled={!hasGloss}
+                onChange={(event) => setLeadWithTranslation(event.target.checked)}
                 size="small"
               />
             }
-            label={possessiveLabel}
+            label={t('LW.translationPane.entityFormat.leadWithTranslation')}
           />
-        ) : null}
 
-        <Box
-          sx={{
-            bgcolor: 'action.hover',
-            borderRadius: 1,
-            px: 1,
-            py: 0.75,
-          }}
-        >
-          <Typography color="text.secondary" variant="caption">
-            {t('LW.translationPane.entityFormat.preview')}
-          </Typography>
-          <Typography variant="body2">{preview || '—'}</Typography>
-        </Box>
+          {showPossessive ? (
+            <FormControlLabel
+              control={
+                <Switch
+                  checked={spec.possessive}
+                  onChange={(event) => onChange({ ...spec, possessive: event.target.checked })}
+                  size="small"
+                />
+              }
+              label={possessiveLabel}
+            />
+          ) : null}
 
-        <Stack direction="row" justifyContent="flex-end" spacing={1}>
-          <Button onClick={onReset} size="small">
-            {t('LW.translationPane.entityFormat.reset')}
-          </Button>
-          <Button onClick={onClose} size="small" variant="contained">
-            {t('LW.translationPane.entityFormat.done')}
-          </Button>
+          <Box
+            sx={{
+              bgcolor: 'action.hover',
+              borderRadius: 1,
+              px: 1,
+              py: 0.75,
+            }}
+          >
+            <Typography color="text.secondary" variant="caption">
+              {t('LW.translationPane.entityFormat.preview')}
+            </Typography>
+            <Typography variant="body2">{preview || '—'}</Typography>
+          </Box>
+
+          <Stack direction="row" justifyContent="flex-end" spacing={1}>
+            <Button onClick={onReset} size="small">
+              {t('LW.translationPane.entityFormat.reset')}
+            </Button>
+            <Button onClick={onClose} size="small" variant="contained">
+              {t('LW.translationPane.entityFormat.done')}
+            </Button>
+          </Stack>
         </Stack>
-      </Stack>
-    </Popover>
+      </Popover>
+
+      <Dialog open={addOpen} onClose={closeAddDialog} fullWidth maxWidth="xs">
+        <DialogTitle>{t('LW.translationPane.entityFormat.addTranslationTitle')}</DialogTitle>
+        <DialogContent>
+          <TextField
+            autoFocus
+            fullWidth
+            label={t('LW.translationPane.entityFormat.addTranslationPrompt', {
+              language: langLabel || lang || '',
+            })}
+            margin="dense"
+            onChange={(event) => setDraftTranslation(event.target.value)}
+            onKeyDown={(event) => {
+              if (event.key === 'Enter') {
+                event.preventDefault();
+                void saveTranslation();
+              }
+            }}
+            value={draftTranslation}
+          />
+          {saveError ? (
+            <Typography color="error" sx={{ mt: 1 }} variant="caption">
+              {saveError}
+            </Typography>
+          ) : null}
+          {suggestError ? (
+            <Typography color="error" sx={{ mt: 1 }} variant="caption">
+              {suggestError}
+            </Typography>
+          ) : null}
+        </DialogContent>
+        <DialogActions sx={{ justifyContent: onSuggestTranslation ? 'space-between' : undefined }}>
+          {onSuggestTranslation ? (
+            <Button
+              disabled={saving || suggestInFlight}
+              onClick={() => void suggestTranslation()}
+            >
+              {suggestInFlight
+                ? t('LW.translationPane.entityFormat.suggestTranslationBusy')
+                : t('LW.translationPane.entityFormat.suggestTranslation')}
+            </Button>
+          ) : (
+            <span />
+          )}
+          <Stack direction="row" spacing={1}>
+            <Button disabled={saving || suggestInFlight} onClick={closeAddDialog}>
+              {t('LW.translationPane.entityFormat.addTranslationCancel')}
+            </Button>
+            <Button
+              disabled={saving || suggestInFlight || !draftTranslation.trim()}
+              onClick={() => void saveTranslation()}
+              variant="contained"
+            >
+              {t('LW.translationPane.entityFormat.addTranslationSave')}
+            </Button>
+          </Stack>
+        </DialogActions>
+      </Dialog>
+    </>
   );
 };

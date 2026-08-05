@@ -22,6 +22,7 @@ import {
   persistDisambiguationSettings,
   readPersistedDisambiguationSettings,
 } from '../../autoTagging/disambiguationSettings';
+import { isAiUiFeatureEnabled } from '../../autoTagging/aiUiFeatures';
 import { useActions } from '../../overmind';
 import type { IDialog } from '../type';
 import { AiPromptEditorDialog } from '../autoTagging/AiPromptEditorDialog';
@@ -29,6 +30,7 @@ import { AiPromptEditorDialog } from '../autoTagging/AiPromptEditorDialog';
 /** Disambiguation launcher — optional AI curation, preference persisted per project. */
 export const DisambiguationDialog = ({ onClose, open = false }: IDialog) => {
   const { startDisambiguationReview, dismissReviewPanes } = useActions().ui;
+  const disambiguationAiEnabled = isAiUiFeatureEnabled('disambiguationCurate');
   const [aiCuration, setAiCuration] = useState(true);
   const [disableCaching, setDisableCaching] = useState(false);
   const [aiPromptProfiles, setAiPromptProfiles] = useState<AiPromptProfilesState>(
@@ -60,8 +62,9 @@ export const DisambiguationDialog = ({ onClose, open = false }: IDialog) => {
   const handleClose = () => onClose?.();
 
   const handleStart = async () => {
-    await persistDisambiguationSettings({ aiCuration, disableCaching });
-    startDisambiguationReview({ aiCuration });
+    const effectiveAiCuration = disambiguationAiEnabled && aiCuration;
+    await persistDisambiguationSettings({ aiCuration: effectiveAiCuration, disableCaching });
+    startDisambiguationReview({ aiCuration: effectiveAiCuration });
     handleClose();
   };
 
@@ -86,21 +89,24 @@ export const DisambiguationDialog = ({ onClose, open = false }: IDialog) => {
 
           <Stack spacing={1} sx={{ mt: 0.5 }}>
             <Typography color="text.secondary" variant="body2">
-              Link tagged mentions to authority records. With AI curation, the model pre-checks likely
-              matches and explains why — you still accept each choice.
+              {disambiguationAiEnabled
+                ? 'Link tagged mentions to authority records. With AI curation, the model pre-checks likely matches and explains why — you still accept each choice.'
+                : 'Link tagged mentions to authority records. You review each candidate match and accept or reject it.'}
             </Typography>
 
-            <FormControlLabel
-              control={
-                <Checkbox
-                  size="small"
-                  checked={aiCuration}
-                  onChange={(event) => setAiCuration(event.target.checked)}
-                />
-              }
-              label="AI curation"
-              sx={{ ml: 0 }}
-            />
+            {disambiguationAiEnabled && (
+              <FormControlLabel
+                control={
+                  <Checkbox
+                    size="small"
+                    checked={aiCuration}
+                    onChange={(event) => setAiCuration(event.target.checked)}
+                  />
+                }
+                label="AI curation"
+                sx={{ ml: 0 }}
+              />
+            )}
 
             <FormControlLabel
               control={
@@ -114,7 +120,7 @@ export const DisambiguationDialog = ({ onClose, open = false }: IDialog) => {
               sx={{ ml: 0 }}
             />
 
-            {aiCuration && (
+            {disambiguationAiEnabled && aiCuration && (
               <Stack direction="row" spacing={1} alignItems="center" flexWrap="wrap">
                 <Typography variant="caption" color="text.secondary">
                   Prompt profile: {activePromptProfile.label}

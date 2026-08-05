@@ -235,6 +235,14 @@
         "rename": "Umbenennen",
         "rename_placeholder": "Neuer Name",
         "rename_title": "Umbenennen"
+      },
+      "sidebar": {
+        "database": {
+          "suggest_translation": "KI",
+          "suggest_translation_busy": "…",
+          "suggest_translation_error": "Übersetzung konnte nicht vorgeschlagen werden.",
+          "suggest_translation_tooltip": "Mit KI vorschlagen"
+        }
       }
     }
   },

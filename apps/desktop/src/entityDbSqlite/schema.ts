@@ -8,7 +8,7 @@
 
 import type { DatabaseSync } from 'node:sqlite';
 
-export const ENTITY_DB_SCHEMA_VERSION = 8;
+export const ENTITY_DB_SCHEMA_VERSION = 9;
 
 const migration1 = `
 CREATE TABLE IF NOT EXISTS entities (
@@ -409,6 +409,54 @@ WHERE status = 'active'
   AND text NOT GLOB '*[一-龥]*';
 `;
 
+/**
+ * Vernacular glosses (fr/en/…) live in entity_translations, not entity_names.
+ * Copy remaining name_type='translation' rows that are not romanizations, then
+ * remove them from entity_names so search/autocomplete stay clean.
+ */
+const migration9 = `
+CREATE TABLE IF NOT EXISTS entity_translations (
+  id INTEGER PRIMARY KEY,
+  entity_id TEXT NOT NULL REFERENCES entities(id) ON DELETE CASCADE,
+  text TEXT NOT NULL CHECK (length(trim(text)) > 0),
+  language TEXT NOT NULL CHECK (length(trim(language)) > 0),
+  origin TEXT NOT NULL DEFAULT 'user' CHECK (origin IN ('user', 'authority', 'xml')),
+  source TEXT,
+  status TEXT NOT NULL DEFAULT 'active' CHECK (status IN ('active', 'rejected', 'withdrawn')),
+  created_at TEXT NOT NULL,
+  updated_at TEXT NOT NULL
+);
+
+CREATE INDEX IF NOT EXISTS entity_translations_entity_idx ON entity_translations(entity_id);
+CREATE INDEX IF NOT EXISTS entity_translations_lang_idx
+  ON entity_translations(entity_id, language, status);
+
+INSERT INTO entity_translations
+  (entity_id, text, language, origin, source, status, created_at, updated_at)
+SELECT
+  entity_id,
+  text,
+  language,
+  origin,
+  source,
+  status,
+  created_at,
+  updated_at
+FROM entity_names
+WHERE status = 'active'
+  AND name_type = 'translation'
+  AND language IS NOT NULL
+  AND TRIM(language) != ''
+  AND language NOT LIKE '%Latn%';
+
+DELETE FROM entity_names
+WHERE status = 'active'
+  AND name_type = 'translation'
+  AND language IS NOT NULL
+  AND TRIM(language) != ''
+  AND language NOT LIKE '%Latn%';
+`;
+
 const migrations: Record<number, string> = {
   1: migration1,
   2: migration2,
@@ -418,6 +466,7 @@ const migrations: Record<number, string> = {
   6: migration6,
   7: migration7,
   8: migration8,
+  9: migration9,
 };
 
 export function applyEntityDbMigrations(db: DatabaseSync): void {

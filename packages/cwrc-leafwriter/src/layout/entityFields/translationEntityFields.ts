@@ -5,6 +5,7 @@ import {
 import {
   applyPossessiveSuffix,
   displaySpecFromLegacyOverride,
+  effectiveTitleConvention,
   EMPTY_DISPLAY_SPEC,
   isEmptyDisplaySpec,
   parseDisplaySpec,
@@ -67,8 +68,11 @@ export const writeDisplaySpecToField = (field: Element, spec: EntityDisplaySpec)
   else field.removeAttribute(ENTITY_DISPLAY_SPEC_ATTR);
 };
 
-const isNamePartId = (id: EntityPartId): boolean =>
+const isRomanizationNamePart = (id: EntityPartId): boolean =>
   id === 'family' || id === 'given' || id === 'name';
+
+const isParenPart = (id: EntityPartId): boolean =>
+  id === 'dates' || id === 'translation' || id === 'original';
 
 /**
  * Append text, optionally wrapping non-Han runs in italics or curly quotes.
@@ -109,7 +113,8 @@ const appendStyledRuns = (
 
 /**
  * Fill an entity field from the display recipe. Work-type italics/quotes apply
- * only to romanized name parts — never to Chinese, dates, or a possessive ’s.
+ * to the leading title part (romanization under romanization-first; gloss under
+ * translation-first) — never to Chinese, original-forms paren, dates, or ’s.
  */
 const applyWorkTypeStyle = (
   field: Element,
@@ -134,13 +139,17 @@ const applyWorkTypeStyle = (
 
   const possessiveStyle = possessiveStyleForLang(lang);
   let possessiveApplied = false;
+  const translationFirst =
+    parts[0]?.id === 'translation' &&
+    effectiveTitleConvention(spec, lang) === 'translation-first';
 
   parts.forEach((part, index) => {
     if (index > 0) field.appendChild(doc.createTextNode(' '));
 
+    const leadTranslation = translationFirst && part.id === 'translation';
     let open = '';
     let close = '';
-    if (part.id === 'dates' || part.id === 'translation') {
+    if (isParenPart(part.id) && !leadTranslation) {
       if (spec.bracketsAround === part.id) {
         open = '[';
         close = ']';
@@ -154,13 +163,18 @@ const applyWorkTypeStyle = (
     }
 
     const next = parts[index + 1];
-    const nextIsName = Boolean(next && isNamePartId(next.id));
+    const isPossessiveTarget = leadTranslation || isRomanizationNamePart(part.id);
+    const nextIsPossessiveTarget = Boolean(
+      next &&
+        (isRomanizationNamePart(next.id) ||
+          (translationFirst && next.id === 'translation' && index === 0)),
+    );
     let suffix = '';
     if (
       spec.possessive &&
       possessiveStyle !== 'none' &&
-      isNamePartId(part.id) &&
-      !nextIsName &&
+      isPossessiveTarget &&
+      !nextIsPossessiveTarget &&
       !possessiveApplied
     ) {
       const full = applyPossessiveSuffix(part.text, possessiveStyle);
@@ -168,8 +182,11 @@ const applyWorkTypeStyle = (
       possessiveApplied = true;
     }
 
-    // Work citation styling only wraps the title-ish name part(s), not chinese/translation/dates.
-    const titleMode = style && isNamePartId(part.id) ? style : ('plain' as const);
+    // Citation styling on the leading title only.
+    const titleMode =
+      style && (leadTranslation || (!translationFirst && isRomanizationNamePart(part.id)))
+        ? style
+        : ('plain' as const);
 
     if (open) field.appendChild(doc.createTextNode(open));
     appendStyledRuns(field, part.text, titleMode);

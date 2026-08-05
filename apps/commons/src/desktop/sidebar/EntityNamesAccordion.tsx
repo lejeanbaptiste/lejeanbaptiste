@@ -6,6 +6,7 @@ import {
   AccordionDetails,
   AccordionSummary,
   Button,
+  Chip,
   IconButton,
   MenuItem,
   Stack,
@@ -13,6 +14,7 @@ import {
   Tooltip,
   Typography,
 } from '@mui/material';
+import { useEffect, useRef } from 'react';
 import { useTranslation } from 'react-i18next';
 import type { NameTypeId } from '../../../../../packages/cwrc-leafwriter/src/autoTagging/nameTypes';
 import { nameTypeLabel } from '../../../../../packages/cwrc-leafwriter/src/autoTagging/nameTypeLabels';
@@ -26,6 +28,11 @@ export interface NameRow {
   keys: string[];
   isValidated: boolean;
   isPrimary: boolean;
+}
+
+export interface MissingTranslationNudge {
+  code: string;
+  label: string;
 }
 
 interface EntityNamesAccordionProps {
@@ -49,6 +56,15 @@ interface EntityNamesAccordionProps {
   newNameLanguage: string;
   onNewNameLanguageChange: (value: string) => void;
   onAdd: () => void;
+  /** Languages that still need a vernacular gloss (dashed chips). */
+  missingTranslations?: MissingTranslationNudge[];
+  onRequestAddTranslation?: (langCode: string) => void;
+  /** Bump to focus the add-name field after a nudge click. */
+  focusAddFieldToken?: number;
+  /** Suggest a vernacular gloss into the new-name draft (Translation + language set). */
+  onSuggestTranslation?: () => void | Promise<void>;
+  suggestBusy?: boolean;
+  suggestError?: string | null;
   title: string;
   hint: string;
   addPlaceholder: string;
@@ -68,6 +84,14 @@ const languageSelectSx = {
   flex: '0 0 auto',
   '& .MuiInputBase-input': { py: 0.5, px: 1, fontSize: 12, textAlign: 'center' as const },
   '& .MuiSelect-select': { pr: '8px !important' },
+};
+
+const dashedChipSx = {
+  borderStyle: 'dashed',
+  borderColor: 'warning.main',
+  color: 'text.secondary',
+  bgcolor: 'transparent',
+  '&:hover': { bgcolor: 'action.hover', borderStyle: 'dashed' },
 };
 
 export function EntityNamesAccordion({
@@ -91,6 +115,12 @@ export function EntityNamesAccordion({
   newNameLanguage,
   onNewNameLanguageChange,
   onAdd,
+  missingTranslations = [],
+  onRequestAddTranslation,
+  focusAddFieldToken = 0,
+  onSuggestTranslation,
+  suggestBusy = false,
+  suggestError = null,
   title,
   hint,
   addPlaceholder,
@@ -98,7 +128,18 @@ export function EntityNamesAccordion({
   const { t } = useTranslation();
   const neutralActionButtonSx = { color: 'text.secondary', p: 0.25 };
   const languageAriaLabel = t('LWC.desktop.sidebar.database.translation_language');
+  const addInputRef = useRef<HTMLInputElement | null>(null);
 
+  useEffect(() => {
+    if (!focusAddFieldToken) return;
+    addInputRef.current?.focus();
+  }, [focusAddFieldToken]);
+
+  const canSuggest =
+    Boolean(onSuggestTranslation) &&
+    newNameType === 'translation' &&
+    Boolean(newNameLanguage) &&
+    !suggestBusy;
   return (
     <Accordion
       disableGutters
@@ -197,9 +238,27 @@ export function EntityNamesAccordion({
               </Tooltip>
             </Stack>
           ))}
+          {missingTranslations.length > 0 && onRequestAddTranslation ? (
+            <Stack direction="row" flexWrap="wrap" gap={0.75} useFlexGap sx={{ pt: 0.25 }}>
+              {missingTranslations.map((lang) => (
+                <Chip
+                  key={lang.code}
+                  clickable
+                  label={t('LWC.desktop.sidebar.database.add_translation_nudge', {
+                    language: lang.label,
+                  })}
+                  onClick={() => onRequestAddTranslation(lang.code)}
+                  size="small"
+                  variant="outlined"
+                  sx={dashedChipSx}
+                />
+              ))}
+            </Stack>
+          ) : null}
           <Stack direction="row" spacing={1} alignItems="flex-start">
             <TextField
               fullWidth
+              inputRef={addInputRef}
               size="small"
               label={addPlaceholder}
               value={newName}
@@ -250,6 +309,23 @@ export function EntityNamesAccordion({
                 ))}
               </TextField>
             )}
+            {onSuggestTranslation && newNameType === 'translation' ? (
+              <Tooltip title={t('LWC.desktop.sidebar.database.suggest_translation_tooltip')}>
+                <span>
+                  <Button
+                    variant="outlined"
+                    size="small"
+                    disabled={!canSuggest}
+                    onClick={() => void onSuggestTranslation()}
+                    sx={{ minWidth: 40, px: 1 }}
+                  >
+                    {suggestBusy
+                      ? t('LWC.desktop.sidebar.database.suggest_translation_busy')
+                      : t('LWC.desktop.sidebar.database.suggest_translation')}
+                  </Button>
+                </span>
+              </Tooltip>
+            ) : null}
             <Button
               variant="outlined"
               size="small"
@@ -259,6 +335,11 @@ export function EntityNamesAccordion({
               {t('LWC.desktop.sidebar.database.add_name')}
             </Button>
           </Stack>
+          {suggestError ? (
+            <Typography color="error" variant="caption">
+              {suggestError}
+            </Typography>
+          ) : null}
         </Stack>
       </AccordionDetails>
     </Accordion>

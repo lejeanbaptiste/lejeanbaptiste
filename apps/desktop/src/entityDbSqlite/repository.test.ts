@@ -1353,7 +1353,11 @@ describe('EntitySqliteRepository', () => {
     expect(jiangNan).toEqual(
       expect.objectContaining({ nameType: 'romanization', language: 'zh-Hant-Latn' }),
     );
-    // French glosses must stay translation.
+    repository.close();
+  });
+
+  it('addName with nameType translation stores in entity_translations', () => {
+    const repository = new EntitySqliteRepository();
     repository.createEntity({ id: 'work-gloss', kind: 'work' });
     repository.addName({
       entityId: 'work-gloss',
@@ -1361,11 +1365,42 @@ describe('EntitySqliteRepository', () => {
       nameType: 'translation',
       language: 'fr',
     });
-    repository.db.exec('PRAGMA user_version = 7');
+    expect(repository.listNames('work-gloss').some((n) => n.text === 'Livre des Jin')).toBe(false);
+    expect(repository.listTranslations('work-gloss')).toEqual([
+      expect.objectContaining({ text: 'Livre des Jin', language: 'fr', status: 'active' }),
+    ]);
+    const panel = repository.getPanelSummary('work-gloss');
+    expect(panel?.translations).toEqual([
+      expect.objectContaining({ text: 'Livre des Jin', language: 'fr' }),
+    ]);
+    // Editor still sees the gloss as a translation name row.
+    expect(panel?.names.find((n) => n.text === 'Livre des Jin')?.nameType).toBe('translation');
+    repository.close();
+  });
+
+  it('migration 9 moves vernacular glosses from entity_names into entity_translations', () => {
+    const repository = new EntitySqliteRepository();
+    repository.createEntity({ id: 'work-legacy-gloss', kind: 'work' });
+    const now = new Date().toISOString();
+    repository.db
+      .prepare(
+        `INSERT INTO entity_names
+           (entity_id, text, name_type, name_role, language, is_primary, origin, source, status, created_at, updated_at)
+         VALUES
+           ('work-legacy-gloss', '晉書', 'primary', 'primary', 'zh-Hant', 1, 'user', NULL, 'active', ?, ?),
+           ('work-legacy-gloss', 'Livre des Jin', 'translation', 'variant', 'fr', 0, 'user', NULL, 'active', ?, ?)`,
+      )
+      .run(now, now, now, now);
+
+    repository.db.exec('PRAGMA user_version = 8');
     applyEntityDbMigrations(repository.db);
+
     expect(
-      repository.listNames('work-gloss').find((n) => n.text === 'Livre des Jin')?.nameType,
-    ).toBe('translation');
+      repository.listNames('work-legacy-gloss').some((n) => n.text === 'Livre des Jin'),
+    ).toBe(false);
+    expect(repository.listTranslations('work-legacy-gloss')).toEqual([
+      expect.objectContaining({ text: 'Livre des Jin', language: 'fr' }),
+    ]);
     repository.close();
   });
 

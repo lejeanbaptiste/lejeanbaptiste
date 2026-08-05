@@ -55,4 +55,41 @@ describe('summaryFromSqlitePanel', () => {
     expect(summary.romanizedName).toBe('Jiang Nan');
     expect(summary.primaryName).toBe('江南');
   });
+
+  test('prefers entity_translations rows over legacy nameType=translation names', () => {
+    const summary = summaryFromSqlitePanel({
+      id: 'work-1',
+      kind: 'work',
+      description: null,
+      familyName: null,
+      startYear: null,
+      endYear: null,
+      names: [
+        { text: '晉書', language: 'zh-Hant', nameType: 'primary', status: 'active' },
+        { text: 'Old gloss', language: 'fr', nameType: 'translation', status: 'active' },
+      ],
+      translations: [
+        { text: 'Livre des Jin', language: 'fr', status: 'active' },
+      ],
+    });
+    expect(summary.translations).toEqual([{ lang: 'fr', text: 'Livre des Jin' }]);
+    expect(summary.primaryName).toBe('晉書');
+  });
+
+  test('falls back to legacy translation names when the table is empty', () => {
+    const summary = summaryFromSqlitePanel({
+      id: 'work-2',
+      kind: 'work',
+      description: null,
+      familyName: null,
+      startYear: null,
+      endYear: null,
+      names: [
+        { text: '晉書', language: 'zh-Hant', nameType: 'primary', status: 'active' },
+        { text: 'Livre des Jin', language: 'fr', nameType: 'translation', status: 'active' },
+      ],
+      translations: [],
+    });
+    expect(summary.translations).toEqual([{ lang: 'fr', text: 'Livre des Jin' }]);
+  });
 });

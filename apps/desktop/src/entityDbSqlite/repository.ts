@@ -42,6 +42,19 @@ export interface SqliteName {
   updatedAt: string;
 }
 
+/** Vernacular gloss (fr/en/…), separate from romanization / name variants. */
+export interface SqliteTranslation {
+  id: number;
+  entityId: string;
+  text: string;
+  language: string;
+  origin: SqliteValueOrigin;
+  source: string | null;
+  status: SqliteValueStatus;
+  createdAt: string;
+  updatedAt: string;
+}
+
 export interface SqliteEntitySummary extends SqliteEntity {
   names: SqliteName[];
 }
@@ -122,6 +135,8 @@ export interface SqliteEntityPanelSummary extends SqliteEntitySummary {
   } | null;
   /** work kind only: 'book' | 'chapter' | 'poem' | 'painting' | 'object'. */
   workType: string | null;
+  /** Vernacular glosses (fr/en/…); not searched as names. */
+  translations: SqliteTranslation[];
   nationalities: string[];
   placesOfOrigin: string[];
   roles: string[];
@@ -434,6 +449,7 @@ const CENTRAL_AUTHORITY_TYPE = 'ljb-central';
 
 const ASSERTION_OWNER: Record<string, string> = {
   entity_names: 'entity_id',
+  entity_translations: 'entity_id',
   entity_authorities: 'entity_id',
   entity_dates: 'entity_id',
   entity_metadata: 'entity_id',
@@ -540,6 +556,7 @@ function assemblePanelSummary(
     authorRows: Record<string, unknown>[];
     titleRows: Record<string, unknown>[];
     nameAssertionRows: Record<string, unknown>[];
+    translationRows: Record<string, unknown>[];
     descriptionRows: Record<string, unknown>[];
     classificationRows: Record<string, unknown>[];
   },
@@ -580,26 +597,43 @@ function assemblePanelSummary(
   const classification =
     (bags.classificationRows.find((row) => row.status === 'active')?.label as string | null) ??
     null;
+  const translations = bags.translationRows
+    .filter((row) => !row.status || row.status === 'active')
+    .map((row) => rowTranslation(row));
 
   const assertions: SqliteEntityAssertion[] = [];
   const addAssertion = (assertion: SqliteEntityAssertion) => {
     if (assertion.value || assertion.element === 'idno') assertions.push(assertion);
   };
+  const nameElement =
+    entity.kind === 'person'
+      ? 'persName'
+      : entity.kind === 'place'
+        ? 'placeName'
+        : entity.kind === 'work'
+          ? 'title'
+          : entity.kind === 'office'
+            ? 'roleName'
+            : 'orgName';
   for (const name of bags.nameAssertionRows) {
     addAssertion({
       key: `entity_names:${name.id}`,
-      element:
-        entity.kind === 'person'
-          ? 'persName'
-          : entity.kind === 'place'
-            ? 'placeName'
-            : entity.kind === 'work'
-              ? 'title'
-              : 'orgName',
+      element: nameElement,
       value: String(name.text),
       origin: name.origin as SqliteValueOrigin,
       source: (name.source as string | null) ?? null,
       status: name.status as SqliteValueStatus,
+      ref: null,
+    });
+  }
+  for (const translation of bags.translationRows) {
+    addAssertion({
+      key: `entity_translations:${translation.id}`,
+      element: nameElement,
+      value: String(translation.text),
+      origin: translation.origin as SqliteValueOrigin,
+      source: (translation.source as string | null) ?? null,
+      status: translation.status as SqliteValueStatus,
       ref: null,
     });
   }
@@ -749,7 +783,10 @@ function assemblePanelSummary(
     null;
   return {
     ...entity,
-    names,
+    // Merge glosses into names so the entity editor / sqliteSummary keep working
+    // without a parallel accordion. Search still uses entity_names only.
+    names: [...names, ...translations.map(translationAsDisplayName)],
+    translations,
     authorities,
     familyName: bags.person?.family_name ?? familyFromNames,
     givenName: bags.person?.given_name ?? givenFromNames,
@@ -813,6 +850,38 @@ function rowName(row: Record<string, unknown>): SqliteName {
     status: row.status as SqliteValueStatus,
     createdAt: String(row.created_at),
     updatedAt: String(row.updated_at),
+  };
+}
+
+function rowTranslation(row: Record<string, unknown>): SqliteTranslation {
+  return {
+    id: Number(row.id),
+    entityId: String(row.entity_id),
+    text: String(row.text),
+    language: String(row.language ?? ''),
+    origin: row.origin as SqliteValueOrigin,
+    source: (row.source as string | null) ?? null,
+    status: row.status as SqliteValueStatus,
+    createdAt: String(row.created_at),
+    updatedAt: String(row.updated_at),
+  };
+}
+
+/** Present glosses in the names list for the entity editor (type=translation). */
+function translationAsDisplayName(translation: SqliteTranslation): SqliteName {
+  return {
+    id: translation.id,
+    entityId: translation.entityId,
+    text: translation.text,
+    nameType: 'translation',
+    nameRole: 'variant',
+    language: translation.language,
+    isPrimary: false,
+    origin: translation.origin,
+    source: translation.source,
+    status: translation.status,
+    createdAt: translation.createdAt,
+    updatedAt: translation.updatedAt,
   };
 }
 
@@ -1700,6 +1769,12 @@ export class EntitySqliteRepository {
              WHERE entity_id = ? ORDER BY is_primary DESC, id`,
           )
           .all(id) as Record<string, unknown>[],
+        translationRows: this.db
+          .prepare(
+            `SELECT id, entity_id, text, language, origin, source, status, created_at, updated_at
+             FROM entity_translations WHERE entity_id = ? ORDER BY id`,
+          )
+          .all(id) as Record<string, unknown>[],
         descriptionRows: this.db
           .prepare(
             `SELECT id, value, origin, source, status
@@ -1741,6 +1816,13 @@ export class EntitySqliteRepository {
 
     const namesByEntity = groupRowsByKey(
       this.db.prepare('SELECT * FROM entity_names ORDER BY is_primary DESC, id').all() as Record<
+        string,
+        unknown
+      >[],
+      'entity_id',
+    );
+    const translationsByEntity = groupRowsByKey(
+      this.db.prepare('SELECT * FROM entity_translations ORDER BY id').all() as Record<
         string,
         unknown
       >[],
@@ -1882,6 +1964,7 @@ export class EntitySqliteRepository {
           authorRows: authorByWork.get(id) ?? empty,
           titleRows: titleByPerson.get(id) ?? empty,
           nameAssertionRows: nameRows,
+          translationRows: translationsByEntity.get(id) ?? empty,
           descriptionRows: descriptionByEntity.get(id) ?? empty,
           classificationRows: classificationByOffice.get(id) ?? empty,
         },
@@ -2333,11 +2416,88 @@ export class EntitySqliteRepository {
     return statement.all(entityId).map((row) => rowName(row as Record<string, unknown>));
   }
 
+  listTranslations(entityId: string, includeInactive = false): SqliteTranslation[] {
+    const statement = includeInactive
+      ? this.db.prepare('SELECT * FROM entity_translations WHERE entity_id = ? ORDER BY id')
+      : this.db.prepare(
+          `SELECT * FROM entity_translations
+           WHERE entity_id = ? AND status = 'active'
+           ORDER BY id`,
+        );
+    return statement.all(entityId).map((row) => rowTranslation(row as Record<string, unknown>));
+  }
+
+  addTranslation(input: {
+    entityId: string;
+    text: string;
+    language: string;
+    origin?: SqliteValueOrigin;
+    source?: string | null;
+    status?: SqliteValueStatus;
+    now?: string;
+  }): SqliteTranslation {
+    const text = input.text.trim();
+    const language = input.language.trim();
+    if (!text) throw new Error('Entity translations cannot be empty.');
+    if (!language) throw new Error('Entity translations require a language.');
+    const now = input.now ?? nowIso();
+    return this.transaction(() => {
+      const existing = this.db
+        .prepare(
+          `SELECT id FROM entity_translations
+           WHERE entity_id = ? AND text = ? AND language = ? AND status = 'active'
+           LIMIT 1`,
+        )
+        .get(input.entityId, text, language) as { id: number } | undefined;
+      if (existing) {
+        const row = this.db
+          .prepare('SELECT * FROM entity_translations WHERE id = ?')
+          .get(existing.id) as Record<string, unknown>;
+        return rowTranslation(row);
+      }
+      const result = this.db
+        .prepare(
+          `INSERT INTO entity_translations
+             (entity_id, text, language, origin, source, status, created_at, updated_at)
+           VALUES (?, ?, ?, ?, ?, ?, ?, ?)`,
+        )
+        .run(
+          input.entityId,
+          text,
+          language,
+          input.origin ?? 'user',
+          input.source ?? null,
+          input.status ?? 'active',
+          now,
+          now,
+        );
+      this.bumpEntity(input.entityId, now);
+      const row = this.db
+        .prepare('SELECT * FROM entity_translations WHERE id = ?')
+        .get(Number(result.lastInsertRowid)) as Record<string, unknown>;
+      return rowTranslation(row);
+    });
+  }
+
   addName(input: AddNameInput): SqliteName {
     const text = input.text.trim();
     if (!text) throw new Error('Entity names cannot be empty.');
     const now = input.now ?? nowIso();
     const nameType = normalizePersonNameType(input.nameType ?? null);
+    if (nameType === 'translation') {
+      const language = (input.language ?? '').trim();
+      if (!language) throw new Error('Translations require a language.');
+      const translation = this.addTranslation({
+        entityId: input.entityId,
+        text,
+        language,
+        origin: input.origin,
+        source: input.source,
+        status: input.status,
+        now,
+      });
+      return translationAsDisplayName(translation);
+    }
     const nameRole =
       input.nameRole ??
       (nameType === 'family' || nameType === 'given'
@@ -2389,6 +2549,66 @@ export class EntitySqliteRepository {
     const nameType =
       input.nameType === undefined ? undefined : normalizePersonNameType(input.nameType);
     return this.transaction(() => {
+      const existingTranslations = this.db
+        .prepare(
+          `SELECT id, language FROM entity_translations
+           WHERE entity_id = ? AND text = ? AND status = 'active'`,
+        )
+        .all(input.entityId, text) as { id: number; language: string }[];
+
+      // Target is (or becomes) a vernacular gloss → entity_translations.
+      if (nameType === 'translation' || (nameType === undefined && existingTranslations.length > 0)) {
+        const language =
+          input.language === undefined
+            ? (existingTranslations[0]?.language ?? '')
+            : (input.language ?? '').trim();
+        if (!language) throw new Error('Translations require a language.');
+
+        // Move off entity_names if present.
+        const nameRows = this.db
+          .prepare(
+            `SELECT id, origin FROM entity_names
+             WHERE entity_id = ? AND text = ? AND status = 'active'`,
+          )
+          .all(input.entityId, text) as { id: number; origin: SqliteValueOrigin }[];
+        for (const row of nameRows) {
+          if (row.origin === 'user') {
+            this.db.prepare('DELETE FROM entity_names WHERE id = ?').run(row.id);
+          } else {
+            this.db
+              .prepare(`UPDATE entity_names SET status = 'withdrawn', updated_at = ? WHERE id = ?`)
+              .run(now, row.id);
+          }
+        }
+
+        if (existingTranslations.length === 0) {
+          this.db
+            .prepare(
+              `INSERT INTO entity_translations
+                 (entity_id, text, language, origin, source, status, created_at, updated_at)
+               VALUES (?, ?, ?, 'user', NULL, 'active', ?, ?)`,
+            )
+            .run(input.entityId, text, language, now, now);
+        } else {
+          for (const row of existingTranslations) {
+            this.db
+              .prepare(
+                `UPDATE entity_translations SET language = ?, updated_at = ? WHERE id = ?`,
+              )
+              .run(language, now, row.id);
+          }
+        }
+        this.bumpEntity(input.entityId, now);
+        return Math.max(1, existingTranslations.length);
+      }
+
+      // Demote gloss → ordinary name: leave translations table, write entity_names.
+      if (existingTranslations.length > 0 && nameType !== undefined && nameType !== 'translation') {
+        for (const row of existingTranslations) {
+          this.db.prepare('DELETE FROM entity_translations WHERE id = ?').run(row.id);
+        }
+      }
+
       const existing = this.db
         .prepare(
           `SELECT id, name_type, language FROM entity_names
@@ -2522,6 +2742,35 @@ export class EntitySqliteRepository {
     const normalized = text.trim();
     if (!normalized) return false;
     return this.transaction(() => {
+      const translationTargets = this.db
+        .prepare(
+          `SELECT id, origin FROM entity_translations
+           WHERE entity_id = ? AND text = ? AND status = 'active'`,
+        )
+        .all(entityId, normalized) as { id: number; origin: SqliteValueOrigin }[];
+      if (translationTargets.length > 0) {
+        for (const target of translationTargets) {
+          if (target.origin === 'user') {
+            this.db.prepare('DELETE FROM entity_translations WHERE id = ?').run(target.id);
+          } else {
+            this.db
+              .prepare(
+                `UPDATE entity_translations SET status = 'rejected', updated_at = ? WHERE id = ?`,
+              )
+              .run(now, target.id);
+            this.db
+              .prepare(
+                `INSERT OR IGNORE INTO entity_tombstones
+                   (entity_id, table_name, row_id, reason, created_at)
+                 VALUES (?, 'entity_translations', ?, 'user-deleted', ?)`,
+              )
+              .run(entityId, target.id, now);
+          }
+        }
+        this.bumpEntity(entityId, now);
+        return true;
+      }
+
       const active = this.db
         .prepare(
           `SELECT id, origin, is_primary, name_type, name_role FROM entity_names
