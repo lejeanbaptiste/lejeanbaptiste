@@ -123,6 +123,7 @@ See [apps/desktop/README.md](apps/desktop/README.md) for the compilation and pac
 
 - [x] Welcome splash: include toggle to activate/disactivate advanced features (direct XML editing), 
 - [x] Simplify hamburger menu.
+
 #### Language / plugin leakage audit
 
 Two switches to keep straight: **plugin on/off** (per project → toolbar, tag actions, auto-tag checkboxes) vs **packs on disk** (machine-wide → some host code still reads them if present). Chinese without Norbert should stay usable; Tibetan should stay free of Norbert chrome. Watch shared packs waking up in disambiguation/review, and Chinese as the fallback when language is unset.
@@ -164,6 +165,7 @@ Two switches to keep straight: **plugin on/off** (per project → toolbar, tag a
 
 ## Waiting
 
+- [ ] Keyboard shortcut for insert entity
 - [ ] Finish word plugin
   - [ ] Zotero-style translation passage atomic import with page numbers and update [translation-planning.md](docs/translation-planning.md))
 - [ ] Finish compiling dics

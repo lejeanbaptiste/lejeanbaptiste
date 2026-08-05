@@ -40,3 +40,27 @@ export const collectTranslationUnitCards = (
     })
     .filter((card) => card.unitId.length > 0);
 };
+
+/** Footnotes before this unit in document order (for continuous numbering). */
+export const footnoteStartIndexForUnit = (
+  unitId: string,
+  cards: readonly Pick<TranslationUnitCard, 'unitId' | 'noteCount'>[],
+): number => {
+  let sum = 0;
+  for (const card of cards) {
+    if (card.unitId === unitId) return sum;
+    sum += card.noteCount;
+  }
+  return sum;
+};
+
+/** True when a unit has no visible translation text (AI may fill it). */
+export const isTranslationUnitBlank = (html: string): boolean => {
+  const withoutNotes = html.replace(/<note[\s\S]*?<\/note>/gi, '');
+  const text = withoutNotes
+    .replace(/&nbsp;/gi, ' ')
+    .replace(/<[^>]+>/g, '')
+    .replace(/\u00a0/g, ' ')
+    .trim();
+  return text.length === 0;
+};

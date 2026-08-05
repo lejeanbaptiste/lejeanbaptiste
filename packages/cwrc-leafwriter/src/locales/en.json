@@ -861,6 +861,7 @@
     "select supported schema": "select supported schema",
     "translationPane": {
       "generateTranslation": "Generate translation",
+      "aiSkippedExisting": "This unit already has text — AI only fills blank units.",
       "copyForExport": "Copy source + translation for export",
       "copyFailed": "Copy failed: {{error}}",
       "lockTranslationUnit": "Lock translation unit",
@@ -880,6 +881,14 @@
       "languageToolApplyFailed": "Could not apply that suggestion.",
       "languageToolCloseResults": "Close",
       "formatting": "Formatting",
+      "insertFootnote": "Insert footnote",
+      "zoteroMenu": {
+        "title": "Zotero",
+        "refresh": "Refresh citations",
+        "preferences": "Preferences",
+        "refreshing": "Refreshing Zotero citations.",
+        "unavailable": "Zotero is not available in this build."
+      },
       "formatItems": {
         "bold": "Bold",
         "italic": "Italic",

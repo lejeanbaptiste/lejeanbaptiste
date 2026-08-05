@@ -1074,20 +1074,6 @@ const buildViewMenu = (): Electron.MenuItemConstructorOptions => ({
   ],
 });
 
-const buildToolsMenu = (): Electron.MenuItemConstructorOptions => ({
-  label: 'Tools',
-  submenu: [
-    {
-      label: 'Zotero Preferences',
-      click: () => sendMenuAction('zotero-preferences'),
-    },
-    {
-      label: 'Zotero Refresh',
-      click: () => sendMenuAction('zotero-refresh'),
-    },
-  ],
-});
-
 const buildApplicationMenu = () => {
   const settingsItem: Electron.MenuItemConstructorOptions = {
     label: 'Settings',
@@ -1215,7 +1201,6 @@ const buildApplicationMenu = () => {
       ],
     },
     ...(process.platform === 'darwin' ? [buildEditMenu()] : []),
-    buildToolsMenu(),
     buildViewMenu(),
   ];
 

@@ -52,6 +52,8 @@ export interface MenuItem extends Item {
 export const EditorToolbar = () => {
   const { t } = useTranslation();
   const { schemaId } = useAppState().document;
+  const { translationMode } = useAppState().ui;
+  const translationActive = translationMode.active;
   const { choiceDisplayMode, isReadonly, showBreaks, showNotes, showTags, textLocked } =
     useAppState().editor;
   // const { fullscreen } = useAppState().ui;
@@ -308,7 +310,7 @@ export const EditorToolbar = () => {
     },
     {
       group: 'ui',
-      hide: isReadonly,
+      hide: isReadonly || translationActive,
       icon: 'TagPlus',
       onClick: () => openDialog({ type: 'autoTagging', props: { id: 'autoTagging' } }),
       title: 'Auto-tagging',
@@ -316,7 +318,7 @@ export const EditorToolbar = () => {
     },
     {
       group: 'ui',
-      hide: isReadonly,
+      hide: isReadonly || translationActive,
       icon: 'disambiguate',
       onClick: () => openDialog({ type: 'disambiguation', props: { id: 'disambiguation' } }),
       title: 'Disambiguate',
@@ -365,9 +367,10 @@ export const EditorToolbar = () => {
     // than inserting itself into the middle of the built-in items above.
     ...pluginToolbarItems.map((item): MenuItem => {
       const isMenu = Boolean(item.menuItems?.length);
+      const hideForTranslation = translationActive && item.id === 'calendar';
       return {
         group: item.group ?? 'ui',
-        hide: isReadonly || !item.isAvailable(),
+        hide: isReadonly || !item.isAvailable() || hideForTranslation,
         icon: item.icon as IconLeafWriter,
         menuItems: isMenu ? item.menuItems : undefined,
         onClick: isMenu ? undefined : () => item.onClick?.({ openCalendar: openCalendarDialog }),

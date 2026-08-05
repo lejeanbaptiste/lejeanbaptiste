@@ -389,6 +389,7 @@
     "select supported schema": "Wähle unterstütztes Schema",
     "translationPane": {
       "generateTranslation": "Übersetzung generieren",
+      "aiSkippedExisting": "Diese Einheit enthält bereits Text — KI füllt nur leere Einheiten.",
       "copyForExport": "Quelle und Übersetzung für den Export kopieren",
       "copyFailed": "Kopieren fehlgeschlagen: {{error}}",
       "lockTranslationUnit": "Übersetzungseinheit sperren",
@@ -396,6 +397,14 @@
       "enableSpellcheck": "Rechtschreibvorschläge einschalten",
       "disableSpellcheck": "Rechtschreibvorschläge ausschalten",
       "formatting": "Formatierung",
+      "insertFootnote": "Fußnote einfügen",
+      "zoteroMenu": {
+        "title": "Zotero",
+        "refresh": "Zitate aktualisieren",
+        "preferences": "Einstellungen",
+        "refreshing": "Zotero-Zitate werden aktualisiert.",
+        "unavailable": "Zotero ist in dieser Version nicht verfügbar."
+      },
       "formatItems": {
         "bold": "Fett",
         "italic": "Kursiv",

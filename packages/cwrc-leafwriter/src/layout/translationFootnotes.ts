@@ -19,7 +19,7 @@ export const footnoteBodyHtml = (note: Element): string => {
   return clone.innerHTML;
 };
 
-export const normalizeFootnoteNotes = (editable: HTMLElement): void => {
+export const normalizeFootnoteNotes = (editable: HTMLElement, startIndex = 0): void => {
   const notes = Array.from(editable.querySelectorAll('note'));
   notes.forEach((note, index) => {
     note.setAttribute('contenteditable', 'false');
@@ -47,7 +47,7 @@ export const normalizeFootnoteNotes = (editable: HTMLElement): void => {
     } else if (mark.nextSibling !== body) {
       note.insertBefore(mark, body);
     }
-    mark.textContent = String(index + 1);
+    mark.textContent = String(startIndex + index + 1);
   });
 };
 

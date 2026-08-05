@@ -382,6 +382,7 @@
     "select supported schema": "Seleccionar esquema compatible",
     "translationPane": {
       "generateTranslation": "Generar traducción",
+      "aiSkippedExisting": "Esta unidad ya tiene texto — la IA solo rellena unidades en blanco.",
       "copyForExport": "Copiar origen y traducción para exportar",
       "copyFailed": "La copia falló: {{error}}",
       "lockTranslationUnit": "Bloquear unidad de traducción",
@@ -389,6 +390,14 @@
       "enableSpellcheck": "Activar sugerencias ortográficas",
       "disableSpellcheck": "Desactivar sugerencias ortográficas",
       "formatting": "Formato",
+      "insertFootnote": "Insertar nota al pie",
+      "zoteroMenu": {
+        "title": "Zotero",
+        "refresh": "Actualizar citas",
+        "preferences": "Preferencias",
+        "refreshing": "Actualizando citas de Zotero.",
+        "unavailable": "Zotero no está disponible en esta versión."
+      },
       "formatItems": {
         "bold": "Negrita",
         "italic": "Cursiva",

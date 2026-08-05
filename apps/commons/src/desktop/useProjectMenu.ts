@@ -276,27 +276,6 @@ export const useProjectMenu = () => {
         return;
       }
 
-      if (action === 'zotero-preferences') {
-        if (!isProjectReady || !projectFilePath) {
-          notifyViaSnackbar(t('LWC.desktop.project.messages.open_project_first'));
-          return;
-        }
-
-        if (!(window as Window & { __desktopCitationBridge?: unknown }).__desktopCitationBridge) {
-          notifyViaSnackbar(t('LWC.desktop.open_translation_tab_for_zotero'));
-          return;
-        }
-
-        window.dispatchEvent(new CustomEvent('desktop:zotero-open-style-picker'));
-        return;
-      }
-
-      if (action === 'zotero-refresh') {
-        window.dispatchEvent(new CustomEvent('desktop:zotero-refresh-citations'));
-        notifyViaSnackbar(t('LWC.desktop.refreshing_zotero_citations'));
-        return;
-      }
-
       if (action === 'look-for-updates') {
         void (async () => {
           notifyViaSnackbar(t('LWC.desktop.project.checking_for_updates'));

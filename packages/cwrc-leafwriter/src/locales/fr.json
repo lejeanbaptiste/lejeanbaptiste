@@ -403,6 +403,7 @@
     "select supported schema": "sélectionner le schéma pris en charge",
     "translationPane": {
       "generateTranslation": "Générer une traduction",
+      "aiSkippedExisting": "Cette unité contient déjà du texte — l'IA ne remplit que les unités vides.",
       "copyForExport": "Copier la source et la traduction pour l'exportation",
       "copyFailed": "La copie a échoué : {{error}}",
       "lockTranslationUnit": "Verrouiller l'unité de traduction",
@@ -410,6 +411,14 @@
       "enableSpellcheck": "Activer les suggestions d'orthographe",
       "disableSpellcheck": "Désactiver les suggestions d'orthographe",
       "formatting": "Mise en forme",
+      "insertFootnote": "Insérer une note de bas de page",
+      "zoteroMenu": {
+        "title": "Zotero",
+        "refresh": "Actualiser les citations",
+        "preferences": "Préférences",
+        "refreshing": "Actualisation des citations Zotero.",
+        "unavailable": "Zotero n'est pas disponible dans cette version."
+      },
       "formatItems": {
         "bold": "Gras",
         "italic": "Italique",

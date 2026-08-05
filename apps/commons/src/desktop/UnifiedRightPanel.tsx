@@ -4,6 +4,7 @@ import ChevronRightIcon from '@mui/icons-material/ChevronRight';
 import DescriptionIcon from '@mui/icons-material/Description';
 import ImageOutlinedIcon from '@mui/icons-material/ImageOutlined';
 import LabelOutlinedIcon from '@mui/icons-material/LabelOutlined';
+import CloseIcon from '@mui/icons-material/Close';
 import TranslateIcon from '@mui/icons-material/Translate';
 import { Box, IconButton, ToggleButton, ToggleButtonGroup, Tooltip } from '@mui/material';
 import { leafwriterAtom } from '@src/jotai';
@@ -185,6 +186,16 @@ export const UnifiedRightPanel = () => {
   const dismissTab = useCallback((tab: string) => {
     setActiveTab((current) => {
       if (current !== tab) return current;
+      const fallback = restoreTabRef.current ?? 'fileMetadata';
+      restoreTabRef.current = null;
+      return fallback;
+    });
+  }, []);
+
+  const closeTranslationMode = useCallback(() => {
+    window.writer?.overmindActions?.ui?.exitTranslationMode?.();
+    setActiveTab((current) => {
+      if (current !== 'translation') return current;
       const fallback = restoreTabRef.current ?? 'fileMetadata';
       restoreTabRef.current = null;
       return fallback;
@@ -423,6 +434,14 @@ export const UnifiedRightPanel = () => {
     return () => cancelAnimationFrame(id);
   }, [collapsed, panelWidth]);
 
+  useEffect(() => {
+    if (activeTab === 'translation' && !collapsed) {
+      requestAnimationFrame(() => {
+        window.dispatchEvent(new Event('desktop:translation-toolbar-slot-ready'));
+      });
+    }
+  }, [activeTab, collapsed]);
+
   if (!leafWriter) return null;
 
   const panelMaxWidth =
@@ -439,6 +458,7 @@ export const UnifiedRightPanel = () => {
   const iconTabBar = (orientation: 'horizontal' | 'vertical') => {
     const isVertical = orientation === 'vertical';
     const tooltipPlacement = isVertical ? 'left' : 'bottom';
+    const translationToolbarActive = activeTab === 'translation' && !isVertical;
 
     return (
       <Box
@@ -450,6 +470,7 @@ export const UnifiedRightPanel = () => {
           flexShrink: 0,
           py: isVertical ? 0.25 : 0,
           px: isVertical ? 0 : 0.25,
+          gap: translationToolbarActive ? 0.5 : 0,
           ...(isVertical
             ? { width: '100%', height: '100%' }
             : {
@@ -462,8 +483,49 @@ export const UnifiedRightPanel = () => {
               }),
         }}
       >
+        {translationToolbarActive ? (
+          <>
+            <Tooltip placement={tooltipPlacement} title="Close translation">
+              <Box
+                sx={{
+                  alignItems: 'center',
+                  bgcolor: 'primary.main',
+                  borderRadius: 999,
+                  color: 'primary.contrastText',
+                  display: 'inline-flex',
+                  flexShrink: 0,
+                  gap: 0.25,
+                  pl: 0.75,
+                  pr: 0.25,
+                  py: 0.25,
+                }}
+              >
+                <TranslateIcon sx={{ fontSize: SIDEBAR_TAB_ICON_SIZE }} />
+                <IconButton
+                  aria-label="Close translation"
+                  onClick={closeTranslationMode}
+                  size="small"
+                  sx={{ color: 'inherit' }}
+                >
+                  <CloseIcon fontSize="small" />
+                </IconButton>
+              </Box>
+            </Tooltip>
+            <Box
+              id="desktop-translation-toolbar-slot"
+              sx={{
+                alignItems: 'center',
+                display: 'flex',
+                flex: 1,
+                minWidth: 0,
+                overflow: 'hidden',
+              }}
+            />
+          </>
+        ) : null}
+
         {/* Collapse button comes first in vertical mode (top of the band) */}
-        {isVertical && (
+        {!translationToolbarActive && isVertical && (
           <Tooltip placement={tooltipPlacement} title="Expand panel">
             <IconButton
               size="small"
@@ -483,54 +545,70 @@ export const UnifiedRightPanel = () => {
           </Tooltip>
         )}
 
-        <ToggleButtonGroup
-          exclusive
-          orientation={orientation}
-          value={activeTab}
-          onChange={(_event, value: RightTabId | null) => {
-            if (value) {
-              // A manual pick breaks any pending auto-view restore chain.
-              restoreTabRef.current = null;
-              setActiveTab(value);
-              if (!suppressedByDockedReviewRef.current && collapsed) setCollapsed(false);
-            }
-          }}
-          sx={{
-            flex: isVertical ? undefined : 1,
-            flexWrap: 'nowrap',
-            minWidth: 0,
-            '& .MuiToggleButtonGroup-grouped': {
-              margin: 0.125,
-              border: 0,
-              borderRadius: 1,
-            },
-          }}
-        >
-          {visibleTabOrder.map((tabId) => (
-            <ToggleButton
-              key={tabId}
-              value={tabId}
-              sx={{
-                width: SIDEBAR_TAB_BUTTON_SIZE,
-                height: SIDEBAR_TAB_BUTTON_SIZE,
-                minWidth: SIDEBAR_TAB_BUTTON_SIZE,
-                p: 0.25,
-                flexShrink: 0,
-              }}
-            >
-              <Tooltip placement={tooltipPlacement} title={TAB_CONFIG[tabId].label}>
-                <Box component="span" sx={{ display: 'inline-flex', color: 'text.primary' }}>
-                  {TAB_CONFIG[tabId].icon}
-                </Box>
-              </Tooltip>
-            </ToggleButton>
-          ))}
-        </ToggleButtonGroup>
+        {!translationToolbarActive ? (
+          <ToggleButtonGroup
+            exclusive
+            orientation={orientation}
+            value={activeTab}
+            onChange={(_event, value: RightTabId | null) => {
+              if (value) {
+                setActiveTab((current) => {
+                  if (
+                    value === 'translation' &&
+                    value !== current &&
+                    restoreTabRef.current === null &&
+                    current !== 'fileMetadata' &&
+                    current !== 'validation'
+                  ) {
+                    restoreTabRef.current = current;
+                  }
+                  if (value !== 'translation' && current === 'translation') {
+                    window.writer?.overmindActions?.ui?.exitTranslationMode?.();
+                  }
+                  return value;
+                });
+                // A manual pick breaks any pending auto-view restore chain.
+                if (value !== 'translation') restoreTabRef.current = null;
+                if (!suppressedByDockedReviewRef.current && collapsed) setCollapsed(false);
+              }
+            }}
+            sx={{
+              flex: isVertical ? undefined : 1,
+              flexWrap: 'nowrap',
+              minWidth: 0,
+              '& .MuiToggleButtonGroup-grouped': {
+                margin: 0.125,
+                border: 0,
+                borderRadius: 1,
+              },
+            }}
+          >
+            {visibleTabOrder.map((tabId) => (
+              <ToggleButton
+                key={tabId}
+                value={tabId}
+                sx={{
+                  width: SIDEBAR_TAB_BUTTON_SIZE,
+                  height: SIDEBAR_TAB_BUTTON_SIZE,
+                  minWidth: SIDEBAR_TAB_BUTTON_SIZE,
+                  p: 0.25,
+                  flexShrink: 0,
+                }}
+              >
+                <Tooltip placement={tooltipPlacement} title={TAB_CONFIG[tabId].label}>
+                  <Box component="span" sx={{ display: 'inline-flex', color: 'text.primary' }}>
+                    {TAB_CONFIG[tabId].icon}
+                  </Box>
+                </Tooltip>
+              </ToggleButton>
+            ))}
+          </ToggleButtonGroup>
+        ) : null}
 
-        {isVertical && <Box sx={{ flex: 1 }} />}
+        {!translationToolbarActive && isVertical && <Box sx={{ flex: 1 }} />}
 
         {/* Collapse button at end in horizontal mode */}
-        {!isVertical && (
+        {!translationToolbarActive && !isVertical && (
           <Tooltip placement={tooltipPlacement} title="Collapse panel">
             <IconButton
               size="small"

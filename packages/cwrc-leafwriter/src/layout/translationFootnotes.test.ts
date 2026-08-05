@@ -19,6 +19,13 @@ describe('translationFootnotes', () => {
     expect(footnoteBodyHtml(notes[1]!)).toBe('second');
   });
 
+  test('normalize supports a global start index', () => {
+    const root = document.createElement('div');
+    root.innerHTML = `<note place="foot">third overall</note>`;
+    normalizeFootnoteNotes(root, 2);
+    expect(root.querySelector(`[${FN_MARK_ATTR}]`)?.textContent).toBe('3');
+  });
+
   test('flatten restores plain TEI notes for disk', () => {
     const root = document.createElement('div');
     root.innerHTML = `<note place="foot"><span ${FN_MARK_ATTR}="true">1</span><span ${FN_BODY_ATTR}="true">only this</span></note>`;

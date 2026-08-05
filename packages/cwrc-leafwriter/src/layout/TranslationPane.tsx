@@ -25,7 +25,6 @@ import {
   Tooltip,
   Typography,
 } from '@mui/material';
-import AutoAwesomeIcon from '@mui/icons-material/AutoAwesome';
 import CloseIcon from '@mui/icons-material/Close';
 import ContentCopyIcon from '@mui/icons-material/ContentCopy';
 import FormatBoldIcon from '@mui/icons-material/FormatBold';
@@ -35,18 +34,17 @@ import FormatQuoteIcon from '@mui/icons-material/FormatQuote';
 import FormatStrikethroughIcon from '@mui/icons-material/FormatStrikethrough';
 import FormatUnderlinedIcon from '@mui/icons-material/FormatUnderlined';
 import LinkIcon from '@mui/icons-material/Link';
-import LockIcon from '@mui/icons-material/Lock';
-import LockOpenIcon from '@mui/icons-material/LockOpen';
 import MoreVertIcon from '@mui/icons-material/MoreVert';
-import NavigateBeforeIcon from '@mui/icons-material/NavigateBefore';
-import NavigateNextIcon from '@mui/icons-material/NavigateNext';
-import PersonOutlineIcon from '@mui/icons-material/PersonOutline';
+import RefreshIcon from '@mui/icons-material/Refresh';
+import SettingsIcon from '@mui/icons-material/Settings';
 import SpellcheckIcon from '@mui/icons-material/Spellcheck';
 import FactCheckIcon from '@mui/icons-material/FactCheck';
 import StickyNote2Icon from '@mui/icons-material/StickyNote2';
 import SubscriptIcon from '@mui/icons-material/Subscript';
 import SuperscriptIcon from '@mui/icons-material/Superscript';
 import TextFieldsIcon from '@mui/icons-material/TextFields';
+import PersonOutlineIcon from '@mui/icons-material/PersonOutline';
+import { ZoteroIcon } from '../components/icons/ZoteroIcon';
 import {
   useCallback,
   useEffect,
@@ -58,6 +56,7 @@ import {
   type ReactNode,
   type SyntheticEvent,
 } from 'react';
+import { createPortal } from 'react-dom';
 import { useTranslation } from 'react-i18next';
 import { copyUnitsForExport } from '../js/conversion/copyForExport';
 import { translationFontZoom } from '../js/fontSizeZoom';
@@ -105,7 +104,7 @@ import type { EntitySummary } from './entityFields/entitySummary';
 import { EntityDisplayPopup } from './entityFields/EntityDisplayPopup';
 import { TRANSLATION_POLICY_CHANGED_EVENT } from './entityFields/dateFormatSettings';
 import { applyEditorialCleanupToRoot, applyEditorialCleanupToRootPreservingSelection } from './translationEditorialCleanup';
-import { collectTranslationUnitCards } from './translationUnitCards';
+import { collectTranslationUnitCards, footnoteStartIndexForUnit, isTranslationUnitBlank } from './translationUnitCards';
 
 const TEI_NS = 'http://www.tei-c.org/ns/1.0';
 const DEFAULT_CITATION_STYLE_ID = 'chicago-note-bibliography';
@@ -597,6 +596,27 @@ export const TranslationPane = () => {
   const zoteroCitationLabel = t('LW.translationPane.formatItems.zoteroCitation');
   const { translationMode } = useAppState().ui;
   const { notifyViaSnackbar, setSelectedTranslationUnit } = useActions().ui;
+  const isDesktopShell = typeof window !== 'undefined' && !!window.electronAPI;
+  const [desktopToolbarSlot, setDesktopToolbarSlot] = useState<Element | null>(null);
+
+  const syncDesktopToolbarSlot = useCallback(() => {
+    if (!isDesktopShell) {
+      setDesktopToolbarSlot(null);
+      return;
+    }
+    setDesktopToolbarSlot(document.getElementById('desktop-translation-toolbar-slot'));
+  }, [isDesktopShell]);
+
+  useEffect(() => {
+    syncDesktopToolbarSlot();
+  }, [syncDesktopToolbarSlot, translationMode.active]);
+
+  useEffect(() => {
+    if (!isDesktopShell) return;
+    const onSlotReady = () => syncDesktopToolbarSlot();
+    window.addEventListener('desktop:translation-toolbar-slot-ready', onSlotReady);
+    return () => window.removeEventListener('desktop:translation-toolbar-slot-ready', onSlotReady);
+  }, [isDesktopShell, syncDesktopToolbarSlot]);
 
   const [translationDoc, setTranslationDoc] = useState<Document | null>(null);
   const [unitHtml, setUnitHtml] = useState('');
@@ -610,7 +630,6 @@ export const TranslationPane = () => {
     getTranslationLanguageState(),
   );
   const selectedLanguage = languageState?.selectedLang || translationMode.lang || '';
-  const [locked, setLocked] = useState(false);
   const [spellcheckEnabled, setSpellcheckEnabled] = useState(() => readSpellcheckEnabled());
   const [languageToolEnabled, setLanguageToolEnabled] = useState(false);
   const [languageToolLive, setLanguageToolLive] = useState(false);
@@ -625,6 +644,8 @@ export const TranslationPane = () => {
   const languageToolSeqRef = useRef(0);
   const languageToolDebounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const [formatAnchor, setFormatAnchor] = useState<HTMLElement | null>(null);
+  const [zoteroMenuAnchor, setZoteroMenuAnchor] = useState<HTMLElement | null>(null);
+  const [aiMenuAnchor, setAiMenuAnchor] = useState<HTMLElement | null>(null);
   const [entityMenuAnchor, setEntityMenuAnchor] = useState<HTMLElement | null>(null);
   const [sourceEntities, setSourceEntities] = useState<SourceUnitEntityHit[]>([]);
   const [entityPickerQuery, setEntityPickerQuery] = useState('');
@@ -692,9 +713,10 @@ export const TranslationPane = () => {
     return collectTranslationUnitCards(translationDoc, alignmentUnit, fileNameOf(sourcePath));
   }, [translationDoc, alignmentUnit, sourcePath, cardsEpoch]);
 
-  const selectedUnitIndex = selectedUnitId
-    ? unitCards.findIndex((card) => card.unitId === selectedUnitId)
-    : -1;
+  const footnoteStartIndex = useMemo(
+    () => (selectedUnitId ? footnoteStartIndexForUnit(selectedUnitId, unitCards) : 0),
+    [selectedUnitId, unitCards],
+  );
 
   const setTranslationDocument = useCallback((doc: Document) => {
     docRef.current = doc;
@@ -931,7 +953,6 @@ export const TranslationPane = () => {
       html = applyMarkdownCleanupToFragment(html);
     }
     setUnitHtml(html);
-    setLocked(unit?.getAttribute('data-leaf-locked') === 'true');
   }, [translationDoc, alignmentUnit, sourcePath, selectedUnitId]);
 
   /** Sync the numbered footnote list below the text from the inline <note> elements,
@@ -942,7 +963,7 @@ export const TranslationPane = () => {
       setFootnotes([]);
       return;
     }
-    normalizeFootnoteNotes(editable);
+    normalizeFootnoteNotes(editable, footnoteStartIndex);
     const notes = Array.from(editable.querySelectorAll('note'));
     for (const note of notes) {
       const body = footnoteBodyOf(note);
@@ -950,7 +971,7 @@ export const TranslationPane = () => {
       else prepareAtomicCitationFields(note, zoteroCitationLabel);
     }
     setFootnotes(notes.map((note) => footnoteBodyHtml(note)));
-  }, [zoteroCitationLabel]);
+  }, [footnoteStartIndex, zoteroCitationLabel]);
 
   const renderCitationRefs = useCallback(
     (doc: Document, styleId = activeCitationStyle) => {
@@ -1064,23 +1085,6 @@ export const TranslationPane = () => {
       if (selectSource) selectSourceUnitInEditor(nextUnitId);
     },
     [persist, setSelectedTranslationUnit],
-  );
-
-  const goToAdjacentUnit = useCallback(
-    (delta: -1 | 1) => {
-      if (unitCards.length === 0) return;
-      const current =
-        selectedUnitIndex >= 0
-          ? selectedUnitIndex
-          : delta > 0
-            ? -1
-            : unitCards.length;
-      const nextIndex = Math.min(unitCards.length - 1, Math.max(0, current + delta));
-      const next = unitCards[nextIndex];
-      if (!next) return;
-      void navigateToUnit(next.unitId);
-    },
-    [navigateToUnit, selectedUnitIndex, unitCards],
   );
 
   // Keep the active card visible when the source caret (or Find) changes the unit.
@@ -1259,7 +1263,6 @@ export const TranslationPane = () => {
           );
           const nextHtml = unit?.innerHTML ?? '';
           setUnitHtml(nextHtml);
-          setLocked(unit?.getAttribute('data-leaf-locked') === 'true');
           if (editableRef.current) editableRef.current.innerHTML = nextHtml;
         }
 
@@ -1275,22 +1278,6 @@ export const TranslationPane = () => {
       }
     };
   }, [alignmentUnit, persist, setTranslationDocument, sourcePath, translationPath]);
-
-  const toggleLock = useCallback(async () => {
-    const doc = docRef.current;
-    if (!doc || !alignmentUnit || !sourcePath || !selectedUnitId || !translationPath) return;
-
-    const unit = findUnitByCorrespId(doc, alignmentUnit, fileNameOf(sourcePath), selectedUnitId);
-    if (!unit) return;
-
-    const next = unit.getAttribute('data-leaf-locked') !== 'true';
-    if (next) unit.setAttribute('data-leaf-locked', 'true');
-    else unit.removeAttribute('data-leaf-locked');
-    setLocked(next);
-
-    const nextXml = new XMLSerializer().serializeToString(doc);
-    await getDesktopApi()?.writeFile?.(translationPath, nextXml);
-  }, [alignmentUnit, sourcePath, selectedUnitId, translationPath]);
 
   const replaceCurrentUnit = useCallback(
     async (nextUnitXml: string) => {
@@ -1318,8 +1305,14 @@ export const TranslationPane = () => {
       setAiStatus({ severity: 'error', message: 'Select a source unit first.' });
       return;
     }
-    if (locked) {
-      setAiStatus({ severity: 'error', message: 'This translation unit is locked.' });
+
+    const doc = docRef.current;
+    const unit =
+      doc &&
+      findUnitByCorrespId(doc, alignmentUnit, fileNameOf(sourcePath), selectedUnitId);
+    const currentHtml = unit?.innerHTML ?? editableRef.current?.innerHTML ?? '';
+    if (!isTranslationUnitBlank(currentHtml)) {
+      setAiStatus({ severity: 'info', message: t('LW.translationPane.aiSkippedExisting') });
       return;
     }
 
@@ -1381,7 +1374,7 @@ export const TranslationPane = () => {
     } finally {
       setGenerating(false);
     }
-  }, [alignmentUnit, locked, replaceCurrentUnit, selectedUnitId, sourcePath, translationMode.lang]);
+  }, [alignmentUnit, replaceCurrentUnit, selectedUnitId, sourcePath, t, translationMode.lang]);
 
   const refreshLanguageToolOverlays = useCallback((matches: LanguageToolMatchView[]) => {
     const root = editableRef.current;
@@ -1412,7 +1405,7 @@ export const TranslationPane = () => {
       }
       return;
     }
-    if (!selectedUnitId || !editableRef.current || locked) return;
+    if (!selectedUnitId || !editableRef.current) return;
 
     const seq = ++languageToolSeqRef.current;
     const text = editableRef.current.textContent ?? '';
@@ -1470,7 +1463,6 @@ export const TranslationPane = () => {
   }, [
     languageState?.selectedLang,
     languageToolEnabled,
-    locked,
     refreshLanguageToolOverlays,
     selectedUnitId,
     t,
@@ -1478,12 +1470,12 @@ export const TranslationPane = () => {
   ]);
 
   const scheduleLiveLanguageToolCheck = useCallback(() => {
-    if (!languageToolLive || !languageToolEnabled || locked) return;
+    if (!languageToolLive || !languageToolEnabled) return;
     if (languageToolDebounceRef.current) clearTimeout(languageToolDebounceRef.current);
     languageToolDebounceRef.current = setTimeout(() => {
       void runLanguageToolCheck({ quiet: true });
     }, 700);
-  }, [languageToolEnabled, languageToolLive, locked, runLanguageToolCheck]);
+  }, [languageToolEnabled, languageToolLive, runLanguageToolCheck]);
 
   const dismissLanguageToolMatch = useCallback(
     (match: LanguageToolMatchView) => {
@@ -1952,10 +1944,6 @@ export const TranslationPane = () => {
       setAiStatus({ severity: 'error', message: 'Zotero citations are not available.' });
       return;
     }
-    if (locked) {
-      setAiStatus({ severity: 'error', message: 'This translation unit is locked.' });
-      return;
-    }
 
     const doc = docRef.current;
     if (!doc || !alignmentUnit || !sourcePath || !selectedUnitId || !translationPath) {
@@ -2031,10 +2019,6 @@ export const TranslationPane = () => {
     entityId: string,
     options?: { replace?: { textNode: Text; start: number; end: number } },
   ) => {
-    if (locked) {
-      notifyViaSnackbar(t('LW.translationPane.entityInsertLocked'));
-      return;
-    }
     const editable = editableRef.current;
     if (!editable) return;
 
@@ -2110,10 +2094,6 @@ export const TranslationPane = () => {
   }, []);
 
   const refreshEntityAutocomplete = useCallback(() => {
-    if (locked) {
-      dismissEntityAutocomplete();
-      return;
-    }
     const selection = window.getSelection();
     const range =
       selection && selection.rangeCount > 0 ? selection.getRangeAt(0) : null;
@@ -2134,7 +2114,7 @@ export const TranslationPane = () => {
     place();
     // Collapsed carets sometimes report empty rects until the next frame.
     window.requestAnimationFrame(place);
-  }, [dismissEntityAutocomplete, locked]);
+  }, [dismissEntityAutocomplete]);
 
   const acceptEntityAutocomplete = async (index?: number) => {
     const suggestion = entityAcSuggestionsRef.current[index ?? entityAcIndexRef.current];
@@ -2224,7 +2204,6 @@ export const TranslationPane = () => {
   };
 
   const openEntityFormatPopup = async (event: ReactMouseEvent, clicked: Element) => {
-    if (locked) return;
     const field = resolveEntityFieldTarget(clicked);
     const key = field?.getAttribute('key');
     if (!field || !key) return;
@@ -2321,7 +2300,7 @@ export const TranslationPane = () => {
   const updateFootnote = (index: number, html: string) => {
     const note = editableRef.current?.querySelectorAll('note')[index];
     if (!note || !editableRef.current) return;
-    normalizeFootnoteNotes(editableRef.current);
+    normalizeFootnoteNotes(editableRef.current, footnoteStartIndex);
     const body = footnoteBodyOf(note);
     if (!body) return;
     body.innerHTML = html;
@@ -2346,9 +2325,7 @@ export const TranslationPane = () => {
       | 'subscript'
       | 'smallCaps'
       | 'removeFormat'
-      | 'link'
-      | 'footnote'
-      | 'citation',
+      | 'link',
   ) => {
     if (command === 'smallCaps') {
       toggleSmallCaps();
@@ -2360,14 +2337,6 @@ export const TranslationPane = () => {
     }
     if (command === 'link') {
       openLinkDialog();
-      return;
-    }
-    if (command === 'footnote') {
-      insertFootnote();
-      return;
-    }
-    if (command === 'citation') {
-      void insertZoteroCitation();
       return;
     }
     editableRef.current?.focus();
@@ -2387,6 +2356,32 @@ export const TranslationPane = () => {
     });
   };
   const shortcut = (macShortcut: string, otherShortcut: string) => (mac ? macShortcut : otherShortcut);
+
+  const handleZoteroRefresh = async () => {
+    setZoteroMenuAnchor(null);
+    await refreshCurrentCitationFields();
+    notifyViaSnackbar(t('LW.translationPane.zoteroMenu.refreshing'));
+  };
+
+  const handleZoteroPreferences = async () => {
+    setZoteroMenuAnchor(null);
+    const bridge = getCitationBridge();
+    if (!bridge) {
+      setAiStatus({ severity: 'error', message: t('LW.translationPane.zoteroMenu.unavailable') });
+      return;
+    }
+    const styleId = await openCitationStylePicker(bridge);
+    if (styleId) await refreshCurrentCitationFields(styleId);
+  };
+
+  const toolbarDivider = (
+    <Divider
+      orientation="vertical"
+      flexItem
+      sx={{ alignSelf: 'center', height: 18, mx: 0.25, borderColor: 'divider' }}
+    />
+  );
+
   const formatItems: Array<{
     command:
       | 'bold'
@@ -2397,9 +2392,7 @@ export const TranslationPane = () => {
       | 'superscript'
       | 'subscript'
       | 'removeFormat'
-      | 'link'
-      | 'footnote'
-      | 'citation';
+      | 'link';
     icon: ReactNode;
     label: string;
     shortcut: string;
@@ -2453,18 +2446,6 @@ export const TranslationPane = () => {
       shortcut: shortcut('⌘K', 'Ctrl+K'),
     },
     {
-      command: 'footnote',
-      icon: <StickyNote2Icon fontSize="small" />,
-      label: t('LW.translationPane.formatItems.footnote'),
-      shortcut: shortcut('⌘⌥F', 'Ctrl+Alt+F'),
-    },
-    {
-      command: 'citation',
-      icon: <FormatQuoteIcon fontSize="small" />,
-      label: t('LW.translationPane.formatItems.zoteroCitation'),
-      shortcut: t('LW.translationPane.formatItems.shortcuts.zoteroPicker'),
-    },
-    {
       command: 'removeFormat',
       icon: <FormatClearIcon fontSize="small" />,
       label: t('LW.translationPane.formatItems.clearFormatting'),
@@ -2472,31 +2453,32 @@ export const TranslationPane = () => {
     },
   ];
 
-  return (
-    <Box
+  const toolbarInRightPanel = Boolean(desktopToolbarSlot);
+
+  const translationToolbar = (
+    <Stack
+      direction="row"
+      alignItems="center"
+      spacing={0.5}
       sx={{
-        display: 'flex',
-        flexDirection: 'column',
-        height: '100%',
-        borderLeft: 1,
-        borderColor: 'divider',
+        minWidth: 0,
+        flex: toolbarInRightPanel ? 1 : undefined,
+        overflow: 'hidden',
+        ...(toolbarInRightPanel
+          ? { py: 0, px: 0 }
+          : { p: 0.5, borderBottom: 1, borderColor: 'divider' }),
       }}
     >
-      <Stack
-        direction="row"
-        alignItems="center"
-        spacing={0.5}
-        sx={{ p: 0.5, borderBottom: 1, borderColor: 'divider', minWidth: 0 }}
-      >
         {languageOptions.length > 0 ? (
           <Select
             disabled={languageState?.indexing}
+            IconComponent={() => null}
             onChange={(event) => languageState?.setSelectedLang(String(event.target.value))}
             size="small"
             sx={{
               flex: '0 0 auto',
-              minWidth: 72,
-              '& .MuiSelect-select': { px: 1, py: 0.5 },
+              minWidth: 48,
+              '& .MuiSelect-select': { px: 1, py: 0.5, pr: '8px !important' },
             }}
             value={
               languageOptions.some((lang) => lang.code === selectedLanguage)
@@ -2529,18 +2511,6 @@ export const TranslationPane = () => {
           </Typography>
         )}
 
-        <Tooltip title={t('LW.translationPane.generateTranslation')}>
-          <span>
-            <IconButton
-              disabled={!selectedUnitId || generating || locked}
-              onClick={() => void generateTranslation()}
-              size="small"
-            >
-              {generating ? <CircularProgress size={18} /> : <AutoAwesomeIcon fontSize="small" />}
-            </IconButton>
-          </span>
-        </Tooltip>
-
         <Tooltip title={t('LW.translationPane.copyForExport')}>
           <span>
             <IconButton
@@ -2563,20 +2533,6 @@ export const TranslationPane = () => {
               size="small"
             >
               <ContentCopyIcon fontSize="small" />
-            </IconButton>
-          </span>
-        </Tooltip>
-
-        <Tooltip
-          title={
-            locked
-              ? t('LW.translationPane.unlockTranslationUnit')
-              : t('LW.translationPane.lockTranslationUnit')
-          }
-        >
-          <span>
-            <IconButton disabled={!selectedUnitId} onClick={() => void toggleLock()} size="small">
-              {locked ? <LockIcon fontSize="small" /> : <LockOpenIcon fontSize="small" />}
             </IconButton>
           </span>
         </Tooltip>
@@ -2614,7 +2570,7 @@ export const TranslationPane = () => {
             <IconButton
               aria-label={t('LW.translationPane.languageToolCheck')}
               color={languageToolMatches.length > 0 ? 'primary' : 'default'}
-              disabled={!selectedUnitId || locked || languageToolChecking}
+              disabled={!selectedUnitId || languageToolChecking}
               onClick={() => void runLanguageToolCheck()}
               size="small"
             >
@@ -2632,7 +2588,7 @@ export const TranslationPane = () => {
             <IconButton
               aria-controls={entityMenuAnchor ? 'translation-entity-menu' : undefined}
               aria-haspopup="menu"
-              disabled={!selectedUnitId || locked}
+              disabled={!selectedUnitId}
               onClick={(event) => openEntityMenu(event.currentTarget)}
               size="small"
             >
@@ -2721,6 +2677,94 @@ export const TranslationPane = () => {
           )}
         </Menu>
 
+        {toolbarDivider}
+
+        <Tooltip title={t('LW.translationPane.insertFootnote')}>
+          <span>
+            <IconButton disabled={!selectedUnitId} onClick={insertFootnote} size="small">
+              <StickyNote2Icon fontSize="small" />
+            </IconButton>
+          </span>
+        </Tooltip>
+
+        {toolbarDivider}
+
+        <Tooltip title={t('LW.translationPane.zoteroMenu.title')}>
+          <span>
+            <IconButton
+              aria-controls={zoteroMenuAnchor ? 'translation-zotero-menu' : undefined}
+              aria-haspopup="menu"
+              onClick={(event) => setZoteroMenuAnchor(event.currentTarget)}
+              size="small"
+            >
+              <ZoteroIcon sx={{ width: 20, height: 20 }} />
+            </IconButton>
+          </span>
+        </Tooltip>
+
+        <Menu
+          anchorEl={zoteroMenuAnchor}
+          id="translation-zotero-menu"
+          onClose={() => setZoteroMenuAnchor(null)}
+          open={Boolean(zoteroMenuAnchor)}
+        >
+          <MenuItem onClick={() => void handleZoteroRefresh()}>
+            <ListItemIcon>
+              <RefreshIcon fontSize="small" />
+            </ListItemIcon>
+            <ListItemText primary={t('LW.translationPane.zoteroMenu.refresh')} />
+          </MenuItem>
+          <MenuItem onClick={() => void handleZoteroPreferences()}>
+            <ListItemIcon>
+              <SettingsIcon fontSize="small" />
+            </ListItemIcon>
+            <ListItemText primary={t('LW.translationPane.zoteroMenu.preferences')} />
+          </MenuItem>
+        </Menu>
+
+        <Tooltip title={t('LW.translationPane.formatItems.zoteroCitation')}>
+          <span>
+            <IconButton
+              disabled={!selectedUnitId}
+              onClick={() => void insertZoteroCitation()}
+              size="small"
+            >
+              <FormatQuoteIcon fontSize="small" />
+            </IconButton>
+          </span>
+        </Tooltip>
+
+        {toolbarDivider}
+
+        <Button
+          aria-controls={aiMenuAnchor ? 'translation-ai-menu' : undefined}
+          aria-haspopup="menu"
+          disabled={!selectedUnitId}
+          onClick={(event) => setAiMenuAnchor(event.currentTarget)}
+          size="small"
+          sx={{ flexShrink: 0, fontWeight: 600, minWidth: 0, px: 1, textTransform: 'none' }}
+          variant="text"
+        >
+          {generating ? <CircularProgress size={16} /> : 'AI'}
+        </Button>
+
+        <Menu
+          anchorEl={aiMenuAnchor}
+          id="translation-ai-menu"
+          onClose={() => setAiMenuAnchor(null)}
+          open={Boolean(aiMenuAnchor)}
+        >
+          <MenuItem
+            disabled={generating}
+            onClick={() => {
+              setAiMenuAnchor(null);
+              void generateTranslation();
+            }}
+          >
+            <ListItemText primary={t('LW.translationPane.generateTranslation')} />
+          </MenuItem>
+        </Menu>
+
         <Tooltip title={t('LW.translationPane.formatting')}>
           <span>
             <IconButton
@@ -2757,6 +2801,24 @@ export const TranslationPane = () => {
             </MenuItem>
           ))}
         </Menu>
+
+    </Stack>
+  );
+
+  return (
+    <Box
+      sx={{
+        display: 'flex',
+        flexDirection: 'column',
+        height: '100%',
+        borderLeft: toolbarInRightPanel ? 0 : 1,
+        borderColor: 'divider',
+      }}
+    >
+      {!toolbarInRightPanel ? translationToolbar : null}
+      {toolbarInRightPanel && desktopToolbarSlot
+        ? createPortal(translationToolbar, desktopToolbarSlot)
+        : null}
 
         <Dialog
           fullWidth
@@ -2838,56 +2900,6 @@ export const TranslationPane = () => {
             </Button>
           </DialogActions>
         </Dialog>
-
-        <Tooltip title={t('LW.translationPane.previousUnit')}>
-          <span>
-            <IconButton
-              aria-label={t('LW.translationPane.previousUnit')}
-              disabled={unitCards.length === 0 || selectedUnitIndex <= 0}
-              onClick={() => goToAdjacentUnit(-1)}
-              size="small"
-            >
-              <NavigateBeforeIcon fontSize="small" />
-            </IconButton>
-          </span>
-        </Tooltip>
-
-        <Tooltip title={t('LW.translationPane.nextUnit')}>
-          <span>
-            <IconButton
-              aria-label={t('LW.translationPane.nextUnit')}
-              disabled={
-                unitCards.length === 0 ||
-                selectedUnitIndex < 0 ||
-                selectedUnitIndex >= unitCards.length - 1
-              }
-              onClick={() => goToAdjacentUnit(1)}
-              size="small"
-            >
-              <NavigateNextIcon fontSize="small" />
-            </IconButton>
-          </span>
-        </Tooltip>
-
-        <Typography
-          color="text.secondary"
-          noWrap
-          variant="caption"
-          sx={{ flex: 1, minWidth: 0, textAlign: 'right' }}
-        >
-          {selectedUnitId
-            ? selectedUnitIndex >= 0
-              ? t('LW.translationPane.unitPosition', {
-                  current: selectedUnitIndex + 1,
-                  total: unitCards.length,
-                })
-              : t('LW.translationPane.unitPosition', {
-                  current: '?',
-                  total: unitCards.length || '?',
-                })
-            : t('LW.translationPane.noUnit')}
-        </Typography>
-      </Stack>
 
       {aiStatus ? (
         <Alert severity={aiStatus.severity} sx={{ borderRadius: 0 }}>
@@ -2983,6 +2995,7 @@ export const TranslationPane = () => {
             minHeight: 0,
             overflow: 'auto',
             fontSize: `${paneFontSize}px`,
+            counterReset: 'footnote',
           }}
         >
           {caretInUnindexedUnit && !selectedUnitId ? (
@@ -3001,7 +3014,6 @@ export const TranslationPane = () => {
               p: 1.5,
               outline: 'none',
               textAlign: 'justify' as const,
-              counterReset: 'footnote',
               '& hi[rend="small-caps"]': { fontVariant: 'small-caps' },
               '& hi[rend="bold"]': { fontWeight: 'bold' },
               '& hi[rend="italic"]': { fontStyle: 'italic' },
@@ -3133,7 +3145,7 @@ export const TranslationPane = () => {
                     <Box sx={{ position: 'relative', flex: '0 0 auto' }}>
           <Box
             ref={editableRef}
-            contentEditable={!locked}
+            contentEditable
             lang={spellcheckLang}
             spellCheck={spellcheckEnabled && !languageToolLive}
             suppressContentEditableWarning
@@ -3221,7 +3233,8 @@ export const TranslationPane = () => {
               if (!command) return;
               event.preventDefault();
               event.stopPropagation();
-              applyFormat(command);
+              if (command === 'footnote') insertFootnote();
+              else applyFormat(command);
             }}
             onPaste={(event) => {
               handleTranslationPaste(event);
@@ -3320,7 +3333,7 @@ export const TranslationPane = () => {
                       sx={{ minWidth: 16, textAlign: 'right', flexShrink: 0 }}
                       variant="caption"
                     >
-                      {index + 1}.
+                      {footnoteStartIndex + index + 1}.
                     </Typography>
                     <Box
                       contentEditable

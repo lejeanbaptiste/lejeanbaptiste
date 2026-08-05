@@ -9,8 +9,6 @@ import { AiRunIndicator } from './AiRunIndicator';
 import { BulkSyncIndicator } from './BulkSyncIndicator';
 import { EntityIndexIndicator } from './EntityIndexIndicator';
 import { ValdidationErrors } from './ValdidationErrors';
-import AnnotationMode from './annotationMode';
-import EditorMode from './editorMode';
 import { Schema } from './schema';
 import { EditorZoomControls } from './sourceView/EditorZoomControls';
 import { SourceView } from './sourceView';
@@ -38,8 +36,6 @@ export const BottomBar = () => {
       <Stack direction="row" alignItems="center" spacing={1} px={1}>
         {!isReadonly && (
           <>
-            <EditorMode />
-            <AnnotationMode />
             <Schema />
             {enableXmlEditing && <SourceView />}
             <EditorZoomControls />

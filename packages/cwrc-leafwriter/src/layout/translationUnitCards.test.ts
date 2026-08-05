@@ -1,4 +1,8 @@
-import { collectTranslationUnitCards } from './translationUnitCards';
+import {
+  collectTranslationUnitCards,
+  footnoteStartIndexForUnit,
+  isTranslationUnitBlank,
+} from './translationUnitCards';
 
 describe('collectTranslationUnitCards', () => {
   test('lists companion units in document order with preview and note counts', () => {
@@ -24,5 +28,31 @@ describe('collectTranslationUnitCards', () => {
       noteCount: 0,
     });
     expect(cards[2]).toMatchObject({ unitId: 'p3', previewText: '', previewHtml: '', noteCount: 0 });
+  });
+});
+
+describe('footnoteStartIndexForUnit', () => {
+  test('sums note counts from earlier units', () => {
+    const cards = [
+      { unitId: 'a', noteCount: 2 },
+      { unitId: 'b', noteCount: 1 },
+      { unitId: 'c', noteCount: 0 },
+    ];
+    expect(footnoteStartIndexForUnit('a', cards)).toBe(0);
+    expect(footnoteStartIndexForUnit('b', cards)).toBe(2);
+    expect(footnoteStartIndexForUnit('c', cards)).toBe(3);
+  });
+});
+
+describe('isTranslationUnitBlank', () => {
+  test('treats empty and whitespace-only units as blank', () => {
+    expect(isTranslationUnitBlank('')).toBe(true);
+    expect(isTranslationUnitBlank('<p></p>')).toBe(true);
+    expect(isTranslationUnitBlank('<p>&nbsp;</p>')).toBe(true);
+  });
+
+  test('ignores footnotes when checking for text', () => {
+    expect(isTranslationUnitBlank('<note place="foot">only a note</note>')).toBe(true);
+    expect(isTranslationUnitBlank('Hello <note place="foot">n</note>')).toBe(false);
   });
 });
