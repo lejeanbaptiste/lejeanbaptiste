@@ -104,7 +104,7 @@ import {
   type LookupWarning,
 } from '../../../../../packages/cwrc-leafwriter/src/autoTagging/lookupWarnings';
 import {
-  autoRomanize,
+  autoRomanizeForKind,
   canAutoRomanize,
   foldForSearch,
 } from '../../../../../packages/cwrc-leafwriter/src/utilities/romanize';
@@ -298,11 +298,13 @@ const PRECISION_LABEL_KEYS: Partial<Record<DatePrecision, string>> = {
   'active to ca.': 'precision_active_to_ca',
 };
 
-const WORK_TITLE_TYPES: NameTypeId[] = ['primary', 'translation', 'variant'];
+const WORK_TITLE_TYPES: NameTypeId[] = ['primary', 'romanization', 'translation', 'variant'];
 type WorkDatePrecision = '' | 'not before' | 'ca.' | 'not after';
 
 const WORK_DATE_START_PRECISION_OPTIONS: WorkDatePrecision[] = ['', 'not before', 'ca.'];
 const WORK_DATE_END_PRECISION_OPTIONS: WorkDatePrecision[] = ['', 'not after', 'ca.'];
+
+const WORK_TYPE_OPTIONS = ['book', 'chapter', 'poem', 'painting', 'object'] as const;
 
 const neutralActionButtonSx = {
   color: 'text.secondary',
@@ -1218,7 +1220,8 @@ export const SidebarDatabaseTab = ({ active = false }: SidebarDatabaseTabProps) 
    */
   const romanizedOf = useCallback(
     (entity: EntitySummary): string | null =>
-      entity.romanized ?? autoRomanize(entity.names[0] ?? '', projectLang),
+      entity.romanized ??
+      autoRomanizeForKind(entity.names[0] ?? '', projectLang, entity.kind),
     [projectLang],
   );
 
@@ -1249,7 +1252,9 @@ export const SidebarDatabaseTab = ({ active = false }: SidebarDatabaseTabProps) 
       if (folded === undefined) {
         const romanizations = [
           entity.romanized ?? '',
-          ...entity.names.map((name) => autoRomanize(name, projectLang) ?? ''),
+          ...entity.names.map(
+            (name) => autoRomanizeForKind(name, projectLang, entity.kind) ?? '',
+          ),
         ];
         // Names + romanization + project key only — not description, not central id.
         const projectKey = entity.projectKey ?? '';
@@ -1533,7 +1538,7 @@ export const SidebarDatabaseTab = ({ active = false }: SidebarDatabaseTabProps) 
       entity.romanized ??
       (entity.kind === 'person'
         ? suggestPersonRomanization(entity.names[0] ?? '', projectLang)
-        : null);
+        : autoRomanizeForKind(entity.names[0] ?? '', projectLang, entity.kind));
     setEditCanonicalName(entity.names[0] ?? '');
     setEditingName(false);
     setEditingRomanized(false);
@@ -2153,6 +2158,16 @@ export const SidebarDatabaseTab = ({ active = false }: SidebarDatabaseTabProps) 
           });
         },
       );
+    })();
+  };
+
+  const saveWorkType = (workType: string) => {
+    if (!editEntity) return;
+    const entityId = editEntity.id;
+    void (async () => {
+      await runSqliteEntityMutation(entityId, 'Saving type…', async (targetStore) => {
+        await targetStore.sqliteSetWorkType({ entityId, workType: workType || 'book' });
+      });
     })();
   };
 
@@ -3661,9 +3676,10 @@ export const SidebarDatabaseTab = ({ active = false }: SidebarDatabaseTabProps) 
                                         editCanonicalName || editEntity?.names[0] || '',
                                         projectLang,
                                       )
-                                    : autoRomanize(
+                                    : autoRomanizeForKind(
                                         editCanonicalName || editEntity?.names[0] || '',
                                         projectLang,
+                                        editEntity?.kind,
                                       )) ?? editRomanized,
                                 )
                               }
@@ -3974,6 +3990,22 @@ export const SidebarDatabaseTab = ({ active = false }: SidebarDatabaseTabProps) 
                 </Tooltip>
               </Stack>
             ))}
+          {editEntity?.kind === 'work' && (
+            <TextField
+              select
+              size="small"
+              label={t('LWC.desktop.sidebar.database.work_type')}
+              value={editEntity.workType || 'book'}
+              onChange={(event) => saveWorkType(event.target.value)}
+              sx={{ mt: 2, minWidth: 180 }}
+            >
+              {WORK_TYPE_OPTIONS.map((option) => (
+                <MenuItem key={option} value={option}>
+                  {t(`LWC.desktop.sidebar.database.work_type_${option}`)}
+                </MenuItem>
+              ))}
+            </TextField>
+          )}
           {editEntity?.kind === 'work' && dateEditing && (
             <Stack spacing={0.75} sx={{ mt: 2 }}>
               <Typography variant="body2" sx={{ fontWeight: 600 }}>

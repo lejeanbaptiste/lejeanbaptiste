@@ -241,7 +241,9 @@ class Utilities {
 
     //* Scroll Node into view
     const startScrollElement = isElement(node) ? node : node.parentElement;
-    if (startScrollElement) startScrollElement.scrollIntoView({ behavior: 'smooth' });
+    if (startScrollElement) {
+      startScrollElement.scrollIntoView({ block: 'nearest', behavior: 'smooth' });
+    }
 
     //* Focus and public Event
     // need focus to happen after timeout, otherwise it doesn't always work (in FF)
@@ -281,7 +283,9 @@ class Utilities {
 
     //* Scroll Node into view
     const startScrollElement = isElement(firstElement) ? firstElement : firstElement.parentElement;
-    if (startScrollElement) startScrollElement.scrollIntoView({ behavior: 'smooth' });
+    if (startScrollElement) {
+      startScrollElement.scrollIntoView({ block: 'nearest', behavior: 'smooth' });
+    }
 
     //* Focus and public Event
     // need focus to happen after timeout, otherwise it doesn't always work (in FF)
@@ -325,8 +329,9 @@ class Utilities {
     this.writer.editor.selection.setRng(rng);
     this.writer.editor.currentBookmark = editor.selection.getBookmark(1);
 
-    //* Scroll Node into view
-    element.scrollIntoView({ behavior: 'smooth' });
+    //* Scroll Node into view — nearest keeps an already-visible tag from yanking
+    // the editor pane (default block:'start' aligns to the top of the scroller).
+    element.scrollIntoView({ block: 'nearest', behavior: 'smooth' });
 
     //* Focus and public Event
     // need focus to happen after timeout, otherwise it doesn't always work (in FF)

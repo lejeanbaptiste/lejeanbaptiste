@@ -9,16 +9,28 @@ export interface EntityDates {
   endPrecision: string | null;
 }
 
+export interface EntityNameEntry {
+  lang: string | null;
+  text: string;
+  /** `primary` | `translation` | `variant` | person name types, etc. */
+  type?: string | null;
+}
+
 export interface EntitySummary {
   id: string;
   kind: EntityKind;
-  names: { lang: string | null; text: string }[];
+  names: EntityNameEntry[];
   primaryName: string | null;
   romanizedName: string | null;
   description: string | null;
   dates: EntityDates | null;
   familyName: string | null;
   authorityIds: { type: string | null; value: string }[];
+  /** Office kind only: first active `office_classifications` label, semantics undocumented
+   * upstream (likely a CBDB office-category code) — surfaced as-is, no interpretation applied. */
+  classification: string | null;
+  /** Work kind only: 'book' | 'chapter' | 'poem' | 'painting' | 'object'. Drives citation styling. */
+  workType: string | null;
 }
 
 /** Loose shape returned by `entitySqliteGet` / panel summaries. */
@@ -48,6 +60,8 @@ export interface SqlitePanelLike {
     whenPrecision?: string | null;
   }>;
   authorities?: Array<{ type: string | null; value: string }>;
+  classification?: string | null;
+  workType?: string | null;
 }
 
 const datesFromPanel = (panel: SqlitePanelLike): EntityDates | null => {
@@ -69,18 +83,54 @@ const datesFromPanel = (panel: SqlitePanelLike): EntityDates | null => {
   return null;
 };
 
+/** True when an xml:lang tag marks Latin-script (romanized) form. */
+const isLatnLanguage = (lang: string | null | undefined): boolean =>
+  !!lang && /(^|-)Latn($|-)/i.test(lang);
+
+/** Latin letters without CJK — used when romanizations were saved under zh-Hant by mistake. */
+const looksLikeRomanizationText = (text: string): boolean =>
+  /[A-Za-z\u00C0-\u024F]/.test(text) && !/[\u3400-\u9FFF]/.test(text);
+
+/**
+ * Pick the romanized display name from panel rows.
+ * Prefer `nameType: 'romanization'`, then a proper `*-Latn` language tag, then
+ * Latin-script rows that were mis-tagged as Chinese (legacy place imports).
+ */
+export const pickRomanizedFromPanelNames = (
+  names: SqlitePanelLike['names'],
+): string | null => {
+  const byType = names.find(
+    (name) => name.nameType === 'romanization' && name.text?.trim(),
+  );
+  if (byType?.text?.trim()) return byType.text.trim();
+
+  const byLang = names.find((name) => isLatnLanguage(name.language) && name.text?.trim());
+  if (byLang?.text?.trim()) return byLang.text.trim();
+
+  const misTagged = names.find((name) => {
+    if (!name.text?.trim() || !looksLikeRomanizationText(name.text)) return false;
+    const primary = (name.language ?? '').trim().toLowerCase().split(/[-_]/)[0] ?? '';
+    // Empty / Chinese / und — not fr/en gloss languages.
+    return !primary || primary === 'zh' || primary === 'und' || primary === 'lzh';
+  });
+  return misTagged?.text?.trim() || null;
+};
+
 export const summaryFromSqlitePanel = (panel: SqlitePanelLike): EntitySummary => {
   const activeNames = panel.names.filter((name) => !name.status || name.status === 'active');
   const primary =
     activeNames.find((name) => name.nameType === 'primary' || name.nameRole === 'primary') ??
     activeNames[0];
-  const romanized = activeNames.find((name) => (name.language ?? '').endsWith('-Latn'));
   return {
     id: panel.id,
     kind: panel.kind as EntityKind,
-    names: activeNames.map((name) => ({ lang: name.language, text: name.text })),
+    names: activeNames.map((name) => ({
+      lang: name.language,
+      text: name.text,
+      type: name.nameType ?? null,
+    })),
     primaryName: primary?.text ?? null,
-    romanizedName: romanized?.text ?? null,
+    romanizedName: pickRomanizedFromPanelNames(activeNames),
     description: panel.description,
     dates: datesFromPanel(panel),
     familyName: panel.familyName,
@@ -88,5 +138,7 @@ export const summaryFromSqlitePanel = (panel: SqlitePanelLike): EntitySummary =>
       type: authority.type,
       value: authority.value,
     })),
+    classification: panel.classification ?? null,
+    workType: panel.workType ?? (panel.kind === 'work' ? 'book' : null),
   };
 };

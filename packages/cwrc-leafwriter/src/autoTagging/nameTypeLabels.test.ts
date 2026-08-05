@@ -16,8 +16,9 @@ describe('nameTypeLabel', () => {
     expect(nameTypeLabel('family', 'bo')).toBe(`Family name (${NAME_TYPE_GLOSSES.bo.family})`);
   });
 
-  it('passes through unknown custom ids', () => {
-    expect(nameTypeLabel('my-nickname', 'ja', 'Childhood nickname')).toBe('Childhood nickname');
-    expect(nameTypeLabel('my-nickname', 'ja')).toBe('my-nickname');
+  it('labels romanization distinctly from translation', () => {
+    expect(nameTypeLabel('romanization')).toBe('Romanization');
+    expect(nameTypeLabel('romanization', 'zh-Hant')).toBe('Romanization (羅馬拼音)');
+    expect(nameTypeLabel('translation')).toBe('Translation');
   });
 });

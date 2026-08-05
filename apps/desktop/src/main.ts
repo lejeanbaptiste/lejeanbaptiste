@@ -229,6 +229,7 @@ import {
   setEntitySqliteUserDate,
   setEntitySqliteUserWorkAuthors,
   setEntitySqliteUserWorkDate,
+  setEntitySqliteWorkType,
   setEntitySqliteCentralMapping,
   clearEntitySqliteCentralMapping,
   listEntitySqliteMappingsByCentralIds,
@@ -264,10 +265,21 @@ interface AiConnectionResult {
   ok: boolean;
 }
 
+interface AiTranslationEntityRef {
+  id: string;
+  kind: string;
+  primaryName: string | null;
+  romanizedName: string | null;
+  familyName: string | null;
+  dates: string | null;
+  description: string | null;
+}
+
 interface AiTranslationRequest {
   alignmentUnit: 'div' | 'p';
   sourceUnitXml: string;
   targetLanguage: string;
+  entities?: AiTranslationEntityRef[];
 }
 
 interface AiTranslationResult {
@@ -479,9 +491,10 @@ const generateAiTranslation = async ({
   alignmentUnit,
   sourceUnitXml,
   targetLanguage,
+  entities,
 }: AiTranslationRequest): Promise<AiTranslationResult> => {
   const settings = await getAiApiSettings();
-  const request = { alignmentUnit, sourceUnitXml, targetLanguage };
+  const request = { alignmentUnit, sourceUnitXml, targetLanguage, entities };
   let baseUrl: string;
 
   try {
@@ -541,6 +554,7 @@ const generateAiTranslation = async ({
       finishReason,
       usage: body.usage ?? null,
       sourceUnitXmlLength: sourceUnitXml.length,
+      entityCount: entities?.length ?? 0,
       contentLength: typeof content === 'string' ? content.length : null,
       rawContent: typeof content === 'string' ? content : null,
     };
@@ -1138,8 +1152,43 @@ const buildApplicationMenu = () => {
     click: () => sendMenuAction('export-document'),
   };
 
-  const template: Electron.MenuItemConstructorOptions[] = [
-    ...(process.platform === 'darwin'
+  // Shared File actions. On Windows/Linux the hamburger pops the application
+  // menu as a flat list, so these must be top-level (not nested under File /
+  // View) or the user has to drill into a second submenu.
+  const fileMenuItems: Electron.MenuItemConstructorOptions[] = [
+    newFileItem,
+    importDocumentsItem,
+    saveItem,
+    saveAsItem,
+    exportDocumentItem,
+    closeTabItem,
+    menuSeparator(),
+    openProjectItem,
+    closeProjectItem,
+    lookForUpdatesItem,
+    timeMachineItem,
+    menuSeparator(),
+    ...(process.platform !== 'darwin'
+      ? [
+          settingsItem,
+          menuSeparator(),
+          {
+            label: 'About Le Jean-Baptiste',
+            click: () => sendMenuAction('open-about'),
+          },
+          menuSeparator(),
+        ]
+      : []),
+    process.platform === 'darwin'
+      ? {
+          label: 'Close Window',
+          click: () => mainWindow?.close(),
+        }
+      : { role: 'quit' },
+  ];
+
+  const template: Electron.MenuItemConstructorOptions[] =
+    process.platform === 'darwin'
       ? [
           {
             label: APP_NAME,
@@ -1163,46 +1212,12 @@ const buildApplicationMenu = () => {
                 click: () => app.quit(),
               },
             ],
-          } satisfies Electron.MenuItemConstructorOptions,
+          },
+          { label: 'File', submenu: fileMenuItems },
+          buildEditMenu(),
+          buildViewMenu(),
         ]
-      : []),
-    {
-      label: 'File',
-      submenu: [
-        newFileItem,
-        importDocumentsItem,
-        saveItem,
-        saveAsItem,
-        exportDocumentItem,
-        closeTabItem,
-        menuSeparator(),
-        openProjectItem,
-        closeProjectItem,
-        lookForUpdatesItem,
-        timeMachineItem,
-        menuSeparator(),
-        ...(process.platform !== 'darwin'
-          ? [
-              settingsItem,
-              menuSeparator(),
-              {
-                label: 'About Le Jean-Baptiste',
-                click: () => sendMenuAction('open-about'),
-              },
-              menuSeparator(),
-            ]
-          : []),
-        process.platform === 'darwin'
-          ? {
-              label: 'Close Window',
-              click: () => mainWindow?.close(),
-            }
-          : { role: 'quit' },
-      ],
-    },
-    ...(process.platform === 'darwin' ? [buildEditMenu()] : []),
-    buildViewMenu(),
-  ];
+      : fileMenuItems;
 
   Menu.setApplicationMenu(Menu.buildFromTemplate(template));
 };
@@ -1732,6 +1747,17 @@ const registerIpcHandlers = () => {
       await assertRendererReadPath(request.databasePath);
       await assertRendererWritePath(request.databasePath);
       return setEntitySqliteUserWorkDate(request);
+    },
+  );
+  ipcMain.handle(
+    'entitySqlite:setWorkType',
+    async (
+      _event,
+      request: import('./entityDbSqlite/readService').EntitySqliteSetWorkTypeRequest,
+    ) => {
+      await assertRendererReadPath(request.databasePath);
+      await assertRendererWritePath(request.databasePath);
+      return setEntitySqliteWorkType(request);
     },
   );
   ipcMain.handle(

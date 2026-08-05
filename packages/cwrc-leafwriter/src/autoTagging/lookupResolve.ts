@@ -11,7 +11,7 @@
  * dialog can show a confirm step without having touched entities.xml yet.
  */
 import type { NamedEntityType } from '../types';
-import { autoRomanize } from '../utilities/romanize';
+import { autoRomanizeForKind, romanizeFromAuthorityMetadata } from '../utilities/romanize';
 import { LOOKUP_TYPE_TO_KIND } from '../services/entity-database-lookup';
 import { autoSyncEntityToCentral } from './autoSync';
 import {
@@ -32,7 +32,6 @@ import {
   bareNorbertAuthorityValue,
   formatNorbertAuthorityValue,
 } from './norbertAuthorityId';
-import { romanizeFromAuthorityMetadata } from '../utilities/romanize';
 import { suggestPersonNameSplit, suggestPersonRomanization } from '../plugins/personNameDefaults';
 import type { AuthorityPackId } from './packPaths';
 import { authorityPackLines, type AuthorityPackContent } from './packLoader';
@@ -661,12 +660,13 @@ export async function planLookupResolution(
       ? suggestPersonNameSplit(splitSurface!, deps.projectLang ?? null)
       : null;
   const romanizedName = hasAuthorityRomanization
-    ? (romanizeFromAuthorityMetadata(candidateMeta, entityName, deps.projectLang) ?? undefined)
+    ? (romanizeFromAuthorityMetadata(candidateMeta, entityName, deps.projectLang, kind) ??
+      undefined)
     : personSplit || packPerson.familyName
       ? (splitSurface
           ? (suggestPersonRomanization(splitSurface, deps.projectLang ?? null) ?? undefined)
           : undefined)
-      : (autoRomanize(entityName, deps.projectLang) ?? undefined);
+      : (autoRomanizeForKind(entityName, deps.projectLang, kind) ?? undefined);
   return {
     action: 'mint',
     entityName,
@@ -909,7 +909,7 @@ export async function linkLocalEntityWithoutAuthority(
       : null;
   const romanizedName = personSplit
     ? (suggestPersonRomanization(surface, deps.projectLang ?? null) ?? undefined)
-    : (autoRomanize(surface, deps.projectLang) ?? undefined);
+    : (autoRomanizeForKind(surface, deps.projectLang, kind) ?? undefined);
 
   const id = await mintEntitySqlite(deps.store, {
     kind,

@@ -1,10 +1,12 @@
 import {
   autoRomanize,
+  autoRomanizeForKind,
   canAutoRomanize,
   foldForSearch,
   isLatinScript,
   latnLangFor,
   romanizeFromAuthorityMetadata,
+  splitPlaceAdminSuffix,
 } from './romanize';
 
 describe('latnLangFor', () => {
@@ -63,7 +65,44 @@ describe('autoRomanize', () => {
     expect(autoRomanize('張衡', 'en')).toBeNull();
     expect(autoRomanize('  ', 'zh-Hant')).toBeNull();
   });
+
+  it('concatenates syllables when asked', () => {
+    expect(autoRomanize('晉書', 'zh-Hant', { concatenate: true })).toBe('Jinshu');
+    expect(autoRomanize('建康郡', 'zh-Hant', { concatenate: true })).toBe('Jiankangjun');
+  });
 });
+
+describe('autoRomanizeForKind', () => {
+  it('leaves persons on syllable Title Case', () => {
+    expect(autoRomanizeForKind('張衡', 'zh-Hant', 'person')).toBe('Zhang Heng');
+    expect(autoRomanizeForKind('司馬遷', 'zh-Hant', null)).toBe('Si Ma Qian');
+  });
+
+  it('concatenates work / org / office titles', () => {
+    expect(autoRomanizeForKind('晉書', 'zh-Hant', 'work')).toBe('Jinshu');
+    expect(autoRomanizeForKind('道德經', 'zh-Hant', 'work')).toBe('Daodejing');
+  });
+
+  it('splits place admin suffixes as a lowercase trailing word', () => {
+    expect(autoRomanizeForKind('建康郡', 'zh-Hant', 'place')).toBe('Jiankang jun');
+    expect(autoRomanizeForKind('安陸縣', 'zh-Hant', 'place')).toBe('Anlu xian');
+    expect(autoRomanizeForKind('永嘉郡', 'zh-Hant', 'place')).toBe('Yongjia jun');
+  });
+
+  it('concatenates places without a recognized admin suffix', () => {
+    expect(autoRomanizeForKind('江南', 'zh-Hant', 'place')).toBe('Jiangnan');
+    expect(autoRomanizeForKind('揚州', 'zh-Hant', 'place')).toBe('Yangzhou');
+  });
+});
+
+describe('splitPlaceAdminSuffix', () => {
+  it('detects trailing admin units', () => {
+    expect(splitPlaceAdminSuffix('建康郡')).toEqual({ stem: '建康', suffixPinyin: 'jun' });
+    expect(splitPlaceAdminSuffix('安陸縣')).toEqual({ stem: '安陸', suffixPinyin: 'xian' });
+    expect(splitPlaceAdminSuffix('江南')).toBeNull();
+  });
+});
+
 
 describe('romanizeFromAuthorityMetadata', () => {
   it('prefers authority-provided pinyin', () => {

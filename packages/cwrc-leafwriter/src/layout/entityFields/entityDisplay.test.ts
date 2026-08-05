@@ -26,6 +26,8 @@ const person = (overrides: Partial<EntitySummary> = {}): EntitySummary => ({
   dates: { startYear: 440, endYear: 483, startPrecision: null, endPrecision: null },
   familyName: 'Cui',
   authorityIds: [],
+  classification: null,
+  workType: null,
   ...overrides,
 });
 
@@ -42,6 +44,66 @@ const luShao = (): EntitySummary =>
     familyName: '陸',
     dates: { startYear: 420, endYear: 479, startPrecision: null, endPrecision: null },
   });
+
+const place = (overrides: Partial<EntitySummary> = {}): EntitySummary => ({
+  id: 'place-1',
+  kind: 'place',
+  names: [{ lang: 'zh-Hant', text: '建康' }, { lang: 'zh-Latn', text: 'Jiankang' }],
+  primaryName: '建康',
+  romanizedName: 'Jiankang',
+  description: null,
+  dates: null,
+  familyName: null,
+  authorityIds: [],
+  classification: null,
+  workType: null,
+  ...overrides,
+});
+
+const org = (overrides: Partial<EntitySummary> = {}): EntitySummary => ({
+  id: 'org-1',
+  kind: 'org',
+  names: [{ lang: 'en', text: 'Hanlin Academy' }],
+  primaryName: 'Hanlin Academy',
+  romanizedName: 'Hanlin Academy',
+  description: null,
+  dates: { startYear: 738, endYear: 907, startPrecision: null, endPrecision: null },
+  familyName: null,
+  authorityIds: [],
+  classification: null,
+  workType: null,
+  ...overrides,
+});
+
+const office = (overrides: Partial<EntitySummary> = {}): EntitySummary => ({
+  id: 'office-1',
+  kind: 'office',
+  names: [{ lang: 'en', text: 'Prefect of Jiankang' }],
+  primaryName: 'Prefect of Jiankang',
+  romanizedName: 'Prefect of Jiankang',
+  description: null,
+  dates: null,
+  familyName: null,
+  authorityIds: [],
+  classification: null,
+  workType: null,
+  ...overrides,
+});
+
+const work = (overrides: Partial<EntitySummary> = {}): EntitySummary => ({
+  id: 'work-1',
+  kind: 'work',
+  names: [{ lang: 'en', text: 'Book of Song' }],
+  primaryName: 'Book of Song',
+  romanizedName: 'Book of Song',
+  description: null,
+  dates: { startYear: 488, endYear: null, startPrecision: null, endPrecision: null },
+  familyName: null,
+  authorityIds: [],
+  classification: null,
+  workType: null,
+  ...overrides,
+});
 
 describe('renderEntityText (translation / Word shared rules)', () => {
   test('first occurrence defaults to romanized + Chinese + dates', () => {
@@ -103,6 +165,78 @@ describe('renderEntityFromSpec', () => {
   test('first occurrence adds chinese and dates and keeps square brackets', () => {
     expect(renderEntityFromSpec(person(), 1, familyInBrackets, ENGLISH_DEFAULTS)).toBe(
       '[Cui] Zusi 崔祖思 (440–483)',
+    );
+  });
+
+  test('first occurrence appends a translation gloss for the target language', () => {
+    const entity = person({
+      names: [
+        { lang: 'zh-Hant', text: '崔祖思', type: null },
+        { lang: 'zh-Latn', text: 'Cui Zusi', type: null },
+        { lang: 'fr', text: 'Cui le Patriote', type: 'translation' },
+      ],
+    });
+    expect(renderEntityFromSpec(entity, 1, EMPTY_DISPLAY_SPEC, ENGLISH_DEFAULTS, 'fr')).toBe(
+      'Cui Zusi 崔祖思 (Cui le Patriote) (440–483)',
+    );
+  });
+
+  test('place romanization stored as romanization + zh-Latn leads the display', () => {
+    const entity = place({
+      names: [
+        { lang: 'zh-Hant', text: '安陸縣', type: 'primary' },
+        { lang: 'zh-Latn', text: 'Anlu', type: 'romanization' },
+      ],
+      primaryName: '安陸縣',
+      romanizedName: 'Anlu',
+    });
+    expect(renderEntityFromSpec(entity, 1, EMPTY_DISPLAY_SPEC, ENGLISH_DEFAULTS, 'fr')).toBe(
+      'Anlu 安陸縣',
+    );
+  });
+
+  test('legacy place romanization stored as translation + zh-Latn still leads the display', () => {
+    // Pre-migration DB shape: setRomanizedName used to write name_type='translation'.
+    const entity = place({
+      names: [
+        { lang: 'zh-Hant', text: '安陸縣', type: 'primary' },
+        { lang: 'zh-Latn', text: 'Anlu', type: 'translation' },
+      ],
+      primaryName: '安陸縣',
+      romanizedName: 'Anlu',
+    });
+    expect(renderEntityFromSpec(entity, 1, EMPTY_DISPLAY_SPEC, ENGLISH_DEFAULTS, 'fr')).toBe(
+      'Anlu 安陸縣',
+    );
+  });
+
+  test('place romanization mis-tagged as zh-Hant translation is still used as the name', () => {
+    // Legacy import quirk: Latin text under zh-Hant, no *-Latn row.
+    const entity = place({
+      names: [
+        { lang: 'zh-Hant', text: '江南', type: 'primary' },
+        { lang: 'zh-Hant', text: 'Jiang Nan', type: 'translation' },
+      ],
+      primaryName: '江南',
+      romanizedName: null,
+    });
+    expect(renderEntityFromSpec(entity, 1, EMPTY_DISPLAY_SPEC, ENGLISH_DEFAULTS, 'fr')).toBe(
+      'Jiang Nan 江南',
+    );
+  });
+
+  test('Latn translation rows are never used as the parenthetical gloss', () => {
+    const entity = place({
+      names: [
+        { lang: 'zh-Hant', text: '安陸縣', type: 'primary' },
+        { lang: 'zh-Latn', text: 'Anlu', type: 'romanization' },
+      ],
+      primaryName: '安陸縣',
+      romanizedName: 'Anlu',
+    });
+    // Pane language zh would otherwise match primary subtag of zh-Latn.
+    expect(renderEntityFromSpec(entity, 1, EMPTY_DISPLAY_SPEC, ENGLISH_DEFAULTS, 'zh-Hant')).toBe(
+      'Anlu 安陸縣',
     );
   });
 
@@ -173,5 +307,85 @@ describe('renderEntityFromSpec', () => {
         '{"hidden":[],"bracketsAround":"family","possessive":false,"nameOrder":"given-family"}',
       ),
     ).toEqual(familyInBrackets);
+  });
+});
+
+describe('non-person kinds render a single name part, not family/given', () => {
+  test('place with no dates: bare name, no spurious split', () => {
+    expect(renderEntityFromSpec(place(), 1, EMPTY_DISPLAY_SPEC, ENGLISH_DEFAULTS)).toBe(
+      'Jiankang 建康',
+    );
+    expect(renderEntityFromSpec(place(), 2, EMPTY_DISPLAY_SPEC, ENGLISH_DEFAULTS)).toBe('Jiankang');
+  });
+
+  test('org has dates in its record but never shows them (dates are person/work only)', () => {
+    expect(renderEntityFromSpec(org(), 1, EMPTY_DISPLAY_SPEC, ENGLISH_DEFAULTS)).toBe(
+      'Hanlin Academy',
+    );
+  });
+
+  test('place likewise never shows a dates part even when dates are present', () => {
+    const dated = place({
+      dates: { startYear: 317, endYear: 420, startPrecision: null, endPrecision: null },
+    });
+    expect(renderEntityFromSpec(dated, 1, EMPTY_DISPLAY_SPEC, ENGLISH_DEFAULTS)).toBe('Jiankang 建康');
+  });
+
+  test('office likewise never shows a dates part even when dates are present', () => {
+    const dated = office({
+      dates: { startYear: 300, endYear: 400, startPrecision: null, endPrecision: null },
+    });
+    expect(renderEntityFromSpec(dated, 1, EMPTY_DISPLAY_SPEC, ENGLISH_DEFAULTS)).toBe(
+      'Prefect of Jiankang',
+    );
+  });
+
+  test('org with only one known year gets a neutral (no b./d.) date', () => {
+    const oneSided = org({
+      dates: { startYear: 738, endYear: null, startPrecision: null, endPrecision: null },
+    });
+    expect(formatDates(oneSided.dates, ENGLISH_DEFAULTS, { neutral: true })).toBe('738');
+  });
+
+  test('circa is preserved in neutral mode', () => {
+    const circa = org({
+      dates: { startYear: 738, endYear: null, startPrecision: 'b. ca.', endPrecision: null },
+    });
+    expect(formatDates(circa.dates, ENGLISH_DEFAULTS, { neutral: true })).toBe('ca. 738');
+  });
+
+  test('person single-sided date keeps the birth/death word (non-neutral by default)', () => {
+    const bornOnly = person({
+      dates: { startYear: 440, endYear: null, startPrecision: null, endPrecision: null },
+    });
+    expect(formatDates(bornOnly.dates, ENGLISH_DEFAULTS)).toBe('b. 440');
+  });
+
+  test('possessive still applies to the name part for a place', () => {
+    const spec: EntityDisplaySpec = { hidden: ['chinese'], bracketsAround: null, possessive: true };
+    expect(renderEntityFromSpec(place(), 1, spec, ENGLISH_DEFAULTS, 'en')).toBe('Jiankang’s');
+  });
+
+  test('office shows its classification after the name on first occurrence only', () => {
+    const withClassification = office({ classification: 'Capital prefecture' });
+    expect(renderEntityFromSpec(withClassification, 1, EMPTY_DISPLAY_SPEC, ENGLISH_DEFAULTS)).toBe(
+      'Prefect of Jiankang Capital prefecture',
+    );
+    expect(renderEntityFromSpec(withClassification, 2, EMPTY_DISPLAY_SPEC, ENGLISH_DEFAULTS)).toBe(
+      'Prefect of Jiankang',
+    );
+  });
+
+  test('office with no classification renders just the name', () => {
+    expect(renderEntityFromSpec(office(), 1, EMPTY_DISPLAY_SPEC, ENGLISH_DEFAULTS)).toBe(
+      'Prefect of Jiankang',
+    );
+  });
+
+  test('work rendering is unchanged by the kind-aware refactor (regression)', () => {
+    expect(renderEntityFromSpec(work(), 1, EMPTY_DISPLAY_SPEC, ENGLISH_DEFAULTS)).toBe(
+      'Book of Song (488)',
+    );
+    expect(renderEntityFromSpec(work(), 2, EMPTY_DISPLAY_SPEC, ENGLISH_DEFAULTS)).toBe('Book of Song');
   });
 });

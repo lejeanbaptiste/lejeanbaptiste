@@ -18,6 +18,7 @@ export interface SqlitePanelSummaryLike {
   startYear: number | null;
   endYear: number | null;
   workDate: EntitySummary['workDate'];
+  workType: EntitySummary['workType'];
   nationalities: string[];
   placesOfOrigin: string[];
   roles: string[];
@@ -48,6 +49,7 @@ export function entitySummaryFromSqlite(snapshot: SqlitePanelSummaryLike): Entit
     startYear: snapshot.startYear,
     endYear: snapshot.endYear,
     workDate: snapshot.workDate,
+    workType: snapshot.workType,
     nationalities: snapshot.nationalities,
     placesOfOrigin: snapshot.placesOfOrigin,
     authors: snapshot.authors.filter((author) => author.status === 'active'),

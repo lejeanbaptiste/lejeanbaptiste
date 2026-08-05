@@ -1,5 +1,6 @@
 import { reconcile } from '../services/lincs-api';
 import {
+  asSyncedEntityCandidate,
   buildDisambiguationCandidates,
   candidatesFromEntityFile,
   candidatesFromSqliteEntities,
@@ -13,9 +14,11 @@ import {
   extractViafId,
   extractWikidataId,
   fetchLiveCandidates,
+  isOwnDatabaseSource,
   mergeCandidates,
   mergeSelectedCandidates,
   normalizeGeo,
+  stripOwnDatabaseSources,
   type DisambiguationCandidate,
 } from './disambiguationCandidates';
 import { AuthorityCache } from './authorityCache';
@@ -1053,6 +1056,43 @@ describe('disambiguationCandidates', () => {
     expect(rows).toHaveLength(1);
     expect(rows[0]?.centralEntityId).toBe('person-cedb-1');
     expect(rows[0]?.sources).toEqual(['central-database', 'Wikidata']);
+  });
+
+  it('strips Local/Central provenance for synced entity candidates', () => {
+    expect(isOwnDatabaseSource('central-database')).toBe(true);
+    expect(isOwnDatabaseSource('entity-file')).toBe(true);
+    expect(isOwnDatabaseSource('Wikidata')).toBe(false);
+    expect(stripOwnDatabaseSources(['central-database', 'Wikidata', 'entity-file'])).toEqual([
+      'Wikidata',
+    ]);
+
+    const linked = asSyncedEntityCandidate(
+      {
+        id: 'person-cedb-1',
+        label: '王羲之',
+        sources: ['central-database', 'CBDB'],
+        centralEntityId: 'person-cedb-1',
+        fromEntityFile: true,
+      },
+      'person-pedb-9',
+    );
+    expect(linked.sources).toEqual(['CBDB']);
+    expect(linked.localEntityId).toBe('person-pedb-9');
+    expect(linked.centralEntityId).toBeUndefined();
+
+    const unlinked = asSyncedEntityCandidate(
+      {
+        id: 'person-cedb-2',
+        label: '王獻之',
+        sources: ['central-database'],
+        centralEntityId: 'person-cedb-2',
+        fromEntityFile: true,
+      },
+      null,
+    );
+    expect(unlinked.sources).toEqual([]);
+    expect(unlinked.localEntityId).toBeUndefined();
+    expect(unlinked.centralEntityId).toBe('person-cedb-2');
   });
 
   it('builds external links for candidates', () => {

@@ -168,10 +168,21 @@ export interface LanguageToolInstallProgress {
   message?: string;
 }
 
+export interface AiTranslationEntityRef {
+  id: string;
+  kind: string;
+  primaryName: string | null;
+  romanizedName: string | null;
+  familyName: string | null;
+  dates: string | null;
+  description: string | null;
+}
+
 export interface AiTranslationRequest {
   alignmentUnit: 'div' | 'p';
   sourceUnitXml: string;
   targetLanguage: string;
+  entities?: AiTranslationEntityRef[];
 }
 
 export interface AiTranslationResult {

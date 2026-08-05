@@ -18,6 +18,9 @@ import {
 
 export { latnLangFor };
 
+/** Entity kinds that affect romanization style (mirrors EntityKind). */
+export type RomanizeEntityKind = 'person' | 'place' | 'org' | 'work' | 'office';
+
 /** True when the string is entirely Latin letters/marks/spaces/common punctuation. */
 export function isLatinScript(value: string): boolean {
   const trimmed = value.trim();
@@ -74,6 +77,37 @@ function romajiForKana(name: string): string | null {
 }
 
 /**
+ * Trailing Chinese administrative-unit characters split off as a lowercase
+ * pinyin word: 建康郡 → "Jiankang jun". Sorted longest-first for future
+ * multi-character suffixes. 州/京/市 stay attached (揚州 → Yangzhou).
+ */
+export const PLACE_ADMIN_SUFFIXES: ReadonlyArray<{ chars: string; pinyin: string }> = [
+  { chars: '郡', pinyin: 'jun' },
+  { chars: '縣', pinyin: 'xian' },
+  { chars: '县', pinyin: 'xian' },
+  { chars: '府', pinyin: 'fu' },
+  { chars: '省', pinyin: 'sheng' },
+  { chars: '軍', pinyin: 'jun' },
+  { chars: '军', pinyin: 'jun' },
+  { chars: '路', pinyin: 'lu' },
+  { chars: '道', pinyin: 'dao' },
+];
+
+/** Split a place label into stem + admin suffix when the suffix is recognized. */
+export function splitPlaceAdminSuffix(
+  name: string,
+): { stem: string; suffixPinyin: string } | null {
+  const trimmed = name.normalize('NFC').trim();
+  if (!trimmed) return null;
+  for (const { chars, pinyin: suffixPinyin } of PLACE_ADMIN_SUFFIXES) {
+    if (trimmed.length > chars.length && trimmed.endsWith(chars)) {
+      return { stem: trimmed.slice(0, -chars.length), suffixPinyin };
+    }
+  }
+  return null;
+}
+
+/**
  * Best-effort romanization of a project-script name. Returns null for Latin
  * input, unsupported languages (e.g. Korean), and Japanese input that is not
  * pure kana.
@@ -97,13 +131,40 @@ export function autoRomanize(
 }
 
 /**
+ * Kind-aware autogeneration for stored/display romanizations.
+ * - **person** (or unknown kind): syllable Title Case — callers that know the
+ *   person should prefer {@link suggestPersonRomanization} instead.
+ * - **place**: concatenated stem + lowercase admin suffix when recognized
+ *   (`建康郡` → `Jiankang jun`); otherwise fully concatenated (`江南` → `Jiangnan`).
+ * - **work / org / office**: fully concatenated (`晉書` → `Jinshu`).
+ */
+export function autoRomanizeForKind(
+  name: string,
+  projectLang: string | null | undefined,
+  kind: RomanizeEntityKind | null | undefined,
+): string | null {
+  if (!kind || kind === 'person') {
+    return autoRomanize(name, projectLang);
+  }
+  if (kind === 'place' && isChineseLanguageCode(projectLang)) {
+    const split = splitPlaceAdminSuffix(name);
+    if (split) {
+      const stem = autoRomanize(split.stem, projectLang, { concatenate: true });
+      if (stem) return `${stem} ${split.suffixPinyin}`;
+    }
+  }
+  return autoRomanize(name, projectLang, { concatenate: true });
+}
+
+/**
  * Romanization from authority metadata (CBDB `pinyin`, NDL `yomi` katakana →
- * Hepburn), falling back to {@link autoRomanize} on the primary name.
+ * Hepburn), falling back to kind-aware autogeneration on the primary name.
  */
 export function romanizeFromAuthorityMetadata(
   metadata: { pinyin?: string; yomi?: string; yomiHiragana?: string } | undefined,
   primaryName: string,
   projectLang: string | null | undefined,
+  kind?: RomanizeEntityKind | null,
 ): string | null {
   const fromPinyin = metadata?.pinyin?.trim();
   if (fromPinyin && isLatinScript(fromPinyin)) return fromPinyin;
@@ -112,7 +173,7 @@ export function romanizeFromAuthorityMetadata(
     const romaji = romajiForKana(yomi);
     if (romaji) return romaji;
   }
-  return autoRomanize(primaryName, projectLang);
+  return autoRomanizeForKind(primaryName, projectLang, kind);
 }
 
 /**

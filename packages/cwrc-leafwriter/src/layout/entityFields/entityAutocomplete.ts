@@ -63,10 +63,14 @@ export const candidateFromEntity = (
   addAlias(aliases, sourceSurface);
   for (const name of entity.names) addAlias(aliases, name.text);
 
-  const { family, given } = familyAndGivenOf(entity);
-  addAlias(aliases, family);
-  addAlias(aliases, given);
-  if (family && given) addAlias(aliases, `${family} ${given}`);
+  // Family/given split only makes sense for a person-shaped name; splitting a
+  // place/org/office/work title on its first space produces bogus aliases.
+  if (entity.kind === 'person') {
+    const { family, given } = familyAndGivenOf(entity);
+    addAlias(aliases, family);
+    addAlias(aliases, given);
+    if (family && given) addAlias(aliases, `${family} ${given}`);
+  }
 
   const chinese = chineseNameOf(entity);
   addAlias(aliases, chinese);

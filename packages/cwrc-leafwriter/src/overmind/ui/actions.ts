@@ -504,6 +504,7 @@ export const resetSourceEditor = ({ state }: Context) => {
   state.ui.editorViewMode = 'visual';
   state.ui.sourceOriginalContent = '';
   state.ui.sourceCurrentContent = '';
+  state.ui.sourceVisualOutOfSync = false;
   state.ui.sourcePendingCursorOffset = null;
   window.writer?.layoutManager?.setEditorViewMode('visual');
   if (wasSource) {
@@ -555,17 +556,23 @@ export const syncSourceEditorFromDocument = async ({ state }: Context) => {
 
   state.ui.sourceOriginalContent = content;
   state.ui.sourceCurrentContent = content;
+  state.ui.sourceVisualOutOfSync = false;
 };
 
 export const setSourceCurrentContent = ({ state }: Context, content: string) => {
   state.ui.sourceCurrentContent = content;
   if (content !== state.ui.sourceOriginalContent) {
     state.editor.contentHasChanged = true;
+    state.ui.sourceVisualOutOfSync = true;
   }
 };
 
 export const markSourceSaved = ({ state }: Context, content: string) => {
   state.ui.sourceOriginalContent = content;
+  // A Source-mode save updates the Monaco baseline without refreshing TinyMCE.
+  if (state.ui.editorViewMode === 'source') {
+    state.ui.sourceVisualOutOfSync = true;
+  }
 };
 
 export const clearSourcePendingCursorOffset = ({ state }: Context) => {
@@ -580,6 +587,7 @@ export const enterSourceMode = async ({ state, actions }: Context) => {
 
   state.ui.sourceOriginalContent = content;
   state.ui.sourceCurrentContent = content;
+  state.ui.sourceVisualOutOfSync = false;
   state.ui.sourcePendingCursorOffset =
     visualCaret !== null ? mapVisualCaretToSourceOffset(content, visualCaret) : null;
 
@@ -745,45 +753,49 @@ const resolveInvalidSourceMode = async (
 };
 
 export const exitSourceMode = async ({ state, actions }: Context): Promise<boolean> => {
-  const finalContent = state.ui.sourceCurrentContent;
-  const leavingWithEdits = finalContent !== state.ui.sourceOriginalContent;
+  const leavingWithEdits = state.ui.sourceCurrentContent !== state.ui.sourceOriginalContent;
+  const visualOutOfSync = state.ui.sourceVisualOutOfSync;
 
   // The visual editor already contains the exact document that Source mode
-  // received. Returning without editing therefore needs neither validation
-  // nor a full TinyMCE reload; both are costly on large documents.
-  if (!leavingWithEdits) {
+  // received — but only if nothing was saved/edited in Source since then.
+  // After a Source-mode save, original===current (so leavingWithEdits is false)
+  // while TinyMCE still holds the pre-source snapshot.
+  if (!leavingWithEdits && !visualOutOfSync) {
     actions.ui.setEditorViewMode('visual');
     return true;
   }
 
-  const result = await resolveInvalidSourceMode({ state, actions } as Context, {
-    allowLeaveAnyway: true,
-  });
-  if (result === 'blocked') return false;
+  if (leavingWithEdits) {
+    const result = await resolveInvalidSourceMode({ state, actions } as Context, {
+      allowLeaveAnyway: true,
+    });
+    if (result === 'blocked') return false;
 
-  // Persist the Source buffer into the tab/stored snapshot whenever we leave
-  // with that buffer (valid edits or explicit leave-anyway). Skip when the
-  // user discarded back to an unchanged entry baseline.
-  if (result === 'valid' || result === 'leaveAnyway') {
-    if (leavingWithEdits || result === 'leaveAnyway') {
+    // Persist the Source buffer into the tab/stored snapshot whenever we leave
+    // with that buffer (valid edits or explicit leave-anyway). Skip when the
+    // user discarded back to an unchanged entry baseline.
+    if (result === 'valid' || result === 'leaveAnyway') {
+      const finalContent = state.ui.sourceCurrentContent;
       const filePath = state.document.url;
       if (filePath) {
         window.writer?.overmindActions?.project?.updateTabContent?.({
           filePath,
           content: finalContent,
         });
-        if (leavingWithEdits) {
-          window.writer?.overmindActions?.project?.markTabDirty?.(true);
-        }
+        window.writer?.overmindActions?.project?.markTabDirty?.(true);
       }
       window.__desktopStoredDocumentXml = finalContent;
     }
   }
 
+  // Re-read after possible discard/revert so visual gets the live Source buffer.
+  const contentToLoad = state.ui.sourceCurrentContent;
+
   // Source edits do not refresh the hidden WYSIWYG tree; reload so the markup
   // panel and visual mode match the changed XML buffer.
   actions.document.setIsReload(true);
-  actions.document.loadDocumentXML(finalContent);
+  actions.document.loadDocumentXML(contentToLoad);
+  state.ui.sourceVisualOutOfSync = false;
   actions.ui.setEditorViewMode('visual');
   return true;
 };

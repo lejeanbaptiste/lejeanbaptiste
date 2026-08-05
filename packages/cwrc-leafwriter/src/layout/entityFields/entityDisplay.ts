@@ -10,7 +10,34 @@ export type DisplayFormatOverride =
   | 'title_only'
   | 'author_only';
 
-export type EntityPartId = 'family' | 'given' | 'chinese' | 'dates';
+export type EntityPartId =
+  | 'family'
+  | 'given'
+  | 'name'
+  | 'classification'
+  | 'chinese'
+  | 'translation'
+  | 'dates';
+
+const ITALIC_WORK_TYPES = new Set(['book', 'painting']);
+const QUOTED_WORK_TYPES = new Set(['chapter', 'poem']);
+
+/** Scholarly default when a work has no explicit type. */
+export const DEFAULT_WORK_TYPE = 'book';
+
+/**
+ * Citation styling for a work-kind mention, derived from `workType`.
+ * Book/painting are italicized (a data attribute, applied by CSS — see
+ * `translationEntityFields.ts`); chapter/poem get literal curly quotes around
+ * the rendered text; object gets neither. Unset/`null` defaults to book.
+ */
+export const workTypeStyle = (entity: EntitySummary): 'italic' | 'quote' | null => {
+  if (entity.kind !== 'work') return null;
+  const type = entity.workType || DEFAULT_WORK_TYPE;
+  if (ITALIC_WORK_TYPES.has(type)) return 'italic';
+  if (QUOTED_WORK_TYPES.has(type)) return 'quote';
+  return null;
+};
 
 /**
  * Persisted recipe for one entity mention; part *values* always refresh from the DB.
@@ -21,7 +48,7 @@ export interface EntityDisplaySpec {
   hidden: EntityPartId[];
   /** At most one part wrapped in square brackets […]. */
   bracketsAround: EntityPartId | null;
-  /** Append ’s after the last visible of {family, given}. */
+  /** Append ’s after the last visible name part ({family, given} for a person, else {name}). */
   possessive: boolean;
 }
 
@@ -65,19 +92,88 @@ export interface ResolvedEntityPart {
   text: string;
 }
 
-const PART_IDS: EntityPartId[] = ['family', 'given', 'chinese', 'dates'];
+const PART_IDS: EntityPartId[] = [
+  'family',
+  'given',
+  'name',
+  'classification',
+  'chinese',
+  'translation',
+  'dates',
+];
 
-const isRomanizationLang = (lang: string | null): boolean => (lang ?? '').endsWith('-Latn');
+const isRomanizationLang = (lang: string | null | undefined): boolean =>
+  !!lang && /(^|-)Latn($|-)/i.test(lang);
 
 /** True when the string is primarily CJK characters (not a Latin romanization). */
 const isMostlyCjk = (text: string): boolean => /[\u3400-\u9FFF]/.test(text);
 
-const shortNameOf = (entity: EntitySummary): string =>
-  entity.romanizedName ?? entity.primaryName ?? entity.names[0]?.text ?? '[Unknown entity]';
+/** Latin letters without CJK — romanization text even when the language tag is wrong. */
+const looksLikeRomanizationText = (text: string): boolean =>
+  /[A-Za-z\u00C0-\u024F]/.test(text) && !isMostlyCjk(text);
+
+const primaryLangSubtag = (lang: string | null | undefined): string =>
+  (lang ?? '').trim().toLowerCase().split(/[-_]/)[0] ?? '';
+
+/**
+ * Resolve the romanized short form: stored field, then `romanization` type,
+ * then `*-Latn` name, then Latin-script rows mis-tagged under Chinese/und.
+ */
+export const romanizedNameOf = (entity: EntitySummary): string | null => {
+  if (entity.romanizedName?.trim()) return entity.romanizedName.trim();
+
+  const byType = entity.names.find(
+    (name) => name.type === 'romanization' && Boolean(name.text?.trim()),
+  );
+  if (byType?.text?.trim()) return byType.text.trim();
+
+  const byLang = entity.names.find(
+    (name) => isRomanizationLang(name.lang) && Boolean(name.text?.trim()),
+  );
+  if (byLang?.text?.trim()) return byLang.text.trim();
+
+  const misTagged = entity.names.find((name) => {
+    if (!name.text?.trim() || !looksLikeRomanizationText(name.text)) return false;
+    const primary = primaryLangSubtag(name.lang);
+    return !primary || primary === 'zh' || primary === 'und' || primary === 'lzh';
+  });
+  return misTagged?.text?.trim() || null;
+};
+
+export const shortNameOf = (entity: EntitySummary): string =>
+  romanizedNameOf(entity) ??
+  entity.primaryName ??
+  entity.names[0]?.text ??
+  '[Unknown entity]';
 
 export const chineseNameOf = (entity: EntitySummary): string | null =>
   entity.names.find((n) => (n.lang ?? '').startsWith('zh') && !isRomanizationLang(n.lang))
     ?.text ?? null;
+
+/**
+ * Translated gloss for the target language (nameType `translation`), if any.
+ * Matches on the primary language subtag (`fr` ↔ `fr-FR`).
+ * Never treats `romanization` (or legacy Latn/`translation` romanizations) as a gloss.
+ */
+export const translatedNameOf = (
+  entity: EntitySummary,
+  lang?: string | null,
+): string | null => {
+  const wanted = primaryLangSubtag(lang);
+  if (!wanted) return null;
+  const hit = entity.names.find((name) => {
+    if (name.type !== 'translation' || !name.text?.trim()) return false;
+    if (primaryLangSubtag(name.lang) !== wanted) return false;
+    if (isRomanizationLang(name.lang)) return false;
+    // Legacy: Latin text under zh/und was a mis-tagged romanization, not a gloss.
+    if (looksLikeRomanizationText(name.text)) {
+      const primary = primaryLangSubtag(name.lang);
+      if (!primary || primary === 'zh' || primary === 'und' || primary === 'lzh') return false;
+    }
+    return true;
+  });
+  return hit?.text?.trim() || null;
+};
 
 /**
  * Split the romanized short name into family + given.
@@ -199,17 +295,31 @@ const formatYearValue = (isoYear: number, settings: DateFormatSettings): string 
 export const formatDates = (
   dates: EntityDates | null,
   settings: DateFormatSettings = ENGLISH_DEFAULTS,
+  options: { neutral?: boolean } = {},
 ): string | null => {
   if (!dates) return null;
   const { startYear, endYear, startPrecision, endPrecision } = dates;
   if (startYear != null && endYear != null) {
     return `${formatYearValue(startYear, settings)}–${formatYearValue(endYear, settings)}`;
   }
+  // `neutral`: we don't know whether a lone date is a birth/founding or a death/dissolution
+  // (place/org/office have no such semantics today), so skip the b./d. word and just show
+  // the year, keeping a circa marker if the stored precision carries one.
   if (startYear != null) {
+    if (options.neutral) {
+      const circa = (startPrecision ? parsePrecision(startPrecision) : null)?.circa ?? false;
+      const year = formatYearValue(startYear, settings);
+      return circa ? `${settings.circaWord} ${year}` : year;
+    }
     const prefix = localizePrecision(startPrecision, 'b', settings);
     return `${prefix} ${formatYearValue(startYear, settings)}`;
   }
   if (endYear != null) {
+    if (options.neutral) {
+      const circa = (endPrecision ? parsePrecision(endPrecision) : null)?.circa ?? false;
+      const year = formatYearValue(endYear, settings);
+      return circa ? `${settings.circaWord} ${year}` : year;
+    }
     const prefix = localizePrecision(endPrecision, 'd', settings);
     return `${prefix} ${formatYearValue(endYear, settings)}`;
   }
@@ -292,45 +402,72 @@ const partValue = (
   id: EntityPartId,
   entity: EntitySummary,
   settings: DateFormatSettings,
+  lang?: string | null,
 ): string | null => {
-  const { family, given } = familyAndGivenOf(entity);
   switch (id) {
     case 'family':
-      return family;
+      return familyAndGivenOf(entity).family;
     case 'given':
-      return given;
+      return familyAndGivenOf(entity).given;
+    case 'name':
+      return shortNameOf(entity);
+    case 'classification':
+      return entity.classification;
     case 'chinese': {
       const chinese = chineseNameOf(entity);
       const short = shortNameOf(entity);
       if (!chinese || chinese === short) return null;
       return chinese;
     }
+    case 'translation': {
+      const gloss = translatedNameOf(entity, lang);
+      if (!gloss) return null;
+      // Don't repeat the gloss if it already is the displayed short name.
+      if (gloss === shortNameOf(entity) || gloss === chineseNameOf(entity)) return null;
+      return gloss;
+    }
     case 'dates':
-      return formatDates(entity.dates, settings);
+      // Only 'person' has real birth/death semantics; every other kind gets a
+      // bare year (no b./d. word) since we don't know what a lone date means for it.
+      return formatDates(entity.dates, settings, { neutral: entity.kind !== 'person' });
   }
 };
 
 /**
  * Base parts from occurrence, minus user-hidden parts, minus missing values.
- * First occurrence adds chinese + dates; later keeps family + given only.
- * Order is always family → given → chinese → dates.
+ * Person: first occurrence adds chinese + translation + dates; later keeps family + given only
+ * (order family → given → chinese → translation → dates). Every other kind uses a single
+ * 'name' part instead of family/given (their names aren't family+given shaped).
+ * Dates only make sense for person (birth/death) and work (publication/composition) —
+ * place/org/office don't get a dates part even on first occurrence.
+ * Translation gloss (nameType `translation` for the target language) appears in parentheses
+ * after the Chinese characters on first occurrence: _Jinshu_ 晉書 (Livre des Jin).
  */
 export const resolveEntityParts = (
   entity: EntitySummary,
   occurrenceIndex: number,
   spec: EntityDisplaySpec = EMPTY_DISPLAY_SPEC,
   settings: DateFormatSettings = ENGLISH_DEFAULTS,
+  lang?: string | null,
 ): ResolvedEntityPart[] => {
   const hidden = new Set(spec.hidden);
   const first = occurrenceIndex <= 1;
-  const baseIds: EntityPartId[] = first
-    ? ['family', 'given', 'chinese', 'dates']
-    : ['family', 'given'];
+  const isPerson = entity.kind === 'person';
+  const hasDates = entity.kind === 'person' || entity.kind === 'work';
+  const baseIds: EntityPartId[] = isPerson
+    ? first
+      ? ['family', 'given', 'chinese', 'translation', 'dates']
+      : ['family', 'given']
+    : first
+      ? (['name', 'classification', 'chinese', 'translation'] as EntityPartId[]).concat(
+          hasDates ? ['dates'] : [],
+        )
+      : ['name'];
 
   const parts: ResolvedEntityPart[] = [];
   for (const id of baseIds) {
     if (hidden.has(id)) continue;
-    const text = partValue(id, entity, settings);
+    const text = partValue(id, entity, settings, lang);
     if (!text) continue;
     parts.push({ id, text });
   }
@@ -351,7 +488,7 @@ const wrapParenDates = (text: string): string => {
 
 /**
  * Compose visible parts with square brackets + language-aware possessive.
- * Dates render as `(…)` by default; if brackets are on dates, use `[…]` instead.
+ * Dates and translation glosses render as `(…)`; if brackets are on that part, use `[…]`.
  */
 export const renderEntityFromSpec = (
   entity: EntitySummary,
@@ -360,7 +497,7 @@ export const renderEntityFromSpec = (
   settings: DateFormatSettings = ENGLISH_DEFAULTS,
   lang?: string | null,
 ): string => {
-  const parts = resolveEntityParts(entity, occurrenceIndex, spec, settings);
+  const parts = resolveEntityParts(entity, occurrenceIndex, spec, settings, lang);
   if (parts.length === 0) return shortNameOf(entity);
 
   const possessiveStyle = possessiveStyleForLang(lang);
@@ -369,16 +506,17 @@ export const renderEntityFromSpec = (
 
   parts.forEach((part, index) => {
     let text = part.text;
-    if (part.id === 'dates') {
+    if (part.id === 'dates' || part.id === 'translation') {
       text =
-        spec.bracketsAround === 'dates' ? wrapSquareBrackets(text) : wrapParenDates(text);
+        spec.bracketsAround === part.id ? wrapSquareBrackets(text) : wrapParenDates(text);
     } else if (spec.bracketsAround === part.id) {
       text = wrapSquareBrackets(text);
     }
 
-    const isNamePart = part.id === 'family' || part.id === 'given';
+    const isNamePart = part.id === 'family' || part.id === 'given' || part.id === 'name';
     const next = parts[index + 1];
-    const nextIsName = next && (next.id === 'family' || next.id === 'given');
+    const nextIsName =
+      next && (next.id === 'family' || next.id === 'given' || next.id === 'name');
     if (
       spec.possessive &&
       possessiveStyle !== 'none' &&

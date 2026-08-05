@@ -1,5 +1,5 @@
 import { buildDocIndex, locateOccurrenceInIndex, type DocIndex } from './anchor';
-import { autoSyncEntityToCentral } from './autoSync';
+import { autoSyncEntitiesToCentral, autoSyncEntityToCentral } from './autoSync';
 import {
   applySuggestions,
   assignEntity,
@@ -15,10 +15,12 @@ import { AuthorityCache } from './authorityCache';
 import { DilaPlaceDetailCache } from './dilaPlaceDetailCache';
 import type { DisambiguationCandidate } from './disambiguationCandidates';
 import {
+  asSyncedEntityCandidate,
   collectGivenFamilyNamesForCandidate,
   collectTypedNamesForCandidate,
   loadSqliteDisambiguationCandidates,
   resolveCandidateForPedb,
+  stripOwnDatabaseSources,
   toAuthoritySourcedFields,
 } from './disambiguationCandidates';
 import { mintOrLinkEntitySqlite } from './sqliteLookupMint';
@@ -48,7 +50,7 @@ import {
   ingestExtractedEntityDataSqlite,
   refreshExtractedEntityDataForDocumentSqlite,
 } from './sqliteEntityExtraction';
-import { autoRomanize } from '../utilities/romanize';
+import { autoRomanizeForKind } from '../utilities/romanize';
 import { checkWellFormedness } from '../utilities/checkWellFormedness';
 import { applyPurge, type PurgeOptions } from './purge';
 import * as Comlink from 'comlink';
@@ -430,6 +432,11 @@ export class AutoTaggingSession {
   /**
    * PEDB/CEDB surface matches for disambiguation. Requires SQLite on each
    * store being searched — no XML/`loadEntities` fallthrough.
+   *
+   * When syncToCentral is on, the central database is the entity pool (same
+   * mental model as the Database panel): promote any still-unlinked PEDB
+   * hits for this surface, then return CEDB matches without Local/Central
+   * provenance. Linked rows carry their PEDB id for document `@key` checks.
    */
   async disambiguationDbSources(
     tag: string,
@@ -454,6 +461,18 @@ export class AutoTaggingSession {
       return { local: sqliteLocal, entitiesDoc: this.getEntitiesDocument() };
     }
 
+    const mappingsBefore =
+      (await this.store.sqliteListAllCentralMappings(central.userStableId)) ?? [];
+    const centralByPedb = new Map(
+      mappingsBefore.map((row) => [row.projectEntityId, row.centralId]),
+    );
+    const unlinkedPedbIds = sqliteLocal
+      .map((candidate) => candidate.localEntityId)
+      .filter((id): id is string => !!id && !centralByPedb.has(id));
+    if (unlinkedPedbIds.length > 0) {
+      await autoSyncEntitiesToCentral(null, unlinkedPedbIds);
+    }
+
     const sqliteCentral = await loadSqliteDisambiguationCandidates(
       central.store,
       tag,
@@ -462,14 +481,44 @@ export class AutoTaggingSession {
     );
     if (sqliteCentral == null) throw new Error(SQLITE_REQUIRED_LOOKUP_MESSAGE);
 
-    const linked = (await this.store.sqliteListLinkedCentralIds(central.userStableId)) ?? [];
-    const linkedSet = new Set(linked);
+    const mappingsAfter =
+      (await this.store.sqliteListAllCentralMappings(central.userStableId)) ?? [];
+    const pedbByCentral = new Map(
+      mappingsAfter.map((row) => [row.centralId, row.projectEntityId]),
+    );
+    const coveredPedbIds = new Set(
+      sqliteCentral
+        .map((candidate) =>
+          candidate.centralEntityId
+            ? pedbByCentral.get(candidate.centralEntityId)
+            : undefined,
+        )
+        .filter((id): id is string => !!id),
+    );
+
+    // PEDB surface hits that CEDB search did not return (e.g. an alternate name
+    // only on the project mirror), plus any still-unlinked after promote failed.
+    const projectOnly = sqliteLocal
+      .filter(
+        (candidate) =>
+          !!candidate.localEntityId && !coveredPedbIds.has(candidate.localEntityId),
+      )
+      .map((candidate) => ({
+        ...candidate,
+        sources: stripOwnDatabaseSources(candidate.sources),
+      }));
+
     return {
-      local: sqliteLocal,
+      local: projectOnly,
       central: {
         userStableId: central.userStableId,
-        candidates: sqliteCentral.filter(
-          (candidate) => !candidate.centralEntityId || !linkedSet.has(candidate.centralEntityId),
+        candidates: sqliteCentral.map((candidate) =>
+          asSyncedEntityCandidate(
+            candidate,
+            candidate.centralEntityId
+              ? pedbByCentral.get(candidate.centralEntityId)
+              : undefined,
+          ),
         ),
       },
       entitiesDoc: this.getEntitiesDocument(),
@@ -1625,7 +1674,7 @@ export class AutoTaggingSession {
       candidate.romanizedName ??
       (nameForSplit
         ? (pluginSplit ? suggestPersonRomanization(nameForSplit, projectLang) : null) ??
-          autoRomanize(nameForSplit, projectLang)
+          autoRomanizeForKind(nameForSplit, projectLang, kind)
         : null) ??
       undefined;
 

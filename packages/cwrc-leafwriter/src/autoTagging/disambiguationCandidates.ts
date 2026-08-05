@@ -40,7 +40,7 @@ import {
   isLatnLang,
   isTibetanLanguageCode,
 } from '../utilities/languageCodes';
-import { autoRomanize, romanizeFromAuthorityMetadata } from '../utilities/romanize';
+import { autoRomanizeForKind, romanizeFromAuthorityMetadata } from '../utilities/romanize';
 import type { WikidataFetchFn } from './wikidataDates';
 import { fetchWikidataLifespan, prefixDescriptionWithLifespan } from './wikidataDates';
 import { fetchDilaPlaceDetail, type DilaFetchFn } from './dilaPlaceDetail';
@@ -72,7 +72,9 @@ export interface DisambiguationCandidate {
    * Set instead of `localEntityId` when this candidate comes from the
    * central database (syncToCentral) rather than this project's own PEDB.
    * Resolving it requires adopting a PEDB mirror first - see
-   * `resolveCandidateForPedb`.
+   * `resolveCandidateForPedb`. When the project is synced, linked CEDB hits
+   * are rewritten to carry `localEntityId` instead so accept/document checks
+   * work without showing a Local vs Central split.
    */
   centralEntityId?: string;
   fromEntityFile?: boolean;
@@ -616,6 +618,41 @@ export function candidatesFromSqliteEntities(
   return out;
 }
 
+/** Provenance keys that mean "from this user's entity database" (PEDB or CEDB). */
+const OWN_DATABASE_SOURCES = new Set([
+  'entity-file',
+  'central-database',
+  'pedb',
+  'cedb',
+]);
+
+export function isOwnDatabaseSource(source: string): boolean {
+  return OWN_DATABASE_SOURCES.has(source.trim().toLowerCase());
+}
+
+/** Drop Local/Central provenance labels so synced projects do not show that split. */
+export function stripOwnDatabaseSources(sources: string[]): string[] {
+  return sources.filter((source) => !isOwnDatabaseSource(source));
+}
+
+/**
+ * Rewrite an entity-database candidate for a syncToCentral project: strip
+ * Local/Central source labels, and when a PEDB mirror id is known prefer that
+ * so "already in document" / accept paths use the project key.
+ */
+export function asSyncedEntityCandidate(
+  candidate: DisambiguationCandidate,
+  linkedPedbId?: string | null,
+): DisambiguationCandidate {
+  const pedbId = linkedPedbId?.trim() || undefined;
+  return {
+    ...candidate,
+    sources: stripOwnDatabaseSources(candidate.sources),
+    localEntityId: pedbId ?? candidate.localEntityId,
+    centralEntityId: pedbId ? undefined : candidate.centralEntityId,
+  };
+}
+
 /** How many same-surface PEDB/CEDB hits disambiguation will load from SQLite. */
 const SQLITE_DISAMBIGUATION_SEARCH_LIMIT = 200;
 
@@ -929,6 +966,7 @@ async function candidatesFromAuthorityPacks(
                 row?.metadata,
                 (row?.displayName?.trim() || row?.primaryName) ?? match.label,
                 projectLang,
+                entityType,
               ) ?? undefined,
             typedNames: typedNamesFromPackRow(row?.names),
             geo: normalizeGeo(row?.metadata?.geo),
@@ -1099,6 +1137,7 @@ export async function enrichCandidateNames(
   candidates: DisambiguationCandidate[],
   projectLang: string | null | undefined,
   fetchImpl?: WikidataFetchFn,
+  kind?: EntityKind | null,
 ): Promise<void> {
   if (!projectLang) return;
 
@@ -1135,7 +1174,7 @@ export async function enrichCandidateNames(
       const enLabel = labels['en'];
       candidate.romanizedName =
         (enLabel && isLatinSurface(enLabel) ? enLabel : undefined) ??
-        autoRomanize(candidate.projectLangName ?? candidate.label, projectLang) ??
+        autoRomanizeForKind(candidate.projectLangName ?? candidate.label, projectLang, kind) ??
         undefined;
     }
   }
@@ -1345,7 +1384,8 @@ export async function buildDisambiguationCandidates(
   const live = await livePromise;
   const merged = await finalize(packLocal, live);
   if (buildOptions?.enrichNames !== false) {
-    await enrichCandidateNames(merged, projectLang);
+    const kind = tag === 'name' ? 'person' : TAG_TO_KIND[tag];
+    await enrichCandidateNames(merged, projectLang, undefined, kind ?? null);
   }
   return merged;
 }

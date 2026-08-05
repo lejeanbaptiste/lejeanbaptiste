@@ -24,7 +24,36 @@ const person = (overrides: Partial<EntitySummary> = {}): EntitySummary => ({
   dates: null,
   familyName: 'Cui',
   authorityIds: [],
+  classification: null,
+  workType: null,
   ...overrides,
+});
+
+describe('candidateFromEntity', () => {
+  test('a place gets no bogus family/given split in its aliases', () => {
+    const place: EntitySummary = {
+      id: 'place-1',
+      kind: 'place',
+      names: [{ lang: 'zh-Latn', text: 'Jiankang' }],
+      primaryName: 'Jiankang',
+      romanizedName: 'Jiankang',
+      description: null,
+      dates: null,
+      familyName: null,
+      authorityIds: [],
+      classification: null,
+  workType: null,
+    };
+    const candidate = candidateFromEntity(place);
+    expect(candidate.aliases).toEqual(['Jiankang']);
+  });
+
+  test('a person still gets family/given aliases', () => {
+    const candidate = candidateFromEntity(person());
+    expect(candidate.aliases).toEqual(
+      expect.arrayContaining(['Cui', 'Zusi', 'Cui Zusi']),
+    );
+  });
 });
 
 describe('scoreAliasMatch', () => {

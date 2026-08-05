@@ -33,6 +33,7 @@ const summariesFromSqlite = (repository: EntitySqliteRepository): EntitySummary[
         startYear: summary.startYear,
         endYear: summary.endYear,
         workDate: summary.workDate,
+        workType: summary.workType,
         nationalities: summary.nationalities,
         placesOfOrigin: summary.placesOfOrigin,
         authors: summary.authors,

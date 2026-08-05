@@ -121,22 +121,48 @@ export const TranslationTabContent = ({ active }: TranslationTabContentProps) =>
     };
   }, [projectFilePath]);
 
+  // Leaving the translation tab calls exitTranslationMode (active → false). Clear the
+  // resolved key so coming back re-runs enterTranslationMode; otherwise the pane mounts
+  // into an empty portal while Overmind still thinks translation is off (blank panel).
+  // Also clear when this tab is merely hidden — exitTranslationMode is a no-op if enter
+  // never succeeded (e.g. dirty file), and a stuck key would permanently skip retry.
+  useEffect(() => {
+    if (!active) resolvedKeyRef.current = null;
+  }, [active]);
+
+  useEffect(() => {
+    const onModeChanged = (event: Event) => {
+      const detail = (event as CustomEvent<{ active?: boolean }>).detail;
+      if (detail?.active === false) resolvedKeyRef.current = null;
+    };
+    window.addEventListener('desktop:translation-mode-changed', onModeChanged);
+    return () => window.removeEventListener('desktop:translation-mode-changed', onModeChanged);
+  }, []);
+
   // Auto-index: the first time this tab is active for a given (file, language) pair,
   // resolve or create the companion translation file.
+  const isActiveTabDirty =
+    openTabs.find((tab) => tab.filePath === activeTabPath)?.dirty ?? false;
+
   useEffect(() => {
     if (!active || !activeTabPath || !selectedLang) return;
     const key = `${activeTabPath}::${selectedLang}`;
     if (resolvedKeyRef.current === key) return;
+    // Hold the key while in flight so overlapping effect runs do not start a second
+    // bootstrap. Soft failures clear it so a later dep change can retry (classic case:
+    // user saves after "Save this file before starting a translation").
     resolvedKeyRef.current = key;
-
-    const isActiveTabDirty = openTabs.find((tab) => tab.filePath === activeTabPath)?.dirty ?? false;
 
     setIndexing(true);
     void startTranslationForLang(selectedLang, {
       activeTabPath,
       isActiveTabDirty,
       onEnter: (payload) => {
-        window.writer?.overmindActions?.ui?.enterTranslationMode?.(payload);
+        const enter = window.writer?.overmindActions?.ui?.enterTranslationMode;
+        if (!enter) {
+          throw new Error('Translation mode is not available yet. Try again in a moment.');
+        }
+        enter(payload);
       },
       onSourceFileWritten: async (filePath) => {
         await ignoreSavedFileChange(filePath);
@@ -144,6 +170,9 @@ export const TranslationTabContent = ({ active }: TranslationTabContentProps) =>
       },
       notify: notifyViaSnackbar,
     })
+      .then((entered) => {
+        if (!entered) resolvedKeyRef.current = null;
+      })
       .catch((error) => {
         resolvedKeyRef.current = null;
         console.error('[translation] startTranslationForLang threw', error);
@@ -152,7 +181,15 @@ export const TranslationTabContent = ({ active }: TranslationTabContentProps) =>
       .finally(() => {
         setIndexing(false);
       });
-  }, [active, activeTabPath, selectedLang, openTabs, reloadTabFromDisk, notifyViaSnackbar]);
+  }, [
+    active,
+    activeTabPath,
+    selectedLang,
+    isActiveTabDirty,
+    reloadTabFromDisk,
+    notifyViaSnackbar,
+    t,
+  ]);
 
   if (languages === null) {
     return (

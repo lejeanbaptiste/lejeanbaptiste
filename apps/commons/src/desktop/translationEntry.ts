@@ -52,10 +52,14 @@ const readFileOrNull = async (filePath: string): Promise<string | null> => {
  * can be pointed at it. Safe to call repeatedly (e.g. every time the language dropdown changes)
  * — a no-op past the first call for a given (file, lang).
  */
+/**
+ * @returns true when `onEnter` was called (pane should become active); false on
+ * soft failures such as dirty source / missing settings so the caller can retry.
+ */
 export const startTranslationForLang = async (
   lang: string,
   ctx: TranslationEntryContext,
-): Promise<void> => {
+): Promise<boolean> => {
   log('startTranslationForLang', { lang, activeTabPath: ctx.activeTabPath });
 
   const bundle = getActiveProjectBundle();
@@ -63,18 +67,18 @@ export const startTranslationForLang = async (
   log('bundle?', !!bundle, 'sourcePath', sourcePath);
   if (!bundle || !sourcePath) {
     ctx.notify('Open a file to start a translation.');
-    return;
+    return false;
   }
   if (ctx.isActiveTabDirty) {
     ctx.notify('Save this file before starting a translation.');
-    return;
+    return false;
   }
 
   const settings = await readTranslationSettings(bundle);
   log('settings', settings);
   if (!settings) {
     ctx.notify('Configure translation languages in Edition metadata first.');
-    return;
+    return false;
   }
 
   const sourceFileName = fileNameOf(sourcePath);
@@ -91,14 +95,14 @@ export const startTranslationForLang = async (
       alignmentUnit: settings.alignmentUnit,
       citationStyle: settings.citationStyle,
     });
-    return;
+    return true;
   }
 
   const sourceXml = await readFileOrNull(sourcePath);
   log('sourceXml read?', !!sourceXml, sourceXml?.length);
   if (!sourceXml) {
     ctx.notify('Could not read the source file.');
-    return;
+    return false;
   }
 
   const sourceDoc = new DOMParser().parseFromString(sourceXml, 'application/xml');
@@ -106,7 +110,7 @@ export const startTranslationForLang = async (
   if (parserError) {
     log('XML parse error', parserError.textContent);
     ctx.notify('Could not parse the source file as XML.');
-    return;
+    return false;
   }
 
   const missing = findAlignmentUnitsMissingIds(sourceDoc, settings.alignmentUnit);
@@ -138,6 +142,7 @@ export const startTranslationForLang = async (
     citationStyle: settings.citationStyle,
   });
   log('onEnter dispatched');
+  return true;
 };
 
 /**

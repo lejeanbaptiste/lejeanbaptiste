@@ -46,13 +46,15 @@ import {
   collapseCrossAuthorityCandidates,
   enrichCandidateCrossRefs,
   extractWikidataId,
+  isOwnDatabaseSource,
   mergeCandidates,
   mergeSelectedCandidates,
   type CandidateLink,
   type DisambiguationCandidate,
 } from './disambiguationCandidates';
+import type { DesktopEntityStoreGlobals } from './entityStore';
 import { suggestPersonRomanization } from '../plugins/personNameDefaults';
-import { autoRomanize, canAutoRomanize } from '../utilities/romanize';
+import { autoRomanizeForKind, canAutoRomanize } from '../utilities/romanize';
 import { AUTHORITY_YEAR_MAX, AUTHORITY_YEAR_MIN } from './authoritySettings';
 import {
   dateFilterFromSettings,
@@ -154,14 +156,19 @@ const AuthorityLinkIcon = ({ link }: { link: CandidateLink }) => (
  * Provenance labels that are not already visible as a clickable authority
  * link or the green "local" chip. Without this filter, CBDB/VIAF/Wikidata
  * appear twice (AuthorityLinkIcon + SourceBadges).
+ *
+ * When the project syncs to the central database there is no Local vs Central
+ * split — hide those provenance keys even if a cached row still carries them.
  */
 function provenanceSourcesForBadges(
   candidate: DisambiguationCandidate,
   links: CandidateLink[],
+  hideOwnDatabase = false,
 ): string[] {
   const linked = new Set(links.map((link) => link.kind));
   return candidate.sources.filter((source) => {
     const key = source.trim().toLowerCase();
+    if (hideOwnDatabase && isOwnDatabaseSource(key)) return false;
     if (key === 'cbdb' && linked.has('cbdb')) return false;
     if (key === 'viaf' && linked.has('viaf')) return false;
     if ((key === 'wikidata' || key === 'wikipedia') && linked.has('wikidata')) return false;
@@ -169,6 +176,16 @@ function provenanceSourcesForBadges(
     if (key === 'entity-file' && candidate.fromEntityFile) return false;
     return true;
   });
+}
+
+function projectSyncsToCentral(): boolean {
+  try {
+    return (
+      (window as unknown as DesktopEntityStoreGlobals).__ljbLspProject?.syncToCentral === true
+    );
+  } catch {
+    return false;
+  }
 }
 
 interface SectionHeaderRowProps {
@@ -1217,7 +1234,8 @@ export const DisambiguationPanel = ({
         {displayCandidates.map((candidate) => {
           const checked = checkedIds.has(candidate.id);
           const links = candidateLinks(candidate);
-          const badgeSources = provenanceSourcesForBadges(candidate, links);
+          const syncToCentral = projectSyncsToCentral();
+          const badgeSources = provenanceSourcesForBadges(candidate, links, syncToCentral);
           const confidence = aiConfidences[candidate.id];
           const appearsInDocument =
             !!candidate.localEntityId && keyedEntityIds.has(candidate.localEntityId);
@@ -1268,7 +1286,7 @@ export const DisambiguationPanel = ({
                   {badgeSources.length > 0 && (
                     <SourceBadges label={badgeSources.join('+')} />
                   )}
-                  {candidate.fromEntityFile && (
+                  {candidate.fromEntityFile && !syncToCentral && (
                     <Chip
                       label="local"
                       size="small"
@@ -1768,7 +1786,7 @@ export const DisambiguationPanel = ({
                       instance &&
                       (kind === 'person'
                         ? suggestPersonRomanization(instance.surface, projectLang)
-                        : autoRomanize(instance.surface, projectLang));
+                        : autoRomanizeForKind(instance.surface, projectLang, kind));
                     setNewEntityRomanized(suggested ?? '');
                     setNewEntityDialogOpen(true);
                   }}

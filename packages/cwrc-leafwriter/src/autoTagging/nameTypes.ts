@@ -18,7 +18,8 @@ export type NameTypeId =
   | 'temple' // 廟號
   | 'dharma' // religious/dharma name
   | 'pen' // pen name / pseudonym
-  | 'translation' // translated title/label
+  | 'romanization' // Latin-script reading (pinyin, Wade–Giles, …) — not a vernacular gloss
+  | 'translation' // translated title/label (fr/en/…), distinct from romanization
   | 'variant'; // unclassified alternate (legacy searchStrings, surface forms)
 
 export const ALL_NAME_TYPES: NameTypeId[] = [
@@ -32,6 +33,7 @@ export const ALL_NAME_TYPES: NameTypeId[] = [
   'temple',
   'dharma',
   'pen',
+  'romanization',
   'translation',
   'variant',
 ];

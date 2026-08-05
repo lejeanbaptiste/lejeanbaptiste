@@ -95,3 +95,17 @@
 - Added card flow to translation panel.
 - Fixed buggy footnotes changing place and eating body text.
 - Added entity insertion and automatic formatting into translation panel.
+- Translation pane UI overhaul.
+- AI translation now grounds tagged names against the entity database instead of guessing them: the model gets each tagged entity's canonical record and emits a placeholder in its place, which is then swapped for a real, correctly formatted entity field.
+- Entity display formatting is now kind-aware: places, organisations, offices, and works no longer get the person-only family/given name split. Dates are now shown only for people and works (births/deaths and publication dates respectively); places, organisations, and offices never display a dates part.
+- Wired up two entity fields that were being silently dropped: generic (non birth/death) existence dates now reach works' entity records instead of being lost, and office classification labels are now surfaced on office entities.
+- Added a work_type field (book, chapter, poem, painting, object) to entity records, with citation styling to match: books and paintings render in italics, chapters and poems in curly quotes.
+- Fixed a save error ("provided markup is invalid XML") that could hit when persisting translation-pane edits — swapped a fragile HTML-string round-trip for a direct DOM import.
+- Fixed entity mentions inserted via the toolbar button landing at the start of the unit instead of at the cursor (including a follow-up where focusing the editor after the entity fetch overwrote the saved caret).
+- Fixed the translation pane opening blank after leaving the tab (e.g. to edit the entity database) and coming back — re-enter translation mode when the tab is selected again.
+- Work entities now default to type `book` (italics) when unset; existing nulls are backfilled on schema migration 7.
+- Work-title italics apply only to the romanization: Chinese characters and an English possessive ’s stay upright.
+- Work (and other) mentions now append a matching-language translation gloss in parentheses after the Chinese characters, e.g. _Jinshu_ 晉書 (Livre des Jin), using names typed `translation` in the entity database.
+- Place (and other) romanizations still lead the display when stored as `translation` + `*-Latn`, and when Latin text was mis-tagged under `zh-Hant`; those rows are no longer mistaken for the parenthetical gloss.
+- Romanizations are now stored as name type `romanization` with a `*-Latn` language (schema migration 8 retags legacy `translation`/mis-tagged rows). Vernacular glosses stay `translation`.
+- Automatic romanization is kind-aware: persons stay syllable Title Case (`Zhang Heng`); works/orgs/offices concatenate (`Jinshu`); places use a concatenated stem plus a lowercase admin suffix when recognized (`Jiankang jun`).

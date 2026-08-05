@@ -8,7 +8,7 @@
 
 import type { DatabaseSync } from 'node:sqlite';
 
-export const ENTITY_DB_SCHEMA_VERSION = 5;
+export const ENTITY_DB_SCHEMA_VERSION = 8;
 
 const migration1 = `
 CREATE TABLE IF NOT EXISTS entities (
@@ -366,12 +366,58 @@ const migration5 = `
 ALTER TABLE entity_decisions ADD COLUMN target_refs TEXT;
 `;
 
+const migration6 = `
+ALTER TABLE works ADD COLUMN work_type TEXT
+  CHECK (work_type IS NULL OR work_type IN ('book', 'chapter', 'poem', 'painting', 'object'));
+`;
+
+/** Unset work types default to book (italic citation styling). */
+const migration7 = `
+UPDATE works SET work_type = 'book' WHERE work_type IS NULL;
+`;
+
+/**
+ * Romanizations used to be stored as name_type='translation' (and sometimes as
+ * Latin text under zh-Hant). Retag them as 'romanization' with a *-Latn language.
+ */
+const migration8 = `
+UPDATE entity_names
+SET name_type = 'romanization',
+    updated_at = datetime('now')
+WHERE status = 'active'
+  AND language LIKE '%Latn%'
+  AND (
+    name_type IS NULL
+    OR TRIM(name_type) = ''
+    OR name_type IN ('translation', 'variant')
+  );
+
+UPDATE entity_names
+SET name_type = 'romanization',
+    language = CASE
+      WHEN language LIKE 'zh-Hant%' THEN 'zh-Hant-Latn'
+      WHEN language LIKE 'zh-Hans%' THEN 'zh-Hans-Latn'
+      WHEN language LIKE 'zh%' THEN 'zh-Latn'
+      WHEN language IS NULL OR TRIM(language) = '' THEN 'und-Latn'
+      ELSE language
+    END,
+    updated_at = datetime('now')
+WHERE status = 'active'
+  AND name_type = 'translation'
+  AND (language IS NULL OR language = '' OR (language LIKE 'zh%' AND language NOT LIKE '%Latn%'))
+  AND text GLOB '*[A-Za-z]*'
+  AND text NOT GLOB '*[一-龥]*';
+`;
+
 const migrations: Record<number, string> = {
   1: migration1,
   2: migration2,
   3: migration3,
   4: migration4,
   5: migration5,
+  6: migration6,
+  7: migration7,
+  8: migration8,
 };
 
 export function applyEntityDbMigrations(db: DatabaseSync): void {

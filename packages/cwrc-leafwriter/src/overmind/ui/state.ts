@@ -45,6 +45,12 @@ type State = {
   disambiguationReview: DisambiguationReviewState;
   sourceCurrentContent: string;
   sourceOriginalContent: string;
+  /**
+   * True when the Source buffer (or a Source-mode save) no longer matches what
+   * TinyMCE is showing. Exit must reload visual even if original===current
+   * (which happens after saving in Source mode).
+   */
+  sourceVisualOutOfSync: boolean;
   sourcePendingCursorOffset: number | null;
   fullscreen: boolean;
   layout: LayoutProps;
@@ -85,6 +91,7 @@ export const state: State = {
   },
   sourceCurrentContent: '',
   sourceOriginalContent: '',
+  sourceVisualOutOfSync: false,
   sourcePendingCursorOffset: null,
   fullscreen: false,
   layout: {

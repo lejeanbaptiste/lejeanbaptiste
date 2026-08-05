@@ -16,12 +16,23 @@ import {
   formatDates,
   possessiveStyleForLang,
   renderEntityFromSpec,
+  shortNameOf,
+  translatedNameOf,
   type EntityDisplaySpec,
   type EntityPartId,
 } from './entityDisplay';
 import type { EntitySummary } from './entitySummary';
 
-const PART_ORDER: EntityPartId[] = ['family', 'given', 'chinese', 'dates'];
+const PERSON_PART_ORDER: EntityPartId[] = ['family', 'given', 'chinese', 'translation', 'dates'];
+const WORK_PART_ORDER: EntityPartId[] = ['name', 'chinese', 'translation', 'dates'];
+const OTHER_PART_ORDER: EntityPartId[] = ['name', 'classification', 'chinese', 'translation'];
+
+/** Dates only make sense for person (birth/death) and work (publication/composition). */
+const partOrderFor = (entity: EntitySummary): EntityPartId[] => {
+  if (entity.kind === 'person') return PERSON_PART_ORDER;
+  if (entity.kind === 'work') return WORK_PART_ORDER;
+  return OTHER_PART_ORDER;
+};
 
 export interface EntityDisplayPopupProps {
   anchorPosition: { top: number; left: number } | null;
@@ -38,14 +49,21 @@ export interface EntityDisplayPopupProps {
 }
 
 const partLabel = (id: EntityPartId, entity: EntitySummary, lang?: string | null): string => {
-  const { family, given } = familyAndGivenOf(entity);
   switch (id) {
     case 'family':
-      return family ?? '—';
+      return familyAndGivenOf(entity).family ?? '—';
     case 'given':
-      return given ?? '—';
+      return familyAndGivenOf(entity).given ?? '—';
+    case 'name':
+      return shortNameOf(entity) ?? '—';
+    case 'classification':
+      return entity.classification ?? '—';
     case 'chinese':
       return chineseNameOf(entity) ?? '—';
+    case 'translation': {
+      const gloss = translatedNameOf(entity, lang);
+      return gloss ? `(${gloss})` : '—';
+    }
     case 'dates': {
       const dates = formatDates(entity.dates, dateFormatSettingsForLang(lang));
       return dates ? `(${dates})` : '—';
@@ -59,8 +77,14 @@ const partTitleKey = (id: EntityPartId): string => {
       return 'LW.translationPane.entityFormat.family';
     case 'given':
       return 'LW.translationPane.entityFormat.given';
+    case 'name':
+      return 'LW.translationPane.entityFormat.name';
+    case 'classification':
+      return 'LW.translationPane.entityFormat.classification';
     case 'chinese':
       return 'LW.translationPane.entityFormat.chinese';
+    case 'translation':
+      return 'LW.translationPane.entityFormat.translation';
     case 'dates':
       return 'LW.translationPane.entityFormat.dates';
   }
@@ -119,7 +143,7 @@ export const EntityDisplayPopup = ({
         <Typography variant="subtitle2">{t('LW.translationPane.entityFormat.title')}</Typography>
 
         <Stack direction="row" flexWrap="wrap" gap={0.75} useFlexGap>
-          {PART_ORDER.map((id) => {
+          {partOrderFor(entity).map((id) => {
             const label = partLabel(id, entity, lang);
             const available = label !== '—';
             const isHidden = hidden.has(id);

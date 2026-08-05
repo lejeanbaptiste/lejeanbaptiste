@@ -13,7 +13,6 @@ import {
 } from '@mui/material';
 import { useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { useAppState } from '@src/overmind';
 
 /** Same localStorage key as Leaf-Writer Guardrails → `setEnableXmlEditing`. */
 const ENABLE_XML_EDITING_KEY = 'enableXmlEditing';
@@ -76,13 +75,13 @@ const writeEnableXmlEditing = (value: boolean) => {
 };
 
 /**
- * First-run gate: tagging name + entity-database folder. The folder must be
- * chosen explicitly (preferably cloud-synced); we do not treat the silent
- * app-data default as “done”.
+ * First-run gate: tagging name + entity-database folder. Opens whenever the
+ * encoder name is empty (including cold start with wiped config). The folder
+ * must be chosen explicitly; we do not treat the silent app-data default as
+ * “done”.
  */
 export const UserNamePromptDialog = () => {
   const { t } = useTranslation();
-  const { rootPath } = useAppState().project;
   const [open, setOpen] = useState(false);
   const [name, setName] = useState('');
   const [entityDbFolder, setEntityDbFolder] = useState<string | null>(null);
@@ -92,19 +91,15 @@ export const UserNamePromptDialog = () => {
   useEffect(() => {
     const checkOpen = () => {
       const bridge = getCommonsUiBridge();
-      // Let a first-run user open an existing root before asking for a name:
-      // that project may already have a portable encoder identity to inherit.
-      if (!rootPath) {
-        setOpen(false);
-        return;
-      }
+      // Rule: no user name → splash. Wait until prefs have loaded so we do not
+      // flash the dialog before a saved name is read from disk.
       if (!bridge?.encoderNameLoaded) return;
       setOpen(!bridge.encoderName.trim());
     };
     checkOpen();
     window.addEventListener('ljbCommonsUiChanged', checkOpen);
     return () => window.removeEventListener('ljbCommonsUiChanged', checkOpen);
-  }, [rootPath]);
+  }, []);
 
   useEffect(() => {
     if (!open) return;

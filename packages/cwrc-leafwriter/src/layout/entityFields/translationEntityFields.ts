@@ -3,19 +3,30 @@ import {
   type DateFormatSettings,
 } from './dateFormatSettings';
 import {
+  applyPossessiveSuffix,
   displaySpecFromLegacyOverride,
   EMPTY_DISPLAY_SPEC,
   isEmptyDisplaySpec,
   parseDisplaySpec,
-  renderEntityFromSpec,
+  possessiveStyleForLang,
+  resolveEntityParts,
   serializeDisplaySpec,
+  shortNameOf,
+  workTypeStyle,
   type DisplayFormatOverride,
   type EntityDisplaySpec,
+  type EntityPartId,
 } from './entityDisplay';
 import type { EntitySummary } from './entitySummary';
 
 export const ENTITY_REF_TYPE = 'ljb-entity';
 export const ENTITY_FIELD_ATTR = 'data-leaf-entity-field';
+/**
+ * Marker that this work mention uses citation italics. The attribute itself is
+ * not styled — only inner `<hi rend="italic">` runs are, so Chinese and
+ * possessive clitics stay upright.
+ */
+export const ENTITY_WORK_STYLE_ATTR = 'data-work-style';
 /** @deprecated Prefer ENTITY_DISPLAY_SPEC_ATTR; kept for older inserts. */
 export const ENTITY_DISPLAY_FORMAT_ATTR = 'data-display-format';
 export const ENTITY_DISPLAY_SPEC_ATTR = 'data-display-spec';
@@ -29,6 +40,9 @@ const LEGACY_OVERRIDES: DisplayFormatOverride[] = [
   'title_only',
   'author_only',
 ];
+
+/** Han-script runs — never italicized or quoted for work titles. */
+const HAN_SPLIT_RE = /(\p{Script=Han}+)/u;
 
 const parseLegacyOverride = (raw: string | null): DisplayFormatOverride | null => {
   if (!raw) return null;
@@ -53,6 +67,117 @@ export const writeDisplaySpecToField = (field: Element, spec: EntityDisplaySpec)
   else field.removeAttribute(ENTITY_DISPLAY_SPEC_ATTR);
 };
 
+const isNamePartId = (id: EntityPartId): boolean =>
+  id === 'family' || id === 'given' || id === 'name';
+
+/**
+ * Append text, optionally wrapping non-Han runs in italics or curly quotes.
+ * Chinese (Han) characters stay upright / outside the quotes.
+ */
+const appendStyledRuns = (
+  parent: Element,
+  text: string,
+  mode: 'plain' | 'italic' | 'quote',
+): void => {
+  const doc = parent.ownerDocument ?? document;
+  if (mode === 'plain' || !text) {
+    if (text) parent.appendChild(doc.createTextNode(text));
+    return;
+  }
+
+  const pieces = text.split(HAN_SPLIT_RE);
+  for (let index = 0; index < pieces.length; index += 1) {
+    const piece = pieces[index];
+    if (!piece) continue;
+    // Capturing split: odd indexes are Han runs.
+    const isHan = index % 2 === 1;
+    if (isHan) {
+      parent.appendChild(doc.createTextNode(piece));
+      continue;
+    }
+    if (mode === 'italic') {
+      const hi = doc.createElement('hi');
+      hi.setAttribute('rend', 'italic');
+      hi.textContent = piece;
+      parent.appendChild(hi);
+      continue;
+    }
+    // quote — wrap this non-Han run in curly quotes
+    parent.appendChild(doc.createTextNode(`“${piece}”`));
+  }
+};
+
+/**
+ * Fill an entity field from the display recipe. Work-type italics/quotes apply
+ * only to romanized name parts — never to Chinese, dates, or a possessive ’s.
+ */
+const applyWorkTypeStyle = (
+  field: Element,
+  entity: EntitySummary,
+  occurrenceIndex: number,
+  spec: EntityDisplaySpec,
+  settings: DateFormatSettings,
+  lang?: string | null,
+): void => {
+  const style = workTypeStyle(entity);
+  if (style === 'italic') field.setAttribute(ENTITY_WORK_STYLE_ATTR, 'italic');
+  else field.removeAttribute(ENTITY_WORK_STYLE_ATTR);
+
+  while (field.firstChild) field.removeChild(field.firstChild);
+
+  const parts = resolveEntityParts(entity, occurrenceIndex, spec, settings, lang);
+  const doc = field.ownerDocument ?? document;
+  if (parts.length === 0) {
+    appendStyledRuns(field, shortNameOf(entity), style ?? 'plain');
+    return;
+  }
+
+  const possessiveStyle = possessiveStyleForLang(lang);
+  let possessiveApplied = false;
+
+  parts.forEach((part, index) => {
+    if (index > 0) field.appendChild(doc.createTextNode(' '));
+
+    let open = '';
+    let close = '';
+    if (part.id === 'dates' || part.id === 'translation') {
+      if (spec.bracketsAround === part.id) {
+        open = '[';
+        close = ']';
+      } else {
+        open = '(';
+        close = ')';
+      }
+    } else if (spec.bracketsAround === part.id) {
+      open = '[';
+      close = ']';
+    }
+
+    const next = parts[index + 1];
+    const nextIsName = Boolean(next && isNamePartId(next.id));
+    let suffix = '';
+    if (
+      spec.possessive &&
+      possessiveStyle !== 'none' &&
+      isNamePartId(part.id) &&
+      !nextIsName &&
+      !possessiveApplied
+    ) {
+      const full = applyPossessiveSuffix(part.text, possessiveStyle);
+      suffix = full.slice(part.text.length);
+      possessiveApplied = true;
+    }
+
+    // Work citation styling only wraps the title-ish name part(s), not chinese/translation/dates.
+    const titleMode = style && isNamePartId(part.id) ? style : ('plain' as const);
+
+    if (open) field.appendChild(doc.createTextNode(open));
+    appendStyledRuns(field, part.text, titleMode);
+    if (close) field.appendChild(doc.createTextNode(close));
+    if (suffix) field.appendChild(doc.createTextNode(suffix));
+  });
+};
+
 export const createEntityFieldElement = (
   entity: EntitySummary,
   occurrenceIndex: number,
@@ -68,7 +193,7 @@ export const createEntityFieldElement = (
   ref.setAttribute(ENTITY_FIELD_ATTR, 'true');
   ref.setAttribute('title', `${entity.kind}: ${entity.id}`);
   writeDisplaySpecToField(ref, spec);
-  ref.textContent = renderEntityFromSpec(entity, occurrenceIndex, spec, resolved, lang);
+  applyWorkTypeStyle(ref, entity, occurrenceIndex, spec, resolved, lang);
   return ref;
 };
 
@@ -106,7 +231,7 @@ export const recalculateEntityFieldsInRoot = (
   );
   fields.forEach((field, index) => {
     const spec = readDisplaySpecFromField(field);
-    field.textContent = renderEntityFromSpec(entity, index + 1, spec, resolved, lang);
+    applyWorkTypeStyle(field, entity, index + 1, spec, resolved, lang);
     field.setAttribute('contenteditable', 'false');
     field.setAttribute(ENTITY_FIELD_ATTR, 'true');
     // Normalize storage: migrate legacy format attrs into data-display-spec.

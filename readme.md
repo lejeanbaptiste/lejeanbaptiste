@@ -51,6 +51,8 @@ Tracked here as mirrored or generated assets:
 - `apps/desktop/src/generated/gameAssetKey.ts`
 - `apps/desktop/resources/avatar-parts/**` (Adventurer avatar-part layers — not spoiler-protected, mirrored as plain SVG files)
 
+
+
 ## What is built
 
 Le Jean-Baptiste is the desktop, offline-first fork of LEAF-Writer. The current build already supports:
@@ -67,6 +69,8 @@ Le Jean-Baptiste is the desktop, offline-first fork of LEAF-Writer. The current 
 - Working with translation companions in split-pane form for paired source/translation editing.
 - Auto-tagging and disambiguation with local authority packs (CBDB, DILA, Wikidata, NDL, …) and plugins such as Sanmiao and Norbert.
 
+
+
 ## Install
 
 Download the installer for your platform from the [latest release](https://github.com/lejeanbaptiste/lejeanbaptiste/releases/latest). All release assets can be verified as described in [SECURITY.md](SECURITY.md).
@@ -78,12 +82,16 @@ Download the installer for your platform from the [latest release](https://githu
 3. The application will be installed to `/Applications/Le Jean-Baptiste.app`.
 4. Signed updates are checked automatically when the application starts and every four hours. A downloaded update is installed when the application quits. The `.pkg` is only needed for the first installation.
 
+
+
 ### Windows
 
 1. Download the installer for your machine: `arm64` for Windows on Arm or `x64` for Intel/AMD (`Le-Jean-Baptiste-win-Setup-<version>-<arch>.exe`).
 2. Run the installer and follow the prompts. Choose your installation directory and start-menu shortcut preferences.
 3. **Note:** The installer is not signed by a certificate authority. Windows Defender SmartScreen may show a warning. To proceed, click "More info" → "Run anyway". A signed package through the Microsoft Store is planned.
 4. Updates are checked automatically when the application starts and every four hours. A downloaded update is installed when the application quits.
+
+
 
 ### Linux
 
@@ -121,8 +129,10 @@ See [apps/desktop/README.md](apps/desktop/README.md) for the compilation and pac
 
 ## To test
 
-- [x] Welcome splash: include toggle to activate/disactivate advanced features (direct XML editing), 
-- [x] Simplify hamburger menu.
+- [ ] Welcome splash: include toggle to activate/disactivate advanced features (direct XML editing), 
+- [ ] Simplify hamburger menu.
+
+
 
 #### Language / plugin leakage audit
 
@@ -158,18 +168,15 @@ Two switches to keep straight: **plugin on/off** (per project → toolbar, tag a
 
 - [ ] Manually enable Norbert on a non-Chinese project (if config allows) → expect full Norbert UI (`isAvailable: () => true`); proves there is no second language gate inside the plugin itself
 
-#### Translation pane
 
-- [ ] Notes, glosses, doubt markes in translation only?
-- [ ] Clean up UI
 
 ## Waiting
 
 - [ ] Keyboard shortcut for insert entity
-- [ ] Finish word plugin
-  - [ ] Zotero-style translation passage atomic import with page numbers and update [translation-planning.md](docs/translation-planning.md))
 - [ ] Finish compiling dics
   - [ ] Official titles dictionaries, dates dictionaries for hover-over
+
+
 
 #### AI
 
@@ -178,15 +185,22 @@ Two switches to keep straight: **plugin on/off** (per project → toolbar, tag a
 - [ ] Translation panel: check for translation consistency across the document
 - [ ] Translation panel: suggest improvements with 'accept/reject'
 
+
+
 ### Future
+
+
 
 #### Push limits
 
 - [ ] Navigate xml tree in-editor with some sort of dead key ?
+- [ ] Make TinyMCE even faster to load.
+
 
 
 #### I/O
 
+- Zotero-style translation passage atomic import with page numbers and update translation-planning.md)
 - Full CBETA integration
   - [ ] Custom schema / conversion ?
   - [ ] Include Bingenheimer's tagged bios
@@ -197,11 +211,14 @@ Two switches to keep straight: **plugin on/off** (per project → toolbar, tag a
   - [ ] Parser
   - [ ] Normaliser
   - [ ] Punctuator
+
 - [ ] Import profiles (rule engine + mandoku hand profile)
 - [ ] AI-inferred import profiles
 - [ ] Browser-extension / URL corpus→TEI extraction (E0–E5 — [corpus-extraction-planning.md](docs/corpus-extraction-planning.md))
 - [ ] (IF someone actually uses markdown) Import Phase 1 leftovers: md `{{header}}`, batch/folder UI, validator + provenance
 - [ ] (IF grows to point where relevant) LaTeX export
+
+
 
 #### UX
 
@@ -211,6 +228,9 @@ Two switches to keep straight: **plugin on/off** (per project → toolbar, tag a
 - [ ] Match-case / persist last find query (optional)
 - [ ] Ignore page breaks, line breaks, and corrections in tagging and disambiguation?
 - [ ] (ABANDONNED as hopeless) Tag-boundary Bugs B/C/H (typing/delete at edges)
+- [ ] Notes, glosses, doubt markes in translation only?
+
+
 
 #### Maps
 
@@ -218,15 +238,21 @@ Two switches to keep straight: **plugin on/off** (per project → toolbar, tag a
 - [ ] Click to disambiguate
 - [ ] Placename Phase 4–5: persisted coordinate/id place entities; mint from merged periods ([placename-geo-disambiguation-planning.md](docs/placename-geo-disambiguation-planning.md))
 
+
+
 #### Dates
 
 - [ ] Parallel Chinese / Japanese dates
 - [ ] Import DILA markers into Sanmiao
 - [ ] AI assist for Sanmiao to identify beginning of dynasties, reigns, era
 
+
+
 #### Authority packs
 
 - [ ] TEI appointment encoding for office/role context
+
+
 
 #### Technical / collaboration
 
@@ -234,6 +260,8 @@ Two switches to keep straight: **plugin on/off** (per project → toolbar, tag a
 - [ ] Support for custom authorities and personal SQL databases
 - [ ] Multi-machine offline sync beyond current mirror
 - [ ] Option to track annotator on the tag level for collaborations.
+
+
 
 ### Unimportant
 

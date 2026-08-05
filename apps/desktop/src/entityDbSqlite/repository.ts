@@ -2,6 +2,10 @@ import { createRequire } from 'node:module';
 import type { DatabaseSync as DatabaseSyncType } from 'node:sqlite';
 import { stringsMatchExactly } from '../../../../packages/cwrc-leafwriter/src/autoTagging/disambiguationMatch';
 import { canonicalNationalityLabel } from '../../../../packages/cwrc-leafwriter/src/autoTagging/dynastyCrosswalk';
+import {
+  isLatnLang,
+  latnLangFor,
+} from '../../../../packages/cwrc-leafwriter/src/utilities/languageCodes';
 import { applyEntityDbMigrations } from './schema';
 
 const nodeRequire = createRequire(__filename);
@@ -116,9 +120,14 @@ export interface SqliteEntityPanelSummary extends SqliteEntitySummary {
     startPrecision: string | null;
     endPrecision: string | null;
   } | null;
+  /** work kind only: 'book' | 'chapter' | 'poem' | 'painting' | 'object'. */
+  workType: string | null;
   nationalities: string[];
   placesOfOrigin: string[];
   roles: string[];
+  /** First active `office_classifications` label (office kind only) — semantics not fully
+   * documented upstream (likely a CBDB office-category code), surfaced as-is. */
+  classification: string | null;
   origins: SqliteValueOrigin[];
   authors: {
     key: string;
@@ -192,6 +201,14 @@ export interface SetUserWorkDateInput {
   endYear?: number | null;
   startPrecision?: string | null;
   endPrecision?: string | null;
+  now?: string;
+}
+
+export type WorkType = 'book' | 'chapter' | 'poem' | 'painting' | 'object';
+
+export interface SetWorkTypeInput {
+  entityId: string;
+  workType: WorkType | null;
   now?: string;
 }
 
@@ -515,6 +532,7 @@ function assemblePanelSummary(
     activeAuthorities: { type: string; value: string }[];
     allAuthorities: Record<string, unknown>[];
     person: { family_name: string | null; given_name: string | null } | undefined;
+    work: { work_type: string | null } | undefined;
     dates: Record<string, unknown>[];
     nationalityRows: Record<string, unknown>[];
     originRows: Record<string, unknown>[];
@@ -523,6 +541,7 @@ function assemblePanelSummary(
     titleRows: Record<string, unknown>[];
     nameAssertionRows: Record<string, unknown>[];
     descriptionRows: Record<string, unknown>[];
+    classificationRows: Record<string, unknown>[];
   },
   allRejections: SqliteConcordanceRejection[],
 ): SqliteEntityPanelSummary {
@@ -558,6 +577,9 @@ function assemblePanelSummary(
   const offices = bags.officeRows;
   const authors = bags.authorRows;
   const nobleTitles = bags.titleRows;
+  const classification =
+    (bags.classificationRows.find((row) => row.status === 'active')?.label as string | null) ??
+    null;
 
   const assertions: SqliteEntityAssertion[] = [];
   const addAssertion = (assertion: SqliteEntityAssertion) => {
@@ -699,10 +721,15 @@ function assemblePanelSummary(
   const activeDates = dates.filter((date) => date.status === 'active');
   const firstDate = (kind: string) =>
     activeDates.find((date) => date.date_kind === kind) as Record<string, unknown> | undefined;
+  // A generic (non birth/death) date row — the only kind of existence-period date that
+  // place/org/office ever get today (imported from <note type="dates">). `work` prefers
+  // this same row over the legacy 'work'-kind row; every other kind falls back to it only
+  // when it has no birth/death row of its own.
+  const genericDatesRow = firstDate('dates');
   const workDateRow =
-    entity.kind === 'work' ? (firstDate('dates') ?? firstDate('work') ?? undefined) : undefined;
-  const startDate = entity.kind === 'work' ? workDateRow : firstDate('birth');
-  const endDate = entity.kind === 'work' ? workDateRow : firstDate('death');
+    entity.kind === 'work' ? (genericDatesRow ?? firstDate('work') ?? undefined) : undefined;
+  const birthRow = entity.kind === 'work' ? undefined : firstDate('birth');
+  const deathRow = entity.kind === 'work' ? undefined : firstDate('death');
   const workDate =
     entity.kind === 'work' && workDateRow
       ? {
@@ -712,21 +739,25 @@ function assemblePanelSummary(
           endPrecision: (workDateRow.end_precision as string | null) ?? null,
         }
       : null;
+  const fallbackStartYear =
+    (birthRow?.start_year as number | null) ??
+    (entity.kind === 'work' ? null : (genericDatesRow?.start_year as number | null)) ??
+    null;
+  const fallbackEndYear =
+    (deathRow?.start_year as number | null) ??
+    (entity.kind === 'work' ? null : (genericDatesRow?.end_year as number | null)) ??
+    null;
   return {
     ...entity,
     names,
     authorities,
     familyName: bags.person?.family_name ?? familyFromNames,
     givenName: bags.person?.given_name ?? givenFromNames,
-    startYear:
-      entity.kind === 'work'
-        ? (workDate?.startYear ?? null)
-        : ((startDate?.start_year as number | null) ?? null),
-    endYear:
-      entity.kind === 'work'
-        ? (workDate?.endYear ?? null)
-        : ((endDate?.start_year as number | null) ?? null),
+    startYear: entity.kind === 'work' ? (workDate?.startYear ?? null) : fallbackStartYear,
+    endYear: entity.kind === 'work' ? (workDate?.endYear ?? null) : fallbackEndYear,
     workDate,
+    workType: bags.work?.work_type ?? (entity.kind === 'work' ? 'book' : null),
+    classification,
     nationalities: Array.from(new Set(nationalities)),
     placesOfOrigin: Array.from(new Set(origins)),
     roles: Array.from(new Set(roles)),
@@ -792,6 +823,12 @@ function normalizePersonNameType(
   if (nameType === 'familyName' || nameType === 'family') return 'family';
   if (nameType === 'givenName' || nameType === 'given') return 'given';
   return nameType;
+}
+
+/** Romanization rows always carry a `*-Latn` language tag. */
+function languageForRomanization(language: string | null | undefined): string {
+  if (isLatnLang(language)) return String(language).trim();
+  return latnLangFor(language);
 }
 
 export class EntitySqliteRepository {
@@ -874,8 +911,15 @@ export class EntitySqliteRepository {
         office: 'offices',
         org: 'organizations',
       };
-      const table = tableByKind[input.kind];
-      this.db.prepare(`INSERT INTO ${table} (entity_id) VALUES (?)`).run(input.id);
+      if (input.kind === 'work') {
+        this.db
+          .prepare(`INSERT INTO works (entity_id, work_type) VALUES (?, 'book')`)
+          .run(input.id);
+      } else {
+        this.db
+          .prepare(`INSERT INTO ${tableByKind[input.kind]} (entity_id) VALUES (?)`)
+          .run(input.id);
+      }
     });
     return this.getEntity(input.id)!;
   }
@@ -907,9 +951,15 @@ export class EntitySqliteRepository {
         office: 'offices',
         org: 'organizations',
       };
-      this.db
-        .prepare(`INSERT INTO ${tableByKind[input.kind]} (entity_id) VALUES (?)`)
-        .run(input.id);
+      if (input.kind === 'work') {
+        this.db
+          .prepare(`INSERT INTO works (entity_id, work_type) VALUES (?, 'book')`)
+          .run(input.id);
+      } else {
+        this.db
+          .prepare(`INSERT INTO ${tableByKind[input.kind]} (entity_id) VALUES (?)`)
+          .run(input.id);
+      }
 
       const insertName = (
         text: string,
@@ -1602,6 +1652,9 @@ export class EntitySqliteRepository {
         person: this.db
           .prepare('SELECT family_name, given_name FROM people WHERE entity_id = ?')
           .get(id) as { family_name: string | null; given_name: string | null } | undefined,
+        work: this.db.prepare('SELECT work_type FROM works WHERE entity_id = ?').get(id) as
+          | { work_type: string | null }
+          | undefined,
         dates: this.db
           .prepare(
             `SELECT id, date_kind, start_year, end_year, start_precision, end_precision,
@@ -1653,6 +1706,12 @@ export class EntitySqliteRepository {
              FROM entity_metadata
              WHERE entity_id = ? AND key = 'description'
              ORDER BY id`,
+          )
+          .all(id) as Record<string, unknown>[],
+        classificationRows: this.db
+          .prepare(
+            `SELECT id, classification_id, reference, label, origin, source, status
+             FROM office_classifications WHERE office_id = ? ORDER BY id`,
           )
           .all(id) as Record<string, unknown>[],
       },
@@ -1709,6 +1768,14 @@ export class EntitySqliteRepository {
           given_name: (row.given_name as string | null) ?? null,
         },
       ]),
+    );
+    const worksByEntity = new Map(
+      (
+        this.db.prepare('SELECT entity_id, work_type FROM works').all() as Record<
+          string,
+          unknown
+        >[]
+      ).map((row) => [String(row.entity_id), { work_type: (row.work_type as string | null) ?? null }]),
     );
     const datesByEntity = groupRowsByKey(
       this.db
@@ -1776,6 +1843,15 @@ export class EntitySqliteRepository {
         .all() as Record<string, unknown>[],
       'entity_id',
     );
+    const classificationByOffice = groupRowsByKey(
+      this.db
+        .prepare(
+          `SELECT id, office_id, classification_id, reference, label, origin, source, status
+           FROM office_classifications ORDER BY id`,
+        )
+        .all() as Record<string, unknown>[],
+      'office_id',
+    );
 
     const empty: Record<string, unknown>[] = [];
     return entityRows.map((row) => {
@@ -1798,6 +1874,7 @@ export class EntitySqliteRepository {
             })),
           allAuthorities: authorityRows,
           person: peopleByEntity.get(id),
+          work: worksByEntity.get(id),
           dates: datesByEntity.get(id) ?? empty,
           nationalityRows: nationalityByPerson.get(id) ?? empty,
           originRows: originByPerson.get(id) ?? empty,
@@ -1806,6 +1883,7 @@ export class EntitySqliteRepository {
           titleRows: titleByPerson.get(id) ?? empty,
           nameAssertionRows: nameRows,
           descriptionRows: descriptionByEntity.get(id) ?? empty,
+          classificationRows: classificationByOffice.get(id) ?? empty,
         },
         rejections,
       );
@@ -2267,6 +2345,10 @@ export class EntitySqliteRepository {
         : input.isPrimary
           ? 'primary'
           : 'variant');
+    const language =
+      nameType === 'romanization'
+        ? languageForRomanization(input.language)
+        : (input.language ?? null);
     return this.transaction(() => {
       if (input.isPrimary) {
         this.db
@@ -2284,7 +2366,7 @@ export class EntitySqliteRepository {
           text,
           nameType,
           nameRole,
-          input.language ?? null,
+          language,
           input.isPrimary ? 1 : 0,
           input.origin ?? 'user',
           input.source ?? null,
@@ -2329,13 +2411,17 @@ export class EntitySqliteRepository {
             : nameType === 'primary'
               ? 'primary'
               : 'variant';
+        const language =
+          nameType === 'romanization'
+            ? languageForRomanization(input.language)
+            : (input.language ?? null);
         const result = this.db
           .prepare(
             `INSERT INTO entity_names
                (entity_id, text, name_type, name_role, language, is_primary, origin, source, status, created_at, updated_at)
              VALUES (?, ?, ?, ?, ?, 0, 'user', NULL, 'active', ?, ?)`,
           )
-          .run(input.entityId, text, nameType, nameRole, input.language ?? null, now, now);
+          .run(input.entityId, text, nameType, nameRole, language, now, now);
         this.syncPersonNameScalars(input.entityId, text, nameType, now);
         this.normalizeEntityNameIntegrity(input.entityId, now);
         this.bumpEntity(input.entityId, now);
@@ -2353,7 +2439,10 @@ export class EntitySqliteRepository {
               : previousType === 'family' || previousType === 'given'
                 ? 'variant'
                 : undefined;
-        const nextLanguage = input.language === undefined ? row.language : input.language;
+        let nextLanguage = input.language === undefined ? row.language : input.language;
+        if (nextType === 'romanization') {
+          nextLanguage = languageForRomanization(nextLanguage);
+        }
         this.db
           .prepare(
             `UPDATE entity_names
@@ -2693,6 +2782,18 @@ export class EntitySqliteRepository {
             now,
           );
       }
+      this.bumpEntity(input.entityId, now);
+    });
+  }
+
+  setWorkType(input: SetWorkTypeInput): void {
+    const now = input.now ?? nowIso();
+    // Unset means "use the scholarly default" — persist as book rather than NULL.
+    const workType = input.workType ?? 'book';
+    this.transaction(() => {
+      this.db
+        .prepare('UPDATE works SET work_type = ? WHERE entity_id = ?')
+        .run(workType, input.entityId);
       this.bumpEntity(input.entityId, now);
     });
   }
@@ -3163,6 +3264,7 @@ export class EntitySqliteRepository {
 
   setRomanizedName(entityId: string, text: string, language = 'und-Latn', now = nowIso()): void {
     const trimmed = text.trim();
+    const latnLanguage = languageForRomanization(language);
     this.transaction(() => {
       const existing = this.db
         .prepare(
@@ -3182,19 +3284,19 @@ export class EntitySqliteRepository {
         this.db
           .prepare(
             `UPDATE entity_names
-             SET text = ?, language = ?, name_type = COALESCE(name_type, 'translation'),
+             SET text = ?, language = ?, name_type = 'romanization',
                  updated_at = ?
              WHERE id = ?`,
           )
-          .run(trimmed, language, now, existing.id);
+          .run(trimmed, latnLanguage, now, existing.id);
       } else {
         this.db
           .prepare(
             `INSERT INTO entity_names
                (entity_id, text, name_type, name_role, language, is_primary, origin, source, status, created_at, updated_at)
-             VALUES (?, ?, 'translation', 'variant', ?, 0, 'user', NULL, 'active', ?, ?)`,
+             VALUES (?, ?, 'romanization', 'variant', ?, 0, 'user', NULL, 'active', ?, ?)`,
           )
-          .run(entityId, trimmed, language, now, now);
+          .run(entityId, trimmed, latnLanguage, now, now);
       }
       this.normalizeEntityNameIntegrity(entityId, now);
       this.bumpEntity(entityId, now);
@@ -3203,7 +3305,7 @@ export class EntitySqliteRepository {
 
   /**
    * Batch mechanical name cleanup:
-   * 1. Promote untyped Latn rows to `translation` (romanizations)
+   * 1. Promote Latn rows (untyped / legacy translation|variant) to `romanization`
    * 2. Remove literal `nan` placeholder rows
    * 3. Deduplicate identical text+type within an entity (keep best row)
    * 4. Remove the invalid family/given pair `n` + `an`
@@ -3219,22 +3321,26 @@ export class EntitySqliteRepository {
     return this.transaction(() => {
       const touched = new Set<string>();
 
-      const latnUntyped = this.db
+      const latnToPromote = this.db
         .prepare(
           `SELECT id, entity_id AS entityId FROM entity_names
            WHERE status = 'active'
-             AND (name_type IS NULL OR TRIM(name_type) = '')
              AND language LIKE '%-Latn'
-             AND is_primary = 0`,
+             AND is_primary = 0
+             AND (
+               name_type IS NULL
+               OR TRIM(name_type) = ''
+               OR name_type IN ('translation', 'variant')
+             )`,
         )
         .all() as Array<{ id: number; entityId: string }>;
-      for (const row of latnUntyped) {
+      for (const row of latnToPromote) {
         this.db
-          .prepare(`UPDATE entity_names SET name_type = 'translation', updated_at = ? WHERE id = ?`)
+          .prepare(`UPDATE entity_names SET name_type = 'romanization', updated_at = ? WHERE id = ?`)
           .run(now, row.id);
         touched.add(row.entityId);
       }
-      const promotedRomanizations = latnUntyped.length;
+      const promotedRomanizations = latnToPromote.length;
 
       const dupGroups = this.db
         .prepare(
@@ -3953,7 +4059,7 @@ export class EntitySqliteRepository {
             .prepare(
               `INSERT INTO entity_names
                  (entity_id, text, name_type, name_role, language, is_primary, origin, source, status, created_at, updated_at)
-               VALUES (?, ?, NULL, 'variant', ?, 0, 'authority', NULL, 'active', ?, ?)`,
+               VALUES (?, ?, 'romanization', 'variant', ?, 0, 'authority', NULL, 'active', ?, ?)`,
             )
             .run(patch.entityId, patch.romanized.text.trim(), latnLang, now, now);
           changed = true;

@@ -95,6 +95,9 @@ export interface EntitySummary {
   startYear: number | null;
   endYear: number | null;
   workDate: WorkDateSummary | null;
+  /** 'book' | 'chapter' | 'poem' | 'painting' | 'object'. Work kind only; null for the
+   * XML-interchange path (summarizeEntity) until work_type is wired into XML round-trip. */
+  workType: string | null;
   nationalities: string[];
   placesOfOrigin: string[];
   authors: EntityAuthorSummary[];
@@ -261,6 +264,7 @@ export function summarizeEntity(
     familyName: familyNameNote(item)?.textContent?.trim() || null,
     givenName: givenNameNote(item)?.textContent?.trim() || null,
     workDate,
+    workType: null,
     startYear: kind === 'work' ? (workDate?.startYear ?? null) : activeDateYear(item, 'birth'),
     endYear: kind === 'work' ? (workDate?.endYear ?? null) : activeDateYear(item, 'death'),
     nationalities: Array.from(

@@ -1,4 +1,5 @@
 import { EntitySqliteRepository } from './repository';
+import { applyEntityDbMigrations } from './schema';
 import { computeEntityContentHash, replaceEntityContentBetween } from './xmlCodec';
 
 describe('EntitySqliteRepository', () => {
@@ -1263,7 +1264,7 @@ describe('EntitySqliteRepository', () => {
       source: 'Norbert',
     });
     repository.setRomanizedName('person-auto-clean', 'Wang Wei', 'zh-Latn');
-    // Force an older untyped Latn (setRomanized now writes translation).
+    // Force an older untyped Latn (setRomanized now writes romanization).
     repository.db
       .prepare(
         `UPDATE entity_names SET name_type = NULL
@@ -1294,9 +1295,77 @@ describe('EntitySqliteRepository', () => {
     const names = repository.listNames('person-auto-clean');
     expect(names.filter((n) => n.text === '摩詰')).toHaveLength(1);
     expect(names.find((n) => n.language?.includes('Latn'))).toEqual(
-      expect.objectContaining({ nameType: 'translation', text: 'Wang Wei' }),
+      expect.objectContaining({ nameType: 'romanization', text: 'Wang Wei' }),
     );
     expect(names.some((n) => n.text === 'orphan-untyped')).toBe(false);
+    repository.close();
+  });
+
+  it('setRomanizedName stores name_type romanization with a Latn language', () => {
+    const repository = new EntitySqliteRepository();
+    repository.createEntity({ id: 'place-rom', kind: 'place' });
+    repository.addName({
+      entityId: 'place-rom',
+      text: '建康',
+      isPrimary: true,
+      nameType: 'primary',
+      language: 'zh-Hant',
+    });
+    repository.setRomanizedName('place-rom', 'Jiankang', 'zh-Hant');
+    const latn = repository.listNames('place-rom').find((n) => n.language?.includes('Latn'));
+    expect(latn).toEqual(
+      expect.objectContaining({
+        text: 'Jiankang',
+        nameType: 'romanization',
+        language: 'zh-Latn',
+      }),
+    );
+    repository.close();
+  });
+
+  it('migration 8 retags legacy Latn translations and mis-tagged zh-Hant Latin text', () => {
+    const repository = new EntitySqliteRepository();
+    repository.createEntity({ id: 'place-legacy-latn', kind: 'place' });
+    repository.createEntity({ id: 'place-legacy-mistag', kind: 'place' });
+    const now = new Date().toISOString();
+    repository.db
+      .prepare(
+        `INSERT INTO entity_names
+           (entity_id, text, name_type, name_role, language, is_primary, origin, source, status, created_at, updated_at)
+         VALUES
+           ('place-legacy-latn', '安陸縣', 'primary', 'primary', 'zh-Hant', 1, 'user', NULL, 'active', ?, ?),
+           ('place-legacy-latn', 'Anlu', 'translation', 'variant', 'zh-Latn', 0, 'user', NULL, 'active', ?, ?),
+           ('place-legacy-mistag', '江南', 'primary', 'primary', 'zh-Hant', 1, 'user', NULL, 'active', ?, ?),
+           ('place-legacy-mistag', 'Jiang Nan', 'translation', 'variant', 'zh-Hant', 0, 'user', NULL, 'active', ?, ?)`,
+      )
+      .run(now, now, now, now, now, now, now, now);
+
+    repository.db.exec('PRAGMA user_version = 7');
+    applyEntityDbMigrations(repository.db);
+
+    const anlu = repository.listNames('place-legacy-latn').find((n) => n.text === 'Anlu');
+    expect(anlu).toEqual(
+      expect.objectContaining({ nameType: 'romanization', language: 'zh-Latn' }),
+    );
+    const jiangNan = repository
+      .listNames('place-legacy-mistag')
+      .find((n) => n.text === 'Jiang Nan');
+    expect(jiangNan).toEqual(
+      expect.objectContaining({ nameType: 'romanization', language: 'zh-Hant-Latn' }),
+    );
+    // French glosses must stay translation.
+    repository.createEntity({ id: 'work-gloss', kind: 'work' });
+    repository.addName({
+      entityId: 'work-gloss',
+      text: 'Livre des Jin',
+      nameType: 'translation',
+      language: 'fr',
+    });
+    repository.db.exec('PRAGMA user_version = 7');
+    applyEntityDbMigrations(repository.db);
+    expect(
+      repository.listNames('work-gloss').find((n) => n.text === 'Livre des Jin')?.nameType,
+    ).toBe('translation');
     repository.close();
   });
 
@@ -1329,6 +1398,70 @@ describe('EntitySqliteRepository', () => {
         )
         .get('person-name-integrity'),
     ).toEqual({ familyName: null, givenName: null });
+    repository.close();
+  });
+
+  it('falls back to a generic dates row for a non-work, non-birth/death kind (place/org/office)', () => {
+    const repository = new EntitySqliteRepository();
+    repository.createEntity({ id: 'org-1', kind: 'org' });
+    repository.addName({ entityId: 'org-1', text: 'Hanlin Academy', isPrimary: true });
+    repository.db
+      .prepare(
+        `INSERT INTO entity_dates
+          (entity_id, date_kind, start_year, end_year, origin, source, status, created_at, updated_at)
+         VALUES (?, 'dates', ?, ?, 'user', NULL, 'active', ?, ?)`,
+      )
+      .run('org-1', 738, 907, '2026-01-01', '2026-01-01');
+
+    const summary = repository.getPanelSummary('org-1')!;
+    expect(summary.startYear).toBe(738);
+    expect(summary.endYear).toBe(907);
+    expect(summary.workDate).toBeNull();
+    repository.close();
+  });
+
+  it('prefers a birth/death row over a generic dates row when both exist', () => {
+    const repository = new EntitySqliteRepository();
+    repository.createEntity({ id: 'person-mixed-dates', kind: 'person' });
+    repository.setUserEntityDate({ entityId: 'person-mixed-dates', part: 'birth', year: 400 });
+    repository.db
+      .prepare(
+        `INSERT INTO entity_dates
+          (entity_id, date_kind, start_year, end_year, origin, source, status, created_at, updated_at)
+         VALUES (?, 'dates', ?, ?, 'user', NULL, 'active', ?, ?)`,
+      )
+      .run('person-mixed-dates', 1, 999, '2026-01-01', '2026-01-01');
+
+    const summary = repository.getPanelSummary('person-mixed-dates')!;
+    expect(summary.startYear).toBe(400);
+    repository.close();
+  });
+
+  it('sets and reads work_type via setWorkType/getPanelSummary, including bulk listPanelSummaries', () => {
+    const repository = new EntitySqliteRepository();
+    repository.createEntity({ id: 'work-type-1', kind: 'work' });
+    repository.setWorkType({ entityId: 'work-type-1', workType: 'chapter' });
+
+    expect(repository.getPanelSummary('work-type-1')?.workType).toBe('chapter');
+    expect(
+      repository.listPanelSummaries('work').find((summary) => summary.id === 'work-type-1')
+        ?.workType,
+    ).toBe('chapter');
+
+    repository.setWorkType({ entityId: 'work-type-1', workType: null });
+    expect(repository.getPanelSummary('work-type-1')?.workType).toBe('book');
+    repository.close();
+  });
+
+  it('rejects an invalid work_type value via the CHECK constraint', () => {
+    const repository = new EntitySqliteRepository();
+    repository.createEntity({ id: 'work-type-invalid', kind: 'work' });
+    expect(() =>
+      repository.setWorkType({
+        entityId: 'work-type-invalid',
+        workType: 'novel' as unknown as null,
+      }),
+    ).toThrow();
     repository.close();
   });
 });

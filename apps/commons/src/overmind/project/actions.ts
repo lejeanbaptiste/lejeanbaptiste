@@ -189,6 +189,17 @@ export const promptCloseDirtyTab = async (
 const isSourceEditorMode = () => window.writer?.overmindState?.ui?.editorViewMode === 'source';
 
 /**
+ * Visual mode stores the TEI header outside TinyMCE and reattaches it on save.
+ * Source mode edits the full document, so strip/merge would throw away header
+ * (and other non-body) edits and can leave TinyMCE holding a stale pre-source
+ * snapshot after save.
+ */
+const prepareXmlForDiskSave = (content: string, baseXml: string): string => {
+  if (isSourceEditorMode()) return content;
+  return mergeEditorBodyWithStoredHeader(stripTeiHeaderForVisualEditor(content), baseXml);
+};
+
+/**
  * Call immediately before a known write starts, so a slow renderer (busy
  * serializing/validating) can't lose the race against the watcher's debounce
  * timer between the write landing on disk and `ignoreSavedFileChange` below
@@ -1325,8 +1336,7 @@ export const saveActiveTab = async (
   try {
     const savedFromSourceMode = isSourceEditorMode();
     const baseXml = window.__desktopStoredDocumentXml ?? tab?.content ?? content;
-    const editorBody = stripTeiHeaderForVisualEditor(content);
-    const merged = mergeEditorBodyWithStoredHeader(editorBody, baseXml);
+    const merged = prepareXmlForDiskSave(content, baseXml);
     const stamped = separateBlockElements(
       await stampContentBeforeSave(merged, state.project.config?.schema?.catalogId),
     );
@@ -1577,8 +1587,7 @@ export const saveActiveTabAs = async (
       ? state.project.openTabs.find((item) => item.filePath === previousPath)
       : state.project.openTabs.find((item) => item.filePath === state.project.activeTabPath);
     const baseXml = window.__desktopStoredDocumentXml ?? sourceTab?.content ?? content;
-    const editorBody = stripTeiHeaderForVisualEditor(content);
-    const merged = mergeEditorBodyWithStoredHeader(editorBody, baseXml);
+    const merged = prepareXmlForDiskSave(content, baseXml);
     const stamped = separateBlockElements(
       await stampContentBeforeSave(merged, state.project.config?.schema?.catalogId),
     );

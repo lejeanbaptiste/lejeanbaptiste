@@ -6,6 +6,7 @@ import {
   useLspProjectBridge,
   useNativeDialogBridge,
 } from '@src/desktop';
+import { UserNamePromptDialog } from '@src/desktop/UserNamePromptDialog';
 import { Page } from '@src/layouts';
 import { useActions, useAppState } from '@src/overmind';
 import { isDesktop } from '@src/types/desktop';
@@ -57,22 +58,6 @@ export const ProjectEditPage = () => {
     };
   }, [isProjectReady, saveWorkspaceSession]);
 
-  if (isDesktop() && !isProjectReady) {
-    return (
-      <Page>
-        <Box
-          sx={{
-            display: 'flex',
-            flexDirection: 'column',
-            height: 'calc(100vh - var(--titlebar-height, 0px))',
-          }}
-        >
-          <DocumentLoadingCover absolute={false} visible />
-        </Box>
-      </Page>
-    );
-  }
-
   return (
     <Page>
       <Box
@@ -82,7 +67,12 @@ export const ProjectEditPage = () => {
           height: 'calc(100vh - var(--titlebar-height, 0px))',
         }}
       >
-        <ProjectEditor />
+        <UserNamePromptDialog />
+        {isDesktop() && !isProjectReady ? (
+          <DocumentLoadingCover absolute={false} visible />
+        ) : (
+          <ProjectEditor />
+        )}
       </Box>
     </Page>
   );

@@ -54,6 +54,22 @@ interface EntityNamesAccordionProps {
   addPlaceholder: string;
 }
 
+/** Compact display codes for the closed select (full labels stay on menu item hover). */
+const shortLanguageCode = (code: string): string => {
+  if (!code) return '—';
+  if (code === 'zh-Hant') return 'ZHT';
+  if (code === 'zh-Hans') return 'ZHS';
+  return (code.split('-')[0] ?? code).toUpperCase();
+};
+
+const languageSelectSx = {
+  minWidth: 56,
+  maxWidth: 64,
+  flex: '0 0 auto',
+  '& .MuiInputBase-input': { py: 0.5, px: 1, fontSize: 12, textAlign: 'center' as const },
+  '& .MuiSelect-select': { pr: '8px !important' },
+};
+
 export function EntityNamesAccordion({
   expanded,
   onExpandedChange,
@@ -81,6 +97,7 @@ export function EntityNamesAccordion({
 }: EntityNamesAccordionProps) {
   const { t } = useTranslation();
   const neutralActionButtonSx = { color: 'text.secondary', p: 0.25 };
+  const languageAriaLabel = t('LWC.desktop.sidebar.database.translation_language');
 
   return (
     <Accordion
@@ -137,15 +154,20 @@ export function EntityNamesAccordion({
                 <TextField
                   select
                   size="small"
-                  label={t('LWC.desktop.sidebar.database.translation_language')}
+                  aria-label={languageAriaLabel}
                   value={nameLanguages[row.text] ?? ''}
                   onChange={(event) => onNameLanguageChange(row.text, event.target.value)}
-                  sx={{ minWidth: 140 }}
+                  sx={languageSelectSx}
+                  SelectProps={{
+                    IconComponent: () => null,
+                    renderValue: (selected) => shortLanguageCode(String(selected ?? '')),
+                    MenuProps: { PaperProps: { sx: { maxHeight: 320 } } },
+                  }}
                 >
                   <MenuItem value="">—</MenuItem>
                   {FIXED_LANGUAGE_OPTIONS.map((option) => (
-                    <MenuItem key={option.code} value={option.code}>
-                      {option.label}
+                    <MenuItem key={option.code} value={option.code} title={option.label}>
+                      {shortLanguageCode(option.code)}
                     </MenuItem>
                   ))}
                 </TextField>
@@ -210,15 +232,20 @@ export function EntityNamesAccordion({
               <TextField
                 select
                 size="small"
-                label={t('LWC.desktop.sidebar.database.translation_language')}
+                aria-label={languageAriaLabel}
                 value={newNameLanguage}
                 onChange={(event) => onNewNameLanguageChange(event.target.value)}
-                sx={{ minWidth: 140 }}
+                sx={languageSelectSx}
+                SelectProps={{
+                  IconComponent: () => null,
+                  renderValue: (selected) => shortLanguageCode(String(selected ?? '')),
+                  MenuProps: { PaperProps: { sx: { maxHeight: 320 } } },
+                }}
               >
                 <MenuItem value="">—</MenuItem>
                 {FIXED_LANGUAGE_OPTIONS.map((option) => (
-                  <MenuItem key={option.code} value={option.code}>
-                    {option.label}
+                  <MenuItem key={option.code} value={option.code} title={option.label}>
+                    {shortLanguageCode(option.code)}
                   </MenuItem>
                 ))}
               </TextField>

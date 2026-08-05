@@ -112,10 +112,19 @@ function buildValidationUserPrompt(params: {
     `Curate the following dictionary/auto-tag suggestions for ${langLabel}historical texts.`,
     'Goal: flag tags that are *obviously wrong* (wrong entity type, nonsense boundary, common-word false positive).',
     'Do not reject merely ambiguous or hard cases — leave those recommended=true with mid confidence.',
+    'Suggestions come from two different kinds of producer, marked below:',
+    '- [dictionary]: a literal string match against an authority/gazetteer database. The tag reflects what that',
+    '  database calls the string in general, NOT that anyone has confirmed it means that HERE. Common words that',
+    '  happen to coincide with a place name, office title, or person name are the main failure mode — judge the',
+    '  "dictionary clue" against whether the local context actually supports that specific reading.',
+    '- [ai]: a model already read the passage and proposed this tag from context, so a lower prior error rate.',
     'For each suggestion, assess:',
     '1. Whether the tag is semantically plausible for the surface string in its local context',
     '2. Whether the boundary spans look accurate',
-    '3. Score each suggestion independently, even when the same surface appears with multiple tags',
+    '3. Score each suggestion independently, even when the same surface appears with multiple tags — when two',
+    '   tags compete for the same span (e.g. the same string offered as both roleName and placeName), decide',
+    '   which reading the sentence actually supports and score them accordingly; do not default to the higher',
+    '   dictionary-clue specificity or to whichever option happens to be listed first',
     '4. confidence = how sure you are the tag is correct (0=clearly wrong, 1=clearly right)',
     '5. recommended=false only when the tag is clearly wrong',
     '',
@@ -126,11 +135,14 @@ function buildValidationUserPrompt(params: {
     const ruleNotes = params.schemaRules.length > 0
       ? `\n  Schema notes: ${params.schemaRules.join(', ')}`
       : '';
+    const originLabel = s.source === 'authority' ? 'dictionary' : s.source === 'ai' ? 'ai' : s.source;
+    const dictionaryClue = s.source === 'authority' && s.rationale ? `\n  Dictionary clue: ${s.rationale}` : '';
     const localContext = `…${s.anchor.contextBefore}【${s.anchor.surface}】${s.anchor.contextAfter}…`;
     lines.push(
-      `- id=${s.id}: tag=<${s.tag}>, surface="${s.anchor.surface}", action=${s.action}` +
+      `- id=${s.id}: [${originLabel}] tag=<${s.tag}>, surface="${s.anchor.surface}", action=${s.action}` +
         (s.confidence !== undefined ? `, confidence=${s.confidence.toFixed(2)}` : '') +
         `\n  Context: ${localContext}` +
+        dictionaryClue +
         ruleNotes,
     );
   }

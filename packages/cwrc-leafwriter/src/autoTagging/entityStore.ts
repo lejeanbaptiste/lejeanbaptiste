@@ -145,6 +145,11 @@ export interface EntityFileApi {
     startPrecision?: string | null;
     endPrecision?: string | null;
   }) => Promise<void>;
+  entitySqliteSetWorkType?: (input: {
+    databasePath: string;
+    entityId: string;
+    workType: string | null;
+  }) => Promise<void>;
   entitySqliteAddNationality?: (input: {
     databasePath: string;
     entityId: string;
@@ -752,6 +757,12 @@ export class EntityStore {
     if (!this.api.entitySqliteSetUserWorkDate)
       throw new Error('SQLite work-date updates are unavailable.');
     await this.api.entitySqliteSetUserWorkDate({ databasePath: this.sqlitePath, ...input });
+  }
+
+  async sqliteSetWorkType(input: { entityId: string; workType: string | null }): Promise<void> {
+    if (!this.api.entitySqliteSetWorkType)
+      throw new Error('SQLite work-type updates are unavailable.');
+    await this.api.entitySqliteSetWorkType({ databasePath: this.sqlitePath, ...input });
   }
 
   async sqliteAddNationality(input: {
@@ -1532,6 +1543,9 @@ export function desktopEntityFileApi(): EntityFileApi | null {
       : undefined,
     entitySqliteSetUserWorkDate: rawApi.entitySqliteSetUserWorkDate
       ? (input) => rawApi.entitySqliteSetUserWorkDate!(input)
+      : undefined,
+    entitySqliteSetWorkType: rawApi.entitySqliteSetWorkType
+      ? (input) => rawApi.entitySqliteSetWorkType!(input)
       : undefined,
     entitySqliteAddNationality: rawApi.entitySqliteAddNationality
       ? (input) => rawApi.entitySqliteAddNationality!(input)

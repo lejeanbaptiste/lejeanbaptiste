@@ -170,6 +170,35 @@ export const useNativeDialogBridge = () => {
   }, []);
 
   useEffect(() => {
+    if (!isDesktop()) return;
+
+    // These deps must be ready during first-run onboarding, which opens the
+    // project-metadata dialog *before* Overmind has loaded the new project
+    // (completeProjectOnboarding → openNativeProjectMetadata → loadProjectBundle).
+    // Save resolves the target project from the dialog session path, not from
+    // the currently-loaded Overmind project.
+    const getAuthoritySettings = (bundle: ProjectBundle) =>
+      authoritySettingsCache.current ?? bundle.config.autoTaggingAuthority;
+    const setAuthoritySettings = (settings: AutoTaggingAuthoritySettings) => {
+      authoritySettingsCache.current = settings;
+    };
+    metadataSaveDepsRef.current = () => ({
+      electronAPI: window.electronAPI!,
+      openTabs: openTabsRef.current,
+      reloadTabFromDisk,
+      notifyViaSnackbar,
+      t,
+      getAuthoritySettings,
+      setAuthoritySettings,
+    });
+    policySaveDepsRef.current = () => ({
+      electronAPI: window.electronAPI!,
+      getAuthoritySettings,
+      setAuthoritySettings,
+    });
+  }, [notifyViaSnackbar, reloadTabFromDisk, t]);
+
+  useEffect(() => {
     if (!isDesktop()) {
       setActiveProjectBundle(null);
       return;

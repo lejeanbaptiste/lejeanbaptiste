@@ -56,7 +56,7 @@ import {
 } from '../../../../packages/cwrc-leafwriter/src/autoTagging/entityStore';
 import { readOrMintUserStableId } from '../../../../packages/cwrc-leafwriter/src/autoTagging/userStableId';
 import {
-  autoRomanize,
+  autoRomanizeForKind,
   canAutoRomanize,
 } from '../../../../packages/cwrc-leafwriter/src/utilities/romanize';
 
@@ -222,7 +222,7 @@ export const EntityLookupField = ({
       const romanized =
         kind === 'person'
           ? suggestPersonRomanization(query.trim(), session.projectLang)
-          : autoRomanize(query.trim(), session.projectLang);
+          : autoRomanizeForKind(query.trim(), session.projectLang, kind);
       setCreateRomanized(romanized ?? '');
     } catch {
       setShowRomanized(false);
@@ -362,7 +362,11 @@ export const EntityLookupField = ({
         nameLang: session.projectLang ?? undefined,
         romanizedName:
           merged.romanizedName ??
-          autoRomanize(merged.projectLangName ?? merged.label, session.projectLang) ??
+          autoRomanizeForKind(
+            merged.projectLangName ?? merged.label,
+            session.projectLang,
+            kind,
+          ) ??
           undefined,
         authorityIds: merged.authorityIds,
         authoritySource: merged.authorityIds?.[0]

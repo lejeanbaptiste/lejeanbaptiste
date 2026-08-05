@@ -2,14 +2,30 @@ import type { AiApiSettings } from './projectPrefs';
 
 export type StructuredOutputMode = 'json_schema' | 'json_object' | 'prompt_only';
 
+export interface AiTranslationEntityRef {
+  id: string;
+  kind: string;
+  primaryName: string | null;
+  romanizedName: string | null;
+  familyName: string | null;
+  dates: string | null;
+  description: string | null;
+}
+
 export interface AiTranslationPayload {
   alignmentUnit: string;
   sourceUnitXml: string;
   targetLanguage: string;
+  entities?: AiTranslationEntityRef[];
 }
 
 const TRANSLATION_SYSTEM_PROMPT =
-  'You translate scholarly XML passages. Return JSON only with one string field named translationXml. Translate only the provided passage. Treat source TEI tags such as persName, placeName, orgName, officeName, date, term, title, and quote as semantic hints, but do not reproduce them. Output plain text only: no XML or HTML tags, no markdown, no angle brackets. Write ampersands and angle brackets as the XML entities &amp;, &lt;, and &gt; if they occur in the text itself.';
+  'You translate scholarly XML passages. Return JSON only with one string field named translationXml. Translate only the provided passage. ' +
+  'The source passage may contain tags such as persName, placeName, orgName, officeName, title, bibl, and roleName with a "key" attribute. ' +
+  'A separate "entities" list in the user message gives the canonical record (kind, name, romanization, dates, description) for each such key. ' +
+  'When a tagged element\'s key matches an entry in "entities", do not translate, transliterate, or otherwise write out that name yourself: replace the entire tagged mention with the exact placeholder {{entity:KEY}} (KEY is the literal key value), and use the surrounding entity metadata only to get the sentence\'s grammar right (e.g. articles, gender agreement, word order) around the placeholder. Never invent your own {{entity:...}} placeholders for keys not given to you. ' +
+  'Treat any other source TEI tags (or a persName/placeName/etc. with no matching entity) as semantic hints only — do not reproduce the tags or invent a placeholder for them, just translate the enclosed text normally. ' +
+  'Output plain text only, aside from the {{entity:KEY}} placeholders: no XML or HTML tags, no markdown, no angle brackets. Write ampersands and angle brackets as the XML entities &amp;, &lt;, and &gt; if they occur in the text itself.';
 
 const PROMPT_ONLY_JSON_HINT =
   '\n\nRespond with one JSON object only, no markdown fences: {"translationXml":"…"}. translationXml must be plain text (use &amp;, &lt;, &gt; for special characters).';
@@ -81,6 +97,7 @@ export function buildTranslationRequestBody(
           alignmentUnit: request.alignmentUnit,
           customInstructions: settings.customInstructions,
           sourceUnitXml: request.sourceUnitXml,
+          entities: request.entities ?? [],
         }),
       },
     ],

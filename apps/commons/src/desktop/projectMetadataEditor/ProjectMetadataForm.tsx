@@ -170,8 +170,12 @@ export const ProjectMetadataForm = ({
       }
       setSavedSyncToCentral(syncToCentral);
       io.onSaved?.();
-    } catch {
-      setError(t('LWC.desktop.project.errors.could_not_save_metadata'));
+    } catch (error) {
+      const message =
+        error instanceof Error && error.message.trim()
+          ? error.message
+          : t('LWC.desktop.project.errors.could_not_save_metadata');
+      setError(message);
     } finally {
       setSubmitting(false);
     }

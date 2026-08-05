@@ -92,6 +92,7 @@ import {
   ENTITY_DISPLAY_SPEC_ATTR,
   ENTITY_FIELD_ATTR,
   ENTITY_REF_TYPE,
+  ENTITY_WORK_STYLE_ATTR,
   createEntityFieldElement,
   prepareAtomicEntityFields,
   recalculateAllEntityFieldsInRoot,
@@ -99,7 +100,7 @@ import {
   readDisplaySpecFromField,
   writeDisplaySpecToField,
 } from './entityFields/translationEntityFields';
-import { EMPTY_DISPLAY_SPEC, type EntityDisplaySpec } from './entityFields/entityDisplay';
+import { EMPTY_DISPLAY_SPEC, formatDates, type EntityDisplaySpec } from './entityFields/entityDisplay';
 import type { EntitySummary } from './entityFields/entitySummary';
 import { EntityDisplayPopup } from './entityFields/EntityDisplayPopup';
 import { TRANSLATION_POLICY_CHANGED_EVENT } from './entityFields/dateFormatSettings';
@@ -238,6 +239,15 @@ interface DesktopElectronApi {
     alignmentUnit: 'div' | 'p';
     sourceUnitXml: string;
     targetLanguage: string;
+    entities?: Array<{
+      id: string;
+      kind: string;
+      primaryName: string | null;
+      romanizedName: string | null;
+      familyName: string | null;
+      dates: string | null;
+      description: string | null;
+    }>;
   }) => Promise<{ error?: string; ok: boolean; translationXml?: string }>;
   readFile?: (filePath: string) => Promise<string>;
   writeFile?: (filePath: string, content: string) => Promise<void>;
@@ -511,6 +521,71 @@ const applyMarkdownCleanupToFragment = (fragmentXml: string): string => {
       return '';
     })
     .join('');
+};
+
+const ENTITY_PLACEHOLDER_RE = /\{\{entity:([^{}]+)\}\}/g;
+
+/**
+ * Replace every `{{entity:ID}}` placeholder the AI emitted with a real atomic
+ * entity field (same element `insertEntityMention` builds by hand), so the
+ * visible name/romanization always comes from the entity DB, never the LLM.
+ * Occurrence index is a per-entity counter in document order, matching
+ * `recalculateEntityFieldsInRoot`'s convention (first mention gets full form).
+ */
+export const substituteEntityPlaceholders = (
+  fragmentXml: string,
+  entities: Map<string, EntitySummary>,
+  lang?: string | null,
+): string => {
+  if (!fragmentXml.includes('{{entity:')) return fragmentXml;
+
+  const wrapped = `<fragment>${fragmentXml}</fragment>`;
+  const doc = new DOMParser().parseFromString(wrapped, 'text/html');
+  const root = doc.body.querySelector('fragment') ?? doc.body;
+
+  const occurrenceCounts = new Map<string, number>();
+  const textNodes: Text[] = [];
+  const walker = doc.createTreeWalker(root, NodeFilter.SHOW_TEXT);
+  let node: Node | null;
+  // eslint-disable-next-line no-cond-assign
+  while ((node = walker.nextNode())) {
+    if ((node.textContent ?? '').includes('{{entity:')) textNodes.push(node as Text);
+  }
+
+  for (const textNode of textNodes) {
+    const text = textNode.textContent ?? '';
+    ENTITY_PLACEHOLDER_RE.lastIndex = 0;
+    let lastIndex = 0;
+    let match: RegExpExecArray | null;
+    const replacement = doc.createDocumentFragment();
+    let sawMatch = false;
+    // eslint-disable-next-line no-cond-assign
+    while ((match = ENTITY_PLACEHOLDER_RE.exec(text))) {
+      sawMatch = true;
+      if (match.index > lastIndex) {
+        replacement.appendChild(doc.createTextNode(text.slice(lastIndex, match.index)));
+      }
+      const entityId = match[1]!.trim();
+      const entity = entities.get(entityId);
+      if (entity) {
+        const nextOccurrence = (occurrenceCounts.get(entityId) ?? 0) + 1;
+        occurrenceCounts.set(entityId, nextOccurrence);
+        const field = createEntityFieldElement(entity, nextOccurrence, EMPTY_DISPLAY_SPEC, undefined, lang);
+        replacement.appendChild(field);
+      } else {
+        console.warn('[translation] AI entity placeholder had no matching entity:', entityId);
+        replacement.appendChild(doc.createTextNode(match[0]));
+      }
+      lastIndex = ENTITY_PLACEHOLDER_RE.lastIndex;
+    }
+    if (!sawMatch) continue;
+    if (lastIndex < text.length) {
+      replacement.appendChild(doc.createTextNode(text.slice(lastIndex)));
+    }
+    textNode.parentNode?.replaceChild(replacement, textNode);
+  }
+
+  return root.innerHTML;
 };
 
 interface TextIndex {
@@ -1064,10 +1139,20 @@ export const TranslationPane = () => {
       ref.removeAttribute('contenteditable');
       ref.removeAttribute(ENTITY_FIELD_ATTR);
       ref.removeAttribute('title');
+      // Presentation-only (CSS-driven); recomputed from the entity record on load.
+      ref.removeAttribute(ENTITY_WORK_STYLE_ATTR);
     }
     stripInvisibleCaretSpacers(clone);
     flattenFootnoteNotesForPersist(clone);
-    unit.innerHTML = clone.innerHTML;
+    // Import nodes directly rather than round-tripping through an HTML string
+    // (`unit.innerHTML = clone.innerHTML`): `unit` belongs to an XML document, and
+    // Chromium's XML innerHTML setter requires the string to be well-formed XML, which
+    // HTML's own serialization doesn't guarantee. Importing already-built DOM nodes
+    // sidesteps that string round-trip (and its "invalid XML" failures) entirely.
+    while (unit.firstChild) unit.removeChild(unit.firstChild);
+    for (const child of Array.from(clone.childNodes)) {
+      unit.appendChild(doc.importNode(child, true));
+    }
     getCitationBridge()?.garbageCollectBibl(doc);
     const nextXml = new XMLSerializer().serializeToString(doc);
     await getDesktopApi()?.writeFile?.(translationPath, nextXml);
@@ -1150,6 +1235,22 @@ export const TranslationPane = () => {
     `;
     parent.appendChild(style);
   }, [sourcePath]);
+
+  // Entity fields live in the plain contentEditable translation pane (not a TinyMCE
+  // iframe), so this is a normal top-level style tag, not doc-injection like above.
+  useEffect(() => {
+    const styleId = 'ljb-entity-worktype-style';
+    if (document.getElementById(styleId)) return;
+    const style = document.createElement('style');
+    style.id = styleId;
+    style.textContent = `
+      /* Italics live on inner <hi rend="italic"> runs only — Chinese and ’s stay upright. */
+      ref[type="${ENTITY_REF_TYPE}"] hi[rend="italic"] {
+        font-style: italic;
+      }
+    `;
+    document.head.appendChild(style);
+  }, []);
 
   const refreshCurrentCitationFields = useCallback(
     async (styleId = activeCitationStyle) => {
@@ -1336,10 +1437,30 @@ export const TranslationPane = () => {
         return;
       }
 
+      const sourceEntityHits = collectSourceUnitEntities(alignmentUnit, selectedUnitId);
+      const entityMap = new Map<string, EntitySummary>();
+      await Promise.all(
+        sourceEntityHits.map(async (hit) => {
+          if (entityMap.has(hit.key)) return;
+          const entity = await fetchEntitySummary(hit.key);
+          if (entity) entityMap.set(hit.key, entity);
+        }),
+      );
+      const entitiesPayload = Array.from(entityMap.values()).map((entity) => ({
+        id: entity.id,
+        kind: entity.kind,
+        primaryName: entity.primaryName,
+        romanizedName: entity.romanizedName,
+        familyName: entity.familyName,
+        dates: formatDates(entity.dates),
+        description: entity.description ? entity.description.slice(0, 200) : null,
+      }));
+
       const result = await api.generateAiTranslation({
         alignmentUnit,
         sourceUnitXml: sourceUnit.xml,
         targetLanguage: translationMode.lang ?? '',
+        entities: entitiesPayload,
       });
       if (!result.ok || !result.translationXml) {
         setAiStatus({
@@ -1359,11 +1480,13 @@ export const TranslationPane = () => {
       }
 
       const cleanedXml = applyMarkdownCleanupToFragment(validated.xml);
-      const replaceResult = await replaceCurrentUnit(cleanedXml);
+      const substitutedXml = substituteEntityPlaceholders(cleanedXml, entityMap, selectedLanguage);
+      const replaceResult = await replaceCurrentUnit(substitutedXml);
       if (replaceResult.error) {
         setAiStatus({ severity: 'error', message: replaceResult.error });
         return;
       }
+      if (editableRef.current) prepareAtomicEntityFields(editableRef.current);
 
       setAiStatus({ severity: 'success', message: 'Translation generated.' });
     } catch (error) {
@@ -1374,7 +1497,15 @@ export const TranslationPane = () => {
     } finally {
       setGenerating(false);
     }
-  }, [alignmentUnit, replaceCurrentUnit, selectedUnitId, sourcePath, t, translationMode.lang]);
+  }, [
+    alignmentUnit,
+    replaceCurrentUnit,
+    selectedLanguage,
+    selectedUnitId,
+    sourcePath,
+    t,
+    translationMode.lang,
+  ]);
 
   const refreshLanguageToolOverlays = useCallback((matches: LanguageToolMatchView[]) => {
     const root = editableRef.current;
@@ -2022,6 +2153,18 @@ export const TranslationPane = () => {
     const editable = editableRef.current;
     if (!editable) return;
 
+    // Snapshot the caret *before* any await or focus(). fetchEntitySummary yields to
+    // the browser; focusing the contentEditable afterwards invents a caret at the
+    // start of the unit, and getEditableRange would then prefer that live (wrong)
+    // selection over the range rememberBodyRange saved when the insert menu opened.
+    const caretBeforeAwait =
+      options?.replace || !editableRef.current
+        ? null
+        : (() => {
+            const live = getEditableRange();
+            return live?.cloneRange() ?? null;
+          })();
+
     try {
       const entity = await fetchEntitySummary(entityId);
       if (!entity) {
@@ -2029,7 +2172,6 @@ export const TranslationPane = () => {
         return;
       }
 
-      editable.focus();
       let range: Range | null = null;
       if (options?.replace) {
         const { textNode, start, end } = options.replace;
@@ -2041,8 +2183,21 @@ export const TranslationPane = () => {
           range.deleteContents();
         }
       }
+      if (
+        !range &&
+        caretBeforeAwait &&
+        editable.contains(caretBeforeAwait.startContainer) &&
+        editable.contains(caretBeforeAwait.endContainer)
+      ) {
+        range = caretBeforeAwait;
+        editable.focus();
+        const selection = window.getSelection();
+        selection?.removeAllRanges();
+        selection?.addRange(range);
+      }
       if (!range) range = getEditableRange();
       if (!range) {
+        editable.focus();
         range = document.createRange();
         range.selectNodeContents(editable);
         range.collapse(false);
@@ -2134,6 +2289,10 @@ export const TranslationPane = () => {
       notifyViaSnackbar(t('LW.translationPane.entityNeedUnit'));
       return;
     }
+    // Snapshot the caret now, before the Menu opens and steals focus (it auto-focuses
+    // its own content for keyboard nav) — insertEntityMention falls back to this saved
+    // range once the live selection is gone, which happens as soon as the menu mounts.
+    rememberBodyRange();
     setSourceEntities(collectSourceUnitEntities(alignmentUnit, selectedUnitId));
     setEntityPickerQuery('');
     setEntityPickerResults([]);
@@ -2472,12 +2631,13 @@ export const TranslationPane = () => {
         {languageOptions.length > 0 ? (
           <Select
             disabled={languageState?.indexing}
-            IconComponent={() => null}
             onChange={(event) => languageState?.setSelectedLang(String(event.target.value))}
             size="small"
             sx={{
               flex: '0 0 auto',
               minWidth: 48,
+              // Compact lang code chip — hide the default dropdown caret.
+              '& .MuiSelect-icon': { display: 'none' },
               '& .MuiSelect-select': { px: 1, py: 0.5, pr: '8px !important' },
             }}
             value={
@@ -2589,6 +2749,7 @@ export const TranslationPane = () => {
               aria-controls={entityMenuAnchor ? 'translation-entity-menu' : undefined}
               aria-haspopup="menu"
               disabled={!selectedUnitId}
+              onMouseDown={(event) => event.preventDefault()}
               onClick={(event) => openEntityMenu(event.currentTarget)}
               size="small"
             >
@@ -2621,14 +2782,15 @@ export const TranslationPane = () => {
             />
           </Box>
 
-          {sourceEntities.length > 0 && (
+          {sourceEntities.length > 0 ? (
             <ListSubheader disableSticky sx={{ lineHeight: 2 }}>
               {t('LW.translationPane.entityPickerFromUnit')}
             </ListSubheader>
-          )}
+          ) : null}
           {sourceEntities.map((hit) => (
             <MenuItem
               key={`unit-${hit.key}`}
+              onMouseDown={(event) => event.preventDefault()}
               onClick={() => {
                 setEntityMenuAnchor(null);
                 void insertEntityMention(hit.key);
@@ -2656,6 +2818,7 @@ export const TranslationPane = () => {
           {entityPickerResults.map((hit) => (
             <MenuItem
               key={`${hit.source}-${hit.id}`}
+              onMouseDown={(event) => event.preventDefault()}
               onClick={() => {
                 setEntityMenuAnchor(null);
                 void insertEntityMention(hit.id);
@@ -2805,20 +2968,23 @@ export const TranslationPane = () => {
     </Stack>
   );
 
+  // Portal must not be a Box child: MUI PropTypes.node rejects React portals
+  // (they are valid React children, but PropTypes.isValidElement is false for them).
   return (
-    <Box
-      sx={{
-        display: 'flex',
-        flexDirection: 'column',
-        height: '100%',
-        borderLeft: toolbarInRightPanel ? 0 : 1,
-        borderColor: 'divider',
-      }}
-    >
-      {!toolbarInRightPanel ? translationToolbar : null}
+    <>
       {toolbarInRightPanel && desktopToolbarSlot
         ? createPortal(translationToolbar, desktopToolbarSlot)
         : null}
+      <Box
+        sx={{
+          display: 'flex',
+          flexDirection: 'column',
+          height: '100%',
+          borderLeft: toolbarInRightPanel ? 0 : 1,
+          borderColor: 'divider',
+        }}
+      >
+        {!toolbarInRightPanel ? translationToolbar : null}
 
         <Dialog
           fullWidth
@@ -3020,6 +3186,7 @@ export const TranslationPane = () => {
               '& hi[rend="underline"]': { textDecoration: 'underline' },
               '& hi[rend="strikethrough"]': { textDecoration: 'line-through' },
               '& ref': { color: 'primary.main', textDecoration: 'underline' },
+              '& ref hi[rend="italic"]': { fontStyle: 'italic' },
               '& note': {
                 // Wrapper only when structured; flat TEI notes (read-only cards) get a pill via ::after.
                 counterIncrement: 'footnote',
@@ -3322,7 +3489,7 @@ export const TranslationPane = () => {
           ))}
                     </Box>
 
-          {footnotes.length > 0 && (
+          {footnotes.length > 0 ? (
             <Box sx={{ px: 1.5, pb: 1.5 }}>
               <Divider sx={{ width: 120, mb: 1 }} />
               <Stack spacing={0.5}>
@@ -3424,7 +3591,7 @@ export const TranslationPane = () => {
                 ))}
               </Stack>
             </Box>
-          )}
+          ) : null}
                   </>
                 )}
               </Box>
@@ -3460,6 +3627,7 @@ export const TranslationPane = () => {
           spec={entityFormatSpec}
         />
       ) : null}
-    </Box>
+      </Box>
+    </>
   );
 };

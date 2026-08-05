@@ -12,6 +12,7 @@ const ENGLISH_LABELS: Record<NameTypeId, string> = {
   temple: 'Temple name',
   dharma: 'Dharma name',
   pen: 'Pen name',
+  romanization: 'Romanization',
   translation: 'Translation',
   variant: 'Variant',
 };
@@ -32,6 +33,8 @@ export const NAME_TYPE_GLOSSES: Record<'zh' | 'ja' | 'bo', Partial<Record<NameTy
     dharma: '法名',
     pen: '筆名',
     birth: '本名',
+    romanization: '羅馬拼音',
+    translation: '譯名',
   },
   ja: {
     family: '苗字',
@@ -42,6 +45,8 @@ export const NAME_TYPE_GLOSSES: Record<'zh' | 'ja' | 'bo', Partial<Record<NameTy
     dharma: '法名',
     pen: '芸名',
     birth: '幼名',
+    romanization: 'ローマ字',
+    translation: '訳名',
   },
   bo: {
     family: 'རུས་',
@@ -50,6 +55,8 @@ export const NAME_TYPE_GLOSSES: Record<'zh' | 'ja' | 'bo', Partial<Record<NameTy
     dharma: 'ཆོས་མིང',
     variant: 'གཅེས་མིང',
     birth: 'མིང',
+    romanization: 'ལ་ཏིན་ཡིག',
+    translation: 'བསྒྱུར་མིང',
   },
 };
 

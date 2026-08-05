@@ -176,10 +176,21 @@ export interface LanguageToolInstallProgress {
   message?: string;
 }
 
+export interface AiTranslationEntityRef {
+  id: string;
+  kind: string;
+  primaryName: string | null;
+  romanizedName: string | null;
+  familyName: string | null;
+  dates: string | null;
+  description: string | null;
+}
+
 export interface AiTranslationRequest {
   alignmentUnit: 'div' | 'p';
   sourceUnitXml: string;
   targetLanguage: string;
+  entities?: AiTranslationEntityRef[];
 }
 
 export interface AiTranslationResult {
@@ -377,6 +388,9 @@ export interface ElectronAPI {
   ) => Promise<void>;
   entitySqliteSetUserWorkDate: (
     request: import('./entityDbSqlite/readService').EntitySqliteSetUserWorkDateRequest,
+  ) => Promise<void>;
+  entitySqliteSetWorkType: (
+    request: import('./entityDbSqlite/readService').EntitySqliteSetWorkTypeRequest,
   ) => Promise<void>;
   entitySqliteAddNationality: (
     request: import('./entityDbSqlite/readService').EntitySqliteAddLabeledValueRequest,
@@ -848,6 +862,7 @@ const electronAPI: ElectronAPI = {
   entitySqliteSetUserDate: (request) => ipcRenderer.invoke('entitySqlite:setUserDate', request),
   entitySqliteSetUserWorkDate: (request) =>
     ipcRenderer.invoke('entitySqlite:setUserWorkDate', request),
+  entitySqliteSetWorkType: (request) => ipcRenderer.invoke('entitySqlite:setWorkType', request),
   entitySqliteAddNationality: (request) =>
     ipcRenderer.invoke('entitySqlite:addNationality', request),
   entitySqliteAddOrigin: (request) => ipcRenderer.invoke('entitySqlite:addOrigin', request),

@@ -1266,19 +1266,32 @@ class Tagger {
 
     this.writer.editor?.undoManager.add();
 
-    if (selection === '\uFEFF') {
-      this.writer.utilities.selectElementById(id, true);
-    } else if (action == undefined || action === this.ADD) {
-      // Place the cursor at the end of the tag's contents \u2014 not just outside a
-      // boundary case that happened to fall through, this is every ordinary wrap.
-      // Landing inside the tag (rather than just after it, where the DOM left the
-      // range after surroundContents/replaceWith) means the tag is immediately
-      // "current" for chained shortcuts like Alt+Enter (add attribute) without an
-      // extra arrow-key nudge to step back inside.
+    // Only the ADD path should auto-select / scroll. AROUND (and friends) leave
+    // `selection` stuck at the empty-tag sentinel `\uFEFF` even though they wrap
+    // existing content — calling selectElementById here scrolls the editor to
+    // the new wrapper (felt as a leap after "Tag noble title").
+    if (action === undefined || action === this.ADD) {
+      if (selection === '\uFEFF') {
+        this.writer.utilities.selectElementById(id, true);
+      } else {
+        // Place the cursor at the end of the tag's contents — not just outside a
+        // boundary case that happened to fall through, this is every ordinary wrap.
+        // Landing inside the tag (rather than just after it, where the DOM left the
+        // range after surroundContents/replaceWith) means the tag is immediately
+        // "current" for chained shortcuts like Alt+Enter (add attribute) without an
+        // extra arrow-key nudge to step back inside.
+        //@ts-ignore
+        const rng: Range = this.writer.editor?.selection.getRng(true);
+        //@ts-ignore
+        rng.selectNodeContents($(`#${id}`, this.writer.editor?.getBody())[0]);
+        rng.collapse(false);
+        this.writer.editor?.selection.setRng(rng);
+      }
+    } else if (newTag[0] && (action === this.AROUND || action === this.INSIDE)) {
+      // Keep the caret inside the new wrapper without scrolling the viewport.
       //@ts-ignore
       const rng: Range = this.writer.editor?.selection.getRng(true);
-      //@ts-ignore
-      rng.selectNodeContents($(`#${id}`, this.writer.editor?.getBody())[0]);
+      rng.selectNodeContents(newTag[0]);
       rng.collapse(false);
       this.writer.editor?.selection.setRng(rng);
     }

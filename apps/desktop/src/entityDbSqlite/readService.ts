@@ -19,6 +19,7 @@ import {
   type UpdateNamesByTextInput,
   type SetUserEntityDateInput,
   type SetUserWorkDateInput,
+  type SetWorkTypeInput,
   type AddLabeledValueInput,
   type NobleTitleMutationInput,
   type SetUserWorkAuthorsInput,
@@ -107,6 +108,10 @@ export interface EntitySqliteSetUserEntityDateRequest extends SetUserEntityDateI
 }
 
 export interface EntitySqliteSetUserWorkDateRequest extends SetUserWorkDateInput {
+  databasePath: string;
+}
+
+export interface EntitySqliteSetWorkTypeRequest extends SetWorkTypeInput {
   databasePath: string;
 }
 
@@ -483,6 +488,14 @@ export async function setEntitySqliteUserWorkDate(
   if (!validDatabasePath(request.databasePath))
     throw new Error('Invalid entity SQLite database path.');
   repositoryFor(request.databasePath).setUserWorkDate(request);
+}
+
+export async function setEntitySqliteWorkType(
+  request: EntitySqliteSetWorkTypeRequest,
+): Promise<void> {
+  if (!validDatabasePath(request.databasePath))
+    throw new Error('Invalid entity SQLite database path.');
+  repositoryFor(request.databasePath).setWorkType(request);
 }
 
 export async function addEntitySqliteNationality(
