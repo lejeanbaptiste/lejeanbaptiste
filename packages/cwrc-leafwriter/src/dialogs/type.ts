@@ -3,6 +3,7 @@ import { DialogProps as MuiDialogProps } from '@mui/material/Dialog';
 import { Options as ModalProviderOptions } from 'mui-modal-provider';
 import type { Schema, SchemaMappingType } from '../types';
 import type { MissingAssetType } from '../utilities/chineseAssetStatus';
+import type { SettingsDialogProps } from './settings/types';
 export declare type ModalComponentProps<P> = Omit<P, 'open'>;
 
 export type SeverityType = 'error' | 'info' | 'success' | 'warning';
@@ -73,7 +74,8 @@ export type DialogProps = IDialog &
   SimpleDialogProps &
   EditSchemaDialogProps &
   EditSourceDialogProps &
-  ChineseAssetsDialogProps;
+  ChineseAssetsDialogProps &
+  SettingsDialogProps;
 
 export interface DialogBarProps {
   dismissed?: boolean;

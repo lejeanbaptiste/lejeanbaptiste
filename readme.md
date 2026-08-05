@@ -123,40 +123,65 @@ See [apps/desktop/README.md](apps/desktop/README.md) for the compilation and pac
 
 - [x] Welcome splash: include toggle to activate/disactivate advanced features (direct XML editing), 
 - [x] Simplify hamburger menu.
-- [ ] how much chinese-only stuff seeped into non-chinese, and norbert-specific into general chinese options?
+#### Language / plugin leakage audit
+
+Two switches to keep straight: **plugin on/off** (per project → toolbar, tag actions, auto-tag checkboxes) vs **packs on disk** (machine-wide → some host code still reads them if present). Chinese without Norbert should stay usable; Tibetan should stay free of Norbert chrome. Watch shared packs waking up in disambiguation/review, and Chinese as the fallback when language is unset.
+
+**A. Chinese project, Norbert off**
+
+- [ ] Disable Norbert in Settings → Plugins; confirm toolbar “Norbert” and noble-title / person-wrapper tag actions disappear
+- [ ] Auto-tag with CBDB/DILA only → review/apply works; no mandatory noble-title / person-wrapper stage
+- [ ] Create/split a person name → basic family/given still works (default Chinese segmenter, not Norbert surname table)
+- [ ] Sanmiao / `cjk-dates` still works if that plugin is enabled
+- [ ] Reopen the project → confirm Chinese onboarding did **not** auto-re-enable Norbert
+- [ ] After Apply on ordinary tags, watch for leftover “Norbert person-wrapper candidates…” notices (pack leakage even with plugin off)
+
+**B. Tibetan project (Norbert never enabled)**
+
+- [ ] Plugins list does not offer Norbert (settings language filter)
+- [ ] Auto-tagging dialog shows only Wikidata `bo` packs
+- [ ] No Norbert toolbar menu / tag-palette branding
+- [ ] Entity disambiguation on a Tibetan name: ideally **no** CBDB/Norbert badges
+
+**C. Tibetan on a machine that already downloaded Chinese packs** (highest-risk leakage)
+
+- [ ] Same as B, but specifically poke reconcile / disambiguation — CBDB/Norbert hits here mean disk-pack leakage in `candidatesFromAuthorityPacks`
+- [ ] Auto-tag Apply → no Norbert wrapper-concatenation notices unless plugin is on
+
+**D. Missing / wrong language defaults**
+
+- [ ] Project with unset / missing source language does **not** silently get full Chinese pack defaults (or document that it still does — known soft spot)
+- [ ] Japanese project sees NDL / Wikidata ja, not CBDB/Norbert UI
+
+**E. Optional hard case**
+
+- [ ] Manually enable Norbert on a non-Chinese project (if config allows) → expect full Norbert UI (`isAvailable: () => true`); proves there is no second language gate inside the plugin itself
 
 #### Translation pane
 
-- [ ] Integrate entity-Zotero: automatically picks up entities, formats them according to what's in the text.
-- [ ] Zdic and hucker for office names 
-- [ ] Copy-and-paste export of paragraphs with translation for word processors
-- [x] Card reader: continuous units in the translation pane (shared chrome, prev/next; [translation-planning.md](docs/translation-planning.md))
 - [ ] Notes, glosses, doubt markes in translation only?
-- [ ] Attractive typography
-- [ ] Official titles dictionaries, dates dictionaries for hover-over
+- [ ] Clean up UI
 
-## Big crazy ambitious dreams
+## Waiting
 
-- Finish word plugin
-  - [ ] Tool to manage name forms (I'll explain)
-  - [ ] Production version, ready for install and distribution
-  - [ ] Live passage citations (source + translation + bibl + page fields, Sync like entities — [live-passage-citation-planning.md](docs/live-passage-citation-planning.md)) 
+- [ ] Finish word plugin
+  - [ ] Zotero-style translation passage atomic import with page numbers and update [translation-planning.md](docs/translation-planning.md))
+- [ ] Finish compiling dics
+  - [ ] Official titles dictionaries, dates dictionaries for hover-over
 
-## Plans
+#### AI
 
-### Next release
+- [ ] AI auto-tag: apply audit actions beyond `add` (remove/retag/redraw); schema-driven tag picker; prompt-profile UI
+- [ ] Make AI assist actually useful: set up a test paragraph with a test set of tagging candidates, tweak the prompt until it gives useful results.
+- [ ] Translation panel: check for translation consistency across the document
+- [ ] Translation panel: suggest improvements with 'accept/reject'
+
+### Future
 
 #### Push limits
 
 - [ ] Navigate xml tree in-editor with some sort of dead key ?
 
-#### Other
-
-- [ ] Time Machine polish: diff preview, export history zip, optional `revisionDesc` on restore, delete (?)
-
----
-
-### Future
 
 #### I/O
 
@@ -201,12 +226,6 @@ See [apps/desktop/README.md](apps/desktop/README.md) for the compilation and pac
 
 - [ ] TEI appointment encoding for office/role context
 
-#### AI
-
-- [ ] AI auto-tag: apply audit actions beyond `add` (remove/retag/redraw); schema-driven tag picker; prompt-profile UI
-- [ ] Make AI assist actually useful: set up a test paragraph with a test set of tagging candidates, tweak the prompt until it gives useful results.
-- [ ] Translation panel: check for translation consistency across the document
-
 #### Technical / collaboration
 
 - [ ] Further Norbert functions
@@ -216,5 +235,6 @@ See [apps/desktop/README.md](apps/desktop/README.md) for the compilation and pac
 
 ### Unimportant
 
+- [ ] Time Machine polish: diff preview, export history zip, optional `revisionDesc` on restore, delete (?)
 - [ ] Docx / Mammoth import
 - [ ] Bundle size: icon barrel / storage-service; strip prod jotai-devtools; lazy dialogs/Monaco ([bundle-size-warning-planning.md](docs/bundle-size-warning-planning.md))

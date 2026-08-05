@@ -4,6 +4,7 @@ import { useTranslation } from 'react-i18next';
 
 export type AutoTaggingBusyLabel =
   | 'Applying tags…'
+  | 'Updating review…'
   | 'Reverting tags…'
   | 'Running AI suggest…'
   | 'Running AI audit…';

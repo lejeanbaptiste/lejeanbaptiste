@@ -510,6 +510,8 @@ class Utilities {
         if (
           // it's an attribute and therefore doesn't need a default namespace
           (p2 !== undefined && (p2.indexOf('attribute') === 0 || p2.indexOf('@') === 0)) ||
+          // wildcard / already-generic node test — do not rewrite to @_tag="*"
+          p4 === '*' ||
           // it's a function not an element name
           // p4.indexOf(/\(.*?\)/) !== -1
           p4.match(/\(.*?\)/) !== null
@@ -519,6 +521,11 @@ class Utilities {
           return [p1, p2, p3, '*[@_tag="' + p4 + '"]', p5].join('');
         }
       });
+
+      // In the HTML editor, attributes like xml:id are stored under a literal name
+      // containing a colon, not in the XML namespace. `@xml:id` needs a resolver and
+      // still would not match — rewrite to a name() test instead.
+      xpath = xpath.replace(/@([A-Za-z_][\w.-]*):([\w.-]+)/g, '@*[name()="$1:$2"]');
     }
 
     let evalResult: XPathResult;
@@ -611,12 +618,16 @@ class Utilities {
       xpath = xpath.replace(regex, (_match: any, p1: any, p2: any, p3: any, p4: any, p5: any) => {
         if (
           (p2 !== undefined && (p2.indexOf('attribute') === 0 || p2.indexOf('@') === 0)) ||
+          p4 === '*' ||
           p4.match(/\(.*?\)/) !== null
         ) {
           return [p1, p2, p3, p4, p5].join('');
         }
         return [p1, p2, p3, '*[@_tag="' + p4 + '"]', p5].join('');
       });
+
+      // See evaluateXPath: literal colon-names in the HTML editor doc.
+      xpath = xpath.replace(/@([A-Za-z_][\w.-]*):([\w.-]+)/g, '@*[name()="$1:$2"]');
     }
 
     let evalResult: XPathResult;

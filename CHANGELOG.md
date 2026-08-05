@@ -92,3 +92,6 @@
 - Simplified slideshow of loading screens on startup.
 - Have Monaco auto insert appropriate closing tag on `</`
 - Added LanguageTool spelling and grammar correction to the translation panel.
+- Added card flow to translation panel.
+- Fixed buggy footnotes changing place and eating body text.
+- Added entity insertion and automatic formatting into translation panel.

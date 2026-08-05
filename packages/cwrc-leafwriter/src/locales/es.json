@@ -434,7 +434,33 @@
       "removeFootnote": "Eliminar nota al pie",
       "unindexedUnitMessage": "Este párrafo es nuevo y aún no se ha indexado para la traducción — guarda el documento para agregarlo.",
       "selectUnitMessage": "Selecciona una {{unit}} en la fuente para traducirla.",
-      "defaultUnitLabel": "sección"
+      "defaultUnitLabel": "sección",
+      "insertEntity": "Insertar entidad de este párrafo",
+      "noSourceEntities": "No hay entidades etiquetadas en esta unidad de origen",
+      "entityNeedUnit": "Seleccione primero una unidad de traducción.",
+      "entityInsertLocked": "Esta unidad de traducción está bloqueada.",
+      "entityNotFound": "Entidad no encontrada en la base de datos: {{id}}",
+      "entityAutocompleteHint": "Tab o Enter para insertar · Esc para cerrar",
+      "entityPickerSearch": "Buscar todas las entidades…",
+      "entityPickerFromUnit": "En este párrafo",
+      "entityPickerAllEntities": "Todas las entidades",
+      "entityPickerSearching": "Buscando…",
+      "entityPickerNoResults": "Sin resultados",
+      "entityPickerTypeToSearch": "Escriba para buscar en la base de entidades",
+      "entityFormat": {
+        "title": "Visualización de entidad",
+        "family": "Apellido",
+        "given": "Nombre",
+        "chinese": "Caracteres",
+        "dates": "Fechas",
+        "brackets": "Alternar corchetes",
+        "chipHint": "Haga clic en una parte para ocultarla o mostrarla. Use [ ] para poner corchetes.",
+        "possessive": "Posesivo ’s",
+        "possessiveGerman": "Genitivo -s",
+        "preview": "Vista previa",
+        "reset": "Restablecer",
+        "done": "Listo"
+      }
     },
     "settings": {
       "authorities": {

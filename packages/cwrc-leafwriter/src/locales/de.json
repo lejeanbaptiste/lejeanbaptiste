@@ -441,7 +441,33 @@
       "removeFootnote": "Fußnote entfernen",
       "unindexedUnitMessage": "Dieser Absatz ist neu und wurde noch nicht für die Übersetzung indexiert — speichern Sie das Dokument, um ihn hinzuzufügen.",
       "selectUnitMessage": "Wählen Sie eine {{unit}} in der Quelle aus, um sie zu übersetzen.",
-      "defaultUnitLabel": "Sektion"
+      "defaultUnitLabel": "Sektion",
+      "insertEntity": "Entität aus diesem Absatz einfügen",
+      "noSourceEntities": "Keine getaggten Entitäten in dieser Quelleneinheit",
+      "entityNeedUnit": "Wählen Sie zuerst eine Übersetzungseinheit.",
+      "entityInsertLocked": "Diese Übersetzungseinheit ist gesperrt.",
+      "entityNotFound": "Entität nicht in der Datenbank gefunden: {{id}}",
+      "entityAutocompleteHint": "Tab oder Enter zum Einfügen · Esc zum Schließen",
+      "entityPickerSearch": "Alle Entitäten durchsuchen…",
+      "entityPickerFromUnit": "In diesem Absatz",
+      "entityPickerAllEntities": "Alle Entitäten",
+      "entityPickerSearching": "Suche…",
+      "entityPickerNoResults": "Keine Treffer",
+      "entityPickerTypeToSearch": "Tippen, um die Entitätsdatenbank zu durchsuchen",
+      "entityFormat": {
+        "title": "Entitätsanzeige",
+        "family": "Familienname",
+        "given": "Vorname",
+        "chinese": "Schriftzeichen",
+        "dates": "Daten",
+        "brackets": "Eckige Klammern umschalten",
+        "chipHint": "Klicken Sie auf einen Teil zum Ein- oder Ausblenden. Mit [ ] einen Teil in eckige Klammern setzen.",
+        "possessive": "Possessiv ’s",
+        "possessiveGerman": "Genitiv -s",
+        "preview": "Vorschau",
+        "reset": "Zurücksetzen",
+        "done": "Fertig"
+      }
     },
     "settings": {
       "authorities": {

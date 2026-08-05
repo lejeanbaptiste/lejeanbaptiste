@@ -8,7 +8,11 @@ import { getClosingTagAutoInsert } from './getClosingTagAutoInsert';
 export const registerClosingTagAutoInsert = (
   editor: monaco.editor.IStandaloneCodeEditor,
 ): monaco.IDisposable => {
-  return editor.onDidType((typed) => {
+  // onDidType exists on the runtime editor; some monaco type builds omit it from IStandaloneCodeEditor.
+  const typingEditor = editor as monaco.editor.IStandaloneCodeEditor & {
+    onDidType: (listener: (typed: string) => void) => monaco.IDisposable;
+  };
+  return typingEditor.onDidType((typed: string) => {
     if (typed !== '/') return;
 
     const model = editor.getModel();

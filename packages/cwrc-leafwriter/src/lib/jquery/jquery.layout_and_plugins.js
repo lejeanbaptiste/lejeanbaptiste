@@ -1608,8 +1608,8 @@ var jQuery = require('jquery');
                         // bind hotkey function - keyDown - if required
                         initHotkeys();
     
-                        // bind window.onunload
-                        $(window).on("unload." + sID, unload);
+                        // bind window.pagehide (unload is deprecated in Chromium)
+                        $(window).on("pagehide." + sID, unload);
     
                         // init plugins for this layout, if there are any (eg: customButtons)
                         runPluginCallbacks(Instance, $.layout.onLoad);

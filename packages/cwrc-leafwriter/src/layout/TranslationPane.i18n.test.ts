@@ -28,6 +28,23 @@ const requiredPaths = [
   'LW.translationPane.removeFootnote',
   'LW.translationPane.unindexedUnitMessage',
   'LW.translationPane.selectUnitMessage',
+  'LW.translationPane.insertEntity',
+  'LW.translationPane.noSourceEntities',
+  'LW.translationPane.entityNeedUnit',
+  'LW.translationPane.entityInsertLocked',
+  'LW.translationPane.entityNotFound',
+  'LW.translationPane.entityFormat.title',
+  'LW.translationPane.entityFormat.family',
+  'LW.translationPane.entityFormat.given',
+  'LW.translationPane.entityFormat.chinese',
+  'LW.translationPane.entityFormat.dates',
+  'LW.translationPane.entityFormat.brackets',
+  'LW.translationPane.entityFormat.chipHint',
+  'LW.translationPane.entityFormat.possessive',
+  'LW.translationPane.entityFormat.possessiveGerman',
+  'LW.translationPane.entityFormat.preview',
+  'LW.translationPane.entityFormat.reset',
+  'LW.translationPane.entityFormat.done',
 ];
 
 const getValue = (resource: LocaleResource, path: string): unknown => {

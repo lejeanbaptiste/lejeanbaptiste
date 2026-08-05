@@ -154,7 +154,9 @@ class Writer extends EventManager {
 
     window.addEventListener('beforeunload', this.handleUnload.bind(this));
 
-    $(window).on('unload', () => {
+    // Prefer pagehide over unload: Chromium is deprecating unload listeners
+    // (bfcache / privacy). Same cleanup goal when the page is being discarded.
+    $(window).on('pagehide', () => {
       try {
         // clear the editor first (large docs can cause the browser to freeze)
         this.utilities.getRootTag().remove();

@@ -35,6 +35,7 @@ import { PluginsSettingsPanel } from './plugins-settings-panel';
 import { AiPromptProfilesPanel } from './ai-prompt-profiles-panel';
 import { ProjectSettingsPanel } from './project-settings-panel';
 import { PrivacySettingsPanel } from './privacy-settings-panel';
+import { TranslationPolicyPanel } from './translation-policy-panel';
 import { SettingsValidationContext } from './settingsValidationContext';
 import type { SettingsDialogProps, SettingsTabId } from './types';
 
@@ -73,6 +74,7 @@ export const SettingsDialog = ({ onClose, open = false, initialTab }: SettingsDi
       { id: 'asset-packs', label: t('LW.settings.tabs.asset_packs'), hide: !isDesktop || isReadonly },
       { id: 'plugins', label: t('LW.settings.tabs.plugins'), hide: !isDesktop },
       { id: 'ai', label: t('LW.settings.tabs.ai'), hide: !isDesktop },
+      { id: 'translation-policy', label: t('LW.settings.tabs.translation_policy') },
       { id: 'privacy', label: t('LW.settings.tabs.privacy') },
     ],
     [hasProject, isDesktop, isReadonly, t],
@@ -90,7 +92,7 @@ export const SettingsDialog = ({ onClose, open = false, initialTab }: SettingsDi
 
   useEffect(() => {
     if (!visibleItems.some(({ id }) => id === activeId)) {
-      setActiveId(visibleItems[0]?.id ?? 'interface');
+      setActiveId((visibleItems[0]?.id as SettingsTabId | undefined) ?? 'interface');
     }
   }, [activeId, visibleItems]);
 
@@ -135,7 +137,11 @@ export const SettingsDialog = ({ onClose, open = false, initialTab }: SettingsDi
         pb={0.75}
         sx={{ flex: 1, minHeight: 0, overflow: 'hidden', alignItems: 'stretch' }}
       >
-        <SideMenu activeId={activeId} items={items} onChange={setActiveId} />
+        <SideMenu
+          activeId={activeId}
+          items={items}
+          onChange={(id) => setActiveId(id as SettingsTabId)}
+        />
         <DialogContent
           sx={{
             pt: 0.25,
@@ -217,6 +223,16 @@ export const SettingsDialog = ({ onClose, open = false, initialTab }: SettingsDi
                       <Reset />
                     </Section>
                   </>
+                )}
+
+                {activeId === 'translation-policy' && (
+                  <Section
+                    id="translation-policy"
+                    title={t('LW.settings.tabs.translation_policy')}
+                    description={t('LW.settings.translationPolicy.description')}
+                  >
+                    <TranslationPolicyPanel />
+                  </Section>
                 )}
 
                 {activeId === 'privacy' && (

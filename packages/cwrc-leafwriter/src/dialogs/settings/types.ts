@@ -4,6 +4,7 @@ export type SettingsTabId =
   | 'project'
   | 'profile'
   | 'interface'
+  | 'translation-policy'
   | 'privacy'
   | 'guardrails'
   | 'authorities'

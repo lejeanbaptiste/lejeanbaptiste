@@ -12,10 +12,13 @@ import {
   IconButton,
   List,
   ListItem,
+  ListItemButton,
   ListItemIcon,
   ListItemText,
+  ListSubheader,
   Menu,
   MenuItem,
+  Popover,
   Select,
   Stack,
   TextField,
@@ -37,6 +40,7 @@ import LockOpenIcon from '@mui/icons-material/LockOpen';
 import MoreVertIcon from '@mui/icons-material/MoreVert';
 import NavigateBeforeIcon from '@mui/icons-material/NavigateBefore';
 import NavigateNextIcon from '@mui/icons-material/NavigateNext';
+import PersonOutlineIcon from '@mui/icons-material/PersonOutline';
 import SpellcheckIcon from '@mui/icons-material/Spellcheck';
 import FactCheckIcon from '@mui/icons-material/FactCheck';
 import StickyNote2Icon from '@mui/icons-material/StickyNote2';
@@ -50,6 +54,7 @@ import {
   useRef,
   useState,
   type ClipboardEvent,
+  type MouseEvent as ReactMouseEvent,
   type ReactNode,
   type SyntheticEvent,
 } from 'react';
@@ -69,6 +74,37 @@ import {
   normalizeFootnoteNotes,
 } from './translationFootnotes';
 import { convertMarkdownInXmlFragment, looksLikeInlineMarkdown } from './markdownToTei';
+import {
+  collectSourceUnitEntities,
+  fetchEntitySummary,
+  searchEntitiesForPicker,
+  type EntityPickerSearchHit,
+  type SourceUnitEntityHit,
+} from './entityFields/sourceUnitEntities';
+import {
+  buildSuggestionsAtCaret,
+  candidateFromEntity,
+  caretAnchorPosition,
+  type EntityAutocompleteCandidate,
+  type EntityAutocompleteSuggestion,
+} from './entityFields/entityAutocomplete';
+import {
+  ENTITY_DISPLAY_FORMAT_ATTR,
+  ENTITY_DISPLAY_SPEC_ATTR,
+  ENTITY_FIELD_ATTR,
+  ENTITY_REF_TYPE,
+  createEntityFieldElement,
+  prepareAtomicEntityFields,
+  recalculateAllEntityFieldsInRoot,
+  recalculateEntityFieldsInRoot,
+  readDisplaySpecFromField,
+  writeDisplaySpecToField,
+} from './entityFields/translationEntityFields';
+import { EMPTY_DISPLAY_SPEC, type EntityDisplaySpec } from './entityFields/entityDisplay';
+import type { EntitySummary } from './entityFields/entitySummary';
+import { EntityDisplayPopup } from './entityFields/EntityDisplayPopup';
+import { TRANSLATION_POLICY_CHANGED_EVENT } from './entityFields/dateFormatSettings';
+import { applyEditorialCleanupToRoot, applyEditorialCleanupToRootPreservingSelection } from './translationEditorialCleanup';
 import { collectTranslationUnitCards } from './translationUnitCards';
 
 const TEI_NS = 'http://www.tei-c.org/ns/1.0';
@@ -126,10 +162,32 @@ const fileNameOf = (filePath: string): string => {
   return idx === -1 ? filePath : filePath.slice(idx + 1);
 };
 
-const isDomElement = (node: unknown): node is Element =>
-  !!node && typeof node === 'object' && (node as Node).nodeType === Node.ELEMENT_NODE;
-
 const ACTIVE_SOURCE_UNIT_CLASS = 'ljb-translation-active-unit';
+
+/** Looks up the tagger's schema id attribute name (xml:id or id), matching attributeIdHelpers.ts. */
+const getSchemaIdAttributeName = (): string =>
+  window.writer?.schemaManager?.getIdName?.() ?? 'xml:id';
+
+/**
+ * Find a source alignment unit in the TinyMCE body without XPath.
+ * `@xml:id` in document.evaluate() throws NamespaceError in the HTML editor doc
+ * (the `xml:` prefix is unresolvable), and CWRC's xpath rewriter also mangles `//*`.
+ */
+const findSourceUnitElement = (body: HTMLElement, unitId: string): Element | null => {
+  const schemaId = getSchemaIdAttributeName();
+  const fromTagger = Array.from(body.querySelectorAll('[_tag]')).find((el) => {
+    const attrs = window.writer?.tagger?.getAttributesForTag?.(el as Element) ?? {};
+    const id = attrs[schemaId] ?? (schemaId !== 'id' ? attrs.id : undefined);
+    return id === unitId;
+  });
+  if (fromTagger) return fromTagger;
+
+  return (
+    (body.querySelector(`[xml\\:id="${CSS.escape(unitId)}"]`) as Element | null) ??
+    (body.querySelector(`[id="${CSS.escape(unitId)}"]`) as Element | null) ??
+    (body.querySelector(`#${CSS.escape(unitId)}`) as Element | null)
+  );
+};
 
 /** Select the source alignment unit in TinyMCE and broadcast NodeChange (same as Find jump). */
 const selectSourceUnitInEditor = (unitId: string): boolean => {
@@ -140,7 +198,6 @@ const selectSourceUnitInEditor = (unitId: string): boolean => {
           nodeChanged?: () => void;
         };
         utilities?: {
-          evaluateXPath?: (root: Node, xpath: string) => unknown;
           getElementXPath?: (element: Element) => string | null;
           selectNode?: (
             target: { xpath: string },
@@ -150,30 +207,19 @@ const selectSourceUnitInEditor = (unitId: string): boolean => {
         };
       }
     | undefined;
-  if (!writer?.editor) return false;
+  if (!writer?.editor || !writer.utilities?.getElementXPath || !writer.utilities.selectNode) {
+    return false;
+  }
 
   const body = writer.editor.getBody?.();
   if (!body) return false;
 
-  const evaluate = writer.utilities?.evaluateXPath;
-  const getXPath = writer.utilities?.getElementXPath;
-  const selectNode = writer.utilities?.selectNode;
-  if (!evaluate || !getXPath || !selectNode) return false;
+  const node = findSourceUnitElement(body, unitId);
+  if (!node) return false;
 
-  const node = evaluate(body, `//*[@xml:id="${unitId}"]`);
-  if (!isDomElement(node)) {
-    const fallback = evaluate(body, `//*[@id="${unitId}"]`);
-    if (!isDomElement(fallback)) return false;
-    const xpath = getXPath(fallback);
-    if (!xpath) return false;
-    selectNode({ xpath }, false, false);
-    writer.editor.nodeChanged?.();
-    return true;
-  }
-
-  const xpath = getXPath(node);
+  const xpath = writer.utilities.getElementXPath(node);
   if (!xpath) return false;
-  selectNode({ xpath }, false, false);
+  writer.utilities.selectNode({ xpath }, false, false);
   writer.editor.nodeChanged?.();
   return true;
 };
@@ -185,22 +231,8 @@ const markActiveSourceUnit = (unitId: string | null): void => {
     el.classList.remove(ACTIVE_SOURCE_UNIT_CLASS);
   }
   if (!unitId) return;
-  const schemaId = getSchemaIdAttributeName();
-  const candidates = Array.from(body.querySelectorAll(`[_tag]`)).filter((el) => {
-    const attrs = window.writer?.tagger?.getAttributesForTag?.(el as Element) ?? {};
-    const id = attrs[schemaId] ?? (schemaId !== 'id' ? attrs.id : undefined);
-    return id === unitId;
-  });
-  const target =
-    candidates[0] ??
-    (body.querySelector(`[xml\\:id="${CSS.escape(unitId)}"]`) as Element | null) ??
-    (body.querySelector(`#${CSS.escape(unitId)}`) as Element | null);
-  target?.classList.add(ACTIVE_SOURCE_UNIT_CLASS);
+  findSourceUnitElement(body, unitId)?.classList.add(ACTIVE_SOURCE_UNIT_CLASS);
 };
-
-/** Looks up the tagger's schema id attribute name (xml:id or id), matching attributeIdHelpers.ts. */
-const getSchemaIdAttributeName = (): string =>
-  window.writer?.schemaManager?.getIdName?.() ?? 'xml:id';
 
 interface DesktopElectronApi {
   generateAiTranslation?: (request: {
@@ -301,6 +333,7 @@ const prepareAtomicCitationFields = (root: ParentNode, title: string): void => {
     bibl.setAttribute('data-leaf-citation-field', 'true');
     bibl.setAttribute('title', title);
   }
+  prepareAtomicEntityFields(root);
 };
 
 const stripInvisibleCaretSpacers = (root: ParentNode): void => {
@@ -354,7 +387,11 @@ const sanitizeTranslationFragment = (root: ParentNode, title: string): void => {
         EDITING_ONLY_ATTRIBUTES.has(attrName) ||
         (attrName.startsWith('data-') &&
           attrName !== 'data-locator' &&
-          attrName !== 'data-locator-type')
+          attrName !== 'data-locator-type' &&
+          attrName !== 'data-prefix' &&
+          attrName !== 'data-suffix' &&
+          attrName !== ENTITY_DISPLAY_FORMAT_ATTR &&
+          attrName !== ENTITY_DISPLAY_SPEC_ATTR)
       ) {
         element.removeAttribute(attr.name);
       }
@@ -572,6 +609,7 @@ export const TranslationPane = () => {
   const [languageState, setLanguageState] = useState<TranslationLanguageState | null>(() =>
     getTranslationLanguageState(),
   );
+  const selectedLanguage = languageState?.selectedLang || translationMode.lang || '';
   const [locked, setLocked] = useState(false);
   const [spellcheckEnabled, setSpellcheckEnabled] = useState(() => readSpellcheckEnabled());
   const [languageToolEnabled, setLanguageToolEnabled] = useState(false);
@@ -587,6 +625,32 @@ export const TranslationPane = () => {
   const languageToolSeqRef = useRef(0);
   const languageToolDebounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const [formatAnchor, setFormatAnchor] = useState<HTMLElement | null>(null);
+  const [entityMenuAnchor, setEntityMenuAnchor] = useState<HTMLElement | null>(null);
+  const [sourceEntities, setSourceEntities] = useState<SourceUnitEntityHit[]>([]);
+  const [entityPickerQuery, setEntityPickerQuery] = useState('');
+  const [entityPickerResults, setEntityPickerResults] = useState<EntityPickerSearchHit[]>([]);
+  const [entityPickerSearching, setEntityPickerSearching] = useState(false);
+  const entityPickerSearchSeqRef = useRef(0);
+  const [entityAcCandidates, setEntityAcCandidates] = useState<EntityAutocompleteCandidate[]>([]);
+  const [entityAcSuggestions, setEntityAcSuggestions] = useState<EntityAutocompleteSuggestion[]>(
+    [],
+  );
+  const [entityAcIndex, setEntityAcIndex] = useState(0);
+  const [entityAcAnchor, setEntityAcAnchor] = useState<{ top: number; left: number } | null>(null);
+  const entityAcCandidatesRef = useRef<EntityAutocompleteCandidate[]>([]);
+  entityAcCandidatesRef.current = entityAcCandidates;
+  const entityAcSuggestionsRef = useRef<EntityAutocompleteSuggestion[]>([]);
+  entityAcSuggestionsRef.current = entityAcSuggestions;
+  const entityAcIndexRef = useRef(0);
+  entityAcIndexRef.current = entityAcIndex;
+  const [entityFormatOpen, setEntityFormatOpen] = useState(false);
+  const [entityFormatAnchor, setEntityFormatAnchor] = useState<{ top: number; left: number } | null>(
+    null,
+  );
+  const [entityFormatSpec, setEntityFormatSpec] = useState<EntityDisplaySpec>(EMPTY_DISPLAY_SPEC);
+  const [entityFormatEntity, setEntityFormatEntity] = useState<EntitySummary | null>(null);
+  const [entityFormatOccurrence, setEntityFormatOccurrence] = useState(1);
+  const entityFormatFieldRef = useRef<Element | null>(null);
   const [paneFontSize, setPaneFontSize] = useState(() => translationFontZoom.get());
   const editableRef = useRef<HTMLDivElement>(null);
   const savedBodyRangeRef = useRef<Range | null>(null);
@@ -915,18 +979,45 @@ export const TranslationPane = () => {
   );
 
   useEffect(() => {
-    if (editableRef.current && editableRef.current.innerHTML !== unitHtml) {
-      editableRef.current.innerHTML = unitHtml;
+    const editable = editableRef.current;
+    if (editable && editable.innerHTML !== unitHtml) {
+      editable.innerHTML = unitHtml;
+    }
+    if (editable) {
+      prepareAtomicCitationFields(editable, zoteroCitationLabel);
+      void recalculateAllEntityFieldsInRoot(editable, fetchEntitySummary, undefined, selectedLanguage)
+        .then(() => {
+          prepareAtomicEntityFields(editable);
+        })
+        .catch((error) => {
+          console.warn('[translation] entity field refresh failed', error);
+        });
     }
     refreshFootnotes();
 
     const pending = pendingHighlightRef.current;
-    if (pending && selectedUnitId === pending.unitId && editableRef.current) {
-      if (selectHighlightedMatch(editableRef.current, pending.text, pending.offset)) {
+    if (pending && selectedUnitId === pending.unitId && editable) {
+      if (selectHighlightedMatch(editable, pending.text, pending.offset)) {
         pendingHighlightRef.current = null;
       }
     }
-  }, [unitHtml, selectedUnitId, refreshFootnotes]);
+  }, [unitHtml, selectedUnitId, refreshFootnotes, zoteroCitationLabel, selectedLanguage]);
+
+  useEffect(() => {
+    const refreshFromPolicy = () => {
+      const editable = editableRef.current;
+      if (!editable) return;
+      void recalculateAllEntityFieldsInRoot(editable, fetchEntitySummary, undefined, selectedLanguage)
+        .then(() => {
+          prepareAtomicEntityFields(editable);
+        })
+        .catch((error) => {
+          console.warn('[translation] entity field policy refresh failed', error);
+        });
+    };
+    window.addEventListener(TRANSLATION_POLICY_CHANGED_EVENT, refreshFromPolicy);
+    return () => window.removeEventListener(TRANSLATION_POLICY_CHANGED_EVENT, refreshFromPolicy);
+  }, [selectedLanguage]);
 
   const persist = useCallback(async () => {
     const doc = docRef.current;
@@ -934,6 +1025,9 @@ export const TranslationPane = () => {
 
     const unit = findUnitByCorrespId(doc, alignmentUnit, fileNameOf(sourcePath), selectedUnitId);
     if (!unit || !editableRef.current) return;
+
+    // Quiet house style before write: spaces, ellipsis, quotes, ranges, punctuation.
+    applyEditorialCleanupToRoot(editableRef.current, selectedLanguage);
 
     // Strip the editing-only contenteditable markers before writing to disk.
     const clone = editableRef.current.cloneNode(true) as HTMLElement;
@@ -945,6 +1039,11 @@ export const TranslationPane = () => {
       bibl.removeAttribute('data-leaf-citation-field');
       bibl.removeAttribute('title');
     }
+    for (const ref of Array.from(clone.querySelectorAll(`ref[type="${ENTITY_REF_TYPE}"]`))) {
+      ref.removeAttribute('contenteditable');
+      ref.removeAttribute(ENTITY_FIELD_ATTR);
+      ref.removeAttribute('title');
+    }
     stripInvisibleCaretSpacers(clone);
     flattenFootnoteNotesForPersist(clone);
     unit.innerHTML = clone.innerHTML;
@@ -952,7 +1051,7 @@ export const TranslationPane = () => {
     const nextXml = new XMLSerializer().serializeToString(doc);
     await getDesktopApi()?.writeFile?.(translationPath, nextXml);
     setCardsEpoch((n) => n + 1);
-  }, [alignmentUnit, sourcePath, selectedUnitId, translationPath]);
+  }, [alignmentUnit, sourcePath, selectedUnitId, selectedLanguage, translationPath]);
 
   const navigateToUnit = useCallback(
     async (nextUnitId: string, options?: { selectSource?: boolean }) => {
@@ -999,10 +1098,44 @@ export const TranslationPane = () => {
     return () => markActiveSourceUnit(null);
   }, [selectedUnitId, sourcePath]);
 
+  // Prefetch romanizations for this unit's entities so autocomplete can match while typing.
+  useEffect(() => {
+    if (!alignmentUnit || !selectedUnitId) {
+      setEntityAcCandidates([]);
+      setEntityAcSuggestions([]);
+      setEntityAcAnchor(null);
+      return;
+    }
+    const hits = collectSourceUnitEntities(alignmentUnit, selectedUnitId);
+    let cancelled = false;
+    void (async () => {
+      const rows = await Promise.all(
+        hits.map(async (hit) => {
+          const entity = await fetchEntitySummary(hit.key);
+          return entity ? { entity, sourceSurface: hit.surface } : null;
+        }),
+      );
+      if (cancelled) return;
+      setEntityAcCandidates(
+        rows
+          .filter((row): row is { entity: EntitySummary; sourceSurface: string } => Boolean(row))
+          .map(({ entity, sourceSurface }) => candidateFromEntity(entity, sourceSurface)),
+      );
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, [alignmentUnit, selectedUnitId, sourcePath]);
+
   useEffect(() => {
     const doc = window.writer?.editor?.getDoc?.() ?? document;
+    if (!doc || typeof doc.createElement !== 'function' || typeof doc.getElementById !== 'function') {
+      return;
+    }
     const styleId = 'ljb-translation-active-unit-style';
     if (doc.getElementById(styleId)) return;
+    const parent = doc.head ?? doc.documentElement ?? doc.body;
+    if (!parent) return;
     const style = doc.createElement('style');
     style.id = styleId;
     style.textContent = `
@@ -1011,7 +1144,7 @@ export const TranslationPane = () => {
         box-shadow: inset 3px 0 0 rgba(25, 118, 210, 0.55);
       }
     `;
-    (doc.head ?? doc.documentElement).appendChild(style);
+    parent.appendChild(style);
   }, [sourcePath]);
 
   const refreshCurrentCitationFields = useCallback(
@@ -1894,6 +2027,258 @@ export const TranslationPane = () => {
     setAiStatus(null);
   };
 
+  const insertEntityMention = async (
+    entityId: string,
+    options?: { replace?: { textNode: Text; start: number; end: number } },
+  ) => {
+    if (locked) {
+      notifyViaSnackbar(t('LW.translationPane.entityInsertLocked'));
+      return;
+    }
+    const editable = editableRef.current;
+    if (!editable) return;
+
+    try {
+      const entity = await fetchEntitySummary(entityId);
+      if (!entity) {
+        notifyViaSnackbar(t('LW.translationPane.entityNotFound', { id: entityId }));
+        return;
+      }
+
+      editable.focus();
+      let range: Range | null = null;
+      if (options?.replace) {
+        const { textNode, start, end } = options.replace;
+        const value = textNode.nodeValue ?? '';
+        if (textNode.parentNode) {
+          range = document.createRange();
+          range.setStart(textNode, Math.max(0, Math.min(start, value.length)));
+          range.setEnd(textNode, Math.max(0, Math.min(end, value.length)));
+          range.deleteContents();
+        }
+      }
+      if (!range) range = getEditableRange();
+      if (!range) {
+        range = document.createRange();
+        range.selectNodeContents(editable);
+        range.collapse(false);
+        const selection = window.getSelection();
+        selection?.removeAllRanges();
+        selection?.addRange(range);
+      }
+
+      const existingCount = Array.from(
+        editable.querySelectorAll(`ref[type="${ENTITY_REF_TYPE}"]`),
+      ).filter((node) => node.getAttribute('key') === entityId).length;
+      const field = createEntityFieldElement(
+        entity,
+        existingCount + 1,
+        EMPTY_DISPLAY_SPEC,
+        undefined,
+        selectedLanguage,
+      );
+      range.insertNode(field);
+      const guard = document.createTextNode('\u200B');
+      field.after(guard);
+      const after = document.createRange();
+      after.setStartAfter(guard);
+      after.collapse(true);
+      const selection = window.getSelection();
+      selection?.removeAllRanges();
+      selection?.addRange(after);
+
+      recalculateEntityFieldsInRoot(editable, entity.id, entity, undefined, selectedLanguage);
+      prepareAtomicEntityFields(editable);
+      rememberBodyRange();
+      setEntityAcSuggestions([]);
+      setEntityAcAnchor(null);
+      await persist();
+    } catch (error) {
+      console.warn('[translation] entity insert failed', error);
+      notifyViaSnackbar(
+        error instanceof Error
+          ? error.message
+          : t('LW.translationPane.entityNotFound', { id: entityId }),
+      );
+    }
+  };
+
+  const dismissEntityAutocomplete = useCallback(() => {
+    setEntityAcSuggestions([]);
+    setEntityAcAnchor(null);
+    setEntityAcIndex(0);
+  }, []);
+
+  const refreshEntityAutocomplete = useCallback(() => {
+    if (locked) {
+      dismissEntityAutocomplete();
+      return;
+    }
+    const selection = window.getSelection();
+    const range =
+      selection && selection.rangeCount > 0 ? selection.getRangeAt(0) : null;
+    if (!range || !editableRef.current?.contains(range.commonAncestorContainer)) {
+      dismissEntityAutocomplete();
+      return;
+    }
+    const suggestions = buildSuggestionsAtCaret(range, entityAcCandidatesRef.current);
+    setEntityAcSuggestions(suggestions);
+    setEntityAcIndex(0);
+    const place = () => {
+      const live = window.getSelection();
+      const liveRange = live && live.rangeCount > 0 ? live.getRangeAt(0) : range;
+      setEntityAcAnchor(
+        suggestions[0] ? caretAnchorPosition(suggestions[0], liveRange) : null,
+      );
+    };
+    place();
+    // Collapsed carets sometimes report empty rects until the next frame.
+    window.requestAnimationFrame(place);
+  }, [dismissEntityAutocomplete, locked]);
+
+  const acceptEntityAutocomplete = async (index?: number) => {
+    const suggestion = entityAcSuggestionsRef.current[index ?? entityAcIndexRef.current];
+    if (!suggestion) return;
+    dismissEntityAutocomplete();
+    await insertEntityMention(suggestion.candidate.id, {
+      replace: {
+        textNode: suggestion.textNode,
+        start: suggestion.replaceStart,
+        end: suggestion.replaceEnd,
+      },
+    });
+  };
+
+  const openEntityMenu = (anchor: HTMLElement) => {
+    if (!alignmentUnit || !selectedUnitId) {
+      notifyViaSnackbar(t('LW.translationPane.entityNeedUnit'));
+      return;
+    }
+    setSourceEntities(collectSourceUnitEntities(alignmentUnit, selectedUnitId));
+    setEntityPickerQuery('');
+    setEntityPickerResults([]);
+    setEntityPickerSearching(false);
+    setEntityMenuAnchor(anchor);
+  };
+
+  useEffect(() => {
+    if (!entityMenuAnchor) return;
+    const query = entityPickerQuery.trim();
+    if (query.length < 1) {
+      setEntityPickerResults([]);
+      setEntityPickerSearching(false);
+      return;
+    }
+    const seq = ++entityPickerSearchSeqRef.current;
+    setEntityPickerSearching(true);
+    const handle = window.setTimeout(() => {
+      void searchEntitiesForPicker(query)
+        .then((hits) => {
+          if (seq !== entityPickerSearchSeqRef.current) return;
+          setEntityPickerResults(hits);
+        })
+        .catch((error) => {
+          console.warn('[translation] entity picker search failed', error);
+          if (seq !== entityPickerSearchSeqRef.current) return;
+          setEntityPickerResults([]);
+        })
+        .finally(() => {
+          if (seq === entityPickerSearchSeqRef.current) setEntityPickerSearching(false);
+        });
+    }, 200);
+    return () => window.clearTimeout(handle);
+  }, [entityMenuAnchor, entityPickerQuery]);
+
+  const resolveEntityFieldTarget = (clicked: Element): Element | null => {
+    const editable = editableRef.current;
+    if (!editable) return null;
+    if (editable.contains(clicked)) return clicked;
+
+    const footnoteEditor = clicked.closest('[data-leaf-footnote-editor]');
+    if (!(footnoteEditor instanceof HTMLElement)) return null;
+    const index = Number(footnoteEditor.getAttribute('data-leaf-footnote-editor'));
+    if (!Number.isFinite(index)) return null;
+    const note = editable.querySelectorAll('note')[index];
+    if (!note) return null;
+    const key = clicked.getAttribute('key');
+    if (!key) return null;
+    const editorRefs = Array.from(
+      footnoteEditor.querySelectorAll(`ref[type="${ENTITY_REF_TYPE}"]`),
+    ).filter((node) => node.getAttribute('key') === key);
+    const noteRefs = Array.from(note.querySelectorAll(`ref[type="${ENTITY_REF_TYPE}"]`)).filter(
+      (node) => node.getAttribute('key') === key,
+    );
+    const localIndex = editorRefs.indexOf(clicked);
+    return noteRefs[localIndex] ?? noteRefs[0] ?? null;
+  };
+
+  const occurrenceIndexForField = (field: Element): number => {
+    const editable = editableRef.current;
+    const key = field.getAttribute('key');
+    if (!editable || !key) return 1;
+    const fields = Array.from(editable.querySelectorAll(`ref[type="${ENTITY_REF_TYPE}"]`)).filter(
+      (node) => node.getAttribute('key') === key,
+    );
+    const index = fields.indexOf(field);
+    return index >= 0 ? index + 1 : 1;
+  };
+
+  const openEntityFormatPopup = async (event: ReactMouseEvent, clicked: Element) => {
+    if (locked) return;
+    const field = resolveEntityFieldTarget(clicked);
+    const key = field?.getAttribute('key');
+    if (!field || !key) return;
+
+    event.preventDefault();
+    event.stopPropagation();
+
+    const entity = await fetchEntitySummary(key);
+    if (!entity) {
+      notifyViaSnackbar(t('LW.translationPane.entityNotFound', { id: key }));
+      return;
+    }
+
+    entityFormatFieldRef.current = field;
+    setEntityFormatEntity(entity);
+    setEntityFormatSpec(readDisplaySpecFromField(field));
+    setEntityFormatOccurrence(occurrenceIndexForField(field));
+    setEntityFormatAnchor({ top: event.clientY, left: event.clientX });
+    setEntityFormatOpen(true);
+  };
+
+  const handleEntityFieldContextMenu = (event: ReactMouseEvent<HTMLElement>) => {
+    const target = event.target as Node | null;
+    const element =
+      target?.nodeType === Node.ELEMENT_NODE ? (target as Element) : target?.parentElement;
+    const ref = element?.closest?.(`ref[${ENTITY_FIELD_ATTR}="true"]`);
+    if (!ref) return;
+    void openEntityFormatPopup(event, ref);
+  };
+
+  const applyEntityDisplaySpec = async (spec: EntityDisplaySpec) => {
+    const field = entityFormatFieldRef.current;
+    const entity = entityFormatEntity;
+    const editable = editableRef.current;
+    if (!field || !entity || !editable) return;
+
+    writeDisplaySpecToField(field, spec);
+    setEntityFormatSpec(spec);
+    recalculateEntityFieldsInRoot(editable, entity.id, entity, undefined, selectedLanguage);
+    prepareAtomicEntityFields(editable);
+    refreshFootnotes();
+    setEntityFormatOccurrence(occurrenceIndexForField(field));
+    await persist();
+  };
+
+  const resetEntityDisplaySpec = async () => {
+    await applyEntityDisplaySpec({ ...EMPTY_DISPLAY_SPEC });
+  };
+
+  const closeEntityFormatPopup = () => {
+    setEntityFormatOpen(false);
+    entityFormatFieldRef.current = null;
+  };
+
   const handleTranslationPaste = (
     event: ClipboardEvent<HTMLElement>,
     options: { target: 'body' | 'footnote' } = { target: 'body' },
@@ -1917,6 +2302,7 @@ export const TranslationPane = () => {
     while (container.firstChild) fragment.appendChild(container.firstChild);
     insertFragmentAtRange(range, fragment);
     sanitizeTranslationFragment(event.currentTarget, zoteroCitationLabel);
+    applyEditorialCleanupToRootPreservingSelection(event.currentTarget, selectedLanguage);
     refreshFootnotes();
   };
 
@@ -1924,7 +2310,10 @@ export const TranslationPane = () => {
     const target = event.target as Node | null;
     const element =
       target?.nodeType === Node.ELEMENT_NODE ? (target as Element) : target?.parentElement;
-    if (element?.closest?.('bibl[data-leaf-citation-field="true"]')) {
+    if (
+      element?.closest?.('bibl[data-leaf-citation-field="true"]') ||
+      element?.closest?.(`ref[${ENTITY_FIELD_ATTR}="true"]`)
+    ) {
       event.preventDefault();
     }
   };
@@ -1988,7 +2377,6 @@ export const TranslationPane = () => {
   if (!translationMode.active) return null;
 
   const languageOptions = languageState?.languages ?? [];
-  const selectedLanguage = languageState?.selectedLang || translationMode.lang || '';
   const spellcheckLang = selectedLanguage || undefined;
 
   const toggleSpellcheck = () => {
@@ -2238,6 +2626,100 @@ export const TranslationPane = () => {
             </IconButton>
           </span>
         </Tooltip>
+
+        <Tooltip title={t('LW.translationPane.insertEntity')}>
+          <span>
+            <IconButton
+              aria-controls={entityMenuAnchor ? 'translation-entity-menu' : undefined}
+              aria-haspopup="menu"
+              disabled={!selectedUnitId || locked}
+              onClick={(event) => openEntityMenu(event.currentTarget)}
+              size="small"
+            >
+              <PersonOutlineIcon fontSize="small" />
+            </IconButton>
+          </span>
+        </Tooltip>
+
+        <Menu
+          anchorEl={entityMenuAnchor}
+          id="translation-entity-menu"
+          onClose={() => setEntityMenuAnchor(null)}
+          open={Boolean(entityMenuAnchor)}
+          slotProps={{
+            paper: { sx: { width: 360, maxHeight: 420 } },
+            list: { sx: { py: 0 } },
+          }}
+        >
+          <Box
+            onKeyDown={(event) => event.stopPropagation()}
+            sx={{ px: 1.5, pt: 1.25, pb: 1 }}
+          >
+            <TextField
+              autoFocus
+              fullWidth
+              placeholder={t('LW.translationPane.entityPickerSearch')}
+              size="small"
+              value={entityPickerQuery}
+              onChange={(event) => setEntityPickerQuery(event.target.value)}
+            />
+          </Box>
+
+          {sourceEntities.length > 0 && (
+            <ListSubheader disableSticky sx={{ lineHeight: 2 }}>
+              {t('LW.translationPane.entityPickerFromUnit')}
+            </ListSubheader>
+          )}
+          {sourceEntities.map((hit) => (
+            <MenuItem
+              key={`unit-${hit.key}`}
+              onClick={() => {
+                setEntityMenuAnchor(null);
+                void insertEntityMention(hit.key);
+              }}
+            >
+              <ListItemText
+                primary={hit.surface || hit.key}
+                secondary={`${hit.kind} · ${hit.key}`}
+              />
+            </MenuItem>
+          ))}
+
+          {entityPickerQuery.trim().length > 0 && (
+            <ListSubheader disableSticky sx={{ lineHeight: 2 }}>
+              {entityPickerSearching
+                ? t('LW.translationPane.entityPickerSearching')
+                : t('LW.translationPane.entityPickerAllEntities')}
+            </ListSubheader>
+          )}
+          {entityPickerQuery.trim().length > 0 &&
+            !entityPickerSearching &&
+            entityPickerResults.length === 0 && (
+              <MenuItem disabled>{t('LW.translationPane.entityPickerNoResults')}</MenuItem>
+            )}
+          {entityPickerResults.map((hit) => (
+            <MenuItem
+              key={`${hit.source}-${hit.id}`}
+              onClick={() => {
+                setEntityMenuAnchor(null);
+                void insertEntityMention(hit.id);
+              }}
+            >
+              <ListItemText
+                primary={hit.label || hit.id}
+                secondary={
+                  hit.description
+                    ? `${hit.kind} · ${hit.source} · ${hit.description}`
+                    : `${hit.kind} · ${hit.source} · ${hit.id}`
+                }
+              />
+            </MenuItem>
+          ))}
+
+          {sourceEntities.length === 0 && entityPickerQuery.trim().length === 0 && (
+            <MenuItem disabled>{t('LW.translationPane.entityPickerTypeToSearch')}</MenuItem>
+          )}
+        </Menu>
 
         <Tooltip title={t('LW.translationPane.formatting')}>
           <span>
@@ -2657,6 +3139,7 @@ export const TranslationPane = () => {
             suppressContentEditableWarning
             onBlur={() => {
               void persist();
+              dismissEntityAutocomplete();
               blurTimeoutRef.current = setTimeout(() => {
                 focusedRef.current = false;
               }, 200);
@@ -2668,16 +3151,52 @@ export const TranslationPane = () => {
               rememberBodyRange();
             }}
             onInput={() => {
+              if (editableRef.current) {
+                applyEditorialCleanupToRootPreservingSelection(
+                  editableRef.current,
+                  selectedLanguage,
+                );
+              }
               refreshFootnotes();
               rememberBodyRange();
+              refreshEntityAutocomplete();
               scheduleLiveLanguageToolCheck();
             }}
             onScroll={() => refreshLanguageToolOverlays(languageToolMatches)}
             onKeyUp={rememberBodyRange}
-            onMouseUp={rememberBodyRange}
+            onMouseUp={() => {
+              rememberBodyRange();
+              refreshEntityAutocomplete();
+            }}
+            onContextMenu={handleEntityFieldContextMenu}
             onKeyDown={(event) => {
               protectCitationField(event);
               if (event.defaultPrevented) return;
+
+              const acCount = entityAcSuggestionsRef.current.length;
+              if (acCount > 0) {
+                if (event.key === 'Escape') {
+                  event.preventDefault();
+                  dismissEntityAutocomplete();
+                  return;
+                }
+                if (event.key === 'ArrowDown') {
+                  event.preventDefault();
+                  setEntityAcIndex((index) => (index + 1) % acCount);
+                  return;
+                }
+                if (event.key === 'ArrowUp') {
+                  event.preventDefault();
+                  setEntityAcIndex((index) => (index - 1 + acCount) % acCount);
+                  return;
+                }
+                if (event.key === 'Tab' || event.key === 'Enter') {
+                  event.preventDefault();
+                  void acceptEntityAutocomplete();
+                  return;
+                }
+              }
+
               if (!(event.metaKey || event.ctrlKey)) return;
               const key = event.key.toLowerCase();
               let command:
@@ -2717,6 +3236,50 @@ export const TranslationPane = () => {
               },
             }}
           />
+          <Popover
+            anchorReference="anchorPosition"
+            anchorPosition={
+              entityAcAnchor
+                ? { top: entityAcAnchor.top, left: entityAcAnchor.left }
+                : undefined
+            }
+            disableAutoFocus
+            disableEnforceFocus
+            disableRestoreFocus
+            onClose={dismissEntityAutocomplete}
+            open={entityAcSuggestions.length > 0 && Boolean(entityAcAnchor)}
+            slotProps={{
+              paper: {
+                sx: { minWidth: 240, maxWidth: 360 },
+              },
+            }}
+            sx={{ pointerEvents: 'none' }}
+          >
+            <Box sx={{ pointerEvents: 'auto' }}>
+              <List dense disablePadding>
+                {entityAcSuggestions.map((suggestion, index) => (
+                  <ListItemButton
+                    key={suggestion.candidate.id}
+                    selected={index === entityAcIndex}
+                    onMouseDown={(event) => event.preventDefault()}
+                    onClick={() => void acceptEntityAutocomplete(index)}
+                  >
+                    <ListItemText
+                      primary={suggestion.candidate.label}
+                      secondary={suggestion.candidate.detail}
+                    />
+                  </ListItemButton>
+                ))}
+              </List>
+              <Typography
+                color="text.secondary"
+                sx={{ display: 'block', px: 1.5, py: 0.75 }}
+                variant="caption"
+              >
+                {t('LW.translationPane.entityAutocompleteHint')}
+              </Typography>
+            </Box>
+          </Popover>
           {languageToolOverlays.map((rect, index) => (
             <Box
               key={`lt-overlay-${rect.matchIndex}-${index}`}
@@ -2773,6 +3336,10 @@ export const TranslationPane = () => {
                       onBeforeInput={protectCitationField}
                       onFocus={(event) => rememberFootnoteRange(index, event.currentTarget)}
                       onInput={(event) => {
+                        applyEditorialCleanupToRootPreservingSelection(
+                          event.currentTarget,
+                          selectedLanguage,
+                        );
                         prepareAtomicCitationFields(event.currentTarget, zoteroCitationLabel);
                         updateFootnote(index, event.currentTarget.innerHTML);
                         rememberFootnoteRange(index, event.currentTarget);
@@ -2782,6 +3349,7 @@ export const TranslationPane = () => {
                       }}
                       onKeyUp={(event) => rememberFootnoteRange(index, event.currentTarget)}
                       onMouseUp={(event) => rememberFootnoteRange(index, event.currentTarget)}
+                      onContextMenu={handleEntityFieldContextMenu}
                       onPaste={(event) => {
                         handleTranslationPaste(event, { target: 'footnote' });
                         updateFootnote(index, event.currentTarget.innerHTML);
@@ -2808,6 +3376,16 @@ export const TranslationPane = () => {
                           color: 'text.disabled',
                         },
                         '& bibl[data-leaf-citation-field="true"]': {
+                          bgcolor: 'action.hover',
+                          border: 1,
+                          borderColor: 'divider',
+                          borderRadius: 0.75,
+                          cursor: 'default',
+                          px: 0.5,
+                          userSelect: 'all',
+                          whiteSpace: 'break-spaces',
+                        },
+                        [`& ref[${ENTITY_FIELD_ATTR}="true"]`]: {
                           bgcolor: 'action.hover',
                           border: 1,
                           borderColor: 'divider',
@@ -2851,6 +3429,24 @@ export const TranslationPane = () => {
           </Typography>
         </Box>
       )}
+
+      {entityFormatEntity ? (
+        <EntityDisplayPopup
+          anchorPosition={entityFormatAnchor}
+          entity={entityFormatEntity}
+          lang={selectedLanguage}
+          occurrenceIndex={entityFormatOccurrence}
+          onChange={(spec) => {
+            void applyEntityDisplaySpec(spec);
+          }}
+          onClose={closeEntityFormatPopup}
+          onReset={() => {
+            void resetEntityDisplaySpec();
+          }}
+          open={entityFormatOpen}
+          spec={entityFormatSpec}
+        />
+      ) : null}
     </Box>
   );
 };

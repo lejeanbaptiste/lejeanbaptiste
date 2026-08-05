@@ -491,10 +491,46 @@ declare global {
         ruleId?: string;
       }>;
     }>;
-    languageToolGetInstallStatus?: () => Promise<unknown>;
-    languageToolInstall?: () => Promise<unknown>;
-    languageToolRemove?: () => Promise<unknown>;
-    languageToolInstallNgrams?: () => Promise<unknown>;
+    languageToolGetInstallStatus?: () => Promise<{
+      installed: boolean;
+      version: string | null;
+      path?: string | null;
+      port?: number;
+      ngrams: { en: boolean };
+      java: { ok: boolean; version?: string; major?: number; error?: string };
+      server: 'stopped' | 'starting' | 'running' | 'failed';
+      serverError?: string;
+    }>;
+    languageToolInstall?: () => Promise<{
+      installed: boolean;
+      version: string | null;
+      path?: string | null;
+      port?: number;
+      ngrams: { en: boolean };
+      java: { ok: boolean; version?: string; major?: number; error?: string };
+      server: 'stopped' | 'starting' | 'running' | 'failed';
+      serverError?: string;
+    }>;
+    languageToolRemove?: () => Promise<{
+      installed: boolean;
+      version: string | null;
+      path?: string | null;
+      port?: number;
+      ngrams: { en: boolean };
+      java: { ok: boolean; version?: string; major?: number; error?: string };
+      server: 'stopped' | 'starting' | 'running' | 'failed';
+      serverError?: string;
+    }>;
+    languageToolInstallNgrams?: () => Promise<{
+      installed: boolean;
+      version: string | null;
+      path?: string | null;
+      port?: number;
+      ngrams: { en: boolean };
+      java: { ok: boolean; version?: string; major?: number; error?: string };
+      server: 'stopped' | 'starting' | 'running' | 'failed';
+      serverError?: string;
+    }>;
     languageToolEnsureServer?: () => Promise<{ ok: boolean; error?: string; port?: number }>;
     onLanguageToolInstallProgress?: (
       callback: (progress: {
