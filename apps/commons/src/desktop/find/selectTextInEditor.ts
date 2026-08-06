@@ -1,4 +1,5 @@
 import { findEditorNodeByTeiXPath } from '../xpath/teiXPathWalker';
+import { findLineMarkerCss, markWysiwygActiveFindLine, clearWysiwygFindLineMarkers } from './findLineMarkers';
 import type { ResolvedTextHit } from './resolveTextHitInXml';
 
 const unhideNotes = (element: Element) => {
@@ -82,6 +83,7 @@ const ensureHighlightStyles = (doc: Document) => {
       box-shadow: 0 0 0 1px #f57c00;
       border-radius: 1px;
     }
+    ${findLineMarkerCss}
   `;
   doc.head?.appendChild(style);
 };
@@ -105,7 +107,11 @@ const unwrapActiveFindHighlight = () => {
 };
 
 export const clearActiveFindHighlightInEditor = () => {
-  runWithoutEditorUndo(unwrapActiveFindHighlight);
+  runWithoutEditorUndo(() => {
+    unwrapActiveFindHighlight();
+    const body = window.writer?.editor?.getBody();
+    if (body) clearWysiwygFindLineMarkers(body);
+  });
 };
 
 /** Highlight the matched characters in WYSIWYG without polluting the undo stack. */
@@ -148,6 +154,7 @@ export const highlightTextHitInEditor = (resolved: ResolvedTextHit): boolean => 
     matchNode.parentNode?.insertBefore(span, matchNode);
     span.appendChild(matchNode);
     activeFindHighlightSpan = span;
+    markWysiwygActiveFindLine(body, span);
   });
 
   return true;

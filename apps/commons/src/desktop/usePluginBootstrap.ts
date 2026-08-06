@@ -9,6 +9,27 @@ export interface PluginLanguagePrompt {
 }
 
 /**
+ * True when a project source language matches a plugin language tag.
+ * Either side may be a prefix of the other so project `zh` matches plugin
+ * `zh-hant`, and project `zh-Hant` matches a bare `zh` declaration.
+ */
+const documentLanguageMatchesPlugin = (
+  documentLanguage: string,
+  pluginLanguages: string[],
+): boolean => {
+  const normalized = documentLanguage.toLowerCase();
+  return pluginLanguages.some((language) => {
+    const candidate = language.toLowerCase();
+    return (
+      normalized === candidate ||
+      normalized.startsWith(`${candidate}-`) ||
+      candidate.startsWith(normalized) ||
+      candidate.startsWith(`${normalized}-`)
+    );
+  });
+};
+
+/**
  * Load the plugin registry on desktop startup. Matching language plugins that
  * are already installed are enabled for the current project — no download /
  * availability dialog. Missing plugins are offered by Chinese/Japanese asset
@@ -31,15 +52,18 @@ export function usePluginBootstrap(
       const snapshot = await window.electronAPI.pluginsGetSnapshot?.();
       if (!snapshot) return;
 
-      const normalized = detectedLanguage.toLowerCase();
       let enabledAny = false;
       for (const plugin of snapshot.plugins) {
         if (plugin.enabled || plugin.manifestError) continue;
         const langs =
           plugin.manifest?.languagePrompt?.documentLanguages ?? plugin.languages ?? [];
-        if (!langs.some((language) => normalized.startsWith(language.toLowerCase()))) continue;
-        await window.electronAPI.pluginsSetEnabled?.(plugin.id, true);
-        enabledAny = true;
+        if (!documentLanguageMatchesPlugin(detectedLanguage, langs)) continue;
+        try {
+          await window.electronAPI.pluginsSetEnabled?.(plugin.id, true);
+          enabledAny = true;
+        } catch (error) {
+          console.warn(`[plugins] Failed to enable ${plugin.id} during bootstrap`, error);
+        }
       }
       if (enabledAny) await refreshPluginRegistry();
     })();

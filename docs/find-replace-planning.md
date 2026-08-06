@@ -1,6 +1,6 @@
 # Find & Replace — planning notes
 
-**Status (2026-08-01):** **Mostly shipped** — Find + raw XML replace/all + well-formedness checks done. Phase **2b** (WYSIWYG visible-text replace across markup) not started.  
+**Status (2026-08-06):** **Mostly shipped** — Find + raw XML replace/all + well-formedness checks done. Phase **2b** (WYSIWYG visible-text replace across markup) not started. Phase **3** (line-level find highlight gutters) done.  
 **Scope:** Desktop sidebar **Find** tab (`Explorer | Find | XPath | …`)
 
 ---
@@ -85,13 +85,20 @@ Find/replace on **visible text** only (tags invisible), preserving inline markup
 
 ---
 
-## Phase 3 — Editor highlight
+## Phase 3 — Editor highlight (done)
 
-**Status:** Largely done for Find (jump + selection / highlight helpers under `apps/commons/src/desktop/find/`). XPath has its own highlight path. Remaining nuance is shared with XPath (raw XML offsets ≠ editor DOM).
+**Status:** Shipped for Find (2026-08-06). Orange inline highlights on matched text (WYSIWYG + Source Monaco) were already in place; they can be hard to see when entity/tag highlighting is heavy on the same line.
 
-- Map `line` / `column` / `start` offset → scroll Raw XML or WYSIWYG selection
-- Options: Monaco in edit-source dialog, future full-file code view, or TEI xpath parent for coarse WYSIWYG highlight
-- See XPath cross-file jump notes — text offsets in XML ≠ editor DOM positions
+**Addition:** thick red vertical bars on the **left and right of the line** containing the active hit (inset `box-shadow` on the WYSIWYG block row or Monaco whole-line decoration), in addition to the existing orange match highlight. Cleared when find highlights clear.
+
+| File | Role |
+|------|------|
+| `find/findLineMarkers.ts` | Block/line marker helpers + shared CSS |
+| `find/findEditorHighlights.ts` | WYSIWYG all-match highlights + line markers |
+| `find/selectTextInEditor.ts` | Active-hit highlight + line marker |
+| `packages/cwrc-leafwriter/src/sourceEditor/findInSourceEditor.ts` | Monaco inline + whole-line decorations |
+
+Phase 2b (WYSIWYG visible-text **replace** across markup) remains future work.
 
 ---
 

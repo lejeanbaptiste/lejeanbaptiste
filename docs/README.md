@@ -3,7 +3,7 @@
 Working notes and specs for **Le Jean-Baptiste** (desktop LEAF-Writer).  
 User install / build instructions live in the [root readme](../readme.md) and [apps/desktop/README.md](../apps/desktop/README.md).
 
-Active product TODOs live in the root [`readme.md`](../readme.md) (`## TODO` / `## Future`). Plan/phases docs below carry a **Status (2026-08-01)** line at the top — start there before reading the body.
+Active product TODOs live in the root [`readme.md`](../readme.md) (`## Waiting` / `## Future`). Plan/phases docs below carry a **Status** line at the top — start there before reading the body. Keep plan status lines current when behaviour ships.
 
 ---
 

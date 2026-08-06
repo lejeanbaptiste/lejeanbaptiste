@@ -346,6 +346,20 @@ const InstanceContext = ({ instance, isCurrent, onSelect }: InstanceContextProps
   </Box>
 );
 
+/**
+ * Candidate row caption for period disambiguation (e.g. period-specific office entities —
+ * see docs/entity-display-translations-planning.md Phase 3). Kind-agnostic: lights up for
+ * any candidate carrying startYear/endYear/dynasty, wherever that source populates it.
+ */
+const formatCandidatePeriod = (candidate: DisambiguationCandidate): string => {
+  const range =
+    candidate.startYear != null || candidate.endYear != null
+      ? `${candidate.startYear ?? '?'}–${candidate.endYear ?? '?'}`
+      : null;
+  if (range && candidate.dynasty) return `${range} (${candidate.dynasty})`;
+  return range ?? candidate.dynasty ?? '';
+};
+
 type DisambiguationListRow =
   | { kind: 'pending-group'; group: MentionGroup }
   | { kind: 'empty'; message: string }
@@ -1337,6 +1351,16 @@ export const DisambiguationPanel = ({
                     />
                   )}
                 </Box>
+                {(candidate.startYear != null || candidate.endYear != null || candidate.dynasty) && (
+                  <Typography
+                    variant="caption"
+                    color="text.secondary"
+                    display="block"
+                    sx={{ lineHeight: 1.3, fontWeight: 600 }}
+                  >
+                    {formatCandidatePeriod(candidate)}
+                  </Typography>
+                )}
                 {candidate.description && (
                   <Typography
                     variant="caption"

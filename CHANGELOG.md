@@ -80,13 +80,18 @@
   - @cwrc/leafwriter@1.2.0
   - @cwrc/leafwriter-storage-service@1.1.0
 
-## Upstream
+## 0.1.0-beta.2
 
 ### First-run and setup
 
 - Welcome splash now includes a toggle for advanced features (direct XML editing).
 - First-run no longer requires choosing an entity-database folder before you can continue: a working default is created deep in app data, and cloud-synced folders are suggested as an optional upgrade. Blank folders are accepted and scaffolded — install must never depend on already having installed, and creating a database must never depend on already having one.
 - Simplified the slideshow of loading screens on startup.
+
+### Auto-tagging
+
+- Tag-bomb date filter now follows the same priority as disambiguation: (1) last user choice, (2) active file work year from TEI metadata, (3) no filter. It no longer defaults to the Eastern Han dynasty range.
+- Chinese projects now treat both Norbert and East Asian dates (`cjk-dates`) as required language plugins: Norbert alone no longer counts as “plugins installed”, so a fresh Chinese project re-prompts / retries until calendars are present too. Enabling also merges the Sanmiao schema contribution (as Japan already did).
 
 ### Performance and stability
 
@@ -126,9 +131,15 @@
 - Missing translations get a dashed “add translation…” nudge in the entity editor (one chip per configured project language) and in the entity-display popup (for the active pane language). Neither inserts placeholder text into the document.
 - On those nudge surfaces, “Suggest with AI” can fill the draft gloss for review; the user still saves or adds it. Never auto-writes to the entity store.
 - The Database Window's bulk Wikidata refresh now pulls work titles for every language configured in Translation policy settings, not just English plus the desktop UI language. Also fixed: that refresh wasn't passing the desktop UI language at all, so in practice it only ever fetched English titles.
+- Office entities can now carry a date range (same date form as works, now offered for offices too), and the auto-tagging disambiguation panel shows each candidate's date range or dynasty when picking between period-specific offices — e.g. distinguishing two entities sharing a title but from different eras. Nothing to render or configure otherwise: which office you tag is which translation you get.
 
 ### UI and settings
 
+- Find: active hit now also marks the containing editor line with thick red vertical bars (in addition to orange inline highlight), so matches stay visible when entity/tag highlighting competes on the same row.
 - Settings panel overhaul.
 - Removed legacy popups ('Hey, looks like you're copying... Do you want to learn about copying?').
 - Removed legacy help pop-ups.
+
+### Rewards system
+
+- Medal unlock toasts are held until you save a portrait in Service Record; medals still unlock and persist in the background, and waiting notifications are delivered after the first portrait save.

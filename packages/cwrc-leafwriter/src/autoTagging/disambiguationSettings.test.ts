@@ -13,7 +13,7 @@ describe('disambiguationSettings', () => {
     expect(aiCurationFromSettings({ aiCuration: false })).toBe(false);
   });
 
-  it('defaults the date filter to none, unlike the tag-bomb dialog', () => {
+  it('defaults the date filter to none when nothing else applies', () => {
     expect(DEFAULT_DISAMBIGUATION_DATE_FILTER).toBe('none');
     expect(dateFilterFromSettings(undefined)).toBe('none');
     expect(dateFilterFromSettings({})).toBe('none');

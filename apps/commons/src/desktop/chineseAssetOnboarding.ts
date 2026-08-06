@@ -56,18 +56,28 @@ export const maybeOfferChineseAssetDownloads = async (
   if (!isDesktop() || !window.electronAPI) return;
   if (!(await isChineseEnabled(bundle))) return;
 
-  const { missingAssets, pluginsInstalled } = await checkChineseProjectAssets();
+  const api = window.electronAPI;
 
-  // Already on disk for the app: enable for this project's config without a
-  // "download plugins" prompt (enable is per-project; install is app-wide).
-  if (pluginsInstalled) {
-    try {
-      await ensureLanguagePlugins(isChineseRelatedLanguage);
-    } catch (error) {
-      console.warn('[onboarding] Failed to enable Chinese language plugins', error);
+  // Enable (and try to remote-fill) Chinese language plugins first. A machine
+  // that already has Norbert must still pull East Asian dates when missing —
+  // checkChineseProjectAssets treats both as required.
+  try {
+    await ensureLanguagePlugins(isChineseRelatedLanguage);
+    if (api.pluginsEnsureSchemaContribution) {
+      const mergeResult = await api.pluginsEnsureSchemaContribution(
+        'cjk-dates',
+        bundle.projectFilePath,
+      );
+      if (mergeResult?.merged && window.writer) {
+        await window.writer.overmindActions?.validator?.clearCache?.();
+        window.writer.schemaManager?.clearSchemaRevision?.();
+      }
     }
+  } catch (error) {
+    console.warn('[onboarding] Failed to enable Chinese language plugins', error);
   }
 
+  const { missingAssets } = await checkChineseProjectAssets();
   if (missingAssets.length === 0) return;
 
   openDialog({
@@ -79,6 +89,20 @@ export const maybeOfferChineseAssetDownloads = async (
         if (action !== 'download') return;
         const selected = (data as { selected?: MissingAssetType[] } | undefined)?.selected ?? [];
         await downloadSelectedChineseAssets(selected);
+        if (selected.includes('plugins') && api.pluginsEnsureSchemaContribution) {
+          try {
+            const mergeResult = await api.pluginsEnsureSchemaContribution(
+              'cjk-dates',
+              bundle.projectFilePath,
+            );
+            if (mergeResult?.merged && window.writer) {
+              await window.writer.overmindActions?.validator?.clearCache?.();
+              window.writer.schemaManager?.clearSchemaRevision?.();
+            }
+          } catch (error) {
+            console.warn('[onboarding] Failed to merge cjk-dates schema contribution', error);
+          }
+        }
       },
     },
   });

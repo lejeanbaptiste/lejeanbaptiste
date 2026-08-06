@@ -32,6 +32,7 @@ import { pipeline } from 'node:stream/promises';
 
 import JSZip from 'jszip';
 
+import { resolveAuthorityExtractionRoot, runNodeScript } from './nodeScriptRunner';
 import { AUTHORITY_PACK_REGISTRY } from '../../commons/src/desktop/authorityPackRegistryTypes';
 import type {
   AuthorityDownloadProgress,
@@ -52,8 +53,21 @@ const MAX_DOWNLOAD_BYTES = 8 * 1024 * 1024 * 1024;
 const DOWNLOAD_TIMEOUT_MS = 30 * 60 * 1000;
 const FETCH_USER_AGENT = 'LeJeanBaptiste-authority/1.0';
 
-/** Combined pin: CBDB release + Norbert reduced-authority export. */
-const REFERENCE_PERSON_BUNDLE_VERSION = '20260627+2026-07-25-reduced-authority';
+/** Norbert reduced-authority export pin (CBDB is fetched independently — see below). */
+const NORBERT_REFERENCE_VERSION = '2026-07-25-reduced-authority';
+
+/**
+ * CBDB's own official release (HuggingFace), fetched directly rather than
+ * through a copy we repackage and redistribute via our own GitHub release.
+ * Keep this pin in sync with `authority extraction/upstream/pins.json`'s
+ * `cbdb` entry when CBDB publishes a new version — that repo's
+ * `fetch-upstream.mjs` pulls from the same URL for the build pipeline.
+ */
+const CBDB_OFFICIAL_VERSION = '20260627';
+const CBDB_OFFICIAL_ZIP_URL =
+  'https://huggingface.co/datasets/cbdb/cbdb-sqlite/resolve/main/history/cbdb_202606/cbdb_20260627.zip';
+const CBDB_OFFICIAL_SQLITE_SHA256 =
+  '193d6fc3f979524abb678728ad1139472638b17aedaa695fa2f331b0a3086496';
 
 export const AUTHORITY_DB_DIRNAME = 'authority-databases';
 
@@ -88,15 +102,16 @@ const dilaRawUrl = (repoPath: string) =>
 export const AUTHORITY_SOURCES: AuthoritySourceSpec[] = [
   {
     id: 'cbdb',
-    label: 'CBDB — China Biographical Database (person reference)',
-    version: REFERENCE_PERSON_BUNDLE_VERSION,
-    // Installed via downloadReferencePersonBundle, not per-file URLs.
+    label: 'CBDB — China Biographical Database (person + office reference)',
+    version: CBDB_OFFICIAL_VERSION,
+    // Installed via downloadCbdbDirect, not per-file URLs.
     files: [],
   },
   {
     id: 'norbert',
     label: 'Norbert — person & office authority (reference)',
-    version: REFERENCE_PERSON_BUNDLE_VERSION,
+    version: NORBERT_REFERENCE_VERSION,
+    // Installed via downloadNorbertReferenceBundle, not per-file URLs.
     files: [],
   },
   {
@@ -321,14 +336,19 @@ const writeSourceManifest = async (
 };
 
 /**
- * Fetch reference-index.json, download the person-reference zip, verify sha256,
- * extract cbdb-person.sqlite3 + norbert.sqlite3, copy CBDB to cbdb.sqlite3 for
- * the legacy compile path, and write both manifests.
+ * Fetch reference-index.json, download the person-reference zip, verify
+ * sha256, extract norbert.sqlite3, and write its manifest. CBDB used to be
+ * bundled into this same zip; it now downloads independently (see
+ * downloadCbdbDirect below) so this app is never the one redistributing a
+ * repackaged copy of CBDB's own data. Norbert has no equivalent concern —
+ * its license ("internal-derived-public", see authority extraction's
+ * upstream/pins.json) is our own reduced-authority export, not a third
+ * party's copyrighted compilation.
  */
-export const downloadReferencePersonBundle = async (
+export const downloadNorbertReferenceBundle = async (
   baseDir: string,
   onProgress?: (progress: AuthorityDownloadProgress) => void,
-): Promise<{ cbdb: AuthorityManifest; norbert: AuthorityManifest }> => {
+): Promise<AuthorityManifest> => {
   await fsp.mkdir(baseDir, { recursive: true });
 
   const indexUrl = referenceIndexUrl();
@@ -344,14 +364,13 @@ export const downloadReferencePersonBundle = async (
 
   const artifactUrl = `${AUTHORITY_PACK_REGISTRY.releaseDownloadBaseUrl}/${index.artifact}`;
   const zipTempPath = path.join(baseDir, `${index.artifact}.download`);
-  const cbdbTemp = path.join(baseDir, 'cbdb-person.sqlite3.download');
   const norbertTemp = path.join(baseDir, 'norbert.sqlite3.download');
-  const tempPaths = [zipTempPath, cbdbTemp, norbertTemp];
+  const tempPaths = [zipTempPath, norbertTemp];
 
   try {
     await downloadToFile(artifactUrl, zipTempPath, (receivedBytes, totalBytes) =>
       onProgress?.({
-        sourceId: 'cbdb',
+        sourceId: 'norbert',
         fileName: index.artifact,
         phase: 'downloading',
         receivedBytes,
@@ -364,15 +383,6 @@ export const downloadReferencePersonBundle = async (
       throw new Error(`Checksum mismatch for ${index.artifact}`);
     }
 
-    await extractZipEntry(zipTempPath, 'cbdb-person.sqlite3', cbdbTemp, (receivedBytes) =>
-      onProgress?.({
-        sourceId: 'cbdb',
-        fileName: 'cbdb-person.sqlite3',
-        phase: 'extracting',
-        receivedBytes,
-        totalBytes: null,
-      }),
-    );
     await extractZipEntry(zipTempPath, 'norbert.sqlite3', norbertTemp, (receivedBytes) =>
       onProgress?.({
         sourceId: 'norbert',
@@ -383,41 +393,17 @@ export const downloadReferencePersonBundle = async (
       }),
     );
 
-    const cbdbDigest = await sha256File(cbdbTemp);
     const norbertDigest = await sha256File(norbertTemp);
-    const expectedCbdb = index.manifest?.files?.['cbdb-person.sqlite3']?.sha256;
     const expectedNorbert = index.manifest?.files?.['norbert.sqlite3']?.sha256;
-    if (expectedCbdb && cbdbDigest !== expectedCbdb) {
-      throw new Error('Checksum mismatch for cbdb-person.sqlite3');
-    }
     if (expectedNorbert && norbertDigest !== expectedNorbert) {
       throw new Error('Checksum mismatch for norbert.sqlite3');
     }
 
-    const cbdbStat = await fsp.stat(cbdbTemp);
     const norbertStat = await fsp.stat(norbertTemp);
-
-    await fsp.rename(cbdbTemp, path.join(baseDir, 'cbdb-person.sqlite3'));
     await fsp.rename(norbertTemp, path.join(baseDir, 'norbert.sqlite3'));
-    // Legacy compile path still looks for cbdb.sqlite3.
-    await fsp.copyFile(path.join(baseDir, 'cbdb-person.sqlite3'), path.join(baseDir, 'cbdb.sqlite3'));
     await fsp.rm(zipTempPath, { force: true });
 
-    const installedAt = new Date().toISOString();
-    const cbdbManifest: AuthorityManifest = {
-      source: 'cbdb',
-      version: index.version,
-      files: [
-        {
-          fileName: 'cbdb-person.sqlite3',
-          sha256: cbdbDigest,
-          bytes: cbdbStat.size,
-          upstreamUrl: artifactUrl,
-        },
-      ],
-      installedAt,
-    };
-    const norbertManifest: AuthorityManifest = {
+    const manifest: AuthorityManifest = {
       source: 'norbert',
       version: index.version,
       files: [
@@ -428,12 +414,10 @@ export const downloadReferencePersonBundle = async (
           upstreamUrl: artifactUrl,
         },
       ],
-      installedAt,
+      installedAt: new Date().toISOString(),
     };
-
-    await writeSourceManifest(baseDir, cbdbManifest);
-    await writeSourceManifest(baseDir, norbertManifest);
-    return { cbdb: cbdbManifest, norbert: norbertManifest };
+    await writeSourceManifest(baseDir, manifest);
+    return manifest;
   } catch (error) {
     for (const tempPath of tempPaths) {
       await fsp.rm(tempPath, { force: true }).catch(() => undefined);
@@ -443,21 +427,129 @@ export const downloadReferencePersonBundle = async (
 };
 
 /**
- * Download and install one source. CBDB and Norbert share the reference-person
- * zip; DILA still downloads its three TEI files individually. Files land under
- * temp names and are renamed into place only after checksum verification; the
- * manifest is written last, so a crashed download never yields an "installed"
- * source.
+ * Fetch CBDB's own official release directly (HuggingFace, pinned above —
+ * the same source authority extraction's build pipeline uses) and strip it
+ * locally to a person+office reference subset via the bundled
+ * authority-extraction CLI (cbdb/stripReferenceDb.mjs — the exact script the
+ * build pipeline itself runs; not a reimplementation). This app never holds
+ * or redistributes its own repackaged copy of CBDB's data: each install
+ * downloads and processes CBDB's own release on its own machine.
+ *
+ * CBDB's upstream OFFICE_CODES table embeds some office-title glosses lifted
+ * from a third party's copyrighted dictionary (tagged "(Hucker)" in CBDB's
+ * own data — see leaf-writer/docs/huckbot5000-planning.md). The *tagging*
+ * pack strips those before this app ever redistributes anything derived
+ * from them (authority extraction/cbdb/compileRecords.mjs). This reference
+ * sqlite intentionally does NOT re-implement that filtering — it's a local,
+ * unmodified copy of CBDB's own official release, read directly by the user
+ * installing it, the same posture as running CBDB's own published database
+ * yourself. Nothing here is republished by this app.
+ */
+export const downloadCbdbDirect = async (
+  baseDir: string,
+  onProgress?: (progress: AuthorityDownloadProgress) => void,
+): Promise<AuthorityManifest> => {
+  await fsp.mkdir(baseDir, { recursive: true });
+
+  const zipTempPath = path.join(baseDir, 'cbdb-official.zip.download');
+  const fullSqliteTempPath = path.join(baseDir, 'cbdb-official.sqlite3.download');
+  const strippedTempPath = path.join(baseDir, 'cbdb-person.sqlite3.download');
+  const tempPaths = [zipTempPath, fullSqliteTempPath, strippedTempPath];
+
+  try {
+    await downloadToFile(CBDB_OFFICIAL_ZIP_URL, zipTempPath, (receivedBytes, totalBytes) =>
+      onProgress?.({
+        sourceId: 'cbdb',
+        fileName: `cbdb_${CBDB_OFFICIAL_VERSION}.zip`,
+        phase: 'downloading',
+        receivedBytes,
+        totalBytes,
+      }),
+    );
+
+    await extractZipEntry(zipTempPath, '.sqlite3', fullSqliteTempPath, (receivedBytes) =>
+      onProgress?.({
+        sourceId: 'cbdb',
+        fileName: 'cbdb.sqlite3',
+        phase: 'extracting',
+        receivedBytes,
+        totalBytes: null,
+      }),
+    );
+    await fsp.rm(zipTempPath, { force: true });
+
+    const fullDigest = await sha256File(fullSqliteTempPath);
+    if (fullDigest !== CBDB_OFFICIAL_SQLITE_SHA256) {
+      throw new Error(
+        `CBDB sqlite checksum mismatch (got ${fullDigest}, expected ${CBDB_OFFICIAL_SQLITE_SHA256}). ` +
+          'Upstream may have published a new version — update the pin here and in ' +
+          'authority extraction/upstream/pins.json together.',
+      );
+    }
+
+    onProgress?.({
+      sourceId: 'cbdb',
+      fileName: 'cbdb-person.sqlite3',
+      phase: 'extracting',
+      receivedBytes: 0,
+      totalBytes: null,
+    });
+    const extractionRoot = resolveAuthorityExtractionRoot('cbdb/stripReferenceDb.mjs');
+    await runNodeScript(
+      path.join(extractionRoot, 'cbdb/stripReferenceDb.mjs'),
+      ['--sqlite', fullSqliteTempPath, '--out', strippedTempPath],
+      extractionRoot,
+    );
+    await fsp.rm(fullSqliteTempPath, { force: true });
+
+    const strippedDigest = await sha256File(strippedTempPath);
+    const strippedStat = await fsp.stat(strippedTempPath);
+
+    await fsp.rename(strippedTempPath, path.join(baseDir, 'cbdb-person.sqlite3'));
+    // Legacy compile path still looks for cbdb.sqlite3.
+    await fsp.copyFile(
+      path.join(baseDir, 'cbdb-person.sqlite3'),
+      path.join(baseDir, 'cbdb.sqlite3'),
+    );
+
+    const manifest: AuthorityManifest = {
+      source: 'cbdb',
+      version: CBDB_OFFICIAL_VERSION,
+      files: [
+        {
+          fileName: 'cbdb-person.sqlite3',
+          sha256: strippedDigest,
+          bytes: strippedStat.size,
+          upstreamUrl: CBDB_OFFICIAL_ZIP_URL,
+        },
+      ],
+      installedAt: new Date().toISOString(),
+    };
+    await writeSourceManifest(baseDir, manifest);
+    return manifest;
+  } catch (error) {
+    for (const tempPath of tempPaths) {
+      await fsp.rm(tempPath, { force: true }).catch(() => undefined);
+    }
+    throw error;
+  }
+};
+
+/**
+ * Download and install one source. CBDB fetches its own official release
+ * directly and strips it locally (downloadCbdbDirect); Norbert still comes
+ * from our reference-person zip (downloadNorbertReferenceBundle); DILA
+ * downloads its three TEI files individually. Files land under temp names
+ * and are renamed into place only after checksum verification; the manifest
+ * is written last, so a crashed download never yields an "installed" source.
  */
 export const downloadAuthoritySource = async (
   baseDir: string,
   id: AuthoritySourceId,
   onProgress?: (progress: AuthorityDownloadProgress) => void,
 ): Promise<AuthorityManifest> => {
-  if (id === 'cbdb' || id === 'norbert') {
-    const manifests = await downloadReferencePersonBundle(baseDir, onProgress);
-    return manifests[id];
-  }
+  if (id === 'cbdb') return downloadCbdbDirect(baseDir, onProgress);
+  if (id === 'norbert') return downloadNorbertReferenceBundle(baseDir, onProgress);
 
   const spec = AUTHORITY_SOURCES.find((source) => source.id === id);
   if (!spec) throw new Error(`Unknown authority source: ${id}`);

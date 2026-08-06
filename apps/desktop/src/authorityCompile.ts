@@ -2,65 +2,17 @@
  * Spawn authority extraction compile scripts against raw databases in the entity folder.
  */
 
-import { execFile } from 'node:child_process';
 import fs from 'node:fs';
 import path from 'node:path';
-import { promisify } from 'node:util';
 
 import { AUTHORITY_DB_DIRNAME } from './authorityDatabases';
+import { resolveAuthorityExtractionRoot, runNodeScript } from './nodeScriptRunner';
 
-const execFileAsync = promisify(execFile);
-
-const COMPILE_TIMEOUT_MS = 30 * 60 * 1000;
-
-/**
- * Resolve sibling repo (dev) or bundled copy (packaged app). `marker` is a
- * script path relative to the root used to confirm the candidate is actually
- * populated. All authority packs (including CHGIS) are now pre-compiled and
- * distributed via the authority-pack registry rather than compiled on-device,
- * so in practice this only resolves in dev checkouts with authority-extraction
- * as a sibling repo.
- */
-export const resolveAuthorityExtractionRoot = (marker = 'cbdb/compile.mjs'): string => {
-  const candidates = [
-    path.join(process.resourcesPath, 'authority-extraction'),
-    path.resolve(__dirname, '../../../../authority extraction'),
-    path.resolve(process.cwd(), '../authority extraction'),
-  ];
-  for (const root of candidates) {
-    if (fs.existsSync(path.join(root, marker))) return root;
-  }
-  throw new Error(
-    'Authority compile bundle not found. Install the authority extraction repo as a sibling of leaf-writer, or bundle it under resources/authority-extraction.',
-  );
-};
-
-/** Runs a bundled toolchain script via Electron's own Node runtime — packaged
- * installs have no system `node` on PATH, so scripts must be spawned as the
- * Electron binary itself with ELECTRON_RUN_AS_NODE, not as `node`. */
-export const runNodeScript = async (
-  scriptPath: string,
-  args: string[],
-  cwd: string,
-): Promise<void> => {
-  const nodeModules = path.join(cwd, 'node_modules');
-  if (!fs.existsSync(nodeModules)) {
-    throw new Error(
-      `Run npm install in the authority extraction folder (${cwd}) before compiling.`,
-    );
-  }
-
-  await execFileAsync(process.execPath, [scriptPath, ...args], {
-    cwd,
-    maxBuffer: 64 * 1024 * 1024,
-    timeout: COMPILE_TIMEOUT_MS,
-    env: {
-      ...process.env,
-      ELECTRON_RUN_AS_NODE: '1',
-      NODE_PATH: nodeModules,
-    },
-  });
-};
+// Re-exported for existing importers (authorityRefLookup.ts and others) —
+// the implementations now live in nodeScriptRunner.ts so authorityDatabases.ts
+// can use them too without a circular import (this file already imports
+// AUTHORITY_DB_DIRNAME from authorityDatabases.ts).
+export { resolveAuthorityExtractionRoot, runNodeScript };
 
 export interface CompileAuthorityPacksOptions {
   entityDbFolder: string;

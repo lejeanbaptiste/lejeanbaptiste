@@ -13,7 +13,7 @@ export const AI_UI_FEATURES = {
   /** Auto-tagging dialog "AI audit" method — second-guesses existing tags; kept off pending better calibration. */
   audit: false,
   /** Disambiguation launcher "AI curation" checkbox. */
-  disambiguationCurate: false,
+  disambiguationCurate: true,
   /** Translation pane "Generate translation" AI menu. */
   translationGenerate: true,
   /** Suggest a vernacular gloss into the draft field (popup + entity editor). */

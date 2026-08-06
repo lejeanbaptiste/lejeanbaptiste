@@ -127,81 +127,32 @@ For detailed build and packaging information, see [apps/desktop/README.md](apps/
 
 See [apps/desktop/README.md](apps/desktop/README.md) for the compilation and packaging instructions.
 
-## To test
-
-- [ ] Welcome splash: include toggle to activate/disactivate advanced features (direct XML editing), 
-- [ ] Simplify hamburger menu.
-
-
-
-#### Language / plugin leakage audit
-
-Two switches to keep straight: **plugin on/off** (per project → toolbar, tag actions, auto-tag checkboxes) vs **packs on disk** (machine-wide → some host code still reads them if present). Chinese without Norbert should stay usable; Tibetan should stay free of Norbert chrome. Watch shared packs waking up in disambiguation/review, and Chinese as the fallback when language is unset.
-
-**A. Chinese project, Norbert off**
-
-- [ ] Disable Norbert in Settings → Plugins; confirm toolbar “Norbert” and noble-title / person-wrapper tag actions disappear
-- [ ] Auto-tag with CBDB/DILA only → review/apply works; no mandatory noble-title / person-wrapper stage
-- [ ] Create/split a person name → basic family/given still works (default Chinese segmenter, not Norbert surname table)
-- [ ] Sanmiao / `cjk-dates` still works if that plugin is enabled
-- [ ] Reopen the project → confirm Chinese onboarding did **not** auto-re-enable Norbert
-- [ ] After Apply on ordinary tags, watch for leftover “Norbert person-wrapper candidates…” notices (pack leakage even with plugin off)
-
-**B. Tibetan project (Norbert never enabled)**
-
-- [ ] Plugins list does not offer Norbert (settings language filter)
-- [ ] Auto-tagging dialog shows only Wikidata `bo` packs
-- [ ] No Norbert toolbar menu / tag-palette branding
-- [ ] Entity disambiguation on a Tibetan name: ideally **no** CBDB/Norbert badges
-
-**C. Tibetan on a machine that already downloaded Chinese packs** (highest-risk leakage)
-
-- [ ] Same as B, but specifically poke reconcile / disambiguation — CBDB/Norbert hits here mean disk-pack leakage in `candidatesFromAuthorityPacks`
-- [ ] Auto-tag Apply → no Norbert wrapper-concatenation notices unless plugin is on
-
-**D. Missing / wrong language defaults**
-
-- [ ] Project with unset / missing source language does **not** silently get full Chinese pack defaults (or document that it still does — known soft spot)
-- [ ] Japanese project sees NDL / Wikidata ja, not CBDB/Norbert UI
-
-**E. Optional hard case**
-
-- [ ] Manually enable Norbert on a non-Chinese project (if config allows) → expect full Norbert UI (`isAvailable: () => true`); proves there is no second language gate inside the plugin itself
-
-
 
 ## Waiting
 
-- [ ] Keyboard shortcut for insert entity
-- [ ] Finish compiling dics
-  - [ ] Official titles dictionaries, dates dictionaries for hover-over
-
-
-
-#### AI
-
-- [ ] AI translate work names
-- [ ] AI auto-tag: apply audit actions beyond `add` (remove/retag/redraw); schema-driven tag picker; prompt-profile UI
-- [ ] Make AI assist actually useful: set up a test paragraph with a test set of tagging candidates, tweak the prompt until it gives useful results.
-- [ ] Translation panel: check for translation consistency across the document
-- [ ] Translation panel: suggest improvements with 'accept/reject'
-
+- [ ] confirm whether the actual installed CBDB/Norbert authority packs populate `metadata.startYear/endYear/dynasty` for office rows
+- [ ] Finish Huckbot plans via Claude.
+- [ ] Verify AI translate entity pipeline (see [translation-smoke-tests.md](docs/translation-smoke-tests.md) §10): source unit has keyed `persName` / `placeName` / `orgName` / `title`|`bibl` / `roleName` → model emits `{{entity:KEY}}` → pane shows atomic `ref[type="ljb-entity"]` fields with kind-aware LJBtero formatting (unit tests cover substitution for all kinds; LLM compliance is manual)
 
 
 ### Future
 
 
+### 'LJBtero'
+
+- [ ] Clean up and rationalise options, UI, document and global settings.
+- [ ] Figure out how best to handle the insertion of entities NOT in said paragraph.
+- [ ] Keyboard shortcut for insert entity
+- [ ] Build Word and LibreOffice plugins on the same model.
+- [ ] Live passage citations in Word / LibreOffice: insert a refreshable field (source unit + optional translation + bibl + nearest page cue) that Syncs from LJB like Zotero — pointers only, no second copy of the edition ([live-passage-citation-planning.md](docs/live-passage-citation-planning.md))
 
 #### Push limits
 
-- [ ] Navigate xml tree in-editor with some sort of dead key ?
+- [ ] Instead of relying on Markup panel to navigate the xml tree, introduce some sort of toggle where the keyboard arrow keys move you between siblings, parent, and first child. Preferably a keyboard toggle.
 - [ ] Make TinyMCE even faster to load.
-
-
 
 #### I/O
 
-- Zotero-style translation passage atomic import with page numbers and update translation-planning.md)
 - Full CBETA integration
   - [ ] Custom schema / conversion ?
   - [ ] Include Bingenheimer's tagged bios
@@ -216,49 +167,50 @@ Two switches to keep straight: **plugin on/off** (per project → toolbar, tag a
 - [ ] Import profiles (rule engine + mandoku hand profile)
 - [ ] AI-inferred import profiles
 - [ ] Browser-extension / URL corpus→TEI extraction (E0–E5 — [corpus-extraction-planning.md](docs/corpus-extraction-planning.md))
-- [ ] (IF someone actually uses markdown) Import Phase 1 leftovers: md `{{header}}`, batch/folder UI, validator + provenance
+- [ ] (IF someone actually uses markdown) Import leftovers: md `{{header}}` expansion, import validator report (blind import, folder multi-select, and basic provenance already ship — see [import-planning.md](docs/import-planning.md))
 - [ ] (IF grows to point where relevant) LaTeX export
-
-
 
 #### UX
 
-- [ ] finish localisations
-- [ ] Redo icons : highlight
-- [ ] Find/replace Phase 2b: WYSIWYG visible-text replace across markup
-- [ ] Match-case / persist last find query (optional)
+- [ ] Finish localisations: no raw variable names, EN and FR complete; manual pass for Service Record to maintain unwritten linguistic policy.
+- [ ] Improve Highlight/CSS panel icon. 
+- [ ] Find/replace Phase 2b: WYSIWYG visible-text replace across markup ([find-replace-planning.md](docs/find-replace-planning.md))
+- [ ] Persist last find query across sessions (match-case / ignore-case toggle already ships)
 - [ ] Ignore page breaks, line breaks, and corrections in tagging and disambiguation?
-- [ ] (ABANDONNED as hopeless) Tag-boundary Bugs B/C/H (typing/delete at edges)
-- [ ] Notes, glosses, doubt markes in translation only?
+- [ ] Re-explore Tag-boundary Bugs B/C/H (typing/delete at edges) keeping us from full Oxygen parity.
 
 
 
 #### Maps
 
-- [ ] Labels
-- [ ] Click to disambiguate
+- [ ] Pin captions to further aid in disambiguation
+- [ ] Click on map to select in panel
 - [ ] Placename Phase 4–5: persisted coordinate/id place entities; mint from merged periods ([placename-geo-disambiguation-planning.md](docs/placename-geo-disambiguation-planning.md))
 
 
 
 #### Dates
 
-- [ ] Parallel Chinese / Japanese dates
-- [ ] Import DILA markers into Sanmiao
+- [ ] Allow the setting and display of Sanmiao-style CJK dates in the place of/parallel to Western dates.
+- [ ] Scan DILA for markers into Sanmiao
 - [ ] AI assist for Sanmiao to identify beginning of dynasties, reigns, era
 
+#### AI
 
+- [ ] Translation panel: check for translation consistency across the document
+- [ ] Translation panel: suggest improvements with 'accept/reject'
+- [ ] AI auto-tag: gold harness / residual gaps for `roleName` / `orgName` audit apply (remove/retag/redraw, schema-driven tag picker, and prompt-profile UI already ship)
 
 #### Authority packs
 
 - [ ] TEI appointment encoding for office/role context
 
 
-
 #### Technical / collaboration
 
 - [ ] Further Norbert functions
-- [ ] Support for custom authorities and personal SQL databases
+- [ ] Support for custom authorities
+- [ ] Support for user SQL databases
 - [ ] Multi-machine offline sync beyond current mirror
 - [ ] Option to track annotator on the tag level for collaborations.
 
@@ -267,5 +219,5 @@ Two switches to keep straight: **plugin on/off** (per project → toolbar, tag a
 ### Unimportant
 
 - [ ] Time Machine polish: diff preview, export history zip, optional `revisionDesc` on restore, delete (?)
-- [ ] Docx / Mammoth import
-- [ ] Bundle size: icon barrel / storage-service; strip prod jotai-devtools; lazy dialogs/Monaco ([bundle-size-warning-planning.md](docs/bundle-size-warning-planning.md))
+- [ ] Docx import Phase 3: style-aware mammoth → IR (blind text extraction already ships)
+- [ ] Bundle size: icon barrel / storage-service; lazy dialogs/Monaco ([bundle-size-warning-planning.md](docs/bundle-size-warning-planning.md))

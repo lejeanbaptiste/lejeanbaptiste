@@ -1451,7 +1451,14 @@ describe('EntitySqliteRepository', () => {
     const summary = repository.getPanelSummary('org-1')!;
     expect(summary.startYear).toBe(738);
     expect(summary.endYear).toBe(907);
-    expect(summary.workDate).toBeNull();
+    // Phase 3 (period-filtered office disambiguation): workDate now generalizes to any
+    // kind with a generic dates row and no birth/death row, not just 'work'.
+    expect(summary.workDate).toEqual({
+      startYear: 738,
+      endYear: 907,
+      startPrecision: null,
+      endPrecision: null,
+    });
     repository.close();
   });
 
@@ -1497,6 +1504,55 @@ describe('EntitySqliteRepository', () => {
         workType: 'novel' as unknown as null,
       }),
     ).toThrow();
+    repository.close();
+  });
+
+  it('populates a precision-carrying workDate for an office entity (Phase 3 period disambiguation)', () => {
+    const repository = new EntitySqliteRepository();
+    repository.createEntity({ id: 'office-period-1', kind: 'office' });
+    repository.setUserWorkDate({
+      entityId: 'office-period-1',
+      startYear: 265,
+      endYear: 420,
+      startPrecision: 'ca.',
+    });
+
+    const summary = repository.getPanelSummary('office-period-1');
+    expect(summary?.workDate).toEqual({
+      startYear: 265,
+      endYear: 420,
+      startPrecision: 'ca.',
+      endPrecision: null,
+    });
+    expect(summary?.startYear).toBe(265);
+    expect(summary?.endYear).toBe(420);
+    repository.close();
+  });
+
+  it('does not populate workDate for place/org when no dates exist (regression)', () => {
+    const repository = new EntitySqliteRepository();
+    repository.createEntity({ id: 'place-no-dates', kind: 'place' });
+    repository.createEntity({ id: 'org-no-dates', kind: 'org' });
+
+    expect(repository.getPanelSummary('place-no-dates')?.workDate).toBeNull();
+    expect(repository.getPanelSummary('org-no-dates')?.workDate).toBeNull();
+    repository.close();
+  });
+
+  it('prefers a birth/death row over the generic dates row for workDate on a non-work kind', () => {
+    const repository = new EntitySqliteRepository();
+    repository.createEntity({ id: 'office-with-birth', kind: 'office' });
+    repository.setUserEntityDate({ entityId: 'office-with-birth', part: 'birth', year: 100 });
+    repository.setUserWorkDate({
+      entityId: 'office-with-birth',
+      startYear: 200,
+      endYear: 300,
+    });
+
+    // birth/death rows take precedence in the existing startYear/endYear fallback chain,
+    // so workDate (built from the same precedence) should stay null here rather than
+    // reflect the generic 'dates' row.
+    expect(repository.getPanelSummary('office-with-birth')?.workDate).toBeNull();
     repository.close();
   });
 });

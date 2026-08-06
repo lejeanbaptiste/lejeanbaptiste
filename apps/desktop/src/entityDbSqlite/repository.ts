@@ -764,15 +764,19 @@ function assemblePanelSummary(
     entity.kind === 'work' ? (genericDatesRow ?? firstDate('work') ?? undefined) : undefined;
   const birthRow = entity.kind === 'work' ? undefined : firstDate('birth');
   const deathRow = entity.kind === 'work' ? undefined : firstDate('death');
-  const workDate =
-    entity.kind === 'work' && workDateRow
-      ? {
-          startYear: (workDateRow.start_year as number | null) ?? null,
-          endYear: (workDateRow.end_year as number | null) ?? null,
-          startPrecision: (workDateRow.start_precision as string | null) ?? null,
-          endPrecision: (workDateRow.end_precision as string | null) ?? null,
-        }
-      : null;
+  // Precision-carrying date range: `work` prefers its own workDateRow; every other kind
+  // (notably office, for period-disambiguation — see docs/entity-display-translations-planning.md
+  // Phase 3) gets the generic dates row too, but only when it has no birth/death row of its own.
+  const dateRangeRow =
+    entity.kind === 'work' ? workDateRow : !birthRow && !deathRow ? genericDatesRow : undefined;
+  const workDate = dateRangeRow
+    ? {
+        startYear: (dateRangeRow.start_year as number | null) ?? null,
+        endYear: (dateRangeRow.end_year as number | null) ?? null,
+        startPrecision: (dateRangeRow.start_precision as string | null) ?? null,
+        endPrecision: (dateRangeRow.end_precision as string | null) ?? null,
+      }
+    : null;
   const fallbackStartYear =
     (birthRow?.start_year as number | null) ??
     (entity.kind === 'work' ? null : (genericDatesRow?.start_year as number | null)) ??

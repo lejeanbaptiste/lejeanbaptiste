@@ -2251,7 +2251,8 @@ export const SidebarDatabaseTab = ({ active = false }: SidebarDatabaseTabProps) 
     );
     const userBirthYear = dateYear(userBirthAssertion) ?? editEntity?.startYear ?? null;
     const userDeathYear = dateYear(userDeathAssertion) ?? editEntity?.endYear ?? null;
-    const workDate = editEntity?.kind === 'work' ? editEntity.workDate : null;
+    const workDate =
+      editEntity?.kind === 'work' || editEntity?.kind === 'office' ? editEntity.workDate : null;
     const pendingDateAssertions = dateAssertions.filter((assertion) => {
       const current = assertion.element === 'birth' ? userBirthYear : userDeathYear;
       return assertion.status === 'active' && (current == null || dateYear(assertion) !== current);
@@ -2401,13 +2402,16 @@ export const SidebarDatabaseTab = ({ active = false }: SidebarDatabaseTabProps) 
     ].join('+');
 
     const dateGridRows: GridRow[] =
-      (editEntity?.kind === 'person' || editEntity?.kind === 'work') && !dateEditing
+      (editEntity?.kind === 'person' ||
+        editEntity?.kind === 'work' ||
+        editEntity?.kind === 'office') &&
+      !dateEditing
         ? [
             {
               key: 'dates-span',
               label: `${t('LWC.desktop.sidebar.database.dates')}:`,
               value:
-                editEntity?.kind === 'work'
+                editEntity?.kind === 'work' || editEntity?.kind === 'office'
                   ? scholarlyDateRange(
                       workDate?.startYear ?? null,
                       workDate?.endYear ?? null,
@@ -4119,7 +4123,7 @@ export const SidebarDatabaseTab = ({ active = false }: SidebarDatabaseTabProps) 
               ))}
             </TextField>
           )}
-          {editEntity?.kind === 'work' && dateEditing && (
+          {(editEntity?.kind === 'work' || editEntity?.kind === 'office') && dateEditing && (
             <Stack spacing={0.75} sx={{ mt: 2 }}>
               <Typography variant="body2" sx={{ fontWeight: 600 }}>
                 {t('LWC.desktop.sidebar.database.dates')}:
@@ -4188,7 +4192,7 @@ export const SidebarDatabaseTab = ({ active = false }: SidebarDatabaseTabProps) 
               </Stack>
             </Stack>
           )}
-          {editEntity?.kind === 'work' && !dateEditing && (
+          {(editEntity?.kind === 'work' || editEntity?.kind === 'office') && !dateEditing && (
             <>
               <Box
                 sx={{
@@ -4233,6 +4237,7 @@ export const SidebarDatabaseTab = ({ active = false }: SidebarDatabaseTabProps) 
                   </Fragment>
                 ))}
               </Box>
+              {editEntity.kind === 'work' && (
               <Box sx={{ mt: 2 }}>
                 {editEntity.authors
                   .filter((author) => author.origin === 'authority')
@@ -4298,6 +4303,7 @@ export const SidebarDatabaseTab = ({ active = false }: SidebarDatabaseTabProps) 
                   }
                 />
               </Box>
+              )}
             </>
           )}
           {editEntity?.kind === 'person' && (

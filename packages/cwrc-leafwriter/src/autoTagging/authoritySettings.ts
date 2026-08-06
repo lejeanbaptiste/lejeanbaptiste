@@ -96,12 +96,17 @@ export async function readProjectNameTypeTaggingPolicy(): Promise<NameTypeTaggin
   return resolveNameTypeTaggingPolicy(settings, sourceLanguage);
 }
 
-export const DEFAULT_AUTHORITY_YEAR_RANGE: [number, number] = [25, 220];
-export const DEFAULT_AUTHORITY_DATE_FILTER: DateFilterMode = 'limit';
-
 /** Slider bounds shared by the tag-bomb dialog and the disambiguation panel's date filter. */
 export const AUTHORITY_YEAR_MIN = -500;
 export const AUTHORITY_YEAR_MAX = 2000;
+
+/** Full slider span — not a dynasty preset. Dynasty chips are explicit user choices. */
+export const DEFAULT_AUTHORITY_YEAR_RANGE: [number, number] = [
+  AUTHORITY_YEAR_MIN,
+  AUTHORITY_YEAR_MAX,
+];
+/** No date filter until the user chooses one or the active file supplies a work year. */
+export const DEFAULT_AUTHORITY_DATE_FILTER: DateFilterMode = 'none';
 
 export function defaultAuthorityPacksRecord(
   overrides: Partial<Record<AuthorityPackId, boolean>> = {},
@@ -114,10 +119,12 @@ export function defaultAuthorityPacksRecord(
 }
 
 /**
- * Explicit persisted settings always win. Absent those, once the active
- * file's work year is known, default to excluding candidates from that year
- * through {@link AUTHORITY_YEAR_MAX} (anachronistic for a text written that
- * early) rather than the fixed Eastern Han preset.
+ * Resolve the tag-bomb date-filter mode:
+ * 1. last explicit user choice (persisted `dateFilter`)
+ * 2. active file work year from TEI metadata → `exclude`
+ * 3. no filter
+ *
+ * Never falls back to a dynasty preset (e.g. Eastern Han).
  */
 export function migrateDateFilter(
   settings?: AutoTaggingAuthoritySettings,
@@ -126,14 +133,20 @@ export function migrateDateFilter(
   if (settings?.dateFilter) return settings.dateFilter;
   if (settings?.yearFilterEnabled === false) return 'none';
   if (workYear != null) return 'exclude';
-  return 'limit';
+  return DEFAULT_AUTHORITY_DATE_FILTER;
 }
 
 function yearRangeFromAuthoritySettings(
   settings?: AutoTaggingAuthoritySettings,
   workYear?: number | null,
 ): [number, number] {
-  if (settings?.yearStart != null || settings?.yearEnd != null) {
+  // Only treat stored years as "last user choice" when a date filter was
+  // saved with them — otherwise packs-only project JSON must not pin the
+  // slider to an old Eastern Han default.
+  if (
+    settings?.dateFilter &&
+    (settings.yearStart != null || settings.yearEnd != null)
+  ) {
     const yearStart = settings.yearStart ?? DEFAULT_AUTHORITY_YEAR_RANGE[0];
     const yearEnd = settings.yearEnd ?? DEFAULT_AUTHORITY_YEAR_RANGE[1];
     return [Math.min(yearStart, yearEnd), Math.max(yearStart, yearEnd)];
@@ -217,4 +230,22 @@ export async function persistAuthoritySettings(
     autoTaggingAuthority: settings,
   });
   window.__leafWriterProject?.setAutoTaggingAuthoritySettings?.(settings);
+}
+
+/**
+ * Persist just the date-filter portion (read-modify-write), so toggling the
+ * filter or dragging the slider becomes the next session's "last user choice"
+ * without requiring a tag-bomb run.
+ */
+export async function persistAuthorityDateFilter(
+  dateFilter: DateFilterMode,
+  yearRange: [number, number],
+): Promise<void> {
+  const current = readPersistedAuthoritySettings() ?? {};
+  await persistAuthoritySettings({
+    ...current,
+    dateFilter,
+    yearStart: Math.min(...yearRange),
+    yearEnd: Math.max(...yearRange),
+  });
 }

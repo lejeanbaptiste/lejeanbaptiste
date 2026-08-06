@@ -2,6 +2,7 @@ import * as monaco from 'monaco-editor/esm/vs/editor/editor.api';
 
 const FIND_DECORATION_CLASS = 'lw-source-find-hit';
 const FIND_ACTIVE_DECORATION_CLASS = 'lw-source-find-hit-active';
+const FIND_LINE_DECORATION_CLASS = 'lw-source-find-line-active';
 
 let decorationCollection: monaco.editor.IEditorDecorationsCollection | undefined;
 let registeredEditor: monaco.editor.IStandaloneCodeEditor | null = null;
@@ -30,6 +31,20 @@ const applyDecorationsForHits = (
         inlineClassName: isActive ? FIND_ACTIVE_DECORATION_CLASS : FIND_DECORATION_CLASS,
       },
     };
+  });
+
+  const activeRange = offsetToRange(content, activeStart, activeEnd);
+  decorations.push({
+    range: new monaco.Range(
+      activeRange.startLineNumber,
+      1,
+      activeRange.endLineNumber,
+      editor.getModel()?.getLineMaxColumn(activeRange.endLineNumber) ?? 1,
+    ),
+    options: {
+      isWholeLine: true,
+      className: FIND_LINE_DECORATION_CLASS,
+    },
   });
 
   decorationCollection?.clear();
@@ -150,6 +165,18 @@ export const revealRangeInSourceEditor = ({
         isWholeLine: end - start > 120,
       },
     },
+    {
+      range: new monaco.Range(
+        range.startLineNumber,
+        1,
+        range.endLineNumber,
+        editor.getModel()?.getLineMaxColumn(range.endLineNumber) ?? 1,
+      ),
+      options: {
+        isWholeLine: true,
+        className: FIND_LINE_DECORATION_CLASS,
+      },
+    },
   ]);
 
   revealFindHitRange(editor, range);
@@ -253,6 +280,9 @@ const ensureHighlightStyles = () => {
       background-color: #ffb74d;
       box-shadow: 0 0 0 1px #f57c00;
       border-radius: 1px;
+    }
+    .${FIND_LINE_DECORATION_CLASS} {
+      box-shadow: inset 5px 0 0 #c62828, inset -5px 0 0 #c62828;
     }
   `;
   document.head?.appendChild(style);

@@ -1,4 +1,4 @@
-import { AUTHORITY_YEAR_MAX } from './authoritySettings';
+import { AUTHORITY_YEAR_MAX, AUTHORITY_YEAR_MIN } from './authoritySettings';
 import { DEFAULT_PLACE_PROXIMITY_KM } from './authorityOverlap';
 import type { DateFilterMode } from './packLoader';
 
@@ -22,9 +22,12 @@ export interface DisambiguationSettings {
 
 export const DEFAULT_DISAMBIGUATION_AI_CURATION = true;
 
-/** Unlike the tag-bomb dialog (defaults to 'limit'), the disambiguation panel starts unfiltered. */
+/** Unlike the tag-bomb dialog (same priority: last choice → work year → none), the disambiguation panel starts unfiltered when nothing else applies. */
 export const DEFAULT_DISAMBIGUATION_DATE_FILTER: DateFilterMode = 'none';
-export const DEFAULT_DISAMBIGUATION_YEAR_RANGE: [number, number] = [25, 220];
+export const DEFAULT_DISAMBIGUATION_YEAR_RANGE: [number, number] = [
+  AUTHORITY_YEAR_MIN,
+  AUTHORITY_YEAR_MAX,
+];
 
 export function aiCurationFromSettings(settings?: DisambiguationSettings): boolean {
   return settings?.aiCuration ?? DEFAULT_DISAMBIGUATION_AI_CURATION;

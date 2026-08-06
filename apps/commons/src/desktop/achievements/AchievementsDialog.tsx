@@ -46,7 +46,11 @@ import {
   metricValue,
   topRankedMetrics,
 } from './evaluate';
-import { recordLeaderboardPublication, refreshGithubContributions } from './engine';
+import {
+  deliverWaitingUnlockNotifications,
+  recordLeaderboardPublication,
+  refreshGithubContributions,
+} from './engine';
 import { MedalIcon, METRIC_RIBBONS, SPECIAL_RIBBON, type MedalMetric } from './MedalIcon';
 import {
   BODY_TYPES,
@@ -544,10 +548,21 @@ export const AchievementsDialog = ({ onClose, open }: AchievementsDialogProps) =
 
   const updateAvatar = async (changes: Partial<typeof avatarOptions>) => {
     const current = await loadAchievementsState();
+    const firstCharacter = current.avatar === null;
     const options = { ...avatarOptions, ...changes };
     current.avatar = { kind: 'dicebear', options };
     await saveAchievementsState(current);
     setState({ ...current });
+    // Medals earned before a portrait existed are already unlocked on disk;
+    // only now may their toast notifications fire.
+    if (firstCharacter) {
+      deliverWaitingUnlockNotifications(current, (message) =>
+        notifyViaSnackbar({
+          message,
+          options: { variant: 'success', autoHideDuration: 7000 },
+        }),
+      );
+    }
   };
 
   // keepMounted below: without it, MUI tears down everything inside

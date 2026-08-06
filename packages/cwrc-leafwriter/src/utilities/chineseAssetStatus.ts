@@ -11,6 +11,13 @@ export interface ChineseProjectAssets {
   pluginsInstalled: boolean;
 }
 
+/**
+ * Plugins every Chinese / literary-Chinese project should have on disk.
+ * "Plugins installed" means all of these, not merely one — otherwise a machine
+ * with only Norbert never re-prompts for East Asian dates (cjk-dates).
+ */
+export const EXPECTED_CHINESE_PLUGIN_IDS = ['norbert', 'cjk-dates'] as const;
+
 const isChineseRelatedLanguage = (language: string): boolean => {
   const normalized = language.toLowerCase();
   return normalized.startsWith('zh') || normalized === 'lzh';
@@ -64,13 +71,17 @@ export async function checkChineseProjectAssets(): Promise<ChineseProjectAssets>
   }
 
   try {
-    // Plugins are installed app-wide; `enabled` is per-project. Only prompt to
-    // *download* when no matching Chinese plugin is on disk — a fresh Chinese
-    // project that simply hasn't enabled Norbert/cjk-dates yet is not "missing"
-    // the plugins.
+    // Plugins are installed app-wide; `enabled` is per-project. Prompt to
+    // *download* when any expected Chinese plugin is still missing from disk
+    // (Norbert alone must not count as complete — East Asian dates is required
+    // too). A project that simply hasn't enabled them yet is not "missing".
     const pluginsSnapshot = await window.electronAPI?.pluginsGetSnapshot?.();
-    result.pluginsInstalled =
-      pluginsSnapshot?.plugins.some((plugin) => pluginSupportsChinese(plugin)) ?? false;
+    const installedIds = new Set(
+      (pluginsSnapshot?.plugins ?? [])
+        .filter((plugin) => !plugin.manifestError)
+        .map((plugin) => plugin.id),
+    );
+    result.pluginsInstalled = EXPECTED_CHINESE_PLUGIN_IDS.every((id) => installedIds.has(id));
     if (!result.pluginsInstalled) {
       result.missingAssets.push('plugins');
     }

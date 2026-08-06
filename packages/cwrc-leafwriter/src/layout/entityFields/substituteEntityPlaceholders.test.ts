@@ -88,4 +88,108 @@ describe('substituteEntityPlaceholders', () => {
     const html = substituteEntityPlaceholders('No mentions here.', entities);
     expect(html).toBe('No mentions here.');
   });
+
+  test('place placeholder becomes a kind-aware entity field', () => {
+    const entities = new Map([
+      [
+        'place-1',
+        {
+          id: 'place-1',
+          kind: 'place',
+          names: [{ lang: 'zh-Latn', text: 'Jiankang' }],
+          primaryName: 'Jiankang',
+          romanizedName: 'Jiankang',
+          translations: [],
+          description: null,
+          dates: null,
+          familyName: null,
+          authorityIds: [],
+          classification: null,
+          workType: null,
+        } satisfies EntitySummary,
+      ],
+    ]);
+    const html = substituteEntityPlaceholders('He went to {{entity:place-1}}.', entities);
+    const refs = refsIn(html);
+    expect(refs).toHaveLength(1);
+    expect(refs[0]!.getAttribute('key')).toBe('place-1');
+    expect(refs[0]!.textContent).toBe('Jiankang');
+  });
+
+  test('org placeholder becomes a kind-aware entity field', () => {
+    const entities = new Map([
+      [
+        'org-1',
+        {
+          id: 'org-1',
+          kind: 'org',
+          names: [{ lang: 'en', text: 'Hanlin Academy' }],
+          primaryName: 'Hanlin Academy',
+          romanizedName: 'Hanlin Academy',
+          translations: [],
+          description: null,
+          dates: { startYear: 738, endYear: 907, startPrecision: null, endPrecision: null },
+          familyName: null,
+          authorityIds: [],
+          classification: null,
+          workType: null,
+        } satisfies EntitySummary,
+      ],
+    ]);
+    const html = substituteEntityPlaceholders('The {{entity:org-1}} met.', entities);
+    expect(refsIn(html)[0]!.textContent).toBe('Hanlin Academy');
+  });
+
+  test('work placeholder becomes a kind-aware entity field', () => {
+    const entities = new Map([
+      [
+        'work-1',
+        {
+          id: 'work-1',
+          kind: 'work',
+          names: [{ lang: 'en', text: 'Book of Song' }],
+          primaryName: 'Book of Song',
+          romanizedName: 'Book of Song',
+          translations: [],
+          description: null,
+          dates: { startYear: 488, endYear: null, startPrecision: null, endPrecision: null },
+          familyName: null,
+          authorityIds: [],
+          classification: null,
+          workType: 'book' as const,
+        } satisfies EntitySummary,
+      ],
+    ]);
+    const html = substituteEntityPlaceholders('See {{entity:work-1}}.', entities);
+    const ref = refsIn(html)[0]!;
+    expect(ref.getAttribute('key')).toBe('work-1');
+    expect(ref.getAttribute('data-work-style')).toBe('italic');
+    expect(ref.textContent).toContain('Book of Song');
+  });
+
+  test('roleName / office placeholder becomes a kind-aware entity field', () => {
+    const entities = new Map([
+      [
+        'office-1',
+        {
+          id: 'office-1',
+          kind: 'office',
+          names: [{ lang: 'en', text: 'Prefect of Jiankang' }],
+          primaryName: 'Prefect of Jiankang',
+          romanizedName: 'Prefect of Jiankang',
+          translations: [],
+          description: null,
+          dates: null,
+          familyName: null,
+          authorityIds: [],
+          classification: 'Capital prefecture',
+          workType: null,
+        } satisfies EntitySummary,
+      ],
+    ]);
+    const html = substituteEntityPlaceholders('As {{entity:office-1}}, he ruled.', entities);
+    const ref = refsIn(html)[0]!;
+    expect(ref.getAttribute('key')).toBe('office-1');
+    expect(ref.textContent).toBe('Prefect of Jiankang Capital prefecture');
+  });
 });

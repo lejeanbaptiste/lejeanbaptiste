@@ -10,8 +10,9 @@ import {
 import { resolveNameTypeTaggingPolicy } from './nameTypeTaggingPolicy';
 
 describe('authoritySettings', () => {
-  it('defaults to the Eastern Han preset when no work year is known', () => {
+  it('defaults to no date filter when no work year is known', () => {
     expect(migrateDateFilter(undefined)).toBe(DEFAULT_AUTHORITY_DATE_FILTER);
+    expect(migrateDateFilter(undefined)).toBe('none');
     expect(uiStateFromSettings(undefined).yearRange).toEqual(DEFAULT_AUTHORITY_YEAR_RANGE);
     expect(uiStateFromSettings(undefined).showPackStringCounts).toBe(false);
   });
@@ -29,9 +30,21 @@ describe('authoritySettings', () => {
   it('lets an explicit persisted setting override the work-year default', () => {
     expect(migrateDateFilter({ dateFilter: 'limit' }, 400)).toBe('limit');
     expect(migrateDateFilter({ yearFilterEnabled: false }, 400)).toBe('none');
-    expect(uiStateFromSettings({ yearStart: 618, yearEnd: 907 }, 400).yearRange).toEqual([
-      618, 907,
+    expect(
+      uiStateFromSettings({ dateFilter: 'limit', yearStart: 618, yearEnd: 907 }, 400).yearRange,
+    ).toEqual([618, 907]);
+  });
+
+  it('ignores stored years when no date filter was saved (packs-only settings)', () => {
+    expect(uiStateFromSettings({ yearStart: 25, yearEnd: 220 }, 400).dateFilter).toBe('exclude');
+    expect(uiStateFromSettings({ yearStart: 25, yearEnd: 220 }, 400).yearRange).toEqual([
+      400,
+      AUTHORITY_YEAR_MAX,
     ]);
+    expect(uiStateFromSettings({ yearStart: 25, yearEnd: 220 }).dateFilter).toBe('none');
+    expect(uiStateFromSettings({ yearStart: 25, yearEnd: 220 }).yearRange).toEqual(
+      DEFAULT_AUTHORITY_YEAR_RANGE,
+    );
   });
 
   it('excludes courtesy names from tagging by default, honoring persisted overrides', () => {

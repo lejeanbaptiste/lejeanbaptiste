@@ -1,4 +1,10 @@
 import { clearFindHighlightsInSourceEditor } from './findSourceEditorHighlights';
+import {
+  clearWysiwygFindLineMarkers,
+  findLineMarkerCss,
+  getWysiwygLineBlock,
+  markWysiwygFindLineBlocks,
+} from './findLineMarkers';
 import { compileFindLiteralRegex, tryCompileFindRegex } from './regexPatternUtils';
 import { clearActiveFindHighlightInEditor } from './selectTextInEditor';
 
@@ -29,6 +35,7 @@ const clearWysiwygFindHighlights = () => {
     parent.removeChild(element);
   });
 
+  clearWysiwygFindLineMarkers(body);
   body.normalize();
 };
 
@@ -47,6 +54,7 @@ const ensureHighlightStyles = (doc: Document) => {
       box-shadow: 0 0 0 1px #f57c00;
       border-radius: 1px;
     }
+    ${findLineMarkerCss}
   `;
   doc.head?.appendChild(style);
 };
@@ -159,6 +167,15 @@ export const applyFindHighlightsInEditor = (
     activeSpan.element.classList.remove(FIND_HIT_CLASS);
     activeSpan.element.classList.add(FIND_HIT_ACTIVE_CLASS);
     activeSpan.element.scrollIntoView({ block: 'nearest', behavior: 'auto' });
+
+    const lineBlocks = new Set<HTMLElement>();
+    for (const span of spans) {
+      const block = getWysiwygLineBlock(span.element, body);
+      if (block) lineBlocks.add(block);
+    }
+    const activeBlock = getWysiwygLineBlock(activeSpan.element, body);
+    markWysiwygFindLineBlocks(body, lineBlocks, activeBlock);
+
     applied = true;
   });
 
@@ -183,7 +200,16 @@ export const scrollToFindHitInEditor = (activeMatchIndex: number): boolean => {
       span.classList.toggle(FIND_HIT_ACTIVE_CLASS, index === activeIndex);
     });
 
-    spans[activeIndex]?.scrollIntoView({ block: 'nearest', behavior: 'auto' });
+    const activeSpan = spans[activeIndex];
+    activeSpan?.scrollIntoView({ block: 'nearest', behavior: 'auto' });
+
+    const lineBlocks = new Set<HTMLElement>();
+    for (const span of spans) {
+      const block = getWysiwygLineBlock(span, body);
+      if (block) lineBlocks.add(block);
+    }
+    const activeBlock = activeSpan ? getWysiwygLineBlock(activeSpan, body) : null;
+    markWysiwygFindLineBlocks(body, lineBlocks, activeBlock);
   });
 
   return true;

@@ -1,5 +1,6 @@
 import {
   checkChineseProjectAssets,
+  EXPECTED_CHINESE_PLUGIN_IDS,
   pluginSupportsChinese,
 } from './chineseAssetStatus';
 
@@ -51,14 +52,26 @@ describe('checkChineseProjectAssets', () => {
     } as typeof window.electronAPI;
   };
 
-  it('does not list plugins as missing when a Chinese plugin is installed but disabled for this project', async () => {
+  it('requires both Norbert and East Asian dates before plugins count as installed', async () => {
     stubApi({
       plugins: [{ id: 'norbert', enabled: false, languages: ['zh-Hant'] }],
     });
 
-    const result = await checkChineseProjectAssets();
-    expect(result.pluginsInstalled).toBe(true);
-    expect(result.missingAssets).not.toContain('plugins');
+    const partial = await checkChineseProjectAssets();
+    expect(partial.pluginsInstalled).toBe(false);
+    expect(partial.missingAssets).toContain('plugins');
+
+    stubApi({
+      plugins: EXPECTED_CHINESE_PLUGIN_IDS.map((id) => ({
+        id,
+        enabled: false,
+        languages: ['zh-Hant'],
+      })),
+    });
+
+    const complete = await checkChineseProjectAssets();
+    expect(complete.pluginsInstalled).toBe(true);
+    expect(complete.missingAssets).not.toContain('plugins');
   });
 
   it('lists plugins as missing when no Chinese plugin is on disk', async () => {
@@ -67,6 +80,7 @@ describe('checkChineseProjectAssets', () => {
     });
 
     const result = await checkChineseProjectAssets();
+    // ja-only install is not the expected Chinese pair (norbert + cjk-dates).
     expect(result.pluginsInstalled).toBe(false);
     expect(result.missingAssets).toContain('plugins');
   });
@@ -75,7 +89,11 @@ describe('checkChineseProjectAssets', () => {
     stubApi({
       packsInstalled: false,
       mapInstalled: false,
-      plugins: [{ id: 'norbert', enabled: true, languages: ['zh-Hant'] }],
+      plugins: EXPECTED_CHINESE_PLUGIN_IDS.map((id) => ({
+        id,
+        enabled: true,
+        languages: ['zh-Hant'],
+      })),
     });
 
     const result = await checkChineseProjectAssets();

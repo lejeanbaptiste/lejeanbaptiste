@@ -16,7 +16,15 @@ import type { AchievementsState } from './types';
 
 export type AchievementUnlockNotifier = (message: string) => void;
 
-const notifyUnlocks = (ids: string[], notify: AchievementUnlockNotifier) => {
+/** Portrait committed in Service Record — unlocks persist before this, but do not toast. */
+const hasCreatedCharacter = (state: AchievementsState): boolean => state.avatar != null;
+
+const notifyUnlocks = (
+  state: AchievementsState,
+  ids: string[],
+  notify: AchievementUnlockNotifier,
+) => {
+  if (!hasCreatedCharacter(state) || ids.length === 0) return;
   if (ids.length > 3) {
     notify(`🎖️ ${ids.length} achievements unlocked — see your Service Record`);
     return;
@@ -26,6 +34,18 @@ const notifyUnlocks = (ids: string[], notify: AchievementUnlockNotifier) => {
     const def = findAchievementDef(id, locale);
     if (def) notify(`🎖️ Achievement unlocked: ${def.name} — ${def.description}`);
   }
+};
+
+/**
+ * Call once the player first commits a portrait. Medals earned while
+ * `avatar` was still null are already in `state.unlocked`; this is when
+ * their toast notifications are allowed to fire.
+ */
+export const deliverWaitingUnlockNotifications = (
+  state: AchievementsState,
+  notify: AchievementUnlockNotifier,
+): void => {
+  notifyUnlocks(state, Object.keys(state.unlocked), notify);
 };
 
 const applyUnlocks = (state: AchievementsState, ids: string[], at: string): string[] => {
@@ -43,7 +63,7 @@ export const unlockAchievement = async (
   const applied = applyUnlocks(state, [id], new Date().toISOString());
   if (applied.length > 0) {
     await saveAchievementsState(state);
-    notifyUnlocks(applied, notify);
+    notifyUnlocks(state, applied, notify);
   }
   return state;
 };
@@ -63,7 +83,7 @@ export const recordTimeMachineRun = async (
       ? applyUnlocks(state, ['precautionary-measures'], at)
       : [];
   await saveAchievementsState(state);
-  notifyUnlocks(applied, notify);
+  notifyUnlocks(state, applied, notify);
   return state;
 };
 
@@ -105,7 +125,7 @@ export const refreshGithubContributions = async (
     new Date().toISOString(),
   );
   await saveAchievementsState(state);
-  notifyUnlocks(applied, notify);
+  notifyUnlocks(state, applied, notify);
   return state;
 };
 
@@ -126,7 +146,7 @@ export const recordLeaderboardPublication = async (
     publishedAt.toISOString(),
   );
   await saveAchievementsState(state);
-  notifyUnlocks(applied, notify);
+  notifyUnlocks(state, applied, notify);
   return state;
 };
 
@@ -243,7 +263,7 @@ export const processSaveForAchievements = async (options: {
     const applied = applyUnlocks(state, newUnlocks, savedAt.toISOString());
 
     await saveAchievementsState(state);
-    notifyUnlocks(applied, notify);
+    notifyUnlocks(state, applied, notify);
   } catch {
     // Decorative feature: swallow everything.
   }

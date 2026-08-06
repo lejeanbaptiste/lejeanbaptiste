@@ -48,6 +48,7 @@ import {
   entityStoreFromDesktop,
   OWN_DATABASE_KIND_BY_PACK_ID,
   persistAuthoritySettings,
+  persistAuthorityDateFilter,
   readAiPromptProfilesFromDesktop,
   readPersistedAuthoritySettings,
   readPersistedExclusions,
@@ -67,6 +68,8 @@ import {
   uiStateFromSettings,
   AUTHORITY_YEAR_MIN,
   AUTHORITY_YEAR_MAX,
+  DEFAULT_AUTHORITY_DATE_FILTER,
+  DEFAULT_AUTHORITY_YEAR_RANGE,
   type AiPromptProfilesState,
   type AuthorityPackId,
   type AuthorityPackStringCounts,
@@ -363,12 +366,20 @@ export const AutoTaggingDialog = ({ id, onClose, open = false }: IDialog) => {
   const [entityDbFolder, setEntityDbFolder] = useState<string | null>(null);
   const [packsLocationHint, setPacksLocationHint] = useState<string | null>(null);
   const [authorityProgress, setAuthorityProgress] = useState('');
-  const [authorityDateFilter, setAuthorityDateFilter] = useState<DateFilterMode>('limit');
-  const [authorityYearRange, setAuthorityYearRange] = useState<[number, number]>([25, 220]);
+  const [authorityDateFilter, setAuthorityDateFilter] =
+    useState<DateFilterMode>(DEFAULT_AUTHORITY_DATE_FILTER);
+  const [authorityYearRange, setAuthorityYearRange] =
+    useState<[number, number]>(DEFAULT_AUTHORITY_YEAR_RANGE);
   const cycleAuthorityDateFilter = () => {
-    setAuthorityDateFilter((mode) =>
-      mode === 'none' ? 'limit' : mode === 'limit' ? 'exclude' : 'none',
-    );
+    setAuthorityDateFilter((mode) => {
+      const next = mode === 'none' ? 'limit' : mode === 'limit' ? 'exclude' : 'none';
+      void persistAuthorityDateFilter(next, authorityYearRange);
+      return next;
+    });
+  };
+  const commitAuthorityYearRange = (range: [number, number]) => {
+    setAuthorityYearRange(range);
+    void persistAuthorityDateFilter(authorityDateFilter, range);
   };
   const [importedLists, setImportedLists] = useState<TagBombImportedList[]>([]);
   const [tagBombScope, setTagBombScope] = useState<TagBombScope>('currentFile');
@@ -1701,6 +1712,9 @@ export const AutoTaggingDialog = ({ id, onClose, open = false }: IDialog) => {
                     step={1}
                     value={authorityYearRange}
                     onChange={(_event, value) => setAuthorityYearRange(value as [number, number])}
+                    onChangeCommitted={(_event, value) =>
+                      commitAuthorityYearRange(value as [number, number])
+                    }
                     valueLabelDisplay="auto"
                     getAriaLabel={(index) => (index === 0 ? 'Start year' : 'End year')}
                     getAriaValueText={(value) => `${value} CE`}
@@ -1729,7 +1743,7 @@ export const AutoTaggingDialog = ({ id, onClose, open = false }: IDialog) => {
                         size="small"
                         variant="outlined"
                         disabled={busy}
-                        onClick={() => setAuthorityYearRange([preset.start, preset.end])}
+                        onClick={() => commitAuthorityYearRange([preset.start, preset.end])}
                         sx={{
                           py: 0,
                           px: 0.75,
