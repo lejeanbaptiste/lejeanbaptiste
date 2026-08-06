@@ -3095,7 +3095,7 @@ const registerIpcHandlers = () => {
       properties: ['openDirectory', 'createDirectory'],
       title: 'Choose entity database folder',
       message:
-        'Prefer a folder synced by Dropbox, iCloud, or similar so your entity database can travel between machines. You can keep projects here too.',
+        'A blank folder is fine — Le Jean-Baptiste will set up the database. Prefer a folder synced by Dropbox, iCloud, or OneDrive so it can travel between machines.',
       defaultPath: await getDialogDefaultPath(),
     };
     const result = parent

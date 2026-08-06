@@ -245,6 +245,9 @@ export async function backfillEntitiesSqlite(
     readPackFile?: (packId: AuthorityPackId) => Promise<AuthorityPackContent>;
     projectLang?: string | null;
     desktopLanguage?: string | null;
+    /** Project's configured translation-mode language codes — widens Wikidata title-label
+     * fetches beyond `en` + `desktopLanguage` so translations land for every project language. */
+    translationLanguages?: string[];
     signal?: AbortSignal;
     onProgress?: (p: NameBackfillProgress) => void;
     fetchImpl?: typeof fetch;
@@ -274,6 +277,7 @@ export async function backfillEntitiesSqlite(
     readPackFile,
     projectLang,
     desktopLanguage,
+    translationLanguages,
     signal,
     onProgress,
     fetchImpl,
@@ -680,6 +684,7 @@ export async function backfillEntitiesSqlite(
             work.qid,
             fetchImpl,
             desktopLanguage,
+            translationLanguages,
           ).catch(() => null);
           const workPatchNames =
             workDetails?.titles.map((title) => ({
@@ -750,9 +755,12 @@ export async function backfillEntitiesSqlite(
     const qid = extractWikidataId(wikidata?.value ?? '');
     let enriched = false;
     if (qid) {
-      const details = await fetchWikidataWorkDetails(qid, fetchImpl, desktopLanguage).catch(
-        () => null,
-      );
+      const details = await fetchWikidataWorkDetails(
+        qid,
+        fetchImpl,
+        desktopLanguage,
+        translationLanguages,
+      ).catch(() => null);
       if (details) {
         const authorIds: Array<{ name: string; personId: string }> = [];
         for (const author of details.authors) {

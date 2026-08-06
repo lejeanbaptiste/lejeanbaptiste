@@ -1,6 +1,6 @@
 # Entity display: work types, title translations, period-filtered role translations
 
-**Status (2026-08-06):** **Phase 0–2 shipped** (`work_type`, `entity_translations` + title convention, empty-state translation nudge). Still open: period-filtered office glosses (Phase 3). Follows the kind-aware entity display baseline (`entityDisplay.ts`, `EntityDisplayPopup.tsx`, `entityAutocomplete.ts`, dates restricted to person/work, `office_classifications` wired up).
+**Status (2026-08-06):** **Phase 0–2 shipped** (`work_type`, `entity_translations` + title convention, empty-state translation nudge), **Phase 1b shipped** (Wikidata batch backfill now covers all configured project translation languages, not just en + desktop UI language). **Phase 3's design is now settled** (a `roleName`/office entity is string + translation + date range — period disambiguation happens at tagging time via the existing candidate-picker UI, not at render time; see decision #4) but not yet built — remaining work is small (candidate-picker UI + confirming date-range plumbing). Follows the kind-aware entity display baseline (`entityDisplay.ts`, `EntityDisplayPopup.tsx`, `entityAutocomplete.ts`, dates restricted to person/work, `office_classifications` wired up).
 
 ## Context
 
@@ -15,7 +15,7 @@ The kind-aware formatter fixed the mechanical problem (place/org/office/work no 
 1. **`work_type` ships before "belongs to."** It's cheap (one column, same shape as the existing `office_classifications`) and unlocks citation styling immediately. "Belongs to" (chapter → book) needs `entity_relations` wired up (currently dormant — round-trips via XML import/export in `xmlCodec.ts` but is never read into the panel summary) plus async cross-entity name resolution to render "chapter of X," which the current formatter isn't built for. Treated as a later, independent phase.
 2. **Title convention (romanization-first vs. translation-first) lives in `EntityDisplaySpec`**, as a per-mention override with a project-level default per target language — same architecture as the existing `possessive`/`bracketsAround` fields, not a parallel system.
 3. **Hucker translations stay local/opt-in, never shipped in the public Norbert asset pack.** Hucker's *Dictionary of Official Titles* is copyrighted; redistributing it verbatim is real legal exposure. Only **Huckbot5000** output — AI-inferred gap-fill translations, synthesized in Hucker's style from matched examples, not copied text — ships in the public pack, and even those must be source-tagged distinctly (`source: 'Huckbot5000'` vs `source: 'Hucker'`) using the existing origin/source/status convention already used throughout the entity store. CBDB's own terms of use may separately restrict redistributing *their* Hucker-derived fields — check before anything ships.
-4. **Period-filtered office translations are variants on one entity, not duplicate entities.** "Same office name, different date range, different Hucker gloss" is modeled as N translation rows on a single office entity, each carrying a valid-from/valid-to range (reusing the existing `EntityDates` shape) — not separate entities sharing a name. Duplicate entities would break entity identity and complicate every `person_offices` reference (which one do you point at?).
+4. **~~Period-filtered office translations are variants on one entity, not duplicate entities~~ — SUPERSEDED (2026-08-06).** Revised: **a `roleName`/office entity is defined as string + translation + date range.** Daniel has been implicitly working this way already — CBDB itself disambiguates by period (its office codes are already period-specific), and Norbert only covers Han/Six Dynasties, so "which era" is already baked into which authority/candidate a tagger picks. Each period-specific office is its own entity (matching CBDB's own granularity, not an artificial leaf-writer split), disambiguated at tagging time via the existing candidate-picker UI — not a new "translation variant" concept layered on top of one shared entity. This resolves the "whose date?" open question below by eliminating it: see there for why.
 5. **`work_type` taxonomy and citation styling (2026-08-05):** `book` (italic), `chapter` (quotes — covers chapters/articles), `poem` (quotes — individual poems; a poem *collection* is typed `book` and italicized), `painting` (italic, art-historical convention), `object` (plain, no styling). **Default is `book`:** unset/`NULL` is treated as book everywhere (display, panel summary, new-work inserts, schema migration7 backfill). Any single mapping can still be adjusted, but the enum and default styling rule are settled — this unblocks Phase 0.
 
 ## Open questions (need answers before building the phase they block)
@@ -24,7 +24,7 @@ These block their respective phase, not Phase 0:
 
 - ~~**Translation storage shape.**~~ **Decided (2026-08-06):** dedicated `entity_translations` table (schema migration 9). Same origin/source/status conventions as names; glosses are out of name-search/autocomplete; the editor still merges them into the names list as `nameType: 'translation'`.
 - ~~**"TRANSLATION"/"TRADUCTION" prefill UX.**~~ **Decided (2026-08-06):** dashed non-typeable affordance on both the entity editor and the translation-pane display popup — never insert literal placeholder text into the document or entity store.
-- **"Whose date?" for period-filtered office translations.** An office mention in running prose doesn't always carry its own date. Candidates: the citing passage's date, the tagged office-holder's tenure, or falling back to "most recent variant" when no date is available. Needs a concrete rule before `renderEntityFromSpec` can take a date parameter.
+- ~~**"Whose date?" for period-filtered office translations.**~~ **Resolved (2026-08-06) by elimination, not by picking a rule.** Given decision #4's revision, this question doesn't need an answer: `renderEntityFromSpec` never needs a date parameter, because there's nothing to disambiguate at render time. A `roleName` mention is either tagged with a resolved `key` pointing at one specific, already-period-disambiguated office entity, or it isn't tagged at all yet (plain text, same as any other unresolved person/place mention today) — `collectSourceUnitEntities`/the AI-translation entity list only ever pick up mentions with a resolved key, so an ambiguous mention simply never reaches rendering or the AI-translation placeholder pipeline. The disambiguation moment is pushed entirely upstream, to the existing entity-tagging/candidate-picker UI, at the point a `roleName` span gets linked to a specific CBDB/Norbert office record in the first place.
 - **Grand Ricci sourcing.** Daniel wants Grand Ricci title translations but has no known source/license path yet. Parked — not an engineering task until he has something to point at.
 
 ## Phased plan
@@ -55,8 +55,16 @@ Confirmed fixed: #1 (no XML error). #2–#4 (correct placement) — deeper caret
 - **Display:** First-occurrence can be romanization-first (`_Jinshu_ 晉書 (Livre des Jin)`) or translation-first (`_Livre des Jin_ (Jinshu 晉書)`). Gloss / leading title italics follow the convention. Hideable via the entity-display popup chip; “Lead with translation” switch writes an explicit per-mention override.
 - **Storage:** vernacular glosses live in `entity_translations` (schema migration 9). Romanizations stay in `entity_names` as `nameType: 'romanization'` + `*-Latn` (migration 8). Editor UI still edits glosses as Translation name rows; repository routes those writes to the translations table. Display prefers `EntitySummary.translations`, with a dual-read fallback for any leftover `nameType: 'translation'` name rows.
 - **Language default:** personal translation-policy setting (`titleConvention` per en/fr/de bucket in localStorage), same store as date wording — not edition/project XML. Default remains romanization-first.
-- Still open / not built: Wikidata pull (Phase 1b).
-- Wikidata pull (translated labels, CC0, no licensing concern unlike Hucker) is a natural Phase 1b — separate PR, not blocking core display.
+
+### Phase 1b — Widen the Wikidata batch backfill — **SHIPPED (2026-08-06)**
+**Goal:** the existing bulk Wikidata pull (Database Window refresh) should cover every language the project has configured for translation, not just `en` + the desktop UI language.
+- Scope decision: widen the existing batch job (`backfillEntitiesSqlite`), not a new per-entity "Suggest from Wikidata" button — that on-demand pattern already exists for AI (`suggestEntityGloss`) and wasn't duplicated for Wikidata.
+- `fetchWikidataWorkDetails` (`wikidataWorkDetails.ts`) gained a 4th param, `extraLanguages?: string[]`, unioned into the requested/extracted label-language set alongside `en` + `desktopLanguage` — additive, no existing caller or test needed to change.
+- `backfillEntitiesSqlite` (`sqliteAuthorityBackfill.ts`) gained a `translationLanguages?: string[]` option, forwarded to both of its internal `fetchWikidataWorkDetails` call sites (the person `expandWikidataWorks` branch and the direct work-entity path).
+- `DatabaseWindow.tsx` now reads the project's configured translation languages the same way the entity editor's nudge chips do (`getActiveProjectBundle()` + `readTranslationSettings()`), and passes them into the bulk-refresh call.
+- **Bonus fix, same pass:** `DatabaseWindow.tsx` was never passing `desktopLanguage` to the backfill at all, so in practice the bulk job only ever fetched the `en` label regardless of UI language — now passes `i18n.language`.
+- Tests: `wikidataWorkDetails.test.ts` — 3 new cases (extra languages included when present, an entity missing one language's label is skipped rather than erroring, and a regression case confirming default `en`+`desktopLanguage`-only behavior is unchanged when the new param is omitted). `backfillEntitiesSqlite` itself has no unit tests (none existed before this change either — flagged as a coverage gap, not silently skipped); relying on TypeScript plus the direct test of the function whose logic actually changed.
+- Not yet done: a live pass of the Database Window's bulk refresh against a real project with 2+ translation languages configured and a Wikidata-linked work — network + Electron, not something driveable headlessly from here.
 
 ### Phase 2 — "TRANSLATION"/"TRADUCTION" empty-state nudge — **SHIPPED (2026-08-06)**
 **Goal:** encourage users to fill out missing translations without risking stray placeholder text shipping in real output.
@@ -65,12 +73,12 @@ Confirmed fixed: #1 (no XML error). #2–#4 (correct placement) — deeper caret
 - No literal “TRANSLATION”/“TRADUCTION” text is ever written into the document or the entity store.
 - **AI suggest on nudge (2026-08-06):** “Suggest with AI” on both surfaces fills the draft gloss only (popup dialog + editor Add row when type is Translation and a language is set). User still edits and clicks Save/Add. Gated by `entityGlossSuggest` (on by default); separate from unfinished full-unit `translationGenerate`.
 
-### Phase 3 — Org/role period-filtered translations (Hucker data model)
-**Goal:** office/org labels carry period-appropriate English glosses.
-- Extends Phase 1's translation table with valid-from/valid-to columns (or a variant sub-table) — same shape as `EntityDates`.
-- New "applicable date" input threaded into `renderEntityFromSpec` (today only takes entity + occurrence + spec + lang).
-- Blocked on the "whose date?" decision above.
-- **Depends on Phase 1's translation infrastructure existing** — this is Phase 1 plus date-ranging, not a separate system.
+### Phase 3 — Org/role period-filtered translations (Hucker data model) — **scope resolved (2026-08-06), not yet built**
+**Goal:** office/role labels carry period-appropriate English glosses.
+Given decision #4's revision, this phase is much smaller than originally sketched — no new "variant" concept, no date parameter threaded through the formatter. A `roleName` entity is string + translation + date range, full stop; each period-specific office is its own entity, same as any other entity kind. What's actually left to build:
+- Confirm office entities can carry a date range through the normal entity-dates path (likely already possible — Part 2 already wired up generic `entity_dates` rows for every kind, including office; it's just not *displayed* for office by design, which is unaffected by this — the date range's job here is disambiguation at tagging time, not rendering).
+- Make sure the candidate-picker/disambiguation UI (used when tagging a `roleName` span against CBDB/Norbert) surfaces each candidate's date range clearly enough for correct picking — this is the one real UI gap, everything else already exists (Phase 1's translation display, existing entity-tagging discipline).
+- No changes needed to `entityDisplay.ts`/`renderEntityFromSpec`/`EntityDisplaySpec` — a resolved office mention renders exactly like any other Phase 1 title translation already does.
 
 ### Phase 4 — Huckbot5000 pipeline
 **Goal:** asset-pack build step that matches Hucker/Grand-Ricci-if-obtainable translations to Norbert/CBDB office entities by string+period, then feeds the untranslated remainder to an AI to infer translations in Hucker's style, source-tagged as `Huckbot5000`.
@@ -84,7 +92,7 @@ Confirmed fixed: #1 (no XML error). #2–#4 (correct placement) — deeper caret
 
 ## Sequencing
 
-- **Phases 0–2** are shipped.
-- **Phase 3** depends on Phase 1's infrastructure and its own open question ("whose date?").
-- **Phase 4** depends on Phase 3's schema and is lowest priority — a build-tool project, not an in-app feature.
+- **Phases 0–2 and 1b** are shipped.
+- **Phase 3**'s scope question is resolved (no more open "whose date?" blocker) but it isn't built — mostly a candidate-picker UI improvement plus confirming office date-range plumbing, both small.
+- **Phase 4** depends on Phase 3 (needs office entities with real date ranges to match against) and is lowest priority — a build-tool project, not an in-app feature. See also `project_huckbot5000_feasibility` memory: lexicon is extractable from Hucker but composition rules aren't, retrieval-augmented matching gave zero lift, and a cold LLM only reproduces Hucker's actual gloss ~28% of the time — worth reading before scoping Phase 4's approach.
 - **"Belongs to"** and **Grand Ricci** run on their own track, not gating or gated by 0–4.

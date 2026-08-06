@@ -585,11 +585,11 @@
       },
       "database_setup_prompt": {
         "title": "Entity database",
-        "message": "Choose a folder for your entity database, preferably one synced to a cloud.",
+        "message": "You already have a working database folder deep in your system files. We suggest creating or choosing a folder synced to the cloud (Dropbox, iCloud, OneDrive, …) instead, so your entities can travel between machines.",
         "folder_label": "Database folder",
-        "folder_placeholder": "No folder chosen yet",
-        "choose": "Choose folder…",
-        "note": "Already have a database synced from another machine (e.g. via Dropbox or iCloud)? Choose its folder here to use it instead of creating a new one.",
+        "folder_placeholder": "Using the built-in default…",
+        "choose": "Choose a cloud-synced folder…",
+        "note": "Optional. A blank folder is fine — Le Jean-Baptiste will set the database up. Already have a database from another machine? Choose that folder to use it.",
         "done": "Done"
       },
       "explorer": {

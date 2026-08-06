@@ -855,11 +855,11 @@
       },
       "database_setup_prompt": {
         "title": "Base d’entités",
-        "message": "Choisissez un dossier pour votre base d’entités, de préférence synchronisé dans le cloud.",
+        "message": "Vous avez déjà un dossier de base fonctionnel, enfoui dans les fichiers système. Nous vous suggérons plutôt de créer ou de choisir un dossier synchronisé dans le cloud (Dropbox, iCloud, OneDrive…), pour que vos entités voyagent d’une machine à l’autre.",
         "folder_label": "Dossier de la base",
-        "folder_placeholder": "Aucun dossier choisi",
-        "choose": "Choisir un dossier…",
-        "note": "Vous avez déjà une base synchronisée depuis une autre machine (Dropbox, iCloud, etc.) ? Choisissez son dossier ici pour l’utiliser plutôt que d’en créer une nouvelle.",
+        "folder_placeholder": "Dossier par défaut en cours d’utilisation…",
+        "choose": "Choisir un dossier synchronisé…",
+        "note": "Facultatif. Un dossier vide convient — Le Jean-Baptiste y créera la base. Vous avez déjà une base sur une autre machine ? Choisissez son dossier pour l’utiliser.",
         "done": "Terminé"
       },
       "tagging": {

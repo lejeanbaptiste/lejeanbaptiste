@@ -26,6 +26,8 @@ import {
   writeLastEntityId,
   writeStoredKindFilter,
 } from '../databaseViewPrefs';
+import { getActiveProjectBundle } from '../activeProjectBundle';
+import { readTranslationSettings } from '../translationSettings';
 import {
   applyHygieneFinding,
   autoCleanEntities,
@@ -328,7 +330,7 @@ function idsRemovedByMerge(finding: HygieneFinding, keepId: string): string[] {
 }
 
 export const DatabaseWindow = () => {
-  const { t } = useTranslation();
+  const { t, i18n } = useTranslation();
   const { config, rootPath } = useAppState().project;
   const { notifyViaSnackbar } = useActions().ui;
   const syncToCentral = config?.syncToCentral === true;
@@ -357,6 +359,7 @@ export const DatabaseWindow = () => {
   const [findings, setFindings] = useState<HygieneFinding[]>([]);
   const [findingIndex, setFindingIndex] = useState(0);
   const [projectLang, setProjectLang] = useState<string | null>(null);
+  const [translationLanguages, setTranslationLanguages] = useState<string[]>([]);
   const [mergeKeepId, setMergeKeepId] = useState<string | null>(null);
   const [reloadBusy, setReloadBusy] = useState(false);
   const [pendingCount, setPendingCount] = useState(0);
@@ -376,6 +379,25 @@ export const DatabaseWindow = () => {
       setProjectLang((await globals.__leafWriterProject?.getProjectSourceLanguage?.()) ?? null);
     })();
   }, []);
+
+  // Project translation languages — widens the Wikidata backfill's title-label fetch
+  // beyond en + the desktop UI language, same source as the entity editor's nudge chips.
+  useEffect(() => {
+    let cancelled = false;
+    void (async () => {
+      const bundle = getActiveProjectBundle();
+      if (!bundle) {
+        if (!cancelled) setTranslationLanguages([]);
+        return;
+      }
+      const settings = await readTranslationSettings(bundle);
+      if (cancelled) return;
+      setTranslationLanguages((settings?.languages ?? []).map((lang) => lang.code));
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, [rootPath]);
 
   const reload = useCallback(async () => {
     const controller = beginJob('Reloading entities');
@@ -1028,6 +1050,8 @@ export const DatabaseWindow = () => {
         entityIds: scopedIds,
         readPackFile: readPack,
         projectLang,
+        desktopLanguage: i18n.language,
+        translationLanguages,
         signal: controller.signal,
         expandWikidataWorks: false,
         lookupAuthorityRef: window.electronAPI?.authorityRefLookup,
@@ -1069,12 +1093,14 @@ export const DatabaseWindow = () => {
     beginJob,
     databaseView,
     endJob,
+    i18n.language,
     jobRunning,
     notifyViaSnackbar,
     projectLang,
     projectStore,
     reload,
     selectedIds,
+    translationLanguages,
     updateJob,
   ]);
 

@@ -719,24 +719,34 @@ export const AutoTaggingDialog = ({ id, onClose, open = false }: IDialog) => {
 
   const chooseEntityDbFolder = async () => {
     setError(null);
+    // Prefer the commons bridge: it scaffolds a blank folder and handles the
+    // "parent already has entities.xml" case. Falling back to raw IPC would
+    // reintroduce the circular "must already have entities.xml" gate.
+    const bridgePick = (
+      window as Window & {
+        __ljbCommonsUi?: { pickEntityDbFolder?: () => Promise<string | null> };
+      }
+    ).__ljbCommonsUi?.pickEntityDbFolder;
+    if (bridgePick) {
+      const picked = await bridgePick();
+      if (!picked) return;
+      await refreshAuthoritySetup();
+      return;
+    }
+
     const picked = await window.electronAPI?.pickEntityDbFolder?.();
     if (!picked) return;
 
     const folder = picked.replace(/[/\\]+$/, '');
     const entitiesHere = await window.electronAPI?.pathExists?.(`${folder}/entities.xml`);
     if (!entitiesHere) {
-      const parent = folder.replace(/[/\\][^/\\]+$/, '');
-      const entitiesInParent =
-        parent.length > 0 && (await window.electronAPI?.pathExists?.(`${parent}/entities.xml`));
-      if (entitiesInParent) {
-        setError(
-          `No entities.xml in that folder. Your entity database is probably the parent folder (${parent}) — choose that, not the project subfolder inside it.`,
-        );
+      try {
+        const { createEntitiesScaffold } = await import('../../autoTagging/entities');
+        await window.electronAPI?.createEntityDatabase?.(folder, createEntitiesScaffold());
+      } catch (e) {
+        setError(e instanceof Error ? e.message : String(e));
         return;
       }
-      setError(
-        'No entities.xml in that folder. Pick the folder that contains entities.xml; compiled packs go in authority-packs/ beside it.',
-      );
     }
 
     await window.electronAPI?.setEntityDbFolder?.(picked);
@@ -1228,24 +1238,26 @@ export const AutoTaggingDialog = ({ id, onClose, open = false }: IDialog) => {
                       }}
                     />
                   </Stack>
-                  {isAiUiFeatureEnabled('suggestAndAudit') && isDesktopApp() && !aiReady && (
-                    <Typography
-                      variant="caption"
-                      color="text.secondary"
-                      sx={{ px: 1, py: 0.125, fontSize: '0.6875rem', lineHeight: 1.35 }}
-                    >
-                      AI suggest and audit need a tested API connection — configure and test it in
-                      Application Settings. AI curate lives on the tag bomb screen.
-                    </Typography>
-                  )}
-                  {isAiUiFeatureEnabled('suggestAndAudit') &&
+                  {(isAiUiFeatureEnabled('suggest') || isAiUiFeatureEnabled('audit')) &&
+                    isDesktopApp() &&
+                    !aiReady && (
+                      <Typography
+                        variant="caption"
+                        color="text.secondary"
+                        sx={{ px: 1, py: 0.125, fontSize: '0.6875rem', lineHeight: 1.35 }}
+                      >
+                        AI suggest and audit need a tested API connection — configure and test it in
+                        Application Settings. AI curate lives on the tag bomb screen.
+                      </Typography>
+                    )}
+                  {isAiUiFeatureEnabled('suggest') &&
                     methodButton(
                       'AI suggest',
                       () => openAiStep('suggest'),
                       aiDisabled,
                       aiDisabledReason,
                     )}
-                  {isAiUiFeatureEnabled('suggestAndAudit') &&
+                  {isAiUiFeatureEnabled('audit') &&
                     methodButton(
                       'AI audit',
                       () => openAiStep('audit'),
@@ -1344,9 +1356,9 @@ export const AutoTaggingDialog = ({ id, onClose, open = false }: IDialog) => {
               )}
               {!entityDbFolder && (
                 <Alert severity="warning" sx={{ py: 0.5 }}>
-                  No entity database folder configured. Pick the folder that contains{' '}
-                  <code>entities.xml</code> — not the project subfolder inside it. Compiled packs
-                  install to <code>authority-packs/</code> beside that file.
+                  No entity database folder configured. Choose any folder — a blank one is fine;
+                  Le Jean-Baptiste will set up the database there. Prefer a cloud-synced folder if
+                  you use more than one machine.
                   <Box sx={{ mt: 1 }}>
                     <Button
                       size="small"

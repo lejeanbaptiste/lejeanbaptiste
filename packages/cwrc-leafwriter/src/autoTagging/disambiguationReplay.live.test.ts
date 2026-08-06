@@ -20,8 +20,16 @@ import path from 'path';
 import { JSDOM } from 'jsdom';
 import { rankDisambiguationCandidates } from './llmDisambiguationRank';
 import { hostedApiKeyHelp, resolveLiveClientConfig } from './liveTestEnv';
-import { MistralLlmClient } from './llmClient';
+import { MistralLlmClient, OllamaLlmClient, type LlmClient } from './llmClient';
 import { collectMentions, mergeMentionGroups, type MentionGroup } from './mentions';
+
+/** Ollama's native /api/chat endpoint (port 11434) needs OllamaLlmClient; everything else speaks OpenAI-style chat completions. */
+function buildLiveClient(baseUrl: string, model: string, apiKey: string): LlmClient {
+  if (baseUrl.includes(':11434')) {
+    return new OllamaLlmClient({ baseUrl, model });
+  }
+  return new MistralLlmClient({ apiKey: apiKey || 'not-needed-for-local-server', model, baseUrl });
+}
 import { normalizeDomText } from './normalize';
 import { parsePendingCache } from './disambiguationPending';
 
@@ -94,11 +102,7 @@ describe('disambiguation replay against a live model (opt-in)', () => {
       throw new Error(hostedApiKeyHelp(baseUrl));
     }
 
-    const client = new MistralLlmClient({
-      apiKey: apiKey || 'not-needed-for-local-server',
-      model,
-      baseUrl,
-    });
+    const client = buildLiveClient(baseUrl, model, apiKey);
 
     const pending = parsePendingCache(fs.readFileSync(pendingPath, 'utf-8'));
     const mentionGroups = collectProjectMentionGroups(projectRoot);

@@ -391,10 +391,10 @@
     "desktop": {
       "settings": {
         "entity_database": "Entity database",
-        "entity_database_change": "Choose existing…",
+        "entity_database_change": "Choose folder…",
         "entity_database_change_success": "Now using the chosen entity database.",
         "entity_database_folder": "Database folder",
-        "entity_database_missing": "No entity database folder is configured. Disambiguation is blocked until you choose one.",
+        "entity_database_missing": "No entity database folder is configured. Disambiguation is blocked until you choose one (a blank folder is fine).",
         "entity_database_move": "Move…",
         "entity_database_move_success": "Entity database moved.",
         "entity_database_move_error": "Could not move the entity database.",

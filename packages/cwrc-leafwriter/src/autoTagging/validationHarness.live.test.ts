@@ -39,9 +39,17 @@ import fs from 'fs';
 import path from 'path';
 import { JSDOM } from 'jsdom';
 import { hostedApiKeyHelp, resolveLiveClientConfig } from './liveTestEnv';
-import { MistralLlmClient } from './llmClient';
+import { MistralLlmClient, OllamaLlmClient, type LlmClient } from './llmClient';
 import { normalizeDomText } from './normalize';
 import { goldMentions, runValidationHarness } from './validationHarness';
+
+/** Ollama's native /api/chat endpoint (port 11434) needs OllamaLlmClient; everything else speaks OpenAI-style chat completions. */
+function buildLiveClient(baseUrl: string, model: string, apiKey: string): LlmClient {
+  if (baseUrl.includes(':11434')) {
+    return new OllamaLlmClient({ baseUrl, model });
+  }
+  return new MistralLlmClient({ apiKey: apiKey || 'not-needed-for-local-server', model, baseUrl });
+}
 
 const DOM_GLOBALS = ['NodeFilter', 'Node', 'Text', 'Element', 'Document', 'DOMParser'] as const;
 
@@ -65,6 +73,10 @@ const maybe = RUN_LIVE ? it : it.skip;
 
 const defaultGold = path.resolve(__dirname, '../../../../test_project/project/gold_test.xml');
 const xmlPath = process.env.LLM_LIVE_GOLD ?? defaultGold;
+const tags = (process.env.LLM_LIVE_TAGS ?? 'persName,placeName')
+  .split(',')
+  .map((s) => s.trim())
+  .filter(Boolean);
 
 function formatMetrics(m: { tp: number; fp: number; fn: number; precision: number; recall: number; f1: number }): string {
   return `P=${m.precision.toFixed(3)} R=${m.recall.toFixed(3)} F1=${m.f1.toFixed(3)} (tp=${m.tp} fp=${m.fp} fn=${m.fn})`;
@@ -83,17 +95,12 @@ describe('validation harness against a live model (opt-in)', () => {
       throw new Error(hostedApiKeyHelp(baseUrl));
     }
 
-    const client = new MistralLlmClient({
-      apiKey: apiKey || 'not-needed-for-local-server',
-      model,
-      baseUrl,
-    });
+    const client = buildLiveClient(baseUrl, model, apiKey);
 
     const source = fs.readFileSync(xmlPath, 'utf-8');
     const doc = parseGoldXml(source);
     normalizeDomText(doc);
 
-    const tags = ['persName', 'placeName'];
     const gold = goldMentions(doc, 'ignore', tags);
 
     const report = await runValidationHarness(doc, {
@@ -117,8 +124,7 @@ describe('validation harness against a live model (opt-in)', () => {
         `  predicted:        ${report.predictedCount}`,
         `  unverifiable:     ${report.unverifiableCount}`,
         `  overall:          ${formatMetrics(report.overall)}`,
-        `  persName:         ${report.byTag.persName ? formatMetrics(report.byTag.persName) : 'n/a'}`,
-        `  placeName:        ${report.byTag.placeName ? formatMetrics(report.byTag.placeName) : 'n/a'}`,
+        ...tags.map((t) => `  ${t}:${' '.repeat(Math.max(1, 18 - t.length - 2))}${report.byTag[t] ? formatMetrics(report.byTag[t]!) : 'n/a'}`),
         `  wrong-tag:        ${report.wrongTag.length}`,
         '─────────────────────────────────────────────────────────',
       ].join('\n'),

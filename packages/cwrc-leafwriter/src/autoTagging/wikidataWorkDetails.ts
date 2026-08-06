@@ -82,10 +82,12 @@ async function fetchLabels(
   return labels;
 }
 
-function normalizeLabelLanguages(desktopLanguage?: string | null): string[] {
-  const languages = ['en', desktopLanguage?.trim().toLowerCase()].filter(
-    (language): language is string => Boolean(language),
-  );
+function normalizeLabelLanguages(desktopLanguage?: string | null, extraLanguages?: string[]): string[] {
+  const languages = [
+    'en',
+    desktopLanguage?.trim().toLowerCase(),
+    ...(extraLanguages ?? []).map((language) => language?.trim().toLowerCase()),
+  ].filter((language): language is string => Boolean(language));
   return [
     ...new Set(
       languages.flatMap((language) => {
@@ -97,13 +99,18 @@ function normalizeLabelLanguages(desktopLanguage?: string | null): string[] {
   ];
 }
 
-/** Fetch P577 (publication date), P571 (inception), and P50 (author) for a work Q-id. */
+/**
+ * Fetch P577 (publication date), P571 (inception), and P50 (author) for a work Q-id.
+ * `extraLanguages` widens the requested title-label languages beyond `en` + `desktopLanguage`
+ * (e.g. a project's configured translation languages).
+ */
 export async function fetchWikidataWorkDetails(
   qid: string,
   fetchImpl: WikidataFetchFn = fetch,
   desktopLanguage?: string | null,
+  extraLanguages?: string[],
 ): Promise<WikidataWorkDetails | null> {
-  const labelLanguages = normalizeLabelLanguages(desktopLanguage);
+  const labelLanguages = normalizeLabelLanguages(desktopLanguage, extraLanguages);
   const url = `https://www.wikidata.org/w/api.php?action=wbgetentities&ids=${qid}&props=claims|labels&languages=${labelLanguages.join('|')}&format=json&origin=*`;
   const response = await fetchImpl(url);
   if (!response.ok) return null;

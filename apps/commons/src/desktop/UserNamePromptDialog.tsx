@@ -13,6 +13,7 @@ import {
 } from '@mui/material';
 import { useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
+import { ensureEntityDbFolder } from './entityDbOnboarding';
 
 /** Same localStorage key as Leaf-Writer Guardrails → `setEnableXmlEditing`. */
 const ENABLE_XML_EDITING_KEY = 'enableXmlEditing';
@@ -37,6 +38,7 @@ const getCommonsUiBridge = () =>
       __ljbCommonsUi?: {
         encoderName: string;
         encoderNameLoaded: boolean;
+        entityDbFolder: string | null;
         setEncoderName: (name: string) => void | Promise<void>;
         pickEntityDbFolder: () => Promise<string | null>;
       };
@@ -75,10 +77,8 @@ const writeEnableXmlEditing = (value: boolean) => {
 };
 
 /**
- * First-run gate: tagging name + entity-database folder. Opens whenever the
- * encoder name is empty (including cold start with wiped config). The folder
- * must be chosen explicitly; we do not treat the silent app-data default as
- * “done”.
+ * First-run gate: tagging name only. A default entity-database folder deep in
+ * app data is already assigned; choosing a cloud-synced folder is optional.
  */
 export const UserNamePromptDialog = () => {
   const { t } = useTranslation();
@@ -95,6 +95,7 @@ export const UserNamePromptDialog = () => {
       // flash the dialog before a saved name is read from disk.
       if (!bridge?.encoderNameLoaded) return;
       setOpen(!bridge.encoderName.trim());
+      if (bridge.entityDbFolder) setEntityDbFolder(bridge.entityDbFolder);
     };
     checkOpen();
     window.addEventListener('ljbCommonsUiChanged', checkOpen);
@@ -104,6 +105,12 @@ export const UserNamePromptDialog = () => {
   useEffect(() => {
     if (!open) return;
     setEnableXmlEditing(readEnableXmlEditing());
+    // Make sure the silent default folder actually contains a database, so
+    // finishing with no explicit pick still leaves tagging ready to use.
+    void ensureEntityDbFolder().then(() => {
+      const folder = getCommonsUiBridge()?.entityDbFolder;
+      if (folder) setEntityDbFolder(folder);
+    });
     const handler = (event: Event) => {
       const detail = (event as CustomEvent<{ value: boolean }>).detail;
       setEnableXmlEditing(detail.value);
@@ -127,12 +134,13 @@ export const UserNamePromptDialog = () => {
     writeEnableXmlEditing(checked);
   };
 
-  const canFinish = Boolean(name.trim() && entityDbFolder);
+  const canFinish = Boolean(name.trim());
 
   const finish = () => {
     if (!canFinish) return;
     // Re-apply in case the editor became ready after the user toggled.
     writeEnableXmlEditing(enableXmlEditing);
+    void ensureEntityDbFolder();
     void getCommonsUiBridge()?.setEncoderName(name.trim());
     setOpen(false);
   };
@@ -170,6 +178,9 @@ export const UserNamePromptDialog = () => {
               size="small"
               value={entityDbFolder ?? ''}
             />
+            <Typography color="text.secondary" variant="caption">
+              {t('LWC.desktop.database_setup_prompt.note')}
+            </Typography>
             <Button
               disabled={choosing}
               onClick={() => void handleChooseFolder()}

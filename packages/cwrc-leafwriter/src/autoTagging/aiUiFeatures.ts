@@ -8,12 +8,14 @@
 export const AI_UI_FEATURES = {
   /** Tag-bomb "AI curate" checkbox + background scoring in the review panel. */
   tagBombCurate: false,
-  /** Auto-tagging dialog "AI suggest" / "AI audit" methods. */
-  suggestAndAudit: false,
+  /** Auto-tagging dialog "AI suggest" method. */
+  suggest: true,
+  /** Auto-tagging dialog "AI audit" method — second-guesses existing tags; kept off pending better calibration. */
+  audit: false,
   /** Disambiguation launcher "AI curation" checkbox. */
   disambiguationCurate: false,
   /** Translation pane "Generate translation" AI menu. */
-  translationGenerate: false,
+  translationGenerate: true,
   /** Suggest a vernacular gloss into the draft field (popup + entity editor). */
   entityGlossSuggest: true,
 } as const;

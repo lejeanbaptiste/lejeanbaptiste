@@ -13,6 +13,7 @@ import { refreshCbdbConcordanceAfterPackLifecycle } from '../../../../packages/c
 import { clearPackContentCache } from '../../../../packages/cwrc-leafwriter/src/services/authority-pack-lookup';
 import { AUTHORITY_PACKS_DIRNAME } from '@src/desktop/authorityPackTypes';
 import { PROJECT_FILE_NAME } from '@src/desktop/projectFile';
+import { ensureEntityDbFolder } from './entityDbOnboarding';
 
 const afterAuthorityPackLifecycleSuccess = async (): Promise<void> => {
   clearPackContentCache();
@@ -36,7 +37,6 @@ export const useCommonsUiBridge = () => {
     setSkipExplorerDeleteConfirm,
     setThemeAppearance,
     switchLanguage,
-    openDialog,
   } = useActions().ui;
   const [encoderName, setEncoderNameState] = useState('');
   const [encoderNameLoaded, setEncoderNameLoaded] = useState(false);
@@ -96,8 +96,15 @@ export const useCommonsUiBridge = () => {
 
     void window.electronAPI
       .getEntityDbFolder()
-      .then((folder) => {
+      .then(async (folder) => {
         setEntityDbFolderState(typeof folder === 'string' && folder.trim() ? folder : null);
+        // Default folder is only mkdir'd by main; scaffold entities.xml so a
+        // brand-new install is ready without an explicit "choose folder" step.
+        await ensureEntityDbFolder();
+        const refreshed = await window.electronAPI?.getEntityDbFolder?.();
+        if (typeof refreshed === 'string' && refreshed.trim()) {
+          setEntityDbFolderState(refreshed);
+        }
       })
       .catch((error) => {
         console.error('Failed to load entity database folder:', error);
@@ -264,26 +271,6 @@ export const useCommonsUiBridge = () => {
     setGithubConnected(false);
   }, []);
 
-  const confirmCreateEntityDb = useCallback(
-    (folder: string): Promise<boolean> =>
-      new Promise((resolve) => {
-        openDialog({
-          type: 'simple',
-          props: {
-            title: 'Create a new entity database?',
-            Body: `This folder has no entities.xml yet:\n${folder}\n\nLe Jean-Baptiste can set up a new entity database here from scratch. Compiled authority packs will go in authority-packs/ beside it.`,
-            actions: [
-              { action: 'cancel', label: 'Cancel' },
-              { action: 'create', label: 'Create entity database', variant: 'contained' },
-            ],
-            preventEscape: true,
-            onClose: (action) => resolve(action === 'create'),
-          },
-        });
-      }),
-    [openDialog],
-  );
-
   const pickEntityDbFolder = useCallback(async (): Promise<string | null> => {
     const picked = await window.electronAPI?.pickEntityDbFolder?.();
     if (!picked) return null;
@@ -305,19 +292,42 @@ export const useCommonsUiBridge = () => {
 
     const entitiesHere = await window.electronAPI?.pathExists?.(`${folder}/entities.xml`);
     if (!entitiesHere) {
+      // Choosing a blank folder means create one there. Do not require
+      // entities.xml already (that would be circular for first install), and
+      // do not open a second in-app dialog — splash/settings may already be
+      // modal, so confirm via native box only when the parent looks like the
+      // real database (common mistake: picking a project subfolder).
       const parent = folder.replace(/[/\\][^/\\]+$/, '');
       const entitiesInParent =
         parent.length > 0 && (await window.electronAPI?.pathExists?.(`${parent}/entities.xml`));
       if (entitiesInParent) {
-        await window.electronAPI?.showNativeMessageBox?.({
+        const choice = await window.electronAPI?.showNativeMessageBox?.({
           type: 'warning',
-          title: 'No entities.xml in that folder',
-          message: `Your entity database is probably the parent folder:\n${parent}\n\nChoose that folder, not the project subfolder inside it.`,
-          buttons: ['OK'],
+          title: 'Create a database in this folder?',
+          message: `The parent folder already has an entity database:\n${parent}\n\nIf you meant that shared database, choose the parent instead. Otherwise Le Jean-Baptiste can create a new empty database in:\n${folder}`,
+          buttons: ['Cancel', 'Use parent folder', 'Create here'],
+          defaultId: 1,
+          cancelId: 0,
         });
-        return null;
+        if (choice?.response === 1) {
+          try {
+            await window.electronAPI?.setEntityDbFolder?.(parent);
+          } catch (error) {
+            const detail = error instanceof Error ? error.message : String(error);
+            void window.electronAPI?.showNativeMessageBox?.({
+              type: 'warning',
+              title: 'Could not save entity database folder',
+              message: `${parent}\n\nSaving the parent folder failed.`,
+              detail,
+              buttons: ['OK'],
+            });
+          }
+          setEntityDbFolderState(parent);
+          return parent;
+        }
+        if (choice?.response !== 2) return null;
       }
-      if (!(await confirmCreateEntityDb(folder))) return null;
+
       try {
         await window.electronAPI?.createEntityDatabase?.(folder, createEntitiesScaffold());
       } catch (error) {
@@ -338,9 +348,7 @@ export const useCommonsUiBridge = () => {
     } catch (error) {
       // Still reflect the pick in the UI (and let the caller proceed) even if
       // persisting it failed - otherwise a prefs-write error here silently
-      // reverts the folder field to empty with no explanation, and since
-      // Settings/onboarding requires a folder before Save enables, the user
-      // is stuck with no visible cause. Surface the actual error instead.
+      // reverts the folder field to empty with no explanation.
       const detail = error instanceof Error ? error.message : String(error);
       void window.electronAPI?.showNativeMessageBox?.({
         type: 'warning',
@@ -352,7 +360,7 @@ export const useCommonsUiBridge = () => {
     }
     setEntityDbFolderState(picked);
     return picked;
-  }, [confirmCreateEntityDb]);
+  }, []);
 
   const setRememberWorkspaceOnStartup = useCallback(async (value: boolean) => {
     setRememberWorkspaceOnStartupState(value);
@@ -481,7 +489,6 @@ export const useCommonsUiBridge = () => {
     runAuthorityLifecycleUpdate,
     revealAuthorityLifecycleFolder,
     moveEntityDbFolder,
-    openDialog,
     setAiApiSettings,
     setLanguageToolSettings,
     setAuthorityLifecycleEnabled,

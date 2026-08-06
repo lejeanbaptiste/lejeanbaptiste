@@ -82,27 +82,39 @@
 
 ## Upstream
 
-- Welcome splash now includes toggle to activate/disactivate advanced features
-- Removed legacy popups ('Hey, looks like you're copying... Do you want to learn about copying?')
-- Settings panel overhaul
-- Removed legacy help pop-ups
-- Editor pane now follows programme's light/dark choice, rather than independantly following the OS.
-- Fixed: save timestamp was not putting @version on <application>, causing validation error in Source mode. 
-- Serialised boots to avoid TinyMCE load race that leaves LJB without an editor pane.
-- Simplified slideshow of loading screens on startup.
-- Have Monaco auto insert appropriate closing tag on `</`
-- Added LanguageTool spelling and grammar correction to the translation panel.
-- Added card flow to translation panel.
+### First-run and setup
+
+- Welcome splash now includes a toggle for advanced features (direct XML editing).
+- First-run no longer requires choosing an entity-database folder before you can continue: a working default is created deep in app data, and cloud-synced folders are suggested as an optional upgrade. Blank folders are accepted and scaffolded — install must never depend on already having installed, and creating a database must never depend on already having one.
+- Simplified the slideshow of loading screens on startup.
+
+### Performance and stability
+
+- Serialised boots to avoid a TinyMCE load race that leaves LJB without an editor pane.
+
+### Editor
+
+- Editor pane now follows the programme's light/dark choice, rather than independently following the OS.
+- Fixed: save timestamp was not putting `@version` on `<application>`, causing a validation error in Source mode.
+- Monaco now auto-inserts the appropriate closing tag on `</`.
+- Fixed entity mentions inserted via the toolbar button landing at the start of the unit instead of at the cursor (including a follow-up where focusing the editor after the entity fetch overwrote the saved caret).
+
+### Translation panel
+
+- Added LanguageTool spelling and grammar correction.
+- Added card flow.
 - Fixed buggy footnotes changing place and eating body text.
-- Added entity insertion and automatic formatting into translation panel.
+- Added entity insertion and automatic formatting.
 - Translation pane UI overhaul.
 - AI translation now grounds tagged names against the entity database instead of guessing them: the model gets each tagged entity's canonical record and emits a placeholder in its place, which is then swapped for a real, correctly formatted entity field.
-- Entity display formatting is now kind-aware: places, organisations, offices, and works no longer get the person-only family/given name split. Dates are now shown only for people and works (births/deaths and publication dates respectively); places, organisations, and offices never display a dates part.
-- Wired up two entity fields that were being silently dropped: generic (non birth/death) existence dates now reach works' entity records instead of being lost, and office classification labels are now surfaced on office entities.
-- Added a work_type field (book, chapter, poem, painting, object) to entity records, with citation styling to match: books and paintings render in italics, chapters and poems in curly quotes.
 - Fixed a save error ("provided markup is invalid XML") that could hit when persisting translation-pane edits — swapped a fragile HTML-string round-trip for a direct DOM import.
-- Fixed entity mentions inserted via the toolbar button landing at the start of the unit instead of at the cursor (including a follow-up where focusing the editor after the entity fetch overwrote the saved caret).
 - Fixed the translation pane opening blank after leaving the tab (e.g. to edit the entity database) and coming back — re-enter translation mode when the tab is selected again.
+
+### Entity display and data
+
+- Entity display formatting is now kind-aware: places, organisations, offices, and works no longer get the person-only family/given name split. Dates are shown only for people and works (births/deaths and publication dates respectively); places, organisations, and offices never display a dates part.
+- Wired up two entity fields that were being silently dropped: generic (non birth/death) existence dates now reach works' entity records instead of being lost, and office classification labels are now surfaced on office entities.
+- Added a `work_type` field (book, chapter, poem, painting, object) to entity records, with citation styling to match: books and paintings render in italics, chapters and poems in curly quotes.
 - Work entities now default to type `book` (italics) when unset; existing nulls are backfilled on schema migration 7.
 - Work-title italics apply only to the romanization: Chinese characters and an English possessive ’s stay upright.
 - Work (and other) mentions now append a matching-language translation gloss in parentheses after the Chinese characters, e.g. _Jinshu_ 晉書 (Livre des Jin), from the `entity_translations` table (with a dual-read fallback for legacy `translation` name rows).
@@ -113,3 +125,10 @@
 - First-occurrence titles can lead with the vernacular gloss instead of the romanization (`Livre des Jin (Jinshu 晉書)`): per-mention toggle on the entity-display popup, plus a personal per-language default in Translation policy settings. Work italics follow the leading title.
 - Missing translations get a dashed “add translation…” nudge in the entity editor (one chip per configured project language) and in the entity-display popup (for the active pane language). Neither inserts placeholder text into the document.
 - On those nudge surfaces, “Suggest with AI” can fill the draft gloss for review; the user still saves or adds it. Never auto-writes to the entity store.
+- The Database Window's bulk Wikidata refresh now pulls work titles for every language configured in Translation policy settings, not just English plus the desktop UI language. Also fixed: that refresh wasn't passing the desktop UI language at all, so in practice it only ever fetched English titles.
+
+### UI and settings
+
+- Settings panel overhaul.
+- Removed legacy popups ('Hey, looks like you're copying... Do you want to learn about copying?').
+- Removed legacy help pop-ups.
