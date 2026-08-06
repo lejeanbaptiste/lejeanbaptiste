@@ -20,6 +20,7 @@ import { leafwriterAtom } from '@src/jotai';
 import { useActions, useAppState } from '@src/overmind';
 import { useAtomValue } from 'jotai';
 import { lazy, Suspense, useCallback, useEffect, useRef, useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import { isCjkDatesEnabled } from '../../../../../packages/cwrc-leafwriter/src/plugins/registry';
 import { isEastAsianCalendarLanguageCode } from '../../../../../packages/cwrc-leafwriter/src/utilities/languageCodes';
 import {
@@ -113,6 +114,7 @@ const authorityIcon = (type: string) => {
 };
 
 export const AttributesPanel = ({ visible = true }: { visible?: boolean }) => {
+  const { t } = useTranslation();
   const { activeTabPath } = useAppState().project;
   const { readonly } = useAppState().editor;
   const leafWriter = useAtomValue(leafwriterAtom);
@@ -615,7 +617,7 @@ export const AttributesPanel = ({ visible = true }: { visible?: boolean }) => {
     refreshMatchCounts(element, attrs);
     if (cleared > 0) {
       notifyViaSnackbar({
-        message: `Removed the key from ${cleared} matching ${cleared === 1 ? 'tag' : 'tags'}.`,
+        message: t('LWC.desktop.tagging.removed_key_from_matches', { count: cleared }),
         options: { variant: 'success' },
       });
     }
@@ -645,7 +647,7 @@ export const AttributesPanel = ({ visible = true }: { visible?: boolean }) => {
     const matches = refreshWalkMatches();
     if (matches.length === 0) {
       notifyViaSnackbar({
-        message: 'No exact unkeyed matches were found for this tag.',
+        message: t('LWC.desktop.tagging.no_exact_unkeyed_matches_found'),
         options: { variant: 'info' },
       });
       return;
@@ -676,7 +678,7 @@ export const AttributesPanel = ({ visible = true }: { visible?: boolean }) => {
     const applied = applyToMatch(current);
     if (!applied) {
       notifyViaSnackbar({
-        message: 'Could not apply attributes to the current match.',
+        message: t('LWC.desktop.tagging.could_not_apply_attributes'),
         options: { variant: 'warning' },
       });
       return;
@@ -684,7 +686,7 @@ export const AttributesPanel = ({ visible = true }: { visible?: boolean }) => {
 
     const nextMatches = refreshWalkMatches();
     if (nextMatches.length === 0) {
-      notifyViaSnackbar({ message: 'Walk complete.', options: { variant: 'success' } });
+      notifyViaSnackbar({ message: t('LWC.desktop.tagging.walk_complete'), options: { variant: 'success' } });
       stopWalk();
       return;
     }
@@ -695,7 +697,7 @@ export const AttributesPanel = ({ visible = true }: { visible?: boolean }) => {
     const nextIndex = walkIndex + 1;
     if (nextIndex >= walkMatches.length) {
       notifyViaSnackbar({
-        message: 'No more matches to skip to.',
+        message: t('LWC.desktop.tagging.no_more_matches_to_skip_to'),
         options: { variant: 'info' },
       });
       return;
@@ -721,7 +723,7 @@ export const AttributesPanel = ({ visible = true }: { visible?: boolean }) => {
       return;
     }
     notifyViaSnackbar({
-      message: 'No exact unkeyed matches were updated.',
+      message: t('LWC.desktop.tagging.no_exact_unkeyed_matches_updated'),
       options: { variant: 'info' },
     });
   };

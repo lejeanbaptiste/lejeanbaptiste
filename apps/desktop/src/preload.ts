@@ -237,6 +237,7 @@ export interface ElectronAPI {
   /** @deprecated Use openProject */
   openProjectFolder: () => Promise<ProjectBundle | null>;
   restoreLastProject: () => Promise<ProjectBundle | null>;
+  setAppLocale: (locale: string) => Promise<void>;
   getRememberWorkspaceOnStartup: () => Promise<boolean>;
   setRememberWorkspaceOnStartup: (remember: boolean) => Promise<void>;
   saveWorkspaceSession: (session: WorkspaceSession) => Promise<void>;
@@ -731,6 +732,7 @@ const electronAPI: ElectronAPI = {
   openProject: () => ipcRenderer.invoke('openProject'),
   openProjectFolder: () => ipcRenderer.invoke('openProject'),
   restoreLastProject: () => ipcRenderer.invoke('restoreLastProject'),
+  setAppLocale: (locale: string) => ipcRenderer.invoke('setAppLocale', locale),
   getRememberWorkspaceOnStartup: () => ipcRenderer.invoke('getRememberWorkspaceOnStartup'),
   setRememberWorkspaceOnStartup: (remember: boolean) =>
     ipcRenderer.invoke('setRememberWorkspaceOnStartup', remember),

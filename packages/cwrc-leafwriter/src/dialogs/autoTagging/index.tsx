@@ -1088,7 +1088,7 @@ export const AutoTaggingDialog = ({ id, onClose, open = false }: IDialog) => {
           else {
             console.warn('[auto-tagging] background AI run failed:', e);
             notifyViaSnackbar({
-              message: `AI ${aiMode} failed: ${e instanceof Error ? e.message : String(e)}`,
+              message: `${t('LW.autoTagging.aiModeFailed', { mode: aiMode })} ${e instanceof Error ? e.message : String(e)}`,
               options: { variant: 'error' },
             });
           }

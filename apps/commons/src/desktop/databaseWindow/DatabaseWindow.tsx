@@ -740,7 +740,7 @@ export const DatabaseWindow = () => {
         }
       });
       notifyViaSnackbar({
-        message: `Found ${next.length} issue${next.length === 1 ? '' : 's'}`,
+        message: t('LWC.desktop.database_window.scan_found_issues', { count: next.length }),
         options: { variant: next.length ? 'info' : 'success' },
       });
     } catch (error) {
@@ -769,7 +769,7 @@ export const DatabaseWindow = () => {
     if (!activeStore || !rootPath || jobRunning) {
       if (!rootPath) {
         notifyViaSnackbar({
-          message: 'Open a project to harvest person wrappers.',
+          message: t('LWC.desktop.database_window.harvest_needs_project'),
           options: { variant: 'warning' },
         });
       }
@@ -779,7 +779,7 @@ export const DatabaseWindow = () => {
     const readFile = window.electronAPI?.readFile;
     if (!listFiles || !readFile) {
       notifyViaSnackbar({
-        message: 'File APIs unavailable for Harvest.',
+        message: t('LWC.desktop.database_window.harvest_apis_unavailable'),
         options: { variant: 'error' },
       });
       return;
@@ -824,7 +824,7 @@ export const DatabaseWindow = () => {
         setMainPane('issues');
       });
       notifyViaSnackbar({
-        message: `Harvest found ${next.length} wrapper${next.length === 1 ? '' : 's'} with new facts`,
+        message: t('LWC.desktop.database_window.harvest_found_wrappers', { count: next.length }),
         options: { variant: next.length ? 'info' : 'success' },
       });
     } catch (error) {
@@ -929,7 +929,7 @@ export const DatabaseWindow = () => {
         setFindingIndex(0);
       });
       notifyViaSnackbar({
-        message: `Queued ${batch.length} “${findingKindLabel(kind)}” fix${batch.length === 1 ? '' : 'es'} — Save & exit to write`,
+        message: t('LWC.desktop.database_window.queued_fixes', { count: batch.length, kind: findingKindLabel(kind) }),
         options: { variant: 'success' },
       });
     },
@@ -991,7 +991,7 @@ export const DatabaseWindow = () => {
       setMainPane('detail');
       if (saved > 0) {
         notifyViaSnackbar({
-          message: `Saved ${saved} fix${saved === 1 ? '' : 'es'}`,
+          message: t('LWC.desktop.database_window.saved_fixes', { count: saved }),
           options: { variant: 'success' },
         });
         await reload();
@@ -1015,7 +1015,7 @@ export const DatabaseWindow = () => {
     setMainPane('detail');
     if (abandoned > 0) {
       notifyViaSnackbar({
-        message: `Left review — discarded ${abandoned} unsaved accept${abandoned === 1 ? '' : 's'}`,
+        message: t('LWC.desktop.database_window.left_review_discarded', { count: abandoned }),
         options: { variant: 'warning' },
       });
     }
@@ -1074,7 +1074,7 @@ export const DatabaseWindow = () => {
         }
       }
       notifyViaSnackbar({
-        message: `Backfill: ${result.namesAdded} names on ${result.entitiesUpdated} entities`,
+        message: t('LWC.desktop.database_window.backfill_result', { names: result.namesAdded, entities: result.entitiesUpdated }),
         options: { variant: 'success' },
       });
       await reload();

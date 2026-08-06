@@ -1305,7 +1305,7 @@ export const TranslationPane = () => {
     const onZoteroOpenStylePicker = async () => {
       const bridge = getCitationBridge();
       if (!bridge) {
-        setAiStatus({ severity: 'error', message: 'Zotero preferences are not available.' });
+        setAiStatus({ severity: 'error', message: t('LW.translationPane.zoteroPrefsUnavailable') });
         return;
       }
 
@@ -1413,7 +1413,7 @@ export const TranslationPane = () => {
 
   const generateTranslation = useCallback(async () => {
     if (!alignmentUnit || !sourcePath || !selectedUnitId) {
-      setAiStatus({ severity: 'error', message: 'Select a source unit first.' });
+      setAiStatus({ severity: 'error', message: t('LW.translationPane.selectSourceUnitFirst') });
       return;
     }
 
@@ -1429,12 +1429,12 @@ export const TranslationPane = () => {
 
     const api = getDesktopApi();
     if (!api?.generateAiTranslation || !api.readFile) {
-      setAiStatus({ severity: 'error', message: 'AI translation is not available.' });
+      setAiStatus({ severity: 'error', message: t('LW.translationPane.aiTranslationUnavailable') });
       return;
     }
 
     setGenerating(true);
-    setAiStatus({ severity: 'info', message: 'Generating translation...' });
+    setAiStatus({ severity: 'info', message: t('LW.translationPane.generatingTranslation') });
 
     try {
       const sourceXml = await api.readFile(sourcePath);
@@ -1498,7 +1498,7 @@ export const TranslationPane = () => {
       }
       if (editableRef.current) prepareAtomicEntityFields(editableRef.current);
 
-      setAiStatus({ severity: 'success', message: 'Translation generated.' });
+      setAiStatus({ severity: 'success', message: t('LW.translationPane.translationGenerated') });
     } catch (error) {
       setAiStatus({
         severity: 'error',
@@ -2001,7 +2001,7 @@ export const TranslationPane = () => {
       defaultStyleId = result.defaultStyleId;
       options = result.options;
     } catch {
-      setAiStatus({ severity: 'error', message: 'Zotero preferences failed to load.' });
+      setAiStatus({ severity: 'error', message: t('LW.translationPane.zoteroPrefsLoadFailed') });
       return null;
     }
 
@@ -2023,7 +2023,7 @@ export const TranslationPane = () => {
 
     const saved = await bridge.setCitationStyle(styleId);
     if (!saved) {
-      setAiStatus({ severity: 'error', message: 'Could not save citation style.' });
+      setAiStatus({ severity: 'error', message: t('LW.translationPane.citationStyleSaveFailed') });
       setPendingCitationStyle('');
       return null;
     }
@@ -2082,13 +2082,13 @@ export const TranslationPane = () => {
   const insertZoteroCitation = async () => {
     const bridge = getCitationBridge();
     if (!bridge) {
-      setAiStatus({ severity: 'error', message: 'Zotero citations are not available.' });
+      setAiStatus({ severity: 'error', message: t('LW.translationPane.zoteroCitationsUnavailable') });
       return;
     }
 
     const doc = docRef.current;
     if (!doc || !alignmentUnit || !sourcePath || !selectedUnitId || !translationPath) {
-      setAiStatus({ severity: 'error', message: 'Select a translation unit first.' });
+      setAiStatus({ severity: 'error', message: t('LW.translationPane.selectTranslationUnitFirst') });
       return;
     }
 

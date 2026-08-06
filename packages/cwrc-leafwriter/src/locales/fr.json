@@ -29,7 +29,23 @@
     "Close auto-tagging review": "Fermer la revue de balisage automatique",
     "Close review": "Fermer la revue",
     "messages": {
-      "some_features_are_not_fully_implemented": "Certaines fonctionnalités ne sont pas entièrement implémentées"
+      "Are you sure you want to delete value": "<0>Êtes-vous sûr de vouloir supprimer </0><1>{{value}}</1>",
+      "Failed to fetch": "Échec de la récupération",
+      "It can produce unexpected results or make LEAF-Writer crash": "Cela peut produire des résultats inattendus ou faire planter LEAF-Writer.",
+      "LEAF-Writer could not find the document schema declaration": "LEAF-Writer n'a pas pu trouver la déclaration de schéma de document.",
+      "Only available on this browser": "Uniquement disponible sur ce navigateur",
+      "Only you can see this": "Toi seul peux voir ça",
+      "Some features are not fully implemented": "Certaines fonctionnalités ne sont pas entièrement implémentées.",
+      "The maximum number of item return in the lookup search": "Le nombre maximum d'éléments renvoyés dans la recherche de référence",
+      "Use with caution": "Utiliser avec précaution",
+      "delete confirmation message": "<0>Voulez-vous vraiment supprimer le schéma </0><1>{{name}}</1><2>?</2>",
+      "failed to fetch URL": "Échec de la récupération de l'URL",
+      "maxResultsDescription": "Le nombre maximum d'éléments renvoyés dans la recherche de référence",
+      "navigate to url": "accéder à l'URL",
+      "root element invalid": "<1>LEAF-Writer ne peut pas ouvrir ce document.</1> L'élément racine <2>{{rootName}}</2> n'est pas pris en charge.",
+      "schema not loaded": "<0>LEAF-Writer n'a pas pu charger le schéma: </0><1>{{rng}}</1>",
+      "schema not supported": "<0>LEAF-Writer ne prend pas en charge le schéma attaché au document: </0><1>{{rng}}</1>",
+      "url invalid": "URL invalide"
     },
     "Rejected": "Rejetées",
     "Reverting tags…": "Annulation des balises…",
@@ -246,7 +262,11 @@
       "settings": "Paramètres",
       "side menu": "menu latéral",
       "undo": "annuler",
-      "update": "mise à jour"
+      "update": "mise à jour",
+      "added_by": "Ajouté par",
+      "loading": "Chargement…",
+      "select_language": "Sélectionner la langue…",
+      "side_menu": "Menu latéral"
     },
     "concept": "concept",
     "deleteSchema": "Supprimer le schéma",
@@ -292,7 +312,15 @@
       "Hide Notes": "Masquer toutes les notes",
       "Hide Notes tooltip": "Replier tous les commentaires (notes, citations, mots-clés)",
       "Show Notes": "Afficher toutes les notes",
-      "Show Notes tooltip": "Déplier tous les commentaires (notes, citations, mots-clés) dans le texte"
+      "Show Notes tooltip": "Déplier tous les commentaires (notes, citations, mots-clés) dans le texte",
+      "Correction Display: Original": "Afficher l'original uniquement",
+      "Correction Display: Corrected": "Afficher la correction uniquement",
+      "Correction Display: Both": "Afficher l'original et la correction",
+      "Correction Display tooltip": "Faire défiler la façon dont le balisage éditorial (sic/corr, inséré, superflu) est affiché",
+      "Lock Text": "Verrouiller le texte",
+      "Lock Text tooltip": "Empêche la saisie et la suppression dans l'éditeur ; le balisage fonctionne toujours (Entrée, Alt+Entrée).",
+      "Unlock Text": "Déverrouiller le texte",
+      "Unlock Text tooltip": "Autorise de nouveau la saisie et la suppression dans l'éditeur."
     },
     "entity": {
       "_plural": {
@@ -370,25 +398,6 @@
     "low": "faible",
     "markup panel": "Panneau de balisage",
     "medium": "moyen",
-    "messages": {
-      "Are you sure you want to delete value": "<0>Êtes-vous sûr de vouloir supprimer </0><1>{{value}}</1>",
-      "Failed to fetch": "Échec de la récupération",
-      "It can produce unexpected results or make LEAF-Writer crash": "Cela peut produire des résultats inattendus ou faire planter LEAF-Writer.",
-      "LEAF-Writer could not find the document schema declaration": "LEAF-Writer n'a pas pu trouver la déclaration de schéma de document.",
-      "Only available on this browser": "Uniquement disponible sur ce navigateur",
-      "Only you can see this": "Toi seul peux voir ça",
-      "Some features are not fully implemented": "Certaines fonctionnalités ne sont pas entièrement implémentées.",
-      "The maximum number of item return in the lookup search": "Le nombre maximum d'éléments renvoyés dans la recherche de référence",
-      "Use with caution": "Utiliser avec précaution",
-      "delete confirmation message": "<0>Voulez-vous vraiment supprimer le schéma </0><1>{{name}}</1><2>?</2>",
-      "failed to fetch URL": "Échec de la récupération de l'URL",
-      "maxResultsDescription": "Le nombre maximum d'éléments renvoyés dans la recherche de référence",
-      "navigate to url": "accéder à l'URL",
-      "root element invalid": "<1>LEAF-Writer ne peut pas ouvrir ce document.</1> L'élément racine <2>{{rootName}}</2> n'est pas pris en charge.",
-      "schema not loaded": "<0>LEAF-Writer n'a pas pu charger le schéma: </0><1>{{rng}}</1>",
-      "schema not supported": "<0>LEAF-Writer ne prend pas en charge le schéma attaché au document: </0><1>{{rng}}</1>",
-      "url invalid": "URL invalide"
-    },
     "multiple tags": "plusieurs balises",
     "no description available": "aucune description disponible",
     "not supported": "Non pris en charge",
@@ -504,7 +513,28 @@
         "preview": "Aperçu",
         "reset": "Réinitialiser",
         "done": "Terminé"
-      }
+      },
+      "spellcheckOffForLiveLt": "La vérification orthographique de Chromium est désactivée pendant que le mode direct de LanguageTool est actif",
+      "languageToolCheck": "Vérifier avec LanguageTool",
+      "languageToolChecking": "Vérification avec LanguageTool…",
+      "languageToolDisabled": "Activez LanguageTool dans Paramètres → IA pour utiliser la vérification grammaticale.",
+      "languageToolUnavailable": "LanguageTool n'est pas disponible dans cette version.",
+      "languageToolNoMatches": "Aucun problème trouvé.",
+      "languageToolMatches_one": "{{count}} problème trouvé",
+      "languageToolMatches_other": "{{count}} problèmes trouvés",
+      "languageToolDismiss": "Ignorer",
+      "languageToolTextChanged": "La traduction a changé depuis la vérification. Relancez la vérification.",
+      "languageToolApplyFailed": "Impossible d'appliquer cette suggestion.",
+      "languageToolCloseResults": "Fermer",
+      "aiTranslationUnavailable": "La traduction par IA n'est pas disponible.",
+      "citationStyleSaveFailed": "Impossible d'enregistrer le style de citation.",
+      "generatingTranslation": "Génération de la traduction...",
+      "selectSourceUnitFirst": "Sélectionnez d'abord une unité source.",
+      "selectTranslationUnitFirst": "Sélectionnez d'abord une unité de traduction.",
+      "translationGenerated": "Traduction générée.",
+      "zoteroCitationsUnavailable": "Les citations Zotero ne sont pas disponibles.",
+      "zoteroPrefsLoadFailed": "Échec du chargement des préférences Zotero.",
+      "zoteroPrefsUnavailable": "Les préférences Zotero ne sont pas disponibles."
     },
     "dateAuthority": {
       "loading_calendar_tables": "Chargement des tables calendaires…",
@@ -536,8 +566,8 @@
         "entire_corpus": "Tout le corpus",
         "folder_placeholder": "Chemin du dossier"
       },
-      "skip_review": "Auto-accept",
-      "ai_curate": "AI curate",
+      "skip_review": "Acceptation automatique",
+      "ai_curate": "Curation IA",
       "tag_bomb_queue": {
         "title": "{{count}} document{{count, plural, one {} other {s}}} trouvé{{count, plural, one {} other {s}}}",
         "review": "Relire",
@@ -547,6 +577,14 @@
         "resume_title": "Reprendre la file du tag bomb",
         "resume_body": "{{count}} document{{count, plural, one {} other {s}}} restant{{count, plural, one {} other {s}}} à relire depuis la dernière exécution.",
         "discard": "Abandonner la file"
+      },
+      "tag_types": "Types de balises",
+      "tag_types_placeholder": "persName, placeName…",
+      "tag_types_helper": "Choisissez dans le schéma ou saisissez un nom de balise.",
+      "aiModeFailed": "L'IA {{mode}} a échoué :",
+      "disambiguation": {
+        "noMentionsInFilter": "Aucune mention ne nécessite de désambiguïsation dans le filtre actuel.",
+        "noPendingItems": "Aucun élément en attente — développez les éléments résolus ci-dessous pour les revoir ou les refaire."
       }
     },
     "settings": {
@@ -566,7 +604,9 @@
         "temperature": "Température",
         "translation_instructions": "Instructions de traduction",
         "translation_instructions_placeholder": "Saisissez ici les consignes de traduction à appliquer.",
-        "title": "API IA"
+        "title": "API IA",
+        "choose_model_first": "Choisissez un modèle avant d'établir la connexion.",
+        "settings_cleared": "Paramètres IA effacés."
       },
       "authorities": {
         "Add Custom Authority": "Ajouter une autorité personnalisée",
@@ -581,6 +621,42 @@
           "activate or deactivate authorities for each entity type": "Activer ou désactiver les autorités pour chaque type d'entité",
           "learn how to set up a custom TEI-based authority file with this guide": "Découvrez comment configurer un fichier d'autorité personnalisé basé sur TEI avec <2>ce guide</2>.",
           "rearrange authorities to prioritize results": "Réorganiser les autorités pour prioriser les résultats"
+        },
+        "chgis": {
+          "download_from": "Télécharger depuis",
+          "download_and_install": "Télécharger depuis Dataverse et installer",
+          "entity_db_required": "Impossible de résoudre un dossier local pour les données d'autorité. Essayez de redémarrer l'application.",
+          "install_here": "puis installez-le ici. LEAF-Writer compile uniquement un pack local - rien n'est redistribué.",
+          "install_failed": "Échec de l'installation de CHGIS.",
+          "install_from_download": "Installer depuis un téléchargement…",
+          "install_success": "Lieux CHGIS compilés ({{count}} enregistrements). Activez les lieux historiques CHGIS dans la boîte de dialogue d'auto-balisage.",
+          "layers": "Couches",
+          "remove_failed": "Impossible de retirer les données CHGIS.",
+          "remove_message": "Supprimer le pack CHGIS compilé et le téléchargement brut de cette base de données d'entités ?",
+          "remove_title": "Retirer les données CHGIS",
+          "removed": "Données CHGIS retirées.",
+          "reinstall_from_download": "Réinstaller depuis un téléchargement…",
+          "title": "Lieux historiques CHGIS (facultatif)"
+        },
+        "offline": {
+          "delete_detail": "Supprimer les bases de données téléchargées et les packs compilés ?",
+          "delete_detail_with_bytes": "Supprimer les bases de données téléchargées et les packs compilés ({{bytes}}) ?",
+          "delete_files": "Supprimer les fichiers",
+          "disable_failed": "Impossible de désactiver les autorités.",
+          "disable_message": "Arrêter la mise à jour des données d'autorité hors ligne.",
+          "disable_title": "Désactiver les autorités hors ligne",
+          "disabled": "Mises à jour des autorités hors ligne désactivées.",
+          "enable_failed": "Échec du téléchargement ou de la compilation. Réessayez depuis les Paramètres.",
+          "entity_db_required": "Impossible de résoudre un dossier local pour les données d'autorité. Essayez de redémarrer l'application.",
+          "keep_files": "Conserver les fichiers",
+          "ready_default": "Les packs d'autorité CBDB, DILA et Wikidata sont prêts pour l'auto-balisage.",
+          "ready_japanese": "Les packs d'autorité NDL sont prêts pour l'auto-balisage.",
+          "ready_tibetan": "Les packs d'autorité Wikidata sont prêts pour l'auto-balisage.",
+          "setup_description_full": "Téléchargez, compilez et mettez à jour les packs de balisage à côté de votre base de données d'entités.",
+          "setup_description_simple": "Téléchargez et mettez à jour les packs de balisage à côté de votre base de données d'entités.",
+          "title": "Autorités hors ligne",
+          "update_failed": "Échec de la mise à jour.",
+          "updated": "Données d'autorité mises à jour."
         }
       },
       "editor": {
@@ -598,7 +674,8 @@
         "font_size_slider": "Curseur de taille de police",
         "interface_zoom": "Zoom de l'interface",
         "interface_zoom_slider": "Curseur de zoom de l'interface",
-        "show_tag_bubble": "Afficher la bulle du nom de balise"
+        "show_tag_bubble": "Afficher la bulle du nom de balise",
+        "Strip East Asian whitespace": "Supprimer les espaces entre les caractères est-asiatiques"
       },
       "guardrails": {
         "title": "Garde-fous",
@@ -710,7 +787,13 @@
         "Show Text Nodes": "Afficher les nœuds de texte",
         "message": {
           "Text Nodes must be displayed for better accuracy": "Les nœuds de texte doivent être affichés pour une meilleure précision"
-        }
+        },
+        "Tree synchronization": "Synchronisation de l'arborescence",
+        "Tree synchronization description": "En direct suit l'éditeur. À la demande n'actualise que sur demande. Désactivé retire l'arborescence de la session d'édition.",
+        "Live": "En direct",
+        "On demand": "À la demande",
+        "Off": "Désactivé",
+        "title": "Panneau de balisage"
       },
       "plugins": {
         "description": "Les plugins sont propres au projet. Les plugins activés modifient les packs d’autorités et les méthodes d’auto-annotation de ce projet.",
@@ -779,6 +862,47 @@
         "translation_policy": "Politique de traduction",
         "privacy": "Confidentialité",
         "entity_types": "Types d'entités"
+      },
+      "language_tool": {
+        "title": "LanguageTool",
+        "description": "Vérification grammaticale facultative pour le panneau de traduction. Installez une copie locale gérée (nécessite Java 17+), ou pointez vers votre propre serveur. La vérification orthographique de Chromium reste disponible séparément sauf si le mode direct est activé.",
+        "enabled": "Activer les vérifications LanguageTool dans le panneau de traduction",
+        "base_url": "URL du serveur (votre propre serveur)",
+        "privacy_note": "Utilise un serveur local par défaut. Si vous collez une URL cloud, le texte traduit quitte cette machine.",
+        "test_connection": "Tester la connexion",
+        "checking": "Vérification…",
+        "connection_failed": "Impossible de joindre LanguageTool.",
+        "connected": "Connecté à LanguageTool.",
+        "connected_with_languages": "Connecté. Le serveur liste {{count}} langue{{count, plural, one {} other {s}}}.",
+        "saved": "Vérifié",
+        "not_saved": "Non vérifié",
+        "java_ok": "Java prêt ({{version}})",
+        "java_missing": "Java 17+ requis. Installez Temurin ou Homebrew openjdk@17, puis actualisez.",
+        "not_installed": "LanguageTool n'est pas encore installé dans LJB.",
+        "installed_version": "LanguageTool {{version}} installé",
+        "install": "Télécharger et installer",
+        "reinstall": "Réinstaller",
+        "remove": "Retirer",
+        "installing": "Installation de LanguageTool…",
+        "install_ok": "LanguageTool installé.",
+        "install_failed": "Échec de l'installation de LanguageTool.",
+        "removed": "LanguageTool géré retiré.",
+        "remove_failed": "Impossible de retirer LanguageTool.",
+        "use_managed": "Utiliser le serveur local géré par LJB",
+        "use_ngrams": "Utiliser les modèles n-grammes anglais (si téléchargés)",
+        "ngrams_download": "Télécharger les n-grammes anglais",
+        "ngrams_installed": "N-grammes anglais prêts",
+        "ngrams_downloading": "Téléchargement des n-grammes anglais (plusieurs Go)…",
+        "ngrams_ok": "N-grammes anglais installés.",
+        "ngrams_failed": "Échec du téléchargement des n-grammes anglais.",
+        "ngrams_warning": "Les n-grammes améliorent la détection des confusions mais nécessitent plusieurs Go de disque et davantage de RAM.",
+        "check_mode": "Mode de vérification",
+        "mode_ondemand": "À la demande (bouton Vérifier)",
+        "mode_live": "En direct (souligné pendant la saisie)",
+        "server_stopped": "serveur arrêté",
+        "server_starting": "démarrage du serveur",
+        "server_running": "serveur en cours d'exécution",
+        "server_failed": "échec du serveur"
       }
     },
     "desktop": {
@@ -794,7 +918,9 @@
         "entity_database_reveal": "Afficher",
         "remember_workspace_on_startup": "Rouvrir le projet et les onglets au démarrage",
         "user_name": "Nom d’utilisateur",
-        "your_name": "Votre nom"
+        "your_name": "Votre nom",
+        "field_required": "Ce champ est requis.",
+        "setup_incomplete": "Définissez votre langue, votre nom d'utilisateur et le dossier de la base de données avant de fermer les paramètres."
       }
     },
     "settlement": "établissement",
@@ -809,6 +935,87 @@
     "xml_document_schema_invalid": "Ce document ne respecte pas le schéma ({{count}} erreur(s)). Voir le panneau de validation pour plus de détails.",
     "xml_document_still_invalid": "Le document rétabli contient toujours des erreurs. Voir le panneau de validation pour plus de détails.",
     "Copy Source and Translation": "Copier la source et la traduction",
-    "Loading authorities": "Chargement des autorités"
+    "Loading authorities": "Chargement des autorités",
+    "error": {
+      "an_error_has_occurred": "Une erreur est survenue"
+    },
+    "entityLookups": {
+      "trigger_search": "Lancer la recherche",
+      "side_menu": "Menu latéral"
+    },
+    "editorLocationBar": {
+      "document_location": "Emplacement du document",
+      "go_to": "Aller à {{segment}}"
+    },
+    "status": "Statut",
+    "allow_drag_and_drop": "Autoriser le glisser-déposer",
+    "Attributes": "",
+    "Day": "",
+    "Emperor": "",
+    "Loading calendar tables…": "",
+    "Person type": "",
+    "Sexagenary day": "",
+    "Sexagenary year": "",
+    "Type to search…": "",
+    "Year": "",
+    "Month": "",
+    "New style": "",
+    "BC": "",
+    "Era": "",
+    "Dynasty": "",
+    "optional": "",
+    "sex_year": "",
+    "gz": "",
+    "nmd_gz": "",
+    "Calendar type": "",
+    "Calendar context (dynasty, emperor, era) — used by sanmiao when resolving dates.": "",
+    "Calendar lookup is unavailable. Install sanmiao and restart the app.": "",
+    "Quick Correction requires selected text and a correction.": "Sélectionnez du texte et saisissez une correction pour une substitution sic/corr.",
+    "Quick Correction requires supplied text.": "Saisissez le texte à marquer comme inséré.",
+    "Quick Correction requires selected text to mark as surplus.": "Sélectionnez le texte à marquer comme superflu.",
+    "Tag Correction requires selected text and a correction.": "Sélectionnez du texte et saisissez une correction.",
+    "Supplied text is required.": "Saisissez le texte à marquer comme inséré.",
+    "Select text to mark as surplus.": "Sélectionnez le texte à marquer comme superflu.",
+    "it_can_produce_unexpected_results_or_make_leaf_writer_crash": "Cela peut produire des résultats inattendus ou faire planter LEAF-Writer",
+    "some_features_are_not_fully_implemented": "Certaines fonctionnalités ne sont pas entièrement implémentées",
+    "panels": {
+      "toc": "Table des matières",
+      "markup": "Balisage",
+      "entities": "Entités",
+      "imageViewer": "Visionneuse d'images",
+      "xmlViewer": "Visionneuse XML",
+      "validation": "Validation",
+      "code": "XML brut"
+    },
+    "text_nodes_required_for_accuracy": "Les nœuds de texte doivent être affichés pour une meilleure précision",
+    "use_with_caution": "À utiliser avec prudence",
+    "xpathSearch": {
+      "title": "Recherche XPath",
+      "queryLabel": "Expression XPath",
+      "search": "Rechercher",
+      "hint": "Utilisez les chemins LEAF-Writer (p. ex. TEI/text/body//p), pas les chemins de style validateur /TEI/text[1]/...",
+      "noResults": "Aucun résultat trouvé.",
+      "invalidXPath": "Expression XPath non valide.",
+      "editorNotReady": "L'éditeur n'est pas encore prêt."
+    },
+    "calendarDialog": {
+      "noDateElements": "Aucun élément <date> à résoudre. Lancez d'abord le balisage des dates."
+    },
+    "customAuthorityDialog": {
+      "errorPrefix": "erreur :"
+    },
+    "entityDatabaseCheck": {
+      "cancel": "Annuler",
+      "mismatchDetail": "Cela peut signifier que la base de données a réellement été remplacée, ou que Paramètres > Base de données d'entités pointe vers le mauvais dossier alors que vos clés existantes sont toujours valides. Vérifiez d'abord ce paramètre — la purge est destructrice et n'est appropriée qu'une fois que vous avez confirmé que les clés ne correspondent vraiment pas.",
+      "mismatchMessage": "Ce projet était lié à une base de données d'entités différente.",
+      "mismatchTitle": "Incohérence de base de données d'entités",
+      "purgeKeys": "Purger les clés"
+    },
+    "schemaMenu": {
+      "noCatalogSchema": "Ce projet n'utilise pas de schéma de catalogue, il n'y a donc rien à actualiser.",
+      "refreshFailed": "Échec de l'actualisation du schéma.",
+      "refreshSuccess": "Schéma actualisé avec succès.",
+      "refreshUnavailable": "L'actualisation du schéma est indisponible dans cet environnement."
+    }
   }
 }

@@ -14,7 +14,16 @@ The kind-aware formatter fixed the mechanical problem (place/org/office/work no 
 
 1. **`work_type` ships before "belongs to."** It's cheap (one column, same shape as the existing `office_classifications`) and unlocks citation styling immediately. "Belongs to" (chapter → book) needs `entity_relations` wired up (currently dormant — round-trips via XML import/export in `xmlCodec.ts` but is never read into the panel summary) plus async cross-entity name resolution to render "chapter of X," which the current formatter isn't built for. Treated as a later, independent phase.
 2. **Title convention (romanization-first vs. translation-first) lives in `EntityDisplaySpec`**, as a per-mention override with a project-level default per target language — same architecture as the existing `possessive`/`bracketsAround` fields, not a parallel system.
-3. **Hucker translations stay local/opt-in, never shipped in the public Norbert asset pack.** Hucker's *Dictionary of Official Titles* is copyrighted; redistributing it verbatim is real legal exposure. Only **Huckbot5000** output — AI-inferred gap-fill translations, synthesized in Hucker's style from matched examples, not copied text — ships in the public pack, and even those must be source-tagged distinctly (`source: 'Huckbot5000'` vs `source: 'Hucker'`) using the existing origin/source/status convention already used throughout the entity store. CBDB's own terms of use may separately restrict redistributing *their* Hucker-derived fields — check before anything ships.
+3. **Hucker dictionary prose is not redistributed in public asset packs.** Hucker's *Dictionary
+   of Official Titles* remains under copyright. Our publishable packs therefore omit verbatim
+   Hucker text and omit CBDB fields that cite `(Hucker)`. Where an office still needs an English
+   gloss in our packs, gap-fill candidates may ship only as **Huckbot5000** output — reviewed
+   translations that do not match known Hucker wording, source-tagged `source: 'Huckbot5000'` so
+   they are never confused with Hucker's own scholarship (`source: 'Hucker'`). Candidates that
+   match known Hucker wording are excluded from publishable packs and kept only in a local
+   collision archive for audit. Separately, users who install CBDB's official database may see
+   whatever CBDB itself publishes; that is CBDB's distribution, not ours. Confirm CBDB's terms
+   before any pack release that might still carry contested fields.
 4. **~~Period-filtered office translations are variants on one entity, not duplicate entities~~ — SUPERSEDED (2026-08-06).** Revised: **a `roleName`/office entity is defined as string + translation + date range.** Daniel has been implicitly working this way already — CBDB itself disambiguates by period (its office codes are already period-specific), and Norbert only covers Han/Six Dynasties, so "which era" is already baked into which authority/candidate a tagger picks. Each period-specific office is its own entity (matching CBDB's own granularity, not an artificial leaf-writer split), disambiguated at tagging time via the existing candidate-picker UI — not a new "translation variant" concept layered on top of one shared entity. This resolves the "whose date?" open question below by eliminating it: see there for why.
 5. **`work_type` taxonomy and citation styling (2026-08-05):** `book` (italic), `chapter` (quotes — covers chapters/articles), `poem` (quotes — individual poems; a poem *collection* is typed `book` and italicized), `painting` (italic, art-historical convention), `object` (plain, no styling). **Default is `book`:** unset/`NULL` is treated as book everywhere (display, panel summary, new-work inserts, schema migration7 backfill). Any single mapping can still be adjusted, but the enum and default styling rule are settled — this unblocks Phase 0.
 
@@ -84,7 +93,10 @@ Per decision #4's revision, this phase turned out much smaller than originally s
 - **Not verified, flagged as a live-check item, not blocking:** whether the actual installed `cbdb-offices.ndjson`/`norbert-offices.ndjson` authority packs populate `metadata.startYear/endYear/dynasty` for office rows in practice — the code fully supports it and the schema documents it, but no live pack file was available in this checkout to confirm. `SidebarDatabaseTab.tsx`/`DisambiguationPanel.tsx` are deep Electron UI with live SQLite/authority-pack state, not headlessly testable — worth a manual pass opening an office entity's date form and running disambiguation on a multi-era `roleName` span.
 
 ### Phase 4 — Huckbot5000 pipeline
-**Goal:** asset-pack build step that matches Hucker/Grand-Ricci-if-obtainable translations to Norbert/CBDB office entities by string+period, then feeds the untranslated remainder to an AI to infer translations in Hucker's style, source-tagged as `Huckbot5000`.
+**Goal:** asset-pack build step that generates English office-title glosses for CBDB/Norbert
+offices that still lack a publishable translation, filters candidates that match known Hucker
+wording, and ships only reviewed rows source-tagged as `Huckbot5000`. (Grand Ricci, if a
+clear license path appears later, is a separate sourcing track.)
 - **Depends on Phase 3's schema existing** (needs the target shape to populate).
 - Not an in-app feature — an asset-pack build tool, separate codebase area from the live app.
 - Also gated on Daniel having Hucker data digitized/matched at all.
@@ -96,5 +108,5 @@ Per decision #4's revision, this phase turned out much smaller than originally s
 ## Sequencing
 
 - **Phases 0–3 and 1b** are shipped.
-- **Phase 4** depends on Phase 3 (needs office entities with real date ranges to match against — now in place) and is lowest priority — a build-tool project, not an in-app feature. See also `project_huckbot5000_feasibility` memory (actively being updated as of 2026-08-06: lexicon extractable, composition rules aren't, OCR cleaned, live CBDB Hucker-verbatim exposure being audited) — read it before scoping Phase 4's approach.
+- **Phase 4** depends on Phase 3 (needs office entities with real date ranges to match against — now in place) and is lowest priority — a build-tool project, not an in-app feature. See also `project_huckbot5000_feasibility` memory (actively being updated as of 2026-08-06: lexicon extractable, composition rules aren't, OCR cleaned, CBDB `(Hucker)`-cited fields in published packs being audited) — read it before scoping Phase 4's approach.
 - **"Belongs to"** and **Grand Ricci** run on their own track, not gating or gated by 0–4.

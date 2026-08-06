@@ -92,6 +92,7 @@
             "processing": "Traitement",
             "repository_not_found": "Dépôt non trouvé",
             "save": "Enregistrer",
+            "select_save_option": "Sélectionner une option d'enregistrement",
             "settings": "paramètres",
             "show_less": "Afficher moins",
             "show_more": "Afficher plus",
@@ -116,7 +117,8 @@
             "document_not_valid": "document non valide",
             "must be a valid https url": "Doit être une URL https valide",
             "must point to a file type": "Doit pointer vers un {{filetypes}}fichier",
-            "saving_document": "enregistrement du document"
+            "saving_document": "enregistrement du document",
+            "updated": "Mis à jour"
         },
         "settings": {
             "allow_all_files": "Autoriser tous les fichiers"

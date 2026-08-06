@@ -47,6 +47,11 @@
         "resume_title": "Resume tag bomb queue",
         "resume_body": "{{count}} document{{count, plural, one {} other {s}}} left to review from the last run.",
         "discard": "Discard queue"
+      },
+      "aiModeFailed": "AI {{mode}} failed:",
+      "disambiguation": {
+        "noMentionsInFilter": "No mentions need disambiguation in the current filter.",
+        "noPendingItems": "No pending items — expand resolved below to review or redo."
       }
     },
     "entityLookups": {
@@ -61,6 +66,7 @@
       "ai_api": {
         "api_key": "API key",
         "base_url": "Base URL",
+        "description": "Configure an OpenAI-compatible endpoint for AI-assisted translation.",
         "check_connection": "Check connection",
         "checking": "Checking AI API connection...",
         "checking_button": "Checking...",
@@ -71,7 +77,11 @@
         "save_failed": "Could not save AI API settings.",
         "saved": "AI API settings saved.",
         "temperature": "Temperature",
-        "title": "AI API"
+        "translation_instructions": "Translation instructions",
+        "translation_instructions_placeholder": "Describe the translation guidance to apply here.",
+        "title": "AI API",
+        "choose_model_first": "Choose a model before establishing the connection.",
+        "settings_cleared": "AI settings cleared."
       },
       "authorities": {
         "Add Custom Authority": "Add Custom Authority",
@@ -114,7 +124,6 @@
         "show_pack_string_counts": "Show live string counts in Tag Bomb",
         "show_pack_string_counts_description": "Counts strings in each authority pack when Tag Bomb opens. Can slow opening.",
         "asset_packs_note": "Offline authority packs and map tiles now live in the Asset packs tab.",
-
         "messages": {
           "Are you sure you want to delete the authority -value": "<0>Are you sure you want to delete the authority </0><1>{{name}}</1><2>?</2>",
           "Authority deleted successfully": "Authority deleted successfully",
@@ -183,24 +192,6 @@
         "snapshot_failed": "The safety snapshot could not be created. No changes were made.",
         "no_matches": "No matching content found.",
         "applied": "Applied {{count}} changes across {{files}} file(s)."
-      },
-      "ai_api": {
-        "api_key": "API key",
-        "base_url": "Base URL",
-        "description": "Configure an OpenAI-compatible endpoint for AI-assisted translation.",
-        "check_connection": "Check connection",
-        "checking": "Checking AI API connection...",
-        "checking_button": "Checking...",
-        "connected_with_models": "Connected. Found {{count}} model{{count, plural, one {} other {s}}}.",
-        "connected_without_models": "Connected. The server did not list any models.",
-        "connection_failed": "Could not reach the AI API.",
-        "model": "Model",
-        "save_failed": "Could not save AI API settings.",
-        "saved": "AI API settings saved.",
-        "temperature": "Temperature",
-        "translation_instructions": "Translation instructions",
-        "translation_instructions_placeholder": "Describe the translation guidance to apply here.",
-        "title": "AI API"
       },
       "language_tool": {
         "title": "LanguageTool",
@@ -408,7 +399,23 @@
     },
     "status": "Status",
     "messages": {
-      "some_features_are_not_fully_implemented": "Some features are not fully implemented"
+      "Are you sure you want to delete value": "<0>Are you sure you want to delete </0><1>{{value}}</1>",
+      "Failed to fetch": "Failed to fetch",
+      "It can produce unexpected results or make LEAF-Writer crash": "It can produce unexpected results or make LEAF-Writer crash",
+      "LEAF-Writer could not find the document schema declaration": "LEAF-Writer could not find the document schema declaration.",
+      "Only available on this browser": "Only available on this browser",
+      "Only you can see this": "Only you can see this",
+      "Some features are not fully implemented": "Some features are not fully implemented",
+      "The maximum number of item return in the lookup search": " The maximum number of item return in the lookup search",
+      "Use with caution": "Use with caution",
+      "delete confirmation message": "<0>Are you sure you want to delete </0><1>{{name}}</1><2> schema?</2>",
+      "failed to fetch URL": "Failed to fetch URL",
+      "maxResultsDescription": " The maximum number of item return in the lookup search",
+      "navigate to url": "navigate to url",
+      "root element invalid": "<1>LEAF-Writer cannot open this document.</1> Root element <2>{{rootName}}</2> not supported.",
+      "schema not loaded": "<0>LEAF-Writer could not load the schema: </0><1>{{rng}}</1>",
+      "schema not supported": "<0>LEAF-Writer does not support the schema attached to the document: </0><1>{{rng}}</1>",
+      "url invalid": "url invalid"
     },
     "Accept All": "",
     "Add Entity Annotation": "Add Entity Annotation",
@@ -831,25 +838,6 @@
     "low": "",
     "markup panel": "",
     "medium": "",
-    "messages": {
-      "Are you sure you want to delete value": "<0>Are you sure you want to delete </0><1>{{value}}</1>",
-      "Failed to fetch": "Failed to fetch",
-      "It can produce unexpected results or make LEAF-Writer crash": "It can produce unexpected results or make LEAF-Writer crash",
-      "LEAF-Writer could not find the document schema declaration": "LEAF-Writer could not find the document schema declaration.",
-      "Only available on this browser": "Only available on this browser",
-      "Only you can see this": "Only you can see this",
-      "Some features are not fully implemented": "Some features are not fully implemented",
-      "The maximum number of item return in the lookup search": " The maximum number of item return in the lookup search",
-      "Use with caution": "Use with caution",
-      "delete confirmation message": "<0>Are you sure you want to delete </0><1>{{name}}</1><2> schema?</2>",
-      "failed to fetch URL": "Failed to fetch URL",
-      "maxResultsDescription": " The maximum number of item return in the lookup search",
-      "navigate to url": "navigate to url",
-      "root element invalid": "<1>LEAF-Writer cannot open this document.</1> Root element <2>{{rootName}}</2> not supported.",
-      "schema not loaded": "<0>LEAF-Writer could not load the schema: </0><1>{{rng}}</1>",
-      "schema not supported": "<0>LEAF-Writer does not support the schema attached to the document: </0><1>{{rng}}</1>",
-      "url invalid": "url invalid"
-    },
     "multiple tags": "multiple tags",
     "no description available": "",
     "not supported": "Not Supported",
@@ -977,7 +965,16 @@
         "preview": "Preview",
         "reset": "Reset",
         "done": "Done"
-      }
+      },
+      "aiTranslationUnavailable": "AI translation is not available.",
+      "citationStyleSaveFailed": "Could not save citation style.",
+      "generatingTranslation": "Generating translation...",
+      "selectSourceUnitFirst": "Select a source unit first.",
+      "selectTranslationUnitFirst": "Select a translation unit first.",
+      "translationGenerated": "Translation generated.",
+      "zoteroCitationsUnavailable": "Zotero citations are not available.",
+      "zoteroPrefsLoadFailed": "Zotero preferences failed to load.",
+      "zoteroPrefsUnavailable": "Zotero preferences are not available."
     },
     "settlement": "",
     "show only valid tags": "show only valid tags",
@@ -991,6 +988,25 @@
     "xml_document_schema_invalid": "This document does not follow the schema ({{count}} error(s)). See the Validation panel for details.",
     "xml_document_still_invalid": "The reverted document still contains errors. See the Validation panel for details. You can leave Source anyway, but Visual mode and save may still complain until the schema errors are fixed.",
     "Copy Source and Translation": "Copy Source and Translation",
-    "Loading authorities": "Loading authorities"
+    "Loading authorities": "Loading authorities",
+    "calendarDialog": {
+      "noDateElements": "No <date> elements to resolve. Run Tag dates first."
+    },
+    "customAuthorityDialog": {
+      "errorPrefix": "error:"
+    },
+    "entityDatabaseCheck": {
+      "cancel": "Cancel",
+      "mismatchDetail": "This can mean the database was genuinely swapped, or that Settings > Entity database is pointing at the wrong folder and your existing keys are still valid. Check that setting first — purging is destructive and only appropriate once you have confirmed the keys really do not match.",
+      "mismatchMessage": "This project was linked to a different entity database.",
+      "mismatchTitle": "Entity database mismatch",
+      "purgeKeys": "Purge keys"
+    },
+    "schemaMenu": {
+      "noCatalogSchema": "This project does not use a catalog schema, so there is nothing to refresh.",
+      "refreshFailed": "Schema refresh failed.",
+      "refreshSuccess": "Schema refreshed successfully.",
+      "refreshUnavailable": "Schema refresh is unavailable in this environment."
+    }
   }
 }

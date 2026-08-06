@@ -106,7 +106,7 @@ export const Menu = ({ anchorEl, handleClose }: MenuProps) => {
     if (!projectFilePath) return;
     if (!window.electronAPI?.installCatalogSchema) {
       notifyViaSnackbar({
-        message: 'Schema refresh is unavailable in this environment.',
+        message: t('LW.schemaMenu.refreshUnavailable'),
         options: { variant: 'warning' },
       });
       return;
@@ -117,7 +117,7 @@ export const Menu = ({ anchorEl, handleClose }: MenuProps) => {
       const currentSchemaCatalogId = reloadedBundle?.config.schema?.catalogId;
       if (!currentSchemaCatalogId) {
         notifyViaSnackbar({
-          message: 'This project does not use a catalog schema, so there is nothing to refresh.',
+          message: t('LW.schemaMenu.noCatalogSchema'),
           options: { variant: 'warning' },
         });
         return;
@@ -150,13 +150,13 @@ export const Menu = ({ anchorEl, handleClose }: MenuProps) => {
       await window.writer?.overmindActions?.validator?.validate?.();
 
       notifyViaSnackbar({
-        message: 'Schema refreshed successfully.',
+        message: t('LW.schemaMenu.refreshSuccess'),
         options: { variant: 'success' },
       });
     } catch (error) {
       console.error('[schema-menu] refresh failed:', error);
       notifyViaSnackbar({
-        message: 'Schema refresh failed.',
+        message: t('LW.schemaMenu.refreshFailed'),
         options: { variant: 'error' },
       });
     }

@@ -8,6 +8,7 @@ import type {
   AuthorityLifecycleStatus,
 } from '@src/desktop/authorityLifecycleTypes';
 import { useCallback, useEffect, useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import { createEntitiesScaffold } from '../../../../packages/cwrc-leafwriter/src/autoTagging/entities';
 import { refreshCbdbConcordanceAfterPackLifecycle } from '../../../../packages/cwrc-leafwriter/src/autoTagging/cbdbConcordance';
 import { clearPackContentCache } from '../../../../packages/cwrc-leafwriter/src/services/authority-pack-lookup';
@@ -26,6 +27,7 @@ const afterAuthorityPackLifecycleSuccess = async (): Promise<void> => {
 };
 
 export const useCommonsUiBridge = () => {
+  const { t } = useTranslation();
   const {
     skipEntityDetachConfirm,
     skipExplorerDeleteConfirm,
@@ -169,6 +171,11 @@ export const useCommonsUiBridge = () => {
     };
   }, [currentLocale, setThemeAppearance, switchLanguage, themeAppearance]);
 
+  useEffect(() => {
+    if (!isDesktop()) return;
+    void window.electronAPI?.setAppLocale?.(currentLocale);
+  }, [currentLocale]);
+
   const setEncoderName = useCallback(async (name: string) => {
     const trimmed = name.trim();
     setEncoderNameState(trimmed);
@@ -283,9 +290,9 @@ export const useCommonsUiBridge = () => {
     if (isProjectFolder) {
       await window.electronAPI?.showNativeMessageBox?.({
         type: 'warning',
-        title: 'That folder is a project',
-        message: `${folder}\n\nThis folder is already a Le Jean-Baptiste project. Choose a different folder for your entity database — you can keep it as the parent of your projects, just not a project folder itself.`,
-        buttons: ['OK'],
+        title: t('LWC.desktop.entity_db_setup.folder_is_project_title'),
+        message: `${folder}\n\n${t('LWC.desktop.entity_db_setup.folder_is_project_message')}`,
+        buttons: [t('LWC.desktop.entity_db_setup.ok')],
       });
       return null;
     }
@@ -303,9 +310,13 @@ export const useCommonsUiBridge = () => {
       if (entitiesInParent) {
         const choice = await window.electronAPI?.showNativeMessageBox?.({
           type: 'warning',
-          title: 'Create a database in this folder?',
-          message: `The parent folder already has an entity database:\n${parent}\n\nIf you meant that shared database, choose the parent instead. Otherwise Le Jean-Baptiste can create a new empty database in:\n${folder}`,
-          buttons: ['Cancel', 'Use parent folder', 'Create here'],
+          title: t('LWC.desktop.entity_db_setup.create_here_title'),
+          message: `${t('LWC.desktop.entity_db_setup.parent_has_db_intro')}\n${parent}\n\n${t('LWC.desktop.entity_db_setup.parent_has_db_detail')}\n${folder}`,
+          buttons: [
+            t('LWC.desktop.entity_db_setup.cancel'),
+            t('LWC.desktop.entity_db_setup.use_parent_folder'),
+            t('LWC.desktop.entity_db_setup.create_here'),
+          ],
           defaultId: 1,
           cancelId: 0,
         });
@@ -316,10 +327,10 @@ export const useCommonsUiBridge = () => {
             const detail = error instanceof Error ? error.message : String(error);
             void window.electronAPI?.showNativeMessageBox?.({
               type: 'warning',
-              title: 'Could not save entity database folder',
-              message: `${parent}\n\nSaving the parent folder failed.`,
+              title: t('LWC.desktop.entity_db_setup.save_folder_failed_title'),
+              message: `${parent}\n\n${t('LWC.desktop.entity_db_setup.save_parent_folder_failed')}`,
               detail,
-              buttons: ['OK'],
+              buttons: [t('LWC.desktop.entity_db_setup.ok')],
             });
           }
           setEntityDbFolderState(parent);
@@ -334,10 +345,10 @@ export const useCommonsUiBridge = () => {
         const detail = error instanceof Error ? error.message : String(error);
         await window.electronAPI?.showNativeMessageBox?.({
           type: 'warning',
-          title: 'Could not create entity database',
-          message: `${folder}\n\nLe Jean-Baptiste could not set up the entity database in this folder.`,
+          title: t('LWC.desktop.entity_db_setup.create_db_failed_title'),
+          message: `${folder}\n\n${t('LWC.desktop.entity_db_setup.create_db_failed_message')}`,
           detail,
-          buttons: ['OK'],
+          buttons: [t('LWC.desktop.entity_db_setup.ok')],
         });
         return null;
       }
@@ -352,10 +363,10 @@ export const useCommonsUiBridge = () => {
       const detail = error instanceof Error ? error.message : String(error);
       void window.electronAPI?.showNativeMessageBox?.({
         type: 'warning',
-        title: 'Could not save entity database folder',
-        message: `${folder}\n\nThe folder was set for this session, but saving it failed and it may not persist. Try again, or check that Le Jean-Baptiste can write to its app data folder.`,
+        title: t('LWC.desktop.entity_db_setup.save_folder_failed_title'),
+        message: `${folder}\n\n${t('LWC.desktop.entity_db_setup.save_folder_failed_session')}`,
         detail,
-        buttons: ['OK'],
+        buttons: [t('LWC.desktop.entity_db_setup.ok')],
       });
     }
     setEntityDbFolderState(picked);

@@ -1,5 +1,6 @@
 import { useActions, useAppState } from '@src/overmind';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import { applyAttributeToTag } from './attributeCommand';
 import { getCaretScreenPosition } from './editorAnchor';
 import {
@@ -41,6 +42,7 @@ export interface AttributeCommandController {
 }
 
 export const useAttributeCommandController = (): AttributeCommandController => {
+  const { t } = useTranslation();
   const { rootPath, activeTabPath } = useAppState().project;
   const { notifyViaSnackbar } = useActions().ui;
 
@@ -119,7 +121,7 @@ export const useAttributeCommandController = (): AttributeCommandController => {
     const element = ctx?.tagElement;
     if (!element) {
       notifyViaSnackbar({
-        message: 'Place the caret inside a tag to add attributes.',
+        message: t('LWC.desktop.tagging.place_caret_in_tag'),
         options: { variant: 'info' },
       });
       return true;

@@ -82,7 +82,7 @@ export const DesktopAiApi = () => {
 
   const establishConnection = async () => {
     if (!settings.model.trim()) {
-      setStatus({ severity: 'error', message: 'Choose a model before establishing the connection.' });
+      setStatus({ severity: 'error', message: t('LW.settings.ai_api.choose_model_first') });
       return;
     }
 
@@ -131,7 +131,7 @@ export const DesktopAiApi = () => {
     try {
       await bridge.setAiApiSettings(DEFAULT_AI_API_SETTINGS);
       setSettings(DEFAULT_AI_API_SETTINGS);
-      setStatus({ severity: 'info', message: 'AI settings cleared.' });
+      setStatus({ severity: 'info', message: t('LW.settings.ai_api.settings_cleared') });
     } catch (error) {
       setStatus({
         severity: 'error',

@@ -279,6 +279,7 @@ export interface ElectronAPI {
   /** @deprecated Use openProject */
   openProjectFolder: () => Promise<ProjectBundle | null>;
   restoreLastProject: () => Promise<ProjectBundle | null>;
+  setAppLocale: (locale: string) => Promise<void>;
   getRememberWorkspaceOnStartup: () => Promise<boolean>;
   setRememberWorkspaceOnStartup: (remember: boolean) => Promise<void>;
   saveWorkspaceSession: (session: WorkspaceSession) => Promise<void>;

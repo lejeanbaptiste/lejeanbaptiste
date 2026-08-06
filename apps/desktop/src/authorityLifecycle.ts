@@ -7,6 +7,7 @@ import fsp from 'node:fs/promises';
 import path from 'node:path';
 
 import { writeFileAtomic } from './atomicWrite';
+import { mainT } from './mainI18n';
 
 import {
   ALL_AUTHORITY_PROFILES,
@@ -400,7 +401,7 @@ const installPacksFromGitHub = async (
   { entityDbFolder, forceDownload, onProgress }: RunAuthorityLifecyclePipelineOptions,
   profiles: AuthorityLifecycleProfile[],
 ): Promise<AuthorityPacksIndex> => {
-  onProgress?.({ phase: 'downloading', message: 'Checking authority pack registry…' });
+  onProgress?.({ phase: 'downloading', message: mainT('checking_authority_pack_registry') });
   const index = await fetchRemotePacksIndex();
   cachedRemoteIndex = index;
   cachedRemoteIndexAt = Date.now();
@@ -441,7 +442,7 @@ const installPacksViaCompileFallback = async ({
   const newPacksDir = path.join(entityDbFolder, `${AUTHORITY_PACKS_DIRNAME}.new`);
   await fsp.rm(newPacksDir, { recursive: true, force: true });
 
-  onProgress?.({ phase: 'compiling', message: 'Compiling authority packs locally…' });
+  onProgress?.({ phase: 'compiling', message: mainT('compiling_authority_packs_locally') });
   await compileAuthorityPacks({
     entityDbFolder,
     outDir: newPacksDir,
@@ -538,7 +539,7 @@ export const runAuthorityLifecyclePipeline = async (
 
         onProgress?.({
           phase: 'downloading',
-          message: `Downloading reference data: ${sourceSpec.label}…`,
+          message: mainT('downloading_reference_data', { label: sourceSpec.label }),
           sourceId: sourceSpec.id,
         });
         await downloadAuthoritySource(rawDir, sourceSpec.id, emitDownload);

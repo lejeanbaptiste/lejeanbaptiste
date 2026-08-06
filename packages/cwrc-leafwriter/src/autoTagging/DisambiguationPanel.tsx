@@ -945,7 +945,7 @@ export const DisambiguationPanel = ({
     if (pending.length === 0 && resolved.length === 0) {
       rows.push({
         kind: 'empty',
-        message: 'No mentions need disambiguation in the current filter.',
+        message: t('LW.autoTagging.disambiguation.noMentionsInFilter'),
       });
       return rows;
     }
@@ -953,7 +953,7 @@ export const DisambiguationPanel = ({
     if (pending.length === 0 && resolved.length > 0) {
       rows.push({
         kind: 'empty',
-        message: 'No pending items — expand resolved below to review or redo.',
+        message: t('LW.autoTagging.disambiguation.noPendingItems'),
       });
     }
 

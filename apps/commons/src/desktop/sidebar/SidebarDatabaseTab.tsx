@@ -895,7 +895,9 @@ export const SidebarDatabaseTab = ({ active = false }: SidebarDatabaseTabProps) 
           const pulled = await syncNonConflictingLinkedEntities(availability.context);
           if (pulled.synced > 0) {
             notifyViaSnackbar({
-              message: `Updated ${pulled.synced} linked entit${pulled.synced === 1 ? 'y' : 'ies'} from the central database.`,
+              message: t('LWC.desktop.sidebar.database.bridge.auto_sync_updated', {
+                count: pulled.synced,
+              }),
               options: { variant: 'info' },
             });
           }
@@ -3047,7 +3049,7 @@ export const SidebarDatabaseTab = ({ active = false }: SidebarDatabaseTabProps) 
     const ids = pruneToKnownEntityIds(group.entityIds, entities);
     if (ids.length < 2) {
       notifyViaSnackbar({
-        message: 'Cannot merge this duplicate group: some entities are not in the current database list.',
+        message: t('LWC.desktop.sidebar.database.merge_group_unavailable'),
         options: { variant: 'warning' },
       });
       return;
@@ -3213,7 +3215,7 @@ export const SidebarDatabaseTab = ({ active = false }: SidebarDatabaseTabProps) 
         await api.writeFile(proposalPath, text ? `${text}\n` : '');
       }
       notifyViaSnackbar({
-        message: `Added ${promoted} ${promoted === 1 ? 'entity' : 'entities'} to the central database.`,
+        message: t('LWC.desktop.sidebar.database.accept_proposals_added', { count: promoted }),
       });
       await reload();
     } catch (error) {

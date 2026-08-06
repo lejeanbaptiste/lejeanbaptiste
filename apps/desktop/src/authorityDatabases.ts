@@ -435,15 +435,13 @@ export const downloadNorbertReferenceBundle = async (
  * or redistributes its own repackaged copy of CBDB's data: each install
  * downloads and processes CBDB's own release on its own machine.
  *
- * CBDB's upstream OFFICE_CODES table embeds some office-title glosses lifted
- * from a third party's copyrighted dictionary (tagged "(Hucker)" in CBDB's
- * own data — see leaf-writer/docs/huckbot5000-planning.md). The *tagging*
- * pack strips those before this app ever redistributes anything derived
- * from them (authority extraction/cbdb/compileRecords.mjs). This reference
- * sqlite intentionally does NOT re-implement that filtering — it's a local,
- * unmodified copy of CBDB's own official release, read directly by the user
- * installing it, the same posture as running CBDB's own published database
- * yourself. Nothing here is republished by this app.
+ * CBDB's upstream OFFICE_CODES table embeds some office-title glosses that
+ * CBDB itself cites as "(Hucker)" — see leaf-writer/docs/huckbot5000-planning.md.
+ * Publishable *tagging* packs omit those fields before redistribution
+ * (authority extraction/cbdb/compileRecords.mjs). This reference sqlite is a
+ * table-subset of CBDB's official release as installed for the user: office
+ * translations are left intact so LJB can display what CBDB publishes. Nothing
+ * here is re-packaged into our GitHub pack assets.
  */
 export const downloadCbdbDirect = async (
   baseDir: string,

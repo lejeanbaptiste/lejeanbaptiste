@@ -1,4 +1,7 @@
+import i18next from 'i18next';
 import { TAG_TO_KIND, type EntityKind } from './entities';
+
+const { t } = i18next;
 import type { EntityStore } from './entityStore';
 import { purgeEntityKeys } from './mentions';
 import { orphanPurgeRemap, sweepOrphans, type OrphanSweepReport } from './orphanSweep';
@@ -258,14 +261,10 @@ export async function runEntityDatabaseCheck(
 
   const { response } = await api.showNativeMessageBox({
     type: 'warning',
-    title: 'Entity database mismatch',
-    message: 'This project was linked to a different entity database.',
-    detail:
-      'This can mean the database was genuinely swapped, or that Settings > Entity database ' +
-      'is pointing at the wrong folder and your existing keys are still valid. Check that ' +
-      'setting first — purging is destructive and only appropriate once you have confirmed ' +
-      'the keys really do not match.',
-    buttons: ['Cancel', 'Purge keys'],
+    title: t('LW.entityDatabaseCheck.mismatchTitle'),
+    message: t('LW.entityDatabaseCheck.mismatchMessage'),
+    detail: t('LW.entityDatabaseCheck.mismatchDetail'),
+    buttons: [t('LW.entityDatabaseCheck.cancel'), t('LW.entityDatabaseCheck.purgeKeys')],
     defaultId: 0,
     cancelId: 0,
   });

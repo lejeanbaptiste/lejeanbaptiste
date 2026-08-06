@@ -81,6 +81,8 @@ import {
   type LanguageToolSettings,
   type WorkspaceSession,
 } from './projectPrefs';
+import { setAppLocale } from './appLocale';
+import { mainT } from './mainI18n';
 import { checkLanguageToolText, testLanguageToolConnection } from './languageToolClient';
 import { applyWhitelistToMatches, loadLanguageToolEntityWhitelist } from './languageToolWhitelist';
 import {
@@ -1386,7 +1388,7 @@ const openProjectFromDialog = async () => {
 
   const result = await dialog.showOpenDialog(mainWindow, {
     properties: ['openDirectory', 'createDirectory'],
-    title: 'Open project folder',
+    title: mainT('open_project_folder_title'),
     defaultPath: await getDialogDefaultPath(),
   });
   if (result.canceled || result.filePaths.length === 0) return null;
@@ -1396,9 +1398,9 @@ const openProjectFromDialog = async () => {
   if (entityDbFolder && pickedFolder === entityDbFolder.replace(/[/\\]+$/, '')) {
     await dialog.showMessageBox(mainWindow, {
       type: 'warning',
-      title: 'That folder is your entity database',
-      message: `${pickedFolder}\n\nThis folder is configured as your entity database folder and can't be used as a project folder. Choose a different folder for your project.`,
-      buttons: ['OK'],
+      title: mainT('entity_db_is_project_title'),
+      message: `${pickedFolder}\n\n${mainT('entity_db_is_project_message')}`,
+      buttons: [mainT('ok')],
     });
     return null;
   }
@@ -1416,7 +1418,7 @@ const openProjectFromDialog = async () => {
       await dialog.showMessageBox(mainWindow, {
         type: 'error',
         title: APP_NAME,
-        message: 'Could not open this project folder.',
+        message: mainT('open_project_failed_message'),
         detail: error instanceof Error ? error.message : String(error),
       });
     }
@@ -2098,6 +2100,8 @@ const registerIpcHandlers = () => {
     return bundle;
   });
 
+  ipcMain.handle('setAppLocale', (_event, locale: string) => setAppLocale(locale));
+
   ipcMain.handle('getRememberWorkspaceOnStartup', () => getRememberWorkspaceOnStartup());
   ipcMain.handle('setRememberWorkspaceOnStartup', (_event, remember: boolean) =>
     setRememberWorkspaceOnStartup(Boolean(remember)),
@@ -2410,7 +2414,7 @@ const registerIpcHandlers = () => {
     const rngResult = await dialog.showOpenDialog(dialogParent, {
       properties: ['openFile'],
       filters: [{ name: 'RelaxNG schema', extensions: ['rng', 'rnc'] }],
-      title: 'Choose schema file (.rng)',
+      title: mainT('choose_schema_file_title'),
       defaultPath: await getDialogDefaultPath(),
     });
     if (rngResult.canceled || !rngResult.filePaths[0]) return null;
@@ -2420,8 +2424,8 @@ const registerIpcHandlers = () => {
     const cssResult = await dialog.showOpenDialog(dialogParent, {
       properties: ['openFile'],
       filters: [{ name: 'CSS stylesheet', extensions: ['css'] }],
-      title: 'Choose CSS file (optional)',
-      message: 'Optional: choose a CSS file for this schema, or Cancel to skip.',
+      title: mainT('choose_css_file_title'),
+      message: mainT('choose_css_file_message'),
     });
     if (!cssResult.canceled && cssResult.filePaths[0])
       approveRendererReadRoot(cssResult.filePaths[0]);
@@ -2443,9 +2447,9 @@ const registerIpcHandlers = () => {
         },
         { name: 'All files', extensions: ['*'] },
       ],
-      message: 'Choose text, Markdown, RTF, Word, ODT, or XML files (or folders) to import.',
+      message: mainT('import_documents_message'),
       properties: ['openFile', 'openDirectory', 'multiSelections'],
-      title: 'Import documents',
+      title: mainT('import_documents_title'),
       defaultPath: await getDialogDefaultPath(),
     });
 
@@ -2552,15 +2556,11 @@ const registerIpcHandlers = () => {
 
     const result = await dialog.showMessageBox(mainWindow, {
       type: 'question',
-      buttons: ['Download', 'Not now'],
+      buttons: [mainT('download'), mainT('not_now')],
       defaultId: 0,
       cancelId: 1,
-      message: 'Download Chinese authority databases?',
-      detail:
-        'This project uses Chinese as its source language. LEAF-Writer can download ' +
-        'CBDB (China Biographical Database, ~600 MB) and the DILA Buddhist Studies ' +
-        'authorities (~85 MB), plus compiled Wikidata packs, for automated tagging. They are ' +
-        'stored locally on this machine (not synced with your entity database) and download in the background.',
+      message: mainT('download_chinese_authority_question'),
+      detail: mainT('download_chinese_authority_detail'),
     });
     if (result.response !== 0) {
       await fs.mkdir(baseDir, { recursive: true });
@@ -2622,7 +2622,7 @@ const registerIpcHandlers = () => {
       const mapTilesDir = await getMapTilesDir();
       activeMapTileDownloadState.set(bundle.id, {
         bundleId: bundle.id,
-        message: 'Preparing download…',
+        message: mainT('preparing_download'),
       });
       const { path: installedPath } = await installMapTileBundle({
         mapTilesDir,
@@ -2683,14 +2683,11 @@ const registerIpcHandlers = () => {
 
     const result = await dialog.showMessageBox(mainWindow, {
       type: 'question',
-      buttons: ['Download', 'Not now'],
+      buttons: [mainT('download'), mainT('not_now')],
       defaultId: 0,
       cancelId: 1,
-      message: 'Download offline map tiles?',
-      detail:
-        'LEAF-Writer can download a basemap (streets, satellite, relief) for comparing ' +
-        'place-name candidates on a map — up to 500 MB, stored locally on this machine ' +
-        '(not synced with your entity database), used entirely offline once downloaded.',
+      message: mainT('download_map_tiles_question'),
+      detail: mainT('download_map_tiles_detail'),
     });
     if (result.response !== 0) {
       await fs.mkdir(mapTilesDir, { recursive: true });
@@ -2869,8 +2866,8 @@ const registerIpcHandlers = () => {
     const parent = getTopNativeDialogWindow() ?? mainWindow ?? undefined;
     const options: Electron.OpenDialogOptions = {
       properties: ['openDirectory'],
-      title: 'Install LJB plugin',
-      message: 'Select a plugin package folder containing plugin.manifest.json.',
+      title: mainT('install_plugin_title'),
+      message: mainT('select_plugin_folder_message'),
       defaultPath: await getDialogDefaultPath(),
     };
     const result = parent
@@ -3174,9 +3171,9 @@ const registerIpcHandlers = () => {
 
     const confirmed = await dialog.showMessageBox(confirmParent, {
       type: 'warning',
-      title: 'Move entity database?',
-      message: `Move your entity database from:\n${source}\n\nto:\n${dest}\n\nAll files will be copied to the new location and the old folder will be removed after a successful move.`,
-      buttons: ['Move', 'Cancel'],
+      title: mainT('move_entity_db_title'),
+      message: mainT('move_entity_db_message', { source, dest }),
+      buttons: [mainT('move'), mainT('cancel')],
       defaultId: 0,
       cancelId: 1,
     });
@@ -3202,8 +3199,8 @@ const registerIpcHandlers = () => {
     const parent = getTopNativeDialogWindow() ?? mainWindow ?? undefined;
     const options: Electron.OpenDialogOptions = {
       properties: ['openDirectory'],
-      title: 'Choose compiled authority packs folder',
-      message: 'Select the folder that contains cbdb/ and dila/ (e.g. authority extraction/packs).',
+      title: mainT('choose_authority_packs_folder_title'),
+      message: mainT('choose_authority_packs_folder_message'),
       defaultPath: await getDialogDefaultPath(),
     };
     const result = parent

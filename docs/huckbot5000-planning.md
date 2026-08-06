@@ -1,22 +1,27 @@
-# Huckbot5000: can Hucker's translations be reduced to an algorithm?
+# Huckbot5000: independent English glosses for Chinese office titles
 
-**Status (2026-08-06):** Feasibility study complete. OCR extraction cleaned (step 1 of the
-recommendation below). Repo/architecture decided. **Not yet built.** This doc records what the
-experiments actually showed, including two results that argue against the original plan, plus
-a live finding (CBDB) that's a bigger and more urgent issue than Huckbot5000 itself.
-Feeds Phase 4 of [entity-display-translations-planning.md](entity-display-translations-planning.md)
-— Phase 3 (the `roleName` = string+translation+date-range schema Huckbot5000's output must match)
-is resolved in that doc but not yet built either; Phase 4 depends on it.
+**Status (2026-08-06, afternoon):** Feasibility study complete. Production pipeline built
+(period-aware targets, CBDB/Norbert concordance, procedural place+suffix + parentOf, dual
+Hucker skip, collision + transliteration audit). Ready for full LLM generation (~11.7k calls).
+This doc records what the experiments actually showed, including two results that argue against
+the original plan, plus the CBDB finding that was more urgent than Huckbot5000 itself. Feeds
+Phase 4 of [entity-display-translations-planning.md](entity-display-translations-planning.md).
+
+**For current status, queue sizes, and next actions, see
+[huckbot5000-integration-plan.md](huckbot5000-integration-plan.md) — that's the doc to read
+first.** This one is the detailed experimental log/evidence behind it. Pipeline mechanics:
+[`authority extraction/huckbot5000/README.md`](../../authority%20extraction/huckbot5000/README.md).
 
 **Resume here.** See [Next up](#next-up) at the bottom for the current punch list.
 
 ## The question
 
-We can't ship Hucker's *Dictionary of Official Titles* (copyrighted; see decision 3 in the
-entity-display doc). The hoped-for way around it: if his translation practice can be reduced
-to an algorithm, we ship the *algorithm* and its output, never his text. Two birds — legal
-exposure drops, and gap-filling for offices Hucker never covered becomes a build step
-rather than manual curation.
+Chinese office titles in leaf-writer need English glosses. Hucker's *Dictionary of Official
+Titles* is the standard reference, but we can't redistribute his dictionary prose (copyright;
+see decision 3 in the entity-display doc). So the project asks a narrower engineering question:
+can we generate *independent* scholarly glosses for offices that still lack a publishable
+translation — using learned patterns and review — without copying his wording into packs we
+ship? Gap-fill for blanks; collision filter for anything that matches known Hucker text.
 
 ## Source data
 
@@ -156,22 +161,24 @@ Noisy exemplars are worse than no exemplars when the corpus itself is inconsiste
 Including distinctively Huckerian renderings — 郞中令 → "Chamberlain for Attendants" is his
 signature construction, not a phrase derivable from the characters.
 
-This is not a good sign for the legal framing. The plan assumed Huckbot5000 output would be
-*synthesized* and therefore clean. But Hucker's dictionary is foundational in sinology and is
-plainly in the training data of any frontier model. An LLM asked to translate an office title
-"as Hucker would" may be **recalling** his text, not deriving it. "We modelled his method" is a
-substantially weaker claim when the model can reproduce the source cold.
+This is not a good sign for an *originality* claim. The plan assumed Huckbot5000 output would be
+clearly distinct from the dictionary. But Hucker's dictionary is foundational in sinology and is
+plainly in the training data of any frontier model. An LLM asked to translate an office title in
+a scholarly English register may be **recalling** Hucker's text, not deriving an independent
+gloss. That is why publishable output must be checked against known Hucker wording.
 
-This does not sink the project, but it changes what has to be true before shipping:
-output must be **checked against** the extracted corpus and near-verbatim matches suppressed
-or re-tagged — the opposite of the original design, where matching Hucker was the success metric.
+This does not sink the project, but it changes what has to be true before publishing gap-fill
+output: candidates must be **checked against** the extracted corpus and near-verbatim matches
+excluded from publishable packs (or held only in a local collision archive) — the opposite of
+the original design, where matching Hucker was the success metric.
 
 ### And exact-match is the wrong metric anyway
 
-If the goal is *not* to ship Hucker, then "Wine Workshop" where Hucker wrote "Imperial Winery",
-or "Provisioner" where he wrote "Almoner", is a **success**, not an error — a serviceable
-scholarly gloss that is demonstrably not his text. The 79% adequacy number is the product-relevant
-one; the 28% exact number is the *legal-risk* one. They should be optimized in opposite directions.
+If the goal is *not* to redistribute Hucker's dictionary text, then "Wine Workshop" where Hucker
+wrote "Imperial Winery", or "Provisioner" where he wrote "Almoner", is a **success**, not an
+error — a serviceable scholarly gloss that is demonstrably not his wording. The 79% adequacy
+number is the product-relevant one; the 28% exact number is the *redistribution-risk* one. They
+should be optimized in opposite directions.
 
 ## Recommendation
 
@@ -193,13 +200,14 @@ Proposed shape, in dependency order:
 - **Step 3 — Re-run Experiment 3 against a real API** at n≈300 with an actual model rather than
   in-context self-play, on cleaned data. The n=50 CIs (17–42%) are too wide to decide anything.
   This is the go/no-go number.
-- **Step 4 — Add a verbatim-collision filter** as a hard gate: any generated gloss whose content
-  words match a Hucker entry for the same headword gets tagged `source: 'Hucker'` (local-only,
-  never shipped), not `source: 'Huckbot5000'`. This inverts the current success metric and is
-  the concrete mitigation for the contamination finding. **Must also check against CBDB's own
+- **Step 4 — Add a verbatim-collision filter** as a hard gate on *publishable* output: any
+  generated gloss whose content words match a Hucker entry for the same headword is tagged
+  `source: 'Hucker'` and kept only in a local collision archive (not redistributed), never as
+  `source: 'Huckbot5000'`. This inverts the original success metric and is the concrete
+  mitigation for the contamination finding. **Must also check against CBDB's own
   `translation` field** (see [CBDB finding](#cbdb-finding-2026-08-06-bigger-and-more-urgent) below)
-  — a generated gloss that collides with CBDB's Hucker-tagged field is exactly as much a
-  collision as one that matches the raw Hucker corpus directly.
+  — a generated gloss that collides with CBDB's `(Hucker)`-cited field is treated the same as
+  one that matches the OCR corpus.
 - **Step 5 — Period variants.** Only 6.5% of headwords are polysemous, so the
   `EntityDates`-ranged translation-variant model (decision 4 in the entity-display doc) is
   sound but low-yield. Worth doing after the above, not before. Note the "whose date?" question
@@ -229,9 +237,10 @@ downstream. Huckbot5000 is another track of the same kind, alongside `packs/norb
 
 ### CBDB reference-tier-first (decided 2026-08-06)
 
-Daniel's framing: **don't ship CBDB's office translations ourselves — have the user's own
-install fetch CBDB, and read the translation from that at lookup time, with Huckbot5000 only
-filling gaps CBDB doesn't cover.**
+Agreed architecture: **do not re-package CBDB office translations into our GitHub pack assets.**
+Users install CBDB's official database locally; LJB reads office glosses from that install at
+lookup time. Huckbot5000 only generates candidates for offices that still lack a gloss in our
+publishable packs (true gaps).
 
 This fits architecture already in place, with one gap to close:
 
@@ -240,13 +249,12 @@ This fits architecture already in place, with one gap to close:
   by `build-reference-bundle.mjs` — office translations are already positioned as reference-tier
   data, not tagging-pack data, in the existing two-tier model
   ([authority-data-lifecycle.md](authority-data-lifecycle.md)).
-- **Gap:** that reference zip is currently *also* mirrored through your own GitHub release
-  (`build-reference-bundle.mjs` → GitHub), same as the tagging packs — so today it's still you
-  redistributing CBDB's `translation` field, just via a different tier. To make "the user's
-  computer downloads it, not us" true rather than nominal, the CBDB reference fetch needs to
-  point at CBDB's own official public distribution instead of a GitHub mirror built from your own
-  copy of the SQL dump — the same pattern already used for DILA reference data (Open Content
-  mirror, not a GitHub copy). Not yet built; independent of the OCR cleanup above.
+- **Gap (as of morning 2026-08-06):** that reference zip was also mirrored through our own
+  GitHub release (`build-reference-bundle.mjs` → GitHub), same as the tagging packs — so we were
+  still redistributing CBDB's `translation` field via a different tier. Closing the gap meant
+  fetching CBDB's official release on the user's machine (`downloadCbdbDirect`) rather than
+  shipping a CBDB person zip from our releases — the same pattern already used for DILA
+  reference data. (Done later the same day; see Next up item 2.)
 - **Lookup precedence**, once built: `authorityRef:lookup(source, id)` (the existing A6
   mechanism) already implements "prefer reference over pack" for names/nationality/appointments —
   office translations should be one more field on that same path. CBDB reference (user-downloaded)
@@ -277,13 +285,14 @@ verbatim/near-verbatim copying, and the currently-shipped pack needs remediation
 - **Already live:** GitHub release **v0.1.13** (current, consumed by leaf-writer) ships 2,360 of
   these strings under a manifest crediting only CBDB, CC-BY-NC-SA-4.0, no mention of Hucker.
 
-**This is a pre-existing exposure, independent of whether Huckbot5000 ever ships**, and it's
-already distributed, not just staged locally. Recommended remediation (from the audit, not yet
-executed): strip `metadata.translation` / `alternateTranslation` / `description` for the
-`(Hucker)`-tagged rows in `compileRecords.mjs` (CBDB's own Chinese/pinyin/dynasty/office-type
-data is unaffected), then cut a follow-up release. This is a publish action on an already-public
-artifact — tracked as its own to-do item below, not executed inline. Blocks Step 4's matcher
-either way (need to know what "the untranslated remainder" excludes once this field is gone).
+**This is a pre-existing redistribution issue in our published packs, independent of whether
+Huckbot5000 ever ships**, and it was already in a live release, not just staged locally.
+Recommended remediation (from the audit): omit `metadata.translation` /
+`alternateTranslation` / `description` for `(Hucker)`-cited rows in `compileRecords.mjs`
+(CBDB's own Chinese/pinyin/dynasty/office-type data is unaffected), then cut a follow-up release.
+This is a publish action on an already-public artifact — tracked as its own to-do item below,
+not executed inline. Blocks Step 4's matcher either way (need to know what "the untranslated
+remainder" excludes once this field is gone).
 
 ## Legal note (not advice)
 
@@ -312,6 +321,11 @@ numbers again). If Step 3 proceeds, `harness.py` (train-only lexicon build, disj
 generation) and `score.py` (exact / head / F1 + Wilson CI) are the two worth keeping.
 
 ## Next up
+
+**Current orientation (2026-08-06 afternoon):** scaffolding is complete; next action is
+commit → full LLM generate → audit → review. See
+[huckbot5000-integration-plan.md](huckbot5000-integration-plan.md) for queue sizes and
+commands. The punch list below is the historical log for the same day (many items now done).
 
 Resumable punch list.
 
@@ -352,20 +366,23 @@ piecemeal, and not automatically (publish action on shared state).
    (`authorityDatabases.test.ts`, `authorityLifecycle.test.ts`, 11 tests) pass unmodified.
    **Follow-up now also done (2026-08-06):** `build-reference-bundle.mjs` no longer builds or
    bundles `cbdb-person.sqlite3` at all — rewritten to ship Norbert only, renamed
-   `authority-reference-norbert-{version}.zip`. `cbdb/stripReferenceDb.mjs` (the script both this
-   pipeline and LJB's `downloadCbdbDirect` call) now also strips `(Hucker)`-tagged
-   `OFFICE_CODES.c_office_trans` rows itself — defense in depth, verified against the real
-   550MB CBDB sqlite (20,127 legitimate translations kept, 0 `(Hucker)` remaining). Deleted two
-   stale local artifacts that predated all of this (`dist/reference/cbdb-person.sqlite3`,
-   `release/authority-reference-person-*.zip`) — both gitignored, never committed, but contained
-   the old unfiltered data.
+   `authority-reference-norbert-{version}.zip`. Publishable CBDB tagging packs omit
+   `(Hucker)`-cited `OFFICE_CODES` translations via `compileRecords.mjs`. The local install path
+   (`stripReferenceDb.mjs` / `downloadCbdbDirect`) keeps CBDB's official office translations as
+   published — LJB displays what the user's CBDB install contains; we do not re-package those
+   strings into GitHub pack assets. Deleted two stale local artifacts that predated the pack-side
+   omit (`dist/reference/cbdb-person.sqlite3`, `release/authority-reference-person-*.zip`) —
+   both gitignored, never committed.
+   **Correction (same day, afternoon):** an earlier note said `stripReferenceDb.mjs` also nulled
+   `(Hucker)` citations in the local reference sqlite; that was reversed. Local CBDB = official
+   content; publishable packs = omit cited third-party prose.
    **Still open, needs a decision:** the *live* GitHub release assets
    `authority-reference-person-20260627+2026-07-25-reduced-authority.zip` on **v0.1.13, v0.1.12,
    and v0.1.10** still contain the old unfiltered `cbdb-person.sqlite3` (built before today's
-   fix). **0 downloads on all three** as of 2026-08-06, so nothing has actually gone out yet, but
-   they're publicly downloadable right now. This is a publish/destructive action on shared state
-   (yanking or superseding a release asset) — bundle with item 1's pending release cut rather
-   than act on it separately.
+   pack-side omit). **0 downloads on all three** as of 2026-08-06, so nothing has actually gone
+   out yet, but they're publicly downloadable right now. This is a publish/destructive action on
+   shared state (yanking or superseding a release asset) — bundle with item 1's pending release
+   cut rather than act on it separately.
 3. ~~Re-mine the morpheme lexicon against the cleaned extraction~~ **Done (2026-08-06).**
    `authority extraction/huckbot5000/compile.mjs` (new, matches the `compile:norbert`/`compile:cbdb`
    convention) → `npm run compile:huckbot5000` → 615 morphemes (272 high-confidence) from 5,894
@@ -443,9 +460,10 @@ piecemeal, and not automatically (publish action on shared state).
    6% baseline contamination (no retrieval) is real but lower than the self-play estimate
    suggested, and the filter is buildable; it just needs to check for stylistic patterns
    (hedging phrases, characteristic Hucker constructions) in addition to headword-gloss matches.
-5. **leaf-writer Phase 3** (candidate-picker date-range UI, in `entity-display-translations-planning.md`)
-   — not started; Phase 4 (this project) can't ship usable output without it, though the pipeline
-   itself can be built in parallel.
+5. ~~leaf-writer Phase 3~~ **Done (uncommitted).** Verified directly: `DisambiguationPanel.tsx`
+   has `formatCandidatePeriod()`, surfacing startYear/endYear/dynasty as a caption on candidate
+   rows during entity tagging — exactly Phase 3's requirement. Correction to earlier text in this
+   doc, which wrongly said "not started."
 6. **Collision-filter + human-review pipeline — built (2026-08-06).** Five scripts in
    `authority extraction/huckbot5000/`, mirroring the `noble-titles/` reviewed-boundary pattern:
    `generate.mjs` (GPT-4o + retrieval, production port of `openai_harness.py`, targets CBDB's
@@ -462,5 +480,107 @@ piecemeal, and not automatically (publish action on shared state).
    spending real API credits on ~12.7k headwords (~3.5hrs at ~1/s). Not committed to git yet.
    Full detail in [[project_huckbot5000_feasibility]].
 
-Remaining open items: the release cut in item 1, item 5, and scoping/running item 6's
-first real generation pass.
+   **Two things checked independently while that run was pending (2026-08-06, this session,
+   no new API spend — reused data already in hand):**
+   - **Adequacy re-check, real GPT-4o data, n=76 hand-rated (both arms, stratified sample of the
+     n=300 run above):** **~57% adequate, ~24% partial, ~19% wrong** — well below the 79%
+     self-play figure this doc cites elsewhere. Recurring failure modes: category errors
+     (place↔person — 里 "Community" → "Village Chief"; 寨 "Stockade" → "Fort Commander"),
+     modern-Chinese anachronisms (中將 read with its *modern* sense "Lieutenant General" instead
+     of the classical one), punting to transliteration instead of translating (平隼案 →
+     "Pingshun Office" — mechanically detectable, worth its own filter check), and the same
+     false-cognate trap seen with Ministral (材官挽强 → "Construction Supervisor of Archery").
+     **~1-in-5 wrong means the human review step should expect a real rejection rate, not a
+     light pass** — worth knowing before scoping the review workflow's time budget.
+   - **CBDB-collision-check gap — confirmed real, not just a reasoning gap.** The filter checks
+     candidates against the local Hucker OCR corpus by headword. Checked directly against the
+     real 550MB CBDB file whether that actually covers CBDB's own 2,381 `(Hucker)`-tagged
+     `OFFICE_CODES.c_office_trans` entries: **only 22% overlap.** 1,856 of CBDB's Hucker-tagged
+     headwords — mostly longer compound institutional titles (尚書省工部尚書, 戶部憑由司,
+     三司都勾院) — aren't in the local OCR corpus at all, so a generated candidate matching one
+     of those wouldn't be caught. **Fixed (2026-08-06), before the real run's audit step.**
+     `lib.mjs` now has `readCbdbHuckerPairs()`, wired into `audit.mjs`, merged into the collision
+     index alongside the OCR corpus; falls back gracefully (warns, doesn't crash) if
+     `.upstream/cbdb.sqlite3` isn't present. Verified directly: the 550MB sqlite **is** present
+     locally, so this is genuinely active, not just present-in-theory. 14/14 tests passing,
+     including a dedicated `readCbdbHuckerPairs` test. **Full 12,704-headword generation run
+     launched (~3.5hrs) with this fix in place before `audit.mjs` ever touches the results.**
+
+## CBDB↔Norbert bridge — office date derivation (2026-08-06)
+
+The generation run in progress only targets CBDB office headwords, not Norbert's. Daniel raised
+building a bridge between the two, prompted by noticing apparent duplicate offices in CBDB's
+pre-Song data (前漢/漢前-style labels). Investigated and built the first real piece.
+
+**Why CBDB's pre-Song offices look duplicated — not an error, two disjoint sources.** All 1,675
+CBDB rows tagged dynasty `Pre-Han` trace to exactly one `c_source`: 左言東《先秦職官表》("Table
+of Pre-Qin Official Titles," Zuo Yandong, 1994), bulk-imported Feb 2024 and flattened onto
+CBDB's single coarsest dynasty code (`Pre-Han`, −1100 to −206) even though the source itself
+distinguishes individual Warring-States-era feudal states (Zheng, Qin, Zeng, Cao...) — that
+specificity survives only in free-text `c_notes`, not structured metadata (1,037 distinct
+title-strings across the 1,675 rows). Generic titles like 伯/大將軍/給事中/公主 also appear in
+CBDB's separately-curated main-line office table, which for many of these only starts at Tang —
+leaving Han-through-Sui genuinely uncovered by *either* CBDB source for these specific titles.
+Confirmed: Norbert already has 5 of 6 sampled generic titles, and Norbert's own scope (Han/Six
+Dynasties) sits right in that gap.
+
+**Considered and rejected: blanket-tagging Norbert offices "Han-Six Dynasties."** Norbert offices
+carry zero period metadata today (0/16,804 have `metadata.dynasty`). Before recommending a
+blanket tag, checked whether real per-office dates were derivable instead — they were, and the
+blanket tag would have been factually wrong for some offices, not just coarse: 侍中 and 御史大夫
+are attested in Norbert's own appointment data well past "Six Dynasties" (through Northern Song
+and Sui respectively).
+
+**Built instead: `norbert/deriveOfficeDates.mjs`** (`npm run derive:norbert-office-dates`).
+Derives real office date ranges from the dynasties of people actually attested holding each
+office (`appointments.ndjson` → person → `metadata.nationality[]`), in the same
+`metadata.dynasty`/`startYear`/`endYear` shape CBDB's offices already use — so
+`officeConcordance.mjs`'s existing `rangesOverlap()` period-filtering, which was previously a
+no-op for Norbert offices (always trivially passing since Norbert had no range to check), starts
+actually working with zero changes to that script. Offices with a single attested dynasty get a
+clean tag; offices attested across several get the honest min/max span plus a
+`dynastiesAttested` breakdown (evidence count per dynasty) rather than an invented single label.
+Offices with no dated appointment evidence are left untouched — no fabricated dates.
+
+Caught and fixed one real bug before trusting the output: `nationality[]` can hold multiple
+entries per person, and the one with usable `startYear`/`endYear` isn't always first (some
+entries carry only a label, with dates on a later entry) — was only checking index `[0]`,
+recovered via a real test case built from the actual data shape, not a synthetic guess.
+
+**Real run, 2026-08-06:** 1,375 of 16,804 Norbert offices updated (1,109 single-dynasty, 266
+multi-dynasty spread) from 3,745 usable dated appointments (2,629 skipped — person had no
+dynasty with actual years, a genuine gap in Norbert's own source data, not fixable from this
+side). Spot-checked 侍中's derived span (−206 to 1127) against the investigation's manual
+finding — matches exactly. Full repo test suite: 230 tests, 229 pass, 1 pre-existing skip, 0
+failures, 8/8 new unit tests for the derivation logic itself. Not committed to git yet.
+
+**Not yet done (superseded same day — see below):** this only derives dates — it doesn't yet feed into `concordance:offices` (should
+just work once run in sequence, not verified end-to-end with a real concordance re-run), doesn't
+extend the Huckbot5000 generation run to Norbert headwords (still CBDB-only, per Daniel's
+"we can improve later" call), and doesn't touch the ~15,000 Norbert offices with no appointment
+evidence at all (left honestly dateless).
+
+## Integration complete — ready for full LLM run (2026-08-06, afternoon)
+
+Same-day continuation after the killed run. Full detail and current queue:
+[huckbot5000-integration-plan.md](huckbot5000-integration-plan.md).
+
+**Built and verified:**
+- Period-aware `(headword, dynasty)` target keys (`resolveTargets.mjs`); `--resume` keys on the same.
+- Old headword-only candidates archived as `candidates.pre-reconcile.ndjson`.
+- `reconcile:norbert-offices` — dates → concordance (Hucker continuity gate for undated) → crosswalks; **178** links.
+- Generation skips: Hucker OCR **period** coverage + CBDB `(Hucker)` **headword** coverage
+  (those titles are available from the user's CBDB install; Huckbot fills remaining blanks).
+- Local CBDB reference sqlite **keeps** official CBDB office translations as published; only
+  packs *we* publish omit `(Hucker)`-cited fields.
+- Collision matches go to a local collision archive (`huckbot5000-insiders`), not the
+  publishable Huckbot5000 pack.
+- Procedural place+suffix (pinyin place stems; reviewed OK) and allowlisted parentOf (`太子`/`公主`/`親王`).
+- Transliteration-punt filter in `audit.mjs` (adequacy study failure mode now mechanical).
+- Compile-include dedupe fixed to `(zh, dynasty)`.
+
+**Current queue:** ~11,850 targets after skips → ~192 procedural + ~11,658 LLM.  
+**Next:** commit pipeline → `npm run generate:huckbot5000 -- --resume` → audit → human review.  
+**Still open / not blocking generate:** `authoritypacks` release cut; remaining undated Norbert offices; expanding parentOf beyond the allowlist.
+
+Remaining open items from earlier in this doc that are *not* the next coding step: the release cut in item 1.

@@ -60,7 +60,10 @@ export const usePermalink = () => {
       Cookies.set('resource', permalink.raw, { expires: 5 / 1440 }); // 5 minutes
       signIn();
 
-      const error: Error = { type: 'warning', message: 'You must sign in to access this resource' };
+      const error: Error = {
+        type: 'warning',
+        message: t('LWC.messages.you_must_sign_in_to_access_this_resource'),
+      };
       return error;
     }
 

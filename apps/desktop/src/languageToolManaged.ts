@@ -1,4 +1,5 @@
 import { app } from 'electron';
+import { mainT } from './mainI18n';
 import { createHash } from 'node:crypto';
 import { execFile, spawn, type ChildProcess } from 'node:child_process';
 import fs from 'node:fs';
@@ -290,7 +291,7 @@ export const downloadAndInstallLanguageTool = async (
     phase: 'download',
     receivedBytes: 0,
     totalBytes: LANGUAGE_TOOL_RELEASE.bytes,
-    message: 'Downloading LanguageTool…',
+    message: mainT('downloading_language_tool'),
   });
   await downloadToFile(
     LANGUAGE_TOOL_RELEASE.downloadUrl,
@@ -305,7 +306,7 @@ export const downloadAndInstallLanguageTool = async (
     throw new Error('Downloaded LanguageTool failed checksum verification.');
   }
 
-  onProgress?.({ phase: 'extract', message: 'Extracting LanguageTool…' });
+  onProgress?.({ phase: 'extract', message: mainT('extracting_language_tool') });
   await unzipTo(zipPath, extractRoot);
 
   const extracted = path.join(extractRoot, LANGUAGE_TOOL_RELEASE.extractFolderName);
@@ -334,7 +335,7 @@ export const downloadAndInstallLanguageTool = async (
   });
 
   await fsp.rm(tempRoot, { recursive: true, force: true });
-  onProgress?.({ phase: 'done', message: 'LanguageTool installed.' });
+  onProgress?.({ phase: 'done', message: mainT('language_tool_installed') });
   return getLanguageToolInstallStatus();
 };
 
@@ -359,7 +360,7 @@ export const downloadEnglishNgrams = async (
     phase: 'download',
     receivedBytes: 0,
     totalBytes: LANGUAGE_TOOL_EN_NGRAMS.bytes,
-    message: 'Downloading English n-grams (several GB)…',
+    message: mainT('downloading_english_ngrams'),
   });
   await downloadToFile(
     LANGUAGE_TOOL_EN_NGRAMS.downloadUrl,
@@ -369,7 +370,7 @@ export const downloadEnglishNgrams = async (
     LANGUAGE_TOOL_EN_NGRAMS.bytes,
   );
 
-  onProgress?.({ phase: 'extract', message: 'Extracting English n-grams…' });
+  onProgress?.({ phase: 'extract', message: mainT('extracting_english_ngrams') });
   // Zip usually contains an `en/` folder; extract into ngrams root so we get ngrams/en/...
   await unzipTo(zipPath, ngramsRoot);
 
@@ -384,7 +385,7 @@ export const downloadEnglishNgrams = async (
   }
 
   await fsp.rm(tempRoot, { recursive: true, force: true });
-  onProgress?.({ phase: 'done', message: 'English n-grams installed.' });
+  onProgress?.({ phase: 'done', message: mainT('english_ngrams_installed') });
 
   // Restart server so --languageModel can pick up the new data.
   if (serverState === 'running') {

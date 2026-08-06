@@ -131,7 +131,7 @@ See [apps/desktop/README.md](apps/desktop/README.md) for the compilation and pac
 ## Waiting
 
 - [ ] confirm whether the actual installed CBDB/Norbert authority packs populate `metadata.startYear/endYear/dynasty` for office rows
-- [ ] Finish Huckbot plans via Claude.
+- [ ] Finish Huckbot — scaffolding ready; next is full LLM generate + review ([huckbot5000-integration-plan.md](docs/huckbot5000-integration-plan.md))
 - [ ] Verify AI translate entity pipeline (see [translation-smoke-tests.md](docs/translation-smoke-tests.md) §10): source unit has keyed `persName` / `placeName` / `orgName` / `title`|`bibl` / `roleName` → model emits `{{entity:KEY}}` → pane shows atomic `ref[type="ljb-entity"]` fields with kind-aware LJBtero formatting (unit tests cover substitution for all kinds; LLM compliance is manual)
 
 
@@ -172,7 +172,6 @@ See [apps/desktop/README.md](apps/desktop/README.md) for the compilation and pac
 
 #### UX
 
-- [ ] Finish localisations: no raw variable names, EN and FR complete; manual pass for Service Record to maintain unwritten linguistic policy.
 - [ ] Improve Highlight/CSS panel icon. 
 - [ ] Find/replace Phase 2b: WYSIWYG visible-text replace across markup ([find-replace-planning.md](docs/find-replace-planning.md))
 - [ ] Persist last find query across sessions (match-case / ignore-case toggle already ships)

@@ -11,6 +11,7 @@ import {
   Typography,
 } from '@mui/material';
 import { useCallback, useEffect, useRef, useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import {
   isCjkDatesEnabled,
   getRegisteredAutoTaggingProducers,
@@ -101,6 +102,7 @@ const CalendarStepRow = ({
  * East Asian calendar workflow: tag date spans, then resolve calendar attributes.
  */
 export const CalendarDialog = ({ notice, onClose, open = false }: CalendarDialogProps) => {
+  const { t } = useTranslation();
   const [error, setError] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
   const [dateCiv, setDateCiv] = useState<Record<SanmiaoCivId, boolean>>({
@@ -284,7 +286,7 @@ export const CalendarDialog = ({ notice, onClose, open = false }: CalendarDialog
       });
       if (result.suggestions.length === 0) {
         notifyViaSnackbar({
-          message: 'No <date> elements to resolve. Run Tag dates first.',
+          message: t('LW.calendarDialog.noDateElements'),
           options: { variant: 'info' },
         });
         handleClose();

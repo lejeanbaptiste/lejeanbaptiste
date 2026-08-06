@@ -279,7 +279,19 @@
         "detail": "Detail",
         "no_issues": "No issues",
         "proposed": "Proposed",
-        "compare": "Compare"
+        "compare": "Compare",
+        "harvest_apis_unavailable": "File APIs unavailable for Harvest.",
+        "harvest_needs_project": "Open a project to harvest person wrappers.",
+        "queued_fixes": "Queued {{count}} “{{kind}}” fix — Save & exit to write",
+        "backfill_result": "Backfill: {{names}} names on {{entities}} entities",
+        "scan_found_issues_one": "Found {{count}} issue",
+        "scan_found_issues_other": "Found {{count}} issues",
+        "harvest_found_wrappers_one": "Harvest found {{count}} wrapper with new facts",
+        "harvest_found_wrappers_other": "Harvest found {{count}} wrappers with new facts",
+        "saved_fixes_one": "Saved {{count}} fix",
+        "saved_fixes_other": "Saved {{count}} fixes",
+        "left_review_discarded_one": "Left review — discarded {{count}} unsaved accept",
+        "left_review_discarded_other": "Left review — discarded {{count}} unsaved accepts"
       },
       "correction": {
         "title": "Correction",
@@ -623,7 +635,19 @@
         "filter_attributes": "Filter attributes...",
         "attribute_value": "Attribute value",
         "attribute_name": "Attribute name",
-        "filter_tags": "Filter tags..."
+        "filter_tags": "Filter tags...",
+        "could_not_apply_attributes": "Could not apply attributes to the current match.",
+        "no_exact_unkeyed_matches_found": "No exact unkeyed matches were found for this tag.",
+        "no_exact_unkeyed_matches_updated": "No exact unkeyed matches were updated.",
+        "no_more_matches_to_skip_to": "No more matches to skip to.",
+        "no_tag_at_caret_to_rename": "No tag at caret to rename.",
+        "no_tags_to_rename": "No tags to rename.",
+        "no_untagged_matches": "No untagged matches.",
+        "place_caret_in_tag": "Place the caret inside a tag to add attributes.",
+        "tag_not_found": "Tag not found.",
+        "walk_complete": "Walk complete.",
+        "removed_key_from_matches_one": "Removed the key from {{count}} matching tag.",
+        "removed_key_from_matches_other": "Removed the key from {{count}} matching tags."
       },
       "scope_fields": {
         "scope": "Scope",
@@ -688,7 +712,9 @@
             "field_family_name": "Family name",
             "field_given_name": "Given name",
             "field_start_year": "Birth / start year",
-            "field_end_year": "Death / end year"
+            "field_end_year": "Death / end year",
+            "auto_sync_updated_one": "Updated {{count}} linked entity from the central database.",
+            "auto_sync_updated_other": "Updated {{count}} linked entities from the central database."
           },
           "search_placeholder": "Search (regex) — name, romanization, project key",
           "clear_search": "Clear search",
@@ -832,7 +858,6 @@
           "actions_for": "Actions for {{id}}",
           "edit_description_names": "Edit description / names",
           "split_entity": "Split entity…",
-          "delete_entity": "Delete entity",
           "merge_dialog_title": "Merge {{count}} entities",
           "merge_dialog_message": "Names, authority ids, and descriptions are combined onto the surviving entity. Every tag in every project sharing this database is rewritten to the surviving key. Save open documents first.",
           "merge_dialog_note": "The selected entry survives; the others are folded into it.",
@@ -859,8 +884,27 @@
             "close": "Close",
             "reload_database": "Reload database",
             "keep_current": "Keep current copy"
-          }
+          },
+          "merge_group_unavailable": "Cannot merge this duplicate group: some entities are not in the current database list.",
+          "accept_proposals_added_one": "Added {{count}} entity to the central database.",
+          "accept_proposals_added_other": "Added {{count}} entities to the central database."
         }
+      },
+      "entity_db_setup": {
+        "cancel": "Cancel",
+        "create_db_failed_message": "Le Jean-Baptiste could not set up the entity database in this folder.",
+        "create_db_failed_title": "Could not create entity database",
+        "create_here": "Create here",
+        "create_here_title": "Create a database in this folder?",
+        "folder_is_project_message": "This folder is already a Le Jean-Baptiste project. Choose a different folder for your entity database — you can keep it as the parent of your projects, just not a project folder itself.",
+        "folder_is_project_title": "That folder is a project",
+        "ok": "OK",
+        "parent_has_db_detail": "If you meant that shared database, choose the parent instead. Otherwise Le Jean-Baptiste can create a new empty database in:",
+        "parent_has_db_intro": "The parent folder already has an entity database:",
+        "save_folder_failed_session": "The folder was set for this session, but saving it failed and it may not persist. Try again, or check that Le Jean-Baptiste can write to its app data folder.",
+        "save_folder_failed_title": "Could not save entity database folder",
+        "save_parent_folder_failed": "Saving the parent folder failed.",
+        "use_parent_folder": "Use parent folder"
       }
     },
     "importExport": {
@@ -898,7 +942,9 @@
       "try_again": "Try again",
       "unable_to_upload file": "Unable to upload the file",
       "you_must_sign_in_to_open_and_save_document_from_the_cloud": "You must sign in to open and save documents from the cloud",
-      "you_must_sign_in_witn_a_storage_provider_to_open_and_save_document_from_the_cloud": "You must sign in with a storage provider to open and save a document from the cloud"
+      "you_must_sign_in_witn_a_storage_provider_to_open_and_save_document_from_the_cloud": "You must sign in with a storage provider to open and save a document from the cloud",
+      "could_not_open_document": "Could not open this document.",
+      "you_must_sign_in_to_access_this_resource": "You must sign in to access this resource"
     },
     "messsages": {
       "authentication_server_is_currently_unavailable": "Authentication server is currently unavailable"
@@ -980,6 +1026,14 @@
         "november": "November",
         "december": "December"
       }
+    },
+    "auth": {
+      "api_base_url_undefined": "Auth API base URL is undefined",
+      "api_url_undefined": "Auth API URL is undefined",
+      "link_account_url_prefix": "Link Account URL:",
+      "linked_accounts_prefix": "Linked Accounts:",
+      "something_went_wrong": "something went wrong",
+      "token_refresh_failed": "Failed to refresh the token, or the session has expired"
     }
   },
   "main": "",

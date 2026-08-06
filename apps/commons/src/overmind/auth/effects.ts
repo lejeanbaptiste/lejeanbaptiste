@@ -3,8 +3,11 @@ import { Provider } from '@src/services';
 import { log } from '@src/utilities';
 import { initClient } from '@ts-rest/core';
 import axios from 'axios';
+import i18next from 'i18next';
 import Keycloak, { type KeycloakTokenParsed } from 'keycloak-js';
 import { logHttpError } from '../../services/utilities';
+
+const { t } = i18next;
 
 //* Documentation: https://github.com/keycloak/keycloak-documentation/blob/master/securing_apps/topics/oidc/javascript-adapter.adoc
 
@@ -149,7 +152,7 @@ export class Api {
    */
   async updateToken() {
     return await this.keycloak.updateToken(5).catch(() => {
-      alert('Failed to refresh the token, or the session has expired');
+      alert(t('LWC.auth.token_refresh_failed'));
       this.keycloak.clearToken();
     });
   }
@@ -237,7 +240,7 @@ export class Api {
     username: string,
   ): Promise<LinkedAccount[] | HTTPRequestError> {
     if (!this.AUTH_API_URL) {
-      return { error: { message: 'AUTH API BASE URL is unedefined' } };
+      return { error: { message: t('LWC.auth.api_base_url_undefined') } };
     }
 
     const authApi = getLincsAuthApi(this.AUTH_API_URL) as any;
@@ -249,14 +252,14 @@ export class Api {
     if (status === 401 || status === 404 || status === 500) {
       console.warn(body.message);
       return {
-        error: { status, message: `Linked Accounts: ${body.message}` },
+        error: { status, message: `${t('LWC.auth.linked_accounts_prefix')} ${body.message}` },
       };
     }
 
     if (status !== 200) {
       console.warn({ error: 'something went wrong' });
       return {
-        error: { status: status, message: `Linked Accounts: something went wrong` },
+        error: { status: status, message: `${t('LWC.auth.linked_accounts_prefix')} ${t('LWC.auth.something_went_wrong')}` },
       };
     }
 
@@ -280,7 +283,7 @@ export class Api {
     keycloakAccessCode: string;
   }): Promise<string | HTTPRequestError> {
     if (!this.AUTH_API_URL) {
-      return { error: { message: 'AUTH API URL is unedefined' } };
+      return { error: { message: t('LWC.auth.api_url_undefined') } };
     }
 
     const authApi = getLincsAuthApi(this.AUTH_API_URL) as any;
@@ -298,7 +301,7 @@ export class Api {
       return {
         error: {
           status: status,
-          message: `Link Account URL: ${body.message}`,
+          message: `${t('LWC.auth.link_account_url_prefix')} ${body.message}`,
         },
       };
     }
@@ -306,7 +309,7 @@ export class Api {
     if (status !== 200) {
       console.warn({ error: 'something went wrong' });
       return {
-        error: { status, message: 'Link Account URL: something went wrong' },
+        error: { status, message: `${t('LWC.auth.link_account_url_prefix')} ${t('LWC.auth.something_went_wrong')}` },
       };
     }
 

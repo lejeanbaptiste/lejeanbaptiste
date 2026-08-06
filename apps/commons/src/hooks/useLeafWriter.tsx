@@ -486,7 +486,7 @@ export const useLeafWriter = () => {
           resetLibLoaded();
           bumpEditorSession((key) => key + 1);
           notifyViaSnackbar({
-            message: 'Could not open this document.',
+            message: t('LWC.messages.could_not_open_document'),
             options: { variant: 'warning' },
           });
         })();

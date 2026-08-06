@@ -1,4 +1,5 @@
 import { useCallback, useEffect } from 'react';
+import { useTranslation } from 'react-i18next';
 import { isDesktop } from '@src/types/desktop';
 import { useActions } from '@src/overmind';
 import { AttributeCommandPopup } from './AttributeCommandPopup';
@@ -13,6 +14,7 @@ import { useAttributeCommandController } from './useAttributeCommandController';
 import { useTagCommandController } from './useTagCommandController';
 
 export const TagCommandProvider = () => {
+  const { t } = useTranslation();
   const tagController = useTagCommandController();
   const attrController = useAttributeCommandController();
   const { notifyViaSnackbar } = useActions().ui;
@@ -25,7 +27,7 @@ export const TagCommandProvider = () => {
       const $tag = writer.tagger.getCurrentTag(tagId);
       const element = ($tag?.[0] as Element | undefined) ?? null;
       if (!element) {
-        notifyViaSnackbar({ message: 'Tag not found.', options: { variant: 'warning' } });
+        notifyViaSnackbar({ message: t('LWC.desktop.tagging.tag_not_found'), options: { variant: 'warning' } });
         return;
       }
 
