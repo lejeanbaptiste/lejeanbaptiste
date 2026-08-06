@@ -43,7 +43,7 @@ export interface AuthorityCandidate {
       startYear?: number;
       endYear?: number;
     }[];
-    dateSource?: 'fine' | 'nationality';
+    dateSource?: 'fine' | 'floruit' | 'index' | 'nationality';
     startYear?: number;
     endYear?: number;
     /** Place subtype (county/mountain/…) or similar sub-classification. */
@@ -67,6 +67,8 @@ export interface AuthorityCandidate {
     /** Hiragana form of `yomi` for IME lookup. */
     yomiHiragana?: string;
     translation?: string;
+    /** French office gloss from MaxiRicci7000 (sidecar); distinct from English `translation`. */
+    translationFr?: string;
     alternateTranslation?: string;
     alternatePinyin?: string;
     /** DILA `note type="disambiguation"` — not the same person as… */

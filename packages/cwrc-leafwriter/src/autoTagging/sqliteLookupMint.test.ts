@@ -101,6 +101,28 @@ const makeStore = (seed: Panel[] = []) => {
       row.authorities.push({ type, value });
       return true;
     },
+    sqliteApplyAuthorityBackfillPatch: async (input: {
+      entityId: string;
+      dates?: Array<{ source: string; startYear?: number | null; endYear?: number | null }>;
+      nationalities?: Array<{ label: string; ref?: string | null; source: string }>;
+      origins?: Array<{ label: string; ref?: string | null; source: string }>;
+    }) => {
+      const row = entities.get(input.entityId);
+      if (!row) return { changed: false, namesAdded: 0 };
+      for (const date of input.dates ?? []) {
+        if (date.startYear != null) row.startYear = date.startYear;
+        if (date.endYear != null) row.endYear = date.endYear;
+      }
+      for (const nationality of input.nationalities ?? []) {
+        nationalities.push({
+          entityId: input.entityId,
+          label: nationality.label,
+          ...(nationality.ref ? { ref: nationality.ref } : {}),
+          ...(nationality.source ? { source: nationality.source } : {}),
+        });
+      }
+      return { changed: true, namesAdded: 0 };
+    },
     sqliteSetUserDate: async (input: {
       entityId: string;
       part: 'birth' | 'death';

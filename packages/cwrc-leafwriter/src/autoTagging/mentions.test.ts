@@ -65,6 +65,21 @@ describe('mentions', () => {
     expect(groups.find((group) => group.tag === 'name')?.surface).toBe('合州刺史範');
   });
 
+  it('excludes nobleTitle ranks and posthumous names from Disambiguate', () => {
+    const document = new DOMParser().parseFromString(
+      `<TEI xmlns="http://www.tei-c.org/ns/1.0"><text><body><p>
+        <nobleTitle><placeName>貞陽</placeName><roleName>公</roleName><persName type="posthumous">武</persName></nobleTitle>
+        <persName>柳世隆</persName>
+      </p></body></text></TEI>`,
+      'application/xml',
+    );
+    const groups = collectMentions(document, 'ignore');
+    expect(groups.map((group) => `${group.tag}:${group.surface}`).sort()).toEqual([
+      'persName:柳世隆',
+      'placeName:貞陽',
+    ]);
+  });
+
   it('ignores entity tags inside teiHeader', () => {
     const document = new DOMParser().parseFromString(
       `<TEI xmlns="http://www.tei-c.org/ns/1.0">

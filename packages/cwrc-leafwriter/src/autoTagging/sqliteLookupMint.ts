@@ -7,6 +7,7 @@ import type { AuthorityId, AuthoritySourcedFields, EntityKind } from './entities
 import { mintEntityId } from './entities';
 import type { EntityStore } from './entityStore';
 import type { OriginAssertion } from './authority';
+import { finiteBiographicalYear } from './personDates';
 import { SQLITE_REQUIRED_LOOKUP_MESSAGE } from './sqliteRequired';
 
 export async function assertLookupSqliteStore(store: EntityStore): Promise<void> {
@@ -48,64 +49,88 @@ async function enrichPersonAuthority(
     origin?: OriginAssertion[];
   },
 ): Promise<void> {
+  // Authority years are provenance assertions — never mint them as user/Central
+  // lifespan dates (that locked dynasty/floruit spans over real birth/death).
+  const dates: Array<{ source: string; startYear?: number | null; endYear?: number | null }> = [];
+  const nationalities: Array<{ label: string; ref?: string | null; source: string }> = [];
+  const origins: Array<{ label: string; ref?: string | null; source: string }> = [];
+
+  const pushDate = (source: string, startYear?: number | null, endYear?: number | null) => {
+    const birth = finiteBiographicalYear(startYear);
+    const death = finiteBiographicalYear(endYear);
+    if (birth == null && death == null) return;
+    dates.push({
+      source,
+      ...(birth != null ? { startYear: birth } : {}),
+      ...(death != null ? { endYear: death } : {}),
+    });
+  };
+
   if (input.authorityAssertions?.length) {
     for (const assertion of input.authorityAssertions) {
-      if (assertion.startYear != null) {
-        await store.sqliteSetUserDate({
-          entityId,
-          part: 'birth',
-          year: assertion.startYear,
-        });
-      }
-      if (assertion.endYear != null) {
-        await store.sqliteSetUserDate({
-          entityId,
-          part: 'death',
-          year: assertion.endYear,
-        });
-      }
+      pushDate(assertion.source, assertion.startYear, assertion.endYear);
       for (const nationality of assertion.nationality ?? []) {
-        await store.sqliteAddNationality({
-          entityId,
+        nationalities.push({
           label: nationality.label,
           ref: nationality.canonicalId,
           source: assertion.source,
         });
       }
       for (const origin of assertion.origin ?? []) {
-        await store.sqliteAddOrigin({
-          entityId,
+        origins.push({
           label: origin.placeName,
           ref: origin.placeAuthorityId,
           source: origin.source ?? assertion.source,
         });
       }
     }
-    return;
+  } else {
+    const source = (input.authoritySource ?? 'authority').trim().toUpperCase();
+    pushDate(source, input.startYear, input.endYear);
+    for (const nationality of input.nationality ?? []) {
+      nationalities.push({
+        label: nationality.label,
+        ref: nationality.canonicalId,
+        source: nationality.sourceIds?.[0] ?? source,
+      });
+    }
+    for (const origin of input.origin ?? []) {
+      origins.push({
+        label: origin.placeName,
+        ref: origin.placeAuthorityId,
+        source: origin.source ?? source,
+      });
+    }
   }
 
-  const source = input.authoritySource ?? 'authority';
-  if (input.startYear != null) {
-    await store.sqliteSetUserDate({ entityId, part: 'birth', year: input.startYear });
-  }
-  if (input.endYear != null) {
-    await store.sqliteSetUserDate({ entityId, part: 'death', year: input.endYear });
-  }
-  for (const nationality of input.nationality ?? []) {
-    await store.sqliteAddNationality({
-      entityId,
-      label: nationality.label,
-      ref: nationality.canonicalId,
-      source: nationality.sourceIds?.[0] ?? source,
-    });
-  }
-  for (const origin of input.origin ?? []) {
-    await store.sqliteAddOrigin({
-      entityId,
-      label: origin.placeName,
-      ref: origin.placeAuthorityId,
-      source: origin.source ?? source,
-    });
+  if (dates.length || nationalities.length || origins.length) {
+    if (store.sqliteApplyAuthorityBackfillPatch) {
+      await store.sqliteApplyAuthorityBackfillPatch({
+        entityId,
+        dates,
+        nationalities,
+        origins,
+      });
+    } else {
+      // Test doubles / older bridges: keep nationality/origin writes, skip dates
+      // rather than polluting user/Central lifespan rows.
+      for (const nationality of nationalities) {
+        await store.sqliteAddNationality({
+          entityId,
+          label: nationality.label,
+          ref: nationality.ref,
+          source: nationality.source,
+        });
+      }
+      for (const origin of origins) {
+        await store.sqliteAddOrigin({
+          entityId,
+          label: origin.label,
+          ref: origin.ref,
+          source: origin.source,
+        });
+      }
+    }
   }
 }
 

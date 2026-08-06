@@ -54,6 +54,17 @@ describe('mergeAdjacentRoleNames', () => {
     expect(merged).toBe(0);
     expect(doc.getElementsByTagName('roleName').length).toBe(2);
   });
+
+  it('does not merge roleNames that sit inside a nobleTitle', () => {
+    const doc = parse(
+      `${TEI_OPEN}<p><nobleTitle><roleName>尚書</roleName><roleName>吏部</roleName></nobleTitle></p>${TEI_CLOSE}`,
+    );
+    const officeIndex = buildOfficeIndex([officeCandidate('吏部', { followsOffice: true })]);
+    const merged = mergeAdjacentRoleNames(doc.documentElement, officeIndex, new Set());
+
+    expect(merged).toBe(0);
+    expect(doc.getElementsByTagName('roleName').length).toBe(2);
+  });
 });
 
 describe('rollPlaceIntoRole', () => {
@@ -71,6 +82,20 @@ describe('rollPlaceIntoRole', () => {
     );
     expect(doc.getElementsByTagName('placeName').length).toBe(1);
     expect(touched.size).toBe(1);
+  });
+
+  it('leaves placeName + roleName siblings inside nobleTitle alone', () => {
+    const doc = parse(
+      `${TEI_OPEN}<p><nobleTitle><placeName>貞陽</placeName><roleName>公</roleName></nobleTitle></p>${TEI_CLOSE}`,
+    );
+    // 公 may also exist as an office with followsPlace — that must not rewrite titles.
+    const officeIndex = buildOfficeIndex([officeCandidate('公', { followsPlace: true })]);
+    const rolled = rollPlaceIntoRole(doc.documentElement, officeIndex, new Set());
+
+    expect(rolled).toBe(0);
+    expect(serialize(doc)).toContain(
+      '<nobleTitle><placeName>貞陽</placeName><roleName>公</roleName></nobleTitle>',
+    );
   });
 });
 
@@ -193,13 +218,20 @@ describe('createPersonWrappersInScope', () => {
 
 describe('runGroupAndClean (integration, user-reported case)', () => {
   it('merges/nests office tags and wraps every person in a real passage', async () => {
-    const xml = `${TEI_OPEN}<p>詔王公<roleName key="office-9">卿士</roleName>薦讜言。以<roleName key="office-1">平北將軍</roleName><persName key="person-1">陳顯達</persName>為<placeName>益州</placeName><roleName key="office-2">刺史</roleName>，<nobleTitle><roleName><placeName>貞陽</placeName>公</roleName></nobleTitle><persName key="person-2">柳世隆</persName>為<roleName key="office-3">南兖州刺史</roleName>，皇子<persName key="person-3">鋒</persName>為<nobleTitle><roleName><placeName>江夏</placeName>王</roleName></nobleTitle>。<roleName key="office-4">領軍將軍</roleName><persName key="person-4">李安民</persName>等破虜於<placeName>淮陽</placeName>。</p>${TEI_CLOSE}`;
+    // Noble titles use sibling placeName + roleName (not office-style nesting).
+    const xml = `${TEI_OPEN}<p>詔王公<roleName key="office-9">卿士</roleName>薦讜言。以<roleName key="office-1">平北將軍</roleName><persName key="person-1">陳顯達</persName>為<placeName>益州</placeName><roleName key="office-2">刺史</roleName>，<nobleTitle><placeName>貞陽</placeName><roleName>公</roleName></nobleTitle><persName key="person-2">柳世隆</persName>為<roleName key="office-3">南兖州刺史</roleName>，皇子<persName key="person-3">鋒</persName>為<nobleTitle><placeName>江夏</placeName><roleName>王</roleName></nobleTitle>。<roleName key="office-4">領軍將軍</roleName><persName key="person-4">李安民</persName>等破虜於<placeName>淮陽</placeName>。</p>${TEI_CLOSE}`;
     const doc = parse(xml);
-    const officeCandidates: AuthorityCandidate[] = [];
+    // 公 / 王 may also be offices with followsPlace — must not rewrite titles.
+    const officeCandidates: AuthorityCandidate[] = [
+      officeCandidate('刺史', { followsPlace: true }),
+      officeCandidate('公', { followsPlace: true }),
+      officeCandidate('王', { followsPlace: true }),
+    ];
     const vocabulary = buildNobleTitleVocabulary([]);
 
     const result = await runGroupAndClean(async () => [], doc.documentElement, officeCandidates, vocabulary);
 
+    expect(result.rolledPlaceNames).toBe(1); // only 益州 + 刺史
     expect(result.createdWrappers).toBe(3);
     const wrappers = Array.from(doc.getElementsByTagName('name')).filter(
       (el) => el.getAttribute('type') === 'personWrapper',
@@ -211,6 +243,13 @@ describe('runGroupAndClean (integration, user-reported case)', () => {
       'person-2',
       'person-4',
     ]);
+    // Title fief + rank stay siblings under nobleTitle.
+    expect(serialize(doc)).toContain(
+      '<nobleTitle><placeName>貞陽</placeName><roleName>公</roleName></nobleTitle>',
+    );
+    expect(serialize(doc)).toContain(
+      '<nobleTitle><placeName>江夏</placeName><roleName>王</roleName></nobleTitle>',
+    );
     // The lone name (鋒, no preceding role/place/title) stays unwrapped.
     expect(doc.getElementsByTagName('persName').length).toBe(4);
     const loneName = Array.from(doc.getElementsByTagName('persName')).find(

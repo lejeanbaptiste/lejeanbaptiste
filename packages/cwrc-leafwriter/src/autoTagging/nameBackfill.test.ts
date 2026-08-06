@@ -116,6 +116,7 @@ describe('backfillEntityNames', () => {
         ],
         startYear: 221,
         endYear: 263,
+        dateSource: 'floruit',
       },
     });
 
@@ -137,8 +138,9 @@ describe('backfillEntityNames', () => {
     const item = findEntity(doc, id)!;
     const birth = Array.from(item.children).find((child) => child.localName === 'birth');
     const death = Array.from(item.children).find((child) => child.localName === 'death');
-    expect(birth?.getAttribute('when')).toBe('0221');
-    expect(death?.getAttribute('when')).toBe('0263');
+    // Dynasty/floruit pack years must not become birth/death.
+    expect(birth).toBeUndefined();
+    expect(death).toBeUndefined();
     const origin = Array.from(item.children).find((child) => child.localName === 'placeName');
     expect(origin?.getAttribute('type')).toBe('jiguan');
   });
@@ -372,7 +374,7 @@ describe('backfillEntityNames', () => {
           primaryName: '徐孝嗣',
           searchStrings: ['徐孝嗣'],
           names: [],
-          metadata: { startYear: 452, endYear: 500 },
+          metadata: { dateSource: 'fine', startYear: 452, endYear: 500 },
         })}\n`;
       }
       if (packId === 'dila-persons') {
@@ -383,7 +385,7 @@ describe('backfillEntityNames', () => {
           primaryName: '徐孝嗣',
           searchStrings: ['徐孝嗣'],
           names: [],
-          metadata: { startYear: 453, endYear: 499 },
+          metadata: { dateSource: 'fine', startYear: 453, endYear: 499 },
         })}\n`;
       }
       throw new Error('missing');
@@ -607,7 +609,7 @@ describe('backfillEntityNames', () => {
           primaryName: '徐孝嗣',
           searchStrings: ['徐孝嗣'],
           names: [],
-          metadata: { startYear: 453, endYear: 499 },
+          metadata: { dateSource: 'fine', startYear: 453, endYear: 499 },
         })}\n`;
       }
       throw new Error('missing');

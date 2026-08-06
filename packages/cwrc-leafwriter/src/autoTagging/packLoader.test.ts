@@ -4,6 +4,8 @@ import {
   candidateIntersectsYearRange,
   candidatePassesDateFilter,
   countPackUniqueStrings,
+  DATE_FILTER_LOOKUP_PAD_YEARS,
+  dateFilterForLookup,
   mergePackCandidates,
   parseAuthorityNdjson,
   rationaleForCandidates,
@@ -96,6 +98,32 @@ describe('office candidates tag as roleName', () => {
     const suggestions = suggestionsFromSeedMatches(matches);
     expect(suggestions[0]!.source).toBe('authority');
     expect(suggestions[0]!.rationale).toContain('參知政事');
+  });
+});
+
+describe('dateFilterForLookup', () => {
+  it('leaves none / undefined alone', () => {
+    expect(dateFilterForLookup(undefined)).toBeUndefined();
+    expect(dateFilterForLookup({ mode: 'none', start: 500, end: 2000 })).toEqual({
+      mode: 'none',
+      start: 500,
+      end: 2000,
+    });
+  });
+
+  it('widens limit both ways and shifts exclude later by the pad', () => {
+    const pad = DATE_FILTER_LOOKUP_PAD_YEARS;
+    expect(dateFilterForLookup({ mode: 'limit', start: 400, end: 500 })).toEqual({
+      mode: 'limit',
+      start: 400 - pad,
+      end: 500 + pad,
+    });
+    // UI shows exclude-from-500; lookup uses 600 so near-contemporaries stay in.
+    expect(dateFilterForLookup({ mode: 'exclude', start: 500, end: 2000 })).toEqual({
+      mode: 'exclude',
+      start: 500 + pad,
+      end: 2000,
+    });
   });
 });
 

@@ -30,6 +30,7 @@ import {
   setAuthorityCache,
   touchEntity,
 } from './entities';
+import { biographicalYearsFromMetadata } from './personDates';
 import type { AuthorityCandidate } from './authority';
 import { normalizeNameType, normalizeTypedNamesForIntake, preferCanonicalFamilyGiven, type NameTypeId } from './nameTypes';
 import { personalNameForSegmentation, nobleTitlesFromMetadata } from './nobleTitleHeadword';
@@ -414,10 +415,7 @@ function applyAuthorityMetadata(
   const item = findEntity(doc, entityId);
   if (!item) return false;
   const normalizedSource = source.trim().toUpperCase();
-  let changed = appendAuthorityDates(doc, item, source, {
-    startYear: metadata.startYear,
-    endYear: metadata.endYear,
-  });
+  let changed = appendAuthorityDates(doc, item, source, biographicalYearsFromMetadata(metadata));
   if (metadata.nationality?.length) {
     const nationalityChanged = appendAuthoritySourcedValues(
       doc,
@@ -750,6 +748,7 @@ export async function backfillEntityNames(
           doc,
           entity.id,
           {
+            dateSource: 'fine',
             startYear: lifespan?.birthYear,
             endYear: lifespan?.deathYear,
             nationality: nationality?.map((value) => ({

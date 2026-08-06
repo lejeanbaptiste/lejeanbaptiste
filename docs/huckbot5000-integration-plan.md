@@ -1,10 +1,9 @@
 # Huckbot5000 + CBDB/Norbert integration — planning document
 
-**Status (2026-08-06, afternoon):** Scaffolding complete and ready for the full LLM
-generation run. Rights-hygiene work done earlier the same day. First production run was
-killed mid-flight (period-keying bug); that bug and the CBDB/Norbert bridge are fixed. Old
-partial candidates archived as `candidates.pre-reconcile.ndjson`. Procedural candidates
-regenerated; ~11.7k LLM targets remain.
+**Status (2026-08-06, evening):** Generate → audit → bulk-accept → pack complete
+(11,445 publishable glosses; 405 local collision archive). Bundle staging and
+leaf-writer gloss loading are wired. Next: cut an `authoritypacks` release that
+includes `huckbot5000/`, then reinstall chinese packs in the app.
 
 **This doc is the current-state summary — what to read to get oriented in five minutes.** The
 full experimental history, numbers, and evidence behind every claim below lives in
@@ -96,6 +95,17 @@ then `npm run audit:huckbot5000`. Expect ~3–4 hours at ~1 call/s.
   Norbert-only offices; no double generation for concordance-linked pairs.
 - Boundary-touch at year 618 = same office (kept). Undated + Hucker-silent/distinct → no link;
   reconcile clears stale CBDB crosswalks.
+- **Dynasty backfill via `crosswalk.cbdb` is not safe to do naively.** Of the 178 linked
+  offices: 86 already have their own single derived `dynasty` (no backfill needed), 14 are
+  undated (Hucker-continuity link only — safe to backfill `dynasty`/`startYear`/`endYear` from
+  the linked CBDB row), but **78 are multi-dynasty** (`metadata.dynastiesAttested` set,
+  e.g. `給事中`/office-225 spans 東漢–唐, 5 dynasties, 25–907 CE) yet still resolve to exactly
+  one CBDB office_id, because CBDB itself only carries one dynasty-tagged row for that name.
+  Backfilling `metadata.dynasty` from the CBDB side for those 78 would silently collapse a
+  multi-century, multi-dynasty office down to CBDB's single narrower dynasty tag — a regression
+  versus what Norbert's own `dynastiesAttested` already records correctly. **Any future
+  crosswalk-based dynasty backfill must check for `metadata.dynastiesAttested` first and skip
+  single-dynasty backfill when it's present**, backfilling only the genuinely undated bucket.
 
 ### Procedural generation — built
 - **place+suffix:** period-aware suffix glosses; place stem = concatenated toneless pinyin;
@@ -105,20 +115,26 @@ then `npm run audit:huckbot5000`. Expect ~3–4 hours at ~1 call/s.
   at audit (expected); only non-colliding rows stay for review.
 
 ### leaf-writer UI
-- Phase 3 candidate period captions (`formatCandidatePeriod`) are built. Display of Huckbot
-  glosses still waits on shippable `translations.ndjson`.
+- Phase 3 candidate period captions (`formatCandidatePeriod`) are built.
+- Huckbot glosses load as a chinese-profile sidecar (`huckbot5000-translations`):
+  fill empty office `metadata.translation` in lookup / disambiguation / tag-bomb,
+  and persist as `entity_translations` (en) when an office is minted.
 
 ---
 
-## Still open (not blocking the LLM run)
+## Still open
 
-1. **Full LLM generate + human review** of the ~11.7k queue (this is the next action).
-2. **`authoritypacks` release cut** — omit `(Hucker)`-cited CBDB fields from published packs +
-   Norbert-only reference bundle; needs explicit go-ahead (independent of generation).
-3. **Commit/push** pipeline code in `authority extraction` (and related leaf-writer docs/UI when
-   ready).
-4. Expanding `parentOf` allowlist beyond `太子`/`公主`/`親王` once non-Hucker compounds prove out.
-5. Dating the remaining ~15k Norbert offices (expands targets later; does not invalidate this run).
+1. **`authoritypacks` release cut** — ship Hucker-omitted CBDB offices + Huckbot
+   translations in the chinese tarball; reinstall packs in the app.
+2. **Commit/push** pipeline code in `authority extraction` and leaf-writer wiring.
+3. Expanding `parentOf` allowlist beyond `太子`/`公主`/`親王` once non-Hucker compounds prove out.
+4. Dating the remaining ~15k Norbert offices (expands targets later; does not invalidate this run).
+5. **MaxiRicci7000** — GPT-4o French pack: Batch A = full Hucker OCR entries + Rotours
+   (`RR:`) seeds; Batch B = CBDB/Huckbot offices absent from Hucker, retrieved against
+   Batch A French. Scaffolding:
+   [`authority extraction/maxiricci7000/`](../../authority%20extraction/maxiricci7000/README.md).
+   Owner policy: AI French is treated as redistributable (`source: MaxiRicci7000`); English
+   Huckbot collision-archive rules unchanged. Batch B benefits from reviewed Huckbot includes.
 
 ---
 

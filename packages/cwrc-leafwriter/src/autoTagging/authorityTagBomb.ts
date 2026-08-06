@@ -1,5 +1,6 @@
 import {
   candidatePassesDateFilter,
+  dateFilterForLookup,
   iterateAuthorityNdjson,
   type AuthorityPackContent,
   type DateRangeFilter,
@@ -16,6 +17,12 @@ import {
   resolveNameTypeTaggingPolicy,
   type NameTypeTaggingPolicy,
 } from './nameTypeTaggingPolicy';
+import {
+  applyHuckbotGlossToCandidate,
+  applyMaxiRicciGlossToCandidate,
+  loadHuckbotGlossIndex,
+  loadMaxiRicciGlossIndex,
+} from './officeGlossLookup';
 
 /** CBDB before DILA so overlap merge prefers CBDB metadata as the base. CHGIS before DILA for place dates. */
 const PACK_LOAD_ORDER: AuthorityPackId[] = [
@@ -107,15 +114,18 @@ export async function runAuthorityTagBombOnDocument(
   policy: WhitespacePolicy,
   options: AuthorityTagBombOptions = {},
 ): Promise<AuthorityTagBombResult> {
-  const dateFilter: DateRangeFilter | undefined =
+  // Widen past the UI-visible cutoff so near-contemporary people are not
+  // dropped when the slider is set from a work year (or manually).
+  const dateFilter: DateRangeFilter | undefined = dateFilterForLookup(
     options.dateFilter ??
-    (options.yearRange
-      ? {
-          mode: 'limit',
-          start: options.yearRange.start,
-          end: options.yearRange.end,
-        }
-      : undefined);
+      (options.yearRange
+        ? {
+            mode: 'limit',
+            start: options.yearRange.start,
+            end: options.yearRange.end,
+          }
+        : undefined),
+  );
 
   const index = createAuthoritySeedIndex();
   const nameTypePolicy = options.nameTypePolicy ?? resolveNameTypeTaggingPolicy(undefined, null);
@@ -145,6 +155,16 @@ export async function runAuthorityTagBombOnDocument(
     return spec ? authorityPackOrigin(spec) === 'file' : true;
   });
 
+  const needsOfficeGlosses = filePackIds.some(
+    (id) => id === 'cbdb-offices' || id === 'norbert-offices',
+  );
+  const officeGlosses = needsOfficeGlosses
+    ? await loadHuckbotGlossIndex(readPackFile)
+    : new Map();
+  const frenchOfficeGlosses = needsOfficeGlosses
+    ? await loadMaxiRicciGlossIndex(readPackFile)
+    : { byOfficeId: new Map(), byZhDynasty: new Map(), byZh: new Map() };
+
   for (const packId of sortPackIds(filePackIds)) {
     options.onProgress?.(`Loading ${packId}…`);
     let packCount = 0;
@@ -152,10 +172,12 @@ export async function runAuthorityTagBombOnDocument(
     // plain/test readers can ignore the optional second argument.
     const content = await readPackFile(packId, dateFilter);
     for (const candidate of iterateAuthorityNdjson(content)) {
+      const withEn = applyHuckbotGlossToCandidate(candidate, officeGlosses);
+      const withGloss = applyMaxiRicciGlossToCandidate(withEn, frenchOfficeGlosses);
       const runtimeCandidates =
         packId === 'norbert-wiki-nt'
-          ? expandNorbertWikiNtCandidate(candidate, norbertNamesByAuthorityId)
-          : [candidate];
+          ? expandNorbertWikiNtCandidate(withGloss, norbertNamesByAuthorityId)
+          : [withGloss];
       for (const runtimeCandidate of runtimeCandidates) {
         const titleFilterResult = applyNobleTitleFilter(runtimeCandidate, nobleTitleFilter);
         const candidatesToAdd = [

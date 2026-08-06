@@ -755,6 +755,32 @@ function assemblePanelSummary(
   const activeDates = dates.filter((date) => date.status === 'active');
   const firstDate = (kind: string) =>
     activeDates.find((date) => date.date_kind === kind) as Record<string, unknown> | undefined;
+  // Prefer a non-sentinel year: skip CBDB/legacy `0`, and prefer user rows that
+  // are real years, then authority rows (Wikidata/CBDB before others).
+  const preferredVitalYear = (kind: 'birth' | 'death'): number | null => {
+    const rows = activeDates.filter((date) => date.date_kind === kind) as Record<string, unknown>[];
+    const yearOf = (row: Record<string, unknown>) => {
+      const year = row.start_year;
+      return typeof year === 'number' && Number.isFinite(year) && year !== 0 ? year : null;
+    };
+    const user = rows.find((row) => row.origin === 'user' && yearOf(row) != null);
+    if (user) return yearOf(user);
+    const preferredSources = ['WIKIDATA', 'CBDB', 'DILA', 'NORBERT'];
+    for (const source of preferredSources) {
+      const hit = rows.find(
+        (row) =>
+          String(row.source ?? '')
+            .trim()
+            .toUpperCase() === source && yearOf(row) != null,
+      );
+      if (hit) return yearOf(hit);
+    }
+    for (const row of rows) {
+      const year = yearOf(row);
+      if (year != null) return year;
+    }
+    return null;
+  };
   // A generic (non birth/death) date row — the only kind of existence-period date that
   // place/org/office ever get today (imported from <note type="dates">). `work` prefers
   // this same row over the legacy 'work'-kind row; every other kind falls back to it only
@@ -778,13 +804,17 @@ function assemblePanelSummary(
       }
     : null;
   const fallbackStartYear =
-    (birthRow?.start_year as number | null) ??
-    (entity.kind === 'work' ? null : (genericDatesRow?.start_year as number | null)) ??
-    null;
+    entity.kind === 'work'
+      ? null
+      : preferredVitalYear('birth') ??
+        (genericDatesRow?.start_year as number | null) ??
+        null;
   const fallbackEndYear =
-    (deathRow?.start_year as number | null) ??
-    (entity.kind === 'work' ? null : (genericDatesRow?.end_year as number | null)) ??
-    null;
+    entity.kind === 'work'
+      ? null
+      : preferredVitalYear('death') ??
+        (genericDatesRow?.end_year as number | null) ??
+        null;
   return {
     ...entity,
     // Merge glosses into names so the entity editor / sqliteSummary keep working

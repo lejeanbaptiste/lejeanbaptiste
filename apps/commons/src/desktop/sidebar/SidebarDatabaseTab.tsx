@@ -2251,8 +2251,22 @@ export const SidebarDatabaseTab = ({ active = false }: SidebarDatabaseTabProps) 
         assertion.origin === 'user' &&
         assertion.status === 'active',
     );
-    const userBirthYear = dateYear(userBirthAssertion) ?? editEntity?.startYear ?? null;
-    const userDeathYear = dateYear(userDeathAssertion) ?? editEntity?.endYear ?? null;
+    const userBirthYearRaw = dateYear(userBirthAssertion);
+    const userDeathYearRaw = dateYear(userDeathAssertion);
+    // Ignore sentinel `0` (unknown CBDB / polluted Central mint) so authority
+    // birth/death assertions can surface as the primary span.
+    const userBirthYear =
+      userBirthYearRaw != null && userBirthYearRaw !== 0
+        ? userBirthYearRaw
+        : editEntity?.startYear != null && editEntity.startYear !== 0
+          ? editEntity.startYear
+          : null;
+    const userDeathYear =
+      userDeathYearRaw != null && userDeathYearRaw !== 0
+        ? userDeathYearRaw
+        : editEntity?.endYear != null && editEntity.endYear !== 0
+          ? editEntity.endYear
+          : null;
     const workDate =
       editEntity?.kind === 'work' || editEntity?.kind === 'office' ? editEntity.workDate : null;
     const pendingDateAssertions = dateAssertions.filter((assertion) => {

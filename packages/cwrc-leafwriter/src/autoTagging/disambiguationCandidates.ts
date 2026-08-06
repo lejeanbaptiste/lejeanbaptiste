@@ -12,6 +12,7 @@ import {
   type EntityKind,
 } from './entities';
 import { formatNorbertAuthorityValue } from './norbertAuthorityId';
+import { biographicalYearsFromMetadata } from './personDates';
 import { linkedCentralIds } from './bridgeInbox';
 import type { EntityStore } from './entityStore';
 import { textWithoutHiddenReadings } from './hiddenChoiceText';
@@ -58,6 +59,7 @@ import {
 import type { AuthorityCandidate } from './authority';
 import type { AuthorityPackId } from './packPaths';
 import { centroidOf, haversineDistanceKm } from './geoCluster';
+import { loadHuckbotGlossIndex, loadMaxiRicciGlossIndex } from './officeGlossLookup';
 
 export interface DisambiguationCandidate {
   id: string;
@@ -871,6 +873,10 @@ async function candidatesFromAuthorityPacks(
     entityType,
   );
   const pendingDilaFetches: Promise<void>[] = [];
+  const officeGlosses =
+    entityType === 'office' ? await loadHuckbotGlossIndex(readPackFile) : undefined;
+  const frenchOfficeGlosses =
+    entityType === 'office' ? await loadMaxiRicciGlossIndex(readPackFile) : undefined;
   // Read packs in parallel — sequential awaits made lookup feel much slower
   // than the legacy per-authority popup (which also fired searches together).
   const perPack = await Promise.all(
@@ -889,10 +895,20 @@ async function candidatesFromAuthorityPacks(
           packSource,
           entityType,
           surface,
+          undefined,
+          officeGlosses,
+          frenchOfficeGlosses,
         )) {
           let description = match.description;
-          let startYear = row?.metadata?.startYear;
-          let endYear = row?.metadata?.endYear;
+          const bioYears =
+            entityType === 'person'
+              ? biographicalYearsFromMetadata(row?.metadata)
+              : {
+                  ...(row?.metadata?.startYear != null ? { startYear: row.metadata.startYear } : {}),
+                  ...(row?.metadata?.endYear != null ? { endYear: row.metadata.endYear } : {}),
+                };
+          let startYear = bioYears.startYear;
+          let endYear = bioYears.endYear;
           let dynasty: string | undefined;
 
           if (

@@ -127,18 +127,16 @@ For detailed build and packaging information, see [apps/desktop/README.md](apps/
 
 See [apps/desktop/README.md](apps/desktop/README.md) for the compilation and packaging instructions.
 
+## Processing
 
-## Waiting
-
-- [ ] confirm whether the actual installed CBDB/Norbert authority packs populate `metadata.startYear/endYear/dynasty` for office rows
-- [ ] Finish Huckbot — scaffolding ready; next is full LLM generate + review ([huckbot5000-integration-plan.md](docs/huckbot5000-integration-plan.md))
+- [ ] Generate MaxiRicci7000 French pack (Batch A Hucker→fr, then Batch B gaps) — see [maxiricci7000/README.md](../authority%20extraction/maxiricci7000/README.md) / [huckbot5000-integration-plan.md](docs/huckbot5000-integration-plan.md)
+- [ ] Cut authoritypacks release with Huckbot + Hucker-omitted CBDB offices ([huckbot5000-integration-plan.md](docs/huckbot5000-integration-plan.md))
+- [ ] Delete prior releases and clean history?
 - [ ] Verify AI translate entity pipeline (see [translation-smoke-tests.md](docs/translation-smoke-tests.md) §10): source unit has keyed `persName` / `placeName` / `orgName` / `title`|`bibl` / `roleName` → model emits `{{entity:KEY}}` → pane shows atomic `ref[type="ljb-entity"]` fields with kind-aware LJBtero formatting (unit tests cover substitution for all kinds; LLM compliance is manual)
-
 
 ### Future
 
-
-### 'LJBtero'
+### 'LJBtero' (After testing)
 
 - [ ] Clean up and rationalise options, UI, document and global settings.
 - [ ] Figure out how best to handle the insertion of entities NOT in said paragraph.
@@ -146,10 +144,10 @@ See [apps/desktop/README.md](apps/desktop/README.md) for the compilation and pac
 - [ ] Build Word and LibreOffice plugins on the same model.
 - [ ] Live passage citations in Word / LibreOffice: insert a refreshable field (source unit + optional translation + bibl + nearest page cue) that Syncs from LJB like Zotero — pointers only, no second copy of the edition ([live-passage-citation-planning.md](docs/live-passage-citation-planning.md))
 
-#### Push limits
+### Database viewer
 
-- [ ] Instead of relying on Markup panel to navigate the xml tree, introduce some sort of toggle where the keyboard arrow keys move you between siblings, parent, and first child. Preferably a keyboard toggle.
-- [ ] Make TinyMCE even faster to load.
+- [ ] Think about how to organise for rapid data entry
+- [ ] Filters
 
 #### I/O
 
@@ -165,27 +163,15 @@ See [apps/desktop/README.md](apps/desktop/README.md) for the compilation and pac
   - [ ] Punctuator
 
 - [ ] Import profiles (rule engine + mandoku hand profile)
-- [ ] AI-inferred import profiles
 - [ ] Browser-extension / URL corpus→TEI extraction (E0–E5 — [corpus-extraction-planning.md](docs/corpus-extraction-planning.md))
-- [ ] (IF someone actually uses markdown) Import leftovers: md `{{header}}` expansion, import validator report (blind import, folder multi-select, and basic provenance already ship — see [import-planning.md](docs/import-planning.md))
-- [ ] (IF grows to point where relevant) LaTeX export
+
 
 #### UX
 
-- [ ] Improve Highlight/CSS panel icon. 
 - [ ] Find/replace Phase 2b: WYSIWYG visible-text replace across markup ([find-replace-planning.md](docs/find-replace-planning.md))
 - [ ] Persist last find query across sessions (match-case / ignore-case toggle already ships)
 - [ ] Ignore page breaks, line breaks, and corrections in tagging and disambiguation?
 - [ ] Re-explore Tag-boundary Bugs B/C/H (typing/delete at edges) keeping us from full Oxygen parity.
-
-
-
-#### Maps
-
-- [ ] Pin captions to further aid in disambiguation
-- [ ] Click on map to select in panel
-- [ ] Placename Phase 4–5: persisted coordinate/id place entities; mint from merged periods ([placename-geo-disambiguation-planning.md](docs/placename-geo-disambiguation-planning.md))
-
 
 
 #### Dates
@@ -194,15 +180,25 @@ See [apps/desktop/README.md](apps/desktop/README.md) for the compilation and pac
 - [ ] Scan DILA for markers into Sanmiao
 - [ ] AI assist for Sanmiao to identify beginning of dynasties, reigns, era
 
+
 #### AI
 
 - [ ] Translation panel: check for translation consistency across the document
 - [ ] Translation panel: suggest improvements with 'accept/reject'
+- [ ] AI-inferred import profiles
 - [ ] AI auto-tag: gold harness / residual gaps for `roleName` / `orgName` audit apply (remove/retag/redraw, schema-driven tag picker, and prompt-profile UI already ship)
 
-#### Authority packs
 
-- [ ] TEI appointment encoding for office/role context
+#### Norbert
+
+- [ ] Consider implementing works/editions
+- [ ] Use 'knowledge' category?
+- [ ] Consider second-order, relational tags, kinship, appointment, death, knowledge
+
+#### Push limits
+
+- [ ] Instead of relying on Markup panel to navigate the xml tree, introduce some sort of toggle where the keyboard arrow keys move you between siblings, parent, and first child. Preferably a keyboard toggle.
+- [ ] Make TinyMCE even faster to load.
 
 
 #### Technical / collaboration
@@ -213,10 +209,28 @@ See [apps/desktop/README.md](apps/desktop/README.md) for the compilation and pac
 - [ ] Multi-machine offline sync beyond current mirror
 - [ ] Option to track annotator on the tag level for collaborations.
 
+---
+
+### Pending
 
 
-### Unimportant
+#### Maps (pending feedback from historian of geography)
 
+- [ ] Pin captions to further aid in disambiguation
+- [ ] Click on map to select in panel
+- [ ] Placename Phase 4–5: persisted coordinate/id place entities; mint from merged periods ([placename-geo-disambiguation-planning.md](docs/placename-geo-disambiguation-planning.md))
+
+
+#### Database cards
+
+- [ ] place (pending feedback from historian of geography)
+- [ ] title (pending decisions on how to treat works)
+
+### Deferred
+
+- [ ] TEI appointment encoding for office/role context ([doc](docs/authority-packs-planning.md))
 - [ ] Time Machine polish: diff preview, export history zip, optional `revisionDesc` on restore, delete (?)
 - [ ] Docx import Phase 3: style-aware mammoth → IR (blind text extraction already ships)
 - [ ] Bundle size: icon barrel / storage-service; lazy dialogs/Monaco ([bundle-size-warning-planning.md](docs/bundle-size-warning-planning.md))
+- [ ] (IF someone actually uses markdown) Import leftovers: md `{{header}}` expansion, import validator report (blind import, folder multi-select, and basic provenance already ship — see import-planning.md)
+- [ ] (IF grows to point where relevant) LaTeX export

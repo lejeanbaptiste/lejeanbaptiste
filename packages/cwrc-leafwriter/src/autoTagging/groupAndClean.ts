@@ -8,9 +8,10 @@
  * Five steps, run in order over a scope (a selection root, or the whole
  * document):
  *  1. Merge adjacent `<roleName>`s that form one compound office
- *     (`office.followsOffice`).
+ *     (`office.followsOffice`). Skipped inside `<nobleTitle>`.
  *  2. Nest a preceding `<placeName>` inside a `<roleName>` that takes one
- *     (`office.followsPlace`).
+ *     (`office.followsPlace`). Skipped inside `<nobleTitle>` — fief and rank
+ *     stay siblings there, not office-style nesting.
  *  3. Parse childless `<nobleTitle>` text into structured components,
  *     splitting out a trailing identity name into a sibling `<persName>`
  *     under a new wrapper (a title's own text never carries the person's
@@ -70,6 +71,20 @@ function elementsAdjacent(first: Element, second: Element): boolean {
   return cursor === second;
 }
 
+/**
+ * True when `element` sits under a `<nobleTitle>`. Office merge / place-roll
+ * must not run there: fief + rank are sibling title components, not an office
+ * that "takes a place" (which would otherwise rewrite
+ * `<nobleTitle><placeName>貞陽</placeName><roleName>公</roleName></nobleTitle>`
+ * into office-style nesting and pollute the roles table).
+ */
+function isInsideNobleTitle(element: Element): boolean {
+  for (let ancestor = element.parentElement; ancestor; ancestor = ancestor.parentElement) {
+    if (localNameOf(ancestor) === 'nobleTitle') return true;
+  }
+  return false;
+}
+
 /** Remove whitespace-only nodes sitting between two now-merging siblings. */
 function stripWhitespaceBetween(first: Element, second: Element): void {
   let cursor = first.nextSibling;
@@ -112,6 +127,10 @@ export function mergeAdjacentRoleNames(
   while (i < roleNames.length - 1) {
     const first = roleNames[i]!;
     const second = roleNames[i + 1]!;
+    if (isInsideNobleTitle(first) || isInsideNobleTitle(second)) {
+      i++;
+      continue;
+    }
     if (first.parentNode !== second.parentNode || !elementsAdjacent(first, second)) {
       i++;
       continue;
@@ -146,6 +165,7 @@ export function rollPlaceIntoRole(
   let rolled = 0;
   const placeNames = Array.from(scopeRoot.getElementsByTagName('placeName'));
   for (const place of placeNames) {
+    if (isInsideNobleTitle(place)) continue;
     const next = place.nextElementSibling;
     if (!next || localNameOf(next) !== 'roleName') continue;
     if (place.parentNode !== next.parentNode || !elementsAdjacent(place, next)) continue;

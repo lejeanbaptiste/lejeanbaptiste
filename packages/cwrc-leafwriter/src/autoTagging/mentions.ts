@@ -2,6 +2,7 @@ import { buildDocIndex, createAnchor, type DocIndex, type OccurrenceCache } from
 import { isInsideTeiHeader } from './dateTeiHelpers';
 import { TAG_TO_KIND } from './entities';
 import { textWithoutHiddenReadings } from './hiddenChoiceText';
+import { isInsideNobleTitle } from './nobleTitleAutoResolve';
 import type { Anchor, WhitespacePolicy } from './types';
 
 export interface MentionInstance {
@@ -24,6 +25,16 @@ export interface MentionGroup {
 
 const DISAMBIGUATION_TAGS = [...Object.keys(TAG_TO_KIND), 'name'];
 
+/**
+ * Inside `<nobleTitle>`, only the fief place belongs in Disambiguate.
+ * Ranks auto-resolve separately; posthumous names must not enter the
+ * persName queue without title context.
+ */
+function shouldSkipNobleTitleChild(tag: string, element: Element): boolean {
+  if (!isInsideNobleTitle(element)) return false;
+  if (tag === 'placeName') return false;
+  return tag === 'roleName' || tag === 'persName';
+}
 function mentionFromElement(
   element: Element,
   doc: Document,
@@ -102,6 +113,7 @@ export function collectMentions(
       // (the editor body omits teiHeader; merge-for-validation puts it back).
       if (isInsideTeiHeader(el)) continue;
       if (tag === 'name' && el.getAttribute('type') !== 'personWrapper') continue;
+      if (shouldSkipNobleTitleChild(tag, el)) continue;
       const mention = mentionFromElement(el, doc, policy, documentId, index, occurrenceCache);
       if (!mention) continue;
       if (mention.hasKey && !includeResolved) continue;

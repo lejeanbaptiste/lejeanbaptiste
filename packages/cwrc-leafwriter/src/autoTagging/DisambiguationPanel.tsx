@@ -65,7 +65,12 @@ import {
   readPersistedDisambiguationSettings,
   yearRangeFromSettings,
 } from './disambiguationSettings';
-import { normalizeDateRangeFilter, type DateFilterMode, type DateRangeFilter } from './packLoader';
+import {
+  dateFilterForLookup,
+  normalizeDateRangeFilter,
+  type DateFilterMode,
+  type DateRangeFilter,
+} from './packLoader';
 import { clusterByGeoAccessor } from './geoCluster';
 import { PlaceComparisonMap, type MapPin } from './mapView/PlaceComparisonMap';
 import { resolveManualAuthorityLink } from './manualAuthorityLink';
@@ -410,6 +415,8 @@ export const DisambiguationPanel = ({
       normalizeDateRangeFilter({ mode: dateFilterMode, start: yearRange[0], end: yearRange[1] }),
     [dateFilterMode, yearRange],
   );
+  /** Same filter the UI shows, widened for matching (see dateFilterForLookup). */
+  const lookupDateFilter = useMemo(() => dateFilterForLookup(dateFilter) ?? dateFilter, [dateFilter]);
   const cycleDateFilterMode = () => {
     setDateFilterMode((mode) => {
       const next = mode === 'none' ? 'limit' : mode === 'limit' ? 'exclude' : 'none';
@@ -804,8 +811,8 @@ export const DisambiguationPanel = ({
   }, [group?.surface, group?.tag, instance]);
 
   const filteredCandidates = useMemo(
-    () => candidates.filter((candidate) => candidatePassesYearFilter(candidate, dateFilter)),
-    [candidates, dateFilter],
+    () => candidates.filter((candidate) => candidatePassesYearFilter(candidate, lookupDateFilter)),
+    [candidates, lookupDateFilter],
   );
 
   /**

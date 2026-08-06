@@ -68,6 +68,7 @@ import {
   uiStateFromSettings,
   AUTHORITY_YEAR_MIN,
   AUTHORITY_YEAR_MAX,
+  dateFilterForLookup,
   DEFAULT_AUTHORITY_DATE_FILTER,
   DEFAULT_AUTHORITY_YEAR_RANGE,
   type AiPromptProfilesState,
@@ -609,14 +610,15 @@ export const AutoTaggingDialog = ({ id, onClose, open = false }: IDialog) => {
           authorityStatus.filter((status) => status.installed).map((status) => status.id),
         );
         const [yearStart, yearEnd] = authorityYearRange;
-        const range =
+        const range = dateFilterForLookup(
           authorityDateFilter === 'none'
             ? undefined
             : {
                 mode: authorityDateFilter,
                 start: Math.min(yearStart, yearEnd),
                 end: Math.max(yearStart, yearEnd),
-              };
+              },
+        );
 
         try {
           const counts: AuthorityPackStringCounts = {};

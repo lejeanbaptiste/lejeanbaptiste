@@ -1,0 +1,155 @@
+import {
+  applyHuckbotGlossToCandidate,
+  applyHuckbotGlossToPackRow,
+  applyMaxiRicciGlossToCandidate,
+  buildHuckbotGlossIndex,
+  buildMaxiRicciGlossIndex,
+  formatOfficeClue,
+} from './officeGlossLookup';
+import type { AuthorityCandidate } from './authority';
+
+describe('officeGlossLookup', () => {
+  const glossNdjson = [
+    JSON.stringify({
+      source: 'Huckbot5000',
+      kind: 'office',
+      zh: '州縣長吏',
+      dynasty: '宋',
+      translation: 'Senior Subalterns of the Prefecture or District',
+      officeIds: ['cbdb:office:987'],
+    }),
+    JSON.stringify({
+      source: 'Huckbot5000',
+      kind: 'office',
+      zh: '太守',
+      dynasty: '漢',
+      translation: 'Governor',
+      officeIds: ['norbert:office:42'],
+    }),
+  ].join('\n');
+
+  const frenchNdjson = [
+    JSON.stringify({
+      source: 'MaxiRicci7000',
+      kind: 'office',
+      language: 'fr',
+      zh: '州縣長吏',
+      dynasty: '宋',
+      translation: 'subalternes seniors de la préfecture ou du district',
+      officeIds: ['cbdb:office:987'],
+    }),
+    JSON.stringify({
+      source: 'MaxiRicci7000',
+      kind: 'office',
+      language: 'fr',
+      zh: '理官',
+      dynasty: 'HAN',
+      translation: 'régulateur officiel',
+      officeIds: [],
+    }),
+  ].join('\n');
+
+  it('indexes by every officeId', () => {
+    const index = buildHuckbotGlossIndex(glossNdjson);
+    expect(index.get('cbdb:office:987')).toBe(
+      'Senior Subalterns of the Prefecture or District',
+    );
+    expect(index.get('norbert:office:42')).toBe('Governor');
+  });
+
+  it('fills blank office translations and refreshes description', () => {
+    const index = buildHuckbotGlossIndex(glossNdjson);
+    const candidate: AuthorityCandidate = {
+      source: 'CBDB',
+      authorityId: '987',
+      kind: 'office',
+      primaryName: '州縣長吏',
+      searchStrings: ['州縣長吏'],
+      metadata: {
+        dynasty: '宋',
+        entityId: 'cbdb:office:987',
+        description: '州縣長吏 (宋)',
+      },
+    };
+    const enriched = applyHuckbotGlossToCandidate(candidate, index);
+    expect(enriched.metadata?.translation).toBe(
+      'Senior Subalterns of the Prefecture or District',
+    );
+    expect(enriched.metadata?.description).toBe(
+      formatOfficeClue(
+        '州縣長吏',
+        'Senior Subalterns of the Prefecture or District',
+        '宋',
+      ),
+    );
+  });
+
+  it('does not overwrite an existing pack translation', () => {
+    const index = buildHuckbotGlossIndex(glossNdjson);
+    const candidate: AuthorityCandidate = {
+      source: 'CBDB',
+      authorityId: '987',
+      kind: 'office',
+      primaryName: '州縣長吏',
+      searchStrings: ['州縣長吏'],
+      metadata: {
+        translation: 'Already present',
+        entityId: 'cbdb:office:987',
+      },
+    };
+    expect(applyHuckbotGlossToCandidate(candidate, index).metadata?.translation).toBe(
+      'Already present',
+    );
+  });
+
+  it('enriches pack rows used by lookup', () => {
+    const index = buildHuckbotGlossIndex(glossNdjson);
+    const row = applyHuckbotGlossToPackRow(
+      {
+        authorityId: '42',
+        primaryName: '太守',
+        metadata: { entityId: 'norbert:office:42', dynasty: '漢' },
+      },
+      'norbert',
+      index,
+    );
+    expect(row.metadata?.translation).toBe('Governor');
+    expect(row.metadata?.description).toContain('Governor');
+  });
+
+  it('attaches French by officeId without touching English', () => {
+    const en = buildHuckbotGlossIndex(glossNdjson);
+    const fr = buildMaxiRicciGlossIndex(frenchNdjson);
+    const candidate: AuthorityCandidate = {
+      source: 'CBDB',
+      authorityId: '987',
+      kind: 'office',
+      primaryName: '州縣長吏',
+      searchStrings: ['州縣長吏'],
+      metadata: { entityId: 'cbdb:office:987', dynasty: '宋' },
+    };
+    const withEn = applyHuckbotGlossToCandidate(candidate, en);
+    const withBoth = applyMaxiRicciGlossToCandidate(withEn, fr);
+    expect(withBoth.metadata?.translation).toBe(
+      'Senior Subalterns of the Prefecture or District',
+    );
+    expect(withBoth.metadata?.translationFr).toBe(
+      'subalternes seniors de la préfecture ou du district',
+    );
+  });
+
+  it('falls back to zh(+dynasty) when officeIds are empty (Batch A)', () => {
+    const fr = buildMaxiRicciGlossIndex(frenchNdjson);
+    const candidate: AuthorityCandidate = {
+      source: 'CBDB',
+      authorityId: '1',
+      kind: 'office',
+      primaryName: '理官',
+      searchStrings: ['理官'],
+      metadata: { dynasty: 'HAN' },
+    };
+    expect(applyMaxiRicciGlossToCandidate(candidate, fr).metadata?.translationFr).toBe(
+      'régulateur officiel',
+    );
+  });
+});

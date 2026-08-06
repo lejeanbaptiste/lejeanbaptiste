@@ -27,6 +27,31 @@ export function normalizeDateRangeFilter(filter: DateRangeFilter): DateRangeFilt
 }
 
 /**
+ * Extra years applied only at lookup time (tag bomb / disambiguation), not in
+ * the UI slider. Keeps the visible cutoff honest while casting a wider net —
+ * important now that import ignores floruit/index pack years as vitals.
+ */
+export const DATE_FILTER_LOOKUP_PAD_YEARS = 100;
+
+/**
+ * Widen a user-visible date filter for authority matching.
+ * - `limit`: expand both ends by {@link DATE_FILTER_LOOKUP_PAD_YEARS}
+ * - `exclude`: shift the exclude window later by that many years (so a work
+ *   dated 500 still admits people active into the early 600s)
+ */
+export function dateFilterForLookup(
+  filter: DateRangeFilter | undefined,
+): DateRangeFilter | undefined {
+  if (!filter || filter.mode === 'none') return filter;
+  const { mode, start, end } = normalizeDateRangeFilter(filter);
+  const pad = DATE_FILTER_LOOKUP_PAD_YEARS;
+  if (mode === 'limit') {
+    return { mode, start: start - pad, end: end + pad };
+  }
+  return { mode, start: start + pad, end };
+}
+
+/**
  * Exclusion for precise lifespans is anachronism-oriented rather than an
  * interval-overlap test: a person is too late if they were born after the
  * cutoff, or if their mean lifespan date is more than 60 years after it.

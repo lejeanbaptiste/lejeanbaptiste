@@ -24,12 +24,26 @@ import { DYNASTY_CROSSWALK } from './dynastyCrosswalkData';
  * pack is missing or stale. Merged with whatever the pack supplies.
  * `nt` is a genuinely closed set in Norbert (44 distinct values).
  */
-const SEED_RANKS = [
+/** Closed-set noble ranks (Norbert `nt`); also the floor for span parsing. */
+export const SEED_RANKS = [
   '皇帝', '天皇', '皇后', '太后', '太妃', '太子', '世子', '公主', '皇女', '夫人',
   '婕妤', '倢伃', '貴妃', '賢妃', '淑妃', '昭儀', '昭容', '昭華', '脩容', '貴嬪',
   '貴人', '淑媛', '美人', '後主', '幼主', '天王',
   '帝', '王', '公', '侯', '伯', '子', '男', '后', '妃', '君', '主', '姬', '嬪', '妾',
 ] as const;
+
+const SEED_RANK_SET = new Set<string>(SEED_RANKS);
+
+/** True for a closed-set noble rank (optionally unioned with pack vocabulary). */
+export function isNobleTitleRank(
+  surface: string | null | undefined,
+  vocabularyRanks?: ReadonlySet<string> | null,
+): boolean {
+  const text = (surface ?? '').trim();
+  if (!text) return false;
+  if (SEED_RANK_SET.has(text)) return true;
+  return Boolean(vocabularyRanks?.has(text));
+}
 
 export interface NobleTitleVocabulary {
   ranks: Set<string>;

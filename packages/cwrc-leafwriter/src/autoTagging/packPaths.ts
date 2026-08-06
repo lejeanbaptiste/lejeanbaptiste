@@ -36,6 +36,10 @@ export type AuthorityPackId =
   | 'norbert-offices'
   | 'norbert-wiki-nt'
   | 'noble-title-filter'
+  /** Gap-fill English office glosses (sidecar — not a tag-bomb seed pack). */
+  | 'huckbot5000-translations'
+  /** French office glosses (sidecar — not a tag-bomb seed pack). */
+  | 'maxiricci7000-translations'
   /** Project entity database (PEDB) — read live from entities.xml, not a file pack. */
   | 'pedb-persons'
   | 'pedb-places'
@@ -78,6 +82,8 @@ export interface AuthorityPackSpec {
     | 'wikidata'
     | 'ndl'
     | 'norbert'
+    | 'huckbot5000'
+    | 'maxiricci7000'
     | 'pedb'
     | 'cedb'
     | 'project'
@@ -310,8 +316,24 @@ export const AUTHORITY_PACKS: AuthorityPackSpec[] = [
     relativePath: 'norbert/offices.ndjson',
     defaultTag: 'roleName',
   },
-  {
-    id: 'norbert-wiki-nt',
+    {
+      id: 'huckbot5000-translations',
+      label: 'Huckbot5000 office translations',
+      source: 'huckbot5000',
+      relativePath: 'huckbot5000/translations.ndjson',
+      // Gloss sidecar only — never a seed pack for tag-bomb matching.
+      defaultTag: '',
+    },
+    {
+      id: 'maxiricci7000-translations',
+      label: 'MaxiRicci7000 French office translations',
+      source: 'maxiricci7000',
+      relativePath: 'maxiricci7000/translations.ndjson',
+      // Gloss sidecar only — never a seed pack for tag-bomb matching.
+      defaultTag: '',
+    },
+    {
+      id: 'norbert-wiki-nt',
     label: 'Norbert wiki noble titles',
     source: 'norbert',
     relativePath: 'norbert/wiki-nt-links.ndjson',
@@ -663,6 +685,8 @@ export const AUTHORITY_SOURCE_ORDER = [
   'wikidata',
   'ndl',
   'norbert',
+  'huckbot5000',
+  'maxiricci7000',
   'project',
   'list',
 ] as const;
@@ -678,6 +702,8 @@ export const AUTHORITY_SOURCE_LABELS: Record<AuthoritySourceId, string> = {
   wikidata: 'Wikidata',
   ndl: 'NDL',
   norbert: 'Norbert',
+  huckbot5000: 'Huckbot5000',
+  maxiricci7000: 'MaxiRicci7000',
   project: 'Project tags',
   list: 'Imported list',
 };

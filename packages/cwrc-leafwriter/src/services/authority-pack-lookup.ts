@@ -22,6 +22,15 @@ import type { AuthorityPackContent } from '../autoTagging/packLoader';
 import { bareNorbertAuthorityValue } from '../autoTagging/norbertAuthorityId';
 import { clearNorbertExpanderCache } from '../autoTagging/norbertExpanderCache';
 import { clearAuthorityPackEnrichmentCaches } from '../autoTagging/nameBackfill';
+import {
+  applyHuckbotGlossToPackRow,
+  applyMaxiRicciGlossToPackRow,
+  clearOfficeGlossIndexCaches,
+  loadHuckbotGlossIndex,
+  loadMaxiRicciGlossIndex,
+  type FrenchOfficeGlossIndex,
+  type OfficeGlossIndex,
+} from '../autoTagging/officeGlossLookup';
 
 export interface PackRow {
   authorityId?: string;
@@ -146,8 +155,18 @@ export function searchPackContent(
   entityType: NamedEntityType,
   query: string,
   limit: number = MAX_RESULTS,
+  officeGlosses?: OfficeGlossIndex,
+  frenchOfficeGlosses?: FrenchOfficeGlossIndex,
 ): AuthorityLookupResult[] {
-  return searchPackRows(content, source, entityType, query, limit).map((match) => match.result);
+  return searchPackRows(
+    content,
+    source,
+    entityType,
+    query,
+    limit,
+    officeGlosses,
+    frenchOfficeGlosses,
+  ).map((match) => match.result);
 }
 
 export interface PackSearchMatch {
@@ -167,6 +186,8 @@ export function searchPackRows(
   entityType: NamedEntityType,
   query: string,
   limit: number = MAX_RESULTS,
+  officeGlosses?: OfficeGlossIndex,
+  frenchOfficeGlosses?: FrenchOfficeGlossIndex,
 ): PackSearchMatch[] {
   const trimmed = query.trim();
   if (!trimmed) return [];
@@ -199,6 +220,12 @@ export function searchPackRows(
       return;
     }
     if (!row.authorityId || !row.primaryName) return;
+    if (entityType === 'office' && officeGlosses?.size) {
+      row = applyHuckbotGlossToPackRow(row, source, officeGlosses);
+    }
+    if (entityType === 'office' && frenchOfficeGlosses) {
+      row = applyMaxiRicciGlossToPackRow(row, source, frenchOfficeGlosses);
+    }
 
     const strings = row.searchStrings?.length ? row.searchStrings : [row.primaryName];
     // Track which search string actually matched — for places it may be an
@@ -344,6 +371,7 @@ export function clearPackContentCache(packIds?: AuthorityPackId[]): void {
   clearNorbertExpanderCache();
   // Backfill enrichment indexes are built from the same packs.
   clearAuthorityPackEnrichmentCaches();
+  clearOfficeGlossIndexCaches();
   if (!packIds) {
     packContentCache.clear();
     return;
@@ -366,7 +394,19 @@ function makeSearch(spec: (typeof SERVICES)[number]) {
     if (!packId) return [];
     if (!(await installedPackIds()).has(packId)) return [];
     const content = await readPackCached(packId);
-    return searchPackContent(content, spec.source, entityType, query);
+    const officeGlosses =
+      entityType === 'office' ? await loadHuckbotGlossIndex(readPackCached) : undefined;
+    const frenchOfficeGlosses =
+      entityType === 'office' ? await loadMaxiRicciGlossIndex(readPackCached) : undefined;
+    return searchPackContent(
+      content,
+      spec.source,
+      entityType,
+      query,
+      undefined,
+      officeGlosses,
+      frenchOfficeGlosses,
+    );
   };
 }
 

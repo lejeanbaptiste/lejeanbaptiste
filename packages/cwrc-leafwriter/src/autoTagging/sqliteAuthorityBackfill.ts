@@ -38,6 +38,10 @@ import {
 import { suggestPersonNameSplit, suggestPersonRomanization } from '../plugins/personNameDefaults';
 import { autoRomanize } from '../utilities/romanize';
 import { norbertAuthorityLookupValues } from './norbertAuthorityId';
+import {
+  biographicalYearsFromMetadata,
+  finiteBiographicalYear,
+} from './personDates';
 import { fetchWikidataLifespan } from './wikidataDates';
 import { fetchWikidataNationality } from './wikidataNationality';
 import { fetchWikidataPlaceOfBirth } from './wikidataPlaceOfBirth';
@@ -60,6 +64,70 @@ const REF_SOURCE_BY_AUTHORITY: Record<string, 'cbdb' | 'dila' | 'norbert'> = {
   DILA: 'dila',
   NORBERT: 'norbert',
 };
+
+/**
+ * Clear user/Central lifespan rows that are known pollution: year `0`, or a
+ * year that matches none of the fine authority birth/death assertions we just
+ * collected (typical of minting dynasty/floruit pack intervals as user dates).
+ */
+async function repairPollutedUserLifespanDates(
+  store: EntityStore,
+  entityId: string,
+  fineDates: ReadonlyArray<{ startYear?: number | null; endYear?: number | null }>,
+): Promise<boolean> {
+  const summary = (await store.sqliteEntitySummary(entityId)) as {
+    assertions?: Array<{
+      element: string;
+      origin: string;
+      status: string;
+      value: string;
+    }>;
+  } | null;
+  if (!summary?.assertions?.length) return false;
+
+  const fineBirths = new Set<number>();
+  const fineDeaths = new Set<number>();
+  for (const date of fineDates) {
+    const birth = finiteBiographicalYear(date.startYear);
+    const death = finiteBiographicalYear(date.endYear);
+    if (birth != null) fineBirths.add(birth);
+    if (death != null) fineDeaths.add(death);
+  }
+
+  let changed = false;
+  const userBirth = summary.assertions.find(
+    (assertion) =>
+      assertion.element === 'birth' &&
+      assertion.origin === 'user' &&
+      assertion.status === 'active',
+  );
+  const userDeath = summary.assertions.find(
+    (assertion) =>
+      assertion.element === 'death' &&
+      assertion.origin === 'user' &&
+      assertion.status === 'active',
+  );
+
+  if (userBirth) {
+    const year = Number(userBirth.value);
+    const missing = !Number.isFinite(year) || year === 0;
+    const disagrees = fineBirths.size > 0 && Number.isFinite(year) && year !== 0 && !fineBirths.has(year);
+    if (missing || disagrees) {
+      await store.sqliteSetUserDate({ entityId, part: 'birth', year: null });
+      changed = true;
+    }
+  }
+  if (userDeath) {
+    const year = Number(userDeath.value);
+    const missing = !Number.isFinite(year) || year === 0;
+    const disagrees = fineDeaths.size > 0 && Number.isFinite(year) && year !== 0 && !fineDeaths.has(year);
+    if (missing || disagrees) {
+      await store.sqliteSetUserDate({ entityId, part: 'death', year: null });
+      changed = true;
+    }
+  }
+  return changed;
+}
 
 async function referenceEnrichmentsForEntity(
   entity: { authorities: Array<{ type: string; value: string }> },
@@ -532,11 +600,12 @@ export async function backfillEntitiesSqlite(
       const meta = enrichment.metadata;
       if (!meta) continue;
       const normalizedSource = source.trim().toUpperCase();
-      if (meta.startYear != null || meta.endYear != null) {
+      const bioYears = biographicalYearsFromMetadata(meta);
+      if (bioYears.startYear != null || bioYears.endYear != null) {
         dates.push({
           source: normalizedSource,
-          startYear: meta.startYear,
-          endYear: meta.endYear,
+          startYear: bioYears.startYear,
+          endYear: bioYears.endYear,
         });
       }
       for (const value of meta.nationality ?? []) {
@@ -627,44 +696,41 @@ export async function backfillEntitiesSqlite(
       (auth) => auth.type.trim().toUpperCase() === 'WIKIDATA',
     );
     if (wikidataIdno && liveWikidata) {
-      const needDates = dates.length === 0;
+      // Always ask Wikidata for P569/P570 when linked — pack floruit/index years
+      // must not suppress real birth/death.
       const needNationality = nationalities.length === 0;
       const needOrigin = origins.length === 0;
-      if (needDates || needNationality || needOrigin) {
-        const [lifespan, nationality, placeOfBirth] = await Promise.all([
-          needDates
-            ? fetchWikidataLifespan(wikidataIdno.value, fetchImpl).catch(() => null)
-            : Promise.resolve(null),
-          needNationality
-            ? fetchWikidataNationality(wikidataIdno.value, fetchImpl, projectLang).catch(() => null)
-            : Promise.resolve(null),
-          needOrigin
-            ? fetchWikidataPlaceOfBirth(wikidataIdno.value, fetchImpl, projectLang).catch(
-                () => null,
-              )
-            : Promise.resolve(null),
-        ]);
-        if (lifespan?.birthYear != null || lifespan?.deathYear != null) {
-          dates.push({
-            source: 'WIKIDATA',
-            startYear: lifespan?.birthYear,
-            endYear: lifespan?.deathYear,
-          });
-        }
-        for (const value of nationality ?? []) {
-          nationalities.push({
-            label: value.label,
-            ref: value.canonicalId,
-            source: 'WIKIDATA',
-          });
-        }
-        for (const value of placeOfBirth ?? []) {
-          origins.push({
-            label: value.label,
-            ref: value.canonicalId,
-            source: 'WIKIDATA',
-          });
-        }
+      const [lifespan, nationality, placeOfBirth] = await Promise.all([
+        fetchWikidataLifespan(wikidataIdno.value, fetchImpl).catch(() => null),
+        needNationality
+          ? fetchWikidataNationality(wikidataIdno.value, fetchImpl, projectLang).catch(() => null)
+          : Promise.resolve(null),
+        needOrigin
+          ? fetchWikidataPlaceOfBirth(wikidataIdno.value, fetchImpl, projectLang).catch(() => null)
+          : Promise.resolve(null),
+      ]);
+      const wikiBirth = finiteBiographicalYear(lifespan?.birthYear);
+      const wikiDeath = finiteBiographicalYear(lifespan?.deathYear);
+      if (wikiBirth != null || wikiDeath != null) {
+        dates.push({
+          source: 'WIKIDATA',
+          startYear: wikiBirth,
+          endYear: wikiDeath,
+        });
+      }
+      for (const value of nationality ?? []) {
+        nationalities.push({
+          label: value.label,
+          ref: value.canonicalId,
+          source: 'WIKIDATA',
+        });
+      }
+      for (const value of placeOfBirth ?? []) {
+        origins.push({
+          label: value.label,
+          ref: value.canonicalId,
+          source: 'WIKIDATA',
+        });
       }
 
       if (expandWikidataWorks) {
@@ -729,6 +795,7 @@ export async function backfillEntitiesSqlite(
       authorityCaches,
     });
     if (result.changed) entityChanged = true;
+    if (await repairPollutedUserLifespanDates(store, entity.id, dates)) entityChanged = true;
     addedThisEntity += result.namesAdded;
     if (entityChanged) entitiesUpdated++;
     namesAdded += addedThisEntity;

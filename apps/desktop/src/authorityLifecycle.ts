@@ -85,6 +85,10 @@ const PROFILE_SPECS: Record<
       'norbert-offices',
       // wiki-nt-links ships with the Norbert plugin / local compile, not the
       // GitHub chinese pack tarball — do not require it for packsReady.
+      // Gloss sidecar (gap-fill English for offices lacking a publishable pack gloss).
+      'huckbot5000-translations',
+      // French office gloss sidecar (MaxiRicci7000).
+      'maxiricci7000-translations',
       'chgis-places',
       'wikidata-persons-pre-ming',
       'wikidata-persons-ming',

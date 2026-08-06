@@ -75,6 +75,14 @@ import { dictionaryTag, type DictionaryEntry } from './dictionary';
 import { compoundWrapperSuggestions, seedSuggestions, suggestionsFromSeedMatches } from './seed';
 import { runGroupAndClean, type GroupAndCleanResult } from './groupAndClean';
 import { buildNobleTitleVocabulary } from './nobleTitleSpanParser';
+import {
+  autoResolveNobleTitles,
+  buildPackTitleNorbertIndex,
+  buildPersonTitleIndex,
+  nobleTitleMatchKey,
+} from './nobleTitleAutoResolve';
+import { formatNorbertAuthorityValue, norbertAuthorityLookupValues } from './norbertAuthorityId';
+import { cachedPackReader } from '../services/authority-pack-lookup';
 import { DisambiguationAiCache } from './disambiguationAiCache';
 import type { AiPromptProfile } from './aiPromptProfiles';
 import type { LlmClient } from './llmClient';
@@ -201,6 +209,98 @@ export async function reconcilePersonWrapperKeys(
     changed = true;
   }
   return changed;
+}
+
+/**
+ * Auto-resolve closed-set noble ranks and uniquely known titles
+ * (place+role+posthumous) against PEDB / Norbert packs before Disambiguate
+ * lists mentions. Returns true when the document was mutated.
+ */
+async function autoResolveNobleTitlesInDocument(
+  store: EntityStore,
+  doc: Document,
+): Promise<boolean> {
+  const personRecords = (await store.sqliteCandidateRecords('person')) as Array<{
+    id: string;
+    nobleTitles?: Array<{
+      fief?: string | null;
+      roleName?: string | null;
+      posthumousName?: string | null;
+    }>;
+  }> | null;
+  const pedbTitleIndex = buildPersonTitleIndex(personRecords ?? []);
+
+  const readPack = cachedPackReader();
+  let packTitleIndex = new Map<string, string[]>();
+  let packOfficeByRank = new Map<string, string>();
+  let vocabularyRanks: Set<string> | undefined;
+  if (readPack) {
+    try {
+      const wikiNt = await readPack('norbert-wiki-nt');
+      const wikiCandidates = [...iterateAuthorityNdjson(wikiNt)];
+      packTitleIndex = buildPackTitleNorbertIndex(wikiCandidates);
+      vocabularyRanks = buildNobleTitleVocabulary(wikiCandidates).ranks;
+    } catch {
+      // Wiki-nt pack is optional.
+    }
+    try {
+      const offices = await readPack('norbert-offices');
+      for (const candidate of iterateAuthorityNdjson(offices)) {
+        if (candidate.kind !== 'office') continue;
+        const name = candidate.primaryName?.trim();
+        if (!name) continue;
+        const authorityId = String(candidate.authorityId ?? '').trim();
+        if (!authorityId) continue;
+        const formatted = formatNorbertAuthorityValue('office', authorityId);
+        const existing = packOfficeByRank.get(name);
+        // Only keep ranks with a unique pack office hit.
+        if (existing && existing !== formatted) packOfficeByRank.set(name, '');
+        else if (!existing) packOfficeByRank.set(name, formatted);
+      }
+      for (const [rank, value] of [...packOfficeByRank.entries()]) {
+        if (!value) packOfficeByRank.delete(rank);
+      }
+    } catch {
+      // Offices pack is optional for rank refs.
+    }
+  }
+
+  const result = await autoResolveNobleTitles(doc, {
+    vocabularyRanks,
+    findOfficeIds: async (rank) => {
+      const candidates = await loadSqliteDisambiguationCandidates(store, 'roleName', rank, 'pedb');
+      if (candidates == null) return [];
+      return [
+        ...new Set(
+          candidates
+            .map((candidate) => candidate.localEntityId)
+            .filter((id): id is string => Boolean(id)),
+        ),
+      ];
+    },
+    findPackOfficeAuthority: (rank) => {
+      const authority = packOfficeByRank.get(rank);
+      return authority ? `NORBERT:${authority}` : null;
+    },
+    findPersonIdsByTitle: async ({ place, role, posthumous }) => {
+      const key = nobleTitleMatchKey(place, role, posthumous);
+      const pedbIds = pedbTitleIndex.get(key) ?? [];
+      if (pedbIds.length === 1) return pedbIds;
+      if (pedbIds.length > 1) return pedbIds;
+
+      const norbertIds = packTitleIndex.get(key) ?? [];
+      if (norbertIds.length !== 1) return pedbIds;
+      const local: string[] = [];
+      for (const value of norbertAuthorityLookupValues(norbertIds[0]!)) {
+        const ids = await store.sqliteFindAllByAuthority('person', 'NORBERT', value);
+        for (const id of ids) {
+          if (!local.includes(id)) local.push(id);
+        }
+      }
+      return local.length ? local : pedbIds;
+    },
+  });
+  return result.changed;
 }
 
 /**
@@ -1358,13 +1458,13 @@ export class AutoTaggingSession {
             ),
           ];
         };
-        if (
-          await reconcilePersonWrapperKeys(
-            doc,
-            findLocalIds,
-            async (entityId) => (await this.store!.sqliteEntitySummary(entityId)) != null,
-          )
-        ) {
+        let changed = await reconcilePersonWrapperKeys(
+          doc,
+          findLocalIds,
+          async (entityId) => (await this.store!.sqliteEntitySummary(entityId)) != null,
+        );
+        if (await autoResolveNobleTitlesInDocument(this.store, doc)) changed = true;
+        if (changed) {
           await this.persistDocument(doc);
           groups = collectMentions(doc, this.policy, documentId, options);
         }
@@ -1405,13 +1505,13 @@ export class AutoTaggingSession {
             ),
           ];
         };
-        if (
-          await reconcilePersonWrapperKeys(
-            doc,
-            findLocalIds,
-            async (entityId) => (await this.store!.sqliteEntitySummary(entityId)) != null,
-          )
-        ) {
+        let changed = await reconcilePersonWrapperKeys(
+          doc,
+          findLocalIds,
+          async (entityId) => (await this.store!.sqliteEntitySummary(entityId)) != null,
+        );
+        if (await autoResolveNobleTitlesInDocument(this.store, doc)) changed = true;
+        if (changed) {
           await this.persistDocument(doc);
           documentGroups = collectMentions(doc, this.policy, documentId, options);
         }
@@ -1716,6 +1816,30 @@ export class AutoTaggingSession {
         language: typed.lang,
         origin: 'authority',
         source: candidate.authorityIds?.[0]?.type,
+      });
+    }
+    // Persist pack / Huckbot English glosses onto office entities so display
+    // and AI placeholders see them via entity_translations.
+    const officeTranslation = candidate.authorityMetadata?.translation?.trim();
+    if (kind === 'office' && officeTranslation) {
+      await this.store.sqliteAddName({
+        entityId,
+        text: officeTranslation,
+        nameType: 'translation',
+        language: 'en',
+        origin: 'authority',
+        source: candidate.authorityIds?.[0]?.type ?? 'Huckbot5000',
+      });
+    }
+    const officeTranslationFr = candidate.authorityMetadata?.translationFr?.trim();
+    if (kind === 'office' && officeTranslationFr) {
+      await this.store.sqliteAddName({
+        entityId,
+        text: officeTranslationFr,
+        nameType: 'translation',
+        language: 'fr',
+        origin: 'authority',
+        source: 'MaxiRicci7000',
       });
     }
 
