@@ -27,6 +27,7 @@ const CHILD_TAGS = [
   'ruler',
   'era',
   'year',
+  'season',
   'month',
   'day',
   'gz',

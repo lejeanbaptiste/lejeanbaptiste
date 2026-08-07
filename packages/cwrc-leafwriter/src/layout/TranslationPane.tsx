@@ -99,6 +99,8 @@ import { autoRomanize } from '../utilities/romanize';
 import {
   adjustDatePrepositionsBeforeDateFields,
   adjustDatePrepositionsInText,
+  ensureDatePrepositionsBeforeDateFields,
+  ensureDatePrepositionsInText,
   dayLevelByDateIndex,
 } from './entityFields/adjustDatePrepositions';
 import { normalizeAiPlaceholders } from './entityFields/normalizeAiPlaceholders';
@@ -668,8 +670,12 @@ export const substituteDatePlaceholders = (
   lang?: string | null,
 ): string => {
   const dayLevels = dayLevelByDateIndex(dates);
-  const cleanedFragment = adjustDatePrepositionsInText(
-    normalizeAiPlaceholders(fragmentXml),
+  const cleanedFragment = ensureDatePrepositionsInText(
+    adjustDatePrepositionsInText(
+      normalizeAiPlaceholders(fragmentXml),
+      dayLevels,
+      lang,
+    ),
     dayLevels,
     lang,
   );
@@ -688,8 +694,12 @@ export const substituteDatePlaceholders = (
   }
 
   for (const textNode of textNodes) {
-    const text = adjustDatePrepositionsInText(
-      normalizeAiPlaceholders(textNode.textContent ?? ''),
+    const text = ensureDatePrepositionsInText(
+      adjustDatePrepositionsInText(
+        normalizeAiPlaceholders(textNode.textContent ?? ''),
+        dayLevels,
+        lang,
+      ),
       dayLevels,
       lang,
     );
@@ -723,6 +733,7 @@ export const substituteDatePlaceholders = (
   }
 
   adjustDatePrepositionsBeforeDateFields(root, lang);
+  ensureDatePrepositionsBeforeDateFields(root, lang);
   return root.innerHTML;
 };
 

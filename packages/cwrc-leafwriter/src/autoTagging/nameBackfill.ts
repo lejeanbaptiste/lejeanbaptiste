@@ -57,6 +57,12 @@ export interface NameBackfillResult {
   namesAdded: number;
   skippedNoAuthority: number;
   cancelled: boolean;
+  /** Norbert↔CBDB/DILA/Wikidata idnos attached during this run. */
+  bridgeLinksAttached?: number;
+  /** Same-name duplicate cards merged because a bridge target was already claimed. */
+  bridgeDuplicatesMerged?: number;
+  /** Bridge targets owned by a differently-named person (needs manual review). */
+  bridgeConflicts?: number;
 }
 
 /** Same filter as link-time pack ingestion: skip primary (already the headword). */

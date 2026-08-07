@@ -91,3 +91,8 @@ export function useDateAuthority(enabled: boolean, civ: readonly string[] = defa
 export function isDateAuthorityAvailable(): boolean {
   return isCjkDatesPythonAvailable() && isCjkDatesEnabled();
 }
+
+/** Sync peek at the in-memory authority cache (null until first successful load). */
+export function peekDateAuthorityCache(): DateAuthorityIndex | null {
+  return cachedIndex;
+}

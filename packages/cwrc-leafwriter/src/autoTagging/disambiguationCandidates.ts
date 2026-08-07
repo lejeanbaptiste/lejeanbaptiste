@@ -1454,24 +1454,34 @@ export function toAuthoritySourcedFields(
         'authority'
       ).toUpperCase();
       const meta = candidate.authorityMetadata;
-      const bioYears = meta
-        ? biographicalYearsFromMetadata(meta)
-        : isFilterOnlyDateSource(candidate.dateSource)
-          ? {}
-          : candidate.dateSource === 'floruit'
-            ? {}
-            : {
-                ...(candidate.startYear != null ? { startYear: candidate.startYear } : {}),
-                ...(candidate.endYear != null ? { endYear: candidate.endYear } : {}),
-              };
-      const floruitYears = meta
-        ? floruitYearsFromMetadata(meta)
+      const metaBioYears = meta ? biographicalYearsFromMetadata(meta) : {};
+      const metaFloruitYears = meta ? floruitYearsFromMetadata(meta) : {};
+      // A candidate's authorityMetadata may carry only ancillary data (e.g.
+      // nationality) with no date fields of its own — fall back to the
+      // candidate's own startYear/endYear rather than treating "meta present"
+      // as "meta is authoritative for dates".
+      const hasMetaYears =
+        metaBioYears.startYear != null ||
+        metaBioYears.endYear != null ||
+        metaFloruitYears.startYear != null ||
+        metaFloruitYears.endYear != null;
+      const fallbackYears = isFilterOnlyDateSource(candidate.dateSource)
+        ? {}
         : candidate.dateSource === 'floruit'
+          ? {}
+          : {
+              ...(candidate.startYear != null ? { startYear: candidate.startYear } : {}),
+              ...(candidate.endYear != null ? { endYear: candidate.endYear } : {}),
+            };
+      const fallbackFloruitYears =
+        candidate.dateSource === 'floruit'
           ? {
               ...(candidate.startYear != null ? { startYear: candidate.startYear } : {}),
               ...(candidate.endYear != null ? { endYear: candidate.endYear } : {}),
             }
           : {};
+      const bioYears = hasMetaYears ? metaBioYears : fallbackYears;
+      const floruitYears = hasMetaYears ? metaFloruitYears : fallbackFloruitYears;
       const asFloruit = Boolean(floruitYears.startYear != null || floruitYears.endYear != null);
       const years = asFloruit ? floruitYears : bioYears;
       return {

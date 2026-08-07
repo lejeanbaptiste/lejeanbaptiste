@@ -13,6 +13,7 @@ import {
 } from './dateGloss';
 import {
   getDateMonthSpanStyle,
+  getDateShowAttrBrackets,
   getDateWesternDisplayMode,
 } from './scholarlyConventions';
 
@@ -42,12 +43,14 @@ export const serializeDateParts = (input: DateGlossInput): string =>
     ruler: input.ruler ?? undefined,
     era: input.era ?? undefined,
     year: input.year ?? undefined,
+    season: input.season ?? undefined,
     month: input.month ?? undefined,
     intercalary: input.intercalary || undefined,
     day: input.day ?? undefined,
     gz: input.gz ?? undefined,
     nmdGz: input.nmdGz ?? undefined,
     lp: input.lp ?? undefined,
+    attrs: input.attrs ?? undefined,
     when: input.when ?? undefined,
     notBefore: input.notBefore ?? undefined,
     notAfter: input.notAfter ?? undefined,
@@ -72,12 +75,14 @@ export const renderDateFieldContent = (
   lang?: string | null,
   mode?: DateWesternDisplayMode,
   monthSpanStyle?: DateMonthSpanStyle,
+  showAttrBrackets?: boolean,
 ): void => {
   const tokens = formatDateGlossTokens(
     input,
     lang,
     mode ?? getDateWesternDisplayMode(),
     monthSpanStyle ?? getDateMonthSpanStyle(),
+    showAttrBrackets ?? getDateShowAttrBrackets(),
   );
   if (tokens.length > 0) {
     appendTokens(field, tokens);

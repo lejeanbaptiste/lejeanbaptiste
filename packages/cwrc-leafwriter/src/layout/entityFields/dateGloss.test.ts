@@ -171,6 +171,54 @@ describe('formatDateGlossPlain', () => {
     );
     expect(formatDateGlossPlain(input, 'en')).toContain('Southern Qi');
     expect(formatDateGlossPlain(input, 'en')).toContain('15 February 481');
+    expect(input.attrs?.year).toBe('3');
+    expect(input.attrs?.era).toBe('建元');
+  });
+
+  test('as-written gloss uses tag children only (六月壬子)', () => {
+    const input = dateGlossInputFromParts(
+      {
+        when: '0481-08-04',
+        year: '3',
+        month: '6',
+        day: '24',
+        gz: '49',
+      },
+      {
+        month: '六月',
+        gz: '壬子',
+      },
+      '六月壬子',
+    );
+    // Era is not written in the source — only month + gz children.
+    expect(formatDateGlossPlain(input, 'en')).toBe(
+      'month VI, day renzi (4 August 481)',
+    );
+    // Full attribute calendar (incl. era) goes in brackets when the setting is on.
+    const withEra: typeof input = {
+      ...input,
+      attrs: { ...input.attrs, era: '建元' },
+    };
+    expect(formatDateGlossPlain(withEra, 'en', 'translation+western', 'months', true)).toBe(
+      'month VI, day renzi [Jianyuan era, year 3, month VI, day 24, renzi] (4 August 481)',
+    );
+  });
+
+  test('season before month (夏四月)', () => {
+    expect(
+      formatDateGlossPlain(
+        {
+          season: '夏',
+          month: '四月',
+          notBefore: '0481-05-14',
+          notAfter: '0481-06-12',
+        },
+        'en',
+      ),
+    ).toBe('summer, month IV (May–June 481)');
+    expect(
+      formatDateGlossPlain({ season: '春', month: '正月' }, 'fr', 'translation'),
+    ).toBe('printemps, mois I');
   });
 
   test('resolved day: translation+western (default) appends Western in parentheses', () => {

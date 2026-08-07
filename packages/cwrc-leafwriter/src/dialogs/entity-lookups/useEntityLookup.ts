@@ -14,6 +14,10 @@ import {
   type LookupResolveDeps,
   type LookupSelectionInput,
 } from '../../autoTagging/lookupResolve';
+import {
+  attachPersonCrosswalkAuthorities,
+  loadNorbertPersonConcordance,
+} from '../../autoTagging/norbertPersonConcordance';
 import type { AuthorityPackId } from '../../autoTagging/packPaths';
 import { adoptFromCentralSqlite } from '../../autoTagging/sqliteBridgeOps';
 import { SQLITE_REQUIRED_LOOKUP_MESSAGE } from '../../autoTagging/sqliteRequired';
@@ -40,6 +44,8 @@ import {
 } from './store';
 import type { EntryLink } from '../../types/authority';
 import { parseAuthorityUri } from '../../autoTagging/lookupResolve';
+import type { EntityStore } from '../../autoTagging/entityStore';
+import type { SqlitePanelSummaryLike } from '../../autoTagging/sqliteSummary';
 
 /** Installed (non-virtual) authority packs, for concordance expansion. */
 const installedPackIds = async (): Promise<AuthorityPackId[]> => {
@@ -103,6 +109,28 @@ const resolveDeps = async (entityType: NamedEntityType): Promise<LookupResolveDe
   // the concordance scan is the slow part of resolve-on-select.
   const packIds = packIdsForEntityType(await installedPackIds(), entityType);
   return { store, packIds, readPackFile: readPackCached, projectLang };
+};
+
+/**
+ * Adopt / direct-link skips planLookupResolution, so Norbert↔CBDB links never
+ * land unless we attach them here from the concordance sidecar.
+ */
+const attachConcordanceAfterLink = async (
+  store: EntityStore,
+  entityId: string,
+  entityType: NamedEntityType,
+  readPackFile: LookupResolveDeps['readPackFile'],
+): Promise<void> => {
+  if (entityType !== 'person' || !readPackFile) return;
+  try {
+    const summary = (await store.sqliteEntitySummary(entityId)) as SqlitePanelSummaryLike | null;
+    const authorities = summary?.authorities ?? [];
+    if (authorities.length === 0) return;
+    const concordance = await loadNorbertPersonConcordance(readPackFile);
+    await attachPersonCrosswalkAuthorities(store, entityId, authorities, { concordance });
+  } catch (error) {
+    log.warn(`Norbert concordance attach after lookup failed: ${String(error)}`);
+  }
 };
 
 export const useEntityLookup = () => {
@@ -228,12 +256,23 @@ export const useEntityLookup = () => {
         const pedbId = await adoptCentralEntity(centralId);
         if (pedbId) {
           await attachExtras(pedbId);
+          const deps = await resolveDeps(lookupType);
+          if (deps) await attachConcordanceAfterLink(deps.store, pedbId, lookupType, deps.readPackFile);
           closeWith(buildLink({ name: active.label, uri: active.uri, repository: 'entity-database', key: pedbId }));
           return;
         }
         // Central database unreachable — fall through to a plain URI link.
       } else {
         await attachExtras(active.internal.id);
+        const deps = await resolveDeps(lookupType);
+        if (deps) {
+          await attachConcordanceAfterLink(
+            deps.store,
+            active.internal.id,
+            lookupType,
+            deps.readPackFile,
+          );
+        }
         closeWith(buildLink({ name: active.label, uri: active.uri, repository: 'entity-database', key: active.internal.id }));
         return;
       }

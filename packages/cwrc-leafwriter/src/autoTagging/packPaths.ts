@@ -35,6 +35,8 @@ export type AuthorityPackId =
   | 'norbert-person-wrappers'
   | 'norbert-offices'
   | 'norbert-wiki-nt'
+  /** Precompiled Norbert ↔ CBDB/DILA/Wikidata person links. */
+  | 'norbert-concordance'
   | 'noble-title-filter'
   /** Gap-fill English office glosses (sidecar — not a tag-bomb seed pack). */
   | 'huckbot5000-translations'
@@ -293,6 +295,14 @@ export const AUTHORITY_PACKS: AuthorityPackSpec[] = [
     source: 'ndl',
     relativePath: 'ndl/works.ndjson',
     defaultTag: 'title',
+  },
+  {
+    id: 'norbert-concordance',
+    label: 'Norbert person concordance',
+    source: 'norbert',
+    relativePath: 'norbert/concordance.ndjson',
+    // Sidecar only — never a seed pack for tag-bomb matching.
+    defaultTag: '',
   },
   {
     id: 'norbert-persons',

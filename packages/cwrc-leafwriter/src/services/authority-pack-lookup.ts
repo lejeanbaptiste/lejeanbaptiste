@@ -21,6 +21,7 @@ import type { AuthorityCandidate } from '../autoTagging/authority';
 import type { AuthorityPackContent } from '../autoTagging/packLoader';
 import { bareNorbertAuthorityValue } from '../autoTagging/norbertAuthorityId';
 import { clearNorbertExpanderCache } from '../autoTagging/norbertExpanderCache';
+import { clearNorbertPersonConcordanceCache } from '../autoTagging/norbertPersonConcordance';
 import { clearAuthorityPackEnrichmentCaches } from '../autoTagging/nameBackfill';
 import {
   applyHuckbotGlossToPackRow,
@@ -383,6 +384,7 @@ export function clearPackContentCache(packIds?: AuthorityPackId[]): void {
   // Backfill enrichment indexes are built from the same packs.
   clearAuthorityPackEnrichmentCaches();
   clearOfficeGlossIndexCaches();
+  clearNorbertPersonConcordanceCache();
   if (!packIds) {
     packContentCache.clear();
     return;

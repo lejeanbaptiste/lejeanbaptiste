@@ -10,9 +10,13 @@
  * - Ruler: always "Emperor {Pinyin}" / French "l’empereur {Pinyin}".
  * - Era: "{Pinyin} era" / French "l’ère {Pinyin}".
  * - Year: "year N" / French "l’an N".
+ * - Season: spring / summer / autumn / winter (春夏秋冬) when a `<season>` child is present.
  * - Months: Roman numerals; intercalary → "intercalary month I".
  * - Ganzhi: concatenated toneless pinyin, italicised by the field renderer.
  * - 朔 → "new moon"; 晦 → "new moon eve".
+ * - As-written gloss uses tag *children* only (e.g. 六月壬子 → month VI, day renzi).
+ * - Optional brackets can show the full interpolated calendar from attributes
+ *   (era … day/gz; no dynasty/emperor) — see scholarly `dateShowAttrBrackets`.
  * - Western date from Sanmiao `@when` when day-level and YYYY-MM-DD is present.
  *   Display mode (translation+western / translation / western) is a scholarly
  *   convention preference — see {@link DateWesternDisplayMode}.
@@ -26,6 +30,7 @@ import {
   sexagenaryIndexToName,
   sexagenaryToPinyin,
 } from '../../dateAuthority/chineseNumerals';
+import { peekDateAuthorityCache } from '../../dateAuthority/useDateAuthority';
 import { autoRomanize } from '../../utilities/romanize';
 
 export type DateGlossLang = 'en' | 'fr';
@@ -65,16 +70,17 @@ export const isDateMonthSpanStyle = (value: unknown): value is DateMonthSpanStyl
   value === 'months' || value === 'full';
 
 
-/** Structured fields extracted from a Sanmiao `<date>` (parse children + attrs). */
-export interface DateGlossInput {
-  /** Dynasty label as written (e.g. 南齊). */
-  dyn?: string | null;
-  /** Ruler / temple name as written (e.g. 太祖). */
-  ruler?: string | null;
-  /** Era / 年號 as written (e.g. 建元). */
+/**
+ * Calendar slots used for the as-written gloss and for attribute brackets.
+ * Brackets never include dynasty / emperor.
+ */
+export interface DateGlossCalendarParts {
+  /** Era / 年號 (e.g. 建元). */
   era?: string | null;
   /** Year number or expression (3, 元年, 三年). */
   year?: string | number | null;
+  /** Season as written (春夏秋冬). */
+  season?: string | null;
   /** Month number or expression. */
   month?: string | number | null;
   /** True when 閏 / intercalary=1. */
@@ -87,6 +93,24 @@ export interface DateGlossInput {
   nmdGz?: string | null;
   /** Lunar phase: 朔 / 晦, or attr 0 / -1. */
   lp?: string | null;
+}
+
+/**
+ * Structured fields extracted from a Sanmiao `<date>`.
+ * Top-level calendar slots are the as-written gloss (tag children).
+ * `attrs` holds the full interpolated calendar for optional brackets.
+ */
+export interface DateGlossInput extends DateGlossCalendarParts {
+  /** Dynasty label as written (e.g. 南齊). */
+  dyn?: string | null;
+  /** Ruler / temple name as written (e.g. 太祖). */
+  ruler?: string | null;
+  /**
+   * Full interpolated calendar from Sanmiao attributes (+ era from child or
+   * `era_id` lookup). Used only when the Dates setting shows attribute brackets.
+   * Never includes dynasty / emperor.
+   */
+  attrs?: DateGlossCalendarParts | null;
   /** Sanmiao ISO `@when` (e.g. 0481-02-15). */
   when?: string | null;
   /** Month-only span start (Sanmiao `notBefore`, e.g. 0213-03-10). */
@@ -215,6 +239,29 @@ const normalizeLp = (lp: string | null | undefined): '朔' | '晦' | null => {
   return null;
 };
 
+const SEASON_GLOSS: Record<string, { en: string; fr: string }> = {
+  春: { en: 'spring', fr: 'printemps' },
+  夏: { en: 'summer', fr: 'été' },
+  秋: { en: 'autumn', fr: 'automne' },
+  冬: { en: 'winter', fr: 'hiver' },
+};
+
+/** Map 春夏秋冬 (or already-English/French) to a vernacular season word. */
+export const glossSeason = (
+  season: string | null | undefined,
+  lang: DateGlossLang,
+): string | null => {
+  const raw = season?.trim();
+  if (!raw) return null;
+  const mapped = SEASON_GLOSS[raw];
+  if (mapped) return mapped[lang];
+  const lower = raw.toLowerCase();
+  for (const entry of Object.values(SEASON_GLOSS)) {
+    if (entry.en === lower || entry.fr === lower) return entry[lang];
+  }
+  return null;
+};
+
 const ganzhiPinyin = (value: string | null | undefined): string | null => {
   const trimmed = value?.trim();
   if (!trimmed) return null;
@@ -327,52 +374,48 @@ const pushGanzhi = (tokens: DateGlossToken[], pinyin: string): void => {
   tokens.push({ kind: 'ganzhi', text: pinyin });
 };
 
-/**
- * Build vernacular gloss tokens for a structured East Asian date.
- * Returns an empty array when nothing useful can be said (caller may fall back
- * to the surface / a temporary AI stand-in).
- *
- * When `mode` is `western` and a resolvable Western conversion exists (day
- * `@when`, or month span), the entire gloss is replaced with `[…]`. Without a
- * conversion, the East Asian gloss is always kept (never empty brackets).
- */
-export const formatDateGlossTokens = (
-  input: DateGlossInput,
-  lang: string | null | undefined = 'en',
-  mode: DateWesternDisplayMode = DEFAULT_DATE_WESTERN_DISPLAY,
-  monthSpanStyle: DateMonthSpanStyle = DEFAULT_DATE_MONTH_SPAN_STYLE,
-): DateGlossToken[] => {
-  const bucket = dateGlossLang(lang);
-  const year = parseIntish(input.year);
-  const month = parseIntish(input.month);
-  const day = parseIntish(input.day);
-  const intercalary = Boolean(input.intercalary);
-  const lp = normalizeLp(input.lp);
-  const gzPy = ganzhiPinyin(resolveGzLabel(input.gz) ?? input.gz);
-  const nmdPy = ganzhiPinyin(resolveGzLabel(input.nmdGz) ?? input.nmdGz);
+type CalendarSlice = {
+  dyn?: string | null;
+  ruler?: string | null;
+} & DateGlossCalendarParts;
 
-  const dyn = input.dyn?.trim() ? romanizeDynasty(input.dyn.trim(), bucket) : null;
-  const ruler = input.ruler?.trim() ? romanizeName(input.ruler.trim()) : null;
-  const era = input.era?.trim() ? romanizeName(input.era.trim()) : null;
+type ChunkFacts = {
+  dyn: string | null;
+  ruler: string | null;
+  era: string | null;
+  year: number | null;
+  season: string | null;
+  month: number | null;
+  day: number | null;
+  intercalary: boolean;
+  lp: '朔' | '晦' | null;
+  gzPy: string | null;
+  nmdPy: string | null;
+  bucket: DateGlossLang;
+};
 
-  // nmd_gz alone is Sanmiao month-span metadata (sexagenary of that lunar month's
-  // 朔), not a day reading — month-only dates still carry it with notBefore/notAfter.
-  // Count it as day-level only together with 朔/晦 (lp), or when a day/gz is present.
-  const dayLevel = Boolean(day != null || gzPy || lp);
-  const hasStructure = Boolean(
-    dyn || ruler || era || year != null || month != null || dayLevel || nmdPy,
-  );
-  if (!hasStructure) return [];
-
-  const tokens: DateGlossToken[] = [];
-  // Prefixed after we know the first slot (French elision: L’an / L’ère / L’empereur).
-  const chunks: Array<() => void> = [];
+const buildChunkFactories = (facts: ChunkFacts): Array<(tokens: DateGlossToken[]) => void> => {
+  const {
+    dyn,
+    ruler,
+    era,
+    year,
+    season,
+    month,
+    day,
+    intercalary,
+    lp,
+    gzPy,
+    nmdPy,
+    bucket,
+  } = facts;
+  const chunks: Array<(tokens: DateGlossToken[]) => void> = [];
 
   if (dyn) {
-    chunks.push(() => pushText(tokens, dyn));
+    chunks.push((tokens) => pushText(tokens, dyn));
   }
   if (ruler) {
-    chunks.push(() =>
+    chunks.push((tokens) =>
       pushText(
         tokens,
         bucket === 'fr' ? `l’empereur ${ruler}` : `Emperor ${ruler}`,
@@ -380,18 +423,21 @@ export const formatDateGlossTokens = (
     );
   }
   if (era) {
-    chunks.push(() =>
+    chunks.push((tokens) =>
       pushText(tokens, bucket === 'fr' ? `l’ère ${era}` : `${era} era`),
     );
   }
   if (year != null) {
-    chunks.push(() =>
+    chunks.push((tokens) =>
       pushText(tokens, bucket === 'fr' ? `l’an ${year}` : `year ${year}`),
     );
   }
+  if (season) {
+    chunks.push((tokens) => pushText(tokens, season));
+  }
   if (month != null) {
     const roman = ROMAN_MONTHS[month] ?? String(month);
-    chunks.push(() => {
+    chunks.push((tokens) => {
       if (bucket === 'fr') {
         pushText(
           tokens,
@@ -406,9 +452,8 @@ export const formatDateGlossTokens = (
     });
   }
 
-  // Lunar phase + ganzhi: distinguish 朔 alone vs nmdgz+later gz.
   if (lp === '朔' && nmdPy && gzPy && nmdPy !== gzPy) {
-    chunks.push(() => {
+    chunks.push((tokens) => {
       if (bucket === 'fr') {
         pushText(tokens, 'nouvelle lune le ');
         pushGanzhi(tokens, nmdPy);
@@ -423,7 +468,7 @@ export const formatDateGlossTokens = (
     });
   } else if (lp === '朔' && (nmdPy || gzPy)) {
     const moonGz = nmdPy ?? gzPy!;
-    chunks.push(() => {
+    chunks.push((tokens) => {
       if (bucket === 'fr') {
         if (day != null) {
           pushText(tokens, `jour ${day}, `);
@@ -445,7 +490,7 @@ export const formatDateGlossTokens = (
       }
     });
   } else if (lp === '晦') {
-    chunks.push(() => {
+    chunks.push((tokens) => {
       if (day != null || gzPy) {
         if (day != null) {
           pushText(tokens, bucket === 'fr' ? `jour ${day}` : `day ${day}`);
@@ -467,7 +512,7 @@ export const formatDateGlossTokens = (
       }
     });
   } else if (day != null || gzPy) {
-    chunks.push(() => {
+    chunks.push((tokens) => {
       if (day != null && gzPy) {
         pushText(tokens, bucket === 'fr' ? `jour ${day}, ` : `day ${day}, `);
         pushGanzhi(tokens, gzPy);
@@ -480,11 +525,111 @@ export const formatDateGlossTokens = (
     });
   }
 
-  if (chunks.length === 0) return [];
+  return chunks;
+};
+
+const calendarFacts = (
+  slice: CalendarSlice,
+  bucket: DateGlossLang,
+  includeDynRuler: boolean,
+): ChunkFacts => {
+  const year = parseIntish(slice.year);
+  const month = parseIntish(slice.month);
+  const day = parseIntish(slice.day);
+  const intercalary = Boolean(slice.intercalary);
+  const lp = normalizeLp(slice.lp);
+  const gzPy = ganzhiPinyin(resolveGzLabel(slice.gz) ?? slice.gz);
+  const nmdPy = ganzhiPinyin(resolveGzLabel(slice.nmdGz) ?? slice.nmdGz);
+  const dyn =
+    includeDynRuler && slice.dyn?.trim()
+      ? romanizeDynasty(slice.dyn.trim(), bucket)
+      : null;
+  const ruler =
+    includeDynRuler && slice.ruler?.trim()
+      ? romanizeName(slice.ruler.trim())
+      : null;
+  const era = slice.era?.trim() ? romanizeName(slice.era.trim()) : null;
+  const season = glossSeason(slice.season, bucket);
+  return {
+    dyn,
+    ruler,
+    era,
+    year,
+    season,
+    month,
+    day,
+    intercalary,
+    lp,
+    gzPy,
+    nmdPy,
+    bucket,
+  };
+};
+
+const hasCalendarStructure = (facts: ChunkFacts): boolean =>
+  Boolean(
+    facts.dyn ||
+      facts.ruler ||
+      facts.era ||
+      facts.year != null ||
+      facts.season ||
+      facts.month != null ||
+      facts.day != null ||
+      facts.gzPy ||
+      facts.lp ||
+      facts.nmdPy,
+  );
+
+const appendChunkWriters = (
+  tokens: DateGlossToken[],
+  writers: Array<(tokens: DateGlossToken[]) => void>,
+): void => {
+  writers.forEach((write, index) => {
+    if (index > 0) pushText(tokens, ', ');
+    write(tokens);
+  });
+};
+
+/**
+ * Build vernacular gloss tokens for a structured East Asian date.
+ * Returns an empty array when nothing useful can be said (caller may fall back
+ * to the surface / a temporary AI stand-in).
+ *
+ * When `mode` is `western` and a resolvable Western conversion exists (day
+ * `@when`, or month span), the entire gloss is replaced with `[…]`. Without a
+ * conversion, the East Asian gloss is always kept (never empty brackets).
+ *
+ * When `showAttrBrackets` is on and `input.attrs` has a full calendar reading,
+ * that reading is appended in `[…]` after the as-written gloss (and before any
+ * Western parentheses). Brackets omit dynasty / emperor.
+ */
+export const formatDateGlossTokens = (
+  input: DateGlossInput,
+  lang: string | null | undefined = 'en',
+  mode: DateWesternDisplayMode = DEFAULT_DATE_WESTERN_DISPLAY,
+  monthSpanStyle: DateMonthSpanStyle = DEFAULT_DATE_MONTH_SPAN_STYLE,
+  showAttrBrackets = false,
+): DateGlossToken[] => {
+  const bucket = dateGlossLang(lang);
+  const writtenFacts = calendarFacts(input, bucket, true);
+  const hasWritten = hasCalendarStructure(writtenFacts);
+  // Attr-only dates (no tag children): use attrs for the main gloss so conversion still works.
+  const mainFacts = hasWritten
+    ? writtenFacts
+    : input.attrs
+      ? calendarFacts(input.attrs, bucket, false)
+      : writtenFacts;
+  if (!hasCalendarStructure(mainFacts)) return [];
+
+  // Day vs month granularity follows what was actually written when present.
+  const dayLevel = Boolean(
+    (hasWritten ? writtenFacts : mainFacts).day != null ||
+      (hasWritten ? writtenFacts : mainFacts).gzPy ||
+      (hasWritten ? writtenFacts : mainFacts).lp,
+  );
 
   const westernDay =
     dayLevel && mode !== 'translation' ? formatWesternWhen(input.when, bucket) : null;
-  // Month-only (or year/month without day markers): Sanmiao span when conversion is on.
   const westernSpan =
     !dayLevel && mode !== 'translation'
       ? formatWesternMonthSpan(input.notBefore, input.notAfter, bucket, monthSpanStyle)
@@ -495,10 +640,25 @@ export const formatDateGlossTokens = (
     return [{ kind: 'text', text: `[${western}]` }];
   }
 
-  chunks.forEach((write, index) => {
-    if (index > 0) pushText(tokens, ', ');
-    write();
-  });
+  const tokens: DateGlossToken[] = [];
+  appendChunkWriters(tokens, buildChunkFactories(mainFacts));
+
+  // Brackets only when the as-written gloss is distinct and attrs carry a full reading.
+  if (showAttrBrackets && hasWritten && input.attrs) {
+    const attrFacts = calendarFacts(input.attrs, bucket, false);
+    if (hasCalendarStructure(attrFacts)) {
+      const bracketTokens: DateGlossToken[] = [];
+      appendChunkWriters(bracketTokens, buildChunkFactories(attrFacts));
+      if (bracketTokens.length > 0) {
+        pushText(tokens, ' [');
+        for (const token of bracketTokens) {
+          if (token.kind === 'ganzhi') pushGanzhi(tokens, token.text);
+          else pushText(tokens, token.text);
+        }
+        pushText(tokens, ']');
+      }
+    }
+  }
 
   if (mode === 'translation+western' && western) {
     pushText(tokens, ` (${western})`);
@@ -521,15 +681,28 @@ export const formatDateGlossPlain = (
   lang: string | null | undefined = 'en',
   mode: DateWesternDisplayMode = DEFAULT_DATE_WESTERN_DISPLAY,
   monthSpanStyle: DateMonthSpanStyle = DEFAULT_DATE_MONTH_SPAN_STYLE,
+  showAttrBrackets = false,
 ): string =>
-  formatDateGlossTokens(input, lang, mode, monthSpanStyle)
+  formatDateGlossTokens(input, lang, mode, monthSpanStyle, showAttrBrackets)
     .map((token) => token.text)
     .join('')
     .trim();
 
+const resolveEraLabelFromId = (eraId: string | undefined): string | undefined => {
+  if (!eraId) return undefined;
+  const authority = peekDateAuthorityCache();
+  const era = authority?.eras.find((entry) => String(entry.eraId) === eraId);
+  const label = era?.label?.trim();
+  return label || undefined;
+};
+
 /**
  * Build {@link DateGlossInput} from TEI/Sanmiao attributes + parse-child map.
  * Child tags: dyn, ruler, era, year, month, day, gz, sexYear, int, lp, nmdgz.
+ *
+ * As-written gloss fields come from **children only**. Attribute values (plus
+ * era from the era child or `era_id` lookup) go on `attrs` for optional brackets.
+ * `@when` / `notBefore` / `notAfter` stay on the top-level input for Western conversion.
  */
 export const dateGlossInputFromParts = (
   attrs: Record<string, string | undefined | null>,
@@ -545,22 +718,49 @@ export const dateGlossInputFromParts = (
     return value || undefined;
   };
 
-  const intercalary =
-    attr('intercalary') === '1' ||
-    Boolean(child('int')) ||
-    /閏|闰/.test(child('month') ?? '');
+  const writtenIntercalary =
+    Boolean(child('int')) || /閏|闰/.test(child('month') ?? '');
+  const attrIntercalary = attr('intercalary') === '1';
+
+  const eraFromChild = child('era');
+  const eraForAttrs = eraFromChild ?? resolveEraLabelFromId(attr('era_id'));
+
+  const attrParts: DateGlossCalendarParts = {
+    era: eraForAttrs,
+    year: attr('year'),
+    month: attr('month'),
+    intercalary: attrIntercalary || undefined,
+    day: attr('day'),
+    gz: attr('gz'),
+    // Keep nmd_gz on attrs for completeness; gloss treats it as day-level only with lp.
+    nmdGz: attr('nmd_gz'),
+    lp: attr('lp'),
+  };
+
+  const hasAttrCalendar = Boolean(
+    attrParts.era ||
+      attrParts.year ||
+      attrParts.month ||
+      attrParts.day ||
+      attrParts.gz ||
+      attrParts.lp ||
+      attrParts.nmdGz ||
+      attrParts.intercalary,
+  );
 
   return {
-    dyn: child('dyn') ?? undefined,
-    ruler: child('ruler') ?? undefined,
-    era: child('era') ?? undefined,
-    year: child('year') ?? attr('year'),
-    month: child('month') ?? attr('month'),
-    intercalary,
-    day: child('day') ?? attr('day'),
-    gz: child('gz') ?? attr('gz'),
-    nmdGz: child('nmdgz') ?? attr('nmd_gz'),
-    lp: child('lp') ?? attr('lp'),
+    dyn: child('dyn'),
+    ruler: child('ruler'),
+    era: eraFromChild,
+    year: child('year'),
+    season: child('season'),
+    month: child('month'),
+    intercalary: writtenIntercalary || undefined,
+    day: child('day'),
+    gz: child('gz'),
+    nmdGz: child('nmdgz'),
+    lp: child('lp'),
+    attrs: hasAttrCalendar ? attrParts : undefined,
     when: attr('when'),
     notBefore: attr('notBefore'),
     notAfter: attr('notAfter'),

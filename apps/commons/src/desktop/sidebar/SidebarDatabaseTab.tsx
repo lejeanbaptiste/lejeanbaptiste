@@ -1490,6 +1490,15 @@ export const SidebarDatabaseTab = ({ active = false }: SidebarDatabaseTabProps) 
           message: result.cancelled
             ? `Backfill cancelled — added ${result.namesAdded} name${result.namesAdded === 1 ? '' : 's'} across ${result.entitiesUpdated} entit${result.entitiesUpdated === 1 ? 'y' : 'ies'}.`
             : `Backfill complete for ${scope}: added ${result.namesAdded} name${result.namesAdded === 1 ? '' : 's'} across ${result.entitiesUpdated} entit${result.entitiesUpdated === 1 ? 'y' : 'ies'}.` +
+              (result.bridgeLinksAttached
+                ? ` Attached ${result.bridgeLinksAttached} Norbert bridge link${result.bridgeLinksAttached === 1 ? '' : 's'}.`
+                : '') +
+              (result.bridgeDuplicatesMerged
+                ? ` Merged ${result.bridgeDuplicatesMerged} same-name duplicate${result.bridgeDuplicatesMerged === 1 ? '' : 's'}.`
+                : '') +
+              (result.bridgeConflicts
+                ? ` ${result.bridgeConflicts} bridge conflict${result.bridgeConflicts === 1 ? '' : 's'} need review (different names sharing an authority id).`
+                : '') +
               (result.skippedNoAuthority > 0
                 ? ` Skipped ${result.skippedNoAuthority} person${result.skippedNoAuthority === 1 ? '' : 's'} with no authority id.`
                 : ''),

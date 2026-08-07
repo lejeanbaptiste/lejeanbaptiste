@@ -350,6 +350,8 @@
         "exampleSpanMonths": "January–February 187 / janvier–février 187",
         "spanFull": "Full span",
         "exampleSpanFull": "2 January–1 February 187 / 2 janvier–1 février 187",
+        "dateShowAttrBrackets": "Show full calendar from attributes in brackets",
+        "exampleAttrBrackets": "month VI, day renzi [Jianyuan era, year 3, month VI, day 24, renzi] (4 August 481)",
         "save": "Save",
         "saved": "Saved"
       },

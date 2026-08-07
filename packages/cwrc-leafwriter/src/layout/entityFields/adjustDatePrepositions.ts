@@ -5,6 +5,9 @@
  * by / until / before / in / on / … immediately before `{{date:N}}`. We only
  * rewrite the in↔on pair (French en↔le) so it matches day vs year/month
  * granularity. All other prepositions are left alone.
+ *
+ * When a date sits at sentence start with no temporal word before it, we
+ * insert In/On (En/Le) automatically.
  */
 
 import { dateGlossIsDayLevel, dateGlossLang, type DateGlossInput } from './dateGloss';
@@ -15,6 +18,14 @@ const ADJUSTABLE = {
   en: { day: 'On', month: 'In', pattern: 'In|On' },
   fr: { day: 'Le', month: 'En', pattern: 'En|Le' },
 } as const;
+
+/** Any temporal word that already covers the slot — do not auto-insert In/On. */
+const TEMPORAL_AT_END = {
+  en: 'In|On|by|until|before|after|from|since|during|around|about',
+  fr: "En|Le|dès|avant|après|depuis|jusqu(?:'|\\u2019)?à?|pendant|vers|autour",
+} as const;
+
+const SENTENCE_END = /[.!?。！？…]["'”’»)\]]*$/u;
 
 const matchCase = (sample: string, canonical: string): string => {
   if (!sample) return canonical;
@@ -61,6 +72,51 @@ export const adjustDatePrepositionsInText = (
   });
 };
 
+const hasTemporalAtEnd = (text: string, lang: 'en' | 'fr'): boolean =>
+  new RegExp(`(?:^|[^\\p{L}])(?:${TEMPORAL_AT_END[lang]})\\s*$`, 'iu').test(text);
+
+const isSentenceStartBefore = (before: string): boolean => {
+  const trimmed = before.replace(/\s+$/u, '');
+  if (!trimmed) return true;
+  return SENTENCE_END.test(trimmed);
+};
+
+/**
+ * Insert In/On (En/Le) before `{{date:N}}` when the placeholder starts a
+ * sentence and no temporal preposition is already present.
+ */
+export const ensureDatePrepositionsInText = (
+  text: string,
+  dayLevelByIndex: Map<number, boolean>,
+  lang: string | null | undefined = 'en',
+): string => {
+  if (!text.includes('{{date:')) return text;
+  const bucket = dateGlossLang(lang);
+  const re = /\{\{date:(\d+)\}\}/g;
+  let result = '';
+  let lastIndex = 0;
+  let match: RegExpExecArray | null;
+  // eslint-disable-next-line no-cond-assign
+  while ((match = re.exec(text))) {
+    const index = parseInt(match[1]!, 10);
+    const before = text.slice(0, match.index);
+    result += text.slice(lastIndex, match.index);
+    if (
+      dayLevelByIndex.has(index) &&
+      isSentenceStartBefore(before) &&
+      !hasTemporalAtEnd(before, bucket)
+    ) {
+      const prep = preferredPreposition(Boolean(dayLevelByIndex.get(index)), bucket);
+      const needsSpace = before.length > 0 && !/\s$/u.test(before);
+      result += `${needsSpace ? ' ' : ''}${prep} `;
+    }
+    result += match[0];
+    lastIndex = re.lastIndex;
+  }
+  result += text.slice(lastIndex);
+  return result;
+};
+
 /**
  * After date fields are substituted, rewrite In/On (En/Le) in the text node
  * immediately preceding each `ref[type="ljb-date"]` using that field's parts.
@@ -93,5 +149,42 @@ export const adjustDatePrepositionsBeforeDateFields = (
     if (kept === text) continue;
     const wanted = preferredPreposition(dateGlossIsDayLevel(parts), bucket);
     prev.textContent = `${kept}${matchCase(prep, wanted)}${trailing}`;
+  }
+};
+
+/**
+ * Insert In/On (En/Le) before a date field when it starts a sentence and no
+ * temporal word precedes it.
+ */
+export const ensureDatePrepositionsBeforeDateFields = (
+  root: ParentNode,
+  lang?: string | null,
+): void => {
+  const bucket = dateGlossLang(lang);
+  const fields = Array.from(
+    (root as ParentNode & { querySelectorAll: typeof Element.prototype.querySelectorAll }).querySelectorAll?.(
+      'ref[type="ljb-date"]',
+    ) ?? [],
+  );
+  const doc = (root as Node).ownerDocument ?? document;
+
+  for (const field of fields) {
+    const parts = readDatePartsFromField(field);
+    if (!parts) continue;
+    const wanted = preferredPreposition(dateGlossIsDayLevel(parts), bucket);
+    const prev = field.previousSibling;
+
+    if (prev && prev.nodeType === Node.TEXT_NODE) {
+      const text = prev.textContent ?? '';
+      if (hasTemporalAtEnd(text, bucket)) continue;
+      if (!isSentenceStartBefore(text)) continue;
+      const trimmed = text.replace(/\s+$/u, '');
+      prev.textContent = `${trimmed}${trimmed ? ' ' : ''}${wanted} `;
+      continue;
+    }
+
+    if (!prev) {
+      field.parentNode?.insertBefore(doc.createTextNode(`${wanted} `), field);
+    }
   }
 };

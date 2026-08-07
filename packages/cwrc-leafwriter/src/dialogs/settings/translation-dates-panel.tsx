@@ -1,10 +1,12 @@
 import {
   Button,
   FormControl,
+  FormControlLabel,
   InputLabel,
   MenuItem,
   Select,
   Stack,
+  Switch,
   Typography,
 } from '@mui/material';
 import { useState } from 'react';
@@ -125,6 +127,31 @@ export const TranslationDatesPanel = () => {
           ))}
         </Select>
       </FormControl>
+
+      <FormControlLabel
+        control={
+          <Switch
+            checked={draft.dateShowAttrBrackets}
+            onChange={(event) =>
+              setDraft({
+                ...draft,
+                dateShowAttrBrackets: event.target.checked,
+              })
+            }
+            size="small"
+          />
+        }
+        label={
+          <Stack spacing={0.15}>
+            <Typography variant="body2">
+              {t('LW.settings.translationPolicy.dateShowAttrBrackets')}
+            </Typography>
+            <Typography color="text.secondary" variant="caption">
+              {t('LW.settings.translationPolicy.exampleAttrBrackets')}
+            </Typography>
+          </Stack>
+        }
+      />
 
       <Stack alignItems="center" direction="row" spacing={1}>
         <Button onClick={handleSave} size="small" variant="contained">

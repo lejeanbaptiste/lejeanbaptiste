@@ -51,6 +51,10 @@ import { suggestPersonNameSplit, suggestPersonRomanization } from '../plugins/pe
 import { autoRomanize, autoRomanizeForKind, latnLangFor } from '../utilities/romanize';
 import { norbertAuthorityLookupValues } from './norbertAuthorityId';
 import {
+  attachPersonCrosswalkAuthorities,
+  loadNorbertPersonConcordance,
+} from './norbertPersonConcordance';
+import {
   biographicalYearsFromMetadata,
   finiteBiographicalYear,
   floruitYearsFromMetadata,
@@ -463,6 +467,11 @@ export async function backfillEntitiesSqlite(
           onProgress?.({ done: 0, total: Math.max(totalTargets, 1), entityLabel: label }),
       })
     : null;
+  // Norbert↔CBDB/DILA/Wikidata bridge links — used to repair Central imports that
+  // only carry NORBERT after a full Norbert database ingest.
+  const norbertConcordance = readPackFile
+    ? await loadNorbertPersonConcordance(readPackFile)
+    : null;
   // Titles come from the Norbert person rows already fetched above (and from
   // A6 reference). Do not scan the full wiki-nt / persons packs here — that
   // reintroduces the select-all hang.
@@ -480,6 +489,9 @@ export async function backfillEntitiesSqlite(
   let entitiesUpdated = 0;
   let namesAdded = 0;
   let cancelled = false;
+  let bridgeLinksAttached = 0;
+  let bridgeDuplicatesMerged = 0;
+  let bridgeConflicts = 0;
 
   // Offices: scrub legacy 姓/名 pollution, attach missing idnos, and write
   // CBDB / Huckbot English + MaxiRicci French roleName translations.
@@ -649,6 +661,56 @@ export async function backfillEntitiesSqlite(
     entitiesScanned++;
     let addedThisEntity = 0;
     let entityChanged = false;
+
+    // Attach missing bridge authorities (Norbert concordance + pack crosswalks)
+    // before name/date enrichment so newly linked packs can contribute too.
+    const packCrosswalks = authorityEnrichmentsForEntity(entity, packIndex).map(
+      (row) =>
+        row.enrichment.metadata?.crosswalk as
+          | Record<string, string | string[] | undefined>
+          | undefined,
+    );
+    const bridge = await attachPersonCrosswalkAuthorities(
+      store,
+      entity.id,
+      entity.authorities,
+      {
+        concordance: norbertConcordance,
+        packCrosswalks,
+        primaryName: entity.names[0] ?? null,
+      },
+    );
+    bridgeLinksAttached += bridge.attached + bridge.reverseAttached;
+    bridgeDuplicatesMerged += bridge.mergedInto.length;
+    bridgeConflicts += bridge.conflicts.length;
+    if (bridge.mergedInto.length > 0) {
+      // This card was merged into a same-name duplicate that already held the
+      // bridge target — skip further enrichment on the dropped id.
+      entitiesUpdated++;
+      onProgress?.({
+        done: entitiesScanned,
+        total: totalTargets,
+        entityId: entity.id,
+        entityLabel: entity.names[0],
+        addedNames: 0,
+      });
+      await yieldFn();
+      continue;
+    }
+    if (bridge.attached > 0) {
+      entityChanged = true;
+      const refreshed = panelPersonFromSummary(await store.sqliteEntitySummary(entity.id));
+      if (refreshed) {
+        entity.authorities = refreshed.authorities;
+      }
+      if (canReadPacks && packIndex) {
+        const extra = await buildPackNameIndexForAuthorities(entity.authorities, {
+          lookupPackRowsByIds,
+          readPackFile,
+        });
+        for (const [key, value] of extra) packIndex.set(key, value);
+      }
+    }
 
     const candidate: DisambiguationCandidate = {
       id: entity.id,
@@ -1111,5 +1173,8 @@ export async function backfillEntitiesSqlite(
     namesAdded,
     skippedNoAuthority,
     cancelled,
+    bridgeLinksAttached,
+    bridgeDuplicatesMerged,
+    bridgeConflicts,
   };
 }

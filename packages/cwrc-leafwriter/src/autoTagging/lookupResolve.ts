@@ -32,6 +32,10 @@ import {
   bareNorbertAuthorityValue,
   formatNorbertAuthorityValue,
 } from './norbertAuthorityId';
+import {
+  expandIdnosWithNorbertConcordance,
+  loadNorbertPersonConcordance,
+} from './norbertPersonConcordance';
 import { suggestPersonNameSplit, suggestPersonRomanization } from '../plugins/personNameDefaults';
 import type { AuthorityPackId } from './packPaths';
 import { authorityPackLines, type AuthorityPackContent } from './packLoader';
@@ -536,7 +540,20 @@ export async function planLookupResolution(
         : Promise.resolve({ idnos: [{ type: ref.idnoType, value: ref.value }] }),
     ),
   );
-  const idnos = dedupeIdnos(crosswalks.flatMap((c) => c.idnos));
+  // Person packs may lack stamped metadata.crosswalk (rebuild without integrate).
+  // The Norbert concordance sidecar still expands NORBERT ↔ CBDB/DILA/Wikidata.
+  const concordance =
+    kind === 'person' && deps.readPackFile
+      ? await loadNorbertPersonConcordance(deps.readPackFile)
+      : null;
+  const idnos = dedupeIdnos(
+    concordance
+      ? expandIdnosWithNorbertConcordance(
+          crosswalks.flatMap((c) => c.idnos),
+          concordance,
+        )
+      : crosswalks.flatMap((c) => c.idnos),
+  );
   const candidateMetas = crosswalks
     .map((c) => c.candidate)
     .filter((c): c is NonNullable<typeof c> => Boolean(c));

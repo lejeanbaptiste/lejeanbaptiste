@@ -1801,22 +1801,35 @@ export class AutoTaggingSession {
       romanizedName = autoRomanizeForKind(mintName, projectLang, kind) ?? undefined;
     }
 
-    const bioYears = candidate.authorityMetadata
+    const metaBioYears = candidate.authorityMetadata
       ? biographicalYearsFromMetadata(candidate.authorityMetadata)
-      : isFilterOnlyDateSource(candidate.dateSource) || candidate.dateSource === 'floruit'
-        ? {}
-        : {
-            ...(candidate.startYear != null ? { startYear: candidate.startYear } : {}),
-            ...(candidate.endYear != null ? { endYear: candidate.endYear } : {}),
-          };
-    const floruitYears = candidate.authorityMetadata
+      : {};
+    const metaFloruitYears = candidate.authorityMetadata
       ? floruitYearsFromMetadata(candidate.authorityMetadata)
-      : candidate.dateSource === 'floruit'
+      : {};
+    // authorityMetadata may carry only ancillary data (e.g. nationality) with no
+    // date fields of its own — fall back to the candidate's own startYear/endYear
+    // rather than treating "meta present" as "meta is authoritative for dates".
+    const hasMetaYears =
+      metaBioYears.startYear != null ||
+      metaBioYears.endYear != null ||
+      metaFloruitYears.startYear != null ||
+      metaFloruitYears.endYear != null;
+    const fallbackYears = isFilterOnlyDateSource(candidate.dateSource) || candidate.dateSource === 'floruit'
+      ? {}
+      : {
+          ...(candidate.startYear != null ? { startYear: candidate.startYear } : {}),
+          ...(candidate.endYear != null ? { endYear: candidate.endYear } : {}),
+        };
+    const fallbackFloruitYears =
+      candidate.dateSource === 'floruit'
         ? {
             ...(candidate.startYear != null ? { startYear: candidate.startYear } : {}),
             ...(candidate.endYear != null ? { endYear: candidate.endYear } : {}),
           }
         : {};
+    const bioYears = hasMetaYears ? metaBioYears : fallbackYears;
+    const floruitYears = hasMetaYears ? metaFloruitYears : fallbackFloruitYears;
     const asFloruit = Boolean(floruitYears.startYear != null || floruitYears.endYear != null);
     const mintDescription =
       candidate.dateSource === 'index'
