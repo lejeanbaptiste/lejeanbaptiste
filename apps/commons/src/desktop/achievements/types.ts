@@ -1,5 +1,5 @@
 export interface ProjectMetrics {
-  /** Relative paths of documents stamped with the encoder's name on save. */
+  /** Relative paths of documents seen on save (inventory; Persistence uses saveCount). */
   savedDocs: string[];
   /** High-water marks; never decremented so deleting work keeps medals. */
   tagsTotal: number;
@@ -15,6 +15,7 @@ export interface AchievementsState {
   version: 1;
   /** First time the achievements file was created — service start date. */
   installedAt: string;
+  /** Successful document saves — drives Merit of Persistence (texts). */
   saveCount: number;
   /** Times the Time Machine dialog has been opened (for Precautionary measures). */
   timeMachineRuns: number;
@@ -32,6 +33,7 @@ export interface AchievementsState {
 
 /** Global metrics aggregated across projects. */
 export interface GlobalMetrics {
+  /** Successful file saves (state.saveCount). */
   texts: number;
   tags: number;
   disambiguated: number;

@@ -97,9 +97,10 @@ import {
 import type { DateGlossInput } from './entityFields/dateGloss';
 import { autoRomanize } from '../utilities/romanize';
 import {
-  stripLeadingDatePrepositionsBeforeDateFields,
-  stripLeadingDatePrepositionsFromText,
-} from './entityFields/stripDatePrepositions';
+  adjustDatePrepositionsBeforeDateFields,
+  adjustDatePrepositionsInText,
+  dayLevelByDateIndex,
+} from './entityFields/adjustDatePrepositions';
 import { normalizeAiPlaceholders } from './entityFields/normalizeAiPlaceholders';
 import { stripLeadingOfficePrepositionsFromText } from './entityFields/stripOfficePrepositions';
 import { entityStoreFromDesktop } from '../autoTagging/entityStore';
@@ -139,6 +140,7 @@ import {
 import type { EntitySummary } from './entityFields/entitySummary';
 import { EntityDisplayPopup } from './entityFields/EntityDisplayPopup';
 import { TRANSLATION_POLICY_CHANGED_EVENT } from './entityFields/dateFormatSettings';
+import { SCHOLARLY_CONVENTIONS_CHANGED_EVENT } from './entityFields/scholarlyConventions';
 import { applyEditorialCleanupToRoot, applyEditorialCleanupToRootPreservingSelection } from './translationEditorialCleanup';
 import { collectTranslationUnitCards, footnoteStartIndexForUnit, isTranslationUnitBlank } from './translationUnitCards';
 import { isAiUiFeatureEnabled } from '../autoTagging/aiUiFeatures';
@@ -665,8 +667,11 @@ export const substituteDatePlaceholders = (
   dates: Map<number, DateGlossInput>,
   lang?: string | null,
 ): string => {
-  const cleanedFragment = stripLeadingDatePrepositionsFromText(
+  const dayLevels = dayLevelByDateIndex(dates);
+  const cleanedFragment = adjustDatePrepositionsInText(
     normalizeAiPlaceholders(fragmentXml),
+    dayLevels,
+    lang,
   );
   if (!cleanedFragment.includes('{{date:')) return cleanedFragment;
 
@@ -683,8 +688,10 @@ export const substituteDatePlaceholders = (
   }
 
   for (const textNode of textNodes) {
-    const text = stripLeadingDatePrepositionsFromText(
+    const text = adjustDatePrepositionsInText(
       normalizeAiPlaceholders(textNode.textContent ?? ''),
+      dayLevels,
+      lang,
     );
     DATE_PLACEHOLDER_RE.lastIndex = 0;
     let lastIndex = 0;
@@ -715,7 +722,7 @@ export const substituteDatePlaceholders = (
     textNode.parentNode?.replaceChild(replacement, textNode);
   }
 
-  stripLeadingDatePrepositionsBeforeDateFields(root);
+  adjustDatePrepositionsBeforeDateFields(root, lang);
   return root.innerHTML;
 };
 
@@ -1281,7 +1288,11 @@ export const TranslationPane = () => {
 
   useEffect(() => {
     window.addEventListener(TRANSLATION_POLICY_CHANGED_EVENT, refreshEntityAnchors);
-    return () => window.removeEventListener(TRANSLATION_POLICY_CHANGED_EVENT, refreshEntityAnchors);
+    window.addEventListener(SCHOLARLY_CONVENTIONS_CHANGED_EVENT, refreshEntityAnchors);
+    return () => {
+      window.removeEventListener(TRANSLATION_POLICY_CHANGED_EVENT, refreshEntityAnchors);
+      window.removeEventListener(SCHOLARLY_CONVENTIONS_CHANGED_EVENT, refreshEntityAnchors);
+    };
   }, [refreshEntityAnchors]);
 
   useEffect(() => {

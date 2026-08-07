@@ -40,7 +40,7 @@ describe('substituteDatePlaceholders', () => {
     const refs = refsIn(html);
     expect(refs).toHaveLength(1);
     expect(refs[0]!.getAttribute('contenteditable')).toBe('false');
-    expect(refs[0]!.textContent).toBe('In Emperor Taizu, Jianyuan era, year 3');
+    expect(refs[0]!.textContent).toBe('Emperor Taizu, Jianyuan era, year 3');
   });
 
   test('leaves unknown indices as placeholders', () => {

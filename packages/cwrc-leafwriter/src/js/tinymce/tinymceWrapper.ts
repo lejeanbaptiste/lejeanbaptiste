@@ -835,33 +835,39 @@ export const tinymceWrapperInit = function ({
           },
           true,
         );
-        // Chromium will not cancel insertCompositionText. When Lock text (or a
-        // tag popup) must block editing, snapshot on compositionstart and revert
-        // on compositionend if the IME still mutated the DOM.
-        let blockedCompositionSnapshot: string | null = null;
+        // Chromium will not cancel insertCompositionText via beforeinput alone.
+        // Abort an in-progress IME when Lock Text / a tag popup must block
+        // editing — but NEVER snapshot-revert the whole document. That revert
+        // raced with autotag apply (tags flash, then compositionend restores
+        // the pre-apply body) and made every accepted tag disappear.
+        const abortBlockedComposition = () => {
+          if (!shouldBlockEditorTextInput()) return;
+          const bookmark = editor.selection.getBookmark(2);
+          try {
+            body.blur();
+          } catch {
+            // ignore
+          }
+          window.setTimeout(() => {
+            applyTextLockDomGuard();
+            try {
+              editor.focus();
+              editor.selection.moveToBookmark(bookmark);
+            } catch {
+              // Selection may be gone if the IME already replaced it.
+            }
+          }, 0);
+        };
+        writer.clearBlockedCompositionSnapshot = () => {
+          // Kept as a no-op hook for loadDocumentXML callers; snapshot revert
+          // was removed because it undid programmatic reloads.
+        };
         body.addEventListener(
           'compositionstart',
           (event) => {
-            if (!shouldBlockEditorTextInput()) {
-              blockedCompositionSnapshot = null;
-              return;
-            }
-            blockedCompositionSnapshot = editor.getContent({ format: 'raw' });
-            event.preventDefault();
-          },
-          true,
-        );
-        body.addEventListener(
-          'compositionend',
-          () => {
-            if (blockedCompositionSnapshot === null) return;
-            const snapshot = blockedCompositionSnapshot;
-            blockedCompositionSnapshot = null;
             if (!shouldBlockEditorTextInput()) return;
-            if (editor.getContent({ format: 'raw' }) === snapshot) return;
-            editor.undoManager.ignore(() => {
-              editor.setContent(snapshot, { format: 'raw' });
-            });
+            event.preventDefault();
+            abortBlockedComposition();
           },
           true,
         );
@@ -877,7 +883,7 @@ export const tinymceWrapperInit = function ({
         );
 
         // TinyMCE can reset contenteditable on some operations — re-assert lock.
-        editor.on('SetContent LoadContent', () => {
+        editor.on('BeforeSetContent SetContent LoadContent', () => {
           applyTextLockDomGuard();
         });
 
@@ -1030,10 +1036,22 @@ export const tinymceWrapperInit = function ({
           const posX = event.screenX - (event.view?.screenLeft ?? 0) + offsetX;
           const posY = event.screenY - (event.view?.screenTop ?? 0) + offsetY;
 
+          // Prefer the tag under the click (e.g. the <date> pill), not whatever
+          // the caret/`currentBookmark` last pointed at (often the parent <p>).
+          const clickNode = event.target as Node | null;
+          let clickTag: Element | null = null;
+          if (clickNode) {
+            const start = isElement(clickNode) ? clickNode : clickNode.parentElement;
+            clickTag = start?.closest('[_tag]') ?? null;
+          }
+
+          editor.currentBookmark = editor.selection.getBookmark(1);
+
           writer.overmindActions.ui.showContextMenu({
             eventSource: 'editor',
             position: { posX, posY },
             useSelection: true,
+            tagId: clickTag?.id || undefined,
           });
         });
       });
@@ -1194,26 +1212,39 @@ export const tinymceWrapperInit = function ({
   };
 
   /**
-   * Tag targeted by Shift+Backspace / Shift+Delete: the inline phrase/entity tag at
-   * the caret — never a block like <p>/<div>. Short tags (roleName) often leave the
-   * caret just outside the span; in that case use the adjacent sibling tag.
+   * Tag targeted by Shift+Backspace / Shift+Delete: the phrase/entity tag at the
+   * caret — never document structure like <p>/<div>/body. Short tags (roleName)
+   * often leave the caret just outside the span; in that case use the adjacent
+   * sibling tag.
+   *
+   * Do not use TinyMCE `dom.isBlock` here: TEI mappings register many phrase
+   * tags (notably `date`) as TinyMCE blocks so they render as <div>, which
+   * made Shift+Backspace skip them and fall through to deleting text.
    */
   const findShiftDeleteTagTarget = (): Element | null => {
     if (!writer.editor) return null;
 
     const rootTag = writer.schemaManager.getRoot();
     const headerTag = writer.schemaManager.getHeader();
+    // Structural containers Shift+Backspace must never unwrap. Phrase-level tags
+    // that happen to be TinyMCE "blocks" (date, bibl, …) stay eligible.
+    const structuralTags = new Set([
+      rootTag,
+      headerTag,
+      'pb',
+      PARAGRAPH_TAG,
+      'body',
+      'front',
+      'back',
+      'text',
+      'group',
+      'div',
+    ]);
     const body = writer.editor.getBody();
     const isCandidate = (el: Element | null): boolean => {
       if (!el) return false;
       const tagName = el.getAttribute('_tag');
-      if (!tagName || tagName === 'pb' || tagName === rootTag || tagName === headerTag) {
-        return false;
-      }
-      // Shift+Backspace is for phrase/entity tags. Unwrapping a paragraph when the
-      // caret sits in plain text (or just outside a short roleName that we failed to
-      // resolve) looks like a no-op or pops a schema warning — never treat blocks as targets.
-      if (writer.editor!.dom.isBlock(el)) return false;
+      if (!tagName || structuralTags.has(tagName)) return false;
       return true;
     };
 
@@ -1409,11 +1440,12 @@ export const tinymceWrapperInit = function ({
       return;
     }
 
-    // Shift+Backspace / Shift+Delete: unwrap the inline tag at the cursor (phrase/entity),
-    // keeping its text. Never targets block structure (<p>, <div>, …). Short tags like
-    // roleName often leave the caret just outside the span — those are resolved via the
-    // adjacent sibling. To remove an outer wrapper, press again (innermost first) or use
-    // the markup tree panel.
+    // Shift+Backspace / Shift+Delete: unwrap the phrase/entity tag at the cursor,
+    // keeping its text. Never deletes text — always preventDefault, even when no
+    // removable tag is found. Never targets document structure (<p>, <div>, …).
+    // Short tags like roleName often leave the caret just outside the span — those
+    // are resolved via the adjacent sibling. To remove an outer wrapper, press again
+    // (innermost first) or use the markup tree panel.
     // Text lock only guards against editing text content — tag removal doesn't touch
     // text, so it stays available even when writer.isTextLocked is true.
     if (
@@ -1422,6 +1454,8 @@ export const tinymceWrapperInit = function ({
       !event.ctrlKey && !event.metaKey && !event.altKey &&
       writer.isReadOnly !== true
     ) {
+      event.preventDefault();
+      event.stopPropagation();
       updateTagBoundaryState();
       const tagEl = findShiftDeleteTagTarget();
       if (tagEl) {
@@ -1430,12 +1464,10 @@ export const tinymceWrapperInit = function ({
           id = writer.getUniqueId('dom_');
           tagEl.setAttribute('id', id);
         }
-        event.preventDefault();
-        event.stopPropagation();
         clearTagBoundaryState();
         writer.tagger.removeTag(id);
-        return;
       }
+      return;
     }
 
     // Backspace/Delete at a tag boundary: unwrap the tag — but only the key that actually

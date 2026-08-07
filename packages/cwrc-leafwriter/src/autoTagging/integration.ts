@@ -26,6 +26,12 @@ import {
 import { mintOrLinkEntitySqlite } from './sqliteLookupMint';
 import { backfillEntitiesSqlite } from './sqliteAuthorityBackfill';
 import { persistOfficeTranslationNames } from './officeGlossLookup';
+import {
+  biographicalYearsFromMetadata,
+  floruitYearsFromMetadata,
+  isFilterOnlyDateSource,
+  scrubIndexYearFloruitClue,
+} from './personDates';
 import { SQLITE_REQUIRED_LOOKUP_MESSAGE } from './sqliteRequired';
 import { entitySummaryFromSqlite } from './sqliteSummary';
 import {
@@ -390,6 +396,7 @@ export interface WriterLike {
   };
   overmindActions?: {
     editor?: { setContentHasChanged?: (value: boolean) => void };
+    document?: { setDocumentXml?: (content: string) => void };
     project?: {
       markTabDirty?: (dirty: boolean) => void;
       updateTabContent?: (params: { content: string; filePath: string }) => void;
@@ -1543,13 +1550,19 @@ export class AutoTaggingSession {
       this.writer.overmindState?.editor?.resource?.filePath ??
       this.writer.overmindState?.document?.url;
 
+    // Always refresh the desktop stored snapshot first so any concurrent
+    // header-merge / validation path sees the tagged body, not the pre-apply
+    // document that caused apply to "flash then revert".
+    if (window.electronAPI) {
+      window.__desktopStoredDocumentXml = contentForStorage;
+    }
+    this.writer.overmindActions?.document?.setDocumentXml?.(contentForStorage);
+
     if (filePath) {
       this.writer.overmindActions?.project?.updateTabContent?.({
         filePath,
         content: contentForStorage,
       });
-    } else if (window.electronAPI) {
-      window.__desktopStoredDocumentXml = contentForStorage;
     }
 
     this.writer.overmindActions?.project?.markTabDirty?.(true);
@@ -1788,6 +1801,33 @@ export class AutoTaggingSession {
       romanizedName = autoRomanizeForKind(mintName, projectLang, kind) ?? undefined;
     }
 
+    const bioYears = candidate.authorityMetadata
+      ? biographicalYearsFromMetadata(candidate.authorityMetadata)
+      : isFilterOnlyDateSource(candidate.dateSource) || candidate.dateSource === 'floruit'
+        ? {}
+        : {
+            ...(candidate.startYear != null ? { startYear: candidate.startYear } : {}),
+            ...(candidate.endYear != null ? { endYear: candidate.endYear } : {}),
+          };
+    const floruitYears = candidate.authorityMetadata
+      ? floruitYearsFromMetadata(candidate.authorityMetadata)
+      : candidate.dateSource === 'floruit'
+        ? {
+            ...(candidate.startYear != null ? { startYear: candidate.startYear } : {}),
+            ...(candidate.endYear != null ? { endYear: candidate.endYear } : {}),
+          }
+        : {};
+    const asFloruit = Boolean(floruitYears.startYear != null || floruitYears.endYear != null);
+    const mintDescription =
+      candidate.dateSource === 'index'
+        ? scrubIndexYearFloruitClue(options.description ?? candidate.description)
+        : (options.description ?? candidate.description);
+    const authorityAssertions =
+      toAuthoritySourcedFields(candidate.authorityAssertions) ??
+      (asFloruit || bioYears.startYear != null || bioYears.endYear != null
+        ? toAuthoritySourcedFields([candidate])
+        : undefined);
+
     const { id: entityId } = await mintOrLinkEntitySqlite(this.store, {
       kind,
       name: mintName,
@@ -1799,11 +1839,12 @@ export class AutoTaggingSession {
       authoritySource: candidate.authorityIds?.[0]
         ? `${candidate.authorityIds[0].type}:${candidate.authorityIds[0].value}`
         : undefined,
-      description: options.description ?? candidate.description,
-      startYear: candidate.startYear,
-      endYear: candidate.endYear,
+      description: mintDescription,
+      startYear: asFloruit ? floruitYears.startYear : bioYears.startYear,
+      endYear: asFloruit ? floruitYears.endYear : bioYears.endYear,
+      asFloruit: asFloruit || undefined,
       origin: candidate.authorityMetadata?.origin,
-      authorityAssertions: toAuthoritySourcedFields(candidate.authorityAssertions),
+      authorityAssertions,
       localEntityId: options.createNew ? undefined : candidate.localEntityId,
     });
     // Keep display-only title headwords as searchable variants when we minted
@@ -1980,7 +2021,9 @@ export class AutoTaggingSession {
       };
     };
     const activePath = globals.writer?.overmindState?.editor?.resource?.filePath;
-    if (activePath && samePath(filePath, activePath)) {
+    // Tag-bomb review of the open file uses the sentinel path "current".
+    // That must hit the live editor — never electronAPI.readFile("current").
+    if (filePath === 'current' || (activePath && samePath(filePath, activePath))) {
       return this.apply(suggestions, userRules);
     }
 

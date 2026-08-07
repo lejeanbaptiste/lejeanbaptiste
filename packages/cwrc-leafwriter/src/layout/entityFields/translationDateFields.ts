@@ -8,7 +8,13 @@ import {
   formatDateGlossTokens,
   type DateGlossInput,
   type DateGlossToken,
+  type DateMonthSpanStyle,
+  type DateWesternDisplayMode,
 } from './dateGloss';
+import {
+  getDateMonthSpanStyle,
+  getDateWesternDisplayMode,
+} from './scholarlyConventions';
 
 export const DATE_REF_TYPE = 'ljb-date';
 export const DATE_FIELD_ATTR = 'data-leaf-date-field';
@@ -43,6 +49,8 @@ export const serializeDateParts = (input: DateGlossInput): string =>
     nmdGz: input.nmdGz ?? undefined,
     lp: input.lp ?? undefined,
     when: input.when ?? undefined,
+    notBefore: input.notBefore ?? undefined,
+    notAfter: input.notAfter ?? undefined,
     surface: input.surface ?? undefined,
   });
 
@@ -62,8 +70,15 @@ export const renderDateFieldContent = (
   field: Element,
   input: DateGlossInput,
   lang?: string | null,
+  mode?: DateWesternDisplayMode,
+  monthSpanStyle?: DateMonthSpanStyle,
 ): void => {
-  const tokens = formatDateGlossTokens(input, lang);
+  const tokens = formatDateGlossTokens(
+    input,
+    lang,
+    mode ?? getDateWesternDisplayMode(),
+    monthSpanStyle ?? getDateMonthSpanStyle(),
+  );
   if (tokens.length > 0) {
     appendTokens(field, tokens);
     return;

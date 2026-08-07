@@ -3,14 +3,21 @@
  *
  * Conventions (English skeleton; French mirrors the same slot order):
  * - Translate as written — no prior-context expansion.
- * - Day-level → "On …"; year/month-only → "In …".
+ * - No leading In/On (En/Le) — the translator or AI supplies temporal
+ *   prepositions (by, until, before, in, on, …); a post-pass only corrects
+ *   in↔on / en↔le to match day vs year/month granularity.
  * - Dynasty: directional prefixes (Southern/Northern/…) + concatenated pinyin stem.
- * - Ruler: always "Emperor {Pinyin}".
- * - Era: "{Pinyin} era" (place-style: capitalised, concatenated, no tones).
+ * - Ruler: always "Emperor {Pinyin}" / French "l’empereur {Pinyin}".
+ * - Era: "{Pinyin} era" / French "l’ère {Pinyin}".
+ * - Year: "year N" / French "l’an N".
  * - Months: Roman numerals; intercalary → "intercalary month I".
  * - Ganzhi: concatenated toneless pinyin, italicised by the field renderer.
  * - 朔 → "new moon"; 晦 → "new moon eve".
  * - Western date from Sanmiao `@when` when day-level and YYYY-MM-DD is present.
+ *   Display mode (translation+western / translation / western) is a scholarly
+ *   convention preference — see {@link DateWesternDisplayMode}.
+ * - Month-only Sanmiao spans (`notBefore`/`notAfter`) can show Western conversion
+ *   when the display mode includes conversion — see {@link DateMonthSpanStyle}.
  * - No trailing punctuation — the translator decides.
  */
 
@@ -22,6 +29,41 @@ import {
 import { autoRomanize } from '../../utilities/romanize';
 
 export type DateGlossLang = 'en' | 'fr';
+
+/**
+ * How a resolved Western `@when` appears beside (or instead of) the East Asian gloss.
+ * - `translation+western` — EA gloss + `(15 February 481)` (default)
+ * - `translation` — EA gloss only
+ * - `western` — `[15 February 481]` only (square brackets)
+ */
+export type DateWesternDisplayMode = 'translation+western' | 'translation' | 'western';
+
+export const DEFAULT_DATE_WESTERN_DISPLAY: DateWesternDisplayMode = 'translation+western';
+
+export const DATE_WESTERN_DISPLAY_MODES: readonly DateWesternDisplayMode[] = [
+  'translation+western',
+  'translation',
+  'western',
+] as const;
+
+export const isDateWesternDisplayMode = (value: unknown): value is DateWesternDisplayMode =>
+  value === 'translation+western' || value === 'translation' || value === 'western';
+
+/**
+ * How a month-only Sanmiao span (`notBefore`–`notAfter`) is rendered when conversion
+ * is shown (i.e. display mode is not `translation`).
+ * - `months` — `January–February 187` / `janvier–février 187` (default)
+ * - `full` — `2 January–1 February 187` / `2 janvier–1 février 187`
+ */
+export type DateMonthSpanStyle = 'months' | 'full';
+
+export const DEFAULT_DATE_MONTH_SPAN_STYLE: DateMonthSpanStyle = 'months';
+
+export const DATE_MONTH_SPAN_STYLES: readonly DateMonthSpanStyle[] = ['months', 'full'] as const;
+
+export const isDateMonthSpanStyle = (value: unknown): value is DateMonthSpanStyle =>
+  value === 'months' || value === 'full';
+
 
 /** Structured fields extracted from a Sanmiao `<date>` (parse children + attrs). */
 export interface DateGlossInput {
@@ -47,6 +89,10 @@ export interface DateGlossInput {
   lp?: string | null;
   /** Sanmiao ISO `@when` (e.g. 0481-02-15). */
   when?: string | null;
+  /** Month-only span start (Sanmiao `notBefore`, e.g. 0213-03-10). */
+  notBefore?: string | null;
+  /** Month-only span end (Sanmiao `notAfter`, e.g. 0213-04-07). */
+  notAfter?: string | null;
   /** Fallback plain surface when structure is missing. */
   surface?: string | null;
 }
@@ -192,24 +238,79 @@ export const formatWesternWhen = (
   when: string | null | undefined,
   lang: DateGlossLang,
 ): string | null => {
-  const raw = when?.trim();
-  if (!raw) return null;
-  // Accept 0481-02-15, 481-2-15, optional leading + / era markers.
-  const match = raw.match(/^([+-]?\d{1,6})-(\d{1,2})-(\d{1,2})$/);
+  const parsed = parseIsoYmd(when);
+  if (!parsed) return null;
+  return formatWesternDay(parsed, lang);
+};
+
+type IsoYmd = { year: number; month: number; day: number };
+
+const parseIsoYmd = (raw: string | null | undefined): IsoYmd | null => {
+  const trimmed = raw?.trim();
+  if (!trimmed) return null;
+  const match = trimmed.match(/^([+-]?\d{1,6})-(\d{1,2})-(\d{1,2})$/);
   if (!match) return null;
   const year = parseInt(match[1]!, 10);
   const month = parseInt(match[2]!, 10);
   const day = parseInt(match[3]!, 10);
   if (!month || month > 12 || !day || day > 31) return null;
-  const yearLabel = year === 0 ? '0' : year < 0 ? `${Math.abs(year)} BCE` : String(year);
-  if (lang === 'fr') {
-    const monthName = FR_MONTHS[month];
-    if (!monthName) return null;
-    return `${day} ${monthName} ${yearLabel.replace(' BCE', ' av. J.-C.')}`;
+  return { year, month, day };
+};
+
+const yearLabelFor = (year: number, lang: DateGlossLang): string => {
+  if (year === 0) return '0';
+  if (year < 0) {
+    const abs = String(Math.abs(year));
+    return lang === 'fr' ? `${abs} av. J.-C.` : `${abs} BCE`;
   }
-  const monthName = EN_MONTHS[month];
+  return String(year);
+};
+
+const monthNameFor = (month: number, lang: DateGlossLang): string | null => {
+  const name = (lang === 'fr' ? FR_MONTHS : EN_MONTHS)[month];
+  return name ?? null;
+};
+
+const formatWesternDay = (ymd: IsoYmd, lang: DateGlossLang): string | null => {
+  const monthName = monthNameFor(ymd.month, lang);
   if (!monthName) return null;
-  return `${day} ${monthName} ${yearLabel}`;
+  return `${ymd.day} ${monthName} ${yearLabelFor(ymd.year, lang)}`;
+};
+
+/**
+ * Format a Sanmiao month-only span (`notBefore`–`notAfter`) for conversion display.
+ * Same calendar year: year once at the end. Cross-year: year on each side.
+ */
+export const formatWesternMonthSpan = (
+  notBefore: string | null | undefined,
+  notAfter: string | null | undefined,
+  lang: DateGlossLang,
+  style: DateMonthSpanStyle = DEFAULT_DATE_MONTH_SPAN_STYLE,
+): string | null => {
+  const start = parseIsoYmd(notBefore);
+  const end = parseIsoYmd(notAfter);
+  if (!start || !end) return null;
+  const startMonth = monthNameFor(start.month, lang);
+  const endMonth = monthNameFor(end.month, lang);
+  if (!startMonth || !endMonth) return null;
+
+  const sameYear = start.year === end.year;
+  const startYear = yearLabelFor(start.year, lang);
+  const endYear = yearLabelFor(end.year, lang);
+
+  if (style === 'months') {
+    if (sameYear) {
+      if (start.month === end.month) return `${startMonth} ${startYear}`;
+      return `${startMonth}–${endMonth} ${startYear}`;
+    }
+    return `${startMonth} ${startYear}–${endMonth} ${endYear}`;
+  }
+
+  // full: include day-of-month on each side
+  if (sameYear) {
+    return `${start.day} ${startMonth}–${end.day} ${endMonth} ${startYear}`;
+  }
+  return `${start.day} ${startMonth} ${startYear}–${end.day} ${endMonth} ${endYear}`;
 };
 
 const pushText = (tokens: DateGlossToken[], text: string): void => {
@@ -230,10 +331,16 @@ const pushGanzhi = (tokens: DateGlossToken[], pinyin: string): void => {
  * Build vernacular gloss tokens for a structured East Asian date.
  * Returns an empty array when nothing useful can be said (caller may fall back
  * to the surface / a temporary AI stand-in).
+ *
+ * When `mode` is `western` and a resolvable Western conversion exists (day
+ * `@when`, or month span), the entire gloss is replaced with `[…]`. Without a
+ * conversion, the East Asian gloss is always kept (never empty brackets).
  */
 export const formatDateGlossTokens = (
   input: DateGlossInput,
   lang: string | null | undefined = 'en',
+  mode: DateWesternDisplayMode = DEFAULT_DATE_WESTERN_DISPLAY,
+  monthSpanStyle: DateMonthSpanStyle = DEFAULT_DATE_MONTH_SPAN_STYLE,
 ): DateGlossToken[] => {
   const bucket = dateGlossLang(lang);
   const year = parseIntish(input.year);
@@ -248,9 +355,12 @@ export const formatDateGlossTokens = (
   const ruler = input.ruler?.trim() ? romanizeName(input.ruler.trim()) : null;
   const era = input.era?.trim() ? romanizeName(input.era.trim()) : null;
 
-  const dayLevel = Boolean(day != null || gzPy || nmdPy || lp);
+  // nmd_gz alone is Sanmiao month-span metadata (sexagenary of that lunar month's
+  // 朔), not a day reading — month-only dates still carry it with notBefore/notAfter.
+  // Count it as day-level only together with 朔/晦 (lp), or when a day/gz is present.
+  const dayLevel = Boolean(day != null || gzPy || lp);
   const hasStructure = Boolean(
-    dyn || ruler || era || year != null || month != null || dayLevel,
+    dyn || ruler || era || year != null || month != null || dayLevel || nmdPy,
   );
   if (!hasStructure) return [];
 
@@ -265,18 +375,18 @@ export const formatDateGlossTokens = (
     chunks.push(() =>
       pushText(
         tokens,
-        bucket === 'fr' ? `empereur ${ruler}` : `Emperor ${ruler}`,
+        bucket === 'fr' ? `l’empereur ${ruler}` : `Emperor ${ruler}`,
       ),
     );
   }
   if (era) {
     chunks.push(() =>
-      pushText(tokens, bucket === 'fr' ? `ère ${era}` : `${era} era`),
+      pushText(tokens, bucket === 'fr' ? `l’ère ${era}` : `${era} era`),
     );
   }
   if (year != null) {
     chunks.push(() =>
-      pushText(tokens, bucket === 'fr' ? `an ${year}` : `year ${year}`),
+      pushText(tokens, bucket === 'fr' ? `l’an ${year}` : `year ${year}`),
     );
   }
   if (month != null) {
@@ -372,40 +482,47 @@ export const formatDateGlossTokens = (
 
   if (chunks.length === 0) return [];
 
-  let lead: string;
-  if (bucket === 'en') {
-    lead = dayLevel ? 'On ' : 'In ';
-  } else if (dyn) {
-    lead = dayLevel ? 'Le ' : 'En ';
-  } else if (ruler) {
-    // « Sous l’empereur Taizu… » / day-level still uses L’empereur…
-    lead = dayLevel ? 'L’' : 'Sous l’';
-  } else if (era || year != null) {
-    lead = dayLevel ? 'L’' : 'En l’';
-  } else {
-    lead = dayLevel ? 'Le ' : 'En ';
+  const westernDay =
+    dayLevel && mode !== 'translation' ? formatWesternWhen(input.when, bucket) : null;
+  // Month-only (or year/month without day markers): Sanmiao span when conversion is on.
+  const westernSpan =
+    !dayLevel && mode !== 'translation'
+      ? formatWesternMonthSpan(input.notBefore, input.notAfter, bucket, monthSpanStyle)
+      : null;
+  const western = westernDay ?? westernSpan;
+
+  if (mode === 'western' && western) {
+    return [{ kind: 'text', text: `[${western}]` }];
   }
-  pushText(tokens, lead);
 
   chunks.forEach((write, index) => {
     if (index > 0) pushText(tokens, ', ');
     write();
   });
 
-  if (dayLevel) {
-    const western = formatWesternWhen(input.when, bucket);
-    if (western) pushText(tokens, ` (${western})`);
+  if (mode === 'translation+western' && western) {
+    pushText(tokens, ` (${western})`);
   }
 
   return tokens;
+};
+
+/** True when the gloss is day-granular (day / gz / 朔|晦) — drives in↔on adjustment. */
+export const dateGlossIsDayLevel = (input: DateGlossInput): boolean => {
+  const day = parseIntish(input.day);
+  const lp = normalizeLp(input.lp);
+  const gzPy = ganzhiPinyin(resolveGzLabel(input.gz) ?? input.gz);
+  return Boolean(day != null || gzPy || lp);
 };
 
 /** Plain-text gloss (ganzhi unmarked) — useful for AI payloads / tests. */
 export const formatDateGlossPlain = (
   input: DateGlossInput,
   lang: string | null | undefined = 'en',
+  mode: DateWesternDisplayMode = DEFAULT_DATE_WESTERN_DISPLAY,
+  monthSpanStyle: DateMonthSpanStyle = DEFAULT_DATE_MONTH_SPAN_STYLE,
 ): string =>
-  formatDateGlossTokens(input, lang)
+  formatDateGlossTokens(input, lang, mode, monthSpanStyle)
     .map((token) => token.text)
     .join('')
     .trim();
@@ -445,6 +562,8 @@ export const dateGlossInputFromParts = (
     nmdGz: child('nmdgz') ?? attr('nmd_gz'),
     lp: child('lp') ?? attr('lp'),
     when: attr('when'),
+    notBefore: attr('notBefore'),
+    notAfter: attr('notAfter'),
     surface: surface ?? undefined,
   };
 };

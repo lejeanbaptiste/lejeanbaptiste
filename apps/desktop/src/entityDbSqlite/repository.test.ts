@@ -1105,6 +1105,57 @@ describe('EntitySqliteRepository', () => {
     repository.close();
   });
 
+  it('stores floruit as dates+fl. and clears wrongly minted birth/death for that source', () => {
+    const repository = new EntitySqliteRepository();
+    repository.createEntity({ id: 'person-floruit', kind: 'person' });
+    repository.addName({
+      entityId: 'person-floruit',
+      text: '活躍',
+      isPrimary: true,
+      origin: 'authority',
+      source: 'CBDB',
+    });
+    // Simulate older mint that wrote floruit span as birth/death.
+    repository.db
+      .prepare(
+        `INSERT INTO entity_dates
+           (entity_id, date_kind, start_year, when_value, origin, source, status, created_at, updated_at)
+         VALUES (?, 'birth', 479, '0479', 'authority', 'CBDB', 'active', ?, ?),
+                (?, 'death', 502, '0502', 'authority', 'CBDB', 'active', ?, ?)`,
+      )
+      .run(
+        'person-floruit',
+        '2026-01-01T00:00:00.000Z',
+        '2026-01-01T00:00:00.000Z',
+        'person-floruit',
+        '2026-01-01T00:00:00.000Z',
+        '2026-01-01T00:00:00.000Z',
+      );
+
+    const result = repository.applyAuthorityBackfillPatch({
+      entityId: 'person-floruit',
+      dates: [{ source: 'CBDB', startYear: 479, endYear: 502, asFloruit: true }],
+      clearAuthorityVitalSources: ['CBDB'],
+    });
+    expect(result.changed).toBe(true);
+    const summary = repository.getPanelSummary('person-floruit');
+    expect(summary?.startYear).toBe(479);
+    expect(summary?.endYear).toBe(502);
+    expect(summary?.workDate?.startPrecision).toBe('fl.');
+    expect(summary?.workDate?.startYear).toBe(479);
+    expect(summary?.workDate?.endYear).toBe(502);
+    const vitalKinds = (
+      repository.db
+        .prepare(
+          `SELECT date_kind FROM entity_dates
+           WHERE entity_id = ? AND origin = 'authority' AND status = 'active'`,
+        )
+        .all('person-floruit') as Array<{ date_kind: string }>
+    ).map((row) => row.date_kind);
+    expect(vitalKinds).toEqual(['dates']);
+    repository.close();
+  });
+
   it('rewrites unvalidated invented 姓名 on re-backfill and clears missing given', () => {
     const repository = new EntitySqliteRepository();
     repository.createEntity({ id: 'person-empress', kind: 'person' });

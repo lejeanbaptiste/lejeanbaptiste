@@ -392,10 +392,13 @@ export interface AuthorityBackfillPatch {
     source: string;
     startYear?: number | null;
     endYear?: number | null;
+    /** Real floruit range → `date_kind=dates` + `start_precision=fl.` (not birth/death). */
+    asFloruit?: boolean;
   }>;
   /**
    * Delete active authority birth/death rows for these sources (e.g. CBDB
-   * floruit/nationality years that were wrongly minted as vitals).
+   * index/nationality years that were wrongly minted as vitals, or floruit
+   * that was wrongly stored as birth/death before the dates+fl. path).
    */
   clearAuthorityVitalSources?: string[];
   nationalities?: Array<{ label: string; ref?: string | null; source: string }>;
@@ -3993,13 +3996,15 @@ export class EntitySqliteRepository {
         source: string,
         startYear: number | null | undefined,
         endYear: number | null | undefined,
+        startPrecision?: string | null,
       ) => {
         const normalizedSource = source.trim().toUpperCase();
         if (dateKind === 'dates') {
           if (startYear == null && endYear == null) return;
+          const precision = startPrecision?.trim() || null;
           const existing = this.db
             .prepare(
-              `SELECT id, start_year, end_year, status FROM entity_dates
+              `SELECT id, start_year, end_year, start_precision, status FROM entity_dates
                WHERE entity_id = ? AND date_kind IN ('dates', 'work')
                  AND origin = 'authority' AND UPPER(COALESCE(source, '')) = ?
                ORDER BY id`,
@@ -4008,10 +4013,14 @@ export class EntitySqliteRepository {
             id: number;
             start_year: number | null;
             end_year: number | null;
+            start_precision: string | null;
             status: string;
           }[];
           const exact = existing.find(
-            (row) => row.start_year === (startYear ?? null) && row.end_year === (endYear ?? null),
+            (row) =>
+              row.start_year === (startYear ?? null) &&
+              row.end_year === (endYear ?? null) &&
+              (row.start_precision ?? null) === precision,
           );
           if (exact) return;
           for (const row of existing) {
@@ -4025,8 +4034,8 @@ export class EntitySqliteRepository {
             .prepare(
               `INSERT INTO entity_dates
                  (entity_id, date_kind, start_year, end_year, from_value, to_value, raw_text,
-                  origin, source, status, created_at, updated_at)
-               VALUES (?, 'dates', ?, ?, ?, ?, ?, 'authority', ?, 'active', ?, ?)`,
+                  start_precision, origin, source, status, created_at, updated_at)
+               VALUES (?, 'dates', ?, ?, ?, ?, ?, ?, 'authority', ?, 'active', ?, ?)`,
             )
             .run(
               patch.entityId,
@@ -4035,6 +4044,7 @@ export class EntitySqliteRepository {
               startYear != null ? isoYearString(startYear) : null,
               endYear != null ? isoYearString(endYear) : null,
               rawText,
+              precision,
               normalizedSource,
               now,
               now,
@@ -4438,8 +4448,18 @@ export class EntitySqliteRepository {
       }
 
       for (const date of patch.dates ?? []) {
-        upsertAuthorityDate('birth', date.source, date.startYear, undefined);
-        upsertAuthorityDate('death', date.source, date.endYear, undefined);
+        if (date.asFloruit) {
+          upsertAuthorityDate(
+            'dates',
+            date.source,
+            date.startYear,
+            date.endYear,
+            'fl.',
+          );
+        } else {
+          upsertAuthorityDate('birth', date.source, date.startYear, undefined);
+          upsertAuthorityDate('death', date.source, date.endYear, undefined);
+        }
       }
 
       if (patch.workDate) {

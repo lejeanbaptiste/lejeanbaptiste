@@ -8,6 +8,10 @@ import {
   formatDateGlossPlain,
   type DateGlossInput,
 } from './dateGloss';
+import {
+  getDateMonthSpanStyle,
+  getDateWesternDisplayMode,
+} from './scholarlyConventions';
 
 export interface SourceUnitDateHit {
   /** 0-based index in document order within the unit. */
@@ -109,7 +113,12 @@ export const collectSourceUnitDates = (
       index: hits.length,
       surface,
       input,
-      gloss: formatDateGlossPlain(input, lang),
+      gloss: formatDateGlossPlain(
+        input,
+        lang,
+        getDateWesternDisplayMode(),
+        getDateMonthSpanStyle(),
+      ),
     });
   }
   return hits;
@@ -140,7 +149,12 @@ export const collectDatesFromSourceUnitXml = (
       index: hits.length,
       surface,
       input,
-      gloss: formatDateGlossPlain(input, lang),
+      gloss: formatDateGlossPlain(
+        input,
+        lang,
+        getDateWesternDisplayMode(),
+        getDateMonthSpanStyle(),
+      ),
     });
   }
   return hits;

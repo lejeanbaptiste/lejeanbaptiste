@@ -102,6 +102,7 @@
 
 ### Editor
 
+- Lock Text no longer undoes autotag apply: removed the IME composition snapshot→`setContent` revert (it raced with `loadDocumentXML` — tags flashed then the pre-apply body came back). Locked typing is still blocked via beforeinput / composition abort without rewriting the document. Also stop re-applying a stale init-time `document.xml` on every `documentLoaded`, always refresh the desktop stored XML snapshot after apply, and treat the tag-bomb `current` path sentinel as the live editor.
 - Editor pane now follows the programme's light/dark choice, rather than independently following the OS.
 - Fixed: save timestamp was not putting `@version` on `<application>`, causing a validation error in Source mode.
 - Monaco now auto-inserts the appropriate closing tag on `</`.
@@ -153,9 +154,11 @@
 - The Database Window's bulk Wikidata refresh now pulls work titles for every language configured in Translation policy settings, not just English plus the desktop UI language. Also fixed: that refresh wasn't passing the desktop UI language at all, so in practice it only ever fetched English titles.
 - Office entities can now carry a date range (same date form as works, now offered for offices too), and the auto-tagging disambiguation panel shows each candidate's date range or dynasty when picking between period-specific offices — e.g. distinguishing two entities sharing a title but from different eras. Nothing to render or configure otherwise: which office you tag is which translation you get.
 - Offices with a vernacular gloss now default to that gloss alone in the translation pane (no pinyin or characters); the display popup can still re-enable extras. Office gloss lookup falls back between en and fr when one language is missing.
+- CBDB (and similar) person dates are no longer lumped together: real floruit earliest/latest (`dateSource: floruit`) is kept as floruit — stored on a `dates` row with precision `fl.`, shown as `fl. A–B` in Disambiguate, entity display, and the sidebar; the person date editor’s `fl.` mode takes a From/To range and writes that row (clearing birth/death so the two do not fight). CBDB index/mean years stay filter-only for the Disambiguate date slider (±30) and are never shown or minted as `fl.`; old pack clues that mislabeled an index year as `fl. YEAR` are scrubbed on load. Pack clue generation restores real floruit and omits index years (recompile packs when convenient for clean NDJSON at source).
 
 ### UI and settings
 
+- Fixed a ghost **Delete entity (1)** state in the database panel when jumping to an entity that is not yet linked to the central database: the panel no longer selects the corpus `@key` while browsing central rows (which use different ids), so the delete button no longer lights up with nothing visibly checked.
 - Find: active hit now also marks the containing editor line with thick red vertical bars (in addition to orange inline highlight), so matches stay visible when entity/tag highlighting competes on the same row.
 - Settings → AI API: **Placeholder retry limit** (0–5, default 1) for AI translation when the model drops required entity/date placeholders.
 - Settings panel overhaul.
@@ -165,4 +168,6 @@
 
 ### Rewards system
 
+- Merit of Persistence (**File saves**) now counts every successful save (`saveCount`), not only distinct file paths — re-saving the same document advances the ladder. Rapid saves are serialised so concurrent Ctrl+S cannot drop counts, and a tag-stats failure no longer skips the achievements pass.
+- Ribbon (per-metric class) unlock snackbars now say the classe (e.g. Vème classe, Ordre du Chevron) instead of the overall rank name (e.g. Sergent) — ranks stay for commission; classes are what each ladder awards.
 - Medal unlock toasts are held until you save a portrait in Service Record; medals still unlock and persist in the background, and waiting notifications are delivered after the first portrait save.

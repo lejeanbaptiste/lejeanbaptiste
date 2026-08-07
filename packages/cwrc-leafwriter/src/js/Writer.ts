@@ -72,6 +72,12 @@ class Writer extends EventManager {
    * composition guards in tinymceWrapper.ts.
    */
   applyTextLockDomGuard?: () => void;
+  /**
+   * Formerly cleared a Lock-text IME snapshot before programmatic reloads.
+   * Snapshot revert was removed (it undid autotag); kept as an optional no-op
+   * hook so call sites stay harmless.
+   */
+  clearBlockedCompositionSnapshot?: () => void;
   isAnnotator = false; // is the editor in annotate (entities) only mode
 
   mode: number = this.XMLRDF; // editor mode
@@ -257,6 +263,9 @@ class Writer extends EventManager {
    * @param {Document|String} docXml An XML document or a string representation of such.
    */
   loadDocumentXML(docXml: string) {
+    // Autotag (and other) reloads must not be undone by a Lock-text IME
+    // compositionend revert of a pre-apply snapshot.
+    this.clearBlockedCompositionSnapshot?.();
     const stripHeader = window.__desktopStripTeiHeaderForVisualEditor;
     const visualXml =
       typeof stripHeader === 'function' && typeof docXml === 'string'

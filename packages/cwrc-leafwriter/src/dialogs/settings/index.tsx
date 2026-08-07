@@ -36,6 +36,7 @@ import { AiPromptProfilesPanel } from './ai-prompt-profiles-panel';
 import { ProjectSettingsPanel } from './project-settings-panel';
 import { PrivacySettingsPanel } from './privacy-settings-panel';
 import { TranslationPolicyPanel } from './translation-policy-panel';
+import { TranslationDatesPanel } from './translation-dates-panel';
 import { SettingsValidationContext } from './settingsValidationContext';
 import type { SettingsDialogProps, SettingsTabId } from './types';
 
@@ -226,13 +227,22 @@ export const SettingsDialog = ({ onClose, open = false, initialTab }: SettingsDi
                 )}
 
                 {activeId === 'translation-policy' && (
-                  <Section
-                    id="translation-policy"
-                    title={t('LW.settings.tabs.translation_policy')}
-                    description={t('LW.settings.translationPolicy.description')}
-                  >
-                    <TranslationPolicyPanel />
-                  </Section>
+                  <>
+                    <Section
+                      id="translation-policy"
+                      title={t('LW.settings.tabs.translation_policy')}
+                      description={t('LW.settings.translationPolicy.description')}
+                    >
+                      <TranslationPolicyPanel />
+                    </Section>
+                    <Section
+                      id="translation-dates"
+                      title={t('LW.settings.translationPolicy.datesSection')}
+                      description={t('LW.settings.translationPolicy.datesDescription')}
+                    >
+                      <TranslationDatesPanel />
+                    </Section>
+                  </>
                 )}
 
                 {activeId === 'privacy' && (

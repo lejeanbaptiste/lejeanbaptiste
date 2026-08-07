@@ -2,6 +2,7 @@ import type { AuthorityCandidate } from './authority';
 import { teiTagForCandidate } from './authority';
 import { DEFAULT_MIN_MATCH_LENGTH } from './dictionary';
 import type { AuthorityPackId } from './packPaths';
+import { filterYearsFromMetadata } from './personDates';
 
 export interface YearRangeFilter {
   start: number;
@@ -73,21 +74,19 @@ function candidateOverlapsYearRange(
   start: number,
   end: number,
 ): boolean {
-  const meta = candidate.metadata;
-  const fine = meta?.dateSource === 'fine' || meta?.dateSource == null && (meta?.startYear != null || meta?.endYear != null);
-  const nationalityYears = (meta?.nationality ?? [])
-    .flatMap((n) => n.startYear != null || n.endYear != null ? [{ start: n.startYear ?? n.endYear!, end: n.endYear ?? n.startYear! }] : []);
-  const yearStart = fine ? meta?.startYear : nationalityYears.length ? Math.min(...nationalityYears.map((n) => n.start)) - 60 : undefined;
-  const yearEnd = fine ? (meta?.endYear ?? meta?.startYear) : nationalityYears.length ? Math.max(...nationalityYears.map((n) => n.end)) + 60 : undefined;
-  if (yearStart == null && yearEnd == null) return false;
-  const lo = yearStart ?? yearEnd!;
-  const hi = yearEnd ?? yearStart!;
+  const { startYear, endYear } = filterYearsFromMetadata(candidate.metadata);
+  if (startYear == null && endYear == null) return false;
+  const lo = startYear ?? endYear!;
+  const hi = endYear ?? startYear!;
   return lo <= end && hi >= start;
 }
 
 /**
  * Limit — keep entries overlapping the range (undated excluded; undated DILA places always kept).
  * Exclude — drop entries overlapping the range (undated kept; undated DILA places always kept).
+ *
+ * Person filter years include CBDB-style floruit/index anchors (`dateSource`), not only
+ * fine birth/death — those anchors never become entity vitals, but they still drive the slider.
  */
 export function candidatePassesDateFilter(
   candidate: AuthorityCandidate,
@@ -96,13 +95,8 @@ export function candidatePassesDateFilter(
   if (!filter || filter.mode === 'none') return true;
 
   const { start, end } = normalizeDateRangeFilter(filter);
-  const meta = candidate.metadata;
-  const fine = meta?.dateSource === 'fine' || meta?.dateSource == null && (meta?.startYear != null || meta?.endYear != null);
-  const nationalityYears = (meta?.nationality ?? [])
-    .flatMap((n) => n.startYear != null || n.endYear != null ? [{ start: n.startYear ?? n.endYear!, end: n.endYear ?? n.startYear! }] : []);
-  const yearStart = fine ? meta?.startYear : nationalityYears.length ? Math.min(...nationalityYears.map((n) => n.start)) - 60 : undefined;
-  const yearEnd = fine ? (meta?.endYear ?? meta?.startYear) : nationalityYears.length ? Math.max(...nationalityYears.map((n) => n.end)) + 60 : undefined;
-  const undated = yearStart == null && yearEnd == null;
+  const years = filterYearsFromMetadata(candidate.metadata);
+  const undated = years.startYear == null && years.endYear == null;
 
   if (undated) {
     // Most DILA places have no date range in the authority file; still match in
@@ -112,8 +106,8 @@ export function candidatePassesDateFilter(
   }
 
   const overlaps =
-    filter.mode === 'exclude' && fine
-      ? preciseDateExceedsExcludeLimit(meta?.startYear, meta?.endYear, start)
+    filter.mode === 'exclude' && years.isFine
+      ? preciseDateExceedsExcludeLimit(years.startYear, years.endYear, start)
       : candidateOverlapsYearRange(candidate, start, end);
   return filter.mode === 'limit' ? overlaps : !overlaps;
 }
@@ -204,12 +198,7 @@ export function candidateIntersectsYearRange(
   candidate: AuthorityCandidate,
   range: YearRangeFilter,
 ): boolean {
-  const meta = candidate.metadata;
-  const fine = meta?.dateSource === 'fine' || meta?.dateSource == null && (meta?.startYear != null || meta?.endYear != null);
-  const nationalityYears = (meta?.nationality ?? [])
-    .flatMap((n) => n.startYear != null || n.endYear != null ? [{ start: n.startYear ?? n.endYear!, end: n.endYear ?? n.startYear! }] : []);
-  const start = fine ? meta?.startYear : nationalityYears.length ? Math.min(...nationalityYears.map((n) => n.start)) - 60 : undefined;
-  const end = fine ? (meta?.endYear ?? meta?.startYear) : nationalityYears.length ? Math.max(...nationalityYears.map((n) => n.end)) + 60 : undefined;
+  const { startYear: start, endYear: end } = filterYearsFromMetadata(candidate.metadata);
 
   if (start == null && end == null) {
     // DILA places have no lifespan in the authority file — still match in text;

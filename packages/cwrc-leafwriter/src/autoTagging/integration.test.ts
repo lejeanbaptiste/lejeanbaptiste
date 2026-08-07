@@ -737,6 +737,45 @@ describe('AutoTaggingSession', () => {
     expect(getCurrent()).toContain('<placeName>洛陽</placeName>');
   });
 
+  it('applyTagBombDocument("current") uses the live editor, never readFile("current")', async () => {
+    const { writer, getCurrent } = makeWriter(XML);
+    writer.overmindState = { editor: { resource: { filePath: '/project/a.xml' } } };
+    (window as unknown as { writer: WriterLike }).writer = writer;
+
+    const readFile = jest.fn(async () => {
+      throw new Error('readFile should not be called for the current sentinel');
+    });
+    const previousApi = (window as unknown as { electronAPI?: unknown }).electronAPI;
+    (window as unknown as { electronAPI: { readFile: typeof readFile; writeFile: jest.Mock } }).electronAPI =
+      {
+        readFile,
+        writeFile: jest.fn(),
+      };
+
+    try {
+      const session = new AutoTaggingSession(writer);
+      const doc = await session.getDocument();
+      const nodes = collectTextNodes(doc, 'ignore');
+      const node = nodes.find((n) => n.search.text.includes('張衡'))!.node;
+      const idx = nodes.find((n) => n.node === node)!.search.text.indexOf('張衡');
+      const rawStart = nodes.find((n) => n.node === node)!.search.map[idx]!;
+      const suggestion = {
+        id: 'add_1',
+        source: 'authority' as const,
+        action: 'add' as const,
+        tag: 'persName',
+        anchor: createAnchor('doc', doc, node, rawStart, rawStart + '張衡'.length, 'ignore'),
+        status: 'accepted' as const,
+      };
+      const result = await session.applyTagBombDocument('current', [suggestion]);
+      expect(readFile).not.toHaveBeenCalled();
+      expect(result.applied).toBe(1);
+      expect(getCurrent()).toContain('<persName>');
+    } finally {
+      (window as unknown as { electronAPI?: unknown }).electronAPI = previousApi;
+    }
+  });
+
   it('falls back to stored XML when the converter cannot read the editor body', async () => {
     window.__desktopStoredDocumentXml = XML;
     const writer: WriterLike = {

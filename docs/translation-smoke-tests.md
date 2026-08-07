@@ -126,10 +126,10 @@ To reset a file's translation state: delete its `*.translation.xml` companions a
 
 **Pipeline (shipped):** `collectDatesFromSourceUnitXml` gathers `<date>` spans in document order. Before the model sees the unit, `replaceDatesWithPlaceholdersInSourceXml` swaps each `<date>…</date>` for a bare `{{date:N}}`. The dates list sent to the model is index-only (gloss applied locally after substitute). Leading In/On/En/Le before a date field or `{{date:N}}` are stripped. After the response, `substituteDatePlaceholders` builds atomic `ref[type="ljb-date"]` fields.
 
-**Automated:** `dateGloss.test.ts`, `substituteDatePlaceholders.test.ts`, `stripDatePrepositions.test.ts`.
+**Automated:** `dateGloss.test.ts`, `substituteDatePlaceholders.test.ts`, `adjustDatePrepositions.test.ts`.
 
 **Manual:**
 
 - [ ] Source unit with a resolved Sanmiao `<date>` (parse children + `@when`).
-- [ ] Generate translation → companion shows `ref type="ljb-date"` whose text matches LJBtero (On/In …, Emperor …, Roman months, italic ganzhi, Western date in parentheses when day-level) — not a doubled “In On …” prefix.
+- [ ] Generate translation → companion shows `ref type="ljb-date"` whose text matches LJBtero (year/month/day slots, Emperor …, Roman months, italic ganzhi, Western date in parentheses when day-level) — AI may keep by/until/before before the field; only in/on (en/le) are auto-adjusted to granularity.
 - [ ] Untagged / structure-less dates still free-translate (no placeholder).

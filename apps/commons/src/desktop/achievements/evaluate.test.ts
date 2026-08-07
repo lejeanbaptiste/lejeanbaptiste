@@ -113,6 +113,16 @@ describe('approximateWordCount', () => {
 });
 
 describe('aggregateGlobalMetrics', () => {
+  it('counts every successful save for Persistence, not distinct file paths', () => {
+    const state = emptyState('2026-01-01T00:00:00.000Z');
+    state.saveCount = 42;
+    state.projects['a'] = {
+      ...emptyProjectMetrics(),
+      savedDocs: ['one.xml', 'two.xml'],
+    };
+    expect(aggregateGlobalMetrics(state).texts).toBe(42);
+  });
+
   it('sums annotation work but takes the max of shared entity counts', () => {
     const state = emptyState('2026-01-01T00:00:00.000Z');
     state.leaderboardPublicationDays = ['2026-07-20', '2026-07-21'];

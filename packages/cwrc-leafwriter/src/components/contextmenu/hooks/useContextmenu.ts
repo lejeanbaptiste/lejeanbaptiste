@@ -51,6 +51,15 @@ export const useContextmenu = () => {
     return true;
   };
 
+  const resolveTaggedElement = (node: Node | null | undefined): Element | null => {
+    if (!node) return null;
+    let el: Element | null = isElement(node) ? node : node.parentElement;
+    while (el && !el.getAttribute('_tag')) {
+      el = el.parentElement;
+    }
+    return el;
+  };
+
   const initialize = async () => {
     if (!writer || !ctx) return false;
 
@@ -60,9 +69,17 @@ export const useContextmenu = () => {
     ctx.rng = 'rng' in bookmark ? bookmark.rng : undefined;
     if (!ctx.rng) return null;
 
-    ctx.element = isElement(ctx.rng.commonAncestorContainer)
-      ? ctx.rng.commonAncestorContainer // ?double-check
-      : ctx.rng.commonAncestorContainer.parentElement;
+    // Prefer an explicit tagId (editor right-click on a tag pill, markup panel).
+    // Falling back to the selection alone often resolves the parent <p> when the
+    // user right-clicked an inner phrase tag such as <date>.
+    if (typeof ctx.tagId === 'string' && ctx.tagId && ctx.nodeType !== 'text') {
+      const byId = writer.editor?.getBody()?.querySelector(`#${CSS.escape(ctx.tagId)}`);
+      if (byId) ctx.element = byId;
+    }
+
+    if (!ctx.element?.getAttribute('_tag')) {
+      ctx.element = resolveTaggedElement(ctx.rng.commonAncestorContainer);
+    }
 
     //? double check
     if (!ctx.element) return null;

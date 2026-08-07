@@ -840,6 +840,8 @@
           "edit_values": "Edit nationality and place of origin",
           "birth": "Birth",
           "death": "Death",
+          "floruit_from": "From",
+          "floruit_to": "To",
           "date_marker_birth": "b.",
           "date_marker_death": "†",
           "era_ce": "CE",

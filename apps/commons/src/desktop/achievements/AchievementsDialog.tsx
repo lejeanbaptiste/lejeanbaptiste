@@ -95,7 +95,7 @@ const LEADERBOARD_WORKER_URL = 'https://ljb-leaderboard.lejeanbaptiste.workers.d
 const LEADERBOARD_AVATAR_SIZE = 140;
 
 const METRIC_LABELS: Record<string, string> = {
-  texts: 'Documents saved',
+  texts: 'File saves',
   tags: 'Tags added',
   disambiguated: 'Tags disambiguated',
   places: 'Places disambiguated',

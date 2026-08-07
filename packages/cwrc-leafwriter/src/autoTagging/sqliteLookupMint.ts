@@ -31,6 +31,8 @@ export interface SqliteMintEntityInput {
   givenName?: string | null;
   startYear?: number | null;
   endYear?: number | null;
+  /** When true with start/end, store as floruit dates row (not birth/death). */
+  asFloruit?: boolean;
   nationality?: Array<{ label: string; canonicalId?: string; sourceIds?: string[] }>;
   authorityAssertions?: AuthoritySourcedFields[];
   authoritySource?: string | null;
@@ -43,6 +45,7 @@ async function enrichPersonAuthority(
   input: {
     startYear?: number | null;
     endYear?: number | null;
+    asFloruit?: boolean;
     nationality?: Array<{ label: string; canonicalId?: string; sourceIds?: string[] }>;
     authorityAssertions?: AuthoritySourcedFields[];
     authoritySource?: string | null;
@@ -50,12 +53,18 @@ async function enrichPersonAuthority(
   },
 ): Promise<void> {
   // Authority years are provenance assertions — never mint them as user/Central
-  // lifespan dates (that locked dynasty/floruit spans over real birth/death).
-  const dates: Array<{ source: string; startYear?: number | null; endYear?: number | null }> = [];
+  // lifespan dates. Floruit goes on a dates+fl. row; index years never write.
+  const dates: Array<{
+    source: string;
+    startYear?: number | null;
+    endYear?: number | null;
+    asFloruit?: boolean;
+  }> = [];
+  const clearAuthorityVitalSources: string[] = [];
   const nationalities: Array<{ label: string; ref?: string | null; source: string }> = [];
   const origins: Array<{ label: string; ref?: string | null; source: string }> = [];
 
-  const pushDate = (source: string, startYear?: number | null, endYear?: number | null) => {
+  const pushVitalDate = (source: string, startYear?: number | null, endYear?: number | null) => {
     const birth = finiteBiographicalYear(startYear);
     const death = finiteBiographicalYear(endYear);
     if (birth == null && death == null) return;
@@ -66,9 +75,26 @@ async function enrichPersonAuthority(
     });
   };
 
+  const pushFloruitDate = (source: string, startYear?: number | null, endYear?: number | null) => {
+    const start = finiteBiographicalYear(startYear);
+    const end = finiteBiographicalYear(endYear) ?? start;
+    if (start == null) return;
+    dates.push({
+      source,
+      startYear: start,
+      endYear: end ?? start,
+      asFloruit: true,
+    });
+    clearAuthorityVitalSources.push(source);
+  };
+
   if (input.authorityAssertions?.length) {
     for (const assertion of input.authorityAssertions) {
-      pushDate(assertion.source, assertion.startYear, assertion.endYear);
+      if (assertion.asFloruit) {
+        pushFloruitDate(assertion.source, assertion.startYear, assertion.endYear);
+      } else {
+        pushVitalDate(assertion.source, assertion.startYear, assertion.endYear);
+      }
       for (const nationality of assertion.nationality ?? []) {
         nationalities.push({
           label: nationality.label,
@@ -86,7 +112,11 @@ async function enrichPersonAuthority(
     }
   } else {
     const source = (input.authoritySource ?? 'authority').trim().toUpperCase();
-    pushDate(source, input.startYear, input.endYear);
+    if (input.asFloruit) {
+      pushFloruitDate(source, input.startYear, input.endYear);
+    } else {
+      pushVitalDate(source, input.startYear, input.endYear);
+    }
     for (const nationality of input.nationality ?? []) {
       nationalities.push({
         label: nationality.label,
@@ -103,29 +133,48 @@ async function enrichPersonAuthority(
     }
   }
 
-  if (dates.length || nationalities.length || origins.length) {
+  if (dates.length || nationalities.length || origins.length || clearAuthorityVitalSources.length) {
     if (store.supportsAuthorityBackfillPatch) {
       await store.sqliteApplyAuthorityBackfillPatch({
         entityId,
         dates,
+        clearAuthorityVitalSources: [...new Set(clearAuthorityVitalSources)],
         nationalities,
         origins,
       });
     } else {
       // Test doubles / older bridges without the bulk backfill endpoint: collapse
-      // authority dates to a single user birth/death (last assertion wins) via the
-      // typed date setter, and keep nationality/origin writes per source.
+      // authority dates to a single user birth/death or floruit work-date row.
       let lastBirth: number | undefined;
       let lastDeath: number | undefined;
+      let lastFloruit: { start: number; end: number } | undefined;
       for (const date of dates) {
+        if (date.asFloruit) {
+          if (date.startYear != null) {
+            lastFloruit = {
+              start: date.startYear,
+              end: date.endYear ?? date.startYear,
+            };
+          }
+          continue;
+        }
         if (date.startYear != null) lastBirth = date.startYear;
         if (date.endYear != null) lastDeath = date.endYear;
       }
-      if (lastBirth != null) {
-        await store.sqliteSetUserDate({ entityId, part: 'birth', year: lastBirth });
-      }
-      if (lastDeath != null) {
-        await store.sqliteSetUserDate({ entityId, part: 'death', year: lastDeath });
+      if (lastFloruit) {
+        await store.sqliteSetUserWorkDate({
+          entityId,
+          startYear: lastFloruit.start,
+          endYear: lastFloruit.end,
+          startPrecision: 'fl.',
+        });
+      } else {
+        if (lastBirth != null) {
+          await store.sqliteSetUserDate({ entityId, part: 'birth', year: lastBirth });
+        }
+        if (lastDeath != null) {
+          await store.sqliteSetUserDate({ entityId, part: 'death', year: lastDeath });
+        }
       }
       for (const nationality of nationalities) {
         await store.sqliteAddNationality({
@@ -156,6 +205,7 @@ export async function enrichEntitySqlite(
     authorityIds?: AuthorityId[];
     startYear?: number | null;
     endYear?: number | null;
+    asFloruit?: boolean;
     nationality?: Array<{ label: string; canonicalId?: string; sourceIds?: string[] }>;
     authorityAssertions?: AuthoritySourcedFields[];
     authoritySource?: string | null;
@@ -248,6 +298,7 @@ export async function mintEntitySqlite(
     kind: input.kind,
     startYear: input.startYear,
     endYear: input.endYear,
+    asFloruit: input.asFloruit,
     nationality: input.nationality,
     authorityAssertions: input.authorityAssertions,
     authoritySource: input.authoritySource,

@@ -53,6 +53,7 @@ import { norbertAuthorityLookupValues } from './norbertAuthorityId';
 import {
   biographicalYearsFromMetadata,
   finiteBiographicalYear,
+  floruitYearsFromMetadata,
 } from './personDates';
 import { fetchWikidataLifespan } from './wikidataDates';
 import { fetchWikidataNationality } from './wikidataNationality';
@@ -784,7 +785,12 @@ export async function backfillEntitiesSqlite(
       if (text) romanized = { text, language: projectLang ?? null };
     }
 
-    const dates: Array<{ source: string; startYear?: number | null; endYear?: number | null }> = [];
+    const dates: Array<{
+      source: string;
+      startYear?: number | null;
+      endYear?: number | null;
+      asFloruit?: boolean;
+    }> = [];
     const clearAuthorityVitalSources: string[] = [];
     const nationalities: Array<{ label: string; ref?: string | null; source: string }> = [];
     const origins: Array<{
@@ -808,18 +814,24 @@ export async function backfillEntitiesSqlite(
       if (!meta) continue;
       const normalizedSource = source.trim().toUpperCase();
       const bioYears = biographicalYearsFromMetadata(meta);
+      const floruitYears = floruitYearsFromMetadata(meta);
       if (bioYears.startYear != null || bioYears.endYear != null) {
         dates.push({
           source: normalizedSource,
           startYear: bioYears.startYear,
           endYear: bioYears.endYear,
         });
-      } else if (
-        meta.dateSource === 'floruit' ||
-        meta.dateSource === 'index' ||
-        meta.dateSource === 'nationality'
-      ) {
-        // Drop dynasty/floruit years that older mints stored as CBDB birth/death.
+      } else if (floruitYears.startYear != null || floruitYears.endYear != null) {
+        // Real floruit: store as dates+fl.; clear any birth/death wrongly minted earlier.
+        dates.push({
+          source: normalizedSource,
+          startYear: floruitYears.startYear,
+          endYear: floruitYears.endYear,
+          asFloruit: true,
+        });
+        clearAuthorityVitalSources.push(normalizedSource);
+      } else if (meta.dateSource === 'index' || meta.dateSource === 'nationality') {
+        // Drop index/dynasty years that older mints stored as CBDB birth/death.
         clearAuthorityVitalSources.push(normalizedSource);
       }
       for (const value of meta.nationality ?? []) {

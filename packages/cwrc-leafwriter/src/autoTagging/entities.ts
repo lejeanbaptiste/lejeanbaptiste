@@ -145,6 +145,11 @@ export interface AuthoritySourcedFields {
   source: string;
   startYear?: number;
   endYear?: number;
+  /**
+   * When true, start/end are real floruit earliest/latest — store as a `dates`
+   * row with `start_precision: 'fl.'`, not as birth/death.
+   */
+  asFloruit?: boolean;
   nationality?: { canonicalId: string; label: string }[];
   origin?: OriginAssertion[];
   description?: string;

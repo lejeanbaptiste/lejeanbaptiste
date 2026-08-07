@@ -119,9 +119,11 @@ export const aggregateGlobalMetrics = (state: AchievementsState): GlobalMetrics 
     flagOfCommitment: state.githubContributions?.count ?? 0,
     languages: 0,
   };
+  // Persistence counts every successful save (saveCount), not distinct
+  // file paths — re-saving the same document is the point of the medal.
+  global.texts = state.saveCount;
   const allLanguages = new Set<string>();
   for (const project of Object.values(state.projects)) {
-    global.texts += project.savedDocs.length;
     global.tags += project.tagsTotal;
     global.disambiguated += project.disambiguated;
     global.places += project.placesDisambiguated;

@@ -78,7 +78,11 @@ export interface SqlitePanelLike {
 }
 
 const datesFromPanel = (panel: SqlitePanelLike): EntityDates | null => {
-  if (panel.kind === 'work' && panel.workDate) {
+  // Works always use workDate; persons use it when it is a floruit range (CBDB fl. earliest–latest).
+  if (
+    panel.workDate &&
+    (panel.kind === 'work' || panel.workDate.startPrecision === 'fl.')
+  ) {
     const { startYear, endYear, startPrecision, endPrecision } = panel.workDate;
     if (startYear == null && endYear == null) return null;
     return { startYear, endYear, startPrecision, endPrecision };

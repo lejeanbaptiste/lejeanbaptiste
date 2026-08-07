@@ -12,7 +12,7 @@ import {
   type EntityKind,
 } from './entities';
 import { formatNorbertAuthorityValue } from './norbertAuthorityId';
-import { biographicalYearsFromMetadata } from './personDates';
+import { biographicalYearsFromMetadata, filterYearsFromMetadata, floruitYearsFromMetadata, isFilterOnlyDateSource, scrubIndexYearFloruitClue } from './personDates';
 import { linkedCentralIds } from './bridgeInbox';
 import type { EntityStore } from './entityStore';
 import { textWithoutHiddenReadings } from './hiddenChoiceText';
@@ -80,10 +80,19 @@ export interface DisambiguationCandidate {
    */
   centralEntityId?: string;
   fromEntityFile?: boolean;
-  /** Birth/founding year (persons: Wikidata P569; CHGIS places: metadata.startYear). */
+  /**
+   * Years used by the Disambiguate date filter and (for places/offices / real floruit) captions.
+   * For persons these may be birth/death, floruit earliest–latest, or CBDB index filter windows
+   * — see {@link dateSource}. Index years are never minted or shown as `fl.`
+   */
   startYear?: number;
-  /** Death/dissolution year (persons: Wikidata P570; CHGIS places: metadata.endYear). */
+  /** Death/dissolution year, or end of a floruit/filter/period interval. */
   endYear?: number;
+  /**
+   * Pack `metadata.dateSource`. `floruit` = real fl. earliest/latest; `index`/`nationality`
+   * = filter anchors only (never shown/stored as floruit).
+   */
+  dateSource?: 'fine' | 'floruit' | 'index' | 'nationality';
   /** DILA place records are split one-per-dynasty (e.g. 東晉); kept for a future dynasty filter/picker. */
   dynasty?: string;
   /** Entity's full name in the project source language script (authority-provided). */
@@ -382,8 +391,6 @@ export function mergeSelectedCandidates(
   if (candidates.length === 0) return null;
   const first = candidates[0]!;
   const fromFile = candidates.find((c) => c.fromEntityFile);
-  const startYears = candidates.map((c) => c.startYear).filter((y): y is number => y != null);
-  const endYears = candidates.map((c) => c.endYear).filter((y): y is number => y != null);
   const projectLangName = candidates.map((c) => c.projectLangName).find(Boolean);
   const romanizedName = candidates.map((c) => c.romanizedName).find(Boolean);
   const typedByText = new Map<string, TypedName>();
@@ -409,6 +416,16 @@ export function mergeSelectedCandidates(
     authorityAssertionMap.set(key, candidate);
   }
   const authorityAssertions = [...authorityAssertionMap.values()];
+  const bioBearing = candidates.filter(
+    (c) => !isFilterOnlyDateSource(c.dateSource) && (c.startYear != null || c.endYear != null),
+  );
+  const yearSources = bioBearing.length ? bioBearing : candidates;
+  const startYears = yearSources.map((c) => c.startYear).filter((y): y is number => y != null);
+  const endYears = yearSources.map((c) => c.endYear).filter((y): y is number => y != null);
+  const filterOnly = candidates.find((c) => isFilterOnlyDateSource(c.dateSource));
+  const dateSource = bioBearing.length
+    ? (bioBearing.find((c) => c.dateSource === 'fine')?.dateSource ?? undefined)
+    : filterOnly?.dateSource;
   return {
     id: fromFile?.id ?? first.id,
     label: fromFile?.label ?? nonLatinLabel ?? first.label,
@@ -426,8 +443,11 @@ export function mergeSelectedCandidates(
     authorityIds: dedupeAuthorityIds(candidates.flatMap((c) => c.authorityIds ?? [])),
     startYear: startYears.length ? Math.min(...startYears) : undefined,
     endYear: endYears.length ? Math.max(...endYears) : undefined,
+    dateSource,
     dynasty: candidates.find((c) => c.dynasty)?.dynasty,
     geo: mergedGeo(candidates),
+    authorityMetadata:
+      candidates.find((c) => c.authorityMetadata)?.authorityMetadata ?? first.authorityMetadata,
     authorityAssertions: authorityAssertions.length ? authorityAssertions : undefined,
   };
 }
@@ -902,15 +922,20 @@ async function candidatesFromAuthorityPacks(
           frenchOfficeGlosses,
         )) {
           let description = match.description;
-          const bioYears =
+          const dateSource = row?.metadata?.dateSource;
+          if (entityType === 'person' && dateSource === 'index') {
+            description = scrubIndexYearFloruitClue(description);
+          }
+          const filterYears =
             entityType === 'person'
-              ? biographicalYearsFromMetadata(row?.metadata)
+              ? filterYearsFromMetadata(row?.metadata)
               : {
-                  ...(row?.metadata?.startYear != null ? { startYear: row.metadata.startYear } : {}),
-                  ...(row?.metadata?.endYear != null ? { endYear: row.metadata.endYear } : {}),
+                  startYear: row?.metadata?.startYear ?? undefined,
+                  endYear: row?.metadata?.endYear ?? undefined,
+                  isFine: true,
                 };
-          let startYear = bioYears.startYear;
-          let endYear = bioYears.endYear;
+          let startYear = filterYears.startYear;
+          let endYear = filterYears.endYear;
           let dynasty: string | undefined;
 
           if (
@@ -974,6 +999,13 @@ async function candidatesFromAuthorityPacks(
             ),
             startYear,
             endYear,
+            dateSource:
+              dateSource === 'fine' ||
+              dateSource === 'floruit' ||
+              dateSource === 'index' ||
+              dateSource === 'nationality'
+                ? dateSource
+                : undefined,
             dynasty,
             projectLangName: (() => {
               const displayName = row?.displayName?.trim() || row?.primaryName;
@@ -1421,16 +1453,41 @@ export function toAuthoritySourcedFields(
         candidate.sources[0] ??
         'authority'
       ).toUpperCase();
+      const meta = candidate.authorityMetadata;
+      const bioYears = meta
+        ? biographicalYearsFromMetadata(meta)
+        : isFilterOnlyDateSource(candidate.dateSource)
+          ? {}
+          : candidate.dateSource === 'floruit'
+            ? {}
+            : {
+                ...(candidate.startYear != null ? { startYear: candidate.startYear } : {}),
+                ...(candidate.endYear != null ? { endYear: candidate.endYear } : {}),
+              };
+      const floruitYears = meta
+        ? floruitYearsFromMetadata(meta)
+        : candidate.dateSource === 'floruit'
+          ? {
+              ...(candidate.startYear != null ? { startYear: candidate.startYear } : {}),
+              ...(candidate.endYear != null ? { endYear: candidate.endYear } : {}),
+            }
+          : {};
+      const asFloruit = Boolean(floruitYears.startYear != null || floruitYears.endYear != null);
+      const years = asFloruit ? floruitYears : bioYears;
       return {
         source,
-        startYear: candidate.startYear,
-        endYear: candidate.endYear,
-        nationality: candidate.authorityMetadata?.nationality?.map((value) => ({
+        startYear: years.startYear,
+        endYear: years.endYear,
+        ...(asFloruit ? { asFloruit: true } : {}),
+        nationality: meta?.nationality?.map((value) => ({
           canonicalId: value.canonicalId,
           label: value.label,
         })),
-        origin: candidate.authorityMetadata?.origin,
-        description: candidate.description,
+        origin: meta?.origin,
+        description:
+          candidate.dateSource === 'index'
+            ? scrubIndexYearFloruitClue(candidate.description)
+            : candidate.description,
       };
     })
     .filter(

@@ -126,6 +126,26 @@ describe('renderEntityText (translation / Word shared rules)', () => {
     expect(formatDates(person().dates, ENGLISH_DEFAULTS)).toBe('440–483');
   });
 
+  test('formatDates renders floruit as fl. A–B', () => {
+    expect(
+      formatDates(
+        {
+          startYear: 479,
+          endYear: 502,
+          startPrecision: 'fl.',
+          endPrecision: null,
+        },
+        ENGLISH_DEFAULTS,
+      ),
+    ).toBe('fl. 479–502');
+    expect(
+      formatDates(
+        { startYear: 1065, endYear: null, startPrecision: 'fl.', endPrecision: null },
+        ENGLISH_DEFAULTS,
+      ),
+    ).toBe('fl. 1065');
+  });
+
   test('family_only override', () => {
     expect(renderEntityText(person(), 3, 'family_only')).toBe('Cui');
   });

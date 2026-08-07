@@ -353,10 +353,25 @@ const InstanceContext = ({ instance, isCurrent, onSelect }: InstanceContextProps
 
 /**
  * Candidate row caption for period disambiguation (e.g. period-specific office entities —
- * see docs/entity-display-translations-planning.md Phase 3). Kind-agnostic: lights up for
- * any candidate carrying startYear/endYear/dynasty, wherever that source populates it.
+ * see docs/entity-display-translations-planning.md Phase 3).
+ * Real floruit shows as `fl. A–B`; CBDB index / nationality filter anchors stay off the caption.
  */
 const formatCandidatePeriod = (candidate: DisambiguationCandidate): string => {
+  if (candidate.dateSource === 'index' || candidate.dateSource === 'nationality') {
+    return candidate.dynasty ?? '';
+  }
+  if (candidate.dateSource === 'floruit') {
+    if (candidate.startYear == null && candidate.endYear == null) {
+      return candidate.dynasty ?? '';
+    }
+    const span =
+      candidate.startYear != null &&
+      candidate.endYear != null &&
+      candidate.startYear !== candidate.endYear
+        ? `fl. ${candidate.startYear}–${candidate.endYear}`
+        : `fl. ${candidate.startYear ?? candidate.endYear}`;
+    return candidate.dynasty ? `${span} (${candidate.dynasty})` : span;
+  }
   const range =
     candidate.startYear != null || candidate.endYear != null
       ? `${candidate.startYear ?? '?'}–${candidate.endYear ?? '?'}`
@@ -1358,16 +1373,19 @@ export const DisambiguationPanel = ({
                     />
                   )}
                 </Box>
-                {(candidate.startYear != null || candidate.endYear != null || candidate.dynasty) && (
+                {(() => {
+                  const period = formatCandidatePeriod(candidate);
+                  return period ? (
                   <Typography
                     variant="caption"
                     color="text.secondary"
                     display="block"
                     sx={{ lineHeight: 1.3, fontWeight: 600 }}
                   >
-                    {formatCandidatePeriod(candidate)}
+                    {period}
                   </Typography>
-                )}
+                  ) : null;
+                })()}
                 {candidate.description && (
                   <Typography
                     variant="caption"

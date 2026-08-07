@@ -326,9 +326,9 @@ const App = ({ document, settings, user }: LeafWriterOptions) => {
 
       _writer.event('documentLoaded').subscribe((success: boolean) => {
         if (!success) return;
-        if (document.xml) {
-          actions.document.setDocumentXml(document.xml);
-        }
+        // Never re-apply the init-time `document.xml` here — that closed-over
+        // snapshot is stale after autotag apply / tab loads and used to
+        // overwrite the just-loaded document in overmind state.
         actions.document.setLoaded(true);
       });
 

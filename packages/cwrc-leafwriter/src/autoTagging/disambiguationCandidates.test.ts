@@ -19,6 +19,7 @@ import {
   mergeSelectedCandidates,
   normalizeGeo,
   stripOwnDatabaseSources,
+  toAuthoritySourcedFields,
   type DisambiguationCandidate,
 } from './disambiguationCandidates';
 import { AuthorityCache } from './authorityCache';
@@ -1169,6 +1170,59 @@ describe('disambiguationCandidates', () => {
     it('normalizes a reversed range', () => {
       const dated = { ...base, startYear: 226, endYear: 249 };
       expect(candidatePassesYearFilter(dated, { mode: 'limit', start: 300, end: 200 })).toBe(true);
+    });
+
+    it('filters CBDB-style index/floruit years carried on the candidate', () => {
+      const indexAnchor: DisambiguationCandidate = {
+        ...base,
+        startYear: 1035,
+        endYear: 1095,
+        dateSource: 'index',
+      };
+      expect(candidatePassesYearFilter(indexAnchor, { mode: 'limit', start: 960, end: 1280 })).toBe(
+        true,
+      );
+      expect(candidatePassesYearFilter(indexAnchor, { mode: 'limit', start: 400, end: 600 })).toBe(
+        false,
+      );
+    });
+  });
+
+  describe('toAuthoritySourcedFields', () => {
+    it('mints floruit as asFloruit and does not mint index years as vitals', () => {
+      const floruit = toAuthoritySourcedFields([
+        {
+          id: 'cbdb:1',
+          label: '活躍',
+          sources: ['CBDB'],
+          startYear: 479,
+          endYear: 502,
+          dateSource: 'floruit',
+          authorityMetadata: { dateSource: 'floruit', startYear: 479, endYear: 502 },
+          description: '活躍 (fl. 479–502, 齊)',
+        },
+      ]);
+      expect(floruit?.[0]?.asFloruit).toBe(true);
+      expect(floruit?.[0]?.startYear).toBe(479);
+      expect(floruit?.[0]?.endYear).toBe(502);
+      expect(floruit?.[0]?.description).toBe('活躍 (fl. 479–502, 齊)');
+
+      const indexOnly = toAuthoritySourcedFields([
+        {
+          id: 'cbdb:2',
+          label: '指數',
+          sources: ['CBDB'],
+          startYear: 1035,
+          endYear: 1095,
+          dateSource: 'index',
+          authorityMetadata: { dateSource: 'index', startYear: 1035, endYear: 1095 },
+          description: '指數 (fl. 1065, 宋)',
+        },
+      ]);
+      expect(indexOnly?.[0]?.startYear).toBeUndefined();
+      expect(indexOnly?.[0]?.endYear).toBeUndefined();
+      expect(indexOnly?.[0]?.asFloruit).toBeUndefined();
+      expect(indexOnly?.[0]?.description).toBe('指數 (宋)');
     });
   });
 });

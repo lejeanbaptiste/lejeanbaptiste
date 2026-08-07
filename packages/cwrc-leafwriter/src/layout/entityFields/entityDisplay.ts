@@ -401,6 +401,7 @@ const formatYearValue = (isoYear: number, settings: DateFormatSettings): string 
  * localized marker (from the stored `precision` when set, else a default
  * `birthWord`/`deathWord`) so a death-only date doesn't show a bare,
  * ambiguous year. A full birth–death range needs no prefix.
+ * Floruit (`fl.`) uses one prefix for the whole span: `fl. A–B` / `fl. A`.
  */
 export const formatDates = (
   dates: EntityDates | null,
@@ -409,6 +410,17 @@ export const formatDates = (
 ): string | null => {
   if (!dates) return null;
   const { startYear, endYear, startPrecision, endPrecision } = dates;
+  const startParsed = startPrecision ? parsePrecision(startPrecision) : null;
+  const endParsed = endPrecision ? parsePrecision(endPrecision) : null;
+  const isFloruit = startParsed?.base === 'fl' || endParsed?.base === 'fl';
+  if (isFloruit && (startYear != null || endYear != null)) {
+    const word = settings.floruitWord;
+    if (startYear != null && endYear != null && startYear !== endYear) {
+      return `${word} ${formatYearValue(startYear, settings)}–${formatYearValue(endYear, settings)}`;
+    }
+    const year = startYear ?? endYear!;
+    return `${word} ${formatYearValue(year, settings)}`;
+  }
   if (startYear != null && endYear != null) {
     return `${formatYearValue(startYear, settings)}–${formatYearValue(endYear, settings)}`;
   }
@@ -417,7 +429,7 @@ export const formatDates = (
   // the year, keeping a circa marker if the stored precision carries one.
   if (startYear != null) {
     if (options.neutral) {
-      const circa = (startPrecision ? parsePrecision(startPrecision) : null)?.circa ?? false;
+      const circa = startParsed?.circa ?? false;
       const year = formatYearValue(startYear, settings);
       return circa ? `${settings.circaWord} ${year}` : year;
     }
@@ -426,7 +438,7 @@ export const formatDates = (
   }
   if (endYear != null) {
     if (options.neutral) {
-      const circa = (endPrecision ? parsePrecision(endPrecision) : null)?.circa ?? false;
+      const circa = endParsed?.circa ?? false;
       const year = formatYearValue(endYear, settings);
       return circa ? `${settings.circaWord} ${year}` : year;
     }

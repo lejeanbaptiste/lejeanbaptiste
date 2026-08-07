@@ -690,6 +690,8 @@
           "edit_values": "Modifier la nationalité et le lieu d’origine",
           "birth": "Naissance",
           "death": "Décès",
+          "floruit_from": "De",
+          "floruit_to": "À",
           "date_marker_birth": "né",
           "date_marker_death": "†",
           "era_ce": "apr. J.-C.",

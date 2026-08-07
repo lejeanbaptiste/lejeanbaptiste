@@ -1344,7 +1344,17 @@ export const saveActiveTab = async (
     await window.electronAPI.writeFile(filePath, stamped);
     if (state.project.rootPath) {
       const rootPath = state.project.rootPath;
+      const notifyAchievement = (message: string) =>
+        context.actions.ui.notifyViaSnackbar({
+          message,
+          options: { variant: 'success', autoHideDuration: 7000 },
+        });
       void updateTagStatsForFile(rootPath, filePath, stamped)
+        .catch(() => ({
+          version: 1 as const,
+          project: { tags: {}, attrs: {}, attrValues: {} },
+          files: {},
+        }))
         .then((merged) =>
           processSaveForAchievements({
             rootPath,
@@ -1353,17 +1363,11 @@ export const saveActiveTab = async (
             xml: stamped,
             stats: merged,
             sourceMode: savedFromSourceMode,
-            notify: (message) =>
-              context.actions.ui.notifyViaSnackbar({
-                message,
-                options: { variant: 'success', autoHideDuration: 7000 },
-              }),
+            notify: notifyAchievement,
           }),
         )
         .catch(() => {
-          // Achievements are decorative; a failure here (e.g. tag-stats
-          // read/write) must never surface as an unhandled rejection or
-          // silently skip evaluation on the next successful save.
+          // Achievements are decorative; never surface as an unhandled rejection.
         });
     }
     state.project.openTabs = state.project.openTabs.map((tab) =>
@@ -1649,7 +1653,17 @@ export const saveActiveTabAs = async (
     if (state.project.rootPath) {
       await reloadDirectoryInTree({ state } as Context, getParentPath(filePath));
       const rootPath = state.project.rootPath;
+      const notifyAchievement = (message: string) =>
+        actions.ui.notifyViaSnackbar({
+          message,
+          options: { variant: 'success', autoHideDuration: 7000 },
+        });
       void updateTagStatsForFile(rootPath, filePath, stamped)
+        .catch(() => ({
+          version: 1 as const,
+          project: { tags: {}, attrs: {}, attrValues: {} },
+          files: {},
+        }))
         .then((merged) =>
           processSaveForAchievements({
             rootPath,
@@ -1658,17 +1672,11 @@ export const saveActiveTabAs = async (
             xml: stamped,
             stats: merged,
             sourceMode: savedFromSourceMode,
-            notify: (message) =>
-              actions.ui.notifyViaSnackbar({
-                message,
-                options: { variant: 'success', autoHideDuration: 7000 },
-              }),
+            notify: notifyAchievement,
           }),
         )
         .catch(() => {
-          // Achievements are decorative; a failure here (e.g. tag-stats
-          // read/write) must never surface as an unhandled rejection or
-          // silently skip evaluation on the next successful save.
+          // Achievements are decorative; never surface as an unhandled rejection.
         });
     }
 

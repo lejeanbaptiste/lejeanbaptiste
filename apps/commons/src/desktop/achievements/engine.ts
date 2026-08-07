@@ -190,6 +190,9 @@ const countEntityDatabase = async (rootPath: string): Promise<number | null> => 
   return null;
 };
 
+/** Serialize achievement writes so rapid Ctrl+S does not lose saveCount. */
+let achievementsSaveQueue: Promise<void> = Promise.resolve();
+
 /**
  * Fire-and-forget achievements pass, called after a successful document
  * save. Must never throw into the save pipeline.
@@ -210,61 +213,70 @@ export const processSaveForAchievements = async (options: {
   sourceMode: boolean;
   notify: AchievementUnlockNotifier;
 }): Promise<void> => {
-  try {
-    const { rootPath, projectId, filePath, xml, stats, sourceMode, notify } = options;
-    const state = await loadAchievementsState();
-    const savedAt = new Date();
-
-    state.saveCount += 1;
-    if (sourceMode) state.sourceModeSaveCount = (state.sourceModeSaveCount ?? 0) + 1;
-
-    const projectKey = projectId ?? normalizePathKey(rootPath);
-    const project = getProjectMetrics(state, projectKey);
-
-    const relativePath = toRelativePath(rootPath, filePath);
-    if (!project.savedDocs.includes(relativePath)) project.savedDocs.push(relativePath);
-
-    const docLanguage = documentRootLanguage(xml);
-    if (docLanguage && !project.docLanguages.includes(docLanguage)) {
-      project.docLanguages.push(docLanguage);
-    }
-
-    const tagMetrics = metricsFromTagStats(stats);
-    project.tagsTotal = Math.max(project.tagsTotal, tagMetrics.tagsTotal);
-    project.disambiguated = Math.max(project.disambiguated, tagMetrics.disambiguated);
-    project.placesDisambiguated = Math.max(
-      project.placesDisambiguated,
-      tagMetrics.placesDisambiguated,
-    );
-
-    const entityCount = await countEntityDatabase(rootPath);
-    if (entityCount != null) {
-      project.entities = Math.max(project.entities, entityCount);
-    }
-
-    let encoderName = '';
+  const run = async () => {
     try {
-      encoderName = (await window.electronAPI?.getEncoderName()) ?? '';
+      const { rootPath, projectId, filePath, xml, stats, sourceMode, notify } = options;
+      const state = await loadAchievementsState();
+      const savedAt = new Date();
+
+      state.saveCount += 1;
+      if (sourceMode) state.sourceModeSaveCount = (state.sourceModeSaveCount ?? 0) + 1;
+
+      const projectKey = projectId ?? normalizePathKey(rootPath);
+      const project = getProjectMetrics(state, projectKey);
+
+      const relativePath = toRelativePath(rootPath, filePath);
+      if (!project.savedDocs.includes(relativePath)) project.savedDocs.push(relativePath);
+
+      const docLanguage = documentRootLanguage(xml);
+      if (docLanguage && !project.docLanguages.includes(docLanguage)) {
+        project.docLanguages.push(docLanguage);
+      }
+
+      const tagMetrics = metricsFromTagStats(stats);
+      project.tagsTotal = Math.max(project.tagsTotal, tagMetrics.tagsTotal);
+      project.disambiguated = Math.max(project.disambiguated, tagMetrics.disambiguated);
+      project.placesDisambiguated = Math.max(
+        project.placesDisambiguated,
+        tagMetrics.placesDisambiguated,
+      );
+
+      const entityCount = await countEntityDatabase(rootPath);
+      if (entityCount != null) {
+        project.entities = Math.max(project.entities, entityCount);
+      }
+
+      let encoderName = '';
+      try {
+        encoderName = (await window.electronAPI?.getEncoderName()) ?? '';
+      } catch {
+        encoderName = '';
+      }
+
+      const global = aggregateGlobalMetrics(state);
+      const newUnlocks = determineNewUnlocks(state, global, {
+        savedAt,
+        encoderName,
+        fileCounts: stats.files[relativePath] ?? null,
+        xml,
+        sourceMode,
+        roll: Math.random(),
+        pickRoll: Math.random(),
+      });
+
+      const applied = applyUnlocks(state, newUnlocks, savedAt.toISOString());
+
+      await saveAchievementsState(state);
+      notifyUnlocks(state, applied, notify);
     } catch {
-      encoderName = '';
+      // Decorative feature: swallow everything.
     }
+  };
 
-    const global = aggregateGlobalMetrics(state);
-    const newUnlocks = determineNewUnlocks(state, global, {
-      savedAt,
-      encoderName,
-      fileCounts: stats.files[relativePath] ?? null,
-      xml,
-      sourceMode,
-      roll: Math.random(),
-      pickRoll: Math.random(),
-    });
-
-    const applied = applyUnlocks(state, newUnlocks, savedAt.toISOString());
-
-    await saveAchievementsState(state);
-    notifyUnlocks(state, applied, notify);
-  } catch {
-    // Decorative feature: swallow everything.
-  }
+  const queued = achievementsSaveQueue.then(run, run);
+  achievementsSaveQueue = queued.then(
+    () => undefined,
+    () => undefined,
+  );
+  return queued;
 };

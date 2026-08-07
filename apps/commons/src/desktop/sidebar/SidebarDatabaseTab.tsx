@@ -349,6 +349,15 @@ const scholarlyDateRange = (
   t: TFn,
 ): string => {
   if (startYear == null && endYear == null) return '—';
+  // Real floruit: one `fl.` for the whole span (CBDB earliest–latest), not on both sides.
+  if (startPrecision === 'fl.' || endPrecision === 'fl.') {
+    const fl = precisionLabel('fl.', t) || 'fl.';
+    if (startYear != null && endYear != null && startYear !== endYear) {
+      return `${fl} ${Math.abs(startYear)}–${Math.abs(endYear)}`;
+    }
+    const year = startYear ?? endYear!;
+    return `${fl} ${Math.abs(year)}`;
+  }
   if (startYear == null) return scholarlyYear(endYear!, endPrecision, t);
   if (endYear == null) return scholarlyYear(startYear, startPrecision, t);
   return `${scholarlyYear(startYear, startPrecision, t)}–${scholarlyYear(endYear, endPrecision, t)}`;
@@ -631,10 +640,10 @@ function EntityRow({
           <Typography variant="caption" color="text.secondary" component="div" noWrap>
             {entity.startYear != null || entity.endYear != null
               ? `${t('LWC.desktop.sidebar.database.dates')}: ${
-                  entity.kind === 'work' && entity.workDate
+                  entity.workDate
                     ? scholarlyDateRange(
-                        entity.startYear,
-                        entity.endYear,
+                        entity.workDate.startYear,
+                        entity.workDate.endYear,
                         entity.workDate.startPrecision,
                         entity.workDate.endPrecision,
                         t,
@@ -1186,23 +1195,32 @@ export const SidebarDatabaseTab = ({ active = false }: SidebarDatabaseTabProps) 
       requestAnimationFrame(() => searchInputRef.current?.focus());
 
       void (async () => {
-        let selectId = projectKey;
-        if (syncToCentral && store) {
-          const api = desktopEntityFileApi();
-          if (api) {
-            try {
-              const { id: userStableId } = await readOrMintUserStableId(
-                api,
-                centralStore?.centralFolder ?? null,
-              );
-              const centralId = await store.sqliteGetCentralId(projectKey, userStableId);
-              if (centralId) selectId = centralId;
-            } catch {
-              // Fall through: select the project key; list filter still uses projectKey.
-            }
+        // Synced projects browse CEDB here. Only select a row id that exists in
+        // that list — never plant the corpus @key when there is no central
+        // mapping, or Delete entity (1) lights up with no checkbox checked.
+        if (syncToCentral) {
+          if (!store) {
+            setSelected(new Set());
+            return;
           }
+          const api = desktopEntityFileApi();
+          if (!api) {
+            setSelected(new Set());
+            return;
+          }
+          try {
+            const { id: userStableId } = await readOrMintUserStableId(
+              api,
+              centralStore?.centralFolder ?? null,
+            );
+            const centralId = await store.sqliteGetCentralId(projectKey, userStableId);
+            setSelected(centralId ? new Set([centralId]) : new Set());
+          } catch {
+            setSelected(new Set());
+          }
+          return;
         }
-        setSelected(new Set([selectId]));
+        setSelected(new Set([projectKey]));
       })();
     };
 
@@ -1590,18 +1608,28 @@ export const SidebarDatabaseTab = ({ active = false }: SidebarDatabaseTabProps) 
     editDescriptionRef.current = description;
     setEditRomanized(suggestedRomanized ?? '');
     const workDate = entity.workDate;
+    const isFloruitRange = workDate?.startPrecision === 'fl.';
     const birthAssertion = entity.assertions.find(
       (assertion) => assertion.element === 'birth' && assertion.origin === 'user',
     );
     const deathAssertion = entity.assertions.find(
       (assertion) => assertion.element === 'death' && assertion.origin === 'user',
     );
-    setDateBirth(entity.startYear != null ? String(Math.abs(entity.startYear)) : '');
-    setDateDeath(entity.endYear != null ? String(Math.abs(entity.endYear)) : '');
-    setDateBirthBce(entity.startYear != null && entity.startYear < 0);
-    setDateDeathBce(entity.endYear != null && entity.endYear < 0);
-    setDateBirthQualifier((birthAssertion?.precision as DatePrecision) ?? '');
-    setDateDeathQualifier((deathAssertion?.precision as DatePrecision) ?? '');
+    if (isFloruitRange) {
+      setDateBirth(workDate?.startYear != null ? String(Math.abs(workDate.startYear)) : '');
+      setDateDeath(workDate?.endYear != null ? String(Math.abs(workDate.endYear)) : '');
+      setDateBirthBce(false);
+      setDateDeathBce(false);
+      setDateBirthQualifier('fl.');
+      setDateDeathQualifier('');
+    } else {
+      setDateBirth(entity.startYear != null ? String(Math.abs(entity.startYear)) : '');
+      setDateDeath(entity.endYear != null ? String(Math.abs(entity.endYear)) : '');
+      setDateBirthBce(entity.startYear != null && entity.startYear < 0);
+      setDateDeathBce(entity.endYear != null && entity.endYear < 0);
+      setDateBirthQualifier((birthAssertion?.precision as DatePrecision) ?? '');
+      setDateDeathQualifier((deathAssertion?.precision as DatePrecision) ?? '');
+    }
     setWorkDateStart(
       workDate?.startYear != null
         ? String(Math.abs(workDate.startYear))
@@ -2148,28 +2176,58 @@ export const SidebarDatabaseTab = ({ active = false }: SidebarDatabaseTabProps) 
       if (!value.trim() || !Number.isInteger(number) || number < 0) return null;
       return bce ? -number : number;
     };
-    const birth = parseYear(dateBirth, dateBirthBce);
-    const death = dateBirthQualifier === 'fl.' ? null : parseYear(dateDeath, dateDeathBce);
-    const birthPrecision = dateBirthQualifier;
-    const deathPrecision = dateDeathQualifier;
+    const start = parseYear(dateBirth, dateBirthBce);
+    const end = parseYear(dateDeath, dateDeathBce);
     const entityId = editEntity.id;
+    const asFloruit = dateBirthQualifier === 'fl.';
     setDateEditing(false);
     void (async () => {
       const handled = await runSqliteEntityMutation(
         entityId,
         'Saving dates…',
         async (targetStore) => {
+          if (asFloruit) {
+            // CBDB-style earliest–latest: dates row + fl., not birth/death.
+            await targetStore.sqliteSetUserDate({
+              entityId,
+              part: 'birth',
+              year: null,
+              precision: null,
+            });
+            await targetStore.sqliteSetUserDate({
+              entityId,
+              part: 'death',
+              year: null,
+              precision: null,
+            });
+            await targetStore.sqliteSetUserWorkDate({
+              entityId,
+              startYear: start,
+              endYear: end ?? start,
+              startPrecision: 'fl.',
+              endPrecision: null,
+            });
+            return;
+          }
+          // Leaving floruit mode: clear a prior floruit dates row if present.
+          if (editEntity.workDate?.startPrecision === 'fl.') {
+            await targetStore.sqliteSetUserWorkDate({
+              entityId,
+              startYear: null,
+              endYear: null,
+            });
+          }
           await targetStore.sqliteSetUserDate({
             entityId,
             part: 'birth',
-            year: birth,
-            precision: birthPrecision,
+            year: start,
+            precision: dateBirthQualifier,
           });
           await targetStore.sqliteSetUserDate({
             entityId,
             part: 'death',
-            year: death,
-            precision: deathPrecision,
+            year: end,
+            precision: dateDeathQualifier,
           });
         },
       );
@@ -4366,7 +4424,11 @@ export const SidebarDatabaseTab = ({ active = false }: SidebarDatabaseTabProps) 
                 <Stack spacing={0.75}>
                   {[
                     {
-                      label: t('LWC.desktop.sidebar.database.birth'),
+                      key: 'start',
+                      label:
+                        dateBirthQualifier === 'fl.'
+                          ? t('LWC.desktop.sidebar.database.floruit_from')
+                          : t('LWC.desktop.sidebar.database.birth'),
                       value: dateBirth,
                       setValue: setDateBirth,
                       qualifier: dateBirthQualifier,
@@ -4374,51 +4436,46 @@ export const SidebarDatabaseTab = ({ active = false }: SidebarDatabaseTabProps) 
                       bce: dateBirthBce,
                       setBce: setDateBirthBce,
                       options: ['b.', 'b. ca.', 'active', 'active ca.', 'fl.'],
+                      isFloruitEnd: false,
                     },
                     {
-                      label: t('LWC.desktop.sidebar.database.death'),
+                      key: 'end',
+                      label:
+                        dateBirthQualifier === 'fl.'
+                          ? t('LWC.desktop.sidebar.database.floruit_to')
+                          : t('LWC.desktop.sidebar.database.death'),
                       value: dateDeath,
                       setValue: setDateDeath,
                       qualifier: dateDeathQualifier,
                       setQualifier: setDateDeathQualifier,
                       bce: dateDeathBce,
                       setBce: setDateDeathBce,
-                      options: [
-                        'd.',
-                        'd. ca.',
-                        ...(dateBirthQualifier === 'active' || dateBirthQualifier === 'active ca.'
-                          ? ['active to', 'active to ca.']
-                          : []),
-                      ],
+                      options:
+                        dateBirthQualifier === 'fl.'
+                          ? ['']
+                          : [
+                              'd.',
+                              'd. ca.',
+                              ...(dateBirthQualifier === 'active' ||
+                              dateBirthQualifier === 'active ca.'
+                                ? ['active to', 'active to ca.']
+                                : []),
+                            ],
+                      isFloruitEnd: true,
                     },
                   ].map((part) => (
-                    <Stack
-                      key={part.label}
-                      direction="row"
-                      spacing={0.5}
-                      alignItems="center"
-                      sx={{
-                        opacity:
-                          dateBirthQualifier === 'fl.' &&
-                          part.label === t('LWC.desktop.sidebar.database.death')
-                            ? 0.5
-                            : 1,
-                      }}
-                    >
+                    <Stack key={part.key} direction="row" spacing={0.5} alignItems="center">
                       <TextField
                         select
                         size="small"
-                        value={part.qualifier}
+                        value={dateBirthQualifier === 'fl.' && part.isFloruitEnd ? '' : part.qualifier}
                         onChange={(event) => part.setQualifier(event.target.value as DatePrecision)}
-                        disabled={
-                          dateBirthQualifier === 'fl.' &&
-                          part.label === t('LWC.desktop.sidebar.database.death')
-                        }
+                        disabled={dateBirthQualifier === 'fl.' && part.isFloruitEnd}
                         sx={{ width: 92 }}
                         SelectProps={{ native: true }}
                       >
                         {part.options.map((option) => (
-                          <option key={option} value={option}>
+                          <option key={option || 'blank'} value={option}>
                             {option || '—'}
                           </option>
                         ))}
@@ -4430,10 +4487,6 @@ export const SidebarDatabaseTab = ({ active = false }: SidebarDatabaseTabProps) 
                         onChange={(event) =>
                           part.setValue(event.target.value.replace(/[^0-9]/g, ''))
                         }
-                        disabled={
-                          dateBirthQualifier === 'fl.' &&
-                          part.label === t('LWC.desktop.sidebar.database.death')
-                        }
                         sx={{ flex: 1 }}
                         inputProps={{ inputMode: 'numeric' }}
                       />
@@ -4441,10 +4494,7 @@ export const SidebarDatabaseTab = ({ active = false }: SidebarDatabaseTabProps) 
                         control={
                           <Switch
                             size="small"
-                            disabled={
-                              dateBirthQualifier === 'fl.' &&
-                              part.label === t('LWC.desktop.sidebar.database.death')
-                            }
+                            disabled={dateBirthQualifier === 'fl.'}
                             checked={part.bce}
                             onChange={(event) => part.setBce(event.target.checked)}
                           />
@@ -4456,6 +4506,7 @@ export const SidebarDatabaseTab = ({ active = false }: SidebarDatabaseTabProps) 
                   ))}
                   {dateBirth &&
                     dateDeath &&
+                    dateBirthQualifier !== 'fl.' &&
                     Math.abs(
                       (dateDeathBce ? -Number(dateDeath) : Number(dateDeath)) -
                         (dateBirthBce ? -Number(dateBirth) : Number(dateBirth)),

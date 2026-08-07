@@ -170,6 +170,28 @@ describe('candidatePassesDateFilter', () => {
     expect(candidatePassesDateFilter(meanTooLate, exclude)).toBe(false);
     expect(candidatePassesDateFilter(bornTooLate, exclude)).toBe(false);
   });
+
+  it('still filters persName on CBDB floruit/index reference dates', () => {
+    const floruit = person({
+      authorityId: '7',
+      primaryName: '活躍',
+      searchStrings: ['活躍'],
+      metadata: { dateSource: 'floruit', startYear: 479, endYear: 502 },
+    });
+    const index = person({
+      authorityId: '8',
+      primaryName: '指數',
+      searchStrings: ['指數'],
+      metadata: { dateSource: 'index', startYear: 1035, endYear: 1095 },
+    });
+    const limitSixDynasties = { mode: 'limit' as const, start: 400, end: 600 };
+    const limitSong = { mode: 'limit' as const, start: 960, end: 1280 };
+
+    expect(candidatePassesDateFilter(floruit, limitSixDynasties)).toBe(true);
+    expect(candidatePassesDateFilter(floruit, limitSong)).toBe(false);
+    expect(candidatePassesDateFilter(index, limitSong)).toBe(true);
+    expect(candidatePassesDateFilter(index, limitSixDynasties)).toBe(false);
+  });
 });
 
 describe('countPackUniqueStrings', () => {
