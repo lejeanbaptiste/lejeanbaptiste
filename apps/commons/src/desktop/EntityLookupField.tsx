@@ -395,8 +395,11 @@ export const EntityLookupField = ({
         await persistOfficeTranslationNames(session.store, resolvedId, {
           translation: merged.authorityMetadata?.translation,
           translationFr: merged.authorityMetadata?.translationFr,
-          enSource: merged.authorityIds?.[0]?.type ?? 'Huckbot5000',
-          frSource: 'MaxiRicci7000',
+          enSource:
+            merged.authorityMetadata?.translationSource ??
+            merged.authorityIds?.[0]?.type ??
+            'Huckbot5000',
+          frSource: merged.authorityMetadata?.translationFrSource ?? 'MaxiRicci7000',
         });
       }
       await autoSyncEntityToCentral(null, resolvedId);

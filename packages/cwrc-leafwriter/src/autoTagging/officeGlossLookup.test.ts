@@ -6,6 +6,8 @@ import {
   buildMaxiRicciGlossIndex,
   cleanPublishableOfficeGloss,
   formatOfficeClue,
+  HUCKBOT_PROCEDURAL_SOURCE,
+  MAXIRICCI_PROCEDURAL_SOURCE,
   officeGlossLookupKeys,
 } from './officeGlossLookup';
 import type { AuthorityCandidate } from './authority';
@@ -189,5 +191,51 @@ describe('officeGlossLookup', () => {
     expect(applyMaxiRicciGlossToCandidate(candidate, fr).metadata?.translationFr).toBe(
       'régulateur officiel',
     );
+  });
+
+  it('falls back to the procedural place+suffix template when no pack row matches', () => {
+    const en = buildHuckbotGlossIndex(glossNdjson);
+    const fr = buildMaxiRicciGlossIndex(frenchNdjson);
+    const candidate: AuthorityCandidate = {
+      source: 'CBDB',
+      authorityId: '999',
+      kind: 'office',
+      primaryName: '豫章太守',
+      searchStrings: ['豫章太守'],
+      metadata: { entityId: 'cbdb:office:999' },
+    };
+    const withEn = applyHuckbotGlossToCandidate(candidate, en);
+    expect(withEn.metadata?.translation).toBe('Commandery Governor of Yuzhang');
+    expect(withEn.metadata?.translationSource).toBe(HUCKBOT_PROCEDURAL_SOURCE);
+
+    const withBoth = applyMaxiRicciGlossToCandidate(withEn, fr);
+    expect(withBoth.metadata?.translationFr).toBe('gouverneur de commanderie de Yuzhang');
+    expect(withBoth.metadata?.translationFrSource).toBe(MAXIRICCI_PROCEDURAL_SOURCE);
+  });
+
+  it('procedural fallback still works with empty packs', () => {
+    const candidate: AuthorityCandidate = {
+      source: 'CBDB',
+      authorityId: '1000',
+      kind: 'office',
+      primaryName: '枝江令',
+      searchStrings: ['枝江令'],
+      metadata: {},
+    };
+    expect(applyHuckbotGlossToCandidate(candidate, new Map()).metadata?.translation).toBe(
+      'District Magistrate of Zhijiang',
+    );
+  });
+
+  it('does not invent a translation for names outside the pattern', () => {
+    const candidate: AuthorityCandidate = {
+      source: 'CBDB',
+      authorityId: '1001',
+      kind: 'office',
+      primaryName: '尚書令',
+      searchStrings: ['尚書令'],
+      metadata: {},
+    };
+    expect(applyHuckbotGlossToCandidate(candidate, new Map()).metadata?.translation).toBeUndefined();
   });
 });

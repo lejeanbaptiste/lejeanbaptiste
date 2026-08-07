@@ -1,6 +1,6 @@
 # Translation Mode — Phased Implementation Plan
 
-**Status (2026-08-01):** **Shipped** — Phases A–E complete (companions, tab, find scope, cascades, old dialog removed). Richer translation-pane word-processing is a separate Future item, not part of this plan. **Card reader (2026-08-04):** continuous unit list in the translation pane — see Future section below.
+**Status (2026-08-01):** **Shipped** — Phases A–E complete (companions, tab, find scope, cascades, old dialog removed). Richer translation-pane word-processing is a separate Future item, not part of this plan. **Card reader (2026-08-04):** continuous unit list in the translation pane — see Future section below. **AI blinding / placeholders (2026-08-07):** entity/date/holding/as/opaque pipeline, office translation-only defaults, and placeholder retry setting — see `translation-smoke-tests.md` §10–10b and root `CHANGELOG.md` (Translation panel).
 
 ## Context
 

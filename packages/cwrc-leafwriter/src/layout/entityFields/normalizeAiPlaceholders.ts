@@ -1,22 +1,51 @@
 /**
- * Repair AI-mangled LJBtero placeholders before substitution.
+ * Repair AI-mangled LJBtero placeholders before substitution / inventory.
  *
  * Models sometimes insert smart/straight quotes: `{{“date:0}}`, `{{"entity:…"}}`.
  */
 
-/** Normalize `{{…}}` placeholders so substitute* regexes can match them. */
+const QUOTE = '[\u201C\u201D\u201E\u201F"\']?';
+
+/** Normalize `{{…}}` placeholders so substitute* / inventory regexes can match them. */
 export const normalizeAiPlaceholders = (text: string): string => {
   if (!text.includes('{{')) return text;
   let out = text;
-  // {{“date:0}} / {{"date:0"}} / {{ date : 0 }}
   out = out.replace(
-    /\{\{\s*[\u201C\u201D\u201E\u201F"']?\s*date\s*:\s*[\u201C\u201D\u201E\u201F"']?\s*(\d+)\s*[\u201C\u201D\u201E\u201F"']?\s*\}\}/gi,
+    new RegExp(
+      `\\{\\{\\s*${QUOTE}\\s*date\\s*:\\s*${QUOTE}\\s*(\\d+)\\s*${QUOTE}\\s*\\}\\}`,
+      'gi',
+    ),
     '{{date:$1}}',
   );
-  // {{“entity:key”}} / {{entity:"key"}}
   out = out.replace(
-    /\{\{\s*[\u201C\u201D\u201E\u201F"']?\s*entity\s*:\s*[\u201C\u201D\u201E\u201F"']?\s*([^{}\s"'“”]+?)\s*[\u201C\u201D\u201E\u201F"']?\s*\}\}/gi,
-    (_match, key: string) => `{{entity:${String(key).trim()}}}`,
+    new RegExp(
+      `\\{\\{\\s*${QUOTE}\\s*opaque\\s*:\\s*${QUOTE}\\s*(\\d+)\\s*${QUOTE}\\s*\\}\\}`,
+      'gi',
+    ),
+    '{{opaque:$1}}',
   );
+  out = out.replace(
+    new RegExp(
+      `\\{\\{\\s*${QUOTE}\\s*holding\\s*:\\s*opaque\\s*:\\s*${QUOTE}\\s*(\\d+)\\s*${QUOTE}\\s*\\}\\}`,
+      'gi',
+    ),
+    '{{holding:opaque:$1}}',
+  );
+  out = out.replace(
+    new RegExp(
+      `\\{\\{\\s*${QUOTE}\\s*as\\s*:\\s*opaque\\s*:\\s*${QUOTE}\\s*(\\d+)\\s*${QUOTE}\\s*\\}\\}`,
+      'gi',
+    ),
+    '{{as:opaque:$1}}',
+  );
+  for (const role of ['entity', 'holding', 'as'] as const) {
+    out = out.replace(
+      new RegExp(
+        `\\{\\{\\s*${QUOTE}\\s*${role}\\s*:\\s*${QUOTE}\\s*([^{}\\s"'“”]+?)\\s*${QUOTE}\\s*\\}\\}`,
+        'gi',
+      ),
+      (_match, key: string) => `{{${role}:${String(key).trim()}}}`,
+    );
+  }
   return out;
 };

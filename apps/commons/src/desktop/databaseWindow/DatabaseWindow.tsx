@@ -426,6 +426,16 @@ export const DatabaseWindow = () => {
     // eslint-disable-next-line react-hooks/exhaustive-deps -- reload on view change only
   }, [databaseView, syncToCentral]);
 
+  useEffect(() => {
+    // Fired by the Electron menu bridge when the user presses F5.
+    const handleRefresh = () => {
+      if (jobRunning) return;
+      void reload();
+    };
+    window.addEventListener('desktop:refresh', handleRefresh);
+    return () => window.removeEventListener('desktop:refresh', handleRefresh);
+  }, [jobRunning, reload]);
+
   const entityById = useMemo(() => {
     const map = new Map<string, EntitySummary>();
     for (const entity of entities) map.set(entity.id, entity);

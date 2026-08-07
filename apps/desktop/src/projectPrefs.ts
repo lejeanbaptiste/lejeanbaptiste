@@ -45,6 +45,11 @@ export interface AiApiSettings {
   temperature: number;
   /** Show verified chunks immediately instead of waiting for the full run. */
   streamResults: boolean;
+  /**
+   * How many times to resend a translation when the model drops placeholders
+   * (0 = no retry; first attempt always runs). Hard-capped in sanitize.
+   */
+  placeholderRetryLimit: number;
   /** Successful connection test for this exact endpoint and model. */
   verifiedAt: string | null;
   verifiedBaseUrl: string;
@@ -58,16 +63,27 @@ export const DEFAULT_AI_API_SETTINGS: AiApiSettings = {
   model: '',
   temperature: 0.1,
   streamResults: false,
+  placeholderRetryLimit: 1,
   verifiedAt: null,
   verifiedBaseUrl: '',
   verifiedModel: '',
 };
+
+/** Inclusive upper bound so the retry loop can never run away. */
+export const MAX_PLACEHOLDER_RETRY_LIMIT = 5;
 
 const sanitizeAiApiSettings = (value: Partial<AiApiSettings> | undefined): AiApiSettings => {
   const temperature =
     typeof value?.temperature === 'number' && Number.isFinite(value.temperature)
       ? Math.min(2, Math.max(0, value.temperature))
       : DEFAULT_AI_API_SETTINGS.temperature;
+  const placeholderRetryLimit =
+    typeof value?.placeholderRetryLimit === 'number' && Number.isFinite(value.placeholderRetryLimit)
+      ? Math.min(
+          MAX_PLACEHOLDER_RETRY_LIMIT,
+          Math.max(0, Math.floor(value.placeholderRetryLimit)),
+        )
+      : DEFAULT_AI_API_SETTINGS.placeholderRetryLimit;
 
   return {
     apiKey: typeof value?.apiKey === 'string' ? value.apiKey : DEFAULT_AI_API_SETTINGS.apiKey,
@@ -80,6 +96,7 @@ const sanitizeAiApiSettings = (value: Partial<AiApiSettings> | undefined): AiApi
     model: typeof value?.model === 'string' ? value.model.trim() : '',
     temperature,
     streamResults: value?.streamResults === true,
+    placeholderRetryLimit,
     verifiedAt: typeof value?.verifiedAt === 'string' ? value.verifiedAt : null,
     verifiedBaseUrl: typeof value?.verifiedBaseUrl === 'string' ? value.verifiedBaseUrl.trim() : '',
     verifiedModel: typeof value?.verifiedModel === 'string' ? value.verifiedModel.trim() : '',

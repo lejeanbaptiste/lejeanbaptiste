@@ -9,6 +9,10 @@ import { bareNorbertAuthorityValue, norbertAuthorityLookupValues } from './norbe
 import type { AuthorityPackContent } from './packLoader';
 import { authorityPackLines } from './packLoader';
 import type { AuthorityPackId } from './packPaths';
+import { tryProceduralOfficeTranslation } from './proceduralOfficeGloss';
+
+export const HUCKBOT_PROCEDURAL_SOURCE = 'Huckbot5000 (procedural)';
+export const MAXIRICCI_PROCEDURAL_SOURCE = 'MaxiRicci7000 (procedural)';
 
 export const HUCKBOT_TRANSLATIONS_PACK_ID: AuthorityPackId = 'huckbot5000-translations';
 export const MAXIRICCI_TRANSLATIONS_PACK_ID: AuthorityPackId = 'maxiricci7000-translations';
@@ -257,22 +261,35 @@ export function applyHuckbotGlossToCandidate(
       },
     };
   }
-  if (!glosses.size) return candidate;
-
   let gloss: string | undefined;
   for (const id of officeEntityIdsForCandidate(candidate)) {
     gloss = cleanPublishableOfficeGloss(glosses.get(id)) ?? undefined;
     if (gloss) break;
   }
-  if (!gloss) return candidate;
 
   const dynasty = candidate.metadata?.dynasty;
+  if (gloss) {
+    return {
+      ...candidate,
+      metadata: {
+        ...candidate.metadata,
+        translation: gloss,
+        description: formatOfficeClue(candidate.primaryName, gloss, dynasty),
+      },
+    };
+  }
+
+  // No pack row for this office (e.g. a place+suffix compound the offline
+  // Huckbot run never enumerated) — try the same procedural template live.
+  const procedural = tryProceduralOfficeTranslation(candidate.primaryName);
+  if (!procedural) return candidate;
   return {
     ...candidate,
     metadata: {
       ...candidate.metadata,
-      translation: gloss,
-      description: formatOfficeClue(candidate.primaryName, gloss, dynasty),
+      translation: procedural.en,
+      translationSource: HUCKBOT_PROCEDURAL_SOURCE,
+      description: formatOfficeClue(candidate.primaryName, procedural.en, dynasty),
     },
   };
 }
@@ -291,8 +308,6 @@ export function applyMaxiRicciGlossToCandidate(
       metadata: { ...candidate.metadata, translationFr: existingFr },
     };
   }
-  if (!glosses.byOfficeId.size && !glosses.byZh.size) return candidate;
-
   const gloss = cleanPublishableOfficeGloss(
     lookupFrenchGloss(
       glosses,
@@ -301,13 +316,24 @@ export function applyMaxiRicciGlossToCandidate(
       candidate.metadata?.dynasty,
     ),
   );
-  if (!gloss) return candidate;
+  if (gloss) {
+    return {
+      ...candidate,
+      metadata: {
+        ...candidate.metadata,
+        translationFr: gloss,
+      },
+    };
+  }
 
+  const procedural = tryProceduralOfficeTranslation(candidate.primaryName);
+  if (!procedural) return candidate;
   return {
     ...candidate,
     metadata: {
       ...candidate.metadata,
-      translationFr: gloss,
+      translationFr: procedural.fr,
+      translationFrSource: MAXIRICCI_PROCEDURAL_SOURCE,
     },
   };
 }
@@ -333,8 +359,6 @@ export function applyHuckbotGlossToPackRow<
       },
     };
   }
-  if (!glosses.size) return row;
-
   const ids = new Set<string>();
   if (row.metadata?.entityId) ids.add(row.metadata.entityId);
   if (row.metadata?.canonicalEntityId) ids.add(row.metadata.canonicalEntityId);
@@ -346,15 +370,28 @@ export function applyHuckbotGlossToPackRow<
     gloss = cleanPublishableOfficeGloss(glosses.get(id)) ?? undefined;
     if (gloss) break;
   }
-  if (!gloss) return row;
 
   const name = row.primaryName?.trim() || '';
+  if (gloss) {
+    return {
+      ...row,
+      metadata: {
+        ...row.metadata,
+        translation: gloss,
+        description: formatOfficeClue(name, gloss, row.metadata?.dynasty),
+      },
+    };
+  }
+
+  const procedural = tryProceduralOfficeTranslation(name);
+  if (!procedural) return row;
   return {
     ...row,
     metadata: {
       ...row.metadata,
-      translation: gloss,
-      description: formatOfficeClue(name, gloss, row.metadata?.dynasty),
+      translation: procedural.en,
+      translationSource: HUCKBOT_PROCEDURAL_SOURCE,
+      description: formatOfficeClue(name, procedural.en, row.metadata?.dynasty),
     },
   };
 }
@@ -366,7 +403,6 @@ export function applyMaxiRicciGlossToPackRow<
     metadata?: AuthorityCandidate['metadata'];
   },
 >(row: T, source: string, glosses: FrenchOfficeGlossIndex): T {
-  if (!glosses.byOfficeId.size && !glosses.byZh.size) return row;
   const existingFr = cleanPublishableOfficeGloss(row.metadata?.translationFr);
   if (existingFr) {
     if (existingFr === row.metadata?.translationFr?.trim()) return row;
@@ -382,13 +418,24 @@ export function applyMaxiRicciGlossToPackRow<
   const gloss = cleanPublishableOfficeGloss(
     lookupFrenchGloss(glosses, ids, row.primaryName, row.metadata?.dynasty),
   );
-  if (!gloss) return row;
+  if (gloss) {
+    return {
+      ...row,
+      metadata: {
+        ...row.metadata,
+        translationFr: gloss,
+      },
+    };
+  }
 
+  const procedural = tryProceduralOfficeTranslation(row.primaryName?.trim() || '');
+  if (!procedural) return row;
   return {
     ...row,
     metadata: {
       ...row.metadata,
-      translationFr: gloss,
+      translationFr: procedural.fr,
+      translationFrSource: MAXIRICCI_PROCEDURAL_SOURCE,
     },
   };
 }

@@ -104,7 +104,7 @@ async function enrichPersonAuthority(
   }
 
   if (dates.length || nationalities.length || origins.length) {
-    if (store.sqliteApplyAuthorityBackfillPatch) {
+    if (store.supportsAuthorityBackfillPatch) {
       await store.sqliteApplyAuthorityBackfillPatch({
         entityId,
         dates,
@@ -112,8 +112,21 @@ async function enrichPersonAuthority(
         origins,
       });
     } else {
-      // Test doubles / older bridges: keep nationality/origin writes, skip dates
-      // rather than polluting user/Central lifespan rows.
+      // Test doubles / older bridges without the bulk backfill endpoint: collapse
+      // authority dates to a single user birth/death (last assertion wins) via the
+      // typed date setter, and keep nationality/origin writes per source.
+      let lastBirth: number | undefined;
+      let lastDeath: number | undefined;
+      for (const date of dates) {
+        if (date.startYear != null) lastBirth = date.startYear;
+        if (date.endYear != null) lastDeath = date.endYear;
+      }
+      if (lastBirth != null) {
+        await store.sqliteSetUserDate({ entityId, part: 'birth', year: lastBirth });
+      }
+      if (lastDeath != null) {
+        await store.sqliteSetUserDate({ entityId, part: 'death', year: lastDeath });
+      }
       for (const nationality of nationalities) {
         await store.sqliteAddNationality({
           entityId,

@@ -515,6 +515,11 @@ export class EntityStore {
     return new EntityStore(api, paths);
   }
 
+  /** True when the bridge actually implements sqliteApplyAuthorityBackfillPatch. */
+  get supportsAuthorityBackfillPatch(): boolean {
+    return !!this.api.entitySqliteApplyAuthorityBackfillPatch;
+  }
+
   static resolve(input: EntityStoreResolveInput): EntityStorePaths {
     return resolveEntityStorePaths(input);
   }

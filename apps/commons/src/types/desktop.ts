@@ -100,6 +100,8 @@ export interface AiApiSettings {
   model: string;
   temperature: number;
   streamResults: boolean;
+  /** Extra AI attempts after placeholders are dropped (0–5). First attempt always runs. */
+  placeholderRetryLimit: number;
   verifiedAt: string | null;
   verifiedBaseUrl: string;
   verifiedModel: string;
@@ -192,6 +194,7 @@ export interface AiTranslationRequest {
   targetLanguage: string;
   entities?: AiTranslationEntityRef[];
   dates?: AiTranslationDateRef[];
+  retryInstruction?: string;
 }
 
 export interface AiTranslationResult {

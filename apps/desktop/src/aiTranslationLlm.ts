@@ -27,19 +27,25 @@ export interface AiTranslationPayload {
   targetLanguage: string;
   entities?: AiTranslationEntityRef[];
   dates?: AiTranslationDateRef[];
+  /** Extra instruction when retrying after the model dropped placeholders. */
+  retryInstruction?: string;
 }
 
 const TRANSLATION_SYSTEM_PROMPT =
   'You translate scholarly XML passages. Return JSON only with one string field named translationXml. Translate only the provided passage. ' +
-  'Keyed entity mentions and East Asian <date> spans have already been removed from the source XML and replaced with placeholders: {{entity:KEY}}, {{date:N}}, and sometimes {{opaque:N}}. ' +
-  'The "entities" list gives only id + kind (person/place/office/…). It does NOT contain names — never invent a person name, place name, or office title for a placeholder. ' +
+  'Entity and date spans have already been removed and replaced with placeholders you must copy exactly: ' +
+  '{{entity:KEY}} (person/place/work/…), {{holding:KEY}} (office the person currently holds), {{as:KEY}} (office they are appointed to, after 為), ' +
+  '{{date:N}}, and sometimes {{opaque:N}} / {{holding:opaque:N}} / {{as:opaque:N}}. ' +
+  'Pattern 以{{holding:…}} {{entity:…}}為{{as:…}} means “appoint [holding-title + person] as [new office]” — never swap holding and as; never drop either. ' +
+  'Chinese (or other) text that remains inside the source — including noble titles such as 貞陽公 or 江夏王 — should be translated normally. ' +
+  'The "entities" list gives only id + kind. It does NOT contain names — never invent a person name, place name, or office title for a placeholder. ' +
   'The "dates" list gives only indices. ' +
-  'Copy every {{entity:KEY}}, {{date:N}}, and {{opaque:N}} through into your translation exactly as written, in the same position. ' +
-  'Do not expand, paraphrase, transliterate, or invent wording for them; do not put a vernacular name, office title (Governor of, Prefect of, General, King, …), or date next to a placeholder; never invent new placeholder keys or indices. ' +
+  'Copy every placeholder through into your translation exactly as written, in the same position and relative order. ' +
+  'Do not expand, paraphrase, transliterate, swap, or delete placeholders; do not put a vernacular name, office title (Governor of, Prefect of, General, King, …), or date next to a placeholder; never invent new placeholder keys or indices. ' +
   'Do not write temporal prepositions (In, On, En, Le, …) immediately before a {{date:N}} placeholder — the date gloss already includes its own On/In. ' +
   'Copy placeholders with plain ASCII braces only — never smart quotes inside {{…}}. ' +
   'Treat any other source TEI tags as semantic hints only — do not reproduce the tags or invent a placeholder for them, just translate the enclosed text normally. ' +
-  'Output plain text only, aside from the {{entity:KEY}}, {{date:N}}, and {{opaque:N}} placeholders: no XML or HTML tags, no markdown, no angle brackets. Write ampersands and angle brackets as the XML entities &amp;, &lt;, and &gt; if they occur in the text itself.';
+  'Output plain text only, aside from the placeholders: no XML or HTML tags, no markdown, no angle brackets. Write ampersands and angle brackets as the XML entities &amp;, &lt;, and &gt; if they occur in the text itself.';
 
 const PROMPT_ONLY_JSON_HINT =
   '\n\nRespond with one JSON object only, no markdown fences: {"translationXml":"…"}. translationXml must be plain text (use &amp;, &lt;, &gt; for special characters).';
@@ -113,6 +119,9 @@ export function buildTranslationRequestBody(
           sourceUnitXml: request.sourceUnitXml,
           entities: request.entities ?? [],
           dates: request.dates ?? [],
+          ...(request.retryInstruction
+            ? { retryInstruction: request.retryInstruction }
+            : {}),
         }),
       },
     ],

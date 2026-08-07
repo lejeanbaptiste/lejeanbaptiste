@@ -77,6 +77,8 @@
         "save_failed": "Could not save AI API settings.",
         "saved": "AI API settings saved.",
         "temperature": "Temperature",
+        "placeholder_retry_limit": "Placeholder retry limit",
+        "placeholder_retry_limit_help": "Extra AI attempts when the model drops {{entity}} / {{date}} markers (0–5). The first attempt always runs.",
         "translation_instructions": "Translation instructions",
         "translation_instructions_placeholder": "Describe the translation guidance to apply here.",
         "title": "AI API",
@@ -910,6 +912,7 @@
       "languageToolCloseResults": "Close",
       "formatting": "Formatting",
       "insertFootnote": "Insert footnote",
+      "refreshEntityAnchors": "Refresh entity anchors from database (F5)",
       "zoteroMenu": {
         "title": "Zotero",
         "refresh": "Refresh citations",

@@ -94,27 +94,42 @@ To reset a file's translation state: delete its `*.translation.xml` companions a
 
 ## 10. AI translate — entity placeholders (⚠ linking + LJBtero formatting)
 
-**Pipeline (shipped):** For the active source unit, `collectSourceUnitEntities` gathers keyed mentions (`persName`, `placeName`, `orgName`, `title`, `bibl`, `roleName`, `officeName`). Each key is resolved from the entity DB and sent in the `entities` payload. Before the model sees the unit, `replaceEntitiesWithPlaceholdersInSourceXml` swaps each keyed tag for `{{entity:KEY}}` (same blinding as dates). After the response, `substituteEntityPlaceholders` builds atomic `ref[type="ljb-entity"]` fields — kind-aware romanization, dates, work italics, office classification, translation glosses, etc.
+**Pipeline (shipped):**
 
-**Automated:** `packages/cwrc-leafwriter/src/layout/entityFields/substituteEntityPlaceholders.test.ts` covers placeholder → entity field for person, place, org, work, and office.
+1. Collect keyed mentions from the **serialized source-unit XML** (`collectEntitiesFromSourceUnitXml`: `persName`, `placeName`, `orgName`, `title`, `bibl`, `roleName`, `officeName`, plus `name[@type=personWrapper][@key]`).
+2. Blind before the model sees the unit (`replaceEntitiesWithPlaceholdersInSourceXml`):
+   - Norbert `personWrapper` → `{{holding:OFFICE}} {{entity:PERSON}}` (title held + person).
+   - Office immediately after `為` → `{{as:KEY}}` (or `{{as:opaque:N}}` if unkeyed).
+   - Other keyed spans → `{{entity:KEY}}` (outermost keyed nest only).
+   - Unkeyed leftover entity tags → `{{opaque:N}}`.
+   - `nobleTitle` (and nested place/role) → **plain text** for the model to translate (not blinded yet).
+   - Adjacent placeholders get a single space; runs of spaces collapse.
+3. AI payload sends **id + kind only** (no romanized/primary names). Dates payload sends **index only**.
+4. If required placeholders are missing from the reply, resend up to **Placeholder retry limit** (Settings → AI API, 0–5).
+5. Repair smart-quoted placeholders; strip “Governor of …” / “In/On …” glued onto placeholders; substitute into atomic `ref[type="ljb-entity"]` / date fields. Offices with a gloss default to translation-only display.
+
+**Automated:** `sourceUnitEntities.test.ts`, `aiPlaceholderGuard.test.ts`, `substituteEntityPlaceholders.test.ts`, office/display tests in `entityDisplay.test.ts`.
 
 **Manual (requires saved source + configured AI API):**
 
-- [ ] **Save the source file first** so the unit XML sent to the model includes the keyed tags (entity list is sent separately, but the model is told to match tagged `key` attributes in the passage).
+- [ ] **Save the source file first** so the unit XML sent to the model includes the keyed tags.
 - [ ] Unit with one keyed mention of each kind (person, place, org, work/title, roleName), all resolved in the entity DB.
+- [ ] Norbert unit with `personWrapper` (holding office + person) appointed `為` a new office — console blinded XML shows `{{holding:…}} {{entity:…}}為{{as:…}}` (or `{{as:opaque:…}}`).
+- [ ] Unit with `nobleTitle` (e.g. 貞陽公 / 江夏王) — those strings remain as Chinese in the blinded XML for free translation; nested place keys are not cut out.
 - [ ] Translation pane → Generate translation (blank unit only).
-- [ ] In the companion raw XML or the pane: each mention is a `ref type="ljb-entity" key="…"` — **not** plain text copied from the model.
-- [ ] Display matches LJBtero rules: person dates on first mention; work title italic (book); office shows classification on first mention; place/org use name only in the default recipe (dates available via display spec).
-- [ ] If the model skips a placeholder, check `ai-translation-debug.jsonl` in app userData and the devtools console for `[translation] AI entity placeholder had no matching entity`.
+- [ ] In the companion raw XML or the pane: keyed mentions are `ref type="ljb-entity" key="…"` — **not** plain English invented by the model.
+- [ ] Offices with an EN/FR gloss show the gloss alone by default (no pinyin/characters).
+- [ ] Deliberately break a model reply (or use a weak model): with retry limit ≥ 1, console shows a retry; with limit 0, no retry.
+- [ ] If placeholders remain missing after retries, check `ai-translation-debug.jsonl` and the console for `[translation] placeholders still missing`.
 
 ## 10b. AI translate — date placeholders (LJBtero Sanmiao glosses)
 
-**Pipeline (shipped):** `collectDatesFromSourceUnitXml` gathers `<date>` spans in document order. Before the model sees the unit, `replaceDatesWithPlaceholdersInSourceXml` swaps each `<date>…</date>` for a bare `{{date:N}}` so the model cannot paraphrase the Chinese formula. The `dates` payload still carries surface/gloss for grammar context only. After the response, `substituteDatePlaceholders` turns each `{{date:N}}` into an atomic `ref[type="ljb-date"]` field.
+**Pipeline (shipped):** `collectDatesFromSourceUnitXml` gathers `<date>` spans in document order. Before the model sees the unit, `replaceDatesWithPlaceholdersInSourceXml` swaps each `<date>…</date>` for a bare `{{date:N}}`. The dates list sent to the model is index-only (gloss applied locally after substitute). Leading In/On/En/Le before a date field or `{{date:N}}` are stripped. After the response, `substituteDatePlaceholders` builds atomic `ref[type="ljb-date"]` fields.
 
-**Automated:** `dateGloss.test.ts` + `substituteDatePlaceholders.test.ts`.
+**Automated:** `dateGloss.test.ts`, `substituteDatePlaceholders.test.ts`, `stripDatePrepositions.test.ts`.
 
 **Manual:**
 
 - [ ] Source unit with a resolved Sanmiao `<date>` (parse children + `@when`).
-- [ ] Generate translation → companion shows `ref type="ljb-date"` whose text matches LJBtero (On/In …, Emperor …, Roman months, italic ganzhi, Western date in parentheses when day-level).
+- [ ] Generate translation → companion shows `ref type="ljb-date"` whose text matches LJBtero (On/In …, Emperor …, Roman months, italic ganzhi, Western date in parentheses when day-level) — not a doubled “In On …” prefix.
 - [ ] Untagged / structure-less dates still free-translate (no placeholder).

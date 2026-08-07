@@ -421,6 +421,7 @@
       "disableSpellcheck": "Désactiver les suggestions d'orthographe",
       "formatting": "Mise en forme",
       "insertFootnote": "Insérer une note de bas de page",
+      "refreshEntityAnchors": "Actualiser les ancrages d'entités depuis la base de données (F5)",
       "zoteroMenu": {
         "title": "Zotero",
         "refresh": "Actualiser les citations",
@@ -602,6 +603,8 @@
         "save_failed": "Impossible d'enregistrer les paramètres de l'API IA.",
         "saved": "Paramètres de l'API IA enregistrés.",
         "temperature": "Température",
+        "placeholder_retry_limit": "Limite de nouvelles tentatives pour les marqueurs",
+        "placeholder_retry_limit_help": "Tentatives IA supplémentaires si le modèle omet des marqueurs {{entity}} / {{date}} (0–5). La première tentative a toujours lieu.",
         "translation_instructions": "Instructions de traduction",
         "translation_instructions_placeholder": "Saisissez ici les consignes de traduction à appliquer.",
         "title": "API IA",

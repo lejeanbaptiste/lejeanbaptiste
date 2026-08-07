@@ -21,6 +21,7 @@ interface AiApiSettings {
   model: string;
   temperature: number;
   streamResults: boolean;
+  placeholderRetryLimit: number;
   verifiedAt: string | null;
   verifiedBaseUrl: string;
   verifiedModel: string;
@@ -39,6 +40,7 @@ const DEFAULT_AI_API_SETTINGS: AiApiSettings = {
   model: '',
   temperature: 0.1,
   streamResults: false,
+  placeholderRetryLimit: 1,
   verifiedAt: null,
   verifiedBaseUrl: '',
   verifiedModel: '',
@@ -201,6 +203,22 @@ export const DesktopAiApi = () => {
             size="small"
             type="number"
             value={settings.temperature}
+          />
+          <TextField
+            fullWidth
+            helperText={t('LW.settings.ai_api.placeholder_retry_limit_help')}
+            inputProps={{ max: 5, min: 0, step: 1 }}
+            label={t('LW.settings.ai_api.placeholder_retry_limit')}
+            onChange={(event) => {
+              const next = Number(event.target.value);
+              updateSetting(
+                'placeholderRetryLimit',
+                Number.isFinite(next) ? Math.min(5, Math.max(0, Math.floor(next))) : 1,
+              );
+            }}
+            size="small"
+            type="number"
+            value={settings.placeholderRetryLimit ?? 1}
           />
           <TextField
             fullWidth

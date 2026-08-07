@@ -192,6 +192,7 @@ export const useCommonsUiBridge = () => {
           model: '',
           temperature: 0.1,
           streamResults: false,
+          placeholderRetryLimit: 1,
           verifiedAt: null,
           verifiedBaseUrl: '',
           verifiedModel: '',

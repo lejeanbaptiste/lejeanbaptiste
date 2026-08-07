@@ -127,13 +127,6 @@ For detailed build and packaging information, see [apps/desktop/README.md](apps/
 
 See [apps/desktop/README.md](apps/desktop/README.md) for the compilation and packaging instructions.
 
-## Processing
-
-- [ ] Generate MaxiRicci7000 French pack (Batch A Hucker→fr, then Batch B gaps) — see [maxiricci7000/README.md](../authority%20extraction/maxiricci7000/README.md) / [huckbot5000-integration-plan.md](docs/huckbot5000-integration-plan.md)
-- [ ] Cut authoritypacks release with Huckbot + Hucker-omitted CBDB offices ([huckbot5000-integration-plan.md](docs/huckbot5000-integration-plan.md))
-- [ ] Delete prior releases and clean history?
-- [ ] Verify AI translate entity pipeline (see [translation-smoke-tests.md](docs/translation-smoke-tests.md) §10): source unit has keyed `persName` / `placeName` / `orgName` / `title`|`bibl` / `roleName` → model emits `{{entity:KEY}}` → pane shows atomic `ref[type="ljb-entity"]` fields with kind-aware LJBtero formatting (unit tests cover substitution for all kinds; LLM compliance is manual)
-
 ### Future
 
 ### 'LJBtero' (After testing)

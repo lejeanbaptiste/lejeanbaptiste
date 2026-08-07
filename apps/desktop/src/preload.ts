@@ -108,6 +108,7 @@ export interface AiApiSettings {
   model: string;
   temperature: number;
   streamResults: boolean;
+  placeholderRetryLimit: number;
   verifiedAt: string | null;
   verifiedBaseUrl: string;
   verifiedModel: string;
@@ -199,6 +200,7 @@ export interface AiTranslationRequest {
   targetLanguage: string;
   entities?: AiTranslationEntityRef[];
   dates?: AiTranslationDateRef[];
+  retryInstruction?: string;
 }
 
 export interface AiTranslationResult {

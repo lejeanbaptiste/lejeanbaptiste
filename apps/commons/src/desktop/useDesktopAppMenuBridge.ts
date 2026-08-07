@@ -43,6 +43,13 @@ export const useDesktopAppMenuBridge = () => {
         void redoDocumentEditor();
         return;
       }
+
+      if (action === 'refresh') {
+        // Broadcast to whichever panels (translation pane, file explorer,
+        // database viewer, …) currently have a refresh listener registered.
+        window.dispatchEvent(new CustomEvent('desktop:refresh'));
+        return;
+      }
     });
 
     void window.electronAPI.signalRendererReady?.();

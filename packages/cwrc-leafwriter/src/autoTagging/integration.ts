@@ -1834,8 +1834,11 @@ export class AutoTaggingSession {
       await persistOfficeTranslationNames(this.store, entityId, {
         translation: candidate.authorityMetadata?.translation,
         translationFr: candidate.authorityMetadata?.translationFr,
-        enSource: candidate.authorityIds?.[0]?.type ?? 'Huckbot5000',
-        frSource: 'MaxiRicci7000',
+        enSource:
+          candidate.authorityMetadata?.translationSource ??
+          candidate.authorityIds?.[0]?.type ??
+          'Huckbot5000',
+        frSource: candidate.authorityMetadata?.translationFrSource ?? 'MaxiRicci7000',
       });
     }
 

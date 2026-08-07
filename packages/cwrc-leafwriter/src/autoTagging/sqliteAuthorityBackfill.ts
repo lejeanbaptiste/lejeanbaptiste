@@ -38,12 +38,15 @@ import {
 } from './nameBackfill';
 import {
   cleanPublishableOfficeGloss,
+  HUCKBOT_PROCEDURAL_SOURCE,
   loadHuckbotGlossIndex,
   loadMaxiRicciGlossIndex,
   lookupEnglishOfficeGloss,
   lookupFrenchOfficeGloss,
+  MAXIRICCI_PROCEDURAL_SOURCE,
   persistOfficeTranslationNames,
 } from './officeGlossLookup';
+import { tryProceduralOfficeTranslation } from './proceduralOfficeGloss';
 import { suggestPersonNameSplit, suggestPersonRomanization } from '../plugins/personNameDefaults';
 import { autoRomanize, autoRomanizeForKind, latnLangFor } from '../utilities/romanize';
 import { norbertAuthorityLookupValues } from './norbertAuthorityId';
@@ -598,11 +601,25 @@ export async function backfillEntitiesSqlite(
               lookupFrenchOfficeGloss(maxiGlosses, authorities, primary, dynasty),
             ) ?? null;
         }
+        let frSource = 'MaxiRicci7000';
+        if ((!translation || !translationFr) && primary) {
+          const procedural = tryProceduralOfficeTranslation(primary);
+          if (procedural) {
+            if (!translation) {
+              translation = procedural.en;
+              enSource = HUCKBOT_PROCEDURAL_SOURCE;
+            }
+            if (!translationFr) {
+              translationFr = procedural.fr;
+              frSource = MAXIRICCI_PROCEDURAL_SOURCE;
+            }
+          }
+        }
         const added = await persistOfficeTranslationNames(store, summary.id, {
           translation: hasLang('en') ? null : translation,
           translationFr: hasLang('fr') ? null : translationFr,
           enSource,
-          frSource: 'MaxiRicci7000',
+          frSource,
         });
         if (added > 0) {
           namesAdded += added;

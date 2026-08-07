@@ -74,6 +74,10 @@ import {
 } from './translationFootnotes';
 import { convertMarkdownInXmlFragment, looksLikeInlineMarkdown } from './markdownToTei';
 import {
+  buildPlaceholderRetryInstruction,
+  missingPlaceholders,
+} from './entityFields/aiPlaceholderGuard';
+import {
   collectEntitiesFromSourceUnitXml,
   collectSourceUnitEntities,
   fetchEntitySummary,
@@ -86,9 +90,12 @@ import {
 } from './entityFields/sourceUnitEntities';
 import {
   collectDatesFromSourceUnitXml,
+  collectSourceUnitDates,
   replaceDatesWithPlaceholdersInSourceXml,
+  type SourceUnitDateHit,
 } from './entityFields/sourceUnitDates';
 import type { DateGlossInput } from './entityFields/dateGloss';
+import { autoRomanize } from '../utilities/romanize';
 import {
   stripLeadingDatePrepositionsBeforeDateFields,
   stripLeadingDatePrepositionsFromText,
@@ -96,6 +103,7 @@ import {
 import { normalizeAiPlaceholders } from './entityFields/normalizeAiPlaceholders';
 import { stripLeadingOfficePrepositionsFromText } from './entityFields/stripOfficePrepositions';
 import { entityStoreFromDesktop } from '../autoTagging/entityStore';
+import { clearOfficeGlossIndexCaches } from '../autoTagging/officeGlossLookup';
 import {
   buildSuggestionsAtCaret,
   candidateFromEntity,
@@ -276,7 +284,12 @@ interface DesktopElectronApi {
     dates?: Array<{
       index: number;
     }>;
+    /** Set on a second attempt when the first reply dropped placeholders. */
+    retryInstruction?: string;
   }) => Promise<{ error?: string; ok: boolean; translationXml?: string }>;
+  getAiApiSettings?: () => Promise<{
+    placeholderRetryLimit?: number;
+  }>;
   suggestEntityGloss?: (request: {
     kind: string;
     primaryName: string | null;
@@ -560,7 +573,7 @@ const applyMarkdownCleanupToFragment = (fragmentXml: string): string => {
     .join('');
 };
 
-const ENTITY_PLACEHOLDER_RE = /\{\{entity:([^{}]+)\}\}/g;
+const ENTITY_PLACEHOLDER_RE = /\{\{(?:entity|holding|as):(?!opaque:)([^{}]+)\}\}/g;
 const DATE_PLACEHOLDER_RE = /\{\{date:(\d+)\}\}/g;
 
 /**
@@ -578,7 +591,11 @@ export const substituteEntityPlaceholders = (
   const cleanedFragment = stripLeadingOfficePrepositionsFromText(
     normalizeAiPlaceholders(fragmentXml),
   );
-  if (!cleanedFragment.includes('{{entity:')) return cleanedFragment;
+  if (!cleanedFragment.includes('{{entity:') &&
+    !cleanedFragment.includes('{{holding:') &&
+    !cleanedFragment.includes('{{as:')) {
+    return cleanedFragment;
+  }
 
   const wrapped = `<fragment>${cleanedFragment}</fragment>`;
   const doc = new DOMParser().parseFromString(wrapped, 'text/html');
@@ -590,7 +607,14 @@ export const substituteEntityPlaceholders = (
   let node: Node | null;
   // eslint-disable-next-line no-cond-assign
   while ((node = walker.nextNode())) {
-    if ((node.textContent ?? '').includes('{{entity:')) textNodes.push(node as Text);
+    const content = node.textContent ?? '';
+    if (
+      content.includes('{{entity:') ||
+      content.includes('{{holding:') ||
+      content.includes('{{as:')
+    ) {
+      textNodes.push(node as Text);
+    }
   }
 
   for (const textNode of textNodes) {
@@ -769,6 +793,36 @@ const selectHighlightedMatch = (
   return selectRange(index, idx, idx + text.length);
 };
 
+const dateCandidateId = (index: number): string => `date:${index}`;
+
+/**
+ * Autocomplete candidate for a Sanmiao date span. The romanization is
+ * mechanical (character-by-character pinyin of the raw Chinese date text) and
+ * exists only to help the user find the date field while typing — it is never
+ * stored on the date field or written anywhere.
+ */
+const candidateFromDateHit = (
+  hit: SourceUnitDateHit,
+  id: string,
+): EntityAutocompleteCandidate => {
+  const aliases = new Set<string>();
+  // Spaced form lets a match start mid-string (e.g. typing just the era
+  // name); concatenated form lets a match start-anchor across the whole date.
+  const romanized = autoRomanize(hit.surface, 'zh');
+  const concatenated = autoRomanize(hit.surface, 'zh', { concatenate: true });
+  if (romanized) aliases.add(romanized);
+  if (concatenated) aliases.add(concatenated);
+  if (hit.surface) aliases.add(hit.surface);
+
+  return {
+    id,
+    kind: 'date',
+    label: romanized ?? hit.gloss ?? hit.surface,
+    detail: hit.gloss || hit.surface,
+    aliases: [...aliases],
+  };
+};
+
 export const TranslationPane = () => {
   const { t } = useTranslation('LW');
   const mac = isMacOS();
@@ -842,6 +896,8 @@ export const TranslationPane = () => {
   const [entityAcAnchor, setEntityAcAnchor] = useState<{ top: number; left: number } | null>(null);
   const entityAcCandidatesRef = useRef<EntityAutocompleteCandidate[]>([]);
   entityAcCandidatesRef.current = entityAcCandidates;
+  /** Maps a date candidate's synthetic id back to its source-unit hit (not persisted anywhere). */
+  const dateAcHitsRef = useRef<Map<string, SourceUnitDateHit>>(new Map());
   const entityAcSuggestionsRef = useRef<EntityAutocompleteSuggestion[]>([]);
   entityAcSuggestionsRef.current = entityAcSuggestions;
   const entityAcIndexRef = useRef(0);
@@ -1208,23 +1264,31 @@ export const TranslationPane = () => {
     }
   }, [unitHtml, selectedUnitId, refreshFootnotes, zoteroCitationLabel, selectedLanguage]);
 
-  useEffect(() => {
-    const refreshFromPolicy = () => {
-      const editable = editableRef.current;
-      if (!editable) return;
-      recalculateDateFieldsInRoot(editable, selectedLanguage);
-      void recalculateAllEntityFieldsInRoot(editable, fetchEntitySummary, undefined, selectedLanguage)
-        .then(() => {
-          prepareAtomicEntityFields(editable);
-          prepareAtomicDateFields(editable);
-        })
-        .catch((error) => {
-          console.warn('[translation] entity field policy refresh failed', error);
-        });
-    };
-    window.addEventListener(TRANSLATION_POLICY_CHANGED_EVENT, refreshFromPolicy);
-    return () => window.removeEventListener(TRANSLATION_POLICY_CHANGED_EVENT, refreshFromPolicy);
+  const refreshEntityAnchors = useCallback(() => {
+    const editable = editableRef.current;
+    if (!editable) return;
+    clearOfficeGlossIndexCaches();
+    recalculateDateFieldsInRoot(editable, selectedLanguage);
+    void recalculateAllEntityFieldsInRoot(editable, fetchEntitySummary, undefined, selectedLanguage)
+      .then(() => {
+        prepareAtomicEntityFields(editable);
+        prepareAtomicDateFields(editable);
+      })
+      .catch((error) => {
+        console.warn('[translation] entity field refresh failed', error);
+      });
   }, [selectedLanguage]);
+
+  useEffect(() => {
+    window.addEventListener(TRANSLATION_POLICY_CHANGED_EVENT, refreshEntityAnchors);
+    return () => window.removeEventListener(TRANSLATION_POLICY_CHANGED_EVENT, refreshEntityAnchors);
+  }, [refreshEntityAnchors]);
+
+  useEffect(() => {
+    // Fired by the Electron menu bridge when the user presses F5.
+    window.addEventListener('desktop:refresh', refreshEntityAnchors);
+    return () => window.removeEventListener('desktop:refresh', refreshEntityAnchors);
+  }, [refreshEntityAnchors]);
 
   const persist = useCallback(async () => {
     const doc = docRef.current;
@@ -1304,9 +1368,23 @@ export const TranslationPane = () => {
       setEntityAcCandidates([]);
       setEntityAcSuggestions([]);
       setEntityAcAnchor(null);
+      dateAcHitsRef.current = new Map();
       return;
     }
     const hits = collectSourceUnitEntities(alignmentUnit, selectedUnitId);
+
+    // Dates aren't in the entity database, so there's nothing to fetch — just
+    // mechanically romanize the Chinese surface text as a typing aid. Nothing
+    // here is stored; it only lives in this in-memory candidate list.
+    const dateHits = collectSourceUnitDates(alignmentUnit, selectedUnitId, selectedLanguage);
+    const dateHitsById = new Map<string, SourceUnitDateHit>();
+    const dateCandidates = dateHits.map((hit) => {
+      const id = dateCandidateId(hit.index);
+      dateHitsById.set(id, hit);
+      return candidateFromDateHit(hit, id);
+    });
+    dateAcHitsRef.current = dateHitsById;
+
     let cancelled = false;
     void (async () => {
       const rows = await Promise.all(
@@ -1316,16 +1394,15 @@ export const TranslationPane = () => {
         }),
       );
       if (cancelled) return;
-      setEntityAcCandidates(
-        rows
-          .filter((row): row is { entity: EntitySummary; sourceSurface: string } => Boolean(row))
-          .map(({ entity, sourceSurface }) => candidateFromEntity(entity, sourceSurface)),
-      );
+      const entityCandidates = rows
+        .filter((row): row is { entity: EntitySummary; sourceSurface: string } => Boolean(row))
+        .map(({ entity, sourceSurface }) => candidateFromEntity(entity, sourceSurface));
+      setEntityAcCandidates([...entityCandidates, ...dateCandidates]);
     })();
     return () => {
       cancelled = true;
     };
-  }, [alignmentUnit, selectedUnitId, sourcePath]);
+  }, [alignmentUnit, selectedUnitId, sourcePath, selectedLanguage]);
 
   useEffect(() => {
     const doc = window.writer?.editor?.getDoc?.() ?? document;
@@ -1591,19 +1668,69 @@ export const TranslationPane = () => {
         xml: sourceUnitXmlForAi,
       });
 
-      const result = await api.generateAiTranslation({
-        alignmentUnit,
-        sourceUnitXml: sourceUnitXmlForAi,
-        targetLanguage: translationMode.lang ?? '',
-        entities: entitiesPayload,
-        dates: datesPayload,
-      });
+      const runAi = (retryInstruction?: string) =>
+        api.generateAiTranslation!({
+          alignmentUnit,
+          sourceUnitXml: sourceUnitXmlForAi,
+          targetLanguage: translationMode.lang ?? '',
+          entities: entitiesPayload,
+          dates: datesPayload,
+          ...(retryInstruction ? { retryInstruction } : {}),
+        });
+
+      // First attempt + up to N resends (from AI settings; hard-capped 0–5).
+      const aiPrefs = await api.getAiApiSettings?.().catch(() => null);
+      const bridgeLimit = (
+        window as Window & {
+          __ljbCommonsUi?: { aiApiSettings?: { placeholderRetryLimit?: number } | null };
+        }
+      ).__ljbCommonsUi?.aiApiSettings?.placeholderRetryLimit;
+      const rawLimit =
+        typeof aiPrefs?.placeholderRetryLimit === 'number'
+          ? aiPrefs.placeholderRetryLimit
+          : typeof bridgeLimit === 'number'
+            ? bridgeLimit
+            : 1;
+      const retryLimit = Math.min(5, Math.max(0, Math.floor(rawLimit)));
+
+      let result = await runAi();
       if (!result.ok || !result.translationXml) {
         setAiStatus({
           severity: 'error',
           message: result.error ?? 'AI did not return a translation.',
         });
         return;
+      }
+
+      let missing = missingPlaceholders(sourceUnitXmlForAi, result.translationXml);
+      let retriesUsed = 0;
+      while (missing.length > 0 && retriesUsed < retryLimit) {
+        retriesUsed += 1;
+        console.warn(
+          `[translation] AI omitted placeholders; retry ${retriesUsed}/${retryLimit}`,
+          missing,
+        );
+        setAiStatus({
+          severity: 'info',
+          message: t('LW.translationPane.generatingTranslation'),
+        });
+        const retry = await runAi(buildPlaceholderRetryInstruction(missing));
+        if (!retry.ok || !retry.translationXml) break;
+        const stillMissing = missingPlaceholders(sourceUnitXmlForAi, retry.translationXml);
+        // Keep the retry only if it improves or fully repairs the inventory.
+        if (stillMissing.length < missing.length || stillMissing.length === 0) {
+          result = retry;
+          missing = stillMissing;
+        } else {
+          break;
+        }
+      }
+      if (missing.length > 0) {
+        console.warn('[translation] placeholders still missing after retries', {
+          missing,
+          retriesUsed,
+          retryLimit,
+        });
       }
 
       const validated = validateGeneratedFragment(result.translationXml);
@@ -2385,6 +2512,38 @@ export const TranslationPane = () => {
     }
   };
 
+  const insertDateMention = (
+    input: DateGlossInput,
+    replace: { textNode: Text; start: number; end: number },
+  ) => {
+    const editable = editableRef.current;
+    if (!editable) return;
+    const { textNode, start, end } = replace;
+    if (!textNode.parentNode) return;
+    const value = textNode.nodeValue ?? '';
+    const range = document.createRange();
+    range.setStart(textNode, Math.max(0, Math.min(start, value.length)));
+    range.setEnd(textNode, Math.max(0, Math.min(end, value.length)));
+    range.deleteContents();
+
+    const field = createDateFieldElement(input, selectedLanguage ?? translationMode.lang);
+    range.insertNode(field);
+    const guard = document.createTextNode('​');
+    field.after(guard);
+    const after = document.createRange();
+    after.setStartAfter(guard);
+    after.collapse(true);
+    const selection = window.getSelection();
+    selection?.removeAllRanges();
+    selection?.addRange(after);
+
+    prepareAtomicDateFields(editable);
+    rememberBodyRange();
+    setEntityAcSuggestions([]);
+    setEntityAcAnchor(null);
+    void persist();
+  };
+
   const dismissEntityAutocomplete = useCallback(() => {
     setEntityAcSuggestions([]);
     setEntityAcAnchor(null);
@@ -2418,6 +2577,18 @@ export const TranslationPane = () => {
     const suggestion = entityAcSuggestionsRef.current[index ?? entityAcIndexRef.current];
     if (!suggestion) return;
     dismissEntityAutocomplete();
+
+    if (suggestion.candidate.kind === 'date') {
+      const hit = dateAcHitsRef.current.get(suggestion.candidate.id);
+      if (!hit) return;
+      insertDateMention(hit.input, {
+        textNode: suggestion.textNode,
+        start: suggestion.replaceStart,
+        end: suggestion.replaceEnd,
+      });
+      return;
+    }
+
     await insertEntityMention(suggestion.candidate.id, {
       replace: {
         textNode: suggestion.textNode,
@@ -3046,6 +3217,16 @@ export const TranslationPane = () => {
           <span>
             <IconButton disabled={!selectedUnitId} onClick={insertFootnote} size="small">
               <StickyNote2Icon fontSize="small" />
+            </IconButton>
+          </span>
+        </Tooltip>
+
+        {toolbarDivider}
+
+        <Tooltip title={t('LW.translationPane.refreshEntityAnchors')}>
+          <span>
+            <IconButton onClick={refreshEntityAnchors} size="small">
+              <RefreshIcon fontSize="small" />
             </IconButton>
           </span>
         </Tooltip>

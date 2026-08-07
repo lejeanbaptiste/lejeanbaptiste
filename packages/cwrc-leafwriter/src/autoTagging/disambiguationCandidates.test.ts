@@ -726,6 +726,7 @@ describe('disambiguationCandidates', () => {
         primaryName: '桓玄',
         searchStrings: ['桓玄'],
         metadata: {
+          dateSource: 'fine',
           startYear: 369,
           endYear: 404,
           description: '桓玄 (Huan Xuan, 369–404, 晉 Jin)',
@@ -740,6 +741,7 @@ describe('disambiguationCandidates', () => {
         primaryName: '桓玄',
         searchStrings: ['桓玄'],
         metadata: {
+          dateSource: 'fine',
           startYear: 369,
           endYear: 404,
           description: '桓玄 (369–404, 晉, 曾廢晉安帝自立為帝)',

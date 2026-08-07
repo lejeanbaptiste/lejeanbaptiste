@@ -69,6 +69,10 @@ export interface AuthorityCandidate {
     translation?: string;
     /** French office gloss from MaxiRicci7000 (sidecar); distinct from English `translation`. */
     translationFr?: string;
+    /** Provenance for `translation` when it didn't come straight from a pack, e.g. 'Huckbot5000 (procedural)'. */
+    translationSource?: string;
+    /** Provenance for `translationFr` when it didn't come straight from a pack, e.g. 'MaxiRicci7000 (procedural)'. */
+    translationFrSource?: string;
     alternateTranslation?: string;
     alternatePinyin?: string;
     /** DILA `note type="disambiguation"` — not the same person as… */

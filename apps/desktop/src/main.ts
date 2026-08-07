@@ -297,6 +297,7 @@ interface AiTranslationRequest {
   targetLanguage: string;
   entities?: AiTranslationEntityRef[];
   dates?: AiTranslationDateRef[];
+  retryInstruction?: string;
 }
 
 interface AiTranslationResult {
@@ -513,9 +514,17 @@ const generateAiTranslation = async ({
   targetLanguage,
   entities,
   dates,
+  retryInstruction,
 }: AiTranslationRequest): Promise<AiTranslationResult> => {
   const settings = await getAiApiSettings();
-  const request = { alignmentUnit, sourceUnitXml, targetLanguage, entities, dates };
+  const request = {
+    alignmentUnit,
+    sourceUnitXml,
+    targetLanguage,
+    entities,
+    dates,
+    retryInstruction,
+  };
   let baseUrl: string;
 
   try {
@@ -1221,6 +1230,11 @@ const buildEditMenu = (): Electron.MenuItemConstructorOptions => ({
 const buildViewMenu = (): Electron.MenuItemConstructorOptions => ({
   label: 'View',
   submenu: [
+    {
+      label: 'Refresh',
+      accelerator: 'F5',
+      click: () => sendMenuAction('refresh'),
+    },
     { role: 'reload' },
     { role: 'forceReload' },
     ...(devToolsEnabled

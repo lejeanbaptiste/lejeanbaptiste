@@ -601,6 +601,7 @@
         "new_folder_title": "Nouveau dossier",
         "open_project_hint": "Ouvrez un projet via Fichier → Ouvrir un projet ({{shortcut}}).",
         "open_folder_editor_hint": "Ouvrez un dossier ({{shortcut}})…",
+        "refresh": "Actualiser (F5)",
         "rename": "Renommer",
         "rename_placeholder": "Nouveau nom",
         "rename_title": "Renommer"

@@ -1,6 +1,6 @@
 # Entity display: work types, title translations, period-filtered role translations
 
-**Status (2026-08-06):** **Phases 0–3, 1b shipped.** `work_type`; `entity_translations` + title convention; empty-state translation nudge; Wikidata batch backfill widened to all project translation languages; and Phase 3 (office entities can now carry a period date range, shown on candidates during disambiguation). Follows the kind-aware entity display baseline (`entityDisplay.ts`, `EntityDisplayPopup.tsx`, `entityAutocomplete.ts`, dates restricted to person/work, `office_classifications` wired up). Remaining: Phase 4 (Huckbot5000), "belongs to" hierarchy, Grand Ricci sourcing — all parked/lower priority, see below.
+**Status (2026-08-06 / updated 2026-08-07):** **Phases 0–3, 1b shipped.** `work_type`; `entity_translations` + title convention; empty-state translation nudge; Wikidata batch backfill widened to all project translation languages; and Phase 3 (office entities can now carry a period date range, shown on candidates during disambiguation). **Office display follow-up (2026-08-07):** when an office has a vernacular gloss, the default recipe is translation-only (no pinyin/characters); extras remain available via the entity-display popup. Offices also accept en/fr gloss fallback when the exact pane language is missing (other kinds stay language-exact). AI translation blinding/retry is documented in `translation-smoke-tests.md` §10. Remaining: Phase 4 (Huckbot5000), "belongs to" hierarchy, Grand Ricci sourcing — all parked/lower priority, see below.
 
 ## Context
 

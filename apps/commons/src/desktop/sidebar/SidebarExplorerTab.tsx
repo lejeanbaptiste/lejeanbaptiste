@@ -1,6 +1,7 @@
 import ClearIcon from '@mui/icons-material/Clear';
 import FolderOpenIcon from '@mui/icons-material/FolderOpen';
 import InsertDriveFileOutlinedIcon from '@mui/icons-material/InsertDriveFileOutlined';
+import RefreshIcon from '@mui/icons-material/Refresh';
 import {
   Box,
   Button,
@@ -18,13 +19,14 @@ import {
   Menu,
   MenuItem,
   TextField,
+  Tooltip,
   Typography,
 } from '@mui/material';
 import { getProjectSchemaDirPath, getRelativeFolderLabel, isPathUnder } from '@src/desktop/explorer/treeUtils';
 import { useActions, useAppState } from '@src/overmind';
 import type { FileTreeNode } from '@src/overmind/project/state';
 import { modShortcut } from '@src/utils/platform';
-import { useEffect, useMemo, useRef } from 'react';
+import { useCallback, useEffect, useMemo, useRef } from 'react';
 import { useTranslation } from 'react-i18next';
 import {
   type ExplorerTarget,
@@ -171,7 +173,7 @@ const TreeNode = ({
 
 export const SidebarExplorerTab = () => {
   const { activeTabPath, config, isProjectReady, rootPath, tree } = useAppState().project;
-  const { loadDirectoryChildren, openFile, openProject, setExplorerFocusedPath } =
+  const { loadDirectoryChildren, openFile, openProject, reloadDirectoryInTree, setExplorerFocusedPath } =
     useActions().project;
   const { t } = useTranslation();
   const treePaneRef = useRef<HTMLDivElement>(null);
@@ -243,6 +245,17 @@ export const SidebarExplorerTab = () => {
     setExplorerFocusedPath({ path: item.path, isDirectory: item.isDirectory });
   }, [rootPath, setExplorerFocusedPath, treeKeyboard.focusedPath]);
 
+  const refreshExplorer = useCallback(() => {
+    if (!rootPath) return;
+    void reloadDirectoryInTree(rootPath);
+  }, [reloadDirectoryInTree, rootPath]);
+
+  useEffect(() => {
+    // Fired by the Electron menu bridge when the user presses F5.
+    window.addEventListener('desktop:refresh', refreshExplorer);
+    return () => window.removeEventListener('desktop:refresh', refreshExplorer);
+  }, [refreshExplorer]);
+
   const handleTreeKeyDown = async (event: React.KeyboardEvent) => {
     if (event.key === 'F2') {
       const item = treeKeyboard.getFocusedItem();
@@ -275,7 +288,7 @@ export const SidebarExplorerTab = () => {
   return (
     <Box sx={{ display: 'flex', flexDirection: 'column', height: '100%' }}>
       {rootPath ? (
-        <Box sx={{ p: 1, borderBottom: 1, borderColor: 'divider' }}>
+        <Box sx={{ p: 1, borderBottom: 1, borderColor: 'divider', display: 'flex', gap: 0.5 }}>
           <TextField
             fullWidth
             size="small"
@@ -297,6 +310,13 @@ export const SidebarExplorerTab = () => {
               ) : undefined,
             }}
           />
+          <Tooltip title={t('LWC.desktop.explorer.refresh')}>
+            <span>
+              <IconButton onClick={refreshExplorer} size="small">
+                <RefreshIcon fontSize="small" />
+              </IconButton>
+            </span>
+          </Tooltip>
         </Box>
       ) : null}
 

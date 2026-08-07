@@ -275,18 +275,22 @@ export const searchEntitiesForPicker = async (
 };
 
 /**
- * Replace every keyed entity tag whose `key` is in `knownKeys` with a bare
- * `{{entity:KEY}}` text node — same blinding as dates, so the model cannot
- * paraphrase Chinese surfaces *and* keep placeholders.
+ * Blind keyed (and leftover unkeyed) entity tags for the AI translation pass.
  *
- * Only the outermost *keyed* entity in a nest is replaced (placeName inside a
- * keyed roleName stays inside that one placeholder). Unkeyed persName inside a
- * keyed personWrapper is blinded to the wrapper’s key. After replacement,
- * personWrapper / nobleTitle shells are unwrapped so the model sees plain
- * placeholder text rather than leftover TEI scaffolding.
+ * Norbert `name[@type=personWrapper]`: pack mechanically as
+ *   `{{holding:OFFICE}} {{entity:PERSON}}`
+ * so the model sees “title held + person”, not two anonymous offices.
  *
- * Remaining unkeyed entity tags (e.g. `<roleName><placeName>益州</placeName>刺史</roleName>`)
- * become `{{opaque:N}}` so the model cannot invent “Prefect of …”.
+ * A `roleName` immediately after `為` becomes `{{as:…}}` (the office appointed
+ * *to*), distinct from `{{holding:…}}` (office already held).
+ *
+ * `nobleTitle` (and placeName/roleName inside it) is left as plain text for the
+ * model to translate — we do not blind those spans yet.
+ *
+ * Other keyed spans → `{{entity:KEY}}`. Leftover unkeyed entity tags →
+ * `{{opaque:N}}` / `{{as:opaque:N}}`.
+ *
+ * Adjacent placeholders get a single space (`}} {{`); runs of spaces collapse.
  */
 export const replaceEntitiesWithPlaceholdersInSourceXml = (
   sourceUnitXml: string,
@@ -298,8 +302,106 @@ export const replaceEntitiesWithPlaceholdersInSourceXml = (
     return { xml: sourceUnitXml, opaques: [] };
   }
 
+  const opaques: OpaqueEntityHit[] = [];
   const tagSet = new Set(SOURCE_UNIT_ENTITY_TAGS);
-  /** True when an ancestor is a keyed entity tag we are also blinding. */
+
+  const pushOpaque = (kind: string, surface: string): number => {
+    const index = opaques.length;
+    opaques.push({ index, kind, surface });
+    return index;
+  };
+
+  const officePlaceholder = (el: Element, role: 'holding' | 'as' | 'entity'): string => {
+    const key = el.getAttribute('key')?.trim();
+    if (key && knownKeys.has(key)) return `{{${role}:${key}}}`;
+    const surface = (el.textContent ?? '').replace(/\s+/g, ' ').trim();
+    if (!surface) return '';
+    const index = pushOpaque(
+      TAG_TO_KIND[el.localName || el.tagName.toLowerCase()] ?? 'office',
+      surface,
+    );
+    if (role === 'holding') return `{{holding:opaque:${index}}}`;
+    if (role === 'as') return `{{as:opaque:${index}}}`;
+    return `{{opaque:${index}}}`;
+  };
+
+  /** True when the preceding non-empty text sibling ends with 為. */
+  const isAfterWei = (el: Element): boolean => {
+    let prev: ChildNode | null = el.previousSibling;
+    while (prev) {
+      if (prev.nodeType === Node.TEXT_NODE) {
+        const text = prev.textContent ?? '';
+        if (!/\S/.test(text)) {
+          prev = prev.previousSibling;
+          continue;
+        }
+        return /為\s*$/.test(text);
+      }
+      return false;
+    }
+    return false;
+  };
+
+  const isInsideNobleTitle = (el: Element): boolean => {
+    let cur = el.parentElement;
+    while (cur) {
+      const tag = cur.localName || cur.tagName.toLowerCase();
+      if (tag === 'nobleTitle') return true;
+      cur = cur.parentElement;
+    }
+    return false;
+  };
+
+  // Flatten nobleTitle → plain text for the model to translate (incl. nested
+  // placeName / roleName). Do this before blinding so those children are not cut out.
+  for (const el of [...elementsByLocalName(doc, 'nobleTitle')]) {
+    if (!el.parentNode) continue;
+    const text = (el.textContent ?? '').replace(/\s+/g, ' ').trim();
+    el.parentNode.replaceChild(doc.createTextNode(text), el);
+  }
+
+  // --- 1. Pack Norbert personWrappers (holding + person; nobleTitle already text). ---
+  for (const wrapper of [...elementsByLocalName(doc, 'name')]) {
+    if (wrapper.getAttribute('type') !== 'personWrapper' || !wrapper.parentNode) continue;
+    const wrapperKey = wrapper.getAttribute('key')?.trim();
+    const chunks: string[] = [];
+
+    for (const child of Array.from(wrapper.childNodes)) {
+      if (child.nodeType === Node.TEXT_NODE) {
+        const text = child.textContent ?? '';
+        if (text) chunks.push(text);
+        continue;
+      }
+      if (child.nodeType !== Node.ELEMENT_NODE) continue;
+      const el = child as Element;
+      const tag = el.localName || el.tagName.toLowerCase();
+
+      if (tag === 'roleName' || tag === 'officeName') {
+        const token = officePlaceholder(el, 'holding');
+        if (token) chunks.push(token);
+        continue;
+      }
+      if (tag === 'persName') {
+        const key = el.getAttribute('key')?.trim() || wrapperKey;
+        if (key && (knownKeys.has(key) || key === wrapperKey)) {
+          chunks.push(`{{entity:${key}}}`);
+        } else {
+          const surface = (el.textContent ?? '').replace(/\s+/g, ' ').trim();
+          if (surface) {
+            const index = pushOpaque('person', surface);
+            chunks.push(`{{opaque:${index}}}`);
+          }
+        }
+        continue;
+      }
+      const leftover = (el.textContent ?? '').replace(/\s+/g, ' ').trim();
+      if (leftover) chunks.push(leftover);
+    }
+
+    wrapper.parentNode.replaceChild(doc.createTextNode(chunks.join('')), wrapper);
+  }
+
+  // --- 2. Keyed entity tags still in the tree (skip anything under nobleTitle). ---
   const hasKeyedEntityAncestor = (el: Element): boolean => {
     let cur = el.parentElement;
     while (cur) {
@@ -313,53 +415,27 @@ export const replaceEntitiesWithPlaceholdersInSourceXml = (
     return false;
   };
 
-  const toReplace: Element[] = [];
+  const toReplace: Array<{ el: Element; token: string }> = [];
   if (knownKeys.size > 0) {
     for (const tag of SOURCE_UNIT_ENTITY_TAGS) {
       for (const el of elementsByLocalName(doc, tag)) {
         const key = el.getAttribute('key')?.trim();
         if (!key || !knownKeys.has(key)) continue;
+        if (isInsideNobleTitle(el)) continue;
         if (hasKeyedEntityAncestor(el)) continue;
-        toReplace.push(el);
-      }
-    }
-    // Unkeyed persName under a keyed personWrapper → same person key
-    for (const wrapper of elementsByLocalName(doc, 'name')) {
-      if (wrapper.getAttribute('type') !== 'personWrapper') continue;
-      const wrapperKey = wrapper.getAttribute('key')?.trim();
-      if (!wrapperKey || !knownKeys.has(wrapperKey)) continue;
-      for (const pers of elementsByLocalName(wrapper, 'persName')) {
-        const persKey = pers.getAttribute('key')?.trim();
-        if (persKey && knownKeys.has(persKey)) continue; // handled above
-        toReplace.push(pers);
-        // Stash wrapper key for this element via temporary attribute
-        pers.setAttribute('data-ljb-blind-key', wrapperKey);
+        const isOffice = tag === 'roleName' || tag === 'officeName';
+        const role = isOffice && isAfterWei(el) ? 'as' : 'entity';
+        toReplace.push({ el, token: `{{${role}:${key}}}` });
       }
     }
   }
 
-  for (const el of toReplace) {
+  for (const { el, token } of toReplace) {
     if (!el.parentNode) continue;
-    const key =
-      el.getAttribute('data-ljb-blind-key')?.trim() || el.getAttribute('key')?.trim();
-    if (!key) continue;
-    el.parentNode.replaceChild(doc.createTextNode(`{{entity:${key}}}`), el);
+    el.parentNode.replaceChild(doc.createTextNode(token), el);
   }
 
-  // Drop personWrapper / nobleTitle shells that only exist to group children.
-  const unwrap = (el: Element) => {
-    const parent = el.parentNode;
-    if (!parent) return;
-    while (el.firstChild) parent.insertBefore(el.firstChild, el);
-    parent.removeChild(el);
-  };
-  for (const el of [...elementsByLocalName(doc, 'nobleTitle')]) unwrap(el);
-  for (const el of [...elementsByLocalName(doc, 'name')]) {
-    if (el.getAttribute('type') === 'personWrapper') unwrap(el);
-  }
-
-  // Opaque-blind leftover unkeyed entity tags (outermost only).
-  const opaques: OpaqueEntityHit[] = [];
+  // --- 3. Opaque-blind leftover unkeyed entity tags (not under nobleTitle). ---
   const hasEntityTagAncestor = (el: Element): boolean => {
     let cur = el.parentElement;
     while (cur) {
@@ -373,6 +449,7 @@ export const replaceEntitiesWithPlaceholdersInSourceXml = (
   for (const tag of SOURCE_UNIT_ENTITY_TAGS) {
     for (const el of elementsByLocalName(doc, tag)) {
       if (el.getAttribute('key')?.trim()) continue;
+      if (isInsideNobleTitle(el)) continue;
       if (hasEntityTagAncestor(el)) continue;
       opaqueTargets.push(el);
     }
@@ -385,15 +462,24 @@ export const replaceEntitiesWithPlaceholdersInSourceXml = (
       el.parentNode.removeChild(el);
       continue;
     }
-    const index = opaques.length;
-    opaques.push({ index, kind, surface });
-    el.parentNode.replaceChild(doc.createTextNode(`{{opaque:${index}}}`), el);
+    const index = pushOpaque(kind, surface);
+    const isOffice = kind === 'office';
+    const token =
+      isOffice && isAfterWei(el) ? `{{as:opaque:${index}}}` : `{{opaque:${index}}}`;
+    el.parentNode.replaceChild(doc.createTextNode(token), el);
   }
 
   const root = doc.documentElement;
   if (!root) return { xml: sourceUnitXml, opaques: [] };
-  return { xml: new XMLSerializer().serializeToString(root), opaques };
+  return {
+    xml: normalizePlaceholderSpacing(new XMLSerializer().serializeToString(root)),
+    opaques,
+  };
 };
+
+/** Put a single space between adjacent `}}{{` tokens; collapse runs of spaces. */
+export const normalizePlaceholderSpacing = (xml: string): string =>
+  xml.replace(/\}\}\{\{/g, '}} {{').replace(/ {2,}/g, ' ');
 
 export interface OpaqueEntityHit {
   index: number;
@@ -401,15 +487,18 @@ export interface OpaqueEntityHit {
   surface: string;
 }
 
-/** Replace `{{opaque:N}}` with a bracketed surface the scholar can clean up. */
+/** Replace `{{opaque:N}}` / `{{holding:opaque:N}}` / `{{as:opaque:N}}` with `[surface]`. */
 export const substituteOpaquePlaceholders = (
   fragmentXml: string,
   opaques: ReadonlyMap<number, OpaqueEntityHit>,
 ): string => {
-  if (!fragmentXml.includes('{{opaque:') || opaques.size === 0) return fragmentXml;
-  return fragmentXml.replace(/\{\{opaque:(\d+)\}\}/g, (match, raw: string) => {
-    const hit = opaques.get(Number(raw));
-    if (!hit) return match;
-    return `[${hit.surface}]`;
-  });
+  if (!fragmentXml.includes('opaque:') || opaques.size === 0) return fragmentXml;
+  return fragmentXml.replace(
+    /\{\{(?:holding:|as:)?opaque:(\d+)\}\}/g,
+    (match, raw: string) => {
+      const hit = opaques.get(Number(raw));
+      if (!hit) return match;
+      return `[${hit.surface}]`;
+    },
+  );
 };
