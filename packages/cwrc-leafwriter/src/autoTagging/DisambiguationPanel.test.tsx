@@ -19,6 +19,15 @@ jest.mock('./llmClientFromSettings', () => ({
     Boolean(settings?.baseUrl?.trim() && settings?.model?.trim()),
 }));
 
+const mockSetDisambiguationAiCuration = jest.fn();
+
+// The full overmind tree pulls in ESM-only deps (nanoid) that jest can't
+// transform — mock the same as TranslationPane's substitute*.test.ts files.
+jest.mock('../overmind', () => ({
+  useActions: () => ({ ui: { setDisambiguationAiCuration: mockSetDisambiguationAiCuration } }),
+  useAppState: () => ({ ui: { disambiguationReview: { active: false, aiCuration: false } } }),
+}));
+
 jest.mock('./disambiguationCandidates', () => {
   const actual = jest.requireActual('./disambiguationCandidates');
   return {
@@ -179,6 +188,39 @@ describe('DisambiguationPanel', () => {
       }),
     );
     expect(await screen.findByText('AI pre-selected 1 candidate.')).toBeTruthy();
+  });
+
+  it('AI toggle flips the overmind setter and persists the preference', async () => {
+    const persistSpy = jest
+      .spyOn(disambiguationSettings, 'persistDisambiguationSettings')
+      .mockResolvedValue(undefined);
+    jest
+      .spyOn(disambiguationSettings, 'readPersistedDisambiguationSettings')
+      .mockReturnValue({ aiCuration: false });
+
+    render(<DisambiguationPanel session={createSession()} groups={[createGroup()]} />);
+
+    const toggle = await screen.findByRole('button', { name: /AI curation is off/i });
+    toggle.click();
+
+    expect(mockSetDisambiguationAiCuration).toHaveBeenCalledWith(true);
+    await waitFor(() =>
+      expect(persistSpy).toHaveBeenCalledWith(expect.objectContaining({ aiCuration: true })),
+    );
+  });
+
+  it('AI toggle is disabled and forced on when "Always on" is set', async () => {
+    mockAiApiSettingsFromDesktop.mockReturnValue({
+      apiKey: '',
+      baseUrl: 'http://localhost:11434',
+      model: 'mock-model',
+      alwaysOn: true,
+    });
+
+    render(<DisambiguationPanel session={createSession()} groups={[createGroup()]} />);
+
+    const toggle = await screen.findByRole('button', { name: /AI curation is always on/i });
+    expect((toggle as HTMLButtonElement).disabled).toBe(true);
   });
 
   it('bypasses saved caches when disambiguation caching is disabled', async () => {

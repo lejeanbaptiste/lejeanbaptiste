@@ -109,6 +109,8 @@ export interface AiApiSettings {
   temperature: number;
   streamResults: boolean;
   placeholderRetryLimit: number;
+  /** When true, AI curation runs unconditionally — no per-run opt-in checkbox (e.g. Disambiguate). */
+  alwaysOn: boolean;
   verifiedAt: string | null;
   verifiedBaseUrl: string;
   verifiedModel: string;
@@ -195,7 +197,8 @@ export interface AiTranslationDateRef {
 }
 
 export interface AiTranslationRequest {
-  alignmentUnit: 'div' | 'p';
+  /** 'note' is a synthetic unit type used for translating a stripped-out footnote independently. */
+  alignmentUnit: 'div' | 'p' | 'note';
   sourceUnitXml: string;
   targetLanguage: string;
   entities?: AiTranslationEntityRef[];

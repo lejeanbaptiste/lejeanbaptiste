@@ -94,6 +94,10 @@ import {
   replaceDatesWithPlaceholdersInSourceXml,
   type SourceUnitDateHit,
 } from './entityFields/sourceUnitDates';
+import {
+  collectNotesFromSourceUnitXml,
+  replaceNotesWithPlaceholdersInSourceXml,
+} from './entityFields/sourceUnitNotes';
 import type { DateGlossInput } from './entityFields/dateGloss';
 import { autoRomanize } from '../utilities/romanize';
 import {
@@ -146,6 +150,11 @@ import { SCHOLARLY_CONVENTIONS_CHANGED_EVENT } from './entityFields/scholarlyCon
 import { applyEditorialCleanupToRoot, applyEditorialCleanupToRootPreservingSelection } from './translationEditorialCleanup';
 import { collectTranslationUnitCards, footnoteStartIndexForUnit, isTranslationUnitBlank } from './translationUnitCards';
 import { isAiUiFeatureEnabled } from '../autoTagging/aiUiFeatures';
+import {
+  finishAiRunProgress,
+  startAiRunProgress,
+  updateAiRunProgress,
+} from '../autoTagging/aiRunProgress';
 
 const TEI_NS = 'http://www.tei-c.org/ns/1.0';
 const DEFAULT_CITATION_STYLE_ID = 'chicago-note-bibliography';
@@ -276,7 +285,7 @@ const markActiveSourceUnit = (unitId: string | null): void => {
 
 interface DesktopElectronApi {
   generateAiTranslation?: (request: {
-    alignmentUnit: 'div' | 'p';
+    alignmentUnit: 'div' | 'p' | 'note';
     sourceUnitXml: string;
     targetLanguage: string;
     /** Id + kind only — never names, or the model expands placeholders. */
@@ -557,6 +566,68 @@ const validateGeneratedFragment = (fragmentXml: string): { error?: string; xml?:
   };
 };
 
+interface BlindedUnitTranslationRequest {
+  alignmentUnit: 'div' | 'p' | 'note';
+  sourceUnitXml: string;
+  targetLanguage: string;
+  entities?: Array<{ id: string; kind: string }>;
+  dates?: Array<{ index: number }>;
+}
+
+/**
+ * Run one blinded-XML translation request, resending (up to `retryLimit`
+ * times) whenever the model drops a required `{{…}}` placeholder. Shared by
+ * the main-unit call and each independent per-note call in
+ * `generateTranslation` — returns the raw (not yet validated/substituted)
+ * `translationXml`.
+ */
+const translateBlindedUnitXml = async (
+  api: DesktopElectronApi,
+  payload: BlindedUnitTranslationRequest,
+  retryLimit: number,
+): Promise<{ xml: string } | { error: string }> => {
+  const runAi = (retryInstruction?: string) =>
+    api.generateAiTranslation!({
+      ...payload,
+      ...(retryInstruction ? { retryInstruction } : {}),
+    });
+
+  const first = await runAi();
+  if (!first.ok || !first.translationXml) {
+    return { error: first.error ?? 'AI did not return a translation.' };
+  }
+
+  let translationXml = first.translationXml;
+  let missing = missingPlaceholders(payload.sourceUnitXml, translationXml);
+  let retriesUsed = 0;
+  while (missing.length > 0 && retriesUsed < retryLimit) {
+    retriesUsed += 1;
+    console.warn(
+      `[translation] AI omitted placeholders; retry ${retriesUsed}/${retryLimit}`,
+      missing,
+    );
+    const retry = await runAi(buildPlaceholderRetryInstruction(missing));
+    if (!retry.ok || !retry.translationXml) break;
+    const stillMissing = missingPlaceholders(payload.sourceUnitXml, retry.translationXml);
+    // Keep the retry only if it improves or fully repairs the inventory.
+    if (stillMissing.length < missing.length || stillMissing.length === 0) {
+      translationXml = retry.translationXml;
+      missing = stillMissing;
+    } else {
+      break;
+    }
+  }
+  if (missing.length > 0) {
+    console.warn('[translation] placeholders still missing after retries', {
+      missing,
+      retriesUsed,
+      retryLimit,
+    });
+  }
+
+  return { xml: translationXml };
+};
+
 /** After schema validation, turn leftover **markdown** in text nodes into <hi>. */
 const applyMarkdownCleanupToFragment = (fragmentXml: string): string => {
   const wrapped = `<fragment>${fragmentXml}</fragment>`;
@@ -734,6 +805,70 @@ export const substituteDatePlaceholders = (
 
   adjustDatePrepositionsBeforeDateFields(root, lang);
   ensureDatePrepositionsBeforeDateFields(root, lang);
+  return root.innerHTML;
+};
+
+const NOTE_PLACEHOLDER_RE = /\{\{note:(\d+)\}\}/g;
+
+/**
+ * Replace every `{{note:N}}` placeholder with a real `<note place="foot">`
+ * element carrying that note's own (independently translated and already
+ * entity/date-substituted) HTML. `normalizeFootnoteNotes` — already wired to
+ * run whenever the unit's HTML changes — picks these up and numbers/wraps
+ * them exactly like a manually inserted footnote.
+ */
+export const substituteNotePlaceholders = (
+  fragmentXml: string,
+  notes: Map<number, string>,
+): string => {
+  const cleanedFragment = normalizeAiPlaceholders(fragmentXml);
+  if (!cleanedFragment.includes('{{note:')) return cleanedFragment;
+
+  const wrapped = `<fragment>${cleanedFragment}</fragment>`;
+  const doc = new DOMParser().parseFromString(wrapped, 'text/html');
+  const root = doc.body.querySelector('fragment') ?? doc.body;
+
+  const textNodes: Text[] = [];
+  const walker = doc.createTreeWalker(root, NodeFilter.SHOW_TEXT);
+  let node: Node | null;
+  // eslint-disable-next-line no-cond-assign
+  while ((node = walker.nextNode())) {
+    if ((node.textContent ?? '').includes('{{note:')) textNodes.push(node as Text);
+  }
+
+  for (const textNode of textNodes) {
+    const text = normalizeAiPlaceholders(textNode.textContent ?? '');
+    NOTE_PLACEHOLDER_RE.lastIndex = 0;
+    let lastIndex = 0;
+    let match: RegExpExecArray | null;
+    const replacement = doc.createDocumentFragment();
+    let sawMatch = false;
+    // eslint-disable-next-line no-cond-assign
+    while ((match = NOTE_PLACEHOLDER_RE.exec(text))) {
+      sawMatch = true;
+      if (match.index > lastIndex) {
+        replacement.appendChild(doc.createTextNode(text.slice(lastIndex, match.index)));
+      }
+      const index = parseInt(match[1]!, 10);
+      const html = notes.get(index);
+      if (html != null) {
+        const note = doc.createElement('note');
+        note.setAttribute('place', 'foot');
+        note.innerHTML = html;
+        replacement.appendChild(note);
+      } else {
+        console.warn('[translation] AI note placeholder had no matching note:', index);
+        replacement.appendChild(doc.createTextNode(match[0]));
+      }
+      lastIndex = NOTE_PLACEHOLDER_RE.lastIndex;
+    }
+    if (!sawMatch) continue;
+    if (lastIndex < text.length) {
+      replacement.appendChild(doc.createTextNode(text.slice(lastIndex)));
+    }
+    textNode.parentNode?.replaceChild(replacement, textNode);
+  }
+
   return root.innerHTML;
 };
 
@@ -1591,18 +1726,22 @@ export const TranslationPane = () => {
   }, [alignmentUnit, persist, setTranslationDocument, sourcePath, translationPath]);
 
   const replaceCurrentUnit = useCallback(
-    async (nextUnitXml: string) => {
+    async (nextUnitXml: string, unitId: string = selectedUnitId ?? '') => {
       const doc = docRef.current;
-      if (!doc || !alignmentUnit || !sourcePath || !selectedUnitId || !translationPath) {
+      if (!doc || !alignmentUnit || !sourcePath || !unitId || !translationPath) {
         return { error: 'No translation unit is selected.' };
       }
 
-      const unit = findUnitByCorrespId(doc, alignmentUnit, fileNameOf(sourcePath), selectedUnitId);
+      const unit = findUnitByCorrespId(doc, alignmentUnit, fileNameOf(sourcePath), unitId);
       if (!unit) return { error: 'Could not find the matching translation unit.' };
 
       unit.innerHTML = nextUnitXml;
-      setUnitHtml(nextUnitXml);
-      if (editableRef.current) editableRef.current.innerHTML = nextUnitXml;
+      // A batch run touches units other than the one on screen — only mirror
+      // into the live editor/React state when it's the one actually displayed.
+      if (unitId === selectedUnitIdRef.current) {
+        setUnitHtml(nextUnitXml);
+        if (editableRef.current) editableRef.current.innerHTML = nextUnitXml;
+      }
 
       const nextXml = new XMLSerializer().serializeToString(doc);
       await getDesktopApi()?.writeFile?.(translationPath, nextXml);
@@ -1611,40 +1750,53 @@ export const TranslationPane = () => {
     [alignmentUnit, sourcePath, selectedUnitId, translationPath],
   );
 
-  const generateTranslation = useCallback(async () => {
-    if (!alignmentUnit || !sourcePath || !selectedUnitId) {
-      setAiStatus({ severity: 'error', message: t('LW.translationPane.selectSourceUnitFirst') });
-      return;
+  const generateTranslation = useCallback(async (
+    unitId: string = selectedUnitId ?? '',
+    options?: { silent?: boolean },
+  ) => {
+    const silent = options?.silent ?? false;
+    const isSelected = unitId === selectedUnitIdRef.current;
+    if (!alignmentUnit || !sourcePath || !unitId) {
+      if (!silent) {
+        setAiStatus({ severity: 'error', message: t('LW.translationPane.selectSourceUnitFirst') });
+      }
+      return { skipped: false, error: 'No unit selected.' };
     }
 
     const doc = docRef.current;
     const unit =
-      doc &&
-      findUnitByCorrespId(doc, alignmentUnit, fileNameOf(sourcePath), selectedUnitId);
-    const currentHtml = unit?.innerHTML ?? editableRef.current?.innerHTML ?? '';
+      doc && findUnitByCorrespId(doc, alignmentUnit, fileNameOf(sourcePath), unitId);
+    // The live editor fallback only applies to the unit actually on screen —
+    // otherwise a batch run over other units would read the wrong content.
+    const currentHtml =
+      unit?.innerHTML ?? (isSelected ? (editableRef.current?.innerHTML ?? '') : '');
     if (!isTranslationUnitBlank(currentHtml)) {
-      setAiStatus({ severity: 'info', message: t('LW.translationPane.aiSkippedExisting') });
-      return;
+      if (!silent) {
+        setAiStatus({ severity: 'info', message: t('LW.translationPane.aiSkippedExisting') });
+      }
+      return { skipped: true };
     }
 
     const api = getDesktopApi();
     if (!api?.generateAiTranslation || !api.readFile) {
-      setAiStatus({ severity: 'error', message: t('LW.translationPane.aiTranslationUnavailable') });
-      return;
+      if (!silent) {
+        setAiStatus({ severity: 'error', message: t('LW.translationPane.aiTranslationUnavailable') });
+      }
+      return { skipped: false, error: 'AI translation unavailable.' };
     }
 
     setGenerating(true);
-    setAiStatus({ severity: 'info', message: t('LW.translationPane.generatingTranslation') });
+    if (!silent) {
+      setAiStatus({ severity: 'info', message: t('LW.translationPane.generatingTranslation') });
+    }
 
     try {
       const sourceXml = await api.readFile(sourcePath);
-      const sourceUnit = serializeSourceUnit(sourceXml, alignmentUnit, selectedUnitId);
+      const sourceUnit = serializeSourceUnit(sourceXml, alignmentUnit, unitId);
       if (!sourceUnit.xml) {
-        setAiStatus({
-          severity: 'error',
-          message: sourceUnit.error ?? 'Could not read source unit.',
-        });
-        return;
+        const message = sourceUnit.error ?? 'Could not read source unit.';
+        if (!silent) setAiStatus({ severity: 'error', message });
+        return { skipped: false, error: message };
       }
 
       // Same source of truth as dates: collect + blind from the serialized unit
@@ -1676,8 +1828,15 @@ export const TranslationPane = () => {
         return { index: hit.index };
       });
       const knownEntityKeys = new Set(sourceEntityHits.map((hit) => hit.key));
+
+      // Notes are stripped and translated independently — collect from the
+      // full unit XML (before blinding) so their own inner XML still has
+      // real entity/date tags to blind for the note-specific AI call below.
+      const noteHits = collectNotesFromSourceUnitXml(sourceUnit.xml);
+      const sourceXmlNotesStripped = replaceNotesWithPlaceholdersInSourceXml(sourceUnit.xml);
+
       const { xml: sourceUnitXmlForAi, opaques } = replaceEntitiesWithPlaceholdersInSourceXml(
-        replaceDatesWithPlaceholdersInSourceXml(sourceUnit.xml),
+        replaceDatesWithPlaceholdersInSourceXml(sourceXmlNotesStripped),
         knownEntityKeys,
       );
       const opaqueMap = new Map<number, OpaqueEntityHit>(
@@ -1687,18 +1846,9 @@ export const TranslationPane = () => {
         entityKeys: knownEntityKeys.size,
         opaqueCount: opaques.length,
         dates: datesPayload.length,
+        notes: noteHits.length,
         xml: sourceUnitXmlForAi,
       });
-
-      const runAi = (retryInstruction?: string) =>
-        api.generateAiTranslation!({
-          alignmentUnit,
-          sourceUnitXml: sourceUnitXmlForAi,
-          targetLanguage: translationMode.lang ?? '',
-          entities: entitiesPayload,
-          dates: datesPayload,
-          ...(retryInstruction ? { retryInstruction } : {}),
-        });
 
       // First attempt + up to N resends (from AI settings; hard-capped 0–5).
       const aiPrefs = await api.getAiApiSettings?.().catch(() => null);
@@ -1715,53 +1865,27 @@ export const TranslationPane = () => {
             : 1;
       const retryLimit = Math.min(5, Math.max(0, Math.floor(rawLimit)));
 
-      let result = await runAi();
-      if (!result.ok || !result.translationXml) {
-        setAiStatus({
-          severity: 'error',
-          message: result.error ?? 'AI did not return a translation.',
-        });
-        return;
+      const mainResult = await translateBlindedUnitXml(
+        api,
+        {
+          alignmentUnit,
+          sourceUnitXml: sourceUnitXmlForAi,
+          targetLanguage: translationMode.lang ?? '',
+          entities: entitiesPayload,
+          dates: datesPayload,
+        },
+        retryLimit,
+      );
+      if ('error' in mainResult) {
+        if (!silent) setAiStatus({ severity: 'error', message: mainResult.error });
+        return { skipped: false, error: mainResult.error };
       }
 
-      let missing = missingPlaceholders(sourceUnitXmlForAi, result.translationXml);
-      let retriesUsed = 0;
-      while (missing.length > 0 && retriesUsed < retryLimit) {
-        retriesUsed += 1;
-        console.warn(
-          `[translation] AI omitted placeholders; retry ${retriesUsed}/${retryLimit}`,
-          missing,
-        );
-        setAiStatus({
-          severity: 'info',
-          message: t('LW.translationPane.generatingTranslation'),
-        });
-        const retry = await runAi(buildPlaceholderRetryInstruction(missing));
-        if (!retry.ok || !retry.translationXml) break;
-        const stillMissing = missingPlaceholders(sourceUnitXmlForAi, retry.translationXml);
-        // Keep the retry only if it improves or fully repairs the inventory.
-        if (stillMissing.length < missing.length || stillMissing.length === 0) {
-          result = retry;
-          missing = stillMissing;
-        } else {
-          break;
-        }
-      }
-      if (missing.length > 0) {
-        console.warn('[translation] placeholders still missing after retries', {
-          missing,
-          retriesUsed,
-          retryLimit,
-        });
-      }
-
-      const validated = validateGeneratedFragment(result.translationXml);
+      const validated = validateGeneratedFragment(mainResult.xml);
       if (!validated.xml) {
-        setAiStatus({
-          severity: 'error',
-          message: validated.error ?? 'AI returned invalid translation XML.',
-        });
-        return;
+        const message = validated.error ?? 'AI returned invalid translation XML.';
+        if (!silent) setAiStatus({ severity: 'error', message });
+        return { skipped: false, error: message };
       }
 
       const cleanedXml = normalizeAiPlaceholders(
@@ -1769,23 +1893,96 @@ export const TranslationPane = () => {
       );
       const withOpaques = substituteOpaquePlaceholders(cleanedXml, opaqueMap);
       const withEntities = substituteEntityPlaceholders(withOpaques, entityMap, selectedLanguage);
-      const substitutedXml = substituteDatePlaceholders(withEntities, dateMap, selectedLanguage);
-      const replaceResult = await replaceCurrentUnit(substitutedXml);
-      if (replaceResult.error) {
-        setAiStatus({ severity: 'error', message: replaceResult.error });
-        return;
+      const withDates = substituteDatePlaceholders(withEntities, dateMap, selectedLanguage);
+
+      // Translate each note independently, only after the main text succeeded.
+      // A note failure never fails the whole operation — it falls back to the
+      // note's original (untranslated) content and is surfaced as a warning.
+      const noteHtmlByIndex = new Map<number, string>();
+      const noteWarnings: string[] = [];
+      let nextOpaqueStart = opaques.length;
+
+      if (noteHits.length > 0 && !silent) {
+        setAiStatus({ severity: 'info', message: t('LW.translationPane.generatingTranslation') });
       }
-      if (editableRef.current) {
+
+      for (const noteHit of noteHits) {
+        if (!noteHit.innerXml.trim()) {
+          noteHtmlByIndex.set(noteHit.index, '');
+          continue;
+        }
+
+        const { xml: noteXmlForAi, opaques: noteOpaques } = replaceEntitiesWithPlaceholdersInSourceXml(
+          replaceDatesWithPlaceholdersInSourceXml(noteHit.innerXml),
+          knownEntityKeys,
+          nextOpaqueStart,
+        );
+        nextOpaqueStart += noteOpaques.length;
+        for (const hit of noteOpaques) opaqueMap.set(hit.index, hit);
+
+        const noteResult = await translateBlindedUnitXml(
+          api,
+          {
+            alignmentUnit: 'note',
+            sourceUnitXml: noteXmlForAi,
+            targetLanguage: translationMode.lang ?? '',
+            entities: entitiesPayload,
+            dates: datesPayload,
+          },
+          retryLimit,
+        );
+        if ('error' in noteResult) {
+          console.warn('[translation] note translation failed, keeping original text', noteResult.error);
+          noteWarnings.push(noteResult.error);
+          noteHtmlByIndex.set(noteHit.index, noteHit.innerXml);
+          continue;
+        }
+
+        const noteValidated = validateGeneratedFragment(noteResult.xml);
+        if (!noteValidated.xml) {
+          console.warn(
+            '[translation] note translation was invalid XML, keeping original text',
+            noteValidated.error,
+          );
+          noteWarnings.push(noteValidated.error ?? 'AI returned invalid note XML.');
+          noteHtmlByIndex.set(noteHit.index, noteHit.innerXml);
+          continue;
+        }
+
+        const noteCleaned = normalizeAiPlaceholders(
+          applyMarkdownCleanupToFragment(noteValidated.xml),
+        );
+        const noteWithOpaques = substituteOpaquePlaceholders(noteCleaned, opaqueMap);
+        const noteWithEntities = substituteEntityPlaceholders(noteWithOpaques, entityMap, selectedLanguage);
+        const noteWithDates = substituteDatePlaceholders(noteWithEntities, dateMap, selectedLanguage);
+        noteHtmlByIndex.set(noteHit.index, noteWithDates);
+      }
+
+      const substitutedXml = substituteNotePlaceholders(withDates, noteHtmlByIndex);
+      const replaceResult = await replaceCurrentUnit(substitutedXml, unitId);
+      if (replaceResult.error) {
+        if (!silent) setAiStatus({ severity: 'error', message: replaceResult.error });
+        return { skipped: false, error: replaceResult.error };
+      }
+      if (isSelected && editableRef.current) {
         prepareAtomicEntityFields(editableRef.current);
         prepareAtomicDateFields(editableRef.current);
       }
 
-      setAiStatus({ severity: 'success', message: t('LW.translationPane.translationGenerated') });
+      if (!silent) {
+        setAiStatus({
+          severity: 'success',
+          message:
+            noteWarnings.length > 0
+              ? `${t('LW.translationPane.translationGenerated')} ${t('LW.translationPane.aiNotesPartial', { count: noteWarnings.length })}`
+              : t('LW.translationPane.translationGenerated'),
+        });
+      }
+      return { skipped: false };
     } catch (error) {
-      setAiStatus({
-        severity: 'error',
-        message: error instanceof Error ? error.message : 'AI translation failed.',
-      });
+      const message = error instanceof Error ? error.message : 'AI translation failed.';
+      if (!silent) setAiStatus({ severity: 'error', message });
+      return { skipped: false, error: message };
     } finally {
       setGenerating(false);
     }
@@ -1798,6 +1995,47 @@ export const TranslationPane = () => {
     t,
     translationMode.lang,
   ]);
+
+  /**
+   * Translate every still-blank unit in the document, one at a time, via the
+   * bottom-bar progress indicator (same module the auto-tagging dialog's
+   * background mode uses) — not the per-unit `aiStatus` chatter, which stays
+   * reserved for the single-unit path.
+   */
+  const translateDocument = useCallback(async () => {
+    if (generating) return;
+    const blankUnits = unitCards.filter((card) => isTranslationUnitBlank(card.previewHtml));
+    if (blankUnits.length === 0) {
+      setAiStatus({ severity: 'info', message: t('LW.translationPane.aiSkippedExisting') });
+      return;
+    }
+
+    const abortController = new AbortController();
+    startAiRunProgress(t('LW.translationPane.translateDocumentProgress'), () =>
+      abortController.abort(),
+    );
+    let translated = 0;
+    let skipped = 0;
+    let failed = 0;
+    try {
+      for (let i = 0; i < blankUnits.length; i++) {
+        if (abortController.signal.aborted) break;
+        updateAiRunProgress(i, blankUnits.length);
+        const result = await generateTranslation(blankUnits[i]!.unitId, { silent: true });
+        if (result?.skipped) skipped += 1;
+        else if (result?.error) failed += 1;
+        else translated += 1;
+      }
+      updateAiRunProgress(blankUnits.length, blankUnits.length);
+    } finally {
+      finishAiRunProgress();
+    }
+
+    setAiStatus({
+      severity: failed > 0 ? 'error' : 'success',
+      message: t('LW.translationPane.translateDocumentDone', { count: translated, skipped, failed }),
+    });
+  }, [generateTranslation, generating, t, unitCards]);
 
   const refreshLanguageToolOverlays = useCallback((matches: LanguageToolMatchView[]) => {
     const root = editableRef.current;
@@ -3330,6 +3568,15 @@ export const TranslationPane = () => {
                 }}
               >
                 <ListItemText primary={t('LW.translationPane.generateTranslation')} />
+              </MenuItem>
+              <MenuItem
+                disabled={generating}
+                onClick={() => {
+                  setAiMenuAnchor(null);
+                  void translateDocument();
+                }}
+              >
+                <ListItemText primary={t('LW.translationPane.translateDocument')} />
               </MenuItem>
             </Menu>
           </>

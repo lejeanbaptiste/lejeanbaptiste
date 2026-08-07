@@ -65,7 +65,9 @@ export function useDateAuthority(enabled: boolean, civ: readonly string[] = defa
       .then((index) => {
         if (cancelled) return;
         if (!index) {
-          setError('Sanmiao lookup tables are not available.');
+          // Leave error null so the UI can show the translated
+          // LW.dateAuthority.calendar_lookup_unavailable message.
+          setError(null);
           setAuthority(null);
           return;
         }

@@ -197,15 +197,26 @@
   "types": "",
   "LW": {
     "dateAuthority": {
-      "day": "Dia",
+      "loading_calendar_tables": "Carregando tabelas de calendário…",
+      "calendar_lookup_unavailable": "A consulta de calendário está indisponível. Instale o sanmiao e reinicie o aplicativo.",
+      "calendar_context_hint": "Contexto calendárico (dinastia, imperador, era) — usado pelo sanmiao ao resolver datas.",
       "dynasty": "Dinastia",
       "emperor": "Imperador",
       "era": "Era",
+      "type_to_search": "Digite para pesquisar…",
+      "year": "Ano",
+      "year_placeholder": "元年, 3, 十八",
       "month": "Mês",
-      "new_moon_gz": "gz da lua nova",
-      "sexagenary_day": "Dia sexagenário",
+      "month_placeholder": "3, 十八",
+      "day": "Dia",
+      "optional": "opcional",
       "sexagenary_year": "Ano sexagenário",
-      "year": "Ano"
+      "sex_year_placeholder": "sex_year",
+      "sexagenary_day": "Dia sexagenário",
+      "gz_placeholder": "gz",
+      "gz_helper": "1–60, ou cole 甲子",
+      "new_moon_gz": "gz da lua nova",
+      "nmd_gz_placeholder": "nmd_gz"
     }
   }
 }

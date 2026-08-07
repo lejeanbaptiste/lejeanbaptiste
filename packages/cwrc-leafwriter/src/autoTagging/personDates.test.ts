@@ -70,6 +70,26 @@ describe('personDates', () => {
     ).toEqual({ startYear: 360, endYear: 539, isFine: false });
   });
 
+  it('falls back to dynasties[] when nationality has labels but no years (Norbert)', () => {
+    expect(
+      filterYearsFromMetadata({
+        dateSource: 'nationality',
+        nationality: [{}],
+        dynasties: [{ startYear: 557, endYear: 581 }],
+      }),
+    ).toEqual({ startYear: 497, endYear: 641, isFine: false });
+  });
+
+  it('prefers nationality years over dynasties when both are present', () => {
+    expect(
+      filterYearsFromMetadata({
+        dateSource: 'nationality',
+        nationality: [{ startYear: 420, endYear: 479 }],
+        dynasties: [{ startYear: 557, endYear: 581 }],
+      }),
+    ).toEqual({ startYear: 360, endYear: 539, isFine: false });
+  });
+
   it('scrubs index-year fl. clues but leaves real floruit ranges when not scrubbing', () => {
     expect(scrubIndexYearFloruitClue('王安石 (Wang Anshi, fl. 1065, 宋 Song)')).toBe(
       '王安石 (Wang Anshi, 宋 Song)',

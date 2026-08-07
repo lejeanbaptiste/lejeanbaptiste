@@ -479,13 +479,18 @@ export const startDisambiguationReview = (
   state.ui.disambiguationReview.active = true;
   // Hidden unfinished AI: never enable curation while the UI flag is off.
   state.ui.disambiguationReview.aiCuration = isAiUiFeatureEnabled('disambiguationCurate')
-    ? (options?.aiCuration ?? true)
+    ? (options?.aiCuration ?? false)
     : false;
   window.dispatchEvent(
     new CustomEvent('desktop:disambiguation-review-open', {
       detail: dockedReviewActiveDetail(state),
     }),
   );
+};
+
+/** Live flip of the panel's own AI-curation toggle — see DisambiguationPanel's AI square. */
+export const setDisambiguationAiCuration = ({ state }: Context, next: boolean) => {
+  state.ui.disambiguationReview.aiCuration = next;
 };
 
 export const exitDisambiguationReview = ({ state }: Context) => {

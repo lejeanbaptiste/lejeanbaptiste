@@ -7,6 +7,11 @@ describe('normalizeAiPlaceholders', () => {
     expect(normalizeAiPlaceholders('{{“entity:office-1”}}')).toBe('{{entity:office-1}}');
     expect(normalizeAiPlaceholders('{{holding:o1}}')).toBe('{{holding:o1}}');
   });
+
+  test('repairs smart-quoted note placeholders', () => {
+    expect(normalizeAiPlaceholders('{{“note:0”}}')).toBe('{{note:0}}');
+    expect(normalizeAiPlaceholders("{{'note: 2 '}}")).toBe('{{note:2}}');
+  });
 });
 
 describe('collectPlaceholderInventory', () => {
@@ -19,11 +24,22 @@ describe('collectPlaceholderInventory', () => {
     expect(inv.get('{{entity:p1}}')).toBe(2);
     expect(inv.get('{{as:opaque:0}}')).toBe(1);
   });
+
+  test('counts note tokens', () => {
+    const inv = collectPlaceholderInventory('{{note:0}} and {{note:1}} and {{note:0}}');
+    expect(inv.get('{{note:0}}')).toBe(2);
+    expect(inv.get('{{note:1}}')).toBe(1);
+  });
 });
 
 describe('missingPlaceholders', () => {
   test('empty when all present', () => {
     const src = '{{date:0}} {{entity:p1}}';
     expect(missingPlaceholders(src, 'On {{date:0}} saw {{entity:p1}}.')).toEqual([]);
+  });
+
+  test('flags a dropped note placeholder', () => {
+    const src = '{{date:0}} {{note:0}}';
+    expect(missingPlaceholders(src, 'On {{date:0}}.')).toEqual(['{{note:0}}']);
   });
 });

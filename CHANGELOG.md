@@ -26,6 +26,8 @@
 ### Functionality
 
 - Rebuilt Sanmiao date validation panel to work _with_ the script, setting fixed waypoints to calculate around and allowing the user to enter missing date data (needs testing.)
+- Disambiguate date filter now falls back to Norbert `dynasties[]` years when `nationality` has labels but no dates — excluding after −78 no longer leaves Northern Zhou / Southern Qi people in as “undated.”
+- Disambiguate AI curation defaults off and stays disabled until a verified AI API is configured (same idea as tag-bomb).
 
 ### Data
 
@@ -58,6 +60,7 @@
 - Database viewer now shows authority badges
 - Blocked disambiguation map from zooming outside of tile range
 - Cleaned up entities viewer UI a little.
+- East Asian date attributes (`LW.dateAuthority`) no longer show raw i18n keys in the attributes panel: synced full strings into commons and package locales, localised the gz helper text, and stopped a hardcoded English Sanmiao error from overriding the translated unavailable message.
 
 ### Rewards system
 
@@ -95,6 +98,11 @@
 - Group & Clean no longer rolls a fief `placeName` into the rank `roleName` inside `<nobleTitle>`; fief and rank stay siblings so ranks do not pollute the offices table.
 - Inside `<nobleTitle>`, Disambiguate only queues `placeName`s. Bare ranks auto-resolve (unique PEDB office key, else a Norbert office `ref`); place + role + posthumous can auto-resolve a person when the title maps uniquely. A posthumous name alone does not enter the person queue.
 - Chinese projects now treat both Norbert and East Asian dates (`cjk-dates`) as required language plugins: Norbert alone no longer counts as “plugins installed”, so a fresh Chinese project re-prompts / retries until calendars are present too. Enabling also merges the Sanmiao schema contribution (as Japan already did).
+- Removed the Disambiguate launcher popup — clicking Disambiguate now starts the review directly (AI curation and caching settings moved to where the rest of the app's settings live, see below).
+- Added a small persistent **AI** toggle to the Disambiguate panel itself, between the tag filter and the refresh button, replacing the launcher's one-time checkbox. Persists across sessions (default off); forced on and non-interactive when **Always on** is set in AI API settings.
+- New **Always on** option in Settings → AI API: when set, AI curation runs unconditionally wherever it's offered (currently Disambiguate) without a per-run opt-in toggle.
+- When **Stream AI results** is off and AI curation is enabled, opening Disambiguate now also warms the AI ranking cache for every pending mention in the background (progress in the bottom bar) — the panel is usable immediately, this just makes navigating mention-to-mention feel instant once it catches up.
+- Moved "Disable caching" for disambiguation out of the (now-removed) launcher popup into Settings → Garde-fous.
 
 ### Performance and stability
 
@@ -126,6 +134,9 @@
 - The IME-style autocomplete popup (type to insert an entity anchor) now also suggests Sanmiao date spans from the source unit. Since dates aren't in the entity database, the match keyword is a mechanical, on-the-fly pinyin romanization of the Chinese date text — never stored, purely a typing aid.
 - Fixed a save error ("provided markup is invalid XML") that could hit when persisting translation-pane edits — swapped a fragile HTML-string round-trip for a direct DOM import.
 - Fixed the translation pane opening blank after leaving the tab (e.g. to edit the entity database) and coming back — re-enter translation mode when the tab is selected again.
+- AI translation now splits source `<note>` footnotes out of the main text before translating: each note is stripped to a `{{note:N}}` placeholder, translated independently (its own entities/dates blinded the same way as the main text), and re-inserted as a real `<note place="foot">` footnote — no code changes needed to the existing footnote numbering, it just picks these up like a manually inserted one. A note that fails to translate falls back to its original text rather than failing the whole run.
+- **Stream AI results into review as each block finishes** now defaults on.
+- New **Translate document** action alongside Generate translation: translates every still-blank unit in the document, one at a time, skipping any unit that already has real text. Progress shows in the bottom bar (same indicator used by background auto-tagging runs), with a cancel button.
 
 ### Entity display and data
 
@@ -167,6 +178,9 @@
 - Removed legacy popups ('Hey, looks like you're copying... Do you want to learn about copying?').
 - Removed legacy help pop-ups.
 - F5 now refreshes whichever panel(s) support it — translation pane entity anchors, file explorer tree, and database viewer entities — instead of only being wired one place at a time. File explorer also got a standalone refresh button.
+- CSS panel now uses the updated highlighter tab icon instead of the placeholder marker-pen SVG.
+- Fixed the Database Window pill reading "Fenêtre base de données" (window base de données) in French — now just "Base de données".
+- Fixed the AI API "Connected. Found N model(s)" message (and a few tag-bomb queue messages) rendering literal `{{...}}` template syntax instead of a proper plural — was using an inline ICU plural pattern this app's i18next setup doesn't support; converted to standard singular/plural translation keys.
 
 ### Rewards system
 

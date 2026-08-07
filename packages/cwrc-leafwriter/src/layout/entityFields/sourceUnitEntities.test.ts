@@ -113,6 +113,32 @@ describe('replaceEntitiesWithPlaceholdersInSourceXml', () => {
     expect(rewritten).toContain('{{opaque:0}}');
     expect(opaques[0]?.surface).toBe('益州刺史');
   });
+
+  test('opaqueStartIndex offsets opaque indices so independent calls never collide', () => {
+    const xml =
+      '<p xmlns="http://www.tei-c.org/ns/1.0">' +
+      '<roleName><placeName>益州</placeName>刺史</roleName> and ' +
+      '<roleName><placeName>荊州</placeName>刺史</roleName>' +
+      '</p>';
+    const { xml: rewritten, opaques } = replaceEntitiesWithPlaceholdersInSourceXml(
+      xml,
+      new Set(),
+      5,
+    );
+    expect(rewritten).toContain('{{opaque:5}}');
+    expect(rewritten).toContain('{{opaque:6}}');
+    expect(rewritten).not.toContain('{{opaque:0}}');
+    expect(opaques.map((hit) => hit.index)).toEqual([5, 6]);
+  });
+
+  test('opaqueStartIndex defaults to 0 when omitted', () => {
+    const xml =
+      '<p xmlns="http://www.tei-c.org/ns/1.0">' +
+      '<roleName><placeName>益州</placeName>刺史</roleName>' +
+      '</p>';
+    const { opaques } = replaceEntitiesWithPlaceholdersInSourceXml(xml, new Set());
+    expect(opaques[0]?.index).toBe(0);
+  });
 });
 
 describe('collectEntitiesFromSourceUnitXml', () => {

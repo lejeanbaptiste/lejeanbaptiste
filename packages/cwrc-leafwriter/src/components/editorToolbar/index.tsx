@@ -7,6 +7,9 @@ import type { IconLeafWriter } from '../../icons';
 import { useActions, useAppState } from '../../overmind';
 import type { ChoiceDisplayMode } from '../../overmind/editor/state';
 import { EntityType } from '../../types';
+import { isAiUiFeatureEnabled } from '../../autoTagging/aiUiFeatures';
+import { aiApiSettingsFromDesktop, isAiSuggestReady } from '../../autoTagging/llmClientFromSettings';
+import { readPersistedDisambiguationSettings } from '../../autoTagging/disambiguationSettings';
 import { Button } from './Button';
 import { IconButton } from './IconButton';
 import { MenuButton } from './MenuButton';
@@ -65,7 +68,8 @@ export const EditorToolbar = () => {
     toggleShowTags,
     toggleTextLocked,
   } = useActions().editor;
-  const { openDialog, showContextMenu } = useActions().ui;
+  const { dismissReviewPanes, openDialog, showContextMenu, startDisambiguationReview } =
+    useActions().ui;
   // Re-render when plugins load/unload so Norbert (etc.) appear without restart.
   const [pluginToolbarEpoch, setPluginToolbarEpoch] = useState(0);
   useEffect(() => {
@@ -320,7 +324,19 @@ export const EditorToolbar = () => {
       group: 'ui',
       hide: isReadonly || translationActive,
       icon: 'disambiguate',
-      onClick: () => openDialog({ type: 'disambiguation', props: { id: 'disambiguation' } }),
+      onClick: () => {
+        // No launcher popup — start review directly. AI curation reflects the
+        // panel's own persisted toggle (or 'Always on' from AI API settings),
+        // same effective logic the old popup's Start button used to compute.
+        const aiSettings = aiApiSettingsFromDesktop();
+        const effectiveAiCuration =
+          isAiUiFeatureEnabled('disambiguationCurate') &&
+          isAiSuggestReady(aiSettings) &&
+          (aiSettings?.alwaysOn === true ||
+            (readPersistedDisambiguationSettings()?.aiCuration ?? false));
+        dismissReviewPanes();
+        startDisambiguationReview({ aiCuration: effectiveAiCuration });
+      },
       title: 'Disambiguate',
       type: 'iconButton',
     },

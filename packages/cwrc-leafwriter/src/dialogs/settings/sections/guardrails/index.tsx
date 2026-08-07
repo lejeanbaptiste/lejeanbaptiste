@@ -1,5 +1,11 @@
 import { FormControl, List, MenuItem, Select, Typography } from '@mui/material';
+import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
+import {
+  disambiguationCachingDisabledFromSettings,
+  persistDisambiguationCaching,
+  readPersistedDisambiguationSettings,
+} from '../../../../autoTagging/disambiguationSettings';
 import { useActions, useAppState } from '../../../../overmind';
 import type { MultiFileSnapshotTrigger } from '../../../../overmind/editor/state';
 import { Toggler } from '../../components';
@@ -24,6 +30,15 @@ export const Guardrails = () => {
     setValidateXmlOnReplace,
   } = useActions().editor;
   const { t } = useTranslation();
+  // Per-project (not overmind) setting, read once — the settings dialog
+  // remounts each time it's opened.
+  const [disableDisambiguationCaching, setDisableDisambiguationCaching] = useState(() =>
+    disambiguationCachingDisabledFromSettings(readPersistedDisambiguationSettings()),
+  );
+  const handleToggleDisambiguationCaching = (next: boolean) => {
+    setDisableDisambiguationCaching(next);
+    void persistDisambiguationCaching(next);
+  };
 
   return (
     <List dense>
@@ -87,6 +102,13 @@ export const Guardrails = () => {
           value={validateMultiFileAutomation}
         />
       )}
+      <Toggler
+        icon="cloudSync"
+        onChange={handleToggleDisambiguationCaching}
+        title={t('LW.settings.guardrails.disable_disambiguation_caching')}
+        type="toggle"
+        value={disableDisambiguationCaching}
+      />
     </List>
   );
 };

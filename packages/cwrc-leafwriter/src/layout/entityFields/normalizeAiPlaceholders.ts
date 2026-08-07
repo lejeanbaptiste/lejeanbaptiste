@@ -19,6 +19,13 @@ export const normalizeAiPlaceholders = (text: string): string => {
   );
   out = out.replace(
     new RegExp(
+      `\\{\\{\\s*${QUOTE}\\s*note\\s*:\\s*${QUOTE}\\s*(\\d+)\\s*${QUOTE}\\s*\\}\\}`,
+      'gi',
+    ),
+    '{{note:$1}}',
+  );
+  out = out.replace(
+    new RegExp(
       `\\{\\{\\s*${QUOTE}\\s*opaque\\s*:\\s*${QUOTE}\\s*(\\d+)\\s*${QUOTE}\\s*\\}\\}`,
       'gi',
     ),

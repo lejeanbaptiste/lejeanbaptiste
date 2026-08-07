@@ -22,6 +22,8 @@ interface AiApiSettings {
   temperature: number;
   streamResults: boolean;
   placeholderRetryLimit: number;
+  /** When true, AI curation runs unconditionally — no per-run opt-in checkbox (e.g. Disambiguate). */
+  alwaysOn: boolean;
   verifiedAt: string | null;
   verifiedBaseUrl: string;
   verifiedModel: string;
@@ -39,8 +41,9 @@ const DEFAULT_AI_API_SETTINGS: AiApiSettings = {
   customInstructions: '',
   model: '',
   temperature: 0.1,
-  streamResults: false,
+  streamResults: true,
   placeholderRetryLimit: 1,
+  alwaysOn: false,
   verifiedAt: null,
   verifiedBaseUrl: '',
   verifiedModel: '',
@@ -230,6 +233,22 @@ export const DesktopAiApi = () => {
             size="small"
             value={settings.customInstructions}
           />
+          <FormControlLabel
+            control={
+              <Checkbox
+                checked={settings.alwaysOn}
+                onChange={(event) => updateSetting('alwaysOn', event.target.checked)}
+                size="small"
+              />
+            }
+            label={
+              <Typography variant="body2">{t('LW.settings.ai_api.always_on')}</Typography>
+            }
+            sx={{ ml: 0 }}
+          />
+          <Typography color="text.secondary" variant="caption">
+            {t('LW.settings.ai_api.always_on_help')}
+          </Typography>
 
           <Collapse in={Boolean(status)}>
             {status ? (

@@ -15,6 +15,7 @@ import {
   Alert,
   Box,
   Button,
+  ButtonBase,
   Checkbox,
   Chip,
   Collapse,
@@ -32,6 +33,7 @@ import {
   Tooltip,
   Typography,
 } from '@mui/material';
+import { useColorScheme } from '@mui/material/styles';
 import { useCallback, useEffect, useMemo, useReducer, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Virtuoso, type VirtuosoHandle } from 'react-virtuoso';
@@ -60,6 +62,7 @@ import {
   dateFilterFromSettings,
   disambiguationCachingDisabledFromSettings,
   persistDisambiguationDateFilter,
+  persistDisambiguationSettings,
   persistPlaceProximityKm,
   placeProximityKmFromSettings,
   readPersistedDisambiguationSettings,
@@ -103,6 +106,8 @@ import {
 } from './aiPromptProfiles';
 import { AiPromptEditorDialog } from '../dialogs/autoTagging/AiPromptEditorDialog';
 import type { MentionGroup, MentionInstance } from './mentions';
+import { useActions } from '../overmind';
+import { isAiUiFeatureEnabled } from './aiUiFeatures';
 
 const wrapperIdentityElement = (element: Element): Element | null =>
   Array.from(element.getElementsByTagName('persName')).find(
@@ -118,6 +123,63 @@ const wrapperHasKeyConflict = (instance: MentionInstance): boolean => {
   const wrapperKey = instance.element.getAttribute('key')?.trim();
   const personKey = person?.getAttribute('key')?.trim();
   return !!wrapperKey && !!personKey && wrapperKey !== personKey;
+};
+
+/**
+ * Small persistent "AI" square — not a normal checkbox, a rounded square
+ * that stays filled/outlined per state so it reads at a glance even
+ * collapsed among the other panel controls. `disabled` is used for the
+ * "Always on" case: the model is always curating, so there's nothing to
+ * toggle, but the square still shows its (permanently-on) state.
+ */
+const AiCurationToggle = ({
+  on,
+  disabled,
+  onClick,
+  title,
+}: {
+  on: boolean;
+  disabled?: boolean;
+  onClick: () => void;
+  title: string;
+}) => {
+  const { mode, systemMode } = useColorScheme();
+  const isDark = mode === 'dark' || (mode === 'system' && systemMode === 'dark');
+  const accent = 'rgb(255, 114, 0)'; // theme secondary.main — app's icon highlight colour
+  const colors = on
+    ? isDark
+      ? { bgcolor: '#fff', color: '#000', borderColor: '#fff' }
+      : { bgcolor: accent, color: '#fff', borderColor: accent }
+    : isDark
+      ? { bgcolor: '#000', color: '#fff', borderColor: '#fff' }
+      : { bgcolor: 'transparent', color: accent, borderColor: accent };
+
+  return (
+    <Tooltip title={title}>
+      <span>
+        <ButtonBase
+          disabled={disabled}
+          onClick={onClick}
+          aria-pressed={on}
+          aria-label={title}
+          sx={{
+            width: 26,
+            height: 26,
+            flexShrink: 0,
+            borderRadius: 1,
+            border: '1.5px solid',
+            fontSize: 10,
+            fontWeight: 700,
+            lineHeight: 1,
+            opacity: disabled ? 0.7 : 1,
+            ...colors,
+          }}
+        >
+          AI
+        </ButtonBase>
+      </span>
+    </Tooltip>
+  );
 };
 
 export interface DisambiguationPanelProps {
@@ -392,6 +454,14 @@ export const DisambiguationPanel = ({
   aiCuration = false,
 }: DisambiguationPanelProps) => {
   const { t, i18n } = useTranslation('LW');
+  const { setDisambiguationAiCuration } = useActions().ui;
+  const disambiguationAiEnabled = isAiUiFeatureEnabled('disambiguationCurate');
+  const aiAlwaysOn = aiApiSettingsFromDesktop()?.alwaysOn === true;
+  const handleToggleAiCuration = () => {
+    const next = !aiCuration;
+    setDisambiguationAiCuration(next);
+    void persistDisambiguationSettings({ ...readPersistedDisambiguationSettings(), aiCuration: next });
+  };
   const [, forceRender] = useReducer((n: number) => n + 1, 0);
   const containerRef = useRef<HTMLDivElement>(null);
   const groupListRef = useRef<VirtuosoHandle>(null);
@@ -1644,6 +1714,20 @@ export const DisambiguationPanel = ({
               </MenuItem>
             ))}
           </Select>
+          {disambiguationAiEnabled && (
+            <AiCurationToggle
+              on={aiAlwaysOn || aiCuration}
+              disabled={aiAlwaysOn}
+              onClick={handleToggleAiCuration}
+              title={
+                aiAlwaysOn
+                  ? 'AI curation is always on (set in AI API settings)'
+                  : aiCuration
+                    ? 'AI curation is on — click to turn off'
+                    : 'AI curation is off — click to turn on'
+              }
+            />
+          )}
           <IconButton
             size="small"
             aria-label="Refresh candidates"

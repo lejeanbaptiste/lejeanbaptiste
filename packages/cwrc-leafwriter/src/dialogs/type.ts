@@ -31,7 +31,6 @@ export type DialogType =
   | 'tagTransform'
   | 'calendar'
   | 'chineseAssets'
-  | 'disambiguation'
   | 'editSchema'
   | 'editSource'
   | 'popup'

@@ -50,6 +50,8 @@ export interface AiApiSettings {
    * (0 = no retry; first attempt always runs). Hard-capped in sanitize.
    */
   placeholderRetryLimit: number;
+  /** When true, AI curation runs unconditionally — no per-run opt-in checkbox (e.g. Disambiguate). */
+  alwaysOn: boolean;
   /** Successful connection test for this exact endpoint and model. */
   verifiedAt: string | null;
   verifiedBaseUrl: string;
@@ -62,8 +64,9 @@ export const DEFAULT_AI_API_SETTINGS: AiApiSettings = {
   customInstructions: '',
   model: '',
   temperature: 0.1,
-  streamResults: false,
+  streamResults: true,
   placeholderRetryLimit: 1,
+  alwaysOn: false,
   verifiedAt: null,
   verifiedBaseUrl: '',
   verifiedModel: '',
@@ -95,8 +98,10 @@ const sanitizeAiApiSettings = (value: Partial<AiApiSettings> | undefined): AiApi
       typeof value?.customInstructions === 'string' ? value.customInstructions : '',
     model: typeof value?.model === 'string' ? value.model.trim() : '',
     temperature,
-    streamResults: value?.streamResults === true,
+    // Default on; only an explicit `false` from a saved project opts back out.
+    streamResults: value?.streamResults !== false,
     placeholderRetryLimit,
+    alwaysOn: value?.alwaysOn === true,
     verifiedAt: typeof value?.verifiedAt === 'string' ? value.verifiedAt : null,
     verifiedBaseUrl: typeof value?.verifiedBaseUrl === 'string' ? value.verifiedBaseUrl.trim() : '',
     verifiedModel: typeof value?.verifiedModel === 'string' ? value.verifiedModel.trim() : '',

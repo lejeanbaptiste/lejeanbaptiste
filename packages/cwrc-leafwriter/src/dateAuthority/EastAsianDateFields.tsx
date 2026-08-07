@@ -258,7 +258,7 @@ export const EastAsianDateFields = ({
         <TextField
           disabled={disabled}
           fullWidth
-          helperText="1–60, or paste 甲子"
+          helperText={t('LW.dateAuthority.gz_helper')}
           label={t('LW.dateAuthority.sexagenary_day')}
           onChange={(event) => patch({ gz: event.target.value })}
           placeholder={t('LW.dateAuthority.gz_placeholder')}
@@ -268,7 +268,7 @@ export const EastAsianDateFields = ({
         <TextField
           disabled={disabled}
           fullWidth
-          helperText="1–60, or paste 甲子"
+          helperText={t('LW.dateAuthority.gz_helper')}
           label={t('LW.dateAuthority.new_moon_gz')}
           onChange={(event) => patch({ nmdGz: event.target.value })}
           placeholder={t('LW.dateAuthority.nmd_gz_placeholder')}

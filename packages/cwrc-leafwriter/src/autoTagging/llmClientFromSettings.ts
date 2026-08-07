@@ -9,6 +9,8 @@ export interface AiApiSettingsLike {
   verifiedBaseUrl?: string;
   verifiedModel?: string;
   streamResults?: boolean;
+  /** When true, AI curation runs unconditionally — no per-run opt-in checkbox (e.g. Disambiguate). */
+  alwaysOn?: boolean;
 }
 
 /**
@@ -72,6 +74,7 @@ export function aiApiSettingsFromDesktop(): AiApiSettingsLike | null {
     verifiedBaseUrl: settings.verifiedBaseUrl ?? '',
     verifiedModel: settings.verifiedModel ?? '',
     streamResults: settings.streamResults === true,
+    alwaysOn: settings.alwaysOn === true,
   };
 }
 

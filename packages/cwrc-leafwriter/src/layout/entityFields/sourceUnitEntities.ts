@@ -295,6 +295,13 @@ export const searchEntitiesForPicker = async (
 export const replaceEntitiesWithPlaceholdersInSourceXml = (
   sourceUnitXml: string,
   knownKeys: ReadonlySet<string>,
+  /**
+   * First opaque index to hand out. Notes are blinded in independent calls
+   * after the main unit — pass the main call's `opaques.length` (running
+   * total) here so a note's `{{opaque:N}}` tokens never collide with the
+   * main text's.
+   */
+  opaqueStartIndex = 0,
 ): { xml: string; opaques: OpaqueEntityHit[] } => {
   if (!sourceUnitXml.trim()) return { xml: sourceUnitXml, opaques: [] };
   const doc = new DOMParser().parseFromString(sourceUnitXml, 'application/xml');
@@ -306,7 +313,7 @@ export const replaceEntitiesWithPlaceholdersInSourceXml = (
   const tagSet = new Set(SOURCE_UNIT_ENTITY_TAGS);
 
   const pushOpaque = (kind: string, surface: string): number => {
-    const index = opaques.length;
+    const index = opaques.length + opaqueStartIndex;
     opaques.push({ index, kind, surface });
     return index;
   };

@@ -21,6 +21,7 @@
       "sex_year_placeholder": "sex_year",
       "sexagenary_day": "Sexagenary day",
       "gz_placeholder": "gz",
+      "gz_helper": "1–60, or paste 甲子",
       "new_moon_gz": "New-moon gz",
       "nmd_gz_placeholder": "nmd_gz"
     },
@@ -39,13 +40,17 @@
       "skip_review": "Auto-accept",
       "ai_curate": "AI curate",
       "tag_bomb_queue": {
-        "title": "{{count}} document{{count, plural, one {} other {s}}} matched",
+        "title_one": "{{count}} document matched",
+        "title_other": "{{count}} documents matched",
         "review": "Review",
         "applying": "Applying…",
-        "applied": "Applied {{count}} tag{{count, plural, one {} other {s}}}",
-        "hits": "{{count}} hit{{count, plural, one {} other {s}}}",
+        "applied_one": "Applied {{count}} tag",
+        "applied_other": "Applied {{count}} tags",
+        "hits_one": "{{count}} hit",
+        "hits_other": "{{count}} hits",
         "resume_title": "Resume tag bomb queue",
-        "resume_body": "{{count}} document{{count, plural, one {} other {s}}} left to review from the last run.",
+        "resume_body_one": "{{count}} document left to review from the last run.",
+        "resume_body_other": "{{count}} documents left to review from the last run.",
         "discard": "Discard queue"
       },
       "aiModeFailed": "AI {{mode}} failed:",
@@ -70,7 +75,8 @@
         "check_connection": "Check connection",
         "checking": "Checking AI API connection...",
         "checking_button": "Checking...",
-        "connected_with_models": "Connected. Found {{count}} model{{count, plural, one {} other {s}}}.",
+        "connected_with_models_one": "Connected. Found {{count}} model.",
+        "connected_with_models_other": "Connected. Found {{count}} models.",
         "connected_without_models": "Connected. The server did not list any models.",
         "connection_failed": "Could not reach the AI API.",
         "model": "Model",
@@ -84,7 +90,9 @@
         "title": "AI API",
         "choose_model_first": "Choose a model before establishing the connection.",
         "settings_cleared": "AI settings cleared.",
-        "stream_results": "Stream AI results into review as each block finishes"
+        "stream_results": "Stream AI results into review as each block finishes",
+        "always_on": "Always on",
+        "always_on_help": "Skip the per-run AI checkbox (e.g. in Disambiguate) and always use AI curation when it's configured."
       },
       "github": {
         "description": "Connect your GitHub account to publish leaderboard stats. LJB will also use this connection for issue, pull request, and commit statistics.",
@@ -204,7 +212,8 @@
           "corpusWide": "Applying changes corpus-wide",
           "none": "None"
         },
-        "validate_multi_file_automation": "Only commit changes to other files after validation"
+        "validate_multi_file_automation": "Only commit changes to other files after validation",
+        "disable_disambiguation_caching": "Disable caching of AI disambiguation results"
       },
       "tagTransform": {
         "title": "Advanced tag transform",
@@ -572,7 +581,6 @@
     "LOD Annotation": "",
     "Level of certainty": "",
     "Link": "",
-    "Loading calendar tables…": "",
     "Loading": "",
     "Loading Document": "",
     "Loading Schema": "",
@@ -683,8 +691,6 @@
     "gz": "",
     "nmd_gz": "",
     "Calendar type": "",
-    "Calendar context (dynasty, emperor, era) — used by sanmiao when resolving dates.": "",
-    "Calendar lookup is unavailable. Install sanmiao and restart the app.": "",
     "use_with_caution": "Use with caution",
     "Validate": "",
     "Validation": "",
@@ -910,6 +916,9 @@
     "select supported schema": "select supported schema",
     "translationPane": {
       "generateTranslation": "Generate translation",
+      "translateDocument": "Translate document",
+      "translateDocumentProgress": "Translating document",
+      "translateDocumentDone": "Translated {{count}} unit(s); {{skipped}} already had text, {{failed}} failed.",
       "aiSkippedExisting": "This unit already has text — AI only fills blank units.",
       "copyForExport": "Copy source + translation for export",
       "copyFailed": "Copy failed: {{error}}",
@@ -1025,6 +1034,7 @@
         "reset": "Reset",
         "done": "Done"
       },
+      "aiNotesPartial": "{{count}} note(s) could not be translated and were left in the source language.",
       "aiTranslationUnavailable": "AI translation is not available.",
       "citationStyleSaveFailed": "Could not save citation style.",
       "generatingTranslation": "Generating translation...",

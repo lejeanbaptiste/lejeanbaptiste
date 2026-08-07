@@ -7,9 +7,10 @@ import {
 } from './disambiguationSettings';
 
 describe('disambiguationSettings', () => {
-  it('defaults AI curation to on', () => {
-    expect(aiCurationFromSettings(undefined)).toBe(true);
-    expect(aiCurationFromSettings({})).toBe(true);
+  it('defaults AI curation to off', () => {
+    expect(aiCurationFromSettings(undefined)).toBe(false);
+    expect(aiCurationFromSettings({})).toBe(false);
+    expect(aiCurationFromSettings({ aiCuration: true })).toBe(true);
     expect(aiCurationFromSettings({ aiCuration: false })).toBe(false);
   });
 

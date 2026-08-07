@@ -33,9 +33,10 @@ export interface AiTranslationPayload {
 
 const TRANSLATION_SYSTEM_PROMPT =
   'You translate scholarly XML passages. Return JSON only with one string field named translationXml. Translate only the provided passage. ' +
-  'Entity and date spans have already been removed and replaced with placeholders you must copy exactly: ' +
+  'Entity, date, and note spans have already been removed and replaced with placeholders you must copy exactly: ' +
   '{{entity:KEY}} (person/place/work/…), {{holding:KEY}} (office the person currently holds), {{as:KEY}} (office they are appointed to, after 為), ' +
-  '{{date:N}}, and sometimes {{opaque:N}} / {{holding:opaque:N}} / {{as:opaque:N}}. ' +
+  '{{date:N}}, {{note:N}} (a footnote, translated separately — never expand or describe it, just copy the placeholder), ' +
+  'and sometimes {{opaque:N}} / {{holding:opaque:N}} / {{as:opaque:N}}. ' +
   'Pattern 以{{holding:…}} {{entity:…}}為{{as:…}} means “appoint [holding-title + person] as [new office]” — never swap holding and as; never drop either. ' +
   'Chinese (or other) text that remains inside the source — including noble titles such as 貞陽公 or 江夏王 — should be translated normally. ' +
   'The "entities" list gives only id + kind. It does NOT contain names — never invent a person name, place name, or office title for a placeholder. ' +

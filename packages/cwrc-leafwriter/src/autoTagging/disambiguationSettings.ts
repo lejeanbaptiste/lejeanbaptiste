@@ -20,7 +20,8 @@ export interface DisambiguationSettings {
   placeProximityKm?: number;
 }
 
-export const DEFAULT_DISAMBIGUATION_AI_CURATION = true;
+/** Opt-in: only useful when an AI API is configured and verified. */
+export const DEFAULT_DISAMBIGUATION_AI_CURATION = false;
 
 /** Unlike the tag-bomb dialog (same priority: last choice → work year → none), the disambiguation panel starts unfiltered when nothing else applies. */
 export const DEFAULT_DISAMBIGUATION_DATE_FILTER: DateFilterMode = 'none';
@@ -126,5 +127,14 @@ export async function persistPlaceProximityKm(proximityKm: number): Promise<void
   await persistDisambiguationSettings({
     ...current,
     placeProximityKm: proximityKm,
+  });
+}
+
+/** Persist just the disable-caching flag, read-modify-write (see persistDisambiguationDateFilter). */
+export async function persistDisambiguationCaching(disableCaching: boolean): Promise<void> {
+  const current = readPersistedDisambiguationSettings();
+  await persistDisambiguationSettings({
+    ...current,
+    disableCaching,
   });
 }

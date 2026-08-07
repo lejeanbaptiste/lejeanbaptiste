@@ -1,5 +1,7 @@
 import { ThemeProvider } from '@mui/material';
 import { createRoot, type Root } from 'react-dom/client';
+import { I18nextProvider } from 'react-i18next';
+import i18n from '../i18n';
 import theme from '../theme';
 import { EastAsianDateFields } from './EastAsianDateFields';
 import { useDateAuthority } from './useDateAuthority';
@@ -38,16 +40,18 @@ const MountBridge = ({
 const rerender = () => {
   if (!root) return;
   root.render(
-    <ThemeProvider theme={theme}>
-      <MountBridge
-        disabled={currentDisabled}
-        onChange={(next) => {
-          currentValues = next;
-          for (const listener of listeners) listener(next);
-        }}
-        values={currentValues}
-      />
-    </ThemeProvider>,
+    <I18nextProvider i18n={i18n}>
+      <ThemeProvider theme={theme}>
+        <MountBridge
+          disabled={currentDisabled}
+          onChange={(next) => {
+            currentValues = next;
+            for (const listener of listeners) listener(next);
+          }}
+          values={currentValues}
+        />
+      </ThemeProvider>
+    </I18nextProvider>,
   );
 };
 

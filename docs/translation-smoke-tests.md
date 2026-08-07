@@ -133,3 +133,19 @@ To reset a file's translation state: delete its `*.translation.xml` companions a
 - [ ] Source unit with a resolved Sanmiao `<date>` (parse children + `@when`).
 - [ ] Generate translation → companion shows `ref type="ljb-date"` whose text matches LJBtero (year/month/day slots, Emperor …, Roman months, italic ganzhi, Western date in parentheses when day-level) — AI may keep by/until/before before the field; only in/on (en/le) are auto-adjusted to granularity.
 - [ ] Untagged / structure-less dates still free-translate (no placeholder).
+
+## 10c. AI translate — note splitting
+
+**Pipeline (shipped):** `collectNotesFromSourceUnitXml` gathers top-level `<note>` spans in document order (a note nested inside another note is left alone — its content stays as plain prose inside the parent note's own translation). Before the model sees the main unit, `replaceNotesWithPlaceholdersInSourceXml` swaps each `<note>…</note>` for a bare `{{note:N}}`. Each note's own content is independently blinded (same entity/date pipeline, sharing the main text's known entity keys and an offset opaque-index counter so `{{opaque:N}}` never collides between the main text and a note) and sent as its own AI request — sequentially, only after the main-text translation succeeds. After both come back, `substituteNotePlaceholders` drops each note's translated, fully-substituted HTML into a real `<note place="foot">` element at the placeholder's position; the existing footnote normalizer (`normalizeFootnoteNotes`, already wired to run on every unit content change) numbers and wraps it exactly like a manually inserted footnote. A note that fails to translate (API error, still-missing placeholders, or invalid returned XML) falls back to its original untranslated content rather than failing the whole generation, and is surfaced as a status warning.
+
+**Automated:** `sourceUnitNotes.test.ts`, `substituteNotePlaceholders.test.ts` (`TranslationPane.test.ts` or equivalent), opaque-offset coverage in `sourceUnitEntities.test.ts`.
+
+**Manual:**
+
+- [ ] Source unit containing `<note place="foot">…</note>` inline (e.g. `<p>Claim.<note place="foot">See discussion.</note></p>`) with plain prose only.
+- [ ] Generate translation → the main translated text reads naturally with **no** note prose leaked into it, and a numbered footnote appears below with the note's own independently-translated content.
+- [ ] The generated `<note>` is a real editable footnote — same shape (`[data-leaf-fn-mark]` / `[data-leaf-fn-body]`) as one created via the manual **Insert footnote** toolbar action.
+- [ ] Source unit with a note containing a keyed entity or a `<date>` — the footnote's translated text resolves the entity/date field correctly (not left as a raw `{{entity:…}}` / `{{date:N}}` token).
+- [ ] Unit with two or more notes — each gets its own footnote, numbered in document order, and `{{opaque:N}}` in one note's console-logged blinded XML never collides with another note's or the main text's.
+- [ ] Force a note-translation failure (e.g. temporarily break the API mid-run) — main translation still completes, the note keeps its original (untranslated) text, and the success status mentions the note(s) that could not be translated.
+- [ ] Unit with no notes — behavior is unchanged from before this feature (no `{{note:…}}` handling touches the main text).

@@ -412,6 +412,9 @@
     "select supported schema": "sélectionner le schéma pris en charge",
     "translationPane": {
       "generateTranslation": "Générer une traduction",
+      "translateDocument": "Traduire le document",
+      "translateDocumentProgress": "Traduction du document",
+      "translateDocumentDone": "{{count}} unité(s) traduite(s) ; {{skipped}} contenaient déjà du texte, {{failed}} ont échoué.",
       "aiSkippedExisting": "Cette unité contient déjà du texte — l'IA ne remplit que les unités vides.",
       "copyForExport": "Copier la source et la traduction pour l'exportation",
       "copyFailed": "La copie a échoué : {{error}}",
@@ -527,6 +530,7 @@
       "languageToolTextChanged": "La traduction a changé depuis la vérification. Relancez la vérification.",
       "languageToolApplyFailed": "Impossible d'appliquer cette suggestion.",
       "languageToolCloseResults": "Fermer",
+      "aiNotesPartial": "{{count}} note(s) n'ont pas pu être traduites et ont été laissées dans la langue source.",
       "aiTranslationUnavailable": "La traduction par IA n'est pas disponible.",
       "citationStyleSaveFailed": "Impossible d'enregistrer le style de citation.",
       "generatingTranslation": "Génération de la traduction...",
@@ -555,6 +559,7 @@
       "sex_year_placeholder": "sex_year",
       "sexagenary_day": "Jour sexagésimal",
       "gz_placeholder": "gz",
+      "gz_helper": "1–60, ou collez 甲子",
       "new_moon_gz": "gz de nouvelle lune",
       "nmd_gz_placeholder": "nmd_gz"
     },
@@ -570,13 +575,17 @@
       "skip_review": "Acceptation automatique",
       "ai_curate": "Curation IA",
       "tag_bomb_queue": {
-        "title": "{{count}} document{{count, plural, one {} other {s}}} trouvé{{count, plural, one {} other {s}}}",
+        "title_one": "{{count}} document trouvé",
+        "title_other": "{{count}} documents trouvés",
         "review": "Relire",
         "applying": "Application…",
-        "applied": "{{count}} balise{{count, plural, one {} other {s}}} appliquée{{count, plural, one {} other {s}}}",
-        "hits": "{{count}} correspondance{{count, plural, one {} other {s}}}",
+        "applied_one": "{{count}} balise appliquée",
+        "applied_other": "{{count}} balises appliquées",
+        "hits_one": "{{count}} correspondance",
+        "hits_other": "{{count}} correspondances",
         "resume_title": "Reprendre la file du tag bomb",
-        "resume_body": "{{count}} document{{count, plural, one {} other {s}}} restant{{count, plural, one {} other {s}}} à relire depuis la dernière exécution.",
+        "resume_body_one": "{{count}} document restant à relire depuis la dernière exécution.",
+        "resume_body_other": "{{count}} documents restants à relire depuis la dernière exécution.",
         "discard": "Abandonner la file"
       },
       "tag_types": "Types de balises",
@@ -596,7 +605,8 @@
         "check_connection": "Vérifier la connexion",
         "checking": "Vérification de la connexion à l'API IA…",
         "checking_button": "Vérification…",
-        "connected_with_models": "Connecté. {{count}} modèle{{count, plural, one {} other {s}}} trouvé{{count, plural, one {} other {s}}}.",
+        "connected_with_models_one": "Connecté. {{count}} modèle trouvé.",
+        "connected_with_models_other": "Connecté. {{count}} modèles trouvés.",
         "connected_without_models": "Connecté. Le serveur n'a listé aucun modèle.",
         "connection_failed": "Impossible de joindre l'API IA.",
         "model": "Modèle",
@@ -610,7 +620,9 @@
         "title": "API IA",
         "choose_model_first": "Choisissez un modèle avant d'établir la connexion.",
         "settings_cleared": "Paramètres IA effacés.",
-        "stream_results": "Diffuser les résultats IA dans la revue au fur et à mesure que chaque bloc se termine"
+        "stream_results": "Diffuser les résultats IA dans la revue au fur et à mesure que chaque bloc se termine",
+        "always_on": "Toujours actif",
+        "always_on_help": "Ignorer la case à cocher IA à chaque lancement (p. ex. dans Désambiguïser) et toujours utiliser la curation IA lorsqu'elle est configurée."
       },
       "github": {
         "description": "Connectez votre compte GitHub pour publier vos statistiques de classement. LJB utilisera aussi cette connexion pour les statistiques d’issues, de pull requests et de commits.",
@@ -731,7 +743,8 @@
           "corpusWide": "L'application de modifications sur tout le corpus",
           "none": "Aucun"
         },
-        "validate_multi_file_automation": "Ne valider les modifications des autres fichiers qu’après validation"
+        "validate_multi_file_automation": "Ne valider les modifications des autres fichiers qu’après validation",
+        "disable_disambiguation_caching": "Désactiver la mise en cache des résultats de désambiguïsation par IA"
       },
       "tagTransform": {
         "title": "Transformation avancée des balises",
@@ -1011,7 +1024,6 @@
     "Attributes": "",
     "Day": "",
     "Emperor": "",
-    "Loading calendar tables…": "",
     "Person type": "",
     "Sexagenary day": "",
     "Sexagenary year": "",
@@ -1027,8 +1039,6 @@
     "gz": "",
     "nmd_gz": "",
     "Calendar type": "",
-    "Calendar context (dynasty, emperor, era) — used by sanmiao when resolving dates.": "",
-    "Calendar lookup is unavailable. Install sanmiao and restart the app.": "",
     "Quick Correction requires selected text and a correction.": "Sélectionnez du texte et saisissez une correction pour une substitution sic/corr.",
     "Quick Correction requires supplied text.": "Saisissez le texte à marquer comme inséré.",
     "Quick Correction requires selected text to mark as surplus.": "Sélectionnez le texte à marquer comme superflu.",

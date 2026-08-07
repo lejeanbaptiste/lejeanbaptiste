@@ -13,6 +13,22 @@ import { useTranslation } from 'react-i18next';
 import { AutoTaggingSession, DisambiguationPanel, type MentionGroup } from '../autoTagging';
 import { runAuthorityPrefetch, type AuthorityPrefetchHandle } from '../autoTagging/authorityPrefetch';
 import { stopBackgroundAuthorityPrefetch } from '../autoTagging/backgroundAuthorityPrefetch';
+import { runDisambiguationAiWarmPass } from '../autoTagging/disambiguationAiWarmPass';
+import { isAiUiFeatureEnabled } from '../autoTagging/aiUiFeatures';
+import {
+  aiApiSettingsFromDesktop,
+  createLlmClientFromSettings,
+  isAiSuggestReady,
+} from '../autoTagging/llmClientFromSettings';
+import {
+  getActiveAiPromptProfile,
+  readAiPromptProfilesFromDesktop,
+} from '../autoTagging/aiPromptProfiles';
+import {
+  finishAiRunProgress,
+  startAiRunProgress,
+  updateAiRunProgress,
+} from '../autoTagging/aiRunProgress';
 import { useActions, useAppState } from '../overmind';
 import { DockedResizeHandle, useStoredPanelWidth } from './DockedResizeHandle';
 import {
@@ -31,9 +47,9 @@ const isDesktopApp = () => typeof window !== 'undefined' && !!window.electronAPI
  * not a permanent sidebar panel.
  */
 export const DisambiguationReviewPane = () => {
-  const { t } = useTranslation('LW');
+  const { t, i18n } = useTranslation('LW');
   const active = useAppState().ui.disambiguationReview?.active ?? false;
-  const aiCuration = useAppState().ui.disambiguationReview?.aiCuration ?? true;
+  const aiCuration = useAppState().ui.disambiguationReview?.aiCuration ?? false;
   const { exitDisambiguationReview } = useActions().ui;
   const [groups, setGroups] = useState<MentionGroup[]>([]);
   const [error, setError] = useState<string | null>(null);
@@ -41,6 +57,12 @@ export const DisambiguationReviewPane = () => {
   const session = useRef<AutoTaggingSession | null>(null);
   const scanGeneration = useRef(0);
   const prefetch = useRef<AuthorityPrefetchHandle | null>(null);
+  const warmPassAbort = useRef<AbortController | null>(null);
+  const stopWarmPass = useCallback(() => {
+    warmPassAbort.current?.abort();
+    warmPassAbort.current = null;
+    finishAiRunProgress();
+  }, []);
   const [panelWidth, setPanelWidth] = useStoredPanelWidth(
     'lw.disambiguation.panelWidth',
     DISAMBIGUATION_PANEL_WIDTH,
@@ -57,6 +79,7 @@ export const DisambiguationReviewPane = () => {
       scanGeneration.current += 1;
       prefetch.current?.stop();
       prefetch.current = null;
+      stopWarmPass();
       setLoading(false);
       setGroups([]);
       setError(null);
@@ -94,6 +117,38 @@ export const DisambiguationReviewPane = () => {
     })();
   }, [active, getSession]);
 
+  // When "Stream AI results" is off, warm the AI ranking cache for every
+  // pending group in the background — the panel is already open and usable
+  // while this runs, it just makes per-mention navigation feel instant once
+  // it catches up. Re-fires if the AI toggle flips after groups are loaded.
+  useEffect(() => {
+    stopWarmPass();
+    if (!active || groups.length === 0 || !aiCuration) return;
+    if (!isAiUiFeatureEnabled('disambiguationCurate')) return;
+    const settings = aiApiSettingsFromDesktop();
+    if (!settings || settings.streamResults !== false || !isAiSuggestReady(settings)) return;
+
+    const controller = new AbortController();
+    warmPassAbort.current = controller;
+    startAiRunProgress('AI pre-caching', () => controller.abort());
+    void (async () => {
+      const profiles = await readAiPromptProfilesFromDesktop();
+      if (controller.signal.aborted) return;
+      const activeSession = getSession();
+      await runDisambiguationAiWarmPass(activeSession, groups, {
+        client: createLlmClientFromSettings(settings),
+        promptProfile: getActiveAiPromptProfile(profiles),
+        preferredLanguage: i18n.language,
+        signal: controller.signal,
+        onProgress: (done, total) => updateAiRunProgress(done, total),
+      });
+    })().finally(() => {
+      if (warmPassAbort.current === controller) stopWarmPass();
+    });
+
+    return () => controller.abort();
+  }, [active, aiCuration, getSession, groups, i18n.language, stopWarmPass]);
+
   // Width updates re-run only the open path so a drag never flashes the
   // mount closed; the close cleanup is keyed on `active` alone.
   useEffect(() => {
@@ -113,10 +168,11 @@ export const DisambiguationReviewPane = () => {
   const handleClose = useCallback(() => {
     prefetch.current?.stop();
     prefetch.current = null;
+    stopWarmPass();
     if (session.current) void session.current.flushDecisions();
     session.current = null;
     exitDisambiguationReview();
-  }, [exitDisambiguationReview]);
+  }, [exitDisambiguationReview, stopWarmPass]);
 
   if (!active) return null;
 

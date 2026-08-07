@@ -102,6 +102,8 @@ export interface AiApiSettings {
   streamResults: boolean;
   /** Extra AI attempts after placeholders are dropped (0–5). First attempt always runs. */
   placeholderRetryLimit: number;
+  /** When true, AI curation runs unconditionally — no per-run opt-in checkbox (e.g. Disambiguate). */
+  alwaysOn: boolean;
   verifiedAt: string | null;
   verifiedBaseUrl: string;
   verifiedModel: string;

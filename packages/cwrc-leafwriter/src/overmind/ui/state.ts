@@ -87,7 +87,7 @@ export const state: State = {
   },
   disambiguationReview: {
     active: false,
-    aiCuration: true,
+    aiCuration: false,
   },
   sourceCurrentContent: '',
   sourceOriginalContent: '',

@@ -7,6 +7,7 @@
  *   - floruit → real floruit earliest/latest (store as dates + precision fl.)
  *   - index → CBDB mean/reference year only (filter; never show/store as fl.)
  *   - nationality → dynasty spans for filter fallback only
+ *   - dynasties[] → pack-native dynasty spans when nationality has no years
  *
  * Mirrors `authority extraction/shared/personDates.mjs`.
  */
@@ -18,6 +19,15 @@ export interface PersonDateMetadata {
   startYear?: number | null;
   endYear?: number | null;
   nationality?: Array<{
+    startYear?: number | null;
+    endYear?: number | null;
+  }> | null;
+  /**
+   * Pack-native dynasty spans (e.g. Norbert). Used as a filter fallback when
+   * `nationality[]` has labels but no years — common for dynasties that never
+   * matched Wikidata during pack compile.
+   */
+  dynasties?: Array<{
     startYear?: number | null;
     endYear?: number | null;
   }> | null;
@@ -79,10 +89,25 @@ export function hasFilterInterval(meta: PersonDateMetadata | null | undefined): 
   return meta.dateSource === 'fine' || meta.dateSource === 'floruit' || meta.dateSource === 'index';
 }
 
+/** Collect start/end year pairs from nationality or dynasty lists. */
+function yearSpansFromEntries(
+  entries: Array<{ startYear?: number | null; endYear?: number | null }> | null | undefined,
+): Array<{ start: number; end: number }> {
+  return (entries ?? []).flatMap((entry) => {
+    const start = finiteBiographicalYear(entry.startYear);
+    const end = finiteBiographicalYear(entry.endYear);
+    if (start == null && end == null) return [];
+    const resolvedStart = start ?? end!;
+    const resolvedEnd = end ?? start!;
+    return [{ start: resolvedStart, end: resolvedEnd }];
+  });
+}
+
 /**
  * Years used by the Disambiguate / tag-bomb date filter.
  * Prefer pack start/end when they are a declared filter interval; otherwise fall
- * back to nationality dynasty spans (±60), matching the pre-dateSource behaviour.
+ * back to nationality dynasty spans (±60), then pack-native `dynasties[]` when
+ * nationality labels have no years (Norbert 北周 / 南齊 / …).
  */
 export function filterYearsFromMetadata(
   meta: PersonDateMetadata | null | undefined,
@@ -101,15 +126,14 @@ export function filterYearsFromMetadata(
     };
   }
 
-  const nationalityYears = (meta.nationality ?? []).flatMap((n) =>
-    n.startYear != null || n.endYear != null
-      ? [{ start: n.startYear ?? n.endYear!, end: n.endYear ?? n.startYear! }]
-      : [],
-  );
-  if (!nationalityYears.length) return { isFine: false };
+  const dynastyYears =
+    yearSpansFromEntries(meta.nationality).length > 0
+      ? yearSpansFromEntries(meta.nationality)
+      : yearSpansFromEntries(meta.dynasties);
+  if (!dynastyYears.length) return { isFine: false };
   return {
-    startYear: Math.min(...nationalityYears.map((n) => n.start)) - 60,
-    endYear: Math.max(...nationalityYears.map((n) => n.end)) + 60,
+    startYear: Math.min(...dynastyYears.map((n) => n.start)) - 60,
+    endYear: Math.max(...dynastyYears.map((n) => n.end)) + 60,
     isFine: false,
   };
 }

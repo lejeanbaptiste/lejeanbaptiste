@@ -970,7 +970,7 @@
       },
       "database_window": {
         "title": "Base de données",
-        "pill": "Fenêtre base de données",
+        "pill": "Base de données",
         "editor_pill": "Éditeur",
         "open": "Ouvrir la fenêtre base de données",
         "run_scans": "Lancer les analyses",
@@ -1105,15 +1105,26 @@
   "types": "",
   "LW": {
     "dateAuthority": {
-      "day": "Jour",
+      "loading_calendar_tables": "Chargement des tables calendaires…",
+      "calendar_lookup_unavailable": "La recherche calendaire est indisponible. Installez sanmiao et redémarrez l’application.",
+      "calendar_context_hint": "Contexte calendaire (dynastie, empereur, ère) — utilisé par sanmiao pour résoudre les dates.",
       "dynasty": "Dynastie",
       "emperor": "Empereur",
       "era": "Ère",
+      "type_to_search": "Tapez pour rechercher…",
+      "year": "Année",
+      "year_placeholder": "元年, 3, 十八",
       "month": "Mois",
-      "new_moon_gz": "gz de nouvelle lune",
-      "sexagenary_day": "Jour sexagésimal",
+      "month_placeholder": "3, 十八",
+      "day": "Jour",
+      "optional": "facultatif",
       "sexagenary_year": "Année sexagésimale",
-      "year": "Année"
+      "sex_year_placeholder": "sex_year",
+      "sexagenary_day": "Jour sexagésimal",
+      "gz_placeholder": "gz",
+      "gz_helper": "1–60, ou collez 甲子",
+      "new_moon_gz": "gz de nouvelle lune",
+      "nmd_gz_placeholder": "nmd_gz"
     }
   }
 }

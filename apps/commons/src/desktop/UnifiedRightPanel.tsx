@@ -7,6 +7,7 @@ import LabelOutlinedIcon from '@mui/icons-material/LabelOutlined';
 import CloseIcon from '@mui/icons-material/Close';
 import TranslateIcon from '@mui/icons-material/Translate';
 import { Box, IconButton, ToggleButton, ToggleButtonGroup, Tooltip } from '@mui/material';
+import { useColorScheme } from '@mui/material/styles';
 import { leafwriterAtom } from '@src/jotai';
 import { useAppState } from '@src/overmind';
 import { useAtom } from 'jotai';
@@ -15,7 +16,8 @@ import { FileMetadataPanel } from './FileMetadataPanel';
 import { describePanelNode, panelTrace } from './panelTrace';
 import { AttributesPanel } from './tagging/AttributesPanel';
 import { CssPanel } from './tagging/CssPanel';
-import { HighlighterIcon } from './tagging/HighlighterIcon';
+import highlightPng from '../icons/tab/tab_highlight.png';
+import highlightDarkPng from '../icons/tab/tab_highlight.dark.png';
 import { RightPanelResizeHandle } from './RightPanelResizeHandle';
 import { TranslationTabContent } from './TranslationTabContent';
 import {
@@ -39,6 +41,23 @@ type RightTabId =
   | 'validation'
   | 'translation';
 
+/** Designed tab_highlight asset (light/dark PNG pair), same pattern as the left sidebar's TabIcon. */
+const HighlightTabIcon = ({ sx }: { sx?: { fontSize?: number | string } }) => {
+  const { mode, systemMode } = useColorScheme();
+  const { darkMode } = useAppState().ui;
+  const isDark = darkMode || mode === 'dark' || (mode === 'system' && systemMode === 'dark');
+  const size = sx?.fontSize ?? SIDEBAR_TAB_ICON_SIZE;
+  return (
+    <Box
+      aria-hidden
+      component="img"
+      src={isDark ? highlightDarkPng : highlightPng}
+      alt=""
+      sx={{ display: 'block', width: size, height: size, flexShrink: 0, objectFit: 'contain' }}
+    />
+  );
+};
+
 const TAB_CONFIG: Record<RightTabId, { label: string; icon: React.ReactNode }> = {
   fileMetadata: {
     label: 'File Metadata',
@@ -50,7 +69,7 @@ const TAB_CONFIG: Record<RightTabId, { label: string; icon: React.ReactNode }> =
   },
   css: {
     label: 'CSS',
-    icon: <HighlighterIcon sx={{ fontSize: SIDEBAR_TAB_ICON_SIZE }} />,
+    icon: <HighlightTabIcon sx={{ fontSize: SIDEBAR_TAB_ICON_SIZE }} />,
   },
   imageViewer: {
     label: 'Image Viewer',

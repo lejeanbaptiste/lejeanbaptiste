@@ -292,7 +292,8 @@ interface AiTranslationDateRef {
 }
 
 interface AiTranslationRequest {
-  alignmentUnit: 'div' | 'p';
+  /** 'note' is a synthetic unit type used for translating a stripped-out footnote independently. */
+  alignmentUnit: 'div' | 'p' | 'note';
   sourceUnitXml: string;
   targetLanguage: string;
   entities?: AiTranslationEntityRef[];
