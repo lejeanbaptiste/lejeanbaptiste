@@ -62,14 +62,14 @@ export const getMetadataFieldsForCatalog = (
     return {
       fields: TEI_V1_METADATA_FIELDS,
       kind: 'tei',
-      note: 'Local TEI schema — using standard TEI header fields.',
+      note: 'LWC.desktop.project.notes.local_tei',
     };
   }
 
   return {
     fields: [],
     kind: 'custom',
-    note: 'Non-catalog schema — add custom metadata fields below. No automatic field map.',
+    note: 'LWC.desktop.project.notes.custom_schema',
   };
 };
 

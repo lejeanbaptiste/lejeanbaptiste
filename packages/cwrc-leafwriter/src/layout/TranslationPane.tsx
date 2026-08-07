@@ -74,12 +74,27 @@ import {
 } from './translationFootnotes';
 import { convertMarkdownInXmlFragment, looksLikeInlineMarkdown } from './markdownToTei';
 import {
+  collectEntitiesFromSourceUnitXml,
   collectSourceUnitEntities,
   fetchEntitySummary,
+  replaceEntitiesWithPlaceholdersInSourceXml,
   searchEntitiesForPicker,
+  substituteOpaquePlaceholders,
   type EntityPickerSearchHit,
+  type OpaqueEntityHit,
   type SourceUnitEntityHit,
 } from './entityFields/sourceUnitEntities';
+import {
+  collectDatesFromSourceUnitXml,
+  replaceDatesWithPlaceholdersInSourceXml,
+} from './entityFields/sourceUnitDates';
+import type { DateGlossInput } from './entityFields/dateGloss';
+import {
+  stripLeadingDatePrepositionsBeforeDateFields,
+  stripLeadingDatePrepositionsFromText,
+} from './entityFields/stripDatePrepositions';
+import { normalizeAiPlaceholders } from './entityFields/normalizeAiPlaceholders';
+import { stripLeadingOfficePrepositionsFromText } from './entityFields/stripOfficePrepositions';
 import { entityStoreFromDesktop } from '../autoTagging/entityStore';
 import {
   buildSuggestionsAtCaret,
@@ -101,7 +116,18 @@ import {
   readDisplaySpecFromField,
   writeDisplaySpecToField,
 } from './entityFields/translationEntityFields';
-import { EMPTY_DISPLAY_SPEC, chineseNameOf, formatDates, type EntityDisplaySpec } from './entityFields/entityDisplay';
+import {
+  createDateFieldElement,
+  prepareAtomicDateFields,
+  recalculateDateFieldsInRoot,
+} from './entityFields/translationDateFields';
+import {
+  EMPTY_DISPLAY_SPEC,
+  chineseNameOf,
+  entityKindSupportsVernacularGloss,
+  formatDates,
+  type EntityDisplaySpec,
+} from './entityFields/entityDisplay';
 import type { EntitySummary } from './entityFields/entitySummary';
 import { EntityDisplayPopup } from './entityFields/EntityDisplayPopup';
 import { TRANSLATION_POLICY_CHANGED_EVENT } from './entityFields/dateFormatSettings';
@@ -241,14 +267,14 @@ interface DesktopElectronApi {
     alignmentUnit: 'div' | 'p';
     sourceUnitXml: string;
     targetLanguage: string;
+    /** Id + kind only — never names, or the model expands placeholders. */
     entities?: Array<{
       id: string;
       kind: string;
-      primaryName: string | null;
-      romanizedName: string | null;
-      familyName: string | null;
-      dates: string | null;
-      description: string | null;
+    }>;
+    /** Index only — gloss/surface stay local for post-substitute. */
+    dates?: Array<{
+      index: number;
     }>;
   }) => Promise<{ error?: string; ok: boolean; translationXml?: string }>;
   suggestEntityGloss?: (request: {
@@ -353,6 +379,7 @@ const prepareAtomicCitationFields = (root: ParentNode, title: string): void => {
     bibl.setAttribute('title', title);
   }
   prepareAtomicEntityFields(root);
+  prepareAtomicDateFields(root);
 };
 
 const stripInvisibleCaretSpacers = (root: ParentNode): void => {
@@ -534,6 +561,7 @@ const applyMarkdownCleanupToFragment = (fragmentXml: string): string => {
 };
 
 const ENTITY_PLACEHOLDER_RE = /\{\{entity:([^{}]+)\}\}/g;
+const DATE_PLACEHOLDER_RE = /\{\{date:(\d+)\}\}/g;
 
 /**
  * Replace every `{{entity:ID}}` placeholder the AI emitted with a real atomic
@@ -547,9 +575,12 @@ export const substituteEntityPlaceholders = (
   entities: Map<string, EntitySummary>,
   lang?: string | null,
 ): string => {
-  if (!fragmentXml.includes('{{entity:')) return fragmentXml;
+  const cleanedFragment = stripLeadingOfficePrepositionsFromText(
+    normalizeAiPlaceholders(fragmentXml),
+  );
+  if (!cleanedFragment.includes('{{entity:')) return cleanedFragment;
 
-  const wrapped = `<fragment>${fragmentXml}</fragment>`;
+  const wrapped = `<fragment>${cleanedFragment}</fragment>`;
   const doc = new DOMParser().parseFromString(wrapped, 'text/html');
   const root = doc.body.querySelector('fragment') ?? doc.body;
 
@@ -563,7 +594,9 @@ export const substituteEntityPlaceholders = (
   }
 
   for (const textNode of textNodes) {
-    const text = textNode.textContent ?? '';
+    const text = stripLeadingOfficePrepositionsFromText(
+      normalizeAiPlaceholders(textNode.textContent ?? ''),
+    );
     ENTITY_PLACEHOLDER_RE.lastIndex = 0;
     let lastIndex = 0;
     let match: RegExpExecArray | null;
@@ -595,6 +628,70 @@ export const substituteEntityPlaceholders = (
     textNode.parentNode?.replaceChild(replacement, textNode);
   }
 
+  return root.innerHTML;
+};
+
+/**
+ * Replace every `{{date:N}}` placeholder with an atomic `ref[type="ljb-date"]`
+ * field whose gloss is computed by LJBtero (`formatDateGlossTokens`), never
+ * by the LLM. N is the 0-based index from `collectDatesFromSourceUnitXml`.
+ */
+export const substituteDatePlaceholders = (
+  fragmentXml: string,
+  dates: Map<number, DateGlossInput>,
+  lang?: string | null,
+): string => {
+  const cleanedFragment = stripLeadingDatePrepositionsFromText(
+    normalizeAiPlaceholders(fragmentXml),
+  );
+  if (!cleanedFragment.includes('{{date:')) return cleanedFragment;
+
+  const wrapped = `<fragment>${cleanedFragment}</fragment>`;
+  const doc = new DOMParser().parseFromString(wrapped, 'text/html');
+  const root = doc.body.querySelector('fragment') ?? doc.body;
+
+  const textNodes: Text[] = [];
+  const walker = doc.createTreeWalker(root, NodeFilter.SHOW_TEXT);
+  let node: Node | null;
+  // eslint-disable-next-line no-cond-assign
+  while ((node = walker.nextNode())) {
+    if ((node.textContent ?? '').includes('{{date:')) textNodes.push(node as Text);
+  }
+
+  for (const textNode of textNodes) {
+    const text = stripLeadingDatePrepositionsFromText(
+      normalizeAiPlaceholders(textNode.textContent ?? ''),
+    );
+    DATE_PLACEHOLDER_RE.lastIndex = 0;
+    let lastIndex = 0;
+    let match: RegExpExecArray | null;
+    const replacement = doc.createDocumentFragment();
+    let sawMatch = false;
+    // eslint-disable-next-line no-cond-assign
+    while ((match = DATE_PLACEHOLDER_RE.exec(text))) {
+      sawMatch = true;
+      if (match.index > lastIndex) {
+        replacement.appendChild(doc.createTextNode(text.slice(lastIndex, match.index)));
+      }
+      const index = parseInt(match[1]!, 10);
+      const input = dates.get(index);
+      if (input) {
+        const field = createDateFieldElement(input, lang);
+        replacement.appendChild(field);
+      } else {
+        console.warn('[translation] AI date placeholder had no matching date:', index);
+        replacement.appendChild(doc.createTextNode(match[0]));
+      }
+      lastIndex = DATE_PLACEHOLDER_RE.lastIndex;
+    }
+    if (!sawMatch) continue;
+    if (lastIndex < text.length) {
+      replacement.appendChild(doc.createTextNode(text.slice(lastIndex)));
+    }
+    textNode.parentNode?.replaceChild(replacement, textNode);
+  }
+
+  stripLeadingDatePrepositionsBeforeDateFields(root);
   return root.innerHTML;
 };
 
@@ -1091,9 +1188,11 @@ export const TranslationPane = () => {
     }
     if (editable) {
       prepareAtomicCitationFields(editable, zoteroCitationLabel);
+      recalculateDateFieldsInRoot(editable, selectedLanguage);
       void recalculateAllEntityFieldsInRoot(editable, fetchEntitySummary, undefined, selectedLanguage)
         .then(() => {
           prepareAtomicEntityFields(editable);
+          prepareAtomicDateFields(editable);
         })
         .catch((error) => {
           console.warn('[translation] entity field refresh failed', error);
@@ -1113,9 +1212,11 @@ export const TranslationPane = () => {
     const refreshFromPolicy = () => {
       const editable = editableRef.current;
       if (!editable) return;
+      recalculateDateFieldsInRoot(editable, selectedLanguage);
       void recalculateAllEntityFieldsInRoot(editable, fetchEntitySummary, undefined, selectedLanguage)
         .then(() => {
           prepareAtomicEntityFields(editable);
+          prepareAtomicDateFields(editable);
         })
         .catch((error) => {
           console.warn('[translation] entity field policy refresh failed', error);
@@ -1447,7 +1548,9 @@ export const TranslationPane = () => {
         return;
       }
 
-      const sourceEntityHits = collectSourceUnitEntities(alignmentUnit, selectedUnitId);
+      // Same source of truth as dates: collect + blind from the serialized unit
+      // XML the model will see. TinyMCE DOM collect can miss the active unit.
+      const sourceEntityHits = collectEntitiesFromSourceUnitXml(sourceUnit.xml);
       const entityMap = new Map<string, EntitySummary>();
       await Promise.all(
         sourceEntityHits.map(async (hit) => {
@@ -1456,21 +1559,44 @@ export const TranslationPane = () => {
           if (entity) entityMap.set(hit.key, entity);
         }),
       );
-      const entitiesPayload = Array.from(entityMap.values()).map((entity) => ({
-        id: entity.id,
-        kind: entity.kind,
-        primaryName: entity.primaryName,
-        romanizedName: entity.romanizedName,
-        familyName: entity.familyName,
-        dates: formatDates(entity.dates),
-        description: entity.description ? entity.description.slice(0, 200) : null,
+      // Never send display names to the model — it will expand {{entity:KEY}}
+      // into "Chen Xianda" from romanizedName instead of copying the placeholder.
+      const entitiesPayload = sourceEntityHits.map((hit) => ({
+        id: hit.key,
+        kind: hit.kind,
       }));
+
+      const sourceDateHits = collectDatesFromSourceUnitXml(
+        sourceUnit.xml,
+        selectedLanguage ?? translationMode.lang,
+      );
+      const dateMap = new Map<number, DateGlossInput>();
+      const datesPayload = sourceDateHits.map((hit) => {
+        dateMap.set(hit.index, hit.input);
+        // Index only for the model; gloss is applied locally after substitute.
+        return { index: hit.index };
+      });
+      const knownEntityKeys = new Set(sourceEntityHits.map((hit) => hit.key));
+      const { xml: sourceUnitXmlForAi, opaques } = replaceEntitiesWithPlaceholdersInSourceXml(
+        replaceDatesWithPlaceholdersInSourceXml(sourceUnit.xml),
+        knownEntityKeys,
+      );
+      const opaqueMap = new Map<number, OpaqueEntityHit>(
+        opaques.map((hit) => [hit.index, hit]),
+      );
+      console.info('[translation] AI blinded source unit', {
+        entityKeys: knownEntityKeys.size,
+        opaqueCount: opaques.length,
+        dates: datesPayload.length,
+        xml: sourceUnitXmlForAi,
+      });
 
       const result = await api.generateAiTranslation({
         alignmentUnit,
-        sourceUnitXml: sourceUnit.xml,
+        sourceUnitXml: sourceUnitXmlForAi,
         targetLanguage: translationMode.lang ?? '',
         entities: entitiesPayload,
+        dates: datesPayload,
       });
       if (!result.ok || !result.translationXml) {
         setAiStatus({
@@ -1489,14 +1615,21 @@ export const TranslationPane = () => {
         return;
       }
 
-      const cleanedXml = applyMarkdownCleanupToFragment(validated.xml);
-      const substitutedXml = substituteEntityPlaceholders(cleanedXml, entityMap, selectedLanguage);
+      const cleanedXml = normalizeAiPlaceholders(
+        applyMarkdownCleanupToFragment(validated.xml),
+      );
+      const withOpaques = substituteOpaquePlaceholders(cleanedXml, opaqueMap);
+      const withEntities = substituteEntityPlaceholders(withOpaques, entityMap, selectedLanguage);
+      const substitutedXml = substituteDatePlaceholders(withEntities, dateMap, selectedLanguage);
       const replaceResult = await replaceCurrentUnit(substitutedXml);
       if (replaceResult.error) {
         setAiStatus({ severity: 'error', message: replaceResult.error });
         return;
       }
-      if (editableRef.current) prepareAtomicEntityFields(editableRef.current);
+      if (editableRef.current) {
+        prepareAtomicEntityFields(editableRef.current);
+        prepareAtomicDateFields(editableRef.current);
+      }
 
       setAiStatus({ severity: 'success', message: t('LW.translationPane.translationGenerated') });
     } catch (error) {
@@ -3694,9 +3827,15 @@ export const TranslationPane = () => {
           onReset={() => {
             void resetEntityDisplaySpec();
           }}
-          onSaveTranslation={saveEntityTranslationFromPopup}
+          onSaveTranslation={
+            entityKindSupportsVernacularGloss(entityFormatEntity.kind)
+              ? saveEntityTranslationFromPopup
+              : undefined
+          }
           onSuggestTranslation={
-            isAiUiFeatureEnabled('entityGlossSuggest') && getDesktopApi()?.suggestEntityGloss
+            entityKindSupportsVernacularGloss(entityFormatEntity.kind) &&
+            isAiUiFeatureEnabled('entityGlossSuggest') &&
+            getDesktopApi()?.suggestEntityGloss
               ? suggestEntityTranslationFromPopup
               : undefined
           }

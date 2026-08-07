@@ -1,3 +1,4 @@
+import i18next from 'i18next';
 import { getActiveProjectBundle } from './activeProjectBundle';
 import {
   assignMissingIds,
@@ -66,18 +67,18 @@ export const startTranslationForLang = async (
   const sourcePath = ctx.activeTabPath;
   log('bundle?', !!bundle, 'sourcePath', sourcePath);
   if (!bundle || !sourcePath) {
-    ctx.notify('Open a file to start a translation.');
+    ctx.notify(i18next.t('LWC.desktop.translation.open_file_to_start'));
     return false;
   }
   if (ctx.isActiveTabDirty) {
-    ctx.notify('Save this file before starting a translation.');
+    ctx.notify(i18next.t('LWC.desktop.translation.save_before_start'));
     return false;
   }
 
   const settings = await readTranslationSettings(bundle);
   log('settings', settings);
   if (!settings) {
-    ctx.notify('Configure translation languages in Edition metadata first.');
+    ctx.notify(i18next.t('LWC.desktop.translation.no_languages_configured'));
     return false;
   }
 
@@ -101,7 +102,7 @@ export const startTranslationForLang = async (
   const sourceXml = await readFileOrNull(sourcePath);
   log('sourceXml read?', !!sourceXml, sourceXml?.length);
   if (!sourceXml) {
-    ctx.notify('Could not read the source file.');
+    ctx.notify(i18next.t('LWC.desktop.translation.could_not_read_source'));
     return false;
   }
 
@@ -109,7 +110,7 @@ export const startTranslationForLang = async (
   const parserError = sourceDoc.getElementsByTagName('parsererror')[0];
   if (parserError) {
     log('XML parse error', parserError.textContent);
-    ctx.notify('Could not parse the source file as XML.');
+    ctx.notify(i18next.t('LWC.desktop.translation.could_not_parse_source'));
     return false;
   }
 

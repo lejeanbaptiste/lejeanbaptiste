@@ -8,6 +8,7 @@ import {
   effectiveTitleConvention,
   EMPTY_DISPLAY_SPEC,
   isEmptyDisplaySpec,
+  officeUsesTranslationOnly,
   parseDisplaySpec,
   possessiveStyleForLang,
   resolveEntityParts,
@@ -141,7 +142,8 @@ const applyWorkTypeStyle = (
   let possessiveApplied = false;
   const translationFirst =
     parts[0]?.id === 'translation' &&
-    effectiveTitleConvention(spec, lang) === 'translation-first';
+    (officeUsesTranslationOnly(entity, spec, lang) ||
+      effectiveTitleConvention(spec, lang, entity.kind) === 'translation-first');
 
   parts.forEach((part, index) => {
     if (index > 0) field.appendChild(doc.createTextNode(' '));

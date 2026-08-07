@@ -171,11 +171,19 @@ export interface LanguageToolInstallProgress {
 export interface AiTranslationEntityRef {
   id: string;
   kind: string;
-  primaryName: string | null;
-  romanizedName: string | null;
-  familyName: string | null;
-  dates: string | null;
-  description: string | null;
+  /** Optional — prefer omitting; names cause the model to expand placeholders. */
+  primaryName?: string | null;
+  romanizedName?: string | null;
+  familyName?: string | null;
+  dates?: string | null;
+  description?: string | null;
+}
+
+export interface AiTranslationDateRef {
+  index: number;
+  surface?: string | null;
+  when?: string | null;
+  gloss?: string | null;
 }
 
 export interface AiTranslationRequest {
@@ -183,6 +191,7 @@ export interface AiTranslationRequest {
   sourceUnitXml: string;
   targetLanguage: string;
   entities?: AiTranslationEntityRef[];
+  dates?: AiTranslationDateRef[];
 }
 
 export interface AiTranslationResult {
@@ -446,6 +455,10 @@ export interface ElectronAPI {
   authorityPackRead?: (
     packId: import('@src/desktop/authorityPackTypes').AuthorityPackId,
     dateFilter?: import('@src/desktop/authorityPackTypes').AuthorityPackDateFilter,
+  ) => Promise<string[]>;
+  authorityPackLookupByIds?: (
+    packId: import('@src/desktop/authorityPackTypes').AuthorityPackId,
+    authorityIds: string[],
   ) => Promise<string[]>;
   authorityPackInstallFrom?: (
     sourcePacksRoot: string,

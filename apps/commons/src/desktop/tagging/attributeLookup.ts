@@ -1,21 +1,23 @@
-import { entityLookupDialogAtom, Types } from '@cwrc/leafwriter';
+import { entityLookupDialogAtom } from '@cwrc/leafwriter';
 import { getDefaultStore } from 'jotai';
 import { RESET } from 'jotai/utils';
+import type { EntityLink, NamedEntityType } from '../../../../../packages/cwrc-leafwriter/src/types';
 import { commitTagAttributes, readTagAttributes } from './attributeCommand';
-
-const { namedEntityTypesSchema } = Types;
-type NamedEntityType = Types.NamedEntityType;
-type EntityLink = Types.EntityLink;
+import { resolveLookupEntityTypeForTag } from './attributeLookupTypes';
 
 const getWriter = () => window.writer;
 
+/**
+ * Which entity-lookup dialog to open for a TEI tag in the Attributes panel.
+ * Prefer the explicit tag map (includes roleName → office); fall back to the
+ * schema mapper for schema-specific entity tags.
+ */
 export const getLookupEntityTypeForTag = (tagName: string): NamedEntityType | null => {
   const writer = getWriter();
-  if (!writer?.schemaManager?.mapper) return null;
-  const type = writer.schemaManager.mapper.getEntityTypeForTag(tagName);
-  if (!type) return null;
-  const parsed = namedEntityTypesSchema.safeParse(type);
-  return parsed.success ? parsed.data : null;
+  const mapperType = writer?.schemaManager?.mapper
+    ? writer.schemaManager.mapper.getEntityTypeForTag(tagName)
+    : null;
+  return resolveLookupEntityTypeForTag(tagName, mapperType);
 };
 
 export const openEntityLookupForTag = (

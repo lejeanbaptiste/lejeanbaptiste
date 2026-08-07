@@ -54,6 +54,7 @@ import { extractRegisteredEntityData } from '../../../../../packages/cwrc-leafwr
 import { backfillEntitiesSqlite } from '../../../../../packages/cwrc-leafwriter/src/autoTagging/sqliteAuthorityBackfill';
 import { refreshCbdbConcordanceSqlite } from '../../../../../packages/cwrc-leafwriter/src/autoTagging/cbdbConcordance';
 import { AUTHORITY_PACKS } from '../../../../../packages/cwrc-leafwriter/src/autoTagging/packPaths';
+import { packRowsByIdsReader } from '../../../../../packages/cwrc-leafwriter/src/services/authority-pack-lookup';
 import { useActions, useAppState } from '@src/overmind';
 import { BackgroundJobBanner, useBackgroundJob, yieldToUi } from './BackgroundJobBanner';
 import { EntityCompareCard } from './EntityCompareCard';
@@ -1025,16 +1026,18 @@ export const DatabaseWindow = () => {
     if (!activeStore || jobRunning) return;
     const scopedIds = selectedIds.length > 0 ? selectedIds : undefined;
     const controller = beginJob(
-      scopedIds && scopedIds.length === 1
-        ? 'Backfilling 1 selected entity'
-        : scopedIds
-          ? `Backfilling ${scopedIds.length} selected entities`
-          : 'Backfilling from authorities',
+      scopedIds
+        ? t('LWC.desktop.database_window.job_backfilling_selected', { count: scopedIds.length })
+        : t('LWC.desktop.database_window.job_backfilling_all'),
     );
     try {
       const readPack = window.electronAPI?.authorityPackRead;
-      if (!readPack) throw new Error('Authority packs unavailable');
-      updateJob({ detail: scopedIds ? 'Reading entity…' : 'Concordance…' });
+      if (!readPack) throw new Error(t('LWC.desktop.database_window.authority_packs_unavailable'));
+      updateJob({
+        detail: scopedIds
+          ? t('LWC.desktop.database_window.job_reading_entity')
+          : t('LWC.desktop.database_window.job_concordance'),
+      });
       await yieldToUi();
       // Concordance is a whole-database apply — skip for selected-entity refresh.
       if (!scopedIds && projectStore && databaseView !== 'central') {
@@ -1045,10 +1048,14 @@ export const DatabaseWindow = () => {
         }
       }
       if (controller.signal.aborted) return;
-      updateJob({ detail: 'Reading packs…' });
+      updateJob({ detail: t('LWC.desktop.database_window.job_reading_packs') });
+      const lookupPackRowsByIds = packRowsByIdsReader();
       const result = await backfillEntitiesSqlite(activeStore, {
         entityIds: scopedIds,
+        // Person enrichment uses id lookup in main (full CBDB pack hangs the UI).
+        // Keep readPackFile for smaller office-name attach scans when needed.
         readPackFile: readPack,
+        lookupPackRowsByIds,
         projectLang,
         desktopLanguage: i18n.language,
         translationLanguages,
@@ -1067,7 +1074,7 @@ export const DatabaseWindow = () => {
       if (controller.signal.aborted) return;
       if (!scopedIds && projectStore && databaseView !== 'central') {
         try {
-          updateJob({ detail: 'Re-applying concordance…' });
+          updateJob({ detail: t('LWC.desktop.database_window.job_reapplying_concordance') });
           await refreshCbdbConcordanceSqlite(projectStore, readPack);
         } catch {
           // non-fatal
@@ -1100,13 +1107,14 @@ export const DatabaseWindow = () => {
     projectStore,
     reload,
     selectedIds,
+    t,
     translationLanguages,
     updateJob,
   ]);
 
   const runAutoClean = useCallback(async () => {
     if (!activeStore || jobRunning) return;
-    const controller = beginJob('Auto-cleaning names');
+    const controller = beginJob(t('LWC.desktop.database_window.job_auto_cleaning'));
     try {
       const report = await autoCleanEntities(activeStore, entities, projectLang, {
         signal: controller.signal,
@@ -1127,8 +1135,8 @@ export const DatabaseWindow = () => {
       notifyViaSnackbar({
         message:
           total === 0
-            ? 'Auto-clean: nothing to fix'
-            : `Auto-clean: ${report.strippedFamilyPrefixed} 姓+字, ${report.parsedFamilyGiven} parsed, ${report.dedupedNames} dupes, ${report.removedNan} nan, ${report.removedInvalidFamilyGiven} n+an, ${report.removedUntyped} untyped, ${report.promotedRomanizations} Latn typed, ${report.fixedRomanization} pinyin joins`,
+            ? t('LWC.desktop.database_window.auto_clean_nothing')
+            : t('LWC.desktop.database_window.auto_clean_result', report),
         options: { variant: 'success' },
       });
       await reload();
@@ -1151,6 +1159,7 @@ export const DatabaseWindow = () => {
     notifyViaSnackbar,
     projectLang,
     reload,
+    t,
     updateJob,
   ]);
 
@@ -1531,16 +1540,25 @@ export const DatabaseWindow = () => {
             variant="fullWidth"
             sx={{ minHeight: 42 }}
           >
-            <Tab value="cleaning" label="Cleaning" sx={{ minHeight: 42 }} />
-            <Tab value="notes" label="Notes" sx={{ minHeight: 42 }} />
+            <Tab
+              value="cleaning"
+              label={t('LWC.desktop.database_window.tab_cleaning')}
+              sx={{ minHeight: 42 }}
+            />
+            <Tab
+              value="notes"
+              label={t('LWC.desktop.database_window.tab_notes')}
+              sx={{ minHeight: 42 }}
+            />
           </Tabs>
           <Divider />
           {rightTab === 'cleaning' && (
             <Stack spacing={1.5} sx={{ p: 1.5, overflow: 'auto' }}>
-              <Typography variant="subtitle2">Database maintenance</Typography>
+              <Typography variant="subtitle2">
+                {t('LWC.desktop.database_window.maintenance_title')}
+              </Typography>
               <Typography variant="body2" color="text.secondary">
-                Backfill uses the sidebar selection. ⌘/Ctrl-click or Shift-click to
-                multi-select; All selects the current filter.
+                {t('LWC.desktop.database_window.maintenance_intro')}
               </Typography>
 
               <Stack spacing={0.5}>
@@ -1552,14 +1570,17 @@ export const DatabaseWindow = () => {
                   disabled={jobRunning || !activeStore || selectedIds.length === 0}
                 >
                   {selectedIds.length > 0
-                    ? `Backfill (${selectedIds.length})`
-                    : 'Backfill'}
+                    ? t('LWC.desktop.database_window.backfill_count', {
+                        count: selectedIds.length,
+                      })
+                    : t('LWC.desktop.database_window.backfill')}
                 </Button>
                 <Typography variant="caption" color="text.secondary">
-                  Add missing names and biographical data from installed authorities
                   {selectedIds.length > 0
-                    ? ` for ${selectedIds.length} selected entit${selectedIds.length === 1 ? 'y' : 'ies'}.`
-                    : '. Select entities in the list first.'}
+                    ? t('LWC.desktop.database_window.backfill_hint_selected', {
+                        count: selectedIds.length,
+                      })
+                    : t('LWC.desktop.database_window.backfill_hint_none')}
                 </Typography>
               </Stack>
 
@@ -1572,10 +1593,10 @@ export const DatabaseWindow = () => {
                   onClick={() => void runAutoClean()}
                   disabled={jobRunning || !activeStore}
                 >
-                  Auto-clean
+                  {t('LWC.desktop.database_window.auto_clean')}
                 </Button>
                 <Typography variant="caption" color="text.secondary">
-                  Normalize names, remove duplicates, and repair common romanization issues.
+                  {t('LWC.desktop.database_window.auto_clean_hint')}
                 </Typography>
               </Stack>
 
@@ -1587,10 +1608,10 @@ export const DatabaseWindow = () => {
                   onClick={() => void runScans()}
                   disabled={jobRunning || !activeStore}
                 >
-                  Run scans
+                  {t('LWC.desktop.database_window.run_scans')}
                 </Button>
                 <Typography variant="caption" color="text.secondary">
-                  Find duplicates, missing fields, bad names, and unlinked authority matches.
+                  {t('LWC.desktop.database_window.run_scans_hint')}
                 </Typography>
               </Stack>
 
@@ -1603,10 +1624,10 @@ export const DatabaseWindow = () => {
                   onClick={() => void runHarvest()}
                   disabled={jobRunning || !activeStore || !rootPath}
                 >
-                  Harvest
+                  {t('LWC.desktop.database_window.harvest')}
                 </Button>
                 <Typography variant="caption" color="text.secondary">
-                  Extract new person facts from tagged wrappers in the current document.
+                  {t('LWC.desktop.database_window.harvest_hint')}
                 </Typography>
               </Stack>
             </Stack>

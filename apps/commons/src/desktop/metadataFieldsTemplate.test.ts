@@ -55,7 +55,7 @@ describe('resolveProjectMetadataFields', () => {
 
     const resolved = resolveProjectMetadataFields(template, 'teiLite');
     expect(resolved.fields).toEqual([{ path: 'titleStmt/funder', label: 'Funder' }]);
-    expect(resolved.note).toContain('metadata-fields.json');
+    expect(resolved.note).toBe('LWC.desktop.project.notes.from_template');
   });
 
   test('falls back to catalog defaults without a template', () => {

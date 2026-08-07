@@ -66,8 +66,10 @@ class Writer extends EventManager {
   /** WYSIWYG text entry/delete/paste blocked; tagging shortcuts still work. */
   isTextLocked = false;
   /**
-   * Sync the editor DOM with {@link isTextLocked}. Chromium will not cancel
-   * Chinese/Japanese/Korean IME via preventDefault; locking flips contenteditable.
+   * Sync the editor DOM with {@link isTextLocked}. Keeps contenteditable=true
+   * (so the caret and arrow-key navigation still work) and just marks the body
+   * for CSS; the actual edit-blocking happens via the beforeinput/paste/
+   * composition guards in tinymceWrapper.ts.
    */
   applyTextLockDomGuard?: () => void;
   isAnnotator = false; // is the editor in annotate (entities) only mode

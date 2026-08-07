@@ -199,7 +199,12 @@ const isInsideProtectedField = (node: Node): boolean => {
   let el = node.parentElement;
   while (el) {
     const tag = el.tagName.toLowerCase();
-    if (tag === 'ref' && el.getAttribute('type') === 'ljb-entity') return true;
+    if (
+      tag === 'ref' &&
+      (el.getAttribute('type') === 'ljb-entity' || el.getAttribute('type') === 'ljb-date')
+    ) {
+      return true;
+    }
     if (tag === 'bibl' && el.getAttribute('type') === 'zotero-ref') return true;
     el = el.parentElement;
   }

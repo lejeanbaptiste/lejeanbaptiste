@@ -196,14 +196,16 @@ export function filterCandidateForPhase1(
   return { ...candidate, searchStrings };
 }
 
-/** Returns an error message, or null when the id is valid. */
-export function validateCustomNameTypeId(id: string): string | null {
+export type CustomNameTypeIdError = 'invalid_slug' | 'shadows_builtin';
+
+/** Returns an error code, or null when the id is valid. */
+export function validateCustomNameTypeId(id: string): CustomNameTypeIdError | null {
   const trimmed = id.trim();
   if (!CUSTOM_ID_RE.test(trimmed)) {
-    return 'Id must be an ASCII slug matching [a-z][a-z0-9_-]*';
+    return 'invalid_slug';
   }
   if (ALL_NAME_TYPES.includes(trimmed as NameTypeId)) {
-    return `Id "${trimmed}" shadows a built-in name type`;
+    return 'shadows_builtin';
   }
   return null;
 }

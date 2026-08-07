@@ -25,18 +25,27 @@ import {
 import {
   authorityEnrichmentForEntity,
   authorityEnrichmentsForEntity,
-  buildNorbertNobleTitleIndex,
-  buildPackNameIndex,
+  buildOfficePackNameIndexForAuthorities,
+  buildPackNameIndexForAuthorities,
   buildUniqueOfficeAuthorityByName,
   firstAuthorityEnrichment,
+  nobleTitleIndexFromPackNameIndex,
   packTypedNamesForEntity,
   type AuthorityEnrichment,
+  type AuthorityPackRowsByIdsFn,
   type NameBackfillProgress,
   type NameBackfillResult,
-  type NorbertNobleTitleCandidate,
 } from './nameBackfill';
+import {
+  cleanPublishableOfficeGloss,
+  loadHuckbotGlossIndex,
+  loadMaxiRicciGlossIndex,
+  lookupEnglishOfficeGloss,
+  lookupFrenchOfficeGloss,
+  persistOfficeTranslationNames,
+} from './officeGlossLookup';
 import { suggestPersonNameSplit, suggestPersonRomanization } from '../plugins/personNameDefaults';
-import { autoRomanize } from '../utilities/romanize';
+import { autoRomanize, autoRomanizeForKind, latnLangFor } from '../utilities/romanize';
 import { norbertAuthorityLookupValues } from './norbertAuthorityId';
 import {
   biographicalYearsFromMetadata,
@@ -65,10 +74,14 @@ const REF_SOURCE_BY_AUTHORITY: Record<string, 'cbdb' | 'dila' | 'norbert'> = {
   NORBERT: 'norbert',
 };
 
+/** Authority sources whose birth/death rows are treated as biographical truth. */
+const FINE_AUTHORITY_DATE_SOURCES = new Set(['WIKIDATA', 'DILA']);
+
 /**
  * Clear user/Central lifespan rows that are known pollution: year `0`, or a
  * year that matches none of the fine authority birth/death assertions we just
- * collected (typical of minting dynasty/floruit pack intervals as user dates).
+ * collected or that already sit on the entity (typical of minting
+ * dynasty/floruit pack intervals as user dates).
  */
 async function repairPollutedUserLifespanDates(
   store: EntityStore,
@@ -81,6 +94,7 @@ async function repairPollutedUserLifespanDates(
       origin: string;
       status: string;
       value: string;
+      source?: string | null;
     }>;
   } | null;
   if (!summary?.assertions?.length) return false;
@@ -92,6 +106,17 @@ async function repairPollutedUserLifespanDates(
     const death = finiteBiographicalYear(date.endYear);
     if (birth != null) fineBirths.add(birth);
     if (death != null) fineDeaths.add(death);
+  }
+  // Also trust fine-ish authority rows already stored (e.g. DILA/Wikidata from
+  // an earlier run) when this pass did not re-fetch them.
+  for (const assertion of summary.assertions) {
+    if (assertion.status !== 'active' || assertion.origin !== 'authority') continue;
+    const source = (assertion.source ?? '').split(':')[0]?.trim().toUpperCase() ?? '';
+    if (!FINE_AUTHORITY_DATE_SOURCES.has(source)) continue;
+    const year = finiteBiographicalYear(Number(assertion.value));
+    if (year == null) continue;
+    if (assertion.element === 'birth') fineBirths.add(year);
+    if (assertion.element === 'death') fineDeaths.add(year);
   }
 
   let changed = false;
@@ -174,6 +199,44 @@ function mergeEnrichmentRows(
   for (const row of packRows) bySource.set(row.source, row);
   for (const row of refRows) bySource.set(row.source, row); // reference wins
   return [...bySource.values()];
+}
+
+/** Drop invented 姓/名 on offices and repair person-style romanizations. */
+async function scrubPersonOnlyNamesFromOffice(
+  store: EntityStore,
+  summary: PanelPerson,
+  projectLang?: string | null,
+): Promise<boolean> {
+  let changed = false;
+  for (const name of summary.names) {
+    const type = (name.nameType ?? '').toLowerCase();
+    if (type !== 'family' && type !== 'given' && type !== 'familyname' && type !== 'givenname') {
+      continue;
+    }
+    const removed = await store.sqliteTombstoneNames(
+      summary.id,
+      name.text,
+      'non-person-name-scrub',
+    );
+    if (removed > 0) changed = true;
+  }
+  const primary =
+    summary.names.find((name) => name.nameType === 'primary')?.text?.normalize('NFC').trim() ||
+    summary.names[0]?.text?.normalize('NFC').trim();
+  const romanized = summary.names.find((name) => isLatnLang(name.language))?.text?.trim();
+  if (primary && romanized) {
+    const personStyle = suggestPersonRomanization(primary, projectLang ?? null);
+    const officeStyle = autoRomanizeForKind(primary, projectLang, 'office');
+    if (personStyle && officeStyle && romanized === personStyle && romanized !== officeStyle) {
+      await store.sqliteSetRomanizedName(
+        summary.id,
+        officeStyle,
+        latnLangFor(projectLang ?? null),
+      );
+      changed = true;
+    }
+  }
+  return changed;
 }
 
 interface PanelPerson {
@@ -336,6 +399,11 @@ export async function backfillEntitiesSqlite(
      * results take precedence over pack metadata for the same authority id.
      */
     lookupAuthorityRef?: AuthorityRefLookupFn;
+    /**
+     * Main-process pack scan that returns only matching NDJSON lines. Required
+     * for safe bulk backfill of CBDB (full pack is ~570MB over IPC).
+     */
+    lookupPackRowsByIds?: AuthorityPackRowsByIdsFn;
     /** Yield between entities so the UI can paint progress (default: microtask). */
     yieldFn?: () => Promise<void>;
   } = {},
@@ -352,6 +420,7 @@ export async function backfillEntitiesSqlite(
     expandWikidataWorks = false,
     liveWikidata = true,
     lookupAuthorityRef,
+    lookupPackRowsByIds,
     yieldFn = () => new Promise((resolve) => setTimeout(resolve, 0)),
   } = options;
 
@@ -377,14 +446,24 @@ export async function backfillEntitiesSqlite(
       }).length
     : personSummaries.filter((entity) => entity.authorities.length === 0).length;
 
-  // Scoped refresh with A6 reference lookup does not need the multi-megabyte
-  // CBDB/DILA/Norbert name index (reference tier wins for those sources).
-  // Title index stays — Norbert person_nt is keyed separately.
-  const packIndex =
-    readPackFile && !(entityIds?.length && lookupAuthorityRef)
-      ? await buildPackNameIndex(readPackFile)
-      : null;
-  const nobleTitleIndex = readPackFile ? await buildNorbertNobleTitleIndex(readPackFile) : null;
+  // Load pack names/metadata only for authority ids already on the targets.
+  // Never pull the full CBDB persons pack into the renderer (select-all used to
+  // hang on "Reading packs…" then die). Prefer main-process id lookup.
+  const linkedAuthorities = targets.flatMap((entity) => entity.authorities);
+  const canReadPacks = Boolean(lookupPackRowsByIds || readPackFile);
+  const packIndex = canReadPacks
+    ? await buildPackNameIndexForAuthorities(linkedAuthorities, {
+        lookupPackRowsByIds,
+        readPackFile,
+        onPackProgress: (label) =>
+          onProgress?.({ done: 0, total: Math.max(totalTargets, 1), entityLabel: label }),
+      })
+    : null;
+  // Titles come from the Norbert person rows already fetched above (and from
+  // A6 reference). Do not scan the full wiki-nt / persons packs here — that
+  // reintroduces the select-all hang.
+  const nobleTitleIndex =
+    packIndex && packIndex.size > 0 ? nobleTitleIndexFromPackNameIndex(packIndex) : null;
   // Office name→authority attach is a catalogue-wide scan — only for bulk or
   // explicitly selected office ids.
   const needsOfficeAttach =
@@ -398,12 +477,45 @@ export async function backfillEntitiesSqlite(
   let namesAdded = 0;
   let cancelled = false;
 
-  // Attach missing NORBERT/CBDB idnos to offices that uniquely match a pack
-  // primary name. Homonyms are skipped. This closes the historical gap where
-  // offices were minted locally without authority links.
-  if (officeAuthorityByName && (!idFilter || entityIds?.some((id) => id.startsWith('office-')))) {
+  // Offices: scrub legacy 姓/名 pollution, attach missing idnos, and write
+  // CBDB / Huckbot English + MaxiRicci French roleName translations.
+  if (!idFilter || entityIds!.some((id) => id.startsWith('office-'))) {
     try {
-      const officeSummaries = ((await store.sqlitePanelSummaries('office')) ?? []) as PanelPerson[];
+      const officeSummaries = (
+        idFilter
+          ? (
+              await Promise.all(
+                entityIds!
+                  .filter((id) => id.startsWith('office-'))
+                  .map((id) => store.sqliteEntitySummary(id)),
+              )
+            )
+              .map(panelPersonFromSummary)
+              .filter((row): row is PanelPerson => Boolean(row))
+          : ((await store.sqlitePanelSummaries('office')) ?? [])
+              .map(panelPersonFromSummary)
+              .filter((row): row is PanelPerson => Boolean(row))
+      ) as PanelPerson[];
+      let officePackIndex =
+        canReadPacks && officeSummaries.length > 0
+          ? await buildOfficePackNameIndexForAuthorities(
+              officeSummaries.flatMap((row) => row.authorities),
+              {
+                lookupPackRowsByIds,
+                readPackFile,
+                onPackProgress: (label) =>
+                  onProgress?.({
+                    done: entitiesScanned,
+                    total: Math.max(totalTargets + officeSummaries.length, 1),
+                    entityLabel: label,
+                  }),
+              },
+            )
+          : null;
+      const huckbotGlosses = readPackFile ? await loadHuckbotGlossIndex(readPackFile) : new Map();
+      const maxiGlosses = readPackFile
+        ? await loadMaxiRicciGlossIndex(readPackFile)
+        : { byOfficeId: new Map(), byZhDynasty: new Map(), byZh: new Map() };
       for (const summary of officeSummaries) {
         if (signal?.aborted) {
           cancelled = true;
@@ -413,32 +525,101 @@ export async function backfillEntitiesSqlite(
         const primary =
           summary.names.find((name) => name.nameType === 'primary')?.text?.normalize('NFC').trim() ||
           summary.names[0]?.text?.normalize('NFC').trim();
-        if (!primary) continue;
-        const candidates = officeAuthorityByName.get(primary);
-        if (!candidates?.length) continue;
         entitiesScanned++;
-        let attached = false;
-        for (const hit of candidates) {
-          const already = summary.authorities.some(
-            (auth) =>
-              auth.type.trim().toUpperCase() === hit.type && auth.value.trim() === hit.value,
-          );
-          if (already) continue;
-          const claimed = await store.sqliteFindByAuthority('office', hit.type, hit.value);
-          if (claimed && claimed !== summary.id) continue;
-          const ok = await store.sqliteAttachAuthority(summary.id, hit.type, hit.value);
-          if (ok) attached = true;
+        let changed = await scrubPersonOnlyNamesFromOffice(store, summary, projectLang);
+        const authorities = [...summary.authorities];
+        const newlyAttached: Array<{ type: 'NORBERT' | 'CBDB'; value: string }> = [];
+        if (officeAuthorityByName && primary) {
+          const candidates = officeAuthorityByName.get(primary);
+          for (const hit of candidates ?? []) {
+            const already = authorities.some(
+              (auth) =>
+                auth.type.trim().toUpperCase() === hit.type && auth.value.trim() === hit.value,
+            );
+            if (already) continue;
+            const claimed = await store.sqliteFindByAuthority('office', hit.type, hit.value);
+            if (claimed && claimed !== summary.id) continue;
+            const ok = await store.sqliteAttachAuthority(summary.id, hit.type, hit.value);
+            if (ok) {
+              changed = true;
+              authorities.push(hit);
+              newlyAttached.push(hit);
+            }
+          }
         }
-        if (attached) entitiesUpdated++;
+        if (newlyAttached.length > 0 && canReadPacks) {
+          const extra = await buildOfficePackNameIndexForAuthorities(newlyAttached, {
+            lookupPackRowsByIds,
+            readPackFile,
+          });
+          if (!officePackIndex) officePackIndex = extra;
+          else for (const [key, value] of extra) officePackIndex.set(key, value);
+        }
+        const hasLang = (lang: string) =>
+          summary.names.some(
+            (name) =>
+              (name.nameType ?? '').toLowerCase() === 'translation' &&
+              Boolean(name.language && name.language.toLowerCase().startsWith(lang)),
+          );
+        let translation: string | null = null;
+        let translationFr: string | null = null;
+        let enSource: string | null = null;
+        let dynasty: string | null = null;
+        if (officePackIndex) {
+          for (const auth of authorities) {
+            const source = auth.type.trim().toUpperCase();
+            const values =
+              source === 'NORBERT'
+                ? norbertAuthorityLookupValues(auth.value)
+                : [auth.value.trim()].filter(Boolean);
+            for (const value of values) {
+              const meta = officePackIndex.get(`${source}:${value}`)?.metadata;
+              if (!meta) continue;
+              dynasty = dynasty ?? meta.dynasty ?? null;
+              const en = cleanPublishableOfficeGloss(meta.translation);
+              if (en && !translation) {
+                translation = en;
+                enSource = source;
+              }
+              const fr = cleanPublishableOfficeGloss(meta.translationFr);
+              if (fr && !translationFr) translationFr = fr;
+            }
+          }
+        }
+        if (!translation) {
+          translation =
+            cleanPublishableOfficeGloss(lookupEnglishOfficeGloss(huckbotGlosses, authorities)) ??
+            null;
+          if (translation) enSource = 'Huckbot5000';
+        }
+        if (!translationFr) {
+          translationFr =
+            cleanPublishableOfficeGloss(
+              lookupFrenchOfficeGloss(maxiGlosses, authorities, primary, dynasty),
+            ) ?? null;
+        }
+        const added = await persistOfficeTranslationNames(store, summary.id, {
+          translation: hasLang('en') ? null : translation,
+          translationFr: hasLang('fr') ? null : translationFr,
+          enSource,
+          frSource: 'MaxiRicci7000',
+        });
+        if (added > 0) {
+          namesAdded += added;
+          changed = true;
+        }
+        if (changed) entitiesUpdated++;
         onProgress?.({
           done: entitiesScanned,
-          total: totalTargets + officeSummaries.length,
+          total: Math.max(totalTargets + officeSummaries.length, 1),
           entityId: summary.id,
-          entityLabel: primary,
+          entityLabel: primary || summary.id,
+          addedNames: added,
         });
+        await yieldFn();
       }
     } catch {
-      // Attach/panel APIs unavailable — skip office idno backfill silently.
+      // Attach/panel APIs unavailable — skip office backfill silently.
     }
   }
 
@@ -490,7 +671,15 @@ export async function backfillEntitiesSqlite(
       ? await referenceEnrichmentsForEntity(entity, lookupAuthorityRef)
       : [];
     const refTypedNames = refRows.flatMap((row) => row.enrichment.names ?? []);
-    const mergedTypedNames = refTypedNames.length > 0 ? refTypedNames : packTypedNames;
+    // Union pack + reference. Taking only reference dropped CBDB 姓/名 whenever
+    // DILA returned any other typed names (or when reference was empty/missing).
+    const mergedTypedNames = normalizeTypedNamesForIntake(
+      [...packTypedNames, ...refTypedNames],
+      [
+        ...packTypedNames.filter((name) => name.type === 'family').map((name) => name.text),
+        ...refTypedNames.filter((name) => name.type === 'family').map((name) => name.text),
+      ],
+    );
     const packHasTypedNames = mergedTypedNames.length > 0;
     const packHasFamily = mergedTypedNames.some((name) => name.type === 'family');
     const packHasGiven = mergedTypedNames.some((name) => name.type === 'given');
@@ -579,6 +768,7 @@ export async function backfillEntitiesSqlite(
     }
 
     const dates: Array<{ source: string; startYear?: number | null; endYear?: number | null }> = [];
+    const clearAuthorityVitalSources: string[] = [];
     const nationalities: Array<{ label: string; ref?: string | null; source: string }> = [];
     const origins: Array<{
       label: string;
@@ -607,6 +797,13 @@ export async function backfillEntitiesSqlite(
           startYear: bioYears.startYear,
           endYear: bioYears.endYear,
         });
+      } else if (
+        meta.dateSource === 'floruit' ||
+        meta.dateSource === 'index' ||
+        meta.dateSource === 'nationality'
+      ) {
+        // Drop dynasty/floruit years that older mints stored as CBDB birth/death.
+        clearAuthorityVitalSources.push(normalizedSource);
       }
       for (const value of meta.nationality ?? []) {
         nationalities.push({
@@ -785,9 +982,12 @@ export async function backfillEntitiesSqlite(
       names: namePatches,
       familyName,
       givenName,
-      rewriteUnvalidatedPersonNames: true,
+      // Only rewrite 姓/名 when authority actually supplied a split — empty
+      // rewrites used to withdraw/tombstone CBDB family/given on card refresh.
+      rewriteUnvalidatedPersonNames: Boolean(familyName || givenName),
       romanized,
       dates,
+      clearAuthorityVitalSources,
       nationalities,
       origins,
       offices,

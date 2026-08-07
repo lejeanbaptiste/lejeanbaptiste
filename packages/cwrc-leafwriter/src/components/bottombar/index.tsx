@@ -7,6 +7,7 @@ import { useAppState } from '../../overmind';
 import { AuthorityLoadIndicator } from './AuthorityLoadIndicator';
 import { AiRunIndicator } from './AiRunIndicator';
 import { BulkSyncIndicator } from './BulkSyncIndicator';
+import { DatabaseJobIndicator } from './DatabaseJobIndicator';
 import { EntityIndexIndicator } from './EntityIndexIndicator';
 import { ValdidationErrors } from './ValdidationErrors';
 import { Schema } from './schema';
@@ -50,6 +51,7 @@ export const BottomBar = () => {
         <AiRunIndicator />
         <EntityIndexIndicator />
         <BulkSyncIndicator />
+        <DatabaseJobIndicator />
 
         {!desktop && (
           <>

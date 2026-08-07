@@ -1016,6 +1016,95 @@ describe('EntitySqliteRepository', () => {
     repository.close();
   });
 
+  it('restores withdrawn family/given names and clears non-fine authority vitals', () => {
+    const repository = new EntitySqliteRepository();
+    repository.createEntity({ id: 'person-restore', kind: 'person' });
+    repository.addName({
+      entityId: 'person-restore',
+      text: '陳顯達',
+      isPrimary: true,
+      origin: 'authority',
+      source: 'CBDB',
+    });
+    repository.db
+      .prepare(
+        `INSERT INTO entity_names
+           (entity_id, text, name_type, name_role, language, is_primary, origin, source, status, created_at, updated_at)
+         VALUES (?, '陳', 'family', 'family', NULL, 0, 'authority', 'CBDB', 'withdrawn', ?, ?)`,
+      )
+      .run('person-restore', '2026-01-01T00:00:00.000Z', '2026-01-01T00:00:00.000Z');
+    repository.db
+      .prepare(
+        `INSERT INTO entity_names
+           (entity_id, text, name_type, name_role, language, is_primary, origin, source, status, created_at, updated_at)
+         VALUES (?, '顯達', 'given', 'given', NULL, 0, 'authority', 'CBDB', 'withdrawn', ?, ?)`,
+      )
+      .run('person-restore', '2026-01-01T00:00:00.000Z', '2026-01-01T00:00:00.000Z');
+    const familyId = (
+      repository.db
+        .prepare(`SELECT id FROM entity_names WHERE entity_id = ? AND text = '陳'`)
+        .get('person-restore') as { id: number }
+    ).id;
+    repository.db
+      .prepare(
+        `INSERT INTO entity_tombstones (entity_id, table_name, row_id, reason, created_at)
+         VALUES (?, 'entity_names', ?, 'mirror-copy-entity_names-status', ?)`,
+      )
+      .run('person-restore', familyId, '2026-01-01T00:00:00.000Z');
+    repository.db
+      .prepare(
+        `INSERT INTO entity_dates
+           (entity_id, date_kind, start_year, when_value, origin, source, status, created_at, updated_at)
+         VALUES (?, 'birth', 479, '0479', 'authority', 'CBDB', 'active', ?, ?),
+                (?, 'death', 502, '0502', 'authority', 'CBDB', 'active', ?, ?),
+                (?, 'birth', 427, '0427', 'authority', 'DILA', 'active', ?, ?),
+                (?, 'death', 500, '0500', 'authority', 'DILA', 'active', ?, ?)`,
+      )
+      .run(
+        'person-restore',
+        '2026-01-01T00:00:00.000Z',
+        '2026-01-01T00:00:00.000Z',
+        'person-restore',
+        '2026-01-01T00:00:00.000Z',
+        '2026-01-01T00:00:00.000Z',
+        'person-restore',
+        '2026-01-01T00:00:00.000Z',
+        '2026-01-01T00:00:00.000Z',
+        'person-restore',
+        '2026-01-01T00:00:00.000Z',
+        '2026-01-01T00:00:00.000Z',
+      );
+    repository.db
+      .prepare('UPDATE people SET family_name = ?, given_name = ? WHERE entity_id = ?')
+      .run('陳', '顯達', 'person-restore');
+
+    // Before cleanup, CBDB dynasty years win over DILA only when preferred first —
+    // after reordering, DILA should already surface; clearing CBDB seals it.
+    const result = repository.applyAuthorityBackfillPatch({
+      entityId: 'person-restore',
+      names: [
+        { text: '陳', nameType: 'family', source: 'CBDB' },
+        { text: '顯達', nameType: 'given', source: 'CBDB' },
+      ],
+      familyName: '陳',
+      givenName: '顯達',
+      rewriteUnvalidatedPersonNames: true,
+      clearAuthorityVitalSources: ['CBDB'],
+    });
+    expect(result.changed).toBe(true);
+    const activeTexts = repository
+      .listNames('person-restore')
+      .filter((name) => name.status === 'active')
+      .map((name) => name.text)
+      .sort();
+    expect(activeTexts).toEqual(['陳', '陳顯達', '顯達'].sort());
+    expect(repository.getPanelSummary('person-restore')?.familyName).toBe('陳');
+    expect(repository.getPanelSummary('person-restore')?.givenName).toBe('顯達');
+    expect(repository.getPanelSummary('person-restore')?.startYear).toBe(427);
+    expect(repository.getPanelSummary('person-restore')?.endYear).toBe(500);
+    repository.close();
+  });
+
   it('rewrites unvalidated invented 姓名 on re-backfill and clears missing given', () => {
     const repository = new EntitySqliteRepository();
     repository.createEntity({ id: 'person-empress', kind: 'person' });

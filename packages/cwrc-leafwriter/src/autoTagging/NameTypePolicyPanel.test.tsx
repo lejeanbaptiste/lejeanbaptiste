@@ -34,15 +34,16 @@ describe('NameTypePolicyPanel', () => {
   it('renders built-in rows and persists bucket changes', async () => {
     render(<NameTypePolicyPanel io={io} />);
 
-    expect(await screen.findByText('Name types for auto-tagging')).toBeTruthy();
+    expect(await screen.findByText('LW.nameTypePolicy.title')).toBeTruthy();
     expect(screen.getByText('Primary name')).toBeTruthy();
+    expect(screen.getByText('Courtesy name (字)')).toBeTruthy();
     expect(screen.getByText('Alias')).toBeTruthy();
+    expect(screen.getByText('LW.nameTypePolicy.custom_title')).toBeTruthy();
 
-    const courtesyGroup = screen.getByRole('group', {
-      name: 'Courtesy name (字) auto-tagging phase',
-    });
-    const courtesyPhase1 = Array.from(courtesyGroup.querySelectorAll('button')).find(
-      (button) => button.textContent === 'Phase 1',
+    const courtesyRow = screen.getByText('Courtesy name (字)').closest('div')?.parentElement;
+    expect(courtesyRow).toBeTruthy();
+    const courtesyPhase1 = Array.from(courtesyRow!.querySelectorAll('button')).find(
+      (button) => button.textContent === 'LW.nameTypePolicy.phase1',
     );
     expect(courtesyPhase1).toBeTruthy();
     await userEvent.click(courtesyPhase1!);

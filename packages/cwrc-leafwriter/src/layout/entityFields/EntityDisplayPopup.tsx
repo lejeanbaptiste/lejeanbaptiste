@@ -19,10 +19,13 @@ import { dateFormatSettingsForLang } from './dateFormatSettings';
 import {
   chineseNameOf,
   effectiveTitleConvention,
+  entityKindSupportsVernacularGloss,
   familyAndGivenOf,
   formatDates,
+  isEntityPartShown,
   possessiveStyleForLang,
   renderEntityFromSpec,
+  shortFormOptionalParts,
   shortNameOf,
   translatedNameOf,
   type EntityDisplaySpec,
@@ -48,6 +51,14 @@ const OTHER_ROMANIZATION_FIRST: EntityPartId[] = [
   'translation',
 ];
 const OTHER_TRANSLATION_FIRST: EntityPartId[] = ['translation', 'original', 'classification'];
+/** Offices with a gloss: vernacular lead; pinyin / characters available as extras. */
+const OFFICE_TRANSLATION_ONLY: EntityPartId[] = [
+  'translation',
+  'name',
+  'chinese',
+  'original',
+  'classification',
+];
 
 /** Dates only make sense for person (birth/death) and work (publication/composition). */
 const partOrderFor = (
@@ -61,6 +72,9 @@ const partOrderFor = (
   }
   if (entity.kind === 'work') {
     return convention === 'translation-first' ? WORK_TRANSLATION_FIRST : WORK_ROMANIZATION_FIRST;
+  }
+  if (entity.kind === 'office' && convention === 'translation-first') {
+    return OFFICE_TRANSLATION_ONLY;
   }
   return convention === 'translation-first' ? OTHER_TRANSLATION_FIRST : OTHER_ROMANIZATION_FIRST;
 };
@@ -108,6 +122,8 @@ const partLabel = (id: EntityPartId, entity: EntitySummary, lang?: string | null
     }
     case 'translation': {
       const gloss = translatedNameOf(entity, lang);
+      // Lead gloss (translation-first / office default) is not parenthesized in text.
+      if (entity.kind === 'office' && gloss) return gloss;
       return gloss ? `(${gloss})` : '—';
     }
     case 'dates': {
@@ -163,16 +179,20 @@ export const EntityDisplayPopup = ({
   const { t } = useTranslation();
   const dateSettings = dateFormatSettingsForLang(lang);
   const preview = renderEntityFromSpec(entity, occurrenceIndex, spec, dateSettings, lang);
-  const hidden = new Set(spec.hidden);
   const possessiveStyle = possessiveStyleForLang(lang);
   const showPossessive = possessiveStyle !== 'none';
   const gloss = translatedNameOf(entity, lang);
   const hasGloss = Boolean(gloss);
+  const supportsVernacularGloss = entityKindSupportsVernacularGloss(entity.kind);
   const convention = hasGloss
-    ? effectiveTitleConvention(spec, lang)
+    ? effectiveTitleConvention(spec, lang, entity.kind)
     : 'romanization-first';
   const leadWithTranslation = convention === 'translation-first';
+  const officeTranslationOnly =
+    entity.kind === 'office' && hasGloss && spec.titleConvention !== 'romanization-first';
   const langLabel = lang ? languageLabelForCode(lang) : '';
+  const canAddTranslation = supportsVernacularGloss && Boolean(lang) && Boolean(onSaveTranslation);
+  const canSuggestTranslation = supportsVernacularGloss && Boolean(onSuggestTranslation);
 
   const [addOpen, setAddOpen] = useState(false);
   const [draftTranslation, setDraftTranslation] = useState('');
@@ -182,10 +202,26 @@ export const EntityDisplayPopup = ({
   const [suggesting, setSuggesting] = useState(false);
 
   const toggleHidden = (id: EntityPartId) => {
-    const nextHidden = hidden.has(id)
-      ? spec.hidden.filter((part) => part !== id)
-      : [...spec.hidden, id];
-    onChange({ ...spec, hidden: nextHidden });
+    const shown = isEntityPartShown(entity, occurrenceIndex, spec, id, lang);
+    // Optional short-form parts (and office translation-only extras on first
+    // mention) toggle via extraParts rather than hidden.
+    const optional = shortFormOptionalParts(entity, lang);
+    if (optional.includes(id) && (occurrenceIndex > 1 || officeTranslationOnly)) {
+      const extras = new Set(spec.extraParts ?? []);
+      if (shown) extras.delete(id);
+      else extras.add(id);
+      onChange({
+        ...spec,
+        extraParts: [...extras],
+        // Keep in sync if it was previously forced into hidden.
+        hidden: spec.hidden.filter((part) => part !== id),
+      });
+      return;
+    }
+    const nextHidden = shown
+      ? [...spec.hidden, id]
+      : spec.hidden.filter((part) => part !== id);
+    onChange({ ...spec, hidden: [...new Set(nextHidden)] });
   };
 
   const toggleBrackets = (id: EntityPartId) => {
@@ -289,7 +325,7 @@ export const EntityDisplayPopup = ({
             {chipIds.map((id) => {
               const label = partLabel(id, entity, lang);
               const available = label !== '—';
-              const isHidden = hidden.has(id);
+              const isHidden = !isEntityPartShown(entity, occurrenceIndex, spec, id, lang);
               const hasBrackets = spec.bracketsAround === id;
               return (
                 <Chip
@@ -332,7 +368,7 @@ export const EntityDisplayPopup = ({
                 />
               );
             })}
-            {!hasGloss && lang && onSaveTranslation ? (
+            {!hasGloss && canAddTranslation ? (
               <Chip
                 clickable
                 label={t('LW.translationPane.entityFormat.addTranslation')}
@@ -428,8 +464,10 @@ export const EntityDisplayPopup = ({
             </Typography>
           ) : null}
         </DialogContent>
-        <DialogActions sx={{ justifyContent: onSuggestTranslation ? 'space-between' : undefined }}>
-          {onSuggestTranslation ? (
+        <DialogActions
+          sx={{ justifyContent: canSuggestTranslation ? 'space-between' : undefined }}
+        >
+          {canSuggestTranslation ? (
             <Button
               disabled={saving || suggestInFlight}
               onClick={() => void suggestTranslation()}

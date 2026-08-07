@@ -107,6 +107,7 @@ import {
 import {
   getAuthorityPackStatuses,
   installAuthorityPacksFrom,
+  lookupAuthorityPackRowsByIds,
   readAuthorityPackFile,
 } from './authorityPacks';
 import { AUTHORITY_PACKS_DIRNAME } from '../../commons/src/desktop/authorityPackTypes';
@@ -276,11 +277,18 @@ interface AiConnectionResult {
 interface AiTranslationEntityRef {
   id: string;
   kind: string;
-  primaryName: string | null;
-  romanizedName: string | null;
-  familyName: string | null;
-  dates: string | null;
-  description: string | null;
+  primaryName?: string | null;
+  romanizedName?: string | null;
+  familyName?: string | null;
+  dates?: string | null;
+  description?: string | null;
+}
+
+interface AiTranslationDateRef {
+  index: number;
+  surface?: string | null;
+  when?: string | null;
+  gloss?: string | null;
 }
 
 interface AiTranslationRequest {
@@ -288,6 +296,7 @@ interface AiTranslationRequest {
   sourceUnitXml: string;
   targetLanguage: string;
   entities?: AiTranslationEntityRef[];
+  dates?: AiTranslationDateRef[];
 }
 
 interface AiTranslationResult {
@@ -503,9 +512,10 @@ const generateAiTranslation = async ({
   sourceUnitXml,
   targetLanguage,
   entities,
+  dates,
 }: AiTranslationRequest): Promise<AiTranslationResult> => {
   const settings = await getAiApiSettings();
-  const request = { alignmentUnit, sourceUnitXml, targetLanguage, entities };
+  const request = { alignmentUnit, sourceUnitXml, targetLanguage, entities, dates };
   let baseUrl: string;
 
   try {
@@ -2732,6 +2742,22 @@ const registerIpcHandlers = () => {
         import('../../commons/src/desktop/authorityPackTypes').AuthorityPackDateFilter | undefined,
     );
   });
+
+  ipcMain.handle(
+    'authorityPack:lookupByIds',
+    async (_event, packId: string, authorityIds: unknown) => {
+      const folder = await getEntityDbFolderOrNull();
+      if (!folder) throw new Error('No entity database folder configured.');
+      const ids = Array.isArray(authorityIds)
+        ? authorityIds.map((id) => String(id ?? '').trim()).filter(Boolean)
+        : [];
+      return lookupAuthorityPackRowsByIds(
+        folder,
+        packId as import('../../commons/src/desktop/authorityPackTypes').AuthorityPackId,
+        ids,
+      );
+    },
+  );
 
   ipcMain.handle('authorityPack:installFrom', async (_event, sourcePacksRoot: string) => {
     const folder = await getEntityDbFolderOrNull();

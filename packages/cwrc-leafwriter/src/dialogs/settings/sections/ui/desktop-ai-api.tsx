@@ -171,9 +171,7 @@ export const DesktopAiApi = () => {
               />
             }
             label={
-              <Typography variant="body2">
-                Stream AI results into review as each block finishes
-              </Typography>
+              <Typography variant="body2">{t('LW.settings.ai_api.stream_results')}</Typography>
             }
             sx={{ ml: 0 }}
           />

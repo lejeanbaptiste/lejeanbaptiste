@@ -1,6 +1,34 @@
 const STEMS = '甲乙丙丁戊己庚辛壬癸';
 const BRANCHES = '子丑寅卯辰巳午未申酉戌亥';
 
+/** Toneless pinyin stems / branches for sexagenary glosses (renxu, jiayin, …). */
+const STEM_PINYIN = [
+  'jia',
+  'yi',
+  'bing',
+  'ding',
+  'wu',
+  'ji',
+  'geng',
+  'xin',
+  'ren',
+  'gui',
+] as const;
+const BRANCH_PINYIN = [
+  'zi',
+  'chou',
+  'yin',
+  'mao',
+  'chen',
+  'si',
+  'wu',
+  'wei',
+  'shen',
+  'you',
+  'xu',
+  'hai',
+] as const;
+
 const DIGIT_VALUES: Record<string, number> = {
   '〇': 0,
   '零': 0,
@@ -32,6 +60,34 @@ export function sexagenaryNameToIndex(name: string): number | null {
     if ((n - 1) % 10 === stem && (n - 1) % 12 === branch) return n;
   }
   return null;
+}
+
+/** Sanmiao gz index 1–60 → Chinese name (甲子…癸亥), or null. */
+export function sexagenaryIndexToName(index: number): string | null {
+  if (!Number.isInteger(index) || index < 1 || index > 60) return null;
+  const stem = STEMS[(index - 1) % 10]!;
+  const branch = BRANCHES[(index - 1) % 12]!;
+  return `${stem}${branch}`;
+}
+
+/**
+ * Sexagenary name or index → concatenated toneless pinyin (renxu, jiayin).
+ * Returns null when the input is not a recognized cycle day.
+ */
+export function sexagenaryToPinyin(nameOrIndex: string | number): string | null {
+  if (typeof nameOrIndex === 'number') {
+    const name = sexagenaryIndexToName(nameOrIndex);
+    return name ? sexagenaryToPinyin(name) : null;
+  }
+  const trimmed = nameOrIndex.trim();
+  if (/^\d+$/.test(trimmed)) {
+    return sexagenaryToPinyin(parseInt(trimmed, 10));
+  }
+  if (trimmed.length !== 2) return null;
+  const stem = STEMS.indexOf(trimmed[0]!);
+  const branch = BRANCHES.indexOf(trimmed[1]!);
+  if (stem === -1 || branch === -1) return null;
+  return `${STEM_PINYIN[stem]}${BRANCH_PINYIN[branch]}`;
 }
 
 /**

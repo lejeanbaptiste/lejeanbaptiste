@@ -2,6 +2,7 @@ import { ENGLISH_DEFAULTS } from './dateFormatSettings';
 import {
   EMPTY_DISPLAY_SPEC,
   applyPossessiveSuffix,
+  entityKindSupportsVernacularGloss,
   entityLikeFromNameEntries,
   familyAndGivenOf,
   formatDates,
@@ -161,6 +162,7 @@ describe('possessiveStyleForLang', () => {
 describe('renderEntityFromSpec', () => {
   const familyInBrackets: EntityDisplaySpec = {
     hidden: [],
+    extraParts: [],
     bracketsAround: 'family',
     possessive: false,
     titleConvention: null,
@@ -444,6 +446,71 @@ describe('non-person kinds render a single name part, not family/given', () => {
     );
   });
 
+  test('office with a gloss defaults to translation only (no pinyin or characters)', () => {
+    const withGloss = office({
+      names: [
+        { lang: 'zh-Hant', text: '平北將軍' },
+        { lang: 'zh-Latn', text: 'Pingbeijiangjun' },
+      ],
+      primaryName: '平北將軍',
+      romanizedName: 'Pingbeijiangjun',
+      translations: [{ lang: 'en', text: 'General Who Pacifies the North' }],
+    });
+    expect(renderEntityFromSpec(withGloss, 1, EMPTY_DISPLAY_SPEC, ENGLISH_DEFAULTS, 'en')).toBe(
+      'General Who Pacifies the North',
+    );
+    expect(renderEntityFromSpec(withGloss, 2, EMPTY_DISPLAY_SPEC, ENGLISH_DEFAULTS, 'en')).toBe(
+      'General Who Pacifies the North',
+    );
+  });
+
+  test('office gloss can reveal pinyin via extraParts', () => {
+    const withGloss = office({
+      names: [
+        { lang: 'zh-Hant', text: '平北將軍' },
+        { lang: 'zh-Latn', text: 'Pingbeijiangjun' },
+      ],
+      primaryName: '平北將軍',
+      romanizedName: 'Pingbeijiangjun',
+      translations: [{ lang: 'en', text: 'General Who Pacifies the North' }],
+    });
+    const revealed: EntityDisplaySpec = {
+      ...EMPTY_DISPLAY_SPEC,
+      extraParts: ['name', 'chinese'],
+    };
+    expect(renderEntityFromSpec(withGloss, 1, revealed, ENGLISH_DEFAULTS, 'en')).toBe(
+      'General Who Pacifies the North Pingbeijiangjun 平北將軍',
+    );
+  });
+
+  test('office romanization-first override keeps pinyin when a gloss exists', () => {
+    const withGloss = office({
+      names: [
+        { lang: 'zh-Hant', text: '平北將軍' },
+        { lang: 'zh-Latn', text: 'Pingbeijiangjun' },
+      ],
+      primaryName: '平北將軍',
+      romanizedName: 'Pingbeijiangjun',
+      translations: [{ lang: 'en', text: 'General Who Pacifies the North' }],
+    });
+    const romanized: EntityDisplaySpec = {
+      ...EMPTY_DISPLAY_SPEC,
+      titleConvention: 'romanization-first',
+    };
+    expect(renderEntityFromSpec(withGloss, 1, romanized, ENGLISH_DEFAULTS, 'en')).toBe(
+      'Pingbeijiangjun 平北將軍 (General Who Pacifies the North)',
+    );
+  });
+
+  test('office English gloss is usable when the pane language is French', () => {
+    const withEnOnly = office({
+      translations: [{ lang: 'en', text: 'General Who Pacifies the North' }],
+    });
+    expect(renderEntityFromSpec(withEnOnly, 1, EMPTY_DISPLAY_SPEC, ENGLISH_DEFAULTS, 'fr')).toBe(
+      'General Who Pacifies the North',
+    );
+  });
+
   test('office with no classification renders just the name', () => {
     expect(renderEntityFromSpec(office(), 1, EMPTY_DISPLAY_SPEC, ENGLISH_DEFAULTS)).toBe(
       'Prefect of Jiankang',
@@ -455,6 +522,17 @@ describe('non-person kinds render a single name part, not family/given', () => {
       'Book of Song (488)',
     );
     expect(renderEntityFromSpec(work(), 2, EMPTY_DISPLAY_SPEC, ENGLISH_DEFAULTS)).toBe('Book of Song');
+  });
+});
+
+describe('entityKindSupportsVernacularGloss', () => {
+  test('persons and places never get vernacular gloss UI; titles and labels do', () => {
+    expect(entityKindSupportsVernacularGloss('person')).toBe(false);
+    expect(entityKindSupportsVernacularGloss('place')).toBe(false);
+    expect(entityKindSupportsVernacularGloss('work')).toBe(true);
+    expect(entityKindSupportsVernacularGloss('office')).toBe(true);
+    expect(entityKindSupportsVernacularGloss('org')).toBe(true);
+    expect(entityKindSupportsVernacularGloss(null)).toBe(false);
   });
 });
 

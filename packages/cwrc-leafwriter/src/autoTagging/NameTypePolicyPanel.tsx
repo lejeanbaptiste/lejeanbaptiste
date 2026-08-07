@@ -10,6 +10,7 @@ import {
   Typography,
 } from '@mui/material';
 import { useCallback, useEffect, useRef, useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import { ToggleButtonGroup } from '../components/ToggleButtonGroup';
 import {
   defaultPolicyForLanguage,
@@ -20,11 +21,7 @@ import {
 import { ALL_NAME_TYPES, type NameTypeId } from './nameTypes';
 import { nameTypeLabel } from './nameTypeLabels';
 
-const BUCKET_OPTIONS: { value: NameTypeTaggingBucket; label: string }[] = [
-  { value: 'phase1', label: 'Phase 1' },
-  { value: 'phase2', label: 'Phase 2' },
-  { value: 'never', label: 'Never' },
-];
+const BUCKET_VALUES: NameTypeTaggingBucket[] = ['phase1', 'phase2', 'never'];
 
 function builtInBucketsFromPolicy(
   buckets: Record<string, NameTypeTaggingBucket>,
@@ -38,10 +35,12 @@ const BucketSelector = ({
   value,
   onChange,
   ariaLabel,
+  labels,
 }: {
   value: NameTypeTaggingBucket;
   onChange: (bucket: NameTypeTaggingBucket) => void;
   ariaLabel: string;
+  labels: Record<NameTypeTaggingBucket, string>;
 }) => (
   <ToggleButtonGroup
     exclusive
@@ -52,9 +51,9 @@ const BucketSelector = ({
     }}
     aria-label={ariaLabel}
   >
-    {BUCKET_OPTIONS.map((option) => (
-      <ToggleButton key={option.value} value={option.value} sx={{ px: 1, py: 0.25, fontSize: '0.75rem' }}>
-        {option.label}
+    {BUCKET_VALUES.map((bucket) => (
+      <ToggleButton key={bucket} value={bucket} sx={{ px: 1, py: 0.25, fontSize: '0.75rem' }}>
+        {labels[bucket]}
       </ToggleButton>
     ))}
   </ToggleButtonGroup>
@@ -83,6 +82,7 @@ export const NameTypePolicyPanel = ({
   /** Draft language from the open project-settings form (overrides loaded language for labels/reset). */
   sourceLanguage?: string | null;
 }) => {
+  const { t } = useTranslation();
   const [loaded, setLoaded] = useState(false);
   const [loadedSourceLanguage, setLoadedSourceLanguage] = useState<string | null>(null);
   const [buckets, setBuckets] = useState<Record<NameTypeId, NameTypeTaggingBucket>>(
@@ -98,6 +98,12 @@ export const NameTypePolicyPanel = ({
 
   const sourceLanguage =
     sourceLanguageOverride !== undefined ? sourceLanguageOverride : loadedSourceLanguage;
+
+  const bucketLabels: Record<NameTypeTaggingBucket, string> = {
+    phase1: t('LW.nameTypePolicy.phase1'),
+    phase2: t('LW.nameTypePolicy.phase2'),
+    never: t('LW.nameTypePolicy.never'),
+  };
 
   const persist = useCallback(
     async (next: {
@@ -165,16 +171,20 @@ export const NameTypePolicyPanel = ({
     const id = newCustomId.trim();
     const label = newCustomLabel.trim();
     const idError = validateCustomNameTypeId(id);
-    if (idError) {
-      setCustomFormError(idError);
+    if (idError === 'invalid_slug') {
+      setCustomFormError(t('LW.nameTypePolicy.errors.invalid_slug'));
+      return;
+    }
+    if (idError === 'shadows_builtin') {
+      setCustomFormError(t('LW.nameTypePolicy.errors.shadows_builtin', { id }));
       return;
     }
     if (!label) {
-      setCustomFormError('Label is required.');
+      setCustomFormError(t('LW.nameTypePolicy.errors.label_required'));
       return;
     }
     if (customTypes.some((entry) => entry.id === id)) {
-      setCustomFormError(`A custom type with id "${id}" already exists.`);
+      setCustomFormError(t('LW.nameTypePolicy.errors.id_exists', { id }));
       return;
     }
     const entry: CustomNameType = { id, label, bucket: newCustomBucket };
@@ -196,55 +206,56 @@ export const NameTypePolicyPanel = ({
     <Box sx={{ display: 'flex', flexDirection: 'column', alignItems: 'stretch' }}>
       <Stack spacing={1.25} width="100%">
         <Box>
-          <Typography variant="subtitle2">Name types for auto-tagging</Typography>
+          <Typography variant="subtitle2">{t('LW.nameTypePolicy.title')}</Typography>
           <Typography variant="caption" color="text.secondary" component="p" sx={{ mt: 0.25 }}>
-            Phase 1 = first Tag bomb pass. Phase 2 = short-form pass after people are linked. Never =
-            stored but never auto-tagged (e.g. family names).
+            {t('LW.nameTypePolicy.intro')}
           </Typography>
         </Box>
 
         {showPrimaryWarning && (
           <Alert severity="warning" sx={{ py: 0.25 }}>
-            Primary names are usually tagged in Phase 1. Setting Primary to Phase 2 or Never may leave
-            many person mentions untagged on the first pass.
+            {t('LW.nameTypePolicy.primary_warning')}
           </Alert>
         )}
 
-        {ALL_NAME_TYPES.map((type) => (
-          <Stack
-            key={type}
-            direction="row"
-            alignItems="flex-start"
-            justifyContent="space-between"
-            gap={1}
-          >
-            <Box sx={{ minWidth: 0, flex: 1 }}>
-              <Typography variant="body2">{nameTypeLabel(type, sourceLanguage)}</Typography>
-              {type === 'art' && buckets.art !== 'never' && (
-                <Typography variant="caption" color="text.secondary" component="p">
-                  Length-gated: short art names go to Phase 2 (≥ {artMinCodePoints} code points → Phase
-                  1)
-                </Typography>
-              )}
-            </Box>
-            <BucketSelector
-              value={buckets[type]}
-              onChange={(bucket) => updateBuiltInBucket(type, bucket)}
-              ariaLabel={`${nameTypeLabel(type, sourceLanguage)} auto-tagging phase`}
-            />
-          </Stack>
-        ))}
+        {ALL_NAME_TYPES.map((type) => {
+          const typeLabel = nameTypeLabel(type, sourceLanguage);
+          return (
+            <Stack
+              key={type}
+              direction="row"
+              alignItems="flex-start"
+              justifyContent="space-between"
+              gap={1}
+            >
+              <Box sx={{ minWidth: 0, flex: 1 }}>
+                <Typography variant="body2">{typeLabel}</Typography>
+                {type === 'art' && buckets.art !== 'never' && (
+                  <Typography variant="caption" color="text.secondary" component="p">
+                    {t('LW.nameTypePolicy.art_length_hint', { count: artMinCodePoints })}
+                  </Typography>
+                )}
+              </Box>
+              <BucketSelector
+                value={buckets[type]}
+                onChange={(bucket) => updateBuiltInBucket(type, bucket)}
+                ariaLabel={t('LW.nameTypePolicy.bucket_aria', { label: typeLabel })}
+                labels={bucketLabels}
+              />
+            </Stack>
+          );
+        })}
 
         <Button size="small" variant="text" sx={{ alignSelf: 'flex-start' }} onClick={handleResetToPreset}>
-          Reset to language preset
+          {t('LW.nameTypePolicy.reset_preset')}
         </Button>
 
         <Box>
           <Typography variant="subtitle2" sx={{ mb: 0.5 }}>
-            Custom name types
+            {t('LW.nameTypePolicy.custom_title')}
           </Typography>
           <Typography variant="caption" color="text.secondary" component="p" sx={{ mb: 1 }}>
-            Project-specific types (ASCII id slug). They follow the same Phase 1 / Phase 2 / Never rules.
+            {t('LW.nameTypePolicy.custom_intro')}
           </Typography>
 
           {customTypes.length > 0 && (
@@ -267,11 +278,12 @@ export const NameTypePolicyPanel = ({
                     <BucketSelector
                       value={entry.bucket}
                       onChange={(bucket) => updateCustomBucket(entry.id, bucket)}
-                      ariaLabel={`${entry.label} auto-tagging phase`}
+                      ariaLabel={t('LW.nameTypePolicy.bucket_aria', { label: entry.label })}
+                      labels={bucketLabels}
                     />
                     <IconButton
                       size="small"
-                      aria-label={`Remove custom type ${entry.label}`}
+                      aria-label={t('LW.nameTypePolicy.remove_custom', { label: entry.label })}
                       onClick={() => deleteCustomType(entry.id)}
                     >
                       <DeleteOutlineIcon fontSize="small" />
@@ -286,8 +298,8 @@ export const NameTypePolicyPanel = ({
             <Stack direction={{ xs: 'column', sm: 'row' }} spacing={1}>
               <TextField
                 size="small"
-                label="Id"
-                placeholder="my_alias"
+                label={t('LW.nameTypePolicy.id_label')}
+                placeholder={t('LW.nameTypePolicy.id_placeholder')}
                 value={newCustomId}
                 onChange={(event) => {
                   setNewCustomId(event.target.value);
@@ -297,8 +309,8 @@ export const NameTypePolicyPanel = ({
               />
               <TextField
                 size="small"
-                label="Label"
-                placeholder="Display label"
+                label={t('LW.nameTypePolicy.label_label')}
+                placeholder={t('LW.nameTypePolicy.label_placeholder')}
                 value={newCustomLabel}
                 onChange={(event) => {
                   setNewCustomLabel(event.target.value);
@@ -311,10 +323,11 @@ export const NameTypePolicyPanel = ({
               <BucketSelector
                 value={newCustomBucket}
                 onChange={setNewCustomBucket}
-                ariaLabel="New custom type auto-tagging phase"
+                ariaLabel={t('LW.nameTypePolicy.new_custom_bucket_aria')}
+                labels={bucketLabels}
               />
               <Button size="small" variant="outlined" onClick={handleAddCustomType}>
-                Add custom type
+                {t('LW.nameTypePolicy.add_custom')}
               </Button>
             </Stack>
             {customFormError && (

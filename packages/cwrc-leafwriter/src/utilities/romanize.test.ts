@@ -81,6 +81,8 @@ describe('autoRomanizeForKind', () => {
   it('concatenates work / org / office titles', () => {
     expect(autoRomanizeForKind('晉書', 'zh-Hant', 'work')).toBe('Jinshu');
     expect(autoRomanizeForKind('道德經', 'zh-Hant', 'work')).toBe('Daodejing');
+    // Not person-style "Ping Beijiangjun".
+    expect(autoRomanizeForKind('平北將軍', 'zh-Hant', 'office')).toBe('Pingbeijiangjun');
   });
 
   it('splits place admin suffixes as a lowercase trailing word', () => {

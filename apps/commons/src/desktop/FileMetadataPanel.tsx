@@ -20,6 +20,7 @@ import {
   pushXmlToActiveEditor,
   readFileMetadataFromXml,
 } from '@src/desktop/fileMetadata';
+import { localizeMetadataFieldLabel } from '@src/desktop/metadataFieldLabels';
 import {
   readMetadataFieldsTemplate,
   resolveFileMetadataFields,
@@ -184,7 +185,7 @@ const TeiSourceFields = ({
           }
           label={
             <Typography color="text.secondary" variant="caption">
-              Uncertain date (not before / not after)
+              {t('LWC.desktop.file_metadata.uncertain_date')}
             </Typography>
           }
         />
@@ -529,8 +530,7 @@ export const FileMetadataPanel = ({ visible = true }: { visible?: boolean }) => 
     return (
       <Paper elevation={0} square sx={{ height: '100%', p: 2 }}>
         <Typography color="text.secondary" variant="body2">
-          Per-file metadata is available for TEI and Orlando documents with a header. Edition-wide
-          defaults are in Project → Edition metadata….
+          {t('LWC.desktop.file_metadata.unsupported_schema')}
         </Typography>
       </Paper>
     );
@@ -566,23 +566,28 @@ export const FileMetadataPanel = ({ visible = true }: { visible?: boolean }) => 
             />
           </>
         ) : (
-          metadataFields.map((field) => (
-            <TextField
-              key={field.path}
-              disabled={readonly}
-              fullWidth
-              label={field.label}
-              minRows={field.multiline || field.label === 'Source' ? 3 : undefined}
-              multiline={Boolean(field.multiline) || field.label === 'Source'}
-              onChange={(event) => handleFieldChange(field.path, event.target.value)}
-              size="small"
-              value={values[field.path] ?? ''}
-            />
-          ))
+          metadataFields.map((field) => {
+            const label = localizeMetadataFieldLabel(field.path, field.label, t);
+            const isSource =
+              field.path === 'sourceDesc/p' || field.path === 'FILEDESC/SOURCEDESC';
+            return (
+              <TextField
+                key={field.path}
+                disabled={readonly}
+                fullWidth
+                label={label}
+                minRows={field.multiline || isSource ? 3 : undefined}
+                multiline={Boolean(field.multiline) || isSource}
+                onChange={(event) => handleFieldChange(field.path, event.target.value)}
+                size="small"
+                value={values[field.path] ?? ''}
+              />
+            );
+          })
         )}
         <Box>
           <Typography color="text.secondary" variant="caption">
-            Project-wide defaults: Project → Edition metadata…
+            {t('LWC.desktop.file_metadata.project_defaults_hint')}
           </Typography>
         </Box>
       </Stack>

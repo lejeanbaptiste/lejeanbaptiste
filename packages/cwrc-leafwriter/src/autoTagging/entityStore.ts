@@ -352,6 +352,7 @@ export interface EntityFileApi {
       startYear?: number | null;
       endYear?: number | null;
     }>;
+    clearAuthorityVitalSources?: string[];
     nationalities?: Array<{ label: string; ref?: string | null; source: string }>;
     origins?: Array<{
       label: string;
@@ -1089,6 +1090,7 @@ export class EntityStore {
       startYear?: number | null;
       endYear?: number | null;
     }>;
+    clearAuthorityVitalSources?: string[];
     nationalities?: Array<{ label: string; ref?: string | null; source: string }>;
     origins?: Array<{
       label: string;

@@ -59,6 +59,7 @@ import {
   autoRomanizeForKind,
   canAutoRomanize,
 } from '../../../../packages/cwrc-leafwriter/src/utilities/romanize';
+import { persistOfficeTranslationNames } from '../../../../packages/cwrc-leafwriter/src/autoTagging/officeGlossLookup';
 
 /** An entity-backed value: a name plus either an authority ref (URI) or a local-only key (entities.xml id). */
 export interface EntityLookupValue {
@@ -350,15 +351,17 @@ export const EntityLookupField = ({
         );
       }
       const typedNames = await collectTypedNamesForCandidate(merged).catch(() => undefined);
-      const givenFamilyNames = await collectGivenFamilyNamesForCandidate(
-        merged,
-        session.projectLang,
-      ).catch(() => undefined);
+      const givenFamilyNames =
+        kind === 'person'
+          ? await collectGivenFamilyNamesForCandidate(merged, session.projectLang).catch(
+              () => undefined,
+            )
+          : undefined;
       const { id: resolvedId } = await mintOrLinkEntitySqlite(session.store, {
         kind,
         name: merged.projectLangName ?? merged.label,
-        familyName: givenFamilyNames?.familyName,
-        givenName: givenFamilyNames?.givenName,
+        familyName: kind === 'person' ? givenFamilyNames?.familyName : undefined,
+        givenName: kind === 'person' ? givenFamilyNames?.givenName : undefined,
         nameLang: session.projectLang ?? undefined,
         romanizedName:
           merged.romanizedName ??
@@ -386,6 +389,14 @@ export const EntityLookupField = ({
           language: typed.lang,
           origin: 'authority',
           source: merged.authorityIds?.[0]?.type,
+        });
+      }
+      if (kind === 'office') {
+        await persistOfficeTranslationNames(session.store, resolvedId, {
+          translation: merged.authorityMetadata?.translation,
+          translationFr: merged.authorityMetadata?.translationFr,
+          enSource: merged.authorityIds?.[0]?.type ?? 'Huckbot5000',
+          frSource: 'MaxiRicci7000',
         });
       }
       await autoSyncEntityToCentral(null, resolvedId);
@@ -445,11 +456,11 @@ export const EntityLookupField = ({
         romanizedName:
           romanizedName ||
           (kind === 'person'
-            ? suggestPersonRomanization(name, session.projectLang) ?? undefined
-            : undefined),
+            ? (suggestPersonRomanization(name, session.projectLang) ?? undefined)
+            : (autoRomanizeForKind(name, session.projectLang, kind) ?? undefined)),
         description,
-        familyName: split?.familyName,
-        givenName: split?.givenName,
+        familyName: kind === 'person' ? split?.familyName : undefined,
+        givenName: kind === 'person' ? split?.givenName : undefined,
       });
       await autoSyncEntityToCentral(null, id);
       setValue({ name, key: id });

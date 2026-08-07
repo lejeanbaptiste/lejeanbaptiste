@@ -612,20 +612,19 @@ export const tinymceWrapperInit = function ({
     writer.isTextLocked === true || Boolean(window.__desktopTagging?.isPopupOpen?.());
 
   /**
-   * Chromium refuses to cancel `insertCompositionText`, so Lock text must take
-   * contenteditable away. Tagging still works: keydown capture listeners remain.
+   * Keep contenteditable=true even while locked, so the caret and arrow-key
+   * navigation keep working — only mark the body for CSS. The actual edit
+   * blocking is done by the beforeinput/paste/composition guards below
+   * (mirrors TinyMCE's own readonly-mode approach). Tagging still works:
+   * keydown capture listeners remain.
    */
   const applyTextLockDomGuard = () => {
     const body = writer.editor?.getBody();
     if (!body || writer.isReadOnly === true) return;
+    body.contentEditable = 'true';
     if (writer.isTextLocked === true) {
-      // contenteditable=false is the only reliable Chromium IME block.
-      // Keep the body focusable so Enter/F2 tagging shortcuts still work.
-      body.contentEditable = 'false';
-      body.setAttribute('tabindex', '0');
       body.setAttribute('data-ljb-text-locked', 'true');
     } else {
-      body.contentEditable = 'true';
       body.removeAttribute('data-ljb-text-locked');
     }
   };
@@ -849,21 +848,6 @@ export const tinymceWrapperInit = function ({
             }
             blockedCompositionSnapshot = editor.getContent({ format: 'raw' });
             event.preventDefault();
-            // contenteditable=false should stop IME; if composition still began
-            // (race / popup-open path), blur to force the IME to abort.
-            if (writer.isTextLocked === true) {
-              const bookmark = editor.selection.getBookmark(2);
-              body.blur();
-              window.setTimeout(() => {
-                applyTextLockDomGuard();
-                editor.focus();
-                try {
-                  editor.selection.moveToBookmark(bookmark);
-                } catch {
-                  // Selection may be gone if the IME already replaced it.
-                }
-              }, 0);
-            }
           },
           true,
         );
@@ -878,6 +862,16 @@ export const tinymceWrapperInit = function ({
             editor.undoManager.ignore(() => {
               editor.setContent(snapshot, { format: 'raw' });
             });
+          },
+          true,
+        );
+        // Now that contenteditable stays true while locked, native drag-and-drop
+        // insertion into the body is otherwise possible; block it explicitly
+        // (beforeinput's insertFromDrop covers Chromium, but not all browsers).
+        body.addEventListener(
+          'drop',
+          (event: DragEvent) => {
+            if (shouldBlockEditorTextInput()) event.preventDefault();
           },
           true,
         );
@@ -1363,7 +1357,7 @@ export const tinymceWrapperInit = function ({
 
   const shouldBlockWhenTextLocked = (event: KeyboardEvent): boolean => {
     if (writer.isTextLocked !== true) return false;
-    // Composition is blocked by contenteditable=false + composition guards below.
+    // Composition (IME) is blocked by the beforeinput/composition guards above.
     if (NAVIGATION_KEYS.has(event.code)) return false;
 
     const mod = tinymce.Env.os.isMacOS() ? event.metaKey : event.ctrlKey;

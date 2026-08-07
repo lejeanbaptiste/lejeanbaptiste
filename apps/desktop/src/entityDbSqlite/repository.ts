@@ -381,7 +381,9 @@ export interface AuthorityBackfillPatch {
   /**
    * When true, withdraw active origin=authority family/given name rows that are
    * not in this patch, and force people.family_name / given_name from the patch
-   * (empty/null clears unvalidated scalars). Never touches origin=user rows.
+   * when the patch carries a positive family or given. Empty patches no longer
+   * clear or tombstone existing splits (that was wiping CBDB 姓/名 on card
+   * refresh when the reference DB was missing). Never touches origin=user rows.
    */
   rewriteUnvalidatedPersonNames?: boolean;
   /** Set only when the entity has no Latin-script name yet. */
@@ -391,6 +393,11 @@ export interface AuthorityBackfillPatch {
     startYear?: number | null;
     endYear?: number | null;
   }>;
+  /**
+   * Delete active authority birth/death rows for these sources (e.g. CBDB
+   * floruit/nationality years that were wrongly minted as vitals).
+   */
+  clearAuthorityVitalSources?: string[];
   nationalities?: Array<{ label: string; ref?: string | null; source: string }>;
   origins?: Array<{
     label: string;
@@ -756,7 +763,8 @@ function assemblePanelSummary(
   const firstDate = (kind: string) =>
     activeDates.find((date) => date.date_kind === kind) as Record<string, unknown> | undefined;
   // Prefer a non-sentinel year: skip CBDB/legacy `0`, and prefer user rows that
-  // are real years, then authority rows (Wikidata/CBDB before others).
+  // are real years, then authority rows. DILA before CBDB so TEI birth/death
+  // beat dynasty-span rows that older mints stored under CBDB.
   const preferredVitalYear = (kind: 'birth' | 'death'): number | null => {
     const rows = activeDates.filter((date) => date.date_kind === kind) as Record<string, unknown>[];
     const yearOf = (row: Record<string, unknown>) => {
@@ -765,7 +773,7 @@ function assemblePanelSummary(
     };
     const user = rows.find((row) => row.origin === 'user' && yearOf(row) != null);
     if (user) return yearOf(user);
-    const preferredSources = ['WIKIDATA', 'CBDB', 'DILA', 'NORBERT'];
+    const preferredSources = ['WIKIDATA', 'DILA', 'CBDB', 'NORBERT'];
     for (const source of preferredSources) {
       const hit = rows.find(
         (row) =>
@@ -822,8 +830,11 @@ function assemblePanelSummary(
     names: [...names, ...translations.map(translationAsDisplayName)],
     translations,
     authorities,
-    familyName: bags.person?.family_name ?? familyFromNames,
-    givenName: bags.person?.given_name ?? givenFromNames,
+    // 姓/名 are person-only. Offices/places/orgs sometimes inherit polluted
+    // family/given name rows from older mint paths — never surface them here.
+    familyName:
+      entity.kind === 'person' ? (bags.person?.family_name ?? familyFromNames) : null,
+    givenName: entity.kind === 'person' ? (bags.person?.given_name ?? givenFromNames) : null,
     startYear: entity.kind === 'work' ? (workDate?.startYear ?? null) : fallbackStartYear,
     endYear: entity.kind === 'work' ? (workDate?.endYear ?? null) : fallbackEndYear,
     workDate,
@@ -4113,7 +4124,38 @@ export class EntitySqliteRepository {
           continue;
         }
         if (existing.length > 0) {
-          // Tombstoned (or withdrawn) name with same text — do not resurrect.
+          // User-rejected names stay dead. Withdrawn family/given (mirror sync or
+          // an empty rewrite pass) may be restored when authority refresh asserts them.
+          const canRestoreSplit = nameType === 'family' || nameType === 'given';
+          const withdrawn = canRestoreSplit
+            ? existing.find((row) => row.status === 'withdrawn')
+            : undefined;
+          if (withdrawn && !existing.some((row) => row.status === 'active')) {
+            this.db
+              .prepare(
+                `UPDATE entity_names
+                 SET status = 'active', name_type = ?, name_role = ?, origin = 'authority',
+                     source = COALESCE(?, source), language = COALESCE(?, language), updated_at = ?
+                 WHERE id = ?`,
+              )
+              .run(
+                nameType,
+                nameType,
+                name.source?.trim() || null,
+                name.language ?? null,
+                now,
+                withdrawn.id,
+              );
+            this.db
+              .prepare(
+                `DELETE FROM entity_tombstones
+                 WHERE entity_id = ? AND table_name = 'entity_names' AND row_id = ?`,
+              )
+              .run(patch.entityId, withdrawn.id);
+            namesAdded += 1;
+            changed = true;
+            continue;
+          }
           continue;
         }
         const nameRole = nameType === 'family' || nameType === 'given' ? nameType : 'variant';
@@ -4143,6 +4185,20 @@ export class EntitySqliteRepository {
         changed = true;
       }
 
+      for (const source of patch.clearAuthorityVitalSources ?? []) {
+        const normalizedSource = source.trim().toUpperCase();
+        if (!normalizedSource) continue;
+        const removed = this.db
+          .prepare(
+            `DELETE FROM entity_dates
+             WHERE entity_id = ? AND origin = 'authority'
+               AND date_kind IN ('birth', 'death')
+               AND UPPER(COALESCE(source, '')) = ?`,
+          )
+          .run(patch.entityId, normalizedSource);
+        if (removed.changes > 0) changed = true;
+      }
+
       if (entity.kind === 'person') {
         const person = this.db
           .prepare('SELECT family_name, given_name FROM people WHERE entity_id = ?')
@@ -4160,8 +4216,13 @@ export class EntitySqliteRepository {
             .map((name) => name.text.trim())
             .filter(Boolean),
         );
+        const nextFamily = patch.familyName?.trim() || null;
+        const nextGiven = patch.givenName?.trim() || null;
+        const hasPositivePersonSplit = Boolean(
+          nextFamily || nextGiven || familyVariants.size > 0 || givenVariants.size > 0,
+        );
 
-        if (patch.rewriteUnvalidatedPersonNames) {
+        if (patch.rewriteUnvalidatedPersonNames && hasPositivePersonSplit) {
           const authorityNameRows = this.db
             .prepare(
               `SELECT id, text, name_type, name_role, origin FROM entity_names
@@ -4185,9 +4246,9 @@ export class EntitySqliteRepository {
             if (!text) continue;
             const keep =
               type === 'family'
-                ? familyVariants.has(text)
+                ? familyVariants.has(text) || text === nextFamily
                 : type === 'given'
-                  ? givenVariants.has(text)
+                  ? givenVariants.has(text) || text === nextGiven
                   : true;
             if (keep) continue;
             this.db
@@ -4218,59 +4279,86 @@ export class EntitySqliteRepository {
             )
             .get(patch.entityId, person?.given_name?.trim() || '') as { 1?: number } | undefined;
 
-          const nextFamily = patch.familyName?.trim() || null;
-          const nextGiven = patch.givenName?.trim() || null;
           const currentFamily = person?.family_name?.trim() || null;
           const currentGiven = person?.given_name?.trim() || null;
 
-          if (!userValidatedFamily && currentFamily !== nextFamily) {
-            if (nextFamily) {
-              const hasName = this.db
+          const ensureSplitNameRow = (text: string, type: 'family' | 'given') => {
+            const rows = this.db
+              .prepare(
+                `SELECT id, status FROM entity_names
+                 WHERE entity_id = ? AND text = ?
+                 ORDER BY CASE status WHEN 'active' THEN 0 WHEN 'withdrawn' THEN 1 ELSE 2 END, id`,
+              )
+              .all(patch.entityId, text) as Array<{ id: number; status: string }>;
+            const active = rows.find((row) => row.status === 'active');
+            if (active) return;
+            const withdrawn = rows.find((row) => row.status === 'withdrawn');
+            if (withdrawn) {
+              this.db
                 .prepare(
-                  `SELECT 1 FROM entity_names WHERE entity_id = ? AND text = ? AND status = 'active'`,
+                  `UPDATE entity_names
+                   SET status = 'active', name_type = ?, name_role = ?, origin = 'authority',
+                       updated_at = ?
+                   WHERE id = ?`,
                 )
-                .get(patch.entityId, nextFamily);
-              if (!hasName) {
-                this.db
-                  .prepare(
-                    `INSERT INTO entity_names
-                       (entity_id, text, name_type, name_role, language, is_primary, origin, source, status, created_at, updated_at)
-                     VALUES (?, ?, 'family', 'family', NULL, 0, 'authority', NULL, 'active', ?, ?)`,
-                  )
-                  .run(patch.entityId, nextFamily, now, now);
-                namesAdded += 1;
-              }
+                .run(type, type, now, withdrawn.id);
+              this.db
+                .prepare(
+                  `DELETE FROM entity_tombstones
+                   WHERE entity_id = ? AND table_name = 'entity_names' AND row_id = ?`,
+                )
+                .run(patch.entityId, withdrawn.id);
+              namesAdded += 1;
+              return;
             }
             this.db
-              .prepare('UPDATE people SET family_name = ? WHERE entity_id = ?')
-              .run(nextFamily, patch.entityId);
-            changed = true;
+              .prepare(
+                `INSERT INTO entity_names
+                   (entity_id, text, name_type, name_role, language, is_primary, origin, source, status, created_at, updated_at)
+                 VALUES (?, ?, ?, ?, NULL, 0, 'authority', NULL, 'active', ?, ?)`,
+              )
+              .run(patch.entityId, text, type, type, now, now);
+            namesAdded += 1;
+          };
+
+          if (!userValidatedFamily && nextFamily) {
+            const before = namesAdded;
+            ensureSplitNameRow(nextFamily, 'family');
+            if (currentFamily !== nextFamily) {
+              this.db
+                .prepare('UPDATE people SET family_name = ? WHERE entity_id = ?')
+                .run(nextFamily, patch.entityId);
+              changed = true;
+            } else if (namesAdded > before) {
+              changed = true;
+            }
           }
 
-          if (!userValidatedGiven && currentGiven !== nextGiven) {
-            if (nextGiven) {
-              const hasName = this.db
-                .prepare(
-                  `SELECT 1 FROM entity_names WHERE entity_id = ? AND text = ? AND status = 'active'`,
-                )
-                .get(patch.entityId, nextGiven);
-              if (!hasName) {
-                this.db
-                  .prepare(
-                    `INSERT INTO entity_names
-                       (entity_id, text, name_type, name_role, language, is_primary, origin, source, status, created_at, updated_at)
-                     VALUES (?, ?, 'given', 'given', NULL, 0, 'authority', NULL, 'active', ?, ?)`,
-                  )
-                  .run(patch.entityId, nextGiven, now, now);
-                namesAdded += 1;
-              }
+          if (!userValidatedGiven && nextGiven) {
+            const before = namesAdded;
+            ensureSplitNameRow(nextGiven, 'given');
+            if (currentGiven !== nextGiven) {
+              this.db
+                .prepare('UPDATE people SET given_name = ? WHERE entity_id = ?')
+                .run(nextGiven, patch.entityId);
+              changed = true;
+            } else if (namesAdded > before) {
+              changed = true;
             }
+          } else if (
+            !userValidatedGiven &&
+            !nextGiven &&
+            currentGiven &&
+            (nextFamily || familyVariants.size > 0)
+          ) {
+            // Authority split without a 名 (e.g. noble-title cleanup) clears an
+            // invented given scalar; empty patches never reach this branch.
             this.db
               .prepare('UPDATE people SET given_name = ? WHERE entity_id = ?')
-              .run(nextGiven, patch.entityId);
+              .run(null, patch.entityId);
             changed = true;
           }
-        } else {
+        } else if (!patch.rewriteUnvalidatedPersonNames) {
           if (patch.familyName?.trim()) {
             const text = patch.familyName.trim();
             const current = person?.family_name?.trim() || null;

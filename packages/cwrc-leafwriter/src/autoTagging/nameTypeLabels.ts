@@ -1,3 +1,4 @@
+import i18next from 'i18next';
 import { ALL_NAME_TYPES, normalizeNameType, type NameTypeId } from './nameTypes';
 
 /** English display labels for built-in name types (base text before any gloss). */
@@ -15,6 +16,14 @@ const ENGLISH_LABELS: Record<NameTypeId, string> = {
   romanization: 'Romanization',
   translation: 'Translation',
   variant: 'Variant',
+};
+
+/** UI-language base label; falls back to English when i18n has no entry. */
+const localizedBaseLabel = (id: NameTypeId): string => {
+  const english = ENGLISH_LABELS[id];
+  const key = `LW.nameTypes.${id}`;
+  const translated = i18next.t(key, { defaultValue: english });
+  return !translated || translated === key ? english : translated;
 };
 
 /**
@@ -67,9 +76,10 @@ function glossLanguage(lang?: string | null): 'zh' | 'ja' | 'bo' | null {
 }
 
 /**
- * Human-readable label for a name type in dropdowns. Built-ins use an English
- * base plus a local gloss when `lang` is zh, ja, or bo. Unknown/custom ids
- * pass through unchanged (or use an optional display label when provided).
+ * Human-readable label for a name type in dropdowns. Built-ins use a
+ * UI-language base (via i18n) plus a local gloss when project `lang` is zh,
+ * ja, or bo. Unknown/custom ids pass through unchanged (or use an optional
+ * display label when provided).
  */
 export function nameTypeLabel(
   type: string,
@@ -80,10 +90,10 @@ export function nameTypeLabel(
   if (!normalized) {
     return customDisplayLabel?.trim() || type;
   }
-  const english = ENGLISH_LABELS[normalized];
+  const base = localizedBaseLabel(normalized);
   const glossLang = glossLanguage(lang);
   const gloss = glossLang ? NAME_TYPE_GLOSSES[glossLang]?.[normalized] : undefined;
-  return gloss ? `${english} (${gloss})` : english;
+  return gloss ? `${base} (${gloss})` : base;
 }
 
 /** All built-in types with labels for the given project language. */

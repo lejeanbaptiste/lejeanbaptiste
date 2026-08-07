@@ -1,6 +1,14 @@
 import CloseIcon from '@mui/icons-material/Close';
 import { Box, IconButton, LinearProgress, Stack, Typography } from '@mui/material';
 import { useCallback, useRef, useSyncExternalStore } from 'react';
+import {
+  finishDatabaseJobProgress,
+  getDatabaseJobProgress,
+  startDatabaseJobProgress,
+  subscribeDatabaseJobProgress,
+  updateDatabaseJobProgress,
+  type DatabaseJobProgress,
+} from '../../../../../packages/cwrc-leafwriter/src/autoTagging/databaseJobProgress';
 
 export type BackgroundJobProgress = {
   label: string;
@@ -10,53 +18,14 @@ export type BackgroundJobProgress = {
   detail?: string;
 };
 
-type Listener = () => void;
-
-/**
- * External store for job progress so ticks re-render only the banner,
- * not the whole Database Window (entity list, cards, etc.).
- */
-function createJobStore() {
-  let job: BackgroundJobProgress | null = null;
-  const listeners = new Set<Listener>();
-  const emit = () => {
-    for (const listener of listeners) listener();
-  };
-  return {
-    subscribe(listener: Listener) {
-      listeners.add(listener);
-      return () => {
-        listeners.delete(listener);
-      };
-    },
-    getSnapshot() {
-      return job;
-    },
-    begin(label: string, total = 0) {
-      job = { label, done: 0, total };
-      emit();
-    },
-    update(patch: Partial<BackgroundJobProgress>) {
-      if (!job) return;
-      job = { ...job, ...patch };
-      emit();
-    },
-    end() {
-      job = null;
-      emit();
-    },
-  };
-}
-
-const jobStore = createJobStore();
-
 /**
  * Fixed bottom-right progress chip for long Database Window jobs
  * (scan / harvest / backfill). Non-modal so the rest of the UI stays usable.
+ * Progress also mirrors into the editor BottomBar via {@link databaseJobProgress}.
  */
 export const BackgroundJobBanner = ({ onCancel }: { onCancel?: () => void }) => {
-  const job = useSyncExternalStore(jobStore.subscribe, jobStore.getSnapshot);
-  if (!job) return null;
+  const job = useSyncExternalStore(subscribeDatabaseJobProgress, getDatabaseJobProgress);
+  if (!job.active) return null;
   const determinate = job.total > 0;
   const percent = determinate ? Math.min(100, (job.done / job.total) * 100) : undefined;
 
@@ -107,34 +76,42 @@ export const BackgroundJobBanner = ({ onCancel }: { onCancel?: () => void }) => 
   );
 };
 
-/** Hook: running flag for disabling buttons; progress lives in the external store. */
+/** Hook: running flag for disabling buttons; progress lives in the global store. */
 export function useBackgroundJob() {
   const abortRef = useRef<AbortController | null>(null);
   // Re-render parent only when a job starts or ends (not on every progress tick).
   const running = useSyncExternalStore(
-    jobStore.subscribe,
-    () => jobStore.getSnapshot() !== null,
+    subscribeDatabaseJobProgress,
+    () => getDatabaseJobProgress().active,
   );
 
   const beginJob = useCallback((label: string, total = 0) => {
     abortRef.current?.abort();
     const controller = new AbortController();
     abortRef.current = controller;
-    jobStore.begin(label, total);
+    // Cancel stays on the global store so the editor BottomBar can abort after
+    // DatabaseWindow unmounts when the user switches views.
+    startDatabaseJobProgress(label, () => controller.abort(), total);
     return controller;
   }, []);
 
   const updateJob = useCallback((patch: Partial<BackgroundJobProgress>) => {
-    jobStore.update(patch);
+    const next: Partial<Pick<DatabaseJobProgress, 'done' | 'total' | 'label' | 'detail'>> = {};
+    if (patch.done != null) next.done = patch.done;
+    if (patch.total != null) next.total = patch.total;
+    if (patch.label != null) next.label = patch.label;
+    if (patch.detail !== undefined) next.detail = patch.detail ?? '';
+    updateDatabaseJobProgress(next);
   }, []);
 
   const endJob = useCallback(() => {
     abortRef.current = null;
-    jobStore.end();
+    finishDatabaseJobProgress();
   }, []);
 
   const cancelJob = useCallback(() => {
     abortRef.current?.abort();
+    getDatabaseJobProgress().cancel?.();
   }, []);
 
   return { jobRunning: running, beginJob, updateJob, endJob, cancelJob };

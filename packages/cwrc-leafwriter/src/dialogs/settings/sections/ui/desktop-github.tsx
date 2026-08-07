@@ -1,5 +1,6 @@
 import { Alert, Box, Button, Collapse, ListItem, Stack, Typography } from '@mui/material';
 import { useEffect, useState } from 'react';
+import { useTranslation } from 'react-i18next';
 
 const getCommonsUiBridge = () =>
   (
@@ -15,6 +16,7 @@ const getCommonsUiBridge = () =>
   ).__ljbCommonsUi;
 
 export const DesktopGithub = () => {
+  const { t } = useTranslation();
   const bridge = getCommonsUiBridge();
   const [connected, setConnected] = useState(bridge?.githubConnected ?? false);
   const [connecting, setConnecting] = useState(false);
@@ -36,19 +38,22 @@ export const DesktopGithub = () => {
       const result = await bridge.connectGithub((userCode) => {
         setMessage({
           severity: 'success',
-          text: `GitHub opened in your browser. Enter the code ${userCode} to authorize LJB.`,
+          text: t('LW.settings.github.browser_code', { code: userCode }),
         });
       });
       if (result.ok) {
         setConnected(true);
-        setMessage({ severity: 'success', text: 'GitHub connected.' });
+        setMessage({ severity: 'success', text: t('LW.settings.github.connected') });
       } else {
-        setMessage({ severity: 'error', text: result.error ?? 'Could not connect to GitHub.' });
+        setMessage({
+          severity: 'error',
+          text: result.error ?? t('LW.settings.github.connect_failed'),
+        });
       }
     } catch (error) {
       setMessage({
         severity: 'error',
-        text: error instanceof Error ? error.message : 'Could not connect to GitHub.',
+        text: error instanceof Error ? error.message : t('LW.settings.github.connect_failed'),
       });
     } finally {
       setConnecting(false);
@@ -61,11 +66,11 @@ export const DesktopGithub = () => {
     try {
       await bridge.disconnectGithub();
       setConnected(false);
-      setMessage({ severity: 'success', text: 'GitHub disconnected.' });
+      setMessage({ severity: 'success', text: t('LW.settings.github.disconnected') });
     } catch (error) {
       setMessage({
         severity: 'error',
-        text: error instanceof Error ? error.message : 'Could not disconnect from GitHub.',
+        text: error instanceof Error ? error.message : t('LW.settings.github.disconnect_failed'),
       });
     } finally {
       setDisconnecting(false);
@@ -76,8 +81,7 @@ export const DesktopGithub = () => {
     <ListItem dense disableGutters sx={{ alignItems: 'flex-start', py: 0.25 }}>
       <Box sx={{ flex: 1, minWidth: 0 }}>
         <Typography color="text.secondary" sx={{ mb: 1 }} variant="caption">
-          Connect your GitHub account to publish leaderboard stats. LJB will also use this
-          connection for issue, pull request, and commit statistics.
+          {t('LW.settings.github.description')}
         </Typography>
         <Stack spacing={0.75}>
           <Stack alignItems="center" direction="row" spacing={1}>
@@ -87,7 +91,11 @@ export const DesktopGithub = () => {
               size="small"
               variant="contained"
             >
-              {connecting ? 'Connecting…' : connected ? 'Reconnect GitHub' : 'Connect GitHub'}
+              {connecting
+                ? t('LW.settings.github.connecting')
+                : connected
+                  ? t('LW.settings.github.reconnect')
+                  : t('LW.settings.github.connect')}
             </Button>
             {connected && (
               <Button
@@ -96,7 +104,9 @@ export const DesktopGithub = () => {
                 size="small"
                 variant="outlined"
               >
-                {disconnecting ? 'Disconnecting…' : 'Disconnect'}
+                {disconnecting
+                  ? t('LW.settings.github.disconnecting')
+                  : t('LW.settings.github.disconnect')}
               </Button>
             )}
           </Stack>

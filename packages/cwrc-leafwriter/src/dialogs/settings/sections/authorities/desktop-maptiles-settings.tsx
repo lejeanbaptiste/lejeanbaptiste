@@ -1,13 +1,11 @@
 import { Alert, Box, Button, CircularProgress, LinearProgress, ListItem, Stack, Typography } from '@mui/material';
 import { useCallback, useEffect, useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import {
   isConfiguredMapTileBundle,
   REGIONAL_BUNDLES,
   type MapTileBundleSpec,
 } from '../../../../autoTagging/mapView/regionalBundles';
-
-const MAP_TILES_ATTRIBUTION =
-  'Basemap data © OpenStreetMap contributors, made available under the Open Database License (ODbL), via Protomaps (protomaps.com).';
 
 type RegionStatus = { id: string; sha256: string; installedAt: string };
 type DownloadState = {
@@ -18,11 +16,15 @@ type DownloadState = {
 };
 
 export const DesktopMapTilesSettings = () => {
+  const { t, i18n } = useTranslation();
   const [regions, setRegions] = useState<RegionStatus[]>([]);
   const [busyId, setBusyId] = useState<string | null>(null);
   const [downloads, setDownloads] = useState<Record<string, DownloadState>>({});
   const [error, setError] = useState<{ id: string; text: string } | null>(null);
   const [completion, setCompletion] = useState<{ id: string; text: string; severity: 'success' | 'error' } | null>(null);
+
+  const regionLabel = (bundle: MapTileBundleSpec) =>
+    t(`LW.settings.map_tiles.regions.${bundle.id}`, { defaultValue: bundle.label });
 
   const refresh = useCallback(async () => {
     const status = await window.electronAPI?.mapTilesStatus?.();
@@ -62,16 +64,24 @@ export const DesktopMapTilesSettings = () => {
             return rest;
           });
           if (result.installed) {
-            setCompletion({ id: result.bundleId, text: 'Map tiles downloaded and ready for offline use.', severity: 'success' });
+            setCompletion({
+              id: result.bundleId,
+              text: t('LW.settings.map_tiles.download_ready'),
+              severity: 'success',
+            });
           } else {
-            setCompletion({ id: result.bundleId, text: result.error ?? 'Map tile download failed.', severity: 'error' });
+            setCompletion({
+              id: result.bundleId,
+              text: result.error ?? t('LW.settings.map_tiles.download_failed'),
+              severity: 'error',
+            });
           }
           void refresh();
         }),
       );
     }
     return () => disposers.forEach((dispose) => dispose());
-  }, [refresh]);
+  }, [refresh, t]);
 
   const handleDownload = async (bundle: MapTileBundleSpec) => {
     setError(null);
@@ -80,12 +90,15 @@ export const DesktopMapTilesSettings = () => {
     try {
       const result = await window.electronAPI?.mapTilesDownloadBackground?.(bundle);
       if (!result?.ok) {
-        setError({ id: bundle.id, text: result?.error ?? 'Map tile download is unavailable in this build.' });
+        setError({
+          id: bundle.id,
+          text: result?.error ?? t('LW.settings.map_tiles.download_unavailable'),
+        });
         setBusyId(null);
       } else {
         setCompletion({
           id: bundle.id,
-          text: 'Download started in the background. You’ll be notified when it finishes.',
+          text: t('LW.settings.map_tiles.download_started'),
           severity: 'success',
         });
       }
@@ -100,7 +113,12 @@ export const DesktopMapTilesSettings = () => {
     setBusyId(bundle.id);
     try {
       const result = await window.electronAPI?.mapTilesRemove?.(bundle.id);
-      if (!result?.ok) setError({ id: bundle.id, text: result?.error ?? 'Could not remove map tiles.' });
+      if (!result?.ok) {
+        setError({
+          id: bundle.id,
+          text: result?.error ?? t('LW.settings.map_tiles.remove_failed'),
+        });
+      }
       await refresh();
     } finally {
       setBusyId(null);
@@ -111,15 +129,14 @@ export const DesktopMapTilesSettings = () => {
     <ListItem sx={{ flexDirection: 'column', alignItems: 'stretch', px: 0, py: 1.5 }}>
       <Stack spacing={1.5} width="100%">
         <Box>
-          <Typography variant="subtitle2">Offline map tiles (optional)</Typography>
+          <Typography variant="subtitle2">{t('LW.settings.map_tiles.title')}</Typography>
           <Typography variant="body2" color="text.secondary">
-            Download a regional basemap for comparing place-name candidates on a map. Downloaded
-            once, used entirely offline afterward.
+            {t('LW.settings.map_tiles.description')}
           </Typography>
         </Box>
 
         <Alert severity="info" sx={{ py: 0.5 }}>
-          {MAP_TILES_ATTRIBUTION}
+          {t('LW.settings.map_tiles.attribution')}
         </Alert>
 
         {REGIONAL_BUNDLES.map((bundle) => {
@@ -127,17 +144,22 @@ export const DesktopMapTilesSettings = () => {
           const working = busyId === bundle.id;
           const download = downloads[bundle.id];
           const configured = isConfiguredMapTileBundle(bundle);
-          const determinate = typeof download?.receivedBytes === 'number' && typeof download?.totalBytes === 'number' && download.totalBytes > 0;
+          const determinate =
+            typeof download?.receivedBytes === 'number' &&
+            typeof download?.totalBytes === 'number' &&
+            download.totalBytes > 0;
           return (
             <Stack key={bundle.id} spacing={0.5}>
               <Stack direction="row" spacing={1} alignItems="center">
                 <Typography variant="body2" sx={{ minWidth: 90 }}>
-                  {bundle.label}
+                  {regionLabel(bundle)}
                 </Typography>
                 <Typography variant="caption" color="text.secondary" sx={{ flex: 1 }}>
                   {installed
-                    ? `installed · ${new Date(installed.installedAt).toLocaleDateString()}`
-                    : 'not installed'}
+                    ? t('LW.settings.map_tiles.installed', {
+                        date: new Date(installed.installedAt).toLocaleDateString(i18n.language),
+                      })
+                    : t('LW.settings.map_tiles.not_installed')}
                 </Typography>
                 <Button
                   size="small"
@@ -145,7 +167,11 @@ export const DesktopMapTilesSettings = () => {
                   disabled={working || !configured}
                   onClick={() => void handleDownload(bundle)}
                 >
-                  {installed ? 'Re-download' : configured ? 'Download' : 'Not configured'}
+                  {installed
+                    ? t('LW.settings.map_tiles.re_download')
+                    : configured
+                      ? t('LW.settings.map_tiles.download')
+                      : t('LW.settings.map_tiles.not_configured')}
                 </Button>
                 {installed && (
                   <Button
@@ -155,13 +181,13 @@ export const DesktopMapTilesSettings = () => {
                     disabled={working}
                     onClick={() => void handleRemove(bundle)}
                   >
-                    Remove
+                    {t('LW.settings.map_tiles.remove')}
                   </Button>
                 )}
               </Stack>
               {!configured && (
                 <Typography variant="caption" color="text.secondary">
-                  This bundle cannot be downloaded in the current desktop build.
+                  {t('LW.settings.map_tiles.not_configured_hint')}
                 </Typography>
               )}
               {working && (
@@ -170,7 +196,10 @@ export const DesktopMapTilesSettings = () => {
                     {determinate ? (
                       <LinearProgress
                         variant="determinate"
-                        value={Math.min(100, ((download?.receivedBytes ?? 0) / (download?.totalBytes ?? 1)) * 100)}
+                        value={Math.min(
+                          100,
+                          ((download?.receivedBytes ?? 0) / (download?.totalBytes ?? 1)) * 100,
+                        )}
                         sx={{ flex: 1, height: 4, borderRadius: 1 }}
                       />
                     ) : (
@@ -179,7 +208,7 @@ export const DesktopMapTilesSettings = () => {
                     <CircularProgress size={16} thickness={5} />
                   </Stack>
                   <Typography variant="caption" color="text.secondary">
-                    {download?.message ?? 'Working in the background…'}
+                    {download?.message ?? t('LW.settings.map_tiles.working')}
                     {determinate
                       ? ` ${Math.round(((download?.receivedBytes ?? 0) / (download?.totalBytes ?? 1)) * 100)}%`
                       : ''}

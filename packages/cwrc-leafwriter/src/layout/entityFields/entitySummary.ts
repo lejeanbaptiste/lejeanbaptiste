@@ -143,8 +143,16 @@ export const summaryFromSqlitePanel = (panel: SqlitePanelLike): EntitySummary =>
   const fromNames = activeNames
     .filter((name) => name.nameType === 'translation' && name.language && name.text?.trim())
     .map((name) => ({ lang: name.language!, text: name.text }));
-  // Prefer the dedicated table; fall back to legacy name rows still typed translation.
-  const translations = fromTable.length > 0 ? fromTable : fromNames;
+  // Union by language: dedicated table wins on conflict, names fill gaps
+  // (legacy rows, or editor merges that only appear in one place).
+  const translationsByLang = new Map<string, EntityTranslationEntry>();
+  for (const entry of [...fromNames, ...fromTable]) {
+    const lang = (entry.lang ?? '').trim();
+    const text = entry.text?.trim();
+    if (!lang || !text) continue;
+    translationsByLang.set(lang.toLowerCase().split(/[-_]/)[0]!, { lang, text });
+  }
+  const translations = [...translationsByLang.values()];
   return {
     id: panel.id,
     kind: panel.kind as EntityKind,

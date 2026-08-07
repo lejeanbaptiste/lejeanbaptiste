@@ -168,7 +168,7 @@ describe('filterCandidateForPhase1', () => {
 describe('validateCustomNameTypeId', () => {
   it('accepts ASCII slugs and rejects built-in shadowing', () => {
     expect(validateCustomNameTypeId('honorific')).toBeNull();
-    expect(validateCustomNameTypeId('Honorific')).toMatch(/ASCII slug/);
-    expect(validateCustomNameTypeId('courtesy')).toMatch(/shadows a built-in/);
+    expect(validateCustomNameTypeId('Honorific')).toBe('invalid_slug');
+    expect(validateCustomNameTypeId('courtesy')).toBe('shadows_builtin');
   });
 });

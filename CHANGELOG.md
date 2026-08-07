@@ -91,6 +91,9 @@
 ### Auto-tagging
 
 - Tag-bomb date filter now follows the same priority as disambiguation: (1) last user choice, (2) active file work year from TEI metadata, (3) no filter. It no longer defaults to the Eastern Han dynasty range.
+- Date filters on tag bomb and Disambiguate now cast a slightly wider net than the slider shows: lookup quietly adds 100 years (exclude starts later; limit expands both ends). The UI still shows the nominal cutoff — e.g. exclude-from-500 behaves as 600 under the hood — so near-contemporaries are less likely to vanish now that pack floruit/index years no longer count as birth/death.
+- Group & Clean no longer rolls a fief `placeName` into the rank `roleName` inside `<nobleTitle>`; fief and rank stay siblings so ranks do not pollute the offices table.
+- Inside `<nobleTitle>`, Disambiguate only queues `placeName`s. Bare ranks auto-resolve (unique PEDB office key, else a Norbert office `ref`); place + role + posthumous can auto-resolve a person when the title maps uniquely. A posthumous name alone does not enter the person queue.
 - Chinese projects now treat both Norbert and East Asian dates (`cjk-dates`) as required language plugins: Norbert alone no longer counts as “plugins installed”, so a fresh Chinese project re-prompts / retries until calendars are present too. Enabling also merges the Sanmiao schema contribution (as Japan already did).
 
 ### Performance and stability
@@ -103,6 +106,7 @@
 - Fixed: save timestamp was not putting `@version` on `<application>`, causing a validation error in Source mode.
 - Monaco now auto-inserts the appropriate closing tag on `</`.
 - Fixed entity mentions inserted via the toolbar button landing at the start of the unit instead of at the cursor (including a follow-up where focusing the editor after the entity fetch overwrote the saved caret).
+- Lock Text no longer blocks the cursor: it keeps the primary source `contenteditable` instead of pulling it, so caret placement and arrow-key navigation work again while locked. Edits are still blocked via the same input/paste/composition/drop guards TinyMCE's own readonly mode uses; tagging and translation editing are unaffected, as neither relied on `contenteditable=false`.
 
 ### Translation panel
 
@@ -117,6 +121,13 @@
 
 ### Entity display and data
 
+- Fixed dynasty / floruit / index pack years being imported as if they were birth and death (again). Only `dateSource: 'fine'` biographical years become person vitals; year `0` (CBDB’s unknown sentinel) is rejected; backfill prefers Wikidata/CBDB lifespan over polluted Central/user dates; the sidebar and entity summaries skip year `0`.
+- Card “backfill from authorities” no longer skips the CBDB pack when the A6 reference sqlite is missing: family/given (姓/名) are restored even if they were withdrawn by Central mirror sync, non-fine CBDB birth/death rows (e.g. Southern Qi 479–502 on 陳顯達) are cleared, and the primary lifespan prefers Wikidata then DILA before CBDB so real TEI vitals surface over dynasty-span leftovers.
+- Database Window / sidebar bulk backfill no longer tries to ship the full CBDB persons pack (~570MB) into the renderer. It looks up only the linked authority ids in the main process, so select-all no longer hangs forever on “Reading packs…” and then does nothing.
+- Long Database Window jobs (backfill, hygiene scan, …) keep running if you switch back to the editor: progress and cancel appear in the bottom bar, same pattern as AI runs and bulk sync.
+- Offices are no longer minted with person 姓/名 splits or person-style pinyin (e.g. 平北將軍 → Ping Beijiangjun). The card hides those name types, offers a refresh button, and refresh scrubs leftover family/given rows while repairing the romanization to a concatenated office form.
+- Office English/French roleName glosses (CBDB, Huckbot5000, MaxiRicci7000) are written onto entity cards on mint and on refresh. CBDB’s `[Not Yet Translated]` placeholder no longer blocks Huckbot fill, and is never stored as a translation.
+- Attributes panel Lookup is available for `roleName` (office) as well as `placeName`, `orgName`/`org`, and `title` — it no longer depends on the schema mapper recognising the tag.
 - Entity display formatting is now kind-aware: places, organisations, offices, and works no longer get the person-only family/given name split. Dates are shown only for people and works (births/deaths and publication dates respectively); places, organisations, and offices never display a dates part.
 - Wired up two entity fields that were being silently dropped: generic (non birth/death) existence dates now reach works' entity records instead of being lost, and office classification labels are now surfaced on office entities.
 - Added a `work_type` field (book, chapter, poem, painting, object) to entity records, with citation styling to match: books and paintings render in italics, chapters and poems in curly quotes.

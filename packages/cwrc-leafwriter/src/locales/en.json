@@ -81,7 +81,44 @@
         "translation_instructions_placeholder": "Describe the translation guidance to apply here.",
         "title": "AI API",
         "choose_model_first": "Choose a model before establishing the connection.",
-        "settings_cleared": "AI settings cleared."
+        "settings_cleared": "AI settings cleared.",
+        "stream_results": "Stream AI results into review as each block finishes"
+      },
+      "github": {
+        "description": "Connect your GitHub account to publish leaderboard stats. LJB will also use this connection for issue, pull request, and commit statistics.",
+        "connect": "Connect GitHub",
+        "reconnect": "Reconnect GitHub",
+        "connecting": "Connecting…",
+        "disconnect": "Disconnect",
+        "disconnecting": "Disconnecting…",
+        "connected": "GitHub connected.",
+        "disconnected": "GitHub disconnected.",
+        "connect_failed": "Could not connect to GitHub.",
+        "disconnect_failed": "Could not disconnect from GitHub.",
+        "browser_code": "GitHub opened in your browser. Enter the code {{code}} to authorize LJB."
+      },
+      "map_tiles": {
+        "title": "Offline map tiles (optional)",
+        "description": "Download a regional basemap for comparing place-name candidates on a map. Downloaded once, used entirely offline afterward.",
+        "attribution": "Basemap data © OpenStreetMap contributors, made available under the Open Database License (ODbL), via Protomaps (protomaps.com).",
+        "not_installed": "not installed",
+        "installed": "installed · {{date}}",
+        "download": "Download",
+        "re_download": "Re-download",
+        "remove": "Remove",
+        "not_configured": "Not configured",
+        "not_configured_hint": "This bundle cannot be downloaded in the current desktop build.",
+        "working": "Working in the background…",
+        "download_started": "Download started in the background. You’ll be notified when it finishes.",
+        "download_ready": "Map tiles downloaded and ready for offline use.",
+        "download_failed": "Map tile download failed.",
+        "download_unavailable": "Map tile download is unavailable in this build.",
+        "remove_failed": "Could not remove map tiles.",
+        "regions": {
+          "tibet": "Tibet",
+          "china": "China",
+          "japan": "Japan"
+        }
       },
       "authorities": {
         "Add Custom Authority": "Add Custom Authority",
@@ -487,7 +524,7 @@
     "Day": "",
     "Define Role": "",
     "Define Type": "",
-    "Document is valid!": "",
+    "Document is valid!": "Document is valid!",
     "Document not supported": "Document not supported",
     "Documentation": "",
     "Done": "",
@@ -1007,6 +1044,47 @@
       "refreshFailed": "Schema refresh failed.",
       "refreshSuccess": "Schema refreshed successfully.",
       "refreshUnavailable": "Schema refresh is unavailable in this environment."
+    },
+    "nameTypes": {
+      "primary": "Primary name",
+      "birth": "Birth name",
+      "family": "Family name",
+      "given": "Given name",
+      "courtesy": "Courtesy name",
+      "art": "Art name",
+      "posthumous": "Posthumous name",
+      "temple": "Temple name",
+      "dharma": "Dharma name",
+      "pen": "Pen name",
+      "romanization": "Romanization",
+      "translation": "Translation",
+      "variant": "Variant"
+    },
+    "nameTypePolicy": {
+      "title": "Name types for auto-tagging",
+      "intro": "Phase 1 = first Tag bomb pass. Phase 2 = short-form pass after people are linked. Never = stored but never auto-tagged (e.g. family names).",
+      "primary_warning": "Primary names are usually tagged in Phase 1. Setting Primary to Phase 2 or Never may leave many person mentions untagged on the first pass.",
+      "phase1": "Phase 1",
+      "phase2": "Phase 2",
+      "never": "Never",
+      "art_length_hint": "Length-gated: short art names go to Phase 2 (≥ {{count}} code points → Phase 1)",
+      "bucket_aria": "{{label}} auto-tagging phase",
+      "reset_preset": "Reset to language preset",
+      "custom_title": "Custom name types",
+      "custom_intro": "Project-specific types (ASCII id slug). They follow the same Phase 1 / Phase 2 / Never rules.",
+      "id_label": "Id",
+      "id_placeholder": "my_alias",
+      "label_label": "Label",
+      "label_placeholder": "Display label",
+      "new_custom_bucket_aria": "New custom type auto-tagging phase",
+      "add_custom": "Add custom type",
+      "remove_custom": "Remove custom type {{label}}",
+      "errors": {
+        "invalid_slug": "Id must be an ASCII slug matching [a-z][a-z0-9_-]*",
+        "shadows_builtin": "Id \"{{id}}\" shadows a built-in name type",
+        "label_required": "Label is required.",
+        "id_exists": "A custom type with id \"{{id}}\" already exists."
+      }
     }
   }
 }

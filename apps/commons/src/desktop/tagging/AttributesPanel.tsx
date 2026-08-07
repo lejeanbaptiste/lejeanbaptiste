@@ -795,7 +795,7 @@ export const AttributesPanel = ({ visible = true }: { visible?: boolean }) => {
             &lt;{tagName}&gt;
           </Typography>
           <Typography color="text.secondary" variant="caption">
-            F2 to rename
+            {t('LWC.desktop.tagging.f2_to_rename')}
           </Typography>
         </Stack>
 
@@ -808,7 +808,7 @@ export const AttributesPanel = ({ visible = true }: { visible?: boolean }) => {
               startIcon={<SearchIcon />}
               variant="outlined"
             >
-              Lookup…
+              {t('LWC.desktop.tagging.lookup')}
             </Button>
             {linkedEntityInfo ? (
               <Alert
@@ -945,7 +945,13 @@ export const AttributesPanel = ({ visible = true }: { visible?: boolean }) => {
       <Box sx={{ flex: 1, minHeight: 0, overflow: 'auto', p: 1.5 }}>
         <Stack spacing={1.5}>
           {eastAsianDates ? (
-            <Suspense fallback={<Typography variant="body2">Loading calendar fields…</Typography>}>
+            <Suspense
+              fallback={
+                <Typography variant="body2">
+                  {t('LWC.desktop.tagging.loading_calendar_fields')}
+                </Typography>
+              }
+            >
               <LazyAttributesEastAsianSection
                 disabled={readonly}
                 onChange={handleEastAsianChange}
@@ -956,7 +962,7 @@ export const AttributesPanel = ({ visible = true }: { visible?: boolean }) => {
 
           {setAttributeEntries.length === 0 && !eastAsianDates ? (
             <Typography color="text.secondary" variant="body2">
-              No attributes set on this tag.
+              {t('LWC.desktop.tagging.no_attributes_set')}
             </Typography>
           ) : null}
 

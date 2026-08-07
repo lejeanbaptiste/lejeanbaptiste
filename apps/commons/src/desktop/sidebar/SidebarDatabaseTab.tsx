@@ -90,7 +90,10 @@ import {
 } from '../../../../../packages/cwrc-leafwriter/src/autoTagging/bulkSyncProgress';
 import { suggestPersonRomanization } from '../../../../../packages/cwrc-leafwriter/src/plugins/personNameDefaults';
 import { isAiUiFeatureEnabled } from '../../../../../packages/cwrc-leafwriter/src/autoTagging/aiUiFeatures';
-import { cachedPackReader } from '../../../../../packages/cwrc-leafwriter/src/services/authority-pack-lookup';
+import {
+  cachedPackReader,
+  packRowsByIdsReader,
+} from '../../../../../packages/cwrc-leafwriter/src/services/authority-pack-lookup';
 import {
   centralEntityStoreFromDesktop,
   desktopEntityFileApi,
@@ -129,6 +132,7 @@ import { BridgeInboxDialog } from './BridgeInboxDialog';
 import { MergeDocketDialog } from './MergeDocketDialog';
 import { SourceBadges } from '../../../../../packages/cwrc-leafwriter/src/autoTagging/SourceBadges';
 import {
+  entityKindSupportsVernacularGloss,
   entityLikeFromNameEntries,
   missingTranslationLangs,
 } from '../../../../../packages/cwrc-leafwriter/src/layout/entityFields/entityDisplay';
@@ -308,6 +312,8 @@ const PRECISION_LABEL_KEYS: Partial<Record<DatePrecision, string>> = {
 };
 
 const WORK_TITLE_TYPES: NameTypeId[] = ['primary', 'romanization', 'translation', 'variant'];
+/** Offices, places, orgs — never 姓/名 / courtesy / posthumous person types. */
+const NON_PERSON_NAME_TYPES: NameTypeId[] = ['primary', 'romanization', 'translation', 'variant'];
 type WorkDatePrecision = '' | 'not before' | 'ca.' | 'not after';
 
 const WORK_DATE_START_PRECISION_OPTIONS: WorkDatePrecision[] = ['', 'not before', 'ca.'];
@@ -1411,9 +1417,11 @@ export const SidebarDatabaseTab = ({ active = false }: SidebarDatabaseTabProps) 
             clearCache: false,
           });
         }
+        const lookupPackRowsByIds = packRowsByIdsReader();
         const result = await backfillEntitiesSqlite(activeStore, {
           entityIds,
           readPackFile: readPack,
+          lookupPackRowsByIds,
           projectLang,
           desktopLanguage: i18n.language,
           signal: controller.signal,
@@ -2002,6 +2010,7 @@ export const SidebarDatabaseTab = ({ active = false }: SidebarDatabaseTabProps) 
               await backfillEntitiesSqlite(targetStore, {
                 entityIds: [entity.id],
                 readPackFile: cachedPackReader(),
+                lookupPackRowsByIds: packRowsByIdsReader(),
                 projectLang,
                 desktopLanguage: i18n.language,
                 expandWikidataWorks: entity.kind === 'person',
@@ -2635,6 +2644,11 @@ export const SidebarDatabaseTab = ({ active = false }: SidebarDatabaseTabProps) 
         : [];
     const nameRows: NameRow[] = (editEntity?.nameEntries ?? [])
       .filter((entry) => entry.text !== editEntity?.romanized)
+      .filter((entry) => {
+        if (editEntity?.kind === 'person') return true;
+        const type = entry.type ?? '';
+        return type !== 'family' && type !== 'given' && type !== 'familyName' && type !== 'givenName';
+      })
       .map((entry) => {
         const matching = nameAssertions.filter(
           (assertion) => assertion.value === entry.text && assertion.status === 'active',
@@ -2746,6 +2760,8 @@ export const SidebarDatabaseTab = ({ active = false }: SidebarDatabaseTabProps) 
 
   const missingTranslationNudges = useMemo(() => {
     if (!editEntity || projectTranslationLanguages.length === 0) return [];
+    // Person names are romanized, not given vernacular glosses.
+    if (!entityKindSupportsVernacularGloss(editEntity.kind)) return [];
     // Prefer live editor state so a just-added gloss hides its chip immediately.
     const liveEntries = Object.keys(editNameTypes).map((text) => ({
       text,
@@ -2784,7 +2800,8 @@ export const SidebarDatabaseTab = ({ active = false }: SidebarDatabaseTabProps) 
 
   const suggestNewTranslationGloss = useCallback(async () => {
     if (!isAiUiFeatureEnabled('entityGlossSuggest')) return;
-    if (!editEntity || editNewNameType !== 'translation' || !editNewNameLanguage.trim()) return;
+    if (!editEntity || !entityKindSupportsVernacularGloss(editEntity.kind)) return;
+    if (editNewNameType !== 'translation' || !editNewNameLanguage.trim()) return;
     const suggest = window.electronAPI?.suggestEntityGloss;
     if (!suggest) {
       setSuggestGlossError(t('LWC.desktop.sidebar.database.suggest_translation_error'));
@@ -3472,15 +3489,19 @@ export const SidebarDatabaseTab = ({ active = false }: SidebarDatabaseTabProps) 
                 sx={{ flex: 1, minWidth: 0 }}
               >
                 {backfillProgress?.entityLabel
-                  ? `Enriching ${backfillProgress.entityLabel}… (${backfillProgress.done}/${backfillProgress.total || '…'})`
-                  : 'Backfilling names from authorities…'}
+                  ? t('LWC.desktop.sidebar.database.backfill_progress_enriching', {
+                      label: backfillProgress.entityLabel,
+                      done: backfillProgress.done,
+                      total: backfillProgress.total || '…',
+                    })
+                  : t('LWC.desktop.sidebar.database.backfill_progress_names')}
               </Typography>
               <Button
                 size="small"
                 onClick={() => backfillAbortRef.current?.abort()}
                 sx={{ flexShrink: 0 }}
               >
-                Cancel
+                {t('LWC.desktop.sidebar.database.cancel')}
               </Button>
             </Stack>
           </Stack>
@@ -3900,13 +3921,19 @@ export const SidebarDatabaseTab = ({ active = false }: SidebarDatabaseTabProps) 
                 </IconButton>
               </Tooltip>
             )}
-            {(editEntity?.kind === 'person' || editEntity?.kind === 'work') && (
+            {(editEntity?.kind === 'person' ||
+              editEntity?.kind === 'work' ||
+              editEntity?.kind === 'office') && (
               <Tooltip title={t('LWC.desktop.sidebar.database.refresh_authorities')}>
                 <span>
                   <IconButton
                     size="small"
                     aria-label={t('LWC.desktop.sidebar.database.refresh_authorities')}
-                    disabled={backfillBusy || editEntity.authorities.length === 0}
+                    disabled={
+                      backfillBusy ||
+                      // Offices can scrub legacy 姓/名 without linked authorities.
+                      (editEntity.kind !== 'office' && editEntity.authorities.length === 0)
+                    }
                     onClick={() =>
                       editEntity.kind === 'work'
                         ? void refreshWorkDetails(editEntity)
@@ -3950,15 +3977,19 @@ export const SidebarDatabaseTab = ({ active = false }: SidebarDatabaseTabProps) 
                     sx={{ flex: 1, minWidth: 0 }}
                   >
                     {backfillProgress?.entityLabel
-                      ? `Enriching ${backfillProgress.entityLabel}… (${backfillProgress.done}/${backfillProgress.total || '…'})`
-                      : 'Refreshing from authorities…'}
+                      ? t('LWC.desktop.sidebar.database.backfill_progress_enriching', {
+                          label: backfillProgress.entityLabel,
+                          done: backfillProgress.done,
+                          total: backfillProgress.total || '…',
+                        })
+                      : t('LWC.desktop.sidebar.database.backfill_progress_refreshing')}
                   </Typography>
                   <Button
                     size="small"
                     onClick={() => backfillAbortRef.current?.abort()}
                     sx={{ flexShrink: 0 }}
                   >
-                    Cancel
+                    {t('LWC.desktop.sidebar.database.cancel')}
                   </Button>
                 </Stack>
               </Stack>
@@ -4540,7 +4571,15 @@ export const SidebarDatabaseTab = ({ active = false }: SidebarDatabaseTabProps) 
               expanded={namesExpanded}
               onExpandedChange={setNamesExpanded}
               rows={nameRows}
-              allowedNameTypes={editEntity.kind === 'work' ? WORK_TITLE_TYPES : ALL_NAME_TYPES}
+              allowedNameTypes={
+                editEntity.kind === 'person'
+                  ? entityKindSupportsVernacularGloss(editEntity.kind)
+                    ? ALL_NAME_TYPES
+                    : ALL_NAME_TYPES.filter((type) => type !== 'translation')
+                  : editEntity.kind === 'work'
+                    ? WORK_TITLE_TYPES
+                    : NON_PERSON_NAME_TYPES
+              }
               projectLang={projectLang}
               validatedSourceLabel={databaseView === 'central' ? 'CEDB' : 'PEDB'}
               nameTypes={editNameTypes}
@@ -4564,10 +4603,16 @@ export const SidebarDatabaseTab = ({ active = false }: SidebarDatabaseTabProps) 
               onNewNameLanguageChange={setEditNewNameLanguage}
               onAdd={commitNewName}
               missingTranslations={missingTranslationNudges}
-              onRequestAddTranslation={requestAddTranslation}
+              onRequestAddTranslation={
+                entityKindSupportsVernacularGloss(editEntity.kind)
+                  ? requestAddTranslation
+                  : undefined
+              }
               focusAddFieldToken={focusAddNameToken}
               onSuggestTranslation={
-                isAiUiFeatureEnabled('entityGlossSuggest') && window.electronAPI?.suggestEntityGloss
+                entityKindSupportsVernacularGloss(editEntity.kind) &&
+                isAiUiFeatureEnabled('entityGlossSuggest') &&
+                window.electronAPI?.suggestEntityGloss
                   ? suggestNewTranslationGloss
                   : undefined
               }

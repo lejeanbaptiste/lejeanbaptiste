@@ -4,6 +4,8 @@
  * - MaxiRicci7000 → French (`metadata.translationFr`) without overwriting English
  */
 import type { AuthorityCandidate } from './authority';
+import type { EntityStore } from './entityStore';
+import { bareNorbertAuthorityValue, norbertAuthorityLookupValues } from './norbertAuthorityId';
 import type { AuthorityPackContent } from './packLoader';
 import { authorityPackLines } from './packLoader';
 import type { AuthorityPackId } from './packPaths';
@@ -28,6 +30,18 @@ type GlossRow = {
   language?: string;
 };
 
+/**
+ * Publishable English/French office gloss. Rejects CBDB's
+ * `[Not Yet Translated]` placeholder and strips trailing `(Hucker)`.
+ */
+export function cleanPublishableOfficeGloss(raw: string | null | undefined): string | null {
+  if (!raw || /not yet translated/i.test(raw)) return null;
+  const gloss = String(raw)
+    .replace(/\(Hucker\)/gi, '')
+    .trim();
+  return gloss || null;
+}
+
 /** `州縣長吏 (Senior Subalterns…, 宋)` — matches cbdbOfficeClue shape. */
 export function formatOfficeClue(
   name: string,
@@ -37,6 +51,91 @@ export function formatOfficeClue(
   const inner = [translation, dynasty].filter((part): part is string => Boolean(part?.trim()));
   if (inner.length) return `${name} (${inner.join(', ')})`;
   return name;
+}
+
+/** Keys used in Huckbot/Maxi `officeIds` (`cbdb:office:7`, `norbert:office:42`, …). */
+export function officeGlossLookupKeys(
+  authorities: ReadonlyArray<{ type: string; value: string }>,
+): string[] {
+  const keys = new Set<string>();
+  for (const auth of authorities) {
+    const type = auth.type.trim().toUpperCase();
+    const value = auth.value.trim();
+    if (!value) continue;
+    if (type === 'CBDB') {
+      if (value.toLowerCase().startsWith('cbdb:office:')) keys.add(value.toLowerCase());
+      else keys.add(`cbdb:office:${value}`);
+    } else if (type === 'NORBERT') {
+      for (const variant of norbertAuthorityLookupValues(value)) {
+        keys.add(`norbert:office:${variant}`);
+        const bare = bareNorbertAuthorityValue(variant);
+        if (bare !== variant) keys.add(`norbert:office:${bare}`);
+      }
+    }
+  }
+  return [...keys];
+}
+
+export function lookupEnglishOfficeGloss(
+  glosses: OfficeGlossIndex,
+  authorities: ReadonlyArray<{ type: string; value: string }>,
+): string | undefined {
+  for (const key of officeGlossLookupKeys(authorities)) {
+    const hit = glosses.get(key);
+    if (hit) return hit;
+  }
+  return undefined;
+}
+
+export function lookupFrenchOfficeGloss(
+  glosses: FrenchOfficeGlossIndex,
+  authorities: ReadonlyArray<{ type: string; value: string }>,
+  zh?: string | null,
+  dynasty?: string | null,
+): string | undefined {
+  return lookupFrenchGloss(glosses, officeGlossLookupKeys(authorities), zh ?? undefined, dynasty);
+}
+
+/**
+ * Write English/French roleName glosses onto an office entity (entity_translations).
+ * Skips placeholders; addTranslation dedupes identical text+language.
+ */
+export async function persistOfficeTranslationNames(
+  store: EntityStore,
+  entityId: string,
+  glosses: {
+    translation?: string | null;
+    translationFr?: string | null;
+    enSource?: string | null;
+    frSource?: string | null;
+  },
+): Promise<number> {
+  let added = 0;
+  const en = cleanPublishableOfficeGloss(glosses.translation);
+  if (en) {
+    await store.sqliteAddName({
+      entityId,
+      text: en,
+      nameType: 'translation',
+      language: 'en',
+      origin: 'authority',
+      source: glosses.enSource ?? 'Huckbot5000',
+    });
+    added += 1;
+  }
+  const fr = cleanPublishableOfficeGloss(glosses.translationFr);
+  if (fr) {
+    await store.sqliteAddName({
+      entityId,
+      text: fr,
+      nameType: 'translation',
+      language: 'fr',
+      origin: 'authority',
+      source: glosses.frSource ?? 'MaxiRicci7000',
+    });
+    added += 1;
+  }
+  return added;
 }
 
 function normalizeZh(zh: string | undefined): string {
@@ -137,18 +236,32 @@ function lookupFrenchGloss(
 
 /**
  * Fill `metadata.translation` (and refresh `description`) when the office pack
- * row has no English gloss yet.
+ * row has no *publishable* English gloss yet. CBDB's `[Not Yet Translated]`
+ * counts as empty so Huckbot can fill.
  */
 export function applyHuckbotGlossToCandidate(
   candidate: AuthorityCandidate,
   glosses: OfficeGlossIndex,
 ): AuthorityCandidate {
-  if (candidate.kind !== 'office' || !glosses.size) return candidate;
-  if (candidate.metadata?.translation?.trim()) return candidate;
+  if (candidate.kind !== 'office') return candidate;
+  const existing = cleanPublishableOfficeGloss(candidate.metadata?.translation);
+  if (existing) {
+    if (existing === candidate.metadata?.translation?.trim()) return candidate;
+    const dynasty = candidate.metadata?.dynasty;
+    return {
+      ...candidate,
+      metadata: {
+        ...candidate.metadata,
+        translation: existing,
+        description: formatOfficeClue(candidate.primaryName, existing, dynasty),
+      },
+    };
+  }
+  if (!glosses.size) return candidate;
 
   let gloss: string | undefined;
   for (const id of officeEntityIdsForCandidate(candidate)) {
-    gloss = glosses.get(id);
+    gloss = cleanPublishableOfficeGloss(glosses.get(id)) ?? undefined;
     if (gloss) break;
   }
   if (!gloss) return candidate;
@@ -170,14 +283,23 @@ export function applyMaxiRicciGlossToCandidate(
   glosses: FrenchOfficeGlossIndex,
 ): AuthorityCandidate {
   if (candidate.kind !== 'office') return candidate;
-  if (candidate.metadata?.translationFr?.trim()) return candidate;
+  const existingFr = cleanPublishableOfficeGloss(candidate.metadata?.translationFr);
+  if (existingFr) {
+    if (existingFr === candidate.metadata?.translationFr?.trim()) return candidate;
+    return {
+      ...candidate,
+      metadata: { ...candidate.metadata, translationFr: existingFr },
+    };
+  }
   if (!glosses.byOfficeId.size && !glosses.byZh.size) return candidate;
 
-  const gloss = lookupFrenchGloss(
-    glosses,
-    officeEntityIdsForCandidate(candidate),
-    candidate.primaryName,
-    candidate.metadata?.dynasty,
+  const gloss = cleanPublishableOfficeGloss(
+    lookupFrenchGloss(
+      glosses,
+      officeEntityIdsForCandidate(candidate),
+      candidate.primaryName,
+      candidate.metadata?.dynasty,
+    ),
   );
   if (!gloss) return candidate;
 
@@ -198,8 +320,20 @@ export function applyHuckbotGlossToPackRow<
     metadata?: AuthorityCandidate['metadata'];
   },
 >(row: T, source: string, glosses: OfficeGlossIndex): T {
+  const existing = cleanPublishableOfficeGloss(row.metadata?.translation);
+  if (existing) {
+    if (existing === row.metadata?.translation?.trim()) return row;
+    const name = row.primaryName?.trim() || '';
+    return {
+      ...row,
+      metadata: {
+        ...row.metadata,
+        translation: existing,
+        description: formatOfficeClue(name, existing, row.metadata?.dynasty),
+      },
+    };
+  }
   if (!glosses.size) return row;
-  if (row.metadata?.translation?.trim()) return row;
 
   const ids = new Set<string>();
   if (row.metadata?.entityId) ids.add(row.metadata.entityId);
@@ -209,7 +343,7 @@ export function applyHuckbotGlossToPackRow<
 
   let gloss: string | undefined;
   for (const id of ids) {
-    gloss = glosses.get(id);
+    gloss = cleanPublishableOfficeGloss(glosses.get(id)) ?? undefined;
     if (gloss) break;
   }
   if (!gloss) return row;
@@ -233,7 +367,11 @@ export function applyMaxiRicciGlossToPackRow<
   },
 >(row: T, source: string, glosses: FrenchOfficeGlossIndex): T {
   if (!glosses.byOfficeId.size && !glosses.byZh.size) return row;
-  if (row.metadata?.translationFr?.trim()) return row;
+  const existingFr = cleanPublishableOfficeGloss(row.metadata?.translationFr);
+  if (existingFr) {
+    if (existingFr === row.metadata?.translationFr?.trim()) return row;
+    return { ...row, metadata: { ...row.metadata, translationFr: existingFr } };
+  }
 
   const ids: string[] = [];
   if (row.metadata?.entityId) ids.push(row.metadata.entityId);
@@ -241,7 +379,9 @@ export function applyMaxiRicciGlossToPackRow<
   const src = source.trim().toLowerCase();
   if (src && row.authorityId) ids.push(`${src}:office:${row.authorityId}`);
 
-  const gloss = lookupFrenchGloss(glosses, ids, row.primaryName, row.metadata?.dynasty);
+  const gloss = cleanPublishableOfficeGloss(
+    lookupFrenchGloss(glosses, ids, row.primaryName, row.metadata?.dynasty),
+  );
   if (!gloss) return row;
 
   return {

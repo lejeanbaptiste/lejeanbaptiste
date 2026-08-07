@@ -115,10 +115,12 @@ export interface TypedName {
   lang?: string;
 }
 
-const TAG_TO_ENTITY_TYPE: Record<string, NamedEntityType> = {
+/** TEI tag → entity-lookup type (Attributes panel, disambiguation, packs). */
+export const TAG_TO_ENTITY_TYPE: Record<string, NamedEntityType> = {
   persName: 'person',
   placeName: 'place',
   orgName: 'organization',
+  org: 'organization',
   title: 'work',
   bibl: 'work',
   roleName: 'office',

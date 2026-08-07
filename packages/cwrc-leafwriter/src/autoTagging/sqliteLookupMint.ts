@@ -160,23 +160,23 @@ export async function enrichEntitySqlite(
   if (input.romanizedName) {
     await store.sqliteSetRomanizedName(entityId, input.romanizedName, input.nameLang ?? undefined);
   }
-  if (input.familyName) {
-    await store.sqliteAddName({
-      entityId,
-      text: input.familyName,
-      nameType: 'family',
-      origin: 'authority',
-    });
-  }
-  if (input.givenName) {
-    await store.sqliteAddName({
-      entityId,
-      text: input.givenName,
-      nameType: 'given',
-      origin: 'authority',
-    });
-  }
   if (input.kind === 'person') {
+    if (input.familyName) {
+      await store.sqliteAddName({
+        entityId,
+        text: input.familyName,
+        nameType: 'family',
+        origin: 'authority',
+      });
+    }
+    if (input.givenName) {
+      await store.sqliteAddName({
+        entityId,
+        text: input.givenName,
+        nameType: 'given',
+        origin: 'authority',
+      });
+    }
     await enrichPersonAuthority(store, entityId, input);
   } else if (input.kind === 'work' && (input.startYear != null || input.endYear != null)) {
     await store.sqliteSetUserWorkDate({

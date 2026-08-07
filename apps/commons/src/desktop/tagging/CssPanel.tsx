@@ -11,6 +11,7 @@ import { leafwriterAtom } from '@src/jotai';
 import { useAppState } from '@src/overmind';
 import { useAtomValue } from 'jotai';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import { HighlighterIcon } from './HighlighterIcon';
 import { getEditorTagContext } from './tagSuggestions';
 import { clearTagStatsCache, loadTagStats, previewProjectTagStats } from './tagStats';
@@ -33,6 +34,7 @@ const isVisualEditorActive = (): boolean =>
   window.writer?.overmindState?.ui?.editorViewMode !== 'source';
 
 export const CssPanel = ({ visible = true }: { visible?: boolean }) => {
+  const { t } = useTranslation();
   const { activeTabPath, openTabs, rootPath } = useAppState().project;
   const { readonly } = useAppState().editor;
   const leafWriter = useAtomValue(leafwriterAtom);
@@ -179,7 +181,7 @@ export const CssPanel = ({ visible = true }: { visible?: boolean }) => {
     return (
       <Paper elevation={0} square sx={{ height: '100%', p: 2 }}>
         <Typography color="text.secondary" variant="body2">
-          Open a file to manage tag appearance.
+          {t('LWC.desktop.tagging.tag_appearance_open_file')}
         </Typography>
       </Paper>
     );
@@ -195,18 +197,18 @@ export const CssPanel = ({ visible = true }: { visible?: boolean }) => {
         <Stack alignItems="center" direction="row" spacing={1}>
           <HighlighterIcon color="action" fontSize="small" />
           <Typography fontWeight={600} variant="subtitle2">
-            Tag Appearance
+            {t('LWC.desktop.tagging.tag_appearance')}
           </Typography>
         </Stack>
         <Typography color="text.secondary" variant="caption">
-          Body annotation tags only — not metadata or structure (div, p, …).
+          {t('LWC.desktop.tagging.tag_appearance_hint')}
         </Typography>
       </Stack>
 
       <Box sx={{ flex: 1, minHeight: 0, overflow: 'auto' }}>
         {orderedTags.length === 0 ? (
           <Typography color="text.secondary" sx={{ p: 2 }} variant="body2">
-            No annotation tags in the document body yet.
+            {t('LWC.desktop.tagging.tag_appearance_empty')}
           </Typography>
         ) : (
           <Stack spacing={0.5} sx={{ p: 1 }}>

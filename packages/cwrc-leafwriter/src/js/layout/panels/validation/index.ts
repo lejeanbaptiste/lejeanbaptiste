@@ -6,6 +6,7 @@ import type {
   ValidationErrorTarget,
   ValidationResponse,
 } from '@cwrc/leafwriter-validator';
+import i18next from 'i18next';
 import $ from 'jquery';
 import 'jquery-ui/ui/widgets/button';
 import 'jquery-ui/ui/widgets/tooltip';
@@ -369,7 +370,7 @@ class Validation {
           >
         </path>
       </svg>
-        <span>Document is valid!</span>
+        <span>${i18next.t('LW.Document is valid!')}</span>
         <div class="revalidate-button">
           <i class="fas fa-redo-alt"></i>
         </div>

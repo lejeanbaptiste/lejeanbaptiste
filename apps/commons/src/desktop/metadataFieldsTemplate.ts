@@ -80,7 +80,8 @@ export const resolveProjectMetadataFields = (
     return {
       fields: template.project,
       kind: 'custom',
-      note: `Fields from project template (${METADATA_FIELDS_TEMPLATE_PATH}).`,
+      // i18n key — ProjectMetadataForm interpolates {{path}}.
+      note: 'LWC.desktop.project.notes.from_template',
     };
   }
   return getMetadataFieldsForCatalog(catalogId);

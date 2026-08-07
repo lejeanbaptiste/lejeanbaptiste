@@ -94,17 +94,16 @@ export async function installAuthorityPacksFrom(
   return { copied };
 }
 
-/**
- * Read a pack's NDJSON as an array of lines, streamed off disk rather than
- * materialized as one string. Some packs (e.g. CBDB persons) exceed V8's hard
- * ~512MB single-string ceiling (`buffer.constants.MAX_STRING_LENGTH`); a
- * `fsp.readFile(..., 'utf8')` on such a file throws `RangeError: Invalid
- * string length` before the caller ever sees the data. Splitting into lines
- * up front keeps every individual string well under that ceiling regardless
- * of how large the pack grows, and readline never buffers more than one line
- * at a time while reading.
- */
-export async function readAuthorityPackFile(
+type DateChunkLayout = {
+  version: 1;
+  blockYears: number;
+  chunks: Array<{ path: string; start: number; end: number }>;
+  undatedPath?: string;
+  includeUndatedForLimit?: boolean;
+};
+
+/** Absolute paths of NDJSON files that make up a pack for the given filter. */
+async function resolveAuthorityPackDataFiles(
   entityDbFolder: string,
   packId: AuthorityPackId,
   dateFilter?: AuthorityPackDateFilter,
@@ -113,18 +112,7 @@ export async function readAuthorityPackFile(
   try {
     const manifestPath = path.join(path.dirname(file), 'manifest.json');
     const manifest = JSON.parse(await fsp.readFile(manifestPath, 'utf8')) as {
-      files?: Record<
-        string,
-        {
-          dateChunks?: {
-            version: 1;
-            blockYears: number;
-            chunks: Array<{ path: string; start: number; end: number }>;
-            undatedPath?: string;
-            includeUndatedForLimit?: boolean;
-          };
-        }
-      >;
+      files?: Record<string, { dateChunks?: DateChunkLayout }>;
     };
     const chunkLayout = manifest.files?.[path.basename(file)]?.dateChunks;
     if (chunkLayout) {
@@ -153,31 +141,94 @@ export async function readAuthorityPackFile(
           selected.add(candidate);
         }
       }
-      // A restrictive interval outside all known chunks has no dated rows; do
-      // not accidentally read the whole pack. The explicit undated policy
-      // below still applies.
       const paths = [...selected].sort((a, b) => a - b).map((index) => sorted[index]!.path);
       if (chunkLayout.undatedPath && (!requested || chunkLayout.includeUndatedForLimit)) {
         paths.push(chunkLayout.undatedPath);
       }
-      // Read selected chunks one at a time. Promise.all + flat() briefly held
-      // the same large pack as nested arrays, a flattened array, and a Set;
-      // with a broad undated section that could push the renderer over V8's
-      // large-string/memory limits even though the date filter was working.
-      const uniqueLines = new Set<string>();
-      for (const relative of paths) {
-        const chunkLines = await readAuthorityPackLines(
-          path.resolve(path.dirname(file), relative),
-        );
-        for (const line of chunkLines) uniqueLines.add(line);
-      }
-      return [...uniqueLines];
+      return paths.map((relative) => path.resolve(path.dirname(file), relative));
     }
   } catch (error) {
     if ((error as NodeJS.ErrnoException)?.code !== 'ENOENT') throw error;
     // Legacy layouts have no manifest; fall through to the single file.
   }
-  return readAuthorityPackLines(file);
+  return [file];
+}
+
+/**
+ * Read a pack's NDJSON as an array of lines, streamed off disk rather than
+ * materialized as one string. Some packs (e.g. CBDB persons) exceed V8's hard
+ * ~512MB single-string ceiling (`buffer.constants.MAX_STRING_LENGTH`); a
+ * `fsp.readFile(..., 'utf8')` on such a file throws `RangeError: Invalid
+ * string length` before the caller ever sees the data. Splitting into lines
+ * up front keeps every individual string well under that ceiling regardless
+ * of how large the pack grows, and readline never buffers more than one line
+ * at a time while reading.
+ */
+export async function readAuthorityPackFile(
+  entityDbFolder: string,
+  packId: AuthorityPackId,
+  dateFilter?: AuthorityPackDateFilter,
+): Promise<string[]> {
+  const files = await resolveAuthorityPackDataFiles(entityDbFolder, packId, dateFilter);
+  if (files.length === 1) return readAuthorityPackLines(files[0]!);
+  // Read selected chunks one at a time. Promise.all + flat() briefly held
+  // the same large pack as nested arrays, a flattened array, and a Set;
+  // with a broad undated section that could push the renderer over V8's
+  // large-string/memory limits even though the date filter was working.
+  const uniqueLines = new Set<string>();
+  for (const file of files) {
+    for (const line of await readAuthorityPackLines(file)) uniqueLines.add(line);
+  }
+  return [...uniqueLines];
+}
+
+/**
+ * Stream a pack in the main process and return only rows whose `authorityId`
+ * is in `authorityIds`. Used by bulk backfill so the renderer never receives
+ * the full ~570MB CBDB persons pack over IPC.
+ */
+export async function lookupAuthorityPackRowsByIds(
+  entityDbFolder: string,
+  packId: AuthorityPackId,
+  authorityIds: string[],
+): Promise<string[]> {
+  const wanted = new Set(
+    authorityIds.map((id) => String(id ?? '').trim()).filter((id) => id.length > 0),
+  );
+  if (wanted.size === 0) return [];
+
+  const files = await resolveAuthorityPackDataFiles(entityDbFolder, packId);
+  const found = new Map<string, string>();
+
+  for (const file of files) {
+    if (found.size >= wanted.size) break;
+    try {
+      const rl = readline.createInterface({
+        input: fs.createReadStream(file, { encoding: 'utf8' }),
+        crlfDelay: Infinity,
+      });
+      for await (const line of rl) {
+        if (!line || line.charCodeAt(0) !== 123 /* { */) continue;
+        let authorityId: string;
+        try {
+          authorityId = String((JSON.parse(line) as { authorityId?: unknown }).authorityId ?? '').trim();
+        } catch {
+          continue;
+        }
+        if (!authorityId || !wanted.has(authorityId) || found.has(authorityId)) continue;
+        found.set(authorityId, line);
+        if (found.size >= wanted.size) {
+          rl.close();
+          break;
+        }
+      }
+    } catch (error) {
+      if ((error as NodeJS.ErrnoException)?.code === 'ENOENT') continue;
+      throw error;
+    }
+  }
+
+  return [...found.values()];
 }
 
 async function readAuthorityPackLines(file: string): Promise<string[]> {

@@ -220,38 +220,212 @@ export async function buildPackNameIndex(
   return packNameIndexPromise;
 }
 
+const PERSON_ENRICHMENT_PACKS: { packId: AuthorityPackId; source: string }[] = [
+  { packId: 'cbdb-persons', source: 'CBDB' },
+  { packId: 'dila-persons', source: 'DILA' },
+  // Norbert's persons pack carries names, dates, nationality, and
+  // place-of-origin assertions alongside CBDB/DILA-style metadata.
+  { packId: 'norbert-persons', source: 'NORBERT' },
+];
+
+const OFFICE_ENRICHMENT_PACKS: { packId: AuthorityPackId; source: string }[] = [
+  { packId: 'cbdb-offices', source: 'CBDB' },
+  { packId: 'norbert-offices', source: 'NORBERT' },
+];
+
+function addPackRowToNameIndex(
+  index: Map<string, AuthorityEnrichment>,
+  source: string,
+  row: AuthorityCandidate,
+): void {
+  const typed = typedNamesFromPackRow(row.names);
+  if (typed.length === 0 && !row.metadata) return;
+  const enrichment = {
+    names: typed,
+    primaryName: row.primaryName,
+    metadata: row.metadata,
+  };
+  const idKeys =
+    source === 'NORBERT'
+      ? norbertAuthorityLookupValues(String(row.authorityId ?? ''))
+      : [String(row.authorityId ?? '').trim()].filter(Boolean);
+  for (const idKey of idKeys) {
+    index.set(`${source}:${idKey}`, enrichment);
+  }
+}
+
 async function buildPackNameIndexUncached(
   readPackFile: (packId: AuthorityPackId) => Promise<AuthorityPackContent>,
 ): Promise<Map<string, AuthorityEnrichment>> {
   const index = new Map<string, AuthorityEnrichment>();
-  const packs: { packId: AuthorityPackId; source: string }[] = [
-    { packId: 'cbdb-persons', source: 'CBDB' },
-    { packId: 'dila-persons', source: 'DILA' },
-    // Norbert's persons pack carries names, dates, nationality, and
-    // place-of-origin assertions alongside CBDB/DILA-style metadata.
-    { packId: 'norbert-persons', source: 'NORBERT' },
-  ];
-  for (const { packId, source } of packs) {
+  for (const { packId, source } of PERSON_ENRICHMENT_PACKS) {
     try {
       const content = await readPackFile(packId);
       for (const row of iterateAuthorityNdjson(content)) {
-        const typed = typedNamesFromPackRow(row.names);
-        if (typed.length === 0 && !row.metadata) continue;
-        const enrichment = {
-          names: typed,
-          primaryName: row.primaryName,
-          metadata: row.metadata,
-        };
-        const idKeys =
-          source === 'NORBERT'
-            ? norbertAuthorityLookupValues(String(row.authorityId ?? ''))
-            : [String(row.authorityId ?? '').trim()].filter(Boolean);
-        for (const idKey of idKeys) {
-          index.set(`${source}:${idKey}`, enrichment);
-        }
+        addPackRowToNameIndex(index, source, row);
       }
     } catch {
       // Pack missing or unreadable — skip silently.
+    }
+  }
+  return index;
+}
+
+export type AuthorityPackRowsByIdsFn = (
+  packId: AuthorityPackId,
+  authorityIds: string[],
+) => Promise<AuthorityPackContent>;
+
+/**
+ * Build a pack enrichment index for only the authority ids already linked to
+ * entities. Prefer {@link lookupPackRowsByIds} (main-process stream) so the
+ * renderer never materializes the full CBDB persons pack.
+ */
+export async function buildPackNameIndexForAuthorities(
+  authorities: ReadonlyArray<{ type: string; value: string }>,
+  options: {
+    lookupPackRowsByIds?: AuthorityPackRowsByIdsFn;
+    readPackFile?: (packId: AuthorityPackId) => Promise<AuthorityPackContent>;
+    onPackProgress?: (label: string) => void;
+  },
+): Promise<Map<string, AuthorityEnrichment>> {
+  const idsBySource = new Map<string, Set<string>>();
+  for (const auth of authorities) {
+    const source = auth.type.trim().toUpperCase();
+    if (source !== 'CBDB' && source !== 'DILA' && source !== 'NORBERT') continue;
+    const set = idsBySource.get(source) ?? new Set<string>();
+    if (source === 'NORBERT') {
+      for (const key of norbertAuthorityLookupValues(auth.value)) set.add(key);
+    } else {
+      const id = auth.value.trim();
+      if (id) set.add(id);
+    }
+    idsBySource.set(source, set);
+  }
+
+  const index = new Map<string, AuthorityEnrichment>();
+  for (const { packId, source } of PERSON_ENRICHMENT_PACKS) {
+    const ids = [...(idsBySource.get(source) ?? [])];
+    if (ids.length === 0) continue;
+    options.onPackProgress?.(`Reading ${source} pack…`);
+    try {
+      let content: AuthorityPackContent | undefined;
+      if (options.lookupPackRowsByIds) {
+        content = await options.lookupPackRowsByIds(packId, ids);
+      } else if (options.readPackFile) {
+        // Fallback: load the pack then filter. Avoid this for CBDB in the UI.
+        const all = await options.readPackFile(packId);
+        const wanted = new Set(ids);
+        const lines: string[] = [];
+        for (const row of iterateAuthorityNdjson(all)) {
+          const id = String(row.authorityId ?? '').trim();
+          if (!id || !wanted.has(id)) continue;
+          lines.push(JSON.stringify(row));
+          wanted.delete(id);
+          if (wanted.size === 0) break;
+        }
+        content = lines;
+      }
+      if (!content) continue;
+      for (const row of iterateAuthorityNdjson(content)) {
+        addPackRowToNameIndex(index, source, row);
+      }
+    } catch {
+      // Pack missing or unreadable — skip silently.
+    }
+  }
+  return index;
+}
+
+/**
+ * Same as {@link buildPackNameIndexForAuthorities} but for office packs —
+ * used to pull `metadata.translation` onto office entity cards.
+ */
+export async function buildOfficePackNameIndexForAuthorities(
+  authorities: ReadonlyArray<{ type: string; value: string }>,
+  options: {
+    lookupPackRowsByIds?: AuthorityPackRowsByIdsFn;
+    readPackFile?: (packId: AuthorityPackId) => Promise<AuthorityPackContent>;
+    onPackProgress?: (label: string) => void;
+  },
+): Promise<Map<string, AuthorityEnrichment>> {
+  const idsBySource = new Map<string, Set<string>>();
+  for (const auth of authorities) {
+    const source = auth.type.trim().toUpperCase();
+    if (source !== 'CBDB' && source !== 'NORBERT') continue;
+    const set = idsBySource.get(source) ?? new Set<string>();
+    if (source === 'NORBERT') {
+      for (const key of norbertAuthorityLookupValues(auth.value)) set.add(key);
+    } else {
+      const id = auth.value.trim();
+      if (id) set.add(id);
+    }
+    idsBySource.set(source, set);
+  }
+
+  const index = new Map<string, AuthorityEnrichment>();
+  for (const { packId, source } of OFFICE_ENRICHMENT_PACKS) {
+    const ids = [...(idsBySource.get(source) ?? [])];
+    if (ids.length === 0) continue;
+    options.onPackProgress?.(`Reading ${source} offices…`);
+    try {
+      let content: AuthorityPackContent | undefined;
+      if (options.lookupPackRowsByIds) {
+        content = await options.lookupPackRowsByIds(packId, ids);
+      } else if (options.readPackFile) {
+        const all = await options.readPackFile(packId);
+        const wanted = new Set(ids);
+        const lines: string[] = [];
+        for (const row of iterateAuthorityNdjson(all)) {
+          const id = String(row.authorityId ?? '').trim();
+          if (!id || !wanted.has(id)) continue;
+          lines.push(JSON.stringify(row));
+          wanted.delete(id);
+          if (wanted.size === 0) break;
+        }
+        content = lines;
+      }
+      if (!content) continue;
+      for (const row of iterateAuthorityNdjson(content)) {
+        addPackRowToNameIndex(index, source, row);
+      }
+    } catch {
+      // Pack missing or unreadable — skip silently.
+    }
+  }
+  return index;
+}
+
+/**
+ * Noble-title index from already-loaded Norbert person enrichments (avoids a
+ * second full `norbert-persons` read during targeted backfill).
+ */
+export function nobleTitleIndexFromPackNameIndex(
+  packIndex: Map<string, AuthorityEnrichment>,
+): Map<string, NorbertNobleTitleCandidate[]> {
+  const index = new Map<string, NorbertNobleTitleCandidate[]>();
+  for (const [key, enrichment] of packIndex) {
+    if (!key.startsWith('NORBERT:')) continue;
+    const titles = enrichment.metadata?.nobleTitles;
+    if (!Array.isArray(titles) || titles.length === 0) continue;
+    const rawPersonId = key.slice('NORBERT:'.length);
+    const personId = formatNorbertAuthorityValue('person', rawPersonId);
+    const list = index.get(personId) ?? [];
+    for (const title of titles) {
+      if (!title?.fief && !title?.roleName) continue;
+      list.push({
+        placeName: title.fief ?? '',
+        roleName: title.roleName ?? '',
+        posthumousName: title.posthumousName,
+        posthumousNameAbbr: title.posthumousNameAbbr,
+        dynasty: enrichment.metadata?.dynasty,
+        ref: `person:${personId}`,
+      });
+    }
+    if (!list.length) continue;
+    index.set(personId, list);
+    for (const alias of norbertAuthorityLookupValues(personId)) {
+      if (alias !== personId) index.set(alias, list);
     }
   }
   return index;

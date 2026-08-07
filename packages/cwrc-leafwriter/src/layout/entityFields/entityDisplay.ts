@@ -54,6 +54,12 @@ export const workTypeStyle = (entity: EntitySummary): 'italic' | 'quote' | null 
 export interface EntityDisplaySpec {
   /** Parts the user hid — remain hidden even when the mention becomes first. */
   hidden: EntityPartId[];
+  /**
+   * Parts revealed on a 2nd+ mention beyond the short form (name / family+given).
+   * First mentions ignore this — they use the full recipe minus `hidden`.
+   * Optional for older saved specs that predate this field.
+   */
+  extraParts?: EntityPartId[];
   /** At most one part wrapped in square brackets […]. */
   bracketsAround: EntityPartId | null;
   /** Append ’s after the last visible name part ({family, given} for a person, else {name}). */
@@ -67,6 +73,7 @@ export interface EntityDisplaySpec {
 
 export const EMPTY_DISPLAY_SPEC: EntityDisplaySpec = {
   hidden: [],
+  extraParts: [],
   bracketsAround: null,
   possessive: false,
   titleConvention: null,
@@ -165,18 +172,10 @@ export const chineseNameOf = (entity: EntitySummary): string | null =>
   entity.names.find((n) => (n.lang ?? '').startsWith('zh') && !isRomanizationLang(n.lang))
     ?.text ?? null;
 
-/**
- * Translated gloss for the target language, if any.
- * Prefers `entity.translations` (entity_translations table); falls back to
- * legacy `names` with type `translation`.
- */
-export const translatedNameOf = (
+const glossFromTable = (
   entity: EntitySummary,
-  lang?: string | null,
+  wanted: string,
 ): string | null => {
-  const wanted = primaryLangSubtag(lang);
-  if (!wanted) return null;
-
   const fromTable = (entity.translations ?? []).find(
     (entry) =>
       Boolean(entry.text?.trim()) && primaryLangSubtag(entry.lang) === wanted,
@@ -197,6 +196,57 @@ export const translatedNameOf = (
 };
 
 /**
+ * Translated gloss for the target language, if any.
+ * Prefers `entity.translations` (entity_translations table); falls back to
+ * legacy `names` with type `translation`.
+ *
+ * For offices, when the pane language has no row, try English then French then
+ * any stored gloss (Huckbot `en` / MaxiRicci `fr` are common). Other kinds stay
+ * language-exact unless `{ allowFallback: true }` is passed. Pass
+ * `{ allowFallback: false }` for “missing translation?” nudges.
+ */
+export const translatedNameOf = (
+  entity: EntitySummary,
+  lang?: string | null,
+  options?: { allowFallback?: boolean },
+): string | null => {
+  const allowFallback =
+    options?.allowFallback !== undefined
+      ? options.allowFallback
+      : entity.kind === 'office';
+  const wanted = primaryLangSubtag(lang);
+  if (wanted) {
+    const exact = glossFromTable(entity, wanted);
+    if (exact) return exact;
+  }
+  if (!allowFallback) return null;
+
+  for (const fallback of ['en', 'fr']) {
+    if (fallback === wanted) continue;
+    const hit = glossFromTable(entity, fallback);
+    if (hit) return hit;
+  }
+
+  const anyTable = (entity.translations ?? []).find((entry) => entry.text?.trim());
+  if (anyTable?.text?.trim()) return anyTable.text.trim();
+
+  const anyName = entity.names.find((name) => {
+    if (name.type !== 'translation' || !name.text?.trim()) return false;
+    if (isRomanizationLang(name.lang)) return false;
+    return true;
+  });
+  return anyName?.text?.trim() || null;
+};
+
+/**
+ * Vernacular glosses (`entity_translations`) are for titles and role/org
+ * labels — not person or place names. Those use romanization (and person typed
+ * name classes like 字/號), never an AI “English translation” of 姓名/地名.
+ */
+export const entityKindSupportsVernacularGloss = (kind: string | null | undefined): boolean =>
+  Boolean(kind) && kind !== 'person' && kind !== 'place';
+
+/**
  * Among `languageCodes` (e.g. project translation languages), return those
  * with no vernacular gloss yet. Empty / blank codes are skipped.
  */
@@ -212,7 +262,9 @@ export const missingTranslationLangs = (
     const key = primaryLangSubtag(trimmed);
     if (!key || seen.has(key)) continue;
     seen.add(key);
-    if (!translatedNameOf(entity as EntitySummary, trimmed)) missing.push(trimmed);
+    if (!translatedNameOf(entity as EntitySummary, trimmed, { allowFallback: false })) {
+      missing.push(trimmed);
+    }
   }
   return missing;
 };
@@ -386,6 +438,7 @@ export const formatDates = (
 
 export const isEmptyDisplaySpec = (spec: EntityDisplaySpec): boolean =>
   spec.hidden.length === 0 &&
+  (spec.extraParts?.length ?? 0) === 0 &&
   spec.bracketsAround === null &&
   !spec.possessive &&
   spec.titleConvention == null;
@@ -398,6 +451,9 @@ export const parseDisplaySpec = (raw: string | null | undefined): EntityDisplayS
     const hidden = Array.isArray(parsed.hidden)
       ? parsed.hidden.filter((id): id is EntityPartId => PART_IDS.includes(id as EntityPartId))
       : [];
+    const extraParts = Array.isArray(parsed.extraParts)
+      ? parsed.extraParts.filter((id): id is EntityPartId => PART_IDS.includes(id as EntityPartId))
+      : [];
     const bracketsAround =
       parsed.bracketsAround && PART_IDS.includes(parsed.bracketsAround as EntityPartId)
         ? (parsed.bracketsAround as EntityPartId)
@@ -409,6 +465,7 @@ export const parseDisplaySpec = (raw: string | null | undefined): EntityDisplayS
         : null;
     return {
       hidden,
+      extraParts,
       bracketsAround,
       possessive: Boolean(parsed.possessive),
       titleConvention,
@@ -422,6 +479,7 @@ export const serializeDisplaySpec = (spec: EntityDisplaySpec): string | null => 
   if (isEmptyDisplaySpec(spec)) return null;
   return JSON.stringify({
     hidden: spec.hidden,
+    extraParts: spec.extraParts ?? [],
     bracketsAround: spec.bracketsAround,
     possessive: spec.possessive,
     titleConvention: spec.titleConvention,
@@ -466,11 +524,30 @@ export const displaySpecFromLegacyOverride = (
   }
 };
 
-/** Effective title order: explicit mention override, else language-bucket default. */
+/**
+ * Effective title order: explicit mention override, else kind/language default.
+ * Offices default to translation-first whenever a gloss exists (see
+ * `resolveEntityParts`); other kinds use the language-bucket setting.
+ */
 export const effectiveTitleConvention = (
   spec: EntityDisplaySpec,
   lang?: string | null,
-): TitleConvention => spec.titleConvention ?? titleConventionForLang(lang);
+  kind?: string | null,
+): TitleConvention => {
+  if (spec.titleConvention) return spec.titleConvention;
+  if (kind === 'office') return 'translation-first';
+  return titleConventionForLang(lang);
+};
+
+/** Offices with a gloss default to the vernacular alone (no pinyin / characters). */
+export const officeUsesTranslationOnly = (
+  entity: EntitySummary,
+  spec: EntityDisplaySpec,
+  lang?: string | null,
+): boolean =>
+  entity.kind === 'office' &&
+  Boolean(translatedNameOf(entity, lang)) &&
+  spec.titleConvention !== 'romanization-first';
 
 /**
  * Romanization + Chinese bundled for translation-first parenthetical:
@@ -524,11 +601,58 @@ const partValue = (
 };
 
 /**
+ * Parts not in the short form (until added to `spec.extraParts`).
+ * Used by the format popup so chips reflect what is actually visible.
+ * For offices with a gloss, the short form is the translation alone.
+ */
+export const shortFormOptionalParts = (
+  entity: EntitySummary,
+  lang?: string | null,
+): EntityPartId[] => {
+  if (entity.kind === 'office' && translatedNameOf(entity, lang)) {
+    return ['name', 'classification', 'chinese', 'original', 'dates'];
+  }
+  if (entity.kind === 'person') {
+    return ['chinese', 'translation', 'dates', 'original', 'classification'];
+  }
+  return ['classification', 'chinese', 'translation', 'dates', 'original'];
+};
+
+/**
+ * Whether a part is currently shown for this mention (chip filled vs outlined).
+ * Later mentions: short-form cores are shown; optional parts need `extraParts`.
+ * Offices with a gloss use translation as the core on every mention.
+ */
+export const isEntityPartShown = (
+  entity: EntitySummary,
+  occurrenceIndex: number,
+  spec: EntityDisplaySpec,
+  id: EntityPartId,
+  lang?: string | null,
+): boolean => {
+  if (spec.hidden.includes(id)) return false;
+  if (officeUsesTranslationOnly(entity, spec, lang)) {
+    if (id === 'translation') return true;
+    return (spec.extraParts ?? []).includes(id);
+  }
+  if (occurrenceIndex <= 1) return true;
+  const shortCore =
+    entity.kind === 'person' ? id === 'family' || id === 'given' : id === 'name';
+  if (shortCore) return true;
+  return (spec.extraParts ?? []).includes(id);
+};
+
+/**
  * Base parts from occurrence, minus user-hidden parts, minus missing values.
  *
- * Romanization-first (default): _Jinshu_ 晉書 (Livre des Jin)
+ * Romanization-first (default for most kinds): _Jinshu_ 晉書 (Livre des Jin)
  * Translation-first (when a gloss exists): _Livre des Jin_ (Jinshu 晉書)
+ * Offices with a gloss: vernacular only — no pinyin, characters, or parentheses
+ * (unless the mention forces romanization-first or the user reveals extras).
  * Without a gloss, always romanization-first regardless of settings.
+ *
+ * Later mentions default to the short form; optional parts listed in
+ * `spec.extraParts` can be revealed from the format popup.
  */
 export const resolveEntityParts = (
   entity: EntitySummary,
@@ -541,15 +665,26 @@ export const resolveEntityParts = (
   const first = occurrenceIndex <= 1;
   const isPerson = entity.kind === 'person';
   const hasDates = entity.kind === 'person' || entity.kind === 'work';
-  const gloss = partValue('translation', entity, settings, lang);
+  const glossText = translatedNameOf(entity, lang);
+  const gloss = glossText ? partValue('translation', entity, settings, lang) ?? glossText : null;
   const convention =
-    first && gloss && effectiveTitleConvention(spec, lang) === 'translation-first'
+    first && gloss && effectiveTitleConvention(spec, lang, entity.kind) === 'translation-first'
       ? 'translation-first'
       : 'romanization-first';
 
   let baseIds: EntityPartId[];
-  if (!first) {
-    baseIds = isPerson ? ['family', 'given'] : ['name'];
+  if (officeUsesTranslationOnly(entity, spec, lang) && gloss) {
+    // Translation alone by default; extras (pinyin, characters, …) via popup.
+    const extras = (spec.extraParts ?? []).filter((id) =>
+      shortFormOptionalParts(entity, lang).includes(id),
+    );
+    baseIds = ['translation', ...extras];
+  } else if (!first) {
+    const shortIds: EntityPartId[] = isPerson ? ['family', 'given'] : ['name'];
+    const extras = (spec.extraParts ?? []).filter(
+      (id) => !shortIds.includes(id) && shortFormOptionalParts(entity, lang).includes(id),
+    );
+    baseIds = [...shortIds, ...extras];
   } else if (convention === 'translation-first') {
     baseIds = isPerson
       ? (['translation', 'original', 'dates'] as EntityPartId[])
@@ -567,7 +702,11 @@ export const resolveEntityParts = (
   const parts: ResolvedEntityPart[] = [];
   for (const id of baseIds) {
     if (hidden.has(id)) continue;
-    const text = partValue(id, entity, settings, lang);
+    // Offices may use the gloss even when it matches the short name (English primary).
+    const text =
+      id === 'translation' && entity.kind === 'office' && glossText
+        ? glossText
+        : partValue(id, entity, settings, lang);
     if (!text) continue;
     parts.push({ id, text });
   }
@@ -613,7 +752,8 @@ export const renderEntityFromSpec = (
   let possessiveApplied = false;
   const convention =
     parts[0]?.id === 'translation' &&
-    effectiveTitleConvention(spec, lang) === 'translation-first'
+    (officeUsesTranslationOnly(entity, spec, lang) ||
+      effectiveTitleConvention(spec, lang, entity.kind) === 'translation-first')
       ? 'translation-first'
       : 'romanization-first';
 

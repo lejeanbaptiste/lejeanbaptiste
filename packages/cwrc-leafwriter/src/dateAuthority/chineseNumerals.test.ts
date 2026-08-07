@@ -1,7 +1,9 @@
 import {
   normalizeIntegerAttributeInput,
   parseChineseNumeral,
+  sexagenaryIndexToName,
   sexagenaryNameToIndex,
+  sexagenaryToPinyin,
 } from './chineseNumerals';
 
 describe('chineseNumerals', () => {
@@ -14,6 +16,12 @@ describe('chineseNumerals', () => {
   it('maps sexagenary names to gz indices', () => {
     expect(sexagenaryNameToIndex('甲子')).toBe(1);
     expect(sexagenaryNameToIndex('癸亥')).toBe(60);
+  });
+
+  it('maps indices back to names and pinyin', () => {
+    expect(sexagenaryIndexToName(1)).toBe('甲子');
+    expect(sexagenaryToPinyin('壬戌')).toBe('renxu');
+    expect(sexagenaryToPinyin(59)).toBe('renxu');
   });
 
   it('normalizes integer attribute input', () => {

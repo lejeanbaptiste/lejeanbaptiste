@@ -201,7 +201,12 @@ const isProtectedElement = (element: Element | null): boolean => {
   let el = element;
   while (el) {
     const tag = el.tagName.toLowerCase();
-    if (tag === 'ref' && el.getAttribute('type') === 'ljb-entity') return true;
+    if (
+      tag === 'ref' &&
+      (el.getAttribute('type') === 'ljb-entity' || el.getAttribute('type') === 'ljb-date')
+    ) {
+      return true;
+    }
     if (tag === 'bibl' && el.getAttribute('type') === 'zotero-ref') return true;
     el = el.parentElement;
   }

@@ -4,7 +4,9 @@ import {
   applyMaxiRicciGlossToCandidate,
   buildHuckbotGlossIndex,
   buildMaxiRicciGlossIndex,
+  cleanPublishableOfficeGloss,
   formatOfficeClue,
+  officeGlossLookupKeys,
 } from './officeGlossLookup';
 import type { AuthorityCandidate } from './authority';
 
@@ -99,6 +101,42 @@ describe('officeGlossLookup', () => {
     };
     expect(applyHuckbotGlossToCandidate(candidate, index).metadata?.translation).toBe(
       'Already present',
+    );
+  });
+
+  it('treats [Not Yet Translated] as empty so Huckbot can fill', () => {
+    expect(cleanPublishableOfficeGloss('[Not Yet Translated]')).toBeNull();
+    expect(cleanPublishableOfficeGloss('Heir Apparent (Hucker)')).toBe('Heir Apparent');
+    const index = buildHuckbotGlossIndex(glossNdjson);
+    const candidate: AuthorityCandidate = {
+      source: 'CBDB',
+      authorityId: '987',
+      kind: 'office',
+      primaryName: '州縣長吏',
+      searchStrings: ['州縣長吏'],
+      metadata: {
+        translation: '[Not Yet Translated]',
+        entityId: 'cbdb:office:987',
+        dynasty: '宋',
+      },
+    };
+    expect(applyHuckbotGlossToCandidate(candidate, index).metadata?.translation).toBe(
+      'Senior Subalterns of the Prefecture or District',
+    );
+  });
+
+  it('builds gloss lookup keys for CBDB and Norbert office idnos', () => {
+    expect(
+      officeGlossLookupKeys([
+        { type: 'CBDB', value: '85931' },
+        { type: 'NORBERT', value: 'office-1255' },
+      ]),
+    ).toEqual(
+      expect.arrayContaining([
+        'cbdb:office:85931',
+        'norbert:office:office-1255',
+        'norbert:office:1255',
+      ]),
     );
   });
 

@@ -26,9 +26,11 @@ import {
   NameTypePolicyPanel,
   type NameTypePolicyIO,
 } from '../../../../../packages/cwrc-leafwriter/src/autoTagging/NameTypePolicyPanel';
+import { localizeMetadataFieldLabel } from '@src/desktop/metadataFieldLabels';
 import { SOURCE_LANGUAGE_PATH } from '@src/desktop/projectLanguage';
 import type { ProjectMetadataDialogState } from '@src/desktop/projectMetadataDialogState';
 import type { TranslationLanguage } from '@src/desktop/translationTypes';
+import { METADATA_FIELDS_TEMPLATE_PATH } from '@src/desktop/metadataFieldsTemplate';
 import { useCallback, useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import type { ProjectMetadataSavePayload, ProjectMetadataSaveResult } from '../projectMetadataSave';
@@ -209,7 +211,9 @@ export const ProjectMetadataForm = ({
         <>
           {state.note && (
             <Typography color="text.secondary" variant="body2">
-              {state.note}
+              {state.note.startsWith('LWC.')
+                ? t(state.note, { path: METADATA_FIELDS_TEMPLATE_PATH })
+                : state.note}
             </Typography>
           )}
 
@@ -218,7 +222,7 @@ export const ProjectMetadataForm = ({
               <TextField
                 fullWidth
                 key={field.path}
-                label={field.label}
+                label={localizeMetadataFieldLabel(field.path, field.label, t)}
                 InputLabelProps={{ shrink: true }}
                 onChange={(event) => updateField(field.path, event.target.value)}
                 required
@@ -230,7 +234,9 @@ export const ProjectMetadataForm = ({
                 {(state.values[field.path] ?? '') !== '' &&
                   !isKnownLanguageCode(state.values[field.path] ?? '') && (
                     <MenuItem value={state.values[field.path]}>
-                      {state.values[field.path]} (legacy)
+                      {t('LWC.desktop.project.legacy_language', {
+                        code: state.values[field.path],
+                      })}
                     </MenuItem>
                   )}
                 {FIXED_LANGUAGE_OPTIONS.map((option) => (
@@ -243,7 +249,7 @@ export const ProjectMetadataForm = ({
               <TextField
                 fullWidth
                 key={field.path}
-                label={field.label}
+                label={localizeMetadataFieldLabel(field.path, field.label, t)}
                 multiline={field.path.includes('projectDesc')}
                 onChange={(event) => updateField(field.path, event.target.value)}
                 size="small"

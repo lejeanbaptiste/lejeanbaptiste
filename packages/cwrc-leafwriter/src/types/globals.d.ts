@@ -650,6 +650,10 @@ declare global {
       packId: import('../autoTagging/packPaths').AuthorityPackId,
       dateFilter?: import('../autoTagging/packPaths').AuthorityPackDateFilter,
     ) => Promise<string[]>;
+    authorityPackLookupByIds?: (
+      packId: import('../autoTagging/packPaths').AuthorityPackId,
+      authorityIds: string[],
+    ) => Promise<string[]>;
     authorityPackInstallFrom?: (
       sourcePacksRoot: string,
     ) => Promise<{ ok: boolean; copied?: string[]; error?: string }>;

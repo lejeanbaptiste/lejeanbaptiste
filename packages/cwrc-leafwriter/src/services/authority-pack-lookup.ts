@@ -348,6 +348,17 @@ export function cachedPackReader():
 }
 
 /**
+ * Main-process filtered pack reader for backfill. Returns only NDJSON lines for
+ * the requested authority ids — safe for CBDB persons (~570MB full pack).
+ */
+export function packRowsByIdsReader():
+  | ((packId: AuthorityPackId, authorityIds: string[]) => Promise<AuthorityPackContent>)
+  | undefined {
+  const lookup = window.electronAPI?.authorityPackLookupByIds;
+  return lookup ? (packId, authorityIds) => lookup(packId, authorityIds) : undefined;
+}
+
+/**
  * Reader for one-shot operations such as tag bomb. Do not retain the raw
  * NDJSON arrays in the session cache while the operation builds its own
  * parsed index; that doubles the live memory for the duration of the run.

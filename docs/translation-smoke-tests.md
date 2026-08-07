@@ -94,7 +94,7 @@ To reset a file's translation state: delete its `*.translation.xml` companions a
 
 ## 10. AI translate — entity placeholders (⚠ linking + LJBtero formatting)
 
-**Pipeline (shipped):** For the active source unit, `collectSourceUnitEntities` gathers keyed mentions (`persName`, `placeName`, `orgName`, `title`, `bibl`, `roleName`). Each key is resolved from the entity DB and sent to the model in the `entities` payload. The system prompt instructs the model to emit `{{entity:KEY}}` instead of writing the name itself. After the response, `substituteEntityPlaceholders` swaps each placeholder for an atomic `ref[type="ljb-entity"]` field built by `createEntityFieldElement` (same as manual insert) — kind-aware romanization, dates, work italics, office classification, translation glosses, etc.
+**Pipeline (shipped):** For the active source unit, `collectSourceUnitEntities` gathers keyed mentions (`persName`, `placeName`, `orgName`, `title`, `bibl`, `roleName`, `officeName`). Each key is resolved from the entity DB and sent in the `entities` payload. Before the model sees the unit, `replaceEntitiesWithPlaceholdersInSourceXml` swaps each keyed tag for `{{entity:KEY}}` (same blinding as dates). After the response, `substituteEntityPlaceholders` builds atomic `ref[type="ljb-entity"]` fields — kind-aware romanization, dates, work italics, office classification, translation glosses, etc.
 
 **Automated:** `packages/cwrc-leafwriter/src/layout/entityFields/substituteEntityPlaceholders.test.ts` covers placeholder → entity field for person, place, org, work, and office.
 
@@ -106,3 +106,15 @@ To reset a file's translation state: delete its `*.translation.xml` companions a
 - [ ] In the companion raw XML or the pane: each mention is a `ref type="ljb-entity" key="…"` — **not** plain text copied from the model.
 - [ ] Display matches LJBtero rules: person dates on first mention; work title italic (book); office shows classification on first mention; place/org use name only in the default recipe (dates available via display spec).
 - [ ] If the model skips a placeholder, check `ai-translation-debug.jsonl` in app userData and the devtools console for `[translation] AI entity placeholder had no matching entity`.
+
+## 10b. AI translate — date placeholders (LJBtero Sanmiao glosses)
+
+**Pipeline (shipped):** `collectDatesFromSourceUnitXml` gathers `<date>` spans in document order. Before the model sees the unit, `replaceDatesWithPlaceholdersInSourceXml` swaps each `<date>…</date>` for a bare `{{date:N}}` so the model cannot paraphrase the Chinese formula. The `dates` payload still carries surface/gloss for grammar context only. After the response, `substituteDatePlaceholders` turns each `{{date:N}}` into an atomic `ref[type="ljb-date"]` field.
+
+**Automated:** `dateGloss.test.ts` + `substituteDatePlaceholders.test.ts`.
+
+**Manual:**
+
+- [ ] Source unit with a resolved Sanmiao `<date>` (parse children + `@when`).
+- [ ] Generate translation → companion shows `ref type="ljb-date"` whose text matches LJBtero (On/In …, Emperor …, Roman months, italic ganzhi, Western date in parentheses when day-level).
+- [ ] Untagged / structure-less dates still free-translate (no placeholder).

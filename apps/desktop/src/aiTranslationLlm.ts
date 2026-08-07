@@ -5,11 +5,20 @@ export type StructuredOutputMode = 'json_schema' | 'json_object' | 'prompt_only'
 export interface AiTranslationEntityRef {
   id: string;
   kind: string;
-  primaryName: string | null;
-  romanizedName: string | null;
-  familyName: string | null;
-  dates: string | null;
-  description: string | null;
+  /** @deprecated Not sent to the model — names leak into the translation. */
+  primaryName?: string | null;
+  romanizedName?: string | null;
+  familyName?: string | null;
+  dates?: string | null;
+  description?: string | null;
+}
+
+/** Sanmiao `<date>` span in document order — gloss is LJBtero, not for the model to rewrite. */
+export interface AiTranslationDateRef {
+  index: number;
+  surface?: string | null;
+  when?: string | null;
+  gloss?: string | null;
 }
 
 export interface AiTranslationPayload {
@@ -17,15 +26,20 @@ export interface AiTranslationPayload {
   sourceUnitXml: string;
   targetLanguage: string;
   entities?: AiTranslationEntityRef[];
+  dates?: AiTranslationDateRef[];
 }
 
 const TRANSLATION_SYSTEM_PROMPT =
   'You translate scholarly XML passages. Return JSON only with one string field named translationXml. Translate only the provided passage. ' +
-  'The source passage may contain tags such as persName, placeName, orgName, officeName, title, bibl, and roleName with a "key" attribute. ' +
-  'A separate "entities" list in the user message gives the canonical record (kind, name, romanization, dates, description) for each such key. ' +
-  'When a tagged element\'s key matches an entry in "entities", do not translate, transliterate, or otherwise write out that name yourself: replace the entire tagged mention with the exact placeholder {{entity:KEY}} (KEY is the literal key value), and use the surrounding entity metadata only to get the sentence\'s grammar right (e.g. articles, gender agreement, word order) around the placeholder. Never invent your own {{entity:...}} placeholders for keys not given to you. ' +
-  'Treat any other source TEI tags (or a persName/placeName/etc. with no matching entity) as semantic hints only — do not reproduce the tags or invent a placeholder for them, just translate the enclosed text normally. ' +
-  'Output plain text only, aside from the {{entity:KEY}} placeholders: no XML or HTML tags, no markdown, no angle brackets. Write ampersands and angle brackets as the XML entities &amp;, &lt;, and &gt; if they occur in the text itself.';
+  'Keyed entity mentions and East Asian <date> spans have already been removed from the source XML and replaced with placeholders: {{entity:KEY}}, {{date:N}}, and sometimes {{opaque:N}}. ' +
+  'The "entities" list gives only id + kind (person/place/office/…). It does NOT contain names — never invent a person name, place name, or office title for a placeholder. ' +
+  'The "dates" list gives only indices. ' +
+  'Copy every {{entity:KEY}}, {{date:N}}, and {{opaque:N}} through into your translation exactly as written, in the same position. ' +
+  'Do not expand, paraphrase, transliterate, or invent wording for them; do not put a vernacular name, office title (Governor of, Prefect of, General, King, …), or date next to a placeholder; never invent new placeholder keys or indices. ' +
+  'Do not write temporal prepositions (In, On, En, Le, …) immediately before a {{date:N}} placeholder — the date gloss already includes its own On/In. ' +
+  'Copy placeholders with plain ASCII braces only — never smart quotes inside {{…}}. ' +
+  'Treat any other source TEI tags as semantic hints only — do not reproduce the tags or invent a placeholder for them, just translate the enclosed text normally. ' +
+  'Output plain text only, aside from the {{entity:KEY}}, {{date:N}}, and {{opaque:N}} placeholders: no XML or HTML tags, no markdown, no angle brackets. Write ampersands and angle brackets as the XML entities &amp;, &lt;, and &gt; if they occur in the text itself.';
 
 const PROMPT_ONLY_JSON_HINT =
   '\n\nRespond with one JSON object only, no markdown fences: {"translationXml":"…"}. translationXml must be plain text (use &amp;, &lt;, &gt; for special characters).';
@@ -98,6 +112,7 @@ export function buildTranslationRequestBody(
           customInstructions: settings.customInstructions,
           sourceUnitXml: request.sourceUnitXml,
           entities: request.entities ?? [],
+          dates: request.dates ?? [],
         }),
       },
     ],

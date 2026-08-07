@@ -25,6 +25,7 @@ import {
 } from './disambiguationCandidates';
 import { mintOrLinkEntitySqlite } from './sqliteLookupMint';
 import { backfillEntitiesSqlite } from './sqliteAuthorityBackfill';
+import { persistOfficeTranslationNames } from './officeGlossLookup';
 import { SQLITE_REQUIRED_LOOKUP_MESSAGE } from './sqliteRequired';
 import { entitySummaryFromSqlite } from './sqliteSummary';
 import {
@@ -1742,49 +1743,58 @@ export class AutoTaggingSession {
     const wrapperPerson = instance.tag === 'name' ? wrapperPersonName(instance.element) : null;
     const name = options.name ?? wrapperPerson?.textContent?.trim() ?? instance.surface;
     const projectLangName = options.createNew ? undefined : candidate.projectLangName;
-    const [typedNames, authorityGivenFamilyNames] = await Promise.all([
-      collectTypedNamesForCandidate(candidate),
-      collectGivenFamilyNamesForCandidate(candidate, projectLang),
-    ]);
+    const typedNames = await collectTypedNamesForCandidate(candidate);
     const titleParts = nobleTitlesFromMetadata(candidate.authorityMetadata);
     const headword = projectLangName ?? name;
     // Prefer pack personal primary / 姓+名 over a display-only title headword.
-    const mintName = preferredEntityPrimaryName(headword, typedNames ?? [], titleParts);
-    const nameForSplit = personalNameForSegmentation(headword, typedNames ?? [], titleParts);
-    // Pack `names[]` (bare 姓/名/字) → scalar family/given when Wikidata did not.
-    // Same preference order as entities-panel backfill.
-    const preferredFromPack = preferCanonicalFamilyGiven(nameForSplit, typedNames);
-    const needsPluginSplit =
-      Boolean(nameForSplit) &&
-      (!(authorityGivenFamilyNames.familyName || preferredFromPack.familyName) ||
-        !(authorityGivenFamilyNames.givenName || preferredFromPack.givenName));
-    const pluginSplit = needsPluginSplit ? suggestPersonNameSplit(nameForSplit!, projectLang) : null;
-    const givenFamilyNames = {
-      familyName:
+    const mintName =
+      kind === 'person'
+        ? preferredEntityPrimaryName(headword, typedNames ?? [], titleParts)
+        : headword.normalize('NFC').trim();
+    // 姓/名 splits are person-only — never invent them for offices, places, etc.
+    let familyName: string | undefined;
+    let givenName: string | undefined;
+    let romanizedName =
+      options.romanizedName ?? candidate.romanizedName ?? undefined;
+    if (kind === 'person') {
+      const authorityGivenFamilyNames = await collectGivenFamilyNamesForCandidate(
+        candidate,
+        projectLang,
+      );
+      const nameForSplit = personalNameForSegmentation(headword, typedNames ?? [], titleParts);
+      const preferredFromPack = preferCanonicalFamilyGiven(nameForSplit, typedNames);
+      const needsPluginSplit =
+        Boolean(nameForSplit) &&
+        (!(authorityGivenFamilyNames.familyName || preferredFromPack.familyName) ||
+          !(authorityGivenFamilyNames.givenName || preferredFromPack.givenName));
+      const pluginSplit = needsPluginSplit
+        ? suggestPersonNameSplit(nameForSplit!, projectLang)
+        : null;
+      familyName =
         authorityGivenFamilyNames.familyName ??
         preferredFromPack.familyName ??
-        pluginSplit?.familyName,
-      givenName:
+        pluginSplit?.familyName;
+      givenName =
         authorityGivenFamilyNames.givenName ??
         preferredFromPack.givenName ??
-        pluginSplit?.givenName,
-    };
-    const romanizedName =
-      options.romanizedName ??
-      candidate.romanizedName ??
-      (nameForSplit
-        ? (pluginSplit ? suggestPersonRomanization(nameForSplit, projectLang) : null) ??
-          autoRomanizeForKind(nameForSplit, projectLang, kind)
-        : null) ??
-      undefined;
+        pluginSplit?.givenName;
+      if (!romanizedName && nameForSplit) {
+        romanizedName =
+          (pluginSplit ? suggestPersonRomanization(nameForSplit, projectLang) : null) ??
+          autoRomanizeForKind(nameForSplit, projectLang, kind) ??
+          undefined;
+      }
+    } else if (!romanizedName) {
+      romanizedName = autoRomanizeForKind(mintName, projectLang, kind) ?? undefined;
+    }
 
     const { id: entityId } = await mintOrLinkEntitySqlite(this.store, {
       kind,
       name: mintName,
       nameLang: projectLang ?? undefined,
       romanizedName,
-      familyName: givenFamilyNames.familyName,
-      givenName: givenFamilyNames.givenName,
+      familyName,
+      givenName,
       authorityIds: candidate.authorityIds,
       authoritySource: candidate.authorityIds?.[0]
         ? `${candidate.authorityIds[0].type}:${candidate.authorityIds[0].value}`
@@ -1818,28 +1828,14 @@ export class AutoTaggingSession {
         source: candidate.authorityIds?.[0]?.type,
       });
     }
-    // Persist pack / Huckbot English glosses onto office entities so display
-    // and AI placeholders see them via entity_translations.
-    const officeTranslation = candidate.authorityMetadata?.translation?.trim();
-    if (kind === 'office' && officeTranslation) {
-      await this.store.sqliteAddName({
-        entityId,
-        text: officeTranslation,
-        nameType: 'translation',
-        language: 'en',
-        origin: 'authority',
-        source: candidate.authorityIds?.[0]?.type ?? 'Huckbot5000',
-      });
-    }
-    const officeTranslationFr = candidate.authorityMetadata?.translationFr?.trim();
-    if (kind === 'office' && officeTranslationFr) {
-      await this.store.sqliteAddName({
-        entityId,
-        text: officeTranslationFr,
-        nameType: 'translation',
-        language: 'fr',
-        origin: 'authority',
-        source: 'MaxiRicci7000',
+    // Persist pack / Huckbot / MaxiRicci glosses onto office entities so the
+    // Database Window and AI placeholders see them via entity_translations.
+    if (kind === 'office') {
+      await persistOfficeTranslationNames(this.store, entityId, {
+        translation: candidate.authorityMetadata?.translation,
+        translationFr: candidate.authorityMetadata?.translationFr,
+        enSource: candidate.authorityIds?.[0]?.type ?? 'Huckbot5000',
+        frSource: 'MaxiRicci7000',
       });
     }
 
