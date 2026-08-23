@@ -50,7 +50,7 @@ export const addToRecentDocument = async (_context: Context, document: Resource)
   const { content, hash, ...resource } = document;
 
   if (
-    !resource.provider === undefined ||
+    resource.provider === undefined ||
     resource.owner === undefined ||
     resource.ownerType === undefined ||
     resource.repo === undefined ||

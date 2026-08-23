@@ -92,7 +92,7 @@ const EntityType = ({
   index: number;
   remove: (index: number) => void;
   replace: (index: number, value: EntityTypeProps) => void;
-  setError: (value: string | undefined | { [index: number]: { url: string } }) => void;
+  setError: (value: string | undefined | Record<number, { url: string }>) => void;
   touched: boolean;
 }) => {
   const { t } = useTranslation();

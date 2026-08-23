@@ -108,14 +108,14 @@ class VirtualEditor {
 
     // eslint-disable-next-line @typescript-eslint/ban-ts-comment
     //@ts-ignore
-    // eslint-disable-next-line @typescript-eslint/no-unsafe-argument, @typescript-eslint/no-unsafe-call, @typescript-eslint/no-unsafe-member-access,
+     
     const definitions = Array.from(this.schema?.definitions.values());
-    // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access, @typescript-eslint/no-explicit-any
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const definition: any = definitions.find((def: any) => def.pat?.name?.name === tagName);
 
-    // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
+     
     const documentation = definition
-      ? // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access
+      ?  
         definition.pat.name.documentation
       : 'Element undefined or documentation unavailable';
 

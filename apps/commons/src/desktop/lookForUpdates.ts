@@ -6,25 +6,25 @@ import type { AppUpdateCheckResult } from './appUpdateTypes';
 import type { AuthorityLifecycleStatus } from './authorityLifecycleTypes';
 import type { SchemaUpdateCheckResult } from './schemaUpdateTypes';
 
-export type LookForUpdatesReport = {
+export interface LookForUpdatesReport {
   app: AppUpdateCheckResult | null;
   authority: AuthorityLifecycleStatus | null;
   pluginUpdates: number;
   schema: SchemaUpdateCheckResult | null;
-};
+}
 
-type LookForUpdatesApi = {
+interface LookForUpdatesApi {
   checkForAppUpdates?: () => Promise<AppUpdateCheckResult>;
   authorityLifecycleMaybeCheckUpdates?: (options?: {
     force?: boolean;
   }) => Promise<AuthorityLifecycleStatus | null>;
-  pluginsGetSnapshot?: () => Promise<{ plugins: Array<{ id: string; version: string }> }>;
-  pluginsGetRemoteIndex?: () => Promise<{ plugins: Array<{ id: string; version: string }> }>;
+  pluginsGetSnapshot?: () => Promise<{ plugins: { id: string; version: string }[] }>;
+  pluginsGetRemoteIndex?: () => Promise<{ plugins: { id: string; version: string }[] }>;
   checkSchemaUpdate?: (
     projectFilePath: string,
     options?: { force?: boolean },
   ) => Promise<SchemaUpdateCheckResult>;
-};
+}
 
 const countPluginUpdates = async (api: LookForUpdatesApi): Promise<number> => {
   if (!api.pluginsGetSnapshot || !api.pluginsGetRemoteIndex) return 0;

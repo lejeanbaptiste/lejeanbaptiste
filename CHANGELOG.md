@@ -187,3 +187,13 @@
 - Merit of Persistence (**File saves**) now counts every successful save (`saveCount`), not only distinct file paths — re-saving the same document advances the ladder. Rapid saves are serialised so concurrent Ctrl+S cannot drop counts, and a tag-stats failure no longer skips the achievements pass.
 - Ribbon (per-metric class) unlock snackbars now say the classe (e.g. Vème classe, Ordre du Chevron) instead of the overall rank name (e.g. Sergent) — ranks stay for commission; classes are what each ladder awards.
 - Medal unlock toasts are held until you save a portrait in Service Record; medals still unlock and persist in the background, and waiting notifications are delivered after the first portrait save.
+
+### Tooling
+
+- Migrated ESLint 8 → 10 across the monorepo (`.eslintrc.js` → flat `eslint.config.mjs`), which also cleared four of the deprecation warnings `npm install` was printing (`eslint@8`, `@humanwhocodes/config-array`, `@humanwhocodes/object-schema`, `eslint-plugin-markdown`).
+- The root lint script (the one CI runs) had excluded `apps/**` and `packages/**` since the config was centralised — CI's `npm run lint` was passing by never looking at any application source. Root lint now actually reaches `scripts/`, `.github/workflows/`, and the other top-level files, and each workspace's own `eslint.config.mjs` now covers its source, including `.tsx`, which no `.eslintrc.js` had ever listed (402 component files had never been linted).
+- Ran `eslint --fix` across all five workspaces (178 files): reversed style-only findings — `Array<T>` → `T[]`, `type` → `interface`, `let` → `const`, and 77 stale `eslint-disable` comments that no longer suppressed anything. No behavior change; verified against a captured Prettier baseline and the full test suite before and after.
+- Fixed three bugs the newly-enabled linting surfaced:
+  - `isEntityType` (`packages/cwrc-leafwriter/src/types/assert.ts`) called the `useTheme()` hook from inside a plain predicate invoked conditionally by two callers — a rules-of-hooks violation that risked "Rendered fewer hooks than expected." Now a pure function taking the theme's entity map as a parameter.
+  - `addToRecentDocument` (`apps/commons/src/overmind/storage/actions.tsx`) had `!resource.provider === undefined` instead of `resource.provider === undefined` in its validation guard — a boolean can never equal `undefined`, so a document missing its `provider` was never being rejected.
+  - `checkWellFormedness`'s error-position parser (`packages/cwrc-leafwriter/src/utilities/checkWellFormedness.ts`) computed a fallback column with `Number(column[index]?.[1]) ?? 1` — `Number(undefined)` is `NaN`, not `undefined`, so `?? 1` never caught the missing-match case and the fallback silently never applied.

@@ -112,7 +112,7 @@ class EntitiesList {
 
     // eslint-disable-next-line @typescript-eslint/ban-ts-comment
     //@ts-ignore
-    // eslint-disable-next-line @typescript-eslint/no-unsafe-call
+
     this.$entities.find('select').selectmenu({
       appendTo: this.writer.layoutManager.getContainer(),
       position: { my: 'left top', at: 'left bottom', collision: 'flipfit' },
@@ -228,7 +228,6 @@ class EntitiesList {
   private acceptAll() {
     const filter = this.getFilter();
     this.writer.entitiesManager.eachEntity((_index: number, entity: Entity) => {
-      // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
       const isCandidate = entity.getAttribute('_candidate');
       const type = entity.getType();
 

@@ -100,7 +100,7 @@ describe('auto-tagging smoke test (real corpus)', () => {
     // Readable trace.
     const applied = result.applied;
     const alreadyTagged = result.results.filter((r) => r.outcome === 'already-tagged').length;
-    // eslint-disable-next-line no-console
+     
     console.log(
       [
         '',

@@ -7,17 +7,17 @@ import type { HygienePeer } from './types';
 
 export type PackPersonSource = 'cbdb' | 'dila' | 'norbert';
 
-export type PackPersonHit = {
+export interface PackPersonHit {
   source: PackPersonSource;
   row: PackRow;
-};
+}
 
-export type PersonPackLookupIndex = {
+export interface PersonPackLookupIndex {
   /** Exact search-string / primary-name → pack hits */
   byName: Map<string, PackPersonHit[]>;
   /** `${source}:${authorityId}` → pack hit */
   byAuthority: Map<string, PackPersonHit>;
-};
+}
 
 /**
  * One-pass index of person packs keyed by exact search-string forms and by
@@ -25,7 +25,7 @@ export type PersonPackLookupIndex = {
  * hygiene scans.
  */
 export async function buildPersonPackLookupIndex(
-  packs: Array<{ source: PackPersonSource; content: string | string[] }>,
+  packs: { source: PackPersonSource; content: string | string[] }[],
   options?: {
     yieldEvery?: number;
     yieldFn?: () => Promise<void>;

@@ -126,7 +126,7 @@ const layoutGridItems = <T,>(
   aspect: number,
   rackTop: number,
   rackLeft: number,
-): Array<{ item: T; x: number; y: number; width: number; height: number }> => {
+): { item: T; x: number; y: number; width: number; height: number }[] => {
   const itemWidth = itemHeight * aspect;
   return items.map((item, index) => ({
     item,

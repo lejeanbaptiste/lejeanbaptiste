@@ -11,11 +11,11 @@ import SimpleDialog from '../SimpleDialog';
 import { AdvancedOptions, BasicInformation, EntityTypes, Header, Instructions } from './components';
 import { useCustomAuthorityDialog } from './useCustomAuthorityDialog';
 
-export type CustomAuthorityDialogProps = {
+export interface CustomAuthorityDialogProps {
   authorityId?: string;
   open: boolean;
   onClose: () => void;
-};
+}
 
 //TODO - Guidance... add to the UI
 // https://docs.google.com/document/d/1R5NvSXMZZDMcvNg85fBTCZlAyLUlG7Q_-2KLVqDvpxU/edit?tab=t.0
@@ -73,7 +73,7 @@ export const CustomAuthorityDialog = ({
       >
         {({ dirty, isSubmitting, handleSubmit }) => (
           <Form onSubmit={handleSubmit}>
-            <Header onClose={onClose} type={!!authorityId ? 'edit' : 'add'} />
+            <Header onClose={onClose} type={authorityId ? 'edit' : 'add'} />
             <DialogContent
               dividers
               sx={{ display: 'flex', flexDirection: 'column', height: 700, gap: 2 }}
@@ -83,7 +83,7 @@ export const CustomAuthorityDialog = ({
               <EntityTypes />
               <AdvancedOptions />
             </DialogContent>
-            <DialogActions sx={{ justifyContent: !!authorityId ? 'space-between' : 'flex-end' }}>
+            <DialogActions sx={{ justifyContent: authorityId ? 'space-between' : 'flex-end' }}>
               {!!authorityId && (
                 <Button color="error" onClick={() => setOpenDeleteDialog(true)} variant="outlined">
                   {t('LW.commons.delete')}
@@ -92,7 +92,7 @@ export const CustomAuthorityDialog = ({
               <Stack direction="row" spacing={2}>
                 <Button onClick={onClose}>Cancel</Button>
                 <Button disabled={!dirty} loading={isSubmitting} type="submit" variant="contained">
-                  {!!authorityId ? t('LW.commons.save') : t('LW.commons.add')}
+                  {authorityId ? t('LW.commons.save') : t('LW.commons.add')}
                 </Button>
               </Stack>
             </DialogActions>

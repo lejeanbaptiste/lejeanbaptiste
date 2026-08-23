@@ -78,9 +78,12 @@ export function findPunctuationBoundaryOffset(
   return 0;
 }
 
-export type TextCaret = { node: Text; offset: number };
+export interface TextCaret {
+  node: Text;
+  offset: number;
+}
 
-type MappedChunk = {
+interface MappedChunk {
   /** Inclusive start index in the flattened string. */
   flatStart: number;
   /** Exclusive end index in the flattened string. */
@@ -88,7 +91,7 @@ type MappedChunk = {
   node: Text;
   /** True when this chunk is a virtual newline inserted at a block boundary. */
   virtual?: boolean;
-};
+}
 
 const isBogusElement = (el: Element): boolean => el.getAttribute('data-mce-bogus') !== null;
 
@@ -110,8 +113,7 @@ export function flattenEditorText(
 
   while (current) {
     let skip = false;
-    let el: Element | null =
-      current.parentElement ?? (current.parentNode as Element | null);
+    let el: Element | null = current.parentElement ?? (current.parentNode as Element | null);
     while (el && el !== root) {
       if (isBogusElement(el)) {
         skip = true;
@@ -138,11 +140,7 @@ export function flattenEditorText(
   return { text, chunks };
 }
 
-const blockAncestor = (
-  node: Node,
-  root: Node,
-  isBlock: (node: Node) => boolean,
-): Node | null => {
+const blockAncestor = (node: Node, root: Node, isBlock: (node: Node) => boolean): Node | null => {
   let cur: Node | null = node;
   while (cur && cur !== root) {
     if (cur.nodeType === Node.ELEMENT_NODE && isBlock(cur)) return cur;
@@ -233,12 +231,12 @@ export function resolveTextCaret(root: Node, node: Node | null, offset: number):
   return first ? { node: first, offset: 0 } : null;
 }
 
-export type MoveByBoundaryResult = {
+export interface MoveByBoundaryResult {
   focus: TextCaret;
   /** Flat offsets, useful for tests / debugging. */
   fromFlat: number;
   toFlat: number;
-};
+}
 
 /**
  * Compute the next caret position for punctuation-boundary navigation inside

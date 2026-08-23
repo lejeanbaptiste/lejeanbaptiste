@@ -1,11 +1,11 @@
 import { CircularProgress, Stack, Typography } from '@mui/material';
 import { useTranslation } from 'react-i18next';
 
-type Props = {
+interface Props {
   isLoadingMore?: boolean;
   loadMore: () => Promise<void>;
   refTarget?: React.MutableRefObject<HTMLDivElement | null>;
-};
+}
 
 export const LoadMore = ({ isLoadingMore, loadMore, refTarget }: Props) => {
   const { t } = useTranslation();

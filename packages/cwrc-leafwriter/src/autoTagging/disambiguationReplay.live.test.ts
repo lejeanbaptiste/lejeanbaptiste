@@ -36,7 +36,7 @@ import { parsePendingCache } from './disambiguationPending';
 const DOM_GLOBALS = ['NodeFilter', 'Node', 'Text', 'Element', 'Document', 'DOMParser'] as const;
 
 function installDomGlobals(
-  window: { [K in (typeof DOM_GLOBALS)[number]]: unknown },
+  window: Record<(typeof DOM_GLOBALS)[number], unknown>,
 ): void {
   for (const key of DOM_GLOBALS) {
     (globalThis as Record<string, unknown>)[key] = window[key];
@@ -70,7 +70,7 @@ function collectProjectMentionGroups(projectRoot: string): MentionGroup[] {
   return mergeMentionGroups(groups);
 }
 
-type ReplayRow = {
+interface ReplayRow {
   tag: string;
   surface: string;
   candidateCount: number;
@@ -78,7 +78,7 @@ type ReplayRow = {
   selectedIds: string[];
   hasRationale: boolean;
   suggestCreateNew: boolean;
-};
+}
 
 const RUN_LIVE = process.env.LLM_LIVE_TEST === '1';
 const maybe = RUN_LIVE ? it : it.skip;
@@ -156,7 +156,7 @@ describe('disambiguation replay against a live model (opt-in)', () => {
     const selected = rows.filter((row) => row.selectedCount > 0).length;
     const createNew = rows.filter((row) => row.suggestCreateNew).length;
 
-    // eslint-disable-next-line no-console
+     
     console.log(
       [
         '',

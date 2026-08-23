@@ -156,7 +156,7 @@ describe('orphan sweep + classified purge', () => {
 
   it('reconstitutes genuine orphans as stub entities without rewriting corpus keys', async () => {
     const { store, checkApi, files } = buildProject();
-    const created: Array<{ id: string; kind: string; name: string }> = [];
+    const created: { id: string; kind: string; name: string }[] = [];
     jest.spyOn(store, 'sqliteCreatePopulated').mockImplementation(async (input) => {
       created.push({
         id: input.id,

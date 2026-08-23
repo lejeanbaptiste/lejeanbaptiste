@@ -11,7 +11,7 @@ export interface TextRangeRect {
  */
 export const collectMatchOverlayRects = (
   root: HTMLElement,
-  matches: Array<{ offset: number; length: number }>,
+  matches: { offset: number; length: number }[],
 ): TextRangeRect[] => {
   const rootRect = root.getBoundingClientRect();
   const pieces: { node: Text; start: number; end: number }[] = [];

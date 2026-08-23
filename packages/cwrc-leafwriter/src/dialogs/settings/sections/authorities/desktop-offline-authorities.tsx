@@ -17,23 +17,27 @@ import { useTranslation } from 'react-i18next';
 
 type AuthorityLifecycleProfile = 'chinese' | 'japanese' | 'tibetan';
 
-type AuthorityLifecycleProgress = {
+interface AuthorityLifecycleProgress {
   phase: 'compiling' | 'downloading' | 'extracting' | 'idle';
   message: string;
-};
+}
 
-type AuthorityLifecycleProfileStatus = {
+interface AuthorityLifecycleProfileStatus {
   id: AuthorityLifecycleProfile;
   label: string;
   enabled: boolean;
   installedPacks: number;
   totalPacks: number;
   packsReady: boolean;
-};
+}
 
-type AuthorityLifecycleAttribution = { source: string; label: string; text: string };
+interface AuthorityLifecycleAttribution {
+  source: string;
+  label: string;
+  text: string;
+}
 
-type AuthorityLifecycleStatus = {
+interface AuthorityLifecycleStatus {
   busy: boolean;
   enabled: boolean;
   profile: AuthorityLifecycleProfile;
@@ -51,11 +55,14 @@ type AuthorityLifecycleStatus = {
   referenceDataEnabled?: boolean;
   diskUsage: { packBytes: number; rawBytes: number } | null;
   attributions?: AuthorityLifecycleAttribution[];
-};
+}
 
-type AuthorityLifecycleRunResult = { ok: boolean; error?: string };
+interface AuthorityLifecycleRunResult {
+  ok: boolean;
+  error?: string;
+}
 
-type CommonsUiBridge = {
+interface CommonsUiBridge {
   authorityLifecycleStatus: AuthorityLifecycleStatus | null;
   refreshAuthorityLifecycle: () => Promise<void>;
   setAuthorityLifecycleEnabled: (options: {
@@ -63,10 +70,12 @@ type CommonsUiBridge = {
     profile?: AuthorityLifecycleProfile;
     deleteFiles?: boolean;
   }) => Promise<AuthorityLifecycleRunResult>;
-  setAuthorityLifecycleReferenceDataEnabled: (enabled: boolean) => Promise<AuthorityLifecycleRunResult>;
+  setAuthorityLifecycleReferenceDataEnabled: (
+    enabled: boolean,
+  ) => Promise<AuthorityLifecycleRunResult>;
   runAuthorityLifecycleUpdate: () => Promise<AuthorityLifecycleRunResult>;
   revealAuthorityLifecycleFolder: () => Promise<void>;
-};
+}
 
 const PROFILE_NAMES: Record<AuthorityLifecycleProfile, string> = {
   chinese: 'Chinese',
@@ -301,9 +310,7 @@ export const DesktopOfflineAuthorities = () => {
     <ListItem sx={{ flexDirection: 'column', alignItems: 'stretch', px: 0, py: 1 }}>
       <Stack spacing={1} width="100%">
         <Box>
-          <Typography variant="subtitle2">
-            {t('LW.settings.authorities.offline.title')}
-          </Typography>
+          <Typography variant="subtitle2">{t('LW.settings.authorities.offline.title')}</Typography>
           <Typography variant="caption" color="text.secondary">
             {[
               status?.updateAvailable && enabledCount > 0 ? 'Update available' : null,
@@ -372,7 +379,10 @@ export const DesktopOfflineAuthorities = () => {
 
         {enabledCount > 0 && (status?.attributions?.length ?? 0) > 0 && (
           <Accordion disableGutters elevation={0} sx={{ '&:before': { display: 'none' } }}>
-            <AccordionSummary expandIcon={<ExpandMoreIcon fontSize="small" />} sx={{ minHeight: 0, px: 0 }}>
+            <AccordionSummary
+              expandIcon={<ExpandMoreIcon fontSize="small" />}
+              sx={{ minHeight: 0, px: 0 }}
+            >
               <Typography variant="caption" color="text.secondary">
                 Attributions
               </Typography>

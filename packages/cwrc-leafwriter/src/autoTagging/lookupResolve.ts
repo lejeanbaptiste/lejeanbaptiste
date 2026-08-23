@@ -173,13 +173,13 @@ export interface CrosswalkResult {
       posthumousNameAbbr?: string | null;
       roleName?: string | null;
     };
-    nobleTitles?: Array<{
+    nobleTitles?: {
       fief?: string | null;
       familyName?: string | null;
       posthumousName?: string | null;
       posthumousNameAbbr?: string | null;
       roleName?: string | null;
-    }>;
+    }[];
   };
 }
 
@@ -206,13 +206,13 @@ interface PackRow {
       posthumousNameAbbr?: string | null;
       roleName?: string | null;
     };
-    nobleTitles?: Array<{
+    nobleTitles?: {
       fief?: string | null;
       familyName?: string | null;
       posthumousName?: string | null;
       posthumousNameAbbr?: string | null;
       roleName?: string | null;
-    }>;
+    }[];
   };
 }
 

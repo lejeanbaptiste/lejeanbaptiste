@@ -89,7 +89,7 @@ export const clearOrlandoHeaderPath = (header: Element, headerPath: string) => {
 
 export const applyOrlandoHeaderPathUpdates = (
   xml: string,
-  updates: Array<{ path: string; value: string }>,
+  updates: { path: string; value: string }[],
   options?: { clearPaths?: string[]; skipPaths?: Set<string> },
 ): string => {
   const parser = new DOMParser();

@@ -11,10 +11,10 @@ import { useMenu } from './useMenu';
 
 export { useMenu } from './useMenu';
 
-export type CascadingContextProps = {
+export interface CascadingContextProps {
   parentPopupState: ReturnType<typeof usePopupState> | null;
   rootPopupState: ReturnType<typeof usePopupState> | null;
-};
+}
 
 export const CascadingContext = createContext<CascadingContextProps>({
   parentPopupState: null,

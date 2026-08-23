@@ -115,17 +115,19 @@ import {
 import { openExternalUrl } from '../../../../../packages/cwrc-leafwriter/src/utilities/DOM';
 import { useActions, useAppState } from '@src/overmind';
 import { EntityLookupField, type EntityLookupValue } from '@src/desktop/EntityLookupField';
-import {
-  readStoredKindFilter,
-  writeStoredKindFilter,
-} from '../databaseViewPrefs';
+import { readStoredKindFilter, writeStoredKindFilter } from '../databaseViewPrefs';
 import { EntityNamesAccordion, type NameRow } from './EntityNamesAccordion';
 import { entityLookupDialogAtom } from '@cwrc/leafwriter';
 import { getDefaultStore } from 'jotai';
 import { RESET } from 'jotai/utils';
 import { db } from '../../../../../packages/cwrc-leafwriter/src/db';
 import { applyKeyRemapAcrossProjects, type KeyRemapSummary } from '../entityDb/applyKeyRemap';
-import { computeMergeDocket, loadBridgeContext, promoteEntities, syncNonConflictingLinkedEntities } from '../entityDb/bridge';
+import {
+  computeMergeDocket,
+  loadBridgeContext,
+  promoteEntities,
+  syncNonConflictingLinkedEntities,
+} from '../entityDb/bridge';
 import type { BulkBridgeProposal } from '../../../../../packages/cwrc-leafwriter/src/autoTagging/bulkBridgeImport';
 import { authorityLookupUrl } from '../entityDb/authorityLinks';
 import { BridgeInboxDialog } from './BridgeInboxDialog';
@@ -1009,7 +1011,6 @@ export const SidebarDatabaseTab = ({ active = false }: SidebarDatabaseTabProps) 
                   // Refresh the CEDB panel so minted/linked rows appear; prompt is suppressed.
                   void reload();
                 } catch (error) {
-                  // eslint-disable-next-line no-console
                   console.error('[central-mirror] catch-up sync failed:', error);
                   setBulkSyncProgress({ active: false, label: '', done: 0, total: 0 });
                   setLoadError(
@@ -1021,7 +1022,6 @@ export const SidebarDatabaseTab = ({ active = false }: SidebarDatabaseTabProps) 
             // On decline: leave unlinked and continue browsing CEDB.
           }
         } catch (error) {
-          // eslint-disable-next-line no-console
           console.error('[central-mirror] synchronisation failed:', error);
           setLoadError(
             `Central synchronisation failed: ${error instanceof Error ? error.message : String(error)}`,
@@ -1257,7 +1257,10 @@ export const SidebarDatabaseTab = ({ active = false }: SidebarDatabaseTabProps) 
     }
   }, [search]);
 
-  type KindFilterOption = { value: EntityKind; label: string };
+  interface KindFilterOption {
+    value: EntityKind;
+    label: string;
+  }
 
   const kindFilterOptions = useMemo(
     (): KindFilterOption[] => [
@@ -1279,8 +1282,7 @@ export const SidebarDatabaseTab = ({ active = false }: SidebarDatabaseTabProps) 
    */
   const romanizedOf = useCallback(
     (entity: EntitySummary): string | null =>
-      entity.romanized ??
-      autoRomanizeForKind(entity.names[0] ?? '', projectLang, entity.kind),
+      entity.romanized ?? autoRomanizeForKind(entity.names[0] ?? '', projectLang, entity.kind),
     [projectLang],
   );
 
@@ -1311,9 +1313,7 @@ export const SidebarDatabaseTab = ({ active = false }: SidebarDatabaseTabProps) 
       if (folded === undefined) {
         const romanizations = [
           entity.romanized ?? '',
-          ...entity.names.map(
-            (name) => autoRomanizeForKind(name, projectLang, entity.kind) ?? '',
-          ),
+          ...entity.names.map((name) => autoRomanizeForKind(name, projectLang, entity.kind) ?? ''),
         ];
         // Names + romanization + project key only — not description, not central id.
         const projectKey = entity.projectKey ?? '';
@@ -1415,8 +1415,7 @@ export const SidebarDatabaseTab = ({ active = false }: SidebarDatabaseTabProps) 
       setBackfillBusy(true);
       setBackfillScopeIds(entityIds ?? null);
       setBackfillProgress({ done: 0, total: 0 });
-      const cardScoped =
-        entityIds?.length === 1 && editEntityIdRef.current === entityIds[0];
+      const cardScoped = entityIds?.length === 1 && editEntityIdRef.current === entityIds[0];
       try {
         const readPack = cachedPackReader();
         if (
@@ -1457,7 +1456,11 @@ export const SidebarDatabaseTab = ({ active = false }: SidebarDatabaseTabProps) 
           // Promote still works without a meaningful DOM when both DBs are SQLite.
           await autoSyncEntitiesToCentral(null, entityIds);
         }
-        if (!scopedRefresh && activeStore === store && window.electronAPI?.entitySqliteApplyConcordance) {
+        if (
+          !scopedRefresh &&
+          activeStore === store &&
+          window.electronAPI?.entitySqliteApplyConcordance
+        ) {
           const imported = await refreshCbdbConcordanceSqliteDebounced(
             activeStore,
             cachedPackReader(),
@@ -1477,10 +1480,7 @@ export const SidebarDatabaseTab = ({ active = false }: SidebarDatabaseTabProps) 
         } else {
           await reload();
           const openId = editEntityIdRef.current;
-          if (
-            openId &&
-            (!entityIds || entityIds.length === 0 || entityIds.includes(openId))
-          ) {
+          if (openId && (!entityIds || entityIds.length === 0 || entityIds.includes(openId))) {
             await refreshEditEntityFromSqlite(activeStore, openId, { remount: true });
           }
         }
@@ -1576,9 +1576,7 @@ export const SidebarDatabaseTab = ({ active = false }: SidebarDatabaseTabProps) 
   ) => {
     const raw = await targetStore.sqliteEntitySummary(entityId);
     if (!raw) return;
-    const refreshed = entitySummaryFromSqlite(
-      raw as Parameters<typeof entitySummaryFromSqlite>[0],
-    );
+    const refreshed = entitySummaryFromSqlite(raw as Parameters<typeof entitySummaryFromSqlite>[0]);
     // Keep project/central key badges from the open card / list row.
     setEditEntity((previous) => {
       if (!previous || previous.id !== entityId) return previous;
@@ -1914,7 +1912,7 @@ export const SidebarDatabaseTab = ({ active = false }: SidebarDatabaseTabProps) 
           const deletedIds = new Set<string>();
           for (const [targetStore, group] of byStore) {
             const isProjectEntity = targetStore === store;
-            const centralPurges: Array<{ sourceDbId: string; centralId: string }> = [];
+            const centralPurges: { sourceDbId: string; centralId: string }[] = [];
             const handled = await runSqliteRemapMutation(
               targetStore,
               group.length === 1
@@ -1965,9 +1963,7 @@ export const SidebarDatabaseTab = ({ active = false }: SidebarDatabaseTabProps) 
           }
 
           if (!anyHandled) return;
-          setEditEntity((previous) =>
-            previous && deletedIds.has(previous.id) ? null : previous,
-          );
+          setEditEntity((previous) => (previous && deletedIds.has(previous.id) ? null : previous));
         })();
       },
     });
@@ -2714,7 +2710,9 @@ export const SidebarDatabaseTab = ({ active = false }: SidebarDatabaseTabProps) 
       .filter((entry) => {
         if (editEntity?.kind === 'person') return true;
         const type = entry.type ?? '';
-        return type !== 'family' && type !== 'given' && type !== 'familyName' && type !== 'givenName';
+        return (
+          type !== 'family' && type !== 'given' && type !== 'familyName' && type !== 'givenName'
+        );
       })
       .map((entry) => {
         const matching = nameAssertions.filter(
@@ -3537,42 +3535,42 @@ export const SidebarDatabaseTab = ({ active = false }: SidebarDatabaseTabProps) 
             backfillScopeIds?.length === 1 &&
             backfillScopeIds[0] === editEntity.id
           ) && (
-          <Stack spacing={0.5}>
-            <LinearProgress
-              variant={
-                backfillProgress && backfillProgress.total > 0 ? 'determinate' : 'indeterminate'
-              }
-              value={
-                backfillProgress && backfillProgress.total > 0
-                  ? (backfillProgress.done / backfillProgress.total) * 100
-                  : undefined
-              }
-            />
-            <Stack direction="row" spacing={1} alignItems="center" justifyContent="space-between">
-              <Typography
-                variant="caption"
-                color="text.secondary"
-                noWrap
-                sx={{ flex: 1, minWidth: 0 }}
-              >
-                {backfillProgress?.entityLabel
-                  ? t('LWC.desktop.sidebar.database.backfill_progress_enriching', {
-                      label: backfillProgress.entityLabel,
-                      done: backfillProgress.done,
-                      total: backfillProgress.total || '…',
-                    })
-                  : t('LWC.desktop.sidebar.database.backfill_progress_names')}
-              </Typography>
-              <Button
-                size="small"
-                onClick={() => backfillAbortRef.current?.abort()}
-                sx={{ flexShrink: 0 }}
-              >
-                {t('LWC.desktop.sidebar.database.cancel')}
-              </Button>
+            <Stack spacing={0.5}>
+              <LinearProgress
+                variant={
+                  backfillProgress && backfillProgress.total > 0 ? 'determinate' : 'indeterminate'
+                }
+                value={
+                  backfillProgress && backfillProgress.total > 0
+                    ? (backfillProgress.done / backfillProgress.total) * 100
+                    : undefined
+                }
+              />
+              <Stack direction="row" spacing={1} alignItems="center" justifyContent="space-between">
+                <Typography
+                  variant="caption"
+                  color="text.secondary"
+                  noWrap
+                  sx={{ flex: 1, minWidth: 0 }}
+                >
+                  {backfillProgress?.entityLabel
+                    ? t('LWC.desktop.sidebar.database.backfill_progress_enriching', {
+                        label: backfillProgress.entityLabel,
+                        done: backfillProgress.done,
+                        total: backfillProgress.total || '…',
+                      })
+                    : t('LWC.desktop.sidebar.database.backfill_progress_names')}
+                </Typography>
+                <Button
+                  size="small"
+                  onClick={() => backfillAbortRef.current?.abort()}
+                  sx={{ flexShrink: 0 }}
+                >
+                  {t('LWC.desktop.sidebar.database.cancel')}
+                </Button>
+              </Stack>
             </Stack>
-          </Stack>
-        )}
+          )}
       </Stack>
 
       {/* Duplicate-authority warning */}
@@ -4026,9 +4024,7 @@ export const SidebarDatabaseTab = ({ active = false }: SidebarDatabaseTabProps) 
               <Stack spacing={0.5} sx={{ mt: 1 }}>
                 <LinearProgress
                   variant={
-                    backfillProgress && backfillProgress.total > 0
-                      ? 'determinate'
-                      : 'indeterminate'
+                    backfillProgress && backfillProgress.total > 0 ? 'determinate' : 'indeterminate'
                   }
                   value={
                     backfillProgress && backfillProgress.total > 0
@@ -4036,7 +4032,12 @@ export const SidebarDatabaseTab = ({ active = false }: SidebarDatabaseTabProps) 
                       : undefined
                   }
                 />
-                <Stack direction="row" spacing={1} alignItems="center" justifyContent="space-between">
+                <Stack
+                  direction="row"
+                  spacing={1}
+                  alignItems="center"
+                  justifyContent="space-between"
+                >
                   <Typography
                     variant="caption"
                     color="text.secondary"
@@ -4352,71 +4353,71 @@ export const SidebarDatabaseTab = ({ active = false }: SidebarDatabaseTabProps) 
                 ))}
               </Box>
               {editEntity.kind === 'work' && (
-              <Box sx={{ mt: 2 }}>
-                {editEntity.authors
-                  .filter((author) => author.origin === 'authority')
-                  .map((author) => (
-                    <Stack
-                      key={author.key}
-                      direction="row"
-                      spacing={0.5}
-                      alignItems="center"
-                      sx={{ mb: 0.5 }}
-                    >
-                      <Typography variant="body2" sx={{ flex: 1, minWidth: 0 }} noWrap>
-                        {author.name}
-                      </Typography>
-                      {author.source && <SourceBadges label={author.source.split(':')[0]} />}
-                      <Tooltip title={t('LWC.desktop.sidebar.database.validate_data')}>
-                        <IconButton
-                          size="small"
-                          sx={neutralActionButtonSx}
-                          onClick={() => queueValidation([author.key])}
-                        >
-                          <CheckIcon fontSize="small" />
-                        </IconButton>
-                      </Tooltip>
-                      <Tooltip title={t('LWC.desktop.sidebar.database.reject_data')}>
-                        <IconButton
-                          size="small"
-                          sx={neutralActionButtonSx}
-                          onClick={() =>
-                            rejectAssertionKeys(
-                              editEntity.id,
-                              [author.key],
-                              t('LWC.desktop.sidebar.database.rejecting_data'),
-                            )
-                          }
-                        >
-                          <ClearIcon fontSize="small" />
-                        </IconButton>
-                      </Tooltip>
-                    </Stack>
-                  ))}
-                <EntityLookupField
-                  kind="person"
-                  tag="persName"
-                  label={`${t('LWC.desktop.sidebar.database.authors')}:`}
-                  mode="multi"
-                  values={editEntity.authors
-                    .filter((author) => author.origin === 'user')
-                    .map((author) => ({
-                      name: author.name,
-                      ref: author.ref ?? undefined,
-                    }))}
-                  onChange={(authors) =>
-                    void (async () => {
-                      const handled = await runSqliteEntityMutation(
-                        editEntity.id,
-                        'Saving authors…',
-                        async (targetStore) => {
-                          await targetStore.sqliteSetUserWorkAuthors(editEntity.id, authors);
-                        },
-                      );
-                    })()
-                  }
-                />
-              </Box>
+                <Box sx={{ mt: 2 }}>
+                  {editEntity.authors
+                    .filter((author) => author.origin === 'authority')
+                    .map((author) => (
+                      <Stack
+                        key={author.key}
+                        direction="row"
+                        spacing={0.5}
+                        alignItems="center"
+                        sx={{ mb: 0.5 }}
+                      >
+                        <Typography variant="body2" sx={{ flex: 1, minWidth: 0 }} noWrap>
+                          {author.name}
+                        </Typography>
+                        {author.source && <SourceBadges label={author.source.split(':')[0]} />}
+                        <Tooltip title={t('LWC.desktop.sidebar.database.validate_data')}>
+                          <IconButton
+                            size="small"
+                            sx={neutralActionButtonSx}
+                            onClick={() => queueValidation([author.key])}
+                          >
+                            <CheckIcon fontSize="small" />
+                          </IconButton>
+                        </Tooltip>
+                        <Tooltip title={t('LWC.desktop.sidebar.database.reject_data')}>
+                          <IconButton
+                            size="small"
+                            sx={neutralActionButtonSx}
+                            onClick={() =>
+                              rejectAssertionKeys(
+                                editEntity.id,
+                                [author.key],
+                                t('LWC.desktop.sidebar.database.rejecting_data'),
+                              )
+                            }
+                          >
+                            <ClearIcon fontSize="small" />
+                          </IconButton>
+                        </Tooltip>
+                      </Stack>
+                    ))}
+                  <EntityLookupField
+                    kind="person"
+                    tag="persName"
+                    label={`${t('LWC.desktop.sidebar.database.authors')}:`}
+                    mode="multi"
+                    values={editEntity.authors
+                      .filter((author) => author.origin === 'user')
+                      .map((author) => ({
+                        name: author.name,
+                        ref: author.ref ?? undefined,
+                      }))}
+                    onChange={(authors) =>
+                      void (async () => {
+                        const handled = await runSqliteEntityMutation(
+                          editEntity.id,
+                          'Saving authors…',
+                          async (targetStore) => {
+                            await targetStore.sqliteSetUserWorkAuthors(editEntity.id, authors);
+                          },
+                        );
+                      })()
+                    }
+                  />
+                </Box>
               )}
             </>
           )}
@@ -4477,7 +4478,9 @@ export const SidebarDatabaseTab = ({ active = false }: SidebarDatabaseTabProps) 
                       <TextField
                         select
                         size="small"
-                        value={dateBirthQualifier === 'fl.' && part.isFloruitEnd ? '' : part.qualifier}
+                        value={
+                          dateBirthQualifier === 'fl.' && part.isFloruitEnd ? '' : part.qualifier
+                        }
                         onChange={(event) => part.setQualifier(event.target.value as DatePrecision)}
                         disabled={dateBirthQualifier === 'fl.' && part.isFloruitEnd}
                         sx={{ width: 92 }}

@@ -137,7 +137,7 @@
     "copy-webpack-plugin": "^14.0.0",
     "css-loader": "^7.1.4",
     "esbuild-loader": "^4.4.2",
-    "eslint": "^8.57.1",
+    "eslint": "^10.9.0",
     "eslint-config-custom": "*",
     "mini-css-extract-plugin": "^2.10.0",
     "monaco-editor-webpack-plugin": "7.1.0",

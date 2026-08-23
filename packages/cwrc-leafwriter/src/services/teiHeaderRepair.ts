@@ -1,13 +1,13 @@
 const RNG_NS = 'http://relaxng.org/ns/structure/1.0';
 const TEI_NS = 'http://www.tei-c.org/ns/1.0';
 
-export type HeaderRepair = {
+export interface HeaderRepair {
   repairedXml: string;
   schemaOrder: string[];
   beforeOrder: string[];
   afterOrder: string[];
   description: string;
-};
+}
 
 const childElements = (node: Element): Element[] =>
   Array.from(node.children).filter((child): child is Element => child instanceof Element);

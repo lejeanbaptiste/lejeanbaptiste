@@ -115,7 +115,7 @@ export const SortableTree = ({
   useEffect(() => {
     let timer: NodeJS.Timeout | undefined;
     if (!!overId && overId !== activeId) {
-      let _overId = overId;
+      const _overId = overId;
       timer = setTimeout(() => {
         if (_overId == overId) handleExpand(_overId, true);
       }, 1000);
@@ -159,7 +159,9 @@ export const SortableTree = ({
     event.shiftKey ? addToselectItems(id) : selectItem(id, { contentOnly });
   };
 
-  type SelectItemOptions = { contentOnly: boolean };
+  interface SelectItemOptions {
+    contentOnly: boolean;
+  }
 
   const selectItem = (
     id: UniqueIdentifier,
@@ -234,7 +236,11 @@ export const SortableTree = ({
       case 'Backspace':
       case 'Delete': {
         if (!currentItem) break;
-        if ([writer.schemaManager.getRoot(), writer.schemaManager.getHeader()].includes(currentItem.label)) {
+        if (
+          [writer.schemaManager.getRoot(), writer.schemaManager.getHeader()].includes(
+            currentItem.label,
+          )
+        ) {
           break;
         }
         event.preventDefault();
@@ -253,7 +259,11 @@ export const SortableTree = ({
       case 'F2':
       case 'Enter': {
         if (!currentItem || currentItem.type === 'text') break;
-        if ([writer.schemaManager.getRoot(), writer.schemaManager.getHeader()].includes(currentItem.label)) {
+        if (
+          [writer.schemaManager.getRoot(), writer.schemaManager.getHeader()].includes(
+            currentItem.label,
+          )
+        ) {
           break;
         }
 
@@ -290,8 +300,8 @@ export const SortableTree = ({
 
     const expandedSelection: string[] = [];
 
-    let firstIndex = Math.min(anchor.index, target.index);
-    let lastIndex = Math.max(anchor.index, target.index);
+    const firstIndex = Math.min(anchor.index, target.index);
+    const lastIndex = Math.max(anchor.index, target.index);
 
     for (let i = firstIndex; i <= lastIndex; i++) {
       const item = visibleTree.find(
@@ -465,40 +475,42 @@ export const SortableTree = ({
           onKeyDown={handleTreeKeyDown}
           style={{ height: '100%', outline: 'none' }}
         >
-        <Virtuoso
-          ref={virtuoso}
-          overscan={1000}
-          data={visibleTree}
-          itemContent={(_index: any, { id, content, children, isEntity, depth, label, type }) => {
-            return (
-              <SortableTreeItem
-                key={id}
-                canAddToMultiselection={canAddToMultiselection}
-                content={content}
-                depth={id === activeId && projected ? projected.depth : depth}
-                // disableInteraction={type === 'node'}
-                // disableSelection={true}
-                draggable={shouldBeDraggable(label)}
-                expanded={expandedItems.includes(id)}
-                expandDisabled={label === writer.schemaManager.getRoot()}
-                id={id}
-                indentationWidth={INDENTATION_WIDTH}
-                isEntity={isEntity}
-                label={label}
-                multipleSelection={selectedItems.length > 1}
-                nodeId={id.toString()}
-                onContextMenuOpen={handleContextMenu}
-                onExpand={
-                  children.length ? () => handleExpand(id, !expandedItems.includes(id)) : undefined
-                }
-                onSelectItem={handleSelectItem}
-                selected={selectedItems.includes(id)}
-                type={type}
-              />
-            );
-          }}
-          style={{ height: '100%' }}
-        />
+          <Virtuoso
+            ref={virtuoso}
+            overscan={1000}
+            data={visibleTree}
+            itemContent={(_index: any, { id, content, children, isEntity, depth, label, type }) => {
+              return (
+                <SortableTreeItem
+                  key={id}
+                  canAddToMultiselection={canAddToMultiselection}
+                  content={content}
+                  depth={id === activeId && projected ? projected.depth : depth}
+                  // disableInteraction={type === 'node'}
+                  // disableSelection={true}
+                  draggable={shouldBeDraggable(label)}
+                  expanded={expandedItems.includes(id)}
+                  expandDisabled={label === writer.schemaManager.getRoot()}
+                  id={id}
+                  indentationWidth={INDENTATION_WIDTH}
+                  isEntity={isEntity}
+                  label={label}
+                  multipleSelection={selectedItems.length > 1}
+                  nodeId={id.toString()}
+                  onContextMenuOpen={handleContextMenu}
+                  onExpand={
+                    children.length
+                      ? () => handleExpand(id, !expandedItems.includes(id))
+                      : undefined
+                  }
+                  onSelectItem={handleSelectItem}
+                  selected={selectedItems.includes(id)}
+                  type={type}
+                />
+              );
+            }}
+            style={{ height: '100%' }}
+          />
         </div>
         {createPortal(
           <DragOverlay dropAnimation={dropAnimationConfig} modifiers={[adjustTranslate]}>

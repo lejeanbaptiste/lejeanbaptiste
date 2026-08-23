@@ -342,7 +342,6 @@ describe('real authority + corpus (all_together.csv → sizhu_shang.xml)', () =>
     expect(result.linked).toBe(unique.length);
     expect(result.entitiesCreated).toBeGreaterThan(0);
 
-    // eslint-disable-next-line no-console
     console.log(
       [
         '',

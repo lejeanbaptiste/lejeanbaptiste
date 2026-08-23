@@ -14,7 +14,7 @@ export interface AuthorityRefLookupResult {
   source: string;
   authorityId: string;
   primaryName?: string;
-  names?: Array<{ text: string; type?: string; lang?: string }>;
+  names?: { text: string; type?: string; lang?: string }[];
   metadata?: {
     dynasty?: string;
     nationality?: unknown[];

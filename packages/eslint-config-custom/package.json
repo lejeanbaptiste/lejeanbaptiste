@@ -3,16 +3,20 @@
   "version": "0.0.1",
   "private": true,
   "license": "MIT",
+  "type": "module",
   "main": "index.js",
+  "exports": {
+    ".": "./index.js"
+  },
   "dependencies": {
-    "@typescript-eslint/eslint-plugin": "^8.56.1",
-    "@typescript-eslint/parser": "^8.56.1",
+    "@eslint/js": "^10.0.1",
+    "@eslint/markdown": "^8.0.3",
     "eslint-config-prettier": "^10.1.8",
-    "eslint-plugin-markdown": "^5.1.0",
-    "eslint-plugin-prettier": "^5.5.5",
-    "eslint-plugin-react": "^7.37.5",
-    "eslint-plugin-react-hooks": "^7.0.1",
-    "eslint-plugin-yml": "1.19.1"
+    "eslint-plugin-prettier": "^5.5.6",
+    "eslint-plugin-react-hooks": "^7.1.1",
+    "eslint-plugin-yml": "^3.8.1",
+    "globals": "^17.11.0",
+    "typescript-eslint": "^8.67.0"
   },
   "publishConfig": {
     "access": "public"

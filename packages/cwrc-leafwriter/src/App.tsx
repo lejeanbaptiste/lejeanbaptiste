@@ -121,7 +121,7 @@ const App = ({ document, settings, user }: LeafWriterOptions) => {
   // The document key below still recreates it when the active document changes.
   const [sourceEditorHasMounted, setSourceEditorHasMounted] = useState(false);
   const setupInProgressRef = useRef(false);
-  const setupWaitersRef = useRef<Array<() => void>>([]);
+  const setupWaitersRef = useRef<(() => void)[]>([]);
 
   useEffect(() => {
     if (editorViewMode === 'source') setSourceEditorHasMounted(true);

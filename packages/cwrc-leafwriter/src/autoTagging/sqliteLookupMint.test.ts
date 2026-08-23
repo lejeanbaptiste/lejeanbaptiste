@@ -32,8 +32,7 @@ const panel = (over: Partial<Panel> & Pick<Panel, 'id' | 'kind'>): Panel => ({
 
 const makeStore = (seed: Panel[] = []) => {
   const entities = new Map(seed.map((row) => [row.id, structuredClone(row)]));
-  const nationalities: Array<{ entityId: string; label: string; ref?: string; source?: string }> =
-    [];
+  const nationalities: { entityId: string; label: string; ref?: string; source?: string }[] = [];
 
   const g = globalThis as { window?: { electronAPI?: Record<string, unknown> } };
   g.window = g.window ?? { electronAPI: {} };
@@ -61,13 +60,13 @@ const makeStore = (seed: Panel[] = []) => {
       id: string;
       kind: Panel['kind'];
       description?: string | null;
-      names?: Array<{
+      names?: {
         text: string;
         nameType?: string | null;
         language?: string | null;
         isPrimary?: boolean;
-      }>;
-      authorities?: Array<{ type: string; value: string; origin?: string }>;
+      }[];
+      authorities?: { type: string; value: string; origin?: string }[];
       familyName?: string | null;
       givenName?: string | null;
     }) => {
@@ -103,9 +102,9 @@ const makeStore = (seed: Panel[] = []) => {
     },
     sqliteApplyAuthorityBackfillPatch: async (input: {
       entityId: string;
-      dates?: Array<{ source: string; startYear?: number | null; endYear?: number | null }>;
-      nationalities?: Array<{ label: string; ref?: string | null; source: string }>;
-      origins?: Array<{ label: string; ref?: string | null; source: string }>;
+      dates?: { source: string; startYear?: number | null; endYear?: number | null }[];
+      nationalities?: { label: string; ref?: string | null; source: string }[];
+      origins?: { label: string; ref?: string | null; source: string }[];
     }) => {
       const row = entities.get(input.entityId);
       if (!row) return { changed: false, namesAdded: 0 };

@@ -1,4 +1,13 @@
-import { Alert, Box, Button, CircularProgress, LinearProgress, ListItem, Stack, Typography } from '@mui/material';
+import {
+  Alert,
+  Box,
+  Button,
+  CircularProgress,
+  LinearProgress,
+  ListItem,
+  Stack,
+  Typography,
+} from '@mui/material';
 import { useCallback, useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import {
@@ -7,13 +16,17 @@ import {
   type MapTileBundleSpec,
 } from '../../../../autoTagging/mapView/regionalBundles';
 
-type RegionStatus = { id: string; sha256: string; installedAt: string };
-type DownloadState = {
+interface RegionStatus {
+  id: string;
+  sha256: string;
+  installedAt: string;
+}
+interface DownloadState {
   bundleId: string;
   message: string;
   receivedBytes?: number;
   totalBytes?: number | null;
-};
+}
 
 export const DesktopMapTilesSettings = () => {
   const { t, i18n } = useTranslation();
@@ -21,7 +34,11 @@ export const DesktopMapTilesSettings = () => {
   const [busyId, setBusyId] = useState<string | null>(null);
   const [downloads, setDownloads] = useState<Record<string, DownloadState>>({});
   const [error, setError] = useState<{ id: string; text: string } | null>(null);
-  const [completion, setCompletion] = useState<{ id: string; text: string; severity: 'success' | 'error' } | null>(null);
+  const [completion, setCompletion] = useState<{
+    id: string;
+    text: string;
+    severity: 'success' | 'error';
+  } | null>(null);
 
   const regionLabel = (bundle: MapTileBundleSpec) =>
     t(`LW.settings.map_tiles.regions.${bundle.id}`, { defaultValue: bundle.label });
@@ -34,7 +51,7 @@ export const DesktopMapTilesSettings = () => {
   useEffect(() => {
     void refresh();
     const api = window.electronAPI;
-    const disposers: Array<() => void> = [];
+    const disposers: (() => void)[] = [];
     const hydrateDownloads = async () => {
       const snapshot = await api?.mapTilesDownloadStatus?.();
       const next: Record<string, DownloadState> = {};
@@ -203,7 +220,10 @@ export const DesktopMapTilesSettings = () => {
                         sx={{ flex: 1, height: 4, borderRadius: 1 }}
                       />
                     ) : (
-                      <LinearProgress variant="indeterminate" sx={{ flex: 1, height: 4, borderRadius: 1 }} />
+                      <LinearProgress
+                        variant="indeterminate"
+                        sx={{ flex: 1, height: 4, borderRadius: 1 }}
+                      />
                     )}
                     <CircularProgress size={16} thickness={5} />
                   </Stack>

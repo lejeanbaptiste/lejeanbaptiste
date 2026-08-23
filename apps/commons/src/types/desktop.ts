@@ -240,7 +240,7 @@ export type WorkspaceCursorPosition =
 export type DesktopRightPanelTab =
   'fileMetadata' | 'attributes' | 'css' | 'imageViewer' | 'validation' | 'translation';
 
-export type DesktopValidatorInstrumentation = {
+export interface DesktopValidatorInstrumentation {
   workerLoading: boolean;
   workerLoaded: boolean;
   schemaLoading: boolean;
@@ -248,7 +248,7 @@ export type DesktopValidatorInstrumentation = {
   validationRunning: boolean;
   validationPanelRequested: boolean;
   validationPanelMounted: boolean;
-};
+}
 
 export interface LeafWriterSourceFindBridge {
   applyJump: (params: {

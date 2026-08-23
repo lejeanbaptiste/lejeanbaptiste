@@ -98,7 +98,7 @@ export function isNobleTitleHeadword(
  */
 export function personalNameForSegmentation(
   headword: string | null | undefined,
-  typedNames: ReadonlyArray<{ text: string; type: string }>,
+  typedNames: readonly { text: string; type: string }[],
   nobleTitles?: readonly NobleTitleParts[] | null,
 ): string | null {
   const head = normalize(headword);
@@ -118,7 +118,7 @@ export function personalNameForSegmentation(
  */
 export function preferredEntityPrimaryName(
   headword: string | null | undefined,
-  typedNames: ReadonlyArray<{ text: string; type?: string }> = [],
+  typedNames: readonly { text: string; type?: string }[] = [],
   nobleTitles?: readonly NobleTitleParts[] | null,
 ): string {
   const head = normalize(headword);
@@ -154,10 +154,10 @@ export function nobleTitlesFromMetadata(
  */
 export function inventedTitleSplitCleanup(input: {
   headword: string | null | undefined;
-  nameEntries?: ReadonlyArray<{ text: string; type?: string | null }>;
+  nameEntries?: readonly { text: string; type?: string | null }[];
   familyName?: string | null;
   givenName?: string | null;
-  typedNames?: ReadonlyArray<{ text: string; type: string }>;
+  typedNames?: readonly { text: string; type: string }[];
   nobleTitles?: readonly NobleTitleParts[] | null;
 }): { tombstoneTexts: string[]; clearGivenName: boolean; preferredFamily: string | null } {
   const head = normalize(input.headword);

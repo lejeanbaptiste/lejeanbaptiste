@@ -18,7 +18,7 @@ export const createNativeProjectMetadataIO = (
         dialogId,
       })) as {
         buckets: Record<string, 'phase1' | 'phase2' | 'never'>;
-        customTypes: Array<{ id: string; label: string; bucket: 'phase1' | 'phase2' | 'never' }>;
+        customTypes: { id: string; label: string; bucket: 'phase1' | 'phase2' | 'never' }[];
         artMinCodePoints: number;
         sourceLanguage: string | null;
       } | null;

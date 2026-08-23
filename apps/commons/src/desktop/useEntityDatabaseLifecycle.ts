@@ -61,7 +61,7 @@ export const useEntityDatabaseLifecycle = () => {
           window.electronAPI!.updateProjectFileConfig(path, patch),
       };
 
-      // eslint-disable-next-line no-console
+       
       console.info('[entity-db-check] running check for project', {
         projectFilePath,
         projectRoot: rootPath,
@@ -79,7 +79,7 @@ export const useEntityDatabaseLifecycle = () => {
         checkApi,
       );
 
-      // eslint-disable-next-line no-console
+       
       console.info('[entity-db-check] check completed', {
         status: checkResult.status,
         databaseId: checkResult.databaseId,
@@ -92,7 +92,7 @@ export const useEntityDatabaseLifecycle = () => {
         try {
           const result = await applyPendingOrders(store);
           if (result.ordersApplied > 0 && (result.summary?.filesChanged ?? 0) > 0) {
-            // eslint-disable-next-line no-console
+             
             console.info(
               `[entity-orders] applied ${result.ordersApplied} order(s); ` +
                 `updated ${result.summary?.filesChanged} file(s) in this project.`,
@@ -115,7 +115,7 @@ export const useEntityDatabaseLifecycle = () => {
           if (availability.available) {
             const synced = await applyPendingCentralOrders(availability.context);
             if (synced.repointed > 0 || synced.cleared > 0) {
-              // eslint-disable-next-line no-console
+               
               console.info(
                 `[central-orders] applied ${synced.ordersApplied} order(s); ` +
                   `repointed ${synced.repointed}, cleared ${synced.cleared} mapping(s).`,
@@ -125,7 +125,7 @@ export const useEntityDatabaseLifecycle = () => {
             // into linked PEDB entities. Does not overwrite scalar conflicts.
             const pulled = await syncNonConflictingLinkedEntities(availability.context);
             if (pulled.synced > 0) {
-              // eslint-disable-next-line no-console
+               
               console.info(
                 `[bridge] auto-synced ${pulled.synced} linked entit${pulled.synced === 1 ? 'y' : 'ies'} from central.`,
               );
@@ -133,7 +133,7 @@ export const useEntityDatabaseLifecycle = () => {
           }
         } catch (error) {
           // never block project open on central order replay
-          // eslint-disable-next-line no-console
+           
           console.error('[central-orders] skipped (SQLite required or apply failed):', error);
         }
       }
@@ -178,11 +178,11 @@ export const useEntityDatabaseLifecycle = () => {
           });
           if (response === 1) {
             const created = await reconstituteReportedOrphans(store, checkApi, report);
-            // eslint-disable-next-line no-console
+             
             console.info(`[orphan-sweep] ingested ${created} stub entit${created === 1 ? 'y' : 'ies'}.`);
           } else if (response === 2) {
             const purged = await purgeReportedOrphans(checkApi, report);
-            // eslint-disable-next-line no-console
+             
             console.info(`[orphan-sweep] stripped ${purged} orphan key(s).`);
           }
         }

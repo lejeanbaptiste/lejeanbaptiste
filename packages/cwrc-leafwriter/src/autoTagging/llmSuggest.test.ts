@@ -97,7 +97,7 @@ describe('llmSuggest', () => {
         ],
       }),
     );
-    const progress: Array<{ done: number; total: number }> = [];
+    const progress: { done: number; total: number }[] = [];
     await llmSuggest(doc, {
       policy: 'ignore',
       tags: ['persName'],

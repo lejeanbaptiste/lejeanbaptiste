@@ -38,11 +38,11 @@ interface UniformAvatarProps {
   /** Colorways of the rank medals currently held. */
   serviceRibbons: Ribbon[];
   /** Earned medals displayed as miniatures on the uniform. */
-  medals: Array<{
+  medals: {
     metric: MedalMetric;
     tier: MedalTier;
     label: string;
-  }>;
+  }[];
   /** A transparent, full-canvas DiceBear Adventurer SVG URL. */
   headImageUrl: string;
   /** The composited body/pose/rank/weapon SVG URLs for the two layers the

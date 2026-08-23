@@ -10,13 +10,13 @@ import {
   type DatabaseJobProgress,
 } from '../../../../../packages/cwrc-leafwriter/src/autoTagging/databaseJobProgress';
 
-export type BackgroundJobProgress = {
+export interface BackgroundJobProgress {
   label: string;
   /** Completed units; 0 + total 0 → indeterminate. */
   done: number;
   total: number;
   detail?: string;
-};
+}
 
 /**
  * Fixed bottom-right progress chip for long Database Window jobs

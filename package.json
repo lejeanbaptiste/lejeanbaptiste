@@ -66,7 +66,7 @@
     "@types/node": "^25.3.3",
     "app-builder-bin": "^5.0.0-alpha.10",
     "changeset": "^0.2.6",
-    "eslint": "^8.57.1",
+    "eslint": "^10.9.0",
     "eslint-config-custom": "*",
     "husky": "^9.1.7",
     "jest": "^30.2.0",

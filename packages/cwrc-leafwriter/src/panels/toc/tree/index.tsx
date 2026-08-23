@@ -80,7 +80,7 @@ export const Tree = () => {
   }, [updatePending]);
 
   useEffect(() => {
-    if (!!nodeChanged) {
+    if (nodeChanged) {
       if (selectedItem === nodeChanged) return;
       const parents = getParents(flattenTree, nodeChanged);
       setExpandedItems((prev) => [...new Set([...prev, ...parents, nodeChanged])]);
@@ -129,7 +129,7 @@ export const Tree = () => {
     setNodeChanged(id);
   };
 
-  const expandUpTo = (treeModel: FlattenedItem[], depth: number = Infinity) => {
+  const expandUpTo = (treeModel: FlattenedItem[], depth = Infinity) => {
     const itemsToExpand = treeModel.filter((item) => item.depth < depth).map((item) => item.id);
     setExpandedItems(itemsToExpand);
   };

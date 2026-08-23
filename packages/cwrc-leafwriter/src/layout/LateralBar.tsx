@@ -6,9 +6,9 @@ import { getIcon, IconLeafWriter } from '../icons';
 import { useActions, useAppState } from '../overmind';
 import type { PanelId, Side } from '../types';
 
-type LateralBarProps = {
+interface LateralBarProps {
   side: Capitalize<Side>;
-};
+}
 
 export const LateralBar = ({ side }: LateralBarProps) => {
   const { t } = useTranslation('LW');

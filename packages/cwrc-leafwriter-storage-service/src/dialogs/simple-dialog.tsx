@@ -24,7 +24,7 @@ export const SimpleDialog = ({
 
   const { t } = useTranslation();
 
-  const [data, setData] = useState<{ [key: string]: any }>({});
+  const [data, setData] = useState<Record<string, any>>({});
 
   const handleShouldCLose = async (action?: string) => {
     if (!onBeforeClose) return true;

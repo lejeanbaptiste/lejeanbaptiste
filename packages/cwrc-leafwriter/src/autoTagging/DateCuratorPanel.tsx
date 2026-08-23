@@ -174,7 +174,7 @@ const AuthorityPackageChip = ({
   label: string;
   needsChoice: boolean;
   disambiguated: boolean;
-  candidates: Array<{ displayLine: string }>;
+  candidates: { displayLine: string }[];
   selectedIndex: number | null;
   onSelectCandidate: (index: number) => void;
 }) => {

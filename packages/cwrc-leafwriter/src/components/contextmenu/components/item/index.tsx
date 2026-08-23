@@ -79,7 +79,8 @@ export const Item = forwardRef<any, ItemProps>(
       onClick && onClick();
     };
 
-    const color = id && isEntityType(id) ? theme.entity[id].color.main : theme.palette.primary.main;
+    const color =
+      id && isEntityType(id, theme.entity) ? theme.entity[id].color.main : theme.palette.primary.main;
 
     const rigthIconProps = useMemo<{ icon: IconLeafWriter; size?: number } | null>(() => {
       if (type === 'collection') {

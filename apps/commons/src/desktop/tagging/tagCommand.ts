@@ -287,7 +287,7 @@ export const applyInsertTag = async (tagName: string): Promise<ApplyTagResult> =
     return { applied: false, error: `Cannot insert <${tagName}> here.` };
   }
 
-  let action = await resolveInsertAction(tagName, getEditorTagContext() ?? ctx);
+  const action = await resolveInsertAction(tagName, getEditorTagContext() ?? ctx);
   if (!action) {
     const { insertTagWithSplit } = await import('./tagInsert');
     const splitResult = insertTagWithSplit(tagName);

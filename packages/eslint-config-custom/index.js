@@ -1,47 +1,102 @@
-module.exports = {
-  extends: ['eslint:recommended', 'prettier'],
-  env: { es6: true },
-  ignorePatterns: [
-    '**/coverage/**/*.*',
-    '**/dist/**/*.*',
-    '**/lib/**/*.*',
-    '**/docs/**/*.*',
-    '**/apps/eslint-*/*.js',
-    '**/packages/eslint-*/*.js',
-    '**/changelog.config.js',
-    '**/jest.config.ts',
-    '**/webpack.config.ts',
-    '**/*.d.ts',
-  ],
-  parserOptions: {
-    ecmaVersion: 'latest',
-    sourceType: 'module',
-  },
-  overrides: [
+import js from '@eslint/js';
+import markdown from '@eslint/markdown';
+import prettierConfig from 'eslint-config-prettier';
+import prettier from 'eslint-plugin-prettier';
+import reactHooks from 'eslint-plugin-react-hooks';
+import yml from 'eslint-plugin-yml';
+import globals from 'globals';
+import tseslint from 'typescript-eslint';
+
+/** Generated, vendored or build output — never worth linting in any workspace. */
+const defaultIgnores = [
+  '**/coverage/**',
+  '**/dist/**',
+  '**/lib/**',
+  '**/docs/**',
+  '**/public/**',
+  '**/apps/eslint-*/*.js',
+  '**/packages/eslint-*/*.js',
+  '**/changelog.config.js',
+  '**/jest.config.ts',
+  '**/webpack.config.ts',
+  '**/*.d.ts',
+  // Fenced code blocks extracted from markdown. The snippets in this repo's readmes
+  // and changelogs are deliberately partial (bare object literals, type fragments),
+  // so parsing them as standalone modules only ever produces false positives.
+  // Drop this line to start linting documentation examples.
+  '**/*.md/**',
+];
+
+/**
+ * Shared flat config.
+ *
+ * @param {object} [options]
+ * @param {string} [options.tsconfigRootDir] directory the `project` paths resolve against.
+ *   Pass `import.meta.dirname` from the workspace's eslint.config.mjs.
+ * @param {string[]} [options.project] tsconfig(s) backing the type-aware rules. Workspaces
+ *   whose build tsconfig excludes tests should pass a lint-scoped one that includes them.
+ * @param {string[]} [options.ignores] extra ignore patterns for this workspace.
+ */
+export default function custom({
+  tsconfigRootDir,
+  project = ['./tsconfig.json'],
+  ignores = [],
+} = {}) {
+  return tseslint.config(
+    { ignores: [...defaultIgnores, ...ignores] },
+
+    // Baseline for every file type. This is a browser app, so browser globals are
+    // the default; the Node-side blocks below layer their own globals on top.
+    js.configs.recommended,
+    prettierConfig,
     {
-      env: { node: true },
-      files: ['**/.eslintrc.{js,cjs}', '**/.jest-preset.js'],
-      parserOptions: { sourceType: 'script' },
-    },
-    {
-      env: { node: true },
-      files: ['**/*.ts'],
-      extends: [
-        'eslint:recommended',
-        //* For more relaxed TS rules, uncommend next 2 lines and comment the following 2.
-        'plugin:@typescript-eslint/recommended',
-        'plugin:@typescript-eslint/stylistic',
-        // 'plugin:@typescript-eslint/recommended-type-checked',
-        // 'plugin:@typescript-eslint/stylistic-type-checked',
-        'prettier',
-      ],
-      parser: '@typescript-eslint/parser',
-      parserOptions: {
+      languageOptions: {
         ecmaVersion: 'latest',
         sourceType: 'module',
-        project: ['./tsconfig.json'],
+        globals: { ...globals.browser, ...globals.es2025 },
       },
-      plugins: ['@typescript-eslint', 'prettier'],
+    },
+
+    // Plain .js is CommonJS here — no package in the monorepo sets "type": "module".
+    {
+      files: ['**/*.js', '**/*.cjs'],
+      languageOptions: { sourceType: 'commonjs', globals: globals.commonjs },
+    },
+
+    // ESM tooling scripts.
+    {
+      files: ['**/*.mjs'],
+      languageOptions: { sourceType: 'module', globals: globals.node },
+    },
+
+    // Anything that runs in Node rather than the browser.
+    {
+      files: ['scripts/**/*.js', 'bin/**/*.js', '**/.jest-preset.js', '**/.env-cmdrc.js'],
+      languageOptions: { globals: globals.node },
+    },
+
+    // TypeScript. The parser enables JSX for .tsx automatically.
+    {
+      files: ['**/*.ts', '**/*.tsx'],
+      extends: [
+        js.configs.recommended,
+        //* For more relaxed TS rules, swap the next 2 lines for the 2 commented ones.
+        tseslint.configs.recommended,
+        tseslint.configs.stylistic,
+        // tseslint.configs.recommendedTypeChecked,
+        // tseslint.configs.stylisticTypeChecked,
+        prettierConfig,
+      ],
+      languageOptions: {
+        globals: { ...globals.node, ...globals.browser },
+        parserOptions: {
+          ecmaVersion: 'latest',
+          sourceType: 'module',
+          project,
+          tsconfigRootDir,
+        },
+      },
+      plugins: { prettier },
       rules: {
         '@typescript-eslint/ban-ts-comment': 1,
         '@typescript-eslint/no-explicit-any': 1,
@@ -49,21 +104,41 @@ module.exports = {
         '@typescript-eslint/no-misused-promises': [2, { checksVoidReturn: false }],
       },
     },
+
+    // React. Custom hooks live in plain .ts files here, so both extensions apply.
+    // Only the two classic rules: eslint-plugin-react-hooks v7 also ships the React
+    // Compiler ruleset under `recommended-latest`, which is a separate opt-in.
     {
-      files: ['**/*.md'],
-      processor: 'markdown/markdown',
-      plugins: ['markdown'],
-      extends: ['eslint:recommended', 'plugin:markdown/recommended-legacy', 'prettier'],
+      files: ['**/*.ts', '**/*.tsx'],
+      plugins: { 'react-hooks': reactHooks },
+      rules: {
+        'react-hooks/rules-of-hooks': 'error',
+        'react-hooks/exhaustive-deps': 'warn',
+      },
     },
+
+    // Markdown: lint the prose container, then the fenced code blocks it extracts.
+    ...markdown.configs.processor,
     {
-      files: ['**/*.md/*.ts'],
+      files: ['**/*.md/**'],
+      extends: [tseslint.configs.disableTypeChecked],
+      languageOptions: {
+        parserOptions: { project: null, projectService: false },
+      },
       rules: { strict: 'off' },
     },
+
+    // YAML.
     {
-      env: { node: true },
       files: ['**/*.yml', '**/*.yaml'],
-      extends: ['eslint:recommended', 'plugin:yml/standard', 'plugin:yml/prettier', 'prettier'],
+      extends: [
+        js.configs.recommended,
+        yml.configs['flat/standard'],
+        yml.configs['flat/prettier'],
+        prettierConfig,
+      ],
+      languageOptions: { globals: globals.node },
       rules: { 'yml/no-empty-mapping-value': 0 },
     },
-  ],
-};
+  );
+}

@@ -68,7 +68,7 @@ export async function autoSyncEntitiesToCentral(
       !(await centralStore.hasSqliteDatabase()) ||
       !window.electronAPI?.entitySqliteCreatePopulated
     ) {
-      // eslint-disable-next-line no-console
+       
       console.error(`[auto-sync] ${SQLITE_REQUIRED_MESSAGE}`);
       return;
     }
@@ -93,7 +93,7 @@ export async function autoSyncEntitiesToCentral(
       );
     }
   } catch (error) {
-    // eslint-disable-next-line no-console
+     
     console.error('[auto-sync] failed to promote new entities to central database:', error);
   }
 }

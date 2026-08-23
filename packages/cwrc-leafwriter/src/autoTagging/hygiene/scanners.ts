@@ -309,7 +309,7 @@ export function scanRejectedBlockingGoodName(
 }
 
 export function findingsFromAuthorityDuplicates(
-  groups: Array<{ type: string; value: string; entityIds: string[] }>,
+  groups: { type: string; value: string; entityIds: string[] }[],
 ): HygieneFinding[] {
   return groups
     .filter((group) => group.entityIds.length >= 2)
@@ -363,12 +363,12 @@ export function scanNearDuplicates(entities: EntitySummary[]): HygieneFinding[] 
     }
   }
 
-  type ScoredPair = {
+  interface ScoredPair {
     a: EntitySummary;
     b: EntitySummary;
     score: number;
     reasons: string[];
-  };
+  }
   const scored: ScoredPair[] = [];
 
   for (const familyBucket of byFamily.values()) {
@@ -386,7 +386,7 @@ export function scanNearDuplicates(entities: EntitySummary[]): HygieneFinding[] 
     }
 
     /** Candidate pairs that already share 姓 and at least one 名/字 link. */
-    const candidatePairs: Array<[EntitySummary, EntitySummary]> = [];
+    const candidatePairs: [EntitySummary, EntitySummary][] = [];
     const pushPairs = (bucket: EntitySummary[]) => {
       const members = [...new Map(bucket.map((p) => [p.id, p])).values()];
       if (members.length < 2 || members.length > 120) return;

@@ -318,7 +318,7 @@ export const clearTagStatsCache = () => {
 export const previewProjectTagStats = (
   stats: TagUsageStats,
   rootPath: string,
-  openTabs: Array<{ content: string; filePath: string }>,
+  openTabs: { content: string; filePath: string }[],
 ): TagUsageStats =>
   openTabs.reduce((merged, tab) => {
     if (!tab.content?.trim()) return merged;

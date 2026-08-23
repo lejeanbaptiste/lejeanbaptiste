@@ -288,7 +288,7 @@ export type AuthorityPackRowsByIdsFn = (
  * renderer never materializes the full CBDB persons pack.
  */
 export async function buildPackNameIndexForAuthorities(
-  authorities: ReadonlyArray<{ type: string; value: string }>,
+  authorities: readonly { type: string; value: string }[],
   options: {
     lookupPackRowsByIds?: AuthorityPackRowsByIdsFn;
     readPackFile?: (packId: AuthorityPackId) => Promise<AuthorityPackContent>;
@@ -348,7 +348,7 @@ export async function buildPackNameIndexForAuthorities(
  * used to pull `metadata.translation` onto office entity cards.
  */
 export async function buildOfficePackNameIndexForAuthorities(
-  authorities: ReadonlyArray<{ type: string; value: string }>,
+  authorities: readonly { type: string; value: string }[],
   options: {
     lookupPackRowsByIds?: AuthorityPackRowsByIdsFn;
     readPackFile?: (packId: AuthorityPackId) => Promise<AuthorityPackContent>;
@@ -561,7 +561,7 @@ export function authorityEnrichmentForEntity(
 export function authorityEnrichmentsForEntity(
   entity: Pick<EntitySummary, 'authorities'>,
   index: Map<string, AuthorityEnrichment> | null,
-): Array<{ source: string; enrichment: AuthorityEnrichment }> {
+): { source: string; enrichment: AuthorityEnrichment }[] {
   if (!index) return [];
   return entity.authorities.flatMap((auth) => {
     const source = auth.type.trim().toUpperCase();

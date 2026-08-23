@@ -66,7 +66,7 @@ const TeiSourceFields = ({
   useEffect(() => {
     setRangeMode(isRange);
     // Only resync the toggle when the underlying document changes shape.
-    // eslint-disable-next-line react-hooks/exhaustive-deps
+     
   }, [isRange]);
 
   // EntityLookupField's work-title flow calls onChange (title link) and then,

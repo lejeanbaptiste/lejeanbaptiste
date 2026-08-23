@@ -225,14 +225,14 @@ describe('AutoTaggingSession', () => {
   });
 
   describe('getProjectDocuments', () => {
-    type DesktopGlobals = {
+    interface DesktopGlobals {
       electronAPI?: {
         listProjectXmlFiles: (root: string) => Promise<{ name: string; path: string }[]>;
         readFile: (path: string) => Promise<string>;
       };
       __ljbLspProject?: { projectRoot?: string };
       writer?: { overmindState?: { editor?: { resource?: { filePath?: string } } } };
-    };
+    }
 
     const win = window as unknown as DesktopGlobals;
     let savedElectron: DesktopGlobals['electronAPI'];
@@ -311,14 +311,14 @@ describe('AutoTaggingSession', () => {
   });
 
   describe('runTagBomb', () => {
-    type DesktopGlobals = {
+    interface DesktopGlobals {
       electronAPI?: {
         listProjectXmlFiles: (root: string) => Promise<{ name: string; path: string }[]>;
         readFile: (path: string) => Promise<string>;
       };
       __ljbLspProject?: { projectRoot?: string };
       writer?: { overmindState?: { editor?: { resource?: { filePath?: string } } } };
-    };
+    }
 
     const win = window as unknown as DesktopGlobals;
     let savedElectron: DesktopGlobals['electronAPI'];

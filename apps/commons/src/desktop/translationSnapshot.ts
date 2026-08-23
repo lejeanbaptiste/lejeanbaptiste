@@ -51,7 +51,7 @@ export const buildSnapshotUnits = async (
     if (!id) continue;
     units.push({
       id,
-      // eslint-disable-next-line no-await-in-loop
+
       contentHash: await hashUnitContent(element),
       index,
       preview: normalizeUnitText(element).slice(0, PREVIEW_LENGTH),

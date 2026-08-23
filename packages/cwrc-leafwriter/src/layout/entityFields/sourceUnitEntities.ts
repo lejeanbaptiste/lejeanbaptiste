@@ -422,7 +422,7 @@ export const replaceEntitiesWithPlaceholdersInSourceXml = (
     return false;
   };
 
-  const toReplace: Array<{ el: Element; token: string }> = [];
+  const toReplace: { el: Element; token: string }[] = [];
   if (knownKeys.size > 0) {
     for (const tag of SOURCE_UNIT_ENTITY_TAGS) {
       for (const el of elementsByLocalName(doc, tag)) {

@@ -69,7 +69,6 @@ export const DATE_MONTH_SPAN_STYLES: readonly DateMonthSpanStyle[] = ['months', 
 export const isDateMonthSpanStyle = (value: unknown): value is DateMonthSpanStyle =>
   value === 'months' || value === 'full';
 
-
 /**
  * Calendar slots used for the as-written gloss and for attribute brackets.
  * Brackets never include dynasty / emperor.
@@ -122,9 +121,7 @@ export interface DateGlossInput extends DateGlossCalendarParts {
 }
 
 /** One render token — ganzhi runs are italicised by the date field builder. */
-export type DateGlossToken =
-  | { kind: 'text'; text: string }
-  | { kind: 'ganzhi'; text: string };
+export type DateGlossToken = { kind: 'text'; text: string } | { kind: 'ganzhi'; text: string };
 
 const ROMAN_MONTHS = [
   '',
@@ -290,7 +287,11 @@ export const formatWesternWhen = (
   return formatWesternDay(parsed, lang);
 };
 
-type IsoYmd = { year: number; month: number; day: number };
+interface IsoYmd {
+  year: number;
+  month: number;
+  day: number;
+}
 
 const parseIsoYmd = (raw: string | null | undefined): IsoYmd | null => {
   const trimmed = raw?.trim();
@@ -379,7 +380,7 @@ type CalendarSlice = {
   ruler?: string | null;
 } & DateGlossCalendarParts;
 
-type ChunkFacts = {
+interface ChunkFacts {
   dyn: string | null;
   ruler: string | null;
   era: string | null;
@@ -392,45 +393,25 @@ type ChunkFacts = {
   gzPy: string | null;
   nmdPy: string | null;
   bucket: DateGlossLang;
-};
+}
 
-const buildChunkFactories = (facts: ChunkFacts): Array<(tokens: DateGlossToken[]) => void> => {
-  const {
-    dyn,
-    ruler,
-    era,
-    year,
-    season,
-    month,
-    day,
-    intercalary,
-    lp,
-    gzPy,
-    nmdPy,
-    bucket,
-  } = facts;
-  const chunks: Array<(tokens: DateGlossToken[]) => void> = [];
+const buildChunkFactories = (facts: ChunkFacts): ((tokens: DateGlossToken[]) => void)[] => {
+  const { dyn, ruler, era, year, season, month, day, intercalary, lp, gzPy, nmdPy, bucket } = facts;
+  const chunks: ((tokens: DateGlossToken[]) => void)[] = [];
 
   if (dyn) {
     chunks.push((tokens) => pushText(tokens, dyn));
   }
   if (ruler) {
     chunks.push((tokens) =>
-      pushText(
-        tokens,
-        bucket === 'fr' ? `l’empereur ${ruler}` : `Emperor ${ruler}`,
-      ),
+      pushText(tokens, bucket === 'fr' ? `l’empereur ${ruler}` : `Emperor ${ruler}`),
     );
   }
   if (era) {
-    chunks.push((tokens) =>
-      pushText(tokens, bucket === 'fr' ? `l’ère ${era}` : `${era} era`),
-    );
+    chunks.push((tokens) => pushText(tokens, bucket === 'fr' ? `l’ère ${era}` : `${era} era`));
   }
   if (year != null) {
-    chunks.push((tokens) =>
-      pushText(tokens, bucket === 'fr' ? `l’an ${year}` : `year ${year}`),
-    );
+    chunks.push((tokens) => pushText(tokens, bucket === 'fr' ? `l’an ${year}` : `year ${year}`));
   }
   if (season) {
     chunks.push((tokens) => pushText(tokens, season));
@@ -439,15 +420,9 @@ const buildChunkFactories = (facts: ChunkFacts): Array<(tokens: DateGlossToken[]
     const roman = ROMAN_MONTHS[month] ?? String(month);
     chunks.push((tokens) => {
       if (bucket === 'fr') {
-        pushText(
-          tokens,
-          intercalary ? `mois intercalaire ${roman}` : `mois ${roman}`,
-        );
+        pushText(tokens, intercalary ? `mois intercalaire ${roman}` : `mois ${roman}`);
       } else {
-        pushText(
-          tokens,
-          intercalary ? `intercalary month ${roman}` : `month ${roman}`,
-        );
+        pushText(tokens, intercalary ? `intercalary month ${roman}` : `month ${roman}`);
       }
     });
   }
@@ -505,10 +480,7 @@ const buildChunkFactories = (facts: ChunkFacts): Array<(tokens: DateGlossToken[]
           pushText(tokens, bucket === 'fr' ? ', veille de la nouvelle lune' : ', new moon eve');
         }
       } else {
-        pushText(
-          tokens,
-          bucket === 'fr' ? 'veille de la nouvelle lune' : 'new moon eve',
-        );
+        pushText(tokens, bucket === 'fr' ? 'veille de la nouvelle lune' : 'new moon eve');
       }
     });
   } else if (day != null || gzPy) {
@@ -541,13 +513,8 @@ const calendarFacts = (
   const gzPy = ganzhiPinyin(resolveGzLabel(slice.gz) ?? slice.gz);
   const nmdPy = ganzhiPinyin(resolveGzLabel(slice.nmdGz) ?? slice.nmdGz);
   const dyn =
-    includeDynRuler && slice.dyn?.trim()
-      ? romanizeDynasty(slice.dyn.trim(), bucket)
-      : null;
-  const ruler =
-    includeDynRuler && slice.ruler?.trim()
-      ? romanizeName(slice.ruler.trim())
-      : null;
+    includeDynRuler && slice.dyn?.trim() ? romanizeDynasty(slice.dyn.trim(), bucket) : null;
+  const ruler = includeDynRuler && slice.ruler?.trim() ? romanizeName(slice.ruler.trim()) : null;
   const era = slice.era?.trim() ? romanizeName(slice.era.trim()) : null;
   const season = glossSeason(slice.season, bucket);
   return {
@@ -569,20 +536,20 @@ const calendarFacts = (
 const hasCalendarStructure = (facts: ChunkFacts): boolean =>
   Boolean(
     facts.dyn ||
-      facts.ruler ||
-      facts.era ||
-      facts.year != null ||
-      facts.season ||
-      facts.month != null ||
-      facts.day != null ||
-      facts.gzPy ||
-      facts.lp ||
-      facts.nmdPy,
+    facts.ruler ||
+    facts.era ||
+    facts.year != null ||
+    facts.season ||
+    facts.month != null ||
+    facts.day != null ||
+    facts.gzPy ||
+    facts.lp ||
+    facts.nmdPy,
   );
 
 const appendChunkWriters = (
   tokens: DateGlossToken[],
-  writers: Array<(tokens: DateGlossToken[]) => void>,
+  writers: ((tokens: DateGlossToken[]) => void)[],
 ): void => {
   writers.forEach((write, index) => {
     if (index > 0) pushText(tokens, ', ');
@@ -624,8 +591,8 @@ export const formatDateGlossTokens = (
   // Day vs month granularity follows what was actually written when present.
   const dayLevel = Boolean(
     (hasWritten ? writtenFacts : mainFacts).day != null ||
-      (hasWritten ? writtenFacts : mainFacts).gzPy ||
-      (hasWritten ? writtenFacts : mainFacts).lp,
+    (hasWritten ? writtenFacts : mainFacts).gzPy ||
+    (hasWritten ? writtenFacts : mainFacts).lp,
   );
 
   const westernDay =
@@ -718,8 +685,7 @@ export const dateGlossInputFromParts = (
     return value || undefined;
   };
 
-  const writtenIntercalary =
-    Boolean(child('int')) || /閏|闰/.test(child('month') ?? '');
+  const writtenIntercalary = Boolean(child('int')) || /閏|闰/.test(child('month') ?? '');
   const attrIntercalary = attr('intercalary') === '1';
 
   const eraFromChild = child('era');
@@ -739,13 +705,13 @@ export const dateGlossInputFromParts = (
 
   const hasAttrCalendar = Boolean(
     attrParts.era ||
-      attrParts.year ||
-      attrParts.month ||
-      attrParts.day ||
-      attrParts.gz ||
-      attrParts.lp ||
-      attrParts.nmdGz ||
-      attrParts.intercalary,
+    attrParts.year ||
+    attrParts.month ||
+    attrParts.day ||
+    attrParts.gz ||
+    attrParts.lp ||
+    attrParts.nmdGz ||
+    attrParts.intercalary,
   );
 
   return {

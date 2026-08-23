@@ -81,7 +81,7 @@ function romajiForKana(name: string): string | null {
  * pinyin word: 建康郡 → "Jiankang jun". Sorted longest-first for future
  * multi-character suffixes. 州/京/市 stay attached (揚州 → Yangzhou).
  */
-export const PLACE_ADMIN_SUFFIXES: ReadonlyArray<{ chars: string; pinyin: string }> = [
+export const PLACE_ADMIN_SUFFIXES: readonly { chars: string; pinyin: string }[] = [
   { chars: '郡', pinyin: 'jun' },
   { chars: '縣', pinyin: 'xian' },
   { chars: '县', pinyin: 'xian' },

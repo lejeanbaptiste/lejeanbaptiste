@@ -67,8 +67,8 @@ export function offsetToRawRange(
 export function sequentialMatchOffsets(
   text: string,
   proposals: SanmiaoProposal[],
-): Array<{ proposal: SanmiaoProposal; offset: number }> {
-  const matched: Array<{ proposal: SanmiaoProposal; offset: number }> = [];
+): { proposal: SanmiaoProposal; offset: number }[] {
+  const matched: { proposal: SanmiaoProposal; offset: number }[] = [];
   let pos = 0;
   for (const proposal of proposals) {
     const surface = proposal.date_string;

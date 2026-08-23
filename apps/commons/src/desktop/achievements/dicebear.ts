@@ -94,7 +94,7 @@ export const diceBearAvatarUrl = (options: DiceBearAvatarOptions): string => {
 /** Deliberately labeled "M"/"F", not "Male"/"Female" or "Sex"/"Gender" -
  * this is a body-art choice (which uniform subtree renders), presented as
  * plainly as possible. */
-export const BODY_TYPES: ReadonlyArray<{ label: string; value: 'm' | 'f' }> = [
+export const BODY_TYPES: readonly { label: string; value: 'm' | 'f' }[] = [
   { label: 'M', value: 'm' },
   { label: 'F', value: 'f' },
 ];

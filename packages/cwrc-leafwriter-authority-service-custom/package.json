@@ -29,7 +29,7 @@
     "lint": "eslint ."
   },
   "devDependencies": {
-    "eslint": "^8.57.1",
+    "eslint": "^10.9.0",
     "eslint-config-custom": "*",
     "tsup": "^8.5.0",
     "typescript": "^5.9.3"

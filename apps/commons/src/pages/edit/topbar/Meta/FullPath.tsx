@@ -1,11 +1,11 @@
 import { Icon, IconButton, Stack, Typography } from '@mui/material';
 import { getIcon, type IconName } from '@src/icons';
 
-type FullPathProps = {
+interface FullPathProps {
   children: React.ReactNode;
   provider?: string;
   url?: string;
-};
+}
 
 export const FullPath = ({ children, provider, url }: FullPathProps) => {
   return (

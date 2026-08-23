@@ -46,7 +46,7 @@ export const usePermalink = () => {
       if (permalink.isSample) return permalink.resource;
 
       // Get RAW URL if user is not signed in.
-      if (!!permalink.resource) {
+      if (permalink.resource) {
         const { owner, repo, path, filename } = permalink.resource;
         if (owner && repo && filename) {
           const _path = path ? `${path}/` : '';

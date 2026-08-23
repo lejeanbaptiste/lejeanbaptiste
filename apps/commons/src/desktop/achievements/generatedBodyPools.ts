@@ -67,7 +67,7 @@ export const POSE_AVAILABLE_RANK_INDICES: Readonly<Record<number, readonly numbe
   ]
 };
 
-export const WEAPON_POOLS: Readonly<Record<number, ReadonlyArray<Record<number, WeaponRankPool>>>> =
+export const WEAPON_POOLS: Readonly<Record<number, readonly Record<number, WeaponRankPool>[]>> =
   {
   "1": [],
   "2": [],

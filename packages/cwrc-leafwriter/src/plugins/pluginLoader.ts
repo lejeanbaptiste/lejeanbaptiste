@@ -12,7 +12,7 @@ async function importPluginModule(url: string): Promise<{ register?: (ctx: unkno
 
 export async function loadEnabledPluginModules(
   snapshot: PluginHostSnapshotView | null,
-  previousEnabled: Set<string> = new Set(),
+  previousEnabled = new Set<string>(),
 ): Promise<void> {
   if (!snapshot || !window.electronAPI?.pluginsGetModuleUrl) return;
 

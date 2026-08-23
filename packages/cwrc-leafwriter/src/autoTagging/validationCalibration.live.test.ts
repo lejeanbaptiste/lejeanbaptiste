@@ -42,7 +42,7 @@ import { runValidationCalibrationHarness, type ThresholdConfusion } from './vali
 const DOM_GLOBALS = ['NodeFilter', 'Node', 'Text', 'Element', 'Document', 'DOMParser'] as const;
 
 function installDomGlobals(
-  window: { [K in (typeof DOM_GLOBALS)[number]]: unknown },
+  window: Record<(typeof DOM_GLOBALS)[number], unknown>,
 ): void {
   for (const key of DOM_GLOBALS) {
     (globalThis as Record<string, unknown>)[key] = window[key];
@@ -108,7 +108,7 @@ describe('validation calibration harness against a live model (opt-in)', () => {
       .filter((b) => b.count > 0)
       .map((b) => `    ${b.rangeLabel}: n=${b.count} accuracy=${b.accuracy.toFixed(3)} avgConfidence=${b.avgConfidence.toFixed(3)}`);
 
-    // eslint-disable-next-line no-console
+     
     console.log(
       [
         '',

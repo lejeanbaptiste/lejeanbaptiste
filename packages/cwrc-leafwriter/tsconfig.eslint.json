@@ -1,0 +1,7 @@
+// Lint-only project: the build tsconfig excludes test files, but ESLint still needs
+// them in a project for type-aware rules. Same sources, minus the test exclusions.
+{
+  "extends": "./tsconfig.json",
+  "include": ["src/**/*", "src/types/**/*.d.ts"],
+  "exclude": ["node_modules", "lib"]
+}

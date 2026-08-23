@@ -117,12 +117,9 @@ const extractNestedTagTemplate = (
   return templates.sort((a, b) => a.end - a.start - (b.end - b.start));
 };
 
-const collectTextMatches = (
-  root: Element,
-  search: string,
-): Array<{ end: number; start: number }> => {
+const collectTextMatches = (root: Element, search: string): { end: number; start: number }[] => {
   const { text } = collectVisibleTextSegments(root);
-  const matches: Array<{ end: number; start: number }> = [];
+  const matches: { end: number; start: number }[] = [];
   let start = 0;
   while (start <= text.length) {
     const index = text.indexOf(search, start);

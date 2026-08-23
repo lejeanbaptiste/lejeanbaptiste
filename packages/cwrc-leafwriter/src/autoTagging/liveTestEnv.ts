@@ -3,12 +3,12 @@
  * Provider-specific keys avoid sending a Groq gsk_… key to Mistral by mistake.
  */
 
-export type LiveClientConfig = {
+export interface LiveClientConfig {
   baseUrl: string;
   model: string;
   key: string;
   keySource: string;
-};
+}
 
 const GROQ_BASE = 'https://api.groq.com/openai';
 const MISTRAL_BASE = 'https://api.mistral.ai';

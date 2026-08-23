@@ -52,7 +52,7 @@ const work: EntityMappingProps = {
   },
   parentTag: 'TITLE',
   types: ['dcterms:BibliographicResource', 'dcterms:title'],
-  // eslint-disable-next-line @typescript-eslint/no-unused-vars
+
   annotation: (annotationsManager, entity, _format) => {
     const anno = annotationsManager.commonAnnotation(
       entity,
@@ -120,7 +120,7 @@ const date: EntityMappingProps = {
   parentTag: ['DATE', 'DATERANGE'],
   types: ['time:Interval', 'time:Instant', 'time:TemporalEntity'],
   xpathSelector: 'self::cwrcEntry:DATE|self::cwrcEntry:DATERANGE',
-  // eslint-disable-next-line @typescript-eslint/no-unused-vars
+
   annotation: (annotationsManager, entity, _format) => {
     const types: string[] = [];
     types.push(entity.getAttribute('FROM') ? 'time:Interval' : 'time:Instant');
@@ -167,7 +167,7 @@ const correction: EntityMappingProps = {
   label: 'Correction',
   parentTag: 'SIC',
   types: ['cnt:ContentAsText'],
-  // eslint-disable-next-line @typescript-eslint/no-unused-vars
+
   annotation: (annotationsManager, entity, _format) => {
     const anno = annotationsManager.commonAnnotation(entity, 'cnt:ContentAsText', 'oa:editing');
 
@@ -193,7 +193,7 @@ const keyword: EntityMappingProps = {
   label: 'Keyword',
   parentTag: 'KEYWORDCLASS',
   types: ['oa:Tag', 'cnt:ContentAsText', 'skos:Concept'],
-  // eslint-disable-next-line @typescript-eslint/no-unused-vars
+
   annotation: (annotationsManager, entity, _format) => {
     const anno = annotationsManager.commonAnnotation(
       entity,

@@ -50,7 +50,7 @@ export async function checkEntityDatabaseFingerprint(
   const mismatch = Boolean(
     input.projectDatabaseId && databaseId && input.projectDatabaseId !== databaseId,
   );
-  // eslint-disable-next-line no-console
+   
   console.info('[entity-db-check] fingerprint compare', {
     entitiesPath: store.entitiesPath,
     mode: store.mode,
@@ -233,7 +233,7 @@ export async function runEntityDatabaseCheck(
   }
 
   if (!input.projectDatabaseId && api.updateProjectFileConfig) {
-    // eslint-disable-next-line no-console
+     
     console.info('[entity-db-check] linking project to database for the first time', {
       entitiesPath: store.entitiesPath,
       projectFilePath: input.projectFilePath,
@@ -251,7 +251,7 @@ export async function runEntityDatabaseCheck(
     return { status: 'cancelled', databaseId };
   }
 
-  // eslint-disable-next-line no-console
+   
   console.info('[entity-db-check] showing mismatch prompt', {
     entitiesPath: store.entitiesPath,
     projectFilePath: input.projectFilePath,
@@ -269,7 +269,7 @@ export async function runEntityDatabaseCheck(
     cancelId: 0,
   });
 
-  // eslint-disable-next-line no-console
+   
   console.info('[entity-db-check] mismatch prompt response', {
     response,
     action: response === 1 ? 'purge' : 'cancel',

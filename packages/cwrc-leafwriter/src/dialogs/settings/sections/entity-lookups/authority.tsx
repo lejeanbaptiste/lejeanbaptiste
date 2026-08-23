@@ -38,7 +38,7 @@ export const Authority = ({
       return;
     }
 
-    if (!!disabled) return;
+    if (disabled) return;
 
     setIsDragging(true);
   };
@@ -76,7 +76,7 @@ export const Authority = ({
       <Stack direction="row" justifyContent="space-between" alignItems="center" width="100%" mx={1}>
         <Stack direction="row" spacing={1} alignItems="center">
           <IconButton id="toogle-lookup-entity" color="primary" size="small" sx={{ border: 0 }}>
-            {!!disabled ? (
+            {disabled ? (
               <RadioButtonUncheckedIcon
                 sx={{ height: 12, width: 12, pointerEvents: 'none' }}
               />
@@ -85,9 +85,9 @@ export const Authority = ({
             )}
           </IconButton>
           <Typography
-            color={!!disabled ? 'text.secondary' : 'inherit'}
+            color={disabled ? 'text.secondary' : 'inherit'}
             sx={{
-              textDecoration: !!disabled ? 'line-through' : 'none',
+              textDecoration: disabled ? 'line-through' : 'none',
               cursor: 'default',
               pointerEvents: 'none',
             }}

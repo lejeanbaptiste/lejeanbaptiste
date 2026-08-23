@@ -1920,12 +1920,12 @@ export const renameExplorerItem = async (
   for (const companion of companions) {
     try {
       const newCompanionPath = translationFilePathFor(renamedPath, companion.lang);
-      // eslint-disable-next-line no-await-in-loop
+
       await window.electronAPI.renamePath(companion.path, newCompanionPath);
 
       // The companion's @corresp values still reference the old source filename — rewrite
       // them, or every unit lookup silently fails after the rename.
-      // eslint-disable-next-line no-await-in-loop
+
       const companionXml = await window.electronAPI.readFile(newCompanionPath);
       const rewritten = rewriteCompanionSourceReferences(
         companionXml,
@@ -1933,7 +1933,6 @@ export const renameExplorerItem = async (
         getFilename(renamedPath),
       );
       if (rewritten && rewritten !== companionXml) {
-        // eslint-disable-next-line no-await-in-loop
         await window.electronAPI.writeFile(newCompanionPath, rewritten);
       }
     } catch (error) {
@@ -1964,7 +1963,6 @@ export const moveExplorerItem = async (
 
     for (const companion of companions) {
       try {
-        // eslint-disable-next-line no-await-in-loop
         await window.electronAPI.movePath(companion.path, destDir);
       } catch (error) {
         console.warn('[translation] failed to move companion file', companion.path, error);
@@ -2011,7 +2009,6 @@ export const deleteExplorerItem = async (
 
   for (const companion of companions) {
     try {
-      // eslint-disable-next-line no-await-in-loop
       await window.electronAPI.deletePath(companion.path);
     } catch (error) {
       console.warn('[translation] failed to delete companion file', companion.path, error);

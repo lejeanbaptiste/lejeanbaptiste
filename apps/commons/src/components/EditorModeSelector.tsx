@@ -8,11 +8,11 @@ import { useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useLocation, useNavigate } from 'react-router';
 
-type Options = {
+interface Options {
   label: string;
   value: string;
   icon: OverridableComponent<SvgIconTypeMap<{}, 'svg'>> & { muiName: string };
-};
+}
 
 export const EditorModeSelector = () => {
   const { readonly } = useAppState().editor;

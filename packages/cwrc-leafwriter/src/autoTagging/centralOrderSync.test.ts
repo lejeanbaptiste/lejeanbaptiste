@@ -112,7 +112,7 @@ describe('applyCentralRemapToPedb', () => {
 
 describe('applyCentralRemapToPedbSqlite', () => {
   it('repoints and clears via store methods without touching the DOM', async () => {
-    const setCalls: Array<{ entityId: string; centralId: string }> = [];
+    const setCalls: { entityId: string; centralId: string }[] = [];
     const clearCalls: string[] = [];
     const store = {
       sqliteListMappingsByCentralIds: async () => [

@@ -94,7 +94,7 @@ const applyGermanQuotes = (text: string): string => {
  * Secondary / leftover singles still get curly apostrophes.
  */
 const applyFrenchQuotes = (text: string): string => {
-  let out = text
+  const out = text
     // Paired straight or curly English doubles → guillemets
     .replace(/[“"„]([^”"«»]*)[”"]/g, `${LAQUO}${NBSP}$1${NBSP}${RAQUO}`)
     // Already-paired guillemets: normalize inner spacing

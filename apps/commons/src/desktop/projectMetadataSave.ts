@@ -31,7 +31,7 @@ import type { TranslationLanguage } from './translationTypes';
 export interface ProjectMetadataSavePayload {
   projectFilePath: string;
   values: Record<string, string>;
-  custom: Array<{ path: string; label: string; value: string }>;
+  custom: { path: string; label: string; value: string }[];
   applyToDocuments: boolean;
   translationAlignmentUnit?: 'div' | 'p';
   translationLanguages?: TranslationLanguage[];
@@ -48,7 +48,7 @@ export interface ProjectMetadataSaveResult {
 
 export interface ProjectMetadataSaveDeps {
   electronAPI: NonNullable<Window['electronAPI']>;
-  openTabs: Array<{ filePath: string; dirty: boolean }>;
+  openTabs: { filePath: string; dirty: boolean }[];
   reloadTabFromDisk: (filePath: string) => Promise<void>;
   notifyViaSnackbar: (notification: { message: string; options?: { variant?: string } }) => void;
   t: TFunction;
@@ -128,7 +128,7 @@ export const saveProjectMetadataChanges = async (
         );
         for (const lang of payload.translationLanguages ?? []) {
           if (!existingCodes.has(lang.code)) {
-            // eslint-disable-next-line no-await-in-loop
+             
             await addTranslationLanguage(bundle, lang);
           }
         }

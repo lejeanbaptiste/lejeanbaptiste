@@ -1,10 +1,10 @@
 import sax from 'sax';
 
-export type XmlParseError = {
+export interface XmlParseError {
   line: number;
   col: number;
   message: string;
-};
+}
 
 const NOISE_MESSAGES = new Set(['Invalid characters in closing tag', 'Unexpected end']);
 

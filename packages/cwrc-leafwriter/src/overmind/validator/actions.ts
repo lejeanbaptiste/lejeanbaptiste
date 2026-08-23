@@ -96,11 +96,11 @@ const waitForEditorSchema = (writer: Writer): Promise<boolean> => {
 
 let validatorSpawnInFlight: Promise<void> | null = null;
 
-export type LoadValidatorOptions = {
+export interface LoadValidatorOptions {
   silent?: boolean;
   /** When false, the caller guarantees the editor schema is already resolved (e.g. loadSchema). */
   waitForSchema?: boolean;
-};
+}
 
 export const loadValidator = async (
   { state, actions }: Context,
@@ -394,7 +394,7 @@ export const validate = async ({ state, actions }: Context) => {
     writer.event('documentValidated').publish(valid, { valid, errors }, validationString);
   };
 
-  // eslint-disable-next-line @typescript-eslint/no-misused-promises
+   
   await workerValidator.validate(validationString, Comlink.proxy(validationProgress));
   instrumentation.validationRunning = false;
 };

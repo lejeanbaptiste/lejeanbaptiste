@@ -1,6 +1,6 @@
 import { fromLocalFileUrl, fetchResourceText } from '../../utilities/fetchResource';
 
-export type ValidatorDebugReport = {
+export interface ValidatorDebugReport {
   editorSchema: {
     schemaId: string | null;
     rng: string | null;
@@ -27,7 +27,7 @@ export type ValidatorDebugReport = {
   };
   workerInit?: { success: boolean; error?: string };
   validate?: { valid: boolean; errorCount: number; schemaUnavailable?: boolean };
-};
+}
 
 /** Console-friendly validator/schema snapshot. Attached to `window.__ljbDebugValidator`. */
 export async function debugValidator(options?: {

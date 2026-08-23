@@ -137,7 +137,10 @@ const summaryFromSqlitePanel = (
   };
 };
 
-type SqliteRoot = { root: string; repository: EntitySqliteRepository };
+interface SqliteRoot {
+  root: string;
+  repository: EntitySqliteRepository;
+}
 
 const openSqliteRoot = async (root: string): Promise<SqliteRoot | null> => {
   const sqlitePath = path.join(root, 'entities.sqlite');
@@ -231,10 +234,7 @@ export const searchEntities = async (
 };
 
 /** Checks every available root (project + central) for a matching id — project takes priority on order. */
-export const getEntityById = async (
-  roots: string[],
-  id: string,
-): Promise<EntitySummary | null> => {
+export const getEntityById = async (roots: string[], id: string): Promise<EntitySummary | null> => {
   const sources = await readAvailableSqliteRoots(roots);
   try {
     for (const source of sources) {

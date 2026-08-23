@@ -14,13 +14,13 @@ export interface SanmiaoProposal {
   date_index: number;
   date_string: string;
   status: 'unique' | 'ambiguous' | 'unresolved' | 'tagged';
-  candidates: Array<{
+  candidates: {
     displayLine: string;
     attrs?: Record<string, string>;
     era_id?: number | null;
     dyn_id?: number | null;
     error_str?: string | null;
-  }>;
+  }[];
   attrs?: Record<string, string>;
   parseInnerXml?: string;
 }

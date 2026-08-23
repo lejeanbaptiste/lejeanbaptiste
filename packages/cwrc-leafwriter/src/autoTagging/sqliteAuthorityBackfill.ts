@@ -72,7 +72,7 @@ type AuthorityRefLookupFn = (request: {
   source?: string;
   authorityId?: string;
   primaryName?: string;
-  names?: Array<{ text: string; type?: string; lang?: string }>;
+  names?: { text: string; type?: string; lang?: string }[];
   metadata?: Record<string, unknown>;
 } | null>;
 
@@ -94,16 +94,16 @@ const FINE_AUTHORITY_DATE_SOURCES = new Set(['WIKIDATA', 'DILA']);
 async function repairPollutedUserLifespanDates(
   store: EntityStore,
   entityId: string,
-  fineDates: ReadonlyArray<{ startYear?: number | null; endYear?: number | null }>,
+  fineDates: readonly { startYear?: number | null; endYear?: number | null }[],
 ): Promise<boolean> {
   const summary = (await store.sqliteEntitySummary(entityId)) as {
-    assertions?: Array<{
+    assertions?: {
       element: string;
       origin: string;
       status: string;
       value: string;
       source?: string | null;
-    }>;
+    }[];
   } | null;
   if (!summary?.assertions?.length) return false;
 
@@ -163,10 +163,10 @@ async function repairPollutedUserLifespanDates(
 }
 
 async function referenceEnrichmentsForEntity(
-  entity: { authorities: Array<{ type: string; value: string }> },
+  entity: { authorities: { type: string; value: string }[] },
   lookupAuthorityRef: AuthorityRefLookupFn,
-): Promise<Array<{ source: string; enrichment: AuthorityEnrichment }>> {
-  const out: Array<{ source: string; enrichment: AuthorityEnrichment }> = [];
+): Promise<{ source: string; enrichment: AuthorityEnrichment }[]> {
+  const out: { source: string; enrichment: AuthorityEnrichment }[] = [];
   for (const auth of entity.authorities) {
     const sourceKey = REF_SOURCE_BY_AUTHORITY[auth.type.trim().toUpperCase()];
     if (!sourceKey) continue;
@@ -200,9 +200,9 @@ async function referenceEnrichmentsForEntity(
 }
 
 function mergeEnrichmentRows(
-  packRows: Array<{ source: string; enrichment: AuthorityEnrichment }>,
-  refRows: Array<{ source: string; enrichment: AuthorityEnrichment }>,
-): Array<{ source: string; enrichment: AuthorityEnrichment }> {
+  packRows: { source: string; enrichment: AuthorityEnrichment }[],
+  refRows: { source: string; enrichment: AuthorityEnrichment }[],
+): { source: string; enrichment: AuthorityEnrichment }[] {
   const bySource = new Map<string, { source: string; enrichment: AuthorityEnrichment }>();
   for (const row of packRows) bySource.set(row.source, row);
   for (const row of refRows) bySource.set(row.source, row); // reference wins
@@ -250,8 +250,8 @@ async function scrubPersonOnlyNamesFromOffice(
 interface PanelPerson {
   id: string;
   kind: string;
-  names: Array<{ text: string; nameType?: string | null; language?: string | null }>;
-  authorities: Array<{ type: string; value: string }>;
+  names: { text: string; nameType?: string | null; language?: string | null }[];
+  authorities: { type: string; value: string }[];
   familyName: string | null;
   givenName: string | null;
 }
@@ -283,13 +283,13 @@ function panelPersonFromSummary(raw: unknown): PanelPerson | null {
   const row = raw as {
     id?: unknown;
     kind?: unknown;
-    names?: Array<{
+    names?: {
       text?: unknown;
       nameType?: unknown;
       language?: unknown;
       status?: unknown;
-    }>;
-    authorities?: Array<{ type?: unknown; value?: unknown }>;
+    }[];
+    authorities?: { type?: unknown; value?: unknown }[];
     familyName?: unknown;
     givenName?: unknown;
   };
@@ -544,7 +544,7 @@ export async function backfillEntitiesSqlite(
         entitiesScanned++;
         let changed = await scrubPersonOnlyNamesFromOffice(store, summary, projectLang);
         const authorities = [...summary.authorities];
-        const newlyAttached: Array<{ type: 'NORBERT' | 'CBDB'; value: string }> = [];
+        const newlyAttached: { type: 'NORBERT' | 'CBDB'; value: string }[] = [];
         if (officeAuthorityByName && primary) {
           const candidates = officeAuthorityByName.get(primary);
           for (const hit of candidates ?? []) {
@@ -727,12 +727,12 @@ export async function backfillEntitiesSqlite(
     const metadata = authorityEnrichmentForEntity(entity, packIndex);
     const firstEnrichment = firstAuthorityEnrichment(entity, packIndex);
     const primaryName = firstEnrichment?.primaryName?.trim();
-    const namePatches: Array<{
+    const namePatches: {
       text: string;
       nameType?: string | null;
       language?: string | null;
       source?: string | null;
-    }> = [];
+    }[] = [];
 
     if (primaryName && primaryName !== entity.names[0]) {
       namePatches.push({
@@ -847,26 +847,26 @@ export async function backfillEntitiesSqlite(
       if (text) romanized = { text, language: projectLang ?? null };
     }
 
-    const dates: Array<{
+    const dates: {
       source: string;
       startYear?: number | null;
       endYear?: number | null;
       asFloruit?: boolean;
-    }> = [];
+    }[] = [];
     const clearAuthorityVitalSources: string[] = [];
-    const nationalities: Array<{ label: string; ref?: string | null; source: string }> = [];
-    const origins: Array<{
+    const nationalities: { label: string; ref?: string | null; source: string }[] = [];
+    const origins: {
       label: string;
       ref?: string | null;
       source: string;
       nameType?: string | null;
-    }> = [];
-    const offices: Array<{ label: string; ref?: string | null; source: string }> = [];
-    const authorityCaches: Array<{
+    }[] = [];
+    const offices: { label: string; ref?: string | null; source: string }[] = [];
+    const authorityCaches: {
       authorityType: string;
       source?: string | null;
       payload: unknown;
-    }> = [];
+    }[] = [];
 
     for (const { source, enrichment } of mergeEnrichmentRows(
       authorityEnrichmentsForEntity(entity, packIndex),
@@ -929,14 +929,14 @@ export async function backfillEntitiesSqlite(
       }
     }
 
-    const nobleTitles: Array<{
+    const nobleTitles: {
       placeName: string;
       roleName: string;
       posthumousName?: string | null;
       dynasty?: string | null;
       ref?: string | null;
       source: string;
-    }> = [];
+    }[] = [];
     const norbertIdno = entity.authorities.find(
       (auth) => auth.type.trim().toUpperCase() === 'NORBERT',
     );
@@ -959,13 +959,13 @@ export async function backfillEntitiesSqlite(
     }
     for (const row of refRows) {
       const titles = (row.enrichment.metadata as {
-        nobleTitles?: Array<{
+        nobleTitles?: {
           fief?: string;
           rank?: string;
           posthumous?: string;
           dynasty?: string;
           id?: string;
-        }>;
+        }[];
       } | undefined)?.nobleTitles;
       for (const title of titles ?? []) {
         if (!title.fief && !title.rank) continue;
@@ -1120,7 +1120,7 @@ export async function backfillEntitiesSqlite(
         translationLanguages,
       ).catch(() => null);
       if (details) {
-        const authorIds: Array<{ name: string; personId: string }> = [];
+        const authorIds: { name: string; personId: string }[] = [];
         for (const author of details.authors) {
           const personId = await resolveOrCreateByAuthority(
             store,

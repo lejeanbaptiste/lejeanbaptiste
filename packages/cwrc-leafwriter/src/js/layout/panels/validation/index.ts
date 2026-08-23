@@ -67,7 +67,7 @@ class Validation {
 
     this.writer.event('documentLoaded').subscribe(() => {
       this.clearResult();
-      // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access
+       
       const hasValidorHasSchema = !!writer.overmindState.validator.hasSchema;
       if (hasValidorHasSchema) this.writer.validate();
     });
@@ -133,7 +133,7 @@ class Validation {
   }
 
   async validate() {
-    // eslint-disable-next-line @typescript-eslint/no-unsafe-call, @typescript-eslint/no-unsafe-member-access
+     
     await this.writer.overmindActions.validator.validate();
   }
 
@@ -160,7 +160,7 @@ class Validation {
 
       // eslint-disable-next-line @typescript-eslint/ban-ts-comment
       //@ts-ignore
-      // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment, @typescript-eslint/no-unsafe-call
+       
       const $validateButton = list.find(`.revalidate-button`).button();
       $validateButton.on('click', () => this.writer.validate());
 

@@ -93,14 +93,14 @@ export function nobleTitleMatchKey(place: string, role: string, posthumous: stri
  * Only indexes rows that have all three components (the strong auto-resolve case).
  */
 export function buildPersonTitleIndex(
-  records: ReadonlyArray<{
+  records: readonly {
     id: string;
-    nobleTitles?: ReadonlyArray<{
+    nobleTitles?: readonly {
       fief?: string | null;
       roleName?: string | null;
       posthumousName?: string | null;
-    }> | null;
-  }>,
+    }[] | null;
+  }[],
 ): Map<string, string[]> {
   const index = new Map<string, string[]>();
   for (const record of records) {
@@ -123,7 +123,7 @@ export function buildPersonTitleIndex(
  * and a linked Norbert person id, for PEDB authority lookup.
  */
 export function buildPackTitleNorbertIndex(
-  candidates: ReadonlyArray<{
+  candidates: readonly {
     metadata?: {
       isNobleTitle?: boolean;
       nobleTitle?: {
@@ -134,7 +134,7 @@ export function buildPackTitleNorbertIndex(
       wrapper?: { personId?: string | null } | null;
       crosswalk?: { norbert?: string | string[] | null } | null;
     } | null;
-  }>,
+  }[],
 ): Map<string, string[]> {
   const index = new Map<string, string[]>();
   for (const candidate of candidates) {

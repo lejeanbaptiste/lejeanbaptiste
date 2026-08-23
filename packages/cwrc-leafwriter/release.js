@@ -1,4 +1,4 @@
-// eslint-disable-next-line no-undef
+ 
 const shell = require('shelljs')
 
 if (!shell.which('git')) {

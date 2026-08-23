@@ -4,13 +4,13 @@ export const PARAGRAPH_TAG = 'p';
 
 const PARAGRAPH_BREAK = /(?:<br\s*\/?>\s*){2,}/gi;
 
-export type NormalizePastedParagraphsDeps = {
+export interface NormalizePastedParagraphsDeps {
   getUniqueId: (prefix: string) => string;
   isParagraphValidInParent: (parentTag: string) => boolean;
   paragraphCanContainText: boolean;
   blockTag: string;
   insertionParentTag: string | null;
-};
+}
 
 const isUntaggedBlock = (element: Element, blockTag: string) => {
   if (element.hasAttribute('_tag')) return false;

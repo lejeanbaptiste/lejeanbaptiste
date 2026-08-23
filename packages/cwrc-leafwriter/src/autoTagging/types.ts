@@ -75,7 +75,7 @@ export interface AiValidationResult {
 }
 
 /** Default AI validation result when validation hasn't run. */
-export function createDefaultAiValidation(recommended: boolean = false): AiValidationResult {
+export function createDefaultAiValidation(recommended = false): AiValidationResult {
   return {
     confidence: 0.5,
     recommended,

@@ -96,7 +96,7 @@ export const completePostLoadOnboarding = async (
   if (!isDesktop()) return bundle;
 
   const log = (step: string) => console.info(`[onboarding] ${step}`);
-  let current = bundle;
+  const current = bundle;
 
   log('ensuring entity db folder');
   await ensureEntityDbFolder();

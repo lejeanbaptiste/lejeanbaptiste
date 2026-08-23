@@ -55,24 +55,24 @@ export interface SqlitePanelLike {
     startPrecision: string | null;
     endPrecision: string | null;
   } | null;
-  names: Array<{
+  names: {
     text: string;
     language: string | null;
     nameType?: string | null;
     nameRole?: string | null;
     status?: string | null;
-  }>;
-  translations?: Array<{
+  }[];
+  translations?: {
     text: string;
     language: string;
     status?: string | null;
-  }>;
-  assertions?: Array<{
+  }[];
+  assertions?: {
     element: string;
     status?: string | null;
     whenPrecision?: string | null;
-  }>;
-  authorities?: Array<{ type: string | null; value: string }>;
+  }[];
+  authorities?: { type: string | null; value: string }[];
   classification?: string | null;
   workType?: string | null;
 }

@@ -40,10 +40,10 @@ export const buildLastAppliedSnapshot = (
 
 export const filterEntriesForFile = (
   xml: string,
-  entries: Array<{ path: string; value: string }>,
+  entries: { path: string; value: string }[],
   lastApplied: ProjectMetadataFile['lastApplied'],
   catalogId?: string | null,
-): { entries: Array<{ path: string; value: string }>; overridesSkipped: number } => {
+): { entries: { path: string; value: string }[]; overridesSkipped: number } => {
   if (!lastApplied) {
     return { entries, overridesSkipped: 0 };
   }
