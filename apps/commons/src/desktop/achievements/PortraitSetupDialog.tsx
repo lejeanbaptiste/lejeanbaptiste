@@ -68,7 +68,7 @@ export const PortraitSetupDialog = ({
           <Box
             alt=""
             component="img"
-            src={diceBearAvatarUrl(options)}
+            src={diceBearAvatarUrl(options, { closeUp: true })}
             sx={{ height: 'auto', maxWidth: '100%', width: { md: 512, xs: 360 } }}
           />
           <Box sx={{ flex: 1, minWidth: 0, width: '100%' }}>

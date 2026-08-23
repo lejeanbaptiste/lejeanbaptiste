@@ -385,7 +385,14 @@ export interface ElectronAPI {
   mapTilesStatus?: () => Promise<{
     installed: boolean;
     path: string | null;
-    regions: { id: string; sha256: string; installedAt: string }[];
+    regions: {
+      id: string;
+      sha256: string;
+      installedAt: string;
+      /** Highest zoom present in the installed .pmtiles (from the archive header). */
+      maxZoom?: number;
+      minZoom?: number;
+    }[];
   }>;
   mapTilesDownloadBackground?: (bundle: {
     id: string;

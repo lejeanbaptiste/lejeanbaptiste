@@ -49,7 +49,7 @@ export function usePluginBootstrap(
         undefined;
       if (!detectedLanguage) return;
 
-      const snapshot = await window.electronAPI.pluginsGetSnapshot?.();
+      const snapshot = await window.electronAPI?.pluginsGetSnapshot?.();
       if (!snapshot) return;
 
       let enabledAny = false;
@@ -59,7 +59,7 @@ export function usePluginBootstrap(
           plugin.manifest?.languagePrompt?.documentLanguages ?? plugin.languages ?? [];
         if (!documentLanguageMatchesPlugin(detectedLanguage, langs)) continue;
         try {
-          await window.electronAPI.pluginsSetEnabled?.(plugin.id, true);
+          await window.electronAPI?.pluginsSetEnabled?.(plugin.id, true);
           enabledAny = true;
         } catch (error) {
           console.warn(`[plugins] Failed to enable ${plugin.id} during bootstrap`, error);

@@ -9,7 +9,7 @@ import {
   setWorkerUrl,
   type StyleSpecification,
 } from 'maplibre-gl';
-import protomapsLayers from 'protomaps-themes-base';
+import { layers as protomapsLayers, namedFlavor } from '@protomaps/basemaps';
 import { findBundleForPoint, lngLatBoundsLike, REGIONAL_BUNDLES } from './regionalBundles';
 
 // MapLibre computes its worker's URL from `import.meta.url` at the moment it
@@ -79,14 +79,19 @@ function blankStyle(): StyleSpecification {
  * region — matches REGIONAL_BUNDLES' `languages` (regionalBundles.ts).
  * Everything here is Han-script text either way (this tool works with
  * Traditional/Classical Chinese sources), so China and Tibet share a
- * lang/script pair; protomaps-themes-base has no dedicated Tibetan pair.
+ * language; @protomaps/basemaps has no dedicated Tibetan entry.
+ *
+ * Script is not passed explicitly: `layers()` derives it from the language
+ * (zh-Hant → Han, ja → Han/Hiragana/Katakana), producing exactly the label
+ * expressions the old `protomaps-themes-base(source, theme, lang, script)`
+ * signature did.
  */
-const LABEL_LANG_BY_BUNDLE: Record<string, { lang: string; script?: string }> = {
-  china: { lang: 'zh-Hant', script: 'Han' },
-  tibet: { lang: 'zh-Hant', script: 'Han' },
-  japan: { lang: 'ja' },
+const LABEL_LANG_BY_BUNDLE: Record<string, string> = {
+  china: 'zh-Hant',
+  tibet: 'zh-Hant',
+  japan: 'ja',
 };
-const DEFAULT_LABEL_LANG = { lang: 'zh-Hant', script: 'Han' };
+const DEFAULT_LABEL_LANG = 'zh-Hant';
 const MAP_TILE_MAX_ZOOM = 15;
 
 /**
@@ -102,7 +107,7 @@ const MAP_TILE_MAX_ZOOM = 15;
  * never wait on this check.
  */
 function vectorStyle(bundleId: string, maxZoom = MAP_TILE_MAX_ZOOM): StyleSpecification {
-  const { lang, script } = LABEL_LANG_BY_BUNDLE[bundleId] ?? DEFAULT_LABEL_LANG;
+  const lang = LABEL_LANG_BY_BUNDLE[bundleId] ?? DEFAULT_LABEL_LANG;
   return {
     version: 8,
     glyphs: '/fonts/{fontstack}/{range}.pbf',
@@ -113,7 +118,9 @@ function vectorStyle(bundleId: string, maxZoom = MAP_TILE_MAX_ZOOM): StyleSpecif
         maxzoom: maxZoom,
       },
     },
-    layers: protomapsLayers('protomaps', 'light', lang, script) as StyleSpecification['layers'],
+    layers: protomapsLayers('protomaps', namedFlavor('light'), {
+      lang,
+    }) as StyleSpecification['layers'],
   };
 }
 

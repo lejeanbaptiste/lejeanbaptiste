@@ -84,8 +84,20 @@ function isValidVariant(value: string | null): value is string {
   return !!value && /^[a-zA-Z0-9_-]+$/.test(value);
 }
 
+// visual_style/base/default.svg's neck is a single <rect id="neck">,
+// separate from the face/ear paths - stripping it out and cropping to the
+// plain (unpadded) content canvas is what closeUp mode below uses to turn
+// the body-scene-registered portrait (small, padded, neck included - what
+// every other caller needs to line up with the uniform collar) into a
+// head-only preview with minimal dead space. The regex is scoped to the
+// `id="neck"` attribute specifically (not geometry) so it keeps working if
+// the shape is ever redrawn, as long as the id survives.
+const NECK_ELEMENT_RE = /<rect\b[^>]*\bid="neck"[^>]*\/>/;
+
 function composeAvatarSvg(params: URLSearchParams): string {
-  const base = readLayerSvg('base', 'default') ?? '';
+  const closeUp = params.get('closeUp') === '1';
+  let base = readLayerSvg('base', 'default') ?? '';
+  if (closeUp) base = base.replace(NECK_ELEMENT_RE, '');
   const skinColor = params.get('skinColor');
   const parts = [withColor(base, isValidHex(skinColor) ? skinColor : null)];
 
@@ -102,9 +114,16 @@ function composeAvatarSvg(params: URLSearchParams): string {
     parts.push(withColor(body, isValidHex(colorHex) ? colorHex : null));
   }
 
+  // closeUp skips the registration padding entirely (that padding exists so
+  // body-scene compositing can never clip an overflowing hairstyle at the
+  // small size it's shown at there - not a concern for this dedicated,
+  // large head-only preview) and drops the neck, giving a tight head-only
+  // frame instead of a small figure lost in a mostly-empty square.
+  const size = closeUp ? CONTENT_SIZE : CANVAS_SIZE;
+  const offset = closeUp ? 0 : PAD;
   return (
-    `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 ${CANVAS_SIZE} ${CANVAS_SIZE}">` +
-    `<g transform="translate(${PAD} ${PAD})">${parts.join('')}</g></svg>`
+    `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 ${size} ${size}">` +
+    `<g transform="translate(${offset} ${offset})">${parts.join('')}</g></svg>`
   );
 }
 

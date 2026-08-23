@@ -42,7 +42,7 @@ export const Item = ({
       if (onPointerDown) onPointerDown(event);
       if (onTrigger) onTrigger(data);
     },
-    [rootPopupState, onPointerDown],
+    [rootPopupState, onPointerDown, onTrigger, data],
   );
 
   const variants: Variants = {

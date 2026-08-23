@@ -11,8 +11,9 @@
  * font stack) — so they're fetched once here at dev/build time and bundled
  * into the app like any other static asset, no separate download flow needed.
  *
- * Font stacks match exactly what protomaps-themes-base's label layers
- * reference (see `text-font` in `labels('protomaps', 'light', ...)` output)
+ * Font stacks match exactly what @protomaps/basemaps' label layers
+ * reference (see `text-font` in `layers('protomaps', namedFlavor('light'), ...)`
+ * output)
  * — Protomaps' pre-built "Noto Sans" stacks bundle broad multi-script
  * coverage (Latin, CJK, etc.) into a single font so one glyph set works for
  * every region this app supports without per-language font wiring.

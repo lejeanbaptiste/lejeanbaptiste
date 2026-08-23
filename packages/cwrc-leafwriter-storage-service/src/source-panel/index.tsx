@@ -35,7 +35,7 @@ export const SourcePanel = () => {
 
   useEffect(() => {
     source === 'cloud' && providerName ? setActive(providerName) : setActive(source);
-  }, [source]);
+  }, [providerName, source]);
 
   const handleChange = (_event: MouseEvent<HTMLElement>, value: string) => {
     if (!value) return;

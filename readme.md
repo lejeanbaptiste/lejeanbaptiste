@@ -51,8 +51,6 @@ Tracked here as mirrored or generated assets:
 - `apps/desktop/src/generated/gameAssetKey.ts`
 - `apps/desktop/resources/avatar-parts/**` (Adventurer avatar-part layers — not spoiler-protected, mirrored as plain SVG files)
 
-
-
 ## What is built
 
 Le Jean-Baptiste is the desktop, offline-first fork of LEAF-Writer. The current build already supports:
@@ -69,8 +67,6 @@ Le Jean-Baptiste is the desktop, offline-first fork of LEAF-Writer. The current 
 - Working with translation companions in split-pane form for paired source/translation editing.
 - Auto-tagging and disambiguation with local authority packs (CBDB, DILA, Wikidata, NDL, …) and plugins such as Sanmiao and Norbert.
 
-
-
 ## Install
 
 Download the installer for your platform from the [latest release](https://github.com/lejeanbaptiste/lejeanbaptiste/releases/latest). All release assets can be verified as described in [SECURITY.md](SECURITY.md).
@@ -82,16 +78,12 @@ Download the installer for your platform from the [latest release](https://githu
 3. The application will be installed to `/Applications/Le Jean-Baptiste.app`.
 4. Signed updates are checked automatically when the application starts and every four hours. A downloaded update is installed when the application quits. The `.pkg` is only needed for the first installation.
 
-
-
 ### Windows
 
 1. Download the installer for your machine: `arm64` for Windows on Arm or `x64` for Intel/AMD (`Le-Jean-Baptiste-win-Setup-<version>-<arch>.exe`).
 2. Run the installer and follow the prompts. Choose your installation directory and start-menu shortcut preferences.
 3. **Note:** The installer is not signed by a certificate authority. Windows Defender SmartScreen may show a warning. To proceed, click "More info" → "Run anyway". A signed package through the Microsoft Store is planned.
 4. Updates are checked automatically when the application starts and every four hours. A downloaded update is installed when the application quits.
-
-
 
 ### Linux
 
@@ -129,6 +121,8 @@ See [apps/desktop/README.md](apps/desktop/README.md) for the compilation and pac
 
 ### Future
 
+- [ ] `apps/commons/src/pages/edit/Editor.tsx`: the effects syncing `contentHasChanged`/`readonly` onto the `leafWriter` instance don't depend on `leafWriter` itself, so a freshly (re)initialized editor instance may not receive current state until those specific values next change (`react-hooks/exhaustive-deps` flags both). Plausible stale-editor-state bug, but this is core editor bootstrap — needs the app running to verify and fix safely rather than a blind dependency-array edit.
+
 ### 'LJBtero' (After testing)
 
 - [ ] Clean up and rationalise options, UI, document and global settings.
@@ -158,7 +152,6 @@ See [apps/desktop/README.md](apps/desktop/README.md) for the compilation and pac
 - [ ] Import profiles (rule engine + mandoku hand profile)
 - [ ] Browser-extension / URL corpus→TEI extraction (E0–E5 — [corpus-extraction-planning.md](docs/corpus-extraction-planning.md))
 
-
 #### UX
 
 - [ ] Find/replace Phase 2b: WYSIWYG visible-text replace across markup ([find-replace-planning.md](docs/find-replace-planning.md))
@@ -166,13 +159,11 @@ See [apps/desktop/README.md](apps/desktop/README.md) for the compilation and pac
 - [ ] Ignore page breaks, line breaks, and corrections in tagging and disambiguation?
 - [ ] Re-explore Tag-boundary Bugs B/C/H (typing/delete at edges) keeping us from full Oxygen parity.
 
-
 #### Dates
 
 - [ ] Allow the setting and display of Sanmiao-style CJK dates in the place of/parallel to Western dates.
 - [ ] Scan DILA for markers into Sanmiao
 - [ ] AI assist for Sanmiao to identify beginning of dynasties, reigns, era
-
 
 #### AI
 
@@ -180,7 +171,6 @@ See [apps/desktop/README.md](apps/desktop/README.md) for the compilation and pac
 - [ ] Translation panel: suggest improvements with 'accept/reject'
 - [ ] AI-inferred import profiles
 - [ ] AI auto-tag: gold harness / residual gaps for `roleName` / `orgName` audit apply (remove/retag/redraw, schema-driven tag picker, and prompt-profile UI already ship)
-
 
 #### Norbert
 
@@ -193,7 +183,6 @@ See [apps/desktop/README.md](apps/desktop/README.md) for the compilation and pac
 - [ ] Instead of relying on Markup panel to navigate the xml tree, introduce some sort of toggle where the keyboard arrow keys move you between siblings, parent, and first child. Preferably a keyboard toggle.
 - [ ] Make TinyMCE even faster to load.
 
-
 #### Technical / collaboration
 
 - [ ] Further Norbert functions
@@ -201,7 +190,6 @@ See [apps/desktop/README.md](apps/desktop/README.md) for the compilation and pac
 - [ ] Support for user SQL databases
 - [ ] Multi-machine offline sync beyond current mirror
 - [ ] Option to track annotator on the tag level for collaborations.
-
 
 #### Infrastructure
 
@@ -212,13 +200,11 @@ See [apps/desktop/README.md](apps/desktop/README.md) for the compilation and pac
 
 ### Pending
 
-
 #### Maps (pending feedback from historian of geography)
 
 - [ ] Pin captions to further aid in disambiguation
 - [ ] Click on map to select in panel
 - [ ] Placename Phase 4–5: persisted coordinate/id place entities; mint from merged periods ([placename-geo-disambiguation-planning.md](docs/placename-geo-disambiguation-planning.md))
-
 
 #### Database cards
 

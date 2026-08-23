@@ -21,7 +21,7 @@ export const useConversionAvailability = () => {
     if (!data) return;
     setConversionTypes(data);
     setSelectedType(data.at(0));
-  }, [isLoading]);
+  }, [data, error, setConversionTypes, setSelectedType]);
 
   return {
     data,
