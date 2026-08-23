@@ -2710,9 +2710,7 @@ export const SidebarDatabaseTab = ({ active = false }: SidebarDatabaseTabProps) 
       .filter((entry) => {
         if (editEntity?.kind === 'person') return true;
         const type = entry.type ?? '';
-        return (
-          type !== 'family' && type !== 'given' && type !== 'familyName' && type !== 'givenName'
-        );
+        return type !== 'family' && type !== 'given';
       })
       .map((entry) => {
         const matching = nameAssertions.filter(

@@ -121,8 +121,6 @@ See [apps/desktop/README.md](apps/desktop/README.md) for the compilation and pac
 
 ### Future
 
-- [ ] `apps/commons/src/pages/edit/Editor.tsx`: the effects syncing `contentHasChanged`/`readonly` onto the `leafWriter` instance don't depend on `leafWriter` itself, so a freshly (re)initialized editor instance may not receive current state until those specific values next change (`react-hooks/exhaustive-deps` flags both). Plausible stale-editor-state bug, but this is core editor bootstrap — needs the app running to verify and fix safely rather than a blind dependency-array edit.
-
 ### 'LJBtero' (After testing)
 
 - [ ] Clean up and rationalise options, UI, document and global settings.

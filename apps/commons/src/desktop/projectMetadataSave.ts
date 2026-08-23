@@ -4,6 +4,7 @@ import {
   type NameTypeTaggingBucket,
 } from '../../../../packages/cwrc-leafwriter/src/autoTagging/nameTypeTaggingPolicy';
 import type { TFunction } from 'i18next';
+import type { NotificationProps } from '@src/types';
 import { resolveProjectBundleByPath } from './activeProjectBundle';
 import { getProjectSourceLanguage } from './projectLanguage';
 import type { ProjectBundle } from './projectTypes';
@@ -49,8 +50,8 @@ export interface ProjectMetadataSaveResult {
 export interface ProjectMetadataSaveDeps {
   electronAPI: NonNullable<Window['electronAPI']>;
   openTabs: { filePath: string; dirty: boolean }[];
-  reloadTabFromDisk: (filePath: string) => Promise<void>;
-  notifyViaSnackbar: (notification: { message: string; options?: { variant?: string } }) => void;
+  reloadTabFromDisk: (filePath: string) => Promise<boolean>;
+  notifyViaSnackbar: (notification: NotificationProps | string) => void;
   t: TFunction;
   getAuthoritySettings: (bundle: ProjectBundle) => AutoTaggingAuthoritySettings | undefined;
   setAuthoritySettings: (settings: AutoTaggingAuthoritySettings) => void;

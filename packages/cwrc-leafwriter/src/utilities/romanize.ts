@@ -141,7 +141,11 @@ export function autoRomanize(
 export function autoRomanizeForKind(
   name: string,
   projectLang: string | null | undefined,
-  kind: RomanizeEntityKind | null | undefined,
+  // Only 'person' (or an unrecognized kind, which behaves the same) and 'place'
+  // get special-cased below; every other value — 'work', 'office', 'org', or any
+  // caller-specific entity kind string — falls through to the same concatenated
+  // branch, so this deliberately accepts any string rather than just the RomanizeEntityKind subset.
+  kind: RomanizeEntityKind | (string & {}) | null | undefined,
 ): string | null {
   if (!kind || kind === 'person') {
     return autoRomanize(name, projectLang);
@@ -164,7 +168,7 @@ export function romanizeFromAuthorityMetadata(
   metadata: { pinyin?: string; yomi?: string; yomiHiragana?: string } | undefined,
   primaryName: string,
   projectLang: string | null | undefined,
-  kind?: RomanizeEntityKind | null,
+  kind?: RomanizeEntityKind | (string & {}) | null,
 ): string | null {
   const fromPinyin = metadata?.pinyin?.trim();
   if (fromPinyin && isLatinScript(fromPinyin)) return fromPinyin;

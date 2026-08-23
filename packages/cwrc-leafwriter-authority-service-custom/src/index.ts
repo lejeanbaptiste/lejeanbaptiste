@@ -1,4 +1,4 @@
-import { AuthorityServiceConfig } from '../../cwrc-leafwriter/src/types';
+import { AuthorityServiceConfig } from '../../cwrc-leafwriter/src/types/authority';
 
 export const customAuthority: AuthorityServiceConfig = {
   name: 'Custom Authority Service',

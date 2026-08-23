@@ -21,6 +21,8 @@ import { scanFamilyPrefixedAltNames } from './scanners';
 import type { HygieneFinding } from './types';
 
 export interface AutoCleanReport {
+  // Passed directly to i18next's t() as the interpolation-values object.
+  [key: string]: number;
   strippedFamilyPrefixed: number;
   parsedFamilyGiven: number;
   dedupedNames: number;

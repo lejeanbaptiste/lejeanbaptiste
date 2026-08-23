@@ -221,6 +221,10 @@ export function searchPackRows(
       return;
     }
     if (!row.authorityId || !row.primaryName) return;
+    // Captured here, before the gloss passes: both only ever touch `row.metadata`,
+    // but their generic signature re-widens `primaryName` back to optional, losing
+    // the narrowing from the guard above.
+    const primaryName = row.primaryName;
     if (entityType === 'office' && officeGlosses?.size) {
       row = applyHuckbotGlossToPackRow(row, source, officeGlosses);
     }
@@ -228,7 +232,7 @@ export function searchPackRows(
       row = applyMaxiRicciGlossToPackRow(row, source, frenchOfficeGlosses);
     }
 
-    const strings = row.searchStrings?.length ? row.searchStrings : [row.primaryName];
+    const strings = row.searchStrings?.length ? row.searchStrings : [primaryName];
     // Track which search string actually matched — for places it may be an
     // alternate/historical name (e.g. DILA tags 吳興 as an alias of 湖州府),
     // not the row's primary name, so it's worth surfacing why this row matched.
@@ -243,7 +247,7 @@ export function searchPackRows(
     if (seen.has(uri)) return;
     seen.add(uri);
 
-    const displayName = row.displayName?.trim() || row.primaryName;
+    const displayName = row.displayName?.trim() || primaryName;
     const label =
       entityType === 'place' && matchedString !== displayName
         ? `${displayName}（${matchedString}）`
