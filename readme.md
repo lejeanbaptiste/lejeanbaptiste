@@ -202,6 +202,12 @@ See [apps/desktop/README.md](apps/desktop/README.md) for the compilation and pac
 - [ ] Multi-machine offline sync beyond current mirror
 - [ ] Option to track annotator on the tag level for collaborations.
 
+
+#### Infrastructure
+
+- [x] Migrate `apps/desktop/resources/game-assets/assets.bin` off Git LFS to Cloudflare R2. Done 2026-08-23: `assets.bin` is no longer committed (untracked from LFS, gitignored, fetched locally/in CI only); `assets.manifest.json` (`{version, sha256}`) is committed in its place. `visual_design`'s `pack-assets.mjs` uploads to R2 content-addressed by sha256 (`assets/<sha256>.bin`) whenever the four `R2_*` env vars are set (opt-in - a dev packing locally without them just gets a local `assets.bin`, same as before). `scripts/fetch-game-assets.mjs` downloads and re-verifies the hash; `.github/workflows/ci.yml`/`release.yml` call it in every job that needs the binary (the lint/test job doesn't - nothing there reads it) instead of `git lfs pull`. Access model: CI authenticates directly with the same scoped R2 API token already in repo secrets (Object Read & Write, restricted to this bucket) - simpler than a presigned-URL indirection layer and consistent with the trust CI already has via those secrets.
+  - [ ] Not done: caching the downloaded binary by hash across matrix jobs within one run (`actions/cache`) - R2 has zero egress fees so this is a wall-clock-time optimization, not a cost or quota concern; each matrix job just re-downloads today.
+
 ---
 
 ### Pending

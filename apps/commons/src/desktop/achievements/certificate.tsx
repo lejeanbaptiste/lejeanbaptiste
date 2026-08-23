@@ -21,7 +21,8 @@ import {
   RIBBON_ASPECT,
   RIBBON_BAND_FRACTION,
   RIBBON_COUNT_FLOOR,
-  scenePhotoFilterForPose,
+  AIRCRAFT_SUBJECT_POSE,
+  scenePhotoFilterForBackground,
 } from './UniformAvatar';
 
 type Ribbon = [string, string] | [string, string, string];
@@ -234,11 +235,12 @@ export const buildPortraitFragment = async (
     Promise.all(medalKeys.map(async (key) => [key, await fetchAsDataUri(key)] as const)),
   ]);
   const medalDataUris = new Map(medalDataUriEntries);
+  const isAircraftSubject = input.poseIndex === AIRCRAFT_SUBJECT_POSE;
   const headStats = getHeadColorStats(input.hairVariant, input.skinColor, input.hairColor);
   const bodyStats = BODY_COLOR_STATS[`${input.poseIndex}:${input.bodyType}`] ?? NEUTRAL_STATS;
-  const uniformFilter = colorMatchFilter(bodyStats, backgroundStats);
-  const headFilter = colorMatchFilter(headStats, backgroundStats);
-  const scenePhotoFilter = scenePhotoFilterForPose(input.poseIndex);
+  const uniformFilter = isAircraftSubject ? 'none' : colorMatchFilter(bodyStats, backgroundStats);
+  const headFilter = isAircraftSubject ? 'none' : colorMatchFilter(headStats, backgroundStats);
+  const scenePhotoFilter = scenePhotoFilterForBackground(input.backgroundImageKey);
   // Already pre-padded by the local compositor (see SVG_PAD in
   // UniformAvatar.tsx) - no further viewBox surgery needed here.
   const paddedHeadMarkup = input.headSvgMarkup;
@@ -333,7 +335,7 @@ export const buildPortraitFragment = async (
   // its own declarations rather than relying on an ancestor's.
   const svg = `<svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" xmlns:inkscape="http://www.inkscape.org/namespaces/inkscape" xmlns:sodipodi="http://sodipodi.sourceforge.net/DTD/sodipodi-0.dtd" width="${sceneWidth}" height="${size}" viewBox="0 0 ${sceneWidth} ${size}">
     <rect x="0" y="0" width="${sceneWidth}" height="${size}" fill="#b7c4c7" />
-    <image x="0" y="0" width="${sceneWidth}" height="${size}" href="${backgroundDataUri}" preserveAspectRatio="xMidYMid slice" />
+    ${isAircraftSubject ? '' : `<image x="0" y="0" width="${sceneWidth}" height="${size}" href="${backgroundDataUri}" preserveAspectRatio="xMidYMid slice" />`}
     <svg x="${portraitLeft}" y="${coatTop}" width="${coatWidth}" height="${coatHeight}" viewBox="0 0 200.55417 87.57708" style="filter: ${uniformFilter}">
       ${bodyBackMarkup}
     </svg>

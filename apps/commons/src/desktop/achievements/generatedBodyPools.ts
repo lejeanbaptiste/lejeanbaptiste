@@ -9,16 +9,24 @@
 // WEAPON_POOLS: per pose index, one entry per <g inkscape:label="weapons">
 // block found in that pose's SVG (a pose can have zero, one, or two - two
 // when a weapon is split into rear/front halves across background/
-// foreground layers, e.g. body6.svg). Each entry maps rank number -> a
-// WeaponRankPool: "universal" ids show regardless of bodyType (a plain
-// rankN label); "f"/"m" are only present when that rank has a bodyType-
-// specific piece (an f-rankN/m-rankN label), keyed by variant - '' for a
-// plain f-rankN with no letter suffix, or the letter(s) after the dash for
-// mutually exclusive alternates (body6.svg's f-rank2-a vs f-rank2-b). More
-// than one id sharing the same bucket means simultaneous parts of the same
-// design (e.g. body7.svg's rank2 sits one image per hand, not two
-// alternates), all shown together. Opaque ids, not spoilers - they mean
-// nothing without the encrypted artwork itself.
+// foreground layers, e.g. body6.svg). Each entry maps rank number (a tier
+// unlocked at that world rank - see WEAPON_ERA_TIERS in bodySvg.mjs, which
+// is why these numbers can be sparse, e.g. {1,3,4,5} rather than {1,2,3,4})
+// to a WeaponRankPool: "universal" is always present and applies regardless
+// of bodyType (a bare era label); "f"/"m" are only present when that rank
+// has a bodyType-specific piece (an f-/m- prefixed label). Each of those is
+// a WeaponScope: Record<group, Record<variant, ids[]>>. Group '' is the
+// default, used by most poses (body6.svg's napoleonic1/2/3 - three
+// different muskets in the one default group); a named group (body7.svg's
+// "pistol"/"sword") is an independent equipment slot, worn simultaneously
+// with every other group present - not an alternative to choose between -
+// while cycling its own variants independently of any other group's pick
+// (which sword shows is independent of which pistol shows). Within a
+// group, each variant key is a mutually-exclusive alternate design; more
+// than one id sharing the same variant means simultaneous parts of the
+// same design (e.g. body7.svg's sword pieces, one per hand), all shown
+// together. Opaque ids, not spoilers - they mean nothing without the
+// encrypted artwork itself.
 //
 // BODY_COLOR_STATS: one precomputed lightness/saturation stat per
 // "<poseIndex>:<bodyType>" key, sampled from a representative render at the
@@ -28,7 +36,7 @@
 // this mirrors. Includes pose 0 (civilian).
 //
 // POSE_ASSET_MIN_RANK_INDEX: 0-based rank index below which a pose has no
-// art at all (e.g. body9.svg only has rank2..7 groups, so its entry here is
+// art at all (e.g. a subject SVG may only have rank2-and-up groups, so its entry here is
 // 1) - sparse, only poses that don't start at rank 1. This is a hard floor
 // from what the SVG actually contains; UniformAvatar.tsx's own
 // POSE_MIN_RANK_INDEX layers additional *design* gating on top (a pose that
@@ -37,17 +45,26 @@
 
 import type { ColorStats } from './colorMatch';
 
+export type WeaponScope = Readonly<Record<string, Readonly<Record<string, readonly string[]>>>>;
+
 export interface WeaponRankPool {
-  readonly universal: readonly string[];
-  readonly f?: Readonly<Record<string, readonly string[]>>;
-  readonly m?: Readonly<Record<string, readonly string[]>>;
+  readonly universal: WeaponScope;
+  readonly f?: WeaponScope;
+  readonly m?: WeaponScope;
 }
 
-export const POSE_INDICES: readonly number[] = [1,2,3,4,5,6,7,8,9];
+export const POSE_INDICES: readonly number[] = [1,2,3,4,5,6,7,8,10,11,9001];
 
 export const POSE_ASSET_MIN_RANK_INDEX: Readonly<Record<number, number>> =
   {
-  "9": 1
+  "9001": 1
+};
+
+export const POSE_AVAILABLE_RANK_INDICES: Readonly<Record<number, readonly number[]>> =
+  {
+  "9001": [
+    2
+  ]
 };
 
 export const WEAPON_POOLS: Readonly<Record<number, ReadonlyArray<Record<number, WeaponRankPool>>>> =
@@ -59,261 +76,487 @@ export const WEAPON_POOLS: Readonly<Record<number, ReadonlyArray<Record<number, 
   "5": [
     {
       "1": {
-        "universal": [
-          "image1-04"
-        ]
+        "universal": {
+          "": {
+            "1": [
+              "image1-04"
+            ],
+            "2": [
+              "image1-83"
+            ]
+          }
+        }
       },
-      "2": {
-        "universal": [
-          "image1-83",
-          "image1-9"
-        ]
+      "3": {
+        "universal": {
+          "": {
+            "1": [
+              "image1-1-9"
+            ],
+            "2": [
+              "image1-4-0"
+            ],
+            "3": [
+              "image1-40"
+            ]
+          }
+        }
       },
       "4": {
-        "universal": [
-          "image1-6"
-        ]
+        "universal": {
+          "": {
+            "1": [
+              "image1-7"
+            ]
+          }
+        }
       },
       "5": {
-        "universal": [
-          "image1-46"
-        ]
+        "universal": {
+          "": {
+            "1": [
+              "image1-02"
+            ]
+          }
+        }
       }
     }
   ],
   "6": [
     {
       "1": {
-        "universal": [],
+        "universal": {},
         "f": {
-          "a": [
-            "image412"
-          ]
+          "": {
+            "1": [
+              "image412"
+            ],
+            "2": [
+              "image14"
+            ],
+            "3": [
+              "image400"
+            ]
+          }
         },
         "m": {
-          "a": [
-            "image405"
-          ]
-        }
-      },
-      "2": {
-        "universal": [],
-        "f": {
-          "a": [
-            "image400"
-          ],
-          "b": [
-            "image14"
-          ]
-        },
-        "m": {
-          "a": [
-            "image397"
-          ],
-          "b": [
-            "image15"
-          ]
+          "": {
+            "1": [
+              "image82"
+            ],
+            "2": [
+              "image80"
+            ],
+            "3": [
+              "image397"
+            ]
+          }
         }
       },
       "3": {
-        "universal": [],
+        "universal": {},
         "f": {
-          "a": [
-            "image1-36"
-          ]
+          "": {
+            "1": [
+              "image53"
+            ],
+            "2": [
+              "image69"
+            ],
+            "3": [
+              "image74"
+            ],
+            "4": [
+              "image77"
+            ]
+          }
         },
         "m": {
-          "a": [
-            "image7"
-          ],
-          "b": [
-            "image9"
-          ]
+          "": {
+            "1": [
+              "image22"
+            ],
+            "2": [
+              "image45"
+            ],
+            "3": [
+              "image46"
+            ],
+            "4": [
+              "image51"
+            ]
+          }
         }
       },
       "4": {
-        "universal": [],
+        "universal": {},
         "f": {
-          "b": [
-            "image396"
-          ]
+          "": {
+            "1": [
+              "image19"
+            ]
+          }
         },
         "m": {
-          "b": [
-            "image395"
-          ]
+          "": {
+            "1": [
+              "image23"
+            ],
+            "2": [
+              "image21"
+            ],
+            "3": [
+              "image20"
+            ]
+          }
         }
       },
       "5": {
-        "universal": [],
+        "universal": {},
         "f": {
-          "a": [
-            "image391",
-            "image16",
-            "image392"
-          ],
-          "b": [
-            "image413"
-          ]
+          "": {
+            "1": [
+              "image55"
+            ],
+            "2": [
+              "image1-0248"
+            ]
+          }
         },
         "m": {
-          "a": [
-            "image11",
-            "image12",
-            "image43"
-          ],
-          "b": [
-            "image415"
-          ]
+          "": {
+            "1": [
+              "image1-024"
+            ],
+            "2": [
+              "image56"
+            ]
+          }
         }
       }
     },
     {
       "1": {
-        "universal": [],
+        "universal": {},
         "f": {
-          "a": [
-            "image1-768"
-          ]
+          "": {
+            "1": [
+              "image86"
+            ],
+            "2": [
+              "image88"
+            ],
+            "3": [
+              "image90"
+            ]
+          }
         },
         "m": {
-          "a": [
-            "image404"
-          ]
-        }
-      },
-      "2": {
-        "universal": [],
-        "f": {
-          "a": [
-            "image1-97",
-            "image399"
-          ],
-          "b": [
-            "image1-02"
-          ]
-        },
-        "m": {
-          "a": [
-            "image1-9"
-          ],
-          "b": [
-            "image10"
-          ]
+          "": {
+            "1": [
+              "image405"
+            ],
+            "2": [
+              "image15"
+            ],
+            "3": [
+              "image84"
+            ]
+          }
         }
       },
       "3": {
-        "universal": [],
+        "universal": {},
         "f": {
-          "a": [
-            "image6"
-          ]
+          "": {
+            "1": [
+              "image52"
+            ],
+            "2": [
+              "image67"
+            ],
+            "3": [
+              "image73"
+            ],
+            "4": [
+              "image76"
+            ]
+          }
         },
         "m": {
-          "a": [
-            "image8"
-          ],
-          "b": [
-            "image4",
-            "image3"
-          ]
+          "": {
+            "1": [
+              "image1-67"
+            ],
+            "2": [
+              "image1-2"
+            ],
+            "3": [
+              "image1-6-7"
+            ],
+            "4": [
+              "image1-70"
+            ]
+          }
         }
       },
       "4": {
-        "universal": [],
+        "universal": {},
         "f": {
-          "a": [
-            "image5"
-          ],
-          "b": [
-            "image394"
-          ]
+          "": {
+            "1": [
+              "image18"
+            ]
+          }
         },
         "m": {
-          "b": [
-            "image1-04"
-          ],
-          "a": [
-            "image2"
-          ]
+          "": {
+            "1": [
+              "image1-0-9"
+            ],
+            "2": [
+              "image1-67-0"
+            ],
+            "3": [
+              "image1-046"
+            ]
+          }
         }
       },
       "5": {
-        "universal": [],
+        "universal": {},
         "f": {
-          "a": [
-            "image1-79"
-          ],
-          "b": [
-            "image401"
-          ]
+          "": {
+            "1": [
+              "image24"
+            ],
+            "2": [
+              "image26"
+            ]
+          }
         },
         "m": {
-          "a": [
-            "image390"
-          ],
-          "b": [
-            "image414"
-          ]
+          "": {
+            "1": [
+              "image25"
+            ],
+            "2": [
+              "image70"
+            ]
+          }
         }
       }
     }
   ],
   "7": [
     {
-      "2": {
-        "universal": [],
+      "1": {
+        "universal": {},
         "f": {
-          "b": [
-            "image1-02",
-            "image49"
-          ],
-          "a": [
-            "image1-52",
-            "image1-97"
-          ]
+          "pistol": {
+            "": [
+              "image1-52"
+            ]
+          },
+          "sword": {
+            "1": [
+              "image1-97"
+            ],
+            "2": [
+              "image1-02"
+            ]
+          }
         },
         "m": {
-          "b": [
-            "image3",
-            "image1"
-          ],
-          "a": [
-            "image4",
-            "image5"
-          ]
+          "sword": {
+            "1": [
+              "image4"
+            ],
+            "2": [
+              "image3"
+            ]
+          },
+          "pistol": {
+            "": [
+              "image5"
+            ]
+          }
         }
       },
       "3": {
-        "universal": [],
+        "universal": {},
         "f": {
-          "": [
-            "image1-1",
-            "image1-22"
-          ]
+          "pistol": {
+            "1": [
+              "image20"
+            ],
+            "2": [
+              "image19"
+            ],
+            "4": [
+              "image17"
+            ],
+            "5": [
+              "image16"
+            ]
+          },
+          "sword": {
+            "": [
+              "image21"
+            ]
+          }
         },
         "m": {
-          "": [
-            "image6",
-            "image7"
-          ]
+          "pistol": {
+            "1": [
+              "image1-03"
+            ],
+            "2": [
+              "image1-8-3"
+            ],
+            "3": [
+              "image1-72"
+            ],
+            "4": [
+              "image1-5"
+            ]
+          },
+          "sword": {
+            "": [
+              "image1-02-8"
+            ]
+          }
+        }
+      },
+      "4": {
+        "universal": {},
+        "f": {
+          "sword": {
+            "": [
+              "image1"
+            ]
+          },
+          "pistol": {
+            "1": [
+              "image12"
+            ],
+            "2": [
+              "image11"
+            ],
+            "3": [
+              "image10"
+            ]
+          }
+        },
+        "m": {
+          "sword": {
+            "": [
+              "image1-91-5"
+            ]
+          },
+          "pistol": {
+            "1": [
+              "image1-3"
+            ],
+            "2": [
+              "image1-03-5"
+            ],
+            "3": [
+              "image1-83"
+            ]
+          }
         }
       },
       "5": {
-        "universal": [],
+        "universal": {},
         "f": {
-          "": [
-            "image1-79",
-            "image1-70",
-            "image1-75"
-          ]
+          "pistol": {
+            "1": [
+              "image1-74"
+            ],
+            "2": [
+              "image1-522"
+            ]
+          },
+          "sword": {
+            "1": [
+              "image1-84"
+            ],
+            "2": [
+              "image29"
+            ]
+          }
         },
         "m": {
-          "": [
-            "image10",
-            "image11",
-            "image12"
-          ]
+          "sword": {
+            "1": [
+              "image25"
+            ],
+            "2": [
+              "image1-78"
+            ]
+          },
+          "pistol": {
+            "1": [
+              "image24"
+            ],
+            "2": [
+              "image18"
+            ]
+          }
+        }
+      }
+    },
+    {
+      "3": {
+        "universal": {},
+        "f": {
+          "sword": {
+            "": [
+              "image23"
+            ]
+          }
+        },
+        "m": {
+          "sword": {
+            "": [
+              "image1-4"
+            ]
+          }
+        }
+      },
+      "4": {
+        "universal": {},
+        "f": {
+          "sword": {
+            "": [
+              "image9"
+            ]
+          }
+        },
+        "m": {
+          "sword": {
+            "": [
+              "image1-41"
+            ]
+          }
+        }
+      },
+      "5": {
+        "universal": {},
+        "f": {
+          "sword": {
+            "1": [
+              "image1-723"
+            ]
+          }
+        },
+        "m": {
+          "sword": {
+            "1": [
+              "image30"
+            ]
+          }
         }
       }
     }
@@ -321,73 +564,307 @@ export const WEAPON_POOLS: Readonly<Record<number, ReadonlyArray<Record<number, 
   "8": [
     {
       "1": {
-        "universal": [],
+        "universal": {},
         "f": {
-          "": [
-            "image1"
-          ]
+          "": {
+            "1": [
+              "image1"
+            ],
+            "2": [
+              "image1-85"
+            ],
+            "3": [
+              "image1-9"
+            ]
+          }
         },
         "m": {
-          "": [
-            "image89"
-          ]
-        }
-      },
-      "2": {
-        "universal": [],
-        "f": {
-          "a": [
-            "image1-85"
-          ],
-          "b": [
-            "image1-9"
-          ]
-        },
-        "m": {
-          "a": [
-            "image88"
-          ],
-          "b": [
-            "image90"
-          ]
+          "": {
+            "1": [
+              "image89"
+            ],
+            "2": [
+              "image88"
+            ],
+            "3": [
+              "image90"
+            ]
+          }
         }
       },
       "3": {
-        "universal": [],
+        "universal": {},
         "f": {
-          "b": [
-            "image1-00"
-          ],
-          "a": [
-            "image1-7"
-          ]
+          "": {
+            "1": [
+              "image5"
+            ],
+            "2": [
+              "image4"
+            ],
+            "3": [
+              "image3"
+            ]
+          }
         },
         "m": {
-          "b": [
-            "image86"
-          ],
-          "a": [
-            "image87"
-          ]
+          "": {
+            "1": [
+              "image1-2"
+            ],
+            "2": [
+              "image1-6"
+            ],
+            "3": [
+              "image1-70"
+            ]
+          }
         }
       },
       "4": {
-        "universal": [],
+        "universal": {},
         "f": {
-          "": [
-            "image1-5",
-            "image2"
-          ]
+          "": {
+            "1": [
+              "image1-1-8"
+            ],
+            "2": [
+              "image1-0-4"
+            ],
+            "3": [
+              "image1-91"
+            ]
+          }
         },
         "m": {
-          "": [
-            "image1-02"
-          ]
+          "": {
+            "2": [
+              "image7"
+            ],
+            "3": [
+              "image6"
+            ]
+          }
+        }
+      },
+      "5": {
+        "universal": {},
+        "f": {
+          "": {
+            "1": [
+              "image2"
+            ]
+          }
+        },
+        "m": {
+          "": {
+            "1": [
+              "image1-02"
+            ]
+          }
         }
       }
     }
   ],
-  "9": []
+  "10": [
+    {
+      "5": {
+        "universal": {},
+        "f": {
+          "": {
+            "1": [
+              "image1"
+            ],
+            "2": [
+              "image7"
+            ]
+          }
+        },
+        "m": {
+          "": {
+            "1": [
+              "image2"
+            ],
+            "2": [
+              "image1-0"
+            ]
+          }
+        }
+      }
+    }
+  ],
+  "11": [
+    {
+      "1": {
+        "universal": {},
+        "f": {
+          "": {
+            "1": [
+              "g29",
+              "image412",
+              "image60"
+            ],
+            "2": [
+              "g31",
+              "image30",
+              "image1-7"
+            ]
+          }
+        },
+        "m": {
+          "": {
+            "1": [
+              "g3",
+              "image1-19",
+              "image405",
+              "image1-6"
+            ],
+            "2": [
+              "g5",
+              "image3",
+              "image15",
+              "image5"
+            ]
+          }
+        }
+      },
+      "3": {
+        "universal": {},
+        "f": {
+          "": {
+            "1": [
+              "g60",
+              "image59",
+              "image61"
+            ],
+            "2": [
+              "g57",
+              "image56",
+              "image62"
+            ],
+            "3": [
+              "g54",
+              "image53",
+              "image63"
+            ]
+          }
+        },
+        "m": {
+          "": {
+            "1": [
+              "g8",
+              "image6",
+              "image45",
+              "image8"
+            ],
+            "2": [
+              "g11",
+              "image9",
+              "image46",
+              "image11"
+            ],
+            "3": [
+              "g16",
+              "image12",
+              "image51",
+              "image16"
+            ]
+          }
+        }
+      },
+      "4": {
+        "universal": {},
+        "f": {
+          "": {
+            "1": [
+              "g50",
+              "image49",
+              "image64"
+            ],
+            "2": [
+              "g42",
+              "image41",
+              "image65"
+            ],
+            "3": [
+              "g39",
+              "image37",
+              "image66"
+            ],
+            "4": [
+              "g36",
+              "image32",
+              "image67"
+            ]
+          }
+        },
+        "m": {
+          "": {
+            "1": [
+              "g22",
+              "image20",
+              "image21",
+              "image22"
+            ],
+            "2": [
+              "g19",
+              "image17",
+              "image1-0-0",
+              "image19"
+            ],
+            "3": [
+              "g25",
+              "image23",
+              "image1-71",
+              "image25"
+            ],
+            "4": [
+              "g28",
+              "image26",
+              "image1-77",
+              "image28"
+            ]
+          }
+        }
+      },
+      "5": {
+        "universal": {},
+        "f": {
+          "": {
+            "1": [
+              "g10",
+              "image1-94",
+              "image7",
+              "image1-01"
+            ],
+            "2": [
+              "g18",
+              "image13",
+              "image24",
+              "image18"
+            ]
+          }
+        },
+        "m": {
+          "": {
+            "1": [
+              "g4",
+              "image1-4",
+              "image1",
+              "image1-75"
+            ],
+            "2": [
+              "g13",
+              "image2",
+              "image1-73",
+              "image10"
+            ]
+          }
+        }
+      }
+    }
+  ],
+  "9001": []
 };
 
 export const BODY_COLOR_STATS: Readonly<Record<string, ColorStats>> = {
@@ -448,12 +925,12 @@ export const BODY_COLOR_STATS: Readonly<Record<string, ColorStats>> = {
     "saturation": 0.7544283438371846
   },
   "7:m": {
-    "lightness": 0.38738549202393946,
-    "saturation": 0.6215257961302414
+    "lightness": 0.3866325201534361,
+    "saturation": 0.6224156876927419
   },
   "7:f": {
-    "lightness": 0.4163100122345364,
-    "saturation": 0.6677806421666411
+    "lightness": 0.41652766415760095,
+    "saturation": 0.6674249548667511
   },
   "8:m": {
     "lightness": 0.3770245814712972,
@@ -463,12 +940,28 @@ export const BODY_COLOR_STATS: Readonly<Record<string, ColorStats>> = {
     "lightness": 0.3772693581700683,
     "saturation": 0.6595831214251591
   },
-  "9:m": {
-    "lightness": 0.3964620149426836,
-    "saturation": 0.2721175655601418
+  "10:m": {
+    "lightness": 0.29388070752776335,
+    "saturation": 0.5673748584379388
   },
-  "9:f": {
-    "lightness": 0.3960751005106694,
-    "saturation": 0.2702974267836754
+  "10:f": {
+    "lightness": 0.27212966565660535,
+    "saturation": 0.5586076270877643
+  },
+  "11:m": {
+    "lightness": 0.2697734082503499,
+    "saturation": 0.6658298681239084
+  },
+  "11:f": {
+    "lightness": 0.31171002344959153,
+    "saturation": 0.6699277200493944
+  },
+  "9001:m": {
+    "lightness": 0.429479063180832,
+    "saturation": 0.24572819881921504
+  },
+  "9001:f": {
+    "lightness": 0.4288901307189572,
+    "saturation": 0.244318614936471
   }
 };

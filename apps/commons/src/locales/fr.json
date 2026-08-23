@@ -342,6 +342,33 @@
       "light_theme": "Thème lumière"
     },
     "desktop": {
+      "portrait_setup": {
+        "title": "Choisissez les caractéristiques qui vous ressemblent le plus",
+        "continue": "Continuer",
+        "body_type": "Type de corps",
+        "hair": "Chevelure",
+        "hair_long": "Chevelure longue {{number}}",
+        "hair_short": "Chevelure courte {{number}}",
+        "hair_color": "Couleur des cheveux",
+        "hair_color_0e0e0e": "Noir",
+        "hair_color_e5d7a3": "Blond",
+        "hair_color_6a4e35": "Brun",
+        "hair_color_cb6820": "Cuivré",
+        "hair_color_afafaf": "Gris",
+        "complexion": "Teint",
+        "complexion_f2d3b1": "Porcelaine",
+        "complexion_ecad80": "Miel",
+        "complexion_9e5622": "Châtain",
+        "complexion_763900": "Brun foncé",
+        "eyes": "Yeux",
+        "eyebrows": "Sourcils",
+        "mouth": "Bouche",
+        "features": "Traits",
+        "eyewear": "Lunettes",
+        "earrings": "Boucles d’oreilles",
+        "variant": "Variante {{number}}",
+        "none": "Aucun"
+      },
       "correction": {
         "title": "Correction",
         "selected_text": "Texte sélectionné",

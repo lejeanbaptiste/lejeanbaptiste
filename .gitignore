@@ -9,6 +9,12 @@ apps/desktop/resources/python/
 apps/desktop/resources/pmtiles/
 apps/desktop/resources/authority-extraction/
 
+# Encrypted game asset blob - no longer committed (was Git LFS, maxing out
+# the free bandwidth tier). Fetched from Cloudflare R2 by
+# scripts/fetch-game-assets.mjs using the committed assets.manifest.json
+# pointer; visual_design's pack-assets.mjs writes both when run locally.
+apps/desktop/resources/game-assets/assets.bin
+
 # Map basemap glyph PBFs (downloaded via npm run glyphs:download -w leafwriter-commons)
 apps/commons/resources/fonts/
 

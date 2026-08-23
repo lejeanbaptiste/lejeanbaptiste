@@ -1,6 +1,7 @@
 import {
   Box,
   Button,
+  CircularProgress,
   Dialog,
   DialogActions,
   DialogContent,
@@ -52,6 +53,7 @@ import {
   refreshGithubContributions,
 } from './engine';
 import { MedalIcon, METRIC_RIBBONS, SPECIAL_RIBBON, type MedalMetric } from './MedalIcon';
+import { PortraitSetupDialog } from './PortraitSetupDialog';
 import {
   BODY_TYPES,
   createDefaultDiceBearAvatar,
@@ -162,6 +164,12 @@ const totalRibbonsEarned = (state: AchievementsState): number =>
 const calculatedRankIndex = (state: AchievementsState): number =>
   Math.min(RANK_NAMES.length - 1, Math.floor(totalRibbonsEarned(state) / RIBBONS_PER_OVERALL_RANK));
 
+/** Ribbons earned since entering the player's current rank - resets to 0
+ * every time calculatedRankIndex ticks up. Only consumed today by
+ * pickBackgroundKey's Rank 4 group rollout (see UniformAvatar.tsx). */
+const ribbonsIntoRank = (state: AchievementsState): number =>
+  totalRibbonsEarned(state) % RIBBONS_PER_OVERALL_RANK;
+
 /** Composite rank shown after the player's name - see calculatedRankIndex. */
 const calculatedRank = (state: AchievementsState): string =>
   RANK_NAMES[calculatedRankIndex(state)]!;
@@ -182,6 +190,15 @@ export const AchievementsDialog = ({ onClose, open }: AchievementsDialogProps) =
   const [weaponRank, setWeaponRank] = useState<number | null>(null);
   const [weaponImageIds, setWeaponImageIds] = useState<string[]>([]);
   const [portraitEditorOpen, setPortraitEditorOpen] = useState(false);
+  // True from the moment character creation is confirmed until the very
+  // first live portrait render has actually finished loading its head/body
+  // layers (see UniformAvatar's onReady) - covers exactly the one reveal
+  // that can't benefit from the keepMounted prefetch trick below, since
+  // there is no previous mount to have already fetched anything.
+  const [revealingFirstPortrait, setRevealingFirstPortrait] = useState(false);
+  const [portraitSetupOptions, setPortraitSetupOptions] = useState<DiceBearAvatarOptions | null>(
+    null,
+  );
   // Set while the pointer hovers an option in one of the head-part Selects
   // below, so the officer-header portrait shows that option live instead of
   // the committed one - lets someone judge a mouth or a hairstyle against
@@ -201,28 +218,16 @@ export const AchievementsDialog = ({ onClose, open }: AchievementsDialogProps) =
   // that round trip through loadAchievementsState/pickPose/pickWeapon and
   // then UniformAvatar's own head/body SVG fetches was exactly what caused
   // the panel to visibly build itself piece by piece on every single open).
-  // Auto-expands the portrait editor the very first time this ever loads
-  // for a player who's never touched avatar customization (state.avatar is
-  // only null until they change something, and that persists from then on -
-  // no separate "have they seen this" flag needed). Checked once, off the
-  // first resolved state, not on every refreshPortrait() call - otherwise
-  // it'd also spring back open on every later close/reopen for a player who
-  // deliberately collapsed it without ever picking a single option.
-  const autoOpenCheckedRef = useRef(false);
   const refreshPortrait = () => {
     void loadAchievementsState().then((loaded) => {
       setState(loaded);
-      if (!autoOpenCheckedRef.current) {
-        autoOpenCheckedRef.current = true;
-        if (loaded.avatar === null) setPortraitEditorOpen(true);
-      }
       // Pose, backdrop, and weapon are all randomized together (Daniel:
       // "pose and weapons will be random"), picked together with `state`
       // (React batches this) so everything's already resolved by the time
       // the render below needs it. Pose is picked first: the backdrop and
       // weapon both depend on which pose just got rolled (some poses pair
-      // with only a specific backdrop subset - see POSE_BACKGROUND_OVERRIDE
-      // in UniformAvatar.tsx - and weapon art is pose-specific), not the
+      // with pose-specific scene rules - subject scenes carry their own
+      // embedded backgrounds - and weapon art is pose-specific), not the
       // stale pose still in state.
       const loadedBodyType =
         loaded.avatar?.kind === 'dicebear'
@@ -231,7 +236,12 @@ export const AchievementsDialog = ({ onClose, open }: AchievementsDialogProps) =
       setPoseIndex((previousPose) => {
         const newPose = pickPose(previousPose, loadedBodyType, calculatedRankIndex(loaded));
         setBackgroundKey((previousBackground) =>
-          pickBackgroundKey(calculatedRankIndex(loaded), previousBackground, newPose),
+          pickBackgroundKey(
+            calculatedRankIndex(loaded),
+            previousBackground,
+            newPose,
+            ribbonsIntoRank(loaded),
+          ),
         );
         setWeaponRank((previousWeaponRank) => {
           const weapon = pickWeapon(
@@ -327,6 +337,7 @@ export const AchievementsDialog = ({ onClose, open }: AchievementsDialogProps) =
     state.avatar?.kind === 'dicebear'
       ? state.avatar.options
       : createDefaultDiceBearAvatar(encoderName);
+  const setupAvatarOptions = portraitSetupOptions ?? avatarOptions;
   const avatarUrl = diceBearAvatarUrl(avatarOptions);
   // Committed avatar unless a Select option is currently hovered - see
   // hoverPreview above.
@@ -565,15 +576,72 @@ export const AchievementsDialog = ({ onClose, open }: AchievementsDialogProps) =
     }
   };
 
+  const updatePortraitSetup = (changes: Partial<DiceBearAvatarOptions>) => {
+    setPortraitSetupOptions((current) => ({ ...(current ?? setupAvatarOptions), ...changes }));
+  };
+
+  const finishPortraitSetup = async () => {
+    const current = await loadAchievementsState();
+    current.avatar = { kind: 'dicebear', options: setupAvatarOptions };
+    await saveAchievementsState(current);
+    setRevealingFirstPortrait(true);
+    setState({ ...current });
+    setPortraitEditorOpen(false);
+    deliverWaitingUnlockNotifications(current, (message) =>
+      notifyViaSnackbar({
+        message,
+        options: { variant: 'success', autoHideDuration: 7000 },
+      }),
+    );
+  };
+
+  // Keep the Service Record entirely out of the DOM until the portrait is
+  // confirmed. A nested dialog would leave its title faintly visible under
+  // the setup modal's backdrop and spoil the first-time reveal.
+  if (state.avatar === null) {
+    return (
+      <PortraitSetupDialog
+        onChange={updatePortraitSetup}
+        onFinish={() => void finishPortraitSetup()}
+        open={open}
+        options={setupAvatarOptions}
+      />
+    );
+  }
+
   // keepMounted below: without it, MUI tears down everything inside
   // (including UniformAvatar and its head/body SVG fetches) on every close,
   // so the next open has to redo that whole round trip from scratch instead
-  // of reusing what refreshPortrait already prefetched while closed.
+  // of reusing what refreshPortrait already prefetched while closed. The
+  // same UniformAvatar instance below also drives revealingFirstPortrait
+  // (see its declaration above): the content stays mounted (visibility, not
+  // a conditional) so its very first load isn't wasted when the spinner
+  // clears, just hidden under the overlay until onReady fires.
   return (
     <Dialog fullWidth keepMounted maxWidth="sm" onClose={onClose} open={open}>
-      <DialogTitle>LJB Service Record</DialogTitle>
-      <DialogContent sx={portraitEditorOpen ? { overflow: 'visible' } : undefined}>
-        <Stack spacing={3}>
+      {!revealingFirstPortrait && <DialogTitle>LJB Service Record</DialogTitle>}
+      <DialogContent
+        sx={{ position: 'relative', ...(portraitEditorOpen ? { overflow: 'visible' } : undefined) }}
+      >
+        {revealingFirstPortrait && (
+          <Box
+            sx={{
+              alignItems: 'center',
+              bgcolor: 'background.paper',
+              display: 'flex',
+              flexDirection: 'column',
+              gap: 2,
+              inset: 0,
+              justifyContent: 'center',
+              position: 'absolute',
+              zIndex: 1,
+            }}
+          >
+            <CircularProgress />
+            <Typography color="text.secondary">Preparing your Service Record…</Typography>
+          </Box>
+        )}
+        <Stack spacing={3} sx={revealingFirstPortrait ? { visibility: 'hidden' } : undefined}>
           {/* Officer header */}
           <Stack alignItems="center" direction="row" spacing={2}>
             <Box
@@ -587,6 +655,7 @@ export const AchievementsDialog = ({ onClose, open }: AchievementsDialogProps) =
                 bodyFrontImageUrl={bodyFrontUrl}
                 backgroundImageKey={backgroundKey}
                 medals={uniformMedals}
+                onReady={() => setRevealingFirstPortrait(false)}
                 serviceRibbons={serviceRibbons}
                 showAlignmentGrid={showAlignmentGrid}
                 size={128}

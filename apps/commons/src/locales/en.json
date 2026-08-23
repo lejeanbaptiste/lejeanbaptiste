@@ -259,6 +259,33 @@
       }
     },
     "desktop": {
+      "portrait_setup": {
+        "title": "Choose the features that most look like you",
+        "continue": "Continue",
+        "body_type": "Body type",
+        "hair": "Hair",
+        "hair_long": "Long hair {{number}}",
+        "hair_short": "Short hair {{number}}",
+        "hair_color": "Hair colour",
+        "hair_color_0e0e0e": "Black",
+        "hair_color_e5d7a3": "Blonde",
+        "hair_color_6a4e35": "Brown",
+        "hair_color_cb6820": "Copper",
+        "hair_color_afafaf": "Silver",
+        "complexion": "Complexion",
+        "complexion_f2d3b1": "Porcelain",
+        "complexion_ecad80": "Honey",
+        "complexion_9e5622": "Chestnut",
+        "complexion_763900": "Deep brown",
+        "eyes": "Eyes",
+        "eyebrows": "Eyebrows",
+        "mouth": "Mouth",
+        "features": "Features",
+        "eyewear": "Eyewear",
+        "earrings": "Earrings",
+        "variant": "Variant {{number}}",
+        "none": "None"
+      },
       "only_available_desktop": "This page is only available in the desktop app.",
       "database_window": {
         "title": "Database",

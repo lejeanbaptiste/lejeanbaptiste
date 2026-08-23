@@ -164,6 +164,10 @@ function isValidLayer(value: string | null): value is 'back' | 'front' {
   return value === 'back' || value === 'front';
 }
 
+function isValidSubjectBackground(value: string | null): value is string {
+  return value === null || /^[1-4]$/.test(value);
+}
+
 /** Only ids matching the asset naming convention are ever matched against
  * the SVG text - same defense-in-depth as avatarAssets.ts's isValidVariant. */
 function isValidId(value: string): boolean {
@@ -175,11 +179,13 @@ function composeBodySvg(params: URLSearchParams): string | null {
   const bodyType = params.get('bodyType');
   const rank = params.get('rank');
   const layer = params.get('layer');
+  const subjectBackground = params.get('subjectBackground');
   if (
     !isValidPoseIndex(poseIndex) ||
     !isValidBodyType(bodyType) ||
     !isValidRank(rank) ||
-    !isValidLayer(layer)
+    !isValidLayer(layer) ||
+    !isValidSubjectBackground(subjectBackground)
   ) {
     return null;
   }
@@ -205,6 +211,15 @@ function composeBodySvg(params: URLSearchParams): string | null {
     ['f-body', bodyType === 'f' ? 'inline' : 'none'],
     ['m-body', bodyType === 'm' ? 'inline' : 'none'],
   ]);
+  // Subject scenes can carry their own full-frame environments. They are
+  // visible only in the rear layer so the front layer still contains the
+  // aircraft and uniform without duplicating the scene behind the head.
+  for (let environment = 1; environment <= 4; environment += 1) {
+    labelValues.set(
+      `background${environment}`,
+      showBackground && subjectBackground === String(environment) ? 'inline' : 'none',
+    );
+  }
   for (const r of RANKS) {
     labelValues.set(`f-rank${r}`, bodyType === 'f' && String(r) === rank ? 'inline' : 'none');
     labelValues.set(`m-rank${r}`, bodyType === 'm' && String(r) === rank ? 'inline' : 'none');
