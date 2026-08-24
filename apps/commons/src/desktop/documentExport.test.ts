@@ -15,10 +15,7 @@ const translationSettingsJson = JSON.stringify({
   lockedAt: new Date().toISOString(),
 });
 
-const sourceXml =
-  '<TEI><text><body>' +
-  '<p xml:id="p1">Hello world.</p>' +
-  '</body></text></TEI>';
+const sourceXml = '<TEI><text><body>' + '<p xml:id="p1">Hello world.</p>' + '</body></text></TEI>';
 
 const translationXml =
   '<translation><text><body>' +

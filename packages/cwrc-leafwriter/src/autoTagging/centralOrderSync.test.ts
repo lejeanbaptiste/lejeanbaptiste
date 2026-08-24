@@ -64,9 +64,7 @@ describe('applyCentralRemapToPedb', () => {
 
     const result = applyCentralRemapToPedb(pedbDoc, { 'person-old-central': null }, USER);
 
-    expect(result.cleared).toEqual([
-      { id, name: '南齊書', from: 'person-old-central', to: null },
-    ]);
+    expect(result.cleared).toEqual([{ id, name: '南齊書', from: 'person-old-central', to: null }]);
     expect(getCentralId(element, USER)).toBeNull();
   });
 

@@ -62,8 +62,7 @@ const makeStore = (seed: Panel[] = []) => {
     ): Promise<string | null> => {
       const hits = [...entities.values()].filter(
         (row) =>
-          row.kind === kind &&
-          row.names.some((n) => n.status === 'active' && n.text === name),
+          row.kind === kind && row.names.some((n) => n.status === 'active' && n.text === name),
       );
       return hits.length === 1 ? hits[0]!.id : null;
     },
@@ -125,9 +124,7 @@ const USER = 'user-a';
 
 describe('adoptFromCentralSqlite', () => {
   it('mints a PEDB mirror and maps it to the central id', async () => {
-    const central = makeStore([
-      panel({ id: 'person-central-1', kind: 'person' }),
-    ]);
+    const central = makeStore([panel({ id: 'person-central-1', kind: 'person' })]);
     const project = makeStore();
 
     const result = await adoptFromCentralSqlite(

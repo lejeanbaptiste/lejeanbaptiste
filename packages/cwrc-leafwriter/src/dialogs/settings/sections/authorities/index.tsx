@@ -8,7 +8,11 @@ import { DesktopOfflineAuthorities } from './desktop-offline-authorities';
 import { DesktopMapTilesSettings } from './desktop-maptiles-settings';
 import { ShowPackStringCounts } from './show-pack-string-counts';
 
-export const Authorities = ({ includeDesktopAssets = true }: { includeDesktopAssets?: boolean }) => {
+export const Authorities = ({
+  includeDesktopAssets = true,
+}: {
+  includeDesktopAssets?: boolean;
+}) => {
   const authorityServices = useAtomValue(authorityServicesAtom);
 
   const authorityIds = useLiveQuery(async () => {

@@ -13,9 +13,7 @@ import type { DialogBarProps } from '../dialogs';
 const projectHasSchema = async (bundle: ProjectBundle): Promise<boolean> => {
   if (!bundle.config.schema?.rng || !window.electronAPI?.readFile) return false;
   try {
-    await window.electronAPI.readFile(
-      joinProjectPath(bundle.rootPath, bundle.config.schema.rng),
-    );
+    await window.electronAPI.readFile(joinProjectPath(bundle.rootPath, bundle.config.schema.rng));
     return true;
   } catch {
     return false;

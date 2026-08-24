@@ -24,11 +24,7 @@ export const HighlighterIcon = (props: SvgIconProps) => {
         d="M4.95 20.7h6.15a1.4 1.4 0 0 0 1.04-.46l1.12-1.22-2.4-2.4-1.22 1.12a1.4 1.4 0 0 0-.46 1.04V20.7z"
         fill={body}
       />
-      <path
-        d="M12.6 16.62 7.38 11.4l9.52-9.52 5.22 5.22z"
-        fill={body}
-        opacity="0.18"
-      />
+      <path d="M12.6 16.62 7.38 11.4l9.52-9.52 5.22 5.22z" fill={body} opacity="0.18" />
     </SvgIcon>
   );
 };

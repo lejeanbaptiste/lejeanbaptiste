@@ -141,8 +141,7 @@ export const TranslationTabContent = ({ active }: TranslationTabContentProps) =>
 
   // Auto-index: the first time this tab is active for a given (file, language) pair,
   // resolve or create the companion translation file.
-  const isActiveTabDirty =
-    openTabs.find((tab) => tab.filePath === activeTabPath)?.dirty ?? false;
+  const isActiveTabDirty = openTabs.find((tab) => tab.filePath === activeTabPath)?.dirty ?? false;
 
   useEffect(() => {
     if (!active || !activeTabPath || !selectedLang) return;
@@ -176,7 +175,11 @@ export const TranslationTabContent = ({ active }: TranslationTabContentProps) =>
       .catch((error) => {
         resolvedKeyRef.current = null;
         console.error('[translation] startTranslationForLang threw', error);
-        notifyViaSnackbar(t('LWC.translation.translate_failed', { error: error instanceof Error ? error.message : String(error) }));
+        notifyViaSnackbar(
+          t('LWC.translation.translate_failed', {
+            error: error instanceof Error ? error.message : String(error),
+          }),
+        );
       })
       .finally(() => {
         setIndexing(false);
@@ -193,22 +196,22 @@ export const TranslationTabContent = ({ active }: TranslationTabContentProps) =>
 
   if (languages === null) {
     return (
-        <Box sx={{ p: 2 }}>
-          <Typography color="text.secondary" variant="body2">
+      <Box sx={{ p: 2 }}>
+        <Typography color="text.secondary" variant="body2">
           {t('LWC.translation.open_project_to_use_translations')}
-          </Typography>
-        </Box>
-      );
+        </Typography>
+      </Box>
+    );
   }
 
   if (languages.length === 0) {
     return (
-        <Box sx={{ p: 2 }}>
-          <Typography color="text.secondary" variant="body2">
+      <Box sx={{ p: 2 }}>
+        <Typography color="text.secondary" variant="body2">
           {t('LWC.translation.no_languages_configured')}
-          </Typography>
-        </Box>
-      );
+        </Typography>
+      </Box>
+    );
   }
 
   return (

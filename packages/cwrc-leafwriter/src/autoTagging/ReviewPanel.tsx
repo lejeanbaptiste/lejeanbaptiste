@@ -709,7 +709,11 @@ export const ReviewPanel = ({
       {aiValidationEnabled && (
         <Box sx={{ px: 1, pb: 0.75, flexShrink: 0 }}>
           {aiCurating && (
-            <Typography variant="caption" color="text.secondary" sx={{ display: 'block', mb: 0.25 }}>
+            <Typography
+              variant="caption"
+              color="text.secondary"
+              sx={{ display: 'block', mb: 0.25 }}
+            >
               AI curating
               {aiCurateProgress && aiCurateProgress.total > 0
                 ? `… ${aiCurateProgress.done}/${aiCurateProgress.total} batches`

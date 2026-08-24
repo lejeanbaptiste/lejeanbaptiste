@@ -1,8 +1,5 @@
 import type { EntitySummary } from '../entityOps';
-import {
-  FAMILY_PREFIX_STRIP_TYPES,
-  stripFamilyPrefixFromCourtesyName,
-} from '../nameTypes';
+import { FAMILY_PREFIX_STRIP_TYPES, stripFamilyPrefixFromCourtesyName } from '../nameTypes';
 import { suggestPersonNameSplit } from '../../plugins/personNameDefaults';
 import { isLatinScript } from '../../utilities/romanize';
 import { isChineseLanguageCode } from '../../utilities/languageCodes';
@@ -83,9 +80,7 @@ const appointmentSet = (entity: EntitySummary): Set<string> =>
 const nobleTitleSet = (entity: EntitySummary): Set<string> =>
   new Set(
     entity.nobleTitles
-      .map((title) =>
-        nfc([title.fief, title.posthumousName, title.title].filter(Boolean).join('')),
-      )
+      .map((title) => nfc([title.fief, title.posthumousName, title.title].filter(Boolean).join('')))
       .filter(Boolean),
   );
 
@@ -229,7 +224,7 @@ export function scanBadPrimary(entities: EntitySummary[]): HygieneFinding[] {
     const betterCjk =
       fromParts && hasCjk(fromParts)
         ? fromParts
-        : entity.nameEntries.find((entry) => {
+        : (entity.nameEntries.find((entry) => {
             const text = nfc(entry.text);
             if (!text || !hasCjk(text) || text === nfc(primary)) return false;
             // Structural parts are not display primaries.
@@ -240,7 +235,7 @@ export function scanBadPrimary(entities: EntitySummary[]): HygieneFinding[] {
             // Single-character CJK is almost always a surname fragment here.
             if (codePointLength(text) < 2) return false;
             return true;
-          })?.text ?? null;
+          })?.text ?? null);
 
     const latinOnly = isLatinScript(primary) && !hasCjk(primary);
     const commaJunk = looksLikeCommaJunkPrimary(primary);
@@ -347,7 +342,11 @@ export function scanNearDuplicates(entities: EntitySummary[]): HygieneFinding[] 
   const findings: HygieneFinding[] = [];
   const seenPairs = new Set<string>();
 
-  const addToBucket = (buckets: Map<string, EntitySummary[]>, key: string, entity: EntitySummary) => {
+  const addToBucket = (
+    buckets: Map<string, EntitySummary[]>,
+    key: string,
+    entity: EntitySummary,
+  ) => {
     if (!key) return;
     const list = buckets.get(key);
     if (list) list.push(entity);
@@ -426,8 +425,7 @@ export function scanNearDuplicates(entities: EntitySummary[]): HygieneFinding[] 
       const bZi = courtesyTexts(b);
 
       const givenGiven = listsIntersect(aGiven, bGiven);
-      const givenZi =
-        listsIntersect(aGiven, bZi) || listsIntersect(bGiven, aZi);
+      const givenZi = listsIntersect(aGiven, bZi) || listsIntersect(bGiven, aZi);
       const ziZi = listsIntersect(aZi, bZi);
       if (!givenGiven && !givenZi && !ziZi) continue;
 
@@ -488,10 +486,7 @@ export function scanNearDuplicates(entities: EntitySummary[]): HygieneFinding[] 
       entityId: keepId!,
       relatedEntityIds: [a.id, b.id],
       peer: { kind: 'entity', entityId: dropId! },
-      evidence:
-        score > 0
-          ? `${reasons.join('; ')} (+${score} beyond minimum)`
-          : reasons.join('; '),
+      evidence: score > 0 ? `${reasons.join('; ')} (+${score} beyond minimum)` : reasons.join('; '),
       proposal: { action: 'merge', keepId: keepId!, dropIds: [dropId!] },
     });
   }

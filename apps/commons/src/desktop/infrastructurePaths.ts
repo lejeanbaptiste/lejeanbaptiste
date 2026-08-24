@@ -16,7 +16,11 @@ export const isInfrastructureDirName = (name: string): boolean =>
   INFRASTRUCTURE_DIR_NAMES.has(name);
 
 export const normalizePathKey = (filePath: string): string =>
-  filePath.split(/[/\\]+/).filter(Boolean).join('/').toLowerCase();
+  filePath
+    .split(/[/\\]+/)
+    .filter(Boolean)
+    .join('/')
+    .toLowerCase();
 
 export const pathsMatch = (a: string, b: string): boolean =>
   normalizePathKey(a) === normalizePathKey(b);

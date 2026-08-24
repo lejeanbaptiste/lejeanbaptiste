@@ -3,7 +3,9 @@
  */
 jest.mock('../../overmind', () => ({
   useAppState: () => ({ ui: { translationMode: { active: false } } }),
-  useActions: () => ({ ui: { notifyViaSnackbar: jest.fn(), setSelectedTranslationUnit: jest.fn() } }),
+  useActions: () => ({
+    ui: { notifyViaSnackbar: jest.fn(), setSelectedTranslationUnit: jest.fn() },
+  }),
 }));
 
 jest.mock('react-i18next', () => ({

@@ -45,9 +45,9 @@ export const NativeSchemaSetupPage = () => {
     if (!isDesktop() || !dialogId) return;
 
     void (async () => {
-      const setupState = (await invoke('getSchemaSetupState', { dialogId })) as
-        | SchemaSetupState
-        | null;
+      const setupState = (await invoke('getSchemaSetupState', {
+        dialogId,
+      })) as SchemaSetupState | null;
       if (setupState) {
         setState(setupState);
         setSelectedCatalogId(setupState.defaultCatalogId);
@@ -117,8 +117,17 @@ export const NativeSchemaSetupPage = () => {
   }
 
   return (
-    <Box sx={{ display: 'flex', flexDirection: 'column', height: '100vh', bgcolor: 'background.default' }}>
-      <Box sx={{ px: 2, py: 1.5, borderBottom: 1, borderColor: 'divider', WebkitAppRegion: 'drag' }}>
+    <Box
+      sx={{
+        display: 'flex',
+        flexDirection: 'column',
+        height: '100vh',
+        bgcolor: 'background.default',
+      }}
+    >
+      <Box
+        sx={{ px: 2, py: 1.5, borderBottom: 1, borderColor: 'divider', WebkitAppRegion: 'drag' }}
+      >
         <Typography variant="h6">{t('LWC.desktop.project.schema_setup')}</Typography>
         <Typography color="text.secondary" variant="body2">
           {t('LWC.desktop.project.choose_schema_message')}

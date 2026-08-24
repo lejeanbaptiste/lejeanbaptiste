@@ -144,9 +144,7 @@ export const countTagsInXml = (xml: string): Record<string, number> => {
   return counts;
 };
 
-export const countAttrsInXml = (
-  xml: string,
-): Pick<FileUsageCounts, 'attrs' | 'attrValues'> => {
+export const countAttrsInXml = (xml: string): Pick<FileUsageCounts, 'attrs' | 'attrValues'> => {
   const attrs: Record<string, Record<string, number>> = {};
   const attrValues: Record<string, Record<string, Record<string, number>>> = {};
   const parser = new DOMParser();
@@ -190,7 +188,9 @@ export const mergeFileCountsIntoProject = (
 ): TagUsageStats => {
   const previous = stats.files[relativePath];
   const nextProjectTags = { ...stats.project.tags };
-  const nextProjectAttrs = JSON.parse(JSON.stringify(stats.project.attrs)) as TagUsageStats['project']['attrs'];
+  const nextProjectAttrs = JSON.parse(
+    JSON.stringify(stats.project.attrs),
+  ) as TagUsageStats['project']['attrs'];
   const nextProjectAttrValues = JSON.parse(
     JSON.stringify(stats.project.attrValues),
   ) as TagUsageStats['project']['attrValues'];

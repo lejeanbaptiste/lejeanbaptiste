@@ -58,7 +58,12 @@ class CorrectionDialog implements SchemaDialog {
       </div>
     `).appendTo(parentEl);
 
-    this.dialog = new DialogForm({ writer, $el: this.$el, type: 'correction', title: 'Tag Correction' });
+    this.dialog = new DialogForm({
+      writer,
+      $el: this.$el,
+      type: 'correction',
+      title: 'Tag Correction',
+    });
 
     // Orlando and cwrcEntry don't need these events
     if (this.mappingID === 'orlando' || this.mappingID == 'cwrcEntry') return;
@@ -180,9 +185,7 @@ class CorrectionDialog implements SchemaDialog {
           return;
         }
 
-        $entity
-          .text(corrText)
-          .attr('data-sic-text', sicText);
+        $entity.text(corrText).attr('data-sic-text', sicText);
         entity.setContent(corrText);
 
         return;
@@ -329,9 +332,7 @@ class CorrectionDialog implements SchemaDialog {
     const fieldTitle = i18next.t('LW.Correction');
 
     const dataMapping =
-      this.mappingID === 'orlando' || this.mappingID == 'cwrcEntry'
-        ? 'CORR'
-        : 'custom.corrText';
+      this.mappingID === 'orlando' || this.mappingID == 'cwrcEntry' ? 'CORR' : 'custom.corrText';
 
     return `
       <div class="attribute correctionField">

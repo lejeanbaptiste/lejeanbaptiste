@@ -20,8 +20,7 @@ export interface PerformFindJumpParams {
   useRegex: boolean;
 }
 
-const isSourceEditorMode = () =>
-  window.writer?.overmindState?.ui?.editorViewMode === 'source';
+const isSourceEditorMode = () => window.writer?.overmindState?.ui?.editorViewMode === 'source';
 
 export const performFindJump = ({
   content,

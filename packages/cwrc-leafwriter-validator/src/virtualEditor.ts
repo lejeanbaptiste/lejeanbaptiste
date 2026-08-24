@@ -54,11 +54,7 @@ class VirtualEditor {
     }
   }
 
-  private sameSchemaIdentity({
-    id,
-    url,
-    schemaRevision = null,
-  }: InitializeParameters): boolean {
+  private sameSchemaIdentity({ id, url, schemaRevision = null }: InitializeParameters): boolean {
     return (
       this.schemaId === id &&
       this.schemaUrl === url &&
@@ -108,15 +104,13 @@ class VirtualEditor {
 
     // eslint-disable-next-line @typescript-eslint/ban-ts-comment
     //@ts-expect-error
-     
+
     const definitions = Array.from(this.schema?.definitions.values());
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const definition: any = definitions.find((def: any) => def.pat?.name?.name === tagName);
 
-     
     const documentation = definition
-      ?  
-        definition.pat.name.documentation
+      ? definition.pat.name.documentation
       : 'Element undefined or documentation unavailable';
 
     return documentation as string;

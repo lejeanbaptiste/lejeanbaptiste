@@ -46,16 +46,21 @@ export const createNativeProjectMetadataIO = (
 
   return {
     loadState: async () => {
-      const dialogState = (await invoke('getProjectMetadataState', { dialogId })) as
-        | Awaited<ReturnType<NonNullable<ProjectMetadataEditorIO['loadState']>>>
-        | null;
+      const dialogState = (await invoke('getProjectMetadataState', { dialogId })) as Awaited<
+        ReturnType<NonNullable<ProjectMetadataEditorIO['loadState']>>
+      > | null;
       return dialogState;
     },
     saveMetadata: async (payload) => {
       const result = (await invoke('saveProjectMetadata', {
         dialogId,
         ...payload,
-      })) as { ok: boolean; error?: string; summary?: string; syncReport?: { broken: number; conflicts: number } };
+      })) as {
+        ok: boolean;
+        error?: string;
+        summary?: string;
+        syncReport?: { broken: number; conflicts: number };
+      };
       return result ?? { ok: false, error: 'Could not save project metadata.' };
     },
     nameTypePolicy,

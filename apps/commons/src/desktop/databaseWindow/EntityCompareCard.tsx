@@ -308,12 +308,12 @@ export const EntityCompareCard = ({
               {model.authorities.length === 0
                 ? dash
                 : model.authorities.map((auth, index) => (
-                  <Chip
-                    key={`${auth.type}-${auth.value}-${index}`}
-                    size="small"
-                    variant="outlined"
-                    icon={<SourceBadges label={auth.type} compact />}
-                    label={auth.value}
+                    <Chip
+                      key={`${auth.type}-${auth.value}-${index}`}
+                      size="small"
+                      variant="outlined"
+                      icon={<SourceBadges label={auth.type} compact />}
+                      label={auth.value}
                     />
                   ))}
             </Stack>

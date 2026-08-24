@@ -72,8 +72,8 @@ describe('readSpreadsheet', () => {
   it('rejects a zip that is neither xlsx nor ods', async () => {
     const zip = new JSZip();
     zip.file('random.txt', 'hello');
-    await expect(readSpreadsheet(await zip.generateAsync({ type: 'arraybuffer' }), 'x.zip')).rejects.toThrow(
-      /not a recognized/,
-    );
+    await expect(
+      readSpreadsheet(await zip.generateAsync({ type: 'arraybuffer' }), 'x.zip'),
+    ).rejects.toThrow(/not a recognized/);
   });
 });

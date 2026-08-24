@@ -1,7 +1,6 @@
 import { MultiStringMatcher } from './matcher';
 
-const scan = (patterns: string[], text: string) =>
-  [...new MultiStringMatcher(patterns).scan(text)];
+const scan = (patterns: string[], text: string) => [...new MultiStringMatcher(patterns).scan(text)];
 
 describe('MultiStringMatcher', () => {
   it('finds all non-overlapping occurrences in one pass', () => {

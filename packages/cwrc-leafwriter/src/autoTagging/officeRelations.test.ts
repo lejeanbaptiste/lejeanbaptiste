@@ -1,9 +1,4 @@
-import {
-  addEntity,
-  createEntitiesScaffold,
-  parseEntities,
-  readOfficeRelations,
-} from './entities';
+import { addEntity, createEntitiesScaffold, parseEntities, readOfficeRelations } from './entities';
 import { recordAdjacentOfficeRelations } from './seed';
 import {
   clearAllPluginOfficeRelationExtractors,

@@ -4,8 +4,7 @@ import { useCallback, useRef, useState } from 'react';
 const MIN_WIDTH = 260;
 const MAX_WIDTH = 900;
 
-const clampWidth = (width: number) =>
-  Math.min(MAX_WIDTH, Math.max(MIN_WIDTH, Math.round(width)));
+const clampWidth = (width: number) => Math.min(MAX_WIDTH, Math.max(MIN_WIDTH, Math.round(width)));
 
 /**
  * Panel width with a localStorage-persisted override. `update` clamps to a

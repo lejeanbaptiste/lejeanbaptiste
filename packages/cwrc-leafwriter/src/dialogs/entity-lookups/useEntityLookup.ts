@@ -83,20 +83,12 @@ const adoptCentralEntity = async (centralId: string): Promise<string | null> => 
   const centralStore = centralEntityStoreFromDesktop(centralFolder);
   if (!centralStore) return null;
 
-  if (
-    !(await projectStore.hasSqliteDatabase()) ||
-    !(await centralStore.hasSqliteDatabase())
-  ) {
+  if (!(await projectStore.hasSqliteDatabase()) || !(await centralStore.hasSqliteDatabase())) {
     throw new Error(SQLITE_REQUIRED_LOOKUP_MESSAGE);
   }
 
   const { id: userStableId } = await readOrMintUserStableId(api, centralFolder);
-  const adopted = await adoptFromCentralSqlite(
-    projectStore,
-    centralStore,
-    centralId,
-    userStableId,
-  );
+  const adopted = await adoptFromCentralSqlite(projectStore, centralStore, centralId, userStableId);
   return adopted?.pedbId ?? null;
 };
 
@@ -149,13 +141,14 @@ export const useEntityLookup = () => {
 
   const buildLink = (
     over: Partial<EntityLink> & Pick<EntityLink, 'name' | 'uri' | 'repository'>,
-  ): EntityLink => ({
-    id: over.uri,
-    properties: { lemma: over.name, uri: over.uri },
-    query,
-    type: entityType,
-    ...over,
-  } as EntityLink);
+  ): EntityLink =>
+    ({
+      id: over.uri,
+      properties: { lemma: over.name, uri: over.uri },
+      query,
+      type: entityType,
+      ...over,
+    }) as EntityLink;
 
   /**
    * When one or more candidates are checked, the primary is whichever one is
@@ -178,11 +171,14 @@ export const useEntityLookup = () => {
     if (active) {
       const extraUris = checked?.extraUris ?? [];
       const description = extraUris.length
-        ? ([active.description, ...checked!.extraUris.map((uri) =>
-            [...checkedEntries.values()].find((entry) => entry.uri === uri)?.description,
-          )]
+        ? [
+            active.description,
+            ...checked!.extraUris.map(
+              (uri) => [...checkedEntries.values()].find((entry) => entry.uri === uri)?.description,
+            ),
+          ]
             .filter(Boolean)
-            .join(' · ') || undefined)
+            .join(' · ') || undefined
         : active.description;
       return {
         uri: active.uri,
@@ -257,8 +253,16 @@ export const useEntityLookup = () => {
         if (pedbId) {
           await attachExtras(pedbId);
           const deps = await resolveDeps(lookupType);
-          if (deps) await attachConcordanceAfterLink(deps.store, pedbId, lookupType, deps.readPackFile);
-          closeWith(buildLink({ name: active.label, uri: active.uri, repository: 'entity-database', key: pedbId }));
+          if (deps)
+            await attachConcordanceAfterLink(deps.store, pedbId, lookupType, deps.readPackFile);
+          closeWith(
+            buildLink({
+              name: active.label,
+              uri: active.uri,
+              repository: 'entity-database',
+              key: pedbId,
+            }),
+          );
           return;
         }
         // Central database unreachable — fall through to a plain URI link.
@@ -273,7 +277,14 @@ export const useEntityLookup = () => {
             deps.readPackFile,
           );
         }
-        closeWith(buildLink({ name: active.label, uri: active.uri, repository: 'entity-database', key: active.internal.id }));
+        closeWith(
+          buildLink({
+            name: active.label,
+            uri: active.uri,
+            repository: 'entity-database',
+            key: active.internal.id,
+          }),
+        );
         return;
       }
     }

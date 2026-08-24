@@ -209,10 +209,7 @@ const resolveSchemaForWorker = async (
   return { url: schemaURL };
 };
 
-export const initialize = async (
-  { state }: Context,
-  options?: { silent?: boolean },
-) => {
+export const initialize = async ({ state }: Context, options?: { silent?: boolean }) => {
   const instrumentation = getValidatorInstrumentation();
   instrumentation.schemaLoading = true;
   instrumentation.schemaLoaded = false;
@@ -287,9 +284,7 @@ export const initialize = async (
       schemaWorker.error?.message ?? '(no error message)',
     );
   }
-  logValidatorInstrumentation(
-    schemaWorker.success ? 'initialize completed' : 'initialize failed',
-  );
+  logValidatorInstrumentation(schemaWorker.success ? 'initialize completed' : 'initialize failed');
 
   if (schemaWorker.success) {
     state.validator.hasSchema = true;
@@ -398,7 +393,6 @@ export const validate = async ({ state, actions }: Context) => {
     writer.event('documentValidated').publish(valid, { valid, errors }, validationString);
   };
 
-   
   await workerValidator.validate(validationString, Comlink.proxy(validationProgress));
   instrumentation.validationRunning = false;
 };
@@ -408,11 +402,7 @@ export const updateValidationError = async ({ state }: Context, value: number) =
 };
 
 type GetAtAction =
-  | 'AttributeAt'
-  | 'AttributesForTagAt'
-  | 'NodesForTagAt'
-  | 'TagAt'
-  | 'ValuesForTagAttributeAt';
+  'AttributeAt' | 'AttributesForTagAt' | 'NodesForTagAt' | 'TagAt' | 'ValuesForTagAttributeAt';
 
 export const getAt = async (
   { actions }: Context,
@@ -543,7 +533,5 @@ export const clearCache = async (_props: Context) => {
   await window.leafwriterValidator.clearCache();
 };
 
-export const debugValidatorState = async (
-  _props: Context,
-  options?: { runValidation?: boolean },
-) => debugValidator(options);
+export const debugValidatorState = async (_props: Context, options?: { runValidation?: boolean }) =>
+  debugValidator(options);

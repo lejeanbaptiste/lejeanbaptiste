@@ -2,8 +2,7 @@ import { offsetToLineColumn, searchInContent } from './textSearchUtils';
 import { filterHitsForWysiwygEditor } from './wysiwygVisibleHits';
 import type { FindFileResult } from './types';
 
-const isSourceEditorMode = () =>
-  window.writer?.overmindState?.ui?.editorViewMode === 'source';
+const isSourceEditorMode = () => window.writer?.overmindState?.ui?.editorViewMode === 'source';
 
 /** Adjust one file's match list after a single replace without re-scanning the whole file. */
 const updateFileMatchesAfterReplace = (

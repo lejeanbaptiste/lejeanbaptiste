@@ -8,14 +8,22 @@ import type { RawLlmItem } from './llmCache';
  * suggestion. This is layer one of two; layer two is anchor verification
  * (see locateInDoc/findOccurrenceOffset below), applied by the caller.
  */
-export function parseValidItems(json: string, tags: string[], allowedActions: string[]): RawLlmItem[] {
+export function parseValidItems(
+  json: string,
+  tags: string[],
+  allowedActions: string[],
+): RawLlmItem[] {
   let parsed: unknown;
   try {
     parsed = JSON.parse(json);
   } catch {
     return [];
   }
-  if (typeof parsed !== 'object' || parsed === null || !Array.isArray((parsed as any).suggestions)) {
+  if (
+    typeof parsed !== 'object' ||
+    parsed === null ||
+    !Array.isArray((parsed as any).suggestions)
+  ) {
     return [];
   }
 
@@ -56,7 +64,11 @@ export function parseValidItems(json: string, tags: string[], allowedActions: st
 }
 
 /** Offset (within `text`) of the nth (1-based) occurrence of `surface`, or null if fewer occurrences exist. */
-export function findOccurrenceOffset(text: string, surface: string, occurrence: number): number | null {
+export function findOccurrenceOffset(
+  text: string,
+  surface: string,
+  occurrence: number,
+): number | null {
   let idx = -1;
   for (let n = 0; n < occurrence; n++) {
     idx = text.indexOf(surface, idx + 1);

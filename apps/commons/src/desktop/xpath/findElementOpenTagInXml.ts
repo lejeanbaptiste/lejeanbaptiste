@@ -114,7 +114,10 @@ export const findElementOpenTagInXml = (
     }
 
     if (inner.startsWith('/')) {
-      const nameMatch = inner.slice(1).trim().match(/^([\w:-]+)/);
+      const nameMatch = inner
+        .slice(1)
+        .trim()
+        .match(/^([\w:-]+)/);
       if (nameMatch) popTag(nameMatch[1]);
       i = tagEnd + 1;
       continue;

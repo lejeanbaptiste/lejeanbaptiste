@@ -35,7 +35,8 @@ const outputDir = path.resolve(process.argv[3] ?? defaultOutputDir);
 const archiveRootName = path.basename(sourceDir);
 const archiveParentDir = path.dirname(sourceDir);
 
-const bundleVersion = process.env.AUTHORITY_PACKS_BUNDLE_VERSION ?? new Date().toISOString().slice(0, 10);
+const bundleVersion =
+  process.env.AUTHORITY_PACKS_BUNDLE_VERSION ?? new Date().toISOString().slice(0, 10);
 const compilePolicyVersion = process.env.AUTHORITY_PACKS_COMPILE_POLICY_VERSION ?? bundleVersion;
 
 const bundleSpecs = [

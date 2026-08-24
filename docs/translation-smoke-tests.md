@@ -30,7 +30,7 @@ To reset a file's translation state: delete its `*.translation.xml` companions a
 
 ## 3. Selection sync & editing (⚠ linking)
 
-- [x] Click into different paragraphs in the source — the pane swaps to each unit's translation. Verify the *text shown actually belongs to the clicked paragraph* (the core correspondence check: put distinct translations in p1/p2/p3 and click each).
+- [x] Click into different paragraphs in the source — the pane swaps to each unit's translation. Verify the _text shown actually belongs to the clicked paragraph_ (the core correspondence check: put distinct translations in p1/p2/p3 and click each).
 - [x] Type a translation, click away (blur) — reopen the companion file raw: the text landed inside the element whose `@corresp` matches the paragraph you were on, not a neighbor.
 - [x] Bold/italic/underline round-trip through blur + file reload.
 - [x] Switch language mid-edit — pane shows the other language's content for the same unit; edits don't bleed between languages.
@@ -49,9 +49,9 @@ To reset a file's translation state: delete its `*.translation.xml` companions a
 ## 4. Splitting & reindex (⚠ linking — highest corruption risk)
 
 - [x] **Split at very end of a paragraph** (Enter with caret after the last character): a new empty sibling paragraph is created, cursor moves into it, and it has **no** `xml:id` until save (never a copy of the original's).
-- [x] **Split mid-paragraph**: both halves render; the second half has a fresh internal id. After **save**: both halves have distinct `xml:id`s on disk; the *first* half keeps the original id.
+- [x] **Split mid-paragraph**: both halves render; the second half has a fresh internal id. After **save**: both halves have distinct `xml:id`s on disk; the _first_ half keeps the original id.
 - [x] After that save, the companion file: the original translation stays attached to the **first** half's id; the split-off half has a new empty unit. No translation text duplicated across both halves.
-- [x] Reindex-on-save is gated: with the Translation tab **closed**, saving a file with duplicate ids (paste a paragraph) does *not* rewrite companions; with the tab open, it does.
+- [x] Reindex-on-save is gated: with the Translation tab **closed**, saving a file with duplicate ids (paste a paragraph) does _not_ rewrite companions; with the tab open, it does.
 - [x] Copy-paste a whole paragraph (duplicate `xml:id`) then save with the tab open — duplicate resolved, first occurrence keeps the id, translations preserved.
 - [x] Immediately after a reindex-save, the pane shows current content (not a stale pre-reindex snapshot), and no "file changed externally" prompt appears.
 - [x] **Merge/delete a paragraph** whose translation exists, then save — known behavior: the orphaned unit stays in the companion until the next reindex actually runs; verify nothing crashes and other units keep their links.
@@ -62,7 +62,7 @@ To reset a file's translation state: delete its `*.translation.xml` companions a
 - [x] Scope=Current file, Documents=Both, search a word that exists **only in the translation** — companion hits appear even though the companion isn't an open tab.
 - [x] Documents=Source hides companion hits; Documents=Translation hides source hits (both for Current file and Project scope).
 - [x] Click a translation hit: opens the source file, switches to the Translation tab + right language, selects the containing paragraph in the source, and selects the matched text in the pane. **Never** opens the companion as a document ("Root element translation not supported" regression).
-- [x] The *auto*-jump to the first result right after pressing Find behaves the same as clicking (second code path regression).
+- [x] The _auto_-jump to the first result right after pressing Find behaves the same as clicking (second code path regression).
 - [x] Two occurrences of the search word in one translated paragraph: clicking each result highlights its own occurrence, not the first twice.
 - [x] After a jump, arrow keys still navigate the results list (focus not stolen by the editor).
 - [ ] Replace-all with Documents=Translation rewrites companion files on disk; with Documents=Source leaves them untouched. **⚠ linking:** verify replace in a translation never alters `corresp` attributes (search for a string that appears in an attribute value, e.g. part of a filename).
@@ -90,7 +90,7 @@ To reset a file's translation state: delete its `*.translation.xml` companions a
 ## 9. Restart / cold start
 
 - [x] Quit and relaunch: Translation tab works on first use without re-indexing already-indexed files (no duplicate id churn, no rewrite of companions).
-- [x] Open the Translation tab *before* any file is open — no crash; behaves once a file is opened. (Impossible, panel not shown until file opened.)
+- [x] Open the Translation tab _before_ any file is open — no crash; behaves once a file is opened. (Impossible, panel not shown until file opened.)
 
 ## 10. AI translate — entity placeholders (⚠ linking + LJBtero formatting)
 

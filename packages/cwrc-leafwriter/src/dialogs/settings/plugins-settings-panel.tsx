@@ -105,7 +105,9 @@ function PluginRow({
             checked={plugin.enabled}
             disabled={busy || !!plugin.manifestError}
             onChange={(event) => onToggle(event.target.checked)}
-            inputProps={{ 'aria-label': t('LW.settings.plugins.enable_plugin', { name: plugin.name }) }}
+            inputProps={{
+              'aria-label': t('LW.settings.plugins.enable_plugin', { name: plugin.name }),
+            }}
           />
           {hasConfigSurface && (
             <IconButton size="small" aria-label={t('LW.settings.plugins.plugin_settings')}>
@@ -137,9 +139,9 @@ export const PluginsSettingsPanel = ({ active = true }: { active?: boolean }) =>
     } catch {
       setRemotePlugins([]);
     }
-    void window.__leafWriterProject?.getProjectSourceLanguage?.().then((language) =>
-      setProjectLanguage(language ?? null),
-    );
+    void window.__leafWriterProject
+      ?.getProjectSourceLanguage?.()
+      .then((language) => setProjectLanguage(language ?? null));
   }, []);
 
   useEffect(() => {
@@ -148,7 +150,8 @@ export const PluginsSettingsPanel = ({ active = true }: { active?: boolean }) =>
   }, [active, load]);
 
   const installedPlugins = useMemo(
-    () => snapshot?.plugins.filter((plugin) => pluginSupportsLanguage(plugin, projectLanguage)) ?? [],
+    () =>
+      snapshot?.plugins.filter((plugin) => pluginSupportsLanguage(plugin, projectLanguage)) ?? [],
     [projectLanguage, snapshot?.plugins],
   );
 
@@ -271,7 +274,12 @@ export const PluginsSettingsPanel = ({ active = true }: { active?: boolean }) =>
       {tab === 'available' && (
         <Stack spacing={1.25}>
           <Box>
-            <Button variant="outlined" size="small" onClick={() => void handleInstallFromFolder()} disabled={busy}>
+            <Button
+              variant="outlined"
+              size="small"
+              onClick={() => void handleInstallFromFolder()}
+              disabled={busy}
+            >
               {t('LW.settings.plugins.install_from_folder')}
             </Button>
           </Box>
@@ -280,7 +288,12 @@ export const PluginsSettingsPanel = ({ active = true }: { active?: boolean }) =>
           ) : (
             availablePlugins.map((entry) => (
               <Box key={entry.id} sx={{ border: 1, borderColor: 'divider', borderRadius: 2, p: 2 }}>
-                <Stack direction="row" alignItems="center" justifyContent="space-between" spacing={2}>
+                <Stack
+                  direction="row"
+                  alignItems="center"
+                  justifyContent="space-between"
+                  spacing={2}
+                >
                   <Stack spacing={0.5}>
                     <Typography variant="subtitle1" fontWeight={600}>
                       {entry.name}{' '}

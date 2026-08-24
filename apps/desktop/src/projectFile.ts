@@ -36,9 +36,7 @@ export const resolveProjectPath = (rootPath: string, relativePath: string): stri
   return resolved;
 };
 
-const normalizeAutoTaggingAuthority = (
-  raw: unknown,
-): AutoTaggingAuthoritySettings | undefined => {
+const normalizeAutoTaggingAuthority = (raw: unknown): AutoTaggingAuthoritySettings | undefined => {
   if (!raw || typeof raw !== 'object') return undefined;
   const value = raw as AutoTaggingAuthoritySettings;
   const packs = Array.isArray(value.packs)
@@ -48,7 +46,11 @@ const normalizeAutoTaggingAuthority = (
   const yearEnd = typeof value.yearEnd === 'number' ? value.yearEnd : undefined;
   const out: AutoTaggingAuthoritySettings = {};
   if (packs?.length) out.packs = packs;
-  if (value.dateFilter === 'none' || value.dateFilter === 'limit' || value.dateFilter === 'exclude') {
+  if (
+    value.dateFilter === 'none' ||
+    value.dateFilter === 'limit' ||
+    value.dateFilter === 'exclude'
+  ) {
     out.dateFilter = value.dateFilter;
   }
   if (typeof value.yearFilterEnabled === 'boolean') out.yearFilterEnabled = value.yearFilterEnabled;
@@ -85,15 +87,17 @@ const normalizeAutoTaggingAuthority = (
   return Object.keys(out).length ? out : undefined;
 };
 
-const normalizeDisambiguationSettings = (
-  raw: unknown,
-): DisambiguationSettings | undefined => {
+const normalizeDisambiguationSettings = (raw: unknown): DisambiguationSettings | undefined => {
   if (!raw || typeof raw !== 'object') return undefined;
   const value = raw as DisambiguationSettings;
   const out: DisambiguationSettings = {};
   if (typeof value.aiCuration === 'boolean') out.aiCuration = value.aiCuration;
   if (typeof value.disableCaching === 'boolean') out.disableCaching = value.disableCaching;
-  if (value.dateFilter === 'none' || value.dateFilter === 'limit' || value.dateFilter === 'exclude') {
+  if (
+    value.dateFilter === 'none' ||
+    value.dateFilter === 'limit' ||
+    value.dateFilter === 'exclude'
+  ) {
     out.dateFilter = value.dateFilter;
   }
   if (typeof value.yearStart === 'number') out.yearStart = value.yearStart;
@@ -128,7 +132,8 @@ const normalizePlugins = (raw: unknown): string[] | undefined => {
 const normalizeConfig = (raw: Partial<ProjectFileConfig>, rootPath: string): ProjectFileConfig => ({
   version: 1,
   name: typeof raw.name === 'string' && raw.name.trim() ? raw.name : path.basename(rootPath),
-  projectId: typeof raw.projectId === 'string' && raw.projectId.trim() ? raw.projectId.trim() : undefined,
+  projectId:
+    typeof raw.projectId === 'string' && raw.projectId.trim() ? raw.projectId.trim() : undefined,
   schema:
     raw.schema && typeof raw.schema.rng === 'string' && raw.schema.rng.trim()
       ? { ...raw.schema, rng: raw.schema.rng.trim() }
@@ -148,7 +153,10 @@ const normalizeConfig = (raw: Partial<ProjectFileConfig>, rootPath: string): Pro
   plugins: normalizePlugins(raw.plugins),
 });
 
-const writeConfigFile = async (projectFilePath: string, config: ProjectFileConfig): Promise<void> => {
+const writeConfigFile = async (
+  projectFilePath: string,
+  config: ProjectFileConfig,
+): Promise<void> => {
   await writeFileAtomic(projectFilePath, JSON.stringify(config, null, 2));
 };
 
@@ -167,7 +175,9 @@ export const writeProjectConfig = async (
   const rootPath = path.dirname(projectFilePath);
   const previous = projectConfigWriteChains.get(projectFilePath) ?? Promise.resolve();
   const next = previous.then(async () => {
-    const raw = JSON.parse(await fs.readFile(projectFilePath, 'utf-8')) as Partial<ProjectFileConfig>;
+    const raw = JSON.parse(
+      await fs.readFile(projectFilePath, 'utf-8'),
+    ) as Partial<ProjectFileConfig>;
     const config = normalizeConfig({ ...raw, ...patch }, rootPath);
     await writeConfigFile(projectFilePath, config);
     return { rootPath, projectFilePath, config };

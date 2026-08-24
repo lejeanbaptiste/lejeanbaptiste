@@ -79,13 +79,11 @@ declare global {
         payload: ProjectMetadataSavePayload,
       ) => ReturnType<typeof saveProjectMetadataChanges>;
       getNameTypeTaggingPolicyState?: () => ReturnType<typeof loadNameTypeTaggingPolicyState>;
-      persistNameTypeTaggingPolicy?: (
-        payload: {
-          buckets: Record<NameTypeId, NameTypeTaggingBucket>;
-          customTypes?: AutoTaggingAuthoritySettings['customNameTypes'];
-          artMinCodePoints?: number;
-        },
-      ) => ReturnType<typeof persistNameTypeTaggingPolicyChanges>;
+      persistNameTypeTaggingPolicy?: (payload: {
+        buckets: Record<NameTypeId, NameTypeTaggingBucket>;
+        customTypes?: AutoTaggingAuthoritySettings['customNameTypes'];
+        artMinCodePoints?: number;
+      }) => ReturnType<typeof persistNameTypeTaggingPolicyChanges>;
     };
   }
 }
@@ -130,8 +128,7 @@ const getWriterSchemasList = (): {
 
 export const useNativeDialogBridge = () => {
   const { t } = useTranslation();
-  const { currentLocale, skipExplorerDeleteConfirm, themeAppearance } =
-    useAppState().ui;
+  const { currentLocale, skipExplorerDeleteConfirm, themeAppearance } = useAppState().ui;
   const { activeTabPath, config, openTabs, projectFilePath, rootPath } = useAppState().project;
   const { setSkipExplorerDeleteConfirm, setThemeAppearance, switchLanguage, notifyViaSnackbar } =
     useActions().ui;
@@ -144,7 +141,10 @@ export const useNativeDialogBridge = () => {
     throw new Error('Project metadata save is not ready.');
   });
   const policySaveDepsRef = useRef<
-    () => Pick<ProjectMetadataSaveDeps, 'electronAPI' | 'getAuthoritySettings' | 'setAuthoritySettings'>
+    () => Pick<
+      ProjectMetadataSaveDeps,
+      'electronAPI' | 'getAuthoritySettings' | 'setAuthoritySettings'
+    >
   >(() => {
     throw new Error('Name-type policy save is not ready.');
   });
@@ -275,8 +275,7 @@ export const useNativeDialogBridge = () => {
       setAutoTaggingValidationSettings: (settings) => {
         validationSettingsCache.current = settings;
       },
-      getDisambiguationSettings: () =>
-        disambiguationSettingsCache.current ?? config.disambiguation,
+      getDisambiguationSettings: () => disambiguationSettingsCache.current ?? config.disambiguation,
       setDisambiguationSettings: (settings) => {
         disambiguationSettingsCache.current = settings;
       },
@@ -291,7 +290,16 @@ export const useNativeDialogBridge = () => {
     return () => {
       delete window.__leafWriterProject;
     };
-  }, [rootPath, projectFilePath, config, openFile, openTabs, reloadTabFromDisk, notifyViaSnackbar, t]);
+  }, [
+    rootPath,
+    projectFilePath,
+    config,
+    openFile,
+    openTabs,
+    reloadTabFromDisk,
+    notifyViaSnackbar,
+    t,
+  ]);
 
   useEffect(() => {
     if (!isDesktop()) return;
@@ -436,7 +444,10 @@ export const useNativeDialogBridge = () => {
             }
 
             try {
-              const bundle = await electronAPI.installCatalogSchema(session.projectFilePath, catalogId);
+              const bundle = await electronAPI.installCatalogSchema(
+                session.projectFilePath,
+                catalogId,
+              );
               registerDesktopSchemas(buildProjectSchemas(bundle.rootPath, bundle.config));
               clearSchemaSetupSession(dialogId);
               session.onComplete(bundle);
@@ -444,7 +455,8 @@ export const useNativeDialogBridge = () => {
             } catch (error) {
               return {
                 ok: false,
-                error: error instanceof Error ? error.message : t('LWC.desktop.schema_download_failed'),
+                error:
+                  error instanceof Error ? error.message : t('LWC.desktop.schema_download_failed'),
               };
             }
           }

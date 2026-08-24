@@ -13,8 +13,6 @@ Run the desktop app from a dev build. Use a fresh empty folder and a folder with
 - [x] Leave most fields blank → Save → schema/project-metadata.json exists with empty/minimal fields
 - [x] Explorer loads; no document auto-created
 
-
-
 ## B. First-time project (local schema)
 
 - [x] New empty folder → wizard → Use local schema file… → pick a .rng from disk
@@ -22,22 +20,16 @@ Run the desktop app from a dev build. Use a fresh empty folder and a folder with
 - [x] Metadata dialog appears (custom/local note if non-catalog TEI)
 - [x] Re-open same project → no schema wizard, no metadata dialog
 
-
-
 ## C. Settings — encoder name
 
 - [x] Settings → set encoder name → Save/close
 - [x] New empty project through schema + metadata setup → Principal field pre-filled from Settings
-- [ ] Change Settings encoder name → re-open existing project metadata → principal not auto-overwritten *(not re-checked this pass)*
-
-
+- [ ] Change Settings encoder name → re-open existing project metadata → principal not auto-overwritten _(not re-checked this pass)_
 
 ## D. Existing project (schema + metadata already present)
 
 - [x] Open folder that already has schema/*.rng and project-metadata.json → no wizards
 - [x] Open an XML file from explorer → editor loads; validation uses local schema (check validator / no network fetch for RNG)
-
-
 
 ## E. Edition metadata (Project menu)
 
@@ -46,31 +38,23 @@ Run the desktop app from a dev build. Use a fresh empty folder and a folder with
 - [x] `titleStmt/title` and `sourceDesc` in files not changed by bulk apply
 - [x] Add / remove custom metadata rows → save → apply → custom path appears in (or is cleared from) file headers
 
-
-
 ## F. Unsaved guard
 
 - [x] Open project, edit a file (dirty tab) → Open Project again → prompted: Save all / Don’t save / Cancel
 - [x] Cancel → stay on current project with edits intact
 - [x] Save all → saves then opens new project
 
-
-
-## G. Failure / edge cases *(deferred)*
+## G. Failure / edge cases _(deferred)_
 
 - [ ] Simulate failed catalog download (offline or bad URL) → no partial schema/; project JSON unchanged; user can retry or pick local file
 - [ ] Copy schema/ folder from one project to another → open copy → schema works; metadata available via Edition metadata menu
 - [ ] Project with XML in subfolders → bulk apply reaches nested *.xml, skips schema/
-
-
 
 ## H. Regression
 
 - [x] Save / Save As still work on an open file (including temp `untitled.xml` → Save As)
 - [x] Restore last project on app launch runs same onboarding gates (schema/metadata) if folder incomplete
 - [x] Native Settings and document schema picker (missing schema on file open) still work
-
-
 
 ## I. New File (⌘N)
 
@@ -88,8 +72,6 @@ Prerequisites: project open with TEI Lite or TEI All schema and `schema/project-
 - [x] Validation panel shows valid document for new skeleton (manual check)
 - [ ] Re-run section H (Save / Save As regression) after New File flows
 
-
-
 ## J. File metadata panel (east rail)
 
 Prerequisites: TEI project open (TEI All or TEI Lite); at least one XML file with a `<teiHeader>`.
@@ -102,8 +84,6 @@ Prerequisites: TEI project open (TEI All or TEI Lite); at least one XML file wit
 - [x] **Project → Edition metadata…** → Save and update documents… still skips title and sourceDesc in files (section E regression)
 - [ ] Read-only mode → panel fields disabled (There is no read-only mode)
 - [x] East rail tabs show icons with tooltips (File metadata, Image Viewer, Validation)
-
-
 
 ## K. Expanded catalog (Phase 4)
 
@@ -120,8 +100,6 @@ Prerequisites: fresh empty folders (one per schema type below).
 - [x] File metadata panel on Orlando file → Title (`DOCTITLE`) + Source (`SOURCEDESC`)
 - [x] **Project → Edition metadata…** → Save and update documents… still skips per-file title/source fields (section E regression)
 
-
-
 ## L. Schema update check
 
 Prerequisites: catalog-installed project (e.g. TEI Lite from schema wizard) with `sourceHash` / `sourceCssHash` in `jean-baptiste.project.json`. Online.
@@ -134,8 +112,6 @@ Prerequisites: catalog-installed project (e.g. TEI Lite from schema wizard) with
 - [ ] Local-schema project (no `catalogId`) → no update check / dialog
 - [ ] Re-open same project within 24h after a check → no second network check (`lastCheckedAt` throttle)
 
-
-
 ## M. Source linked tag editing
 
 Prerequisites: desktop dev build; TEI file open in **Source** mode.
@@ -146,8 +122,6 @@ Prerequisites: desktop dev build; TEI file open in **Source** mode.
 - [x] Nested same-name tags (e.g. `<div><div>…</div></div>`) link only the innermost pair at the caret
 - [x] Self-closing tag (e.g. `<pb/>`) does not trigger linked rename
 - [ ] Edit Source dialog (if used) behaves the same as main Source pane
-
-
 
 ## Source paired tag unwrap
 
@@ -163,8 +137,6 @@ Prerequisites: same as above; **Visual** mode with caret in a paragraph.
 
 - [ ] Switch to **Source** → Monaco caret is at the same paragraph/character (location bar xpath matches)
 
-
-
 ## N. Phase 6 polish
 
 Prerequisites: catalog-installed TEI project with edition metadata; encoder name set in Settings.
@@ -176,8 +148,6 @@ Prerequisites: catalog-installed TEI project with edition metadata; encoder name
 - [ ] Orlando file → Save → `REVISIONDESC/RESPONSIBILITY[@RESP="Le Jean-Baptiste"]` updated with encoder name and date; other `RESPONSIBILITY` entries unchanged
 - [ ] Edition metadata → bulk apply → change one file’s managed field in file metadata panel → change edition default → bulk apply again → edited file keeps its value; others update
 - [ ] After bulk apply, `schema/project-metadata.json` contains `lastApplied` snapshot
-
-
 
 ## O. Tagging Phase 1 (Enter popup, F2, split)
 
@@ -194,8 +164,6 @@ Prerequisites: desktop dev build; TEI project open; **Visual** mode; **Show tags
 - [x] Invalid tag greyed in popup; apply refused with snackbar
 - [ ] Save file → `schema/tag-stats.json` updated with element counts
 - [x] **Source** mode: Enter/F2 do not open tag popup (linked rename in source still works)
-
-
 
 ## P. Tagging Phase 2 (Attributes)
 

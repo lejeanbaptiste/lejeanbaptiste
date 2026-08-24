@@ -32,17 +32,17 @@
 
 ### Key files
 
-| File | Role |
-|------|------|
-| `apps/commons/src/desktop/sidebar/SidebarFindTab.tsx` | Find tab UI |
-| `apps/commons/src/desktop/find/searchText.ts` | Multi-scope text search |
-| `apps/commons/src/desktop/find/textSearchUtils.ts` | Literal/regex scan, snippets, line/column |
-| `apps/commons/src/desktop/find/useFindNavigation.ts` | Tab switch + pending jump retries |
-| `apps/commons/src/desktop/find/resolveTextHitInXml.ts` | Source offset → TEI xpath + text offsets |
-| `apps/commons/src/desktop/find/selectTextInEditor.ts` | Select + scroll in WYSIWYG editor |
-| `apps/commons/src/desktop/find/performFindJump.ts` | Orchestrates resolve + select |
-| `apps/commons/src/desktop/shared/searchScope.ts` | Shared scope type + labels |
-| `apps/commons/src/desktop/shared/ScopeFields.tsx` | Shared scope dropdown (XPath + Find) |
+| File                                                   | Role                                      |
+| ------------------------------------------------------ | ----------------------------------------- |
+| `apps/commons/src/desktop/sidebar/SidebarFindTab.tsx`  | Find tab UI                               |
+| `apps/commons/src/desktop/find/searchText.ts`          | Multi-scope text search                   |
+| `apps/commons/src/desktop/find/textSearchUtils.ts`     | Literal/regex scan, snippets, line/column |
+| `apps/commons/src/desktop/find/useFindNavigation.ts`   | Tab switch + pending jump retries         |
+| `apps/commons/src/desktop/find/resolveTextHitInXml.ts` | Source offset → TEI xpath + text offsets  |
+| `apps/commons/src/desktop/find/selectTextInEditor.ts`  | Select + scroll in WYSIWYG editor         |
+| `apps/commons/src/desktop/find/performFindJump.ts`     | Orchestrates resolve + select             |
+| `apps/commons/src/desktop/shared/searchScope.ts`       | Shared scope type + labels                |
+| `apps/commons/src/desktop/shared/ScopeFields.tsx`      | Shared scope dropdown (XPath + Find)      |
 
 ---
 
@@ -58,12 +58,12 @@ Raw XML replace on **single text-run** matches only (no `<`/`>` in matched slice
 
 ### Replace logic
 
-| File | Role |
-|------|------|
-| `find/replaceText.ts` | `isReplaceableTextHit`, `replaceHitAtOffset`, `replaceAllInContent`, regex `$1` substitution |
-| `find/replaceValidation.ts` | `validateAndReplaceHit`, `validateAndReplaceAll`, `parseXmlDocument` |
-| `find/applyReplaceToEditor.ts` | Tab/source/visual/disk sync |
-| `find/useFindReplace.ts` | Hook wired from `SidebarFindTab` |
+| File                           | Role                                                                                         |
+| ------------------------------ | -------------------------------------------------------------------------------------------- |
+| `find/replaceText.ts`          | `isReplaceableTextHit`, `replaceHitAtOffset`, `replaceAllInContent`, regex `$1` substitution |
+| `find/replaceValidation.ts`    | `validateAndReplaceHit`, `validateAndReplaceAll`, `parseXmlDocument`                         |
+| `find/applyReplaceToEditor.ts` | Tab/source/visual/disk sync                                                                  |
+| `find/useFindReplace.ts`       | Hook wired from `SidebarFindTab`                                                             |
 
 - Single replace: splice `[hit.start, hit.end)` with replacement string
 - Regex replace: `$1`, `$2`, `$$` in replacement string
@@ -91,12 +91,12 @@ Find/replace on **visible text** only (tags invisible), preserving inline markup
 
 **Addition:** thick red vertical bars on the **left and right of the line** containing the active hit (inset `box-shadow` on the WYSIWYG block row or Monaco whole-line decoration), in addition to the existing orange match highlight. Cleared when find highlights clear.
 
-| File | Role |
-|------|------|
-| `find/findLineMarkers.ts` | Block/line marker helpers + shared CSS |
-| `find/findEditorHighlights.ts` | WYSIWYG all-match highlights + line markers |
-| `find/selectTextInEditor.ts` | Active-hit highlight + line marker |
-| `packages/cwrc-leafwriter/src/sourceEditor/findInSourceEditor.ts` | Monaco inline + whole-line decorations |
+| File                                                              | Role                                        |
+| ----------------------------------------------------------------- | ------------------------------------------- |
+| `find/findLineMarkers.ts`                                         | Block/line marker helpers + shared CSS      |
+| `find/findEditorHighlights.ts`                                    | WYSIWYG all-match highlights + line markers |
+| `find/selectTextInEditor.ts`                                      | Active-hit highlight + line marker          |
+| `packages/cwrc-leafwriter/src/sourceEditor/findInSourceEditor.ts` | Monaco inline + whole-line decorations      |
 
 Phase 2b (WYSIWYG visible-text **replace** across markup) remains future work.
 
@@ -108,11 +108,11 @@ Goal: **reject replacements that break well-formed XML**, especially when the us
 
 ### When to validate
 
-| Action | Validation |
-|--------|------------|
-| **Replace** (single) | Validate **after** replace on that file before committing; revert + toast on failure |
-| **Replace all** | Validate **each file** after all replacements in that file; skip file or abort batch on failure |
-| **Find only** | No validation |
+| Action               | Validation                                                                                      |
+| -------------------- | ----------------------------------------------------------------------------------------------- |
+| **Replace** (single) | Validate **after** replace on that file before committing; revert + toast on failure            |
+| **Replace all**      | Validate **each file** after all replacements in that file; skip file or abort batch on failure |
+| **Find only**        | No validation                                                                                   |
 
 Rapid per-replace validation is cheap (parse one file string). Batch “replace all” validates once per modified file, not once per hit.
 
@@ -134,12 +134,12 @@ If `parseXmlDocument(newContent)` returns `null` → **reject** the replace and 
 
 ### Risk tiers (when to warn vs always validate)
 
-| Tier | Condition | Action |
-|------|-----------|--------|
-| **Low** | Literal find; match text has no `<`, `>`, `&` | Still validate parse after replace (cheap) |
-| **Medium** | Literal find; match spans markup-looking characters | Validate + optional confirm dialog |
-| **High** | **Regex enabled** | Always validate; consider extra confirm for `.*`, `.+`, `[^<]+` patterns |
-| **High** | Find/replace string contains `<`, `>`, `/`, or attribute-like `=` | Warn: “This may alter XML structure” |
+| Tier       | Condition                                                         | Action                                                                   |
+| ---------- | ----------------------------------------------------------------- | ------------------------------------------------------------------------ |
+| **Low**    | Literal find; match text has no `<`, `>`, `&`                     | Still validate parse after replace (cheap)                               |
+| **Medium** | Literal find; match spans markup-looking characters               | Validate + optional confirm dialog                                       |
+| **High**   | **Regex enabled**                                                 | Always validate; consider extra confirm for `.*`, `.+`, `[^<]+` patterns |
+| **High**   | Find/replace string contains `<`, `>`, `/`, or attribute-like `=` | Warn: “This may alter XML structure”                                     |
 
 ### Regex patterns that almost always need scrutiny
 
@@ -178,12 +178,12 @@ export const getReplaceRiskTier = (find: string, replace: string, useRegex: bool
 
 ## Shared infrastructure with XPath
 
-| Shared | Notes |
-|--------|--------|
-| `SearchScope` | `shared/searchScope.ts` |
-| `ScopeFields` | Scope dropdown + custom folder path |
-| `collectXmlFiles` | Project/custom file enumeration |
-| Hits list UX | Same collapse/keyboard pattern as XPath tab |
+| Shared            | Notes                                       |
+| ----------------- | ------------------------------------------- |
+| `SearchScope`     | `shared/searchScope.ts`                     |
+| `ScopeFields`     | Scope dropdown + custom folder path         |
+| `collectXmlFiles` | Project/custom file enumeration             |
+| Hits list UX      | Same collapse/keyboard pattern as XPath tab |
 
 Find **does not** reuse `useXPathJump` — text hits use line/column, not xpath/id.
 

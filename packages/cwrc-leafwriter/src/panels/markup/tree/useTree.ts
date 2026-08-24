@@ -8,10 +8,7 @@ import { flattenTree, getNodes, processElement } from './utilities';
 
 const INTIATE_EXPANDED_UP_TO_LEVEL = 4; //2;
 
-export const useTree = (
-  syncMode: Exclude<MarkupTreeSyncMode, 'off'>,
-  refreshVersion: number,
-) => {
+export const useTree = (syncMode: Exclude<MarkupTreeSyncMode, 'off'>, refreshVersion: number) => {
   const [items, setItems] = useAtom(itemsAtom);
   const flattenedTree = useMemo(() => flattenTree(items), [items]);
 
@@ -30,8 +27,7 @@ export const useTree = (
 
     for (const item of flattenedTree) {
       const parentIsVisible =
-        item.parentId === null ||
-        (visibleIds.has(item.parentId) && expanded.has(item.parentId));
+        item.parentId === null || (visibleIds.has(item.parentId) && expanded.has(item.parentId));
       if (!parentIsVisible) continue;
 
       visible.push(item);

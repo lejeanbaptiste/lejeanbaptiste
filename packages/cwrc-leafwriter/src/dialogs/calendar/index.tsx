@@ -208,7 +208,12 @@ export const CalendarDialog = ({ notice, onClose, open = false }: CalendarDialog
     recalculate?: import('../../autoTagging/batchHolder').DateReviewRecalculate,
     authorityCiv?: readonly string[],
   ) => {
-    startAutoTaggingReview({ suggestions: produced, notice: reviewNotice, recalculate, authorityCiv });
+    startAutoTaggingReview({
+      suggestions: produced,
+      notice: reviewNotice,
+      recalculate,
+      authorityCiv,
+    });
     handleClose();
   };
 
@@ -294,9 +299,7 @@ export const CalendarDialog = ({ notice, onClose, open = false }: CalendarDialog
       }
 
       preAcceptUniqueDateSuggestions(result.suggestions);
-      const needsReview = result.suggestions.some(
-        (suggestion) => suggestion.status === 'pending',
-      );
+      const needsReview = result.suggestions.some((suggestion) => suggestion.status === 'pending');
       if (!needsReview) {
         const accepted = result.suggestions.filter(
           (suggestion) => suggestion.status === 'accepted',

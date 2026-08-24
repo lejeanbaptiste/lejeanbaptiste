@@ -25,7 +25,14 @@ describe('llmSuggest', () => {
     const client = new FakeClient(() =>
       JSON.stringify({
         suggestions: [
-          { surface: '張衡', occurrence: 1, tag: 'persName', action: 'add', confidence: 0.9, rationale: 'name' },
+          {
+            surface: '張衡',
+            occurrence: 1,
+            tag: 'persName',
+            action: 'add',
+            confidence: 0.9,
+            rationale: 'name',
+          },
         ],
       }),
     );
@@ -49,7 +56,14 @@ describe('llmSuggest', () => {
     const client = new FakeClient(() =>
       JSON.stringify({
         suggestions: [
-          { surface: '完全編造', occurrence: 1, tag: 'persName', action: 'add', confidence: 0.9, rationale: 'r' },
+          {
+            surface: '完全編造',
+            occurrence: 1,
+            tag: 'persName',
+            action: 'add',
+            confidence: 0.9,
+            rationale: 'r',
+          },
         ],
       }),
     );
@@ -73,7 +87,14 @@ describe('llmSuggest', () => {
     const client = new FakeClient(() =>
       JSON.stringify({
         suggestions: [
-          { surface: '張衡', occurrence: 1, tag: 'persName', action: 'add', confidence: 0.9, rationale: 'name' },
+          {
+            surface: '張衡',
+            occurrence: 1,
+            tag: 'persName',
+            action: 'add',
+            confidence: 0.9,
+            rationale: 'name',
+          },
         ],
       }),
     );
@@ -93,7 +114,14 @@ describe('llmSuggest', () => {
     const client = new FakeClient(() =>
       JSON.stringify({
         suggestions: [
-          { surface: '張衡', occurrence: 1, tag: 'persName', action: 'add', confidence: 0.9, rationale: 'name' },
+          {
+            surface: '張衡',
+            occurrence: 1,
+            tag: 'persName',
+            action: 'add',
+            confidence: 0.9,
+            rationale: 'name',
+          },
         ],
       }),
     );
@@ -117,7 +145,14 @@ describe('llmSuggest', () => {
       sentChunks.push(req.user);
       return JSON.stringify({
         suggestions: [
-          { surface: '李白', occurrence: 1, tag: 'persName', action: 'add', confidence: 0.9, rationale: 'name' },
+          {
+            surface: '李白',
+            occurrence: 1,
+            tag: 'persName',
+            action: 'add',
+            confidence: 0.9,
+            rationale: 'name',
+          },
         ],
       });
     });

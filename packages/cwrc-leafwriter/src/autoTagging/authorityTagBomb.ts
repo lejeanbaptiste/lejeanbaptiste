@@ -139,8 +139,8 @@ export async function runAuthorityTagBombOnDocument(
   let nobleTitleFilter = buildNobleTitleFilterIndex([]);
   try {
     const filterContent = await readPackFile('noble-title-filter');
-    const filterCandidates = [...iterateAuthorityNdjson(filterContent)].filter(
-      (candidate) => Boolean(candidate.metadata?.nobleTitleFilter),
+    const filterCandidates = [...iterateAuthorityNdjson(filterContent)].filter((candidate) =>
+      Boolean(candidate.metadata?.nobleTitleFilter),
     );
     nobleTitleFilter = buildNobleTitleFilterIndex(filterCandidates);
     for (const candidate of filterCandidates) addCandidateToSeedIndex(index, candidate);
@@ -158,9 +158,7 @@ export async function runAuthorityTagBombOnDocument(
   const needsOfficeGlosses = filePackIds.some(
     (id) => id === 'cbdb-offices' || id === 'norbert-offices',
   );
-  const officeGlosses = needsOfficeGlosses
-    ? await loadHuckbotGlossIndex(readPackFile)
-    : new Map();
+  const officeGlosses = needsOfficeGlosses ? await loadHuckbotGlossIndex(readPackFile) : new Map();
   const frenchOfficeGlosses = needsOfficeGlosses
     ? await loadMaxiRicciGlossIndex(readPackFile)
     : { byOfficeId: new Map(), byZhDynasty: new Map(), byZh: new Map() };
@@ -188,13 +186,13 @@ export async function runAuthorityTagBombOnDocument(
           if (dateFilter && !candidatePassesDateFilter(filteredCandidate, dateFilter)) continue;
           const filtered = filterCandidateForPhase1(filteredCandidate, nameTypePolicy);
           if (filtered.searchStrings.length === 0) continue;
-        if (packId === 'norbert-persons') {
-          const names = [
-            filtered.primaryName,
-            ...(filtered.names ?? []).map((name) => name.text),
-          ].filter(Boolean);
-          norbertNamesByAuthorityId.set(filtered.authorityId, [...new Set(names)]);
-        }
+          if (packId === 'norbert-persons') {
+            const names = [
+              filtered.primaryName,
+              ...(filtered.names ?? []).map((name) => name.text),
+            ].filter(Boolean);
+            norbertNamesByAuthorityId.set(filtered.authorityId, [...new Set(names)]);
+          }
           addCandidateToSeedIndex(index, filtered);
           packCount += 1;
           candidateCount += 1;

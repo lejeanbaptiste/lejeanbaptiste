@@ -33,18 +33,18 @@ A suggestion looks roughly like:
 Key points:
 
 - **Anchoring** follows the W3C Web Annotation selector model in spirit: verbatim surface string + occurrence/context is the primary locator, XPath + offset is the fast path, and the hash detects staleness. If the string isn't found where claimed, the suggestion is dropped or flagged as unresolvable — never mis-applied. Within a single session we can instead insert temporary ids on affected nodes and flush them when the session ends; the fuzzy re-anchoring machinery is only needed across sessions and is deferred.
-- **Apply is one engine.** It performs insert-into-text-node, dedup, and schema-rule checks (checking whether the target context allows the tag *before* insertion, not just repairing after), then validates.
+- **Apply is one engine.** It performs insert-into-text-node, dedup, and schema-rule checks (checking whether the target context allows the tag _before_ insertion, not just repairing after), then validates.
 - **One undo step.** Applying a batch of suggestions is a single undoable operation, and nothing is applied until it passes through the review gate.
-- **Review is one UI.** The split-screen audit walk (editor on one side, to-do list on the other, keyboard-navigable like find-and-replace, with per-item rationale and ok/reject/correct) is the commit gate for *all* methods, not just AI audit. "Dumb" methods just produce suggestions with `rationale` like "matched dictionary entry X".
+- **Review is one UI.** The split-screen audit walk (editor on one side, to-do list on the other, keyboard-navigable like find-and-replace, with per-item rationale and ok/reject/correct) is the commit gate for _all_ methods, not just AI audit. "Dumb" methods just produce suggestions with `rationale` like "matched dictionary entry X".
 - Accepted/rejected decisions are appended to the **decision log** (see Disambiguation), which feeds both future defaults and AI context.
 
 ### Phase 0 specifications (decided)
 
 **Normalization is central and happens once.** On document load (before any anchor is created or verified), text nodes are NFC-normalized at a single central point. Producers and the verifier never normalize independently — they assume NFC. This keeps offsets and occurrence counts consistent between the process that created an anchor and the one resolving it.
 
-**Whitespace policy.** Matching operates on a *search text* derived from text nodes, with an offset map back to raw positions so insertion happens at the correct raw offset. Two policies, a project setting defaulted from the document language: `ignore` (whitespace stripped — CJK documents, where in-node whitespace is layout noise and may fall mid-name) and `collapse` (runs collapsed to a single space — whitespace-delimited languages). Occurrence counting ("2nd occurrence of 張衡") is computed on the search text of the whole document, in document order — same policy on both sides.
+**Whitespace policy.** Matching operates on a _search text_ derived from text nodes, with an offset map back to raw positions so insertion happens at the correct raw offset. Two policies, a project setting defaulted from the document language: `ignore` (whitespace stripped — CJK documents, where in-node whitespace is layout noise and may fall mid-name) and `collapse` (runs collapsed to a single space — whitespace-delimited languages). Occurrence counting ("2nd occurrence of 張衡") is computed on the search text of the whole document, in document order — same policy on both sides.
 
-**Anchor resolution tiers.** (1) Fast path: XPath resolves and the node hash matches → use the stored offset. (2) XPath resolves but hash differs → search within that node for the surface string, disambiguating by context. (3) Whole-document search by surface + occurrence index, context as tiebreaker. (4) Otherwise the suggestion is marked `unresolvable` — never applied approximately. Context windows are taken from the *document-level* search-text stream (crossing text-node boundaries), because a tagged name is often a text node containing nothing but the name itself, leaving no node-local context. A candidate only wins re-anchoring with positive, uniquely-best context agreement — a lone surface match with zero matching context is rejected, since the XPath may have drifted onto the wrong node.
+**Anchor resolution tiers.** (1) Fast path: XPath resolves and the node hash matches → use the stored offset. (2) XPath resolves but hash differs → search within that node for the surface string, disambiguating by context. (3) Whole-document search by surface + occurrence index, context as tiebreaker. (4) Otherwise the suggestion is marked `unresolvable` — never applied approximately. Context windows are taken from the _document-level_ search-text stream (crossing text-node boundaries), because a tagged name is often a text node containing nothing but the name itself, leaving no node-local context. A candidate only wins re-anchoring with positive, uniquely-best context agreement — a lone surface match with zero matching context is rejected, since the XPath may have drifted onto the wrong node.
 
 **Temporary ids.** In-session anchoring uses the editor's existing DOM ids (leaf-writer's editing representation already assigns HTML `id`s to tags — see `tagger.ts` — which never serialize to XML), so no schema-compatibility issue arises and nothing needs flushing from the XML itself.
 
@@ -61,30 +61,32 @@ Firing a large authority set (CBDB is ~660k persons) at a document must **not** 
 Instead the matcher (`autoTagging/matcher.ts`, `MultiStringMatcher`) does a **single pass** over the text:
 
 - **Build once.** Every pattern is hashed into a bucket keyed by its length (a `Map<length, Set<string>>`). Cost O(Σ pattern lengths), done once and reusable across documents if the dictionary is fixed.
-- **Scan once.** Walk the text left to right. At each position, test only the *distinct pattern lengths* (a handful — names are short), doing an O(1) `Set` lookup per length. On a hit, emit it and resume **after** the match (non-overlapping, leftmost-longest — which is exactly the "prefer the longer span" conflict rule). Scan cost is O(text × distinctLengths) — **independent of the number of patterns**.
+- **Scan once.** Walk the text left to right. At each position, test only the _distinct pattern lengths_ (a handful — names are short), doing an O(1) `Set` lookup per length. On a hit, emit it and resume **after** the match (non-overlapping, leftmost-longest — which is exactly the "prefer the longer span" conflict rule). Scan cost is O(text × distinctLengths) — **independent of the number of patterns**.
 - **No regex.** Patterns are exact substrings, so there is no regex compilation, backtracking, or escaping — just hash lookups. (This suits CJK, where there are no word boundaries and every position is a candidate start; it is equally correct for whitespace languages via the search-text policy.)
 
 Measured (jsdom, 200k-char text, patterns of length ≤ 6): build 6 ms / 35 ms / 178 ms and **scan 161 ms / 119 ms / 142 ms for 10k / 100k / 600k patterns** — scan time flat as the dictionary grows 60×.
 
-The theoretical optimum is an Aho-Corasick automaton (O(text + matches), also independent of *distinctLengths*). We chose length-bucketed hashing because for short-name dictionaries `distinctLengths` is tiny (≤ ~10), so it is within a small constant of Aho-Corasick while being far simpler and less bug-prone; if a dictionary ever has a wide length spread, swapping in Aho-Corasick behind the same `MultiStringMatcher` interface is a localized change. `dictionaryTag` and the authority seed pass both run through this matcher; the document search-index (normalization, offset map, occurrence counts) is likewise built once per document, not per pattern.
+The theoretical optimum is an Aho-Corasick automaton (O(text + matches), also independent of _distinctLengths_). We chose length-bucketed hashing because for short-name dictionaries `distinctLengths` is tiny (≤ ~10), so it is within a small constant of Aho-Corasick while being far simpler and less bug-prone; if a dictionary ever has a wide length spread, swapping in Aho-Corasick behind the same `MultiStringMatcher` interface is a localized change. `dictionaryTag` and the authority seed pass both run through this matcher; the document search-index (normalization, offset map, occurrence counts) is likewise built once per document, not per pattern.
 
 ## Base technology
 
 Whatever different methods of autotagging we do, we should use the same set of solid functions for regex, xpath navigation, and validation. I've built such things into sanmiao, so we can look at that package.
 
 Specifically:
+
 - If possible, we insert tags into text nodes to avoid breaking the XML
 - We 'deduplicate', removing nested `<persName>` for example.
 - We set up schema-based rules to clean tags that go where they shouldn't (e.g., `<date>` inside a `<placeName>`) — checked before insertion where possible.
 - After cleanup, we run validation and try to resolve all issues before rebuilding the document and letting the user clean up.
 
 Conflict resolution within a run:
+
 1. Prefer longer span (done)
 2. Prefer higher-confidence sources?
 3. Prefer known project entities
 4. Review of unresolved overlaps
 
-Priority *across* methods (dictionary vs. AI vs. NER on overlapping spans) is set aside for now. The working assumption is sequential passes (e.g., dictionary first, AI audits the result) rather than a competing pool, but no commitment yet.
+Priority _across_ methods (dictionary vs. AI vs. NER on overlapping spans) is set aside for now. The working assumption is sequential passes (e.g., dictionary first, AI audits the result) rather than a competing pool, but no commitment yet.
 
 ## East Asian dates
 
@@ -116,10 +118,10 @@ Earlier builds combined tag+solve in one `propose_dates` call. The UI now uses `
 
 ### Two layers in corpus XML
 
-| Layer | When | Content |
-|-------|------|---------|
-| **Parse** | After tag apply (or after resolve if still ambiguous) | Sanmiao children inside `<date>`: `<dyn>`, `<era>`, `<year>`, … — encodes what the text says, **no** `era_id` / `jdn` |
-| **Resolution** | After user picks a candidate | `jdn` (canonical), `when` / `notBefore` / `notAfter` (derived ISO for display), optional `era_id`, `dyn_id`, `dila_id`, `calendar` |
+| Layer          | When                                                  | Content                                                                                                                            |
+| -------------- | ----------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------- |
+| **Parse**      | After tag apply (or after resolve if still ambiguous) | Sanmiao children inside `<date>`: `<dyn>`, `<era>`, `<year>`, … — encodes what the text says, **no** `era_id` / `jdn`              |
+| **Resolution** | After user picks a candidate                          | `jdn` (canonical), `when` / `notBefore` / `notAfter` (derived ISO for display), optional `era_id`, `dyn_id`, `dila_id`, `calendar` |
 
 Ambiguous or pending: parse children + `cert="low"` (or `type="sanmiao-pending"`). No resolution IDs until confirmed.
 
@@ -143,7 +145,7 @@ interface DateCandidate {
   jdnEnd?: number;
   iso?: string;
   isoEnd?: string;
-  displayLine: string;   // sanmiao report line
+  displayLine: string; // sanmiao report line
   era_id?: number;
   dyn_id?: number;
   dila_id?: string;
@@ -174,6 +176,7 @@ Stock TEI does not allow sanmiao children or `jdn` / `era_id` on `<date>`. **TEI
 At the very least, we should offer the ability to import tables with 'string' and 'tag' columns. (Despite the historical "regex" label, the implementation uses no regex — see **Matching performance** above; matching is exact-substring via a single-pass length-bucketed matcher, longest span first.)
 
 Sources:
+
 - Spreadsheets (tsv, csv, xlsx, LibreOffice, etc.)
 - Internal: crawl project XML to compile an internal list and apply that list
 - Authorities: pre-configured occasional dumps from CBDB, DILA, CHGIS APIs (?)
@@ -189,6 +192,7 @@ Principle: **the AI proposes, the machine applies.** The model never rewrites te
 **Provider (2026-07-04, built):** Mistral family only for v1 — a local Ministral model via an Ollama-compatible endpoint for development/no-cost use, hosted Mistral API as the BYO-key fallback. NER is dropped from scope for now (stays in Deferred/future). Frontier-model spend is a later decision if the local/Mistral path proves insufficient. See `autoTagging/llmClient.ts`.
 
 Requirements:
+
 - **Structural, non-overlapping chunking** (`autoTagging/chunk.ts`), not fixed-size-with-overlap: cut only at block-element boundaries (`p`/`div`/`l`/`lg`/`head`/`ab`/`item`), so chunks never split mid-sentence and occurrence counting stays unambiguous (every document offset belongs to exactly one chunk). A read-only context margin surrounds each chunk for disambiguation but is never itself taggable.
 - **One pass, multiple tag types**: a single pass should be able to request several tag types at once — this shapes the JSON response format and keeps costs down. Multi-turn refinement (second pass for a tag type) remains possible but is not the default. Suggest, audit, and (later) translation stay **separate prompts/requests** rather than one stacked prompt — a small local model degrades on multi-objective instructions, the output shapes genuinely differ per task, and stacking would invalidate the whole cache whenever any one task's instructions change. They share only a preamble prompt module.
 - **Confidence scoring** on every suggestion, filterable by threshold in the review UI.
@@ -196,6 +200,7 @@ Requirements:
 - **Two-layer validation** before anything becomes a suggestion: schema/field validation (`autoTagging/llmParse.ts`: tag/action must be one requested, confidence in [0,1]) and anchor verification against the live document (surface + occurrence must actually resolve). Either failing drops the item silently — never applied, always counted.
 
 **AI audit**: take a dumb-tagged document, identify mistakes with a one-sentence rationale, and walk the user through keep/add/correct decisions:
+
 - dumb mode missed something → `add`
 - dumb mode incorrectly identified something as a NE → `remove`
 - dumb mode used the wrong tag or drew the boundary incorrectly → `retag` / `redraw-boundary`
@@ -214,12 +219,12 @@ AI suggest is wired in the desktop app (dialog → review panel → `.ljb/ai-cac
 
 **What exists today:**
 
-| Piece | Location | Role |
-|-------|----------|------|
-| Template files | `autoTagging/prompt-templates/` | `preamble.txt`, `suggest.system.txt`, `tag-definitions.json`, `versions.json` |
-| Assembly | `prompts.ts` | Fills `{{TAGS}}`, `{{TAG_GUIDE}}`; exports `SUGGEST_PROMPT_VERSION` for cache keys |
-| Connection settings | App Settings → AI API | base URL, API key, model — **not** suggest prompt text |
-| Translation-only extra | `customInstructions` in AI API settings | Used by translation; **not** wired to suggest yet |
+| Piece                  | Location                                | Role                                                                               |
+| ---------------------- | --------------------------------------- | ---------------------------------------------------------------------------------- |
+| Template files         | `autoTagging/prompt-templates/`         | `preamble.txt`, `suggest.system.txt`, `tag-definitions.json`, `versions.json`      |
+| Assembly               | `prompts.ts`                            | Fills `{{TAGS}}`, `{{TAG_GUIDE}}`; exports `SUGGEST_PROMPT_VERSION` for cache keys |
+| Connection settings    | App Settings → AI API                   | base URL, API key, model — **not** suggest prompt text                             |
+| Translation-only extra | `customInstructions` in AI API settings | Used by translation; **not** wired to suggest yet                                  |
 
 **What to build (v1 prompt UI):**
 
@@ -280,12 +285,14 @@ This is not something that the user will do all the time, so we should maybe han
 ## Data model
 
 We distinguish:
+
 1. **surface form**: 張衡 as written in the text;
 2. **mention**: this specific occurrence of 張衡;
 3. **entity**: the person/place/work to which it refers;
 4. **authority links**: CBDB, Wikidata, VIAF, DILA, CHGIS, etc.
 
 TEI mapping, explicitly:
+
 - surface form = text content;
 - mention = the element (`<persName>` etc.);
 - entity = `@key`/`@ref` on the mention, pointing **only to the local project entity** — never directly to an external authority;
@@ -299,12 +306,12 @@ Not an SQL server. The entity database is a TEI standoff file: `<standOff>` / pe
 
 ### Where things live
 
-| Artifact | Location | Visible? |
-|----------|----------|----------|
-| Central entity database | `{user-chosen folder}/entities.xml` | Yes — open in any TEI editor |
-| Project entity database (opt-in) | `<projectRoot>/entities.xml` | Yes |
-| Decision log, pending caches, project backups | `<projectRoot>/.ljb/` | Hidden |
-| App prefs (central DB folder path, etc.) | Electron userData | Hidden |
+| Artifact                                      | Location                            | Visible?                     |
+| --------------------------------------------- | ----------------------------------- | ---------------------------- |
+| Central entity database                       | `{user-chosen folder}/entities.xml` | Yes — open in any TEI editor |
+| Project entity database (opt-in)              | `<projectRoot>/entities.xml`        | Yes                          |
+| Decision log, pending caches, project backups | `<projectRoot>/.ljb/`               | Hidden                       |
+| App prefs (central DB folder path, etc.)      | Electron userData                   | Hidden                       |
 
 **Central database folder** — chosen at **first-run / install** (folder picker, not file). LJB explains: this folder holds your **entity database** (`entities.xml`); we **suggest** keeping your projects as subfolders here, but that layout is optional. Changeable in **App Settings → Entity database location**. Pointer-only on move (no automatic file migration) + strong warning.
 
@@ -370,9 +377,9 @@ If App Settings points at a folder where `entities.xml` is missing:
 
 If the corpus already contains `@key` values but the database is gone:
 
-| Option | What it does |
-|--------|----------------|
-| **Purge all entity ids** | Strip `@key` only from all corpus files in the project; **keep tags** and all other attributes (`@resp`, `cert`, etc.). User re-disambiguates from scratch. |
+| Option                       | What it does                                                                                                                                                                                                                                        |
+| ---------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| **Purge all entity ids**     | Strip `@key` only from all corpus files in the project; **keep tags** and all other attributes (`@resp`, `cert`, etc.). User re-disambiguates from scratch.                                                                                         |
 | **Reconstitute from corpus** | Crawl all `@key` values in the project; mint **stub** entity records (id + name from the tagged surface text). Preserves id continuity in the XML but **cannot restore** authority `<idno>` links or descriptions that lived only in the lost file. |
 
 Use **reconstitute** when the database file is lost but the XML still has keys. Use **purge** when you want a clean slate with no keys.
@@ -397,11 +404,11 @@ After import, old LJB ids are gone from both the database and the corpus; author
 
 **Mismatch dialog options:**
 
-| Option | When |
-|--------|------|
-| **Cancel** (default) | No change. |
-| **Import from previous database** | Old `entities.xml` available (file picker if needed). Import + remap as above. |
-| **Purge all entity ids** | Strip `@key` only; keep tags and all other attributes. Attach to new empty or existing target database. |
+| Option                            | When                                                                                                    |
+| --------------------------------- | ------------------------------------------------------------------------------------------------------- |
+| **Cancel** (default)              | No change.                                                                                              |
+| **Import from previous database** | Old `entities.xml` available (file picker if needed). Import + remap as above.                          |
+| **Purge all entity ids**          | Strip `@key` only; keep tags and all other attributes. Attach to new empty or existing target database. |
 
 Do **not** silently keep stale keys. **Reconstitute** (stub entities from corpus surface text) remains for **lost-database** recovery when the old file is gone — it cannot restore authority `<idno>` links.
 
@@ -451,9 +458,10 @@ Project-local `entities.xml` must be excluded from find/replace, auto-tag crawls
 ## Norbert paradigm (reference)
 
 In Norbert, I have an SQL database that is my own. First I tag entities, then I add attributes. If there is a one-to-one correspondence, I add that attribute. If it is one-to-many, I add all, separated by `|`. After the first round of tagging, I export a CSV that lists all those individuals that matched with related information (dynasty, where he might have a biography, description, _zi_, etc.). Then:
+
 - Where there is a one-to-one match that is wrong, necessitating the addition of a new person, I remove that item from the table.
 - Where there is a one-to-many, I manually deduplicate, leaving only the correct person.
-In phase two, I clean the XML attributes based on the table, and those without attributes are exported to a new table, of people to add, which I validate before sending off to the SQL database, getting their new IDs, and then inserting them as attributes.
+  In phase two, I clean the XML attributes based on the table, and those without attributes are exported to a new table, of people to add, which I validate before sending off to the SQL database, getting their new IDs, and then inserting them as attributes.
 
 This works great for me, but I'm not going to set up such a thing for every user. (A future option: let a power user connect his own database — later step, not for everyone.)
 
@@ -471,6 +479,7 @@ When we launch that, we'll query the authorities the user has chosen, the local 
 Each item provides basic details to help disambiguate. Button to open the authority source (e.g. Wikipedia).
 
 **Buttons:**
+
 - accept for this occurrence;
 - accept for all identical strings **in this document** (default bulk — never corpus-wide);
 - create new entity;
@@ -491,6 +500,7 @@ When the author accepts and the entity has no custom description, a popup offers
 **Politeness:** cache in `<project>/.ljb/authority-cache/`; query when a string is opened, not on every keystroke; ~1 request/second max; 30-day TTL + manual refresh; User-Agent identifies Le Jean-Baptiste. See `Auto-tagging-phases.md` Phase 4b for the full authority matrix.
 
 Technical:
+
 - cache authority queries;
 - batched reconcile calls (multi-authority per request via LINCS);
 - rate limit, to be polite.
@@ -502,10 +512,12 @@ Technical:
 Integrated via API for guided choices with a short summary per case. Implementation: `rankDisambiguationCandidates` + DisambiguationPanel AI curation. Context today includes document date range and nearby names (plus candidate labels/descriptions); decision-log feed is optional polish.
 
 Example shape of guidance:
+
 ```
 1. 張衡, Eastern Han astronomer — likely, because nearby text discusses calendrical instruments.
 2. 張衡, Tang official — unlikely, date mismatch.
 ```
+
 User accepts locally or for the whole document as in Phase 4b. Same caching economy as other AI modes.
 
 ## Anchoring

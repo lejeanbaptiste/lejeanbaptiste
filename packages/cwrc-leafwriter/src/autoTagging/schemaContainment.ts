@@ -2,8 +2,7 @@ export interface SchemaContainmentChecker {
   isTagValidChildOfParent: (child: string, parent: string) => boolean;
 }
 
-const localTagName = (tag: string): string =>
-  tag.includes(':') ? tag.split(':').pop()! : tag;
+const localTagName = (tag: string): string => (tag.includes(':') ? tag.split(':').pop()! : tag);
 
 /**
  * Parent/child check for auto-tagging apply. TEI inline `<date>` is

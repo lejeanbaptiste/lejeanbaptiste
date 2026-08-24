@@ -11,8 +11,7 @@ import type { FindFileResult } from './types';
 
 const getFilename = (filePath: string) => filePath.split(/[/\\]/).pop() ?? filePath;
 
-const isSourceEditorMode = () =>
-  window.writer?.overmindState?.ui?.editorViewMode === 'source';
+const isSourceEditorMode = () => window.writer?.overmindState?.ui?.editorViewMode === 'source';
 
 /** Live buffer for the active tab in Source mode; otherwise the tab snapshot. */
 const getContentForSearch = (tab: OpenTab, activeTabPath: string | null) => {
@@ -102,7 +101,6 @@ export const searchText = async ({
     const companionPaths = await getCompanionTranslationFilePaths(sourcePath);
     for (const companionPath of companionPaths) {
       try {
-         
         const content = await window.electronAPI!.readFile(companionPath);
         addResult(buildFileResult(companionPath, content, trimmed, useRegex, ignoreCase));
       } catch {
@@ -151,7 +149,7 @@ export const searchText = async ({
             ),
           );
         }
-         
+
         await addCompanionResults(tab.filePath);
       }
     } else if (scope === 'project') {

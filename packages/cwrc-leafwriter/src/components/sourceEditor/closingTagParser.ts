@@ -88,9 +88,7 @@ const getTagNameText = (content: string, range: TagNameRange) =>
 
 /** Allow rename-in-progress when one tag name is a prefix of the other. */
 export const tagsAreLinkedRenameCandidates = (openName: string, closeName: string) =>
-  openName === closeName ||
-  openName.startsWith(closeName) ||
-  closeName.startsWith(openName);
+  openName === closeName || openName.startsWith(closeName) || closeName.startsWith(openName);
 
 const canLinkTagNames = (content: string, openName: TagNameRange, closeName: TagNameRange) =>
   tagsAreLinkedRenameCandidates(
@@ -439,10 +437,7 @@ export const getMirroredNameDeleteEdits = (
   ].sort((a, b) => b.start - a.start);
 };
 
-const findStructuralCloseNameRange = (
-  content: string,
-  fromOffset: number,
-): TagNameRange | null => {
+const findStructuralCloseNameRange = (content: string, fromOffset: number): TagNameRange | null => {
   let depth = 1;
   let i = fromOffset;
 
@@ -492,10 +487,7 @@ const findStructuralCloseNameRange = (
 };
 
 /** Return opening and closing tag name ranges when the cursor is inside either name. */
-export const findLinkedTagNameRanges = (
-  content: string,
-  offset: number,
-): TagNameRange[] | null => {
+export const findLinkedTagNameRanges = (content: string, offset: number): TagNameRange[] | null => {
   if (offset < 0 || offset > content.length) return null;
 
   const stack: StackEntry[] = [];
@@ -604,7 +596,10 @@ export const getOpenTagStackBeforeCursor = (content: string, offset: number): Op
     }
 
     if (inner.startsWith('/')) {
-      const nameMatch = inner.slice(1).trim().match(/^([\w:.-]+)/);
+      const nameMatch = inner
+        .slice(1)
+        .trim()
+        .match(/^([\w:.-]+)/);
       if (nameMatch) {
         const name = nameMatch[1];
         if (stack.length > 0 && stack[stack.length - 1].name === name) {

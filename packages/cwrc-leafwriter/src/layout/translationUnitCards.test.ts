@@ -27,7 +27,12 @@ describe('collectTranslationUnitCards', () => {
       previewHtml: 'Second paragraph',
       noteCount: 0,
     });
-    expect(cards[2]).toMatchObject({ unitId: 'p3', previewText: '', previewHtml: '', noteCount: 0 });
+    expect(cards[2]).toMatchObject({
+      unitId: 'p3',
+      previewText: '',
+      previewHtml: '',
+      noteCount: 0,
+    });
   });
 });
 

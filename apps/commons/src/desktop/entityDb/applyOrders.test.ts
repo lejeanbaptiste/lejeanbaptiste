@@ -1,5 +1,8 @@
 import { createEntitiesScaffold } from '../../../../../packages/cwrc-leafwriter/src/autoTagging/entities';
-import { appendOrders, makeOrder } from '../../../../../packages/cwrc-leafwriter/src/autoTagging/entityOrders';
+import {
+  appendOrders,
+  makeOrder,
+} from '../../../../../packages/cwrc-leafwriter/src/autoTagging/entityOrders';
 import {
   EntityStore,
   resolveEntityStorePaths,
@@ -32,7 +35,10 @@ const makeStore = () => {
   fs.dirs.add('/central');
   fs.files.set('/central/entities.xml', createEntitiesScaffold('db1'));
   fs.files.set('/central/entities.sqlite', '');
-  fs.files.set('/central/entity-projects.json', JSON.stringify({ version: 1, projects: ['/proj'] }));
+  fs.files.set(
+    '/central/entity-projects.json',
+    JSON.stringify({ version: 1, projects: ['/proj'] }),
+  );
   const paths = resolveEntityStorePaths({
     projectRoot: '/proj',
     entityStore: 'central',

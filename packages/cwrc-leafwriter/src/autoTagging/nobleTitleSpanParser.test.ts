@@ -78,7 +78,7 @@ describe('parseNobleTitleSpan — plain text', () => {
     expect(result.slots.find((s) => s.role === 'posthumousName')!.unverified).toBe(true);
   });
 
-  it('exposes each slot\'s offset within its own (shared) text segment', () => {
+  it("exposes each slot's offset within its own (shared) text segment", () => {
     // All three slots come from ONE text segment ("鄱陽王範"); a caller
     // committing this to a document needs to cut the exact sub-range for
     // each slot out of that single original text node.

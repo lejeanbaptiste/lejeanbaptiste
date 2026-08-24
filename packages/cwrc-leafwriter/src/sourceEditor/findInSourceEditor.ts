@@ -8,10 +8,7 @@ let decorationCollection: monaco.editor.IEditorDecorationsCollection | undefined
 let registeredEditor: monaco.editor.IStandaloneCodeEditor | null = null;
 let cachedHitRanges: { end: number; start: number }[] = [];
 
-const revealFindHitRange = (
-  editor: monaco.editor.IStandaloneCodeEditor,
-  range: monaco.IRange,
-) => {
+const revealFindHitRange = (editor: monaco.editor.IStandaloneCodeEditor, range: monaco.IRange) => {
   editor.revealRangeInCenterIfOutsideViewport(range, monaco.editor.ScrollType.Immediate);
 };
 
@@ -120,9 +117,7 @@ export const setCursorOffsetInSourceEditor = ({
     editor.focus();
   }
 
-  window.dispatchEvent(
-    new CustomEvent('lw:source-cursor-moved', { detail: { offset: clamped } }),
-  );
+  window.dispatchEvent(new CustomEvent('lw:source-cursor-moved', { detail: { offset: clamped } }));
 
   return true;
 };

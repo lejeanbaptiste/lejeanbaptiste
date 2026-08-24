@@ -256,8 +256,10 @@ const applyCreationDate = (header: Element, date: SourceWorkDate) => {
   if (date.when?.trim()) {
     dateEl.setAttribute('when', normalizeTeiDateValue(date.when));
   } else {
-    if (date.notBefore?.trim()) dateEl.setAttribute('notBefore', normalizeTeiDateValue(date.notBefore));
-    if (date.notAfter?.trim()) dateEl.setAttribute('notAfter', normalizeTeiDateValue(date.notAfter));
+    if (date.notBefore?.trim())
+      dateEl.setAttribute('notBefore', normalizeTeiDateValue(date.notBefore));
+    if (date.notAfter?.trim())
+      dateEl.setAttribute('notAfter', normalizeTeiDateValue(date.notAfter));
   }
   dateEl.textContent = workDateLabel(date);
 };
@@ -265,10 +267,10 @@ const applyCreationDate = (header: Element, date: SourceWorkDate) => {
 const hasBiblContent = (data: SourceDescription): boolean =>
   Boolean(
     data.title.trim() ||
-      data.authors.length > 0 ||
-      data.edition.trim() ||
-      data.editionDate.trim() ||
-      data.sourceNote.trim(),
+    data.authors.length > 0 ||
+    data.edition.trim() ||
+    data.editionDate.trim() ||
+    data.sourceNote.trim(),
   );
 
 const applySourceDesc = (fileDesc: Element, data: SourceDescription) => {

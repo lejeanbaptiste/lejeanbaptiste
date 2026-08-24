@@ -53,9 +53,7 @@ const DocumentFontSize = () => {
   return (
     <ListItem dense disableGutters>
       <FormatSizeIcon sx={{ mx: 1, height: 18, width: 18 }} />
-      <Typography variant="body2">
-        {t('LW.settings.editor.font_size')}
-      </Typography>
+      <Typography variant="body2">{t('LW.settings.editor.font_size')}</Typography>
       <Box flexGrow={1} />
       <Slider
         aria-label={t('LW.settings.editor.font_size_slider')}

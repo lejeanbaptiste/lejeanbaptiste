@@ -34,7 +34,10 @@ export type PluginPythonProgressEvent =
 export type PluginPythonProgressCallback = (event: PluginPythonProgressEvent) => void;
 
 /** A python interpreter invocation: `spawn(bin, [...args, ...rest])`. */
-interface PythonCommand { bin: string; args: string[] }
+interface PythonCommand {
+  bin: string;
+  args: string[];
+}
 
 const commandLabel = (cmd: PythonCommand): string => [cmd.bin, ...cmd.args].join(' ');
 
@@ -129,8 +132,7 @@ const isMissingSanmiaoModule = (stderr: string): boolean =>
  * Settings > Apps > Advanced app settings > App execution aliases.
  */
 const isWindowsStoreStub = (output: string): boolean =>
-  process.platform === 'win32' &&
-  /install.*from|Microsoft Store|ms-windows-store:/i.test(output);
+  process.platform === 'win32' && /install.*from|Microsoft Store|ms-windows-store:/i.test(output);
 
 /** Force UTF-8 I/O so non-ASCII (CJK) text survives on Windows, whose default
  * console codepage otherwise mangles it and can raise UnicodeEncodeError. */
@@ -143,7 +145,10 @@ const forceUtf8Env = (env: NodeJS.ProcessEnv): NodeJS.ProcessEnv => ({
 const tryAutoInstallSanmiao = async (pluginId: string, python: PythonCommand): Promise<boolean> => {
   const label = commandLabel(python);
   try {
-    logPluginPython(pluginId, 'attempting automatic sanmiao install', { python: label, spec: SANMIAO_SPEC });
+    logPluginPython(pluginId, 'attempting automatic sanmiao install', {
+      python: label,
+      spec: SANMIAO_SPEC,
+    });
     await execFileAsync(
       python.bin,
       [...python.args, '-m', 'pip', 'install', '--user', '--upgrade', SANMIAO_SPEC],
@@ -227,8 +232,15 @@ const resolvePluginPython = async (pluginId: string): Promise<PythonCommand> => 
     const env = forceUtf8Env({ ...process.env, PYTHONPATH: path.join(devRoot, 'src') });
     const devCandidates: PythonCommand[] =
       process.platform === 'win32'
-        ? [{ bin: 'py', args: ['-3'] }, { bin: 'python3', args: [] }, { bin: 'python', args: [] }]
-        : [{ bin: 'python3', args: [] }, { bin: 'python', args: [] }];
+        ? [
+            { bin: 'py', args: ['-3'] },
+            { bin: 'python3', args: [] },
+            { bin: 'python', args: [] },
+          ]
+        : [
+            { bin: 'python3', args: [] },
+            { bin: 'python', args: [] },
+          ];
     for (const python of devCandidates) {
       try {
         await execFileAsync(python.bin, [...python.args, '-c', SANMIAO_IMPORT_CHECK], {
@@ -237,7 +249,10 @@ const resolvePluginPython = async (pluginId: string): Promise<PythonCommand> => 
         });
         pythonCache.set(pluginId, python);
         devRootCache.set(pluginId, devRoot);
-        logPluginPython(pluginId, 'using python with PYTHONPATH', { python: commandLabel(python), devRoot });
+        logPluginPython(pluginId, 'using python with PYTHONPATH', {
+          python: commandLabel(python),
+          devRoot,
+        });
         return python;
       } catch (error) {
         recordFailure(`${commandLabel(python)} (PYTHONPATH=${devRoot}/src)`, error);
@@ -264,7 +279,9 @@ const pythonEnvForPlugin = (pluginId: string): NodeJS.ProcessEnv => {
   const env: NodeJS.ProcessEnv = { ...process.env };
   const devRoot = devRootCache.get(pluginId);
   if (devRoot) {
-    env.PYTHONPATH = [path.join(devRoot, 'src'), env.PYTHONPATH].filter(Boolean).join(path.delimiter);
+    env.PYTHONPATH = [path.join(devRoot, 'src'), env.PYTHONPATH]
+      .filter(Boolean)
+      .join(path.delimiter);
   }
   return env;
 };
@@ -293,10 +310,17 @@ const runPluginPythonCli = async (
       chunks: Array.isArray(payload.chunks) ? payload.chunks.length : 0,
     });
 
-    const child = spawn(python.bin, [...python.args, '-c', `from ${moduleName} import cli_main; cli_main()`], {
-      env: forceUtf8Env({ ...pythonEnvForPlugin(pluginId), PYTHONWARNINGS: 'ignore::RuntimeWarning' }),
-      stdio: ['pipe', 'pipe', 'pipe'],
-    });
+    const child = spawn(
+      python.bin,
+      [...python.args, '-c', `from ${moduleName} import cli_main; cli_main()`],
+      {
+        env: forceUtf8Env({
+          ...pythonEnvForPlugin(pluginId),
+          PYTHONWARNINGS: 'ignore::RuntimeWarning',
+        }),
+        stdio: ['pipe', 'pipe', 'pipe'],
+      },
+    );
 
     let stdout = '';
     let stderr = '';
@@ -360,7 +384,10 @@ const runPluginPythonCli = async (
       settled = true;
       logPluginPython(pluginId, 'done', { code, ms: Date.now() - t0 });
       if (code !== 0) {
-        const lines = stderr.trim().split('\n').filter((line) => line.trim());
+        const lines = stderr
+          .trim()
+          .split('\n')
+          .filter((line) => line.trim());
         const tracebackIdx = lines.findIndex((line) => line.startsWith('Traceback'));
         const detail =
           tracebackIdx >= 0

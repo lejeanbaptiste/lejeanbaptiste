@@ -66,13 +66,29 @@ describe('applySuggestions', () => {
   });
 
   it('wraps existing tagged components without replacing their structure', async () => {
-    const doc = parse(`<TEI xmlns="http://www.tei-c.org/ns/1.0"><text><body><p><roleName>合州刺史</roleName><nobleTitle><placeName>鄱陽</placeName><roleName>王</roleName></nobleTitle><persName>範</persName></p></body></text></TEI>`);
+    const doc = parse(
+      `<TEI xmlns="http://www.tei-c.org/ns/1.0"><text><body><p><roleName>合州刺史</roleName><nobleTitle><placeName>鄱陽</placeName><roleName>王</roleName></nobleTitle><persName>範</persName></p></body></text></TEI>`,
+    );
     const start = doc.getElementsByTagName('roleName')[0]!.firstChild as Text;
     const end = doc.getElementsByTagName('persName')[0]!.firstChild as Text;
-    const anchor = createCompoundAnchor('doc', doc, start, 0, end, end.data.length, '合州刺史鄱陽王範', 'ignore');
+    const anchor = createCompoundAnchor(
+      'doc',
+      doc,
+      start,
+      0,
+      end,
+      end.data.length,
+      '合州刺史鄱陽王範',
+      'ignore',
+    );
     const suggestion: Suggestion = {
-      id: 'compound', source: 'authority', action: 'add-compound', tag: 'name',
-      attributes: { type: 'personWrapper', cert: 'unknown' }, anchor, status: 'pending',
+      id: 'compound',
+      source: 'authority',
+      action: 'add-compound',
+      tag: 'name',
+      attributes: { type: 'personWrapper', cert: 'unknown' },
+      anchor,
+      status: 'pending',
     };
     const { applied } = await applySuggestions(doc, [suggestion], { policy: 'ignore' });
     expect(applied).toBe(1);
@@ -268,10 +284,7 @@ describe('applySuggestions', () => {
 
   it('prefers the longer span when suggestions overlap', async () => {
     const doc = parse(TEI);
-    const batch = [
-      suggest(doc, '浮黎', 'placeName'),
-      suggest(doc, '大浮黎土', 'placeName'),
-    ];
+    const batch = [suggest(doc, '浮黎', 'placeName'), suggest(doc, '大浮黎土', 'placeName')];
     const { results } = await applySuggestions(doc, batch, { policy: 'ignore' });
 
     const byId = (id: string) => results.find((r) => r.suggestion.id === id)!;

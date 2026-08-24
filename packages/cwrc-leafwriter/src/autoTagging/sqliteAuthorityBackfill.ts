@@ -16,7 +16,11 @@ import {
 } from './disambiguationCandidates';
 import { mintEntityId, type EntityKind } from './entities';
 import type { EntityStore } from './entityStore';
-import { normalizeNameType, normalizeTypedNamesForIntake, preferCanonicalFamilyGiven } from './nameTypes';
+import {
+  normalizeNameType,
+  normalizeTypedNamesForIntake,
+  preferCanonicalFamilyGiven,
+} from './nameTypes';
 import {
   inventedTitleSplitCleanup,
   nobleTitlesFromMetadata,
@@ -130,21 +134,18 @@ async function repairPollutedUserLifespanDates(
   let changed = false;
   const userBirth = summary.assertions.find(
     (assertion) =>
-      assertion.element === 'birth' &&
-      assertion.origin === 'user' &&
-      assertion.status === 'active',
+      assertion.element === 'birth' && assertion.origin === 'user' && assertion.status === 'active',
   );
   const userDeath = summary.assertions.find(
     (assertion) =>
-      assertion.element === 'death' &&
-      assertion.origin === 'user' &&
-      assertion.status === 'active',
+      assertion.element === 'death' && assertion.origin === 'user' && assertion.status === 'active',
   );
 
   if (userBirth) {
     const year = Number(userBirth.value);
     const missing = !Number.isFinite(year) || year === 0;
-    const disagrees = fineBirths.size > 0 && Number.isFinite(year) && year !== 0 && !fineBirths.has(year);
+    const disagrees =
+      fineBirths.size > 0 && Number.isFinite(year) && year !== 0 && !fineBirths.has(year);
     if (missing || disagrees) {
       await store.sqliteSetUserDate({ entityId, part: 'birth', year: null });
       changed = true;
@@ -153,7 +154,8 @@ async function repairPollutedUserLifespanDates(
   if (userDeath) {
     const year = Number(userDeath.value);
     const missing = !Number.isFinite(year) || year === 0;
-    const disagrees = fineDeaths.size > 0 && Number.isFinite(year) && year !== 0 && !fineDeaths.has(year);
+    const disagrees =
+      fineDeaths.size > 0 && Number.isFinite(year) && year !== 0 && !fineDeaths.has(year);
     if (missing || disagrees) {
       await store.sqliteSetUserDate({ entityId, part: 'death', year: null });
       changed = true;
@@ -229,18 +231,16 @@ async function scrubPersonOnlyNamesFromOffice(
     if (removed > 0) changed = true;
   }
   const primary =
-    summary.names.find((name) => name.nameType === 'primary')?.text?.normalize('NFC').trim() ||
-    summary.names[0]?.text?.normalize('NFC').trim();
+    summary.names
+      .find((name) => name.nameType === 'primary')
+      ?.text?.normalize('NFC')
+      .trim() || summary.names[0]?.text?.normalize('NFC').trim();
   const romanized = summary.names.find((name) => isLatnLang(name.language))?.text?.trim();
   if (primary && romanized) {
     const personStyle = suggestPersonRomanization(primary, projectLang ?? null);
     const officeStyle = autoRomanizeForKind(primary, projectLang, 'office');
     if (personStyle && officeStyle && romanized === personStyle && romanized !== officeStyle) {
-      await store.sqliteSetRomanizedName(
-        summary.id,
-        officeStyle,
-        latnLangFor(projectLang ?? null),
-      );
+      await store.sqliteSetRomanizedName(summary.id, officeStyle, latnLangFor(projectLang ?? null));
       changed = true;
     }
   }
@@ -363,7 +363,9 @@ async function resolveOrCreateByAuthority(
     id,
     kind,
     names: [{ text: name, isPrimary: true, origin: 'authority', source: authorityType }],
-    authorities: [{ type: authorityType, value: authorityValue, origin: 'authority', source: authorityType }],
+    authorities: [
+      { type: authorityType, value: authorityValue, origin: 'authority', source: authorityType },
+    ],
   });
   if (extras?.romanized) {
     await store.sqliteApplyAuthorityBackfillPatch({
@@ -469,9 +471,7 @@ export async function backfillEntitiesSqlite(
     : null;
   // Norbert↔CBDB/DILA/Wikidata bridge links — used to repair Central imports that
   // only carry NORBERT after a full Norbert database ingest.
-  const norbertConcordance = readPackFile
-    ? await loadNorbertPersonConcordance(readPackFile)
-    : null;
+  const norbertConcordance = readPackFile ? await loadNorbertPersonConcordance(readPackFile) : null;
   // Titles come from the Norbert person rows already fetched above (and from
   // A6 reference). Do not scan the full wiki-nt / persons packs here — that
   // reintroduces the select-all hang.
@@ -539,8 +539,10 @@ export async function backfillEntitiesSqlite(
         }
         if (idFilter && !idFilter.has(summary.id)) continue;
         const primary =
-          summary.names.find((name) => name.nameType === 'primary')?.text?.normalize('NFC').trim() ||
-          summary.names[0]?.text?.normalize('NFC').trim();
+          summary.names
+            .find((name) => name.nameType === 'primary')
+            ?.text?.normalize('NFC')
+            .trim() || summary.names[0]?.text?.normalize('NFC').trim();
         entitiesScanned++;
         let changed = await scrubPersonOnlyNamesFromOffice(store, summary, projectLang);
         const authorities = [...summary.authorities];
@@ -667,19 +669,13 @@ export async function backfillEntitiesSqlite(
     const packCrosswalks = authorityEnrichmentsForEntity(entity, packIndex).map(
       (row) =>
         row.enrichment.metadata?.crosswalk as
-          | Record<string, string | string[] | undefined>
-          | undefined,
+          Record<string, string | string[] | undefined> | undefined,
     );
-    const bridge = await attachPersonCrosswalkAuthorities(
-      store,
-      entity.id,
-      entity.authorities,
-      {
-        concordance: norbertConcordance,
-        packCrosswalks,
-        primaryName: entity.names[0] ?? null,
-      },
-    );
+    const bridge = await attachPersonCrosswalkAuthorities(store, entity.id, entity.authorities, {
+      concordance: norbertConcordance,
+      packCrosswalks,
+      primaryName: entity.names[0] ?? null,
+    });
     bridgeLinksAttached += bridge.attached + bridge.reverseAttached;
     bridgeDuplicatesMerged += bridge.mergedInto.length;
     bridgeConflicts += bridge.conflicts.length;
@@ -958,15 +954,19 @@ export async function backfillEntitiesSqlite(
       }
     }
     for (const row of refRows) {
-      const titles = (row.enrichment.metadata as {
-        nobleTitles?: {
-          fief?: string;
-          rank?: string;
-          posthumous?: string;
-          dynasty?: string;
-          id?: string;
-        }[];
-      } | undefined)?.nobleTitles;
+      const titles = (
+        row.enrichment.metadata as
+          | {
+              nobleTitles?: {
+                fief?: string;
+                rank?: string;
+                posthumous?: string;
+                dynasty?: string;
+                id?: string;
+              }[];
+            }
+          | undefined
+      )?.nobleTitles;
       for (const title of titles ?? []) {
         if (!title.fief && !title.rank) continue;
         nobleTitles.push({

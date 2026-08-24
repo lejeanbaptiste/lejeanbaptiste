@@ -82,10 +82,7 @@ const sanitizeAiApiSettings = (value: Partial<AiApiSettings> | undefined): AiApi
       : DEFAULT_AI_API_SETTINGS.temperature;
   const placeholderRetryLimit =
     typeof value?.placeholderRetryLimit === 'number' && Number.isFinite(value.placeholderRetryLimit)
-      ? Math.min(
-          MAX_PLACEHOLDER_RETRY_LIMIT,
-          Math.max(0, Math.floor(value.placeholderRetryLimit)),
-        )
+      ? Math.min(MAX_PLACEHOLDER_RETRY_LIMIT, Math.max(0, Math.floor(value.placeholderRetryLimit)))
       : DEFAULT_AI_API_SETTINGS.placeholderRetryLimit;
 
   return {
@@ -239,16 +236,18 @@ let prefsWriteChain: Promise<void> = Promise.resolve();
 const mutateAppPrefs = async (mutator: (prefs: AppPrefs) => void): Promise<void> => {
   // A failed write must not leave every later preference save rejected by the
   // same promise chain. The next save gets a chance to recover `.tmp`/`.bak`.
-  prefsWriteChain = prefsWriteChain.catch(() => undefined).then(async () => {
-    const prefs = await readAppPrefs();
-    mutator(prefs);
-    prefsWriteInProgress = true;
-    try {
-      await writeAppPrefs(prefs);
-    } finally {
-      prefsWriteInProgress = false;
-    }
-  });
+  prefsWriteChain = prefsWriteChain
+    .catch(() => undefined)
+    .then(async () => {
+      const prefs = await readAppPrefs();
+      mutator(prefs);
+      prefsWriteInProgress = true;
+      try {
+        await writeAppPrefs(prefs);
+      } finally {
+        prefsWriteInProgress = false;
+      }
+    });
   await prefsWriteChain;
 };
 
@@ -434,8 +433,14 @@ export const getLocalAuthorityAssetsDir = async (): Promise<string> => {
         const newPath = path.join(dir, name);
         try {
           const [legacyExists, newExists] = await Promise.all([
-            fs.access(legacyPath).then(() => true).catch(() => false),
-            fs.access(newPath).then(() => true).catch(() => false),
+            fs
+              .access(legacyPath)
+              .then(() => true)
+              .catch(() => false),
+            fs
+              .access(newPath)
+              .then(() => true)
+              .catch(() => false),
           ]);
           if (legacyExists && !newExists) {
             await moveDirectory(legacyPath, newPath);

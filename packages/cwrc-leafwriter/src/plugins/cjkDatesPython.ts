@@ -47,7 +47,11 @@ export const cjkDatesProposeDates = async (
   return Array.isArray(result) ? result : [];
 };
 
-export const cjkDatesProposeDatesBatch: SanmiaoBatchProposeFn = async (chunks, options, onChunk) => {
+export const cjkDatesProposeDatesBatch: SanmiaoBatchProposeFn = async (
+  chunks,
+  options,
+  onChunk,
+) => {
   const result = await invokePython<SanmiaoProposal[][]>({ chunks, ...options }, onChunk);
   return Array.isArray(result) ? result : [];
 };

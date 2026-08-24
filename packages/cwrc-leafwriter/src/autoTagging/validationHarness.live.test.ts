@@ -54,9 +54,7 @@ function buildLiveClient(baseUrl: string, model: string, apiKey: string): LlmCli
 const DOM_GLOBALS = ['NodeFilter', 'Node', 'Text', 'Element', 'Document', 'DOMParser'] as const;
 
 /** Shared autoTagging code expects browser DOM globals; install from jsdom. */
-function installDomGlobals(
-  window: Record<(typeof DOM_GLOBALS)[number], unknown>,
-): void {
+function installDomGlobals(window: Record<(typeof DOM_GLOBALS)[number], unknown>): void {
   for (const key of DOM_GLOBALS) {
     (globalThis as Record<string, unknown>)[key] = window[key];
   }
@@ -78,58 +76,71 @@ const tags = (process.env.LLM_LIVE_TAGS ?? 'persName,placeName')
   .map((s) => s.trim())
   .filter(Boolean);
 
-function formatMetrics(m: { tp: number; fp: number; fn: number; precision: number; recall: number; f1: number }): string {
+function formatMetrics(m: {
+  tp: number;
+  fp: number;
+  fn: number;
+  precision: number;
+  recall: number;
+  f1: number;
+}): string {
   return `P=${m.precision.toFixed(3)} R=${m.recall.toFixed(3)} F1=${m.f1.toFixed(3)} (tp=${m.tp} fp=${m.fp} fn=${m.fn})`;
 }
 
 describe('validation harness against a live model (opt-in)', () => {
-  maybe('scores suggest vs hand-tagged gold', async () => {
-    expect(fs.existsSync(xmlPath)).toBe(true);
+  maybe(
+    'scores suggest vs hand-tagged gold',
+    async () => {
+      expect(fs.existsSync(xmlPath)).toBe(true);
 
-    const { baseUrl, model, key: apiKey, keySource } = resolveLiveClientConfig();
-    const needsKey =
-      baseUrl.includes('api.mistral.ai') ||
-      baseUrl.includes('groq.com') ||
-      (!baseUrl.includes('localhost') && !baseUrl.includes('127.0.0.1'));
-    if (needsKey && !apiKey) {
-      throw new Error(hostedApiKeyHelp(baseUrl));
-    }
+      const { baseUrl, model, key: apiKey, keySource } = resolveLiveClientConfig();
+      const needsKey =
+        baseUrl.includes('api.mistral.ai') ||
+        baseUrl.includes('groq.com') ||
+        (!baseUrl.includes('localhost') && !baseUrl.includes('127.0.0.1'));
+      if (needsKey && !apiKey) {
+        throw new Error(hostedApiKeyHelp(baseUrl));
+      }
 
-    const client = buildLiveClient(baseUrl, model, apiKey);
+      const client = buildLiveClient(baseUrl, model, apiKey);
 
-    const source = fs.readFileSync(xmlPath, 'utf-8');
-    const doc = parseGoldXml(source);
-    normalizeDomText(doc);
+      const source = fs.readFileSync(xmlPath, 'utf-8');
+      const doc = parseGoldXml(source);
+      normalizeDomText(doc);
 
-    const gold = goldMentions(doc, 'ignore', tags);
+      const gold = goldMentions(doc, 'ignore', tags);
 
-    const report = await runValidationHarness(doc, {
-      policy: 'ignore',
-      tags,
-      client,
-      targetChars: 800,
-      marginChars: 100,
-    });
+      const report = await runValidationHarness(doc, {
+        policy: 'ignore',
+        tags,
+        client,
+        targetChars: 800,
+        marginChars: 100,
+      });
 
-     
-    console.log(
-      [
-        '',
-        '── validation harness (live) ─────────────────────────────',
-        `  gold file:        ${xmlPath}`,
-        `  base URL:         ${baseUrl}`,
-        `  model:            ${client.modelId}`,
-        `  api key:          ${keySource}${apiKey ? ` (${apiKey.length} chars)` : ''}`,
-        `  gold mentions:    ${report.goldCount}  (pre-strip count: ${gold.length})`,
-        `  predicted:        ${report.predictedCount}`,
-        `  unverifiable:     ${report.unverifiableCount}`,
-        `  overall:          ${formatMetrics(report.overall)}`,
-        ...tags.map((t) => `  ${t}:${' '.repeat(Math.max(1, 18 - t.length - 2))}${report.byTag[t] ? formatMetrics(report.byTag[t]!) : 'n/a'}`),
-        `  wrong-tag:        ${report.wrongTag.length}`,
-        '─────────────────────────────────────────────────────────',
-      ].join('\n'),
-    );
+      console.log(
+        [
+          '',
+          '── validation harness (live) ─────────────────────────────',
+          `  gold file:        ${xmlPath}`,
+          `  base URL:         ${baseUrl}`,
+          `  model:            ${client.modelId}`,
+          `  api key:          ${keySource}${apiKey ? ` (${apiKey.length} chars)` : ''}`,
+          `  gold mentions:    ${report.goldCount}  (pre-strip count: ${gold.length})`,
+          `  predicted:        ${report.predictedCount}`,
+          `  unverifiable:     ${report.unverifiableCount}`,
+          `  overall:          ${formatMetrics(report.overall)}`,
+          ...tags.map(
+            (t) =>
+              `  ${t}:${' '.repeat(Math.max(1, 18 - t.length - 2))}${report.byTag[t] ? formatMetrics(report.byTag[t]!) : 'n/a'}`,
+          ),
+          `  wrong-tag:        ${report.wrongTag.length}`,
+          '─────────────────────────────────────────────────────────',
+        ].join('\n'),
+      );
 
-    expect(report.goldCount).toBeGreaterThan(0);
-  }, 600_000);
+      expect(report.goldCount).toBeGreaterThan(0);
+    },
+    600_000,
+  );
 });

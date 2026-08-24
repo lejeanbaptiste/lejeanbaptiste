@@ -58,7 +58,9 @@ const key = (kind: EntityKind, type: string, value: string) =>
 const yieldToUi = () => new Promise<void>((resolve) => setTimeout(resolve, 0));
 
 const nameOf = (item: Element): string | null =>
-  Array.from(item.children).find((child) => /Name$/.test(child.localName ?? ''))?.textContent?.trim() || null;
+  Array.from(item.children)
+    .find((child) => /Name$/.test(child.localName ?? ''))
+    ?.textContent?.trim() || null;
 
 const authoritiesOf = (item: Element) =>
   Array.from(item.children)
@@ -81,7 +83,13 @@ const repeatableChildKey = (child: Element): string => {
 /** Copy source assertions which the normal scalar reconciler intentionally does not model. */
 const mergeRepeatableChildren = (source: Element, central: Element): boolean => {
   const ignored = new Set([
-    'persName', 'placeName', 'orgName', 'title', 'idno', 'birth', 'death',
+    'persName',
+    'placeName',
+    'orgName',
+    'title',
+    'idno',
+    'birth',
+    'death',
     'note', // descriptions, names, dates and changed stamps are handled by reconcile
   ]);
   const existing = new Set(
@@ -131,8 +139,15 @@ export async function bulkBridgeImport(options: BulkBridgeOptions): Promise<Bulk
 
   const progress = (update: Partial<BulkBridgeProgress>) =>
     options.onProgress?.({
-      stage: 'indexing', done: 0, total: sourceItems.length, matched: 0, proposed: 0,
-      ambiguous: 0, merged: 0, lastSourceId: null, ...update,
+      stage: 'indexing',
+      done: 0,
+      total: sourceItems.length,
+      matched: 0,
+      proposed: 0,
+      ambiguous: 0,
+      merged: 0,
+      lastSourceId: null,
+      ...update,
     });
 
   for (let offset = 0; offset < centralEntities.length; offset += chunkSize) {
@@ -178,7 +193,10 @@ export async function bulkBridgeImport(options: BulkBridgeOptions): Promise<Bulk
       if (candidateIds.length === 1) decisions.set(sourceId, candidateIds[0]!);
       else {
         const proposal: BulkBridgeProposal = {
-          sourceId, kind, name: nameOf(source), authorities: authoritiesOf(source),
+          sourceId,
+          kind,
+          name: nameOf(source),
+          authorities: authoritiesOf(source),
           reason: candidateIds.length ? 'ambiguous-authority-match' : 'no-authority-match',
           candidateCentralIds: candidateIds,
         };
@@ -188,9 +206,24 @@ export async function bulkBridgeImport(options: BulkBridgeOptions): Promise<Bulk
         else proposed += 1;
       }
     }
-    progress({ stage: 'matching', done: Math.min(offset + chunkSize, sourceItems.length), matched: decisions.size, proposed, ambiguous });
+    progress({
+      stage: 'matching',
+      done: Math.min(offset + chunkSize, sourceItems.length),
+      matched: decisions.size,
+      proposed,
+      ambiguous,
+    });
     await yieldToUi();
-    if (options.shouldCancel?.()) return { matched: decisions.size, proposed, ambiguous, merged: 0, sourceChanged: false, centralChanged: false, proposals };
+    if (options.shouldCancel?.())
+      return {
+        matched: decisions.size,
+        proposed,
+        ambiguous,
+        merged: 0,
+        sourceChanged: false,
+        centralChanged: false,
+        proposals,
+      };
   }
 
   let sourceChanged = false;
@@ -202,10 +235,16 @@ export async function bulkBridgeImport(options: BulkBridgeOptions): Promise<Bulk
     for (const source of sourceItems.slice(offset, offset + chunkSize)) {
       const sourceId = source.getAttribute('xml:id');
       const centralId = sourceId ? decisions.get(sourceId) : undefined;
-      if (!sourceId || !centralId) { done += 1; continue; }
+      if (!sourceId || !centralId) {
+        done += 1;
+        continue;
+      }
       const kind = entityKindOfElement(source);
       const central = kind ? centralItems.get(`${kind}\t${centralId}`) : undefined;
-      if (!central) { done += 1; continue; }
+      if (!central) {
+        done += 1;
+        continue;
+      }
       const plan = planReconcile(source, central);
       const applied = applyReconcilePlan(
         options.sourceDoc,
@@ -223,13 +262,50 @@ export async function bulkBridgeImport(options: BulkBridgeOptions): Promise<Bulk
       if (applied.pedbChanged || applied.cedbChanged || richChanged) merged += 1;
       done += 1;
     }
-    progress({ stage: 'merging', done, total: sourceItems.length, matched: decisions.size, proposed, ambiguous, merged, lastSourceId: sourceItems[Math.min(done - 1, sourceItems.length - 1)]?.getAttribute('xml:id') ?? null });
+    progress({
+      stage: 'merging',
+      done,
+      total: sourceItems.length,
+      matched: decisions.size,
+      proposed,
+      ambiguous,
+      merged,
+      lastSourceId:
+        sourceItems[Math.min(done - 1, sourceItems.length - 1)]?.getAttribute('xml:id') ?? null,
+    });
     if (done > 0 && (done % checkpointInterval < chunkSize || done === sourceItems.length)) {
-      await options.onCheckpoint?.({ stage: 'merging', done, total: sourceItems.length, matched: decisions.size, proposed, ambiguous, merged, lastSourceId: sourceItems[Math.min(done - 1, sourceItems.length - 1)]?.getAttribute('xml:id') ?? null });
+      await options.onCheckpoint?.({
+        stage: 'merging',
+        done,
+        total: sourceItems.length,
+        matched: decisions.size,
+        proposed,
+        ambiguous,
+        merged,
+        lastSourceId:
+          sourceItems[Math.min(done - 1, sourceItems.length - 1)]?.getAttribute('xml:id') ?? null,
+      });
     }
     await yieldToUi();
     if (options.shouldCancel?.()) break;
   }
-  progress({ stage: 'complete', done, total: sourceItems.length, matched: decisions.size, proposed, ambiguous, merged, lastSourceId: null });
-  return { matched: decisions.size, proposed, ambiguous, merged, sourceChanged, centralChanged, proposals };
+  progress({
+    stage: 'complete',
+    done,
+    total: sourceItems.length,
+    matched: decisions.size,
+    proposed,
+    ambiguous,
+    merged,
+    lastSourceId: null,
+  });
+  return {
+    matched: decisions.size,
+    proposed,
+    ambiguous,
+    merged,
+    sourceChanged,
+    centralChanged,
+    proposals,
+  };
 }

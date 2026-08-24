@@ -5,11 +5,7 @@ import {
   readOrlandoHeaderPathValues,
 } from './orlandoHeaderXml';
 import { isOrlandoCatalog } from './schemaMetadataFields';
-import {
-  applyHeaderPathUpdates,
-  hasTeiHeader,
-  readHeaderPathValues,
-} from './teiHeaderXml';
+import { applyHeaderPathUpdates, hasTeiHeader, readHeaderPathValues } from './teiHeaderXml';
 
 export interface FileMetadataFieldDefinition {
   label: string;
@@ -48,13 +44,7 @@ export const ORLANDO_FILE_METADATA_FIELDS: FileMetadataFieldDefinition[] = [
 /** @deprecated Use getFileMetadataFieldsForCatalog */
 export const FILE_METADATA_FIELDS = TEI_FILE_METADATA_FIELDS;
 
-const TEI_CATALOG_IDS = new Set([
-  'teiAll',
-  'teiLite',
-  'teiSimplePrint',
-  'jTei',
-  'local-tei',
-]);
+const TEI_CATALOG_IDS = new Set(['teiAll', 'teiLite', 'teiSimplePrint', 'jTei', 'local-tei']);
 
 export const isTeiCatalogForFileMetadata = (catalogId?: string | null): boolean =>
   !catalogId || TEI_CATALOG_IDS.has(catalogId);
@@ -91,17 +81,13 @@ export const applyFileHeaderFields = (
   return applyHeaderPathUpdates(xml, entries);
 };
 
-export const documentSupportsFileMetadata = (
-  xml: string,
-  catalogId?: string | null,
-): boolean => {
+export const documentSupportsFileMetadata = (xml: string, catalogId?: string | null): boolean => {
   if (isOrlandoCatalog(catalogId)) return hasOrlandoHeader(xml);
   if (isTeiCatalogForFileMetadata(catalogId)) return hasTeiHeader(xml);
   return false;
 };
 
-const isSourceEditorMode = () =>
-  window.writer?.overmindState?.ui?.editorViewMode === 'source';
+const isSourceEditorMode = () => window.writer?.overmindState?.ui?.editorViewMode === 'source';
 
 export interface PushXmlToActiveEditorParams {
   content: string;

@@ -50,7 +50,9 @@ describe('LlmCache', () => {
   it('tag set order does not affect the key', async () => {
     const cache = new LlmCache(null, null);
     await cache.set('chunk text', ['persName', 'placeName'], 'ollama:m', 'suggest.v1', [item]);
-    expect(await cache.get('chunk text', ['placeName', 'persName'], 'ollama:m', 'suggest.v1')).toEqual([item]);
+    expect(
+      await cache.get('chunk text', ['placeName', 'persName'], 'ollama:m', 'suggest.v1'),
+    ).toEqual([item]);
   });
 
   it('persists to disk and reloads into a fresh instance', async () => {

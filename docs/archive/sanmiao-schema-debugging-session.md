@@ -15,7 +15,7 @@ isolated each layer is reusable.
 
 1. "Schema does not allow `<date>` inside `<p>`" — auto-tagging apply blocked everything.
 2. Same error persisted after a first schema fix.
-3. Validation *panel* (checkmark icon) still showed "Tag `era`/`year`/... not allowed in `date`" — 542 errors — even after the auto-tagging path was fixed.
+3. Validation _panel_ (checkmark icon) still showed "Tag `era`/`year`/... not allowed in `date`" — 542 errors — even after the auto-tagging path was fixed.
 4. Same 542 errors persisted through multiple app restarts, hard refreshes, and rebuilds.
 5. After finally getting the underlying pipeline provably correct, the validation panel got stuck in a continuous refresh loop, count still unchanged.
 
@@ -24,13 +24,16 @@ isolated each layer is reusable.
 **File:** `apps/desktop/src/sanmiaoSchemaMerge.ts`
 
 The original wrapper tried to override TEI's `<date>` using:
+
 ```xml
 <include href="tei_all.tei.rng">
   <except><define name="date"/></except>
 </include>
 <include href="ljb-sanmiao-dates.rng"/>
 ```
+
 Three problems:
+
 - RelaxNG has **no `<include><except>`** construct. `<except>` is invalid inside `<include>`.
 - The empty `<define name="date"/>` is not a valid pattern.
 - Because the exclusion didn't work, **both** files ended up defining `date` at
@@ -40,6 +43,7 @@ Three problems:
 **Fix:** replace a definition in RelaxNG by placing the **override `<define>`
 directly inside `<include>`** (this is the actual, spec-compliant override
 mechanism):
+
 ```xml
 <include href="tei_all.tei.rng">
   <define name="date"> ... </define>
@@ -57,11 +61,11 @@ sanmiao children validate inside `<date>`.
 Even after fixing Bug 1, `<date>`/`<era>`/`<year>` etc. still failed, because
 neither the wrapper grammar nor the patch grammar declared
 `ns="http://www.tei-c.org/ns/1.0"`. Their `<element>` patterns therefore only
-matched *no-namespace* elements, while real documents use the TEI namespace.
+matched _no-namespace_ elements, while real documents use the TEI namespace.
 
 **Fix:** add `ns="http://www.tei-c.org/ns/1.0"` to both generated `<grammar>` roots.
 
-## Bug 3 — The in-app schema manager only resolves the *first* `<include>`
+## Bug 3 — The in-app schema manager only resolves the _first_ `<include>`
 
 **File:** `packages/cwrc-leafwriter/src/js/schema/schemaManager.ts` (consumer),
 `apps/desktop/src/sanmiaoSchemaMerge.ts` (fix)
@@ -69,10 +73,14 @@ matched *no-namespace* elements, while real documents use the TEI namespace.
 The wrapper had **two** `<include>` elements: the TEI core (with the date
 override) and a separate `ljb-sanmiao-dates.rng` patch file with the
 `ljb.sanmiao.*` helper defines. `schemaManager.ts`'s `loadSchema()` does:
+
 ```js
 const include = $('include:first', this.schemaXML); // TODO add handling for multiple includes
-if (include.length == 1) { await this.loadIncludes(schemaEntry, include); }
+if (include.length == 1) {
+  await this.loadIncludes(schemaEntry, include);
+}
 ```
+
 Only the first include is ever processed. The second include (helper defines)
 was silently dropped. The date override's `<ref name="ljb.sanmiao.date.parts"/>`
 then pointed at nothing, `xmlToJSON` returned `null` for the whole schema, and
@@ -81,7 +89,7 @@ This is the "schema allows nothing, not even text in `<p>`" symptom from the
 very first report.
 
 **Gotcha:** `xmllint` accepts multiple includes fine, so RNG-level validation
-passed even with this bug present. It only breaks the *in-app* schema manager.
+passed even with this bug present. It only breaks the _in-app_ schema manager.
 
 **Fix:** collapse to a single `<include>` (TEI core, override inside it) and
 **inline** the sanmiao helper defines as siblings of that include in the
@@ -99,15 +107,17 @@ included `p` with zero dangling refs.
 
 **File:** `packages/cwrc-leafwriter/src/js/schema/schemaManager.ts`
 
-`loadSchemaFile()` is shared by the top-level schema load *and* by
+`loadSchemaFile()` is shared by the top-level schema load _and_ by
 `loadIncludes()`'s fetch of the include target. It always prioritizes
 `this.documentSchemaUrl` if set:
+
 ```js
 if (this.documentSchemaUrl && !urls.includes(this.documentSchemaUrl)) {
   urls = filterResourceUrls([this.documentSchemaUrl, ...urls]);
 }
 ```
-`documentSchemaUrl` gets set (from `xml2cwrc.ts`) whenever *any* document
+
+`documentSchemaUrl` gets set (from `xml2cwrc.ts`) whenever _any_ document
 opens, and — since `schemaManager` isn't recreated per project — persists
 across project switches within the same running session. When it happened to
 equal the wrapper's own URL, this logic hijacked the include fetch and
@@ -120,7 +130,7 @@ and zero occurrences of `persName` anywhere.
 `loadSchemaFile`; `loadIncludes()` now passes
 `{ prioritizeDocumentSchema: false, trackRng: false }` so it always fetches
 exactly the include's own URL and never lets that fetch clobber
-`this.rng` (the tracked top-level schema URL used to resolve *future* includes).
+`this.rng` (the tracked top-level schema URL used to resolve _future_ includes).
 
 **Verification:** `schemaManager.test.ts` — constructs a `SchemaManager` with
 a fake writer, sets `documentSchemaUrl` to the wrapper's own URL (reproducing
@@ -150,7 +160,7 @@ onto the fetched grammar — mirroring the logic already fixed in
 
 **Verification:** `fetchResource.test.ts` — feeds a wrapper+core pair through
 `localSchemaToBlobUrl`, parses the resulting blob, and asserts the merged
-`date` define contains the override's ref and *not* the stock `model.phrase`-only
+`date` define contains the override's ref and _not_ the stock `model.phrase`-only
 content. Confirmed fails without the fix, passes with it.
 
 ## Bug 6 — Validator worker caches the compiled grammar by id alone, ignoring the URL
@@ -163,6 +173,7 @@ async initialize({ id, url }) {
   ...
 }
 ```
+
 `id` is the catalog id (e.g. `"teiAll"` or a project-specific
 `"project-tei-all"`), which is the **same** across `initialize()` calls even
 when the underlying schema content differs (fresh blob URL each time for
@@ -221,7 +232,7 @@ brand-new `Worker` every time `loadValidator()` runs (called from
 re-run more than once per session, e.g. on project/document switches). A
 freshly-spawned worker has no memory of any previous worker's schema load.
 `state.validator.hasSchema` is an Overmind flag that doesn't distinguish
-*which* worker instance it was set for, so it can remain `true` even after
+_which_ worker instance it was set for, so it can remain `true` even after
 the underlying worker has been silently swapped for an uninitialized one.
 
 **Fix, part A:** `loadValidator()` now resets `state.validator.hasSchema = false`
@@ -259,7 +270,7 @@ not yet been re-verified live after this specific fix when this log was written.
   compliant) include handling.
 - **Reimplementing the suspect merge logic inline in the DevTools console**,
   reading real project files via `window.electronAPI.readFile`, to test the
-  *logic* in isolation from *deployment* (bundling/caching/lifecycle)
+  _logic_ in isolation from _deployment_ (bundling/caching/lifecycle)
   concerns. This proved the merge logic was correct well before the
   deployment-layer bugs (6.5, 7) were found.
 - **Fetching the served bundle from the console** (`fetch(src).then(r=>r.text())`)
@@ -269,8 +280,8 @@ not yet been re-verified live after this specific fix when this log was written.
   (`window.leafwriterValidator.getValidNodesAt(...)`) to test the actual
   compiled grammar's behavior, bypassing the app's own UI-triggered validate
   flow entirely — this is what finally proved the pipeline was correct and
-  isolated the remaining bug to *when/how often* `initialize()` runs, not
-  *what* it produces.
+  isolated the remaining bug to _when/how often_ `initialize()` runs, not
+  _what_ it produces.
 - **Adding temporary `console.log` instrumentation directly into the real
   action** (`overmind/validator/actions.ts`), rebuilding, and observing the
   natural (non-manually-triggered) call sequence during a real boot — this
@@ -306,11 +317,11 @@ This phase added an architectural fix plus a second stack of deployment/cache bu
 
 **Problem:** Three systems each interpreted the same wrapper RNG differently:
 
-| Consumer | Merge behaviour |
-|----------|-----------------|
-| `xmllint` | Spec-correct RelaxNG includes → often **passes** |
-| `schemaManager.ts` | Custom merge for tagging / parent lookup |
-| `fetchResource.ts` → validator worker | **Second** custom merge for the checkmark panel |
+| Consumer                              | Merge behaviour                                  |
+| ------------------------------------- | ------------------------------------------------ |
+| `xmllint`                             | Spec-correct RelaxNG includes → often **passes** |
+| `schemaManager.ts`                    | Custom merge for tagging / parent lookup         |
+| `fetchResource.ts` → validator worker | **Second** custom merge for the checkmark panel  |
 
 Bugs 3–5 were all “hand-rolled merge diverged from RelaxNG.” Fixing each merge site
 helped, but the class of bugs could recur whenever a new code path loaded RNG.
@@ -339,7 +350,7 @@ truthy). Any IndexedDB entry for a schema id was treated as valid forever — ty
 
 This alone turned 542 errors into ~2 (real document issues).
 
-### Bug 9 — Schema reload skipped when schema *id* unchanged
+### Bug 9 — Schema reload skipped when schema _id_ unchanged
 
 **Files:** `xml2cwrc.ts`, `schemaManager.ts`, `projectOnboarding.ts`
 
@@ -412,18 +423,18 @@ The validator worker is **not** in the commons dev watch loop:
 
 ## Did we reject the `<include>` solution for the wrong reasons?
 
-**Short answer: mostly no — but we rejected the *wrong* `<include>` pattern, not `<include>` itself.**
+**Short answer: mostly no — but we rejected the _wrong_ `<include>` pattern, not `<include>` itself.**
 
-RelaxNG has several ways people *wish* they could patch TEI. We tried or discussed three;
+RelaxNG has several ways people _wish_ they could patch TEI. We tried or discussed three;
 only one is spec-correct, and we still use it:
 
-| Approach | Valid RelaxNG? | Verdict |
-|----------|----------------|---------|
-| `<include><except><define name="date"/></except></include>` | **No** — `<except>` is not a RelaxNG construct | Correctly rejected (Bug 1) |
-| Top-level `<define name="date">` in wrapper *without* override inside include | Partially — needs `combine="override"` or you get duplicate-define errors | Avoided in favour of override-inside-include |
-| **`<include href="tei.rng"><define name="date">…</define></include>`** | **Yes** — official override mechanism | **Still used** in the merge pipeline (wrapper stage) |
-| Second `<include href="ljb-sanmiao-dates.rng"/>` for helpers | Valid RNG, but… | Rejected because **`schemaManager` only resolves the first `<include>`** (Bug 3) — valid reason for LJB, not a RelaxNG limitation |
-| Thin wrapper on disk + runtime merge in app | Valid RNG | **Superseded** by flat-at-merge (v4+) because **three different merge implementations** diverged — architectural reason, not because includes are wrong |
+| Approach                                                                      | Valid RelaxNG?                                                            | Verdict                                                                                                                                                 |
+| ----------------------------------------------------------------------------- | ------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `<include><except><define name="date"/></except></include>`                   | **No** — `<except>` is not a RelaxNG construct                            | Correctly rejected (Bug 1)                                                                                                                              |
+| Top-level `<define name="date">` in wrapper _without_ override inside include | Partially — needs `combine="override"` or you get duplicate-define errors | Avoided in favour of override-inside-include                                                                                                            |
+| **`<include href="tei.rng"><define name="date">…</define></include>`**        | **Yes** — official override mechanism                                     | **Still used** in the merge pipeline (wrapper stage)                                                                                                    |
+| Second `<include href="ljb-sanmiao-dates.rng"/>` for helpers                  | Valid RNG, but…                                                           | Rejected because **`schemaManager` only resolves the first `<include>`** (Bug 3) — valid reason for LJB, not a RelaxNG limitation                       |
+| Thin wrapper on disk + runtime merge in app                                   | Valid RNG                                                                 | **Superseded** by flat-at-merge (v4+) because **three different merge implementations** diverged — architectural reason, not because includes are wrong |
 
 So if “the `<include>` solution” means **override defines nested inside `<include>`**: we did
 **not** reject it; that is exactly how `buildSanmiaoWrapperRng()` works before flattening.
@@ -433,7 +444,7 @@ does not exist in RelaxNG (it looks like XInclude or wishful thinking).
 
 If it means **leaving a multi-include wrapper as the runtime schema**: rejection was **correct
 for this codebase**, because LJB’s schema loader and validator each had incomplete include
-handling. Flattening sidesteps that without abandoning the include-override *authoring* model.
+handling. Flattening sidesteps that without abandoning the include-override _authoring_ model.
 
 **The deeper lesson:** the painful session was rarely “we picked the wrong RelaxNG pattern.”
 More often:

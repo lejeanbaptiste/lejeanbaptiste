@@ -1,8 +1,14 @@
 import { cachedPackReader } from '../services/authority-pack-lookup';
 import type { AuthorityCache } from './authorityCache';
-import { buildDisambiguationCandidates, type DisambiguationCandidate } from './disambiguationCandidates';
+import {
+  buildDisambiguationCandidates,
+  type DisambiguationCandidate,
+} from './disambiguationCandidates';
 import type { DisambiguationAiCache } from './disambiguationAiCache';
-import { placeProximityKmFromSettings, readPersistedDisambiguationSettings } from './disambiguationSettings';
+import {
+  placeProximityKmFromSettings,
+  readPersistedDisambiguationSettings,
+} from './disambiguationSettings';
 import type { DilaPlaceDetailCache } from './dilaPlaceDetailCache';
 import type { LlmClient } from './llmClient';
 import { rankDisambiguationCandidates } from './llmDisambiguationRank';
@@ -16,7 +22,10 @@ export interface DisambiguationAiWarmPassSession {
   readonly disambiguationAiCache: DisambiguationAiCache | null;
   getDocument(): Promise<Document>;
   getPendingCandidates(tag: string, surface: string): DisambiguationCandidate[] | null;
-  disambiguationDbSources(tag: string, surface: string): Promise<{
+  disambiguationDbSources(
+    tag: string,
+    surface: string,
+  ): Promise<{
     local: DisambiguationCandidate[];
     central?: {
       userStableId: string;

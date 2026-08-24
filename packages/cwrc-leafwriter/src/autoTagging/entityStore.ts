@@ -57,10 +57,7 @@ export interface EntityFileApi {
   notifyOwnWrite?: (filePath: string) => Promise<void>;
   /** Runtime entity database bridge; XML remains only the DOM compatibility layer. */
   entitySqliteExportXml?: (request: { databasePath: string }) => Promise<string | null>;
-  entitySqliteImportXml?: (request: {
-    databasePath: string;
-    xml: string;
-  }) => Promise<unknown>;
+  entitySqliteImportXml?: (request: { databasePath: string; xml: string }) => Promise<unknown>;
   entitySqliteCandidates?: (request: {
     databasePath: string;
     kind: 'person' | 'place' | 'work' | 'office' | 'org';
@@ -80,12 +77,15 @@ export interface EntityFileApi {
     kind: 'person' | 'place' | 'work' | 'office' | 'org';
     query: string;
     limit?: number;
-  }) => Promise<{
-    id: string;
-    label: string;
-    description?: string;
-    idnos: { type: string; value: string }[];
-  }[] | null>;
+  }) => Promise<
+    | {
+        id: string;
+        label: string;
+        description?: string;
+        idnos: { type: string; value: string }[];
+      }[]
+    | null
+  >;
   entitySqliteAuthorityDuplicates?: (databasePath: string) => Promise<unknown[] | null>;
   entitySqliteUpdateNames?: (input: {
     databasePath: string;
@@ -1263,12 +1263,15 @@ export class EntityStore {
     kind: 'person' | 'place' | 'work' | 'office' | 'org',
     query: string,
     limit = 20,
-  ): Promise<{
-    id: string;
-    label: string;
-    description?: string;
-    idnos: { type: string; value: string }[];
-  }[] | null> {
+  ): Promise<
+    | {
+        id: string;
+        label: string;
+        description?: string;
+        idnos: { type: string; value: string }[];
+      }[]
+    | null
+  > {
     if (!this.api.entitySqliteSearch || !(await this.hasSqliteDatabase())) return null;
     return this.api.entitySqliteSearch({
       databasePath: this.sqlitePath,

@@ -36,7 +36,9 @@ describe('project enumerators exclude infrastructure', () => {
 
   it('findXmlFilesByName never surfaces infrastructure or snapshot files', async () => {
     expect(await findXmlFilesByName(root, 'entities')).toEqual([]);
-    expect((await findXmlFilesByName(root, 'chapter')).map((f) => f.name)).toEqual(['chapter1.xml']);
+    expect((await findXmlFilesByName(root, 'chapter')).map((f) => f.name)).toEqual([
+      'chapter1.xml',
+    ]);
     expect((await findXmlFilesByName(root, 'chapter')).map((f) => f.path)).toEqual([
       path.join(root, 'chapter1.xml'),
     ]);

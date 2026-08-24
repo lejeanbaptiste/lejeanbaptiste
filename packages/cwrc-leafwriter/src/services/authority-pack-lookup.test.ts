@@ -1,8 +1,4 @@
-import {
-  packIdsForEntityType,
-  packResultUri,
-  searchPackContent,
-} from './authority-pack-lookup';
+import { packIdsForEntityType, packResultUri, searchPackContent } from './authority-pack-lookup';
 import { parseAuthorityUri } from '../autoTagging/lookupResolve';
 
 const rows = [

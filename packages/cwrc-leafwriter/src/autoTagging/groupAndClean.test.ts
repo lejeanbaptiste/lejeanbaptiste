@@ -77,9 +77,7 @@ describe('rollPlaceIntoRole', () => {
     const rolled = rollPlaceIntoRole(doc.documentElement, officeIndex, touched);
 
     expect(rolled).toBe(1);
-    expect(serialize(doc)).toContain(
-      '<roleName><placeName>荊州</placeName>刺史</roleName>',
-    );
+    expect(serialize(doc)).toContain('<roleName><placeName>荊州</placeName>刺史</roleName>');
     expect(doc.getElementsByTagName('placeName').length).toBe(1);
     expect(touched.size).toBe(1);
   });
@@ -126,24 +124,42 @@ describe('reparseApprovedNobleTitleNames', () => {
   it('replaces an exact reviewed persName with a structured nobleTitle', () => {
     const doc = parse(`${TEI_OPEN}<p><persName key="p1">海鹽公主</persName></p>${TEI_CLOSE}`);
     const candidate = {
-      source: 'Noble title filter (Norbert)', authorityId: 'noble-title-filter:haiyan:person-1', kind: 'person' as const,
-      primaryName: '海鹽公主', searchStrings: ['海鹽公主'],
-      metadata: { isNobleTitle: true, nobleTitleFilter: { ruleId: 'haiyan' }, nobleTitle: { fief: '海鹽', roleName: '公主' } },
+      source: 'Noble title filter (Norbert)',
+      authorityId: 'noble-title-filter:haiyan:person-1',
+      kind: 'person' as const,
+      primaryName: '海鹽公主',
+      searchStrings: ['海鹽公主'],
+      metadata: {
+        isNobleTitle: true,
+        nobleTitleFilter: { ruleId: 'haiyan' },
+        nobleTitle: { fief: '海鹽', roleName: '公主' },
+      },
     };
     const repaired = reparseApprovedNobleTitleNames(doc.documentElement, [candidate], new Set());
     expect(repaired).toBe(1);
-    expect(serialize(doc)).toContain('<nobleTitle><placeName>海鹽</placeName><roleName>公主</roleName></nobleTitle>');
+    expect(serialize(doc)).toContain(
+      '<nobleTitle><placeName>海鹽</placeName><roleName>公主</roleName></nobleTitle>',
+    );
     expect(doc.getElementsByTagName('persName').length).toBe(0);
   });
 
   it('keeps the existing key on an approved title-plus-person wrapper', () => {
     const doc = parse(`${TEI_OPEN}<p><persName key="p2">壽王瑁</persName></p>${TEI_CLOSE}`);
     const candidate = {
-      source: 'Noble title filter (Norbert)', authorityId: 'noble-title-filter:shou:person-2', kind: 'person' as const,
-      primaryName: '壽王瑁', searchStrings: ['壽王瑁'],
+      source: 'Noble title filter (Norbert)',
+      authorityId: 'noble-title-filter:shou:person-2',
+      kind: 'person' as const,
+      primaryName: '壽王瑁',
+      searchStrings: ['壽王瑁'],
       metadata: {
-        isNobleTitle: true, nobleTitleFilter: { ruleId: 'shou' }, nobleTitle: { fief: '壽', roleName: '王' },
-        wrapper: { personId: 'person-2', titleRowId: 'shou', components: { fief: '壽', roleName: '王', persName: '瑁' } },
+        isNobleTitle: true,
+        nobleTitleFilter: { ruleId: 'shou' },
+        nobleTitle: { fief: '壽', roleName: '王' },
+        wrapper: {
+          personId: 'person-2',
+          titleRowId: 'shou',
+          components: { fief: '壽', roleName: '王', persName: '瑁' },
+        },
       },
     };
     const repaired = reparseApprovedNobleTitleNames(doc.documentElement, [candidate], new Set());
@@ -229,7 +245,12 @@ describe('runGroupAndClean (integration, user-reported case)', () => {
     ];
     const vocabulary = buildNobleTitleVocabulary([]);
 
-    const result = await runGroupAndClean(async () => [], doc.documentElement, officeCandidates, vocabulary);
+    const result = await runGroupAndClean(
+      async () => [],
+      doc.documentElement,
+      officeCandidates,
+      vocabulary,
+    );
 
     expect(result.rolledPlaceNames).toBe(1); // only 益州 + 刺史
     expect(result.createdWrappers).toBe(3);

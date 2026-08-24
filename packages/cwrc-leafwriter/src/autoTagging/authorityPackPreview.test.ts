@@ -56,12 +56,11 @@ describe('countAuthorityPackStrings', () => {
 
   it('applies the year filter', async () => {
     const installed = new Set(['wikidata-persons-pre-ming', 'wikidata-persons-ming'] as const);
-    const counts = await countAuthorityPackStrings(
-      ['wikidata-persons'],
-      readPackFile,
-      installed,
-      { mode: 'limit', start: 600, end: 900 },
-    );
+    const counts = await countAuthorityPackStrings(['wikidata-persons'], readPackFile, installed, {
+      mode: 'limit',
+      start: 600,
+      end: 900,
+    });
     expect(counts['wikidata-persons']).toEqual({ entities: 1, uniqueStrings: 2 });
   });
 });

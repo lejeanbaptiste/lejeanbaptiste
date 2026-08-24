@@ -58,8 +58,8 @@ const wireSqliteLookupWrites = (store: EntityStore, fs: FakeFs) => {
 
   jest.spyOn(store, 'sqliteCreatePopulated').mockImplementation(async (input) => {
     const doc = await store.loadEntities();
-    const primary =
-      input.names?.find((name) => name.isPrimary) ?? input.names?.[0] ?? { text: 'unnamed' };
+    const primary = input.names?.find((name) => name.isPrimary) ??
+      input.names?.[0] ?? { text: 'unnamed' };
     const romanized = input.names?.find((name) => name !== primary && name.text !== primary.text);
     const { element } = addEntity(doc, input.kind, {
       name: primary.text,
@@ -91,16 +91,19 @@ const wireSqliteLookupWrites = (store: EntityStore, fs: FakeFs) => {
   jest.spyOn(store, 'sqliteAddNationality').mockImplementation(async () => true);
   jest.spyOn(store, 'sqliteAddOrigin').mockImplementation(async () => true);
 
-  jest.spyOn(store, 'sqliteSetRomanizedName').mockImplementation(async (entityId, text, language) => {
-    const doc = await store.loadEntities();
-    setRomanizedName(doc, entityId, text, language ?? undefined);
-    await store.saveEntities(doc, { allowSqliteFullReimport: true });
-  });
+  jest
+    .spyOn(store, 'sqliteSetRomanizedName')
+    .mockImplementation(async (entityId, text, language) => {
+      const doc = await store.loadEntities();
+      setRomanizedName(doc, entityId, text, language ?? undefined);
+      await store.saveEntities(doc, { allowSqliteFullReimport: true });
+    });
 
   jest.spyOn(store, 'sqliteAddName').mockImplementation(async (input) => {
     const doc = await store.loadEntities();
     addEntityName(doc, input.entityId, input.text, {
-      type: input.nameType as 'family' | 'given' | 'variant' | 'courtesy' | 'posthumous' | undefined,
+      type: input.nameType as
+        'family' | 'given' | 'variant' | 'courtesy' | 'posthumous' | undefined,
       lang: input.language ?? undefined,
       origin: input.origin,
       source: input.source ?? undefined,
@@ -240,7 +243,9 @@ describe('parseAuthorityUri', () => {
       idnoType: 'VIAF',
       value: '12345',
     });
-    expect(parseAuthorityUri('https://cbdb.fas.harvard.edu/cbdbapi/person.php?id=31305')).toMatchObject({
+    expect(
+      parseAuthorityUri('https://cbdb.fas.harvard.edu/cbdbapi/person.php?id=31305'),
+    ).toMatchObject({
       idnoType: 'CBDB',
       value: '31305',
     });
@@ -315,9 +320,7 @@ describe('crosswalkForRef', () => {
       packIds,
       readPackFile,
     );
-    expect(result.idnos).toEqual(
-      expect.arrayContaining([{ type: 'Wikidata', value: 'Q712570' }]),
-    );
+    expect(result.idnos).toEqual(expect.arrayContaining([{ type: 'Wikidata', value: 'Q712570' }]));
   });
 });
 
@@ -719,8 +722,14 @@ describe('linkWithoutEnrichment', () => {
   it('links the chosen entity, writes no idnos, files a concordance warning', async () => {
     const { fs, store } = makeStore();
     const doc = await store.loadEntities();
-    const a = addEntity(doc, 'person', { name: 'A', authorityIds: [{ type: 'CBDB', value: '31305' }] });
-    const b = addEntity(doc, 'person', { name: 'B', authorityIds: [{ type: 'DILA', value: 'A001492' }] });
+    const a = addEntity(doc, 'person', {
+      name: 'A',
+      authorityIds: [{ type: 'CBDB', value: '31305' }],
+    });
+    const b = addEntity(doc, 'person', {
+      name: 'B',
+      authorityIds: [{ type: 'DILA', value: 'A001492' }],
+    });
     await store.saveEntities(doc, { allowSqliteFullReimport: true });
     const before = await store.loadEntities().then((d) => d.getElementsByTagName('idno').length);
 

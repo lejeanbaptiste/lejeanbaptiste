@@ -33,7 +33,7 @@
   "scripts": {
     "prepare": "husky",
     "test": "jest --silent --onlyChanged",
-    "format": "prettier --write \"**/*.{ts,tsx,md}\"",
+    "format": "prettier . --write",
     "format-check": "prettier . --check",
     "lint": "eslint . && npm run lint --workspaces --if-present",
     "check:electron-api": "node scripts/check-electron-api-drift.mjs",

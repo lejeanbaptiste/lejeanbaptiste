@@ -23,8 +23,12 @@ const make = (id: string, extra: Partial<Suggestion> = {}): Suggestion => ({
 describe('ReviewController', () => {
   it('walks pending suggestions in document order even when the batch is shuffled', () => {
     const c = new ReviewController([
-      make('later', { anchor: { ...make('x').anchor, xpath: '/TEI/text/body/div/p[2]/text()[1]' } }),
-      make('earlier', { anchor: { ...make('x').anchor, xpath: '/TEI/text/body/div/p[1]/text()[1]' } }),
+      make('later', {
+        anchor: { ...make('x').anchor, xpath: '/TEI/text/body/div/p[2]/text()[1]' },
+      }),
+      make('earlier', {
+        anchor: { ...make('x').anchor, xpath: '/TEI/text/body/div/p[1]/text()[1]' },
+      }),
     ]);
     expect(c.current()!.id).toBe('earlier');
     c.next();
@@ -226,7 +230,11 @@ describe('ReviewController', () => {
         make('as-pers', { tag: 'persName', anchor: { ...anchor } }),
         make('as-title', { tag: 'title', anchor: { ...anchor } }),
         make('other', {
-          anchor: { ...make('x').anchor, surface: '洛陽', xpath: '/TEI/text/body/div/p[2]/text()[1]' },
+          anchor: {
+            ...make('x').anchor,
+            surface: '洛陽',
+            xpath: '/TEI/text/body/div/p[2]/text()[1]',
+          },
           tag: 'placeName',
         }),
       ];
@@ -250,9 +258,7 @@ describe('ReviewController', () => {
       });
       c.reject();
       expect(c.counts()).toMatchObject({ rejected: 2, pending: 1 });
-      expect(decisions).toEqual(
-        expect.arrayContaining(['as-pers:rejected', 'as-title:rejected']),
-      );
+      expect(decisions).toEqual(expect.arrayContaining(['as-pers:rejected', 'as-title:rejected']));
     });
 
     it('j/k treat the alternative pair as a single navigation stop', () => {

@@ -85,7 +85,8 @@ function run(command, args, options = {}) {
     const stderr = result.stderr?.trim();
     const stdout = result.stdout?.trim();
     throw new Error(
-      [command, ...args].join(' ') + ` failed${stderr ? `:\n${stderr}` : ''}${stdout ? `\n${stdout}` : ''}`,
+      [command, ...args].join(' ') +
+        ` failed${stderr ? `:\n${stderr}` : ''}${stdout ? `\n${stdout}` : ''}`,
     );
   }
 
@@ -161,17 +162,16 @@ async function main() {
     // dpkg-scanpackages records Filename as <path-we-gave-it>/<debFile>; point
     // it back at the real published pool location, not the scratch scan dir
     // (which gets deleted below, before this ever reaches GitHub Pages).
-    packages = packages.split(`Filename: ${scanPathRelative}/`).join(`Filename: ${poolPathRelative}/`);
+    packages = packages
+      .split(`Filename: ${scanPathRelative}/`)
+      .join(`Filename: ${poolPathRelative}/`);
     for (const packageName of packageNamesByArchitecture.get(architecture) ?? []) {
       if (!packages.split(/\r?\n/).includes(`Package: ${packageName}`)) {
         throw new Error(`APT index for ${architecture} is missing ${packageName}`);
       }
     }
     await fs.writeFile(packagesPath, packages);
-    await fs.writeFile(
-      `${packagesPath}.gz`,
-      zlib.gzipSync(Buffer.from(packages), { mtime: 0 }),
-    );
+    await fs.writeFile(`${packagesPath}.gz`, zlib.gzipSync(Buffer.from(packages), { mtime: 0 }));
   }
   await fs.rm(scanRoot, { recursive: true, force: true });
 
@@ -214,7 +214,15 @@ async function main() {
       path.join(distDir, 'InRelease'),
       run(
         'gpg',
-        [...gpgBaseArgs, '--local-user', options.gpgKey, '--clearsign', '--output', '-', releasePath],
+        [
+          ...gpgBaseArgs,
+          '--local-user',
+          options.gpgKey,
+          '--clearsign',
+          '--output',
+          '-',
+          releasePath,
+        ],
         { cwd: repoDir },
       ),
     );
@@ -223,7 +231,16 @@ async function main() {
       path.join(distDir, 'Release.gpg'),
       run(
         'gpg',
-        [...gpgBaseArgs, '--local-user', options.gpgKey, '--armor', '--detach-sign', '--output', '-', releasePath],
+        [
+          ...gpgBaseArgs,
+          '--local-user',
+          options.gpgKey,
+          '--armor',
+          '--detach-sign',
+          '--output',
+          '-',
+          releasePath,
+        ],
         { cwd: repoDir },
       ),
     );

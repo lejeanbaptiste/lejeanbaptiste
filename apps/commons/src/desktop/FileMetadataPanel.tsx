@@ -59,14 +59,14 @@ const TeiSourceFields = ({
   value: SourceDescription;
 }) => {
   const { t } = useTranslation();
-  const isRange = value.workDate.when === undefined &&
+  const isRange =
+    value.workDate.when === undefined &&
     (value.workDate.notBefore !== undefined || value.workDate.notAfter !== undefined);
   const [rangeMode, setRangeMode] = useState(isRange);
 
   useEffect(() => {
     setRangeMode(isRange);
     // Only resync the toggle when the underlying document changes shape.
-     
   }, [isRange]);
 
   // EntityLookupField's work-title flow calls onChange (title link) and then,
@@ -121,7 +121,9 @@ const TeiSourceFields = ({
           if (Object.keys(patch).length > 0) update(patch);
         }}
         tag="title"
-        values={value.title ? [{ name: value.title, ref: value.titleRef, key: value.titleKey }] : []}
+        values={
+          value.title ? [{ name: value.title, ref: value.titleRef, key: value.titleKey }] : []
+        }
       />
 
       <EntityLookupField
@@ -349,7 +351,12 @@ const SourceProfileControls = ({
           >
             {t('LWC.desktop.file_metadata.profile_apply')}
           </Button>
-          <Button disabled={disabled} onClick={() => setSaveOpen(true)} size="small" variant="outlined">
+          <Button
+            disabled={disabled}
+            onClick={() => setSaveOpen(true)}
+            size="small"
+            variant="outlined"
+          >
             {t('LWC.desktop.file_metadata.profile_save_as')}
           </Button>
           <Button
@@ -414,8 +421,7 @@ export const FileMetadataPanel = ({ visible = true }: { visible?: boolean }) => 
   const activeTab = openTabs.find((tab) => tab.filePath === activeTabPath);
   const catalogId = config?.schema?.catalogId;
   // Structured TEI fields unless a project template overrides the file fields.
-  const structured =
-    isTeiCatalogForFileMetadata(catalogId) && !(fieldsTemplate?.file?.length ?? 0);
+  const structured = isTeiCatalogForFileMetadata(catalogId) && !(fieldsTemplate?.file?.length ?? 0);
   const metadataFields = resolveFileMetadataFields(fieldsTemplate, catalogId);
   const xml = activeTabPath ? getActiveTabXml(activeTabPath, openTabs) : '';
   const supported = Boolean(activeTabPath && xml && documentSupportsFileMetadata(xml, catalogId));
@@ -568,8 +574,7 @@ export const FileMetadataPanel = ({ visible = true }: { visible?: boolean }) => 
         ) : (
           metadataFields.map((field) => {
             const label = localizeMetadataFieldLabel(field.path, field.label, t);
-            const isSource =
-              field.path === 'sourceDesc/p' || field.path === 'FILEDESC/SOURCEDESC';
+            const isSource = field.path === 'sourceDesc/p' || field.path === 'FILEDESC/SOURCEDESC';
             return (
               <TextField
                 key={field.path}

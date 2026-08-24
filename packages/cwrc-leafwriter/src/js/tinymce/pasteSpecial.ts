@@ -81,11 +81,7 @@ export const detectPasteAmbiguity = ({
 };
 
 export const escapeHtml = (value: string): string =>
-  value
-    .replace(/&/g, '&amp;')
-    .replace(/</g, '&lt;')
-    .replace(/>/g, '&gt;')
-    .replace(/"/g, '&quot;');
+  value.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
 
 const splitParagraphs = (text: string, singleNewlineFallback = false): string[] => {
   const normalized = text.replace(/\r\n?/g, '\n');
@@ -98,7 +94,11 @@ const splitParagraphs = (text: string, singleNewlineFallback = false): string[] 
     .filter(Boolean);
 };
 
-export const textToParagraphHtml = (text: string, blockTag = 'p', singleNewlineFallback = false): string =>
+export const textToParagraphHtml = (
+  text: string,
+  blockTag = 'p',
+  singleNewlineFallback = false,
+): string =>
   splitParagraphs(text, singleNewlineFallback)
     .map((paragraph) => {
       const html = paragraph

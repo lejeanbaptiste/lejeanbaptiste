@@ -17,14 +17,16 @@ import { getEditorTagContext } from './tagSuggestions';
 import { loadTagStats, updateTagStatsForFile } from './tagStats';
 
 const isVisualEditorActive = (): boolean =>
-  Boolean(window.writer?.editor) &&
-  window.writer?.overmindState?.ui?.editorViewMode !== 'source';
+  Boolean(window.writer?.editor) && window.writer?.overmindState?.ui?.editorViewMode !== 'source';
 
 export interface AttributeCommandController {
   anchor: { left: number; top: number } | null;
   closePopup: () => void;
   focusedField: 'name' | 'value';
-  handleEditorKeyDown: (event: KeyboardEvent, options: { tagPopupOpen: boolean; walkMode: boolean }) => boolean;
+  handleEditorKeyDown: (
+    event: KeyboardEvent,
+    options: { tagPopupOpen: boolean; walkMode: boolean },
+  ) => boolean;
   handlePopupKeyDown: (event: React.KeyboardEvent) => void;
   highlightedIndex: number;
   nameFilter: string;
@@ -86,7 +88,11 @@ export const useAttributeCommandController = (): AttributeCommandController => {
   const highlightedAttribute = visibleAttributes[highlightedIndex] ?? null;
 
   const valueSuggestions = useMemo(() => {
-    const attrName = resolveAttributeNameForApply(schemaAttributes, nameFilter, highlightedAttribute)?.name;
+    const attrName = resolveAttributeNameForApply(
+      schemaAttributes,
+      nameFilter,
+      highlightedAttribute,
+    )?.name;
     if (!attrName || !stats || !tagName) return [];
     return suggestAttributeValues(tagName, attrName, stats, valueFilter);
   }, [highlightedAttribute, nameFilter, schemaAttributes, stats, tagName, valueFilter]);
@@ -105,41 +111,47 @@ export const useAttributeCommandController = (): AttributeCommandController => {
     setTagName('');
   }, []);
 
-  const loadSchemaForTag = useCallback(async (element: Element) => {
-    const attrs = await fetchSchemaAttributes(element);
-    const sorted = stats
-      ? orderAttributeSuggestions(attrs, element.getAttribute('_tag') ?? '', stats, '')
-      : attrs;
-    setSchemaAttributes(sorted);
-    setHighlightedIndex(0);
-  }, [stats]);
+  const loadSchemaForTag = useCallback(
+    async (element: Element) => {
+      const attrs = await fetchSchemaAttributes(element);
+      const sorted = stats
+        ? orderAttributeSuggestions(attrs, element.getAttribute('_tag') ?? '', stats, '')
+        : attrs;
+      setSchemaAttributes(sorted);
+      setHighlightedIndex(0);
+    },
+    [stats],
+  );
 
-  const openPopup = useCallback(async (anchorOverride?: { left: number; top: number } | null) => {
-    if (!isVisualEditorActive()) return false;
+  const openPopup = useCallback(
+    async (anchorOverride?: { left: number; top: number } | null) => {
+      if (!isVisualEditorActive()) return false;
 
-    const ctx = getEditorTagContext();
-    const element = ctx?.tagElement;
-    if (!element) {
-      notifyViaSnackbar({
-        message: t('LWC.desktop.tagging.place_caret_in_tag'),
-        options: { variant: 'info' },
-      });
+      const ctx = getEditorTagContext();
+      const element = ctx?.tagElement;
+      if (!element) {
+        notifyViaSnackbar({
+          message: t('LWC.desktop.tagging.place_caret_in_tag'),
+          options: { variant: 'info' },
+        });
+        return true;
+      }
+
+      const name = element.getAttribute('_tag') ?? '';
+      setTagElement(element);
+      setTagName(name);
+      setNameFilter('');
+      setValueFilter('');
+      setFocusedField('name');
+      setHighlightedIndex(0);
+      setAnchor(getCaretScreenPosition(anchorOverride));
+      setOpen(true);
+      await loadSchemaForTag(element);
+      window.writer?.layoutManager?.showModule('attributes');
       return true;
-    }
-
-    const name = element.getAttribute('_tag') ?? '';
-    setTagElement(element);
-    setTagName(name);
-    setNameFilter('');
-    setValueFilter('');
-    setFocusedField('name');
-    setHighlightedIndex(0);
-    setAnchor(getCaretScreenPosition(anchorOverride));
-    setOpen(true);
-    await loadSchemaForTag(element);
-    window.writer?.layoutManager?.showModule('attributes');
-    return true;
-  }, [loadSchemaForTag, notifyViaSnackbar, t]);
+    },
+    [loadSchemaForTag, notifyViaSnackbar, t],
+  );
 
   const commitAttribute = useCallback(async () => {
     if (applyingRef.current || !tagElement) return;
@@ -147,7 +159,9 @@ export const useAttributeCommandController = (): AttributeCommandController => {
     const attr = resolveAttributeNameForApply(schemaAttributes, nameFilter, highlightedAttribute);
     if (!attr) {
       notifyViaSnackbar({
-        message: nameFilter.trim() ? `Attribute "${nameFilter.trim()}" is not valid here.` : 'Enter an attribute name.',
+        message: nameFilter.trim()
+          ? `Attribute "${nameFilter.trim()}" is not valid here.`
+          : 'Enter an attribute name.',
         options: { variant: 'info' },
       });
       return;
@@ -191,7 +205,11 @@ export const useAttributeCommandController = (): AttributeCommandController => {
       if (event.key === 'Tab' && !event.shiftKey) {
         event.preventDefault();
         if (focusedField === 'name') {
-          const attr = resolveAttributeNameForApply(schemaAttributes, nameFilter, highlightedAttribute);
+          const attr = resolveAttributeNameForApply(
+            schemaAttributes,
+            nameFilter,
+            highlightedAttribute,
+          );
           if (attr) setNameFilter(attr.name);
           setFocusedField('value');
         }

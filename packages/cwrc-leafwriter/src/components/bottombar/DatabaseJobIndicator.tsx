@@ -11,9 +11,7 @@ export const DatabaseJobIndicator = () => {
   const progress = useSyncExternalStore(subscribeDatabaseJobProgress, getDatabaseJobProgress);
   if (!progress.active) return null;
   const determinate = progress.total > 0;
-  const caption = progress.detail
-    ? `${progress.label} · ${progress.detail}`
-    : `${progress.label}…`;
+  const caption = progress.detail ? `${progress.label} · ${progress.detail}` : `${progress.label}…`;
 
   return (
     <Stack direction="row" alignItems="center" spacing={0.75} sx={{ flexShrink: 0, maxWidth: 360 }}>

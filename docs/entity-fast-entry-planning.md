@@ -4,7 +4,7 @@
 
 ## 1. Why this doc exists
 
-The entity database viewer shipped (V0–V4 in the companion doc): cards render, backlinks work, inline edit exists in both the editor sidebar and the database window. But "inline edit" there means *document-editing* interaction — click a field, a text box appears, blur or Enter/Escape to commit, repeat per field. That's fine for touching one or two fields on one entity. It is not fast for the actual recurring job: correcting the same field across many entities in one sitting (e.g. fixing romanization on 40 rows after a segmenter bug), which wants to feel like editing a CSV in a spreadsheet app — type, Enter, next row, no mouse.
+The entity database viewer shipped (V0–V4 in the companion doc): cards render, backlinks work, inline edit exists in both the editor sidebar and the database window. But "inline edit" there means _document-editing_ interaction — click a field, a text box appears, blur or Enter/Escape to commit, repeat per field. That's fine for touching one or two fields on one entity. It is not fast for the actual recurring job: correcting the same field across many entities in one sitting (e.g. fixing romanization on 40 rows after a segmenter bug), which wants to feel like editing a CSV in a spreadsheet app — type, Enter, next row, no mouse.
 
 This doc is about closing that gap, not about redesigning the cards that already work.
 
@@ -23,10 +23,10 @@ No grid-editing primitive exists anywhere in the codebase — no DataGrid, ag-gr
 
 Worth naming explicitly, because conflating them is probably why neither current card feels fast:
 
-| Job | Shape it wants | Current home |
-|---|---|---|
-| Fix several fields on **one** entity (disambiguation cleanup, filling in a date, linking an authority) | Vertical form/card | Both cards, sort of — just slow because of click-to-reveal + no keyboard flow |
-| Fix **one** field across many entities (bulk romanization fix, bulk nationality correction) | Columnar grid, CSV-like | Nothing today — this is the real gap |
+| Job                                                                                                    | Shape it wants          | Current home                                                                  |
+| ------------------------------------------------------------------------------------------------------ | ----------------------- | ----------------------------------------------------------------------------- |
+| Fix several fields on **one** entity (disambiguation cleanup, filling in a date, linking an authority) | Vertical form/card      | Both cards, sort of — just slow because of click-to-reveal + no keyboard flow |
+| Fix **one** field across many entities (bulk romanization fix, bulk nationality correction)            | Columnar grid, CSV-like | Nothing today — this is the real gap                                          |
 
 The second job is the one motivating "wicked fast, all keystrokes, CSV-on-a-fast-machine." It's a genuinely different interaction, not a faster version of the card.
 
@@ -59,7 +59,7 @@ Don't try to make one card widget serve both jobs. Concretely:
 
 ## 7. Relationship to existing docs
 
-| Document | Role |
-|---|---|
+| Document                                                                 | Role                                                                                                                    |
+| ------------------------------------------------------------------------ | ----------------------------------------------------------------------------------------------------------------------- |
 | [entity-database-viewer-planning.md](entity-database-viewer-planning.md) | The shipped card viewer/editor this doc extends; defines `EntitySummary` and the existing sidebar/database-window split |
-| **This doc** | Proposal for a keystroke-driven bulk-editing grid mode, distinct from the existing per-entity cards |
+| **This doc**                                                             | Proposal for a keystroke-driven bulk-editing grid mode, distinct from the existing per-entity cards                     |

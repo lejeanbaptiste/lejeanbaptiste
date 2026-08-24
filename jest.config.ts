@@ -43,7 +43,8 @@ const config: Config.InitialOptions = {
           '<rootDir>/packages/cwrc-leafwriter-storage-service/src/index.tsx',
         '^@cwrc/leafwriter-storage-service/(.*)$':
           '<rootDir>/packages/cwrc-leafwriter-storage-service/src/$1',
-        '^@octokit/rest$': '<rootDir>/packages/cwrc-leafwriter-storage-service/test/mocks/octokit.ts',
+        '^@octokit/rest$':
+          '<rootDir>/packages/cwrc-leafwriter-storage-service/test/mocks/octokit.ts',
         '^dexie$': dexieModulePath,
         '^nanoid$': '<rootDir>/packages/cwrc-leafwriter-storage-service/test/mocks/nanoid.ts',
       },
@@ -68,8 +69,7 @@ const config: Config.InitialOptions = {
       moduleNameMapper: {
         '^dexie$': dexieModulePath,
         // Holds `import.meta`, which ts-jest cannot compile to CJS; see the stub.
-        '.*/devWorkerUrl$':
-          '<rootDir>/packages/cwrc-leafwriter/test/mocks/devWorkerUrl.ts',
+        '.*/devWorkerUrl$': '<rootDir>/packages/cwrc-leafwriter/test/mocks/devWorkerUrl.ts',
         // ESM-only, so jest's CJS resolver cannot reach it; see the stub.
         '^maplibre-gl$': '<rootDir>/packages/cwrc-leafwriter/test/mocks/maplibreGl.ts',
         '\\.(png|jpe?g|gif|svg|webp)$': '<rootDir>/packages/cwrc-leafwriter/test/fileMock.cjs',
@@ -134,8 +134,7 @@ const config: Config.InitialOptions = {
           '<rootDir>/packages/cwrc-leafwriter-storage-service/src/$1',
         '^dexie$': dexieModulePath,
         // Holds `import.meta`, which ts-jest cannot compile to CJS; see the stub.
-        '.*/devWorkerUrl$':
-          '<rootDir>/packages/cwrc-leafwriter/test/mocks/devWorkerUrl.ts',
+        '.*/devWorkerUrl$': '<rootDir>/packages/cwrc-leafwriter/test/mocks/devWorkerUrl.ts',
         // ESM-only, so jest's CJS resolver cannot reach it; see the stub.
         '^maplibre-gl$': '<rootDir>/packages/cwrc-leafwriter/test/mocks/maplibreGl.ts',
         '\\.(png|jpe?g|gif|svg|webp)$': '<rootDir>/packages/cwrc-leafwriter/test/fileMock.cjs',
@@ -154,7 +153,9 @@ const config: Config.InitialOptions = {
       preset: 'ts-jest',
       // tibetan-ewts-converter ships ESM-only; let ts-jest compile it to CJS.
       // nanoid ships ESM only, so it must be transformed rather than skipped.
-      transformIgnorePatterns: ['/node_modules/(?!(tibetan-ewts-converter|nanoid|query-string|decode-uri-component|split-on-first|filter-obj)/)'],
+      transformIgnorePatterns: [
+        '/node_modules/(?!(tibetan-ewts-converter|nanoid|query-string|decode-uri-component|split-on-first|filter-obj)/)',
+      ],
       transform: {
         '\\.mjs$': ['ts-jest', { tsconfig: { allowJs: true } }],
         // Bundled CSL citation styles and locales (webpack asset/source in the real build).

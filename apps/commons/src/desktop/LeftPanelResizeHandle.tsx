@@ -6,7 +6,10 @@ interface LeftPanelResizeHandleProps {
   onWidthChange: (width: number) => void;
 }
 
-export const LeftPanelResizeHandle = ({ panelWidth, onWidthChange }: LeftPanelResizeHandleProps) => {
+export const LeftPanelResizeHandle = ({
+  panelWidth,
+  onWidthChange,
+}: LeftPanelResizeHandleProps) => {
   const draggingRef = useRef(false);
   const startXRef = useRef(0);
   const startWidthRef = useRef(panelWidth);

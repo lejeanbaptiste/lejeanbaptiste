@@ -1,4 +1,5 @@
 # Unrelated
+
 CRUCIAL: the style name finder placed the character 字 in the wrong place, AFTER the name. The \1 and \2 capture groups appear to be reversed.
 I'm still getting tag bomb results that are in the TEI header or somewhere that is not visible, including latin characters...
 XML tree viewer was broken, stale tree race -- confirm the fix works.
@@ -14,7 +15,7 @@ Opened LJB, document loads; CPU peaks around 26%; RAM 1700. Once loaded these dr
 
 Maybe 10 tabs were open. I closed all but one. There was a minute long spike of activity, but now the CPU and RAM are about identical to the situation with 10 tabs open.
 
-Poking around in some panels, navigating the text, doing very light things, memory would go up to just below 2 Go, cpu max at 20%. 
+Poking around in some panels, navigating the text, doing very light things, memory would go up to just below 2 Go, cpu max at 20%.
 
 Editing the one-line description in entities viewer pop-up is painfully slow and has the cpu working at 26% constantly. It takes several seconds to delete one character.
 

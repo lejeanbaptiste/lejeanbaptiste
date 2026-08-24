@@ -52,7 +52,9 @@ describe('filterNestedSameTagAdds', () => {
   });
 
   it('keeps an add on plain text', () => {
-    const doc = parse('<TEI><text><body><p><persName>張行成</persName>與洛陽</p></body></text></TEI>');
+    const doc = parse(
+      '<TEI><text><body><p><persName>張行成</persName>與洛陽</p></body></text></TEI>',
+    );
     const { suggestions, dropped } = filterNestedSameTagAdds(doc, 'ignore', [
       addSuggestion('洛陽', 1, 'placeName'),
     ]);

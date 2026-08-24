@@ -4,10 +4,7 @@ const isElement = (node: unknown): node is Element =>
   node instanceof Element || (!!node && (node as Node).nodeType === Node.ELEMENT_NODE);
 
 /** Build a TEI-style xpath from an editor element using _tag attributes. */
-export const getTeiXPathFromEditorElement = (
-  element: Element,
-  body: HTMLElement,
-): string => {
+export const getTeiXPathFromEditorElement = (element: Element, body: HTMLElement): string => {
   const segments: string[] = [];
   let current: Element | null = element;
 
@@ -19,9 +16,7 @@ export const getTeiXPathFromEditorElement = (
     if (!parent) break;
 
     const children = Array.from(parent.children) as Element[];
-    const siblings = children.filter((el) =>
-      matchesTeiTag(el.getAttribute('_tag'), tag),
-    );
+    const siblings = children.filter((el) => matchesTeiTag(el.getAttribute('_tag'), tag));
     const index = siblings.indexOf(current);
     const segment = index >= 0 ? `${tag}[${index + 1}]` : tag;
     segments.unshift(segment);

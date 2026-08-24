@@ -85,10 +85,7 @@ import { setAppLocale } from './appLocale';
 import { mainT } from './mainI18n';
 import { checkLanguageToolText, testLanguageToolConnection } from './languageToolClient';
 import { applyWhitelistToMatches, loadLanguageToolEntityWhitelist } from './languageToolWhitelist';
-import {
-  resolveLanguageToolCheckBaseUrl,
-  sanitizeLanguageToolSettings,
-} from './languageTool';
+import { resolveLanguageToolCheckBaseUrl, sanitizeLanguageToolSettings } from './languageTool';
 import {
   downloadAndInstallLanguageTool,
   downloadEnglishNgrams,
@@ -674,9 +671,7 @@ const postAiEntityGlossWithStructuredOutputFallback = async (
   return response;
 };
 
-const suggestEntityGloss = async (
-  request: AiEntityGlossRequest,
-): Promise<AiEntityGlossResult> => {
+const suggestEntityGloss = async (request: AiEntityGlossRequest): Promise<AiEntityGlossResult> => {
   if (!request.targetLanguage?.trim()) {
     return { ok: false, error: 'A target language is required.' };
   }
@@ -1457,16 +1452,13 @@ const registerIpcHandlers = () => {
   // Electron's nativeTheme module tracks it through the native APIs instead,
   // so we rebroadcast its 'updated' event to the renderer.
   ipcMain.handle('nativeTheme:shouldUseDarkColors', () => nativeTheme.shouldUseDarkColors);
-  ipcMain.handle(
-    'nativeTheme:setThemeSource',
-    (_event, source: 'system' | 'light' | 'dark') => {
-      if (source !== 'system' && source !== 'light' && source !== 'dark') return false;
-      // Pin Chromium's prefers-color-scheme to the app preference so OS dark
-      // does not briefly restyle chrome when the user chose light (and vice versa).
-      nativeTheme.themeSource = source;
-      return true;
-    },
-  );
+  ipcMain.handle('nativeTheme:setThemeSource', (_event, source: 'system' | 'light' | 'dark') => {
+    if (source !== 'system' && source !== 'light' && source !== 'dark') return false;
+    // Pin Chromium's prefers-color-scheme to the app preference so OS dark
+    // does not briefly restyle chrome when the user chose light (and vice versa).
+    nativeTheme.themeSource = source;
+    return true;
+  });
   nativeTheme.on('updated', () => {
     for (const window of BrowserWindow.getAllWindows()) {
       if (!window.isDestroyed()) {

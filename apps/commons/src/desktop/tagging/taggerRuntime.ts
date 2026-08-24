@@ -26,10 +26,7 @@ export const getBookmark = (editor: { selection: unknown }): RuntimeBookmark => 
   return bookmark;
 };
 
-export const moveToBookmark = (
-  editor: { selection: unknown },
-  bookmark: RuntimeBookmark,
-): void => {
+export const moveToBookmark = (editor: { selection: unknown }, bookmark: RuntimeBookmark): void => {
   (editor.selection as SelectionWithBookmarks).moveToBookmark(bookmark as BookmarkLike);
 };
 

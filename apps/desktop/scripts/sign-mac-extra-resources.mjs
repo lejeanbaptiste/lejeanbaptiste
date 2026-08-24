@@ -75,7 +75,11 @@ export default async function signMacExtraResources(context) {
 
   const appName = `${context.packager.appInfo.productFilename}.app`;
   const resourcesDir = path.join(context.appOutDir, appName, 'Contents', 'Resources');
-  const entitlements = path.join(context.packager.projectDir, 'resources', 'entitlements.mac.plist');
+  const entitlements = path.join(
+    context.packager.projectDir,
+    'resources',
+    'entitlements.mac.plist',
+  );
 
   const binaries = [];
   for (const dir of SIGN_DIRS) {

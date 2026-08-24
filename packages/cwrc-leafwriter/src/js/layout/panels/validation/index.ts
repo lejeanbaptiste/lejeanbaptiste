@@ -67,7 +67,7 @@ class Validation {
 
     this.writer.event('documentLoaded').subscribe(() => {
       this.clearResult();
-       
+
       const hasValidorHasSchema = !!writer.overmindState.validator.hasSchema;
       if (hasValidorHasSchema) this.writer.validate();
     });
@@ -97,9 +97,14 @@ class Validation {
       void this.validate();
     });
 
-    this.writer
-      .event('documentValidated')
-      .subscribe((_valid: boolean, result: ValidationResponse & { parseError?: { message: string; positions?: XMLParseErrorPosition[] }; schemaUnavailable?: boolean }) => {
+    this.writer.event('documentValidated').subscribe(
+      (
+        _valid: boolean,
+        result: ValidationResponse & {
+          parseError?: { message: string; positions?: XMLParseErrorPosition[] };
+          schemaUnavailable?: boolean;
+        },
+      ) => {
         $(`#${this.id}_indicator`).hide();
         this.showValidationResult(result);
         if (result.errors?.length || result.parseError || result.schemaUnavailable) {
@@ -107,7 +112,8 @@ class Validation {
             this.writer.layoutManager.showModule('validation');
           }
         }
-      });
+      },
+    );
 
     this.writer.event('documentValidating').subscribe((partDone: number) => {
       const pct = `${Math.floor(partDone * 100)}%`;
@@ -133,7 +139,6 @@ class Validation {
   }
 
   async validate() {
-     
     await this.writer.overmindActions.validator.validate();
   }
 
@@ -160,7 +165,7 @@ class Validation {
 
       // eslint-disable-next-line @typescript-eslint/ban-ts-comment
       //@ts-expect-error
-       
+
       const $validateButton = list.find(`.revalidate-button`).button();
       $validateButton.on('click', () => this.writer.validate());
 
@@ -200,8 +205,14 @@ class Validation {
         </div>
       `);
 
-      //@ts-expect-error
-      $stats.find('.validation-info').button().on('click', () => this.writer.validate());
+      $stats
+        .find('.validation-info')
+        // jQuery UI's .button() is not in the bundled jQuery types. The directive
+        // sits on this line specifically: it is line-scoped, so it has to hug the
+        // call it suppresses rather than the head of the chain.
+        //@ts-expect-error
+        .button()
+        .on('click', () => this.writer.validate());
 
       return;
     }
@@ -213,9 +224,7 @@ class Validation {
 
       const parseErrors: { message: string }[] = parseError.positions?.length
         ? parseError.positions.map((pos: XMLParseErrorPosition) => ({
-            message:
-              pos.message ??
-              `Line ${pos.line}, column ${pos.col}: ${parseError.message}`,
+            message: pos.message ?? `Line ${pos.line}, column ${pos.col}: ${parseError.message}`,
           }))
         : [{ message: parseError.message }];
 
@@ -245,8 +254,14 @@ class Validation {
         </div>
       `);
 
-      //@ts-expect-error
-      $stats.find('.validation-info').button().on('click', () => this.writer.validate());
+      $stats
+        .find('.validation-info')
+        // jQuery UI's .button() is not in the bundled jQuery types. The directive
+        // sits on this line specifically: it is line-scoped, so it has to hug the
+        // call it suppresses rather than the head of the chain.
+        //@ts-expect-error
+        .button()
+        .on('click', () => this.writer.validate());
 
       return;
     }

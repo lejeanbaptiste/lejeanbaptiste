@@ -1,7 +1,4 @@
-import {
-  allowedOwnDatabaseServiceIds,
-  projectSyncsToCentral,
-} from './lookupMode';
+import { allowedOwnDatabaseServiceIds, projectSyncsToCentral } from './lookupMode';
 import { CENTRAL_ENTITY_DATABASE_SERVICE_ID } from '../../services/central-entity-database-lookup';
 import { ENTITY_DATABASE_SERVICE_ID } from '../../services/entity-database-lookup';
 

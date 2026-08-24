@@ -60,7 +60,10 @@ export const extractOdtTextFromContentXml = (contentXml: string): ExtractedOdtTe
   const paragraphs: string[] = [];
 
   const walkBlocks = (element: Element) => {
-    if (element.namespaceURI === TEXT_NS && (element.localName === 'p' || element.localName === 'h')) {
+    if (
+      element.namespaceURI === TEXT_NS &&
+      (element.localName === 'p' || element.localName === 'h')
+    ) {
       paragraphs.push(collectInlineText(element, warnings));
       return;
     }
@@ -72,7 +75,10 @@ export const extractOdtTextFromContentXml = (contentXml: string): ExtractedOdtTe
   walkBlocks(doc.documentElement);
 
   return {
-    text: paragraphs.map((paragraph) => paragraph.trim()).filter(Boolean).join('\n\n'),
+    text: paragraphs
+      .map((paragraph) => paragraph.trim())
+      .filter(Boolean)
+      .join('\n\n'),
     warnings,
   };
 };

@@ -105,18 +105,15 @@ describe('splitPlaceAdminSuffix', () => {
   });
 });
 
-
 describe('romanizeFromAuthorityMetadata', () => {
   it('prefers authority-provided pinyin', () => {
-    expect(
-      romanizeFromAuthorityMetadata({ pinyin: 'An Dun' }, '安惇', 'zh-Hant'),
-    ).toBe('An Dun');
+    expect(romanizeFromAuthorityMetadata({ pinyin: 'An Dun' }, '安惇', 'zh-Hant')).toBe('An Dun');
   });
 
   it('converts NDL yomi katakana to Hepburn', () => {
-    expect(
-      romanizeFromAuthorityMetadata({ yomi: 'ナツメ ソウセキ' }, '夏目漱石', 'ja'),
-    ).toBe('Natsume Souseki');
+    expect(romanizeFromAuthorityMetadata({ yomi: 'ナツメ ソウセキ' }, '夏目漱石', 'ja')).toBe(
+      'Natsume Souseki',
+    );
   });
 
   it('falls back to autogeneration from the primary name', () => {
@@ -133,7 +130,7 @@ describe('foldForSearch', () => {
   it('strips tone marks, case, and separators', () => {
     expect(foldForSearch('Zhāng Héng')).toBe('zhangheng');
     expect(foldForSearch('Zhang Heng')).toBe('zhangheng');
-    expect(foldForSearch("Blo-bzang grags-pa")).toBe('blobzanggragspa');
+    expect(foldForSearch('Blo-bzang grags-pa')).toBe('blobzanggragspa');
     expect(foldForSearch("O'Brien")).toBe('obrien');
   });
 

@@ -7,17 +7,20 @@
 Smallest piece, unblocks everything else.
 
 **Decide first:**
+
 - [x] Code list: BCP-47 (`zh-Hant`, `zh-Hans`, `en`, `fr`, …) — do we distinguish Hant/Hans for gating, or gate on primary subtag `zh`? DPM: yes.
 - [x] Where the setting lives: project schema? translation-pane language? both feeding one "project languages" set? DPM: project schema and translation pane both use languages, both will use fixed codes, one for the source documents, one for translation languages. Tagging and disambiguation only matter for the source document, its language is determined at the project level.
 - [x] Migration for existing projects with free-text language values. DPM: if there's no language, reopen the project settings before allowing the user to proceed. Language is mandatory.
 
 **Prepare:**
+
 - [x] Replace free-text language entry with a fixed-code picker.
 - [x] A single `isChineseEnabled(project)` predicate the rest of the feature keys off.
 
 **Done when:** a project can declare Chinese via a fixed code, and non-Chinese projects see none of the new UI.
 
 **Status (2026-07-04):** built.
+
 - Fixed code list (BCP-47, incl. `zh-Hant`/`zh-Hans`/`lzh` Literary Chinese) lives in `packages/cwrc-leafwriter/src/utilities/languageCodes.ts`; light windows import it via the `@cwrc/leafwriter/languageCodes` alias (webpack + tsconfig) so native dialogs don't pull in the editor bundle.
 - Project settings dialog (`NativeProjectMetadataPage`): "Source language" is now a required select (legacy free-text values stay selectable, marked "(legacy)"); Save buttons disable while it's empty. Translation languages are added from the same fixed list (label auto-filled); the free-text code/label inputs are gone.
 - `normalizeLanguageIdent` now preserves hyphenated BCP-47 tags with canonical case (`zh-hant` → `zh-Hant`) instead of truncating them.
@@ -27,10 +30,12 @@ Smallest piece, unblocks everything else.
 ## Phase A1 — Download manager
 
 **Decide first:**
+
 - [x] Storage location: repo-level `databases/` vs. per-user app-data dir (desktop). Web app: probably unsupported at first — confirm desktop-only for v1. DPM: this will be alongside the user's central database wherever the user chose to install that. BTW, we didn't go through this while developping, so let's use test_project as our main folder, and corpus_a as our project. I've changed names already.
 - [x] Download UX: settings section vs. prompt-on-first-Chinese-project. DPM: prompt on first Chinese project.
 
 **Prepare:**
+
 - [ ] Fetcher: CBDB zip from the HuggingFace URL (manifest JSON already gives URL + sha256), DILA person/place/districts XML from `DILA-edu/Authority-Databases` (pin a commit; record it in our manifest).
 - [ ] Checksum verification, unzip, and a per-source manifest file (`source, version/date, sha256, upstream URL, installedAt`).
 - [ ] Presence + valid-manifest check = source availability; nothing else in the app looks at the raw files.
@@ -38,6 +43,7 @@ Smallest piece, unblocks everything else.
 **Done when:** from a Chinese project, the user can fetch both sources; a corrupted or missing file simply makes the source unavailable.
 
 **Status (2026-07-04):** built.
+
 - `apps/desktop/src/authorityDatabases.ts` (electron-free, unit-tested): source specs — CBDB zip pinned to the HuggingFace 20260627 release (sha256-verified sqlite, extracted via JSZip stream), DILA person/place/districts XML pinned to commit `385e3f55` (2026-06-30) on `DILA-edu/Authority-Databases`. Files download to `<entityDbFolder>/authority-databases/` under temp names, rename into place after hashing, manifest (`<id>.manifest.json`: version, per-file sha256/bytes/upstream URL, installedAt) written last — a crashed download never reads as installed.
 - Availability = manifest parses + every listed file present with recorded size (`getAuthorityStatuses`); no other code touches the raw files.
 - IPC: `authorityDb:statuses`, `authorityDb:download` (streams progress events, throttled; system notification on success/failure; concurrent-download guard), `authorityDb:promptDownload` (native dialog; decline is remembered via `download-declined.json` marker so the user isn't nagged — the A4 panel can still trigger downloads).
@@ -77,14 +83,17 @@ cd leaf-writer && node scripts/sync-authority-packs.mjs /path/to/entityDbFolder
 **Status (2026-07-05):** built for v1 tag bomb path.
 
 **Decide first:**
+
 - [x] Memory budget: stream NDJSON + build index incrementally (no 659k `push()`); date filter **before** index build.
 
 **Prepare:**
+
 - [x] Loader: seed index `Map<tag+surface, candidates[]>`; overlap merge **only** when DILA `idno type="CBDB"` crosswalk links to CBDB (`authorityOverlap.ts`). Same string without crosswalk → separate suggestions; user may link manually in disambiguation (4b).
 - [x] Date-range filter at load time (`candidateIntersectsYearRange`).
 - [x] Wire into seed matcher; suggestions carry `sourceDetail` + `rationale` clue.
 
 **Still to do:**
+
 - [x] Formal filtered memory check in the desktop app: a cutoff through 530 CE peaked at about 236 MB after the one-shot read path was added
 - [ ] Formal full-pack memory/time profile without a date filter
 
@@ -95,9 +104,11 @@ cd leaf-writer && node scripts/sync-authority-packs.mjs /path/to/entityDbFolder
 **Status (2026-07-05):** partial.
 
 **Decide first:**
+
 - [x] Slider design: single year-range slider with dynasty presets as labeled stops (Eastern Han, Tang, Song, Ming–Qing).
 
 **Prepare:**
+
 - [x] Authority dialog: checkbox per pack, date slider, hide undated, install-from-source.
 - [x] Review panel: source badge (`CBDB+DILA`), clue line (`rationale`); DILA disambiguation in clue when compiled.
 - [x] Post-run notice: per-pack entry counts + match count.
@@ -145,11 +156,11 @@ cd leaf-writer && node scripts/sync-authority-packs.mjs /path/to/entityDbFolder
 
 **Reference artifacts:**
 
-| File | Origin |
-|------|--------|
-| `cbdb-person.sqlite3` | Stripped from full CBDB (person/names/dynasty/addr/postings/offices only) |
-| `norbert.sqlite3` | Public allowlisted SQL → sqlite + `dynasty_labels` |
-| `dila-person.xml` (+ place/districts) | DILA Open Content / GitHub mirror |
+| File                                  | Origin                                                                    |
+| ------------------------------------- | ------------------------------------------------------------------------- |
+| `cbdb-person.sqlite3`                 | Stripped from full CBDB (person/names/dynasty/addr/postings/offices only) |
+| `norbert.sqlite3`                     | Public allowlisted SQL → sqlite + `dynasty_labels`                        |
+| `dila-person.xml` (+ place/districts) | DILA Open Content / GitHub mirror                                         |
 
 ## Phase H — CHGIS
 

@@ -44,9 +44,7 @@ export const findDuplicateSchemaIdInDocument = (
   for (const tag of tagged) {
     if (excludeElement && tag === excludeElement) continue;
     const attrs = writer.tagger.getAttributesForTag(tag);
-    const existing =
-      attrs[schemaId] ??
-      (schemaId !== 'id' ? attrs.id : undefined);
+    const existing = attrs[schemaId] ?? (schemaId !== 'id' ? attrs.id : undefined);
     if (typeof existing === 'string' && existing.trim() === normalized) {
       return tag.getAttribute('_tag') ?? 'element';
     }

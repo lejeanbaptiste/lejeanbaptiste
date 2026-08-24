@@ -188,9 +188,7 @@ export const buildMarkdownDocument = (
     .map((footnoteBody, index) => `[^${index + 1}]: ${footnoteBody}`)
     .join('\n');
 
-  return [body, footnoteDefs, markdownReferences(bibliography).trim()]
-    .filter(Boolean)
-    .join('\n\n');
+  return [body, footnoteDefs, markdownReferences(bibliography).trim()].filter(Boolean).join('\n\n');
 };
 
 /* ---------------------------------------------------------------------- raw text */

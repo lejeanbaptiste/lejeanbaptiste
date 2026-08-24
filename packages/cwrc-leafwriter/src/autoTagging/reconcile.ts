@@ -99,7 +99,11 @@ export function readFields(item: Element): EntityFields {
   const nameTag = nameTagForItem(item);
 
   for (const child of Array.from(item.children)) {
-    if (nameTag && child.localName === nameTag && readEntityValueProvenance(child).status === 'active') {
+    if (
+      nameTag &&
+      child.localName === nameTag &&
+      readEntityValueProvenance(child).status === 'active'
+    ) {
       const text = child.textContent?.trim();
       if (text) {
         names.push({
@@ -186,9 +190,16 @@ const compareChanged = (a: string | null, b: string | null): 'pedb' | 'cedb' | '
   return 'equal';
 };
 
-const SCALAR_FIELDS: ScalarField[] = ['description', 'familyName', 'givenName', 'startYear', 'endYear'];
+const SCALAR_FIELDS: ScalarField[] = [
+  'description',
+  'familyName',
+  'givenName',
+  'startYear',
+  'endYear',
+];
 
-const scalarOf = (fields: EntityFields, field: ScalarField): string | number | null => fields[field];
+const scalarOf = (fields: EntityFields, field: ScalarField): string | number | null =>
+  fields[field];
 
 /**
  * Plan the reconciliation of a PEDB entity against its CEDB counterpart. Pure —
@@ -331,7 +342,8 @@ export function applyReconcilePlan(
 ): { pedbChanged: boolean; cedbChanged: boolean } {
   const pedbItem = findEntity(pedbDoc, pedbId, pedbIndex);
   const cedbItem = findEntity(cedbDoc, cedbId, cedbIndex);
-  if (!pedbItem || !cedbItem) throw new Error('reconcile: entity not found in one of the documents');
+  if (!pedbItem || !cedbItem)
+    throw new Error('reconcile: entity not found in one of the documents');
 
   let pedbChanged = false;
   let cedbChanged = false;

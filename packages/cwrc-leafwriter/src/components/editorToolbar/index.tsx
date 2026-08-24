@@ -8,7 +8,10 @@ import { useActions, useAppState } from '../../overmind';
 import type { ChoiceDisplayMode } from '../../overmind/editor/state';
 import { EntityType } from '../../types';
 import { isAiUiFeatureEnabled } from '../../autoTagging/aiUiFeatures';
-import { aiApiSettingsFromDesktop, isAiSuggestReady } from '../../autoTagging/llmClientFromSettings';
+import {
+  aiApiSettingsFromDesktop,
+  isAiSuggestReady,
+} from '../../autoTagging/llmClientFromSettings';
 import { readPersistedDisambiguationSettings } from '../../autoTagging/disambiguationSettings';
 import { Button } from './Button';
 import { IconButton } from './IconButton';

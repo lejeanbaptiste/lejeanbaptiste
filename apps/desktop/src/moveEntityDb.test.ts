@@ -30,7 +30,9 @@ describe('moveEntityDbFolder', () => {
     await moveEntityDbFolder(source, dest);
 
     await expect(fs.access(dest)).resolves.toBeUndefined();
-    await expect(fs.readFile(path.join(dest, 'entities.xml'), 'utf-8')).resolves.toBe('<entities/>');
+    await expect(fs.readFile(path.join(dest, 'entities.xml'), 'utf-8')).resolves.toBe(
+      '<entities/>',
+    );
     await expect(fs.access(source)).rejects.toMatchObject({ code: 'ENOENT' });
   });
 
@@ -42,7 +44,9 @@ describe('moveEntityDbFolder', () => {
 
     await expect(moveEntityDbFolder(source, dest)).rejects.toThrow(MoveEntityDbError);
     await expect(fs.access(source)).resolves.toBeUndefined();
-    await expect(fs.readFile(path.join(dest, 'entities.xml'), 'utf-8')).resolves.toBe('<entities/>');
+    await expect(fs.readFile(path.join(dest, 'entities.xml'), 'utf-8')).resolves.toBe(
+      '<entities/>',
+    );
   });
 
   it('refuses nested source/destination paths', async () => {
@@ -70,7 +74,9 @@ describe('moveEntityDbFolder', () => {
 
     await moveEntityDbFolder(source, dest);
 
-    await expect(fs.readFile(path.join(dest, 'entities.xml'), 'utf-8')).resolves.toBe('<entities/>');
+    await expect(fs.readFile(path.join(dest, 'entities.xml'), 'utf-8')).resolves.toBe(
+      '<entities/>',
+    );
     await expect(fs.readFile(path.join(dest, 'readme.txt'), 'utf-8')).resolves.toBe('keep me');
     await expect(fs.access(source)).rejects.toMatchObject({ code: 'ENOENT' });
   });
@@ -80,13 +86,17 @@ describe('moveEntityDbFolder', () => {
     const dest = path.join(root, 'dest-db');
     await scaffoldEntityDb(source);
 
-    const renameSpy = jest.spyOn(fs, 'rename').mockRejectedValueOnce(Object.assign(new Error('EXDEV'), { code: 'EXDEV' }));
+    const renameSpy = jest
+      .spyOn(fs, 'rename')
+      .mockRejectedValueOnce(Object.assign(new Error('EXDEV'), { code: 'EXDEV' }));
 
     await moveEntityDbFolder(source, dest);
 
     renameSpy.mockRestore();
 
-    await expect(fs.readFile(path.join(dest, 'entities.xml'), 'utf-8')).resolves.toBe('<entities/>');
+    await expect(fs.readFile(path.join(dest, 'entities.xml'), 'utf-8')).resolves.toBe(
+      '<entities/>',
+    );
     await expect(fs.access(source)).rejects.toMatchObject({ code: 'ENOENT' });
   });
 });

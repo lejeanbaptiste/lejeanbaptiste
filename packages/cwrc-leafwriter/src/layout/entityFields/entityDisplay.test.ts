@@ -52,7 +52,10 @@ const luShao = (): EntitySummary =>
 const place = (overrides: Partial<EntitySummary> = {}): EntitySummary => ({
   id: 'place-1',
   kind: 'place',
-  names: [{ lang: 'zh-Hant', text: '建康' }, { lang: 'zh-Latn', text: 'Jiankang' }],
+  names: [
+    { lang: 'zh-Hant', text: '建康' },
+    { lang: 'zh-Latn', text: 'Jiankang' },
+  ],
   primaryName: '建康',
   romanizedName: 'Jiankang',
   translations: [],
@@ -189,7 +192,9 @@ describe('renderEntityFromSpec', () => {
   };
 
   test('brackets use square brackets around romanized family', () => {
-    expect(renderEntityFromSpec(person(), 2, familyInBrackets, ENGLISH_DEFAULTS)).toBe('[Cui] Zusi');
+    expect(renderEntityFromSpec(person(), 2, familyInBrackets, ENGLISH_DEFAULTS)).toBe(
+      '[Cui] Zusi',
+    );
   });
 
   test('first occurrence adds chinese and dates and keeps square brackets', () => {
@@ -413,7 +418,9 @@ describe('non-person kinds render a single name part, not family/given', () => {
     const dated = place({
       dates: { startYear: 317, endYear: 420, startPrecision: null, endPrecision: null },
     });
-    expect(renderEntityFromSpec(dated, 1, EMPTY_DISPLAY_SPEC, ENGLISH_DEFAULTS)).toBe('Jiankang 建康');
+    expect(renderEntityFromSpec(dated, 1, EMPTY_DISPLAY_SPEC, ENGLISH_DEFAULTS)).toBe(
+      'Jiankang 建康',
+    );
   });
 
   test('office likewise never shows a dates part even when dates are present', () => {
@@ -541,7 +548,9 @@ describe('non-person kinds render a single name part, not family/given', () => {
     expect(renderEntityFromSpec(work(), 1, EMPTY_DISPLAY_SPEC, ENGLISH_DEFAULTS)).toBe(
       'Book of Song (488)',
     );
-    expect(renderEntityFromSpec(work(), 2, EMPTY_DISPLAY_SPEC, ENGLISH_DEFAULTS)).toBe('Book of Song');
+    expect(renderEntityFromSpec(work(), 2, EMPTY_DISPLAY_SPEC, ENGLISH_DEFAULTS)).toBe(
+      'Book of Song',
+    );
   });
 });
 

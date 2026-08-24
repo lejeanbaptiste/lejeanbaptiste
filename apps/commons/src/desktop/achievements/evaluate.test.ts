@@ -189,11 +189,7 @@ describe('determineNewUnlocks', () => {
   it('awards Aspiring Sinologist for the Marina or Pandolfino names', () => {
     for (const encoderName of ['Marina', 'Pandolfino', 'Marina Dupont', 'Dr. pandolfino']) {
       expect(
-        determineNewUnlocks(
-          freshState(),
-          zeroMetrics(),
-          baseContext({ encoderName }),
-        ),
+        determineNewUnlocks(freshState(), zeroMetrics(), baseContext({ encoderName })),
       ).toContain('aspiring-sinologist');
     }
   });
@@ -305,7 +301,9 @@ describe('catalogue', () => {
     expect(RANK_MEDALS).toHaveLength(8);
     expect(RANK_MEDALS.every((medal) => medal.thresholds.length === RANK_NAMES.length)).toBe(true);
     expect(rankCount).toBe(56);
-    expect(TOTAL_ACHIEVEMENTS).toBe(rankCount + SPECIAL_ACHIEVEMENTS.length + RARE_ACHIEVEMENTS.length);
+    expect(TOTAL_ACHIEVEMENTS).toBe(
+      rankCount + SPECIAL_ACHIEVEMENTS.length + RARE_ACHIEVEMENTS.length,
+    );
     expect(TOTAL_ACHIEVEMENTS).toBe(83);
   });
 

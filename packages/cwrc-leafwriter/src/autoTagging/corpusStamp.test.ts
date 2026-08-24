@@ -42,7 +42,8 @@ describe('corpus PEDB stamp', () => {
   });
 
   it('skips files with no publicationStmt rather than corrupting them', () => {
-    const noHeader = '<TEI xmlns="http://www.tei-c.org/ns/1.0"><text><body><p>x</p></body></text></TEI>';
+    const noHeader =
+      '<TEI xmlns="http://www.tei-c.org/ns/1.0"><text><body><p>x</p></body></text></TEI>';
     const { xml, changed, skipped } = stampProjectDatabase(noHeader, 'pedb-123');
     expect(skipped).toBe(true);
     expect(changed).toBe(false);

@@ -27,7 +27,12 @@ describe('Norbert Wikipedia noble-title runtime', () => {
       ...candidate,
       metadata: {
         ...candidate.metadata,
-        nobleTitle: { fief: '宋', roleName: '帝', posthumousName: '孝武', posthumousNameAbbr: '武' },
+        nobleTitle: {
+          fief: '宋',
+          roleName: '帝',
+          posthumousName: '孝武',
+          posthumousNameAbbr: '武',
+        },
       },
     };
     const title = expandNorbertWikiNtCandidate(abbreviated).find(
@@ -69,11 +74,18 @@ describe('Norbert Wikipedia noble-title runtime', () => {
 
     // Keep this assertion close to the runtime boundary: the title candidate
     // must be represented independently of the longer wrapper candidate.
-    expect(expandNorbertWikiNtCandidate(candidate).map((item) => [item.metadata?.teiTag, item.searchStrings])).toEqual(
-      expect.arrayContaining([['nobleTitle', expect.arrayContaining(['江陽公'])]]),
-    );
+    expect(
+      expandNorbertWikiNtCandidate(candidate).map((item) => [
+        item.metadata?.teiTag,
+        item.searchStrings,
+      ]),
+    ).toEqual(expect.arrayContaining([['nobleTitle', expect.arrayContaining(['江陽公'])]]));
 
-    expect(wrapperSuggestions.some((item) => item.tag === 'name' && item.innerXml?.includes('王瑊'))).toBe(true);
-    expect(titleSuggestions.some((item) => item.tag === 'nobleTitle' && item.innerXml?.includes('江陽'))).toBe(true);
+    expect(
+      wrapperSuggestions.some((item) => item.tag === 'name' && item.innerXml?.includes('王瑊')),
+    ).toBe(true);
+    expect(
+      titleSuggestions.some((item) => item.tag === 'nobleTitle' && item.innerXml?.includes('江陽')),
+    ).toBe(true);
   });
 });

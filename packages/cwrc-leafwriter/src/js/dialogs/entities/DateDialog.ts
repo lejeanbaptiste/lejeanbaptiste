@@ -324,7 +324,8 @@ class DateDialog implements SchemaDialog {
 
     this.dialog.$el.on('beforeSave', (_event: JQuery.Event, dialog: DialogForm) => {
       if (this.eastAsianMode) {
-        const eastAsian = this.eastAsianMount?.getEastAsianDateFieldValues() ?? readEastAsianDateValues({});
+        const eastAsian =
+          this.eastAsianMount?.getEastAsianDateFieldValues() ?? readEastAsianDateValues({});
         if (!hasEastAsianCalendarContext(eastAsian)) {
           dialog.isValid = false;
           return;
@@ -412,8 +413,7 @@ class DateDialog implements SchemaDialog {
     }
 
     const language = (await window.__leafWriterProject?.getProjectSourceLanguage?.()) ?? null;
-    this.eastAsianMode =
-      isCjkDatesEnabled() && isEastAsianCalendarLanguageCode(language);
+    this.eastAsianMode = isCjkDatesEnabled() && isEastAsianCalendarLanguageCode(language);
     const $eastAsian = $(`#${id}_eastAsianDates`);
 
     if (!this.eastAsianMode) {

@@ -17,10 +17,7 @@ import {
   type ProjectFileConfig,
   type ProjectSchemaConfig,
 } from './projectFile';
-import {
-  shouldMergeSanmiaoDates,
-  writeSanmiaoMergedTeiSchema,
-} from './sanmiaoSchemaMerge';
+import { shouldMergeSanmiaoDates, writeSanmiaoMergedTeiSchema } from './sanmiaoSchemaMerge';
 import { isPluginEnabledInMain } from './plugins';
 import type { ProjectMetadataFile } from './projectTypes';
 import {
@@ -29,7 +26,10 @@ import {
   shouldBypassSchemaCheckThrottle,
   validateMetadataPathsAfterUpgrade,
 } from '../../commons/src/desktop/schemaUpdateLogic';
-import type { SchemaUpdateApplyResult, SchemaUpdateCheckResult } from '../../commons/src/desktop/schemaUpdateTypes';
+import type {
+  SchemaUpdateApplyResult,
+  SchemaUpdateCheckResult,
+} from '../../commons/src/desktop/schemaUpdateTypes';
 
 const TEI_NS = 'http://www.tei-c.org/ns/1.0';
 
@@ -45,9 +45,7 @@ const touchLastCheckedAt = async (projectFilePath: string, bundle: ProjectBundle
   await writeProjectConfig(projectFilePath, config);
 };
 
-const readMetadataFile = async (
-  bundle: ProjectBundle,
-): Promise<ProjectMetadataFile | null> => {
+const readMetadataFile = async (bundle: ProjectBundle): Promise<ProjectMetadataFile | null> => {
   const relative = bundle.config.metadata ?? 'schema/project-metadata.json';
   try {
     const raw = await fs.readFile(resolveProjectPath(bundle.rootPath, relative), 'utf-8');
@@ -78,7 +76,10 @@ export const checkCatalogSchemaUpdate = async (
     onDiskRngHash = sha256Hex(rngContent);
     if (schema.css) {
       try {
-        const cssContent = await fs.readFile(resolveProjectPath(bundle.rootPath, schema.css), 'utf-8');
+        const cssContent = await fs.readFile(
+          resolveProjectPath(bundle.rootPath, schema.css),
+          'utf-8',
+        );
         onDiskCssHash = sha256Hex(cssContent);
       } catch {
         onDiskCssHash = undefined;

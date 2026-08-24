@@ -2,7 +2,8 @@ import { separateBlockElements } from './xmlBlockSpacing';
 
 describe('separateBlockElements', () => {
   test('separates glued sibling paragraphs with depth-matching indentation', () => {
-    const input = '<TEI><text><body><p xml:id="p1">One</p><p xml:id="p2">Two</p></body></text></TEI>';
+    const input =
+      '<TEI><text><body><p xml:id="p1">One</p><p xml:id="p2">Two</p></body></text></TEI>';
     const result = separateBlockElements(input);
     // body is 3 levels deep (TEI > text > body), so paragraphs indent 3 units
     expect(result).toContain('</p>\n      <p xml:id="p2">');
@@ -28,9 +29,7 @@ describe('separateBlockElements', () => {
   });
 
   test('is idempotent', () => {
-    const once = separateBlockElements(
-      '<TEI><text><body><p>One</p><p>Two</p></body></text></TEI>',
-    );
+    const once = separateBlockElements('<TEI><text><body><p>One</p><p>Two</p></body></text></TEI>');
     expect(separateBlockElements(once)).toBe(once);
   });
 

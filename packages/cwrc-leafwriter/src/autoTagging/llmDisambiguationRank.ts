@@ -1,8 +1,5 @@
 import type { AiPromptProfile } from './aiPromptProfiles';
-import {
-  promptVersionWithProfile,
-  resolveDisambiguationRankTaskText,
-} from './aiPromptProfiles';
+import { promptVersionWithProfile, resolveDisambiguationRankTaskText } from './aiPromptProfiles';
 import { injectPlaceholder } from './prompts';
 import { languageLabelForCode } from '../utilities/languageCodes';
 import rankSystemTemplate from './prompt-templates/disambiguation-rank.system.txt';
@@ -38,10 +35,7 @@ const responseSchema: Record<string, unknown> = {
   additionalProperties: false,
 };
 
-function parseRankResponse(
-  json: string,
-  validIds: Set<string>,
-): DisambiguationAiRankResult | null {
+function parseRankResponse(json: string, validIds: Set<string>): DisambiguationAiRankResult | null {
   let parsed: unknown;
   try {
     parsed = JSON.parse(json);
@@ -122,7 +116,8 @@ function fallbackDateAnchoredSelection(
   return {
     selectedCandidateIds: [candidate.id],
     rationales: {
-      [candidate.id]: 'Fallback: exact label match and only dated candidate overlapping the document span.',
+      [candidate.id]:
+        'Fallback: exact label match and only dated candidate overlapping the document span.',
     },
     confidences: {
       [candidate.id]: 0.56,
@@ -158,11 +153,9 @@ export async function rankDisambiguationCandidates(options: {
   const user = formatDisambiguationRankContext(ctx);
   const validIds = new Set(candidates.map((c) => c.id));
   const candidateIds = candidates.map((c) => c.id);
-  const promptVersion = promptVersionWithProfile(
-    DISAMBIGUATION_RANK_PROMPT_VERSION,
-    promptProfile,
-  );
-  const taskTextTemplate = resolveDisambiguationRankTaskText(promptProfile) ?? rankSystemTemplate.trimStart();
+  const promptVersion = promptVersionWithProfile(DISAMBIGUATION_RANK_PROMPT_VERSION, promptProfile);
+  const taskTextTemplate =
+    resolveDisambiguationRankTaskText(promptProfile) ?? rankSystemTemplate.trimStart();
   const responseLanguage = preferredLanguage?.trim()
     ? languageLabelForCode(preferredLanguage.trim())
     : '';
@@ -199,7 +192,7 @@ export async function rankDisambiguationCandidates(options: {
   if (!result) return null;
   const finalResult =
     result.selectedCandidateIds.length === 0 && !result.suggestCreateNew
-      ? fallbackDateAnchoredSelection(ctx) ?? result
+      ? (fallbackDateAnchoredSelection(ctx) ?? result)
       : result;
 
   if (cacheKey && cache) {

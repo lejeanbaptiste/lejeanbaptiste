@@ -183,7 +183,11 @@ const AuthorityPackageChip = ({
 
   if (!needsChoice) {
     return (
-      <Box component="span" sx={kindSx(disambiguated ? 'resolved' : 'locked', disambiguated)} title="Emperor · era">
+      <Box
+        component="span"
+        sx={kindSx(disambiguated ? 'resolved' : 'locked', disambiguated)}
+        title="Emperor · era"
+      >
         {label}
       </Box>
     );
@@ -207,7 +211,9 @@ const AuthorityPackageChip = ({
         }}
         title="Choose emperor · era"
       >
-        {selectedIndex == null ? label : candidates[selectedIndex]?.displayLine.split('=')[0]?.trim() || label}
+        {selectedIndex == null
+          ? label
+          : candidates[selectedIndex]?.displayLine.split('=')[0]?.trim() || label}
       </Box>
       <Menu
         anchorEl={anchorEl}
@@ -632,7 +638,10 @@ export const DateCuratorPanel = ({
       if (suggestion.status === 'pending' && includeUnreviewedPending) {
         const selected = selectedIndexFor(suggestion);
         if (!canAcceptDateSuggestion(suggestion, selected)) continue;
-        if (suggestion.dateResolution?.status === 'unresolved' && attachIndexFor(suggestion) === '') {
+        if (
+          suggestion.dateResolution?.status === 'unresolved' &&
+          attachIndexFor(suggestion) === ''
+        ) {
           continue;
         }
         finalizeDateSuggestion(suggestion, selected);

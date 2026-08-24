@@ -52,9 +52,7 @@ describe('candidateFromEntity', () => {
 
   test('a person still gets family/given aliases', () => {
     const candidate = candidateFromEntity(person());
-    expect(candidate.aliases).toEqual(
-      expect.arrayContaining(['Cui', 'Zusi', 'Cui Zusi']),
-    );
+    expect(candidate.aliases).toEqual(expect.arrayContaining(['Cui', 'Zusi', 'Cui Zusi']));
   });
 });
 

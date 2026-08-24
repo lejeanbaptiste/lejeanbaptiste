@@ -36,15 +36,20 @@ describe('isDateCuratorBatch', () => {
   it('is true for resolve-date batches', () => {
     expect(
       isDateCuratorBatch([
-        dateSuggestion({ action: 'resolve-date', dateResolution: { status: 'unique', candidates: [] } }),
+        dateSuggestion({
+          action: 'resolve-date',
+          dateResolution: { status: 'unique', candidates: [] },
+        }),
       ]),
     ).toBe(true);
   });
 
   it('is false for tag-only batches', () => {
-    expect(isDateCuratorBatch([dateSuggestion({ dateResolution: { status: 'tagged', candidates: [] } })])).toBe(
-      false,
-    );
+    expect(
+      isDateCuratorBatch([
+        dateSuggestion({ dateResolution: { status: 'tagged', candidates: [] } }),
+      ]),
+    ).toBe(false);
   });
 
   it('is false when mixed with dictionary suggestions', () => {
@@ -131,7 +136,13 @@ describe('priorAcceptedDates', () => {
   it('lists accepted dates before the current row', () => {
     const suggestions: Suggestion[] = [
       { ...dateSuggestion({ id: 'date_0' }), status: 'accepted' },
-      { ...dateSuggestion({ id: 'date_1', anchor: { ...dateSuggestion().anchor, surface: '三月' } }), status: 'pending' },
+      {
+        ...dateSuggestion({
+          id: 'date_1',
+          anchor: { ...dateSuggestion().anchor, surface: '三月' },
+        }),
+        status: 'pending',
+      },
     ];
     const prior = priorAcceptedDates(suggestions, 'date_1');
     expect(prior).toHaveLength(1);

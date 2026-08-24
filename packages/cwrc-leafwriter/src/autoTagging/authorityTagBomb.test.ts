@@ -26,23 +26,29 @@ describe('runAuthorityTagBombOnDocument extraCandidates', () => {
   const readPack = async (_packId: AuthorityPackId) => dilaPack;
 
   it('merges extraCandidates (e.g. PEDB) alongside NDJSON packs', async () => {
-    const result = await runAuthorityTagBombOnDocument(doc(), ['dila-persons'], readPack, 'ignore', {
-      extraCandidates: [
-        {
-          groupLabel: 'pedb-persons',
-          candidates: [
-            {
-              source: 'PEDB',
-              authorityId: 'person-1',
-              kind: 'person',
-              primaryName: '鄭玄',
-              searchStrings: ['鄭玄'],
-              metadata: { startYear: 127, endYear: 200 },
-            },
-          ],
-        },
-      ],
-    });
+    const result = await runAuthorityTagBombOnDocument(
+      doc(),
+      ['dila-persons'],
+      readPack,
+      'ignore',
+      {
+        extraCandidates: [
+          {
+            groupLabel: 'pedb-persons',
+            candidates: [
+              {
+                source: 'PEDB',
+                authorityId: 'person-1',
+                kind: 'person',
+                primaryName: '鄭玄',
+                searchStrings: ['鄭玄'],
+                metadata: { startYear: 127, endYear: 200 },
+              },
+            ],
+          },
+        ],
+      },
+    );
 
     expect(result.matchCount).toBe(2);
     expect(result.loaded['dila-persons']).toBe(1);
@@ -51,24 +57,30 @@ describe('runAuthorityTagBombOnDocument extraCandidates', () => {
   });
 
   it('applies the date filter to extraCandidates the same as pack candidates', async () => {
-    const result = await runAuthorityTagBombOnDocument(doc(), ['dila-persons'], readPack, 'ignore', {
-      dateFilter: { mode: 'limit', start: 25, end: 220 },
-      extraCandidates: [
-        {
-          groupLabel: 'pedb-persons',
-          candidates: [
-            {
-              source: 'PEDB',
-              authorityId: 'person-1',
-              kind: 'person',
-              primaryName: '鄭玄',
-              searchStrings: ['鄭玄'],
-              metadata: { startYear: 127, endYear: 200 },
-            },
-          ],
-        },
-      ],
-    });
+    const result = await runAuthorityTagBombOnDocument(
+      doc(),
+      ['dila-persons'],
+      readPack,
+      'ignore',
+      {
+        dateFilter: { mode: 'limit', start: 25, end: 220 },
+        extraCandidates: [
+          {
+            groupLabel: 'pedb-persons',
+            candidates: [
+              {
+                source: 'PEDB',
+                authorityId: 'person-1',
+                kind: 'person',
+                primaryName: '鄭玄',
+                searchStrings: ['鄭玄'],
+                metadata: { startYear: 127, endYear: 200 },
+              },
+            ],
+          },
+        ],
+      },
+    );
 
     // DILA's 王安石 (1021-1086) falls outside the 25-220 CE window; PEDB's 鄭玄 is inside it.
     expect(result.loaded['dila-persons']).toBe(0);

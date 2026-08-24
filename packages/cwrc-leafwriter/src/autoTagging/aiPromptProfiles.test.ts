@@ -38,9 +38,7 @@ describe('aiPromptProfiles', () => {
       version: 2,
       suggestTaskText: 'Edited',
     };
-    expect(promptVersionWithProfile(SUGGEST_PROMPT_VERSION, profile)).toBe(
-      'suggest.v3+defaultv2',
-    );
+    expect(promptVersionWithProfile(SUGGEST_PROMPT_VERSION, profile)).toBe('suggest.v3+defaultv2');
     expect(promptVersionWithProfile(AUDIT_CLEAN_PROMPT_VERSION, profile)).toBe(
       'audit-clean.v2+defaultv2',
     );
@@ -89,7 +87,9 @@ describe('aiPromptProfiles', () => {
       ],
     });
     const parsed = parseAiPromptProfilesFile(raw);
-    expect(parsed.profiles[0]?.disambiguationRankTaskText).toBe(DEFAULT_DISAMBIGUATION_RANK_TASK_TEXT);
+    expect(parsed.profiles[0]?.disambiguationRankTaskText).toBe(
+      DEFAULT_DISAMBIGUATION_RANK_TASK_TEXT,
+    );
   });
 });
 

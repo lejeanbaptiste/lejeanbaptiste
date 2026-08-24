@@ -18,14 +18,7 @@ export type DisplayFormatOverride =
   | 'author_only';
 
 export type EntityPartId =
-  | 'family'
-  | 'given'
-  | 'name'
-  | 'classification'
-  | 'chinese'
-  | 'original'
-  | 'translation'
-  | 'dates';
+  'family' | 'given' | 'name' | 'classification' | 'chinese' | 'original' | 'translation' | 'dates';
 
 const ITALIC_WORK_TYPES = new Set(['book', 'painting']);
 const QUOTED_WORK_TYPES = new Set(['chapter', 'poem']);
@@ -163,22 +156,15 @@ export const romanizedNameOf = (entity: EntitySummary): string | null => {
 };
 
 export const shortNameOf = (entity: EntitySummary): string =>
-  romanizedNameOf(entity) ??
-  entity.primaryName ??
-  entity.names[0]?.text ??
-  '[Unknown entity]';
+  romanizedNameOf(entity) ?? entity.primaryName ?? entity.names[0]?.text ?? '[Unknown entity]';
 
 export const chineseNameOf = (entity: EntitySummary): string | null =>
-  entity.names.find((n) => (n.lang ?? '').startsWith('zh') && !isRomanizationLang(n.lang))
-    ?.text ?? null;
+  entity.names.find((n) => (n.lang ?? '').startsWith('zh') && !isRomanizationLang(n.lang))?.text ??
+  null;
 
-const glossFromTable = (
-  entity: EntitySummary,
-  wanted: string,
-): string | null => {
+const glossFromTable = (entity: EntitySummary, wanted: string): string | null => {
   const fromTable = (entity.translations ?? []).find(
-    (entry) =>
-      Boolean(entry.text?.trim()) && primaryLangSubtag(entry.lang) === wanted,
+    (entry) => Boolean(entry.text?.trim()) && primaryLangSubtag(entry.lang) === wanted,
   );
   if (fromTable?.text?.trim()) return fromTable.text.trim();
 
@@ -211,9 +197,7 @@ export const translatedNameOf = (
   options?: { allowFallback?: boolean },
 ): string | null => {
   const allowFallback =
-    options?.allowFallback !== undefined
-      ? options.allowFallback
-      : entity.kind === 'office';
+    options?.allowFallback !== undefined ? options.allowFallback : entity.kind === 'office';
   const wanted = primaryLangSubtag(lang);
   if (wanted) {
     const exact = glossFromTable(entity, wanted);
@@ -284,7 +268,6 @@ export const entityLikeFromNameEntries = (
   })),
 });
 
-
 /**
  * Split the romanized short name into family + given.
  * Prefer a Latin `familyName` that prefixes the short name; otherwise split on the
@@ -296,8 +279,7 @@ export const familyAndGivenOf = (
 ): { family: string | null; given: string | null } => {
   const short = shortNameOf(entity);
   const storedFamily = entity.familyName?.trim() || null;
-  const latinFamily =
-    storedFamily && !isMostlyCjk(storedFamily) ? storedFamily : null;
+  const latinFamily = storedFamily && !isMostlyCjk(storedFamily) ? storedFamily : null;
 
   if (latinFamily && short.startsWith(latinFamily)) {
     const rest = short.slice(latinFamily.length).trim();
@@ -648,8 +630,7 @@ export const isEntityPartShown = (
     return (spec.extraParts ?? []).includes(id);
   }
   if (occurrenceIndex <= 1) return true;
-  const shortCore =
-    entity.kind === 'person' ? id === 'family' || id === 'given' : id === 'name';
+  const shortCore = entity.kind === 'person' ? id === 'family' || id === 'given' : id === 'name';
   if (shortCore) return true;
   return (spec.extraParts ?? []).includes(id);
 };
@@ -678,7 +659,7 @@ export const resolveEntityParts = (
   const isPerson = entity.kind === 'person';
   const hasDates = entity.kind === 'person' || entity.kind === 'work';
   const glossText = translatedNameOf(entity, lang);
-  const gloss = glossText ? partValue('translation', entity, settings, lang) ?? glossText : null;
+  const gloss = glossText ? (partValue('translation', entity, settings, lang) ?? glossText) : null;
   const convention =
     first && gloss && effectiveTitleConvention(spec, lang, entity.kind) === 'translation-first'
       ? 'translation-first'
@@ -773,8 +754,7 @@ export const renderEntityFromSpec = (
     let text = part.text;
     const leadTranslation = convention === 'translation-first' && part.id === 'translation';
     if (isParenPart(part.id) && !leadTranslation) {
-      text =
-        spec.bracketsAround === part.id ? wrapSquareBrackets(text) : wrapParenDates(text);
+      text = spec.bracketsAround === part.id ? wrapSquareBrackets(text) : wrapParenDates(text);
     } else if (spec.bracketsAround === part.id) {
       text = wrapSquareBrackets(text);
     }
@@ -849,11 +829,7 @@ export const renderEntityMention = (
     EMPTY_DISPLAY_SPEC;
   // Empty spec + no legacy → same as renderEntityText(null): first gets full, later short.
   // Using renderEntityFromSpec for empty spec already matches first/later part sets.
-  if (
-    isEmptyDisplaySpec(spec) &&
-    !options.spec &&
-    !options.legacyOverride
-  ) {
+  if (isEmptyDisplaySpec(spec) && !options.spec && !options.legacyOverride) {
     return renderEntityText(entity, occurrenceIndex, null, settings);
   }
   return renderEntityFromSpec(entity, occurrenceIndex, spec, settings);

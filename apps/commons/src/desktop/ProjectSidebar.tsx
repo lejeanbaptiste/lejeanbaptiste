@@ -29,9 +29,21 @@ export const ProjectSidebar = () => {
           variant="fullWidth"
           sx={{ minHeight: 36 }}
         >
-          <Tab label="Explorer" value="explorer" sx={{ minHeight: 36, py: 0.5, fontSize: '0.75rem', textTransform: 'none' }} />
-          <Tab label="Find" value="find" sx={{ minHeight: 36, py: 0.5, fontSize: '0.75rem', textTransform: 'none' }} />
-          <Tab label="XPath" value="xpath" sx={{ minHeight: 36, py: 0.5, fontSize: '0.75rem', textTransform: 'none' }} />
+          <Tab
+            label="Explorer"
+            value="explorer"
+            sx={{ minHeight: 36, py: 0.5, fontSize: '0.75rem', textTransform: 'none' }}
+          />
+          <Tab
+            label="Find"
+            value="find"
+            sx={{ minHeight: 36, py: 0.5, fontSize: '0.75rem', textTransform: 'none' }}
+          />
+          <Tab
+            label="XPath"
+            value="xpath"
+            sx={{ minHeight: 36, py: 0.5, fontSize: '0.75rem', textTransform: 'none' }}
+          />
         </Tabs>
       </Box>
       <Box sx={{ flex: 1, minHeight: 0, overflow: 'hidden' }}>

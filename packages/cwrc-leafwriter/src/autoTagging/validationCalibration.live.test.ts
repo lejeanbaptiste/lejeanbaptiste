@@ -41,9 +41,7 @@ import { runValidationCalibrationHarness, type ThresholdConfusion } from './vali
 
 const DOM_GLOBALS = ['NodeFilter', 'Node', 'Text', 'Element', 'Document', 'DOMParser'] as const;
 
-function installDomGlobals(
-  window: Record<(typeof DOM_GLOBALS)[number], unknown>,
-): void {
+function installDomGlobals(window: Record<(typeof DOM_GLOBALS)[number], unknown>): void {
   for (const key of DOM_GLOBALS) {
     (globalThis as Record<string, unknown>)[key] = window[key];
   }
@@ -75,58 +73,64 @@ function formatConfusion(c: ThresholdConfusion): string {
 }
 
 describe('validation calibration harness against a live model (opt-in)', () => {
-  maybe('scores validation confidence vs hand-tagged gold correctness', async () => {
-    expect(fs.existsSync(xmlPath)).toBe(true);
+  maybe(
+    'scores validation confidence vs hand-tagged gold correctness',
+    async () => {
+      expect(fs.existsSync(xmlPath)).toBe(true);
 
-    const { baseUrl, model, key: apiKey, keySource } = resolveLiveClientConfig();
-    const needsKey =
-      baseUrl.includes('api.mistral.ai') ||
-      baseUrl.includes('groq.com') ||
-      (!baseUrl.includes('localhost') && !baseUrl.includes('127.0.0.1'));
-    if (needsKey && !apiKey) {
-      throw new Error(hostedApiKeyHelp(baseUrl));
-    }
+      const { baseUrl, model, key: apiKey, keySource } = resolveLiveClientConfig();
+      const needsKey =
+        baseUrl.includes('api.mistral.ai') ||
+        baseUrl.includes('groq.com') ||
+        (!baseUrl.includes('localhost') && !baseUrl.includes('127.0.0.1'));
+      if (needsKey && !apiKey) {
+        throw new Error(hostedApiKeyHelp(baseUrl));
+      }
 
-    const client = buildLiveClient(baseUrl, model, apiKey);
+      const client = buildLiveClient(baseUrl, model, apiKey);
 
-    const source = fs.readFileSync(xmlPath, 'utf-8');
-    const doc = parseGoldXml(source);
-    normalizeDomText(doc);
+      const source = fs.readFileSync(xmlPath, 'utf-8');
+      const doc = parseGoldXml(source);
+      normalizeDomText(doc);
 
-    const tags = ['persName', 'placeName'];
+      const tags = ['persName', 'placeName'];
 
-    const report = await runValidationCalibrationHarness(doc, {
-      policy: 'ignore',
-      tags,
-      suggestClient: client,
-      targetChars: 800,
-      marginChars: 100,
-      autoAcceptThreshold: threshold,
-    });
+      const report = await runValidationCalibrationHarness(doc, {
+        policy: 'ignore',
+        tags,
+        suggestClient: client,
+        targetChars: 800,
+        marginChars: 100,
+        autoAcceptThreshold: threshold,
+      });
 
-    const bucketLines = report.buckets
-      .filter((b) => b.count > 0)
-      .map((b) => `    ${b.rangeLabel}: n=${b.count} accuracy=${b.accuracy.toFixed(3)} avgConfidence=${b.avgConfidence.toFixed(3)}`);
+      const bucketLines = report.buckets
+        .filter((b) => b.count > 0)
+        .map(
+          (b) =>
+            `    ${b.rangeLabel}: n=${b.count} accuracy=${b.accuracy.toFixed(3)} avgConfidence=${b.avgConfidence.toFixed(3)}`,
+        );
 
-     
-    console.log(
-      [
-        '',
-        '── validation calibration harness (live) ──────────────────',
-        `  gold file:        ${xmlPath}`,
-        `  base URL:         ${baseUrl}`,
-        `  model:            ${client.modelId}`,
-        `  api key:          ${keySource}${apiKey ? ` (${apiKey.length} chars)` : ''}`,
-        `  suggestions:      ${report.suggestCount}  (correct=${report.correctCount}, incorrect=${report.incorrectCount}, unvalidated=${report.unvalidatedCount})`,
-        `  at threshold:     ${formatConfusion(report.atConfiguredThreshold)}`,
-        '  calibration buckets:',
-        ...bucketLines,
-        '  threshold sweep:',
-        ...report.sweep.map((c) => `    ${formatConfusion(c)}`),
-        '─────────────────────────────────────────────────────────',
-      ].join('\n'),
-    );
+      console.log(
+        [
+          '',
+          '── validation calibration harness (live) ──────────────────',
+          `  gold file:        ${xmlPath}`,
+          `  base URL:         ${baseUrl}`,
+          `  model:            ${client.modelId}`,
+          `  api key:          ${keySource}${apiKey ? ` (${apiKey.length} chars)` : ''}`,
+          `  suggestions:      ${report.suggestCount}  (correct=${report.correctCount}, incorrect=${report.incorrectCount}, unvalidated=${report.unvalidatedCount})`,
+          `  at threshold:     ${formatConfusion(report.atConfiguredThreshold)}`,
+          '  calibration buckets:',
+          ...bucketLines,
+          '  threshold sweep:',
+          ...report.sweep.map((c) => `    ${formatConfusion(c)}`),
+          '─────────────────────────────────────────────────────────',
+        ].join('\n'),
+      );
 
-    expect(report.suggestCount).toBeGreaterThan(0);
-  }, 600_000);
+      expect(report.suggestCount).toBeGreaterThan(0);
+    },
+    600_000,
+  );
 });

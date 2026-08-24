@@ -11,7 +11,14 @@ describe('EntitySqliteRepository', () => {
        (person_id, label, reference, origin, source, status, created_at, updated_at)
        VALUES (?, ?, ?, 'authority', ?, 'active', ?, ?)`,
     );
-    insert.run('person-nationality-merge', '唐', 'CBDB:dynasty:6', 'CBDB', '2026-08-02', '2026-08-02');
+    insert.run(
+      'person-nationality-merge',
+      '唐',
+      'CBDB:dynasty:6',
+      'CBDB',
+      '2026-08-02',
+      '2026-08-02',
+    );
     insert.run('person-nationality-merge', '唐朝', null, 'Norbert', '2026-08-02', '2026-08-02');
 
     expect(repository.getPanelSummary('person-nationality-merge')?.nationalities).toEqual(['唐']);
@@ -528,7 +535,9 @@ describe('EntitySqliteRepository', () => {
       kind: 'person',
       names: [{ text: 'Kong Yi', isPrimary: true }],
     });
-    expect(repository.findEntityIdByNameDates('person', 'kong yi', null, null)).toBe('person-latin');
+    expect(repository.findEntityIdByNameDates('person', 'kong yi', null, null)).toBe(
+      'person-latin',
+    );
     repository.createPopulatedEntity({
       id: 'person-latin-dup',
       kind: 'person',
@@ -1535,9 +1544,9 @@ describe('EntitySqliteRepository', () => {
     repository.db.exec('PRAGMA user_version = 8');
     applyEntityDbMigrations(repository.db);
 
-    expect(
-      repository.listNames('work-legacy-gloss').some((n) => n.text === 'Livre des Jin'),
-    ).toBe(false);
+    expect(repository.listNames('work-legacy-gloss').some((n) => n.text === 'Livre des Jin')).toBe(
+      false,
+    );
     expect(repository.listTranslations('work-legacy-gloss')).toEqual([
       expect.objectContaining({ text: 'Livre des Jin', language: 'fr' }),
     ]);

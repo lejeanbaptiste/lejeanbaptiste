@@ -34,12 +34,7 @@ import {
 } from './sidebarConstants';
 
 type RightTabId =
-  | 'fileMetadata'
-  | 'attributes'
-  | 'css'
-  | 'imageViewer'
-  | 'validation'
-  | 'translation';
+  'fileMetadata' | 'attributes' | 'css' | 'imageViewer' | 'validation' | 'translation';
 
 /** Designed tab_highlight asset (light/dark PNG pair), same pattern as the left sidebar's TabIcon. */
 const HighlightTabIcon = ({ sx }: { sx?: { fontSize?: number | string } }) => {
@@ -85,13 +80,7 @@ const TAB_CONFIG: Record<RightTabId, { label: string; icon: React.ReactNode }> =
   },
 };
 
-const TAB_ORDER: RightTabId[] = [
-  'fileMetadata',
-  'attributes',
-  'css',
-  'validation',
-  'translation',
-];
+const TAB_ORDER: RightTabId[] = ['fileMetadata', 'attributes', 'css', 'validation', 'translation'];
 
 const JQUERY_TABS: RightTabId[] = ['imageViewer', 'validation'];
 
@@ -288,8 +277,16 @@ export const UnifiedRightPanel = () => {
       }
 
       const pairs: [RightTabId, HTMLElement | null, HTMLDivElement | null][] = [
-        ['imageViewer', document.getElementById(`${editorId}-imageViewer`), imageViewerSlotRef.current],
-        ['validation', document.getElementById(`${editorId}-validation`), validationSlotRef.current],
+        [
+          'imageViewer',
+          document.getElementById(`${editorId}-imageViewer`),
+          imageViewerSlotRef.current,
+        ],
+        [
+          'validation',
+          document.getElementById(`${editorId}-validation`),
+          validationSlotRef.current,
+        ],
       ];
 
       let migratedAny = false;
@@ -422,9 +419,7 @@ export const UnifiedRightPanel = () => {
   // Translation tab: collapse the left explorer and widen this panel for parallel reading.
   useEffect(() => {
     const active = activeTab === 'translation';
-    window.dispatchEvent(
-      new CustomEvent('desktop:translation-layout', { detail: { active } }),
-    );
+    window.dispatchEvent(new CustomEvent('desktop:translation-layout', { detail: { active } }));
 
     if (active) {
       if (widthBeforeTranslationRef.current === null) {

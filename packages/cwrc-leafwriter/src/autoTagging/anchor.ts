@@ -63,7 +63,9 @@ export function xpathForTextNode(node: Text): string {
       break;
     }
     const sameName = Array.from(parent.children).filter((c) => c.nodeName === el!.nodeName);
-    steps.unshift(sameName.length > 1 ? `${el.nodeName}[${sameName.indexOf(el) + 1}]` : el.nodeName);
+    steps.unshift(
+      sameName.length > 1 ? `${el.nodeName}[${sameName.indexOf(el) + 1}]` : el.nodeName,
+    );
     el = parent;
   }
 
@@ -106,7 +108,11 @@ interface Occurrence {
 /** Reuse occurrence lists when building many anchors in one document. */
 export type OccurrenceCache = Map<string, Occurrence[]>;
 
-function cachedOccurrences(index: DocIndex, surface: string, cache?: OccurrenceCache): Occurrence[] {
+function cachedOccurrences(
+  index: DocIndex,
+  surface: string,
+  cache?: OccurrenceCache,
+): Occurrence[] {
   if (!cache) return occurrences(index, surface);
   const hit = cache.get(surface);
   if (hit) return hit;
@@ -203,7 +209,11 @@ export function createAnchor(
     all.findIndex((o) => o.nodeIndex === nodeIndex && o.searchIndex === searchStart) + 1;
   if (occurrence === 0) throw new Error('createAnchor: could not locate own occurrence');
 
-  const { before, after } = contextsAt(index, { nodeIndex, searchIndex: searchStart }, surface.length);
+  const { before, after } = contextsAt(
+    index,
+    { nodeIndex, searchIndex: searchStart },
+    surface.length,
+  );
 
   return {
     documentId,
@@ -267,7 +277,10 @@ export function createCompoundAnchor(
   })();
   if (!occurrence) throw new Error('createCompoundAnchor: surface does not match boundary');
   const before = index.text.slice(Math.max(0, flatStart - CONTEXT_LENGTH), flatStart);
-  const after = index.text.slice(flatStart + surface.length, flatStart + surface.length + CONTEXT_LENGTH);
+  const after = index.text.slice(
+    flatStart + surface.length,
+    flatStart + surface.length + CONTEXT_LENGTH,
+  );
   return {
     documentId,
     xpath: xpathForTextNode(startNode),
@@ -380,7 +393,11 @@ function toResolved(index: DocIndex, occ: Occurrence, anchor: Anchor, tier: 2 | 
  * winner with a positive score — even a lone candidate must show some context
  * agreement, since the xpath may have drifted onto the wrong node entirely.
  */
-function pickByContext(index: DocIndex, anchor: Anchor, candidates: Occurrence[]): Occurrence | null {
+function pickByContext(
+  index: DocIndex,
+  anchor: Anchor,
+  candidates: Occurrence[],
+): Occurrence | null {
   const scored = candidates.map((occ) => ({ occ, score: contextScore(index, anchor, occ) }));
   scored.sort((a, b) => b.score - a.score);
   const [first, second] = scored;

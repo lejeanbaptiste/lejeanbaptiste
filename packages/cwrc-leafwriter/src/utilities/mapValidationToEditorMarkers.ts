@@ -29,11 +29,10 @@ export const mapValidationErrorsToMarkers = (
       const xpath =
         error.type === 'ElementNameError' && error.target.name && error.element?.xpath
           ? `${error.element.xpath}/${error.target.name}`
-          : error.element?.xpath ?? error.target?.xpath ?? '';
+          : (error.element?.xpath ?? error.target?.xpath ?? '');
 
       const offset = xpath ? findOpenTagOffset(xml, xpath) : null;
-      const { line, col } =
-        offset !== null ? offsetToLineColumn(xml, offset) : { line: 1, col: 1 };
+      const { line, col } = offset !== null ? offsetToLineColumn(xml, offset) : { line: 1, col: 1 };
 
       const highlightLength = error.target.name?.length ?? 1;
 

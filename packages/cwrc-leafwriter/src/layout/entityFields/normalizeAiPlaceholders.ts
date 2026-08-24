@@ -11,17 +11,11 @@ export const normalizeAiPlaceholders = (text: string): string => {
   if (!text.includes('{{')) return text;
   let out = text;
   out = out.replace(
-    new RegExp(
-      `\\{\\{\\s*${QUOTE}\\s*date\\s*:\\s*${QUOTE}\\s*(\\d+)\\s*${QUOTE}\\s*\\}\\}`,
-      'gi',
-    ),
+    new RegExp(`\\{\\{\\s*${QUOTE}\\s*date\\s*:\\s*${QUOTE}\\s*(\\d+)\\s*${QUOTE}\\s*\\}\\}`, 'gi'),
     '{{date:$1}}',
   );
   out = out.replace(
-    new RegExp(
-      `\\{\\{\\s*${QUOTE}\\s*note\\s*:\\s*${QUOTE}\\s*(\\d+)\\s*${QUOTE}\\s*\\}\\}`,
-      'gi',
-    ),
+    new RegExp(`\\{\\{\\s*${QUOTE}\\s*note\\s*:\\s*${QUOTE}\\s*(\\d+)\\s*${QUOTE}\\s*\\}\\}`, 'gi'),
     '{{note:$1}}',
   );
   out = out.replace(

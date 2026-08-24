@@ -1,9 +1,4 @@
-import {
-  buildSearchText,
-  enrichDateAuthorityIndex,
-  filterEras,
-  matchesSearchText,
-} from './search';
+import { buildSearchText, enrichDateAuthorityIndex, filterEras, matchesSearchText } from './search';
 import {
   eastAsianValuesToAttributes,
   hasEastAsianCalendarContext,
@@ -14,7 +9,19 @@ import {
 describe('dateAuthority values', () => {
   it('normalizes 元年 to year 1', () => {
     expect(normalizeYearInput('元年')).toBe('1');
-    expect(eastAsianValuesToAttributes({ dynId: '', rulerId: '', eraId: '', year: '元年', month: '', day: '', sexYear: '', gz: '', nmdGz: '' })).toEqual({
+    expect(
+      eastAsianValuesToAttributes({
+        dynId: '',
+        rulerId: '',
+        eraId: '',
+        year: '元年',
+        month: '',
+        day: '',
+        sexYear: '',
+        gz: '',
+        nmdGz: '',
+      }),
+    ).toEqual({
       year: '1',
     });
   });

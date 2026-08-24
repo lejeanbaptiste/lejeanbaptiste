@@ -22,7 +22,11 @@ import {
   Tooltip,
   Typography,
 } from '@mui/material';
-import { getProjectSchemaDirPath, getRelativeFolderLabel, isPathUnder } from '@src/desktop/explorer/treeUtils';
+import {
+  getProjectSchemaDirPath,
+  getRelativeFolderLabel,
+  isPathUnder,
+} from '@src/desktop/explorer/treeUtils';
 import { useActions, useAppState } from '@src/overmind';
 import type { FileTreeNode } from '@src/overmind/project/state';
 import { modShortcut } from '@src/utils/platform';
@@ -173,8 +177,13 @@ const TreeNode = ({
 
 export const SidebarExplorerTab = () => {
   const { activeTabPath, config, isProjectReady, rootPath, tree } = useAppState().project;
-  const { loadDirectoryChildren, openFile, openProject, reloadDirectoryInTree, setExplorerFocusedPath } =
-    useActions().project;
+  const {
+    loadDirectoryChildren,
+    openFile,
+    openProject,
+    reloadDirectoryInTree,
+    setExplorerFocusedPath,
+  } = useActions().project;
   const { t } = useTranslation();
   const treePaneRef = useRef<HTMLDivElement>(null);
   const focusedRowRef = useRef<HTMLDivElement>(null);
@@ -215,10 +224,7 @@ export const SidebarExplorerTab = () => {
   );
 
   const visibleFilterMatches = useMemo(
-    () =>
-      matches.filter(
-        (match) => !schemaDirPath || !isPathUnder(match.path, schemaDirPath),
-      ),
+    () => matches.filter((match) => !schemaDirPath || !isPathUnder(match.path, schemaDirPath)),
     [matches, schemaDirPath],
   );
 
@@ -360,9 +366,7 @@ export const SidebarExplorerTab = () => {
           ) : (
             <List dense disablePadding>
               {visibleFilterMatches.map((match) => {
-                const folderLabel = rootPath
-                  ? getRelativeFolderLabel(match.path, rootPath)
-                  : '';
+                const folderLabel = rootPath ? getRelativeFolderLabel(match.path, rootPath) : '';
                 const isSelected = match.path === activeTabPath;
 
                 return (

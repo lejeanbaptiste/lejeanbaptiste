@@ -43,9 +43,7 @@ function dedupeSourceLabels(sources: string[]): string[] {
   return [...seen.values()];
 }
 
-type NobleTitleComponents = NonNullable<
-  NonNullable<AuthorityCandidate['metadata']>['nobleTitle']
->;
+type NobleTitleComponents = NonNullable<NonNullable<AuthorityCandidate['metadata']>['nobleTitle']>;
 
 /**
  * One authority record generates several search-string forms from the same
@@ -78,12 +76,15 @@ function wrapperComponentsForSurface(
   wrapper: NonNullable<NonNullable<AuthorityCandidate['metadata']>['wrapper']>,
   surface: string,
 ): NonNullable<NonNullable<AuthorityCandidate['metadata']>['wrapper']>['components'] | null {
-  const { nationality, fief, familyName, posthumousName, roleName, templeName, persName } = wrapper.components;
+  const { nationality, fief, familyName, posthumousName, roleName, templeName, persName } =
+    wrapper.components;
   const full = [nationality, fief, familyName, posthumousName, roleName, templeName, persName]
     .filter(Boolean)
     .join('');
   if (full === surface) return wrapper.components;
-  const bare = [nationality, fief, familyName, roleName, templeName, persName].filter(Boolean).join('');
+  const bare = [nationality, fief, familyName, roleName, templeName, persName]
+    .filter(Boolean)
+    .join('');
   if (bare === surface) return { ...wrapper.components, posthumousName: undefined };
   return null;
 }
@@ -95,9 +96,7 @@ export function suggestionsFromSeedMatches(matches: SeedMatch[]): Suggestion[] {
 
     const rawWrapper = match.candidates.find((candidate) => candidate.metadata?.wrapper)?.metadata
       ?.wrapper;
-    const wrapperComponents = rawWrapper
-      ? wrapperComponentsForSurface(rawWrapper, surface)
-      : null;
+    const wrapperComponents = rawWrapper ? wrapperComponentsForSurface(rawWrapper, surface) : null;
 
     const rawNobleTitle = match.candidates.find(
       (candidate) => !candidate.metadata?.wrapper && candidate.metadata?.teiTag === 'nobleTitle',
@@ -239,7 +238,9 @@ export function wrapperInnerXml(
     : '';
   const titleParts = [
     components.fief ? `<placeName>${xmlEscape(components.fief)}</placeName>` : '',
-    components.familyName ? `<persName type="family">${xmlEscape(components.familyName)}</persName>` : '',
+    components.familyName
+      ? `<persName type="family">${xmlEscape(components.familyName)}</persName>`
+      : '',
     components.posthumousName
       ? `<persName type="posthumous">${xmlEscape(components.posthumousName)}</persName>`
       : '',
@@ -442,9 +443,7 @@ function resolveEntity(
   projectLang?: string | null,
 ): { id: string; created: boolean } {
   const authorityIds =
-    candidate.kind === 'office'
-      ? officeAuthorityIds(candidate)
-      : personAuthorityIds(candidate);
+    candidate.kind === 'office' ? officeAuthorityIds(candidate) : personAuthorityIds(candidate);
   const memo =
     candidate.metadata?.canonicalEntityId ??
     authorityIds
@@ -460,8 +459,7 @@ function resolveEntity(
       authorityIds.some(
         (authority) =>
           (idno.getAttribute('type') ?? '').trim().toLowerCase() ===
-            authority.type.trim().toLowerCase() &&
-          idno.textContent === authority.value,
+            authority.type.trim().toLowerCase() && idno.textContent === authority.value,
       )
     ) {
       const owner = idno.parentElement;
@@ -487,14 +485,8 @@ function resolveEntity(
   const typedNames = candidate.names ?? [];
   // Prefer pack personal primary / 姓+名; keep title headwords only as fallback label.
   const mintName =
-    candidate.kind === 'person'
-      ? preferredEntityPrimaryName(displayName, typedNames)
-      : displayName;
-  const romanizedName = romanizeFromAuthorityMetadata(
-    candidate.metadata,
-    mintName,
-    projectLang,
-  );
+    candidate.kind === 'person' ? preferredEntityPrimaryName(displayName, typedNames) : displayName;
+  const romanizedName = romanizeFromAuthorityMetadata(candidate.metadata, mintName, projectLang);
   const { id } = addEntity(
     entitiesDoc,
     candidate.kind,
@@ -558,7 +550,9 @@ function personAuthorityIds(candidate: AuthorityCandidate) {
   add('BDRC', crosswalk?.bdrc);
   add('VIAF', crosswalk?.viaf);
   if (crosswalk?.wikidata) {
-    for (const qid of Array.isArray(crosswalk.wikidata) ? crosswalk.wikidata : [crosswalk.wikidata]) {
+    for (const qid of Array.isArray(crosswalk.wikidata)
+      ? crosswalk.wikidata
+      : [crosswalk.wikidata]) {
       add('Wikidata', qid);
     }
   }

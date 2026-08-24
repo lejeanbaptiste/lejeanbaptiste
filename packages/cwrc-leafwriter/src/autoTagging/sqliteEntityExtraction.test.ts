@@ -7,9 +7,9 @@ import {
 
 describe('sqlite entity extraction reconciliation', () => {
   const storeFrom = (repository: EntitySqliteRepository) => ({
-    sqliteReconcileXmlExtractedData: async (input: Parameters<
-      EntitySqliteRepository['reconcileXmlExtractedData']
-    >[0]) => repository.reconcileXmlExtractedData(input),
+    sqliteReconcileXmlExtractedData: async (
+      input: Parameters<EntitySqliteRepository['reconcileXmlExtractedData']>[0],
+    ) => repository.reconcileXmlExtractedData(input),
   });
 
   it('does not remove validated (user) values when the XML assertion vanishes', async () => {
@@ -86,9 +86,7 @@ describe('sqlite entity extraction reconciliation', () => {
     const summary = repository.getPanelSummary('person-2')!;
     expect(summary.placesOfOrigin).toEqual(['建康']);
     expect(summary.roles).toEqual(['尚書']);
-    expect(summary.nobleTitles).toEqual([
-      expect.objectContaining({ fief: '鄱陽', title: '王' }),
-    ]);
+    expect(summary.nobleTitles).toEqual([expect.objectContaining({ fief: '鄱陽', title: '王' })]);
     expect(summary.assertions).toEqual(
       expect.arrayContaining([
         expect.objectContaining({

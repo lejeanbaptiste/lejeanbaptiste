@@ -159,7 +159,14 @@ async function makeTarGz(sourceDir, outFile) {
   ]);
 }
 
-function arHeader(name, size, mode = 0o100644, mtime = Math.floor(Date.now() / 1000), uid = 0, gid = 0) {
+function arHeader(
+  name,
+  size,
+  mode = 0o100644,
+  mtime = Math.floor(Date.now() / 1000),
+  uid = 0,
+  gid = 0,
+) {
   const pad = (value, length, alignLeft = false) => {
     const s = String(value);
     return alignLeft ? s.padEnd(length, ' ') : s.padStart(length, ' ');
@@ -228,7 +235,9 @@ async function main() {
     formatControlField('Maintainer', options.get('--maintainer')),
     options.get('--url') ? formatControlField('Homepage', options.get('--url')) : '',
     lists.get('-d')?.length ? formatControlField('Depends', lists.get('-d').join(', ')) : '',
-    lists.get('--deb-recommends')?.length ? formatControlField('Recommends', lists.get('--deb-recommends').join(', ')) : '',
+    lists.get('--deb-recommends')?.length
+      ? formatControlField('Recommends', lists.get('--deb-recommends').join(', '))
+      : '',
     formatDescription(options.get('--description')),
   ].filter(Boolean);
 

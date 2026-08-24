@@ -326,24 +326,24 @@ export const AUTHORITY_PACKS: AuthorityPackSpec[] = [
     relativePath: 'norbert/offices.ndjson',
     defaultTag: 'roleName',
   },
-    {
-      id: 'huckbot5000-translations',
-      label: 'Huckbot5000 office translations',
-      source: 'huckbot5000',
-      relativePath: 'huckbot5000/translations.ndjson',
-      // Gloss sidecar only — never a seed pack for tag-bomb matching.
-      defaultTag: '',
-    },
-    {
-      id: 'maxiricci7000-translations',
-      label: 'MaxiRicci7000 French office translations',
-      source: 'maxiricci7000',
-      relativePath: 'maxiricci7000/translations.ndjson',
-      // Gloss sidecar only — never a seed pack for tag-bomb matching.
-      defaultTag: '',
-    },
-    {
-      id: 'norbert-wiki-nt',
+  {
+    id: 'huckbot5000-translations',
+    label: 'Huckbot5000 office translations',
+    source: 'huckbot5000',
+    relativePath: 'huckbot5000/translations.ndjson',
+    // Gloss sidecar only — never a seed pack for tag-bomb matching.
+    defaultTag: '',
+  },
+  {
+    id: 'maxiricci7000-translations',
+    label: 'MaxiRicci7000 French office translations',
+    source: 'maxiricci7000',
+    relativePath: 'maxiricci7000/translations.ndjson',
+    // Gloss sidecar only — never a seed pack for tag-bomb matching.
+    defaultTag: '',
+  },
+  {
+    id: 'norbert-wiki-nt',
     label: 'Norbert wiki noble titles',
     source: 'norbert',
     relativePath: 'norbert/wiki-nt-links.ndjson',

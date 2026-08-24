@@ -246,9 +246,7 @@ export const EntityLookupField = ({
       }
 
       let localCandidates: DisambiguationCandidate[] = [];
-      let central:
-        | { userStableId: string; candidates: DisambiguationCandidate[] }
-        | undefined;
+      let central: { userStableId: string; candidates: DisambiguationCandidate[] } | undefined;
 
       if (session.central) {
         const candidates = await loadSqliteDisambiguationCandidates(
@@ -365,11 +363,7 @@ export const EntityLookupField = ({
         nameLang: session.projectLang ?? undefined,
         romanizedName:
           merged.romanizedName ??
-          autoRomanizeForKind(
-            merged.projectLangName ?? merged.label,
-            session.projectLang,
-            kind,
-          ) ??
+          autoRomanizeForKind(merged.projectLangName ?? merged.label, session.projectLang, kind) ??
           undefined,
         authorityIds: merged.authorityIds,
         authoritySource: merged.authorityIds?.[0]
@@ -414,7 +408,8 @@ export const EntityLookupField = ({
         }).catch(() => undefined);
         if (kind === 'work') {
           const summary = await session.store.sqliteEntitySummary(resolvedId);
-          const workDate = (summary as { workDate?: { startYear?: number | null } } | null)?.workDate;
+          const workDate = (summary as { workDate?: { startYear?: number | null } } | null)
+            ?.workDate;
           const authors = (summary as { authors?: { name: string; ref?: string | null }[] } | null)
             ?.authors;
           if (workDate?.startYear != null || authors?.length) {

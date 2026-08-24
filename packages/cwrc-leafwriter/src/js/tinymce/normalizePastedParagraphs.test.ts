@@ -71,8 +71,7 @@ describe('normalizePastedParagraphs', () => {
 
   test('uses fragment structural parent when present', () => {
     const root = document.createElement('div');
-    root.innerHTML =
-      '<div _tag="body" id="dom_body"><div>Pasted text</div></div>';
+    root.innerHTML = '<div _tag="body" id="dom_body"><div>Pasted text</div></div>';
 
     expect(
       getEffectiveParentTag({
@@ -99,8 +98,7 @@ describe('normalizePastedParagraphs', () => {
 
   test('hoists nested pasted paragraphs out of an existing paragraph', () => {
     const root = document.createElement('div');
-    root.innerHTML =
-      '<div _tag="p" id="dom_outer"><div _tag="p" id="dom_inner">Nested</div></div>';
+    root.innerHTML = '<div _tag="p" id="dom_outer"><div _tag="p" id="dom_inner">Nested</div></div>';
 
     fixNestedPastedParagraphs(root);
 
@@ -118,9 +116,12 @@ describe('normalizePastedParagraphs', () => {
 
     fixNestedPastedParagraphs(root);
 
-    expect(
-      Array.from(root.children).map((child) => child.getAttribute('id')),
-    ).toEqual(['dom_outer', 'dom_inner_1', 'dom_inner_2', 'dom_inner_3']);
+    expect(Array.from(root.children).map((child) => child.getAttribute('id'))).toEqual([
+      'dom_outer',
+      'dom_inner_1',
+      'dom_inner_2',
+      'dom_inner_3',
+    ]);
   });
 
   test('does not tag empty paste blocks', () => {

@@ -19,7 +19,7 @@ export const toMonacoCompletionItems = (
 ): monaco.languages.CompletionItem[] => {
   if (!result) return [];
 
-  const items = Array.isArray(result) ? result : result.items ?? [];
+  const items = Array.isArray(result) ? result : (result.items ?? []);
 
   return items.map((item) => {
     const label = item.label;

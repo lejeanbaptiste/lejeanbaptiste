@@ -58,10 +58,7 @@ export const clearTagWalkHighlight = () => {
 
 const isRangeLike = (value: unknown): value is Range =>
   Boolean(
-    value &&
-      typeof value === 'object' &&
-      'startContainer' in value &&
-      'startOffset' in value,
+    value && typeof value === 'object' && 'startContainer' in value && 'startOffset' in value,
   );
 
 const resolveScrollElement = (target: Range | Element): Element | null => {

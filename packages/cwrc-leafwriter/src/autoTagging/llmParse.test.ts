@@ -11,13 +11,27 @@ const parse = (xml: string) => {
 describe('parseValidItems', () => {
   const validJson = JSON.stringify({
     suggestions: [
-      { surface: '張衡', occurrence: 1, tag: 'persName', action: 'add', confidence: 0.9, rationale: 'name' },
+      {
+        surface: '張衡',
+        occurrence: 1,
+        tag: 'persName',
+        action: 'add',
+        confidence: 0.9,
+        rationale: 'name',
+      },
     ],
   });
 
   it('accepts a well-formed response', () => {
     expect(parseValidItems(validJson, ['persName'], ['add'])).toEqual([
-      { surface: '張衡', occurrence: 1, tag: 'persName', action: 'add', confidence: 0.9, rationale: 'name' },
+      {
+        surface: '張衡',
+        occurrence: 1,
+        tag: 'persName',
+        action: 'add',
+        confidence: 0.9,
+        rationale: 'name',
+      },
     ]);
   });
 
@@ -32,7 +46,14 @@ describe('parseValidItems', () => {
   it('drops items whose tag was not requested', () => {
     const json = JSON.stringify({
       suggestions: [
-        { surface: 'X', occurrence: 1, tag: 'placeName', action: 'add', confidence: 0.5, rationale: 'r' },
+        {
+          surface: 'X',
+          occurrence: 1,
+          tag: 'placeName',
+          action: 'add',
+          confidence: 0.5,
+          rationale: 'r',
+        },
       ],
     });
     expect(parseValidItems(json, ['persName'], ['add'])).toEqual([]);
@@ -41,7 +62,14 @@ describe('parseValidItems', () => {
   it('drops items whose action was not allowed', () => {
     const json = JSON.stringify({
       suggestions: [
-        { surface: 'X', occurrence: 1, tag: 'persName', action: 'remove', confidence: 0.5, rationale: 'r' },
+        {
+          surface: 'X',
+          occurrence: 1,
+          tag: 'persName',
+          action: 'remove',
+          confidence: 0.5,
+          rationale: 'r',
+        },
       ],
     });
     expect(parseValidItems(json, ['persName'], ['add'])).toEqual([]);
@@ -50,7 +78,14 @@ describe('parseValidItems', () => {
   it('drops items with out-of-range confidence', () => {
     const json = JSON.stringify({
       suggestions: [
-        { surface: 'X', occurrence: 1, tag: 'persName', action: 'add', confidence: 1.5, rationale: 'r' },
+        {
+          surface: 'X',
+          occurrence: 1,
+          tag: 'persName',
+          action: 'add',
+          confidence: 1.5,
+          rationale: 'r',
+        },
       ],
     });
     expect(parseValidItems(json, ['persName'], ['add'])).toEqual([]);
@@ -59,8 +94,22 @@ describe('parseValidItems', () => {
   it('keeps valid items and drops invalid ones in the same batch', () => {
     const json = JSON.stringify({
       suggestions: [
-        { surface: 'good', occurrence: 1, tag: 'persName', action: 'add', confidence: 0.5, rationale: 'r' },
-        { surface: 'bad', occurrence: 1, tag: 'unknownTag', action: 'add', confidence: 0.5, rationale: 'r' },
+        {
+          surface: 'good',
+          occurrence: 1,
+          tag: 'persName',
+          action: 'add',
+          confidence: 0.5,
+          rationale: 'r',
+        },
+        {
+          surface: 'bad',
+          occurrence: 1,
+          tag: 'unknownTag',
+          action: 'add',
+          confidence: 0.5,
+          rationale: 'r',
+        },
       ],
     });
     expect(parseValidItems(json, ['persName'], ['add'])).toHaveLength(1);
@@ -68,10 +117,19 @@ describe('parseValidItems', () => {
 
   it('coerces string occurrence and defaults action when only one is allowed', () => {
     const json = JSON.stringify({
-      suggestions: [{ surface: '張衡', occurrence: '1', tag: 'persName', confidence: 0.9, rationale: 'name' }],
+      suggestions: [
+        { surface: '張衡', occurrence: '1', tag: 'persName', confidence: 0.9, rationale: 'name' },
+      ],
     });
     expect(parseValidItems(json, ['persName'], ['add'])).toEqual([
-      { surface: '張衡', occurrence: 1, tag: 'persName', action: 'add', confidence: 0.9, rationale: 'name' },
+      {
+        surface: '張衡',
+        occurrence: 1,
+        tag: 'persName',
+        action: 'add',
+        confidence: 0.9,
+        rationale: 'name',
+      },
     ]);
   });
 });
@@ -97,7 +155,9 @@ describe('locateInDoc', () => {
   });
 
   it('returns null when the span crosses a text-node boundary', () => {
-    const doc = parse('<TEI><text><body><p>alpha<placeName>beta</placeName>gamma</p></body></text></TEI>');
+    const doc = parse(
+      '<TEI><text><body><p>alpha<placeName>beta</placeName>gamma</p></body></text></TEI>',
+    );
     const index = buildDocIndex(doc, 'collapse');
     // "phabeta" spans the alpha/beta node boundary.
     const start = index.text.indexOf('pha');

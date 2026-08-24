@@ -8,10 +8,7 @@
   },
   "beforeBuild": "./scripts/skip-electron-builder-deps.mjs",
   "icon": "icon",
-  "files": [
-    "dist/**/*",
-    "package.json"
-  ],
+  "files": ["dist/**/*", "package.json"],
   "extraResources": [
     {
       "from": "../../THIRD_PARTY_NOTICES.md",

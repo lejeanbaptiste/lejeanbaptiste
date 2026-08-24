@@ -98,8 +98,7 @@ describe('findPunctuationBoundaryOffset', () => {
 
 describe('flattenEditorText + computePunctuationBoundaryMove', () => {
   const isBlock = (node: Node) =>
-    node.nodeType === Node.ELEMENT_NODE &&
-    ['P', 'DIV'].includes((node as Element).tagName);
+    node.nodeType === Node.ELEMENT_NODE && ['P', 'DIV'].includes((node as Element).tagName);
 
   it('inserts a virtual newline between block-level text nodes', () => {
     const root = document.createElement('div');
@@ -140,8 +139,6 @@ describe('isPunctuationBoundaryNavEvent', () => {
 
   it('ignores plain arrows and Cmd+Arrow', () => {
     expect(isPunctuationBoundaryNavEvent(arrow({}), true)).toBe(false);
-    expect(isPunctuationBoundaryNavEvent(arrow({ metaKey: true, altKey: true }), true)).toBe(
-      false,
-    );
+    expect(isPunctuationBoundaryNavEvent(arrow({ metaKey: true, altKey: true }), true)).toBe(false);
   });
 });

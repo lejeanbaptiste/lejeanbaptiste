@@ -1,21 +1,10 @@
 {
   "viewBox": "0 0 762 762",
-  "stackingOrder": [
-    "base",
-    "eyes",
-    "eyebrows",
-    "mouth",
-    "features",
-    "glasses",
-    "hair",
-    "earrings"
-  ],
+  "stackingOrder": ["base", "eyes", "eyebrows", "mouth", "features", "glasses", "hair", "earrings"],
   "source": "api.dicebear.com/10.x/adventurer (live-scraped to match production exactly)",
   "components": {
     "base": {
-      "variants": [
-        "default"
-      ],
+      "variants": ["default"],
       "colorable": true
     },
     "eyes": {
@@ -106,34 +95,15 @@
       "colorable": false
     },
     "features": {
-      "variants": [
-        "birthmark",
-        "blush",
-        "freckles",
-        "mustache"
-      ],
+      "variants": ["birthmark", "blush", "freckles", "mustache"],
       "colorable": false
     },
     "glasses": {
-      "variants": [
-        "variant01",
-        "variant02",
-        "variant03",
-        "variant04",
-        "variant05",
-        "variant06"
-      ],
+      "variants": ["variant01", "variant02", "variant03", "variant04", "variant05", "variant06"],
       "colorable": false
     },
     "earrings": {
-      "variants": [
-        "variant01",
-        "variant02",
-        "variant03",
-        "variant04",
-        "variant05",
-        "variant06"
-      ],
+      "variants": ["variant01", "variant02", "variant03", "variant04", "variant05", "variant06"],
       "colorable": false
     },
     "hair": {

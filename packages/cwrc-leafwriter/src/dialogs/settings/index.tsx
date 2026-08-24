@@ -6,13 +6,7 @@ import { useActions, useAppState } from '../../overmind';
 import { AddCustomAuthority } from '../custom-authority-dialog/add-custom-authority';
 import { Section } from './components';
 import { Header } from './header';
-import {
-  Authorities,
-  EntityLookups,
-  Guardrails,
-  MarkupPanel,
-  Reset,
-} from './sections';
+import { Authorities, EntityLookups, Guardrails, MarkupPanel, Reset } from './sections';
 import { Toggler } from './components/toggler';
 import { DesktopOfflineAuthorities } from './sections/authorities/desktop-offline-authorities';
 import { DesktopMapTilesSettings } from './sections/authorities/desktop-maptiles-settings';
@@ -74,7 +68,11 @@ export const SettingsDialog = ({ onClose, open = false, initialTab }: SettingsDi
       { id: 'interface', label: t('LW.settings.tabs.interface') },
       { id: 'guardrails', label: t('LW.settings.tabs.guardrails') },
       { id: 'authorities', label: t('LW.settings.tabs.authorities'), hide: isReadonly },
-      { id: 'asset-packs', label: t('LW.settings.tabs.asset_packs'), hide: !isDesktop || isReadonly },
+      {
+        id: 'asset-packs',
+        label: t('LW.settings.tabs.asset_packs'),
+        hide: !isDesktop || isReadonly,
+      },
       { id: 'plugins', label: t('LW.settings.tabs.plugins'), hide: !isDesktop },
       { id: 'ai', label: t('LW.settings.tabs.ai'), hide: !isDesktop },
       { id: 'translation-policy', label: t('LW.settings.tabs.translation_policy') },
@@ -101,7 +99,11 @@ export const SettingsDialog = ({ onClose, open = false, initialTab }: SettingsDi
 
   useEffect(() => {
     if (!closeAttempted || validity.allValid) return;
-    if (validity.isDesktop && !validity.encoderNameValid && visibleItems.some(({ id }) => id === 'profile')) {
+    if (
+      validity.isDesktop &&
+      !validity.encoderNameValid &&
+      visibleItems.some(({ id }) => id === 'profile')
+    ) {
       setActiveId('profile');
       return;
     }
@@ -279,9 +281,7 @@ export const SettingsDialog = ({ onClose, open = false, initialTab }: SettingsDi
                 {activeId === 'authorities' && !isReadonly && (
                   <>
                     {isDesktop && (
-                      <Alert severity="info">
-                        {t('LW.settings.authorities.asset_packs_note')}
-                      </Alert>
+                      <Alert severity="info">{t('LW.settings.authorities.asset_packs_note')}</Alert>
                     )}
                     <Section
                       endDecorator={<AddCustomAuthority />}
@@ -298,7 +298,10 @@ export const SettingsDialog = ({ onClose, open = false, initialTab }: SettingsDi
 
                 {activeId === 'asset-packs' && isDesktop && !isReadonly && (
                   <>
-                    <Section id="asset-authorities" title={t('LW.settings.asset_packs.offline_authorities')}>
+                    <Section
+                      id="asset-authorities"
+                      title={t('LW.settings.asset_packs.offline_authorities')}
+                    >
                       <List dense>
                         <DesktopOfflineAuthorities />
                       </List>

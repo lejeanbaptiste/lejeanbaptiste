@@ -407,10 +407,7 @@ export const setValidateMultiFileAutomation = ({ state, effects }: Context, valu
   effects.editor.api.saveToLocalStorage<boolean>(VALIDATE_MULTI_FILE_AUTOMATION_KEY, value);
 };
 
-export const setAllowSourceModeSchemaViolations = (
-  { state, effects }: Context,
-  value: boolean,
-) => {
+export const setAllowSourceModeSchemaViolations = ({ state, effects }: Context, value: boolean) => {
   state.editor.allowSourceModeSchemaViolations = value;
   effects.editor.api.saveToLocalStorage<boolean>(ALLOW_SOURCE_MODE_SCHEMA_VIOLATIONS_KEY, value);
 };

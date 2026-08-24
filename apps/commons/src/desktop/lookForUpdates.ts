@@ -48,12 +48,10 @@ export const gatherUpdateReport = async (
   const projectFilePath = options?.projectFilePath?.trim() || null;
 
   const [app, authority, pluginUpdates, schema] = await Promise.all([
-    api.checkForAppUpdates?.().catch(
-      (error): AppUpdateCheckResult => ({
-        status: 'error',
-        message: error instanceof Error ? error.message : String(error),
-      }),
-    ) ?? Promise.resolve(null),
+    api.checkForAppUpdates?.().catch((error): AppUpdateCheckResult => ({
+      status: 'error',
+      message: error instanceof Error ? error.message : String(error),
+    })) ?? Promise.resolve(null),
     api.authorityLifecycleMaybeCheckUpdates?.({ force: true }).catch(() => null) ??
       Promise.resolve(null),
     countPluginUpdates(api).catch(() => 0),
@@ -68,14 +66,10 @@ export const gatherUpdateReport = async (
 /** True when every applicable channel is current (or N/A). */
 export const everythingIsUpToDate = (report: LookForUpdatesReport): boolean => {
   const appOk =
-    !report.app ||
-    report.app.status === 'current' ||
-    report.app.status === 'unsupported';
+    !report.app || report.app.status === 'current' || report.app.status === 'unsupported';
   const authorityOk = !report.authority?.enabled || !report.authority.updateAvailable;
   const pluginsOk = report.pluginUpdates === 0;
   const schemaOk =
-    !report.schema ||
-    report.schema.status === 'current' ||
-    report.schema.status === 'skipped';
+    !report.schema || report.schema.status === 'current' || report.schema.status === 'skipped';
   return appOk && authorityOk && pluginsOk && schemaOk;
 };

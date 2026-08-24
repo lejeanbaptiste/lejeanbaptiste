@@ -1,8 +1,5 @@
 import type { AiPromptProfile } from './aiPromptProfiles';
-import {
-  DEFAULT_VALIDATION_TASK_TEXT,
-  resolveValidationTaskText,
-} from './aiPromptProfiles';
+import { DEFAULT_VALIDATION_TASK_TEXT, resolveValidationTaskText } from './aiPromptProfiles';
 import type { AiValidationResult, Suggestion } from './types';
 import type { LlmClient } from './llmClient';
 import type { ChunkOptions } from './chunk';
@@ -132,11 +129,12 @@ function buildValidationUserPrompt(params: {
   ];
 
   for (const s of params.suggestions) {
-    const ruleNotes = params.schemaRules.length > 0
-      ? `\n  Schema notes: ${params.schemaRules.join(', ')}`
-      : '';
-    const originLabel = s.source === 'authority' ? 'dictionary' : s.source === 'ai' ? 'ai' : s.source;
-    const dictionaryClue = s.source === 'authority' && s.rationale ? `\n  Dictionary clue: ${s.rationale}` : '';
+    const ruleNotes =
+      params.schemaRules.length > 0 ? `\n  Schema notes: ${params.schemaRules.join(', ')}` : '';
+    const originLabel =
+      s.source === 'authority' ? 'dictionary' : s.source === 'ai' ? 'ai' : s.source;
+    const dictionaryClue =
+      s.source === 'authority' && s.rationale ? `\n  Dictionary clue: ${s.rationale}` : '';
     const localContext = `…${s.anchor.contextBefore}【${s.anchor.surface}】${s.anchor.contextAfter}…`;
     lines.push(
       `- id=${s.id}: [${originLabel}] tag=<${s.tag}>, surface="${s.anchor.surface}", action=${s.action}` +
@@ -149,8 +147,12 @@ function buildValidationUserPrompt(params: {
 
   lines.push('');
   lines.push('Respond with a JSON object containing a "validations" array.');
-  lines.push('Each validation must include: id, confidence (0-1), recommended (boolean), and optionally warning, rationale.');
-  lines.push('Do not choose or infer a single winner for same-surface alternatives; evaluate each listed suggestion on its own.');
+  lines.push(
+    'Each validation must include: id, confidence (0-1), recommended (boolean), and optionally warning, rationale.',
+  );
+  lines.push(
+    'Do not choose or infer a single winner for same-surface alternatives; evaluate each listed suggestion on its own.',
+  );
 
   return lines.join('\n');
 }
@@ -183,15 +185,16 @@ function parseValidationResponse(
     const id = typeof v.id === 'string' && suggestionIds.has(v.id) ? v.id : null;
     if (!id) continue;
 
-    const confidence = typeof v.confidence === 'number' && v.confidence >= 0 && v.confidence <= 1
-      ? v.confidence
-      : 0.5;
+    const confidence =
+      typeof v.confidence === 'number' && v.confidence >= 0 && v.confidence <= 1
+        ? v.confidence
+        : 0.5;
 
-    const warning = typeof v.warning === 'string' && v.warning.trim() !== '' ? v.warning.trim() : undefined;
+    const warning =
+      typeof v.warning === 'string' && v.warning.trim() !== '' ? v.warning.trim() : undefined;
     const recommended = v.recommended === true;
-    const rationale = typeof v.rationale === 'string' && v.rationale.trim() !== ''
-      ? v.rationale.trim()
-      : undefined;
+    const rationale =
+      typeof v.rationale === 'string' && v.rationale.trim() !== '' ? v.rationale.trim() : undefined;
 
     result.set(id, {
       confidence,
@@ -276,7 +279,9 @@ export function suggestionCurateConfidence(suggestion: Suggestion): number | und
 /**
  * Get validation confidence color for display.
  */
-export function getValidationColor(confidence: number | undefined): 'error' | 'warning' | 'success' | 'default' {
+export function getValidationColor(
+  confidence: number | undefined,
+): 'error' | 'warning' | 'success' | 'default' {
   if (confidence === undefined) return 'default';
   if (confidence >= 0.8) return 'success';
   if (confidence >= 0.5) return 'warning';

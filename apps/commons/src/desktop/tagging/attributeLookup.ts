@@ -1,7 +1,10 @@
 import { entityLookupDialogAtom } from '@cwrc/leafwriter';
 import { getDefaultStore } from 'jotai';
 import { RESET } from 'jotai/utils';
-import type { EntityLink, NamedEntityType } from '../../../../../packages/cwrc-leafwriter/src/types';
+import type {
+  EntityLink,
+  NamedEntityType,
+} from '../../../../../packages/cwrc-leafwriter/src/types';
 import { commitTagAttributes, readTagAttributes } from './attributeCommand';
 import { resolveLookupEntityTypeForTag } from './attributeLookupTypes';
 
@@ -20,10 +23,7 @@ export const getLookupEntityTypeForTag = (tagName: string): NamedEntityType | nu
   return resolveLookupEntityTypeForTag(tagName, mapperType);
 };
 
-export const openEntityLookupForTag = (
-  tagElement: Element,
-  onApplied?: () => void,
-): boolean => {
+export const openEntityLookupForTag = (tagElement: Element, onApplied?: () => void): boolean => {
   const writer = getWriter();
   if (!writer) return false;
 

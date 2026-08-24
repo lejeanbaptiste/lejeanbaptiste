@@ -2,11 +2,7 @@ import { addEntity, createEntitiesScaffold, parseEntities } from './entities';
 import { listEntities, setFamilyName, setGivenName } from './entityOps';
 import { normalizeDomText } from './normalize';
 import { resolveNameTypeTaggingPolicy } from './nameTypeTaggingPolicy';
-import {
-  keyedPersNameFloors,
-  phase2StringsForEntity,
-  shortFormTag,
-} from './shortFormTag';
+import { keyedPersNameFloors, phase2StringsForEntity, shortFormTag } from './shortFormTag';
 
 const TEI_NS = 'http://www.tei-c.org/ns/1.0';
 

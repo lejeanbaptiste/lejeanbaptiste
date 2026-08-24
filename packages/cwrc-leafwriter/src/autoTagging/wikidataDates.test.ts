@@ -1,4 +1,9 @@
-import { formatLifespan, formatWikidataYear, parseWikidataYear, prefixDescriptionWithLifespan } from './wikidataDates';
+import {
+  formatLifespan,
+  formatWikidataYear,
+  parseWikidataYear,
+  prefixDescriptionWithLifespan,
+} from './wikidataDates';
 
 describe('wikidataDates', () => {
   it('parses a CE year at year precision', () => {
@@ -35,9 +40,9 @@ describe('wikidataDates', () => {
   });
 
   it('prefixes a description with the lifespan', () => {
-    expect(prefixDescriptionWithLifespan('Romance of the Three Kingdoms character', { deathYear: 253 })).toBe(
-      '(d. 253) Romance of the Three Kingdoms character',
-    );
+    expect(
+      prefixDescriptionWithLifespan('Romance of the Three Kingdoms character', { deathYear: 253 }),
+    ).toBe('(d. 253) Romance of the Three Kingdoms character');
   });
 
   it('leaves description unchanged when no lifespan is found', () => {

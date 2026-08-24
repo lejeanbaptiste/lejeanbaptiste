@@ -28,7 +28,12 @@ export function AiTagChipPicker({ options, value, disabled, onChange }: AiTagChi
       }}
       renderTags={(tagValue, getTagProps) =>
         tagValue.map((option, index) => (
-          <Chip {...getTagProps({ index })} key={`${option}-${index}`} label={option} size="small" />
+          <Chip
+            {...getTagProps({ index })}
+            key={`${option}-${index}`}
+            label={option}
+            size="small"
+          />
         ))
       }
       renderInput={(params) => (

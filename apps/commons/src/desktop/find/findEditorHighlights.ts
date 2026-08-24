@@ -113,7 +113,9 @@ const wrapMatchesInTextNode = (textNode: Text, regex: RegExp, spans: HighlightSp
     if (match.index === undefined) continue;
 
     if (match.index > lastIndex) {
-      fragment.appendChild(textNode.ownerDocument.createTextNode(text.slice(lastIndex, match.index)));
+      fragment.appendChild(
+        textNode.ownerDocument.createTextNode(text.slice(lastIndex, match.index)),
+      );
     }
 
     const span = textNode.ownerDocument.createElement('span');

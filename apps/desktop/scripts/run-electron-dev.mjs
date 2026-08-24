@@ -8,10 +8,7 @@ import { fileURLToPath } from 'node:url';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const desktopRoot = path.join(__dirname, '..');
-const executable = path.join(
-  desktopRoot,
-  '.dev/Le Jean-Baptiste.app/Contents/MacOS/Electron',
-);
+const executable = path.join(desktopRoot, '.dev/Le Jean-Baptiste.app/Contents/MacOS/Electron');
 
 if (!existsSync(executable)) {
   console.error(

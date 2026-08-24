@@ -58,13 +58,9 @@ function normalizedEntityXml(item: Element): string {
       }
     }
     for (const child of Array.from(element.children)) {
-      if (
-        child.localName === 'idno' && child.getAttribute('type') === CENTRAL_MAPPING_TYPE
-      ) {
+      if (child.localName === 'idno' && child.getAttribute('type') === CENTRAL_MAPPING_TYPE) {
         child.remove();
-      } else if (
-        child.localName === 'note' && child.getAttribute('type') === 'ljb-changed'
-      ) {
+      } else if (child.localName === 'note' && child.getAttribute('type') === 'ljb-changed') {
         child.remove();
       }
     }

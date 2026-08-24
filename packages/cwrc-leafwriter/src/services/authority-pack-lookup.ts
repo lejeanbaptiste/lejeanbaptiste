@@ -357,8 +357,7 @@ export function cachedPackReader():
  * the requested authority ids — safe for CBDB persons (~570MB full pack).
  */
 export function packRowsByIdsReader():
-  | ((packId: AuthorityPackId, authorityIds: string[]) => Promise<AuthorityPackContent>)
-  | undefined {
+  ((packId: AuthorityPackId, authorityIds: string[]) => Promise<AuthorityPackContent>) | undefined {
   const lookup = window.electronAPI?.authorityPackLookupByIds;
   return lookup ? (packId, authorityIds) => lookup(packId, authorityIds) : undefined;
 }
@@ -369,7 +368,10 @@ export function packRowsByIdsReader():
  * parsed index; that doubles the live memory for the duration of the run.
  */
 export function uncachedPackReader():
-  | ((packId: AuthorityPackId, dateFilter?: AuthorityPackDateFilter) => Promise<AuthorityPackContent>)
+  | ((
+      packId: AuthorityPackId,
+      dateFilter?: AuthorityPackDateFilter,
+    ) => Promise<AuthorityPackContent>)
   | undefined {
   const readPack = window.electronAPI?.authorityPackRead;
   return readPack ? (packId, dateFilter) => readPack(packId, dateFilter) : undefined;

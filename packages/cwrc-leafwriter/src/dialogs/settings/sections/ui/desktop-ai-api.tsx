@@ -241,9 +241,7 @@ export const DesktopAiApi = () => {
                 size="small"
               />
             }
-            label={
-              <Typography variant="body2">{t('LW.settings.ai_api.always_on')}</Typography>
-            }
+            label={<Typography variant="body2">{t('LW.settings.ai_api.always_on')}</Typography>}
             sx={{ ml: 0 }}
           />
           <Typography color="text.secondary" variant="caption">
@@ -268,7 +266,10 @@ export const DesktopAiApi = () => {
               {checking ? 'Establishing...' : 'Establish connection'}
             </Button>
             <Button
-              disabled={forgetting || (!settings.apiKey.trim() && !settings.baseUrl.trim() && !settings.model.trim())}
+              disabled={
+                forgetting ||
+                (!settings.apiKey.trim() && !settings.baseUrl.trim() && !settings.model.trim())
+              }
               onClick={() => void forgetSettings()}
               size="small"
               variant="outlined"

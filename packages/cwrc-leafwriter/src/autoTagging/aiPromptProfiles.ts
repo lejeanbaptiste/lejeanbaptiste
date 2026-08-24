@@ -87,7 +87,9 @@ export function resolveAuditCleanTaskText(profile?: AiPromptProfile | null): str
   return profile.auditCleanTaskText;
 }
 
-export function resolveDisambiguationRankTaskText(profile?: AiPromptProfile | null): string | undefined {
+export function resolveDisambiguationRankTaskText(
+  profile?: AiPromptProfile | null,
+): string | undefined {
   if (!profile || isDefaultAiPromptProfile(profile)) return undefined;
   return profile.disambiguationRankTaskText;
 }
@@ -98,7 +100,10 @@ export function resolveValidationTaskText(profile?: AiPromptProfile | null): str
 }
 
 /** Append a profile suffix to the shipped prompt version for cache invalidation. */
-export function promptVersionWithProfile(baseVersion: string, profile?: AiPromptProfile | null): string {
+export function promptVersionWithProfile(
+  baseVersion: string,
+  profile?: AiPromptProfile | null,
+): string {
   if (!profile || (profile.id === DEFAULT_AI_PROMPT_PROFILE_ID && profile.version === 0)) {
     return baseVersion;
   }

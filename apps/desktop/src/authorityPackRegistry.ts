@@ -125,7 +125,8 @@ const downloadToFile = async (
   }
   const contentLength = Number(response.headers.get('content-length'));
   const totalBytes = Number.isFinite(contentLength) && contentLength > 0 ? contentLength : null;
-  if (totalBytes !== null && totalBytes > maxBytes) throw new Error(`Download exceeds the ${maxBytes} byte limit.`);
+  if (totalBytes !== null && totalBytes > maxBytes)
+    throw new Error(`Download exceeds the ${maxBytes} byte limit.`);
 
   let receivedBytes = 0;
   const body = Readable.fromWeb(response.body as import('node:stream/web').ReadableStream);
@@ -134,7 +135,8 @@ const downloadToFile = async (
     async function* (chunks) {
       for await (const chunk of chunks) {
         receivedBytes += (chunk as Buffer).length;
-        if (receivedBytes > maxBytes) throw new Error(`Download exceeds the ${maxBytes} byte limit.`);
+        if (receivedBytes > maxBytes)
+          throw new Error(`Download exceeds the ${maxBytes} byte limit.`);
         onChunk?.(receivedBytes, totalBytes);
         yield chunk;
       }
@@ -219,9 +221,14 @@ export const installPackBundle = async ({
   await fsp.mkdir(tempDir, { recursive: true });
 
   onProgress?.(`Downloading ${bundle.fileName}…`, 0, bundle.bytes);
-  await downloadToFile(tarballUrl, tarballPath, (received, total) => {
-    onProgress?.(`Downloading authority packs…`, received, total ?? bundle.bytes);
-  }, Math.min(MAX_PACK_DOWNLOAD_BYTES, bundle.bytes + 64 * 1024 * 1024));
+  await downloadToFile(
+    tarballUrl,
+    tarballPath,
+    (received, total) => {
+      onProgress?.(`Downloading authority packs…`, received, total ?? bundle.bytes);
+    },
+    Math.min(MAX_PACK_DOWNLOAD_BYTES, bundle.bytes + 64 * 1024 * 1024),
+  );
 
   const tarballDigest = await sha256File(tarballPath);
   if (tarballDigest !== bundle.sha256) {
@@ -313,13 +320,8 @@ export async function ingestPackPurgeOrdersFromInstall(
   entityDbFolder: string,
   packsLiveDir: string = path.join(entityDbFolder, 'authority-packs'),
 ): Promise<{ added: number }> {
-  const {
-    mergeShippedOrdersIntoDocket,
-    parseShippedPurgeOrders,
-    packPurgeDocketPaths,
-  } = await import(
-    '../../../packages/cwrc-leafwriter/src/autoTagging/packPurgeDocket'
-  );
+  const { mergeShippedOrdersIntoDocket, parseShippedPurgeOrders, packPurgeDocketPaths } =
+    await import('../../../packages/cwrc-leafwriter/src/autoTagging/packPurgeDocket');
   const candidates = [
     path.join(packsLiveDir, 'purge-orders', 'purge-orders.ndjson'),
     path.join(packsLiveDir, 'purge-orders.ndjson'),

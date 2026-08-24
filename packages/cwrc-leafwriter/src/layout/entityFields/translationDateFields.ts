@@ -111,23 +111,20 @@ export const createDateFieldElement = (
 
 export const prepareAtomicDateFields = (root: ParentNode): void => {
   for (const ref of Array.from(
-    (root as ParentNode & { querySelectorAll: typeof Element.prototype.querySelectorAll }).querySelectorAll?.(
-      `ref[type="${DATE_REF_TYPE}"]`,
-    ) ?? [],
+    (
+      root as ParentNode & { querySelectorAll: typeof Element.prototype.querySelectorAll }
+    ).querySelectorAll?.(`ref[type="${DATE_REF_TYPE}"]`) ?? [],
   )) {
     ref.setAttribute('contenteditable', 'false');
     ref.setAttribute(DATE_FIELD_ATTR, 'true');
   }
 };
 
-export const recalculateDateFieldsInRoot = (
-  root: ParentNode,
-  lang?: string | null,
-): void => {
+export const recalculateDateFieldsInRoot = (root: ParentNode, lang?: string | null): void => {
   const fields = Array.from(
-    (root as ParentNode & { querySelectorAll: typeof Element.prototype.querySelectorAll }).querySelectorAll?.(
-      `ref[type="${DATE_REF_TYPE}"]`,
-    ) ?? [],
+    (
+      root as ParentNode & { querySelectorAll: typeof Element.prototype.querySelectorAll }
+    ).querySelectorAll?.(`ref[type="${DATE_REF_TYPE}"]`) ?? [],
   );
   for (const field of fields) {
     const parts = readDatePartsFromField(field);

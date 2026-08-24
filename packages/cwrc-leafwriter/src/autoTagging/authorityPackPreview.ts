@@ -8,10 +8,7 @@ import {
   type DateRangeFilter,
   type PackStringCount,
 } from './packLoader';
-import {
-  WIKIDATA_PERSON_CHILD_PACK_IDS,
-  type AuthorityPackId,
-} from './packPaths';
+import { WIKIDATA_PERSON_CHILD_PACK_IDS, type AuthorityPackId } from './packPaths';
 
 export type AuthorityPackStringCounts = Partial<Record<AuthorityPackId, PackStringCount>>;
 

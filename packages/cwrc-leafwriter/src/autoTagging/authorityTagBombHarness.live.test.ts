@@ -27,9 +27,7 @@ import { goldMentions, runAuthorityTagBombHarness } from './validationHarness';
 
 const DOM_GLOBALS = ['NodeFilter', 'Node', 'Text', 'Element', 'Document', 'DOMParser'] as const;
 
-function installDomGlobals(
-  window: Record<(typeof DOM_GLOBALS)[number], unknown>,
-): void {
+function installDomGlobals(window: Record<(typeof DOM_GLOBALS)[number], unknown>): void {
   for (const key of DOM_GLOBALS) {
     (globalThis as Record<string, unknown>)[key] = window[key];
   }
@@ -79,63 +77,64 @@ function formatMetrics(m: {
 }
 
 describe('authority tag bomb validation harness (opt-in live)', () => {
-  maybe('scores tag bomb vs hand-tagged gold', async () => {
-    expect(fs.existsSync(xmlPath)).toBe(true);
-    for (const packId of packIds) {
-      expect(fs.existsSync(packPath(entityDbFolder, packId))).toBe(true);
-    }
+  maybe(
+    'scores tag bomb vs hand-tagged gold',
+    async () => {
+      expect(fs.existsSync(xmlPath)).toBe(true);
+      for (const packId of packIds) {
+        expect(fs.existsSync(packPath(entityDbFolder, packId))).toBe(true);
+      }
 
-    const source = fs.readFileSync(xmlPath, 'utf-8');
-    const doc = parseGoldXml(source);
-    normalizeDomText(doc);
+      const source = fs.readFileSync(xmlPath, 'utf-8');
+      const doc = parseGoldXml(source);
+      normalizeDomText(doc);
 
-    const readPackFile = async (packId: AuthorityPackId) =>
-      fs.readFileSync(packPath(entityDbFolder, packId), 'utf-8');
+      const readPackFile = async (packId: AuthorityPackId) =>
+        fs.readFileSync(packPath(entityDbFolder, packId), 'utf-8');
 
-    const gold = goldMentions(doc, 'ignore', tags);
-    const report = await runAuthorityTagBombHarness(doc, {
-      policy: 'ignore',
-      tags,
-      packIds,
-      readPackFile,
-      ...(yearFilterEnabled
-        ? { yearRange: { start: yearStart, end: yearEnd }, hideUndated }
-        : {}),
-    });
-
-     
-    console.log('\n--- authority tag bomb harness ---');
-    console.log('gold file:', xmlPath);
-    console.log('entity db folder:', entityDbFolder);
-    console.log('pack ids:', packIds.join(', '));
-    console.log('tags scored:', tags.join(', '));
-    if (yearFilterEnabled) {
-      console.log(`year filter: ${yearStart}–${yearEnd} CE, hideUndated=${hideUndated}`);
-    } else {
-      console.log('year filter: off');
-    }
-    console.log('gold mentions:', gold.length);
-    console.log('candidates loaded:', report.candidateCount);
-    console.log('matches:', report.matchCount);
-    console.log('overall:', formatMetrics(report.overall));
-    for (const [tag, metrics] of Object.entries(report.byTag)) {
-      console.log(`  ${tag}: ${formatMetrics(metrics)}`);
-    }
-    if (report.wrongTag.length > 0) {
-      console.log('wrong tag (first 10):', report.wrongTag.slice(0, 10));
-    }
-    if (report.overall.fn > 0) {
-      const predictedKeys = new Set(
-        report.wrongTag.map((w) => `${w.surface}@${w.occurrence}`),
-      );
-      const missed = gold.filter((g) => {
-        const key = `${g.surface}@${g.occurrence}`;
-        return !predictedKeys.has(key);
+      const gold = goldMentions(doc, 'ignore', tags);
+      const report = await runAuthorityTagBombHarness(doc, {
+        policy: 'ignore',
+        tags,
+        packIds,
+        readPackFile,
+        ...(yearFilterEnabled
+          ? { yearRange: { start: yearStart, end: yearEnd }, hideUndated }
+          : {}),
       });
-      console.log('sample false negatives (first 15):', missed.slice(0, 15));
-    }
 
-    expect(report.goldCount).toBeGreaterThan(0);
-    expect(report.candidateCount).toBeGreaterThan(0);
-  }, 120_000);
+      console.log('\n--- authority tag bomb harness ---');
+      console.log('gold file:', xmlPath);
+      console.log('entity db folder:', entityDbFolder);
+      console.log('pack ids:', packIds.join(', '));
+      console.log('tags scored:', tags.join(', '));
+      if (yearFilterEnabled) {
+        console.log(`year filter: ${yearStart}–${yearEnd} CE, hideUndated=${hideUndated}`);
+      } else {
+        console.log('year filter: off');
+      }
+      console.log('gold mentions:', gold.length);
+      console.log('candidates loaded:', report.candidateCount);
+      console.log('matches:', report.matchCount);
+      console.log('overall:', formatMetrics(report.overall));
+      for (const [tag, metrics] of Object.entries(report.byTag)) {
+        console.log(`  ${tag}: ${formatMetrics(metrics)}`);
+      }
+      if (report.wrongTag.length > 0) {
+        console.log('wrong tag (first 10):', report.wrongTag.slice(0, 10));
+      }
+      if (report.overall.fn > 0) {
+        const predictedKeys = new Set(report.wrongTag.map((w) => `${w.surface}@${w.occurrence}`));
+        const missed = gold.filter((g) => {
+          const key = `${g.surface}@${g.occurrence}`;
+          return !predictedKeys.has(key);
+        });
+        console.log('sample false negatives (first 15):', missed.slice(0, 15));
+      }
+
+      expect(report.goldCount).toBeGreaterThan(0);
+      expect(report.candidateCount).toBeGreaterThan(0);
+    },
+    120_000,
+  );
 });

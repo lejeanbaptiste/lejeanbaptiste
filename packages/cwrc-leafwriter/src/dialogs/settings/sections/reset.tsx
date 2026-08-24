@@ -14,35 +14,35 @@ export const Reset = () => {
       <Button
         icon="reset"
         onClick={() => {
-            resetDialogWarnings().then(() => {
-              notifyViaSnackbar(t('LW.settings.reset.message.dialog_warnings_reset'));
-            });
-          }}
-        >
+          resetDialogWarnings().then(() => {
+            notifyViaSnackbar(t('LW.settings.reset.message.dialog_warnings_reset'));
+          });
+        }}
+      >
         {t('LW.settings.reset.reset_dialog_warnings')}
       </Button>
       <Button
         icon="reset"
         onClick={() => {
-            resetPreferences().then(() => {
-              notifyViaSnackbar(t('LW.settings.reset.message.settings_reset_to_default'));
-            });
-          }}
-        >
+          resetPreferences().then(() => {
+            notifyViaSnackbar(t('LW.settings.reset.message.settings_reset_to_default'));
+          });
+        }}
+      >
         {t('LW.settings.reset.reset_settings')}
       </Button>
       <Button
         icon="reset"
         onClick={() => {
-            clearCache().then(() => {
-              notifyViaSnackbar(
-                `${t('LW.settings.reset.message.cache_cleared')}. ${t(
-                  'LW.settings.reset.message.reload_document_if_needed',
-                )}.`,
-              );
-            });
-          }}
-        >
+          clearCache().then(() => {
+            notifyViaSnackbar(
+              `${t('LW.settings.reset.message.cache_cleared')}. ${t(
+                'LW.settings.reset.message.reload_document_if_needed',
+              )}.`,
+            );
+          });
+        }}
+      >
         {t('LW.settings.reset.clear_cache')}
       </Button>
     </Stack>

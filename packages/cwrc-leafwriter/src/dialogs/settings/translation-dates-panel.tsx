@@ -23,10 +23,7 @@ import {
   type ScholarlyConventions,
 } from '../../layout/entityFields/scholarlyConventions';
 
-const MODE_I18N: Record<
-  DateWesternDisplayMode,
-  { label: string; example: string }
-> = {
+const MODE_I18N: Record<DateWesternDisplayMode, { label: string; example: string }> = {
   'translation+western': {
     label: 'LW.settings.translationPolicy.modeTranslationWestern',
     example: 'LW.settings.translationPolicy.exampleTranslationWestern',

@@ -23,9 +23,9 @@ const indexAndSnapshot = async (
 const serialize = (doc: Document): string => new XMLSerializer().serializeToString(doc);
 
 const idsOf = (xml: string): (string | null)[] =>
-  Array.from(
-    parse(xml).getElementsByTagNameNS('http://www.tei-c.org/ns/1.0', 'p'),
-  ).map((p) => p.getAttribute('xml:id'));
+  Array.from(parse(xml).getElementsByTagNameNS('http://www.tei-c.org/ns/1.0', 'p')).map((p) =>
+    p.getAttribute('xml:id'),
+  );
 
 describe('recoverIdsFromSnapshot', () => {
   test('restores all ids after an external tool stripped them (content unchanged)', async () => {

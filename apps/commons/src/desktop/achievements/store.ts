@@ -152,7 +152,7 @@ export const mergeAchievementsStates = (
     projects[key] =
       diskMetrics && localMetrics
         ? mergeProjectMetrics(diskMetrics, localMetrics)
-        : diskMetrics ?? localMetrics!;
+        : (diskMetrics ?? localMetrics!);
   }
 
   const unlocked: AchievementsState['unlocked'] = { ...diskState.unlocked };

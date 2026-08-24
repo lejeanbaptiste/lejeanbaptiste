@@ -17,19 +17,15 @@ const tag = (name: string, invalid = false): NodeDetail => ({
 
 describe('sortTagSuggestions', () => {
   test('orders by project usage then alphabetically', () => {
-    const sorted = sortTagSuggestions(
-      [tag('note'), tag('persName'), tag('placeName')],
-      { persName: 5, note: 1 },
-    );
+    const sorted = sortTagSuggestions([tag('note'), tag('persName'), tag('placeName')], {
+      persName: 5,
+      note: 1,
+    });
     expect(sorted.map((item) => item.name)).toEqual(['persName', 'note', 'placeName']);
   });
 
   test('moves preferred tag to front when present', () => {
-    const sorted = sortTagSuggestions(
-      [tag('note'), tag('persName'), tag('p')],
-      {},
-      'p',
-    );
+    const sorted = sortTagSuggestions([tag('note'), tag('persName'), tag('p')], {}, 'p');
     expect(sorted[0]?.name).toBe('p');
   });
 });
@@ -65,7 +61,11 @@ describe('pinParagraphInsertOption', () => {
       editor: { getBody: () => body },
     };
 
-    const result = pinParagraphInsertOption([{ name: 'persName', type: 'tag', eventType: 'enterStartTag' }], 'insert', ctx);
+    const result = pinParagraphInsertOption(
+      [{ name: 'persName', type: 'tag', eventType: 'enterStartTag' }],
+      'insert',
+      ctx,
+    );
     expect(result[0]?.name).toBe('p');
     expect(result[0]?.invalid).toBe(false);
   });
@@ -114,7 +114,16 @@ describe('getEditorTagContext', () => {
     rng.setStart(text, 1);
     rng.collapse(true);
 
-    (window as unknown as { writer: { editor: { getBody: () => Element; selection: { getNode: () => Node; getRng: () => Range } } } }).writer = {
+    (
+      window as unknown as {
+        writer: {
+          editor: {
+            getBody: () => Element;
+            selection: { getNode: () => Node; getRng: () => Range };
+          };
+        };
+      }
+    ).writer = {
       editor: {
         getBody: () => body,
         selection: {
@@ -137,7 +146,16 @@ describe('getEditorTagContext', () => {
     rng.setStart(text, 0);
     rng.collapse(true);
 
-    (window as unknown as { writer: { editor: { getBody: () => Element; selection: { getNode: () => Node; getRng: () => Range } } } }).writer = {
+    (
+      window as unknown as {
+        writer: {
+          editor: {
+            getBody: () => Element;
+            selection: { getNode: () => Node; getRng: () => Range };
+          };
+        };
+      }
+    ).writer = {
       editor: {
         getBody: () => body,
         selection: {

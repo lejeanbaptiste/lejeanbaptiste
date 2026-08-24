@@ -397,145 +397,145 @@ export const ProjectEditor = () => {
           position: 'relative',
         }}
       >
-      <UnifiedLeftPanel />
-      {!resource && !hasProject && (
-        // A floating callout rather than a plain inline hint, so it visually
-        // reads as "click the folder icon over there". Positioned against
-        // this component's own top-level row (the shared ancestor whose top
-        // edge the sidebar's icon strip and this callout both start from),
-        // not the content column below — that column has an extra 35px
-        // toolbar row above it that the sidebar doesn't, which would throw
-        // off any offset measured from inside it.
-        <Box
-          component="button"
-          type="button"
-          onClick={() => void openProject()}
-          sx={{
-            alignItems: 'center',
-            bgcolor: 'success.main',
-            border: 'none',
-            borderRadius: 5,
-            boxShadow: 3,
-            color: 'success.contrastText',
-            cursor: 'pointer',
-            display: 'inline-flex',
-            font: 'inherit',
-            gap: 1,
-            left: LEFT_PANEL_COLLAPSED_WIDTH + 8,
-            m: 0,
-            position: 'absolute',
-            px: 2,
-            py: 1,
-            top: OPEN_FOLDER_CALLOUT_TOP,
-            transform: 'translateY(-50%)',
-            zIndex: 2,
-            '&:hover': { bgcolor: 'success.dark' },
-          }}
-        >
-          <WestIcon sx={{ fontSize: 20 }} aria-hidden />
-          <Typography color="inherit" variant="body1">
-            {t('LWC.desktop.explorer.open_folder_editor_hint', { shortcut: modShortcut('O') })}
-          </Typography>
-        </Box>
-      )}
-      <Box sx={{ display: 'flex', flexDirection: 'column', flex: 1, minWidth: 0 }}>
-        <Box
-          id="desktop-toolbar-row"
-          sx={{
-            display: 'flex',
-            alignItems: 'center',
-            flexShrink: 0,
-            height: TOOLBAR_ROW_HEIGHT,
-            overflow: 'hidden',
-            borderBottom: 1,
-            borderColor: 'divider',
-            bgcolor: 'background.paper',
-          }}
-        />
-        <Box sx={{ flex: 1, minHeight: 0, position: 'relative' }}>
-          <DocumentLoadingCover visible={showDocumentCover} />
-          {!resource && (
-            <Box
-              sx={{
-                alignItems: 'center',
-                bgcolor: 'background.default',
-                display: 'flex',
-                height: '100%',
-                inset: 0,
-                justifyContent: 'center',
-                position: 'absolute',
-                zIndex: 1,
-              }}
-            >
-              {hasProject && (
-                <Typography color="text.secondary" variant="body1">
-                  {t('LWC.desktop.project.no_file_open', { shortcut: modShortcut('N') })}
-                </Typography>
-              )}
-            </Box>
-          )}
-          {editorLoadFailed && resource && (
-            <Box
-              sx={{
-                alignItems: 'center',
-                bgcolor: 'background.default',
-                display: 'flex',
-                flexDirection: 'column',
-                gap: 2,
-                height: '100%',
-                inset: 0,
-                justifyContent: 'center',
-                position: 'absolute',
-                zIndex: 2,
-              }}
-            >
-              <Typography color="text.secondary" variant="body1">
-                {t('LWC.desktop.project.messages.editor_failed_to_load')}
-              </Typography>
-              <Button onClick={retryEditorLoad} variant="contained">
-                {t('LWC.commons.retry')}
-              </Button>
-            </Box>
-          )}
+        <UnifiedLeftPanel />
+        {!resource && !hasProject && (
+          // A floating callout rather than a plain inline hint, so it visually
+          // reads as "click the folder icon over there". Positioned against
+          // this component's own top-level row (the shared ancestor whose top
+          // edge the sidebar's icon strip and this callout both start from),
+          // not the content column below — that column has an extra 35px
+          // toolbar row above it that the sidebar doesn't, which would throw
+          // off any offset measured from inside it.
           <Box
-            key={sessionKey}
-            ref={divEl}
-            id="leaf-writer-container"
+            component="button"
+            type="button"
+            onClick={() => void openProject()}
+            sx={{
+              alignItems: 'center',
+              bgcolor: 'success.main',
+              border: 'none',
+              borderRadius: 5,
+              boxShadow: 3,
+              color: 'success.contrastText',
+              cursor: 'pointer',
+              display: 'inline-flex',
+              font: 'inherit',
+              gap: 1,
+              left: LEFT_PANEL_COLLAPSED_WIDTH + 8,
+              m: 0,
+              position: 'absolute',
+              px: 2,
+              py: 1,
+              top: OPEN_FOLDER_CALLOUT_TOP,
+              transform: 'translateY(-50%)',
+              zIndex: 2,
+              '&:hover': { bgcolor: 'success.dark' },
+            }}
+          >
+            <WestIcon sx={{ fontSize: 20 }} aria-hidden />
+            <Typography color="inherit" variant="body1">
+              {t('LWC.desktop.explorer.open_folder_editor_hint', { shortcut: modShortcut('O') })}
+            </Typography>
+          </Box>
+        )}
+        <Box sx={{ display: 'flex', flexDirection: 'column', flex: 1, minWidth: 0 }}>
+          <Box
+            id="desktop-toolbar-row"
             sx={{
               display: 'flex',
-              flexDirection: 'column',
-              height: '100%',
-              minHeight: 0,
-              width: '100%',
-              visibility: resource || settingsBootstrapRequested ? 'visible' : 'hidden',
+              alignItems: 'center',
+              flexShrink: 0,
+              height: TOOLBAR_ROW_HEIGHT,
+              overflow: 'hidden',
+              borderBottom: 1,
+              borderColor: 'divider',
+              bgcolor: 'background.paper',
             }}
           />
+          <Box sx={{ flex: 1, minHeight: 0, position: 'relative' }}>
+            <DocumentLoadingCover visible={showDocumentCover} />
+            {!resource && (
+              <Box
+                sx={{
+                  alignItems: 'center',
+                  bgcolor: 'background.default',
+                  display: 'flex',
+                  height: '100%',
+                  inset: 0,
+                  justifyContent: 'center',
+                  position: 'absolute',
+                  zIndex: 1,
+                }}
+              >
+                {hasProject && (
+                  <Typography color="text.secondary" variant="body1">
+                    {t('LWC.desktop.project.no_file_open', { shortcut: modShortcut('N') })}
+                  </Typography>
+                )}
+              </Box>
+            )}
+            {editorLoadFailed && resource && (
+              <Box
+                sx={{
+                  alignItems: 'center',
+                  bgcolor: 'background.default',
+                  display: 'flex',
+                  flexDirection: 'column',
+                  gap: 2,
+                  height: '100%',
+                  inset: 0,
+                  justifyContent: 'center',
+                  position: 'absolute',
+                  zIndex: 2,
+                }}
+              >
+                <Typography color="text.secondary" variant="body1">
+                  {t('LWC.desktop.project.messages.editor_failed_to_load')}
+                </Typography>
+                <Button onClick={retryEditorLoad} variant="contained">
+                  {t('LWC.commons.retry')}
+                </Button>
+              </Box>
+            )}
+            <Box
+              key={sessionKey}
+              ref={divEl}
+              id="leaf-writer-container"
+              sx={{
+                display: 'flex',
+                flexDirection: 'column',
+                height: '100%',
+                minHeight: 0,
+                width: '100%',
+                visibility: resource || settingsBootstrapRequested ? 'visible' : 'hidden',
+              }}
+            />
+          </Box>
         </Box>
-      </Box>
-      {/* Mount point for the auto-tagging review panel (portaled from LEAF-Writer App). */}
-      <Box
-        id="desktop-panel-auto-tagging"
-        sx={{
-          flexShrink: 0,
-          height: '100%',
-          overflow: 'hidden',
-          width: 0,
-          minWidth: 0,
-          display: 'none',
-        }}
-      />
-      <Box
-        id="desktop-panel-disambiguation"
-        sx={{
-          flexShrink: 0,
-          height: '100%',
-          overflow: 'hidden',
-          width: 0,
-          minWidth: 0,
-          display: 'none',
-        }}
-      />
-      <UnifiedRightPanel />
+        {/* Mount point for the auto-tagging review panel (portaled from LEAF-Writer App). */}
+        <Box
+          id="desktop-panel-auto-tagging"
+          sx={{
+            flexShrink: 0,
+            height: '100%',
+            overflow: 'hidden',
+            width: 0,
+            minWidth: 0,
+            display: 'none',
+          }}
+        />
+        <Box
+          id="desktop-panel-disambiguation"
+          sx={{
+            flexShrink: 0,
+            height: '100%',
+            overflow: 'hidden',
+            width: 0,
+            minWidth: 0,
+            display: 'none',
+          }}
+        />
+        <UnifiedRightPanel />
       </Box>
     </Box>
   );

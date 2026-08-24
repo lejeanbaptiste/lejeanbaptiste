@@ -9,9 +9,7 @@ import { normalizeSourceLanguageCode } from '@cwrc/leafwriter/languageCodes';
 /** TEI metadata path holding the project's source-document language. */
 export const SOURCE_LANGUAGE_PATH = 'profileDesc/langUsage/language';
 
-export const sourceLanguageFromMetadata = (
-  metadata: ProjectMetadataFile | null,
-): string | null => {
+export const sourceLanguageFromMetadata = (metadata: ProjectMetadataFile | null): string | null => {
   const value = metadata?.fields?.[SOURCE_LANGUAGE_PATH]?.trim();
   return value ? normalizeSourceLanguageCode(value) : null;
 };
@@ -20,9 +18,8 @@ export const sourceLanguageFromMetadata = (
 export const projectRequiresSourceLanguage = (bundle: ProjectBundle): boolean =>
   !isOrlandoCatalog(bundle.config.schema?.catalogId);
 
-export const getProjectSourceLanguage = async (
-  bundle: ProjectBundle,
-): Promise<string | null> => sourceLanguageFromMetadata(await readProjectMetadata(bundle));
+export const getProjectSourceLanguage = async (bundle: ProjectBundle): Promise<string | null> =>
+  sourceLanguageFromMetadata(await readProjectMetadata(bundle));
 
 /**
  * Chinese gate (auto-tagging Phase A0): CBDB/DILA authority sources are only

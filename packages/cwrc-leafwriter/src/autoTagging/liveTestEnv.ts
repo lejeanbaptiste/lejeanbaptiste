@@ -69,12 +69,14 @@ export function resolveLiveModel(baseUrl: string): string {
 export function resolveLiveApiKey(baseUrl: string): { key: string; source: string } {
   const live = process.env.LLM_LIVE_API_KEY?.trim() ?? '';
   if (baseUrl.includes('groq.com')) {
-    if (process.env.GROQ_API_KEY?.trim()) return { key: process.env.GROQ_API_KEY.trim(), source: 'GROQ_API_KEY' };
+    if (process.env.GROQ_API_KEY?.trim())
+      return { key: process.env.GROQ_API_KEY.trim(), source: 'GROQ_API_KEY' };
     if (live) return { key: live, source: 'LLM_LIVE_API_KEY' };
     return { key: '', source: 'none' };
   }
   if (baseUrl.includes('api.mistral.ai')) {
-    if (process.env.MISTRAL_API_KEY?.trim()) return { key: process.env.MISTRAL_API_KEY.trim(), source: 'MISTRAL_API_KEY' };
+    if (process.env.MISTRAL_API_KEY?.trim())
+      return { key: process.env.MISTRAL_API_KEY.trim(), source: 'MISTRAL_API_KEY' };
     if (live.startsWith('gsk_')) {
       throw new Error(
         'LLM_LIVE_API_KEY looks like a Groq key (gsk_…), but LLM_LIVE_BASE_URL is Mistral.\n' +
@@ -89,8 +91,10 @@ export function resolveLiveApiKey(baseUrl: string): { key: string; source: strin
     return { key: '', source: 'local' };
   }
   if (live) return { key: live, source: 'LLM_LIVE_API_KEY' };
-  if (process.env.MISTRAL_API_KEY?.trim()) return { key: process.env.MISTRAL_API_KEY.trim(), source: 'MISTRAL_API_KEY' };
-  if (process.env.GROQ_API_KEY?.trim()) return { key: process.env.GROQ_API_KEY.trim(), source: 'GROQ_API_KEY' };
+  if (process.env.MISTRAL_API_KEY?.trim())
+    return { key: process.env.MISTRAL_API_KEY.trim(), source: 'MISTRAL_API_KEY' };
+  if (process.env.GROQ_API_KEY?.trim())
+    return { key: process.env.GROQ_API_KEY.trim(), source: 'GROQ_API_KEY' };
   return { key: '', source: 'none' };
 }
 
@@ -117,8 +121,15 @@ export function hostedApiKeyHelp(baseUrl?: string): string {
       'GROQ_API_KEY is set but the run targets Mistral. Unset LLM_LIVE_BASE_URL or set LLM_LIVE_PROVIDER=groq.',
     );
   }
-  if (!process.env.GROQ_API_KEY?.trim() && !process.env.MISTRAL_API_KEY?.trim() && !process.env.LLM_LIVE_API_KEY?.trim()) {
-    hints.push('', 'No API keys visible to Jest. Export in the same shell before running npx jest.');
+  if (
+    !process.env.GROQ_API_KEY?.trim() &&
+    !process.env.MISTRAL_API_KEY?.trim() &&
+    !process.env.LLM_LIVE_API_KEY?.trim()
+  ) {
+    hints.push(
+      '',
+      'No API keys visible to Jest. Export in the same shell before running npx jest.',
+    );
   }
   return hints.join('\n');
 }

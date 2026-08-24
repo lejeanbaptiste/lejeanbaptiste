@@ -52,7 +52,10 @@ export async function fetchWikidataNationality(
   return targetQids.map((targetQid) => {
     const labels = labelsByQid.get(targetQid.toUpperCase()) ?? {};
     const label =
-      preferredLabelForLang(labels, projectLang) ?? labels['en'] ?? Object.values(labels)[0] ?? targetQid;
+      preferredLabelForLang(labels, projectLang) ??
+      labels['en'] ??
+      Object.values(labels)[0] ??
+      targetQid;
     return { canonicalId: `https://www.wikidata.org/entity/${targetQid}`, label };
   });
 }

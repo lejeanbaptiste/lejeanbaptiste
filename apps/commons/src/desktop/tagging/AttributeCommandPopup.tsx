@@ -48,7 +48,11 @@ export const AttributeCommandPopup = ({
 }: AttributeCommandPopupProps) => {
   const nameInputRef = useRef<HTMLInputElement>(null);
   const valueInputRef = useRef<HTMLInputElement>(null);
-  const { ref: popupRef, left, top } = useClampedPopupPosition(anchor, open, [
+  const {
+    ref: popupRef,
+    left,
+    top,
+  } = useClampedPopupPosition(anchor, open, [
     focusedField,
     highlightedIndex,
     nameFilter,

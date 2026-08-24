@@ -66,10 +66,7 @@ export interface ExactTagMatchCounts {
 }
 
 /** Count keyed and unkeyed exact matches in one document traversal. */
-export const countExactTagMatches = (
-  tagElement: Element,
-  key?: string,
-): ExactTagMatchCounts => {
+export const countExactTagMatches = (tagElement: Element, key?: string): ExactTagMatchCounts => {
   const writer = getWriter();
   const body = writer?.editor?.getBody();
   const tagName = tagElement.getAttribute('_tag');
@@ -94,10 +91,7 @@ export const countExactTagMatches = (
   return { keyed, unkeyed };
 };
 
-export const clearKeyFromExactMatches = (
-  tagElement: Element,
-  key: string,
-): { cleared: number } => {
+export const clearKeyFromExactMatches = (tagElement: Element, key: string): { cleared: number } => {
   const writer = getWriter();
   const editor = writer?.editor;
   if (!editor || !key) return { cleared: 0 };

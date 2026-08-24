@@ -9,12 +9,8 @@ import { recoverTranslationLinksOnExternalChange } from './translationRecovery';
 export const useExternalFileWatcher = () => {
   const { activeTabPath, openTabs, rootPath } = useAppState().project;
   const { contentHasChanged } = useAppState().editor;
-  const {
-    reloadTabFromDisk,
-    mergeTabWithDisk,
-    setExternalChangePending,
-    isTabContentStaleOnDisk,
-  } = useActions().project;
+  const { reloadTabFromDisk, mergeTabWithDisk, setExternalChangePending, isTabContentStaleOnDisk } =
+    useActions().project;
   const { notifyViaSnackbar } = useActions().ui;
   const { t } = useTranslation();
 

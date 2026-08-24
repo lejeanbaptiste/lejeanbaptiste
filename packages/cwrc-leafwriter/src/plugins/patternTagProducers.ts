@@ -5,9 +5,7 @@ import type { AuthorityCandidate } from '../autoTagging/authority';
  * (the same shape `expandNorbertWikiNtCandidate` produces), computed however
  * the plugin likes rather than read from a static bundled pack.
  */
-export type PluginPatternTagProducer = () =>
-  | AuthorityCandidate[]
-  | Promise<AuthorityCandidate[]>;
+export type PluginPatternTagProducer = () => AuthorityCandidate[] | Promise<AuthorityCandidate[]>;
 
 const producers = new Map<string, PluginPatternTagProducer>();
 

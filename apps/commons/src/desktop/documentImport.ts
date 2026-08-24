@@ -95,10 +95,7 @@ const dirname = (filePath: string): string => {
 };
 
 const joinPath = (...parts: string[]): string =>
-  parts
-    .filter(Boolean)
-    .join('/')
-    .replace(/\/+/g, '/');
+  parts.filter(Boolean).join('/').replace(/\/+/g, '/');
 
 const replaceExtension = (filePath: string, extension: string): string => {
   const dir = dirname(filePath);
@@ -248,7 +245,12 @@ export const normalizeImportedParagraphs = (content: string): string[] => {
 
   return normalized
     .split(/\n{2,}/)
-    .map((paragraph) => paragraph.replace(/\n+/g, ' ').replace(/[ \t]{2,}/g, ' ').trim())
+    .map((paragraph) =>
+      paragraph
+        .replace(/\n+/g, ' ')
+        .replace(/[ \t]{2,}/g, ' ')
+        .trim(),
+    )
     .filter(Boolean);
 };
 
@@ -265,8 +267,7 @@ export const extractPlainTextForImport = (
 };
 
 export const isEntityDatabaseFilename = (filePath: string): boolean =>
-  basenameWithoutExtension(filePath).toLowerCase() === 'entities' &&
-  /\.xml$/i.test(filePath);
+  basenameWithoutExtension(filePath).toLowerCase() === 'entities' && /\.xml$/i.test(filePath);
 
 /**
  * Scans for top-level `<div>...</div>` blocks (tracking nesting depth so a
@@ -418,9 +419,7 @@ const replaceOrInsertProcessingInstruction = (
   pi: string,
 ): string => {
   const pattern =
-    target === 'xml-model'
-      ? /<\?xml-model\s+[^?]*\?>/i
-      : /<\?xml-stylesheet\s+[^?]*\?>/i;
+    target === 'xml-model' ? /<\?xml-model\s+[^?]*\?>/i : /<\?xml-stylesheet\s+[^?]*\?>/i;
 
   if (pattern.test(xml)) {
     return xml.replace(pattern, pi);
@@ -491,10 +490,7 @@ const appendImportProvenanceNote = ({
       );
     }
     if (/<SOURCEDESC\b[^>]*>[\s\S]*?<\/SOURCEDESC>/i.test(xml)) {
-      return xml.replace(
-        /<\/SOURCEDESC>/i,
-        `\n${escapeXmlText(note)}\n  </SOURCEDESC>`,
-      );
+      return xml.replace(/<\/SOURCEDESC>/i, `\n${escapeXmlText(note)}\n  </SOURCEDESC>`);
     }
     return xml;
   }
@@ -523,8 +519,7 @@ const appendImportProvenanceNote = ({
 
   const teiNs = 'http://www.tei-c.org/ns/1.0';
   const header =
-    doc.getElementsByTagNameNS(teiNs, 'teiHeader')[0] ??
-    doc.getElementsByTagName('teiHeader')[0];
+    doc.getElementsByTagNameNS(teiNs, 'teiHeader')[0] ?? doc.getElementsByTagName('teiHeader')[0];
   if (!header) return xml;
 
   let revisionDesc =
@@ -614,11 +609,7 @@ const replaceTeiTitle = (xml: string, title: string): string =>
   xml.replace(/<title(\s[^>]*)?>[\s\S]*?<\/title>/, `<title$1>${escapeXmlText(title)}</title>`);
 
 const renderImportedParagraph = (paragraph: string, tag: string): string => {
-  const resolved = resolvePageBreakMarkers(
-    paragraph,
-    escapeXmlText,
-    (n) => `<pb n="${n}"/>`,
-  );
+  const resolved = resolvePageBreakMarkers(paragraph, escapeXmlText, (n) => `<pb n="${n}"/>`);
   if ('soleMarker' in resolved) return resolved.soleMarker;
   return `<${tag}>${resolved.text}</${tag}>`;
 };
@@ -645,7 +636,9 @@ const replaceOrlandoTitle = (xml: string, title: string): string =>
     .replace(/<STANDARD>[\s\S]*?<\/STANDARD>/, `<STANDARD>${escapeXmlText(title)}</STANDARD>`);
 
 const replaceOrlandoBody = (xml: string, paragraphs: string[]): string => {
-  const prose = paragraphs.map((paragraph) => renderImportedParagraph(paragraph, 'P')).join('\n      ');
+  const prose = paragraphs
+    .map((paragraph) => renderImportedParagraph(paragraph, 'P'))
+    .join('\n      ');
   return xml.replace(
     /<AUTHORSUMMARY>[\s\S]*?<\/AUTHORSUMMARY>/,
     `<AUTHORSUMMARY>\n      ${prose}\n  </AUTHORSUMMARY>`,

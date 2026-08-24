@@ -49,10 +49,7 @@ export const testLanguageToolConnection = async (
   } catch (error) {
     return {
       ok: false,
-      error:
-        error instanceof Error
-          ? error.message
-          : 'Could not reach the LanguageTool server.',
+      error: error instanceof Error ? error.message : 'Could not reach the LanguageTool server.',
     };
   }
 };
@@ -96,10 +93,7 @@ export const checkLanguageToolText = async (
   } catch (error) {
     return {
       ok: false,
-      error:
-        error instanceof Error
-          ? error.message
-          : `Could not reach LanguageTool at ${origin}.`,
+      error: error instanceof Error ? error.message : `Could not reach LanguageTool at ${origin}.`,
     };
   }
 };

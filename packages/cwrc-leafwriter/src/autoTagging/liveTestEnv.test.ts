@@ -26,7 +26,10 @@ describe('liveTestEnv', () => {
     process.env.GROQ_API_KEY = 'gsk_test';
     expect(resolveLiveBaseUrl()).toBe('https://api.groq.com/openai');
     expect(resolveLiveModel(resolveLiveBaseUrl())).toBe('qwen/qwen3.6-27b');
-    expect(resolveLiveApiKey(resolveLiveBaseUrl())).toEqual({ key: 'gsk_test', source: 'GROQ_API_KEY' });
+    expect(resolveLiveApiKey(resolveLiveBaseUrl())).toEqual({
+      key: 'gsk_test',
+      source: 'GROQ_API_KEY',
+    });
   });
 
   it('auto-detects Mistral when only MISTRAL_API_KEY is set', () => {

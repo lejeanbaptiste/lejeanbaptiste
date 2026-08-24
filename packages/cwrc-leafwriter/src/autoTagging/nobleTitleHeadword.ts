@@ -68,9 +68,7 @@ export function nobleTitleSurfaceVariants(title: NobleTitleParts): string[] {
 export function endsWithNobleTitleRank(surface: string): boolean {
   const text = normalize(surface);
   if (text.length < 2) return false;
-  return NOBLE_TITLE_RANK_SUFFIXES.some(
-    (rank) => text.endsWith(rank) && text.length > rank.length,
-  );
+  return NOBLE_TITLE_RANK_SUFFIXES.some((rank) => text.endsWith(rank) && text.length > rank.length);
 }
 
 /**
@@ -121,9 +119,7 @@ export function preferredEntityPrimaryName(
   typedNames: readonly { text: string; type?: string }[] = [],
 ): string {
   const head = normalize(headword);
-  const typedPrimary = normalize(
-    typedNames.find((name) => name.type === 'primary')?.text,
-  );
+  const typedPrimary = normalize(typedNames.find((name) => name.type === 'primary')?.text);
   if (typedPrimary) return typedPrimary;
   const familyNorm = normalize(typedNames.find((name) => name.type === 'family')?.text);
   const givenNorm = normalize(typedNames.find((name) => name.type === 'given')?.text);

@@ -32,9 +32,7 @@ describe('bulkBridgeImportSqlite', () => {
     seedPerson(central, 'person-central-1', '張衡', [
       { type: 'Wikidata', value: 'http://www.wikidata.org/entity/Q42' },
     ]);
-    seedPerson(source, 'person-source-1', '张衡', [
-      { type: 'wikidata', value: 'Q42' },
-    ]);
+    seedPerson(source, 'person-source-1', '张衡', [{ type: 'wikidata', value: 'Q42' }]);
 
     const result = await bulkBridgeImportSqlite({
       source,

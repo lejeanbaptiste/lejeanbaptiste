@@ -35,7 +35,11 @@ const CONCURRENCY = 12;
 
 const listRangeFiles = async (fontStack) => {
   const apiUrl = `https://api.github.com/repos/${SOURCE_REPO}/contents/fonts/${encodeURIComponent(fontStack)}?ref=${SOURCE_BRANCH}`;
-  const response = await fetchWithRetry(apiUrl, { headers: { Accept: 'application/vnd.github+json' } }, { label: `${fontStack} listing` });
+  const response = await fetchWithRetry(
+    apiUrl,
+    { headers: { Accept: 'application/vnd.github+json' } },
+    { label: `${fontStack} listing` },
+  );
   const entries = await response.json();
   return entries.filter((e) => e.type === 'file' && e.name.endsWith('.pbf')).map((e) => e.name);
 };
@@ -91,7 +95,9 @@ for (const fontStack of FONT_STACKS) {
     continue;
   }
 
-  console.log(`[glyphs] ${fontStack}: downloading ${missing.length}/${rangeFiles.length} range(s)...`);
+  console.log(
+    `[glyphs] ${fontStack}: downloading ${missing.length}/${rangeFiles.length} range(s)...`,
+  );
   await runWithConcurrency(missing, CONCURRENCY, (fileName) =>
     downloadFile(fontStack, fileName, path.join(stackDir, fileName)),
   );

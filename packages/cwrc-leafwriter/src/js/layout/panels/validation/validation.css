@@ -172,14 +172,14 @@
   }
 }
 
-.validationList [id$="_progress"] {
+.validationList [id$='_progress'] {
   display: flex;
   justify-content: center;
   align-items: center;
   height: 100%;
 }
 
-.validationList [id$="_progress_bar"] {
+.validationList [id$='_progress_bar'] {
   position: relative;
   max-width: 200px;
   font-size: 2rem;
@@ -191,15 +191,15 @@
     background-color: #1e1e1e;
     color: #e0e0e0;
   }
-  
+
   .validationList li {
     background-color: transparent;
   }
-  
+
   .validationList li:hover {
     background-color: #2d2d2d;
   }
-  
+
   .validationList li.selected {
     background-color: #2d2d2d;
     box-shadow: 0 0px 4px rgb(255 255 255 / 10%);
@@ -213,36 +213,36 @@
   .moduleFooter {
     border-top-color: #3a3a3a;
   }
-  
+
   .validationList li .validation-header-icon {
     color: #999;
   }
-  
+
   .validationList li .expandButton {
     color: #999;
   }
-  
+
   .validationList li:hover .validation-header-icon i {
     color: #e0e0e0 !important;
   }
-  
+
   .validationList li .validation-details .documentation {
     border-left-color: #555;
   }
-  
+
   .validationList li .element {
     background-color: rgba(255, 255, 255, 0.05);
   }
-  
+
   .validationList li [data-tooltip]:hover::before {
     background-color: #444c;
     color: #e0e0e0;
   }
-  
+
   .moduleParent .revalidate-button:hover {
     background-color: #3a3a3a;
   }
-  
+
   .moduleParent .revalidate-button i {
     color: #999;
   }

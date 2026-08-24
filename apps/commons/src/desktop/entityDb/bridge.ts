@@ -117,9 +117,7 @@ export async function computeBridgeInbox(ctx: BridgeContext): Promise<BridgeInbo
   );
 
   const neededCentralIds = [
-    ...new Set(
-      [...centralIdByProject.values()].filter((id): id is string => Boolean(id?.trim())),
-    ),
+    ...new Set([...centralIdByProject.values()].filter((id): id is string => Boolean(id?.trim()))),
   ];
   const cedbFieldsById = new Map<string, EntityFields>();
   // Bounded parallelism: one IPC get per linked central id (typically ≪ CEDB size).

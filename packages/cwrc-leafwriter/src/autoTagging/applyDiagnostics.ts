@@ -131,11 +131,7 @@ function explainResolveDateFailure(
   return 'Resolve-date failed for an unknown reason.';
 }
 
-function explainFailure(
-  doc: Document,
-  result: ApplyResult,
-  options: ApplyOptions,
-): string {
+function explainFailure(doc: Document, result: ApplyResult, options: ApplyOptions): string {
   const { suggestion, outcome } = result;
   switch (outcome) {
     case 'applied':
@@ -245,8 +241,9 @@ export function withApplyDiagnostics(
     logApplyDiagnosticsReport(diagnostics);
   }
   if (typeof window !== 'undefined') {
-    (window as unknown as { __lastApplyDiagnostics?: ApplyDiagnosticsReport }).__lastApplyDiagnostics =
-      diagnostics;
+    (
+      window as unknown as { __lastApplyDiagnostics?: ApplyDiagnosticsReport }
+    ).__lastApplyDiagnostics = diagnostics;
   }
   return { ...result, diagnostics };
 }

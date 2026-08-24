@@ -24,7 +24,12 @@ export const EntityIndexIndicator = () => {
       />
       {progress.cancel && (
         <Tooltip title="Cancel entity indexing">
-          <IconButton aria-label="Cancel entity indexing" onClick={progress.cancel} size="small" sx={{ color: 'text.disabled', p: 0.125 }}>
+          <IconButton
+            aria-label="Cancel entity indexing"
+            onClick={progress.cancel}
+            size="small"
+            sx={{ color: 'text.disabled', p: 0.125 }}
+          >
             <CloseIcon sx={{ fontSize: 14 }} />
           </IconButton>
         </Tooltip>

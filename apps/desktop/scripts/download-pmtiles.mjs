@@ -1,6 +1,14 @@
 #!/usr/bin/env node
 /** Download the pinned official extractor used for on-demand regional builds. */
-import { chmodSync, existsSync, mkdirSync, readFileSync, readdirSync, rmSync, writeFileSync } from 'node:fs';
+import {
+  chmodSync,
+  existsSync,
+  mkdirSync,
+  readFileSync,
+  readdirSync,
+  rmSync,
+  writeFileSync,
+} from 'node:fs';
 import { createWriteStream } from 'node:fs';
 import { pipeline } from 'node:stream/promises';
 import path from 'node:path';
@@ -21,9 +29,10 @@ if (!osName || !archName) {
 }
 
 const extension = platform === 'linux' ? 'tar.gz' : 'zip';
-const asset = platform === 'darwin'
-  ? `go-pmtiles-${VERSION}_${osName}_${archName}.${extension}`
-  : `go-pmtiles_${VERSION}_${osName}_${archName}.${extension}`;
+const asset =
+  platform === 'darwin'
+    ? `go-pmtiles-${VERSION}_${osName}_${archName}.${extension}`
+    : `go-pmtiles_${VERSION}_${osName}_${archName}.${extension}`;
 const url = `https://github.com/protomaps/go-pmtiles/releases/download/v${VERSION}/${asset}`;
 const binaryName = platform === 'win32' ? 'pmtiles.exe' : 'pmtiles';
 const binaryPath = path.join(targetDir, binaryName);

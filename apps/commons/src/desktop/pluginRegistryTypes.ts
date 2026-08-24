@@ -30,23 +30,35 @@ export interface PluginReleaseIndex {
 export const pluginIndexUrl = (registry = LJB_PLUGIN_REGISTRY): string =>
   `${registry.releaseDownloadBaseUrl}/${PLUGINS_INDEX_FILENAME}`;
 
-export const pluginArtifactUrl = (
-  fileName: string,
-  registry = LJB_PLUGIN_REGISTRY,
-): string => `${registry.releaseDownloadBaseUrl}/${fileName.replace(/^\//, '')}`;
+export const pluginArtifactUrl = (fileName: string, registry = LJB_PLUGIN_REGISTRY): string =>
+  `${registry.releaseDownloadBaseUrl}/${fileName.replace(/^\//, '')}`;
 
 const SHA256_RE = /^[0-9a-f]{64}$/;
 
 export const parsePluginReleaseIndex = (raw: string): PluginReleaseIndex | null => {
   try {
     const parsed = JSON.parse(raw) as Partial<PluginReleaseIndex>;
-    if (parsed.schemaVersion !== 1 || typeof parsed.builtAt !== 'string' || !Array.isArray(parsed.plugins)) return null;
+    if (
+      parsed.schemaVersion !== 1 ||
+      typeof parsed.builtAt !== 'string' ||
+      !Array.isArray(parsed.plugins)
+    )
+      return null;
     for (const plugin of parsed.plugins) {
-      if (!plugin || typeof plugin.id !== 'string' || typeof plugin.name !== 'string' ||
-          typeof plugin.version !== 'string' || typeof plugin.description !== 'string' ||
-          typeof plugin.license !== 'string' || typeof plugin.fileName !== 'string' ||
-          typeof plugin.bytes !== 'number' || !SHA256_RE.test(plugin.sha256 ?? '') ||
-          !plugin.manifest || typeof plugin.manifest !== 'object') return null;
+      if (
+        !plugin ||
+        typeof plugin.id !== 'string' ||
+        typeof plugin.name !== 'string' ||
+        typeof plugin.version !== 'string' ||
+        typeof plugin.description !== 'string' ||
+        typeof plugin.license !== 'string' ||
+        typeof plugin.fileName !== 'string' ||
+        typeof plugin.bytes !== 'number' ||
+        !SHA256_RE.test(plugin.sha256 ?? '') ||
+        !plugin.manifest ||
+        typeof plugin.manifest !== 'object'
+      )
+        return null;
     }
     return parsed as PluginReleaseIndex;
   } catch {

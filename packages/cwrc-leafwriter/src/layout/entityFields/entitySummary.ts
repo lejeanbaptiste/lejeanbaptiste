@@ -79,10 +79,7 @@ export interface SqlitePanelLike {
 
 const datesFromPanel = (panel: SqlitePanelLike): EntityDates | null => {
   // Works always use workDate; persons use it when it is a floruit range (CBDB fl. earliest–latest).
-  if (
-    panel.workDate &&
-    (panel.kind === 'work' || panel.workDate.startPrecision === 'fl.')
-  ) {
+  if (panel.workDate && (panel.kind === 'work' || panel.workDate.startPrecision === 'fl.')) {
     const { startYear, endYear, startPrecision, endPrecision } = panel.workDate;
     if (startYear == null && endYear == null) return null;
     return { startYear, endYear, startPrecision, endPrecision };
@@ -113,12 +110,8 @@ const looksLikeRomanizationText = (text: string): boolean =>
  * Prefer `nameType: 'romanization'`, then a proper `*-Latn` language tag, then
  * Latin-script rows that were mis-tagged as Chinese (legacy place imports).
  */
-export const pickRomanizedFromPanelNames = (
-  names: SqlitePanelLike['names'],
-): string | null => {
-  const byType = names.find(
-    (name) => name.nameType === 'romanization' && name.text?.trim(),
-  );
+export const pickRomanizedFromPanelNames = (names: SqlitePanelLike['names']): string | null => {
+  const byType = names.find((name) => name.nameType === 'romanization' && name.text?.trim());
   if (byType?.text?.trim()) return byType.text.trim();
 
   const byLang = names.find((name) => isLatnLanguage(name.language) && name.text?.trim());

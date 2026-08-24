@@ -367,10 +367,12 @@ export const AutoTaggingDialog = ({ id, onClose, open = false }: IDialog) => {
   const [entityDbFolder, setEntityDbFolder] = useState<string | null>(null);
   const [packsLocationHint, setPacksLocationHint] = useState<string | null>(null);
   const [authorityProgress, setAuthorityProgress] = useState('');
-  const [authorityDateFilter, setAuthorityDateFilter] =
-    useState<DateFilterMode>(DEFAULT_AUTHORITY_DATE_FILTER);
-  const [authorityYearRange, setAuthorityYearRange] =
-    useState<[number, number]>(DEFAULT_AUTHORITY_YEAR_RANGE);
+  const [authorityDateFilter, setAuthorityDateFilter] = useState<DateFilterMode>(
+    DEFAULT_AUTHORITY_DATE_FILTER,
+  );
+  const [authorityYearRange, setAuthorityYearRange] = useState<[number, number]>(
+    DEFAULT_AUTHORITY_YEAR_RANGE,
+  );
   const cycleAuthorityDateFilter = () => {
     setAuthorityDateFilter((mode) => {
       const next = mode === 'none' ? 'limit' : mode === 'limit' ? 'exclude' : 'none';
@@ -434,7 +436,6 @@ export const AutoTaggingDialog = ({ id, onClose, open = false }: IDialog) => {
       .then(setSelectionRange)
       .catch(() => setSelectionRange(null));
     // getSession is stable for the dialog's lifetime.
-     
   }, [open]);
 
   const aiSettings = aiApiSettingsFromDesktop();
@@ -670,9 +671,7 @@ export const AutoTaggingDialog = ({ id, onClose, open = false }: IDialog) => {
     startAutoTaggingReview({
       suggestions: applyExclusionsToSuggestions(produced),
       notice,
-      aiValidation: Boolean(
-        options?.aiCurate && aiReady && isAiUiFeatureEnabled('tagBombCurate'),
-      ),
+      aiValidation: Boolean(options?.aiCurate && aiReady && isAiUiFeatureEnabled('tagBombCurate')),
     });
     handleClose();
   };
@@ -977,7 +976,6 @@ export const AutoTaggingDialog = ({ id, onClose, open = false }: IDialog) => {
         const exclusions = readPersistedExclusions();
         const userRules = nestingPathsToUserRules(exclusions.nestingPaths);
         for (const docResult of matchedDocs) {
-           
           const applied = await getSession().applyTagBombDocument(
             docResult.filePath,
             filterSuggestionsByExclusions(docResult.suggestions, exclusions),
@@ -1372,9 +1370,9 @@ export const AutoTaggingDialog = ({ id, onClose, open = false }: IDialog) => {
               )}
               {!entityDbFolder && (
                 <Alert severity="warning" sx={{ py: 0.5 }}>
-                  No entity database folder configured. Choose any folder — a blank one is fine;
-                  Le Jean-Baptiste will set up the database there. Prefer a cloud-synced folder if
-                  you use more than one machine.
+                  No entity database folder configured. Choose any folder — a blank one is fine; Le
+                  Jean-Baptiste will set up the database there. Prefer a cloud-synced folder if you
+                  use more than one machine.
                   <Box sx={{ mt: 1 }}>
                     <Button
                       size="small"

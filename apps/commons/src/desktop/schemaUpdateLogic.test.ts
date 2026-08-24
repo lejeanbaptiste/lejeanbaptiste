@@ -53,9 +53,9 @@ describe('shouldBypassSchemaCheckThrottle', () => {
   test('bypasses when project file was modified after last check', () => {
     const lastCheckedAt = '2026-06-28T12:00:00.000Z';
     const projectFileMtimeMs = Date.parse('2026-06-28T13:00:00.000Z');
-    expect(
-      shouldBypassSchemaCheckThrottle(lastCheckedAt, projectFileMtimeMs, 'aaa', 'aaa'),
-    ).toBe(true);
+    expect(shouldBypassSchemaCheckThrottle(lastCheckedAt, projectFileMtimeMs, 'aaa', 'aaa')).toBe(
+      true,
+    );
   });
 
   test('bypasses when stored RNG hash does not match on-disk file', () => {

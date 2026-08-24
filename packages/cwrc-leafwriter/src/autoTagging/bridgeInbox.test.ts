@@ -37,7 +37,12 @@ describe('buildBridgeInbox', () => {
     setCentralMapping(element, USER, 'person-does-not-exist');
     const report = buildBridgeInbox(pedbDoc, cedbDoc, USER);
     expect(report.broken).toEqual([
-      { id: element.getAttribute('xml:id'), name: '張衡', kind: 'person', centralId: 'person-does-not-exist' },
+      {
+        id: element.getAttribute('xml:id'),
+        name: '張衡',
+        kind: 'person',
+        centralId: 'person-does-not-exist',
+      },
     ]);
   });
 

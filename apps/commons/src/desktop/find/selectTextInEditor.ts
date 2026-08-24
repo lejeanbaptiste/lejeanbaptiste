@@ -1,5 +1,9 @@
 import { findEditorNodeByTeiXPath } from '../xpath/teiXPathWalker';
-import { findLineMarkerCss, markWysiwygActiveFindLine, clearWysiwygFindLineMarkers } from './findLineMarkers';
+import {
+  findLineMarkerCss,
+  markWysiwygActiveFindLine,
+  clearWysiwygFindLineMarkers,
+} from './findLineMarkers';
 import type { ResolvedTextHit } from './resolveTextHitInXml';
 
 const unhideNotes = (element: Element) => {
@@ -161,10 +165,7 @@ export const highlightTextHitInEditor = (resolved: ResolvedTextHit): boolean => 
 };
 
 /** Patch matched text in the WYSIWYG editor without reloading the whole document. */
-export const replaceTextHitInEditor = (
-  resolved: ResolvedTextHit,
-  replacement: string,
-): boolean => {
+export const replaceTextHitInEditor = (resolved: ResolvedTextHit, replacement: string): boolean => {
   const editor = window.writer?.editor;
   if (!editor) return false;
 

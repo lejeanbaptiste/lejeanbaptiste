@@ -270,7 +270,8 @@ const downloadToFile = async (
   }
   const contentLength = Number(response.headers.get('content-length'));
   const totalBytes = Number.isFinite(contentLength) && contentLength > 0 ? contentLength : null;
-  if (totalBytes !== null && totalBytes > maxBytes) throw new Error(`Download exceeds the ${maxBytes} byte limit.`);
+  if (totalBytes !== null && totalBytes > maxBytes)
+    throw new Error(`Download exceeds the ${maxBytes} byte limit.`);
 
   let receivedBytes = 0;
   const body = Readable.fromWeb(response.body as import('node:stream/web').ReadableStream);
@@ -279,7 +280,8 @@ const downloadToFile = async (
     async function* (chunks) {
       for await (const chunk of chunks) {
         receivedBytes += (chunk as Buffer).length;
-        if (receivedBytes > maxBytes) throw new Error(`Download exceeds the ${maxBytes} byte limit.`);
+        if (receivedBytes > maxBytes)
+          throw new Error(`Download exceeds the ${maxBytes} byte limit.`);
         onChunk(receivedBytes, totalBytes);
         yield chunk;
       }
@@ -298,10 +300,9 @@ const extractZipEntry = async (
   if (archiveStat.size > MAX_ARCHIVE_BYTES) throw new Error('Authority archive is too large.');
   const zip = await JSZip.loadAsync(await fsp.readFile(zipPath));
   const entries = Object.values(zip.files);
-  if (entries.length > MAX_ARCHIVE_ENTRIES) throw new Error('Authority archive has too many entries.');
-  const entry = entries.find(
-    (file) => !file.dir && file.name.endsWith(entrySuffix),
-  );
+  if (entries.length > MAX_ARCHIVE_ENTRIES)
+    throw new Error('Authority archive has too many entries.');
+  const entry = entries.find((file) => !file.dir && file.name.endsWith(entrySuffix));
   if (!entry) throw new Error(`No ${entrySuffix} entry in ${path.basename(zipPath)}`);
   const declaredSize = (entry as unknown as { _data?: { uncompressedSize?: number } })._data
     ?.uncompressedSize;
@@ -321,18 +322,15 @@ const extractZipEntry = async (
       callback(null, chunk);
     },
   });
-  await pipeline(
-    entry.nodeStream(),
-    sizeGuard,
-    fs.createWriteStream(destPath),
-  );
+  await pipeline(entry.nodeStream(), sizeGuard, fs.createWriteStream(destPath));
 };
 
-const writeSourceManifest = async (
-  baseDir: string,
-  manifest: AuthorityManifest,
-): Promise<void> => {
-  await fsp.writeFile(manifestPath(baseDir, manifest.source), JSON.stringify(manifest, null, 2), 'utf-8');
+const writeSourceManifest = async (baseDir: string, manifest: AuthorityManifest): Promise<void> => {
+  await fsp.writeFile(
+    manifestPath(baseDir, manifest.source),
+    JSON.stringify(manifest, null, 2),
+    'utf-8',
+  );
 };
 
 /**
@@ -565,14 +563,17 @@ export const downloadAuthoritySource = async (
       if (file.unzipEntrySuffix) {
         const zipTempPath = `${tempPath}.zip`;
         tempPaths.push(zipTempPath);
-        await downloadToFile(file.url, zipTempPath, (receivedBytes, totalBytes) =>
-          onProgress?.({
-            sourceId: id,
-            fileName: file.fileName,
-            phase: 'downloading',
-            receivedBytes,
-            totalBytes,
-          }),
+        await downloadToFile(
+          file.url,
+          zipTempPath,
+          (receivedBytes, totalBytes) =>
+            onProgress?.({
+              sourceId: id,
+              fileName: file.fileName,
+              phase: 'downloading',
+              receivedBytes,
+              totalBytes,
+            }),
           MAX_DOWNLOAD_BYTES,
         );
         await extractZipEntry(zipTempPath, file.unzipEntrySuffix, tempPath, (receivedBytes) =>
@@ -586,14 +587,17 @@ export const downloadAuthoritySource = async (
         );
         await fsp.rm(zipTempPath, { force: true });
       } else {
-        await downloadToFile(file.url, tempPath, (receivedBytes, totalBytes) =>
-          onProgress?.({
-            sourceId: id,
-            fileName: file.fileName,
-            phase: 'downloading',
-            receivedBytes,
-            totalBytes,
-          }),
+        await downloadToFile(
+          file.url,
+          tempPath,
+          (receivedBytes, totalBytes) =>
+            onProgress?.({
+              sourceId: id,
+              fileName: file.fileName,
+              phase: 'downloading',
+              receivedBytes,
+              totalBytes,
+            }),
           MAX_DOWNLOAD_BYTES,
         );
       }
@@ -613,7 +617,10 @@ export const downloadAuthoritySource = async (
 
     // All files verified: move into place, then write the manifest.
     for (const file of spec.files) {
-      await fsp.rename(path.join(baseDir, `${file.fileName}.download`), path.join(baseDir, file.fileName));
+      await fsp.rename(
+        path.join(baseDir, `${file.fileName}.download`),
+        path.join(baseDir, file.fileName),
+      );
     }
     const manifest: AuthorityManifest = {
       source: id,

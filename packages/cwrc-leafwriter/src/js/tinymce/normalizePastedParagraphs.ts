@@ -18,7 +18,10 @@ const isUntaggedBlock = (element: Element, blockTag: string) => {
   return name === blockTag || name === 'p';
 };
 
-const findStructuralParent = (start: Element | null, stopBefore: Element | null): Element | null => {
+const findStructuralParent = (
+  start: Element | null,
+  stopBefore: Element | null,
+): Element | null => {
   let current = start;
   while (current && current !== stopBefore) {
     if (current.hasAttribute('_tag')) return current;
@@ -87,9 +90,7 @@ export const removeEmptyParagraphs = (root: ParentNode, blockTag = 'div') => {
     }
   }
 
-  const untagged = Array.from(
-    root.querySelectorAll(`${blockTag}:not([_tag]), p:not([_tag])`),
-  );
+  const untagged = Array.from(root.querySelectorAll(`${blockTag}:not([_tag]), p:not([_tag])`));
   for (const block of untagged) {
     if (isEffectivelyEmptyParagraph(block)) {
       block.remove();
@@ -162,10 +163,7 @@ export const fixNestedPastedParagraphs = (body: ParentNode) => {
   }
 };
 
-const tagAsParagraph = (
-  element: Element,
-  deps: NormalizePastedParagraphsDeps,
-) => {
+const tagAsParagraph = (element: Element, deps: NormalizePastedParagraphsDeps) => {
   const doc = element.ownerDocument;
   if (!doc) return;
 

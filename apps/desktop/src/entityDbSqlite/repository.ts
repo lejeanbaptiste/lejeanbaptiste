@@ -817,15 +817,11 @@ function assemblePanelSummary(
   const fallbackStartYear =
     entity.kind === 'work'
       ? null
-      : preferredVitalYear('birth') ??
-        (genericDatesRow?.start_year as number | null) ??
-        null;
+      : (preferredVitalYear('birth') ?? (genericDatesRow?.start_year as number | null) ?? null);
   const fallbackEndYear =
     entity.kind === 'work'
       ? null
-      : preferredVitalYear('death') ??
-        (genericDatesRow?.end_year as number | null) ??
-        null;
+      : (preferredVitalYear('death') ?? (genericDatesRow?.end_year as number | null) ?? null);
   return {
     ...entity,
     // Merge glosses into names so the entity editor / sqliteSummary keep working
@@ -835,8 +831,7 @@ function assemblePanelSummary(
     authorities,
     // 姓/名 are person-only. Offices/places/orgs sometimes inherit polluted
     // family/given name rows from older mint paths — never surface them here.
-    familyName:
-      entity.kind === 'person' ? (bags.person?.family_name ?? familyFromNames) : null,
+    familyName: entity.kind === 'person' ? (bags.person?.family_name ?? familyFromNames) : null,
     givenName: entity.kind === 'person' ? (bags.person?.given_name ?? givenFromNames) : null,
     startYear: entity.kind === 'work' ? (workDate?.startYear ?? null) : fallbackStartYear,
     endYear: entity.kind === 'work' ? (workDate?.endYear ?? null) : fallbackEndYear,
@@ -1770,8 +1765,7 @@ export class EntitySqliteRepository {
           .prepare('SELECT family_name, given_name FROM people WHERE entity_id = ?')
           .get(id) as { family_name: string | null; given_name: string | null } | undefined,
         work: this.db.prepare('SELECT work_type FROM works WHERE entity_id = ?').get(id) as
-          | { work_type: string | null }
-          | undefined,
+          { work_type: string | null } | undefined,
         dates: this.db
           .prepare(
             `SELECT id, date_kind, start_year, end_year, start_precision, end_precision,
@@ -1901,11 +1895,11 @@ export class EntitySqliteRepository {
     );
     const worksByEntity = new Map(
       (
-        this.db.prepare('SELECT entity_id, work_type FROM works').all() as Record<
-          string,
-          unknown
-        >[]
-      ).map((row) => [String(row.entity_id), { work_type: (row.work_type as string | null) ?? null }]),
+        this.db.prepare('SELECT entity_id, work_type FROM works').all() as Record<string, unknown>[]
+      ).map((row) => [
+        String(row.entity_id),
+        { work_type: (row.work_type as string | null) ?? null },
+      ]),
     );
     const datesByEntity = groupRowsByKey(
       this.db
@@ -2605,7 +2599,10 @@ export class EntitySqliteRepository {
         .all(input.entityId, text) as { id: number; language: string }[];
 
       // Target is (or becomes) a vernacular gloss → entity_translations.
-      if (nameType === 'translation' || (nameType === undefined && existingTranslations.length > 0)) {
+      if (
+        nameType === 'translation' ||
+        (nameType === undefined && existingTranslations.length > 0)
+      ) {
         const language =
           input.language === undefined
             ? (existingTranslations[0]?.language ?? '')
@@ -2640,9 +2637,7 @@ export class EntitySqliteRepository {
         } else {
           for (const row of existingTranslations) {
             this.db
-              .prepare(
-                `UPDATE entity_translations SET language = ?, updated_at = ? WHERE id = ?`,
-              )
+              .prepare(`UPDATE entity_translations SET language = ?, updated_at = ? WHERE id = ?`)
               .run(language, now, row.id);
           }
         }
@@ -3633,7 +3628,9 @@ export class EntitySqliteRepository {
         .all() as { id: number; entityId: string }[];
       for (const row of latnToPromote) {
         this.db
-          .prepare(`UPDATE entity_names SET name_type = 'romanization', updated_at = ? WHERE id = ?`)
+          .prepare(
+            `UPDATE entity_names SET name_type = 'romanization', updated_at = ? WHERE id = ?`,
+          )
           .run(now, row.id);
         touched.add(row.entityId);
       }
@@ -4449,13 +4446,7 @@ export class EntitySqliteRepository {
 
       for (const date of patch.dates ?? []) {
         if (date.asFloruit) {
-          upsertAuthorityDate(
-            'dates',
-            date.source,
-            date.startYear,
-            date.endYear,
-            'fl.',
-          );
+          upsertAuthorityDate('dates', date.source, date.startYear, date.endYear, 'fl.');
         } else {
           upsertAuthorityDate('birth', date.source, date.startYear, undefined);
           upsertAuthorityDate('death', date.source, date.endYear, undefined);

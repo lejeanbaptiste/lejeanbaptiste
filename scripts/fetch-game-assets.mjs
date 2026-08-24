@@ -30,10 +30,7 @@ import { fileURLToPath } from 'node:url';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const ROOT = path.resolve(__dirname, '..');
-const MANIFEST_PATH = path.join(
-  ROOT,
-  'apps/desktop/resources/game-assets/assets.manifest.json',
-);
+const MANIFEST_PATH = path.join(ROOT, 'apps/desktop/resources/game-assets/assets.manifest.json');
 const OUT_BIN = path.join(ROOT, 'apps/desktop/resources/game-assets/assets.bin');
 
 function requireEnv(name) {
@@ -50,7 +47,9 @@ async function main() {
   }
   const manifest = JSON.parse(readFileSync(MANIFEST_PATH, 'utf8'));
   if (!manifest.sha256 || typeof manifest.sha256 !== 'string') {
-    throw new Error(`${MANIFEST_PATH} is missing a valid "sha256" field: ${JSON.stringify(manifest)}`);
+    throw new Error(
+      `${MANIFEST_PATH} is missing a valid "sha256" field: ${JSON.stringify(manifest)}`,
+    );
   }
 
   // CI restores this path from actions/cache, keyed on manifest.sha256 - a hit means
@@ -60,7 +59,9 @@ async function main() {
     const cachedBytes = readFileSync(OUT_BIN);
     const cachedSha256 = createHash('sha256').update(cachedBytes).digest('hex');
     if (cachedSha256 === manifest.sha256) {
-      console.log(`${OUT_BIN} already matches manifest sha256 ${manifest.sha256} - skipping R2 fetch.`);
+      console.log(
+        `${OUT_BIN} already matches manifest sha256 ${manifest.sha256} - skipping R2 fetch.`,
+      );
       return;
     }
     console.log(`${OUT_BIN} exists but doesn't match the manifest - re-fetching from R2.`);

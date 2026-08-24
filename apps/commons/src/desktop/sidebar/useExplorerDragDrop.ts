@@ -2,10 +2,7 @@ import { getParentPath, getProjectSchemaDirPath } from '@src/desktop/explorer/tr
 import { useActions, useAppState } from '@src/overmind';
 import { useCallback, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import {
-  type ExplorerTarget,
-  isExplorerItemProtected,
-} from './useExplorerContextMenu';
+import { type ExplorerTarget, isExplorerItemProtected } from './useExplorerContextMenu';
 
 const DRAG_MIME = 'application/x-ljb-explorer-path';
 
@@ -53,11 +50,7 @@ export const canDropOnFolder = (
   if (getParentPath(source.path) === destDir) return false;
   if (isExplorerItemProtected(source, rootPath, schemaDirPath)) return false;
   if (
-    isExplorerItemProtected(
-      { isDirectory: true, name: '', path: destDir },
-      rootPath,
-      schemaDirPath,
-    )
+    isExplorerItemProtected({ isDirectory: true, name: '', path: destDir }, rootPath, schemaDirPath)
   ) {
     return false;
   }

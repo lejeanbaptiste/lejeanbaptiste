@@ -1,6 +1,4 @@
-import {
-  TAG_TO_ENTITY_TYPE,
-} from '../../../../../packages/cwrc-leafwriter/src/autoTagging/disambiguationCandidates';
+import { TAG_TO_ENTITY_TYPE } from '../../../../../packages/cwrc-leafwriter/src/autoTagging/disambiguationCandidates';
 import type { NamedEntityType } from '../../../../../packages/cwrc-leafwriter/src/types';
 
 const LOOKUP_TYPES = new Set<string>([

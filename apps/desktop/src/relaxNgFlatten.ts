@@ -19,9 +19,7 @@ const findDirectDefine = (parent: Element, name: string): Element | null =>
 /** Apply RelaxNG's `combine="choice"` to a flattened duplicate define. */
 const mergeChoiceDefine = (existing: Element, incoming: Element): void => {
   const incomingChildren = directChildElements(incoming);
-  let choice = directChildElements(existing).find(
-    (el) => el.tagName.toLowerCase() === 'choice',
-  );
+  let choice = directChildElements(existing).find((el) => el.tagName.toLowerCase() === 'choice');
 
   if (!choice) {
     choice = existing.ownerDocument!.createElement('choice');

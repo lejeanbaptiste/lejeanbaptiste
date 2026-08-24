@@ -31,13 +31,19 @@ export function registryPathFor(entitiesPath: string): string {
 }
 
 const normalizePath = (value: string) =>
-  value.split(/[/\\]+/).filter(Boolean).join('/').toLowerCase();
+  value
+    .split(/[/\\]+/)
+    .filter(Boolean)
+    .join('/')
+    .toLowerCase();
 
 const parseRegistry = (raw: string): string[] => {
   try {
     const parsed = JSON.parse(raw) as Partial<RegistryPayload>;
     if (!Array.isArray(parsed.projects)) return [];
-    return parsed.projects.filter((root): root is string => typeof root === 'string' && !!root.trim());
+    return parsed.projects.filter(
+      (root): root is string => typeof root === 'string' && !!root.trim(),
+    );
   } catch {
     return [];
   }

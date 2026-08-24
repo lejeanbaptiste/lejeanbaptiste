@@ -49,19 +49,29 @@ describe('mapTiles', () => {
   it('parses a valid manifest and rejects a malformed one', () => {
     const parsed = parseMapTilesManifest(
       JSON.stringify({
-        bundles: { china: { fileName: 'china.pmtiles', sha256: 'a'.repeat(64), installedAt: '2026-07-26T00:00:00Z' } },
+        bundles: {
+          china: {
+            fileName: 'china.pmtiles',
+            sha256: 'a'.repeat(64),
+            installedAt: '2026-07-26T00:00:00Z',
+          },
+        },
       }),
     );
     expect(parsed?.bundles.china?.fileName).toBe('china.pmtiles');
 
     expect(parseMapTilesManifest('not json')).toBeNull();
-    expect(parseMapTilesManifest(JSON.stringify({ bundles: { china: { fileName: 'x' } } }))).toBeNull();
+    expect(
+      parseMapTilesManifest(JSON.stringify({ bundles: { china: { fileName: 'x' } } })),
+    ).toBeNull();
   });
 
   it('reports no manifest, no regions, and no installed bundle when nothing has been downloaded yet', async () => {
     expect(await readInstalledMapTilesManifest(tempDir)).toBeNull();
     expect(await listInstalledMapTileRegions(tempDir)).toEqual([]);
-    expect(await mapTileBundleInstalled(tempDir, { id: 'china', sha256: 'a'.repeat(64) })).toBe(false);
+    expect(await mapTileBundleInstalled(tempDir, { id: 'china', sha256: 'a'.repeat(64) })).toBe(
+      false,
+    );
   });
 
   it('downloads, verifies, and installs a bundle, writing a manifest that round-trips', async () => {
@@ -69,7 +79,10 @@ describe('mapTiles', () => {
     const bundle = makeBundle({ bytes: contents.length, sha256: sha256(contents) });
 
     global.fetch = jest.fn().mockResolvedValue(
-      new Response(contents, { status: 200, headers: { 'content-length': String(contents.length) } }),
+      new Response(contents, {
+        status: 200,
+        headers: { 'content-length': String(contents.length) },
+      }),
     ) as unknown as typeof fetch;
 
     const onProgress = jest.fn();
@@ -94,13 +107,33 @@ describe('mapTiles', () => {
   it('installs multiple regional bundles side by side without clobbering each other', async () => {
     const chinaContents = 'china bytes';
     const japanContents = 'japan bytes!!';
-    const chinaBundle = makeBundle({ id: 'china', fileName: 'china.pmtiles', bytes: chinaContents.length, sha256: sha256(chinaContents) });
-    const japanBundle = makeBundle({ id: 'japan', fileName: 'japan.pmtiles', bytes: japanContents.length, sha256: sha256(japanContents) });
+    const chinaBundle = makeBundle({
+      id: 'china',
+      fileName: 'china.pmtiles',
+      bytes: chinaContents.length,
+      sha256: sha256(chinaContents),
+    });
+    const japanBundle = makeBundle({
+      id: 'japan',
+      fileName: 'japan.pmtiles',
+      bytes: japanContents.length,
+      sha256: sha256(japanContents),
+    });
 
     global.fetch = jest
       .fn()
-      .mockResolvedValueOnce(new Response(chinaContents, { status: 200, headers: { 'content-length': String(chinaContents.length) } }))
-      .mockResolvedValueOnce(new Response(japanContents, { status: 200, headers: { 'content-length': String(japanContents.length) } })) as unknown as typeof fetch;
+      .mockResolvedValueOnce(
+        new Response(chinaContents, {
+          status: 200,
+          headers: { 'content-length': String(chinaContents.length) },
+        }),
+      )
+      .mockResolvedValueOnce(
+        new Response(japanContents, {
+          status: 200,
+          headers: { 'content-length': String(japanContents.length) },
+        }),
+      ) as unknown as typeof fetch;
 
     await installMapTileBundle({ mapTilesDir: tempDir, bundle: chinaBundle });
     await installMapTileBundle({ mapTilesDir: tempDir, bundle: japanBundle });
@@ -114,13 +147,33 @@ describe('mapTiles', () => {
   it('removes an installed bundle without touching other installed regions', async () => {
     const chinaContents = 'china bytes';
     const japanContents = 'japan bytes!!';
-    const chinaBundle = makeBundle({ id: 'china', fileName: 'china.pmtiles', bytes: chinaContents.length, sha256: sha256(chinaContents) });
-    const japanBundle = makeBundle({ id: 'japan', fileName: 'japan.pmtiles', bytes: japanContents.length, sha256: sha256(japanContents) });
+    const chinaBundle = makeBundle({
+      id: 'china',
+      fileName: 'china.pmtiles',
+      bytes: chinaContents.length,
+      sha256: sha256(chinaContents),
+    });
+    const japanBundle = makeBundle({
+      id: 'japan',
+      fileName: 'japan.pmtiles',
+      bytes: japanContents.length,
+      sha256: sha256(japanContents),
+    });
 
     global.fetch = jest
       .fn()
-      .mockResolvedValueOnce(new Response(chinaContents, { status: 200, headers: { 'content-length': String(chinaContents.length) } }))
-      .mockResolvedValueOnce(new Response(japanContents, { status: 200, headers: { 'content-length': String(japanContents.length) } })) as unknown as typeof fetch;
+      .mockResolvedValueOnce(
+        new Response(chinaContents, {
+          status: 200,
+          headers: { 'content-length': String(chinaContents.length) },
+        }),
+      )
+      .mockResolvedValueOnce(
+        new Response(japanContents, {
+          status: 200,
+          headers: { 'content-length': String(japanContents.length) },
+        }),
+      ) as unknown as typeof fetch;
 
     await installMapTileBundle({ mapTilesDir: tempDir, bundle: chinaBundle });
     await installMapTileBundle({ mapTilesDir: tempDir, bundle: japanBundle });
@@ -136,9 +189,11 @@ describe('mapTiles', () => {
   it('rejects a download whose bytes do not match the expected checksum', async () => {
     const bundle = makeBundle({ bytes: 4, sha256: 'a'.repeat(64) });
 
-    global.fetch = jest.fn().mockResolvedValue(
-      new Response('oops', { status: 200, headers: { 'content-length': '4' } }),
-    ) as unknown as typeof fetch;
+    global.fetch = jest
+      .fn()
+      .mockResolvedValue(
+        new Response('oops', { status: 200, headers: { 'content-length': '4' } }),
+      ) as unknown as typeof fetch;
 
     await expect(installMapTileBundle({ mapTilesDir: tempDir, bundle })).rejects.toThrow(
       'checksum verification',
@@ -147,10 +202,17 @@ describe('mapTiles', () => {
   });
 
   it('rejects a bundle whose declared size exceeds the 500 MB cap before downloading', async () => {
-    const bundle = makeBundle({ id: 'too-big', fileName: 'too-big.pmtiles', bytes: 600 * 1024 * 1024, sha256: 'a'.repeat(64) });
+    const bundle = makeBundle({
+      id: 'too-big',
+      fileName: 'too-big.pmtiles',
+      bytes: 600 * 1024 * 1024,
+      sha256: 'a'.repeat(64),
+    });
     global.fetch = jest.fn();
 
-    await expect(installMapTileBundle({ mapTilesDir: tempDir, bundle })).rejects.toThrow('exceeds the');
+    await expect(installMapTileBundle({ mapTilesDir: tempDir, bundle })).rejects.toThrow(
+      'exceeds the',
+    );
     expect(global.fetch).not.toHaveBeenCalled();
   });
 

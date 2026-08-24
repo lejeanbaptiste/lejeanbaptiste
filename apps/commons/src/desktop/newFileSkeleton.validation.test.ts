@@ -77,13 +77,7 @@ describe('new file skeleton RelaxNG validation', () => {
     fetchMock.enableMocks();
   });
 
-  test.each([
-    'teiAll',
-    'teiLite',
-    'teiSimplePrint',
-    'jTei',
-    'orlando',
-  ] as const)(
+  test.each(['teiAll', 'teiLite', 'teiSimplePrint', 'jTei', 'orlando'] as const)(
     'validates merged skeleton against %s catalog RNG (requires network)',
     (catalogId) =>
       new Promise<void>((resolve, reject) => {
@@ -109,9 +103,7 @@ describe('new file skeleton RelaxNG validation', () => {
               resolve();
             }
             if (state === WorkingState.INVALID) {
-              const detail = errors?.length
-                ? JSON.stringify(errors.slice(0, 3))
-                : 'unknown';
+              const detail = errors?.length ? JSON.stringify(errors.slice(0, 3)) : 'unknown';
               reject(new Error(`Skeleton invalid for ${catalogId}: ${detail}`));
             }
           });

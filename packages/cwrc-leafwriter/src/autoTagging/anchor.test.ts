@@ -238,13 +238,15 @@ describe('locateOccurrenceInIndex', () => {
 
 describe('compareXPath', () => {
   it('orders sibling elements by numeric index, not lexicographically', () => {
-    expect(compareXPath('/TEI/text/body/div[2]/p/text()[1]', '/TEI/text/body/div[10]/p/text()[1]')).toBeLessThan(
-      0,
-    );
+    expect(
+      compareXPath('/TEI/text/body/div[2]/p/text()[1]', '/TEI/text/body/div[10]/p/text()[1]'),
+    ).toBeLessThan(0);
   });
 
   it('orders paragraphs within the same div', () => {
-    expect(compareXPath('/TEI/text/body/div/p[1]/text()[1]', '/TEI/text/body/div/p[2]/text()[1]')).toBeLessThan(0);
+    expect(
+      compareXPath('/TEI/text/body/div/p[1]/text()[1]', '/TEI/text/body/div/p[2]/text()[1]'),
+    ).toBeLessThan(0);
   });
 
   it('treats a shorter path as an ancestor that comes first', () => {

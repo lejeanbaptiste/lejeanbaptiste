@@ -164,7 +164,10 @@ export const copyAttributesWithoutSchemaId = (from: Element, to: Element) => {
  * genuinely new content (not part of the original), it gets a fresh xml:id rather than a
  * copy of the original's, so no duplicate-id reindex is ever needed for this case.
  */
-const insertEmptySiblingParagraph = (writer: NonNullable<ReturnType<typeof getWriter>>, paragraph: Element): ApplyTagResult => {
+const insertEmptySiblingParagraph = (
+  writer: NonNullable<ReturnType<typeof getWriter>>,
+  paragraph: Element,
+): ApplyTagResult => {
   const doc = writer.editor!.getDoc();
 
   writer.editor!.undoManager.transact(() => {
@@ -265,9 +268,7 @@ export const splitParagraphAtCaret = (): ApplyTagResult => {
 };
 
 export type SplitAtCaretResult =
-  | { kind: 'applied'; result: ApplyTagResult }
-  | { kind: 'continued' }
-  | { kind: 'none' };
+  { kind: 'applied'; result: ApplyTagResult } | { kind: 'continued' } | { kind: 'none' };
 
 export const trySplitAtCaretForInsert = (tagName: string): SplitAtCaretResult => {
   const ctx = getEditorTagContext();
@@ -302,8 +303,7 @@ export const trySplitAtCaretForInsert = (tagName: string): SplitAtCaretResult =>
     return { kind: 'applied', result: { applied: true, tagName } };
   }
 
-  const isBlockOrBreak =
-    tagName === DEFAULT_INSERT_TAG || tagName === DEFAULT_LINE_BREAK_TAG;
+  const isBlockOrBreak = tagName === DEFAULT_INSERT_TAG || tagName === DEFAULT_LINE_BREAK_TAG;
   if (isInlineStructuralParent(parent) && isBlockOrBreak) {
     writer!.editor!.selection.setRng(ctx.rng);
     writer!.editor!.undoManager.transact(() => {
@@ -327,7 +327,8 @@ export const insertTagWithSplit = (tagName: string): ApplyTagResult => {
 export const insertLineBreak = async (): Promise<ApplyTagResult> => {
   const writer = getWriter();
   const ctx = getEditorTagContext();
-  if (!writer?.editor || !writer.tagger || !ctx) return { applied: false, error: 'Editor not ready' };
+  if (!writer?.editor || !writer.tagger || !ctx)
+    return { applied: false, error: 'Editor not ready' };
 
   const lbResult = await applyInsertTag(DEFAULT_LINE_BREAK_TAG);
   if (lbResult.applied) return lbResult;

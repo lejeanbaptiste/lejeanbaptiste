@@ -9,16 +9,10 @@
 
 import type { AuthorityId } from './entities';
 import type { EntityStore } from './entityStore';
-import {
-  formatNorbertAuthorityValue,
-  norbertAuthorityLookupValues,
-} from './norbertAuthorityId';
+import { formatNorbertAuthorityValue, norbertAuthorityLookupValues } from './norbertAuthorityId';
 import { authorityPackLines, type AuthorityPackContent } from './packLoader';
 import type { AuthorityPackId } from './packPaths';
-import {
-  authorityIdsFromPackCrosswalk,
-  normalizeWikidataQid,
-} from './viafWikidataConcordance';
+import { authorityIdsFromPackCrosswalk, normalizeWikidataQid } from './viafWikidataConcordance';
 
 /** Pack id for the shipped Norbert person concordance sidecar. */
 export const NORBERT_PERSON_CONCORDANCE_PACK_ID: AuthorityPackId = 'norbert-concordance';
@@ -42,25 +36,13 @@ function authorityKey(type: string, value: string): string {
   return `${type.trim().toUpperCase()}\0${value.trim()}`;
 }
 
-function pushLink(
-  index: NorbertPersonConcordanceIndex,
-  from: AuthorityId,
-  to: AuthorityId,
-): void {
-  if (
-    from.type.toUpperCase() === to.type.toUpperCase() &&
-    from.value === to.value
-  ) {
+function pushLink(index: NorbertPersonConcordanceIndex, from: AuthorityId, to: AuthorityId): void {
+  if (from.type.toUpperCase() === to.type.toUpperCase() && from.value === to.value) {
     return;
   }
   const key = authorityKey(from.type, from.value);
   const list = index.byAuthority.get(key) ?? [];
-  if (
-    list.some(
-      (id) =>
-        id.type.toUpperCase() === to.type.toUpperCase() && id.value === to.value,
-    )
-  ) {
+  if (list.some((id) => id.type.toUpperCase() === to.type.toUpperCase() && id.value === to.value)) {
     return;
   }
   list.push(to);
@@ -295,11 +277,16 @@ function primaryNameFromSummary(raw: unknown): string | null {
     names.find((name) => name.isPrimary === true) ??
     names.find((name) => String(name.nameType ?? '').toLowerCase() === 'primary') ??
     names[0];
-  const text = String(primary?.text ?? '').normalize('NFC').trim();
+  const text = String(primary?.text ?? '')
+    .normalize('NFC')
+    .trim();
   return text || null;
 }
 
-function namesMatchForBridgeMerge(a: string | null | undefined, b: string | null | undefined): boolean {
+function namesMatchForBridgeMerge(
+  a: string | null | undefined,
+  b: string | null | undefined,
+): boolean {
   if (!a || !b) return false;
   return a.normalize('NFC').trim() === b.normalize('NFC').trim();
 }

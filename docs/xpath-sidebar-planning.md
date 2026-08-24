@@ -18,35 +18,35 @@ The single-purpose project sidebar was replaced with tabs. The **XPath** tab pro
 
 ### Key files
 
-| File | Role |
-|------|------|
-| `apps/commons/src/desktop/ProjectSidebar.tsx` | Tab shell |
-| `apps/commons/src/desktop/sidebar/SidebarXPathTab.tsx` | XPath UI + keyboard nav |
-| `apps/commons/src/desktop/xpath/searchXPath.ts` | Multi-scope search orchestration |
-| `apps/commons/src/desktop/xpath/evaluateXPathAll.ts` | Raw XML xpath evaluation + path building |
-| `apps/commons/src/desktop/xpath/useXPathJump.ts` | Open tab, wait for editor, select node (pending jump + retries) |
-| `apps/commons/src/desktop/xpath/teiXPathWalker.ts` | Walk editor DOM by `_tag` to match stored TEI xpath |
-| `apps/commons/src/desktop/xpath/editorTeiXPath.ts` | Fallback TEI xpath match in editor |
-| `apps/commons/src/desktop/xpath/xpathSourceJump.ts` | Jump when Source (Monaco) view is active |
-| `packages/cwrc-leafwriter/src/js/conversion/xml2cwrc.ts` | XML → editor HTML conversion (strips original `id`) |
-| `packages/cwrc-leafwriter/src/js/utilities.ts` | `selectNode`, `getElementXPath`, `evaluateXPathAll` |
+| File                                                     | Role                                                            |
+| -------------------------------------------------------- | --------------------------------------------------------------- |
+| `apps/commons/src/desktop/ProjectSidebar.tsx`            | Tab shell                                                       |
+| `apps/commons/src/desktop/sidebar/SidebarXPathTab.tsx`   | XPath UI + keyboard nav                                         |
+| `apps/commons/src/desktop/xpath/searchXPath.ts`          | Multi-scope search orchestration                                |
+| `apps/commons/src/desktop/xpath/evaluateXPathAll.ts`     | Raw XML xpath evaluation + path building                        |
+| `apps/commons/src/desktop/xpath/useXPathJump.ts`         | Open tab, wait for editor, select node (pending jump + retries) |
+| `apps/commons/src/desktop/xpath/teiXPathWalker.ts`       | Walk editor DOM by `_tag` to match stored TEI xpath             |
+| `apps/commons/src/desktop/xpath/editorTeiXPath.ts`       | Fallback TEI xpath match in editor                              |
+| `apps/commons/src/desktop/xpath/xpathSourceJump.ts`      | Jump when Source (Monaco) view is active                        |
+| `packages/cwrc-leafwriter/src/js/conversion/xml2cwrc.ts` | XML → editor HTML conversion (strips original `id`)             |
+| `packages/cwrc-leafwriter/src/js/utilities.ts`           | `selectNode`, `getElementXPath`, `evaluateXPathAll`             |
 
 ---
 
 ## What works
 
-| Feature | Status |
-|---------|--------|
-| Tabbed sidebar (Explorer / Find / XPath / …) | Done |
-| XPath search across four scopes | Done |
-| File-grouped, collapsible results | Done |
-| Results show xpath path only | Done |
-| Keyboard nav + highlight **in the active file** | Done |
+| Feature                                                       | Status                                  |
+| ------------------------------------------------------------- | --------------------------------------- |
+| Tabbed sidebar (Explorer / Find / XPath / …)                  | Done                                    |
+| XPath search across four scopes                               | Done                                    |
+| File-grouped, collapsible results                             | Done                                    |
+| Results show xpath path only                                  | Done                                    |
+| Keyboard nav + highlight **in the active file**               | Done                                    |
 | **Cross-file jump** — `openFile` then pending jump after load | Done (retry schedule in `useXPathJump`) |
-| **Cross-file highlight** after tab switch | Done (same path; report if flaky) |
-| Sidebar keeps focus after jump (`focusEditor: false`) | Done |
-| Source-mode jump | Done (`xpathSourceJump.ts`) |
-| Toolbar XPath hidden on desktop | Done |
+| **Cross-file highlight** after tab switch                     | Done (same path; report if flaky)       |
+| Sidebar keeps focus after jump (`focusEditor: false`)         | Done                                    |
+| Source-mode jump                                              | Done (`xpathSourceJump.ts`)             |
+| Toolbar XPath hidden on desktop                               | Done                                    |
 
 ---
 
@@ -54,10 +54,10 @@ The single-purpose project sidebar was replaced with tabs. The **XPath** tab pro
 
 > Kept for the DOM-tree analysis below. Do not treat as current bugs.
 
-| Feature | Status then |
-|---------|--------|
-| **Cross-file jump** | Unreliable / regressed during debug |
-| **Cross-file highlight** | Not working |
+| Feature                    | Status then                                                       |
+| -------------------------- | ----------------------------------------------------------------- |
+| **Cross-file jump**        | Unreliable / regressed during debug                               |
+| **Cross-file highlight**   | Not working                                                       |
 | Debug instrumentation logs | Fetch to local debug server did not produce log files in Electron |
 
 User-reported behaviour at time of writing (March 2026):
@@ -111,13 +111,13 @@ openingTagString = `<${htmlTag} _tag="${nodeName}" id="${id}" ...`;
 
 ### 2. `matchIndex` is not portable across raw XML and editor DOM
 
-The same xpath query (`//p`) can return the same *logical* matches but in a **different order or count** in raw XML vs the converted editor body (wrapper elements, schema normalization, etc.).
+The same xpath query (`//p`) can return the same _logical_ matches but in a **different order or count** in raw XML vs the converted editor body (wrapper elements, schema normalization, etc.).
 
 **Evidence:** File A jump via `matchIndex` succeeded on the active file. File B jump via `matchIndex` selected the wrong node or failed.
 
 **Implication:** `matchIndex` from search is only trustworthy when `searchInEditor()` was used for that file.
 
-### 3. Stored xpath path is the right *idea*, but mapping is hard
+### 3. Stored xpath path is the right _idea_, but mapping is hard
 
 The stable identifier across conversion is the **TEI element path** (tag names + sibling indices), not id or flat index.
 
@@ -141,11 +141,11 @@ jumpToMatch → openFile(filePath) → setResource → loadDocumentXML → docum
 
 Bugs introduced during debugging:
 
-| Bug | Effect |
-|-----|--------|
-| Pre-setting `activeTabPathRef` to target file before `openFile` completed | Next jump thought tab was already active → **skipped `openFile`** → no tab switch |
-| Guard that stopped syncing refs from React state while pending jump existed | Compounded stale path detection |
-| `selectNode` “success” when any selection existed | False positive — old selection counted as successful jump |
+| Bug                                                                         | Effect                                                                            |
+| --------------------------------------------------------------------------- | --------------------------------------------------------------------------------- |
+| Pre-setting `activeTabPathRef` to target file before `openFile` completed   | Next jump thought tab was already active → **skipped `openFile`** → no tab switch |
+| Guard that stopped syncing refs from React state while pending jump existed | Compounded stale path detection                                                   |
+| `selectNode` “success” when any selection existed                           | False positive — old selection counted as successful jump                         |
 
 v8 reverted ref pre-setting and uses `resource?.filePath ?? activeTabPath` for `isActive`. Outcome still broken — suggests remaining issues are in xpath mapping and/or timing, not refs alone.
 
@@ -195,15 +195,15 @@ sequenceDiagram
 
 ## Attempted fixes (chronological)
 
-| Attempt | Intent | Outcome |
-|---------|--------|---------|
-| Jump by `id` | Fast lookup | Failed for raw XML results (ids stripped in editor) |
-| Jump by `matchIndex` | Re-use search index | Works same-file only; wrong node cross-file |
-| Store + jump by xpath string | Stable path across conversion | Implemented; teiWalk blocked by syntax error initially |
-| `PendingXPathJump.xpath` + documentLoaded retry | Wait for editor before jump | Partial; timing/ref bugs interfered |
-| Namespace-aware `matchesTeiTag` | Match `cb:div` ↔ `div` | Code written; not verified |
-| Ref-based path tracking | Avoid path mismatch on tab switch | **Caused regression** — tabs stopped switching |
-| v8: React state for `isActive`, retries after `openFile` | Fix regression | Still broken at last user test |
+| Attempt                                                  | Intent                            | Outcome                                                |
+| -------------------------------------------------------- | --------------------------------- | ------------------------------------------------------ |
+| Jump by `id`                                             | Fast lookup                       | Failed for raw XML results (ids stripped in editor)    |
+| Jump by `matchIndex`                                     | Re-use search index               | Works same-file only; wrong node cross-file            |
+| Store + jump by xpath string                             | Stable path across conversion     | Implemented; teiWalk blocked by syntax error initially |
+| `PendingXPathJump.xpath` + documentLoaded retry          | Wait for editor before jump       | Partial; timing/ref bugs interfered                    |
+| Namespace-aware `matchesTeiTag`                          | Match `cb:div` ↔ `div`            | Code written; not verified                             |
+| Ref-based path tracking                                  | Avoid path mismatch on tab switch | **Caused regression** — tabs stopped switching         |
+| v8: React state for `isActive`, retries after `openFile` | Fix regression                    | Still broken at last user test                         |
 
 ---
 
@@ -239,7 +239,7 @@ Options:
 
 ### D. Handle index divergence explicitly
 
-If teiWalk fails at segment *i* with `candidateCount > 0` but wrong index:
+If teiWalk fails at segment _i_ with `candidateCount > 0` but wrong index:
 
 - Try adjacent indices (off-by-one from conversion differences).
 - Fall back to matching by xpath suffix (last N segments unique within file).

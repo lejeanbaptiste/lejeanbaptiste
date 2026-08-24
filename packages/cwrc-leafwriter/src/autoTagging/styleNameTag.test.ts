@@ -4,7 +4,9 @@ const parse = (xml: string) => new DOMParser().parseFromString(xml, 'application
 
 describe('tagFollowingStyleNames', () => {
   it('tags a one- or two-character 字 name with the original key', () => {
-    const doc = parse('<TEI xmlns="http://www.tei-c.org/ns/1.0"><p><persName key="p1">王安石</persName>字介甫，居京</p></TEI>');
+    const doc = parse(
+      '<TEI xmlns="http://www.tei-c.org/ns/1.0"><p><persName key="p1">王安石</persName>字介甫，居京</p></TEI>',
+    );
 
     expect(tagFollowingStyleNames(doc)).toBe(1);
     expect(doc.querySelectorAll('persName')).toHaveLength(2);
@@ -16,7 +18,9 @@ describe('tagFollowingStyleNames', () => {
   });
 
   it('requires the punctuation and an immediate text-node suffix', () => {
-    const doc = parse('<TEI xmlns="http://www.tei-c.org/ns/1.0"><p><persName key="p1">王安石</persName>字介甫居京</p></TEI>');
+    const doc = parse(
+      '<TEI xmlns="http://www.tei-c.org/ns/1.0"><p><persName key="p1">王安石</persName>字介甫居京</p></TEI>',
+    );
     expect(tagFollowingStyleNames(doc)).toBe(0);
   });
 });

@@ -1,8 +1,4 @@
-import {
-  buildClipboardExport,
-  escapeRtfText,
-  type ExportBiblEntry,
-} from './clipboardExport';
+import { buildClipboardExport, escapeRtfText, type ExportBiblEntry } from './clipboardExport';
 
 const parseUnit = (xml: string): Element => {
   const doc = new DOMParser().parseFromString(xml, 'application/xml');
@@ -67,7 +63,9 @@ describe('buildClipboardExport', () => {
     const { text, rtf, html } = buildClipboardExport([{ source: null, translation }]);
 
     expect(text).toBe('Claim. More.');
-    expect(rtf).toContain('{\\super\\chftn}{\\footnote\\pard\\plain {\\super\\chftn} See discussion.}');
+    expect(rtf).toContain(
+      '{\\super\\chftn}{\\footnote\\pard\\plain {\\super\\chftn} See discussion.}',
+    );
     expect(html).toContain('[See discussion.]');
   });
 

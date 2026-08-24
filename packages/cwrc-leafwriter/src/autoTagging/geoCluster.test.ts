@@ -72,10 +72,7 @@ describe('clusterCandidatesByGeo', () => {
       place('Wikidata', 'wd-b', 39.899, 116.398),
     ];
 
-    const { clusters, noGeo } = clusterCandidatesByGeo(
-      [...placeAJingling, ...placeBJingling],
-      5,
-    );
+    const { clusters, noGeo } = clusterCandidatesByGeo([...placeAJingling, ...placeBJingling], 5);
 
     expect(noGeo).toHaveLength(0);
     expect(clusters).toHaveLength(2);

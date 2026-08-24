@@ -829,7 +829,6 @@ Add language as an optional property to settings. Now we can explicitly tell the
       - @types/lodash@4.14.192 [c250d6e77f3857bb4d53945764c1aedbb52e97db]
 
   ### Tests
-
   - Refactoring [767dfaeb8657620cf7fca0652c3c7b0977001128]
 
 ## 1.3.9

@@ -6,8 +6,7 @@ import type { PendingXPathJump } from './types';
 import { applyXPathHighlight, clearXPathHighlights } from './xpathEditorHighlights';
 import { performXPathJumpInSourceEditor } from './xpathSourceJump';
 
-const isSourceEditorMode = () =>
-  window.writer?.overmindState?.ui?.editorViewMode === 'source';
+const isSourceEditorMode = () => window.writer?.overmindState?.ui?.editorViewMode === 'source';
 
 const isElement = (node: Node): node is Element => node.nodeType === Node.ELEMENT_NODE;
 

@@ -11,12 +11,7 @@ export interface CachedSchema {
 }
 
 export type EventName =
-  | 'attributeName'
-  | 'attributeValue'
-  | 'endTag'
-  | 'enterStartTag'
-  | 'leaveStartTag'
-  | 'text';
+  'attributeName' | 'attributeValue' | 'endTag' | 'enterStartTag' | 'leaveStartTag' | 'text';
 
 export interface InitializeParameters {
   id: string;

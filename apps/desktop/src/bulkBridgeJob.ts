@@ -6,7 +6,10 @@ import type {
   BulkBridgeJobRequest,
 } from '../../commons/src/desktop/bulkBridgeTypes';
 
-export type { BulkBridgeJobEvent, BulkBridgeJobRequest } from '../../commons/src/desktop/bulkBridgeTypes';
+export type {
+  BulkBridgeJobEvent,
+  BulkBridgeJobRequest,
+} from '../../commons/src/desktop/bulkBridgeTypes';
 
 const workers = new Map<string, ChildProcess>();
 
@@ -55,7 +58,8 @@ export function startBulkBridgeJob(
   });
   worker.on('exit', (code) => {
     workers.delete(jobId);
-    if (code && code !== 0) emit({ jobId, status: 'error', error: `Bulk bridge worker exited with code ${code}.` });
+    if (code && code !== 0)
+      emit({ jobId, status: 'error', error: `Bulk bridge worker exited with code ${code}.` });
   });
   worker.send({ type: 'run', jobId, request });
   return jobId;

@@ -1,7 +1,10 @@
 import { Avatar, Box, ListSubheader, Stack } from '@mui/material';
 import { useEffect } from 'react';
 import { useInView } from 'react-intersection-observer';
-import { OWN_DATABASE_INITIALS, isOwnDatabaseService } from '../../../../services/own-database-authorities';
+import {
+  OWN_DATABASE_INITIALS,
+  isOwnDatabaseService,
+} from '../../../../services/own-database-authorities';
 import { LookupService } from '../../store';
 import { Item } from './item';
 

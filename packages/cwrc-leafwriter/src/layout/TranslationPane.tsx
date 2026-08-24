@@ -62,7 +62,11 @@ import { copyUnitsForExport } from '../js/conversion/copyForExport';
 import { translationFontZoom } from '../js/fontSizeZoom';
 import { useActions, useAppState } from '../overmind';
 import { isMacOS } from '../utils/platform';
-import { applyTextContentReplacement, shiftLanguageToolMatchViews, type LanguageToolMatchView } from './languageToolApply';
+import {
+  applyTextContentReplacement,
+  shiftLanguageToolMatchViews,
+  type LanguageToolMatchView,
+} from './languageToolApply';
 import { collectMatchOverlayRects, type TextRangeRect } from './languageToolOverlays';
 import {
   FN_BODY_ATTR,
@@ -146,8 +150,15 @@ import type { EntitySummary } from './entityFields/entitySummary';
 import { EntityDisplayPopup } from './entityFields/EntityDisplayPopup';
 import { TRANSLATION_POLICY_CHANGED_EVENT } from './entityFields/dateFormatSettings';
 import { SCHOLARLY_CONVENTIONS_CHANGED_EVENT } from './entityFields/scholarlyConventions';
-import { applyEditorialCleanupToRoot, applyEditorialCleanupToRootPreservingSelection } from './translationEditorialCleanup';
-import { collectTranslationUnitCards, footnoteStartIndexForUnit, isTranslationUnitBlank } from './translationUnitCards';
+import {
+  applyEditorialCleanupToRoot,
+  applyEditorialCleanupToRootPreservingSelection,
+} from './translationEditorialCleanup';
+import {
+  collectTranslationUnitCards,
+  footnoteStartIndexForUnit,
+  isTranslationUnitBlank,
+} from './translationUnitCards';
 import { isAiUiFeatureEnabled } from '../autoTagging/aiUiFeatures';
 import {
   finishAiRunProgress,
@@ -345,8 +356,7 @@ interface ZoteroCaywPick {
 }
 
 type ZoteroCaywResult =
-  | { ok: true; picks: ZoteroCaywPick[] }
-  | { ok: false; cancelled: boolean; error?: string };
+  { ok: true; picks: ZoteroCaywPick[] } | { ok: false; cancelled: boolean; error?: string };
 
 interface DesktopCitationBridge {
   chipLabel: (item: CslJsonItem) => string;
@@ -664,9 +674,11 @@ export const substituteEntityPlaceholders = (
   const cleanedFragment = stripLeadingOfficePrepositionsFromText(
     normalizeAiPlaceholders(fragmentXml),
   );
-  if (!cleanedFragment.includes('{{entity:') &&
+  if (
+    !cleanedFragment.includes('{{entity:') &&
     !cleanedFragment.includes('{{holding:') &&
-    !cleanedFragment.includes('{{as:')) {
+    !cleanedFragment.includes('{{as:')
+  ) {
     return cleanedFragment;
   }
 
@@ -678,7 +690,7 @@ export const substituteEntityPlaceholders = (
   const textNodes: Text[] = [];
   const walker = doc.createTreeWalker(root, NodeFilter.SHOW_TEXT);
   let node: Node | null;
-   
+
   while ((node = walker.nextNode())) {
     const content = node.textContent ?? '';
     if (
@@ -699,7 +711,7 @@ export const substituteEntityPlaceholders = (
     let match: RegExpExecArray | null;
     const replacement = doc.createDocumentFragment();
     let sawMatch = false;
-     
+
     while ((match = ENTITY_PLACEHOLDER_RE.exec(text))) {
       sawMatch = true;
       if (match.index > lastIndex) {
@@ -710,7 +722,13 @@ export const substituteEntityPlaceholders = (
       if (entity) {
         const nextOccurrence = (occurrenceCounts.get(entityId) ?? 0) + 1;
         occurrenceCounts.set(entityId, nextOccurrence);
-        const field = createEntityFieldElement(entity, nextOccurrence, EMPTY_DISPLAY_SPEC, undefined, lang);
+        const field = createEntityFieldElement(
+          entity,
+          nextOccurrence,
+          EMPTY_DISPLAY_SPEC,
+          undefined,
+          lang,
+        );
         replacement.appendChild(field);
       } else {
         console.warn('[translation] AI entity placeholder had no matching entity:', entityId);
@@ -740,11 +758,7 @@ export const substituteDatePlaceholders = (
 ): string => {
   const dayLevels = dayLevelByDateIndex(dates);
   const cleanedFragment = ensureDatePrepositionsInText(
-    adjustDatePrepositionsInText(
-      normalizeAiPlaceholders(fragmentXml),
-      dayLevels,
-      lang,
-    ),
+    adjustDatePrepositionsInText(normalizeAiPlaceholders(fragmentXml), dayLevels, lang),
     dayLevels,
     lang,
   );
@@ -757,7 +771,7 @@ export const substituteDatePlaceholders = (
   const textNodes: Text[] = [];
   const walker = doc.createTreeWalker(root, NodeFilter.SHOW_TEXT);
   let node: Node | null;
-   
+
   while ((node = walker.nextNode())) {
     if ((node.textContent ?? '').includes('{{date:')) textNodes.push(node as Text);
   }
@@ -777,7 +791,7 @@ export const substituteDatePlaceholders = (
     let match: RegExpExecArray | null;
     const replacement = doc.createDocumentFragment();
     let sawMatch = false;
-     
+
     while ((match = DATE_PLACEHOLDER_RE.exec(text))) {
       sawMatch = true;
       if (match.index > lastIndex) {
@@ -829,7 +843,7 @@ export const substituteNotePlaceholders = (
   const textNodes: Text[] = [];
   const walker = doc.createTreeWalker(root, NodeFilter.SHOW_TEXT);
   let node: Node | null;
-   
+
   while ((node = walker.nextNode())) {
     if ((node.textContent ?? '').includes('{{note:')) textNodes.push(node as Text);
   }
@@ -841,7 +855,7 @@ export const substituteNotePlaceholders = (
     let match: RegExpExecArray | null;
     const replacement = doc.createDocumentFragment();
     let sawMatch = false;
-     
+
     while ((match = NOTE_PLACEHOLDER_RE.exec(text))) {
       sawMatch = true;
       if (match.index > lastIndex) {
@@ -952,10 +966,7 @@ const dateCandidateId = (index: number): string => `date:${index}`;
  * exists only to help the user find the date field while typing — it is never
  * stored on the date field or written anywhere.
  */
-const candidateFromDateHit = (
-  hit: SourceUnitDateHit,
-  id: string,
-): EntityAutocompleteCandidate => {
+const candidateFromDateHit = (hit: SourceUnitDateHit, id: string): EntityAutocompleteCandidate => {
   const aliases = new Set<string>();
   // Spaced form lets a match start mid-string (e.g. typing just the era
   // name); concatenated form lets a match start-anchor across the whole date.
@@ -1054,9 +1065,10 @@ export const TranslationPane = () => {
   const entityAcIndexRef = useRef(0);
   entityAcIndexRef.current = entityAcIndex;
   const [entityFormatOpen, setEntityFormatOpen] = useState(false);
-  const [entityFormatAnchor, setEntityFormatAnchor] = useState<{ top: number; left: number } | null>(
-    null,
-  );
+  const [entityFormatAnchor, setEntityFormatAnchor] = useState<{
+    top: number;
+    left: number;
+  } | null>(null);
   const [entityFormatSpec, setEntityFormatSpec] = useState<EntityDisplaySpec>(EMPTY_DISPLAY_SPEC);
   const [entityFormatEntity, setEntityFormatEntity] = useState<EntitySummary | null>(null);
   const [entityFormatOccurrence, setEntityFormatOccurrence] = useState(1);
@@ -1073,9 +1085,9 @@ export const TranslationPane = () => {
   const [linkUrl, setLinkUrl] = useState('');
   const [footnotes, setFootnotes] = useState<string[]>([]);
   const [citationStylePickerOpen, setCitationStylePickerOpen] = useState(false);
-  const [citationStyleChoices, setCitationStyleChoices] = useState<
-    { id: string; label: string }[]
-  >([]);
+  const [citationStyleChoices, setCitationStyleChoices] = useState<{ id: string; label: string }[]>(
+    [],
+  );
   const [pendingCitationStyle, setPendingCitationStyle] = useState('');
   const citationStyleResolveRef = useRef<((styleId: string | null) => void) | null>(null);
   const docRef = useRef<Document | null>(null);
@@ -1129,9 +1141,9 @@ export const TranslationPane = () => {
   useEffect(() => {
     const setSpellcheck = window.electronAPI?.setTranslationSpellcheck;
     if (!setSpellcheck) return;
-    const languageCodes = [
-      languageState?.selectedLang || translationMode.lang || '',
-    ].filter(Boolean);
+    const languageCodes = [languageState?.selectedLang || translationMode.lang || ''].filter(
+      Boolean,
+    );
     const enabled = spellcheckEnabled && !languageToolLive;
     void setSpellcheck({ enabled, languageCodes });
   }, [languageState?.selectedLang, languageToolLive, spellcheckEnabled, translationMode.lang]);
@@ -1139,10 +1151,12 @@ export const TranslationPane = () => {
   useEffect(() => {
     const load = window.electronAPI?.getLanguageToolSettings;
     if (!load) return;
-    const apply = (settings: {
-      enabled?: boolean;
-      checkMode?: 'onDemand' | 'live';
-    } | null) => {
+    const apply = (
+      settings: {
+        enabled?: boolean;
+        checkMode?: 'onDemand' | 'live';
+      } | null,
+    ) => {
       setLanguageToolEnabled(settings?.enabled === true);
       setLanguageToolLive(settings?.enabled === true && settings?.checkMode === 'live');
     };
@@ -1401,7 +1415,12 @@ export const TranslationPane = () => {
     if (editable) {
       prepareAtomicCitationFields(editable, zoteroCitationLabel);
       recalculateDateFieldsInRoot(editable, selectedLanguage);
-      void recalculateAllEntityFieldsInRoot(editable, fetchEntitySummary, undefined, selectedLanguage)
+      void recalculateAllEntityFieldsInRoot(
+        editable,
+        fetchEntitySummary,
+        undefined,
+        selectedLanguage,
+      )
         .then(() => {
           prepareAtomicEntityFields(editable);
           prepareAtomicDateFields(editable);
@@ -1566,7 +1585,11 @@ export const TranslationPane = () => {
 
   useEffect(() => {
     const doc = window.writer?.editor?.getDoc?.() ?? document;
-    if (!doc || typeof doc.createElement !== 'function' || typeof doc.getElementById !== 'function') {
+    if (
+      !doc ||
+      typeof doc.createElement !== 'function' ||
+      typeof doc.getElementById !== 'function'
+    ) {
       return;
     }
     const styleId = 'ljb-translation-active-unit-style';
@@ -1758,251 +1781,264 @@ export const TranslationPane = () => {
     [alignmentUnit, sourcePath, selectedUnitId, translationPath],
   );
 
-  const generateTranslation = useCallback(async (
-    unitId: string = selectedUnitId ?? '',
-    options?: { silent?: boolean },
-  ) => {
-    const silent = options?.silent ?? false;
-    const isSelected = unitId === selectedUnitIdRef.current;
-    if (!alignmentUnit || !sourcePath || !unitId) {
-      if (!silent) {
-        setAiStatus({ severity: 'error', message: t('LW.translationPane.selectSourceUnitFirst') });
-      }
-      return { skipped: false, error: 'No unit selected.' };
-    }
-
-    const doc = docRef.current;
-    const unit =
-      doc && findUnitByCorrespId(doc, alignmentUnit, fileNameOf(sourcePath), unitId);
-    // The live editor fallback only applies to the unit actually on screen —
-    // otherwise a batch run over other units would read the wrong content.
-    const currentHtml =
-      unit?.innerHTML ?? (isSelected ? (editableRef.current?.innerHTML ?? '') : '');
-    if (!isTranslationUnitBlank(currentHtml)) {
-      if (!silent) {
-        setAiStatus({ severity: 'info', message: t('LW.translationPane.aiSkippedExisting') });
-      }
-      return { skipped: true };
-    }
-
-    const api = getDesktopApi();
-    if (!api?.generateAiTranslation || !api.readFile) {
-      if (!silent) {
-        setAiStatus({ severity: 'error', message: t('LW.translationPane.aiTranslationUnavailable') });
-      }
-      return { skipped: false, error: 'AI translation unavailable.' };
-    }
-
-    setGenerating(true);
-    if (!silent) {
-      setAiStatus({ severity: 'info', message: t('LW.translationPane.generatingTranslation') });
-    }
-
-    try {
-      const sourceXml = await api.readFile(sourcePath);
-      const sourceUnit = serializeSourceUnit(sourceXml, alignmentUnit, unitId);
-      if (!sourceUnit.xml) {
-        const message = sourceUnit.error ?? 'Could not read source unit.';
-        if (!silent) setAiStatus({ severity: 'error', message });
-        return { skipped: false, error: message };
-      }
-
-      // Same source of truth as dates: collect + blind from the serialized unit
-      // XML the model will see. TinyMCE DOM collect can miss the active unit.
-      const sourceEntityHits = collectEntitiesFromSourceUnitXml(sourceUnit.xml);
-      const entityMap = new Map<string, EntitySummary>();
-      await Promise.all(
-        sourceEntityHits.map(async (hit) => {
-          if (entityMap.has(hit.key)) return;
-          const entity = await fetchEntitySummary(hit.key);
-          if (entity) entityMap.set(hit.key, entity);
-        }),
-      );
-      // Never send display names to the model — it will expand {{entity:KEY}}
-      // into "Chen Xianda" from romanizedName instead of copying the placeholder.
-      const entitiesPayload = sourceEntityHits.map((hit) => ({
-        id: hit.key,
-        kind: hit.kind,
-      }));
-
-      const sourceDateHits = collectDatesFromSourceUnitXml(
-        sourceUnit.xml,
-        selectedLanguage ?? translationMode.lang,
-      );
-      const dateMap = new Map<number, DateGlossInput>();
-      const datesPayload = sourceDateHits.map((hit) => {
-        dateMap.set(hit.index, hit.input);
-        // Index only for the model; gloss is applied locally after substitute.
-        return { index: hit.index };
-      });
-      const knownEntityKeys = new Set(sourceEntityHits.map((hit) => hit.key));
-
-      // Notes are stripped and translated independently — collect from the
-      // full unit XML (before blinding) so their own inner XML still has
-      // real entity/date tags to blind for the note-specific AI call below.
-      const noteHits = collectNotesFromSourceUnitXml(sourceUnit.xml);
-      const sourceXmlNotesStripped = replaceNotesWithPlaceholdersInSourceXml(sourceUnit.xml);
-
-      const { xml: sourceUnitXmlForAi, opaques } = replaceEntitiesWithPlaceholdersInSourceXml(
-        replaceDatesWithPlaceholdersInSourceXml(sourceXmlNotesStripped),
-        knownEntityKeys,
-      );
-      const opaqueMap = new Map<number, OpaqueEntityHit>(
-        opaques.map((hit) => [hit.index, hit]),
-      );
-      console.info('[translation] AI blinded source unit', {
-        entityKeys: knownEntityKeys.size,
-        opaqueCount: opaques.length,
-        dates: datesPayload.length,
-        notes: noteHits.length,
-        xml: sourceUnitXmlForAi,
-      });
-
-      // First attempt + up to N resends (from AI settings; hard-capped 0–5).
-      const aiPrefs = await api.getAiApiSettings?.().catch(() => null);
-      const bridgeLimit = (
-        window as Window & {
-          __ljbCommonsUi?: { aiApiSettings?: { placeholderRetryLimit?: number } | null };
+  const generateTranslation = useCallback(
+    async (unitId: string = selectedUnitId ?? '', options?: { silent?: boolean }) => {
+      const silent = options?.silent ?? false;
+      const isSelected = unitId === selectedUnitIdRef.current;
+      if (!alignmentUnit || !sourcePath || !unitId) {
+        if (!silent) {
+          setAiStatus({
+            severity: 'error',
+            message: t('LW.translationPane.selectSourceUnitFirst'),
+          });
         }
-      ).__ljbCommonsUi?.aiApiSettings?.placeholderRetryLimit;
-      const rawLimit =
-        typeof aiPrefs?.placeholderRetryLimit === 'number'
-          ? aiPrefs.placeholderRetryLimit
-          : typeof bridgeLimit === 'number'
-            ? bridgeLimit
-            : 1;
-      const retryLimit = Math.min(5, Math.max(0, Math.floor(rawLimit)));
-
-      const mainResult = await translateBlindedUnitXml(
-        api,
-        {
-          alignmentUnit,
-          sourceUnitXml: sourceUnitXmlForAi,
-          targetLanguage: translationMode.lang ?? '',
-          entities: entitiesPayload,
-          dates: datesPayload,
-        },
-        retryLimit,
-      );
-      if ('error' in mainResult) {
-        if (!silent) setAiStatus({ severity: 'error', message: mainResult.error });
-        return { skipped: false, error: mainResult.error };
+        return { skipped: false, error: 'No unit selected.' };
       }
 
-      const validated = validateGeneratedFragment(mainResult.xml);
-      if (!validated.xml) {
-        const message = validated.error ?? 'AI returned invalid translation XML.';
-        if (!silent) setAiStatus({ severity: 'error', message });
-        return { skipped: false, error: message };
+      const doc = docRef.current;
+      const unit = doc && findUnitByCorrespId(doc, alignmentUnit, fileNameOf(sourcePath), unitId);
+      // The live editor fallback only applies to the unit actually on screen —
+      // otherwise a batch run over other units would read the wrong content.
+      const currentHtml =
+        unit?.innerHTML ?? (isSelected ? (editableRef.current?.innerHTML ?? '') : '');
+      if (!isTranslationUnitBlank(currentHtml)) {
+        if (!silent) {
+          setAiStatus({ severity: 'info', message: t('LW.translationPane.aiSkippedExisting') });
+        }
+        return { skipped: true };
       }
 
-      const cleanedXml = normalizeAiPlaceholders(
-        applyMarkdownCleanupToFragment(validated.xml),
-      );
-      const withOpaques = substituteOpaquePlaceholders(cleanedXml, opaqueMap);
-      const withEntities = substituteEntityPlaceholders(withOpaques, entityMap, selectedLanguage);
-      const withDates = substituteDatePlaceholders(withEntities, dateMap, selectedLanguage);
+      const api = getDesktopApi();
+      if (!api?.generateAiTranslation || !api.readFile) {
+        if (!silent) {
+          setAiStatus({
+            severity: 'error',
+            message: t('LW.translationPane.aiTranslationUnavailable'),
+          });
+        }
+        return { skipped: false, error: 'AI translation unavailable.' };
+      }
 
-      // Translate each note independently, only after the main text succeeded.
-      // A note failure never fails the whole operation — it falls back to the
-      // note's original (untranslated) content and is surfaced as a warning.
-      const noteHtmlByIndex = new Map<number, string>();
-      const noteWarnings: string[] = [];
-      let nextOpaqueStart = opaques.length;
-
-      if (noteHits.length > 0 && !silent) {
+      setGenerating(true);
+      if (!silent) {
         setAiStatus({ severity: 'info', message: t('LW.translationPane.generatingTranslation') });
       }
 
-      for (const noteHit of noteHits) {
-        if (!noteHit.innerXml.trim()) {
-          noteHtmlByIndex.set(noteHit.index, '');
-          continue;
+      try {
+        const sourceXml = await api.readFile(sourcePath);
+        const sourceUnit = serializeSourceUnit(sourceXml, alignmentUnit, unitId);
+        if (!sourceUnit.xml) {
+          const message = sourceUnit.error ?? 'Could not read source unit.';
+          if (!silent) setAiStatus({ severity: 'error', message });
+          return { skipped: false, error: message };
         }
 
-        const { xml: noteXmlForAi, opaques: noteOpaques } = replaceEntitiesWithPlaceholdersInSourceXml(
-          replaceDatesWithPlaceholdersInSourceXml(noteHit.innerXml),
-          knownEntityKeys,
-          nextOpaqueStart,
+        // Same source of truth as dates: collect + blind from the serialized unit
+        // XML the model will see. TinyMCE DOM collect can miss the active unit.
+        const sourceEntityHits = collectEntitiesFromSourceUnitXml(sourceUnit.xml);
+        const entityMap = new Map<string, EntitySummary>();
+        await Promise.all(
+          sourceEntityHits.map(async (hit) => {
+            if (entityMap.has(hit.key)) return;
+            const entity = await fetchEntitySummary(hit.key);
+            if (entity) entityMap.set(hit.key, entity);
+          }),
         );
-        nextOpaqueStart += noteOpaques.length;
-        for (const hit of noteOpaques) opaqueMap.set(hit.index, hit);
+        // Never send display names to the model — it will expand {{entity:KEY}}
+        // into "Chen Xianda" from romanizedName instead of copying the placeholder.
+        const entitiesPayload = sourceEntityHits.map((hit) => ({
+          id: hit.key,
+          kind: hit.kind,
+        }));
 
-        const noteResult = await translateBlindedUnitXml(
+        const sourceDateHits = collectDatesFromSourceUnitXml(
+          sourceUnit.xml,
+          selectedLanguage ?? translationMode.lang,
+        );
+        const dateMap = new Map<number, DateGlossInput>();
+        const datesPayload = sourceDateHits.map((hit) => {
+          dateMap.set(hit.index, hit.input);
+          // Index only for the model; gloss is applied locally after substitute.
+          return { index: hit.index };
+        });
+        const knownEntityKeys = new Set(sourceEntityHits.map((hit) => hit.key));
+
+        // Notes are stripped and translated independently — collect from the
+        // full unit XML (before blinding) so their own inner XML still has
+        // real entity/date tags to blind for the note-specific AI call below.
+        const noteHits = collectNotesFromSourceUnitXml(sourceUnit.xml);
+        const sourceXmlNotesStripped = replaceNotesWithPlaceholdersInSourceXml(sourceUnit.xml);
+
+        const { xml: sourceUnitXmlForAi, opaques } = replaceEntitiesWithPlaceholdersInSourceXml(
+          replaceDatesWithPlaceholdersInSourceXml(sourceXmlNotesStripped),
+          knownEntityKeys,
+        );
+        const opaqueMap = new Map<number, OpaqueEntityHit>(opaques.map((hit) => [hit.index, hit]));
+        console.info('[translation] AI blinded source unit', {
+          entityKeys: knownEntityKeys.size,
+          opaqueCount: opaques.length,
+          dates: datesPayload.length,
+          notes: noteHits.length,
+          xml: sourceUnitXmlForAi,
+        });
+
+        // First attempt + up to N resends (from AI settings; hard-capped 0–5).
+        const aiPrefs = await api.getAiApiSettings?.().catch(() => null);
+        const bridgeLimit = (
+          window as Window & {
+            __ljbCommonsUi?: { aiApiSettings?: { placeholderRetryLimit?: number } | null };
+          }
+        ).__ljbCommonsUi?.aiApiSettings?.placeholderRetryLimit;
+        const rawLimit =
+          typeof aiPrefs?.placeholderRetryLimit === 'number'
+            ? aiPrefs.placeholderRetryLimit
+            : typeof bridgeLimit === 'number'
+              ? bridgeLimit
+              : 1;
+        const retryLimit = Math.min(5, Math.max(0, Math.floor(rawLimit)));
+
+        const mainResult = await translateBlindedUnitXml(
           api,
           {
-            alignmentUnit: 'note',
-            sourceUnitXml: noteXmlForAi,
+            alignmentUnit,
+            sourceUnitXml: sourceUnitXmlForAi,
             targetLanguage: translationMode.lang ?? '',
             entities: entitiesPayload,
             dates: datesPayload,
           },
           retryLimit,
         );
-        if ('error' in noteResult) {
-          console.warn('[translation] note translation failed, keeping original text', noteResult.error);
-          noteWarnings.push(noteResult.error);
-          noteHtmlByIndex.set(noteHit.index, noteHit.innerXml);
-          continue;
+        if ('error' in mainResult) {
+          if (!silent) setAiStatus({ severity: 'error', message: mainResult.error });
+          return { skipped: false, error: mainResult.error };
         }
 
-        const noteValidated = validateGeneratedFragment(noteResult.xml);
-        if (!noteValidated.xml) {
-          console.warn(
-            '[translation] note translation was invalid XML, keeping original text',
-            noteValidated.error,
+        const validated = validateGeneratedFragment(mainResult.xml);
+        if (!validated.xml) {
+          const message = validated.error ?? 'AI returned invalid translation XML.';
+          if (!silent) setAiStatus({ severity: 'error', message });
+          return { skipped: false, error: message };
+        }
+
+        const cleanedXml = normalizeAiPlaceholders(applyMarkdownCleanupToFragment(validated.xml));
+        const withOpaques = substituteOpaquePlaceholders(cleanedXml, opaqueMap);
+        const withEntities = substituteEntityPlaceholders(withOpaques, entityMap, selectedLanguage);
+        const withDates = substituteDatePlaceholders(withEntities, dateMap, selectedLanguage);
+
+        // Translate each note independently, only after the main text succeeded.
+        // A note failure never fails the whole operation — it falls back to the
+        // note's original (untranslated) content and is surfaced as a warning.
+        const noteHtmlByIndex = new Map<number, string>();
+        const noteWarnings: string[] = [];
+        let nextOpaqueStart = opaques.length;
+
+        if (noteHits.length > 0 && !silent) {
+          setAiStatus({ severity: 'info', message: t('LW.translationPane.generatingTranslation') });
+        }
+
+        for (const noteHit of noteHits) {
+          if (!noteHit.innerXml.trim()) {
+            noteHtmlByIndex.set(noteHit.index, '');
+            continue;
+          }
+
+          const { xml: noteXmlForAi, opaques: noteOpaques } =
+            replaceEntitiesWithPlaceholdersInSourceXml(
+              replaceDatesWithPlaceholdersInSourceXml(noteHit.innerXml),
+              knownEntityKeys,
+              nextOpaqueStart,
+            );
+          nextOpaqueStart += noteOpaques.length;
+          for (const hit of noteOpaques) opaqueMap.set(hit.index, hit);
+
+          const noteResult = await translateBlindedUnitXml(
+            api,
+            {
+              alignmentUnit: 'note',
+              sourceUnitXml: noteXmlForAi,
+              targetLanguage: translationMode.lang ?? '',
+              entities: entitiesPayload,
+              dates: datesPayload,
+            },
+            retryLimit,
           );
-          noteWarnings.push(noteValidated.error ?? 'AI returned invalid note XML.');
-          noteHtmlByIndex.set(noteHit.index, noteHit.innerXml);
-          continue;
+          if ('error' in noteResult) {
+            console.warn(
+              '[translation] note translation failed, keeping original text',
+              noteResult.error,
+            );
+            noteWarnings.push(noteResult.error);
+            noteHtmlByIndex.set(noteHit.index, noteHit.innerXml);
+            continue;
+          }
+
+          const noteValidated = validateGeneratedFragment(noteResult.xml);
+          if (!noteValidated.xml) {
+            console.warn(
+              '[translation] note translation was invalid XML, keeping original text',
+              noteValidated.error,
+            );
+            noteWarnings.push(noteValidated.error ?? 'AI returned invalid note XML.');
+            noteHtmlByIndex.set(noteHit.index, noteHit.innerXml);
+            continue;
+          }
+
+          const noteCleaned = normalizeAiPlaceholders(
+            applyMarkdownCleanupToFragment(noteValidated.xml),
+          );
+          const noteWithOpaques = substituteOpaquePlaceholders(noteCleaned, opaqueMap);
+          const noteWithEntities = substituteEntityPlaceholders(
+            noteWithOpaques,
+            entityMap,
+            selectedLanguage,
+          );
+          const noteWithDates = substituteDatePlaceholders(
+            noteWithEntities,
+            dateMap,
+            selectedLanguage,
+          );
+          noteHtmlByIndex.set(noteHit.index, noteWithDates);
         }
 
-        const noteCleaned = normalizeAiPlaceholders(
-          applyMarkdownCleanupToFragment(noteValidated.xml),
-        );
-        const noteWithOpaques = substituteOpaquePlaceholders(noteCleaned, opaqueMap);
-        const noteWithEntities = substituteEntityPlaceholders(noteWithOpaques, entityMap, selectedLanguage);
-        const noteWithDates = substituteDatePlaceholders(noteWithEntities, dateMap, selectedLanguage);
-        noteHtmlByIndex.set(noteHit.index, noteWithDates);
-      }
+        const substitutedXml = substituteNotePlaceholders(withDates, noteHtmlByIndex);
+        const replaceResult = await replaceCurrentUnit(substitutedXml, unitId);
+        if (replaceResult.error) {
+          if (!silent) setAiStatus({ severity: 'error', message: replaceResult.error });
+          return { skipped: false, error: replaceResult.error };
+        }
+        if (isSelected && editableRef.current) {
+          prepareAtomicEntityFields(editableRef.current);
+          prepareAtomicDateFields(editableRef.current);
+        }
 
-      const substitutedXml = substituteNotePlaceholders(withDates, noteHtmlByIndex);
-      const replaceResult = await replaceCurrentUnit(substitutedXml, unitId);
-      if (replaceResult.error) {
-        if (!silent) setAiStatus({ severity: 'error', message: replaceResult.error });
-        return { skipped: false, error: replaceResult.error };
+        if (!silent) {
+          setAiStatus({
+            severity: 'success',
+            message:
+              noteWarnings.length > 0
+                ? `${t('LW.translationPane.translationGenerated')} ${t('LW.translationPane.aiNotesPartial', { count: noteWarnings.length })}`
+                : t('LW.translationPane.translationGenerated'),
+          });
+        }
+        return { skipped: false };
+      } catch (error) {
+        const message = error instanceof Error ? error.message : 'AI translation failed.';
+        if (!silent) setAiStatus({ severity: 'error', message });
+        return { skipped: false, error: message };
+      } finally {
+        setGenerating(false);
       }
-      if (isSelected && editableRef.current) {
-        prepareAtomicEntityFields(editableRef.current);
-        prepareAtomicDateFields(editableRef.current);
-      }
-
-      if (!silent) {
-        setAiStatus({
-          severity: 'success',
-          message:
-            noteWarnings.length > 0
-              ? `${t('LW.translationPane.translationGenerated')} ${t('LW.translationPane.aiNotesPartial', { count: noteWarnings.length })}`
-              : t('LW.translationPane.translationGenerated'),
-        });
-      }
-      return { skipped: false };
-    } catch (error) {
-      const message = error instanceof Error ? error.message : 'AI translation failed.';
-      if (!silent) setAiStatus({ severity: 'error', message });
-      return { skipped: false, error: message };
-    } finally {
-      setGenerating(false);
-    }
-  }, [
-    alignmentUnit,
-    replaceCurrentUnit,
-    selectedLanguage,
-    selectedUnitId,
-    sourcePath,
-    t,
-    translationMode.lang,
-  ]);
+    },
+    [
+      alignmentUnit,
+      replaceCurrentUnit,
+      selectedLanguage,
+      selectedUnitId,
+      sourcePath,
+      t,
+      translationMode.lang,
+    ],
+  );
 
   /**
    * Translate every still-blank unit in the document, one at a time, via the
@@ -2041,7 +2077,11 @@ export const TranslationPane = () => {
 
     setAiStatus({
       severity: failed > 0 ? 'error' : 'success',
-      message: t('LW.translationPane.translateDocumentDone', { count: translated, skipped, failed }),
+      message: t('LW.translationPane.translateDocumentDone', {
+        count: translated,
+        skipped,
+        failed,
+      }),
     });
   }, [generateTranslation, generating, t, unitCards]);
 
@@ -2054,89 +2094,92 @@ export const TranslationPane = () => {
     setLanguageToolOverlays(collectMatchOverlayRects(root, matches));
   }, []);
 
-  const runLanguageToolCheck = useCallback(async (options?: { quiet?: boolean }) => {
-    const check = window.electronAPI?.checkLanguageTool;
-    if (!check) {
-      if (!options?.quiet) {
-        setLanguageToolStatus({
-          severity: 'error',
-          message: t('LW.translationPane.languageToolUnavailable'),
-        });
-      }
-      return;
-    }
-    if (!languageToolEnabled) {
-      if (!options?.quiet) {
-        setLanguageToolStatus({
-          severity: 'info',
-          message: t('LW.translationPane.languageToolDisabled'),
-        });
-      }
-      return;
-    }
-    if (!selectedUnitId || !editableRef.current) return;
-
-    const seq = ++languageToolSeqRef.current;
-    const text = editableRef.current.textContent ?? '';
-    setLanguageToolChecking(true);
-    if (!options?.quiet) setLanguageToolStatus(null);
-    try {
-      const result = await check({
-        text,
-        language: languageState?.selectedLang || translationMode.lang || 'auto',
-      });
-      if (seq !== languageToolSeqRef.current) return;
-      if (!result.ok) {
-        setLanguageToolMatches([]);
-        setLanguageToolSnapshot(null);
-        setLanguageToolOverlays([]);
+  const runLanguageToolCheck = useCallback(
+    async (options?: { quiet?: boolean }) => {
+      const check = window.electronAPI?.checkLanguageTool;
+      if (!check) {
         if (!options?.quiet) {
           setLanguageToolStatus({
             severity: 'error',
-            message: result.error ?? t('LW.settings.language_tool.connection_failed'),
+            message: t('LW.translationPane.languageToolUnavailable'),
           });
         }
         return;
       }
-      const matches = (result.matches ?? []) as LanguageToolMatchView[];
-      const liveText = editableRef.current?.textContent ?? '';
-      if (liveText !== text) return;
-      setLanguageToolSnapshot(text);
-      setLanguageToolMatches(matches);
-      refreshLanguageToolOverlays(matches);
-      if (!options?.quiet || matches.length > 0) {
-        setLanguageToolStatus({
-          severity: matches.length === 0 ? 'success' : 'info',
-          message:
-            matches.length === 0
-              ? t('LW.translationPane.languageToolNoMatches')
-              : t('LW.translationPane.languageToolMatches', { count: matches.length }),
-        });
-      } else if (matches.length === 0) {
-        setLanguageToolStatus(null);
+      if (!languageToolEnabled) {
+        if (!options?.quiet) {
+          setLanguageToolStatus({
+            severity: 'info',
+            message: t('LW.translationPane.languageToolDisabled'),
+          });
+        }
+        return;
       }
-    } catch (error) {
-      if (seq !== languageToolSeqRef.current) return;
-      if (!options?.quiet) {
-        setLanguageToolStatus({
-          severity: 'error',
-          message:
-            error instanceof Error
-              ? error.message
-              : t('LW.settings.language_tool.connection_failed'),
+      if (!selectedUnitId || !editableRef.current) return;
+
+      const seq = ++languageToolSeqRef.current;
+      const text = editableRef.current.textContent ?? '';
+      setLanguageToolChecking(true);
+      if (!options?.quiet) setLanguageToolStatus(null);
+      try {
+        const result = await check({
+          text,
+          language: languageState?.selectedLang || translationMode.lang || 'auto',
         });
+        if (seq !== languageToolSeqRef.current) return;
+        if (!result.ok) {
+          setLanguageToolMatches([]);
+          setLanguageToolSnapshot(null);
+          setLanguageToolOverlays([]);
+          if (!options?.quiet) {
+            setLanguageToolStatus({
+              severity: 'error',
+              message: result.error ?? t('LW.settings.language_tool.connection_failed'),
+            });
+          }
+          return;
+        }
+        const matches = (result.matches ?? []) as LanguageToolMatchView[];
+        const liveText = editableRef.current?.textContent ?? '';
+        if (liveText !== text) return;
+        setLanguageToolSnapshot(text);
+        setLanguageToolMatches(matches);
+        refreshLanguageToolOverlays(matches);
+        if (!options?.quiet || matches.length > 0) {
+          setLanguageToolStatus({
+            severity: matches.length === 0 ? 'success' : 'info',
+            message:
+              matches.length === 0
+                ? t('LW.translationPane.languageToolNoMatches')
+                : t('LW.translationPane.languageToolMatches', { count: matches.length }),
+          });
+        } else if (matches.length === 0) {
+          setLanguageToolStatus(null);
+        }
+      } catch (error) {
+        if (seq !== languageToolSeqRef.current) return;
+        if (!options?.quiet) {
+          setLanguageToolStatus({
+            severity: 'error',
+            message:
+              error instanceof Error
+                ? error.message
+                : t('LW.settings.language_tool.connection_failed'),
+          });
+        }
+      } finally {
+        if (seq === languageToolSeqRef.current) setLanguageToolChecking(false);
       }
-    } finally {
-      if (seq === languageToolSeqRef.current) setLanguageToolChecking(false);
-    }
-  }, [
-    languageState?.selectedLang,
-    languageToolEnabled,
-    refreshLanguageToolOverlays,
-    selectedUnitId,
-    t,
-    translationMode.lang,
-  ]);
+    },
+    [
+      languageState?.selectedLang,
+      languageToolEnabled,
+      refreshLanguageToolOverlays,
+      selectedUnitId,
+      t,
+      translationMode.lang,
+    ],
+  );
 
   const scheduleLiveLanguageToolCheck = useCallback(() => {
     if (!languageToolLive || !languageToolEnabled) return;
@@ -2609,13 +2652,19 @@ export const TranslationPane = () => {
   const insertZoteroCitation = async () => {
     const bridge = getCitationBridge();
     if (!bridge) {
-      setAiStatus({ severity: 'error', message: t('LW.translationPane.zoteroCitationsUnavailable') });
+      setAiStatus({
+        severity: 'error',
+        message: t('LW.translationPane.zoteroCitationsUnavailable'),
+      });
       return;
     }
 
     const doc = docRef.current;
     if (!doc || !alignmentUnit || !sourcePath || !selectedUnitId || !translationPath) {
-      setAiStatus({ severity: 'error', message: t('LW.translationPane.selectTranslationUnitFirst') });
+      setAiStatus({
+        severity: 'error',
+        message: t('LW.translationPane.selectTranslationUnitFirst'),
+      });
       return;
     }
 
@@ -2819,8 +2868,7 @@ export const TranslationPane = () => {
 
   const refreshEntityAutocomplete = useCallback(() => {
     const selection = window.getSelection();
-    const range =
-      selection && selection.rangeCount > 0 ? selection.getRangeAt(0) : null;
+    const range = selection && selection.rangeCount > 0 ? selection.getRangeAt(0) : null;
     if (!range || !editableRef.current?.contains(range.commonAncestorContainer)) {
       dismissEntityAutocomplete();
       return;
@@ -2831,9 +2879,7 @@ export const TranslationPane = () => {
     const place = () => {
       const live = window.getSelection();
       const liveRange = live && live.rangeCount > 0 ? live.getRangeAt(0) : range;
-      setEntityAcAnchor(
-        suggestions[0] ? caretAnchorPosition(suggestions[0], liveRange) : null,
-      );
+      setEntityAcAnchor(suggestions[0] ? caretAnchorPosition(suggestions[0], liveRange) : null);
     };
     place();
     // Collapsed carets sometimes report empty rects until the next frame.
@@ -3152,7 +3198,8 @@ export const TranslationPane = () => {
       return next;
     });
   };
-  const shortcut = (macShortcut: string, otherShortcut: string) => (mac ? macShortcut : otherShortcut);
+  const shortcut = (macShortcut: string, otherShortcut: string) =>
+    mac ? macShortcut : otherShortcut;
 
   const handleZoteroRefresh = async () => {
     setZoteroMenuAnchor(null);
@@ -3266,366 +3313,359 @@ export const TranslationPane = () => {
           : { p: 0.5, borderBottom: 1, borderColor: 'divider' }),
       }}
     >
-        {languageOptions.length > 0 ? (
-          <Select
-            disabled={languageState?.indexing}
-            onChange={(event) => languageState?.setSelectedLang(String(event.target.value))}
-            size="small"
-            sx={{
-              flex: '0 0 auto',
-              minWidth: 48,
-              // Compact lang code chip — hide the default dropdown caret.
-              '& .MuiSelect-icon': { display: 'none' },
-              '& .MuiSelect-select': { px: 1, py: 0.5, pr: '8px !important' },
-            }}
-            value={
-              languageOptions.some((lang) => lang.code === selectedLanguage)
-                ? selectedLanguage
-                : languageOptions[0]!.code
-            }
-          >
-            {languageOptions.map((lang) => (
-              <MenuItem key={lang.code} value={lang.code}>
-                {lang.code}
-              </MenuItem>
-            ))}
-          </Select>
-        ) : (
-          <Typography
-            noWrap
-            variant="caption"
-            sx={{
-              border: 1,
-              borderColor: 'divider',
-              borderRadius: 1,
-              flex: '0 0 auto',
-              minWidth: 48,
-              px: 1,
-              py: 0.5,
-              textAlign: 'center',
-            }}
-          >
-            {selectedLanguage || '--'}
-          </Typography>
-        )}
-
-        <Tooltip title={t('LW.translationPane.copyForExport')}>
-          <span>
-            <IconButton
-              disabled={!selectedUnitId}
-              onClick={() => {
-                if (!selectedUnitId) return;
-                void copyUnitsForExport({
-                  translationMode: { alignmentUnit, sourcePath, translationPath },
-                  unitIds: [selectedUnitId],
-                  translationDoc,
-                  notify: (message) => notifyViaSnackbar(message),
-                }).catch((error) => {
-                  notifyViaSnackbar(
-                    t('LW.translationPane.copyFailed', {
-                      error: error instanceof Error ? error.message : String(error),
-                    }),
-                  );
-                });
-              }}
-              size="small"
-            >
-              <ContentCopyIcon fontSize="small" />
-            </IconButton>
-          </span>
-        </Tooltip>
-
-        <Tooltip
-          title={
-            languageToolLive
-              ? t('LW.translationPane.spellcheckOffForLiveLt')
-              : spellcheckEnabled
-                ? t('LW.translationPane.disableSpellcheck')
-                : t('LW.translationPane.enableSpellcheck')
+      {languageOptions.length > 0 ? (
+        <Select
+          disabled={languageState?.indexing}
+          onChange={(event) => languageState?.setSelectedLang(String(event.target.value))}
+          size="small"
+          sx={{
+            flex: '0 0 auto',
+            minWidth: 48,
+            // Compact lang code chip — hide the default dropdown caret.
+            '& .MuiSelect-icon': { display: 'none' },
+            '& .MuiSelect-select': { px: 1, py: 0.5, pr: '8px !important' },
+          }}
+          value={
+            languageOptions.some((lang) => lang.code === selectedLanguage)
+              ? selectedLanguage
+              : languageOptions[0]!.code
           }
         >
-          <span>
-            <IconButton
-              aria-pressed={spellcheckEnabled && !languageToolLive}
-              color={spellcheckEnabled && !languageToolLive ? 'primary' : 'default'}
-              disabled={languageToolLive}
-              onClick={toggleSpellcheck}
-              size="small"
-            >
-              <SpellcheckIcon fontSize="small" />
-            </IconButton>
-          </span>
-        </Tooltip>
-
-        <Tooltip
-          title={
-            languageToolEnabled
-              ? t('LW.translationPane.languageToolCheck')
-              : t('LW.translationPane.languageToolDisabled')
-          }
-        >
-          <span>
-            <IconButton
-              aria-label={t('LW.translationPane.languageToolCheck')}
-              color={languageToolMatches.length > 0 ? 'primary' : 'default'}
-              disabled={!selectedUnitId || languageToolChecking}
-              onClick={() => void runLanguageToolCheck()}
-              size="small"
-            >
-              {languageToolChecking ? (
-                <CircularProgress size={18} />
-              ) : (
-                <FactCheckIcon fontSize="small" />
-              )}
-            </IconButton>
-          </span>
-        </Tooltip>
-
-        <Tooltip title={t('LW.translationPane.insertEntity')}>
-          <span>
-            <IconButton
-              aria-controls={entityMenuAnchor ? 'translation-entity-menu' : undefined}
-              aria-haspopup="menu"
-              disabled={!selectedUnitId}
-              onMouseDown={(event) => event.preventDefault()}
-              onClick={(event) => openEntityMenu(event.currentTarget)}
-              size="small"
-            >
-              <PersonOutlineIcon fontSize="small" />
-            </IconButton>
-          </span>
-        </Tooltip>
-
-        <Menu
-          anchorEl={entityMenuAnchor}
-          id="translation-entity-menu"
-          onClose={() => setEntityMenuAnchor(null)}
-          open={Boolean(entityMenuAnchor)}
-          slotProps={{
-            paper: { sx: { width: 360, maxHeight: 420 } },
-            list: { sx: { py: 0 } },
+          {languageOptions.map((lang) => (
+            <MenuItem key={lang.code} value={lang.code}>
+              {lang.code}
+            </MenuItem>
+          ))}
+        </Select>
+      ) : (
+        <Typography
+          noWrap
+          variant="caption"
+          sx={{
+            border: 1,
+            borderColor: 'divider',
+            borderRadius: 1,
+            flex: '0 0 auto',
+            minWidth: 48,
+            px: 1,
+            py: 0.5,
+            textAlign: 'center',
           }}
         >
-          <Box
-            onKeyDown={(event) => event.stopPropagation()}
-            sx={{ px: 1.5, pt: 1.25, pb: 1 }}
+          {selectedLanguage || '--'}
+        </Typography>
+      )}
+
+      <Tooltip title={t('LW.translationPane.copyForExport')}>
+        <span>
+          <IconButton
+            disabled={!selectedUnitId}
+            onClick={() => {
+              if (!selectedUnitId) return;
+              void copyUnitsForExport({
+                translationMode: { alignmentUnit, sourcePath, translationPath },
+                unitIds: [selectedUnitId],
+                translationDoc,
+                notify: (message) => notifyViaSnackbar(message),
+              }).catch((error) => {
+                notifyViaSnackbar(
+                  t('LW.translationPane.copyFailed', {
+                    error: error instanceof Error ? error.message : String(error),
+                  }),
+                );
+              });
+            }}
+            size="small"
           >
-            <TextField
-              autoFocus
-              fullWidth
-              placeholder={t('LW.translationPane.entityPickerSearch')}
-              size="small"
-              value={entityPickerQuery}
-              onChange={(event) => setEntityPickerQuery(event.target.value)}
-            />
-          </Box>
+            <ContentCopyIcon fontSize="small" />
+          </IconButton>
+        </span>
+      </Tooltip>
 
-          {sourceEntities.length > 0 ? (
-            <ListSubheader disableSticky sx={{ lineHeight: 2 }}>
-              {t('LW.translationPane.entityPickerFromUnit')}
-            </ListSubheader>
-          ) : null}
-          {sourceEntities.map((hit) => (
-            <MenuItem
-              key={`unit-${hit.key}`}
-              onMouseDown={(event) => event.preventDefault()}
-              onClick={() => {
-                setEntityMenuAnchor(null);
-                void insertEntityMention(hit.key);
-              }}
-            >
-              <ListItemText
-                primary={hit.surface || hit.key}
-                secondary={`${hit.kind} · ${hit.key}`}
-              />
-            </MenuItem>
-          ))}
+      <Tooltip
+        title={
+          languageToolLive
+            ? t('LW.translationPane.spellcheckOffForLiveLt')
+            : spellcheckEnabled
+              ? t('LW.translationPane.disableSpellcheck')
+              : t('LW.translationPane.enableSpellcheck')
+        }
+      >
+        <span>
+          <IconButton
+            aria-pressed={spellcheckEnabled && !languageToolLive}
+            color={spellcheckEnabled && !languageToolLive ? 'primary' : 'default'}
+            disabled={languageToolLive}
+            onClick={toggleSpellcheck}
+            size="small"
+          >
+            <SpellcheckIcon fontSize="small" />
+          </IconButton>
+        </span>
+      </Tooltip>
 
-          {entityPickerQuery.trim().length > 0 && (
-            <ListSubheader disableSticky sx={{ lineHeight: 2 }}>
-              {entityPickerSearching
-                ? t('LW.translationPane.entityPickerSearching')
-                : t('LW.translationPane.entityPickerAllEntities')}
-            </ListSubheader>
-          )}
-          {entityPickerQuery.trim().length > 0 &&
-            !entityPickerSearching &&
-            entityPickerResults.length === 0 && (
-              <MenuItem disabled>{t('LW.translationPane.entityPickerNoResults')}</MenuItem>
+      <Tooltip
+        title={
+          languageToolEnabled
+            ? t('LW.translationPane.languageToolCheck')
+            : t('LW.translationPane.languageToolDisabled')
+        }
+      >
+        <span>
+          <IconButton
+            aria-label={t('LW.translationPane.languageToolCheck')}
+            color={languageToolMatches.length > 0 ? 'primary' : 'default'}
+            disabled={!selectedUnitId || languageToolChecking}
+            onClick={() => void runLanguageToolCheck()}
+            size="small"
+          >
+            {languageToolChecking ? (
+              <CircularProgress size={18} />
+            ) : (
+              <FactCheckIcon fontSize="small" />
             )}
-          {entityPickerResults.map((hit) => (
-            <MenuItem
-              key={`${hit.source}-${hit.id}`}
-              onMouseDown={(event) => event.preventDefault()}
-              onClick={() => {
-                setEntityMenuAnchor(null);
-                void insertEntityMention(hit.id);
-              }}
-            >
-              <ListItemText
-                primary={hit.label || hit.id}
-                secondary={
-                  hit.description
-                    ? `${hit.kind} · ${hit.source} · ${hit.description}`
-                    : `${hit.kind} · ${hit.source} · ${hit.id}`
-                }
-              />
-            </MenuItem>
-          ))}
+          </IconButton>
+        </span>
+      </Tooltip>
 
-          {sourceEntities.length === 0 && entityPickerQuery.trim().length === 0 && (
-            <MenuItem disabled>{t('LW.translationPane.entityPickerTypeToSearch')}</MenuItem>
-          )}
-        </Menu>
+      <Tooltip title={t('LW.translationPane.insertEntity')}>
+        <span>
+          <IconButton
+            aria-controls={entityMenuAnchor ? 'translation-entity-menu' : undefined}
+            aria-haspopup="menu"
+            disabled={!selectedUnitId}
+            onMouseDown={(event) => event.preventDefault()}
+            onClick={(event) => openEntityMenu(event.currentTarget)}
+            size="small"
+          >
+            <PersonOutlineIcon fontSize="small" />
+          </IconButton>
+        </span>
+      </Tooltip>
 
-        {toolbarDivider}
+      <Menu
+        anchorEl={entityMenuAnchor}
+        id="translation-entity-menu"
+        onClose={() => setEntityMenuAnchor(null)}
+        open={Boolean(entityMenuAnchor)}
+        slotProps={{
+          paper: { sx: { width: 360, maxHeight: 420 } },
+          list: { sx: { py: 0 } },
+        }}
+      >
+        <Box onKeyDown={(event) => event.stopPropagation()} sx={{ px: 1.5, pt: 1.25, pb: 1 }}>
+          <TextField
+            autoFocus
+            fullWidth
+            placeholder={t('LW.translationPane.entityPickerSearch')}
+            size="small"
+            value={entityPickerQuery}
+            onChange={(event) => setEntityPickerQuery(event.target.value)}
+          />
+        </Box>
 
-        <Tooltip title={t('LW.translationPane.insertFootnote')}>
-          <span>
-            <IconButton disabled={!selectedUnitId} onClick={insertFootnote} size="small">
-              <StickyNote2Icon fontSize="small" />
-            </IconButton>
-          </span>
-        </Tooltip>
-
-        {toolbarDivider}
-
-        <Tooltip title={t('LW.translationPane.refreshEntityAnchors')}>
-          <span>
-            <IconButton onClick={refreshEntityAnchors} size="small">
-              <RefreshIcon fontSize="small" />
-            </IconButton>
-          </span>
-        </Tooltip>
-
-        {toolbarDivider}
-
-        <Tooltip title={t('LW.translationPane.zoteroMenu.title')}>
-          <span>
-            <IconButton
-              aria-controls={zoteroMenuAnchor ? 'translation-zotero-menu' : undefined}
-              aria-haspopup="menu"
-              onClick={(event) => setZoteroMenuAnchor(event.currentTarget)}
-              size="small"
-            >
-              <ZoteroIcon sx={{ width: 20, height: 20 }} />
-            </IconButton>
-          </span>
-        </Tooltip>
-
-        <Menu
-          anchorEl={zoteroMenuAnchor}
-          id="translation-zotero-menu"
-          onClose={() => setZoteroMenuAnchor(null)}
-          open={Boolean(zoteroMenuAnchor)}
-        >
-          <MenuItem onClick={() => void handleZoteroRefresh()}>
-            <ListItemIcon>
-              <RefreshIcon fontSize="small" />
-            </ListItemIcon>
-            <ListItemText primary={t('LW.translationPane.zoteroMenu.refresh')} />
+        {sourceEntities.length > 0 ? (
+          <ListSubheader disableSticky sx={{ lineHeight: 2 }}>
+            {t('LW.translationPane.entityPickerFromUnit')}
+          </ListSubheader>
+        ) : null}
+        {sourceEntities.map((hit) => (
+          <MenuItem
+            key={`unit-${hit.key}`}
+            onMouseDown={(event) => event.preventDefault()}
+            onClick={() => {
+              setEntityMenuAnchor(null);
+              void insertEntityMention(hit.key);
+            }}
+          >
+            <ListItemText primary={hit.surface || hit.key} secondary={`${hit.kind} · ${hit.key}`} />
           </MenuItem>
-          <MenuItem onClick={() => void handleZoteroPreferences()}>
-            <ListItemIcon>
-              <SettingsIcon fontSize="small" />
-            </ListItemIcon>
-            <ListItemText primary={t('LW.translationPane.zoteroMenu.preferences')} />
-          </MenuItem>
-        </Menu>
+        ))}
 
-        <Tooltip title={t('LW.translationPane.formatItems.zoteroCitation')}>
-          <span>
-            <IconButton
-              disabled={!selectedUnitId}
-              onClick={() => void insertZoteroCitation()}
-              size="small"
-            >
-              <FormatQuoteIcon fontSize="small" />
-            </IconButton>
-          </span>
-        </Tooltip>
-
-        {isAiUiFeatureEnabled('translationGenerate') && (
-          <>
-            {toolbarDivider}
-
-            <Button
-              aria-controls={aiMenuAnchor ? 'translation-ai-menu' : undefined}
-              aria-haspopup="menu"
-              disabled={!selectedUnitId}
-              onClick={(event) => setAiMenuAnchor(event.currentTarget)}
-              size="small"
-              sx={{ flexShrink: 0, fontWeight: 600, minWidth: 0, px: 1, textTransform: 'none' }}
-              variant="text"
-            >
-              {generating ? <CircularProgress size={16} /> : 'AI'}
-            </Button>
-
-            <Menu
-              anchorEl={aiMenuAnchor}
-              id="translation-ai-menu"
-              onClose={() => setAiMenuAnchor(null)}
-              open={Boolean(aiMenuAnchor)}
-            >
-              <MenuItem
-                disabled={generating}
-                onClick={() => {
-                  setAiMenuAnchor(null);
-                  void generateTranslation();
-                }}
-              >
-                <ListItemText primary={t('LW.translationPane.generateTranslation')} />
-              </MenuItem>
-              <MenuItem
-                disabled={generating}
-                onClick={() => {
-                  setAiMenuAnchor(null);
-                  void translateDocument();
-                }}
-              >
-                <ListItemText primary={t('LW.translationPane.translateDocument')} />
-              </MenuItem>
-            </Menu>
-          </>
+        {entityPickerQuery.trim().length > 0 && (
+          <ListSubheader disableSticky sx={{ lineHeight: 2 }}>
+            {entityPickerSearching
+              ? t('LW.translationPane.entityPickerSearching')
+              : t('LW.translationPane.entityPickerAllEntities')}
+          </ListSubheader>
         )}
+        {entityPickerQuery.trim().length > 0 &&
+          !entityPickerSearching &&
+          entityPickerResults.length === 0 && (
+            <MenuItem disabled>{t('LW.translationPane.entityPickerNoResults')}</MenuItem>
+          )}
+        {entityPickerResults.map((hit) => (
+          <MenuItem
+            key={`${hit.source}-${hit.id}`}
+            onMouseDown={(event) => event.preventDefault()}
+            onClick={() => {
+              setEntityMenuAnchor(null);
+              void insertEntityMention(hit.id);
+            }}
+          >
+            <ListItemText
+              primary={hit.label || hit.id}
+              secondary={
+                hit.description
+                  ? `${hit.kind} · ${hit.source} · ${hit.description}`
+                  : `${hit.kind} · ${hit.source} · ${hit.id}`
+              }
+            />
+          </MenuItem>
+        ))}
 
-        <Tooltip title={t('LW.translationPane.formatting')}>
-          <span>
-            <IconButton
-              aria-controls={formatAnchor ? 'translation-format-menu' : undefined}
-              aria-haspopup="menu"
-              disabled={!selectedUnitId}
-              onClick={(event) => setFormatAnchor(event.currentTarget)}
-              size="small"
-            >
-              <MoreVertIcon fontSize="small" />
-            </IconButton>
-          </span>
-        </Tooltip>
+        {sourceEntities.length === 0 && entityPickerQuery.trim().length === 0 && (
+          <MenuItem disabled>{t('LW.translationPane.entityPickerTypeToSearch')}</MenuItem>
+        )}
+      </Menu>
 
-        <Menu
-          anchorEl={formatAnchor}
-          id="translation-format-menu"
-          onClose={() => setFormatAnchor(null)}
-          open={Boolean(formatAnchor)}
-        >
-          {formatItems.map((item) => (
+      {toolbarDivider}
+
+      <Tooltip title={t('LW.translationPane.insertFootnote')}>
+        <span>
+          <IconButton disabled={!selectedUnitId} onClick={insertFootnote} size="small">
+            <StickyNote2Icon fontSize="small" />
+          </IconButton>
+        </span>
+      </Tooltip>
+
+      {toolbarDivider}
+
+      <Tooltip title={t('LW.translationPane.refreshEntityAnchors')}>
+        <span>
+          <IconButton onClick={refreshEntityAnchors} size="small">
+            <RefreshIcon fontSize="small" />
+          </IconButton>
+        </span>
+      </Tooltip>
+
+      {toolbarDivider}
+
+      <Tooltip title={t('LW.translationPane.zoteroMenu.title')}>
+        <span>
+          <IconButton
+            aria-controls={zoteroMenuAnchor ? 'translation-zotero-menu' : undefined}
+            aria-haspopup="menu"
+            onClick={(event) => setZoteroMenuAnchor(event.currentTarget)}
+            size="small"
+          >
+            <ZoteroIcon sx={{ width: 20, height: 20 }} />
+          </IconButton>
+        </span>
+      </Tooltip>
+
+      <Menu
+        anchorEl={zoteroMenuAnchor}
+        id="translation-zotero-menu"
+        onClose={() => setZoteroMenuAnchor(null)}
+        open={Boolean(zoteroMenuAnchor)}
+      >
+        <MenuItem onClick={() => void handleZoteroRefresh()}>
+          <ListItemIcon>
+            <RefreshIcon fontSize="small" />
+          </ListItemIcon>
+          <ListItemText primary={t('LW.translationPane.zoteroMenu.refresh')} />
+        </MenuItem>
+        <MenuItem onClick={() => void handleZoteroPreferences()}>
+          <ListItemIcon>
+            <SettingsIcon fontSize="small" />
+          </ListItemIcon>
+          <ListItemText primary={t('LW.translationPane.zoteroMenu.preferences')} />
+        </MenuItem>
+      </Menu>
+
+      <Tooltip title={t('LW.translationPane.formatItems.zoteroCitation')}>
+        <span>
+          <IconButton
+            disabled={!selectedUnitId}
+            onClick={() => void insertZoteroCitation()}
+            size="small"
+          >
+            <FormatQuoteIcon fontSize="small" />
+          </IconButton>
+        </span>
+      </Tooltip>
+
+      {isAiUiFeatureEnabled('translationGenerate') && (
+        <>
+          {toolbarDivider}
+
+          <Button
+            aria-controls={aiMenuAnchor ? 'translation-ai-menu' : undefined}
+            aria-haspopup="menu"
+            disabled={!selectedUnitId}
+            onClick={(event) => setAiMenuAnchor(event.currentTarget)}
+            size="small"
+            sx={{ flexShrink: 0, fontWeight: 600, minWidth: 0, px: 1, textTransform: 'none' }}
+            variant="text"
+          >
+            {generating ? <CircularProgress size={16} /> : 'AI'}
+          </Button>
+
+          <Menu
+            anchorEl={aiMenuAnchor}
+            id="translation-ai-menu"
+            onClose={() => setAiMenuAnchor(null)}
+            open={Boolean(aiMenuAnchor)}
+          >
             <MenuItem
-              key={item.command}
+              disabled={generating}
               onClick={() => {
-                applyFormat(item.command);
-                setFormatAnchor(null);
+                setAiMenuAnchor(null);
+                void generateTranslation();
               }}
             >
-              <ListItemIcon>{item.icon}</ListItemIcon>
-              <ListItemText primary={item.label} />
-              <Typography color="text.secondary" sx={{ ml: 3 }} variant="caption">
-                {item.shortcut}
-              </Typography>
+              <ListItemText primary={t('LW.translationPane.generateTranslation')} />
             </MenuItem>
-          ))}
-        </Menu>
+            <MenuItem
+              disabled={generating}
+              onClick={() => {
+                setAiMenuAnchor(null);
+                void translateDocument();
+              }}
+            >
+              <ListItemText primary={t('LW.translationPane.translateDocument')} />
+            </MenuItem>
+          </Menu>
+        </>
+      )}
 
+      <Tooltip title={t('LW.translationPane.formatting')}>
+        <span>
+          <IconButton
+            aria-controls={formatAnchor ? 'translation-format-menu' : undefined}
+            aria-haspopup="menu"
+            disabled={!selectedUnitId}
+            onClick={(event) => setFormatAnchor(event.currentTarget)}
+            size="small"
+          >
+            <MoreVertIcon fontSize="small" />
+          </IconButton>
+        </span>
+      </Tooltip>
+
+      <Menu
+        anchorEl={formatAnchor}
+        id="translation-format-menu"
+        onClose={() => setFormatAnchor(null)}
+        open={Boolean(formatAnchor)}
+      >
+        {formatItems.map((item) => (
+          <MenuItem
+            key={item.command}
+            onClick={() => {
+              applyFormat(item.command);
+              setFormatAnchor(null);
+            }}
+          >
+            <ListItemIcon>{item.icon}</ListItemIcon>
+            <ListItemText primary={item.label} />
+            <Typography color="text.secondary" sx={{ ml: 3 }} variant="caption">
+              {item.shortcut}
+            </Typography>
+          </MenuItem>
+        ))}
+      </Menu>
     </Stack>
   );
 
@@ -3728,577 +3768,585 @@ export const TranslationPane = () => {
           </DialogActions>
         </Dialog>
 
-      {aiStatus ? (
-        <Alert severity={aiStatus.severity} sx={{ borderRadius: 0 }}>
-          {aiStatus.message}
-        </Alert>
-      ) : null}
+        {aiStatus ? (
+          <Alert severity={aiStatus.severity} sx={{ borderRadius: 0 }}>
+            {aiStatus.message}
+          </Alert>
+        ) : null}
 
-      {languageToolStatus ? (
-        <Alert
-          action={
-            languageToolMatches.length > 0 ? (
-              <Button
-                color="inherit"
-                onClick={() => {
-                  setLanguageToolMatches([]);
-                  setLanguageToolSnapshot(null);
-                  setLanguageToolStatus(null);
-                }}
-                size="small"
-              >
-                {t('LW.translationPane.languageToolCloseResults')}
-              </Button>
-            ) : undefined
-          }
-          severity={languageToolStatus.severity}
-          sx={{ borderRadius: 0 }}
-        >
-          {languageToolStatus.message}
-        </Alert>
-      ) : null}
+        {languageToolStatus ? (
+          <Alert
+            action={
+              languageToolMatches.length > 0 ? (
+                <Button
+                  color="inherit"
+                  onClick={() => {
+                    setLanguageToolMatches([]);
+                    setLanguageToolSnapshot(null);
+                    setLanguageToolStatus(null);
+                  }}
+                  size="small"
+                >
+                  {t('LW.translationPane.languageToolCloseResults')}
+                </Button>
+              ) : undefined
+            }
+            severity={languageToolStatus.severity}
+            sx={{ borderRadius: 0 }}
+          >
+            {languageToolStatus.message}
+          </Alert>
+        ) : null}
 
-      {languageToolMatches.length > 0 ? (
-        <Box
-          sx={{
-            borderBottom: 1,
-            borderColor: 'divider',
-            maxHeight: 180,
-            overflow: 'auto',
-            px: 1,
-            py: 0.5,
-          }}
-        >
-          <List dense disablePadding>
-            {languageToolMatches.map((match) => (
-              <ListItem
-                alignItems="flex-start"
-                disableGutters
-                key={`${match.offset}-${match.length}-${match.ruleId ?? match.message}`}
-                sx={{ flexDirection: 'column', py: 0.5 }}
-              >
-                <Typography variant="body2">{match.message}</Typography>
-                <Typography color="text.secondary" variant="caption">
-                  “{(languageToolSnapshot ?? '').slice(match.offset, match.offset + match.length)}”
-                </Typography>
-                <Stack direction="row" flexWrap="wrap" spacing={0.5} sx={{ mt: 0.5 }}>
-                  {match.replacements.map((replacement) => (
-                    <Chip
-                      key={`${match.offset}-${replacement}`}
-                      label={replacement === ' ' ? '␣' : replacement || '∅'}
-                      onClick={() => void applyLanguageToolReplacement(match, replacement)}
+        {languageToolMatches.length > 0 ? (
+          <Box
+            sx={{
+              borderBottom: 1,
+              borderColor: 'divider',
+              maxHeight: 180,
+              overflow: 'auto',
+              px: 1,
+              py: 0.5,
+            }}
+          >
+            <List dense disablePadding>
+              {languageToolMatches.map((match) => (
+                <ListItem
+                  alignItems="flex-start"
+                  disableGutters
+                  key={`${match.offset}-${match.length}-${match.ruleId ?? match.message}`}
+                  sx={{ flexDirection: 'column', py: 0.5 }}
+                >
+                  <Typography variant="body2">{match.message}</Typography>
+                  <Typography color="text.secondary" variant="caption">
+                    “{(languageToolSnapshot ?? '').slice(match.offset, match.offset + match.length)}
+                    ”
+                  </Typography>
+                  <Stack direction="row" flexWrap="wrap" spacing={0.5} sx={{ mt: 0.5 }}>
+                    {match.replacements.map((replacement) => (
+                      <Chip
+                        key={`${match.offset}-${replacement}`}
+                        label={replacement === ' ' ? '␣' : replacement || '∅'}
+                        onClick={() => void applyLanguageToolReplacement(match, replacement)}
+                        size="small"
+                        variant="outlined"
+                      />
+                    ))}
+                    <Button
+                      onClick={() => dismissLanguageToolMatch(match)}
                       size="small"
-                      variant="outlined"
-                    />
-                  ))}
-                  <Button
-                    onClick={() => dismissLanguageToolMatch(match)}
-                    size="small"
-                    sx={{ minWidth: 0 }}
-                  >
-                    {t('LW.translationPane.languageToolDismiss')}
-                  </Button>
-                </Stack>
-              </ListItem>
-            ))}
-          </List>
-        </Box>
-      ) : null}
+                      sx={{ minWidth: 0 }}
+                    >
+                      {t('LW.translationPane.languageToolDismiss')}
+                    </Button>
+                  </Stack>
+                </ListItem>
+              ))}
+            </List>
+          </Box>
+        ) : null}
 
-      {unitCards.length > 0 || selectedUnitId ? (
-        <Box
-          ref={listScrollRef}
-          onKeyDown={(event) => {
-            if (!(event.metaKey || event.ctrlKey) || event.altKey) return;
-            if (event.key === '=' || event.key === '+') translationFontZoom.zoomIn();
-            else if (event.key === '-') translationFontZoom.zoomOut();
-            else if (event.key === '0') translationFontZoom.reset();
-            else return;
-            event.preventDefault();
-            event.stopPropagation();
-          }}
-          sx={{
-            flex: 1,
-            minHeight: 0,
-            overflow: 'auto',
-            fontSize: `${paneFontSize}px`,
-            counterReset: 'footnote',
-          }}
-        >
-          {caretInUnindexedUnit && !selectedUnitId ? (
-            <Alert severity="info" sx={{ borderRadius: 0 }}>
-              {t('LW.translationPane.unindexedUnitMessage')}
-            </Alert>
-          ) : null}
-          {(unitCards.length > 0
-            ? unitCards
-            : selectedUnitId
-              ? [{ unitId: selectedUnitId, previewText: '', previewHtml: '', noteCount: 0 }]
-              : []
-          ).map((card) => {
-            const isActive = card.unitId === selectedUnitId;
-            const unitBodySx = {
-              p: 1.5,
-              outline: 'none',
-              textAlign: 'justify' as const,
-              '& hi[rend="small-caps"]': { fontVariant: 'small-caps' },
-              '& hi[rend="bold"]': { fontWeight: 'bold' },
-              '& hi[rend="italic"]': { fontStyle: 'italic' },
-              '& hi[rend="underline"]': { textDecoration: 'underline' },
-              '& hi[rend="strikethrough"]': { textDecoration: 'line-through' },
-              '& ref': { color: 'primary.main', textDecoration: 'underline' },
-              '& ref hi[rend="italic"]': { fontStyle: 'italic' },
-              '& note': {
-                // Wrapper only when structured; flat TEI notes (read-only cards) get a pill via ::after.
-                counterIncrement: 'footnote',
-                display: 'inline-flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                verticalAlign: 'super',
-                position: 'relative',
-                // Fixed rem box — never grow with hidden/transparent footnote text.
-                boxSizing: 'border-box',
-                width: '1.15rem',
-                height: '1.15rem',
-                minWidth: '1.15rem',
-                maxWidth: '1.15rem',
-                flexShrink: 0,
-                mx: '0.15rem',
-                p: 0,
-                borderRadius: '999px',
-                bgcolor: 'primary.main',
-                color: 'transparent',
-                fontSize: 0,
-                lineHeight: 0,
-                overflow: 'hidden',
-                cursor: 'default',
-                userSelect: 'none',
-                whiteSpace: 'nowrap',
-                [`& [${FN_MARK_ATTR}]`]: {
+        {unitCards.length > 0 || selectedUnitId ? (
+          <Box
+            ref={listScrollRef}
+            onKeyDown={(event) => {
+              if (!(event.metaKey || event.ctrlKey) || event.altKey) return;
+              if (event.key === '=' || event.key === '+') translationFontZoom.zoomIn();
+              else if (event.key === '-') translationFontZoom.zoomOut();
+              else if (event.key === '0') translationFontZoom.reset();
+              else return;
+              event.preventDefault();
+              event.stopPropagation();
+            }}
+            sx={{
+              flex: 1,
+              minHeight: 0,
+              overflow: 'auto',
+              fontSize: `${paneFontSize}px`,
+              counterReset: 'footnote',
+            }}
+          >
+            {caretInUnindexedUnit && !selectedUnitId ? (
+              <Alert severity="info" sx={{ borderRadius: 0 }}>
+                {t('LW.translationPane.unindexedUnitMessage')}
+              </Alert>
+            ) : null}
+            {(unitCards.length > 0
+              ? unitCards
+              : selectedUnitId
+                ? [{ unitId: selectedUnitId, previewText: '', previewHtml: '', noteCount: 0 }]
+                : []
+            ).map((card) => {
+              const isActive = card.unitId === selectedUnitId;
+              const unitBodySx = {
+                p: 1.5,
+                outline: 'none',
+                textAlign: 'justify' as const,
+                '& hi[rend="small-caps"]': { fontVariant: 'small-caps' },
+                '& hi[rend="bold"]': { fontWeight: 'bold' },
+                '& hi[rend="italic"]': { fontStyle: 'italic' },
+                '& hi[rend="underline"]': { textDecoration: 'underline' },
+                '& hi[rend="strikethrough"]': { textDecoration: 'line-through' },
+                '& ref': { color: 'primary.main', textDecoration: 'underline' },
+                '& ref hi[rend="italic"]': { fontStyle: 'italic' },
+                '& note': {
+                  // Wrapper only when structured; flat TEI notes (read-only cards) get a pill via ::after.
+                  counterIncrement: 'footnote',
                   display: 'inline-flex',
                   alignItems: 'center',
                   justifyContent: 'center',
+                  verticalAlign: 'super',
+                  position: 'relative',
+                  // Fixed rem box — never grow with hidden/transparent footnote text.
                   boxSizing: 'border-box',
                   width: '1.15rem',
                   height: '1.15rem',
                   minWidth: '1.15rem',
                   maxWidth: '1.15rem',
                   flexShrink: 0,
+                  mx: '0.15rem',
                   p: 0,
                   borderRadius: '999px',
                   bgcolor: 'primary.main',
+                  color: 'transparent',
+                  fontSize: 0,
+                  lineHeight: 0,
+                  overflow: 'hidden',
+                  cursor: 'default',
+                  userSelect: 'none',
+                  whiteSpace: 'nowrap',
+                  [`& [${FN_MARK_ATTR}]`]: {
+                    display: 'inline-flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    boxSizing: 'border-box',
+                    width: '1.15rem',
+                    height: '1.15rem',
+                    minWidth: '1.15rem',
+                    maxWidth: '1.15rem',
+                    flexShrink: 0,
+                    p: 0,
+                    borderRadius: '999px',
+                    bgcolor: 'primary.main',
+                    color: 'primary.contrastText',
+                    fontSize: '0.65rem',
+                    fontWeight: 700,
+                    lineHeight: 1,
+                    overflow: 'hidden',
+                  },
+                  [`& [${FN_BODY_ATTR}]`]: {
+                    display: 'none',
+                  },
+                },
+                // Structured notes: the mark span is the pill; clear the wrapper chrome.
+                [`& note:has([${FN_MARK_ATTR}])`]: {
+                  width: 'auto',
+                  height: 'auto',
+                  minWidth: 0,
+                  maxWidth: 'none',
+                  bgcolor: 'transparent',
+                  overflow: 'visible',
+                  color: 'inherit',
+                  fontSize: 'inherit',
+                  lineHeight: 'inherit',
+                },
+                // Flat notes (inactive card HTML from TEI): paint the number with ::after.
+                [`& note:not(:has([${FN_MARK_ATTR}]))::after`]: {
+                  content: 'counter(footnote)',
+                  position: 'absolute',
+                  inset: 0,
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
                   color: 'primary.contrastText',
                   fontSize: '0.65rem',
                   fontWeight: 700,
                   lineHeight: 1,
-                  overflow: 'hidden',
                 },
-                [`& [${FN_BODY_ATTR}]`]: {
+                // Hide raw footnote children inside flat notes.
+                [`& note:not(:has([${FN_MARK_ATTR}])) > *`]: {
                   display: 'none',
                 },
-              },
-              // Structured notes: the mark span is the pill; clear the wrapper chrome.
-              [`& note:has([${FN_MARK_ATTR}])`]: {
-                width: 'auto',
-                height: 'auto',
-                minWidth: 0,
-                maxWidth: 'none',
-                bgcolor: 'transparent',
-                overflow: 'visible',
-                color: 'inherit',
-                fontSize: 'inherit',
-                lineHeight: 'inherit',
-              },
-              // Flat notes (inactive card HTML from TEI): paint the number with ::after.
-              [`& note:not(:has([${FN_MARK_ATTR}]))::after`]: {
-                content: 'counter(footnote)',
-                position: 'absolute',
-                inset: 0,
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                color: 'primary.contrastText',
-                fontSize: '0.65rem',
-                fontWeight: 700,
-                lineHeight: 1,
-              },
-              // Hide raw footnote children inside flat notes.
-              [`& note:not(:has([${FN_MARK_ATTR}])) > *`]: {
-                display: 'none',
-              },
-            };
-            return (
-              <Box
-                key={card.unitId}
-                data-unit-id={card.unitId}
-                data-active={isActive ? 'true' : undefined}
-                ref={(el: HTMLDivElement | null) => {
-                  if (el) cardNodeRefs.current.set(card.unitId, el);
-                  else cardNodeRefs.current.delete(card.unitId);
-                }}
-                onClick={() => {
-                  if (!isActive) void navigateToUnit(card.unitId);
-                }}
-                sx={{
-                  borderBottom: 1,
-                  borderColor: 'divider',
-                  borderLeft: 3,
-                  borderLeftColor: isActive ? 'error.main' : 'transparent',
-                  bgcolor: isActive ? 'background.paper' : 'transparent',
-                  cursor: isActive ? 'text' : 'pointer',
-                  '&:hover': isActive ? undefined : { bgcolor: 'action.hover' },
-                }}
-              >
-                {!isActive ? (
-                  card.previewHtml.trim() || card.previewText ? (
-                    <Box
-                      dangerouslySetInnerHTML={{
-                        __html: looksLikeInlineMarkdown(card.previewText)
-                          ? applyMarkdownCleanupToFragment(card.previewHtml)
-                          : card.previewHtml,
-                      }}
-                      sx={unitBodySx}
-                    />
+              };
+              return (
+                <Box
+                  key={card.unitId}
+                  data-unit-id={card.unitId}
+                  data-active={isActive ? 'true' : undefined}
+                  ref={(el: HTMLDivElement | null) => {
+                    if (el) cardNodeRefs.current.set(card.unitId, el);
+                    else cardNodeRefs.current.delete(card.unitId);
+                  }}
+                  onClick={() => {
+                    if (!isActive) void navigateToUnit(card.unitId);
+                  }}
+                  sx={{
+                    borderBottom: 1,
+                    borderColor: 'divider',
+                    borderLeft: 3,
+                    borderLeftColor: isActive ? 'error.main' : 'transparent',
+                    bgcolor: isActive ? 'background.paper' : 'transparent',
+                    cursor: isActive ? 'text' : 'pointer',
+                    '&:hover': isActive ? undefined : { bgcolor: 'action.hover' },
+                  }}
+                >
+                  {!isActive ? (
+                    card.previewHtml.trim() || card.previewText ? (
+                      <Box
+                        dangerouslySetInnerHTML={{
+                          __html: looksLikeInlineMarkdown(card.previewText)
+                            ? applyMarkdownCleanupToFragment(card.previewHtml)
+                            : card.previewHtml,
+                        }}
+                        sx={unitBodySx}
+                      />
+                    ) : (
+                      <Typography color="text.disabled" sx={{ px: 1.5, py: 1.5 }} variant="body2">
+                        {t('LW.translationPane.emptyUnitPreview')}
+                      </Typography>
+                    )
                   ) : (
-                    <Typography
-                      color="text.disabled"
-                      sx={{ px: 1.5, py: 1.5 }}
-                      variant="body2"
-                    >
-                      {t('LW.translationPane.emptyUnitPreview')}
-                    </Typography>
-                  )
-                ) : (
-                  <>
-                    <Box sx={{ position: 'relative', flex: '0 0 auto' }}>
-          <Box
-            ref={editableRef}
-            contentEditable
-            lang={spellcheckLang}
-            spellCheck={spellcheckEnabled && !languageToolLive}
-            suppressContentEditableWarning
-            onBlur={() => {
-              void persist();
-              dismissEntityAutocomplete();
-              blurTimeoutRef.current = setTimeout(() => {
-                focusedRef.current = false;
-              }, 200);
-            }}
-            onBeforeInput={protectCitationField}
-            onFocus={() => {
-              if (blurTimeoutRef.current) clearTimeout(blurTimeoutRef.current);
-              focusedRef.current = true;
-              rememberBodyRange();
-            }}
-            onInput={() => {
-              if (editableRef.current) {
-                applyEditorialCleanupToRootPreservingSelection(
-                  editableRef.current,
-                  selectedLanguage,
-                );
-              }
-              refreshFootnotes();
-              rememberBodyRange();
-              refreshEntityAutocomplete();
-              scheduleLiveLanguageToolCheck();
-            }}
-            onScroll={() => refreshLanguageToolOverlays(languageToolMatches)}
-            onKeyUp={rememberBodyRange}
-            onMouseUp={() => {
-              rememberBodyRange();
-              refreshEntityAutocomplete();
-            }}
-            onContextMenu={handleEntityFieldContextMenu}
-            onKeyDown={(event) => {
-              protectCitationField(event);
-              if (event.defaultPrevented) return;
+                    <>
+                      <Box sx={{ position: 'relative', flex: '0 0 auto' }}>
+                        <Box
+                          ref={editableRef}
+                          contentEditable
+                          lang={spellcheckLang}
+                          spellCheck={spellcheckEnabled && !languageToolLive}
+                          suppressContentEditableWarning
+                          onBlur={() => {
+                            void persist();
+                            dismissEntityAutocomplete();
+                            blurTimeoutRef.current = setTimeout(() => {
+                              focusedRef.current = false;
+                            }, 200);
+                          }}
+                          onBeforeInput={protectCitationField}
+                          onFocus={() => {
+                            if (blurTimeoutRef.current) clearTimeout(blurTimeoutRef.current);
+                            focusedRef.current = true;
+                            rememberBodyRange();
+                          }}
+                          onInput={() => {
+                            if (editableRef.current) {
+                              applyEditorialCleanupToRootPreservingSelection(
+                                editableRef.current,
+                                selectedLanguage,
+                              );
+                            }
+                            refreshFootnotes();
+                            rememberBodyRange();
+                            refreshEntityAutocomplete();
+                            scheduleLiveLanguageToolCheck();
+                          }}
+                          onScroll={() => refreshLanguageToolOverlays(languageToolMatches)}
+                          onKeyUp={rememberBodyRange}
+                          onMouseUp={() => {
+                            rememberBodyRange();
+                            refreshEntityAutocomplete();
+                          }}
+                          onContextMenu={handleEntityFieldContextMenu}
+                          onKeyDown={(event) => {
+                            protectCitationField(event);
+                            if (event.defaultPrevented) return;
 
-              const acCount = entityAcSuggestionsRef.current.length;
-              if (acCount > 0) {
-                if (event.key === 'Escape') {
-                  event.preventDefault();
-                  dismissEntityAutocomplete();
-                  return;
-                }
-                if (event.key === 'ArrowDown') {
-                  event.preventDefault();
-                  setEntityAcIndex((index) => (index + 1) % acCount);
-                  return;
-                }
-                if (event.key === 'ArrowUp') {
-                  event.preventDefault();
-                  setEntityAcIndex((index) => (index - 1 + acCount) % acCount);
-                  return;
-                }
-                if (event.key === 'Tab' || event.key === 'Enter') {
-                  event.preventDefault();
-                  void acceptEntityAutocomplete();
-                  return;
-                }
-              }
+                            const acCount = entityAcSuggestionsRef.current.length;
+                            if (acCount > 0) {
+                              if (event.key === 'Escape') {
+                                event.preventDefault();
+                                dismissEntityAutocomplete();
+                                return;
+                              }
+                              if (event.key === 'ArrowDown') {
+                                event.preventDefault();
+                                setEntityAcIndex((index) => (index + 1) % acCount);
+                                return;
+                              }
+                              if (event.key === 'ArrowUp') {
+                                event.preventDefault();
+                                setEntityAcIndex((index) => (index - 1 + acCount) % acCount);
+                                return;
+                              }
+                              if (event.key === 'Tab' || event.key === 'Enter') {
+                                event.preventDefault();
+                                void acceptEntityAutocomplete();
+                                return;
+                              }
+                            }
 
-              if (!(event.metaKey || event.ctrlKey)) return;
-              const key = event.key.toLowerCase();
-              let command:
-                | 'smallCaps'
-                | 'superscript'
-                | 'subscript'
-                | 'removeFormat'
-                | 'link'
-                | 'footnote'
-                | null = null;
-              if (event.shiftKey && key === 'k') command = 'smallCaps';
-              else if (!event.shiftKey && !event.altKey && key === 'k') command = 'link';
-              else if (
-                event.altKey &&
-                !event.shiftKey &&
-                (key === 'f' || key === 'ƒ' || event.code === 'KeyF')
-              )
-                command = 'footnote';
-              else if (key === '.') command = 'superscript';
-              else if (key === ',') command = 'subscript';
-              else if (key === 'm') command = 'removeFormat';
-              if (!command) return;
-              event.preventDefault();
-              event.stopPropagation();
-              if (command === 'footnote') insertFootnote();
-              else applyFormat(command);
+                            if (!(event.metaKey || event.ctrlKey)) return;
+                            const key = event.key.toLowerCase();
+                            let command:
+                              | 'smallCaps'
+                              | 'superscript'
+                              | 'subscript'
+                              | 'removeFormat'
+                              | 'link'
+                              | 'footnote'
+                              | null = null;
+                            if (event.shiftKey && key === 'k') command = 'smallCaps';
+                            else if (!event.shiftKey && !event.altKey && key === 'k')
+                              command = 'link';
+                            else if (
+                              event.altKey &&
+                              !event.shiftKey &&
+                              (key === 'f' || key === 'ƒ' || event.code === 'KeyF')
+                            )
+                              command = 'footnote';
+                            else if (key === '.') command = 'superscript';
+                            else if (key === ',') command = 'subscript';
+                            else if (key === 'm') command = 'removeFormat';
+                            if (!command) return;
+                            event.preventDefault();
+                            event.stopPropagation();
+                            if (command === 'footnote') insertFootnote();
+                            else applyFormat(command);
+                          }}
+                          onPaste={(event) => {
+                            handleTranslationPaste(event);
+                            rememberBodyRange();
+                          }}
+                          sx={{
+                            ...unitBodySx,
+                            flex: '1 0 auto',
+                            '&:empty::before': {
+                              content: `"${t('LW.translationPane.startTypingPlaceholder')}"`,
+                              color: 'text.disabled',
+                            },
+                          }}
+                        />
+                        <Popover
+                          anchorReference="anchorPosition"
+                          anchorPosition={
+                            entityAcAnchor
+                              ? { top: entityAcAnchor.top, left: entityAcAnchor.left }
+                              : undefined
+                          }
+                          disableAutoFocus
+                          disableEnforceFocus
+                          disableRestoreFocus
+                          onClose={dismissEntityAutocomplete}
+                          open={entityAcSuggestions.length > 0 && Boolean(entityAcAnchor)}
+                          slotProps={{
+                            paper: {
+                              sx: { minWidth: 240, maxWidth: 360 },
+                            },
+                          }}
+                          sx={{ pointerEvents: 'none' }}
+                        >
+                          <Box sx={{ pointerEvents: 'auto' }}>
+                            <List dense disablePadding>
+                              {entityAcSuggestions.map((suggestion, index) => (
+                                <ListItemButton
+                                  key={suggestion.candidate.id}
+                                  selected={index === entityAcIndex}
+                                  onMouseDown={(event) => event.preventDefault()}
+                                  onClick={() => void acceptEntityAutocomplete(index)}
+                                >
+                                  <ListItemText
+                                    primary={suggestion.candidate.label}
+                                    secondary={suggestion.candidate.detail}
+                                  />
+                                </ListItemButton>
+                              ))}
+                            </List>
+                            <Typography
+                              color="text.secondary"
+                              sx={{ display: 'block', px: 1.5, py: 0.75 }}
+                              variant="caption"
+                            >
+                              {t('LW.translationPane.entityAutocompleteHint')}
+                            </Typography>
+                          </Box>
+                        </Popover>
+                        {languageToolOverlays.map((rect, index) => (
+                          <Box
+                            key={`lt-overlay-${rect.matchIndex}-${index}`}
+                            onClick={() => {
+                              const match = languageToolMatches[rect.matchIndex];
+                              if (!match) return;
+                              setLanguageToolStatus({
+                                severity: 'info',
+                                message: match.message,
+                              });
+                            }}
+                            sx={{
+                              position: 'absolute',
+                              top: rect.top,
+                              left: rect.left,
+                              width: rect.width,
+                              height: rect.height,
+                              bgcolor: 'error.main',
+                              opacity: 0.85,
+                              borderRadius: 1,
+                              pointerEvents: 'auto',
+                              cursor: 'pointer',
+                              zIndex: 1,
+                            }}
+                            title={languageToolMatches[rect.matchIndex]?.shortMessage}
+                          />
+                        ))}
+                      </Box>
+
+                      {footnotes.length > 0 ? (
+                        <Box sx={{ px: 1.5, pb: 1.5 }}>
+                          <Divider sx={{ width: 120, mb: 1 }} />
+                          <Stack spacing={0.5}>
+                            {footnotes.map((text, index) => (
+                              <Stack alignItems="baseline" direction="row" key={index} spacing={1}>
+                                <Typography
+                                  color="text.secondary"
+                                  sx={{ minWidth: 16, textAlign: 'right', flexShrink: 0 }}
+                                  variant="caption"
+                                >
+                                  {footnoteStartIndex + index + 1}.
+                                </Typography>
+                                <Box
+                                  contentEditable
+                                  data-leaf-footnote-editor={index}
+                                  dangerouslySetInnerHTML={{ __html: text }}
+                                  lang={spellcheckLang}
+                                  spellCheck={spellcheckEnabled && !languageToolLive}
+                                  onBlur={(event) => {
+                                    rememberFootnoteRange(index, event.currentTarget);
+                                    updateFootnote(index, event.currentTarget.innerHTML);
+                                    void persist();
+                                  }}
+                                  onBeforeInput={protectCitationField}
+                                  onFocus={(event) =>
+                                    rememberFootnoteRange(index, event.currentTarget)
+                                  }
+                                  onInput={(event) => {
+                                    applyEditorialCleanupToRootPreservingSelection(
+                                      event.currentTarget,
+                                      selectedLanguage,
+                                    );
+                                    prepareAtomicCitationFields(
+                                      event.currentTarget,
+                                      zoteroCitationLabel,
+                                    );
+                                    updateFootnote(index, event.currentTarget.innerHTML);
+                                    rememberFootnoteRange(index, event.currentTarget);
+                                  }}
+                                  onKeyDown={(event) => {
+                                    protectCitationField(event);
+                                  }}
+                                  onKeyUp={(event) =>
+                                    rememberFootnoteRange(index, event.currentTarget)
+                                  }
+                                  onMouseUp={(event) =>
+                                    rememberFootnoteRange(index, event.currentTarget)
+                                  }
+                                  onContextMenu={handleEntityFieldContextMenu}
+                                  onPaste={(event) => {
+                                    handleTranslationPaste(event, { target: 'footnote' });
+                                    updateFootnote(index, event.currentTarget.innerHTML);
+                                    rememberFootnoteRange(index, event.currentTarget);
+                                  }}
+                                  ref={(el: HTMLDivElement | null) => {
+                                    if (el) prepareAtomicCitationFields(el, zoteroCitationLabel);
+                                    if (el && focusFootnoteIndexRef.current === index) {
+                                      focusFootnoteIndexRef.current = null;
+                                      el.scrollIntoView({ block: 'center', behavior: 'smooth' });
+                                      el.focus();
+                                    }
+                                  }}
+                                  suppressContentEditableWarning
+                                  sx={{
+                                    flex: 1,
+                                    fontSize: '0.85em',
+                                    lineHeight: 1.4,
+                                    minHeight: 22,
+                                    outline: 'none',
+                                    py: 0.25,
+                                    '&:empty::before': {
+                                      content: `"${t('LW.translationPane.footnotePlaceholder')}"`,
+                                      color: 'text.disabled',
+                                    },
+                                    '& bibl[data-leaf-citation-field="true"]': {
+                                      bgcolor: 'action.hover',
+                                      border: 1,
+                                      borderColor: 'divider',
+                                      borderRadius: 0.75,
+                                      cursor: 'default',
+                                      px: 0.5,
+                                      userSelect: 'all',
+                                      whiteSpace: 'break-spaces',
+                                    },
+                                    [`& ref[${ENTITY_FIELD_ATTR}="true"]`]: {
+                                      bgcolor: 'action.hover',
+                                      border: 1,
+                                      borderColor: 'divider',
+                                      borderRadius: 0.75,
+                                      cursor: 'default',
+                                      px: 0.5,
+                                      userSelect: 'all',
+                                      whiteSpace: 'break-spaces',
+                                    },
+                                  }}
+                                />
+                                <Tooltip title={t('LW.translationPane.removeFootnote')}>
+                                  <IconButton
+                                    aria-label={t('LW.translationPane.removeFootnote')}
+                                    onClick={() => removeFootnote(index)}
+                                    size="small"
+                                    sx={{ flexShrink: 0, alignSelf: 'center' }}
+                                  >
+                                    <CloseIcon sx={{ fontSize: 14 }} />
+                                  </IconButton>
+                                </Tooltip>
+                              </Stack>
+                            ))}
+                          </Stack>
+                        </Box>
+                      ) : null}
+                    </>
+                  )}
+                </Box>
+              );
+            })}
+          </Box>
+        ) : (
+          <Box sx={{ flex: 1, p: 1.5 }}>
+            <Typography color="text.secondary" variant="body2">
+              {caretInUnindexedUnit
+                ? t('LW.translationPane.unindexedUnitMessage')
+                : t('LW.translationPane.selectUnitMessage', {
+                    unit: alignmentUnit ?? t('LW.translationPane.defaultUnitLabel'),
+                  })}
+            </Typography>
+          </Box>
+        )}
+
+        {entityFormatEntity ? (
+          <EntityDisplayPopup
+            anchorPosition={entityFormatAnchor}
+            entity={entityFormatEntity}
+            lang={selectedLanguage}
+            occurrenceIndex={entityFormatOccurrence}
+            onChange={(spec) => {
+              void applyEntityDisplaySpec(spec);
             }}
-            onPaste={(event) => {
-              handleTranslationPaste(event);
-              rememberBodyRange();
+            onClose={closeEntityFormatPopup}
+            onReset={() => {
+              void resetEntityDisplaySpec();
             }}
-            sx={{
-              ...unitBodySx,
-              flex: '1 0 auto',
-              '&:empty::before': {
-                content: `"${t('LW.translationPane.startTypingPlaceholder')}"`,
-                color: 'text.disabled',
-              },
-            }}
-          />
-          <Popover
-            anchorReference="anchorPosition"
-            anchorPosition={
-              entityAcAnchor
-                ? { top: entityAcAnchor.top, left: entityAcAnchor.left }
+            onSaveTranslation={
+              entityKindSupportsVernacularGloss(entityFormatEntity.kind)
+                ? saveEntityTranslationFromPopup
                 : undefined
             }
-            disableAutoFocus
-            disableEnforceFocus
-            disableRestoreFocus
-            onClose={dismissEntityAutocomplete}
-            open={entityAcSuggestions.length > 0 && Boolean(entityAcAnchor)}
-            slotProps={{
-              paper: {
-                sx: { minWidth: 240, maxWidth: 360 },
-              },
-            }}
-            sx={{ pointerEvents: 'none' }}
-          >
-            <Box sx={{ pointerEvents: 'auto' }}>
-              <List dense disablePadding>
-                {entityAcSuggestions.map((suggestion, index) => (
-                  <ListItemButton
-                    key={suggestion.candidate.id}
-                    selected={index === entityAcIndex}
-                    onMouseDown={(event) => event.preventDefault()}
-                    onClick={() => void acceptEntityAutocomplete(index)}
-                  >
-                    <ListItemText
-                      primary={suggestion.candidate.label}
-                      secondary={suggestion.candidate.detail}
-                    />
-                  </ListItemButton>
-                ))}
-              </List>
-              <Typography
-                color="text.secondary"
-                sx={{ display: 'block', px: 1.5, py: 0.75 }}
-                variant="caption"
-              >
-                {t('LW.translationPane.entityAutocompleteHint')}
-              </Typography>
-            </Box>
-          </Popover>
-          {languageToolOverlays.map((rect, index) => (
-            <Box
-              key={`lt-overlay-${rect.matchIndex}-${index}`}
-              onClick={() => {
-                const match = languageToolMatches[rect.matchIndex];
-                if (!match) return;
-                setLanguageToolStatus({
-                  severity: 'info',
-                  message: match.message,
-                });
-              }}
-              sx={{
-                position: 'absolute',
-                top: rect.top,
-                left: rect.left,
-                width: rect.width,
-                height: rect.height,
-                bgcolor: 'error.main',
-                opacity: 0.85,
-                borderRadius: 1,
-                pointerEvents: 'auto',
-                cursor: 'pointer',
-                zIndex: 1,
-              }}
-              title={languageToolMatches[rect.matchIndex]?.shortMessage}
-            />
-          ))}
-                    </Box>
-
-          {footnotes.length > 0 ? (
-            <Box sx={{ px: 1.5, pb: 1.5 }}>
-              <Divider sx={{ width: 120, mb: 1 }} />
-              <Stack spacing={0.5}>
-                {footnotes.map((text, index) => (
-                  <Stack alignItems="baseline" direction="row" key={index} spacing={1}>
-                    <Typography
-                      color="text.secondary"
-                      sx={{ minWidth: 16, textAlign: 'right', flexShrink: 0 }}
-                      variant="caption"
-                    >
-                      {footnoteStartIndex + index + 1}.
-                    </Typography>
-                    <Box
-                      contentEditable
-                      data-leaf-footnote-editor={index}
-                      dangerouslySetInnerHTML={{ __html: text }}
-                      lang={spellcheckLang}
-                      spellCheck={spellcheckEnabled && !languageToolLive}
-                      onBlur={(event) => {
-                        rememberFootnoteRange(index, event.currentTarget);
-                        updateFootnote(index, event.currentTarget.innerHTML);
-                        void persist();
-                      }}
-                      onBeforeInput={protectCitationField}
-                      onFocus={(event) => rememberFootnoteRange(index, event.currentTarget)}
-                      onInput={(event) => {
-                        applyEditorialCleanupToRootPreservingSelection(
-                          event.currentTarget,
-                          selectedLanguage,
-                        );
-                        prepareAtomicCitationFields(event.currentTarget, zoteroCitationLabel);
-                        updateFootnote(index, event.currentTarget.innerHTML);
-                        rememberFootnoteRange(index, event.currentTarget);
-                      }}
-                      onKeyDown={(event) => {
-                        protectCitationField(event);
-                      }}
-                      onKeyUp={(event) => rememberFootnoteRange(index, event.currentTarget)}
-                      onMouseUp={(event) => rememberFootnoteRange(index, event.currentTarget)}
-                      onContextMenu={handleEntityFieldContextMenu}
-                      onPaste={(event) => {
-                        handleTranslationPaste(event, { target: 'footnote' });
-                        updateFootnote(index, event.currentTarget.innerHTML);
-                        rememberFootnoteRange(index, event.currentTarget);
-                      }}
-                      ref={(el: HTMLDivElement | null) => {
-                        if (el) prepareAtomicCitationFields(el, zoteroCitationLabel);
-                        if (el && focusFootnoteIndexRef.current === index) {
-                          focusFootnoteIndexRef.current = null;
-                          el.scrollIntoView({ block: 'center', behavior: 'smooth' });
-                          el.focus();
-                        }
-                      }}
-                      suppressContentEditableWarning
-                      sx={{
-                        flex: 1,
-                        fontSize: '0.85em',
-                        lineHeight: 1.4,
-                        minHeight: 22,
-                        outline: 'none',
-                        py: 0.25,
-                        '&:empty::before': {
-                          content: `"${t('LW.translationPane.footnotePlaceholder')}"`,
-                          color: 'text.disabled',
-                        },
-                        '& bibl[data-leaf-citation-field="true"]': {
-                          bgcolor: 'action.hover',
-                          border: 1,
-                          borderColor: 'divider',
-                          borderRadius: 0.75,
-                          cursor: 'default',
-                          px: 0.5,
-                          userSelect: 'all',
-                          whiteSpace: 'break-spaces',
-                        },
-                        [`& ref[${ENTITY_FIELD_ATTR}="true"]`]: {
-                          bgcolor: 'action.hover',
-                          border: 1,
-                          borderColor: 'divider',
-                          borderRadius: 0.75,
-                          cursor: 'default',
-                          px: 0.5,
-                          userSelect: 'all',
-                          whiteSpace: 'break-spaces',
-                        },
-                      }}
-                    />
-                    <Tooltip title={t('LW.translationPane.removeFootnote')}>
-                      <IconButton
-                        aria-label={t('LW.translationPane.removeFootnote')}
-                        onClick={() => removeFootnote(index)}
-                        size="small"
-                        sx={{ flexShrink: 0, alignSelf: 'center' }}
-                      >
-                        <CloseIcon sx={{ fontSize: 14 }} />
-                      </IconButton>
-                    </Tooltip>
-                  </Stack>
-                ))}
-              </Stack>
-            </Box>
-          ) : null}
-                  </>
-                )}
-              </Box>
-            );
-          })}
-        </Box>
-      ) : (
-        <Box sx={{ flex: 1, p: 1.5 }}>
-          <Typography color="text.secondary" variant="body2">
-            {caretInUnindexedUnit
-              ? t('LW.translationPane.unindexedUnitMessage')
-              : t('LW.translationPane.selectUnitMessage', {
-                  unit: alignmentUnit ?? t('LW.translationPane.defaultUnitLabel'),
-                })}
-          </Typography>
-        </Box>
-      )}
-
-      {entityFormatEntity ? (
-        <EntityDisplayPopup
-          anchorPosition={entityFormatAnchor}
-          entity={entityFormatEntity}
-          lang={selectedLanguage}
-          occurrenceIndex={entityFormatOccurrence}
-          onChange={(spec) => {
-            void applyEntityDisplaySpec(spec);
-          }}
-          onClose={closeEntityFormatPopup}
-          onReset={() => {
-            void resetEntityDisplaySpec();
-          }}
-          onSaveTranslation={
-            entityKindSupportsVernacularGloss(entityFormatEntity.kind)
-              ? saveEntityTranslationFromPopup
-              : undefined
-          }
-          onSuggestTranslation={
-            entityKindSupportsVernacularGloss(entityFormatEntity.kind) &&
-            isAiUiFeatureEnabled('entityGlossSuggest') &&
-            getDesktopApi()?.suggestEntityGloss
-              ? suggestEntityTranslationFromPopup
-              : undefined
-          }
-          open={entityFormatOpen}
-          spec={entityFormatSpec}
-        />      ) : null}
+            onSuggestTranslation={
+              entityKindSupportsVernacularGloss(entityFormatEntity.kind) &&
+              isAiUiFeatureEnabled('entityGlossSuggest') &&
+              getDesktopApi()?.suggestEntityGloss
+                ? suggestEntityTranslationFromPopup
+                : undefined
+            }
+            open={entityFormatOpen}
+            spec={entityFormatSpec}
+          />
+        ) : null}
       </Box>
     </>
   );

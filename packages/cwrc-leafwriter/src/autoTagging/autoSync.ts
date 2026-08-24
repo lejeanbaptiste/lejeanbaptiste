@@ -68,32 +68,20 @@ export async function autoSyncEntitiesToCentral(
       !(await centralStore.hasSqliteDatabase()) ||
       !window.electronAPI?.entitySqliteCreatePopulated
     ) {
-       
       console.error(`[auto-sync] ${SQLITE_REQUIRED_MESSAGE}`);
       return;
     }
 
     for (const pedbId of pedbIds) {
-      const result = await promoteToCentralSqlite(
-        projectStore,
-        centralStore,
-        pedbId,
-        userStableId,
-      );
+      const result = await promoteToCentralSqlite(projectStore, centralStore, pedbId, userStableId);
       if (!result) continue;
       if (pedbDoc) {
         const pedbItem = findEntity(pedbDoc, pedbId);
         if (pedbItem) setCentralMapping(pedbItem, userStableId, result.centralId);
       }
-      await propagateTombstonesToSqlite(
-        projectStore,
-        pedbId,
-        centralStore,
-        result.centralId,
-      );
+      await propagateTombstonesToSqlite(projectStore, pedbId, centralStore, result.centralId);
     }
   } catch (error) {
-     
     console.error('[auto-sync] failed to promote new entities to central database:', error);
   }
 }

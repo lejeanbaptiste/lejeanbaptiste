@@ -59,9 +59,7 @@ const getCommonsUiBridge = () =>
     window as Window & {
       __ljbCommonsUi?: {
         languageToolSettings: LanguageToolSettings | null;
-        setLanguageToolSettings: (
-          settings: Partial<LanguageToolSettings>,
-        ) => void | Promise<void>;
+        setLanguageToolSettings: (settings: Partial<LanguageToolSettings>) => void | Promise<void>;
         testLanguageToolConnection: (
           settings: Partial<LanguageToolSettings>,
         ) => Promise<LanguageToolConnectionResult>;
@@ -159,9 +157,7 @@ export const DesktopLanguageTool = () => {
       setStatus({
         severity: 'error',
         message:
-          error instanceof Error
-            ? error.message
-            : t('LW.settings.language_tool.connection_failed'),
+          error instanceof Error ? error.message : t('LW.settings.language_tool.connection_failed'),
       });
     } finally {
       setChecking(false);
@@ -182,7 +178,8 @@ export const DesktopLanguageTool = () => {
     } catch (error) {
       setStatus({
         severity: 'error',
-        message: error instanceof Error ? error.message : t('LW.settings.language_tool.install_failed'),
+        message:
+          error instanceof Error ? error.message : t('LW.settings.language_tool.install_failed'),
       });
     } finally {
       setBusy(false);
@@ -202,7 +199,8 @@ export const DesktopLanguageTool = () => {
     } catch (error) {
       setStatus({
         severity: 'error',
-        message: error instanceof Error ? error.message : t('LW.settings.language_tool.remove_failed'),
+        message:
+          error instanceof Error ? error.message : t('LW.settings.language_tool.remove_failed'),
       });
     } finally {
       setBusy(false);
@@ -244,7 +242,7 @@ export const DesktopLanguageTool = () => {
               ? t('LW.settings.language_tool.java_ok', {
                   version: installStatus.java.version ?? '17+',
                 })
-              : installStatus?.java.error ?? t('LW.settings.language_tool.java_missing')}
+              : (installStatus?.java.error ?? t('LW.settings.language_tool.java_missing'))}
           </Alert>
 
           <Typography variant="body2">
@@ -302,7 +300,9 @@ export const DesktopLanguageTool = () => {
                 size="small"
               />
             }
-            label={<Typography variant="body2">{t('LW.settings.language_tool.enabled')}</Typography>}
+            label={
+              <Typography variant="body2">{t('LW.settings.language_tool.enabled')}</Typography>
+            }
             sx={{ ml: 0 }}
           />
 
@@ -337,7 +337,9 @@ export const DesktopLanguageTool = () => {
           />
 
           <FormControl fullWidth size="small">
-            <InputLabel id="lt-check-mode-label">{t('LW.settings.language_tool.check_mode')}</InputLabel>
+            <InputLabel id="lt-check-mode-label">
+              {t('LW.settings.language_tool.check_mode')}
+            </InputLabel>
             <Select
               label={t('LW.settings.language_tool.check_mode')}
               labelId="lt-check-mode-label"

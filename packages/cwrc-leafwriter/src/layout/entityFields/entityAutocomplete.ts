@@ -75,12 +75,7 @@ export const candidateFromEntity = (
   const chinese = chineseNameOf(entity);
   addAlias(aliases, chinese);
 
-  const label =
-    entity.romanizedName ??
-    entity.primaryName ??
-    chinese ??
-    sourceSurface ??
-    entity.id;
+  const label = entity.romanizedName ?? entity.primaryName ?? chinese ?? sourceSurface ?? entity.id;
 
   return {
     id: entity.id,

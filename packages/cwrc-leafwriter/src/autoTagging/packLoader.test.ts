@@ -66,12 +66,8 @@ describe('candidateIntersectsYearRange', () => {
   });
 
   it('checks interval overlap', () => {
-    expect(
-      candidateIntersectsYearRange(person(), { start: 1100, end: 1200 }),
-    ).toBe(false);
-    expect(
-      candidateIntersectsYearRange(person(), { start: 1000, end: 1100 }),
-    ).toBe(true);
+    expect(candidateIntersectsYearRange(person(), { start: 1100, end: 1200 })).toBe(false);
+    expect(candidateIntersectsYearRange(person(), { start: 1000, end: 1100 })).toBe(true);
   });
 });
 
@@ -135,7 +131,12 @@ describe('candidatePassesDateFilter', () => {
       searchStrings: ['李白'],
       metadata: { startYear: 701, endYear: 762 },
     });
-    const undated = person({ authorityId: '3', primaryName: '無年', searchStrings: ['無年'], metadata: {} });
+    const undated = person({
+      authorityId: '3',
+      primaryName: '無年',
+      searchStrings: ['無年'],
+      metadata: {},
+    });
     const limit = { mode: 'limit' as const, start: 600, end: 900 };
     const exclude = { mode: 'exclude' as const, start: 600, end: 900 };
 
@@ -237,12 +238,10 @@ describe('mergePackCandidates', () => {
     const big = Array.from({ length: 50_000 }, (_, i) =>
       person({ authorityId: String(i), primaryName: `名${i}`, searchStrings: [`名${i}`] }),
     );
-    expect(() =>
-      mergePackCandidates([{ packId: 'cbdb-persons', candidates: big }]),
-    ).not.toThrow();
-    expect(mergePackCandidates([{ packId: 'cbdb-persons', candidates: big }]).candidates).toHaveLength(
-      50_000,
-    );
+    expect(() => mergePackCandidates([{ packId: 'cbdb-persons', candidates: big }])).not.toThrow();
+    expect(
+      mergePackCandidates([{ packId: 'cbdb-persons', candidates: big }]).candidates,
+    ).toHaveLength(50_000);
   });
 });
 

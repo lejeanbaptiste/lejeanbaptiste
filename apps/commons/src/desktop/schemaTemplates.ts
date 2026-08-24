@@ -11,8 +11,7 @@ interface SchemaTemplateConfig {
 const xmlModelPi = (rng: string) =>
   `<?xml-model href="${rng}" type="application/xml" schematypens="http://relaxng.org/ns/structure/1.0"?>`;
 
-const stylesheetPi = (css: string) =>
-  `<?xml-stylesheet type="text/css" href="${css}"?>`;
+const stylesheetPi = (css: string) => `<?xml-stylesheet type="text/css" href="${css}"?>`;
 
 /** TEI skeleton — shared for teiAll, teiLite, and teiSimplePrint. */
 export const buildTeiSkeletonXml = (config: SchemaTemplateConfig): string => {

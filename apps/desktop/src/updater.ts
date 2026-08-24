@@ -161,7 +161,8 @@ export const initAutoUpdater = (options?: InitAutoUpdaterOptions): (() => void) 
  */
 export const checkForAppUpdatesManually = async (): Promise<AppUpdateCheckResult> => {
   if (!app.isPackaged) return { status: 'unsupported' };
-  if (process.platform !== 'darwin' && process.platform !== 'win32') return { status: 'unsupported' };
+  if (process.platform !== 'darwin' && process.platform !== 'win32')
+    return { status: 'unsupported' };
 
   configureAutoUpdater();
 

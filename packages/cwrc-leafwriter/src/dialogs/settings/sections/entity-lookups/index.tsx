@@ -23,7 +23,11 @@ export const EntityLookups = () => {
     <Stack width="100%" py={0.5} spacing={1.25}>
       <Stack direction="row" mx={0.5} gap={1}>
         <InfoOutlinedIcon sx={{ height: 16, width: 16, mt: '2px', flexShrink: 0 }} />
-        <Typography color="textSecondary" variant="body2" sx={{ fontSize: '0.8rem', lineHeight: 1.35 }}>
+        <Typography
+          color="textSecondary"
+          variant="body2"
+          sx={{ fontSize: '0.8rem', lineHeight: 1.35 }}
+        >
           {t('LW.settings.authorities.messages.rearrange authorities to prioritize results')}.{' '}
           {t(
             'LW.settings.authorities.messages.activate or deactivate authorities for each entity type',
@@ -35,13 +39,7 @@ export const EntityLookups = () => {
           .
         </Typography>
       </Stack>
-      <Stack
-        direction="row"
-        flexWrap="wrap"
-        useFlexGap
-        spacing={1}
-        sx={{ alignItems: 'stretch' }}
-      >
+      <Stack direction="row" flexWrap="wrap" useFlexGap spacing={1} sx={{ alignItems: 'stretch' }}>
         {entityTypes?.map((service) => (
           <Stack key={service} sx={{ flex: '1 1 180px', minWidth: 160, maxWidth: 240 }}>
             <EntityType entityType={service} />

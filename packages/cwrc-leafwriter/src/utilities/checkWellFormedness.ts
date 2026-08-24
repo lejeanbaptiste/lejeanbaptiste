@@ -23,10 +23,7 @@ const formatParseErrorMessage = (errors: XMLParseErrorPosition[]): string => {
   }
 
   return errors
-    .map(
-      (error) =>
-        `Line ${error.line}, column ${error.col}: ${error.message ?? 'Invalid XML'}`,
-    )
+    .map((error) => `Line ${error.line}, column ${error.col}: ${error.message ?? 'Invalid XML'}`)
     .join('\n');
 };
 

@@ -831,7 +831,10 @@ declare global {
       }) => void;
       loadProjectMetadataState?: (
         mode?: 'firstSetup' | 'edition',
-      ) => Promise<import('../../../../apps/commons/src/desktop/projectMetadataDialogTypes').ProjectMetadataDialogState | null>;
+      ) => Promise<
+        | import('../../../../apps/commons/src/desktop/projectMetadataDialogTypes').ProjectMetadataDialogState
+        | null
+      >;
       saveProjectMetadata?: (payload: {
         projectFilePath: string;
         values: Record<string, string>;

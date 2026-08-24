@@ -67,9 +67,9 @@ export const NativeSchemaPickerPage = () => {
     if (!isDesktop() || !dialogId) return;
 
     void (async () => {
-      const pickerState = (await invoke('getSchemaPickerState', { dialogId })) as
-        | SchemaPickerState
-        | null;
+      const pickerState = (await invoke('getSchemaPickerState', {
+        dialogId,
+      })) as SchemaPickerState | null;
       if (pickerState) {
         setState(pickerState);
         setSelectedSchemaId(pickerState.defaultSchemaId ?? pickerState.schemas[0]?.id ?? '');
@@ -103,7 +103,14 @@ export const NativeSchemaPickerPage = () => {
   }
 
   return (
-    <Box sx={{ display: 'flex', flexDirection: 'column', height: '100vh', bgcolor: 'background.default' }}>
+    <Box
+      sx={{
+        display: 'flex',
+        flexDirection: 'column',
+        height: '100vh',
+        bgcolor: 'background.default',
+      }}
+    >
       <Box
         sx={{
           px: 2,
@@ -144,7 +151,10 @@ export const NativeSchemaPickerPage = () => {
             </FormControl>
 
             <Typography variant="caption">
-              <Box component="span" sx={{ textDecoration: 'underline', textTransform: 'uppercase' }}>
+              <Box
+                component="span"
+                sx={{ textDecoration: 'underline', textTransform: 'uppercase' }}
+              >
                 {t('LW.note')}:
               </Box>
               {` ${t(

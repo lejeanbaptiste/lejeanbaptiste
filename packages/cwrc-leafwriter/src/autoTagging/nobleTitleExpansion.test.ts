@@ -19,7 +19,7 @@ describe('expandNobleTitle (port of Norbert nt_combos)', () => {
     );
   });
 
-  it("recovers both alternate names CBDB stores for 曹操 (武皇帝 posthumous, 太祖 temple)", () => {
+  it('recovers both alternate names CBDB stores for 曹操 (武皇帝 posthumous, 太祖 temple)', () => {
     const strings = expandNobleTitleStrings(caoCao);
     expect(strings).toContain('武皇帝');
     expect(strings).toContain('太祖');
@@ -231,9 +231,7 @@ describe('expandNobleTitle (port of Norbert nt_combos)', () => {
       expect(expandNobleTitleStrings(wuyue)).toContain('吳越武肅王');
       expect(expandNobleTitleStrings(wuyue)).not.toContain('吳越吳越武肅王');
       // Faithful mode still reproduces the original's doubling.
-      expect(expandNobleTitleStrings(wuyue, { corrections: false })).toContain(
-        '吳越吳越武肅王',
-      );
+      expect(expandNobleTitleStrings(wuyue, { corrections: false })).toContain('吳越吳越武肅王');
     });
 
     it('still treats a longer dynasty label with a shorter fief as territorial', () => {

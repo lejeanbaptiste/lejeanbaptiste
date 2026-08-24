@@ -26,10 +26,7 @@ We'll also use the same infrastructure to show a map of disambiguated place name
 
 ---
 
-
-
 ## 2. Technical Stack
-
 
 | Component     | Technology                                                      | Purpose                                        |
 | ------------- | --------------------------------------------------------------- | ---------------------------------------------- |
@@ -40,14 +37,9 @@ We'll also use the same infrastructure to show a map of disambiguated place name
 | UI Framework  | Vanilla JS/HTML/CSS or integrate with existing editor framework | Map container and controls                     |
 | Data Storage  | XML attributes/elements                                         | Persist selected coordinates and place details |
 
-
 ---
 
-
-
 ## 3. Detailed Requirements
-
-
 
 ### 3.1 Map Display
 
@@ -56,15 +48,11 @@ We'll also use the same infrastructure to show a map of disambiguated place name
 - **Positioning**: Centered modal or anchored to the trigger element in the XML editor
 - **Default View**: Automatically zoom and pan to fit all pins with padding (e.g., 20% margin)
 
-
-
 ### 3.2 Pins and Markers
 
 - **Visual Style**: Distinctive pin icon (e.g., red marker with number for multi-candidate disambiguation)
 - **Hover Effect**: Pin scales slightly and shows a tooltip with disambiguation info
 - **Click Effect**: Pin highlights briefly, then triggers selection workflow
-
-
 
 ### 3.3 Disambiguation Information (Hover Tooltip)
 
@@ -76,18 +64,15 @@ The tooltip must display:
 - **Contextual data**: Years of relevance, historical periods, or other metadata from the XML document
 - **Source**: Geocoding source (e.g., "Nominatim/OSM")
 
-
-
 ### 3.4 Selection Workflow
 
 1. User hovers over a pin → Tooltip appears with disambiguation info
 2. User clicks a pin →
-  - Map captures the selected candidate's data (coordinates, full name, metadata)
-  - Map closes automatically
-  - XML editor's review panel updates to show the selected candidate
-  - Selected candidate is highlighted in the review panel
 
-
+- Map captures the selected candidate's data (coordinates, full name, metadata)
+- Map closes automatically
+- XML editor's review panel updates to show the selected candidate
+- Selected candidate is highlighted in the review panel
 
 ### 3.5 Layer Switching (Optional but Recommended)
 
@@ -98,11 +83,7 @@ The tooltip must display:
 
 ---
 
-
-
 ## 4. Architecture
-
-
 
 ### 4.1 Component Diagram
 
@@ -126,8 +107,6 @@ The tooltip must display:
                     │  (Geocoding)    │
                     └─────────────────┘
 ```
-
-
 
 ### 4.2 Data Flow
 
@@ -155,11 +134,7 @@ The tooltip must display:
 
 ---
 
-
-
 ## 5. Implementation Plan
-
-
 
 ### Phase 1: Core Map Integration (1-2 days)
 
@@ -211,11 +186,7 @@ The tooltip must display:
 
 ---
 
-
-
 ## 6. UI/UX Specifications
-
-
 
 ### 6.1 Map Popup
 
@@ -225,16 +196,12 @@ The tooltip must display:
 - **Resize Handle**: Bottom-right corner grip for resizing
 - **Close Button**: Top-right 'X' button to cancel without selection
 
-
-
 ### 6.2 Pins
 
 - **Default State**: Red marker icon (⚫ or custom SVG)
 - **Hover State**: Blue marker with scale animation (1.2x)
 - **Size**: 24x24px icons
 - **Number Badges**: If >1 candidate, show count (e.g., "1", "2", "3") on pins
-
-
 
 ### 6.3 Tooltip
 
@@ -251,8 +218,6 @@ The tooltip must display:
   ```
 - **Animation**: Fade in/out (200ms)
 
-
-
 ### 6.4 Layer Switcher
 
 - **Position**: Top-right of map (standard location)
@@ -261,10 +226,7 @@ The tooltip must display:
 
 ---
 
-
-
 ## 7. Error Handling
-
 
 | Scenario                     | Handling                                        |
 | ---------------------------- | ----------------------------------------------- |
@@ -275,14 +237,9 @@ The tooltip must display:
 | Invalid coordinates          | Skip invalid entries, log to console            |
 | User cancels (closes map)    | No action; return to editor without selection   |
 
-
 ---
 
-
-
 ## 8. Testing Strategy
-
-
 
 ### 8.1 Test Cases
 
@@ -296,8 +253,6 @@ The tooltip must display:
 - [ ] Layer switching between street/satellite/relief
 - [ ] Mobile touch interactions
 
-
-
 ### 8.2 Validation
 
 - Verify all pins are visible when map auto-fits
@@ -307,11 +262,7 @@ The tooltip must display:
 
 ---
 
-
-
 ## 9. Dependencies
-
-
 
 ### 9.1 External Libraries
 
@@ -319,13 +270,9 @@ The tooltip must display:
 - Optional: `maplibre-gl-terrain` plugin for relief view
 - Optional: `leaflet` (fallback if MapLibre proves too heavy)
 
-
-
 ### 9.2 APIs
 
 - ~~Nominatim: `https://nominatim.openstreetmap.org/search` (no API key required)~~ — **superseded, not used.** See note at top of document: coordinates come only from already-compiled authority-pack geo data, never from live geocoding.
-
-
 
 ### 9.3 Data Sources
 
@@ -334,10 +281,7 @@ The tooltip must display:
 
 ---
 
-
-
 ## 10. Risks and Mitigations
-
 
 | Risk                        | Probability | Impact | Mitigation                                                      |
 | --------------------------- | ----------- | ------ | --------------------------------------------------------------- |
@@ -347,10 +291,7 @@ The tooltip must display:
 | Browser compatibility       | Low         | Medium | Use polyfills for older browsers; test on Chrome/Firefox/Safari |
 | XML integration complexity  | Medium      | High   | Design clean interface between map and editor                   |
 
-
 ---
-
-
 
 ## 11. Open Questions
 
@@ -362,11 +303,7 @@ The tooltip must display:
 
 ---
 
-
-
 ## 12. Appendix: Code Snippets
-
-
 
 ### Basic MapLibre Initialization
 
@@ -376,7 +313,7 @@ const map = new maplibregl.Map({
   container: 'disambiguation-map',
   style: 'https://demotiles.maplibre.org/style.json', // OSM-based style
   center: [0, 0], // Will be overridden by fitBounds
-  zoom: 2
+  zoom: 2,
 });
 
 // Add GeoJSON source with candidates
@@ -385,12 +322,12 @@ map.on('load', () => {
     type: 'geojson',
     data: {
       type: 'FeatureCollection',
-      features: candidates.map(c => ({
+      features: candidates.map((c) => ({
         type: 'Feature',
         geometry: { type: 'Point', coordinates: [c.lon, c.lat] },
-        properties: { name: c.display_name, years: c.years, ...c.metadata }
-      }))
-    }
+        properties: { name: c.display_name, years: c.years, ...c.metadata },
+      })),
+    },
   });
 
   // Add layer for pins
@@ -398,17 +335,15 @@ map.on('load', () => {
     id: 'candidates-layer',
     type: 'circle',
     source: 'candidates',
-    paint: { 'circle-radius': 8, 'circle-color': '#ff0000' }
+    paint: { 'circle-radius': 8, 'circle-color': '#ff0000' },
   });
 
   // Fit to all pins
   const bounds = new maplibregl.LngLatBounds();
-  candidates.forEach(c => bounds.extend([c.lon, c.lat]));
+  candidates.forEach((c) => bounds.extend([c.lon, c.lat]));
   map.fitBounds(bounds, { padding: 50, maxZoom: 12 });
 });
 ```
-
-
 
 ### Nominatim Query
 
@@ -416,13 +351,11 @@ map.on('load', () => {
 async function geocodePlaceName(query) {
   const response = await fetch(
     `https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(query)}`,
-    { headers: { 'User-Agent': 'MyXMLEditor/1.0' } }
+    { headers: { 'User-Agent': 'MyXMLEditor/1.0' } },
   );
   return await response.json();
 }
 ```
-
-
 
 ### Hover Tooltip
 
@@ -433,7 +366,8 @@ map.on('mousemove', 'candidates-layer', (e) => {
     const props = features[0].properties;
     new maplibregl.Popup()
       .setLngLat(e.lngLat)
-      .setHTML(`
+      .setHTML(
+        `
         <div class="tooltip">
           <strong>${props.name}</strong>
           <hr>
@@ -441,7 +375,8 @@ map.on('mousemove', 'candidates-layer', (e) => {
           <small>Lat: ${props.lat}, Lon: ${props.lon}</small><br>
           <small>Years: ${props.years || 'N/A'}</small>
         </div>
-      `)
+      `,
+      )
       .addTo(map);
   }
 });
@@ -449,6 +384,6 @@ map.on('mousemove', 'candidates-layer', (e) => {
 
 ---
 
-*Document Status: Draft*
-*Last Updated: July 26, 2026*
-*Owner: Daniel MORGAN / CNRS*
+_Document Status: Draft_
+_Last Updated: July 26, 2026_
+_Owner: Daniel MORGAN / CNRS_

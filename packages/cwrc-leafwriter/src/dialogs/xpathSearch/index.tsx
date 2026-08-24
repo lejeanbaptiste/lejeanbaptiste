@@ -26,7 +26,12 @@ interface XPathSearchDialogProps extends IDialog {
   query?: string;
 }
 
-export const XPathSearchDialog = ({ id, onClose, open = false, query: initialQuery = '' }: XPathSearchDialogProps) => {
+export const XPathSearchDialog = ({
+  id,
+  onClose,
+  open = false,
+  query: initialQuery = '',
+}: XPathSearchDialogProps) => {
   const { t } = useTranslation();
   const [query, setQuery] = useState(initialQuery);
   const [results, setResults] = useState<XPathResultItem[]>([]);
@@ -63,8 +68,10 @@ export const XPathSearchDialog = ({ id, onClose, open = false, query: initialQue
         const xpath = isElement(node)
           ? (window.writer.utilities.getElementXPath(node) ?? '')
           : (window.writer.utilities.getNodeXpath(node) ?? '');
-        const id = isElement(node) ? node.getAttribute('id') ?? undefined : undefined;
-        const tagName = isElement(node) ? node.getAttribute('_tag') ?? node.nodeName : node.nodeName;
+        const id = isElement(node) ? (node.getAttribute('id') ?? undefined) : undefined;
+        const tagName = isElement(node)
+          ? (node.getAttribute('_tag') ?? node.nodeName)
+          : node.nodeName;
 
         return {
           id,

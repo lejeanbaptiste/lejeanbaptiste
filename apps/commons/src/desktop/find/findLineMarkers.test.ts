@@ -1,8 +1,4 @@
-import {
-  FIND_LINE_ACTIVE_CLASS,
-  FIND_LINE_CLASS,
-  getWysiwygLineBlock,
-} from './findLineMarkers';
+import { FIND_LINE_ACTIVE_CLASS, FIND_LINE_CLASS, getWysiwygLineBlock } from './findLineMarkers';
 
 describe('findLineMarkers', () => {
   it('finds the direct child block of the editor body', () => {

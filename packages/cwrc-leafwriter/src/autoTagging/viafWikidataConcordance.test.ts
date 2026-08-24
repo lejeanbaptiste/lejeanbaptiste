@@ -28,9 +28,7 @@ describe('viafWikidataConcordance', () => {
   });
 
   it('emits authority ids from pack crosswalk', () => {
-    expect(
-      authorityIdsFromPackCrosswalk({ viaf: '24645678', wikidata: ['5581'] }),
-    ).toEqual(
+    expect(authorityIdsFromPackCrosswalk({ viaf: '24645678', wikidata: ['5581'] })).toEqual(
       expect.arrayContaining([
         { type: 'VIAF', value: '24645678' },
         { type: 'Wikidata', value: 'Q5581' },

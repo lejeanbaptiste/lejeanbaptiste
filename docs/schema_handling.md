@@ -62,7 +62,7 @@ When a project is open (schema + `schema/project-metadata.json` present):
    - **TEI** (`teiAll`, `teiLite`, `teiSimplePrint`): `<head>Section heading</head>` + `<p>Paragraph text</p>`
    - **jTEI**: header author/keywords; `<front>` abstract; body section; `<back>` bibliography
    - **Orlando**: `STANDARD` (author name), `AUTHORSUMMARY`, `BIOGRAPHY` life-event sections (Birth, Death, Education), `WRITING` sections (Production, Textual features, Reception), `WORKSCITED`
-   Non-blank edition metadata is merged from **`project-metadata.json`**. Per-file title defaults to **`Untitled`**. Caret lands in the first `<p>`.
+     Non-blank edition metadata is merged from **`project-metadata.json`**. Per-file title defaults to **`Untitled`**. Caret lands in the first `<p>`.
 3. **Save** (⌘S) on a temp tab opens **Save As**. The dialog defaults to the **explorer-focused folder** (or the parent of a focused file); otherwise **project root**.
 4. After Save As, the tab is no longer temp; subsequent saves write to that path and the file appears in the explorer.
 5. Closing a **dirty temp tab** prompts **Save…**, **Don't Save**, or **Cancel**. **Don't Save** deletes the temp file; **Save…** runs Save As then closes on success.
@@ -77,12 +77,12 @@ Automated coverage: `apps/commons/src/desktop/newFileSkeleton.test.ts` (unit) an
 
 Edition-wide defaults live in **`schema/project-metadata.json`** (edited via **Project → Edition metadata…**). Per-file fields live in each XML file’s header and are edited in the **File metadata** panel on the right (east) rail — the first icon; this panel opens by default when a file loads.
 
-| Catalog | Field | Path | Notes |
-|---------|-------|------|--------|
-| TEI (`teiAll`, `teiLite`, `teiSimplePrint`, `jTei`, local TEI) | Title | `titleStmt/title` | Per-file; not overwritten by edition bulk apply |
-| TEI | Source | `sourceDesc/p` | First paragraph under `sourceDesc`; excluded from bulk apply |
-| Orlando | Title | `ORLANDOHEADER/FILEDESC/TITLESTMT/DOCTITLE` | Per-file; excluded from bulk apply |
-| Orlando | Source | `ORLANDOHEADER/FILEDESC/SOURCEDESC` | Excluded from bulk apply |
+| Catalog                                                        | Field  | Path                                        | Notes                                                        |
+| -------------------------------------------------------------- | ------ | ------------------------------------------- | ------------------------------------------------------------ |
+| TEI (`teiAll`, `teiLite`, `teiSimplePrint`, `jTei`, local TEI) | Title  | `titleStmt/title`                           | Per-file; not overwritten by edition bulk apply              |
+| TEI                                                            | Source | `sourceDesc/p`                              | First paragraph under `sourceDesc`; excluded from bulk apply |
+| Orlando                                                        | Title  | `ORLANDOHEADER/FILEDESC/TITLESTMT/DOCTITLE` | Per-file; excluded from bulk apply                           |
+| Orlando                                                        | Source | `ORLANDOHEADER/FILEDESC/SOURCEDESC`         | Excluded from bulk apply                                     |
 
 Implementation: `apps/commons/src/desktop/FileMetadataPanel.tsx`, `fileMetadata.ts`, `teiHeaderXml.ts`, `orlandoHeaderXml.ts`. East tab icons are rendered by `DesktopEastPanels.tsx`.
 
@@ -97,6 +97,7 @@ Your idea is **excellent** and aligns perfectly with the needs of **TEI (Text En
 ---
 
 ## **✅ Why This Is a Great Idea**
+
 1. **Reduces Friction for TEI Newbies**
    - Many users (even experienced ones) struggle with **TEI schemas, namespaces, and validation**. Your approach **automates the setup**, so users can focus on content rather than XML syntax.
 
@@ -120,15 +121,18 @@ Your idea is **excellent** and aligns perfectly with the needs of **TEI (Text En
 ---
 
 ## **⚠️ Potential Challenges & Solutions**
+
 Here are the **main difficulties** you might encounter and how to address them:
 
 ---
 
 ### **🔹 1. TEI Schema Complexity**
+
 **Challenge:**
 TEI schemas (e.g., `TEI P5`) are **highly modular** and can include **dozens of sub-schemas** (e.g., for drama, poetry, manuscripts). Downloading and managing them could get messy.
 
 **Solutions:**
+
 - **Pre-bundle common TEI schemas** (e.g., `TEI P5 All`, `TEI Lite`, `TEI for Manuscripts`).
   - Store them in a **default `schemas/` folder** in your editor’s installation directory.
   - Example schemas to include:
@@ -146,10 +150,12 @@ TEI schemas (e.g., `TEI P5`) are **highly modular** and can include **dozens of 
 ---
 
 ### **🔹 2. Default TEI Document Template**
+
 **Challenge:**
 TEI documents require **specific boilerplate** (e.g., `<teiHeader>`, `<text>`, `<body>`). Generating a **valid default template** for each schema variation is non-trivial.
 
 **Solutions:**
+
 - **Provide pre-made templates** for each schema.
   - Example for `TEI P5 All`:
     ```xml
@@ -184,12 +190,15 @@ TEI documents require **specific boilerplate** (e.g., `<teiHeader>`, `<text>`, `
 ---
 
 ### **🔹 3. WYSIWYG + TEI Tag Wrapping**
+
 **Challenge:**
 A **true WYSIWYG editor** for TEI is **hard** because TEI is **highly semantic** (e.g., `<div type="chapter">` vs. `<div type="poem">`). You need to:
+
 - **Map visual elements** (e.g., bold text) to TEI tags (e.g., `<hi rend="bold">`).
 - **Handle nested structures** (e.g., `<div>` inside `<body>` inside `<text>`).
 
 **Solutions:**
+
 - **Use a structured editor approach**:
   - Instead of a **free-form WYSIWYG**, use a **form-based editor** (like [Sigma](#) or [Oxygen XML Editor](#)).
   - Example: A dropdown to select **TEI elements** (e.g., `<p>`, `<div>`, `<head>`), and the editor **automatically wraps the text** in the correct tags.
@@ -204,20 +213,32 @@ A **true WYSIWYG editor** for TEI is **hard** because TEI is **highly semantic**
 ---
 
 ### **🔹 4. CSS for TEI Rendering**
+
 **Challenge:**
 TEI documents are **not meant to be rendered directly in browsers**—they need **CSS or XSLT** to look good. Providing a **default CSS** that works for all TEI schemas is tricky.
 
 **Solutions:**
+
 - **Bundle a default TEI CSS**:
   - Use [TEI Boilerplate’s CSS](https://github.com/TEIC/TEI-Boilerplate/blob/master/css/tei.css) as a starting point.
   - Example:
     ```css
     /* Default TEI CSS */
-    TEI { display: block; }
-    div { margin: 1em 0; }
-    p { margin: 0.5em 0; }
-    hi[rend="bold"] { font-weight: bold; }
-    head { font-style: italic; }
+    TEI {
+      display: block;
+    }
+    div {
+      margin: 1em 0;
+    }
+    p {
+      margin: 0.5em 0;
+    }
+    hi[rend='bold'] {
+      font-weight: bold;
+    }
+    head {
+      font-style: italic;
+    }
     ```
 - **Allow custom CSS**:
   - Let users **upload their own CSS** or select from **pre-made themes** (e.g., "Manuscript Style," "Modern Article").
@@ -227,10 +248,12 @@ TEI documents are **not meant to be rendered directly in browsers**—they need 
 ---
 
 ### **🔹 5. Schema Validation**
+
 **Challenge:**
 TEI schemas are **strict**, and users might **accidentally break validation** (e.g., by adding invalid attributes or elements).
 
 **Solutions:**
+
 - **Integrate a validator**:
   - Use [Jing](https://relaxng.org/jing/) (for RelaxNG) or [xmllint](http://www.xmlsoft.org/xmllint.html) (for XSD/DTD) to **validate documents in real-time**.
   - Example:
@@ -242,15 +265,19 @@ TEI schemas are **strict**, and users might **accidentally break validation** (e
   - Provide **tooltips** with suggestions (e.g., "Did you mean `<div type='chapter'>`?").
 
 ---
+
 ---
+
 ---
 
 ## **🛠️ Implementation Roadmap**
+
 Here’s how you could **build this step-by-step**:
 
 ---
 
 ### **Phase 1: Schema Management**
+
 1. **Pre-bundle common TEI schemas** (e.g., `TEI P5 All`, `TEI Lite`).
 2. **Add a "New Project" dialog** with a dropdown to select a schema:
    - Option 1: **Use a pre-bundled schema** (e.g., `TEI P5 All`).
@@ -262,12 +289,15 @@ Here’s how you could **build this step-by-step**:
 ---
 
 ### **Phase 2: Default TEI Template**
+
 1. **Provide a default template** for each schema (e.g., `tei_p5_all.xml`).
 2. **Allow users to customize the template** (e.g., edit the `<teiHeader>`).
 3. **Store templates** in a `templates/` folder.
 
 ---
+
 ### **Phase 3: WYSIWYG Editor**
+
 1. **Use a structured editor** (e.g., [CodeMirror](https://codemirror.net/) + [TEI mode](https://github.com/TEIC/TEI-Codemirror)).
 2. **Add a toolbar** with TEI-specific buttons (e.g., "Insert `<p>`", "Insert `<div>`", "Insert `<head>`").
 3. **Implement "Paste as TEI"**:
@@ -275,22 +305,29 @@ Here’s how you could **build this step-by-step**:
 4. **Add a live preview pane** (using [TEI Publisher](https://tei-publisher.org/) or custom CSS).
 
 ---
+
 ### **Phase 4: CSS & Rendering**
+
 1. **Bundle a default TEI CSS** (e.g., from [TEI Boilerplate](https://teiboilerplate.org/)).
 2. **Allow users to upload custom CSS**.
 3. **Render the TEI document** in a preview pane using the selected CSS.
 
 ---
+
 ### **Phase 5: Validation**
+
 1. **Integrate Jing or xmllint** for schema validation.
 2. **Show errors in real-time** (e.g., red underlines for invalid tags).
 3. **Provide quick fixes** (e.g., "Add missing `@type` attribute").
 
 ---
+
 ---
+
 ---
 
 ## **📌 Example Workflow for Users**
+
 1. **Create a New Project**:
    - User opens your editor and clicks **"New Project"**.
    - They select **"TEI P5 All"** from the dropdown.
@@ -324,10 +361,13 @@ Here’s how you could **build this step-by-step**:
    - User **exports the TEI file** or **previews it in a browser**.
 
 ---
+
 ---
+
 ---
 
 ## **💡 Potential Extensions**
+
 1. **TEI-Odd Customization**:
    - Allow users to **create custom TEI schemas** (using [TEI ODD](https://tei-c.org/guidelines/customization/)).
    - Provide a **GUI for ODD customization** (e.g., select which TEI modules to include).
@@ -344,26 +384,33 @@ Here’s how you could **build this step-by-step**:
    - Embed **tooltips or a sidebar** with TEI documentation (e.g., "What is `<div type='chapter'>`?").
 
 ---
+
 ---
+
 ---
 
 ## **🎯 Final Thoughts: Is This Feasible?**
-| **Aspect**               | **Feasibility** | **Effort** | **Notes** |
-|--------------------------|-----------------|------------|-----------|
-| Schema management        | ✅ High          | Medium     | Pre-bundle schemas + download on-demand. |
-| Default TEI templates    | ✅ High          | Low        | Provide a few templates for common schemas. |
-| WYSIWYG editor           | ⚠️ Medium        | High       | Use a structured editor (not free-form WYSIWYG). |
-| CSS rendering            | ✅ High          | Medium     | Bundle TEI Boilerplate CSS. |
-| Schema validation        | ✅ High          | Medium     | Integrate Jing or xmllint. |
-| TEI compliance           | ✅ High          | High       | Requires strict adherence to TEI guidelines. |
+
+| **Aspect**            | **Feasibility** | **Effort** | **Notes**                                        |
+| --------------------- | --------------- | ---------- | ------------------------------------------------ |
+| Schema management     | ✅ High         | Medium     | Pre-bundle schemas + download on-demand.         |
+| Default TEI templates | ✅ High         | Low        | Provide a few templates for common schemas.      |
+| WYSIWYG editor        | ⚠️ Medium       | High       | Use a structured editor (not free-form WYSIWYG). |
+| CSS rendering         | ✅ High         | Medium     | Bundle TEI Boilerplate CSS.                      |
+| Schema validation     | ✅ High         | Medium     | Integrate Jing or xmllint.                       |
+| TEI compliance        | ✅ High         | High       | Requires strict adherence to TEI guidelines.     |
 
 **Verdict:**
 Your idea is **not only feasible but highly valuable** for the TEI community. The **main challenge** will be the **WYSIWYG editor**, but by using a **structured approach** (e.g., form-based editing or a TEI-aware CodeMirror), you can avoid the pitfalls of free-form WYSIWYG.
 
 ---
+
 ---
+
 ---
+
 ### **🚀 Next Steps**
+
 1. **Start small**:
    - Build a **basic schema manager** (Phase 1) and **default templates** (Phase 2).
    - Use **CodeMirror + TEI mode** for the editor (Phase 3).
@@ -373,7 +420,9 @@ Your idea is **not only feasible but highly valuable** for the TEI community. Th
    - Add **CSS rendering** and **validation** later.
 
 ---
+
 ### **Need More Help?**
+
 - Want a **code example** for downloading TEI schemas?
 - Need **recommendations for TEI-aware libraries** (e.g., for validation or rendering)?
 - Want to **discuss the WYSIWYG approach** in more detail?

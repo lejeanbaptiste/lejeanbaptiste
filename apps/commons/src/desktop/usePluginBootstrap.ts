@@ -55,8 +55,7 @@ export function usePluginBootstrap(
       let enabledAny = false;
       for (const plugin of snapshot.plugins) {
         if (plugin.enabled || plugin.manifestError) continue;
-        const langs =
-          plugin.manifest?.languagePrompt?.documentLanguages ?? plugin.languages ?? [];
+        const langs = plugin.manifest?.languagePrompt?.documentLanguages ?? plugin.languages ?? [];
         if (!documentLanguageMatchesPlugin(detectedLanguage, langs)) continue;
         try {
           await window.electronAPI?.pluginsSetEnabled?.(plugin.id, true);

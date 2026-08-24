@@ -306,9 +306,7 @@ describe('scanUnlinkedAuthorityHits', () => {
       authorityValue: value,
       primaryName: '李淳風',
     });
-    expect(
-      scanUnlinkedAuthorityHits([{ entity, peers: [peer('1'), peer('2')] }]),
-    ).toHaveLength(0);
+    expect(scanUnlinkedAuthorityHits([{ entity, peers: [peer('1'), peer('2')] }])).toHaveLength(0);
     expect(scanUnlinkedAuthorityHits([{ entity, peers: [peer('1')] }])).toHaveLength(1);
   });
 

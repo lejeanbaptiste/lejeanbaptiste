@@ -3,7 +3,16 @@
  * Downloads the LemMinX binary matching vscode-xml release (same engine as Red Hat XML extension).
  * macOS is supported today; Windows is intentionally skipped until we wire a Windows binary source.
  */
-import { chmodSync, createWriteStream, existsSync, mkdirSync, readFileSync, rmSync, unlinkSync, writeFileSync } from 'fs';
+import {
+  chmodSync,
+  createWriteStream,
+  existsSync,
+  mkdirSync,
+  readFileSync,
+  rmSync,
+  unlinkSync,
+  writeFileSync,
+} from 'fs';
 import { pipeline } from 'stream/promises';
 import path from 'path';
 import { fileURLToPath } from 'url';
@@ -41,7 +50,11 @@ const binaryPath = path.join(RESOURCES_DIR, config.binary);
 const stampPath = path.join(RESOURCES_DIR, '.lemminx-version');
 const stamp = `${LEMMINX_VERSION} ${config.asset}`;
 
-if (existsSync(binaryPath) && existsSync(stampPath) && readFileSync(stampPath, 'utf-8').trim() === stamp) {
+if (
+  existsSync(binaryPath) &&
+  existsSync(stampPath) &&
+  readFileSync(stampPath, 'utf-8').trim() === stamp
+) {
   console.log(`[lemminx] Already present: ${binaryPath}`);
   process.exit(0);
 }

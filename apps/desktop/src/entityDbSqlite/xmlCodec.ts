@@ -1,7 +1,12 @@
 import { DOMParser, XMLSerializer } from '@xmldom/xmldom';
 import type { DatabaseSync } from 'node:sqlite';
 import { getDatabaseId } from '../../../../packages/cwrc-leafwriter/src/autoTagging/entities';
-import { EntitySqliteRepository, type SqliteEntityKind, type DecisionTargetBackfillEntry, type DecisionTargetBackfillReport } from './repository';
+import {
+  EntitySqliteRepository,
+  type SqliteEntityKind,
+  type DecisionTargetBackfillEntry,
+  type DecisionTargetBackfillReport,
+} from './repository';
 
 const XML_NS = 'http://www.w3.org/XML/1998/namespace';
 const TEI_NS = 'http://www.tei-c.org/ns/1.0';
@@ -318,11 +323,7 @@ export function importEntitiesXml(
                   ? 'given'
                   : explicitNameType;
             const lang = attr(child, 'xml:lang');
-            if (
-              normalizedType === 'translation' &&
-              lang &&
-              !/(^|-)Latn($|-)/i.test(lang)
-            ) {
+            if (normalizedType === 'translation' && lang && !/(^|-)Latn($|-)/i.test(lang)) {
               db.prepare(
                 `INSERT INTO entity_translations
                   (entity_id, text, language, origin, source, status, created_at, updated_at)
@@ -363,10 +364,7 @@ export function importEntitiesXml(
               (normalizedType === 'family' || normalizedType === 'given')
             ) {
               const column = normalizedType === 'family' ? 'family_name' : 'given_name';
-              db.prepare(`UPDATE people SET ${column} = ? WHERE entity_id = ?`).run(
-                childText,
-                id,
-              );
+              db.prepare(`UPDATE people SET ${column} = ? WHERE entity_id = ?`).run(childText, id);
             }
             report.namesImported += 1;
             importedNameCount += 1;
@@ -461,10 +459,7 @@ export function importEntitiesXml(
             );
             if (kind === 'person' && childText && p.status === 'active') {
               const column = nameRole === 'family' ? 'family_name' : 'given_name';
-              db.prepare(`UPDATE people SET ${column} = ? WHERE entity_id = ?`).run(
-                childText,
-                id,
-              );
+              db.prepare(`UPDATE people SET ${column} = ? WHERE entity_id = ?`).run(childText, id);
             }
             report.namesImported += 1;
             continue;
@@ -799,8 +794,7 @@ function entityXml(db: DatabaseSync, entity: Record<string, unknown>): string {
     if (row.status !== 'active' && row.status !== 'rejected') continue;
     const nameType = String(row.name_type ?? '');
     const nameRole = String(row.name_role ?? '');
-    const isFamily =
-      nameRole === 'family' || nameType === 'family' || nameType === 'familyName';
+    const isFamily = nameRole === 'family' || nameType === 'family' || nameType === 'familyName';
     const isGiven = nameRole === 'given' || nameType === 'given' || nameType === 'givenName';
     if (isFamily || isGiven) {
       const noteType = isFamily ? 'familyName' : 'givenName';
@@ -1092,7 +1086,7 @@ export function normalizeEntityXmlForContentHash(entityElementXml: string): stri
   };
   if (!root) return entityElementXml;
 
-  const elements: typeof root[] = [];
+  const elements: (typeof root)[] = [];
   const walk = (element: typeof root) => {
     elements.push(element);
     for (const child of childElements(element)) walk(child as typeof root);
@@ -1118,10 +1112,7 @@ export function normalizeEntityXmlForContentHash(entityElementXml: string): stri
     }
     for (const child of [...childElements(element)]) {
       const childName = localName(child);
-      if (
-        childName === 'idno' &&
-        child.getAttribute('type') === CENTRAL_MAPPING_TYPE
-      ) {
+      if (childName === 'idno' && child.getAttribute('type') === CENTRAL_MAPPING_TYPE) {
         element.removeChild?.(child);
       } else if (childName === 'note' && child.getAttribute('type') === 'ljb-changed') {
         element.removeChild?.(child);
@@ -1137,8 +1128,7 @@ export function exportEntityElementXml(
   entityId: string,
 ): string | null {
   const row = repository.db.prepare('SELECT * FROM entities WHERE id = ?').get(entityId) as
-    | Record<string, unknown>
-    | undefined;
+    Record<string, unknown> | undefined;
   if (!row || row.deleted_at) return null;
   return entityXml(repository.db, row);
 }

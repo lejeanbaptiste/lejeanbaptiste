@@ -11,13 +11,7 @@ export declare var webpackEnv: {
 
 export type PaletteMode = 'light' | 'dark' | 'system';
 export type NamedEntityType =
-  | 'person'
-  | 'place'
-  | 'organization'
-  | 'work'
-  | 'thing'
-  | 'concept'
-  | 'citation';
+  'person' | 'place' | 'organization' | 'work' | 'thing' | 'concept' | 'citation';
 
 export interface NotificationProps {
   dismissed?: boolean;

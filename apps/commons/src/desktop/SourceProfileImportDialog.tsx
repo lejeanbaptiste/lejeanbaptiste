@@ -50,11 +50,7 @@ export const SourceProfileImportDialog = ({
                 key={entry.identityKey}
                 secondaryAction={
                   <>
-                    <Button
-                      size="small"
-                      onClick={() => onApply(entry)}
-                      sx={{ mr: 0.5 }}
-                    >
+                    <Button size="small" onClick={() => onApply(entry)} sx={{ mr: 0.5 }}>
                       {t('LWC.desktop.file_metadata.import_apply')}
                     </Button>
                     <Button size="small" variant="outlined" onClick={() => onAddToLibrary(entry)}>

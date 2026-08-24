@@ -1,5 +1,9 @@
 import { Box, MenuList } from '@mui/material';
-import type { Content, SearchResults, SearchResultsBlobs } from '@cwrc/leafwriter-storage-service/types';
+import type {
+  Content,
+  SearchResults,
+  SearchResultsBlobs,
+} from '@cwrc/leafwriter-storage-service/types';
 import { motion, type Variants } from 'motion/react';
 import { Results } from './results';
 

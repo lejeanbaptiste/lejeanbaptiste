@@ -11,9 +11,11 @@
  * namespace — so it runs unconditionally, with no settings toggle.
  */
 
-const isNamespaceDeclaration = (name: string): boolean => name === 'xmlns' || name.startsWith('xmlns:');
+const isNamespaceDeclaration = (name: string): boolean =>
+  name === 'xmlns' || name.startsWith('xmlns:');
 
-const declaredPrefix = (name: string): string | null => (name === 'xmlns' ? null : name.slice('xmlns:'.length));
+const declaredPrefix = (name: string): string | null =>
+  name === 'xmlns' ? null : name.slice('xmlns:'.length);
 
 /** Strip redundant `xmlns`/`xmlns:*` declarations from every element under `root`, in place. */
 export function stripRedundantNamespacesInElement(root: Node): void {
@@ -25,7 +27,9 @@ export function stripRedundantNamespacesInElement(root: Node): void {
     const parent = node.parentNode;
 
     if (parent?.nodeType === Node.ELEMENT_NODE) {
-      const namespaceAttrs = Array.from(node.attributes).filter((attr) => isNamespaceDeclaration(attr.name));
+      const namespaceAttrs = Array.from(node.attributes).filter((attr) =>
+        isNamespaceDeclaration(attr.name),
+      );
 
       for (const attr of namespaceAttrs) {
         const prefix = declaredPrefix(attr.name);

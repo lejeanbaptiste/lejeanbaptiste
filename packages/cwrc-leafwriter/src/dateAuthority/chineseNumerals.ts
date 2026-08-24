@@ -2,18 +2,7 @@ const STEMS = '甲乙丙丁戊己庚辛壬癸';
 const BRANCHES = '子丑寅卯辰巳午未申酉戌亥';
 
 /** Toneless pinyin stems / branches for sexagenary glosses (renxu, jiayin, …). */
-const STEM_PINYIN = [
-  'jia',
-  'yi',
-  'bing',
-  'ding',
-  'wu',
-  'ji',
-  'geng',
-  'xin',
-  'ren',
-  'gui',
-] as const;
+const STEM_PINYIN = ['jia', 'yi', 'bing', 'ding', 'wu', 'ji', 'geng', 'xin', 'ren', 'gui'] as const;
 const BRANCH_PINYIN = [
   'zi',
   'chou',
@@ -30,23 +19,23 @@ const BRANCH_PINYIN = [
 ] as const;
 
 const DIGIT_VALUES: Record<string, number> = {
-  '〇': 0,
-  '零': 0,
-  '一': 1,
-  '二': 2,
-  '三': 3,
-  '四': 4,
-  '五': 5,
-  '六': 6,
-  '七': 7,
-  '八': 8,
-  '九': 9,
+  〇: 0,
+  零: 0,
+  一: 1,
+  二: 2,
+  三: 3,
+  四: 4,
+  五: 5,
+  六: 6,
+  七: 7,
+  八: 8,
+  九: 9,
 };
 
 const UNIT_VALUES: Record<string, number> = {
-  '十': 10,
-  '百': 100,
-  '千': 1000,
+  十: 10,
+  百: 100,
+  千: 1000,
 };
 
 /** Sexagenary day name (e.g. 甲子) → sanmiao gz index 1–60, or null. */

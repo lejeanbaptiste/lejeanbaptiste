@@ -87,8 +87,7 @@ export async function debugValidator(options?: {
         report.schemaFile.readable = true;
         report.schemaFile.byteLength = text.length;
         report.schemaFile.hasInclude = /<include[\s>]/i.test(text);
-        report.schemaFile.mergeMarker =
-          text.match(/ljb-sanmiao-merge v\d+/i)?.[0] ?? null;
+        report.schemaFile.mergeMarker = text.match(/ljb-sanmiao-merge v\d+/i)?.[0] ?? null;
       } catch (error) {
         report.schemaFile.readable = false;
         report.schemaFile.error = String(error);
@@ -131,9 +130,7 @@ export async function debugValidator(options?: {
             sm.schemaId ?? sm.getCurrentSchema()?.id ?? sm.getSchemaIdFromUrl(currentSchemaUrl);
           const schemaRevision = sm.getSchemaRevision();
           const isLjBResource = currentSchemaUrl.startsWith('ljb://');
-          const schemaText = isLjBResource
-            ? await fetchResourceText(currentSchemaUrl)
-            : undefined;
+          const schemaText = isLjBResource ? await fetchResourceText(currentSchemaUrl) : undefined;
           if (schemaId && (schemaText || !isLjBResource)) {
             const init = await window.leafwriterValidator.initialize({
               id: schemaId,

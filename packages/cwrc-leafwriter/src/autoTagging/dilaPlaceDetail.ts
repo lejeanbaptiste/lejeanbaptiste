@@ -25,7 +25,9 @@ function fieldValue(html: string, spanId: string): string | undefined {
 }
 
 /** Extract a "(start ~ end)" year range from DILA remark prose, e.g. "（317 ~ 420）郡級行政中心所在地". */
-export function yearRangeFromDilaText(text: string | undefined): { startYear: number; endYear: number } | undefined {
+export function yearRangeFromDilaText(
+  text: string | undefined,
+): { startYear: number; endYear: number } | undefined {
   if (!text) return undefined;
   const match = /[（(]\s*([+-]?\d{1,4})\s*[~～\-–]\s*([+-]?\d{1,4})\s*[）)]/.exec(text);
   if (!match) return undefined;

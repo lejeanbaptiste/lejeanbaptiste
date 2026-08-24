@@ -18,13 +18,7 @@ describe('parseWarnings', () => {
   });
 
   it('skips blank and corrupt lines', () => {
-    const body = [
-      '',
-      'not json {{{',
-      JSON.stringify(warning()),
-      '   ',
-      '{"half": true',
-    ].join('\n');
+    const body = ['', 'not json {{{', JSON.stringify(warning()), '   ', '{"half": true'].join('\n');
     expect(parseWarnings(body)).toEqual([warning()]);
   });
 

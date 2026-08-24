@@ -22,8 +22,7 @@ const TAG_FOR_KIND: Record<CorrectionKind, string> = {
 };
 
 const isVisualEditorActive = (): boolean =>
-  Boolean(window.writer?.editor) &&
-  window.writer?.overmindState?.ui?.editorViewMode !== 'source';
+  Boolean(window.writer?.editor) && window.writer?.overmindState?.ui?.editorViewMode !== 'source';
 
 export type CorrectionPopupMode = 'add' | 'edit';
 
@@ -127,8 +126,9 @@ export const useCorrectionController = () => {
         return false;
       }
 
-      const selected =
-        editor.selection.isCollapsed() ? '' : editor.selection.getContent({ format: 'text' });
+      const selected = editor.selection.isCollapsed()
+        ? ''
+        : editor.selection.getContent({ format: 'text' });
 
       setMode('add');
       setEntityId(null);
@@ -154,10 +154,9 @@ export const useCorrectionController = () => {
             if (!confirmed) return;
             writer.allowOverlap = true;
             writer.mode = writer.XMLRDF;
-            const selected =
-              editor.selection.isCollapsed()
-                ? ''
-                : editor.selection.getContent({ format: 'text' });
+            const selected = editor.selection.isCollapsed()
+              ? ''
+              : editor.selection.getContent({ format: 'text' });
             setMode('add');
             setEntityId(null);
             setSicText(selected);
@@ -172,8 +171,9 @@ export const useCorrectionController = () => {
         return true;
       }
 
-      const selected =
-        editor.selection.isCollapsed() ? '' : editor.selection.getContent({ format: 'text' });
+      const selected = editor.selection.isCollapsed()
+        ? ''
+        : editor.selection.getContent({ format: 'text' });
       setMode('add');
       setEntityId(null);
       setSicText(selected);
@@ -263,16 +263,7 @@ export const useCorrectionController = () => {
     } finally {
       applyingRef.current = false;
     }
-  }, [
-    buildAttributes,
-    closePopup,
-    corrText,
-    entityId,
-    inferred,
-    mode,
-    sicText,
-    t,
-  ]);
+  }, [buildAttributes, closePopup, corrText, entityId, inferred, mode, sicText, t]);
 
   const onRemoveMarkup = useCallback(() => {
     const writer = window.writer;

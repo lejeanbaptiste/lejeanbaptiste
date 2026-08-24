@@ -4,9 +4,7 @@ import { registerSchemaPickerSession } from '@src/desktop/schemaPickerSession';
 import type { SchemaPickerOpenerOptions } from '@src/types/desktop';
 import { isDesktop } from '@src/types/desktop';
 
-export const openNativeSchemaPicker = async (
-  options: SchemaPickerOpenerOptions,
-): Promise<void> => {
+export const openNativeSchemaPicker = async (options: SchemaPickerOpenerOptions): Promise<void> => {
   if (!isDesktop() || !window.electronAPI?.openNativeDialog) return;
 
   const dialogId = nanoid();

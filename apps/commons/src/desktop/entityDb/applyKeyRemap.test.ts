@@ -84,7 +84,10 @@ describe('applyKeyRemapToRoots', () => {
   it('does not process a file twice when roots overlap', async () => {
     const shared = '<persName key="a">甲</persName>';
     let reads = 0;
-    const { ops } = makeOps({ '/a/doc.xml': shared }, { '/a': ['/a/doc.xml'], '/A': ['/a/doc.xml'] });
+    const { ops } = makeOps(
+      { '/a/doc.xml': shared },
+      { '/a': ['/a/doc.xml'], '/A': ['/a/doc.xml'] },
+    );
     const countingOps: KeyRemapFileOps = {
       ...ops,
       readFile: async (path) => {

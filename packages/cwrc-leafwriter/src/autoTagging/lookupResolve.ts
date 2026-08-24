@@ -22,16 +22,9 @@ import {
 } from './entities';
 import type { OriginAssertion } from './authority';
 import type { EntityStore } from './entityStore';
-import {
-  assertLookupSqliteStore,
-  enrichEntitySqlite,
-  mintEntitySqlite,
-} from './sqliteLookupMint';
+import { assertLookupSqliteStore, enrichEntitySqlite, mintEntitySqlite } from './sqliteLookupMint';
 import { isLatinSurface } from './disambiguationMatch';
-import {
-  bareNorbertAuthorityValue,
-  formatNorbertAuthorityValue,
-} from './norbertAuthorityId';
+import { bareNorbertAuthorityValue, formatNorbertAuthorityValue } from './norbertAuthorityId';
 import {
   expandIdnosWithNorbertConcordance,
   loadNorbertPersonConcordance,
@@ -88,16 +81,18 @@ const URI_PATTERNS: {
     idnoType: 'DILA',
     crosswalkKey: 'dila',
   },
-  { pattern: /id\.ndl\.go\.jp\/auth\/(?:ndlna|ndlsh)\/(\w+)/i, idnoType: 'NDL', crosswalkKey: 'ndl' },
+  {
+    pattern: /id\.ndl\.go\.jp\/auth\/(?:ndlna|ndlsh)\/(\w+)/i,
+    idnoType: 'NDL',
+    crosswalkKey: 'ndl',
+  },
   { pattern: /geonames\.org\/(\d+)/i, idnoType: 'Geonames' },
   { pattern: /vocab\.getty\.edu\/(?:tgn|ulan|aat)\/([\w-]+)/i, idnoType: 'Getty' },
   { pattern: /d-nb\.info\/gnd\/([\w-]+)/i, idnoType: 'GND' },
 ];
 
 export function parseAuthorityUri(uri: string): ParsedAuthorityRef | null {
-  const localPack = uri.match(
-    /^urn:ljb:authority:(cbdb|norbert):(person|place|office):(.+)$/i,
-  );
+  const localPack = uri.match(/^urn:ljb:authority:(cbdb|norbert):(person|place|office):(.+)$/i);
   if (localPack) {
     const source = localPack[1]!.toLowerCase();
     const entityType = localPack[2]!.toLowerCase();
@@ -105,8 +100,7 @@ export function parseAuthorityUri(uri: string): ParsedAuthorityRef | null {
     // Norbert person/office tables share a numeric id space — store typed
     // values (`person-12`) so authority-duplicate checks stay honest.
     // CBDB keeps bare ids (its person/office spaces do not collide in LJB).
-    const value =
-      source === 'norbert' ? `${entityType}-${bareId}` : bareId;
+    const value = source === 'norbert' ? `${entityType}-${bareId}` : bareId;
     return {
       idnoType: source === 'cbdb' ? 'CBDB' : 'NORBERT',
       crosswalkKey: source,
@@ -244,10 +238,7 @@ function idnosFromRow(row: PackRow): AuthorityId[] {
   const sourceType = row.source ? SOURCE_IDNO_TYPES[row.source.toLowerCase()] : undefined;
   if (sourceType && row.authorityId != null) {
     const bare = String(row.authorityId);
-    const value =
-      sourceType === 'NORBERT'
-        ? formatNorbertAuthorityValue(row.kind, bare)
-        : bare;
+    const value = sourceType === 'NORBERT' ? formatNorbertAuthorityValue(row.kind, bare) : bare;
     out.push({ type: sourceType, value });
   }
   for (const [key, entry] of Object.entries(row.metadata?.crosswalk ?? {})) {
@@ -420,11 +411,7 @@ async function collectEntityIdsByAuthorities(
   const ids: string[] = [];
   const seen = new Set<string>();
   for (const authority of authorities) {
-    const matches = await store.sqliteFindAllByAuthority(
-      kind,
-      authority.type,
-      authority.value,
-    );
+    const matches = await store.sqliteFindAllByAuthority(kind, authority.type, authority.value);
     for (const id of matches) {
       if (seen.has(id)) continue;
       seen.add(id);
@@ -508,9 +495,7 @@ function splitEnrichment(entity: EntityRecord, idnos: AuthorityId[]) {
   const idnoConflicts: AuthorityId[] = [];
   for (const idno of idnos) {
     if (entityHasIdno(entity, idno)) continue;
-    const sameType = entity.idnos.find(
-      (own) => own.type.toLowerCase() === idno.type.toLowerCase(),
-    );
+    const sameType = entity.idnos.find((own) => own.type.toLowerCase() === idno.type.toLowerCase());
     if (sameType) idnoConflicts.push(idno);
     else addIdnos.push(idno);
   }
@@ -594,9 +579,7 @@ export async function planLookupResolution(
   if (direct.length === 1) {
     const entity = direct[0]!;
     const packPerson =
-      kind === 'person'
-        ? personEnrichmentFromPackCandidate(candidateMeta, deps.projectLang)
-        : {};
+      kind === 'person' ? personEnrichmentFromPackCandidate(candidateMeta, deps.projectLang) : {};
     return {
       action: 'link',
       key: entity.key,
@@ -627,9 +610,7 @@ export async function planLookupResolution(
   if (viaCrosswalk.length === 1) {
     const entity = viaCrosswalk[0]!;
     const packPerson =
-      kind === 'person'
-        ? personEnrichmentFromPackCandidate(candidateMeta, deps.projectLang)
-        : {};
+      kind === 'person' ? personEnrichmentFromPackCandidate(candidateMeta, deps.projectLang) : {};
     return {
       action: 'link',
       key: entity.key,
@@ -649,9 +630,7 @@ export async function planLookupResolution(
   const headword = candidateMeta?.primaryName ?? input.label;
   const titleParts = nobleTitlesFromMetadata(candidateMeta);
   const packPerson =
-    kind === 'person'
-      ? personEnrichmentFromPackCandidate(candidateMeta, deps.projectLang)
-      : {};
+    kind === 'person' ? personEnrichmentFromPackCandidate(candidateMeta, deps.projectLang) : {};
   // Prefer pack personal primary / 姓+名 over a display-only title headword.
   const entityName =
     kind === 'person'
@@ -680,9 +659,9 @@ export async function planLookupResolution(
     ? (romanizeFromAuthorityMetadata(candidateMeta, entityName, deps.projectLang, kind) ??
       undefined)
     : personSplit || packPerson.familyName
-      ? (splitSurface
-          ? (suggestPersonRomanization(splitSurface, deps.projectLang ?? null) ?? undefined)
-          : undefined)
+      ? splitSurface
+        ? (suggestPersonRomanization(splitSurface, deps.projectLang ?? null) ?? undefined)
+        : undefined
       : (autoRomanizeForKind(entityName, deps.projectLang, kind) ?? undefined);
   return {
     action: 'mint',
@@ -776,7 +755,8 @@ export async function applyLookupResolution(
         endYear: plan.endYear,
         nationality: plan.nationality,
         authorityAssertions: plan.authorityAssertions,
-        authoritySource: plan.authoritySource ?? parseAuthorityUri(input.uri)?.idnoType ?? 'authority',
+        authoritySource:
+          plan.authoritySource ?? parseAuthorityUri(input.uri)?.idnoType ?? 'authority',
         familyName: plan.familyName,
         givenName: plan.givenName,
       });
@@ -812,8 +792,7 @@ export async function applyLookupResolution(
   const id = await mintEntitySqlite(deps.store, {
     kind,
     name: plan.entityName,
-    nameLang:
-      deps.projectLang && !isLatinSurface(plan.entityName) ? deps.projectLang : undefined,
+    nameLang: deps.projectLang && !isLatinSurface(plan.entityName) ? deps.projectLang : undefined,
     romanizedName: plan.romanizedName,
     authorityIds: plan.idnos,
     authoritySource: plan.authoritySource,
@@ -931,8 +910,7 @@ export async function linkLocalEntityWithoutAuthority(
   const id = await mintEntitySqlite(deps.store, {
     kind,
     name: surface,
-    nameLang:
-      deps.projectLang && !isLatinSurface(surface) ? deps.projectLang : undefined,
+    nameLang: deps.projectLang && !isLatinSurface(surface) ? deps.projectLang : undefined,
     romanizedName,
     familyName: personSplit?.familyName,
     givenName: personSplit?.givenName,

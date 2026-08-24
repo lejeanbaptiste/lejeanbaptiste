@@ -63,7 +63,9 @@ const stripEntityWrapper = (tagElement: Element): Element => {
   return (newTag as Element | undefined) ?? tagElement;
 };
 
-const expandSelectionToElementBoundaries = (editor: NonNullable<ReturnType<typeof getWriter>>['editor']): boolean => {
+const expandSelectionToElementBoundaries = (
+  editor: NonNullable<ReturnType<typeof getWriter>>['editor'],
+): boolean => {
   if (!editor) return false;
   const rng = getSelectionRange(editor);
 
@@ -221,7 +223,8 @@ export const resolveInsertAction = async (
 
 const insertEmptyTagAtCaret = (tagName: string): ApplyTagResult => {
   const writer = getWriter();
-  if (!writer?.editor || !writer.schemaManager) return { applied: false, error: 'Editor not ready' };
+  if (!writer?.editor || !writer.schemaManager)
+    return { applied: false, error: 'Editor not ready' };
 
   const id = writer.getUniqueId('dom_');
   const editorEl = writer.schemaManager.isTagBlockLevel(tagName) ? 'div' : 'span';
@@ -240,7 +243,8 @@ const insertEmptyTagAtCaret = (tagName: string): ApplyTagResult => {
 export const applyInsertTag = async (tagName: string): Promise<ApplyTagResult> => {
   const writer = getWriter();
   const ctx = getEditorTagContext();
-  if (!writer?.editor || !writer.tagger || !ctx) return { applied: false, error: 'Editor not ready' };
+  if (!writer?.editor || !writer.tagger || !ctx)
+    return { applied: false, error: 'Editor not ready' };
 
   const { trySplitAtCaretForInsert, splitParagraphAtCaret, findParagraphAncestor } =
     await import('./tagInsert');
@@ -270,7 +274,8 @@ export const applyInsertTag = async (tagName: string): Promise<ApplyTagResult> =
     }
 
     if (action === 'after') {
-      const targetElement = (getEditorTagContext() ?? ctx).tagElement ?? (getEditorTagContext() ?? ctx).element;
+      const targetElement =
+        (getEditorTagContext() ?? ctx).tagElement ?? (getEditorTagContext() ?? ctx).element;
       const tagId = targetElement?.getAttribute('id');
       if (!tagId) return { applied: false, error: `Cannot insert <${tagName}> here.` };
       writer.tagger.addStructureTag({

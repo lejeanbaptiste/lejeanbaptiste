@@ -74,10 +74,7 @@ const GLOBAL_EXCLUDE = ['Q4167410', 'Q13442814'];
 const SPARQL_ENDPOINT = 'https://query.wikidata.org/sparql';
 const SPARQL_BATCH_SIZE = 40;
 
-export type WikidataFetchFn = (
-  url: string,
-  init?: RequestInit,
-) => Promise<Response>;
+export type WikidataFetchFn = (url: string, init?: RequestInit) => Promise<Response>;
 
 interface SparqlBinding {
   item?: { value?: string };

@@ -166,7 +166,11 @@ export const TimeMachineDialog = ({ onClose, open }: TimeMachineDialogProps) => 
       preRestoreLog = '';
     }
 
-    await api.restoreTimeMachineSnapshotToProject(centralFolder!, CENTRAL_SNAPSHOT_NAME, snapshotPath);
+    await api.restoreTimeMachineSnapshotToProject(
+      centralFolder!,
+      CENTRAL_SNAPSHOT_NAME,
+      snapshotPath,
+    );
 
     if (preRestoreLog.trim()) {
       let restoredLog = '';

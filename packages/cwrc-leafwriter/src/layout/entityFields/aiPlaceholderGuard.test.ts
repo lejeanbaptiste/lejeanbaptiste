@@ -16,8 +16,7 @@ describe('normalizeAiPlaceholders', () => {
 
 describe('collectPlaceholderInventory', () => {
   test('counts holding/as/entity/date/opaque tokens', () => {
-    const text =
-      '{{date:0}}以{{holding:o1}}{{entity:p1}}為{{as:opaque:0}}，{{entity:p1}}';
+    const text = '{{date:0}}以{{holding:o1}}{{entity:p1}}為{{as:opaque:0}}，{{entity:p1}}';
     const inv = collectPlaceholderInventory(text);
     expect(inv.get('{{date:0}}')).toBe(1);
     expect(inv.get('{{holding:o1}}')).toBe(1);

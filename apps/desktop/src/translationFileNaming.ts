@@ -14,9 +14,7 @@ export interface ParsedTranslationFilePath {
   lang: string;
 }
 
-export const parseTranslationFilePath = (
-  filePath: string,
-): ParsedTranslationFilePath | null => {
+export const parseTranslationFilePath = (filePath: string): ParsedTranslationFilePath | null => {
   const fileName = path.basename(filePath);
   const match = fileName.match(TRANSLATION_SUFFIX_PATTERN);
   if (!match) return null;

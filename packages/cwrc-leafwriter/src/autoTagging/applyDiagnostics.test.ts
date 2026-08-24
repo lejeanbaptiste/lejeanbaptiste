@@ -15,16 +15,20 @@ describe('explainAnchorFailure', () => {
     const doc = parse(
       `<TEI xmlns="http://www.tei-c.org/ns/1.0"><text><body><p>義熙八年</p></body></text></TEI>`,
     );
-    const reason = explainAnchorFailure(doc, {
-      documentId: '',
-      xpath: '/TEI/text/body/p[9]/text()[1]',
-      offset: 0,
-      surface: '義熙八年',
-      occurrence: 1,
-      contextBefore: '',
-      contextAfter: '',
-      nodeHash: 'x',
-    }, 'ignore');
+    const reason = explainAnchorFailure(
+      doc,
+      {
+        documentId: '',
+        xpath: '/TEI/text/body/p[9]/text()[1]',
+        offset: 0,
+        surface: '義熙八年',
+        occurrence: 1,
+        contextBefore: '',
+        contextAfter: '',
+        nodeHash: 'x',
+      },
+      'ignore',
+    );
     expect(reason).toContain('XPath not found');
   });
 
@@ -32,7 +36,14 @@ describe('explainAnchorFailure', () => {
     const doc = parse(
       `<TEI xmlns="http://www.tei-c.org/ns/1.0"><text><body><p>義熙九年</p></body></text></TEI>`,
     );
-    const anchor = createAnchor('doc', doc, doc.getElementsByTagName('p')[0]!.firstChild as Text, 0, 4, 'ignore');
+    const anchor = createAnchor(
+      'doc',
+      doc,
+      doc.getElementsByTagName('p')[0]!.firstChild as Text,
+      0,
+      4,
+      'ignore',
+    );
     anchor.surface = '義熙八年';
     anchor.nodeHash = 'stale-hash';
     const reason = explainAnchorFailure(doc, anchor, 'ignore');

@@ -79,5 +79,7 @@ export function validatePersonWrappers(doc: Document): PersonWrapperValidation {
     errors.push(...result.errors.map((error) => `${error} (${wrapper.textContent?.trim() ?? ''})`));
     pending += result.pending ?? 0;
   }
-  return pending > 0 ? { valid: errors.length === 0, errors, pending } : { valid: errors.length === 0, errors };
+  return pending > 0
+    ? { valid: errors.length === 0, errors, pending }
+    : { valid: errors.length === 0, errors };
 }

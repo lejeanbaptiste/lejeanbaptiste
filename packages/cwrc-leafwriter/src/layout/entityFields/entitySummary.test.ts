@@ -68,9 +68,7 @@ describe('summaryFromSqlitePanel', () => {
         { text: '晉書', language: 'zh-Hant', nameType: 'primary', status: 'active' },
         { text: 'Old gloss', language: 'fr', nameType: 'translation', status: 'active' },
       ],
-      translations: [
-        { text: 'Livre des Jin', language: 'fr', status: 'active' },
-      ],
+      translations: [{ text: 'Livre des Jin', language: 'fr', status: 'active' }],
     });
     expect(summary.translations).toEqual([{ lang: 'fr', text: 'Livre des Jin' }]);
     expect(summary.primaryName).toBe('晉書');

@@ -89,7 +89,8 @@ export const resolveTextHitInXml = (
     }
   };
 
-  const xpathForStack = () => `/${stack.map((entry) => `${entry.name}[${entry.index + 1}]`).join('/')}`;
+  const xpathForStack = () =>
+    `/${stack.map((entry) => `${entry.name}[${entry.index + 1}]`).join('/')}`;
 
   const parentPathKey = () =>
     stack.length === 0 ? '' : stack.map((entry) => `${entry.name}[${entry.index + 1}]`).join('/');
@@ -171,7 +172,10 @@ export const resolveTextHitInXml = (
     }
 
     if (inner.startsWith('/')) {
-      const nameMatch = inner.slice(1).trim().match(/^([\w:-]+)/);
+      const nameMatch = inner
+        .slice(1)
+        .trim()
+        .match(/^([\w:-]+)/);
       if (nameMatch) popTag(nameMatch[1]);
       i = tagEnd + 1;
       continue;

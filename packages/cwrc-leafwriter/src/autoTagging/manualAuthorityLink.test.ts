@@ -1,4 +1,7 @@
-import { resolveManualAuthorityLink, resolveWikidataQidFromWikipediaUrl } from './manualAuthorityLink';
+import {
+  resolveManualAuthorityLink,
+  resolveWikidataQidFromWikipediaUrl,
+} from './manualAuthorityLink';
 
 describe('manualAuthorityLink', () => {
   it('accepts a Wikidata item URL', async () => {
@@ -24,7 +27,9 @@ describe('manualAuthorityLink', () => {
       type: 'GND',
       value: 'https://d-nb.info/gnd/118530471',
     });
-    expect(await resolveManualAuthorityLink('https://www.geonames.org/1816670/beijing.html')).toEqual({
+    expect(
+      await resolveManualAuthorityLink('https://www.geonames.org/1816670/beijing.html'),
+    ).toEqual({
       type: 'Geonames',
       value: 'https://www.geonames.org/1816670/beijing.html',
     });
@@ -48,15 +53,25 @@ describe('manualAuthorityLink', () => {
     );
     expect(qid).toBe('Q505183');
 
-    const id = await resolveManualAuthorityLink('https://fr.wikipedia.org/wiki/Yu_le_Grand', fetchImpl);
+    const id = await resolveManualAuthorityLink(
+      'https://fr.wikipedia.org/wiki/Yu_le_Grand',
+      fetchImpl,
+    );
     expect(id).toEqual({ type: 'Wikidata', value: 'https://www.wikidata.org/wiki/Q505183' });
   });
 
   it('returns null when the Wikipedia page has no linked Wikidata item', async () => {
-    const fetchImpl = jest.fn(async () =>
-      ({ ok: true, json: async () => ({ query: { pages: { '1': {} } } }) }) as unknown as Response,
+    const fetchImpl = jest.fn(
+      async () =>
+        ({
+          ok: true,
+          json: async () => ({ query: { pages: { '1': {} } } }),
+        }) as unknown as Response,
     );
-    const id = await resolveManualAuthorityLink('https://en.wikipedia.org/wiki/Nonexistent', fetchImpl);
+    const id = await resolveManualAuthorityLink(
+      'https://en.wikipedia.org/wiki/Nonexistent',
+      fetchImpl,
+    );
     expect(id).toBeNull();
   });
 

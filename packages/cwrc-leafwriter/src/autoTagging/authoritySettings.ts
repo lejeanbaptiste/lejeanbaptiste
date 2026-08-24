@@ -1,14 +1,6 @@
-import {
-  persistedPacksFromUi,
-  uiPacksFromPersisted,
-  type AuthorityPackId,
-} from './packPaths';
+import { persistedPacksFromUi, uiPacksFromPersisted, type AuthorityPackId } from './packPaths';
 import type { DateFilterMode } from './packLoader';
-import {
-  DEFAULT_UNTAGGABLE_TYPES,
-  normalizeNameType,
-  type NameTypeId,
-} from './nameTypes';
+import { DEFAULT_UNTAGGABLE_TYPES, normalizeNameType, type NameTypeId } from './nameTypes';
 import {
   excludedFromPhase1Types,
   resolveNameTypeTaggingPolicy,
@@ -143,10 +135,7 @@ function yearRangeFromAuthoritySettings(
   // Only treat stored years as "last user choice" when a date filter was
   // saved with them — otherwise packs-only project JSON must not pin the
   // slider to an old Eastern Han default.
-  if (
-    settings?.dateFilter &&
-    (settings.yearStart != null || settings.yearEnd != null)
-  ) {
+  if (settings?.dateFilter && (settings.yearStart != null || settings.yearEnd != null)) {
     const yearStart = settings.yearStart ?? DEFAULT_AUTHORITY_YEAR_RANGE[0];
     const yearEnd = settings.yearEnd ?? DEFAULT_AUTHORITY_YEAR_RANGE[1];
     return [Math.min(yearStart, yearEnd), Math.max(yearStart, yearEnd)];
@@ -212,8 +201,7 @@ export function readPersistedAuthoritySettings(): AutoTaggingAuthoritySettings |
     yearEnd: raw.yearEnd,
     excludedNameTypes: raw.excludedNameTypes,
     nameTypeTaggingPolicy: raw.nameTypeTaggingPolicy as
-      | Record<string, NameTypeTaggingBucket>
-      | undefined,
+      Record<string, NameTypeTaggingBucket> | undefined,
     customNameTypes: raw.customNameTypes as CustomNameType[] | undefined,
     artMinCodePoints: raw.artMinCodePoints,
     yearFilterEnabled: raw.yearFilterEnabled,

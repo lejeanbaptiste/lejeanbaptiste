@@ -1,10 +1,7 @@
 import { CalendarDialog } from '../../dialogs/calendar';
 import { DateCuratorPanel } from '../../autoTagging/DateCuratorPanel';
 import { DateTagReviewPanel } from '../../autoTagging/DateTagReviewPanel';
-import {
-  isDateCuratorBatch,
-  isDateTagOnlyBatch,
-} from '../../autoTagging/dateCurator';
+import { isDateCuratorBatch, isDateTagOnlyBatch } from '../../autoTagging/dateCurator';
 import { isCjkDatesEnabled } from '../registry';
 import { isCjkDatesPythonAvailable } from '../cjkDatesPython';
 import type { PluginRegisterContext } from '../registerContext';
@@ -56,12 +53,16 @@ export function registerCjkDatesUi(context: PluginRegisterContext): void {
   });
 
   context.onEnable = () => {
-    window.dispatchEvent(new CustomEvent('ljb:plugin-enabled', { detail: { id: context.pluginId } }));
+    window.dispatchEvent(
+      new CustomEvent('ljb:plugin-enabled', { detail: { id: context.pluginId } }),
+    );
     window.dispatchEvent(new CustomEvent('desktop:calendar-workflow-changed'));
   };
 
   context.onDisable = () => {
-    window.dispatchEvent(new CustomEvent('ljb:plugin-disabled', { detail: { id: context.pluginId } }));
+    window.dispatchEvent(
+      new CustomEvent('ljb:plugin-disabled', { detail: { id: context.pluginId } }),
+    );
     window.dispatchEvent(new CustomEvent('desktop:calendar-workflow-changed'));
   };
 }

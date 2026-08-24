@@ -22,7 +22,7 @@ export const theme = createTheme({
   },
   typography: {
     fontFamily: 'Lato, Helvetica, Arial, sans-serif',
-    fontSize: 12
+    fontSize: 12,
   },
   components: {
     MuiCssBaseline: {

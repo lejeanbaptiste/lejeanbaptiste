@@ -146,10 +146,7 @@ async function fetchWikidataNamesBatchUncached(
   return out;
 }
 
-async function fetchNamesAndLabels(
-  qids: string[],
-  fetchImpl: WikidataFetchFn,
-): Promise<void> {
+async function fetchNamesAndLabels(qids: string[], fetchImpl: WikidataFetchFn): Promise<void> {
   const pending = qids.filter(
     (qid) => !wikidataNamesCache.has(qid) || !wikidataLabelsCache.has(qid),
   );
@@ -339,14 +336,18 @@ export async function fetchWikidataGivenFamilyNames(
     ),
   ];
   const labelsByRefId =
-    allRefIds.length > 0 ? await wikidataLabelsByQid(allRefIds, fetchImpl) : new Map<string, Record<string, string>>();
+    allRefIds.length > 0
+      ? await wikidataLabelsByQid(allRefIds, fetchImpl)
+      : new Map<string, Record<string, string>>();
 
   for (const qid of pending) {
     const refs = refIdsByQid.get(qid) ?? {};
     const givenLabels = refs.given ? (labelsByRefId.get(refs.given) ?? {}) : {};
     const familyLabels = refs.family ? (labelsByRefId.get(refs.family) ?? {}) : {};
-    const givenName = preferredLabelForLang(givenLabels, projectLang) ?? Object.values(givenLabels)[0];
-    const familyName = preferredLabelForLang(familyLabels, projectLang) ?? Object.values(familyLabels)[0];
+    const givenName =
+      preferredLabelForLang(givenLabels, projectLang) ?? Object.values(givenLabels)[0];
+    const familyName =
+      preferredLabelForLang(familyLabels, projectLang) ?? Object.values(familyLabels)[0];
     wikidataGivenFamilyCache.set(qid, { givenName, familyName });
   }
 
@@ -356,11 +357,7 @@ export async function fetchWikidataGivenFamilyNames(
 export function extractWikidataIdsFromText(text: string | undefined): string[] {
   if (!text) return [];
   const ids = new Set<string>();
-  const patterns = [
-    /wikidata\.org\/(?:wiki|entity)\/(Q\d+)/gi,
-    /WKP\|(Q\d+)/gi,
-    /\b(Q\d{3,})\b/g,
-  ];
+  const patterns = [/wikidata\.org\/(?:wiki|entity)\/(Q\d+)/gi, /WKP\|(Q\d+)/gi, /\b(Q\d{3,})\b/g];
   for (const pattern of patterns) {
     for (const match of text.matchAll(pattern)) {
       if (match[1]) ids.add(match[1].toUpperCase());

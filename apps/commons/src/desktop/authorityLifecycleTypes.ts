@@ -42,11 +42,7 @@ export interface AuthorityLifecycleConfig {
   lastError?: string;
 }
 
-export type AuthorityLifecyclePhase =
-  | 'downloading'
-  | 'extracting'
-  | 'compiling'
-  | 'idle';
+export type AuthorityLifecyclePhase = 'downloading' | 'extracting' | 'compiling' | 'idle';
 
 export interface AuthorityLifecycleProgress {
   phase: AuthorityLifecyclePhase;

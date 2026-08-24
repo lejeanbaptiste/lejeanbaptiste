@@ -202,7 +202,6 @@ placeholders are restored by the more specific rules below. */
   color: color-mix(in srgb, var(--work) 75%, black) !important;
 }
 
-
 .link,
 .ui-dialog-content .link {
   border: 1px solid color-mix(in srgb, var(--link) 50%, white);
@@ -623,7 +622,8 @@ body.hideBreaks *[_tag='pb'] {
    and any structural wrapper that contains nested block tags, to avoid breaking
    TinyMCE's scroll-width calculation. */
 body.showTagBubble:not(.showTags) span[_tag].tag-cursor-active,
-body.showTagBubble:not(.showTags) div[_tag]:not(body > div[_tag]):not(:has(> div[_tag])).tag-cursor-active {
+body.showTagBubble:not(.showTags)
+  div[_tag]:not(body > div[_tag]):not(:has(> div[_tag])).tag-cursor-active {
   position: relative;
 }
 
@@ -647,7 +647,8 @@ body.showTagBubble:not(.showTags) span[_tag].tag-cursor-active::after {
   text-indent: 0;
 }
 
-body.showTagBubble:not(.showTags) div[_tag]:not(body > div[_tag]):not(:has(> div[_tag])).tag-cursor-active::after {
+body.showTagBubble:not(.showTags)
+  div[_tag]:not(body > div[_tag]):not(:has(> div[_tag])).tag-cursor-active::after {
   content: attr(_tag);
   position: absolute;
   bottom: calc(100% + 4px);
@@ -675,7 +676,8 @@ body.showTagBubble:not(.showTags) div[_tag]:not(body > div[_tag]):not(:has(> div
     background-color: rgba(130, 170, 255, 0.12);
   }
   body.showTagBubble:not(.showTags) span[_tag].tag-cursor-active::after,
-  body.showTagBubble:not(.showTags) div[_tag]:not(body > div[_tag]):not(:has(> div[_tag])).tag-cursor-active::after {
+  body.showTagBubble:not(.showTags)
+    div[_tag]:not(body > div[_tag]):not(:has(> div[_tag])).tag-cursor-active::after {
     background: rgba(100, 150, 240, 0.88);
   }
 }

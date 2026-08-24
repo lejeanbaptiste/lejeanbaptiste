@@ -120,12 +120,8 @@ export const AttributesPanel = ({ visible = true }: { visible?: boolean }) => {
   const syncFrameRef = useRef<number | null>(null);
   const forceScheduledSyncRef = useRef(false);
   const lastSyncedElementRef = useRef<Element | null>(null);
-  const schemaAttributeCacheRef = useRef(
-    new Map<string, Promise<SchemaAttributeDetail[]>>(),
-  );
-  const matchCountCacheRef = useRef(
-    new Map<string, { keyed: number; unkeyed: number }>(),
-  );
+  const schemaAttributeCacheRef = useRef(new Map<string, Promise<SchemaAttributeDetail[]>>());
+  const matchCountCacheRef = useRef(new Map<string, { keyed: number; unkeyed: number }>());
   const schemaAttributesRef = useRef(schemaAttributes);
   const valuesRef = useRef(values);
   const tagElementRef = useRef(tagElement);
@@ -182,21 +178,18 @@ export const AttributesPanel = ({ visible = true }: { visible?: boolean }) => {
     return request;
   }, []);
 
-  const loadMatchCounts = useCallback(
-    (element: Element, attrs: Record<string, string>) => {
-      const matchKey = [
-        element.getAttribute('_tag') ?? '',
-        element.textContent?.trim() ?? '',
-        attrs.key ?? '',
-      ].join('\0');
-      const cached = matchCountCacheRef.current.get(matchKey);
-      if (cached) return cached;
-      const counts = countExactTagMatches(element, attrs.key);
-      matchCountCacheRef.current.set(matchKey, counts);
-      return counts;
-    },
-    [],
-  );
+  const loadMatchCounts = useCallback((element: Element, attrs: Record<string, string>) => {
+    const matchKey = [
+      element.getAttribute('_tag') ?? '',
+      element.textContent?.trim() ?? '',
+      attrs.key ?? '',
+    ].join('\0');
+    const cached = matchCountCacheRef.current.get(matchKey);
+    if (cached) return cached;
+    const counts = countExactTagMatches(element, attrs.key);
+    matchCountCacheRef.current.set(matchKey, counts);
+    return counts;
+  }, []);
 
   const refreshMatchCounts = useCallback(
     (element: Element, attrs = readTagAttributes(element)) => {
@@ -208,56 +201,59 @@ export const AttributesPanel = ({ visible = true }: { visible?: boolean }) => {
     [loadMatchCounts],
   );
 
-  const syncFromEditor = useCallback(async (force = false) => {
-    if (!visible || !isVisualEditorActive()) {
-      clearEditorSelection();
-      return;
-    }
-
-    const ctx = getEditorTagContext();
-    const element = ctx?.tagElement ?? ctx?.element ?? null;
-    const name = element?.getAttribute('_tag') ?? '';
-
-    if (!element || !name) {
-      if (isFocusInAttributesPanel() && tagElementRef.current?.isConnected) {
+  const syncFromEditor = useCallback(
+    async (force = false) => {
+      if (!visible || !isVisualEditorActive()) {
+        clearEditorSelection();
         return;
       }
-      clearEditorSelection();
-      return;
-    }
 
-    const elementChanged = element !== lastSyncedElementRef.current;
-    if (!force && !elementChanged) return;
+      const ctx = getEditorTagContext();
+      const element = ctx?.tagElement ?? ctx?.element ?? null;
+      const name = element?.getAttribute('_tag') ?? '';
 
-    const generation = ++syncGenerationRef.current;
-    lastSyncedElementRef.current = element;
-    tagElementRef.current = element;
-    setTagElement(element);
-    setTagName(name);
+      if (!element || !name) {
+        if (isFocusInAttributesPanel() && tagElementRef.current?.isConnected) {
+          return;
+        }
+        clearEditorSelection();
+        return;
+      }
 
-    const attrs = readTagAttributes(element);
-    if (elementChanged || !sameAttributeValues(valuesRef.current, attrs)) {
-      valuesRef.current = attrs;
-      setValues(attrs);
-    }
+      const elementChanged = element !== lastSyncedElementRef.current;
+      if (!force && !elementChanged) return;
 
-    const counts = loadMatchCounts(element, attrs);
-    setPropagatableMatchCount(counts.unkeyed);
-    setKeyedMatchCount(counts.keyed);
+      const generation = ++syncGenerationRef.current;
+      lastSyncedElementRef.current = element;
+      tagElementRef.current = element;
+      setTagElement(element);
+      setTagName(name);
 
-    if (!elementChanged && schemaAttributesRef.current.length > 0) return;
+      const attrs = readTagAttributes(element);
+      if (elementChanged || !sameAttributeValues(valuesRef.current, attrs)) {
+        valuesRef.current = attrs;
+        setValues(attrs);
+      }
 
-    try {
-      const schemaAttrs = await loadSchemaAttributes(element);
-      if (generation !== syncGenerationRef.current) return;
-      schemaAttributesRef.current = schemaAttrs;
-      setSchemaAttributes(schemaAttrs);
-    } catch {
-      if (generation !== syncGenerationRef.current) return;
-      schemaAttributesRef.current = [];
-      setSchemaAttributes([]);
-    }
-  }, [clearEditorSelection, loadMatchCounts, loadSchemaAttributes, visible]);
+      const counts = loadMatchCounts(element, attrs);
+      setPropagatableMatchCount(counts.unkeyed);
+      setKeyedMatchCount(counts.keyed);
+
+      if (!elementChanged && schemaAttributesRef.current.length > 0) return;
+
+      try {
+        const schemaAttrs = await loadSchemaAttributes(element);
+        if (generation !== syncGenerationRef.current) return;
+        schemaAttributesRef.current = schemaAttrs;
+        setSchemaAttributes(schemaAttrs);
+      } catch {
+        if (generation !== syncGenerationRef.current) return;
+        schemaAttributesRef.current = [];
+        setSchemaAttributes([]);
+      }
+    },
+    [clearEditorSelection, loadMatchCounts, loadSchemaAttributes, visible],
+  );
 
   const scheduleEditorSync = useCallback(
     (force = false) => {
@@ -503,10 +499,7 @@ export const AttributesPanel = ({ visible = true }: { visible?: boolean }) => {
     try {
       const store = entityStoreFromDesktop();
       if (!store) return;
-      if (
-        !(await store.hasSqliteDatabase()) ||
-        !window.electronAPI?.entitySqliteUpdateNames
-      ) {
+      if (!(await store.hasSqliteDatabase()) || !window.electronAPI?.entitySqliteUpdateNames) {
         throw new Error(SQLITE_REQUIRED_PANEL_MESSAGE);
       }
       const changed = await store.sqliteUpdateNames({
@@ -662,7 +655,10 @@ export const AttributesPanel = ({ visible = true }: { visible?: boolean }) => {
 
     const nextMatches = refreshWalkMatches();
     if (nextMatches.length === 0) {
-      notifyViaSnackbar({ message: t('LWC.desktop.tagging.walk_complete'), options: { variant: 'success' } });
+      notifyViaSnackbar({
+        message: t('LWC.desktop.tagging.walk_complete'),
+        options: { variant: 'success' },
+      });
       stopWalk();
       return;
     }

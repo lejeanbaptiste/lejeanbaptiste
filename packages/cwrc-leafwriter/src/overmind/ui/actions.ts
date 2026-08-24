@@ -45,7 +45,9 @@ export const onInitializeOvermind = ({ state, actions, effects }: Context, _over
   // Default true (only false if explicitly saved as false)
   state.editor.showTagBubble = showTagBubble !== false;
 
-  const treeSyncMode = effects.editor.api.getFromLocalStorage<string>(MARKUP_TREE_SYNC_MODE_STORAGE_KEY);
+  const treeSyncMode = effects.editor.api.getFromLocalStorage<string>(
+    MARKUP_TREE_SYNC_MODE_STORAGE_KEY,
+  );
   if (treeSyncMode === 'live' || treeSyncMode === 'manual' || treeSyncMode === 'off') {
     state.ui.markupPanel.syncMode = treeSyncMode;
   }
@@ -80,9 +82,7 @@ export const setThemeAppearance = ({ state, actions, effects }: Context, value: 
     void electronAPI.setNativeThemeSource(value).then(async () => {
       if (value === 'system') {
         const osDark = await electronAPI.getShouldUseDarkColors?.();
-        applyResolvedDarkMode(
-          osDark ?? window.matchMedia('(prefers-color-scheme: dark)').matches,
-        );
+        applyResolvedDarkMode(osDark ?? window.matchMedia('(prefers-color-scheme: dark)').matches);
         return;
       }
       applyResolvedDarkMode(value === 'dark');

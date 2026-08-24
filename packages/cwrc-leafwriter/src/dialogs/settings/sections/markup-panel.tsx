@@ -26,7 +26,9 @@ export const MarkupPanel = () => {
           <MenuItem value="manual">{t('LW.settings.markupPanel.On demand')}</MenuItem>
           <MenuItem value="off">{t('LW.settings.markupPanel.Off')}</MenuItem>
         </Select>
-        <FormHelperText>{t('LW.settings.markupPanel.Tree synchronization description')}</FormHelperText>
+        <FormHelperText>
+          {t('LW.settings.markupPanel.Tree synchronization description')}
+        </FormHelperText>
       </FormControl>
       <Toggler
         description={`${t('LW.settings.markupPanel.message.Text Nodes must be displayed for better accuracy')} (${t('LW.commons.experimental')})`}

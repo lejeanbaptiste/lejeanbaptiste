@@ -21,7 +21,11 @@ export {
   refreshPluginRegistry,
   setPluginRegistrySnapshot,
 } from './registry';
-export { dispatchPluginToolAction, isKnownPluginToolAction, registerPluginToolAction } from './toolActions';
+export {
+  dispatchPluginToolAction,
+  isKnownPluginToolAction,
+  registerPluginToolAction,
+} from './toolActions';
 export {
   applyPersonNameSplitToEntity,
   suggestPersonNameSplit,

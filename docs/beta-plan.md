@@ -34,8 +34,8 @@ I am not adding new features for the beta unless they are needed to make an exis
 ### Release hygiene
 
 - [x] Run the entity database/sync scenarios in
-  [entity-sync-manual-test-plan.md](entity-sync-manual-test-plan.md) against
-  scratch project folders before declaring the first beta build ready.
+      [entity-sync-manual-test-plan.md](entity-sync-manual-test-plan.md) against
+      scratch project folders before declaring the first beta build ready.
 - [x] Complete a packaged regression pass for the first beta (see below).
 - Settle versioning and release commands.
 - Start the changelog from the next release.

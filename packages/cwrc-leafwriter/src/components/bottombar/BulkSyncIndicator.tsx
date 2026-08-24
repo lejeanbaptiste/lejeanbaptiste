@@ -1,10 +1,7 @@
 import CloseIcon from '@mui/icons-material/Close';
 import { IconButton, LinearProgress, Stack, Tooltip, Typography } from '@mui/material';
 import { useSyncExternalStore } from 'react';
-import {
-  getBulkSyncProgress,
-  subscribeBulkSyncProgress,
-} from '../../autoTagging/bulkSyncProgress';
+import { getBulkSyncProgress, subscribeBulkSyncProgress } from '../../autoTagging/bulkSyncProgress';
 
 /** Compact bottom-bar progress for the background project↔central bulk sync. */
 export const BulkSyncIndicator = () => {
@@ -24,7 +21,12 @@ export const BulkSyncIndicator = () => {
       />
       {progress.cancel && (
         <Tooltip title="Cancel synchronisation">
-          <IconButton aria-label="Cancel synchronisation" onClick={progress.cancel} size="small" sx={{ color: 'text.disabled', p: 0.125 }}>
+          <IconButton
+            aria-label="Cancel synchronisation"
+            onClick={progress.cancel}
+            size="small"
+            sx={{ color: 'text.disabled', p: 0.125 }}
+          >
             <CloseIcon sx={{ fontSize: 14 }} />
           </IconButton>
         </Tooltip>

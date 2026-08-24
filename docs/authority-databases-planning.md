@@ -4,29 +4,29 @@
 
 ## 1. What we have on disk
 
-| File | Format | Records | Contents |
-|---|---|---|---|
-| `cbdb_20260627.sqlite3` (550 MB) | SQLite | 659,593 persons | China Biographical Database, full relational dump |
-| `cbdb_20260627.json` | manifest | — | sha256 + HuggingFace source URL (`datasets/cbdb/cbdb-sqlite`) |
-| `Buddhist_Studies_Person_Authority.xml` (49 MB) | TEI listPerson | 49,190 persons | DILA person authority |
-| `Buddhist_Studies_Place_Authority.xml` (30 MB) | TEI listPlace | 117,408 places | DILA place authority |
-| `districts.xml` | TEI listPlace | — | DILA administrative-district hierarchy (countries → districts, `PLA…` ids referenced by place records' `<location><place key>`) |
-| `all_together.csv` | CSV | 74,200 rows | Markus-style flat dictionary (persName / officeName / placeName / ntName / title) — already consumed by `autoTagging/authority.ts` |
+| File                                            | Format         | Records         | Contents                                                                                                                           |
+| ----------------------------------------------- | -------------- | --------------- | ---------------------------------------------------------------------------------------------------------------------------------- |
+| `cbdb_20260627.sqlite3` (550 MB)                | SQLite         | 659,593 persons | China Biographical Database, full relational dump                                                                                  |
+| `cbdb_20260627.json`                            | manifest       | —               | sha256 + HuggingFace source URL (`datasets/cbdb/cbdb-sqlite`)                                                                      |
+| `Buddhist_Studies_Person_Authority.xml` (49 MB) | TEI listPerson | 49,190 persons  | DILA person authority                                                                                                              |
+| `Buddhist_Studies_Place_Authority.xml` (30 MB)  | TEI listPlace  | 117,408 places  | DILA place authority                                                                                                               |
+| `districts.xml`                                 | TEI listPlace  | —               | DILA administrative-district hierarchy (countries → districts, `PLA…` ids referenced by place records' `<location><place key>`)    |
+| `all_together.csv`                              | CSV            | 74,200 rows     | Markus-style flat dictionary (persName / officeName / placeName / ntName / title) — already consumed by `autoTagging/authority.ts` |
 
 ## 2. CBDB: relevant columns
 
 ### Persons — `BIOG_MAIN` (659,593 rows)
 
-| Column | Use |
-|---|---|
-| `c_personid` | authority id (`cbdb:<id>`) |
-| `c_name_chn` | primary match string (漢字) |
-| `c_name` | pinyin — display only, not a match string |
-| `c_birthyear`, `c_deathyear` | dates for clue + filtering (only ~60k have birthyear) |
-| `c_index_year` | CBDB's "best single year" (307k coverage) — fallback for filtering |
-| `c_fl_earliest_year`, `c_fl_latest_year` | floruit fallback |
-| `c_dy` → `DYNASTIES` | dynasty code; **648k/659k coverage** — the workhorse for both the clue and the period filter |
-| `c_female` | optional clue detail |
+| Column                                   | Use                                                                                          |
+| ---------------------------------------- | -------------------------------------------------------------------------------------------- |
+| `c_personid`                             | authority id (`cbdb:<id>`)                                                                   |
+| `c_name_chn`                             | primary match string (漢字)                                                                  |
+| `c_name`                                 | pinyin — display only, not a match string                                                    |
+| `c_birthyear`, `c_deathyear`             | dates for clue + filtering (only ~60k have birthyear)                                        |
+| `c_index_year`                           | CBDB's "best single year" (307k coverage) — fallback for filtering                           |
+| `c_fl_earliest_year`, `c_fl_latest_year` | floruit fallback                                                                             |
+| `c_dy` → `DYNASTIES`                     | dynasty code; **648k/659k coverage** — the workhorse for both the clue and the period filter |
+| `c_female`                               | optional clue detail                                                                         |
 
 `DYNASTIES` gives `c_dynasty_chn` (宋), `c_dynasty` (Song), and `c_start`/`c_end`
 year ranges — this is what powers a Markus-style "dynasties selection" without
@@ -94,23 +94,26 @@ One slider (years, with dynasty presets as labeled stops, like Markus's
 1. birth–death if present;
 2. else fl. earliest–latest / index_year ± a window (say ±30);
 3. else the dynasty's `c_start`–`c_end`;
-4. else (no data at all): configurable — default *include*, with a "hide undated" toggle.
+4. else (no data at all): configurable — default _include_, with a "hide undated" toggle.
 
 Dynasty presets come straight from `DYNASTIES` (id, 漢字, English, start, end, sort).
 
 ## 6. Infrastructure
 
 ### Language gating
+
 - Project language becomes a fixed-code picker (BCP-47: `zh-Hant`, `zh-Hans`, `en`, `fr`, …), not free text.
 - CBDB/DILA sources are offered only when a project (or translation pane language) is Chinese.
 
 ### Fetch-on-demand
+
 - When Chinese is selected, offer "Download authority databases". Fetch:
   - CBDB: HuggingFace URL already recorded in `cbdb_20260627.json`; verify sha256; unzip.
   - DILA: GitHub (`DILA-edu/Authority-Databases`) — person, place, districts XML.
 - Store under `databases/`; a source appears in the UI only if its file is present and passes checksum/parse.
 
 ### Compile step (important)
+
 Don't parse 550 MB SQLite / 49 MB XML at tagging time. On first download (or when
 the file's hash changes), compile each source into a compact normalized artifact —
 `AuthorityCandidate` records (see `autoTagging/authority.ts`), one NDJSON (or
@@ -124,7 +127,7 @@ seed matcher should handle it, but memory-profile the compiled dictionary; if ne
 the date filter can be applied at load time (before building the automaton) rather
 than per-match.
 
-Dedup by string: the automaton is built over *unique strings*, not candidates.
+Dedup by string: the automaton is built over _unique strings_, not candidates.
 At load time, fold the selected sources' search strings into one
 `Map<string, AuthorityCandidate[]>`; each string enters the automaton once and a
 hit fans out to all candidates that share it (王安石 the statesman and any
@@ -132,6 +135,7 @@ namesakes are one search, many suggestions). This also collapses the heavy
 cross-source overlap (DILA monks largely re-appear in CBDB).
 
 ### Update checking
+
 Each installed source keeps a small manifest (`source, version/date, sha256,
 upstream URL, installedAt` — CBDB's downloaded JSON already is one; write an
 equivalent for DILA). On a throttled schedule (e.g. at most weekly, on app
@@ -150,14 +154,16 @@ results, so the user decides when. Offline or API failure = silently skip the
 check.
 
 ### UI (authority mode)
+
 - Keep the list/authority distinction. Authority mode opens a Markus-style panel:
-  checkboxes for each *available* source × category (CBDB persons, CBDB places,
+  checkboxes for each _available_ source × category (CBDB persons, CBDB places,
   CBDB offices, DILA persons, DILA places, project CSV…), plus the date slider.
 - Multiple sources may propose the same string: keep both suggestions with a source
   badge; when a DILA record carries `idno type="CBDB"` matching a CBDB candidate,
   merge them into one suggestion listing both ids.
 
 ### Deferred / open questions
+
 - Wikipedia/VIAF/Wikidata: not a match source. Best fit is Phase 4b reconciliation —
   when minting an entity, use DILA's Wikidata idno (or a lookup service) to attach
   extra idnos. Design later.

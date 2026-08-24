@@ -90,10 +90,14 @@ const validateMovePaths = async (source: string, dest: string): Promise<void> =>
   await assertNotProjectFolder(normalizedDest);
 
   if (isPathInside(normalizedDest, normalizedSource)) {
-    throw new MoveEntityDbError('The destination cannot be inside the current entity database folder.');
+    throw new MoveEntityDbError(
+      'The destination cannot be inside the current entity database folder.',
+    );
   }
   if (isPathInside(normalizedSource, normalizedDest)) {
-    throw new MoveEntityDbError('The current entity database folder cannot be moved inside itself.');
+    throw new MoveEntityDbError(
+      'The current entity database folder cannot be moved inside itself.',
+    );
   }
 
   try {

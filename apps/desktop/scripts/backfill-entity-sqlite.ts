@@ -24,10 +24,7 @@ import { refreshCbdbConcordanceSqlite } from '../../../packages/cwrc-leafwriter/
 import { EntityStore } from '../../../packages/cwrc-leafwriter/src/autoTagging/entityStore';
 import type { AuthorityPackId } from '../../../packages/cwrc-leafwriter/src/autoTagging/packPaths';
 import { backfillEntitiesSqlite } from '../../../packages/cwrc-leafwriter/src/autoTagging/sqliteAuthorityBackfill';
-import {
-  lookupAuthorityPackRowsByIds,
-  readAuthorityPackFile,
-} from '../src/authorityPacks';
+import { lookupAuthorityPackRowsByIds, readAuthorityPackFile } from '../src/authorityPacks';
 import {
   applyEntitySqliteAuthorityBackfillPatch,
   applyEntitySqliteConcordance,
@@ -132,8 +129,7 @@ const main = async () => {
     centralFolder: root,
   });
 
-  const readPackFile = async (packId: AuthorityPackId) =>
-    readAuthorityPackFile(packsRoot, packId);
+  const readPackFile = async (packId: AuthorityPackId) => readAuthorityPackFile(packsRoot, packId);
 
   const lookupPackRowsByIds = async (packId: AuthorityPackId, authorityIds: string[]) =>
     lookupAuthorityPackRowsByIds(packsRoot, packId, authorityIds);
@@ -203,7 +199,7 @@ const main = async () => {
 };
 
 main().catch((error) => {
-  console.error(error instanceof Error ? error.stack ?? error.message : error);
+  console.error(error instanceof Error ? (error.stack ?? error.message) : error);
   try {
     closeEntitySqliteReadRepositories();
   } catch {

@@ -1,11 +1,4 @@
-import {
-  Box,
-  Checkbox,
-  Chip,
-  Paper,
-  Stack,
-  Typography,
-} from '@mui/material';
+import { Box, Checkbox, Chip, Paper, Stack, Typography } from '@mui/material';
 import { ColorSwatchPicker } from '@src/components/ColorSwatchPicker';
 import { leafwriterAtom } from '@src/jotai';
 import { useAppState } from '@src/overmind';
@@ -30,8 +23,7 @@ const emptyStats = (): TagUsageStats => ({
 });
 
 const isVisualEditorActive = (): boolean =>
-  Boolean(window.writer?.editor) &&
-  window.writer?.overmindState?.ui?.editorViewMode !== 'source';
+  Boolean(window.writer?.editor) && window.writer?.overmindState?.ui?.editorViewMode !== 'source';
 
 export const CssPanel = ({ visible = true }: { visible?: boolean }) => {
   const { t } = useTranslation();
@@ -228,9 +220,7 @@ export const CssPanel = ({ visible = true }: { visible?: boolean }) => {
                     minWidth: 0,
                     px: 0.75,
                     py: 0.5,
-                    ...(activeTagName === tagName
-                      ? { bgcolor: 'action.hover' }
-                      : undefined),
+                    ...(activeTagName === tagName ? { bgcolor: 'action.hover' } : undefined),
                   }}
                 >
                   <Chip

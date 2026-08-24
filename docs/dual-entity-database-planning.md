@@ -21,24 +21,24 @@ backbone.** Merges/deletes now append a durable, timestamped, db-scoped remap to
 checkout replays unapplied orders on open via a per-machine cursor
 (`applyOrders.ts`), idempotently. The path registry survives only as an
 eager-crawl optimization and its destructive prune is gone (`registerProject`
-never drops entries it can't `pathExists` — that prune *was* the Story A–F bug).
+never drops entries it can't `pathExists` — that prune _was_ the Story A–F bug).
 
 Shipped modules (all in `packages/cwrc-leafwriter/src/autoTagging/` unless noted):
 
-| Piece | Module |
-|---|---|
-| Per-entity `changed` timestamp (`<note type="ljb-changed" when>`) | `entities.ts` — `touchEntity`/`getEntityChanged`/`backfillEntityTimestamps` |
-| UUID minting both sides | `entities.ts` — `mintEntityId` |
-| `ljb-central` concordance rows | `concordance.ts` |
-| `userStableId` in `{entityDbFolder}/user-id.txt` | `userStableId.ts` |
-| Per-corpus-file PEDB stamp (`<idno type="ljb-project-database">`) | `corpusStamp.ts` |
-| Order log + cursor + compose/union | `entityOrders.ts`; replay in `apps/commons/.../entityDb/applyOrders.ts` |
-| Classified orphan sweep (genuine vs stray-file) | `orphanSweep.ts`; orchestrated in `entityDatabaseCheck.ts`; gentle prompt on open in `useEntityDatabaseLifecycle.ts` |
-| Field-level reconcile (union/fill/conflict) | `reconcile.ts` |
-| Link / Promote (authority-first) | `promote.ts` |
-| Bridge inbox (unlinked/broken/syncable/conflict) | `bridgeInbox.ts`; dialog `apps/commons/.../sidebar/BridgeInboxDialog.tsx` (Hub icon in the database toolbar) |
-| Central Time Machine tab | `TimeMachineDialog.tsx` — snapshots the central folder into its own `.ljb-time-machine` (roams with the folder); restore preserves the order log via `unionOrderLogs` |
-| Fork-merge of two central copies | `centralForkMerge.ts` (engine + tests; menu entry point still to wire) |
+| Piece                                                             | Module                                                                                                                                                                |
+| ----------------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Per-entity `changed` timestamp (`<note type="ljb-changed" when>`) | `entities.ts` — `touchEntity`/`getEntityChanged`/`backfillEntityTimestamps`                                                                                           |
+| UUID minting both sides                                           | `entities.ts` — `mintEntityId`                                                                                                                                        |
+| `ljb-central` concordance rows                                    | `concordance.ts`                                                                                                                                                      |
+| `userStableId` in `{entityDbFolder}/user-id.txt`                  | `userStableId.ts`                                                                                                                                                     |
+| Per-corpus-file PEDB stamp (`<idno type="ljb-project-database">`) | `corpusStamp.ts`                                                                                                                                                      |
+| Order log + cursor + compose/union                                | `entityOrders.ts`; replay in `apps/commons/.../entityDb/applyOrders.ts`                                                                                               |
+| Classified orphan sweep (genuine vs stray-file)                   | `orphanSweep.ts`; orchestrated in `entityDatabaseCheck.ts`; gentle prompt on open in `useEntityDatabaseLifecycle.ts`                                                  |
+| Field-level reconcile (union/fill/conflict)                       | `reconcile.ts`                                                                                                                                                        |
+| Link / Promote (authority-first)                                  | `promote.ts`                                                                                                                                                          |
+| Bridge inbox (unlinked/broken/syncable/conflict)                  | `bridgeInbox.ts`; dialog `apps/commons/.../sidebar/BridgeInboxDialog.tsx` (Hub icon in the database toolbar)                                                          |
+| Central Time Machine tab                                          | `TimeMachineDialog.tsx` — snapshots the central folder into its own `.ljb-time-machine` (roams with the folder); restore preserves the order log via `unionOrderLogs` |
+| Fork-merge of two central copies                                  | `centralForkMerge.ts` (engine + tests; menu entry point still to wire)                                                                                                |
 
 Deliberate semantics worth remembering:
 
@@ -46,7 +46,7 @@ Deliberate semantics worth remembering:
   (via the order log + remap) rewrites keys.
 - Writing an `ljb-central` mapping does **not** bump the entity's `changed`
   timestamp (per-user metadata must not fake content recency).
-- Fork-merge treats absence as *addition on the other side*, never deletion —
+- Fork-merge treats absence as _addition on the other side_, never deletion —
   deletions travel exclusively through the order log.
 - A lost/blank order cursor costs a redundant scan, never correctness (replay is
   idempotent).
@@ -55,7 +55,8 @@ Still open: fork-merge UI entry point; conflict-resolution UI beyond the inbox
 list (currently resolve by editing either record); i18n for the new dialog
 strings; workshop-chapter copy (Phase E below).
 
----  
+---
+
 **Scope:** Desktop app — personal central `entities.xml` **and** per-project `entities.xml`, with an interpretation layer (bridge) between them; collaboration via shared project DB; separate rollbacks  
 **Related:** [`Auto-tagging.md`](Auto-tagging.md) (current single-store model), [`Auto-tagging-phases.md`](Auto-tagging-phases.md) Phase 3, [`versioning-planning.md`](versioning-planning.md), [`entity-database-viewer-planning.md`](entity-database-viewer-planning.md), [`import-planning.md`](import-planning.md), [`entity-registry-merges-and-splits.md`](entity-registry-merges-and-splits.md) (plain-language explainer: registry fragility, merge blast radius, why split is hard)
 
@@ -69,23 +70,23 @@ This plan replaces that either/or with **both layers always present for a normal
 
 1. **Project `entities.xml`** — the shared edition’s authority list. Corpus `@key` values always point here.
 2. **Central `entities.xml`** — one scholar’s lifelong personal index (Norbert-style). Never required for collaborators to open the project.
-3. **Bridge** — link / promote / absorb operations that keep the two files aligned for *one user*, using authority `<idno>`s first and a per-user mapping when ids differ.
+3. **Bridge** — link / promote / absorb operations that keep the two files aligned for _one user_, using authority `<idno>`s first and a per-user mapping when ids differ.
 
 **Collaboration rule:** two or more people may share a corpus **only if they accept the same project `entities.xml`**. Personal central databases stay private. No LJB-hosted SQL server; sync of the project folder remains Git and/or cloud (Dropbox, iCloud) with sequential edits of the shared entity file.
 
-**Root folder:** no longer required. Projects may live anywhere; the central DB lives in the user-chosen folder from App Settings. Nesting projects under that folder remains a *suggestion* for personal roaming, not a hard law.
+**Root folder:** no longer required. Projects may live anywhere; the central DB lives in the user-chosen folder from App Settings. Nesting projects under that folder remains a _suggestion_ for personal roaming, not a hard law.
 
 ---
 
 ## Why this approach
 
-| Approach | Pros | Cons |
-|----------|------|------|
-| Central only (today’s default) | One personal brain | Collaboration on tagged corpora is fragile; ids collide across users |
-| Project only (today’s opt-in) | Easy to share a folder | No lifelong personal index; re-disambiguate across editions |
-| Hosted SQL / online DB | True multi-writer | Ops you do not want to run; XML ceases to be the scholar-visible source of truth |
-| Full CRDT / real-time merge of `entities.xml` | Concurrent edit | High complexity; poor fit for sequential TEI ids and DH workflows |
-| **Dual store + bridge (chosen)** | Personal brain + sharable edition; reuses TEI/`@key`/remap; no server | Bridge UX and staleness checks to build; concurrent edit of project DB still discouraged |
+| Approach                                      | Pros                                                                  | Cons                                                                                     |
+| --------------------------------------------- | --------------------------------------------------------------------- | ---------------------------------------------------------------------------------------- |
+| Central only (today’s default)                | One personal brain                                                    | Collaboration on tagged corpora is fragile; ids collide across users                     |
+| Project only (today’s opt-in)                 | Easy to share a folder                                                | No lifelong personal index; re-disambiguate across editions                              |
+| Hosted SQL / online DB                        | True multi-writer                                                     | Ops you do not want to run; XML ceases to be the scholar-visible source of truth         |
+| Full CRDT / real-time merge of `entities.xml` | Concurrent edit                                                       | High complexity; poor fit for sequential TEI ids and DH workflows                        |
+| **Dual store + bridge (chosen)**              | Personal brain + sharable edition; reuses TEI/`@key`/remap; no server | Bridge UX and staleness checks to build; concurrent edit of project DB still discouraged |
 
 **Positioning:** The project file is the **source of truth for the edition**. The central file is a **personal index** that may lag. Corpus mentions speak only project language (UUIDs).
 
@@ -102,10 +103,10 @@ This plan replaces that either/or with **both layers always present for a normal
 
 ### Id schemes
 
-| File | `xml:id` scheme | Rationale |
-|------|-----------------|-----------|
+| File                       | `xml:id` scheme                                                                                | Rationale                                                                                  |
+| -------------------------- | ---------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------ |
 | **Project** `entities.xml` | Kind-prefixed UUID, e.g. `person-a1b2c3d4-e5f6-7890-abcd-ef1234567890` (**locked**, see below) | Collision-safe when multiple people mint entities without coordinating sequential counters |
-| **Central** `entities.xml` | Keep typed sequential ids (`person-000042`, …) | Readable in a personal viewer; no need for global uniqueness |
+| **Central** `entities.xml` | Keep typed sequential ids (`person-000042`, …)                                                 | Readable in a personal viewer; no need for global uniqueness                               |
 
 **Locked: always prefix with the kind, never a bare UUID.** This isn't only a readability preference — a bare UUID is frequently **not a legal `xml:id`**. XML's NCName grammar forbids a name starting with a digit, and canonical UUIDs start with `0`–`9` close to half the time. A bare-UUID `xml:id` will validate today and then break the moment the RNG mints one that starts with a digit, which is exactly the kind of intermittent failure that's miserable to trace back to "this one entity." The kind prefix (`person-`, `place-`, …) also keeps `nextEntityId`-style scans and human debugging sane, matching the convention central already uses.
 
@@ -127,8 +128,8 @@ UUIDs fix **identifier** collisions. They do **not** fix two records for the sam
 
 - `type="ljb-central"` — value is the central `xml:id` for this user.
 - `subtype` — stable **user** id (not machine path): a UUID minted once, so the same person on two machines writes the same subtype.
-- **Locked: store `userStableId` inside the central entity DB folder itself** (e.g. `{entityDbFolder}/user-id.txt`), **not** in Electron `userData`. `userData` is per-machine and is never what the "same person on two machines" requirement can rely on — this doc's whole premise is that the central folder is the thing the user already puts in Dropbox/iCloud for roaming (see "Personal multi-machine" above), so `userStableId` inherits that roaming property for free by living there too. Minting it in `userData` instead would silently produce a *second* `userStableId` the first time the user opens the app on a second machine, splitting one scholar into two `ljb-central` rows on every entity they've linked — directly defeating the stated goal. First run with no central folder configured yet: mint a session-local id and persist it into the folder as soon as one is set.
-- Multiple collaborators → multiple `ljb-central` rows on the same project person (one per `subtype`). That reveals only central id *strings*, not the rest of anyone’s central DB.
+- **Locked: store `userStableId` inside the central entity DB folder itself** (e.g. `{entityDbFolder}/user-id.txt`), **not** in Electron `userData`. `userData` is per-machine and is never what the "same person on two machines" requirement can rely on — this doc's whole premise is that the central folder is the thing the user already puts in Dropbox/iCloud for roaming (see "Personal multi-machine" above), so `userStableId` inherits that roaming property for free by living there too. Minting it in `userData` instead would silently produce a _second_ `userStableId` the first time the user opens the app on a second machine, splitting one scholar into two `ljb-central` rows on every entity they've linked — directly defeating the stated goal. First run with no central folder configured yet: mint a session-local id and persist it into the folder as soon as one is set.
+- Multiple collaborators → multiple `ljb-central` rows on the same project person (one per `subtype`). That reveals only central id _strings_, not the rest of anyone’s central DB.
 - When in doubt, matching prefers **authority associations** present in either file (same CBDB / Wikidata / …) over name-only guesses.
 
 ### Collaboration
@@ -137,14 +138,14 @@ UUIDs fix **identifier** collisions. They do **not** fix two records for the sam
 - Collaborators **must** use that project `entities.xml`. Do not switch the project to “central only.”
 - Central DBs are **not** shared with the team.
 - Concurrent writers on project `entities.xml` remain **unsupported** (same deferred constraint as today). Teach: pull/wait for sync, one librarian moment for entity create/merge; tagging mentions is the common path.
-- **Be explicit this is a workflow constraint, not a solved technical problem.** UUIDs remove *identifier* collisions (two people no longer mint the same key for different people), but they do nothing about the ordinary git text conflict that happens when two collaborators both append a new `<person>` near-simultaneously — new entities almost always land at the same insertion point (end of list), so this is the *common* case for a conflict, not an edge case. The collaboration banner (see UI sketch) should say this outright — something like "Entity additions can conflict like any shared file; if Git flags `entities.xml`, keep both `<person>`/`<place>`/… blocks and re-open the project" — rather than leaving first-timers to discover it as what looks like a data-loss bug report.
+- **Be explicit this is a workflow constraint, not a solved technical problem.** UUIDs remove _identifier_ collisions (two people no longer mint the same key for different people), but they do nothing about the ordinary git text conflict that happens when two collaborators both append a new `<person>` near-simultaneously — new entities almost always land at the same insertion point (end of list), so this is the _common_ case for a conflict, not an edge case. The collaboration banner (see UI sketch) should say this outright — something like "Entity additions can conflict like any shared file; if Git flags `entities.xml`, keep both `<person>`/`<place>`/… blocks and re-open the project" — rather than leaving first-timers to discover it as what looks like a data-loss bug report.
 - Transport: Git and/or cloud sync of the project folder (Workshop pedagogy). LJB does not run a sync server.
 
 ### Personal multi-machine (central DB)
 
 - Central folder may live in Dropbox/iCloud for roaming; sequential use of central `entities.xml`.
 - Projects need not live inside that folder.
-- **Known issue, not just a someday cleanup — see "Registry fragility" below:** `entity-projects.json`'s absolute paths break across OS checkouts *and* the current self-healing behavior actively drops other machines' entries, not just stale ones.
+- **Known issue, not just a someday cleanup — see "Registry fragility" below:** `entity-projects.json`'s absolute paths break across OS checkouts _and_ the current self-healing behavior actively drops other machines' entries, not just stale ones.
 
 ### Registry fragility (why this can't wait for "after bridge v1")
 
@@ -156,17 +157,17 @@ That pruning is the problem for exactly the roaming workflow this plan re-affirm
 
 1. Open the project on machine A → registry gets `/Users/daniel/editions/han-commentary`.
 2. Open the same project (synced via Git) on machine B → `registerProject` checks the existing entry, finds `/Users/daniel/...` doesn't exist on machine B (different OS, different home dir, different mount), **silently drops it**, and writes only machine B's own path.
-3. Absorb a duplicate entity back on machine A, having not reopened the project since step 2 → `resolveProjectRoots` no longer sees machine B's path (it was never re-added there, and machine A's own re-registration on next open doesn't restore *B*'s entry either) → the remap can miss project trees that are only ever visible from the other machine's checkout.
+3. Absorb a duplicate entity back on machine A, having not reopened the project since step 2 → `resolveProjectRoots` no longer sees machine B's path (it was never re-added there, and machine A's own re-registration on next open doesn't restore _B_'s entry either) → the remap can miss project trees that are only ever visible from the other machine's checkout.
 
 So this isn't a hypothetical edge case or generic tech debt — it's a correctness bug in the specific "roam your central DB across machines" feature this plan exists to deliver, and it'll surface the first time a scholar actually uses two machines with the same project, which this doc explicitly expects to be a normal workflow. I'd resolve it in Phase A or B (id-based registry entries — a stable `projectId` already exists in the project JSON's fingerprint machinery — rather than raw absolute paths, so an entry from a machine that currently can't `pathExists` it doesn't get treated as garbage), not defer it behind Phase C's bridge operations that depend on the registry being trustworthy in the first place.
 
 ### Three bridge verbs (do not collapse into one “Merge”)
 
-| Verb | Meaning | Touches corpus `@key`? |
-|------|---------|-------------------------|
-| **Link** | Project UUID ↔ existing central id (write `ljb-central` mapping) | No |
-| **Promote** | Create (or authority-match) a central record from a project entity, then Link | No |
-| **Absorb** | Two project entities (or two central entities) are the same person; keep one, remap keys / mappings | **Yes** for project-side absorb (remap `@key` across registered corpus files) |
+| Verb        | Meaning                                                                                             | Touches corpus `@key`?                                                        |
+| ----------- | --------------------------------------------------------------------------------------------------- | ----------------------------------------------------------------------------- |
+| **Link**    | Project UUID ↔ existing central id (write `ljb-central` mapping)                                    | No                                                                            |
+| **Promote** | Create (or authority-match) a central record from a project entity, then Link                       | No                                                                            |
+| **Absorb**  | Two project entities (or two central entities) are the same person; keep one, remap keys / mappings | **Yes** for project-side absorb (remap `@key` across registered corpus files) |
 
 Matching order for Link / Promote:
 
@@ -189,10 +190,10 @@ Central may lag the edition. That is acceptable; the inbox makes lag visible.
 
 Align with [`versioning-planning.md`](versioning-planning.md):
 
-| Scope | History location |
-|-------|------------------|
+| Scope                               | History location                        |
+| ----------------------------------- | --------------------------------------- |
 | Corpus + **project** `entities.xml` | `<project>/.ljb/history/` (Project tab) |
-| **Central** `entities.xml` | Electron userData (Entity database tab) |
+| **Central** `entities.xml`          | Electron userData (Entity database tab) |
 
 **Rule:** restoring one file does **not** auto-restore the other or the corpus.
 
@@ -208,15 +209,15 @@ Always take a `rollback-pre` snapshot before overwrite (existing versioning plan
 
 ## Mental model (SQL analogy for teaching)
 
-| SQL idea | LJB dual model |
-|----------|----------------|
-| Shared team database | Project `entities.xml` |
-| Personal research DB | Central `entities.xml` |
-| Primary key in the edition | Project UUID (`xml:id`) |
-| Foreign key in texts | `@key` on mentions → project UUID only |
-| External authority PK | `<idno type="CBDB">` etc. |
-| User-specific synonym | `<idno type="ljb-central" subtype="…">` |
-| ETL / sync job | Bridge: Link / Promote / Absorb |
+| SQL idea                   | LJB dual model                          |
+| -------------------------- | --------------------------------------- |
+| Shared team database       | Project `entities.xml`                  |
+| Personal research DB       | Central `entities.xml`                  |
+| Primary key in the edition | Project UUID (`xml:id`)                 |
+| Foreign key in texts       | `@key` on mentions → project UUID only  |
+| External authority PK      | `<idno type="CBDB">` etc.               |
+| User-specific synonym      | `<idno type="ljb-central" subtype="…">` |
+| ETL / sync job             | Bridge: Link / Promote / Absorb         |
 
 ---
 
@@ -326,14 +327,14 @@ Resolved since the first draft (see inline **locked** notes above): UUID form (k
 
 ## Relationship to existing code
 
-| Area | Today | Under this plan |
-|------|--------|-----------------|
-| `entityStoreResolve.ts` | `central` XOR `project` | Resolve **project** file for `@key`; central always available for bridge |
-| `entities.ts` / `nextEntityId` | Sequential per kind | Sequential for central; UUID mint for project |
-| `mergeEntities` / `applyKeyRemap` | Merge inside one file + remap corpus | Become **Absorb** (project side); Link/Promote are new |
-| `entityDatabaseCheck.ts` | Fingerprint vs attached DB | Fingerprint vs **project** DB |
-| Time Machine | Project vs central tabs | Unchanged storage split; add orphan/bridge warnings |
-| Workshop ch. 9 | Sync whole workspace | Sync **project** for collab; central optional personal sync |
+| Area                              | Today                                | Under this plan                                                          |
+| --------------------------------- | ------------------------------------ | ------------------------------------------------------------------------ |
+| `entityStoreResolve.ts`           | `central` XOR `project`              | Resolve **project** file for `@key`; central always available for bridge |
+| `entities.ts` / `nextEntityId`    | Sequential per kind                  | Sequential for central; UUID mint for project                            |
+| `mergeEntities` / `applyKeyRemap` | Merge inside one file + remap corpus | Become **Absorb** (project side); Link/Promote are new                   |
+| `entityDatabaseCheck.ts`          | Fingerprint vs attached DB           | Fingerprint vs **project** DB                                            |
+| Time Machine                      | Project vs central tabs              | Unchanged storage split; add orphan/bridge warnings                      |
+| Workshop ch. 9                    | Sync whole workspace                 | Sync **project** for collab; central optional personal sync              |
 
 ---
 

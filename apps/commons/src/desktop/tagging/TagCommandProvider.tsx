@@ -27,7 +27,10 @@ export const TagCommandProvider = () => {
       const $tag = writer.tagger.getCurrentTag(tagId);
       const element = ($tag?.[0] as Element | undefined) ?? null;
       if (!element) {
-        notifyViaSnackbar({ message: t('LWC.desktop.tagging.tag_not_found'), options: { variant: 'warning' } });
+        notifyViaSnackbar({
+          message: t('LWC.desktop.tagging.tag_not_found'),
+          options: { variant: 'warning' },
+        });
         return;
       }
 

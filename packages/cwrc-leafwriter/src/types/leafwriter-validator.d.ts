@@ -19,5 +19,6 @@ declare module '@cwrc/leafwriter-validator' {
     ValidationResponse,
   } from '../../../cwrc-leafwriter-validator/src/validate';
 
-  export type ValidatorType = typeof import('../../../cwrc-leafwriter-validator/src/Validator').default;
+  export type ValidatorType =
+    typeof import('../../../cwrc-leafwriter-validator/src/Validator').default;
 }

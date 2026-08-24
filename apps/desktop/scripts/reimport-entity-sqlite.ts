@@ -41,9 +41,7 @@ const main = () => {
     process.exit(1);
   }
   if (fs.existsSync(sqlitePath)) {
-    console.error(
-      `Refusing to overwrite existing ${sqlitePath}. Delete it (and -wal/-shm) first.`,
-    );
+    console.error(`Refusing to overwrite existing ${sqlitePath}. Delete it (and -wal/-shm) first.`);
     process.exit(1);
   }
 

@@ -131,11 +131,7 @@ export const notifyDocumentOpen = (item: TextDocumentItem) => {
   sendLspNotification('textDocument/didOpen', { textDocument: item });
 };
 
-export const notifyDocumentChange = (
-  uri: string,
-  version: number,
-  text: string,
-) => {
+export const notifyDocumentChange = (uri: string, version: number, text: string) => {
   sendLspNotification('textDocument/didChange', {
     textDocument: { uri, version },
     contentChanges: [{ text }],

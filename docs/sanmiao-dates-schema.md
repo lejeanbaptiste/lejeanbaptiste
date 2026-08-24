@@ -80,24 +80,24 @@ On **TEI catalog schema install** (TEI All, TEI Lite, Simple Print, jTEI) and on
 
 From `sanmiao.config.date_elements`:
 
-| Element | Role |
-|---------|------|
-| `dyn` | Dynasty name string |
-| `ruler` | Ruler name string |
-| `era` | Era name string |
-| `year` | Year expression (e.g. 十八年, 元年) |
-| `sexYear` | Sexagenary year |
-| `month` | Month expression |
-| `day` | Day expression |
-| `gz` | Sexagenary day |
-| `int` | Intercalary marker (閏) |
-| `rel` | Relative prefix (`dir`, `unit` attrs) |
-| `suffix` | 初, 之世, etc. |
-| `lp` | Lunar phase (朔, 晦) |
-| `nmdgz` | New-moon sexagenary day |
-| `lp_filler`, `filler` | Particle text |
-| `season` | 春/夏/秋/冬 |
-| `gy` | 改元 |
+| Element               | Role                                  |
+| --------------------- | ------------------------------------- |
+| `dyn`                 | Dynasty name string                   |
+| `ruler`               | Ruler name string                     |
+| `era`                 | Era name string                       |
+| `year`                | Year expression (e.g. 十八年, 元年)   |
+| `sexYear`             | Sexagenary year                       |
+| `month`               | Month expression                      |
+| `day`                 | Day expression                        |
+| `gz`                  | Sexagenary day                        |
+| `int`                 | Intercalary marker (閏)               |
+| `rel`                 | Relative prefix (`dir`, `unit` attrs) |
+| `suffix`              | 初, 之世, etc.                        |
+| `lp`                  | Lunar phase (朔, 晦)                  |
+| `nmdgz`               | New-moon sexagenary day               |
+| `lp_filler`, `filler` | Particle text                         |
+| `season`              | 春/夏/秋/冬                           |
+| `gy`                  | 改元                                  |
 
 ---
 
@@ -127,11 +127,11 @@ Project settings: `dateConversion.prolepticGregorian`, `gregorianStart`, `civ`, 
 
 ## Cert / provenance
 
-| State | `cert` | Resolution attrs |
-|-------|--------|------------------|
-| Tagged, not resolved | `low` or omit | none |
-| Ambiguous, in queue | `low` | none |
-| User confirmed | `high` | full |
-| User rejected all candidates | `unknown` | none |
+| State                        | `cert`        | Resolution attrs |
+| ---------------------------- | ------------- | ---------------- |
+| Tagged, not resolved         | `low` or omit | none             |
+| Ambiguous, in queue          | `low`         | none             |
+| User confirmed               | `high`        | full             |
+| User rejected all candidates | `unknown`     | none             |
 
 Always `resp="#ljb-sanmiao"` (or project encoder) on machine-assisted dates.

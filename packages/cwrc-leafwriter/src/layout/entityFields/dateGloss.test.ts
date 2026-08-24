@@ -81,26 +81,20 @@ describe('formatDateGlossPlain', () => {
   });
 
   test('year-only with emperor and era', () => {
-    expect(
-      formatDateGlossPlain({ ruler: '太祖', era: '建元', year: '三年' }, 'en'),
-    ).toBe('Emperor Taizu, Jianyuan era, year 3');
+    expect(formatDateGlossPlain({ ruler: '太祖', era: '建元', year: '三年' }, 'en')).toBe(
+      'Emperor Taizu, Jianyuan era, year 3',
+    );
   });
 
   test('year and month', () => {
     expect(
-      formatDateGlossPlain(
-        { ruler: '太祖', era: '建元', year: '三年', month: '正月' },
-        'en',
-      ),
+      formatDateGlossPlain({ ruler: '太祖', era: '建元', year: '三年', month: '正月' }, 'en'),
     ).toBe('Emperor Taizu, Jianyuan era, year 3, month I');
   });
 
   test('year month day gz without dynasty context', () => {
     expect(
-      formatDateGlossPlain(
-        { year: '三年', month: '十一月', day: '三日', gz: '壬戌' },
-        'en',
-      ),
+      formatDateGlossPlain({ year: '三年', month: '十一月', day: '三日', gz: '壬戌' }, 'en'),
     ).toBe('year 3, month XI, day 3, renxu');
   });
 
@@ -120,12 +114,9 @@ describe('formatDateGlossPlain', () => {
   });
 
   test('intercalary month', () => {
-    expect(
-      formatDateGlossPlain(
-        { year: 3, month: 1, intercalary: true },
-        'en',
-      ),
-    ).toBe('year 3, intercalary month I');
+    expect(formatDateGlossPlain({ year: 3, month: 1, intercalary: true }, 'en')).toBe(
+      'year 3, intercalary month I',
+    );
   });
 
   test('晦 alone', () => {
@@ -191,9 +182,7 @@ describe('formatDateGlossPlain', () => {
       '六月壬子',
     );
     // Era is not written in the source — only month + gz children.
-    expect(formatDateGlossPlain(input, 'en')).toBe(
-      'month VI, day renzi (4 August 481)',
-    );
+    expect(formatDateGlossPlain(input, 'en')).toBe('month VI, day renzi (4 August 481)');
     // Full attribute calendar (incl. era) goes in brackets when the setting is on.
     const withEra: typeof input = {
       ...input,
@@ -216,9 +205,9 @@ describe('formatDateGlossPlain', () => {
         'en',
       ),
     ).toBe('summer, month IV (May–June 481)');
-    expect(
-      formatDateGlossPlain({ season: '春', month: '正月' }, 'fr', 'translation'),
-    ).toBe('printemps, mois I');
+    expect(formatDateGlossPlain({ season: '春', month: '正月' }, 'fr', 'translation')).toBe(
+      'printemps, mois I',
+    );
   });
 
   test('resolved day: translation+western (default) appends Western in parentheses', () => {
@@ -241,13 +230,9 @@ describe('formatDateGlossPlain', () => {
   });
 
   test('unresolved day-level: western mode falls back to EA gloss', () => {
-    expect(
-      formatDateGlossPlain(
-        { year: '三年', month: '二月', gz: '乙未' },
-        'en',
-        'western',
-      ),
-    ).toBe('year 3, month II, day yiwei');
+    expect(formatDateGlossPlain({ year: '三年', month: '二月', gz: '乙未' }, 'en', 'western')).toBe(
+      'year 3, month II, day yiwei',
+    );
   });
 
   test('year-only never gets Western for any mode', () => {

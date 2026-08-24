@@ -33,9 +33,7 @@ export const buildProjectSchemas = (
   if (!config.schema?.rng) return [];
 
   const rngPath = joinProjectPath(rootPath, config.schema.rng);
-  const cssPath = config.schema.css
-    ? joinProjectPath(rootPath, config.schema.css)
-    : null;
+  const cssPath = config.schema.css ? joinProjectPath(rootPath, config.schema.css) : null;
 
   const schemaName =
     config.schema.rng

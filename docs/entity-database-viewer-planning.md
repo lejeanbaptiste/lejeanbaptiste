@@ -61,7 +61,7 @@ Alongside the entity file, `EntityStore` also owns a project-local `.ljb/` folde
 
 ### 2.3 What writes to it today
 
-- Phase 4b disambiguation resolves a tagged mention to an entity: either `addEntity()` (mint a new record, optionally seeded from an authority search result and its `cache` payload) or links to an existing `xml:id`, then writes `@key="person-000001"` onto the mention tag in the *document* XML (not into `entities.xml`).
+- Phase 4b disambiguation resolves a tagged mention to an entity: either `addEntity()` (mint a new record, optionally seeded from an authority search result and its `cache` payload) or links to an existing `xml:id`, then writes `@key="person-000001"` onto the mention tag in the _document_ XML (not into `entities.xml`).
 - `entityDatabaseCheck.ts` / `purgeEntityKeysInProject` handle the fingerprint-mismatch recovery path (strip stale `@key`s across the project if the linked database changed underneath the project).
 
 ### 2.4 What's missing for a viewer today
@@ -83,7 +83,7 @@ A read-and-light-edit surface over `entities.xml`, scoped per active database (c
 3. Optionally shows **backlinks**: which documents/spans in the project(s) currently carry `@key="‹this id›"` (requires a project-XML scan, not stored in `entities.xml` itself — see §5.3).
 4. Lets a user hand-edit the normalized fields (alt names, dates, notes) without needing to understand TEI or open the raw file.
 
-This is compatible with the existing architecture: it's a viewer *of* the standoff file the disambiguation phase already produces, not a new identity store, and not a revival of `entitiesManager`.
+This is compatible with the existing architecture: it's a viewer _of_ the standoff file the disambiguation phase already produces, not a new identity store, and not a revival of `entitiesManager`.
 
 ---
 
@@ -91,14 +91,15 @@ This is compatible with the existing architecture: it's a viewer *of* the stando
 
 Today, everything beyond the primary name and authority ids lives in one opaque `note[type=authority-cache]` JSON blob per source. Two options:
 
-| Approach | Pro | Con |
-|---|---|---|
-| **A. Viewer parses `cache` per source at render time** | No schema change; ship viewer today | Viewer must know every source's JSON shape (VIAF cluster XML-derived JSON ≠ Wikidata entity JSON ≠ CBDB row); breaks when a source's payload shape changes; can't hand-edit (it's a fetch snapshot, not authored data) |
-| **B. Add normalized TEI elements to the entity item** (`<persName type="alt">`, `<birth>`/`<death>` or `<floruit>`, `<note>` with `@source`/citation text), written once at creation/edit time from whichever source, and kept independent of `cache` | Source-agnostic viewer; user-editable; matches DILA's separation of structured fields vs. cited notes | Schema addition to `entities.ts` (`addEntity`, a new `updateEntity`); migration path for entities already created under the old shape |
+| Approach                                                                                                                                                                                                                                              | Pro                                                                                                   | Con                                                                                                                                                                                                                    |
+| ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ----------------------------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| **A. Viewer parses `cache` per source at render time**                                                                                                                                                                                                | No schema change; ship viewer today                                                                   | Viewer must know every source's JSON shape (VIAF cluster XML-derived JSON ≠ Wikidata entity JSON ≠ CBDB row); breaks when a source's payload shape changes; can't hand-edit (it's a fetch snapshot, not authored data) |
+| **B. Add normalized TEI elements to the entity item** (`<persName type="alt">`, `<birth>`/`<death>` or `<floruit>`, `<note>` with `@source`/citation text), written once at creation/edit time from whichever source, and kept independent of `cache` | Source-agnostic viewer; user-editable; matches DILA's separation of structured fields vs. cited notes | Schema addition to `entities.ts` (`addEntity`, a new `updateEntity`); migration path for entities already created under the old shape                                                                                  |
 
 **Recommendation: B**, keeping `cache` as a "last raw snapshot from source X, for reference/re-sync" field only — never the thing the viewer renders directly. This mirrors the DILA card's own structure (structured 別名/生年/卒年 fields vs. cited 註解 notes) and keeps the viewer decoupled from every authority source's native shape.
 
 Concretely, extend `NewEntity`/`addEntity` (and add `updateEntity`) with:
+
 - `altNames?: string[]` → multiple `<persName type="alt">` (or `<placeName type="alt">` etc.)
 - `dates?: { birth?: string; death?: string; floruit?: string }` → `<birth>`/`<death>`/`<floruit>` (ISO or fuzzy TEI `@notBefore`/`@notAfter` if precision is uncertain)
 - `notes?: { text: string; source？: string }[]` → `<note resp="…">` per entry, distinct from the `authority-cache` note type
@@ -139,11 +140,11 @@ This is additive — existing `entities.xml` files with only `<persName>` + `<id
 
 ## 6. Relationship to existing docs
 
-| Document | Role |
-|---|---|
-| [authority-packs-planning.md](authority-packs-planning.md) | Where authority candidates (name/id/dates) come from *before* disambiguation; `AuthorityCandidate.metadata` is a plausible source for V1's normalized dates/alt-names when an entity is minted from a pack hit |
-| [Auto-tagging-phases.md](Auto-tagging-phases.md) | Phase 4a/4b: tag-then-disambiguate discipline this viewer must not violate |
-| **This doc** | Current `entities.xml`/`EntityStore` shape + path to a DILA-style database viewer |
+| Document                                                   | Role                                                                                                                                                                                                           |
+| ---------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| [authority-packs-planning.md](authority-packs-planning.md) | Where authority candidates (name/id/dates) come from _before_ disambiguation; `AuthorityCandidate.metadata` is a plausible source for V1's normalized dates/alt-names when an entity is minted from a pack hit |
+| [Auto-tagging-phases.md](Auto-tagging-phases.md)           | Phase 4a/4b: tag-then-disambiguate discipline this viewer must not violate                                                                                                                                     |
+| **This doc**                                               | Current `entities.xml`/`EntityStore` shape + path to a DILA-style database viewer                                                                                                                              |
 
 ---
 

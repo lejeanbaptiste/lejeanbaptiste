@@ -15,5 +15,4 @@ export const isMacOS = (): boolean => {
 export const modKeyLabel = (): string => (isMacOS() ? '⌘' : 'Ctrl');
 
 /** e.g. ⌘O on Mac, Ctrl+O on Windows/Linux. */
-export const modShortcut = (key: string): string =>
-  isMacOS() ? `⌘${key}` : `Ctrl+${key}`;
+export const modShortcut = (key: string): string => (isMacOS() ? `⌘${key}` : `Ctrl+${key}`);

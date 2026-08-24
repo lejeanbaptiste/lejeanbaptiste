@@ -1,10 +1,7 @@
 /**
  * @jest-environment jsdom
  */
-import {
-  buildPlaceholderRetryInstruction,
-  missingPlaceholders,
-} from './aiPlaceholderGuard';
+import { buildPlaceholderRetryInstruction, missingPlaceholders } from './aiPlaceholderGuard';
 import {
   collectEntitiesFromSourceUnitXml,
   normalizePlaceholderSpacing,
@@ -106,10 +103,7 @@ describe('replaceEntitiesWithPlaceholdersInSourceXml', () => {
       '<p xmlns="http://www.tei-c.org/ns/1.0">' +
       '<roleName><placeName>益州</placeName>刺史</roleName>' +
       '</p>';
-    const { xml: rewritten, opaques } = replaceEntitiesWithPlaceholdersInSourceXml(
-      xml,
-      new Set(),
-    );
+    const { xml: rewritten, opaques } = replaceEntitiesWithPlaceholdersInSourceXml(xml, new Set());
     expect(rewritten).toContain('{{opaque:0}}');
     expect(opaques[0]?.surface).toBe('益州刺史');
   });
@@ -161,17 +155,14 @@ describe('substituteOpaquePlaceholders', () => {
       [0, { index: 0, kind: 'office', surface: '益州刺史' }],
       [1, { index: 1, kind: 'office', surface: '貞陽公' }],
     ]);
-    expect(substituteOpaquePlaceholders('made {{as:opaque:0}}.', map)).toBe(
-      'made [益州刺史].',
-    );
+    expect(substituteOpaquePlaceholders('made {{as:opaque:0}}.', map)).toBe('made [益州刺史].');
     expect(substituteOpaquePlaceholders('{{holding:opaque:1}} X', map)).toBe('[貞陽公] X');
   });
 });
 
 describe('missingPlaceholders', () => {
   test('reports dropped tokens', () => {
-    const expected =
-      '{{date:0}}以{{holding:o1}}{{entity:p1}}為{{as:opaque:0}}';
+    const expected = '{{date:0}}以{{holding:o1}}{{entity:p1}}為{{as:opaque:0}}';
     const actual = '{{date:0}}以{{holding:o1}}{{entity:p1}}為 prefect';
     expect(missingPlaceholders(expected, actual)).toEqual(['{{as:opaque:0}}']);
   });

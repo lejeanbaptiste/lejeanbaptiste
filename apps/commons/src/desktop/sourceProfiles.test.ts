@@ -45,7 +45,10 @@ describe('dedupeProjectSources', () => {
     const deduped = dedupeProjectSources([
       { source: shared, filePath: '/a/vol01.xml' },
       { source: { ...shared, sourceNote: 'Juan 13' }, filePath: '/a/vol02.xml' },
-      { source: sampleSource({ title: 'Other work', titleRef: 'https://example.org/other' }), filePath: '/a/other.xml' },
+      {
+        source: sampleSource({ title: 'Other work', titleRef: 'https://example.org/other' }),
+        filePath: '/a/other.xml',
+      },
     ]);
 
     expect(deduped).toHaveLength(2);
@@ -58,7 +61,12 @@ describe('dedupeProjectSources', () => {
     expect(
       dedupeProjectSources([
         {
-          source: sampleSource({ title: '', authors: [], titleRef: undefined, titleKey: undefined }),
+          source: sampleSource({
+            title: '',
+            authors: [],
+            titleRef: undefined,
+            titleKey: undefined,
+          }),
           filePath: '/a/empty.xml',
         },
       ]),
@@ -69,7 +77,9 @@ describe('dedupeProjectSources', () => {
 describe('applyProfileToSource', () => {
   it('copies shared fields but preserves transcription source', () => {
     const current = sampleSource({ sourceNote: 'Local note' });
-    const profile = toSharedSource(sampleSource({ edition: 'Updated edition', sourceNote: 'ignored' }));
+    const profile = toSharedSource(
+      sampleSource({ edition: 'Updated edition', sourceNote: 'ignored' }),
+    );
     const merged = applyProfileToSource(current, profile);
 
     expect(merged.edition).toBe('Updated edition');

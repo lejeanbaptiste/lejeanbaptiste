@@ -1,4 +1,10 @@
-import { addEntity, createEntitiesScaffold, findEntity, parseEntities, touchEntity } from './entities';
+import {
+  addEntity,
+  createEntitiesScaffold,
+  findEntity,
+  parseEntities,
+  touchEntity,
+} from './entities';
 import { applyReconcilePlan, planReconcile, readFields } from './reconcile';
 
 /** Two independent single-entity databases (PEDB and CEDB). */
@@ -11,14 +17,23 @@ const setup = () => {
 describe('planReconcile', () => {
   it('reports identical when both records agree', () => {
     const { pedbDoc, cedbDoc } = setup();
-    const p = addEntity(pedbDoc, 'person', { name: '張衡', authorityIds: [{ type: 'CBDB', value: '1' }] }).element;
-    const c = addEntity(cedbDoc, 'person', { name: '張衡', authorityIds: [{ type: 'CBDB', value: '1' }] }).element;
+    const p = addEntity(pedbDoc, 'person', {
+      name: '張衡',
+      authorityIds: [{ type: 'CBDB', value: '1' }],
+    }).element;
+    const c = addEntity(cedbDoc, 'person', {
+      name: '張衡',
+      authorityIds: [{ type: 'CBDB', value: '1' }],
+    }).element;
     expect(planReconcile(p, c).identical).toBe(true);
   });
 
   it('unions names and authorities both ways (no conflict)', () => {
     const { pedbDoc, cedbDoc } = setup();
-    const p = addEntity(pedbDoc, 'person', { name: '張衡', authorityIds: [{ type: 'CBDB', value: '1' }] }).element;
+    const p = addEntity(pedbDoc, 'person', {
+      name: '張衡',
+      authorityIds: [{ type: 'CBDB', value: '1' }],
+    }).element;
     const c = addEntity(cedbDoc, 'person', {
       name: '張衡',
       altNames: [{ text: '平子' }],

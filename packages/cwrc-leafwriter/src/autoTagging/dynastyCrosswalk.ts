@@ -24,7 +24,11 @@ const byLabel = new Map<string, DynastyCrosswalkEntry>();
 // than one row — e.g. Wikidata Q320930 is listed for both 三國魏 and 北魏. Keep
 // only the first row's mapping for a given id so lookups are at least stable,
 // rather than silently depending on array order.
-function setIfAbsent<K>(map: Map<K, DynastyCrosswalkEntry>, key: K, entry: DynastyCrosswalkEntry): void {
+function setIfAbsent<K>(
+  map: Map<K, DynastyCrosswalkEntry>,
+  key: K,
+  entry: DynastyCrosswalkEntry,
+): void {
   if (!map.has(key)) map.set(key, entry);
 }
 

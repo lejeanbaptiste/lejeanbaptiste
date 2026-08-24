@@ -1,2 +1,21 @@
 coverage
 **/dist/**/*.*
+
+# Build output. `lib/` is emitted by tsc/tsup, `public/` by webpack.
+**/lib/**
+apps/commons/public/**
+
+# Vendored third-party assets, kept byte-for-byte as shipped: TinyMCE's skins,
+# the bundled jQuery/ObjTree copies, and the browserified jsdom build.
+**/css/tinymce/**
+packages/cwrc-leafwriter/src/lib/jquery/**
+packages/cwrc-leafwriter/src/lib/objtree/**
+packages/cwrc-leafwriter-validator/src/lib/jsdom/**
+
+# Anything minified is not ours to reformat.
+**/*.min.*
+
+# Code-generated sources — reformatting them only drifts from what the
+# generator emits (see visual-design:sync and the avatar/asset scripts).
+**/generated/**
+**/generated*.ts

@@ -43,6 +43,9 @@ jobs:
       - name: Run typecheck
         run: npm run typecheck
 
+      - name: Check formatting
+        run: npm run format-check
+
   desktop-linux:
     name: Build Linux desktop package (${{ matrix.arch }})
     runs-on: ubuntu-latest

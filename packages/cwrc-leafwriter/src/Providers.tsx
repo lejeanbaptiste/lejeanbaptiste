@@ -31,11 +31,7 @@ const Providers = (props: LeafWriterOptions) => {
   }, [preferDark, setDarkMode, themeAppearance]);
 
   return (
-    <ThemeProvider
-      theme={theme}
-      defaultMode={darkMode ? 'dark' : 'light'}
-      storageManager={null}
-    >
+    <ThemeProvider theme={theme} defaultMode={darkMode ? 'dark' : 'light'} storageManager={null}>
       <SyncColorScheme darkMode={darkMode} />
       <CssBaseline enableColorScheme />
       <ModalProvider>

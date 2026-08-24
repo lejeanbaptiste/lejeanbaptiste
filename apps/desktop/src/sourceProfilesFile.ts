@@ -2,7 +2,10 @@ import { app } from 'electron';
 import { existsSync } from 'fs';
 import fs from 'fs/promises';
 import path from 'path';
-import type { SourceProfile, SourceProfileFile } from '../../commons/src/desktop/sourceProfileTypes';
+import type {
+  SourceProfile,
+  SourceProfileFile,
+} from '../../commons/src/desktop/sourceProfileTypes';
 import { getEntityDbFolder } from './projectPrefs';
 
 const PROFILES_FILENAME = 'source-profiles.json';
@@ -71,7 +74,8 @@ const sanitizeProfile = (value: unknown): SourceProfile | null => {
   const label = typeof value.label === 'string' ? value.label.trim() : '';
   const identityKey = typeof value.identityKey === 'string' ? value.identityKey.trim() : '';
   const source = sanitizeSharedSource(value.source);
-  const updatedAt = typeof value.updatedAt === 'string' ? value.updatedAt : new Date().toISOString();
+  const updatedAt =
+    typeof value.updatedAt === 'string' ? value.updatedAt : new Date().toISOString();
   if (!id || !label || !identityKey || !source) return null;
   return { id, label, identityKey, source, updatedAt };
 };
@@ -117,10 +121,16 @@ export const readSourceProfilesFile = async (): Promise<SourceProfileFile> => {
 export const writeSourceProfilesFile = async (file: SourceProfileFile): Promise<void> => {
   const filePath = await getProfilesPath();
   await fs.mkdir(path.dirname(filePath), { recursive: true });
-  await fs.writeFile(filePath, `${JSON.stringify(sanitizeSourceProfileFile(file), null, 2)}\n`, 'utf-8');
+  await fs.writeFile(
+    filePath,
+    `${JSON.stringify(sanitizeSourceProfileFile(file), null, 2)}\n`,
+    'utf-8',
+  );
 };
 
-export const upsertSourceProfileInFile = async (profile: SourceProfile): Promise<SourceProfileFile> => {
+export const upsertSourceProfileInFile = async (
+  profile: SourceProfile,
+): Promise<SourceProfileFile> => {
   const file = await readSourceProfilesFile();
   const index = file.profiles.findIndex(
     (entry) => entry.identityKey === profile.identityKey || entry.id === profile.id,
@@ -139,7 +149,9 @@ export const upsertSourceProfileInFile = async (profile: SourceProfile): Promise
   return file;
 };
 
-export const deleteSourceProfileFromFile = async (profileId: string): Promise<SourceProfileFile> => {
+export const deleteSourceProfileFromFile = async (
+  profileId: string,
+): Promise<SourceProfileFile> => {
   const file = await readSourceProfilesFile();
   file.profiles = file.profiles.filter((profile) => profile.id !== profileId);
   await writeSourceProfilesFile(file);

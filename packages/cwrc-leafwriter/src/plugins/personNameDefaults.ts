@@ -18,10 +18,7 @@ export function suggestPersonNameSplit(
 }
 
 /** Romanize a new person label, using plugin split parts when Norbert (etc.) is enabled. */
-export function suggestPersonRomanization(
-  name: string,
-  projectLang: string | null,
-): string | null {
+export function suggestPersonRomanization(name: string, projectLang: string | null): string | null {
   const split = suggestPersonNameSplit(name, projectLang);
   if (split) {
     const family = autoRomanize(split.familyName, projectLang, { concatenate: true });

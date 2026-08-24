@@ -103,7 +103,9 @@ export function buildTranslationRequestBody(
 ): Record<string, unknown> {
   const responseFormat = buildResponseFormat(mode);
   const systemContent =
-    mode === 'prompt_only' ? TRANSLATION_SYSTEM_PROMPT + PROMPT_ONLY_JSON_HINT : TRANSLATION_SYSTEM_PROMPT;
+    mode === 'prompt_only'
+      ? TRANSLATION_SYSTEM_PROMPT + PROMPT_ONLY_JSON_HINT
+      : TRANSLATION_SYSTEM_PROMPT;
 
   return {
     model,
@@ -120,9 +122,7 @@ export function buildTranslationRequestBody(
           sourceUnitXml: request.sourceUnitXml,
           entities: request.entities ?? [],
           dates: request.dates ?? [],
-          ...(request.retryInstruction
-            ? { retryInstruction: request.retryInstruction }
-            : {}),
+          ...(request.retryInstruction ? { retryInstruction: request.retryInstruction } : {}),
         }),
       },
     ],

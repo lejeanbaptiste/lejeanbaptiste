@@ -746,11 +746,12 @@ describe('AutoTaggingSession', () => {
       throw new Error('readFile should not be called for the current sentinel');
     });
     const previousApi = (window as unknown as { electronAPI?: unknown }).electronAPI;
-    (window as unknown as { electronAPI: { readFile: typeof readFile; writeFile: jest.Mock } }).electronAPI =
-      {
-        readFile,
-        writeFile: jest.fn(),
-      };
+    (
+      window as unknown as { electronAPI: { readFile: typeof readFile; writeFile: jest.Mock } }
+    ).electronAPI = {
+      readFile,
+      writeFile: jest.fn(),
+    };
 
     try {
       const session = new AutoTaggingSession(writer);

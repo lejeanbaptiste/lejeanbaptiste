@@ -37,14 +37,20 @@ describe('searchText currentFile scope with translation companions', () => {
       ...originalElectronAPI,
       readFile: mockReadFile({
         '/proj/schema/translation-settings.json': translationSettingsJson,
-        '/proj/chapter1.fr.translation.xml': '<translation xml:lang="fr"><p>Un mauvais chaton.</p></translation>',
+        '/proj/chapter1.fr.translation.xml':
+          '<translation xml:lang="fr"><p>Un mauvais chaton.</p></translation>',
       }),
     } as unknown as typeof window.electronAPI;
 
     const { results, totalMatches } = await searchText({
       activeTabPath: '/proj/chapter1.xml',
       docScope: 'both',
-      openTabs: [{ filePath: '/proj/chapter1.xml', content: '<TEI><body><p>A bad kitten.</p></body></TEI>' } as any],
+      openTabs: [
+        {
+          filePath: '/proj/chapter1.xml',
+          content: '<TEI><body><p>A bad kitten.</p></body></TEI>',
+        } as any,
+      ],
       query: 'chaton',
       rootPath: '/proj',
       scope: 'currentFile',
@@ -61,14 +67,20 @@ describe('searchText currentFile scope with translation companions', () => {
       ...originalElectronAPI,
       readFile: mockReadFile({
         '/proj/schema/translation-settings.json': translationSettingsJson,
-        '/proj/chapter1.fr.translation.xml': '<translation xml:lang="fr"><p>Un mauvais chaton.</p></translation>',
+        '/proj/chapter1.fr.translation.xml':
+          '<translation xml:lang="fr"><p>Un mauvais chaton.</p></translation>',
       }),
     } as unknown as typeof window.electronAPI;
 
     const { results, totalMatches } = await searchText({
       activeTabPath: '/proj/chapter1.xml',
       docScope: 'source',
-      openTabs: [{ filePath: '/proj/chapter1.xml', content: '<TEI><body><p>A bad chaton.</p></body></TEI>' } as any],
+      openTabs: [
+        {
+          filePath: '/proj/chapter1.xml',
+          content: '<TEI><body><p>A bad chaton.</p></body></TEI>',
+        } as any,
+      ],
       query: 'chaton',
       rootPath: '/proj',
       scope: 'currentFile',
@@ -85,14 +97,20 @@ describe('searchText currentFile scope with translation companions', () => {
       ...originalElectronAPI,
       readFile: mockReadFile({
         '/proj/schema/translation-settings.json': translationSettingsJson,
-        '/proj/chapter1.fr.translation.xml': '<translation xml:lang="fr"><p>Un mauvais chaton.</p></translation>',
+        '/proj/chapter1.fr.translation.xml':
+          '<translation xml:lang="fr"><p>Un mauvais chaton.</p></translation>',
       }),
     } as unknown as typeof window.electronAPI;
 
     const { results, totalMatches } = await searchText({
       activeTabPath: '/proj/chapter1.xml',
       docScope: 'translation',
-      openTabs: [{ filePath: '/proj/chapter1.xml', content: '<TEI><body><p>A bad chaton.</p></body></TEI>' } as any],
+      openTabs: [
+        {
+          filePath: '/proj/chapter1.xml',
+          content: '<TEI><body><p>A bad chaton.</p></body></TEI>',
+        } as any,
+      ],
       query: 'chaton',
       rootPath: '/proj',
       scope: 'currentFile',

@@ -8,12 +8,7 @@ import type { Suggestion } from './types';
  * separately. (Optional polish: feed decision-log stats into AI ranking prompts.)
  */
 
-export type DecisionAction =
-  | 'accepted'
-  | 'rejected'
-  | 'resolved'
-  | 'auto-resolved'
-  | 'unresolved';
+export type DecisionAction = 'accepted' | 'rejected' | 'resolved' | 'auto-resolved' | 'unresolved';
 
 export type DecisionScope = 'occurrence' | 'document-surface' | 'selection';
 

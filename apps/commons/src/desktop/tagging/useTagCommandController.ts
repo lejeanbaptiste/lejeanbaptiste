@@ -235,8 +235,7 @@ export const useTagCommandController = () => {
         nextMode === 'wrap' && !ctx.rng.collapsed ? ctx.rng.cloneRange() : null;
       if (editor) {
         bookmarkRef.current = getBookmark(editor);
-        sourceRangeRef.current =
-          wrapRangeSnapshot ?? getSelectionRange(editor).cloneRange();
+        sourceRangeRef.current = wrapRangeSnapshot ?? getSelectionRange(editor).cloneRange();
         if (wrapRangeSnapshot) {
           editor.selection.collapse(false);
         }
@@ -450,7 +449,10 @@ export const useTagCommandController = () => {
       if (!oldTagName || !selectedText) return;
       const remaining = countRenamableMatches(oldTagName, selectedText);
       if (remaining === 0) {
-        notifyViaSnackbar({ message: t('LWC.desktop.tagging.no_tags_to_rename'), options: { variant: 'info' } });
+        notifyViaSnackbar({
+          message: t('LWC.desktop.tagging.no_tags_to_rename'),
+          options: { variant: 'info' },
+        });
         return;
       }
       closePopup();
@@ -471,7 +473,10 @@ export const useTagCommandController = () => {
     if (!selectedText) return;
     const remaining = countPropagatableMatches(selectedText, tag.name);
     if (remaining === 0) {
-      notifyViaSnackbar({ message: t('LWC.desktop.tagging.no_untagged_matches'), options: { variant: 'info' } });
+      notifyViaSnackbar({
+        message: t('LWC.desktop.tagging.no_untagged_matches'),
+        options: { variant: 'info' },
+      });
       return;
     }
 
@@ -486,7 +491,16 @@ export const useTagCommandController = () => {
     walkIndexRef.current = 0;
     walkCurrentRangeRef.current = previewQueueWalkTarget(selectedText, tag.name, 0);
     window.writer?.editor?.focus();
-  }, [closePopup, filter, mode, notifyViaSnackbar, resolveTagForApply, selectedText, t, tagElement]);
+  }, [
+    closePopup,
+    filter,
+    mode,
+    notifyViaSnackbar,
+    resolveTagForApply,
+    selectedText,
+    t,
+    tagElement,
+  ]);
 
   const applyWalkStep = useCallback(() => {
     if (!walkMode) return;
@@ -499,7 +513,10 @@ export const useTagCommandController = () => {
         walkIndexRef.current,
       ).then((step) => {
         if (step.done) {
-          notifyViaSnackbar({ message: t('LWC.desktop.tagging.walk_complete'), options: { variant: 'info' } });
+          notifyViaSnackbar({
+            message: t('LWC.desktop.tagging.walk_complete'),
+            options: { variant: 'info' },
+          });
           exitWalkMode();
           return;
         }
@@ -512,7 +529,10 @@ export const useTagCommandController = () => {
         const elements = listRenamableElements(walkMode.oldTagName!, walkMode.search);
         const remaining = elements.length;
         if (remaining === 0) {
-          notifyViaSnackbar({ message: t('LWC.desktop.tagging.walk_complete'), options: { variant: 'info' } });
+          notifyViaSnackbar({
+            message: t('LWC.desktop.tagging.walk_complete'),
+            options: { variant: 'info' },
+          });
           exitWalkMode();
           return;
         }
@@ -538,7 +558,10 @@ export const useTagCommandController = () => {
     }
 
     if (step.done) {
-      notifyViaSnackbar({ message: t('LWC.desktop.tagging.walk_complete'), options: { variant: 'info' } });
+      notifyViaSnackbar({
+        message: t('LWC.desktop.tagging.walk_complete'),
+        options: { variant: 'info' },
+      });
       exitWalkMode();
       return;
     }
@@ -552,7 +575,10 @@ export const useTagCommandController = () => {
     writeLastUsedTag(walkMode.tagName);
     const ranges = listUntaggedRanges(walkMode.search, walkMode.tagName);
     if (ranges.length === 0) {
-      notifyViaSnackbar({ message: t('LWC.desktop.tagging.walk_complete'), options: { variant: 'info' } });
+      notifyViaSnackbar({
+        message: t('LWC.desktop.tagging.walk_complete'),
+        options: { variant: 'info' },
+      });
       exitWalkMode();
       return;
     }
@@ -573,7 +599,10 @@ export const useTagCommandController = () => {
     if (walkMode.mode === 'rename' && walkMode.oldTagName) {
       const elements = listRenamableElements(walkMode.oldTagName, walkMode.search);
       if (elements.length === 0) {
-        notifyViaSnackbar({ message: t('LWC.desktop.tagging.no_more_matches_to_skip_to'), options: { variant: 'info' } });
+        notifyViaSnackbar({
+          message: t('LWC.desktop.tagging.no_more_matches_to_skip_to'),
+          options: { variant: 'info' },
+        });
         return;
       }
       walkIndexRef.current = Math.min(walkIndexRef.current + 1, elements.length - 1);
@@ -587,7 +616,10 @@ export const useTagCommandController = () => {
 
     const ranges = listUntaggedRanges(walkMode.search, walkMode.tagName);
     if (ranges.length === 0) {
-      notifyViaSnackbar({ message: t('LWC.desktop.tagging.no_more_matches_to_skip_to'), options: { variant: 'info' } });
+      notifyViaSnackbar({
+        message: t('LWC.desktop.tagging.no_more_matches_to_skip_to'),
+        options: { variant: 'info' },
+      });
       return;
     }
     walkIndexRef.current = Math.min(walkIndexRef.current + 1, ranges.length - 1);

@@ -198,7 +198,8 @@ describe('rankDisambiguationCandidates', () => {
     expect(result).toEqual({
       selectedCandidateIds: ['cand-1'],
       rationales: {
-        'cand-1': 'Fallback: exact label match and only dated candidate overlapping the document span.',
+        'cand-1':
+          'Fallback: exact label match and only dated candidate overlapping the document span.',
       },
       confidences: {
         'cand-1': 0.56,

@@ -81,11 +81,7 @@ describe('resolveTranslationHitTarget', () => {
       readFile: jest.fn().mockRejectedValue(new Error('nope')),
     } as unknown as typeof window.electronAPI;
 
-    const target = await resolveTranslationHitTarget(
-      '/proj/chapter1.fr.translation.xml',
-      0,
-      5,
-    );
+    const target = await resolveTranslationHitTarget('/proj/chapter1.fr.translation.xml', 0, 5);
 
     expect(target).toEqual({
       sourcePath: '/proj/chapter1.xml',

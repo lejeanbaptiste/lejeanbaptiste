@@ -19,7 +19,9 @@ const getWriter = () => window.writer;
 export const schemaAttributeContextKey = (tagName: string, xpath?: string | null): string =>
   `${tagName}\0${xpath?.replace(/\[\d+\]/g, '') ?? ''}`;
 
-const toSchemaAttribute = (node: NodeDetail | Record<string, unknown>): SchemaAttributeDetail | null => {
+const toSchemaAttribute = (
+  node: NodeDetail | Record<string, unknown>,
+): SchemaAttributeDetail | null => {
   const rawName = (node as NodeDetail).name ?? (node as { name?: string }).name;
   if (!rawName) return null;
 
@@ -31,7 +33,8 @@ const toSchemaAttribute = (node: NodeDetail | Record<string, unknown>): SchemaAt
     invalid: Boolean((node as NodeDetail).invalid),
     required: Boolean((node as { required?: boolean }).required),
     choices: (node as { choices?: string[] }).choices,
-    documentation: (node as NodeDetail).documentation ?? (node as { documentation?: string }).documentation,
+    documentation:
+      (node as NodeDetail).documentation ?? (node as { documentation?: string }).documentation,
   };
 };
 
@@ -140,8 +143,7 @@ export const filterAttributeSuggestions = (
   if (!trimmed) return attrs;
   return attrs.filter(
     (attr) =>
-      attr.name.toLowerCase().includes(trimmed) ||
-      attr.fullName?.toLowerCase().includes(trimmed),
+      attr.name.toLowerCase().includes(trimmed) || attr.fullName?.toLowerCase().includes(trimmed),
   );
 };
 

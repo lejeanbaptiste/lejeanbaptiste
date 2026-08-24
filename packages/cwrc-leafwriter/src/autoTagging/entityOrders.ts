@@ -113,7 +113,9 @@ export function unionOrderLogs(a: string, b: string): string {
  * deterministic regardless of the order lines arrive across syncs.
  */
 export function composeRemap(orders: EntityOrder[]): Record<string, string | null> {
-  const sorted = [...orders].sort((a, b) => a.when.localeCompare(b.when) || a.id.localeCompare(b.id));
+  const sorted = [...orders].sort(
+    (a, b) => a.when.localeCompare(b.when) || a.id.localeCompare(b.id),
+  );
   const result: Record<string, string | null> = {};
   for (const order of sorted) {
     for (const [from, to] of Object.entries(order.remap)) {
@@ -159,7 +161,11 @@ interface OrderCursor {
 const parseCursor = (raw: string): OrderCursor => {
   try {
     const parsed = JSON.parse(raw) as Partial<OrderCursor>;
-    return { applied: Array.isArray(parsed.applied) ? parsed.applied.filter((x) => typeof x === 'string') : [] };
+    return {
+      applied: Array.isArray(parsed.applied)
+        ? parsed.applied.filter((x) => typeof x === 'string')
+        : [],
+    };
   } catch {
     return { applied: [] };
   }

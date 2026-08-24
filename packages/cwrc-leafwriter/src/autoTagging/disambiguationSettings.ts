@@ -79,8 +79,7 @@ export function yearRangeFromSettings(
 
 export function readPersistedDisambiguationSettings(): DisambiguationSettings | undefined {
   const raw = window.__leafWriterProject?.getDisambiguationSettings?.() as
-    | DisambiguationSettings
-    | undefined;
+    DisambiguationSettings | undefined;
   if (!raw) return undefined;
   return {
     aiCuration:

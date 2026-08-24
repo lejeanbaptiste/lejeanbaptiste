@@ -4,8 +4,7 @@ export type { StoredCursorPosition } from './cursorPositionFilter';
 export { filterVisualCursorPositions } from './cursorPositionFilter';
 
 export type LeafWriterCursorPosition =
-  | ({ mode: 'source' } & { offset: number })
-  | ({ mode: 'visual' } & VisualCaretPosition);
+  ({ mode: 'source' } & { offset: number }) | ({ mode: 'visual' } & VisualCaretPosition);
 
 const localTagName = (name: string) => (name.includes(':') ? name.split(':').pop()! : name);
 

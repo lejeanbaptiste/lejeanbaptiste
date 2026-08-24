@@ -211,7 +211,9 @@ export async function lookupAuthorityPackRowsByIds(
         if (!line || line.charCodeAt(0) !== 123 /* { */) continue;
         let authorityId: string;
         try {
-          authorityId = String((JSON.parse(line) as { authorityId?: unknown }).authorityId ?? '').trim();
+          authorityId = String(
+            (JSON.parse(line) as { authorityId?: unknown }).authorityId ?? '',
+          ).trim();
         } catch {
           continue;
         }

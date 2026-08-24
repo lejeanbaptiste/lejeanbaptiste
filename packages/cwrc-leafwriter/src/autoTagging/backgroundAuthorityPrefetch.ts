@@ -1,8 +1,5 @@
 import { AutoTaggingSession } from './integration';
-import {
-  runAuthorityPrefetch,
-  type AuthorityPrefetchHandle,
-} from './authorityPrefetch';
+import { runAuthorityPrefetch, type AuthorityPrefetchHandle } from './authorityPrefetch';
 
 /**
  * Unattended authority prefetch that runs right after auto-tagging applies

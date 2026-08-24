@@ -10,9 +10,7 @@ import type {
 export const normalizeProfileTitle = (title: string): string =>
   title.normalize('NFC').trim().toLowerCase();
 
-export const profileIdentityKey = (
-  source: SourceDescription | SharedSourceDescription,
-): string => {
+export const profileIdentityKey = (source: SourceDescription | SharedSourceDescription): string => {
   if (source.titleRef?.trim()) return `ref:${source.titleRef.trim()}`;
   if (source.titleKey?.trim()) return `key:${source.titleKey.trim()}`;
   const normalized = normalizeProfileTitle(source.title);
@@ -137,7 +135,9 @@ export const readGlobalSourceProfiles = async (): Promise<SourceProfile[]> => {
   return file?.profiles ?? [];
 };
 
-export const upsertGlobalSourceProfile = async (profile: SourceProfile): Promise<SourceProfile[]> => {
+export const upsertGlobalSourceProfile = async (
+  profile: SourceProfile,
+): Promise<SourceProfile[]> => {
   if (!window.electronAPI?.upsertSourceProfile) {
     throw new Error('Desktop source profile APIs unavailable');
   }

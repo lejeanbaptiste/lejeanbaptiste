@@ -2,8 +2,7 @@ import { getActiveEditorContent } from '../find/findSourceEditorHighlights';
 import { findElementOpenTagInXml } from './findElementOpenTagInXml';
 import type { PendingXPathJump } from './types';
 
-const isSourceEditorMode = () =>
-  window.writer?.overmindState?.ui?.editorViewMode === 'source';
+const isSourceEditorMode = () => window.writer?.overmindState?.ui?.editorViewMode === 'source';
 
 export const performXPathJumpInSourceEditor = (jump: PendingXPathJump): boolean => {
   if (!isSourceEditorMode() || !jump.xpath) return false;

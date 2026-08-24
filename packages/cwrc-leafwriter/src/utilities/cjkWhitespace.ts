@@ -52,7 +52,11 @@ export function stripCjkWhitespace(text: string): string {
     const prev = out.length > 0 ? out[out.length - 1]! : '';
     const next = j < n ? text[j]! : '';
 
-    if ((isEastAsian(prev) || isEastAsian(next)) && !isSpacedWordChar(prev) && !isSpacedWordChar(next)) {
+    if (
+      (isEastAsian(prev) || isEastAsian(next)) &&
+      !isSpacedWordChar(prev) &&
+      !isSpacedWordChar(next)
+    ) {
       // between East Asian characters (or trimming next to one) — drop it
     } else if (isSpacedWordChar(prev) && isSpacedWordChar(next)) {
       out += ' ';

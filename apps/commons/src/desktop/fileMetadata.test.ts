@@ -1,7 +1,4 @@
-import {
-  applyFileHeaderFields,
-  readFileMetadataFromXml,
-} from './fileMetadata';
+import { applyFileHeaderFields, readFileMetadataFromXml } from './fileMetadata';
 import { buildOrlandoSkeletonXml, buildTeiSkeletonXml } from './schemaTemplates';
 
 const teiSampleXml = () =>

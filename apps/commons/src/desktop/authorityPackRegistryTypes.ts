@@ -6,7 +6,8 @@ export type { AuthorityLifecycleProfile } from './authorityLifecycleTypes';
 
 /** Latest published authoritypacks release assets. */
 export const AUTHORITY_PACK_REGISTRY = {
-  releaseDownloadBaseUrl: 'https://github.com/lejeanbaptiste/authoritypacks/releases/latest/download',
+  releaseDownloadBaseUrl:
+    'https://github.com/lejeanbaptiste/authoritypacks/releases/latest/download',
 } as const;
 
 export const PACKS_INDEX_FILENAME = 'packs-index.json';
@@ -66,10 +67,8 @@ export const artifactRawUrl = (
 export const packsIndexUrl = (registry = AUTHORITY_PACK_REGISTRY): string =>
   artifactRawUrl(registry, PACKS_INDEX_FILENAME);
 
-export const tarballArtifactUrl = (
-  fileName: string,
-  registry = AUTHORITY_PACK_REGISTRY,
-): string => artifactRawUrl(registry, fileName);
+export const tarballArtifactUrl = (fileName: string, registry = AUTHORITY_PACK_REGISTRY): string =>
+  artifactRawUrl(registry, fileName);
 
 export const parsePacksIndex = (raw: string): AuthorityPacksIndex | null => {
   try {

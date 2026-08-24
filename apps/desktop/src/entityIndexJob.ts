@@ -25,7 +25,8 @@ export const startEntityIndexJob = (
   });
   worker.on('exit', (code) => {
     jobs.delete(jobId);
-    if (code && code !== 0) emit({ jobId, status: 'error', error: `Entity index worker exited with code ${code}.` });
+    if (code && code !== 0)
+      emit({ jobId, status: 'error', error: `Entity index worker exited with code ${code}.` });
   });
   worker.send({ type: 'run', jobId, request });
   return jobId;

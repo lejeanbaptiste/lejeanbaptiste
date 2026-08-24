@@ -33,11 +33,7 @@ export interface ClipboardExportFlavors {
 /* ------------------------------------------------------------------ escaping */
 
 const escapeHtml = (value: string): string =>
-  value
-    .replace(/&/g, '&amp;')
-    .replace(/</g, '&lt;')
-    .replace(/>/g, '&gt;')
-    .replace(/"/g, '&quot;');
+  value.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
 
 /** RTF-escapes a string: control chars, braces, and \uN for anything non-ASCII. */
 export const escapeRtfText = (value: string): string => {
@@ -156,7 +152,8 @@ export const buildZoteroFieldInstruction = (
   entry: ExportBiblEntry,
   renderedText: string,
   options: { locator?: string; locatorType?: string } = {},
-): string => `ADDIN ZOTERO_ITEM CSL_CITATION ${buildZoteroCitationJson(entry, renderedText, options)}`;
+): string =>
+  `ADDIN ZOTERO_ITEM CSL_CITATION ${buildZoteroCitationJson(entry, renderedText, options)}`;
 
 /* ---------------------------------------------------------------- rtf flavor */
 

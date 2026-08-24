@@ -207,9 +207,7 @@ export const TranslationPolicyPanel = () => {
         <InputLabel>{t('LW.settings.translationPolicy.eraDisplay')}</InputLabel>
         <Select
           label={t('LW.settings.translationPolicy.eraDisplay')}
-          onChange={(event) =>
-            setDraft({ ...draft, eraDisplay: event.target.value as EraDisplay })
-          }
+          onChange={(event) => setDraft({ ...draft, eraDisplay: event.target.value as EraDisplay })}
           value={draft.eraDisplay}
         >
           <MenuItem value="none">{t('LW.settings.translationPolicy.eraNever')}</MenuItem>
@@ -230,7 +228,9 @@ export const TranslationPolicyPanel = () => {
           <MenuItem value="astronomical">
             {t('LW.settings.translationPolicy.yearAstronomical')}
           </MenuItem>
-          <MenuItem value="historical">{t('LW.settings.translationPolicy.yearHistorical')}</MenuItem>
+          <MenuItem value="historical">
+            {t('LW.settings.translationPolicy.yearHistorical')}
+          </MenuItem>
         </Select>
       </FormControl>
 

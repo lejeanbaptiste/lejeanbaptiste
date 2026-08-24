@@ -19,14 +19,10 @@ const matchesTeiTag = (a: string | null, b: string | null) => {
   return attrLocal === wantedLocal || a.toLowerCase() === b.toLowerCase();
 };
 
-const formatSegment = (tag: string, index: number) =>
-  index === 0 ? tag : `${tag}[${index + 1}]`;
+const formatSegment = (tag: string, index: number) => (index === 0 ? tag : `${tag}[${index + 1}]`);
 
 /** Build `/TEI/text/body/p[3]` from a WYSIWYG editor element (_tag attributes). */
-export const getTeiXPathFromEditorElement = (
-  element: Element,
-  body: HTMLElement,
-): string => {
+export const getTeiXPathFromEditorElement = (element: Element, body: HTMLElement): string => {
   const segments: string[] = [];
   let current: Element | null = element;
 
@@ -160,7 +156,10 @@ export const getTeiXPathAtOffset = (content: string, offset: number): string | n
     }
 
     if (inner.startsWith('/')) {
-      const nameMatch = inner.slice(1).trim().match(/^([\w:.-]+)/);
+      const nameMatch = inner
+        .slice(1)
+        .trim()
+        .match(/^([\w:.-]+)/);
       if (nameMatch) popTag(nameMatch[1]);
       i = tagEnd + 1;
       continue;
@@ -247,10 +246,7 @@ const findRootCandidate = (body: HTMLElement, tag: string, index: number): Eleme
 };
 
 /** Walk the WYSIWYG editor DOM using TEI-style xpath segments (_tag names). */
-export const findEditorNodeByTeiXPath = (
-  body: HTMLElement,
-  teiXpath: string,
-): Element | null => {
+export const findEditorNodeByTeiXPath = (body: HTMLElement, teiXpath: string): Element | null => {
   const segments = parseTeiXPathSegments(teiXpath);
   if (segments.length === 0) return null;
 

@@ -16,7 +16,9 @@ export const Language = () => {
       <TextField
         error={attempted && !languageValid}
         fullWidth
-        helperText={attempted && !languageValid ? t('LW.desktop.settings.field_required') : undefined}
+        helperText={
+          attempted && !languageValid ? t('LW.desktop.settings.field_required') : undefined
+        }
         id="language-selector"
         label={t('LW.commons.language')}
         onChange={(event) => {

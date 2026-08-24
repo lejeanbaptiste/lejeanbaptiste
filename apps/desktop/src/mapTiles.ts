@@ -79,8 +79,10 @@ export interface MapTilesManifest {
 export const mapTilesManifestPath = (mapTilesDir: string): string =>
   path.join(mapTilesDir, MAP_TILES_MANIFEST_FILENAME);
 
-export const mapTileBundlePath = (mapTilesDir: string, bundle: Pick<MapTileBundleSpec, 'fileName'>): string =>
-  path.join(mapTilesDir, bundle.fileName);
+export const mapTileBundlePath = (
+  mapTilesDir: string,
+  bundle: Pick<MapTileBundleSpec, 'fileName'>,
+): string => path.join(mapTilesDir, bundle.fileName);
 
 export const parseMapTilesManifest = (raw: string): MapTilesManifest | null => {
   try {
@@ -119,16 +121,27 @@ const writeInstalledMapTilesManifest = async (
   manifest: MapTilesManifest,
 ): Promise<void> => {
   await fsp.mkdir(mapTilesDir, { recursive: true });
-  await writeFileAtomic(mapTilesManifestPath(mapTilesDir), `${JSON.stringify(manifest, null, 2)}\n`);
+  await writeFileAtomic(
+    mapTilesManifestPath(mapTilesDir),
+    `${JSON.stringify(manifest, null, 2)}\n`,
+  );
 };
 
 /** Every installed, verified bundle — for settings UI and the region-availability warning banner. */
 export const listInstalledMapTileRegions = async (
   mapTilesDir: string,
-): Promise<{ id: string; sha256: string; installedAt: string; maxZoom?: number; minZoom?: number }[]> => {
+): Promise<
+  { id: string; sha256: string; installedAt: string; maxZoom?: number; minZoom?: number }[]
+> => {
   const manifest = await readInstalledMapTilesManifest(mapTilesDir);
   if (!manifest) return [];
-  const regions: { id: string; sha256: string; installedAt: string; maxZoom?: number; minZoom?: number }[] = [];
+  const regions: {
+    id: string;
+    sha256: string;
+    installedAt: string;
+    maxZoom?: number;
+    minZoom?: number;
+  }[] = [];
   for (const [id, entry] of Object.entries(manifest.bundles)) {
     const region: {
       id: string;
@@ -203,7 +216,8 @@ const downloadToFile = async (
     async function* (chunks) {
       for await (const chunk of chunks) {
         receivedBytes += (chunk as Buffer).length;
-        if (receivedBytes > maxBytes) throw new Error(`Download exceeds the ${maxBytes} byte limit.`);
+        if (receivedBytes > maxBytes)
+          throw new Error(`Download exceeds the ${maxBytes} byte limit.`);
         onChunk?.(receivedBytes, totalBytes);
         yield chunk;
       }
@@ -249,7 +263,8 @@ const copyFileToPath = async (
     async function* (chunks) {
       for await (const chunk of chunks) {
         receivedBytes += (chunk as Buffer).length;
-        if (receivedBytes > maxBytes) throw new Error(`Download exceeds the ${maxBytes} byte limit.`);
+        if (receivedBytes > maxBytes)
+          throw new Error(`Download exceeds the ${maxBytes} byte limit.`);
         onChunk?.(receivedBytes, totalBytes);
         yield chunk;
       }
@@ -270,10 +285,10 @@ export const isConfiguredMapTileBundle = (bundle: MapTileBundleSpec): boolean =>
   return (
     (bundle.source === PROTOMAPS_DAILY_SOURCE && bundle.bbox !== undefined) ||
     bundle.source === AUTHORITYPACKS_RELEASE_SOURCE ||
-    (sourcePath !== null || !bundle.url.includes('TODO-replace-with-real-hosted-url')) &&
+    ((sourcePath !== null || !bundle.url.includes('TODO-replace-with-real-hosted-url')) &&
       (bundle.bytes ?? 0) > 0 &&
       !!bundle.sha256 &&
-      !/^0+$/.test(bundle.sha256)
+      !/^0+$/.test(bundle.sha256))
   );
 };
 
@@ -356,9 +371,10 @@ export const installMapTileBundle = async ({
   }
   const installedManifest = await readInstalledMapTilesManifest(mapTilesDir);
   const installedEntry = installedManifest?.bundles[bundle.id];
-  const alreadyInstalled = bundle.source === PROTOMAPS_DAILY_SOURCE
-    ? installedEntry?.sourceUrl === resolvedSourceUrl
-    : installedEntry?.sha256 === bundle.sha256;
+  const alreadyInstalled =
+    bundle.source === PROTOMAPS_DAILY_SOURCE
+      ? installedEntry?.sourceUrl === resolvedSourceUrl
+      : installedEntry?.sha256 === bundle.sha256;
   if (!force && alreadyInstalled && fs.existsSync(destPath)) {
     return { installed: false, path: destPath };
   }
@@ -376,24 +392,34 @@ export const installMapTileBundle = async ({
       sourcePath,
       tempPath,
       (received, total) => onProgress?.('Copying map tiles…', received, total ?? bundle.bytes),
-      Math.min(MAX_MAP_TILE_BUNDLE_BYTES, (bundle.bytes ?? MAX_MAP_TILE_BUNDLE_BYTES) + 8 * 1024 * 1024),
+      Math.min(
+        MAX_MAP_TILE_BUNDLE_BYTES,
+        (bundle.bytes ?? MAX_MAP_TILE_BUNDLE_BYTES) + 8 * 1024 * 1024,
+      ),
     );
   } else if (bundle.source === PROTOMAPS_DAILY_SOURCE) {
     if (!resolvedSourceUrl) throw new Error('Could not resolve the Protomaps daily build.');
-    await extractRegionalBundle(resolvedSourceUrl, bundle, tempPath, (message) => onProgress?.(message));
+    await extractRegionalBundle(resolvedSourceUrl, bundle, tempPath, (message) =>
+      onProgress?.(message),
+    );
   } else {
     await downloadToFile(
       bundle.url,
       tempPath,
       (received, total) => onProgress?.('Downloading map tiles…', received, total ?? bundle.bytes),
-      Math.min(MAX_MAP_TILE_BUNDLE_BYTES, (bundle.bytes ?? MAX_MAP_TILE_BUNDLE_BYTES) + 8 * 1024 * 1024),
+      Math.min(
+        MAX_MAP_TILE_BUNDLE_BYTES,
+        (bundle.bytes ?? MAX_MAP_TILE_BUNDLE_BYTES) + 8 * 1024 * 1024,
+      ),
     );
   }
 
   const outputBytes = (await fsp.stat(tempPath)).size;
   if (outputBytes > MAX_MAP_TILE_BUNDLE_BYTES) {
     await fsp.rm(tempPath, { force: true });
-    throw new Error(`Extracted map tile bundle exceeds the ${MAX_MAP_TILE_BUNDLE_BYTES} byte limit.`);
+    throw new Error(
+      `Extracted map tile bundle exceeds the ${MAX_MAP_TILE_BUNDLE_BYTES} byte limit.`,
+    );
   }
 
   onProgress?.('Verifying download…');
@@ -444,11 +470,18 @@ export const removeMapTileBundle = async (mapTilesDir: string, bundleId: string)
 };
 
 /** Parses `pmtiles://<bundleId>/{z}/{x}/{y}.<ext>`. */
-export function parsePmtilesTileUrl(url: string): { bundleId: string; z: number; x: number; y: number } | null {
+export function parsePmtilesTileUrl(
+  url: string,
+): { bundleId: string; z: number; x: number; y: number } | null {
   const parsed = new URL(url);
   const match = parsed.pathname.match(/\/(\d+)\/(\d+)\/(\d+)\.\w+$/);
   if (!match || !parsed.hostname) return null;
-  return { bundleId: parsed.hostname, z: Number(match[1]), x: Number(match[2]), y: Number(match[3]) };
+  return {
+    bundleId: parsed.hostname,
+    z: Number(match[1]),
+    x: Number(match[2]),
+    y: Number(match[3]),
+  };
 }
 
 /** Reads byte ranges directly from a local file — PMTiles needs no SQLite/native dependency. */
@@ -464,7 +497,9 @@ class NodeFileSource implements Source {
     try {
       const buffer = Buffer.alloc(length);
       await handle.read(buffer, 0, length, offset);
-      return { data: buffer.buffer.slice(buffer.byteOffset, buffer.byteOffset + buffer.byteLength) };
+      return {
+        data: buffer.buffer.slice(buffer.byteOffset, buffer.byteOffset + buffer.byteLength),
+      };
     } finally {
       await handle.close();
     }

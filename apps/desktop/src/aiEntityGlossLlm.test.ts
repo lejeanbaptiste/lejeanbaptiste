@@ -64,7 +64,9 @@ describe('aiEntityGlossLlm', () => {
 
   test('parseEntityGlossContent reads JSON gloss and fenced JSON', () => {
     expect(parseEntityGlossContent('{"gloss":"Livre des Jin"}')).toBe('Livre des Jin');
-    expect(parseEntityGlossContent('```json\n{"gloss":"Livre des Jin"}\n```')).toBe('Livre des Jin');
+    expect(parseEntityGlossContent('```json\n{"gloss":"Livre des Jin"}\n```')).toBe(
+      'Livre des Jin',
+    );
     expect(parseEntityGlossContent('Livre des Jin')).toBe('Livre des Jin');
     expect(parseEntityGlossContent('{"gloss":""}')).toBeNull();
     expect(parseEntityGlossContent('{not-json')).toBeNull();

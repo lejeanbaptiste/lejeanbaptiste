@@ -4,14 +4,14 @@ Plain-text templates for **suggest** and **audit** producers. Edit these files d
 
 ## Files
 
-| File | Role |
-|------|------|
-| `preamble.txt` | Shared rules (locator, JSON output, no offsets) |
-| `suggest.system.txt` | Suggest task body; placeholders `{{TAGS}}`, `{{TAG_GUIDE}}` |
-| `audit.system.txt` | Audit task body; placeholder `{{TAGS}}` |
-| `user.wrapper.txt` | User message wrapper; `{{BEFORE}}`, `{{CHUNK}}`, `{{AFTER}}` |
-| `tag-definitions.json` | One-line definition per tag name (used in suggest only) |
-| `versions.json` | Bump `suggest` / `audit` when prompt *meaning* changes (invalidates LLM cache) |
+| File                   | Role                                                                           |
+| ---------------------- | ------------------------------------------------------------------------------ |
+| `preamble.txt`         | Shared rules (locator, JSON output, no offsets)                                |
+| `suggest.system.txt`   | Suggest task body; placeholders `{{TAGS}}`, `{{TAG_GUIDE}}`                    |
+| `audit.system.txt`     | Audit task body; placeholder `{{TAGS}}`                                        |
+| `user.wrapper.txt`     | User message wrapper; `{{BEFORE}}`, `{{CHUNK}}`, `{{AFTER}}`                   |
+| `tag-definitions.json` | One-line definition per tag name (used in suggest only)                        |
+| `versions.json`        | Bump `suggest` / `audit` when prompt _meaning_ changes (invalidates LLM cache) |
 
 Assembly logic lives in `../prompts.ts`.
 

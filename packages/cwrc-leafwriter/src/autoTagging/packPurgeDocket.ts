@@ -10,10 +10,7 @@ export const PACK_PURGE_ORDERS_FILE = 'pack-purge-orders.jsonl';
 export const PACK_PURGE_RESOLUTIONS_FILE = 'pack-purge-order-resolutions.jsonl';
 
 export type PackPurgeOrderKind =
-  | 'concordance-unlink'
-  | 'concordance-link'
-  | 'concordance-replace'
-  | 'pack-note';
+  'concordance-unlink' | 'concordance-link' | 'concordance-replace' | 'pack-note';
 
 export interface PackPurgeOrder {
   id: string;
@@ -76,8 +73,8 @@ function appendJsonl<T>(existing: string, records: T[]): string {
 
 /** Parse shipped purge-orders.ndjson text into typed orders. */
 export function parseShippedPurgeOrders(text: string): PackPurgeOrder[] {
-  return parseJsonl<PackPurgeOrder>(text).filter(
-    (row) => Boolean(row?.id && row?.kind && row?.note && row?.from === 'developer'),
+  return parseJsonl<PackPurgeOrder>(text).filter((row) =>
+    Boolean(row?.id && row?.kind && row?.note && row?.from === 'developer'),
   );
 }
 
@@ -92,9 +89,7 @@ export function mergeShippedOrdersIntoDocket(
 ): { text: string; added: number } {
   const existing = parseJsonl<PackPurgeOrder>(existingDocketText);
   const seen = new Set(existing.map((row) => row.id));
-  const toAdd = shipped
-    .filter((row) => !seen.has(row.id))
-    .map((row) => ({ ...row, ingestedAt }));
+  const toAdd = shipped.filter((row) => !seen.has(row.id)).map((row) => ({ ...row, ingestedAt }));
   return {
     text: appendJsonl(existingDocketText, toAdd),
     added: toAdd.length,

@@ -7,21 +7,21 @@
 Import one file, a selection of files, or a whole folder tree (docx, odt, md, txt, rtf, …) into the current project, converting each file into a schema-valid document. Two tracks:
 
 1. **Blind import** — strip everything but text, make paragraph breaks where appropriate, wrap in the project's document skeleton. (This is what `documentImport.ts` does today.)
-2. **Profiled import** — send sample document(s) to the configured AI endpoint, have it infer an *import profile* (a declarative rule set: pattern → tag), let the user review/tweak it, then apply it deterministically across the batch.
+2. **Profiled import** — send sample document(s) to the configured AI endpoint, have it infer an _import profile_ (a declarative rule set: pattern → tag), let the user review/tweak it, then apply it deterministically across the batch.
 
 The profile replaces the per-corpus scripts we currently write by hand, but the artifact is data (inspectable, editable, re-runnable, saved with the project), not generated code. No model-generated code is ever executed.
 
 ## What already exists (reuse targets)
 
-| Piece | Where | Role in import |
-|---|---|---|
-| Blind import core (strip md/rtf, paragraph split, skeleton wrap, XML inspection, output-path dedup) | `apps/commons/src/desktop/documentImport.ts` | Phase 1 foundation |
-| Document skeletons per catalog (TEI / jTEI / Orlando) | `apps/commons/src/desktop/schemaTemplates.ts` — `buildSkeletonForCatalog()` | Wrapper for imported body content |
-| Project metadata → header merge | `metadataApplyOverrides.ts` / `newFile` action in `apps/commons/src/overmind/project/actions.ts` | Fill header from project metadata, per-file title from filename/front matter |
-| Schema-aware paragraph normalization | `packages/cwrc-leafwriter/src/js/tinymce/normalizePastedParagraphs.ts` (`isTagValidChildOfParent`, `canTagContainText`, `getBlockTag`) | Validity predicates when placing imported blocks |
-| Validator | `packages/cwrc-leafwriter-validator` | Post-import validation report per file |
-| AI endpoint (OpenAI-compatible, user-configured) | `apps/desktop/src/projectPrefs.ts` (`AiApiSettings`); request pattern in `main.ts` (`generateAiTranslation`) | Profile inference call |
-| File ops in project tree | `apps/desktop/src/explorerFileOps.ts` | Writing imported files, creating target folders |
+| Piece                                                                                               | Where                                                                                                                                  | Role in import                                                               |
+| --------------------------------------------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------- | ---------------------------------------------------------------------------- |
+| Blind import core (strip md/rtf, paragraph split, skeleton wrap, XML inspection, output-path dedup) | `apps/commons/src/desktop/documentImport.ts`                                                                                           | Phase 1 foundation                                                           |
+| Document skeletons per catalog (TEI / jTEI / Orlando)                                               | `apps/commons/src/desktop/schemaTemplates.ts` — `buildSkeletonForCatalog()`                                                            | Wrapper for imported body content                                            |
+| Project metadata → header merge                                                                     | `metadataApplyOverrides.ts` / `newFile` action in `apps/commons/src/overmind/project/actions.ts`                                       | Fill header from project metadata, per-file title from filename/front matter |
+| Schema-aware paragraph normalization                                                                | `packages/cwrc-leafwriter/src/js/tinymce/normalizePastedParagraphs.ts` (`isTagValidChildOfParent`, `canTagContainText`, `getBlockTag`) | Validity predicates when placing imported blocks                             |
+| Validator                                                                                           | `packages/cwrc-leafwriter-validator`                                                                                                   | Post-import validation report per file                                       |
+| AI endpoint (OpenAI-compatible, user-configured)                                                    | `apps/desktop/src/projectPrefs.ts` (`AiApiSettings`); request pattern in `main.ts` (`generateAiTranslation`)                           | Profile inference call                                                       |
+| File ops in project tree                                                                            | `apps/desktop/src/explorerFileOps.ts`                                                                                                  | Writing imported files, creating target folders                              |
 
 Key architectural point: **import runs as a file-level pipeline and writes XML into the project folder directly** — it does not round-trip through TinyMCE. The editor's paste path is for fragments; a batch of 400 files needs the main-process path. The schema predicates in `normalizePastedParagraphs` are pure functions over the schema manager and can be extracted for headless use.
 
@@ -29,7 +29,7 @@ Key architectural point: **import runs as a file-level pipeline and writes XML i
 
 Keep sample files with the project or a private corpus folder (not committed under `docs/`). Each sample exercises a different profile feature:
 
-1. **`KR1a0145_002.txt`** — Kanseki Repository / mandoku format. Org-mode metadata lines (`#+TITLE:`, `#+PROPERTY: JUAN …`), `<pb:KR1a0145_WYG_002-1a>` page-break markers, `¶` end-of-line pilcrows where a *missing* pilcrow means the paragraph continues across the page break. Needs: line-pattern rules → `<pb/>`, metadata capture → header, pilcrow-based line joining.
+1. **`KR1a0145_002.txt`** — Kanseki Repository / mandoku format. Org-mode metadata lines (`#+TITLE:`, `#+PROPERTY: JUAN …`), `<pb:KR1a0145_WYG_002-1a>` page-break markers, `¶` end-of-line pilcrows where a _missing_ pilcrow means the paragraph continues across the page break. Needs: line-pattern rules → `<pb/>`, metadata capture → header, pilcrow-based line joining.
 2. **`nihonshoki.md`** — Wikisource-style markdown. `{{header}}` template block carrying title/section metadata (currently passes through the md stripper as literal text — needs a rule), blank-line paragraphs, `〈…〉` interlinear notes and `★`/`■` editorial symbols as inline-rule candidates.
 3. **`MKBG OCR.docx`** — OCR'd Word document. Needs: docx extraction, heading/style mapping, OCR-noise tolerance (running headers, loose page numbers → `<pb/>` or drop).
 4. **`HanShu_bio_007_j_34_HanXin_clean.xml`** — already-structured custom XML. Root is not TEI/Orlando, so v1 XML import rejects it with a clear error. Long-term: element-mapping rules (their `<note type="comm">` → TEI `<note>`).
@@ -48,15 +48,15 @@ One extractor per format, all producing a shared intermediate representation:
 ```ts
 interface IrDocument {
   sourcePath: string;
-  metadata: Record<string, string>;   // front matter, #+PROPERTY, {{header}}, docx core props
+  metadata: Record<string, string>; // front matter, #+PROPERTY, {{header}}, docx core props
   blocks: IrBlock[];
 }
 interface IrBlock {
   kind: 'para' | 'heading' | 'line' | 'blank' | 'table' | 'image';
-  level?: number;          // heading level
-  styleName?: string;      // docx paragraph style, when present
+  level?: number; // heading level
+  styleName?: string; // docx paragraph style, when present
   text: string;
-  runs?: IrRun[];          // italic/bold/note spans, for later phases
+  runs?: IrRun[]; // italic/bold/note spans, for later phases
 }
 ```
 
@@ -75,21 +75,25 @@ JSON stored in the project (e.g. `import/profiles/<name>.json`), applied by a fi
 {
   "version": 1,
   "name": "Kanseki mandoku",
-  "source": { "paragraphMode": "pilcrow",   // or "blank-line" | "every-line" | "reflow"
-              "pilcrowChar": "¶" },
+  "source": {
+    "paragraphMode": "pilcrow", // or "blank-line" | "every-line" | "reflow"
+    "pilcrowChar": "¶",
+  },
   "metadata": [
     { "match": "^#\\+TITLE:\\s*(.+)$", "field": "title" },
-    { "match": "^#\\+PROPERTY: JUAN (.+)$", "field": "custom:juan" }
+    { "match": "^#\\+PROPERTY: JUAN (.+)$", "field": "custom:juan" },
   ],
-  "lineRules": [        // whole lines/blocks, first match wins
+  "lineRules": [
+    // whole lines/blocks, first match wins
     { "match": "^<pb:([^>]+)>$", "action": "milestone", "tag": "pb", "attrs": { "n": "$1" } },
     { "match": "^#\\+.*$", "action": "drop" },
-    { "styleName": "Heading 1", "action": "heading", "level": 1 }
+    { "styleName": "Heading 1", "action": "heading", "level": 1 },
   ],
-  "inlineRules": [      // inside paragraph text
-    { "match": "〈([^〉]*)〉", "action": "wrap", "tag": "note", "attrs": { "type": "inline" } }
+  "inlineRules": [
+    // inside paragraph text
+    { "match": "〈([^〉]*)〉", "action": "wrap", "tag": "note", "attrs": { "type": "inline" } },
   ],
-  "structure": { "headingTag": "head", "sectionTag": "div", "paragraphTag": "p" }
+  "structure": { "headingTag": "head", "sectionTag": "div", "paragraphTag": "p" },
 }
 ```
 
@@ -118,7 +122,7 @@ Engine properties:
 ### 5. UI flow
 
 1. **File → Import…** → pick files/folder.
-2. Import dialog: *Blind* (paragraph-mode dropdown) or *Analyze with AI* (sample picker, defaults to first + median-size file).
+2. Import dialog: _Blind_ (paragraph-mode dropdown) or _Analyze with AI_ (sample picker, defaults to first + median-size file).
 3. Profile review panel: rules rendered human-readably ("lines like `<pb:…>` → page break `<pb n='…'/>` — matched 214× in sample") with live preview of the first sample's XML; rules can be disabled/edited/added; profiles save/load.
 4. Run → progress → import report → reveal in explorer.
 

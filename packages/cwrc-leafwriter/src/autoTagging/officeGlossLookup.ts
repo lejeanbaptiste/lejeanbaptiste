@@ -143,7 +143,9 @@ export async function persistOfficeTranslationNames(
 }
 
 function normalizeZh(zh: string | undefined): string {
-  return String(zh ?? '').normalize('NFKC').trim();
+  return String(zh ?? '')
+    .normalize('NFKC')
+    .trim();
 }
 
 function zhDynastyKey(zh: string, dynasty: string | null | undefined): string {

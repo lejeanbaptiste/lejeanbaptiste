@@ -85,12 +85,9 @@ export const loadDatabaseWindowEntities = async (
   error: string | null;
 }> => {
   const projectStore = entityStoreFromDesktop();
-  const centralFolder =
-    (await window.electronAPI?.getEntityDbFolder?.().catch(() => null)) ?? null;
+  const centralFolder = (await window.electronAPI?.getEntityDbFolder?.().catch(() => null)) ?? null;
   const centralStore = centralEntityStoreFromDesktop(centralFolder);
-  const viewingCentral = Boolean(
-    (syncToCentral || databaseView === 'central') && centralStore,
-  );
+  const viewingCentral = Boolean((syncToCentral || databaseView === 'central') && centralStore);
   const activeStore = viewingCentral ? centralStore : projectStore;
 
   if (!activeStore) {

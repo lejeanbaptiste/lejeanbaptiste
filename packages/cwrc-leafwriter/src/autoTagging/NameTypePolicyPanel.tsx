@@ -85,8 +85,8 @@ export const NameTypePolicyPanel = ({
   const { t } = useTranslation();
   const [loaded, setLoaded] = useState(false);
   const [loadedSourceLanguage, setLoadedSourceLanguage] = useState<string | null>(null);
-  const [buckets, setBuckets] = useState<Record<NameTypeId, NameTypeTaggingBucket>>(
-    () => builtInBucketsFromPolicy(defaultPolicyForLanguage(null)),
+  const [buckets, setBuckets] = useState<Record<NameTypeId, NameTypeTaggingBucket>>(() =>
+    builtInBucketsFromPolicy(defaultPolicyForLanguage(null)),
   );
   const [customTypes, setCustomTypes] = useState<CustomNameType[]>([]);
   const [artMinCodePoints, setArtMinCodePoints] = useState(3);
@@ -246,7 +246,12 @@ export const NameTypePolicyPanel = ({
           );
         })}
 
-        <Button size="small" variant="text" sx={{ alignSelf: 'flex-start' }} onClick={handleResetToPreset}>
+        <Button
+          size="small"
+          variant="text"
+          sx={{ alignSelf: 'flex-start' }}
+          onClick={handleResetToPreset}
+        >
           {t('LW.nameTypePolicy.reset_preset')}
         </Button>
 

@@ -261,7 +261,10 @@ class Utilities {
    * - parentId?: string;
    * - xpath?: string;
    */
-  selectAdjacentNodes([startNode, endNode]: [SelectNodeParams, SelectNodeParams], focusEditor = true) {
+  selectAdjacentNodes(
+    [startNode, endNode]: [SelectNodeParams, SelectNodeParams],
+    focusEditor = true,
+  ) {
     if (!this.writer.editor) return;
     const { editor, entitiesManager } = this.writer;
     entitiesManager.removeHighlights();

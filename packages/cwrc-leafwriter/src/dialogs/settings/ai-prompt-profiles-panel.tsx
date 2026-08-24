@@ -102,7 +102,10 @@ export const AiPromptProfilesPanel = ({ active = true }: { active?: boolean }) =
     setAuditCleanTaskText(reverted.auditCleanTaskText);
     setDisambiguationRankTaskText(reverted.disambiguationRankTaskText);
     setError(null);
-    window.setTimeout(() => disambiguationFieldRef.current?.scrollIntoView({ block: 'nearest' }), 0);
+    window.setTimeout(
+      () => disambiguationFieldRef.current?.scrollIntoView({ block: 'nearest' }),
+      0,
+    );
   };
 
   const handleSaveAsNew = async () => {
@@ -165,9 +168,7 @@ export const AiPromptProfilesPanel = ({ active = true }: { active?: boolean }) =
       )}
 
       <FormControl size="small" fullWidth>
-        <InputLabel id="ai-prompt-profile-label">
-          {t('LW.settings.ai_prompts.profile')}
-        </InputLabel>
+        <InputLabel id="ai-prompt-profile-label">{t('LW.settings.ai_prompts.profile')}</InputLabel>
         <Select
           labelId="ai-prompt-profile-label"
           label={t('LW.settings.ai_prompts.profile')}

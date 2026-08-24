@@ -50,10 +50,7 @@ export function entityFieldsFromSqlitePanel(snapshot: PanelSnapshot): EntityFiel
   return panelFields(snapshot);
 }
 
-async function loadPanel(
-  store: EntityStore,
-  entityId: string,
-): Promise<PanelSnapshot | null> {
+async function loadPanel(store: EntityStore, entityId: string): Promise<PanelSnapshot | null> {
   const raw = await store.sqliteEntitySummary(entityId);
   return (raw as PanelSnapshot | null) ?? null;
 }
@@ -388,18 +385,8 @@ export async function syncEntityPairSqlite(
   const cedb = await loadPanel(centralStore, centralId);
   if (!pedb || !cedb) return null;
 
-  let pedbChanged = await propagateTombstonesSqlite(
-    centralStore,
-    centralId,
-    projectStore,
-    pedbId,
-  );
-  let cedbChanged = await propagateTombstonesSqlite(
-    projectStore,
-    pedbId,
-    centralStore,
-    centralId,
-  );
+  let pedbChanged = await propagateTombstonesSqlite(centralStore, centralId, projectStore, pedbId);
+  let cedbChanged = await propagateTombstonesSqlite(projectStore, pedbId, centralStore, centralId);
 
   // Re-read after tombstones so the union plan does not revive them.
   const pedbAfter = (await loadPanel(projectStore, pedbId)) ?? pedb;

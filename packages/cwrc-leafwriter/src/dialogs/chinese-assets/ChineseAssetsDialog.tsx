@@ -57,9 +57,7 @@ export const ChineseAssetsDialog = ({
 
   return (
     <Dialog open={open} maxWidth="sm" fullWidth>
-      <DialogTitle>
-        {isZh ? '中文项目资源下载' : 'Chinese Project Resources'}
-      </DialogTitle>
+      <DialogTitle>{isZh ? '中文项目资源下载' : 'Chinese Project Resources'}</DialogTitle>
 
       <DialogContent sx={{ pt: 2 }}>
         <Stack spacing={2}>
@@ -74,10 +72,7 @@ export const ChineseAssetsDialog = ({
               <FormControlLabel
                 key={asset}
                 control={
-                  <Checkbox
-                    checked={selected.has(asset)}
-                    onChange={() => handleToggle(asset)}
-                  />
+                  <Checkbox checked={selected.has(asset)} onChange={() => handleToggle(asset)} />
                 }
                 label={isZh ? assetLabels[asset].zh : assetLabels[asset].en}
               />

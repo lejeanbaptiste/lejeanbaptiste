@@ -21,9 +21,7 @@ if (!globalScope.MonacoEnvironment) {
   globalScope.MonacoEnvironment = {
     getWorkerUrl: () => {
       const origin =
-        typeof window !== 'undefined' && window.location?.origin
-          ? window.location.origin
-          : '';
+        typeof window !== 'undefined' && window.location?.origin ? window.location.origin : '';
       return `${origin}/monaco-editor.worker.js`;
     },
   };

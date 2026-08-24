@@ -269,7 +269,7 @@ class CWRC2XML {
       xmlString += tags[0];
 
       if (tags.length > 1) {
-      currentNode.contents().each((_index, element) => {
+        currentNode.contents().each((_index, element) => {
           if (element.nodeType === Node.ELEMENT_NODE) {
             doBuild($(element));
           } else if (element.nodeType === Node.TEXT_NODE) {

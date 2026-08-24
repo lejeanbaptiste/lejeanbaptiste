@@ -24,7 +24,13 @@
  * two real computers.
  */
 
-import { addEntity, createEntitiesScaffold, getDatabaseId, parseEntities, serializeEntities } from './entities';
+import {
+  addEntity,
+  createEntitiesScaffold,
+  getDatabaseId,
+  parseEntities,
+  serializeEntities,
+} from './entities';
 import { mergeEntities } from './entityOps';
 import { EntityStore, resolveEntityStorePaths, type EntityFileApi } from './entityStore';
 import type { KeyRemapFileOps } from '../../../../apps/commons/src/desktop/entityDb/applyKeyRemap';
@@ -106,7 +112,11 @@ describe('SMOKE TEST — two-machine merge convergence (the bug this redesign fi
     const storeFor = (projectRoot: string) =>
       EntityStore.fromPaths(
         cloud,
-        resolveEntityStorePaths({ projectRoot, entityStore: 'central', centralFolder: '/shared-central' }),
+        resolveEntityStorePaths({
+          projectRoot,
+          entityStore: 'central',
+          centralFolder: '/shared-central',
+        }),
       );
 
     const storeA = storeFor('/machine-a');
@@ -136,7 +146,7 @@ describe('SMOKE TEST — two-machine merge convergence (the bug this redesign fi
         machineACorpus[path] = xml.replaceAll(`key="${duplicate}"`, `key="${keep}"`);
       }
     }
-    console.log('[step 3] Machine A\'s own corpus updated immediately (eager crawl).');
+    console.log("[step 3] Machine A's own corpus updated immediately (eager crawl).");
     expect(machineACorpus['/machine-a/chapter1.xml']).not.toContain(duplicate);
 
     // --- The critical check: Machine B is UNCHANGED so far -----------------
@@ -149,9 +159,8 @@ describe('SMOKE TEST — two-machine merge convergence (the bug this redesign fi
     // No message was sent. No shared process. B only shares the cloud folder.
     console.log('[step 5] ...time passes... the user now opens the SAME project on Machine B...');
 
-    const { applyPendingOrders } = await import(
-      '../../../../apps/commons/src/desktop/entityDb/applyOrders'
-    );
+    const { applyPendingOrders } =
+      await import('../../../../apps/commons/src/desktop/entityDb/applyOrders');
     const result = await applyPendingOrders(storeB, localCorpus(machineBCorpus));
 
     console.log(
@@ -165,7 +174,9 @@ describe('SMOKE TEST — two-machine merge convergence (the bug this redesign fi
     expect(machineBCorpus['/machine-b/chapter1.xml']).not.toContain(duplicate);
     expect(machineBCorpus['/machine-b/chapter1.xml']).toContain(keep);
 
-    console.log('[PASS] Machine B converged on its own. This was impossible before the redesign.\n');
+    console.log(
+      '[PASS] Machine B converged on its own. This was impossible before the redesign.\n',
+    );
 
     // --- Bonus: replay is idempotent -----------------------------------------
     // Opening Machine B a second time must not re-scan/rewrite anything.

@@ -430,9 +430,7 @@ describe('createDateReviewRecalculator', () => {
 
   it('skips intervening flashback dates when attachToDateIndex points at an earlier prior', async () => {
     // 1 建元元年 → 2 flashback 漢 → 3 四年 should inherit from 1, not 2.
-    const doc = docFromBody(
-      '<p><date>建元元年</date><date>漢高祖元年</date><date>四年</date></p>',
-    );
+    const doc = docFromBody('<p><date>建元元年</date><date>漢高祖元年</date><date>四年</date></p>');
     let recalculationInput: string[] = [];
     const current = await dateResolveFromDocument(doc, policy, async (dates) =>
       dates.map((_date, index) => ({
@@ -442,11 +440,7 @@ describe('createDateReviewRecalculator', () => {
         candidates: [
           {
             displayLine:
-              index === 0
-                ? '南齊建元元年（479）'
-                : index === 1
-                  ? '漢高祖元年'
-                  : '漢高祖四年',
+              index === 0 ? '南齊建元元年（479）' : index === 1 ? '漢高祖元年' : '漢高祖四年',
             attrs:
               index === 0
                 ? { era_id: '272', year: '1', ind_year: '479' }

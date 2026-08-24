@@ -9,9 +9,7 @@ export const hexToRgb = (hex: string): [number, number, number] | null => {
 
 export const rgbToHex = (r: number, g: number, b: number): string =>
   `#${[r, g, b]
-    .map((channel) =>
-      clamp(Math.round(channel), 0, 255).toString(16).padStart(2, '0'),
-    )
+    .map((channel) => clamp(Math.round(channel), 0, 255).toString(16).padStart(2, '0'))
     .join('')}`;
 
 export const rgbToHsl = (r: number, g: number, b: number): [number, number, number] => {
@@ -24,8 +22,7 @@ export const rgbToHsl = (r: number, g: number, b: number): [number, number, numb
   if (max === min) return [0, 0, lightness * 100];
 
   const delta = max - min;
-  const saturation =
-    lightness > 0.5 ? delta / (2 - max - min) : delta / (max + min);
+  const saturation = lightness > 0.5 ? delta / (2 - max - min) : delta / (max + min);
 
   let hue: number;
   if (max === rn) hue = (gn - bn) / delta + (gn < bn ? 6 : 0);
@@ -46,7 +43,10 @@ export const hslToRgb = (h: number, s: number, l: number): [number, number, numb
     return [gray, gray, gray];
   }
 
-  const q = lightness < 0.5 ? lightness * (1 + saturation) : lightness + saturation - lightness * saturation;
+  const q =
+    lightness < 0.5
+      ? lightness * (1 + saturation)
+      : lightness + saturation - lightness * saturation;
   const p = 2 * lightness - q;
   const convert = (t: number) => {
     let tone = t;

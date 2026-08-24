@@ -59,9 +59,9 @@ describe('authoritySettings', () => {
     expect(excludedNameTypesFromSettings({}, 'zh')).toEqual(
       expect.arrayContaining(['courtesy', 'family', 'given']),
     );
-    expect(excludedNameTypesFromSettings({ nameTypeTaggingPolicy: { courtesy: 'phase1' } }, 'zh')).toEqual(
-      expect.arrayContaining(['family', 'given']),
-    );
+    expect(
+      excludedNameTypesFromSettings({ nameTypeTaggingPolicy: { courtesy: 'phase1' } }, 'zh'),
+    ).toEqual(expect.arrayContaining(['family', 'given']));
   });
 
   it('exposes nameTypeTaggingPolicyFromSettings for UI and tag bomb', () => {

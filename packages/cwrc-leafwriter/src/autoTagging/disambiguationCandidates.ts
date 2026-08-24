@@ -12,7 +12,13 @@ import {
   type EntityKind,
 } from './entities';
 import { formatNorbertAuthorityValue } from './norbertAuthorityId';
-import { biographicalYearsFromMetadata, filterYearsFromMetadata, floruitYearsFromMetadata, isFilterOnlyDateSource, scrubIndexYearFloruitClue } from './personDates';
+import {
+  biographicalYearsFromMetadata,
+  filterYearsFromMetadata,
+  floruitYearsFromMetadata,
+  isFilterOnlyDateSource,
+  scrubIndexYearFloruitClue,
+} from './personDates';
 import { linkedCentralIds } from './bridgeInbox';
 import type { EntityStore } from './entityStore';
 import { textWithoutHiddenReadings } from './hiddenChoiceText';
@@ -580,7 +586,9 @@ export function candidatesFromEntityFile(
     const nameEls = entityNameElements(el, nameTag);
     const nameTexts = nameEls.map((name) => textWithoutHiddenReadings(name).trim()).filter(Boolean);
     const romanizedNameEl = nameEls.find((name) => isLatnLang(name.getAttribute('xml:lang')));
-    const romanizedName = romanizedNameEl ? textWithoutHiddenReadings(romanizedNameEl).trim() : undefined;
+    const romanizedName = romanizedNameEl
+      ? textWithoutHiddenReadings(romanizedNameEl).trim()
+      : undefined;
     out.push({
       id: localId || `local-${i}`,
       label: nameTexts[0] || surface,
@@ -623,7 +631,9 @@ export function candidatesFromSqliteEntities(
   for (const entity of entities) {
     const nameTexts = entity.names.map((name) => name.text.trim()).filter(Boolean);
     if (!nameTexts.some((text) => stringsMatchExactly(surface, text))) continue;
-    const romanizedName = entity.names.find((name) => isLatnLang(name.language ?? null))?.text.trim();
+    const romanizedName = entity.names
+      .find((name) => isLatnLang(name.language ?? null))
+      ?.text.trim();
     out.push({
       id: entity.id,
       label: entity.label || nameTexts[0] || surface,
@@ -643,12 +653,7 @@ export function candidatesFromSqliteEntities(
 }
 
 /** Provenance keys that mean "from this user's entity database" (PEDB or CEDB). */
-const OWN_DATABASE_SOURCES = new Set([
-  'entity-file',
-  'central-database',
-  'pedb',
-  'cedb',
-]);
+const OWN_DATABASE_SOURCES = new Set(['entity-file', 'central-database', 'pedb', 'cedb']);
 
 export function isOwnDatabaseSource(source: string): boolean {
   return OWN_DATABASE_SOURCES.has(source.trim().toLowerCase());
@@ -1368,8 +1373,7 @@ export async function buildDisambiguationCandidates(
   buildOptions?: BuildDisambiguationCandidatesOptions,
 ): Promise<DisambiguationCandidate[]> {
   const local =
-    localCandidates ??
-    (entitiesDoc ? candidatesFromEntityFile(entitiesDoc, tag, surface) : []);
+    localCandidates ?? (entitiesDoc ? candidatesFromEntityFile(entitiesDoc, tag, surface) : []);
   const centralCandidates = central
     ? (central.candidates ??
       (() => {

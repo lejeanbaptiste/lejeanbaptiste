@@ -63,9 +63,7 @@ export function parseCbdbConcordanceAssociations(
   return associations;
 }
 
-export type CbdbConcordancePackReader = (
-  packId: AuthorityPackId,
-) => Promise<AuthorityPackContent>;
+export type CbdbConcordancePackReader = (packId: AuthorityPackId) => Promise<AuthorityPackContent>;
 
 export interface CbdbConcordanceSqliteStore {
   sqliteApplyConcordance: (
@@ -167,9 +165,7 @@ export async function refreshCbdbConcordanceSqliteDebounced(
     const completedAt = refreshGate.completedAt.get(key);
     if (completedAt != null && now - completedAt < debounceMs) {
       // Reuse the prior result so panel reload can still surface conflicts.
-      return refreshGate.lastResult.has(key)
-        ? (refreshGate.lastResult.get(key) ?? null)
-        : null;
+      return refreshGate.lastResult.has(key) ? (refreshGate.lastResult.get(key) ?? null) : null;
     }
   }
 

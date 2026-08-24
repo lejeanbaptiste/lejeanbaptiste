@@ -65,7 +65,11 @@ export function emptyViafWikidataIndex(): ViafWikidataIndex {
   return { viafByWikidata: new Map(), wikidataByViaf: new Map() };
 }
 
-export function addViafWikidataPair(index: ViafWikidataIndex, wikidata: string, viaf: string): void {
+export function addViafWikidataPair(
+  index: ViafWikidataIndex,
+  wikidata: string,
+  viaf: string,
+): void {
   const qid = normalizeWikidataQid(wikidata);
   const viafId = normalizeViafId(viaf);
   if (!qid || !viafId) return;
@@ -146,11 +150,7 @@ export function indexViafWikidataFromPackNdjson(content: AuthorityPackContent): 
         metadata?: { crosswalk?: Record<string, string | string[] | undefined> };
         crosswalk?: Record<string, string | string[] | undefined>;
       };
-      addPairFromPackCrosswalk(
-        index,
-        row.metadata?.crosswalk ?? row.crosswalk,
-        row.authorityId,
-      );
+      addPairFromPackCrosswalk(index, row.metadata?.crosswalk ?? row.crosswalk, row.authorityId);
     } catch {
       // skip
     }
@@ -291,7 +291,9 @@ export function clearViafWikidataConcordanceCacheForTests(): void {
  * Load the dedicated concordance pack when installed. Missing pack → empty index
  * (regex / description scraping remains as a fallback).
  */
-export async function loadViafWikidataConcordance(readPackFile: ReadPack): Promise<ViafWikidataIndex> {
+export async function loadViafWikidataConcordance(
+  readPackFile: ReadPack,
+): Promise<ViafWikidataIndex> {
   concordancePromise ??= (async () => {
     try {
       const content = await readPackFile(VIAF_WIKIDATA_CONCORDANCE_PACK_ID);

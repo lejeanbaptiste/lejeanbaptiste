@@ -35,9 +35,7 @@ import { parsePendingCache } from './disambiguationPending';
 
 const DOM_GLOBALS = ['NodeFilter', 'Node', 'Text', 'Element', 'Document', 'DOMParser'] as const;
 
-function installDomGlobals(
-  window: Record<(typeof DOM_GLOBALS)[number], unknown>,
-): void {
+function installDomGlobals(window: Record<(typeof DOM_GLOBALS)[number], unknown>): void {
   for (const key of DOM_GLOBALS) {
     (globalThis as Record<string, unknown>)[key] = window[key];
   }
@@ -55,7 +53,9 @@ function parseXmlFile(filePath: string): Document {
 function listProjectXmlFiles(projectRoot: string): string[] {
   return fs
     .readdirSync(projectRoot, { withFileTypes: true })
-    .filter((entry) => entry.isFile() && entry.name.endsWith('.xml') && entry.name !== 'entities.xml')
+    .filter(
+      (entry) => entry.isFile() && entry.name.endsWith('.xml') && entry.name !== 'entities.xml',
+    )
     .map((entry) => path.join(projectRoot, entry.name))
     .sort();
 }
@@ -65,7 +65,9 @@ function collectProjectMentionGroups(projectRoot: string): MentionGroup[] {
   const groups: MentionGroup[] = [];
   for (const filePath of files) {
     const doc = parseXmlFile(filePath);
-    groups.push(...collectMentions(doc, 'ignore', path.basename(filePath), { includeResolved: true }));
+    groups.push(
+      ...collectMentions(doc, 'ignore', path.basename(filePath), { includeResolved: true }),
+    );
   }
   return mergeMentionGroups(groups);
 }
@@ -88,101 +90,108 @@ const projectRoot = path.resolve(process.env.LLM_DISAMBIG_REPLAY_PROJECT ?? defa
 const replayLimit = Math.max(1, Number(process.env.LLM_DISAMBIG_REPLAY_LIMIT ?? '10'));
 
 describe('disambiguation replay against a live model (opt-in)', () => {
-  maybe('replays cached pending candidates through the current AI ranker', async () => {
-    expect(fs.existsSync(projectRoot)).toBe(true);
-    const pendingPath = path.join(projectRoot, '.ljb', 'disambiguation-pending.json');
-    expect(fs.existsSync(pendingPath)).toBe(true);
+  maybe(
+    'replays cached pending candidates through the current AI ranker',
+    async () => {
+      expect(fs.existsSync(projectRoot)).toBe(true);
+      const pendingPath = path.join(projectRoot, '.ljb', 'disambiguation-pending.json');
+      expect(fs.existsSync(pendingPath)).toBe(true);
 
-    const { baseUrl, model, key: apiKey, keySource } = resolveLiveClientConfig();
-    const needsKey =
-      baseUrl.includes('api.mistral.ai') ||
-      baseUrl.includes('groq.com') ||
-      (!baseUrl.includes('localhost') && !baseUrl.includes('127.0.0.1'));
-    if (needsKey && !apiKey) {
-      throw new Error(hostedApiKeyHelp(baseUrl));
-    }
-
-    const client = buildLiveClient(baseUrl, model, apiKey);
-
-    const pending = parsePendingCache(fs.readFileSync(pendingPath, 'utf-8'));
-    const mentionGroups = collectProjectMentionGroups(projectRoot);
-
-    const rows: ReplayRow[] = [];
-    const skipped: string[] = [];
-    for (const entry of Object.values(pending.entries).slice(0, replayLimit)) {
-      const group = mentionGroups.find((item) => item.tag === entry.tag && item.surface === entry.surface);
-      const instance = group?.instances.find((item) => item.isUnresolved) ?? group?.instances[0];
-      if (!group || !instance) {
-        skipped.push(`${entry.tag}:${entry.surface}`);
-        continue;
+      const { baseUrl, model, key: apiKey, keySource } = resolveLiveClientConfig();
+      const needsKey =
+        baseUrl.includes('api.mistral.ai') ||
+        baseUrl.includes('groq.com') ||
+        (!baseUrl.includes('localhost') && !baseUrl.includes('127.0.0.1'));
+      if (needsKey && !apiKey) {
+        throw new Error(hostedApiKeyHelp(baseUrl));
       }
 
-      const xmlPath = path.join(projectRoot, instance.documentId);
-      if (!fs.existsSync(xmlPath)) {
-        skipped.push(`${entry.tag}:${entry.surface} (${instance.documentId})`);
-        continue;
-      }
-      const doc = parseXmlFile(xmlPath);
-      const result = await rankDisambiguationCandidates({
-        doc,
-        instance,
-        candidates: entry.candidates,
-        client,
-      });
-      if (!result) {
+      const client = buildLiveClient(baseUrl, model, apiKey);
+
+      const pending = parsePendingCache(fs.readFileSync(pendingPath, 'utf-8'));
+      const mentionGroups = collectProjectMentionGroups(projectRoot);
+
+      const rows: ReplayRow[] = [];
+      const skipped: string[] = [];
+      for (const entry of Object.values(pending.entries).slice(0, replayLimit)) {
+        const group = mentionGroups.find(
+          (item) => item.tag === entry.tag && item.surface === entry.surface,
+        );
+        const instance = group?.instances.find((item) => item.isUnresolved) ?? group?.instances[0];
+        if (!group || !instance) {
+          skipped.push(`${entry.tag}:${entry.surface}`);
+          continue;
+        }
+
+        const xmlPath = path.join(projectRoot, instance.documentId);
+        if (!fs.existsSync(xmlPath)) {
+          skipped.push(`${entry.tag}:${entry.surface} (${instance.documentId})`);
+          continue;
+        }
+        const doc = parseXmlFile(xmlPath);
+        const result = await rankDisambiguationCandidates({
+          doc,
+          instance,
+          candidates: entry.candidates,
+          client,
+        });
+        if (!result) {
+          rows.push({
+            tag: entry.tag,
+            surface: entry.surface,
+            candidateCount: entry.candidates.length,
+            selectedCount: 0,
+            selectedIds: [],
+            hasRationale: false,
+            suggestCreateNew: false,
+          });
+          continue;
+        }
         rows.push({
           tag: entry.tag,
           surface: entry.surface,
           candidateCount: entry.candidates.length,
-          selectedCount: 0,
-          selectedIds: [],
-          hasRationale: false,
-          suggestCreateNew: false,
+          selectedCount: result.selectedCandidateIds.length,
+          selectedIds: result.selectedCandidateIds,
+          hasRationale: Object.keys(result.rationales).length > 0,
+          suggestCreateNew: result.suggestCreateNew,
         });
-        continue;
       }
-      rows.push({
-        tag: entry.tag,
-        surface: entry.surface,
-        candidateCount: entry.candidates.length,
-        selectedCount: result.selectedCandidateIds.length,
-        selectedIds: result.selectedCandidateIds,
-        hasRationale: Object.keys(result.rationales).length > 0,
-        suggestCreateNew: result.suggestCreateNew,
-      });
-    }
 
-    const abstained = rows.filter((row) => row.selectedCount === 0 && !row.suggestCreateNew).length;
-    const selected = rows.filter((row) => row.selectedCount > 0).length;
-    const createNew = rows.filter((row) => row.suggestCreateNew).length;
+      const abstained = rows.filter(
+        (row) => row.selectedCount === 0 && !row.suggestCreateNew,
+      ).length;
+      const selected = rows.filter((row) => row.selectedCount > 0).length;
+      const createNew = rows.filter((row) => row.suggestCreateNew).length;
 
-     
-    console.log(
-      [
-        '',
-        '── disambiguation replay (live) ─────────────────────────',
-        `  project:          ${projectRoot}`,
-        `  pending file:     ${pendingPath}`,
-        `  base URL:         ${baseUrl}`,
-        `  model:            ${client.modelId}`,
-        `  api key:          ${keySource}${apiKey ? ` (${apiKey.length} chars)` : ''}`,
-        `  replayed:         ${rows.length}`,
-        `  skipped:          ${skipped.length}`,
-        `  selected:         ${selected}`,
-        `  abstained:        ${abstained}`,
-        `  suggest-create:   ${createNew}`,
-        '',
-        ...rows.slice(0, 20).map(
-          (row) =>
-            `  ${row.tag}:${row.surface} | candidates=${row.candidateCount} | selected=${row.selectedCount} | create=${row.suggestCreateNew ? 'yes' : 'no'} | rationale=${row.hasRationale ? 'yes' : 'no'}${row.selectedIds.length ? ` | ids=${row.selectedIds.join(', ')}` : ''}`,
-        ),
-        ...(skipped.length
-          ? ['', `  skipped samples: ${skipped.slice(0, 10).join(' ; ')}`]
-          : []),
-        '─────────────────────────────────────────────────────────',
-      ].join('\n'),
-    );
+      console.log(
+        [
+          '',
+          '── disambiguation replay (live) ─────────────────────────',
+          `  project:          ${projectRoot}`,
+          `  pending file:     ${pendingPath}`,
+          `  base URL:         ${baseUrl}`,
+          `  model:            ${client.modelId}`,
+          `  api key:          ${keySource}${apiKey ? ` (${apiKey.length} chars)` : ''}`,
+          `  replayed:         ${rows.length}`,
+          `  skipped:          ${skipped.length}`,
+          `  selected:         ${selected}`,
+          `  abstained:        ${abstained}`,
+          `  suggest-create:   ${createNew}`,
+          '',
+          ...rows
+            .slice(0, 20)
+            .map(
+              (row) =>
+                `  ${row.tag}:${row.surface} | candidates=${row.candidateCount} | selected=${row.selectedCount} | create=${row.suggestCreateNew ? 'yes' : 'no'} | rationale=${row.hasRationale ? 'yes' : 'no'}${row.selectedIds.length ? ` | ids=${row.selectedIds.join(', ')}` : ''}`,
+            ),
+          ...(skipped.length ? ['', `  skipped samples: ${skipped.slice(0, 10).join(' ; ')}`] : []),
+          '─────────────────────────────────────────────────────────',
+        ].join('\n'),
+      );
 
-    expect(rows.length).toBeGreaterThan(0);
-  }, 600_000);
+      expect(rows.length).toBeGreaterThan(0);
+    },
+    600_000,
+  );
 });

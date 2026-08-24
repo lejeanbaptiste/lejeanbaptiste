@@ -92,6 +92,10 @@ describe('attributeCommand', () => {
     };
 
     commitTagAttributes(tag, { ref: 'http://x', key: '' });
-    expect(editStructureTag).toHaveBeenCalledWith(expect.anything(), { ref: 'http://x' }, 'persName');
+    expect(editStructureTag).toHaveBeenCalledWith(
+      expect.anything(),
+      { ref: 'http://x' },
+      'persName',
+    );
   });
 });

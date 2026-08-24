@@ -34,7 +34,9 @@ export const DesktopEncoderName = () => {
       <TextField
         error={attempted && !encoderNameValid}
         fullWidth
-        helperText={attempted && !encoderNameValid ? t('LW.desktop.settings.field_required') : undefined}
+        helperText={
+          attempted && !encoderNameValid ? t('LW.desktop.settings.field_required') : undefined
+        }
         label={t('LW.desktop.settings.user_name')}
         onBlur={() => void bridge.setEncoderName(encoderName)}
         onChange={(event) => setEncoderNameLocal(event.target.value)}

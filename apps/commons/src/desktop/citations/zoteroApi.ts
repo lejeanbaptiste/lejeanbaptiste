@@ -25,8 +25,7 @@ export interface ZoteroCaywPick extends ZoteroSearchResult {
 }
 
 export type ZoteroCaywResult =
-  | { ok: true; picks: ZoteroCaywPick[] }
-  | { ok: false; cancelled: boolean; error?: string };
+  { ok: true; picks: ZoteroCaywPick[] } | { ok: false; cancelled: boolean; error?: string };
 
 interface ZoteroBridge {
   zoteroCheckAvailability?: () => Promise<ZoteroAvailability>;
@@ -35,8 +34,7 @@ interface ZoteroBridge {
   zoteroCancelPick?: () => Promise<void>;
 }
 
-const bridge = (): ZoteroBridge =>
-  (window as { electronAPI?: ZoteroBridge }).electronAPI ?? {};
+const bridge = (): ZoteroBridge => (window as { electronAPI?: ZoteroBridge }).electronAPI ?? {};
 
 export const checkZoteroAvailability = async (): Promise<ZoteroAvailability> => {
   const check = bridge().zoteroCheckAvailability;

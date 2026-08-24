@@ -29,11 +29,13 @@ describe('applyEditorialCleanupToText', () => {
     expect(applyEditorialCleanupToText('Voir 440-483 et 12–15.', 'fr')).toBe(
       'Voir 440-483 et 12-15.',
     );
-    expect(applyEditorialCleanupToText('Il dit "bonjour".', 'fr')).toBe('Il dit «\u00a0bonjour\u00a0».');
+    expect(applyEditorialCleanupToText('Il dit "bonjour".', 'fr')).toBe(
+      'Il dit «\u00a0bonjour\u00a0».',
+    );
     expect(applyEditorialCleanupToText('Oui ; non : vraiment ! pourquoi ?', 'fr')).toBe(
       'Oui\u00a0; non\u00a0: vraiment\u00a0! pourquoi\u00a0?',
     );
-    expect(applyEditorialCleanupToText('Attends , s\'il vous plaît.', 'fr')).toBe(
+    expect(applyEditorialCleanupToText("Attends , s'il vous plaît.", 'fr')).toBe(
       'Attends, s’il vous plaît.',
     );
   });

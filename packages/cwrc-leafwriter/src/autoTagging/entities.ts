@@ -579,7 +579,7 @@ export function addEntity(
         origin: value.sourceIds?.length ? 'authority' : 'user',
         source:
           value.sourceIds?.length || importedOrigin === 'authority'
-            ? value.sourceIds?.[0] ?? importedSource
+            ? (value.sourceIds?.[0] ?? importedSource)
             : entity.authoritySource,
       });
       item.appendChild(el);
@@ -593,7 +593,7 @@ export function addEntity(
       el.textContent = place;
       writeEntityValueProvenance(el, {
         origin: importedOrigin,
-        source: importedOrigin === 'authority' ? origin.source ?? importedSource : origin.source,
+        source: importedOrigin === 'authority' ? (origin.source ?? importedSource) : origin.source,
       });
       item.appendChild(el);
     }

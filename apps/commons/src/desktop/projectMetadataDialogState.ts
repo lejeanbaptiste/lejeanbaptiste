@@ -61,10 +61,7 @@ export const buildProjectMetadataDialogState = async (
   bundle: ProjectBundle,
   mode: ProjectMetadataDialogMode,
 ): Promise<ProjectMetadataDialogState> => {
-  const catalogKind = getCatalogKind(
-    bundle.config.schema?.catalogId,
-    bundle.config.schema?.rng,
-  );
+  const catalogKind = getCatalogKind(bundle.config.schema?.catalogId, bundle.config.schema?.rng);
   const template = await readMetadataFieldsTemplate(bundle.rootPath);
   const fieldDef = resolveProjectMetadataFields(template, catalogKind);
 

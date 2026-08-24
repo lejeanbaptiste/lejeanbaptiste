@@ -99,9 +99,9 @@ export const scenePhotoFilterForPose = (): string | undefined => undefined;
  * used to review source material.
  */
 export const scenePhotoFilterForBackground = (backgroundImageKey: string): string | undefined => {
-  const treatment = ARCHIVE_BACKGROUND_ASSETS_BY_RANK
-    .flat()
-    .find((asset) => asset.assetKey === backgroundImageKey)?.treatment ?? 'colour';
+  const treatment =
+    ARCHIVE_BACKGROUND_ASSETS_BY_RANK.flat().find((asset) => asset.assetKey === backgroundImageKey)
+      ?.treatment ?? 'colour';
   switch (treatment) {
     case 'wwi-ortho':
       return 'grayscale(1) contrast(1.08) brightness(0.98)';
@@ -288,7 +288,10 @@ export const pickWeapon = (
       .filter((entry): entry is (typeof WEAPON_POOLS)[number][number][number] => !!entry)
       .map(
         (entry) =>
-          new Set([...variantKeysOf(entry.universal, group), ...variantKeysOf(entry[bodyType], group)]),
+          new Set([
+            ...variantKeysOf(entry.universal, group),
+            ...variantKeysOf(entry[bodyType], group),
+          ]),
       )
       .filter((keys) => keys.size > 0);
     if (variantKeySetsPerChannel.length === 0) continue;
@@ -364,7 +367,8 @@ export const backgroundPoolForRank = (
 ): string[] => {
   const cumulative = ARCHIVE_BACKGROUND_ASSETS_BY_RANK.slice(0, Math.max(0, rankIndex) + 1).flat();
   const compatible = cumulative.filter(
-    (asset) => !excludesPose(asset, poseIndex) && !isLockedRank4Group(asset, rankIndex, ribbonsIntoRank),
+    (asset) =>
+      !excludesPose(asset, poseIndex) && !isLockedRank4Group(asset, rankIndex, ribbonsIntoRank),
   );
   return (compatible.length > 0 ? compatible : cumulative).map((asset) => asset.assetKey);
 };
@@ -416,7 +420,8 @@ const isSelectableCategory = (asset: ArchiveBackgroundAsset): boolean =>
 
 const selectableBackgroundsForRank = (rankIndex: number, ribbonsIntoRank: number) =>
   (ARCHIVE_BACKGROUND_ASSETS_BY_RANK[Math.max(0, rankIndex)] ?? []).filter(
-    (asset) => isSelectableCategory(asset) && !isLockedRank4Group(asset, rankIndex, ribbonsIntoRank),
+    (asset) =>
+      isSelectableCategory(asset) && !isLockedRank4Group(asset, rankIndex, ribbonsIntoRank),
   );
 
 const weightedPick = <T extends { weight: number }>(assets: readonly T[]): T => {
@@ -442,10 +447,9 @@ export const pickBackgroundKey = (
   ribbonsIntoRank = 0,
 ): string => {
   const current = selectableBackgroundsForRank(rankIndex, ribbonsIntoRank);
-  const historical =
-    ARCHIVE_BACKGROUND_ASSETS_BY_RANK.slice(0, Math.max(0, rankIndex)).flatMap((assets) =>
-      assets.filter(isSelectableCategory),
-    );
+  const historical = ARCHIVE_BACKGROUND_ASSETS_BY_RANK.slice(0, Math.max(0, rankIndex)).flatMap(
+    (assets) => assets.filter(isSelectableCategory),
+  );
   const preferred =
     current.length > 0 && historical.length > 0 && Math.random() < CURRENT_WORLD_PROBABILITY
       ? current
@@ -458,9 +462,7 @@ export const pickBackgroundKey = (
   const compatible = preferred.filter((asset) => !excludesPose(asset, poseIndex));
   const pool = compatible.length > 0 ? compatible : preferred;
   const choices =
-    previousKey && pool.length > 1
-      ? pool.filter((asset) => asset.assetKey !== previousKey)
-      : pool;
+    previousKey && pool.length > 1 ? pool.filter((asset) => asset.assetKey !== previousKey) : pool;
   return weightedPick(choices).assetKey;
 };
 
@@ -867,7 +869,15 @@ export const UniformAvatar = ({
       readyFiredRef.current = true;
       onReady?.();
     }
-  }, [headFailed, paddedHeadSrc, bodyBackFailed, bodyBackSrc, bodyFrontFailed, bodyFrontSrc, onReady]);
+  }, [
+    headFailed,
+    paddedHeadSrc,
+    bodyBackFailed,
+    bodyBackSrc,
+    bodyFrontFailed,
+    bodyFrontSrc,
+    onReady,
+  ]);
 
   // Color-matches the fixed-palette uniform and head sprites to whichever
   // backdrop they're currently sitting on, so a random pick doesn't leave
@@ -922,7 +932,8 @@ export const UniformAvatar = ({
   useEffect(() => {
     let cancelled = false;
     void getCachedColorStats(backgroundImageKey).then((backgroundStats) => {
-      if (!cancelled) setUniformFilter(isAircraftSubject ? 'none' : colorMatchFilter(bodyStats, backgroundStats));
+      if (!cancelled)
+        setUniformFilter(isAircraftSubject ? 'none' : colorMatchFilter(bodyStats, backgroundStats));
     });
     return () => {
       cancelled = true;
@@ -931,7 +942,8 @@ export const UniformAvatar = ({
   useEffect(() => {
     let cancelled = false;
     void getCachedColorStats(backgroundImageKey).then((backgroundStats) => {
-      if (!cancelled) setHeadFilter(isAircraftSubject ? 'none' : colorMatchFilter(headStats, backgroundStats));
+      if (!cancelled)
+        setHeadFilter(isAircraftSubject ? 'none' : colorMatchFilter(headStats, backgroundStats));
     });
     return () => {
       cancelled = true;

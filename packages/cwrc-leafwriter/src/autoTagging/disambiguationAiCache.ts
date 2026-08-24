@@ -48,7 +48,9 @@ export class DisambiguationAiCache {
     promptVersion: string,
   ): string {
     return hashText(
-      [tag, surface, [...candidateIds].sort().join(','), contextText, model, promptVersion].join('\0'),
+      [tag, surface, [...candidateIds].sort().join(','), contextText, model, promptVersion].join(
+        '\0',
+      ),
     );
   }
 
@@ -70,7 +72,12 @@ export class DisambiguationAiCache {
     }
   }
 
-  async set(key: string, model: string, promptVersion: string, result: DisambiguationAiRankResult): Promise<void> {
+  async set(
+    key: string,
+    model: string,
+    promptVersion: string,
+    result: DisambiguationAiRankResult,
+  ): Promise<void> {
     const entry: DisambiguationAiCacheEntry = {
       cacheKey: key,
       model,

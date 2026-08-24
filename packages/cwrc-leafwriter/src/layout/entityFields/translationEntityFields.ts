@@ -1,7 +1,4 @@
-import {
-  dateFormatSettingsForLang,
-  type DateFormatSettings,
-} from './dateFormatSettings';
+import { dateFormatSettingsForLang, type DateFormatSettings } from './dateFormatSettings';
 import {
   applyPossessiveSuffix,
   displaySpecFromLegacyOverride,
@@ -168,8 +165,8 @@ const applyWorkTypeStyle = (
     const isPossessiveTarget = leadTranslation || isRomanizationNamePart(part.id);
     const nextIsPossessiveTarget = Boolean(
       next &&
-        (isRomanizationNamePart(next.id) ||
-          (translationFirst && next.id === 'translation' && index === 0)),
+      (isRomanizationNamePart(next.id) ||
+        (translationFirst && next.id === 'translation' && index === 0)),
     );
     let suffix = '';
     if (
@@ -218,9 +215,9 @@ export const createEntityFieldElement = (
 
 export const prepareAtomicEntityFields = (root: ParentNode): void => {
   for (const ref of Array.from(
-    (root as ParentNode & { querySelectorAll: typeof Element.prototype.querySelectorAll }).querySelectorAll?.(
-      `ref[type="${ENTITY_REF_TYPE}"]`,
-    ) ?? [],
+    (
+      root as ParentNode & { querySelectorAll: typeof Element.prototype.querySelectorAll }
+    ).querySelectorAll?.(`ref[type="${ENTITY_REF_TYPE}"]`) ?? [],
   )) {
     ref.setAttribute('contenteditable', 'false');
     ref.setAttribute(ENTITY_FIELD_ATTR, 'true');
@@ -266,15 +263,13 @@ export const recalculateAllEntityFieldsInRoot = async (
 ): Promise<void> => {
   const resolved = settings ?? dateFormatSettingsForLang(lang);
   const fields = Array.from(
-    (root as ParentNode & { querySelectorAll: typeof Element.prototype.querySelectorAll }).querySelectorAll?.(
-      `ref[type="${ENTITY_REF_TYPE}"][key]`,
-    ) ?? [],
+    (
+      root as ParentNode & { querySelectorAll: typeof Element.prototype.querySelectorAll }
+    ).querySelectorAll?.(`ref[type="${ENTITY_REF_TYPE}"][key]`) ?? [],
   );
   const ids = [
     ...new Set(
-      fields
-        .map((field) => field.getAttribute('key'))
-        .filter((key): key is string => Boolean(key)),
+      fields.map((field) => field.getAttribute('key')).filter((key): key is string => Boolean(key)),
     ),
   ];
   for (const id of ids) {

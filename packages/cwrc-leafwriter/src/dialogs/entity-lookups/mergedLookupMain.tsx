@@ -89,8 +89,7 @@ const primaryUriForCandidate = (candidate: DisambiguationCandidate): string => {
     const type = auth.type.toLowerCase();
     if (type === 'wikidata') return `https://www.wikidata.org/wiki/${auth.value}`;
     if (type === 'viaf') return `https://viaf.org/viaf/${auth.value}`;
-    if (type === 'cbdb')
-      return `https://cbdb.fas.harvard.edu/cbdbapi/person.php?id=${auth.value}`;
+    if (type === 'cbdb') return `https://cbdb.fas.harvard.edu/cbdbapi/person.php?id=${auth.value}`;
   }
   return `urn:ljb:lookup:${candidate.id}`;
 };
@@ -189,9 +188,7 @@ export const MergedLookupMain = () => {
         const attachMode = Boolean(attachToEntityId);
         const pedbStore = entityStoreFromDesktop();
         let localCandidates: DisambiguationCandidate[] = [];
-        let central:
-          | { userStableId: string; candidates: DisambiguationCandidate[] }
-          | undefined;
+        let central: { userStableId: string; candidates: DisambiguationCandidate[] } | undefined;
 
         if (!attachMode && pedbStore) {
           if (syncToCentral) {

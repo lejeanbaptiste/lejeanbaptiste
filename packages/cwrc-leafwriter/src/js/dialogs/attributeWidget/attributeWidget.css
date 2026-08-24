@@ -1,11 +1,11 @@
 .attributeWidget {
-    display: flex;
-    flex-direction: column;
-    gap: 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
 }
 
 .attributeWidget label {
-    display: inline;
+  display: inline;
 }
 
 /* .attributeWidget .attributeSelector {
@@ -15,9 +15,9 @@
 } */
 
 .attributeSelector {
-    flex: 1;
-    display: flex;
-    flex-direction: column;
+  flex: 1;
+  display: flex;
+  flex-direction: column;
 }
 
 /* 
@@ -30,11 +30,11 @@
 } */
 
 .attributeSelector ul {
-    flex: 1;
-    list-style: none;
-    margin: 0;
-    padding: 0;
-    overflow: auto;
+  flex: 1;
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  overflow: auto;
 }
 
 /* .attributeWidget .attributeSelector li {
@@ -48,19 +48,19 @@
 } */
 
 .attributeSelector li {
-    list-style-type: none;
-    margin: 0;
-    padding: 4px;
-    background-color: #fff;
-    border-radius: 4px;
-    margin-top: 1px;
-    margin-bottom: 1px;
+  list-style-type: none;
+  margin: 0;
+  padding: 4px;
+  background-color: #fff;
+  border-radius: 4px;
+  margin-top: 1px;
+  margin-bottom: 1px;
 }
 
 .annotationDialog span.fullname {
-    font-size: 0.75rem;
-    color: #666;
-    text-transform: capitalize;
+  font-size: 0.75rem;
+  color: #666;
+  text-transform: capitalize;
 }
 
 /* break line */
@@ -70,8 +70,8 @@
 } */
 
 .attributeSelector li span.fullname::before {
-    content: "\a";
-    white-space: pre;
+  content: '\a';
+  white-space: pre;
 }
 
 /* .attributeWidget .attributeSelector li:hover {
@@ -80,8 +80,8 @@
 } */
 
 .attributeSelector li:hover {
-    background-color: #f0f0f0;
-    cursor: pointer;
+  background-color: #f0f0f0;
+  cursor: pointer;
 }
 
 /* .attributeWidget .attributeSelector li.selected {
@@ -89,23 +89,23 @@
 } */
 
 .attributeSelector li.selected {
-    background-color: #4688f040;
+  background-color: #4688f040;
 }
 
 .attributeWidget .attsContainer {
-    display: flex;
-    flex-direction: column;
-    gap: 16px;
-    flex: 2;
-    /* overflow: auto; */
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  flex: 2;
+  /* overflow: auto; */
 }
 
 .attributeWidget .atts {
-    float: left;
-    clear: left;
+  float: left;
+  clear: left;
 }
 
 .attributeWidget .attsContainer input,
 .attributeWidget .attsContainer select {
-    width: 100% !important;
+  width: 100% !important;
 }

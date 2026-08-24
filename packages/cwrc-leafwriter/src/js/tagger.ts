@@ -425,7 +425,8 @@ class Tagger {
   private openLegacyCorrectionDialog() {
     if (!this.writer.editor) return;
 
-    const requiresSelection = this.writer.schemaManager.mapper.doesEntityRequireSelection('correction');
+    const requiresSelection =
+      this.writer.schemaManager.mapper.doesEntityRequireSelection('correction');
     const result =
       !requiresSelection && this.writer.editor.selection.isCollapsed()
         ? this.VALID
@@ -1634,13 +1635,7 @@ class Tagger {
    * @param {Boolean} cleanRange True to remove extra whitespace and fix text range that spans multiple parents
    * @returns {Integer}
    */
-  isSelectionValid({
-    isStructTag,
-    cleanRange,
-  }: {
-    isStructTag: boolean;
-    cleanRange: boolean;
-  }) {
+  isSelectionValid({ isStructTag, cleanRange }: { isStructTag: boolean; cleanRange: boolean }) {
     const sel = this.writer.editor?.selection;
 
     // disallow empty entities

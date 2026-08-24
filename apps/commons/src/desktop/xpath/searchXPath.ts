@@ -16,8 +16,7 @@ const excludeTranslationFiles = (filePaths: string[]): string[] =>
 
 const getFilename = (filePath: string) => filePath.split(/[/\\]/).pop() ?? filePath;
 
-const isSourceEditorMode = () =>
-  window.writer?.overmindState?.ui?.editorViewMode === 'source';
+const isSourceEditorMode = () => window.writer?.overmindState?.ui?.editorViewMode === 'source';
 
 /** Raw XML content for search — always the on-disk / tab snapshot, not the editor DOM. */
 const getContentForSearch = (tab: OpenTab, activeTabPath: string | null) => {
@@ -52,10 +51,7 @@ const buildMatchesFromNodes = (
 const isInsideHeader = (node: Node): boolean => {
   let current: Node | null = node;
   while (current) {
-    if (
-      current.nodeType === Node.ELEMENT_NODE &&
-      (current as Element).localName === 'teiHeader'
-    ) {
+    if (current.nodeType === Node.ELEMENT_NODE && (current as Element).localName === 'teiHeader') {
       return true;
     }
     current = current.parentNode;
@@ -134,9 +130,7 @@ export const searchXPath = async ({
 
     for (const tab of openTabs) {
       if (isTranslationFile(tab.filePath)) continue;
-      addResult(
-        searchInXmlContent(tab.filePath, getContentForSearch(tab, activeTabPath), trimmed),
-      );
+      addResult(searchInXmlContent(tab.filePath, getContentForSearch(tab, activeTabPath), trimmed));
     }
 
     return { results };

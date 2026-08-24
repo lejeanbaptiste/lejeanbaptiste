@@ -4,7 +4,9 @@ import type { SchemaUpdateCheckOptions, SchemaUpdateCheckResult } from './schema
 
 const { t } = i18next;
 
-const buildUpdateMessage = (result: Extract<SchemaUpdateCheckResult, { status: 'updateAvailable' }>) => {
+const buildUpdateMessage = (
+  result: Extract<SchemaUpdateCheckResult, { status: 'updateAvailable' }>,
+) => {
   const lines = [`A newer version of ${result.catalogLabel} may be available.`];
 
   if (result.localVersion && result.remoteVersion) {

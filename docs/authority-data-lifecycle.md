@@ -20,9 +20,9 @@ Tag bomb and disambiguation need **fast, versioned tagging packs**, but scholars
 
 ## Two tiers (decision 2026-07-05; reference shipping revised 2026-08-01)
 
-| Tier | Path | Source | Purpose |
-|------|------|--------|---------|
-| **Tagging packs** | `…/authority-packs/` | **GitHub `authoritypacks` releases** (NDJSON + manifest) | Tag bomb; offline disambiguation **shortlist** |
+| Tier                    | Path                     | Source                                                                                                               | Purpose                                                                                       |
+| ----------------------- | ------------------------ | -------------------------------------------------------------------------------------------------------------------- | --------------------------------------------------------------------------------------------- |
+| **Tagging packs**       | `…/authority-packs/`     | **GitHub `authoritypacks` releases** (NDJSON + manifest)                                                             | Tag bomb; offline disambiguation **shortlist**                                                |
 | **Reference databases** | `…/authority-databases/` | **GitHub** co-ships **Norbert sqlite + stripped CBDB person sqlite**; **DILA** TEI from Open Content / GitHub mirror | Rich lookup when minting/enriching — names, nationality, origin, appointments, Norbert titles |
 
 **Not done:** merging CBDB + Norbert + DILA into one sqlite. Each source keeps its native (or slimmed) format; `authorityRef:lookup(source, id)` knows how to query each.
@@ -43,32 +43,32 @@ User entity SQLite (names, nationality, origin, appointments, noble titles)
 
 **Runtime rules:**
 
-| Feature | Reads |
-|---------|--------|
-| Tag bomb | `authority-packs/` only (never SQL/XML) |
-| Offline disambiguation shortlist | `authority-packs/` only |
-| Link / backfill enrichment | Prefer `authorityRef:lookup` when reference installed; else pack metadata; Wikidata may enrich live |
-| Online reconcile (VIAF, Wikidata, …) | LINCS / live APIs — separate from both tiers |
+| Feature                              | Reads                                                                                               |
+| ------------------------------------ | --------------------------------------------------------------------------------------------------- |
+| Tag bomb                             | `authority-packs/` only (never SQL/XML)                                                             |
+| Offline disambiguation shortlist     | `authority-packs/` only                                                                             |
+| Link / backfill enrichment           | Prefer `authorityRef:lookup` when reference installed; else pack metadata; Wikidata may enrich live |
+| Online reconcile (VIAF, Wikidata, …) | LINCS / live APIs — separate from both tiers                                                        |
 
 ### What LJB reads when
 
-| Need | Pack NDJSON | Reference DB | Live Wikidata |
-|------|-------------|--------------|---------------|
-| Tag-bomb seeds (`searchStrings`) | Yes | No | No |
-| Typed names / 姓名字 on entity | Prefer reference; else pack | Yes | Fallback |
-| Nationality, 籍貫, appointments | Prefer reference; else pack | Yes | Nationality / PoB |
-| Norbert noble titles | Pack wiki-nt index and/or reference `person_nt` | Yes | — |
+| Need                             | Pack NDJSON                                     | Reference DB | Live Wikidata     |
+| -------------------------------- | ----------------------------------------------- | ------------ | ----------------- |
+| Tag-bomb seeds (`searchStrings`) | Yes                                             | No           | No                |
+| Typed names / 姓名字 on entity   | Prefer reference; else pack                     | Yes          | Fallback          |
+| Nationality, 籍貫, appointments  | Prefer reference; else pack                     | Yes          | Nationality / PoB |
+| Norbert noble titles             | Pack wiki-nt index and/or reference `person_nt` | Yes          | —                 |
 
 ---
 
 ## Licenses (distribution constraints)
 
-| Source | License | Tagging packs (GitHub releases) | Reference download |
-|--------|---------|------------------------|-------------------------|
-| **CBDB** | [CC BY-NC-SA 4.0](https://creativecommons.org/licenses/by-nc-sa/4.0/) | **OK** — attribute CBDB; release derivatives under NC-SA | **Stripped person sqlite** in `authority-reference-person-*.zip` (not full HuggingFace dump) |
-| **Norbert** | internal-derived-public | **OK** — attribution in manifest | Same reference zip (`norbert.sqlite3`) |
-| **DILA** | CC-BY-SA 3.0 | **OK** — attribute DILA | Browse [Open Content Downloads](https://authority.dila.edu.tw/docs/open_content/download.php); LJB fetches the GitHub TEI mirror of that data |
-| **CHGIS** | Academic EULA — no standalone redistribution | **OK as bundled derivative** in chinese pack | Local Dataverse compile only |
+| Source      | License                                                               | Tagging packs (GitHub releases)                          | Reference download                                                                                                                            |
+| ----------- | --------------------------------------------------------------------- | -------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------- |
+| **CBDB**    | [CC BY-NC-SA 4.0](https://creativecommons.org/licenses/by-nc-sa/4.0/) | **OK** — attribute CBDB; release derivatives under NC-SA | **Stripped person sqlite** in `authority-reference-person-*.zip` (not full HuggingFace dump)                                                  |
+| **Norbert** | internal-derived-public                                               | **OK** — attribution in manifest                         | Same reference zip (`norbert.sqlite3`)                                                                                                        |
+| **DILA**    | CC-BY-SA 3.0                                                          | **OK** — attribute DILA                                  | Browse [Open Content Downloads](https://authority.dila.edu.tw/docs/open_content/download.php); LJB fetches the GitHub TEI mirror of that data |
+| **CHGIS**   | Academic EULA — no standalone redistribution                          | **OK as bundled derivative** in chinese pack             | Local Dataverse compile only                                                                                                                  |
 
 Pack manifests must record `license` accurately (CBDB: `CC-BY-NC-SA-4.0`, not vague “academic terms”). Settings UI shows attribution strings.
 
@@ -80,13 +80,13 @@ Pack manifests must record `license` accurately (CBDB: `CC-BY-NC-SA-4.0`, not va
 
 **“Offline Chinese authorities (CBDB + DILA)”** block:
 
-| Control | Behavior |
-|---------|----------|
-| **Enable** (master toggle) | Download tagging packs from the GitHub `authoritypacks` repo; optionally download reference databases from upstream. Weekly update checks. |
-| **Reference databases** (checkbox) | Fetch slim CBDB + Norbert from GitHub reference zip; fetch DILA TEI (Open Content mirror). Turn off to save disk if user only tags. |
-| **Status** | Per tier: pack version, reference version, disk use, last check, update available / downloading / error. |
-| **Update now** | Refresh packs from GitHub; refresh reference data from upstream if enabled. |
-| **Open folder** | Reveal `<entityDbFolder>` in the file manager. |
+| Control                            | Behavior                                                                                                                                   |
+| ---------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------ |
+| **Enable** (master toggle)         | Download tagging packs from the GitHub `authoritypacks` repo; optionally download reference databases from upstream. Weekly update checks. |
+| **Reference databases** (checkbox) | Fetch slim CBDB + Norbert from GitHub reference zip; fetch DILA TEI (Open Content mirror). Turn off to save disk if user only tags.        |
+| **Status**                         | Per tier: pack version, reference version, disk use, last check, update available / downloading / error.                                   |
+| **Update now**                     | Refresh packs from GitHub; refresh reference data from upstream if enabled.                                                                |
+| **Open folder**                    | Reveal `<entityDbFolder>` in the file manager.                                                                                             |
 
 **Not in scope:** Entity Lookups bubble order (VIAF, Wikidata) — online lookup at mint time (Phase 4b). Tag bomb source checkboxes stay in the auto-tag dialog.
 
@@ -172,11 +172,11 @@ When the user turns **Enable** on:
 
 **Check two channels:**
 
-| Channel | Signal |
-|---------|--------|
-| **Pack registry** | Bundle `packBundleVersion` / per-file sha256 vs local `packs.manifest.json` |
-| **Reference upstream** (if enabled) | CBDB HuggingFace release; DILA GitHub commit vs local manifests |
-| **Policy only** | App ships new `compilePolicyVersion` → new pack bundle on registry, no upstream change |
+| Channel                             | Signal                                                                                 |
+| ----------------------------------- | -------------------------------------------------------------------------------------- |
+| **Pack registry**                   | Bundle `packBundleVersion` / per-file sha256 vs local `packs.manifest.json`            |
+| **Reference upstream** (if enabled) | CBDB HuggingFace release; DILA GitHub commit vs local manifests                        |
+| **Policy only**                     | App ships new `compilePolicyVersion` → new pack bundle on registry, no upstream change |
 
 On user accept (never silent):
 
@@ -211,15 +211,15 @@ LJB desktop app **only downloads** this artifact for tier 1. Compile scripts rem
 
 ## IPC / API (desktop)
 
-| Channel | Purpose | Status |
-|---------|---------|--------|
-| `authorityLifecycle:get` | Status for both tiers | built (partial — local compile spike) |
-| `authorityLifecycle:setEnabled` | Enable/disable + optional delete | built |
-| `authorityLifecycle:update` | Manual update | built (needs pivot to pack fetch) |
-| `authorityLifecycle:onProgress` | Download progress | built |
-| `authorityPack:read` | Tag bomb reads NDJSON | built |
-| `authorityDb:download` | Reference tier fetch | built (A1) |
-| `authorityRef:lookup` | `(source, authorityId) → JSON` detail from raw sqlite/XML | **planned (A6)** |
+| Channel                         | Purpose                                                   | Status                                |
+| ------------------------------- | --------------------------------------------------------- | ------------------------------------- |
+| `authorityLifecycle:get`        | Status for both tiers                                     | built (partial — local compile spike) |
+| `authorityLifecycle:setEnabled` | Enable/disable + optional delete                          | built                                 |
+| `authorityLifecycle:update`     | Manual update                                             | built (needs pivot to pack fetch)     |
+| `authorityLifecycle:onProgress` | Download progress                                         | built                                 |
+| `authorityPack:read`            | Tag bomb reads NDJSON                                     | built                                 |
+| `authorityDb:download`          | Reference tier fetch                                      | built (A1)                            |
+| `authorityRef:lookup`           | `(source, authorityId) → JSON` detail from raw sqlite/XML | **planned (A6)**                      |
 
 ---
 
@@ -227,38 +227,38 @@ LJB desktop app **only downloads** this artifact for tier 1. Compile scripts rem
 
 Historical China **places** — complements CBDB places and DILA. See [authority-packs-planning.md](authority-packs-planning.md) §4.5.
 
-| Aspect | Status |
-|--------|------|
-| Pack | `authority-packs/chgis/places.ndjson`, compiled in `authority extraction` and shipped as part of the `chinese` profile bundle |
-| Delivery | **Tier 1, pre-compiled** — same GitHub-release pack registry as CBDB/DILA/Wikidata. Compiled once locally by a maintainer per CHGIS version bump and checked into `authority extraction` via Git LFS (not compiled on the end user's machine) |
-| Crosswalk | CBDB `CHGIS_PT_ID` (exact-id match) and DILA (name+geo fuzzy match); both crosswalks are built once locally and checked in alongside the pack — see `authority extraction/chgis/README.md` |
-| UI | No dedicated CHGIS UI — folded into the generic offline-authorities block (`DesktopOfflineAuthorities`) and its manifest-driven attributions disclosure, same as every other pack source |
+| Aspect    | Status                                                                                                                                                                                                                                        |
+| --------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Pack      | `authority-packs/chgis/places.ndjson`, compiled in `authority extraction` and shipped as part of the `chinese` profile bundle                                                                                                                 |
+| Delivery  | **Tier 1, pre-compiled** — same GitHub-release pack registry as CBDB/DILA/Wikidata. Compiled once locally by a maintainer per CHGIS version bump and checked into `authority extraction` via Git LFS (not compiled on the end user's machine) |
+| Crosswalk | CBDB `CHGIS_PT_ID` (exact-id match) and DILA (name+geo fuzzy match); both crosswalks are built once locally and checked in alongside the pack — see `authority extraction/chgis/README.md`                                                    |
+| UI        | No dedicated CHGIS UI — folded into the generic offline-authorities block (`DesktopOfflineAuthorities`) and its manifest-driven attributions disclosure, same as every other pack source                                                      |
 
 ---
 
 ## What consumes what
 
-| Feature | Tier 1 (packs) | Tier 2 (reference) | Online |
-|---------|------------------|----------------------|--------|
-| Tag bomb | ✓ | — | — |
-| Disambiguation shortlist | ✓ | — | — |
-| Disambiguation detail pane | id + clue from pack | full record lookup | LINCS |
-| `entities.xml` `<idno>` | id from pack | — | — |
-| `entities.xml` authority-cache note | minimal | rich fields from reference | optional |
+| Feature                             | Tier 1 (packs)      | Tier 2 (reference)         | Online   |
+| ----------------------------------- | ------------------- | -------------------------- | -------- |
+| Tag bomb                            | ✓                   | —                          | —        |
+| Disambiguation shortlist            | ✓                   | —                          | —        |
+| Disambiguation detail pane          | id + clue from pack | full record lookup         | LINCS    |
+| `entities.xml` `<idno>`             | id from pack        | —                          | —        |
+| `entities.xml` authority-cache note | minimal             | rich fields from reference | optional |
 
 ---
 
 ## Implementation phases
 
-| Step | Track | Deliverable | Status |
-|------|-------|-------------|--------|
-| 1 | A5 | This spec; lifecycle IPC + Settings UI (spike) | partial |
-| 2 | C3/D3 | GitHub Actions → publish pack bundle + `packs-index.json` | done |
-| 3 | A5 | LJB: fetch packs from GitHub contents (`authorityPackRegistry.ts`) | done |
-| 4 | A5 | Reference-data checkbox + keep A1 fetcher for tier 2 | done / in use |
-| 5 | A6 | `authorityRef:lookup` for disambiguation / entity enrichment | done (person enrichment) |
-| 6 | D1 | DILA recompile (D0 `<note>`/`<add>` variants); bump policy | planned |
-| 7 | H | CHGIS compile + fold into `chinese` Tier 1 pack bundle | done |
+| Step | Track | Deliverable                                                        | Status                   |
+| ---- | ----- | ------------------------------------------------------------------ | ------------------------ |
+| 1    | A5    | This spec; lifecycle IPC + Settings UI (spike)                     | partial                  |
+| 2    | C3/D3 | GitHub Actions → publish pack bundle + `packs-index.json`          | done                     |
+| 3    | A5    | LJB: fetch packs from GitHub contents (`authorityPackRegistry.ts`) | done                     |
+| 4    | A5    | Reference-data checkbox + keep A1 fetcher for tier 2               | done / in use            |
+| 5    | A6    | `authorityRef:lookup` for disambiguation / entity enrichment       | done (person enrichment) |
+| 6    | D1    | DILA recompile (D0 `<note>`/`<add>` variants); bump policy         | planned                  |
+| 7    | H     | CHGIS compile + fold into `chinese` Tier 1 pack bundle             | done                     |
 
 **Exit criteria:** User enables once; packs install from GitHub without terminal; reference data optional; tag bomb works; update offers new pack bundle; disambiguation can show rich CBDB/DILA detail from local reference; disable + delete reclaims disk.
 

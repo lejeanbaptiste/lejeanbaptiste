@@ -95,7 +95,7 @@ const GitLabTIcket = () => {
   const { t } = useTranslation();
 
   return (
-      <Button
+    <Button
       endIcon={<OpenInNewIcon />}
       href="https://github.com/lejeanbaptiste/lejeanbaptiste/issues/new"
       size="small"
@@ -113,9 +113,7 @@ const DisplayEmail = () => {
   const { notifyViaSnackbar } = useActions().ui;
 
   const handleCopyToClipboard = () => {
-    navigator.clipboard.writeText(
-      'daniel.morgan@college-de-france.fr',
-    );
+    navigator.clipboard.writeText('daniel.morgan@college-de-france.fr');
     notifyViaSnackbar({ message: t('LWC.home.bugReport.email copied to clipboard') });
   };
 
@@ -134,9 +132,7 @@ const DisplayEmail = () => {
           backgroundColor: `rgba(${theme.vars.palette.primary.mainChannel} / 0.12)`,
         })}
       >
-        <Typography variant="caption">
-          daniel.morgan@college-de-france.fr
-        </Typography>
+        <Typography variant="caption">daniel.morgan@college-de-france.fr</Typography>
         <IconButton onClick={handleCopyToClipboard} size="small" sx={{ borderRadius: 1 }}>
           <ContentCopyIcon fontSize="inherit" />
         </IconButton>

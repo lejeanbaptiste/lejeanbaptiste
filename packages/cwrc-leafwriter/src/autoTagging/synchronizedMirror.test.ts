@@ -28,7 +28,11 @@ describe('synchronized CEDB/PEDB mirror', () => {
 
     const centralStore = fakeStore(central);
     const projectStore = fakeStore(project);
-    addEntityName(project, projectId, '世遠', { type: 'courtesy', origin: 'authority', source: 'Norbert' });
+    addEntityName(project, projectId, '世遠', {
+      type: 'courtesy',
+      origin: 'authority',
+      source: 'Norbert',
+    });
 
     const result = await synchronizeMirroredProject(projectStore, centralStore, 'user-a');
     expect(result.unavailable).toBe(true);

@@ -11,11 +11,7 @@ import Validation from './panels/validation';
 
 type DesktopLeftPanelTab = 'explorer' | 'find' | 'xpath' | 'toc' | 'markup';
 type DesktopRightPanelTab =
-  | 'fileMetadata'
-  | 'attributes'
-  | 'imageViewer'
-  | 'validation'
-  | 'translation';
+  'fileMetadata' | 'attributes' | 'imageViewer' | 'validation' | 'translation';
 
 interface InitConfigProps {
   editorId: string;
@@ -81,8 +77,7 @@ class LayoutManager {
     this.editorId = config.editorId;
 
     const isDesktopApp =
-      typeof window !== 'undefined' &&
-      !!(window as Window & { electronAPI?: unknown }).electronAPI;
+      typeof window !== 'undefined' && !!(window as Window & { electronAPI?: unknown }).electronAPI;
 
     const loadingMaskHtml = isDesktopApp
       ? `<div class="cwrc cwrcLoadingMask" style="display:none" aria-hidden="true"></div>`
@@ -382,7 +377,8 @@ class LayoutManager {
     if (rightPanelModules.includes(moduleId)) {
       window.__desktopRightPanelPendingTab = moduleId as DesktopRightPanelTab;
       if (window.__desktopValidatorInstrumentation) {
-        window.__desktopValidatorInstrumentation.validationPanelRequested = moduleId === 'validation';
+        window.__desktopValidatorInstrumentation.validationPanelRequested =
+          moduleId === 'validation';
       }
     }
 
@@ -603,8 +599,7 @@ class LayoutManager {
     }
 
     //multiple modules
-    const iconTabsClass =
-      panelRegion === 'east' ? ' cwrc-east-icon-tabs' : '';
+    const iconTabsClass = panelRegion === 'east' ? ' cwrc-east-icon-tabs' : '';
     const panelDivClass = panelRegion === 'east' ? ' class="cwrc-east-panel"' : '';
     return `
       <div class="cwrc tabs ui-layout-${panelRegion}${iconTabsClass}">

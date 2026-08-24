@@ -16,10 +16,10 @@ first.** This one is the detailed experimental log/evidence behind it. Pipeline 
 
 ## The question
 
-Chinese office titles in leaf-writer need English glosses. Hucker's *Dictionary of Official
-Titles* is the standard reference, but we can't redistribute his dictionary prose (copyright;
+Chinese office titles in leaf-writer need English glosses. Hucker's _Dictionary of Official
+Titles_ is the standard reference, but we can't redistribute his dictionary prose (copyright;
 see decision 3 in the entity-display doc). So the project asks a narrower engineering question:
-can we generate *independent* scholarly glosses for offices that still lack a publishable
+can we generate _independent_ scholarly glosses for offices that still lack a publishable
 translation — using learned patterns and review — without copying his wording into packs we
 ship? Gap-fill for blanks; collision filter for anything that matches known Hucker text.
 
@@ -46,19 +46,20 @@ Original known problems, root-caused and fixed in `skunkworks/scripts/parse_entr
   (96% reduction); `YUAN` count corrected from 284 to 434 (previously hiding in the `AN` bucket).
 - **Row misalignment** (`translation_title` holding a bare dynasty string instead of a real
   translation, e.g. `司天監` → `T'ANG`) — root cause: when a definition spans multiple
-  non-contiguous dynasties (`CHOU, N-S DIV (Chou):`), the old `TAG_RE` only matched the *last*
+  non-contiguous dynasties (`CHOU, N-S DIV (Chou):`), the old `TAG_RE` only matched the _last_
   item in the comma-joined list; earlier dynasty names were left as unparsed leftover text in
   `general_gloss`, which `extract_title()` then mistook for the actual title. Fixed by widening
   `TAG_RE` to capture the whole comma-joined list as one tag (also more correct: the dynasty
   scope is no longer silently dropped). **16 → 3 rows** (81% reduction).
 
 Still open, not regex-fixable:
+
 - **3,222 rows have no parsed `translation_title`** (was 3,197 pre-fix; the two bugs above didn't
   touch this population). This isn't a bug — Hucker's prose for these entries doesn't start with
   a short title-case phrase — so it's a real coverage ceiling on the `translation_title` field,
   not something to chase further with regex.
 - **Headword-level OCR corruption** (`广如容漢軍堂`, `炻`, `提辩` for what should be 提點) —
-  pure-CJK strings that are simply the *wrong* hanzi (visually-similar glyph misread), which no
+  pure-CJK strings that are simply the _wrong_ hanzi (visually-similar glyph misread), which no
   regex can tell apart from a genuine word. `extract_lines.py`'s existing `MANUAL_CORRECTIONS`
   block already holds itself to the right standard here (only fix what's cross-verified against
   another correctly-OCR'd occurrence of the same character elsewhere in the book) — 15 rows with
@@ -77,32 +78,32 @@ doc is real but far rarer at whole-title level than the design anticipated.
 Mining character n-grams (1–4) against content words in the translations, with
 p(gloss | morpheme) and lift over corpus base rate:
 
-| morpheme | gloss | p | lift |
-|---|---|---|---|
-| 博士 | Erudite | 0.89 | ×137 |
-| 鹽 | Salt | 0.90 | ×135 |
-| 左 / 右 | Left / Right | 0.80 / 0.72 | ×102 / ×94 |
-| 御史 | Censor | 0.68 | ×114 |
-| 大夫 | Grand Master | 0.97 | ×33 |
-| 提擧 | Supervisorate | 0.55 | ×113 |
-| 局 | Service | 0.80 | ×27 |
-| 郡 | Commandery | 0.89 | — |
+| morpheme | gloss         | p           | lift       |
+| -------- | ------------- | ----------- | ---------- |
+| 博士     | Erudite       | 0.89        | ×137       |
+| 鹽       | Salt          | 0.90        | ×135       |
+| 左 / 右  | Left / Right  | 0.80 / 0.72 | ×102 / ×94 |
+| 御史     | Censor        | 0.68        | ×114       |
+| 大夫     | Grand Master  | 0.97        | ×33        |
+| 提擧     | Supervisorate | 0.55        | ×113       |
+| 局       | Service       | 0.80        | ×27        |
+| 郡       | Commandery    | 0.89        | —          |
 
 **617 morphemes** clear support ≥5 / p ≥ 0.30 / lift ≥ 8 (271 at p ≥ 0.6), covering **92% of
 held-out titles**. Emitted as `hucker_morpheme_lexicon.json` (scratchpad; not yet in-repo).
 
 This part of the hypothesis holds. The lexicon is real, compact, and extractable.
 
-## Experiment 2 — is it *generatively* compositional? **No.**
+## Experiment 2 — is it _generatively_ compositional? **No.**
 
 Built the full pipeline: IBM-Model-1 EM alignment → DP segmentation over the phrase table →
 head-final reordering with "of"-insertion. Trained on 85%, tested on the held-out 15% (n=819).
 
-| metric | result |
-|---|---|
+| metric                   | result   |
+| ------------------------ | -------- |
 | exact content-word match | **4.8%** |
-| correct head noun | 20.0% |
-| mean content-word F1 | 0.314 |
+| correct head noun        | 20.0%    |
+| mean content-word F1     | 0.314    |
 
 Nearest-neighbour analogy (retrieve the most character-similar Hucker entry, reuse its
 translation) does no better: F1 0.219, only 23% of items get a usable analogy.
@@ -114,7 +115,7 @@ Three distinct failure modes, all structural rather than fixable by more data:
 2. **Bound ≠ free forms.** 尚書 standing alone is "Minister"; inside 尚書省 the same characters
    are "Department of State Affairs". A headword lexicon cannot express this.
 3. **Head-marking is soft, not rule-governed.** Whether Hucker writes "Directorate of X" or
-   "X Directorate" correlates with the final character only probabilistically — 寺 takes *of*
+   "X Directorate" correlates with the final character only probabilistically — 寺 takes _of_
    74% of the time, 案 9%, 官 16%. Eight English templates are in play and none dominates
    (Modifier+Head 33%, HEAD of X 26%, bare head 10%).
 
@@ -127,27 +128,27 @@ priming), lexicon built from train only:
 - **Arm A (control):** bare Chinese title + dynasty, no retrieval.
 - **Arm B (treatment):** + mined morpheme lexicon + 6 nearest Hucker exemplars.
 
-| arm | exact | head noun | F1 |
-|---|---|---|---|
-| rule-based baseline (n=819) | 4.8% | 20.0% | 0.314 |
-| **A — no retrieval** (n=50) | **28.0%** | 50.0% | 0.541 |
-| **B — +lexicon +exemplars** (n=50) | **28.0%** | 46.0% | 0.484 |
+| arm                                | exact     | head noun | F1    |
+| ---------------------------------- | --------- | --------- | ----- |
+| rule-based baseline (n=819)        | 4.8%      | 20.0%     | 0.314 |
+| **A — no retrieval** (n=50)        | **28.0%** | 50.0%     | 0.541 |
+| **B — +lexicon +exemplars** (n=50) | **28.0%** | 46.0%     | 0.484 |
 
 Exact-match 95% Wilson CI for both arms: 17–42%. The arms are statistically indistinguishable,
-and B is *slightly worse* on F1 and head noun.
+and B is _slightly worse_ on F1 and head noun.
 
 Hand-rating every non-exact output for scholarly adequacy (would a sinologist accept this
 gloss, even though it isn't Hucker's wording?), excluding items where gold is OCR-corrupt:
 
-| arm | exact | +adequate | = usable | partial | wrong |
-|---|---|---|---|---|---|
-| A | 14 | 24 | **38/48 (79%)** | 4 | 6 |
-| B | 14 | 20 | **34/48 (71%)** | 9 | 5 |
+| arm | exact | +adequate | = usable        | partial | wrong |
+| --- | ----- | --------- | --------------- | ------- | ----- |
+| A   | 14    | 24        | **38/48 (79%)** | 4       | 6     |
+| B   | 14    | 20        | **34/48 (71%)** | 9       | 5     |
 
 ### Why retrieval failed
 
 Retrieval actively misled on several items. The clearest case is 內大 [CH'ING]: the retrieved
-exemplar set contained *the identical headword* glossed "Grand Minister of the Imperial
+exemplar set contained _the identical headword_ glossed "Grand Minister of the Imperial
 Household Department", which I copied — gold for this entry is "Grand Minister Assistant
 Commander of the Imperial Guard". That is the 6.5% polysemy from Experiment 1, and retrieval
 walks straight into it with full confidence. Similarly 春官: exemplar said "Spring Office",
@@ -161,7 +162,7 @@ Noisy exemplars are worse than no exemplars when the corpus itself is inconsiste
 Including distinctively Huckerian renderings — 郞中令 → "Chamberlain for Attendants" is his
 signature construction, not a phrase derivable from the characters.
 
-This is not a good sign for an *originality* claim. The plan assumed Huckbot5000 output would be
+This is not a good sign for an _originality_ claim. The plan assumed Huckbot5000 output would be
 clearly distinct from the dictionary. But Hucker's dictionary is foundational in sinology and is
 plainly in the training data of any frontier model. An LLM asked to translate an office title in
 a scholarly English register may be **recalling** Hucker's text, not deriving an independent
@@ -174,10 +175,10 @@ the original design, where matching Hucker was the success metric.
 
 ### And exact-match is the wrong metric anyway
 
-If the goal is *not* to redistribute Hucker's dictionary text, then "Wine Workshop" where Hucker
+If the goal is _not_ to redistribute Hucker's dictionary text, then "Wine Workshop" where Hucker
 wrote "Imperial Winery", or "Provisioner" where he wrote "Almoner", is a **success**, not an
 error — a serviceable scholarly gloss that is demonstrably not his wording. The 79% adequacy
-number is the product-relevant one; the 28% exact number is the *redistribution-risk* one. They
+number is the product-relevant one; the 28% exact number is the _redistribution-risk_ one. They
 should be optimized in opposite directions.
 
 ## Recommendation
@@ -200,7 +201,7 @@ Proposed shape, in dependency order:
 - **Step 3 — Re-run Experiment 3 against a real API** at n≈300 with an actual model rather than
   in-context self-play, on cleaned data. The n=50 CIs (17–42%) are too wide to decide anything.
   This is the go/no-go number.
-- **Step 4 — Add a verbatim-collision filter** as a hard gate on *publishable* output: any
+- **Step 4 — Add a verbatim-collision filter** as a hard gate on _publishable_ output: any
   generated gloss whose content words match a Hucker entry for the same headword is tagged
   `source: 'Hucker'` and kept only in a local collision archive (not redistributed), never as
   `source: 'Huckbot5000'`. This inverts the original success metric and is the concrete
@@ -278,8 +279,8 @@ verbatim/near-verbatim copying, and the currently-shipped pack needs remediation
   University Press as a licensed data source for `OFFICE_CODES`. CBDB's site-wide CC-BY-NC-SA-4.0
   claim covers CBDB's own compiled content — it cannot sublicense a third party's copyrighted
   prose just by tagging it with a citation.
-- **Correction to earlier assumption in this doc:** Hucker's *A Dictionary of Official Titles in
-  Imperial China* was published by **Stanford University Press (1985)**, not Michigan. Hucker
+- **Correction to earlier assumption in this doc:** Hucker's _A Dictionary of Official Titles in
+  Imperial China_ was published by **Stanford University Press (1985)**, not Michigan. Hucker
   died in 1994; under US copyright (life + 70) the work is protected through **2064** — not
   public domain, not close.
 - **Already live:** GitHub release **v0.1.13** (current, consumed by leaf-writer) ships 2,360 of
@@ -296,7 +297,7 @@ remainder" excludes once this field is gone).
 
 ## Legal note (not advice)
 
-Daniel is at Collège de France, so the EU *sui generis* database right (Directive 96/9/EC)
+Daniel is at Collège de France, so the EU _sui generis_ database right (Directive 96/9/EC)
 applies and has no US equivalent. It protects substantial extraction from a database
 independently of whether the individual contents are copyrightable — a different question from
 the copyright analysis in the entity-display doc, which is the one that's been reasoned about
@@ -376,7 +377,7 @@ piecemeal, and not automatically (publish action on shared state).
    **Correction (same day, afternoon):** an earlier note said `stripReferenceDb.mjs` also nulled
    `(Hucker)` citations in the local reference sqlite; that was reversed. Local CBDB = official
    content; publishable packs = omit cited third-party prose.
-   **Still open, needs a decision:** the *live* GitHub release assets
+   **Still open, needs a decision:** the _live_ GitHub release assets
    `authority-reference-person-20260627+2026-07-25-reduced-authority.zip` on **v0.1.13, v0.1.12,
    and v0.1.10** still contain the old unfiltered `cbdb-person.sqlite3` (built before today's
    pack-side omit). **0 downloads on all three** as of 2026-08-06, so nothing has actually gone
@@ -394,12 +395,12 @@ piecemeal, and not automatically (publish action on shared state).
    Script: `ollama_harness.py` (scratchpad) — real HTTP calls to `localhost:11434/api/generate`,
    ~9s/call, ~35 min total.
 
-   | arm | n | exact | head noun | F1 |
-   |---|---|---|---|---|
-   | A: no retrieval | 150 | 0.7% (CI 0.1–3.7%) | 12.7% | 0.147 |
-   | B: +lexicon+exemplars | 150 | 2.7% (CI 1.0–6.7%) | 20.7% | 0.237 |
-   | *cf. Claude self-play A/B (n=50)* | | *28.0% / 28.0%* | *50.0% / 46.0%* | *0.541 / 0.484* |
-   | *cf. rule-based lexicon lookup (n=819)* | | *4.8%* | *20.0%* | *0.314* |
+   | arm                                     | n   | exact              | head noun       | F1              |
+   | --------------------------------------- | --- | ------------------ | --------------- | --------------- |
+   | A: no retrieval                         | 150 | 0.7% (CI 0.1–3.7%) | 12.7%           | 0.147           |
+   | B: +lexicon+exemplars                   | 150 | 2.7% (CI 1.0–6.7%) | 20.7%           | 0.237           |
+   | _cf. Claude self-play A/B (n=50)_       |     | _28.0% / 28.0%_    | _50.0% / 46.0%_ | _0.541 / 0.484_ |
+   | _cf. rule-based lexicon lookup (n=819)_ |     | _4.8%_             | _20.0%_         | _0.314_         |
 
    **Ministral doesn't clear the naive rule-based bar even with retrieval.** Two findings worth
    keeping: (1) **retrieval helps Ministral a lot** (exact match ~4×, head noun ~1.6×) — the
@@ -419,21 +420,21 @@ piecemeal, and not automatically (publish action on shared state).
    credits.** Script: `openai_harness.py` (scratchpad), same disjoint-arm design, real HTTP calls
    to the Chat Completions API, ~1/s, ~5 min total, cost a few cents.
 
-   | arm | n | exact | 95% CI | head noun | F1 |
-   |---|---|---|---|---|---|
-   | A: no retrieval | 150 | **6.0%** | 3.2–11.0% | 16.7% | 0.237 |
-   | B: +lexicon+exemplars | 150 | **14.0%** | 9.3–20.5% | 30.7% | 0.386 |
-   | *cf. Claude self-play A/B (n=50)* | | *28.0% / 28.0%* | *50.0% / 46.0%* | *0.541 / 0.484* |
-   | *cf. Ministral 8B A/B (n=300)* | | *0.7% / 2.7%* | | *12.7% / 20.7%* | *0.147 / 0.237* |
-   | *cf. rule-based lexicon lookup (n=819)* | | *4.8%* | | *20.0%* | *0.314* |
+   | arm                                     | n   | exact           | 95% CI          | head noun       | F1              |
+   | --------------------------------------- | --- | --------------- | --------------- | --------------- | --------------- |
+   | A: no retrieval                         | 150 | **6.0%**        | 3.2–11.0%       | 16.7%           | 0.237           |
+   | B: +lexicon+exemplars                   | 150 | **14.0%**       | 9.3–20.5%       | 30.7%           | 0.386           |
+   | _cf. Claude self-play A/B (n=50)_       |     | _28.0% / 28.0%_ | _50.0% / 46.0%_ | _0.541 / 0.484_ |
+   | _cf. Ministral 8B A/B (n=300)_          |     | _0.7% / 2.7%_   |                 | _12.7% / 20.7%_ | _0.147 / 0.237_ |
+   | _cf. rule-based lexicon lookup (n=819)_ |     | _4.8%_          |                 | _20.0%_         | _0.314_         |
 
    Two things this changes:
 
    1. **The Claude self-play numbers (28%) are almost certainly inflated** — real, independently
       run exact match for a comparable frontier model (GPT-4o) is 6.0% with no retrieval. This
       isn't a self-grading artifact (exact/F1/head are mechanical string comparisons, not
-      subjective ratings) — more likely, generating *inside a conversation where the model knows
-      exactly what's being tested* behaves differently than a cold, stateless API call. **Treat
+      subjective ratings) — more likely, generating _inside a conversation where the model knows
+      exactly what's being tested_ behaves differently than a cold, stateless API call. **Treat
       the self-play numbers as unreliable going forward; this GPT-4o result is the better
       reference point.**
    2. **Retrieval genuinely helps real models — the self-play "zero lift" finding doesn't
@@ -447,11 +448,11 @@ piecemeal, and not automatically (publish action on shared state).
    reasonable paraphrases rather than garbage (職方氏 gold "Overseer of Feudatories" → "Regional
    Operations Official"; 詳斷案 gold "Sentence Evaluators Section" → "Case Evaluator").
 
-   **One contamination flag beyond lexical exact-match:** 脫脫禾孫 came back as *"Meaning and
-   derivation not clear"* — not a translation, but Hucker's own stock hedge phrase for
+   **One contamination flag beyond lexical exact-match:** 脫脫禾孫 came back as _"Meaning and
+   derivation not clear"_ — not a translation, but Hucker's own stock hedge phrase for
    etymologically obscure entries (encountered repeatedly while cleaning the OCR extraction
    earlier in this doc). Word-overlap scoring doesn't flag this as a hit since it doesn't match
-   the gold gloss, but it's evidence the model can recall Hucker's *editorial voice*, not just
+   the gold gloss, but it's evidence the model can recall Hucker's _editorial voice_, not just
    vocabulary. **The verbatim-collision filter (Step 4) needs to catch stylistic tells like this,
    not just check the final phrase against Hucker's headword gloss.**
 
@@ -460,6 +461,7 @@ piecemeal, and not automatically (publish action on shared state).
    6% baseline contamination (no retrieval) is real but lower than the self-play estimate
    suggested, and the filter is buildable; it just needs to check for stylistic patterns
    (hedging phrases, characteristic Hucker constructions) in addition to headword-gloss matches.
+
 5. ~~leaf-writer Phase 3~~ **Done (uncommitted).** Verified directly: `DisambiguationPanel.tsx`
    has `formatCandidatePeriod()`, surfacing startYear/endYear/dynasty as a caption on candidate
    rows during entity tagging — exactly Phase 3's requirement. Correction to earlier text in this
@@ -486,7 +488,7 @@ piecemeal, and not automatically (publish action on shared state).
      n=300 run above):** **~57% adequate, ~24% partial, ~19% wrong** — well below the 79%
      self-play figure this doc cites elsewhere. Recurring failure modes: category errors
      (place↔person — 里 "Community" → "Village Chief"; 寨 "Stockade" → "Fort Commander"),
-     modern-Chinese anachronisms (中將 read with its *modern* sense "Lieutenant General" instead
+     modern-Chinese anachronisms (中將 read with its _modern_ sense "Lieutenant General" instead
      of the classical one), punting to transliteration instead of translating (平隼案 →
      "Pingshun Office" — mechanically detectable, worth its own filter check), and the same
      false-cognate trap seen with Ministral (材官挽强 → "Construction Supervisor of Archery").
@@ -520,7 +522,7 @@ distinguishes individual Warring-States-era feudal states (Zheng, Qin, Zeng, Cao
 specificity survives only in free-text `c_notes`, not structured metadata (1,037 distinct
 title-strings across the 1,675 rows). Generic titles like 伯/大將軍/給事中/公主 also appear in
 CBDB's separately-curated main-line office table, which for many of these only starts at Tang —
-leaving Han-through-Sui genuinely uncovered by *either* CBDB source for these specific titles.
+leaving Han-through-Sui genuinely uncovered by _either_ CBDB source for these specific titles.
 Confirmed: Norbert already has 5 of 6 sampled generic titles, and Norbert's own scope (Han/Six
 Dynasties) sits right in that gap.
 
@@ -566,13 +568,14 @@ Same-day continuation after the killed run. Full detail and current queue:
 [huckbot5000-integration-plan.md](huckbot5000-integration-plan.md).
 
 **Built and verified:**
+
 - Period-aware `(headword, dynasty)` target keys (`resolveTargets.mjs`); `--resume` keys on the same.
 - Old headword-only candidates archived as `candidates.pre-reconcile.ndjson`.
 - `reconcile:norbert-offices` — dates → concordance (Hucker continuity gate for undated) → crosswalks; **178** links.
 - Generation skips: Hucker OCR **period** coverage + CBDB `(Hucker)` **headword** coverage
   (those titles are available from the user's CBDB install; Huckbot fills remaining blanks).
 - Local CBDB reference sqlite **keeps** official CBDB office translations as published; only
-  packs *we* publish omit `(Hucker)`-cited fields.
+  packs _we_ publish omit `(Hucker)`-cited fields.
 - Collision matches go to a local collision archive (`huckbot5000-insiders`), not the
   publishable Huckbot5000 pack.
 - Procedural place+suffix (pinyin place stems; reviewed OK) and allowlisted parentOf (`太子`/`公主`/`親王`).
@@ -583,4 +586,4 @@ Same-day continuation after the killed run. Full detail and current queue:
 **Next:** commit pipeline → `npm run generate:huckbot5000 -- --resume` → audit → human review.  
 **Still open / not blocking generate:** `authoritypacks` release cut; remaining undated Norbert offices; expanding parentOf beyond the allowlist.
 
-Remaining open items from earlier in this doc that are *not* the next coding step: the release cut in item 1.
+Remaining open items from earlier in this doc that are _not_ the next coding step: the release cut in item 1.

@@ -22,7 +22,10 @@ let activeProjectFilePath: string | null = null;
 let activeEnabledPluginIds: string[] = [];
 
 /** Plugins are installed for the app, but their enabled state belongs to the open project. */
-export function setPluginProject(projectFilePath: string | null, enabledPluginIds: string[] = []): void {
+export function setPluginProject(
+  projectFilePath: string | null,
+  enabledPluginIds: string[] = [],
+): void {
   activeProjectFilePath = projectFilePath;
   activeEnabledPluginIds = enabledPluginIds;
   cachedSnapshot = null;
@@ -66,7 +69,9 @@ export function isPluginEnabledInMain(pluginId: string): boolean {
 export function resolvePluginPythonBinary(pluginId: string): string | null {
   const root = path.join(pluginsRoot(), pluginId, 'python');
   const python =
-    process.platform === 'win32' ? path.join(root, 'python.exe') : path.join(root, 'bin', 'python3');
+    process.platform === 'win32'
+      ? path.join(root, 'python.exe')
+      : path.join(root, 'bin', 'python3');
   return fs.existsSync(python) ? python : null;
 }
 
@@ -77,7 +82,9 @@ function coreBundledPythonCandidates(): string[] {
   ].filter((root): root is string => Boolean(root));
   return roots
     .map((root) =>
-      process.platform === 'win32' ? path.join(root, 'python.exe') : path.join(root, 'bin', 'python3'),
+      process.platform === 'win32'
+        ? path.join(root, 'python.exe')
+        : path.join(root, 'bin', 'python3'),
     )
     .filter((candidate) => fs.existsSync(candidate));
 }
@@ -237,7 +244,10 @@ export function getPluginEntryModuleUrl(pluginId: string): string | null {
   return toLocalFileUrl(filePath);
 }
 
-export async function setPluginEnabled(pluginId: string, enabled: boolean): Promise<PluginHostSnapshot> {
+export async function setPluginEnabled(
+  pluginId: string,
+  enabled: boolean,
+): Promise<PluginHostSnapshot> {
   if (!activeProjectFilePath) throw new Error('Open a project before changing plugin settings.');
   const snapshot = await getPluginHostSnapshot();
   const plugin = snapshot.plugins.find((p) => p.id === pluginId);

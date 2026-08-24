@@ -5,10 +5,7 @@
  */
 
 const escapeXml = (value: string): string =>
-  value
-    .replace(/&/g, '&amp;')
-    .replace(/</g, '&lt;')
-    .replace(/>/g, '&gt;');
+  value.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
 
 /** True when the string still looks like it contains markdown emphasis markers. */
 export const looksLikeInlineMarkdown = (text: string): boolean =>
@@ -54,11 +51,15 @@ export const markdownInlineToTei = (text: string): string => {
 
   let parts: Part[] = [{ kind: 'text', value: text }];
 
-  parts = replaceInTextParts(parts, /\*\*\*(.+?)\*\*\*/g, (inner) =>
-    `<hi rend="bold"><hi rend="italic">${escapeXml(inner)}</hi></hi>`,
+  parts = replaceInTextParts(
+    parts,
+    /\*\*\*(.+?)\*\*\*/g,
+    (inner) => `<hi rend="bold"><hi rend="italic">${escapeXml(inner)}</hi></hi>`,
   );
-  parts = replaceInTextParts(parts, /___(.+?)___/g, (inner) =>
-    `<hi rend="bold"><hi rend="italic">${escapeXml(inner)}</hi></hi>`,
+  parts = replaceInTextParts(
+    parts,
+    /___(.+?)___/g,
+    (inner) => `<hi rend="bold"><hi rend="italic">${escapeXml(inner)}</hi></hi>`,
   );
   parts = replaceInTextParts(
     parts,
@@ -86,9 +87,7 @@ export const markdownInlineToTei = (text: string): string => {
     (inner) => `<hi rend="italic">${escapeXml(inner)}</hi>`,
   );
 
-  return parts
-    .map((part) => (part.kind === 'html' ? part.value : escapeXml(part.value)))
-    .join('');
+  return parts.map((part) => (part.kind === 'html' ? part.value : escapeXml(part.value))).join('');
 };
 
 /**

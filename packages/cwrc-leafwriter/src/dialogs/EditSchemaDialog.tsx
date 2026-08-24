@@ -40,7 +40,12 @@ const deriveSchemaName = (rng?: string): string => {
   try {
     if (rng.startsWith('ljb://')) {
       const path = decodeURIComponent(rng.slice('ljb://'.length));
-      return path.split(/[/\\]/).pop()?.replace(/\.(rng|rnc|xsd)$/i, '') ?? '';
+      return (
+        path
+          .split(/[/\\]/)
+          .pop()
+          ?.replace(/\.(rng|rnc|xsd)$/i, '') ?? ''
+      );
     }
     const filename = rng.split('/').pop() ?? '';
     return filename.replace(/\.(rng|rnc|xsd)$/i, '');
@@ -91,7 +96,8 @@ export const EditSchemaDialog = ({
 
   const preventEscape = actionType === 'add';
 
-  const isDesktop = typeof window !== 'undefined' && !!(window as Window & { electronAPI?: unknown }).electronAPI;
+  const isDesktop =
+    typeof window !== 'undefined' && !!(window as Window & { electronAPI?: unknown }).electronAPI;
 
   const urlValidation = isDesktop
     ? z
@@ -100,11 +106,9 @@ export const EditSchemaDialog = ({
         .refine((val) => val.startsWith('ljb://') || val.startsWith('https://'), {
           message: t('LW.URL must start with HTTPS secured connection').toString(),
         })
-    : z
-        .url({ message: t('LW.Must be a valid URL').toString() })
-        .startsWith('https://', {
-          message: t('LW.URL must start with HTTPS secured connection').toString(),
-        });
+    : z.url({ message: t('LW.Must be a valid URL').toString() }).startsWith('https://', {
+        message: t('LW.URL must start with HTTPS secured connection').toString(),
+      });
 
   const cssValidation = isDesktop
     ? z

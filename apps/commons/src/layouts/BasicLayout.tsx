@@ -11,7 +11,14 @@ export const BasicLayout = () => {
   const desktop = isDesktop();
 
   return (
-    <Box sx={{ display: 'flex', flexDirection: 'column', width: '100%', bgcolor: 'background.default' }}>
+    <Box
+      sx={{
+        display: 'flex',
+        flexDirection: 'column',
+        width: '100%',
+        bgcolor: 'background.default',
+      }}
+    >
       {desktop && (
         <GlobalStyles styles={{ ':root': { '--titlebar-height': `${TITLEBAR_HEIGHT}px` } }} />
       )}

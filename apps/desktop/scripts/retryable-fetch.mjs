@@ -23,11 +23,7 @@ const parseRetryAfterMs = (value) => {
 export const fetchWithRetry = async (
   url,
   init,
-  {
-    attempts = 4,
-    baseDelayMs = 1000,
-    label = url,
-  } = {},
+  { attempts = 4, baseDelayMs = 1000, label = url } = {},
 ) => {
   let lastError;
 

@@ -1605,86 +1605,86 @@ export const SidebarDatabaseTab = ({ active = false }: SidebarDatabaseTabProps) 
    * in-place refresh after authority backfill so the open card shows new data
    * without close/reopen (including uncontrolled TextFields via editFormEpoch).
    */
-  const syncEditFormFields = useCallback((
-    entity: EntitySummary,
-    options?: { resetAccordions?: boolean; remount?: boolean },
-  ) => {
-    const suggestedRomanized =
-      entity.romanized ??
-      (entity.kind === 'person'
-        ? suggestPersonRomanization(entity.names[0] ?? '', projectLang)
-        : autoRomanizeForKind(entity.names[0] ?? '', projectLang, entity.kind));
-    setEditCanonicalName(entity.names[0] ?? '');
-    setEditingName(false);
-    setEditingRomanized(false);
-    const description = entity.description ?? '';
-    setEditDescriptionSeed(description);
-    editDescriptionRef.current = description;
-    setEditRomanized(suggestedRomanized ?? '');
-    const workDate = entity.workDate;
-    const isFloruitRange = workDate?.startPrecision === 'fl.';
-    const birthAssertion = entity.assertions.find(
-      (assertion) => assertion.element === 'birth' && assertion.origin === 'user',
-    );
-    const deathAssertion = entity.assertions.find(
-      (assertion) => assertion.element === 'death' && assertion.origin === 'user',
-    );
-    if (isFloruitRange) {
-      setDateBirth(workDate?.startYear != null ? String(Math.abs(workDate.startYear)) : '');
-      setDateDeath(workDate?.endYear != null ? String(Math.abs(workDate.endYear)) : '');
-      setDateBirthBce(false);
-      setDateDeathBce(false);
-      setDateBirthQualifier('fl.');
-      setDateDeathQualifier('');
-    } else {
-      setDateBirth(entity.startYear != null ? String(Math.abs(entity.startYear)) : '');
-      setDateDeath(entity.endYear != null ? String(Math.abs(entity.endYear)) : '');
-      setDateBirthBce(entity.startYear != null && entity.startYear < 0);
-      setDateDeathBce(entity.endYear != null && entity.endYear < 0);
-      setDateBirthQualifier((birthAssertion?.precision as DatePrecision) ?? '');
-      setDateDeathQualifier((deathAssertion?.precision as DatePrecision) ?? '');
-    }
-    setWorkDateStart(
-      workDate?.startYear != null
-        ? String(Math.abs(workDate.startYear))
-        : entity.startYear != null
-          ? String(Math.abs(entity.startYear))
-          : '',
-    );
-    setWorkDateEnd(
-      workDate?.endYear != null
-        ? String(Math.abs(workDate.endYear))
-        : entity.endYear != null
-          ? String(Math.abs(entity.endYear))
-          : '',
-    );
-    setWorkDateStartPrecision((workDate?.startPrecision as WorkDatePrecision) ?? '');
-    setWorkDateEndPrecision((workDate?.endPrecision as WorkDatePrecision) ?? '');
-    setDateEditing(false);
-    setValuesEditing(false);
-    setPendingValidations([]);
-    setEditNameTypes(
-      Object.fromEntries(entity.nameEntries.map((entry) => [entry.text, entry.type ?? ''])),
-    );
-    setEditNameLanguages(
-      Object.fromEntries(
-        entity.nameEntries
-          .filter((entry) => entry.lang)
-          .map((entry) => [entry.text, entry.lang!] as const),
-      ),
-    );
-    setEditNewName('');
-    setEditNewNameType('');
-    setEditNewNameLanguage('');
-    setNewTitle({ dynasty: '', fief: '', posthumousName: '', title: '' });
-    if (options?.resetAccordions !== false) {
-      setNamesExpanded(false);
-      setTitlesExpanded(false);
-    }
-    if (options?.remount) {
-      setEditFormEpoch((epoch) => epoch + 1);
-    }
-  }, [projectLang]);
+  const syncEditFormFields = useCallback(
+    (entity: EntitySummary, options?: { resetAccordions?: boolean; remount?: boolean }) => {
+      const suggestedRomanized =
+        entity.romanized ??
+        (entity.kind === 'person'
+          ? suggestPersonRomanization(entity.names[0] ?? '', projectLang)
+          : autoRomanizeForKind(entity.names[0] ?? '', projectLang, entity.kind));
+      setEditCanonicalName(entity.names[0] ?? '');
+      setEditingName(false);
+      setEditingRomanized(false);
+      const description = entity.description ?? '';
+      setEditDescriptionSeed(description);
+      editDescriptionRef.current = description;
+      setEditRomanized(suggestedRomanized ?? '');
+      const workDate = entity.workDate;
+      const isFloruitRange = workDate?.startPrecision === 'fl.';
+      const birthAssertion = entity.assertions.find(
+        (assertion) => assertion.element === 'birth' && assertion.origin === 'user',
+      );
+      const deathAssertion = entity.assertions.find(
+        (assertion) => assertion.element === 'death' && assertion.origin === 'user',
+      );
+      if (isFloruitRange) {
+        setDateBirth(workDate?.startYear != null ? String(Math.abs(workDate.startYear)) : '');
+        setDateDeath(workDate?.endYear != null ? String(Math.abs(workDate.endYear)) : '');
+        setDateBirthBce(false);
+        setDateDeathBce(false);
+        setDateBirthQualifier('fl.');
+        setDateDeathQualifier('');
+      } else {
+        setDateBirth(entity.startYear != null ? String(Math.abs(entity.startYear)) : '');
+        setDateDeath(entity.endYear != null ? String(Math.abs(entity.endYear)) : '');
+        setDateBirthBce(entity.startYear != null && entity.startYear < 0);
+        setDateDeathBce(entity.endYear != null && entity.endYear < 0);
+        setDateBirthQualifier((birthAssertion?.precision as DatePrecision) ?? '');
+        setDateDeathQualifier((deathAssertion?.precision as DatePrecision) ?? '');
+      }
+      setWorkDateStart(
+        workDate?.startYear != null
+          ? String(Math.abs(workDate.startYear))
+          : entity.startYear != null
+            ? String(Math.abs(entity.startYear))
+            : '',
+      );
+      setWorkDateEnd(
+        workDate?.endYear != null
+          ? String(Math.abs(workDate.endYear))
+          : entity.endYear != null
+            ? String(Math.abs(entity.endYear))
+            : '',
+      );
+      setWorkDateStartPrecision((workDate?.startPrecision as WorkDatePrecision) ?? '');
+      setWorkDateEndPrecision((workDate?.endPrecision as WorkDatePrecision) ?? '');
+      setDateEditing(false);
+      setValuesEditing(false);
+      setPendingValidations([]);
+      setEditNameTypes(
+        Object.fromEntries(entity.nameEntries.map((entry) => [entry.text, entry.type ?? ''])),
+      );
+      setEditNameLanguages(
+        Object.fromEntries(
+          entity.nameEntries
+            .filter((entry) => entry.lang)
+            .map((entry) => [entry.text, entry.lang!] as const),
+        ),
+      );
+      setEditNewName('');
+      setEditNewNameType('');
+      setEditNewNameLanguage('');
+      setNewTitle({ dynasty: '', fief: '', posthumousName: '', title: '' });
+      if (options?.resetAccordions !== false) {
+        setNamesExpanded(false);
+        setTitlesExpanded(false);
+      }
+      if (options?.remount) {
+        setEditFormEpoch((epoch) => epoch + 1);
+      }
+    },
+    [projectLang],
+  );
 
   /**
    * A direct field edit changes one entity, not the entire database. Keep the
@@ -1856,13 +1856,9 @@ export const SidebarDatabaseTab = ({ active = false }: SidebarDatabaseTabProps) 
   const requestDetach = (entity: EntitySummary, ref: AuthorityId) => {
     const detach = () =>
       void (async () => {
-        await runSqliteEntityMutation(
-          entity.id,
-          'Detaching authority…',
-          async (targetStore) => {
-            await targetStore.sqliteDecoupleAuthority(entity.id, ref.type, ref.value);
-          },
-        );
+        await runSqliteEntityMutation(entity.id, 'Detaching authority…', async (targetStore) => {
+          await targetStore.sqliteDecoupleAuthority(entity.id, ref.type, ref.value);
+        });
       })();
     if (skipEntityDetachConfirm) {
       detach();
@@ -2200,55 +2196,51 @@ export const SidebarDatabaseTab = ({ active = false }: SidebarDatabaseTabProps) 
     const asFloruit = dateBirthQualifier === 'fl.';
     setDateEditing(false);
     void (async () => {
-      await runSqliteEntityMutation(
-        entityId,
-        'Saving dates…',
-        async (targetStore) => {
-          if (asFloruit) {
-            // CBDB-style earliest–latest: dates row + fl., not birth/death.
-            await targetStore.sqliteSetUserDate({
-              entityId,
-              part: 'birth',
-              year: null,
-              precision: null,
-            });
-            await targetStore.sqliteSetUserDate({
-              entityId,
-              part: 'death',
-              year: null,
-              precision: null,
-            });
-            await targetStore.sqliteSetUserWorkDate({
-              entityId,
-              startYear: start,
-              endYear: end ?? start,
-              startPrecision: 'fl.',
-              endPrecision: null,
-            });
-            return;
-          }
-          // Leaving floruit mode: clear a prior floruit dates row if present.
-          if (editEntity.workDate?.startPrecision === 'fl.') {
-            await targetStore.sqliteSetUserWorkDate({
-              entityId,
-              startYear: null,
-              endYear: null,
-            });
-          }
+      await runSqliteEntityMutation(entityId, 'Saving dates…', async (targetStore) => {
+        if (asFloruit) {
+          // CBDB-style earliest–latest: dates row + fl., not birth/death.
           await targetStore.sqliteSetUserDate({
             entityId,
             part: 'birth',
-            year: start,
-            precision: dateBirthQualifier,
+            year: null,
+            precision: null,
           });
           await targetStore.sqliteSetUserDate({
             entityId,
             part: 'death',
-            year: end,
-            precision: dateDeathQualifier,
+            year: null,
+            precision: null,
           });
-        },
-      );
+          await targetStore.sqliteSetUserWorkDate({
+            entityId,
+            startYear: start,
+            endYear: end ?? start,
+            startPrecision: 'fl.',
+            endPrecision: null,
+          });
+          return;
+        }
+        // Leaving floruit mode: clear a prior floruit dates row if present.
+        if (editEntity.workDate?.startPrecision === 'fl.') {
+          await targetStore.sqliteSetUserWorkDate({
+            entityId,
+            startYear: null,
+            endYear: null,
+          });
+        }
+        await targetStore.sqliteSetUserDate({
+          entityId,
+          part: 'birth',
+          year: start,
+          precision: dateBirthQualifier,
+        });
+        await targetStore.sqliteSetUserDate({
+          entityId,
+          part: 'death',
+          year: end,
+          precision: dateDeathQualifier,
+        });
+      });
     })();
   };
 
@@ -2265,19 +2257,15 @@ export const SidebarDatabaseTab = ({ active = false }: SidebarDatabaseTabProps) 
     const entityId = editEntity.id;
     setDateEditing(false);
     void (async () => {
-      await runSqliteEntityMutation(
-        entityId,
-        'Saving dates…',
-        async (targetStore) => {
-          await targetStore.sqliteSetUserWorkDate({
-            entityId,
-            startYear,
-            endYear,
-            startPrecision,
-            endPrecision,
-          });
-        },
-      );
+      await runSqliteEntityMutation(entityId, 'Saving dates…', async (targetStore) => {
+        await targetStore.sqliteSetUserWorkDate({
+          entityId,
+          startYear,
+          endYear,
+          startPrecision,
+          endPrecision,
+        });
+      });
     })();
   };
 
@@ -3056,13 +3044,9 @@ export const SidebarDatabaseTab = ({ active = false }: SidebarDatabaseTabProps) 
     const entityId = editEntity.id;
     setNewTitle({ dynasty: '', fief: '', posthumousName: '', title: '' });
     void (async () => {
-      await runSqliteEntityMutation(
-        entityId,
-        'Adding noble title…',
-        async (targetStore) => {
-          await targetStore.sqliteAddNobleTitle({ entityId, ...input });
-        },
-      );
+      await runSqliteEntityMutation(entityId, 'Adding noble title…', async (targetStore) => {
+        await targetStore.sqliteAddNobleTitle({ entityId, ...input });
+      });
     })();
   };
 
@@ -3073,13 +3057,9 @@ export const SidebarDatabaseTab = ({ active = false }: SidebarDatabaseTabProps) 
     if (!editEntity) return;
     const entityId = editEntity.id;
     void (async () => {
-      await runSqliteEntityMutation(
-        entityId,
-        'Updating noble title…',
-        async (targetStore) => {
-          await targetStore.sqliteUpdateNobleTitle(entityId, key, input);
-        },
-      );
+      await runSqliteEntityMutation(entityId, 'Updating noble title…', async (targetStore) => {
+        await targetStore.sqliteUpdateNobleTitle(entityId, key, input);
+      });
     })();
   };
 
@@ -3170,13 +3150,9 @@ export const SidebarDatabaseTab = ({ active = false }: SidebarDatabaseTabProps) 
     void (async () => {
       const entityId = group.entityIds[0];
       if (!entityId || !store) return;
-      await runSqliteEntityMutation(
-        entityId,
-        'Marking as intentional…',
-        async (targetStore) => {
-          await targetStore.sqliteMarkDuplicateIntentional(group.entityIds);
-        },
-      );
+      await runSqliteEntityMutation(entityId, 'Marking as intentional…', async (targetStore) => {
+        await targetStore.sqliteMarkDuplicateIntentional(group.entityIds);
+      });
     })();
   };
 
@@ -3184,13 +3160,9 @@ export const SidebarDatabaseTab = ({ active = false }: SidebarDatabaseTabProps) 
     void (async () => {
       const entityId = conflict.entityIds[0];
       if (!entityId) return;
-      await runSqliteEntityMutation(
-        entityId,
-        'Rejecting concordance…',
-        async (targetStore) => {
-          await targetStore.sqliteRejectConcordance(conflict.association, entityId);
-        },
-      );
+      await runSqliteEntityMutation(entityId, 'Rejecting concordance…', async (targetStore) => {
+        await targetStore.sqliteRejectConcordance(conflict.association, entityId);
+      });
     })();
   };
 
@@ -3207,33 +3179,36 @@ export const SidebarDatabaseTab = ({ active = false }: SidebarDatabaseTabProps) 
     setSelected(entity ? new Set([id]) : new Set());
   };
 
-  const openXPathForEntity = useCallback((entity: EntitySummary) => {
-    const projectKey = entity.projectKey;
-    if (!projectKey) {
-      notifyViaSnackbar({
-        message: t('LWC.desktop.sidebar.database.no_project_key', {
-          defaultValue: 'This entity is central-only — it has no project key in the corpus.',
+  const openXPathForEntity = useCallback(
+    (entity: EntitySummary) => {
+      const projectKey = entity.projectKey;
+      if (!projectKey) {
+        notifyViaSnackbar({
+          message: t('LWC.desktop.sidebar.database.no_project_key', {
+            defaultValue: 'This entity is central-only — it has no project key in the corpus.',
+          }),
+          options: { variant: 'info' },
+        });
+        return;
+      }
+      const tagType =
+        entity.kind === 'person'
+          ? 'persName'
+          : entity.kind === 'place'
+            ? 'placeName'
+            : entity.kind === 'org'
+              ? 'orgName'
+              : entity.kind === 'work'
+                ? 'title'
+                : entity.kind;
+      window.dispatchEvent(
+        new CustomEvent(DESKTOP_XPATH_SEARCH_EVENT, {
+          detail: { query: `TEI//${tagType}[@key="${projectKey}"]` },
         }),
-        options: { variant: 'info' },
-      });
-      return;
-    }
-    const tagType =
-      entity.kind === 'person'
-        ? 'persName'
-        : entity.kind === 'place'
-          ? 'placeName'
-          : entity.kind === 'org'
-            ? 'orgName'
-            : entity.kind === 'work'
-              ? 'title'
-              : entity.kind;
-    window.dispatchEvent(
-      new CustomEvent(DESKTOP_XPATH_SEARCH_EVENT, {
-        detail: { query: `TEI//${tagType}[@key="${projectKey}"]` },
-      }),
-    );
-  }, [notifyViaSnackbar, t]);
+      );
+    },
+    [notifyViaSnackbar, t],
+  );
 
   /** Show every implicated entity together, preselected so Merge is one click away. */
   const reviewWarningEntities = (warning: LookupWarning) => {

@@ -33,9 +33,7 @@ export function readEastAsianDateValues(attrs: Record<string, string>): EastAsia
   };
 }
 
-export function eastAsianValuesToAttributes(
-  values: EastAsianDateValues,
-): Record<string, string> {
+export function eastAsianValuesToAttributes(values: EastAsianDateValues): Record<string, string> {
   const out: Record<string, string> = {};
   if (values.dynId.trim()) out.dyn_id = values.dynId.trim();
   if (values.rulerId.trim()) out.ruler_id = values.rulerId.trim();

@@ -34,9 +34,7 @@ export interface MapTileBundleSpec {
 }
 
 export function isConfiguredMapTileBundle(bundle: MapTileBundleSpec): boolean {
-  return (
-    bundle.source === 'authoritypacks-release' && bundle.bbox.length === 4
-  );
+  return bundle.source === 'authoritypacks-release' && bundle.bbox.length === 4;
 }
 
 // Tibet's bounds sit entirely inside China's — listed first so

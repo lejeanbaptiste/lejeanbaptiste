@@ -370,7 +370,10 @@ const App = ({ document, settings, user }: LeafWriterOptions) => {
           {tocPanelContainer && createPortal(<TocPanel />, tocPanelContainer)}
           {structureTreePanelContainer &&
             !isReadonly &&
-            createPortal(<MarkupPanel syncMode={markupPanel.syncMode} />, structureTreePanelContainer)}
+            createPortal(
+              <MarkupPanel syncMode={markupPanel.syncMode} />,
+              structureTreePanelContainer,
+            )}
           {codePanelContainer &&
             !isReadonly &&
             showRawXmlPanel &&

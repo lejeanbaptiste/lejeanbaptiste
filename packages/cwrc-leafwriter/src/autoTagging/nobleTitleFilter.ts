@@ -55,12 +55,13 @@ export function applyNobleTitleFilter(
   };
   const searchStrings = candidate.searchStrings.filter((surface) => !isApproved(surface));
   const names = candidate.names?.filter((name) => !isApproved(name.text));
-  const filtered = searchStrings.length === 0
-    ? null
-    : {
-        ...candidate,
-        searchStrings,
-        ...(names ? { names } : {}),
-      };
+  const filtered =
+    searchStrings.length === 0
+      ? null
+      : {
+          ...candidate,
+          searchStrings,
+          ...(names ? { names } : {}),
+        };
   return { candidate: filtered, titleCandidates: [...matched.values()] };
 }

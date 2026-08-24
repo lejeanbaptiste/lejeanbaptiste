@@ -75,7 +75,9 @@ describe('tagColors', () => {
 
   test('updateTagColor removes entry when null', async () => {
     const writeFile = jest.fn().mockResolvedValue(undefined);
-    (window as unknown as { electronAPI: { writeFile: typeof writeFile; readFile: jest.Mock } }).electronAPI = {
+    (
+      window as unknown as { electronAPI: { writeFile: typeof writeFile; readFile: jest.Mock } }
+    ).electronAPI = {
       writeFile,
       readFile: jest.fn().mockRejectedValue(new Error('missing')),
     };
@@ -99,7 +101,11 @@ describe('tagColors', () => {
         stored = content;
       }
     });
-    (window as unknown as { electronAPI: { writeFile: typeof writeFile; readFile: typeof readFile } }).electronAPI = {
+    (
+      window as unknown as {
+        electronAPI: { writeFile: typeof writeFile; readFile: typeof readFile };
+      }
+    ).electronAPI = {
       writeFile,
       readFile,
     };
@@ -121,7 +127,11 @@ describe('tagColors', () => {
         electronAPI: { readFile: jest.Mock; pathExists: jest.Mock };
       }
     ).electronAPI = {
-      readFile: jest.fn().mockResolvedValue(JSON.stringify({ version: 1, tags: { persName: { highlight: '#abc' } } })),
+      readFile: jest
+        .fn()
+        .mockResolvedValue(
+          JSON.stringify({ version: 1, tags: { persName: { highlight: '#abc' } } }),
+        ),
       pathExists: jest.fn().mockResolvedValue(true),
     };
     delete (window as unknown as { writer?: unknown }).writer;

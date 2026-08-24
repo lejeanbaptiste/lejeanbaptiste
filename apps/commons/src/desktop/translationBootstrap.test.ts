@@ -76,11 +76,7 @@ describe('assignMissingIds', () => {
 
     // simulate an undo/external tool stripping the id, content unchanged
     first!.element.removeAttribute('xml:id');
-    const [again] = await assignMissingIds(
-      doc,
-      findAlignmentUnitsMissingIds(doc, 'div'),
-      'twu',
-    );
+    const [again] = await assignMissingIds(doc, findAlignmentUnitsMissingIds(doc, 'div'), 'twu');
 
     expect(again?.id).toBe(first!.id);
   });
@@ -185,9 +181,7 @@ describe('reindexAlignmentUnits', () => {
     const doc = parse(SPLIT_PARAGRAPH_XML);
     const result = await reindexAlignmentUnits(doc, 'p', 'twu');
 
-    const paragraphs = Array.from(
-      doc.getElementsByTagNameNS('http://www.tei-c.org/ns/1.0', 'p'),
-    );
+    const paragraphs = Array.from(doc.getElementsByTagNameNS('http://www.tei-c.org/ns/1.0', 'p'));
     expect(paragraphs[0]?.getAttribute('xml:id')).toBe('p1');
     expect(paragraphs[1]?.getAttribute('xml:id')).not.toBe('p1');
     expect(paragraphs[1]?.getAttribute('xml:id')).toBeTruthy();
@@ -285,8 +279,9 @@ describe('header exclusion', () => {
     expect(missing).toHaveLength(2);
 
     await assignMissingIds(doc, missing, 'twu');
-    const headerPs = Array.from(doc.getElementsByTagNameNS('http://www.tei-c.org/ns/1.0', 'p'))
-      .filter((p) => p.closest('teiHeader'));
+    const headerPs = Array.from(
+      doc.getElementsByTagNameNS('http://www.tei-c.org/ns/1.0', 'p'),
+    ).filter((p) => p.closest('teiHeader'));
     for (const p of headerPs) {
       expect(p.getAttribute('xml:id')).toBeNull();
     }

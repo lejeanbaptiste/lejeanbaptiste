@@ -38,9 +38,7 @@ const preferredPreposition = (dayLevel: boolean, lang: 'en' | 'fr'): string =>
   dayLevel ? ADJUSTABLE[lang].day : ADJUSTABLE[lang].month;
 
 /** Build index → dayLevel from the same date map used for substitution. */
-export const dayLevelByDateIndex = (
-  dates: Map<number, DateGlossInput>,
-): Map<number, boolean> => {
+export const dayLevelByDateIndex = (dates: Map<number, DateGlossInput>): Map<number, boolean> => {
   const out = new Map<number, boolean>();
   for (const [index, input] of dates) {
     out.set(index, dateGlossIsDayLevel(input));
@@ -96,7 +94,7 @@ export const ensureDatePrepositionsInText = (
   let result = '';
   let lastIndex = 0;
   let match: RegExpExecArray | null;
-   
+
   while ((match = re.exec(text))) {
     const index = parseInt(match[1]!, 10);
     const before = text.slice(0, match.index);
@@ -130,9 +128,9 @@ export const adjustDatePrepositionsBeforeDateFields = (
   const prepositionAtEnd = new RegExp(`^(.*?)\\b(${pattern})(\\s*)$`, 'i');
 
   const fields = Array.from(
-    (root as ParentNode & { querySelectorAll: typeof Element.prototype.querySelectorAll }).querySelectorAll?.(
-      'ref[type="ljb-date"]',
-    ) ?? [],
+    (
+      root as ParentNode & { querySelectorAll: typeof Element.prototype.querySelectorAll }
+    ).querySelectorAll?.('ref[type="ljb-date"]') ?? [],
   );
 
   for (const field of fields) {
@@ -162,9 +160,9 @@ export const ensureDatePrepositionsBeforeDateFields = (
 ): void => {
   const bucket = dateGlossLang(lang);
   const fields = Array.from(
-    (root as ParentNode & { querySelectorAll: typeof Element.prototype.querySelectorAll }).querySelectorAll?.(
-      'ref[type="ljb-date"]',
-    ) ?? [],
+    (
+      root as ParentNode & { querySelectorAll: typeof Element.prototype.querySelectorAll }
+    ).querySelectorAll?.('ref[type="ljb-date"]') ?? [],
   );
   const doc = (root as Node).ownerDocument ?? document;
 

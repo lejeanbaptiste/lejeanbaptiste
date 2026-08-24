@@ -50,19 +50,14 @@ export const ResolutionPanel = () => {
             <Button onClick={cancel} size="small">
               Cancel
             </Button>
-            <Button
-              onClick={() => void confirmPendingLink(input)}
-              size="small"
-              variant="contained"
-            >
+            <Button onClick={() => void confirmPendingLink(input)} size="small" variant="contained">
               Link
             </Button>
           </Stack>
         }
       >
         <Typography variant="body2">
-          This record matches an existing entity:{' '}
-          <strong>{plan.entityName}</strong>{' '}
+          This record matches an existing entity: <strong>{plan.entityName}</strong>{' '}
           <Typography component="span" sx={{ fontFamily: 'monospace' }} variant="caption">
             ({plan.key})
           </Typography>
@@ -70,7 +65,8 @@ export const ResolutionPanel = () => {
         </Typography>
         {plan.addIdnos.length > 0 && (
           <Typography color="textSecondary" variant="caption">
-            Linking will also attach: {plan.addIdnos.map((idno) => `${idno.type} ${idno.value}`).join(', ')}
+            Linking will also attach:{' '}
+            {plan.addIdnos.map((idno) => `${idno.type} ${idno.value}`).join(', ')}
           </Typography>
         )}
       </Alert>
@@ -89,20 +85,14 @@ export const ResolutionPanel = () => {
           {candidates.map((candidate) => (
             <ListItemButton
               key={candidate.key}
-              onClick={() =>
-                void resolveConflict(candidate.key, candidate.name, candidates, input)
-              }
+              onClick={() => void resolveConflict(candidate.key, candidate.name, candidates, input)}
               sx={{ borderRadius: 1 }}
             >
               <ListItemText
                 primary={
                   <>
                     {candidate.name}{' '}
-                    <Typography
-                      component="span"
-                      sx={{ fontFamily: 'monospace' }}
-                      variant="caption"
-                    >
+                    <Typography component="span" sx={{ fontFamily: 'monospace' }} variant="caption">
                       ({candidate.key})
                     </Typography>
                   </>

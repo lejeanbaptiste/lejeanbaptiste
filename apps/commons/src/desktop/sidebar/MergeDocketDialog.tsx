@@ -17,7 +17,12 @@ import {
 import { useCallback, useEffect, useState } from 'react';
 import type { NameField } from '../../../../../packages/cwrc-leafwriter/src/autoTagging/reconcile';
 import type { EntityStore } from '../../../../../packages/cwrc-leafwriter/src/autoTagging/entityStore';
-import { computeMergeDocket, resolveMergeSuggestion, type MergeDocketEntry, type MergeDocketSide } from '../entityDb/bridge';
+import {
+  computeMergeDocket,
+  resolveMergeSuggestion,
+  type MergeDocketEntry,
+  type MergeDocketSide,
+} from '../entityDb/bridge';
 
 interface Props {
   open: boolean;
@@ -27,7 +32,8 @@ interface Props {
   onChanged?: () => void;
 }
 
-const nameLabel = (name: NameField): string => (name.type ? `${name.text} (${name.type})` : name.text);
+const nameLabel = (name: NameField): string =>
+  name.type ? `${name.text} (${name.type})` : name.text;
 
 const dateLabel = (side: MergeDocketSide): string | null => {
   const { startYear, endYear } = side.fields;
@@ -128,7 +134,13 @@ const MergeDocketRow = ({
       >
         <Stack direction="row" spacing={2}>
           {entry.sides.map((side) => (
-            <Stack key={side.id} direction="row" spacing={0.5} alignItems="flex-start" sx={{ flex: 1, minWidth: 0 }}>
+            <Stack
+              key={side.id}
+              direction="row"
+              spacing={0.5}
+              alignItems="flex-start"
+              sx={{ flex: 1, minWidth: 0 }}
+            >
               <Radio size="small" value={side.id} sx={{ p: 0, mt: 0.25 }} />
               <SideColumn side={side} />
             </Stack>
@@ -144,7 +156,12 @@ const MergeDocketRow = ({
         >
           Merge, keep {keptSide.fields.names[0]?.text ?? keptSide.id}
         </Button>
-        <Button size="small" variant="outlined" disabled={busy} onClick={() => onResolve({ action: 'ignore' })}>
+        <Button
+          size="small"
+          variant="outlined"
+          disabled={busy}
+          onClick={() => onResolve({ action: 'ignore' })}
+        >
           Ignore
         </Button>
       </Stack>
@@ -178,7 +195,12 @@ const DeleteDocketRow = ({
       >
         Delete from central
       </Button>
-      <Button size="small" variant="outlined" disabled={busy} onClick={() => onResolve({ action: 'ignore' })}>
+      <Button
+        size="small"
+        variant="outlined"
+        disabled={busy}
+        onClick={() => onResolve({ action: 'ignore' })}
+      >
         Keep
       </Button>
     </Stack>
@@ -242,7 +264,9 @@ export const MergeDocketDialog = ({ open, onClose, centralStore, onChanged }: Pr
     <Dialog open={open} onClose={onClose} maxWidth="md" fullWidth>
       <DialogTitle>Merge docket</DialogTitle>
       <DialogContent dividers>
-        {!centralStore && <Alert severity="info">No central database folder is configured (App Settings).</Alert>}
+        {!centralStore && (
+          <Alert severity="info">No central database folder is configured (App Settings).</Alert>
+        )}
         {error && (
           <Alert severity="error" sx={{ mb: 2 }}>
             {error}

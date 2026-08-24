@@ -26,10 +26,12 @@ describe('personDates', () => {
     expect(
       floruitYearsFromMetadata({ dateSource: 'floruit', startYear: 479, endYear: 502 }),
     ).toEqual({ startYear: 479, endYear: 502 });
-    expect(floruitYearsFromMetadata({ dateSource: 'index', startYear: 1035, endYear: 1095 })).toEqual(
+    expect(
+      floruitYearsFromMetadata({ dateSource: 'index', startYear: 1035, endYear: 1095 }),
+    ).toEqual({});
+    expect(floruitYearsFromMetadata({ dateSource: 'fine', startYear: 78, endYear: 139 })).toEqual(
       {},
     );
-    expect(floruitYearsFromMetadata({ dateSource: 'fine', startYear: 78, endYear: 139 })).toEqual({});
   });
 
   it('treats year 0 as missing', () => {
@@ -43,13 +45,13 @@ describe('personDates', () => {
     expect(hasFilterInterval({ dateSource: 'floruit', startYear: 479, endYear: 502 })).toBe(true);
     expect(hasFilterInterval({ dateSource: 'index', startYear: 1035, endYear: 1095 })).toBe(true);
     expect(hasFilterInterval({ dateSource: 'nationality' })).toBe(false);
-    expect(filterYearsFromMetadata({ dateSource: 'index', startYear: 1035, endYear: 1095 })).toEqual(
-      {
-        startYear: 1035,
-        endYear: 1095,
-        isFine: false,
-      },
-    );
+    expect(
+      filterYearsFromMetadata({ dateSource: 'index', startYear: 1035, endYear: 1095 }),
+    ).toEqual({
+      startYear: 1035,
+      endYear: 1095,
+      isFine: false,
+    });
     expect(filterYearsFromMetadata({ dateSource: 'fine', startYear: 78, endYear: 139 })).toEqual({
       startYear: 78,
       endYear: 139,

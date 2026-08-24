@@ -15,7 +15,11 @@ const tree: Record<string, FakeEntry[]> = {
     { name: 'sub', path: '/proj/sub', isDirectory: true },
   ],
   '/proj/.ljb': [
-    { name: 'entity-decisions.jsonl', path: '/proj/.ljb/entity-decisions.jsonl', isDirectory: false },
+    {
+      name: 'entity-decisions.jsonl',
+      path: '/proj/.ljb/entity-decisions.jsonl',
+      isDirectory: false,
+    },
   ],
   '/proj/.ljb-time-machine': [
     { name: 'snapshots', path: '/proj/.ljb-time-machine/snapshots', isDirectory: true },

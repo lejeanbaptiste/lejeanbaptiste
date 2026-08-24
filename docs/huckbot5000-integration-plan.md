@@ -16,7 +16,7 @@ points to it. Pipeline mechanics:
 ## What we're doing
 
 Chinese office titles (`roleName` entities, sourced from CBDB and Norbert) need English
-translations in leaf-writer. Charles Hucker's *Dictionary of Official Titles in Imperial China*
+translations in leaf-writer. Charles Hucker's _Dictionary of Official Titles in Imperial China_
 is the standard scholarly reference; it remains under copyright, so **packs and releases we
 publish must not redistribute his prose**. Huckbot5000 is a gap-fill pipeline: generate
 candidate glosses for offices that still lack an English gloss in our publishable packs,
@@ -24,8 +24,9 @@ filter anything that matches known Hucker text, and ship only reviewed, distinct
 source-tagged output (`Huckbot5000`).
 
 Two data sources need this, not one, and they don't cleanly line up:
+
 - **CBDB** — broad coverage, has its own translations (some cited as `(Hucker)` in upstream
-  data; those citations are omitted from packs *we* publish).
+  data; those citations are omitted from packs _we_ publish).
 - **Norbert** — Han-through-Sui-and-beyond coverage, zero translations; appointment-derived dates
   for a subset of offices (see below).
 
@@ -34,6 +35,7 @@ Two data sources need this, not one, and they don't cleanly line up:
 ## Where we're at
 
 ### Rights hygiene — done (policy refined same day)
+
 - **Packs we publish** (`packs/cbdb/offices.ndjson`): `(Hucker)`-cited translations omitted in
   `compileRecords.mjs`, so our redistributable tagging packs do not carry that third-party prose.
 - **CBDB installed for the user** (`stripReferenceDb.mjs` / `downloadCbdbDirect`): table-subset
@@ -47,45 +49,48 @@ Two data sources need this, not one, and they don't cleanly line up:
   does not load that archive yet.
 - **Generation skips** offices CBDB already translates under a `(Hucker)` citation (covered by
   the user's CBDB install) and offices whose dynasty is already covered in the Hucker OCR corpus.
-- **Still open:** three *live* GitHub releases still carry an old reference-person zip that
+- **Still open:** three _live_ GitHub releases still carry an old reference-person zip that
   predates the pack-side omit. Publishing a superseding release needs an explicit go-ahead.
 
 ### Feasibility and benchmarking — done
+
 - Morpheme lexicon is real and mineable; rule-based composition abandoned (4.8% exact).
 - Self-play numbers unreliable vs real API. **GPT-4o + retrieval** clears the rule-based floor
   (14.0% exact / 0.386 F1). Hand-rated adequacy ~57% adequate / ~19% wrong — budget ~1-in-5
   review rejection.
 
 ### Production pipeline — ready for full LLM run
+
 Scripts in `authority extraction/huckbot5000/` (see that README for commands):
 
-| Stage | What |
-|---|---|
+| Stage             | What                                                                                                 |
+| ----------------- | ---------------------------------------------------------------------------------------------------- |
 | Target resolution | `(headword, dynasty)` keys; concordance skips; Hucker OCR period skip; CBDB `(Hucker)` headword skip |
-| Procedural | place+suffix (`太守`/`刺史`/`令`); allowlisted `parentOf` (`太子`/`公主`/`親王`) |
-| LLM | GPT-4o + retrieval (`generate.mjs`) |
-| Audit | collision + transliteration → review CSV |
-| Compile | accepted CSV → `approved-include` → `translations.ndjson`; collisions → local archive |
+| Procedural        | place+suffix (`太守`/`刺史`/`令`); allowlisted `parentOf` (`太子`/`公主`/`親王`)                     |
+| LLM               | GPT-4o + retrieval (`generate.mjs`)                                                                  |
+| Audit             | collision + transliteration → review CSV                                                             |
+| Compile           | accepted CSV → `approved-include` → `translations.ndjson`; collisions → local archive                |
 
 **Killed first run:** headword-only dedupe bug; ~3,675 candidates archived as
 `packs/huckbot5000/candidates.pre-reconcile.ndjson`. Do **not** `--resume` that file.
 
 **Current queue (after skips + procedural, 2026-08-06):**
 
-| | count |
-|---|---|
-| Resolved targets after all skips | ~11,850 |
-| Procedural (place+suffix + parentOf) | ~192 |
-| LLM remaining | ~11,658 |
-| Skipped — Hucker OCR period covers dynasty | ~511 |
-| Skipped — CBDB `(Hucker)` headword | ~3,137 |
-| Norbert skipped via office concordance | 178 links |
+|                                            | count     |
+| ------------------------------------------ | --------- |
+| Resolved targets after all skips           | ~11,850   |
+| Procedural (place+suffix + parentOf)       | ~192      |
+| LLM remaining                              | ~11,658   |
+| Skipped — Hucker OCR period covers dynasty | ~511      |
+| Skipped — CBDB `(Hucker)` headword         | ~3,137    |
+| Norbert skipped via office concordance     | 178 links |
 
 Full generate (after commit):  
 `OPENAI_API_KEY=... npm run generate:huckbot5000 -- --resume`  
 then `npm run audit:huckbot5000`. Expect ~3–4 hours at ~1 call/s.
 
 ### CBDB/Norbert bridge — built
+
 - **`deriveOfficeDates.mjs`** wired into `compile:norbert` / `reconcile:norbert-offices`
   (~1,375 dated offices from appointments).
 - **`officeConcordance.mjs`** period-aware; undated Norbert links only when Hucker affirms
@@ -108,6 +113,7 @@ then `npm run audit:huckbot5000`. Expect ~3–4 hours at ~1 call/s.
   single-dynasty backfill when it's present**, backfilling only the genuinely undated bucket.
 
 ### Procedural generation — built
+
 - **place+suffix:** period-aware suffix glosses; place stem = concatenated toneless pinyin;
   conservative stem heuristics + blocklist (`遷安固太守`). Reviewed and accepted as correct.
 - **parentOf (v1):** Norbert `office-relations` only (not CBDB office-type tree); allowlisted
@@ -115,6 +121,7 @@ then `npm run audit:huckbot5000`. Expect ~3–4 hours at ~1 call/s.
   at audit (expected); only non-colliding rows stay for review.
 
 ### leaf-writer UI
+
 - Phase 3 candidate period captions (`formatCandidatePeriod`) are built.
 - Huckbot glosses load as a chinese-profile sidecar (`huckbot5000-translations`):
   fill empty office `metadata.translation` in lookup / disambiguation / tag-bomb,

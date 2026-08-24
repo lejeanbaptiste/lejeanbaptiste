@@ -32,16 +32,18 @@ import {
 } from './entities';
 import { biographicalYearsFromMetadata } from './personDates';
 import type { AuthorityCandidate } from './authority';
-import { normalizeNameType, normalizeTypedNamesForIntake, preferCanonicalFamilyGiven, type NameTypeId } from './nameTypes';
+import {
+  normalizeNameType,
+  normalizeTypedNamesForIntake,
+  preferCanonicalFamilyGiven,
+  type NameTypeId,
+} from './nameTypes';
 import { personalNameForSegmentation, nobleTitlesFromMetadata } from './nobleTitleHeadword';
 import { suggestPersonNameSplit, suggestPersonRomanization } from '../plugins/personNameDefaults';
 import { fetchWikidataLifespan } from './wikidataDates';
 import { fetchWikidataNationality } from './wikidataNationality';
 import { fetchWikidataPlaceOfBirth } from './wikidataPlaceOfBirth';
-import {
-  formatNorbertAuthorityValue,
-  norbertAuthorityLookupValues,
-} from './norbertAuthorityId';
+import { formatNorbertAuthorityValue, norbertAuthorityLookupValues } from './norbertAuthorityId';
 
 export interface NameBackfillProgress {
   done: number;
@@ -103,8 +105,7 @@ export interface NorbertNobleTitleCandidate {
  * are — see `norbert-direct` records in the compiled asset). Keyed by the
  * person's Norbert authority id (`metadata.crosswalk.norbert`).
  */
-let norbertNobleTitleIndexPromise: Promise<Map<string, NorbertNobleTitleCandidate[]>> | null =
-  null;
+let norbertNobleTitleIndexPromise: Promise<Map<string, NorbertNobleTitleCandidate[]>> | null = null;
 let packNameIndexPromise: Promise<Map<string, AuthorityEnrichment>> | null = null;
 let officeAuthorityByNamePromise: Promise<
   Map<string, { type: 'NORBERT' | 'CBDB'; value: string }[]>
@@ -506,9 +507,7 @@ export function packTypedNamesForEntity(
     // varies by source (e.g. "Norbert" vs "CBDB"/"DILA").
     const source = auth.type.trim().toUpperCase();
     const values =
-      source === 'NORBERT'
-        ? norbertAuthorityLookupValues(auth.value)
-        : [auth.value.trim()];
+      source === 'NORBERT' ? norbertAuthorityLookupValues(auth.value) : [auth.value.trim()];
     for (const value of values) {
       const enrichment = index.get(`${source}:${value}`);
       if (!enrichment) continue;
@@ -566,9 +565,7 @@ export function authorityEnrichmentsForEntity(
   return entity.authorities.flatMap((auth) => {
     const source = auth.type.trim().toUpperCase();
     const values =
-      source === 'NORBERT'
-        ? norbertAuthorityLookupValues(auth.value)
-        : [auth.value.trim()];
+      source === 'NORBERT' ? norbertAuthorityLookupValues(auth.value) : [auth.value.trim()];
     for (const value of values) {
       const enrichment = index.get(`${source}:${value}`);
       if (enrichment) return [{ source, enrichment }];
@@ -806,14 +803,8 @@ export async function backfillEntityNames(
       ),
       typedNames,
     );
-    const nextFamily =
-      givenFamily.familyName ||
-      preferred.familyName ||
-      null;
-    const nextGiven =
-      givenFamily.givenName ||
-      preferred.givenName ||
-      null;
+    const nextFamily = givenFamily.familyName || preferred.familyName || null;
+    const nextGiven = givenFamily.givenName || preferred.givenName || null;
     if (nextFamily && !getFamilyName(doc, entity.id)) {
       setFamilyName(doc, entity.id, nextFamily);
       entityChanged = true;
@@ -880,9 +871,7 @@ export async function backfillEntityNames(
       const authorityRomanized = metadata?.pinyin ?? metadata?.yomi;
       const romanized =
         authorityRomanized?.trim() ||
-        (splitSurface
-          ? suggestPersonRomanization(splitSurface, projectLang ?? null)
-          : null);
+        (splitSurface ? suggestPersonRomanization(splitSurface, projectLang ?? null) : null);
       if (romanized) {
         setRomanizedName(doc, entity.id, romanized, projectLang ?? null);
         entityChanged = true;

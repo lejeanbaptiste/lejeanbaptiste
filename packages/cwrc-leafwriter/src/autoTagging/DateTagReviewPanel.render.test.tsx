@@ -13,7 +13,10 @@ import { DateTagReviewPanel } from './DateTagReviewPanel';
 
 jest.mock('react-virtuoso', () => ({
   Virtuoso: forwardRef(function MockVirtuoso(
-    { data, itemContent }: { data?: unknown[]; itemContent?: (i: number, row: unknown) => ReactNode },
+    {
+      data,
+      itemContent,
+    }: { data?: unknown[]; itemContent?: (i: number, row: unknown) => ReactNode },
     _ref,
   ) {
     return <div>{(data ?? []).map((row, i) => itemContent?.(i, row))}</div>;

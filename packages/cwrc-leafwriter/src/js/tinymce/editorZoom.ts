@@ -10,16 +10,12 @@ const ZOOM_STEP = 10;
 const DEFAULT_ZOOM = 200;
 const MIGRATION_KEY = 'leafWriterEditorZoomMigratedTo125';
 
-const clampZoom = (level: number) =>
-  Math.min(MAX_ZOOM, Math.max(MIN_ZOOM, Math.round(level)));
+const clampZoom = (level: number) => Math.min(MAX_ZOOM, Math.max(MIN_ZOOM, Math.round(level)));
 
 export const getEditorZoom = (): number => {
   const stored = Number(window.localStorage.getItem(STORAGE_KEY));
   if (!Number.isFinite(stored) || stored <= 0) return DEFAULT_ZOOM;
-  if (
-    stored === LEGACY_DEFAULT_ZOOM &&
-    window.localStorage.getItem(MIGRATION_KEY) !== 'true'
-  ) {
+  if (stored === LEGACY_DEFAULT_ZOOM && window.localStorage.getItem(MIGRATION_KEY) !== 'true') {
     window.localStorage.setItem(MIGRATION_KEY, 'true');
     window.localStorage.setItem(STORAGE_KEY, String(DEFAULT_ZOOM));
     return DEFAULT_ZOOM;
@@ -42,11 +38,9 @@ export const setEditorZoom = (editor: Editor, level: number) => {
   applyEditorZoom(editor, clamped);
 };
 
-export const zoomEditorIn = (editor: Editor) =>
-  setEditorZoom(editor, getEditorZoom() + ZOOM_STEP);
+export const zoomEditorIn = (editor: Editor) => setEditorZoom(editor, getEditorZoom() + ZOOM_STEP);
 
-export const zoomEditorOut = (editor: Editor) =>
-  setEditorZoom(editor, getEditorZoom() - ZOOM_STEP);
+export const zoomEditorOut = (editor: Editor) => setEditorZoom(editor, getEditorZoom() - ZOOM_STEP);
 
 export const resetEditorZoom = (editor: Editor) => setEditorZoom(editor, DEFAULT_ZOOM);
 

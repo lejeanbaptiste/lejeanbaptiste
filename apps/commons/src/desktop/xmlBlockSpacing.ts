@@ -89,7 +89,11 @@ const tokenize = (xml: string): Token[] => {
     if (inner.startsWith('?') || inner.startsWith('!')) {
       tokens.push({ type: 'other', name: '', raw });
     } else if (inner.startsWith('/')) {
-      const name = inner.slice(1).trim().match(/^[\w:-]+/)?.[0] ?? '';
+      const name =
+        inner
+          .slice(1)
+          .trim()
+          .match(/^[\w:-]+/)?.[0] ?? '';
       tokens.push({ type: 'close', name, raw });
     } else {
       const name = inner.match(/^[\w:-]+/)?.[0] ?? '';

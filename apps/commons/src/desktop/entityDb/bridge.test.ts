@@ -1,6 +1,15 @@
-import { addEntity, createEntitiesScaffold } from '../../../../../packages/cwrc-leafwriter/src/autoTagging/entities';
-import { appendOrders, makeOrder } from '../../../../../packages/cwrc-leafwriter/src/autoTagging/entityOrders';
-import { setCentralMapping, getCentralId } from '../../../../../packages/cwrc-leafwriter/src/autoTagging/concordance';
+import {
+  addEntity,
+  createEntitiesScaffold,
+} from '../../../../../packages/cwrc-leafwriter/src/autoTagging/entities';
+import {
+  appendOrders,
+  makeOrder,
+} from '../../../../../packages/cwrc-leafwriter/src/autoTagging/entityOrders';
+import {
+  setCentralMapping,
+  getCentralId,
+} from '../../../../../packages/cwrc-leafwriter/src/autoTagging/concordance';
 import { SQLITE_REQUIRED_MESSAGE } from '../../../../../packages/cwrc-leafwriter/src/autoTagging/sqliteRequired';
 import {
   EntityStore,
@@ -47,7 +56,11 @@ const makeContext = () => {
   const projectStore = EntityStore.fromPaths(fs, resolveEntityStorePaths({ projectRoot: '/proj' }));
   const centralStore = EntityStore.fromPaths(
     fs,
-    resolveEntityStorePaths({ projectRoot: '/proj', entityStore: 'central', centralFolder: '/central' }),
+    resolveEntityStorePaths({
+      projectRoot: '/proj',
+      entityStore: 'central',
+      centralFolder: '/central',
+    }),
   );
   const ctx: BridgeContext = { projectStore, centralStore, userStableId: USER };
   return { fs, ctx, projectStore };

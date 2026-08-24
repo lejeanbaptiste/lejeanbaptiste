@@ -47,13 +47,19 @@ describe('disambiguationContext', () => {
       element: target,
       hasKey: false,
       isUnresolved: false,
-      anchor: createAnchor('test.xml', doc.documentElement, target.firstChild as Text, 0, 2, 'ignore', index),
+      anchor: createAnchor(
+        'test.xml',
+        doc.documentElement,
+        target.firstChild as Text,
+        0,
+        2,
+        'ignore',
+        index,
+      ),
     };
 
     const co = coMentionedNamesInBlock(instance);
-    expect(co).toEqual([
-      { surface: 'Taizong', tag: 'persName', entityKey: 'person_000001' },
-    ]);
+    expect(co).toEqual([{ surface: 'Taizong', tag: 'persName', entityKey: 'person_000001' }]);
   });
 
   it('formats context with document dates and co-mentions', () => {
@@ -66,7 +72,15 @@ describe('disambiguationContext', () => {
       element: target,
       hasKey: false,
       isUnresolved: false,
-      anchor: createAnchor('test.xml', doc.documentElement, target.firstChild as Text, 0, 2, 'ignore', index),
+      anchor: createAnchor(
+        'test.xml',
+        doc.documentElement,
+        target.firstChild as Text,
+        0,
+        2,
+        'ignore',
+        index,
+      ),
     };
     const candidates: DisambiguationCandidate[] = [
       { id: 'wd:Q123', label: 'Weizheng', description: 'Tang minister', sources: ['Wikidata'] },

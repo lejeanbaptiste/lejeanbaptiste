@@ -187,7 +187,8 @@ export function applyNobleTitleSpanToEditor(
     .sort((a, b) => a.segmentIndex - b.segmentIndex || b.segmentTextOffset - a.segmentTextOffset);
 
   for (const slot of taggableSlotsDescending) {
-    const attributes: Record<string, string> = slot.role === 'posthumousName' ? { type: 'posthumous' } : {};
+    const attributes: Record<string, string> =
+      slot.role === 'posthumousName' ? { type: 'posthumous' } : {};
     const id = tagSlot(slot, attributes);
     if (id) idFor.set(slot.role, id);
   }
@@ -196,7 +197,10 @@ export function applyNobleTitleSpanToEditor(
     .map((role) => idFor.get(role))
     .filter((id): id is string => Boolean(id));
   if (titleIds.length === 0) {
-    return { applied: false, conflicts: [...parsed.conflicts, 'no taggable title component found'] };
+    return {
+      applied: false,
+      conflicts: [...parsed.conflicts, 'no taggable title component found'],
+    };
   }
 
   const dynastySlot = parsed.slots.find((slot) => slot.role === 'dynasty');
@@ -210,7 +214,10 @@ export function applyNobleTitleSpanToEditor(
     tagName: 'nobleTitle',
   }) as Element | undefined;
   if (!nobleTitleEl?.id) {
-    return { applied: false, conflicts: [...parsed.conflicts, 'failed to wrap the title components'] };
+    return {
+      applied: false,
+      conflicts: [...parsed.conflicts, 'failed to wrap the title components'],
+    };
   }
 
   const personId = idFor.get('personName');

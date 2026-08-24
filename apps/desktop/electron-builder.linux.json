@@ -2,9 +2,7 @@
   "extends": "./electron-builder.base.json",
   "artifactName": "Le-Jean-Baptiste-linux-${version}-${arch}.${ext}",
   "linux": {
-    "target": [
-      "deb"
-    ],
+    "target": ["deb"],
     "icon": "icons",
     "category": "Office",
     "syncDesktopName": true,
@@ -13,10 +11,7 @@
       {
         "from": "resources/python",
         "to": "python",
-        "filter": [
-          "**/*",
-          "!.deps-installed"
-        ]
+        "filter": ["**/*", "!.deps-installed"]
       }
     ]
   },
@@ -34,8 +29,6 @@
     ]
   },
   "win": {
-    "target": [
-      "nsis"
-    ]
+    "target": ["nsis"]
   }
 }

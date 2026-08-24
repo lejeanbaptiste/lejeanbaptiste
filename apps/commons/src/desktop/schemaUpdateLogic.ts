@@ -71,9 +71,7 @@ export const validateMetadataPathsAfterUpgrade = (
   for (const row of metadata.custom ?? []) {
     const fieldPath = row.path?.trim();
     if (fieldPath && (row.value?.trim() || row.label?.trim())) {
-      warnings.push(
-        `Custom metadata path "${fieldPath}" may need review after a schema update.`,
-      );
+      warnings.push(`Custom metadata path "${fieldPath}" may need review after a schema update.`);
     }
   }
 

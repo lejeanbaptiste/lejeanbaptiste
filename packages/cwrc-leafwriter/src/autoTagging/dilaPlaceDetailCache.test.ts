@@ -26,7 +26,12 @@ describe('DilaPlaceDetailCache', () => {
 
   it('round-trips through the in-memory layer', async () => {
     const cache = new DilaPlaceDetailCache(null, null);
-    const detail = { remark: '（317 ~ 420）郡級行政中心所在地。', dynasty: '東晉', startYear: 317, endYear: 420 };
+    const detail = {
+      remark: '（317 ~ 420）郡級行政中心所在地。',
+      dynasty: '東晉',
+      startYear: 317,
+      endYear: 420,
+    };
     await cache.set('PL000000029418', detail);
     expect(await cache.get('PL000000029418')).toEqual(detail);
   });
@@ -34,7 +39,12 @@ describe('DilaPlaceDetailCache', () => {
   it('persists to and reads back from the file api', async () => {
     const api = memoryFileApi();
     const cacheA = new DilaPlaceDetailCache(api, '/cache/dila-place-detail');
-    const detail = { remark: '（317 ~ 420）郡級行政中心所在地。', dynasty: '東晉', startYear: 317, endYear: 420 };
+    const detail = {
+      remark: '（317 ~ 420）郡級行政中心所在地。',
+      dynasty: '東晉',
+      startYear: 317,
+      endYear: 420,
+    };
     await cacheA.set('PL000000029418', detail);
 
     // Fresh instance (no in-memory hit) must read the persisted file.

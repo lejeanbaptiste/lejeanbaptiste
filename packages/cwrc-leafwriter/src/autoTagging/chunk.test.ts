@@ -34,7 +34,11 @@ describe('chunkDocument', () => {
 
   it('emits one leaf block per chunk when maxBlocksPerChunk is 1', () => {
     const doc = parse('<TEI><text><body><p>alpha</p><p>beta</p><p>gamma</p></body></text></TEI>');
-    const chunks = chunkDocument(doc, { policy: 'ignore', targetChars: 10_000, maxBlocksPerChunk: 1 });
+    const chunks = chunkDocument(doc, {
+      policy: 'ignore',
+      targetChars: 10_000,
+      maxBlocksPerChunk: 1,
+    });
     expect(chunks).toHaveLength(3);
     expect(chunks.map((c) => c.text)).toEqual(['alpha', 'beta', 'gamma']);
   });
@@ -73,7 +77,9 @@ describe('chunkDocument', () => {
   });
 
   it('honors an explicit root over the teiHeader-excluding default', () => {
-    const doc = parse('<TEI><teiHeader><p>Smith, editor</p></teiHeader><text><body><p>alpha</p></body></text></TEI>');
+    const doc = parse(
+      '<TEI><teiHeader><p>Smith, editor</p></teiHeader><text><body><p>alpha</p></body></text></TEI>',
+    );
     const header = doc.getElementsByTagName('teiHeader')[0]!;
     const chunks = chunkDocument(doc, { policy: 'ignore', targetChars: 100, root: header });
     const full = chunks.map((c) => c.text).join('');

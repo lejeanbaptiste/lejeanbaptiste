@@ -189,8 +189,7 @@ export async function applySuggestions(
   // Spans already claimed by an applied 'add', to block a second, differently
   // tagged 'add' on the same exact span (mutually exclusive alternatives).
   const appliedAddSpans = new Map<string, string>();
-  const spanKeyOf = (s: Suggestion) =>
-    `${s.anchor.xpath}\t${s.anchor.offset}\t${s.anchor.surface}`;
+  const spanKeyOf = (s: Suggestion) => `${s.anchor.xpath}\t${s.anchor.offset}\t${s.anchor.surface}`;
 
   const textLength = (): number => doc.documentElement?.textContent?.length ?? 0;
   const textIntegrityIssues: string[] = [];
@@ -361,12 +360,20 @@ export function resolveCompoundAdd(
   const startNode = resolveXPath(doc, suggestion.anchor.xpath);
   const endNode = resolveXPath(doc, suggestion.anchor.endXpath);
   if (!startNode || !endNode) {
-    return { ok: false, outcome: 'unresolvable', reason: 'xpath no longer resolves for the wrapper span' };
+    return {
+      ok: false,
+      outcome: 'unresolvable',
+      reason: 'xpath no longer resolves for the wrapper span',
+    };
   }
   const start = { node: startNode, start: suggestion.anchor.offset };
   const endOffset = suggestion.anchor.endOffset;
   if (endOffset < 0 || endOffset > endNode.data.length) {
-    return { ok: false, outcome: 'unresolvable', reason: 'end offset is no longer within its node' };
+    return {
+      ok: false,
+      outcome: 'unresolvable',
+      reason: 'end offset is no longer within its node',
+    };
   }
 
   const commonParent = nearestCommonElement(start.node, endNode);
@@ -381,24 +388,49 @@ export function resolveCompoundAdd(
   }
   const parent = first.parentElement;
   if (!parent) {
-    return { ok: false, outcome: 'unresolvable', reason: 'wrapper components have no parent element' };
+    return {
+      ok: false,
+      outcome: 'unresolvable',
+      reason: 'wrapper components have no parent element',
+    };
   }
   if (blockedBySchema(schemaTagName(parent), suggestion.tag, options)) {
-    return { ok: false, outcome: 'schema-blocked', reason: `schema does not allow <${suggestion.tag}> here` };
+    return {
+      ok: false,
+      outcome: 'schema-blocked',
+      reason: `schema does not allow <${suggestion.tag}> here`,
+    };
   }
   if (blockedByUserRule(parent, suggestion.tag, options)) {
-    return { ok: false, outcome: 'rule-blocked', reason: `blocked by a user tagging rule for <${suggestion.tag}>` };
+    return {
+      ok: false,
+      outcome: 'rule-blocked',
+      reason: `blocked by a user tagging rule for <${suggestion.tag}>`,
+    };
   }
   if (isInsideDateElement(start.node) || isInsideDateElement(endNode)) {
-    return { ok: false, outcome: 'rule-blocked', reason: 'wrapper span is now inside a <date> element' };
+    return {
+      ok: false,
+      outcome: 'rule-blocked',
+      reason: 'wrapper span is now inside a <date> element',
+    };
   }
   if (findAncestorTag(start.node, suggestion.tag)) {
-    return { ok: false, outcome: 'already-tagged', reason: `already inside a <${suggestion.tag}> element` };
+    return {
+      ok: false,
+      outcome: 'already-tagged',
+      reason: `already inside a <${suggestion.tag}> element`,
+    };
   }
 
   const firstText = firstTextDescendant(first);
   const lastText = lastTextDescendant(last);
-  if (firstText !== start.node || start.start !== 0 || lastText !== endNode || endOffset !== endNode.data.length) {
+  if (
+    firstText !== start.node ||
+    start.start !== 0 ||
+    lastText !== endNode ||
+    endOffset !== endNode.data.length
+  ) {
     return {
       ok: false,
       outcome: 'unresolvable',
@@ -410,13 +442,18 @@ export function resolveCompoundAdd(
 }
 
 /** Wrap a contiguous run of already-tagged sibling components in a person wrapper. */
-function applyCompoundAdd(doc: Document, suggestion: Suggestion, options: ApplyOptions): ApplyResult {
+function applyCompoundAdd(
+  doc: Document,
+  suggestion: Suggestion,
+  options: ApplyOptions,
+): ApplyResult {
   const resolved = resolveCompoundAdd(doc, suggestion, options);
   if (!resolved.ok) return { suggestion, outcome: resolved.outcome };
   const { parent, first, last } = resolved;
 
   const element = doc.createElementNS(doc.documentElement?.namespaceURI ?? null, suggestion.tag);
-  for (const [name, value] of Object.entries(suggestion.attributes ?? {})) element.setAttribute(name, value);
+  for (const [name, value] of Object.entries(suggestion.attributes ?? {}))
+    element.setAttribute(name, value);
   parent.insertBefore(element, first);
   let current: ChildNode | null = first;
   while (current) {
@@ -544,7 +581,9 @@ function applyResolveDate(
   }
   if (!dateEl) return { suggestion, outcome: 'unresolvable' };
 
-  for (const [name, value] of Object.entries(sanitizeResolvedDateAttributes(suggestion.attributes ?? {}))) {
+  for (const [name, value] of Object.entries(
+    sanitizeResolvedDateAttributes(suggestion.attributes ?? {}),
+  )) {
     dateEl.setAttribute(name, value);
   }
 

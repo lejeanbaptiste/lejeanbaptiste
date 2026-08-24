@@ -103,10 +103,7 @@ describe('normalizeTypedNamesForIntake', () => {
 
   it('recovers a bare courtesy name when only the composite is present', () => {
     expect(
-      normalizeTypedNamesForIntake(
-        [{ text: '成公廣明', type: 'courtesy' }],
-        ['成公'],
-      ),
+      normalizeTypedNamesForIntake([{ text: '成公廣明', type: 'courtesy' }], ['成公']),
     ).toEqual([{ text: '廣明', type: 'courtesy' }]);
   });
 

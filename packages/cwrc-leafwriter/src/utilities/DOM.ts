@@ -25,8 +25,9 @@ export const isValidCSSSelector = ((dummyElement) => (selector: string) => {
 /** Open http(s) links in the system browser; works in Electron and web. */
 export const openExternalUrl = (url: string): void => {
   if (!url) return;
-  const electron = (window as Window & { electronAPI?: { openExternalUrl?: (url: string) => Promise<boolean> } })
-    .electronAPI;
+  const electron = (
+    window as Window & { electronAPI?: { openExternalUrl?: (url: string) => Promise<boolean> } }
+  ).electronAPI;
   if (electron?.openExternalUrl) {
     void electron.openExternalUrl(url);
     return;

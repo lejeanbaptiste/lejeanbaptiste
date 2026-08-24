@@ -12,9 +12,8 @@ jest.mock('./db', () => ({
 
 const mockProcessSchema = processSchema as jest.Mock;
 const mockVerifyHash = verifyHash as jest.Mock;
-const mockCachedGet = (
-  jest.requireMock('./db') as { db: { cachedSchemas: { get: jest.Mock } } }
-).db.cachedSchemas.get;
+const mockCachedGet = (jest.requireMock('./db') as { db: { cachedSchemas: { get: jest.Mock } } }).db
+  .cachedSchemas.get;
 
 describe('VirtualEditor.initialize', () => {
   beforeEach(() => {

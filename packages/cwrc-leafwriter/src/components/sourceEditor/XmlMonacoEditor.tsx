@@ -10,10 +10,7 @@ import {
   dispatchDesktopOpenFind,
   registerSourceFindEditor,
 } from '../../sourceEditor/findInSourceEditor';
-import {
-  SOURCE_CURSOR_MOVED_EVENT,
-  type SourceCursorMovedDetail,
-} from '../editorLocationBar';
+import { SOURCE_CURSOR_MOVED_EVENT, type SourceCursorMovedDetail } from '../editorLocationBar';
 import { registerClosingTagAutoInsert } from './closingTagAutoInsert';
 import { registerClosingTagCompletion } from './closingTagCompletion';
 import { findEnclosingTagPair, getUnwrapEdits } from './closingTagParser';
@@ -29,11 +26,17 @@ const TAG_NAME_RE = /^([a-zA-Z_:][\w:.-]*)/;
  * of the tag name in the nearest enclosing opening tag.
  * Works whether the cursor is in content, inside an opening tag, or in a closing tag.
  */
-const findOpeningTagNameAt = (text: string, offset: number): { start: number; length: number } | null => {
+const findOpeningTagNameAt = (
+  text: string,
+  offset: number,
+): { start: number; length: number } | null => {
   // Determine if cursor is inside a tag by scanning forward for > vs <
   let insideTag = false;
   for (let i = offset; i < text.length; i++) {
-    if (text[i] === '>') { insideTag = true; break; }
+    if (text[i] === '>') {
+      insideTag = true;
+      break;
+    }
     if (text[i] === '<') break;
   }
 
@@ -42,7 +45,10 @@ const findOpeningTagNameAt = (text: string, offset: number): { start: number; le
   if (insideTag) {
     // Find the < that opens the tag the cursor is in
     for (let i = offset; i >= 0; i--) {
-      if (text[i] === '<') { ltPos = i; break; }
+      if (text[i] === '<') {
+        ltPos = i;
+        break;
+      }
     }
   } else {
     // Cursor is in element content — find the nearest enclosing opening tag
@@ -51,11 +57,17 @@ const findOpeningTagNameAt = (text: string, offset: number): { start: number; le
     let depth = 0;
     let i = offset - 1;
     while (i >= 0) {
-      if (text[i] !== '<') { i--; continue; }
+      if (text[i] !== '<') {
+        i--;
+        continue;
+      }
 
       const isClose = text[i + 1] === '/';
       const isProc = text[i + 1] === '!' || text[i + 1] === '?';
-      if (isProc) { i--; continue; }
+      if (isProc) {
+        i--;
+        continue;
+      }
 
       if (isClose) {
         depth++;
@@ -69,7 +81,10 @@ const findOpeningTagNameAt = (text: string, offset: number): { start: number; le
       const selfClose = text[j - 1] === '/';
 
       if (!selfClose) {
-        if (depth === 0) { ltPos = i; break; }
+        if (depth === 0) {
+          ltPos = i;
+          break;
+        }
         depth--;
       }
       i--;
@@ -90,13 +105,19 @@ const findOpeningTagNameAt = (text: string, offset: number): { start: number; le
     let depth = 1;
     let i = ltPos - 1;
     while (i >= 0 && depth > 0) {
-      if (text[i] !== '<') { i--; continue; }
+      if (text[i] !== '<') {
+        i--;
+        continue;
+      }
       const inner = text[i + 1] === '/' ? i + 2 : i + 1;
       const m = TAG_NAME_RE.exec(text.slice(inner));
       if (m && m[1] === closeName) {
         if (text[i + 1] === '/') depth++;
         else depth--;
-        if (depth === 0) { nameStart = inner; break; }
+        if (depth === 0) {
+          nameStart = inner;
+          break;
+        }
       }
       i--;
     }
@@ -240,9 +261,12 @@ export const XmlMonacoEditor = ({
       );
     });
 
-    monacoEditor.addCommand(monaco.KeyMod.CtrlCmd | monaco.KeyMod.Shift | monaco.KeyCode.KeyZ, () => {
-      void monacoEditor.getAction('editor.action.redo')?.run();
-    });
+    monacoEditor.addCommand(
+      monaco.KeyMod.CtrlCmd | monaco.KeyMod.Shift | monaco.KeyCode.KeyZ,
+      () => {
+        void monacoEditor.getAction('editor.action.redo')?.run();
+      },
+    );
 
     monacoEditor.addCommand(monaco.KeyMod.CtrlCmd | monaco.KeyCode.KeyY, () => {
       void monacoEditor.getAction('editor.action.redo')?.run();
@@ -268,15 +292,20 @@ export const XmlMonacoEditor = ({
         editor.executeEdits('wrap-tag', [{ range: selection, text: wrapped }]);
 
         // Place cursor selecting "tag" in the opening tag so linked editing propagates
-        const tagNameStart = model.getOffsetAt({
-          lineNumber: selection.startLineNumber,
-          column: selection.startColumn,
-        }) + 1; // step past '<'
+        const tagNameStart =
+          model.getOffsetAt({
+            lineNumber: selection.startLineNumber,
+            column: selection.startColumn,
+          }) + 1; // step past '<'
         const startPos = model.getPositionAt(tagNameStart);
-        editor.setSelection(new monaco.Range(
-          startPos.lineNumber, startPos.column,
-          startPos.lineNumber, startPos.column + 3, // length of "tag"
-        ));
+        editor.setSelection(
+          new monaco.Range(
+            startPos.lineNumber,
+            startPos.column,
+            startPos.lineNumber,
+            startPos.column + 3, // length of "tag"
+          ),
+        );
       },
     });
 
@@ -435,11 +464,5 @@ export const XmlMonacoEditor = ({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [editor, errorPositions]);
 
-  return (
-    <Box
-      className="Editor"
-      ref={divEl}
-      sx={{ height: '100%', minHeight, width: '100%' }}
-    />
-  );
+  return <Box className="Editor" ref={divEl} sx={{ height: '100%', minHeight, width: '100%' }} />;
 };

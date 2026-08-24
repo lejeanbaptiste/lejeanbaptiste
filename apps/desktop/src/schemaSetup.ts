@@ -16,10 +16,7 @@ import {
   type ProjectFileConfig,
   type ProjectSchemaConfig,
 } from './projectFile';
-import {
-  shouldMergeSanmiaoDates,
-  writeSanmiaoMergedTeiSchema,
-} from './sanmiaoSchemaMerge';
+import { shouldMergeSanmiaoDates, writeSanmiaoMergedTeiSchema } from './sanmiaoSchemaMerge';
 import { isPluginEnabledInMain } from './plugins';
 
 const TEI_NS = 'http://www.tei-c.org/ns/1.0';
@@ -95,7 +92,8 @@ export const installCatalogSchema = async (
     return updated;
   } catch (error) {
     await fs.writeFile(projectFilePath, priorConfigRaw, 'utf-8');
-    for (const filePath of writtenFiles) await restoreFile(filePath, priorFiles.get(filePath) ?? null);
+    for (const filePath of writtenFiles)
+      await restoreFile(filePath, priorFiles.get(filePath) ?? null);
     throw error;
   }
 };
@@ -156,7 +154,8 @@ export const installLocalSchema = async (
     return updated;
   } catch (error) {
     await fs.writeFile(projectFilePath, priorConfigRaw, 'utf-8');
-    for (const filePath of writtenFiles) await restoreFile(filePath, priorFiles.get(filePath) ?? null);
+    for (const filePath of writtenFiles)
+      await restoreFile(filePath, priorFiles.get(filePath) ?? null);
     throw error;
   }
 };

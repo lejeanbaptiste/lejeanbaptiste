@@ -82,7 +82,10 @@ async function fetchLabels(
   return labels;
 }
 
-function normalizeLabelLanguages(desktopLanguage?: string | null, extraLanguages?: string[]): string[] {
+function normalizeLabelLanguages(
+  desktopLanguage?: string | null,
+  extraLanguages?: string[],
+): string[] {
   const languages = [
     'en',
     desktopLanguage?.trim().toLowerCase(),

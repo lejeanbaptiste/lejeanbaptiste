@@ -77,9 +77,7 @@ export const Authority = ({
         <Stack direction="row" spacing={1} alignItems="center">
           <IconButton id="toogle-lookup-entity" color="primary" size="small" sx={{ border: 0 }}>
             {disabled ? (
-              <RadioButtonUncheckedIcon
-                sx={{ height: 12, width: 12, pointerEvents: 'none' }}
-              />
+              <RadioButtonUncheckedIcon sx={{ height: 12, width: 12, pointerEvents: 'none' }} />
             ) : (
               <RadioButtonCheckedIcon sx={{ height: 12, width: 12, pointerEvents: 'none' }} />
             )}

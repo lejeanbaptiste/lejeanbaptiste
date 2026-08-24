@@ -94,9 +94,7 @@ export const PLACE_ADMIN_SUFFIXES: readonly { chars: string; pinyin: string }[] 
 ];
 
 /** Split a place label into stem + admin suffix when the suffix is recognized. */
-export function splitPlaceAdminSuffix(
-  name: string,
-): { stem: string; suffixPinyin: string } | null {
+export function splitPlaceAdminSuffix(name: string): { stem: string; suffixPinyin: string } | null {
   const trimmed = name.normalize('NFC').trim();
   if (!trimmed) return null;
   for (const { chars, pinyin: suffixPinyin } of PLACE_ADMIN_SUFFIXES) {

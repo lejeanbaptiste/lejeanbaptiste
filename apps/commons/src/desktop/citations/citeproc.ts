@@ -125,8 +125,7 @@ const escapeXmlText = (text: string): string =>
 
 /** Compact label for citation chips in the footnote list, e.g. "Morgan 2020". */
 export const citationChipLabel = (item: CslJsonItem): string => {
-  const author =
-    item.author?.[0]?.family ?? item.author?.[0]?.literal ?? item.title ?? 'Untitled';
+  const author = item.author?.[0]?.family ?? item.author?.[0]?.literal ?? item.title ?? 'Untitled';
   const year = item.issued?.['date-parts']?.[0]?.[0];
   return year ? `${author} ${year}` : String(author);
 };

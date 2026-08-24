@@ -24,4 +24,5 @@ export const matchesEditorRename = (event: KeyboardEvent): boolean => event.code
 export const matchesWalkModeTag = (event: KeyboardEvent): boolean =>
   (event.code === 'Enter' || event.code === 'NumpadEnter') && !event.shiftKey && !event.altKey;
 
-export const matchesWalkModeSkip = (event: KeyboardEvent): boolean => event.code === 'Tab' && !event.shiftKey;
+export const matchesWalkModeSkip = (event: KeyboardEvent): boolean =>
+  event.code === 'Tab' && !event.shiftKey;

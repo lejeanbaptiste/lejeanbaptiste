@@ -15,14 +15,7 @@ const domStub = path.join(__dirname, 'node-dom-stub.cjs');
 
 const result = spawnSync(
   process.execPath,
-  [
-    '-r',
-    domStub,
-    '-r',
-    'ts-node/register/transpile-only',
-    script,
-    ...process.argv.slice(2),
-  ],
+  ['-r', domStub, '-r', 'ts-node/register/transpile-only', script, ...process.argv.slice(2)],
   {
     cwd: leafWriterRoot,
     stdio: 'inherit',

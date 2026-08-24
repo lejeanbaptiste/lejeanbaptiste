@@ -13,7 +13,12 @@ export const useExplorerFileFilter = (rootPath: string | null, isProjectReady: b
   }, [filterQuery]);
 
   useEffect(() => {
-    if (!isProjectReady || !rootPath || !debouncedQuery || !window.electronAPI?.findXmlFilesByName) {
+    if (
+      !isProjectReady ||
+      !rootPath ||
+      !debouncedQuery ||
+      !window.electronAPI?.findXmlFilesByName
+    ) {
       setMatches([]);
       setSearching(false);
       return;

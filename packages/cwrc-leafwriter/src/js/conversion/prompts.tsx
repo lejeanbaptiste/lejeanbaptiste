@@ -23,8 +23,7 @@ export interface ProcessSchemaProps {
 const { t } = i18next;
 
 const isDesktopApp = () =>
-  typeof window !== 'undefined' &&
-  !!(window as Window & { electronAPI?: unknown }).electronAPI;
+  typeof window !== 'undefined' && !!(window as Window & { electronAPI?: unknown }).electronAPI;
 
 const handleSchemaCancel = (writer: Writer) => {
   if (isDesktopApp()) return;
@@ -282,4 +281,3 @@ export const promptAddSchema = (params: ProcessSchemaProps) => {
     },
   });
 };
-

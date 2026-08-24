@@ -38,8 +38,7 @@ export const isTeiCatalogId = (catalogId: string | undefined): boolean =>
 
 export const isTeiRelaxNgSchema = (rngContent: string): boolean =>
   /<define\s+name="date">/i.test(rngContent) &&
-  (/TEI Edition:\s*P5/i.test(rngContent) ||
-    /http:\/\/www\.tei-c\.org\/ns\/1\.0/.test(rngContent));
+  (/TEI Edition:\s*P5/i.test(rngContent) || /http:\/\/www\.tei-c\.org\/ns\/1\.0/.test(rngContent));
 
 export const isSanmiaoMergedWrapper = (rngContent: string): boolean =>
   /ljb-sanmiao-dates\.rng/.test(rngContent) ||
@@ -100,7 +99,10 @@ const buildLjbInlineModelOverride = (): string => `
       <ref name="ljb.personWrapper"/>
     </define>`;
 
-export const buildSanmiaoWrapperRng = (teiCoreFileName: string, baseRng: string): string => `<?xml version="1.0" encoding="UTF-8"?>
+export const buildSanmiaoWrapperRng = (
+  teiCoreFileName: string,
+  baseRng: string,
+): string => `<?xml version="1.0" encoding="UTF-8"?>
 <grammar xmlns="http://relaxng.org/ns/structure/1.0"
          ns="${TEI_NS}"
          datatypeLibrary="http://www.w3.org/2001/XMLSchema-datatypes"
@@ -133,9 +135,9 @@ const textElementDefine = (name: string): string => `
  */
 export const generateSanmiaoHelperDefines = (): string => {
   const partDefines = SANMIAO_DATE_PARTS.map((name) => textElementDefine(name)).join('\n');
-  const partRefs = SANMIAO_DATE_PARTS.map((name) => `          <ref name="ljb.sanmiao.${name}"/>`).join(
-    '\n',
-  );
+  const partRefs = SANMIAO_DATE_PARTS.map(
+    (name) => `          <ref name="ljb.sanmiao.${name}"/>`,
+  ).join('\n');
 
   return `${partDefines}
   <define name="ljb.nobleTitle">
@@ -225,9 +227,7 @@ export interface SanmiaoSchemaMergeResult {
 const resolveTeiCoreInclude =
   (teiCoreFileName: string, teiCoreRng: string) =>
   (href: string): string | null => {
-    const includeFile = href.includes('/')
-      ? (href.match(/(.*\/)(.*)/)?.[2] ?? href)
-      : href;
+    const includeFile = href.includes('/') ? (href.match(/(.*\/)(.*)/)?.[2] ?? href) : href;
     if (includeFile === teiCoreFileName) return teiCoreRng;
     return null;
   };
@@ -287,9 +287,7 @@ export const writeSanmiaoMergedTeiSchema = async (
  * wrappers produced by an older merge version, using the pristine upstream copy
  * preserved as `*.tei.rng`.
  */
-export const ensureSanmiaoDatesSchemaMerged = async (
-  bundle: ProjectBundle,
-): Promise<boolean> => {
+export const ensureSanmiaoDatesSchemaMerged = async (bundle: ProjectBundle): Promise<boolean> => {
   const schema = bundle.config.schema;
   if (!schema?.rng) return false;
 

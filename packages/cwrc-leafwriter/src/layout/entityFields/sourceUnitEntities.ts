@@ -183,8 +183,9 @@ export const mergeCentralGlossesIntoSummary = (
 
 /** Project entity DB first, then central — same resolution order as the Word plugin API. */
 export const fetchEntitySummary = async (entityId: string): Promise<EntitySummary | null> => {
-  const projectMeta = (window as unknown as { __ljbLspProject?: { entityDbFolder?: string | null } })
-    .__ljbLspProject;
+  const projectMeta = (
+    window as unknown as { __ljbLspProject?: { entityDbFolder?: string | null } }
+  ).__ljbLspProject;
   const project = entityStoreFromDesktop();
   const central = centralEntityStoreFromDesktop(projectMeta?.entityDbFolder ?? null);
 
@@ -265,8 +266,9 @@ export const searchEntitiesForPicker = async (
   const projectHits = await collect(entityStoreFromDesktop(), 'project');
   const seen = new Set(projectHits.map((hit) => hit.id));
 
-  const projectMeta = (window as unknown as { __ljbLspProject?: { entityDbFolder?: string | null } })
-    .__ljbLspProject;
+  const projectMeta = (
+    window as unknown as { __ljbLspProject?: { entityDbFolder?: string | null } }
+  ).__ljbLspProject;
   const centralHits = (
     await collect(centralEntityStoreFromDesktop(projectMeta?.entityDbFolder ?? null), 'central')
   ).filter((hit) => !seen.has(hit.id));
@@ -471,8 +473,7 @@ export const replaceEntitiesWithPlaceholdersInSourceXml = (
     }
     const index = pushOpaque(kind, surface);
     const isOffice = kind === 'office';
-    const token =
-      isOffice && isAfterWei(el) ? `{{as:opaque:${index}}}` : `{{opaque:${index}}}`;
+    const token = isOffice && isAfterWei(el) ? `{{as:opaque:${index}}}` : `{{opaque:${index}}}`;
     el.parentNode.replaceChild(doc.createTextNode(token), el);
   }
 
@@ -500,12 +501,9 @@ export const substituteOpaquePlaceholders = (
   opaques: ReadonlyMap<number, OpaqueEntityHit>,
 ): string => {
   if (!fragmentXml.includes('opaque:') || opaques.size === 0) return fragmentXml;
-  return fragmentXml.replace(
-    /\{\{(?:holding:|as:)?opaque:(\d+)\}\}/g,
-    (match, raw: string) => {
-      const hit = opaques.get(Number(raw));
-      if (!hit) return match;
-      return `[${hit.surface}]`;
-    },
-  );
+  return fragmentXml.replace(/\{\{(?:holding:|as:)?opaque:(\d+)\}\}/g, (match, raw: string) => {
+    const hit = opaques.get(Number(raw));
+    if (!hit) return match;
+    return `[${hit.surface}]`;
+  });
 };

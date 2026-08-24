@@ -96,9 +96,10 @@ pluginsApi.get('/entities/search', async (req: Request, res: Response) => {
   }
 
   const limitParam = Number(req.query.limit);
-  const limit = Number.isFinite(limitParam) && limitParam > 0
-    ? Math.min(limitParam, MAX_SEARCH_LIMIT)
-    : DEFAULT_SEARCH_LIMIT;
+  const limit =
+    Number.isFinite(limitParam) && limitParam > 0
+      ? Math.min(limitParam, MAX_SEARCH_LIMIT)
+      : DEFAULT_SEARCH_LIMIT;
 
   const results = await searchEntities(roots, q, kinds, limit);
   res.json({ results });

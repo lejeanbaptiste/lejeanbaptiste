@@ -17,12 +17,12 @@ LJB remains the source of truth. Word/LO only store **pointers** (content-contro
 
 ## What already exists
 
-| Piece | Where |
-| --- | --- |
-| Alignment units + ids | Source TEI `xml:id` on `p`/`div` (translation bootstrap) |
-| Translation text | Companion `*.lang.translation.xml` with `@corresp="file.xml#id"` |
-| Word entity fields | [`wordprocessor/src/wordFields.ts`](../../wordprocessor/src/wordFields.ts) — content controls tagged `{ entryId, fieldType, displayFormat }`, Sync via `GET /api/plugins/entities/:id` |
-| Plugin HTTPS API | [`apps/commons/src-server/routes/plugins.ts`](../apps/commons/src-server/routes/plugins.ts) — Bearer token, read-only today |
+| Piece                 | Where                                                                                                                                                                                  |
+| --------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Alignment units + ids | Source TEI `xml:id` on `p`/`div` (translation bootstrap)                                                                                                                               |
+| Translation text      | Companion `*.lang.translation.xml` with `@corresp="file.xml#id"`                                                                                                                       |
+| Word entity fields    | [`wordprocessor/src/wordFields.ts`](../../wordprocessor/src/wordFields.ts) — content controls tagged `{ entryId, fieldType, displayFormat }`, Sync via `GET /api/plugins/entities/:id` |
+| Plugin HTTPS API      | [`apps/commons/src-server/routes/plugins.ts`](../apps/commons/src-server/routes/plugins.ts) — Bearer token, read-only today                                                            |
 
 See also [translation-planning.md](translation-planning.md) (card reader / linking model).
 

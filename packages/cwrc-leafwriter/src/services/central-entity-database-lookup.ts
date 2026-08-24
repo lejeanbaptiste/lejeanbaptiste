@@ -15,9 +15,7 @@ import type {
   AuthorityService,
   NamedEntityType,
 } from '../types';
-import {
-  LOOKUP_TYPE_TO_KIND,
-} from './entity-database-lookup';
+import { LOOKUP_TYPE_TO_KIND } from './entity-database-lookup';
 
 export const CENTRAL_ENTITY_DATABASE_SERVICE_ID = 'central-entities';
 export const CENTRAL_ENTITY_DATABASE_SERVICE_NAME = 'Central entities';

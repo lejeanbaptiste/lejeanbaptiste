@@ -20,12 +20,14 @@ export type DatesPassStatus = 'ran' | 'applied';
 type DatesPassStore = Record<string, DatesPassStatus>;
 
 /** Stable per-document key for workflow flags (session + reopen). */
-export function autoTaggingDocumentKey(writer?: {
-  overmindState?: {
-    editor?: { resource?: { filePath?: string } };
-    document?: { url?: string };
-  };
-} | null): string {
+export function autoTaggingDocumentKey(
+  writer?: {
+    overmindState?: {
+      editor?: { resource?: { filePath?: string } };
+      document?: { url?: string };
+    };
+  } | null,
+): string {
   const path =
     writer?.overmindState?.editor?.resource?.filePath?.trim() ||
     writer?.overmindState?.document?.url?.trim();
@@ -116,19 +118,23 @@ const joinProjectPath = (rootPath: string, relativePath: string): string => {
 
 /** Read language from `schema/project-metadata.json` when the bridge is unavailable. */
 export async function readProjectLanguageFromDisk(): Promise<string | null> {
-  const api = typeof window !== 'undefined'
-    ? (window as {
-        electronAPI?: { readFile?: (path: string) => Promise<string> };
-        __leafWriterProject?: { getProjectFilePath?: () => string };
-        __ljbLspProject?: { projectRoot?: string };
-      }).electronAPI
-    : undefined;
-  const projectApi = typeof window !== 'undefined'
-    ? (window as {
-        __leafWriterProject?: { getProjectFilePath?: () => string };
-        __ljbLspProject?: { projectRoot?: string };
-      })
-    : undefined;
+  const api =
+    typeof window !== 'undefined'
+      ? (
+          window as {
+            electronAPI?: { readFile?: (path: string) => Promise<string> };
+            __leafWriterProject?: { getProjectFilePath?: () => string };
+            __ljbLspProject?: { projectRoot?: string };
+          }
+        ).electronAPI
+      : undefined;
+  const projectApi =
+    typeof window !== 'undefined'
+      ? (window as {
+          __leafWriterProject?: { getProjectFilePath?: () => string };
+          __ljbLspProject?: { projectRoot?: string };
+        })
+      : undefined;
 
   const root = projectApi?.__ljbLspProject?.projectRoot?.trim();
   if (!root || !api?.readFile) return null;
@@ -208,9 +214,7 @@ export const SANMIAO_CIV_OPTIONS: readonly { id: SanmiaoCivId; label: string }[]
 ];
 
 /** Default sanmiao `civ` for a project language. */
-export function defaultSanmiaoCivForLanguage(
-  language: string | null | undefined,
-): SanmiaoCivId[] {
+export function defaultSanmiaoCivForLanguage(language: string | null | undefined): SanmiaoCivId[] {
   if (isJapaneseLanguageCode(language)) return ['j'];
   if (isKoreanLanguageCode(language)) return ['k'];
   if (isChineseLanguageCode(language)) return ['c'];
@@ -331,9 +335,8 @@ export function areOtherAutoTaggingMethodsUnlocked(
   return true;
 }
 
-export const datesPassStatusForDocument = (
-  docKey: string,
-): DatesPassStatus | undefined => readDatesPassStore()[docKey];
+export const datesPassStatusForDocument = (docKey: string): DatesPassStatus | undefined =>
+  readDatesPassStore()[docKey];
 
 /** True after the user completed the tag-dates workflow step in this session. */
 export function isTagDatesPassComplete(

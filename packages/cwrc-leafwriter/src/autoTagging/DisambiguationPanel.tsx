@@ -245,9 +245,7 @@ function provenanceSourcesForBadges(
 
 function projectSyncsToCentral(): boolean {
   try {
-    return (
-      (window as unknown as DesktopEntityStoreGlobals).__ljbLspProject?.syncToCentral === true
-    );
+    return (window as unknown as DesktopEntityStoreGlobals).__ljbLspProject?.syncToCentral === true;
   } catch {
     return false;
   }
@@ -458,7 +456,10 @@ export const DisambiguationPanel = ({
   const handleToggleAiCuration = () => {
     const next = !aiCuration;
     setDisambiguationAiCuration(next);
-    void persistDisambiguationSettings({ ...readPersistedDisambiguationSettings(), aiCuration: next });
+    void persistDisambiguationSettings({
+      ...readPersistedDisambiguationSettings(),
+      aiCuration: next,
+    });
   };
   const [, forceRender] = useReducer((n: number) => n + 1, 0);
   const containerRef = useRef<HTMLDivElement>(null);
@@ -499,7 +500,10 @@ export const DisambiguationPanel = ({
     [dateFilterMode, yearRange],
   );
   /** Same filter the UI shows, widened for matching (see dateFilterForLookup). */
-  const lookupDateFilter = useMemo(() => dateFilterForLookup(dateFilter) ?? dateFilter, [dateFilter]);
+  const lookupDateFilter = useMemo(
+    () => dateFilterForLookup(dateFilter) ?? dateFilter,
+    [dateFilter],
+  );
   const cycleDateFilterMode = () => {
     setDateFilterMode((mode) => {
       const next = mode === 'none' ? 'limit' : mode === 'limit' ? 'exclude' : 'none';
@@ -806,10 +810,13 @@ export const DisambiguationPanel = ({
             targetGroup.tag,
             targetGroup.surface,
           );
-          const rows = mergeCandidates([dbSources.local, dbSources.central?.candidates ?? [], cached], {
-            tag: targetGroup.tag,
-            placeProximityKm,
-          });
+          const rows = mergeCandidates(
+            [dbSources.local, dbSources.central?.candidates ?? [], cached],
+            {
+              tag: targetGroup.tag,
+              placeProximityKm,
+            },
+          );
           if (currentKeyRef.current !== groupKey) return;
           setCandidates(rows);
           // The prefetcher can cache DILA place rows before their lazy detail
@@ -1395,9 +1402,7 @@ export const DisambiguationPanel = ({
                   {links.map((link) => (
                     <AuthorityLinkIcon key={link.url} link={link} />
                   ))}
-                  {badgeSources.length > 0 && (
-                    <SourceBadges label={badgeSources.join('+')} />
-                  )}
+                  {badgeSources.length > 0 && <SourceBadges label={badgeSources.join('+')} />}
                   {candidate.fromEntityFile && !syncToCentral && (
                     <Chip
                       label="local"
@@ -1452,14 +1457,14 @@ export const DisambiguationPanel = ({
                 {(() => {
                   const period = formatCandidatePeriod(candidate);
                   return period ? (
-                  <Typography
-                    variant="caption"
-                    color="text.secondary"
-                    display="block"
-                    sx={{ lineHeight: 1.3, fontWeight: 600 }}
-                  >
-                    {period}
-                  </Typography>
+                    <Typography
+                      variant="caption"
+                      color="text.secondary"
+                      display="block"
+                      sx={{ lineHeight: 1.3, fontWeight: 600 }}
+                    >
+                      {period}
+                    </Typography>
                   ) : null;
                 })()}
                 {candidate.description && (

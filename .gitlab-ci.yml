@@ -17,10 +17,10 @@ variables:
 
   # GitLab CI configuration
   # TEST_DISABLED: 1
-  POSTGRES_ENABLED: "false"
+  POSTGRES_ENABLED: 'false'
   STAGING_ENABLED: 1
   KUBE_INGRESS_BASE_DOMAIN: leaf-vre.org
-  KUBE_CONTEXT: "calincs/gitlab-agents:leaf-agent"
+  KUBE_CONTEXT: 'calincs/gitlab-agents:leaf-agent'
   KUBE_NAMESPACE: $CI_PROJECT_NAME-$CI_ENVIRONMENT_SLUG
 
   K8S_SECRET_GA_MEASUREMENT_ID: $GA_MEASUREMENT_ID
@@ -29,7 +29,7 @@ variables:
 
   # Disable the le-<project-id> host
   # https://gitlab.com/gitlab-org/cluster-integration/auto-deploy-image/-/blob/381abf6d6bffe46c6f88ca995920a5ca9ddd2a49/src/bin/auto-deploy#L354
-  AUTO_DEVOPS_COMMON_NAME: ""
+  AUTO_DEVOPS_COMMON_NAME: ''
 
 # Only rebuild node_modules if package.json changes
 cache:
@@ -46,7 +46,7 @@ build:
   stage: build
   image:
     name: gcr.io/kaniko-project/executor:v1.23.2-debug
-    entrypoint: [""]
+    entrypoint: ['']
   services: []
   before_script:
     - mkdir -p /kaniko/.docker
@@ -87,7 +87,7 @@ test:
 staging:
   variables:
     KUBE_INGRESS_BASE_DOMAIN: stage.lincsproject.ca
-    KUBE_CONTEXT: "calincs/gitlab-agents:stage-agent"
+    KUBE_CONTEXT: 'calincs/gitlab-agents:stage-agent'
     KUBE_NAMESPACE: $CI_PROJECT_NAME-$CI_PROJECT_ID-staging
   <<: *deployment
 
@@ -97,12 +97,12 @@ production_manual:
     name: production
   id_tokens:
     NPM_ID_TOKEN:
-      aud: "npm:registry.npmjs.org"
+      aud: 'npm:registry.npmjs.org'
     SIGSTORE_ID_TOKEN:
       aud: sigstore
   variables:
     KUBE_INGRESS_BASE_DOMAIN: leaf-vre.org
-    KUBE_CONTEXT: "calincs/gitlab-agents:leaf-agent"
+    KUBE_CONTEXT: 'calincs/gitlab-agents:leaf-agent'
     KUBE_NAMESPACE: $CI_PROJECT_NAME-$CI_PROJECT_ID-production
   before_script:
     - apk add --update npm

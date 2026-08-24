@@ -74,8 +74,7 @@ let managedChild: ChildProcess | null = null;
 let serverState: LanguageToolInstallStatus['server'] = 'stopped';
 let serverError: string | undefined;
 
-export const getLanguageToolRoot = (): string =>
-  path.join(app.getPath('userData'), 'languagetool');
+export const getLanguageToolRoot = (): string => path.join(app.getPath('userData'), 'languagetool');
 
 export const getLanguageToolDistDir = (): string => path.join(getLanguageToolRoot(), 'dist');
 
@@ -441,7 +440,11 @@ export const ensureManagedLanguageToolServer = async (options: {
 }): Promise<{ ok: boolean; error?: string; port: number }> => {
   const status = await getLanguageToolInstallStatus();
   if (!status.installed || !status.path) {
-    return { ok: false, error: 'LanguageTool is not installed yet.', port: LANGUAGE_TOOL_MANAGED_PORT };
+    return {
+      ok: false,
+      error: 'LanguageTool is not installed yet.',
+      port: LANGUAGE_TOOL_MANAGED_PORT,
+    };
   }
   if (!status.java.ok) {
     return { ok: false, error: status.java.error ?? 'Java 17+ is required.', port: status.port };

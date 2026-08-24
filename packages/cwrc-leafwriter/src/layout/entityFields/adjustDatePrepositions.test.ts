@@ -24,21 +24,21 @@ describe('adjustDatePrepositionsInText', () => {
     expect(
       adjustDatePrepositionsInText('by {{date:0}} he had fled', dayLevels([[0, true]]), 'en'),
     ).toBe('by {{date:0}} he had fled');
-    expect(
-      adjustDatePrepositionsInText('until {{date:0}}', dayLevels([[0, false]]), 'en'),
-    ).toBe('until {{date:0}}');
-    expect(
-      adjustDatePrepositionsInText('before {{date:0}}', dayLevels([[0, true]]), 'en'),
-    ).toBe('before {{date:0}}');
+    expect(adjustDatePrepositionsInText('until {{date:0}}', dayLevels([[0, false]]), 'en')).toBe(
+      'until {{date:0}}',
+    );
+    expect(adjustDatePrepositionsInText('before {{date:0}}', dayLevels([[0, true]]), 'en')).toBe(
+      'before {{date:0}}',
+    );
   });
 
   test('French En↔Le', () => {
     expect(
       adjustDatePrepositionsInText('En {{date:0}}, un édit', dayLevels([[0, true]]), 'fr'),
     ).toBe('Le {{date:0}}, un édit');
-    expect(
-      adjustDatePrepositionsInText('Le {{date:0}}', dayLevels([[0, false]]), 'fr'),
-    ).toBe('En {{date:0}}');
+    expect(adjustDatePrepositionsInText('Le {{date:0}}', dayLevels([[0, false]]), 'fr')).toBe(
+      'En {{date:0}}',
+    );
   });
 
   test('leaves prepositions that are not immediately before the placeholder', () => {
@@ -88,14 +88,14 @@ describe('ensureDatePrepositionsInText', () => {
   });
 
   test('does not insert when a temporal word is already present', () => {
-    expect(
-      ensureDatePrepositionsInText('until {{date:0}}', dayLevels([[0, true]]), 'en'),
-    ).toBe('until {{date:0}}');
+    expect(ensureDatePrepositionsInText('until {{date:0}}', dayLevels([[0, true]]), 'en')).toBe(
+      'until {{date:0}}',
+    );
   });
 
   test('French Le at sentence start', () => {
-    expect(
-      ensureDatePrepositionsInText('{{date:0}}, un édit', dayLevels([[0, true]]), 'fr'),
-    ).toBe('Le {{date:0}}, un édit');
+    expect(ensureDatePrepositionsInText('{{date:0}}, un édit', dayLevels([[0, true]]), 'fr')).toBe(
+      'Le {{date:0}}, un édit',
+    );
   });
 });

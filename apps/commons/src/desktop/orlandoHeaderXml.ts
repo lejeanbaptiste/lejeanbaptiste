@@ -45,11 +45,7 @@ export const getOrlandoHeaderPathValue = (header: Element, headerPath: string): 
   return node?.textContent ?? '';
 };
 
-export const setOrlandoHeaderPathValue = (
-  header: Element,
-  headerPath: string,
-  value: string,
-) => {
+export const setOrlandoHeaderPathValue = (header: Element, headerPath: string, value: string) => {
   const parts = headerPath.split('/').filter(Boolean);
   const leaf = parts.pop();
   if (!leaf) return;

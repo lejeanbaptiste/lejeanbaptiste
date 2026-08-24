@@ -6,13 +6,8 @@ import {
   dispatchPluginToolAction,
   isKnownPluginToolAction,
 } from '../../../../packages/cwrc-leafwriter/src/plugins';
-import {
-  promptAndApplySchemaUpdate,
-} from '@src/desktop/schemaUpdateCheck';
-import {
-  everythingIsUpToDate,
-  gatherUpdateReport,
-} from '@src/desktop/lookForUpdates';
+import { promptAndApplySchemaUpdate } from '@src/desktop/schemaUpdateCheck';
+import { everythingIsUpToDate, gatherUpdateReport } from '@src/desktop/lookForUpdates';
 import { leafwriterAtom } from '@src/jotai';
 import { useActions, useAppState } from '@src/overmind';
 import { isDesktop } from '@src/types/desktop';
@@ -332,8 +327,7 @@ export const useProjectMenu = () => {
                             notifyViaSnackbar(t('LWC.desktop.project.authority_updated'));
                           } else {
                             notifyViaSnackbar(
-                              result?.error ??
-                                t('LWC.desktop.project.authority_update_failed'),
+                              result?.error ?? t('LWC.desktop.project.authority_update_failed'),
                             );
                           }
                         })();
@@ -365,11 +359,7 @@ export const useProjectMenu = () => {
             });
           }
 
-          if (
-            report.schema?.status === 'updateAvailable' &&
-            isProjectReady &&
-            projectFilePath
-          ) {
+          if (report.schema?.status === 'updateAvailable' && isProjectReady && projectFilePath) {
             await promptAndApplySchemaUpdate(projectFilePath, report.schema, {
               notify: (message) => notifyViaSnackbar(message),
               onBundleUpdated: (bundle) => refreshProjectSchemaConfig(bundle),

@@ -1235,9 +1235,7 @@ export function removeEntityName(doc: Document, id: string, name: string): boole
   const kind = kindOfElement(item);
   if (!kind) throw new Error(`Unknown entity kind for: ${id}`);
   const names = nameElements(item, kind);
-  const activeNames = names.filter(
-    (el) => readEntityValueProvenance(el).status === 'active',
-  );
+  const activeNames = names.filter((el) => readEntityValueProvenance(el).status === 'active');
   if (activeNames.length <= 1) return false;
   const targets = activeNames.filter((el) => el.textContent?.trim() === name.trim());
   if (targets.length === 0) return false;

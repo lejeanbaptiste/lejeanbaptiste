@@ -13,13 +13,7 @@ import tocDarkPng from './tab_toc.dark.png';
 import treePng from './tab_tree.png';
 import treeDarkPng from './tab_tree.dark.png';
 
-export type SidebarTabId =
-  | 'explorer'
-  | 'find'
-  | 'xpath'
-  | 'toc'
-  | 'markup'
-  | 'database';
+export type SidebarTabId = 'explorer' | 'find' | 'xpath' | 'toc' | 'markup' | 'database';
 
 /** Tabs without a PNG pair fall back to an MUI icon in TabIcon. */
 const tabIconSources: Partial<Record<SidebarTabId, string>> = {

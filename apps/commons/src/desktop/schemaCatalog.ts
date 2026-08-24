@@ -32,11 +32,8 @@ export const getTieredCatalogForSetup = (): {
   return { primary, more };
 };
 
-export const getCatalogSchemaById = (id: string) =>
-  catalogSchemas.find((entry) => entry.id === id);
+export const getCatalogSchemaById = (id: string) => catalogSchemas.find((entry) => entry.id === id);
 
 /** Built-in catalog entries enabled for desktop project flow (schema wizard + editor picker). */
 export const getEnabledCatalogSchemas = () =>
-  catalogSchemas.filter((entry) =>
-    (ENABLED_CATALOG_IDS as readonly string[]).includes(entry.id),
-  );
+  catalogSchemas.filter((entry) => (ENABLED_CATALOG_IDS as readonly string[]).includes(entry.id));

@@ -2,9 +2,7 @@
   "extends": "./electron-builder.base.json",
   "artifactName": "Le-Jean-Baptiste-linux-flatpak-${version}-${arch}.${ext}",
   "linux": {
-    "target": [
-      "flatpak"
-    ],
+    "target": ["flatpak"],
     "icon": "icons",
     "category": "Office",
     "syncDesktopName": true,
@@ -13,10 +11,7 @@
       {
         "from": "resources/python",
         "to": "python",
-        "filter": [
-          "**/*",
-          "!.deps-installed"
-        ]
+        "filter": ["**/*", "!.deps-installed"]
       }
     ]
   },
@@ -26,8 +21,6 @@
     "useWaylandFlags": true
   },
   "win": {
-    "target": [
-      "nsis"
-    ]
+    "target": ["nsis"]
   }
 }

@@ -50,7 +50,7 @@ export async function checkEntityDatabaseFingerprint(
   const mismatch = Boolean(
     input.projectDatabaseId && databaseId && input.projectDatabaseId !== databaseId,
   );
-   
+
   console.info('[entity-db-check] fingerprint compare', {
     entitiesPath: store.entitiesPath,
     mode: store.mode,
@@ -171,8 +171,7 @@ export async function collectOrphanStubSpecs(
       const el = node as Element;
       const key = el.getAttribute('key');
       if (key && file.orphanKeys.includes(key) && !byId.has(key)) {
-        const kind =
-          TAG_TO_KIND[el.localName] ?? kindFromEntityId(key) ?? ('person' as EntityKind);
+        const kind = TAG_TO_KIND[el.localName] ?? kindFromEntityId(key) ?? ('person' as EntityKind);
         const raw = (el.textContent ?? '').replace(/\s+/g, ' ').trim();
         byId.set(key, { id: key, kind, name: raw || key });
       }
@@ -233,7 +232,6 @@ export async function runEntityDatabaseCheck(
   }
 
   if (!input.projectDatabaseId && api.updateProjectFileConfig) {
-     
     console.info('[entity-db-check] linking project to database for the first time', {
       entitiesPath: store.entitiesPath,
       projectFilePath: input.projectFilePath,
@@ -251,7 +249,6 @@ export async function runEntityDatabaseCheck(
     return { status: 'cancelled', databaseId };
   }
 
-   
   console.info('[entity-db-check] showing mismatch prompt', {
     entitiesPath: store.entitiesPath,
     projectFilePath: input.projectFilePath,
@@ -269,7 +266,6 @@ export async function runEntityDatabaseCheck(
     cancelId: 0,
   });
 
-   
   console.info('[entity-db-check] mismatch prompt response', {
     response,
     action: response === 1 ? 'purge' : 'cancel',

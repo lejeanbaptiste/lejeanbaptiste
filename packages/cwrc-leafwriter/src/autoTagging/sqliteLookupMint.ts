@@ -325,11 +325,7 @@ export async function mintOrLinkEntitySqlite(
   }
 
   for (const authority of input.authorityIds ?? []) {
-    const match = await store.sqliteFindByAuthority(
-      input.kind,
-      authority.type,
-      authority.value,
-    );
+    const match = await store.sqliteFindByAuthority(input.kind, authority.type, authority.value);
     if (match) {
       await enrichEntitySqlite(store, match, input);
       return { id: match, created: false };

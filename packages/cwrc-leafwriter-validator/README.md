@@ -597,7 +597,7 @@ Run `npm run build-documentation` to get a nice page with all the types.
 
 ### PossibleNodesAtOptions
 
-| Name                | Type    | Description                    |
+| Name | Type | Description |
 | ------------------- | ------- | ------------------------------ | ----------------------------------------------------------- |
 | speculativeValidate | boolean | The tag Xpath in the document. | nabled/disabled speculatively validation. Default is `true` |
 

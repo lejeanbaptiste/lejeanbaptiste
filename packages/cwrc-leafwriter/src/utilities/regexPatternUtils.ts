@@ -41,7 +41,11 @@ export const compileFindRegex = (pattern: string, ignoreCase = false): RegExp =>
   new RegExp(expandUnicodeWordShorthand(pattern), ignoreCase ? 'giu' : 'gu');
 
 export const tryCompileFindRegex = (pattern: string, ignoreCase = false): RegExp | null => {
-  try { return compileFindRegex(pattern, ignoreCase); } catch { return null; }
+  try {
+    return compileFindRegex(pattern, ignoreCase);
+  } catch {
+    return null;
+  }
 };
 
 export const compileFindLiteralRegex = (query: string, ignoreCase = false): RegExp =>
@@ -51,11 +55,11 @@ export const compileFindLiteralRegex = (query: string, ignoreCase = false): RegE
 export const applyRegexReplacement = (match: RegExpExecArray, replacement: string): string => {
   const withBackrefs = replacement.replace(/[\\#]([1-9]\d*)/g, (_full, digits: string) => {
     const index = Number.parseInt(digits, 10);
-    return index >= 1 && index < match.length ? match[index] ?? '' : '';
+    return index >= 1 && index < match.length ? (match[index] ?? '') : '';
   });
   return withBackrefs.replace(/\$(\$|\d+)/g, (_full, token: string) => {
     if (token === '$') return '$';
     const index = Number.parseInt(token, 10);
-    return index >= 1 && index < match.length ? match[index] ?? '' : '';
+    return index >= 1 && index < match.length ? (match[index] ?? '') : '';
   });
 };

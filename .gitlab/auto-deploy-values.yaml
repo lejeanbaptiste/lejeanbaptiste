@@ -11,5 +11,5 @@ readinessProbe:
   timeoutSeconds: 10
 ingress:
   annotations:
-    nginx.ingress.kubernetes.io/enable-cors: "true"
+    nginx.ingress.kubernetes.io/enable-cors: 'true'
     cert-manager.io/cluster-issuer: letsencrypt

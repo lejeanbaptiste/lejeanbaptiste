@@ -1,6 +1,9 @@
 import type { AuthorityCache } from './authorityCache';
 import type { DisambiguationAiCache } from './disambiguationAiCache';
-import { buildDisambiguationCandidates, type DisambiguationCandidate } from './disambiguationCandidates';
+import {
+  buildDisambiguationCandidates,
+  type DisambiguationCandidate,
+} from './disambiguationCandidates';
 import {
   runDisambiguationAiWarmPass,
   type DisambiguationAiWarmPassSession,
@@ -21,8 +24,12 @@ jest.mock('../services/authority-pack-lookup', () => ({
   cachedPackReader: () => jest.fn(),
 }));
 
-const mockBuild = buildDisambiguationCandidates as jest.MockedFunction<typeof buildDisambiguationCandidates>;
-const mockRank = rankDisambiguationCandidates as jest.MockedFunction<typeof rankDisambiguationCandidates>;
+const mockBuild = buildDisambiguationCandidates as jest.MockedFunction<
+  typeof buildDisambiguationCandidates
+>;
+const mockRank = rankDisambiguationCandidates as jest.MockedFunction<
+  typeof rankDisambiguationCandidates
+>;
 
 function makeInstance(): MentionInstance {
   return {
@@ -37,7 +44,13 @@ function makeInstance(): MentionInstance {
 }
 
 function makeGroup(surface: string, overrides: Partial<MentionGroup> = {}): MentionGroup {
-  return { tag: 'persName', surface, instances: [makeInstance()], fullyResolved: false, ...overrides };
+  return {
+    tag: 'persName',
+    surface,
+    instances: [makeInstance()],
+    fullyResolved: false,
+    ...overrides,
+  };
 }
 
 function makeCandidates(label: string): DisambiguationCandidate[] {
@@ -45,7 +58,11 @@ function makeCandidates(label: string): DisambiguationCandidate[] {
 }
 
 function makeSession(
-  options: { hasCache?: boolean; hasAiCache?: boolean; seedPending?: Record<string, DisambiguationCandidate[]> } = {},
+  options: {
+    hasCache?: boolean;
+    hasAiCache?: boolean;
+    seedPending?: Record<string, DisambiguationCandidate[]>;
+  } = {},
 ): DisambiguationAiWarmPassSession {
   const { hasCache = true, hasAiCache = true, seedPending = {} } = options;
   const doc = {} as Document;

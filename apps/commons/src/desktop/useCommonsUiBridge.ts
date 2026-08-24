@@ -27,12 +27,8 @@ const afterAuthorityPackLifecycleSuccess = async (): Promise<void> => {
 
 export const useCommonsUiBridge = () => {
   const { t } = useTranslation();
-  const {
-    skipEntityDetachConfirm,
-    skipExplorerDeleteConfirm,
-    themeAppearance,
-    currentLocale,
-  } = useAppState().ui;
+  const { skipEntityDetachConfirm, skipExplorerDeleteConfirm, themeAppearance, currentLocale } =
+    useAppState().ui;
   const {
     setSkipEntityDetachConfirm,
     setSkipExplorerDeleteConfirm,

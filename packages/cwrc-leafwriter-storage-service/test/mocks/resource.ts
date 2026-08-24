@@ -1,6 +1,15 @@
 import { SearchBlobsItem } from '@cwrc/leafwriter-storage-service/providers/Gitlab';
-import { Organization, PublicRepository, Repository, Resource } from '@cwrc/leafwriter-storage-service/types';
-import type { AuthenticatedUser, DocumentDetails, ProviderAuth } from '@cwrc/leafwriter-storage-service/types/Provider';
+import {
+  Organization,
+  PublicRepository,
+  Repository,
+  Resource,
+} from '@cwrc/leafwriter-storage-service/types';
+import type {
+  AuthenticatedUser,
+  DocumentDetails,
+  ProviderAuth,
+} from '@cwrc/leafwriter-storage-service/types/Provider';
 
 export const unsupportedProviderAuth: ProviderAuth = { name: 'google', access_token: '12345' };
 export const githubAuth: ProviderAuth = { name: 'github', access_token: 'gho_vtkG' };

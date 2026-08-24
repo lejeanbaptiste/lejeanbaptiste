@@ -147,10 +147,7 @@ export const useLeafWriter = () => {
     }
 
     const prepared = await prepareDesktopDocument(filePath, content, rootPath, config?.schema);
-    if (
-      !preparedDocumentsRef.current.has(cacheKey) &&
-      preparedDocumentsRef.current.size >= 4
-    ) {
+    if (!preparedDocumentsRef.current.has(cacheKey) && preparedDocumentsRef.current.size >= 4) {
       const oldestKey = preparedDocumentsRef.current.keys().next().value;
       if (oldestKey) preparedDocumentsRef.current.delete(oldestKey);
     }

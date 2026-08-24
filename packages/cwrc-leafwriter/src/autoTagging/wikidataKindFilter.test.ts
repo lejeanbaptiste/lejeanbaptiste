@@ -21,9 +21,7 @@ describe('wikidataKindFilter', () => {
   it('parses SPARQL bindings into Q-ids', () => {
     const matched = parseKindFilterSparqlResponse({
       results: {
-        bindings: [
-          { item: { value: 'http://www.wikidata.org/entity/Q1188379' } },
-        ],
+        bindings: [{ item: { value: 'http://www.wikidata.org/entity/Q1188379' } }],
       },
     });
     expect(matched.has('Q1188379')).toBe(true);
@@ -41,11 +39,7 @@ describe('wikidataKindFilter', () => {
         }),
       }) as Response;
 
-    const matched = await wikidataQidsMatchingKind(
-      ['Q1188379', 'Q85466117'],
-      'person',
-      fetchImpl,
-    );
+    const matched = await wikidataQidsMatchingKind(['Q1188379', 'Q85466117'], 'person', fetchImpl);
     expect(matched.has('Q1188379')).toBe(true);
     expect(matched.has('Q85466117')).toBe(false);
 

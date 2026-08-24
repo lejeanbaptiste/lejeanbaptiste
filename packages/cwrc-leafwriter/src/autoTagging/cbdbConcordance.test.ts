@@ -102,8 +102,7 @@ describe('refreshCbdbConcordance after pack lifecycle', () => {
     return store;
   };
 
-  const readPack = async () =>
-    JSON.stringify({ canonicalId: '31', mergedFromId: '98561' });
+  const readPack = async () => JSON.stringify({ canonicalId: '31', mergedFromId: '98561' });
 
   it('calls refresh on the resolved store after pack lifecycle', async () => {
     const store = makeStore();

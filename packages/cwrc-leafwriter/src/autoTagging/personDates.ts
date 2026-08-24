@@ -18,19 +18,23 @@ export interface PersonDateMetadata {
   dateSource?: PersonDateSource | string | null;
   startYear?: number | null;
   endYear?: number | null;
-  nationality?: {
-    startYear?: number | null;
-    endYear?: number | null;
-  }[] | null;
+  nationality?:
+    | {
+        startYear?: number | null;
+        endYear?: number | null;
+      }[]
+    | null;
   /**
    * Pack-native dynasty spans (e.g. Norbert). Used as a filter fallback when
    * `nationality[]` has labels but no years — common for dynasties that never
    * matched Wikidata during pack compile.
    */
-  dynasties?: {
-    startYear?: number | null;
-    endYear?: number | null;
-  }[] | null;
+  dynasties?:
+    | {
+        startYear?: number | null;
+        endYear?: number | null;
+      }[]
+    | null;
 }
 
 /** Treat CBDB/legacy sentinel `0` (and non-finite values) as missing. */
@@ -45,9 +49,10 @@ export function finiteBiographicalYear(value: unknown): number | null {
  * Years safe to treat as birth/death vitals (entity import / TEI birth–death).
  * Floruit, index, nationality, and legacy undated packs return empty.
  */
-export function biographicalYearsFromMetadata(
-  meta: PersonDateMetadata | null | undefined,
-): { startYear?: number; endYear?: number } {
+export function biographicalYearsFromMetadata(meta: PersonDateMetadata | null | undefined): {
+  startYear?: number;
+  endYear?: number;
+} {
   if (!meta || meta.dateSource !== 'fine') return {};
   const startYear = finiteBiographicalYear(meta.startYear);
   const endYear = finiteBiographicalYear(meta.endYear);
@@ -61,9 +66,10 @@ export function biographicalYearsFromMetadata(
  * Real floruit earliest/latest from packs (`dateSource: 'floruit'`).
  * Stored as `date_kind=dates` + `start_precision=fl.`, never as birth/death.
  */
-export function floruitYearsFromMetadata(
-  meta: PersonDateMetadata | null | undefined,
-): { startYear?: number; endYear?: number } {
+export function floruitYearsFromMetadata(meta: PersonDateMetadata | null | undefined): {
+  startYear?: number;
+  endYear?: number;
+} {
   if (!meta || meta.dateSource !== 'floruit') return {};
   const startYear = finiteBiographicalYear(meta.startYear);
   const endYear = finiteBiographicalYear(meta.endYear) ?? startYear;
@@ -109,9 +115,11 @@ function yearSpansFromEntries(
  * back to nationality dynasty spans (±60), then pack-native `dynasties[]` when
  * nationality labels have no years (Norbert 北周 / 南齊 / …).
  */
-export function filterYearsFromMetadata(
-  meta: PersonDateMetadata | null | undefined,
-): { startYear?: number; endYear?: number; isFine: boolean } {
+export function filterYearsFromMetadata(meta: PersonDateMetadata | null | undefined): {
+  startYear?: number;
+  endYear?: number;
+  isFine: boolean;
+} {
   if (!meta) return { isFine: false };
 
   if (hasFilterInterval(meta)) {
@@ -152,7 +160,9 @@ export function isFilterOnlyDateSource(
  * Strip CBDB index-year clues that older packs mislabeled as `fl. YEAR`.
  * Only call when `dateSource === 'index'` — leave real floruit `fl. A–B` alone.
  */
-export function scrubIndexYearFloruitClue(description: string | undefined | null): string | undefined {
+export function scrubIndexYearFloruitClue(
+  description: string | undefined | null,
+): string | undefined {
   if (!description) return description ?? undefined;
   const scrubbed = description
     .replace(/(?:,\s*)?fl\.\s*[+-]?\d+(?:\s*[–\-~～]\s*[+-]?\d+)?/gi, '')

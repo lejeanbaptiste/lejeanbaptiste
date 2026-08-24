@@ -153,11 +153,7 @@ function displayValue(
   return '';
 }
 
-function fieldKind(
-  key: DateEditorKey,
-  value: string,
-  xml: Map<string, string>,
-): DateFieldKind {
+function fieldKind(key: DateEditorKey, value: string, xml: Map<string, string>): DateFieldKind {
   const xmlKey = XML_FIELD_BY_KEY[key];
   if (xmlKey && xml.has(xmlKey)) return 'locked';
   if (value) return 'resolved';
@@ -193,7 +189,8 @@ export function dateEditorFields(
       value,
       kind,
       // Toggles stay interactive only when the slot is not locked/out-of-bounds.
-      editable: (key === 'intercalary' || key === 'lp') && kind !== 'locked' && kind !== 'out-of-bounds',
+      editable:
+        (key === 'intercalary' || key === 'lp') && kind !== 'locked' && kind !== 'out-of-bounds',
     };
   });
 }

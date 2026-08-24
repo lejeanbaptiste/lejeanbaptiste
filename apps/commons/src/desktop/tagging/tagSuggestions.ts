@@ -31,7 +31,7 @@ const ensureValidatorReady = async (): Promise<boolean> => {
 
   return Boolean(
     writer?.overmindState?.validator?.hasWorkerValidator &&
-      writer?.overmindState?.validator?.hasSchema,
+    writer?.overmindState?.validator?.hasSchema,
   );
 };
 
@@ -75,8 +75,7 @@ export const getEditorTagContext = (): EditorTagContext | null => {
       : rng.commonAncestorContainer.parentElement;
 
   const element =
-    tagElement ??
-    (elementFromAncestor?.hasAttribute('_tag') ? elementFromAncestor : null);
+    tagElement ?? (elementFromAncestor?.hasAttribute('_tag') ? elementFromAncestor : null);
 
   if (!element) return null;
 
@@ -227,9 +226,11 @@ export const fetchTagSuggestions = async (
 
     const nodes =
       (await validatorActions.getPossibleNodesAt(target)) ??
-      (await window.leafwriterValidator?.getPossibleNodesAt(target, {
-        speculativeValidate: true,
-      }))?.nodes?.filter((node: NodeDetail) => node.type === 'tag') ??
+      (
+        await window.leafwriterValidator?.getPossibleNodesAt(target, {
+          speculativeValidate: true,
+        })
+      )?.nodes?.filter((node: NodeDetail) => node.type === 'tag') ??
       [];
 
     return nodes.filter((node: NodeDetail) => node.type === 'tag');
@@ -332,7 +333,9 @@ export const filterTagSuggestions = (tags: NodeDetail[], query: string): NodeDet
 
   return tags
     .map((tag, index) => ({ index, rank: matchRank(tag), tag }))
-    .filter((entry): entry is { index: number; rank: number; tag: NodeDetail } => entry.rank !== null)
+    .filter(
+      (entry): entry is { index: number; rank: number; tag: NodeDetail } => entry.rank !== null,
+    )
     .sort((a, b) => a.rank - b.rank || a.index - b.index)
     .map((entry) => entry.tag);
 };
@@ -344,10 +347,7 @@ export const getDefaultHighlightIndex = (
 ): number => {
   if (tags.length === 0) return 0;
 
-  const preferred =
-    mode === 'insert' || mode === 'lineBreak'
-      ? DEFAULT_INSERT_TAG
-      : lastUsedTag;
+  const preferred = mode === 'insert' || mode === 'lineBreak' ? DEFAULT_INSERT_TAG : lastUsedTag;
 
   if (!preferred) return 0;
   const index = tags.findIndex((tag) => tag.name === preferred && !tag.invalid);

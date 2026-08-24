@@ -66,10 +66,7 @@ const findRootCandidate = (body: HTMLElement, tag: string, index: number): Eleme
 };
 
 /** Walk the CWRC editor DOM using TEI-style xpath segments (_tag names). */
-export const findEditorNodeByTeiXPath = (
-  body: HTMLElement,
-  teiXpath: string,
-): Element | null => {
+export const findEditorNodeByTeiXPath = (body: HTMLElement, teiXpath: string): Element | null => {
   const segments = parseTeiXPathSegments(teiXpath);
   if (segments.length === 0) return null;
 

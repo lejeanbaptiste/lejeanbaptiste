@@ -94,7 +94,9 @@ export const sanitizeLanguageToolSettings = (
       : DEFAULT_LANGUAGE_TOOL_SETTINGS.baseUrl,
   verifiedAt: typeof value?.verifiedAt === 'string' ? value.verifiedAt : null,
   verifiedBaseUrl:
-    typeof value?.verifiedBaseUrl === 'string' ? value.verifiedBaseUrl.trim().replace(/\/+$/, '') : '',
+    typeof value?.verifiedBaseUrl === 'string'
+      ? value.verifiedBaseUrl.trim().replace(/\/+$/, '')
+      : '',
   checkMode: value?.checkMode === 'live' ? 'live' : 'onDemand',
   managedInstall: value?.managedInstall === true,
   ngramsEnabled: value?.ngramsEnabled === true,
@@ -179,7 +181,10 @@ export const shiftLanguageToolMatchesAfterApply = (
         return { ...match, offset: match.offset + delta };
       }
       // Overlapping / nested — drop; caller should re-check.
-      if (match.offset + match.length > appliedOffset && match.offset < appliedOffset + appliedLength) {
+      if (
+        match.offset + match.length > appliedOffset &&
+        match.offset < appliedOffset + appliedLength
+      ) {
         return null;
       }
       return match;
@@ -210,8 +215,7 @@ export const collectLanguageToolWhitelist = (
   for (const name of names) {
     const text = name.text?.trim();
     if (!text) continue;
-    const keep =
-      isLatnLanguageTag(name.language) || isLatinScriptName(text);
+    const keep = isLatnLanguageTag(name.language) || isLatinScriptName(text);
     if (!keep) continue;
     out.add(text);
     out.add(text.toLocaleLowerCase('en-US'));
@@ -220,8 +224,10 @@ export const collectLanguageToolWhitelist = (
   return out;
 };
 
-export const matchedSpan = (text: string, match: Pick<LanguageToolMatch, 'offset' | 'length'>): string =>
-  text.slice(match.offset, match.offset + match.length);
+export const matchedSpan = (
+  text: string,
+  match: Pick<LanguageToolMatch, 'offset' | 'length'>,
+): string => text.slice(match.offset, match.offset + match.length);
 
 /**
  * Drop matches whose exact span is a whitelisted entity romanisation / latin name

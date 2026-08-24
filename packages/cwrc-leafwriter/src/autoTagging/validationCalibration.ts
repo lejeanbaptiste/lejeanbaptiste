@@ -94,7 +94,10 @@ export interface ThresholdConfusion {
  * this number as the auto-accept/reject cutoff, how often would that be
  * the right call?"
  */
-export function confusionAtThreshold(labeled: LabeledValidation[], threshold: number): ThresholdConfusion {
+export function confusionAtThreshold(
+  labeled: LabeledValidation[],
+  threshold: number,
+): ThresholdConfusion {
   let tp = 0;
   let fp = 0;
   let tn = 0;
@@ -139,7 +142,10 @@ export interface CalibrationBucket {
  * be right about 70-80% of the time; systematic over/under-confidence
  * shows up as buckets whose accuracy doesn't match their range.
  */
-export function calibrationBuckets(labeled: LabeledValidation[], bucketSize = 0.1): CalibrationBucket[] {
+export function calibrationBuckets(
+  labeled: LabeledValidation[],
+  bucketSize = 0.1,
+): CalibrationBucket[] {
   const buckets: CalibrationBucket[] = [];
   const steps = Math.round(1 / bucketSize);
   for (let i = 0; i < steps; i++) {
@@ -158,7 +164,9 @@ export function calibrationBuckets(labeled: LabeledValidation[], bucketSize = 0.
       correctCount,
       accuracy: inBucket.length === 0 ? NaN : correctCount / inBucket.length,
       avgConfidence:
-        inBucket.length === 0 ? NaN : inBucket.reduce((sum, l) => sum + l.validation.confidence, 0) / inBucket.length,
+        inBucket.length === 0
+          ? NaN
+          : inBucket.reduce((sum, l) => sum + l.validation.confidence, 0) / inBucket.length,
     });
   }
   return buckets;
@@ -186,7 +194,9 @@ export interface SameSpanAlternativeGroup {
  * buckets don't isolate: a model can be "accurate on average" while still
  * failing every time it has to pick between two live alternatives.
  */
-export function sameSpanAlternativeGroups(labeled: LabeledValidation[]): SameSpanAlternativeGroup[] {
+export function sameSpanAlternativeGroups(
+  labeled: LabeledValidation[],
+): SameSpanAlternativeGroup[] {
   const groups = new Map<string, LabeledValidation[]>();
   for (const l of labeled) {
     const key = mentionKey(l.surface, l.occurrence);
@@ -204,7 +214,9 @@ export function sameSpanAlternativeGroups(labeled: LabeledValidation[]): SameSpa
       recommended: i.validation.recommended,
     }));
     const correctOptions = options.filter((o) => o.correct);
-    const incorrectMax = options.filter((o) => !o.correct).reduce((max, o) => Math.max(max, o.confidence), -Infinity);
+    const incorrectMax = options
+      .filter((o) => !o.correct)
+      .reduce((max, o) => Math.max(max, o.confidence), -Infinity);
     const rankedCorrectHighest =
       correctOptions.length === 0 ? null : correctOptions.some((o) => o.confidence > incorrectMax);
     results.push({
@@ -331,7 +343,10 @@ export interface RunAuthorityTagBombCalibrationOptions {
   policy: ChunkOptions['policy'];
   tags: string[];
   packIds: AuthorityPackId[];
-  readPackFile: (packId: AuthorityPackId, dateFilter?: DateRangeFilter) => Promise<AuthorityPackContent>;
+  readPackFile: (
+    packId: AuthorityPackId,
+    dateFilter?: DateRangeFilter,
+  ) => Promise<AuthorityPackContent>;
   dateFilter?: DateRangeFilter;
   yearRange?: { start: number; end: number };
   hideUndated?: boolean;
@@ -373,12 +388,18 @@ export async function runAuthorityTagBombCalibrationHarness(
   const gold = goldMentions(scoped, options.policy, options.tags);
   const stripped = stripTags(scoped, options.tags);
 
-  const tagBombResult = await runAuthorityTagBombOnDocument(stripped, options.packIds, options.readPackFile, options.policy, {
-    dateFilter: options.dateFilter,
-    yearRange: options.yearRange,
-    hideUndated: options.hideUndated,
-    nameTypePolicy: options.nameTypePolicy,
-  });
+  const tagBombResult = await runAuthorityTagBombOnDocument(
+    stripped,
+    options.packIds,
+    options.readPackFile,
+    options.policy,
+    {
+      dateFilter: options.dateFilter,
+      yearRange: options.yearRange,
+      hideUndated: options.hideUndated,
+      nameTypePolicy: options.nameTypePolicy,
+    },
+  );
 
   const validations = await validateSuggestions({
     suggestions: tagBombResult.suggestions,

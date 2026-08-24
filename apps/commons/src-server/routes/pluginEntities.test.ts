@@ -220,7 +220,12 @@ describe('pluginEntities', () => {
     });
 
     test('searchEntities finds a central-only entity when a project is also open', async () => {
-      const results = await searchEntities([projectRoot, centralRoot], 'central only', ['person'], 20);
+      const results = await searchEntities(
+        [projectRoot, centralRoot],
+        'central only',
+        ['person'],
+        20,
+      );
       expect(results.map((r) => r.id)).toEqual(['person-central-only']);
     });
 

@@ -79,7 +79,8 @@ const flattenResults = (
 };
 
 const isSourceEditorMode = () => window.writer?.overmindState?.ui?.editorViewMode === 'source';
-const shouldValidateXmlOnReplace = () => window.writer?.overmindState?.editor?.validateXmlOnReplace ?? true;
+const shouldValidateXmlOnReplace = () =>
+  window.writer?.overmindState?.editor?.validateXmlOnReplace ?? true;
 
 export const SidebarFindTab = () => {
   const { t } = useTranslation();
@@ -732,7 +733,9 @@ export const SidebarFindTab = () => {
             />
           </Box>
           <FormControl size="small" sx={{ flex: '1 1 0', minWidth: 0 }}>
-            <InputLabel id="find-doc-scope-label">{t('LWC.desktop.sidebar.find.documents_label')}</InputLabel>
+            <InputLabel id="find-doc-scope-label">
+              {t('LWC.desktop.sidebar.find.documents_label')}
+            </InputLabel>
             <Select
               label={t('LWC.desktop.sidebar.find.documents_label')}
               labelId="find-doc-scope-label"

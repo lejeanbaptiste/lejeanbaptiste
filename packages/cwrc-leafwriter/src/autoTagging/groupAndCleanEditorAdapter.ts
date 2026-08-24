@@ -33,7 +33,9 @@ export async function applyGroupAndClean(): Promise<void> {
 
     const parts: string[] = [];
     if (result.mergedRoleNames > 0) {
-      parts.push(`${result.mergedRoleNames} roleName merge${result.mergedRoleNames === 1 ? '' : 's'}`);
+      parts.push(
+        `${result.mergedRoleNames} roleName merge${result.mergedRoleNames === 1 ? '' : 's'}`,
+      );
     }
     if (result.rolledPlaceNames > 0) {
       parts.push(

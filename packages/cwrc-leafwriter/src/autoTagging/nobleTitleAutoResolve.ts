@@ -95,11 +95,13 @@ export function nobleTitleMatchKey(place: string, role: string, posthumous: stri
 export function buildPersonTitleIndex(
   records: readonly {
     id: string;
-    nobleTitles?: readonly {
-      fief?: string | null;
-      roleName?: string | null;
-      posthumousName?: string | null;
-    }[] | null;
+    nobleTitles?:
+      | readonly {
+          fief?: string | null;
+          roleName?: string | null;
+          posthumousName?: string | null;
+        }[]
+      | null;
   }[],
 ): Map<string, string[]> {
   const index = new Map<string, string[]>();
@@ -145,9 +147,7 @@ export function buildPackTitleNorbertIndex(
     const posthumous = title.posthumousName?.trim() ?? '';
     if (!place || !role || !posthumous) continue;
     const crosswalkNorbert = candidate.metadata.crosswalk?.norbert;
-    const fromCrosswalk = Array.isArray(crosswalkNorbert)
-      ? crosswalkNorbert[0]
-      : crosswalkNorbert;
+    const fromCrosswalk = Array.isArray(crosswalkNorbert) ? crosswalkNorbert[0] : crosswalkNorbert;
     const raw = candidate.metadata.wrapper?.personId?.trim() || fromCrosswalk?.trim();
     if (!raw) continue;
     const norbertId = formatNorbertAuthorityValue('person', raw);
@@ -200,9 +200,9 @@ export async function autoResolveNobleTitles(
       const alreadyKeyed = Boolean(parts.roleEl.getAttribute('key')?.trim());
       const alreadyReffed = Boolean(parts.roleEl.getAttribute('ref')?.trim());
       if (!alreadyKeyed) {
-        const officeIds = [...new Set(await Promise.resolve(deps.findOfficeIds(parts.role)))].filter(
-          Boolean,
-        );
+        const officeIds = [
+          ...new Set(await Promise.resolve(deps.findOfficeIds(parts.role))),
+        ].filter(Boolean);
         if (officeIds.length === 1) {
           assignEntity({ element: parts.roleEl, entityId: officeIds[0]! });
           resolvedRanks++;

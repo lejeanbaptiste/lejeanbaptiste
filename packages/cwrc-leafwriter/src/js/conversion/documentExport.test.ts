@@ -42,7 +42,9 @@ describe('buildRtfDocument', () => {
     const rtf = buildRtfDocument([{ source, translation: null }]);
     expect(rtf).toContain('\\fet2');
     // The in-text anchor (\chftn) stays exactly where the note is cited.
-    expect(rtf).toContain('{\\super\\chftn}{\\footnote\\pard\\plain {\\super\\chftn} See discussion.}');
+    expect(rtf).toContain(
+      '{\\super\\chftn}{\\footnote\\pard\\plain {\\super\\chftn} See discussion.}',
+    );
   });
 
   test('omits the References section when there is no bibliography', () => {
@@ -229,7 +231,9 @@ describe('buildOdtDocument', () => {
 
     const contentXml = await readZipEntry(blob, 'content.xml');
     expect(contentXml).toContain('plain ');
-    expect(contentXml).toContain('<text:span text:style-name="Ti"><text:span text:style-name="Tb">fancy</text:span></text:span>');
+    expect(contentXml).toContain(
+      '<text:span text:style-name="Ti"><text:span text:style-name="Tb">fancy</text:span></text:span>',
+    );
     expect(contentXml).toContain('References');
     expect(contentXml).toContain('Pregadio');
 

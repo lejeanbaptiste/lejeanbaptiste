@@ -259,7 +259,10 @@ export class Api {
     if (status !== 200) {
       console.warn({ error: 'something went wrong' });
       return {
-        error: { status: status, message: `${t('LWC.auth.linked_accounts_prefix')} ${t('LWC.auth.something_went_wrong')}` },
+        error: {
+          status: status,
+          message: `${t('LWC.auth.linked_accounts_prefix')} ${t('LWC.auth.something_went_wrong')}`,
+        },
       };
     }
 
@@ -309,7 +312,10 @@ export class Api {
     if (status !== 200) {
       console.warn({ error: 'something went wrong' });
       return {
-        error: { status, message: `${t('LWC.auth.link_account_url_prefix')} ${t('LWC.auth.something_went_wrong')}` },
+        error: {
+          status,
+          message: `${t('LWC.auth.link_account_url_prefix')} ${t('LWC.auth.something_went_wrong')}`,
+        },
       };
     }
 

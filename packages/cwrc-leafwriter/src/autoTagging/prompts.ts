@@ -62,7 +62,7 @@ export function buildSuggestPrompt(params: {
   const taskTemplate = params.suggestTaskText ?? suggestSystemTemplate;
   const system = `${preambleTemplate}${injectTagGuide(
     fillTemplate(taskTemplate, {
-    TAGS: params.tags.join(', '),
+      TAGS: params.tags.join(', '),
     }),
     tagGuide,
   )}`;
@@ -98,7 +98,7 @@ function buildTaggedChunkPrompt(
   const taskTemplate = params.taskText ?? systemTemplate;
   const system = `${preambleTemplate}${injectTagGuide(
     fillTemplate(taskTemplate, {
-    TAGS: params.tags.join(', '),
+      TAGS: params.tags.join(', '),
     }),
     tagGuide,
   )}`;

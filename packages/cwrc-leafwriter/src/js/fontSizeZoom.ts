@@ -18,8 +18,7 @@ export interface FontSizeZoom {
   subscribe: (listener: (size: number) => void) => () => void;
 }
 
-const clamp = (size: number) =>
-  Math.min(FONT_ZOOM_MAX, Math.max(FONT_ZOOM_MIN, Math.round(size)));
+const clamp = (size: number) => Math.min(FONT_ZOOM_MAX, Math.max(FONT_ZOOM_MIN, Math.round(size)));
 
 export const createFontSizeZoom = (storageKey: string, defaultSize: number): FontSizeZoom => {
   const listeners = new Set<(size: number) => void>();

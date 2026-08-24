@@ -2,11 +2,7 @@ export const DOCKED_AUTO_TAGGING_MOUNT_ID = 'desktop-panel-auto-tagging';
 export const DOCKED_DISAMBIGUATION_MOUNT_ID = 'desktop-panel-disambiguation';
 
 /** Show or hide a docked review mount in the desktop flex shell. */
-export function setDockedReviewMountOpen(
-  mountId: string,
-  open: boolean,
-  widthPx?: number,
-): void {
+export function setDockedReviewMountOpen(mountId: string, open: boolean, widthPx?: number): void {
   const mount = document.getElementById(mountId);
   if (!mount) return;
 

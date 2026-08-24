@@ -58,8 +58,7 @@ export function AiPromptEditorDialog({
   const [busy, setBusy] = useState(false);
   const disambiguationFieldRef = useRef<HTMLDivElement>(null);
 
-  const selectedProfile =
-    state.profiles.find((p) => p.id === profileId) ?? activeProfile;
+  const selectedProfile = state.profiles.find((p) => p.id === profileId) ?? activeProfile;
 
   useEffect(() => {
     if (!open) return;
@@ -75,7 +74,10 @@ export function AiPromptEditorDialog({
 
   useEffect(() => {
     if (!open || highlightField !== 'disambiguation') return;
-    window.setTimeout(() => disambiguationFieldRef.current?.scrollIntoView({ block: 'nearest' }), 0);
+    window.setTimeout(
+      () => disambiguationFieldRef.current?.scrollIntoView({ block: 'nearest' }),
+      0,
+    );
   }, [highlightField, open, profileId]);
 
   const loadProfileIntoEditor = (profile: AiPromptProfile) => {

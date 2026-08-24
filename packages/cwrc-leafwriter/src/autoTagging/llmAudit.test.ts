@@ -23,19 +23,30 @@ class FakeClient implements LlmClient {
 
 describe('llmAudit', () => {
   it('renders existing tags inline on the clean pass', async () => {
-    const doc = parse('<TEI><text><body><p><persName>張衡</persName>是天文學家</p></body></text></TEI>');
+    const doc = parse(
+      '<TEI><text><body><p><persName>張衡</persName>是天文學家</p></body></text></TEI>',
+    );
     const client = new FakeClient(() => JSON.stringify({ suggestions: [] }));
     await llmAuditClean(doc, { policy: 'ignore', tags: ['persName'], client });
     expect(client.lastUserPrompt).toContain('<persName>張衡</persName>');
   });
 
   it('verifies and emits a "remove" finding against an existing tagged mention', async () => {
-    const doc = parse('<TEI><text><body><p><persName>張衡</persName>是天文學家</p></body></text></TEI>');
+    const doc = parse(
+      '<TEI><text><body><p><persName>張衡</persName>是天文學家</p></body></text></TEI>',
+    );
     const client = new FakeClient((_req, call) =>
       call === 1
         ? JSON.stringify({
             suggestions: [
-              { surface: '張衡', occurrence: 1, tag: 'persName', action: 'remove', confidence: 0.8, rationale: 'not a person' },
+              {
+                surface: '張衡',
+                occurrence: 1,
+                tag: 'persName',
+                action: 'remove',
+                confidence: 0.8,
+                rationale: 'not a person',
+              },
             ],
           })
         : JSON.stringify({ suggestions: [] }),
@@ -44,34 +55,60 @@ describe('llmAudit', () => {
     const result = await llmAudit(doc, { policy: 'ignore', tags: ['persName'], client });
     expect(result.unverifiableCount).toBe(0);
     expect(result.suggestions).toHaveLength(1);
-    expect(result.suggestions[0]).toMatchObject({ action: 'remove', tag: 'persName', source: 'ai' });
+    expect(result.suggestions[0]).toMatchObject({
+      action: 'remove',
+      tag: 'persName',
+      source: 'ai',
+    });
     expect(result.cleanSuggestionCount).toBe(1);
   });
 
   it('verifies and emits an "add" finding for a missed mention', async () => {
-    const doc = parse('<TEI><text><body><p><persName>張衡</persName>與洛陽</p></body></text></TEI>');
+    const doc = parse(
+      '<TEI><text><body><p><persName>張衡</persName>與洛陽</p></body></text></TEI>',
+    );
     const client = new FakeClient((_req, call) =>
       call === 1
         ? JSON.stringify({ suggestions: [] })
         : JSON.stringify({
             suggestions: [
-              { surface: '洛陽', occurrence: 1, tag: 'placeName', action: 'add', confidence: 0.7, rationale: 'missed place' },
+              {
+                surface: '洛陽',
+                occurrence: 1,
+                tag: 'placeName',
+                action: 'add',
+                confidence: 0.7,
+                rationale: 'missed place',
+              },
             ],
           }),
     );
 
-    const result = await llmAudit(doc, { policy: 'ignore', tags: ['persName', 'placeName'], client });
+    const result = await llmAudit(doc, {
+      policy: 'ignore',
+      tags: ['persName', 'placeName'],
+      client,
+    });
     expect(result.suggestions).toHaveLength(1);
     expect(result.suggestions[0]).toMatchObject({ action: 'add', tag: 'placeName' });
     expect(result.addSuggestionCount).toBe(1);
   });
 
   it('drops an add nested inside the same tag via review filter', async () => {
-    const doc = parse('<TEI><text><body><p><persName>張行成</persName>奏對</p></body></text></TEI>');
+    const doc = parse(
+      '<TEI><text><body><p><persName>張行成</persName>奏對</p></body></text></TEI>',
+    );
     const client = new FakeClient(() =>
       JSON.stringify({
         suggestions: [
-          { surface: '行成', occurrence: 1, tag: 'persName', action: 'add', confidence: 0.8, rationale: 'anaphora' },
+          {
+            surface: '行成',
+            occurrence: 1,
+            tag: 'persName',
+            action: 'add',
+            confidence: 0.8,
+            rationale: 'anaphora',
+          },
         ],
       }),
     );
@@ -84,12 +121,21 @@ describe('llmAudit', () => {
   });
 
   it('drops an unverifiable finding rather than applying it', async () => {
-    const doc = parse('<TEI><text><body><p><persName>張衡</persName>是天文學家</p></body></text></TEI>');
+    const doc = parse(
+      '<TEI><text><body><p><persName>張衡</persName>是天文學家</p></body></text></TEI>',
+    );
     const client = new FakeClient((_req, call) =>
       call === 1
         ? JSON.stringify({
             suggestions: [
-              { surface: '完全編造', occurrence: 1, tag: 'persName', action: 'remove', confidence: 0.8, rationale: 'r' },
+              {
+                surface: '完全編造',
+                occurrence: 1,
+                tag: 'persName',
+                action: 'remove',
+                confidence: 0.8,
+                rationale: 'r',
+              },
             ],
           })
         : JSON.stringify({ suggestions: [] }),
@@ -101,7 +147,9 @@ describe('llmAudit', () => {
   });
 
   it('drops a no-op retag where target tag equals the current tag', async () => {
-    const doc = parse('<TEI><text><body><p><persName>張衡</persName>是天文學家</p></body></text></TEI>');
+    const doc = parse(
+      '<TEI><text><body><p><persName>張衡</persName>是天文學家</p></body></text></TEI>',
+    );
     const client = new FakeClient((_req, call) =>
       call === 1
         ? JSON.stringify({

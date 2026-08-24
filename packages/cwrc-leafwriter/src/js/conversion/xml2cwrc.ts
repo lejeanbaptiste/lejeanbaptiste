@@ -157,8 +157,9 @@ class XML2CWRC {
 
     const bootstrapSchemaId =
       schemaManager.schemas.find((schema) => schema.id === 'teiLite')?.id ??
-      schemaManager.schemas.find((schema) => schema.mapping === 'teiLite' || schema.mapping === 'tei')
-        ?.id ??
+      schemaManager.schemas.find(
+        (schema) => schema.mapping === 'teiLite' || schema.mapping === 'tei',
+      )?.id ??
       schemaManager.schemas[0]?.id;
 
     if (bootstrapSchemaId && bootstrapSchemaId !== schemaManager.schemaId) {
@@ -487,9 +488,7 @@ class XML2CWRC {
 
       if (node.childNodes.length === 0) {
         openingTagString += '>';
-        closingTagString = canContainText
-          ? `\uFEFF</${htmlTag}>`
-          : `</${htmlTag}>`;
+        closingTagString = canContainText ? `\uFEFF</${htmlTag}>` : `</${htmlTag}>`;
       } else {
         openingTagString += '>';
         closingTagString = `</${htmlTag}>`;

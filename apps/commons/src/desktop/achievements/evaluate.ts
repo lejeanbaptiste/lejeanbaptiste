@@ -182,10 +182,7 @@ export const hasEmptyElement = (xml: string): boolean => {
   const names = EMPTY_HONOUR_TAGS.join('|');
   const selfClosing = new RegExp(`<(?:${names})(?:\\s[^<>]*?)?\\s*/>`, 'i');
   if (selfClosing.test(xml)) return true;
-  const emptyPair = new RegExp(
-    `<(${names})(?:\\s[^<>]*?)?>\\s*</\\1\\s*>`,
-    'i',
-  );
+  const emptyPair = new RegExp(`<(${names})(?:\\s[^<>]*?)?>\\s*</\\1\\s*>`, 'i');
   return emptyPair.test(xml);
 };
 

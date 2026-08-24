@@ -2,7 +2,11 @@ import { resolvePageBreakMarkers, tagPageBreaks } from './pageBreakDetection';
 
 const resolveAll = (paragraphs: string[]): string[] =>
   paragraphs.map((paragraph) => {
-    const resolved = resolvePageBreakMarkers(paragraph, (v) => v, (n) => `<pb n="${n}"/>`);
+    const resolved = resolvePageBreakMarkers(
+      paragraph,
+      (v) => v,
+      (n) => `<pb n="${n}"/>`,
+    );
     return 'soleMarker' in resolved ? resolved.soleMarker : resolved.text;
   });
 

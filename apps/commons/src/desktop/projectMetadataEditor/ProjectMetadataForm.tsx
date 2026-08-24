@@ -70,19 +70,22 @@ export const ProjectMetadataForm = ({
   const [pendingApplyToDocuments, setPendingApplyToDocuments] = useState(false);
   const [syncReport, setSyncReport] = useState<{ broken: number; conflicts: number } | null>(null);
 
-  const applyDialogState = useCallback((dialogState: ProjectMetadataDialogState | null) => {
-    if (dialogState) {
-      setState(dialogState);
-      setAlignmentUnit(dialogState.translation.alignmentUnit ?? 'p');
-      setLanguages(dialogState.translation.languages);
-      setSyncToCentral(dialogState.syncToCentral);
-      setSavedSyncToCentral(dialogState.syncToCentral);
-      setError(null);
-    } else {
-      setError(t('LWC.desktop.project.errors.could_not_load_edition_metadata'));
-    }
-    setLoading(false);
-  }, [t]);
+  const applyDialogState = useCallback(
+    (dialogState: ProjectMetadataDialogState | null) => {
+      if (dialogState) {
+        setState(dialogState);
+        setAlignmentUnit(dialogState.translation.alignmentUnit ?? 'p');
+        setLanguages(dialogState.translation.languages);
+        setSyncToCentral(dialogState.syncToCentral);
+        setSavedSyncToCentral(dialogState.syncToCentral);
+        setError(null);
+      } else {
+        setError(t('LWC.desktop.project.errors.could_not_load_edition_metadata'));
+      }
+      setLoading(false);
+    },
+    [t],
+  );
 
   useEffect(() => {
     if (!active) return;
@@ -91,21 +94,13 @@ export const ProjectMetadataForm = ({
   }, [active, applyDialogState, io]);
 
   const updateField = (path: string, value: string) => {
-    setState((prev) =>
-      prev ? { ...prev, values: { ...prev.values, [path]: value } } : prev,
-    );
+    setState((prev) => (prev ? { ...prev, values: { ...prev.values, [path]: value } } : prev));
   };
 
-  const updateCustom = (
-    index: number,
-    key: 'path' | 'label' | 'value',
-    value: string,
-  ) => {
+  const updateCustom = (index: number, key: 'path' | 'label' | 'value', value: string) => {
     setState((prev) => {
       if (!prev) return prev;
-      const custom = prev.custom.map((row, i) =>
-        i === index ? { ...row, [key]: value } : row,
-      );
+      const custom = prev.custom.map((row, i) => (i === index ? { ...row, [key]: value } : row));
       return { ...prev, custom };
     });
   };
@@ -123,9 +118,7 @@ export const ProjectMetadataForm = ({
 
   const removeCustomRow = (index: number) => {
     setState((prev) =>
-      prev
-        ? { ...prev, custom: prev.custom.filter((_, i) => i !== index) }
-        : prev,
+      prev ? { ...prev, custom: prev.custom.filter((_, i) => i !== index) } : prev,
     );
   };
 
@@ -196,8 +189,7 @@ export const ProjectMetadataForm = ({
   const isFirstSetup = state?.mode === 'firstSetup';
   const requiresLanguage =
     state?.fields.some((field) => field.path === SOURCE_LANGUAGE_PATH) ?? false;
-  const languageMissing =
-    requiresLanguage && !(state?.values[SOURCE_LANGUAGE_PATH] ?? '').trim();
+  const languageMissing = requiresLanguage && !(state?.values[SOURCE_LANGUAGE_PATH] ?? '').trim();
 
   const formBody = (
     <>
@@ -440,7 +432,12 @@ export const ProjectMetadataForm = ({
 
   const confirmDialogs = (
     <>
-      <Dialog open={confirmSyncOpen} onClose={() => setConfirmSyncOpen(false)} maxWidth="xs" fullWidth>
+      <Dialog
+        open={confirmSyncOpen}
+        onClose={() => setConfirmSyncOpen(false)}
+        maxWidth="xs"
+        fullWidth
+      >
         <DialogTitle>{t('LWC.desktop.project.sync_confirm_title')}</DialogTitle>
         <DialogContent>
           <DialogContentText>{t('LWC.desktop.project.sync_confirm_message')}</DialogContentText>
@@ -480,8 +477,17 @@ export const ProjectMetadataForm = ({
 
   if (layout === 'page') {
     return (
-      <Box sx={{ display: 'flex', flexDirection: 'column', height: '100vh', bgcolor: 'background.default' }}>
-        <Box sx={{ px: 2, py: 1.5, borderBottom: 1, borderColor: 'divider', WebkitAppRegion: 'drag' }}>
+      <Box
+        sx={{
+          display: 'flex',
+          flexDirection: 'column',
+          height: '100vh',
+          bgcolor: 'background.default',
+        }}
+      >
+        <Box
+          sx={{ px: 2, py: 1.5, borderBottom: 1, borderColor: 'divider', WebkitAppRegion: 'drag' }}
+        >
           <Typography variant="h6">{t('LWC.desktop.project.settings')}</Typography>
           <Typography color="text.secondary" variant="body2">
             {isFirstSetup

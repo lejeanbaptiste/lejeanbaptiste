@@ -26,11 +26,11 @@ After the user picks a schema (first-time setup only), a **Project settings** di
 
 ## Why this approach
 
-| Approach | Pros | Cons |
-|----------|------|------|
-| Online URLs only (current default) | Small app; always “latest” TEI | Needs network; not reproducible; offline failures |
-| Pre-bundle everything in the app | Offline first launch | ~24–40 MB redundant; app updates tied to TEI releases |
-| **Copy into project on open/setup (chosen)** | Self-contained; offline; DH best practice; ~1–3 MB per project | One-time download; update UX to maintain |
+| Approach                                     | Pros                                                           | Cons                                                  |
+| -------------------------------------------- | -------------------------------------------------------------- | ----------------------------------------------------- |
+| Online URLs only (current default)           | Small app; always “latest” TEI                                 | Needs network; not reproducible; offline failures     |
+| Pre-bundle everything in the app             | Offline first launch                                           | ~24–40 MB redundant; app updates tied to TEI releases |
+| **Copy into project on open/setup (chosen)** | Self-contained; offline; DH best practice; ~1–3 MB per project | One-time download; update UX to maintain              |
 
 Modern TEI P5 RelaxNG releases ship **monolithic** `.rng` files (~1 MB each), so copy-on-setup is a single-file download per schema.
 
@@ -38,23 +38,23 @@ Modern TEI P5 RelaxNG releases ship **monolithic** `.rng` files (~1 MB each), so
 
 ## What already exists
 
-| Capability | Status | Where |
-|------------|--------|-------|
-| Built-in schema catalog | Done | `packages/cwrc-leafwriter/src/config/schemas.ts` |
-| Schema picker UI | Done | `SelectSchemaDialog`, `NativeSchemaPickerPage` |
-| Project file + `schema/` detection | Done | `apps/*/src/desktop/projectFile.ts` |
-| Resolve local schemas when opening files | Done | `resolveDocumentSchemas.ts` |
-| RelaxNG validation | Done | `@cwrc/leafwriter-validator` |
-| SHA-256 hash for remote schema changes | Done | `cwrc-leafwriter-validator/src/conversion.ts` |
-| Desktop Settings (locale, theme, warnings, encoder name) | Done | `NativeSettingsPage`, `project-prefs.json` |
-| **Open Project + schema setup wizard** | **Done (Phase 1)** | `NativeSchemaSetupPage`, `schemaSetup.ts`, `openProject` onboarding |
-| **Project metadata dialog + JSON** | **Done (Phase 1)** | `NativeProjectMetadataPage`, `projectMetadata.ts` |
-| **Apply metadata to existing files** | **Done (Phase 1)** | Edition metadata → Save and update documents… |
-| **New File (⌘N) + skeleton merge** | **Done (Phase 2)** | `project/actions.ts` `newFile`, `schemaTemplates.ts`, `mergeMetadataIntoHeader` |
-| **Temp file + Save As flow** | **Done (Phase 2)** | Save redirects temp tabs to Save As; explorer default directory; temp close prompt + cleanup |
-| **Phase 1 smoke test** | **Done (June 2026)** | `docs/smoke_test.md` |
-| **Phase 2 smoke test** | **Ready for manual pass** | `docs/smoke_test.md` section I |
-| **Schema update alert** | **Done (June 2026)** | `docs/smoke_test.md` section L |
+| Capability                                               | Status                    | Where                                                                                        |
+| -------------------------------------------------------- | ------------------------- | -------------------------------------------------------------------------------------------- |
+| Built-in schema catalog                                  | Done                      | `packages/cwrc-leafwriter/src/config/schemas.ts`                                             |
+| Schema picker UI                                         | Done                      | `SelectSchemaDialog`, `NativeSchemaPickerPage`                                               |
+| Project file + `schema/` detection                       | Done                      | `apps/*/src/desktop/projectFile.ts`                                                          |
+| Resolve local schemas when opening files                 | Done                      | `resolveDocumentSchemas.ts`                                                                  |
+| RelaxNG validation                                       | Done                      | `@cwrc/leafwriter-validator`                                                                 |
+| SHA-256 hash for remote schema changes                   | Done                      | `cwrc-leafwriter-validator/src/conversion.ts`                                                |
+| Desktop Settings (locale, theme, warnings, encoder name) | Done                      | `NativeSettingsPage`, `project-prefs.json`                                                   |
+| **Open Project + schema setup wizard**                   | **Done (Phase 1)**        | `NativeSchemaSetupPage`, `schemaSetup.ts`, `openProject` onboarding                          |
+| **Project metadata dialog + JSON**                       | **Done (Phase 1)**        | `NativeProjectMetadataPage`, `projectMetadata.ts`                                            |
+| **Apply metadata to existing files**                     | **Done (Phase 1)**        | Edition metadata → Save and update documents…                                                |
+| **New File (⌘N) + skeleton merge**                       | **Done (Phase 2)**        | `project/actions.ts` `newFile`, `schemaTemplates.ts`, `mergeMetadataIntoHeader`              |
+| **Temp file + Save As flow**                             | **Done (Phase 2)**        | Save redirects temp tabs to Save As; explorer default directory; temp close prompt + cleanup |
+| **Phase 1 smoke test**                                   | **Done (June 2026)**      | `docs/smoke_test.md`                                                                         |
+| **Phase 2 smoke test**                                   | **Ready for manual pass** | `docs/smoke_test.md` section I                                                               |
+| **Schema update alert**                                  | **Done (June 2026)**      | `docs/smoke_test.md` section L                                                               |
 
 ---
 
@@ -135,55 +135,55 @@ Field paths are **TEI element paths** relative to `teiHeader` (e.g. `encodingDes
 
 ### Open Project (replaces separate “New Project”)
 
-| # | Decision |
-|---|----------|
-| — | **File → Open Project…** only; picker may create a new folder. |
-| — | On open: scan for `schema/*.rng` and/or `jean-baptiste.project.json`. |
-| — | **If schema found:** use it; skip schema picker. |
-| — | **If no schema:** user chooses — **download from catalog** (tiered picker; see **#18**) **or** **use local schema file…** (copy into `schema/`). |
-| — | After schema is established (first setup): show **Project metadata** dialog (see below). |
-| — | Failed download: **all-or-nothing rollback**. |
-| — | Opening a folder that already has files is allowed. |
+| #   | Decision                                                                                                                                         |
+| --- | ------------------------------------------------------------------------------------------------------------------------------------------------ |
+| —   | **File → Open Project…** only; picker may create a new folder.                                                                                   |
+| —   | On open: scan for `schema/*.rng` and/or `jean-baptiste.project.json`.                                                                            |
+| —   | **If schema found:** use it; skip schema picker.                                                                                                 |
+| —   | **If no schema:** user chooses — **download from catalog** (tiered picker; see **#18**) **or** **use local schema file…** (copy into `schema/`). |
+| —   | After schema is established (first setup): show **Project metadata** dialog (see below).                                                         |
+| —   | Failed download: **all-or-nothing rollback**.                                                                                                    |
+| —   | Opening a folder that already has files is allowed.                                                                                              |
 
 ### Project metadata (#15 — locked)
 
-| # | Decision |
-|---|----------|
-| — | Shown **after schema selection** on first project setup. |
-| — | **Must Save once** on first setup — no Skip/Cancel that leaves project without `project-metadata.json` (fields inside may be blank). |
-| — | **Not** shown on every project open if `schema/project-metadata.json` already exists. |
-| — | Dialog fields from **`schemaMetadataFields`** (shared TEI set for `teiAll` + `teiLite` in v1). |
-| — | User can **add custom fields** at the bottom (path + label + value). |
-| — | **Blanks stay blank** — omitted from JSON / not injected into new files. |
-| — | Stored in **`schema/project-metadata.json`**; referenced from project JSON. |
-| — | Copying **`schema/`** to a new project brings metadata + RNG + CSS (validate `catalogId` / paths if schema differs). |
-| — | **Settings → encoder name** pre-fills **`titleStmt/principal`** on new project setup only; stored value lives in project JSON; changing Settings later does not auto-update projects. |
-| — | **Per-file:** `<title>` always **`Untitled`** on New File (not a project-default field). **`sourceDesc`** excluded from bulk apply by default (often document-specific). |
-| — | **No `xmlns:rdf`** in skeleton unless schema/user requires it. |
+| #   | Decision                                                                                                                                                                              |
+| --- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| —   | Shown **after schema selection** on first project setup.                                                                                                                              |
+| —   | **Must Save once** on first setup — no Skip/Cancel that leaves project without `project-metadata.json` (fields inside may be blank).                                                  |
+| —   | **Not** shown on every project open if `schema/project-metadata.json` already exists.                                                                                                 |
+| —   | Dialog fields from **`schemaMetadataFields`** (shared TEI set for `teiAll` + `teiLite` in v1).                                                                                        |
+| —   | User can **add custom fields** at the bottom (path + label + value).                                                                                                                  |
+| —   | **Blanks stay blank** — omitted from JSON / not injected into new files.                                                                                                              |
+| —   | Stored in **`schema/project-metadata.json`**; referenced from project JSON.                                                                                                           |
+| —   | Copying **`schema/`** to a new project brings metadata + RNG + CSS (validate `catalogId` / paths if schema differs).                                                                  |
+| —   | **Settings → encoder name** pre-fills **`titleStmt/principal`** on new project setup only; stored value lives in project JSON; changing Settings later does not auto-update projects. |
+| —   | **Per-file:** `<title>` always **`Untitled`** on New File (not a project-default field). **`sourceDesc`** excluded from bulk apply by default (often document-specific).              |
+| —   | **No `xmlns:rdf`** in skeleton unless schema/user requires it.                                                                                                                        |
 
 **v1 project metadata fields** (same for `teiAll` and `teiLite`; plus custom rows):
 
-| Label | TEI path (`teiHeader` relative) |
-|-------|----------------------------------|
-| Licence / rights | `publicationStmt/availability/licence` |
-| Publisher / distributor | `publicationStmt/distributor` |
-| Funder | `titleStmt/funder` |
-| Principal (encoder) | `titleStmt/principal` |
-| Encoding project description | `encodingDesc/projectDesc/p` |
-| Default language | `profileDesc/langUsage/language` |
+| Label                        | TEI path (`teiHeader` relative)        |
+| ---------------------------- | -------------------------------------- |
+| Licence / rights             | `publicationStmt/availability/licence` |
+| Publisher / distributor      | `publicationStmt/distributor`          |
+| Funder                       | `titleStmt/funder`                     |
+| Principal (encoder)          | `titleStmt/principal`                  |
+| Encoding project description | `encodingDesc/projectDesc/p`           |
+| Default language             | `profileDesc/langUsage/language`       |
 
 **Local schema file:** if TEI-like, use the same field set; if unknown/non-TEI, **custom rows only** + short explanatory note (no `sourceUrl`, no update checks).
 
 ### Per-file metadata panel (locked)
 
-| # | Decision |
-|---|----------|
-| — | **Right-hand panel** (LEAF-Writer east rail / utilities area), not a left-sidebar tab. |
-| — | **First icon** in the right-rail icon strip; **default visible panel when a file is opened**. |
-| — | Right-rail uses **icons instead of text labels** to save space (file metadata icon first; validation, XML viewer, etc. follow). |
-| — | Edits **current file** header fields — at minimum **`titleStmt/title`**, **`sourceDesc`** (and room to grow). Writes through to tab XML / editor. |
-| — | **Edition metadata** (project defaults) remains **Project → Edition metadata…** dialog — not this panel. |
-| — | Distinct from project JSON: panel shows **effective values in this file**; changing title here does not change `project-metadata.json`. |
+| #   | Decision                                                                                                                                          |
+| --- | ------------------------------------------------------------------------------------------------------------------------------------------------- |
+| —   | **Right-hand panel** (LEAF-Writer east rail / utilities area), not a left-sidebar tab.                                                            |
+| —   | **First icon** in the right-rail icon strip; **default visible panel when a file is opened**.                                                     |
+| —   | Right-rail uses **icons instead of text labels** to save space (file metadata icon first; validation, XML viewer, etc. follow).                   |
+| —   | Edits **current file** header fields — at minimum **`titleStmt/title`**, **`sourceDesc`** (and room to grow). Writes through to tab XML / editor. |
+| —   | **Edition metadata** (project defaults) remains **Project → Edition metadata…** dialog — not this panel.                                          |
+| —   | Distinct from project JSON: panel shows **effective values in this file**; changing title here does not change `project-metadata.json`.           |
 
 **Minimal structural skeleton** (always present for validation, regardless of metadata blanks):
 
@@ -201,21 +201,21 @@ Non-blank entries from `project-metadata.json` are **merged** into this structur
 
 **Harmonisation model:**
 
-| Scope | Examples | Storage |
-|-------|----------|---------|
-| Project-wide | licence, funder, encodingDesc, principal | `project-metadata.json` |
-| Per-file | title, sourceDesc (usually), revisionDesc | In each XML file |
+| Scope        | Examples                                  | Storage                 |
+| ------------ | ----------------------------------------- | ----------------------- |
+| Project-wide | licence, funder, encodingDesc, principal  | `project-metadata.json` |
+| Per-file     | title, sourceDesc (usually), revisionDesc | In each XML file        |
 
 ### Edition metadata menu + propagation
 
-| # | Decision |
-|---|----------|
-| — | **Project → Edition metadata…** re-opens the dialog for the current project. |
-| — | **Save** writes `schema/project-metadata.json`. |
-| — | If defaults **changed** and project contains XML files → confirmation dialog. |
-| — | **Save defaults only** — JSON updated; existing files unchanged; new files use new defaults. |
-| — | **Save and update documents…** — second step: apply **managed fields** to all project XML files (see below). |
-| — | **Cancel** — revert dialog without saving. |
+| #   | Decision                                                                                                     |
+| --- | ------------------------------------------------------------------------------------------------------------ |
+| —   | **Project → Edition metadata…** re-opens the dialog for the current project.                                 |
+| —   | **Save** writes `schema/project-metadata.json`.                                                              |
+| —   | If defaults **changed** and project contains XML files → confirmation dialog.                                |
+| —   | **Save defaults only** — JSON updated; existing files unchanged; new files use new defaults.                 |
+| —   | **Save and update documents…** — second step: apply **managed fields** to all project XML files (see below). |
+| —   | **Cancel** — revert dialog without saving.                                                                   |
 
 **Apply to existing files (v1 rules):**
 
@@ -230,59 +230,59 @@ Non-blank entries from `project-metadata.json` are **merged** into this structur
 
 ### New File (⌘N)
 
-| # | Decision |
-|---|----------|
-| — | No auto-document when project opens. |
-| — | ⌘N without project → Open Project prompt. |
-| — | Requires project schema + metadata file (metadata may be empty `{}`). |
-| — | Temp file on disk; tab **`untitled.xml`**; Save As into project. |
-| — | Save As initial directory: **explorer-selected folder** if a folder is selected; if a **file** is selected, its **parent folder**; else **project root**. User can navigate elsewhere in the dialog. |
-| — | Closing/discarding unsaved temp tab → **prompt** (Save / Don’t save / Cancel). |
-| — | Skeleton = minimal header + merged **non-blank** project metadata + `text/body/div/p`. **One shared body template** for **`teiAll`** and **`teiLite`** (validate against both). |
-| — | Caret in first `<p>`. Relative `xml-model` / `xml-stylesheet` PIs. |
+| #   | Decision                                                                                                                                                                                             |
+| --- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| —   | No auto-document when project opens.                                                                                                                                                                 |
+| —   | ⌘N without project → Open Project prompt.                                                                                                                                                            |
+| —   | Requires project schema + metadata file (metadata may be empty `{}`).                                                                                                                                |
+| —   | Temp file on disk; tab **`untitled.xml`**; Save As into project.                                                                                                                                     |
+| —   | Save As initial directory: **explorer-selected folder** if a folder is selected; if a **file** is selected, its **parent folder**; else **project root**. User can navigate elsewhere in the dialog. |
+| —   | Closing/discarding unsaved temp tab → **prompt** (Save / Don’t save / Cancel).                                                                                                                       |
+| —   | Skeleton = minimal header + merged **non-blank** project metadata + `text/body/div/p`. **One shared body template** for **`teiAll`** and **`teiLite`** (validate against both).                      |
+| —   | Caret in first `<p>`. Relative `xml-model` / `xml-stylesheet` PIs.                                                                                                                                   |
 
 ### Switching projects with unsaved work
 
-| # | Decision |
-|---|----------|
-| — | One dialog: unsaved documents list (Save all / Don’t save / Cancel). |
+| #   | Decision                                                             |
+| --- | -------------------------------------------------------------------- |
+| —   | One dialog: unsaved documents list (Save all / Don’t save / Cancel). |
 
 ### Schema updates (phase 3)
 
-| # | Decision |
-|---|----------|
-| — | Throttled check on project open when online; silent if unchanged. |
-| — | Bundled RNG + CSS update with `schema/_archive/` backup. |
-| — | After schema upgrade: validate `project-metadata.json` field paths still legal. |
+| #   | Decision                                                                        |
+| --- | ------------------------------------------------------------------------------- |
+| —   | Throttled check on project open when online; silent if unchanged.               |
+| —   | Bundled RNG + CSS update with `schema/_archive/` backup.                        |
+| —   | After schema upgrade: validate `project-metadata.json` field paths still legal. |
 
 ### Schema catalog (#18 — locked)
 
-| # | Decision |
-|---|----------|
-| — | **Single source of truth:** `packages/cwrc-leafwriter/src/config/schemas.ts`, exposed as editor `schemasList` (same list as `SelectSchemaDialog` / `NativeSchemaPickerPage`). Do not maintain a separate project-only catalog. |
-| — | **`apps/commons/src/config/schemas.ts`** (CWRC Event, CWRC Lite, REED, etc.) remains **localhost dev only** for now; optional desktop merge later. |
-| — | **v1 enabled for full project flow** (download + metadata field map + New File skeleton): **`teiAll`**, **`teiLite`**, **`teiSimplePrint`**, **`jTei`**, **`orlando`**. |
-| — | **Tiered picker UI:** show TEI All + TEI Lite prominently; **More schemas…** lists `teiSimplePrint`, `jTei`, `orlando` (all selectable). |
-| — | **Use local schema file…** always available — copy into `schema/` **keeping original filenames** (`.rng`, `.css`, etc.); no `sourceUrl`; metadata field set per TEI vs custom rules above. |
-| — | Reuse **`NativeSchemaPickerPage`** / **`SelectSchemaDialog`** patterns where possible; pass `enabledCatalogIds` or filter for project setup. |
-| — | **Phased delivery:** `teiSimplePrint`, `jTei`, and `orlando` shipped in Phase 4 (Orlando uses separate non-TEI header field map). |
+| #   | Decision                                                                                                                                                                                                                       |
+| --- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| —   | **Single source of truth:** `packages/cwrc-leafwriter/src/config/schemas.ts`, exposed as editor `schemasList` (same list as `SelectSchemaDialog` / `NativeSchemaPickerPage`). Do not maintain a separate project-only catalog. |
+| —   | **`apps/commons/src/config/schemas.ts`** (CWRC Event, CWRC Lite, REED, etc.) remains **localhost dev only** for now; optional desktop merge later.                                                                             |
+| —   | **v1 enabled for full project flow** (download + metadata field map + New File skeleton): **`teiAll`**, **`teiLite`**, **`teiSimplePrint`**, **`jTei`**, **`orlando`**.                                                        |
+| —   | **Tiered picker UI:** show TEI All + TEI Lite prominently; **More schemas…** lists `teiSimplePrint`, `jTei`, `orlando` (all selectable).                                                                                       |
+| —   | **Use local schema file…** always available — copy into `schema/` **keeping original filenames** (`.rng`, `.css`, etc.); no `sourceUrl`; metadata field set per TEI vs custom rules above.                                     |
+| —   | Reuse **`NativeSchemaPickerPage`** / **`SelectSchemaDialog`** patterns where possible; pass `enabledCatalogIds` or filter for project setup.                                                                                   |
+| —   | **Phased delivery:** `teiSimplePrint`, `jTei`, and `orlando` shipped in Phase 4 (Orlando uses separate non-TEI header field map).                                                                                              |
 
 Current built-in catalog entries:
 
-| id | name | mapping | v1 project flow |
-|----|------|---------|-----------------|
-| `teiAll` | TEI All | tei | **Enabled** |
-| `teiLite` | TEI Lite | teiLite | **Enabled** |
-| `teiSimplePrint` | TEI Simple Print | tei | **Enabled** (More…) |
-| `jTei` | jTEI Article | tei | **Enabled** (More…) |
-| `orlando` | Orlando | orlando | **Enabled** (More…) |
+| id               | name             | mapping | v1 project flow     |
+| ---------------- | ---------------- | ------- | ------------------- |
+| `teiAll`         | TEI All          | tei     | **Enabled**         |
+| `teiLite`        | TEI Lite         | teiLite | **Enabled**         |
+| `teiSimplePrint` | TEI Simple Print | tei     | **Enabled** (More…) |
+| `jTei`           | jTEI Article     | tei     | **Enabled** (More…) |
+| `orlando`        | Orlando          | orlando | **Enabled** (More…) |
 
 ### Technical
 
-| # | Decision |
-|---|----------|
-| — | RelaxNG only (Salve). |
-| — | Monolithic `.rng` for TEI P5 4.x downloads. |
+| #   | Decision                                    |
+| --- | ------------------------------------------- |
+| —   | RelaxNG only (Salve).                       |
+| —   | Monolithic `.rng` for TEI P5 4.x downloads. |
 
 ---
 
@@ -388,23 +388,23 @@ Current built-in catalog entries:
 
 ## Key files (planned)
 
-| File | Role |
-|------|------|
-| `apps/desktop/src/main.ts` | Menus: Open Project, New File ⌘N, Edition metadata |
-| `apps/desktop/src/projectFile.ts` | Schema setup, types, metadata path |
-| `apps/commons/src/overmind/project/actions.ts` | openProject, metadata save, applyToFiles, newFile |
-| `apps/commons/src/desktop/useProjectMenu.ts` | Menu + keyboard bridge |
-| `apps/commons/src/desktop/schemaSetup.ts` (new) | Download, copy, hash, rollback |
-| `apps/commons/src/desktop/projectMetadata.ts` (new) | JSON I/O, merge into teiHeader, apply to files |
-| `apps/commons/src/desktop/schemaMetadataFields.ts` (new) | Per-catalog dialog field definitions |
-| `apps/commons/src/desktop/schemaTemplates.ts` (new) | Body + minimal header shell |
-| `apps/commons/src/desktop/checkSchemaUpdate.ts` (new) | Throttled update check |
-| `apps/commons/src/pages/project/NativeSettingsPage.tsx` | Encoder name setting |
-| `packages/cwrc-leafwriter/src/config/schemas.ts` | Catalog source of truth (URLs) |
-| `apps/commons/src/desktop/schemaCatalog.ts` (new) | v1 `enabledCatalogIds`, tiered picker helpers |
-| `SelectSchemaDialog` / `NativeSchemaPickerPage` | Reuse for project schema pick |
-| `packages/cwrc-leafwriter/src/layout/Utilities.tsx` (or desktop override) | Right-rail icons; default panel on open |
-| `apps/commons/src/desktop/FileMetadataPanel.tsx` (new) | Per-file header fields bound to active tab |
+| File                                                                      | Role                                               |
+| ------------------------------------------------------------------------- | -------------------------------------------------- |
+| `apps/desktop/src/main.ts`                                                | Menus: Open Project, New File ⌘N, Edition metadata |
+| `apps/desktop/src/projectFile.ts`                                         | Schema setup, types, metadata path                 |
+| `apps/commons/src/overmind/project/actions.ts`                            | openProject, metadata save, applyToFiles, newFile  |
+| `apps/commons/src/desktop/useProjectMenu.ts`                              | Menu + keyboard bridge                             |
+| `apps/commons/src/desktop/schemaSetup.ts` (new)                           | Download, copy, hash, rollback                     |
+| `apps/commons/src/desktop/projectMetadata.ts` (new)                       | JSON I/O, merge into teiHeader, apply to files     |
+| `apps/commons/src/desktop/schemaMetadataFields.ts` (new)                  | Per-catalog dialog field definitions               |
+| `apps/commons/src/desktop/schemaTemplates.ts` (new)                       | Body + minimal header shell                        |
+| `apps/commons/src/desktop/checkSchemaUpdate.ts` (new)                     | Throttled update check                             |
+| `apps/commons/src/pages/project/NativeSettingsPage.tsx`                   | Encoder name setting                               |
+| `packages/cwrc-leafwriter/src/config/schemas.ts`                          | Catalog source of truth (URLs)                     |
+| `apps/commons/src/desktop/schemaCatalog.ts` (new)                         | v1 `enabledCatalogIds`, tiered picker helpers      |
+| `SelectSchemaDialog` / `NativeSchemaPickerPage`                           | Reuse for project schema pick                      |
+| `packages/cwrc-leafwriter/src/layout/Utilities.tsx` (or desktop override) | Right-rail icons; default panel on open            |
+| `apps/commons/src/desktop/FileMetadataPanel.tsx` (new)                    | Per-file header fields bound to active tab         |
 
 ---
 
@@ -420,26 +420,26 @@ Current built-in catalog entries:
 
 ## Testing plan
 
-| Case | Expect |
-|------|--------|
-| First open, no schema | Schema wizard → metadata dialog → JSON written |
-| Catalog picker v1 | TEI All + Lite enabled; More… shows other entries |
-| Download teiAll / teiLite | Files in `schema/`; provenance in project JSON |
-| Re-open project | No metadata dialog if JSON exists |
-| Blank metadata fields | Omitted from JSON; new files get minimal header only |
-| Settings encoder name | Pre-filled in metadata dialog on new setup |
-| Copy `schema/` to new project | Metadata + RNG available |
-| Edition metadata → Save only | JSON updated; XML unchanged |
-| Edition metadata → Apply all | Managed fields updated; title/sourceDesc skipped |
-| Clear default + apply without “clear from files” | Old XML values kept |
-| ⌘N | Merged header validates; Untitled title |
-| Close unsaved temp tab | Prompt Save / Don’t save / Cancel |
-| First metadata dialog | Cannot dismiss without Save |
-| Open file | File metadata panel visible by default (right rail) |
-| Apply metadata to files | All `*.xml` under root; title/sourceDesc skipped |
-| Metadata apply with dirty tabs | Warning / prompt |
-| Local schema copy | Original `.rng` / `.css` filenames preserved |
-| Schema update | Metadata paths re-validated |
+| Case                                             | Expect                                               |
+| ------------------------------------------------ | ---------------------------------------------------- |
+| First open, no schema                            | Schema wizard → metadata dialog → JSON written       |
+| Catalog picker v1                                | TEI All + Lite enabled; More… shows other entries    |
+| Download teiAll / teiLite                        | Files in `schema/`; provenance in project JSON       |
+| Re-open project                                  | No metadata dialog if JSON exists                    |
+| Blank metadata fields                            | Omitted from JSON; new files get minimal header only |
+| Settings encoder name                            | Pre-filled in metadata dialog on new setup           |
+| Copy `schema/` to new project                    | Metadata + RNG available                             |
+| Edition metadata → Save only                     | JSON updated; XML unchanged                          |
+| Edition metadata → Apply all                     | Managed fields updated; title/sourceDesc skipped     |
+| Clear default + apply without “clear from files” | Old XML values kept                                  |
+| ⌘N                                               | Merged header validates; Untitled title              |
+| Close unsaved temp tab                           | Prompt Save / Don’t save / Cancel                    |
+| First metadata dialog                            | Cannot dismiss without Save                          |
+| Open file                                        | File metadata panel visible by default (right rail)  |
+| Apply metadata to files                          | All `*.xml` under root; title/sourceDesc skipped     |
+| Metadata apply with dirty tabs                   | Warning / prompt                                     |
+| Local schema copy                                | Original `.rng` / `.css` filenames preserved         |
+| Schema update                                    | Metadata paths re-validated                          |
 
 ---
 

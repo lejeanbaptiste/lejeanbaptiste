@@ -194,12 +194,7 @@ describe('promoteToCentralSqlite', () => {
     ]);
     const central = makeStore();
 
-    const first = await promoteToCentralSqlite(
-      project.store,
-      central.store,
-      'person-pedb-1',
-      USER,
-    );
+    const first = await promoteToCentralSqlite(project.store, central.store, 'person-pedb-1', USER);
     const second = await promoteToCentralSqlite(
       project.store,
       central.store,

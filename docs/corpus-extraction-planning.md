@@ -6,10 +6,10 @@
 
 Scholars routinely read pre-modern East Asian texts in web corpora (CTEXT, CBETA, Scripta Sinica, Kanripo, Wikisource, 識典古籍, BDRC, Aozora Bunko, NDL, …). Copy-paste loses:
 
-- bibliographic metadata and stable identifiers  
-- paragraph / section / juan structure  
-- page breaks and image–text alignment  
-- footnotes, variant characters, ruby, punctuation layers  
+- bibliographic metadata and stable identifiers
+- paragraph / section / juan structure
+- page breaks and image–text alignment
+- footnotes, variant characters, ruby, punctuation layers
 - licensing / attribution strings required by the host
 
 We want a one-click (or URL-paste) path from **“what I’m reading in the browser”** to **“TEI snippet or file in my project”**, without re-keying.
@@ -93,7 +93,7 @@ All adapters target the same JSON shape (TypeScript types in the extension repo;
 
 ```typescript
 interface CorpusAdapter {
-  id: string;                          // e.g. "cbeta"
+  id: string; // e.g. "cbeta"
   match(url: URL): boolean;
   detectWorkRef(doc: Document, url: URL): WorkRef | null;
   preferCanonical?(ref: WorkRef): Promise<ExtractedDocument>;
@@ -104,30 +104,30 @@ interface CorpusAdapter {
 
 **Resolution order per page:**
 
-1. Parse stable ID from URL / page meta / JSON-LD  
-2. If `preferCanonical` exists and succeeds → use it  
-3. Else intercept recent network payloads  
-4. Else DOM scrape with site-specific selectors  
+1. Parse stable ID from URL / page meta / JSON-LD
+2. If `preferCanonical` exists and succeeds → use it
+3. Else intercept recent network payloads
+4. Else DOM scrape with site-specific selectors
 5. Attach `warnings` for anything inferred not read
 
 ### TEI emitter (minimal profile)
 
 Target **TEI Lite + sourceDesc + pb/lb/note** — enough for FairCopy `import-tei.js` and leaf-writer validation:
 
-- `<teiHeader>` with `<fileDesc><titleStmt>`, `<publicationStmt>`, `<sourceDesc><bibl>`  
-- `<text xml:lang="…"><body>` with `<div type="chapter|juan">`, `<p>`, `<pb/>`, `<note place="foot">`  
+- `<teiHeader>` with `<fileDesc><titleStmt>`, `<publicationStmt>`, `<sourceDesc><bibl>`
+- `<text xml:lang="…"><body>` with `<div type="chapter|juan">`, `<p>`, `<pb/>`, `<note place="foot">`
 - `<idno type="URI">` and corpus-specific ids (`@corresp` to CBETA work codes, CTP URNs, KR ids, BDRC `bdr:…`, Wikisource page ids)
 
 Optional later: `<facsimile>` stub pointing at IIIF when the host exposes image URLs.
 
 ### Browser extension shape (Manifest V3)
 
-| Component | Role |
-|-----------|------|
-| Content scripts | Per-domain DOM hooks; optional `webRequest`/debugger for XHR (where permitted) |
-| Service worker | Adapter registry, fetch canonical sources, build TEI, download |
+| Component          | Role                                                                            |
+| ------------------ | ------------------------------------------------------------------------------- |
+| Content scripts    | Per-domain DOM hooks; optional `webRequest`/debugger for XHR (where permitted)  |
+| Service worker     | Adapter registry, fetch canonical sources, build TEI, download                  |
 | Side panel / popup | Preview structure tree, warnings, “Export TEI” / “Copy” / “Open in leaf-writer” |
-| Options | API keys (CTEXT), GitHub token (Kanripo), default language/whitespace policy |
+| Options            | API keys (CTEXT), GitHub token (Kanripo), default language/whitespace policy    |
 
 **Future:** native messaging to leaf-writer desktop (same payload as file download).
 
@@ -137,21 +137,21 @@ Optional later: `<facsimile>` stub pointing at IIIF when the host exposes image 
 
 Priority tiers reflect **quality of structured access** and **overlap with leaf-writer user base**, not corpus size.
 
-| Tier | Corpus | Language | Best access | Extension role |
-|------|--------|----------|-------------|------------------|
-| **P0** | CBETA | zh (Buddhist) | TEI P5 GitHub + [CBETA API](https://cbdata.dila.edu.tw/stable/static_pages/export) | ID from URL → fetch TEI |
-| **P0** | CTEXT | lzh/zh | [CTP JSON API](https://ctext.org/tools/api) + [plugins](https://ctext.org/tools/plugins/ens) | URN from page → `gettext` |
-| **P1** | Kanripo | lzh | [API v1](https://www.kanripo.org/api) + GitHub TEI/Mandoku | KR id → clone/fetch edition file |
-| **P1** | Wikisource | multi | [MediaWiki Action API](https://www.mediawiki.org/wiki/API:Parsing_wikitext) | Page title → wikitext → TEI |
-| **P1** | 識典古籍 Shidianguji | zh | DOM + network (no public bulk API yet) | Scrape / intercept; high user demand |
-| **P2** | Scripta Sinica | zh | DOM only (subscription) | Scrape; institutional login caveat |
-| **P2** | BDRC / BUDA | bo | [purl.bdrc.io](http://purl.bdrc.io/index) + etext chunks | `bdr:UT…` → etext graph |
-| **P2** | OpenPecha / Pecha.org | bo | [pecha.org API](https://forum.openpecha.org/t/retrieving-buddhist-text-commentaries-using-pecha-org-api-a-step-by-step-guide/78), HuggingFace | Segment id → standoff layers |
-| **P2** | Aozora Bunko | ja | [GitHub corpus](https://github.com/aozorabunko/aozorabunko) + XHTML files | Card id → fetch XHTML |
-| **P2** | NDL Kotenseki / Next DL | ja/zh (koten) | [NDL Lab API](https://lab.ndl.go.jp/) + OCR JSON | Item id → text + coords |
-| **P3** | NIJL / Kokusho DB | ja | [古典籍 DBs](https://www.nijl.ac.jp/pages/database/index.html), [open dataset](https://www.nijl.ac.jp/pages/cijproject/info/dataset.html) | DOI / bib id → bulk or API |
-| **P3** | Japan Search | ja | Aggregator API | Resolve to provider adapter |
-| **P3** | Adarsha / ALL | bo | Web reader; training data via BDRC OCR ecosystem | DOM; link to BDRC ids where possible |
+| Tier   | Corpus                  | Language      | Best access                                                                                                                                   | Extension role                       |
+| ------ | ----------------------- | ------------- | --------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------ |
+| **P0** | CBETA                   | zh (Buddhist) | TEI P5 GitHub + [CBETA API](https://cbdata.dila.edu.tw/stable/static_pages/export)                                                            | ID from URL → fetch TEI              |
+| **P0** | CTEXT                   | lzh/zh        | [CTP JSON API](https://ctext.org/tools/api) + [plugins](https://ctext.org/tools/plugins/ens)                                                  | URN from page → `gettext`            |
+| **P1** | Kanripo                 | lzh           | [API v1](https://www.kanripo.org/api) + GitHub TEI/Mandoku                                                                                    | KR id → clone/fetch edition file     |
+| **P1** | Wikisource              | multi         | [MediaWiki Action API](https://www.mediawiki.org/wiki/API:Parsing_wikitext)                                                                   | Page title → wikitext → TEI          |
+| **P1** | 識典古籍 Shidianguji    | zh            | DOM + network (no public bulk API yet)                                                                                                        | Scrape / intercept; high user demand |
+| **P2** | Scripta Sinica          | zh            | DOM only (subscription)                                                                                                                       | Scrape; institutional login caveat   |
+| **P2** | BDRC / BUDA             | bo            | [purl.bdrc.io](http://purl.bdrc.io/index) + etext chunks                                                                                      | `bdr:UT…` → etext graph              |
+| **P2** | OpenPecha / Pecha.org   | bo            | [pecha.org API](https://forum.openpecha.org/t/retrieving-buddhist-text-commentaries-using-pecha-org-api-a-step-by-step-guide/78), HuggingFace | Segment id → standoff layers         |
+| **P2** | Aozora Bunko            | ja            | [GitHub corpus](https://github.com/aozorabunko/aozorabunko) + XHTML files                                                                     | Card id → fetch XHTML                |
+| **P2** | NDL Kotenseki / Next DL | ja/zh (koten) | [NDL Lab API](https://lab.ndl.go.jp/) + OCR JSON                                                                                              | Item id → text + coords              |
+| **P3** | NIJL / Kokusho DB       | ja            | [古典籍 DBs](https://www.nijl.ac.jp/pages/database/index.html), [open dataset](https://www.nijl.ac.jp/pages/cijproject/info/dataset.html)     | DOI / bib id → bulk or API           |
+| **P3** | Japan Search            | ja            | Aggregator API                                                                                                                                | Resolve to provider adapter          |
+| **P3** | Adarsha / ALL           | bo            | Web reader; training data via BDRC OCR ecosystem                                                                                              | DOM; link to BDRC ids where possible |
 
 ---
 
@@ -260,22 +260,22 @@ Priority tiers reflect **quality of structured access** and **overlap with leaf-
 
 ### Other Japanese sources (P3 / opportunistic)
 
-| Source | Notes |
-|--------|--------|
-| **Wikisource ja** | See Wikisource section; good for Meiji+ and some koten |
-| **デジタル源氏物語** (UTokyo) | [genji.dl.itc.u-tokyo.ac.jp](https://genji.dl.itc.u-tokyo.ac.jp/) — aligned Genji text; research platform, check terms |
-| **国語研 NINJAL corpora** | Modern Japanese reference corpora — different use case (linguistics not koten) |
-| **J-Text (日本文学文字通数データベース)** | Character-count reference — metadata not full text |
-| **Kanripo-adjacent Japanese kanbun** | Some KR ids are Japan-edition kanbun — use Kanripo adapter |
+| Source                                    | Notes                                                                                                                  |
+| ----------------------------------------- | ---------------------------------------------------------------------------------------------------------------------- |
+| **Wikisource ja**                         | See Wikisource section; good for Meiji+ and some koten                                                                 |
+| **デジタル源氏物語** (UTokyo)             | [genji.dl.itc.u-tokyo.ac.jp](https://genji.dl.itc.u-tokyo.ac.jp/) — aligned Genji text; research platform, check terms |
+| **国語研 NINJAL corpora**                 | Modern Japanese reference corpora — different use case (linguistics not koten)                                         |
+| **J-Text (日本文学文字通数データベース)** | Character-count reference — metadata not full text                                                                     |
+| **Kanripo-adjacent Japanese kanbun**      | Some KR ids are Japan-edition kanbun — use Kanripo adapter                                                             |
 
 ### Other Tibetan / Buddhist sources (P3)
 
-| Source | Notes |
-|--------|--------|
-| **Adarsha** | Web reader; BDRC OCR training partner |
-| **Asian Legacy Library (ALL)** | Manuscript transcription corpus; see BDRC OCR credits |
-| **84000** | English translation focus; Tibetan source via separate licensing |
-| **rKTs** (Rubin Karma Text eLibrary) | Restricted; likely out of scope |
+| Source                               | Notes                                                            |
+| ------------------------------------ | ---------------------------------------------------------------- |
+| **Adarsha**                          | Web reader; BDRC OCR training partner                            |
+| **Asian Legacy Library (ALL)**       | Manuscript transcription corpus; see BDRC OCR credits            |
+| **84000**                            | English translation focus; Tibetan source via separate licensing |
+| **rKTs** (Rubin Karma Text eLibrary) | Restricted; likely out of scope                                  |
 
 ---
 
@@ -283,15 +283,15 @@ Priority tiers reflect **quality of structured access** and **overlap with leaf-
 
 Because Wikisource is template-driven, maintain a **per-wiki config file**:
 
-| Wikitext pattern | TEI target |
-|------------------|------------|
-| `{{header\|…}}`, `{{title\|…}}` | `<teiHeader>` / `<title>` |
-| `[[Page:Book/NN]]`, `{{pagenum}}` | `<pb n="NN"/>` |
-| Empty line / `{{*}}` | `</p><p>` |
-| `<poem>`, `:` indentation | `<lg>`, `<l>` |
-| `{{note\|…}}`, `<ref>` | `<note place="foot">` |
-| `{{lang\|la\|…}}` | `<foreign xml:lang="la">` |
-| `[[:File:…]]` | `<figure>` + `<idno type="URI">` to Commons |
+| Wikitext pattern                  | TEI target                                  |
+| --------------------------------- | ------------------------------------------- |
+| `{{header\|…}}`, `{{title\|…}}`   | `<teiHeader>` / `<title>`                   |
+| `[[Page:Book/NN]]`, `{{pagenum}}` | `<pb n="NN"/>`                              |
+| Empty line / `{{*}}`              | `</p><p>`                                   |
+| `<poem>`, `:` indentation         | `<lg>`, `<l>`                               |
+| `{{note\|…}}`, `<ref>`            | `<note place="foot">`                       |
+| `{{lang\|la\|…}}`                 | `<foreign xml:lang="la">`                   |
+| `[[:File:…]]`                     | `<figure>` + `<idno type="URI">` to Commons |
 
 Start with **zh.wikisource.org** and **en.wikisource.org** MVP templates; ja.wikisource uses different header conventions.
 
@@ -301,56 +301,56 @@ Start with **zh.wikisource.org** and **en.wikisource.org** MVP templates; ja.wik
 
 ### Phase E0 — Spec & spike (1 week)
 
-- [ ] Finalize `ExtractedDocument` JSON schema + TEI Lite mapping table  
-- [ ] CBETA spike: URL → TEI juan → validate in FairCopy import  
-- [ ] CTEXT spike: URN → API → TEI  
+- [ ] Finalize `ExtractedDocument` JSON schema + TEI Lite mapping table
+- [ ] CBETA spike: URL → TEI juan → validate in FairCopy import
+- [ ] CTEXT spike: URN → API → TEI
 - [ ] Choose extension repo location (new repo vs. `leaf-writer/apps/extension`)
 
 ### Phase E1 — MVP extension (2–3 weeks)
 
-- [ ] Manifest V3 shell + side panel preview  
-- [ ] Adapters: **CBETA**, **CTEXT**, **Aozora** (three provenance styles: TEI, API, XHTML)  
-- [ ] TEI download + clipboard  
+- [ ] Manifest V3 shell + side panel preview
+- [ ] Adapters: **CBETA**, **CTEXT**, **Aozora** (three provenance styles: TEI, API, XHTML)
+- [ ] TEI download + clipboard
 - [ ] Per-export `<sourceDesc>` boilerplate + warnings block
 
 ### Phase E2 — Chinese web corpora (3–4 weeks)
 
-- [ ] **Kanripo** (TEI + Mandoku)  
-- [ ] **Shidianguji** (network-first)  
-- [ ] **Scripta Sinica** (DOM, login notes in UI)  
+- [ ] **Kanripo** (TEI + Mandoku)
+- [ ] **Shidianguji** (network-first)
+- [ ] **Scripta Sinica** (DOM, login notes in UI)
 - [ ] Optional: CTEXT official plugin registration (parallel to extension)
 
 ### Phase E3 — Wikisource & Japanese (3–4 weeks)
 
-- [ ] Wikisource adapter framework + zh/en templates  
-- [ ] **NDL** Next DL item id path  
-- [ ] **NIJL** Kokusho / open dataset resolver  
+- [ ] Wikisource adapter framework + zh/en templates
+- [ ] **NDL** Next DL item id path
+- [ ] **NIJL** Kokusho / open dataset resolver
 - [ ] ja.wikisource template pack
 
 ### Phase E4 — Tibetan & integration (2–3 weeks)
 
-- [ ] **BDRC** etext adapter  
-- [ ] **OpenPecha** segment export  
-- [ ] Native messaging → leaf-writer “Import from browser”  
+- [ ] **BDRC** etext adapter
+- [ ] **OpenPecha** segment export
+- [ ] Native messaging → leaf-writer “Import from browser”
 - [ ] Batch CLI using same adapter npm package
 
 ### Phase E5 — Hardening
 
-- [ ] Adapter health checks (selector/API smoke tests in CI)  
-- [ ] User-facing corpus status page (last verified date per site)  
+- [ ] Adapter health checks (selector/API smoke tests in CI)
+- [ ] User-facing corpus status page (last verified date per site)
 - [ ] Extraction decision log (like auto-tagging decision log) for “accept punctuation / reject note” at import
 
 ---
 
 ## Integration with leaf-writer
 
-| Step | Mechanism |
-|------|-----------|
-| Import | TEI file → existing FairCopy / leaf-writer `import-tei` path |
-| Source metadata | `<sourceDesc>` preserved; optional `@type="extracted"` on `<div>` |
-| Auto-tagging | No change — NFC + whitespace policy already defined in [Auto-tagging.md](Auto-tagging.md) |
-| Authority ids | `<idno type="CBDB">` etc. remain separate; extraction only supplies text + structural `<idno type="URI">` |
-| Project setting | `documentLanguage` + `whitespacePolicy` defaulted from extracted `@xml:lang` |
+| Step            | Mechanism                                                                                                 |
+| --------------- | --------------------------------------------------------------------------------------------------------- |
+| Import          | TEI file → existing FairCopy / leaf-writer `import-tei` path                                              |
+| Source metadata | `<sourceDesc>` preserved; optional `@type="extracted"` on `<div>`                                         |
+| Auto-tagging    | No change — NFC + whitespace policy already defined in [Auto-tagging.md](Auto-tagging.md)                 |
+| Authority ids   | `<idno type="CBDB">` etc. remain separate; extraction only supplies text + structural `<idno type="URI">` |
+| Project setting | `documentLanguage` + `whitespacePolicy` defaulted from extracted `@xml:lang`                              |
 
 **Handoff menu item (future):** “Paste corpus URL” in leaf-writer desktop → headless adapter run → same TEI as extension.
 
@@ -358,40 +358,40 @@ Start with **zh.wikisource.org** and **en.wikisource.org** MVP templates; ja.wik
 
 ## Risks & mitigations
 
-| Risk | Mitigation |
-|------|------------|
-| Site layout/API change breaks adapter | Version adapters independently; CI fixture HTML; “last verified” badge |
-| Shidianguji / Scripta ToS | Personal export + attribution; no corpus mirroring; clear UI disclaimer |
-| Incomplete structure from DOM | `warnings[]` + review preview before download |
-| CTP/CBETA rate limits | API keys; local TEI cache for CBETA GitHub |
-| Wikisource template drift | Per-wiki config; community template mapping table |
-| Tibetan geoblocking (BDRC) | Graceful error; link to BUDA viewer |
-| Ruby / variant characters | Preserve in TEI; leaf-writer NFC normalizes on load (variants in `<g>` or `<ruby>`) |
+| Risk                                  | Mitigation                                                                          |
+| ------------------------------------- | ----------------------------------------------------------------------------------- |
+| Site layout/API change breaks adapter | Version adapters independently; CI fixture HTML; “last verified” badge              |
+| Shidianguji / Scripta ToS             | Personal export + attribution; no corpus mirroring; clear UI disclaimer             |
+| Incomplete structure from DOM         | `warnings[]` + review preview before download                                       |
+| CTP/CBETA rate limits                 | API keys; local TEI cache for CBETA GitHub                                          |
+| Wikisource template drift             | Per-wiki config; community template mapping table                                   |
+| Tibetan geoblocking (BDRC)            | Graceful error; link to BUDA viewer                                                 |
+| Ruby / variant characters             | Preserve in TEI; leaf-writer NFC normalizes on load (variants in `<g>` or `<ruby>`) |
 
 ---
 
 ## Open questions (👤 decide)
 
-1. **Repo home:** standalone `corpus-extractor` repo, or `leaf-writer/apps/browser-extension`?  
-2. **MVP corpora order:** CBETA + CTEXT + which third? (Kanripo vs. Shidianguji vs. Aozora)  
-3. **TEI profile:** strict TEI Lite vs. allow `<pc>` for machine punctuation from 識典古籍 / CTEXT layers?  
-4. **Wikisource scope:** all languages or East Asian wikis only at first?  
-5. **Native messaging priority:** needed for v1, or file download enough?  
+1. **Repo home:** standalone `corpus-extractor` repo, or `leaf-writer/apps/browser-extension`?
+2. **MVP corpora order:** CBETA + CTEXT + which third? (Kanripo vs. Shidianguji vs. Aozora)
+3. **TEI profile:** strict TEI Lite vs. allow `<pc>` for machine punctuation from 識典古籍 / CTEXT layers?
+4. **Wikisource scope:** all languages or East Asian wikis only at first?
+5. **Native messaging priority:** needed for v1, or file download enough?
 6. **CTEXT plugin vs. extension:** register official CTP plugin early (low friction for CTEXT users)?
 
 ---
 
 ## References
 
-- CTEXT API — https://ctext.org/tools/api  
-- CBETA API / downloads — https://cbdata.dila.edu.tw/stable/static_pages/export  
-- Kanripo API — https://www.kanripo.org/api  
-- BDRC Public Data Interface — http://purl.bdrc.io/index  
-- OpenPecha toolkit — https://github.com/OpenPecha/toolkit-v2  
-- Shidianguji — https://www.shidianguji.com/zh  
-- Aozora Bunko GitHub — https://github.com/aozorabunko/aozorabunko  
-- NDL Kotenseki OCR — https://lab.ndl.go.jp/data_set/r4_kotenocr_en/  
-- NIJL databases — https://www.nijl.ac.jp/pages/database/index.html  
-- Wikisource TEI notes — https://wikisource.org/wiki/Wikisource:TEI  
-- MediaWiki API — https://www.mediawiki.org/wiki/API:Main_page  
-- Academia Sinica DH Platform — https://dh.ascdc.sinica.edu.tw/member/index_en.html  
+- CTEXT API — https://ctext.org/tools/api
+- CBETA API / downloads — https://cbdata.dila.edu.tw/stable/static_pages/export
+- Kanripo API — https://www.kanripo.org/api
+- BDRC Public Data Interface — http://purl.bdrc.io/index
+- OpenPecha toolkit — https://github.com/OpenPecha/toolkit-v2
+- Shidianguji — https://www.shidianguji.com/zh
+- Aozora Bunko GitHub — https://github.com/aozorabunko/aozorabunko
+- NDL Kotenseki OCR — https://lab.ndl.go.jp/data_set/r4_kotenocr_en/
+- NIJL databases — https://www.nijl.ac.jp/pages/database/index.html
+- Wikisource TEI notes — https://wikisource.org/wiki/Wikisource:TEI
+- MediaWiki API — https://www.mediawiki.org/wiki/API:Main_page
+- Academia Sinica DH Platform — https://dh.ascdc.sinica.edu.tw/member/index_en.html

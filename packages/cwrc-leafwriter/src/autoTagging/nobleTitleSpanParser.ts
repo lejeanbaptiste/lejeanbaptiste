@@ -26,10 +26,46 @@ import { DYNASTY_CROSSWALK } from './dynastyCrosswalkData';
  */
 /** Closed-set noble ranks (Norbert `nt`); also the floor for span parsing. */
 export const SEED_RANKS = [
-  '皇帝', '天皇', '皇后', '太后', '太妃', '太子', '世子', '公主', '皇女', '夫人',
-  '婕妤', '倢伃', '貴妃', '賢妃', '淑妃', '昭儀', '昭容', '昭華', '脩容', '貴嬪',
-  '貴人', '淑媛', '美人', '後主', '幼主', '天王',
-  '帝', '王', '公', '侯', '伯', '子', '男', '后', '妃', '君', '主', '姬', '嬪', '妾',
+  '皇帝',
+  '天皇',
+  '皇后',
+  '太后',
+  '太妃',
+  '太子',
+  '世子',
+  '公主',
+  '皇女',
+  '夫人',
+  '婕妤',
+  '倢伃',
+  '貴妃',
+  '賢妃',
+  '淑妃',
+  '昭儀',
+  '昭容',
+  '昭華',
+  '脩容',
+  '貴嬪',
+  '貴人',
+  '淑媛',
+  '美人',
+  '後主',
+  '幼主',
+  '天王',
+  '帝',
+  '王',
+  '公',
+  '侯',
+  '伯',
+  '子',
+  '男',
+  '后',
+  '妃',
+  '君',
+  '主',
+  '姬',
+  '嬪',
+  '妾',
 ] as const;
 
 const SEED_RANK_SET = new Set<string>(SEED_RANKS);
@@ -89,8 +125,7 @@ export function buildNobleTitleVocabulary(
 
 /** One piece of the selected span: either untagged text, or an existing element. */
 export type SpanSegment =
-  | { kind: 'text'; text: string }
-  | { kind: 'element'; text: string; localName: string };
+  { kind: 'text'; text: string } | { kind: 'element'; text: string; localName: string };
 
 export type SlotRole = 'dynasty' | 'fief' | 'posthumousName' | 'rank' | 'personName';
 
@@ -312,7 +347,10 @@ export function parseNobleTitleSpan(
     if (slot.unverified && slot.existingTag && slot.role !== 'rank') {
       const inner = enumeratePrefixSplits(slot.text, vocabulary)
         .filter((parts) => parts.length > 1 && parts.every((part) => !part.unverified))
-        .sort((a, b) => Number(b.some((p) => p.role === 'fief')) - Number(a.some((p) => p.role === 'fief')))[0];
+        .sort(
+          (a, b) =>
+            Number(b.some((p) => p.role === 'fief')) - Number(a.some((p) => p.role === 'fief')),
+        )[0];
       if (inner) {
         conflicts.push(
           `existing <${slot.existingTag}> covers "${slot.text}", but that decomposes into ${inner
@@ -339,10 +377,7 @@ interface PrefixPart {
 }
 
 /** Enumerate [dynasty?][fief?][posthumousName?] splits of the pre-rank prefix. */
-function enumeratePrefixSplits(
-  prefix: string,
-  vocabulary: NobleTitleVocabulary,
-): PrefixPart[][] {
+function enumeratePrefixSplits(prefix: string, vocabulary: NobleTitleVocabulary): PrefixPart[][] {
   if (!prefix) return [[]];
   const splits: PrefixPart[][] = [];
   const n = prefix.length;

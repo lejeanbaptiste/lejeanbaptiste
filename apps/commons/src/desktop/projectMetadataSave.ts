@@ -1,4 +1,7 @@
-import { ALL_NAME_TYPES, type NameTypeId } from '../../../../packages/cwrc-leafwriter/src/autoTagging/nameTypes';
+import {
+  ALL_NAME_TYPES,
+  type NameTypeId,
+} from '../../../../packages/cwrc-leafwriter/src/autoTagging/nameTypes';
 import {
   resolveNameTypeTaggingPolicy,
   type NameTypeTaggingBucket,
@@ -73,13 +76,7 @@ export const saveProjectMetadataChanges = async (
   deps: ProjectMetadataSaveDeps,
   payload: ProjectMetadataSavePayload,
 ): Promise<ProjectMetadataSaveResult> => {
-  const {
-    electronAPI,
-    openTabs,
-    reloadTabFromDisk,
-    notifyViaSnackbar,
-    t,
-  } = deps;
+  const { electronAPI, openTabs, reloadTabFromDisk, notifyViaSnackbar, t } = deps;
   const mode = payload.mode ?? 'edition';
 
   const bundle = await resolveBundle(payload.projectFilePath);
@@ -127,7 +124,6 @@ export const saveProjectMetadataChanges = async (
         );
         for (const lang of payload.translationLanguages ?? []) {
           if (!existingCodes.has(lang.code)) {
-             
             await addTranslationLanguage(bundle, lang);
           }
         }
@@ -242,7 +238,10 @@ export const persistNameTypeTaggingPolicyChanges = async (
     customTypes?: AutoTaggingAuthoritySettings['customNameTypes'];
     artMinCodePoints?: number;
   },
-  deps: Pick<ProjectMetadataSaveDeps, 'electronAPI' | 'getAuthoritySettings' | 'setAuthoritySettings'>,
+  deps: Pick<
+    ProjectMetadataSaveDeps,
+    'electronAPI' | 'getAuthoritySettings' | 'setAuthoritySettings'
+  >,
 ): Promise<{ ok: boolean; error?: string }> => {
   const { electronAPI, getAuthoritySettings, setAuthoritySettings } = deps;
   const bundle = await resolveBundle(projectFilePath);

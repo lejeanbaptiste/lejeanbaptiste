@@ -22,12 +22,7 @@ const selectionMatchesRange = (
 const offsetToRange = (model: monaco.editor.ITextModel, range: TextDeleteRange) => {
   const start = model.getPositionAt(range.start);
   const end = model.getPositionAt(range.end);
-  return new monaco.Range(
-    start.lineNumber,
-    start.column,
-    end.lineNumber,
-    end.column,
-  );
+  return new monaco.Range(start.lineNumber, start.column, end.lineNumber, end.column);
 };
 
 const executeDeleteRanges = (
@@ -72,10 +67,7 @@ export const registerPairedTagUnwrap = (
   editor: monaco.editor.IStandaloneCodeEditor,
 ): monaco.IDisposable => {
   return editor.onKeyDown((event) => {
-    if (
-      event.keyCode !== monaco.KeyCode.Backspace &&
-      event.keyCode !== monaco.KeyCode.Delete
-    ) {
+    if (event.keyCode !== monaco.KeyCode.Backspace && event.keyCode !== monaco.KeyCode.Delete) {
       return;
     }
 
@@ -121,9 +113,7 @@ export const registerPairedTagUnwrap = (
     }
 
     const cursorOffset =
-      mirrored.length === 2
-        ? Math.min(mirrored[0].start, mirrored[1].start)
-        : mirrored[0]?.start;
+      mirrored.length === 2 ? Math.min(mirrored[0].start, mirrored[1].start) : mirrored[0]?.start;
 
     executeDeleteRanges(editor, model, mirrored, cursorOffset);
   });

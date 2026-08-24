@@ -12,9 +12,7 @@ describe('parseMetadataFieldsTemplate', () => {
     const template = parseMetadataFieldsTemplate(
       JSON.stringify({
         version: 1,
-        project: [
-          { path: 'titleStmt/funder', label: 'Funder', default: 'Collège de France' },
-        ],
+        project: [{ path: 'titleStmt/funder', label: 'Funder', default: 'Collège de France' }],
         file: [{ path: 'sourceDesc/p', label: 'Source', multiline: true }],
       }),
     );
@@ -22,9 +20,7 @@ describe('parseMetadataFieldsTemplate', () => {
     expect(template?.project).toEqual([
       { path: 'titleStmt/funder', label: 'Funder', default: 'Collège de France' },
     ]);
-    expect(template?.file).toEqual([
-      { path: 'sourceDesc/p', label: 'Source', multiline: true },
-    ]);
+    expect(template?.file).toEqual([{ path: 'sourceDesc/p', label: 'Source', multiline: true }]);
   });
 
   test('falls back to path when label is missing and drops empty paths', () => {
@@ -34,9 +30,7 @@ describe('parseMetadataFieldsTemplate', () => {
       }),
     );
 
-    expect(template?.project).toEqual([
-      { path: 'titleStmt/funder', label: 'titleStmt/funder' },
-    ]);
+    expect(template?.project).toEqual([{ path: 'titleStmt/funder', label: 'titleStmt/funder' }]);
   });
 
   test('returns null for invalid JSON or empty templates', () => {

@@ -253,12 +253,7 @@ export const processElement = (
  * @param {Node} node - the node to process
  * @returns A treeItem object
  */
-export const processNode = (
-  node: Node,
-  parent?: TreeItem,
-  index = 0,
-  xpathIndex?: number,
-) => {
+export const processNode = (node: Node, parent?: TreeItem, index = 0, xpathIndex?: number) => {
   // * remove comments to ignore nodes with tab and line-breaks
   // const trimmedContent = node.textContent.replaceAll(/\\n|\\t|\\r/g, '').trim();
   // if (trimmedContent === '') return;

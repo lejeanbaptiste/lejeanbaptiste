@@ -17,9 +17,7 @@ describe('paired tag unwrap parser', () => {
 
     expect(fromOpen).not.toBeNull();
     expect(fromClose).toEqual(fromOpen);
-    expect(content.slice(fromOpen!.openDelimiter.start, fromOpen!.openDelimiter.end)).toBe(
-      '<cat>',
-    );
+    expect(content.slice(fromOpen!.openDelimiter.start, fromOpen!.openDelimiter.end)).toBe('<cat>');
     expect(content.slice(fromOpen!.closeDelimiter.start, fromOpen!.closeDelimiter.end)).toBe(
       '</cat>',
     );

@@ -36,7 +36,9 @@ export const TagWalkToolbar = ({
   >
     <Typography variant="caption" color="text.secondary" sx={{ display: 'block', mb: 0.75 }}>
       Walk mode — {mode === 'rename' ? 'rename to' : 'tag as'} <strong>{tagName}</strong>
-      {searchText ? ` — "${searchText.length > 32 ? `${searchText.slice(0, 32)}…` : searchText}"` : ''}
+      {searchText
+        ? ` — "${searchText.length > 32 ? `${searchText.slice(0, 32)}…` : searchText}"`
+        : ''}
     </Typography>
     <Typography variant="caption" color="text.secondary" sx={{ display: 'block', mb: 0.75 }}>
       {matchCount} remaining · Enter tag · Tab skip · Esc done

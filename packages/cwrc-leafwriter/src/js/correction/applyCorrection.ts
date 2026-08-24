@@ -11,8 +11,7 @@ const TAG_FOR_KIND: Record<CorrectionKind, string> = {
 };
 
 export type CorrectionInferResult =
-  | { kind: CorrectionKind }
-  | { kind: 'invalid'; errorKey: string };
+  { kind: CorrectionKind } | { kind: 'invalid'; errorKey: string };
 
 export const inferCorrectionKind = (sicText: string, corrText: string): CorrectionInferResult => {
   const sic = sicText.trim();
@@ -37,8 +36,7 @@ export const getCorrectionEntityAtSelection = (
 
   const node = editor.selection.getNode();
   const entityEl = $(node).closest('.entity.correction[_entity="true"]', editor.getBody())[0] as
-    | HTMLElement
-    | undefined;
+    HTMLElement | undefined;
   if (!entityEl) return null;
 
   const entityId = entityEl.getAttribute('id') ?? entityEl.getAttribute('name');
@@ -145,11 +143,7 @@ const insertCorrectionText = (
   return textNode as Text;
 };
 
-const stampSicTextAfterAdd = (
-  writer: Writer,
-  sicText: string,
-  textNode: Text | null,
-) => {
+const stampSicTextAfterAdd = (writer: Writer, sicText: string, textNode: Text | null) => {
   if (!sicText || !textNode) return;
   const entitySpan = textNode.parentElement;
   if (entitySpan?.classList.contains('correction')) {

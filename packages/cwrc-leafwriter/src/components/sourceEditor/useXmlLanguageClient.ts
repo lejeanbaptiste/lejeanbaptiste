@@ -102,9 +102,7 @@ export const useXmlLanguageClient = ({
 
     const setup = async () => {
       try {
-        const rootUri = lspOptions?.projectRoot
-          ? pathToFileUri(lspOptions.projectRoot)
-          : null;
+        const rootUri = lspOptions?.projectRoot ? pathToFileUri(lspOptions.projectRoot) : null;
 
         await ensureLspInitialized(lspOptions ?? {}, rootUri);
         if (disposed) return;

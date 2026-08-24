@@ -169,9 +169,7 @@ const DatabaseEntityList = memo(function DatabaseEntityList({
         sx={{ px: 1, py: 0.5, borderBottom: 1, borderColor: 'divider', flexShrink: 0 }}
       >
         <Typography variant="caption" color="text.secondary" sx={{ flex: 1 }}>
-          {selectedInFilter > 0
-            ? `${selectedInFilter} selected`
-            : `${filtered.length} shown`}
+          {selectedInFilter > 0 ? `${selectedInFilter} selected` : `${filtered.length} shown`}
         </Typography>
         <Button size="small" onClick={onSelectAllFiltered} sx={{ minWidth: 0, px: 0.75 }}>
           All
@@ -942,7 +940,10 @@ export const DatabaseWindow = () => {
         setFindingIndex(0);
       });
       notifyViaSnackbar({
-        message: t('LWC.desktop.database_window.queued_fixes', { count: batch.length, kind: findingKindLabel(kind) }),
+        message: t('LWC.desktop.database_window.queued_fixes', {
+          count: batch.length,
+          kind: findingKindLabel(kind),
+        }),
         options: { variant: 'success' },
       });
     },
@@ -1093,7 +1094,10 @@ export const DatabaseWindow = () => {
         }
       }
       notifyViaSnackbar({
-        message: t('LWC.desktop.database_window.backfill_result', { names: result.namesAdded, entities: result.entitiesUpdated }),
+        message: t('LWC.desktop.database_window.backfill_result', {
+          names: result.namesAdded,
+          entities: result.entitiesUpdated,
+        }),
         options: { variant: 'success' },
       });
       await reload();
@@ -1187,9 +1191,7 @@ export const DatabaseWindow = () => {
         if (anchorIdx >= 0 && targetIdx >= 0) {
           const [lo, hi] = anchorIdx < targetIdx ? [anchorIdx, targetIdx] : [targetIdx, anchorIdx];
           const rangeIds = filtered.slice(lo, hi + 1).map((entity) => entity.id);
-          setSelectedIds((prev) =>
-            additive ? [...new Set([...prev, ...rangeIds])] : rangeIds,
-          );
+          setSelectedIds((prev) => (additive ? [...new Set([...prev, ...rangeIds])] : rangeIds));
           setSelectedId(id);
           if (selected) writeLastEntityId(selected.kind, id);
           setMainPane('detail');

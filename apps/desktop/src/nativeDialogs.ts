@@ -306,10 +306,9 @@ export const registerNativeDialogIpc = () => {
       const defaultId = options.defaultId ?? 0;
       const cancelId =
         options.cancelId ??
-        (buttons.length > 1
-          ? buttons.findIndex((label) => /cancel|no$/i.test(label.trim()))
-          : 0);
-      const resolvedCancelId = cancelId >= 0 ? cancelId : buttons.length > 1 ? buttons.length - 1 : 0;
+        (buttons.length > 1 ? buttons.findIndex((label) => /cancel|no$/i.test(label.trim())) : 0);
+      const resolvedCancelId =
+        cancelId >= 0 ? cancelId : buttons.length > 1 ? buttons.length - 1 : 0;
 
       const messageOptions: MessageBoxOptions = {
         type: options.type ?? 'none',

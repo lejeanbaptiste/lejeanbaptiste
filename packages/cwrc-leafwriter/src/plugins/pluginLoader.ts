@@ -6,7 +6,9 @@ import type { PluginHostSnapshotView } from './types';
 const loadedPluginIds = new Set<string>();
 const loadedContexts = new Map<string, ReturnType<typeof createPluginRegisterContext>>();
 
-async function importPluginModule(url: string): Promise<{ register?: (ctx: unknown) => void | Promise<void> }> {
+async function importPluginModule(
+  url: string,
+): Promise<{ register?: (ctx: unknown) => void | Promise<void> }> {
   return import(/* webpackIgnore: true */ url);
 }
 

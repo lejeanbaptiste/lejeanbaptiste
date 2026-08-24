@@ -14,7 +14,13 @@ const doc = (body: string, stampWith?: string): string => {
 describe('sweepOrphans', () => {
   it('reports keys absent from the PEDB as genuine orphans', () => {
     const files: CorpusFile[] = [
-      { path: 'a.xml', xml: doc('<persName key="person-1">A</persName><persName key="person-2">B</persName>', 'pedb-1') },
+      {
+        path: 'a.xml',
+        xml: doc(
+          '<persName key="person-1">A</persName><persName key="person-2">B</persName>',
+          'pedb-1',
+        ),
+      },
     ];
     const report = sweepOrphans(files, new Set(['person-1']), 'pedb-1');
     expect(report.orphanFiles).toEqual([{ path: 'a.xml', orphanKeys: ['person-2'] }]);
@@ -35,7 +41,9 @@ describe('sweepOrphans', () => {
   });
 
   it('treats an unstamped file with a matching-db assumption as orphan (rollback case)', () => {
-    const files: CorpusFile[] = [{ path: 'legacy.xml', xml: doc('<placeName key="place-x">L</placeName>') }];
+    const files: CorpusFile[] = [
+      { path: 'legacy.xml', xml: doc('<placeName key="place-x">L</placeName>') },
+    ];
     const report = sweepOrphans(files, new Set(['place-y']), 'pedb-1');
     expect(report.orphanFiles).toEqual([{ path: 'legacy.xml', orphanKeys: ['place-x'] }]);
   });

@@ -30,9 +30,7 @@ describe('mergeCentralGlossesIntoSummary', () => {
     });
     const merged = mergeCentralGlossesIntoSummary(project, central);
     expect(merged.id).toBe('office-project');
-    expect(merged.translations).toEqual([
-      { lang: 'en', text: 'General Commanding the Troops' },
-    ]);
+    expect(merged.translations).toEqual([{ lang: 'en', text: 'General Commanding the Troops' }]);
   });
 
   test('project gloss wins over central for the same language', () => {
@@ -76,9 +74,7 @@ describe('summaryFromSqlitePanel translations', () => {
           status: 'active',
         },
       ],
-      translations: [
-        { text: 'General Commanding the Troops', language: 'en', status: 'active' },
-      ],
+      translations: [{ text: 'General Commanding the Troops', language: 'en', status: 'active' }],
     });
     expect(summary.translations).toEqual(
       expect.arrayContaining([

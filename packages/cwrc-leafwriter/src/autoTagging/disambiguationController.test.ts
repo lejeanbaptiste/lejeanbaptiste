@@ -30,11 +30,7 @@ function mockInstance(hasKey: boolean, surface = '李白'): MentionInstance {
   };
 }
 
-function mockGroup(
-  surface: string,
-  instances: MentionInstance[],
-  tag = 'persName',
-): MentionGroup {
+function mockGroup(surface: string, instances: MentionInstance[], tag = 'persName'): MentionGroup {
   return {
     tag,
     surface,
@@ -45,12 +41,14 @@ function mockGroup(
 
 describe('DisambiguationController', () => {
   it('offers only tag types represented by the validation scan', () => {
-    expect(tagTypesPresent([
-      mockGroup('李白', [mockInstance(false)], 'persName'),
-      mockGroup('太守', [mockInstance(false, '太守')], 'roleName'),
-      mockGroup('範', [mockInstance(false, '範')], 'name'),
-      mockGroup('李白', [mockInstance(false)], 'persName'),
-    ])).toEqual(['name', 'persName', 'roleName']);
+    expect(
+      tagTypesPresent([
+        mockGroup('李白', [mockInstance(false)], 'persName'),
+        mockGroup('太守', [mockInstance(false, '太守')], 'roleName'),
+        mockGroup('範', [mockInstance(false, '範')], 'name'),
+        mockGroup('李白', [mockInstance(false)], 'persName'),
+      ]),
+    ).toEqual(['name', 'persName', 'roleName']);
   });
 
   it('lists pending and resolved groups separately', () => {
@@ -70,9 +68,13 @@ describe('DisambiguationController', () => {
       mockGroup('杜甫', [mockInstance(false)]),
     ];
     const focused: string[] = [];
-    const controller = new DisambiguationController(groups, {}, {
-      onFocus: (instance) => focused.push(instance.surface),
-    });
+    const controller = new DisambiguationController(
+      groups,
+      {},
+      {
+        onFocus: (instance) => focused.push(instance.surface),
+      },
+    );
 
     expect(controller.currentGroup()?.surface).toBe('李白');
     controller.next();

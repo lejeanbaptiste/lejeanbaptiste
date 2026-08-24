@@ -79,11 +79,7 @@ const prepareCitations = (root: ParentNode): void => {
   }
 };
 
-const serializeCurrentNote = (
-  editor: HTMLDivElement,
-  doc: Document,
-  language: string,
-): string => {
+const serializeCurrentNote = (editor: HTMLDivElement, doc: Document, language: string): string => {
   const body = noteBody(doc);
   body.setAttribute('xml:lang', language);
   body.innerHTML = editor.innerHTML;
@@ -330,16 +326,8 @@ export const EntityNoteEditor = ({
 
   const languages = languageState()?.languages ?? [];
   const statusColor =
-    message && message !== 'Autosaved'
-      ? 'error'
-      : dirty
-        ? 'warning.main'
-        : 'text.secondary';
-  const statusText = saving
-    ? 'Saving…'
-    : dirty
-      ? 'Unsaved…'
-      : message ?? null;
+    message && message !== 'Autosaved' ? 'error' : dirty ? 'warning.main' : 'text.secondary';
+  const statusText = saving ? 'Saving…' : dirty ? 'Unsaved…' : (message ?? null);
 
   return (
     <Stack spacing={1} sx={{ height: '100%', minHeight: 0 }}>

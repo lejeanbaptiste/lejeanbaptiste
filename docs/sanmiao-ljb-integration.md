@@ -36,18 +36,18 @@ tag_date_elements(text) → consolidate_date → remove_lone_tags → strip_text
 
 Partial namespace support exists only in:
 
-| File | Function | What it does |
-|------|----------|--------------|
-| `bulk_processing.py` | `dates_xml_to_df` | If root has `{uri}tag`, uses `tei:` prefix in xpath for `date` and children |
-| `tagging.py` | `index_date_nodes` | Same pattern for `.//tei:date` |
+| File                 | Function           | What it does                                                                |
+| -------------------- | ------------------ | --------------------------------------------------------------------------- |
+| `bulk_processing.py` | `dates_xml_to_df`  | If root has `{uri}tag`, uses `tei:` prefix in xpath for `date` and children |
+| `tagging.py`         | `index_date_nodes` | Same pattern for `.//tei:date`                                              |
 
 **Not namespace-aware** (uses `.//date`, `tag == "date"`, or unprefixed `findall`):
 
-| File | Functions / areas |
-|------|---------------------|
-| `tagging.py` | `tag_date_elements`, `tag_basic_tokens`, `promote_gz_to_sexyear`, `promote_nmdgz`, `attach_suffixes`, rel attachment, `SKIP` sets, `et.Element("date")` creation |
-| `xml_utils.py` | `remove_lone_tags`, `strip_text`, most of `replace_in_text_and_tail` |
-| `bulk_processing.py` | `fix_dynasty_mismatch_xml` (partially OK via local-name split on `date`/`dyn` only) |
+| File                 | Functions / areas                                                                                                                                                |
+| -------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `tagging.py`         | `tag_date_elements`, `tag_basic_tokens`, `promote_gz_to_sexyear`, `promote_nmdgz`, `attach_suffixes`, rel attachment, `SKIP` sets, `et.Element("date")` creation |
+| `xml_utils.py`       | `remove_lone_tags`, `strip_text`, most of `replace_in_text_and_tail`                                                                                             |
+| `bulk_processing.py` | `fix_dynasty_mismatch_xml` (partially OK via local-name split on `date`/`dyn` only)                                                                              |
 
 ### Failure modes on TEI P5 (default namespace `http://www.tei-c.org/ns/1.0`)
 
@@ -147,11 +147,11 @@ Estimated effort: **2–4 days** for namespace refactor + tests on TEI fixtures.
 
 ## Small sanmiao fixes worth doing regardless
 
-| Fix | File | Effort |
-|-----|------|--------|
-| `tei:nmd_gz` → `tei:nmdgz` (or local-name) | `bulk_processing.py` | Trivial |
-| Export `propose_dates` / `row_to_tei_attrs` | new `ljb_bridge.py` | Small |
-| Unit test: TEI-namespaced `<date>` round-trip via fragment | `tests/test_ljb_bridge.py` | Small |
+| Fix                                                        | File                       | Effort  |
+| ---------------------------------------------------------- | -------------------------- | ------- |
+| `tei:nmd_gz` → `tei:nmdgz` (or local-name)                 | `bulk_processing.py`       | Trivial |
+| Export `propose_dates` / `row_to_tei_attrs`                | new `ljb_bridge.py`        | Small   |
+| Unit test: TEI-namespaced `<date>` round-trip via fragment | `tests/test_ljb_bridge.py` | Small   |
 
 ---
 
@@ -170,13 +170,13 @@ Reading **in place** is now supported via `local-name()` xpath and TEI-aware tag
 
 ## Implemented in sanmiao (2026-07)
 
-| Module | Purpose |
-|--------|---------|
-| `sanmiao/ns.py` | `local-name()` xpath, `is_tag`, `detect_wrapper_namespace`, `strip_namespaces` |
-| `sanmiao/tei_bridge.py` | `propose_dates()`, `resolve_date_element()`, `row_to_tei_attrs()` |
-| `dates_xml_to_df` | Namespace-agnostic child extraction (fixes `nmdgz` xpath typo) |
-| `tagging.py` | Skip/wrap uses local names; TEI `<date>` wrappers when tagging inside TEI |
-| `xml_utils.py` | `remove_lone_tags`, `strip_text` namespace-aware |
+| Module                  | Purpose                                                                        |
+| ----------------------- | ------------------------------------------------------------------------------ |
+| `sanmiao/ns.py`         | `local-name()` xpath, `is_tag`, `detect_wrapper_namespace`, `strip_namespaces` |
+| `sanmiao/tei_bridge.py` | `propose_dates()`, `resolve_date_element()`, `row_to_tei_attrs()`              |
+| `dates_xml_to_df`       | Namespace-agnostic child extraction (fixes `nmdgz` xpath typo)                 |
+| `tagging.py`            | Skip/wrap uses local names; TEI `<date>` wrappers when tagging inside TEI      |
+| `xml_utils.py`          | `remove_lone_tags`, `strip_text` namespace-aware                               |
 
 Tests: `sanmiao/tests/test_tei_ns.py` (run with `PYTHONPATH=src pytest`).
 
@@ -222,10 +222,10 @@ PYTHONPATH=src .venv/bin/python -m pytest tests/test_tei_ns.py -q
 
 ## Decision matrix
 
-| Approach | Sanmiao changes | Namespace risk | Re-resolve stored parse |
-|----------|-----------------|----------------|-------------------------|
-| **Fragment bridge (v1 LJB)** | `tei_bridge.py` | Low | `resolve_date_element()` |
-| **In-document tagging** | Done in core (ns helpers) | Low–medium | Native |
+| Approach                               | Sanmiao changes                                                                               | Namespace risk                                                       | Re-resolve stored parse  |
+| -------------------------------------- | --------------------------------------------------------------------------------------------- | -------------------------------------------------------------------- | ------------------------ |
+| **Fragment bridge (v1 LJB)**           | `tei_bridge.py`                                                                               | Low                                                                  | `resolve_date_element()` |
+| **In-document tagging**                | Done in core (ns helpers)                                                                     | Low–medium                                                           | Native                   |
 | **Paragraph batch with implied carry** | `propose_dates_batch()` passes `implied` from chunk to chunk when `sequential=True` (0.2.10+) | LJB sends one `<p>` per chunk; cross-paragraph 其三年 still resolves |
 
 **Recommendation:** LJB calls `propose_dates()` / `resolve_date_element()` via subprocess; apply TEI mutations in TypeScript. Sanmiao core is now TEI-capable for standalone batch use too.

@@ -64,7 +64,8 @@ const STRINGS = {
     open_project_failed_message: 'Impossible d’ouvrir ce dossier de projet.',
     choose_schema_file_title: 'Choisir un fichier de schéma (.rng)',
     choose_css_file_title: 'Choisir un fichier CSS (facultatif)',
-    choose_css_file_message: 'Facultatif : choisissez un fichier CSS pour ce schéma, ou Annuler pour ignorer.',
+    choose_css_file_message:
+      'Facultatif : choisissez un fichier CSS pour ce schéma, ou Annuler pour ignorer.',
     import_documents_title: 'Importer des documents',
     import_documents_message:
       'Choisissez des fichiers texte, Markdown, RTF, Word, ODT ou XML (ou des dossiers) à importer.',

@@ -1,17 +1,12 @@
 import CloseIcon from '@mui/icons-material/Close';
-import {
-  Alert,
-  Box,
-  IconButton,
-  LinearProgress,
-  Stack,
-  Tooltip,
-  Typography,
-} from '@mui/material';
+import { Alert, Box, IconButton, LinearProgress, Stack, Tooltip, Typography } from '@mui/material';
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { AutoTaggingSession, DisambiguationPanel, type MentionGroup } from '../autoTagging';
-import { runAuthorityPrefetch, type AuthorityPrefetchHandle } from '../autoTagging/authorityPrefetch';
+import {
+  runAuthorityPrefetch,
+  type AuthorityPrefetchHandle,
+} from '../autoTagging/authorityPrefetch';
 import { stopBackgroundAuthorityPrefetch } from '../autoTagging/backgroundAuthorityPrefetch';
 import { runDisambiguationAiWarmPass } from '../autoTagging/disambiguationAiWarmPass';
 import { isAiUiFeatureEnabled } from '../autoTagging/aiUiFeatures';
@@ -208,7 +203,9 @@ export const DisambiguationReviewPane = () => {
         </Tooltip>
       </Stack>
 
-      <Box sx={{ flex: 1, minHeight: 0, overflow: 'hidden', display: 'flex', flexDirection: 'column' }}>
+      <Box
+        sx={{ flex: 1, minHeight: 0, overflow: 'hidden', display: 'flex', flexDirection: 'column' }}
+      >
         {loading && (
           <Box sx={{ px: 0.75, py: 0.5 }}>
             <Typography variant="caption" color="text.secondary" display="block" sx={{ mb: 0.5 }}>
@@ -231,11 +228,7 @@ export const DisambiguationReviewPane = () => {
         )}
 
         {!loading && groups.length > 0 && (
-          <DisambiguationPanel
-            session={getSession()}
-            groups={groups}
-            aiCuration={aiCuration}
-          />
+          <DisambiguationPanel session={getSession()} groups={groups} aiCuration={aiCuration} />
         )}
       </Box>
     </Box>

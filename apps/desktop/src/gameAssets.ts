@@ -46,7 +46,10 @@ function getBundlePath(): string {
 // body/background image.
 const MIN_PLAUSIBLE_BUNDLE_BYTES = 1024;
 
-function loadAssetMap(): Map<string, { buffer: Buffer; type: string; colorStats?: AssetColorStats }> {
+function loadAssetMap(): Map<
+  string,
+  { buffer: Buffer; type: string; colorStats?: AssetColorStats }
+> {
   if (assetMap) return assetMap;
 
   const bundlePath = getBundlePath();

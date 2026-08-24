@@ -51,8 +51,7 @@ export const EastAsianDateFields = ({
     [authority, values.dynId],
   );
   const eraOptions = useMemo(
-    () =>
-      authority ? filterEras(authority.eras, values.dynId, values.rulerId, '') : [],
+    () => (authority ? filterEras(authority.eras, values.dynId, values.rulerId, '') : []),
     [authority, values.dynId, values.rulerId],
   );
 
@@ -139,9 +138,7 @@ export const EastAsianDateFields = ({
 
       <Autocomplete
         disabled={disabled}
-        filterOptions={(options, state) =>
-          filterDynasties(options, state.inputValue)
-        }
+        filterOptions={(options, state) => filterDynasties(options, state.inputValue)}
         getOptionLabel={(option) => option.label}
         isOptionEqualToValue={(a, b) => a.dynId === b.dynId}
         onChange={(_event, option) => handleDynasty(option)}
@@ -156,10 +153,7 @@ export const EastAsianDateFields = ({
         )}
         renderOption={(props, option) => (
           <Box component="li" {...props} key={optionKey('dyn', option.dynId)}>
-            <ListItemText
-              primary={option.label}
-              secondary={dynastySubtitle(option)}
-            />
+            <ListItemText primary={option.label} secondary={dynastySubtitle(option)} />
           </Box>
         )}
         value={selectedDynasty}

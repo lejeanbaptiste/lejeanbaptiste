@@ -100,9 +100,11 @@ describe('searchXPath header filtering', () => {
 
     window.electronAPI = {
       ...originalElectronAPI,
-      readDirectory: jest.fn().mockResolvedValue([
-        { name: 'chapter1.xml', path: '/proj/chapter1.xml', isDirectory: false },
-      ]),
+      readDirectory: jest
+        .fn()
+        .mockResolvedValue([
+          { name: 'chapter1.xml', path: '/proj/chapter1.xml', isDirectory: false },
+        ]),
       readFile: jest.fn().mockResolvedValue(xmlWithHeader),
     } as unknown as typeof window.electronAPI;
 

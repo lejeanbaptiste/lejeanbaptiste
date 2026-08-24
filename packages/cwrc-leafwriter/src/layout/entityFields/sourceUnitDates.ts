@@ -3,15 +3,8 @@
  * (TinyMCE live DOM) or from serialized source-unit XML for the AI payload.
  */
 
-import {
-  dateGlossInputFromParts,
-  formatDateGlossPlain,
-  type DateGlossInput,
-} from './dateGloss';
-import {
-  getDateMonthSpanStyle,
-  getDateWesternDisplayMode,
-} from './scholarlyConventions';
+import { dateGlossInputFromParts, formatDateGlossPlain, type DateGlossInput } from './dateGloss';
+import { getDateMonthSpanStyle, getDateWesternDisplayMode } from './scholarlyConventions';
 
 export interface SourceUnitDateHit {
   /** 0-based index in document order within the unit. */
@@ -41,9 +34,7 @@ const readChildrenFromDom = (dateEl: Element): Record<string, string> => {
   const children: Record<string, string> = {};
   for (const child of Array.from(dateEl.children)) {
     const tag =
-      child.getAttribute('_tag')?.trim() ||
-      child.localName ||
-      child.tagName.toLowerCase();
+      child.getAttribute('_tag')?.trim() || child.localName || child.tagName.toLowerCase();
     if (!tag || children[tag]) continue;
     if (!(CHILD_TAGS as readonly string[]).includes(tag) && tag !== 'sexYear') continue;
     const text = (child.textContent ?? '').replace(/\s+/g, ' ').trim();

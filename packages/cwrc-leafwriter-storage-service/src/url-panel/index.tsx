@@ -13,7 +13,6 @@ export const UrlPanel = () => {
   const { allowedFileTypes, resource } = useAppState().common;
   const { setResource } = useActions().common;
 
-
   const [inputValue, setInputValue] = useState('');
 
   const helperText = useMemo(() => {

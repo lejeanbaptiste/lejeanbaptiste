@@ -4,10 +4,7 @@ import {
   type MetadataFieldDefinition,
   type MetadataFieldSetKind,
 } from './schemaMetadataFields';
-import {
-  getFileMetadataFieldsForCatalog,
-  type FileMetadataFieldDefinition,
-} from './fileMetadata';
+import { getFileMetadataFieldsForCatalog, type FileMetadataFieldDefinition } from './fileMetadata';
 
 export const METADATA_FIELDS_TEMPLATE_PATH = 'schema/metadata-fields.json';
 
@@ -26,9 +23,7 @@ export interface MetadataFieldsTemplate {
   file?: TemplateFileField[];
 }
 
-const sanitizeRows = <T extends { path?: string; label?: string }>(
-  rows: unknown,
-): T[] => {
+const sanitizeRows = <T extends { path?: string; label?: string }>(rows: unknown): T[] => {
   if (!Array.isArray(rows)) return [];
   return rows
     .filter(
@@ -38,7 +33,10 @@ const sanitizeRows = <T extends { path?: string; label?: string }>(
     .map((row) => ({
       ...row,
       path: String(row.path).trim(),
-      label: typeof row.label === 'string' && row.label.trim() ? row.label.trim() : String(row.path).trim(),
+      label:
+        typeof row.label === 'string' && row.label.trim()
+          ? row.label.trim()
+          : String(row.path).trim(),
     }))
     .filter((row) => row.path) as unknown as T[];
 };

@@ -42,7 +42,9 @@ const toSchemaId = (schemaPath: string) => {
 };
 
 const replacePiHref = (pi: string, href: string, nextHref: string) =>
-  pi.replace(`href="${href}"`, `href="${nextHref}"`).replace(`href='${href}'`, `href='${nextHref}'`);
+  pi
+    .replace(`href="${href}"`, `href="${nextHref}"`)
+    .replace(`href='${href}'`, `href='${nextHref}'`);
 
 const joinPath = (root: string, ...parts: string[]) => {
   const separator = root.includes('\\') ? '\\' : '/';
@@ -334,9 +336,7 @@ const applyProjectSchemaConfig = async (
   if (!modelMatch) {
     const pi = `<?xml-model href="${rngUrl}" type="application/xml" schematypens="http://relaxng.org/ns/structure/1.0"?>`;
     const xmlDecl = content.match(/<\?xml[^?]*\?>/i);
-    updated = xmlDecl
-      ? content.replace(xmlDecl[0], `${xmlDecl[0]}\n${pi}`)
-      : `${pi}\n${content}`;
+    updated = xmlDecl ? content.replace(xmlDecl[0], `${xmlDecl[0]}\n${pi}`) : `${pi}\n${content}`;
     modelMatch = updated.match(/<\?xml-model\s+([^?]+)\?>/i);
   }
 
@@ -400,7 +400,14 @@ export const prepareDesktopDocument = async (
 
   for (const schemaPath of candidates) {
     try {
-      return await buildSchemaFromFile(schemaPath, content, filePath, href, modelMatch, projectRoot);
+      return await buildSchemaFromFile(
+        schemaPath,
+        content,
+        filePath,
+        href,
+        modelMatch,
+        projectRoot,
+      );
     } catch {
       // try next candidate
     }

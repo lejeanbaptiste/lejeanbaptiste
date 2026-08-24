@@ -74,7 +74,12 @@ describe('composeRemap', () => {
 
   it('sorts by when then id, independent of input order', () => {
     const later = order({ dbId: 'db1', id: 'z', when: '2026-01-02T00:00:00Z', remap: { b: 'c' } });
-    const earlier = order({ dbId: 'db1', id: 'a', when: '2026-01-01T00:00:00Z', remap: { a: 'b' } });
+    const earlier = order({
+      dbId: 'db1',
+      id: 'a',
+      when: '2026-01-01T00:00:00Z',
+      remap: { a: 'b' },
+    });
     expect(composeRemap([later, earlier])).toEqual({ a: 'c', b: 'c' });
   });
 });

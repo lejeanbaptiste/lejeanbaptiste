@@ -8,8 +8,7 @@ export const resolveDialogDefaultPath = (options: {
   pathExists: (candidate: string) => boolean;
 }): string => {
   const isEntityDbFolder = (candidate: string) =>
-    !!options.entityDbFolder &&
-    path.resolve(candidate) === path.resolve(options.entityDbFolder);
+    !!options.entityDbFolder && path.resolve(candidate) === path.resolve(options.entityDbFolder);
 
   const lastDir = options.lastDialogDir;
   if (lastDir && options.pathExists(lastDir) && !isEntityDbFolder(lastDir)) {

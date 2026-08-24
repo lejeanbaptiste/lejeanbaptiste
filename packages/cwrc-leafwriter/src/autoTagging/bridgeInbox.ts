@@ -10,7 +10,12 @@
 import { getCentralId } from './concordance';
 import { findEntity, type EntityKind } from './entities';
 import { listEntities } from './entityOps';
-import { planReconcile, planReconcileFields, type EntityFields, type ScalarField } from './reconcile';
+import {
+  planReconcile,
+  planReconcileFields,
+  type EntityFields,
+  type ScalarField,
+} from './reconcile';
 
 export interface BridgeItem {
   id: string;
@@ -112,7 +117,11 @@ export function buildBridgeInbox(
   for (const entity of listEntities(pedbDoc)) {
     const pedbItem = findEntity(pedbDoc, entity.id);
     if (!pedbItem) continue;
-    const base: BridgeItem = { id: entity.id, name: entity.names[0] ?? entity.id, kind: entity.kind };
+    const base: BridgeItem = {
+      id: entity.id,
+      name: entity.names[0] ?? entity.id,
+      kind: entity.kind,
+    };
 
     const centralId = getCentralId(pedbItem, userStableId);
     if (!centralId) {

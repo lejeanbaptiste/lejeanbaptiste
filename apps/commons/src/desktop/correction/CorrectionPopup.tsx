@@ -66,7 +66,11 @@ export const CorrectionPopup = ({
   const { t } = useTranslation();
   const correctionInputRef = useRef<HTMLInputElement>(null);
   const extraAttrNames = Object.keys(extraAttributes);
-  const { ref: popupRef, left, top } = useClampedPopupPosition(anchor, open, [
+  const {
+    ref: popupRef,
+    left,
+    top,
+  } = useClampedPopupPosition(anchor, open, [
     addAttrName,
     availableAttributes.length,
     cert,
@@ -223,7 +227,16 @@ export const CorrectionPopup = ({
         ) : null}
       </Stack>
 
-      <Box sx={{ p: 0.75, borderTop: 1, borderColor: 'divider', display: 'flex', gap: 0.5, flexWrap: 'wrap' }}>
+      <Box
+        sx={{
+          p: 0.75,
+          borderTop: 1,
+          borderColor: 'divider',
+          display: 'flex',
+          gap: 0.5,
+          flexWrap: 'wrap',
+        }}
+      >
         <Button size="small" variant="contained" onClick={onApply} sx={{ fontSize: '0.75rem' }}>
           {t('LWC.desktop.correction.ok')}
         </Button>

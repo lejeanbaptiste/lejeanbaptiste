@@ -2,19 +2,34 @@ import { Box, Popover, TextField, Typography } from '@mui/material';
 import { useEffect, useState } from 'react';
 import type { MouseEvent } from 'react';
 import type { SxProps, Theme } from '@mui/material';
-import {
-  hexToHsl,
-  hslToHex,
-  hueGradientCss,
-  lightnessGradientCss,
-} from './colorUtils';
+import { hexToHsl, hslToHex, hueGradientCss, lightnessGradientCss } from './colorUtils';
 
 const PRESET_COLORS = [
-  '#ffffff', '#f5f5f5', '#e0e0e0', '#9e9e9e', '#000000',
-  '#e8f4fc', '#1a5276', '#eafaf1', '#186a3b', '#fef9e7',
-  '#7d6608', '#f4ecf7', '#512e5f', '#fdebd0', '#784212',
-  '#ffcdd2', '#f44336', '#c8e6c9', '#4caf50', '#bbdefb',
-  '#2196f3', '#fff9c4', '#ffc107', '#e1bee7', '#9c27b0',
+  '#ffffff',
+  '#f5f5f5',
+  '#e0e0e0',
+  '#9e9e9e',
+  '#000000',
+  '#e8f4fc',
+  '#1a5276',
+  '#eafaf1',
+  '#186a3b',
+  '#fef9e7',
+  '#7d6608',
+  '#f4ecf7',
+  '#512e5f',
+  '#fdebd0',
+  '#784212',
+  '#ffcdd2',
+  '#f44336',
+  '#c8e6c9',
+  '#4caf50',
+  '#bbdefb',
+  '#2196f3',
+  '#fff9c4',
+  '#ffc107',
+  '#e1bee7',
+  '#9c27b0',
 ];
 
 const isValidHex = (value: string): boolean => /^#[0-9a-f]{6}$/i.test(value.trim());
@@ -138,9 +153,7 @@ export const ColorSwatchPicker = ({
             aria-label={`${ariaLabel} hue`}
             max={360}
             min={0}
-            onChange={(event) =>
-              commitHsl(Number(event.target.value), saturation, lightness)
-            }
+            onChange={(event) => commitHsl(Number(event.target.value), saturation, lightness)}
             step={1}
             sx={{
               appearance: 'none',

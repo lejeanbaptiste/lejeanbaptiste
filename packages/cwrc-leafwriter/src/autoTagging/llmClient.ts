@@ -200,8 +200,7 @@ export class MistralLlmClient implements LlmClient {
     this.fetchImpl = options.fetchImpl ?? defaultFetch;
     this.isGroq = this.baseUrl.includes('groq.com');
     this.structuredOutput =
-      options.structuredOutput ??
-      (this.isGroq ? 'prompt_only' : 'json_schema');
+      options.structuredOutput ?? (this.isGroq ? 'prompt_only' : 'json_schema');
     this.maxRateLimitRetries = options.maxRateLimitRetries ?? 6;
   }
 
@@ -271,7 +270,11 @@ export class MistralLlmClient implements LlmClient {
         await sleep(delayMs, request.signal);
         continue;
       }
-      if (!result.ok && isJsonValidateFailed(result.status, result.text) && mode !== 'prompt_only') {
+      if (
+        !result.ok &&
+        isJsonValidateFailed(result.status, result.text) &&
+        mode !== 'prompt_only'
+      ) {
         mode = 'prompt_only';
         result = await this.postCompletion(request, mode);
       }

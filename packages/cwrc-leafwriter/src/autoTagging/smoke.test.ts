@@ -66,7 +66,8 @@ describe('auto-tagging smoke test (real corpus)', () => {
     const half = Math.ceil(suggestions.length / 2);
     const accepted = suggestions.slice(0, half);
     for (const s of accepted) session.logDecision({ suggestion: s, decision: 'accepted' });
-    for (const s of suggestions.slice(half)) session.logDecision({ suggestion: s, decision: 'rejected' });
+    for (const s of suggestions.slice(half))
+      session.logDecision({ suggestion: s, decision: 'rejected' });
 
     // 4. Apply the accepted suggestions to the document.
     const result = await session.apply(accepted);
@@ -100,7 +101,7 @@ describe('auto-tagging smoke test (real corpus)', () => {
     // Readable trace.
     const applied = result.applied;
     const alreadyTagged = result.results.filter((r) => r.outcome === 'already-tagged').length;
-     
+
     console.log(
       [
         '',

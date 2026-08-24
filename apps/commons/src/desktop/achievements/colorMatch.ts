@@ -3,7 +3,8 @@ export interface ColorStats {
   saturation: number;
 }
 
-const clamp = (value: number, min: number, max: number): number => Math.min(max, Math.max(min, value));
+const clamp = (value: number, min: number, max: number): number =>
+  Math.min(max, Math.max(min, value));
 
 // A sprite that's already close to the target needs no correction; the
 // clamp keeps a wildly mismatched pair from being pushed so far it looks

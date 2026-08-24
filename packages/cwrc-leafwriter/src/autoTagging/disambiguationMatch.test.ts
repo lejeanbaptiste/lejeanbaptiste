@@ -164,22 +164,24 @@ describe('disambiguationMatch', () => {
     const claim = (text: string, language = 'zh') => ({
       mainsnak: { datavalue: { value: { text, language } } },
     });
-    const fetchImpl = jest.fn(async () =>
-      ({
-        ok: true,
-        json: async () => ({
-          entities: {
-            Q11332: {
-              claims: {
-                P1559: [claim('張衡', 'zh-hant')],
-                P1782: [claim('平子')],
-                P1786: [claim('西鄂侯')],
-                P31: [{ mainsnak: { datavalue: { value: { id: 'Q5' } } } }],
+    const fetchImpl = jest.fn(
+      async () =>
+        ({
+          ok: true,
+          json: async () => ({
+            entities: {
+              Q11332: {
+                claims: {
+                  P1559: [claim('張衡', 'zh-hant')],
+                  P1782: [claim('平子')],
+                  P1786: [claim('西鄂侯')],
+                  P31: [{ mainsnak: { datavalue: { value: { id: 'Q5' } } } }],
+                },
               },
             },
-          },
-        }),
-      }) as unknown as Response) as unknown as typeof fetch;
+          }),
+        }) as unknown as Response,
+    ) as unknown as typeof fetch;
 
     const names = (await fetchWikidataTypedNames(['Q11332'], fetchImpl)).get('Q11332')!;
     expect(names).toEqual(

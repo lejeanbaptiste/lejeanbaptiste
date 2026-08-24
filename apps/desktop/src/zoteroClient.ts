@@ -48,8 +48,7 @@ export interface ZoteroCaywPick {
 }
 
 export type ZoteroCaywResult =
-  | { ok: true; picks: ZoteroCaywPick[] }
-  | { ok: false; cancelled: boolean; error?: string };
+  { ok: true; picks: ZoteroCaywPick[] } | { ok: false; cancelled: boolean; error?: string };
 
 const probe = async (path: string): Promise<Response | null> => {
   try {
@@ -181,7 +180,6 @@ export const listZoteroStyles = async (): Promise<ZoteroStyle[]> => {
   for (const entry of entries) {
     if (!entry.endsWith('.csl')) continue;
     try {
-       
       const xml = await fs.readFile(path.join(stylesDir, entry), 'utf-8');
       const fallbackId = entry.replace(/\.csl$/, '');
       styles.push({

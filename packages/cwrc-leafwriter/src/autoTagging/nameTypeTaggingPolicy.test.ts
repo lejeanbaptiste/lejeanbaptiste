@@ -57,10 +57,7 @@ describe('bucketForTypedName', () => {
   });
 
   it('honors never bucket for art regardless of length', () => {
-    const policy = resolveNameTypeTaggingPolicy(
-      { nameTypeTaggingPolicy: { art: 'never' } },
-      'zh',
-    );
+    const policy = resolveNameTypeTaggingPolicy({ nameTypeTaggingPolicy: { art: 'never' } }, 'zh');
     expect(bucketForTypedName('art', '半山老人', policy)).toBe('never');
   });
 

@@ -21,10 +21,30 @@ const parentsForTagCache = new Map<string, { name: string; level: number }[]>();
  * never register `p` as a valid child of `div`.
  */
 const RELAXNG_KEYWORDS = new Set([
-  'element', 'define', 'ref', 'choice', 'group', 'interleave', 'optional',
-  'zeroOrMore', 'oneOrMore', 'list', 'value', 'empty', 'text', 'notAllowed',
-  'mixed', 'grammar', 'start', 'include', 'param', 'data', 'anyName', 'nsName',
-  'name', 'attribute',
+  'element',
+  'define',
+  'ref',
+  'choice',
+  'group',
+  'interleave',
+  'optional',
+  'zeroOrMore',
+  'oneOrMore',
+  'list',
+  'value',
+  'empty',
+  'text',
+  'notAllowed',
+  'mixed',
+  'grammar',
+  'start',
+  'include',
+  'param',
+  'data',
+  'anyName',
+  'nsName',
+  'name',
+  'attribute',
 ]);
 
 /**

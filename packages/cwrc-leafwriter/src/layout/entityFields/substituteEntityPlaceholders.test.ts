@@ -3,7 +3,9 @@
  */
 jest.mock('../../overmind', () => ({
   useAppState: () => ({ ui: { translationMode: { active: false } } }),
-  useActions: () => ({ ui: { notifyViaSnackbar: jest.fn(), setSelectedTranslationUnit: jest.fn() } }),
+  useActions: () => ({
+    ui: { notifyViaSnackbar: jest.fn(), setSelectedTranslationUnit: jest.fn() },
+  }),
 }));
 
 jest.mock('react-i18next', () => ({
@@ -54,10 +56,7 @@ describe('substituteEntityPlaceholders', () => {
 
   test('repeated mentions of the same entity get first-occurrence vs later short form', () => {
     const entities = new Map([['q1', person('q1', 'Cui Zusi')]]);
-    const html = substituteEntityPlaceholders(
-      '{{entity:q1}} met {{entity:q1}} again.',
-      entities,
-    );
+    const html = substituteEntityPlaceholders('{{entity:q1}} met {{entity:q1}} again.', entities);
     const refs = refsIn(html);
     expect(refs).toHaveLength(2);
     expect(refs[0]!.textContent).toBe('Cui Zusi (440–483)');

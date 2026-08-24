@@ -45,7 +45,9 @@ describe('sanmiaoSchemaMerge', () => {
     expect(helpers).toContain('<define name="ljb.sanmiao.int">');
     expect(helpers).toContain('<element name="int">');
     expect(helpers).toMatch(/<define name="ljb\.sanmiao\.int">[\s\S]*<text\/>/);
-    expect(helpers).not.toContain('<define name="ljb.sanmiao.int">\n    <element name="int">\n      <empty/>');
+    expect(helpers).not.toContain(
+      '<define name="ljb.sanmiao.int">\n    <element name="int">\n      <empty/>',
+    );
     expect(helpers).not.toContain('<grammar');
     expect(helpers).not.toContain('<define name="date">');
   });
@@ -77,8 +79,11 @@ describe('sanmiaoSchemaMerge', () => {
   it('detects TEI schemas and merge need', () => {
     expect(isTeiRelaxNgSchema(MINIMAL_TEI)).toBe(true);
     expect(shouldMergeSanmiaoDates('teiAll', MINIMAL_TEI)).toBe(true);
-    expect(shouldMergeSanmiaoDates('teiAll', buildSanmiaoMergedSchemaFiles(MINIMAL_TEI, 'tei_all.rng').flatRng)).toBe(
-      false,
-    );
+    expect(
+      shouldMergeSanmiaoDates(
+        'teiAll',
+        buildSanmiaoMergedSchemaFiles(MINIMAL_TEI, 'tei_all.rng').flatRng,
+      ),
+    ).toBe(false);
   });
 });

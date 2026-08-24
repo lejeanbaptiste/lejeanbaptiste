@@ -124,7 +124,9 @@ export interface ParsedGeoAdminCompound {
 }
 
 export function parseGeoAdminCompound(zh: string): ParsedGeoAdminCompound | null {
-  const name = String(zh ?? '').normalize('NFKC').trim();
+  const name = String(zh ?? '')
+    .normalize('NFKC')
+    .trim();
   if (!name) return null;
   if (PROCEDURAL_BLOCKLIST.has(name)) return null;
 

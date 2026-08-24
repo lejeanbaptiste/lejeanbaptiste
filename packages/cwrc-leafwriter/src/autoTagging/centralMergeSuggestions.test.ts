@@ -40,7 +40,9 @@ describe('pendingMergeSuggestions', () => {
     const suggestion = makeMergeSuggestion('pedb-1', [a, b]);
     const resolution = makeMergeSuggestionResolution(suggestion.id, 'ignored');
 
-    expect(pendingMergeSuggestions([suggestion], [resolution], [], CEDB_ID, idsOf(doc))).toEqual([]);
+    expect(pendingMergeSuggestions([suggestion], [resolution], [], CEDB_ID, idsOf(doc))).toEqual(
+      [],
+    );
   });
 
   it('drops a suggestion already satisfied by a regular Absorb order', () => {
@@ -122,7 +124,9 @@ describe('pendingDeleteSuggestions', () => {
     const suggestion = makeDeleteSuggestion('pedb-1', a);
     const resolution = makeMergeSuggestionResolution(suggestion.id, 'ignored');
 
-    expect(pendingDeleteSuggestions([suggestion], [resolution], [], CEDB_ID, idsOf(doc))).toEqual([]);
+    expect(pendingDeleteSuggestions([suggestion], [resolution], [], CEDB_ID, idsOf(doc))).toEqual(
+      [],
+    );
   });
 
   it('drops a delete suggestion once the central entity was actually deleted', () => {

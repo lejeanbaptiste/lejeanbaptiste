@@ -13,7 +13,10 @@ import {
 } from './entityDatabaseCheck';
 import { SQLITE_REQUIRED_LOOKUP_MESSAGE } from './sqliteRequired';
 
-const makeApi = (files: Record<string, string>, extras: Partial<EntityFileApi> = {}): EntityFileApi => ({
+const makeApi = (
+  files: Record<string, string>,
+  extras: Partial<EntityFileApi> = {},
+): EntityFileApi => ({
   ensureDirectory: async () => undefined,
   pathExists: async (path: string) => path in files,
   readFile: async (path: string) => files[path] ?? '',
@@ -45,7 +48,9 @@ describe('entityDatabaseCheck', () => {
     expect(databaseId).toBe('new-id');
     expect(mismatch).toBe(true);
     expect(
-      getDatabaseId(new DOMParser().parseFromString(createEntitiesScaffold('x'), 'application/xml')),
+      getDatabaseId(
+        new DOMParser().parseFromString(createEntitiesScaffold('x'), 'application/xml'),
+      ),
     ).toBe('x');
   });
 
@@ -149,9 +154,7 @@ describe('orphan sweep + classified purge', () => {
     const { store, checkApi } = buildProject();
     const report = await sweepProjectOrphans(store, checkApi, '/proj');
     const specs = await collectOrphanStubSpecs(checkApi, report);
-    expect(specs).toEqual([
-      { id: 'person-orphan', kind: 'person', name: 'Gone' },
-    ]);
+    expect(specs).toEqual([{ id: 'person-orphan', kind: 'person', name: 'Gone' }]);
   });
 
   it('reconstitutes genuine orphans as stub entities without rewriting corpus keys', async () => {

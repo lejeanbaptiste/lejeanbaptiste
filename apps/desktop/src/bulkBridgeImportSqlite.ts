@@ -4,7 +4,10 @@
  * worker and BulkSyncIndicator stay unchanged.
  */
 
-import { mintEntityId, type EntityKind } from '../../../packages/cwrc-leafwriter/src/autoTagging/entities';
+import {
+  mintEntityId,
+  type EntityKind,
+} from '../../../packages/cwrc-leafwriter/src/autoTagging/entities';
 import type {
   BulkBridgeProgress,
   BulkBridgeProposal,
@@ -170,10 +173,7 @@ export async function bulkBridgeImportSqlite(
     });
 
   const maybeCheckpoint = async () => {
-    if (
-      done > 0 &&
-      (done % checkpointInterval < chunkSize || done === sourceIds.length)
-    ) {
+    if (done > 0 && (done % checkpointInterval < chunkSize || done === sourceIds.length)) {
       await options.onCheckpoint?.({
         stage: 'matching',
         done,

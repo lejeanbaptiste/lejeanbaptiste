@@ -127,8 +127,7 @@ const mergeLanguage = (
 ): DateFormatSettings => ({
   ...preset,
   ...stored,
-  titleConvention:
-    parseTitleConvention(stored?.titleConvention) ?? preset.titleConvention,
+  titleConvention: parseTitleConvention(stored?.titleConvention) ?? preset.titleConvention,
 });
 
 export const loadDateFormatState = (): StoredDateFormatState => {
@@ -175,9 +174,7 @@ export const saveDateFormatState = (state: StoredDateFormatState): void => {
 };
 
 /** Map a translation language code (e.g. fr-FR, de) to a date-format bucket. */
-export const dateFormatLanguageForCode = (
-  lang: string | null | undefined,
-): DateFormatLanguage => {
+export const dateFormatLanguageForCode = (lang: string | null | undefined): DateFormatLanguage => {
   const code = (lang ?? '').trim().toLowerCase().split(/[-_]/)[0] ?? '';
   if (code === 'fr') return 'fr';
   if (code === 'de') return 'de';

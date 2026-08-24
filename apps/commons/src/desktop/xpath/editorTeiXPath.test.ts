@@ -1,7 +1,4 @@
-import {
-  findEditorNodeByMatchingTeiXPath,
-  getTeiXPathFromEditorElement,
-} from './editorTeiXPath';
+import { findEditorNodeByMatchingTeiXPath, getTeiXPathFromEditorElement } from './editorTeiXPath';
 import { matchesTeiTag } from './teiXPathWalker';
 
 describe('editorTeiXPath', () => {

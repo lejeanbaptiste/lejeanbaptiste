@@ -111,9 +111,7 @@ describe('backfillEntityNames', () => {
             sourceIds: ['Norbert:dynasty:三國蜀'],
           },
         ],
-        origin: [
-          { source: 'Norbert', originType: 'jiguan', placeName: '涿郡' },
-        ],
+        origin: [{ source: 'Norbert', originType: 'jiguan', placeName: '涿郡' }],
         startYear: 221,
         endYear: 263,
         dateSource: 'floruit',
@@ -189,9 +187,7 @@ describe('backfillEntityNames', () => {
     // Re-running must not duplicate the title.
     const second = await backfillEntityNames(doc, { readPackFile });
     expect(second.entitiesUpdated).toBe(0);
-    expect(
-      listEntities(doc).find((entity) => entity.id === id)!.nobleTitles,
-    ).toHaveLength(1);
+    expect(listEntities(doc).find((entity) => entity.id === id)!.nobleTitles).toHaveLength(1);
   });
 
   it('strips a family-prefixed composite courtesy name from authority intake', async () => {

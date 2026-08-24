@@ -1,6 +1,6 @@
 # Le Jean-Baptiste
 
-![Le Jean-Baptiste — XML avec du corps](.github/splash.png)
+<img src=".github/splash.png" alt="Le Jean-Baptiste — XML avec du corps" width="50%">
 
 Le Jean-Baptiste is a desktop XML markup editor forked from the in-browser tool [LEAF-Writer](https://leaf-writer.leaf-vre.org/), part of [The Linked Editing Academic Framework](https://www.leaf-vre.org/) (LEAF) tool suite. LEAF-Writer is an enhancement of the CWRC-Writer developed by the [Canadian Writing Research Collaboratory (CWRC)](https://cwrc.ca), and was developed alongside the [Named Entity Recognition Vetting Environment](https://nerve.lincsproject.ca/en) (NERVE). The project website is [github.com/lejeanbaptiste/lejeanbaptiste](https://github.com/lejeanbaptiste/lejeanbaptiste). Le Jean-Baptiste wraps the web app in Electron for offline, individual desktop use and includes workflow changes aimed particularly at local editing and East Asian documents.
 
@@ -168,6 +168,7 @@ See [apps/desktop/README.md](apps/desktop/README.md) for the compilation and pac
 - [ ] Support for user SQL databases
 - [ ] Multi-machine offline sync beyond current mirror
 - [ ] Option to track annotator on the tag level for collaborations.
+
 ---
 
 ### Pending

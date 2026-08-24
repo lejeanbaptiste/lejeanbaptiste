@@ -218,9 +218,7 @@ export const EntityDisplayPopup = ({
       });
       return;
     }
-    const nextHidden = shown
-      ? [...spec.hidden, id]
-      : spec.hidden.filter((part) => part !== id);
+    const nextHidden = shown ? [...spec.hidden, id] : spec.hidden.filter((part) => part !== id);
     onChange({ ...spec, hidden: [...new Set(nextHidden)] });
   };
 
@@ -333,7 +331,10 @@ export const EntityDisplayPopup = ({
                   color={isHidden ? 'default' : 'primary'}
                   disabled={!available}
                   label={
-                    <Box component="span" sx={{ display: 'inline-flex', alignItems: 'center', gap: 0.5 }}>
+                    <Box
+                      component="span"
+                      sx={{ display: 'inline-flex', alignItems: 'center', gap: 0.5 }}
+                    >
                       <span>{t(partTitleKey(id))}</span>
                       <Box
                         component="span"
@@ -464,14 +465,9 @@ export const EntityDisplayPopup = ({
             </Typography>
           ) : null}
         </DialogContent>
-        <DialogActions
-          sx={{ justifyContent: canSuggestTranslation ? 'space-between' : undefined }}
-        >
+        <DialogActions sx={{ justifyContent: canSuggestTranslation ? 'space-between' : undefined }}>
           {canSuggestTranslation ? (
-            <Button
-              disabled={saving || suggestInFlight}
-              onClick={() => void suggestTranslation()}
-            >
+            <Button disabled={saving || suggestInFlight} onClick={() => void suggestTranslation()}>
               {suggestInFlight
                 ? t('LW.translationPane.entityFormat.suggestTranslationBusy')
                 : t('LW.translationPane.entityFormat.suggestTranslation')}

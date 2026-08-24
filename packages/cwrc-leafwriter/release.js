@@ -1,5 +1,4 @@
- 
-const shell = require('shelljs')
+const shell = require('shelljs');
 
 if (!shell.which('git')) {
   shell.echo('Sorry, this script requires git');

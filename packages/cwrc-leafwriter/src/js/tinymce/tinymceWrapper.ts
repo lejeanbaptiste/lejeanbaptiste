@@ -17,7 +17,12 @@ import {
   applyPunctuationBoundaryMove,
   isPunctuationBoundaryNavEvent,
 } from '../../utilities/punctuationBoundaryNav';
-import { normalizePastedParagraphs, fixNestedPastedParagraphs, removeEmptyParagraphs, PARAGRAPH_TAG } from './normalizePastedParagraphs';
+import {
+  normalizePastedParagraphs,
+  fixNestedPastedParagraphs,
+  removeEmptyParagraphs,
+  PARAGRAPH_TAG,
+} from './normalizePastedParagraphs';
 import {
   buildLeafWriterClipboardPayload,
   detectPasteAmbiguity,
@@ -63,8 +68,7 @@ export const tinymceWrapperInit = function ({
   const toolbar = document.querySelector('#editor-toolbar');
   const toolbarHeight = toolbar?.getBoundingClientRect().height ?? 0;
 
-  const visualBodyStyle =
-    `body { margin: 8px !important; max-width: none !important; width: auto !important; font-size: ${DEFAULT_EDITOR_FONT_SIZE}pt; }`;
+  const visualBodyStyle = `body { margin: 8px !important; max-width: none !important; width: auto !important; font-size: ${DEFAULT_EDITOR_FONT_SIZE}pt; }`;
 
   const isNodeInEditorBody = (editor: LeafWriterEditor, node: Node | null | undefined) => {
     if (!node) return false;
@@ -93,8 +97,7 @@ export const tinymceWrapperInit = function ({
     return false;
   };
 
-  const escapeAttribute = (value: string) =>
-    escapeHtml(value).replace(/'/g, '&apos;');
+  const escapeAttribute = (value: string) => escapeHtml(value).replace(/'/g, '&apos;');
 
   const buildEditorTagAttributes = (node: Element) => {
     const attrs: Record<string, string> = {};
@@ -243,7 +246,8 @@ export const tinymceWrapperInit = function ({
     editor: LeafWriterEditor,
     range: Range | null = null,
   ): PasteInsertionContext => {
-    const parentTag = getInsertionParentTagFromRange(editor, range) ?? getInsertionParentTag(editor);
+    const parentTag =
+      getInsertionParentTagFromRange(editor, range) ?? getInsertionParentTag(editor);
     const blockEl = findBlockElFromRange(editor, range);
     const blockParentTag = blockEl
       ? findTagNameFromNode(blockEl.parentNode, editor.getBody())
@@ -256,10 +260,7 @@ export const tinymceWrapperInit = function ({
     };
   };
 
-  const canImportXmlFragment = (
-    context: PasteInsertionContext,
-    fragmentDocument: XMLDocument,
-  ) => {
+  const canImportXmlFragment = (context: PasteInsertionContext, fragmentDocument: XMLDocument) => {
     if (!context.parentTag) return false;
 
     return Array.from(fragmentDocument.documentElement.childNodes).every((node) => {
@@ -455,11 +456,7 @@ export const tinymceWrapperInit = function ({
     editor.selection.setRng(collapseRange);
   };
 
-  const insertEditorContentAtRange = (
-    editor: LeafWriterEditor,
-    content: string,
-    range: Range,
-  ) => {
+  const insertEditorContentAtRange = (editor: LeafWriterEditor, content: string, range: Range) => {
     const doc = editor.getDoc();
     const container = doc.createElement('div');
     container.innerHTML = content;
@@ -499,8 +496,17 @@ export const tinymceWrapperInit = function ({
       ambiguity === 'xml' && xmlStatus.content ? 'xml' : 'paragraphs',
     );
     const modes = [
-      { mode: 'paragraphs', label: 'Paragraphs', description: 'Blank lines create new paragraphs; without blank lines, every line break does.' },
-      { mode: 'line-breaks', label: 'Line breaks', description: 'Single line breaks become lb elements.' },
+      {
+        mode: 'paragraphs',
+        label: 'Paragraphs',
+        description:
+          'Blank lines create new paragraphs; without blank lines, every line break does.',
+      },
+      {
+        mode: 'line-breaks',
+        label: 'Line breaks',
+        description: 'Single line breaks become lb elements.',
+      },
       {
         mode: 'xml',
         label: 'XML fragment',
@@ -656,10 +662,7 @@ export const tinymceWrapperInit = function ({
     const nextHref = tinymceContentThemeCss(dark);
     for (const link of Array.from(doc.querySelectorAll('link[rel="stylesheet"]'))) {
       const href = link.getAttribute('href') ?? '';
-      if (
-        href.includes('/skins/content/dark/') ||
-        href.includes('/skins/content/writer/')
-      ) {
+      if (href.includes('/skins/content/dark/') || href.includes('/skins/content/writer/')) {
         if (href !== nextHref) link.setAttribute('href', nextHref);
       }
     }
@@ -752,7 +755,10 @@ export const tinymceWrapperInit = function ({
         const projectLanguage = window.__leafWriterProject?.getProjectSourceLanguage?.();
         void projectLanguage?.then((language) => {
           editorBody.classList.toggle('project-language-chinese', isChineseLanguageCode(language));
-          editorBody.classList.toggle('project-language-japanese', isJapaneseLanguageCode(language));
+          editorBody.classList.toggle(
+            'project-language-japanese',
+            isJapaneseLanguageCode(language),
+          );
         });
 
         if (writer.isReadOnly === true) {
@@ -763,9 +769,8 @@ export const tinymceWrapperInit = function ({
         // the serializer entirely. BeforeAddUndo is the only reliable intercept point.
         // Strip our transient classes from the level content, then cancel the level
         // entirely if the stripped content is identical to the previous level.
-        const stripLWClasses = (s: string) => s
-          .replace(/\s*\btag-cursor-active\b/g, '')
-          .replace(/\s*\btag-at-boundary\b/g, '');
+        const stripLWClasses = (s: string) =>
+          s.replace(/\s*\btag-cursor-active\b/g, '').replace(/\s*\btag-at-boundary\b/g, '');
 
         editor.on('BeforeAddUndo', (e: any) => {
           if (!e.level?.content) return;
@@ -1310,13 +1315,27 @@ export const tinymceWrapperInit = function ({
       if (offset === 0) {
         const prevSib = container.previousSibling;
         const via = tagElThroughEntity(prevSib);
-        if (via) { tagEl = via; atBoundary = true; externalBoundary = true; boundarySide = 'after'; }
-        else if (isTagOrCombinedEl(parent)) { tagEl = parent; atBoundary = true; }
+        if (via) {
+          tagEl = via;
+          atBoundary = true;
+          externalBoundary = true;
+          boundarySide = 'after';
+        } else if (isTagOrCombinedEl(parent)) {
+          tagEl = parent;
+          atBoundary = true;
+        }
       } else if (offset >= textLen) {
         const nextSib = container.nextSibling;
         const via = tagElThroughEntity(nextSib);
-        if (via) { tagEl = via; atBoundary = true; externalBoundary = true; boundarySide = 'before'; }
-        else if (isTagOrCombinedEl(parent)) { tagEl = parent; atBoundary = true; }
+        if (via) {
+          tagEl = via;
+          atBoundary = true;
+          externalBoundary = true;
+          boundarySide = 'before';
+        } else if (isTagOrCombinedEl(parent)) {
+          tagEl = parent;
+          atBoundary = true;
+        }
       } else {
         if (isTagOrCombinedEl(parent)) tagEl = parent;
       }
@@ -1328,15 +1347,26 @@ export const tinymceWrapperInit = function ({
       const viaAfter = tagElThroughEntity(childAfter);
       const viaBefore = tagElThroughEntity(childBefore);
 
-      if (viaAfter) { tagEl = viaAfter; atBoundary = true; externalBoundary = true; boundarySide = 'before'; }
-      else if (viaBefore) { tagEl = viaBefore; atBoundary = true; externalBoundary = true; boundarySide = 'after'; }
-      else if (isTagOrCombinedEl(el)) {
+      if (viaAfter) {
+        tagEl = viaAfter;
+        atBoundary = true;
+        externalBoundary = true;
+        boundarySide = 'before';
+      } else if (viaBefore) {
+        tagEl = viaBefore;
+        atBoundary = true;
+        externalBoundary = true;
+        boundarySide = 'after';
+      } else if (isTagOrCombinedEl(el)) {
         tagEl = el;
         atBoundary = offset === 0 || offset >= el.childNodes.length;
       }
     }
 
-    if (!tagEl) { applyBoundaryClasses(null, null); return; }
+    if (!tagEl) {
+      applyBoundaryClasses(null, null);
+      return;
+    }
 
     applyBoundaryClasses(tagEl, atBoundary ? tagEl : null, externalBoundary, boundarySide);
   };
@@ -1434,7 +1464,10 @@ export const tinymceWrapperInit = function ({
       currentBoundaryElement &&
       !currentBoundaryIsExternal &&
       event.code === 'Delete' &&
-      !event.shiftKey && !event.ctrlKey && !event.metaKey && !event.altKey
+      !event.shiftKey &&
+      !event.ctrlKey &&
+      !event.metaKey &&
+      !event.altKey
     ) {
       event.preventDefault();
       return;
@@ -1451,7 +1484,9 @@ export const tinymceWrapperInit = function ({
     if (
       event.shiftKey &&
       isBackspaceOrDelete(event) &&
-      !event.ctrlKey && !event.metaKey && !event.altKey &&
+      !event.ctrlKey &&
+      !event.metaKey &&
+      !event.altKey &&
       writer.isReadOnly !== true
     ) {
       event.preventDefault();
@@ -1482,7 +1517,10 @@ export const tinymceWrapperInit = function ({
       isBackspaceOrDelete(event) &&
       ((!isBackspace(event) && currentBoundarySide === 'before') ||
         (isBackspace(event) && currentBoundarySide === 'after')) &&
-      !event.shiftKey && !event.ctrlKey && !event.metaKey && !event.altKey &&
+      !event.shiftKey &&
+      !event.ctrlKey &&
+      !event.metaKey &&
+      !event.altKey &&
       writer.isReadOnly !== true &&
       writer.isTextLocked !== true
     ) {
@@ -1498,7 +1536,10 @@ export const tinymceWrapperInit = function ({
     if (tinymce.Env.os.isMacOS() ? event.metaKey : event.ctrlKey) return;
 
     //allow select all
-    if ((tinymce.Env.os.isMacOS() ? event.metaKey : event.ctrlKey) && event.key.toLowerCase() === 'a') {
+    if (
+      (tinymce.Env.os.isMacOS() ? event.metaKey : event.ctrlKey) &&
+      event.key.toLowerCase() === 'a'
+    ) {
       event.preventDefault();
       return;
     }

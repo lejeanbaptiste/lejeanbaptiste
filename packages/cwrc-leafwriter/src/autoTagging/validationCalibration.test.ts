@@ -23,7 +23,9 @@ const validation = (over: Partial<AiValidationResult>): AiValidationResult => ({
   ...over,
 });
 
-const labeled = (over: Partial<LabeledValidation> & { correct: boolean; validation: AiValidationResult }): LabeledValidation => ({
+const labeled = (
+  over: Partial<LabeledValidation> & { correct: boolean; validation: AiValidationResult },
+): LabeledValidation => ({
   suggestionId: 'x',
   tag: 'persName',
   surface: '張衡',
@@ -37,9 +39,57 @@ describe('labelSuggestionsAgainstGold', () => {
     );
     const gold = goldMentions(doc, 'ignore', ['persName', 'placeName']);
     const suggestions = [
-      { id: 'a', source: 'ai' as const, action: 'add' as const, tag: 'persName', status: 'pending' as const, anchor: { documentId: '', xpath: '', offset: 0, surface: '張衡', occurrence: 1, contextBefore: '', contextAfter: '', nodeHash: '' } },
-      { id: 'b', source: 'ai' as const, action: 'add' as const, tag: 'roleName', status: 'pending' as const, anchor: { documentId: '', xpath: '', offset: 0, surface: '洛陽', occurrence: 1, contextBefore: '', contextAfter: '', nodeHash: '' } },
-      { id: 'c', source: 'ai' as const, action: 'add' as const, tag: 'persName', status: 'pending' as const, anchor: { documentId: '', xpath: '', offset: 0, surface: '虛構', occurrence: 1, contextBefore: '', contextAfter: '', nodeHash: '' } },
+      {
+        id: 'a',
+        source: 'ai' as const,
+        action: 'add' as const,
+        tag: 'persName',
+        status: 'pending' as const,
+        anchor: {
+          documentId: '',
+          xpath: '',
+          offset: 0,
+          surface: '張衡',
+          occurrence: 1,
+          contextBefore: '',
+          contextAfter: '',
+          nodeHash: '',
+        },
+      },
+      {
+        id: 'b',
+        source: 'ai' as const,
+        action: 'add' as const,
+        tag: 'roleName',
+        status: 'pending' as const,
+        anchor: {
+          documentId: '',
+          xpath: '',
+          offset: 0,
+          surface: '洛陽',
+          occurrence: 1,
+          contextBefore: '',
+          contextAfter: '',
+          nodeHash: '',
+        },
+      },
+      {
+        id: 'c',
+        source: 'ai' as const,
+        action: 'add' as const,
+        tag: 'persName',
+        status: 'pending' as const,
+        anchor: {
+          documentId: '',
+          xpath: '',
+          offset: 0,
+          surface: '虛構',
+          occurrence: 1,
+          contextBefore: '',
+          contextAfter: '',
+          nodeHash: '',
+        },
+      },
     ];
     const labels = labelSuggestionsAgainstGold(gold, suggestions);
     expect(labels.get('a')).toBe(true);
@@ -57,7 +107,15 @@ describe('confusionAtThreshold', () => {
       labeled({ suggestionId: 'd', correct: false, validation: validation({ confidence: 0.2 }) }),
     ];
     const result = confusionAtThreshold(data, 0.8);
-    expect(result).toMatchObject({ tp: 1, fp: 1, fn: 1, tn: 1, precision: 0.5, recall: 0.5, accuracy: 0.5 });
+    expect(result).toMatchObject({
+      tp: 1,
+      fp: 1,
+      fn: 1,
+      tn: 1,
+      precision: 0.5,
+      recall: 0.5,
+      accuracy: 0.5,
+    });
   });
 
   it('treats an empty set as perfect (no evidence of failure)', () => {
@@ -119,8 +177,22 @@ describe('runValidationCalibrationHarness', () => {
         // suggest: one correct hit, one mistagged false positive (right span, wrong requested tag)
         return JSON.stringify({
           suggestions: [
-            { surface: '張衡', occurrence: 1, tag: 'persName', action: 'add', confidence: 0.9, rationale: 'name' },
-            { surface: '洛陽', occurrence: 1, tag: 'persName', action: 'add', confidence: 0.6, rationale: 'guess' },
+            {
+              surface: '張衡',
+              occurrence: 1,
+              tag: 'persName',
+              action: 'add',
+              confidence: 0.9,
+              rationale: 'name',
+            },
+            {
+              surface: '洛陽',
+              occurrence: 1,
+              tag: 'persName',
+              action: 'add',
+              confidence: 0.6,
+              rationale: 'guess',
+            },
           ],
         });
       }
@@ -142,6 +214,12 @@ describe('runValidationCalibrationHarness', () => {
     expect(report.suggestCount).toBe(2);
     expect(report.correctCount).toBe(1);
     expect(report.incorrectCount).toBe(1);
-    expect(report.atConfiguredThreshold).toMatchObject({ threshold: 0.8, tp: 1, fp: 0, tn: 1, fn: 0 });
+    expect(report.atConfiguredThreshold).toMatchObject({
+      threshold: 0.8,
+      tp: 1,
+      fp: 0,
+      tn: 1,
+      fn: 0,
+    });
   });
 });

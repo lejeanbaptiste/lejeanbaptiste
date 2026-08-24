@@ -38,7 +38,10 @@ const getSnapshotsRoot = (projectRootPath: string) =>
   path.join(getBackupRoot(projectRootPath), SNAPSHOTS_DIR_NAME);
 
 const makeSnapshotId = (date = new Date()) =>
-  date.toISOString().replace(/\.\d{3}Z$/, '').replace(/:/g, '-');
+  date
+    .toISOString()
+    .replace(/\.\d{3}Z$/, '')
+    .replace(/:/g, '-');
 
 const makeUniqueSnapshotPath = async (snapshotsRoot: string) => {
   const baseId = makeSnapshotId();
@@ -117,9 +120,7 @@ const copyTree = async (
       if (!entry.isFile() && !entry.isSymbolicLink()) continue;
 
       const sourceStat = await fs.stat(sourcePath);
-      const previousPath = previousFilesRoot
-        ? path.join(previousFilesRoot, relativePath)
-        : null;
+      const previousPath = previousFilesRoot ? path.join(previousFilesRoot, relativePath) : null;
 
       if (previousPath && (await statMatches(sourcePath, previousPath))) {
         try {

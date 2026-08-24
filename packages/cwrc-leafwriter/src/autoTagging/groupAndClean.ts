@@ -35,15 +35,8 @@
  */
 
 import type { AuthorityCandidate } from './authority';
-import {
-  parseNobleTitleSpan,
-  SLOT_TAG,
-  type NobleTitleVocabulary,
-} from './nobleTitleSpanParser';
-import {
-  validatePersonWrapper,
-  type PersonWrapperValidation,
-} from './personWrapperValidation';
+import { parseNobleTitleSpan, SLOT_TAG, type NobleTitleVocabulary } from './nobleTitleSpanParser';
+import { validatePersonWrapper, type PersonWrapperValidation } from './personWrapperValidation';
 
 /** The identity-bearing child of a person wrapper (not a posthumous/temple name). */
 function wrapperPersonName(wrapper: Element): Element | null {

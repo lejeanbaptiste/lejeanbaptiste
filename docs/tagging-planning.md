@@ -29,28 +29,28 @@ Later phases: disambiguation queue, resolution-file attribute propagation, linke
 
 ## Why the current LEAF-Writer model is wrong for LJB
 
-| Norbert / Markus phase | Goal | LEAF-Writer today |
-|------------------------|------|-------------------|
-| 1. Auto markup | External scripts | Partial “Scrape Candidate Entities” only |
-| 2. Identify | `persName` without IDs | Toolbar → `PersonDialog` → authority lookup |
-| 3. Disambiguate | Table, negative filter | Per-tag lookup modal |
-| 4. Propagate IDs | Bulk from resolutions | One entity at a time |
+| Norbert / Markus phase | Goal                   | LEAF-Writer today                           |
+| ---------------------- | ---------------------- | ------------------------------------------- |
+| 1. Auto markup         | External scripts       | Partial “Scrape Candidate Entities” only    |
+| 2. Identify            | `persName` without IDs | Toolbar → `PersonDialog` → authority lookup |
+| 3. Disambiguate        | Table, negative filter | Per-tag lookup modal                        |
+| 4. Propagate IDs       | Bulk from resolutions  | One entity at a time                        |
 
 Relevant code today:
 
-| Piece | Role | Path |
-|-------|------|------|
-| Entity dialog chain | Select → modal → lookup | `tagger.addEntityDialog`, `PersonDialog`, `useEntityLookup` |
-| Structure wrap / rename | Wrap, edit tag name | `tagger.addStructureTag`, `tagger.editStructureTag`, `changeTagDialog` |
-| Split at caret | Context menu only; skips entities | `tagger.splitTag` |
-| Schema child check | Valid parent/child | `schemaManager.isTagValidChildOfParent` |
-| Possible tags at cursor | Validator suggestions (valid + invalid flags) | `@cwrc/leafwriter-validator` → `getPossibleNodesAt` |
-| Attributes modal | Slow jQuery dialog | `attributesEditor/attributesEditor.ts`, `AttributeWidget` |
-| TEI entity attrs | `@ref`, `@key`, `@cert` | `schema/mappings/tei.ts` |
-| Enter = new paragraph | TinyMCE default | `tinymceWrapper.ts` (keydown/keyup) |
-| Explorer rename | IPC | `renameExplorerItem`, `renamePath` |
+| Piece                   | Role                                          | Path                                                                   |
+| ----------------------- | --------------------------------------------- | ---------------------------------------------------------------------- |
+| Entity dialog chain     | Select → modal → lookup                       | `tagger.addEntityDialog`, `PersonDialog`, `useEntityLookup`            |
+| Structure wrap / rename | Wrap, edit tag name                           | `tagger.addStructureTag`, `tagger.editStructureTag`, `changeTagDialog` |
+| Split at caret          | Context menu only; skips entities             | `tagger.splitTag`                                                      |
+| Schema child check      | Valid parent/child                            | `schemaManager.isTagValidChildOfParent`                                |
+| Possible tags at cursor | Validator suggestions (valid + invalid flags) | `@cwrc/leafwriter-validator` → `getPossibleNodesAt`                    |
+| Attributes modal        | Slow jQuery dialog                            | `attributesEditor/attributesEditor.ts`, `AttributeWidget`              |
+| TEI entity attrs        | `@ref`, `@key`, `@cert`                       | `schema/mappings/tei.ts`                                               |
+| Enter = new paragraph   | TinyMCE default                               | `tinymceWrapper.ts` (keydown/keyup)                                    |
+| Explorer rename         | IPC                                           | `renameExplorerItem`, `renamePath`                                     |
 
-**North star:** *Enter names or inserts tags; F2 renames tags; Alt+Enter adds attributes; propagate and queue-walk live only in the tag popup; authority lives in the attributes panel; linking and bulk ID work stay separate, never blocking identify.*
+**North star:** _Enter names or inserts tags; F2 renames tags; Alt+Enter adds attributes; propagate and queue-walk live only in the tag popup; authority lives in the attributes panel; linking and bulk ID work stay separate, never blocking identify._
 
 ---
 
@@ -60,13 +60,13 @@ All default chords are **customisable** in Settings (Tagging section) to avoid O
 
 ### Master chord table (defaults)
 
-| Context | Enter | Alt+Enter | Shift+Enter | F2 |
-|---------|--------|-----------|-------------|-----|
-| **Editor — text selected** | Tag popup → **wrap** selection (nest if schema allows) | Attribute popup | **Line break** (split if inside inline tag) | Rename **innermost tag at caret** |
-| **Editor — collapsed caret** | Tag popup → **insert** (`p` default in list) | Attribute popup on **current tag** | **Line break** (split if inside inline tag) | Rename **tag at caret** |
-| **Tag popup open** | Apply **single** | **Queue-walk** | **Propagate** all exact matches in file | — |
-| **Attribute popup open** | Commit attribute; stay open for next attr | — | Propagate attr (later phase) | — |
-| **Explorer — item selected** | — | — | — | Rename **file/folder** |
+| Context                      | Enter                                                  | Alt+Enter                          | Shift+Enter                                 | F2                                |
+| ---------------------------- | ------------------------------------------------------ | ---------------------------------- | ------------------------------------------- | --------------------------------- |
+| **Editor — text selected**   | Tag popup → **wrap** selection (nest if schema allows) | Attribute popup                    | **Line break** (split if inside inline tag) | Rename **innermost tag at caret** |
+| **Editor — collapsed caret** | Tag popup → **insert** (`p` default in list)           | Attribute popup on **current tag** | **Line break** (split if inside inline tag) | Rename **tag at caret**           |
+| **Tag popup open**           | Apply **single**                                       | **Queue-walk**                     | **Propagate** all exact matches in file     | —                                 |
+| **Attribute popup open**     | Commit attribute; stay open for next attr              | —                                  | Propagate attr (later phase)                | —                                 |
+| **Explorer — item selected** | —                                                      | —                                  | —                                           | Rename **file/folder**            |
 
 **Enter never renames a tag.** **Text selected + Enter always wraps/nests**, never opens rename mode.
 
@@ -87,11 +87,11 @@ All default chords are **customisable** in Settings (Tagging section) to avoid O
 
 ### Three apply modes (tag popup only)
 
-| Mode | Action | Chord (in popup) |
-|------|--------|------------------|
-| **Single** | Wrap selection or insert one element at caret | **Enter** |
-| **All in file** | Same tag on every **exact** match of selected string in open file | **Shift+Enter** |
-| **Queue-walk** | Apply tag → jump to next **untagged** occurrence of same string; repeat | **Alt+Enter** |
+| Mode            | Action                                                                  | Chord (in popup) |
+| --------------- | ----------------------------------------------------------------------- | ---------------- |
+| **Single**      | Wrap selection or insert one element at caret                           | **Enter**        |
+| **All in file** | Same tag on every **exact** match of selected string in open file       | **Shift+Enter**  |
+| **Queue-walk**  | Apply tag → jump to next **untagged** occurrence of same string; repeat | **Alt+Enter**    |
 
 - Popup shows **buttons** for all three modes plus match count (“14 matches in this file”).
 - **Single undo step** per apply (including bulk and queue segments).
@@ -114,9 +114,9 @@ All default chords are **customisable** in Settings (Tagging section) to avoid O
 
 ### Queue-walk loop
 
-1. Select string → Enter → popup with last tag highlighted.  
-2. **Alt+Enter** in popup → wrap → auto-select next untagged occurrence.  
-3. Repeat (minimal UI; popup may collapse to one-line hint).  
+1. Select string → Enter → popup with last tag highlighted.
+2. **Alt+Enter** in popup → wrap → auto-select next untagged occurrence.
+3. Repeat (minimal UI; popup may collapse to one-line hint).
 4. **Esc** → exit walk.
 
 ---
@@ -138,15 +138,15 @@ All default chords are **customisable** in Settings (Tagging section) to avoid O
 
 When user confirms insert from the tag popup (collapsed caret):
 
-| Intended insert | Parent context | Behaviour |
-|-----------------|----------------|-----------|
-| Same tag as parent (e.g. `p` inside `p`) | Block | **Split parent** at caret into two sibling tags |
+| Intended insert                           | Parent context          | Behaviour                                                                        |
+| ----------------------------------------- | ----------------------- | -------------------------------------------------------------------------------- |
+| Same tag as parent (e.g. `p` inside `p`)  | Block                   | **Split parent** at caret into two sibling tags                                  |
 | Inline tag valid `inside` current element | e.g. `label` inside `p` | Insert `<tag/>` at caret via `editor.insertContent` — never wraps parent content |
-| Block tag valid `after` current element | e.g. `desc` after `p` | Insert empty sibling after current element |
-| `p` anywhere inside a `p` ancestor | — | Split the `p` at caret (fast path, no popup confirmation needed) |
-| Invalid | any | Greyed in popup or refuse with one-line message |
+| Block tag valid `after` current element   | e.g. `desc` after `p`   | Insert empty sibling after current element                                       |
+| `p` anywhere inside a `p` ancestor        | —                       | Split the `p` at caret (fast path, no popup confirmation needed)                 |
+| Invalid                                   | any                     | Greyed in popup or refuse with one-line message                                  |
 
-**Key rule:** with no selection, insertion *never wraps existing content*. The validator's `resolveInsertAction` resolves to `inside`, `after`, or `add`; the first two route to insert-at-caret or insert-as-sibling; `add` also routes to insert-at-caret (inline empty tag). The pre-existing `cleanRange` path in `isSelectionValid` is bypassed for no-selection inserts to prevent it from silently expanding the range in the wrong direction.
+**Key rule:** with no selection, insertion _never wraps existing content_. The validator's `resolveInsertAction` resolves to `inside`, `after`, or `add`; the first two route to insert-at-caret or insert-as-sibling; `add` also routes to insert-at-caret (inline empty tag). The pre-existing `cleanRange` path in `isSelectionValid` is bypassed for no-selection inserts to prevent it from silently expanding the range in the wrong direction.
 
 **Shift+Enter** outside popups (line break) uses the **same split/insert engine** as choosing `lb` from the popup — one code path.
 
@@ -287,11 +287,14 @@ export interface TagUsageStats {
     attrValues: Record<string, Record<string, Record<string, number>>>;
   };
   /** relative file path → same shape as project subset */
-  files: Record<string, {
-    tags: Record<string, number>;
-    attrs: Record<string, Record<string, number>>;
-    attrValues: Record<string, Record<string, Record<string, number>>>;
-  }>;
+  files: Record<
+    string,
+    {
+      tags: Record<string, number>;
+      attrs: Record<string, Record<string, number>>;
+      attrValues: Record<string, Record<string, Record<string, number>>>;
+    }
+  >;
 }
 ```
 
@@ -301,14 +304,14 @@ Updated on save or debounced after tag/attr apply. Used for popup ordering only,
 
 ## Settings (Tagging section in Native Settings)
 
-| Setting | Default |
-|---------|---------|
+| Setting                                         | Default                           |
+| ----------------------------------------------- | --------------------------------- |
 | Chords: tag popup / attrs / rename / line break | See master table (all remappable) |
-| Default insert suggestion (insert mode) | `p` highlighted, not silent |
-| Line-break element | `lb` (schema-dependent) |
-| Show invalid tags in popups | greyed (true) / hidden (false) |
-| Propagate: exact match only | on |
-| Attr propagate: skip already-linked | on (later) |
+| Default insert suggestion (insert mode)         | `p` highlighted, not silent       |
+| Line-break element                              | `lb` (schema-dependent)           |
+| Show invalid tags in popups                     | greyed (true) / hidden (false)    |
+| Propagate: exact match only                     | on                                |
+| Attr propagate: skip already-linked             | on (later)                        |
 
 Schema validity remains authoritative; settings tune **behaviour**, not RelaxNG rules.
 
@@ -341,20 +344,20 @@ Schema validity remains authoritative; settings tune **behaviour**, not RelaxNG 
 
 ## What already exists (reuse)
 
-| Capability | Status | Where |
-|------------|--------|-------|
-| Wrap selection in tag | Done | `tagger.addStructureTag` |
-| Rename tag | Done (modal path) | `changeTagDialog`, `editStructureTag` |
-| Split at caret | Partial | `tagger.splitTag` |
-| Possible nodes at target | Done | `getPossibleNodesAt` |
-| Attributes editor | Done (replace UX) | `attributesEditor`, `AttributeWidget` |
-| Explorer rename | Done | `renameExplorerItem`, `renamePath` |
-| Enter = paragraph | **Replace** | `tinymceWrapper.ts` |
-| Enter / F2 / Alt+Enter popups | **Phase 1 done** (Enter + F2); Alt+Enter Phase 2 | `apps/commons/src/desktop/tagging/` |
-| Attributes panel | **Not done** | — |
-| Per-type tag colours (project CSS) | **Not done** | defaults in `editor.less` (entity types only) |
-| Tag + attr stats | **Not done** | — |
-| Disambiguation queue | **Not done** | — |
+| Capability                         | Status                                           | Where                                         |
+| ---------------------------------- | ------------------------------------------------ | --------------------------------------------- |
+| Wrap selection in tag              | Done                                             | `tagger.addStructureTag`                      |
+| Rename tag                         | Done (modal path)                                | `changeTagDialog`, `editStructureTag`         |
+| Split at caret                     | Partial                                          | `tagger.splitTag`                             |
+| Possible nodes at target           | Done                                             | `getPossibleNodesAt`                          |
+| Attributes editor                  | Done (replace UX)                                | `attributesEditor`, `AttributeWidget`         |
+| Explorer rename                    | Done                                             | `renameExplorerItem`, `renamePath`            |
+| Enter = paragraph                  | **Replace**                                      | `tinymceWrapper.ts`                           |
+| Enter / F2 / Alt+Enter popups      | **Phase 1 done** (Enter + F2); Alt+Enter Phase 2 | `apps/commons/src/desktop/tagging/`           |
+| Attributes panel                   | **Not done**                                     | —                                             |
+| Per-type tag colours (project CSS) | **Not done**                                     | defaults in `editor.less` (entity types only) |
+| Tag + attr stats                   | **Not done**                                     | —                                             |
+| Disambiguation queue               | **Not done**                                     | —                                             |
 
 ---
 
@@ -402,25 +405,25 @@ Schema validity remains authoritative; settings tune **behaviour**, not RelaxNG 
 
 ## Key files (planned)
 
-| File | Role |
-|------|------|
-| `apps/commons/src/desktop/tagging/tagCommandPopup.tsx` (new) | Tag IME overlay |
-| `apps/commons/src/desktop/tagging/tagCommand.ts` (new) | Wrap / insert / rename modes |
-| `apps/commons/src/desktop/tagging/tagInsert.ts` (new) | Insert + Oxygen split |
-| `apps/commons/src/desktop/tagging/tagPropagate.ts` (new) | Exact-match propagate |
-| `apps/commons/src/desktop/tagging/attributeCommandPopup.tsx` (new) | Alt+Enter attr overlay |
-| `apps/commons/src/desktop/tagging/AttributesPanel.tsx` (new) | Right rail + Lookup + colour swatch |
-| `apps/commons/src/desktop/tagging/tagColors.ts` (new) | JSON + CSS generate + editor inject |
-| `schema/tag-colors.json` | Per-type highlight + text overrides |
-| `schema/tag-colors.css` | Generated stylesheet (git-tracked or regenerated on open) |
-| `apps/commons/src/desktop/tagging/tagStats.ts` (new) | Tag + attr usage counts |
-| `apps/commons/src/desktop/tagging/tagSuggestions.ts` (new) | Validator + stats merge |
-| `apps/commons/src/desktop/tagging/keybindings.ts` (new) | Defaults + Settings persistence |
-| `packages/cwrc-leafwriter/src/js/tinymce/tinymceWrapper.ts` | Enter/F2/Alt+Enter interception |
-| `packages/cwrc-leafwriter/src/js/tagger.ts` | splitTag, addStructureTag, editStructureTag |
-| `apps/commons/src/pages/project/NativeSettingsPage.tsx` | Tagging + chord settings |
-| `apps/commons/src/desktop/tagging/disambiguationQueue.ts` (Phase 4) | Mention extraction |
-| `apps/commons/src/desktop/tagging/attributePropagate.ts` (Phase 5) | Bulk attr apply |
+| File                                                                | Role                                                      |
+| ------------------------------------------------------------------- | --------------------------------------------------------- |
+| `apps/commons/src/desktop/tagging/tagCommandPopup.tsx` (new)        | Tag IME overlay                                           |
+| `apps/commons/src/desktop/tagging/tagCommand.ts` (new)              | Wrap / insert / rename modes                              |
+| `apps/commons/src/desktop/tagging/tagInsert.ts` (new)               | Insert + Oxygen split                                     |
+| `apps/commons/src/desktop/tagging/tagPropagate.ts` (new)            | Exact-match propagate                                     |
+| `apps/commons/src/desktop/tagging/attributeCommandPopup.tsx` (new)  | Alt+Enter attr overlay                                    |
+| `apps/commons/src/desktop/tagging/AttributesPanel.tsx` (new)        | Right rail + Lookup + colour swatch                       |
+| `apps/commons/src/desktop/tagging/tagColors.ts` (new)               | JSON + CSS generate + editor inject                       |
+| `schema/tag-colors.json`                                            | Per-type highlight + text overrides                       |
+| `schema/tag-colors.css`                                             | Generated stylesheet (git-tracked or regenerated on open) |
+| `apps/commons/src/desktop/tagging/tagStats.ts` (new)                | Tag + attr usage counts                                   |
+| `apps/commons/src/desktop/tagging/tagSuggestions.ts` (new)          | Validator + stats merge                                   |
+| `apps/commons/src/desktop/tagging/keybindings.ts` (new)             | Defaults + Settings persistence                           |
+| `packages/cwrc-leafwriter/src/js/tinymce/tinymceWrapper.ts`         | Enter/F2/Alt+Enter interception                           |
+| `packages/cwrc-leafwriter/src/js/tagger.ts`                         | splitTag, addStructureTag, editStructureTag               |
+| `apps/commons/src/pages/project/NativeSettingsPage.tsx`             | Tagging + chord settings                                  |
+| `apps/commons/src/desktop/tagging/disambiguationQueue.ts` (Phase 4) | Mention extraction                                        |
+| `apps/commons/src/desktop/tagging/attributePropagate.ts` (Phase 5)  | Bulk attr apply                                           |
 
 ---
 
@@ -438,32 +441,32 @@ Schema validity remains authoritative; settings tune **behaviour**, not RelaxNG 
 
 ## Testing plan
 
-| Case | Expect |
-|------|--------|
-| Select text + Enter | Tag popup; last tag highlighted; Enter wraps (nests if valid) |
-| Select text inside `persName` + Enter | Nested tag only; never rename |
-| Collapsed Enter | Insert popup; `p` highlighted; must confirm |
-| Type `persName` + Enter (insert) | Empty `persName` at caret if valid |
-| F2 on tag | Rename popup with current name; Enter renames |
-| F2 in explorer | Rename file/folder |
-| Shift+Enter outside popup | Line break; splits inline parent if needed |
-| Insert `lb` / `p` inside `persName` | Parent splits into two; break between |
-| Tag popup Shift+Enter | All exact matches wrapped; one undo |
-| Tag popup Alt+Enter | Queue-walk through untagged matches |
-| Alt+Enter in editor | Attr popup; Tab to value; chain with Enter |
-| Lookup in attr popup | Not present |
-| Lookup in attributes panel | Fills link attrs |
-| Colour swatch in panel | Opens compact picker; highlight + text |
-| Change `persName` colours | All `persName` in project update visually |
-| Save / switch file | Colours unchanged (project CSS) |
-| Reset colour for type | Reverts to catalog default; JSON entry removed |
-| Backspace out of empty tag | Unwrap allowed |
-| Nested `persName` via propagate | Skipped |
-| Nested `note` in `persName` via wrap | Allowed if schema OK |
-| Invalid tag in popup | Greyed or blocked |
-| IME composing + Enter | No popup |
-| Save file | Stats updated |
-| Remapped chord in Settings | New binding works; conflict shown |
+| Case                                  | Expect                                                        |
+| ------------------------------------- | ------------------------------------------------------------- |
+| Select text + Enter                   | Tag popup; last tag highlighted; Enter wraps (nests if valid) |
+| Select text inside `persName` + Enter | Nested tag only; never rename                                 |
+| Collapsed Enter                       | Insert popup; `p` highlighted; must confirm                   |
+| Type `persName` + Enter (insert)      | Empty `persName` at caret if valid                            |
+| F2 on tag                             | Rename popup with current name; Enter renames                 |
+| F2 in explorer                        | Rename file/folder                                            |
+| Shift+Enter outside popup             | Line break; splits inline parent if needed                    |
+| Insert `lb` / `p` inside `persName`   | Parent splits into two; break between                         |
+| Tag popup Shift+Enter                 | All exact matches wrapped; one undo                           |
+| Tag popup Alt+Enter                   | Queue-walk through untagged matches                           |
+| Alt+Enter in editor                   | Attr popup; Tab to value; chain with Enter                    |
+| Lookup in attr popup                  | Not present                                                   |
+| Lookup in attributes panel            | Fills link attrs                                              |
+| Colour swatch in panel                | Opens compact picker; highlight + text                        |
+| Change `persName` colours             | All `persName` in project update visually                     |
+| Save / switch file                    | Colours unchanged (project CSS)                               |
+| Reset colour for type                 | Reverts to catalog default; JSON entry removed                |
+| Backspace out of empty tag            | Unwrap allowed                                                |
+| Nested `persName` via propagate       | Skipped                                                       |
+| Nested `note` in `persName` via wrap  | Allowed if schema OK                                          |
+| Invalid tag in popup                  | Greyed or blocked                                             |
+| IME composing + Enter                 | No popup                                                      |
+| Save file                             | Stats updated                                                 |
+| Remapped chord in Settings            | New binding works; conflict shown                             |
 
 ---
 

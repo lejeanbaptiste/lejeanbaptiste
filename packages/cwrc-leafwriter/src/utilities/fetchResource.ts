@@ -54,9 +54,7 @@ export const filterResourceUrls = (urls: string[]): string[] => {
 const resolveIncludeUrl = (baseSchemaUrl: string, href: string): string => {
   const localBase = fromLocalFileUrl(baseSchemaUrl);
   if (localBase) {
-    const includeFile = href.includes('/')
-      ? (href.match(/(.*\/)(.*)/)?.[2] ?? href)
-      : href;
+    const includeFile = href.includes('/') ? (href.match(/(.*\/)(.*)/)?.[2] ?? href) : href;
     const separator = localBase.includes('\\') ? '\\' : '/';
     const dir = localBase.slice(
       0,
@@ -67,9 +65,7 @@ const resolveIncludeUrl = (baseSchemaUrl: string, href: string): string => {
 
   if (/^https?:\/\//i.test(baseSchemaUrl)) {
     const schemaBase = baseSchemaUrl.match(/(.*\/)(.*)/)?.[1];
-    const includeFile = href.includes('/')
-      ? (href.match(/(.*\/)(.*)/)?.[2] ?? href)
-      : href;
+    const includeFile = href.includes('/') ? (href.match(/(.*\/)(.*)/)?.[2] ?? href) : href;
     return schemaBase ? schemaBase + includeFile : href;
   }
 

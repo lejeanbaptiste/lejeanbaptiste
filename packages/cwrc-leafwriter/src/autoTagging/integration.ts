@@ -227,14 +227,16 @@ async function autoResolveNobleTitlesInDocument(
   store: EntityStore,
   doc: Document,
 ): Promise<boolean> {
-  const personRecords = (await store.sqliteCandidateRecords('person')) as {
-    id: string;
-    nobleTitles?: {
-      fief?: string | null;
-      roleName?: string | null;
-      posthumousName?: string | null;
-    }[];
-  }[] | null;
+  const personRecords = (await store.sqliteCandidateRecords('person')) as
+    | {
+        id: string;
+        nobleTitles?: {
+          fief?: string | null;
+          roleName?: string | null;
+          posthumousName?: string | null;
+        }[];
+      }[]
+    | null;
   const pedbTitleIndex = buildPersonTitleIndex(personRecords ?? []);
 
   const readPack = cachedPackReader();
@@ -591,15 +593,11 @@ export class AutoTaggingSession {
 
     const mappingsAfter =
       (await this.store.sqliteListAllCentralMappings(central.userStableId)) ?? [];
-    const pedbByCentral = new Map(
-      mappingsAfter.map((row) => [row.centralId, row.projectEntityId]),
-    );
+    const pedbByCentral = new Map(mappingsAfter.map((row) => [row.centralId, row.projectEntityId]));
     const coveredPedbIds = new Set(
       sqliteCentral
         .map((candidate) =>
-          candidate.centralEntityId
-            ? pedbByCentral.get(candidate.centralEntityId)
-            : undefined,
+          candidate.centralEntityId ? pedbByCentral.get(candidate.centralEntityId) : undefined,
         )
         .filter((id): id is string => !!id),
     );
@@ -608,8 +606,7 @@ export class AutoTaggingSession {
     // only on the project mirror), plus any still-unlinked after promote failed.
     const projectOnly = sqliteLocal
       .filter(
-        (candidate) =>
-          !!candidate.localEntityId && !coveredPedbIds.has(candidate.localEntityId),
+        (candidate) => !!candidate.localEntityId && !coveredPedbIds.has(candidate.localEntityId),
       )
       .map((candidate) => ({
         ...candidate,
@@ -623,9 +620,7 @@ export class AutoTaggingSession {
         candidates: sqliteCentral.map((candidate) =>
           asSyncedEntityCandidate(
             candidate,
-            candidate.centralEntityId
-              ? pedbByCentral.get(candidate.centralEntityId)
-              : undefined,
+            candidate.centralEntityId ? pedbByCentral.get(candidate.centralEntityId) : undefined,
           ),
         ),
       },
@@ -1767,8 +1762,7 @@ export class AutoTaggingSession {
     // 姓/名 splits are person-only — never invent them for offices, places, etc.
     let familyName: string | undefined;
     let givenName: string | undefined;
-    let romanizedName =
-      options.romanizedName ?? candidate.romanizedName ?? undefined;
+    let romanizedName = options.romanizedName ?? candidate.romanizedName ?? undefined;
     if (kind === 'person') {
       const authorityGivenFamilyNames = await collectGivenFamilyNamesForCandidate(
         candidate,
@@ -1815,12 +1809,13 @@ export class AutoTaggingSession {
       metaBioYears.endYear != null ||
       metaFloruitYears.startYear != null ||
       metaFloruitYears.endYear != null;
-    const fallbackYears = isFilterOnlyDateSource(candidate.dateSource) || candidate.dateSource === 'floruit'
-      ? {}
-      : {
-          ...(candidate.startYear != null ? { startYear: candidate.startYear } : {}),
-          ...(candidate.endYear != null ? { endYear: candidate.endYear } : {}),
-        };
+    const fallbackYears =
+      isFilterOnlyDateSource(candidate.dateSource) || candidate.dateSource === 'floruit'
+        ? {}
+        : {
+            ...(candidate.startYear != null ? { startYear: candidate.startYear } : {}),
+            ...(candidate.endYear != null ? { endYear: candidate.endYear } : {}),
+          };
     const fallbackFloruitYears =
       candidate.dateSource === 'floruit'
         ? {

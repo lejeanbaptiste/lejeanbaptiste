@@ -61,17 +61,11 @@ export const useExplorerTreeKeyboard = (
     });
   }, []);
 
-  const isExpanded = useCallback(
-    (path: string) => expandedPaths.has(path),
-    [expandedPaths],
-  );
+  const isExpanded = useCallback((path: string) => expandedPaths.has(path), [expandedPaths]);
 
-  const focusRow = useCallback(
-    (path: string) => {
-      setFocusedPath(path);
-    },
-    [],
-  );
+  const focusRow = useCallback((path: string) => {
+    setFocusedPath(path);
+  }, []);
 
   const getParentPath = useCallback(
     (path: string): string | null => {

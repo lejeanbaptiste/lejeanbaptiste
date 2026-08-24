@@ -1,5 +1,8 @@
 import type { AuthorityCache } from './authorityCache';
-import { buildDisambiguationCandidates, type DisambiguationCandidate } from './disambiguationCandidates';
+import {
+  buildDisambiguationCandidates,
+  type DisambiguationCandidate,
+} from './disambiguationCandidates';
 import { runAuthorityPrefetch, type AuthorityPrefetchSession } from './authorityPrefetch';
 import type { MentionGroup } from './mentions';
 
@@ -7,7 +10,9 @@ jest.mock('./disambiguationCandidates', () => ({
   buildDisambiguationCandidates: jest.fn(),
 }));
 
-const mockBuild = buildDisambiguationCandidates as jest.MockedFunction<typeof buildDisambiguationCandidates>;
+const mockBuild = buildDisambiguationCandidates as jest.MockedFunction<
+  typeof buildDisambiguationCandidates
+>;
 
 function makeGroup(surface: string, overrides: Partial<MentionGroup> = {}): MentionGroup {
   return { tag: 'persName', surface, instances: [], fullyResolved: false, ...overrides };
@@ -22,7 +27,9 @@ interface TestSession extends AuthorityPrefetchSession {
   pendingEntries: Map<string, DisambiguationCandidate[]>;
 }
 
-function makeSession(options: { hasCache?: boolean; seedPending?: Record<string, DisambiguationCandidate[]> } = {}): TestSession {
+function makeSession(
+  options: { hasCache?: boolean; seedPending?: Record<string, DisambiguationCandidate[]> } = {},
+): TestSession {
   const { hasCache = true, seedPending = {} } = options;
   const doc = {} as Document;
   const pendingEntries = new Map<string, DisambiguationCandidate[]>(
@@ -117,7 +124,9 @@ describe('runAuthorityPrefetch', () => {
 
   it('processes groups serially, one per idle tick, and remembers results', async () => {
     const session = makeSession();
-    mockBuild.mockImplementation(async (_doc, _tag, surface) => makeCandidates(`result-${surface}`));
+    mockBuild.mockImplementation(async (_doc, _tag, surface) =>
+      makeCandidates(`result-${surface}`),
+    );
 
     runAuthorityPrefetch(session, [makeGroup('甲'), makeGroup('乙')]);
 

@@ -19,7 +19,9 @@ describe('decodeTextBuffer', () => {
   });
 
   test('strips UTF-8 BOM', () => {
-    const result = decodeTextBuffer(Buffer.concat([Buffer.from([0xef, 0xbb, 0xbf]), Buffer.from('hello')]));
+    const result = decodeTextBuffer(
+      Buffer.concat([Buffer.from([0xef, 0xbb, 0xbf]), Buffer.from('hello')]),
+    );
     expect(result.encoding).toBe('utf-8');
     expect(result.text).toBe('hello');
   });

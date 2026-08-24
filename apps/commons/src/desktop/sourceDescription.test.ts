@@ -90,9 +90,7 @@ describe('applySourceDescriptionToXml', () => {
     const xml = applySourceDescriptionToXml(skeleton, data);
     const read = readSourceDescriptionFromXml(xml);
     expect(read.authors).toEqual(data.authors);
-    expect(xml.indexOf('<title>Les Misérables</title>')).toBeLessThan(
-      xml.indexOf('Victor Hugo'),
-    );
+    expect(xml.indexOf('<title>Les Misérables</title>')).toBeLessThan(xml.indexOf('Victor Hugo'));
   });
 
   test('leaves non-TEI XML untouched', () => {
@@ -106,7 +104,9 @@ describe('applySourceDescriptionToXml', () => {
     expect(xml).toContain(
       '<title ref="https://www.wikidata.org/wiki/Q180736">Les Misérables</title>',
     );
-    expect((xml.match(/<title ref="https:\/\/www\.wikidata\.org\/wiki\/Q180736">/g) ?? []).length).toBe(2);
+    expect(
+      (xml.match(/<title ref="https:\/\/www\.wikidata\.org\/wiki\/Q180736">/g) ?? []).length,
+    ).toBe(2);
     expect(readSourceDescriptionFromXml(xml)).toEqual(data);
   });
 

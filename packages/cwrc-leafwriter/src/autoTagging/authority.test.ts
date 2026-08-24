@@ -40,7 +40,7 @@ describe('authorityRowsFromCsv', () => {
     const csv = [
       'person_id,string,abr,tag,office_id,cat,follows_place,follows_office,follows_person,is_qualifier,start_year,end_year',
       '3854.0,漢顯宗,,ntName,,,,,,,,',
-      ',丞,,officeName,323.0,,b\'\\x01\',b\'\\x01\',,,,',
+      ",丞,,officeName,323.0,,b'\\x01',b'\\x01',,,,",
       '80160.0,張衡,,persName,,,,,,,,',
     ].join('\n');
 

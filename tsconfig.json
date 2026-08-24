@@ -33,9 +33,7 @@
       "@src/*": ["apps/commons/src/*"],
       "@cwrc/leafwriter": ["packages/cwrc-leafwriter/src/index.tsx"],
       "@cwrc/leafwriter/*": ["packages/cwrc-leafwriter/src/*"],
-      "@cwrc/leafwriter/languageCodes": [
-        "packages/cwrc-leafwriter/src/utilities/languageCodes.ts"
-      ],
+      "@cwrc/leafwriter/languageCodes": ["packages/cwrc-leafwriter/src/utilities/languageCodes.ts"],
       "@cwrc/leafwriter/documentExport": [
         "packages/cwrc-leafwriter/src/js/conversion/documentExport.ts"
       ],
@@ -45,15 +43,9 @@
       "@cwrc/leafwriter-storage-service": [
         "packages/cwrc-leafwriter-storage-service/src/index.tsx"
       ],
-      "@cwrc/leafwriter-storage-service/*": [
-        "packages/cwrc-leafwriter-storage-service/src/*"
-      ],
-      "@cwrc/leafwriter-validator": [
-        "packages/cwrc-leafwriter-validator/src/index.worker.ts"
-      ],
-      "@cwrc/leafwriter-validator/*": [
-        "packages/cwrc-leafwriter-validator/src/*"
-      ]
+      "@cwrc/leafwriter-storage-service/*": ["packages/cwrc-leafwriter-storage-service/src/*"],
+      "@cwrc/leafwriter-validator": ["packages/cwrc-leafwriter-validator/src/index.worker.ts"],
+      "@cwrc/leafwriter-validator/*": ["packages/cwrc-leafwriter-validator/src/*"]
     },
     "target": "ESNext",
     "types": ["node", "jest", "mocha", "@testing-library/jest-dom", "mdx"]

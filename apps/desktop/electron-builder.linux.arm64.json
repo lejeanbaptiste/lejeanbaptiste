@@ -16,10 +16,7 @@
       {
         "from": "resources/python",
         "to": "python",
-        "filter": [
-          "**/*",
-          "!.deps-installed"
-        ]
+        "filter": ["**/*", "!.deps-installed"]
       }
     ]
   },
@@ -37,8 +34,6 @@
     ]
   },
   "win": {
-    "target": [
-      "nsis"
-    ]
+    "target": ["nsis"]
   }
 }

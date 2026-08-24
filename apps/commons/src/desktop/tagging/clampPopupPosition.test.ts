@@ -1,4 +1,8 @@
-import { clampFixedPopupPosition, POPUP_ANCHOR_GAP, POPUP_VIEWPORT_PADDING } from './clampPopupPosition';
+import {
+  clampFixedPopupPosition,
+  POPUP_ANCHOR_GAP,
+  POPUP_VIEWPORT_PADDING,
+} from './clampPopupPosition';
 
 describe('clampFixedPopupPosition', () => {
   const viewport = { width: 800, height: 600 };

@@ -17,7 +17,9 @@ import { TranslationPane } from './TranslationPane';
 export const Layout = () => {
   const { active: translationActive } = useAppState().ui.translationMode;
   const { active: autoTaggingActive } = useAppState().ui.autoTaggingReview ?? { active: false };
-  const { active: disambiguationActive } = useAppState().ui.disambiguationReview ?? { active: false };
+  const { active: disambiguationActive } = useAppState().ui.disambiguationReview ?? {
+    active: false,
+  };
 
   return (
     <Stack>

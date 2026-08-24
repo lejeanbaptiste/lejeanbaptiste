@@ -60,8 +60,7 @@ export const AutoTaggingReviewPane = () => {
   const active = useAppState().ui.autoTaggingReview?.active ?? false;
   const batchId = useAppState().ui.autoTaggingReview?.batchId ?? 0;
   const aiValidationRequested = useAppState().ui.autoTaggingReview?.aiValidation ?? false;
-  const aiValidationEnabled =
-    isAiUiFeatureEnabled('tagBombCurate') && aiValidationRequested;
+  const aiValidationEnabled = isAiUiFeatureEnabled('tagBombCurate') && aiValidationRequested;
   const { exitAutoTaggingReview } = useActions().ui;
   const [suggestions, setSuggestions] = useState<Suggestion[]>([]);
   const [applied, setApplied] = useState(0);

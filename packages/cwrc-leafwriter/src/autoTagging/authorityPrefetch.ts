@@ -1,7 +1,10 @@
 import type { AuthorityCache } from './authorityCache';
 import { cachedPackReader } from '../services/authority-pack-lookup';
 import { prefetchFinished, prefetchProgress } from './authorityLoadProgress';
-import { buildDisambiguationCandidates, type DisambiguationCandidate } from './disambiguationCandidates';
+import {
+  buildDisambiguationCandidates,
+  type DisambiguationCandidate,
+} from './disambiguationCandidates';
 import {
   disambiguationCachingDisabledFromSettings,
   placeProximityKmFromSettings,
@@ -21,11 +24,18 @@ export interface AuthorityPrefetchSession {
   readonly cache: AuthorityCache | null;
   readonly dilaPlaceDetailCache: DilaPlaceDetailCache | null;
   getPendingCandidates(tag: string, surface: string): DisambiguationCandidate[] | null;
-  rememberPendingCandidates(tag: string, surface: string, candidates: DisambiguationCandidate[]): void;
+  rememberPendingCandidates(
+    tag: string,
+    surface: string,
+    candidates: DisambiguationCandidate[],
+  ): void;
   getEntitiesDocument(): Document | null;
   savePendingCache(): Promise<void>;
   candidateSearchCentralContext(): Promise<{ doc?: Document; userStableId: string } | null>;
-  disambiguationDbSources(tag: string, surface: string): Promise<{
+  disambiguationDbSources(
+    tag: string,
+    surface: string,
+  ): Promise<{
     local: DisambiguationCandidate[];
     central?: {
       userStableId: string;
@@ -84,7 +94,8 @@ export function runAuthorityPrefetch(
   if (!cache) return NOOP_HANDLE;
 
   const queue = groups.filter(
-    (group) => !group.fullyResolved && session.getPendingCandidates(group.tag, group.surface) == null,
+    (group) =>
+      !group.fullyResolved && session.getPendingCandidates(group.tag, group.surface) == null,
   );
   if (queue.length === 0) return NOOP_HANDLE;
 
@@ -130,7 +141,9 @@ export function runAuthorityPrefetch(
       if (session.getPendingCandidates(group.tag, group.surface) == null) {
         const dbSources = await session.disambiguationDbSources(group.tag, group.surface);
         if (stopped) return;
-        const placeProximityKm = placeProximityKmFromSettings(readPersistedDisambiguationSettings());
+        const placeProximityKm = placeProximityKmFromSettings(
+          readPersistedDisambiguationSettings(),
+        );
         const rows = await buildDisambiguationCandidates(
           dbSources.entitiesDoc,
           group.tag,

@@ -107,11 +107,7 @@ export const validateAndReplaceHit = (
 
   const nextContent = replaceHitAtOffset(content, start, end, nextReplacement);
 
-  if (
-    enforceWellFormedXml &&
-    MARKUP_CHARS.test(nextReplacement) &&
-    !isWellFormedXml(nextContent)
-  ) {
+  if (enforceWellFormedXml && MARKUP_CHARS.test(nextReplacement) && !isWellFormedXml(nextContent)) {
     return { ok: false, error: INVALID_XML_MESSAGE };
   }
 

@@ -25,7 +25,10 @@ import {
   AUTHORITY_PACKS_DIRNAME,
   type AuthorityPackId,
 } from '../../commons/src/desktop/authorityPackTypes';
-import { AUTHORITY_SOURCE_ORDER, AUTHORITY_SOURCE_LABELS } from '../../../packages/cwrc-leafwriter/src/autoTagging/packPaths';
+import {
+  AUTHORITY_SOURCE_ORDER,
+  AUTHORITY_SOURCE_LABELS,
+} from '../../../packages/cwrc-leafwriter/src/autoTagging/packPaths';
 import { compileAuthorityPacks } from './authorityCompile';
 import {
   fetchRemotePacksIndex,
@@ -129,8 +132,7 @@ const REMOTE_INDEX_TTL_MS = 5 * 60 * 1000;
 const lifecyclePath = (entityDbFolder: string): string =>
   path.join(entityDbFolder, AUTHORITY_DB_DIRNAME, LIFECYCLE_FILENAME);
 
-const useCompileFallback = (): boolean =>
-  process.env.AUTHORITY_LIFECYCLE_COMPILE_FALLBACK === '1';
+const useCompileFallback = (): boolean => process.env.AUTHORITY_LIFECYCLE_COMPILE_FALLBACK === '1';
 
 const normalizeProfile = (
   profile: AuthorityLifecycleProfile | null | undefined,
@@ -179,16 +181,12 @@ export const parseLifecycleConfig = (raw: string): AuthorityLifecycleConfig | nu
       version: 1,
       enabled: parsed.enabled,
       profile: normalizeProfile(parsed.profile),
-      profiles: Array.isArray(parsed.profiles)
-        ? parsed.profiles.filter(isKnownProfile)
-        : undefined,
+      profiles: Array.isArray(parsed.profiles) ? parsed.profiles.filter(isKnownProfile) : undefined,
       referenceDataEnabled:
         typeof parsed.referenceDataEnabled === 'boolean' ? parsed.referenceDataEnabled : false,
       lastCheckAt: typeof parsed.lastCheckAt === 'string' ? parsed.lastCheckAt : undefined,
       compilePolicyVersion:
-        typeof parsed.compilePolicyVersion === 'string'
-          ? parsed.compilePolicyVersion
-          : undefined,
+        typeof parsed.compilePolicyVersion === 'string' ? parsed.compilePolicyVersion : undefined,
       packBundleVersion:
         typeof parsed.packBundleVersion === 'string' ? parsed.packBundleVersion : undefined,
       declinedFirstPrompt:
@@ -205,9 +203,7 @@ export const readLifecycleConfig = async (
 ): Promise<AuthorityLifecycleConfig> => {
   if (!entityDbFolder) return { ...DEFAULT_LIFECYCLE };
   try {
-    const parsed = parseLifecycleConfig(
-      await fsp.readFile(lifecyclePath(entityDbFolder), 'utf-8'),
-    );
+    const parsed = parseLifecycleConfig(await fsp.readFile(lifecyclePath(entityDbFolder), 'utf-8'));
     return parsed ?? { ...DEFAULT_LIFECYCLE };
   } catch {
     return { ...DEFAULT_LIFECYCLE };
@@ -330,17 +326,22 @@ export const getAuthorityLifecycleStatus = async (
 
   const attributionBySource = new Map<string, string>();
   for (const pack of packs) {
-    if (pack.installed && pack.source && pack.attribution && !attributionBySource.has(pack.source)) {
+    if (
+      pack.installed &&
+      pack.source &&
+      pack.attribution &&
+      !attributionBySource.has(pack.source)
+    ) {
       attributionBySource.set(pack.source, pack.attribution);
     }
   }
-  const attributions = AUTHORITY_SOURCE_ORDER.filter((source) => attributionBySource.has(source)).map(
-    (source) => ({
-      source,
-      label: AUTHORITY_SOURCE_LABELS[source],
-      text: attributionBySource.get(source)!,
-    }),
-  );
+  const attributions = AUTHORITY_SOURCE_ORDER.filter((source) =>
+    attributionBySource.has(source),
+  ).map((source) => ({
+    source,
+    label: AUTHORITY_SOURCE_LABELS[source],
+    text: attributionBySource.get(source)!,
+  }));
 
   const profileStatuses = ALL_AUTHORITY_PROFILES.map((id) => {
     const spec = profileSpec(id);
@@ -491,7 +492,8 @@ export const runAuthorityLifecyclePipeline = async (
   if (!entityDbFolderReady(entityDbFolder)) {
     return {
       ok: false,
-      error: 'No authority-assets folder could be resolved; restart the app before enabling authorities.',
+      error:
+        'No authority-assets folder could be resolved; restart the app before enabling authorities.',
     };
   }
 
@@ -597,7 +599,10 @@ export const setAuthorityLifecycleReferenceDataEnabled = async (
   if (!enabledProfiles(current).length) {
     return { ok: false, error: 'Enable a language pack before downloading reference data.' };
   }
-  await writeLifecycleConfig(entityDbFolder, { referenceDataEnabled: enabled, lastError: undefined });
+  await writeLifecycleConfig(entityDbFolder, {
+    referenceDataEnabled: enabled,
+    lastError: undefined,
+  });
   if (!enabled) return { ok: true };
   return runAuthorityLifecyclePipeline({ entityDbFolder, onProgress });
 };

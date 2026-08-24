@@ -57,11 +57,7 @@ export function getCentralId(item: Element, userStableId: string): string | null
  * Upsert the central mapping for one user. Returns true when something changed
  * (new row or a different central id), false when it was already exactly this.
  */
-export function setCentralMapping(
-  item: Element,
-  userStableId: string,
-  centralId: string,
-): boolean {
+export function setCentralMapping(item: Element, userStableId: string, centralId: string): boolean {
   const existing = centralIdnos(item).find(
     (idno) => idno.getAttribute('subtype')?.trim() === userStableId,
   );

@@ -160,13 +160,21 @@ export function parseAuthorityNdjson(content: AuthorityPackContent): AuthorityCa
 }
 
 /** Stream-parse NDJSON without building one giant array (tag-bomb scale). */
-export function* iterateAuthorityNdjson(content: AuthorityPackContent): Generator<AuthorityCandidate> {
+export function* iterateAuthorityNdjson(
+  content: AuthorityPackContent,
+): Generator<AuthorityCandidate> {
   if (Array.isArray(content)) {
     for (const rawLine of content) {
       const trimmed = rawLine.trim();
       if (!trimmed) continue;
       const row = JSON.parse(trimmed) as AuthorityCandidate;
-      if (row.source && row.authorityId && row.kind && row.primaryName && row.searchStrings?.length) {
+      if (
+        row.source &&
+        row.authorityId &&
+        row.kind &&
+        row.primaryName &&
+        row.searchStrings?.length
+      ) {
         const sanitized = sanitizeAuthorityCandidate(row);
         if (sanitized) yield sanitized;
       }

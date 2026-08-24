@@ -103,11 +103,7 @@ export async function applyCentralRemapToPedbSqlite(
     const target = remap[mapping.centralId] ?? null;
     const name = mapping.label ?? mapping.projectEntityId;
     if (target && target !== mapping.centralId) {
-      await projectStore.sqliteSetCentralMapping(
-        mapping.projectEntityId,
-        userStableId,
-        target,
-      );
+      await projectStore.sqliteSetCentralMapping(mapping.projectEntityId, userStableId, target);
       result.repointed.push({
         id: mapping.projectEntityId,
         name,

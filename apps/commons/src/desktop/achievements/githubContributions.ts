@@ -55,7 +55,9 @@ export const fetchFlagOfCommitmentCount = async (token: string): Promise<number 
   try {
     const username = await fetchGithubUsername(token);
     if (!username) {
-      console.warn('[Flag of Commitment] could not resolve a GitHub username from the cached token');
+      console.warn(
+        '[Flag of Commitment] could not resolve a GitHub username from the cached token',
+      );
       return null;
     }
     console.debug(`[Flag of Commitment] counting contributions for GitHub user "${username}"`);

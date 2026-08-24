@@ -50,15 +50,20 @@ export const authorityLookupResultSchema = z.object({
 });
 export type AuthorityLookupResult = z.infer<typeof authorityLookupResultSchema>;
 
-export const searchFunctionSchema = z
-  .function({ input: [authorityLookupParamsSchema], output: z.promise(z.array(authorityLookupResultSchema)) });
+export const searchFunctionSchema = z.function({
+  input: [authorityLookupParamsSchema],
+  output: z.promise(z.array(authorityLookupResultSchema)),
+});
 export type SearchFunction = z.infer<typeof searchFunctionSchema>;
 
 export const entityTypePropsSchema = z.object({
   name: namedEntityTypesSchema,
-  url: z.url().startsWith('https://', {
-      error: 'Must provide secure URL'
-}).optional(),
+  url: z
+    .url()
+    .startsWith('https://', {
+      error: 'Must provide secure URL',
+    })
+    .optional(),
 });
 export type EntityTypeProps = z.infer<typeof entityTypePropsSchema>;
 
@@ -72,13 +77,13 @@ const baseAuthorityServiceConfigSchema = z.object({
   description: z.string().optional(),
   name: z
     .string({
-        error: (issue) => issue.input === undefined ? 'Every authority needs a name' : undefined
+      error: (issue) => (issue.input === undefined ? 'Every authority needs a name' : undefined),
     })
     .min(3, {
-        error: 'Must be at least 3 characters'
+      error: 'Must be at least 3 characters',
     })
     .max(20, {
-        error: 'Cannot have more than 20 characters'
+      error: 'Cannot have more than 20 characters',
     }),
   url: z.url().optional(),
 });
@@ -86,11 +91,9 @@ const baseAuthorityServiceConfigSchema = z.object({
 export const localAuthorityServiceConfigSchema = baseAuthorityServiceConfigSchema.extend({
   id: z.string(),
   searchType: z.literal('TEI-FILE'),
-  entityTypes: z
-    .array(entityTypePropsSchema.required())
-    .min(1, {
-        error: 'At least one entity type is required'
-    }),
+  entityTypes: z.array(entityTypePropsSchema.required()).min(1, {
+    error: 'At least one entity type is required',
+  }),
   options: z.object({ maxResults: z.number().prefault(10).optional() }).optional(),
 });
 export type LocalAuthorityServiceConfig = z.infer<typeof localAuthorityServiceConfigSchema>;

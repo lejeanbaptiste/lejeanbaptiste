@@ -32,9 +32,7 @@ describe('nobleTitleHeadword', () => {
   });
 
   it('matches pack nobleTitles when suffix alone is ambiguous', () => {
-    expect(
-      isNobleTitleHeadword('海鹽公主', [{ fief: '海鹽', roleName: '公主' }]),
-    ).toBe(true);
+    expect(isNobleTitleHeadword('海鹽公主', [{ fief: '海鹽', roleName: '公主' }])).toBe(true);
     expect(isNobleTitleHeadword('王安石')).toBe(false);
   });
 

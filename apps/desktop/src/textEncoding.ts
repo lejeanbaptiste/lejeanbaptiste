@@ -30,12 +30,16 @@ const scoreDecodedText = (text: string): number => {
     if (code === 0xfffd) score -= 60;
     else if (COMMON_CJK_SET.has(char)) score += 10;
     else if (code >= 0x4e00 && code <= 0x9fff) score += 2;
-    else if (code >= 0x3000 && code <= 0x30ff) score += 2; // CJK punct + kana
-    else if (code >= 0xac00 && code <= 0xd7af) score += 2; // hangul
-    else if (code >= 0xff01 && code <= 0xff60) score += 2; // fullwidth forms
+    else if (code >= 0x3000 && code <= 0x30ff)
+      score += 2; // CJK punct + kana
+    else if (code >= 0xac00 && code <= 0xd7af)
+      score += 2; // hangul
+    else if (code >= 0xff01 && code <= 0xff60)
+      score += 2; // fullwidth forms
     else if (code >= 0x20 && code <= 0x7e) score += 1;
     else if (code === 0x09 || code === 0x0a || code === 0x0d || code === 0x85) score += 1;
-    else if (code >= 0xe000 && code <= 0xf8ff) score -= 10; // private use
+    else if (code >= 0xe000 && code <= 0xf8ff)
+      score -= 10; // private use
     else if (code < 0x20 || (code >= 0x7f && code <= 0x9f)) score -= 20;
   }
   return score;

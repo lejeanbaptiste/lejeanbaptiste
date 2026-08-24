@@ -38,8 +38,7 @@ export function readPersistedValidationSettings(): ValidationSettings | undefine
   const raw = window.__leafWriterProject?.getAutoTaggingValidationSettings?.();
   if (!raw) return undefined;
   return {
-    aiValidation:
-      typeof raw.aiValidation === 'boolean' ? raw.aiValidation : DEFAULT_AI_VALIDATION,
+    aiValidation: typeof raw.aiValidation === 'boolean' ? raw.aiValidation : DEFAULT_AI_VALIDATION,
     autoAcceptThreshold:
       typeof raw.autoAcceptThreshold === 'number'
         ? raw.autoAcceptThreshold
@@ -56,9 +55,7 @@ export function readPersistedValidationSettings(): ValidationSettings | undefine
  * Merges with the current value so a partial update (e.g. only `aiValidation`)
  * does not wipe `autoAcceptThreshold`.
  */
-export async function persistValidationSettings(
-  settings: ValidationSettings,
-): Promise<void> {
+export async function persistValidationSettings(settings: ValidationSettings): Promise<void> {
   const projectFilePath = window.__leafWriterProject?.getProjectFilePath?.();
   if (!projectFilePath || !window.electronAPI?.updateProjectFileConfig) return;
   const merged: ValidationSettings = {

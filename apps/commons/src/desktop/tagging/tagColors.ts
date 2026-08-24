@@ -47,10 +47,7 @@ export const normalizeTagColorEntry = (entry?: TagColorEntry | null): TagColorEn
   return Object.keys(normalized).length > 0 ? normalized : undefined;
 };
 
-export const resolveTagColor = (
-  file: TagColorsFile,
-  tagName: string,
-): TagColorEntry | undefined =>
+export const resolveTagColor = (file: TagColorsFile, tagName: string): TagColorEntry | undefined =>
   normalizeTagColorEntry(file.tags[tagName]) ?? normalizeTagColorEntry(getDefaultTagColor(tagName));
 
 const parseHex = (hex: string): [number, number, number] | null => {
@@ -129,9 +126,7 @@ export const pillColorsFromEntry = (
 
 export const generateTagColorsCss = (file: TagColorsFile): string => {
   const mergedTags = { ...DEFAULT_TAG_COLORS, ...file.tags };
-  const lines = [
-    '/* Generated from schema/tag-colors.json — do not edit by hand */',
-  ];
+  const lines = ['/* Generated from schema/tag-colors.json — do not edit by hand */'];
 
   for (const [tagName, colors] of Object.entries(mergedTags)) {
     const normalized = normalizeTagColorEntry(colors);
@@ -140,10 +135,7 @@ export const generateTagColorsCss = (file: TagColorsFile): string => {
     const text = normalized.textEnabled === false ? undefined : normalized.text;
     if (!highlight && !text) continue;
     const selector = `*[_tag='${tagName}'], *[_tag='${tagName}'] *`;
-    const rules: string[] = [
-      'box-decoration-break: clone',
-      '-webkit-box-decoration-break: clone',
-    ];
+    const rules: string[] = ['box-decoration-break: clone', '-webkit-box-decoration-break: clone'];
     if (highlight) rules.push(`background-color: ${highlight}`);
     if (text) rules.push(`color: ${text} !important`);
     lines.push(`${selector} { ${rules.join('; ')}; }`);
@@ -194,10 +186,7 @@ export const saveTagColors = async (rootPath: string, file: TagColorsFile): Prom
   await window.electronAPI.writeFile(getTagColorsPath(rootPath), JSON.stringify(file, null, 2));
 };
 
-export const saveGeneratedTagColorsCss = async (
-  rootPath: string,
-  css: string,
-): Promise<void> => {
+export const saveGeneratedTagColorsCss = async (rootPath: string, css: string): Promise<void> => {
   if (!window.electronAPI?.writeFile) return;
   await window.electronAPI.writeFile(getTagColorsCssPath(rootPath), css);
 };
@@ -219,7 +208,7 @@ export const injectTagColorsCss = (css: string): boolean => {
     style = doc.createElement('style');
     style.id = 'tagColors';
     style.type = 'text/css';
-  doc.head?.appendChild(style);
+    doc.head?.appendChild(style);
   }
   style.textContent = css;
   return true;
@@ -247,10 +236,7 @@ export const scheduleTagColorsInjection = (rootPath: string): void => {
 const tagColorsWriteQueues = new Map<string, Promise<unknown>>();
 
 /** Serialize read-modify-write so rapid colour changes cannot drop other tag entries. */
-const enqueueTagColorsWrite = <T>(
-  rootPath: string,
-  write: () => Promise<T>,
-): Promise<T> => {
+const enqueueTagColorsWrite = <T>(rootPath: string, write: () => Promise<T>): Promise<T> => {
   const prior = tagColorsWriteQueues.get(rootPath) ?? Promise.resolve();
   const next = prior.then(write, write);
   tagColorsWriteQueues.set(rootPath, next);

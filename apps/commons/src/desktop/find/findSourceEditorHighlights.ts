@@ -1,5 +1,4 @@
-const isSourceEditorMode = () =>
-  window.writer?.overmindState?.ui?.editorViewMode === 'source';
+const isSourceEditorMode = () => window.writer?.overmindState?.ui?.editorViewMode === 'source';
 
 export const clearFindHighlightsInSourceEditor = () => {
   window.__leafWriterSourceFind?.clear();

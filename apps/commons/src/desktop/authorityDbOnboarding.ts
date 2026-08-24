@@ -53,7 +53,11 @@ export const maybeOfferAuthorityDatabases = async (bundle: ProjectBundle): Promi
   const profile = authorityProfileForLanguage(await getProjectSourceLanguage(bundle));
   if (!profile) return;
 
-  if (api.authorityLifecycleGet && api.authorityLifecyclePromptEnable && api.authorityLifecycleSetEnabled) {
+  if (
+    api.authorityLifecycleGet &&
+    api.authorityLifecyclePromptEnable &&
+    api.authorityLifecycleSetEnabled
+  ) {
     const status = await api.authorityLifecycleGet();
     const profileStatus = status.profileStatuses?.find((entry) => entry.id === profile);
     if (profileStatus?.enabled) return;

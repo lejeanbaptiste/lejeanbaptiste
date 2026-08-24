@@ -1,5 +1,10 @@
 import { deleteExplorerTarget } from '@src/desktop/explorer/explorerDeleteTarget';
-import { getParentPath, getPathBasename, getProjectSchemaDirPath, isPathUnder } from '@src/desktop/explorer/treeUtils';
+import {
+  getParentPath,
+  getPathBasename,
+  getProjectSchemaDirPath,
+  isPathUnder,
+} from '@src/desktop/explorer/treeUtils';
 import { useActions, useAppState } from '@src/overmind';
 import { useCallback, useState } from 'react';
 import { useTranslation } from 'react-i18next';

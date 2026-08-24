@@ -35,7 +35,9 @@ class LoadingIndicator implements LWDialogProps {
       //@ts-expect-error
       open: (event: JQuery.Event, ui) => {
         $('.ui-dialog-titlebar-close', ui.dialog).hide();
-        $(ui.dialog).find('.ui-dialog-content').css({ padding: '8px 12px 10px', overflow: 'hidden' });
+        $(ui.dialog)
+          .find('.ui-dialog-content')
+          .css({ padding: '8px 12px 10px', overflow: 'hidden' });
       },
     });
 

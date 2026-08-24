@@ -50,7 +50,11 @@ describe('bulkBridgeImport', () => {
     addEntity(central, 'person', { name: '乙', authorityIds: [{ type: 'NORBERT', value: '7' }] });
     addEntity(source, 'person', { name: '丙', authorityIds: [{ type: 'NORBERT', value: '7' }] });
 
-    const result = await bulkBridgeImport({ sourceDoc: source, centralDoc: central, userStableId: 'test-user' });
+    const result = await bulkBridgeImport({
+      sourceDoc: source,
+      centralDoc: central,
+      userStableId: 'test-user',
+    });
 
     expect(result.matched).toBe(0);
     expect(result.ambiguous).toBe(1);

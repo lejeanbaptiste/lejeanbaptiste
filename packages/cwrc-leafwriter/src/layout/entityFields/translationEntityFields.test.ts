@@ -203,10 +203,7 @@ describe('translationEntityFields', () => {
   });
 
   test('a person entity never gets work-type styling, even with a stray workType', () => {
-    const field = createEntityFieldElement(
-      { ...person(), workType: 'book' },
-      1,
-    );
+    const field = createEntityFieldElement({ ...person(), workType: 'book' }, 1);
     expect(field.getAttribute(ENTITY_WORK_STYLE_ATTR)).toBeNull();
     expect(field.querySelector('hi[rend="italic"]')).toBeNull();
     expect(field.textContent).toBe('Cui Zusi 崔祖思 (440–483)');

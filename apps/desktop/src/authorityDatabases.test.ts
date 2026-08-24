@@ -39,9 +39,7 @@ describe('parseAuthorityManifest', () => {
     ).toBeNull();
     expect(parseAuthorityManifest(JSON.stringify(validManifest([])))).toBeNull();
     expect(
-      parseAuthorityManifest(
-        JSON.stringify(validManifest([{ ...fileEntry, sha256: 'short' }])),
-      ),
+      parseAuthorityManifest(JSON.stringify(validManifest([{ ...fileEntry, sha256: 'short' }]))),
     ).toBeNull();
     expect(
       parseAuthorityManifest(JSON.stringify(validManifest([{ ...fileEntry, bytes: 0 }]))),

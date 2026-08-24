@@ -126,7 +126,7 @@ No external tile requests are needed after installation.
 1. Keep the local cache and `pmtiles://` serving path in `mapTiles.ts`.
 2. Keep the staged-folder path as an advanced fallback for development and
    troubleshooting.
-4. Add or update tests for:
+3. Add or update tests for:
    - install from local staged source
    - install from remote URL
    - checksum verification

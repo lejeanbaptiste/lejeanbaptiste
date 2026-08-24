@@ -12,12 +12,12 @@ TEI/XML files are small; full-file snapshots with hash deduplication and retenti
 
 ## Why this approach
 
-| Approach | Pros | Cons |
-|----------|------|------|
-| Git only | Branches, remote, collaboration | Steeper curve; useless if user never commits |
-| Cloud sync only | Off-device backup | Needs network; not “undo my last hour” |
+| Approach                           | Pros                                              | Cons                                                            |
+| ---------------------------------- | ------------------------------------------------- | --------------------------------------------------------------- |
+| Git only                           | Branches, remote, collaboration                   | Steeper curve; useless if user never commits                    |
+| Cloud sync only                    | Off-device backup                                 | Needs network; not “undo my last hour”                          |
 | **Local history on save (chosen)** | Offline; one app; fast recovery; scholar-friendly | Disk use; not shared across machines unless user copies project |
-| Autosave temp files only | Crash recovery | No dated timeline; no project rollback |
+| Autosave temp files only           | Crash recovery                                    | No dated timeline; no project rollback                          |
 
 **Positioning:** Ship local history **by default**. Optional Git integration remains out of scope for v1.
 
@@ -92,11 +92,11 @@ Append one line to `manifest.jsonl` per snapshot. Project rollback queries manif
 
 ### Retention (defaults; configurable in Settings)
 
-| Rule | Default |
-|------|---------|
-| Max snapshots **per file** | 50 |
-| Max age | 90 days |
-| Max total history size | 500 MB (prune oldest globally when exceeded) |
+| Rule                       | Default                                      |
+| -------------------------- | -------------------------------------------- |
+| Max snapshots **per file** | 50                                           |
+| Max age                    | 90 days                                      |
+| Max total history size     | 500 MB (prune oldest globally when exceeded) |
 
 Prune after each new snapshot. Never delete the **only** snapshot younger than 1 hour (safety floor—optional).
 
@@ -118,11 +118,11 @@ Prune after each new snapshot. Never delete the **only** snapshot younger than 1
 
 ### Menu & settings
 
-| UI | Action |
-|----|--------|
-| **File → History…** | Active file timeline + Restore |
-| **Project → Rollback…** | Project point-in-time restore |
-| **Settings → History** | Enable/disable, retention limits, “backup on save” toggle |
+| UI                      | Action                                                    |
+| ----------------------- | --------------------------------------------------------- |
+| **File → History…**     | Active file timeline + Restore                            |
+| **Project → Rollback…** | Project point-in-time restore                             |
+| **Settings → History**  | Enable/disable, retention limits, “backup on save” toggle |
 
 No background scheduler required for v1—**hook save** is enough. (User said “schedule”; interpreted as **on every save**, not cron.)
 
@@ -130,15 +130,15 @@ No background scheduler required for v1—**hook save** is enough. (User said �
 
 ## What already exists
 
-| Capability | Status | Where |
-|------------|--------|-------|
-| Desktop save to disk | Done | `saveActiveTab`, `useProjectMenu.ts` |
-| Save As | Done | `saveActiveTabAs` |
-| Reload from disk | Done | `reloadTabFromDisk` |
-| SHA-256 hashing | Done | `cwrc-leafwriter-validator/src/conversion.ts` (reuse pattern) |
-| Schema file archive | Planned separately | `schema/_archive/` in `project-schema-planning.md` |
-| Local file history | **Not done** | — |
-| Rollback UI | **Not done** | — |
+| Capability           | Status             | Where                                                         |
+| -------------------- | ------------------ | ------------------------------------------------------------- |
+| Desktop save to disk | Done               | `saveActiveTab`, `useProjectMenu.ts`                          |
+| Save As              | Done               | `saveActiveTabAs`                                             |
+| Reload from disk     | Done               | `reloadTabFromDisk`                                           |
+| SHA-256 hashing      | Done               | `cwrc-leafwriter-validator/src/conversion.ts` (reuse pattern) |
+| Schema file archive  | Planned separately | `schema/_archive/` in `project-schema-planning.md`            |
+| Local file history   | **Not done**       | —                                                             |
+| Rollback UI          | **Not done**       | —                                                             |
 
 ### Save hook point
 
@@ -190,18 +190,18 @@ export interface ProjectFileConfig {
 
 ## Key files (planned)
 
-| File | Role |
-|------|------|
-| `apps/desktop/src/history/historyRecord.ts` (new) | Snapshot, prune, manifest I/O |
-| `apps/desktop/src/history/historyRestore.ts` (new) | File + project restore |
-| `apps/desktop/src/history/historyQuery.ts` (new) | List snapshots, project timeline |
-| `apps/desktop/src/main.ts` | IPC handlers; menu items |
-| `apps/commons/src/overmind/project/actions.ts` | Call history after successful save |
-| `apps/commons/src/desktop/useProjectMenu.ts` | Wire File / Project menu |
-| `apps/commons/src/dialogs/HistoryDialog.tsx` (new) | Per-file history |
-| `apps/commons/src/dialogs/ProjectRollbackDialog.tsx` (new) | Project rollback |
-| `apps/commons/src/pages/project/NativeSettingsPage.tsx` | History retention settings |
-| `.ljb/history/manifest.jsonl` | Per-project index |
+| File                                                       | Role                               |
+| ---------------------------------------------------------- | ---------------------------------- |
+| `apps/desktop/src/history/historyRecord.ts` (new)          | Snapshot, prune, manifest I/O      |
+| `apps/desktop/src/history/historyRestore.ts` (new)         | File + project restore             |
+| `apps/desktop/src/history/historyQuery.ts` (new)           | List snapshots, project timeline   |
+| `apps/desktop/src/main.ts`                                 | IPC handlers; menu items           |
+| `apps/commons/src/overmind/project/actions.ts`             | Call history after successful save |
+| `apps/commons/src/desktop/useProjectMenu.ts`               | Wire File / Project menu           |
+| `apps/commons/src/dialogs/HistoryDialog.tsx` (new)         | Per-file history                   |
+| `apps/commons/src/dialogs/ProjectRollbackDialog.tsx` (new) | Project rollback                   |
+| `apps/commons/src/pages/project/NativeSettingsPage.tsx`    | History retention settings         |
+| `.ljb/history/manifest.jsonl`                              | Per-project index                  |
 
 ---
 
@@ -217,30 +217,30 @@ export interface ProjectFileConfig {
 
 ## Testing plan
 
-| Case | Expect |
-|------|--------|
-| Save with content change | New snapshot + manifest line |
-| Save unchanged content | No new snapshot |
-| 51st save on one file | Oldest over limit pruned |
-| History &gt; 500 MB | Global prune removes oldest |
-| File → History → Restore | Live file replaced; tab reloads |
-| Restore | `rollback-pre` snapshot exists |
-| Project → Rollback | All affected files restored to ≤ chosen time |
-| Temp untitled tab | No snapshots until Save As |
-| History disabled in Settings | Save works; no snapshots |
-| File outside project | Not snapshotted |
-| Open project on second machine | History travels with `.ljb/` folder copy |
+| Case                           | Expect                                       |
+| ------------------------------ | -------------------------------------------- |
+| Save with content change       | New snapshot + manifest line                 |
+| Save unchanged content         | No new snapshot                              |
+| 51st save on one file          | Oldest over limit pruned                     |
+| History &gt; 500 MB            | Global prune removes oldest                  |
+| File → History → Restore       | Live file replaced; tab reloads              |
+| Restore                        | `rollback-pre` snapshot exists               |
+| Project → Rollback             | All affected files restored to ≤ chosen time |
+| Temp untitled tab              | No snapshots until Save As                   |
+| History disabled in Settings   | Save works; no snapshots                     |
+| File outside project           | Not snapshotted                              |
+| Open project on second machine | History travels with `.ljb/` folder copy     |
 
 ---
 
 ## Distinction from other features
 
-| Feature | Role |
-|---------|------|
-| **Local history** (this doc) | Oops recovery; dated file copies |
-| **`schema/_archive/`** | TEI RNG/CSS upgrade backup |
-| **`revisionDesc` in XML** | Scholarly record inside the document |
-| **Git** | Collaboration, publication workflow (optional, external) |
+| Feature                      | Role                                                     |
+| ---------------------------- | -------------------------------------------------------- |
+| **Local history** (this doc) | Oops recovery; dated file copies                         |
+| **`schema/_archive/`**       | TEI RNG/CSS upgrade backup                               |
+| **`revisionDesc` in XML**    | Scholarly record inside the document                     |
+| **Git**                      | Collaboration, publication workflow (optional, external) |
 
 ---
 

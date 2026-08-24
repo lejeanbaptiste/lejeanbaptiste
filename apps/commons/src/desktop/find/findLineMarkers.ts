@@ -52,9 +52,7 @@ export const markWysiwygFindLineBlocks = (
 ) => {
   clearWysiwygFindLineMarkers(body);
   for (const block of blocks) {
-    block.classList.add(
-      block === activeBlock ? FIND_LINE_ACTIVE_CLASS : FIND_LINE_CLASS,
-    );
+    block.classList.add(block === activeBlock ? FIND_LINE_ACTIVE_CLASS : FIND_LINE_CLASS);
   }
 };
 

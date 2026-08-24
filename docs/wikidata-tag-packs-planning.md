@@ -27,14 +27,14 @@ Tag time stays **tag-only** (no `@key` on corpus XML). The Q-id is not applied u
 
 ## 2. Design principles
 
-| Principle | Rationale |
-|-----------|-----------|
-| **Language/script is the primary partition** | `zh-hant` ≠ `zh-hans` (different glyphs). Wikidata stores them as separate label/alias languages. |
-| **Period is a filter dimension, not a string property** | Same 張衡 string may appear in multiple dynasty slices; load packs matching the project’s period slider. |
+| Principle                                                 | Rationale                                                                                                                                                                       |
+| --------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| **Language/script is the primary partition**              | `zh-hant` ≠ `zh-hans` (different glyphs). Wikidata stores them as separate label/alias languages.                                                                               |
+| **Period is a filter dimension, not a string property**   | Same 張衡 string may appear in multiple dynasty slices; load packs matching the project’s period slider.                                                                        |
 | **Membership heuristics, not one “Chinese people” class** | Wikidata has no single clean item for “Chinese person.” Use `instance of` + `country of citizenship (P27)` dynasty items + optional `ethnic group (P172)` + sitelinks — see §4. |
-| **Surface forms only in the matcher** | Labels, aliases, `native label (P1705)` where present. Skip descriptions, sitelink titles unless validated as aliases. |
-| **Official dumps, not live scraping** | Weekly [Wikidata JSON dump](https://www.wikidata.org/wiki/Wikidata:Database_download) (CC0) or batched SPARQL for prototypes. |
-| **Ambiguity is normal** | One string → many Q-ids → same as today’s seed “one-to-many” bucket; review + disambiguation. |
+| **Surface forms only in the matcher**                     | Labels, aliases, `native label (P1705)` where present. Skip descriptions, sitelink titles unless validated as aliases.                                                          |
+| **Official dumps, not live scraping**                     | Weekly [Wikidata JSON dump](https://www.wikidata.org/wiki/Wikidata:Database_download) (CC0) or batched SPARQL for prototypes.                                                   |
+| **Ambiguity is normal**                                   | One string → many Q-ids → same as today’s seed “one-to-many” bucket; review + disambiguation.                                                                                   |
 
 ---
 
@@ -46,10 +46,10 @@ Tag time stays **tag-only** (no `@key` on corpus XML). The Q-id is not applied u
 wikidata-{kind}-{language}[-{period}]
 ```
 
-| Segment | Values |
-|---------|--------|
-| `kind` | `person` \| `place` \| `org` \| `work` |
-| `language` | BCP-47: `zh-hant`, `zh-hans`, `ja`, `bo`, `en`, … |
+| Segment             | Values                                                                                   |
+| ------------------- | ---------------------------------------------------------------------------------------- |
+| `kind`              | `person` \| `place` \| `org` \| `work`                                                   |
+| `language`          | BCP-47: `zh-hant`, `zh-hans`, `ja`, `bo`, `en`, …                                        |
 | `period` (optional) | Dynasty/membership slug: `pre-ming`, `tang`, `ming`, `qing`, … or year range `-220_1911` |
 
 Examples:
@@ -115,12 +115,12 @@ The existing `AuthorityCandidate` normalizer can consume these at compile time i
 
 Map to LJB / LEAF types ([`entities.ts`](../packages/cwrc-leafwriter/src/autoTagging/entities.ts)):
 
-| LJB kind | TEI tag | Wikidata strategy |
-|----------|---------|-------------------|
-| `person` | `persName` | `P31` → `human (Q5)` |
-| `place` | `placeName` / `geogName` | `P31` → geographic types (see below) |
-| `org` | `orgName` | `P31` → `organization (Q43229)` and subclasses (business, religious org, dynasty as org, …) |
-| `work` | `title` | `P31` → `creative work`, `literary work`, `book`, `poem`, … |
+| LJB kind | TEI tag                  | Wikidata strategy                                                                           |
+| -------- | ------------------------ | ------------------------------------------------------------------------------------------- |
+| `person` | `persName`               | `P31` → `human (Q5)`                                                                        |
+| `place`  | `placeName` / `geogName` | `P31` → geographic types (see below)                                                        |
+| `org`    | `orgName`                | `P31` → `organization (Q43229)` and subclasses (business, religious org, dynasty as org, …) |
+| `work`   | `title`                  | `P31` → `creative work`, `literary work`, `book`, `poem`, …                                 |
 
 ### 4.1 Persons — “Chinese people” without a single class
 
@@ -144,12 +144,12 @@ Wikidata models pre-modern Chinese persons with **dynasty as `country of citizen
 
 **Period assignment for persons:**
 
-| Priority | Source | Use |
-|----------|--------|-----|
-| 1 | `P569`/`P570` birth/death | Intersect with dynasty year range |
-| 2 | `P27` dynasty item | Pack membership + filter |
-| 3 | `P2348` time period | When P27 missing |
-| 4 | None | Put in “undated” pack or include with `metadata.endYear` null |
+| Priority | Source                    | Use                                                           |
+| -------- | ------------------------- | ------------------------------------------------------------- |
+| 1        | `P569`/`P570` birth/death | Intersect with dynasty year range                             |
+| 2        | `P27` dynasty item        | Pack membership + filter                                      |
+| 3        | `P2348` time period       | When P27 missing                                              |
+| 4        | None                      | Put in “undated” pack or include with `metadata.endYear` null |
 
 ### 4.2 Places
 
@@ -190,12 +190,12 @@ Wikidata models pre-modern Chinese persons with **dynasty as `country of citizen
 
 Wikidata distinguishes:
 
-| Code | Script | Pack |
-|------|--------|------|
-| `zh-hant` | Traditional | Separate pack; matcher only loads one script pack per run (or user selects) |
-| `zh-hans` | Simplified | Separate pack |
-| `zh` | Often one or the other | **Do not merge** with hant/hans — treat `zh` labels as a third optional pack or map explicitly |
-| `lzh` | Literary/Classical | Optional pack for classical corpora |
+| Code      | Script                 | Pack                                                                                           |
+| --------- | ---------------------- | ---------------------------------------------------------------------------------------------- |
+| `zh-hant` | Traditional            | Separate pack; matcher only loads one script pack per run (or user selects)                    |
+| `zh-hans` | Simplified             | Separate pack                                                                                  |
+| `zh`      | Often one or the other | **Do not merge** with hant/hans — treat `zh` labels as a third optional pack or map explicitly |
+| `lzh`     | Literary/Classical     | Optional pack for classical corpora                                                            |
 
 **Build step:** for each entity, collect:
 
@@ -296,14 +296,14 @@ Run parallel prototypes for: `zh-hans`, places (`P31` geographic + `zh-hant` lab
 
 ### Phase W3 — Post-process & quality gates (3–5 days)
 
-| Gate | Rule |
-|------|------|
-| Min length | Drop `\|surface\| ≤ 1` for CJK |
-| Numeric-only | Drop pure digits |
-| Generic strings | Optional blocklist (中国, 日本, …) per kind |
-| Deduplication | Same `(qid, surface)` once |
-| Ambiguity report | `surfaces-ambiguous.csv` for human review |
-| Size cap | Optional max strings per pack; split sub-packs if needed |
+| Gate             | Rule                                                     |
+| ---------------- | -------------------------------------------------------- |
+| Min length       | Drop `\|surface\| ≤ 1` for CJK                           |
+| Numeric-only     | Drop pure digits                                         |
+| Generic strings  | Optional blocklist (中国, 日本, …) per kind              |
+| Deduplication    | Same `(qid, surface)` once                               |
+| Ambiguity report | `surfaces-ambiguous.csv` for human review                |
+| Size cap         | Optional max strings per pack; split sub-packs if needed |
 
 **Compare** sample against CBDB Tang persons — overlap and gaps (Wikidata should be wider, noisier).
 
@@ -335,12 +335,12 @@ Run parallel prototypes for: `zh-hans`, places (`P31` geographic + `zh-hant` lab
 
 ### Phase W5 — Distribution & updates (3–5 days)
 
-| Decision | Recommendation |
-|----------|----------------|
-| **Host** | GitHub Release or HuggingFace dataset (like CBDB) — packs are 10–200 MB compiled, not 100 GB |
-| **Pre-ship vs download** | Download on first use; optional “Install Wikidata packs” in authority UI |
-| **Update cadence** | Monthly rebuild off weekly dump; manifest `wikidataDumpDate` |
-| **User override** | Advanced: point at custom pack URL |
+| Decision                 | Recommendation                                                                               |
+| ------------------------ | -------------------------------------------------------------------------------------------- |
+| **Host**                 | GitHub Release or HuggingFace dataset (like CBDB) — packs are 10–200 MB compiled, not 100 GB |
+| **Pre-ship vs download** | Download on first use; optional “Install Wikidata packs” in authority UI                     |
+| **Update cadence**       | Monthly rebuild off weekly dump; manifest `wikidataDumpDate`                                 |
+| **User override**        | Advanced: point at custom pack URL                                                           |
 
 **Exit:** LJB desktop can download `wikidata-person-zh-hant-tang`, verify sha256, compile if needed, run tag bomb.
 
@@ -361,18 +361,18 @@ Run parallel prototypes for: `zh-hans`, places (`P31` geographic + `zh-hant` lab
 
 Ship small, validate, expand.
 
-| Pack id | Est. strings | Priority |
-|---------|--------------|----------|
-| `wikidata-person-zh-hant-pre-ming` | 50k+ | **P0** — Song, Yuan, and earlier (canonical; not separate Song/Yuan packs) |
-| `wikidata-person-zh-hant-tang` | 5k–15k | P0 optional — Tang `P27` slice |
-| `wikidata-person-zh-hant-ming` / `-qing` | tens of k | P0 |
-| `wikidata-person-zh-hans` (all periods, metadata filter) | 100k+ | P1 — modern/simple |
-| `wikidata-work-zh-hant` | 5k–20k | P1 — **title** tag for classical Chinese corpora |
-| `wikidata-place-zh-hant` | 254k | P2 — noisy; compare CHGIS; **opt-in** in LJB |
-| `wikidata-place-ja` | 514k | P2 — noisy; compare NDL; **opt-in** in LJB (`wikidata-places-ja`) |
-| `wikidata-org-zh-hant` | 5k–15k | P2 |
-| `wikidata-person-ja` | 50k+ | P3 — **supplement** to NDL persons (not replacement) |
-| `wikidata-work-ja` | varies | P2 — **title**; NDL works batch is small (~900) |
+| Pack id                                                  | Est. strings | Priority                                                                   |
+| -------------------------------------------------------- | ------------ | -------------------------------------------------------------------------- |
+| `wikidata-person-zh-hant-pre-ming`                       | 50k+         | **P0** — Song, Yuan, and earlier (canonical; not separate Song/Yuan packs) |
+| `wikidata-person-zh-hant-tang`                           | 5k–15k       | P0 optional — Tang `P27` slice                                             |
+| `wikidata-person-zh-hant-ming` / `-qing`                 | tens of k    | P0                                                                         |
+| `wikidata-person-zh-hans` (all periods, metadata filter) | 100k+        | P1 — modern/simple                                                         |
+| `wikidata-work-zh-hant`                                  | 5k–20k       | P1 — **title** tag for classical Chinese corpora                           |
+| `wikidata-place-zh-hant`                                 | 254k         | P2 — noisy; compare CHGIS; **opt-in** in LJB                               |
+| `wikidata-place-ja`                                      | 514k         | P2 — noisy; compare NDL; **opt-in** in LJB (`wikidata-places-ja`)          |
+| `wikidata-org-zh-hant`                                   | 5k–15k       | P2                                                                         |
+| `wikidata-person-ja`                                     | 50k+         | P3 — **supplement** to NDL persons (not replacement)                       |
+| `wikidata-work-ja`                                       | varies       | P2 — **title**; NDL works batch is small (~900)                            |
 
 **Obsolete:** `wikidata-person-zh-hant-song` / `-yuan` as standalone packs — Wikidata `P27` coverage is too thin; those people are in **pre-Ming**.
 
@@ -401,15 +401,15 @@ The pack’s **`qindex.ndjson`** is the offline shortlist so you are not queryin
 
 ## 9. Risks & mitigations
 
-| Risk | Mitigation |
-|------|------------|
-| WDQS too slow / limited | Production = dump parse only |
-| “Chinese people” too fuzzy | Dynasty-scoped packs; optional P172; document false-positive rate |
-| zh-hans/hant mixed labels on one item | Emit both; user loads one pack |
-| String ambiguity (王安石) | Existing one-to-many bucket + disambiguation |
-| Stale data | Versioned manifests; monthly rebuild |
-| Place noise | Prefer CBDB/CHGIS for zh places; Wikidata as supplement |
-| Build complexity | Start W0–W1 manually; automate W2 once Tang pack validated |
+| Risk                                  | Mitigation                                                        |
+| ------------------------------------- | ----------------------------------------------------------------- |
+| WDQS too slow / limited               | Production = dump parse only                                      |
+| “Chinese people” too fuzzy            | Dynasty-scoped packs; optional P172; document false-positive rate |
+| zh-hans/hant mixed labels on one item | Emit both; user loads one pack                                    |
+| String ambiguity (王安石)             | Existing one-to-many bucket + disambiguation                      |
+| Stale data                            | Versioned manifests; monthly rebuild                              |
+| Place noise                           | Prefer CBDB/CHGIS for zh places; Wikidata as supplement           |
+| Build complexity                      | Start W0–W1 manually; automate W2 once Tang pack validated        |
 
 ---
 
@@ -434,13 +434,13 @@ The pack’s **`qindex.ndjson`** is the offline shortlist so you are not queryin
 
 ## 11. Timeline sketch
 
-| Week | Milestone |
-|------|-----------|
-| 1 | W0 tables + W1 SPARQL prototypes; size estimates |
-| 2–3 | W2 extractor; first `wikidata-person-zh-hant-tang` raw build |
-| 4 | W3 quality gates + W4 compile to AuthorityCandidate |
-| 5 | W5 host pack + manual tag bomb test on gold passage |
-| 6+ | W6 UI + additional dynasties / works / ja |
+| Week | Milestone                                                    |
+| ---- | ------------------------------------------------------------ |
+| 1    | W0 tables + W1 SPARQL prototypes; size estimates             |
+| 2–3  | W2 extractor; first `wikidata-person-zh-hant-tang` raw build |
+| 4    | W3 quality gates + W4 compile to AuthorityCandidate          |
+| 5    | W5 host pack + manual tag bomb test on gold passage          |
+| 6+   | W6 UI + additional dynasties / works / ja                    |
 
 Parallel: CBDB compile (Phase A2) remains higher priority for Chinese biography **quality**; Wikidata packs widen coverage.
 
@@ -450,17 +450,17 @@ Parallel: CBDB compile (Phase A2) remains higher priority for Chinese biography 
 
 **Done when:**
 
-1. User with `zh-Hant` Tang project downloads one pack, runs tag bomb, gets sensible `persName` suggestions.  
-2. Ambiguous strings open disambiguation with Q-id shortlist from `qindex`, not blind Wikidata search.  
-3. Rebuild from new dump produces new manifest hash; user can update voluntarily.  
+1. User with `zh-Hant` Tang project downloads one pack, runs tag bomb, gets sensible `persName` suggestions.
+2. Ambiguous strings open disambiguation with Q-id shortlist from `qindex`, not blind Wikidata search.
+3. Rebuild from new dump produces new manifest hash; user can update voluntarily.
 4. Documented build recipe — anyone can reproduce `wikidata-person-zh-hant-tang` from upstream dump.
 
 ---
 
 ## 13. References
 
-- [Wikidata:Database download](https://www.wikidata.org/wiki/Wikidata:Database_download) — CC0 structured data  
-- [WikiProject East Asia / CBDB import](https://www.wikidata.org/wiki/Wikidata:WikiProject_East_Asia/China_Biographical_Database_import) — P27 dynasty modeling  
-- [WikiProject Chinese Culture and Heritage](https://www.wikidata.org/wiki/Wikidata:WikiProject_Chinese_Culture_and_Heritage) — person/place data models  
-- [WDumper](https://wdumps.toolforge.org/) — optional alternative for RDF slices  
+- [Wikidata:Database download](https://www.wikidata.org/wiki/Wikidata:Database_download) — CC0 structured data
+- [WikiProject East Asia / CBDB import](https://www.wikidata.org/wiki/Wikidata:WikiProject_East_Asia/China_Biographical_Database_import) — P27 dynasty modeling
+- [WikiProject Chinese Culture and Heritage](https://www.wikidata.org/wiki/Wikidata:WikiProject_Chinese_Culture_and_Heritage) — person/place data models
+- [WDumper](https://wdumps.toolforge.org/) — optional alternative for RDF slices
 - LJB: [authority-packs-planning.md](authority-packs-planning.md), [`authority.ts`](../packages/cwrc-leafwriter/src/autoTagging/authority.ts), [`lincs-api.ts`](../packages/cwrc-leafwriter/src/services/lincs-api.ts) (Wikidata reconcile)

@@ -81,7 +81,7 @@ export function expandNorbertWikiNtCandidate(
   const person = metadata.wrapper?.components.persName?.trim() || candidate.primaryName;
   const linkedPersonId = metadata.wrapper?.personId;
   const personNames = [
-    ...(linkedPersonId ? personNamesByAuthorityId?.get(linkedPersonId) ?? [] : []),
+    ...(linkedPersonId ? (personNamesByAuthorityId?.get(linkedPersonId) ?? []) : []),
     ...(candidate.names ?? []).map((name) => name.text.trim()),
     person?.trim() ?? '',
   ].filter(Boolean);

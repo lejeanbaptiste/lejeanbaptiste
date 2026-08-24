@@ -6,9 +6,11 @@ import type { CachedSchema, InitializeParameters } from './types';
 const HASH_ALGORITHM = 'SHA-256';
 
 if (typeof globalThis.structuredClone !== 'function') {
-  (globalThis as typeof globalThis & {
-    structuredClone: <T>(value: T) => T;
-  }).structuredClone = <T>(value: T) => JSON.parse(JSON.stringify(value));
+  (
+    globalThis as typeof globalThis & {
+      structuredClone: <T>(value: T) => T;
+    }
+  ).structuredClone = <T>(value: T) => JSON.parse(JSON.stringify(value));
 }
 
 /** Feed RelaxNG text directly to Salve — avoids fetch/blob issues in web workers. */
@@ -31,9 +33,7 @@ export const processSchema = async ({
   shouldCache = true,
   schemaText,
 }: InitializeParameters) => {
-  const resourceLoader = schemaText
-    ? new StringResourceLoader(schemaText)
-    : makeResourceLoader();
+  const resourceLoader = schemaText ? new StringResourceLoader(schemaText) : makeResourceLoader();
   // ljb:// and other custom schemes are not valid URL() inputs in all runtimes;
   // when compiling from schemaText the loader ignores the path anyway.
   const schemaPath = new URL(schemaText ? IN_MEMORY_SCHEMA_URL : url);

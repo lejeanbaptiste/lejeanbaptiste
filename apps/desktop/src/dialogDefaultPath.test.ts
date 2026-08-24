@@ -3,11 +3,7 @@ import { resolveDialogDefaultPath } from './dialogDefaultPath';
 describe('resolveDialogDefaultPath', () => {
   const home = '/Users/me';
   const entityDb = '/Users/me/Library/entity-database';
-  const exists = new Set([
-    '/Users/me/dialog-pick',
-    '/Users/me/project',
-    entityDb,
-  ]);
+  const exists = new Set(['/Users/me/dialog-pick', '/Users/me/project', entityDb]);
 
   const resolve = (overrides: Partial<Parameters<typeof resolveDialogDefaultPath>[0]> = {}) =>
     resolveDialogDefaultPath({

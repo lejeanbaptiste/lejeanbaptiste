@@ -109,9 +109,7 @@ export const FontFamily = () => {
   return (
     <ListItem dense disableGutters>
       <FontDownloadIcon sx={{ mx: 1, height: 18, width: 18 }} />
-      <Typography variant="body2">
-        {t('LW.settings.editor.default_fonts')}
-      </Typography>
+      <Typography variant="body2">{t('LW.settings.editor.default_fonts')}</Typography>
       <Box flexGrow={1} />
       <Stack alignItems="center" direction="row" spacing={1}>
         <FormControl size="small" sx={{ minWidth: 180 }}>
@@ -168,7 +166,7 @@ export const FontFamily = () => {
             }}
             options={asianOptions}
             renderInput={(params) => (
-            <TextField {...params} label={t('LW.settings.editor.asian_font')} size="small" />
+              <TextField {...params} label={t('LW.settings.editor.asian_font')} size="small" />
             )}
             value={getOptionFromValue(asianFont, asianOptions)}
           />

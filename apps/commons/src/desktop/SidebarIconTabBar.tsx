@@ -1,12 +1,6 @@
 import ChevronLeftIcon from '@mui/icons-material/ChevronLeft';
 import ChevronRightIcon from '@mui/icons-material/ChevronRight';
-import {
-  Box,
-  IconButton,
-  ToggleButton,
-  ToggleButtonGroup,
-  Tooltip,
-} from '@mui/material';
+import { Box, IconButton, ToggleButton, ToggleButtonGroup, Tooltip } from '@mui/material';
 import {
   SIDEBAR_TAB_BUTTON_SIZE,
   SIDEBAR_TAB_ICON_SIZE,
@@ -75,11 +69,7 @@ export const SidebarIconTabBar = ({
           aria-label={t('LWC.dialogs.aria_labels.toggle_sidebar_panel')}
           sx={{ width: SIDEBAR_TAB_BUTTON_SIZE, height: SIDEBAR_TAB_BUTTON_SIZE, flexShrink: 0 }}
         >
-          {collapsed ? (
-            <ChevronRightIcon fontSize="small" />
-          ) : (
-            <ChevronLeftIcon fontSize="small" />
-          )}
+          {collapsed ? <ChevronRightIcon fontSize="small" /> : <ChevronLeftIcon fontSize="small" />}
         </IconButton>
       </Tooltip>
 

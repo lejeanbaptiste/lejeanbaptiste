@@ -61,8 +61,8 @@ export const DesktopEastPanels = () => {
 
     if (Object.keys(next).length > 0) {
       setPanelContainers((current) => {
-        const changed = Object.entries(next).some(([moduleId, container]) =>
-          current[moduleId] !== container,
+        const changed = Object.entries(next).some(
+          ([moduleId, container]) => current[moduleId] !== container,
         );
         return changed ? { ...current, ...next } : current;
       });

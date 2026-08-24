@@ -10,8 +10,7 @@ const parse = (xml: string) => {
   return doc;
 };
 
-const byString = (entries: DictionaryEntry[], s: string) =>
-  entries.find((e) => e.string === s);
+const byString = (entries: DictionaryEntry[], s: string) => entries.find((e) => e.string === s);
 
 describe('crawlDocuments', () => {
   it('merges tagged entities across documents, deduping by (surface, tag)', () => {

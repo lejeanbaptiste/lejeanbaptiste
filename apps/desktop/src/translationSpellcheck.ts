@@ -109,8 +109,7 @@ export const attachTranslationSpellcheckContextMenu = (webContents: WebContents)
 
     template.push({
       label: 'Add to dictionary',
-      click: () =>
-        webContents.session.addWordToSpellCheckerDictionary(params.misspelledWord),
+      click: () => webContents.session.addWordToSpellCheckerDictionary(params.misspelledWord),
     });
 
     const menu = Menu.buildFromTemplate(template);

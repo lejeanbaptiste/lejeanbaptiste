@@ -64,8 +64,7 @@ const readEnableXmlEditing = (): boolean => {
  */
 const writeEnableXmlEditing = (value: boolean) => {
   const set = window.writer?.overmindActions?.editor?.setEnableXmlEditing as
-    | ((next: boolean) => void)
-    | undefined;
+    ((next: boolean) => void) | undefined;
   if (set) {
     set(value);
     return;

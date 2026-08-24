@@ -51,9 +51,9 @@ describe('documentImport', () => {
   });
 
   test('strips common Markdown syntax to plain text', () => {
-    expect(stripMarkdownToPlainText('# Heading\n\n- **Item** with [link](https://example.com)')).toBe(
-      'Heading\n\nItem with link',
-    );
+    expect(
+      stripMarkdownToPlainText('# Heading\n\n- **Item** with [link](https://example.com)'),
+    ).toBe('Heading\n\nItem with link');
   });
 
   test('strips simple RTF controls to plain text', () => {

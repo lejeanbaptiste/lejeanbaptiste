@@ -4,7 +4,7 @@
 
 ## Context
 
-Leaf-writer (a TEI/Orlando XML scholarly editor) has a broken, half-built "translate" toolbar button today: it hard-requires a `<div>` selection and, when it works, just splices a `<div type="translation" xml:lang="...">` sibling with raw pasted text into the *same* document — no tracking of which paragraph maps to which, no separate file, no reuse across languages. It has never worked for the user in practice (selection-type mismatch), and its data model is a dead end for what's actually wanted.
+Leaf-writer (a TEI/Orlando XML scholarly editor) has a broken, half-built "translate" toolbar button today: it hard-requires a `<div>` selection and, when it works, just splices a `<div type="translation" xml:lang="...">` sibling with raw pasted text into the _same_ document — no tracking of which paragraph maps to which, no separate file, no reuse across languages. It has never worked for the user in practice (selection-type mismatch), and its data model is a dead end for what's actually wanted.
 
 The goal is a proper **translation mode**: a project-level feature where each source XML file can have one or more language translations, edited in a split-pane view, explicitly linked at a user-chosen granularity (paragraph or div), stored as companion files rather than inline markup, with basic rich-text formatting but not full entity tagging inside translation content. This plan replaces the old dialog entirely (icon kept, behavior replaced) and lands as a foundation-first, incrementally shippable sequence of phases.
 
@@ -13,11 +13,11 @@ The goal is a proper **translation mode**: a project-level feature where each so
 1. **Project-level setting**, written once and then largely locked: `alignmentUnit: 'div' | 'p'` (chosen on first use, immutable after) and `languages: [{code, label}]` (an open, appendable list — new languages can be added anytime). Stored in `schema/translation-settings.json`, mirroring `schema/project-metadata.json`.
 2. **Storage:** one companion file per (source file × language), living next to the source file by naming convention: `chapter1.xml` → `chapter1.fr.translation.xml`. Never inline in the source document.
 3. **Linking:** `xml:id` + `@corresp`. On first "Start Translation" for a source file, every element at the alignment-unit level gets an `xml:id` if missing (mutates the source — requires a one-time user confirmation, in the spirit of the existing schema-update confirmation flow). The companion file's aligned-unit elements carry `@corresp="chapter1.xml#<id>"`.
-4. **Structural mirroring:** the companion file mirrors the source's structural shell (divs/sections/headings) exactly down to and including the alignment-unit level. Content *inside* the unit is free-form and untracked below that level — this is what makes `div`-level alignment actually looser/useful than `p`-level.
-5. **UI:** split-pane, but only ever showing the translation of the *currently selected* alignment unit (no full-document parallel scrolling/reordering to keep in sync — explicitly ruled out as unnecessary complexity).
+4. **Structural mirroring:** the companion file mirrors the source's structural shell (divs/sections/headings) exactly down to and including the alignment-unit level. Content _inside_ the unit is free-form and untracked below that level — this is what makes `div`-level alignment actually looser/useful than `p`-level.
+5. **UI:** split-pane, but only ever showing the translation of the _currently selected_ alignment unit (no full-document parallel scrolling/reordering to keep in sync — explicitly ruled out as unnecessary complexity).
 6. **Translation pane supports basic rich-text formatting** (bold/italic/underline — whatever inline marks the schema already supports, e.g. TEI `<hi rend="...">`), but **not** full entity/attribute tagging. This keeps it a lightweight second text surface rather than a second full CWRC tagging instance.
 7. **Find/xpath/tagging get a scope selector**: Source / Translation:[lang] / All. Since translations are separate documents, this mostly reuses existing per-document search machinery.
-8. **Footnotes are independent per document** for v1 — no automatic cross-linking between source and translation notes. **Amended 2026-08-07:** at AI-generation time, source `<note>` spans *are* now automatically split out, translated independently, and re-inserted as `<note place="foot">` footnotes in the generated translation (see `TranslationPane.tsx` `generateTranslation`, `entityFields/sourceUnitNotes.ts`) — this is a one-time authoring convenience, not a persistent link: once generated, the translation's footnotes are edited independently and are not kept in sync with later edits to the source notes.
+8. **Footnotes are independent per document** for v1 — no automatic cross-linking between source and translation notes. **Amended 2026-08-07:** at AI-generation time, source `<note>` spans _are_ now automatically split out, translated independently, and re-inserted as `<note place="foot">` footnotes in the generated translation (see `TranslationPane.tsx` `generateTranslation`, `entityFields/sourceUnitNotes.ts`) — this is a one-time authoring convenience, not a persistent link: once generated, the translation's footnotes are edited independently and are not kept in sync with later edits to the source notes.
 9. **File lifecycle cascading is new territory**: renaming/moving/deleting a source file must cascade to its companion file(s). No existing precedent for cross-file cascades in the codebase today — every file op is currently fully independent.
 10. **Old inline dialog is scrapped, icon kept.** `packages/cwrc-leafwriter/src/js/dialogs/translation.ts` and its `dialogManager` registration are deleted; the toolbar's `translate` icon is repointed to the new entry flow.
 11. **Explicit non-goal:** no automatic sentence/paragraph alignment tooling (no Hunalign-style auto-aligner). Links are only ever created by a human authoring a translation unit.
@@ -62,7 +62,7 @@ The goal is a proper **translation mode**: a project-level feature where each so
    - `createTranslationShell(sourceDoc, sourceFileName, lang, alignmentUnit)` — clones the structural shell down to and including each alignment-unit element, stamps `@corresp` on each, leaves unit content empty for free-form authoring.
    - Test: `translationBootstrap.test.ts` (missing-id detection, collision-avoidance, shell-cloning fidelity).
 
-5. **One-time source-mutation confirmation dialog**: locate the existing schema-update confirmation flow (near `apps/desktop/src/checkSchemaUpdate.ts` / its paired UI) and clone its shape for: *"Starting translation will add xml:id attributes to N elements in chapter1.xml. Continue?"* — shown only when `findAlignmentUnitsMissingIds` is non-empty.
+5. **One-time source-mutation confirmation dialog**: locate the existing schema-update confirmation flow (near `apps/desktop/src/checkSchemaUpdate.ts` / its paired UI) and clone its shape for: _"Starting translation will add xml:id attributes to N elements in chapter1.xml. Continue?"_ — shown only when `findAlignmentUnitsMissingIds` is non-empty.
 
 **Phase A critical files:** `apps/commons/src/desktop/translationTypes.ts` (new), `translationSettings.ts` (new), `apps/desktop/src/translationFileNaming.ts` (new), `apps/commons/src/desktop/translationBootstrap.ts` (new), `apps/commons/src/desktop/projectTypes.ts` (add pointer field).
 
@@ -88,7 +88,7 @@ The goal is a proper **translation mode**: a project-level feature where each so
    - Already active → dispatch `exitTranslationMode()`.
 
 4. **Split-pane UI** — reuse `PanelGroup`/`Section`/`ResizeHandle` from `packages/cwrc-leafwriter/src/layout/index.tsx`:
-   - New `packages/cwrc-leafwriter/src/layout/TranslationPane.tsx`. Given the "basic formatting, not full tagging" decision: this pane hosts a **lightweight TinyMCE instance** configured with only a small inline-formatting toolbar (bold/italic/underline, mapped to whatever inline element the schema already defines — e.g. TEI `<hi rend="...">`), *not* a second full CWRC tagger/entity-widget instance. This avoids needing a "which writer instance has focus" resolver for tagging commands — tagging commands stay scoped to the single main `window.writer`; the translation pane is a simpler, self-contained rich-text widget with its own serialize-on-blur logic.
+   - New `packages/cwrc-leafwriter/src/layout/TranslationPane.tsx`. Given the "basic formatting, not full tagging" decision: this pane hosts a **lightweight TinyMCE instance** configured with only a small inline-formatting toolbar (bold/italic/underline, mapped to whatever inline element the schema already defines — e.g. TEI `<hi rend="...">`), _not_ a second full CWRC tagger/entity-widget instance. This avoids needing a "which writer instance has focus" resolver for tagging commands — tagging commands stay scoped to the single main `window.writer`; the translation pane is a simpler, self-contained rich-text widget with its own serialize-on-blur logic.
    - Wire into `Layout`: when `state.ui.translationMode.active`, render `<TranslationPane />` in the right `Section` slot (temporarily superseding whatever utility panel was open there).
    - Selection sync: a selection-change listener on the main editor (reuse whatever hook the entity/attribute widgets already use for this — locate under `packages/cwrc-leafwriter/src/js/`) updates `selectedUnitId`; `TranslationPane` re-renders to the element whose `@corresp` matches.
    - Saving: edits serialize back into the companion `Document` (replacing the matching `@corresp` element's inline content) and persist via `electronAPI.writeFile`, on blur or a short debounce.
@@ -153,6 +153,7 @@ The goal is a proper **translation mode**: a project-level feature where each so
 ## Verification plan
 
 ### Manual end-to-end flows
+
 1. **First-time settings lock**: configure alignment unit `div`, languages `fr`+`de`; reopen dialog, confirm `alignmentUnit` is now read-only, languages remain add-able.
 2. **Start Translation, ids missing**: pick `fr` on a file with no `xml:id`s on its divs; confirm the confirmation dialog appears; accept; verify source now has ids and `chapter1.fr.translation.xml` exists with mirrored shell + correct `@corresp`.
 3. **Start Translation, ids already present**: repeat for `de` on the same file — no confirmation dialog the second time, independent companion file created.
@@ -165,6 +166,7 @@ The goal is a proper **translation mode**: a project-level feature where each so
 10. **Old dialog removal**: `dialogManager.show('translation')` no longer resolves; toolbar icon never opens the old dialog under any path.
 
 ### Automated test seams
+
 - `apps/commons/src/desktop/fileMetadata.test.ts` — precedent to mirror for `translationSettings.test.ts` (round-trip, write-once lock, additive language append) and `translationBootstrap.test.ts` (id-assignment collision-avoidance, shell-cloning fidelity).
 - New `translationFileNaming.test.ts` — pure string-transform round-trips (cheap, high-value given Phase D's cascade logic depends on it being exactly right).
 - New `translationCompanionOps.test.ts` (Phase D) — temp-dir fixture verifying rename/move/delete cascades, including "no companions exist" and "zero configured languages" no-op cases.

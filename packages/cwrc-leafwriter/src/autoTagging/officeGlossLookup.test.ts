@@ -55,9 +55,7 @@ describe('officeGlossLookup', () => {
 
   it('indexes by every officeId', () => {
     const index = buildHuckbotGlossIndex(glossNdjson);
-    expect(index.get('cbdb:office:987')).toBe(
-      'Senior Subalterns of the Prefecture or District',
-    );
+    expect(index.get('cbdb:office:987')).toBe('Senior Subalterns of the Prefecture or District');
     expect(index.get('norbert:office:42')).toBe('Governor');
   });
 
@@ -76,15 +74,9 @@ describe('officeGlossLookup', () => {
       },
     };
     const enriched = applyHuckbotGlossToCandidate(candidate, index);
-    expect(enriched.metadata?.translation).toBe(
-      'Senior Subalterns of the Prefecture or District',
-    );
+    expect(enriched.metadata?.translation).toBe('Senior Subalterns of the Prefecture or District');
     expect(enriched.metadata?.description).toBe(
-      formatOfficeClue(
-        '州縣長吏',
-        'Senior Subalterns of the Prefecture or District',
-        '宋',
-      ),
+      formatOfficeClue('州縣長吏', 'Senior Subalterns of the Prefecture or District', '宋'),
     );
   });
 
@@ -170,9 +162,7 @@ describe('officeGlossLookup', () => {
     };
     const withEn = applyHuckbotGlossToCandidate(candidate, en);
     const withBoth = applyMaxiRicciGlossToCandidate(withEn, fr);
-    expect(withBoth.metadata?.translation).toBe(
-      'Senior Subalterns of the Prefecture or District',
-    );
+    expect(withBoth.metadata?.translation).toBe('Senior Subalterns of the Prefecture or District');
     expect(withBoth.metadata?.translationFr).toBe(
       'subalternes seniors de la préfecture ou du district',
     );
@@ -236,6 +226,8 @@ describe('officeGlossLookup', () => {
       searchStrings: ['尚書令'],
       metadata: {},
     };
-    expect(applyHuckbotGlossToCandidate(candidate, new Map()).metadata?.translation).toBeUndefined();
+    expect(
+      applyHuckbotGlossToCandidate(candidate, new Map()).metadata?.translation,
+    ).toBeUndefined();
   });
 });

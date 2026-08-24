@@ -5,11 +5,7 @@
  * app picks the richest flavor it understands).
  */
 
-import {
-  buildClipboardExport,
-  type ExportBiblEntry,
-  type ExportUnitPair,
-} from './clipboardExport';
+import { buildClipboardExport, type ExportBiblEntry, type ExportUnitPair } from './clipboardExport';
 
 interface TranslationModeInfo {
   alignmentUnit: 'div' | 'p' | null;
@@ -28,11 +24,7 @@ interface CopyForExportOptions {
 
 interface DesktopApi {
   readFile?: (filePath: string) => Promise<string>;
-  writeClipboardRich?: (flavors: {
-    text: string;
-    html?: string;
-    rtf?: string;
-  }) => Promise<void>;
+  writeClipboardRich?: (flavors: { text: string; html?: string; rtf?: string }) => Promise<void>;
 }
 
 interface CitationBridge {
@@ -43,13 +35,10 @@ const getDesktopApi = (): DesktopApi | undefined =>
   (window as Window & { electronAPI?: DesktopApi }).electronAPI;
 
 const getCitationBridge = (): CitationBridge | null =>
-  (window as Window & { __desktopCitationBridge?: CitationBridge }).__desktopCitationBridge ??
-  null;
+  (window as Window & { __desktopCitationBridge?: CitationBridge }).__desktopCitationBridge ?? null;
 
 const getElementsByLocalName = (root: Document | Element, localName: string): Element[] =>
-  Array.from(root.getElementsByTagName('*')).filter(
-    (element) => element.localName === localName,
-  );
+  Array.from(root.getElementsByTagName('*')).filter((element) => element.localName === localName);
 
 /** Header content (teiHeader, Orlando ORLANDOHEADER) is metadata, not translatable text —
  * its <p>/<div> elements must never be treated as alignment units. Mirrors
@@ -81,8 +70,7 @@ export const findUnitById = (
   unitId: string,
 ): Element | null =>
   getElementsByLocalName(doc, alignmentUnit).find(
-    (element) =>
-      element.getAttribute('xml:id') === unitId || element.getAttribute('id') === unitId,
+    (element) => element.getAttribute('xml:id') === unitId || element.getAttribute('id') === unitId,
   ) ?? null;
 
 export const findUnitByCorresp = (

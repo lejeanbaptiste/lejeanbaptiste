@@ -59,7 +59,9 @@ describe('ReviewPanel', () => {
         onApply={async (accepted, dismissed = []) => {
           rejected.push(...dismissed.map((s) => s.id));
           const { results } = await applySuggestions(doc, accepted, { policy: 'ignore' });
-          applied.push(...results.filter((r) => r.outcome === 'applied').map((r) => r.suggestion.id));
+          applied.push(
+            ...results.filter((r) => r.outcome === 'applied').map((r) => r.suggestion.id),
+          );
         }}
       />,
     );
@@ -137,7 +139,9 @@ describe('ReviewPanel', () => {
         onApply={async (accepted, dismissed = []) => {
           rejected.push(...dismissed.map((s) => s.id));
           const { results } = await applySuggestions(doc, accepted, { policy: 'ignore' });
-          applied.push(...results.filter((r) => r.outcome === 'applied').map((r) => r.suggestion.id));
+          applied.push(
+            ...results.filter((r) => r.outcome === 'applied').map((r) => r.suggestion.id),
+          );
         }}
       />,
     );
@@ -165,9 +169,7 @@ describe('ReviewPanel', () => {
 
   describe('same-span alternatives (one string, several tags)', () => {
     const setupAlternatives = () => {
-      const doc = parse(
-        '<TEI xmlns="http://www.tei-c.org/ns/1.0"><p>高祖與諸將論其功。</p></TEI>',
-      );
+      const doc = parse('<TEI xmlns="http://www.tei-c.org/ns/1.0"><p>高祖與諸將論其功。</p></TEI>');
       const suggestions = dictionaryTag(
         doc,
         [

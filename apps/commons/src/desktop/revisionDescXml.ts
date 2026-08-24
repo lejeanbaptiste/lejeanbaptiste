@@ -23,9 +23,7 @@ const findChildByLocalName = (parent: Element, name: string): Element | null => 
 };
 
 const findTeiChild = (parent: Element, name: string): Element | null =>
-  parent.getElementsByTagNameNS(TEI_NS, name)[0] ??
-  parent.getElementsByTagName(name)[0] ??
-  null;
+  parent.getElementsByTagNameNS(TEI_NS, name)[0] ?? parent.getElementsByTagName(name)[0] ?? null;
 
 const findTeiApplication = (appInfo: Element): Element | null => {
   const apps = [
@@ -35,12 +33,7 @@ const findTeiApplication = (appInfo: Element): Element | null => {
   return apps.find((app) => app.getAttribute('ident') === DESKTOP_APP_IDENT) ?? null;
 };
 
-const stampTeiApplication = (
-  application: Element,
-  who: string,
-  when: string,
-  version: string,
-) => {
+const stampTeiApplication = (application: Element, who: string, when: string, version: string) => {
   application.setAttribute('when', when);
   application.setAttribute('version', toTeiApplicationVersion(version));
   Array.from(application.childNodes).forEach((child) => {

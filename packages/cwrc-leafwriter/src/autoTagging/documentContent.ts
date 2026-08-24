@@ -13,9 +13,7 @@ export interface DocumentContentReader {
  * Resolve the current document as TEI XML, with fallbacks when the visual
  * editor body is empty or not yet convertible (e.g. mid tab switch).
  */
-export async function resolveCurrentDocumentXml(
-  writer: DocumentContentReader,
-): Promise<string> {
+export async function resolveCurrentDocumentXml(writer: DocumentContentReader): Promise<string> {
   let fromEditor = '';
   try {
     fromEditor =
@@ -35,8 +33,7 @@ export async function resolveCurrentDocumentXml(
     return fromEditor;
   }
 
-  const stored =
-    window.__desktopStoredDocumentXml ?? writer.overmindState?.document?.xml;
+  const stored = window.__desktopStoredDocumentXml ?? writer.overmindState?.document?.xml;
   if (stored?.trim()) {
     const mergeForValidation = window.__desktopMergeHeaderForValidation;
     if (typeof mergeForValidation === 'function') {

@@ -57,16 +57,7 @@ export const compileAuthorityPacks = async ({
   onProgress?.('Compiling DILA persons and places…');
   await runNodeScript(
     path.join(root, 'dila/compile.mjs'),
-    [
-      '--persons',
-      persons,
-      '--places',
-      places,
-      '--districts',
-      districts,
-      '--out',
-      dilaOut,
-    ],
+    ['--persons', persons, '--places', places, '--districts', districts, '--out', dilaOut],
     root,
   );
 };

@@ -83,10 +83,7 @@ export const setPage = async ({ state }: Context, value: string) => {
 };
 
 /** Switch between the document editor and the full-width Database Window. */
-export const setDesktopWindowMode = (
-  { state, effects }: Context,
-  value: 'editor' | 'database',
-) => {
+export const setDesktopWindowMode = ({ state, effects }: Context, value: 'editor' | 'database') => {
   state.ui.desktopWindowMode = value;
   effects.storage.api.saveToLocalStorage(DESKTOP_WINDOW_MODE_STORAGE_KEY, value);
 };
@@ -127,9 +124,7 @@ export const setThemeAppearance = ({ state, actions, effects }: Context, value: 
     void electronAPI.setNativeThemeSource(value).then(async () => {
       if (value === 'system') {
         const osDark = await electronAPI.getShouldUseDarkColors?.();
-        applyResolvedDarkMode(
-          osDark ?? window.matchMedia('(prefers-color-scheme: dark)').matches,
-        );
+        applyResolvedDarkMode(osDark ?? window.matchMedia('(prefers-color-scheme: dark)').matches);
         return;
       }
       applyResolvedDarkMode(value === 'dark');
@@ -146,10 +141,7 @@ export const setThemeAppearance = ({ state, actions, effects }: Context, value: 
   );
 };
 
-export const setSkipExplorerDeleteConfirm = (
-  { state, effects }: Context,
-  value: boolean,
-) => {
+export const setSkipExplorerDeleteConfirm = ({ state, effects }: Context, value: boolean) => {
   state.ui.skipExplorerDeleteConfirm = value;
   effects.storage.api.saveToLocalStorage('skipExplorerDeleteConfirm', value);
 };

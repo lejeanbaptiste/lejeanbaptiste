@@ -39,7 +39,10 @@ export async function loadDateAuthority(
   return inflight;
 }
 
-export function useDateAuthority(enabled: boolean, civ: readonly string[] = defaultCiv): {
+export function useDateAuthority(
+  enabled: boolean,
+  civ: readonly string[] = defaultCiv,
+): {
   authority: DateAuthorityIndex | null;
   loading: boolean;
   error: string | null;

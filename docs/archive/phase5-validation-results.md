@@ -16,7 +16,7 @@ pass needed.
 Built at [`autoTagging/validationHarness.ts`](../packages/cwrc-leafwriter/src/autoTagging/validationHarness.ts).
 
 1. **`goldMentions(doc, policy, tags)`** — every existing tagged mention of the given tags
-   *is* a gold entity. Occurrence is numbered the same way `Anchor.occurrence` is (1-based,
+   _is_ a gold entity. Occurrence is numbered the same way `Anchor.occurrence` is (1-based,
    whole-document, counted over the flattened search text) — which is identical whether a
    mention is wrapped in a tag or not, since stripping a tag never changes the document's
    character content. That's what makes a gold mention directly comparable to a predicted
@@ -53,7 +53,7 @@ scoring, just counting candidates) found 131 candidates; the harness run below f
 simply hasn't been hand-tagged yet in this document will score as a **false positive** here,
 deflating measured precision below the true value.
 
-**Practical consequence:** precision as measured is a *floor*, not a trustworthy number, until
+**Practical consequence:** precision as measured is a _floor_, not a trustworthy number, until
 the gold document's own tagging is more complete (or a more densely/completely tagged
 document is used instead). **Recall is more trustworthy** — a gold mention the model fails to
 find is unambiguously a miss regardless of how complete the rest of the tagging is.
@@ -77,7 +77,7 @@ No wrong-tag confusions were found — every one of the 89 FPs was a span matchi
 mention at all, not a mislabeled span. That rules out "the model confuses persName and
 placeName" as the story; the remaining question is how many of those 89 are real entities
 missing from gold versus genuine hallucinations (already anchor-verified as real text spans —
-only the *entity claim* is what's unverified).
+only the _entity claim_ is what's unverified).
 
 ### Reading the numbers
 
@@ -204,14 +204,14 @@ this gold with the current prompt.
 
 ### Side-by-side (`gold_test.xml`, 65 gold mentions, all `suggest.v3` unless noted)
 
-| | **Groq Qwen3.6** | Hosted Mistral 8B | Local Ministral 8B | Groq Qwen3.6 v1 |
-|---|---|---|---|---|
-| Runtime | **~5 s** | ~16 s | ~84 s | ~5 s |
-| Predicted | **54** | 31 | 9 | 29 |
-| Overall P / R / F1 | **.82 / .68 / .74** | .81 / .39 / .52 | .78 / .11 / .19 | .76 / .34 / .47 |
-| persName R | **.67** | .33 | .04 | .29 |
-| placeName R | **.71** (10/14) | .57 (8/14) | .36 (5/14) | .50 (7/14) |
-| wrong-tag | 0 | 0 | 0 | 0 |
+|                    | **Groq Qwen3.6**    | Hosted Mistral 8B | Local Ministral 8B | Groq Qwen3.6 v1 |
+| ------------------ | ------------------- | ----------------- | ------------------ | --------------- |
+| Runtime            | **~5 s**            | ~16 s             | ~84 s              | ~5 s            |
+| Predicted          | **54**              | 31                | 9                  | 29              |
+| Overall P / R / F1 | **.82 / .68 / .74** | .81 / .39 / .52   | .78 / .11 / .19    | .76 / .34 / .47 |
+| persName R         | **.67**             | .33               | .04                | .29             |
+| placeName R        | **.71** (10/14)     | .57 (8/14)        | .36 (5/14)         | .50 (7/14)      |
+| wrong-tag          | 0                   | 0                 | 0                  | 0               |
 
 **Summary:** **`suggest.v3` is tuned for Groq Qwen3.6-27B** — clear winner. Hosted Mistral
 benefits from v3 but stays ~20 F1 points behind. Local Ministral **regressed** on v3 (keep v1

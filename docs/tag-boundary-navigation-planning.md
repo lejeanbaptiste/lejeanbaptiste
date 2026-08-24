@@ -8,7 +8,7 @@ Three-position cursor model for XML tag brackets in show-tags mode.
 There are three distinct visual/interaction states at each tag boundary.
 
 **Updated model (as of 2026-06-30)** — the R2L model was revised mid-implementation.
-The original spec had R2L position 3 land *before the opening tag* (traversing the whole
+The original spec had R2L position 3 land _before the opening tag_ (traversing the whole
 entity). The revised spec is symmetric with L2R: position 3 enters the entity from the
 other side.
 
@@ -39,14 +39,14 @@ Inside tag moving left (ArrowLeft), approaching opening bracket:
 ```
 
 Deletion semantics at each position:
-- Position 1 (mild): a destructive key aimed *into* a tag boundary advances to position 2
+
+- Position 1 (mild): a destructive key aimed _into_ a tag boundary advances to position 2
   (selects the tag) rather than acting on the adjacent character. The key is consumed; no
   content is deleted. A second press from position 2 unwraps/removes the tag.
-  Destructive keys aimed *away* from the boundary act on text normally.
+  Destructive keys aimed _away_ from the boundary act on text normally.
 - Position 2 (vivid): both Backspace and Delete unwrap/remove the tag.
   Typing at position 2 should also be a no-op (not yet implemented — see deferred).
 - Position 3 (inside tag): normal character editing resumes.
-
 
 ## Implementation
 
@@ -69,24 +69,24 @@ case. Throughout this code, inline entities are detected via
 ### State variables
 
 ```typescript
-let currentBoundaryElement: Element | null    // tag being highlighted
-let currentBoundaryIsExternal: boolean        // cursor is in adjacent text (not tag's own text)
-let currentVirtualExternal: boolean           // second stop (vivid) is active
+let currentBoundaryElement: Element | null; // tag being highlighted
+let currentBoundaryIsExternal: boolean; // cursor is in adjacent text (not tag's own text)
+let currentVirtualExternal: boolean; // second stop (vivid) is active
 
-let _keydownBoundaryWasVirtualExternal: boolean   // snapshot of virtualExternal at keydown time
-let _keydownBoundaryElement: Element | null       // snapshot of boundary element at keydown time
+let _keydownBoundaryWasVirtualExternal: boolean; // snapshot of virtualExternal at keydown time
+let _keydownBoundaryElement: Element | null; // snapshot of boundary element at keydown time
 let _pendingAdvance: {
   node: Node;
   offset: number;
-  isExit?: boolean;           // true → cursor lands in adjacent external text (not inside tag)
+  isExit?: boolean; // true → cursor lands in adjacent external text (not inside tag)
   isSuppressBoundary?: boolean; // true → suppress boundary re-engagement at the landing position
-} | null
+} | null;
 
 // When an entry advance lands inside an entity (L2R at offset 0, R2L at textLen), the landing
 // position coincides with the natural "internal approach" boundary that updateTagBoundaryState
 // would show mild highlight for. This flag suppresses that while cursor stays at the exact
 // landing position, self-clearing the moment cursor moves anywhere else.
-let _suppressedBoundaryPosition: { node: Node; offset: number } | null
+let _suppressedBoundaryPosition: { node: Node; offset: number } | null;
 ```
 
 ### Key mechanisms
@@ -125,6 +125,7 @@ for entry advances or "first stop pin" advances. Entry advances suppress themsel
 boundary) must not be cleared or the vivid highlight is immediately wiped.
 
 **`isExit` vs `isSuppressBoundary` on `_pendingAdvance`:**
+
 - `isExit: true` — cursor lands in external adjacent text. Trigger `clearTagBoundaryState()` so
   no boundary highlight lingers after exiting.
 - `isSuppressBoundary: true` — cursor enters the entity (L2R at offset 0, R2L at textLen).
@@ -134,7 +135,7 @@ boundary) must not be cleared or the vivid highlight is immediately wiped.
 **`beforeinput` interception** — capture-phase listener on `editor.getBody()`. When
 `inputType === 'insertText'` fires with cursor at `(textNode, 0)` inside an entity and
 `currentBoundaryElement === null` (confirming position 3), TinyMCE would route the character
-*before* the entity due to range normalization. We intercept, call `textNode.insertData(0,
+_before_ the entity due to range normalization. We intercept, call `textNode.insertData(0,
 event.data)` directly, advance cursor to `(textNode, data.length)`, and call
 `editor.undoManager.add()`.
 
@@ -145,10 +146,9 @@ offset 0 (ArrowLeft) or `textLen` (ArrowRight).
 **Bug D (fixed) — ArrowLeft from offset=1 inside entity** — TinyMCE's keyup bounces cursor
 from offset=0 to outside the entity. Intercepted in `keydown` (capture, before TinyMCE) when
 `!currentBoundaryElement && offset===1 && isTagOrCombinedEl(parent) && isInlineOrCombined`.
-`_pendingAdvance` pins cursor at offset=0 in keyup (no `isSuppressBoundary`; we *want* the
+`_pendingAdvance` pins cursor at offset=0 in keyup (no `isSuppressBoundary`; we _want_ the
 boundary system to engage at offset 0 so ArrowLeft from there proceeds through mild → vivid →
 exit).
-
 
 ## Known bugs (as of 2026-06-30)
 
@@ -184,6 +184,7 @@ typing at pos 2 should be a no-op, but instead TinyMCE routes characters into th
 Both issues have the same root cause and likely the same fix.
 
 **Potential fixes (preferred first):**
+
 1. Intercept `beforeinput` (capture phase). When cursor is at offset=0 in external text
    with the previous sibling being an entity span (`currentBoundaryIsExternal === true`),
    preventDefault and either: (a) do nothing (correct for pos 2); or (b) re-dispatch the
@@ -228,7 +229,7 @@ descendant rather than the pre-entity text.
 ### Bug G — cursor position appears ambiguous at position 3 (visual rendering)
 
 **Symptom:** after entering the entity via position 3 (L2R at offset 0, or R2L at textLen),
-the blinking cursor caret is visually rendered *outside* the entity highlight even though the
+the blinking cursor caret is visually rendered _outside_ the entity highlight even though the
 DOM selection is correctly placed at `(entityText, 0)` or `(entityText, textLen)`. Typing
 confirms the placement is correct (character inserts inside), but the visual caret is
 misleading.
@@ -240,6 +241,7 @@ pixel position at the left edge of the span's content area. The browser draws th
 the external (left) side.
 
 **Thoughts on fixes:**
+
 1. **CSS `direction` trick** — not applicable here since content may be RTL.
 2. **Zero-width joiner / non-breaking space** — inserting a ZWJ or U+FEFF inside the entity
    at position 0 forces the caret to render inside the element, but it pollutes content.
@@ -268,14 +270,12 @@ type through it). Currently TinyMCE routes typed characters into the entity (Bug
 **Status:** not implemented. Fix for Bug B will likely also fix this: at `currentVirtualExternal
 === true`, the `beforeinput` intercept can call `preventDefault()` and return without inserting.
 
-
 ## Files changed
 
-| File | Description |
-|---|---|
-| `packages/cwrc-leafwriter/src/js/tinymce/tinymceWrapper.ts` | All navigation logic |
-| `packages/cwrc-leafwriter/src/css/build/editor.css` | `tag-at-boundary` and `tag-external-active` CSS |
-
+| File                                                        | Description                                     |
+| ----------------------------------------------------------- | ----------------------------------------------- |
+| `packages/cwrc-leafwriter/src/js/tinymce/tinymceWrapper.ts` | All navigation logic                            |
+| `packages/cwrc-leafwriter/src/css/build/editor.css`         | `tag-at-boundary` and `tag-external-active` CSS |
 
 ## Deferred
 

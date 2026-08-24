@@ -4,11 +4,7 @@ import {
   pendingOrders,
 } from '../../../../../packages/cwrc-leafwriter/src/autoTagging/entityOrders';
 import { SQLITE_REQUIRED_LOOKUP_MESSAGE } from '../../../../../packages/cwrc-leafwriter/src/autoTagging/sqliteRequired';
-import {
-  applyKeyRemapToRoots,
-  type KeyRemapFileOps,
-  type KeyRemapSummary,
-} from './applyKeyRemap';
+import { applyKeyRemapToRoots, type KeyRemapFileOps, type KeyRemapSummary } from './applyKeyRemap';
 import { collectXmlFiles } from '../xpath/collectXmlFiles';
 
 /**

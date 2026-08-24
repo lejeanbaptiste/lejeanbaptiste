@@ -58,7 +58,9 @@ describe('JSONL round-trip', () => {
   });
 
   it('appends to an existing body without dropping earlier lines', () => {
-    const first = appendRecords('', [recordFromDecision({ suggestion: suggestion(), decision: 'accepted' })]);
+    const first = appendRecords('', [
+      recordFromDecision({ suggestion: suggestion(), decision: 'accepted' }),
+    ]);
     const second = appendRecords(first, [
       recordFromDecision({ suggestion: suggestion(), decision: 'rejected' }),
     ]);

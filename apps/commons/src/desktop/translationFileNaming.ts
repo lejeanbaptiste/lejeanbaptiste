@@ -23,9 +23,7 @@ export interface ParsedTranslationFilePath {
   lang: string;
 }
 
-export const parseTranslationFilePath = (
-  filePath: string,
-): ParsedTranslationFilePath | null => {
+export const parseTranslationFilePath = (filePath: string): ParsedTranslationFilePath | null => {
   const { file } = splitDirAndFile(filePath);
   const match = file.match(TRANSLATION_SUFFIX_PATTERN);
   if (!match) return null;

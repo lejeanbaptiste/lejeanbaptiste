@@ -71,9 +71,9 @@ describe('isUpdateAvailable', () => {
   ];
 
   it('is false when disabled', () => {
-    expect(
-      isUpdateAvailable({ version: 1, enabled: false }, installedPacks, null, null, []),
-    ).toBe(false);
+    expect(isUpdateAvailable({ version: 1, enabled: false }, installedPacks, null, null, [])).toBe(
+      false,
+    );
   });
 
   it('is true when compile policy is outdated', () => {

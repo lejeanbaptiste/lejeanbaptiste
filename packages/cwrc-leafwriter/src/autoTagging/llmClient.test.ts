@@ -14,12 +14,12 @@ describe('parseRateLimitRetryMs', () => {
 
 describe('MistralLlmClient rate-limit retry', () => {
   it('waits and retries on HTTP 429', async () => {
-    const timeoutSpy = jest.spyOn(globalThis, 'setTimeout').mockImplementation(
-      (((callback: TimerHandler) => {
-        if (typeof callback === 'function') callback();
-        return 0 as unknown as ReturnType<typeof setTimeout>;
-      }) as unknown) as typeof setTimeout,
-    );
+    const timeoutSpy = jest.spyOn(globalThis, 'setTimeout').mockImplementation(((
+      callback: TimerHandler,
+    ) => {
+      if (typeof callback === 'function') callback();
+      return 0 as unknown as ReturnType<typeof setTimeout>;
+    }) as unknown as typeof setTimeout);
     let calls = 0;
     const fetchImpl = (async () => {
       calls++;

@@ -1076,10 +1076,8 @@ const electronAPI: ElectronAPI = {
   languageToolInstallNgrams: () => ipcRenderer.invoke('languageToolInstallNgrams'),
   languageToolEnsureServer: () => ipcRenderer.invoke('languageToolEnsureServer'),
   onLanguageToolInstallProgress: (callback) => {
-    const listener = (
-      _event: Electron.IpcRendererEvent,
-      progress: LanguageToolInstallProgress,
-    ) => callback(progress);
+    const listener = (_event: Electron.IpcRendererEvent, progress: LanguageToolInstallProgress) =>
+      callback(progress);
     ipcRenderer.on('languageTool:installProgress', listener);
     return () => ipcRenderer.removeListener('languageTool:installProgress', listener);
   },

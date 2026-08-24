@@ -24,8 +24,7 @@ export const editorialCleanupLang = (lang: string | null | undefined): Editorial
   return 'other';
 };
 
-const isWordChar = (ch: string | undefined): boolean =>
-  Boolean(ch && /[\p{L}\p{N}]/u.test(ch));
+const isWordChar = (ch: string | undefined): boolean => Boolean(ch && /[\p{L}\p{N}]/u.test(ch));
 
 /** Opening vs closing curly double/single quotes (English / fallback). */
 const applyCurlyQuotes = (text: string): string => {

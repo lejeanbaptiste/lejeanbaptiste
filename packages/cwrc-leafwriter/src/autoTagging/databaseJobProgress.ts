@@ -33,11 +33,7 @@ export const subscribeDatabaseJobProgress = (listener: () => void): (() => void)
   return () => listeners.delete(listener);
 };
 
-export const startDatabaseJobProgress = (
-  label: string,
-  cancel: () => void,
-  total = 0,
-): void => {
+export const startDatabaseJobProgress = (label: string, cancel: () => void, total = 0): void => {
   emit({ active: true, cancel, done: 0, total, label, detail: '' });
 };
 

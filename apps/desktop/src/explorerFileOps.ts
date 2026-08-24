@@ -41,10 +41,7 @@ export const listProjectXmlFiles = async (rootPath: string): Promise<NamedPath[]
   return results.sort((a, b) => a.path.localeCompare(b.path));
 };
 
-export const findXmlFilesByName = async (
-  rootPath: string,
-  query: string,
-): Promise<NamedPath[]> => {
+export const findXmlFilesByName = async (rootPath: string, query: string): Promise<NamedPath[]> => {
   const normalizedQuery = query.trim().toLowerCase();
   if (!normalizedQuery) return [];
 
@@ -121,10 +118,7 @@ export const movePath = async (sourcePath: string, destDir: string): Promise<str
   return destPath;
 };
 
-export const createDirectory = async (
-  parentDir: string,
-  folderName: string,
-): Promise<string> => {
+export const createDirectory = async (parentDir: string, folderName: string): Promise<string> => {
   const trimmed = folderName.trim();
   if (!trimmed || trimmed.includes('/') || trimmed.includes('\\')) {
     throw new Error('Invalid folder name');

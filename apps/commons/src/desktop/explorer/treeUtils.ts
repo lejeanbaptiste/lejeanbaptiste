@@ -14,7 +14,8 @@ export const getParentPath = (filePath: string) => {
   return parts.join('/') || '/';
 };
 
-export const joinPath = (...parts: string[]) => parts.filter(Boolean).join('/').replace(/\/+/g, '/');
+export const joinPath = (...parts: string[]) =>
+  parts.filter(Boolean).join('/').replace(/\/+/g, '/');
 
 export const updateTreeNode = (
   nodes: FileTreeNode[],
@@ -33,9 +34,7 @@ export const removeTreeNode = (nodes: FileTreeNode[], targetPath: string): FileT
   nodes
     .filter((node) => node.path !== targetPath)
     .map((node) =>
-      node.children
-        ? { ...node, children: removeTreeNode(node.children, targetPath) }
-        : node,
+      node.children ? { ...node, children: removeTreeNode(node.children, targetPath) } : node,
     );
 
 const repathSingle = (filePath: string, oldPath: string, newPath: string): string | null => {
