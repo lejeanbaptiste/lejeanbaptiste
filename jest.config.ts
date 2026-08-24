@@ -114,6 +114,9 @@ const config: Config.InitialOptions = {
       modulePathIgnorePatterns: ['<rootDir>/.claude/'],
       coveragePathIgnorePatterns: ['/node_modules/', '/dist', '/lib', 'lib-esm', '/test'],
       moduleNameMapper: {
+        // Ahead of the @src alias: mapping is first-match-wins, and MDX is imported
+        // through that alias.
+        '\\.mdx$': '<rootDir>/apps/commons/test/mocks/mdx.tsx',
         '^@src/(.*)$': '<rootDir>/apps/commons/src/$1',
         '^@cwrc/leafwriter/documentExport$':
           '<rootDir>/packages/cwrc-leafwriter/src/js/conversion/documentExport.ts',
@@ -124,6 +127,11 @@ const config: Config.InitialOptions = {
         // The bare specifier resolves to the package's webpack bundle, which cannot
         // be evaluated under jsdom. See the stub for what it covers.
         '^@cwrc/leafwriter$': '<rootDir>/apps/commons/test/mocks/cwrcLeafwriter.tsx',
+        // Same treatment the storage project gives itself: resolve to source.
+        '^@cwrc/leafwriter-storage-service$':
+          '<rootDir>/packages/cwrc-leafwriter-storage-service/src/index.tsx',
+        '^@cwrc/leafwriter-storage-service/(.*)$':
+          '<rootDir>/packages/cwrc-leafwriter-storage-service/src/$1',
         '^dexie$': dexieModulePath,
         // Holds `import.meta`, which ts-jest cannot compile to CJS; see the stub.
         '.*/devWorkerUrl$':
@@ -146,7 +154,7 @@ const config: Config.InitialOptions = {
       preset: 'ts-jest',
       // tibetan-ewts-converter ships ESM-only; let ts-jest compile it to CJS.
       // nanoid ships ESM only, so it must be transformed rather than skipped.
-      transformIgnorePatterns: ['/node_modules/(?!(tibetan-ewts-converter|nanoid)/)'],
+      transformIgnorePatterns: ['/node_modules/(?!(tibetan-ewts-converter|nanoid|query-string|decode-uri-component|split-on-first|filter-obj)/)'],
       transform: {
         '\\.mjs$': ['ts-jest', { tsconfig: { allowJs: true } }],
         // Bundled CSL citation styles and locales (webpack asset/source in the real build).
