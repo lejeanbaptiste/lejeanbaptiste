@@ -74,7 +74,6 @@ class KeywordDialog implements SchemaDialog {
         return;
       }
 
-      //@ts-ignore
       if (dialog.currentData.attributes.ana !== undefined) {
         dialog.isValid = true;
         return;
@@ -108,7 +107,7 @@ class KeywordDialog implements SchemaDialog {
       this.forceSave = false;
 
       if (this.dialog.mode === DialogForm.ADD) {
-        //@ts-ignore
+        //@ts-expect-error
         this.dialog.attributesWidget.setData({ ana: '' });
         this.dialog.$el.find(`label[for=${id}_noteContent]`).show();
         this.dialog.$el.find(`#${id}_noteContent`).show();

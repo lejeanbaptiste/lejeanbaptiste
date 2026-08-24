@@ -183,11 +183,11 @@ class Writer extends EventManager {
 
     this.event('tinymceInitialized').subscribe(async () => {
       // fade out loading mask and do final resizing after tinymce has loaded
-      //@ts-ignore
+      //@ts-expect-error
       this.layoutManager.$outerLayout.options.onresizeall_end = () => {
-        //@ts-ignore
+        //@ts-expect-error
         this.layoutManager.$outerLayout.options.onresizeall_end = null;
-        //@ts-ignore
+        //@ts-expect-error
         this.layoutManager.$loadingMask.fadeOut(350);
       };
 

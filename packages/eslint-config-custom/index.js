@@ -55,6 +55,15 @@ export default function custom({
         sourceType: 'module',
         globals: { ...globals.browser, ...globals.es2025 },
       },
+      rules: {
+        // This codebase's convention for "intentionally unused" — a destructured
+        // param kept for its position/documentation value, an unused catch binding —
+        // is a leading underscore. Recognize it everywhere, not just in .ts/.tsx.
+        'no-unused-vars': [
+          'error',
+          { argsIgnorePattern: '^_', varsIgnorePattern: '^_', caughtErrorsIgnorePattern: '^_' },
+        ],
+      },
     },
 
     // Plain .js is CommonJS here — no package in the monorepo sets "type": "module".
@@ -102,6 +111,11 @@ export default function custom({
         '@typescript-eslint/no-explicit-any': 1,
         '@typescript-eslint/require-await': 0,
         '@typescript-eslint/no-misused-promises': [2, { checksVoidReturn: false }],
+        // See the matching no-unused-vars comment above — same underscore convention.
+        '@typescript-eslint/no-unused-vars': [
+          'error',
+          { argsIgnorePattern: '^_', varsIgnorePattern: '^_', caughtErrorsIgnorePattern: '^_' },
+        ],
       },
     },
 

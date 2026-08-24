@@ -21,7 +21,7 @@ class Popup implements LWDialogProps {
 
     const _this = this;
 
-    //@ts-ignore
+    //@ts-expect-error
     this.$popupEl.popup({
       autoOpen: false,
       resizable: false,
@@ -45,7 +45,7 @@ class Popup implements LWDialogProps {
 
           const tagOffset = _this.$currentTag?.offset();
 
-          //@ts-ignore
+          //@ts-expect-error
           const frameOffset = $(editor.iframeElement).offset();
           const editorScrollTop = $editorBody.scrollTop();
           const editorScrollLeft = $editorBody.scrollLeft();
@@ -122,7 +122,7 @@ class Popup implements LWDialogProps {
   }
 
   private entityShowPopupLink(event: JQuery.Event) {
-    //@ts-ignore
+    //@ts-expect-error
     const target: HTMLElement = event.target;
 
     const entityId = target.getAttribute('id') || target.getAttribute('name');
@@ -166,7 +166,7 @@ class Popup implements LWDialogProps {
   }
 
   private entityMouseOut(event: JQuery.Event) {
-    //@ts-ignore
+    //@ts-expect-error
     const targetId = event.target.getAttribute('id');
     if (!targetId) return;
 
@@ -176,7 +176,7 @@ class Popup implements LWDialogProps {
       );
       if (!dialogBar) return;
 
-      //@ts-ignore
+      //@ts-expect-error
       if (dialogBar?.props?.closeOnMouseOutTarget) {
         this.writer.overmindActions.ui.closeDialog(targetId);
       }

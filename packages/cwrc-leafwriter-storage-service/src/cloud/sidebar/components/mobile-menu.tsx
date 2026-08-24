@@ -86,7 +86,7 @@ export const MobileMenu = ({ onSelect, selectedMenu }: MobileMenuProps) => {
       const publicRepository = await getPublicRepositoryByUsername(value);
       if (!publicRepository) return log.warn('public repository not found');
 
-      const { uuid, provider, ...rest } = publicRepository;
+      const { uuid: _uuid, provider: _provider, ...rest } = publicRepository;
       setOwner(rest as Owner);
     }
 
@@ -98,7 +98,7 @@ export const MobileMenu = ({ onSelect, selectedMenu }: MobileMenuProps) => {
   const handleSearchSelect = async (publicRepository: PublicRepository) => {
     await addPublicRepository(publicRepository);
 
-    const { uuid, provider, ...rest } = publicRepository;
+    const { uuid, provider: _provider, ...rest } = publicRepository;
     setOwner(rest as Owner);
 
     setShowSearch(false);

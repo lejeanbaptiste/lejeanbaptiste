@@ -23,7 +23,7 @@ export const api = (() => {
       try {
         const object = JSON.parse(value);
         return object as T;
-      } catch (error) {
+      } catch {
         return value as T;
       }
     },

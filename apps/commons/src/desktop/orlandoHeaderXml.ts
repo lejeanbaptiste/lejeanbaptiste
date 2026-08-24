@@ -1,6 +1,5 @@
 const findChildByLocalName = (parent: Element, name: string): Element | null => {
-  for (let i = 0; i < parent.children.length; i += 1) {
-    const child = parent.children[i];
+  for (const child of parent.children) {
     if (child.localName === name || child.tagName === name) return child;
   }
   return null;

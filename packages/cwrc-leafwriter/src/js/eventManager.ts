@@ -280,12 +280,11 @@ class EventManager {
     if (!event) {
       const callbacks = $.Callbacks();
       event = {
-        publish: function () {
+        publish: function (...args: unknown[]) {
           if (_this.debug) {
-            log.debug(`[LW Event: ${this.event}]: ${[...arguments]}`);
+            log.debug(`[LW Event: ${this.event}]: ${args}`);
           }
-          //@ts-ignore
-          callbacks.fire.apply(this, arguments);
+          callbacks.fire.apply(this, args);
         },
         subscribe: callbacks.add,
         unsubscribe: callbacks.remove,

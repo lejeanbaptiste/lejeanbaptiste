@@ -1,7 +1,6 @@
 import AddIcon from '@mui/icons-material/Add';
 import CloseIcon from '@mui/icons-material/Close';
 import LabelOutlinedIcon from '@mui/icons-material/LabelOutlined';
-import OpenInNewIcon from '@mui/icons-material/OpenInNew';
 import SearchIcon from '@mui/icons-material/Search';
 import {
   Alert,
@@ -28,12 +27,6 @@ import {
   readEastAsianDateValues,
 } from '../../../../../packages/cwrc-leafwriter/src/dateAuthority/values';
 import type { EastAsianDateValues } from '../../../../../packages/cwrc-leafwriter/src/dateAuthority/types';
-import {
-  CbdbIcon,
-  DilaIcon,
-  InitialsIcon,
-} from '../../../../../packages/cwrc-leafwriter/src/icons/custom/AuthoritySource';
-import { WikipediaIcon } from '../../../../../packages/cwrc-leafwriter/src/icons/custom/Wikipedia';
 import { EntitySummary } from '../../../../../packages/cwrc-leafwriter/src/autoTagging/entityOps';
 import {
   ALL_NAME_TYPES,
@@ -50,7 +43,6 @@ const LazyAttributesEastAsianSection = lazy(() =>
     (mod) => ({ default: mod.AttributesEastAsianSection }),
   ),
 );
-import { openExternalUrl } from '../../../../../packages/cwrc-leafwriter/src/utilities/DOM';
 import {
   applyAttributeToTag,
   commitTagAttributes,
@@ -96,22 +88,6 @@ interface LinkedEntityInfo {
   entity: EntitySummary;
   urls: { type: string; url: string }[];
 }
-
-const authorityIcon = (type: string) => {
-  switch (type.toLowerCase()) {
-    case 'wikidata':
-    case 'wikipedia':
-      return <WikipediaIcon sx={{ fontSize: 14 }} />;
-    case 'cbdb':
-      return <CbdbIcon sx={{ fontSize: 14 }} />;
-    case 'viaf':
-      return <InitialsIcon top="VI" bottom="AF" sx={{ fontSize: 14 }} />;
-    case 'dila':
-      return <DilaIcon sx={{ fontSize: 14 }} />;
-    default:
-      return <OpenInNewIcon sx={{ fontSize: 12 }} />;
-  }
-};
 
 export const AttributesPanel = ({ visible = true }: { visible?: boolean }) => {
   const { t } = useTranslation();

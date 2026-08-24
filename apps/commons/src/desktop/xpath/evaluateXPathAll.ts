@@ -1,4 +1,4 @@
-const xpathSegmentRegex = /(\/{0,2})([\w-]+::|@)?(\w+?:)?([\w-(\.\*)]+)(\[.+?\])?/g;
+const xpathSegmentRegex = /(\/{0,2})([\w-]+::|@)?(\w+?:)?([\w-(.*)]+)(\[.+?\])?/g;
 
 const isElement = (node: Node): node is Element => node.nodeType === Node.ELEMENT_NODE;
 

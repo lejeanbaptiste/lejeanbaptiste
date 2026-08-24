@@ -19,10 +19,7 @@ import { rationaleForCandidates } from './packLoader';
 import type { Suggestion, WhitespacePolicy } from './types';
 import { extractPluginOfficeRelations } from '../plugins/officeRelationExtractors';
 import { formatNorbertAuthorityValue } from './norbertAuthorityId';
-import {
-  nobleTitlesFromMetadata,
-  preferredEntityPrimaryName,
-} from './nobleTitleHeadword';
+import { preferredEntityPrimaryName } from './nobleTitleHeadword';
 
 /**
  * Dedupe source labels for the pill display. Each input may itself already be
@@ -488,11 +485,10 @@ function resolveEntity(
 
   const displayName = candidate.displayName?.trim() || candidate.primaryName;
   const typedNames = candidate.names ?? [];
-  const titleParts = nobleTitlesFromMetadata(candidate.metadata);
   // Prefer pack personal primary / 姓+名; keep title headwords only as fallback label.
   const mintName =
     candidate.kind === 'person'
-      ? preferredEntityPrimaryName(displayName, typedNames, titleParts)
+      ? preferredEntityPrimaryName(displayName, typedNames)
       : displayName;
   const romanizedName = romanizeFromAuthorityMetadata(
     candidate.metadata,

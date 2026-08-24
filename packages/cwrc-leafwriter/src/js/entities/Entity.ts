@@ -291,8 +291,8 @@ class Entity {
   }
 
   setProperty(property: string, value: any) {
-    if (this.hasOwnProperty(property)) {
-      //@ts-ignore
+    if (Object.prototype.hasOwnProperty.call(this, property)) {
+      //@ts-expect-error
       this[property] = value;
     }
   }

@@ -277,11 +277,13 @@ export default class Github implements Provider {
   async getOrganization({ orgName: org }: Types.GetOrganization) {
     if (!org) return null;
 
-    const response = this.octokit.rest.orgs.get({ org }).catch(() => null);
+    const response = await this.octokit.rest.orgs.get({ org }).catch(() => null);
     if (!response) return null;
 
-    const organization = response as any;
-    organization.username = organization.login;
+    const organization = {
+      ...response.data,
+      username: response.data.login,
+    } as any;
 
     return organization;
   }

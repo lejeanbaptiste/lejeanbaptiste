@@ -422,7 +422,7 @@ describe('AutoTaggingSession', () => {
     const makeStore = () => {
       const files = new Map<string, string>();
       const api: EntityFileApi = {
-        ensureDirectory: async () => {},
+        ensureDirectory: async () => undefined,
         pathExists: async (p) => files.has(p),
         readFile: async (p) => files.get(p) ?? '',
         writeFile: async (p, c) => {
@@ -786,7 +786,7 @@ describe('AutoTaggingSession', () => {
           );
         },
       },
-      loadDocumentXML: () => {},
+      loadDocumentXML: () => undefined,
     };
     const session = new AutoTaggingSession(writer);
     const doc = await session.getDocument();

@@ -46,7 +46,7 @@ export const PublicRepositories = ({ onSelect, selectedMenu }: PublicRepositorie
       const publicRepository = await getPublicRepositoryByUsername(value);
       if (!publicRepository) return log.warn('public repository not found');
 
-      const { uuid, provider, ...user } = publicRepository;
+      const { uuid: _uuid, provider: _provider, ...user } = publicRepository;
       setOwner(user as Owner);
       onSelect(user.username);
     },
@@ -66,7 +66,7 @@ export const PublicRepositories = ({ onSelect, selectedMenu }: PublicRepositorie
   const handleSearchSelect = async (publicRepository: PublicRepository) => {
     await addPublicRepository(publicRepository);
 
-    const { uuid, provider, ...user } = publicRepository;
+    const { uuid: _uuid, provider: _provider, ...user } = publicRepository;
     setOwner(user as Owner);
 
     onSelect(user.username);

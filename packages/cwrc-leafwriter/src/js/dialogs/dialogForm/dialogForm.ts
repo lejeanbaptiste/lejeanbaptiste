@@ -109,7 +109,7 @@ class DialogForm {
               case 'radio':
                 val = formEl.find('input:checked').val();
                 // eslint-disable-next-line @typescript-eslint/ban-ts-comment
-                //@ts-ignore
+                //@ts-expect-error
                 data[dataKey][mapping] = val;
                 break;
               case 'textbox':
@@ -117,7 +117,7 @@ class DialogForm {
               case 'select':
                 val = formEl.val();
                 // eslint-disable-next-line @typescript-eslint/ban-ts-comment
-                //@ts-ignore
+                //@ts-expect-error
                 if (val !== null) data[dataKey][mapping] = val;
                 break;
             }
@@ -179,7 +179,7 @@ class DialogForm {
               formEl.val(value);
 
               // eslint-disable-next-line @typescript-eslint/ban-ts-comment
-              //@ts-ignore
+              //@ts-expect-error
               if (formEl.data('transform') === 'selectmenu') formEl.selectmenu('refresh');
               // formEl.parents('[data-transform="accordion"]').accordion('option', 'active', 0);
               break;
@@ -218,7 +218,6 @@ class DialogForm {
     // this.cwrcWriterConfig = config.cwrcWriterConfig; // the config to use for the leafWriter
 
     // eslint-disable-next-line @typescript-eslint/ban-ts-comment
-    //@ts-ignore
     this.$el.dialog({
       title,
       modal: true,
@@ -241,7 +240,6 @@ class DialogForm {
             this.$el.trigger('beforeCancel');
             this.$el.trigger('beforeClose');
             // eslint-disable-next-line @typescript-eslint/ban-ts-comment
-            //@ts-ignore
             this.$el.dialog('close');
           },
         },
@@ -260,16 +258,16 @@ class DialogForm {
       switch (transform) {
         //! buttonset is deprecated, but there are yet a few instances in the code. Use 'controlgroup' instead
         // case 'buttonset':
-        //   //@ts-ignore
+        //   //@ts-expect-error
         //   formEl.controlgroup({ icon: false });
         //   break;
         case 'controlgroup':
           // eslint-disable-next-line @typescript-eslint/ban-ts-comment
-          //@ts-ignore
+          //@ts-expect-error
           formEl.controlgroup({ icon: false });
           break;
         // case 'accordion':
-        //   //@ts-ignore
+        //   //@ts-expect-error
         //   formEl.accordion({
         //     heightStyle: 'content',
         //     animate: false,
@@ -279,7 +277,7 @@ class DialogForm {
         //   break;
         case 'selectmenu':
           // eslint-disable-next-line @typescript-eslint/ban-ts-comment
-          //@ts-ignore
+          //@ts-expect-error
           formEl.selectmenu({
             appendTo: this.writer.layoutManager.getContainer(),
           });
@@ -330,7 +328,7 @@ class DialogForm {
       switch (type) {
         case 'radio':
           // eslint-disable-next-line @typescript-eslint/ban-ts-comment
-          //@ts-ignore
+          //@ts-expect-error
           formEl.find('input').checkboxradio({ icon: false });
           formEl.find('input').prop('checked', false); // reset all
           formEl.find('[data-default]').prop('checked', true); // set default if it exists
@@ -340,7 +338,7 @@ class DialogForm {
           formEl.val('');
           if (formEl.data('transform') === 'selectmenu') {
             // eslint-disable-next-line @typescript-eslint/ban-ts-comment
-            //@ts-ignore
+            //@ts-expect-error
             formEl.selectmenu('refresh');
           }
           break;
@@ -420,7 +418,7 @@ class DialogForm {
       // copy mapped properties to currentData
       mappedProps?.forEach((propName) => {
         // eslint-disable-next-line @typescript-eslint/ban-ts-comment
-        //@ts-ignore
+        //@ts-expect-error
         this.currentData.properties[propName] = config.entry?.[propName];
       });
     }
@@ -429,7 +427,6 @@ class DialogForm {
     this.$el.trigger('beforeShow', [config, this]);
 
     // eslint-disable-next-line @typescript-eslint/ban-ts-comment
-    //@ts-ignore
     this.$el.dialog('open');
   }
 
@@ -442,7 +439,6 @@ class DialogForm {
     if (this.isValid) {
       this.$el.trigger('beforeClose');
       // eslint-disable-next-line @typescript-eslint/ban-ts-comment
-      //@ts-ignore
       this.$el.dialog('close');
 
       if (this.mode === DialogForm.EDIT && this.currentData && this.currentId) {
@@ -476,7 +472,7 @@ class DialogForm {
           //   break;
           case 'controlgroup':
             // eslint-disable-next-line @typescript-eslint/ban-ts-comment
-            //@ts-ignore
+            //@ts-expect-error
             formEl.controlgroup('destroy');
             break;
           // case 'accordion':
@@ -484,7 +480,7 @@ class DialogForm {
           //   break;
           case 'selectmenu':
             // eslint-disable-next-line @typescript-eslint/ban-ts-comment
-            //@ts-ignore
+            //@ts-expect-error
             formEl.selectmenu('destroy');
             break;
         }

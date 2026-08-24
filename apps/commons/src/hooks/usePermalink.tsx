@@ -4,7 +4,6 @@ import type { Error, Resource } from '@src/types';
 import { isErrorMessage } from '@src/types';
 import { isBefore } from 'date-fns';
 import Cookies from 'js-cookie';
-//@ts-ignore
 import queryString from 'query-string';
 import { useTranslation } from 'react-i18next';
 import { useLocation, useNavigate } from 'react-router';
@@ -157,7 +156,7 @@ export const usePermalink = () => {
         return error;
       }
 
-      const { expires, id, ...resource } = document;
+      const { expires: _expires, id: _id, ...resource } = document;
 
       if (!isBefore(new Date(), document.expires)) {
         const error: Error = { type: 'error', message: `${t('LWC.commons.request expired')}` };

@@ -250,9 +250,7 @@ const App = ({ document, settings, user }: LeafWriterOptions) => {
       );
       const _writer = new Writer(config);
 
-      //@ts-ignore
       _writer.overmindState = state;
-      //@ts-ignore
       _writer.overmindActions = actions;
       window.writer = _writer;
 
@@ -260,7 +258,6 @@ const App = ({ document, settings, user }: LeafWriterOptions) => {
         opts?: Parameters<typeof actions.validator.debugValidatorState>[0],
       ) => actions.validator.debugValidatorState(opts);
 
-      //@ts-ignore
       _writer.event('writerInitialized').subscribe(() => {
         actions.document.setDocumentUrl(document.url);
 

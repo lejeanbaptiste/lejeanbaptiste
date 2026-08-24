@@ -30,20 +30,24 @@ export const ContextMenu = () => {
     if (!contextMenu.show) return;
     if (isReadonly) return;
 
-    const initialzed = initialize();
-    if (!initialzed) return;
+    let cancelled = false;
+    void (async () => {
+      const initialzed = await initialize();
+      if (cancelled || !initialzed) return;
 
-    setAnchorRef(contextMenu.anchorEl ? 'anchorEl' : 'anchorPosition');
-    setAnchorEl(contextMenu.anchorEl ?? null);
-    setPosition({
-      top: contextMenu.position?.posY ?? 0,
-      left: contextMenu.position?.posX ?? 0,
-    });
+      setAnchorRef(contextMenu.anchorEl ? 'anchorEl' : 'anchorPosition');
+      setAnchorEl(contextMenu.anchorEl ?? null);
+      setPosition({
+        top: contextMenu.position?.posY ?? 0,
+        left: contextMenu.position?.posX ?? 0,
+      });
 
-    setShow(true);
-    loadItems();
+      setShow(true);
+      void loadItems();
+    })();
 
     return () => {
+      cancelled = true;
       setPosition({ top: 0, left: 0 });
       setOptions([]);
       setShow(false);

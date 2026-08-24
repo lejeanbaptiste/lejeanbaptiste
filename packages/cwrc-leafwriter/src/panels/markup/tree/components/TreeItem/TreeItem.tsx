@@ -25,10 +25,8 @@ export const TreeItem = forwardRef<HTMLDivElement, TreeItemProps>(
     {
       canAddToMultiselection,
       content,
-      childCount,
       clone,
       disableInteraction,
-      disableSelection,
       depth,
       expanded,
       expandDisabled,

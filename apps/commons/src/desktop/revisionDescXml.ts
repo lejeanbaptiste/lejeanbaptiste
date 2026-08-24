@@ -16,8 +16,7 @@ export const toTeiApplicationVersion = (raw: string | undefined | null): string 
 };
 
 const findChildByLocalName = (parent: Element, name: string): Element | null => {
-  for (let i = 0; i < parent.children.length; i += 1) {
-    const child = parent.children[i];
+  for (const child of parent.children) {
     if (child.localName === name || child.tagName === name) return child;
   }
   return null;
@@ -99,8 +98,7 @@ const stampTeiLastSaved = (
 };
 
 const findOrlandoResponsibility = (revisionDesc: Element, resp: string): Element | null => {
-  for (let i = 0; i < revisionDesc.children.length; i += 1) {
-    const child = revisionDesc.children[i];
+  for (const child of revisionDesc.children) {
     if (child.localName !== 'RESPONSIBILITY' && child.tagName !== 'RESPONSIBILITY') continue;
     if (child.getAttribute('RESP') === resp) return child;
   }

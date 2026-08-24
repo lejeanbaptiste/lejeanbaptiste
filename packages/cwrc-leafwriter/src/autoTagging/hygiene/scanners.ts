@@ -2,7 +2,6 @@ import type { EntitySummary } from '../entityOps';
 import {
   FAMILY_PREFIX_STRIP_TYPES,
   stripFamilyPrefixFromCourtesyName,
-  type NameTypeId,
 } from '../nameTypes';
 import { suggestPersonNameSplit } from '../../plugins/personNameDefaults';
 import { isLatinScript } from '../../utilities/romanize';

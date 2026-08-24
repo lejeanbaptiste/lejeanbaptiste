@@ -111,7 +111,7 @@ class EntitiesList {
     if (this.writer.isReadOnly) this.$entities.find('.moduleFooter').hide();
 
     // eslint-disable-next-line @typescript-eslint/ban-ts-comment
-    //@ts-ignore
+    //@ts-expect-error
 
     this.$entities.find('select').selectmenu({
       appendTo: this.writer.layoutManager.getContainer(),
@@ -121,7 +121,7 @@ class EntitiesList {
 
     this.$entities
       .find('button.convert')
-      //@ts-ignore
+      //@ts-expect-error
       .button()
       .click(() => {
         //* Prevent Trigger LW change event
@@ -132,7 +132,7 @@ class EntitiesList {
 
     this.$entities
       .find('button.accept')
-      //@ts-ignore
+      //@ts-expect-error
       .button()
       .click(() => {
         this.acceptAll();
@@ -141,7 +141,7 @@ class EntitiesList {
 
     this.$entities
       .find('button.reject')
-      //@ts-ignore
+      //@ts-expect-error
       .button()
       .click(() => {
         this.rejectAll();
@@ -150,7 +150,7 @@ class EntitiesList {
 
     this.$entities
       .find('button.done')
-      //@ts-ignore
+      //@ts-expect-error
       .button()
       .click(() => {
         if (this.getCandidates().length <= 0) {
@@ -206,12 +206,12 @@ class EntitiesList {
     this.writer.event('entityFocused').subscribe((entityId: string) => {
       this.$entities
         .find(`div.entitiesList > li[data-id="${entityId}"]`)
-        //@ts-ignore
+        //@ts-expect-error
         .addClass('expanded', { duration: 200, queue: true });
     });
     this.writer.event('entityUnfocused').subscribe(() => {
       this.$entities.find('div.entitiesList > li').each(function (_index: any, _el: any) {
-        //@ts-ignore
+        //@ts-expect-error
         $(this).removeClass('expanded', { duration: 200, queue: true });
       });
     });
@@ -251,7 +251,7 @@ class EntitiesList {
   }
 
   private setFilter(value: string) {
-    //@ts-ignore
+    //@ts-expect-error
     return this.$entities.find('select[name="filter"]').val(value).selectmenu('refresh');
   }
 
@@ -304,7 +304,7 @@ class EntitiesList {
     this.$entities
       .find('button.convert')
       .show()
-      //@ts-ignore
+      //@ts-expect-error
       .button('option', 'disabled', false)
       .next('span')
       .hide();
@@ -493,7 +493,6 @@ class EntitiesList {
     const potentialEntitiesByType = this.writer.schemaManager.mapper.findEntities(typesToFind);
     let potentialEntities: HTMLElement[] = [];
     for (const type in potentialEntitiesByType) {
-      //@ts-ignore
       potentialEntities = [...potentialEntities, ...potentialEntitiesByType[type]];
     }
 
@@ -517,7 +516,7 @@ class EntitiesList {
     this.$entities
       .find('button.convert')
       .hide()
-      //@ts-ignore
+      //@ts-expect-error
       .button('option', 'disabled', true)
       .next('span')
       .show();
@@ -570,7 +569,7 @@ class EntitiesList {
     this.$entities.find('div.entitiesList > li > div').on('click', (event) => {
       const $currentTargetParent = $(event.currentTarget).parent();
       if ($currentTargetParent.hasClass('expanded')) {
-        //@ts-ignore
+        //@ts-expect-error
         $currentTargetParent.toggleClass('expanded', { duration: 200, queue: true });
         return;
       }
@@ -612,7 +611,7 @@ class EntitiesList {
       }
     });
 
-    //@ts-ignore
+    //@ts-expect-error
     this.$entities.find('.actions').tooltip({
       show: false,
       hide: false,
@@ -648,11 +647,11 @@ class EntitiesList {
   }
 
   destroy() {
-    //@ts-ignore
+    //@ts-expect-error
     this.$entities.find('button').button('destroy');
-    //@ts-ignore
+    //@ts-expect-error
     this.$entities.find('select').selectmenu('destroy');
-    //@ts-ignore
+    //@ts-expect-error
     this.$entities.find('.actions').tooltip('destroy');
     this.$entities.remove();
   }

@@ -16,17 +16,11 @@ import * as ro from '@src/content/privacy/ro.mdx';
 
 // Static mapping of content by locale
 const privacyContentMap = {
-  //@ts-ignore
   de: { content: de.default, tableOfContents: de.tableOfContents, frontmatter: de.frontmatter },
-  //@ts-ignore
   en: { content: en.default, tableOfContents: en.tableOfContents, frontmatter: en.frontmatter },
-  //@ts-ignore
   es: { content: es.default, tableOfContents: es.tableOfContents, frontmatter: es.frontmatter },
-  //@ts-ignore
   fr: { content: fr.default, tableOfContents: fr.tableOfContents, frontmatter: fr.frontmatter },
-  //@ts-ignore
   pt: { content: pt.default, tableOfContents: pt.tableOfContents, frontmatter: pt.frontmatter },
-  //@ts-ignore
   ro: { content: ro.default, tableOfContents: ro.tableOfContents, frontmatter: ro.frontmatter },
 };
 

@@ -155,7 +155,7 @@
                 try {
                     var saved = window.localStorage.getItem('leafwriter.pasteSpecial.default.' + ambiguity);
                     return saved || fallback;
-                } catch (error) {
+                } catch {
                     return fallback;
                 }
             }
@@ -163,7 +163,7 @@
             function savePasteDefault(ambiguity, mode) {
                 try {
                     window.localStorage.setItem('leafwriter.pasteSpecial.default.' + ambiguity, mode);
-                } catch (error) {
+                } catch {
                     // localStorage may be unavailable; ignore.
                 }
             }
@@ -375,12 +375,12 @@
             }
 
             // Add command for external usage
-            ed.addCommand('mceInsertClipboardContent', function(u, o) {
+            ed.addCommand('mceInsertClipboardContent', function(_, o) {
                 process(o, true);
             });
 
             if (!getParam(ed, "paste_text_use_dialog")) {
-                ed.addCommand('mcePasteText', function(u, v) {
+                ed.addCommand('mcePasteText', function() {
                     var cookie = tinymce.util.Cookie;
 
                     ed.pasteAsPlainText = !ed.pasteAsPlainText;
@@ -679,7 +679,7 @@
                     /<!--[\s\S]+?-->/gi,
 
                     // Remove comments, scripts (e.g., msoShowComment), XML tag, VML content, MS Office namespaced tags, and a few other tags
-                    /<(!|script[^>]*>.*?<\/script(?=[>\s])|\/?(\?xml(:\w+)?|img|meta|link|style|\w:\w+)(?=[\s\/>]))[^>]*>/gi,
+                    /<(!|script[^>]*>.*?<\/script(?=[>\s])|\/?(\?xml(:\w+)?|img|meta|link|style|\w:\w+)(?=[\s/>]))[^>]*>/gi,
 
                     // Convert <s> into <strike> for line-though
                     [/<(\/?)s>/gi, "<$1strike>"],
@@ -847,7 +847,7 @@
                 };
 
                 h = h.replace(/ class="([^"]+)"/gi, removeClasses);
-                h = h.replace(/ class=([\-\w]+)/gi, removeClasses);
+                h = h.replace(/ class=([\w-]+)/gi, removeClasses);
             }
 
             // Remove spans option
@@ -1081,7 +1081,7 @@
                     [/<\/(?:p|h[1-6]|ul|ol|dl|table|div|blockquote|fieldset|pre|address|center)>/gi, "\n\n"],        // Block tags get a blank line after them
                     [/<br[^>]*>|<\/tr>/gi, "\n"],                // Single linebreak for <br /> tags and table rows
                     [/<\/t[dh]>\s*<t[dh][^>]*>/gi, "\t"],        // Table cells get tabs betweem them
-                    /<[a-z!\/?][^>]*>/gi,                        // Delete all remaining tags
+                    /<[a-z!/?][^>]*>/gi,                        // Delete all remaining tags
                     [/&nbsp;/gi, " "],                            // Convert non-break spaces to regular spaces (remember, *plain text*)
                     [/(?:(?!\n)\s)*(\n+)(?:(?!\n)\s)*/gi, "$1"] // Cool little RegExp deletes whitespace around linebreak chars.
                 ]);

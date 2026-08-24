@@ -24,7 +24,7 @@ describe('plugin toolbar contributions — menu items', () => {
     const [item] = getPluginToolbarItems();
     expect(item!.onClick).toBeUndefined();
     expect(item!.menuItems).toHaveLength(1);
-    item!.menuItems![0]!.onClick({ openCalendar: () => {} });
+    item!.menuItems![0]!.onClick({ openCalendar: () => undefined });
     expect(tagNobleTitle).toHaveBeenCalledWith({ openCalendar: expect.any(Function) });
   });
 
@@ -41,7 +41,7 @@ describe('plugin toolbar contributions — menu items', () => {
 
     const [item] = getPluginToolbarItems();
     expect(item!.menuItems).toBeUndefined();
-    item!.onClick!({ openCalendar: () => {} });
+    item!.onClick!({ openCalendar: () => undefined });
     expect(onClick).toHaveBeenCalled();
   });
 });
@@ -54,13 +54,13 @@ describe('plugin tag-command contributions', () => {
       id: 'norbert:noble-title',
       label: 'Tag noble title',
       icon: 'norbert',
-      onClick: () => {},
+      onClick: () => undefined,
     });
     registerPluginTagCommandItem({
       id: 'norbert:person-wrapper',
       label: 'Tag person wrapper',
       icon: 'norbert',
-      onClick: () => {},
+      onClick: () => undefined,
       isAvailable: () => false,
     });
 

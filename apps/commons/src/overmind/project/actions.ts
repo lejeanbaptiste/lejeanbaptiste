@@ -1221,35 +1221,31 @@ export const openFile = async (context: Context, filePath: string) => {
     return;
   }
 
-  try {
-    await persistActiveTabEditorContent(context);
+  await persistActiveTabEditorContent(context);
 
-    let content = await window.electronAPI.readFile(filePath);
-    content = await prepareFileContent({ state, actions } as Context, filePath, content);
-    const filename = getFilename(filePath);
-    const tab = {
-      content,
-      dirty: false,
-      lastSavedContent: content,
-      editorReady: true,
-      filePath,
-      filename,
-    };
+  let content = await window.electronAPI.readFile(filePath);
+  content = await prepareFileContent({ state, actions } as Context, filePath, content);
+  const filename = getFilename(filePath);
+  const tab = {
+    content,
+    dirty: false,
+    lastSavedContent: content,
+    editorReady: true,
+    filePath,
+    filename,
+  };
 
-    state.project.openTabs = [...state.project.openTabs, tab];
-    state.project.activeTabPath = filePath;
+  state.project.openTabs = [...state.project.openTabs, tab];
+  state.project.activeTabPath = filePath;
 
-    await actions.editor.setResource({
-      content,
-      filePath,
-      filename,
-      isLocal: true,
-    });
-    state.editor.contentLastSaved = content;
-    await actions.project.saveWorkspaceSession();
-  } catch (error) {
-    throw error;
-  }
+  await actions.editor.setResource({
+    content,
+    filePath,
+    filename,
+    isLocal: true,
+  });
+  state.editor.contentLastSaved = content;
+  await actions.project.saveWorkspaceSession();
 };
 
 export const switchTab = async (
@@ -1798,13 +1794,6 @@ export const updateTabContent = (
     }
   }
 };
-
-const treeContainsPath = (nodes: FileTreeNode[], targetPath: string): boolean =>
-  nodes.some(
-    (node) =>
-      node.path === targetPath ||
-      (node.children ? treeContainsPath(node.children, targetPath) : false),
-  );
 
 export const reloadDirectoryInTree = async ({ state }: Context, dirPath: string) => {
   const schemaDirPath = getExplorerSchemaDirPath(

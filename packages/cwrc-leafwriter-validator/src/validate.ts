@@ -139,7 +139,7 @@ const parseErrors = (
 
   const elementNode =
     // eslint-disable-next-line @typescript-eslint/ban-ts-comment
-    //@ts-ignore
+    //@ts-expect-error
     type === 'AttributeNameError' || type === 'AttributeValueError' ? node.ownerElement : node;
 
   element.name = elementNode.nodeName;

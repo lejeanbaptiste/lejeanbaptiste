@@ -168,7 +168,7 @@ class LayoutManager {
     };
 
     if (this.modulesLayout.get('west')) {
-      //@ts-ignore
+      //@ts-expect-error
       outerLayoutConfig.west = {
         size: 'auto',
         minSize: this.PANEL_MIN_WIDTH,
@@ -176,7 +176,7 @@ class LayoutManager {
     }
 
     if (this.modulesLayout.get('east')) {
-      //@ts-ignore
+      //@ts-expect-error
       outerLayoutConfig.east = {
         size: 'auto',
         minSize: this.PANEL_MIN_WIDTH,
@@ -188,7 +188,7 @@ class LayoutManager {
       };
     }
 
-    //@ts-ignore
+    //@ts-expect-error
     this.$outerLayout = this.$container.layout(outerLayoutConfig);
 
     const innerLayoutConfig = {
@@ -212,17 +212,17 @@ class LayoutManager {
     };
 
     if (this.modulesLayout.get('south')) {
-      //@ts-ignore
+      //@ts-expect-error
       innerLayoutConfig.south = {
         size: 250,
         resizable: true,
         initClosed: true,
-        //@ts-ignore
+        //@ts-expect-error
         activate: (event: any, ui: any) => $.layout.callbacks.resizeTabLayout(event, ui),
       };
     }
 
-    //@ts-ignore
+    //@ts-expect-error
     this.$innerLayout = this.$container.find('.ui-layout-center').first().layout(innerLayoutConfig);
 
     this.modulesLayout.forEach((moduleConfig, region) => {
@@ -243,9 +243,9 @@ class LayoutManager {
         if (module) this.modules.push(module);
       });
 
-      //@ts-ignore
+      //@ts-expect-error
       $region.tabs({
-        //@ts-ignore
+        //@ts-expect-error
         activate: (event: any, ui: any) => $.layout.callbacks.resizeTabLayout(event, ui),
         create: () => {
           $region.parent().find('.ui-corner-all:not(button)').removeClass('ui-corner-all');
@@ -414,11 +414,10 @@ class LayoutManager {
   private isModuleTabActive(region: LayoutLocation, moduleId: string): boolean {
     if (region !== 'east' && region !== 'west') return true;
 
-    //@ts-ignore
+    //@ts-expect-error
     const $pane = this.$outerLayout?.panes?.[region];
     if (!$pane?.length) return false;
 
-    //@ts-ignore
     return $pane.find(`> ul > li#${moduleId}`).hasClass('ui-tabs-active');
   }
 
@@ -428,11 +427,10 @@ class LayoutManager {
       return;
     }
 
-    //@ts-ignore
+    //@ts-expect-error
     const $pane = this.$outerLayout?.panes?.[region];
     if (!$pane?.length) return;
 
-    //@ts-ignore
     const $alternate = $pane.find('> ul > li').filter(function (this: HTMLElement) {
       return this.style.display !== 'none' && this.id !== moduleId;
     });
@@ -447,10 +445,10 @@ class LayoutManager {
 
   showRegion(region: LayoutLocation, tabIndex?: number) {
     if (region === 'south') {
-      //@ts-ignore
+      //@ts-expect-error
       this.$innerLayout.open('south');
       if (tabIndex) {
-        //@ts-ignore
+        //@ts-expect-error
         this.$innerLayout.panes[region].tabs('option', 'active', tabIndex);
       }
       return;
@@ -459,18 +457,18 @@ class LayoutManager {
     if (region !== 'west' && region !== 'east') return;
 
     if (region === 'west') {
-      //@ts-ignore
+      //@ts-expect-error
       this.$outerLayout.open('west');
     }
 
     if (region === 'east') {
-      //@ts-ignore
+      //@ts-expect-error
       this.$outerLayout.open('east');
     }
 
-    //@ts-ignore
+    //@ts-expect-error
     if (tabIndex >= 0 && this.$outerLayout.panes[region].tabs('instance')) {
-      //@ts-ignore
+      //@ts-expect-error
       this.$outerLayout.panes[region].tabs('option', 'active', tabIndex);
     }
   }
@@ -481,21 +479,18 @@ class LayoutManager {
 
     if (show || !this.$outerLayout) return;
 
-    //@ts-ignore
+    //@ts-expect-error
     const $east = this.$outerLayout.panes?.east;
     if (!$east) return;
 
-    //@ts-ignore
     const $codeTab = $east.find('> ul > li#code');
     if (!$codeTab.hasClass('ui-tabs-active')) return;
 
-    //@ts-ignore
     const $visibleTabs = $east.find('> ul > li').filter(function (this: HTMLElement) {
       return this.style.display !== 'none';
     });
 
     if ($visibleTabs.length > 0) {
-      //@ts-ignore
       $east.tabs('option', 'active', $visibleTabs.first().index());
       return;
     }
@@ -505,19 +500,19 @@ class LayoutManager {
 
   hideRegion(region: LayoutLocation) {
     if (region === 'south') {
-      //@ts-ignore
+      //@ts-expect-error
       this.$innerLayout.close('south');
       return;
     }
 
     if (region === 'west') {
-      //@ts-ignore
+      //@ts-expect-error
       this.$outerLayout.close('west');
       return;
     }
 
     if (region === 'east') {
-      //@ts-ignore
+      //@ts-expect-error
       this.$outerLayout.close('east');
       return;
     }
@@ -548,9 +543,9 @@ class LayoutManager {
     // "containerMissing".
     if (!this.$container?.[0] || !document.body.contains(this.$container[0])) return;
 
-    //@ts-ignore
+    //@ts-expect-error
     this.$outerLayout?.resizeAll();
-    //@ts-ignore
+    //@ts-expect-error
     this.$innerLayout?.resizeAll();
   }
 
@@ -589,7 +584,7 @@ class LayoutManager {
         : log.warn(`LayoutManager: no destroy method for ${module}`);
     });
 
-    //@ts-ignore
+    //@ts-expect-error
     this.$outerLayout?.destroy(true);
     this.$container?.remove();
   }

@@ -24,7 +24,7 @@ export const Page = forwardRef<PageProps, any>(({ children, title, ...rest }, re
   }, [title]);
 
   return (
-    //@ts-ignore
+    //@ts-expect-error
     <div ref={ref} {...rest}>
       <Helmet>
         <title>{title}</title>

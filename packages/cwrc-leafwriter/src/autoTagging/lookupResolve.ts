@@ -655,7 +655,7 @@ export async function planLookupResolution(
   // Prefer pack personal primary / 姓+名 over a display-only title headword.
   const entityName =
     kind === 'person'
-      ? preferredEntityPrimaryName(headword, packPerson.typedNames ?? [], titleParts)
+      ? preferredEntityPrimaryName(headword, packPerson.typedNames ?? [])
       : headword;
   const splitSurface =
     kind === 'person'

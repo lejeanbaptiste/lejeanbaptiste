@@ -12,7 +12,7 @@ export function tagFollowingStyleNames(doc: Document): number {
     const text = person.nextSibling as Text;
     const match = STYLE_NAME_PATTERN.exec(text.data);
     if (!match) continue;
-    const [, styleName, punctuation] = match;
+    const [, styleName] = match;
     const style = doc.createElementNS(person.namespaceURI, 'persName');
     style.setAttribute('type', 'courtesy');
     style.setAttribute('key', key);

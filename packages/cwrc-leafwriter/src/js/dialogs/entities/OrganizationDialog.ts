@@ -91,7 +91,7 @@ class OrgDialog implements SchemaDialog {
       </div>
     `).appendTo(parentEl);
 
-    //@ts-ignore
+    //@ts-expect-error
     const $relinkButton = $(`#${id}_tagAs .relink-bt`, $el).button();
     $relinkButton.on('click', () => {
       parentEl.css('display', 'none');

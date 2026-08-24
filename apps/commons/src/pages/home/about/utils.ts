@@ -19,17 +19,12 @@ const aboutContentMap: Record<
   Locales,
   { content: ComponentType<MDXProps>; frontmatter: AboutFrontmatter }
 > = {
-  //@ts-ignore
   de: { content: de.default, frontmatter: de.frontmatter },
-  //@ts-ignore
   en: { content: en.default, frontmatter: en.frontmatter },
-  //@ts-ignore
   es: { content: es.default, frontmatter: es.frontmatter },
-  //@ts-ignore
   fr: { content: fr.default, frontmatter: fr.frontmatter },
-  //@ts-ignore
   pt: { content: pt.default, frontmatter: pt.frontmatter },
-  //@ts-ignore
+  //@ts-expect-error
   ro: { content: ro.default, frontmatter: ro.frontmatter },
 };
 

@@ -138,7 +138,7 @@ describe('applySuggestions', () => {
       ),
       status: 'pending',
     };
-    const errorSpy = jest.spyOn(console, 'error').mockImplementation(() => {});
+    const errorSpy = jest.spyOn(console, 'error').mockImplementation(() => undefined);
     const { results, applied, textIntegrityWarning } = await applySuggestions(doc, [suggestion], {
       policy: 'ignore',
     });

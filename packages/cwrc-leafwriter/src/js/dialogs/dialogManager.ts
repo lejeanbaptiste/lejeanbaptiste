@@ -27,23 +27,18 @@ const handleResize = (dialogEl: JQuery<any>) => {
       const winWidth = $(window).width();
       const winHeight = $(window).height();
 
-      //@ts-ignore
       const dialogWidth = dialogEl.dialog('option', 'width');
-      //@ts-ignore
       const dialogHeight = dialogEl.dialog('option', 'height');
 
       if (!winWidth || !winHeight) return;
 
       if (dialogWidth > winWidth) {
-        //@ts-ignore
         dialogEl.dialog('option', 'width', winWidth * 0.8);
       }
       if (dialogHeight > winHeight) {
-        //@ts-ignore
         dialogEl.dialog('option', 'height', winHeight * 0.8);
       }
 
-      //@ts-ignore
       dialogEl.dialog('option', 'position', { my: 'center', at: 'center', of: window });
     }
   }
@@ -56,21 +51,21 @@ let prevPopupCreate: any;
 
 const setDialogListeners = ($cwrcDialogWrapper: JQuery<HTMLElement>) => {
   // store previous values (from parent cwrc writer)
-  //@ts-ignore
+  //@ts-expect-error
   prevAppendTo = $.ui.dialog.prototype.options.appendTo;
-  //@ts-ignore
+  //@ts-expect-error
   prevDialogCreate = $.ui.dialog.prototype.options.create;
-  //@ts-ignore
+  //@ts-expect-error
   prevTooltipOpen = $.ui.tooltip.prototype.options.open;
-  //@ts-ignore
+  //@ts-expect-error
   prevPopupCreate = $.custom.popup.prototype.options.create;
 
   // add event listeners to all of our jquery ui dialogs
-  //@ts-ignore
+  //@ts-expect-error
   $.extend($.ui.dialog.prototype.options, {
     appendTo: $cwrcDialogWrapper,
     create: function (event: JQuery.Event) {
-      //@ts-ignore
+      //@ts-expect-error
       $(event.target)
         .on('dialogopen', function (event) {
           handleResize($(event.target));
@@ -110,18 +105,18 @@ const setDialogListeners = ($cwrcDialogWrapper: JQuery<HTMLElement>) => {
 
   // do the same for tooltips
 
-  //@ts-ignore
+  //@ts-expect-error
   $.extend($.ui.tooltip.prototype.options, {
     create: function (_event: JQuery.Event, _ui: any) {
-      //@ts-ignore
+      //@ts-expect-error
       const instance = $(this).tooltip('instance');
       instance.liveRegion = instance.liveRegion.appendTo($cwrcDialogWrapper);
     },
   });
 
-  //@ts-ignore
+  //@ts-expect-error
   $.extend($.ui.tooltip.prototype, {
-    //@ts-ignore
+    //@ts-expect-error
     _appendTo: (target) => {
       let element = target.closest('.ui-front, dialog');
       // add the tooltip to cwrcDialogWrapper if no ui-front or dialog is found
@@ -131,16 +126,16 @@ const setDialogListeners = ($cwrcDialogWrapper: JQuery<HTMLElement>) => {
   });
 
   // do the same for popups
-  //@ts-ignore
+  //@ts-expect-error
   $.extend($.custom.popup.prototype.options, {
     appendTo: $cwrcDialogWrapper,
     create: function (e: JQuery.Event) {
-      //@ts-ignore
+      //@ts-expect-error
       $(e.target)
         .on('popupopen', function (event: JQuery.Event) {
-          //@ts-ignore
+          //@ts-expect-error
           handleResize($(event.target));
-          //@ts-ignore
+          //@ts-expect-error
           $(window).on('resize', $.proxy(handleResize, this, $(event.target)));
         })
         .on('popupclose', function (event) {
@@ -153,18 +148,18 @@ const setDialogListeners = ($cwrcDialogWrapper: JQuery<HTMLElement>) => {
 const restorePreviousDialogListeners = () => {
   $(document).off('focusin.leafwriter-tinymce');
 
-  //@ts-ignore
+  //@ts-expect-error
   $.extend($.ui.dialog.prototype.options, {
     appendTo: prevAppendTo,
     create: prevDialogCreate,
   });
 
-  //@ts-ignore
+  //@ts-expect-error
   $.extend($.ui.tooltip.prototype.options, {
     open: prevTooltipOpen,
   });
 
-  //@ts-ignore
+  //@ts-expect-error
   $.extend($.custom.popup.prototype.options, {
     appendTo: prevAppendTo,
     create: prevPopupCreate,

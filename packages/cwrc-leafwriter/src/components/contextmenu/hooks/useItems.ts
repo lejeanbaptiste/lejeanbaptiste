@@ -206,7 +206,7 @@ export const useItems = (ctx: State) => {
           }
 
           // eslint-disable-next-line @typescript-eslint/ban-ts-comment
-          //@ts-ignore
+          //@ts-expect-error
           writer.editor.currentBookmark.tagId = ctx.tagId;
           writer.tagger.addTagDialog({
             tagName: name,

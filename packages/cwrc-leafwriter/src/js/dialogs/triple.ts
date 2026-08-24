@@ -76,7 +76,6 @@ class Triple {
       </div>
     `).appendTo(parentEl);
 
-    //@ts-ignore
     this.$triple.dialog({
       title: 'Add Relation',
       modal: true,
@@ -87,7 +86,6 @@ class Triple {
       position: { my: 'center', at: 'center', of: this.writer.layoutManager.getContainer() },
       autoOpen: false,
       buttons: {
-        //@ts-ignore
         Close: () => this.$triple.dialog('close'),
       },
     });
@@ -96,11 +94,11 @@ class Triple {
     this.$predicate = $('.column:eq(1)', this.$triple);
     this.$object = $('.column:eq(2)', this.$triple);
 
-    //@ts-ignore
+    //@ts-expect-error
     $('input', this.$subject).watermark('Custom Subject');
-    //@ts-ignore
+    //@ts-expect-error
     $('input', this.$predicate).watermark('Custom Predicate');
-    //@ts-ignore
+    //@ts-expect-error
     $('input', this.$object).watermark('Custom Object');
 
     const _this = this;
@@ -111,7 +109,7 @@ class Triple {
     });
 
     $('.currentRelation button', this.$triple)
-      //@ts-ignore
+      //@ts-expect-error
       .button({ disabled: true })
       .click(() => {
         const components = this.getComponents();
@@ -135,7 +133,7 @@ class Triple {
         };
 
         this.writer.triples.push(triple);
-        //@ts-ignore
+        //@ts-expect-error
         this.writer.relations.update();
       });
   }
@@ -179,7 +177,7 @@ class Triple {
 
   private getComponents() {
     const _this = this;
-    //@ts-ignore
+    //@ts-expect-error
     const components: ComponentProps[] = [null, null, null];
 
     $('ul', this.$triple).each(function (index) {
@@ -189,7 +187,7 @@ class Triple {
         let uri = '';
         const id = s.attr('name');
 
-        //@ts-ignore
+        //@ts-expect-error
         if (id) uri = _this.writer.entitiesManager.getEntity(id).getUris().annotationId;
 
         components[index] = {
@@ -232,7 +230,7 @@ class Triple {
     $('.currentRelation p', this.$triple).html(str);
 
     const enabledSwitch = enable ? 'enabled' : 'disable';
-    //@ts-ignore
+    //@ts-expect-error
     $('.currentRelation button', this.$triple).button(enabledSwitch);
   }
 
@@ -288,12 +286,10 @@ class Triple {
         _this.updateRelationString();
       });
 
-    //@ts-ignore
     this.$triple.dialog('open');
   }
 
   destroy() {
-    //@ts-ignore
     this.$triple.dialog('destroy');
   }
 }

@@ -45,8 +45,6 @@ import {
   buildDisambiguationCandidates,
   candidateLinks,
   candidatePassesYearFilter,
-  collapseCrossAuthorityCandidates,
-  enrichCandidateCrossRefs,
   extractWikidataId,
   isOwnDatabaseSource,
   mergeCandidates,

@@ -119,7 +119,6 @@ export function personalNameForSegmentation(
 export function preferredEntityPrimaryName(
   headword: string | null | undefined,
   typedNames: readonly { text: string; type?: string }[] = [],
-  nobleTitles?: readonly NobleTitleParts[] | null,
 ): string {
   const head = normalize(headword);
   const typedPrimary = normalize(

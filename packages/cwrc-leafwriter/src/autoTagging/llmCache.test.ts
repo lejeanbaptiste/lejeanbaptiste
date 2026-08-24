@@ -22,7 +22,7 @@ function memoryFileApi(): LlmCacheFileApi & { files: Map<string, string> } {
       files.set(p, c);
     },
     pathExists: async (p) => files.has(p),
-    ensureDirectory: async () => {},
+    ensureDirectory: async () => undefined,
   };
 }
 

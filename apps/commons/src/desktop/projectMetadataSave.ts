@@ -79,8 +79,6 @@ export const saveProjectMetadataChanges = async (
     reloadTabFromDisk,
     notifyViaSnackbar,
     t,
-    getAuthoritySettings,
-    setAuthoritySettings,
   } = deps;
   const mode = payload.mode ?? 'edition';
 

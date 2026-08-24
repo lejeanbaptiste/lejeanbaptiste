@@ -126,7 +126,6 @@ class EntitiesManager {
       entity.getType(),
     );
     for (const attName in requiredAttributes) {
-      //@ts-ignore
       entity.setAttribute(attName, requiredAttributes[attName]);
     }
 
@@ -300,7 +299,6 @@ class EntitiesManager {
     entity?.setURI(uri);
 
     const uriMapping = this.writer.schemaManager.mapper.getAttributeForProperty(
-      //@ts-ignore
       entity?.getType(),
       'uri',
     );
@@ -317,7 +315,6 @@ class EntitiesManager {
     entity?.setLemma(lemma);
 
     const lemmaMapping = this.writer.schemaManager.mapper.getAttributeForProperty(
-      //@ts-ignore
       entity.getType(),
       'lemma',
     );
@@ -335,7 +332,6 @@ class EntitiesManager {
     entity?.setCertainty(certainty);
 
     const certaintyMapping = this.writer.schemaManager.mapper.getAttributeForProperty(
-      //@ts-ignore
       entity.getType(),
       'certainty',
     );
@@ -353,7 +349,6 @@ class EntitiesManager {
     entity?.setPrecision(precision);
 
     const precisionyMapping = this.writer.schemaManager.mapper.getAttributeForProperty(
-      //@ts-ignore
       entity.getType(),
       'precision',
     );
@@ -410,7 +405,7 @@ class EntitiesManager {
     // clear selection
     let rng = this.writer.editor?.dom.createRng();
 
-    //@ts-ignore
+    //@ts-expect-error
     this.writer.editor.selection.setRng(rng);
 
     if (entity?.isNote()) {
@@ -426,11 +421,11 @@ class EntitiesManager {
     } else {
       // move inside entity
       rng = this.writer.editor?.dom.createRng();
-      //@ts-ignore
+      //@ts-expect-error
       rng.setStart(entityTags[0], 0);
-      //@ts-ignore
+      //@ts-expect-error
       rng.collapse(true);
-      //@ts-ignore
+      //@ts-expect-error
       this.writer.editor.selection.setRng(rng);
     }
 
@@ -497,8 +492,8 @@ class EntitiesManager {
       if (markers.length > 1) {
         let canConvert = true;
         const parent = markers[0]?.parentNode;
-        for (let i = 0; i < markers.length; i++) {
-          if (markers[i]?.parentNode !== parent) {
+        for (const marker of markers) {
+          if (marker?.parentNode !== parent) {
             canConvert = false;
             break;
           }
@@ -508,9 +503,7 @@ class EntitiesManager {
           const $tag = $(this.writer.editor.dom.create('span', {}, ''));
           const atts = markers[0]?.attributes;
           if (atts) {
-            for (let i = 0; i < atts.length; i++) {
-              const att = atts[i];
-              //@ts-ignore
+            for (const att of atts) {
               $tag.attr(att.name, att.value);
             }
           }

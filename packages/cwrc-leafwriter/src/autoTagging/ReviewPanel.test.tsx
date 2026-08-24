@@ -88,7 +88,7 @@ describe('ReviewPanel', () => {
     render(
       <ReviewPanel
         suggestions={suggestions}
-        onApply={() => {}}
+        onApply={() => undefined}
         onFocus={(s) => focused.push(s.id)}
       />,
     );
@@ -103,7 +103,7 @@ describe('ReviewPanel', () => {
 
   it('accepts and rejects via the row buttons (no keyboard needed)', () => {
     const { suggestions } = setup();
-    render(<ReviewPanel suggestions={suggestions} onApply={() => {}} />);
+    render(<ReviewPanel suggestions={suggestions} onApply={() => undefined} />);
     const panel = screen.getByTestId('review-panel');
 
     fireEvent.click(screen.getByTestId(`accept-${suggestions[0]!.id}`));
@@ -123,7 +123,7 @@ describe('ReviewPanel', () => {
   });
 
   it('shows an empty state', () => {
-    render(<ReviewPanel suggestions={[]} onApply={() => {}} />);
+    render(<ReviewPanel suggestions={[]} onApply={() => undefined} />);
     expect(screen.getByText('Nothing to review.')).toBeTruthy();
   });
 
@@ -152,7 +152,7 @@ describe('ReviewPanel', () => {
 
   it('can flip a decision from the expanded accepted group', () => {
     const { suggestions } = setup();
-    render(<ReviewPanel suggestions={suggestions} onApply={() => {}} />);
+    render(<ReviewPanel suggestions={suggestions} onApply={() => undefined} />);
 
     fireEvent.click(screen.getByTestId(`accept-${suggestions[0]!.id}`));
     expect(screen.getByTestId('review-counts').textContent).toContain('1 accepted');
@@ -181,7 +181,7 @@ describe('ReviewPanel', () => {
 
     it('stacks the alternatives as one navigation stop with a checkbox each', () => {
       const { suggestions } = setupAlternatives();
-      render(<ReviewPanel suggestions={suggestions} onApply={() => {}} />);
+      render(<ReviewPanel suggestions={suggestions} onApply={() => undefined} />);
 
       const pers = suggestions.find((s) => s.tag === 'persName')!;
       const title = suggestions.find((s) => s.tag === 'title')!;
@@ -241,7 +241,7 @@ describe('ReviewPanel', () => {
 
     it('Space cycles the checked alternative via the keyboard', () => {
       const { suggestions } = setupAlternatives();
-      render(<ReviewPanel suggestions={suggestions} onApply={() => {}} />);
+      render(<ReviewPanel suggestions={suggestions} onApply={() => undefined} />);
       const panel = screen.getByTestId('review-panel');
 
       const pers = suggestions.find((s) => s.tag === 'persName')!;
@@ -272,7 +272,7 @@ describe('ReviewPanel', () => {
       render(
         <ReviewPanel
           suggestions={withNoble}
-          onApply={() => {}}
+          onApply={() => undefined}
           mandatoryStage="nobleTitle"
         />,
       );
@@ -301,7 +301,7 @@ describe('ReviewPanel', () => {
       render(
         <ReviewPanel
           suggestions={withWrapper}
-          onApply={() => {}}
+          onApply={() => undefined}
           mandatoryStage="personWrapper"
         />,
       );

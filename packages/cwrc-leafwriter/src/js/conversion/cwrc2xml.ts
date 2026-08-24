@@ -49,7 +49,6 @@ class CWRC2XML {
     }
 
     // Reset default namespace on export; preserve other xmlns declarations from the document.
-    //@ts-ignore
     const rootAttributes = this.writer.tagger.getAttributesForTag($rootEl[0]);
     const hadDocumentRdfNamespace = 'xmlns:rdf' in rootAttributes;
     delete rootAttributes.xmlns;
@@ -62,7 +61,6 @@ class CWRC2XML {
     if (schemaNamespace) rootAttributes.xmlns = schemaNamespace;
     if (includeRDF) rootAttributes['xmlns:rdf'] = 'http://www.w3.org/1999/02/22-rdf-syntax-ns#';
 
-    //@ts-ignore
     this.writer.tagger.setAttributesForTag($rootEl[0], rootAttributes);
 
     let xmlString = '<?xml version="1.0" encoding="UTF-8"?>\n';
@@ -129,15 +127,12 @@ class CWRC2XML {
         } else {
           // node doesn't exist so add it
           const namespace = $currNode[0]?.namespaceURI;
-          //@ts-ignore
           const node = xmlDoc.createElementNS(namespace, tag);
           const child = $currNode[0]?.firstElementChild;
 
           $currNode = child
-            ? //@ts-ignore
-              $($currNode[0].insertBefore(node, child))
-            : //@ts-ignore
-              $($currNode[0].appendChild(node));
+            ? $($currNode[0].insertBefore(node, child))
+            : $($currNode[0].appendChild(node));
         }
       } else {
         // axis handling
@@ -155,11 +150,9 @@ class CWRC2XML {
             parent = $currNode[0]?.parentNode;
             if (!parent) break;
 
-            //@ts-ignore
+            //@ts-expect-error
             namespace = parent.namespaceURI;
-            //@ts-ignore
             node = xmlDoc.createElementNS(namespace, tag_part1);
-            //@ts-ignore
             $currNode = $(parent.insertBefore(node, $currNode[0]));
             break;
 
@@ -167,9 +160,8 @@ class CWRC2XML {
             parent = $currNode[0]?.parentNode;
             if (!parent) break;
 
-            //@ts-ignore
+            //@ts-expect-error
             namespace = parent.namespaceURI;
-            //@ts-ignore
             node = xmlDoc.createElementNS(namespace, tag_part1);
             sibling = $currNode[0]?.nextElementSibling;
 
@@ -228,10 +220,8 @@ class CWRC2XML {
           if (identifyEntities) {
             // add temp id so we can target it later in setEntityRanges
             if (array[0] !== '') {
-              //@ts-ignore
               array[0] = array[0]?.replace(/([\s>])/, ` cwrcTempId="${id}"$&`);
             } else {
-              //@ts-ignore
               array[1] = array[1]?.replace(/([\s>])/, ` cwrcTempId="${id}"$&`);
             }
           }
@@ -305,8 +295,7 @@ class CWRC2XML {
     const offsets = this.getNodeOffsetsFromParent(body);
     const ents = [];
 
-    for (let i = 0; i < offsets.length; i++) {
-      const o = offsets[i];
+    for (const o of offsets) {
       if (o?.entity) ents.push(o);
     }
     return ents;
@@ -337,7 +326,7 @@ class CWRC2XML {
     // get the overlapping entity IDs, in the order that they appear in the document.
     const overlappingEntNodes = $('[_entity][class~="start"]', body).not('[_tag]').not('[_note]');
     const overlappingEntIds = $.map(overlappingEntNodes, (val) => {
-      //@ts-ignore
+      //@ts-expect-error
       return $(val).attr('name');
     });
 
@@ -361,7 +350,6 @@ class CWRC2XML {
     this.writer.entitiesManager.eachEntity((entityId: string, entry: Entity) => {
       const $entity = $(`[cwrcTempId="${entityId}"]`, doc);
       if ($entity.length === 1) {
-        //@ts-ignore
         const startXPath = this.writer.utilities.getElementXPath($entity[0]);
         if (startXPath) entry.setRange({ startXPath });
       }
@@ -392,7 +380,7 @@ class CWRC2XML {
         // To allow this function to exit recursion it must be able to return false.
         let ret = true;
 
-        //@ts-ignore
+        //@ts-expect-error
         parent.contents().each((index, element) => {
           const $el = $(element);
           let start: boolean;
@@ -441,7 +429,6 @@ class CWRC2XML {
 
     const doRangeGet = ($element: JQuery<HTMLElement>, isEnd: boolean) => {
       const parent = $element.parents('[_tag]').first();
-      //@ts-ignore
       const xpath = this.writer.utilities.getElementXPath(parent[0]);
       const offset = getOffsetFromParentForEntity(entityId, parent, isEnd);
 
@@ -507,7 +494,6 @@ class CWRC2XML {
           const id = $el.attr('name');
           if (!id) return;
 
-          //@ts-ignore
           const entityContentLength = _this.writer.entitiesManager
             .getEntity(id)
             .getContent()?.length;

@@ -111,7 +111,6 @@ const insertCorrectionText = (
   writer: Writer,
   corrText: string,
   kind: CorrectionKind,
-  sicText: string,
 ): Text | null => {
   const editor = writer.editor;
   if (!editor) return null;
@@ -235,7 +234,7 @@ export const applyCorrection = (
       editor.currentBookmark = editor.selection.getBookmark(1);
     }
 
-    const textNode = insertCorrectionText(writer, corrText, kind, sicText);
+    const textNode = insertCorrectionText(writer, corrText, kind);
 
     writer.tagger.finalizeEntity('correction', {
       attributes: payload.attributes,

@@ -33,7 +33,7 @@ export const Section = ({ side, ...props }: SectionProps) => {
     <PanelSection ref={ref} id={side} {...props}>
       {
         PanelComponent[
-          //@ts-ignore
+          //@ts-expect-error
           layout[side].activePanel
         ]
       }

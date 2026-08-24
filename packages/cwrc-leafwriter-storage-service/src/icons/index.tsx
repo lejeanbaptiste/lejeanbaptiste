@@ -25,7 +25,7 @@ const icons = {
 export type IconName =
   typeof icons extends Record<
     infer I,
-    OverridableComponent<SvgIconTypeMap<{}, 'svg'>> & { muiName: string }
+    OverridableComponent<SvgIconTypeMap<object, 'svg'>> & { muiName: string }
   >
     ? I
     : never;

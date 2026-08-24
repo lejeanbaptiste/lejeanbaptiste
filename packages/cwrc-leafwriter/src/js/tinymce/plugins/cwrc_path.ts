@@ -2,7 +2,7 @@ import tinymce from 'tinymce';
 import { LeafWriterEditor } from '../../../types';
 
 tinymce.PluginManager.add('cwrcpath', function (editor: LeafWriterEditor) {
-  //@ts-ignore
+  //@ts-expect-error
   tinymce.ui.CWRCPath = tinymce.ui.Path.extend({
     postRender: function () {
       const self = this;
@@ -26,12 +26,12 @@ tinymce.PluginManager.add('cwrcpath', function (editor: LeafWriterEditor) {
       });
 
       //  if (editor.settings.elementpath !== false) {
-      //@ts-ignore
+      //@ts-expect-error
       self.on('select', function (event) {
         //  editor.focus();
         //  editor.selection.select(this.row()[e.index].element);
         //  editor.nodeChanged();
-        //@ts-ignore
+        //@ts-expect-error
         const el = this.row()[event.index].element;
         const id = el.getAttribute('id');
         editor.writer?.utilities.selectElementById(id, false);
@@ -64,6 +64,6 @@ tinymce.PluginManager.add('cwrcpath', function (editor: LeafWriterEditor) {
     },
   });
 
-  //@ts-ignore
-  const path = new tinymce.ui.CWRCPath(editor);
+  //@ts-expect-error
+  new tinymce.ui.CWRCPath(editor);
 });

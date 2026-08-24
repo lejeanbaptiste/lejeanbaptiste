@@ -1,4 +1,4 @@
-import { buildDocIndex, collectTextNodes, createAnchor, type DocIndex } from './anchor';
+import { buildDocIndex, createAnchor, type DocIndex } from './anchor';
 import { buildSearchText } from './normalize';
 import { chunkDocument, type Chunk } from './chunk';
 import { cloneWithHiddenReadingsCleared, textWithoutHiddenReadings } from './hiddenChoiceText';
@@ -12,10 +12,8 @@ import type { Anchor, DateCandidate, DateResolution, Suggestion, WhitespacePolic
 import type { DateReviewRecalculate } from './batchHolder';
 import type {
   DateTagOptions,
-  SanmiaoBatchProposeFn,
   SanmiaoBatchResolveFn,
   SanmiaoBatchTagFn,
-  SanmiaoChunkProgressEvent,
   SanmiaoProposal,
   SanmiaoProposeOptions,
 } from './sanmiaoDateTypes';

@@ -154,6 +154,9 @@ function flatten(segments: readonly SpanSegment[]): FlatSpan {
     starts.push(text.length);
     const value = segment.text.normalize('NFC');
     text += value;
+    // Must push once per UTF-16 code unit to keep owner.length === text.length;
+    // `for...of value` iterates code points instead, undercounting surrogate pairs.
+    // eslint-disable-next-line @typescript-eslint/prefer-for-of
     for (let i = 0; i < value.length; i++) owner.push(index);
   });
   return { text, owner, starts };

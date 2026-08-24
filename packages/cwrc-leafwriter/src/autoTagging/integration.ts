@@ -1762,7 +1762,7 @@ export class AutoTaggingSession {
     // Prefer pack personal primary / 姓+名 over a display-only title headword.
     const mintName =
       kind === 'person'
-        ? preferredEntityPrimaryName(headword, typedNames ?? [], titleParts)
+        ? preferredEntityPrimaryName(headword, typedNames ?? [])
         : headword.normalize('NFC').trim();
     // 姓/名 splits are person-only — never invent them for offices, places, etc.
     let familyName: string | undefined;

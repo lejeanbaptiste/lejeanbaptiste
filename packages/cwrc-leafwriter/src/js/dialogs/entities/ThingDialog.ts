@@ -61,7 +61,7 @@ class ThingDialog implements SchemaDialog {
     `).appendTo(parentEl);
 
     // eslint-disable-next-line @typescript-eslint/ban-ts-comment
-    //@ts-ignore
+    //@ts-expect-error
     const $relinkButton = $(`#${id}_tagAs .relink-bt`, this.$el).button();
     $relinkButton.on('click', () => {
       parentEl.css('display', 'none');

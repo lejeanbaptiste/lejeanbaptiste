@@ -106,14 +106,13 @@ export const useCorrectionController = () => {
     if (result === tagger.VALID) {
       const childName = writer.schemaManager.mapper.getParentTag('correction');
 
-      //@ts-ignore
+      //@ts-expect-error
       let parentTag = editor.currentBookmark.rng.commonAncestorContainer;
       while (parentTag.nodeType !== Node.ELEMENT_NODE) {
         parentTag = parentTag.parentNode;
       }
 
       const parentName = parentTag.getAttribute('_tag');
-      //@ts-ignore
       const isValid = writer.schemaManager.isTagValidChildOfParent(childName, parentName);
 
       if (!isValid) {

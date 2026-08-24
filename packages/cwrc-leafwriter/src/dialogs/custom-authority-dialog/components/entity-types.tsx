@@ -45,12 +45,12 @@ export const EntityTypes = () => {
         {({ push, remove, replace }) => (
           <>
             {fieldCollection.value.map(({ name, url }, index) => (
-              //@ts-ignore - type mismatch
+              //@ts-expect-error - type mismatch
               <EntityType
                 key={name}
                 {...{
                   index,
-                  //@ts-ignore - type mismatch
+                  //@ts-expect-error - type mismatch
                   errorUrl: meta.error?.[index]?.url,
                   name,
                   url,
@@ -122,7 +122,7 @@ const EntityType = ({
       setIsValidUrl(true);
       setError(undefined);
       return true;
-    } catch (error) {
+    } catch {
       setError({ [index]: { url: t('LW.messages.failed to fetch URL') } });
       setIsValidUrl(false);
       return false;

@@ -88,7 +88,7 @@ class ImageViewer {
 
     this.writer.event('contentChanged').subscribe(() => {
       const document = this.writer.editor?.getDoc();
-      //@ts-ignore
+      //@ts-expect-error
       this.processDocument(document, false);
     });
 
@@ -135,7 +135,7 @@ class ImageViewer {
     const rules = $(this.writer.editor.getDoc()).find('#schemaRules')[0];
     !rules
       ? setTimeout(this.cssHack, 50)
-      : //@ts-ignore
+      : //@ts-expect-error
         rules.sheet.insertRule(`*[_tag="${this.tagName}"] { display: block; }`, 0);
   }
 

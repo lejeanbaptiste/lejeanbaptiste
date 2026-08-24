@@ -225,6 +225,8 @@ const insertEmptyTagAtCaret = (tagName: string): ApplyTagResult => {
 
   const id = writer.getUniqueId('dom_');
   const editorEl = writer.schemaManager.isTagBlockLevel(tagName) ? 'div' : 'span';
+  // U+FEFF keeps the empty element from collapsing so it stays clickable/editable.
+  // eslint-disable-next-line no-irregular-whitespace
   const content = `<${editorEl} id="${id}" _tag="${tagName}" _attributes="{}">﻿</${editorEl}>`;
 
   writer.editor.undoManager.transact(() => {

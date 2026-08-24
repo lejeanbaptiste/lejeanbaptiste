@@ -140,7 +140,6 @@ import {
   EMPTY_DISPLAY_SPEC,
   chineseNameOf,
   entityKindSupportsVernacularGloss,
-  formatDates,
   type EntityDisplaySpec,
 } from './entityFields/entityDisplay';
 import type { EntitySummary } from './entityFields/entitySummary';

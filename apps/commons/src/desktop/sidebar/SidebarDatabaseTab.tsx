@@ -1,4 +1,3 @@
-import AddIcon from '@mui/icons-material/Add';
 import AutorenewIcon from '@mui/icons-material/Autorenew';
 import ExpandMoreIcon from '@mui/icons-material/ExpandMore';
 import CheckIcon from '@mui/icons-material/Check';
@@ -967,7 +966,7 @@ export const SidebarDatabaseTab = ({ active = false }: SidebarDatabaseTabProps) 
               }
               void (async () => {
                 try {
-                  await new Promise<void>(async (resolve, reject) => {
+                  await new Promise<void>((resolve, reject) => {
                     let jobId: string | null = null;
                     const cancel = () => {
                       if (jobId) void window.electronAPI?.bulkBridgeCancel?.(jobId);
@@ -994,19 +993,21 @@ export const SidebarDatabaseTab = ({ active = false }: SidebarDatabaseTabProps) 
                         reject(new Error(event.error ?? 'Background catch-up sync failed.'));
                       }
                     });
-                    try {
-                      jobId = await start({
-                        sourceEntitiesPath: currentStore.entitiesPath,
-                        centralEntitiesPath: resolvedCentralStore.entitiesPath,
-                        centralLjbDir: resolvedCentralStore.projectLjbDir,
-                        userStableId,
-                        chunkSize: 250,
-                      });
-                      setBulkSyncProgress({ active: true, label, done: 0, total: 0, cancel });
-                    } catch (error) {
-                      unsubscribe();
-                      reject(error);
-                    }
+                    void (async () => {
+                      try {
+                        jobId = await start({
+                          sourceEntitiesPath: currentStore.entitiesPath,
+                          centralEntitiesPath: resolvedCentralStore.entitiesPath,
+                          centralLjbDir: resolvedCentralStore.projectLjbDir,
+                          userStableId,
+                          chunkSize: 250,
+                        });
+                        setBulkSyncProgress({ active: true, label, done: 0, total: 0, cancel });
+                      } catch (error) {
+                        unsubscribe();
+                        reject(error);
+                      }
+                    })();
                   });
                   // Refresh the CEDB panel so minted/linked rows appear; prompt is suppressed.
                   void reload();
@@ -1846,7 +1847,7 @@ export const SidebarDatabaseTab = ({ active = false }: SidebarDatabaseTabProps) 
   const requestDetach = (entity: EntitySummary, ref: AuthorityId) => {
     const detach = () =>
       void (async () => {
-        const handled = await runSqliteEntityMutation(
+        await runSqliteEntityMutation(
           entity.id,
           'Detaching authority…',
           async (targetStore) => {
@@ -2157,7 +2158,7 @@ export const SidebarDatabaseTab = ({ active = false }: SidebarDatabaseTabProps) 
     setEditEntity(null);
     setPendingValidations([]);
     void (async () => {
-      const handled = await runSqliteEntityMutation(id, 'Saving entity…', async (targetStore) => {
+      await runSqliteEntityMutation(id, 'Saving entity…', async (targetStore) => {
         for (const validation of validations) {
           if (validation.mode === 'date') {
             await targetStore.sqliteAcceptDateAssertion(id, validation.key);
@@ -2187,7 +2188,7 @@ export const SidebarDatabaseTab = ({ active = false }: SidebarDatabaseTabProps) 
     const asFloruit = dateBirthQualifier === 'fl.';
     setDateEditing(false);
     void (async () => {
-      const handled = await runSqliteEntityMutation(
+      await runSqliteEntityMutation(
         entityId,
         'Saving dates…',
         async (targetStore) => {
@@ -2252,7 +2253,7 @@ export const SidebarDatabaseTab = ({ active = false }: SidebarDatabaseTabProps) 
     const entityId = editEntity.id;
     setDateEditing(false);
     void (async () => {
-      const handled = await runSqliteEntityMutation(
+      await runSqliteEntityMutation(
         entityId,
         'Saving dates…',
         async (targetStore) => {
@@ -3043,7 +3044,7 @@ export const SidebarDatabaseTab = ({ active = false }: SidebarDatabaseTabProps) 
     const entityId = editEntity.id;
     setNewTitle({ dynasty: '', fief: '', posthumousName: '', title: '' });
     void (async () => {
-      const handled = await runSqliteEntityMutation(
+      await runSqliteEntityMutation(
         entityId,
         'Adding noble title…',
         async (targetStore) => {
@@ -3060,7 +3061,7 @@ export const SidebarDatabaseTab = ({ active = false }: SidebarDatabaseTabProps) 
     if (!editEntity) return;
     const entityId = editEntity.id;
     void (async () => {
-      const handled = await runSqliteEntityMutation(
+      await runSqliteEntityMutation(
         entityId,
         'Updating noble title…',
         async (targetStore) => {
@@ -3075,7 +3076,7 @@ export const SidebarDatabaseTab = ({ active = false }: SidebarDatabaseTabProps) 
       if (!editEntity) return;
       const entityId = editEntity.id;
       void (async () => {
-        const handled = await runSqliteEntityMutation(
+        await runSqliteEntityMutation(
           entityId,
           t('LWC.desktop.sidebar.database.adding_data'),
           async (targetStore) => {
@@ -3097,7 +3098,7 @@ export const SidebarDatabaseTab = ({ active = false }: SidebarDatabaseTabProps) 
       if (!editEntity) return;
       const entityId = editEntity.id;
       void (async () => {
-        const handled = await runSqliteEntityMutation(
+        await runSqliteEntityMutation(
           entityId,
           t('LWC.desktop.sidebar.database.adding_data'),
           async (targetStore) => {
@@ -3157,7 +3158,7 @@ export const SidebarDatabaseTab = ({ active = false }: SidebarDatabaseTabProps) 
     void (async () => {
       const entityId = group.entityIds[0];
       if (!entityId || !store) return;
-      const handled = await runSqliteEntityMutation(
+      await runSqliteEntityMutation(
         entityId,
         'Marking as intentional…',
         async (targetStore) => {
@@ -3171,7 +3172,7 @@ export const SidebarDatabaseTab = ({ active = false }: SidebarDatabaseTabProps) 
     void (async () => {
       const entityId = conflict.entityIds[0];
       if (!entityId) return;
-      const handled = await runSqliteEntityMutation(
+      await runSqliteEntityMutation(
         entityId,
         'Rejecting concordance…',
         async (targetStore) => {
@@ -4405,7 +4406,7 @@ export const SidebarDatabaseTab = ({ active = false }: SidebarDatabaseTabProps) 
                       }))}
                     onChange={(authors) =>
                       void (async () => {
-                        const handled = await runSqliteEntityMutation(
+                        await runSqliteEntityMutation(
                           editEntity.id,
                           'Saving authors…',
                           async (targetStore) => {

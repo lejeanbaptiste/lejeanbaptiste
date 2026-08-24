@@ -1,6 +1,6 @@
 # Document Import — Planning
 
-**Status (2026-08-01):** **In progress** — blind import + same-family XML import exist (`documentImport.ts`). Still open: Phase 1 leftovers (md headers, batch/folder UI, validator/provenance); Phases 2–4 (profiles, docx, AI inference). Early notes: [archive/document-io.md](archive/document-io.md).
+**Status (2026-08-24):** **In progress** — blind import + same-family XML import exist (`documentImport.ts`); folder multi-select ships (`main.ts` dialog uses `['openFile', 'openDirectory', 'multiSelections']`) and basic provenance is recorded in `documentImport.ts`. Still open: Phase 1 leftovers (md `{{header}}` expansion, import validator report); Phases 2–4 (profiles, docx style-aware IR, AI inference). Early notes: [archive/document-io.md](archive/document-io.md).
 
 ## Goal
 

@@ -121,9 +121,12 @@ See [apps/desktop/README.md](apps/desktop/README.md) for the compilation and pac
 
 ### Future
 
+- [ ] No typecheck gate in CI. `.github/workflows/ci.yml` runs `test:ci` + `lint` + builds; no workspace has a `tsc --noEmit` script, and the webpack builds transpile without checking. As of 2026-08-24 that leaves **11 real type errors** on committed code: `useNativeDialogBridge.ts` (4 — the deps object doesn't satisfy `ProjectMetadataSaveDeps`; `reloadTabFromDisk` returns `Promise<boolean>` where `Promise<void>` is expected), `authority-pack-lookup.ts` (2 — unchecked index access), `DatabaseWindow.tsx:1149` (i18n `t()` overload), `SidebarDatabaseTab.tsx:2714` (2 — dead comparisons against `'familyName'`/`'givenName'`, which aren't in the union; harmless), `dialogs/autoTagging/index.tsx:758` (`createEntityDatabase` missing from `LeafWriterElectronApi`), and `disambiguationCandidates.ts:1019` (entity-kind union is wider than `RomanizeEntityKind` — `'citation'`/`'office'` may be silently failing at runtime; the only one that looks like a live bug). Adding the gate needs two prerequisites first: `cwrc-leafwriter-authority-service-custom` reports 2,012 spurious errors because it has one source file but `"lib": ["es2023"]` with no `dom`, and typechecking from `packages/cwrc-leafwriter` pulls in `apps/commons` files whose `@src/*` alias it doesn't define (~28 more, mostly cascading implicit-`any`).
+- [ ] `packages/cwrc-leafwriter/src/js/tinymce/plugins/prevent_delete.ts`: file-level `@ts-nocheck` is masking ~30 real issues — a legitimate but undeclared `editor.writer` runtime augmentation (set in `tinymceWrapper.ts:741`, same shape as the `LeafWriterElectronApi`/`ElectronAPI` drift fixed elsewhere) plus several genuine null-safety gaps (`nextParent`, `textNode.textContent`, `textNode.parentElement` all used without narrowing). This is the delete-key interception logic that stops backspace/delete from silently invalidating tag structure — correctness-sensitive, not a mechanical cleanup. Needs its own pass: type the `editor.writer` augmentation properly, then work through the null-safety gaps with the plugin actually loaded and tested, not blind.
+
 ### 'LJBtero' (After testing)
 
-- [ ] Clean up and rationalise options, UI, document and global settings.
+- [ ] Clean up and rationalise options, UI, document and global settings. (Settings dialog reorganised into sections — `authorities`, `editor`, `entity-lookups`, `guardrails`, `markup-panel`, `profile`, `ui`, `reset` — and shipped in beta.2. Still open: the document-level vs global split; everything today is global.)
 - [ ] Figure out how best to handle the insertion of entities NOT in said paragraph.
 - [ ] Keyboard shortcut for insert entity
 - [ ] Build Word and LibreOffice plugins on the same model.
@@ -132,7 +135,7 @@ See [apps/desktop/README.md](apps/desktop/README.md) for the compilation and pac
 ### Database viewer
 
 - [ ] Think about how to organise for rapid data entry
-- [ ] Filters
+- [ ] Filters beyond entity kind (the kind filter ships and persists via `databaseViewPrefs`; no field-level or faceted filtering yet)
 
 #### I/O
 
@@ -153,7 +156,7 @@ See [apps/desktop/README.md](apps/desktop/README.md) for the compilation and pac
 #### UX
 
 - [ ] Find/replace Phase 2b: WYSIWYG visible-text replace across markup ([find-replace-planning.md](docs/find-replace-planning.md))
-- [ ] Persist last find query across sessions (match-case / ignore-case toggle already ships)
+- [ ] Persist last find query across sessions (match-case / ignore-case and regex toggles already ship; the query itself resets to `''` on mount)
 - [ ] Ignore page breaks, line breaks, and corrections in tagging and disambiguation?
 - [ ] Re-explore Tag-boundary Bugs B/C/H (typing/delete at edges) keeping us from full Oxygen parity.
 

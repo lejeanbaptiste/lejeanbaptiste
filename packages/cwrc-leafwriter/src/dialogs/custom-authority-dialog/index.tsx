@@ -63,7 +63,7 @@ export const CustomAuthorityDialog = ({
             notifyViaSnackbar({
               message: `${t('LW.customAuthorityDialog.errorPrefix')} ${(error as Error)?.message}`,
             });
-            throw new Error('Error processing custom authority');
+            throw new Error('Error processing custom authority', { cause: error });
           }
 
           //?add feedback here

@@ -1792,9 +1792,9 @@ export const tinymceWrapperInit = function ({
       ) {
         const prevNode = writer.utilities.getPreviousTextNode(parent);
         if (prevNode) {
-          //@ts-ignore
+          //@ts-expect-error
           range.setStart(prevNode, prevNode.length);
-          //@ts-ignore
+          //@ts-expect-error
           range.setEnd(prevNode, prevNode.length);
         }
       } else {

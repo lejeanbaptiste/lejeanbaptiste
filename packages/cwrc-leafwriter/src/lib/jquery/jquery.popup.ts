@@ -1,7 +1,7 @@
 import $ from 'jquery';
 import 'jquery-ui/ui/widgets/dialog';
 
-//@ts-ignore
+//@ts-expect-error
 $.widget('custom.popup', $.ui.dialog, {
   version: '1.10.4',
   close: function (event: JQuery.Event) {

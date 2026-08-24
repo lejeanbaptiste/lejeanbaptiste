@@ -41,7 +41,6 @@ export interface LeafWriterOptionsSettings {
   baseUrl?: string;
 
   colorScheme?: string;
-  // eslint-disable-next-line @typescript-eslint/ban-types
   locale?: Locales | (string & {});
 
   authorityServices?: AuthorityServiceConfig[];

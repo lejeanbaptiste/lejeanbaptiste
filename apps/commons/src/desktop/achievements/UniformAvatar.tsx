@@ -89,8 +89,7 @@ const effectivePoseMinRankIndex = (poseIndex: number): number =>
 /** Filter applied to the complete scene for the deliberately photographic
  * WWI pose. Keep this as a shared value so the live avatar and certificate
  * export render the same treatment. */
-export const scenePhotoFilterForPose = (poseIndex: number): string | undefined =>
-  undefined;
+export const scenePhotoFilterForPose = (): string | undefined => undefined;
 
 /**
  * Archive treatment belongs to the selected record, rather than the pose:

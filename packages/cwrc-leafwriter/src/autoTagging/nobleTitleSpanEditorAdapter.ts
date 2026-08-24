@@ -39,7 +39,7 @@ export async function applyNobleTitleForSelection(): Promise<void> {
   const dialogManager = writer?.dialogManager;
   if (!writer || !editor || !dialogManager) return;
 
-  //@ts-ignore — TinyMCE's real getRng(normalized?: boolean) isn't in this codebase's Editor type (see tagger.ts).
+  //@ts-expect-error — TinyMCE's real getRng(normalized?: boolean) isn't in this codebase's Editor type (see tagger.ts).
   const range: Range | undefined = editor.selection?.getRng(true);
   if (!range || range.collapsed) {
     dialogManager.show('message', {
@@ -80,7 +80,7 @@ export async function applyPersonWrapperForSelection(): Promise<void> {
   const dialogManager = writer?.dialogManager;
   if (!writer || !editor || !dialogManager) return;
 
-  //@ts-ignore — TinyMCE's real getRng(normalized?: boolean) isn't in this codebase's Editor type.
+  //@ts-expect-error — TinyMCE's real getRng(normalized?: boolean) isn't in this codebase's Editor type.
   const range: Range | undefined = editor.selection?.getRng(true);
   if (!range || range.collapsed) {
     dialogManager.show('message', {
@@ -91,7 +91,6 @@ export async function applyPersonWrapperForSelection(): Promise<void> {
     return;
   }
 
-  //@ts-ignore — the runtime accepts the standard bookmark shape used by tagger.addStructureTag.
   const bookmark = editor.selection.getBookmark(1);
   const wrapped = writer.tagger.addStructureTag({
     action: 'add',

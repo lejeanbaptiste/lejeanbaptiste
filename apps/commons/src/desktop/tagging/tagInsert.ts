@@ -137,9 +137,8 @@ export const isAtEndOfElement = (range: Range, element: Element): boolean => {
 export const copyAttributesWithoutSchemaId = (from: Element, to: Element) => {
   const schemaId = getWriter()?.schemaManager?.getIdName?.() ?? 'xml:id';
 
-  for (let i = 0; i < from.attributes.length; i++) {
-    const attr = from.attributes[i];
-    if (!attr || attr.name === 'id' || attr.name === 'xml:id' || attr.name === schemaId) continue;
+  for (const attr of from.attributes) {
+    if (attr.name === 'id' || attr.name === 'xml:id' || attr.name === schemaId) continue;
 
     if (attr.name === '_attributes') {
       try {
@@ -242,8 +241,8 @@ export const splitParagraphAtCaret = (): ApplyTagResult => {
     // Place cursor at start of the new paragraph's first text node
     const firstText = (function findFirstText(n: Node): Text | null {
       if (n.nodeType === Node.TEXT_NODE) return n as Text;
-      for (let i = 0; i < n.childNodes.length; i++) {
-        const found = findFirstText(n.childNodes[i]!);
+      for (const child of n.childNodes) {
+        const found = findFirstText(child);
         if (found) return found;
       }
       return null;

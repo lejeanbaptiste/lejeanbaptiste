@@ -107,7 +107,7 @@ class VirtualEditor {
     // }
 
     // eslint-disable-next-line @typescript-eslint/ban-ts-comment
-    //@ts-ignore
+    //@ts-expect-error
      
     const definitions = Array.from(this.schema?.definitions.values());
     // eslint-disable-next-line @typescript-eslint/no-explicit-any

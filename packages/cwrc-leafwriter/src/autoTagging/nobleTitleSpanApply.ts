@@ -17,7 +17,6 @@ import {
 } from './nobleTitleSpanParser';
 
 const ELEMENT_NODE = 1;
-const TEXT_NODE = 3;
 
 export interface ApplyNobleTitleSpanResult {
   applied: boolean;
