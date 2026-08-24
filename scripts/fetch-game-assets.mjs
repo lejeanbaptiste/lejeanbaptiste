@@ -24,7 +24,7 @@
 
 import { S3Client, GetObjectCommand } from '@aws-sdk/client-s3';
 import { createHash } from 'node:crypto';
-import { existsSync, mkdirSync, readFileSync, writeFileSync } from 'node:fs';
+import { existsSync, mkdirSync, readFileSync, statSync, writeFileSync } from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 
@@ -51,6 +51,19 @@ async function main() {
   const manifest = JSON.parse(readFileSync(MANIFEST_PATH, 'utf8'));
   if (!manifest.sha256 || typeof manifest.sha256 !== 'string') {
     throw new Error(`${MANIFEST_PATH} is missing a valid "sha256" field: ${JSON.stringify(manifest)}`);
+  }
+
+  // CI restores this path from actions/cache, keyed on manifest.sha256 - a hit means
+  // some earlier job (this run or a previous one) already fetched and verified this
+  // exact binary. Skip the R2 round-trip entirely rather than re-downloading it.
+  if (existsSync(OUT_BIN) && statSync(OUT_BIN).size > 0) {
+    const cachedBytes = readFileSync(OUT_BIN);
+    const cachedSha256 = createHash('sha256').update(cachedBytes).digest('hex');
+    if (cachedSha256 === manifest.sha256) {
+      console.log(`${OUT_BIN} already matches manifest sha256 ${manifest.sha256} - skipping R2 fetch.`);
+      return;
+    }
+    console.log(`${OUT_BIN} exists but doesn't match the manifest - re-fetching from R2.`);
   }
 
   const client = new S3Client({
