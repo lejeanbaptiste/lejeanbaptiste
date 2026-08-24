@@ -369,6 +369,9 @@ export const XmlMonacoEditor = ({
       monacoEditor.dispose();
       setEditor(null);
     };
+    // Mount-only editor construction. The teardown disposes the local
+    // `monacoEditor`, so it works regardless of the `editor` state value.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   useEffect(() => {
@@ -427,6 +430,9 @@ export const XmlMonacoEditor = ({
     );
 
     setDecorations(nextDecorations);
+    // `decorations` is the state this effect writes on the line above; naming it
+    // would re-enter the effect on its own output.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [editor, errorPositions]);
 
   return (

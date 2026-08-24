@@ -48,6 +48,9 @@ export const SelectSchemaDialog = ({
 
   useEffect(() => {
     setSchema(defaultSchema);
+    // Keyed to the identity of the default schema rather than the object, which is
+    // recomputed every render, and to the joined mapping ids for the same reason.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [defaultSchema?.id, mappingIds.join('|')]);
 
   const handleSchemaSelect = (event: SelectChangeEvent) => {

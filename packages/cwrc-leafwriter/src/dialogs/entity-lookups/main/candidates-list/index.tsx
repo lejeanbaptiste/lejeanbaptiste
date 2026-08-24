@@ -16,6 +16,9 @@ export const CandidatesList = ({ authority, setAuthorityInView }: CandidateListP
 
   useEffect(() => {
     if (entry) setAuthorityInView({ id: entry.target.id, inView });
+    // Keyed to the visibility flag. `entry` changes together with it, and
+    // `setAuthorityInView` is a caller prop rebuilt every render.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [inView]);
 
   return (

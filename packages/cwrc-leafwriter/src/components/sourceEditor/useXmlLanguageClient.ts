@@ -140,6 +140,10 @@ export const useXmlLanguageClient = ({
       }
       disposables.forEach((d) => d.dispose());
     };
+    // Depends on the two option fields that matter rather than the `lspOptions`
+    // object, which is rebuilt every render; naming it would tear down and
+    // recreate the language client constantly.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [documentPath, editor, lspOptions?.defaultSchemaRng, lspOptions?.projectRoot]);
 
   useEffect(() => {

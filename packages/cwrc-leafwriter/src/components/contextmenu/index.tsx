@@ -56,6 +56,9 @@ export const ContextMenu = () => {
       setTagName(null);
       setTagMeta(null);
     };
+    // Keyed to the open/close flag alone: anchor and position are read when the
+    // menu opens, and naming them would rebuild the menu as it is dragged around.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [contextMenu.show]);
 
   const loadItems = async () => {

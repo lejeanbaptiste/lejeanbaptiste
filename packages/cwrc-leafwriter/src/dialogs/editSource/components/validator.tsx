@@ -17,6 +17,9 @@ export const Validator = () => {
 
   useEffect(() => {
     if (xmlValidity.valid) animatedCheckMark();
+    // Plays the tick when validity flips. `animatedCheckMark` is redefined every
+    // render, so naming it would replay the animation on every render.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [xmlValidity.valid]);
 
   const animatedCheckMark = async () => {

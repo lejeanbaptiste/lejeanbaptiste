@@ -98,7 +98,7 @@ export const useSourceValidation = () => {
     }, AUTO_VALIDATE_DELAY_MS);
 
     return () => clearTimeout(timer);
-  }, [editorViewMode, sourceCurrentContent]);
+  }, [actions.validator, editorViewMode, sourceCurrentContent]);
 
   return { markers };
 };

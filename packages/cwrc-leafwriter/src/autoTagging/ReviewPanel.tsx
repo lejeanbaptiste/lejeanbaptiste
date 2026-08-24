@@ -545,6 +545,7 @@ export const ReviewPanel = ({
       }
     },
     // finishIfIdle closes over controller/busy — intentional per keypress
+    // eslint-disable-next-line react-hooks/exhaustive-deps
     [controller, busy],
   );
 
@@ -627,6 +628,10 @@ export const ReviewPanel = ({
     listRef.current
       .querySelector(`[data-testid="review-item-${current.id}"]`)
       ?.scrollIntoView?.({ block: 'nearest' });
+    // Keyed to the current item's id rather than the object: the effect only
+    // uses `current.id` to find the row to scroll to, so a same-id replacement
+    // would scroll to the same place.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [current?.id, currentPendingIndex]);
 
   return (

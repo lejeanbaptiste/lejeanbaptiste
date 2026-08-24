@@ -21,6 +21,9 @@ export const SourceEditorPane = () => {
       defaultSchemaRng: bridge?.defaultSchemaRng,
       projectRoot: bridge?.projectRoot,
     };
+    // Same shape: the LSP bridge hangs off `window`, so the open file path is the
+    // only signal that it may have changed.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [resource?.filePath]);
 
   const applyPendingCursor = useCallback(() => {

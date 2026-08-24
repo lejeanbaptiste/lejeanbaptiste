@@ -12,6 +12,10 @@ export const useEditor = (editor: monaco.editor.IStandaloneCodeEditor | null) =>
 
   useEffect(() => {
     updateDecorations();
+    // Deliberately keyed to a computed value: decorations only need rebuilding
+    // when validity flips or the message text changes, not on every object
+    // identity change. `updateDecorations` is redefined every render.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [xmlValidity.valid || xmlValidity.error.message]);
 
   const updateDecorations = () => {

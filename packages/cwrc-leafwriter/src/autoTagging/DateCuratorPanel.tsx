@@ -733,6 +733,7 @@ export const DateCuratorPanel = ({
       }
     },
     // decidePending closes over controller state — rerender on each render is intentional
+    // eslint-disable-next-line react-hooks/exhaustive-deps
     [controller, snapshot, prepared],
   );
 
@@ -769,6 +770,10 @@ export const DateCuratorPanel = ({
     const index = prepared.indexOf(current);
     if (index >= 0)
       dateListRef.current?.scrollToIndex({ index, align: 'center', behavior: 'auto' });
+    // Keyed to the current item's id rather than the object: the effect only
+    // uses `current.id` to find the row to scroll to, so a same-id replacement
+    // would scroll to the same place.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [current?.id, prepared]);
 
   const renderDateRow = (suggestion: Suggestion) => {

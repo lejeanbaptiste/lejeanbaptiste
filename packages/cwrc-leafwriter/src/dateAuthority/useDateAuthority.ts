@@ -85,6 +85,9 @@ export function useDateAuthority(enabled: boolean, civ: readonly string[] = defa
     return () => {
       cancelled = true;
     };
+    // Keyed to `civKey`, the stable string derived from `civ`; depending on the
+    // value itself would refetch whenever its identity changed.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [enabled, civKey]);
 
   return { authority, loading, error };

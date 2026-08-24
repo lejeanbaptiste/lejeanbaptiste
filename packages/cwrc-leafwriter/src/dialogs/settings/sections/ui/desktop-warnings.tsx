@@ -29,6 +29,9 @@ export const DesktopWarnings = () => {
     if (!bridge) return;
     setSkipDeleteConfirm(bridge.skipExplorerDeleteConfirm);
     setSkipDetachConfirmLocal(bridge.skipEntityDetachConfirm);
+    // `getCommonsUiBridge()` returns a fresh object every render, so this depends
+    // on the individual settings it mirrors rather than the bridge itself.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [bridge?.skipEntityDetachConfirm, bridge?.skipExplorerDeleteConfirm]);
 
   if (!bridge) return null;

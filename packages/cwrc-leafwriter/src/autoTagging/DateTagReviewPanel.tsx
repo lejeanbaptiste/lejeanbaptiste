@@ -455,6 +455,7 @@ export const DateTagReviewPanel = ({
       }
     },
     // decidePending closes over controller state — rerender on each render is intentional
+    // eslint-disable-next-line react-hooks/exhaustive-deps
     [controller, snapshot, suggestions],
   );
 
@@ -508,6 +509,10 @@ export const DateTagReviewPanel = ({
     listRef.current
       .querySelector(`[data-testid="date-curator-item-${current.id}"]`)
       ?.scrollIntoView?.({ block: 'nearest' });
+    // Keyed to the current item's id rather than the object: the effect only
+    // uses `current.id` to find the row to scroll to, so a same-id replacement
+    // would scroll to the same place.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [current?.id]);
 
   return (

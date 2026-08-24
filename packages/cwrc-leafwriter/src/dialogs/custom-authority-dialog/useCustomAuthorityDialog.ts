@@ -30,6 +30,10 @@ export const useCustomAuthorityDialog = (authorityId?: string) => {
         maxResults: 10,
       },
     };
+    // Deliberately frozen: this is the form's *initial* value. Naming
+    // `user.name`/`user.uri` would recompute it — regenerating the `nanoid` id and
+    // discarding whatever the user has typed — whenever the profile changes.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   const initialValue: LocalAuthorityServiceConfig = useLiveQuery(

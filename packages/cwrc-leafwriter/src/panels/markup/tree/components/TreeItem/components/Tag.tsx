@@ -53,6 +53,9 @@ export const Tag = forwardRef<HTMLDivElement, TagProps>(
     const [multiselectable, setMultiselectable] = useState(true);
     const [selectContentOnly, setSelectContentOnly] = useState(true);
 
+    // `schemaManager` hangs off `window.writer` and is not reactive; the tag
+    // label is the only real input.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
     const fullName = useMemo(() => schemaManager.getFullNameForTag(label), [label]);
 
     useEffect(() => {

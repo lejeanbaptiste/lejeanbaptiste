@@ -27,6 +27,9 @@ export const DesktopGithub = () => {
 
   useEffect(() => {
     if (bridge) setConnected(bridge.githubConnected);
+    // `getCommonsUiBridge()` returns a fresh object every render, so this depends
+    // on the individual setting it mirrors rather than the bridge itself.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [bridge?.githubConnected]);
 
   if (!bridge) return null;

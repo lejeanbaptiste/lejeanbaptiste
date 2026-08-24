@@ -110,6 +110,10 @@ export const SortableTree = ({
     }, 1);
 
     return () => clearTimeout(timer);
+    // Scrolls to the first selected row. Indexing inline is deliberate — only the
+    // lead selection matters — and `visibleTree` is read to locate it, so naming
+    // it would re-scroll on every expand or collapse.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [selectedItems[0]]);
 
   useEffect(() => {
@@ -123,6 +127,9 @@ export const SortableTree = ({
       clearTimeout(timer);
     }
     return () => clearTimeout(timer);
+    // Drag-hover auto-expand, keyed to the row being hovered. `handleExpand` is
+    // redefined every render and `activeId` is read only to skip the dragged row.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [overId]);
 
   const canAddToMultiselection = (id: UniqueIdentifier) => {

@@ -41,6 +41,10 @@ export const EntityType = ({ entityType }: { entityType: NamedEntityType }) => {
 
   useEffect(() => {
     setItems(entityTypes);
+    // Keyed to the enabled/disabled pattern rather than the array identity, which
+    // is rebuilt every render; resyncing on identity alone would discard an
+    // in-progress reorder.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [entityTypes.map((item) => item.disabled).join('-')]);
 
   const handleDragEnd = (event: DragEndEvent) => {

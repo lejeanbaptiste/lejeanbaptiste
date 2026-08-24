@@ -88,7 +88,7 @@ export const Item = forwardRef<any, ItemProps>(
       }
       if (['tag', 'entity'].includes(type) && invalid) return { icon: 'invalid' };
       return null;
-    }, [isEmpty, invalid]);
+    }, [isEmpty, invalid, type]);
 
     const itemVariants: Variants = {
       hidden: { y: -10, opacity: 0 },

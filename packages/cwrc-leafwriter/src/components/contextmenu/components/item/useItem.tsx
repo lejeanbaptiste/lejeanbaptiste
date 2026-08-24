@@ -18,6 +18,9 @@ export const useItem = ({ active, children, getChildren, type }: UseItemProps) =
 
   useEffect(() => {
     if (type === 'collection') handleActiveChange();
+    // Keyed to the active flag. `handleActiveChange` is redefined every render,
+    // and `type` is fixed for the life of an item.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [active]);
 
   const handleActiveChange = () => {

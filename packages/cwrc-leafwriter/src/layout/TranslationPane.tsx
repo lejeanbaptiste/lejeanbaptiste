@@ -1100,6 +1100,11 @@ export const TranslationPane = () => {
   const unitCards = useMemo(() => {
     if (!translationDoc || !alignmentUnit || !sourcePath) return [];
     return collectTranslationUnitCards(translationDoc, alignmentUnit, fileNameOf(sourcePath));
+    // `cardsEpoch` is an invalidation signal, not an input: the cards are read out
+    // of a mutable document React cannot observe, so the counter is bumped to
+    // force a rebuild. The rule calls it unnecessary because the body never
+    // mentions it, which is the point.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [translationDoc, alignmentUnit, sourcePath, cardsEpoch]);
 
   const footnoteStartIndex = useMemo(
@@ -1657,6 +1662,11 @@ export const TranslationPane = () => {
       window.removeEventListener('desktop:zotero-refresh-citations', onZoteroRefresh);
       window.removeEventListener('desktop:zotero-open-style-picker', onZoteroOpenStylePicker);
     };
+    // Re-registers only when the citation style or refresh helper changes.
+    // `openCitationStylePicker` and `t` are read inside the handlers, not used to
+    // decide whether to re-register, and naming them would tear down and rebuild
+    // these window listeners far more often than needed.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [activeCitationStyle, refreshCurrentCitationFields]);
 
   useEffect(() => {

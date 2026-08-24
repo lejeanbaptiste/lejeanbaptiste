@@ -22,6 +22,9 @@ export const DesktopEncoderName = () => {
   useEffect(() => {
     if (!bridge) return;
     setEncoderNameLocal(bridge.encoderName);
+    // `getCommonsUiBridge()` returns a fresh object every render, so this depends
+    // on the individual setting it mirrors rather than the bridge itself.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [bridge?.encoderName]);
 
   if (!bridge) return null;

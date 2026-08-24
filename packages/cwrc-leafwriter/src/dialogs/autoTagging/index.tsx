@@ -562,6 +562,9 @@ export const AutoTaggingDialog = ({ id, onClose, open = false }: IDialog) => {
       }
       setWorkflowReady(true);
     });
+    // Runs when the dialog opens. `refreshWorkflowState` is redefined every
+    // render, so naming it would re-run this while the dialog is open.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [open]);
 
   const visibleAuthorityPackIds = useMemo(

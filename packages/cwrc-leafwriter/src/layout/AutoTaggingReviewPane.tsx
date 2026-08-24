@@ -310,6 +310,10 @@ export const AutoTaggingReviewPane = () => {
     };
     window.addEventListener('desktop:auto-tagging-review-append', append);
     return () => window.removeEventListener('desktop:auto-tagging-review-append', append);
+    // Registers the listener while the pane is active. `getSession` is read inside
+    // the handler, not used to decide whether to register, and is redefined every
+    // render.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [active]);
 
   // Desktop: expand/collapse the shell mount between editor and right sidebar.

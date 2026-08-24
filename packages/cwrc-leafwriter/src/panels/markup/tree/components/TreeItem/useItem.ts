@@ -30,6 +30,9 @@ export const useItem = ({ content = '', id, isEntity = false, selected = false }
 
   const icon = useMemo(
     () => (entityType ? getIcon(theme.entity[entityType].icon) : getIcon(id as IconLeafWriter)),
+    // `entityType` is derived from `id` a few lines above, so `id` already covers
+    // it; `theme.entity` is a static palette map.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
     [id],
   );
 
@@ -41,11 +44,16 @@ export const useItem = ({ content = '', id, isEntity = false, selected = false }
   useEffect(() => {
     !hover && !selected ? clearDetailsTimer() : startDetailsTimer(detailsHoverTimeOut);
     return () => clearTimeout(timer);
+    // Keyed to hover alone; selection is handled by the effect below. The timer
+    // helpers are redefined every render.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [hover]);
 
   useEffect(() => {
     !selected ? clearDetailsTimer() : startDetailsTimer(TIME_OUT_SELECT);
     return () => clearTimeout(timer);
+    // Keyed to selection alone; the timer helpers are redefined every render.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [selected]);
 
   const startDetailsTimer = (duration: number) => {

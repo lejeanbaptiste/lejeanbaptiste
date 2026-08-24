@@ -118,6 +118,11 @@ export const useEditor = (
         updateTimerRef.current = null;
       }
     };
+    // Re-subscribes only when the editor lifecycle flags change. The writer event
+    // handlers are redefined every render, so naming them would tear down and
+    // rebuild every subscription on every render; subscribe and unsubscribe use
+    // the same references within a run, so the teardown still matches.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [initialized, enabled, items, syncMode]);
 
   useEffect(() => {
@@ -130,6 +135,10 @@ export const useEditor = (
       setExpandedItems((prev) => [...new Set([...prev, ...parents, nodeChanged])]);
       setSelectedItems([nodeChanged]);
     }
+    // Reacts to the editor's node change alone. `selectedItems` is read to skip
+    // redundant work and `getItemParents` is redefined every render, so naming
+    // either would re-run this whenever the tree state it writes changes.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [nodeChanged]);
 
   const handleDocumentLoaded = (success?: boolean) => {

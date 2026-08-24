@@ -22,6 +22,9 @@ export const DesktopStartup = () => {
   useEffect(() => {
     if (!bridge) return;
     setRememberWorkspaceOnStartupLocal(bridge.rememberWorkspaceOnStartup);
+    // `getCommonsUiBridge()` returns a fresh object every render, so this depends
+    // on the individual settings it mirrors rather than the bridge itself.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [bridge?.rememberWorkspaceOnStartup]);
 
   if (!bridge) return null;

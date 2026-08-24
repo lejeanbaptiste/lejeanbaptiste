@@ -26,6 +26,9 @@ export const Filters = ({ onQuery }: FilterProps) => {
 
   const handleChangeDebounce = useMemo(
     () => debounce((_query: string) => onQuery(_query), 200, { trailing: true }),
+    // Built once: re-creating the debounced function would reset its timer on
+    // every render, so the filter would never settle.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
     [],
   );
 

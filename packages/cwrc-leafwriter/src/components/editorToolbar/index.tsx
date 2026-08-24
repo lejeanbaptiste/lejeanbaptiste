@@ -98,6 +98,11 @@ export const EditorToolbar = () => {
 
   const isSupported = useCallback(
     (name: EntityType) => window.writer.schemaManager.mapper.getEntitiesMapping().has(name),
+    // `schemaId` is the invalidation signal, not an input: the mapping is read off
+    // `window.writer`, which React cannot observe, so the id is what tells us the
+    // schema changed. The rule calls it unnecessary because the body never
+    // mentions it.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
     [schemaId],
   );
 

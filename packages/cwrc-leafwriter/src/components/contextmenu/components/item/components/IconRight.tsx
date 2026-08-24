@@ -11,6 +11,8 @@ export interface IconRightProps {
 
 export const IconRight = ({ icon, isLoading, size = 16 }: IconRightProps) => {
   const { getIcon } = useContextmenu();
+  // Keyed to the icon name; `getIcon` is a context helper rebuilt every render.
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   const IconComponent = useMemo(() => (icon ? getIcon(icon) : null), [icon]);
 
   return (

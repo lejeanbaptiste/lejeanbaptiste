@@ -36,6 +36,9 @@ export const Collection = ({ isLoading = false, list, searchable = false }: Coll
 
   useEffect(() => {
     setVisibleList(applyFilters(list));
+    // Keyed to the inputs the filter reads. `applyFilters` is redefined every
+    // render, so naming it would refilter on every render.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [list, query, onlyValid]);
 
   const handleQuery = (query: string) => setQuery(query);

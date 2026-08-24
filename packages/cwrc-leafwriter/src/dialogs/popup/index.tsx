@@ -27,6 +27,10 @@ export const Popup = (props: PopupProps) => {
   useEffect(() => {
     getAnchor();
     getOffset();
+    // Positions the popup once against the element it was opened for. Both
+    // helpers are declared below this effect, so naming them would be a
+    // temporal-dead-zone reference.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   const getAnchor = useCallback(() => {
@@ -34,7 +38,7 @@ export const Popup = (props: PopupProps) => {
     if (!element) return;
 
     setAnchorEl(element);
-  }, []);
+  }, [id]);
 
   const getOffset = useCallback(() => {
     const editorRect = window.writer.editor?.editorContainer.getBoundingClientRect();

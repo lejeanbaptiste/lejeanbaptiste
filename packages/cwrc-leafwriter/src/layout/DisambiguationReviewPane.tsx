@@ -115,6 +115,9 @@ export const DisambiguationReviewPane = () => {
         if (generation === scanGeneration.current) setLoading(false);
       }
     })();
+    // `stopWarmPass` is called by the scan below but is redefined every render;
+    // naming it would restart the scan continuously.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [active, getSession]);
 
   // When "Stream AI results" is off, warm the AI ranking cache for every

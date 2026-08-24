@@ -17,7 +17,7 @@ export const Tree = ({ syncMode }: { syncMode: Exclude<MarkupTreeSyncMode, 'off'
   useEffect(() => {
     allowDND(markupPanel.allowDragAndDrop);
     displayTextNodes(markupPanel.showTextNodes);
-  }, [markupPanel.allowDragAndDrop, markupPanel.showTextNodes]);
+  }, [allowDND, displayTextNodes, markupPanel.allowDragAndDrop, markupPanel.showTextNodes]);
 
   return (
     <Box sx={{ display: 'flex', flexDirection: 'column', flex: 1, minHeight: 0 }}>
