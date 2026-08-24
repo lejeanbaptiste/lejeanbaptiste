@@ -19,9 +19,7 @@ const isElement = (node: Node): node is Element => node.nodeType === 1;
 const collectInlineText = (element: Element, warnings: string[]): string => {
   let out = '';
 
-  for (let i = 0; i < element.childNodes.length; i++) {
-    const child = element.childNodes[i];
-
+  for (const child of Array.from(element.childNodes)) {
     if (child.nodeType === 3) {
       out += child.nodeValue ?? '';
       continue;
@@ -66,8 +64,7 @@ export const extractOdtTextFromContentXml = (contentXml: string): ExtractedOdtTe
       paragraphs.push(collectInlineText(element, warnings));
       return;
     }
-    for (let i = 0; i < element.childNodes.length; i++) {
-      const child = element.childNodes[i];
+    for (const child of Array.from(element.childNodes)) {
       if (isElement(child)) walkBlocks(child);
     }
   };

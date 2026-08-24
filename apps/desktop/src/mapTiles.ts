@@ -332,7 +332,10 @@ const extractRegionalBundle = async (
     );
   } catch (error) {
     const detail = error instanceof Error ? error.message : String(error);
-    throw new Error(`Could not extract regional map tiles. Install the Protomaps pmtiles tool or set ${PMTILES_BIN_ENV}. ${detail}`);
+    throw new Error(
+      `Could not extract regional map tiles. Install the Protomaps pmtiles tool or set ${PMTILES_BIN_ENV}. ${detail}`,
+      { cause: error },
+    );
   }
 };
 

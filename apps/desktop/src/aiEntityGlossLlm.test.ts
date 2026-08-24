@@ -35,7 +35,7 @@ describe('aiEntityGlossLlm', () => {
       },
     });
 
-    const messages = body.messages as Array<{ role: string; content: string }>;
+    const messages = body.messages as { role: string; content: string }[];
     expect(messages[0]?.role).toBe('system');
     expect(messages[1]?.role).toBe('user');
     const payload = JSON.parse(messages[1]!.content) as Record<string, unknown>;
@@ -58,7 +58,7 @@ describe('aiEntityGlossLlm', () => {
       'prompt_only',
     );
     expect(body.response_format).toBeUndefined();
-    const messages = body.messages as Array<{ role: string; content: string }>;
+    const messages = body.messages as { role: string; content: string }[];
     expect(messages[0]?.content).toContain('{"gloss":"…"}');
   });
 

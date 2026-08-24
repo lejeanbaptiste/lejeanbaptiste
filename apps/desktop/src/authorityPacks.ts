@@ -55,7 +55,7 @@ export async function getAuthorityPackStatuses(baseFolder: string): Promise<Auth
           // Pack files remain usable when their optional manifest is unavailable.
         }
       } catch {
-        installed = false;
+        // stat failed — the pack file is absent, so the `false` initializer stands.
       }
       return {
         id: spec.id,
@@ -94,13 +94,13 @@ export async function installAuthorityPacksFrom(
   return { copied };
 }
 
-type DateChunkLayout = {
+interface DateChunkLayout {
   version: 1;
   blockYears: number;
-  chunks: Array<{ path: string; start: number; end: number }>;
+  chunks: { path: string; start: number; end: number }[];
   undatedPath?: string;
   includeUndatedForLimit?: boolean;
-};
+}
 
 /** Absolute paths of NDJSON files that make up a pack for the given filter. */
 async function resolveAuthorityPackDataFiles(

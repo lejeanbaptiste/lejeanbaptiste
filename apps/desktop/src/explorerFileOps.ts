@@ -137,7 +137,7 @@ export const createDirectory = async (
     }
   } catch (error) {
     if ((error as NodeJS.ErrnoException).code === 'ENOENT') {
-      throw new Error('Parent directory does not exist');
+      throw new Error('Parent directory does not exist', { cause: error });
     }
     throw error;
   }

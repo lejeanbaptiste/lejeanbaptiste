@@ -25,12 +25,12 @@ const configureAutoUpdater = (): void => {
   autoUpdater.allowPrerelease = false;
 };
 
-export type InitAutoUpdaterOptions = {
+export interface InitAutoUpdaterOptions {
   /** Invoked when the user clicks a plugin-update notification. */
   onCompanionNotifyClick?: () => void;
   /** Invoked after authority packs have been replaced in the background. */
   onAuthorityUpdated?: () => void;
-};
+}
 
 let lastAuthorityNotifyKey = '';
 let lastPluginNotifyKey = '';

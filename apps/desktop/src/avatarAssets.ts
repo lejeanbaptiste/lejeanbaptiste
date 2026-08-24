@@ -36,12 +36,12 @@ export const CANVAS_SIZE = CONTENT_SIZE + PAD * 2;
 // a subset: a variant list existing in visual_style/ with nothing reading
 // it would be exactly the kind of hand-picked-shortlist-by-omission this is
 // meant to avoid.
-const LAYER_ORDER: ReadonlyArray<{
+const LAYER_ORDER: readonly {
   folder: string;
   param: string;
   colorParam?: string;
   probabilityParam?: string;
-}> = [
+}[] = [
   { folder: 'eyes', param: 'eyesVariant' },
   { folder: 'eyebrows', param: 'eyebrowsVariant' },
   { folder: 'mouth', param: 'mouthVariant' },

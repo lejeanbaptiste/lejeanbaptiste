@@ -373,7 +373,7 @@ const testAiConnection = async (settings: Partial<AiApiSettings>): Promise<AiCon
       return { ok: false, error: `Server returned HTTP ${response.status}.` };
     }
 
-    const body = (await response.json()) as { data?: Array<{ id?: unknown }> };
+    const body = (await response.json()) as { data?: { id?: unknown }[] };
     const models = Array.isArray(body.data)
       ? body.data
           .map((model) => (typeof model.id === 'string' ? model.id : null))
@@ -402,7 +402,7 @@ const listAiModels = async (settings: AiApiSettings): Promise<string[]> => {
   const response = await fetch(`${baseUrl}/models`, { headers });
   if (!response.ok) return [];
 
-  const body = (await response.json()) as { data?: Array<{ id?: unknown }> };
+  const body = (await response.json()) as { data?: { id?: unknown }[] };
   return Array.isArray(body.data)
     ? body.data
         .map((model) => (typeof model.id === 'string' ? model.id : null))
@@ -574,7 +574,7 @@ const generateAiTranslation = async ({
     }
 
     const body = (await response.json()) as {
-      choices?: Array<{ finish_reason?: unknown; message?: { content?: unknown } }>;
+      choices?: { finish_reason?: unknown; message?: { content?: unknown } }[];
       usage?: unknown;
     };
     const choice = body.choices?.[0];
@@ -730,7 +730,7 @@ const suggestEntityGloss = async (
     }
 
     const body = (await response.json()) as {
-      choices?: Array<{ message?: { content?: unknown } }>;
+      choices?: { message?: { content?: unknown } }[];
     };
     const content = body.choices?.[0]?.message?.content;
     const gloss = parseEntityGlossContent(content);
@@ -1139,7 +1139,7 @@ const waitForMainWindowLoad = (window: BrowserWindow): Promise<void> =>
     resolve();
   });
 
-let pendingRendererReadyResolvers: Array<() => void> = [];
+const pendingRendererReadyResolvers: (() => void)[] = [];
 
 const waitForRendererReady = (timeoutMs = 10_000): Promise<void> =>
   new Promise((resolve, reject) => {

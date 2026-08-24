@@ -25,7 +25,7 @@ describe('decodeTextBuffer', () => {
   });
 
   test('decodes UTF-16LE with BOM', () => {
-    const result = decodeTextBuffer(Buffer.from(`﻿${DAODEJING}`, 'utf16le'));
+    const result = decodeTextBuffer(Buffer.from(`\uFEFF${DAODEJING}`, 'utf16le'));
     expect(result.encoding).toBe('utf-16le');
     expect(result.text).toBe(DAODEJING);
   });

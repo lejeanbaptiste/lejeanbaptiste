@@ -160,13 +160,13 @@ export interface EntitySqliteAutoCleanNamesRequest {
   databasePath: string;
 }
 
-export type EntitySqliteAutoCleanNamesResult = {
+export interface EntitySqliteAutoCleanNamesResult {
   dedupedNames: number;
   removedNan: number;
   removedInvalidFamilyGiven: number;
   removedUntyped: number;
   promotedRomanizations: number;
-};
+}
 
 export interface EntitySqliteApplyConcordanceRequest {
   databasePath: string;
@@ -394,7 +394,9 @@ export async function backfillEntitySqliteDecisionTargets(
     return { updated: 0, inserted: 0, unchanged: 0 };
   }
   const xmlPath = request.databasePath.replace(/entities\.sqlite$/i, 'entities.xml');
-  let xml: string | null = null;
+  // No initializer: every path out of the `catch` below returns, so `xml` is
+  // definitely assigned by the time it is read.
+  let xml: string;
   try {
     xml = await fs.readFile(xmlPath, 'utf-8');
     if (xml.charCodeAt(0) === 0xfeff) xml = xml.slice(1);
@@ -757,7 +759,7 @@ export async function listEntitySqliteMappingsByCentralIds(request: {
   databasePath: string;
   userStableId: string;
   centralIds: string[];
-}): Promise<Array<{ projectEntityId: string; centralId: string; label: string | null }>> {
+}): Promise<{ projectEntityId: string; centralId: string; label: string | null }[]> {
   if (!validDatabasePath(request.databasePath))
     throw new Error('Invalid entity SQLite database path.');
   try {
@@ -774,7 +776,7 @@ export async function listEntitySqliteMappingsByCentralIds(request: {
 export async function listEntitySqliteAllCentralMappings(request: {
   databasePath: string;
   userStableId: string;
-}): Promise<Array<{ projectEntityId: string; centralId: string }>> {
+}): Promise<{ projectEntityId: string; centralId: string }[]> {
   if (!validDatabasePath(request.databasePath))
     throw new Error('Invalid entity SQLite database path.');
   try {

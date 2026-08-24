@@ -14,6 +14,7 @@
   "scripts": {
     "build": "tsup",
     "typecheck": "tsc --noEmit -p tsconfig.json",
+    "lint": "eslint .",
     "icon:export": "node ../../scripts/export-icon.mjs",
     "pmtiles:download": "node scripts/download-pmtiles.mjs",
     "brand-electron": "node scripts/brand-electron-dev.mjs",
@@ -54,6 +55,8 @@
   "devDependencies": {
     "electron": "43.1.0",
     "electron-builder": "^26.15.7",
+    "eslint": "^10.9.0",
+    "eslint-config-custom": "*",
     "tsup": "^8.5.1",
     "typescript": "^5.9.3"
   }

@@ -1,5 +1,4 @@
 import fs from 'fs/promises';
-import path from 'path';
 import { type EntitySummary } from '../../../packages/cwrc-leafwriter/src/autoTagging/entityOps';
 import type {
   EntityIndexJobEvent,
@@ -113,6 +112,7 @@ process.on(
       } catch (error) {
         throw new Error(
           `Entity indexing requires entities.sqlite beside ${request.entitiesPath}: ${error instanceof Error ? error.message : String(error)}`,
+          { cause: error },
         );
       }
       const chunkSize = Math.max(50, request.chunkSize ?? 250);

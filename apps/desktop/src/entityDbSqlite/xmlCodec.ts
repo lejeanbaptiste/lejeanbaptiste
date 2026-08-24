@@ -31,7 +31,7 @@ export interface XmlExportOptions {
   databaseId?: string;
 }
 
-type XmlElement = {
+interface XmlElement {
   nodeType: number;
   localName?: string;
   nodeName?: string;
@@ -40,7 +40,7 @@ type XmlElement = {
   attributes?: { length: number; item(index: number): { name: string; value: string } | null };
   getAttribute(name: string): string;
   getAttributeNS?(namespace: string, localName: string): string;
-};
+}
 
 const childElements = (element: XmlElement): XmlElement[] => {
   const out: XmlElement[] = [];
@@ -1092,7 +1092,7 @@ export function normalizeEntityXmlForContentHash(entityElementXml: string): stri
   };
   if (!root) return entityElementXml;
 
-  const elements: Array<typeof root> = [];
+  const elements: typeof root[] = [];
   const walk = (element: typeof root) => {
     elements.push(element);
     for (const child of childElements(element)) walk(child as typeof root);

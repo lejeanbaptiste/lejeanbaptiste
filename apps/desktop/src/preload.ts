@@ -523,11 +523,11 @@ export interface ElectronAPI {
     databasePath: string;
     userStableId: string;
     centralIds: string[];
-  }) => Promise<Array<{ projectEntityId: string; centralId: string; label: string | null }>>;
+  }) => Promise<{ projectEntityId: string; centralId: string; label: string | null }[]>;
   entitySqliteListAllCentralMappings: (request: {
     databasePath: string;
     userStableId: string;
-  }) => Promise<Array<{ projectEntityId: string; centralId: string }>>;
+  }) => Promise<{ projectEntityId: string; centralId: string }[]>;
   entitySqliteListLinkedCentralIds: (request: {
     databasePath: string;
     userStableId: string;
