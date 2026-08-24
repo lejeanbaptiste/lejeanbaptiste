@@ -48,6 +48,10 @@ export const useTree = (
       expandUpTo(treeModel, INTIATE_EXPANDED_UP_TO_LEVEL);
       setItems(treeModel);
     }
+    // `getEditorTreeModel` and `expandUpTo` are declared below this effect, and a
+    // dependency array is evaluated during render, so naming them would be a
+    // temporal-dead-zone ReferenceError. They are also redefined every render.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [initialized]);
 
   useEffect(() => {
@@ -56,6 +60,9 @@ export const useTree = (
     if (!treeModel) return;
     setItems(treeModel);
     expandUpTo(treeModel, INTIATE_EXPANDED_UP_TO_LEVEL);
+    // Same as above: the helpers are declared below, so naming them would be a
+    // temporal-dead-zone reference.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [initialized, refreshVersion]);
 
   useEffect(() => {
@@ -90,6 +97,9 @@ export const useTree = (
       cancelled = true;
       window.cancelAnimationFrame(frame);
     };
+    // Same as above: the helpers are declared below, so naming them would be a
+    // temporal-dead-zone reference.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [updatePending]);
 
   useEffect(() => {
@@ -99,6 +109,9 @@ export const useTree = (
 
       setItems(treeModel);
     }
+    // Rebuilds when the text-node display toggle changes. `initialized` is read
+    // only as a guard, and the helpers are declared below this effect.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [displayTextNodes]);
 
   const getEditorTreeModel = () => {

@@ -57,6 +57,11 @@ export const Tree = () => {
       writer.event('documentLoaded').unsubscribe(initialize);
       writer.event('nodeChanged').unsubscribe(nodeChange);
     };
+    // Re-subscribes only when the tree's own lifecycle flags change. `nodeChange`
+    // is redefined every render, so naming it would tear down and re-establish
+    // these writer subscriptions on every render. Subscribe and unsubscribe use
+    // the same reference within one run, so the teardown still matches.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [initialized, updatePending]);
 
   useEffect(() => {
@@ -67,6 +72,9 @@ export const Tree = () => {
       expandUpTo(treeModel, INTIATE_EXPANDED_UP_TO_LEVEL);
       setFlattenTree(treeModel);
     }
+    // Builds the initial tree once the editor reports ready.
+    // `getEditorTreeModel` is redefined every render.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [initialized]);
 
   useEffect(() => {
@@ -77,6 +85,9 @@ export const Tree = () => {
       setFlattenTree(treeModel);
       setUpdatePending(false);
     }
+    // Rebuilds the tree when an update is queued; `getEditorTreeModel` is
+    // redefined every render.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [updatePending]);
 
   useEffect(() => {
@@ -86,6 +97,10 @@ export const Tree = () => {
       setExpandedItems((prev) => [...new Set([...prev, ...parents, nodeChanged])]);
       setSelectedItem(nodeChanged);
     }
+    // Reacts to the editor's node change alone. `flattenTree` and `selectedItem`
+    // are read to compute the expansion, not to decide whether to run: naming
+    // them would re-expand the tree every time it is rebuilt.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [nodeChanged]);
 
   useEffect(() => {
@@ -101,6 +116,9 @@ export const Tree = () => {
     }, 1);
 
     return () => clearTimeout(timer);
+    // Scrolls when the selection changes. `visibleTree` is read to locate the
+    // row; naming it would re-scroll on every expand/collapse.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [selectedItem]);
 
   const initialize = (success?: boolean) => {

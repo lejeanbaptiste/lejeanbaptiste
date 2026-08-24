@@ -711,7 +711,7 @@ export const DisambiguationPanel = ({
         }
       }
     },
-    [activePromptProfile, aiCuration, i18n.language, session],
+    [activePromptProfile, aiCuration, cacheDisabled, i18n.language, session],
   );
 
   /**
@@ -885,6 +885,11 @@ export const DisambiguationPanel = ({
       return;
     }
     void loadCandidates(group, false, instance);
+    // The expansion check is deliberately inline: this must re-run when the group
+    // is expanded or collapsed, which is not reachable from `group` alone. Naming
+    // `controller` or `group` as the rule asks would re-run on every render,
+    // since the controller object is rebuilt each time.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [group?.surface, group?.tag, group && controller.isExpanded(group), instance, loadCandidates]);
 
   useEffect(() => {
@@ -1060,7 +1065,7 @@ export const DisambiguationPanel = ({
     }
 
     return rows;
-  }, [pending, resolved, resolvedOpen]);
+  }, [pending, resolved, resolvedOpen, t]);
 
   const currentRowIndex = useMemo(() => {
     if (!currentKey) return -1;

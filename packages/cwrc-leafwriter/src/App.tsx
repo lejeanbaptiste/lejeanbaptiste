@@ -129,7 +129,7 @@ const App = ({ document, settings, user }: LeafWriterOptions) => {
 
   useEffect(() => {
     i18n.changeLanguage(state.ui.currentLocale);
-  }, [state.ui.currentLocale]);
+  }, [state.ui.currentLocale, i18n]);
 
   useEffect(() => {
     window.document.addEventListener('fullscreenchange', fullscreenchanged);
@@ -140,6 +140,9 @@ const App = ({ document, settings, user }: LeafWriterOptions) => {
       window.removeEventListener('changeLanguage', actions.ui.listenChangeLanguage);
       window.removeEventListener('changeTheme', actions.ui.listenChangeTheme);
     };
+    // Registered once for the app's lifetime. Add and remove use the same
+    // references within a single run, so the teardown matches.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   useEffect(() => {
@@ -159,11 +162,16 @@ const App = ({ document, settings, user }: LeafWriterOptions) => {
     actions.document.setLoaded(false);
     setWriter(null);
     void setup();
+    // Keyed to the incoming document URL. `state.document.url` is read to detect
+    // an already-loaded document and is written by the setup this effect starts,
+    // so naming it would re-enter setup in a loop; `setup` is redefined every
+    // render.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [document.url]);
 
   useEffect(() => {
     if (ready) actions.ui.updateReadonly();
-  }, [ready, state.editor.isReadonly]);
+  }, [ready, state.editor.isReadonly, actions.ui]);
 
   // The translation tab's mount point only exists once at least one language is
   // configured, which can happen at any point during the session (via Edition

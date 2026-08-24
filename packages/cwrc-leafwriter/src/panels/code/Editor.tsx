@@ -34,6 +34,16 @@ export const Editor = ({ showLOD }: EditorProps) => {
     [mode, systemMode],
   );
 
+  // Mount-only: creates the Monaco instance and subscribes to writer events.
+  //
+  // NOTE (found while auditing dependencies, deliberately not changed here): this
+  // effect's teardown does not work. With an empty dependency array the cleanup
+  // closes over the initial `editor` state, which is null, so `editor?.dispose()`
+  // never disposes the instance created below; and each `unsubscribe` is passed a
+  // freshly-created arrow function that cannot match the one `subscribe` was
+  // given. Both leak on unmount. Fixing them means disposing the local `_editor`
+  // and keeping handler references to unsubscribe with — a lifecycle change that
+  // wants its own pass, not a dependency edit.
   useEffect(() => {
     const parentContainer = document.getElementById('code-panel');
     if (parentContainer) resizeObserver.observe(parentContainer);
@@ -84,6 +94,7 @@ export const Editor = ({ showLOD }: EditorProps) => {
         .event('massUpdateCompleted')
         .unsubscribe(() => triggerFromEvent('massUpdateCompleted'));
     };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   const triggerFromEvent = (eventName: string) => {
@@ -107,6 +118,9 @@ export const Editor = ({ showLOD }: EditorProps) => {
       updateView(update.useDoc);
       setUpdate(null);
     }
+    // Keyed to the queued update. `updateView` is redefined every render, so
+    // naming it would re-run this on every render.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [update]);
 
   useEffect(() => {
@@ -115,14 +129,23 @@ export const Editor = ({ showLOD }: EditorProps) => {
 
   useEffect(() => {
     if (editor) updateView();
+    // Keyed to the level-of-detail toggle. `editor` is only read to check the
+    // instance exists, and `updateView` is redefined every render.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [_showLOD]);
 
   useEffect(() => {
     editor?.setValue(content);
+    // Keyed to the content. The editor is created with this value already set, so
+    // there is nothing to re-apply when the instance itself appears.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [content]);
 
   useEffect(() => {
     editor?.updateOptions({ theme: editorTheme });
+    // `editorTheme` is derived from exactly these two values, so listing them is
+    // equivalent; `editor` is only read to check the instance exists.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [mode, systemMode]);
 
   const updateView = async (useDoc = false) => {
