@@ -68,7 +68,7 @@ export async function applyKeyRemapToRoots(
 
   const visited = new Set<string>();
   for (const root of roots) {
-    let files: string[] = [];
+    let files: string[];
     try {
       files = await ops.listXmlFiles(root);
     } catch (error) {

@@ -26,7 +26,8 @@
   "scripts": {
     "build": "npm run clean && tsup && tsc --emitDeclarationOnly --declaration",
     "clean": "npx rimraf node_modules lib",
-    "lint": "eslint ."
+    "lint": "eslint .",
+    "typecheck": "tsc --noEmit -p tsconfig.json"
   },
   "devDependencies": {
     "eslint": "^10.9.0",

@@ -2512,9 +2512,8 @@ export const TranslationPane = () => {
     bridge: DesktopCitationBridge,
     initialStyleId = pendingCitationStyle || translationMode.citationStyle || undefined,
   ): Promise<string | null> => {
-    let defaultStyleId = DEFAULT_CITATION_STYLE_ID;
-    let options: Awaited<ReturnType<DesktopCitationBridge['getCitationStyleOptions']>>['options'] =
-      [];
+    let defaultStyleId: string;
+    let options: Awaited<ReturnType<DesktopCitationBridge['getCitationStyleOptions']>>['options'];
     try {
       const result = await bridge.getCitationStyleOptions();
       defaultStyleId = result.defaultStyleId;

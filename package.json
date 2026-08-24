@@ -36,6 +36,7 @@
     "format": "prettier --write \"**/*.{ts,tsx,md}\"",
     "format-check": "prettier . --check",
     "lint": "eslint .",
+    "typecheck": "npm run typecheck --workspaces --if-present",
     "dev": "npm run dev -w @cwrc/leafwriter-storage-service & npm run dev -w leafwriter-commons",
     "dev-worker": "npm run dev -w @cwrc/leafwriter-storage-service & npm run dev-worker -w leafwriter-commons",
     "build-commons": "npm run build -w @cwrc/leafwriter-storage-service && npm run build -w @cwrc/leafwriter-validator && npm run build -w leafwriter-commons",

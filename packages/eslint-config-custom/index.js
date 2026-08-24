@@ -116,6 +116,13 @@ export default function custom({
           'error',
           { argsIgnorePattern: '^_', varsIgnorePattern: '^_', caughtErrorsIgnorePattern: '^_' },
         ],
+        // Empty arrow functions are a normal no-op/placeholder pattern here — a lazily-assigned
+        // useRef callback, a stub for an unavailable API, a deliberate null-object handler.
+        '@typescript-eslint/no-empty-function': ['warn', { allow: ['arrowFunctions'] }],
+        // Consistently named (`_this`/`self`) pre-ES6 alias, still genuinely needed in jQuery
+        // event handlers that use a plain `function` for its own `this` (the triggering DOM
+        // element) while also needing the outer class instance — arrow functions can't do both.
+        '@typescript-eslint/no-this-alias': ['error', { allowedNames: ['_this', 'self'] }],
       },
     },
 

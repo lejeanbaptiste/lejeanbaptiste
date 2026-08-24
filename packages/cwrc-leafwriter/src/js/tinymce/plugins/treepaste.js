@@ -991,8 +991,6 @@
                             dom.remove(span);
                     });
 
-                    html = p.innerHTML;
-
                     // Remove middot/list items
                     if (type == 'ul')
                         html = p.innerHTML.replace(/__MCE_ITEM__/g, '').replace(/^[\u2022\u00b7\u00a7\u00d8o\u25CF]\s*(&nbsp;|\u00a0)+\s*/, '');

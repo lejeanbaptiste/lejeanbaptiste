@@ -129,7 +129,7 @@ const note: EntityMappingProps = {
   types: ['cwrc:NoteInternal', 'cwrc:NoteScholarly', 'oa:TextualBody', 'cwrc:Note'],
   xpathSelector: 'self::note[not(@type="citation")]',
   annotation: (annotationsManager, entity) => {
-    let types = '';
+    let types: string;
     const type = entity.getAttribute('type');
 
     switch (type) {
@@ -228,8 +228,8 @@ const keyword: EntityMappingProps = {
     return [startTag, endTag];
   },
   annotation: (annotationsManager, entity) => {
-    let types = '';
-    let motivations = '';
+    let types: string;
+    let motivations: string;
     const ana = entity.getAttribute('ana');
     const hasAna = !!ana;
     const hasRef = hasAna && ana.indexOf('http') === 0;

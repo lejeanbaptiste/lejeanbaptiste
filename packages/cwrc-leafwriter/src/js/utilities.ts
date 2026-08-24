@@ -665,7 +665,7 @@ class Utilities {
    * @param {Number} [refreshRate]  How often to break (in milliseconds). Default is 250.
    * @returns {Promise} A jQuery promise
    */
-  processArray(array: any[], processFunc: Function, refreshRate = 250) {
+  processArray(array: any[], processFunc: (entry: any) => void, refreshRate = 250) {
     //@ts-expect-error
     const dfd = new $.Deferred();
 

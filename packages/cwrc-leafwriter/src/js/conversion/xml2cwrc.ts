@@ -658,23 +658,18 @@ class XML2CWRC {
 
     // insert entities
     const insertEntity = (entry: any) => {
-      let startNode = null;
-      let endNode = null;
-      let startOffset = 0;
-      let endOffset = 0;
-
       const range = entry.getRange();
 
       // just rdf, no markup
       if (range.endXPath) {
         let parent = this.writer.utilities.evaluateXPath(docRoot, range.startXPath) as Element;
         let result = this.getTextNodeFromParentAndOffset(parent, range.startOffset);
-        startNode = result.textNode;
-        startOffset = result.offset;
+        const startNode = result.textNode;
+        const startOffset = result.offset;
         parent = this.writer.utilities.evaluateXPath(docRoot, range.endXPath) as Element;
         result = this.getTextNodeFromParentAndOffset(parent, range.endOffset);
-        endNode = result.textNode;
-        endOffset = result.offset;
+        const endNode = result.textNode;
+        const endOffset = result.offset;
 
         try {
           //@ts-expect-error

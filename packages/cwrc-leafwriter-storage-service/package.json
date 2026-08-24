@@ -130,6 +130,7 @@
     "format": "prettier --write \"**/*.{ts,tsx,md}\"",
     "format-check": "prettier . --check",
     "lint": "eslint .",
+    "typecheck": "tsc --noEmit -p tsconfig.json",
     "test": "DEBUG_PRINT_LIMIT=40000 NODE_OPTIONS=--experimental-vm-modules jest",
     "test-watch": "jest --watchAll --verbose",
     "prepublishOnly": "npm run build"

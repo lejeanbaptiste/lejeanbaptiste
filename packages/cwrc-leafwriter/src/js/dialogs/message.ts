@@ -3,7 +3,7 @@ import Writer from '../Writer';
 import type { LWDialogProps, LWDialogConfigProps } from './types';
 
 interface ConfigProps {
-  callback?: Function;
+  callback?: (confirmed?: boolean) => void;
   dialogType: string;
   height?: number;
   modal?: boolean;

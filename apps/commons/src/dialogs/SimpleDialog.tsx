@@ -44,7 +44,7 @@ export const SimpleDialog = ({
     }
 
     closeDialog(id);
-    onClose && onClose(reason, data);
+    onClose?.(reason, data);
   };
 
   const handleAction = async (action: string) => {
@@ -56,7 +56,7 @@ export const SimpleDialog = ({
     }
 
     closeDialog(id);
-    onClose && onClose(action, data);
+    onClose?.(action, data);
   };
 
   return (

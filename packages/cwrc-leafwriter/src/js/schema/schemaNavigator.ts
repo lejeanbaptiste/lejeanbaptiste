@@ -562,8 +562,8 @@ const getChildrenJSON = (
  * @param {Object} context A schema entry, the starting point.
  * @param {Function} matchingFunc The function that's called on each entry.
  */
-const queryUp = (context: any, matchingFunc: Function) => {
-  let continueQuery = true;
+const queryUp = (context: any, matchingFunc: (context: any) => boolean | undefined | void) => {
+  let continueQuery: boolean | undefined | void = true;
   while (continueQuery && context !== null) {
     continueQuery = matchingFunc.call(this, context);
     if (continueQuery === undefined) continueQuery = true;
@@ -578,7 +578,11 @@ const queryUp = (context: any, matchingFunc: Function) => {
  * @param {Function} matchingFunc The function that's called on each entry.
  * @param {Boolean} [processRefs] Automatically process refs, i.e. fetch their definitions
  */
-const queryDown = (context: any, matchingFunc: Function, processRefs = false) => {
+const queryDown = (
+  context: any,
+  matchingFunc: (context: any) => boolean | undefined | void,
+  processRefs = false,
+) => {
   let continueQuery = true;
   const defHits = {};
 

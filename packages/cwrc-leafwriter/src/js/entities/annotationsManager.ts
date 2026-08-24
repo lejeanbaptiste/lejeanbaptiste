@@ -232,7 +232,7 @@ class AnnotationsManager {
     //contributors
     if (entity.didUpdate) {
       //add contributor if current user IS NEITHER the creator NOR one of the contributors
-      let userIsCreator = false;
+      let userIsCreator: boolean;
       if (entity?.creator?.['@id']) {
         userIsCreator = userInfo.id === entity?.creator?.['@id'];
       } else {
@@ -598,7 +598,7 @@ class AnnotationsManager {
     if (entityType) entityConfig.type = entityType;
 
     // range
-    let rangeObj: AnnotationRange = {};
+    let rangeObj: AnnotationRange;
 
     // matching element
     const selectorUri = target.find('oa\\:hasSelector, hasSelector').attr('rdf:resource');

@@ -106,13 +106,13 @@ class AttributeWidget {
     // build atts
     let attsString = '';
     let attributeSelector = '';
-    let isRequired = false;
+    let isRequired: boolean;
 
     for (const att of atts) {
       //skip disallowedAttributes
       if (RESERVED_ATTRIBUTES.has(att.name)) continue;
 
-      let currAttString = '';
+      let currAttString: string;
       isRequired = att.required;
 
       // Attribute name

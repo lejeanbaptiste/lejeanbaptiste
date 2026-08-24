@@ -376,9 +376,7 @@ class DateDialog implements SchemaDialog {
         if (typeof startString === 'number') startString = startString.toString();
         if (typeof endString === 'number') endString = endString.toString();
 
-        // eslint-disable-next-line @typescript-eslint/ban-ts-comment
         const startLuxon = DateTime.fromISO(startString);
-        // eslint-disable-next-line @typescript-eslint/ban-ts-comment
         const endLuxon = DateTime.fromISO(endString);
 
         if (startLuxon.isValid) {

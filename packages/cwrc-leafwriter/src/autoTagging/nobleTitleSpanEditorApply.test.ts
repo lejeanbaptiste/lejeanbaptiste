@@ -73,7 +73,6 @@ function makeFakeWriter(doc: Document): Writer {
         setRng: (range: Range) => {
           currentRange = range;
         },
-        // eslint-disable-next-line @typescript-eslint/no-unused-vars
         getBookmark: (_type: number) => ({ __fakeRange: currentRange }),
       },
     },

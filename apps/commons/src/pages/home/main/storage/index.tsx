@@ -38,9 +38,7 @@ export const Storage = () => {
     }
 
     if (userState === 'AUTHENTICATED') {
-      countRecentDocs === 0
-        ? setSelectedView(view.templates.value)
-        : setSelectedView(view.recent.value);
+      setSelectedView(countRecentDocs === 0 ? view.templates.value : view.recent.value);
       return;
     }
   };

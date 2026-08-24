@@ -49,6 +49,7 @@
     "format": "prettier --write \"**/*.{ts,tsx,md}\"",
     "format-check": "prettier . --check",
     "lint": "eslint .",
+    "typecheck": "node scripts/typecheck.mjs",
     "prepublishOnly": "npm run build"
   },
   "dependencies": {

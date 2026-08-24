@@ -40,7 +40,6 @@ class AttributesEditor implements LWDialogProps {
 
     let dialogOpenTimestamp = 0;
 
-    // eslint-disable-next-line @typescript-eslint/ban-ts-comment
     this.$schemaDialog.dialog({
       modal: true,
       resizable: true,
@@ -52,12 +51,10 @@ class AttributesEditor implements LWDialogProps {
       minHeight: 400,
       minWidth: 510,
       autoOpen: false,
-      // eslint-disable-next-line @typescript-eslint/no-unused-vars
       open: (event: JQuery.Event, _ui: unknown) => {
         dialogOpenTimestamp = event.timeStamp;
         this.$schemaDialog.parent().find('.ui-dialog-titlebar-close').hide();
       },
-      // eslint-disable-next-line @typescript-eslint/no-unused-vars
       beforeClose: (event: JQuery.Event, _ui: unknown) => {
         // if the dialog was opened then closed immediately it was unintentional
         if (event.timeStamp - dialogOpenTimestamp < 150) return false;
@@ -137,7 +134,6 @@ class AttributesEditor implements LWDialogProps {
     let attributes = this.attributesWidget.getData();
     if (!attributes) attributes = {}; // let form submit even if invalid (for now)
 
-    // eslint-disable-next-line @typescript-eslint/ban-ts-comment
     this.$schemaDialog.dialog('close');
 
     // check if beforeClose cancelled or not
@@ -158,7 +154,6 @@ class AttributesEditor implements LWDialogProps {
 
   private cancel() {
     if (!this.writer.editor) return;
-    // eslint-disable-next-line @typescript-eslint/ban-ts-comment
     this.$schemaDialog.dialog('close');
 
     // check if beforeClose cancelled or not
@@ -212,9 +207,7 @@ class AttributesEditor implements LWDialogProps {
     this.attributesWidget.buildWidget({ atts, initialVals: attributes, tagName });
 
     const title = tagFullname ? `${tagName} ${tagFullname}` : tagName;
-    // eslint-disable-next-line @typescript-eslint/ban-ts-comment
     this.$schemaDialog.dialog('option', 'title', title);
-    // eslint-disable-next-line @typescript-eslint/ban-ts-comment
     this.$schemaDialog.dialog('open');
 
     // Prefer native focus over jQuery .trigger('focus') — the latter routes
@@ -262,7 +255,6 @@ class AttributesEditor implements LWDialogProps {
     });
 
     this.attributesWidget.destroy();
-    // eslint-disable-next-line @typescript-eslint/ban-ts-comment
     this.$schemaDialog.dialog('destroy');
   }
 }

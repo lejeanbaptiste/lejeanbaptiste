@@ -27,7 +27,7 @@ export const rgbToHsl = (r: number, g: number, b: number): [number, number, numb
   const saturation =
     lightness > 0.5 ? delta / (2 - max - min) : delta / (max + min);
 
-  let hue = 0;
+  let hue: number;
   if (max === rn) hue = (gn - bn) / delta + (gn < bn ? 6 : 0);
   else if (max === gn) hue = (bn - rn) / delta + 2;
   else hue = (rn - gn) / delta + 4;

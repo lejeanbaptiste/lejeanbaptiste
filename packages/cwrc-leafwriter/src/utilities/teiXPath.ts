@@ -271,7 +271,7 @@ export const getTeiXPathForEditorNode = (node: Node | null | undefined): string 
   const body = editor?.getBody();
   if (!body || !node) return '';
 
-  let element: Element | null = null;
+  let element: Element | null;
   if (isElement(node)) {
     element = node.getAttribute('_tag') ? node : node.closest('[_tag]');
   } else {

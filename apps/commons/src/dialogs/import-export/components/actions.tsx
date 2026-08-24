@@ -54,7 +54,8 @@ export const Actions = ({ onAction }: ActionsProps) => {
   };
 
   const handleSelect = async () => {
-    dialogAction === 'import' ? handleImport() : handleExport();
+    if (dialogAction === 'import') handleImport();
+    else handleExport();
   };
 
   const handleImport = async () => {

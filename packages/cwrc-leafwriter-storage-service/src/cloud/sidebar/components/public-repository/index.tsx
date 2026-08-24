@@ -23,7 +23,7 @@ interface PublicRepositoriesProps {
 const searcbarCollapsible = false;
 
 export const PublicRepositories = ({ onSelect, selectedMenu }: PublicRepositoriesProps) => {
-  const { name: providerName, owner } = useAppState().cloud;
+  const { name: providerName } = useAppState().cloud;
   const { searchUsers, setOwner } = useActions().cloud;
 
   const { t } = useTranslation();
@@ -38,8 +38,6 @@ export const PublicRepositories = ({ onSelect, selectedMenu }: PublicRepositorie
   useEffect(() => {
     setShowSearch(!searcbarCollapsible);
   }, [providerName]);
-
-  useEffect(() => {}, [owner]);
 
   const fetch = debounce(
     async (value: string) => {

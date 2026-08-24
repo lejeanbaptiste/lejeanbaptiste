@@ -143,7 +143,7 @@ async function runAuditCleanPass(
     for (const item of items) {
       const renderedOffset = findOccurrenceOffset(rendered, item.surface, item.occurrence);
       const docOffset = renderedOffset === null ? null : map[renderedOffset]!;
-      let located = null;
+      let located: ReturnType<typeof locateInDoc>;
       try {
         located = docOffset === null ? null : locateInDoc(index, docOffset, item.surface.length);
       } catch {

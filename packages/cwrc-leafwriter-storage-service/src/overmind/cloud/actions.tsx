@@ -39,7 +39,6 @@ import { getFromLocalStorage, log } from '../../utilities';
 const { t } = i18n;
 
 //* INIITIALIZE
-// eslint-disable-next-line @typescript-eslint/no-unused-vars, @typescript-eslint/no-explicit-any
 export const onInitializeOvermind = async ({ state }: Context, _overmind: any) => {
   //PREFERRED STORAGE PROVIDER
   const prefprovider = getFromLocalStorage('prefStorageProvider');

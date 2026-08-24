@@ -9,8 +9,12 @@ export const createNativeProjectMetadataIO = (
     onSaved: () => void;
   },
 ): ProjectMetadataEditorIO => {
+  // Both the bridge object and the method are optional-chained: a preload that
+  // predates `nativeDialogInvoke` should degrade the same way a missing
+  // `electronAPI` already does (callers treat `undefined` as a failed call)
+  // rather than throwing a raw TypeError.
   const invoke = async (method: string, args?: unknown) =>
-    window.electronAPI?.nativeDialogInvoke({ dialogId, method, args });
+    window.electronAPI?.nativeDialogInvoke?.({ dialogId, method, args });
 
   const nameTypePolicy: NameTypePolicyIO = {
     load: async () => {

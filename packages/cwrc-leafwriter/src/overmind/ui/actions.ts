@@ -303,7 +303,6 @@ export const doNotDisplayDialog = async (_context: Context, value: string) => {
   await db.doNotDisplayDialogs.put({ id: value });
 };
 
-// eslint-disable-next-line @typescript-eslint/no-unused-vars
 export const resetDoNotDisplayDialogs = async (_context: Context) => {
   await db.doNotDisplayDialogs.clear();
 };

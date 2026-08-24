@@ -10,7 +10,6 @@ const person: EntityMappingProps = {
   },
   parentTag: 'NAME',
   types: ['foaf:Person'],
-  // eslint-disable-next-line @typescript-eslint/no-unused-vars
   annotation: (annotationsManager, entity, _format) => {
     return annotationsManager.commonAnnotation(entity, 'foaf:Person');
   },
@@ -24,7 +23,6 @@ const place: EntityMappingProps = {
   },
   parentTag: 'PLACE',
   types: ['geo:SpatialThing'],
-  // eslint-disable-next-line @typescript-eslint/no-unused-vars
   annotation: (annotationsManager, entity, _format) => {
     return annotationsManager.commonAnnotation(entity, 'geo:SpatialThing');
   },
@@ -38,7 +36,6 @@ const organization: EntityMappingProps = {
   },
   parentTag: 'ORGNAME',
   types: ['foaf:Organization'],
-  // eslint-disable-next-line @typescript-eslint/no-unused-vars
   annotation: (annotationsManager, entity, _format) => {
     return annotationsManager.commonAnnotation(entity, 'foaf:Organization');
   },
@@ -86,7 +83,6 @@ const citation: EntityMappingProps = {
   },
   parentTag: 'BIBCIT',
   types: ['dcterms:BibliographicResource'],
-  // eslint-disable-next-line @typescript-eslint/no-unused-vars
   annotation: (annotationsManager, entity, _format) => {
     return annotationsManager.commonAnnotation(
       entity,
@@ -106,7 +102,6 @@ const note: EntityMappingProps = {
   parentTag: ['RESEARCHNOTE', 'SCHOLARNOTE'],
   xpathSelector: 'self::cwrcEntry:RESEARCHNOTE|self::cwrcEntry:SCHOLARNOTE',
   types: ['bibo:Note'],
-  // eslint-disable-next-line @typescript-eslint/no-unused-vars
   annotation: (annotationsManager, entity, _format) => {
     return annotationsManager.commonAnnotation(entity, 'bibo:Note', 'oa:commenting');
   },
@@ -222,7 +217,6 @@ const link: EntityMappingProps = {
   label: 'Link',
   parentTag: 'XREF',
   types: ['cnt:ContentAsText'],
-  // eslint-disable-next-line @typescript-eslint/no-unused-vars
   annotation: (annotationsManager, entity, _format) => {
     return annotationsManager.commonAnnotation(entity, 'cnt:ContentAsText', 'oa:linking');
   },

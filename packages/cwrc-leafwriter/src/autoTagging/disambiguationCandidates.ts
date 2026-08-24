@@ -1065,7 +1065,7 @@ export function candidatePassesYearFilter(
 async function lifespanForQid(qid: string, cache: AuthorityCache) {
   if (wikidataLifespanCache.has(qid)) return wikidataLifespanCache.get(qid)!;
   await cache.throttle();
-  let lifespan: Awaited<ReturnType<typeof fetchWikidataLifespan>> = null;
+  let lifespan: Awaited<ReturnType<typeof fetchWikidataLifespan>>;
   try {
     lifespan = await fetchWikidataLifespan(qid);
   } catch {

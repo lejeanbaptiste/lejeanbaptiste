@@ -50,19 +50,19 @@ export const TemplatesView = ({
     if (itemSelected === url) return;
 
     setItemSelected(url);
-    onSelect && onSelect(resource);
+    onSelect?.(resource);
   };
 
   const handledSelectCreate = (resource: Resource) => {
-    onSelect && onSelect(resource);
-    onClose && onClose();
+    onSelect?.(resource);
+    onClose?.();
     load(resource);
   };
 
   const load = async ({ title }: Resource) => {
     if (!title) return;
     openFromLibrary({ category: 'template', title });
-    onLoad && onLoad();
+    onLoad?.();
   };
 
   const gap = 12;

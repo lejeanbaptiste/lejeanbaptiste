@@ -255,7 +255,7 @@ export const initialize = async (
   }
 
   const shouldCache = !isLocalFileUrl(schemaURL);
-  let schemaWorker: { success: boolean; error?: Error } = { success: false };
+  let schemaWorker: { success: boolean; error?: Error };
   try {
     schemaWorker = await workerValidator.initialize({
       id: schemaId,
@@ -533,7 +533,6 @@ export const clear = ({ state }: Context) => {
   state.validator.hasWorkerValidator = false;
 };
 
-// eslint-disable-next-line @typescript-eslint/no-unused-vars
 export const clearCache = async (_props: Context) => {
   clearLocalSchemaBlobCache();
   if (!window.leafwriterValidator) return;

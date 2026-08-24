@@ -194,7 +194,7 @@ export const mergeAchievementsStates = (
 };
 
 export const loadAchievementsState = async (): Promise<AchievementsState> => {
-  let raw: string | null = null;
+  let raw: string | null;
   try {
     raw = (await window.electronAPI?.readAchievementsFile?.()) ?? null;
   } catch {

@@ -1676,7 +1676,7 @@ class Tagger {
         if (!newNode) return null;
         if (newNode.nodeType == Node.TEXT_NODE) return newNode;
 
-        return doFind(newNode, dir, reps++);
+        return doFind(newNode, dir, reps + 1);
       }
 
       return doFind(node, direction, 0);
@@ -1731,7 +1731,7 @@ class Tagger {
             const nextTextNode = findTextNode(range.startContainer, 'forward');
             if (nextTextNode) range.setStart(nextTextNode, 0);
           }
-          shiftRangeForward(range, count, reps++);
+          shiftRangeForward(range, count, reps + 1);
         }
       }
 
@@ -1746,7 +1746,7 @@ class Tagger {
             //@ts-expect-error
             if (prevTextNode) range.setEnd(prevTextNode, prevTextNode.length);
           }
-          shiftRangeBackward(range, count, reps++);
+          shiftRangeBackward(range, count, reps + 1);
         }
       }
 

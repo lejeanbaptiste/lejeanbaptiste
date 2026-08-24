@@ -140,7 +140,6 @@ class DialogForm {
         // don't include form elements from note entity children
         return $(element).parents('.cwrcWrapper').length === 1;
       })
-      // eslint-disable-next-line @typescript-eslint/no-unused-vars
       .each(function (_index, _element) {
         const formEl = $(this);
         const type = formEl.data('type');
@@ -217,14 +216,12 @@ class DialogForm {
 
     // this.cwrcWriterConfig = config.cwrcWriterConfig; // the config to use for the leafWriter
 
-    // eslint-disable-next-line @typescript-eslint/ban-ts-comment
     this.$el.dialog({
       title,
       modal: true,
       resizable: true,
       dialogClass: 'splitButtons',
       closeOnEscape: false,
-      // eslint-disable-next-line @typescript-eslint/no-unused-vars
       open: (_event: JQuery.Event, _ui: unknown) => {
         this.$el.parent().find('.ui-dialog-titlebar-close').hide();
       },
@@ -239,7 +236,6 @@ class DialogForm {
           click: () => {
             this.$el.trigger('beforeCancel');
             this.$el.trigger('beforeClose');
-            // eslint-disable-next-line @typescript-eslint/ban-ts-comment
             this.$el.dialog('close');
           },
         },
@@ -426,7 +422,6 @@ class DialogForm {
     DialogForm.populateForm(this);
     this.$el.trigger('beforeShow', [config, this]);
 
-    // eslint-disable-next-line @typescript-eslint/ban-ts-comment
     this.$el.dialog('open');
   }
 
@@ -438,7 +433,6 @@ class DialogForm {
 
     if (this.isValid) {
       this.$el.trigger('beforeClose');
-      // eslint-disable-next-line @typescript-eslint/ban-ts-comment
       this.$el.dialog('close');
 
       if (this.mode === DialogForm.EDIT && this.currentData && this.currentId) {
