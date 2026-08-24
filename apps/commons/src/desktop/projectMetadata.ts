@@ -164,7 +164,11 @@ export const applyMetadataToProjectFiles = async (
   metadata: ProjectMetadataFile,
   options: { clearRemovedFromFiles?: boolean; previous?: ProjectMetadataFile | null },
 ): Promise<ApplyMetadataResult> => {
-  if (!window.electronAPI?.listProjectXmlFiles || !window.electronAPI.readFile) {
+  if (
+    !window.electronAPI?.listProjectXmlFiles ||
+    !window.electronAPI.readFile ||
+    !window.electronAPI.writeFile
+  ) {
     throw new Error('Desktop file APIs unavailable');
   }
 

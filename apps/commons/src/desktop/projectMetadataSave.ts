@@ -149,6 +149,9 @@ export const saveProjectMetadataChanges = async (
   if (payload.applyToDocuments) {
     const dirtyTabs = openTabs.filter((tab) => tab.dirty);
     if (dirtyTabs.length > 0) {
+      if (!electronAPI.showNativeMessageBox) {
+        return { ok: false, error: 'Desktop dialog API unavailable' };
+      }
       const warn = await electronAPI.showNativeMessageBox({
         type: 'warning',
         title: t('LWC.desktop.unsaved_documents'),

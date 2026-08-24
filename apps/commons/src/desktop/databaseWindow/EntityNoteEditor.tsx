@@ -243,11 +243,12 @@ export const EntityNoteEditor = ({
 
   // Flush on unmount if still dirty.
   useEffect(() => {
+    const editor = editorRef.current;
     return () => {
-      if (!dirtyRef.current || !store || !loadedEntityIdRef.current || !editorRef.current) return;
+      if (!dirtyRef.current || !store || !loadedEntityIdRef.current || !editor) return;
       void store.sqliteSetNote(
         loadedEntityIdRef.current,
-        serializeCurrentNote(editorRef.current, noteDocRef.current, languageRef.current),
+        serializeCurrentNote(editor, noteDocRef.current, languageRef.current),
       );
     };
   }, [store]);
