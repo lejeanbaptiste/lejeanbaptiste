@@ -1345,14 +1345,14 @@ export const SidebarDatabaseTab = ({ active = false }: SidebarDatabaseTabProps) 
     });
   }, [entities, foldedIndex, kindFilter, regex, search]);
 
-  const toggleSelected = (id: string) => {
+  const toggleSelected = useCallback((id: string) => {
     setSelected((previous) => {
       const next = new Set(previous);
       if (next.has(id)) next.delete(id);
       else next.add(id);
       return next;
     });
-  };
+  }, []);
 
   /** Whichever database is currently being browsed - every visible row belongs to it. */
   const resolveStoreFor = useCallback(
@@ -1599,7 +1599,7 @@ export const SidebarDatabaseTab = ({ active = false }: SidebarDatabaseTabProps) 
    * in-place refresh after authority backfill so the open card shows new data
    * without close/reopen (including uncontrolled TextFields via editFormEpoch).
    */
-  const syncEditFormFields = (
+  const syncEditFormFields = useCallback((
     entity: EntitySummary,
     options?: { resetAccordions?: boolean; remount?: boolean },
   ) => {
@@ -1678,7 +1678,7 @@ export const SidebarDatabaseTab = ({ active = false }: SidebarDatabaseTabProps) 
     if (options?.remount) {
       setEditFormEpoch((epoch) => epoch + 1);
     }
-  };
+  }, [projectLang]);
 
   /**
    * A direct field edit changes one entity, not the entire database. Keep the
@@ -1981,10 +1981,13 @@ export const SidebarDatabaseTab = ({ active = false }: SidebarDatabaseTabProps) 
     requestDeleteEntities(targets);
   };
 
-  const openEdit = (entity: EntitySummary) => {
-    setEditEntity(entity);
-    syncEditFormFields(entity, { resetAccordions: true });
-  };
+  const openEdit = useCallback(
+    (entity: EntitySummary) => {
+      setEditEntity(entity);
+      syncEditFormFields(entity, { resetAccordions: true });
+    },
+    [syncEditFormFields],
+  );
 
   const queueValidation = useCallback(
     (keys: string[], mode: PendingValidationMode = 'assertion') => {
@@ -3195,7 +3198,7 @@ export const SidebarDatabaseTab = ({ active = false }: SidebarDatabaseTabProps) 
     setSelected(entity ? new Set([id]) : new Set());
   };
 
-  const openXPathForEntity = (entity: EntitySummary) => {
+  const openXPathForEntity = useCallback((entity: EntitySummary) => {
     const projectKey = entity.projectKey;
     if (!projectKey) {
       notifyViaSnackbar({
@@ -3221,7 +3224,7 @@ export const SidebarDatabaseTab = ({ active = false }: SidebarDatabaseTabProps) 
         detail: { query: `TEI//${tagType}[@key="${projectKey}"]` },
       }),
     );
-  };
+  }, [notifyViaSnackbar, t]);
 
   /** Show every implicated entity together, preselected so Merge is one click away. */
   const reviewWarningEntities = (warning: LookupWarning) => {

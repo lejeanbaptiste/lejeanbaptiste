@@ -1175,27 +1175,30 @@ export const DisambiguationPanel = ({
     }
   };
 
-  const handleKeyDown = useCallback(
-    (event: React.KeyboardEvent) => {
-      if (handleDisambiguationKey(controller, event.key, { shift: event.shiftKey })) {
+  // Deliberately not memoized: its only consumer is `onKeyDown` on a plain Box
+  // below, where a changing identity costs nothing (React's synthetic events add
+  // no listener per render, and no memoized child receives it). The `useCallback`
+  // this replaces never memoized anything anyway — `acceptOccurrence` and
+  // `acceptDocumentSurface` are redefined every render, so its dependency array
+  // changed every render too.
+  const handleKeyDown = (event: React.KeyboardEvent) => {
+    if (handleDisambiguationKey(controller, event.key, { shift: event.shiftKey })) {
+      event.preventDefault();
+      forceRender();
+      return;
+    }
+    if (event.key === 'Enter') {
+      const target = event.target as HTMLElement;
+      const isTextEntry =
+        target.tagName === 'TEXTAREA' ||
+        (target.tagName === 'INPUT' && (target as HTMLInputElement).type !== 'checkbox');
+      if (isTextEntry) return;
+      if (selected) {
         event.preventDefault();
-        forceRender();
-        return;
+        void (event.shiftKey ? acceptDocumentSurface() : acceptOccurrence());
       }
-      if (event.key === 'Enter') {
-        const target = event.target as HTMLElement;
-        const isTextEntry =
-          target.tagName === 'TEXTAREA' ||
-          (target.tagName === 'INPUT' && (target as HTMLInputElement).type !== 'checkbox');
-        if (isTextEntry) return;
-        if (selected) {
-          event.preventDefault();
-          void (event.shiftKey ? acceptDocumentSurface() : acceptOccurrence());
-        }
-      }
-    },
-    [acceptDocumentSurface, acceptOccurrence, controller, selected],
-  );
+    }
+  };
 
   const markCurrentUnresolved = async () => {
     if (!instance || !group) return;
