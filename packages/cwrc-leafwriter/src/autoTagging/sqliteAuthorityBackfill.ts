@@ -60,6 +60,7 @@ import {
 } from './norbertPersonConcordance';
 import {
   biographicalYearsFromMetadata,
+  filterYearsFromMetadata,
   finiteBiographicalYear,
   floruitYearsFromMetadata,
 } from './personDates';
@@ -888,8 +889,17 @@ export async function backfillEntitiesSqlite(
           asFloruit: true,
         });
         clearAuthorityVitalSources.push(normalizedSource);
-      } else if (meta.dateSource === 'index' || meta.dateSource === 'nationality') {
-        // Drop index/dynasty years that older mints stored as CBDB birth/death.
+      } else if (
+        meta.dateSource === 'index' ||
+        meta.dateSource === 'nationality' ||
+        // Same test the candidate builder applies: a pack may omit `dateSource`
+        // entirely — the Norbert person pack does, on every row — so ask the years
+        // where they came from rather than trusting the label. Without this the
+        // cleanup could never fire for Norbert people, which is why dynasty spans
+        // stored as birth/death by earlier mints survived being cleaned.
+        filterYearsFromMetadata(meta).derivedFromDynasty
+      ) {
+        // Drop index/dynasty years that older mints stored as birth/death.
         clearAuthorityVitalSources.push(normalizedSource);
       }
       for (const value of meta.nationality ?? []) {
