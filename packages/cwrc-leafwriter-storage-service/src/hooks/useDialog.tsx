@@ -52,6 +52,10 @@ export const useDialog = () => {
       storeDisplayed(id);
       setDialogDisplayId({ id: props.id, displayId: id });
     });
+    // Keyed to the dialog bar alone. `showModal`/`destroyModal` come from
+    // mui-modal-provider and are rebuilt every render, so depending on them
+    // would re-show every open dialog on every render.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [dialogBar]);
 
   const getComponent = (type?: DialogType) => {

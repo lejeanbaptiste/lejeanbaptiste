@@ -32,6 +32,9 @@ export const FooterSave = ({ onCancel }: Props) => {
       return;
     }
     checkPermissions();
+    // Keyed to the repository, which is what determines permissions.
+    // `checkPermissions` is redefined every render.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [repository]);
 
   const checkPermissions = async () => {

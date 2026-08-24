@@ -18,6 +18,8 @@ export const PastePanel = () => {
 
   useEffect(() => {
     if (resource?.content) setText(resource.content);
+    // Seeds the textarea once; later edits belong to the user.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   const onChageOnPastePanel = (event: ChangeEvent<HTMLTextAreaElement>) => {

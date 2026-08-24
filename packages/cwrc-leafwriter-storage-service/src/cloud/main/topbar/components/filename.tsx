@@ -36,12 +36,19 @@ export const Filename = () => {
   const theme = useTheme();
   const isSM = useMediaQuery(theme.breakpoints.down('sm'));
 
+  // Seeds the field once from the resource; the effect below handles later
+  // changes. Naming the filename here would duplicate that.
   useEffect(() => {
     setValue(resource?.filename ?? '');
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   useEffect(() => {
     if (resource?.filename && resource.filename !== value) setValue(resource.filename);
+    // Keyed to the incoming filename only. `value` is the field being edited, so
+    // depending on it would re-run this on every keystroke and overwrite what
+    // the user is typing with the stored filename.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [resource?.filename]);
 
   const addFileExtension = (fileName: string) => {

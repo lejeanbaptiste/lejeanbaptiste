@@ -60,6 +60,9 @@ export const SearchBar = ({
     onInputChange: async (_event, newInputValue) => fetch(newInputValue),
   });
 
+  // Built once: re-creating the debounced function would reset its timer on
+  // every render, so the search would never actually settle.
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   const fetch = useMemo(() => debounce((query: string) => updateList(query), 500), []);
 
   const updateList = async (query: string) => {

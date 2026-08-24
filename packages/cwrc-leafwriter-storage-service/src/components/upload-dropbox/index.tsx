@@ -35,7 +35,7 @@ export const UploadDropBox = ({ filename, onSelectFile }: UploadDropBoxProps) =>
     });
 
     return mimeTypes;
-  }, []);
+  }, [allowedMimeTypes]);
 
   const HandleDrop = async (acceptedFiles: File[]) => {
     const accepted = acceptedFiles.length > 0;

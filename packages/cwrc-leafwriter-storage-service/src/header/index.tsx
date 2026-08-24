@@ -19,6 +19,10 @@ export const Header = ({ label }: Props) => {
 
   useEffect(() => {
     if (scope.current) changeTitle();
+    // Keyed to what the title is derived from. `changeTitle` is redefined every
+    // render and `scope` is the animation target ref, so naming either would
+    // re-run the title animation on every render.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [source, providerName]);
 
   const changeTitle = async () => {

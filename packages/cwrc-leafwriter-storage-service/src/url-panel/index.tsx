@@ -4,12 +4,15 @@ import { useTranslation } from 'react-i18next';
 import { useActions, useAppState } from '../overmind';
 import { isValidHttpURL } from '../utilities';
 
+// Module scope: a constant formatter with no component inputs. Rebuilding it per
+// render made it unusable as a memo dependency.
+const typeList = new Intl.ListFormat('en', { style: 'long', type: 'disjunction' });
+
 export const UrlPanel = () => {
   const { t } = useTranslation();
   const { allowedFileTypes, resource } = useAppState().common;
   const { setResource } = useActions().common;
 
-  const typeList = new Intl.ListFormat('en', { style: 'long', type: 'disjunction' });
 
   const [inputValue, setInputValue] = useState('');
 
@@ -22,10 +25,13 @@ export const UrlPanel = () => {
             filetypes: typeList.format(allowedFileTypes),
           });
     return content;
-  }, [allowedFileTypes, inputValue]);
+  }, [allowedFileTypes, inputValue, t]);
 
   useEffect(() => {
     if (resource?.url) setInputValue(resource.url);
+    // Seeds the field once from the incoming resource; later edits belong to the
+    // user, so re-running on `resource.url` would overwrite what they typed.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   const handleInputChange = (event: ChangeEvent<HTMLInputElement>) => {

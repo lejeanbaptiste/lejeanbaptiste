@@ -15,7 +15,7 @@ export const Main = () => {
   const [openFolderDialog, setOpenFolderDialog] = useState(false);
 
   const [topBarHeight, setTopBarHeight] = useState(0);
-  const { width, height } = useWindowSize();
+  const { height } = useWindowSize();
   const heighBase = isSM
     ? height - 32 - topBarHeight // 32px (heigh of side bar stacked on top of main section)
     : isMD
@@ -25,7 +25,7 @@ export const Main = () => {
 
   useEffect(() => {
     setCollectionHeight(heighBase - topBarHeight);
-  }, [height, width, topBarHeight]);
+  }, [heighBase, topBarHeight]);
 
   const updateTopBarSize = (rect: DOMRect) => {
     setTopBarHeight(rect.height);

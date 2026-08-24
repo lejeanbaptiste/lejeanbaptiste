@@ -53,9 +53,12 @@ export const Main = ({
   const { breakpoints } = useTheme();
   const isMD = useMediaQuery(breakpoints.down('md'));
 
+  // One-time dialog bootstrap. `init` is redefined every render, and the dialog
+  // does not change type while mounted.
   useEffect(() => {
     setDialogType(type);
     init();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   useEffect(() => {
@@ -79,6 +82,10 @@ export const Main = ({
       storageSource: resource?.storageSource,
     };
     onChange(changeObject);
+    // Keyed to the state the change object is built from. `onChange` is a caller
+    // prop that is typically rebuilt every render, so naming it would fire a change
+    // notification on every render.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [
     cloud.name,
     cloud.owner,
@@ -94,6 +101,9 @@ export const Main = ({
     if (submit?.action === 'load' && onLoad) onLoad(resource);
     if (submit?.action === 'save' && onSave) onSave(resource);
     clearSubmit();
+    // Keyed to the submission itself. `onLoad`/`onSave` are caller props rebuilt
+    // every render, so naming them would re-fire the load or save.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [submit]);
 
   const init = async () => {
