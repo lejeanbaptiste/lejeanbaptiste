@@ -152,6 +152,31 @@ runtime (see above) before electron-builder assembles the installer.
 - The bundled LemMinX XML language server is currently downloaded for macOS only; Linux builds skip it, and the mac packaging hook will refuse to continue if it cannot stage the expected binary.
 - The packaged app starts a local Express server and loads the `/project` route.
 
+## Asset sources
+
+Artwork and spoiler-protected game assets come from the private [visual_design](https://github.com/lejeanbaptiste/visual_design) repo. Run `npm run visual-design:sync` (from the repo root) to refresh the mirrored files below.
+
+Tracked here as mirrored or generated assets:
+
+- `apps/desktop/resources/branding/icon.svg`
+- `apps/desktop/resources/branding/icon.png`
+- `apps/desktop/resources/branding/icons/*.png`
+- `apps/desktop/resources/branding/splash.svg`
+- `apps/desktop/resources/branding/splash_new.png`
+- `apps/commons/src/icons/tab/tab_explorer.{svg,png,dark.svg,dark.png}`
+- `apps/commons/src/icons/tab/tab_find.{svg,png,dark.svg,dark.png}`
+- `apps/commons/src/icons/tab/tab_xpath.{svg,png,dark.svg,dark.png}`
+- `apps/commons/src/icons/tab/tab_toc.{svg,png,dark.svg,dark.png}`
+- `apps/commons/src/icons/tab/tab_tree.{svg,png,dark.svg,dark.png}`
+- `apps/commons/src/icons/tool_{correction,transform,hide_notes,show_notes}.{svg,dark.svg}`
+- `apps/commons/src/assets/images/norbert-mini.png`
+- `apps/commons/src/desktop/achievements/definitions.ts`
+- `apps/desktop/resources/game-assets/assets.bin`
+- `apps/desktop/src/generated/gameAssetKey.ts`
+- `apps/desktop/resources/avatar-parts/**` (Adventurer avatar-part layers — not spoiler-protected, mirrored as plain SVG files)
+
+`assets.bin` itself is not committed — it's fetched from Cloudflare R2 by `scripts/fetch-game-assets.mjs` (see that script and `.github/workflows/ci.yml` for the fetch/cache mechanics), keyed against `apps/desktop/resources/game-assets/assets.manifest.json`'s `sha256`.
+
 ## License notices
 
 The desktop build bundles third-party runtime components such as Electron, TinyMCE, `monaco-editor`, `jszip`, `mammoth`, and `@xmldom/xmldom`. Their license pointers are tracked in [THIRD_PARTY_NOTICES.md](../../THIRD_PARTY_NOTICES.md).

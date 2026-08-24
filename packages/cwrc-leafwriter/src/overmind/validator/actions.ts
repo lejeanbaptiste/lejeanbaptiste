@@ -7,7 +7,6 @@ import { WorkingState } from '@cwrc/salve-dom-leafwriter';
 import * as Comlink from 'comlink';
 import { Context } from '../';
 import Writer from '../../js/Writer';
-import { webpackEnv } from '../../types';
 import { debugValidator } from './debugValidator';
 import { devValidatorWorkerUrl } from './devWorkerUrl';
 import { checkWellFormedness } from '../../utilities/checkWellFormedness';
@@ -185,11 +184,12 @@ const loadWebworker = async (baseUrl = ''): Promise<Comlink.Remote<ValidatorType
 
     // `devValidatorWorkerUrl` lives in its own module so that `import.meta` does
     // not appear here — see that file for why it blocks every test importing
-    // this package's overmind.
-    const worker =
-      webpackEnv.WORKER_ENV === 'development'
-        ? new Worker(devValidatorWorkerUrl())
-        : new Worker(`${baseUrl}/leafwriter-validator.worker.js`);
+    // this package's overmind, and why the WORKER_ENV guard has to live inside
+    // it rather than out here. It returns null outside development.
+    const devUrl = devValidatorWorkerUrl();
+    const worker = devUrl
+      ? new Worker(devUrl)
+      : new Worker(`${baseUrl}/leafwriter-validator.worker.js`);
 
     const validator: Comlink.Remote<ValidatorType> = Comlink.wrap(worker);
 

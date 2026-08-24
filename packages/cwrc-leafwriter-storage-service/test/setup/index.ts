@@ -1,6 +1,6 @@
 // ! Configuring Your Testing Environment
 // https://reactjs.org/blog/2022/03/08/react-18-upgrade-guide.html
-//@ts-ignore
+// @ts-expect-error -- React's test-environment global is not declared by the installed types.
 globalThis.IS_REACT_ACT_ENVIRONMENT = true;
 
 import '@testing-library/jest-dom';

@@ -25,12 +25,11 @@ const spyGithub = () => {
     .spyOn(provider, 'getReposForAuthenticatedUser')
     .mockImplementation(async () => ({ collection: mock.repositories, nextPage: null }));
 
-  //@ts-ignore
+  // @ts-expect-error -- this legacy provider method is available at runtime but absent from its type.
   jest.spyOn(provider, 'getRepoContent').mockImplementation(async () => mock.repoContent);
 
   jest
     .spyOn(provider, 'getOrganizationsForAuthenticatedUser')
-    //@ts-ignore
     .mockImplementation(async () => ({ collection: mock.organizations, nextPage: null }));
 
   jest

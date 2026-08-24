@@ -1,19 +1,29 @@
+import { webpackEnv } from '../../types';
+
 /**
  * The dev-mode validator worker URL, isolated in its own module.
  *
- * webpack resolves `new URL(specifier, import.meta.url)` at build time to emit
- * the worker bundle, so the expression has to stay written exactly like this.
- * But `import.meta` is a syntax error in CommonJS output, and ts-jest compiles
- * to CommonJS — so any module containing it fails to *parse* under jest, whether
- * or not the line ever runs. In `validator/actions.ts` that made every test
- * transitively importing this package's overmind unrunnable, which is most of
- * the editor: the module is pulled in through the overmind config, so nothing
- * downstream could be mounted in a test at all.
+ * Two constraints have to hold at once here.
  *
- * Keeping the expression here means `actions.ts` compiles cleanly, and jest maps
- * this one file to a stub (see the `devWorkerUrl` entries in jest.config.ts).
- * Only the development branch of `loadWebworker` calls it; production loads the
- * worker from a plain path.
+ * `import.meta` is a syntax error in CommonJS output, and ts-jest compiles to
+ * CommonJS — so any module containing it fails to *parse* under jest whether or
+ * not the line runs. Keeping it out of `validator/actions.ts` is what makes the
+ * overmind config importable in tests, and with it everything downstream: most
+ * of the editor could not be mounted at all before.
+ *
+ * But the `WORKER_ENV` guard has to stay wrapped around the expression, not just
+ * around the call site. webpack folds that constant at build time and drops the
+ * dead branch *before resolving it*; without the guard the `new URL` is
+ * unconditional, and a production build tries to resolve
+ * `@cwrc/leafwriter-validator`, which does not export `.` under production
+ * conditions. Hoisting the expression without its guard is exactly what broke
+ * the build once — every desktop job failed while tests stayed green, because no
+ * test compiles with webpack.
+ *
+ * Returns null outside development; `loadWebworker` loads the worker from a
+ * plain path there instead.
  */
-export const devValidatorWorkerUrl = (): URL =>
-  new URL('@cwrc/leafwriter-validator', import.meta.url);
+export const devValidatorWorkerUrl = (): URL | null =>
+  webpackEnv.WORKER_ENV === 'development'
+    ? new URL('@cwrc/leafwriter-validator', import.meta.url)
+    : null;

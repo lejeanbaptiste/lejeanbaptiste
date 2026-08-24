@@ -1,5 +1,7 @@
 # Le Jean-Baptiste
 
+![Le Jean-Baptiste — XML avec du corps](.github/splash.png)
+
 Le Jean-Baptiste is a desktop XML markup editor forked from the in-browser tool [LEAF-Writer](https://leaf-writer.leaf-vre.org/), part of [The Linked Editing Academic Framework](https://www.leaf-vre.org/) (LEAF) tool suite. LEAF-Writer is an enhancement of the CWRC-Writer developed by the [Canadian Writing Research Collaboratory (CWRC)](https://cwrc.ca), and was developed alongside the [Named Entity Recognition Vetting Environment](https://nerve.lincsproject.ca/en) (NERVE). The project website is [github.com/lejeanbaptiste/lejeanbaptiste](https://github.com/lejeanbaptiste/lejeanbaptiste). Le Jean-Baptiste wraps the web app in Electron for offline, individual desktop use and includes workflow changes aimed particularly at local editing and East Asian documents.
 
 GPL-2.0 · [Commitizen friendly](http://commitizen.github.io/cz-cli/)
@@ -14,7 +16,6 @@ For a concise list of the major bundled components and where to verify their lic
 
 - **[LEAF](https://www.leaf-vre.org/)** (The Linked Editing Academic Framework) — Le Jean-Baptiste is a desktop fork of [LEAF-Writer](https://leaf-writer.leaf-vre.org/), itself an enhancement of CWRC-Writer from the [Canadian Writing Research Collaboratory (CWRC)](https://cwrc.ca).
 - **[Sanmiao](https://github.com/PotatoSinology/sanmiao)** — Chinese, Japanese, and Korean historical calendar conversion by Daniel Patrick Morgan (CNRS-CRCAO), bundled as the desktop app's date-conversion back end. MIT licensed.
-- **[Adventurer](https://www.figma.com/community/file/1184595184137881796)** by Lisa Wischofsky ([@lischi_art](https://www.instagram.com/lischi_art/)) — the player-avatar art in the achievement system, distributed via [DiceBear](https://www.dicebear.com/styles/adventurer) and licensed under [CC BY 4.0](https://creativecommons.org/licenses/by/4.0/).
 
 See [THIRD_PARTY_NOTICES.md](THIRD_PARTY_NOTICES.md) for the rest of the bundled runtime components (TinyMCE, Font Awesome, Lato, etc.) and their license terms.
 
@@ -27,29 +28,6 @@ LEAF-Writer is also wired to connect to five authorities — VIAF, Wikidata, Get
 ## Overview
 
 Le Jean-Baptiste is a WYSIWYG XML editor built around a heavily customized [TinyMCE](https://www.tiny.cloud/) core (from LEAF-Writer), packaged as an Electron desktop app. This README focuses on the desktop fork. Planning notes and architecture docs live under [docs/](docs/README.md).
-
-## Asset sources
-
-Artwork and spoiler-protected game assets come from the private [visual_design](https://github.com/lejeanbaptiste/visual_design) repo. Run `npm run visual-design:sync` to refresh the mirrored files in this repo.
-
-Tracked here as mirrored or generated assets:
-
-- `apps/desktop/resources/branding/icon.svg`
-- `apps/desktop/resources/branding/icon.png`
-- `apps/desktop/resources/branding/icons/*.png`
-- `apps/desktop/resources/branding/splash.svg`
-- `apps/desktop/resources/branding/splash_new.png`
-- `apps/commons/src/icons/tab/tab_explorer.{svg,png,dark.svg,dark.png}`
-- `apps/commons/src/icons/tab/tab_find.{svg,png,dark.svg,dark.png}`
-- `apps/commons/src/icons/tab/tab_xpath.{svg,png,dark.svg,dark.png}`
-- `apps/commons/src/icons/tab/tab_toc.{svg,png,dark.svg,dark.png}`
-- `apps/commons/src/icons/tab/tab_tree.{svg,png,dark.svg,dark.png}`
-- `apps/commons/src/icons/tool_{correction,transform,hide_notes,show_notes}.{svg,dark.svg}`
-- `apps/commons/src/assets/images/norbert-mini.png`
-- `apps/commons/src/desktop/achievements/definitions.ts`
-- `apps/desktop/resources/game-assets/assets.bin`
-- `apps/desktop/src/generated/gameAssetKey.ts`
-- `apps/desktop/resources/avatar-parts/**` (Adventurer avatar-part layers — not spoiler-protected, mirrored as plain SVG files)
 
 ## What is built
 

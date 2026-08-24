@@ -30,7 +30,6 @@ describe('General', () => {
       test('locale not supported', async () => {
         expect.assertions(2);
         expect(i18n.language).toEqual('en');
-        //@ts-ignore
         await updateLocale('zz');
         expect(i18n.language).not.toEqual('zz');
       });
