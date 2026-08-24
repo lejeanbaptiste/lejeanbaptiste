@@ -18,9 +18,6 @@ import { SidebarDatabaseTab } from './SidebarDatabaseTab';
  * panel's internals change.
  */
 
-const notifyViaSnackbar = jest.fn();
-const setSkipEntityDetachConfirm = jest.fn();
-
 jest.mock('react-i18next', () => ({
   useTranslation: () => ({
     t: (key: string, options?: { defaultValue?: string }) => options?.defaultValue ?? key,
@@ -28,28 +25,24 @@ jest.mock('react-i18next', () => ({
   }),
 }));
 
-jest.mock('@src/overmind', () => ({
-  useAppState: () => ({
-    ui: { skipEntityDetachConfirm: false },
-    project: { config: null, rootPath: null },
-  }),
-  useActions: () => ({
-    ui: { notifyViaSnackbar, setSkipEntityDetachConfirm },
-  }),
-}));
+// The factory is hoisted above any const in this file, so the shared actions are
+// built inside it and re-exported for assertions rather than referenced from
+// outside — the same temporal-dead-zone trap these tests exist to catch.
+jest.mock('@src/overmind', () => {
+  const m = jest.requireActual('../../../test/mocks/overmind');
+  const state = m.appState();
+  const acts = m.actions();
+  return { useAppState: () => state, useActions: () => acts, __actions: acts };
+});
+
+const { __actions } = jest.requireMock('@src/overmind') as {
+  __actions: { ui: { notifyViaSnackbar: jest.Mock } };
+};
 
 // react-window measures real DOM; with no entities to show there are no rows to
 // virtualise, so a passthrough keeps the test independent of its layout maths.
 jest.mock('react-window', () => ({
   List: () => null,
-}));
-
-// The bare `@cwrc/leafwriter` specifier resolves to the package's built webpack
-// bundle, which cannot run under jsdom ("Automatic publicPath is not supported").
-// The panel needs exactly one export from it, so stand in a real atom rather than
-// mapping the whole editor into this test.
-jest.mock('@cwrc/leafwriter', () => ({
-  entityLookupDialogAtom: jest.requireActual('jotai').atom(null),
 }));
 
 describe('SidebarDatabaseTab', () => {
@@ -71,6 +64,6 @@ describe('SidebarDatabaseTab', () => {
 
   it('does not report an error to the user on a clean mount', () => {
     render(<SidebarDatabaseTab active />);
-    expect(notifyViaSnackbar).not.toHaveBeenCalled();
+    expect(__actions.ui.notifyViaSnackbar).not.toHaveBeenCalled();
   });
 });

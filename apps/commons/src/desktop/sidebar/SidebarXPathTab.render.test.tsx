@@ -14,18 +14,12 @@ jest.mock('react-i18next', () => ({
   }),
 }));
 
-jest.mock('@src/overmind', () => ({
-  useAppState: () => ({
-    project: { activeTabPath: null, openTabs: [], rootPath: null },
-    // Read by a child of this panel, not by the panel itself.
-    editor: { resource: null },
-  }),
-  // Likewise: children of this panel dispatch, even though it does not.
-  useActions: () => ({
-    ui: { notifyViaSnackbar: jest.fn() },
-    project: { openFile: jest.fn() },
-  }),
-}));
+jest.mock('@src/overmind', () => {
+  const m = jest.requireActual('../../../test/mocks/overmind');
+  const state = m.appState();
+  const acts = m.actions();
+  return { useAppState: () => state, useActions: () => acts };
+});
 
 describe('SidebarXPathTab', () => {
   it('mounts and offers a query field', () => {

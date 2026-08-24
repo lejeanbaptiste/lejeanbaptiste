@@ -111,6 +111,9 @@ const config: Config.InitialOptions = {
           '<rootDir>/packages/cwrc-leafwriter/src/utilities/pageBreakDetection.ts',
         '^@cwrc/leafwriter/languageCodes$':
           '<rootDir>/packages/cwrc-leafwriter/src/utilities/languageCodes.ts',
+        // The bare specifier resolves to the package's webpack bundle, which cannot
+        // be evaluated under jsdom. See the stub for what it covers.
+        '^@cwrc/leafwriter$': '<rootDir>/apps/commons/test/mocks/cwrcLeafwriter.tsx',
         '^dexie$': dexieModulePath,
         '\\.(png|jpe?g|gif|svg|webp)$': '<rootDir>/packages/cwrc-leafwriter/test/fileMock.cjs',
       },
