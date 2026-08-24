@@ -119,6 +119,16 @@ export function filterYearsFromMetadata(meta: PersonDateMetadata | null | undefi
   startYear?: number;
   endYear?: number;
   isFine: boolean;
+  /**
+   * True when the years were computed from a dynasty/nationality span rather
+   * than from the person's own record. Callers must treat these as filter
+   * anchors only — never as vitals, and never displayed as the person's dates.
+   *
+   * Returned as a fact about the years rather than left to `dateSource`, because
+   * a pack can omit that label: every one of the 16,050 rows in the Norbert
+   * person pack does, which is how a dynasty span reached birth/death fields.
+   */
+  derivedFromDynasty?: boolean;
 } {
   if (!meta) return { isFine: false };
 
@@ -143,6 +153,7 @@ export function filterYearsFromMetadata(meta: PersonDateMetadata | null | undefi
     startYear: Math.min(...dynastyYears.map((n) => n.start)) - 60,
     endYear: Math.max(...dynastyYears.map((n) => n.end)) + 60,
     isFine: false,
+    derivedFromDynasty: true,
   };
 }
 

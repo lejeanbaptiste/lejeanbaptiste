@@ -927,7 +927,7 @@ async function candidatesFromAuthorityPacks(
           frenchOfficeGlosses,
         )) {
           let description = match.description;
-          const dateSource = row?.metadata?.dateSource;
+          let dateSource = row?.metadata?.dateSource;
           if (entityType === 'person' && dateSource === 'index') {
             description = scrubIndexYearFloruitClue(description);
           }
@@ -942,6 +942,15 @@ async function candidatesFromAuthorityPacks(
           let startYear = filterYears.startYear;
           let endYear = filterYears.endYear;
           let dynasty: string | undefined;
+
+          // A dynasty span is not a lifespan. When the years were computed from one,
+          // label them `nationality` whatever the pack claimed: the Norbert person
+          // pack sets no `dateSource` on any of its 16,050 rows, so trusting that
+          // field let dynasty ranges reach birth/death and show on the disambiguation
+          // panel as the person's own dates. With the label applied,
+          // `isFilterOnlyDateSource` keeps them out of vitals and the authority
+          // backfill can strip the ones earlier mints already stored.
+          if (filterYears.derivedFromDynasty) dateSource = 'nationality';
 
           if (
             packSource === 'dila' &&

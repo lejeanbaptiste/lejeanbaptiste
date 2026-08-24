@@ -69,7 +69,7 @@ describe('personDates', () => {
         dateSource: 'nationality',
         nationality: [{ startYear: 420, endYear: 479 }],
       }),
-    ).toEqual({ startYear: 360, endYear: 539, isFine: false });
+    ).toEqual({ startYear: 360, endYear: 539, isFine: false, derivedFromDynasty: true });
   });
 
   it('falls back to dynasties[] when nationality has labels but no years (Norbert)', () => {
@@ -79,7 +79,30 @@ describe('personDates', () => {
         nationality: [{}],
         dynasties: [{ startYear: 557, endYear: 581 }],
       }),
-    ).toEqual({ startYear: 497, endYear: 641, isFine: false });
+    ).toEqual({ startYear: 497, endYear: 641, isFine: false, derivedFromDynasty: true });
+  });
+
+  // Regression: 劉景素 (Norbert person-3841) carries no dates of his own, only
+  // `dynasties: [{ 劉宋, 420–479 }]`. Those years reached the entity as birth 420 /
+  // death 479, and the ±60 filter window (360–539) was shown on the disambiguation
+  // panel as his dates. Every guard that would have stopped it keys on
+  // `dateSource`, which the Norbert pack never sets — so the years have to
+  // announce their own provenance.
+  it('marks dynasty-derived years as such even when the pack sets no dateSource', () => {
+    const result = filterYearsFromMetadata({
+      dynasties: [{ label: '劉宋', startYear: 420, endYear: 479 }],
+    });
+    expect(result.derivedFromDynasty).toBe(true);
+    expect(result.isFine).toBe(false);
+    // The window is a filter anchor, never a lifespan.
+    expect(result).toMatchObject({ startYear: 360, endYear: 539 });
+  });
+
+  it("does not mark a person's own years as dynasty-derived", () => {
+    expect(
+      filterYearsFromMetadata({ dateSource: 'fine', startYear: 452, endYear: 476 })
+        .derivedFromDynasty,
+    ).toBeUndefined();
   });
 
   it('prefers nationality years over dynasties when both are present', () => {
@@ -89,7 +112,7 @@ describe('personDates', () => {
         nationality: [{ startYear: 420, endYear: 479 }],
         dynasties: [{ startYear: 557, endYear: 581 }],
       }),
-    ).toEqual({ startYear: 360, endYear: 539, isFine: false });
+    ).toEqual({ startYear: 360, endYear: 539, isFine: false, derivedFromDynasty: true });
   });
 
   it('scrubs index-year fl. clues but leaves real floruit ranges when not scrubbing', () => {

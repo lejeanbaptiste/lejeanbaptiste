@@ -188,6 +188,8 @@
 - Ribbon (per-metric class) unlock snackbars now say the classe (e.g. Vème classe, Ordre du Chevron) instead of the overall rank name (e.g. Sergent) — ranks stay for commission; classes are what each ladder awards.
 - Medal unlock toasts are held until you save a portrait in Service Record; medals still unlock and persist in the background, and waiting notifications are delivered after the first portrait save.
 
+## 0.1.0-beta.3
+
 ### Tooling
 
 - Migrated ESLint 8 → 10 across the monorepo (`.eslintrc.js` → flat `eslint.config.mjs`), which also cleared four of the deprecation warnings `npm install` was printing (`eslint@8`, `@humanwhocodes/config-array`, `@humanwhocodes/object-schema`, `eslint-plugin-markdown`).
