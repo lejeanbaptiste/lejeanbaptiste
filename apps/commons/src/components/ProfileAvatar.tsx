@@ -36,6 +36,11 @@ export const ProfileAvatar = ({ clickable = true, size = 32 }: ProfileAvatarProp
       });
       setId(user?.preferredID);
     }
+    // Keyed to the identity switch alone. `id` is the state this effect writes
+    // on the line above, so depending on it would retrigger the animation in a
+    // loop; `clickable` and `badgeAnimationControl` are read only to decide
+    // whether to animate this one transition.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [user?.preferredID]);
 
   const profileVariants: Variants = {

@@ -18,8 +18,11 @@ export const ImportDialog = ({
 }: IDialog) => {
   const { closeDialog } = useActions().ui;
 
+  // Seeds the store once from the prop the dialog was opened with; a dialog
+  // does not switch between import and export while mounted.
   useEffect(() => {
     ImportExportStore.set(dialogActionAtom, type as DialogTye);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   const handleAction = () => closeDialog(id);

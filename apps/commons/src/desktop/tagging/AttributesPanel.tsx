@@ -629,7 +629,7 @@ export const AttributesPanel = ({ visible = true }: { visible?: boolean }) => {
       return;
     }
     setWalkActive(true);
-  }, [notifyViaSnackbar, refreshWalkMatches]);
+  }, [notifyViaSnackbar, refreshWalkMatches, t]);
 
   const applyToMatch = useCallback(
     (target: Element) => {
@@ -667,7 +667,7 @@ export const AttributesPanel = ({ visible = true }: { visible?: boolean }) => {
       return;
     }
     setWalkIndex((currentIndex) => Math.min(currentIndex, nextMatches.length - 1));
-  }, [applyToMatch, notifyViaSnackbar, refreshWalkMatches, stopWalk, walkIndex, walkMatches]);
+  }, [applyToMatch, notifyViaSnackbar, refreshWalkMatches, stopWalk, t, walkIndex, walkMatches]);
 
   const handleWalkSkip = useCallback(() => {
     const nextIndex = walkIndex + 1;
@@ -679,7 +679,7 @@ export const AttributesPanel = ({ visible = true }: { visible?: boolean }) => {
       return;
     }
     setWalkIndex(nextIndex);
-  }, [notifyViaSnackbar, walkIndex, walkMatches.length]);
+  }, [notifyViaSnackbar, t, walkIndex, walkMatches.length]);
 
   const handlePropagateAttributes = () => {
     const element = tagElementRef.current;

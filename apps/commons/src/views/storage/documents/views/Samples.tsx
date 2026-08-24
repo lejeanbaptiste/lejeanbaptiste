@@ -19,8 +19,11 @@ export const SamplesView = ({ layout, width }: SamplesViewProps) => {
   const [samples, setSamples] = useState<Resource[]>([]);
   const [selected, setSelected] = useState<string | null>(null);
 
+  // Load once on mount. `loadSamples` is redefined every render, so depending
+  // on it would refetch the sample list on every render.
   useEffect(() => {
     loadSamples();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   const loadSamples = async () => {

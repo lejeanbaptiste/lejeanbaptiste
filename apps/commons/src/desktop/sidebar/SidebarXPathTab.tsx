@@ -57,7 +57,6 @@ const flattenResults = (
 export const SidebarXPathTab = () => {
   const { t } = useTranslation();
   const { activeTabPath, openTabs, rootPath } = useAppState().project;
-  const { resource } = useAppState().editor;
 
   const [query, setQuery] = useState('');
   const [scope, setScope] = useState<SearchScope>('currentFile');
@@ -216,7 +215,7 @@ export const SidebarXPathTab = () => {
     } finally {
       setLoading(false);
     }
-  }, [activeTabPath, customPath, openTabs, query, resource?.filePath, rootPath, scope]);
+  }, [activeTabPath, customPath, openTabs, query, rootPath, scope]);
 
   useEffect(() => {
     const handlePrefill = (event: Event) => {

@@ -51,6 +51,12 @@ export const UploadDropBox = ({
     });
 
     return mimeTypes;
+    // Computed once per mount. `allowedMimeTypes` defaults to a fresh array
+    // literal, and callers pass inline literals too, so depending on it would
+    // rebuild this on every render and churn the dropzone's `accept` config.
+    // Every caller passes a constant list today; if one ever varies it at
+    // runtime, this needs a stable key (e.g. the joined list) rather than `[]`.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   const HandleDrop = async (acceptedFiles: File[]) => {

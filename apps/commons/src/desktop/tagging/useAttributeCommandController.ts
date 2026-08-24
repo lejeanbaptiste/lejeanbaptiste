@@ -139,7 +139,7 @@ export const useAttributeCommandController = (): AttributeCommandController => {
     await loadSchemaForTag(element);
     window.writer?.layoutManager?.showModule('attributes');
     return true;
-  }, [loadSchemaForTag, notifyViaSnackbar]);
+  }, [loadSchemaForTag, notifyViaSnackbar, t]);
 
   const commitAttribute = useCallback(async () => {
     if (applyingRef.current || !tagElement) return;

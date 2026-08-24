@@ -29,7 +29,7 @@ export const useMessage = () => {
         </>
       );
     }
-  }, [userState, storageProviders]);
+  }, [userState, storageProviders, t]);
 
   return {
     cloudDisabledMessage,

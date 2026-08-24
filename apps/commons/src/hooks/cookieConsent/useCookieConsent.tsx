@@ -37,6 +37,9 @@ export const useCookieConsent = () => {
 
     const linkPrivacyPolicy = document.getElementById('linkToPrivacyPolicy');
     if (linkPrivacyPolicy) linkPrivacyPolicy.onclick = handleClickPrivacyPolicy;
+    // Runs once: it creates the global cookie-consent widget and wires the
+    // privacy-policy link. Re-running would initialise the widget a second time.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   const beforeRemoveBasicConsent = (cookie: any) => {

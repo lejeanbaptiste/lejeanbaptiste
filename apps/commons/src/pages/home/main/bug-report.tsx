@@ -18,7 +18,7 @@ export const BugReport = () => {
   const backgroundColor = useMemo(() => {
     const isDarkMode = mode === 'dark' || (mode === 'system' && systemMode === 'dark');
     return isDarkMode ? theme.vars.palette.grey[900] : theme.vars.palette.grey[50];
-  }, [mode, systemMode]);
+  }, [mode, systemMode, theme.vars.palette.grey]);
 
   return (
     <Stack

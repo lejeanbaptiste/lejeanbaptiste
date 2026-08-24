@@ -588,6 +588,7 @@ export const useNativeDialogBridge = () => {
     reloadTabFromDisk,
     rootPath,
     setSkipExplorerDeleteConfirm,
+    t,
     setThemeAppearance,
     skipExplorerDeleteConfirm,
     switchLanguage,

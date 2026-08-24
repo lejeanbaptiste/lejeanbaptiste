@@ -372,7 +372,7 @@ export const useCommonsUiBridge = () => {
     }
     setEntityDbFolderState(picked);
     return picked;
-  }, []);
+  }, [t]);
 
   const setRememberWorkspaceOnStartup = useCallback(async (value: boolean) => {
     setRememberWorkspaceOnStartupState(value);

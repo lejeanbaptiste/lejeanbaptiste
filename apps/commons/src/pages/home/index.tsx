@@ -29,10 +29,16 @@ export const HomePage = () => {
     if (location.hash !== '') {
       scrollToElement(location.hash.slice(1), { delay: 500 });
     }
+    // Mount-only: marks the page and honours an inbound anchor once. Re-running
+    // on a later hash change would yank the reader back to the anchor.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
+  // Keyed to auth state, which is what decides whether a permalinked document
+  // can be loaded. `loadDocumentFromPermalink` is redefined every render.
   useEffect(() => {
     loadDocumentFromPermalink();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [userState]);
 
   const loadDocumentFromPermalink = async () => {

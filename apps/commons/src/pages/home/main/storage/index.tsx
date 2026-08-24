@@ -27,8 +27,11 @@ export const Storage = () => {
 
   const isDarkMode = mode === 'dark' || (mode === 'system' && systemMode === 'dark');
 
+  // Keyed to the two values that should reselect the view. `setView` is
+  // redefined every render, so depending on it would reselect on every render.
   useEffect(() => {
     if (userState !== 'AUTHENTICATING') setView();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [userState, countRecentDocs]);
 
   const setView = async () => {

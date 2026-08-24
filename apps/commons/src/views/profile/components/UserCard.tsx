@@ -30,6 +30,11 @@ export const UserCard = () => {
       name: identity.name,
       uri: identity.uri,
     };
+    // `user.preferredID` is listed on purpose even though `user` is: Overmind
+    // state is proxied, so the `user` object's identity can stay the same while
+    // the selected identity changes underneath it. Without the property dep this
+    // memo would keep returning the previously selected identity.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [user, user?.preferredID]);
 
   const handleManageAccontClick = () => accountManagement();

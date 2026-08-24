@@ -278,6 +278,9 @@ export const AchievementsDialog = ({ onClose, open }: AchievementsDialogProps) =
       const timer = setTimeout(refreshPortrait, 1000);
       return () => clearTimeout(timer);
     }
+    // Keyed to `open` alone: `refreshPortrait` is redefined every render, so
+    // depending on it would reschedule the re-roll timer on every render.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [open]);
 
   // Keep the Service Record name in sync with the splash name prompt.

@@ -243,6 +243,10 @@ export const SidebarExplorerTab = () => {
     const item = treeKeyboard.getFocusedItem();
     if (!item || !rootPath) return;
     setExplorerFocusedPath({ path: item.path, isDirectory: item.isDirectory });
+    // Depends on `treeKeyboard.focusedPath` rather than the whole `treeKeyboard`
+    // the rule asks for: the hook rebuilds that object every render, so naming it
+    // would run this on every render instead of when the focused row moves.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [rootPath, setExplorerFocusedPath, treeKeyboard.focusedPath]);
 
   const refreshExplorer = useCallback(() => {

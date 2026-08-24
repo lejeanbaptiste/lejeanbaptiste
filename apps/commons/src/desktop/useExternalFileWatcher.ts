@@ -91,7 +91,7 @@ export const useExternalFileWatcher = () => {
         promptingRef.current.delete(filePath);
       }
     },
-    [reloadTabFromDisk, setExternalChangePending, t],
+    [mergeTabWithDisk, notifyViaSnackbar, reloadTabFromDisk, setExternalChangePending, t],
   );
 
   const handleExternalChange = useCallback(

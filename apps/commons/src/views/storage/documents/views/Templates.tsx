@@ -34,8 +34,11 @@ export const TemplatesView = ({
 
   const categories = new Set([...templates.map((template) => template.category)]);
 
+  // Load once on mount. `loadTemplates` is redefined every render, so depending
+  // on it would refetch the template list on every render.
   useEffect(() => {
     loadTemplates();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   const loadTemplates = async () => {

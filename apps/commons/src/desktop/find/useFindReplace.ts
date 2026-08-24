@@ -232,7 +232,6 @@ export const useFindReplace = ({
     replaceQuery,
     resource?.filePath,
     results,
-    scope,
     selectedHit,
     selectedIndex,
     openTabs,

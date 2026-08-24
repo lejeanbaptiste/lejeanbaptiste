@@ -46,6 +46,11 @@ export const Actions = ({ onAction }: ActionsProps) => {
 
     setResource(undefined);
     onAction('select');
+    // Keyed to a newly-selected resource. The other values are read to decide
+    // what to do with it, not to decide whether to run: `openResource`,
+    // `setResource` and `onAction` are redefined every render, and re-running on
+    // a `dialogAction` change would re-open or re-save the same resource.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [resource]);
 
   const handleCancel = () => {

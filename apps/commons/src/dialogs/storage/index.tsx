@@ -33,6 +33,10 @@ export const Storage = () => {
 
   const { open, source, type } = storageDialogState;
 
+  // `storageProviders` is the invalidation signal, not an input:
+  // `getStorageProvidersAuth` reads current auth state and is redefined every
+  // render, so depending on it would recompute this on every render.
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   const providers = useMemo(() => getStorageProvidersAuth(), [storageProviders]);
 
   const handleOnChange = (resource?: Resource) => {
