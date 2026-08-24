@@ -67,6 +67,11 @@ const config: Config.InitialOptions = {
       coveragePathIgnorePatterns: ['/node_modules/', '/dist', '/lib', 'lib-esm', '/test'],
       moduleNameMapper: {
         '^dexie$': dexieModulePath,
+        // Holds `import.meta`, which ts-jest cannot compile to CJS; see the stub.
+        '.*/devWorkerUrl$':
+          '<rootDir>/packages/cwrc-leafwriter/test/mocks/devWorkerUrl.ts',
+        // ESM-only, so jest's CJS resolver cannot reach it; see the stub.
+        '^maplibre-gl$': '<rootDir>/packages/cwrc-leafwriter/test/mocks/maplibreGl.ts',
         '\\.(png|jpe?g|gif|svg|webp)$': '<rootDir>/packages/cwrc-leafwriter/test/fileMock.cjs',
         '\\.(css|less)$': '<rootDir>/packages/cwrc-leafwriter/test/cssModuleMock.cjs',
       },
@@ -74,6 +79,7 @@ const config: Config.InitialOptions = {
       setupFiles: [
         '<rootDir>/packages/cwrc-leafwriter/test/setup/structuredClone.ts',
         '<rootDir>/packages/cwrc-leafwriter/test/setup/textEncoder.ts',
+        '<rootDir>/packages/cwrc-leafwriter/test/setup/fetch.ts',
         'fake-indexeddb/auto',
       ],
       setupFilesAfterEnv: ['<rootDir>/packages/cwrc-leafwriter/test/setup/jestAfterEnv.ts'],
@@ -119,6 +125,11 @@ const config: Config.InitialOptions = {
         // be evaluated under jsdom. See the stub for what it covers.
         '^@cwrc/leafwriter$': '<rootDir>/apps/commons/test/mocks/cwrcLeafwriter.tsx',
         '^dexie$': dexieModulePath,
+        // Holds `import.meta`, which ts-jest cannot compile to CJS; see the stub.
+        '.*/devWorkerUrl$':
+          '<rootDir>/packages/cwrc-leafwriter/test/mocks/devWorkerUrl.ts',
+        // ESM-only, so jest's CJS resolver cannot reach it; see the stub.
+        '^maplibre-gl$': '<rootDir>/packages/cwrc-leafwriter/test/mocks/maplibreGl.ts',
         '\\.(png|jpe?g|gif|svg|webp)$': '<rootDir>/packages/cwrc-leafwriter/test/fileMock.cjs',
         '\\.(css|less)$': '<rootDir>/packages/cwrc-leafwriter/test/cssModuleMock.cjs',
       },

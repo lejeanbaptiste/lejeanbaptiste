@@ -9,6 +9,7 @@ import { Context } from '../';
 import Writer from '../../js/Writer';
 import { webpackEnv } from '../../types';
 import { debugValidator } from './debugValidator';
+import { devValidatorWorkerUrl } from './devWorkerUrl';
 import { checkWellFormedness } from '../../utilities/checkWellFormedness';
 import {
   fetchResourceText,
@@ -182,9 +183,12 @@ const loadWebworker = async (baseUrl = ''): Promise<Comlink.Remote<ValidatorType
     // * Check ThreadsJS once again.
     // * Or maybe experiment with ESBUILD
 
+    // `devValidatorWorkerUrl` lives in its own module so that `import.meta` does
+    // not appear here — see that file for why it blocks every test importing
+    // this package's overmind.
     const worker =
       webpackEnv.WORKER_ENV === 'development'
-        ? new Worker(new URL('@cwrc/leafwriter-validator', import.meta.url))
+        ? new Worker(devValidatorWorkerUrl())
         : new Worker(`${baseUrl}/leafwriter-validator.worker.js`);
 
     const validator: Comlink.Remote<ValidatorType> = Comlink.wrap(worker);
