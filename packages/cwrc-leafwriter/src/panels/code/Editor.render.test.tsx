@@ -9,6 +9,12 @@ import { render } from '@testing-library/react';
  * down: with the original cleanup, which closed over the initial `editor` state
  * rather than the instance it created, the Monaco editor was never disposed on
  * unmount.
+ *
+ * THIS VERIFIES LIFECYCLE, NOT EDITING. A green run means the panel mounts,
+ * subscribes, and disposes what it created. It says nothing about whether the
+ * editor renders or reflects the document — real Monaco cannot run under jsdom,
+ * so it is stubbed throughout. Reading this suite as "the source panel works"
+ * would be a misread; that still needs the running app.
  */
 
 const mockDispose = jest.fn();

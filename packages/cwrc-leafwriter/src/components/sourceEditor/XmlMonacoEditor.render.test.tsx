@@ -7,6 +7,18 @@ import { render } from '@testing-library/react';
  * Monaco instance; this component does it correctly, off a local binding. The
  * dispose assertion below pins that so the working version does not regress into
  * the broken shape.
+ *
+ * THIS VERIFIES LIFECYCLE, NOT EDITING. A green run here means the component
+ * mounts, wires itself up, and disposes what it created. It says nothing about
+ * whether the editor renders text, decorates errors, or validates — real Monaco
+ * cannot run under jsdom (workers, canvas measurement, layout), so it is stubbed
+ * throughout. Treating this suite as "the source editor works" would be a
+ * misread; that still needs the running app.
+ *
+ * The stub below answers any member, so it cannot catch a call to a method that
+ * does not exist. `tsc` covers that instead: the mock is jest-only, so the
+ * component is typechecked against the real monaco-editor types, and a renamed
+ * or removed API fails the typecheck gate.
  */
 
 const mockDispose = jest.fn();
