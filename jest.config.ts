@@ -67,6 +67,7 @@ const config: Config.InitialOptions = {
       modulePathIgnorePatterns: ['<rootDir>/.claude/'],
       coveragePathIgnorePatterns: ['/node_modules/', '/dist', '/lib', 'lib-esm', '/test'],
       moduleNameMapper: {
+        '\\.mdx$': '<rootDir>/packages/cwrc-leafwriter/test/mocks/mdx.tsx',
         '^dexie$': dexieModulePath,
         // Holds `import.meta`, which ts-jest cannot compile to CJS; see the stub.
         '.*/devWorkerUrl$': '<rootDir>/packages/cwrc-leafwriter/test/mocks/devWorkerUrl.ts',
