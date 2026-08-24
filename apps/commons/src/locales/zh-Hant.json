@@ -160,7 +160,7 @@
         "fr": "French",
         "pt": "Portuguese",
         "ro": "Romanian",
-        "zh-Hant": "Traditional Chinese"
+        "zh-Hant": "繁體中文"
       },
       "messages": {
         "annotation_need_space": "Annotating documents requires more space.",
@@ -1024,7 +1024,7 @@
       "fr": "French",
       "pt": "Portuguese",
       "ro": "Romanian",
-      "zh-Hant": "Traditional Chinese"
+      "zh-Hant": "繁體中文"
     },
     "messages": {
       "annotation_need_space": "Annotating documents needs more space.",

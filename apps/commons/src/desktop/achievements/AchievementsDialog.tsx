@@ -210,6 +210,50 @@ export const AchievementsDialog = ({ onClose, open }: AchievementsDialogProps) =
     typeof window !== 'undefined' &&
     new URLSearchParams(window.location.search).get('portraitGrid') === '1';
 
+  // Rank that poseIndex/weaponRank/weaponImageIds were last rolled for - lets
+  // the GitHub-refresh branch below tell a real rank-up apart from a
+  // same-rank state update, instead of just trusting whichever `setState`
+  // call happens to land last (see pickPortraitFor).
+  const pickedForRankRef = useRef<number | null>(null);
+
+  // Pose, backdrop, and weapon are all randomized together (Daniel: "pose and
+  // weapons will be random"), picked together with `state` (React batches
+  // this) so everything's already resolved by the time the render below
+  // needs it. Pose is picked first: the backdrop and weapon both depend on
+  // which pose just got rolled (some poses pair with pose-specific scene
+  // rules - subject scenes carry their own embedded backgrounds - and weapon
+  // art is pose-specific), not the stale pose still in state.
+  const pickPortraitFor = (loaded: AchievementsState) => {
+    setState(loaded);
+    const loadedBodyType =
+      loaded.avatar?.kind === 'dicebear'
+        ? loaded.avatar.options.bodyType
+        : createDefaultDiceBearAvatar(encoderName).bodyType;
+    setPoseIndex((previousPose) => {
+      const newPose = pickPose(previousPose, loadedBodyType, calculatedRankIndex(loaded));
+      setBackgroundKey((previousBackground) =>
+        pickBackgroundKey(
+          calculatedRankIndex(loaded),
+          previousBackground,
+          newPose,
+          ribbonsIntoRank(loaded),
+        ),
+      );
+      setWeaponRank((previousWeaponRank) => {
+        const weapon = pickWeapon(
+          newPose,
+          loadedBodyType,
+          calculatedRankIndex(loaded),
+          previousWeaponRank,
+        );
+        setWeaponImageIds(weapon?.imageIds ?? []);
+        return weapon?.rank ?? null;
+      });
+      return newPose;
+    });
+    pickedForRankRef.current = calculatedRankIndex(loaded);
+  };
+
   // Loads achievements state and re-rolls the backdrop/pose/weapon pick.
   // Called on mount (so everything's already resolved and fetched well
   // before the user ever opens the dialog - see the effect below) and again
@@ -219,47 +263,23 @@ export const AchievementsDialog = ({ onClose, open }: AchievementsDialogProps) =
   // then UniformAvatar's own head/body SVG fetches was exactly what caused
   // the panel to visibly build itself piece by piece on every single open).
   const refreshPortrait = () => {
-    void loadAchievementsState().then((loaded) => {
-      setState(loaded);
-      // Pose, backdrop, and weapon are all randomized together (Daniel:
-      // "pose and weapons will be random"), picked together with `state`
-      // (React batches this) so everything's already resolved by the time
-      // the render below needs it. Pose is picked first: the backdrop and
-      // weapon both depend on which pose just got rolled (some poses pair
-      // with pose-specific scene rules - subject scenes carry their own
-      // embedded backgrounds - and weapon art is pose-specific), not the
-      // stale pose still in state.
-      const loadedBodyType =
-        loaded.avatar?.kind === 'dicebear'
-          ? loaded.avatar.options.bodyType
-          : createDefaultDiceBearAvatar(encoderName).bodyType;
-      setPoseIndex((previousPose) => {
-        const newPose = pickPose(previousPose, loadedBodyType, calculatedRankIndex(loaded));
-        setBackgroundKey((previousBackground) =>
-          pickBackgroundKey(
-            calculatedRankIndex(loaded),
-            previousBackground,
-            newPose,
-            ribbonsIntoRank(loaded),
-          ),
-        );
-        setWeaponRank((previousWeaponRank) => {
-          const weapon = pickWeapon(
-            newPose,
-            loadedBodyType,
-            calculatedRankIndex(loaded),
-            previousWeaponRank,
-          );
-          setWeaponImageIds(weapon?.imageIds ?? []);
-          return weapon?.rank ?? null;
-        });
-        return newPose;
-      });
-    });
+    void loadAchievementsState().then(pickPortraitFor);
     // Best-effort, no-ops when the cached count isn't stale or there's no
     // linked GitHub token yet - refreshes quietly in the background rather
     // than blocking the rest of refreshPortrait's synchronous-feeling flow.
-    void refreshGithubContributions(() => {}).then(setState);
+    // If it resolves with a HIGHER rank than the local-state branch above
+    // already picked pose/weapon for (a real-time rank-up crossing the
+    // network round trip), that pick is now for the wrong rank - e.g. a
+    // rank-1-only weapon spliced into a rank-5 composite - so re-roll for
+    // the rank the player actually ended up at instead of just trusting
+    // whichever `setState` lands last.
+    void refreshGithubContributions(() => {}).then((refreshed) => {
+      if (calculatedRankIndex(refreshed) !== pickedForRankRef.current) {
+        pickPortraitFor(refreshed);
+      } else {
+        setState(refreshed);
+      }
+    });
   };
 
   const didMountRef = useRef(false);
