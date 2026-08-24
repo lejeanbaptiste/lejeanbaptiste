@@ -46,6 +46,7 @@ const baseState: Record<string, Slice> = {
   editor: {
     contentHasChanged: false,
     isReadonly: false,
+    readonly: false,
     resource: null,
   },
   auth: {
@@ -62,7 +63,14 @@ const baseState: Record<string, Slice> = {
 
 const actionNames: Record<string, string[]> = {
   ui: ['notifyViaSnackbar', 'openDialog', 'closeDialog', 'setSkipEntityDetachConfirm'],
-  project: ['openFile', 'openProject', 'reloadTabFromDisk', 'setExplorerFocusedPath'],
+  project: [
+    'openFile',
+    'openProject',
+    'reloadTabFromDisk',
+    'setExplorerFocusedPath',
+    'markTabDirty',
+    'updateTabContent',
+  ],
   storage: ['uploadFile'],
   auth: ['login', 'logout'],
   editor: ['setContentHasChanged'],
