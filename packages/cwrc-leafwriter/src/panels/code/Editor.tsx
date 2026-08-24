@@ -7,6 +7,19 @@ import { useEffect, useMemo, useRef, useState } from 'react';
 
 // * Intellisense for XML: https://mono.software/2017/04/11/custom-intellisense-with-monaco-editor/
 
+/** Writer events the source panel mirrors. Subscribed and unsubscribed as one set. */
+const WRITER_EVENTS = [
+  'documentLoaded',
+  'selectionChanged',
+  'contentChanged',
+  'tagSelected',
+  'tagAdded',
+  'tagEdited',
+  'tagRemoved',
+  'massUpdateStarted',
+  'massUpdateCompleted',
+] as const;
+
 interface EditorProps {
   showLOD: boolean;
 }
@@ -36,17 +49,17 @@ export const Editor = ({ showLOD }: EditorProps) => {
 
   // Mount-only: creates the Monaco instance and subscribes to writer events.
   //
-  // NOTE (found while auditing dependencies, deliberately not changed here): this
-  // effect's teardown does not work. With an empty dependency array the cleanup
-  // closes over the initial `editor` state, which is null, so `editor?.dispose()`
-  // never disposes the instance created below; and each `unsubscribe` is passed a
-  // freshly-created arrow function that cannot match the one `subscribe` was
-  // given. Both leak on unmount. Fixing them means disposing the local `_editor`
-  // and keeping handler references to unsubscribe with — a lifecycle change that
-  // wants its own pass, not a dependency edit.
+  // The teardown deliberately works off local bindings rather than component
+  // state. With an empty dependency array the cleanup closes over the *initial*
+  // `editor` state — null — so disposing that would silently never run; and the
+  // handlers must be the same references `subscribe` was given, or `unsubscribe`
+  // matches nothing. Both previously leaked on unmount; Editor.render.test.tsx
+  // guards the dispose half.
   useEffect(() => {
     const parentContainer = document.getElementById('code-panel');
     if (parentContainer) resizeObserver.observe(parentContainer);
+
+    let createdEditor: monaco.editor.IStandaloneCodeEditor | null = null;
 
     if (divEl.current) {
       const _editor = monaco.editor.create(divEl.current, {
@@ -63,36 +76,23 @@ export const Editor = ({ showLOD }: EditorProps) => {
         wrappingIndent: 'indent',
       });
 
+      createdEditor = _editor;
       setEditor(_editor);
     }
 
-    writer.event('documentLoaded').subscribe(() => triggerFromEvent('documentLoaded'));
-    writer.event('selectionChanged').subscribe(() => triggerFromEvent('selectionChanged'));
-    writer.event('contentChanged').subscribe(() => triggerFromEvent('contentChanged'));
-    // writer.event('nodeChanged').subscribe(() => triggerFromEvent('nodeChanged'));
-    writer.event('tagSelected').subscribe(() => triggerFromEvent('tagSelected'));
-    writer.event('tagAdded').subscribe(() => triggerFromEvent('tagAdded'));
-    writer.event('tagEdited').subscribe(() => triggerFromEvent('tagEdited'));
-    writer.event('tagRemoved').subscribe(() => triggerFromEvent('tagRemoved'));
-    writer.event('massUpdateStarted').subscribe(() => triggerFromEvent('massUpdateStarted'));
-    writer.event('massUpdateCompleted').subscribe(() => triggerFromEvent('massUpdateCompleted'));
+    const handlers = WRITER_EVENTS.map((eventName) => {
+      const handler = () => triggerFromEvent(eventName);
+      writer.event(eventName).subscribe(handler);
+      return [eventName, handler] as const;
+    });
 
     return () => {
-      editor?.dispose();
+      createdEditor?.dispose();
       setEditor(null);
 
-      writer.event('documentLoaded').unsubscribe(() => triggerFromEvent('documentLoaded'));
-      writer.event('selectionChanged').unsubscribe(() => triggerFromEvent('selectionChanged'));
-      writer.event('contentChanged').unsubscribe(() => triggerFromEvent('contentChanged'));
-      // writer.event('nodeChanged').unsubscribe(() => triggerFromEvent('nodeChanged'));
-      writer.event('tagSelected').unsubscribe(() => triggerFromEvent('tagSelected'));
-      writer.event('tagAdded').unsubscribe(() => triggerFromEvent('tagAdded'));
-      writer.event('tagEdited').unsubscribe(() => triggerFromEvent('tagEdited'));
-      writer.event('tagRemoved').unsubscribe(() => triggerFromEvent('tagRemoved'));
-      writer.event('massUpdateStarted').unsubscribe(() => triggerFromEvent('massUpdateStarted'));
-      writer
-        .event('massUpdateCompleted')
-        .unsubscribe(() => triggerFromEvent('massUpdateCompleted'));
+      for (const [eventName, handler] of handlers) {
+        writer.event(eventName).unsubscribe(handler);
+      }
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
