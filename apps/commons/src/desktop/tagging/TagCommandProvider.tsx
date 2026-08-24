@@ -41,7 +41,7 @@ export const TagCommandProvider = () => {
         }
       });
     },
-    [notifyViaSnackbar],
+    [notifyViaSnackbar, t],
   );
 
   const handleEditorKeyDown = useCallback(
@@ -59,6 +59,11 @@ export const TagCommandProvider = () => {
 
       return handled;
     },
+    // Deliberately depends on the individual controller members rather than the
+    // whole `attrController`/`tagController` objects the rule asks for: both are
+    // rebuilt by their hooks on every render, so depending on the objects would
+    // rebuild this callback every render and defeat the memoisation.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
     [
       attrController.handleEditorKeyDown,
       attrController.open,
@@ -80,6 +85,9 @@ export const TagCommandProvider = () => {
     });
 
     return () => unregisterDesktopTaggingBridge();
+    // Same reasoning as `handleEditorKeyDown` above — member-level deps, not the
+    // whole controller objects, which change identity every render.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [
     attrController.open,
     attrController.openPopup,

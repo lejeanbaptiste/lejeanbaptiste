@@ -136,6 +136,7 @@ export const useProjectMenu = () => {
     notifyViaSnackbar,
     openTabs,
     saveActiveTab,
+    t,
   ]);
 
   const saveCurrentDocumentAs = useCallback(async () => {
@@ -180,6 +181,7 @@ export const useProjectMenu = () => {
     notifyViaSnackbar,
     openTabs,
     saveActiveTabAs,
+    t,
   ]);
 
   const closeCurrentTab = useCallback(async () => {
@@ -393,6 +395,7 @@ export const useProjectMenu = () => {
     refreshProjectSchemaConfig,
     saveCurrentDocument,
     saveCurrentDocumentAs,
+    t,
   ]);
 
   const onKeydownHandle = useCallback(
@@ -437,7 +440,7 @@ export const useProjectMenu = () => {
       // Electron application menu accelerators via onAppMenuAction. Handling them here too
       // caused duplicate actions (e.g. Cmd+O firing openProject twice, Cmd+S racing saves).
     },
-    [closeCommonsPopup, leafWriter, notifyViaSnackbar],
+    [closeCommonsPopup, leafWriter, notifyViaSnackbar, t],
   );
 
   return { aboutOpen, onKeydownHandle, setAboutOpen, setTimeMachineOpen, timeMachineOpen };

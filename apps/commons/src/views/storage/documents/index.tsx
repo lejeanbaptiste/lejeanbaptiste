@@ -28,16 +28,21 @@ export const DocumentViews = ({ title, value }: DocumentViewsProps) => {
   const [layout, setLayout] = useState<Layout>('list');
   const [type, setType] = useState<ViewType>('samples');
 
+  // The effect below already runs on mount, so a separate mount-only copy of
+  // this call was redundant.
+  //
+  // Keyed to what actually changes the size. `changeViewSize` is redefined
+  // every render, so depending on it would resize on every render.
   useEffect(() => {
     changeViewSize();
-  }, []);
-
-  useEffect(() => {
-    changeViewSize();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [userState, _windowWidth]);
 
+  // Same reasoning, and here it matters more: `switchView` runs a hide/show
+  // animation, so re-running it every render would animate continuously.
   useEffect(() => {
     switchView();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [currentLocale, value]);
 
   const changeViewSize = () => {

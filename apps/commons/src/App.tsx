@@ -42,30 +42,44 @@ export const App = () => {
   const { analytics, initAnalytics, stopAnalytics } = useAnalytics();
   const { getLanguage } = usePermalink();
 
+  // Mount-only on purpose: this applies the language named in the permalink,
+  // which must not re-apply later and override a language the user picks by
+  // hand. `getLanguage`/`switchLanguageConsent` come from hooks that rebuild
+  // their return object every render, so depending on them would re-run this
+  // on every render.
   useEffect(() => {
     const language = getLanguage();
     if (language) {
       switchLanguage(language);
       switchLanguageConsent(language);
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
+  // Keyed to consent alone. `useAnalytics` returns fresh function identities
+  // every render, so listing them here would start and stop analytics on every
+  // render rather than when consent actually changes.
   useEffect(() => {
     if (cookieConsent.includes('measurement')) initAnalytics();
     if (!cookieConsent.includes('measurement')) stopAnalytics();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [cookieConsent]);
 
+  // One page view per navigation. `analytics` is rebuilt every render (same
+  // hook as above), so depending on it would report a page view on every
+  // render instead.
   useEffect(() => {
     if (analytics) analytics.page();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [location.pathname, location.search]);
 
   useEffect(() => {
     i18n.changeLanguage(currentLocale);
-  }, [currentLocale]);
+  }, [currentLocale, i18n]);
 
   useEffect(() => {
     if (themeAppearance === 'system') setDarkMode(prefersDarkMode);
-  }, [prefersDarkMode, themeAppearance]);
+  }, [prefersDarkMode, setDarkMode, themeAppearance]);
 
   // On Linux, Chromium's `prefers-color-scheme` media query does not reliably
   // live-update when the OS theme changes, so the desktop app also listens to
@@ -82,7 +96,7 @@ export const App = () => {
     return electronAPI.onNativeThemeChanged((shouldUseDarkColors) => {
       setDarkMode(shouldUseDarkColors);
     });
-  }, [themeAppearance]);
+  }, [setDarkMode, themeAppearance]);
 
   return (
     <ThemeProvider
