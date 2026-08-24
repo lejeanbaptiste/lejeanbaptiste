@@ -109,6 +109,8 @@ const config: Config.InitialOptions = {
           '<rootDir>/packages/cwrc-leafwriter/src/js/conversion/documentExport.ts',
         '^@cwrc/leafwriter/pageBreakDetection$':
           '<rootDir>/packages/cwrc-leafwriter/src/utilities/pageBreakDetection.ts',
+        '^@cwrc/leafwriter/languageCodes$':
+          '<rootDir>/packages/cwrc-leafwriter/src/utilities/languageCodes.ts',
         '^dexie$': dexieModulePath,
         '\\.(png|jpe?g|gif|svg|webp)$': '<rootDir>/packages/cwrc-leafwriter/test/fileMock.cjs',
       },

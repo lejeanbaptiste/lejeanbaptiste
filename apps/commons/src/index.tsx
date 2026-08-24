@@ -17,10 +17,16 @@ import {
   clearChunkLoadRecoveryGuard,
   recoverFromChunkLoadFailure,
 } from '../../../packages/cwrc-leafwriter/src/plugins/chunkLoadRecovery';
+import { registerHostSettingsPanels } from './desktop/registerHostSettingsPanels';
 import './utilities/devtoolsLog';
 import './utilities/log';
 
 // scan({ enabled: true });
+
+// The editor package renders the project-metadata tab of its settings dialog,
+// but the form itself is commons-owned and desktop-only. Register it here, at
+// module init, so it is in place before any dialog can be opened.
+registerHostSettingsPanels();
 
 // A webpack watch rebuild can briefly leave the page with an old lazy-chunk
 // name while the new asset is being written. Reload once so the page obtains

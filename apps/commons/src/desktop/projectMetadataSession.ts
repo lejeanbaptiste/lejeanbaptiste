@@ -1,6 +1,11 @@
-import type { ProjectMetadataDialogState } from './projectMetadataDialogState';
+import type {
+  ProjectMetadataDialogMode,
+  ProjectMetadataDialogState,
+} from './projectMetadataDialogTypes';
 
-export type ProjectMetadataDialogMode = 'firstSetup' | 'edition';
+// Defined in the pure `projectMetadataDialogTypes` leaf; re-exported here so
+// existing importers keep working.
+export type { ProjectMetadataDialogMode } from './projectMetadataDialogTypes';
 
 export interface ProjectMetadataSession {
   dialogId: string;

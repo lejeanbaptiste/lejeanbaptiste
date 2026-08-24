@@ -33,7 +33,7 @@ import { SideMenu, type MenuItemProps } from './side-menu';
 import { useRequiredFieldsValidity } from './useRequiredFieldsValidity';
 import { PluginsSettingsPanel } from './plugins-settings-panel';
 import { AiPromptProfilesPanel } from './ai-prompt-profiles-panel';
-import { ProjectSettingsPanel } from './project-settings-panel';
+import { getProjectSettingsPanel } from './hostPanels';
 import { PrivacySettingsPanel } from './privacy-settings-panel';
 import { TranslationPolicyPanel } from './translation-policy-panel';
 import { TranslationDatesPanel } from './translation-dates-panel';
@@ -60,6 +60,8 @@ export const SettingsDialog = ({ onClose, open = false, initialTab }: SettingsDi
     typeof window !== 'undefined' && !!(window as Window & { electronAPI?: unknown }).electronAPI;
   const projectFilePath = window.__leafWriterProject?.getProjectFilePath?.() ?? null;
   const hasProject = Boolean(projectFilePath);
+  // Supplied by the host app (see `hostPanels`); null when it provides none.
+  const ProjectSettingsPanel = getProjectSettingsPanel();
 
   const dialogContainer = isDesktop
     ? undefined
@@ -169,7 +171,7 @@ export const SettingsDialog = ({ onClose, open = false, initialTab }: SettingsDi
                 {closeAttempted && !validity.allValid && (
                   <Alert severity="error">{t('LW.desktop.settings.setup_incomplete')}</Alert>
                 )}
-                {activeId === 'project' && isDesktop && hasProject && (
+                {activeId === 'project' && isDesktop && hasProject && ProjectSettingsPanel && (
                   <Section id="project" title={t('LW.settings.tabs.project')}>
                     <ProjectSettingsPanel active={activeId === 'project'} />
                   </Section>

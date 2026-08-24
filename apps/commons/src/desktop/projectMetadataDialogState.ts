@@ -10,25 +10,20 @@ import {
   readMetadataFieldsTemplate,
   resolveProjectMetadataFields,
 } from './metadataFieldsTemplate';
-import type { ProjectMetadataDialogMode } from './projectMetadataSession';
+import type {
+  ProjectMetadataDialogMode,
+  ProjectMetadataDialogState,
+  TranslationMetadataSection,
+} from './projectMetadataDialogTypes';
 import { readTranslationSettings } from './translationSettings';
-import type { TranslationLanguage } from './translationTypes';
 
-export interface TranslationMetadataSection {
-  locked: boolean;
-  alignmentUnit: 'div' | 'p' | null;
-  languages: TranslationLanguage[];
-}
-
-export interface ProjectMetadataDialogState {
-  mode: ProjectMetadataDialogMode;
-  note?: string;
-  fields: { path: string; label: string }[];
-  values: Record<string, string>;
-  custom: { path: string; label: string; value: string }[];
-  translation: TranslationMetadataSection;
-  syncToCentral: boolean;
-}
+// Defined in the pure `projectMetadataDialogTypes` leaf so `@cwrc/leafwriter`
+// can reference them without pulling this module's runtime imports in; re-exported
+// here so existing importers keep working.
+export type {
+  ProjectMetadataDialogState,
+  TranslationMetadataSection,
+} from './projectMetadataDialogTypes';
 
 const cache = new Map<string, ProjectMetadataDialogState>();
 
