@@ -14,7 +14,9 @@ export const onInitializeOvermind = async (_context: Context) => {
     if (expiredDocResquests.length > 0) {
       await db.documentRequested.bulkDelete(expiredDocResquests.map(({ id }) => id));
     }
-  } catch {}
+  } catch (error) {
+    log.warn(error);
+  }
 };
 
 export const setPrefStorageProvider = ({ state, effects }: Context, providerId: string) => {
@@ -47,10 +49,10 @@ export const closeStorageDialog = async ({ state }: Context) => {
 };
 
 export const addToRecentDocument = async (_context: Context, document: Resource) => {
-  const { content, hash, ...resource } = document;
+  const { content: _content, hash: _hash, ...resource } = document;
 
   if (
-    !resource.provider === undefined ||
+    resource.provider === undefined ||
     resource.owner === undefined ||
     resource.ownerType === undefined ||
     resource.repo === undefined ||

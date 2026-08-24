@@ -137,12 +137,12 @@ function personWrapperOccurrence(wrapper: Element): number {
   );
 }
 
-export type HarvestedWrapper = {
+export interface HarvestedWrapper {
   entityId: string;
   documentKey: string;
   source: string;
   assertions: EntityDataAssertion[];
-};
+}
 
 /** Collect keyed person wrappers and their harvested assertions from one corpus doc. */
 export function collectHarvestedWrappers(

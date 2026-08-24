@@ -17,7 +17,7 @@ export const Sidebar = () => {
     owner && user?.username !== owner?.username
       ? setSelectedMenu(owner?.username)
       : setSelectedMenu('owner');
-  }, [cloud.name, isSM]);
+  }, [cloud.name, isSM, owner, user?.username]);
 
   return (
     <Stack

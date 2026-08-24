@@ -28,7 +28,7 @@ export const loadLanguageToolEntityWhitelist = async (
     if (typeof candidate === 'string' && candidate.trim()) paths.add(candidate.trim());
   }
 
-  const nameRows: Array<{ text?: string | null; language?: string | null }> = [];
+  const nameRows: { text?: string | null; language?: string | null }[] = [];
 
   for (const databasePath of paths) {
     for (const kind of ENTITY_KINDS) {

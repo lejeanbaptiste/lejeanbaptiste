@@ -32,7 +32,7 @@ import { goldMentionsForAutoCorpus, runManualAutoAuditHarness } from './validati
 const DOM_GLOBALS = ['NodeFilter', 'Node', 'Text', 'Element', 'Document', 'DOMParser', 'XMLSerializer'] as const;
 
 function installDomGlobals(
-  window: { [K in (typeof DOM_GLOBALS)[number]]: unknown },
+  window: Record<(typeof DOM_GLOBALS)[number], unknown>,
 ): void {
   for (const key of DOM_GLOBALS) {
     (globalThis as Record<string, unknown>)[key] = window[key];
@@ -99,7 +99,7 @@ describe('audit validation harness against a live model (opt-in)', () => {
 
     const deltaF1 = report.overall.f1 - report.beforeAudit.overall.f1;
 
-    // eslint-disable-next-line no-console
+     
     console.log(
       [
         '',

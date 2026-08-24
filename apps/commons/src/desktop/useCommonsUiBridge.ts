@@ -12,7 +12,6 @@ import { useTranslation } from 'react-i18next';
 import { createEntitiesScaffold } from '../../../../packages/cwrc-leafwriter/src/autoTagging/entities';
 import { refreshCbdbConcordanceAfterPackLifecycle } from '../../../../packages/cwrc-leafwriter/src/autoTagging/cbdbConcordance';
 import { clearPackContentCache } from '../../../../packages/cwrc-leafwriter/src/services/authority-pack-lookup';
-import { AUTHORITY_PACKS_DIRNAME } from '@src/desktop/authorityPackTypes';
 import { PROJECT_FILE_NAME } from '@src/desktop/projectFile';
 import { ensureEntityDbFolder } from './entityDbOnboarding';
 

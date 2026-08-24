@@ -1,10 +1,10 @@
 import { collectXmlParseErrors } from './collectXmlParseErrors';
 
-export type XMLParseErrorPosition = {
+export interface XMLParseErrorPosition {
   line: number;
   col: number;
   message?: string;
-};
+}
 
 export type XMLValidity =
   | { valid: true }
@@ -60,7 +60,7 @@ export const checkWellFormedness = (content: string): XMLValidity => {
 
   const positions = lines.map((line, index) => ({
     line: Number(line[1]),
-    col: Number(column[index]?.[1]) ?? 1,
+    col: column[index]?.[1] === undefined ? 1 : Number(column[index][1]),
     message: errorString,
   }));
 

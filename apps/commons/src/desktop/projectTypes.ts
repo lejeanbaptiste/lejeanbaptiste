@@ -68,12 +68,12 @@ export interface AutoTaggingAuthoritySettings {
   /** @deprecated Migrated to nameTypeTaggingPolicy (phase2 bucket). */
   excludedNameTypes?: string[];
   nameTypeTaggingPolicy?: Record<string, 'phase1' | 'phase2' | 'never'>;
-  customNameTypes?: Array<{
+  customNameTypes?: {
     id: string;
     label: string;
     labelsByLang?: Record<string, string>;
     bucket: 'phase1' | 'phase2' | 'never';
-  }>;
+  }[];
   artMinCodePoints?: number;
   /** @deprecated */
   yearFilterEnabled?: boolean;
@@ -85,12 +85,12 @@ export interface ProjectMetadataFile {
   version: 1;
   catalogId?: string;
   fields: Record<string, string>;
-  custom: Array<{ path: string; label: string; value: string }>;
+  custom: { path: string; label: string; value: string }[];
   /** Snapshot written after bulk apply to existing files. */
   lastApplied?: {
     at: string;
     fields: Record<string, string>;
-    custom: Array<{ path: string; value: string }>;
+    custom: { path: string; value: string }[];
   };
 }
 

@@ -325,19 +325,18 @@ class SchemaManager {
       }
 
       // now process the references
-      //@ts-ignore
       currEl.find('ref').each((_index, el) => {
         const name = $(el).attr('name');
         if ($(el).parents('element').length > 0 && level > 0) {
           return; // ignore other elements
         }
-        //@ts-ignore
+        //@ts-expect-error
         if (!defHits[name]) {
-          //@ts-ignore
+          //@ts-expect-error
           defHits[name] = true;
-          //@ts-ignore
+          //@ts-expect-error
           const def = $('define[name="' + name + '"]', this.schemaXML);
-          //@ts-ignore
+          //@ts-expect-error
           return checkForText(def, defHits, level + 1, status);
         }
       });
@@ -348,12 +347,12 @@ class SchemaManager {
       const localData = localStorage[`cwrc.${tag}.text`];
       if (localData) return localData === 'true';
     }
-    //@ts-ignore
+    //@ts-expect-error
     const element = $(`element[name="${tag}"]`, this.schemaXML);
     const defHits = {};
     const level = 0;
     const status = { canContainText: false }; // needs to be an object so change is visible outside of checkForText
-    //@ts-ignore
+    //@ts-expect-error
     checkForText(element, defHits, level, status);
 
     if (useLocalStorage) localStorage[`cwrc.${tag}.text`] = status.canContainText;
@@ -376,14 +375,14 @@ class SchemaManager {
   }
 
   getDocumentationForTag(tag: string) {
-    //@ts-ignore
+    //@ts-expect-error
     const element = $(`element[name="${tag}"]`, this.schemaXML);
     const doc = $('a\\:documentation, documentation', element).first().text();
     return doc;
   }
 
   getFullNameForTag(tag: string) {
-    //@ts-ignore
+    //@ts-expect-error
     const element = $(`element[name="${tag}"]`, this.schemaXML);
     const doc = $('a\\:documentation, documentation', element).first().text();
     // if the tag name is an abbreviation, we expect the full name to be at the beginning of the doc, in parentheses
@@ -505,8 +504,7 @@ class SchemaManager {
         // check if context children are valid for parent
         const validChildren = this.getChildrenForTag(parentTag);
 
-        for (let i = 0; i < contextNode.children.length; i++) {
-          const child = contextNode.children[i];
+        for (const child of contextNode.children) {
           const childTag = child?.getAttribute('_tag');
           const childIsValid = validChildren.find((vc) => {
             return vc.name === childTag;
@@ -593,7 +591,7 @@ class SchemaManager {
    */
   async getPossibleRootsForSchema(schemaId: string) {
     if (this.mapper.mappings.has(schemaId)) {
-      //@ts-ignore
+      //@ts-expect-error
       return this.mapper.mappings.get(schemaId).root;
     }
 
@@ -758,7 +756,7 @@ class SchemaManager {
     const elements: string[] = [];
 
     // eslint-disable-next-line @typescript-eslint/ban-ts-comment
-    // @ts-ignore
+    // @ts-expect-error
 
     $('element', this.schemaXML).each((index, el) => {
       const tag = $(el);
@@ -802,7 +800,7 @@ class SchemaManager {
     schemaNavigator.setSchemaElements(this.schema.elements);
 
     // remove any child tags in the element/attribute documentation, as they are not handled properly during xmlToJSON
-    //@ts-ignore
+    //@ts-expect-error
     $('a\\:documentation *', this.schemaXML).each((index, el) => {
       if (el.parentElement) {
         el.parentElement.innerHTML = this.writer.utilities.escapeHTMLString(
@@ -811,7 +809,7 @@ class SchemaManager {
       }
     });
 
-    //@ts-ignore
+    //@ts-expect-error
     const schemaGrammar = $('grammar', this.schemaXML)[0];
     this.schemaJSON = this.writer.utilities.xmlToJSON(schemaGrammar);
 
@@ -891,9 +889,8 @@ class SchemaManager {
     const additionalBlockElements = this.mapper.getBlockLevelElements();
     const blockElements = this.writer.editor?.schema.getBlockElements();
     if (blockElements) {
-      for (let i = 0; i < additionalBlockElements.length; i++) {
-        //@ts-ignore
-        blockElements[additionalBlockElements[i]] = {};
+      for (const tag of additionalBlockElements) {
+        blockElements[tag] = {};
       }
     }
 
@@ -964,8 +961,7 @@ class SchemaManager {
     const rules = cssObj.stylesheet?.rules;
 
     if (rules) {
-      for (let i = 0; i < rules.length; i++) {
-        const rule = rules[i];
+      for (const rule of rules) {
         const popupRule = Object.assign({}, rule);
 
         if (rule?.type === 'rule') {
@@ -973,21 +969,17 @@ class SchemaManager {
           const convertedPopupSelectors = [];
 
           //? rules doesn't have selectors
-          //@ts-ignore
-          for (let j = 0; j < rule.selectors.length; j++) {
-            //@ts-ignore
-            const selector = rule.selectors[j];
-            //@ts-ignore
-            const newSelector = selector.replace(/(^|,|\s)(#?\w+)/g, (str, p1, p2, offset, s) => {
+          //@ts-expect-error
+          for (const selector of rule.selectors) {
+            const newSelector = selector.replace(/(^|,|\s)(#?\w+)/g, (str, p1, p2) => {
               return p1 + '*[_tag="' + p2 + '"]';
             });
             convertedPopupSelectors.push('.cwrc .popup ' + newSelector);
             convertedSelectors.push(newSelector);
           }
 
-          ///@ts-ignore
           rule.selectors = convertedSelectors;
-          //@ts-ignore
+          //@ts-expect-error
           popupRule.selectors = convertedPopupSelectors;
 
           popupCssObj.stylesheet?.rules.push(popupRule);

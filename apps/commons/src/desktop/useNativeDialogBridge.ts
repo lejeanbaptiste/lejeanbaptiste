@@ -92,7 +92,7 @@ declare global {
 
 interface SchemaPickerStatePayload {
   defaultSchemaId: string | null;
-  schemas: Array<{ id: string; name: string }>;
+  schemas: { id: string; name: string }[];
 }
 
 const getStringArg = (args: unknown, key: string): string | null => {
@@ -105,24 +105,24 @@ const getLeafWriterPaletteMode = (mode: PaletteMode): 'light' | 'dark' => {
   return window.matchMedia?.('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
 };
 
-const getWriterSchemasList = (): Array<{
+const getWriterSchemasList = (): {
   id: string;
   name: string;
   mapping: string;
   rng: string[];
   css: string[];
-}> => {
+}[] => {
   const writer = window.writer;
   if (!writer?.overmindState?.editor) return [];
 
   const { schemasList } = writer.overmindState.editor as {
-    schemasList: Array<{
+    schemasList: {
       id: string;
       name: string;
       mapping: string;
       rng: string[];
       css: string[];
-    }>;
+    }[];
   };
 
   return schemasList;
@@ -495,10 +495,10 @@ export const useNativeDialogBridge = () => {
               syncToCentral,
             } = (args ?? {}) as {
               values?: Record<string, string>;
-              custom?: Array<{ path: string; label: string; value: string }>;
+              custom?: { path: string; label: string; value: string }[];
               applyToDocuments?: boolean;
               translationAlignmentUnit?: 'div' | 'p';
-              translationLanguages?: Array<{ code: string; label: string }>;
+              translationLanguages?: { code: string; label: string }[];
               syncToCentral?: boolean;
             };
             const dialogId = getStringArg(args, 'dialogId');

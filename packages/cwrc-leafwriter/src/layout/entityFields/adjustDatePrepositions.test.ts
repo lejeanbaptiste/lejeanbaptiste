@@ -6,7 +6,7 @@ import {
 import type { DateGlossInput } from './dateGloss';
 
 describe('adjustDatePrepositionsInText', () => {
-  const dayLevels = (entries: Array<[number, boolean]>) => new Map(entries);
+  const dayLevels = (entries: [number, boolean][]) => new Map(entries);
 
   test('rewrites In→On before a day-level date', () => {
     expect(
@@ -59,7 +59,7 @@ describe('adjustDatePrepositionsInText', () => {
 });
 
 describe('ensureDatePrepositionsInText', () => {
-  const dayLevels = (entries: Array<[number, boolean]>) => new Map(entries);
+  const dayLevels = (entries: [number, boolean][]) => new Map(entries);
 
   test('inserts On at sentence start before a day-level date', () => {
     expect(

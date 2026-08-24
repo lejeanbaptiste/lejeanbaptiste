@@ -8,7 +8,6 @@ import {
   shiftLanguageToolMatchesAfterApply,
   DEFAULT_LANGUAGE_TOOL_SETTINGS,
   type LanguageToolMatch,
-  type LanguageToolSettings,
 } from './languageTool';
 
 describe('languageTool helpers', () => {

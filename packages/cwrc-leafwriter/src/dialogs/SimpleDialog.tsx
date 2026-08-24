@@ -25,7 +25,7 @@ export const SimpleDialog = ({
 
   actions = actions ?? [{ action: 'close', label: t('LW.commons.close') }];
 
-  const [data, setData] = useState<{ [key: string]: any }>({});
+  const [data, setData] = useState<Record<string, any>>({});
 
   const handleShouldCLose = async (action?: string) => {
     if (!onBeforeClose) return true;

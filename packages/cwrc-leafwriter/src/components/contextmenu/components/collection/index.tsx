@@ -40,7 +40,7 @@ export const Collection = ({ isLoading = false, list, searchable = false }: Coll
 
   const handleQuery = (query: string) => setQuery(query);
 
-  const handleMouseEnter = (id: string = '') => setActiveItem(id);
+  const handleMouseEnter = (id = '') => setActiveItem(id);
 
   return (
     //reset pointer event here so that the menu items could receive mouse events

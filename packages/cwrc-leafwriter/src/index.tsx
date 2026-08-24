@@ -292,7 +292,7 @@ export class Leafwriter {
   }
 
   getShowTags() {
-    overmind.state.editor.showTags;
+    return overmind.state.editor.showTags;
   }
 
   setShowTags(value: boolean) {
@@ -300,7 +300,7 @@ export class Leafwriter {
   }
 
   getContentHasChanged() {
-    overmind.state.editor.contentHasChanged;
+    return overmind.state.editor.contentHasChanged;
   }
 
   setContentHasChanged(value: boolean) {
@@ -322,7 +322,7 @@ export class Leafwriter {
   }
 
   async isValid() {
-    overmind.state.validator.validationErrors === 0;
+    return overmind.state.validator.validationErrors === 0;
   }
 
   async showSettingsDialog(options?: {

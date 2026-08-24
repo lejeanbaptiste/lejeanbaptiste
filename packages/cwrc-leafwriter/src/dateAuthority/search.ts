@@ -7,7 +7,7 @@ import type {
 } from './types';
 
 /** Build a lowercase search blob for typeahead (Chinese + simplified + toneless pinyin). */
-export function buildSearchText(parts: Array<string | null | undefined>): string {
+export function buildSearchText(parts: (string | null | undefined)[]): string {
   const tokens: string[] = [];
   for (const part of parts) {
     if (!part?.trim()) continue;
@@ -23,9 +23,9 @@ export function buildSearchText(parts: Array<string | null | undefined>): string
 }
 
 export function enrichDateAuthorityIndex(raw: {
-  dynasties: Array<Omit<DynastyAuthorityEntry, 'searchText'>>;
-  rulers: Array<Omit<RulerAuthorityEntry, 'searchText'>>;
-  eras: Array<Omit<EraAuthorityEntry, 'searchText'>>;
+  dynasties: Omit<DynastyAuthorityEntry, 'searchText'>[];
+  rulers: Omit<RulerAuthorityEntry, 'searchText'>[];
+  eras: Omit<EraAuthorityEntry, 'searchText'>[];
 }): DateAuthorityIndex {
   return {
     dynasties: raw.dynasties.map((entry) => ({

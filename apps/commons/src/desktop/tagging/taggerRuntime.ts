@@ -1,12 +1,12 @@
-type BookmarkLike = {
+interface BookmarkLike {
   rng?: Range;
   tagId?: string | string[];
-};
+}
 
-type SelectionWithBookmarks = {
+interface SelectionWithBookmarks {
   getBookmark: (type?: number) => BookmarkLike;
   moveToBookmark: (bookmark: BookmarkLike) => void;
-};
+}
 
 export type RuntimeBookmark = unknown;
 

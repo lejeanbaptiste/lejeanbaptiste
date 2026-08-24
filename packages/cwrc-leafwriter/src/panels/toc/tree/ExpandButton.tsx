@@ -3,12 +3,12 @@ import { IconButton, useColorScheme, useTheme, type PaletteMode } from '@mui/mat
 import { motion, type Variants } from 'motion/react';
 import { MouseEvent, useMemo } from 'react';
 
-type ExpandButtonProps = {
+interface ExpandButtonProps {
   disabled?: boolean;
   expanded?: boolean;
   onClick: (event: MouseEvent<HTMLElement, globalThis.MouseEvent>) => void;
   selected?: boolean;
-};
+}
 
 export const ExpandButton = ({
   disabled = false,

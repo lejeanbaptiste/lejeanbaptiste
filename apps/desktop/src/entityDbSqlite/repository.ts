@@ -264,7 +264,7 @@ export interface XmlExtractedAssertionInput {
   element: string;
   value: string;
   ref?: string | null;
-  children?: Array<{ element: string; value: string; ref?: string | null }>;
+  children?: { element: string; value: string; ref?: string | null }[];
 }
 
 export interface XmlExtractedWrapperInput {
@@ -342,20 +342,20 @@ export interface CreatePopulatedEntityInput {
   id: string;
   kind: SqliteEntityKind;
   description?: string | null;
-  names?: Array<{
+  names?: {
     text: string;
     nameType?: string | null;
     language?: string | null;
     isPrimary?: boolean;
     origin?: SqliteValueOrigin;
     source?: string | null;
-  }>;
-  authorities?: Array<{
+  }[];
+  authorities?: {
     type: string;
     value: string;
     origin?: SqliteValueOrigin;
     source?: string | null;
-  }>;
+  }[];
   familyName?: string | null;
   givenName?: string | null;
   now?: string;
@@ -368,12 +368,12 @@ export interface CreatePopulatedEntityInput {
  */
 export interface AuthorityBackfillPatch {
   entityId: string;
-  names?: Array<{
+  names?: {
     text: string;
     nameType?: string | null;
     language?: string | null;
     source?: string | null;
-  }>;
+  }[];
   /** Set only when the person has no family name yet (unless rewriteUnvalidatedPersonNames). */
   familyName?: string | null;
   /** Set only when the person has no given name yet (unless rewriteUnvalidatedPersonNames). */
@@ -388,46 +388,46 @@ export interface AuthorityBackfillPatch {
   rewriteUnvalidatedPersonNames?: boolean;
   /** Set only when the entity has no Latin-script name yet. */
   romanized?: { text: string; language?: string | null } | null;
-  dates?: Array<{
+  dates?: {
     source: string;
     startYear?: number | null;
     endYear?: number | null;
     /** Real floruit range → `date_kind=dates` + `start_precision=fl.` (not birth/death). */
     asFloruit?: boolean;
-  }>;
+  }[];
   /**
    * Delete active authority birth/death rows for these sources (e.g. CBDB
    * index/nationality years that were wrongly minted as vitals, or floruit
    * that was wrongly stored as birth/death before the dates+fl. path).
    */
   clearAuthorityVitalSources?: string[];
-  nationalities?: Array<{ label: string; ref?: string | null; source: string }>;
-  origins?: Array<{
+  nationalities?: { label: string; ref?: string | null; source: string }[];
+  origins?: {
     label: string;
     ref?: string | null;
     source: string;
     nameType?: string | null;
-  }>;
-  offices?: Array<{ label: string; ref?: string | null; source: string }>;
-  nobleTitles?: Array<{
+  }[];
+  offices?: { label: string; ref?: string | null; source: string }[];
+  nobleTitles?: {
     placeName: string;
     roleName: string;
     posthumousName?: string | null;
     dynasty?: string | null;
     ref?: string | null;
     source: string;
-  }>;
-  authorityCaches?: Array<{
+  }[];
+  authorityCaches?: {
     authorityType: string;
     source?: string | null;
     payload: unknown;
-  }>;
-  workAuthors?: Array<{
+  }[];
+  workAuthors?: {
     name: string;
     personId?: string | null;
     ref?: string | null;
     source?: string | null;
-  }>;
+  }[];
   /** Authority-origin work date (`date_kind = dates`), keyed by source. */
   workDate?: {
     source: string;
@@ -1437,7 +1437,7 @@ export class EntitySqliteRepository {
   listMappingsByCentralIds(
     userStableId: string,
     centralIds: string[],
-  ): Array<{ projectEntityId: string; centralId: string; label: string | null }> {
+  ): { projectEntityId: string; centralId: string; label: string | null }[] {
     if (centralIds.length === 0) return [];
     const placeholders = centralIds.map(() => '?').join(', ');
     const rows = this.db
@@ -1470,7 +1470,7 @@ export class EntitySqliteRepository {
    */
   listAllCentralMappingsForUser(
     userStableId: string,
-  ): Array<{ projectEntityId: string; centralId: string }> {
+  ): { projectEntityId: string; centralId: string }[] {
     const rows = this.db
       .prepare(
         `SELECT m.project_entity_id, m.central_entity_id
@@ -2932,14 +2932,14 @@ export class EntitySqliteRepository {
            WHERE entity_id = ? AND xml LIKE '%ljb-entity-note%'
            ORDER BY ordinal`,
         )
-        .all(entityId) as Array<{ xml: string }>),
+        .all(entityId) as { xml: string }[]),
       ...(this.db
         .prepare(
           `SELECT xml FROM entity_extensions
            WHERE entity_id = ? AND xml LIKE '%ljb-entity-note%'
            ORDER BY ordinal`,
         )
-        .all(entityId) as Array<{ xml: string }>),
+        .all(entityId) as { xml: string }[]),
     ];
     return rows.map((row) => ({ xml: String(row.xml) }));
   }
@@ -3216,7 +3216,7 @@ export class EntitySqliteRepository {
 
       if (input.purgeOrphanSources !== false) {
         const sourcePrefix = `xml:${input.documentKey}#personWrapper:`;
-        const orphanTables: Array<{ table: string; ownerCol: string }> = [
+        const orphanTables: { table: string; ownerCol: string }[] = [
           { table: 'person_nationalities', ownerCol: 'person_id' },
           { table: 'person_origins', ownerCol: 'person_id' },
           { table: 'person_offices', ownerCol: 'person_id' },
@@ -3230,12 +3230,12 @@ export class EntitySqliteRepository {
                FROM ${table}
                WHERE origin = 'xml' AND source LIKE ?`,
             )
-            .all(`${sourcePrefix}%`) as Array<{
+            .all(`${sourcePrefix}%`) as {
             id: number;
             owner_id: string;
             source: string | null;
             status: string;
-          }>;
+          }[];
           for (const row of rows) {
             if (!row.source || liveSources.has(row.source)) continue;
             if (row.status !== 'active') {
@@ -3630,7 +3630,7 @@ export class EntitySqliteRepository {
                OR name_type IN ('translation', 'variant')
              )`,
         )
-        .all() as Array<{ id: number; entityId: string }>;
+        .all() as { id: number; entityId: string }[];
       for (const row of latnToPromote) {
         this.db
           .prepare(`UPDATE entity_names SET name_type = 'romanization', updated_at = ? WHERE id = ?`)
@@ -3649,7 +3649,7 @@ export class EntitySqliteRepository {
            GROUP BY entity_id, text, COALESCE(name_type, '')
            HAVING c > 1`,
         )
-        .all() as Array<{ entityId: string; text: string; nameTypeKey: string; c: number }>;
+        .all() as { entityId: string; text: string; nameTypeKey: string; c: number }[];
 
       let dedupedNames = 0;
       for (const group of dupGroups) {
@@ -3663,12 +3663,12 @@ export class EntitySqliteRepository {
                       CASE WHEN name_type IS NULL OR TRIM(name_type) = '' THEN 1 ELSE 0 END,
                       id ASC`,
           )
-          .all(group.entityId, group.text, group.nameTypeKey) as Array<{
+          .all(group.entityId, group.text, group.nameTypeKey) as {
           id: number;
           origin: SqliteValueOrigin;
           isPrimary: number;
           nameType: string | null;
-        }>;
+        }[];
         const [, ...extras] = rows;
         for (const extra of extras) {
           if (extra.origin === 'user') {
@@ -3697,7 +3697,7 @@ export class EntitySqliteRepository {
           `SELECT id FROM entities
            WHERE id IN (SELECT DISTINCT entity_id FROM entity_names) OR kind = 'person'`,
         )
-        .all() as Array<{ id: string }>;
+        .all() as { id: string }[];
       for (const { id: entityId } of entityIds) {
         const result = this.normalizeEntityNameIntegrity(entityId, now);
         removedNan += result.removedNan;
@@ -3713,7 +3713,7 @@ export class EntitySqliteRepository {
              AND (name_type IS NULL OR TRIM(name_type) = '')
              AND is_primary = 0`,
         )
-        .all() as Array<{ id: number; entityId: string; origin: SqliteValueOrigin }>;
+        .all() as { id: number; entityId: string; origin: SqliteValueOrigin }[];
 
       let removedUntyped = 0;
       for (const row of untyped) {
@@ -3781,7 +3781,7 @@ export class EntitySqliteRepository {
 
   /** Delete all content rows for an entity, keeping the entity row and central mappings. */
   private clearEntityBody(entityId: string): void {
-    const tables: Array<[string, string]> = [
+    const tables: [string, string][] = [
       ['entity_names', 'entity_id'],
       ['entity_authorities', 'entity_id'],
       ['entity_dates', 'entity_id'],
@@ -4243,13 +4243,13 @@ export class EntitySqliteRepository {
                    OR name_role IN ('family', 'given', 'familyName', 'givenName')
                  )`,
             )
-            .all(patch.entityId) as Array<{
+            .all(patch.entityId) as {
             id: number;
             text: string;
             name_type: string | null;
             name_role: string | null;
             origin: string;
-          }>;
+          }[];
           for (const row of authorityNameRows) {
             const type = normalizePersonNameType(row.name_type) ?? row.name_role;
             const text = row.text.trim();
@@ -4299,7 +4299,7 @@ export class EntitySqliteRepository {
                  WHERE entity_id = ? AND text = ?
                  ORDER BY CASE status WHEN 'active' THEN 0 WHEN 'withdrawn' THEN 1 ELSE 2 END, id`,
               )
-              .all(patch.entityId, text) as Array<{ id: number; status: string }>;
+              .all(patch.entityId, text) as { id: number; status: string }[];
             const active = rows.find((row) => row.status === 'active');
             if (active) return;
             const withdrawn = rows.find((row) => row.status === 'withdrawn');
@@ -4799,12 +4799,12 @@ export class EntitySqliteRepository {
            FROM ${table}
            WHERE person_id = ? AND source = ?`,
         )
-        .all(wrapper.entityId, wrapper.source) as Array<{
+        .all(wrapper.entityId, wrapper.source) as {
         id: number;
         label: string;
         origin: string;
         status: string;
-      }>;
+      }[];
       for (const row of rows) {
         const label = String(row.label).trim();
         const present = elements.some((element) =>
@@ -4835,14 +4835,14 @@ export class EntitySqliteRepository {
            FROM person_titles
            WHERE person_id = ? AND source = ?`,
         )
-        .all(wrapper.entityId, wrapper.source) as Array<{
+        .all(wrapper.entityId, wrapper.source) as {
         id: number;
         place_name: string | null;
         role_name: string | null;
         posthumous_name: string | null;
         origin: string;
         status: string;
-      }>;
+      }[];
       for (const row of rows) {
         if (row.origin !== 'xml' || row.status !== 'active') {
           retained += 1;
@@ -4868,7 +4868,7 @@ export class EntitySqliteRepository {
       }
     }
 
-    const rowExists = (sql: string, ...params: Array<string | number | bigint | null>) =>
+    const rowExists = (sql: string, ...params: (string | number | bigint | null)[]) =>
       Boolean(this.db.prepare(sql).get(...params));
 
     for (const item of mapped) {
@@ -5158,7 +5158,7 @@ export class EntitySqliteRepository {
         `SELECT id, origin FROM entity_names
          WHERE entity_id = ? AND status = 'active' AND TRIM(text) = 'nan'`,
       )
-      .all(entityId) as Array<{ id: number; origin: SqliteValueOrigin }>;
+      .all(entityId) as { id: number; origin: SqliteValueOrigin }[];
     for (const row of nanRows) remove(row, 'auto-clean-nan');
 
     let dedupedNames = 0;
@@ -5170,7 +5170,7 @@ export class EntitySqliteRepository {
          GROUP BY text, COALESCE(name_type, '')
          HAVING COUNT(*) > 1`,
       )
-      .all(entityId) as Array<{ text: string; nameTypeKey: string }>;
+      .all(entityId) as { text: string; nameTypeKey: string }[];
     for (const group of groups) {
       const rows = this.db
         .prepare(
@@ -5181,10 +5181,10 @@ export class EntitySqliteRepository {
                     CASE WHEN name_type IS NULL OR TRIM(name_type) = '' THEN 1 ELSE 0 END,
                     id ASC`,
         )
-        .all(entityId, group.text, group.nameTypeKey) as Array<{
+        .all(entityId, group.text, group.nameTypeKey) as {
         id: number;
         origin: SqliteValueOrigin;
-      }>;
+      }[];
       for (const row of rows.slice(1)) {
         remove(row, 'auto-clean-duplicate');
         dedupedNames += 1;
@@ -5206,7 +5206,7 @@ export class EntitySqliteRepository {
              AND ((name_type IN ('family', 'familyName') OR name_role IN ('family', 'familyName')) AND TRIM(text) = 'n'
                OR (name_type IN ('given', 'givenName') OR name_role IN ('given', 'givenName')) AND TRIM(text) = 'an')`,
         )
-        .all(entityId) as Array<{ id: number; origin: SqliteValueOrigin }>;
+        .all(entityId) as { id: number; origin: SqliteValueOrigin }[];
       for (const row of invalidRows) remove(row, 'auto-clean-invalid-family-given');
       this.syncPersonNameScalarsAfterTypeChange(entityId, 'n', 'family', null, now);
       this.syncPersonNameScalarsAfterTypeChange(entityId, 'an', 'given', null, now);

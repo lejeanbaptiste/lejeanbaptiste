@@ -183,11 +183,11 @@ class Writer extends EventManager {
 
     this.event('tinymceInitialized').subscribe(async () => {
       // fade out loading mask and do final resizing after tinymce has loaded
-      //@ts-ignore
+      //@ts-expect-error
       this.layoutManager.$outerLayout.options.onresizeall_end = () => {
-        //@ts-ignore
+        //@ts-expect-error
         this.layoutManager.$outerLayout.options.onresizeall_end = null;
-        //@ts-ignore
+        //@ts-expect-error
         this.layoutManager.$loadingMask.fadeOut(350);
       };
 
@@ -304,7 +304,7 @@ class Writer extends EventManager {
   // showSaveAsDialog() {}
   // saveAndExit() {}
 
-  validate(callback?: Function) {
+  validate(callback?: (isValid: boolean) => void) {
     if (callback) {
       const doCallback = (isValid: boolean) => {
         callback.call(this, isValid);
@@ -320,7 +320,7 @@ class Writer extends EventManager {
    * Get the document contents as XML
    * @param {Function} callback Callback is called with an XML representation of the document
    */
-  getDocumentXML(callback: Function) {
+  getDocumentXML(callback: (doc: Document | null) => void) {
     this.converter.getDocument(false, callback);
   }
 
@@ -328,7 +328,7 @@ class Writer extends EventManager {
    * Get the document contents as a string
    * @param {Function} callback Callback is called with a string representation of the document
    */
-  async getDocumentString(callback?: Function) {
+  async getDocumentString(callback?: (docString: string) => void) {
     const document = await this.converter.getDocument(true, callback);
     return typeof document === 'string' ? document : undefined;
   }

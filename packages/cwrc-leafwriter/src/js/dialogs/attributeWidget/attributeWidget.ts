@@ -106,13 +106,12 @@ class AttributeWidget {
     // build atts
     let attsString = '';
     let attributeSelector = '';
-    let isRequired = false;
+    let isRequired: boolean;
 
     for (const att of atts) {
       //skip disallowedAttributes
       if (RESERVED_ATTRIBUTES.has(att.name)) continue;
 
-      let currAttString = '';
       isRequired = att.required;
 
       // Attribute name
@@ -142,7 +141,7 @@ class AttributeWidget {
       att.defaultValue = initialVals?.[att.name] ? initialVals[att.name] : '';
       const display = initialVals?.[att.name] ? 'flex' : 'none';
 
-      currAttString = this.createAttributeField({
+      const currAttString = this.createAttributeField({
         attributeName: att.name,
         choices: att.choices,
         disabled: disabledAttributes.includes(att.name),

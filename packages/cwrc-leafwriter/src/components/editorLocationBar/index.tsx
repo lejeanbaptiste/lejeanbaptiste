@@ -13,9 +13,9 @@ export const EDITOR_LOCATION_BAR_ID = 'editor-location-bar';
 
 export const SOURCE_CURSOR_MOVED_EVENT = 'lw:source-cursor-moved';
 
-export type SourceCursorMovedDetail = {
+export interface SourceCursorMovedDetail {
   offset: number;
-};
+}
 
 const XPathBreadcrumb = ({
   xpath,

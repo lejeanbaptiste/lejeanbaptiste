@@ -101,8 +101,8 @@ export const getParentsForTag = (tag: string) => {
   }
 
   let parents: { name: string; level: number }[] = [];
-  for (let i = 0; i < elements.length; i++) {
-    parents = [...parents, ...getElementParents(elements[i])];
+  for (const element of elements) {
+    parents = [...parents, ...getElementParents(element)];
   }
 
   sortEntries(parents);
@@ -142,8 +142,8 @@ export const getChildrenForTag = (tag: string) => {
   }
 
   let children: any[] = [];
-  for (let i = 0; i < elements.length; i++) {
-    children = [...children, ...getElementChildren(elements[i], 'element')];
+  for (const element of elements) {
+    children = [...children, ...getElementChildren(element, 'element')];
   }
 
   sortEntries(children);
@@ -296,8 +296,7 @@ const getElementChildren = (element: any, type: string) => {
   if (children.indexOf('anyName') !== -1) {
     children = [];
     // anyName means include all elements
-    for (let i = 0; i < schemaElements.length; i++) {
-      const el = schemaElements[i];
+    for (const el of schemaElements) {
       // TODO need to add more info than just the name
       children.push({ name: el });
     }
@@ -335,8 +334,7 @@ const getParentsJSON = (defName: string, defHits: any, level: number, parents: a
     }
   });
 
-  for (let i = 0; i < matches.length; i++) {
-    const item = matches[i];
+  for (const item of matches) {
     let parent = item.$parent;
 
     while (parent !== undefined) {
@@ -406,9 +404,7 @@ const getChildrenJSON = (
     }
   });
 
-  for (let i = 0; i < hits.length; i++) {
-    const child = hits[i];
-
+  for (const child of hits) {
     let docs = null;
     queryDown(child, (item: any) => {
       if (item['a:documentation']) {
@@ -449,27 +445,27 @@ const getChildrenJSON = (
 
       if (type === 'element') {
         if (refParentProps?.optional != null) {
-          //@ts-ignore
+          //@ts-expect-error
           childObj.required = !refParentProps.optional;
         } else {
           if (child.$parent?.$key === 'element' || child.$parent?.$key === 'oneOrMore') {
-            //@ts-ignore
+            //@ts-expect-error
             childObj.required = true;
           } else {
-            //@ts-ignore
+            //@ts-expect-error
             childObj.required = false;
           }
         }
       } else if (type === 'attribute') {
         if (refParentProps?.optional != null) {
-          //@ts-ignore
+          //@ts-expect-error
           childObj.required = !refParentProps.optional;
         } else {
-          //@ts-ignore
+          //@ts-expect-error
           childObj.required = true;
           queryUp(child.$parent, (item: any) => {
             if (item.optional) {
-              //@ts-ignore
+              //@ts-expect-error
               childObj.required = false;
               return false;
             }
@@ -484,7 +480,7 @@ const getChildrenJSON = (
           }
         });
 
-        //@ts-ignore
+        //@ts-expect-error
         childObj.defaultValue = defaultVal || '';
 
         let choice: any = null;
@@ -504,13 +500,12 @@ const getChildrenJSON = (
             if (!Array.isArray(values)) values = [values];
           });
 
-          for (let j = 0; j < values.length; j++) {
-            let val = values[j];
+          for (let val of values) {
             if (val['#text']) val = val['#text'];
             choices.push(val);
           }
 
-          //@ts-ignore
+          //@ts-expect-error
           childObj.choices = choices;
         }
 
@@ -531,8 +526,7 @@ const getChildrenJSON = (
     if (item.ref) hits = hits.concat(item.ref); // use concat incase item.ref is an array
   });
 
-  for (let i = 0; i < hits.length; i++) {
-    const ref = hits[i];
+  for (const ref of hits) {
     const name = ref['@name'];
 
     // store optional value
@@ -568,8 +562,8 @@ const getChildrenJSON = (
  * @param {Object} context A schema entry, the starting point.
  * @param {Function} matchingFunc The function that's called on each entry.
  */
-const queryUp = (context: any, matchingFunc: Function) => {
-  let continueQuery = true;
+const queryUp = (context: any, matchingFunc: (context: any) => boolean | undefined | void) => {
+  let continueQuery: boolean | undefined | void = true;
   while (continueQuery && context !== null) {
     continueQuery = matchingFunc.call(this, context);
     if (continueQuery === undefined) continueQuery = true;
@@ -584,7 +578,11 @@ const queryUp = (context: any, matchingFunc: Function) => {
  * @param {Function} matchingFunc The function that's called on each entry.
  * @param {Boolean} [processRefs] Automatically process refs, i.e. fetch their definitions
  */
-const queryDown = (context: any, matchingFunc: Function, processRefs = false) => {
+const queryDown = (
+  context: any,
+  matchingFunc: (context: any) => boolean | undefined | void,
+  processRefs = false,
+) => {
   let continueQuery = true;
   const defHits = {};
 
@@ -596,7 +594,7 @@ const queryDown = (context: any, matchingFunc: Function, processRefs = false) =>
   function doQuery(currContext: any) {
     if (!continueQuery) return;
 
-    //@ts-ignore
+    //@ts-expect-error
     continueQuery = matchingFunc.call(this, currContext);
     if (continueQuery == undefined) continueQuery = true;
 
@@ -608,11 +606,11 @@ const queryDown = (context: any, matchingFunc: Function, processRefs = false) =>
         if (processRefs === true && key === 'ref') {
           const refs = isArray(prop) ? prop : [prop];
 
-          for (let j = 0; j < refs.length; j++) {
-            const name = refs[j]['@name'];
-            //@ts-ignore
+          for (const ref of refs) {
+            const name = ref['@name'];
+            //@ts-expect-error
             if (defHits[name] === undefined) {
-              //@ts-ignore
+              //@ts-expect-error
               defHits[name] = true;
               const def = getDefinition(name);
               if (def !== null) doQuery(def);
@@ -620,8 +618,8 @@ const queryDown = (context: any, matchingFunc: Function, processRefs = false) =>
           }
         } else {
           if (isArray(prop)) {
-            for (let i = 0; i < prop.length; i++) {
-              doQuery(prop[i]);
+            for (const item of prop) {
+              doQuery(item);
             }
           } else if (isObject(prop)) {
             doQuery(prop);

@@ -67,11 +67,11 @@ export type CbdbConcordancePackReader = (
   packId: AuthorityPackId,
 ) => Promise<AuthorityPackContent>;
 
-export type CbdbConcordanceSqliteStore = {
+export interface CbdbConcordanceSqliteStore {
   sqliteApplyConcordance: (
     associations: ConcordanceAssociation[],
   ) => Promise<ConcordanceImportResult>;
-};
+}
 
 /** Store shape needed for debounce keys + optional SQLite presence check. */
 export type CbdbConcordanceRefreshStore = CbdbConcordanceSqliteStore & {
@@ -90,11 +90,11 @@ export function packIdsAffectConcordance(packIds: readonly string[] | undefined)
   return packIds.some((id) => CONCORDANCE_LIFECYCLE_PACK_IDS.has(id as AuthorityPackId));
 }
 
-type RefreshGate = {
+interface RefreshGate {
   inflight: Map<string, Promise<ConcordanceImportResult | null>>;
   completedAt: Map<string, number>;
   lastResult: Map<string, ConcordanceImportResult | null>;
-};
+}
 
 const refreshGate: RefreshGate = {
   inflight: new Map(),
@@ -137,7 +137,7 @@ export async function refreshCbdbConcordanceSqlite(
   }
 }
 
-export type RefreshCbdbConcordanceDebounceOptions = {
+export interface RefreshCbdbConcordanceDebounceOptions {
   /** Always apply (pack install/update, post-backfill). Default false skips within debounce. */
   force?: boolean;
   /** Drop cached pack contents before reading. Default true. */
@@ -146,7 +146,7 @@ export type RefreshCbdbConcordanceDebounceOptions = {
   now?: number;
   /** Override debounce window for tests. */
   debounceMs?: number;
-};
+}
 
 /**
  * Apply concordance with in-flight coalescing and a short debounce so a panel
@@ -195,14 +195,14 @@ export async function refreshCbdbConcordanceSqliteDebounced(
   return run;
 }
 
-export type RefreshCbdbConcordanceAfterPackLifecycleDeps = {
+export interface RefreshCbdbConcordanceAfterPackLifecycleDeps {
   /** Defaults to the open project PEDB (same target as Database panel reload). */
   resolveStore?: () => CbdbConcordanceRefreshStore | null;
   readPack?: CbdbConcordancePackReader | undefined;
   /** When provided and non-empty without concordance packs, skip. */
   packIds?: readonly string[];
   force?: boolean;
-};
+}
 
 /**
  * After authority pack install/update: re-apply CBDB concordance to the open

@@ -386,7 +386,7 @@ export const demoteEntityKeys = (xml: string): DemoteEntityKeysResult => {
     }
 
     count += keys.length;
-    let next = tag.replace(KEY_ATTR, '');
+    const next = tag.replace(KEY_ATTR, '');
     const tokens = keys.map((key) => `${FORMER_KEY_ANA_PREFIX}${key}`);
 
     const anaMatch = next.match(ANA_ATTR);

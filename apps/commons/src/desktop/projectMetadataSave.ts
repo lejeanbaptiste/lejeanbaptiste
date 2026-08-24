@@ -4,6 +4,7 @@ import {
   type NameTypeTaggingBucket,
 } from '../../../../packages/cwrc-leafwriter/src/autoTagging/nameTypeTaggingPolicy';
 import type { TFunction } from 'i18next';
+import type { NotificationProps } from '@src/types';
 import { resolveProjectBundleByPath } from './activeProjectBundle';
 import { getProjectSourceLanguage } from './projectLanguage';
 import type { ProjectBundle } from './projectTypes';
@@ -31,7 +32,7 @@ import type { TranslationLanguage } from './translationTypes';
 export interface ProjectMetadataSavePayload {
   projectFilePath: string;
   values: Record<string, string>;
-  custom: Array<{ path: string; label: string; value: string }>;
+  custom: { path: string; label: string; value: string }[];
   applyToDocuments: boolean;
   translationAlignmentUnit?: 'div' | 'p';
   translationLanguages?: TranslationLanguage[];
@@ -48,9 +49,9 @@ export interface ProjectMetadataSaveResult {
 
 export interface ProjectMetadataSaveDeps {
   electronAPI: NonNullable<Window['electronAPI']>;
-  openTabs: Array<{ filePath: string; dirty: boolean }>;
-  reloadTabFromDisk: (filePath: string) => Promise<void>;
-  notifyViaSnackbar: (notification: { message: string; options?: { variant?: string } }) => void;
+  openTabs: { filePath: string; dirty: boolean }[];
+  reloadTabFromDisk: (filePath: string) => Promise<boolean>;
+  notifyViaSnackbar: (notification: NotificationProps | string) => void;
   t: TFunction;
   getAuthoritySettings: (bundle: ProjectBundle) => AutoTaggingAuthoritySettings | undefined;
   setAuthoritySettings: (settings: AutoTaggingAuthoritySettings) => void;
@@ -78,8 +79,6 @@ export const saveProjectMetadataChanges = async (
     reloadTabFromDisk,
     notifyViaSnackbar,
     t,
-    getAuthoritySettings,
-    setAuthoritySettings,
   } = deps;
   const mode = payload.mode ?? 'edition';
 
@@ -128,7 +127,7 @@ export const saveProjectMetadataChanges = async (
         );
         for (const lang of payload.translationLanguages ?? []) {
           if (!existingCodes.has(lang.code)) {
-            // eslint-disable-next-line no-await-in-loop
+             
             await addTranslationLanguage(bundle, lang);
           }
         }

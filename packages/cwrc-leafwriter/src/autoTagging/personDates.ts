@@ -18,19 +18,19 @@ export interface PersonDateMetadata {
   dateSource?: PersonDateSource | string | null;
   startYear?: number | null;
   endYear?: number | null;
-  nationality?: Array<{
+  nationality?: {
     startYear?: number | null;
     endYear?: number | null;
-  }> | null;
+  }[] | null;
   /**
    * Pack-native dynasty spans (e.g. Norbert). Used as a filter fallback when
    * `nationality[]` has labels but no years — common for dynasties that never
    * matched Wikidata during pack compile.
    */
-  dynasties?: Array<{
+  dynasties?: {
     startYear?: number | null;
     endYear?: number | null;
-  }> | null;
+  }[] | null;
 }
 
 /** Treat CBDB/legacy sentinel `0` (and non-finite values) as missing. */
@@ -91,8 +91,8 @@ export function hasFilterInterval(meta: PersonDateMetadata | null | undefined): 
 
 /** Collect start/end year pairs from nationality or dynasty lists. */
 function yearSpansFromEntries(
-  entries: Array<{ startYear?: number | null; endYear?: number | null }> | null | undefined,
-): Array<{ start: number; end: number }> {
+  entries: { startYear?: number | null; endYear?: number | null }[] | null | undefined,
+): { start: number; end: number }[] {
   return (entries ?? []).flatMap((entry) => {
     const start = finiteBiographicalYear(entry.startYear);
     const end = finiteBiographicalYear(entry.endYear);

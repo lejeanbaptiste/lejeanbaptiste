@@ -274,7 +274,7 @@ export const missingTranslationLangs = (
  * into names as type `translation` after migration 9).
  */
 export const entityLikeFromNameEntries = (
-  nameEntries: Array<{ text: string; lang?: string | null; type?: string | null }>,
+  nameEntries: { text: string; lang?: string | null; type?: string | null }[],
 ): Pick<EntitySummary, 'translations' | 'names'> => ({
   translations: [],
   names: nameEntries.map((entry) => ({

@@ -170,7 +170,6 @@ export function applyNobleTitleSpanToEditor(
 
     const subRange = rangeForSlot(doc, segment, slot);
     editor.selection.setRng(subRange);
-    // @ts-ignore — getBookmark's overloads in this codebase's tinymce types don't include the (1) form used throughout tagger.ts callers.
     const bookmark = editor.selection.getBookmark(1);
     const tagged = writer.tagger.addStructureTag({ action: ADD, attributes, bookmark, tagName });
     return (tagged as Element | undefined)?.id ?? null;

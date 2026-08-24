@@ -129,11 +129,11 @@ function priorDateLabel(s: Suggestion): string {
 export function priorAcceptedDates(
   suggestions: Suggestion[],
   currentId: string,
-): Array<{ index: number; surface: string; label: string }> {
+): { index: number; surface: string; label: string }[] {
   const currentIndex = suggestions.findIndex((s) => s.id === currentId);
   if (currentIndex <= 0) return [];
 
-  const prior: Array<{ index: number; surface: string; label: string }> = [];
+  const prior: { index: number; surface: string; label: string }[] = [];
   for (let i = 0; i < currentIndex; i++) {
     const s = suggestions[i]!;
     if (s.tag !== 'date') continue;

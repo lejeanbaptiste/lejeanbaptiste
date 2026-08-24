@@ -1,4 +1,4 @@
-const ROOT_OPEN_TAG_PATTERN = /^(\s*<[^\/?!][^>]*>)/;
+const ROOT_OPEN_TAG_PATTERN = /^(\s*<[^/?!][^>]*>)/;
 
 const getRootOpenTag = (xml: string): string | null => {
   const withoutPis = xml.replace(/<\?[^?]+\?>\s*/g, '');

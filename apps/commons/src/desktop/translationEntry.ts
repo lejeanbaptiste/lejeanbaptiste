@@ -195,7 +195,7 @@ export const reindexTranslationOnSave = async (
 
   for (const language of settings.languages) {
     const translationPath = translationFilePathFor(filePath, language.code);
-    // eslint-disable-next-line no-await-in-loop
+
     const existingXml = await readFileOrNull(translationPath);
     const existingDoc = existingXml
       ? new DOMParser().parseFromString(existingXml, 'application/xml')
@@ -210,7 +210,7 @@ export const reindexTranslationOnSave = async (
       language.code,
       settings.alignmentUnit,
     );
-    // eslint-disable-next-line no-await-in-loop
+
     await window.electronAPI?.writeFile(
       translationPath,
       new XMLSerializer().serializeToString(resynced),

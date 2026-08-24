@@ -5,8 +5,8 @@ import {
   svgStampPixelsForCssBox,
   BODY_CSS_OVERSAMPLE,
   SVG_PIXEL_OVERSAMPLE,
+  scenePhotoFilterForBackground,
   scenePhotoFilterForPose,
-  backgroundPoolForRank,
 } from './UniformAvatar';
 
 describe('pose rank eligibility', () => {
@@ -25,41 +25,44 @@ describe('pose rank eligibility', () => {
   });
 
   it('excludes weaponed poses until the player rank unlocks a tier', () => {
-    expect(poseEligibleForRank(7, 'm', 0)).toBe(false);
-    expect(poseEligibleForRank(7, 'f', 0)).toBe(false);
+    expect(poseEligibleForRank(7, 'm', 0)).toBe(true);
+    expect(poseEligibleForRank(7, 'f', 0)).toBe(true);
     expect(poseEligibleForRank(7, 'm', 1)).toBe(true);
     expect(poseEligibleForRank(5, 'm', 0)).toBe(true);
     expect(poseEligibleForRank(6, 'f', 0)).toBe(true);
   });
 
   it('lists only eligible poses for rank 1 (Fusilier)', () => {
-    expect(eligiblePoseIndices('m', 0)).toEqual([1, 2, 5, 6, 8]);
-    expect(eligiblePoseIndices('f', 0)).toEqual([1, 2, 5, 6, 8]);
+    expect(eligiblePoseIndices('m', 0)).toEqual([1, 5, 6, 8, 11]);
+    expect(eligiblePoseIndices('f', 0)).toEqual([1, 5, 6, 8, 11]);
   });
 
-  it('includes body7, body8, and body9 from rank 2 upward but not body3/4 until rank 3', () => {
-    expect(eligiblePoseIndices('m', 1)).toEqual([1, 2, 5, 6, 7, 8, 9]);
-    expect(eligiblePoseIndices('m', 2)).toEqual([1, 2, 3, 4, 5, 6, 7, 8, 9]);
+  it('keeps the aircraft subject out of Rank 2 and introduces it in Rank 3', () => {
+    expect(eligiblePoseIndices('m', 1)).toEqual([1, 2, 5, 6, 7, 8, 11]);
+    expect(eligiblePoseIndices('m', 2)).toEqual([1, 2, 3, 4, 5, 6, 7, 8, 11, 9001]);
   });
 
-  it('limits unranked players to body1 and body2', () => {
-    expect(eligiblePoseIndices('m', -1)).toEqual([1, 2]);
+  it('limits unranked players to body1 only', () => {
+    // body5 requires its napoleonic-tier weapon art, which only unlocks at
+    // Rank 1 (rankIndex 0) and above - see WEAPON_ERA_TIERS in
+    // visual_design's bodySvg.mjs. An unranked player (-1) hasn't reached
+    // that yet, so body5 correctly drops out here even though it's back in
+    // the very next test ('lists only eligible poses for rank 1').
+    expect(eligiblePoseIndices('m', -1)).toEqual([1]);
   });
 });
 
 describe('scene photo filter', () => {
-  it('uses the WWI photo treatment for pose 9 only', () => {
-    expect(scenePhotoFilterForPose(9)).toBe('grayscale(0.95) contrast(1.2) brightness(0.92)');
+  it('leaves subject-scene grading to the authored composite', () => {
+    expect(scenePhotoFilterForPose(9001)).toBeUndefined();
     expect(scenePhotoFilterForPose(8)).toBeUndefined();
   });
-});
 
-describe('pose-specific backgrounds', () => {
-  it('keeps body9 backgrounds exclusive to body9', () => {
-    expect(backgroundPoolForRank(3, 9)).toEqual(['bg/2f', 'bg/3f', 'bg/4e', 'bg/4f']);
-    expect(backgroundPoolForRank(3, 8)).not.toEqual(
-      expect.arrayContaining(['bg/2f', 'bg/3f', 'bg/4e', 'bg/4f']),
-    );
+  it('uses the selected archive record rather than the pose for grading', () => {
+    expect(scenePhotoFilterForBackground('bg/r03/military/r03-artillery')).toContain('grayscale');
+    expect(scenePhotoFilterForBackground('bg/r04/military/r04-a-airfield')).toContain('grayscale');
+    expect(scenePhotoFilterForBackground('bg/r04/military/r04-a-hospital')).toContain('sepia');
+    expect(scenePhotoFilterForBackground('bg/r01/military/r01-artillery')).toBeUndefined();
   });
 });
 

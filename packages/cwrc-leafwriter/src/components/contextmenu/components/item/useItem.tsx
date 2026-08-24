@@ -1,12 +1,12 @@
 import { useEffect, useState } from 'react';
 import { ItemProps, ItemType } from './';
 
-type UseItemProps = {
+interface UseItemProps {
   active?: boolean;
   children?: ItemProps[];
   getChildren?: () => Promise<ItemProps[]>;
   type: ItemType;
-};
+}
 
 export const useItem = ({ active, children, getChildren, type }: UseItemProps) => {
   const [nestedList, setNestedList] = useState<ItemProps[]>(children ?? []);

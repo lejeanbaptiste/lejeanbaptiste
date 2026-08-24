@@ -20,19 +20,19 @@ export const MAXIRICCI_TRANSLATIONS_PACK_ID: AuthorityPackId = 'maxiricci7000-tr
 export type OfficeGlossIndex = Map<string, string>;
 
 /** French index: officeId keys plus zh / zh\\tdynasty fallbacks for Batch A. */
-export type FrenchOfficeGlossIndex = {
+export interface FrenchOfficeGlossIndex {
   byOfficeId: Map<string, string>;
   byZhDynasty: Map<string, string>;
   byZh: Map<string, string>;
-};
+}
 
-type GlossRow = {
+interface GlossRow {
   translation?: string;
   officeIds?: string[];
   zh?: string;
   dynasty?: string;
   language?: string;
-};
+}
 
 /**
  * Publishable English/French office gloss. Rejects CBDB's
@@ -59,7 +59,7 @@ export function formatOfficeClue(
 
 /** Keys used in Huckbot/Maxi `officeIds` (`cbdb:office:7`, `norbert:office:42`, …). */
 export function officeGlossLookupKeys(
-  authorities: ReadonlyArray<{ type: string; value: string }>,
+  authorities: readonly { type: string; value: string }[],
 ): string[] {
   const keys = new Set<string>();
   for (const auth of authorities) {
@@ -82,7 +82,7 @@ export function officeGlossLookupKeys(
 
 export function lookupEnglishOfficeGloss(
   glosses: OfficeGlossIndex,
-  authorities: ReadonlyArray<{ type: string; value: string }>,
+  authorities: readonly { type: string; value: string }[],
 ): string | undefined {
   for (const key of officeGlossLookupKeys(authorities)) {
     const hit = glosses.get(key);
@@ -93,7 +93,7 @@ export function lookupEnglishOfficeGloss(
 
 export function lookupFrenchOfficeGloss(
   glosses: FrenchOfficeGlossIndex,
-  authorities: ReadonlyArray<{ type: string; value: string }>,
+  authorities: readonly { type: string; value: string }[],
   zh?: string | null,
   dynasty?: string | null,
 ): string | undefined {
@@ -174,9 +174,9 @@ export function buildHuckbotGlossIndex(content: AuthorityPackContent): OfficeGlo
 
 /** Build French gloss indexes from MaxiRicci7000 translations NDJSON. */
 export function buildMaxiRicciGlossIndex(content: AuthorityPackContent): FrenchOfficeGlossIndex {
-  const byOfficeId: Map<string, string> = new Map();
-  const byZhDynasty: Map<string, string> = new Map();
-  const byZh: Map<string, string> = new Map();
+  const byOfficeId = new Map<string, string>();
+  const byZhDynasty = new Map<string, string>();
+  const byZh = new Map<string, string>();
 
   for (const line of authorityPackLines(content)) {
     const trimmed = line.trim();

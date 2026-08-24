@@ -9,12 +9,12 @@ import {
 } from '@mui/material';
 import { useMemo } from 'react';
 
-type IconProps = {
+interface IconProps {
   color?: string;
   icon?: NonNullable<SvgIconProps['component']>;
   isEntity?: boolean;
   selected?: boolean;
-};
+}
 
 export const Icon = ({
   color = 'inherit',

@@ -14,7 +14,7 @@ function memoryFileApi(): AuthorityCacheFileApi & { files: Map<string, string> }
       files.set(path, content);
     },
     pathExists: async (path) => files.has(path),
-    ensureDirectory: async () => {},
+    ensureDirectory: async () => undefined,
   };
 }
 

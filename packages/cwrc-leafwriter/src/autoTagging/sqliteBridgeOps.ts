@@ -18,13 +18,13 @@ import type { SqlitePanelSummaryLike } from './sqliteSummary';
 
 type PanelSnapshot = SqlitePanelSummaryLike & {
   updatedAt?: string;
-  assertions?: Array<{
+  assertions?: {
     key: string;
     element: string;
     value: string;
     status: 'active' | 'rejected' | 'withdrawn';
     noteType?: string | null;
-  }>;
+  }[];
 };
 
 const panelFields = (snapshot: PanelSnapshot): EntityFields => ({

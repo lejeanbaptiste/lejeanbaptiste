@@ -2,12 +2,12 @@ import type { EntityDataAssertion } from '../plugins/entityDataExtractors';
 import { personWrapperSource } from './entityExtraction';
 import type { EntityStore } from './entityStore';
 
-export type XmlExtractedRefreshStats = {
+export interface XmlExtractedRefreshStats {
   wrappers: number;
   added: number;
   removed: number;
   retained: number;
-};
+}
 
 /** Minimal store surface used by SQLite extraction (easy to fake in unit tests). */
 export type SqliteExtractionStore = Pick<EntityStore, 'sqliteReconcileXmlExtractedData'>;
@@ -34,16 +34,16 @@ function collectLiveWrappers(
   corpusDoc: Document,
   documentKey: string,
   extract: (wrapper: Element, documentKey: string) => EntityDataAssertion[],
-): Array<{
+): {
   entityId: string;
   source: string;
   assertions: EntityDataAssertion[];
-}> {
-  const wrappers: Array<{
+}[] {
+  const wrappers: {
     entityId: string;
     source: string;
     assertions: EntityDataAssertion[];
-  }> = [];
+  }[] = [];
   for (const wrapper of Array.from(corpusDoc.getElementsByTagName('name'))) {
     if (wrapper.getAttribute('type') !== 'personWrapper') continue;
     const entityId = wrapperEntityId(wrapper);

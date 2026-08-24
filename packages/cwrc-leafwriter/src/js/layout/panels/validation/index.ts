@@ -26,7 +26,7 @@ class Validation {
 
   readonly AUTO_VALIDATE_ONCHANGE_TIMER = 10000;
   autoValidateTimerActive = false;
-  //@ts-ignore
+  //@ts-expect-error
   autoValidateTimer: ReturnType<typeof setTimeout>;
 
   progressBar?: Circle; //typeof ProgressBar | null = null;
@@ -67,7 +67,7 @@ class Validation {
 
     this.writer.event('documentLoaded').subscribe(() => {
       this.clearResult();
-      // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access
+       
       const hasValidorHasSchema = !!writer.overmindState.validator.hasSchema;
       if (hasValidorHasSchema) this.writer.validate();
     });
@@ -133,7 +133,7 @@ class Validation {
   }
 
   async validate() {
-    // eslint-disable-next-line @typescript-eslint/no-unsafe-call, @typescript-eslint/no-unsafe-member-access
+     
     await this.writer.overmindActions.validator.validate();
   }
 
@@ -159,8 +159,8 @@ class Validation {
       list.append(this.createSucessMessageComponent());
 
       // eslint-disable-next-line @typescript-eslint/ban-ts-comment
-      //@ts-ignore
-      // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment, @typescript-eslint/no-unsafe-call
+      //@ts-expect-error
+       
       const $validateButton = list.find(`.revalidate-button`).button();
       $validateButton.on('click', () => this.writer.validate());
 
@@ -200,7 +200,7 @@ class Validation {
         </div>
       `);
 
-      //@ts-ignore
+      //@ts-expect-error
       $stats.find('.validation-info').button().on('click', () => this.writer.validate());
 
       return;
@@ -245,7 +245,7 @@ class Validation {
         </div>
       `);
 
-      //@ts-ignore
+      //@ts-expect-error
       $stats.find('.validation-info').button().on('click', () => this.writer.validate());
 
       return;
@@ -261,8 +261,7 @@ class Validation {
 
     errors?.forEach((error: ValidationError) => {
       // convert xpath to jquery selector
-      //@ts-ignore
-      const path = this.getElementPathOnEditor(error.target.xpath ?? error.element.xpath);
+      const path = this.getElementPathOnEditor(error.target.xpath ?? error.element?.xpath ?? '');
       const docEl = $(path, this.writer.editor?.getBody());
       const id = docEl.attr('id') ?? null;
 
@@ -298,7 +297,7 @@ class Validation {
      </div>
     `);
 
-    //@ts-ignore
+    //@ts-expect-error
     const $infoBadge = $stats.find('.validation-info').button();
     $infoBadge.on('click', () => this.writer.validate());
 
@@ -391,7 +390,6 @@ class Validation {
         if (index === null) {
           index = 0;
         } else {
-          //@ts-ignore
           index = parseInt(index[1]);
           index--; // xpath is 1-based and "eq()" is 0-based
         }

@@ -31,12 +31,12 @@ describe('checkChineseProjectAssets', () => {
   const stubApi = (overrides: {
     packsInstalled?: boolean;
     mapInstalled?: boolean;
-    plugins?: Array<{
+    plugins?: {
       id: string;
       enabled?: boolean;
       languages?: string[];
       manifestError?: string | null;
-    }>;
+    }[];
   }) => {
     window.electronAPI = {
       authorityPackStatuses: async () => [

@@ -67,7 +67,7 @@ class CitationDialog implements SchemaDialog {
       </div>
     `).appendTo(parentEl);
 
-    //@ts-ignore
+    //@ts-expect-error
     const $relinkButton = $(`#${id}_selectedSource .relink-bt`, $el).button();
     $relinkButton.on('click', () => {
       parentEl.css('display', 'none');

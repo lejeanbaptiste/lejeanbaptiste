@@ -128,7 +128,7 @@ export const createInitialMetadata = (
 
 const applyMetadataToXml = (
   xml: string,
-  entries: Array<{ path: string; value: string }>,
+  entries: { path: string; value: string }[],
   options: { clearRemovedPaths?: string[]; catalogId?: string | null },
 ): string => {
   const updates = entries
@@ -168,7 +168,7 @@ export const applyMetadataToProjectFiles = async (
     throw new Error('Desktop file APIs unavailable');
   }
 
-  const entries: Array<{ path: string; value: string }> = [];
+  const entries: { path: string; value: string }[] = [];
 
   for (const [path, value] of Object.entries(metadata.fields)) {
     entries.push({ path, value });
@@ -229,7 +229,7 @@ export const mergeMetadataIntoSkeleton = (
   skeletonXml: string,
   metadata: ProjectMetadataFile,
 ): string => {
-  const entries: Array<{ path: string; value: string }> = [];
+  const entries: { path: string; value: string }[] = [];
   for (const [path, value] of Object.entries(metadata.fields ?? {})) {
     if (value.trim()) entries.push({ path, value });
   }
@@ -246,7 +246,7 @@ export const mergeMetadataIntoSkeleton = (
 export const mergeMetadataIntoHeader = mergeMetadataIntoSkeleton;
 
 export const metadataEntriesFromFile = (metadata: ProjectMetadataFile) => {
-  const entries: Array<{ path: string; value: string; label: string }> = [];
+  const entries: { path: string; value: string; label: string }[] = [];
   for (const [path, value] of Object.entries(metadata.fields)) {
     entries.push({ path, value, label: path });
   }

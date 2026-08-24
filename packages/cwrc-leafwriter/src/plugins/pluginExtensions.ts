@@ -71,12 +71,12 @@ export interface PluginTagCommandItem {
 }
 
 const pluginDialogs = new Map<string, PluginDialogComponent>();
-const pluginReviewPanels: Array<{
+const pluginReviewPanels: {
   pluginId: string;
   matcher: PluginReviewPanelMatcher;
   component: PluginReviewPanelComponent;
   finishWhenIdle?: boolean | ((suggestions: Suggestion[]) => boolean);
-}> = [];
+}[] = [];
 const pluginToolbarItems: PluginToolbarContribution[] = [];
 const pluginTagCommandItems: PluginTagCommandItem[] = [];
 

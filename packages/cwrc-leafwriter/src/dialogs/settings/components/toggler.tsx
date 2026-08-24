@@ -9,7 +9,7 @@ import {
 } from '@mui/material';
 import { Icon, type IconLeafWriter } from '../../../icons';
 
-type TogglerProps = {
+interface TogglerProps {
   description?: string;
   disabled?: boolean;
   icon: IconLeafWriter;
@@ -17,7 +17,7 @@ type TogglerProps = {
   title: string;
   type?: 'checkbox' | 'toggle';
   value: boolean;
-};
+}
 
 export const Toggler = ({
   description,

@@ -31,7 +31,6 @@ export const findCompanionTranslationFiles = async (
   for (const language of settings.languages) {
     const companionPath = translationFilePathFor(sourcePath, language.code);
     try {
-      // eslint-disable-next-line no-await-in-loop
       await window.electronAPI.statFile(companionPath);
       existing.push({ path: companionPath, lang: language.code });
     } catch {

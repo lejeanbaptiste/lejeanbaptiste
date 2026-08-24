@@ -227,19 +227,19 @@ async function autoResolveNobleTitlesInDocument(
   store: EntityStore,
   doc: Document,
 ): Promise<boolean> {
-  const personRecords = (await store.sqliteCandidateRecords('person')) as Array<{
+  const personRecords = (await store.sqliteCandidateRecords('person')) as {
     id: string;
-    nobleTitles?: Array<{
+    nobleTitles?: {
       fief?: string | null;
       roleName?: string | null;
       posthumousName?: string | null;
-    }>;
-  }> | null;
+    }[];
+  }[] | null;
   const pedbTitleIndex = buildPersonTitleIndex(personRecords ?? []);
 
   const readPack = cachedPackReader();
   let packTitleIndex = new Map<string, string[]>();
-  let packOfficeByRank = new Map<string, string>();
+  const packOfficeByRank = new Map<string, string>();
   let vocabularyRanks: Set<string> | undefined;
   if (readPack) {
     try {
@@ -1613,7 +1613,7 @@ export class AutoTaggingSession {
     if (error) throw new Error(error);
     if (documents.length === 0) throw new Error('No documents matched the selected scope.');
 
-    const changed: Array<{ filePath: string; xml: string; doc: Document; matches: number }> = [];
+    const changed: { filePath: string; xml: string; doc: Document; matches: number }[] = [];
     let matches = 0;
     const schemaManager = this.writer.schemaManager;
     const transformOptions: TagTransformOptions = {
@@ -1762,7 +1762,7 @@ export class AutoTaggingSession {
     // Prefer pack personal primary / 姓+名 over a display-only title headword.
     const mintName =
       kind === 'person'
-        ? preferredEntityPrimaryName(headword, typedNames ?? [], titleParts)
+        ? preferredEntityPrimaryName(headword, typedNames ?? [])
         : headword.normalize('NFC').trim();
     // 姓/名 splits are person-only — never invent them for offices, places, etc.
     let familyName: string | undefined;

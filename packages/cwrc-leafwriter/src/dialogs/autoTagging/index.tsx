@@ -434,7 +434,7 @@ export const AutoTaggingDialog = ({ id, onClose, open = false }: IDialog) => {
       .then(setSelectionRange)
       .catch(() => setSelectionRange(null));
     // getSession is stable for the dialog's lifetime.
-    // eslint-disable-next-line react-hooks/exhaustive-deps
+     
   }, [open]);
 
   const aiSettings = aiApiSettingsFromDesktop();
@@ -974,7 +974,7 @@ export const AutoTaggingDialog = ({ id, onClose, open = false }: IDialog) => {
         const exclusions = readPersistedExclusions();
         const userRules = nestingPathsToUserRules(exclusions.nestingPaths);
         for (const docResult of matchedDocs) {
-          // eslint-disable-next-line no-await-in-loop
+           
           const applied = await getSession().applyTagBombDocument(
             docResult.filePath,
             filterSuggestionsByExclusions(docResult.suggestions, exclusions),

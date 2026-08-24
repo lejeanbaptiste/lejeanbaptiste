@@ -30,7 +30,7 @@ describe('MenuButton', () => {
         type="menuButton"
         group="ui"
         menuItems={menuItems}
-        openCalendar={() => {}}
+        openCalendar={() => undefined}
       />,
     );
     expect(screen.queryByText('Tag noble title')).toBeNull();
@@ -72,7 +72,7 @@ describe('MenuButton', () => {
         type="menuButton"
         group="ui"
         menuItems={menuItems}
-        openCalendar={() => {}}
+        openCalendar={() => undefined}
       />,
     );
     await user.click(screen.getByRole('button', { name: 'Norbert' }));

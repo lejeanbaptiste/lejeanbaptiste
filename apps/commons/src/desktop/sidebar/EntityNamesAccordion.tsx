@@ -106,7 +106,6 @@ export function EntityNamesAccordion({
   onNameTypeChange,
   onNameLanguageChange,
   onValidate,
-  onReject,
   onDelete,
   newName,
   onNewNameChange,

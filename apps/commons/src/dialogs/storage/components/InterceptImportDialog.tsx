@@ -3,9 +3,9 @@ import { TextEmphasis } from '@src/components';
 import { getIcon } from '@src/icons';
 import { Trans, useTranslation } from 'react-i18next';
 
-type InterceptImportDialogProps = {
+interface InterceptImportDialogProps {
   format: string;
-};
+}
 
 export const InterceptImportDialog = ({ format }: InterceptImportDialogProps) => {
   const { t } = useTranslation();

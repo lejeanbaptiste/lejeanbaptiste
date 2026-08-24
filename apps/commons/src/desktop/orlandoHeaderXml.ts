@@ -1,6 +1,5 @@
 const findChildByLocalName = (parent: Element, name: string): Element | null => {
-  for (let i = 0; i < parent.children.length; i += 1) {
-    const child = parent.children[i];
+  for (const child of parent.children) {
     if (child.localName === name || child.tagName === name) return child;
   }
   return null;
@@ -89,7 +88,7 @@ export const clearOrlandoHeaderPath = (header: Element, headerPath: string) => {
 
 export const applyOrlandoHeaderPathUpdates = (
   xml: string,
-  updates: Array<{ path: string; value: string }>,
+  updates: { path: string; value: string }[],
   options?: { clearPaths?: string[]; skipPaths?: Set<string> },
 ): string => {
   const parser = new DOMParser();

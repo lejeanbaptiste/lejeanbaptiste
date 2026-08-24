@@ -16,6 +16,7 @@
 // forms (so whitespace around 、。「」（）etc. is also cleaned). U+3000 is in
 // this range but is not ASCII whitespace, so it is preserved by construction.
 const EAST_ASIAN =
+  // eslint-disable-next-line no-irregular-whitespace -- U+3000 is a literal range boundary here, not stray whitespace.
   /[\p{Script=Han}\p{Script=Hiragana}\p{Script=Katakana}\p{Script=Hangul}\p{Script=Tibetan}\p{Script=Bopomofo}　-〿︰-﹏＀-￯]/u;
 
 // Any Unicode whitespace EXCEPT U+3000 (the ideographic "long" space), which is

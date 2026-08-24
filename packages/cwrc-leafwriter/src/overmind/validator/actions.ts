@@ -96,11 +96,11 @@ const waitForEditorSchema = (writer: Writer): Promise<boolean> => {
 
 let validatorSpawnInFlight: Promise<void> | null = null;
 
-export type LoadValidatorOptions = {
+export interface LoadValidatorOptions {
   silent?: boolean;
   /** When false, the caller guarantees the editor schema is already resolved (e.g. loadSchema). */
   waitForSchema?: boolean;
-};
+}
 
 export const loadValidator = async (
   { state, actions }: Context,
@@ -255,7 +255,7 @@ export const initialize = async (
   }
 
   const shouldCache = !isLocalFileUrl(schemaURL);
-  let schemaWorker: { success: boolean; error?: Error } = { success: false };
+  let schemaWorker: { success: boolean; error?: Error };
   try {
     schemaWorker = await workerValidator.initialize({
       id: schemaId,
@@ -394,7 +394,7 @@ export const validate = async ({ state, actions }: Context) => {
     writer.event('documentValidated').publish(valid, { valid, errors }, validationString);
   };
 
-  // eslint-disable-next-line @typescript-eslint/no-misused-promises
+   
   await workerValidator.validate(validationString, Comlink.proxy(validationProgress));
   instrumentation.validationRunning = false;
 };
@@ -533,7 +533,6 @@ export const clear = ({ state }: Context) => {
   state.validator.hasWorkerValidator = false;
 };
 
-// eslint-disable-next-line @typescript-eslint/no-unused-vars
 export const clearCache = async (_props: Context) => {
   clearLocalSchemaBlobCache();
   if (!window.leafwriterValidator) return;

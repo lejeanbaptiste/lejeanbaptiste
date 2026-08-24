@@ -7,11 +7,16 @@ type Events = Record<string, EventProps>;
 interface EventProps {
   event: string;
   publish: (...args: any) => any;
+  // Generic pub/sub wrapper — each event id carries its own payload shape, so
+  // callback signatures genuinely vary per subscriber; `(...args: any[]) => any`
+  // is the honest "accepts any callable" type, unlike the bare `Function` keyword.
   subscribe: (
-    callback: JQuery.TypeOrArray<Function>,
-    ...callbacks: JQuery.TypeOrArray<Function>[]
-  ) => JQuery.Callbacks<Function>;
-  unsubscribe: (...callbacks: Function[]) => JQuery.Callbacks<Function>;
+    callback: JQuery.TypeOrArray<(...args: any[]) => any>,
+    ...callbacks: JQuery.TypeOrArray<(...args: any[]) => any>[]
+  ) => JQuery.Callbacks<(...args: any[]) => any>;
+  unsubscribe: (
+    ...callbacks: ((...args: any[]) => any)[]
+  ) => JQuery.Callbacks<(...args: any[]) => any>;
 }
 
 /**
@@ -280,12 +285,11 @@ class EventManager {
     if (!event) {
       const callbacks = $.Callbacks();
       event = {
-        publish: function () {
+        publish: function (...args: unknown[]) {
           if (_this.debug) {
-            log.debug(`[LW Event: ${this.event}]: ${[...arguments]}`);
+            log.debug(`[LW Event: ${this.event}]: ${args}`);
           }
-          //@ts-ignore
-          callbacks.fire.apply(this, arguments);
+          callbacks.fire.apply(this, args);
         },
         subscribe: callbacks.add,
         unsubscribe: callbacks.remove,

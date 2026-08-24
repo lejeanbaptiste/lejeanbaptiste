@@ -1,11 +1,17 @@
 import { useEffect, useMemo, useRef, useState, type CSSProperties } from 'react';
 import { colorMatchFilter, type ColorStats } from './colorMatch';
-import { BG_POOL_BY_RANK } from './generatedBackgroundPools';
+import {
+  ARCHIVE_BACKGROUND_ASSETS_BY_RANK,
+  WORLD_BODY_POOLS,
+  type ArchiveBackgroundAsset,
+} from './generatedBackgroundPools';
 import {
   BODY_COLOR_STATS,
+  POSE_AVAILABLE_RANK_INDICES,
   POSE_ASSET_MIN_RANK_INDEX,
   POSE_INDICES,
   WEAPON_POOLS,
+  type WeaponScope,
 } from './generatedBodyPools';
 import { getHeadColorStats } from './headColorStats';
 import { MedalIcon, type MedalMetric, type MedalTier } from './MedalIcon';
@@ -21,6 +27,10 @@ export const GAME_ASSET_PREFIX = 'ljb-asset://';
 // (also read from the encrypted bundle) by toggling which rank/weapon
 // groups are visible - see buildBodyUrl below.
 export const BODY_SCHEME_PREFIX = 'ljb-body://compose?';
+/** Numeric compositor slot for the Rank 3 aircraft subject. This is kept
+ * outside the reusable body namespace so body9 remains available for a
+ * future normal body SVG. */
+export const AIRCRAFT_SUBJECT_POSE = 9001;
 
 type Ribbon = [string, string] | [string, string, string];
 
@@ -28,11 +38,11 @@ interface UniformAvatarProps {
   /** Colorways of the rank medals currently held. */
   serviceRibbons: Ribbon[];
   /** Earned medals displayed as miniatures on the uniform. */
-  medals: Array<{
+  medals: {
     metric: MedalMetric;
     tier: MedalTier;
     label: string;
-  }>;
+  }[];
   /** A transparent, full-canvas DiceBear Adventurer SVG URL. */
   headImageUrl: string;
   /** The composited body/pose/rank/weapon SVG URLs for the two layers the
@@ -50,6 +60,14 @@ interface UniformAvatarProps {
   /** Development-only alignment overlay for tuning portrait placement. */
   showAlignmentGrid?: boolean;
   size?: number;
+  /** Fires once all three layers (head, body back, body front) have either
+   * loaded or failed - i.e. there's nothing left for this instance to pop
+   * in piece by piece. Meant for a caller that wants to hold a spinner over
+   * a portrait's first-ever reveal (see AchievementsDialog.tsx's
+   * post-character-creator transition) rather than show it mid-assembly;
+   * normal re-renders of an already-mounted, already-loaded instance don't
+   * fire it again. */
+  onReady?: () => void;
 }
 
 /** Minimum player rank index (0-based into RANK_NAMES) before a pose may
@@ -57,7 +75,7 @@ interface UniformAvatarProps {
  * complete from rank 1, it's just held back for pacing. Poses not listed
  * here have no design-driven floor. Combined with POSE_ASSET_MIN_RANK_INDEX
  * (generatedBodyPools.ts - a *hard* floor for poses whose art genuinely
- * doesn't exist below some rank, e.g. body9.svg) by effectivePoseMinRankIndex
+ * doesn't exist below some rank, e.g. a subject scene) by effectivePoseMinRankIndex
  * below; the two are independent and this one alone is never sufficient to
  * know when a pose can first appear. */
 const POSE_MIN_RANK_INDEX: Partial<Record<number, number>> = {
@@ -71,8 +89,34 @@ const effectivePoseMinRankIndex = (poseIndex: number): number =>
 /** Filter applied to the complete scene for the deliberately photographic
  * WWI pose. Keep this as a shared value so the live avatar and certificate
  * export render the same treatment. */
-export const scenePhotoFilterForPose = (poseIndex: number): string | undefined =>
-  poseIndex === 9 ? 'grayscale(0.95) contrast(1.2) brightness(0.92)' : undefined;
+export const scenePhotoFilterForPose = (): string | undefined => undefined;
+
+/**
+ * Archive treatment belongs to the selected record, rather than the pose:
+ * a later player can still encounter an older WWI image, and a Rank 4 image
+ * may deliberately be sepia or hand-coloured. CSS is the runtime baseline;
+ * the private QA browser provides the more faithful grain and film response
+ * used to review source material.
+ */
+export const scenePhotoFilterForBackground = (backgroundImageKey: string): string | undefined => {
+  const treatment = ARCHIVE_BACKGROUND_ASSETS_BY_RANK
+    .flat()
+    .find((asset) => asset.assetKey === backgroundImageKey)?.treatment ?? 'colour';
+  switch (treatment) {
+    case 'wwi-ortho':
+      return 'grayscale(1) contrast(1.08) brightness(0.98)';
+    case 'wwii-bw':
+      return 'grayscale(1) contrast(1.08) brightness(0.98)';
+    case 'sepia':
+      return 'grayscale(1) sepia(0.78) saturate(0.78) contrast(1.10) brightness(0.96)';
+    case 'tinted':
+      return 'grayscale(1) sepia(0.24) saturate(0.72) contrast(1.05) brightness(0.98)';
+    case 'hand-coloured':
+      return 'contrast(1.03) saturate(0.92)';
+    default:
+      return undefined;
+  }
+};
 
 /** True when this pose may appear in the random rotation at `rankIndex`.
  * Some poses have a minimum rank (see effectivePoseMinRankIndex). Poses with
@@ -85,11 +129,17 @@ export const poseEligibleForRank = (
   bodyType: 'm' | 'f',
   rankIndex: number,
 ): boolean => {
+  const explicitRanks = POSE_AVAILABLE_RANK_INDICES[poseIndex];
+  if (explicitRanks && !explicitRanks.includes(rankIndex)) return false;
   const minRankIndex = effectivePoseMinRankIndex(poseIndex);
   if (rankIndex < minRankIndex) return false;
 
   const channels = WEAPON_POOLS[poseIndex] ?? [];
-  if (channels.length === 0) return true;
+  // Some source SVGs retain an empty `weapons` group as an editing
+  // placeholder (body5 is one). It is an unarmed pose, not a pose waiting
+  // for a weapon tier, so only channels that actually declare a rank should
+  // trigger weapon-gating.
+  if (!channels.some((channel) => Object.keys(channel).length > 0)) return true;
   for (const channel of channels) {
     for (const rank of Object.keys(channel).map(Number)) {
       if (rank <= rankIndex + 1 && channelHasRankFor(channel, rank, bodyType)) return true;
@@ -100,7 +150,13 @@ export const poseEligibleForRank = (
 
 /** Every pose eligible for random pick at this rank and body type. */
 export const eligiblePoseIndices = (bodyType: 'm' | 'f', rankIndex: number): number[] =>
-  POSE_INDICES.filter((pose) => poseEligibleForRank(pose, bodyType, rankIndex));
+  POSE_INDICES.filter((pose) => {
+    const allowedByWorld = WORLD_BODY_POOLS[Math.max(0, rankIndex)];
+    return (
+      (allowedByWorld === null || allowedByWorld === undefined || allowedByWorld.includes(pose)) &&
+      poseEligibleForRank(pose, bodyType, rankIndex)
+    );
+  });
 
 /** Uniform random pick among every pose that has a full rank kit (see
  * POSE_INDICES in generatedBodyPools.ts, auto-discovered at pack time) and
@@ -134,10 +190,14 @@ export interface WeaponSelection {
   imageIds: string[];
 }
 
+/** True if a scope (universal, or one bodyType) has any group with any
+ * variant to show. See WeaponScope's doc comment in generatedBodyPools.ts. */
+const scopeHasArt = (scope: WeaponScope | undefined): boolean =>
+  !!scope && Object.values(scope).some((variants) => Object.keys(variants).length > 0);
+
 /** True if this rank has anything at all to show for `bodyType` in this
  * channel - either a universal (sex-independent) piece, or a bodyType-
- * specific piece under any variant. Shared by poseEligibleForRank and
- * pickWeapon below. */
+ * specific piece. Shared by poseEligibleForRank and pickWeapon below. */
 const channelHasRankFor = (
   channel: (typeof WEAPON_POOLS)[number][number],
   rank: number,
@@ -145,10 +205,16 @@ const channelHasRankFor = (
 ): boolean => {
   const entry = channel[rank];
   if (!entry) return false;
-  if (entry.universal.length > 0) return true;
-  const byBodyType = entry[bodyType];
-  return !!byBodyType && Object.keys(byBodyType).length > 0;
+  return scopeHasArt(entry.universal) || scopeHasArt(entry[bodyType]);
 };
+
+/** Every group name a scope declares (empty set if the scope is absent). */
+const groupsOf = (scope: WeaponScope | undefined): Set<string> => new Set(Object.keys(scope ?? {}));
+
+/** Every variant key one group of a scope declares (empty set if the scope
+ * or that group is absent). */
+const variantKeysOf = (scope: WeaponScope | undefined, group: string): Set<string> =>
+  new Set(Object.keys(scope?.[group] ?? {}));
 
 /** Daniel's rule: "at that rank or above, that weapon asset enters
  * rotation... rank 5 will cycle randomly through rank 1-5 assets" - the
@@ -157,18 +223,29 @@ const channelHasRankFor = (
  * letters. Returns null when this pose has no weapon at all, or the
  * player's rank hasn't unlocked any tier yet.
  *
- * Some ranks have sex-specific alternates at the same rank (body6.svg's
- * f-rank2-a vs f-rank2-b) - mutually exclusive designs, not simultaneous
- * parts, so exactly one variant letter is picked per rank+bodyType. That
- * pick is made *once*, shared across every channel (not independently per
- * channel), and only from variant letters common to every channel that has
- * a bodyType-specific piece at this rank - picking independently per
- * channel could combine a front half authored for variant "a" with a rear
- * half only drawn for variant "b" (body6.svg's rank4/rank5 are asymmetric
- * like this: not every variant has a matching piece in both the background
- * and foreground weapon groups). Falls back to the union across channels
- * only if they share no variant at all, so a rank with genuinely disjoint
- * per-channel authoring still shows *something* rather than nothing. */
+ * A weapon can split into independent equipment groups (body7.svg's
+ * "pistol" and "sword" - a sidearm and a melee weapon worn together, not
+ * alternatives; most poses only ever use the single default group ''). Every
+ * group present at this rank is included at once, but each cycles its own
+ * variant selection independently - which sword shows doesn't constrain
+ * which pistol shows.
+ *
+ * Within one group, some ranks have several mutually-exclusive designs
+ * (body6.svg's napoleonic1 vs napoleonic2 vs napoleonic3 in the default
+ * group - three different muskets, not three pieces of one; body7.svg's
+ * napoleonic-sword1 vs napoleonic-sword2 in the "sword" group) - exactly
+ * one variant is picked per group, from either the universal or the
+ * bodyType-specific scope (a pose only ever uses one of the two for a given
+ * group). That pick is made *once* per group, shared across every channel
+ * (not independently per channel), and only from variant keys common to
+ * every channel that declares any for that group - picking independently
+ * per channel could combine a front half authored for variant "1" with a
+ * rear half only drawn for variant "2" (body6.svg's rank4/rank5 are
+ * asymmetric like this: not every variant has a matching piece in both the
+ * background and foreground weapon groups). Falls back to the union across
+ * channels only if they share no variant at all, so a rank with genuinely
+ * disjoint per-channel authoring still shows *something* rather than
+ * nothing. */
 export const pickWeapon = (
   poseIndex: number,
   bodyType: 'm' | 'f',
@@ -192,35 +269,47 @@ export const pickWeapon = (
     previousRank !== null && pool.length > 1 ? pool.filter((rank) => rank !== previousRank) : pool;
   const rank = choices[Math.floor(Math.random() * choices.length)]!;
 
-  // Variant keys the bodyType has at this rank, per channel (only channels
-  // that have *something* for this bodyType at this rank count).
-  const variantKeySetsPerChannel = channels
-    .map((channel) => channel[rank]?.[bodyType])
-    .filter((byBodyType): byBodyType is Record<string, readonly string[]> => !!byBodyType)
-    .map((byBodyType) => new Set(Object.keys(byBodyType)));
+  // Every group present at this rank, across channels and both scopes.
+  const groupNames = new Set<string>();
+  for (const channel of channels) {
+    const entry = channel[rank];
+    if (!entry) continue;
+    for (const group of groupsOf(entry.universal)) groupNames.add(group);
+    for (const group of groupsOf(entry[bodyType])) groupNames.add(group);
+  }
 
-  let variant: string | null = null;
-  if (variantKeySetsPerChannel.length > 0) {
+  const imageIds: string[] = [];
+  for (const group of groupNames) {
+    // Variant keys for THIS group, per channel (universal ∪ bodyType-
+    // specific) - same intersection-then-union-fallback consistency rule
+    // described above, scoped to this one group.
+    const variantKeySetsPerChannel = channels
+      .map((channel) => channel[rank])
+      .filter((entry): entry is (typeof WEAPON_POOLS)[number][number][number] => !!entry)
+      .map(
+        (entry) =>
+          new Set([...variantKeysOf(entry.universal, group), ...variantKeysOf(entry[bodyType], group)]),
+      )
+      .filter((keys) => keys.size > 0);
+    if (variantKeySetsPerChannel.length === 0) continue;
+
     const intersection = variantKeySetsPerChannel.reduce(
       (acc, keys) => new Set(Array.from(acc).filter((key) => keys.has(key))),
     );
     const union = new Set(variantKeySetsPerChannel.flatMap((keys) => Array.from(keys)));
     const candidates = Array.from(intersection.size > 0 ? intersection : union);
-    variant = candidates[Math.floor(Math.random() * candidates.length)]!;
-  }
+    const variant = candidates[Math.floor(Math.random() * candidates.length)]!;
 
-  // Every id sharing this rank+bodyType+variant within a channel is a
-  // simultaneous part of the same design (e.g. bodies/body7.svg's rank2 has
-  // two images ~170 units apart - one per hand), so all of them come along
-  // together.
-  const imageIds: string[] = [];
-  for (const channel of channels) {
-    const entry = channel[rank];
-    if (!entry) continue;
-    imageIds.push(...entry.universal);
-    if (variant !== null) {
-      const idsForVariant = entry[bodyType]?.[variant];
-      if (idsForVariant) imageIds.push(...idsForVariant);
+    // Every id sharing this group+variant within a channel is a
+    // simultaneous part of the same design (e.g. bodies/body7.svg's sword
+    // sits one image per hand), so all of them come along together.
+    for (const channel of channels) {
+      const entry = channel[rank];
+      if (!entry) continue;
+      for (const scope of [entry.universal, entry[bodyType]]) {
+        const ids = scope?.[group]?.[variant];
+        if (ids) imageIds.push(...ids);
+      }
     }
   }
   return { rank, imageIds };
@@ -249,51 +338,130 @@ export const buildBodyUrl = (
     layer,
   });
   if (weapon && weapon.imageIds.length > 0) params.set('weaponIds', weapon.imageIds.join(','));
+  if (poseIndex === AIRCRAFT_SUBJECT_POSE) {
+    // The aircraft is a Rank 3-only composite subject. Keep both layers on the same
+    // embedded environment, changing it as the resolved weapon/rank changes
+    // without adding a second piece of persisted portrait state.
+    const environment = ((Math.max(0, rankIndex) + 1 + (weapon?.rank ?? 0)) % 4) + 1;
+    params.set('subjectBackground', String(environment));
+  }
   return `${BODY_SCHEME_PREFIX}${params.toString()}`;
 };
 
-// Rank-gated portrait backdrops, one letter-suffixed pool per rank
-// (RANK_NAMES[0..6]). The pool available at a given rank is cumulative -
-// everything from rank 1 up through the player's current rank - so ranking
-// up adds backdrops rather than swapping them out. Pools themselves come
-// from generatedBackgroundPools.ts (derived from rewards/bg_*.png filenames
-// at pack time - see visual_design/scripts/pack-assets.mjs), not hand-listed
-// here, so a new backdrop file doesn't need a code change to show up.
-
-// Some poses pair with only a specific subset of backdrops rather than the
-// full rank-cumulative pool - e.g. body9.svg (a WWI-photo-styled pose, see
-// its filter treatment in UniformAvatar below) only ever shows against
-// bg_2f/bg_3f/bg_4e/bg_4f, still gated by rank the same as everything else
-// (a rank-2 player who rolls body9 only has bg_2f available; bg_3f/4e/4f
-// join as they rank up to 3 and 4).
-const POSE_BACKGROUND_OVERRIDE: Partial<Record<number, readonly string[]>> = {
-  9: ['bg/2f', 'bg/3f', 'bg/4e', 'bg/4f'],
-};
-
-const POSE_EXCLUSIVE_BACKGROUND_KEYS = new Set(Object.values(POSE_BACKGROUND_OVERRIDE).flat());
+// Every rank is one world. Earlier worlds remain in the archive as history,
+// while the current world's military records are selected more often. Pools
+// are generated from assets/worlds.json and final artwork by pack-assets.mjs.
 
 /** Every backdrop unlocked at or below `rankIndex` (-1/unranked still gets
- * the rank-1 pool, so there's always something to show), narrowed to
- * `poseIndex`'s own pool when it has one (see POSE_BACKGROUND_OVERRIDE). */
-export const backgroundPoolForRank = (rankIndex: number, poseIndex?: number): string[] => {
-  const cumulative = BG_POOL_BY_RANK.slice(0, Math.max(0, rankIndex) + 1).flat();
-  const override = poseIndex !== undefined ? POSE_BACKGROUND_OVERRIDE[poseIndex] : undefined;
-  return override
-    ? cumulative.filter((key) => override.includes(key))
-    : cumulative.filter((key) => !POSE_EXCLUSIVE_BACKGROUND_KEYS.has(key));
+ * the rank-1 pool, so there is always something to show). Subject scenes
+ * keep their embedded environments inside the body SVG; the external archive
+ * remains the ordinary backdrop pool for all poses.
+ */
+export const backgroundPoolForRank = (
+  rankIndex: number,
+  poseIndex?: number,
+  ribbonsIntoRank: number = RANK_4_GROUPS.length,
+): string[] => {
+  const cumulative = ARCHIVE_BACKGROUND_ASSETS_BY_RANK.slice(0, Math.max(0, rankIndex) + 1).flat();
+  const compatible = cumulative.filter(
+    (asset) => !excludesPose(asset, poseIndex) && !isLockedRank4Group(asset, rankIndex, ribbonsIntoRank),
+  );
+  return (compatible.length > 0 ? compatible : cumulative).map((asset) => asset.assetKey);
+};
+
+/** True when docs/bg-body-pairs.md (see pack-assets.mjs's parseBgBodyPairs)
+ * flags this backdrop as compositionally wrong for this pose - a lamppost
+ * through the head, a pose facing the wrong way for the scene, etc. */
+const excludesPose = (asset: ArchiveBackgroundAsset, poseIndex?: number): boolean =>
+  poseIndex !== undefined && asset.excludedPoses?.includes(poseIndex) === true;
+
+// Rank 4 (index 3) is being rolled out gradually: its background pool is
+// split into five named groups by filename (r04-a-.. through r04-e-..),
+// and only `a` is available the moment the player reaches Rank 4 - each
+// ribbon earned since then (see AchievementsDialog.tsx's ribbonsIntoRank)
+// opens the next group, until all five are open with two ribbons still to
+// spare before promotion to Rank 5. Only restricts Rank 4's own pool, and
+// only while the player is actually AT Rank 4 - a Rank 4 asset appearing in
+// some later rank's "historical" pool is never restricted, since finishing
+// Rank 4 necessarily means every group was already open by then. Unrelated
+// to any other rank, and to excludesPose's per-pose exclusions above -
+// in-game only, deliberately not mirrored in the QA browser.
+const RANK_4_INDEX = 3;
+const RANK_4_GROUPS = ['a', 'b', 'c', 'd', 'e'];
+const rank4Group = (asset: ArchiveBackgroundAsset): string | null => {
+  const filename = asset.assetKey.split('/').pop() ?? '';
+  return /^r04-([a-e])-/.exec(filename)?.[1] ?? null;
+};
+const isLockedRank4Group = (
+  asset: ArchiveBackgroundAsset,
+  rankIndex: number,
+  ribbonsIntoRank: number,
+): boolean => {
+  if (rankIndex !== RANK_4_INDEX) return false;
+  const group = rank4Group(asset);
+  if (!group) return false;
+  const unlockedCount = Math.min(RANK_4_GROUPS.length, ribbonsIntoRank + 1);
+  return RANK_4_GROUPS.indexOf(group) >= unlockedCount;
+};
+
+const CURRENT_WORLD_PROBABILITY = 0.8;
+
+// Easter eggs (e.g. rank 2's castle/dinosaurs/dragon/knights/kraken/mars/
+// robot/undersea) are ordinary backdrops in the rotation, just weighted
+// very low (0.05 vs 1 in assets/worlds.json) so weightedPick surfaces them
+// rarely - not a separate trigger. 'memory' isn't wired in: no world
+// currently declares any memory-category asset.
+const isSelectableCategory = (asset: ArchiveBackgroundAsset): boolean =>
+  asset.category === 'military' || asset.category === 'easter-egg';
+
+const selectableBackgroundsForRank = (rankIndex: number, ribbonsIntoRank: number) =>
+  (ARCHIVE_BACKGROUND_ASSETS_BY_RANK[Math.max(0, rankIndex)] ?? []).filter(
+    (asset) => isSelectableCategory(asset) && !isLockedRank4Group(asset, rankIndex, ribbonsIntoRank),
+  );
+
+const weightedPick = <T extends { weight: number }>(assets: readonly T[]): T => {
+  const total = assets.reduce((sum, asset) => sum + asset.weight, 0);
+  let needle = Math.random() * total;
+  for (const asset of assets) {
+    needle -= asset.weight;
+    if (needle <= 0) return asset;
+  }
+  return assets[assets.length - 1]!;
 };
 
 /** Picks a random backdrop from the unlocked pool, excluding whichever key
  * was shown last (when the pool has more than one option) so the same
- * image never appears twice in a row. */
+ * image never appears twice in a row. `ribbonsIntoRank` (ribbons earned
+ * since entering `rankIndex`, i.e. totalRibbonsEarned % RIBBONS_PER_OVERALL_RANK
+ * - see AchievementsDialog.tsx) only matters for Rank 4's group rollout;
+ * pass 0 (or omit) for any other rank. */
 export const pickBackgroundKey = (
   rankIndex: number,
   previousKey: string | null,
   poseIndex?: number,
+  ribbonsIntoRank = 0,
 ): string => {
-  const pool = backgroundPoolForRank(rankIndex, poseIndex);
-  const choices = previousKey && pool.length > 1 ? pool.filter((key) => key !== previousKey) : pool;
-  return choices[Math.floor(Math.random() * choices.length)]!;
+  const current = selectableBackgroundsForRank(rankIndex, ribbonsIntoRank);
+  const historical =
+    ARCHIVE_BACKGROUND_ASSETS_BY_RANK.slice(0, Math.max(0, rankIndex)).flatMap((assets) =>
+      assets.filter(isSelectableCategory),
+    );
+  const preferred =
+    current.length > 0 && historical.length > 0 && Math.random() < CURRENT_WORLD_PROBABILITY
+      ? current
+      : current.length > 0 && historical.length === 0
+        ? current
+        : historical;
+  // Drop backdrops docs/bg-body-pairs.md flags as compositionally wrong for
+  // this pose - falling back to the unfiltered pool if that would empty it
+  // out entirely (a slightly-off composite still beats no portrait at all).
+  const compatible = preferred.filter((asset) => !excludesPose(asset, poseIndex));
+  const pool = compatible.length > 0 ? compatible : preferred;
+  const choices =
+    previousKey && pool.length > 1
+      ? pool.filter((asset) => asset.assetKey !== previousKey)
+      : pool;
+  return weightedPick(choices).assetKey;
 };
 
 // bg_* artwork is 758x331.
@@ -651,6 +819,7 @@ export const UniformAvatar = ({
   backgroundImageKey,
   showAlignmentGrid = false,
   size = 96,
+  onReady,
 }: UniformAvatarProps) => {
   const sceneWidth = size * BG_ASPECT;
   const coatWidth = sceneWidth;
@@ -684,6 +853,22 @@ export const UniformAvatar = ({
     bodyStamp.height,
   );
 
+  // Fires onReady once this instance has nothing left to pop in piece by
+  // piece - a ref guard rather than a dependency-driven single run, since a
+  // later pose/weapon/backdrop change legitimately re-triggers all three
+  // loads and callers of onReady only care about the very first reveal.
+  const readyFiredRef = useRef(false);
+  useEffect(() => {
+    if (readyFiredRef.current) return;
+    const headDone = headFailed || paddedHeadSrc !== null;
+    const backDone = bodyBackFailed || bodyBackSrc !== null;
+    const frontDone = bodyFrontFailed || bodyFrontSrc !== null;
+    if (headDone && backDone && frontDone) {
+      readyFiredRef.current = true;
+      onReady?.();
+    }
+  }, [headFailed, paddedHeadSrc, bodyBackFailed, bodyBackSrc, bodyFrontFailed, bodyFrontSrc, onReady]);
+
   // Color-matches the fixed-palette uniform and head sprites to whichever
   // backdrop they're currently sitting on, so a random pick doesn't leave
   // the figure looking pasted onto a mismatched scene. Every stat involved
@@ -715,7 +900,7 @@ export const UniformAvatar = ({
       return NEUTRAL_STATS;
     }
   }, [bodyFrontImageUrl]);
-  // body9.svg is deliberately styled as an old WWI-era photograph rather
+  // The aircraft subject is deliberately authored as a complete scene rather
   // than a normal color uniform render - applied once, on the outer scene
   // container, so backdrop/head/body all end up looking like one coherent
   // antique photo rather than a desaturated figure standing in front of a
@@ -726,32 +911,32 @@ export const UniformAvatar = ({
   // feTurbulence/feComponentTransfer, since plain CSS filter functions can't
   // add noise or lift blacks asymmetrically) was tried and shelved for now;
   // revisit before relying on this being the final look.
-  const isWwiPhotoPose = useMemo(() => {
+  const isAircraftSubject = useMemo(() => {
     try {
-      return new URL(bodyFrontImageUrl).searchParams.get('pose') === '9';
+      return new URL(bodyFrontImageUrl).searchParams.get('pose') === String(AIRCRAFT_SUBJECT_POSE);
     } catch {
       return false;
     }
   }, [bodyFrontImageUrl]);
-  const scenePhotoFilter = scenePhotoFilterForPose(isWwiPhotoPose ? 9 : -1);
+  const scenePhotoFilter = scenePhotoFilterForBackground(backgroundImageKey);
   useEffect(() => {
     let cancelled = false;
     void getCachedColorStats(backgroundImageKey).then((backgroundStats) => {
-      if (!cancelled) setUniformFilter(colorMatchFilter(bodyStats, backgroundStats));
+      if (!cancelled) setUniformFilter(isAircraftSubject ? 'none' : colorMatchFilter(bodyStats, backgroundStats));
     });
     return () => {
       cancelled = true;
     };
-  }, [backgroundImageKey, bodyStats]);
+  }, [backgroundImageKey, bodyStats, isAircraftSubject]);
   useEffect(() => {
     let cancelled = false;
     void getCachedColorStats(backgroundImageKey).then((backgroundStats) => {
-      if (!cancelled) setHeadFilter(colorMatchFilter(headStats, backgroundStats));
+      if (!cancelled) setHeadFilter(isAircraftSubject ? 'none' : colorMatchFilter(headStats, backgroundStats));
     });
     return () => {
       cancelled = true;
     };
-  }, [backgroundImageKey, headStats]);
+  }, [backgroundImageKey, headStats, isAircraftSubject]);
 
   const backgroundSrc = `${GAME_ASSET_PREFIX}${backgroundImageKey}`;
   // Body art is a full-frame layer now (see the shared-canvas comment above
@@ -792,7 +977,7 @@ export const UniformAvatar = ({
       aria-label="Service uniform portrait"
       style={{
         backgroundColor: '#b7c4c7',
-        backgroundImage: `url(${backgroundSrc})`,
+        backgroundImage: isAircraftSubject ? undefined : `url(${backgroundSrc})`,
         backgroundPosition: 'center',
         backgroundRepeat: 'no-repeat',
         backgroundSize: 'cover',

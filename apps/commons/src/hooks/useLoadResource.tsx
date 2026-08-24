@@ -16,7 +16,7 @@ export const useLoadResource = () => {
   const { openDialog } = useActions().ui;
 
   const location = useLocation();
-  let [, setSearchParams] = useSearchParams();
+  const [, setSearchParams] = useSearchParams();
 
   const navigate = useNavigate();
   const { t } = useTranslation();

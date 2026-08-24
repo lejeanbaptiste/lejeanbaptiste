@@ -75,7 +75,7 @@ describe('TranslationPane opening', () => {
     await flush();
 
     consoleError.mockRestore();
-    // eslint-disable-next-line no-console
+
     if (errors.length)
       console.log('CONSOLE ERRORS:', JSON.stringify(errors, null, 2).slice(0, 4000));
 

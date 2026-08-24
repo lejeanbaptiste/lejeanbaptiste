@@ -181,7 +181,7 @@ export const listZoteroStyles = async (): Promise<ZoteroStyle[]> => {
   for (const entry of entries) {
     if (!entry.endsWith('.csl')) continue;
     try {
-      // eslint-disable-next-line no-await-in-loop
+       
       const xml = await fs.readFile(path.join(stylesDir, entry), 'utf-8');
       const fallbackId = entry.replace(/\.csl$/, '');
       styles.push({

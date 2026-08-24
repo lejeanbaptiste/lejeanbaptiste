@@ -31,7 +31,6 @@ const i18n: I18n = createInstance(
     supportedLngs: locales,
   },
   // We must provide a function as second parameter, otherwise i18next errors
-  // eslint-disable-next-line @typescript-eslint/no-unused-vars
   (error, _t) => {
     if (error) return log.error(error);
   },

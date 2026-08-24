@@ -14,7 +14,7 @@ export const collectPlaceholderInventory = (text: string): Map<string, number> =
   const counts = new Map<string, number>();
   PLACEHOLDER_TOKEN_RE.lastIndex = 0;
   let match: RegExpExecArray | null;
-  // eslint-disable-next-line no-cond-assign
+
   while ((match = PLACEHOLDER_TOKEN_RE.exec(normalized))) {
     const token = match[0];
     counts.set(token, (counts.get(token) ?? 0) + 1);

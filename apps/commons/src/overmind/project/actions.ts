@@ -1221,35 +1221,31 @@ export const openFile = async (context: Context, filePath: string) => {
     return;
   }
 
-  try {
-    await persistActiveTabEditorContent(context);
+  await persistActiveTabEditorContent(context);
 
-    let content = await window.electronAPI.readFile(filePath);
-    content = await prepareFileContent({ state, actions } as Context, filePath, content);
-    const filename = getFilename(filePath);
-    const tab = {
-      content,
-      dirty: false,
-      lastSavedContent: content,
-      editorReady: true,
-      filePath,
-      filename,
-    };
+  let content = await window.electronAPI.readFile(filePath);
+  content = await prepareFileContent({ state, actions } as Context, filePath, content);
+  const filename = getFilename(filePath);
+  const tab = {
+    content,
+    dirty: false,
+    lastSavedContent: content,
+    editorReady: true,
+    filePath,
+    filename,
+  };
 
-    state.project.openTabs = [...state.project.openTabs, tab];
-    state.project.activeTabPath = filePath;
+  state.project.openTabs = [...state.project.openTabs, tab];
+  state.project.activeTabPath = filePath;
 
-    await actions.editor.setResource({
-      content,
-      filePath,
-      filename,
-      isLocal: true,
-    });
-    state.editor.contentLastSaved = content;
-    await actions.project.saveWorkspaceSession();
-  } catch (error) {
-    throw error;
-  }
+  await actions.editor.setResource({
+    content,
+    filePath,
+    filename,
+    isLocal: true,
+  });
+  state.editor.contentLastSaved = content;
+  await actions.project.saveWorkspaceSession();
 };
 
 export const switchTab = async (
@@ -1799,13 +1795,6 @@ export const updateTabContent = (
   }
 };
 
-const treeContainsPath = (nodes: FileTreeNode[], targetPath: string): boolean =>
-  nodes.some(
-    (node) =>
-      node.path === targetPath ||
-      (node.children ? treeContainsPath(node.children, targetPath) : false),
-  );
-
 export const reloadDirectoryInTree = async ({ state }: Context, dirPath: string) => {
   const schemaDirPath = getExplorerSchemaDirPath(
     state.project.rootPath,
@@ -1920,12 +1909,12 @@ export const renameExplorerItem = async (
   for (const companion of companions) {
     try {
       const newCompanionPath = translationFilePathFor(renamedPath, companion.lang);
-      // eslint-disable-next-line no-await-in-loop
+
       await window.electronAPI.renamePath(companion.path, newCompanionPath);
 
       // The companion's @corresp values still reference the old source filename — rewrite
       // them, or every unit lookup silently fails after the rename.
-      // eslint-disable-next-line no-await-in-loop
+
       const companionXml = await window.electronAPI.readFile(newCompanionPath);
       const rewritten = rewriteCompanionSourceReferences(
         companionXml,
@@ -1933,7 +1922,6 @@ export const renameExplorerItem = async (
         getFilename(renamedPath),
       );
       if (rewritten && rewritten !== companionXml) {
-        // eslint-disable-next-line no-await-in-loop
         await window.electronAPI.writeFile(newCompanionPath, rewritten);
       }
     } catch (error) {
@@ -1964,7 +1952,6 @@ export const moveExplorerItem = async (
 
     for (const companion of companions) {
       try {
-        // eslint-disable-next-line no-await-in-loop
         await window.electronAPI.movePath(companion.path, destDir);
       } catch (error) {
         console.warn('[translation] failed to move companion file', companion.path, error);
@@ -2011,7 +1998,6 @@ export const deleteExplorerItem = async (
 
   for (const companion of companions) {
     try {
-      // eslint-disable-next-line no-await-in-loop
       await window.electronAPI.deletePath(companion.path);
     } catch (error) {
       console.warn('[translation] failed to delete companion file', companion.path, error);

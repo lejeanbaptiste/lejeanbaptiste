@@ -159,14 +159,15 @@ class Mapper {
 
     const removeMatch = (match: Node) => {
       switch (match.nodeType) {
-        case Node.ATTRIBUTE_NODE:
+        case Node.ATTRIBUTE_NODE: {
           const matchAttr = match as Attr;
           if (matchAttr.ownerElement !== entityElement) {
             matchAttr.ownerElement?.parentElement?.removeChild(matchAttr.ownerElement);
           }
           break;
+        }
 
-        case Node.ELEMENT_NODE:
+        case Node.ELEMENT_NODE: {
           const matchElement = match as Element;
           if (matchElement !== entityElement) {
             if (isTextTag(matchElement)) {
@@ -177,8 +178,9 @@ class Mapper {
             }
           }
           break;
+        }
 
-        case Node.TEXT_NODE:
+        case Node.TEXT_NODE: {
           const matchText = match as Text;
           if (matchText.parentElement !== entityElement) {
             // if that text's parent is not the entity then remove the text and the parent if it's not the textTag
@@ -189,6 +191,7 @@ class Mapper {
             }
           }
           break;
+        }
 
         default:
           log.warn(
@@ -241,9 +244,7 @@ class Mapper {
       let innerXPath: RegExpExecArray | string | null = /^local-name\((.*)\)$/.exec(xpath); // try to get the inside of the name function
 
       if (innerXPath) {
-        //@ts-ignore
         innerXPath = innerXPath[1];
-        //@ts-ignore
         const innerResult = this.getValueFromXPath.call(this, contextEl, innerXPath);
 
         // hack: if innerResult return undefined, result is also undefined
@@ -290,7 +291,7 @@ class Mapper {
     // attributes
     isCWRC
       ? (obj.attributes = this.writer.tagger.getAttributesForTag(element))
-      : //@ts-ignore
+      : //@ts-expect-error
         $.map(element.attributes, (att) => (obj.attributes[att.name] = att.value));
 
     // mapping values
@@ -616,12 +617,9 @@ class Mapper {
       let parentTag = entity.parentTag;
       if (Array.isArray(parentTag)) entityTagNames = [...entityTagNames, ...parentTag];
       if (Array.isArray(parentTag)) {
-        //@ts-ignore
         parentTag = parentTag[0];
-        //@ts-ignore
         if (parentTag !== '') entityTagNames.push(parentTag);
       }
-      //@ts-ignore
       if (parentTag !== '') entityTagNames.push(parentTag);
 
       entityTagNames = entityTagNames.map((name) => `[_tag="${name}"]`);

@@ -1150,7 +1150,7 @@ describe('EntitySqliteRepository', () => {
           `SELECT date_kind FROM entity_dates
            WHERE entity_id = ? AND origin = 'authority' AND status = 'active'`,
         )
-        .all('person-floruit') as Array<{ date_kind: string }>
+        .all('person-floruit') as { date_kind: string }[]
     ).map((row) => row.date_kind);
     expect(vitalKinds).toEqual(['dates']);
     repository.close();

@@ -366,10 +366,8 @@ class CorrectionDialog implements SchemaDialog {
     this.updateTextField(this.selectedText ?? '');
 
     if (config?.quick) {
-      //@ts-ignore
       this.dialog.$el.dialog('option', 'title', i18next.t('LW.editorToolbar.Correction'));
     } else {
-      //@ts-ignore
       this.dialog.$el.dialog('option', 'title', i18next.t('LW.editorToolbar.Tag Correction'));
     }
 

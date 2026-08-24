@@ -14,7 +14,6 @@ const mockSetMaxBounds = jest.fn();
 const mockSetMaxZoom = jest.fn();
 
 let onLoadCallback: (() => void) | null = null;
-let onMoveEndCallback: (() => void) | null = null;
 let mockCenter = { lat: 30.65, lng: 113.15 };
 let mockMapOptions: unknown = null;
 
@@ -27,7 +26,6 @@ jest.mock(
       }
       on(event: string, cb: () => void) {
         if (event === 'load') onLoadCallback = cb;
-        if (event === 'moveend') onMoveEndCallback = cb;
       }
       fitBounds(...args: unknown[]) {
         mockFitBounds(...args);
@@ -107,7 +105,6 @@ describe('PlaceComparisonMap', () => {
   afterEach(() => {
     jest.clearAllMocks();
     onLoadCallback = null;
-    onMoveEndCallback = null;
     mockCenter = { lat: 30.65, lng: 113.15 };
     mockMapOptions = null;
     delete (window as { electronAPI?: unknown }).electronAPI;

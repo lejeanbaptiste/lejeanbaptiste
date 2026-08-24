@@ -132,9 +132,8 @@ export const setUserProfile = async (
   const preferredID = effects.storage.api.getFromLocalStorage<string>('prefIdProvider');
 
   //if not preferredID, use the first identityProviders linked Account
-  preferredID
-    ? (state.auth.user.preferredID = preferredID)
-    : actions.auth.setPreferredId(identityProvider);
+  if (preferredID) state.auth.user.preferredID = preferredID;
+  else actions.auth.setPreferredId(identityProvider);
 
   //use avatar from preffed ID
   state.auth.user.avatar_url = getAvatarUrl(user.identities.get(user.preferredID));

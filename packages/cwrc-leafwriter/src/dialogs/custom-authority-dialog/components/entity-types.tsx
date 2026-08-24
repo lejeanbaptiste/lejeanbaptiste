@@ -45,12 +45,12 @@ export const EntityTypes = () => {
         {({ push, remove, replace }) => (
           <>
             {fieldCollection.value.map(({ name, url }, index) => (
-              //@ts-ignore - type mismatch
+              //@ts-expect-error - type mismatch
               <EntityType
                 key={name}
                 {...{
                   index,
-                  //@ts-ignore - type mismatch
+                  //@ts-expect-error - type mismatch
                   errorUrl: meta.error?.[index]?.url,
                   name,
                   url,
@@ -92,7 +92,7 @@ const EntityType = ({
   index: number;
   remove: (index: number) => void;
   replace: (index: number, value: EntityTypeProps) => void;
-  setError: (value: string | undefined | { [index: number]: { url: string } }) => void;
+  setError: (value: string | undefined | Record<number, { url: string }>) => void;
   touched: boolean;
 }) => {
   const { t } = useTranslation();
@@ -122,7 +122,7 @@ const EntityType = ({
       setIsValidUrl(true);
       setError(undefined);
       return true;
-    } catch (error) {
+    } catch {
       setError({ [index]: { url: t('LW.messages.failed to fetch URL') } });
       setIsValidUrl(false);
       return false;

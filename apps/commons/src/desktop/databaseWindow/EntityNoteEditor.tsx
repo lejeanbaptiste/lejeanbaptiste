@@ -20,7 +20,7 @@ import { installCitationBridge } from '../citations/citationBridge';
 
 interface LanguageState {
   indexing: boolean;
-  languages: Array<{ code: string; label: string }>;
+  languages: { code: string; label: string }[];
   selectedLang: string;
   setSelectedLang: (lang: string) => void;
 }

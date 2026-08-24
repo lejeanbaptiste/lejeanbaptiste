@@ -69,8 +69,8 @@ const makeStore = (seed: Panel[] = []) => {
       id: string;
       kind: Panel['kind'];
       description?: string | null;
-      names?: Array<{ text: string; nameType?: string | null; language?: string | null }>;
-      authorities?: Array<{ type: string; value: string; origin?: string }>;
+      names?: { text: string; nameType?: string | null; language?: string | null }[];
+      authorities?: { type: string; value: string; origin?: string }[];
       familyName?: string | null;
       givenName?: string | null;
     }) => {

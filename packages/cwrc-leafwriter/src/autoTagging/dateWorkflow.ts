@@ -201,7 +201,7 @@ export function isEastAsianDatesMethodAvailable(language: string | null | undefi
 
 export type SanmiaoCivId = 'c' | 'j' | 'k';
 
-export const SANMIAO_CIV_OPTIONS: ReadonlyArray<{ id: SanmiaoCivId; label: string }> = [
+export const SANMIAO_CIV_OPTIONS: readonly { id: SanmiaoCivId; label: string }[] = [
   { id: 'c', label: 'Chinese' },
   { id: 'j', label: 'Japanese' },
   { id: 'k', label: 'Korean' },

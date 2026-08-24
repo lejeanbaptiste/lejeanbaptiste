@@ -23,7 +23,7 @@ interface PublicRepositoriesProps {
 const searcbarCollapsible = false;
 
 export const PublicRepositories = ({ onSelect, selectedMenu }: PublicRepositoriesProps) => {
-  const { name: providerName, owner } = useAppState().cloud;
+  const { name: providerName } = useAppState().cloud;
   const { searchUsers, setOwner } = useActions().cloud;
 
   const { t } = useTranslation();
@@ -39,14 +39,12 @@ export const PublicRepositories = ({ onSelect, selectedMenu }: PublicRepositorie
     setShowSearch(!searcbarCollapsible);
   }, [providerName]);
 
-  useEffect(() => {}, [owner]);
-
   const fetch = debounce(
     async (value: string) => {
       const publicRepository = await getPublicRepositoryByUsername(value);
       if (!publicRepository) return log.warn('public repository not found');
 
-      const { uuid, provider, ...user } = publicRepository;
+      const { uuid: _uuid, provider: _provider, ...user } = publicRepository;
       setOwner(user as Owner);
       onSelect(user.username);
     },
@@ -66,7 +64,7 @@ export const PublicRepositories = ({ onSelect, selectedMenu }: PublicRepositorie
   const handleSearchSelect = async (publicRepository: PublicRepository) => {
     await addPublicRepository(publicRepository);
 
-    const { uuid, provider, ...user } = publicRepository;
+    const { uuid: _uuid, provider: _provider, ...user } = publicRepository;
     setOwner(user as Owner);
 
     onSelect(user.username);

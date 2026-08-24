@@ -1,6 +1,6 @@
 // https://stackoverflow.com/questions/9856269/protect-div-element-from-being-deleted-within-tinymce
-//@ts-nocheck
-import tinymce, { type Editor, type EditorEvent } from 'tinymce';
+import tinymce, { type EditorEvent } from 'tinymce';
+import { type LeafWriterEditor } from '../../../types';
 
 //! THESE FUNCTIONS NEED BE REVIEWED: KEYBOARD_EVENT.keyCode is deprecated. -- see WIP on the commented code bellow
 const contains = (array: number[], item: number) => {
@@ -68,34 +68,35 @@ const cancelKey = (event: EditorEvent<KeyboardEvent>) => {
 //   return element.nodeType === Node.TEXT_NODE ? true : element.nodeName.toLowerCase() === 'span';
 // };
 
-const deleteConfirm = (editor: Editor, range: Range, direction: 'back' | 'forward') => {
-  let element: Element;
-  if (direction === 'back') {
-    element =
-      range.commonAncestorContainer.previousElementSibling ||
-      range.commonAncestorContainer.parentElement;
-  } else {
-    element =
-      range.commonAncestorContainer.nextElementSibling ||
-      range.commonAncestorContainer.parentElement;
-  }
+const deleteConfirm = (editor: LeafWriterEditor, range: Range, direction: 'back' | 'forward') => {
+  const writer = editor.writer;
+  if (!writer) return;
 
-  const invalidDelete: boolean = editor.writer.schemaManager.wouldDeleteInvalidate({
-    contextNode: element,
+  // previousElementSibling/nextElementSibling are declared on Element and CharacterData
+  // (which Text extends) but not on the generic Node type range.commonAncestorContainer
+  // carries — this range is always inside editor content, so always one or the other.
+  const container = range.commonAncestorContainer as Element | CharacterData;
+  const element =
+    direction === 'back' ? container.previousElementSibling : container.nextElementSibling;
+  const parentElement = element ?? container.parentElement;
+  if (!parentElement) return;
+
+  const invalidDelete: boolean = writer.schemaManager.wouldDeleteInvalidate({
+    contextNode: parentElement,
     removeContext: true,
     removeContents: false,
   });
 
-  let msg = `<p>Delete "${element.getAttribute('_tag')}" element?</p>`;
+  let msg = `<p>Delete "${parentElement.getAttribute('_tag')}" element?</p>`;
   let showConfirmKey = 'confirm-delete-tag';
 
   if (invalidDelete) {
-    const _tagAttr = element.getAttribute('_tag');
+    const _tagAttr = parentElement.getAttribute('_tag');
     msg = `<p>Deleting the "${_tagAttr}" element will make the document invalid. Do you wish to continue?</p>`;
     showConfirmKey = 'confirm-delete-tag-invalidating';
   }
 
-  editor.writer.dialogManager.confirm({
+  writer.dialogManager.confirm({
     title: 'Warning',
     msg,
     showConfirmKey,
@@ -103,12 +104,15 @@ const deleteConfirm = (editor: Editor, range: Range, direction: 'back' | 'forwar
     callback: (confirmed: boolean) => {
       const textNode =
         direction === 'back'
-          ? editor.writer.utilities.getPreviousTextNode(range.commonAncestorContainer, true)
-          : editor.writer.utilities.getNextTextNode(range.commonAncestorContainer, true);
+          ? writer.utilities.getPreviousTextNode(range.commonAncestorContainer, true)
+          : writer.utilities.getNextTextNode(range.commonAncestorContainer, true);
 
       if (confirmed) {
-        const hasTextContent = element.textContent !== '\uFEFF';
-        editor.writer.tagger.removeStructureTag(element.getAttribute('id'), !hasTextContent);
+        const id = parentElement.getAttribute('id');
+        if (id) {
+          const hasTextContent = parentElement.textContent !== '\uFEFF';
+          writer.tagger.removeStructureTag(id, !hasTextContent);
+        }
       }
 
       if (textNode?.parentNode) {
@@ -125,68 +129,81 @@ const deleteConfirm = (editor: Editor, range: Range, direction: 'back' | 'forwar
 
 const moveToTextNode = (
   event: EditorEvent<KeyboardEvent>,
-  editor: Editor,
+  editor: LeafWriterEditor,
   range: Range,
   direction: 'back' | 'forward',
 ) => {
+  const writer = editor.writer;
+  if (!writer) return;
+
   const textNode: Node | null =
     direction === 'back'
-      ? editor.writer.utilities.getPreviousTextNode(range.commonAncestorContainer, true)
-      : editor.writer.utilities.getNextTextNode(range.commonAncestorContainer, true);
+      ? writer.utilities.getPreviousTextNode(range.commonAncestorContainer, true)
+      : writer.utilities.getNextTextNode(range.commonAncestorContainer, true);
 
-  if (textNode !== null && textNode.parentNode !== null) {
-    // if parentNode is null that means the text was normalized as part of removeStructureTag
-    const nextParent = textNode.parentElement;
-    if (
-      nextParent.textContent.length === 0 ||
-      (nextParent.textContent.length === 1 && nextParent.textContent.charCodeAt(0) === 65279)
-    ) {
-      const rng = editor.selection.getRng();
-      if (direction === 'back') {
-        rng.setStart(textNode, textNode.textContent.length);
-        rng.setEnd(textNode, textNode.textContent.length);
-      } else {
-        rng.setStart(textNode, 0);
-        rng.setEnd(textNode, 0);
-      }
-      deleteConfirm(editor, rng, direction);
-      return cancelKey(event);
+  if (textNode === null || textNode.parentNode === null) return;
+  // if parentNode is null that means the text was normalized as part of removeStructureTag
+
+  // parentNode !== null doesn't guarantee parentElement !== null (the parent could be a
+  // non-Element node, e.g. a DocumentFragment) — that gap was previously unguarded.
+  const nextParent = textNode.parentElement;
+  if (!nextParent) return;
+
+  const nextParentText = nextParent.textContent ?? '';
+  const textNodeContent = textNode.textContent ?? '';
+
+  if (
+    nextParentText.length === 0 ||
+    (nextParentText.length === 1 && nextParentText.charCodeAt(0) === 65279)
+  ) {
+    const rng = editor.selection.getRng();
+    if (direction === 'back') {
+      rng.setStart(textNode, textNodeContent.length);
+      rng.setEnd(textNode, textNodeContent.length);
     } else {
-      if (textNode.parentElement.nodeName === 'SPAN') {
-        if (textNode.parentElement.textContent.length === 1) {
-          const nextParent = textNode.parentElement;
-          // this keydown will delete all text content, leaving an empty tag
-          // so insert zero-width non-breaking space (zwnb) to prevent tag deletion
-          nextParent.textContent = '\uFEFF';
-          // set range to after the zwnb character
+      rng.setStart(textNode, 0);
+      rng.setEnd(textNode, 0);
+    }
+    deleteConfirm(editor, rng, direction);
+    return cancelKey(event);
+  } else {
+    if (nextParent.nodeName === 'SPAN') {
+      if (nextParentText.length === 1) {
+        // this keydown will delete all text content, leaving an empty tag
+        // so insert zero-width non-breaking space (zwnb) to prevent tag deletion
+        nextParent.textContent = '\uFEFF';
+        // set range to after the zwnb character
+        if (nextParent.firstChild) {
           const rng = editor.selection.getRng();
           rng.setStart(nextParent.firstChild, 1);
           rng.setEnd(nextParent.firstChild, 1);
           editor.selection.setRng(rng);
-          return cancelKey(event);
         }
-      } else {
-        const rng = editor.selection.getRng();
-        if (direction === 'back') {
-          rng.setStart(textNode, textNode.textContent.length);
-          rng.setEnd(textNode, textNode.textContent.length);
-        } else {
-          rng.setStart(textNode, 0);
-          rng.setEnd(textNode, 0);
-        }
-        editor.selection.setRng(rng);
-        // return cancelKey(event);
+        return cancelKey(event);
       }
+    } else {
+      const rng = editor.selection.getRng();
+      if (direction === 'back') {
+        rng.setStart(textNode, textNodeContent.length);
+        rng.setEnd(textNode, textNodeContent.length);
+      } else {
+        rng.setStart(textNode, 0);
+        rng.setEnd(textNode, 0);
+      }
+      editor.selection.setRng(rng);
+      // return cancelKey(event);
     }
   }
 };
 
-const preventDelete = (editor: Editor, event: EditorEvent<KeyboardEvent>) => {
+const preventDelete = (editor: LeafWriterEditor, event: EditorEvent<KeyboardEvent>) => {
   const range = editor.selection.getRng();
 
   // deleting individual characters
   if (range.collapsed && range.commonAncestorContainer.nodeType === Node.TEXT_NODE) {
-    const textContainer = range.commonAncestorContainer;
+    // .length (character count) is declared on Text (a CharacterData), not the generic Node
+    // type commonAncestorContainer carries — the nodeType check above guarantees it's a Text.
+    const textContainer = range.commonAncestorContainer as Text;
 
     // backspace
     if (event.code === 'Backspace') {
@@ -286,14 +303,17 @@ const preventDelete = (editor: Editor, event: EditorEvent<KeyboardEvent>) => {
     }
 
     if (willDeleteTags) {
-      editor.writer.dialogManager.confirm({
+      const writer = editor.writer;
+      if (!writer) return;
+
+      writer.dialogManager.confirm({
         title: 'Warning',
         msg: '<p>The text you are trying to delete contains XML elements, do you want to proceed?</p>',
         showConfirmKey: 'confirm-delete-tags-selection',
         type: 'info',
         callback: (confirmed: boolean) => {
           if (confirmed) {
-            editor.writer.tagger.processRemovedContent(range);
+            writer.tagger.processRemovedContent(range);
 
             editor.focus();
             if (event.code === 'Backspace' || event.code === 'Delete') {
@@ -302,7 +322,7 @@ const preventDelete = (editor: Editor, event: EditorEvent<KeyboardEvent>) => {
               editor.getDoc().execCommand('insertText', false, event.key);
             }
 
-            editor.writer.event('contentChanged').publish();
+            writer.event('contentChanged').publish();
 
             editor.undoManager.add();
           }
@@ -313,7 +333,7 @@ const preventDelete = (editor: Editor, event: EditorEvent<KeyboardEvent>) => {
   }
 };
 
-tinymce.PluginManager.add('preventdelete', function (editor) {
+tinymce.PluginManager.add('preventdelete', function (editor: LeafWriterEditor) {
   editor.on('keydown', (event) => {
     // Shift+Backspace / Shift+Delete unwrap inline tags in tinymceWrapper — do not
     // intercept those shortcuts here (especially at offset 0, where preventDelete

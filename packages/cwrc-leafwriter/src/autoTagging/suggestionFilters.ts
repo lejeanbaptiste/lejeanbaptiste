@@ -231,7 +231,12 @@ export function filterNestedSameTagAdds(
   const tagSet = new Set(adds.map((s) => s.tag));
   const existing = collectTaggedSpans(doc, index, tagSet);
 
-  type SpannedAdd = { suggestion: Suggestion; start: number; end: number; length: number };
+  interface SpannedAdd {
+    suggestion: Suggestion;
+    start: number;
+    end: number;
+    length: number;
+  }
   const spanned: SpannedAdd[] = [];
   const unresolvable = new Set<Suggestion>();
   for (const suggestion of adds) {
@@ -251,16 +256,14 @@ export function filterNestedSameTagAdds(
   // Longer first so the outer span is kept, then the inner is rejected as nested.
   spanned.sort((a, b) => b.length - a.length || a.start - b.start);
 
-  const keptBatchSpans: Array<{ start: number; end: number; tag: string; entityKey?: string }> = [];
+  const keptBatchSpans: { start: number; end: number; tag: string; entityKey?: string }[] = [];
   const keptAdds = new Set<Suggestion>();
   let dropped = 0;
 
   for (const row of spanned) {
     const nestedInDocument = existing.some(
       (t) =>
-        entityTagsEquivalent(t.tag, row.suggestion.tag) &&
-        row.start >= t.start &&
-        row.end <= t.end,
+        entityTagsEquivalent(t.tag, row.suggestion.tag) && row.start >= t.start && row.end <= t.end,
     );
     if (nestedInDocument) {
       dropped++;

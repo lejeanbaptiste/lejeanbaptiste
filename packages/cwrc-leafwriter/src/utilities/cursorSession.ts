@@ -58,7 +58,6 @@ const setVisualCaret = ({ offsetInElementText, teiXPath }: VisualCaretPosition):
   const walker = doc.createTreeWalker(element, NodeFilter.SHOW_TEXT);
   let remaining = Math.max(0, offsetInElementText);
   let textNode = walker.nextNode();
-  let visitedTextLength = 0;
 
   while (textNode) {
     const length = textNode.textContent?.length ?? 0;
@@ -73,7 +72,6 @@ const setVisualCaret = ({ offsetInElementText, teiXPath }: VisualCaretPosition):
       return true;
     }
     remaining -= length;
-    visitedTextLength += length;
     textNode = walker.nextNode();
   }
 

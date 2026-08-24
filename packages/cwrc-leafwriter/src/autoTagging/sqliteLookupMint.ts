@@ -33,7 +33,7 @@ export interface SqliteMintEntityInput {
   endYear?: number | null;
   /** When true with start/end, store as floruit dates row (not birth/death). */
   asFloruit?: boolean;
-  nationality?: Array<{ label: string; canonicalId?: string; sourceIds?: string[] }>;
+  nationality?: { label: string; canonicalId?: string; sourceIds?: string[] }[];
   authorityAssertions?: AuthoritySourcedFields[];
   authoritySource?: string | null;
   origin?: OriginAssertion[];
@@ -46,7 +46,7 @@ async function enrichPersonAuthority(
     startYear?: number | null;
     endYear?: number | null;
     asFloruit?: boolean;
-    nationality?: Array<{ label: string; canonicalId?: string; sourceIds?: string[] }>;
+    nationality?: { label: string; canonicalId?: string; sourceIds?: string[] }[];
     authorityAssertions?: AuthoritySourcedFields[];
     authoritySource?: string | null;
     origin?: OriginAssertion[];
@@ -54,15 +54,15 @@ async function enrichPersonAuthority(
 ): Promise<void> {
   // Authority years are provenance assertions — never mint them as user/Central
   // lifespan dates. Floruit goes on a dates+fl. row; index years never write.
-  const dates: Array<{
+  const dates: {
     source: string;
     startYear?: number | null;
     endYear?: number | null;
     asFloruit?: boolean;
-  }> = [];
+  }[] = [];
   const clearAuthorityVitalSources: string[] = [];
-  const nationalities: Array<{ label: string; ref?: string | null; source: string }> = [];
-  const origins: Array<{ label: string; ref?: string | null; source: string }> = [];
+  const nationalities: { label: string; ref?: string | null; source: string }[] = [];
+  const origins: { label: string; ref?: string | null; source: string }[] = [];
 
   const pushVitalDate = (source: string, startYear?: number | null, endYear?: number | null) => {
     const birth = finiteBiographicalYear(startYear);
@@ -206,7 +206,7 @@ export async function enrichEntitySqlite(
     startYear?: number | null;
     endYear?: number | null;
     asFloruit?: boolean;
-    nationality?: Array<{ label: string; canonicalId?: string; sourceIds?: string[] }>;
+    nationality?: { label: string; canonicalId?: string; sourceIds?: string[] }[];
     authorityAssertions?: AuthoritySourcedFields[];
     authoritySource?: string | null;
     origin?: OriginAssertion[];
@@ -257,13 +257,13 @@ export async function mintEntitySqlite(
 ): Promise<string> {
   await assertLookupSqliteStore(store);
   const id = mintEntityId(input.kind);
-  const names: Array<{
+  const names: {
     text: string;
     nameType: 'primary' | 'variant';
     language: string | null;
     isPrimary: boolean;
     origin: 'authority';
-  }> = [
+  }[] = [
     {
       text: input.name,
       nameType: 'primary' as const,

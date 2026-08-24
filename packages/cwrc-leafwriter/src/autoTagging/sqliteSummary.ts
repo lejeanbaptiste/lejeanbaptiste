@@ -6,12 +6,12 @@ export interface SqlitePanelSummaryLike {
   id: string;
   kind: EntityKind;
   description: string | null;
-  names: Array<{
+  names: {
     text: string;
     nameType: string | null;
     language: string | null;
     status: 'active' | 'rejected' | 'withdrawn';
-  }>;
+  }[];
   authorities: { type: string; value: string }[];
   familyName: string | null;
   givenName: string | null;

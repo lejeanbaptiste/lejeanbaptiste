@@ -1,12 +1,12 @@
 import type { ProjectFileConfig } from './projectTypes';
 
-type SchemaTemplateConfig = {
+interface SchemaTemplateConfig {
   schema?: {
     catalogId?: ProjectFileConfig['schema'] extends { catalogId?: infer C } ? C : string;
     css?: string;
     rng?: string;
   };
-};
+}
 
 const xmlModelPi = (rng: string) =>
   `<?xml-model href="${rng}" type="application/xml" schematypens="http://relaxng.org/ns/structure/1.0"?>`;

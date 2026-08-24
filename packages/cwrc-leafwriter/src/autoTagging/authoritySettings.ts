@@ -87,7 +87,7 @@ export function nameTypeTaggingPolicyFromSettings(
 /** Async helper for UI and tag-bomb: reads persisted settings + project source language. */
 export async function readProjectNameTypeTaggingPolicy(): Promise<NameTypeTaggingPolicy> {
   const settings = readPersistedAuthoritySettings();
-  let sourceLanguage: string | null = null;
+  let sourceLanguage: string | null;
   try {
     sourceLanguage = (await window.__leafWriterProject?.getProjectSourceLanguage?.()) ?? null;
   } catch {

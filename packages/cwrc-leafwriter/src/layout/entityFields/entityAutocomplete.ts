@@ -92,7 +92,7 @@ export const candidateFromEntity = (
 };
 
 export const candidatesFromEntities = (
-  entities: Array<{ entity: EntitySummary; sourceSurface?: string | null }>,
+  entities: { entity: EntitySummary; sourceSurface?: string | null }[],
 ): EntityAutocompleteCandidate[] =>
   entities.map(({ entity, sourceSurface }) => candidateFromEntity(entity, sourceSurface));
 
@@ -121,14 +121,14 @@ export const rankEntityAutocomplete = (
   query: string,
   candidates: EntityAutocompleteCandidate[],
   limit = 8,
-): Array<{ candidate: EntityAutocompleteCandidate; matchedAlias: string; score: number }> => {
+): { candidate: EntityAutocompleteCandidate; matchedAlias: string; score: number }[] => {
   if (!query || query.length < minQueryLength(query)) return [];
 
-  const ranked: Array<{
+  const ranked: {
     candidate: EntityAutocompleteCandidate;
     matchedAlias: string;
     score: number;
-  }> = [];
+  }[] = [];
 
   for (const candidate of candidates) {
     let bestScore = 0;

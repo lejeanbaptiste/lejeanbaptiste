@@ -23,12 +23,12 @@ import {
   quoteFontFamily,
 } from '../../../../overmind/editor/fontFamilies';
 
-type LocalFontData = {
+interface LocalFontData {
   family?: string;
   fullName?: string;
   postscriptName?: string;
   style?: string;
-};
+}
 
 type LocalFontWindow = Window & {
   queryLocalFonts?: () => Promise<LocalFontData[]>;

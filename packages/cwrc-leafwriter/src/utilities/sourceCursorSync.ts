@@ -266,7 +266,7 @@ export const getVisualCaretForSourceSync = (): VisualCaretPosition | null => {
   const rng = editor.selection.getRng();
   if (!rng) return null;
 
-  let element: Element | null = null;
+  let element: Element | null;
   if (rng.startContainer.nodeType === Node.ELEMENT_NODE) {
     const el = rng.startContainer as Element;
     element = el.getAttribute('_tag') ? el : el.closest('[_tag]');

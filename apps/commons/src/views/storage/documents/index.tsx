@@ -11,7 +11,7 @@ export type Layout = 'list' | 'grid';
 export { TopBar } from './components';
 export { TemplatesView } from './views';
 
-interface DocumentViewsProps extends ViewProps {}
+type DocumentViewsProps = ViewProps;
 
 const MIN_WIDTH = 290; // Use to show the login panel // 1 column grid
 const MIN_HEIGHT = 333;

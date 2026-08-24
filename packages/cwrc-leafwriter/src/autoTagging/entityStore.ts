@@ -80,12 +80,12 @@ export interface EntityFileApi {
     kind: 'person' | 'place' | 'work' | 'office' | 'org';
     query: string;
     limit?: number;
-  }) => Promise<Array<{
+  }) => Promise<{
     id: string;
     label: string;
     description?: string;
-    idnos: Array<{ type: string; value: string }>;
-  }> | null>;
+    idnos: { type: string; value: string }[];
+  }[] | null>;
   entitySqliteAuthorityDuplicates?: (databasePath: string) => Promise<unknown[] | null>;
   entitySqliteUpdateNames?: (input: {
     databasePath: string;
@@ -108,7 +108,7 @@ export interface EntityFileApi {
   entitySqliteGetNotes?: (input: {
     databasePath: string;
     entityId: string;
-  }) => Promise<Array<{ xml: string }>>;
+  }) => Promise<{ xml: string }[]>;
   entitySqliteSetNote?: (input: {
     databasePath: string;
     entityId: string;
@@ -192,7 +192,7 @@ export interface EntityFileApi {
   entitySqliteSetUserWorkAuthors?: (input: {
     databasePath: string;
     entityId: string;
-    authors: Array<{ name: string; ref?: string | null; key?: string | null }>;
+    authors: { name: string; ref?: string | null; key?: string | null }[];
   }) => Promise<void>;
   entitySqliteAttachAuthority?: (input: {
     databasePath: string;
@@ -256,19 +256,19 @@ export interface EntityFileApi {
   }>;
   entitySqliteApplyConcordance?: (input: {
     databasePath: string;
-    associations: Array<{
+    associations: {
       source: string;
       canonicalId: string;
       mergedFromId: string;
       notes?: string;
       sourceRef?: string;
-    }>;
+    }[];
   }) => Promise<{
     applied: number;
     alreadyPresent: number;
     rejected: number;
     unresolved: number;
-    conflicts: Array<{
+    conflicts: {
       association: {
         source: string;
         canonicalId: string;
@@ -277,7 +277,7 @@ export interface EntityFileApi {
         sourceRef?: string;
       };
       entityIds: string[];
-    }>;
+    }[];
   }>;
   entitySqliteRejectConcordance?: (input: {
     databasePath: string;
@@ -306,81 +306,81 @@ export interface EntityFileApi {
   }) => Promise<{
     keepId: string;
     remap: Record<string, string>;
-    centralConflicts: Array<{
+    centralConflicts: {
       userStableId: string;
       keptCentralId: string;
       droppedCentralId: string;
-    }>;
+    }[];
   }>;
   entitySqliteCreatePopulated?: (input: {
     databasePath: string;
     id: string;
     kind: 'person' | 'place' | 'work' | 'office' | 'org';
     description?: string | null;
-    names?: Array<{
+    names?: {
       text: string;
       nameType?: string | null;
       language?: string | null;
       isPrimary?: boolean;
       origin?: 'user' | 'authority' | 'xml';
       source?: string | null;
-    }>;
-    authorities?: Array<{
+    }[];
+    authorities?: {
       type: string;
       value: string;
       origin?: 'user' | 'authority' | 'xml';
       source?: string | null;
-    }>;
+    }[];
     familyName?: string | null;
     givenName?: string | null;
   }) => Promise<unknown>;
   entitySqliteApplyAuthorityBackfillPatch?: (input: {
     databasePath: string;
     entityId: string;
-    names?: Array<{
+    names?: {
       text: string;
       nameType?: string | null;
       language?: string | null;
       source?: string | null;
-    }>;
+    }[];
     familyName?: string | null;
     givenName?: string | null;
     rewriteUnvalidatedPersonNames?: boolean;
     romanized?: { text: string; language?: string | null } | null;
-    dates?: Array<{
+    dates?: {
       source: string;
       startYear?: number | null;
       endYear?: number | null;
       asFloruit?: boolean;
-    }>;
+    }[];
     clearAuthorityVitalSources?: string[];
-    nationalities?: Array<{ label: string; ref?: string | null; source: string }>;
-    origins?: Array<{
+    nationalities?: { label: string; ref?: string | null; source: string }[];
+    origins?: {
       label: string;
       ref?: string | null;
       source: string;
       nameType?: string | null;
-    }>;
-    offices?: Array<{ label: string; ref?: string | null; source: string }>;
-    nobleTitles?: Array<{
+    }[];
+    offices?: { label: string; ref?: string | null; source: string }[];
+    nobleTitles?: {
       placeName: string;
       roleName: string;
       posthumousName?: string | null;
       dynasty?: string | null;
       ref?: string | null;
       source: string;
-    }>;
-    authorityCaches?: Array<{
+    }[];
+    authorityCaches?: {
       authorityType: string;
       source?: string | null;
       payload: unknown;
-    }>;
-    workAuthors?: Array<{
+    }[];
+    workAuthors?: {
       name: string;
       personId?: string | null;
       ref?: string | null;
       source?: string | null;
-    }>;
+    }[];
     workDate?: {
       source: string;
       startYear?: number | null;
@@ -390,16 +390,16 @@ export interface EntityFileApi {
   entitySqliteReconcileXmlExtractedData?: (input: {
     databasePath: string;
     documentKey: string;
-    wrappers: Array<{
+    wrappers: {
       entityId: string;
       source: string;
-      assertions: Array<{
+      assertions: {
         element: string;
         value: string;
         ref?: string | null;
-        children?: Array<{ element: string; value: string; ref?: string | null }>;
-      }>;
-    }>;
+        children?: { element: string; value: string; ref?: string | null }[];
+      }[];
+    }[];
     purgeOrphanSources?: boolean;
   }) => Promise<{ wrappers: number; added: number; removed: number; retained: number }>;
   entitySqliteEntityContentHash?: (input: {
@@ -432,11 +432,11 @@ export interface EntityFileApi {
     databasePath: string;
     userStableId: string;
     centralIds: string[];
-  }) => Promise<Array<{ projectEntityId: string; centralId: string; label: string | null }>>;
+  }) => Promise<{ projectEntityId: string; centralId: string; label: string | null }[]>;
   entitySqliteListAllCentralMappings?: (input: {
     databasePath: string;
     userStableId: string;
-  }) => Promise<Array<{ projectEntityId: string; centralId: string }>>;
+  }) => Promise<{ projectEntityId: string; centralId: string }[]>;
   entitySqliteListLinkedCentralIds?: (input: {
     databasePath: string;
     userStableId: string;
@@ -962,19 +962,19 @@ export class EntityStore {
   }
 
   async sqliteApplyConcordance(
-    associations: Array<{
+    associations: {
       source: string;
       canonicalId: string;
       mergedFromId: string;
       notes?: string;
       sourceRef?: string;
-    }>,
+    }[],
   ): Promise<{
     applied: number;
     alreadyPresent: number;
     rejected: number;
     unresolved: number;
-    conflicts: Array<{
+    conflicts: {
       association: {
         source: string;
         canonicalId: string;
@@ -983,7 +983,7 @@ export class EntityStore {
         sourceRef?: string;
       };
       entityIds: string[];
-    }>;
+    }[];
   }> {
     if (!this.api.entitySqliteApplyConcordance)
       throw new Error('SQLite concordance application is unavailable.');
@@ -1043,11 +1043,11 @@ export class EntityStore {
   ): Promise<{
     keepId: string;
     remap: Record<string, string>;
-    centralConflicts: Array<{
+    centralConflicts: {
       userStableId: string;
       keptCentralId: string;
       droppedCentralId: string;
-    }>;
+    }[];
   }> {
     if (!this.api.entitySqliteMerge) throw new Error('SQLite entity merge is unavailable.');
     return this.api.entitySqliteMerge({ databasePath: this.sqlitePath, keepId, dropIds });
@@ -1057,20 +1057,20 @@ export class EntityStore {
     id: string;
     kind: 'person' | 'place' | 'work' | 'office' | 'org';
     description?: string | null;
-    names?: Array<{
+    names?: {
       text: string;
       nameType?: string | null;
       language?: string | null;
       isPrimary?: boolean;
       origin?: 'user' | 'authority' | 'xml';
       source?: string | null;
-    }>;
-    authorities?: Array<{
+    }[];
+    authorities?: {
       type: string;
       value: string;
       origin?: 'user' | 'authority' | 'xml';
       source?: string | null;
-    }>;
+    }[];
     familyName?: string | null;
     givenName?: string | null;
   }): Promise<unknown> {
@@ -1081,50 +1081,50 @@ export class EntityStore {
 
   async sqliteApplyAuthorityBackfillPatch(input: {
     entityId: string;
-    names?: Array<{
+    names?: {
       text: string;
       nameType?: string | null;
       language?: string | null;
       source?: string | null;
-    }>;
+    }[];
     familyName?: string | null;
     givenName?: string | null;
     rewriteUnvalidatedPersonNames?: boolean;
     romanized?: { text: string; language?: string | null } | null;
-    dates?: Array<{
+    dates?: {
       source: string;
       startYear?: number | null;
       endYear?: number | null;
       asFloruit?: boolean;
-    }>;
+    }[];
     clearAuthorityVitalSources?: string[];
-    nationalities?: Array<{ label: string; ref?: string | null; source: string }>;
-    origins?: Array<{
+    nationalities?: { label: string; ref?: string | null; source: string }[];
+    origins?: {
       label: string;
       ref?: string | null;
       source: string;
       nameType?: string | null;
-    }>;
-    offices?: Array<{ label: string; ref?: string | null; source: string }>;
-    nobleTitles?: Array<{
+    }[];
+    offices?: { label: string; ref?: string | null; source: string }[];
+    nobleTitles?: {
       placeName: string;
       roleName: string;
       posthumousName?: string | null;
       dynasty?: string | null;
       ref?: string | null;
       source: string;
-    }>;
-    authorityCaches?: Array<{
+    }[];
+    authorityCaches?: {
       authorityType: string;
       source?: string | null;
       payload: unknown;
-    }>;
-    workAuthors?: Array<{
+    }[];
+    workAuthors?: {
       name: string;
       personId?: string | null;
       ref?: string | null;
       source?: string | null;
-    }>;
+    }[];
     workDate?: {
       source: string;
       startYear?: number | null;
@@ -1141,16 +1141,16 @@ export class EntityStore {
 
   async sqliteReconcileXmlExtractedData(input: {
     documentKey: string;
-    wrappers: Array<{
+    wrappers: {
       entityId: string;
       source: string;
-      assertions: Array<{
+      assertions: {
         element: string;
         value: string;
         ref?: string | null;
-        children?: Array<{ element: string; value: string; ref?: string | null }>;
-      }>;
-    }>;
+        children?: { element: string; value: string; ref?: string | null }[];
+      }[];
+    }[];
     purgeOrphanSources?: boolean;
   }): Promise<{ wrappers: number; added: number; removed: number; retained: number }> {
     if (!this.api.entitySqliteReconcileXmlExtractedData) {
@@ -1223,7 +1223,7 @@ export class EntityStore {
   async sqliteListMappingsByCentralIds(
     userStableId: string,
     centralIds: string[],
-  ): Promise<Array<{ projectEntityId: string; centralId: string; label: string | null }>> {
+  ): Promise<{ projectEntityId: string; centralId: string; label: string | null }[]> {
     if (!this.api.entitySqliteListMappingsByCentralIds) return [];
     return this.api.entitySqliteListMappingsByCentralIds({
       databasePath: this.sqlitePath,
@@ -1234,7 +1234,7 @@ export class EntityStore {
 
   async sqliteListAllCentralMappings(
     userStableId: string,
-  ): Promise<Array<{ projectEntityId: string; centralId: string }>> {
+  ): Promise<{ projectEntityId: string; centralId: string }[]> {
     if (!this.api.entitySqliteListAllCentralMappings) return [];
     return this.api.entitySqliteListAllCentralMappings({
       databasePath: this.sqlitePath,
@@ -1263,12 +1263,12 @@ export class EntityStore {
     kind: 'person' | 'place' | 'work' | 'office' | 'org',
     query: string,
     limit = 20,
-  ): Promise<Array<{
+  ): Promise<{
     id: string;
     label: string;
     description?: string;
-    idnos: Array<{ type: string; value: string }>;
-  }> | null> {
+    idnos: { type: string; value: string }[];
+  }[] | null> {
     if (!this.api.entitySqliteSearch || !(await this.hasSqliteDatabase())) return null;
     return this.api.entitySqliteSearch({
       databasePath: this.sqlitePath,

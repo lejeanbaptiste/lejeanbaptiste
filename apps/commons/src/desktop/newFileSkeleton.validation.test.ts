@@ -62,7 +62,7 @@ describe('new file skeleton RelaxNG validation', () => {
   const RUN_LIVE = process.env.TEI_LIVE_TEST === '1';
 
   if (!RUN_LIVE) {
-    test.skip('live TEI catalog validation is opt-in (set TEI_LIVE_TEST=1)', () => {});
+    test.skip('live TEI catalog validation is opt-in (set TEI_LIVE_TEST=1)', () => undefined);
     return;
   }
 

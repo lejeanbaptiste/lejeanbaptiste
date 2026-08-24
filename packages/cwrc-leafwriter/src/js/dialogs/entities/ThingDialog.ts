@@ -61,7 +61,7 @@ class ThingDialog implements SchemaDialog {
     `).appendTo(parentEl);
 
     // eslint-disable-next-line @typescript-eslint/ban-ts-comment
-    //@ts-ignore
+    //@ts-expect-error
     const $relinkButton = $(`#${id}_tagAs .relink-bt`, this.$el).button();
     $relinkButton.on('click', () => {
       parentEl.css('display', 'none');
@@ -99,7 +99,6 @@ class ThingDialog implements SchemaDialog {
     // Uncomment tag next line if needed
     // this.dialog.$el.on('beforeShow', (event: JQuery.Event, config: any) => {});
 
-    // eslint-disable-next-line @typescript-eslint/no-unused-vars
     this.dialog.$el.on('beforeSave', (_event: JQuery.Event, _config: unknown) => {
       if (this.dialog.currentData.attributes.type === '') {
         delete this.dialog.currentData.attributes.type;

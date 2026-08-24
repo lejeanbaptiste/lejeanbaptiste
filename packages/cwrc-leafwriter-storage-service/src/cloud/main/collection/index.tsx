@@ -1,6 +1,6 @@
 import { Box, List } from '@mui/material';
 import { useActions, useAppState } from '@cwrc/leafwriter-storage-service/overmind';
-import { useEffect, useRef, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import { useScrollSpy } from '../../hooks/useScrollSpy';
 import { Content, Empty, LoadMore, Organization, Repository, Skeletons } from './components';
 
@@ -18,15 +18,15 @@ export const Collection = ({ height = '100%' }: Collection) => {
   const [isLoadingMore, setIsLoadingMore] = useState(false);
   const { reachBottom } = useScrollSpy({ container: refContainer, target: refTarget, offset: -70 });
 
-  useEffect(() => {
-    if (collectionType && reachBottom && !isLoadingMore) loadMore();
-  }, [reachBottom]);
-
-  const loadMore = async () => {
+  const loadMore = useCallback(async () => {
     setIsLoadingMore(true);
     await loadMoreRepos();
     setIsLoadingMore(false);
-  };
+  }, [loadMoreRepos]);
+
+  useEffect(() => {
+    if (collectionType && reachBottom && !isLoadingMore) loadMore();
+  }, [collectionType, isLoadingMore, loadMore, reachBottom]);
 
   return (
     <Box ref={refContainer} height={height} sx={{ overflow: 'auto' }}>

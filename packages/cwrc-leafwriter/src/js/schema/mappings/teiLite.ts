@@ -129,7 +129,7 @@ const note: EntityMappingProps = {
   types: ['cwrc:NoteInternal', 'cwrc:NoteScholarly', 'oa:TextualBody', 'cwrc:Note'],
   xpathSelector: 'self::note[not(@type="citation")]',
   annotation: (annotationsManager, entity) => {
-    let types = '';
+    let types: string;
     const type = entity.getAttribute('type');
 
     switch (type) {
@@ -228,8 +228,8 @@ const keyword: EntityMappingProps = {
     return [startTag, endTag];
   },
   annotation: (annotationsManager, entity) => {
-    let types = '';
-    let motivations = '';
+    let types: string;
+    let motivations: string;
     const ana = entity.getAttribute('ana');
     const hasAna = !!ana;
     const hasRef = hasAna && ana.indexOf('http') === 0;
@@ -416,10 +416,10 @@ export const teiLite: SchemaMappingProps = {
       const $tag = $(tag);
       if ($tag.attr('_tag') === 'graphic') handleGraphics($tag);
     },
-    documentLoaded: (_success: any, body: any) => {
+    documentLoaded: (_success, body) => {
       $(body)
         .find('*[_tag="graphic"]')
-        .each((_index: any, el: any) => handleGraphics($(el)));
+        .each((_index, el) => handleGraphics($(el)));
     },
   },
 };

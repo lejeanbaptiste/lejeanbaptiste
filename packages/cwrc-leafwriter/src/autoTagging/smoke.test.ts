@@ -20,7 +20,7 @@ import { AutoTaggingSession, type WriterLike } from './integration';
 /** In-memory stand-in for the desktop file API. */
 class FakeFs implements EntityFileApi {
   files = new Map<string, string>();
-  ensureDirectory = async () => {};
+  ensureDirectory = async () => undefined;
   pathExists = async (p: string) => this.files.has(p);
   readFile = async (p: string) => this.files.get(p) ?? '';
   writeFile = async (p: string, c: string) => void this.files.set(p, c);
@@ -100,7 +100,7 @@ describe('auto-tagging smoke test (real corpus)', () => {
     // Readable trace.
     const applied = result.applied;
     const alreadyTagged = result.results.filter((r) => r.outcome === 'already-tagged').length;
-    // eslint-disable-next-line no-console
+     
     console.log(
       [
         '',

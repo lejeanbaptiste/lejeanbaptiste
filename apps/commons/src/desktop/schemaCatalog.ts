@@ -7,12 +7,12 @@ export const ENABLED_CATALOG_IDS = [...PRIMARY_CATALOG_IDS, ...MORE_CATALOG_IDS]
 /** @deprecated Use ENABLED_CATALOG_IDS */
 export const V1_ENABLED_CATALOG_IDS = PRIMARY_CATALOG_IDS;
 
-export type SchemaSetupTierEntry = {
+export interface SchemaSetupTierEntry {
   id: string;
   name: string;
   enabled: boolean;
   comingSoon?: boolean;
-};
+}
 
 export const getTieredCatalogForSetup = (): {
   primary: SchemaSetupTierEntry[];

@@ -11,10 +11,10 @@ export interface LspStartOptions {
   projectRoot?: string;
 }
 
-type PendingRequest = {
+interface PendingRequest {
   reject: (error: Error) => void;
   resolve: (value: unknown) => void;
-};
+}
 
 let nextRequestId = 1;
 const pendingRequests = new Map<number, PendingRequest>();

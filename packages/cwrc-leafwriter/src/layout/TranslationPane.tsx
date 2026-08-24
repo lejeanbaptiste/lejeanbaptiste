@@ -140,7 +140,6 @@ import {
   EMPTY_DISPLAY_SPEC,
   chineseNameOf,
   entityKindSupportsVernacularGloss,
-  formatDates,
   type EntityDisplaySpec,
 } from './entityFields/entityDisplay';
 import type { EntitySummary } from './entityFields/entitySummary';
@@ -157,7 +156,6 @@ import {
 } from '../autoTagging/aiRunProgress';
 
 const TEI_NS = 'http://www.tei-c.org/ns/1.0';
-const DEFAULT_CITATION_STYLE_ID = 'chicago-note-bibliography';
 const SPELLCHECK_STORAGE_KEY = 'leafWriterTranslationSpellcheck';
 
 const readSpellcheckEnabled = (): boolean => {
@@ -289,14 +287,14 @@ interface DesktopElectronApi {
     sourceUnitXml: string;
     targetLanguage: string;
     /** Id + kind only — never names, or the model expands placeholders. */
-    entities?: Array<{
+    entities?: {
       id: string;
       kind: string;
-    }>;
+    }[];
     /** Index only — gloss/surface stay local for post-substitute. */
-    dates?: Array<{
+    dates?: {
       index: number;
-    }>;
+    }[];
     /** Set on a second attempt when the first reply dropped placeholders. */
     retryInstruction?: string;
   }) => Promise<{ error?: string; ok: boolean; translationXml?: string }>;
@@ -317,7 +315,7 @@ interface DesktopElectronApi {
 
 interface TranslationLanguageState {
   indexing: boolean;
-  languages: Array<{ code: string; label: string }>;
+  languages: { code: string; label: string }[];
   selectedLang: string;
   setSelectedLang: (lang: string) => void;
 }
@@ -367,7 +365,7 @@ interface DesktopCitationBridge {
   pickZoteroCitation: () => Promise<ZoteroCaywResult>;
   getCitationStyleOptions: () => Promise<{
     defaultStyleId: string;
-    options: Array<{ id: string; label: string }>;
+    options: { id: string; label: string }[];
   }>;
   setCitationStyle: (styleId: string) => Promise<boolean>;
 }
@@ -570,8 +568,8 @@ interface BlindedUnitTranslationRequest {
   alignmentUnit: 'div' | 'p' | 'note';
   sourceUnitXml: string;
   targetLanguage: string;
-  entities?: Array<{ id: string; kind: string }>;
-  dates?: Array<{ index: number }>;
+  entities?: { id: string; kind: string }[];
+  dates?: { index: number }[];
 }
 
 /**
@@ -680,7 +678,7 @@ export const substituteEntityPlaceholders = (
   const textNodes: Text[] = [];
   const walker = doc.createTreeWalker(root, NodeFilter.SHOW_TEXT);
   let node: Node | null;
-  // eslint-disable-next-line no-cond-assign
+   
   while ((node = walker.nextNode())) {
     const content = node.textContent ?? '';
     if (
@@ -701,7 +699,7 @@ export const substituteEntityPlaceholders = (
     let match: RegExpExecArray | null;
     const replacement = doc.createDocumentFragment();
     let sawMatch = false;
-    // eslint-disable-next-line no-cond-assign
+     
     while ((match = ENTITY_PLACEHOLDER_RE.exec(text))) {
       sawMatch = true;
       if (match.index > lastIndex) {
@@ -759,7 +757,7 @@ export const substituteDatePlaceholders = (
   const textNodes: Text[] = [];
   const walker = doc.createTreeWalker(root, NodeFilter.SHOW_TEXT);
   let node: Node | null;
-  // eslint-disable-next-line no-cond-assign
+   
   while ((node = walker.nextNode())) {
     if ((node.textContent ?? '').includes('{{date:')) textNodes.push(node as Text);
   }
@@ -779,7 +777,7 @@ export const substituteDatePlaceholders = (
     let match: RegExpExecArray | null;
     const replacement = doc.createDocumentFragment();
     let sawMatch = false;
-    // eslint-disable-next-line no-cond-assign
+     
     while ((match = DATE_PLACEHOLDER_RE.exec(text))) {
       sawMatch = true;
       if (match.index > lastIndex) {
@@ -831,7 +829,7 @@ export const substituteNotePlaceholders = (
   const textNodes: Text[] = [];
   const walker = doc.createTreeWalker(root, NodeFilter.SHOW_TEXT);
   let node: Node | null;
-  // eslint-disable-next-line no-cond-assign
+   
   while ((node = walker.nextNode())) {
     if ((node.textContent ?? '').includes('{{note:')) textNodes.push(node as Text);
   }
@@ -843,7 +841,7 @@ export const substituteNotePlaceholders = (
     let match: RegExpExecArray | null;
     const replacement = doc.createDocumentFragment();
     let sawMatch = false;
-    // eslint-disable-next-line no-cond-assign
+     
     while ((match = NOTE_PLACEHOLDER_RE.exec(text))) {
       sawMatch = true;
       if (match.index > lastIndex) {
@@ -1076,7 +1074,7 @@ export const TranslationPane = () => {
   const [footnotes, setFootnotes] = useState<string[]>([]);
   const [citationStylePickerOpen, setCitationStylePickerOpen] = useState(false);
   const [citationStyleChoices, setCitationStyleChoices] = useState<
-    Array<{ id: string; label: string }>
+    { id: string; label: string }[]
   >([]);
   const [pendingCitationStyle, setPendingCitationStyle] = useState('');
   const citationStyleResolveRef = useRef<((styleId: string | null) => void) | null>(null);
@@ -2513,9 +2511,8 @@ export const TranslationPane = () => {
     bridge: DesktopCitationBridge,
     initialStyleId = pendingCitationStyle || translationMode.citationStyle || undefined,
   ): Promise<string | null> => {
-    let defaultStyleId = DEFAULT_CITATION_STYLE_ID;
-    let options: Awaited<ReturnType<DesktopCitationBridge['getCitationStyleOptions']>>['options'] =
-      [];
+    let defaultStyleId: string;
+    let options: Awaited<ReturnType<DesktopCitationBridge['getCitationStyleOptions']>>['options'];
     try {
       const result = await bridge.getCitationStyleOptions();
       defaultStyleId = result.defaultStyleId;
@@ -3172,7 +3169,7 @@ export const TranslationPane = () => {
     />
   );
 
-  const formatItems: Array<{
+  const formatItems: {
     command:
       | 'bold'
       | 'italic'
@@ -3186,7 +3183,7 @@ export const TranslationPane = () => {
     icon: ReactNode;
     label: string;
     shortcut: string;
-  }> = [
+  }[] = [
     {
       command: 'bold',
       icon: <FormatBoldIcon fontSize="small" />,

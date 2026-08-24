@@ -75,7 +75,7 @@ export const getMetadataFieldsForCatalog = (
 
 export const getAllManagedPaths = (
   fields: MetadataFieldDefinition[],
-  custom: Array<{ path: string }>,
+  custom: { path: string }[],
 ): string[] => {
   const paths = fields.map((field) => field.path);
   for (const row of custom) {

@@ -60,7 +60,7 @@ const BucketSelector = ({
 );
 
 /** Load/save contract so the panel can run in the project-settings dialog window. */
-export type NameTypePolicyIO = {
+export interface NameTypePolicyIO {
   load: () => Promise<{
     buckets: Record<string, NameTypeTaggingBucket>;
     customTypes: CustomNameType[];
@@ -72,7 +72,7 @@ export type NameTypePolicyIO = {
     customTypes: CustomNameType[];
     artMinCodePoints: number;
   }) => Promise<void>;
-};
+}
 
 export const NameTypePolicyPanel = ({
   io,

@@ -1,11 +1,11 @@
 import { Box, MenuItem, MenuList } from '@mui/material';
 import { useTranslation } from 'react-i18next';
 
-export type MenuItemProps = {
+export interface MenuItemProps {
   id: string;
   label: string;
   hide?: boolean;
-};
+}
 
 interface SideMenuProps {
   items: MenuItemProps[];

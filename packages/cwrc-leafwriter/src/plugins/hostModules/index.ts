@@ -1,9 +1,9 @@
 import type { PluginRegisterContext } from '../registerContext';
 
-export type PluginHostModule = {
+export interface PluginHostModule {
   registerCjkDatesUi?: (context: PluginRegisterContext) => void;
   registerNorbertNobleTitleUi?: (context: PluginRegisterContext) => void;
-};
+}
 
 const loaders: Record<string, () => Promise<PluginHostModule>> = {
   'cjk-dates-ui': () => import('./cjkDatesUi'),

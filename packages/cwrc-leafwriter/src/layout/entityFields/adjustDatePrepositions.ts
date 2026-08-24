@@ -96,7 +96,7 @@ export const ensureDatePrepositionsInText = (
   let result = '';
   let lastIndex = 0;
   let match: RegExpExecArray | null;
-  // eslint-disable-next-line no-cond-assign
+   
   while ((match = re.exec(text))) {
     const index = parseInt(match[1]!, 10);
     const before = text.slice(0, match.index);

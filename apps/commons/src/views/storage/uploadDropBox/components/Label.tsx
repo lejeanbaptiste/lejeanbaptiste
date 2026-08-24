@@ -1,11 +1,11 @@
 import { Typography, type SxProps } from '@mui/material';
 import { motion, type Variants } from 'motion/react';
 
-type LabelProps = {
+interface LabelProps {
   children: React.ReactNode;
   show?: boolean;
   sx?: SxProps;
-};
+}
 
 export const Label = ({ children, show = false, sx }: LabelProps) => {
   const variantsLabel: Variants = {

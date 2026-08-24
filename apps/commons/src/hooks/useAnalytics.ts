@@ -1,7 +1,7 @@
 /* eslint-disable @typescript-eslint/ban-ts-comment */
-//@ts-ignore
+//@ts-expect-error
 import { removeCookie } from '@analytics/cookie-utils';
-//@ts-ignore
+//@ts-expect-error
 import googleAnalytics from '@analytics/google-analytics';
 import Analytics, { type AnalyticsInstance } from 'analytics';
 import pck from '../../package.json';
@@ -21,7 +21,6 @@ export const useAnalytics = () => {
       app: 'LEAF-Writer',
       version: pck.version,
       plugins: [
-        // eslint-disable-next-line @typescript-eslint/no-unsafe-call
         googleAnalytics({
           measurementIds: [GAID],
           gtagConfig: {
@@ -38,9 +37,9 @@ export const useAnalytics = () => {
 
   const stopAnalytics = () => {
     void analytics?.reset();
-    // eslint-disable-next-line @typescript-eslint/no-unsafe-call
+
     void removeCookie('_ga');
-    // eslint-disable-next-line @typescript-eslint/no-unsafe-call
+
     void removeCookie('_ga_JG3NWYH6TY');
     analytics = null;
   };

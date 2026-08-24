@@ -415,7 +415,7 @@ export const EntityLookupField = ({
         if (kind === 'work') {
           const summary = await session.store.sqliteEntitySummary(resolvedId);
           const workDate = (summary as { workDate?: { startYear?: number | null } } | null)?.workDate;
-          const authors = (summary as { authors?: Array<{ name: string; ref?: string | null }> } | null)
+          const authors = (summary as { authors?: { name: string; ref?: string | null }[] } | null)
             ?.authors;
           if (workDate?.startYear != null || authors?.length) {
             onWorkDetails?.({

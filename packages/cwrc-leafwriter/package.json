@@ -49,6 +49,7 @@
     "format": "prettier --write \"**/*.{ts,tsx,md}\"",
     "format-check": "prettier . --check",
     "lint": "eslint .",
+    "typecheck": "node scripts/typecheck.mjs",
     "prepublishOnly": "npm run build"
   },
   "dependencies": {
@@ -64,6 +65,7 @@
     "@mdx-js/react": "^3.1.1",
     "@mui/icons-material": "^7.3.8",
     "@mui/material": "^7.3.8",
+    "@protomaps/basemaps": "^5.7.2",
     "@sentry/react": "^10.42.0",
     "chroma-js": "^3.2.0",
     "classnames": "^2.5.1",
@@ -98,7 +100,6 @@
     "overmind-react": "29.0.6",
     "pinyin-pro": "^3.27.0",
     "progressbar.js": "^1.1.1",
-    "protomaps-themes-base": "^4.5.0",
     "react": "^18.3.1",
     "react-dom": "^18.3.1",
     "react-i18next": "^16.5.4",
@@ -137,7 +138,7 @@
     "copy-webpack-plugin": "^14.0.0",
     "css-loader": "^7.1.4",
     "esbuild-loader": "^4.4.2",
-    "eslint": "^8.57.1",
+    "eslint": "^10.9.0",
     "eslint-config-custom": "*",
     "mini-css-extract-plugin": "^2.10.0",
     "monaco-editor-webpack-plugin": "7.1.0",

@@ -25,7 +25,7 @@ export interface PurgeOptions {
   replaceString?: string;
   /** Optional schema gate for creating or renaming tags. */
   canInsertTag?: (tagName: string, parentName: string) => boolean;
-  changes?: Array<{ name: string; value: string; remove?: boolean }>;
+  changes?: { name: string; value: string; remove?: boolean }[];
 }
 
 export const INFRASTRUCTURE_TAGS = new Set([

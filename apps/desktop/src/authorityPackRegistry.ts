@@ -336,7 +336,7 @@ export async function ingestPackPurgeOrdersFromInstall(
   try {
     existing = await fsp.readFile(paths.orders, 'utf8');
   } catch {
-    existing = '';
+    // No docket on disk yet — the empty initializer stands.
   }
   const merged = mergeShippedOrdersIntoDocket(existing, shipped);
   if (merged.added > 0) {

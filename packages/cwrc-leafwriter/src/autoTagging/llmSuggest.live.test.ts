@@ -24,7 +24,7 @@ import { normalizeDomText } from './normalize';
 const DOM_GLOBALS = ['NodeFilter', 'Node', 'Text', 'Element', 'Document', 'DOMParser'] as const;
 
 function installDomGlobals(
-  window: { [K in (typeof DOM_GLOBALS)[number]]: unknown },
+  window: Record<(typeof DOM_GLOBALS)[number], unknown>,
 ): void {
   for (const key of DOM_GLOBALS) {
     (globalThis as Record<string, unknown>)[key] = window[key];
@@ -65,7 +65,7 @@ describe('llmSuggest against a live local model (opt-in)', () => {
       marginChars: 100,
     });
 
-    // eslint-disable-next-line no-console
+     
     console.log(
       [
         '',

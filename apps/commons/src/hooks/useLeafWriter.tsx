@@ -429,7 +429,7 @@ export const useLeafWriter = () => {
   const setEditorEvents = () => {
     if (!leafWriter) return;
 
-    if (leafWriter.onLoad.observed) removeSubscribers;
+    if (leafWriter.onLoad.observed) removeSubscribers();
 
     const dirtyEvent = leafWriter.onContentHasChanged.subscribe((value) => {
       if (!leafWriter) return;

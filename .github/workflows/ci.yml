@@ -24,7 +24,6 @@ jobs:
         uses: actions/checkout@v5
         with:
           ref: ${{ inputs.source_ref || github.ref }}
-          lfs: true
 
       - name: Set up Node.js
         uses: actions/setup-node@v5
@@ -40,6 +39,9 @@ jobs:
 
       - name: Run linter
         run: npm run lint
+
+      - name: Run typecheck
+        run: npm run typecheck
 
   desktop-linux:
     name: Build Linux desktop package (${{ matrix.arch }})
@@ -58,7 +60,6 @@ jobs:
         uses: actions/checkout@v5
         with:
           ref: ${{ inputs.source_ref || github.ref }}
-          lfs: true
 
       - name: Set up Node.js
         uses: actions/setup-node@v5
@@ -68,6 +69,14 @@ jobs:
 
       - name: Install dependencies
         run: npm ci
+
+      - name: Fetch game assets from R2
+        env:
+          R2_ACCESS_KEY_ID: ${{ secrets.R2_ACCESS_KEY_ID }}
+          R2_SECRET_ACCESS_KEY: ${{ secrets.R2_SECRET_ACCESS_KEY }}
+          R2_BUCKET_NAME: ${{ secrets.R2_BUCKET_NAME }}
+          R2_ENDPOINT: ${{ secrets.R2_ENDPOINT }}
+        run: node scripts/fetch-game-assets.mjs
 
       - name: Build Linux desktop package
         run: |
@@ -102,7 +111,6 @@ jobs:
         uses: actions/checkout@v5
         with:
           ref: ${{ inputs.source_ref || github.ref }}
-          lfs: true
 
       - name: Set up Node.js
         uses: actions/setup-node@v5
@@ -118,6 +126,14 @@ jobs:
 
       - name: Install dependencies
         run: npm ci
+
+      - name: Fetch game assets from R2
+        env:
+          R2_ACCESS_KEY_ID: ${{ secrets.R2_ACCESS_KEY_ID }}
+          R2_SECRET_ACCESS_KEY: ${{ secrets.R2_SECRET_ACCESS_KEY }}
+          R2_BUCKET_NAME: ${{ secrets.R2_BUCKET_NAME }}
+          R2_ENDPOINT: ${{ secrets.R2_ENDPOINT }}
+        run: node scripts/fetch-game-assets.mjs
 
       - name: Build Flatpak
         run: |
@@ -146,7 +162,6 @@ jobs:
         uses: actions/checkout@v5
         with:
           ref: ${{ inputs.source_ref || github.ref }}
-          lfs: true
 
       - name: Set up Node.js
         uses: actions/setup-node@v5
@@ -156,6 +171,14 @@ jobs:
 
       - name: Install dependencies
         run: npm ci
+
+      - name: Fetch game assets from R2
+        env:
+          R2_ACCESS_KEY_ID: ${{ secrets.R2_ACCESS_KEY_ID }}
+          R2_SECRET_ACCESS_KEY: ${{ secrets.R2_SECRET_ACCESS_KEY }}
+          R2_BUCKET_NAME: ${{ secrets.R2_BUCKET_NAME }}
+          R2_ENDPOINT: ${{ secrets.R2_ENDPOINT }}
+        run: node scripts/fetch-game-assets.mjs
 
       - name: Import code-signing certificates
         env:
@@ -280,7 +303,8 @@ jobs:
 
     steps:
       # Configure the runner before checkout so Windows services cannot grab
-      # the large LFS resource while it is being materialized.
+      # the large game-assets binary while it's being written by the R2
+      # fetch step below.
       - name: Prepare Windows workspace protection
         shell: pwsh
         run: |
@@ -293,8 +317,6 @@ jobs:
         uses: actions/checkout@v5
         with:
           ref: ${{ inputs.source_ref || github.ref }}
-          # Fetch the large LFS asset only after Defender/Search are stopped.
-          lfs: false
 
       - name: Set up Node.js
         uses: actions/setup-node@v5
@@ -305,18 +327,23 @@ jobs:
       - name: Install dependencies
         run: npm ci
 
-      - name: Fetch Windows LFS assets
+      - name: Fetch game assets from R2
         shell: pwsh
+        env:
+          R2_ACCESS_KEY_ID: ${{ secrets.R2_ACCESS_KEY_ID }}
+          R2_SECRET_ACCESS_KEY: ${{ secrets.R2_SECRET_ACCESS_KEY }}
+          R2_BUCKET_NAME: ${{ secrets.R2_BUCKET_NAME }}
+          R2_ENDPOINT: ${{ secrets.R2_ENDPOINT }}
         run: |
           $ErrorActionPreference = 'Stop'
-          git lfs pull --include="apps/desktop/resources/game-assets/assets.bin"
+          node scripts/fetch-game-assets.mjs
           $asset = Get-Item "apps/desktop/resources/game-assets/assets.bin"
           if ($asset.Length -lt 1MB) {
-            throw "LFS asset was not materialized: $($asset.FullName) is only $($asset.Length) bytes"
+            throw "Fetched asset was not materialized: $($asset.FullName) is only $($asset.Length) bytes"
           }
           Write-Host "Fetched $($asset.FullName) ($([math]::Round($asset.Length / 1MB, 1)) MB)"
 
-      # Belt-and-braces for large/freshly-smudged LFS binaries specifically:
+      # Belt-and-braces for large/freshly-fetched binaries specifically:
       # read each one through once so this job — not Defender, not the
       # indexer — is the process settling its file handle right before the
       # packaging step needs it, rather than hoping the background scanners

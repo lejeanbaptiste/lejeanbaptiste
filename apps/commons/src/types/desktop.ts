@@ -240,7 +240,7 @@ export type WorkspaceCursorPosition =
 export type DesktopRightPanelTab =
   'fileMetadata' | 'attributes' | 'css' | 'imageViewer' | 'validation' | 'translation';
 
-export type DesktopValidatorInstrumentation = {
+export interface DesktopValidatorInstrumentation {
   workerLoading: boolean;
   workerLoaded: boolean;
   schemaLoading: boolean;
@@ -248,7 +248,7 @@ export type DesktopValidatorInstrumentation = {
   validationRunning: boolean;
   validationPanelRequested: boolean;
   validationPanelMounted: boolean;
-};
+}
 
 export interface LeafWriterSourceFindBridge {
   applyJump: (params: {
@@ -385,7 +385,14 @@ export interface ElectronAPI {
   mapTilesStatus?: () => Promise<{
     installed: boolean;
     path: string | null;
-    regions: { id: string; sha256: string; installedAt: string }[];
+    regions: {
+      id: string;
+      sha256: string;
+      installedAt: string;
+      /** Highest zoom present in the installed .pmtiles (from the archive header). */
+      maxZoom?: number;
+      minZoom?: number;
+    }[];
   }>;
   mapTilesDownloadBackground?: (bundle: {
     id: string;

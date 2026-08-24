@@ -23,7 +23,7 @@ export const SimpleDialog = ({
 }: SimpleDialogProps) => {
   const { closeDialog } = useActions().ui;
 
-  const [data, setData] = useState<{ [key: string]: any }>({});
+  const [data, setData] = useState<Record<string, any>>({});
   const [actionsDisabled, setActionsDisabled] = useState(false);
 
   const handleShouldClose = async (action?: string) => {
@@ -44,7 +44,7 @@ export const SimpleDialog = ({
     }
 
     closeDialog(id);
-    onClose && onClose(reason, data);
+    onClose?.(reason, data);
   };
 
   const handleAction = async (action: string) => {
@@ -56,7 +56,7 @@ export const SimpleDialog = ({
     }
 
     closeDialog(id);
-    onClose && onClose(action, data);
+    onClose?.(action, data);
   };
 
   return (

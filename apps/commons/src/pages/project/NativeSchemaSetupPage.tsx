@@ -15,8 +15,8 @@ import { useCallback, useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 
 interface SchemaSetupState {
-  primary: Array<{ id: string; name: string; enabled: boolean }>;
-  more: Array<{ id: string; name: string; enabled: boolean; comingSoon?: boolean }>;
+  primary: { id: string; name: string; enabled: boolean }[];
+  more: { id: string; name: string; enabled: boolean; comingSoon?: boolean }[];
   defaultCatalogId: string;
 }
 

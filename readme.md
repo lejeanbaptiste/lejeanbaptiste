@@ -51,8 +51,6 @@ Tracked here as mirrored or generated assets:
 - `apps/desktop/src/generated/gameAssetKey.ts`
 - `apps/desktop/resources/avatar-parts/**` (Adventurer avatar-part layers — not spoiler-protected, mirrored as plain SVG files)
 
-
-
 ## What is built
 
 Le Jean-Baptiste is the desktop, offline-first fork of LEAF-Writer. The current build already supports:
@@ -69,8 +67,6 @@ Le Jean-Baptiste is the desktop, offline-first fork of LEAF-Writer. The current 
 - Working with translation companions in split-pane form for paired source/translation editing.
 - Auto-tagging and disambiguation with local authority packs (CBDB, DILA, Wikidata, NDL, …) and plugins such as Sanmiao and Norbert.
 
-
-
 ## Install
 
 Download the installer for your platform from the [latest release](https://github.com/lejeanbaptiste/lejeanbaptiste/releases/latest). All release assets can be verified as described in [SECURITY.md](SECURITY.md).
@@ -82,16 +78,12 @@ Download the installer for your platform from the [latest release](https://githu
 3. The application will be installed to `/Applications/Le Jean-Baptiste.app`.
 4. Signed updates are checked automatically when the application starts and every four hours. A downloaded update is installed when the application quits. The `.pkg` is only needed for the first installation.
 
-
-
 ### Windows
 
 1. Download the installer for your machine: `arm64` for Windows on Arm or `x64` for Intel/AMD (`Le-Jean-Baptiste-win-Setup-<version>-<arch>.exe`).
 2. Run the installer and follow the prompts. Choose your installation directory and start-menu shortcut preferences.
 3. **Note:** The installer is not signed by a certificate authority. Windows Defender SmartScreen may show a warning. To proceed, click "More info" → "Run anyway". A signed package through the Microsoft Store is planned.
 4. Updates are checked automatically when the application starts and every four hours. A downloaded update is installed when the application quits.
-
-
 
 ### Linux
 
@@ -129,9 +121,11 @@ See [apps/desktop/README.md](apps/desktop/README.md) for the compilation and pac
 
 ### Future
 
+- [ ] `createCompoundAnchor` (`packages/cwrc-leafwriter/src/autoTagging/anchor.ts:247-248`) computes `localEnd` — the search-index equivalent of `localStart`, which the sibling `createAnchor` function's `rawRange` helper (same file) uses to convert a search-index back to a snapped raw text-node offset — but then never uses it: `endOffset: endRaw` (line 275) returns the _raw, unsnapped_ input instead of the computed-and-normalized value, unlike `offset: startSearch.map[localStart]` a few lines above it, which does apply that snapping for the start boundary. `localEnd` is assigned and read nowhere. This looks like an incomplete port of the pattern `createAnchor`/`rawRange` establish elsewhere in the file, not a deliberate choice — but the existing test (`apply.test.ts:72`) exercises exactly the case where `endRaw` equals the node's full length, where `localEnd`'s `findIndex` would miss (hit the `-1` fallback) and `endRaw` happens to already be correct, so the gap may not be as visible as it should be. This only affects `createCompoundAnchor`'s callers (the post-component person-wrapper pass) and only when the end boundary isn't at a node's natural end, where whitespace-policy snapping could shift the offset. **2026-08-24: low real-world priority** — Asian-script sources normally carry no whitespace, so the whitespace-policy snapping this gap would affect essentially doesn't come up in practice for this project's actual corpus. Still worth fixing for correctness/robustness, but not urgent.
+
 ### 'LJBtero' (After testing)
 
-- [ ] Clean up and rationalise options, UI, document and global settings.
+- [ ] Clean up and rationalise options, UI, document and global settings. (Settings dialog reorganised into sections — `authorities`, `editor`, `entity-lookups`, `guardrails`, `markup-panel`, `profile`, `ui`, `reset` — and shipped in beta.2. Still open: the document-level vs global split; everything today is global.)
 - [ ] Figure out how best to handle the insertion of entities NOT in said paragraph.
 - [ ] Keyboard shortcut for insert entity
 - [ ] Build Word and LibreOffice plugins on the same model.
@@ -140,7 +134,7 @@ See [apps/desktop/README.md](apps/desktop/README.md) for the compilation and pac
 ### Database viewer
 
 - [ ] Think about how to organise for rapid data entry
-- [ ] Filters
+- [ ] Filters beyond entity kind (the kind filter ships and persists via `databaseViewPrefs`; no field-level or faceted filtering yet)
 
 #### I/O
 
@@ -158,14 +152,12 @@ See [apps/desktop/README.md](apps/desktop/README.md) for the compilation and pac
 - [ ] Import profiles (rule engine + mandoku hand profile)
 - [ ] Browser-extension / URL corpus→TEI extraction (E0–E5 — [corpus-extraction-planning.md](docs/corpus-extraction-planning.md))
 
-
 #### UX
 
 - [ ] Find/replace Phase 2b: WYSIWYG visible-text replace across markup ([find-replace-planning.md](docs/find-replace-planning.md))
-- [ ] Persist last find query across sessions (match-case / ignore-case toggle already ships)
+- [ ] Persist last find query across sessions (match-case / ignore-case and regex toggles already ship; the query itself resets to `''` on mount)
 - [ ] Ignore page breaks, line breaks, and corrections in tagging and disambiguation?
 - [ ] Re-explore Tag-boundary Bugs B/C/H (typing/delete at edges) keeping us from full Oxygen parity.
-
 
 #### Dates
 
@@ -173,14 +165,12 @@ See [apps/desktop/README.md](apps/desktop/README.md) for the compilation and pac
 - [ ] Scan DILA for markers into Sanmiao
 - [ ] AI assist for Sanmiao to identify beginning of dynasties, reigns, era
 
-
 #### AI
 
 - [ ] Translation panel: check for translation consistency across the document
 - [ ] Translation panel: suggest improvements with 'accept/reject'
 - [ ] AI-inferred import profiles
 - [ ] AI auto-tag: gold harness / residual gaps for `roleName` / `orgName` audit apply (remove/retag/redraw, schema-driven tag picker, and prompt-profile UI already ship)
-
 
 #### Norbert
 
@@ -193,7 +183,6 @@ See [apps/desktop/README.md](apps/desktop/README.md) for the compilation and pac
 - [ ] Instead of relying on Markup panel to navigate the xml tree, introduce some sort of toggle where the keyboard arrow keys move you between siblings, parent, and first child. Preferably a keyboard toggle.
 - [ ] Make TinyMCE even faster to load.
 
-
 #### Technical / collaboration
 
 - [ ] Further Norbert functions
@@ -202,17 +191,20 @@ See [apps/desktop/README.md](apps/desktop/README.md) for the compilation and pac
 - [ ] Multi-machine offline sync beyond current mirror
 - [ ] Option to track annotator on the tag level for collaborations.
 
+#### Infrastructure
+
+- [x] Migrate `apps/desktop/resources/game-assets/assets.bin` off Git LFS to Cloudflare R2. Done 2026-08-23: `assets.bin` is no longer committed (untracked from LFS, gitignored, fetched locally/in CI only); `assets.manifest.json` (`{version, sha256}`) is committed in its place. `visual_design`'s `pack-assets.mjs` uploads to R2 content-addressed by sha256 (`assets/<sha256>.bin`) whenever the four `R2_*` env vars are set (opt-in - a dev packing locally without them just gets a local `assets.bin`, same as before). `scripts/fetch-game-assets.mjs` downloads and re-verifies the hash; `.github/workflows/ci.yml`/`release.yml` call it in every job that needs the binary (the lint/test job doesn't - nothing there reads it) instead of `git lfs pull`. Access model: CI authenticates directly with the same scoped R2 API token already in repo secrets (Object Read & Write, restricted to this bucket) - simpler than a presigned-URL indirection layer and consistent with the trust CI already has via those secrets.
+  - [ ] Not done: caching the downloaded binary by hash across matrix jobs within one run (`actions/cache`) - R2 has zero egress fees so this is a wall-clock-time optimization, not a cost or quota concern; each matrix job just re-downloads today.
+
 ---
 
 ### Pending
-
 
 #### Maps (pending feedback from historian of geography)
 
 - [ ] Pin captions to further aid in disambiguation
 - [ ] Click on map to select in panel
 - [ ] Placename Phase 4–5: persisted coordinate/id place entities; mint from merged periods ([placename-geo-disambiguation-planning.md](docs/placename-geo-disambiguation-planning.md))
-
 
 #### Database cards
 

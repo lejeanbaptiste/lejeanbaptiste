@@ -1,4 +1,4 @@
-import { buildDocIndex, collectTextNodes, createAnchor, type DocIndex } from './anchor';
+import { buildDocIndex, createAnchor, type DocIndex } from './anchor';
 import { buildSearchText } from './normalize';
 import { chunkDocument, type Chunk } from './chunk';
 import { cloneWithHiddenReadingsCleared, textWithoutHiddenReadings } from './hiddenChoiceText';
@@ -12,10 +12,8 @@ import type { Anchor, DateCandidate, DateResolution, Suggestion, WhitespacePolic
 import type { DateReviewRecalculate } from './batchHolder';
 import type {
   DateTagOptions,
-  SanmiaoBatchProposeFn,
   SanmiaoBatchResolveFn,
   SanmiaoBatchTagFn,
-  SanmiaoChunkProgressEvent,
   SanmiaoProposal,
   SanmiaoProposeOptions,
 } from './sanmiaoDateTypes';
@@ -67,8 +65,8 @@ export function offsetToRawRange(
 export function sequentialMatchOffsets(
   text: string,
   proposals: SanmiaoProposal[],
-): Array<{ proposal: SanmiaoProposal; offset: number }> {
-  const matched: Array<{ proposal: SanmiaoProposal; offset: number }> = [];
+): { proposal: SanmiaoProposal; offset: number }[] {
+  const matched: { proposal: SanmiaoProposal; offset: number }[] = [];
   let pos = 0;
   for (const proposal of proposals) {
     const surface = proposal.date_string;

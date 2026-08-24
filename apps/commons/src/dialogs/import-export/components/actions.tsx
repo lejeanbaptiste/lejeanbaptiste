@@ -15,9 +15,9 @@ import {
 
 export type DialogAction = 'cancel' | 'select';
 
-type ActionsProps = {
+interface ActionsProps {
   onAction: (action: DialogAction) => void;
-};
+}
 
 export const Actions = ({ onAction }: ActionsProps) => {
   const { t } = useTranslation();
@@ -54,7 +54,8 @@ export const Actions = ({ onAction }: ActionsProps) => {
   };
 
   const handleSelect = async () => {
-    dialogAction === 'import' ? handleImport() : handleExport();
+    if (dialogAction === 'import') handleImport();
+    else handleExport();
   };
 
   const handleImport = async () => {

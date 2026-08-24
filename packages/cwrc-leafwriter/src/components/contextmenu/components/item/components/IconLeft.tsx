@@ -13,7 +13,8 @@ export const IconLeft = ({ entityType, icon }: IconLeftProps) => {
   const { getIcon } = useContextmenu();
 
   const IconComponent = useMemo(() => getIcon(icon), [icon]);
-  const color = entityType && isEntityType(entityType) ? entity[entityType].color.main : 'inherit';
+  const color =
+    entityType && isEntityType(entityType, entity) ? entity[entityType].color.main : 'inherit';
 
   return <Icon component={IconComponent} sx={{ height: 16, width: 16, color }} />;
 };

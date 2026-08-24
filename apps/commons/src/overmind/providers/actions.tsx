@@ -14,7 +14,7 @@ export const initProvider = async (
 ) => {
   if (!SupportedProviderIds.includes(providerName as ProviderId)) return;
 
-  let supportedProvider = state.providers.supportedProviders.find(
+  const supportedProvider = state.providers.supportedProviders.find(
     (provider) => provider.providerId === providerName,
   );
   if (!supportedProvider) return;

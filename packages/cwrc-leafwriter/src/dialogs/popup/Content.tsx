@@ -3,11 +3,11 @@ import { Icon, IconButton, Link, Stack, Typography } from '@mui/material';
 import { getIcon } from '../../icons';
 import { EntityType } from '../../types';
 
-type Props = {
+interface Props {
   content?: string;
   entityType?: EntityType;
   isLink?: boolean;
-};
+}
 
 export const Content = ({ content = '', entityType, isLink = false }: Props) => {
   const handleCopyToClipboard = async () => {

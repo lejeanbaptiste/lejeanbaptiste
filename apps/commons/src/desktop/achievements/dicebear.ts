@@ -72,8 +72,20 @@ export const createDefaultDiceBearAvatar = (seed: string): DiceBearAvatarOptions
  * no network access, no dependency on api.dicebear.com. `seed` isn't used
  * by the composite (there's nothing left to randomize once every layer is
  * explicit) but stays part of the interface so avatar options remain a
- * stable, cacheable identity for callers. */
-export const diceBearAvatarUrl = (options: DiceBearAvatarOptions): string => {
+ * stable, cacheable identity for callers.
+ *
+ * `closeUp` drops the neck and the body-scene registration padding (see
+ * avatarAssets.ts's composeAvatarSvg) for a head-only preview with minimal
+ * dead space - use this for a dedicated, large head picker (e.g.
+ * PortraitSetupDialog) where there's no uniform collar to line up with;
+ * leave it false for anything shown alongside/composited into a body scene
+ * (the Service Record header, the certificate), which needs the neck and
+ * the overflow-safe padding to stay aligned and unclipped at that small
+ * size. */
+export const diceBearAvatarUrl = (
+  options: DiceBearAvatarOptions,
+  { closeUp = false }: { closeUp?: boolean } = {},
+): string => {
   const params = new URLSearchParams({
     eyebrowsVariant: options.eyebrowsVariant,
     eyesVariant: options.eyesVariant,
@@ -87,6 +99,7 @@ export const diceBearAvatarUrl = (options: DiceBearAvatarOptions): string => {
     hairVariant: options.hairVariant,
     skinColor: options.skinColor,
     hairColor: options.hairColor,
+    ...(closeUp ? { closeUp: '1' } : {}),
   });
   return `${AVATAR_SCHEME}://compose?${params.toString()}`;
 };
@@ -94,7 +107,7 @@ export const diceBearAvatarUrl = (options: DiceBearAvatarOptions): string => {
 /** Deliberately labeled "M"/"F", not "Male"/"Female" or "Sex"/"Gender" -
  * this is a body-art choice (which uniform subtree renders), presented as
  * plainly as possible. */
-export const BODY_TYPES: ReadonlyArray<{ label: string; value: 'm' | 'f' }> = [
+export const BODY_TYPES: readonly { label: string; value: 'm' | 'f' }[] = [
   { label: 'M', value: 'm' },
   { label: 'F', value: 'f' },
 ];

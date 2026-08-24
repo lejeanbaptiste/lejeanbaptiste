@@ -203,7 +203,7 @@ export const isLatnLanguageTag = (lang: string | null | undefined): boolean => {
 
 /** Collect unique latin-script tokens from entity name rows for LT post-filtering. */
 export const collectLanguageToolWhitelist = (
-  names: Array<{ text?: string | null; language?: string | null }>,
+  names: { text?: string | null; language?: string | null }[],
   cap = 5000,
 ): Set<string> => {
   const out = new Set<string>();
@@ -250,14 +250,14 @@ export const parseLanguageToolCheckResponse = (
   }
   const body = payload as {
     language?: { code?: string; name?: string };
-    matches?: Array<{
+    matches?: {
       message?: string;
       shortMessage?: string;
       offset?: number;
       length?: number;
-      replacements?: Array<{ value?: string }>;
+      replacements?: { value?: string }[];
       rule?: { id?: string };
-    }>;
+    }[];
   };
 
   const matches: LanguageToolMatch[] = (body.matches ?? [])

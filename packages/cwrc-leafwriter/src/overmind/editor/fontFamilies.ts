@@ -1,7 +1,7 @@
-export type FontFamilyOption = {
+export interface FontFamilyOption {
   label: string;
   value: string;
-};
+}
 
 export const SYSTEM_LATIN_FONT =
   '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Arial, Helvetica, sans-serif';

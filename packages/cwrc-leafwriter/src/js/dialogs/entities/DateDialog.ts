@@ -149,7 +149,7 @@ class DateDialog implements SchemaDialog {
     });
 
     // eslint-disable-next-line @typescript-eslint/ban-ts-comment
-    //@ts-ignore
+    //@ts-expect-error
     this.$dateInput.datepicker({
       dateFormat: 'yy-mm-dd',
       constrainInput: false,
@@ -182,7 +182,7 @@ class DateDialog implements SchemaDialog {
     const _this = this;
 
     // eslint-disable-next-line @typescript-eslint/ban-ts-comment
-    //@ts-ignore
+    //@ts-expect-error
     this.dateRange = $(`#${id}_startDate, #${id}_endDate`).datepicker({
       dateFormat: 'yy-mm-dd',
       constrainInput: false,
@@ -200,10 +200,10 @@ class DateDialog implements SchemaDialog {
         const instance = $(this).data('datepicker');
 
         // eslint-disable-next-line @typescript-eslint/ban-ts-comment
-        //@ts-ignore
+        //@ts-expect-error
         const date = $.datepicker.parseDate(
           // eslint-disable-next-line @typescript-eslint/ban-ts-comment
-          //@ts-ignore
+          //@ts-expect-error
           instance.settings.dateFormat || $.datepicker._defaults.dateFormat,
           selectedDate,
           instance.settings,
@@ -376,11 +376,7 @@ class DateDialog implements SchemaDialog {
         if (typeof startString === 'number') startString = startString.toString();
         if (typeof endString === 'number') endString = endString.toString();
 
-        // eslint-disable-next-line @typescript-eslint/ban-ts-comment
-        //@ts-ignore
         const startLuxon = DateTime.fromISO(startString);
-        // eslint-disable-next-line @typescript-eslint/ban-ts-comment
-        //@ts-ignore
         const endLuxon = DateTime.fromISO(endString);
 
         if (startLuxon.isValid) {
@@ -702,7 +698,7 @@ class DateDialog implements SchemaDialog {
     this.eastAsianMount?.unmountEastAsianDateFields();
     this.eastAsianMount = null;
     // eslint-disable-next-line @typescript-eslint/ban-ts-comment
-    //@ts-ignore
+    //@ts-expect-error
     this.$dateInput.datepicker('destroy');
     this.dateRange.datepicker('destroy');
     this.dialog.destroy();

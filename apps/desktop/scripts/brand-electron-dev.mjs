@@ -44,11 +44,6 @@ const electronRoot = path.dirname(require.resolve('electron/package.json'));
 const sourceAppRoot = path.join(electronRoot, 'dist/Electron.app');
 const electronVersionPath = path.join(electronRoot, 'dist/version');
 
-const readPlistValue = (plistPath, key) =>
-  execFileSync('plutil', ['-extract', key, 'raw', '-o', '-', plistPath], {
-    encoding: 'utf8',
-  }).trim();
-
 const writePlistValue = (plistPath, key, value) => {
   execFileSync('plutil', ['-replace', key, '-string', value, plistPath]);
 };

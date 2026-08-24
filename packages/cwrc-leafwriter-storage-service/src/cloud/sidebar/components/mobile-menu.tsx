@@ -4,7 +4,11 @@ import { IconButton, MenuItem, Stack } from '@mui/material';
 import Select, { type SelectChangeEvent } from '@mui/material/Select';
 import { db } from '@cwrc/leafwriter-storage-service/db';
 import { useActions, useAppState } from '@cwrc/leafwriter-storage-service/overmind';
-import type { CollectionSource, Owner, PublicRepository } from '@cwrc/leafwriter-storage-service/types';
+import type {
+  CollectionSource,
+  Owner,
+  PublicRepository,
+} from '@cwrc/leafwriter-storage-service/types';
 import { log } from '@cwrc/leafwriter-storage-service/utilities';
 import { useLiveQuery } from 'dexie-react-hooks';
 import { useEffect, useState } from 'react';
@@ -53,7 +57,11 @@ export const MobileMenu = ({ onSelect, selectedMenu }: MobileMenuProps) => {
     } else {
       setMainMenuSelection('public');
     }
-  }, []);
+    // onSelect (the parent's setSelectedMenu) and setCollectionSource are stable.
+    // menuOptions' labels are the only thing that vary across renders (translated
+    // text); the `.value`s checked above are fixed, so it isn't a meaningful dep.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [selectedMenu]);
 
   const handleChangeMainMenu = async (event: SelectChangeEvent) => {
     const value = event.target.value as CollectionSource | 'public';
@@ -78,7 +86,7 @@ export const MobileMenu = ({ onSelect, selectedMenu }: MobileMenuProps) => {
       const publicRepository = await getPublicRepositoryByUsername(value);
       if (!publicRepository) return log.warn('public repository not found');
 
-      const { uuid, provider, ...rest } = publicRepository;
+      const { uuid: _uuid, provider: _provider, ...rest } = publicRepository;
       setOwner(rest as Owner);
     }
 
@@ -90,7 +98,7 @@ export const MobileMenu = ({ onSelect, selectedMenu }: MobileMenuProps) => {
   const handleSearchSelect = async (publicRepository: PublicRepository) => {
     await addPublicRepository(publicRepository);
 
-    const { uuid, provider, ...rest } = publicRepository;
+    const { uuid, provider: _provider, ...rest } = publicRepository;
     setOwner(rest as Owner);
 
     setShowSearch(false);

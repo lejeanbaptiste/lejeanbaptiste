@@ -15,7 +15,7 @@ export const Nest = ({ anchorEl, isLoading = false, items = [], searchable }: Ne
   const windowSize = useWindowSize();
 
   const anchorBoundingClientRect = anchorEl?.getBoundingClientRect();
-  const isOpen = Boolean(Boolean(anchorEl));
+  const isOpen = Boolean(anchorEl);
 
   const hasSpaceToTheRight = () => {
     if (!anchorBoundingClientRect || !windowSize || !windowSize.width) return true;

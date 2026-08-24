@@ -152,18 +152,18 @@ export function stripFamilyPrefixFromCourtesyName(text: string, familyNames: str
   return bestPrefix ? normalizedText.slice(bestPrefix.length) : normalizedText;
 }
 
-export type IntakeTypedName = {
+export interface IntakeTypedName {
   text: string;
   type: NameTypeId;
   lang?: string;
-};
+}
 
 /**
  * Normalize typed names for entity intake: strip 姓 from courtesy/art/dharma
  * composites, then dedupe by NFC text so bare and composite forms collapse.
  */
 export function normalizeTypedNamesForIntake(
-  names: Array<{ text: string; type: NameTypeId; lang?: string }>,
+  names: { text: string; type: NameTypeId; lang?: string }[],
   extraFamilyNames: string[] = [],
 ): IntakeTypedName[] {
   const familyNames = [
@@ -198,7 +198,7 @@ export function normalizeTypedNamesForIntake(
  */
 export function preferCanonicalFamilyGiven(
   primaryName: string | null | undefined,
-  typedNames: Array<{ text: string; type: NameTypeId }>,
+  typedNames: { text: string; type: NameTypeId }[],
 ): { familyName: string | null; givenName: string | null } {
   const primary = primaryName?.normalize('NFC').trim() || '';
   const families = typedNames

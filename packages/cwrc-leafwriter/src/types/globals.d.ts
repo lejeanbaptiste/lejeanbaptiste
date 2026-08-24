@@ -675,6 +675,18 @@ declare global {
     pluginsInstallRemote?: (
       entry: import('../../../../apps/commons/src/desktop/pluginRegistryTypes').PluginReleaseEntry,
     ) => Promise<import('../plugins/types').PluginHostSnapshotView>;
+    listProjectXmlFiles?: (
+      rootPath: string,
+    ) => Promise<import('../../../../apps/desktop/src/preload').NamedPath[]>;
+    getEncoderName?: () => Promise<string>;
+    createEntityDatabase?: (folder: string, content: string) => Promise<void>;
+    createDirectory?: (parentDir: string, folderName: string) => Promise<string>;
+    nativeDialogInvoke?: (payload: {
+      dialogId: string;
+      method: string;
+      args?: unknown;
+    }) => Promise<unknown>;
+    onNativeDialogClosed?: (callback: (id: string) => void) => () => void;
   }
 
   type WorkspaceCursorPosition =

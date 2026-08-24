@@ -186,8 +186,8 @@ class XML2CWRC {
       const tagStrings = this.getTagStringsForNode(node);
       editorString += tagStrings[0];
 
-      for (let i = 0; i < node.childNodes.length; i++) {
-        doBuild(node.childNodes[i] as Element);
+      for (const child of node.childNodes) {
+        doBuild(child as Element);
       }
 
       editorString += tagStrings[1];
@@ -215,7 +215,6 @@ class XML2CWRC {
           .replaceAll(/"|'/g, '') // remove quotes
           .split(' ') // split the variables
           .map((s) => s.split('=')) // split keys from values
-          //@ts-ignore
           .map(([k, v]) => ({ [k]: v })), // create an objects
       );
 
@@ -229,11 +228,11 @@ class XML2CWRC {
 
     doc.childNodes.forEach((node) => {
       if (node.nodeName === 'xml-model') {
-        //@ts-ignore
+        //@ts-expect-error
         const nodeData = node.data as string;
         rng = parseData(nodeData);
       } else if (node.nodeName === 'xml-stylesheet') {
-        //@ts-ignore
+        //@ts-expect-error
         const nodeData = node.data as string;
         css = parseData(nodeData);
       }
@@ -421,8 +420,8 @@ class XML2CWRC {
 
     const traverse = (node: Element, depth: number) => {
       nodeArray.push({ node, depth });
-      for (let i = 0; i < node.childNodes.length; i++) {
-        traverse(node.childNodes[i] as Element, depth + 1);
+      for (const child of node.childNodes) {
+        traverse(child as Element, depth + 1);
       }
     };
 
@@ -466,9 +465,9 @@ class XML2CWRC {
         const jsonAttrs: Record<string, any> = {};
         const attrs = node.attributes;
 
-        for (let i = 0; i < attrs.length; i++) {
-          const attName = attrs[i]?.name;
-          const attValue = attrs[i]?.value;
+        for (const attr of attrs) {
+          const attName = attr.name;
+          const attValue = attr.value;
 
           if ((this._isLegacyDocument && attName === 'annotationId') || attName === 'offsetId') {
             continue;
@@ -496,12 +495,12 @@ class XML2CWRC {
         closingTagString = `</${htmlTag}>`;
       }
     } else if (node.nodeType === Node.TEXT_NODE) {
-      //@ts-ignore
+      //@ts-expect-error
       const content = node.data.replace(/</g, '&lt;').replace(/>/g, '&gt;'); // prevent tags from accidentally being created
       openingTagString = content;
     } else if (node.nodeType === Node.COMMENT_NODE) {
       // preserve comment
-      //@ts-ignore
+      //@ts-expect-error
       openingTagString += `<!--${node.data}`;
       closingTagString = '-->';
     } else {
@@ -512,7 +511,7 @@ class XML2CWRC {
   }
 
   private buildEditorStringDeferred(parentNode: Element) {
-    //@ts-ignore
+    //@ts-expect-error
     const dfd = new $.Deferred();
 
     const li = this.writer.dialogManager.getDialog('loadingindicator');
@@ -545,7 +544,6 @@ class XML2CWRC {
             editorString += stackEntry.string;
             if (closingStack.length > 0) {
               // peek at next
-              //@ts-ignore
               const nextDepth = closingStack[closingStack.length - 1].depth;
               if (nextDepth <= prevDepth && nextDepth >= depth) {
                 stackEntry = closingStack.pop();
@@ -560,7 +558,6 @@ class XML2CWRC {
       }
 
       editorString += openingTagString;
-      //@ts-ignore
       closingStack.push(closingTag);
 
       return depth;
@@ -574,7 +571,7 @@ class XML2CWRC {
     const parentFunc = () => {
       while (nodeArray.length > 0) {
         const entry = nodeArray.shift();
-        //@ts-ignore
+        //@ts-expect-error
         depth = processNode(entry, depth);
 
         const time2 = new Date().getTime();
@@ -603,7 +600,7 @@ class XML2CWRC {
   }
 
   private buildDocumentAndInsertEntities(doc: Document) {
-    //@ts-ignore
+    //@ts-expect-error
     const dfd = new $.Deferred();
 
     this.buildEditorStringDeferred(doc.documentElement)
@@ -640,7 +637,7 @@ class XML2CWRC {
     const entities = Object.keys(entObj).map((key) => entObj[key]);
 
     if (entities.length === 0) {
-      //@ts-ignore
+      //@ts-expect-error
       const dfd = new $.Deferred();
       dfd.resolve();
       return dfd.promise();
@@ -661,30 +658,25 @@ class XML2CWRC {
 
     // insert entities
     const insertEntity = (entry: any) => {
-      let startNode = null;
-      let endNode = null;
-      let startOffset = 0;
-      let endOffset = 0;
-
       const range = entry.getRange();
 
       // just rdf, no markup
       if (range.endXPath) {
         let parent = this.writer.utilities.evaluateXPath(docRoot, range.startXPath) as Element;
         let result = this.getTextNodeFromParentAndOffset(parent, range.startOffset);
-        startNode = result.textNode;
-        startOffset = result.offset;
+        const startNode = result.textNode;
+        const startOffset = result.offset;
         parent = this.writer.utilities.evaluateXPath(docRoot, range.endXPath) as Element;
         result = this.getTextNodeFromParentAndOffset(parent, range.endOffset);
-        endNode = result.textNode;
-        endOffset = result.offset;
+        const endNode = result.textNode;
+        const endOffset = result.offset;
 
         try {
-          //@ts-ignore
+          //@ts-expect-error
           const selRange = this.writer.editor.selection.getRng();
-          //@ts-ignore
+          //@ts-expect-error
           selRange.setStart(startNode, startOffset);
-          //@ts-ignore
+          //@ts-expect-error
           selRange.setEnd(endNode, endOffset);
           this.writer.tagger.addEntityTag(entry, selRange);
 
@@ -747,18 +739,18 @@ class XML2CWRC {
 
       $(parent)
         .contents()
-        //@ts-ignore
+        //@ts-expect-error
         .each((index, element) => {
           // Not sure why the &nbsp; text nodes would not be counted but as long
           // as we are consistent in both the saving and loading it should be
           // fine.
-          //@ts-ignore
+          //@ts-expect-error
           if (element.nodeType === Node.TEXT_NODE && element.data !== ' ') {
             // Count all the text!
-            //@ts-ignore
+            //@ts-expect-error
             currentOffset += element.length;
             if (currentOffset >= offset) {
-              //@ts-ignore
+              //@ts-expect-error
               currentOffset = offset - (currentOffset - element.length);
               textNode = element;
               ret = false;

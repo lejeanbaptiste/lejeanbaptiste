@@ -1,5 +1,5 @@
 import { AppBar, Stack, Toolbar, useColorScheme } from '@mui/material';
-import { EditorModeSelector, ProfileAvatar, SigninButton } from '@src/components';
+import { ProfileAvatar, SigninButton } from '@src/components';
 import { useAppState } from '@src/overmind';
 import { AnimatePresence } from 'motion/react';
 import { CookiesSettings } from './cookies-settings';
@@ -40,12 +40,9 @@ export const TopBar = ({ Center, Left }: TopBarProps) => {
         >
           <AnimatePresence mode="wait">
             {userState === 'AUTHENTICATED' ? (
-              <>
-                {page !== 'home' && <EditorModeSelector />}
-                <ProfileAnchor>
-                  <ProfileAvatar />
-                </ProfileAnchor>
-              </>
+              <ProfileAnchor>
+                <ProfileAvatar />
+              </ProfileAnchor>
             ) : userState === 'UNAUTHENTICATED' ? (
               <>
                 <CookiesSettings />

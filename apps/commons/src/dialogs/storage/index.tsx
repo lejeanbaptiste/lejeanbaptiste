@@ -107,7 +107,7 @@ export const Storage = () => {
     );
 
     return prefIdIsStorageProvider ? user.preferredID : providers[0]?.name;
-  }, [user?.preferredID]);
+  }, [providers, user]);
 
   return (
     <>

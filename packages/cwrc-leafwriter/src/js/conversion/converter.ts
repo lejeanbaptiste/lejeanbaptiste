@@ -96,7 +96,17 @@ class Converter {
     this.processDocument(xml);
   }
 
-  async getDocument(asString: boolean, callback?: Function) {
+  async getDocument(asString: true, callback?: (docString: string) => void): Promise<string | null>;
+  async getDocument(
+    asString: false,
+    callback?: (doc: Document | null) => void,
+  ): Promise<Document | null>;
+  async getDocument(
+    asString: boolean,
+    // The overloads above give callers the precise per-mode type; this implementation
+    // signature just needs to be broad enough to satisfy both.
+    callback?: (result: any) => void,
+  ): Promise<string | Document | null> {
     const docString = await this.getDocumentContent(true);
     if (!docString) return null;
 

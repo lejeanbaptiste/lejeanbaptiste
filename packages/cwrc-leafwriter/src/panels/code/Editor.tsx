@@ -11,9 +11,9 @@ interface EditorProps {
   showLOD: boolean;
 }
 
-type UpdateProps = {
+interface UpdateProps {
   useDoc: boolean;
-};
+}
 
 export const Editor = ({ showLOD }: EditorProps) => {
   const { mode, systemMode } = useColorScheme();
@@ -125,7 +125,7 @@ export const Editor = ({ showLOD }: EditorProps) => {
     editor?.updateOptions({ theme: editorTheme });
   }, [mode, systemMode]);
 
-  const updateView = async (useDoc: boolean = false) => {
+  const updateView = async (useDoc = false) => {
     if (!enabled) return;
     // Avoid converting while the editor is empty or mid-load — that spam-logs
     // "converter: no root found for TEI" on every selection/content event.

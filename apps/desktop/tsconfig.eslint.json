@@ -1,0 +1,8 @@
+// Lint-only project: the build tsconfig covers `src/**/*` only, but ESLint's type-aware
+// rules also need the .ts helpers under scripts/ in a project. Same compiler options,
+// wider include, minus the bundled runtimes and build output.
+{
+  "extends": "./tsconfig.json",
+  "include": ["src/**/*", "scripts/**/*.ts"],
+  "exclude": ["node_modules", "dist", "release", "resources"]
+}

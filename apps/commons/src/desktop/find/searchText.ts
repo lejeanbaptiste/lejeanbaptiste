@@ -102,7 +102,7 @@ export const searchText = async ({
     const companionPaths = await getCompanionTranslationFilePaths(sourcePath);
     for (const companionPath of companionPaths) {
       try {
-        // eslint-disable-next-line no-await-in-loop
+         
         const content = await window.electronAPI!.readFile(companionPath);
         addResult(buildFileResult(companionPath, content, trimmed, useRegex, ignoreCase));
       } catch {
@@ -151,7 +151,7 @@ export const searchText = async ({
             ),
           );
         }
-        // eslint-disable-next-line no-await-in-loop
+         
         await addCompanionResults(tab.filePath);
       }
     } else if (scope === 'project') {

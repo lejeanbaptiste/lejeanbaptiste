@@ -216,7 +216,9 @@ export const searchRegexInContent = (
   try {
     regex = compileFindRegex(pattern, ignoreCase);
   } catch (error) {
-    throw new Error(error instanceof Error ? error.message : 'Invalid regular expression.');
+    throw new Error(error instanceof Error ? error.message : 'Invalid regular expression.', {
+      cause: error,
+    });
   }
 
   const hits: TextHit[] = [];

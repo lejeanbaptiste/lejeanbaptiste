@@ -20,7 +20,9 @@ import { applyHygieneFinding } from './apply';
 import { scanFamilyPrefixedAltNames } from './scanners';
 import type { HygieneFinding } from './types';
 
-export type AutoCleanReport = {
+export interface AutoCleanReport {
+  // Passed directly to i18next's t() as the interpolation-values object.
+  [key: string]: number;
   strippedFamilyPrefixed: number;
   parsedFamilyGiven: number;
   dedupedNames: number;
@@ -29,7 +31,7 @@ export type AutoCleanReport = {
   removedUntyped: number;
   promotedRomanizations: number;
   fixedRomanization: number;
-};
+}
 
 const nfc = (value: string) => value.normalize('NFC');
 
@@ -151,11 +153,11 @@ export async function autoCleanEntities(
   const orphanFindings = scanOrphanShortNameSplits(people, projectLang);
   const romanFindings = scanJoinableRomanizations(people, projectLang);
 
-  const findingBatches: Array<{
+  const findingBatches: {
     label: string;
     findings: HygieneFinding[];
     key: 'strippedFamilyPrefixed' | 'parsedFamilyGiven' | 'fixedRomanization';
-  }> = [
+  }[] = [
     { label: 'Strip 姓 from 字/號/法號', findings: stripFindings, key: 'strippedFamilyPrefixed' },
     { label: 'Parse orphan short names', findings: orphanFindings, key: 'parsedFamilyGiven' },
     { label: 'Join romanization spaces', findings: romanFindings, key: 'fixedRomanization' },

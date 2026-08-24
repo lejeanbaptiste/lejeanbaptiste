@@ -10,7 +10,11 @@ export const applyTextContentReplacement = (
 ): boolean => {
   if (offset < 0 || length < 0) return false;
 
-  type Piece = { node: Text; start: number; end: number };
+  interface Piece {
+    node: Text;
+    start: number;
+    end: number;
+  }
   const pieces: Piece[] = [];
   const walker = document.createTreeWalker(root, NodeFilter.SHOW_TEXT);
   let cursor = 0;

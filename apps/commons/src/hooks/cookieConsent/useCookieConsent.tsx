@@ -125,15 +125,15 @@ export const useCookieConsent = () => {
 
       languages: {
         'en-CA': {
-          //@ts-ignore
+          //@ts-expect-error
           consent_modal: consentModalContent('en-CA'),
-          //@ts-ignore
+          //@ts-expect-error
           settings_modal: consentSettingsContent('en-CA'),
         },
         'fr-CA': {
-          //@ts-ignore
+          //@ts-expect-error
           consent_modal: consentModalContent('fr-CA'),
-          //@ts-ignore
+          //@ts-expect-error
           settings_modal: consentSettingsContent('fr-CA'),
         },
       },

@@ -71,12 +71,12 @@ export const Zone = ({
       <IconFileText
         component={motion.svg}
         variants={variantsIcon}
-        animate={isProcessing ? 'processing' : !!filename ? 'selected' : 'default'}
+        animate={isProcessing ? 'processing' : filename ? 'selected' : 'default'}
         sx={{ height: 40, width: 40 }}
       />
       <Stack>
         <AnimatePresence>
-          {!!filename ? (
+          {filename ? (
             <Label key="document" show={!!filename}>
               {filename}
             </Label>
@@ -97,7 +97,7 @@ export const Zone = ({
               overflow="hidden"
               component={motion.div}
               variants={variantsProgress}
-              animate={!!isProcessing ? 'show' : 'hide'}
+              animate={isProcessing ? 'show' : 'hide'}
               initial="hide"
               exit="hide"
             >

@@ -790,7 +790,7 @@ async function filterWikidataByKind<T extends { uri: string; description?: strin
 ): Promise<T[]> {
   if (matches.length === 0) return matches;
 
-  const withQid: Array<{ match: T; qid: string }> = [];
+  const withQid: { match: T; qid: string }[] = [];
   for (const match of matches) {
     const qid = extractWikidataId(match.uri) ?? extractWikidataId(match.description ?? '');
     if (qid) withQid.push({ match, qid });
@@ -1065,7 +1065,7 @@ export function candidatePassesYearFilter(
 async function lifespanForQid(qid: string, cache: AuthorityCache) {
   if (wikidataLifespanCache.has(qid)) return wikidataLifespanCache.get(qid)!;
   await cache.throttle();
-  let lifespan: Awaited<ReturnType<typeof fetchWikidataLifespan>> = null;
+  let lifespan: Awaited<ReturnType<typeof fetchWikidataLifespan>>;
   try {
     lifespan = await fetchWikidataLifespan(qid);
   } catch {
@@ -1088,7 +1088,7 @@ export async function fetchLiveCandidates(
   tag: string,
   surface: string,
   cache: AuthorityCache,
-  enabledAuthorities: Array<keyof typeof AUTHORITY_MAP>,
+  enabledAuthorities: (keyof typeof AUTHORITY_MAP)[],
   forceRefresh = false,
   readPackFile?: ReadAuthorityPackFile,
   options: FetchLiveCandidatesOptions = {},
@@ -1105,7 +1105,7 @@ export async function fetchLiveCandidates(
       const authorityId = AUTHORITY_MAP[name];
       if (!authorityId) return [];
 
-      let cached = await cache.get(name, entityType, surface, forceRefresh);
+      const cached = await cache.get(name, entityType, surface, forceRefresh);
       let matches: AuthorityLookupResult[] = cached?.results ?? [];
 
       if (!cached) {
@@ -1347,7 +1347,7 @@ export async function buildDisambiguationCandidates(
   tag: string,
   surface: string,
   cache: AuthorityCache,
-  enabledAuthorities: Array<keyof typeof AUTHORITY_MAP> = ['Wikidata', 'VIAF'],
+  enabledAuthorities: (keyof typeof AUTHORITY_MAP)[] = ['Wikidata', 'VIAF'],
   forceRefresh = false,
   readPackFile?: ReadAuthorityPackFile,
   dilaDetailCache?: DilaPlaceDetailCache,

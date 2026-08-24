@@ -39,7 +39,7 @@ interface CompiledDefinitions {
 }
 
 const moduleShell: { exports: Partial<CompiledDefinitions> } = { exports: {} };
-// eslint-disable-next-line no-new-func -- de-obfuscated, self-contained, no external requires
+ 
 new Function('module', 'exports', deobfuscate(OBFUSCATED))(moduleShell, moduleShell.exports);
 const compiled = moduleShell.exports as CompiledDefinitions;
 

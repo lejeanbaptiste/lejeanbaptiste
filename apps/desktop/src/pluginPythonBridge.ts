@@ -34,7 +34,7 @@ export type PluginPythonProgressEvent =
 export type PluginPythonProgressCallback = (event: PluginPythonProgressEvent) => void;
 
 /** A python interpreter invocation: `spawn(bin, [...args, ...rest])`. */
-type PythonCommand = { bin: string; args: string[] };
+interface PythonCommand { bin: string; args: string[] }
 
 const commandLabel = (cmd: PythonCommand): string => [cmd.bin, ...cmd.args].join(' ');
 
@@ -269,7 +269,7 @@ const pythonEnvForPlugin = (pluginId: string): NodeJS.ProcessEnv => {
   return env;
 };
 
-const runPluginPythonCli = (
+const runPluginPythonCli = async (
   pluginId: string,
   payload: Record<string, unknown>,
   onProgress?: PluginPythonProgressCallback,
@@ -277,15 +277,13 @@ const runPluginPythonCli = (
   const useStream = Boolean(onProgress && (payload.chunks || payload.dates));
   const moduleName = pythonModuleForPlugin(pluginId);
 
-  return new Promise(async (resolve, reject) => {
-    let python: PythonCommand;
-    try {
-      python = await resolvePluginPython(pluginId);
-    } catch (error) {
-      reject(error);
-      return;
-    }
+  // Resolved before the executor rather than inside it: an `async` executor
+  // swallows anything thrown after the first await, leaving the promise
+  // permanently pending. A rejection here propagates through this function
+  // instead, which is what callers already expect.
+  const python = await resolvePluginPython(pluginId);
 
+  return new Promise((resolve, reject) => {
     const input = JSON.stringify(useStream ? { ...payload, stream: true } : payload);
     const t0 = Date.now();
     logPluginPython(pluginId, 'spawn', {

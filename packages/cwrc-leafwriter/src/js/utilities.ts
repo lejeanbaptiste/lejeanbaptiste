@@ -89,12 +89,11 @@ class Utilities {
     let newText = text;
     if (newText.match(/&.+?;/gim)) {
       // match all entities
-      //@ts-ignore
       this.$entitiesConverter[0].innerHTML = newText;
 
-      //@ts-ignore
+      //@ts-expect-error
       newText =
-        //@ts-ignore
+        //@ts-expect-error
         this.$entitiesConverter[0].innerText || this.$entitiesConverter[0].firstChild.nodeValue;
     }
 
@@ -224,7 +223,7 @@ class Utilities {
     const rng = editor.dom.createRng();
     if (isElement(node)) {
       if (selectContentsOnly) {
-        //@ts-ignore
+        //@ts-expect-error
         if (tinymce?.isWebKit && node.firstChild == null) node.append('\uFEFF');
         rng.selectNodeContents(node);
       } else {
@@ -317,7 +316,7 @@ class Utilities {
     //* Create Selection
     const rng = editor.dom.createRng();
     if (selectContentsOnly) {
-      //@ts-ignore
+      //@ts-expect-error
       if (tinymce.isWebKit && element.firstChild == null) element.append('\uFEFF');
       rng.selectNodeContents(element);
     } else {
@@ -407,7 +406,7 @@ class Utilities {
     const paths: string[] = [];
 
     // Use nodeName (instead of localName) so namespace prefix is included (if any).
-    //@ts-ignore
+    //@ts-expect-error
     for (; element && element.nodeType == 1; element = element.parentNode) {
       let index = 0;
 
@@ -415,9 +414,9 @@ class Utilities {
         // Ignore document type declaration.
         if (sibling.nodeType === Node.DOCUMENT_TYPE_NODE) continue;
 
-        //@ts-ignore
+        //@ts-expect-error
         if (tagAtt && sibling.getAttribute !== undefined) {
-          //@ts-ignore
+          //@ts-expect-error
           if (sibling.getAttribute(tagAtt) == element.getAttribute(tagAtt)) {
             ++index;
           }
@@ -453,7 +452,7 @@ class Utilities {
     const isCWRC = doc === this.writer.editor?.getDoc();
 
     // grouped matches: 1 separator, 2 axis, 3 namespace, 4 element name or attribute name or function, 5 predicate
-    const regex = /(\/{0,2})([\w-]+::|@)?(\w+?:)?([\w-(\.\*)]+)(\[.+?\])?/g;
+    const regex = /(\/{0,2})([\w-]+::|@)?(\w+?:)?([\w-(.*)]+)(\[.+?\])?/g;
 
     let nsResolver = null;
     const defaultNamespace =
@@ -462,7 +461,7 @@ class Utilities {
     // TODO should doc.documentElement.namespaceURI also be checked? it will return http://wwthis.writer.w3.org/1999/xhtml for the editor doc
     if (!isCWRC && doc instanceof Document) {
       const nsr = doc.createNSResolver(doc.documentElement);
-      //@ts-ignore
+      //@ts-expect-error
       nsResolver = (prefix) => nsr.lookupNamespaceURI(prefix) || defaultNamespace;
 
       // default namespace hack (http://stackoverflothis.writer.com/questions/9621679/javascript-xpath-and-default-namespaces)
@@ -499,7 +498,7 @@ class Utilities {
       if (doc === contextNode) contextNode = doc.documentElement;
       // if the context node is the schema root then we need to make sure the xpath starts with "//"
       if (
-        //@ts-ignore
+        //@ts-expect-error
         contextNode.getAttribute('_tag') === this.writer.schemaManager.getRoot() &&
         !xpath.startsWith('@')
       ) {
@@ -574,7 +573,7 @@ class Utilities {
 
     const isCWRC = doc === this.writer.editor?.getDoc();
 
-    const regex = /(\/{0,2})([\w-]+::|@)?(\w+?:)?([\w-(\.\*)]+)(\[.+?\])?/g;
+    const regex = /(\/{0,2})([\w-]+::|@)?(\w+?:)?([\w-(.*)]+)(\[.+?\])?/g;
 
     let nsResolver = null;
     const defaultNamespace =
@@ -582,7 +581,7 @@ class Utilities {
 
     if (!isCWRC && doc instanceof Document) {
       const nsr = doc.createNSResolver(doc.documentElement);
-      //@ts-ignore
+      //@ts-expect-error
       nsResolver = (prefix) => nsr.lookupNamespaceURI(prefix) || defaultNamespace;
 
       if (defaultNamespace !== null) {
@@ -608,7 +607,7 @@ class Utilities {
     if (isCWRC) {
       if (doc === contextNode) contextNode = doc.documentElement;
       if (
-        //@ts-ignore
+        //@ts-expect-error
         contextNode.getAttribute('_tag') === this.writer.schemaManager.getRoot() &&
         !xpath.startsWith('@')
       ) {
@@ -666,8 +665,8 @@ class Utilities {
    * @param {Number} [refreshRate]  How often to break (in milliseconds). Default is 250.
    * @returns {Promise} A jQuery promise
    */
-  processArray(array: any[], processFunc: Function, refreshRate = 250) {
-    //@ts-ignore
+  processArray(array: any[], processFunc: (entry: any) => void, refreshRate = 250) {
+    //@ts-expect-error
     const dfd = new $.Deferred();
 
     const li = this.writer.dialogManager.getDialog('loadingindicator');
@@ -679,7 +678,7 @@ class Utilities {
       while (array.length > 0) {
         const entry = array.shift();
 
-        //@ts-ignore
+        //@ts-expect-error
         processFunc.call(this, entry);
 
         const time2 = new Date().getTime();
@@ -727,7 +726,6 @@ class Utilities {
     if (!$parent) return position;
 
     let offP = $el.offsetParent();
-    //@ts-ignore
     while ($parent.find(offP[0]).length === 1) {
       const pos = offP.position();
       position.top += pos.top;

@@ -225,14 +225,14 @@ describe('AutoTaggingSession', () => {
   });
 
   describe('getProjectDocuments', () => {
-    type DesktopGlobals = {
+    interface DesktopGlobals {
       electronAPI?: {
         listProjectXmlFiles: (root: string) => Promise<{ name: string; path: string }[]>;
         readFile: (path: string) => Promise<string>;
       };
       __ljbLspProject?: { projectRoot?: string };
       writer?: { overmindState?: { editor?: { resource?: { filePath?: string } } } };
-    };
+    }
 
     const win = window as unknown as DesktopGlobals;
     let savedElectron: DesktopGlobals['electronAPI'];
@@ -311,14 +311,14 @@ describe('AutoTaggingSession', () => {
   });
 
   describe('runTagBomb', () => {
-    type DesktopGlobals = {
+    interface DesktopGlobals {
       electronAPI?: {
         listProjectXmlFiles: (root: string) => Promise<{ name: string; path: string }[]>;
         readFile: (path: string) => Promise<string>;
       };
       __ljbLspProject?: { projectRoot?: string };
       writer?: { overmindState?: { editor?: { resource?: { filePath?: string } } } };
-    };
+    }
 
     const win = window as unknown as DesktopGlobals;
     let savedElectron: DesktopGlobals['electronAPI'];
@@ -422,7 +422,7 @@ describe('AutoTaggingSession', () => {
     const makeStore = () => {
       const files = new Map<string, string>();
       const api: EntityFileApi = {
-        ensureDirectory: async () => {},
+        ensureDirectory: async () => undefined,
         pathExists: async (p) => files.has(p),
         readFile: async (p) => files.get(p) ?? '',
         writeFile: async (p, c) => {
@@ -786,7 +786,7 @@ describe('AutoTaggingSession', () => {
           );
         },
       },
-      loadDocumentXML: () => {},
+      loadDocumentXML: () => undefined,
     };
     const session = new AutoTaggingSession(writer);
     const doc = await session.getDocument();

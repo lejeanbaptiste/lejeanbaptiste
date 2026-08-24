@@ -121,7 +121,7 @@ const App = ({ document, settings, user }: LeafWriterOptions) => {
   // The document key below still recreates it when the active document changes.
   const [sourceEditorHasMounted, setSourceEditorHasMounted] = useState(false);
   const setupInProgressRef = useRef(false);
-  const setupWaitersRef = useRef<Array<() => void>>([]);
+  const setupWaitersRef = useRef<(() => void)[]>([]);
 
   useEffect(() => {
     if (editorViewMode === 'source') setSourceEditorHasMounted(true);
@@ -250,9 +250,7 @@ const App = ({ document, settings, user }: LeafWriterOptions) => {
       );
       const _writer = new Writer(config);
 
-      //@ts-ignore
       _writer.overmindState = state;
-      //@ts-ignore
       _writer.overmindActions = actions;
       window.writer = _writer;
 
@@ -260,7 +258,6 @@ const App = ({ document, settings, user }: LeafWriterOptions) => {
         opts?: Parameters<typeof actions.validator.debugValidatorState>[0],
       ) => actions.validator.debugValidatorState(opts);
 
-      //@ts-ignore
       _writer.event('writerInitialized').subscribe(() => {
         actions.document.setDocumentUrl(document.url);
 

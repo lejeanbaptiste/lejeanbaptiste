@@ -127,7 +127,7 @@ async function search({
       id: string;
       label: string;
       description?: string;
-      idnos: Array<{ type: string; value: string }>;
+      idnos: { type: string; value: string }[];
     }) => ({
       label: result.label,
       ...(result.description ? { description: result.description } : {}),

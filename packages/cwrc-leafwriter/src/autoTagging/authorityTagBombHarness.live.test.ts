@@ -28,7 +28,7 @@ import { goldMentions, runAuthorityTagBombHarness } from './validationHarness';
 const DOM_GLOBALS = ['NodeFilter', 'Node', 'Text', 'Element', 'Document', 'DOMParser'] as const;
 
 function installDomGlobals(
-  window: { [K in (typeof DOM_GLOBALS)[number]]: unknown },
+  window: Record<(typeof DOM_GLOBALS)[number], unknown>,
 ): void {
   for (const key of DOM_GLOBALS) {
     (globalThis as Record<string, unknown>)[key] = window[key];
@@ -103,7 +103,7 @@ describe('authority tag bomb validation harness (opt-in live)', () => {
         : {}),
     });
 
-    // eslint-disable-next-line no-console -- live harness output
+     
     console.log('\n--- authority tag bomb harness ---');
     console.log('gold file:', xmlPath);
     console.log('entity db folder:', entityDbFolder);

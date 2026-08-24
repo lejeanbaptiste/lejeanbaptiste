@@ -59,7 +59,7 @@ const processStdoutBuffer = () => {
 
 const buildInitializationOptions = () => {
   const workDir = path.join(app.getPath('userData'), 'lemminx-cache');
-  const fileAssociations: Array<{ pattern: string; systemId: string }> = [];
+  const fileAssociations: { pattern: string; systemId: string }[] = [];
 
   if (initOptions.defaultSchemaRng && initOptions.projectRoot) {
     const schemaPath = path.isAbsolute(initOptions.defaultSchemaRng)

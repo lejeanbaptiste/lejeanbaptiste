@@ -80,8 +80,6 @@ class PersonDialog implements SchemaDialog {
 
     const $el = $(html).appendTo(parentEl);
 
-    // eslint-disable-next-line @typescript-eslint/ban-ts-comment
-    //@ts-ignore
     (
       $(`#${this.id}_keyPill`, $el) as JQuery<HTMLElement> & {
         button: (...args: unknown[]) => JQuery<HTMLElement>;

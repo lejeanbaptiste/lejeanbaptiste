@@ -6,12 +6,12 @@ export interface PluginPersonNameSegmentResult {
   romanizedName: string | null;
 }
 
-export type PluginPersonNameSegmentInput = {
+export interface PluginPersonNameSegmentInput {
   name: string;
   projectLang: string | null;
   /** Host-provided romanizer (toneless pinyin, Wylie, etc.). */
   romanize: (part: string) => string | null;
-};
+}
 
 export type PluginPersonNameSegmenter = (
   input: PluginPersonNameSegmentInput,

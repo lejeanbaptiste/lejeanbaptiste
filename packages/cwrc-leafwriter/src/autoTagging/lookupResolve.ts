@@ -173,13 +173,13 @@ export interface CrosswalkResult {
       posthumousNameAbbr?: string | null;
       roleName?: string | null;
     };
-    nobleTitles?: Array<{
+    nobleTitles?: {
       fief?: string | null;
       familyName?: string | null;
       posthumousName?: string | null;
       posthumousNameAbbr?: string | null;
       roleName?: string | null;
-    }>;
+    }[];
   };
 }
 
@@ -206,13 +206,13 @@ interface PackRow {
       posthumousNameAbbr?: string | null;
       roleName?: string | null;
     };
-    nobleTitles?: Array<{
+    nobleTitles?: {
       fief?: string | null;
       familyName?: string | null;
       posthumousName?: string | null;
       posthumousNameAbbr?: string | null;
       roleName?: string | null;
-    }>;
+    }[];
   };
 }
 
@@ -655,7 +655,7 @@ export async function planLookupResolution(
   // Prefer pack personal primary / 姓+名 over a display-only title headword.
   const entityName =
     kind === 'person'
-      ? preferredEntityPrimaryName(headword, packPerson.typedNames ?? [], titleParts)
+      ? preferredEntityPrimaryName(headword, packPerson.typedNames ?? [])
       : headword;
   const splitSurface =
     kind === 'person'

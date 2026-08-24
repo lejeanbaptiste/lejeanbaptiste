@@ -62,7 +62,7 @@ export const Filename = () => {
   };
 
   const handleChange = (event: ChangeEvent<HTMLInputElement>) => {
-    let inputValue = event.target.value;
+    const inputValue = event.target.value;
     setValue(inputValue);
   };
 

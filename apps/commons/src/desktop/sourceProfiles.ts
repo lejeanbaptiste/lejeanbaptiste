@@ -50,7 +50,7 @@ export const sharedSourcesEqual = (
 ): boolean => JSON.stringify(left) === JSON.stringify(right);
 
 export const dedupeProjectSources = (
-  entries: Array<{ source: SourceDescription; filePath: string }>,
+  entries: { source: SourceDescription; filePath: string }[],
 ): DedupedProjectSource[] => {
   const groups = new Map<
     string,
@@ -99,7 +99,7 @@ export const scanProjectSourceProfiles = async (
   }
 
   const files = await window.electronAPI.listProjectXmlFiles(rootPath);
-  const entries: Array<{ source: SourceDescription; filePath: string }> = [];
+  const entries: { source: SourceDescription; filePath: string }[] = [];
 
   for (const file of files) {
     try {

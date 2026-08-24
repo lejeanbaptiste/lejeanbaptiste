@@ -23,9 +23,9 @@ export interface TranslationMetadataSection {
 export interface ProjectMetadataDialogState {
   mode: ProjectMetadataDialogMode;
   note?: string;
-  fields: Array<{ path: string; label: string }>;
+  fields: { path: string; label: string }[];
   values: Record<string, string>;
-  custom: Array<{ path: string; label: string; value: string }>;
+  custom: { path: string; label: string; value: string }[];
   translation: TranslationMetadataSection;
   syncToCentral: boolean;
 }

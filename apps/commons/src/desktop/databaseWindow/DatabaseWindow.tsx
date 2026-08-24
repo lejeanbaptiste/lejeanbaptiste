@@ -77,11 +77,11 @@ const hasCbdbOrDila = (entity: EntitySummary): boolean =>
 /** Dense two-line entity row height (name + romanization/id). */
 const DATABASE_ENTITY_ROW_HEIGHT = 56;
 
-type DatabaseEntityRowData = {
+interface DatabaseEntityRowData {
   entities: EntitySummary[];
   selectedIdSet: Set<string>;
   onSelect: (id: string, event: React.MouseEvent) => void;
-};
+}
 
 /** Stable row component for react-window (must not be recreated each render). */
 function DatabaseEntityRow({
@@ -256,10 +256,10 @@ const highlightForFinding = (finding: HygieneFinding): string[] => {
   }
 };
 
-type PendingApply = {
+interface PendingApply {
   finding: HygieneFinding;
   keepId?: string;
-};
+}
 
 /**
  * Issue kinds safe to accept en masse without per-item judgment.
@@ -583,7 +583,7 @@ export const DatabaseWindow = () => {
         const groups = await activeStore.sqliteAuthorityDuplicates();
         if (controller.signal.aborted) return;
         authorityDupes = findingsFromAuthorityDuplicates(
-          (groups ?? []) as Array<{ type: string; value: string; entityIds: string[] }>,
+          (groups ?? []) as { type: string; value: string; entityIds: string[] }[],
         );
       } catch {
         // optional
@@ -591,10 +591,10 @@ export const DatabaseWindow = () => {
 
       const readPack = window.electronAPI?.authorityPackRead;
       const preferredByEntity = new Map<string, string[]>();
-      const unlinkedInputs: Array<{
+      const unlinkedInputs: {
         entity: EntitySummary;
         peers: Extract<HygienePeer, { kind: 'authority' }>[];
-      }> = [];
+      }[] = [];
       const emptyDescEnriched: HygieneFinding[] = [];
 
       if (readPack) {
@@ -619,10 +619,10 @@ export const DatabaseWindow = () => {
           }),
         );
         if (controller.signal.aborted) return;
-        const usable = packContents.filter(Boolean) as Array<{
+        const usable = packContents.filter(Boolean) as {
           source: 'cbdb' | 'dila';
           content: string | string[];
-        }>;
+        }[];
 
         updateJob({ done: 4, detail: 'Indexing packs…' });
         await yieldToUi();

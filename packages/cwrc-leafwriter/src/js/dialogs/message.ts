@@ -3,7 +3,7 @@ import Writer from '../Writer';
 import type { LWDialogProps, LWDialogConfigProps } from './types';
 
 interface ConfigProps {
-  callback?: Function;
+  callback?: (confirmed?: boolean) => void;
   dialogType: string;
   height?: number;
   modal?: boolean;
@@ -67,7 +67,6 @@ class Message implements LWDialogProps {
       </div>
     `).appendTo(this.$parentEl);
 
-    //@ts-ignore
     $message.dialog({
       title,
       modal,
@@ -80,7 +79,6 @@ class Message implements LWDialogProps {
       close: () => {
         this.openDialogs.splice(this.openDialogs.indexOf($message), 1);
 
-        //@ts-ignore
         $message.dialog('destroy');
         $message.remove();
 
@@ -118,17 +116,14 @@ class Message implements LWDialogProps {
     config.dialogType = 'message';
     const $message = this.createMessageDialog(config);
 
-    //@ts-ignore
     $message.dialog('option', 'buttons', [
       {
         text: 'Ok',
         role: 'ok',
-        //@ts-ignore
         click: () => $message.dialog('close'),
       },
     ]);
 
-    //@ts-ignore
     $message.dialog('open');
   }
 
@@ -169,7 +164,6 @@ class Message implements LWDialogProps {
 
     if (showConfirmKey) $('#confirmCheckboxParent').show();
 
-    //@ts-ignore
     $message.dialog('option', 'buttons', [
       {
         text: yesText,
@@ -179,7 +173,6 @@ class Message implements LWDialogProps {
             const value = $('#showConfirmCheckbox').prop('checked');
             this.writer.dialogManager.setDialogPref(showConfirmKey, value);
           }
-          //@ts-ignore
           $message.dialog('close');
           if (callback) setTimeout(() => callback(true), 0); // make sure dialog closes before callback
         },
@@ -192,20 +185,17 @@ class Message implements LWDialogProps {
             const value = $('#showConfirmCheckbox').prop('checked');
             this.writer.dialogManager.setDialogPref(showConfirmKey, value);
           }
-          //@ts-ignore
           $message.dialog('close');
           if (callback) setTimeout(() => callback(false), 0); // make sure dialog closes before callback
         },
       },
     ]);
 
-    //@ts-ignore
     $message.dialog('open');
   }
 
   destroy() {
     for (const dialog of this.openDialogs) {
-      //@ts-ignore
       dialog.dialog('destroy');
       dialog.remove();
     }

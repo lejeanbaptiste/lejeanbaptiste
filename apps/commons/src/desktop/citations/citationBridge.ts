@@ -69,7 +69,7 @@ let styleOptionsCache: CitationStyleOption[] | null = null;
 let styleOptionsPromise: Promise<CitationStyleOption[]> | null = null;
 
 interface ZoteroStyleBridge {
-  zoteroListStyles?: () => Promise<Array<CitationStyleOption & { xml: string }>>;
+  zoteroListStyles?: () => Promise<(CitationStyleOption & { xml: string })[]>;
 }
 
 const loadStyleOptions = async (): Promise<CitationStyleOption[]> => {

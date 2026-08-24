@@ -232,7 +232,7 @@ class AnnotationsManager {
     //contributors
     if (entity.didUpdate) {
       //add contributor if current user IS NEITHER the creator NOR one of the contributors
-      let userIsCreator = false;
+      let userIsCreator: boolean;
       if (entity?.creator?.['@id']) {
         userIsCreator = userInfo.id === entity?.creator?.['@id'];
       } else {
@@ -242,7 +242,7 @@ class AnnotationsManager {
       let userIsContributor = false;
       if (annotation['dcterms:contributor']) {
         userIsContributor = !!annotation['dcterms:contributor'].find(
-          //@ts-ignore
+          //@ts-expect-error
           (contributor = contributor['@id'] === userInfo.id),
         );
       }
@@ -270,7 +270,7 @@ class AnnotationsManager {
 
     // !should add just namespaces used on this particualar annotation
     namespaces.forEach((uri, namespace) => {
-      //@ts-ignore
+      //@ts-expect-error
       annotation['@context'][namespace] = uri;
     });
 
@@ -467,7 +467,7 @@ class AnnotationsManager {
     // type
     const annotationTypes: string | string[] =
       annotation['oa:hasBody'].type || annotation['oa:hasBody']['@type'];
-    //@ts-ignore
+    //@ts-expect-error
     entityConfig.type = this.getEntityTypeForAnnotation(annotationTypes);
 
     //uri
@@ -517,8 +517,7 @@ class AnnotationsManager {
     const needsMotivation = bodyTypes.indexOf('cnt:ContentAsText') !== -1;
     if (needsMotivation) bodyTypes = bodyTypes.concat(json.motivatedBy);
 
-    for (let i = 0; i < bodyTypes.length; i++) {
-      const typeUri = bodyTypes[i];
+    for (const typeUri of bodyTypes) {
       entityType = this.getEntityTypeForAnnotationLegacy(typeUri);
       if (entityType !== null) break;
     }
@@ -599,7 +598,7 @@ class AnnotationsManager {
     if (entityType) entityConfig.type = entityType;
 
     // range
-    let rangeObj: AnnotationRange = {};
+    let rangeObj: AnnotationRange;
 
     // matching element
     const selectorUri = target.find('oa\\:hasSelector, hasSelector').attr('rdf:resource');
@@ -722,7 +721,7 @@ class AnnotationsManager {
       const content = regex.exec(xpointer)?.[1];
       xpath = content;
     } else {
-      const regex = new RegExp(/xpointer\((?:string-range\()?([^\)]*)\)+/); // regex for isolating xpath and offset
+      const regex = new RegExp(/xpointer\((?:string-range\()?([^)]*)\)+/); // regex for isolating xpath and offset
       const content = regex.exec(xpointer)?.[1];
       if (!content) return { xpath, offset };
 

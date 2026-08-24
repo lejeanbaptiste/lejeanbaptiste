@@ -1,8 +1,8 @@
 import { Box, Skeleton, Typography } from '@mui/material';
 
-type Props = {
+interface Props {
   quantity?: number;
-};
+}
 
 export const Skeletons = ({ quantity = 5 }: Props) => {
   const skels = new Array(quantity).fill(0);

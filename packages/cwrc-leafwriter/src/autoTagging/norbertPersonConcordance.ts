@@ -220,7 +220,7 @@ export async function loadNorbertPersonConcordance(
 export async function filterAttachablePersonAuthorities(
   store: EntityStore,
   entityId: string,
-  existing: ReadonlyArray<{ type: string; value: string }>,
+  existing: readonly { type: string; value: string }[],
   candidates: readonly AuthorityId[],
 ): Promise<AuthorityId[]> {
   const out: AuthorityId[] = [];
@@ -262,10 +262,10 @@ export interface AttachCrosswalkResult {
 }
 
 function expandCrosswalkCandidates(
-  authorities: ReadonlyArray<{ type: string; value: string }>,
+  authorities: readonly { type: string; value: string }[],
   options: {
     concordance?: NorbertPersonConcordanceIndex | null;
-    packCrosswalks?: Array<Record<string, string | string[] | undefined> | undefined>;
+    packCrosswalks?: (Record<string, string | string[] | undefined> | undefined)[];
   },
 ): AuthorityId[] {
   const expanded: AuthorityId[] = [];
@@ -288,7 +288,7 @@ function expandCrosswalkCandidates(
 
 function primaryNameFromSummary(raw: unknown): string | null {
   if (!raw || typeof raw !== 'object') return null;
-  const names = (raw as { names?: Array<{ text?: unknown; isPrimary?: unknown; nameType?: unknown }> })
+  const names = (raw as { names?: { text?: unknown; isPrimary?: unknown; nameType?: unknown }[] })
     .names;
   if (!Array.isArray(names) || names.length === 0) return null;
   const primary =
@@ -315,11 +315,11 @@ function namesMatchForBridgeMerge(a: string | null | undefined, b: string | null
 export async function attachPersonCrosswalkAuthorities(
   store: EntityStore,
   entityId: string,
-  authorities: ReadonlyArray<{ type: string; value: string }>,
+  authorities: readonly { type: string; value: string }[],
   options: {
     concordance?: NorbertPersonConcordanceIndex | null;
     /** Pack-row crosswalks already loaded for this entity's authorities. */
-    packCrosswalks?: Array<Record<string, string | string[] | undefined> | undefined>;
+    packCrosswalks?: (Record<string, string | string[] | undefined> | undefined)[];
     /** Primary name of `entityId` (avoids an extra summary read when known). */
     primaryName?: string | null;
   } = {},

@@ -58,7 +58,8 @@ export const ChineseAssetsDialog = ({
                     onChange={() =>
                       setSelected((current) => {
                         const next = new Set(current);
-                        next.has(asset) ? next.delete(asset) : next.add(asset);
+                        if (next.has(asset)) next.delete(asset);
+                        else next.add(asset);
                         return next;
                       })
                     }
