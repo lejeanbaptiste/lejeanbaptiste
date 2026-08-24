@@ -1121,7 +1121,7 @@ export const SidebarDatabaseTab = ({ active = false }: SidebarDatabaseTabProps) 
     } finally {
       setLoading(false);
     }
-  }, [databaseView, notifyViaSnackbar, syncToCentral]);
+  }, [databaseView, notifyViaSnackbar, syncToCentral, t]);
 
   // Drop cross-database selection when the browse target changes. Reload also
   // prunes, but clearing immediately avoids a Fusionner(3) flash with ghost ids.
@@ -1227,7 +1227,7 @@ export const SidebarDatabaseTab = ({ active = false }: SidebarDatabaseTabProps) 
 
     window.addEventListener(DESKTOP_DATABASE_ENTITY_EVENT, handleShowEntity);
     return () => window.removeEventListener(DESKTOP_DATABASE_ENTITY_EVENT, handleShowEntity);
-  }, [centralStore?.centralFolder, store, syncToCentral]);
+  }, [centralStore?.centralFolder, setKindFilter, store, syncToCentral]);
 
   // Reload when either database changes on disk (external edit or another flow).
   useEffect(() => {
@@ -1514,6 +1514,12 @@ export const SidebarDatabaseTab = ({ active = false }: SidebarDatabaseTabProps) 
         setBackfillProgress(null);
       }
     },
+    // `refreshEditEntityFromSqlite` is deliberately absent: it is declared below
+    // this callback, and a dependency array is evaluated during render, so
+    // naming it here is a temporal-dead-zone ReferenceError rather than a
+    // stale-closure fix. It is also redefined every render, which would defeat
+    // this memo. Closing this properly means hoisting that function.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
     [
       activeStore,
       backfillBusy,
@@ -1736,6 +1742,9 @@ export const SidebarDatabaseTab = ({ active = false }: SidebarDatabaseTabProps) 
         setBusyMessage(null);
       }
     },
+    // Same as above: `refreshEditEntityFromSqlite` is declared later in the
+    // component, so listing it here would be a temporal-dead-zone reference.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
     [resolveStoreFor],
   );
 

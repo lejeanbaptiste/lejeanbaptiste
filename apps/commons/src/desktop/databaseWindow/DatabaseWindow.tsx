@@ -773,6 +773,7 @@ export const DatabaseWindow = () => {
     jobRunning,
     notifyViaSnackbar,
     projectLang,
+    t,
     updateJob,
   ]);
 
@@ -856,6 +857,7 @@ export const DatabaseWindow = () => {
     jobRunning,
     notifyViaSnackbar,
     rootPath,
+    t,
     updateJob,
   ]);
 
@@ -944,7 +946,7 @@ export const DatabaseWindow = () => {
         options: { variant: 'success' },
       });
     },
-    [findings, notifyViaSnackbar],
+    [findings, notifyViaSnackbar, t],
   );
 
   const skipFinding = useCallback(() => {
@@ -1015,7 +1017,7 @@ export const DatabaseWindow = () => {
     } finally {
       setApplyBusy(false);
     }
-  }, [flushPendingApplies, notifyViaSnackbar, reload]);
+  }, [flushPendingApplies, notifyViaSnackbar, reload, t]);
 
   const leaveReview = useCallback(() => {
     const abandoned = pendingAppliesRef.current.length;
@@ -1030,7 +1032,7 @@ export const DatabaseWindow = () => {
         options: { variant: 'warning' },
       });
     }
-  }, [notifyViaSnackbar]);
+  }, [notifyViaSnackbar, t]);
 
   const runBackfill = useCallback(async () => {
     if (!activeStore || jobRunning) return;

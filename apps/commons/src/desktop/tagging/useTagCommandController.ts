@@ -122,6 +122,12 @@ export const useTagCommandController = () => {
   );
 
   const highlightedTag = visibleSuggestions[highlightedIndex] ?? null;
+  // `pluginItemsVersion` is the invalidation signal, not an input:
+  // `getPluginTagCommandItems` reads a module-level registry that React cannot
+  // observe, so the counter below is bumped when plugins change to force this
+  // to recompute. The rule flags it as unnecessary because the callback body
+  // never mentions it, which is exactly the point.
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   const pluginItems = useMemo(() => getPluginTagCommandItems(), [pluginItemsVersion]);
 
   useEffect(() => {
@@ -261,7 +267,7 @@ export const useTagCommandController = () => {
       await loadSuggestions(nextMode, suggestionCtx);
       return true;
     },
-    [loadSuggestions, notifyViaSnackbar],
+    [loadSuggestions, notifyViaSnackbar, t],
   );
 
   const notifyApplyResult = useCallback(
@@ -480,7 +486,7 @@ export const useTagCommandController = () => {
     walkIndexRef.current = 0;
     walkCurrentRangeRef.current = previewQueueWalkTarget(selectedText, tag.name, 0);
     window.writer?.editor?.focus();
-  }, [closePopup, filter, mode, notifyViaSnackbar, resolveTagForApply, selectedText, tagElement]);
+  }, [closePopup, filter, mode, notifyViaSnackbar, resolveTagForApply, selectedText, t, tagElement]);
 
   const applyWalkStep = useCallback(() => {
     if (!walkMode) return;
@@ -559,7 +565,7 @@ export const useTagCommandController = () => {
       walkIndexRef.current,
     );
     void refreshStatsForActiveFile();
-  }, [exitWalkMode, notifyApplyResult, notifyViaSnackbar, refreshStatsForActiveFile, walkMode]);
+  }, [exitWalkMode, notifyApplyResult, notifyViaSnackbar, refreshStatsForActiveFile, t, walkMode]);
 
   const skipWalkStep = useCallback(() => {
     if (!walkMode) return;
@@ -590,7 +596,7 @@ export const useTagCommandController = () => {
       walkMode.tagName,
       walkIndexRef.current,
     );
-  }, [notifyViaSnackbar, walkMode]);
+  }, [notifyViaSnackbar, t, walkMode]);
 
   applyQueueWalkRef.current = enterWalkMode;
 
@@ -649,7 +655,12 @@ export const useTagCommandController = () => {
         });
       }
     },
-    [applyHighlighted, applyPropagate, closePopup, visibleSuggestions.length],
+    // Depends on the list itself, not just its length: the arrow-key handlers
+    // read each suggestion's `invalid` flag, so a filter change that yields the
+    // same number of different suggestions would otherwise leave this closure
+    // navigating a stale list. `visibleSuggestions` is memoised on
+    // `[filter, suggestions]`, so this costs a rebuild only when it really changes.
+    [applyHighlighted, applyPropagate, closePopup, visibleSuggestions],
   );
 
   const handleEditorKeyDown = useCallback(
