@@ -245,6 +245,12 @@ export function createCompoundAnchor(
   if (localStart < 0) throw new Error('createCompoundAnchor: invalid start boundary');
   const endSearch = index.nodes[endIndex]!.search;
   let localEnd = endSearch.map.findIndex((raw) => raw >= endRaw);
+  // `localEnd` is computed but deliberately still unread: `endOffset` below
+  // returns the raw, unsnapped `endRaw` instead. That is a known incomplete
+  // port of this file's own `createAnchor`/`rawRange` pattern, tracked in
+  // readme.md ("Future"). Closing it changes anchoring behaviour at
+  // non-node-end boundaries, so it needs its own tested pass.
+  // eslint-disable-next-line no-useless-assignment
   if (localEnd < 0) localEnd = endSearch.map.length;
 
   const flatStart = index.nodeStart[startIndex]! + localStart;

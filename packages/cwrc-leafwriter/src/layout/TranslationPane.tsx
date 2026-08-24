@@ -156,7 +156,6 @@ import {
 } from '../autoTagging/aiRunProgress';
 
 const TEI_NS = 'http://www.tei-c.org/ns/1.0';
-const DEFAULT_CITATION_STYLE_ID = 'chicago-note-bibliography';
 const SPELLCHECK_STORAGE_KEY = 'leafWriterTranslationSpellcheck';
 
 const readSpellcheckEnabled = (): boolean => {

@@ -179,7 +179,7 @@ class KeywordDialog implements SchemaDialog {
   }
 
   show(config?: { [x: string]: any; entry: Entity }) {
-    if (config?.entry) this.entry;
+    this.entry = config?.entry ? config.entry : undefined;
     this.selectedText = config?.entry ? config.entry.content : this.getSelection();
     this.updateTextField(this.selectedText ?? '');
 

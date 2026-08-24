@@ -119,6 +119,15 @@ export default function custom({
         // Empty arrow functions are a normal no-op/placeholder pattern here — a lazily-assigned
         // useRef callback, a stub for an unavailable API, a deliberate null-object handler.
         '@typescript-eslint/no-empty-function': ['warn', { allow: ['arrowFunctions'] }],
+        // `cb && cb(x)` and `cond ? doA() : doB()` as statements are a pervasive, deliberate
+        // idiom in the inherited LEAF-Writer code (~60 sites). Allowing them keeps the part
+        // of this rule that actually finds bugs: a bare expression statement with no call and
+        // no side effect — `module.destroy`, `this.entry`, a getter body missing its `return` —
+        // which is exactly the class that turned up real defects in the 2026-08 sweep.
+        '@typescript-eslint/no-unused-expressions': [
+          'error',
+          { allowShortCircuit: true, allowTernary: true },
+        ],
         // Consistently named (`_this`/`self`) pre-ES6 alias, still genuinely needed in jQuery
         // event handlers that use a plain `function` for its own `this` (the triggering DOM
         // element) while also needing the outer class instance — arrow functions can't do both.
