@@ -68,6 +68,7 @@ const config: Config.InitialOptions = {
       moduleNameMapper: {
         '^dexie$': dexieModulePath,
         '\\.(png|jpe?g|gif|svg|webp)$': '<rootDir>/packages/cwrc-leafwriter/test/fileMock.cjs',
+        '\\.(css|less)$': '<rootDir>/packages/cwrc-leafwriter/test/cssModuleMock.cjs',
       },
       resetMocks: false,
       setupFiles: [
@@ -81,10 +82,13 @@ const config: Config.InitialOptions = {
       testPathIgnorePatterns: ['<rootDir>/packages/cwrc-leafwriter/lib*'],
       preset: 'ts-jest',
       // tibetan-ewts-converter ships ESM-only; let ts-jest compile it to CJS.
-      transformIgnorePatterns: ['/node_modules/(?!tibetan-ewts-converter/)'],
+      // nanoid ships ESM only, so it must be transformed rather than skipped.
+      transformIgnorePatterns: ['/node_modules/(?!(tibetan-ewts-converter|nanoid)/)'],
       transform: {
         '\\.txt$': '<rootDir>/packages/cwrc-leafwriter/test/loadTextFile.cjs',
         '\\.mjs$': ['ts-jest', { tsconfig: { allowJs: true } }],
+        // Only reaches the packages transformIgnorePatterns lets through (both ESM-only).
+        '\\.js$': ['ts-jest', { tsconfig: { allowJs: true } }],
         '^.+\\.tsx?$': 'ts-jest',
       },
     },
@@ -116,6 +120,7 @@ const config: Config.InitialOptions = {
         '^@cwrc/leafwriter$': '<rootDir>/apps/commons/test/mocks/cwrcLeafwriter.tsx',
         '^dexie$': dexieModulePath,
         '\\.(png|jpe?g|gif|svg|webp)$': '<rootDir>/packages/cwrc-leafwriter/test/fileMock.cjs',
+        '\\.(css|less)$': '<rootDir>/packages/cwrc-leafwriter/test/cssModuleMock.cjs',
       },
       resetMocks: false,
       setupFiles: [
@@ -129,11 +134,14 @@ const config: Config.InitialOptions = {
       testMatch: ['<rootDir>/apps/commons/**/?(*.)+(spec|test).[jt]s?(x)'],
       preset: 'ts-jest',
       // tibetan-ewts-converter ships ESM-only; let ts-jest compile it to CJS.
-      transformIgnorePatterns: ['/node_modules/(?!tibetan-ewts-converter/)'],
+      // nanoid ships ESM only, so it must be transformed rather than skipped.
+      transformIgnorePatterns: ['/node_modules/(?!(tibetan-ewts-converter|nanoid)/)'],
       transform: {
         '\\.mjs$': ['ts-jest', { tsconfig: { allowJs: true } }],
         // Bundled CSL citation styles and locales (webpack asset/source in the real build).
         '\\.(csl|xml)$': '<rootDir>/packages/cwrc-leafwriter/test/loadTextFile.cjs',
+        // Only reaches the packages transformIgnorePatterns lets through (both ESM-only).
+        '\\.js$': ['ts-jest', { tsconfig: { allowJs: true } }],
         '^.+\\.tsx?$': 'ts-jest',
       },
     },
