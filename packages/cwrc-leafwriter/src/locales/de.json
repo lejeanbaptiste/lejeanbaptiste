@@ -257,7 +257,17 @@
       "settings": "Einstellungen",
       "side menu": "",
       "undo": "Rückgängig machen",
-      "update": "aktualisieren"
+      "update": "aktualisieren",
+      "added_by": "Added by",
+      "refresh": "refresh",
+      "remove": "remove",
+      "status_installed": "installed",
+      "leave_source_anyway": "leave Source anyway",
+      "entity_types": "Entity types",
+      "loading": "Loading…",
+      "profile": "Profile",
+      "select_language": "Select language…",
+      "side_menu": "Side menu"
     },
     "concept": "Konzept",
     "deleteSchema": "Schema löschen",
@@ -289,7 +299,27 @@
       "Tag Thing": "",
       "Tag Work": "",
       "Toggle Fullscreen": "",
-      "Validate": ""
+      "Validate": "",
+      "Correction Display: Original": "Show Original Only",
+      "Correction Display: Corrected": "Show Corrected Only",
+      "Correction Display: Both": "Show Original & Corrected",
+      "Correction Display tooltip": "Cycle how editorial markup (sic/corr, supplied, surplus) is displayed",
+      "Lock Text": "Lock text",
+      "Lock Text tooltip": "Prevent typing and deleting in the editor; tagging still works (Enter, Alt+Enter).",
+      "Unlock Text": "Unlock text",
+      "Unlock Text tooltip": "Allow typing and deleting in the editor again.",
+      "Quick Correction": "Correction",
+      "Quick Correction tooltip": "Mark editorial changes: substitute (sic/corr), add (<supplied>), or delete (<surplus>)",
+      "Correction": "Correction",
+      "Correction tooltip": "Mark editorial changes: substitute (sic/corr), add (<supplied>), or delete (<surplus>)",
+      "Hide Breaks": "Hide breaks",
+      "Hide Breaks tooltip": "Hide line and page breaks so interrupted text reads as one continuous block",
+      "Show Breaks": "Show breaks",
+      "Show Breaks tooltip": "Show line and page breaks in the editor",
+      "Hide Notes": "Hide all notes",
+      "Hide Notes tooltip": "Fold up all note, citation, and keyword commentary",
+      "Show Notes": "Show all notes",
+      "Show Notes tooltip": "Expand all note, citation, and keyword commentary inline"
     },
     "entity": {
       "_plural": {
@@ -501,7 +531,33 @@
         "preview": "Vorschau",
         "reset": "Zurücksetzen",
         "done": "Fertig"
-      }
+      },
+      "translateDocument": "Translate document",
+      "translateDocumentProgress": "Translating document",
+      "translateDocumentDone": "Translated {{count}} unit(s); {{skipped}} already had text, {{failed}} failed.",
+      "spellcheckOffForLiveLt": "Chromium spelling is off while LanguageTool live mode is on",
+      "languageToolCheck": "Check with LanguageTool",
+      "languageToolChecking": "Checking with LanguageTool…",
+      "languageToolDisabled": "Enable LanguageTool in Settings → AI to use grammar check.",
+      "languageToolUnavailable": "LanguageTool is not available in this build.",
+      "languageToolNoMatches": "No issues found.",
+      "languageToolMatches_one": "{{count}} issue found",
+      "languageToolMatches_other": "{{count}} issues found",
+      "languageToolDismiss": "Dismiss",
+      "languageToolTextChanged": "The translation changed since the check. Run Check again.",
+      "languageToolApplyFailed": "Could not apply that suggestion.",
+      "languageToolCloseResults": "Close",
+      "refreshEntityAnchors": "Refresh entity anchors from database (F5)",
+      "aiNotesPartial": "{{count}} note(s) could not be translated and were left in the source language.",
+      "aiTranslationUnavailable": "AI translation is not available.",
+      "citationStyleSaveFailed": "Could not save citation style.",
+      "generatingTranslation": "Generating translation...",
+      "selectSourceUnitFirst": "Select a source unit first.",
+      "selectTranslationUnitFirst": "Select a translation unit first.",
+      "translationGenerated": "Translation generated.",
+      "zoteroCitationsUnavailable": "Zotero citations are not available.",
+      "zoteroPrefsLoadFailed": "Zotero preferences failed to load.",
+      "zoteroPrefsUnavailable": "Zotero preferences are not available."
     },
     "settings": {
       "authorities": {
@@ -578,7 +634,13 @@
         "Show Text Nodes": "Zeige Textknoten",
         "message": {
           "Text Nodes must be displayed for better accuracy": "Textknoten müssen für bessere Genauigkeit angezeigt werden"
-        }
+        },
+        "Tree synchronization": "Tree synchronization",
+        "Tree synchronization description": "Live follows the editor. On demand refreshes only when requested. Off removes the tree from the editing session.",
+        "Live": "Live",
+        "On demand": "On demand",
+        "Off": "Off",
+        "title": "Markup panel"
       },
       "reset": {
         "Clear Cache": "Cache leeren",
@@ -589,7 +651,10 @@
           "Confirmation dialog preferences have been reset": "Einstellung für den Bestätigungsdialog wurden zurückgesetzt",
           "Settings preferences have been reset to default": "Einstellungen wurden auf Standardwerte zurückgesetzt",
           "You might need to reload the document": "Sie müssen eventuell das Dokument neu laden"
-        }
+        },
+        "clear_cache": "Clear Cache",
+        "reset_dialog_warnings": "Reset Dialog Warnings",
+        "reset_settings": "Reset Settings"
       },
       "schemas": {
         "messages": {
@@ -755,7 +820,123 @@
         "server_failed": "server fehlgeschlagen"
       },
       "ai_prompts": {
-        "title": "KI-Eingabeaufforderungen"
+        "title": "KI-Eingabeaufforderungen",
+        "description": "Edit task wording for suggest, audit, and disambiguation curation. The surrounding app instructions and JSON shape stay fixed.",
+        "profile": "Profile",
+        "profile_label": "Profile label",
+        "suggest_task_text": "Suggest task text",
+        "audit_clean_task_text": "Audit clean task text",
+        "disambiguation_rank_task_text": "Disambiguation rank task text",
+        "save_as_new_profile": "Save as new profile",
+        "new_profile_placeholder": "Groq classical biography",
+        "delete_profile": "Delete profile",
+        "revert_to_default_text": "Revert to default text",
+        "save_as_new": "Save as new…",
+        "enter_new_profile_name": "Enter a name for the new profile."
+      },
+      "asset_packs": {
+        "offline_authorities": "Offline authorities",
+        "map_tiles": "Offline map tiles"
+      },
+      "privacy": {
+        "description": "What LEAF-Writer stores locally and what it only sends if you choose to use a networked feature.",
+        "summary": "LEAF-Writer is mostly local-first in normal desktop use. Your files, databases, and settings stay on your machine unless you use a feature that explicitly talks to another service.",
+        "local_first": "Normal editing, local entity databases, offline packs, and most settings remain on your computer.",
+        "documents_title": "Document metadata",
+        "documents_body": "The user name you enter in Settings can be written into your documents as project/document metadata. That name travels with the file because it becomes part of the document itself, not because the app uploads it somewhere automatically.",
+        "leaderboard_title": "Leaderboard submission",
+        "leaderboard_body": "If you choose to submit your service record to the leaderboard, LEAF-Writer sends your GitHub identity token for verification, your displayed user name/rank context, your achievement metrics counts, and your optional avatar image to the leaderboard service.",
+        "telemetry_title": "Crash and error reporting",
+        "telemetry_body": "The editor code supports optional Sentry crash/error reporting if a build enables it. That is configuration-dependent rather than a normal editing requirement.",
+        "web_title": "Web-only measurement cookies",
+        "web_body": "In the web app, anonymous Google Analytics page/editor events can be sent only if measurement cookies are accepted. The desktop app does not use that cookie-consent analytics flow."
+      },
+      "translationPolicy": {
+        "description": "Personal conventions for how entity names and dates appear in translations. One set of preferences per language; they apply while you translate and travel with you to Word export.",
+        "intro": "These are your house style for born/died/circa wording, era labels, and whether titles lead with romanization or translation. Edit the language you translate into; switching languages never overwrites the other.",
+        "language": "Language bucket",
+        "langEn": "English",
+        "langFr": "French",
+        "langDe": "German",
+        "resetDefaults": "Reset to {{language}} defaults",
+        "titleConvention": "Title order (first mention)",
+        "titleConventionRomanizationFirst": "Romanization first — Jinshu 晉書 (Livre des Jin)",
+        "titleConventionTranslationFirst": "Translation first — Livre des Jin (Jinshu 晉書)",
+        "birth": "Born",
+        "death": "Died",
+        "floruit": "Floruit",
+        "active": "Active",
+        "activeTo": "Active to",
+        "circa": "Circa",
+        "ceLabel": "CE / AD label",
+        "bceLabel": "BCE / BC label",
+        "custom": "Custom…",
+        "customPlaceholder": "Custom value",
+        "eraDisplay": "Show CE/BCE labels",
+        "eraNever": "Never",
+        "eraBceOnly": "Only for BCE dates",
+        "eraAlways": "Always",
+        "yearNumbering": "BCE year numbering",
+        "yearAstronomical": "Astronomical (as stored, e.g. -99)",
+        "yearHistorical": "Historical (e.g. 100 BCE — no year zero)",
+        "datesSection": "Dates",
+        "datesDescription": "How converted Sanmiao calendar dates appear in LJBtero translation fields.",
+        "datesIntro": "When a Chinese (or Japanese/Korean) date has been resolved to an exact Western day, choose whether the translation field shows the East Asian wording, the Western date, or both.",
+        "dateWesternDisplay": "Resolved day display",
+        "modeTranslationWestern": "Translation + Western (default)",
+        "exampleTranslationWestern": "month II, day yiwei (27 March 479)",
+        "modeTranslation": "Translation alone",
+        "exampleTranslation": "month II, day yiwei",
+        "modeWestern": "Western alone (square brackets)",
+        "exampleWestern": "[27 March 479]",
+        "unresolvedNote": "Year-only, relative, or unresolved dates always keep the East Asian translation — never empty brackets.",
+        "dateMonthSpanStyle": "Month-only span conversion",
+        "monthSpanIntro": "When Sanmiao resolves a lunar month to a Western range (notBefore–notAfter) and conversion is shown above.",
+        "spanMonths": "Months only (default)",
+        "exampleSpanMonths": "January–February 187 / janvier–février 187",
+        "spanFull": "Full span",
+        "exampleSpanFull": "2 January–1 February 187 / 2 janvier–1 février 187",
+        "dateShowAttrBrackets": "Show full calendar from attributes in brackets",
+        "exampleAttrBrackets": "month VI, day renzi [Jianyuan era, year 3, month VI, day 24, renzi] (4 August 481)",
+        "save": "Save",
+        "saved": "Saved"
+      },
+      "plugins": {
+        "description": "Plugins are project-specific. Enabled plugins affect this project's authority packs and auto-tagging methods.",
+        "filtered_for_language": "Showing plugins available for {{language}}.",
+        "installed_tab": "Installed ({{count}})",
+        "available_tab": "Search available plugins ({{count}})",
+        "none_installed": "No plugins installed yet.",
+        "none_available": "No compatible plugins found.",
+        "install_from_folder": "Install from folder…",
+        "install": "Install",
+        "documentation": "Documentation",
+        "update_to_version": "Update to v{{version}}",
+        "enable_plugin": "Enable {{name}}",
+        "plugin_settings": "Plugin settings",
+        "auto_tagging_methods": "{{count}} auto-tagging method(s)",
+        "authority_packs": "{{count}} authority pack(s)"
+      },
+      "project": {
+        "open_existing_description": "The current project settings still use the existing project settings panel.",
+        "current_panel_note": "Project settings stay project-scoped and keep their current workflow here while the rest of Settings is unified.",
+        "open_button": "Open current project settings"
+      },
+      "tabs": {
+        "project": "Project",
+        "profile": "Profile",
+        "interface": "Interface",
+        "guardrails": "Guardrails",
+        "authorities": "Authorities",
+        "github": "GitHub",
+        "appearance": "Appearance",
+        "behaviour": "Behaviour",
+        "asset_packs": "Asset packs",
+        "plugins": "Plugins",
+        "ai": "AI",
+        "translation_policy": "Translation policy",
+        "privacy": "Data privacy",
+        "entity_types": "Entity types"
       }
     },
     "settlement": "Siedlung",
@@ -812,6 +993,156 @@
     "editorLocationBar": {
       "document_location": "Dokumentenspeicherort",
       "go_to": "Weiter bei {{segment}}"
+    },
+    "desktop": {
+      "settings": {
+        "entity_database": "Entity database",
+        "entity_database_change": "Choose folder…",
+        "entity_database_change_success": "Now using the chosen entity database.",
+        "entity_database_folder": "Database folder",
+        "entity_database_missing": "No entity database folder is configured. Disambiguation is blocked until you choose one (a blank folder is fine).",
+        "entity_database_move": "Move…",
+        "entity_database_move_success": "Entity database moved.",
+        "entity_database_move_error": "Could not move the entity database.",
+        "entity_database_reveal": "Reveal",
+        "field_required": "This field is required.",
+        "remember_workspace_on_startup": "Reopen project and tabs on startup",
+        "setup_incomplete": "Set your language, user name, and database folder before closing settings.",
+        "user_name": "User name",
+        "your_name": "Your name"
+      }
+    },
+    "status": "Status",
+    "allow_drag_and_drop": "Allow drag and drop",
+    "Attributes": "",
+    "Disambiguate": "Disambiguate",
+    "Close disambiguation": "Close disambiguation",
+    "Correction type": "Correction type",
+    "Substitute (sic/corr)": "Substitute (sic/corr)",
+    "Add (supplied)": "Add (supplied)",
+    "Delete (surplus)": "Delete (surplus)",
+    "Supplied text": "Supplied text",
+    "Quick Correction requires selected text and a correction": {
+      "": "Select text and enter a correction for a sic/corr substitution."
+    },
+    "Quick Correction requires supplied text": {
+      "": "Enter the text to mark as supplied."
+    },
+    "Quick Correction requires selected text to mark as surplus": {
+      "": "Select the text to mark as surplus."
+    },
+    "Tag Correction requires selected text and a correction": {
+      "": "Select text and enter a correction."
+    },
+    "Supplied text is required": {
+      "": "Enter the text to mark as supplied."
+    },
+    "Select text to mark as surplus": {
+      "": "Select the text to mark as surplus."
+    },
+    "Day": "",
+    "Emperor": "",
+    "it_can_produce_unexpected_results_or_make_leaf_writer_crash": "It can produce unexpected results or make LEAF-Writer crash",
+    "Person type": "",
+    "Sexagenary day": "",
+    "Sexagenary year": "",
+    "some_features_are_not_fully_implemented": "Some features are not fully implemented",
+    "panels": {
+      "toc": "Table of Contents",
+      "markup": "Markup",
+      "entities": "Entities",
+      "imageViewer": "Image Viewer",
+      "xmlViewer": "XML Viewer",
+      "validation": "Validation",
+      "code": "Raw XML"
+    },
+    "Type to search…": "",
+    "text_nodes_required_for_accuracy": "Text Nodes must be displayed for better accuracy",
+    "Year": "",
+    "Month": "",
+    "New style": "",
+    "BC": "",
+    "Era": "",
+    "Dynasty": "",
+    "optional": "",
+    "sex_year": "",
+    "gz": "",
+    "nmd_gz": "",
+    "Calendar type": "",
+    "use_with_caution": "Use with caution",
+    "zoom_in": "Zoom in",
+    "zoom_out": "Zoom out",
+    "xpathSearch": {
+      "title": "XPath Search",
+      "queryLabel": "XPath expression",
+      "search": "Search",
+      "hint": "Use LEAF-Writer paths (e.g. TEI/text/body//p), not validator-style /TEI/text[1]/... paths.",
+      "noResults": "No matches found.",
+      "invalidXPath": "Invalid XPath expression.",
+      "editorNotReady": "Editor is not ready yet."
+    },
+    "xml_document_schema_invalid": "This document does not follow the schema ({{count}} error(s)). See the Validation panel for details.",
+    "xml_document_still_invalid": "The reverted document still contains errors. See the Validation panel for details. You can leave Source anyway, but Visual mode and save may still complain until the schema errors are fixed.",
+    "Loading authorities": "Loading authorities",
+    "calendarDialog": {
+      "noDateElements": "No <date> elements to resolve. Run Tag dates first."
+    },
+    "customAuthorityDialog": {
+      "errorPrefix": "error:"
+    },
+    "entityDatabaseCheck": {
+      "cancel": "Cancel",
+      "mismatchDetail": "This can mean the database was genuinely swapped, or that Settings > Entity database is pointing at the wrong folder and your existing keys are still valid. Check that setting first — purging is destructive and only appropriate once you have confirmed the keys really do not match.",
+      "mismatchMessage": "This project was linked to a different entity database.",
+      "mismatchTitle": "Entity database mismatch",
+      "purgeKeys": "Purge keys"
+    },
+    "schemaMenu": {
+      "noCatalogSchema": "This project does not use a catalog schema, so there is nothing to refresh.",
+      "refreshFailed": "Schema refresh failed.",
+      "refreshSuccess": "Schema refreshed successfully.",
+      "refreshUnavailable": "Schema refresh is unavailable in this environment."
+    },
+    "nameTypes": {
+      "primary": "Primary name",
+      "birth": "Birth name",
+      "family": "Family name",
+      "given": "Given name",
+      "courtesy": "Courtesy name",
+      "art": "Art name",
+      "posthumous": "Posthumous name",
+      "temple": "Temple name",
+      "dharma": "Dharma name",
+      "pen": "Pen name",
+      "romanization": "Romanization",
+      "translation": "Translation",
+      "variant": "Variant"
+    },
+    "nameTypePolicy": {
+      "title": "Name types for auto-tagging",
+      "intro": "Phase 1 = first Tag bomb pass. Phase 2 = short-form pass after people are linked. Never = stored but never auto-tagged (e.g. family names).",
+      "primary_warning": "Primary names are usually tagged in Phase 1. Setting Primary to Phase 2 or Never may leave many person mentions untagged on the first pass.",
+      "phase1": "Phase 1",
+      "phase2": "Phase 2",
+      "never": "Never",
+      "art_length_hint": "Length-gated: short art names go to Phase 2 (≥ {{count}} code points → Phase 1)",
+      "bucket_aria": "{{label}} auto-tagging phase",
+      "reset_preset": "Reset to language preset",
+      "custom_title": "Custom name types",
+      "custom_intro": "Project-specific types (ASCII id slug). They follow the same Phase 1 / Phase 2 / Never rules.",
+      "id_label": "Id",
+      "id_placeholder": "my_alias",
+      "label_label": "Label",
+      "label_placeholder": "Display label",
+      "new_custom_bucket_aria": "New custom type auto-tagging phase",
+      "add_custom": "Add custom type",
+      "remove_custom": "Remove custom type {{label}}",
+      "errors": {
+        "invalid_slug": "Id must be an ASCII slug matching [a-z][a-z0-9_-]*",
+        "shadows_builtin": "Id \"{{id}}\" shadows a built-in name type",
+        "label_required": "Label is required.",
+        "id_exists": "A custom type with id \"{{id}}\" already exists."
+      }
     }
   }
 }

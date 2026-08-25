@@ -105,7 +105,7 @@ export const useCorrectionController = () => {
     if (result === tagger.VALID) {
       const childName = writer.schemaManager.mapper.getParentTag('correction');
 
-      //@ts-expect-error
+      //@ts-expect-error rng is set by getBookmark(1) but not declared on the bookmark type
       let parentTag = editor.currentBookmark.rng.commonAncestorContainer;
       while (parentTag.nodeType !== Node.ELEMENT_NODE) {
         parentTag = parentTag.parentNode;

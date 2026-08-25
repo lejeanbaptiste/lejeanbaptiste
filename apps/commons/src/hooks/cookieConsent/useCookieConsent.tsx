@@ -42,7 +42,7 @@ export const useCookieConsent = () => {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  const beforeRemoveBasicConsent = (cookie: any) => {
+  const beforeRemoveBasicConsent = (cookie: SavedCookieContent) => {
     if (auth.userState == 'AUTHENTICATED') {
       openDialog({
         props: {

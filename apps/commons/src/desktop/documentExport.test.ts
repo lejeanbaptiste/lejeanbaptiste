@@ -1,6 +1,7 @@
 import JSZip from 'jszip';
 import { setActiveProjectBundle } from './activeProjectBundle';
 import { exportDocument } from './documentExport';
+import type { ProjectBundle } from './projectTypes';
 
 const bundle = {
   config: { version: 1 as const, name: 'test' },
@@ -34,7 +35,7 @@ describe('exportDocument', () => {
   const originalElectronAPI = window.electronAPI;
 
   beforeEach(() => {
-    setActiveProjectBundle(bundle as any);
+    setActiveProjectBundle(bundle as ProjectBundle);
     window.electronAPI = {
       ...originalElectronAPI,
       readFile: jest.fn(async (filePath: string) => {

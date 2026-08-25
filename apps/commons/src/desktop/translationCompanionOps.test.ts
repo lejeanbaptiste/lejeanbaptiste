@@ -1,4 +1,5 @@
 import { setActiveProjectBundle } from './activeProjectBundle';
+import type { ProjectBundle } from './projectTypes';
 import {
   findCompanionTranslationFiles,
   rewriteCompanionSourceReferences,
@@ -24,7 +25,7 @@ describe('findCompanionTranslationFiles', () => {
   const originalElectronAPI = window.electronAPI;
 
   beforeEach(() => {
-    setActiveProjectBundle(bundle as any);
+    setActiveProjectBundle(bundle as ProjectBundle);
   });
 
   afterEach(() => {

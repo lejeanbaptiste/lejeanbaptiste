@@ -1,4 +1,6 @@
 import { setActiveProjectBundle } from '../activeProjectBundle';
+import type { ProjectBundle } from '../projectTypes';
+import type { OpenTab } from '@src/overmind/project/state';
 import { searchText } from './searchText';
 
 const bundle = {
@@ -18,7 +20,7 @@ describe('searchText currentFile scope with translation companions', () => {
   const originalElectronAPI = window.electronAPI;
 
   beforeEach(() => {
-    setActiveProjectBundle(bundle as any);
+    setActiveProjectBundle(bundle as ProjectBundle);
   });
 
   afterEach(() => {
@@ -49,7 +51,7 @@ describe('searchText currentFile scope with translation companions', () => {
         {
           filePath: '/proj/chapter1.xml',
           content: '<TEI><body><p>A bad kitten.</p></body></TEI>',
-        } as any,
+        } as unknown as OpenTab,
       ],
       query: 'chaton',
       rootPath: '/proj',
@@ -79,7 +81,7 @@ describe('searchText currentFile scope with translation companions', () => {
         {
           filePath: '/proj/chapter1.xml',
           content: '<TEI><body><p>A bad chaton.</p></body></TEI>',
-        } as any,
+        } as unknown as OpenTab,
       ],
       query: 'chaton',
       rootPath: '/proj',
@@ -109,7 +111,7 @@ describe('searchText currentFile scope with translation companions', () => {
         {
           filePath: '/proj/chapter1.xml',
           content: '<TEI><body><p>A bad chaton.</p></body></TEI>',
-        } as any,
+        } as unknown as OpenTab,
       ],
       query: 'chaton',
       rootPath: '/proj',

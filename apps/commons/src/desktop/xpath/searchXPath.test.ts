@@ -1,3 +1,4 @@
+import type { OpenTab } from '@src/overmind/project/state';
 import { evaluateXPathAll, getXPathForElement, parseXmlDocument } from './evaluateXPathAll';
 import { searchXPath } from './searchXPath';
 
@@ -67,7 +68,10 @@ describe('searchXPath translation-file exclusion', () => {
     const { results, error } = await searchXPath({
       activeTabPath: '/proj/chapter1.fr.translation.xml',
       openTabs: [
-        { filePath: '/proj/chapter1.fr.translation.xml', content: '<translation/>' } as any,
+        {
+          filePath: '/proj/chapter1.fr.translation.xml',
+          content: '<translation/>',
+        } as unknown as OpenTab,
       ],
       query: '//p',
       rootPath: '/proj',
