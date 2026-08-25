@@ -1,6 +1,8 @@
 import {
   eligiblePoseIndices,
+  pickWeapon,
   poseEligibleForRank,
+  rankOfBackgroundKey,
   stampSvgPixelSize,
   svgStampPixelsForCssBox,
   BODY_CSS_OVERSAMPLE,
@@ -49,6 +51,46 @@ describe('pose rank eligibility', () => {
     // that yet, so body5 correctly drops out here even though it's back in
     // the very next test ('lists only eligible poses for rank 1').
     expect(eligiblePoseIndices('m', -1)).toEqual([1]);
+  });
+});
+
+describe('pickWeapon requireRank', () => {
+  // Pose 5's weapon channel has tiers {1, 3, 4, 5} - a good spread for
+  // asserting requireRank actually excludes the lower ones.
+  it('cycles through every unlocked tier when unrestricted', () => {
+    const seenRanks = new Set<number>();
+    for (let i = 0; i < 200; i++) {
+      const weapon = pickWeapon(5, 'm', 6, null);
+      seenRanks.add(weapon!.rank);
+    }
+    expect(Array.from(seenRanks).sort()).toEqual([1, 3, 4, 5]);
+  });
+
+  it('restricts to tiers at or above requireRank (Rank 5+ backdrop pairing)', () => {
+    const seenRanks = new Set<number>();
+    for (let i = 0; i < 200; i++) {
+      const weapon = pickWeapon(5, 'm', 6, null, 5);
+      seenRanks.add(weapon!.rank);
+    }
+    expect(Array.from(seenRanks)).toEqual([5]);
+  });
+
+  it('falls back to the unrestricted pool if requireRank would empty it', () => {
+    // At rankIndex 1 (Rank 2), only tier 1 is unlocked - nothing meets a
+    // requireRank of 5, so the pick should fall back rather than return null.
+    const weapon = pickWeapon(5, 'm', 1, null, 5);
+    expect(weapon?.rank).toBe(1);
+  });
+});
+
+describe('rankOfBackgroundKey', () => {
+  it('resolves a real archive asset to its declared rank', () => {
+    expect(rankOfBackgroundKey('bg/r05/military/r05-a-boarding')).toBe(5);
+    expect(rankOfBackgroundKey('bg/r01/military/r01-artillery')).toBe(1);
+  });
+
+  it('returns null for an unrecognised key', () => {
+    expect(rankOfBackgroundKey('bg/does-not-exist')).toBeNull();
   });
 });
 

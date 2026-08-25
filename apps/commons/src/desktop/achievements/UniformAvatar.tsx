@@ -223,6 +223,11 @@ const variantKeysOf = (scope: WeaponScope | undefined, group: string): Set<strin
  * letters. Returns null when this pose has no weapon at all, or the
  * player's rank hasn't unlocked any tier yet.
  *
+ * `requireRank`, when given, drops every tier below it from the pool first
+ * (e.g. the Rank 5+ sci-fi backdrop shouldn't pair with a Napoleonic-era
+ * rank-1/2 musket) - falls back to the unrestricted cumulative pool if that
+ * would empty it out entirely, so a portrait still shows *something*.
+ *
  * A weapon can split into independent equipment groups (body7.svg's
  * "pistol" and "sword" - a sidearm and a melee weapon worn together, not
  * alternatives; most poses only ever use the single default group ''). Every
@@ -251,6 +256,7 @@ export const pickWeapon = (
   bodyType: 'm' | 'f',
   rankIndex: number,
   previousRank: number | null,
+  requireRank?: number,
 ): WeaponSelection | null => {
   const channels = WEAPON_POOLS[poseIndex] ?? [];
   if (channels.length === 0) return null;
@@ -264,7 +270,11 @@ export const pickWeapon = (
   }
   if (unlockedRanks.size === 0) return null;
 
-  const pool = Array.from(unlockedRanks);
+  const restricted =
+    requireRank !== undefined
+      ? new Set(Array.from(unlockedRanks).filter((rank) => rank >= requireRank))
+      : unlockedRanks;
+  const pool = Array.from(restricted.size > 0 ? restricted : unlockedRanks);
   const choices =
     previousRank !== null && pool.length > 1 ? pool.filter((rank) => rank !== previousRank) : pool;
   const rank = choices[Math.floor(Math.random() * choices.length)]!;
@@ -464,6 +474,20 @@ export const pickBackgroundKey = (
   const choices =
     previousKey && pool.length > 1 ? pool.filter((asset) => asset.assetKey !== previousKey) : pool;
   return weightedPick(choices).assetKey;
+};
+
+/** The 1-based rank a backdrop belongs to (its own declared `rank`, not the
+ * bucket it happened to surface in via pickBackgroundKey's historical/
+ * current split), or null if `key` isn't a recognised archive asset. Lets
+ * callers tell a Rank 5+ sci-fi backdrop apart from an earlier-rank
+ * "historical" pick without re-deriving the bucket search themselves - see
+ * pickWeapon's `requireRank`. */
+export const rankOfBackgroundKey = (key: string): number | null => {
+  for (const assets of ARCHIVE_BACKGROUND_ASSETS_BY_RANK) {
+    const found = assets.find((asset) => asset.assetKey === key);
+    if (found) return found.rank;
+  }
+  return null;
 };
 
 // bg_* artwork is 758x331.

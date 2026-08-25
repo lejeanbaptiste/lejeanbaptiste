@@ -76,6 +76,7 @@ import {
   pickBackgroundKey,
   pickPose,
   pickWeapon,
+  rankOfBackgroundKey,
   UniformAvatar,
 } from './UniformAvatar';
 import { loadAchievementsState, saveAchievementsState } from './store';
@@ -231,20 +232,30 @@ export const AchievementsDialog = ({ onClose, open }: AchievementsDialogProps) =
         : createDefaultDiceBearAvatar(encoderName).bodyType;
     setPoseIndex((previousPose) => {
       const newPose = pickPose(previousPose, loadedBodyType, calculatedRankIndex(loaded));
-      setBackgroundKey((previousBackground) =>
-        pickBackgroundKey(
+      let pickedBackgroundKey: string | null = null;
+      setBackgroundKey((previousBackground) => {
+        pickedBackgroundKey = pickBackgroundKey(
           calculatedRankIndex(loaded),
           previousBackground,
           newPose,
           ribbonsIntoRank(loaded),
-        ),
-      );
+        );
+        return pickedBackgroundKey;
+      });
+      // A Rank 5+ sci-fi backdrop shouldn't pair with an earlier-era rank-1/2
+      // weapon (Daniel: "Rank5+ background should be linked to rank5+
+      // weapons") - force the weapon pool up to match whenever the backdrop
+      // that was just rolled is itself Rank 5+.
+      const backgroundRank = pickedBackgroundKey ? rankOfBackgroundKey(pickedBackgroundKey) : null;
+      const requireRank =
+        backgroundRank !== null && backgroundRank >= 5 ? backgroundRank : undefined;
       setWeaponRank((previousWeaponRank) => {
         const weapon = pickWeapon(
           newPose,
           loadedBodyType,
           calculatedRankIndex(loaded),
           previousWeaponRank,
+          requireRank,
         );
         setWeaponImageIds(weapon?.imageIds ?? []);
         return weapon?.rank ?? null;
