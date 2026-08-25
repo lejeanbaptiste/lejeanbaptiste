@@ -1,9 +1,6 @@
 import * as de from '@src/content/about/de.mdx';
 import * as en from '@src/content/about/en.mdx';
-import * as es from '@src/content/about/es.mdx';
 import * as fr from '@src/content/about/fr.mdx';
-import * as pt from '@src/content/about/pt.mdx';
-import * as ro from '@src/content/about/ro.mdx';
 import { Locales } from '@src/i18n';
 import type { MDXProps } from 'mdx/types';
 import type { ComponentType } from 'react';
@@ -14,18 +11,23 @@ interface AboutFrontmatter {
   [key: string]: any;
 }
 
-// Static mapping of content by locale
+// Static mapping of content by locale. Keyed on `Locales`, so it must stay total:
+// `getAboutContent` is consumed as `data.content` / `data.frontmatter` with no
+// undefined guard, and a missing key would throw rather than degrade.
+// `zh-Hant` and `ja` have no about page of their own yet and fall back to the
+// English one, matching i18next's own `fallbackLng`. Swap in `zh-Hant.mdx` /
+// `ja.mdx` when they are written.
+// Content also exists for es/pt/ro, but none of those are in `locales` — they are
+// unreachable until that list grows, so they are deliberately not mapped here.
 const aboutContentMap: Record<
   Locales,
   { content: ComponentType<MDXProps>; frontmatter: AboutFrontmatter }
 > = {
   de: { content: de.default, frontmatter: de.frontmatter },
   en: { content: en.default, frontmatter: en.frontmatter },
-  es: { content: es.default, frontmatter: es.frontmatter },
   fr: { content: fr.default, frontmatter: fr.frontmatter },
-  pt: { content: pt.default, frontmatter: pt.frontmatter },
-  //@ts-expect-error
-  ro: { content: ro.default, frontmatter: ro.frontmatter },
+  'zh-Hant': { content: en.default, frontmatter: en.frontmatter },
+  ja: { content: en.default, frontmatter: en.frontmatter },
 };
 
 export const getAboutContent = (locale: Locales) => {

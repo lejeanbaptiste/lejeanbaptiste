@@ -1,4 +1,4 @@
-import { act, render, screen } from '@testing-library/react';
+import { act, render, screen, waitFor } from '@testing-library/react';
 import { PlaceComparisonMap, type MapPin } from './PlaceComparisonMap';
 
 const mockFitBounds = jest.fn();
@@ -101,6 +101,27 @@ function makePin(overrides: Partial<MapPin> = {}): MapPin {
   };
 }
 
+/**
+ * Render and wait until the map actually exists.
+ *
+ * The component's container div lives inside a MUI `Dialog`, whose portal
+ * content mounts in a commit *after* the initial render, so the callback ref
+ * that sets `container` — and therefore the effect that constructs the map —
+ * has not necessarily run by the time `render()` returns. Asserting straight
+ * afterwards measures whatever happened to have committed, which is why these
+ * cases passed alone and failed under a loaded parallel run.
+ *
+ * Waiting rather than assuming a commit count also keeps the failure honest:
+ * `onLoadCallback?.()` no-ops silently while the effect is still pending, so a
+ * too-early test previously failed on "marker never added" — a component bug
+ * that wasn't there — instead of on the map not being ready.
+ */
+const renderMap = async (ui: Parameters<typeof render>[0]) => {
+  const result = render(ui);
+  await waitFor(() => expect(mockMapOptions).not.toBeNull());
+  return result;
+};
+
 describe('PlaceComparisonMap', () => {
   afterEach(() => {
     jest.clearAllMocks();
@@ -110,20 +131,22 @@ describe('PlaceComparisonMap', () => {
     delete (window as { electronAPI?: unknown }).electronAPI;
   });
 
-  it('limits map zoom to the maximum zoom supported by the tile source', () => {
-    render(<PlaceComparisonMap open pins={[makePin()]} title="Single place" onClose={jest.fn()} />);
+  it('limits map zoom to the maximum zoom supported by the tile source', async () => {
+    await renderMap(
+      <PlaceComparisonMap open pins={[makePin()]} title="Single place" onClose={jest.fn()} />,
+    );
 
     expect(mockMapOptions).toEqual(
       expect.objectContaining({ maxZoom: 15, renderWorldCopies: false }),
     );
   });
 
-  it('creates one marker per pin and fits bounds to all of them once the map loads', () => {
+  it('creates one marker per pin and fits bounds to all of them once the map loads', async () => {
     const pins = [
       makePin({ id: 'a', lat: 30.65, lon: 113.15 }),
       makePin({ id: 'b', lat: 39.9, lon: 116.4 }),
     ];
-    render(
+    await renderMap(
       <PlaceComparisonMap open pins={pins} title="竟陵 — compare clusters" onClose={jest.fn()} />,
     );
 
@@ -137,7 +160,7 @@ describe('PlaceComparisonMap', () => {
   });
 
   it('refreshes the rendered markers when the pins change while the dialog stays open', async () => {
-    const { rerender } = render(
+    const { rerender } = await renderMap(
       <PlaceComparisonMap
         open
         pins={[makePin({ id: 'a' })]}
@@ -172,8 +195,10 @@ describe('PlaceComparisonMap', () => {
     expect(mockFitBounds).toHaveBeenCalledTimes(1);
   });
 
-  it('jumps to the single pin instead of fitting bounds when there is only one', () => {
-    render(<PlaceComparisonMap open pins={[makePin()]} title="Single place" onClose={jest.fn()} />);
+  it('jumps to the single pin instead of fitting bounds when there is only one', async () => {
+    await renderMap(
+      <PlaceComparisonMap open pins={[makePin()]} title="Single place" onClose={jest.fn()} />,
+    );
 
     onLoadCallback?.();
 
@@ -197,8 +222,8 @@ describe('PlaceComparisonMap', () => {
     expect(onClose).toHaveBeenCalledTimes(1);
   });
 
-  it('tears down the map and its markers on unmount', () => {
-    const { unmount } = render(
+  it('tears down the map and its markers on unmount', async () => {
+    const { unmount } = await renderMap(
       <PlaceComparisonMap open pins={[makePin()]} title="Single place" onClose={jest.fn()} />,
     );
     onLoadCallback?.();
@@ -227,7 +252,9 @@ describe('PlaceComparisonMap', () => {
       }),
     };
 
-    render(<PlaceComparisonMap open pins={[makePin()]} title="Single place" onClose={jest.fn()} />);
+    await renderMap(
+      <PlaceComparisonMap open pins={[makePin()]} title="Single place" onClose={jest.fn()} />,
+    );
     await act(async () => {
       onLoadCallback?.();
       await Promise.resolve();
@@ -249,7 +276,9 @@ describe('PlaceComparisonMap', () => {
       mapTilesStatus: jest.fn().mockResolvedValue({ installed: false, path: null, regions: [] }),
     };
 
-    render(<PlaceComparisonMap open pins={[makePin()]} title="Single place" onClose={jest.fn()} />);
+    await renderMap(
+      <PlaceComparisonMap open pins={[makePin()]} title="Single place" onClose={jest.fn()} />,
+    );
     await act(async () => {
       onLoadCallback?.();
       await Promise.resolve();
@@ -268,7 +297,9 @@ describe('PlaceComparisonMap', () => {
       }),
     };
 
-    render(<PlaceComparisonMap open pins={[makePin()]} title="Single place" onClose={jest.fn()} />);
+    await renderMap(
+      <PlaceComparisonMap open pins={[makePin()]} title="Single place" onClose={jest.fn()} />,
+    );
     await act(async () => {
       onLoadCallback?.();
       await Promise.resolve();
@@ -282,7 +313,9 @@ describe('PlaceComparisonMap', () => {
       mapTilesStatus: jest.fn().mockResolvedValue({ installed: false, path: null, regions: [] }),
     };
 
-    render(<PlaceComparisonMap open pins={[makePin()]} title="Single place" onClose={jest.fn()} />);
+    await renderMap(
+      <PlaceComparisonMap open pins={[makePin()]} title="Single place" onClose={jest.fn()} />,
+    );
     await act(async () => {
       onLoadCallback?.();
       await Promise.resolve();
@@ -302,7 +335,9 @@ describe('PlaceComparisonMap', () => {
       }),
     };
 
-    render(<PlaceComparisonMap open pins={[makePin()]} title="Single place" onClose={jest.fn()} />);
+    await renderMap(
+      <PlaceComparisonMap open pins={[makePin()]} title="Single place" onClose={jest.fn()} />,
+    );
     await act(async () => {
       onLoadCallback?.();
       await Promise.resolve();

@@ -8,10 +8,11 @@ import es from './locales/es.json';
 import fr from './locales/fr.json';
 import pt from './locales/pt.json';
 import zhHant from './locales/zh-Hant.json';
+import ja from './locales/ja.json';
 
-export const resources = { en, es, fr, pt, de, 'zh-Hant': zhHant } as const;
+export const resources = { en, es, fr, pt, de, 'zh-Hant': zhHant, ja } as const;
 
-export const locales = ['en', 'fr', 'de', 'zh-Hant'] as const;
+export const locales = ['en', 'fr', 'de', 'zh-Hant', 'ja'] as const;
 export const localesSchema = z.enum(locales);
 export type Locales = z.infer<typeof localesSchema>;
 
