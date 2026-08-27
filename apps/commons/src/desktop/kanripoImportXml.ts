@@ -14,10 +14,7 @@ export interface KanripoTeiMeta {
 }
 
 const escapeXmlText = (value: string): string =>
-  value
-    .replace(/&/g, '&amp;')
-    .replace(/</g, '&lt;')
-    .replace(/>/g, '&gt;');
+  value.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
 
 const isoDate = (d = new Date()): string => d.toISOString().slice(0, 10);
 

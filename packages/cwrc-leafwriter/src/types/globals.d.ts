@@ -580,8 +580,23 @@ declare global {
     /** File I/O bridge, used by the entity store and authority pack readers. */
     pathExists?: (filePath: string) => Promise<boolean>;
     readFile?: (filePath: string) => Promise<string>;
+    readFileAutoEncoding?: (filePath: string) => Promise<{ encoding: string; text: string }>;
     writeFile?: (filePath: string, content: string) => Promise<void>;
     ensureDirectory?: (dirPath: string) => Promise<void>;
+    readDirectory?: (
+      dirPath: string,
+      options?: { allFiles?: boolean },
+    ) => Promise<{ name: string; isDirectory: boolean; path: string }[]>;
+    extractDocxText?: (filePath: string) => Promise<{ text: string; warnings: string[] }>;
+    extractOdtText?: (filePath: string) => Promise<{ text: string; warnings: string[] }>;
+    pickDocumentImportSources?: () => Promise<
+      | {
+          format: 'txt' | 'md' | 'rtf' | 'docx' | 'odt' | 'xml';
+          relativePath: string;
+          sourcePath: string;
+        }[]
+      | null
+    >;
     statFile?: (filePath: string) => Promise<{ mtimeMs: number }>;
     ignoreFileChange?: (filePath: string, mtimeMs: number) => Promise<void>;
     /** Entity database folder (holds entities.xml and authority-packs/). */

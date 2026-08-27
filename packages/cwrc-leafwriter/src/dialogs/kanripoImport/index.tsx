@@ -176,7 +176,9 @@ export const KanripoImportDialog = ({
   const [hits, setHits] = useState<KanripoWorkHit[]>([]);
   const [selected, setSelected] = useState<KanripoWorkHit | null>(null);
   const [normalize, setNormalize] = useState<KanripoNormalizeMode>('off');
-  const [punctMode, setPunctMode] = useState<'as-is' | 'parallel'>(punctuateOnly ? 'parallel' : 'as-is');
+  const [punctMode, setPunctMode] = useState<'as-is' | 'parallel'>(
+    punctuateOnly ? 'parallel' : 'as-is',
+  );
   const [sources, setSources] = useState<ParallelSource[]>([]);
   const [pasteDraft, setPasteDraft] = useState('');
   const [pasteCount, setPasteCount] = useState(0);
@@ -271,10 +273,7 @@ export const KanripoImportDialog = ({
     if (!text) return;
     const next = pasteCount + 1;
     setPasteCount(next);
-    setSources((current) => [
-      ...current,
-      { id: `paste-${next}`, label: `Paste ${next}`, text },
-    ]);
+    setSources((current) => [...current, { id: `paste-${next}`, label: `Paste ${next}`, text }]);
     setPasteDraft('');
   };
 
@@ -316,10 +315,10 @@ export const KanripoImportDialog = ({
 
   const canRunImport = Boolean(
     selected &&
-      projectReady &&
-      !busy &&
-      window.electronAPI?.kanripoClone &&
-      (punctMode === 'as-is' || hasSources),
+    projectReady &&
+    !busy &&
+    window.electronAPI?.kanripoClone &&
+    (punctMode === 'as-is' || hasSources),
   );
 
   const runImport = async () => {
@@ -327,7 +326,7 @@ export const KanripoImportDialog = ({
     const project = window.__leafWriterProject;
     const rootPath = project?.getProjectRootPath?.();
     const config = project?.getProjectConfig?.();
-    if (!projectReady || !rootPath || !config) {
+    if (!project || !projectReady || !rootPath || !config) {
       setError('Open a project before importing from Kanripo.');
       return;
     }
@@ -367,7 +366,12 @@ export const KanripoImportDialog = ({
 
       for (let i = 0; i < files.length; i += 1) {
         const filePath = files[i];
-        const stem = filePath.replace(/\\/g, '/').split('/').pop()?.replace(/\.txt$/i, '') ?? 'juan';
+        const stem =
+          filePath
+            .replace(/\\/g, '/')
+            .split('/')
+            .pop()
+            ?.replace(/\.txt$/i, '') ?? 'juan';
         setStatus(`Converting ${stem} (${i + 1} of ${files.length})…`);
         try {
           const converted = (await api.pluginsInvokePython(PLUGIN_ID, {
@@ -503,10 +507,16 @@ export const KanripoImportDialog = ({
     <Box sx={{ mt: 2 }}>
       <Typography variant="subtitle2">Parallel transcription</Typography>
       <Typography variant="body2" color="text.secondary" sx={{ mb: 1 }}>
-        Add one or more files or pastes. URL / Wikisource is a later step. Punctuation is copied only
-        where the texts overlap.
+        Add one or more files or pastes. URL / Wikisource is a later step. Punctuation is copied
+        only where the texts overlap.
       </Typography>
-      <Button size="small" variant="outlined" disabled={busy} sx={{ mb: 1, mr: 1 }} onClick={() => void addFiles()}>
+      <Button
+        size="small"
+        variant="outlined"
+        disabled={busy}
+        sx={{ mb: 1, mr: 1 }}
+        onClick={() => void addFiles()}
+      >
         Add file…
       </Button>
       <TextField
@@ -536,7 +546,9 @@ export const KanripoImportDialog = ({
                 <Button
                   size="small"
                   disabled={busy}
-                  onClick={() => setSources((current) => current.filter((item) => item.id !== source.id))}
+                  onClick={() =>
+                    setSources((current) => current.filter((item) => item.id !== source.id))
+                  }
                 >
                   Remove
                 </Button>
@@ -577,7 +589,17 @@ export const KanripoImportDialog = ({
               onChange={(event) => setQuery(event.target.value)}
               disabled={busy}
             />
-            <List dense sx={{ maxHeight: 240, overflow: 'auto', mt: 1, border: 1, borderColor: 'divider', borderRadius: 1 }}>
+            <List
+              dense
+              sx={{
+                maxHeight: 240,
+                overflow: 'auto',
+                mt: 1,
+                border: 1,
+                borderColor: 'divider',
+                borderRadius: 1,
+              }}
+            >
               {hits.map((hit) => (
                 <ListItemButton
                   key={hit.id}
@@ -585,7 +607,10 @@ export const KanripoImportDialog = ({
                   disabled={busy}
                   onClick={() => setSelected(hit)}
                 >
-                  <ListItemText primary={`${hit.id}  ${hit.title}`} secondary={secondaryFor(hit) || undefined} />
+                  <ListItemText
+                    primary={`${hit.id}  ${hit.title}`}
+                    secondary={secondaryFor(hit) || undefined}
+                  />
                 </ListItemButton>
               ))}
               {hits.length === 0 && (
@@ -602,8 +627,16 @@ export const KanripoImportDialog = ({
                 value={normalize}
                 onChange={(event) => setNormalize(event.target.value as KanripoNormalizeMode)}
               >
-                <FormControlLabel value="off" control={<Radio />} label="As in Kanripo (no table)" />
-                <FormControlLabel value="dpm" control={<Radio />} label="DPM table (normalization_zh)" />
+                <FormControlLabel
+                  value="off"
+                  control={<Radio />}
+                  label="As in Kanripo (no table)"
+                />
+                <FormControlLabel
+                  value="dpm"
+                  control={<Radio />}
+                  label="DPM table (normalization_zh)"
+                />
                 <FormControlLabel
                   value="hard_replacements"
                   control={<Radio />}
@@ -617,9 +650,22 @@ export const KanripoImportDialog = ({
                 value={punctMode}
                 onChange={(event) => setPunctMode(event.target.value as 'as-is' | 'parallel')}
               >
-                <FormControlLabel value="as-is" control={<Radio />} label="As-is (pilcrow join only)" />
-                <FormControlLabel value="parallel" control={<Radio />} label="From a parallel transcription" />
-                <FormControlLabel value="ai" control={<Radio />} label="AI (not in this version)" disabled />
+                <FormControlLabel
+                  value="as-is"
+                  control={<Radio />}
+                  label="As-is (pilcrow join only)"
+                />
+                <FormControlLabel
+                  value="parallel"
+                  control={<Radio />}
+                  label="From a parallel transcription"
+                />
+                <FormControlLabel
+                  value="ai"
+                  control={<Radio />}
+                  label="AI (not in this version)"
+                  disabled
+                />
               </RadioGroup>
             </FormControl>
           </>

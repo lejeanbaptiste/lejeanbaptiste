@@ -19,7 +19,8 @@
     "noUnusedLocals": false,
     "noUnusedParameters": false,
     "paths": {
-      "@src/*": ["src/*"]
+      "@src/*": ["src/*"],
+      "@cwrc/leafwriter/pageBreakDetection": ["src/utilities/pageBreakDetection.ts"]
     },
     "preserveWatchOutput": true,
     "plugins": [{ "name": "typescript-plugin-css-modules" }],

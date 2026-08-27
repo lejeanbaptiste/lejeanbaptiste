@@ -1,4 +1,8 @@
-import { wrapKanripoTeiDocument, uniqueKanripoXmlPath, type KanripoTeiMeta } from './kanripoImportXml';
+import {
+  wrapKanripoTeiDocument,
+  uniqueKanripoXmlPath,
+  type KanripoTeiMeta,
+} from './kanripoImportXml';
 import type { ProjectFileConfig } from './projectFile';
 
 const config: ProjectFileConfig = {
@@ -26,7 +30,8 @@ describe('wrapKanripoTeiDocument', () => {
     const xml = wrapKanripoTeiDocument({
       config,
       meta,
-      bodyXml: '<div type="juan">\n<p>甲<pb n="KRTEST1_WYG_001-1a"/><note type="comm">注</note></p>\n</div>',
+      bodyXml:
+        '<div type="juan">\n<p>甲<pb n="KRTEST1_WYG_001-1a"/><note type="comm">注</note></p>\n</div>',
       importedAt: new Date('2026-08-27T12:00:00Z'),
     });
 

@@ -22,7 +22,10 @@ export const stripXmlToParallelText = (xml: string): string => {
       return Number.isFinite(code) ? String.fromCharCode(code) : '';
     });
 
-  return text.replace(/[ \t]+\n/g, '\n').replace(/\n{3,}/g, '\n\n').trim();
+  return text
+    .replace(/[ \t]+\n/g, '\n')
+    .replace(/\n{3,}/g, '\n\n')
+    .trim();
 };
 
 const basename = (filePath: string): string => {
@@ -54,9 +57,14 @@ export const loadParallelPlainText = async ({
     return { label, text };
   }
 
-  const raw = api.readFileAutoEncoding
-    ? (await api.readFileAutoEncoding(sourcePath)).text
-    : await api.readFile(sourcePath);
+  let raw: string;
+  if (api.readFileAutoEncoding) {
+    raw = (await api.readFileAutoEncoding(sourcePath)).text;
+  } else if (api.readFile) {
+    raw = await api.readFile(sourcePath);
+  } else {
+    throw new Error('Reading files is unavailable.');
+  }
   if (format === 'xml') {
     return { label, text: stripXmlToParallelText(raw) };
   }
