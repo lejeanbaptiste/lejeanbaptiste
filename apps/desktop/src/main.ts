@@ -192,6 +192,8 @@ import {
   restoreTimeMachineSnapshotToDirectory,
 } from './timeMachine';
 import { invokePluginPython } from './pluginPythonBridge';
+import { cloneKanripoWork, flushKanripoWork, listKanripoTxtFiles } from './kanripoClone';
+import { searchKanripoWorks } from './kanripoWorks';
 import {
   closeEntitySqliteReadRepositories,
   acceptEntitySqliteDateAssertion,
@@ -902,6 +904,7 @@ const setActiveProjectRoot = (rootPath: string | null): void => {
 const activateProjectBundle = (bundle: ProjectBundle | null): void => {
   setActiveProjectRoot(bundle?.rootPath ?? null);
   setPluginProject(bundle?.projectFilePath ?? null, bundle?.config.plugins ?? []);
+  buildApplicationMenu();
 };
 
 const isPathWithin = (root: string, candidate: string): boolean => {
@@ -1241,7 +1244,7 @@ const buildViewMenu = (): Electron.MenuItemConstructorOptions => ({
   ],
 });
 
-const buildApplicationMenu = () => {
+function buildApplicationMenu() {
   const settingsItem: Electron.MenuItemConstructorOptions = {
     label: 'Settings',
     accelerator: 'CommandOrControl+,',
@@ -1300,6 +1303,14 @@ const buildApplicationMenu = () => {
     click: () => sendMenuAction('import-documents'),
   };
 
+  const pluginFileMenuItems: Electron.MenuItemConstructorOptions[] = [];
+  if (isPluginEnabledInMain('kanripo-import')) {
+    pluginFileMenuItems.push({
+      label: 'Import from Kanripo…',
+      click: () => sendMenuAction('kanripo-import.open'),
+    });
+  }
+
   const exportDocumentItem: Electron.MenuItemConstructorOptions = {
     label: 'Export Document…',
     click: () => sendMenuAction('export-document'),
@@ -1311,6 +1322,7 @@ const buildApplicationMenu = () => {
   const fileMenuItems: Electron.MenuItemConstructorOptions[] = [
     newFileItem,
     importDocumentsItem,
+    ...pluginFileMenuItems,
     saveItem,
     saveAsItem,
     exportDocumentItem,
@@ -1373,7 +1385,7 @@ const buildApplicationMenu = () => {
       : fileMenuItems;
 
   Menu.setApplicationMenu(Menu.buildFromTemplate(template));
-};
+}
 
 const setMainWindowTitle = (title?: string) => {
   mainWindow?.setTitle(title?.trim() ? title : APP_NAME);
@@ -2366,6 +2378,21 @@ const registerIpcHandlers = () => {
       );
     },
   );
+
+  ipcMain.handle('kanripo:search', async (_event, query: string) => {
+    return searchKanripoWorks(typeof query === 'string' ? query : '');
+  });
+
+  ipcMain.handle('kanripo:clone', async (_event, krId: string) => {
+    const { cachePath, reused } = await cloneKanripoWork(String(krId));
+    const files = await listKanripoTxtFiles(cachePath);
+    return { cachePath, reused, files };
+  });
+
+  ipcMain.handle('kanripo:flush', async (_event, krId: string) => {
+    await flushKanripoWork(String(krId));
+    return { ok: true };
+  });
 
   ipcMain.handle(
     'checkSchemaUpdate',

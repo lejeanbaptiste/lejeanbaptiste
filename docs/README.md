@@ -64,6 +64,7 @@ Supporting / deeper:
 | [placename-geo-disambiguation-planning.md](placename-geo-disambiguation-planning.md)                                    | Place geo disambiguation + map (authoritative for maps)       |
 | [map-tiles-planning.md](map-tiles-planning.md)                                                                          | Regional PMTiles download / cache                             |
 | [import-planning.md](import-planning.md)                                                                                | Document import (blind + profiled)                            |
+| [kanripo-import-plugin-planning.md](kanripo-import-plugin-planning.md)                                                  | Kanripo clone → TEI plugin (coverage-bar punctuation)         |
 | [find-replace-planning.md](find-replace-planning.md)                                                                    | Find / replace                                                |
 | [xpath-sidebar-planning.md](xpath-sidebar-planning.md)                                                                  | XPath sidebar                                                 |
 | [translation-planning.md](translation-planning.md)                                                                      | Translation pane (phases A–E + card reader — reference)       |

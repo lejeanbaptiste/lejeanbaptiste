@@ -283,6 +283,13 @@ export interface ElectronAPI {
     projectFilePath: string,
   ) => Promise<{ merged: boolean }>;
   pluginsInvokePython?: (pluginId: string, payload: Record<string, unknown>) => Promise<unknown>;
+  kanripoSearch?: (
+    query: string,
+  ) => Promise<{ id: string; title: string; author?: string; dynasty?: string }[]>;
+  kanripoClone?: (
+    krId: string,
+  ) => Promise<{ cachePath: string; reused: boolean; files: string[] }>;
+  kanripoFlush?: (krId: string) => Promise<{ ok: boolean }>;
   onPluginPythonProgress?: (
     pluginId: string,
     callback: (
@@ -789,6 +796,9 @@ const electronAPI: ElectronAPI = {
     ipcRenderer.invoke('plugins:ensureSchemaContribution', pluginId, projectFilePath),
   pluginsInvokePython: (pluginId: string, payload: Record<string, unknown>) =>
     ipcRenderer.invoke('plugins:invokePython', pluginId, payload),
+  kanripoSearch: (query: string) => ipcRenderer.invoke('kanripo:search', query),
+  kanripoClone: (krId: string) => ipcRenderer.invoke('kanripo:clone', krId),
+  kanripoFlush: (krId: string) => ipcRenderer.invoke('kanripo:flush', krId),
   onPluginPythonProgress: (pluginId, callback) => {
     const listener = (
       _event: Electron.IpcRendererEvent,

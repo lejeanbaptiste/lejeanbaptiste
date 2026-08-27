@@ -545,6 +545,13 @@ declare global {
       projectFilePath: string,
     ) => Promise<{ merged: boolean }>;
     pluginsInvokePython?: (pluginId: string, payload: Record<string, unknown>) => Promise<unknown>;
+    kanripoSearch?: (
+      query: string,
+    ) => Promise<{ id: string; title: string; author?: string; dynasty?: string }[]>;
+    kanripoClone?: (
+      krId: string,
+    ) => Promise<{ cachePath: string; reused: boolean; files: string[] }>;
+    kanripoFlush?: (krId: string) => Promise<{ ok: boolean }>;
     onPluginPythonProgress?: (
       pluginId: string,
       callback: (progress: import('../autoTagging/dates').SanmiaoChunkProgressEvent) => void,
@@ -761,6 +768,11 @@ declare global {
       reloadFileFromDisk?: (filePath: string) => Promise<void>;
       /** Open (or switch to) `filePath` as the active editor tab. */
       openFile?: (filePath: string) => Promise<void>;
+      getProjectRootPath?: () => string;
+      getProjectConfig?: () =>
+        import('../../../../apps/commons/src/desktop/projectTypes').ProjectFileConfig | undefined;
+      isProjectReady?: () => boolean;
+      refreshExplorer?: () => Promise<void>;
       /** Guardrail hook: snapshot the project before a multi-document automated edit (tag bomb, purge, propagate). */
       createTimeMachineSnapshot?: (label?: string) => Promise<{ ok: boolean; path?: string }>;
       getAutoTaggingAuthoritySettings: () =>

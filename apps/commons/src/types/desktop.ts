@@ -529,6 +529,13 @@ export interface ElectronAPI {
     projectFilePath: string,
   ) => Promise<{ merged: boolean }>;
   pluginsInvokePython?: (pluginId: string, payload: Record<string, unknown>) => Promise<unknown>;
+  kanripoSearch?: (
+    query: string,
+  ) => Promise<{ id: string; title: string; author?: string; dynasty?: string }[]>;
+  kanripoClone?: (
+    krId: string,
+  ) => Promise<{ cachePath: string; reused: boolean; files: string[] }>;
+  kanripoFlush?: (krId: string) => Promise<{ ok: boolean }>;
   onPluginPythonProgress?: (
     pluginId: string,
     callback: (

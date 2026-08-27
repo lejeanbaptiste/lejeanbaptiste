@@ -38,6 +38,7 @@ export interface PluginAutoTaggingProducer {
 
 export interface PluginContributions {
   toolsMenu?: { id: string; label: string; action?: string; separatorBefore?: boolean }[];
+  fileMenu?: { id: string; label: string; action?: string; separatorBefore?: boolean }[];
   autoTagging?: PluginAutoTaggingProducer[];
   authorityPacks?: PluginAuthorityPackContribution[];
   settingsSections?: { id: string; label: string; description?: string }[];

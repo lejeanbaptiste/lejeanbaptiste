@@ -64,6 +64,10 @@ declare global {
       reloadFileFromDisk?: (filePath: string) => Promise<void>;
       /** Open (or switch to) `filePath` as the active editor tab. */
       openFile?: (filePath: string) => Promise<void>;
+      getProjectRootPath?: () => string;
+      getProjectConfig?: () => import('./projectTypes').ProjectFileConfig | undefined;
+      isProjectReady?: () => boolean;
+      refreshExplorer?: () => Promise<void>;
       /** Guardrail hook: snapshot the project before a multi-document automated edit (tag bomb, purge, propagate). */
       createTimeMachineSnapshot?: (label?: string) => Promise<{ ok: boolean; path?: string }>;
       getAutoTaggingAuthoritySettings: () => AutoTaggingAuthoritySettings | undefined;
@@ -129,10 +133,11 @@ const getWriterSchemasList = (): {
 export const useNativeDialogBridge = () => {
   const { t } = useTranslation();
   const { currentLocale, skipExplorerDeleteConfirm, themeAppearance } = useAppState().ui;
-  const { activeTabPath, config, openTabs, projectFilePath, rootPath } = useAppState().project;
+  const { activeTabPath, config, isProjectReady, openTabs, projectFilePath, rootPath } =
+    useAppState().project;
   const { setSkipExplorerDeleteConfirm, setThemeAppearance, switchLanguage, notifyViaSnackbar } =
     useActions().ui;
-  const { openFile, reloadTabFromDisk } = useActions().project;
+  const { openFile, refreshExplorer, reloadTabFromDisk } = useActions().project;
   const [leafWriter] = useAtom(leafwriterAtom);
   const authoritySettingsCache = useRef<AutoTaggingAuthoritySettings | undefined>(undefined);
   const validationSettingsCache = useRef<AutoTaggingValidationSettings | undefined>(undefined);
@@ -252,6 +257,10 @@ export const useNativeDialogBridge = () => {
         }
       },
       openFile: (filePath) => openFile(filePath),
+      getProjectRootPath: () => rootPath ?? '',
+      getProjectConfig: () => config,
+      isProjectReady: () => isProjectReady,
+      refreshExplorer: () => refreshExplorer(),
       createTimeMachineSnapshot: async (label) => {
         if (!rootPath || !window.electronAPI) return { ok: false };
         try {
@@ -294,7 +303,9 @@ export const useNativeDialogBridge = () => {
     rootPath,
     projectFilePath,
     config,
+    isProjectReady,
     openFile,
+    refreshExplorer,
     openTabs,
     reloadTabFromDisk,
     notifyViaSnackbar,

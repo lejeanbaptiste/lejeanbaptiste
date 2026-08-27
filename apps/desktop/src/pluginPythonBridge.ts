@@ -43,6 +43,7 @@ const commandLabel = (cmd: PythonCommand): string => [cmd.bin, ...cmd.args].join
 
 const pythonCache = new Map<string, PythonCommand>();
 const devRootCache = new Map<string, string | null>();
+const extraPythonPathCache = new Map<string, string[]>();
 
 const logPluginPython = (pluginId: string, message: string, data?: Record<string, unknown>) => {
   const suffix = data ? ` ${JSON.stringify(data)}` : '';
@@ -72,6 +73,38 @@ const resolveSanmiaoDevRoot = (): string | null => {
   return null;
 };
 
+/** Resolve normalization_zh (dev or resources) for kanripo-import. */
+const resolveNormalizationZhDevRoot = (): string | null => {
+  const fromEnv = process.env.NORMALIZATION_ZH_ROOT?.trim();
+  const candidates = [
+    fromEnv,
+    path.join(process.resourcesPath, 'normalization_zh'),
+    path.resolve(__dirname, '../../../../normalization_zh'),
+    path.resolve(__dirname, '../../../../../normalization_zh'),
+    path.resolve(process.cwd(), '../normalization_zh'),
+    path.resolve(process.cwd(), '../../normalization_zh'),
+    path.resolve(process.cwd(), '../../../normalization_zh'),
+  ].filter((root): root is string => Boolean(root));
+  for (const root of candidates) {
+    if (fs.existsSync(path.join(root, 'src/normalization_zh/kanripo_tei.py'))) return root;
+  }
+  return null;
+};
+
+const extraPythonPathsForPlugin = (pluginId: string): string[] => {
+  const paths: string[] = [];
+  const plugin = pluginRecord(pluginId);
+  if (plugin?.installPath) {
+    const pythonDir = path.join(plugin.installPath, 'python');
+    if (fs.existsSync(pythonDir)) paths.push(pythonDir);
+  }
+  if (pluginId === 'kanripo-import') {
+    const nz = resolveNormalizationZhDevRoot();
+    if (nz) paths.push(path.join(nz, 'src'));
+  }
+  return paths;
+};
+
 const coreBundledPython = (): string | null => {
   const roots = [
     process.resourcesPath ? path.join(process.resourcesPath, 'python') : null,
@@ -88,7 +121,10 @@ const coreBundledPython = (): string | null => {
 };
 
 const pythonCandidatesForPlugin = (pluginId: string): PythonCommand[] => {
-  const fromEnv = process.env.SANMIAO_PYTHON?.trim();
+  const fromEnv =
+    pluginId === 'cjk-dates'
+      ? process.env.SANMIAO_PYTHON?.trim()
+      : process.env.LJB_PLUGIN_PYTHON?.trim();
   if (fromEnv) return [{ bin: fromEnv, args: [] }];
 
   const candidates: PythonCommand[] = [];
@@ -175,11 +211,17 @@ const SANMIAO_IMPORT_CHECK = [
     ')"',
 ].join('; ');
 
-const resolvePluginPython = async (pluginId: string): Promise<PythonCommand> => {
+const KANRIPO_IMPORT_CHECK = [
+  'from kanripo_import.ljb_bridge import cli_main',
+  'from normalization_zh.kanripo_tei import convert_kanripo_txt',
+].join('; ');
+
+const resolveCjkDatesPython = async (): Promise<PythonCommand> => {
+  const pluginId = 'cjk-dates';
   const cached = pythonCache.get(pluginId);
   if (cached) return cached;
 
-  const devRoot = pluginId === 'cjk-dates' ? resolveSanmiaoDevRoot() : null;
+  const devRoot = resolveSanmiaoDevRoot();
   const failures: string[] = [];
 
   let sawWindowsStoreStub = false;
@@ -275,13 +317,74 @@ const resolvePluginPython = async (pluginId: string): Promise<PythonCommand> => 
   );
 };
 
+const resolveGenericPluginPython = async (pluginId: string): Promise<PythonCommand> => {
+  const cached = pythonCache.get(pluginId);
+  if (cached) return cached;
+
+  extraPythonPathCache.set(pluginId, extraPythonPathsForPlugin(pluginId));
+  const importCheck =
+    pluginId === 'kanripo-import'
+      ? KANRIPO_IMPORT_CHECK
+      : `import ${pythonModuleForPlugin(pluginId)}`;
+  const failures: string[] = [];
+  let sawWindowsStoreStub = false;
+
+  const recordFailure = (label: string, error: unknown) => {
+    const stdout = (error as { stdout?: string })?.stdout ?? '';
+    const stderr = (error as { stderr?: string })?.stderr ?? String(error);
+    if (isWindowsStoreStub(stdout) || isWindowsStoreStub(stderr)) {
+      sawWindowsStoreStub = true;
+    }
+    const reason = stderr.trim().split('\n').pop() ?? stdout.trim() ?? 'unknown error';
+    failures.push(`${label}: ${reason}`);
+    logPluginPython(pluginId, 'candidate rejected', { python: label, reason });
+  };
+
+  for (const python of pythonCandidatesForPlugin(pluginId)) {
+    const label = commandLabel(python);
+    try {
+      await execFileAsync(python.bin, [...python.args, '-c', importCheck], {
+        timeout: 15_000,
+        env: forceUtf8Env(pythonEnvForPlugin(pluginId)),
+      });
+      pythonCache.set(pluginId, python);
+      logPluginPython(pluginId, 'using python', {
+        python: label,
+        pythonPath: extraPythonPathCache.get(pluginId),
+      });
+      return python;
+    } catch (error) {
+      recordFailure(label, error);
+    }
+  }
+
+  const storeStubHint = sawWindowsStoreStub
+    ? ' Windows is redirecting "python"/"python3" to its Microsoft Store stub instead of a real interpreter.'
+    : '';
+  const nzHint =
+    pluginId === 'kanripo-import'
+      ? ' Set NORMALIZATION_ZH_ROOT to the normalization_zh repo, or put it next to the LJB checkout.'
+      : '';
+  const failureHint = failures.length > 0 ? ` [${failures.join(' | ')}]` : '';
+  throw new Error(
+    `Plugin ${pluginId} Python backend is not available.${nzHint}${storeStubHint}${failureHint}`,
+  );
+};
+
+const resolvePluginPython = async (pluginId: string): Promise<PythonCommand> => {
+  if (pluginId === 'cjk-dates') return resolveCjkDatesPython();
+  return resolveGenericPluginPython(pluginId);
+};
+
 const pythonEnvForPlugin = (pluginId: string): NodeJS.ProcessEnv => {
   const env: NodeJS.ProcessEnv = { ...process.env };
+  const extras: string[] = [];
   const devRoot = devRootCache.get(pluginId);
-  if (devRoot) {
-    env.PYTHONPATH = [path.join(devRoot, 'src'), env.PYTHONPATH]
-      .filter(Boolean)
-      .join(path.delimiter);
+  if (devRoot) extras.push(path.join(devRoot, 'src'));
+  extras.push(...(extraPythonPathCache.get(pluginId) ?? extraPythonPathsForPlugin(pluginId)));
+  const unique = [...new Set(extras.filter(Boolean))];
+  if (unique.length) {
+    env.PYTHONPATH = [...unique, env.PYTHONPATH].filter(Boolean).join(path.delimiter);
   }
   return env;
 };
@@ -445,8 +548,10 @@ export const clearPluginPythonCache = (pluginId?: string): void => {
   if (pluginId) {
     pythonCache.delete(pluginId);
     devRootCache.delete(pluginId);
+    extraPythonPathCache.delete(pluginId);
     return;
   }
   pythonCache.clear();
   devRootCache.clear();
+  extraPythonPathCache.clear();
 };

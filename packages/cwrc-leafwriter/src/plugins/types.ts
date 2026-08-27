@@ -46,6 +46,7 @@ export interface PluginManifestContributionsView {
   autoTagging?: PluginAutoTaggingProducerView[];
   authorityPacks?: { id: string; label: string; defaultTag?: string }[];
   toolsMenu?: PluginToolsMenuItemView[];
+  fileMenu?: PluginToolsMenuItemView[];
 }
 
 export interface RegisteredPluginPackSpec extends AuthorityPackSpec {

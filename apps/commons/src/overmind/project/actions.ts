@@ -1211,6 +1211,19 @@ export const restoreTabWithoutSync = async ({ state, actions }: Context, filePat
   state.project.openTabs = [...state.project.openTabs, tab];
 };
 
+export const refreshExplorer = async ({ state }: Context) => {
+  if (!state.project.rootPath) return;
+  const schemaDirPath = getExplorerSchemaDirPath(
+    state.project.rootPath,
+    state.project.config?.schema,
+  );
+  state.project.tree = await loadTreeLevel(
+    state.project.rootPath,
+    schemaDirPath,
+    state.project.rootPath,
+  );
+};
+
 export const openFile = async (context: Context, filePath: string) => {
   const { state, actions } = context;
   if (!window.electronAPI || !state.project.isProjectReady || !state.project.rootPath) return;

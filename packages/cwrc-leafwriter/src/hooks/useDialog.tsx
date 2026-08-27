@@ -85,6 +85,7 @@ export const useDialog = () => {
     if (type === 'autoTagging') return AutoTaggingDialog;
     if (type === 'tagTransform') return TagTransformDialog;
     if (type === 'calendar') return getPluginDialog('calendar');
+    if (type === 'kanripoImport') return getPluginDialog('kanripoImport');
     if (type === 'chineseAssets') return ChineseAssetsDialog;
   };
 };

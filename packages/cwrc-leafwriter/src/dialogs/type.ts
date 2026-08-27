@@ -38,7 +38,8 @@ export type DialogType =
   | 'simple'
   | 'settings'
   | 'plugins'
-  | 'xpathSearch';
+  | 'xpathSearch'
+  | 'kanripoImport';
 
 export interface SimpleDialogMessageProps {
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
