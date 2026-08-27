@@ -24,7 +24,7 @@ import {
   wrapKanripoTeiDocument,
   type KanripoNormalizeMode,
   type KanripoTeiMeta,
-} from '../../../../apps/commons/src/desktop/kanripoImportXml';
+} from '../../../../../apps/commons/src/desktop/kanripoImportXml';
 import type { IDialog } from '../type';
 import { isPluginEnabled } from '../../plugins';
 

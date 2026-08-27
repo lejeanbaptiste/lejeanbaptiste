@@ -60,6 +60,22 @@ const pythonModuleForPlugin = (pluginId: string): string => {
   return moduleName;
 };
 
+const isNormalizationZhRoot = (root: string): boolean =>
+  fs.existsSync(path.join(root, 'src/normalization_zh/kanripo_tei.py'));
+
+/** Walk parents of ``start`` looking for a sibling ``normalization_zh`` checkout. */
+const walkForSiblingRepo = (start: string, folderName: string, markerRel: string): string | null => {
+  let dir = path.resolve(start);
+  for (let i = 0; i < 10; i += 1) {
+    const candidate = path.join(dir, folderName);
+    if (fs.existsSync(path.join(candidate, markerRel))) return candidate;
+    const parent = path.dirname(dir);
+    if (parent === dir) break;
+    dir = parent;
+  }
+  return null;
+};
+
 /** Resolve sibling sanmiao repo (dev) for cjk-dates. */
 const resolveSanmiaoDevRoot = (): string | null => {
   const candidates = [
@@ -76,17 +92,17 @@ const resolveSanmiaoDevRoot = (): string | null => {
 /** Resolve normalization_zh (dev or resources) for kanripo-import. */
 const resolveNormalizationZhDevRoot = (): string | null => {
   const fromEnv = process.env.NORMALIZATION_ZH_ROOT?.trim();
-  const candidates = [
-    fromEnv,
-    path.join(process.resourcesPath, 'normalization_zh'),
-    path.resolve(__dirname, '../../../../normalization_zh'),
-    path.resolve(__dirname, '../../../../../normalization_zh'),
-    path.resolve(process.cwd(), '../normalization_zh'),
-    path.resolve(process.cwd(), '../../normalization_zh'),
-    path.resolve(process.cwd(), '../../../normalization_zh'),
-  ].filter((root): root is string => Boolean(root));
-  for (const root of candidates) {
-    if (fs.existsSync(path.join(root, 'src/normalization_zh/kanripo_tei.py'))) return root;
+  if (fromEnv && isNormalizationZhRoot(fromEnv)) return fromEnv;
+
+  const resources = process.resourcesPath
+    ? path.join(process.resourcesPath, 'normalization_zh')
+    : '';
+  if (resources && isNormalizationZhRoot(resources)) return resources;
+
+  for (const start of [process.cwd(), __dirname]) {
+    if (isNormalizationZhRoot(start)) return start;
+    const found = walkForSiblingRepo(start, 'normalization_zh', 'src/normalization_zh/kanripo_tei.py');
+    if (found) return found;
   }
   return null;
 };
