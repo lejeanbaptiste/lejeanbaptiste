@@ -764,6 +764,8 @@ declare global {
       getActiveFileWorkYear?: () => number | null;
       /** Every open editor tab, for `openTabs`-scoped tag bomb runs. */
       getOpenTabs?: () => { filePath: string; content: string }[];
+      getActiveFileXml?: () => string;
+      getActiveFilePath?: () => string | null;
       /** Re-read `filePath` from disk into its open tab, if any, after a direct (skip-review) write. */
       reloadFileFromDisk?: (filePath: string) => Promise<void>;
       /** Open (or switch to) `filePath` as the active editor tab. */

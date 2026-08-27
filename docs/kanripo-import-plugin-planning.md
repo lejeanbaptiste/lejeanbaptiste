@@ -1,6 +1,6 @@
 # Kanripo import plugin — planning
 
-**Status (2026-08-27):** **Phase 1 shipped** — File → Import from Kanripo… (when the plugin is enabled), git clone/flush, as-is TEI per juan, optional DPM / hard-replacements normalisation. Conversion lives in `normalization_zh.kanripo_tei` (`convert_kanripo_txt`); **do not** use `segment_kanripo_document` for this path (it strips `<pb>` and notes for text-reuse matching). Parallel punctuation, coverage bar, and AI are not in this phase.  
+**Status (2026-08-28):** **Phase 2 implemented** — multiple file/paste sources, document extractors, multi-span coverage bar (hover), editor redraw from `ana="ljb:parallel-punct"` stamps, well-formed paragraph splits. Mac verification next. URL/Wikisource (Phase 3) and AI (Phase 4) wait. Conversion still uses `normalization_zh.kanripo_tei` until that slice is vendored into the plugin. `segment_kanripo_document` is not the TEI path.  
 **Related:** [import-planning.md](import-planning.md) (blind/profiled file import; Mandoku sample), [corpus-extraction-planning.md](corpus-extraction-planning.md) (Wikisource / web extract, later), plugin host in `plugins/` (`cjk-dates`, `norbert`).
 
 This plugin clones a Kanseki Repository (Kanripo) work from GitHub, converts each juan to project TEI, and optionally segments/punctuates. Segment-and-punctuate is also an editor command for a selection that has no punctuation.

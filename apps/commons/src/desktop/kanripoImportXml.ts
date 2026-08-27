@@ -28,12 +28,14 @@ export const wrapKanripoTeiDocument = ({
   bodyXml,
   githubUrl,
   importedAt,
+  punctNote,
 }: {
   config: ProjectFileConfig;
   meta: KanripoTeiMeta;
   bodyXml: string;
   githubUrl?: string;
   importedAt?: Date;
+  punctNote?: string;
 }): string => {
   const catalogId = config.schema?.catalogId ?? '';
   if (catalogId === 'orlando' || catalogId === 'jTei') {
@@ -67,7 +69,7 @@ export const wrapKanripoTeiDocument = ({
 
   const change = `Imported from Kanripo with plugin kanripo-import; normalisation=${escapeXmlText(
     meta.normalize,
-  )}.`;
+  )}${punctNote ? `; ${escapeXmlText(punctNote)}` : ''}.`;
   xml = xml.replace(
     /<\/teiHeader>/,
     `<revisionDesc>\n    <change when="${when}">${change}</change>\n  </revisionDesc>\n</teiHeader>`,
