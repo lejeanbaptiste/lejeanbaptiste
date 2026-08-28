@@ -588,6 +588,36 @@ declare global {
       rowIds?: string[];
       sections?: { id: string; slug: string; title: string; rowCount: number }[];
     }>;
+    daozangStatus?: () => Promise<{
+      ready: boolean;
+      textCount: number;
+      source?: 'user-cache' | 'bundled' | 'none';
+      manifest?: Record<string, unknown>;
+      cacheRoot?: string;
+    }>;
+    daozangSync?: (options?: { force?: boolean }) => Promise<{
+      reused?: boolean;
+      textCount?: number;
+      converted?: number;
+      manifest?: Record<string, unknown>;
+    }>;
+    daozangDetectLocalSources?: () => Promise<
+      { path: string; label: string; kind: 'extracted' | 'rar' }[]
+    >;
+    daozangPickCorpusSource?: () => Promise<string | null>;
+    daozangInstallFromSource?: (sourcePath: string) => Promise<{
+      reused?: boolean;
+      textCount?: number;
+      converted?: number;
+      manifest?: Record<string, unknown>;
+    }>;
+    daozangSearch?: (
+      query: string,
+    ) => Promise<{ id: string; dz_no: string; title: string; variant: string; rel_path: string }[]>;
+    daozangResolveText?: (relPath: string) => Promise<string>;
+    daozangReadText?: (
+      relPath: string,
+    ) => Promise<{ text: string; rel_path: string; path: string }>;
     onPluginPythonProgress?: (
       pluginId: string,
       callback: (progress: import('../autoTagging/dates').SanmiaoChunkProgressEvent) => void,

@@ -1,4 +1,3 @@
-import { describe, expect, it } from 'vitest';
 import {
   ctextChapterUrlFromIndex,
   fetchWikisourceParallel,
@@ -39,9 +38,9 @@ describe('url kind detectors', () => {
   });
 
   it('builds chapter URLs from res index URLs', () => {
-    expect(
-      ctextChapterUrlFromIndex('https://ctext.org/wiki.pl?if=gb&res=150222', '793335'),
-    ).toBe('https://ctext.org/wiki.pl?if=gb&chapter=793335');
+    expect(ctextChapterUrlFromIndex('https://ctext.org/wiki.pl?if=gb&res=150222', '793335')).toBe(
+      'https://ctext.org/wiki.pl?if=gb&chapter=793335',
+    );
   });
 
   it('detects wikisource URLs', () => {
@@ -65,7 +64,9 @@ describe('fetchWikisourceParallel', () => {
         json: async () => ({
           parse: {
             title: '論語',
-            text: { '*': '<div class="mw-parser-output"><p>子曰：「學而時習之，不亦說乎？」</p></div>' },
+            text: {
+              '*': '<div class="mw-parser-output"><p>子曰：「學而時習之，不亦說乎？」</p></div>',
+            },
           },
         }),
       }) as Response;
@@ -80,11 +81,13 @@ describe('fetchWikisourceParallel', () => {
     const fetchImpl = async () =>
       ({
         ok: true,
-        json: async () => ({ error: { code: 'missingtitle', info: 'The page you specified does not exist.' } }),
+        json: async () => ({
+          error: { code: 'missingtitle', info: 'The page you specified does not exist.' },
+        }),
       }) as Response;
 
-    await expect(fetchWikisourceParallel('https://zh.wikisource.org/wiki/Missing', fetchImpl)).rejects.toThrow(
-      /does not exist/,
-    );
+    await expect(
+      fetchWikisourceParallel('https://zh.wikisource.org/wiki/Missing', fetchImpl),
+    ).rejects.toThrow(/does not exist/);
   });
 });

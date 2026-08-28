@@ -352,6 +352,7 @@ export interface ElectronAPI {
     query: string,
   ) => Promise<{ id: string; dz_no: string; title: string; variant: string; rel_path: string }[]>;
   daozangResolveText?: (relPath: string) => Promise<string>;
+  daozangReadText?: (relPath: string) => Promise<{ text: string; rel_path: string; path: string }>;
   onPluginPythonProgress?: (
     pluginId: string,
     callback: (
@@ -876,6 +877,7 @@ const electronAPI: ElectronAPI = {
     ipcRenderer.invoke('daozang:installFromSource', sourcePath),
   daozangSearch: (query: string) => ipcRenderer.invoke('daozang:search', query),
   daozangResolveText: (relPath: string) => ipcRenderer.invoke('daozang:resolveText', relPath),
+  daozangReadText: (relPath: string) => ipcRenderer.invoke('daozang:readText', relPath),
   onPluginPythonProgress: (pluginId, callback) => {
     const listener = (
       _event: Electron.IpcRendererEvent,

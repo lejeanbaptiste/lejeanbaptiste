@@ -15,11 +15,6 @@ const openDaozangDialog = (): boolean => {
   return false;
 };
 
-const hostNotify = (message: string): void => {
-  window.__ljbHostDialogBridge?.notify?.(message);
-  window.writer?.overmindActions?.ui?.notifyViaSnackbar?.(message);
-};
-
 /** Registers File-menu wizard for Daozang import. */
 export function registerDaozangImportUi(context: PluginRegisterContext): void {
   context.log('registering Daozang import UI');

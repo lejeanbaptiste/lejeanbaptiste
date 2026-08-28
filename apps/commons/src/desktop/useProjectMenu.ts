@@ -1,9 +1,6 @@
 import { clearFindHighlights } from '@src/desktop/find/findEditorHighlights';
 import { openFindPanel } from '@src/desktop/desktopLeftPanelBridge';
-import {
-  clearHostDialogBridge,
-  registerHostDialogBridge,
-} from '@src/desktop/hostDialogBridge';
+import { clearHostDialogBridge, registerHostDialogBridge } from '@src/desktop/hostDialogBridge';
 import { openApplicationSettings } from '@src/desktop/openApplicationSettings';
 import { openPluginsDialog } from '@src/desktop/usePluginBootstrap';
 import {

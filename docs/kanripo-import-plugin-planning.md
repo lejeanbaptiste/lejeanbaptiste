@@ -1,6 +1,6 @@
 # Kanripo import plugin — planning
 
-**Status (2026-08-28):** **Phase 2 done** — file/paste/URL parallel sources, multi-span coverage bar (hover), editor redraw from `ana="ljb:parallel-punct"` stamps, well-formed paragraph splits. **Phase 3 largely done** — Wikisource fetch via MediaWiki API (`wikisource-parallel.mjs` / `parallelUrlFetch.ts`); chapter-page resolution for punctuated editions; tape-mode paragraph reflow + comm-note repair in `parallel_punct.py`. **ctext wiki fetch + segmented parallel punct** wired in wizard and CLI (`fetch-ctext-parallel.mjs`). **Next:** Daozang bundled corpus as parallel source for `KR5*` (crosswalk, not a new index — see [daozang-import-planning.md](daozang-import-planning.md)); low-coverage / low-punctuation import warnings; Mac verification; AI (Phase 4) wait. Mandoku→TEI conversion, gaiji tables/PNGs, and normalisation CSVs are **bundled in the plugin** (no `normalization_zh` sibling). `segment_kanripo_document` is not the TEI path.  
+**Status (2026-08-28):** **Phase 2 done** — file/paste/URL parallel sources, multi-span coverage bar (hover), editor redraw from `ana="ljb:parallel-punct"` stamps, well-formed paragraph splits. **Phase 3 largely done** — Wikisource fetch via MediaWiki API (`wikisource-parallel.mjs` / `parallelUrlFetch.ts`); chapter-page resolution for punctuated editions; tape-mode paragraph reflow + comm-note repair in `parallel_punct.py`. **ctext wiki fetch + segmented parallel punct** wired in wizard and CLI (`fetch-ctext-parallel.mjs`). **Concordance done** — bundled `data/concordance/` with `kanripo_daozang_map.json` (1,483 KR → Daozang `rel_path` hits); Python `concordance_lookup` bridge op. **Phase 3b partial** — import wizard auto-loads bundled Daozang parallel when concordance + Daozang corpus hit (tape mode). **Next:** manual Daozang search picker; low-coverage / low-punctuation warnings; Mac verification; AI (Phase 4) wait. Mandoku→TEI conversion, gaiji tables/PNGs, and normalisation CSVs are **bundled in the plugin** (no `normalization_zh` sibling). `segment_kanripo_document` is not the TEI path.  
 **Related:** [import-planning.md](import-planning.md) (blind/profiled file import; Mandoku sample), [ctext-import-planning.md](ctext-import-planning.md) (future direct Ctext API import; wiki parallel partially implemented), [daozang-import-planning.md](daozang-import-planning.md) (bundled punctuated corpus; Kanripo parallel crosswalk), [corpus-extraction-planning.md](corpus-extraction-planning.md) (Wikisource / web extract, later), plugin host in `plugins/` (`cjk-dates`, `norbert`, `daozang-import`).
 
 This plugin clones a Kanseki Repository (Kanripo) work from GitHub, converts each juan to project TEI, and optionally segments/punctuates. Segment-and-punctuate is also an editor command for a selection that has no punctuation.
@@ -196,10 +196,10 @@ Unmatched prefix, suffix, and holes stay as option-1 lines.
 
 Ported and extended in `plugins/packages/plugin-kanripo-import/python/kanripo_import/parallel_punct.py` (not a black-box call into old `dz_krp` XML builders).
 
-| Mode | When | Behaviour |
-| ---- | ---- | --------- |
+| Mode               | When                                           | Behaviour                                                                                                                                                                                                                                                |
+| ------------------ | ---------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | **tape** (default) | Wikisource, paste, file, future Daozang `.txt` | One Han sticker aligned infix/superset; punctuation + `\n\n` breaks copied onto overlap; **reflow** inside green zone (merge Kanripo line wraps, split at sentence ends, skip splits inside comm notes); **relocate** comm notes stranded at `<p>` start |
-| **segmented** | ctext wiki (李善 etc.) | Merge split `</note></p><p><note type="comm">`; match basetext and each comm note separately; no paragraph reflow |
+| **segmented**      | ctext wiki (李善 etc.)                         | Merge split `</note></p><p><note type="comm">`; match basetext and each comm note separately; no paragraph reflow                                                                                                                                        |
 
 Alignment fixes shipped since first Phase 2 cut:
 
@@ -314,19 +314,20 @@ Editor command: same parallel/AI panel without search/clone.
 
 ## Reuse map
 
-| Piece                               | Location                                                                                              | Role                                  |
-| ----------------------------------- | ----------------------------------------------------------------------------------------------------- | ------------------------------------- |
-| TEI skeleton + metadata merge       | `schemaTemplates.ts`, `metadataApplyOverrides.ts`, document import provenance                         | Wrapper                               |
-| Blind import extractors             | `documentImport.ts`                                                                                   | Parallel file/paste → text            |
-| Page-break joining                  | `pageBreakDetection.ts`; Mandoku pilcrow rules in import-planning                                     | `<pb/>` inside `<p>`                  |
-| Plugin hybrid + Python IPC          | `plugin-cjk-dates`, `pluginPythonBridge.ts`                                                           | Pattern                               |
-| Work catalogue                      | `chinese_corpus_metadata` `krp_works.csv`                                                             | Search                                |
-| Mandoku parse, pb, commentary split | `normalization_zh` (`kanripo_segment.py`, `commentary_extraction.py`); `dz_krp` `krp_metadata.py`     | Body                                  |
-| Parallel punctuate/segment          | `dz_krp` `align_punct.py`, `align_seq.py`, `convertor.py`                                             | Option 2 (port; emit TEI not old XML) |
-| Normalisation tables                | `normalization_compile_table` `hard_replacements.csv`; `dz_krp` `dpm_variant_normalisation_table.csv` | Option radio                          |
-| AI JSON                             | `llmClient.ts`, auto-tagging response contract                                                        | Option 3                              |
+| Piece                               | Location                                                                                              | Role                                            |
+| ----------------------------------- | ----------------------------------------------------------------------------------------------------- | ----------------------------------------------- |
+| TEI skeleton + metadata merge       | `schemaTemplates.ts`, `metadataApplyOverrides.ts`, document import provenance                         | Wrapper                                         |
+| Blind import extractors             | `documentImport.ts`                                                                                   | Parallel file/paste → text                      |
+| Page-break joining                  | `pageBreakDetection.ts`; Mandoku pilcrow rules in import-planning                                     | `<pb/>` inside `<p>`                            |
+| Plugin hybrid + Python IPC          | `plugin-cjk-dates`, `pluginPythonBridge.ts`                                                           | Pattern                                         |
+| Work catalogue                      | `chinese_corpus_metadata` `krp_works.csv`                                                             | Search                                          |
+| Mandoku parse, pb, commentary split | `normalization_zh` (`kanripo_segment.py`, `commentary_extraction.py`); `dz_krp` `krp_metadata.py`     | Body                                            |
+| Parallel punctuate/segment          | `dz_krp` `align_punct.py`, `align_seq.py`, `convertor.py`                                             | Option 2 (port; emit TEI not old XML)           |
+| Normalisation tables                | `normalization_compile_table` `hard_replacements.csv`; `dz_krp` `dpm_variant_normalisation_table.csv` | Option radio                                    |
+| AI JSON                             | `llmClient.ts`, auto-tagging response contract                                                        | Option 3                                        |
 | Wikisource fetch                    | `plugin-kanripo-import/scripts/wikisource-parallel.mjs`, `parallelUrlFetch.ts`                        | URL source — **done** (chapter-page preference) |
 | Daozang bundled parallel (planned)  | [daozang-import-planning.md](daozang-import-planning.md), `plugin-daozang-import`                     | Offline `KR5*` parallels via crosswalk          |
+| Kanripo ↔ Daozang concordance       | `plugin-kanripo-import/data/concordance/`, `concordance.py`, `build-concordance-data.py`              | **Done** — map + lookup; UI wiring pending      |
 
 Do **not** ship `dz_krp` `build_document_xml` as the output document.
 
@@ -367,18 +368,22 @@ Do **not** ship `dz_krp` `build_document_xml` as the output document.
 
 **Acceptance:** Point at a zh.wikisource page that overlaps one juan; that juan’s bar turns partly green; other juans stay grey. **Met** for chapter-based works (e.g. 荀子/勸學篇 → `KR3a0002` juan 1).
 
-### Phase 3b — Bundled Daozang parallel (planned)
+### Phase 3b — Bundled Daozang parallel
 
 Use the **Daozang import** plugin’s bundled 方瞳子 UTF-8 corpus as an offline parallel source for Kanripo Dao texts (`KR5*`), same tape engine as Wikisource.
 
-| Piece | Status |
-| ----- | ------ |
-| Daozang `index.json` + search (import dialog) | **Done** — see [daozang-import-planning.md](daozang-import-planning.md) |
-| Load `.txt` as parallel tape in Kanripo import | **Not wired** |
-| `kanripo_daozang_map.json` (KR id → `rel_path`) | **Not built** — normalize titles, prefer 本文類, manual override CSV for commentaries |
-| Import UI “Use bundled Daozang punctuation” | **Not wired** — Phase 1: manual picker reusing `daozang:search`; Phase 2: auto-suggest from crosswalk |
+| Piece                                             | Status                                                                                                                                                                                          |
+| ------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Daozang `index.json` + search (import dialog)     | **Done** — see [daozang-import-planning.md](daozang-import-planning.md)                                                                                                                         |
+| Bundled concordance (`data/concordance/`)         | **Done** — `krp_dz_collation.csv`, `kanripo_org_concordance.csv`, `dz_corpus_works.csv`, `duren_jing_index.csv`, `kanripo_daozang_overrides.csv`                                                |
+| `kanripo_daozang_map.json` (KR id → `rel_path`)   | **Done** — 1,483 entries; built by `scripts/build-concordance-data.py` (`npm run build:concordance`) from `chinese_corpus_metadata` + Daozang corpus index + optional `dz_krp` Duren jing index |
+| Python lookup + bridge                            | **Done** — `concordance.lookup_daozang_rel_path(kr_id)`; `ljb_bridge` op `concordance_lookup`                                                                                                   |
+| Load `.txt` as parallel tape in Kanripo import UI | **Done** — auto on work select when Daozang plugin enabled + map hit                                                                                                                            |
+| Import UI “Use bundled Daozang punctuation”       | **Partial** — auto-load + reload button; manual search picker still open                                                                                                                        |
 
-Do **not** duplicate the Daozang title index; extend `corpus_index.py` with optional `short_title` and generate the crosswalk offline from `krp_works.json` + `index.json`.
+**Match methods** in the map include `krp_dz_collation` (KR↔DZID ↔ Fang Tongzi filename), `duren_jing_index` (curated commentary paths from `dz_krp`), `exact` / `manual`, and `override` (maintainer CSV).
+
+Do **not** duplicate the Daozang title index; the crosswalk joins upstream KR↔DZ tables to bundled `rel_path` values already in `plugin-daozang-import`.
 
 ### Phase 4 — AI JSON punctuation
 

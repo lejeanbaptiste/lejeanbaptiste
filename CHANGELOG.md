@@ -255,11 +255,13 @@
 - **Parallel punctuation — segmented mode (ctext wiki):** `fetch-ctext-parallel.mjs` pulls punctuated ctext wiki chapters; segmented mode merges split commentary notes then matches basetext and `<note type="comm">` separately (李善-style inline commentary). Tape mode remains default for Wikisource and plain sources.
 - **Wikisource fetch:** work-index URLs now prefer **chapter pages** (e.g. `荀子/勸學篇`, punctuated) over scanned 四庫全書本 **卷** pages (often unpunctuated); falls back to 卷 listing when no chapter pages exist. Import wizard placeholders and help text updated for chapter-based URLs.
 - Headless batch tools: `npm run test:parallel-batch` (coverage + well-formed XML per juan) and `npm run test:wikisource` (MediaWiki fetch unit tests). See `plugin-kanripo-import` README for CLI workflows.
+- **Kanripo ↔ Daozang concordance** bundled under `data/concordance/`: … Bridge op `concordance_lookup`.
+- **Kanripo import:** when parallel punctuation is selected and the Daozang plugin is enabled, a concordance hit auto-loads the matching bundled 方瞳子 `.txt` as a parallel source (tape mode). New IPC `daozang:readText`; helper `kanripoDaozangParallel.ts`.
 
 ### Daozang import
 
 - Added a Daozang import plugin (`plugin-daozang-import`) with a bundled **方瞳子** punctuated UTF-8 corpus (~1,513 texts, ~77 MB): local search index, **File → Import from Daozang…**, and optional install/replace from a local RAR or extracted `道藏_txt` folder.
-- **Not yet wired:** using bundled Daozang texts as parallel punctuation sources when importing Kanripo Dao works (`KR5*`). The Daozang title index already exists; what is still needed is a Kanripo↔Daozang crosswalk (normalized titles, prefer 本文類 over 玉訣類/注疏). See [daozang-import-planning.md](docs/daozang-import-planning.md) and [kanripo-import-plugin-planning.md](docs/kanripo-import-plugin-planning.md).
+- Kanripo import ships a **bundled concordance** to those files (`kanripo_daozang_map.json` in `plugin-kanripo-import`). Import wizard auto-loads a matched Daozang parallel when both plugins are enabled and parallel punctuation is selected.
 
 ### Rewards system
 

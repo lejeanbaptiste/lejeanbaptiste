@@ -1,5 +1,5 @@
 import { useModal } from 'mui-modal-provider';
-import { useEffect } from 'react';
+import { useEffect, type ComponentType } from 'react';
 import {
   ChineseAssetsDialog,
   ImportDialog,
@@ -69,7 +69,11 @@ export const useDialog = () => {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [dialogBar]);
 
-  const getComponent = (type?: DialogType) => {
+  /** Plugin dialogs are registered at runtime, so their props cannot be checked statically here. */
+  const pluginDialog = (type: string) =>
+    getPluginDialog(type) as ComponentType<DialogProps> | undefined;
+
+  const getComponent = (type?: DialogType): ComponentType<DialogProps> | undefined => {
     if (!type) return SimpleDialog;
     if (type === 'export' || type === 'import') return ImportDialog;
     if (type === 'simple') return SimpleDialog;
@@ -77,6 +81,6 @@ export const useDialog = () => {
     if (type === 'privacy') return PrivacyDialog;
     if (type === 'signIn') return SignInDialog;
     if (type === 'chineseAssets') return ChineseAssetsDialog;
-    if (type === 'kanripoImport') return getPluginDialog('kanripoImport');
+    if (type === 'kanripoImport') return pluginDialog('kanripoImport');
   };
 };

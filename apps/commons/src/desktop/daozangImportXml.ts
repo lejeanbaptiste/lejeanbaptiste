@@ -45,9 +45,7 @@ export const wrapDaozangTeiDocument = ({
     `<titleStmt><title>${title}</title></titleStmt>`,
   );
 
-  const idnoBlock = dzNo
-    ? `\n      <idno type="Daozang">${dzNo}</idno>`
-    : '';
+  const idnoBlock = dzNo ? `\n      <idno type="Daozang">${dzNo}</idno>` : '';
   const sourcePara = `${sourceNote}; local path ${relPath} (${variant})`;
   xml = xml.replace(
     /<sourceDesc>[\s\S]*?<\/sourceDesc>/,

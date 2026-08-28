@@ -48,7 +48,7 @@ interface ConvertPayload {
   body_xml: string;
 }
 
-export interface DaozangImportDialogProps extends IDialog {}
+export type DaozangImportDialogProps = IDialog;
 
 const joinPath = (...parts: string[]): string =>
   parts.filter(Boolean).join('/').replace(/\/+/g, '/');
@@ -182,7 +182,12 @@ export const DaozangImportDialog = ({ onClose, open = false }: DaozangImportDial
       return;
     }
     const api = window.electronAPI;
-    if (!api?.pluginsInvokePython || !api.writeFile || !api.ensureDirectory || !api.daozangResolveText) {
+    if (
+      !api?.pluginsInvokePython ||
+      !api.writeFile ||
+      !api.ensureDirectory ||
+      !api.daozangResolveText
+    ) {
       setError('Daozang import is only available in the desktop app.');
       return;
     }
@@ -251,9 +256,9 @@ export const DaozangImportDialog = ({ onClose, open = false }: DaozangImportDial
         )}
 
         <Typography variant="body2" sx={{ mb: 2 }}>
-          Search 方瞳子源 (Fang Tongzi) transcriptions. When the plugin is installed with its bundled
-          corpus, no separate download is needed. You can still replace the cache from a local RAR or
-          corpus pack if you prefer.
+          Search 方瞳子源 (Fang Tongzi) transcriptions. When the plugin is installed with its
+          bundled corpus, no separate download is needed. You can still replace the cache from a
+          local RAR or corpus pack if you prefer.
         </Typography>
 
         {statusInfo && (
@@ -322,10 +327,18 @@ export const DaozangImportDialog = ({ onClose, open = false }: DaozangImportDial
           <Button variant="contained" disabled={busy} onClick={() => void pickCorpusSource()}>
             Install corpus from file…
           </Button>
-          <Button variant="outlined" disabled={busy || !statusInfo?.ready} onClick={() => void rebuildCorpus(false)}>
+          <Button
+            variant="outlined"
+            disabled={busy || !statusInfo?.ready}
+            onClick={() => void rebuildCorpus(false)}
+          >
             Refresh index
           </Button>
-          <Button variant="text" disabled={busy || !statusInfo?.ready} onClick={() => void rebuildCorpus(true)}>
+          <Button
+            variant="text"
+            disabled={busy || !statusInfo?.ready}
+            onClick={() => void rebuildCorpus(true)}
+          >
             Rebuild from cached RAR
           </Button>
         </Box>
@@ -376,7 +389,7 @@ export const DaozangImportDialog = ({ onClose, open = false }: DaozangImportDial
 export const isDaozangImportAvailable = (): boolean =>
   Boolean(
     window.electronAPI?.daozangStatus &&
-      window.electronAPI?.daozangInstallFromSource &&
-      window.electronAPI?.daozangSearch &&
-      window.electronAPI?.pluginsInvokePython,
+    window.electronAPI?.daozangInstallFromSource &&
+    window.electronAPI?.daozangSearch &&
+    window.electronAPI?.pluginsInvokePython,
   );

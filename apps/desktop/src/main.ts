@@ -2417,7 +2417,13 @@ const registerIpcHandlers = () => {
 
   ipcMain.handle('daozang:status', async () => {
     if (!isPluginEnabledInMain('daozang-import')) {
-      return { ready: false, textCount: 0, source: 'none', manifest: {}, cacheRoot: daozangCacheRoot() };
+      return {
+        ready: false,
+        textCount: 0,
+        source: 'none',
+        manifest: {},
+        cacheRoot: daozangCacheRoot(),
+      };
     }
     return daozangCorpusStatus();
   });
@@ -2442,7 +2448,8 @@ const registerIpcHandlers = () => {
     mainWindow.focus();
     const result = await dialog.showOpenDialog(mainWindow, {
       title: 'Install Daozang corpus',
-      message: 'Choose the Fang Tongzi RAR, an LJB corpus pack (.tar.gz), or a folder of .txt files.',
+      message:
+        'Choose the Fang Tongzi RAR, an LJB corpus pack (.tar.gz), or a folder of .txt files.',
       properties: ['openFile', 'openDirectory'],
       defaultPath: app.getPath('downloads'),
       filters: [
@@ -2452,7 +2459,7 @@ const registerIpcHandlers = () => {
     });
     if (result.canceled || result.filePaths.length === 0) return null;
     const picked = result.filePaths[0];
-    rememberDialogDir(picked, fs.statSync(picked).isDirectory() ? 'directory' : 'file');
+    rememberDialogDir(picked, statSync(picked).isDirectory() ? 'directory' : 'file');
     approveRendererReadRoot(picked);
     return picked;
   });
@@ -2478,7 +2485,27 @@ const registerIpcHandlers = () => {
   });
 
   ipcMain.handle('daozang:resolveText', async (_event, relPath: string) => {
-    return daozangTextPath(String(relPath || ''));
+    const abs = daozangTextPath(String(relPath || ''));
+    approveRendererReadRoot(path.dirname(abs));
+    return abs;
+  });
+
+  ipcMain.handle('daozang:readText', async (_event, relPath: string) => {
+    if (!isPluginEnabledInMain('daozang-import')) {
+      throw new Error('Enable the Daozang import plugin first.');
+    }
+    const { ready } = daozangCorpusStatus();
+    if (!ready) {
+      throw new Error('Daozang corpus is not ready.');
+    }
+    const rel = String(relPath || '').trim();
+    if (!rel) throw new Error('No Daozang text selected.');
+    const abs = daozangTextPath(rel);
+    if (!existsSync(abs)) {
+      throw new Error(`Daozang text not found: ${rel}`);
+    }
+    const decoded = decodeTextBuffer(await fs.readFile(abs));
+    return { text: decoded.text, rel_path: rel, path: abs };
   });
 
   ipcMain.handle(

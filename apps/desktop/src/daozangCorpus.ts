@@ -2,10 +2,7 @@ import fs from 'node:fs';
 import os from 'node:os';
 import path from 'node:path';
 import { app } from 'electron';
-import {
-  getCachedPluginHostSnapshot,
-  resolveDevPluginSourcePath,
-} from './plugins/pluginHost';
+import { getCachedPluginHostSnapshot, resolveDevPluginSourcePath } from './plugins/pluginHost';
 
 export const DAOZANG_ARCHIVE_NAME = 'DaoCanon_txt_chm.rar';
 
@@ -24,7 +21,10 @@ export const bundledDaozangCorpusRoot = (): string | null => {
   const plugin = getCachedPluginHostSnapshot()?.plugins.find((p) => p.id === 'daozang-import');
   if (plugin?.installPath) candidates.push(path.join(plugin.installPath, 'data', 'corpus'));
   for (const candidate of candidates) {
-    if (fs.existsSync(path.join(candidate, 'index.json')) && fs.existsSync(path.join(candidate, 'utf8'))) {
+    if (
+      fs.existsSync(path.join(candidate, 'index.json')) &&
+      fs.existsSync(path.join(candidate, 'utf8'))
+    ) {
       return candidate;
     }
   }
@@ -45,7 +45,8 @@ export const daozangUtf8Root = (): string => path.join(activeDaozangCorpusRoot()
 
 export const daozangIndexPath = (): string => path.join(activeDaozangCorpusRoot(), 'index.json');
 
-export const daozangManifestPath = (): string => path.join(activeDaozangCorpusRoot(), 'manifest.json');
+export const daozangManifestPath = (): string =>
+  path.join(activeDaozangCorpusRoot(), 'manifest.json');
 
 export const daozangTextPath = (relPath: string): string =>
   path.join(daozangUtf8Root(), relPath.replace(/^\/+/, ''));
@@ -80,8 +81,9 @@ export const daozangCorpusStatus = (): {
   return { ready, textCount, source, manifest, cacheRoot: root };
 };
 
-const downloadDirs = (): string[] =>
-  [...new Set([app.getPath('downloads'), path.join(os.homedir(), 'Downloads')])];
+const downloadDirs = (): string[] => [
+  ...new Set([app.getPath('downloads'), path.join(os.homedir(), 'Downloads')]),
+];
 
 /** Prefer an already-extracted txt tree, then complete local RAR archives. */
 export const detectDaozangLocalSources = (): DaozangLocalSource[] => {

@@ -14,8 +14,7 @@ export interface ParallelUrlFetchResult {
 
 export type UrlFetchFn = (url: string, init?: RequestInit) => Promise<Response>;
 
-const WIKISOURCE_HOST_RE =
-  /^(?:[a-z-]+\.)?wikisource\.org$/i;
+const WIKISOURCE_HOST_RE = /^(?:[a-z-]+\.)?wikisource\.org$/i;
 
 /** Parse `{lang}.wikisource.org/wiki/{title}` or variant paths like `/zh-hant/{title}`. */
 export const parseWikisourceUrl = (url: string): { apiHost: string; title: string } | null => {
@@ -155,7 +154,9 @@ export const fetchWikisourceParallel = async (
     }).toString();
 
   const response = await fetchImpl(apiUrl, {
-    headers: { 'User-Agent': 'LJB/0.1 (Kanripo parallel fetch; +https://github.com/leJeanBaptiste)' },
+    headers: {
+      'User-Agent': 'LJB/0.1 (Kanripo parallel fetch; +https://github.com/leJeanBaptiste)',
+    },
   });
   if (!response.ok) {
     throw new Error(`Wikisource API HTTP ${response.status} for ${parsed.title}`);
@@ -190,7 +191,9 @@ export const fetchGenericUrlParallel = async (
 ): Promise<ParallelUrlFetchResult> => {
   const parsed = assertFetchableHttpUrl(url);
   const response = await fetchImpl(parsed.toString(), {
-    headers: { 'User-Agent': 'LJB/0.1 (Kanripo parallel fetch; +https://github.com/leJeanBaptiste)' },
+    headers: {
+      'User-Agent': 'LJB/0.1 (Kanripo parallel fetch; +https://github.com/leJeanBaptiste)',
+    },
     redirect: 'follow',
   });
   if (!response.ok) {

@@ -28,6 +28,7 @@ import {
   type KanripoTeiMeta,
 } from '../../../../../apps/commons/src/desktop/kanripoImportXml';
 import { loadParallelPlainText } from '../../../../../apps/commons/src/desktop/kanripoParallelText';
+import { loadBundledDaozangParallel } from '../../../../../apps/commons/src/desktop/kanripoDaozangParallel';
 import {
   appendTeiRevisionChange,
   formatParallelProvenance,
@@ -43,6 +44,7 @@ import type { IDialog } from '../type';
 import { isPluginEnabled } from '../../plugins';
 
 const PLUGIN_ID = 'kanripo-import';
+const DAOZANG_PLUGIN_ID = 'daozang-import';
 
 const CTEXT_IMPORT_MESSAGE =
   'ctext wiki URLs are for in-editor punctuation only (Segment and punctuate on one open juan). For import, use Wikisource, a file, or paste.';
@@ -81,8 +83,15 @@ interface ParallelSource {
   id: string;
   label: string;
   text: string;
-  kind?: 'file' | 'paste' | 'ctext' | 'wikisource' | 'url';
+  kind?: 'file' | 'paste' | 'ctext' | 'wikisource' | 'url' | 'daozang';
   url?: string;
+}
+
+interface DaozangMatchInfo {
+  krId: string;
+  title: string;
+  dzId: string;
+  matchMethod: string;
 }
 
 type ParallelAlignMode = 'tape' | 'segmented';
@@ -223,6 +232,7 @@ export const KanripoImportDialog = ({
     coverage: Coverage;
   } | null>(null);
   const [stampCoverage, setStampCoverage] = useState<Coverage | null>(null);
+  const [daozangMatch, setDaozangMatch] = useState<DaozangMatchInfo | null>(null);
 
   const projectReady = Boolean(window.__leafWriterProject?.isProjectReady?.());
   const hasSources = sources.some((source) => source.text.trim());
@@ -277,6 +287,61 @@ export const KanripoImportDialog = ({
       cancelled = true;
     };
   }, [open, punctuateOnly]);
+
+  const applyBundledDaozangParallel = useCallback(async (krId: string) => {
+    if (!isPluginEnabled(DAOZANG_PLUGIN_ID)) {
+      setDaozangMatch(null);
+      setSources((current) => current.filter((source) => source.kind !== 'daozang'));
+      return;
+    }
+    const { entry, text, label } = await loadBundledDaozangParallel(krId);
+    if (!entry || !text) {
+      setDaozangMatch(null);
+      setSources((current) => current.filter((source) => source.kind !== 'daozang'));
+      return;
+    }
+    const resolvedLabel = label ?? entry.daozang_title;
+    setDaozangMatch({
+      krId,
+      title: resolvedLabel,
+      dzId: entry.dz_id,
+      matchMethod: entry.match_method,
+    });
+    setAlignMode('tape');
+    setSources((current) => [
+      ...current.filter((source) => source.kind !== 'daozang'),
+      {
+        id: `daozang-${krId}`,
+        label: resolvedLabel,
+        text,
+        kind: 'daozang',
+      },
+    ]);
+    setStatus(
+      `Bundled Daozang match for ${krId}: ${resolvedLabel} (${text.trim().length} characters).`,
+    );
+  }, []);
+
+  useEffect(() => {
+    if (!open || punctuateOnly || punctMode !== 'parallel' || !selected?.id) {
+      return;
+    }
+    let cancelled = false;
+    void (async () => {
+      try {
+        await applyBundledDaozangParallel(selected.id);
+      } catch (loadError) {
+        if (!cancelled) {
+          setDaozangMatch(null);
+          setSources((current) => current.filter((source) => source.kind !== 'daozang'));
+          console.warn('[kanripo-import] Daozang parallel load failed:', loadError);
+        }
+      }
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, [open, punctuateOnly, punctMode, selected?.id, applyBundledDaozangParallel]);
 
   const secondaryFor = (hit: KanripoWorkHit) =>
     [hit.author, hit.dynasty].filter(Boolean).join(' · ');
@@ -631,10 +696,7 @@ export const KanripoImportDialog = ({
     }
     const filePath = window.__leafWriterProject?.getActiveFilePath?.();
     let next = replaceJuanDiv(editorPreview.xml, editorPreview.body);
-    next = appendTeiRevisionChange(
-      next,
-      formatParallelProvenance(sources, alignMode),
-    );
+    next = appendTeiRevisionChange(next, formatParallelProvenance(sources, alignMode));
     if (!xmlLooksWellFormed(next)) {
       setError('Resulting XML is not well-formed.');
       return;
@@ -658,6 +720,9 @@ export const KanripoImportDialog = ({
     }
     if (!projectReady) return 'Open a project first (same as Import Documents).';
     if (punctMode === 'parallel') {
+      if (isPluginEnabled(DAOZANG_PLUGIN_ID)) {
+        return 'Search by Kanripo id (KR…) or title. For Dao works (KR5…), a bundled Daozang match loads automatically when available. You can also paste a Wikisource work index (e.g. 荀子) and Fetch URL.';
+      }
       return 'Search by Kanripo id (KR…) or title. Paste a Wikisource work index (e.g. 荀子) — Fetch URL loads every chapter page (勸學篇, …) and matches each juan on import.';
     }
     return 'Search by Kanripo id (KR…) or title. Each juan becomes one TEI file.';
@@ -668,12 +733,42 @@ export const KanripoImportDialog = ({
   const parallelPanel = (punctMode === 'parallel' || punctuateOnly) && (
     <Box sx={{ mt: 2 }}>
       <Typography variant="subtitle2">Parallel transcription</Typography>
+      {!punctuateOnly && isPluginEnabled(DAOZANG_PLUGIN_ID) && punctMode === 'parallel' && (
+        <>
+          {daozangMatch ? (
+            <Alert severity="info" sx={{ mb: 1 }}>
+              Bundled Daozang match ({daozangMatch.dzId}): {daozangMatch.title}
+              {daozangMatch.matchMethod &&
+              !['exact', 'duren_jing_index', 'override'].includes(daozangMatch.matchMethod)
+                ? ` · via ${daozangMatch.matchMethod}`
+                : ''}
+            </Alert>
+          ) : (
+            selected?.id.startsWith('KR5') && (
+              <Typography variant="body2" color="text.secondary" sx={{ mb: 1 }}>
+                No bundled Daozang match for {selected.id}. Add Wikisource, a file, or paste below.
+              </Typography>
+            )
+          )}
+          {selected && (
+            <Button
+              size="small"
+              variant="text"
+              disabled={busy}
+              sx={{ mb: 1 }}
+              onClick={() => void applyBundledDaozangParallel(selected.id)}
+            >
+              Reload bundled Daozang match
+            </Button>
+          )}
+        </>
+      )}
       <Typography variant="body2" color="text.secondary" sx={{ mb: 1 }}>
         {punctuateOnly
           ? 'Applies to the currently open file only. Use a ctext wiki URL for 李善 commentary (segmented mode), or a single Wikisource 卷 page / file / paste.'
-          : 'On import, Fetch URL on a Wikisource work index loads all linked chapter pages (or 卷 pages for scanned editions) as one parallel tape.'}
-        {' '}
-        {punctuateOnly && isCtextWikiUrl(ctextUrl) &&
+          : 'On import, Fetch URL on a Wikisource work index loads all linked chapter pages (or 卷 pages for scanned editions) as one parallel tape.'}{' '}
+        {punctuateOnly &&
+          isCtextWikiUrl(ctextUrl) &&
           (isCtextWikiResUrl(ctextUrl)
             ? 'A res= index lists chapters — use List ctext sections, then click a chapter to fetch it.'
             : 'Narrow with section/contains below if the chapter page is long.')}

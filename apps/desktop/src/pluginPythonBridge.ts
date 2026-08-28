@@ -213,7 +213,10 @@ const DAOZANG_IMPORT_CHECK = [
 ].join('; ');
 
 const pythonTimeoutMs = (pluginId: string, payload: Record<string, unknown>): number => {
-  if (pluginId === 'daozang-import' && (payload.op === 'sync' || payload.op === 'install_from_source')) {
+  if (
+    pluginId === 'daozang-import' &&
+    (payload.op === 'sync' || payload.op === 'install_from_source')
+  ) {
     return DAOZANG_SYNC_TIMEOUT_MS;
   }
   return PYTHON_TIMEOUT_MS;
