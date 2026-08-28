@@ -47,10 +47,9 @@ export const wrapKanripoTeiDocument = ({
 
   let xml = buildSkeletonForCatalog(config);
 
-  const idno = krId ? `\n    <idno type="Kanripo">${krId}</idno>` : '';
   xml = xml.replace(
     /<titleStmt>\s*<title>[\s\S]*?<\/title>\s*<\/titleStmt>/,
-    `<titleStmt><title>${title}</title>${idno}</titleStmt>`,
+    `<titleStmt><title>${title}</title></titleStmt>`,
   );
 
   const sourceBits = ['Kanseki Repository (Kanripo)'];
@@ -59,9 +58,10 @@ export const wrapKanripoTeiDocument = ({
   if (meta.source) sourceBits.push(`edition ${escapeXmlText(meta.source)}`);
   const sourcePara = escapeXmlText(sourceBits.join(', '));
   const urlPara = url ? `<p>${escapeXmlText(url)}</p>` : '';
+  const idnoBlock = krId ? `\n      <bibl><idno type="Kanripo">${krId}</idno></bibl>` : '';
   xml = xml.replace(
     /<sourceDesc>[\s\S]*?<\/sourceDesc>/,
-    `<sourceDesc>\n      <p>${sourcePara}.</p>\n      ${urlPara}\n    </sourceDesc>`,
+    `<sourceDesc>\n      <p>${sourcePara}.</p>\n      ${urlPara}${idnoBlock}\n    </sourceDesc>`,
   );
 
   const change = `Imported from Kanripo with plugin kanripo-import; normalisation=${escapeXmlText(

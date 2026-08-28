@@ -552,6 +552,23 @@ declare global {
       krId: string,
     ) => Promise<{ cachePath: string; reused: boolean; files: string[] }>;
     kanripoFlush?: (krId: string) => Promise<{ ok: boolean }>;
+    kanripoFetchCtextParallel?: (options: {
+      url: string;
+      row?: number | string;
+      id?: string;
+      contains?: string;
+      section?: string;
+    }) => Promise<{
+      text: string;
+      label: string;
+      section?: string;
+      rowId?: string;
+      rowIds?: string[];
+      sections?: { id: string; slug: string; title: string; rowCount: number }[];
+    }>;
+    kanripoListCtextSections?: (
+      url: string,
+    ) => Promise<{ id: string; slug: string; title: string; rowCount: number }[]>;
     onPluginPythonProgress?: (
       pluginId: string,
       callback: (progress: import('../autoTagging/dates').SanmiaoChunkProgressEvent) => void,
@@ -582,6 +599,7 @@ declare global {
     readFile?: (filePath: string) => Promise<string>;
     readFileAutoEncoding?: (filePath: string) => Promise<{ encoding: string; text: string }>;
     writeFile?: (filePath: string, content: string) => Promise<void>;
+    writeBinaryFile?: (filePath: string, bytes: Uint8Array) => Promise<void>;
     ensureDirectory?: (dirPath: string) => Promise<void>;
     readDirectory?: (
       dirPath: string,

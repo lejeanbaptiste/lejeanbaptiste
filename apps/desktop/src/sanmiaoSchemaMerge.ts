@@ -8,7 +8,7 @@ import type { ProjectBundle } from './projectFile';
 
 export const SANMIAO_PATCH_FILENAME = 'ljb-sanmiao-dates.rng';
 /** Bump when the generated RNG changes so existing merged schemas get regenerated. */
-export const SANMIAO_MERGE_VERSION = 10;
+export const SANMIAO_MERGE_VERSION = 11;
 const MERGE_VERSION_MARKER = `ljb-sanmiao-merge v${SANMIAO_MERGE_VERSION}`;
 const TEI_NS = 'http://www.tei-c.org/ns/1.0';
 const TEI_CATALOG_IDS = new Set(['teiAll', 'teiLite', 'teiSimplePrint', 'jTei']);
@@ -99,6 +99,40 @@ const buildLjbInlineModelOverride = (): string => `
       <ref name="ljb.personWrapper"/>
     </define>`;
 
+/**
+ * TEI ``<g>`` is text-only; Kanripo gaiji needs an inline ``<graphic>`` child when
+ * ``@type="kanripo"`` (see plugin-kanripo-import ``gaiji_graphic_xml``).
+ */
+const buildKanripoGOverrideDefine = (): string => `
+    <define name="g">
+      <element name="g">
+        <a:documentation>TEI g extended for Kanripo inline gaiji (type=kanripo).</a:documentation>
+        <choice>
+          <group>
+            <attribute name="type"><value>kanripo</value></attribute>
+            <optional><attribute name="n"><text/></attribute></optional>
+            <ref name="ljb.kanripo.graphic"/>
+            <ref name="att.global.attributes"/>
+            <ref name="att.typed.attributes"/>
+            <empty/>
+          </group>
+          <group>
+            <text/>
+            <ref name="att.global.attributes"/>
+            <ref name="att.typed.attributes"/>
+            <optional>
+              <attribute name="ref">
+                <data type="anyURI">
+                  <param name="pattern">\\S+</param>
+                </data>
+              </attribute>
+            </optional>
+            <empty/>
+          </group>
+        </choice>
+      </element>
+    </define>`;
+
 export const buildSanmiaoWrapperRng = (
   teiCoreFileName: string,
   baseRng: string,
@@ -110,6 +144,7 @@ export const buildSanmiaoWrapperRng = (
   <a:documentation>Le Jean-Baptiste: TEI + sanmiao East Asian date extension (${MERGE_VERSION_MARKER})</a:documentation>
   <include href="${teiCoreFileName}">
 ${buildDateOverrideDefine(baseRng)}
+${buildKanripoGOverrideDefine()}
 ${buildLjbInlineModelOverride()}
   </include>
 ${generateSanmiaoHelperDefines()}
@@ -140,6 +175,15 @@ export const generateSanmiaoHelperDefines = (): string => {
   ).join('\n');
 
   return `${partDefines}
+  <define name="ljb.kanripo.graphic">
+    <element name="graphic">
+      <a:documentation>Kanripo gaiji PNG referenced from g[@type=kanripo].</a:documentation>
+      <ref name="att.global.attributes"/>
+      <optional><attribute name="url"><text/></attribute></optional>
+      <optional><attribute name="height"><text/></attribute></optional>
+      <empty/>
+    </element>
+  </define>
   <define name="ljb.nobleTitle">
     <element name="nobleTitle">
       <oneOrMore>

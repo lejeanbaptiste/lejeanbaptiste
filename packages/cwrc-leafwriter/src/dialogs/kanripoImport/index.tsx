@@ -67,7 +67,10 @@ interface ParallelSource {
   id: string;
   label: string;
   text: string;
+  kind?: 'file' | 'paste' | 'ctext';
 }
+
+type ParallelAlignMode = 'tape' | 'segmented';
 
 interface ParallelPunctPayload {
   body_xml: string;
@@ -179,9 +182,18 @@ export const KanripoImportDialog = ({
   const [punctMode, setPunctMode] = useState<'as-is' | 'parallel'>(
     punctuateOnly ? 'parallel' : 'as-is',
   );
+  const [alignMode, setAlignMode] = useState<ParallelAlignMode>(
+    punctuateOnly ? 'segmented' : 'tape',
+  );
   const [sources, setSources] = useState<ParallelSource[]>([]);
   const [pasteDraft, setPasteDraft] = useState('');
   const [pasteCount, setPasteCount] = useState(0);
+  const [ctextUrl, setCtextUrl] = useState('');
+  const [ctextSection, setCtextSection] = useState('');
+  const [ctextContains, setCtextContains] = useState('');
+  const [ctextSections, setCtextSections] = useState<
+    { id: string; slug: string; title: string; rowCount: number }[]
+  >([]);
   const [busy, setBusy] = useState(false);
   const [status, setStatus] = useState('');
   const [error, setError] = useState<string | null>(null);
@@ -259,6 +271,7 @@ export const KanripoImportDialog = ({
     if (!api?.pluginsInvokePython) throw new Error('Python bridge unavailable.');
     return (await api.pluginsInvokePython(PLUGIN_ID, {
       op: 'parallel_punct',
+      mode: alignMode,
       body_xml: bodyXml,
       sources: sources.map((source) => ({
         id: source.id,
@@ -266,6 +279,70 @@ export const KanripoImportDialog = ({
         text: source.text,
       })),
     })) as ParallelPunctPayload;
+  };
+
+  const fetchCtext = async () => {
+    const api = window.electronAPI;
+    if (!api?.kanripoFetchCtextParallel) {
+      setError('ctext fetch is only available in the desktop app.');
+      return;
+    }
+    const url = ctextUrl.trim();
+    if (!url) {
+      setError('Paste a ctext wiki chapter URL first.');
+      return;
+    }
+    setBusy(true);
+    setError(null);
+    try {
+      const result = await api.kanripoFetchCtextParallel({
+        url,
+        section: ctextSection.trim() || undefined,
+        contains: ctextContains.trim() || undefined,
+      });
+      if (!result.text.trim()) {
+        setError('That ctext page row had no text.');
+        return;
+      }
+      if (result.sections?.length) {
+        setCtextSections(result.sections);
+      }
+      setSources((current) => [
+        ...current,
+        {
+          id: `ctext-${result.label}-${Date.now()}`,
+          label: result.label,
+          text: result.text,
+          kind: 'ctext',
+        },
+      ]);
+      setStatus(`Fetched ${result.label} (${result.text.trim().length} characters).`);
+    } catch (fetchError) {
+      setError(fetchError instanceof Error ? fetchError.message : String(fetchError));
+    } finally {
+      setBusy(false);
+    }
+  };
+
+  const listCtextSections = async () => {
+    const api = window.electronAPI;
+    const url = ctextUrl.trim();
+    if (!api?.kanripoListCtextSections || !url) return;
+    setBusy(true);
+    setError(null);
+    try {
+      const sections = await api.kanripoListCtextSections(url);
+      setCtextSections(sections);
+      setStatus(
+        sections.length
+          ? `Found ${sections.length} sections on that wiki page.`
+          : 'No section headings found on that page.',
+      );
+    } catch (listError) {
+      setError(listError instanceof Error ? listError.message : String(listError));
+    } finally {
+      setBusy(false);
+    }
   };
 
   const addPasteSource = () => {
@@ -377,6 +454,7 @@ export const KanripoImportDialog = ({
           const converted = (await api.pluginsInvokePython(PLUGIN_ID, {
             path: filePath,
             normalize,
+            gaiji_dest_dir: joinPath(destDir, '_gaiji'),
           })) as ConvertPayload;
           if (!converted?.body_xml || !converted.meta) {
             throw new Error('Python conversion returned no TEI body.');
@@ -419,6 +497,9 @@ export const KanripoImportDialog = ({
       }
 
       await project.refreshExplorer?.();
+      for (const outputPath of written) {
+        await project.reloadFileFromDisk?.(outputPath);
+      }
       setReport({ written, failed, bars });
       setStatus(
         failed.length === 0
@@ -495,7 +576,7 @@ export const KanripoImportDialog = ({
 
   const hint = useMemo(() => {
     if (punctuateOnly) {
-      return 'Add punctuated parallels (file or paste). Grey = unmatched; green = punctuation that will be copied. Existing stamps show on the bar even before you add a source.';
+      return 'Add punctuated parallels (ctext wiki, file, or paste). Segmented mode matches basetext and commentary separately — best for ctext rows with inline 李善 commentary.';
     }
     if (!projectReady) return 'Open a project first (same as Import Documents).';
     return 'Search by Kanripo id (KR…) or title. Each juan becomes one TEI file.';
@@ -507,9 +588,94 @@ export const KanripoImportDialog = ({
     <Box sx={{ mt: 2 }}>
       <Typography variant="subtitle2">Parallel transcription</Typography>
       <Typography variant="body2" color="text.secondary" sx={{ mb: 1 }}>
-        Add one or more files or pastes. URL / Wikisource is a later step. Punctuation is copied
-        only where the texts overlap.
+        Punctuation is copied only where the texts overlap. Use segmented mode for ctext wiki pages
+        with inline commentary.
       </Typography>
+      <FormControl sx={{ mb: 2 }} disabled={busy}>
+        <FormLabel>Alignment mode</FormLabel>
+        <RadioGroup
+          value={alignMode}
+          onChange={(event) => setAlignMode(event.target.value as ParallelAlignMode)}
+        >
+          <FormControlLabel
+            value="segmented"
+            control={<Radio />}
+            label="Segmented (basetext + commentary separately — for ctext)"
+          />
+          <FormControlLabel
+            value="tape"
+            control={<Radio />}
+            label="Single tape (one contiguous Han string)"
+          />
+        </RadioGroup>
+      </FormControl>
+      <Typography variant="body2" sx={{ mb: 1 }}>
+        ctext wiki
+      </Typography>
+      <TextField
+        fullWidth
+        size="small"
+        label="Wiki chapter URL"
+        placeholder="https://ctext.org/wiki.pl?if=gb&chapter=793335"
+        value={ctextUrl}
+        onChange={(event) => setCtextUrl(event.target.value)}
+        disabled={busy}
+        sx={{ mb: 1 }}
+      />
+      <Box sx={{ display: 'flex', gap: 1, mb: 1, flexWrap: 'wrap' }}>
+        <TextField
+          size="small"
+          label="Section (optional)"
+          placeholder="兩都賦序"
+          value={ctextSection}
+          onChange={(event) => setCtextSection(event.target.value)}
+          disabled={busy}
+          sx={{ flex: 1, minWidth: 160 }}
+        />
+        <TextField
+          size="small"
+          label="Contains (optional)"
+          placeholder="或曰"
+          value={ctextContains}
+          onChange={(event) => setCtextContains(event.target.value)}
+          disabled={busy}
+          sx={{ flex: 1, minWidth: 160 }}
+        />
+      </Box>
+      <Button
+        size="small"
+        variant="outlined"
+        disabled={busy || !ctextUrl.trim()}
+        sx={{ mb: 1, mr: 1 }}
+        onClick={() => void fetchCtext()}
+      >
+        Fetch from ctext
+      </Button>
+      <Button
+        size="small"
+        variant="text"
+        disabled={busy || !ctextUrl.trim()}
+        sx={{ mb: 1 }}
+        onClick={() => void listCtextSections()}
+      >
+        List sections
+      </Button>
+      {ctextSections.length > 0 && (
+        <List dense sx={{ mb: 1, border: 1, borderColor: 'divider', borderRadius: 1 }}>
+          {ctextSections.map((section) => (
+            <ListItemButton
+              key={section.id}
+              disabled={busy}
+              onClick={() => setCtextSection(section.title || section.slug)}
+            >
+              <ListItemText
+                primary={section.title || section.slug}
+                secondary={`${section.rowCount} rows · ${section.id}`}
+              />
+            </ListItemButton>
+          ))}
+        </List>
+      )}
       <Button
         size="small"
         variant="outlined"
@@ -557,7 +723,7 @@ export const KanripoImportDialog = ({
               <ListItemText
                 sx={{ pl: 2, pr: 10 }}
                 primary={source.label}
-                secondary={`${source.text.trim().length} characters`}
+                secondary={`${source.text.trim().length} characters${source.kind === 'ctext' ? ' · ctext' : ''}`}
               />
             </ListItem>
           ))}
@@ -635,7 +801,7 @@ export const KanripoImportDialog = ({
                 <FormControlLabel
                   value="dpm"
                   control={<Radio />}
-                  label="DPM table (normalization_zh)"
+                  label="DPM variant table (bundled with plugin)"
                 />
                 <FormControlLabel
                   value="hard_replacements"
@@ -648,7 +814,11 @@ export const KanripoImportDialog = ({
               <FormLabel>Punctuation</FormLabel>
               <RadioGroup
                 value={punctMode}
-                onChange={(event) => setPunctMode(event.target.value as 'as-is' | 'parallel')}
+                onChange={(event) => {
+                  const next = event.target.value as 'as-is' | 'parallel';
+                  setPunctMode(next);
+                  if (next === 'parallel') setAlignMode('segmented');
+                }}
               >
                 <FormControlLabel
                   value="as-is"

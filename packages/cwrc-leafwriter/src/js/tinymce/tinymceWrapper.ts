@@ -33,6 +33,11 @@ import {
   parseXmlFragment,
   textToLineBreakXml,
 } from './pasteSpecial';
+import {
+  getClipboardImageFile,
+  handleKanripoGaijiImagePaste,
+} from '../../utilities/kanripoGaijiEditor';
+import { refreshGraphicsInBody } from '../schema/mappings/utitlities';
 import { initEditorZoom } from './editorZoom';
 import { DEFAULT_EDITOR_FONT_SIZE } from '../../overmind/editor/state';
 import { isChineseLanguageCode, isJapaneseLanguageCode } from '../../utilities/languageCodes';
@@ -962,6 +967,24 @@ export const tinymceWrapperInit = function ({
             const text = normalizeClipboardText(
               clipboard.getData('text/plain') || clipboard.getData('Text') || '',
             );
+
+            const imageFile = getClipboardImageFile(clipboard);
+            if (
+              imageFile &&
+              !text.trim() &&
+              window.electronAPI?.writeBinaryFile &&
+              window.__leafWriterProject?.getActiveFilePath?.()
+            ) {
+              event.preventDefault();
+              event.stopImmediatePropagation();
+              void handleKanripoGaijiImagePaste(writer, imageFile).then((inserted) => {
+                if (!inserted) {
+                  log.warn('Kanripo gaiji paste failed — is the document saved to disk?');
+                }
+              });
+              return;
+            }
+
             const ambiguity = detectPasteAmbiguity({ fromLeafWriter, text });
             if (!ambiguity) return;
 
@@ -1072,6 +1095,10 @@ export const tinymceWrapperInit = function ({
   writer.event('documentLoaded').subscribe(() => {
     if (!writer.editor) return;
     const { overmindState, overmindActions } = writer;
+
+    const documentFilePath =
+      overmindState.document.url ?? overmindState.editor.resource?.filePath ?? null;
+    refreshGraphicsInBody(writer.editor.getBody(), { documentFilePath });
 
     // Opt-in: strip inter-character whitespace from the rendered body so
     // pretty-printed East Asian source doesn't show as gaps. Done post-render

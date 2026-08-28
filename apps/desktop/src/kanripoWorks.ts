@@ -22,10 +22,7 @@ const loadKanripoWorks = (): KanripoWorkIndexEntry[] => {
   return works;
 };
 
-export const searchKanripoWorks = (
-  query: string,
-  limit = 40,
-): KanripoWorkIndexEntry[] => {
+export const searchKanripoWorks = (query: string, limit = 40): KanripoWorkIndexEntry[] => {
   const works = loadKanripoWorks();
   const q = query.trim();
   if (!q) return works.slice(0, Math.min(30, works.length));

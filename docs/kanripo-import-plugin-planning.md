@@ -1,7 +1,7 @@
 # Kanripo import plugin — planning
 
-**Status (2026-08-28):** **Phase 2 implemented** — multiple file/paste sources, document extractors, multi-span coverage bar (hover), editor redraw from `ana="ljb:parallel-punct"` stamps, well-formed paragraph splits. Mac verification next. URL/Wikisource (Phase 3) and AI (Phase 4) wait. Conversion still uses `normalization_zh.kanripo_tei` until that slice is vendored into the plugin. `segment_kanripo_document` is not the TEI path.  
-**Related:** [import-planning.md](import-planning.md) (blind/profiled file import; Mandoku sample), [corpus-extraction-planning.md](corpus-extraction-planning.md) (Wikisource / web extract, later), plugin host in `plugins/` (`cjk-dates`, `norbert`).
+**Status (2026-08-28):** **Phase 2 implemented** — multiple file/paste sources, document extractors, multi-span coverage bar (hover), editor redraw from `ana="ljb:parallel-punct"` stamps, well-formed paragraph splits. **ctext wiki fetch + segmented parallel punct** wired in wizard and CLI; see [ctext-import-planning.md](ctext-import-planning.md) for future direct API import. Mac verification next. URL/Wikisource (Phase 3) and AI (Phase 4) wait. Mandoku→TEI conversion, gaiji tables/PNGs, and normalisation CSVs are **bundled in the plugin** (no `normalization_zh` sibling). `segment_kanripo_document` is not the TEI path.  
+**Related:** [import-planning.md](import-planning.md) (blind/profiled file import; Mandoku sample), [ctext-import-planning.md](ctext-import-planning.md) (future direct Ctext API import; wiki parallel partially implemented), [corpus-extraction-planning.md](corpus-extraction-planning.md) (Wikisource / web extract, later), plugin host in `plugins/` (`cjk-dates`, `norbert`).
 
 This plugin clones a Kanseki Repository (Kanripo) work from GitHub, converts each juan to project TEI, and optionally segments/punctuates. Segment-and-punctuate is also an editor command for a selection that has no punctuation.
 
@@ -27,13 +27,13 @@ Clones are **temporary**: cache while converting, **delete the git tree** once X
 
 ## Decisions (2026-08-27)
 
-| Topic | Decision |
-| --- | --- |
-| Granularity | **One XML file per juan** (one per Kanripo `.txt`). |
-| Git tree | Clone to a cache/temp dir; **flush after successful XML write**. On conversion failure, keep the clone until retry or cancel. Re-import clones again. |
-| Commentary | ASCII `(…)` → `<note type="comm">…</note>` inline (including across `<pb/>`). |
-| Normalisation | User chooses **off** / **hard replacements** (`hard_replacements.csv`) / **older DPM variant table** (`dpm_variant_normalisation_table.csv`). Record which in `revisionDesc`. |
-| File menu | **File → Import from Kanripo…** (next to Import Documents). Segment-and-punctuate also in the **editor** (toolbar / Tools). |
+| Topic           | Decision                                                                                                                                                                         |
+| --------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Granularity     | **One XML file per juan** (one per Kanripo `.txt`).                                                                                                                              |
+| Git tree        | Clone to a cache/temp dir; **flush after successful XML write**. On conversion failure, keep the clone until retry or cancel. Re-import clones again.                            |
+| Commentary      | ASCII `(…)` → `<note type="comm">…</note>` inline (including across `<pb/>`).                                                                                                    |
+| Normalisation   | User chooses **off** / **hard replacements** (`hard_replacements.csv`) / **older DPM variant table** (`dpm_variant_normalisation_table.csv`). Record which in `revisionDesc`.    |
+| File menu       | **File → Import from Kanripo…** (next to Import Documents). Segment-and-punctuate also in the **editor** (toolbar / Tools).                                                      |
 | Parallel source | Any extractable document, **paste**, or **URL** (Wikisource especially). Punctuate only the overlapping stretch. Coverage shown as a **1-D bar** (disk-usage metaphor) per juan. |
 
 ---
@@ -82,13 +82,13 @@ search index (bundled) ──► pick KR_ID
 
 **Package shape** (same as `cjk-dates`): hybrid plugin.
 
-| Layer | Where |
-| --- | --- |
-| Manifest, work index, normalisation CSVs, Python conversion | `plugins/packages/plugin-kanripo-import/` (name TBD) |
-| Thin `register.mjs` | plugin package |
-| Wizard + coverage UI | LJB host module (`loadHostModule`), so the plugin does not bundle React |
-| File menu injection, git clone IPC, fetch URL, write files | desktop main process |
-| Python IPC | existing `plugins:invokePython` (needs a longer timeout and non-Sanmiao-specific resolver) |
+| Layer                                                       | Where                                                                                      |
+| ----------------------------------------------------------- | ------------------------------------------------------------------------------------------ |
+| Manifest, work index, normalisation CSVs, Python conversion | `plugins/packages/plugin-kanripo-import/` (name TBD)                                       |
+| Thin `register.mjs`                                         | plugin package                                                                             |
+| Wizard + coverage UI                                        | LJB host module (`loadHostModule`), so the plugin does not bundle React                    |
+| File menu injection, git clone IPC, fetch URL, write files  | desktop main process                                                                       |
+| Python IPC                                                  | existing `plugins:invokePython` (needs a longer timeout and non-Sanmiao-specific resolver) |
 
 Import writes **files on disk** (like `documentImport.ts`). It does not round-trip through TinyMCE.
 
@@ -96,7 +96,7 @@ Import writes **files on disk** (like `documentImport.ts`). It does not round-tr
 
 ## Host changes (lejeanbaptiste)
 
-Plugins today may declare `contributions.toolsMenu` only. The Electron **File** menu is hard-coded. Tool actions can be *dispatched* if a menu click sends them, but plugin items are not inserted into File.
+Plugins today may declare `contributions.toolsMenu` only. The Electron **File** menu is hard-coded. Tool actions can be _dispatched_ if a menu click sends them, but plugin items are not inserted into File.
 
 Needed:
 
@@ -172,11 +172,11 @@ Pilcrow join + `<pb/>` + notes. No parallel, no AI. Default and always available
 
 Each source becomes punctuated plain text: characters + paragraph breaks + Chinese punctuation. Formats:
 
-| Input | How |
-| --- | --- |
-| File | Reuse document-import extractors (txt, md, rtf, docx, odt, xml). Keep punctuation and paragraph breaks; strip chrome. |
-| Paste | Same stripping on clipboard. |
-| URL | Main-process fetch. Generic HTML → visible text. **zh.wikisource.org** (and siblings): MediaWiki parse API preferred. Best-effort for arbitrary sites (bots, login walls). |
+| Input | How                                                                                                                                                                        |
+| ----- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| File  | Reuse document-import extractors (txt, md, rtf, docx, odt, xml). Keep punctuation and paragraph breaks; strip chrome.                                                      |
+| Paste | Same stripping on clipboard.                                                                                                                                               |
+| URL   | Main-process fetch. Generic HTML → visible text. **zh.wikisource.org** (and siblings): MediaWiki parse API preferred. Best-effort for arbitrary sites (bots, login walls). |
 
 Multiple sources per work/juan. Each may cover a different stretch.
 
@@ -198,12 +198,12 @@ Code to port (not call as a black box that emits old XML): `dz_krp/lib/align_pun
 
 One **horizontal bar per juan**; left = start of that Kanripo file, right = end. Scale = comparison-text character count (so `<pb/>` does not distort length).
 
-| Colour | Meaning |
-| --- | --- |
-| Grey | No overlap; still unpunctuated lines |
-| Green | Aligned; punctuation/paragraphs applied or previewed |
-| Amber (optional) | Weak match — apply only if the user confirms |
-| Second hue / hatch | Another source, or two sources overlapping |
+| Colour             | Meaning                                              |
+| ------------------ | ---------------------------------------------------- |
+| Grey               | No overlap; still unpunctuated lines                 |
+| Green              | Aligned; punctuation/paragraphs applied or previewed |
+| Amber (optional)   | Weak match — apply only if the user confirms         |
+| Second hue / hatch | Another source, or two sources overlapping           |
 
 Typical Wikisource picture: grey — green block — grey.
 
@@ -287,18 +287,18 @@ Editor command: same parallel/AI panel without search/clone.
 
 ## Reuse map
 
-| Piece | Location | Role |
-| --- | --- | --- |
-| TEI skeleton + metadata merge | `schemaTemplates.ts`, `metadataApplyOverrides.ts`, document import provenance | Wrapper |
-| Blind import extractors | `documentImport.ts` | Parallel file/paste → text |
-| Page-break joining | `pageBreakDetection.ts`; Mandoku pilcrow rules in import-planning | `<pb/>` inside `<p>` |
-| Plugin hybrid + Python IPC | `plugin-cjk-dates`, `pluginPythonBridge.ts` | Pattern |
-| Work catalogue | `chinese_corpus_metadata` `krp_works.csv` | Search |
-| Mandoku parse, pb, commentary split | `normalization_zh` (`kanripo_segment.py`, `commentary_extraction.py`); `dz_krp` `krp_metadata.py` | Body |
-| Parallel punctuate/segment | `dz_krp` `align_punct.py`, `align_seq.py`, `convertor.py` | Option 2 (port; emit TEI not old XML) |
-| Normalisation tables | `normalization_compile_table` `hard_replacements.csv`; `dz_krp` `dpm_variant_normalisation_table.csv` | Option radio |
-| AI JSON | `llmClient.ts`, auto-tagging response contract | Option 3 |
-| Wikisource fetch | corpus-extraction-planning (MediaWiki API) | URL source |
+| Piece                               | Location                                                                                              | Role                                  |
+| ----------------------------------- | ----------------------------------------------------------------------------------------------------- | ------------------------------------- |
+| TEI skeleton + metadata merge       | `schemaTemplates.ts`, `metadataApplyOverrides.ts`, document import provenance                         | Wrapper                               |
+| Blind import extractors             | `documentImport.ts`                                                                                   | Parallel file/paste → text            |
+| Page-break joining                  | `pageBreakDetection.ts`; Mandoku pilcrow rules in import-planning                                     | `<pb/>` inside `<p>`                  |
+| Plugin hybrid + Python IPC          | `plugin-cjk-dates`, `pluginPythonBridge.ts`                                                           | Pattern                               |
+| Work catalogue                      | `chinese_corpus_metadata` `krp_works.csv`                                                             | Search                                |
+| Mandoku parse, pb, commentary split | `normalization_zh` (`kanripo_segment.py`, `commentary_extraction.py`); `dz_krp` `krp_metadata.py`     | Body                                  |
+| Parallel punctuate/segment          | `dz_krp` `align_punct.py`, `align_seq.py`, `convertor.py`                                             | Option 2 (port; emit TEI not old XML) |
+| Normalisation tables                | `normalization_compile_table` `hard_replacements.csv`; `dz_krp` `dpm_variant_normalisation_table.csv` | Option radio                          |
+| AI JSON                             | `llmClient.ts`, auto-tagging response contract                                                        | Option 3                              |
+| Wikisource fetch                    | corpus-extraction-planning (MediaWiki API)                                                            | URL source                            |
 
 Do **not** ship `dz_krp` `build_document_xml` as the output document.
 
@@ -346,7 +346,7 @@ Do **not** ship `dz_krp` `build_document_xml` as the output document.
 
 ### Deferred
 
-- Auto-lookup of CBETA/DZ/zhsj parallels from `normalization_compile_table` discovery (user still *can* attach those files by hand in Phase 2).
+- Auto-lookup of CBETA/DZ/zhsj parallels from `normalization_compile_table` discovery (user still _can_ attach those files by hand in Phase 2).
 - Full Wikisource→TEI adapter (corpus-extraction E3); punctuation only needs text.
 - Merging several juans into one XML.
 - Keeping clones for offline re-import.

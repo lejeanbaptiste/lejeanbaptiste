@@ -475,6 +475,35 @@ distinguishable at a glance. */
   color: green;
 }
 
+/* Kanripo inline gaiji: character-sized PNGs from _gaiji/ beside imported XML */
+.showTags *[_tag='g'][type='kanripo']:before,
+.showTags *[_tag='g'][type='kanripo']:after,
+.showTags *[_tag='g'][type='kanripo'] *[_tag='graphic']:before,
+.showTags *[_tag='g'][type='kanripo'] *[_tag='graphic']:after {
+  content: none !important;
+  display: none !important;
+}
+
+*[_tag='g'][type='kanripo'].lw-kanripo-gaiji-wrap,
+.lw-kanripo-gaiji-wrap {
+  display: inline-block;
+  vertical-align: baseline;
+  line-height: 0;
+  padding: 0;
+  margin: 0;
+  font-size: inherit;
+}
+
+.lw-inline-graphic.lw-kanripo-gaiji,
+*[_tag='graphic'].lw-kanripo-gaiji {
+  display: block;
+  vertical-align: baseline;
+  line-height: 0;
+  margin: 0;
+  padding: 0;
+  transform: translateY(0.12em);
+}
+
 /* Entity chrome fights inline commentary */
 .noteWrapper .entity.note,
 .noteWrapper .entity.citation,

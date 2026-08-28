@@ -332,6 +332,32 @@ function devPluginPackageRoots(): string[] {
   return [...new Set(candidates)].filter((p) => fs.existsSync(p));
 }
 
+/** Live plugin package in the sibling plugins repo (dev only). */
+export function resolveDevPluginSourcePath(pluginId: string): string | null {
+  if (app.isPackaged) return null;
+  for (const packagesRoot of devPluginPackageRoots()) {
+    let entries: fs.Dirent[];
+    try {
+      entries = fs.readdirSync(packagesRoot, { withFileTypes: true });
+    } catch {
+      continue;
+    }
+    for (const entry of entries) {
+      if (!entry.isDirectory() || entry.name === 'plugin-sdk') continue;
+      const pkgDir = path.join(packagesRoot, entry.name);
+      const manifestPath = path.join(pkgDir, PLUGIN_MANIFEST_FILENAME);
+      if (!fs.existsSync(manifestPath)) continue;
+      try {
+        const raw = JSON.parse(fs.readFileSync(manifestPath, 'utf8')) as { id?: string };
+        if (raw.id === pluginId) return pkgDir;
+      } catch {
+        continue;
+      }
+    }
+  }
+  return null;
+}
+
 /** In development, seed plugin packages from the sibling plugins repo when none installed. */
 export async function seedDevPluginsIfEmpty(): Promise<void> {
   if (app.isPackaged) return;

@@ -11,6 +11,13 @@ import type { Action } from '../../../js/tagger';
 import { useActions, useAppState } from '../../../overmind';
 import type { EntityType } from '../../../types';
 import { log } from '../../../utilities';
+import {
+  graphicHeightEm,
+  pickImageFile,
+  replaceKanripoGaijiImage,
+  resolveKanripoGaijiContext,
+  updateKanripoGaijiHeight,
+} from '../../../utilities/kanripoGaijiEditor';
 import type { ItemProps } from '../components';
 import { State } from './useContextmenu';
 
@@ -404,6 +411,44 @@ export const useItems = (ctx: State) => {
         });
       }
 
+      items.push({ type: 'divider', name: 'divider' });
+    }
+
+    const kanripoGaiji = ctx.element ? resolveKanripoGaijiContext(ctx.element) : null;
+    if (kanripoGaiji && !ctx.isEntity) {
+      const currentHeight = graphicHeightEm(kanripoGaiji.graphicElement, writer).replace(/em$/, '');
+      items.push({
+        type: 'action',
+        name: t('LW.Set Kanripo gaiji height'),
+        icon: 'edit',
+        onClick: () => {
+          const next = window.prompt(t('LW.Height in em (e.g. 1 or 1.5)'), currentHeight);
+          if (!next) return;
+          const parsed = parseFloat(next.trim());
+          if (!Number.isFinite(parsed) || parsed <= 0) {
+            notifyViaSnackbar(t('LW.Enter a positive number.'));
+            return;
+          }
+          updateKanripoGaijiHeight(writer, kanripoGaiji.graphicElement, `${parsed}em`);
+        },
+      });
+      items.push({
+        type: 'action',
+        name: t('LW.Replace Kanripo gaiji image'),
+        icon: 'edit',
+        onClick: async () => {
+          const file = await pickImageFile();
+          if (!file) return;
+          const replaced = await replaceKanripoGaijiImage(
+            writer,
+            kanripoGaiji.graphicElement,
+            file,
+          );
+          if (!replaced) {
+            notifyViaSnackbar(t('LW.Could not save the new gaiji image.'));
+          }
+        },
+      });
       items.push({ type: 'divider', name: 'divider' });
     }
 

@@ -9,6 +9,7 @@ import { promisify } from 'node:util';
 import {
   getCachedPluginHostSnapshot,
   isPluginEnabledInMain,
+  resolveDevPluginSourcePath,
   resolvePluginPythonBinary,
 } from './plugins/pluginHost';
 
@@ -60,20 +61,25 @@ const pythonModuleForPlugin = (pluginId: string): string => {
   return moduleName;
 };
 
-const isNormalizationZhRoot = (root: string): boolean =>
-  fs.existsSync(path.join(root, 'src/normalization_zh/kanripo_tei.py'));
-
-/** Walk parents of ``start`` looking for a sibling ``normalization_zh`` checkout. */
-const walkForSiblingRepo = (start: string, folderName: string, markerRel: string): string | null => {
-  let dir = path.resolve(start);
-  for (let i = 0; i < 10; i += 1) {
-    const candidate = path.join(dir, folderName);
-    if (fs.existsSync(path.join(candidate, markerRel))) return candidate;
-    const parent = path.dirname(dir);
-    if (parent === dir) break;
-    dir = parent;
+const extraPythonPathsForPlugin = (pluginId: string): string[] => {
+  const paths: string[] = [];
+  const devSource = resolveDevPluginSourcePath(pluginId);
+  if (devSource) {
+    const devPython = path.join(devSource, 'python');
+    if (fs.existsSync(devPython)) paths.push(devPython);
   }
-  return null;
+  const plugin = pluginRecord(pluginId);
+  if (plugin?.installPath) {
+    const pythonDir = path.join(plugin.installPath, 'python');
+    if (fs.existsSync(pythonDir) && !paths.includes(pythonDir)) paths.push(pythonDir);
+  }
+  return paths;
+};
+
+const pluginInstallRootForPython = (pluginId: string): string | null => {
+  const devSource = resolveDevPluginSourcePath(pluginId);
+  if (devSource) return devSource;
+  return pluginRecord(pluginId)?.installPath ?? null;
 };
 
 /** Resolve sibling sanmiao repo (dev) for cjk-dates. */
@@ -87,38 +93,6 @@ const resolveSanmiaoDevRoot = (): string | null => {
     if (fs.existsSync(path.join(root, 'src/sanmiao/tei_bridge.py'))) return root;
   }
   return null;
-};
-
-/** Resolve normalization_zh (dev or resources) for kanripo-import. */
-const resolveNormalizationZhDevRoot = (): string | null => {
-  const fromEnv = process.env.NORMALIZATION_ZH_ROOT?.trim();
-  if (fromEnv && isNormalizationZhRoot(fromEnv)) return fromEnv;
-
-  const resources = process.resourcesPath
-    ? path.join(process.resourcesPath, 'normalization_zh')
-    : '';
-  if (resources && isNormalizationZhRoot(resources)) return resources;
-
-  for (const start of [process.cwd(), __dirname]) {
-    if (isNormalizationZhRoot(start)) return start;
-    const found = walkForSiblingRepo(start, 'normalization_zh', 'src/normalization_zh/kanripo_tei.py');
-    if (found) return found;
-  }
-  return null;
-};
-
-const extraPythonPathsForPlugin = (pluginId: string): string[] => {
-  const paths: string[] = [];
-  const plugin = pluginRecord(pluginId);
-  if (plugin?.installPath) {
-    const pythonDir = path.join(plugin.installPath, 'python');
-    if (fs.existsSync(pythonDir)) paths.push(pythonDir);
-  }
-  if (pluginId === 'kanripo-import') {
-    const nz = resolveNormalizationZhDevRoot();
-    if (nz) paths.push(path.join(nz, 'src'));
-  }
-  return paths;
 };
 
 const coreBundledPython = (): string | null => {
@@ -229,7 +203,7 @@ const SANMIAO_IMPORT_CHECK = [
 
 const KANRIPO_IMPORT_CHECK = [
   'from kanripo_import.ljb_bridge import cli_main',
-  'from normalization_zh.kanripo_tei import convert_kanripo_txt',
+  'from kanripo_import.kanripo_tei import convert_kanripo_txt',
 ].join('; ');
 
 const resolveCjkDatesPython = async (): Promise<PythonCommand> => {
@@ -377,13 +351,13 @@ const resolveGenericPluginPython = async (pluginId: string): Promise<PythonComma
   const storeStubHint = sawWindowsStoreStub
     ? ' Windows is redirecting "python"/"python3" to its Microsoft Store stub instead of a real interpreter.'
     : '';
-  const nzHint =
-    pluginId === 'kanripo-import'
-      ? ' Set NORMALIZATION_ZH_ROOT to the normalization_zh repo, or put it next to the LJB checkout.'
-      : '';
   const failureHint = failures.length > 0 ? ` [${failures.join(' | ')}]` : '';
+  const reinstallHint =
+    pluginId === 'kanripo-import'
+      ? ' Reinstall the plugin from Tools → Plugins (Install from folder… → plugin-kanripo-import) if you recently updated it.'
+      : '';
   throw new Error(
-    `Plugin ${pluginId} Python backend is not available.${nzHint}${storeStubHint}${failureHint}`,
+    `Plugin ${pluginId} Python backend is not available.${storeStubHint}${reinstallHint}${failureHint}`,
   );
 };
 
@@ -394,6 +368,10 @@ const resolvePluginPython = async (pluginId: string): Promise<PythonCommand> => 
 
 const pythonEnvForPlugin = (pluginId: string): NodeJS.ProcessEnv => {
   const env: NodeJS.ProcessEnv = { ...process.env };
+  const installRoot = pluginInstallRootForPython(pluginId);
+  if (installRoot) {
+    env.LJB_PLUGIN_INSTALL_PATH = installRoot;
+  }
   const extras: string[] = [];
   const devRoot = devRootCache.get(pluginId);
   if (devRoot) extras.push(path.join(devRoot, 'src'));

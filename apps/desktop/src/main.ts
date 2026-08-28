@@ -193,6 +193,7 @@ import {
 } from './timeMachine';
 import { invokePluginPython } from './pluginPythonBridge';
 import { cloneKanripoWork, flushKanripoWork, listKanripoTxtFiles } from './kanripoClone';
+import { fetchCtextWikiParallel, listCtextWikiSections } from './ctextWikiParallel';
 import { searchKanripoWorks } from './kanripoWorks';
 import {
   closeEntitySqliteReadRepositories,
@@ -2252,6 +2253,11 @@ const registerIpcHandlers = () => {
     await fs.writeFile(filePath, content, 'utf-8');
   });
 
+  ipcMain.handle('writeBinaryFile', async (_event, filePath: string, bytes: Uint8Array) => {
+    await assertRendererWritePath(filePath);
+    await fs.writeFile(filePath, Buffer.from(bytes));
+  });
+
   ipcMain.handle('pathExists', async (_event, filePath: string) => {
     return pathExists(filePath);
   });
@@ -2392,6 +2398,34 @@ const registerIpcHandlers = () => {
   ipcMain.handle('kanripo:flush', async (_event, krId: string) => {
     await flushKanripoWork(String(krId));
     return { ok: true };
+  });
+
+  ipcMain.handle(
+    'kanripo:fetchCtextParallel',
+    async (
+      _event,
+      options: {
+        url?: string;
+        row?: number | string;
+        id?: string;
+        contains?: string;
+        section?: string;
+      },
+    ) => {
+      const url = String(options?.url || '').trim();
+      if (!url) throw new Error('Missing ctext wiki URL.');
+      return fetchCtextWikiParallel({
+        url,
+        row: options?.row,
+        id: options?.id,
+        contains: options?.contains,
+        section: options?.section,
+      });
+    },
+  );
+
+  ipcMain.handle('kanripo:listCtextSections', async (_event, url: string) => {
+    return listCtextWikiSections(String(url || '').trim());
   });
 
   ipcMain.handle(

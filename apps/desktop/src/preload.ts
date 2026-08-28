@@ -262,6 +262,7 @@ export interface ElectronAPI {
   extractOdtText: (filePath: string) => Promise<{ text: string; warnings: string[] }>;
   writeClipboardRich: (flavors: { text: string; html?: string; rtf?: string }) => Promise<void>;
   writeFile: (filePath: string, content: string) => Promise<void>;
+  writeBinaryFile: (filePath: string, bytes: Uint8Array) => Promise<void>;
   pathExists: (filePath: string) => Promise<boolean>;
   statFile: (filePath: string) => Promise<FileStat>;
   syncWatchedFiles: (paths: string[]) => Promise<void>;
@@ -286,10 +287,25 @@ export interface ElectronAPI {
   kanripoSearch?: (
     query: string,
   ) => Promise<{ id: string; title: string; author?: string; dynasty?: string }[]>;
-  kanripoClone?: (
-    krId: string,
-  ) => Promise<{ cachePath: string; reused: boolean; files: string[] }>;
+  kanripoClone?: (krId: string) => Promise<{ cachePath: string; reused: boolean; files: string[] }>;
   kanripoFlush?: (krId: string) => Promise<{ ok: boolean }>;
+  kanripoFetchCtextParallel?: (options: {
+    url: string;
+    row?: number | string;
+    id?: string;
+    contains?: string;
+    section?: string;
+  }) => Promise<{
+    text: string;
+    label: string;
+    section?: string;
+    rowId?: string;
+    rowIds?: string[];
+    sections?: { id: string; slug: string; title: string; rowCount: number }[];
+  }>;
+  kanripoListCtextSections?: (
+    url: string,
+  ) => Promise<{ id: string; slug: string; title: string; rowCount: number }[]>;
   onPluginPythonProgress?: (
     pluginId: string,
     callback: (
@@ -774,6 +790,8 @@ const electronAPI: ElectronAPI = {
     ipcRenderer.invoke('writeClipboardRich', flavors),
   writeFile: (filePath: string, content: string) =>
     ipcRenderer.invoke('writeFile', filePath, content),
+  writeBinaryFile: (filePath: string, bytes: Uint8Array) =>
+    ipcRenderer.invoke('writeBinaryFile', filePath, bytes),
   pathExists: (filePath: string) => ipcRenderer.invoke('pathExists', filePath),
   statFile: (filePath: string) => ipcRenderer.invoke('statFile', filePath),
   syncWatchedFiles: (paths: string[]) => ipcRenderer.invoke('syncWatchedFiles', paths),
@@ -799,6 +817,8 @@ const electronAPI: ElectronAPI = {
   kanripoSearch: (query: string) => ipcRenderer.invoke('kanripo:search', query),
   kanripoClone: (krId: string) => ipcRenderer.invoke('kanripo:clone', krId),
   kanripoFlush: (krId: string) => ipcRenderer.invoke('kanripo:flush', krId),
+  kanripoFetchCtextParallel: (options) => ipcRenderer.invoke('kanripo:fetchCtextParallel', options),
+  kanripoListCtextSections: (url: string) => ipcRenderer.invoke('kanripo:listCtextSections', url),
   onPluginPythonProgress: (pluginId, callback) => {
     const listener = (
       _event: Electron.IpcRendererEvent,

@@ -10,4 +10,5 @@ export {
   setPluginEnabled,
   setPluginProject,
   syncEnabledPluginContributions,
+  resolveDevPluginSourcePath,
 } from './pluginHost';

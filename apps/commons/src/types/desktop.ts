@@ -532,10 +532,25 @@ export interface ElectronAPI {
   kanripoSearch?: (
     query: string,
   ) => Promise<{ id: string; title: string; author?: string; dynasty?: string }[]>;
-  kanripoClone?: (
-    krId: string,
-  ) => Promise<{ cachePath: string; reused: boolean; files: string[] }>;
+  kanripoClone?: (krId: string) => Promise<{ cachePath: string; reused: boolean; files: string[] }>;
   kanripoFlush?: (krId: string) => Promise<{ ok: boolean }>;
+  kanripoFetchCtextParallel?: (options: {
+    url: string;
+    row?: number | string;
+    id?: string;
+    contains?: string;
+    section?: string;
+  }) => Promise<{
+    text: string;
+    label: string;
+    section?: string;
+    rowId?: string;
+    rowIds?: string[];
+    sections?: { id: string; slug: string; title: string; rowCount: number }[];
+  }>;
+  kanripoListCtextSections?: (
+    url: string,
+  ) => Promise<{ id: string; slug: string; title: string; rowCount: number }[]>;
   onPluginPythonProgress?: (
     pluginId: string,
     callback: (

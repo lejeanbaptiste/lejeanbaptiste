@@ -48,6 +48,7 @@ describe('sanmiaoSchemaMerge', () => {
     expect(helpers).not.toContain(
       '<define name="ljb.sanmiao.int">\n    <element name="int">\n      <empty/>',
     );
+    expect(helpers).toContain('<define name="ljb.kanripo.graphic">');
     expect(helpers).not.toContain('<grammar');
     expect(helpers).not.toContain('<define name="date">');
   });
@@ -64,6 +65,8 @@ describe('sanmiaoSchemaMerge', () => {
     expect(merged.flatRng).toContain('<define name="ljb.sanmiao.date.parts">');
     expect(merged.flatRng).toContain('ref name="persName"');
     expect(merged.flatRng).toContain('ref name="ljb.nobleTitle"');
+    expect(merged.flatRng).toContain('ljb.kanripo.graphic');
+    expect(merged.flatRng).toContain('type=kanripo');
     expect(merged.flatRng).toContain('persName');
     expect(isFlatRelaxNgGrammar(merged.flatRng)).toBe(true);
     expect(isSanmiaoMergedWrapper(merged.flatRng)).toBe(true);

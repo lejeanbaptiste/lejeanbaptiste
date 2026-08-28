@@ -11,6 +11,8 @@ const toLocalFileUrl = (absolutePath: string): string => {
   return `${LJB_PREFIX}${LJB_HOST}${segments.map(encodeURIComponent).join('/')}`;
 };
 
+export { toLocalFileUrl };
+
 export const fromLocalFileUrl = (url: string): string | null => {
   if (!isLocalFileUrl(url)) return null;
   try {
@@ -33,6 +35,24 @@ const isUsableResourceUrl = (url: string): boolean => {
   if (url.includes('ljb:')) return false;
   if (/%2F/i.test(url)) return false;
   return true;
+};
+
+/** Join a document-relative asset path to the open XML file and return an ljb:// URL. */
+export const resolveDocumentAssetUrl = (
+  url: string,
+  documentFilePath: string | null | undefined,
+): string => {
+  if (!url) return url;
+  if (isLocalFileUrl(url) || /^https?:\/\//i.test(url) || url.startsWith('blob:')) return url;
+  if (!documentFilePath) return url;
+
+  const normalizedDoc = documentFilePath.replace(/\\/g, '/');
+  const slash = Math.max(normalizedDoc.lastIndexOf('/'), documentFilePath.lastIndexOf('\\'));
+  const baseDir = slash >= 0 ? documentFilePath.slice(0, slash) : documentFilePath;
+  const separator = baseDir.includes('\\') ? '\\' : '/';
+  const relative = url.replace(/^[./\\]+/, '').replace(/\//g, separator);
+  const absolute = `${baseDir}${separator}${relative}`;
+  return toLocalFileUrl(absolute);
 };
 
 export const filterResourceUrls = (urls: string[]): string[] => {

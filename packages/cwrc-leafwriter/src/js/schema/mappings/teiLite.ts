@@ -2,7 +2,7 @@ import $ from 'jquery';
 import type { AnnotationHasBody } from '../../entities/types';
 import { getAttributeString, getTagAndDefaultAttributes } from '../mapper';
 import type { EntityMappingProps, SchemaMappingProps } from '../types';
-import { handleGraphics } from './utitlities';
+import { handleGraphics, refreshGraphicsInBody } from './utitlities';
 
 const person: EntityMappingProps = {
   label: 'Person',
@@ -417,9 +417,7 @@ export const teiLite: SchemaMappingProps = {
       if ($tag.attr('_tag') === 'graphic') handleGraphics($tag);
     },
     documentLoaded: (_success, body) => {
-      $(body)
-        .find('*[_tag="graphic"]')
-        .each((_index, el) => handleGraphics($(el)));
+      refreshGraphicsInBody(body);
     },
   },
 };
