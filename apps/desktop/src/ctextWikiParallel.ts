@@ -18,6 +18,7 @@ export interface FetchCtextWikiParallelOptions {
   id?: string;
   contains?: string;
   section?: string;
+  fetchAll?: boolean;
 }
 
 const resolveCtextWikiModule = (): string => {
@@ -58,7 +59,7 @@ export const listCtextWikiSections = async (
   const modulePath = resolveCtextWikiModule();
   const mod = (await import(pathToFileURL(modulePath).href)) as {
     fetch: typeof fetch;
-    listWikiSections: (
+    listWikiCatalog: (
       html: string,
     ) => { id: string; slug: string; title: string; rowCount: number }[];
   };
@@ -68,5 +69,5 @@ export const listCtextWikiSections = async (
     if (!response.ok) throw new Error(`HTTP ${response.status} for ${url}`);
     return response.text();
   });
-  return mod.listWikiSections(html);
+  return mod.listWikiCatalog(html);
 };

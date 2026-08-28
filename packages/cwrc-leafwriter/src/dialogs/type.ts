@@ -39,7 +39,8 @@ export type DialogType =
   | 'settings'
   | 'plugins'
   | 'xpathSearch'
-  | 'kanripoImport';
+  | 'kanripoImport'
+  | 'daozangImport';
 
 export interface SimpleDialogMessageProps {
   // eslint-disable-next-line @typescript-eslint/no-explicit-any

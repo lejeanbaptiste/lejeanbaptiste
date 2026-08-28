@@ -306,6 +306,52 @@ export interface ElectronAPI {
   kanripoListCtextSections?: (
     url: string,
   ) => Promise<{ id: string; slug: string; title: string; rowCount: number }[]>;
+  kanripoListWikisourceVolumes?: (
+    url: string,
+  ) => Promise<{ id: string; slug: string; title: string; rowCount: number }[]>;
+  kanripoFetchParallelUrl?: (options: {
+    url: string;
+    section?: string;
+    contains?: string;
+    fetchAll?: boolean;
+  }) => Promise<{
+    text: string;
+    label: string;
+    kind: 'wikisource' | 'generic' | 'ctext';
+    url: string;
+    pageTitle?: string;
+    section?: string;
+    rowId?: string;
+    rowIds?: string[];
+    sections?: { id: string; slug: string; title: string; rowCount: number }[];
+  }>;
+  daozangStatus?: () => Promise<{
+    ready: boolean;
+    textCount: number;
+    source?: 'user-cache' | 'bundled' | 'none';
+    manifest?: Record<string, unknown>;
+    cacheRoot?: string;
+  }>;
+  daozangSync?: (options?: { force?: boolean }) => Promise<{
+    reused?: boolean;
+    textCount?: number;
+    converted?: number;
+    manifest?: Record<string, unknown>;
+  }>;
+  daozangDetectLocalSources?: () => Promise<
+    { path: string; label: string; kind: 'extracted' | 'rar' }[]
+  >;
+  daozangPickCorpusSource?: () => Promise<string | null>;
+  daozangInstallFromSource?: (sourcePath: string) => Promise<{
+    reused?: boolean;
+    textCount?: number;
+    converted?: number;
+    manifest?: Record<string, unknown>;
+  }>;
+  daozangSearch?: (
+    query: string,
+  ) => Promise<{ id: string; dz_no: string; title: string; variant: string; rel_path: string }[]>;
+  daozangResolveText?: (relPath: string) => Promise<string>;
   onPluginPythonProgress?: (
     pluginId: string,
     callback: (
@@ -819,6 +865,17 @@ const electronAPI: ElectronAPI = {
   kanripoFlush: (krId: string) => ipcRenderer.invoke('kanripo:flush', krId),
   kanripoFetchCtextParallel: (options) => ipcRenderer.invoke('kanripo:fetchCtextParallel', options),
   kanripoListCtextSections: (url: string) => ipcRenderer.invoke('kanripo:listCtextSections', url),
+  kanripoListWikisourceVolumes: (url: string) =>
+    ipcRenderer.invoke('kanripo:listWikisourceVolumes', url),
+  kanripoFetchParallelUrl: (options) => ipcRenderer.invoke('kanripo:fetchParallelUrl', options),
+  daozangStatus: () => ipcRenderer.invoke('daozang:status'),
+  daozangSync: (options) => ipcRenderer.invoke('daozang:sync', options),
+  daozangDetectLocalSources: () => ipcRenderer.invoke('daozang:detectLocalSources'),
+  daozangPickCorpusSource: () => ipcRenderer.invoke('daozang:pickCorpusSource'),
+  daozangInstallFromSource: (sourcePath: string) =>
+    ipcRenderer.invoke('daozang:installFromSource', sourcePath),
+  daozangSearch: (query: string) => ipcRenderer.invoke('daozang:search', query),
+  daozangResolveText: (relPath: string) => ipcRenderer.invoke('daozang:resolveText', relPath),
   onPluginPythonProgress: (pluginId, callback) => {
     const listener = (
       _event: Electron.IpcRendererEvent,

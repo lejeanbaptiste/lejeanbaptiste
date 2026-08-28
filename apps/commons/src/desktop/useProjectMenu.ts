@@ -1,5 +1,9 @@
 import { clearFindHighlights } from '@src/desktop/find/findEditorHighlights';
 import { openFindPanel } from '@src/desktop/desktopLeftPanelBridge';
+import {
+  clearHostDialogBridge,
+  registerHostDialogBridge,
+} from '@src/desktop/hostDialogBridge';
 import { openApplicationSettings } from '@src/desktop/openApplicationSettings';
 import { openPluginsDialog } from '@src/desktop/usePluginBootstrap';
 import {
@@ -13,7 +17,7 @@ import { useActions, useAppState } from '@src/overmind';
 import { isDesktop } from '@src/types/desktop';
 import Button from '@mui/material/Button';
 import { useAtom } from 'jotai';
-import { createElement, useCallback, useEffect, useState } from 'react';
+import { createElement, useCallback, useEffect, useLayoutEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { mergeEditorBodyWithStoredHeader, stripTeiHeaderForVisualEditor } from './teiHeaderXml';
 
@@ -76,6 +80,11 @@ export const useProjectMenu = () => {
   const [leafWriter] = useAtom(leafwriterAtom);
   const [aboutOpen, setAboutOpen] = useState(false);
   const [timeMachineOpen, setTimeMachineOpen] = useState(false);
+
+  useLayoutEffect(() => {
+    registerHostDialogBridge(openDialog, notifyViaSnackbar);
+    return () => clearHostDialogBridge();
+  }, [notifyViaSnackbar, openDialog]);
 
   const finalizeSavedDocument = useCallback(
     (content: string) => {

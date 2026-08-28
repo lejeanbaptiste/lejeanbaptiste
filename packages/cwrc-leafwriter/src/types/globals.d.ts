@@ -569,6 +569,25 @@ declare global {
     kanripoListCtextSections?: (
       url: string,
     ) => Promise<{ id: string; slug: string; title: string; rowCount: number }[]>;
+    kanripoListWikisourceVolumes?: (
+      url: string,
+    ) => Promise<{ id: string; slug: string; title: string; rowCount: number }[]>;
+    kanripoFetchParallelUrl?: (options: {
+      url: string;
+      section?: string;
+      contains?: string;
+      fetchAll?: boolean;
+    }) => Promise<{
+      text: string;
+      label: string;
+      kind: 'wikisource' | 'generic' | 'ctext';
+      url: string;
+      pageTitle?: string;
+      section?: string;
+      rowId?: string;
+      rowIds?: string[];
+      sections?: { id: string; slug: string; title: string; rowCount: number }[];
+    }>;
     onPluginPythonProgress?: (
       pluginId: string,
       callback: (progress: import('../autoTagging/dates').SanmiaoChunkProgressEvent) => void,

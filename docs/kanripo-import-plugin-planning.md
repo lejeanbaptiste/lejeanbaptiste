@@ -1,7 +1,7 @@
 # Kanripo import plugin — planning
 
-**Status (2026-08-28):** **Phase 2 implemented** — multiple file/paste sources, document extractors, multi-span coverage bar (hover), editor redraw from `ana="ljb:parallel-punct"` stamps, well-formed paragraph splits. **ctext wiki fetch + segmented parallel punct** wired in wizard and CLI; see [ctext-import-planning.md](ctext-import-planning.md) for future direct API import. Mac verification next. URL/Wikisource (Phase 3) and AI (Phase 4) wait. Mandoku→TEI conversion, gaiji tables/PNGs, and normalisation CSVs are **bundled in the plugin** (no `normalization_zh` sibling). `segment_kanripo_document` is not the TEI path.  
-**Related:** [import-planning.md](import-planning.md) (blind/profiled file import; Mandoku sample), [ctext-import-planning.md](ctext-import-planning.md) (future direct Ctext API import; wiki parallel partially implemented), [corpus-extraction-planning.md](corpus-extraction-planning.md) (Wikisource / web extract, later), plugin host in `plugins/` (`cjk-dates`, `norbert`).
+**Status (2026-08-28):** **Phase 2 done** — file/paste/URL parallel sources, multi-span coverage bar (hover), editor redraw from `ana="ljb:parallel-punct"` stamps, well-formed paragraph splits. **Phase 3 largely done** — Wikisource fetch via MediaWiki API (`wikisource-parallel.mjs` / `parallelUrlFetch.ts`); chapter-page resolution for punctuated editions; tape-mode paragraph reflow + comm-note repair in `parallel_punct.py`. **ctext wiki fetch + segmented parallel punct** wired in wizard and CLI (`fetch-ctext-parallel.mjs`). **Next:** Daozang bundled corpus as parallel source for `KR5*` (crosswalk, not a new index — see [daozang-import-planning.md](daozang-import-planning.md)); low-coverage / low-punctuation import warnings; Mac verification; AI (Phase 4) wait. Mandoku→TEI conversion, gaiji tables/PNGs, and normalisation CSVs are **bundled in the plugin** (no `normalization_zh` sibling). `segment_kanripo_document` is not the TEI path.  
+**Related:** [import-planning.md](import-planning.md) (blind/profiled file import; Mandoku sample), [ctext-import-planning.md](ctext-import-planning.md) (future direct Ctext API import; wiki parallel partially implemented), [daozang-import-planning.md](daozang-import-planning.md) (bundled punctuated corpus; Kanripo parallel crosswalk), [corpus-extraction-planning.md](corpus-extraction-planning.md) (Wikisource / web extract, later), plugin host in `plugins/` (`cjk-dates`, `norbert`, `daozang-import`).
 
 This plugin clones a Kanseki Repository (Kanripo) work from GitHub, converts each juan to project TEI, and optionally segments/punctuates. Segment-and-punctuate is also an editor command for a selection that has no punctuation.
 
@@ -192,7 +192,34 @@ The Kanripo juan is the **tape**. The parallel is often a **shorter sticker** (o
 
 Unmatched prefix, suffix, and holes stay as option-1 lines.
 
-Code to port (not call as a black box that emits old XML): `dz_krp/lib/align_punct.py`, `align_seq.py`; paragraph repair / dedupe passes in `convertor.py`.
+### Implementation notes (2026-08-28)
+
+Ported and extended in `plugins/packages/plugin-kanripo-import/python/kanripo_import/parallel_punct.py` (not a black-box call into old `dz_krp` XML builders).
+
+| Mode | When | Behaviour |
+| ---- | ---- | --------- |
+| **tape** (default) | Wikisource, paste, file, future Daozang `.txt` | One Han sticker aligned infix/superset; punctuation + `\n\n` breaks copied onto overlap; **reflow** inside green zone (merge Kanripo line wraps, split at sentence ends, skip splits inside comm notes); **relocate** comm notes stranded at `<p>` start |
+| **segmented** | ctext wiki (李善 etc.) | Merge split `</note></p><p><note type="comm">`; match basetext and each comm note separately; no paragraph reflow |
+
+Alignment fixes shipped since first Phase 2 cut:
+
+- `find_han_overlap` — union coverage for variant-heavy / infix matches.
+- `_sticker_to_tape_map` — per-character opcode map (replaces broken linear origin tracking).
+- `strip_wikisource_commentary` — drop `〈…〉` gloss spans before comparing Han.
+
+**Wikisource URL resolution** (`scripts/wikisource-parallel.mjs`):
+
+1. User pastes a work index (e.g. `https://zh.wikisource.org/zh-hant/荀子`).
+2. `resolveEditionRoot` prefers **chapter pages** (`荀子/勸學篇`, …) over scanned **四庫全書本** 卷 pages (often unpunctuated).
+3. `listVolumePages` falls back to chapter list when no 卷 pages exist.
+4. Fetched chapter text is concatenated into one parallel tape per import.
+
+**Known limitations:**
+
+- Kanripo **juan** count may not match Wikisource **卷** count (e.g. 荀子 23 vs 20); whole-work fetch only partially covers some juans.
+- Reflow applies only inside the aligned (green) zone; outside it, Kanripo still has one `<p>` per source line.
+- Parallel source must already contain punctuation — the engine copies marks, it does not invent them.
+- ctext **library/reading** URLs are not parallel sources; use **wiki** chapter URLs (`…/wiki.pl?…&chapter=…`).
 
 ### Coverage bar (“disk usage”)
 
@@ -298,7 +325,8 @@ Editor command: same parallel/AI panel without search/clone.
 | Parallel punctuate/segment          | `dz_krp` `align_punct.py`, `align_seq.py`, `convertor.py`                                             | Option 2 (port; emit TEI not old XML) |
 | Normalisation tables                | `normalization_compile_table` `hard_replacements.csv`; `dz_krp` `dpm_variant_normalisation_table.csv` | Option radio                          |
 | AI JSON                             | `llmClient.ts`, auto-tagging response contract                                                        | Option 3                              |
-| Wikisource fetch                    | corpus-extraction-planning (MediaWiki API)                                                            | URL source                            |
+| Wikisource fetch                    | `plugin-kanripo-import/scripts/wikisource-parallel.mjs`, `parallelUrlFetch.ts`                        | URL source — **done** (chapter-page preference) |
+| Daozang bundled parallel (planned)  | [daozang-import-planning.md](daozang-import-planning.md), `plugin-daozang-import`                     | Offline `KR5*` parallels via crosswalk          |
 
 Do **not** ship `dz_krp` `build_document_xml` as the output document.
 
@@ -335,8 +363,22 @@ Do **not** ship `dz_krp` `build_document_xml` as the output document.
 
 - Main-process fetch; generic HTML-to-text.
 - Wikisource: MediaWiki parse API; add as a named source on the bar.
+- Chapter-page preference for work indexes (punctuated 篇 pages vs unpunctuated 四庫 scans).
 
-**Acceptance:** Point at a zh.wikisource page that overlaps one juan; that juan’s bar turns partly green; other juans stay grey.
+**Acceptance:** Point at a zh.wikisource page that overlaps one juan; that juan’s bar turns partly green; other juans stay grey. **Met** for chapter-based works (e.g. 荀子/勸學篇 → `KR3a0002` juan 1).
+
+### Phase 3b — Bundled Daozang parallel (planned)
+
+Use the **Daozang import** plugin’s bundled 方瞳子 UTF-8 corpus as an offline parallel source for Kanripo Dao texts (`KR5*`), same tape engine as Wikisource.
+
+| Piece | Status |
+| ----- | ------ |
+| Daozang `index.json` + search (import dialog) | **Done** — see [daozang-import-planning.md](daozang-import-planning.md) |
+| Load `.txt` as parallel tape in Kanripo import | **Not wired** |
+| `kanripo_daozang_map.json` (KR id → `rel_path`) | **Not built** — normalize titles, prefer 本文類, manual override CSV for commentaries |
+| Import UI “Use bundled Daozang punctuation” | **Not wired** — Phase 1: manual picker reusing `daozang:search`; Phase 2: auto-suggest from crosswalk |
+
+Do **not** duplicate the Daozang title index; extend `corpus_index.py` with optional `short_title` and generate the crosswalk offline from `krp_works.json` + `index.json`.
 
 ### Phase 4 — AI JSON punctuation
 
@@ -346,7 +388,9 @@ Do **not** ship `dz_krp` `build_document_xml` as the output document.
 
 ### Deferred
 
-- Auto-lookup of CBETA/DZ/zhsj parallels from `normalization_compile_table` discovery (user still _can_ attach those files by hand in Phase 2).
+- Auto-lookup of CBETA/zhsj parallels from `normalization_compile_table` discovery (user still _can_ attach those files by hand in Phase 2). **Daozang:** bundled corpus + crosswalk planned in Phase 3b (above), not normalization table discovery.
+- Import warning when parallel overlap is high but transferred punctuation density is low.
+- Per-juan Wikisource fetch when 卷/juan mapping is not 1:1.
 - Full Wikisource→TEI adapter (corpus-extraction E3); punctuation only needs text.
 - Merging several juans into one XML.
 - Keeping clones for offline re-import.
@@ -364,6 +408,16 @@ Keep samples out of git if they are large; small fixtures in the plugin or `docs
 3. Unbalanced `(` — must fail that file.
 4. Punctuated excerpt that matches only the middle of (2) — coverage bar + partial apply.
 5. Unrelated punctuated paste — empty bar.
+6. **`KR3a0002` + 荀子 Wikisource index** — chapter fetch, punctuation transfer, comm-note placement (regression for tape reflow).
+
+### Automated tests (plugin package)
+
+```bash
+pytest plugins/packages/plugin-kanripo-import/python/tests/test_parallel_punct.py -q
+npm run test:wikisource -w @ljb/plugin-kanripo-import
+npm run test:parallel-batch -w @ljb/plugin-kanripo-import -- \
+  --kanripo /tmp/KR3a0002 --wikisource-url 'https://zh.wikisource.org/zh-hant/荀子'
+```
 
 ---
 

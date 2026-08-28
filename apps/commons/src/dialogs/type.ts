@@ -23,7 +23,14 @@ export interface IDialog extends Partial<Omit<MuiDialogProps, 'onClose'>> {
 }
 
 export type DialogType =
-  'chineseAssets' | 'export' | 'import' | 'privacy' | 'signIn' | 'simple' | 'templates';
+  | 'chineseAssets'
+  | 'export'
+  | 'import'
+  | 'kanripoImport'
+  | 'privacy'
+  | 'signIn'
+  | 'simple'
+  | 'templates';
 
 interface SimpleDialogMessageProps {
   data?: Record<string, unknown>;

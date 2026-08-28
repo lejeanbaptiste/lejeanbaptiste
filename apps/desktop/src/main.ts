@@ -194,7 +194,16 @@ import {
 import { invokePluginPython } from './pluginPythonBridge';
 import { cloneKanripoWork, flushKanripoWork, listKanripoTxtFiles } from './kanripoClone';
 import { fetchCtextWikiParallel, listCtextWikiSections } from './ctextWikiParallel';
+import { fetchParallelFromUrl } from './parallelUrlFetch';
+import { listWikisourceCatalog } from './wikisourceParallel';
 import { searchKanripoWorks } from './kanripoWorks';
+import {
+  daozangCacheRoot,
+  daozangCorpusStatus,
+  daozangTextPath,
+  detectDaozangLocalSources,
+} from './daozangCorpus';
+import { clearDaozangIndexCache, searchDaozangWorks } from './daozangWorks';
 import {
   closeEntitySqliteReadRepositories,
   acceptEntitySqliteDateAssertion,
@@ -1311,6 +1320,12 @@ function buildApplicationMenu() {
       click: () => sendMenuAction('kanripo-import.open'),
     });
   }
+  if (isPluginEnabledInMain('daozang-import')) {
+    pluginFileMenuItems.push({
+      label: 'Import from Daozang…',
+      click: () => sendMenuAction('daozang-import.open'),
+    });
+  }
 
   const exportDocumentItem: Electron.MenuItemConstructorOptions = {
     label: 'Export Document…',
@@ -2400,6 +2415,72 @@ const registerIpcHandlers = () => {
     return { ok: true };
   });
 
+  ipcMain.handle('daozang:status', async () => {
+    if (!isPluginEnabledInMain('daozang-import')) {
+      return { ready: false, textCount: 0, source: 'none', manifest: {}, cacheRoot: daozangCacheRoot() };
+    }
+    return daozangCorpusStatus();
+  });
+
+  ipcMain.handle('daozang:sync', async (_event, options?: { force?: boolean }) => {
+    if (!isPluginEnabledInMain('daozang-import')) {
+      throw new Error('Enable the Daozang import plugin first.');
+    }
+    const result = (await invokePluginPython('daozang-import', {
+      op: 'sync',
+      cache_root: daozangCacheRoot(),
+      force: Boolean(options?.force),
+    })) as { reused?: boolean; textCount?: number };
+    clearDaozangIndexCache();
+    return result;
+  });
+
+  ipcMain.handle('daozang:detectLocalSources', async () => detectDaozangLocalSources());
+
+  ipcMain.handle('daozang:pickCorpusSource', async () => {
+    if (!mainWindow) return null;
+    mainWindow.focus();
+    const result = await dialog.showOpenDialog(mainWindow, {
+      title: 'Install Daozang corpus',
+      message: 'Choose the Fang Tongzi RAR, an LJB corpus pack (.tar.gz), or a folder of .txt files.',
+      properties: ['openFile', 'openDirectory'],
+      defaultPath: app.getPath('downloads'),
+      filters: [
+        { name: 'Daozang corpus', extensions: ['rar', 'tar', 'gz', 'tgz'] },
+        { name: 'All files', extensions: ['*'] },
+      ],
+    });
+    if (result.canceled || result.filePaths.length === 0) return null;
+    const picked = result.filePaths[0];
+    rememberDialogDir(picked, fs.statSync(picked).isDirectory() ? 'directory' : 'file');
+    approveRendererReadRoot(picked);
+    return picked;
+  });
+
+  ipcMain.handle('daozang:installFromSource', async (_event, sourcePath: string) => {
+    if (!isPluginEnabledInMain('daozang-import')) {
+      throw new Error('Enable the Daozang import plugin first.');
+    }
+    const source = String(sourcePath || '').trim();
+    if (!source) throw new Error('No corpus source selected.');
+    approveRendererReadRoot(source);
+    const result = (await invokePluginPython('daozang-import', {
+      op: 'install_from_source',
+      cache_root: daozangCacheRoot(),
+      source_path: source,
+    })) as { reused?: boolean; textCount?: number };
+    clearDaozangIndexCache();
+    return result;
+  });
+
+  ipcMain.handle('daozang:search', async (_event, query: string) => {
+    return searchDaozangWorks(typeof query === 'string' ? query : '');
+  });
+
+  ipcMain.handle('daozang:resolveText', async (_event, relPath: string) => {
+    return daozangTextPath(String(relPath || ''));
+  });
+
   ipcMain.handle(
     'kanripo:fetchCtextParallel',
     async (
@@ -2426,6 +2507,34 @@ const registerIpcHandlers = () => {
 
   ipcMain.handle('kanripo:listCtextSections', async (_event, url: string) => {
     return listCtextWikiSections(String(url || '').trim());
+  });
+
+  ipcMain.handle(
+    'kanripo:fetchParallelUrl',
+    async (
+      _event,
+      options: {
+        url?: string;
+        row?: number | string;
+        id?: string;
+        contains?: string;
+        section?: string;
+        fetchAll?: boolean;
+      },
+    ) => {
+      const url = String(options?.url || '').trim();
+      if (!url) throw new Error('Missing parallel URL.');
+      return fetchParallelFromUrl({
+        url,
+        section: options?.section,
+        contains: options?.contains,
+        fetchAll: options?.fetchAll,
+      });
+    },
+  );
+
+  ipcMain.handle('kanripo:listWikisourceVolumes', async (_event, url: string) => {
+    return listWikisourceCatalog(String(url || '').trim());
   });
 
   ipcMain.handle(

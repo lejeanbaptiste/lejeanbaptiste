@@ -18,6 +18,42 @@ const escapeXmlText = (value: string): string =>
 
 const isoDate = (d = new Date()): string => d.toISOString().slice(0, 10);
 
+export interface ParallelProvenanceSource {
+  label: string;
+  url?: string;
+  kind?: string;
+}
+
+/** Human-readable note for ``revisionDesc`` when parallel punctuation was applied. */
+export const formatParallelProvenance = (
+  sources: ParallelProvenanceSource[],
+  alignMode: 'tape' | 'segmented',
+): string => {
+  const used = sources.filter((source) => source.label.trim());
+  const sourceBits = used.map((source) => {
+    if (source.url) return `${source.label} (${source.url})`;
+    return source.label;
+  });
+  const sourceNote = sourceBits.length ? sourceBits.join('; ') : 'paste/file';
+  return `parallel punctuation (${alignMode}); sources: ${sourceNote}`;
+};
+
+/** Append a ``revisionDesc/change`` entry, creating ``revisionDesc`` if needed. */
+export const appendTeiRevisionChange = (xml: string, change: string, importedAt?: Date): string => {
+  const when = isoDate(importedAt);
+  const escaped = escapeXmlText(change);
+  if (/<revisionDesc\b/.test(xml)) {
+    return xml.replace(
+      /<\/revisionDesc>/,
+      `    <change when="${when}">${escaped}</change>\n  </revisionDesc>`,
+    );
+  }
+  return xml.replace(
+    /<\/teiHeader>/,
+    `<revisionDesc>\n    <change when="${when}">${escaped}</change>\n  </revisionDesc>\n</teiHeader>`,
+  );
+};
+
 /** Wrap a Kanripo body ``div`` in the project TEI skeleton with provenance. */
 export const wrapKanripoTeiDocument = ({
   config,

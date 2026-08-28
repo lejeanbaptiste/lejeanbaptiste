@@ -1,7 +1,7 @@
 # Ctext import — planning
 
-**Status (2026-08-28):** **Not started** — wiki fetch for _parallel punctuation_ is implemented (see Kanripo plugin); a full **Import from Ctext** path is deferred.  
-**Related:** [kanripo-import-plugin-planning.md](kanripo-import-plugin-planning.md) (Kanripo clone + parallel punct; ctext wiki as parallel source), [import-planning.md](import-planning.md) (generic document import), [corpus-extraction-planning.md](corpus-extraction-planning.md) (web extract patterns).
+**Status (2026-08-28):** **Not started** (full import path) — **wiki fetch for parallel punctuation is done** via the Kanripo plugin (`fetch-ctext-parallel.mjs`, segmented mode in `parallel_punct.py`). A standalone **File → Import from Ctext…** path remains deferred.  
+**Related:** [kanripo-import-plugin-planning.md](kanripo-import-plugin-planning.md) (Kanripo clone + parallel punct; ctext wiki as parallel source), [daozang-import-planning.md](daozang-import-planning.md) (bundled Dao parallels), [import-planning.md](import-planning.md) (generic document import), [corpus-extraction-planning.md](corpus-extraction-planning.md) (web extract patterns).
 
 Ctext (Chinese Text Project) is a major pre-modern Chinese corpus. LJB already uses ctext **wiki pages** as punctuated parallels when importing Kanripo texts (李善-style inline commentary). This document plans a future **direct import** path: pull text from ctext into project TEI without going through Kanripo first.
 

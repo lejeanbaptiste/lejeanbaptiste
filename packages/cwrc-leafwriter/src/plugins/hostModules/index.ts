@@ -4,12 +4,14 @@ export interface PluginHostModule {
   registerCjkDatesUi?: (context: PluginRegisterContext) => void;
   registerNorbertNobleTitleUi?: (context: PluginRegisterContext) => void;
   registerKanripoImportUi?: (context: PluginRegisterContext) => void;
+  registerDaozangImportUi?: (context: PluginRegisterContext) => void;
 }
 
 const loaders: Record<string, () => Promise<PluginHostModule>> = {
   'cjk-dates-ui': () => import('./cjkDatesUi'),
   'norbert-noble-title-ui': () => import('./norbertNobleTitleUi'),
   'kanripo-import-ui': () => import('./kanripoImportUi'),
+  'daozang-import-ui': () => import('./daozangImportUi'),
 };
 
 export async function loadPluginHostModule(moduleId: string): Promise<PluginHostModule> {

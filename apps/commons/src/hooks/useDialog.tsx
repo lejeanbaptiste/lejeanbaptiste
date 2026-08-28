@@ -10,6 +10,7 @@ import {
   type DialogProps,
   type DialogType,
 } from '../dialogs';
+import { getPluginDialog } from '../../../../packages/cwrc-leafwriter/src/plugins/pluginExtensions';
 import { useActions, useAppState } from '../overmind';
 
 let displayed: string[] = [];
@@ -76,5 +77,6 @@ export const useDialog = () => {
     if (type === 'privacy') return PrivacyDialog;
     if (type === 'signIn') return SignInDialog;
     if (type === 'chineseAssets') return ChineseAssetsDialog;
+    if (type === 'kanripoImport') return getPluginDialog('kanripoImport');
   };
 };

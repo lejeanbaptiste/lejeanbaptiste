@@ -16,6 +16,7 @@ import {
 const execFileAsync = promisify(execFile);
 
 const PYTHON_TIMEOUT_MS = 5 * 60 * 1000;
+const DAOZANG_SYNC_TIMEOUT_MS = 30 * 60 * 1000;
 const MIN_SANMIAO_VERSION = '0.2.10';
 const SANMIAO_SPEC = `sanmiao[fuzzy]==${MIN_SANMIAO_VERSION}`;
 
@@ -206,6 +207,18 @@ const KANRIPO_IMPORT_CHECK = [
   'from kanripo_import.kanripo_tei import convert_kanripo_txt',
 ].join('; ');
 
+const DAOZANG_IMPORT_CHECK = [
+  'from daozang_import.ljb_bridge import cli_main',
+  'from daozang_import.daozang_tei import convert_daozang_txt',
+].join('; ');
+
+const pythonTimeoutMs = (pluginId: string, payload: Record<string, unknown>): number => {
+  if (pluginId === 'daozang-import' && (payload.op === 'sync' || payload.op === 'install_from_source')) {
+    return DAOZANG_SYNC_TIMEOUT_MS;
+  }
+  return PYTHON_TIMEOUT_MS;
+};
+
 const resolveCjkDatesPython = async (): Promise<PythonCommand> => {
   const pluginId = 'cjk-dates';
   const cached = pythonCache.get(pluginId);
@@ -315,7 +328,9 @@ const resolveGenericPluginPython = async (pluginId: string): Promise<PythonComma
   const importCheck =
     pluginId === 'kanripo-import'
       ? KANRIPO_IMPORT_CHECK
-      : `import ${pythonModuleForPlugin(pluginId)}`;
+      : pluginId === 'daozang-import'
+        ? DAOZANG_IMPORT_CHECK
+        : `import ${pythonModuleForPlugin(pluginId)}`;
   const failures: string[] = [];
   let sawWindowsStoreStub = false;
 
@@ -355,7 +370,9 @@ const resolveGenericPluginPython = async (pluginId: string): Promise<PythonComma
   const reinstallHint =
     pluginId === 'kanripo-import'
       ? ' Reinstall the plugin from Tools → Plugins (Install from folder… → plugin-kanripo-import) if you recently updated it.'
-      : '';
+      : pluginId === 'daozang-import'
+        ? ' Reinstall the plugin from Tools → Plugins (Install from folder… → plugin-daozang-import) if you recently updated it.'
+        : '';
   throw new Error(
     `Plugin ${pluginId} Python backend is not available.${storeStubHint}${reinstallHint}${failureHint}`,
   );
@@ -426,12 +443,13 @@ const runPluginPythonCli = async (
     let settled = false;
     let forceKillTimer: ReturnType<typeof setTimeout> | undefined;
 
+    const timeoutMs = pythonTimeoutMs(pluginId, payload);
     const timeout = setTimeout(() => {
       child.kill('SIGTERM');
       forceKillTimer = setTimeout(() => child.kill('SIGKILL'), 2_000);
       settled = true;
-      reject(new Error(`Plugin ${pluginId} Python timed out after ${PYTHON_TIMEOUT_MS / 1000}s`));
-    }, PYTHON_TIMEOUT_MS);
+      reject(new Error(`Plugin ${pluginId} Python timed out after ${timeoutMs / 1000}s`));
+    }, timeoutMs);
 
     child.stdout.on('data', (chunk: Buffer) => {
       const text = chunk.toString('utf8');

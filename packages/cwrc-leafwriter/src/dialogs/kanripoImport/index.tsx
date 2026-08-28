@@ -28,10 +28,24 @@ import {
   type KanripoTeiMeta,
 } from '../../../../../apps/commons/src/desktop/kanripoImportXml';
 import { loadParallelPlainText } from '../../../../../apps/commons/src/desktop/kanripoParallelText';
+import {
+  appendTeiRevisionChange,
+  formatParallelProvenance,
+} from '../../../../../apps/commons/src/desktop/kanripoImportXml';
+import {
+  ctextChapterUrlFromIndex,
+  isCtextWikiResUrl,
+  isCtextWikiUrl,
+  isWikisourceUrl,
+  unsupportedCtextUrlMessage,
+} from '../../../../../apps/commons/src/desktop/parallelUrlFetch';
 import type { IDialog } from '../type';
 import { isPluginEnabled } from '../../plugins';
 
 const PLUGIN_ID = 'kanripo-import';
+
+const CTEXT_IMPORT_MESSAGE =
+  'ctext wiki URLs are for in-editor punctuation only (Segment and punctuate on one open juan). For import, use Wikisource, a file, or paste.';
 
 interface KanripoWorkHit {
   id: string;
@@ -67,7 +81,8 @@ interface ParallelSource {
   id: string;
   label: string;
   text: string;
-  kind?: 'file' | 'paste' | 'ctext';
+  kind?: 'file' | 'paste' | 'ctext' | 'wikisource' | 'url';
+  url?: string;
 }
 
 type ParallelAlignMode = 'tape' | 'segmented';
@@ -281,39 +296,66 @@ export const KanripoImportDialog = ({
     })) as ParallelPunctPayload;
   };
 
-  const fetchCtext = async () => {
+  const fetchParallelUrl = async (overrideUrl?: string) => {
     const api = window.electronAPI;
-    if (!api?.kanripoFetchCtextParallel) {
-      setError('ctext fetch is only available in the desktop app.');
+    const fetcher = api?.kanripoFetchParallelUrl ?? api?.kanripoFetchCtextParallel;
+    if (!fetcher) {
+      setError('URL fetch is only available in the desktop app.');
       return;
     }
-    const url = ctextUrl.trim();
+    const url = (overrideUrl ?? ctextUrl).trim();
     if (!url) {
-      setError('Paste a ctext wiki chapter URL first.');
+      setError(
+        punctuateOnly
+          ? 'Paste a parallel URL first (ctext wiki, Wikisource, or other).'
+          : 'Paste a Wikisource URL, or add a file or paste below.',
+      );
+      return;
+    }
+    if (!punctuateOnly && isCtextWikiUrl(url)) {
+      setError(CTEXT_IMPORT_MESSAGE);
+      return;
+    }
+    const ctextHint = unsupportedCtextUrlMessage(url);
+    if (ctextHint) {
+      setError(ctextHint);
       return;
     }
     setBusy(true);
     setError(null);
     try {
-      const result = await api.kanripoFetchCtextParallel({
+      const result = await fetcher({
         url,
-        section: ctextSection.trim() || undefined,
-        contains: ctextContains.trim() || undefined,
+        section: punctuateOnly ? ctextSection.trim() || undefined : undefined,
+        contains: punctuateOnly ? ctextContains.trim() || undefined : undefined,
+        fetchAll: !punctuateOnly && isWikisourceUrl(url) ? true : undefined,
       });
       if (!result.text.trim()) {
-        setError('That ctext page row had no text.');
+        setError('That URL returned no text.');
         return;
       }
       if (result.sections?.length) {
         setCtextSections(result.sections);
       }
+      const kind =
+        'kind' in result && result.kind
+          ? (result.kind as ParallelSource['kind'])
+          : isCtextWikiUrl(url)
+            ? 'ctext'
+            : 'url';
+      if (kind === 'ctext' && punctuateOnly) {
+        setAlignMode('segmented');
+      } else if (!punctuateOnly && isWikisourceUrl(url)) {
+        setAlignMode('tape');
+      }
       setSources((current) => [
         ...current,
         {
-          id: `ctext-${result.label}-${Date.now()}`,
+          id: `url-${result.label}-${Date.now()}`,
           label: result.label,
           text: result.text,
-          kind: 'ctext',
+          kind,
+          url,
         },
       ]);
       setStatus(`Fetched ${result.label} (${result.text.trim().length} characters).`);
@@ -337,6 +379,27 @@ export const KanripoImportDialog = ({
         sections.length
           ? `Found ${sections.length} sections on that wiki page.`
           : 'No section headings found on that page.',
+      );
+    } catch (listError) {
+      setError(listError instanceof Error ? listError.message : String(listError));
+    } finally {
+      setBusy(false);
+    }
+  };
+
+  const listWikisourceVolumes = async () => {
+    const api = window.electronAPI;
+    const url = ctextUrl.trim();
+    if (!api?.kanripoListWikisourceVolumes || !url) return;
+    setBusy(true);
+    setError(null);
+    try {
+      const sections = await api.kanripoListWikisourceVolumes(url);
+      setCtextSections(sections);
+      setStatus(
+        sections.length
+          ? `Found ${sections.length} Wikisource 卷 pages (Fetch URL loads all of them on import).`
+          : 'No 卷 pages found under that Wikisource URL.',
       );
     } catch (listError) {
       setError(listError instanceof Error ? listError.message : String(listError));
@@ -413,6 +476,16 @@ export const KanripoImportDialog = ({
       return;
     }
 
+    if (punctMode === 'parallel') {
+      const hasCtextSource = sources.some(
+        (source) => source.kind === 'ctext' || (source.url && isCtextWikiUrl(source.url)),
+      );
+      if (hasCtextSource) {
+        setError(CTEXT_IMPORT_MESSAGE);
+        return;
+      }
+    }
+
     setBusy(true);
     setError(null);
     setReport(null);
@@ -462,11 +535,12 @@ export const KanripoImportDialog = ({
           let bodyXml = converted.body_xml;
           let punctNote: string | undefined;
           if (punctMode === 'parallel') {
+            setStatus(`Punctuating ${stem} (${i + 1} of ${files.length})…`);
             const punct = await invokeParallel(bodyXml);
             bars.push({ stem, coverage: punct.coverage });
             if (punct.applied) {
               bodyXml = punct.body_xml;
-              punctNote = 'parallel punctuation on overlapping stretch';
+              punctNote = formatParallelProvenance(sources, alignMode);
             }
           }
           const xml = wrapKanripoTeiDocument({
@@ -540,8 +614,8 @@ export const KanripoImportDialog = ({
       setEditorPreview({ xml, body: punct.body_xml, coverage: punct.coverage });
       setStatus(
         punct.applied
-          ? 'Preview ready. Apply writes punctuation only on the green stretch.'
-          : 'No overlap — the parallel does not match this juan. Nothing will be changed.',
+          ? 'Preview ready for this file. Apply writes punctuation only on the green stretch.'
+          : 'No overlap in this file — the parallel does not match this juan. Nothing will be changed.',
       );
     } catch (previewError) {
       setError(previewError instanceof Error ? previewError.message : String(previewError));
@@ -556,7 +630,11 @@ export const KanripoImportDialog = ({
       return;
     }
     const filePath = window.__leafWriterProject?.getActiveFilePath?.();
-    const next = replaceJuanDiv(editorPreview.xml, editorPreview.body);
+    let next = replaceJuanDiv(editorPreview.xml, editorPreview.body);
+    next = appendTeiRevisionChange(
+      next,
+      formatParallelProvenance(sources, alignMode),
+    );
     if (!xmlLooksWellFormed(next)) {
       setError('Resulting XML is not well-formed.');
       return;
@@ -571,16 +649,19 @@ export const KanripoImportDialog = ({
       return;
     }
     setStampCoverage(editorPreview.coverage);
-    setStatus('Applied parallel punctuation on the overlapping stretch.');
+    setStatus('Applied parallel punctuation to the open file.');
   };
 
   const hint = useMemo(() => {
     if (punctuateOnly) {
-      return 'Add punctuated parallels (ctext wiki, file, or paste). Segmented mode matches basetext and commentary separately — best for ctext rows with inline 李善 commentary.';
+      return 'Parallel punctuation applies to the open file only. Add a ctext wiki URL, Wikisource page, file, or paste (segmented mode for 李善 commentary).';
     }
     if (!projectReady) return 'Open a project first (same as Import Documents).';
+    if (punctMode === 'parallel') {
+      return 'Search by Kanripo id (KR…) or title. Paste a Wikisource work index (e.g. 荀子) — Fetch URL loads every chapter page (勸學篇, …) and matches each juan on import.';
+    }
     return 'Search by Kanripo id (KR…) or title. Each juan becomes one TEI file.';
-  }, [projectReady, punctuateOnly]);
+  }, [projectReady, punctuateOnly, punctMode]);
 
   const shownEditorCoverage = editorPreview?.coverage ?? stampCoverage;
 
@@ -588,91 +669,143 @@ export const KanripoImportDialog = ({
     <Box sx={{ mt: 2 }}>
       <Typography variant="subtitle2">Parallel transcription</Typography>
       <Typography variant="body2" color="text.secondary" sx={{ mb: 1 }}>
-        Punctuation is copied only where the texts overlap. Use segmented mode for ctext wiki pages
-        with inline commentary.
+        {punctuateOnly
+          ? 'Applies to the currently open file only. Use a ctext wiki URL for 李善 commentary (segmented mode), or a single Wikisource 卷 page / file / paste.'
+          : 'On import, Fetch URL on a Wikisource work index loads all linked chapter pages (or 卷 pages for scanned editions) as one parallel tape.'}
+        {' '}
+        {punctuateOnly && isCtextWikiUrl(ctextUrl) &&
+          (isCtextWikiResUrl(ctextUrl)
+            ? 'A res= index lists chapters — use List ctext sections, then click a chapter to fetch it.'
+            : 'Narrow with section/contains below if the chapter page is long.')}
       </Typography>
-      <FormControl sx={{ mb: 2 }} disabled={busy}>
-        <FormLabel>Alignment mode</FormLabel>
-        <RadioGroup
-          value={alignMode}
-          onChange={(event) => setAlignMode(event.target.value as ParallelAlignMode)}
-        >
-          <FormControlLabel
-            value="segmented"
-            control={<Radio />}
-            label="Segmented (basetext + commentary separately — for ctext)"
-          />
-          <FormControlLabel
-            value="tape"
-            control={<Radio />}
-            label="Single tape (one contiguous Han string)"
-          />
-        </RadioGroup>
-      </FormControl>
+      {punctuateOnly && (
+        <FormControl sx={{ mb: 2 }} disabled={busy}>
+          <FormLabel>Alignment mode</FormLabel>
+          <RadioGroup
+            value={alignMode}
+            onChange={(event) => setAlignMode(event.target.value as ParallelAlignMode)}
+          >
+            <FormControlLabel
+              value="segmented"
+              control={<Radio />}
+              label="Segmented (basetext + commentary separately — for ctext)"
+            />
+            <FormControlLabel
+              value="tape"
+              control={<Radio />}
+              label="Single tape (one contiguous Han string)"
+            />
+          </RadioGroup>
+        </FormControl>
+      )}
       <Typography variant="body2" sx={{ mb: 1 }}>
-        ctext wiki
+        {punctuateOnly
+          ? 'Parallel URL (ctext wiki, Wikisource, or other)'
+          : 'Parallel URL (Wikisource or other)'}
       </Typography>
       <TextField
         fullWidth
         size="small"
-        label="Wiki chapter URL"
-        placeholder="https://ctext.org/wiki.pl?if=gb&chapter=793335"
+        label="URL"
+        placeholder={
+          punctuateOnly
+            ? 'https://ctext.org/wiki.pl?chapter=… or https://zh.wikisource.org/wiki/…/卷01'
+            : 'https://zh.wikisource.org/zh-hant/荀子 or …/wiki/荀子/勸學篇'
+        }
         value={ctextUrl}
         onChange={(event) => setCtextUrl(event.target.value)}
         disabled={busy}
         sx={{ mb: 1 }}
       />
-      <Box sx={{ display: 'flex', gap: 1, mb: 1, flexWrap: 'wrap' }}>
-        <TextField
-          size="small"
-          label="Section (optional)"
-          placeholder="兩都賦序"
-          value={ctextSection}
-          onChange={(event) => setCtextSection(event.target.value)}
-          disabled={busy}
-          sx={{ flex: 1, minWidth: 160 }}
-        />
-        <TextField
-          size="small"
-          label="Contains (optional)"
-          placeholder="或曰"
-          value={ctextContains}
-          onChange={(event) => setCtextContains(event.target.value)}
-          disabled={busy}
-          sx={{ flex: 1, minWidth: 160 }}
-        />
-      </Box>
+      {punctuateOnly && isCtextWikiUrl(ctextUrl) && (
+        <Box sx={{ display: 'flex', gap: 1, mb: 1, flexWrap: 'wrap' }}>
+          <TextField
+            size="small"
+            label="Section (ctext)"
+            placeholder="兩都賦序"
+            value={ctextSection}
+            onChange={(event) => setCtextSection(event.target.value)}
+            disabled={busy}
+            sx={{ flex: 1, minWidth: 160 }}
+          />
+          <TextField
+            size="small"
+            label="Contains (ctext)"
+            placeholder="或曰"
+            value={ctextContains}
+            onChange={(event) => setCtextContains(event.target.value)}
+            disabled={busy}
+            sx={{ flex: 1, minWidth: 160 }}
+          />
+        </Box>
+      )}
       <Button
         size="small"
         variant="outlined"
         disabled={busy || !ctextUrl.trim()}
         sx={{ mb: 1, mr: 1 }}
-        onClick={() => void fetchCtext()}
+        onClick={() => void fetchParallelUrl()}
       >
-        Fetch from ctext
+        Fetch URL
       </Button>
-      <Button
-        size="small"
-        variant="text"
-        disabled={busy || !ctextUrl.trim()}
-        sx={{ mb: 1 }}
-        onClick={() => void listCtextSections()}
-      >
-        List sections
-      </Button>
-      {ctextSections.length > 0 && (
+      {punctuateOnly && isCtextWikiUrl(ctextUrl) && (
+        <Button
+          size="small"
+          variant="text"
+          disabled={busy || !ctextUrl.trim()}
+          sx={{ mb: 1 }}
+          onClick={() => void listCtextSections()}
+        >
+          List ctext sections
+        </Button>
+      )}
+      {!punctuateOnly && isWikisourceUrl(ctextUrl) && (
+        <Button
+          size="small"
+          variant="text"
+          disabled={busy || !ctextUrl.trim()}
+          sx={{ mb: 1 }}
+          onClick={() => void listWikisourceVolumes()}
+        >
+          List Wikisource 卷
+        </Button>
+      )}
+      {isCtextWikiUrl(ctextUrl) && ctextSections.length > 0 && punctuateOnly && (
         <List dense sx={{ mb: 1, border: 1, borderColor: 'divider', borderRadius: 1 }}>
           {ctextSections.map((section) => (
             <ListItemButton
               key={section.id}
               disabled={busy}
-              onClick={() => setCtextSection(section.title || section.slug)}
+              onClick={() => {
+                if (section.rowCount === 0 && isCtextWikiResUrl(ctextUrl)) {
+                  const chapterUrl = ctextChapterUrlFromIndex(ctextUrl, section.id);
+                  if (chapterUrl) void fetchParallelUrl(chapterUrl);
+                  return;
+                }
+                setCtextSection(section.title || section.slug);
+              }}
             >
               <ListItemText
                 primary={section.title || section.slug}
-                secondary={`${section.rowCount} rows · ${section.id}`}
+                secondary={
+                  section.rowCount === 0 && isCtextWikiResUrl(ctextUrl)
+                    ? `chapter ${section.id} · click to fetch`
+                    : `${section.rowCount} rows · ${section.id}`
+                }
               />
             </ListItemButton>
+          ))}
+        </List>
+      )}
+      {!punctuateOnly && isWikisourceUrl(ctextUrl) && ctextSections.length > 0 && (
+        <List dense sx={{ mb: 1, border: 1, borderColor: 'divider', borderRadius: 1 }}>
+          {ctextSections.map((section) => (
+            <ListItem key={section.id} dense>
+              <ListItemText
+                primary={section.title || section.slug}
+                secondary={`included in whole-edition fetch · ${section.id}`}
+              />
+            </ListItem>
           ))}
         </List>
       )}
@@ -723,7 +856,11 @@ export const KanripoImportDialog = ({
               <ListItemText
                 sx={{ pl: 2, pr: 10 }}
                 primary={source.label}
-                secondary={`${source.text.trim().length} characters${source.kind === 'ctext' ? ' · ctext' : ''}`}
+                secondary={`${source.text.trim().length} characters${
+                  source.kind && source.kind !== 'file' && source.kind !== 'paste'
+                    ? ` · ${source.kind}`
+                    : ''
+                }`}
               />
             </ListItem>
           ))}
@@ -817,7 +954,7 @@ export const KanripoImportDialog = ({
                 onChange={(event) => {
                   const next = event.target.value as 'as-is' | 'parallel';
                   setPunctMode(next);
-                  if (next === 'parallel') setAlignMode('segmented');
+                  if (next === 'parallel') setAlignMode(punctuateOnly ? 'segmented' : 'tape');
                 }}
               >
                 <FormControlLabel

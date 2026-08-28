@@ -251,6 +251,15 @@
 - Bulk Kanripo import now reloads any already-open tabs for written juan files from disk, not only when a single juan was imported.
 - Fixed CI typecheck failures in `utitlities.ts` (correct `fetchResource` import path; `HTMLImageElement` typing for image load callbacks). Added `writeBinaryFile` to the Electron bridge for saving pasted or replaced gaiji PNGs.
 - TEI schema merge (v11) now allows `<graphic>` inside `<g type="kanripo">` for Kanripo gaiji, and moves imported Kanripo `<idno>` from `titleStmt` into `sourceDesc/bibl` where TEI permits it. Fixed gaiji height changes in the context menu (inline styles were not clearing on update).
+- **Parallel punctuation — tape mode (Wikisource, paste, file):** improved Han overlap for variant-heavy texts; per-character opcode alignment from parallel tape onto the Kanripo body (fixes misplaced punctuation); paragraph reflow inside matched zones — merges spurious Kanripo line `<p>` wraps, splits at `。`/`！`/`？` and blank lines, and skips splits inside `<note type="comm">`; relocates commentary notes stranded at paragraph starts back onto the preceding sentence. Verified on 荀子/勸學篇 (`KR3a0002`).
+- **Parallel punctuation — segmented mode (ctext wiki):** `fetch-ctext-parallel.mjs` pulls punctuated ctext wiki chapters; segmented mode merges split commentary notes then matches basetext and `<note type="comm">` separately (李善-style inline commentary). Tape mode remains default for Wikisource and plain sources.
+- **Wikisource fetch:** work-index URLs now prefer **chapter pages** (e.g. `荀子/勸學篇`, punctuated) over scanned 四庫全書本 **卷** pages (often unpunctuated); falls back to 卷 listing when no chapter pages exist. Import wizard placeholders and help text updated for chapter-based URLs.
+- Headless batch tools: `npm run test:parallel-batch` (coverage + well-formed XML per juan) and `npm run test:wikisource` (MediaWiki fetch unit tests). See `plugin-kanripo-import` README for CLI workflows.
+
+### Daozang import
+
+- Added a Daozang import plugin (`plugin-daozang-import`) with a bundled **方瞳子** punctuated UTF-8 corpus (~1,513 texts, ~77 MB): local search index, **File → Import from Daozang…**, and optional install/replace from a local RAR or extracted `道藏_txt` folder.
+- **Not yet wired:** using bundled Daozang texts as parallel punctuation sources when importing Kanripo Dao works (`KR5*`). The Daozang title index already exists; what is still needed is a Kanripo↔Daozang crosswalk (normalized titles, prefer 本文類 over 玉訣類/注疏). See [daozang-import-planning.md](docs/daozang-import-planning.md) and [kanripo-import-plugin-planning.md](docs/kanripo-import-plugin-planning.md).
 
 ### Rewards system
 

@@ -2,12 +2,30 @@ import { KanripoImportDialog, isKanripoImportAvailable } from '../../dialogs/kan
 import { isPluginEnabled } from '../registry';
 import type { PluginRegisterContext } from '../registerContext';
 
+const openKanripoDialog = (props?: { variant?: 'import' | 'punctuate' }): boolean => {
+  const dialog = { type: 'kanripoImport', props };
+  if (window.__ljbHostDialogBridge?.openDialog) {
+    window.__ljbHostDialogBridge.openDialog(dialog);
+    return true;
+  }
+  if (window.writer?.overmindActions?.ui?.openDialog) {
+    window.writer.overmindActions.ui.openDialog({ type: 'kanripoImport', props });
+    return true;
+  }
+  return false;
+};
+
+const hostNotify = (message: string): void => {
+  window.__ljbHostDialogBridge?.notify?.(message);
+  window.writer?.overmindActions?.ui?.notifyViaSnackbar?.(message);
+};
+
 /** Registers File-menu wizard and editor punctuate command for Kanripo import. */
 export function registerKanripoImportUi(context: PluginRegisterContext): void {
   context.log('registering Kanripo import UI');
   context.registerDialog('kanripoImport', KanripoImportDialog);
 
-  const openImport = async ({ notify }: { notify: (message: string) => void }) => {
+  const openImport = ({ notify }: { notify: (message: string) => void }) => {
     if (!isPluginEnabled('kanripo-import')) {
       notify('Enable the “Kanripo import” plugin in Tools → Plugins.');
       return;
@@ -21,14 +39,11 @@ export function registerKanripoImportUi(context: PluginRegisterContext): void {
       notify('Open a project first.');
       return;
     }
-    if (window.writer) {
-      window.writer.overmindActions.ui.openDialog({ type: 'kanripoImport' });
-      return;
-    }
-    notify('Kanripo import is not ready yet.');
+    if (openKanripoDialog()) return;
+    notify('Kanripo import is not ready yet — try again in a moment.');
   };
 
-  const openPunctuate = async ({ notify }: { notify: (message: string) => void }) => {
+  const openPunctuate = ({ notify }: { notify: (message: string) => void }) => {
     if (!isPluginEnabled('kanripo-import')) {
       notify('Enable the “Kanripo import” plugin in Tools → Plugins.');
       return;
@@ -37,13 +52,7 @@ export function registerKanripoImportUi(context: PluginRegisterContext): void {
       notify('Open a document first.');
       return;
     }
-    if (window.writer) {
-      window.writer.overmindActions.ui.openDialog({
-        type: 'kanripoImport',
-        props: { variant: 'punctuate' },
-      });
-      return;
-    }
+    if (openKanripoDialog({ variant: 'punctuate' })) return;
     notify('Open a document in the editor first.');
   };
 
@@ -54,13 +63,20 @@ export function registerKanripoImportUi(context: PluginRegisterContext): void {
     id: 'kanripo-punctuate',
     icon: 'entitiesTag',
     title: 'Segment and punctuate',
-    tooltip: 'Copy punctuation from a parallel onto the overlapping stretch',
+    tooltip: 'Copy punctuation from a parallel onto the open file only',
     group: 'ui',
     isAvailable: () => isPluginEnabled('kanripo-import') && isKanripoImportAvailable(),
     onClick: () => {
-      void openPunctuate({
-        notify: (message) => window.writer?.overmindActions?.ui?.notifyViaSnackbar?.(message),
-      });
+      openPunctuate({ notify: hostNotify });
     },
   });
+}
+
+declare global {
+  interface Window {
+    __ljbHostDialogBridge?: {
+      openDialog: (dialog: { type: string; props?: Record<string, unknown> }) => void;
+      notify: (message: string) => void;
+    };
+  }
 }
