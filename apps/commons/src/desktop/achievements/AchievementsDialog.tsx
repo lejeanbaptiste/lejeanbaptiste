@@ -76,8 +76,8 @@ import {
   pickBackgroundKey,
   pickPose,
   pickWeapon,
-  rankOfBackgroundKey,
   UniformAvatar,
+  weaponFloorForBackground,
 } from './UniformAvatar';
 import { loadAchievementsState, saveAchievementsState } from './store';
 import type { AchievementsState, UnlockedAchievement } from './types';
@@ -217,6 +217,17 @@ export const AchievementsDialog = ({ onClose, open }: AchievementsDialogProps) =
   // call happens to land last (see pickPortraitFor).
   const pickedForRankRef = useRef<number | null>(null);
 
+  // The pose/backdrop/weapon-tier last rolled, mirroring the same three
+  // pieces of state. The picks feed into each other (the backdrop depends on
+  // the pose, and the backdrop's rank constrains the weapon pool), and a
+  // `setState` updater doesn't run until React re-renders - so reading the
+  // previous value through an updater, as this used to, meant the backdrop
+  // key was still unset when the weapon pick needed its rank, and every
+  // portrait rolled its weapon unrestricted. Refs are readable right now.
+  const lastPoseRef = useRef<number | null>(null);
+  const lastBackgroundKeyRef = useRef<string | null>(null);
+  const lastWeaponRankRef = useRef<number | null>(null);
+
   // Pose, backdrop, and weapon are all randomized together (Daniel: "pose and
   // weapons will be random"), picked together with `state` (React batches
   // this) so everything's already resolved by the time the render below
@@ -230,39 +241,33 @@ export const AchievementsDialog = ({ onClose, open }: AchievementsDialogProps) =
       loaded.avatar?.kind === 'dicebear'
         ? loaded.avatar.options.bodyType
         : createDefaultDiceBearAvatar(encoderName).bodyType;
-    setPoseIndex((previousPose) => {
-      const newPose = pickPose(previousPose, loadedBodyType, calculatedRankIndex(loaded));
-      let pickedBackgroundKey: string | null = null;
-      setBackgroundKey((previousBackground) => {
-        pickedBackgroundKey = pickBackgroundKey(
-          calculatedRankIndex(loaded),
-          previousBackground,
-          newPose,
-          ribbonsIntoRank(loaded),
-        );
-        return pickedBackgroundKey;
-      });
-      // A Rank 5+ sci-fi backdrop shouldn't pair with an earlier-era rank-1/2
-      // weapon (Daniel: "Rank5+ background should be linked to rank5+
-      // weapons") - force the weapon pool up to match whenever the backdrop
-      // that was just rolled is itself Rank 5+.
-      const backgroundRank = pickedBackgroundKey ? rankOfBackgroundKey(pickedBackgroundKey) : null;
-      const requireRank =
-        backgroundRank !== null && backgroundRank >= 5 ? backgroundRank : undefined;
-      setWeaponRank((previousWeaponRank) => {
-        const weapon = pickWeapon(
-          newPose,
-          loadedBodyType,
-          calculatedRankIndex(loaded),
-          previousWeaponRank,
-          requireRank,
-        );
-        setWeaponImageIds(weapon?.imageIds ?? []);
-        return weapon?.rank ?? null;
-      });
-      return newPose;
-    });
-    pickedForRankRef.current = calculatedRankIndex(loaded);
+    const rankIndex = calculatedRankIndex(loaded);
+    const newPose = pickPose(lastPoseRef.current, loadedBodyType, rankIndex);
+    const newBackgroundKey = pickBackgroundKey(
+      rankIndex,
+      lastBackgroundKeyRef.current,
+      newPose,
+      ribbonsIntoRank(loaded),
+    );
+    // A Rank 5+ sci-fi backdrop shouldn't pair with an earlier-era rank-1/2
+    // weapon (Daniel: "Rank5+ background should be linked to rank5+
+    // weapons") - force the weapon pool up to match the backdrop that was
+    // just rolled. See weaponFloorForBackground for the era rule itself.
+    const weapon = pickWeapon(
+      newPose,
+      loadedBodyType,
+      rankIndex,
+      lastWeaponRankRef.current,
+      weaponFloorForBackground(newBackgroundKey),
+    );
+    lastPoseRef.current = newPose;
+    lastBackgroundKeyRef.current = newBackgroundKey;
+    lastWeaponRankRef.current = weapon?.rank ?? null;
+    setPoseIndex(newPose);
+    setBackgroundKey(newBackgroundKey);
+    setWeaponRank(weapon?.rank ?? null);
+    setWeaponImageIds(weapon?.imageIds ?? []);
+    pickedForRankRef.current = rankIndex;
   };
 
   // Loads achievements state and re-rolls the backdrop/pose/weapon pick.

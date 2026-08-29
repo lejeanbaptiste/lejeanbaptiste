@@ -3,6 +3,7 @@ import {
   extractDateAttributeRefs,
   generateSanmiaoHelperDefines,
   isCurrentSanmiaoMergeVersion,
+  kanripoGOverrideHasDuplicateType,
   isFlatRelaxNgGrammar,
   isSanmiaoMergedWrapper,
   isTeiRelaxNgSchema,
@@ -25,6 +26,10 @@ const MINIMAL_TEI = `<?xml version="1.0"?>
   <a:documentation xmlns:a="http://relaxng.org/ns/compatibility/annotations/1.0">TEI Edition: P5 Version 4.9.0</a:documentation>
   <define name="model.phrase"><choice><ref name="persName"/><ref name="date"/></choice></define>
   ${SAMPLE_TEI_DATE}
+  <define name="att.global.attributes">
+    <optional><attribute name="n"><text/></attribute></optional>
+  </define>
+  <define name="att.typed.attributes"><empty/></define>
   <define name="persName"><element name="persName"/></define>
 </grammar>`;
 
@@ -67,6 +72,14 @@ describe('sanmiaoSchemaMerge', () => {
     expect(merged.flatRng).toContain('ref name="ljb.nobleTitle"');
     expect(merged.flatRng).toContain('ljb.kanripo.graphic');
     expect(merged.flatRng).toContain('type=kanripo');
+    expect(merged.flatRng).not.toMatch(
+      /<attribute name="n">[\s\S]*?<attribute name="n">/,
+    );
+    const kanripoBranch = merged.flatRng.match(
+      /<attribute name="type"><value>kanripo<\/value><\/attribute>([\s\S]*?)<empty\/>/,
+    )?.[1];
+    expect(kanripoBranch).toBeDefined();
+    expect(kanripoBranch).not.toContain('att.typed.attributes');
     expect(merged.flatRng).toContain('persName');
     expect(isFlatRelaxNgGrammar(merged.flatRng)).toBe(true);
     expect(isSanmiaoMergedWrapper(merged.flatRng)).toBe(true);
@@ -77,6 +90,16 @@ describe('sanmiaoSchemaMerge', () => {
     const v1Wrapper = `<grammar><a:documentation>Le Jean-Baptiste: TEI + sanmiao East Asian date extension</a:documentation><include href="tei_all.tei.rng"><except><define name="date"/></except></include><include href="ljb-sanmiao-dates.rng"/></grammar>`;
     expect(isSanmiaoMergedWrapper(v1Wrapper)).toBe(true);
     expect(isCurrentSanmiaoMergeVersion(v1Wrapper)).toBe(false);
+  });
+
+  it('rejects merged schemas with duplicate @type on Kanripo g even when marker matches', () => {
+    const merged = buildSanmiaoMergedSchemaFiles(MINIMAL_TEI, 'tei_all.rng');
+    const broken = merged.flatRng.replace(
+      '<ref name="ljb.kanripo.graphic"/>',
+      '<ref name="ljb.kanripo.graphic"/><ref name="att.typed.attributes"/>',
+    );
+    expect(kanripoGOverrideHasDuplicateType(broken)).toBe(true);
+    expect(isCurrentSanmiaoMergeVersion(broken)).toBe(false);
   });
 
   it('detects TEI schemas and merge need', () => {

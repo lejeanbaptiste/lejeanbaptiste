@@ -43,7 +43,11 @@ export const useDialog = () => {
       if (displayId && displayed.includes(displayId)) return;
 
       const component = getComponent(type);
-      if (!component) return;
+      if (!component) {
+        console.warn(`[dialog] No component registered for type "${type}"`);
+        if (props?.id) removeDialog(props.id);
+        return;
+      }
 
       // display dialog
       const { id } = showModal<DialogProps>(
@@ -82,5 +86,6 @@ export const useDialog = () => {
     if (type === 'signIn') return SignInDialog;
     if (type === 'chineseAssets') return ChineseAssetsDialog;
     if (type === 'kanripoImport') return pluginDialog('kanripoImport');
+    if (type === 'daozangImport') return pluginDialog('daozangImport');
   };
 };

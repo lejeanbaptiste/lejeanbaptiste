@@ -1,4 +1,4 @@
-import { MistralLlmClient, type FetchFn, type LlmClient } from './llmClient';
+import { MistralLlmClient, OllamaLlmClient, type FetchFn, type LlmClient } from './llmClient';
 
 /** Shape of desktop AI API settings exposed via `window.__ljbCommonsUi`. */
 export interface AiApiSettingsLike {
@@ -45,13 +45,25 @@ export function isAiSuggestReady(settings: AiApiSettingsLike | null | undefined)
   );
 }
 
+/** Ollama listens on :11434 and uses /api/chat with JSON schema — not OpenAI /v1/chat/completions. */
+export function isOllamaBaseUrl(baseUrl: string): boolean {
+  return /:11434(?:\/|$)/i.test(baseUrl.trim());
+}
+
 export function createLlmClientFromSettings(
   settings: AiApiSettingsLike,
   fetchImpl?: FetchFn,
 ): LlmClient {
   const model = settings.model.trim();
-  const baseUrl = normalizeLlmChatBaseUrl(settings.baseUrl);
   const apiKey = isLocalAiBaseUrl(settings.baseUrl) ? '' : settings.apiKey?.trim() || '';
+  if (isOllamaBaseUrl(settings.baseUrl)) {
+    return new OllamaLlmClient({
+      baseUrl: normalizeLlmChatBaseUrl(settings.baseUrl),
+      model,
+      fetchImpl,
+    });
+  }
+  const baseUrl = normalizeLlmChatBaseUrl(settings.baseUrl);
   return new MistralLlmClient({ apiKey, model, baseUrl, fetchImpl });
 }
 

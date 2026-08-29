@@ -8,7 +8,7 @@ import type { ProjectBundle } from './projectFile';
 
 export const SANMIAO_PATCH_FILENAME = 'ljb-sanmiao-dates.rng';
 /** Bump when the generated RNG changes so existing merged schemas get regenerated. */
-export const SANMIAO_MERGE_VERSION = 11;
+export const SANMIAO_MERGE_VERSION = 14;
 const MERGE_VERSION_MARKER = `ljb-sanmiao-merge v${SANMIAO_MERGE_VERSION}`;
 const TEI_NS = 'http://www.tei-c.org/ns/1.0';
 const TEI_CATALOG_IDS = new Set(['teiAll', 'teiLite', 'teiSimplePrint', 'jTei']);
@@ -48,8 +48,16 @@ export const isSanmiaoMergedWrapper = (rngContent: string): boolean =>
 export const isFlatRelaxNgGrammar = (rngContent: string): boolean =>
   !/<include[\s>]/i.test(rngContent);
 
+/** True when Kanripo gaiji override pins @type=kanripo and also pulls in att.typed (@type again). */
+export const kanripoGOverrideHasDuplicateType = (rngContent: string): boolean => {
+  const kanripoBranch = rngContent.match(
+    /<attribute name="type"><value>kanripo<\/value><\/attribute>([\s\S]*?)<empty\/>/,
+  )?.[1];
+  return Boolean(kanripoBranch?.includes('att.typed.attributes'));
+};
+
 export const isCurrentSanmiaoMergeVersion = (rngContent: string): boolean =>
-  rngContent.includes(MERGE_VERSION_MARKER);
+  rngContent.includes(MERGE_VERSION_MARKER) && !kanripoGOverrideHasDuplicateType(rngContent);
 
 /** Attribute groups referenced on stock TEI `<date>`. */
 export const extractDateAttributeRefs = (baseRng: string): string[] => {
@@ -110,10 +118,8 @@ const buildKanripoGOverrideDefine = (): string => `
         <choice>
           <group>
             <attribute name="type"><value>kanripo</value></attribute>
-            <optional><attribute name="n"><text/></attribute></optional>
             <ref name="ljb.kanripo.graphic"/>
             <ref name="att.global.attributes"/>
-            <ref name="att.typed.attributes"/>
             <empty/>
           </group>
           <group>

@@ -490,6 +490,32 @@ export const rankOfBackgroundKey = (key: string): number | null => {
   return null;
 };
 
+/** The weapon tier that counts as "modern era". Also the highest tier any
+ * pose actually has art for: backdrops run to Rank 7, weapon art stops
+ * here. */
+export const MODERN_ERA_RANK = 5;
+
+/** The `requireRank` floor to pair with `backgroundKey` - the rule that
+ * keeps a portrait's weapon in the same era as its backdrop.
+ *
+ * Ranks 5, 6 and 7 all resolve to MODERN_ERA_RANK: those backdrops are
+ * modern/sci-fi, but only tier 5 weapon art exists, so all three share it
+ * (Daniel: "for now, ranks 5-7 should all use rank5 weapons"). Passing the
+ * backdrop's own rank instead would ask pickWeapon for a tier-6 floor,
+ * empty its pool, and trigger the unrestricted fallback - which is how a
+ * Rank 6 desert backdrop ended up holding a flintlock. The floor is
+ * cumulative, so tier 6/7 art would be picked up on its own if it ever
+ * lands (UniformAvatar.test.ts fails when it does, as a reminder to raise
+ * MODERN_ERA_RANK).
+ *
+ * Earlier-rank backdrops return undefined: a Rank 6 player drawing a
+ * "historical" Napoleonic scene should still get a Napoleonic weapon, so
+ * the pool stays unrestricted there. */
+export const weaponFloorForBackground = (backgroundKey: string): number | undefined => {
+  const backgroundRank = rankOfBackgroundKey(backgroundKey);
+  return backgroundRank !== null && backgroundRank >= MODERN_ERA_RANK ? MODERN_ERA_RANK : undefined;
+};
+
 // bg_* artwork is 758x331.
 export const BG_ASPECT = 758 / 331;
 

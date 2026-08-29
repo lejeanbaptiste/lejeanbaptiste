@@ -1327,6 +1327,8 @@ function buildApplicationMenu() {
     });
   }
 
+  const pluginToolsMenuItems: Electron.MenuItemConstructorOptions[] = [];
+
   const exportDocumentItem: Electron.MenuItemConstructorOptions = {
     label: 'Export Document…',
     click: () => sendMenuAction('export-document'),
@@ -1349,6 +1351,9 @@ function buildApplicationMenu() {
     lookForUpdatesItem,
     timeMachineItem,
     menuSeparator(),
+    ...(pluginToolsMenuItems.length > 0
+      ? [...pluginToolsMenuItems, menuSeparator()]
+      : []),
     ...(process.platform !== 'darwin'
       ? [
           settingsItem,
@@ -1397,6 +1402,9 @@ function buildApplicationMenu() {
           { label: 'File', submenu: fileMenuItems },
           buildEditMenu(),
           buildViewMenu(),
+          ...(pluginToolsMenuItems.length > 0
+            ? [{ label: 'Tools', submenu: pluginToolsMenuItems }]
+            : []),
         ]
       : fileMenuItems;
 

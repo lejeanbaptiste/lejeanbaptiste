@@ -3,9 +3,23 @@ export type PluginToolActionHandler = (ctx: {
 }) => void | Promise<void>;
 
 const handlers = new Map<string, PluginToolActionHandler>();
+const actionOwners = new Map<string, string>();
 
-export function registerPluginToolAction(action: string, handler: PluginToolActionHandler) {
+export function registerPluginToolAction(
+  action: string,
+  handler: PluginToolActionHandler,
+  pluginId?: string,
+) {
   handlers.set(action, handler);
+  if (pluginId) actionOwners.set(action, pluginId);
+}
+
+export function clearPluginToolActionsForPlugin(pluginId: string): void {
+  for (const [action, owner] of actionOwners.entries()) {
+    if (owner !== pluginId) continue;
+    handlers.delete(action);
+    actionOwners.delete(action);
+  }
 }
 
 export function isKnownPluginToolAction(action: string): boolean {

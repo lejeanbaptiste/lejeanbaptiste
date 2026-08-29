@@ -10,6 +10,7 @@ export interface WikisourceParallelResult {
   url: string;
   pageTitle?: string;
   sections?: { id: string; slug: string; title: string; rowCount: number }[];
+  chapters?: { id: string; title: string; text: string }[];
 }
 
 export interface FetchWikisourceParallelOptions {

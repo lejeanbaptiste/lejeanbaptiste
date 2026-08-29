@@ -36,7 +36,8 @@ describe('wrapKanripoTeiDocument', () => {
     });
 
     expect(xml).toContain('<title>Test Juan</title>');
-    expect(xml).toContain('<bibl><idno type="Kanripo">KRTEST1</idno></bibl>');
+    expect(xml).toContain('<idno type="Kanripo">KRTEST1</idno>');
+    expect(xml).not.toContain('<bibl><idno type="Kanripo">');
     expect(xml).not.toContain('<title>Test Juan</title><idno');
     expect(xml).toContain('Kanseki Repository (Kanripo)');
     expect(xml).toContain('https://github.com/kanripo/KRTEST1');

@@ -46,6 +46,13 @@ interface DaozangStatus {
 interface ConvertPayload {
   meta: DaozangTeiMeta;
   body_xml: string;
+  split?: boolean;
+  juan_files?: {
+    juan_n: string;
+    juan_title: string;
+    subtitle?: string;
+    body_xml: string;
+  }[];
 }
 
 export type DaozangImportDialogProps = IDialog;
@@ -93,7 +100,7 @@ export const DaozangImportDialog = ({ onClose, open = false }: DaozangImportDial
     const next = await api(text);
     setHits(next);
     setSelected((current) => {
-      if (current && next.some((hit) => hit.id === current.id)) return current;
+      if (current && next.some((hit) => hit.rel_path === current.rel_path)) return current;
       return next[0] ?? null;
     });
   }, []);
@@ -217,24 +224,51 @@ export const DaozangImportDialog = ({ onClose, open = false }: DaozangImportDial
         }
       }
 
-      const stem = converted.meta.stem || selected.title || selected.id;
-      const xml = wrapDaozangTeiDocument({
-        config,
-        meta: converted.meta,
-        bodyXml: converted.body_xml,
-      });
-      if (!xmlLooksWellFormed(xml)) {
-        throw new Error('Wrapped TEI is not well-formed XML.');
+      const baseStem = converted.meta.stem || selected.title || selected.id;
+      const juanFiles =
+        converted.split && converted.juan_files && converted.juan_files.length >= 2
+          ? converted.juan_files
+          : [
+              {
+                juan_n: '',
+                juan_title: converted.meta.title,
+                body_xml: converted.body_xml,
+              },
+            ];
+
+      const written: string[] = [];
+      for (const juan of juanFiles) {
+        const fileStem =
+          juan.juan_n && juanFiles.length > 1
+            ? `${baseStem}-卷${juan.juan_n}`
+            : baseStem;
+        const docTitle =
+          juan.juan_n && juanFiles.length > 1
+            ? `${converted.meta.title} — 卷${juan.juan_n}`
+            : converted.meta.title;
+        const xml = wrapDaozangTeiDocument({
+          config,
+          meta: { ...converted.meta, title: docTitle },
+          bodyXml: juan.body_xml,
+        });
+        if (!xmlLooksWellFormed(xml)) {
+          throw new Error('Wrapped TEI is not well-formed XML.');
+        }
+        const outputPath = uniqueDaozangXmlPath(destDir, fileStem, used);
+        const dir = parentDir(outputPath);
+        if (dir) await api.ensureDirectory(dir);
+        await api.writeFile(outputPath, xml);
+        written.push(outputPath);
       }
-      const outputPath = uniqueDaozangXmlPath(destDir, stem, used);
-      const dir = parentDir(outputPath);
-      if (dir) await api.ensureDirectory(dir);
-      await api.writeFile(outputPath, xml);
 
       await project.refreshExplorer?.();
-      await project.openFile?.(outputPath);
-      setReport({ written: [outputPath] });
-      setStatus(`Imported ${selected.title}.`);
+      await project.openFile?.(written[0]);
+      setReport({ written });
+      setStatus(
+        written.length > 1
+          ? `Imported ${selected.title} as ${written.length} juan files.`
+          : `Imported ${selected.title}.`,
+      );
     } catch (importError) {
       setError(importError instanceof Error ? importError.message : String(importError));
       setStatus('');
@@ -362,8 +396,8 @@ export const DaozangImportDialog = ({ onClose, open = false }: DaozangImportDial
           )}
           {hits.map((hit) => (
             <ListItemButton
-              key={hit.id}
-              selected={selected?.id === hit.id}
+              key={hit.rel_path}
+              selected={selected?.rel_path === hit.rel_path}
               onClick={() => setSelected(hit)}
             >
               <ListItemText

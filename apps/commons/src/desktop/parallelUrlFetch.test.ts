@@ -5,6 +5,7 @@ import {
   isCtextWikiResUrl,
   isCtextWikiUrl,
   isWikisourceUrl,
+  isWikisourceVolumeUrl,
   parseWikisourceUrl,
 } from './parallelUrlFetch';
 
@@ -45,6 +46,22 @@ describe('url kind detectors', () => {
 
   it('detects wikisource URLs', () => {
     expect(isWikisourceUrl('https://en.wikisource.org/wiki/Foo')).toBe(true);
+  });
+
+  it('detects wikisource 卷 page URLs', () => {
+    expect(
+      isWikisourceVolumeUrl('https://zh.wikisource.org/wiki/%E5%BE%8C%E6%BC%A2%E6%9B%B8/%E5%8D%B775'),
+    ).toBe(true);
+    expect(
+      isWikisourceVolumeUrl('https://zh.wikisource.org/wiki/%E5%BE%8C%E6%BC%A2%E6%9B%B8/%E5%8D%B779%E4%B8%8A'),
+    ).toBe(true);
+    expect(
+      isWikisourceVolumeUrl('https://zh.wikisource.org/wiki/%E8%8D%80%E5%AD%90/%E5%8B%80%E5%AD%B8%E7%AF%87'),
+    ).toBe(true);
+    expect(isWikisourceVolumeUrl('https://zh.wikisource.org/wiki/%E8%8D%80%E5%AD%90')).toBe(false);
+    expect(isWikisourceVolumeUrl('https://zh.wikisource.org/wiki/%E5%BE%8C%E6%BC%A2%E6%9B%B8')).toBe(
+      false,
+    );
   });
 });
 

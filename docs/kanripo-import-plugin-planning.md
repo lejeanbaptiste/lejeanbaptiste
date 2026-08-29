@@ -1,6 +1,7 @@
 # Kanripo import plugin — planning
 
-**Status (2026-08-28):** **Phase 2 done** — file/paste/URL parallel sources, multi-span coverage bar (hover), editor redraw from `ana="ljb:parallel-punct"` stamps, well-formed paragraph splits. **Phase 3 largely done** — Wikisource fetch via MediaWiki API (`wikisource-parallel.mjs` / `parallelUrlFetch.ts`); chapter-page resolution for punctuated editions; tape-mode paragraph reflow + comm-note repair in `parallel_punct.py`. **ctext wiki fetch + segmented parallel punct** wired in wizard and CLI (`fetch-ctext-parallel.mjs`). **Concordance done** — bundled `data/concordance/` with `kanripo_daozang_map.json` (1,483 KR → Daozang `rel_path` hits); Python `concordance_lookup` bridge op. **Phase 3b partial** — import wizard auto-loads bundled Daozang parallel when concordance + Daozang corpus hit (tape mode). **Next:** manual Daozang search picker; low-coverage / low-punctuation warnings; Mac verification; AI (Phase 4) wait. Mandoku→TEI conversion, gaiji tables/PNGs, and normalisation CSVs are **bundled in the plugin** (no `normalization_zh` sibling). `segment_kanripo_document` is not the TEI path.  
+**Status (2026-08-29):** … **Phase 3b partial** — import wizard auto-loads bundled Daozang parallel when concordance + Daozang corpus hit (tape mode). **Import quality warnings done**. **Phase 4 AI punctuation shipped** — **v3 parallel transfer** (plain-text LLM → scoped fuzzy align → `apply_ai_parallel_segments` + auto reflow); editor selection scoping; `AiRunIndicator` progress; no Han gate. **AI fill gaps** — optional after parallel import (**Fill gaps** on each coverage bar) or Kanripo toolbar; not during bulk import. v2 JSON anchors retained as fallback code only. **Next:** coverage bar second colour for AI.  
+**Testing:** [kanripo-daozang-testing.md](kanripo-daozang-testing.md).  
 **Related:** [import-planning.md](import-planning.md) (blind/profiled file import; Mandoku sample), [ctext-import-planning.md](ctext-import-planning.md) (future direct Ctext API import; wiki parallel partially implemented), [daozang-import-planning.md](daozang-import-planning.md) (bundled punctuated corpus; Kanripo parallel crosswalk), [corpus-extraction-planning.md](corpus-extraction-planning.md) (Wikisource / web extract, later), plugin host in `plugins/` (`cjk-dates`, `norbert`, `daozang-import`).
 
 This plugin clones a Kanseki Repository (Kanripo) work from GitHub, converts each juan to project TEI, and optionally segments/punctuates. Segment-and-punctuate is also an editor command for a selection that has no punctuation.
@@ -33,7 +34,7 @@ Clones are **temporary**: cache while converting, **delete the git tree** once X
 | Git tree        | Clone to a cache/temp dir; **flush after successful XML write**. On conversion failure, keep the clone until retry or cancel. Re-import clones again.                            |
 | Commentary      | ASCII `(…)` → `<note type="comm">…</note>` inline (including across `<pb/>`).                                                                                                    |
 | Normalisation   | User chooses **off** / **hard replacements** (`hard_replacements.csv`) / **older DPM variant table** (`dpm_variant_normalisation_table.csv`). Record which in `revisionDesc`.    |
-| File menu       | **File → Import from Kanripo…** (next to Import Documents). Segment-and-punctuate also in the **editor** (toolbar / Tools).                                                      |
+| File menu       | **File → Import from Kanripo…** (next to Import Documents). Punctuation tools in the **Kanripo toolbar** (not duplicated in the app Tools menu). |
 | Parallel source | Any extractable document, **paste**, or **URL** (Wikisource especially). Punctuate only the overlapping stretch. Coverage shown as a **1-D bar** (disk-usage metaphor) per juan. |
 
 ---
@@ -250,17 +251,56 @@ Fail closed: commentary vs base-text mismatch → empty bar, not speckles.
 
 ---
 
-## Punctuation option 3 — AI (JSON, leave the text alone)
+## Punctuation option 3 — AI (plain text → parallel transfer)
 
-Same contract as auto-tagging structured output:
+**Implemented (2026-08-29, v3).** Pure inference when no parallel exists.
 
-- Model must **not** rewrite characters.
-- Returns JSON (offsets or “insert `。` after this n-gram”).
-- Host inserts into the original string; verify every insertion against live text (drop failures).
-- Chunk by juan or by a few hundred characters.
-- Reuse project `AiApiSettings` / OpenAI-compatible `chat/completions` + `response_format` JSON schema.
+| Decision | Choice |
+| -------- | ------ |
+| Entry A | Import wizard: `punctMode = ai` on whole juan(s) |
+| Entry C | Tools → **AI punctuate selection…** (whole juan if no selection) |
+| Segmentation | `parse_body_segments` — one LLM call per basetext run + one per `<note type="comm">` |
+| Model output | **Plain punctuated text** per segment (**prompt v3**, `ai-punct-v3`) — no JSON schema |
+| Transfer | Scoped fuzzy align per segment (`apply_scoped_parallel_punctuation`); variant normalization in model output is fine |
+| Reflow | Automatic at end of v3 pipeline; Kanripo line-length heuristic (long `<p>` + short terminal `<p>`) preserves mandoku line-wrap breaks |
+| Comm notes | Full inline punctuation; no paragraph breaks inside notes |
+| Mark set | `。，、：；？！「」『』·《》` only — no brackets |
+| Overwrite | Never — skip segments that already contain adequate punctuation (**AI fill gaps:** skip segments above punct-density threshold) |
+| Selection + existing punct | Confirm: purge punctuation in scope and continue, or cancel — purge uses **Han range** when a selection is active (not whole segment) |
+| Provenance | Single `<change>` in header on import; editor commands append `<change>` — records model, prompt version, `marks_added`, `segments_applied`, `align_failed`, `reflowed` |
+| Paragraph reflow | Also available as separate command (**Reflow paragraphs…**) |
+| LLM | TypeScript `llmClient.ts` (plain-text mode when no `jsonSchema`); Python `ai_punct.py` applies parallel transfer only |
 
-Grey on the coverage bar = still untreated; can fill remaining holes after parallel.
+Pipeline:
+
+1. One LLM call per segment → punctuated plain text (whole segment, chunked at ~400 Han when long).
+2. Pass output to scoped fuzzy align → copy marks onto source Han (normalization tolerated).
+3. Pass verified parallels to `apply_ai_parallel_segments` → mechanical mark copy + inline reflow.
+4. Reuse project `AiApiSettings` / Ollama or OpenAI-compatible chat.
+5. **Purge punctuation** command strips marks for re-run.
+6. Tests: `test_ai_punct.py`; opt-in `aiPunctuate.live.test.ts` for Ollama.
+
+**Manual testing:** configure AI in App Settings, then exercise import (**AI inference**) on **KR1f0006** (孝經刋誤, ~2 juans) or a single short juan. Use **Purge punctuation** to retry.
+
+Grey on the coverage bar = Han not yet adequately punctuated (green grows after parallel transfer and after **Fill gaps**).
+
+### AI fill gaps (after parallel transfer)
+
+**Done (2026-08-29).** AI is **not** run during bulk import. Workflow:
+
+1. Import with **From a parallel transcription** (fast) — coverage bars show green (treated) vs grey (untreated) per juan; **Fill gaps** button appears on each juan with grey areas.
+2. Or open one juan → Kanripo toolbar → **AI fill gaps…** (or Segment and punctuate → Apply → **AI fill gaps**).
+3. `runAiPunctuate` with `gapsOnly: true` — only segments still unpunctuated or below **0.75 marks per 100 Han**.
+
+Requires configured AI API. One LLM call per gap segment — run **per juan**, not on whole multi-juan works at once.
+
+### v2 JSON anchors (superseded, code retained)
+
+Earlier path returned JSON `{ insertions: [{ left, occurrence, mark }] }` (**prompt v2**, `ai-punct-v2`). Local models often dropped anchors or punctuated poorly under schema constraints. **v2 modules remain** (`llmPunctuate.ts`, `verifyInsertions.ts`) for a possible per-segment fallback if v3 align fails.
+
+### Hybrid v2 fallback (not wired)
+
+If v3 parallel transfer fails overlap on a segment (`align_failed`), optionally retry that segment with v2 JSON anchors. Not implemented yet.
 
 ---
 
@@ -385,16 +425,20 @@ Use the **Daozang import** plugin’s bundled 方瞳子 UTF-8 corpus as an offli
 
 Do **not** duplicate the Daozang title index; the crosswalk joins upstream KR↔DZ tables to bundled `rel_path` values already in `plugin-daozang-import`.
 
-### Phase 4 — AI JSON punctuation
+### Phase 4 — AI punctuation
 
-- Same coverage bar (second colour); insertions verified; holes after parallel can be filled.
+**Done (2026-08-29).** See “Punctuation option 3” and “Hybrid parallel + AI for gaps” above.
 
-**Acceptance:** As-is juan + AI → punctuation inserted without character substitutions (diff of CJK letters empty). Invalid JSON / failed anchors dropped, counted in the report.
+- Module: `plugins/.../ai_punct.py`, `cwrc-leafwriter/src/aiPunctuation/`.
+- Bridge ops: `ai_punct_list_segments`, `ai_punct_parallel_apply`, `purge_punct`, `reflow_paragraphs`.
+- Import wizard: **AI inference**, **Fill gaps** on import coverage bars; Kanripo toolbar (AI punctuate, AI fill gaps, purge, reflow).
+
+**Acceptance:** As-is juan + AI → marks inserted without Han character substitutions. v3 uses scoped fuzzy align (variant normalization tolerated); `align_failed` counted in provenance. Editor respects TinyMCE selection; purge gate uses Han-range purge on re-run. **Manual smoke passed on KR1f0006 (2026-08-29).**
 
 ### Deferred
 
 - Auto-lookup of CBETA/zhsj parallels from `normalization_compile_table` discovery (user still _can_ attach those files by hand in Phase 2). **Daozang:** bundled corpus + crosswalk planned in Phase 3b (above), not normalization table discovery.
-- Import warning when parallel overlap is high but transferred punctuation density is low.
+- Import warning when parallel overlap is high but transferred punctuation density is low. **Done** — `assess_parallel_quality()` + import report UI (2026-08-28).
 - Per-juan Wikisource fetch when 卷/juan mapping is not 1:1.
 - Full Wikisource→TEI adapter (corpus-extraction E3); punctuation only needs text.
 - Merging several juans into one XML.

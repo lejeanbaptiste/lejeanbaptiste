@@ -1,4 +1,10 @@
 import { KanripoImportDialog, isKanripoImportAvailable } from '../../dialogs/kanripoImport';
+import {
+  runAiFillGapsEditorCommand,
+  runAiPunctuateEditorCommand,
+  runPurgePunctEditorCommand,
+  runReflowParagraphsEditorCommand,
+} from '../../aiPunctuation/aiPunctuateEditor';
 import { isPluginEnabled } from '../registry';
 import type { PluginRegisterContext } from '../registerContext';
 
@@ -56,19 +62,136 @@ export function registerKanripoImportUi(context: PluginRegisterContext): void {
     notify('Open a document in the editor first.');
   };
 
+  const runEditorCommand = async (
+    fn: () => Promise<{ ok: boolean; message: string; cancelled?: boolean }>,
+    notify: (message: string) => void,
+    options?: { busyMessage?: string },
+  ) => {
+    if (!isPluginEnabled('kanripo-import')) {
+      notify('Enable the “Kanripo import” plugin in Tools → Plugins.');
+      return;
+    }
+    if (!isKanripoImportAvailable()) {
+      notify('Kanripo tools are available in the desktop app.');
+      return;
+    }
+    if (!window.__leafWriterProject?.getActiveFileXml?.()) {
+      notify('Open a document first.');
+      return;
+    }
+    if (options?.busyMessage) {
+      notify(options.busyMessage);
+    }
+    try {
+      const outcome = await fn();
+      notify(outcome.message);
+    } catch (error) {
+      notify(error instanceof Error ? error.message : String(error));
+    }
+  };
+
+  const openAiPunctuate = async ({ notify }: { notify: (message: string) => void }) => {
+    if (!isPluginEnabled('kanripo-import')) {
+      notify('Enable the “Kanripo import” plugin in Tools → Plugins.');
+      return;
+    }
+    if (!isKanripoImportAvailable()) {
+      notify('Kanripo tools are available in the desktop app.');
+      return;
+    }
+    if (!window.__leafWriterProject?.getActiveFileXml?.()) {
+      notify('Open a document first.');
+      return;
+    }
+    try {
+      const outcome = await runAiPunctuateEditorCommand();
+      if (!outcome.ok && !outcome.cancelled) {
+        notify(outcome.message);
+      }
+    } catch (error) {
+      notify(error instanceof Error ? error.message : String(error));
+    }
+  };
+
+  const openPurgePunct = async ({ notify }: { notify: (message: string) => void }) => {
+    await runEditorCommand(runPurgePunctEditorCommand, notify);
+  };
+
+  const openReflowParagraphs = async ({ notify }: { notify: (message: string) => void }) => {
+    await runEditorCommand(runReflowParagraphsEditorCommand, notify);
+  };
+
+  const openAiFillGaps = async ({ notify }: { notify: (message: string) => void }) => {
+    if (!isPluginEnabled('kanripo-import')) {
+      notify('Enable the “Kanripo import” plugin in Tools → Plugins.');
+      return;
+    }
+    if (!isKanripoImportAvailable()) {
+      notify('Kanripo tools are available in the desktop app.');
+      return;
+    }
+    if (!window.__leafWriterProject?.getActiveFileXml?.()) {
+      notify('Open a document first.');
+      return;
+    }
+    try {
+      const outcome = await runAiFillGapsEditorCommand();
+      if (!outcome.ok && !outcome.cancelled) {
+        notify(outcome.message);
+      } else if (outcome.ok) {
+        notify(outcome.message);
+      }
+    } catch (error) {
+      notify(error instanceof Error ? error.message : String(error));
+    }
+  };
+
   context.registerToolAction('kanripo-import.open', openImport);
   context.registerToolAction('kanripo-import.punctuate', openPunctuate);
+  context.registerToolAction('kanripo-import.ai-punctuate', openAiPunctuate);
+  context.registerToolAction('kanripo-import.ai-fill-gaps', openAiFillGaps);
+  context.registerToolAction('kanripo-import.purge-punct', openPurgePunct);
+  context.registerToolAction('kanripo-import.reflow-paragraphs', openReflowParagraphs);
 
   context.registerToolbarItem({
-    id: 'kanripo-punctuate',
-    icon: 'entitiesTag',
-    title: 'Segment and punctuate',
-    tooltip: 'Copy punctuation from a parallel onto the open file only',
+    id: 'kanripo',
+    icon: 'kanripo',
+    title: 'Kanripo',
+    tooltip: 'Import from Kanripo or punctuate the open file',
     group: 'ui',
     isAvailable: () => isPluginEnabled('kanripo-import') && isKanripoImportAvailable(),
-    onClick: () => {
-      openPunctuate({ notify: hostNotify });
-    },
+    menuItems: [
+      {
+        id: 'import',
+        label: 'Import from Kanripo…',
+        onClick: () => openImport({ notify: hostNotify }),
+      },
+      {
+        id: 'punctuate',
+        label: 'Segment and punctuate…',
+        onClick: () => openPunctuate({ notify: hostNotify }),
+      },
+      {
+        id: 'ai-punctuate',
+        label: 'AI punctuate selection…',
+        onClick: () => openAiPunctuate({ notify: hostNotify }),
+      },
+      {
+        id: 'ai-fill-gaps',
+        label: 'AI fill gaps…',
+        onClick: () => openAiFillGaps({ notify: hostNotify }),
+      },
+      {
+        id: 'purge-punct',
+        label: 'Purge punctuation…',
+        onClick: () => openPurgePunct({ notify: hostNotify }),
+      },
+      {
+        id: 'reflow-paragraphs',
+        label: 'Reflow paragraphs…',
+        onClick: () => openReflowParagraphs({ notify: hostNotify }),
+      },
+    ],
   });
 }
 

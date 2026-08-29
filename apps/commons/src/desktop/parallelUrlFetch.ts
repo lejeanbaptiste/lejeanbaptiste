@@ -40,6 +40,13 @@ export const parseWikisourceUrl = (url: string): { apiHost: string; title: strin
 
 export const isWikisourceUrl = (url: string): boolean => parseWikisourceUrl(url) !== null;
 
+/** True when the URL points at one Wikisource page (卷, 篇, …), not a work index alone. */
+export const isWikisourceVolumeUrl = (url: string): boolean => {
+  const parsed = parseWikisourceUrl(url);
+  if (!parsed) return false;
+  return parsed.title.includes('/');
+};
+
 export const isCtextWikiUrl = (url: string): boolean => {
   try {
     const parsed = new URL(url.trim());

@@ -5,16 +5,18 @@ import {
   useEntityDatabaseLifecycle,
   useLspProjectBridge,
   useNativeDialogBridge,
+  clearHostDialogBridge,
+  registerHostDialogBridge,
 } from '@src/desktop';
 import { UserNamePromptDialog } from '@src/desktop/UserNamePromptDialog';
 import { Page } from '@src/layouts';
 import { useActions, useAppState } from '@src/overmind';
 import { isDesktop } from '@src/types/desktop';
-import { useEffect } from 'react';
+import { useEffect, useLayoutEffect } from 'react';
 import { ProjectEditor } from './ProjectEditor';
 
 export const ProjectEditPage = () => {
-  const { setPage } = useActions().ui;
+  const { setPage, notifyViaSnackbar, openDialog } = useActions().ui;
   const { restoreLastProject, saveWorkspaceSession } = useActions().project;
   const { activeTabPath, isProjectReady, openTabs, projectFilePath } = useAppState().project;
 
@@ -22,6 +24,11 @@ export const ProjectEditPage = () => {
   useCommonsUiBridge();
   useLspProjectBridge();
   useEntityDatabaseLifecycle();
+
+  useLayoutEffect(() => {
+    registerHostDialogBridge(openDialog, notifyViaSnackbar);
+    return () => clearHostDialogBridge();
+  }, [notifyViaSnackbar, openDialog]);
 
   useEffect(() => {
     setPage('project');

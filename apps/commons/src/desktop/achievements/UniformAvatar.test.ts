@@ -1,8 +1,12 @@
+import { ARCHIVE_BACKGROUND_ASSETS_BY_RANK } from './generatedBackgroundPools';
+import { WEAPON_POOLS } from './generatedBodyPools';
 import {
   eligiblePoseIndices,
+  MODERN_ERA_RANK,
   pickWeapon,
   poseEligibleForRank,
   rankOfBackgroundKey,
+  weaponFloorForBackground,
   stampSvgPixelSize,
   svgStampPixelsForCssBox,
   BODY_CSS_OVERSAMPLE,
@@ -75,11 +79,52 @@ describe('pickWeapon requireRank', () => {
     expect(Array.from(seenRanks)).toEqual([5]);
   });
 
+  // Why AchievementsDialog clamps its floor to MODERN_ERA_RANK instead of
+  // passing the backdrop's own rank: Rank 6/7 backdrops exist, but no pose
+  // has weapon art above tier 5, so a floor of 6 empties the pool and the
+  // fallback below hands back a Napoleonic musket for a sci-fi scene. If
+  // tier 6 art ever lands, this fails - bump MODERN_ERA_RANK to match.
+  it('has no weapon art above MODERN_ERA_RANK', () => {
+    const tiers = Object.values(WEAPON_POOLS).flatMap((channels) =>
+      channels.flatMap((channel) => Object.keys(channel).map(Number)),
+    );
+    expect(Math.max(...tiers)).toBe(MODERN_ERA_RANK);
+  });
+
   it('falls back to the unrestricted pool if requireRank would empty it', () => {
     // At rankIndex 1 (Rank 2), only tier 1 is unlocked - nothing meets a
     // requireRank of 5, so the pick should fall back rather than return null.
     const weapon = pickWeapon(5, 'm', 1, null, 5);
     expect(weapon?.rank).toBe(1);
+  });
+});
+
+describe('weaponFloorForBackground', () => {
+  // Ranks 5, 6 and 7 all share tier-5 weapon art for now.
+  it('floors every modern-era backdrop at MODERN_ERA_RANK', () => {
+    for (const rank of [5, 6, 7]) {
+      const backdrop = ARCHIVE_BACKGROUND_ASSETS_BY_RANK[rank - 1]!.find(
+        (asset) => asset.rank === rank,
+      );
+      expect(backdrop).toBeDefined();
+      expect(weaponFloorForBackground(backdrop!.assetKey)).toBe(MODERN_ERA_RANK);
+    }
+  });
+
+  // The whole point of a floor rather than an exact match: a Rank 6 player
+  // rolling a historical Napoleonic scene still gets a Napoleonic weapon.
+  it('leaves earlier-era backdrops unrestricted', () => {
+    for (const rank of [1, 2, 3, 4]) {
+      const backdrop = ARCHIVE_BACKGROUND_ASSETS_BY_RANK[rank - 1]!.find(
+        (asset) => asset.rank === rank,
+      );
+      expect(backdrop).toBeDefined();
+      expect(weaponFloorForBackground(backdrop!.assetKey)).toBeUndefined();
+    }
+  });
+
+  it('leaves an unrecognised key unrestricted', () => {
+    expect(weaponFloorForBackground('bg/does-not-exist')).toBeUndefined();
   });
 });
 

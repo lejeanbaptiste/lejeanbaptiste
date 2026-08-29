@@ -62,7 +62,7 @@ export const wrapDaozangTeiDocument = ({
   if (!/<div[\s>]/.test(trimmedBody)) {
     throw new Error('Daozang conversion did not return a TEI div.');
   }
-  xml = xml.replace(/<div type="text">[\s\S]*?<\/div>/, trimmedBody);
+  xml = xml.replace(/<div type="(?:text|juan)"[^>]*>[\s\S]*?<\/div>/, trimmedBody);
 
   return xml;
 };

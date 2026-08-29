@@ -1,12 +1,7 @@
 import { clearFindHighlights } from '@src/desktop/find/findEditorHighlights';
 import { openFindPanel } from '@src/desktop/desktopLeftPanelBridge';
-import { clearHostDialogBridge, registerHostDialogBridge } from '@src/desktop/hostDialogBridge';
 import { openApplicationSettings } from '@src/desktop/openApplicationSettings';
 import { openPluginsDialog } from '@src/desktop/usePluginBootstrap';
-import {
-  dispatchPluginToolAction,
-  isKnownPluginToolAction,
-} from '../../../../packages/cwrc-leafwriter/src/plugins';
 import { promptAndApplySchemaUpdate } from '@src/desktop/schemaUpdateCheck';
 import { everythingIsUpToDate, gatherUpdateReport } from '@src/desktop/lookForUpdates';
 import { leafwriterAtom } from '@src/jotai';
@@ -14,7 +9,7 @@ import { useActions, useAppState } from '@src/overmind';
 import { isDesktop } from '@src/types/desktop';
 import Button from '@mui/material/Button';
 import { useAtom } from 'jotai';
-import { createElement, useCallback, useEffect, useLayoutEffect, useState } from 'react';
+import { createElement, useCallback, useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { mergeEditorBodyWithStoredHeader, stripTeiHeaderForVisualEditor } from './teiHeaderXml';
 
@@ -77,11 +72,6 @@ export const useProjectMenu = () => {
   const [leafWriter] = useAtom(leafwriterAtom);
   const [aboutOpen, setAboutOpen] = useState(false);
   const [timeMachineOpen, setTimeMachineOpen] = useState(false);
-
-  useLayoutEffect(() => {
-    registerHostDialogBridge(openDialog, notifyViaSnackbar);
-    return () => clearHostDialogBridge();
-  }, [notifyViaSnackbar, openDialog]);
 
   const finalizeSavedDocument = useCallback(
     (content: string) => {
@@ -271,11 +261,6 @@ export const useProjectMenu = () => {
           (message) => notifyViaSnackbar(message),
           t('LWC.desktop.could_not_open_settings'),
         );
-        return;
-      }
-
-      if (isKnownPluginToolAction(action)) {
-        void dispatchPluginToolAction(action, { notify: notifyViaSnackbar });
         return;
       }
 

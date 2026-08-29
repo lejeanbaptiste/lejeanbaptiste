@@ -1,6 +1,7 @@
 # Daozang import — planning
 
 **Status (2026-08-28):** **Import path done** — bundled 方瞳子 UTF-8 corpus (~1,513 texts), local search index, **File → Import from Daozang…**, optional install from local RAR/extracted folder. **Concordance done** — Kanripo import plugin ships `kanripo_daozang_map.json` (1,483 KR → bundled `rel_path` hits). **UI wiring partial** — Kanripo import wizard auto-loads matched Daozang text when parallel mode and both plugins are enabled; manual Daozang search picker still open.  
+**Testing:** [kanripo-daozang-testing.md](kanripo-daozang-testing.md) (automated + manual checklist for this stage).  
 **Related:** [kanripo-import-plugin-planning.md](kanripo-import-plugin-planning.md) (parallel punctuation engine, Phase 3b), `plugins/packages/plugin-daozang-import/`, `plugins/packages/plugin-kanripo-import/data/concordance/`.
 
 ---

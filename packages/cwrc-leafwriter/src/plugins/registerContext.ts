@@ -75,7 +75,8 @@ export function createPluginRegisterContext(pluginId: string): PluginRegisterCon
   const context: PluginRegisterContext = {
     pluginId,
     log: (message) => console.log(`[plugin:${pluginId}] ${message}`),
-    registerToolAction: (action, handler) => registerPluginToolAction(action, handler),
+    registerToolAction: (action, handler) =>
+      registerPluginToolAction(action, handler, pluginId),
     registerDialog: (type, component) => {
       (component as { __pluginId?: string }).__pluginId = pluginId;
       registerPluginDialog(type, component);

@@ -48,7 +48,11 @@ export const useDialog = () => {
       if (displayId && displayed.includes(displayId)) return;
 
       const component = getComponent(type);
-      if (!component) return;
+      if (!component) {
+        console.warn(`[dialog] No component registered for type "${type}"`);
+        if (props?.id) removeDialog(props.id);
+        return;
+      }
 
       // display dialog
       const { id } = showModal<DialogProps>(

@@ -1,4 +1,5 @@
 import { clearPluginExtensionsForPlugin } from './pluginExtensions';
+import { clearPluginToolActionsForPlugin } from './toolActions';
 import { recoverFromChunkLoadFailure } from './chunkLoadRecovery';
 import { createPluginRegisterContext } from './registerContext';
 import type { PluginHostSnapshotView } from './types';
@@ -24,6 +25,7 @@ export async function loadEnabledPluginModules(
     if (enabledNow.has(pluginId)) continue;
     loadedContexts.get(pluginId)?.onDisable?.();
     clearPluginExtensionsForPlugin(pluginId);
+    clearPluginToolActionsForPlugin(pluginId);
     loadedContexts.delete(pluginId);
     loadedPluginIds.delete(pluginId);
   }
@@ -57,6 +59,7 @@ export async function loadEnabledPluginModules(
     } catch (error) {
       loadedPluginIds.delete(plugin.id);
       clearPluginExtensionsForPlugin(plugin.id);
+      clearPluginToolActionsForPlugin(plugin.id);
       // This error is normally caught here for per-plugin resilience, so it
       // never reaches the application's global unhandled-rejection handler.
       // A stale dev-server lazy chunk needs one full-page retry instead.

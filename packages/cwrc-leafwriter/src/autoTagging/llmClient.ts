@@ -16,8 +16,8 @@ export interface RateLimitRetryInfo {
 export interface LlmRequest {
   system: string;
   user: string;
-  /** JSON schema the response must conform to (best-effort — always validate the parsed result). */
-  jsonSchema: Record<string, unknown>;
+  /** When set, request structured JSON (schema / json_object). Omit for plain-text responses. */
+  jsonSchema?: Record<string, unknown>;
   /** Called before each 429 retry sleep so callers can surface live progress. */
   onRateLimitRetry?: (info: RateLimitRetryInfo) => void;
   /** Aborts the in-flight HTTP request (and any retry wait) when triggered. */
@@ -78,7 +78,7 @@ export class OllamaLlmClient implements LlmClient {
       body: JSON.stringify({
         model: this.modelId.replace(/^ollama:/, ''),
         stream: false,
-        format: request.jsonSchema,
+        ...(request.jsonSchema ? { format: request.jsonSchema } : {}),
         messages: [
           { role: 'system', content: request.system },
           { role: 'user', content: request.user },
@@ -226,9 +226,10 @@ export class MistralLlmClient implements LlmClient {
 
   private async postCompletion(
     request: LlmRequest,
-    mode: 'json_schema' | 'json_object' | 'prompt_only',
+    mode: 'json_schema' | 'json_object' | 'prompt_only' | 'plain_text',
   ): Promise<{ ok: boolean; status: number; text: string }> {
-    const responseFormat = this.buildResponseFormat(request, mode);
+    const responseFormat =
+      mode === 'plain_text' ? undefined : this.buildResponseFormat(request, mode);
     const jsonHint =
       mode === 'prompt_only'
         ? '\n\nRespond with one JSON object only, no markdown fences: {"suggestions":[{"surface":"…","occurrence":1,"tag":"persName","action":"add","confidence":0.9,"rationale":"…"}]}. Use {"suggestions":[]} if none.'
@@ -254,6 +255,24 @@ export class MistralLlmClient implements LlmClient {
   }
 
   async complete(request: LlmRequest): Promise<LlmResponse> {
+    if (!request.jsonSchema) {
+      const result = await this.postCompletion(request, 'plain_text');
+      if (!result.ok) {
+        throw new Error(`Mistral request failed: ${result.status} ${result.text}`);
+      }
+      const body = JSON.parse(result.text) as {
+        choices: { message: { content: string | null } }[];
+        usage?: { prompt_tokens: number; completion_tokens: number };
+      };
+      return {
+        json: body.choices[0]!.message.content ?? '',
+        usage: {
+          inputTokens: body.usage?.prompt_tokens ?? 0,
+          outputTokens: body.usage?.completion_tokens ?? 0,
+        },
+      };
+    }
+
     let mode = this.structuredOutput;
     let rateLimitAttempt = 0;
 

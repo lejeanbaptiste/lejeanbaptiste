@@ -21,6 +21,7 @@ export type ParallelUrlFetchResponse = ParallelUrlFetchResult & {
   rowId?: string;
   rowIds?: string[];
   sections?: { id: string; slug: string; title: string; rowCount: number }[];
+  chapters?: { id: string; title: string; text: string }[];
 };
 
 export const fetchParallelFromUrl = async (

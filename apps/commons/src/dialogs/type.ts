@@ -27,6 +27,7 @@ export type DialogType =
   | 'export'
   | 'import'
   | 'kanripoImport'
+  | 'daozangImport'
   | 'privacy'
   | 'signIn'
   | 'simple'

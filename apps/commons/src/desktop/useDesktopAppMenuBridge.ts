@@ -3,10 +3,15 @@ import { redoDocumentEditor, undoDocumentEditor } from '@src/desktop/editorUndoR
 import { useActions } from '@src/overmind';
 import { isDesktop } from '@src/types/desktop';
 import { useEffect } from 'react';
+import {
+  dispatchPluginToolAction,
+  isKnownPluginToolAction,
+} from '../../../../packages/cwrc-leafwriter/src/plugins';
 
 /** App-wide Electron menu shortcuts (registered once, survives route changes). */
 export const useDesktopAppMenuBridge = () => {
   const { closeProject, openProject } = useActions().project;
+  const { notifyViaSnackbar } = useActions().ui;
 
   useEffect(() => {
     if (!isDesktop() || !window.electronAPI?.onAppMenuAction) return;
@@ -50,10 +55,21 @@ export const useDesktopAppMenuBridge = () => {
         window.dispatchEvent(new CustomEvent('desktop:refresh'));
         return;
       }
+
+      if (isKnownPluginToolAction(action)) {
+        void dispatchPluginToolAction(action, { notify: notifyViaSnackbar });
+        return;
+      }
+
+      if (action === 'daozang-import.open' || action === 'kanripo-import.open') {
+        notifyViaSnackbar(
+          'That import plugin did not finish loading. Open Tools → Plugins to confirm it is enabled, then restart the app.',
+        );
+      }
     });
 
     void window.electronAPI.signalRendererReady?.();
 
     return unsubscribe;
-  }, [closeProject, openProject]);
+  }, [closeProject, notifyViaSnackbar, openProject]);
 };

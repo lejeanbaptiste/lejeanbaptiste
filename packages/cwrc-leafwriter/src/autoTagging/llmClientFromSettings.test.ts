@@ -66,4 +66,13 @@ describe('llmClientFromSettings', () => {
     );
     expect(client.modelId).toBe('mistral:qwen/qwen3.6-27b');
   });
+
+  it('uses OllamaLlmClient for port 11434', () => {
+    const client = createLlmClientFromSettings({
+      apiKey: '',
+      baseUrl: 'http://localhost:11434',
+      model: 'ministral-3:latest',
+    });
+    expect(client.modelId).toBe('ollama:ministral-3:latest');
+  });
 });

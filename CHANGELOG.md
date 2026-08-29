@@ -250,17 +250,24 @@
 - Paste an image from the clipboard (with no accompanying plain text) into an on-disk TEI file to insert a Kanripo-style gaiji: the PNG is saved beside the document in `_gaiji/`, and a `<g type="kanripo">` wrapper is inserted at the caret. Right-click a gaiji graphic to change its height in `em` or replace its PNG.
 - Bulk Kanripo import now reloads any already-open tabs for written juan files from disk, not only when a single juan was imported.
 - Fixed CI typecheck failures in `utitlities.ts` (correct `fetchResource` import path; `HTMLImageElement` typing for image load callbacks). Added `writeBinaryFile` to the Electron bridge for saving pasted or replaced gaiji PNGs.
-- TEI schema merge (v11) now allows `<graphic>` inside `<g type="kanripo">` for Kanripo gaiji, and moves imported Kanripo `<idno>` from `titleStmt` into `sourceDesc/bibl` where TEI permits it. Fixed gaiji height changes in the context menu (inline styles were not clearing on update).
+- TEI schema merge (v12) now allows `<graphic>` inside `<g type="kanripo">` for Kanripo gaiji (fixes duplicate `@n` in RelaxNG that broke schema compilation in v11), and moves imported Kanripo `<idno>` from `titleStmt` into `sourceDesc/bibl` where TEI permits it. Fixed gaiji height changes in the context menu (inline styles were not clearing on update).
+- TEI schema merge (v13) fixes duplicate `@type` on Kanripo `<g type="kanripo">` (v12 still failed RelaxNG compile).
+- TEI schema merge (v14) detects and regenerates broken Kanripo `<g>` overrides even when the version marker already matched; File-menu import actions now work during project load, not only after the editor finishes mounting. Fixed Daozang import dialog not opening (commons `useDialog` was missing the `daozangImport` route).
 - **Parallel punctuation — tape mode (Wikisource, paste, file):** improved Han overlap for variant-heavy texts; per-character opcode alignment from parallel tape onto the Kanripo body (fixes misplaced punctuation); paragraph reflow inside matched zones — merges spurious Kanripo line `<p>` wraps, splits at `。`/`！`/`？` and blank lines, and skips splits inside `<note type="comm">`; relocates commentary notes stranded at paragraph starts back onto the preceding sentence. Verified on 荀子/勸學篇 (`KR3a0002`).
 - **Parallel punctuation — segmented mode (ctext wiki):** `fetch-ctext-parallel.mjs` pulls punctuated ctext wiki chapters; segmented mode merges split commentary notes then matches basetext and `<note type="comm">` separately (李善-style inline commentary). Tape mode remains default for Wikisource and plain sources.
 - **Wikisource fetch:** work-index URLs now prefer **chapter pages** (e.g. `荀子/勸學篇`, punctuated) over scanned 四庫全書本 **卷** pages (often unpunctuated); falls back to 卷 listing when no chapter pages exist. Import wizard placeholders and help text updated for chapter-based URLs.
 - Headless batch tools: `npm run test:parallel-batch` (coverage + well-formed XML per juan) and `npm run test:wikisource` (MediaWiki fetch unit tests). See `plugin-kanripo-import` README for CLI workflows.
 - **Kanripo ↔ Daozang concordance** bundled under `data/concordance/`: … Bridge op `concordance_lookup`.
 - **Kanripo import:** when parallel punctuation is selected and the Daozang plugin is enabled, a concordance hit auto-loads the matching bundled 方瞳子 `.txt` as a parallel source (tape mode). New IPC `daozang:readText`; helper `kanripoDaozangParallel.ts`.
+- **Kanripo import quality warnings:** after parallel import, per-juan warnings for low overlap, no alignment, high overlap with few punctuation marks copied, and Daozang-specific mismatch (`assess_parallel_quality` in `parallel_punct.py`).
+- **Kanripo AI punctuation (v3):** model returns plain punctuated text per segment; scoped fuzzy align + parallel tape transfer (`apply_ai_parallel_segments`); auto paragraph reflow with Kanripo line-length heuristic; prompt `ai-punct-v3`. Import wizard and Tools → AI punctuate use the v3 path; editor selection scoping and bottom-bar progress indicator.
+- **Kanripo scoped purge:** purge by Han index range (`han_start`/`han_end`) when a selection is active — AI re-punctuate and Purge punctuation remove marks only in the selected stretch, not whole segments.
 
 ### Daozang import
 
 - Added a Daozang import plugin (`plugin-daozang-import`) with a bundled **方瞳子** punctuated UTF-8 corpus (~1,513 texts, ~77 MB): local search index, **File → Import from Daozang…**, and optional install/replace from a local RAR or extracted `道藏_txt` folder.
+- Fixed bundled-corpus import when `.txt` files are still GB-family encoded (the converter now decodes legacy bytes the same way as RAR install).
+- Daozang search index ids are now unique for Chinese filenames (fixes duplicate React list keys in the import dialog).
 - Kanripo import ships a **bundled concordance** to those files (`kanripo_daozang_map.json` in `plugin-kanripo-import`). Import wizard auto-loads a matched Daozang parallel when both plugins are enabled and parallel punctuation is selected.
 
 ### Rewards system
