@@ -74,7 +74,8 @@ Supporting / deeper:
 | [sanmiao-ljb-integration.md](sanmiao-ljb-integration.md)                                                                | Sanmiao bridge design notes                                   |
 | [versioning-planning.md](versioning-planning.md)                                                                        | Local history / time machine                                  |
 | [performance-planning.md](performance-planning.md) / [bundle-size-warning-planning.md](bundle-size-warning-planning.md) | Perf / first-load size                                        |
-| [corpus-extraction-planning.md](corpus-extraction-planning.md)                                                          | Future browser / corpus extract                               |
+| [wikisource-import.md](wikisource-import.md)                                                                            | Wikisource browser extension + built-in TEI import            |
+| [corpus-extraction-planning.md](corpus-extraction-planning.md)                                                          | Broader browser / corpus extract (Wikisource MVP started)     |
 | [beta-plan.md](beta-plan.md)                                                                                            | Ship criteria                                                 |
 
 Related script notes: [scripts/extract-map-tile-bundles.md](../scripts/extract-map-tile-bundles.md).

@@ -38,6 +38,10 @@
       "from": "resources/pmtiles",
       "to": "pmtiles",
       "filter": ["pmtiles*"]
+    },
+    {
+      "from": "resources/native-host",
+      "to": "native-host"
     }
   ]
 }

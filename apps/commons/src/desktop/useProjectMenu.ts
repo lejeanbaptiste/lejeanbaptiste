@@ -215,6 +215,15 @@ export const useProjectMenu = () => {
         return;
       }
 
+      if (action === 'wikisource-import') {
+        if (!isProjectReady) {
+          notifyViaSnackbar(t('LWC.desktop.project.messages.open_project_first'));
+          return;
+        }
+        openDialog({ type: 'wikisourceImport' });
+        return;
+      }
+
       if (action === 'save') {
         void saveCurrentDocument();
         return;
@@ -378,6 +387,21 @@ export const useProjectMenu = () => {
     saveCurrentDocumentAs,
     t,
   ]);
+
+  useEffect(() => {
+    if (!isDesktop() || !window.electronAPI?.onWikisourceImportOrder) return;
+    const unsubscribe = window.electronAPI.onWikisourceImportOrder((order) => {
+      if (!isProjectReady) {
+        notifyViaSnackbar(t('LWC.desktop.project.messages.open_project_first'));
+        return;
+      }
+      openDialog({
+        type: 'wikisourceImport',
+        props: { initialUrl: order.url, importScope: order.scope },
+      });
+    });
+    return () => unsubscribe();
+  }, [isProjectReady, notifyViaSnackbar, openDialog, t]);
 
   const onKeydownHandle = useCallback(
     async (event: KeyboardEvent) => {

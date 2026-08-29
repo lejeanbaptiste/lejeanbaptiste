@@ -1,0 +1,46 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <style>
+      body {
+        font: 14px/1.4 system-ui, sans-serif;
+        margin: 12px;
+        width: 280px;
+      }
+      button {
+        margin-right: 6px;
+      }
+      .msg {
+        margin-top: 8px;
+      }
+      .hidden {
+        display: none;
+      }
+      label {
+        display: block;
+        margin-top: 8px;
+      }
+    </style>
+  </head>
+  <body>
+    <p>
+      Import this Wikisource page into Le Jean-Baptiste. A chapter sends one file; a work root
+      sends every chapter or juan.
+    </p>
+    <button id="import" type="button">Import</button>
+    <button id="help" type="button">?</button>
+    <p id="status" class="msg"></p>
+    <div id="explainer" class="hidden">
+      <p>
+        LJB must be running with a project open. The extension only names the page; LJB fetches
+        text and Wikidata metadata. If several editions exist, LJB asks which tree to import.
+      </p>
+      <label>
+        <input id="dont-show" type="checkbox" />
+        Don’t show this again
+      </label>
+    </div>
+    <script src="popup.js"></script>
+  </body>
+</html>

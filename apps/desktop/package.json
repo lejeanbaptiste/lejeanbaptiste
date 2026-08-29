@@ -14,6 +14,7 @@
   "scripts": {
     "build": "tsup",
     "typecheck": "tsc --noEmit -p tsconfig.json",
+    "test:wikisource": "node --test src/wikisource/*.test.mjs",
     "lint": "eslint .",
     "icon:export": "node ../../scripts/export-icon.mjs",
     "pmtiles:download": "node scripts/download-pmtiles.mjs",

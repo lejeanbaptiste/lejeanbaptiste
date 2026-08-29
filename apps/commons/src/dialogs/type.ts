@@ -20,6 +20,8 @@ export interface IDialog extends Partial<Omit<MuiDialogProps, 'onClose'>> {
   severity?: SeverityType;
   title?: string;
   type?: DialogType;
+  initialUrl?: string;
+  importScope?: 'page' | 'work';
 }
 
 export type DialogType =
@@ -28,6 +30,7 @@ export type DialogType =
   | 'import'
   | 'kanripoImport'
   | 'daozangImport'
+  | 'wikisourceImport'
   | 'privacy'
   | 'signIn'
   | 'simple'

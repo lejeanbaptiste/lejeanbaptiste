@@ -208,7 +208,7 @@ Alignment fixes shipped since first Phase 2 cut:
 - `_sticker_to_tape_map` — per-character opcode map (replaces broken linear origin tracking).
 - `strip_wikisource_commentary` — drop `〈…〉` gloss spans before comparing Han.
 
-**Wikisource URL resolution** (`scripts/wikisource-parallel.mjs`):
+**Wikisource URL resolution** (`lejeanbaptiste/apps/desktop/src/wikisource/wikisource-parallel.mjs`; plugin re-exports `scripts/wikisource-parallel.mjs`):
 
 1. User pastes a work index (e.g. `https://zh.wikisource.org/zh-hant/荀子`).
 2. `resolveEditionRoot` prefers **chapter pages** (`荀子/勸學篇`, …) over scanned **四庫全書本** 卷 pages (often unpunctuated).

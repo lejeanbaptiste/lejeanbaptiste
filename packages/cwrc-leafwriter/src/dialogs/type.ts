@@ -40,7 +40,8 @@ export type DialogType =
   | 'plugins'
   | 'xpathSearch'
   | 'kanripoImport'
-  | 'daozangImport';
+  | 'daozangImport'
+  | 'wikisourceImport';
 
 export interface SimpleDialogMessageProps {
   // eslint-disable-next-line @typescript-eslint/no-explicit-any

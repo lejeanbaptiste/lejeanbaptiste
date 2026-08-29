@@ -19,6 +19,7 @@ import { randomUUID } from 'crypto';
 import { existsSync, statSync } from 'fs';
 import fs from 'fs/promises';
 import path from 'path';
+import { pathToFileURL } from 'url';
 import {
   resolvePluginApiStateFilePath,
   writePluginApiState,
@@ -195,7 +196,8 @@ import { invokePluginPython } from './pluginPythonBridge';
 import { cloneKanripoWork, flushKanripoWork, listKanripoTxtFiles } from './kanripoClone';
 import { fetchCtextWikiParallel, listCtextWikiSections } from './ctextWikiParallel';
 import { fetchParallelFromUrl } from './parallelUrlFetch';
-import { listWikisourceCatalog } from './wikisourceParallel';
+import { getWikisourceModulePath, listWikisourceCatalog } from './wikisourceParallel';
+import { startBrowserImportBridge } from './browserBridge';
 import { searchKanripoWorks } from './kanripoWorks';
 import {
   daozangCacheRoot,
@@ -872,6 +874,7 @@ if (isDev) {
 }
 
 let mainWindow: BrowserWindow | null = null;
+let browserImportServer: import('http').Server | null = null;
 let isQuitting = false;
 let quitPreparationInProgress = false;
 let serverProcess: ChildProcess | null = null;
@@ -1313,6 +1316,11 @@ function buildApplicationMenu() {
     click: () => sendMenuAction('import-documents'),
   };
 
+  const importWikisourceItem: Electron.MenuItemConstructorOptions = {
+    label: 'Import from Wikisource…',
+    click: () => sendMenuAction('wikisource-import'),
+  };
+
   const pluginFileMenuItems: Electron.MenuItemConstructorOptions[] = [];
   if (isPluginEnabledInMain('kanripo-import')) {
     pluginFileMenuItems.push({
@@ -1340,6 +1348,7 @@ function buildApplicationMenu() {
   const fileMenuItems: Electron.MenuItemConstructorOptions[] = [
     newFileItem,
     importDocumentsItem,
+    importWikisourceItem,
     ...pluginFileMenuItems,
     saveItem,
     saveAsItem,
@@ -2569,6 +2578,34 @@ const registerIpcHandlers = () => {
   ipcMain.handle('kanripo:listWikisourceVolumes', async (_event, url: string) => {
     return listWikisourceCatalog(String(url || '').trim());
   });
+
+  const loadWikisourceImport = async () => {
+    const moduleDir = path.dirname(getWikisourceModulePath());
+    return import(pathToFileURL(path.join(moduleDir, 'wikisourceImport.mjs')).href) as Promise<{
+      inspectWikisourceImport: (url: string) => Promise<unknown>;
+      fetchWikisourceImportPages: (options: {
+        apiHost: string;
+        titles: string[];
+      }) => Promise<unknown[]>;
+    }>;
+  };
+
+  ipcMain.handle('wikisource:inspect', async (_event, url: string) => {
+    const mod = await loadWikisourceImport();
+    return mod.inspectWikisourceImport(String(url || '').trim());
+  });
+
+  ipcMain.handle(
+    'wikisource:fetchPage',
+    async (_event, options: { apiHost?: string; title?: string }) => {
+      const apiHost = String(options?.apiHost || '').trim();
+      const title = String(options?.title || '').trim();
+      if (!apiHost || !title) throw new Error('Missing Wikisource host or title.');
+      const mod = await loadWikisourceImport();
+      const pages = await mod.fetchWikisourceImportPages({ apiHost, titles: [title] });
+      return pages[0];
+    },
+  );
 
   ipcMain.handle(
     'checkSchemaUpdate',
@@ -3830,6 +3867,7 @@ app.whenReady().then(() => {
   registerPmtilesProtocol();
   registerIpcHandlers();
   registerNativeDialogIpc();
+  browserImportServer = startBrowserImportBridge(() => mainWindow);
   registerLemminxIpc(() => mainWindow);
   initAutoUpdater({
     onCompanionNotifyClick: () => sendMenuAction('look-for-updates'),
@@ -3883,6 +3921,8 @@ app.on('window-all-closed', () => {
     serverProcess.kill();
     serverProcess = null;
   }
+  browserImportServer?.close();
+  browserImportServer = null;
   killAllBulkBridgeJobs();
   killAllEntityIndexJobs();
   disposeLemminx();

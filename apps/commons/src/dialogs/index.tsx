@@ -1,4 +1,5 @@
 export * from './ChineseAssetsDialog';
+export * from './WikisourceImportDialog';
 export * from './import-export';
 export * from './privacy-dialog';
 export * from './SignInDialog';

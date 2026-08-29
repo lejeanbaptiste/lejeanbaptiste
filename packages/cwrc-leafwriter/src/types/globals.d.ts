@@ -572,6 +572,26 @@ declare global {
     kanripoListWikisourceVolumes?: (
       url: string,
     ) => Promise<{ id: string; slug: string; title: string; rowCount: number }[]>;
+    wikisourceInspect?: (url: string) => Promise<unknown>;
+    wikisourceFetchPage?: (options: {
+      apiHost: string;
+      title: string;
+    }) => Promise<{
+      title: string;
+      stem: string;
+      bodyXml: string;
+      header: { title?: string; author?: string; section?: string; notes?: string } | null;
+      hasPb: boolean;
+    }>;
+    onWikisourceImportOrder?: (
+      callback: (order: {
+        action: string;
+        url: string;
+        title?: string;
+        wiki?: string;
+        scope?: 'page' | 'work';
+      }) => void,
+    ) => () => void;
     kanripoFetchParallelUrl?: (options: {
       url: string;
       section?: string;

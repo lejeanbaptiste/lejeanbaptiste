@@ -309,6 +309,26 @@ export interface ElectronAPI {
   kanripoListWikisourceVolumes?: (
     url: string,
   ) => Promise<{ id: string; slug: string; title: string; rowCount: number }[]>;
+  wikisourceInspect?: (url: string) => Promise<unknown>;
+  wikisourceFetchPage?: (options: {
+    apiHost: string;
+    title: string;
+  }) => Promise<{
+    title: string;
+    stem: string;
+    bodyXml: string;
+    header: { title?: string; author?: string; section?: string; notes?: string } | null;
+    hasPb: boolean;
+  }>;
+  onWikisourceImportOrder?: (
+    callback: (order: {
+      action: string;
+      url: string;
+      title?: string;
+      wiki?: string;
+      scope?: 'page' | 'work';
+    }) => void,
+  ) => () => void;
   kanripoFetchParallelUrl?: (options: {
     url: string;
     section?: string;
@@ -868,6 +888,9 @@ const electronAPI: ElectronAPI = {
   kanripoListCtextSections: (url: string) => ipcRenderer.invoke('kanripo:listCtextSections', url),
   kanripoListWikisourceVolumes: (url: string) =>
     ipcRenderer.invoke('kanripo:listWikisourceVolumes', url),
+  wikisourceInspect: (url: string) => ipcRenderer.invoke('wikisource:inspect', url),
+  wikisourceFetchPage: (options: { apiHost: string; title: string }) =>
+    ipcRenderer.invoke('wikisource:fetchPage', options),
   kanripoFetchParallelUrl: (options) => ipcRenderer.invoke('kanripo:fetchParallelUrl', options),
   daozangStatus: () => ipcRenderer.invoke('daozang:status'),
   daozangSync: (options) => ipcRenderer.invoke('daozang:sync', options),
@@ -1206,6 +1229,20 @@ const electronAPI: ElectronAPI = {
     const listener = (_event: Electron.IpcRendererEvent, action: string) => callback(action);
     ipcRenderer.on('app:menu-action', listener);
     return () => ipcRenderer.removeListener('app:menu-action', listener);
+  },
+  onWikisourceImportOrder: (callback) => {
+    const listener = (
+      _event: Electron.IpcRendererEvent,
+      order: {
+        action: string;
+        url: string;
+        title?: string;
+        wiki?: string;
+        scope?: 'page' | 'work';
+      },
+    ) => callback(order);
+    ipcRenderer.on('wikisource:import-order', listener);
+    return () => ipcRenderer.removeListener('wikisource:import-order', listener);
   },
   signalRendererReady: () => ipcRenderer.invoke('signalRendererReady'),
   onExternalFileChange: (callback: (filePath: string) => void) => {

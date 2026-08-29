@@ -128,7 +128,7 @@ See [apps/desktop/README.md](apps/desktop/README.md) for the compilation and pac
   - [ ] Punctuator
 
 - [ ] Import profiles (rule engine + mandoku hand profile)
-- [ ] Browser-extension / URL corpus→TEI extraction (E0–E5 — [corpus-extraction-planning.md](docs/corpus-extraction-planning.md))
+- [x] Wikisource browser-extension + built-in import ([wikisource-import.md](docs/wikisource-import.md); remaining corpora still [corpus-extraction-planning.md](docs/corpus-extraction-planning.md))
 
 #### UX
 

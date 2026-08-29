@@ -77,6 +77,8 @@ interface KanripoWorkHit {
 interface ConvertPayload {
   meta: KanripoTeiMeta;
   body_xml: string;
+  metadata_xml?: string;
+  entities?: Pick<KanripoTeiMeta, 'authorship'>;
 }
 
 interface CoverageSpan {
@@ -811,8 +813,14 @@ export const KanripoImportDialog = ({
           }
           const xml = wrapKanripoTeiDocument({
             config,
-            meta: { ...converted.meta, normalize, stem: converted.meta.stem || stem },
+            meta: {
+              ...converted.meta,
+              normalize,
+              stem: converted.meta.stem || stem,
+              authorship: converted.entities?.authorship ?? converted.meta.authorship,
+            },
             bodyXml,
+            metadataXml: converted.metadata_xml,
             punctNote,
           });
           if (!xmlLooksWellFormed(xml)) {

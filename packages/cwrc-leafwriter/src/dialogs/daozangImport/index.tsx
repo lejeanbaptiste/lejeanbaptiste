@@ -46,6 +46,8 @@ interface DaozangStatus {
 interface ConvertPayload {
   meta: DaozangTeiMeta;
   body_xml: string;
+  metadata_xml?: string;
+  entities?: Pick<DaozangTeiMeta, 'authorship'>;
   split?: boolean;
   juan_files?: {
     juan_n: string;
@@ -244,10 +246,16 @@ export const DaozangImportDialog = ({ onClose, open = false }: DaozangImportDial
           juan.juan_n && juanFiles.length > 1
             ? `${converted.meta.title} — 卷${juan.juan_n}`
             : converted.meta.title;
+        const meta: DaozangTeiMeta = {
+          ...converted.meta,
+          title: docTitle,
+          authorship: converted.entities?.authorship ?? converted.meta.authorship,
+        };
         const xml = wrapDaozangTeiDocument({
           config,
-          meta: { ...converted.meta, title: docTitle },
+          meta,
           bodyXml: juan.body_xml,
+          metadataXml: converted.metadata_xml,
         });
         if (!xmlLooksWellFormed(xml)) {
           throw new Error('Wrapped TEI is not well-formed XML.');

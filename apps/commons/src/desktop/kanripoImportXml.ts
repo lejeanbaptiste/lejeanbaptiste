@@ -3,6 +3,17 @@ import type { ProjectFileConfig } from './projectTypes';
 
 export type KanripoNormalizeMode = 'off' | 'dpm' | 'hard_replacements';
 
+export interface KanripoAuthorshipMeta {
+  author_index?: string;
+  person_name?: string;
+  person_id?: string;
+  function?: string;
+  time_dynasty?: string;
+  author_dates?: string;
+  date_not_before?: string;
+  date_not_after?: string;
+}
+
 export interface KanripoTeiMeta {
   title: string;
   kanripo_id: string;
@@ -11,12 +22,42 @@ export interface KanripoTeiMeta {
   dzid: string;
   normalize: KanripoNormalizeMode;
   stem: string;
+  vols?: string;
+  juan_count?: string;
+  catalog_source?: string;
+  cbeta_id?: string;
+  time_dynasty?: string;
+  date_not_before?: string;
+  date_not_after?: string;
+  author_dates?: string;
+  authorship?: KanripoAuthorshipMeta[];
 }
 
 const escapeXmlText = (value: string): string =>
   value.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
 
+const escapeXmlAttr = (value: string): string =>
+  escapeXmlText(value).replace(/"/g, '&quot;');
+
 const isoDate = (d = new Date()): string => d.toISOString().slice(0, 10);
+
+const authorBlocks = (meta: KanripoTeiMeta): string => {
+  const rows = meta.authorship ?? [];
+  if (!rows.length) return '';
+  return rows
+    .map((row) => {
+      const name = escapeXmlText(row.person_name ?? '');
+      const pid = (row.person_id ?? '').trim();
+      const fn = (row.function ?? '').trim();
+      const attrs = [
+        pid ? ` n="${escapeXmlAttr(pid)}"` : '',
+        fn ? ` role="${escapeXmlAttr(fn)}"` : '',
+      ].join('');
+      return name ? `      <author${attrs}>${name}</author>` : '';
+    })
+    .filter(Boolean)
+    .join('\n');
+};
 
 export interface ParallelProvenanceSource {
   label: string;
@@ -59,6 +100,7 @@ export const wrapKanripoTeiDocument = ({
   config,
   meta,
   bodyXml,
+  metadataXml,
   githubUrl,
   importedAt,
   punctNote,
@@ -66,6 +108,7 @@ export const wrapKanripoTeiDocument = ({
   config: ProjectFileConfig;
   meta: KanripoTeiMeta;
   bodyXml: string;
+  metadataXml?: string;
   githubUrl?: string;
   importedAt?: Date;
   punctNote?: string;
@@ -80,25 +123,54 @@ export const wrapKanripoTeiDocument = ({
   const juan = escapeXmlText(meta.juan);
   const when = isoDate(importedAt);
   const url = githubUrl ?? (meta.kanripo_id ? `https://github.com/kanripo/${meta.kanripo_id}` : '');
+  const authors = authorBlocks(meta);
 
   let xml = buildSkeletonForCatalog(config);
 
   xml = xml.replace(
     /<titleStmt>\s*<title>[\s\S]*?<\/title>\s*<\/titleStmt>/,
-    `<titleStmt><title>${title}</title></titleStmt>`,
+    `<titleStmt>\n      <title>${title}</title>\n${authors}\n    </titleStmt>`,
   );
 
   const sourceBits = ['Kanseki Repository (Kanripo)'];
   if (krId) sourceBits.push(krId);
   if (juan) sourceBits.push(`juan ${juan}`);
-  if (meta.source) sourceBits.push(`edition ${escapeXmlText(meta.source)}`);
+  if (meta.source) sourceBits.push(`witness ${escapeXmlText(meta.source)}`);
+  if (meta.catalog_source) sourceBits.push(`catalog ${escapeXmlText(meta.catalog_source)}`);
   const sourcePara = escapeXmlText(sourceBits.join(', '));
   const urlPara = url ? `<p>${escapeXmlText(url)}</p>` : '';
-  const idnoBlock = krId ? `\n      <idno type="Kanripo">${krId}</idno>` : '';
+  const idnos = [
+    krId ? `\n      <idno type="Kanripo">${krId}</idno>` : '',
+    meta.cbeta_id ? `\n      <idno type="CBETA">${escapeXmlText(meta.cbeta_id)}</idno>` : '',
+    meta.dzid ? `\n      <idno type="DZID">${escapeXmlText(meta.dzid)}</idno>` : '',
+  ].join('');
   xml = xml.replace(
     /<sourceDesc>[\s\S]*?<\/sourceDesc>/,
-    `<sourceDesc>\n      <p>${sourcePara}.</p>\n      ${urlPara}${idnoBlock}\n    </sourceDesc>`,
+    `<sourceDesc>\n      <p>${sourcePara}.</p>\n      ${urlPara}${idnos}\n    </sourceDesc>`,
   );
+
+  const profileBits: string[] = [];
+  const volLabel = meta.vols ?? meta.juan_count;
+  if (volLabel) {
+    profileBits.push(`      <extent>${escapeXmlText(volLabel)} 卷</extent>`);
+  }
+  if (meta.time_dynasty || meta.author_dates) {
+    const whenParts = [
+      meta.time_dynasty ? `<origDate>${escapeXmlText(meta.time_dynasty)}</origDate>` : '',
+      meta.author_dates
+        ? `<note type="authorDates">${escapeXmlText(meta.author_dates)}</note>`
+        : '',
+    ].filter(Boolean);
+    if (whenParts.length) {
+      profileBits.push(`      <creation>\n        ${whenParts.join('\n        ')}\n      </creation>`);
+    }
+  }
+  if (profileBits.length) {
+    xml = xml.replace(
+      /<\/fileDesc>/,
+      `  </fileDesc>\n  <profileDesc>\n${profileBits.join('\n')}\n  </profileDesc>`,
+    );
+  }
 
   const change = `Imported from Kanripo with plugin kanripo-import; normalisation=${escapeXmlText(
     meta.normalize,
@@ -112,7 +184,12 @@ export const wrapKanripoTeiDocument = ({
   if (!/<div[\s>]/.test(trimmedBody)) {
     throw new Error('Kanripo conversion did not return a TEI div.');
   }
-  xml = xml.replace(/<div type="text">[\s\S]*?<\/div>/, trimmedBody);
+
+  const metadataBlock = (metadataXml ?? '').trim();
+  const bodyContent = metadataBlock
+    ? `${metadataBlock}\n    ${trimmedBody}`
+    : trimmedBody;
+  xml = xml.replace(/<div type="text">[\s\S]*?<\/div>/, bodyContent);
 
   return xml;
 };

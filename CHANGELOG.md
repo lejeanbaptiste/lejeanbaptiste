@@ -270,6 +270,12 @@
 - Daozang search index ids are now unique for Chinese filenames (fixes duplicate React list keys in the import dialog).
 - Kanripo import ships a **bundled concordance** to those files (`kanripo_daozang_map.json` in `plugin-kanripo-import`). Import wizard auto-loads a matched Daozang parallel when both plugins are enabled and parallel punctuation is selected.
 
+### Wikisource import
+
+- Built-in **File → Import from Wikisource…** (not a language plugin): inspect a URL, choose among edition trees when more than one exists, fetch wikitext via the MediaWiki API, map zh templates (`header`, `pb`, `〈…〉` notes) to TEI, and write one file per chapter/juan under `imported/wikisource/{workTitle}/`. Wikidata sitelink metadata (Q-id, P50 authors, P4517 Ctext) fills the header; Wikisource `{{header}}` credit is kept as a note.
+- Brave/Chromium unpacked extension (`apps/browser-extension`) sends a small native-messaging order; LJB must be running with a project open. See `docs/wikisource-import.md`.
+- Kanripo parallel punctuation now loads the shared Wikisource fetch module from the desktop app (plugin `scripts/wikisource-parallel.mjs` re-exports it).
+
 ### Rewards system
 
 - The first-run portrait picker's head preview now shows a tight, neck-free close-up instead of a small head adrift in mostly-empty space with a neck it didn't need — added a `closeUp` mode to the avatar compositor (`avatarAssets.ts`) that strips the base SVG's `id="neck"` rect and swaps to the unpadded content canvas. The Service Record header and printed certificate, which both need the neck and the overflow-safe padding to line up with the uniform collar, are unaffected — they don't pass `closeUp` and keep the original framing.

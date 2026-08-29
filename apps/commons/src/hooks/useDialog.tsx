@@ -7,6 +7,7 @@ import {
   SignInDialog,
   SimpleDialog,
   TemplateDialog,
+  WikisourceImportDialog,
   type DialogProps,
   type DialogType,
 } from '../dialogs';
@@ -87,5 +88,8 @@ export const useDialog = () => {
     if (type === 'chineseAssets') return ChineseAssetsDialog;
     if (type === 'kanripoImport') return pluginDialog('kanripoImport');
     if (type === 'daozangImport') return pluginDialog('daozangImport');
+    if (type === 'wikisourceImport') {
+      return WikisourceImportDialog as ComponentType<DialogProps>;
+    }
   };
 };
