@@ -53,7 +53,10 @@ import {
   aiApiSettingsFromDesktop,
 } from '../../autoTagging/llmClientFromSettings';
 import { fetchPunctCoverage } from '../../aiPunctuation/pluginBridge';
-import { runAiFillGapsEditorCommand, runAiFillGapsOnFile } from '../../aiPunctuation/aiPunctuateEditor';
+import {
+  runAiFillGapsEditorCommand,
+  runAiFillGapsOnFile,
+} from '../../aiPunctuation/aiPunctuateEditor';
 import { formatAiProvenance } from '../../aiPunctuation/formatAiProvenance';
 import { runAiPunctuate } from '../../aiPunctuation/runAiPunctuate';
 import { AI_PUNCT_PROMPT_VERSION } from '../../aiPunctuation/prompts';
@@ -132,8 +135,7 @@ export interface KanripoImportDialogProps extends IDialog {
   variant?: 'import' | 'punctuate';
 }
 
-const coverageHasGaps = (coverage: Coverage): boolean =>
-  coverage.empty || coverage.ratio < 1;
+const coverageHasGaps = (coverage: Coverage): boolean => coverage.empty || coverage.ratio < 1;
 
 const joinPath = (...parts: string[]): string =>
   parts.filter(Boolean).join('/').replace(/\/+/g, '/');
@@ -350,7 +352,14 @@ export const KanripoImportDialog = ({
   }, [open]);
 
   const applyDaozangParallelText = useCallback(
-    (krId: string, relPath: string, label: string, text: string, matchMethod: string, dzId: string) => {
+    (
+      krId: string,
+      relPath: string,
+      label: string,
+      text: string,
+      matchMethod: string,
+      dzId: string,
+    ) => {
       setDaozangIssue(null);
       setDaozangIssueDetail('');
       setDaozangMatch({
@@ -374,52 +383,58 @@ export const KanripoImportDialog = ({
     [],
   );
 
-  const applyBundledDaozangParallel = useCallback(async (krId: string) => {
-    setDaozangLoading(true);
-    setDaozangIssue(null);
-    setDaozangIssueDetail('');
-    try {
-      const result = await loadBundledDaozangParallel(krId, {
-        pluginEnabled: daozangPluginEnabled,
-      });
-      if (!result.entry || !result.text || !result.label) {
-        setDaozangMatch(null);
-        setSources((current) => current.filter((source) => source.kind !== 'daozang'));
-        setDaozangIssue(result.issue);
-        setDaozangIssueDetail(result.detail ?? '');
-        return;
+  const applyBundledDaozangParallel = useCallback(
+    async (krId: string) => {
+      setDaozangLoading(true);
+      setDaozangIssue(null);
+      setDaozangIssueDetail('');
+      try {
+        const result = await loadBundledDaozangParallel(krId, {
+          pluginEnabled: daozangPluginEnabled,
+        });
+        if (!result.entry || !result.text || !result.label) {
+          setDaozangMatch(null);
+          setSources((current) => current.filter((source) => source.kind !== 'daozang'));
+          setDaozangIssue(result.issue);
+          setDaozangIssueDetail(result.detail ?? '');
+          return;
+        }
+        applyDaozangParallelText(
+          krId,
+          result.entry.daozang_rel_path,
+          result.label,
+          result.text,
+          result.entry.match_method,
+          result.entry.dz_id,
+        );
+      } finally {
+        setDaozangLoading(false);
       }
-      applyDaozangParallelText(
-        krId,
-        result.entry.daozang_rel_path,
-        result.label,
-        result.text,
-        result.entry.match_method,
-        result.entry.dz_id,
-      );
-    } finally {
-      setDaozangLoading(false);
-    }
-  }, [applyDaozangParallelText, daozangPluginEnabled]);
+    },
+    [applyDaozangParallelText, daozangPluginEnabled],
+  );
 
-  const loadDaozangPick = useCallback(async (relPath: string, title: string) => {
-    const api = window.electronAPI;
-    if (!api?.daozangReadText || !selected?.id) return;
-    setDaozangLoading(true);
-    setError(null);
-    try {
-      const read = await api.daozangReadText(relPath);
-      if (!read.text?.trim()) {
-        setError('That Daozang file is empty.');
-        return;
+  const loadDaozangPick = useCallback(
+    async (relPath: string, title: string) => {
+      const api = window.electronAPI;
+      if (!api?.daozangReadText || !selected?.id) return;
+      setDaozangLoading(true);
+      setError(null);
+      try {
+        const read = await api.daozangReadText(relPath);
+        if (!read.text?.trim()) {
+          setError('That Daozang file is empty.');
+          return;
+        }
+        applyDaozangParallelText(selected.id, relPath, title, read.text, 'manual', '');
+      } catch (pickError) {
+        setError(pickError instanceof Error ? pickError.message : String(pickError));
+      } finally {
+        setDaozangLoading(false);
       }
-      applyDaozangParallelText(selected.id, relPath, title, read.text, 'manual', '');
-    } catch (pickError) {
-      setError(pickError instanceof Error ? pickError.message : String(pickError));
-    } finally {
-      setDaozangLoading(false);
-    }
-  }, [applyDaozangParallelText, selected?.id]);
+    },
+    [applyDaozangParallelText, selected?.id],
+  );
 
   useEffect(() => {
     if (!open || punctuateOnly || punctMode !== 'parallel') return;
@@ -512,9 +527,7 @@ export const KanripoImportDialog = ({
         section: punctuateOnly ? ctextSection.trim() || undefined : undefined,
         contains: punctuateOnly ? ctextContains.trim() || undefined : undefined,
         fetchAll:
-          !punctuateOnly && isWikisourceUrl(url) && !isWikisourceVolumeUrl(url)
-            ? true
-            : undefined,
+          !punctuateOnly && isWikisourceUrl(url) && !isWikisourceVolumeUrl(url) ? true : undefined,
       });
       if (!result.text.trim()) {
         setError('That URL returned no text.');
@@ -960,12 +973,8 @@ export const KanripoImportDialog = ({
     }
   };
 
-  const importHasGaps = Boolean(
-    report?.bars?.some((bar) => coverageHasGaps(bar.coverage)),
-  );
-  const canAiFillGaps = Boolean(
-    punctuateOnly && aiReady && parallelApplied && !busy,
-  );
+  const importHasGaps = Boolean(report?.bars?.some((bar) => coverageHasGaps(bar.coverage)));
+  const canAiFillGaps = Boolean(punctuateOnly && aiReady && parallelApplied && !busy);
 
   const aiFillGapsForJuan = async (bar: { stem: string; outputPath: string }) => {
     if (!aiReady) {
@@ -1040,9 +1049,7 @@ export const KanripoImportDialog = ({
 
   const shownEditorCoverage = editorPreview?.coverage ?? stampCoverage;
   const showEditorCoverageBar =
-    punctuateOnly &&
-    shownEditorCoverage &&
-    (editorPreview?.coverage || !shownEditorCoverage.empty);
+    punctuateOnly && shownEditorCoverage && (editorPreview?.coverage || !shownEditorCoverage.empty);
 
   const parallelPanel = (punctMode === 'parallel' || punctuateOnly) && (
     <Box sx={{ mt: 2 }}>
@@ -1457,12 +1464,15 @@ export const KanripoImportDialog = ({
             <strong>Apply</strong>, then <strong>Fill gaps</strong> if grey remains.
           </Alert>
         )}
-        {punctuateOnly && parallelApplied && shownEditorCoverage && shownEditorCoverage.ratio < 1 && (
-          <Alert severity="info" sx={{ mt: 1 }}>
-            Green = punctuated Han. Grey = still untreated. Click <strong>Fill gaps</strong> on
-            grey segments (one juan at a time — can take several minutes).
-          </Alert>
-        )}
+        {punctuateOnly &&
+          parallelApplied &&
+          shownEditorCoverage &&
+          shownEditorCoverage.ratio < 1 && (
+            <Alert severity="info" sx={{ mt: 1 }}>
+              Green = punctuated Han. Grey = still untreated. Click <strong>Fill gaps</strong> on
+              grey segments (one juan at a time — can take several minutes).
+            </Alert>
+          )}
         {punctuateOnly &&
           editorPreview?.warnings?.map((item, index) => (
             <Alert
@@ -1527,9 +1537,11 @@ export const KanripoImportDialog = ({
             {report.warnings && report.warnings.length > 0 && (
               <>
                 {' '}
-                Parallel warnings:{' '}
-                {report.warnings.reduce((sum, row) => sum + row.items.length, 0)} across{' '}
-                {report.warnings.length} juan.
+                Parallel warnings: {report.warnings.reduce(
+                  (sum, row) => sum + row.items.length,
+                  0,
+                )}{' '}
+                across {report.warnings.length} juan.
               </>
             )}
             {report.failed.length > 0 && (
@@ -1552,8 +1564,8 @@ export const KanripoImportDialog = ({
               </>
             ) : (
               <>
-                Some juans have grey (untreated) areas. Configure AI in <strong>App Settings</strong>{' '}
-                to use <strong>Fill gaps</strong> on each bar above.
+                Some juans have grey (untreated) areas. Configure AI in{' '}
+                <strong>App Settings</strong> to use <strong>Fill gaps</strong> on each bar above.
               </>
             )}
           </Alert>
@@ -1577,11 +1589,7 @@ export const KanripoImportDialog = ({
             >
               Apply
             </Button>
-            <Button
-              variant="contained"
-              disabled={!canAiFillGaps}
-              onClick={() => void aiFillGaps()}
-            >
+            <Button variant="contained" disabled={!canAiFillGaps} onClick={() => void aiFillGaps()}>
               AI fill gaps
             </Button>
           </>

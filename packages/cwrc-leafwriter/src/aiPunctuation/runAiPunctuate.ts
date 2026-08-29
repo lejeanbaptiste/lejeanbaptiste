@@ -2,11 +2,7 @@ import type { KanripoNormalizeMode } from '../../../../apps/commons/src/desktop/
 import type { LlmClient } from '../autoTagging/llmClient';
 import { emptyAiPunctStats, mergeAiPunctStats, type AiPunctApplyStats } from './formatAiProvenance';
 import { llmPunctuatePlainSegment } from './llmPunctuatePlain';
-import {
-  applyAiParallelPunct,
-  listAiPunctSegments,
-  type AiPunctSegment,
-} from './pluginBridge';
+import { applyAiParallelPunct, listAiPunctSegments, type AiPunctSegment } from './pluginBridge';
 import { segmentNeedsAiGap, selectTargetsForAi, type HanRange } from './selectionScope';
 
 export interface RunAiPunctuateOptions {
@@ -50,7 +46,7 @@ export async function runAiPunctuate(
     return { body_xml: xml, stats, applied: false };
   }
 
-  const segmentParallels: Array<{ parallel_text: string; han_start: number; han_end: number }> = [];
+  const segmentParallels: { parallel_text: string; han_start: number; han_end: number }[] = [];
   let done = 0;
   const total = targets.length;
 

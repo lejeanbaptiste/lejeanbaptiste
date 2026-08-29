@@ -1351,9 +1351,7 @@ function buildApplicationMenu() {
     lookForUpdatesItem,
     timeMachineItem,
     menuSeparator(),
-    ...(pluginToolsMenuItems.length > 0
-      ? [...pluginToolsMenuItems, menuSeparator()]
-      : []),
+    ...(pluginToolsMenuItems.length > 0 ? [...pluginToolsMenuItems, menuSeparator()] : []),
     ...(process.platform !== 'darwin'
       ? [
           settingsItem,

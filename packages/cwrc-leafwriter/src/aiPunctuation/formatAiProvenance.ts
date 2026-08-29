@@ -18,9 +18,7 @@ export function formatAiProvenance(options: {
   stats: AiPunctApplyStats;
 }): string {
   const norm =
-    options.normalize === 'off' || options.normalize === 'none'
-      ? 'none'
-      : options.normalize;
+    options.normalize === 'off' || options.normalize === 'none' ? 'none' : options.normalize;
   return [
     `AI punctuation (model: ${options.modelId}, ${options.promptVersion})`,
     `normalisation: ${norm}`,

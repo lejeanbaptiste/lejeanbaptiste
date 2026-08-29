@@ -33,11 +33,10 @@ const xmlLooksWellFormed = (xml: string): boolean => {
 };
 
 export type AiPunctuateEditorOutcome =
-  | { ok: true; message: string }
-  | { ok: false; message: string; cancelled?: boolean };
+  { ok: true; message: string } | { ok: false; message: string; cancelled?: boolean };
 
 function scopeHasPunct(
-  segments: Array<{ id: number; has_punct: boolean }>,
+  segments: { id: number; has_punct: boolean }[],
   segmentIds?: number[],
 ): boolean {
   const idSet = segmentIds ? new Set(segmentIds) : null;
@@ -89,15 +88,9 @@ export async function runAiPunctuateEditorCommand(options?: {
 
   const selectionHasPunct = hanRange ? punctInHanRange(listed.segments, hanRange) : false;
   const juanHasPunct = scopeHasPunct(listed.segments);
-  const needsPurgePrompt = hanRange
-    ? selectionHasPunct
-    : listed.has_any_punct && juanHasPunct;
+  const needsPurgePrompt = hanRange ? selectionHasPunct : listed.has_any_punct && juanHasPunct;
 
-  if (
-    needsPurgePrompt &&
-    !options?.forcePurge &&
-    !options?.skipPurgePrompt
-  ) {
+  if (needsPurgePrompt && !options?.forcePurge && !options?.skipPurgePrompt) {
     const purge = window.confirm(
       hanRange
         ? 'The selected text contains punctuation marks.\n\nPurge punctuation in the selection and re-punctuate?\n(Cancel to back out.)'

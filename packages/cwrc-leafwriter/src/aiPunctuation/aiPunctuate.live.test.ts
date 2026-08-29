@@ -24,8 +24,7 @@ function buildLiveClient(baseUrl: string, model: string, apiKey: string): LlmCli
 }
 
 /** Long enough for MIN_SEGMENT_HAN (20). */
-const SAMPLE_HAN =
-  '學而時習之不亦說乎有朋自遠方來不亦樂乎人不知而不慍不亦君子乎';
+const SAMPLE_HAN = '學而時習之不亦說乎有朋自遠方來不亦樂乎人不知而不慍不亦君子乎';
 
 maybe(
   'Ollama/local model returns verifiable punctuation insertions',

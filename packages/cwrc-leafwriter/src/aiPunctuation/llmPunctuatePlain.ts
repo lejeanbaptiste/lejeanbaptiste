@@ -1,9 +1,5 @@
 import type { LlmClient } from '../autoTagging/llmClient';
-import {
-  buildPlainPunctPrompt,
-  stripPlainPunctResponse,
-  type PunctPromptSegment,
-} from './prompts';
+import { buildPlainPunctPrompt, stripPlainPunctResponse, type PunctPromptSegment } from './prompts';
 import { PLAIN_CHUNK_HAN } from './punctSchema';
 
 export interface LlmPunctuatePlainSegmentInput extends PunctPromptSegment {

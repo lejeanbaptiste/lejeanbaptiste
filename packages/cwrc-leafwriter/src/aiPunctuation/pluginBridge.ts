@@ -56,7 +56,7 @@ export async function listAiPunctSegments(bodyXml: string): Promise<ListSegments
 
 export async function applyAiPunctInsertions(
   bodyXml: string,
-  verifiedBySegment: Record<number, Array<{ afterHan: number; mark: string; global_han: number }>>,
+  verifiedBySegment: Record<number, { afterHan: number; mark: string; global_han: number }[]>,
   segmentMeta: AiPunctSegment[],
 ): Promise<ApplyInsertionsResult> {
   const payload: Record<string, unknown> = {
@@ -72,7 +72,7 @@ export async function applyAiPunctInsertions(
 
 export async function applyAiParallelPunct(
   bodyXml: string,
-  segmentParallels: Array<{ parallel_text: string; han_start: number; han_end: number }>,
+  segmentParallels: { parallel_text: string; han_start: number; han_end: number }[],
   options?: { reflow?: boolean },
 ): Promise<AiParallelApplyResult> {
   return invokePython({
@@ -115,13 +115,13 @@ export interface PunctCoverage {
   total_chars: number;
   ratio: number;
   empty: boolean;
-  spans?: Array<{
+  spans?: {
     start: number;
     end: number;
     covered_chars: number;
     source: string;
     preview: string;
-  }>;
+  }[];
 }
 
 /** Green/grey bar from actual punctuation marks (parallel or AI), not parallel overlap alone. */

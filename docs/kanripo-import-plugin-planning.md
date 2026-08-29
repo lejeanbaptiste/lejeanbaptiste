@@ -34,7 +34,7 @@ Clones are **temporary**: cache while converting, **delete the git tree** once X
 | Git tree        | Clone to a cache/temp dir; **flush after successful XML write**. On conversion failure, keep the clone until retry or cancel. Re-import clones again.                            |
 | Commentary      | ASCII `(…)` → `<note type="comm">…</note>` inline (including across `<pb/>`).                                                                                                    |
 | Normalisation   | User chooses **off** / **hard replacements** (`hard_replacements.csv`) / **older DPM variant table** (`dpm_variant_normalisation_table.csv`). Record which in `revisionDesc`.    |
-| File menu       | **File → Import from Kanripo…** (next to Import Documents). Punctuation tools in the **Kanripo toolbar** (not duplicated in the app Tools menu). |
+| File menu       | **File → Import from Kanripo…** (next to Import Documents). Punctuation tools in the **Kanripo toolbar** (not duplicated in the app Tools menu).                                 |
 | Parallel source | Any extractable document, **paste**, or **URL** (Wikisource especially). Punctuate only the overlapping stretch. Coverage shown as a **1-D bar** (disk-usage metaphor) per juan. |
 
 ---
@@ -255,21 +255,21 @@ Fail closed: commentary vs base-text mismatch → empty bar, not speckles.
 
 **Implemented (2026-08-29, v3).** Pure inference when no parallel exists.
 
-| Decision | Choice |
-| -------- | ------ |
-| Entry A | Import wizard: `punctMode = ai` on whole juan(s) |
-| Entry C | Tools → **AI punctuate selection…** (whole juan if no selection) |
-| Segmentation | `parse_body_segments` — one LLM call per basetext run + one per `<note type="comm">` |
-| Model output | **Plain punctuated text** per segment (**prompt v3**, `ai-punct-v3`) — no JSON schema |
-| Transfer | Scoped fuzzy align per segment (`apply_scoped_parallel_punctuation`); variant normalization in model output is fine |
-| Reflow | Automatic at end of v3 pipeline; Kanripo line-length heuristic (long `<p>` + short terminal `<p>`) preserves mandoku line-wrap breaks |
-| Comm notes | Full inline punctuation; no paragraph breaks inside notes |
-| Mark set | `。，、：；？！「」『』·《》` only — no brackets |
-| Overwrite | Never — skip segments that already contain adequate punctuation (**AI fill gaps:** skip segments above punct-density threshold) |
-| Selection + existing punct | Confirm: purge punctuation in scope and continue, or cancel — purge uses **Han range** when a selection is active (not whole segment) |
-| Provenance | Single `<change>` in header on import; editor commands append `<change>` — records model, prompt version, `marks_added`, `segments_applied`, `align_failed`, `reflowed` |
-| Paragraph reflow | Also available as separate command (**Reflow paragraphs…**) |
-| LLM | TypeScript `llmClient.ts` (plain-text mode when no `jsonSchema`); Python `ai_punct.py` applies parallel transfer only |
+| Decision                   | Choice                                                                                                                                                                  |
+| -------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Entry A                    | Import wizard: `punctMode = ai` on whole juan(s)                                                                                                                        |
+| Entry C                    | Tools → **AI punctuate selection…** (whole juan if no selection)                                                                                                        |
+| Segmentation               | `parse_body_segments` — one LLM call per basetext run + one per `<note type="comm">`                                                                                    |
+| Model output               | **Plain punctuated text** per segment (**prompt v3**, `ai-punct-v3`) — no JSON schema                                                                                   |
+| Transfer                   | Scoped fuzzy align per segment (`apply_scoped_parallel_punctuation`); variant normalization in model output is fine                                                     |
+| Reflow                     | Automatic at end of v3 pipeline; Kanripo line-length heuristic (long `<p>` + short terminal `<p>`) preserves mandoku line-wrap breaks                                   |
+| Comm notes                 | Full inline punctuation; no paragraph breaks inside notes                                                                                                               |
+| Mark set                   | `。，、：；？！「」『』·《》` only — no brackets                                                                                                                        |
+| Overwrite                  | Never — skip segments that already contain adequate punctuation (**AI fill gaps:** skip segments above punct-density threshold)                                         |
+| Selection + existing punct | Confirm: purge punctuation in scope and continue, or cancel — purge uses **Han range** when a selection is active (not whole segment)                                   |
+| Provenance                 | Single `<change>` in header on import; editor commands append `<change>` — records model, prompt version, `marks_added`, `segments_applied`, `align_failed`, `reflowed` |
+| Paragraph reflow           | Also available as separate command (**Reflow paragraphs…**)                                                                                                             |
+| LLM                        | TypeScript `llmClient.ts` (plain-text mode when no `jsonSchema`); Python `ai_punct.py` applies parallel transfer only                                                   |
 
 Pipeline:
 

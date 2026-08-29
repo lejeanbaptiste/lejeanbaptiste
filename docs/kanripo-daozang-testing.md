@@ -172,10 +172,10 @@ Use checkboxes to record passes. Note macOS version and app build (dev vs packag
 
 **Suggested Dao works (concordance hits):**
 
-| KR id      | Title (short)        | Notes                          |
-| ---------- | -------------------- | ------------------------------ |
-| `KR5a0001` | 靈寶無量度人上品妙經   | Strong map hit                 |
-| `KR5a0087` | 度人經四註           | Commentary / variant filename  |
+| KR id      | Title (short)        | Notes                         |
+| ---------- | -------------------- | ----------------------------- |
+| `KR5a0001` | 靈寶無量度人上品妙經 | Strong map hit                |
+| `KR5a0087` | 度人經四註           | Commentary / variant filename |
 
 **Not expected to auto-match Daozang:** `KR3a0002` (荀子) — use Wikisource instead.
 
@@ -247,14 +247,14 @@ Prerequisites: parallel import completed (§2.5–2.6); coverage bars show grey 
 
 ## Part 4 — Known limitations (not failures)
 
-| Limitation | Workaround |
-| ---------- | ---------- |
-| Concordance covers ~1,483 Dao KR ids, not all Kanripo works | Wikisource, paste, or file parallel |
-| 荀子 etc. (non-Dao) — no Daozang auto-match | Use Wikisource chapter URL |
-| Multi-juan work vs single Daozang file — overlap may be partial | Check per-juan warnings; manual parallel per juan |
-| Bundled corpus filenames are Chinese; index uses hashed ids | Search by title, not by id slug |
-| Per-juan Wikisource when 卷 ≠ juan | Not built yet — whole-work or chapter URL only |
-| Phase 4 AI punctuation | Shipped — **parallel import** then **Fill gaps** per juan on the import screen, or Kanripo toolbar → **AI fill gaps**. **AI inference** import mode punctuates whole juans (slow). |
+| Limitation                                                      | Workaround                                                                                                                                                                         |
+| --------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Concordance covers ~1,483 Dao KR ids, not all Kanripo works     | Wikisource, paste, or file parallel                                                                                                                                                |
+| 荀子 etc. (non-Dao) — no Daozang auto-match                     | Use Wikisource chapter URL                                                                                                                                                         |
+| Multi-juan work vs single Daozang file — overlap may be partial | Check per-juan warnings; manual parallel per juan                                                                                                                                  |
+| Bundled corpus filenames are Chinese; index uses hashed ids     | Search by title, not by id slug                                                                                                                                                    |
+| Per-juan Wikisource when 卷 ≠ juan                              | Not built yet — whole-work or chapter URL only                                                                                                                                     |
+| Phase 4 AI punctuation                                          | Shipped — **parallel import** then **Fill gaps** per juan on the import screen, or Kanripo toolbar → **AI fill gaps**. **AI inference** import mode punctuates whole juans (slow). |
 
 ---
 
@@ -290,13 +290,13 @@ Issues:
 
 ## Part 6 — If something fails
 
-| Symptom | First checks |
-| ------- | ------------- |
-| File → Import from Daozang does nothing | Plugins enabled? Project open? Console `[plugins] Failed to load daozang-import`? Restart `dev:desktop`. |
-| Dialog opens but list duplicates / React key warnings | Refresh index in dialog or restart app (index v2 with hashed ids). |
-| Python import error / mojibake | Daozang `.txt` GB decoding — rerun `plugin-daozang-import` python tests. |
-| Schema compile error in console | Reopen project; confirm `ljb-sanmiao-merge v14+` in `schema/tei_all.rng`. |
-| No Daozang match in Kanripo wizard | KR id in `kanripo_daozang_map.json`? Both plugins enabled? Parallel mode on? |
-| Punctuation wrong but import “succeeds” | Check yellow quality warnings; try Wikisource or manual parallel for comparison. |
+| Symptom                                               | First checks                                                                                             |
+| ----------------------------------------------------- | -------------------------------------------------------------------------------------------------------- |
+| File → Import from Daozang does nothing               | Plugins enabled? Project open? Console `[plugins] Failed to load daozang-import`? Restart `dev:desktop`. |
+| Dialog opens but list duplicates / React key warnings | Refresh index in dialog or restart app (index v2 with hashed ids).                                       |
+| Python import error / mojibake                        | Daozang `.txt` GB decoding — rerun `plugin-daozang-import` python tests.                                 |
+| Schema compile error in console                       | Reopen project; confirm `ljb-sanmiao-merge v14+` in `schema/tei_all.rng`.                                |
+| No Daozang match in Kanripo wizard                    | KR id in `kanripo_daozang_map.json`? Both plugins enabled? Parallel mode on?                             |
+| Punctuation wrong but import “succeeds”               | Check yellow quality warnings; try Wikisource or manual parallel for comparison.                         |
 
 For debugging, useful console filters: `[plugins]`, `[plugin-python:daozang-import]`, `[validator]`, `[dialog]`.

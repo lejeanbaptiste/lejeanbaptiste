@@ -1,4 +1,10 @@
-import { AI_PUNCT_MARKS, CHUNK_HAN, CHUNK_OVERLAP, MIN_SEGMENT_HAN, type AiPunctMark } from './punctSchema';
+import {
+  AI_PUNCT_MARKS,
+  CHUNK_HAN,
+  CHUNK_OVERLAP,
+  MIN_SEGMENT_HAN,
+  type AiPunctMark,
+} from './punctSchema';
 
 const PUNCT_SET = new Set<string>(AI_PUNCT_MARKS);
 
@@ -134,7 +140,7 @@ export function selectionHanOnly(text: string): string {
 }
 
 /** Reconstruct the juan Han tape from segment metadata (global han indices). */
-export function buildJuanHanTape(segments: Array<{ han: string; han_start: number }>): string {
+export function buildJuanHanTape(segments: { han: string; han_start: number }[]): string {
   if (!segments.length) return '';
   const end = Math.max(...segments.map((seg) => seg.han_start + seg.han.length));
   const chars = Array<string>(end).fill('');
@@ -152,7 +158,7 @@ export function buildJuanHanTape(segments: Array<{ han: string; han_start: numbe
  * - `null` — selection present but not locatable in the tape
  */
 export function findSelectionHanRange(
-  segments: Array<{ han: string; han_start: number; han_end: number }>,
+  segments: { han: string; han_start: number; han_end: number }[],
   selectedPlain: string,
 ): HanRange | null | undefined {
   if (!selectedPlain.trim()) return undefined;
@@ -192,7 +198,7 @@ export function clipSegmentToHanRange<
 }
 
 export function punctInHanRange(
-  segments: Array<{ han: string; han_start: number; han_end: number }>,
+  segments: { han: string; han_start: number; han_end: number }[],
   range: HanRange,
 ): boolean {
   for (const seg of segments) {
@@ -205,7 +211,7 @@ export function punctInHanRange(
 }
 
 export function segmentsInSelection(
-  segments: Array<{ id: number; han: string; han_start: number; han_end: number }>,
+  segments: { id: number; han: string; han_start: number; han_end: number }[],
   selectedPlain: string,
 ): number[] | undefined {
   const range = findSelectionHanRange(segments, selectedPlain);

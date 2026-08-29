@@ -42,8 +42,12 @@ export function registerDaozangImportUi(context: PluginRegisterContext): void {
       return;
     }
     if (openDaozangDialog()) return;
-    notify('Daozang import is not ready yet — restart the app or check the console for plugin load errors.');
-    hostNotify('Daozang import is not ready yet — restart the app or check the console for plugin load errors.');
+    notify(
+      'Daozang import is not ready yet — restart the app or check the console for plugin load errors.',
+    );
+    hostNotify(
+      'Daozang import is not ready yet — restart the app or check the console for plugin load errors.',
+    );
   };
 
   context.registerToolAction('daozang-import.open', openImport);

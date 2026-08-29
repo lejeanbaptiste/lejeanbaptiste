@@ -72,9 +72,7 @@ describe('sanmiaoSchemaMerge', () => {
     expect(merged.flatRng).toContain('ref name="ljb.nobleTitle"');
     expect(merged.flatRng).toContain('ljb.kanripo.graphic');
     expect(merged.flatRng).toContain('type=kanripo');
-    expect(merged.flatRng).not.toMatch(
-      /<attribute name="n">[\s\S]*?<attribute name="n">/,
-    );
+    expect(merged.flatRng).not.toMatch(/<attribute name="n">[\s\S]*?<attribute name="n">/);
     const kanripoBranch = merged.flatRng.match(
       /<attribute name="type"><value>kanripo<\/value><\/attribute>([\s\S]*?)<empty\/>/,
     )?.[1];

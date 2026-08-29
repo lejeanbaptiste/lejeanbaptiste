@@ -3,7 +3,11 @@ import { buildPunctPrompt, AI_PUNCT_PROMPT_VERSION, type PunctPromptSegment } fr
 import { punctuationResponseSchema } from './punctSchema';
 import { chunkHanText } from './selectionScope';
 import type { RawPunctInsertion, VerifiedPunctInsertion } from './punctSchema';
-import { dedupeInsertions, parseValidInsertions, verifySegmentInsertions } from './verifyInsertions';
+import {
+  dedupeInsertions,
+  parseValidInsertions,
+  verifySegmentInsertions,
+} from './verifyInsertions';
 
 export interface LlmPunctuateSegmentInput extends PunctPromptSegment {
   han_start: number;
@@ -42,7 +46,7 @@ export async function llmPunctuateSegment(
       const body = JSON.parse(response.json) as { insertions?: unknown[] };
       rawCount = Array.isArray(body.insertions) ? body.insertions.length : 0;
     } catch {
-      rawCount = 0;
+      /* invalid JSON — rawCount stays 0 */
     }
     dropped_schema += Math.max(0, rawCount - parsed.length);
     const { verified, dropped } = verifySegmentInsertions(

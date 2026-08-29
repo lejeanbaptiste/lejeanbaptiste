@@ -30,12 +30,25 @@ export function buildPlainPunctSystemPrompt(kind: 'text' | 'comm'): string {
 }
 
 export function buildPlainPunctUserPrompt(segment: PunctPromptSegment): string {
-  const lines = [`Segment kind: ${segment.kind}`, '', 'Base text (Han only — punctuate this string):', segment.han];
+  const lines = [
+    `Segment kind: ${segment.kind}`,
+    '',
+    'Base text (Han only — punctuate this string):',
+    segment.han,
+  ];
   if (segment.preceding_comm) {
-    lines.push('', 'Preceding commentary (context only — do not punctuate):', segment.preceding_comm);
+    lines.push(
+      '',
+      'Preceding commentary (context only — do not punctuate):',
+      segment.preceding_comm,
+    );
   }
   if (segment.following_comm) {
-    lines.push('', 'Following commentary (context only — do not punctuate):', segment.following_comm);
+    lines.push(
+      '',
+      'Following commentary (context only — do not punctuate):',
+      segment.following_comm,
+    );
   }
   return lines.join('\n');
 }
@@ -86,18 +99,24 @@ export function buildPunctSystemPrompt(kind: 'text' | 'comm'): string {
 }
 
 export function buildPunctUserPrompt(segment: PunctPromptSegment, chunkOffset = 0): string {
-  const lines = [
-    `Segment kind: ${segment.kind}`,
-  ];
+  const lines = [`Segment kind: ${segment.kind}`];
   if (chunkOffset > 0) {
     lines.push(`Note: this is a continuation chunk; left/occurrence refer to THIS chunk only.`);
   }
   lines.push('', 'Base text (Han only — punctuate this string):', segment.han);
   if (segment.preceding_comm) {
-    lines.push('', 'Preceding commentary (context only — do not punctuate):', segment.preceding_comm);
+    lines.push(
+      '',
+      'Preceding commentary (context only — do not punctuate):',
+      segment.preceding_comm,
+    );
   }
   if (segment.following_comm) {
-    lines.push('', 'Following commentary (context only — do not punctuate):', segment.following_comm);
+    lines.push(
+      '',
+      'Following commentary (context only — do not punctuate):',
+      segment.following_comm,
+    );
   }
   return lines.join('\n');
 }

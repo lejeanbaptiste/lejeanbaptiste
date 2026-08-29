@@ -239,9 +239,7 @@ export const DaozangImportDialog = ({ onClose, open = false }: DaozangImportDial
       const written: string[] = [];
       for (const juan of juanFiles) {
         const fileStem =
-          juan.juan_n && juanFiles.length > 1
-            ? `${baseStem}-卷${juan.juan_n}`
-            : baseStem;
+          juan.juan_n && juanFiles.length > 1 ? `${baseStem}-卷${juan.juan_n}` : baseStem;
         const docTitle =
           juan.juan_n && juanFiles.length > 1
             ? `${converted.meta.title} — 卷${juan.juan_n}`

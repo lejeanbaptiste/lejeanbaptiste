@@ -1,4 +1,14 @@
-import { filterSegmentsForAi, filterSegmentsForAiGaps, chunkHanText, findSelectionHanRange, clipSegmentToHanRange, buildJuanHanTape, selectionHanOnly, segmentNeedsAiGap, punctPer100Han } from './selectionScope';
+import {
+  filterSegmentsForAi,
+  filterSegmentsForAiGaps,
+  chunkHanText,
+  findSelectionHanRange,
+  clipSegmentToHanRange,
+  buildJuanHanTape,
+  selectionHanOnly,
+  segmentNeedsAiGap,
+  punctPer100Han,
+} from './selectionScope';
 
 describe('chunkHanText', () => {
   it('returns one chunk for short text', () => {

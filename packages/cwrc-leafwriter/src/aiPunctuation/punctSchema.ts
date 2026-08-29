@@ -1,5 +1,20 @@
 /** Traditional Chinese reading marks allowed for AI punctuation (no brackets). */
-export const AI_PUNCT_MARKS = ['。', '，', '、', '：', '；', '？', '！', '「', '」', '『', '』', '·', '《', '》'] as const;
+export const AI_PUNCT_MARKS = [
+  '。',
+  '，',
+  '、',
+  '：',
+  '；',
+  '？',
+  '！',
+  '「',
+  '」',
+  '『',
+  '』',
+  '·',
+  '《',
+  '》',
+] as const;
 
 export type AiPunctMark = (typeof AI_PUNCT_MARKS)[number];
 
