@@ -403,6 +403,26 @@ export const useProjectMenu = () => {
     return () => unsubscribe();
   }, [isProjectReady, notifyViaSnackbar, openDialog, t]);
 
+  useEffect(() => {
+    if (!isDesktop() || !window.electronAPI?.onKanripoImportOrder) return;
+    const unsubscribe = window.electronAPI.onKanripoImportOrder((order) => {
+      if (!isProjectReady) {
+        notifyViaSnackbar(t('LWC.desktop.project.messages.open_project_first'));
+        return;
+      }
+      openDialog({
+        type: 'kanripoImport',
+        props: {
+          initialKrId: order.kr_id,
+          initialImportScope: order.scope,
+          initialJuan: order.juan ?? order.loc?.split('_').slice(1).join('_') ?? '',
+          initialUrl: order.url,
+        },
+      });
+    });
+    return () => unsubscribe();
+  }, [isProjectReady, notifyViaSnackbar, openDialog, t]);
+
   const onKeydownHandle = useCallback(
     async (event: KeyboardEvent) => {
       if (event.key === 'Escape') {

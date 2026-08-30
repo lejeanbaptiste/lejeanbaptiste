@@ -31,6 +31,12 @@ export interface KanripoTeiMeta {
   date_not_after?: string;
   author_dates?: string;
   authorship?: KanripoAuthorshipMeta[];
+  work_qid?: string;
+  edition_qid?: string;
+  ws_page?: string;
+  ws_url?: string;
+  wikidata_primary_name?: string;
+  wikidata_aliases?: string[];
 }
 
 const escapeXmlText = (value: string): string =>
@@ -143,6 +149,13 @@ export const wrapKanripoTeiDocument = ({
     krId ? `\n      <idno type="Kanripo">${krId}</idno>` : '',
     meta.cbeta_id ? `\n      <idno type="CBETA">${escapeXmlText(meta.cbeta_id)}</idno>` : '',
     meta.dzid ? `\n      <idno type="DZID">${escapeXmlText(meta.dzid)}</idno>` : '',
+    meta.work_qid
+      ? `\n      <idno type="URI">https://www.wikidata.org/entity/${escapeXmlText(meta.work_qid)}</idno>`
+      : '',
+    meta.edition_qid && meta.edition_qid !== meta.work_qid
+      ? `\n      <idno type="URI" subtype="edition">https://www.wikidata.org/entity/${escapeXmlText(meta.edition_qid)}</idno>`
+      : '',
+    meta.ws_url ? `\n      <idno type="URI" subtype="wikisource">${escapeXmlText(meta.ws_url)}</idno>` : '',
   ].join('');
   xml = xml.replace(
     /<sourceDesc>[\s\S]*?<\/sourceDesc>/,

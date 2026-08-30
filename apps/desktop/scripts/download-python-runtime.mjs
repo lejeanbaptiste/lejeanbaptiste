@@ -1,9 +1,9 @@
 #!/usr/bin/env node
 /**
  * Downloads a relocatable CPython (python-build-standalone) and pip-installs
- * the pinned sanmiao release into it, so every platform ships date tagging
- * with zero Python setup — and every dev machine/VM self-provisions the same
- * runtime at the same repo-relative path (apps/desktop/resources/python).
+ * the pinned sanmiao and kanripo (pykanripo API) releases into it, so every
+ * platform ships date tagging and single-juan Kanripo fetch with zero Python
+ * setup.
  */
 import { existsSync, mkdirSync, readFileSync, rmSync, unlinkSync, writeFileSync } from 'fs';
 import { createWriteStream } from 'fs';
@@ -17,6 +17,7 @@ import { fetchWithRetry } from './retryable-fetch.mjs';
 const PBS_TAG = '20260623';
 const PYTHON_VERSION = '3.12.13';
 const SANMIAO_SPEC = 'sanmiao[fuzzy]==0.2.10';
+const KANRIPO_API_SPEC = 'kanripo==0.31';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const RESOURCES_DIR = path.join(__dirname, '../resources/python');
@@ -56,7 +57,7 @@ const pythonBin =
     ? path.join(RESOURCES_DIR, 'python.exe')
     : path.join(RESOURCES_DIR, 'bin', 'python3');
 const stampPath = path.join(RESOURCES_DIR, '.deps-installed');
-const stamp = `${asset} ${SANMIAO_SPEC}`;
+const stamp = `${asset} ${SANMIAO_SPEC} ${KANRIPO_API_SPEC}`;
 
 if (
   existsSync(pythonBin) &&
@@ -97,6 +98,24 @@ execFileSync(
     '--timeout',
     '60',
     SANMIAO_SPEC,
+  ],
+  { stdio: 'inherit' },
+);
+
+console.log(`[python-runtime] Installing ${KANRIPO_API_SPEC}`);
+execFileSync(
+  pythonBin,
+  [
+    '-m',
+    'pip',
+    'install',
+    '--no-warn-script-location',
+    '--disable-pip-version-check',
+    '--retries',
+    '5',
+    '--timeout',
+    '60',
+    KANRIPO_API_SPEC,
   ],
   { stdio: 'inherit' },
 );

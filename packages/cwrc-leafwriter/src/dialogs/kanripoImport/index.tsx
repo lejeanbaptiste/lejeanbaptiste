@@ -34,6 +34,13 @@ import {
   type DaozangParallelLoadIssue,
 } from '../../../../../apps/commons/src/desktop/kanripoDaozangParallel';
 import {
+  daozangSources,
+  lookupKanripoCrosswalk,
+  wikisourceSources,
+  type ParallelCrosswalkEntry,
+  type ParallelSourceEntry,
+} from '../../../../../apps/commons/src/desktop/kanripoCrosswalk';
+import {
   appendTeiRevisionChange,
   formatParallelProvenance,
 } from '../../../../../apps/commons/src/desktop/kanripoImportXml';
@@ -63,6 +70,11 @@ import { AI_PUNCT_PROMPT_VERSION } from '../../aiPunctuation/prompts';
 
 const PLUGIN_ID = 'kanripo-import';
 const DAOZANG_PLUGIN_ID = 'daozang-import';
+
+const extractKanripoIdFromXml = (xml: string): string | null => {
+  const match = xml.match(/<idno[^>]*type="Kanripo"[^>]*>([^<]+)<\/idno>/i);
+  return match?.[1]?.trim() || null;
+};
 
 const CTEXT_IMPORT_MESSAGE =
   'ctext wiki URLs are for in-editor punctuation only (Segment and punctuate on one open juan). For import, use Wikisource, a file, or paste.';
@@ -135,6 +147,10 @@ interface ParallelQualityWarning {
 
 export interface KanripoImportDialogProps extends IDialog {
   variant?: 'import' | 'punctuate';
+  initialKrId?: string;
+  initialImportScope?: 'work' | 'juan';
+  initialJuan?: string;
+  initialUrl?: string;
 }
 
 const coverageHasGaps = (coverage: Coverage): boolean => coverage.empty || coverage.ratio < 1;
@@ -230,9 +246,15 @@ export const KanripoImportDialog = ({
   onClose,
   open = false,
   variant = 'import',
+  initialKrId = '',
+  initialImportScope,
+  initialJuan = '',
+  initialUrl = '',
 }: KanripoImportDialogProps) => {
   const punctuateOnly = variant === 'punctuate';
   const [query, setQuery] = useState('');
+  const [importScope, setImportScope] = useState<'work' | 'juan'>('work');
+  const [juanInput, setJuanInput] = useState('');
   const [hits, setHits] = useState<KanripoWorkHit[]>([]);
   const [selected, setSelected] = useState<KanripoWorkHit | null>(null);
   const [normalize, setNormalize] = useState<KanripoNormalizeMode>('off');
@@ -294,6 +316,14 @@ export const KanripoImportDialog = ({
   const [daozangPickHits, setDaozangPickHits] = useState<
     { id: string; title: string; rel_path: string; dz_no: string }[]
   >([]);
+  const [parallelCrosswalk, setParallelCrosswalk] = useState<ParallelCrosswalkEntry | null>(null);
+  const [crosswalkLoading, setCrosswalkLoading] = useState(false);
+
+  const activeKrId = useMemo(() => {
+    if (!punctuateOnly) return selected?.id ?? null;
+    const xml = window.__leafWriterProject?.getActiveFileXml?.() ?? '';
+    return extractKanripoIdFromXml(xml);
+  }, [punctuateOnly, selected?.id, open]);
 
   const projectReady = Boolean(window.__leafWriterProject?.isProjectReady?.());
   const hasSources = sources.some((source) => source.text.trim());
@@ -314,6 +344,20 @@ export const KanripoImportDialog = ({
     if (!open || punctuateOnly) return;
     void search('');
   }, [open, punctuateOnly, search]);
+
+  useEffect(() => {
+    if (!open || punctuateOnly || !initialKrId.trim()) return;
+    setQuery(initialKrId.trim());
+    if (initialImportScope) setImportScope(initialImportScope);
+    if (initialJuan.trim()) setJuanInput(initialJuan.trim());
+  }, [open, punctuateOnly, initialKrId, initialImportScope, initialJuan]);
+
+  useEffect(() => {
+    if (!open || punctuateOnly || !initialKrId.trim() || hits.length === 0) return;
+    const wanted = initialKrId.trim().toLowerCase();
+    const match = hits.find((hit) => hit.id.toLowerCase() === wanted);
+    if (match) setSelected(match);
+  }, [open, punctuateOnly, initialKrId, hits]);
 
   useEffect(() => {
     if (!open || punctuateOnly) return;
@@ -452,25 +496,30 @@ export const KanripoImportDialog = ({
   }, [open, punctuateOnly, punctMode, daozangPickQuery, daozangPluginEnabled]);
 
   useEffect(() => {
-    if (!open || punctuateOnly || punctMode !== 'parallel' || !selected?.id) {
+    if (!open || (!punctuateOnly && punctMode !== 'parallel')) {
+      setParallelCrosswalk(null);
+      return;
+    }
+    if (!activeKrId) {
+      setParallelCrosswalk(null);
       return;
     }
     let cancelled = false;
+    setCrosswalkLoading(true);
     void (async () => {
       try {
-        await applyBundledDaozangParallel(selected.id);
-      } catch (loadError) {
-        if (!cancelled) {
-          setDaozangMatch(null);
-          setSources((current) => current.filter((source) => source.kind !== 'daozang'));
-          console.warn('[kanripo-import] Daozang parallel load failed:', loadError);
-        }
+        const crosswalk = await lookupKanripoCrosswalk(activeKrId);
+        if (!cancelled) setParallelCrosswalk(crosswalk);
+      } catch {
+        if (!cancelled) setParallelCrosswalk(null);
+      } finally {
+        if (!cancelled) setCrosswalkLoading(false);
       }
     })();
     return () => {
       cancelled = true;
     };
-  }, [open, punctuateOnly, punctMode, selected?.id, applyBundledDaozangParallel]);
+  }, [open, punctMode, punctuateOnly, activeKrId]);
 
   const secondaryFor = (hit: KanripoWorkHit) =>
     [hit.author, hit.dynasty].filter(Boolean).join(' · ');
@@ -579,6 +628,21 @@ export const KanripoImportDialog = ({
     }
   };
 
+  const applyWikisourceFromCrosswalk = async (source: ParallelSourceEntry) => {
+    if (!source.url) return;
+    setCtextUrl(source.url);
+    setError(null);
+    if (punctuateOnly) {
+      setStatus(`Wikisource URL set: ${source.label}. Click Fetch URL, then Preview.`);
+      return;
+    }
+    await fetchParallelUrl(source.url);
+  };
+
+  const knownWikisource = wikisourceSources(parallelCrosswalk);
+  const knownDaozang = daozangSources(parallelCrosswalk);
+  const hasKnownSources = knownWikisource.length > 0 || knownDaozang.length > 0;
+
   const listCtextSections = async () => {
     const api = window.electronAPI;
     const url = ctextUrl.trim();
@@ -671,6 +735,10 @@ export const KanripoImportDialog = ({
     projectReady &&
     !busy &&
     window.electronAPI?.kanripoClone &&
+    (importScope === 'work' ||
+      (importScope === 'juan' &&
+        juanInput.trim() &&
+        window.electronAPI?.kanripoFetchJuan)) &&
     (punctMode === 'as-is' || punctMode === 'ai' || hasSources),
   );
 
@@ -711,7 +779,7 @@ export const KanripoImportDialog = ({
     setError(null);
     setReport(null);
     setUsedChapterIds([]);
-    setStatus(`Cloning ${selected.id}…`);
+    setStatus(importScope === 'juan' ? `Fetching ${selected.id} juan…` : `Cloning ${selected.id}…`);
 
     importAbortRef.current?.abort();
     const importAbort = new AbortController();
@@ -725,11 +793,26 @@ export const KanripoImportDialog = ({
     const warnings: { stem: string; items: ParallelQualityWarning[] }[] = [];
 
     try {
-      const clone = await api.kanripoClone(selected.id);
-      cloned = true;
-      const files = clone.files ?? [];
-      if (files.length === 0) {
-        throw new Error(`No .txt files found in ${selected.id}.`);
+      let files: string[] = [];
+      if (importScope === 'juan') {
+        const juan = juanInput.trim();
+        if (!api.kanripoFetchJuan) {
+          throw new Error('Single-juan fetch is not available in this app session.');
+        }
+        const fetched = await api.kanripoFetchJuan(selected.id, juan);
+        files = fetched.files ?? (fetched.path ? [fetched.path] : []);
+        cloned = true;
+        if (files.length === 0) {
+          throw new Error(`No text returned for ${fetched.loc ?? juan}.`);
+        }
+        setStatus(`Fetched ${fetched.loc ?? juan} via Kanripo API…`);
+      } else {
+        const clone = await api.kanripoClone(selected.id);
+        cloned = true;
+        files = clone.files ?? [];
+        if (files.length === 0) {
+          throw new Error(`No .txt files found in ${selected.id}.`);
+        }
       }
 
       const destDir = joinPath(rootPath, 'imported', 'kanripo', selected.id);
@@ -845,7 +928,7 @@ export const KanripoImportDialog = ({
         }
       }
 
-      if (failed.length === 0) {
+      if (failed.length === 0 && importScope === 'work') {
         await api.kanripoFlush?.(selected.id);
         cloned = false;
       }
@@ -1043,17 +1126,20 @@ export const KanripoImportDialog = ({
 
   const hint = useMemo(() => {
     if (punctuateOnly) {
-      return 'Parallel punctuation applies to the open file only. Add a ctext wiki URL, Wikisource page, file, or paste (segmented mode for 李善 commentary).';
+      return 'Parallel punctuation applies to the open file only. When a Wikisource or Daozang match exists for this Kanripo id, use the one-click buttons below. For ctext commentary, files, or other URLs, use the advanced fields.';
+    }
+    if (initialUrl.trim()) {
+      return `Sent from browser (${initialUrl.trim()}). Confirm the work, import scope, and options below.`;
     }
     if (!projectReady) return 'Open a project first (same as Import Documents).';
     if (punctMode === 'parallel') {
-      return 'Search by Kanripo id (KR…) or title. For Dao works, bundled 方瞳子 Daozang punctuation loads below when the Daozang plugin and concordance are available. You can also use Wikisource, a file, or paste. Grey areas in the coverage bar can be filled later with AI.';
+      return 'Search by Kanripo id (KR…) or title. Known Wikisource and Daozang parallels appear as one-click choices when the crosswalk has a match. Use file, paste, or manual URL for other sources. Grey areas in the coverage bar can be filled later with AI.';
     }
     if (punctMode === 'ai') {
       return 'Search by Kanripo id (KR…) or title. Each juan is converted to TEI, then punctuation is inferred by AI (no parallel source). Requires configured AI API settings.';
     }
-    return 'Search by Kanripo id (KR…) or title. Each juan becomes one TEI file.';
-  }, [projectReady, punctuateOnly, punctMode]);
+    return 'Search by Kanripo id (KR…) or title. Import the entire work (GitHub clone) or one 卷 via the Kanripo API.';
+  }, [projectReady, punctuateOnly, punctMode, initialUrl]);
 
   const shownEditorCoverage = editorPreview?.coverage ?? stampCoverage;
   const showEditorCoverageBar =
@@ -1062,87 +1148,123 @@ export const KanripoImportDialog = ({
   const parallelPanel = (punctMode === 'parallel' || punctuateOnly) && (
     <Box sx={{ mt: 2 }}>
       <Typography variant="subtitle2">Parallel transcription</Typography>
-      {!punctuateOnly && punctMode === 'parallel' && (
-        <Box sx={{ mb: 2, p: 1.5, border: 1, borderColor: 'divider', borderRadius: 1 }}>
+      {(activeKrId || crosswalkLoading) && (
+        <Box sx={{ mt: 1, mb: 2, p: 1.5, border: 1, borderColor: 'divider', borderRadius: 1 }}>
           <Typography variant="subtitle2" sx={{ mb: 0.5 }}>
-            Bundled Daozang (方瞳子)
+            Known sources{activeKrId ? ` for ${activeKrId}` : ''}
           </Typography>
-          {!daozangPluginEnabled ? (
-            <Alert severity="warning" sx={{ mb: 1 }}>
-              Enable <strong>Daozang import</strong> in Tools → Plugins for this project to use
-              offline punctuated parallels.
-            </Alert>
-          ) : daozangMatch ? (
-            <Alert severity="success" sx={{ mb: 1 }}>
-              Match ({daozangMatch.dzId}): {daozangMatch.title}
-              {daozangMatch.matchMethod &&
-              !['exact', 'duren_jing_index', 'override', 'manual'].includes(
-                daozangMatch.matchMethod,
-              )
-                ? ` · via ${daozangMatch.matchMethod}`
-                : ''}
-            </Alert>
-          ) : daozangIssue ? (
-            <Alert severity="info" sx={{ mb: 1 }}>
-              {daozangParallelIssueMessage(daozangIssue)}
-              {daozangIssueDetail ? ` ${daozangIssueDetail}` : ''}
-            </Alert>
-          ) : selected?.id.startsWith('KR5') ? (
-            <Typography variant="body2" color="text.secondary" sx={{ mb: 1 }}>
-              Looking up a concordance match for {selected.id}…
+          {crosswalkLoading ? (
+            <Typography variant="body2" color="text.secondary">
+              Looking up crosswalk…
             </Typography>
-          ) : null}
-          <Box sx={{ display: 'flex', gap: 1, flexWrap: 'wrap', mb: 1 }}>
-            <Button
-              size="small"
-              variant="outlined"
-              disabled={busy || daozangLoading || !selected}
-              onClick={() => selected && void applyBundledDaozangParallel(selected.id)}
-            >
-              {daozangLoading ? 'Loading…' : 'Load concordance match'}
-            </Button>
-          </Box>
-          {daozangPluginEnabled && (
+          ) : hasKnownSources ? (
             <>
-              <Typography variant="body2" color="text.secondary" sx={{ mb: 0.5 }}>
-                Or pick any Daozang text manually:
+              <Typography variant="body2" color="text.secondary" sx={{ mb: 1 }}>
+                {parallelCrosswalk?.title
+                  ? `${parallelCrosswalk.title} — `
+                  : ''}
+                One-click load from the bundled KRP–Wikisource–Daozang crosswalk.
               </Typography>
-              <TextField
-                fullWidth
-                size="small"
-                placeholder="Search Daozang corpus by title"
-                value={daozangPickQuery}
-                onChange={(event) => setDaozangPickQuery(event.target.value)}
-                disabled={busy || daozangLoading}
-                sx={{ mb: 1 }}
-              />
-              {daozangPickHits.length > 0 && (
-                <List dense sx={{ maxHeight: 160, overflow: 'auto' }}>
-                  {daozangPickHits.slice(0, 12).map((hit) => (
-                    <ListItemButton
-                      key={hit.rel_path}
-                      disabled={busy || daozangLoading || !selected}
-                      onClick={() => void loadDaozangPick(hit.rel_path, hit.title)}
-                    >
-                      <ListItemText primary={hit.title} secondary={hit.rel_path} />
-                    </ListItemButton>
-                  ))}
-                </List>
+              <Box sx={{ display: 'flex', gap: 1, flexWrap: 'wrap', mb: 1 }}>
+                {knownWikisource.map((source) => (
+                  <Button
+                    key={`ws-${source.ws_page ?? source.url}`}
+                    size="small"
+                    variant="contained"
+                    disabled={busy}
+                    onClick={() => void applyWikisourceFromCrosswalk(source)}
+                  >
+                    Wikisource: {source.label}
+                  </Button>
+                ))}
+                {knownDaozang.map((source) => (
+                  <Button
+                    key={`dz-${source.rel_path}`}
+                    size="small"
+                    variant="contained"
+                    disabled={
+                      busy ||
+                      daozangLoading ||
+                      !activeKrId ||
+                      !daozangPluginEnabled
+                    }
+                    onClick={() => activeKrId && void applyBundledDaozangParallel(activeKrId)}
+                  >
+                    Daozang: {source.label}
+                  </Button>
+                ))}
+              </Box>
+              {knownDaozang.length > 0 && !daozangPluginEnabled && (
+                <Alert severity="warning" sx={{ mb: 1 }}>
+                  Enable <strong>Daozang import</strong> in Tools → Plugins to load bundled
+                  Daozang punctuation.
+                </Alert>
+              )}
+              {daozangMatch && (
+                <Alert severity="success" sx={{ mb: 1 }}>
+                  Loaded Daozang ({daozangMatch.dzId}): {daozangMatch.title}
+                </Alert>
+              )}
+              {daozangIssue && knownDaozang.length > 0 && (
+                <Alert severity="info" sx={{ mb: 1 }}>
+                  {daozangParallelIssueMessage(daozangIssue)}
+                  {daozangIssueDetail ? ` ${daozangIssueDetail}` : ''}
+                </Alert>
               )}
             </>
-          )}
+          ) : activeKrId ? (
+            <Typography variant="body2" color="text.secondary">
+              No bundled Wikisource or Daozang match for this id — use file, paste, or URL below.
+            </Typography>
+          ) : punctuateOnly ? (
+            <Typography variant="body2" color="text.secondary">
+              Open a Kanripo TEI file with a Kanripo idno to see crosswalk matches.
+            </Typography>
+          ) : null}
         </Box>
       )}
+      <Typography variant="subtitle2" sx={{ mb: 0.5 }}>
+        Other sources
+      </Typography>
       <Typography variant="body2" color="text.secondary" sx={{ mb: 1 }}>
         {punctuateOnly
-          ? 'Applies to the open file only. Kanripo 卷 numbers often differ from Wikisource (e.g. KRP 卷一百五 = WS 卷75, not 卷105). Paste the work index (後漢書) for auto-match, or the correct WS 卷 page. Use ctext wiki for 李善 commentary (segmented mode). Click Preview before Apply.'
-          : 'On import, Fetch URL on a Wikisource work index loads all linked chapter pages as a catalog; each Kanripo juan is matched to the right chapter by title, with Han-overlap fallback for leftovers.'}{' '}
+          ? 'For ctext wiki (e.g. 李善 commentary), paste a URL and use segmented mode. Kanripo 卷 numbers often differ from Wikisource — use the work index or correct 卷 page when not using the crosswalk button above.'
+          : 'Manual Wikisource URL, file, or paste. On import, a Wikisource work index fetches all linked 卷 pages; each Kanripo juan is matched by title.'}{' '}
         {punctuateOnly &&
           isCtextWikiUrl(ctextUrl) &&
           (isCtextWikiResUrl(ctextUrl)
             ? 'A res= index lists chapters — use List ctext sections, then click a chapter to fetch it.'
             : 'Narrow with section/contains below if the chapter page is long.')}
       </Typography>
+      {!punctuateOnly && punctMode === 'parallel' && daozangPluginEnabled && (
+        <Box sx={{ mb: 2, p: 1.5, border: 1, borderColor: 'divider', borderRadius: 1 }}>
+          <Typography variant="body2" color="text.secondary" sx={{ mb: 0.5 }}>
+            Or pick any Daozang text manually:
+          </Typography>
+          <TextField
+            fullWidth
+            size="small"
+            placeholder="Search Daozang corpus by title"
+            value={daozangPickQuery}
+            onChange={(event) => setDaozangPickQuery(event.target.value)}
+            disabled={busy || daozangLoading}
+            sx={{ mb: 1 }}
+          />
+          {daozangPickHits.length > 0 && (
+            <List dense sx={{ maxHeight: 160, overflow: 'auto' }}>
+              {daozangPickHits.slice(0, 12).map((hit) => (
+                <ListItemButton
+                  key={hit.rel_path}
+                  disabled={busy || daozangLoading || !selected}
+                  onClick={() => void loadDaozangPick(hit.rel_path, hit.title)}
+                >
+                  <ListItemText primary={hit.title} secondary={hit.rel_path} />
+                </ListItemButton>
+              ))}
+            </List>
+          )}
+        </Box>
+      )}
       {punctuateOnly && (
         <FormControl sx={{ mb: 2 }} disabled={busy}>
           <FormLabel>Alignment mode</FormLabel>
@@ -1389,6 +1511,38 @@ export const KanripoImportDialog = ({
                 </Box>
               )}
             </List>
+            <FormControl sx={{ mt: 2 }} disabled={busy}>
+              <FormLabel>Import scope</FormLabel>
+              <RadioGroup
+                value={importScope}
+                onChange={(event) => setImportScope(event.target.value as 'work' | 'juan')}
+              >
+                <FormControlLabel
+                  value="work"
+                  control={<Radio />}
+                  label="Entire work (clone from GitHub — all 卷)"
+                />
+                <FormControlLabel
+                  value="juan"
+                  control={<Radio />}
+                  label="One 卷 only (Kanripo API — faster for a single file)"
+                />
+              </RadioGroup>
+              {importScope === 'juan' && (
+                <Box sx={{ mt: 1 }}>
+                  <TextField
+                    fullWidth
+                    size="small"
+                    label="Juan"
+                    placeholder="001 or KR1a0030_001"
+                    value={juanInput}
+                    onChange={(event) => setJuanInput(event.target.value)}
+                    disabled={busy}
+                    helperText="Uses the bundled kanripo API client (same Python runtime as Sanmiao). File numbers are usually three digits (_001, _002, …)."
+                  />
+                </Box>
+              )}
+            </FormControl>
             <FormControl sx={{ mt: 2 }} disabled={busy}>
               <FormLabel>Character normalisation</FormLabel>
               <RadioGroup

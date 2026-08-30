@@ -18,6 +18,24 @@ export interface WikisourceImportOrder {
   scope: 'page' | 'work';
 }
 
+export interface KanripoImportOrder {
+  v?: number;
+  action: 'import-kanripo';
+  kr_id: string;
+  url: string;
+  scope: 'work' | 'juan';
+  juan?: string;
+  loc?: string;
+}
+
+export type BrowserImportOrder = WikisourceImportOrder | KanripoImportOrder;
+
+const isWikisourceOrder = (payload: BrowserImportOrder): payload is WikisourceImportOrder =>
+  payload?.action === 'import-wikisource';
+
+const isKanripoOrder = (payload: BrowserImportOrder): payload is KanripoImportOrder =>
+  payload?.action === 'import-kanripo';
+
 const pointerPath = (): string =>
   path.join(os.homedir(), '.config', 'lejeanbaptiste', 'browser-bridge.json');
 
@@ -45,7 +63,7 @@ export const resolveNativeHostLauncher = (): string => {
 const writeNativeManifests = (hostPath: string): void => {
   const manifest = {
     name: NATIVE_HOST_NAME,
-    description: 'Le Jean-Baptiste Wikisource import',
+    description: 'Le Jean-Baptiste browser import (Wikisource and Kanripo)',
     path: hostPath,
     type: 'stdio',
     allowed_origins: [`chrome-extension://${BROWSER_EXTENSION_ID}/`],
@@ -80,8 +98,20 @@ export const startBrowserImportBridge = (
     req.on('data', (chunk) => chunks.push(chunk as Buffer));
     req.on('end', () => {
       try {
-        const payload = JSON.parse(Buffer.concat(chunks).toString('utf8')) as WikisourceImportOrder;
-        if (payload?.action !== 'import-wikisource' || !payload.url) {
+        const payload = JSON.parse(Buffer.concat(chunks).toString('utf8')) as BrowserImportOrder;
+        if (isWikisourceOrder(payload)) {
+          if (!payload.url) {
+            res.writeHead(400);
+            res.end(JSON.stringify({ error: 'INVALID_ORDER' }));
+            return;
+          }
+        } else if (isKanripoOrder(payload)) {
+          if (!payload.kr_id || !payload.url) {
+            res.writeHead(400);
+            res.end(JSON.stringify({ error: 'INVALID_ORDER' }));
+            return;
+          }
+        } else {
           res.writeHead(400);
           res.end(JSON.stringify({ error: 'INVALID_ORDER' }));
           return;
@@ -95,7 +125,11 @@ export const startBrowserImportBridge = (
         if (win.isMinimized()) win.restore();
         win.show();
         win.focus();
-        win.webContents.send('wikisource:import-order', payload);
+        if (isWikisourceOrder(payload)) {
+          win.webContents.send('wikisource:import-order', payload);
+        } else {
+          win.webContents.send('kanripo:import-order', payload);
+        }
         res.writeHead(200, { 'Content-Type': 'application/json' });
         res.end(JSON.stringify({ ok: true }));
       } catch {

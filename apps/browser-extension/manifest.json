@@ -1,11 +1,16 @@
 {
   "manifest_version": 3,
-  "name": "LJB Wikisource import",
-  "version": "0.1.0",
-  "description": "Send the current Wikisource page to Le Jean-Baptiste for TEI import.",
+  "name": "LJB corpus import",
+  "version": "0.2.0",
+  "description": "Send the current Wikisource or Kanripo page to Le Jean-Baptiste for TEI import.",
   "key": "MIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEApMcCj4Ti3bjkjTqdWvQXeOiQgIHJHH7NCAT+wNldo/OHFdPDRZZZ3bGYsTTvs2OWHLgM7lssIxXqAHB8o7wxYlrvSyJLAC4CMmMojNVpFT9q7LDn/at5TkFMvim5eOjVBTOkh5CdtQ7PHZnuJhGJ9xRn6bBDZNeStnzEcm23S4YwJQssGGo4XkfUUNYgEtHOG7rKS3r5QnzNoiqJdgcEj/08rnucXG9X6mX5RvoT8JdovGtH/9uTdlY/BjoG3M5i5fpV60GE5Y+eaAuKs9GfVKXBRcLzXElg1A7zIuHWvTcl6UnoC8QiGkqnD92qAatQ43CTpjze0aC5/DfIFWqU3QIDAQAB",
   "permissions": ["activeTab", "storage", "nativeMessaging"],
-  "host_permissions": ["https://*.wikisource.org/*", "https://wikisource.org/*"],
+  "host_permissions": [
+    "https://*.wikisource.org/*",
+    "https://wikisource.org/*",
+    "https://*.kanripo.org/*",
+    "https://kanripo.org/*"
+  ],
   "action": {
     "default_title": "Import to LJB",
     "default_popup": "popup.html"
@@ -14,6 +19,10 @@
     {
       "matches": ["https://*.wikisource.org/*", "https://wikisource.org/*"],
       "js": ["content.js"]
+    },
+    {
+      "matches": ["https://*.kanripo.org/*", "https://kanripo.org/*"],
+      "js": ["content-kanripo.js"]
     }
   ]
 }

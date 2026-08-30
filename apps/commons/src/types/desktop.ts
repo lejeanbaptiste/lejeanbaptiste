@@ -533,6 +533,10 @@ export interface ElectronAPI {
     query: string,
   ) => Promise<{ id: string; title: string; author?: string; dynasty?: string }[]>;
   kanripoClone?: (krId: string) => Promise<{ cachePath: string; reused: boolean; files: string[] }>;
+  kanripoFetchJuan?: (
+    krId: string,
+    juan: string,
+  ) => Promise<{ kr_id: string; loc: string; path: string; files: string[]; reused: boolean }>;
   kanripoFlush?: (krId: string) => Promise<{ ok: boolean }>;
   kanripoFetchCtextParallel?: (options: {
     url: string;
@@ -572,6 +576,16 @@ export interface ElectronAPI {
       title?: string;
       wiki?: string;
       scope?: 'page' | 'work';
+    }) => void,
+  ) => () => void;
+  onKanripoImportOrder?: (
+    callback: (order: {
+      action: string;
+      url: string;
+      kr_id: string;
+      scope?: 'work' | 'juan';
+      juan?: string;
+      loc?: string;
     }) => void,
   ) => () => void;
   kanripoFetchParallelUrl?: (options: {

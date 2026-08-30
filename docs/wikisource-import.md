@@ -26,6 +26,12 @@ If LJB is not running, the popup says so. Node.js must be on `PATH` for the nati
 
 Pinned extension id: `dddnkaleimllefhfolmhdfbidnjfojjh`.
 
+## Kanripo via the same extension
+
+On [kanripo.org](https://www.kanripo.org), open a text whose URL hash names a KR id (e.g. `#KR1a0030_001` for one juan, or `#KR1a0030` for the whole work). Click **Import** in the extension. LJB opens **Import from Kanripo** with the work pre-selected and import scope set (single juan vs full GitHub clone). Confirm and run import in the dialog.
+
+The extension reads the hash, path, or `loc=` query parameter; it does not scrape page text.
+
 ## zh wikitext map
 
 | Wikitext | TEI |

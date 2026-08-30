@@ -30,6 +30,11 @@ export interface DaozangTeiMeta {
   date_not_after?: string;
   author_dates?: string;
   authorship?: DaozangAuthorshipMeta[];
+  work_qid?: string;
+  edition_qid?: string;
+  ws_page?: string;
+  ws_url?: string;
+  match_tier?: string;
 }
 
 const escapeXmlText = (value: string): string =>
@@ -97,6 +102,13 @@ export const wrapDaozangTeiDocument = ({
     dzNo ? `\n      <idno type="Daozang">${dzNo}</idno>` : '',
     dzid ? `\n      <idno type="DZID">${dzid}</idno>` : '',
     krId ? `\n      <idno type="Kanripo">${krId}</idno>` : '',
+    meta.work_qid
+      ? `\n      <idno type="URI">https://www.wikidata.org/entity/${escapeXmlText(meta.work_qid)}</idno>`
+      : '',
+    meta.edition_qid && meta.edition_qid !== meta.work_qid
+      ? `\n      <idno type="URI" subtype="edition">https://www.wikidata.org/entity/${escapeXmlText(meta.edition_qid)}</idno>`
+      : '',
+    meta.ws_url ? `\n      <idno type="URI" subtype="wikisource">${escapeXmlText(meta.ws_url)}</idno>` : '',
   ].join('');
   const sourcePara = `${sourceNote}; local path ${relPath} (${variant})`;
   xml = xml.replace(

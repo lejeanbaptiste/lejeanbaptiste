@@ -193,7 +193,7 @@ import {
   restoreTimeMachineSnapshotToDirectory,
 } from './timeMachine';
 import { invokePluginPython } from './pluginPythonBridge';
-import { cloneKanripoWork, flushKanripoWork, listKanripoTxtFiles } from './kanripoClone';
+import { cloneKanripoWork, flushKanripoWork, kanripoCacheRoot, listKanripoTxtFiles } from './kanripoClone';
 import { fetchCtextWikiParallel, listCtextWikiSections } from './ctextWikiParallel';
 import { fetchParallelFromUrl } from './parallelUrlFetch';
 import { getWikisourceModulePath, listWikisourceCatalog } from './wikisourceParallel';
@@ -2423,6 +2423,16 @@ const registerIpcHandlers = () => {
     const { cachePath, reused } = await cloneKanripoWork(String(krId));
     const files = await listKanripoTxtFiles(cachePath);
     return { cachePath, reused, files };
+  });
+
+  ipcMain.handle('kanripo:fetchJuan', async (_event, krId: string, juan: string) => {
+    const result = (await invokePluginPython('kanripo-import', {
+      op: 'fetch_juan',
+      kr_id: String(krId),
+      juan: String(juan),
+      cache_root: kanripoCacheRoot(),
+    })) as { kr_id: string; loc: string; path: string; files: string[] };
+    return { ...result, reused: false };
   });
 
   ipcMain.handle('kanripo:flush', async (_event, krId: string) => {

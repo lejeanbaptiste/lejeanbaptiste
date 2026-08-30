@@ -288,6 +288,10 @@ export interface ElectronAPI {
     query: string,
   ) => Promise<{ id: string; title: string; author?: string; dynasty?: string }[]>;
   kanripoClone?: (krId: string) => Promise<{ cachePath: string; reused: boolean; files: string[] }>;
+  kanripoFetchJuan?: (
+    krId: string,
+    juan: string,
+  ) => Promise<{ kr_id: string; loc: string; path: string; files: string[]; reused: boolean }>;
   kanripoFlush?: (krId: string) => Promise<{ ok: boolean }>;
   kanripoFetchCtextParallel?: (options: {
     url: string;
@@ -327,6 +331,16 @@ export interface ElectronAPI {
       title?: string;
       wiki?: string;
       scope?: 'page' | 'work';
+    }) => void,
+  ) => () => void;
+  onKanripoImportOrder?: (
+    callback: (order: {
+      action: string;
+      url: string;
+      kr_id: string;
+      scope?: 'work' | 'juan';
+      juan?: string;
+      loc?: string;
     }) => void,
   ) => () => void;
   kanripoFetchParallelUrl?: (options: {
@@ -883,6 +897,8 @@ const electronAPI: ElectronAPI = {
     ipcRenderer.invoke('plugins:invokePython', pluginId, payload),
   kanripoSearch: (query: string) => ipcRenderer.invoke('kanripo:search', query),
   kanripoClone: (krId: string) => ipcRenderer.invoke('kanripo:clone', krId),
+  kanripoFetchJuan: (krId: string, juan: string) =>
+    ipcRenderer.invoke('kanripo:fetchJuan', krId, juan),
   kanripoFlush: (krId: string) => ipcRenderer.invoke('kanripo:flush', krId),
   kanripoFetchCtextParallel: (options) => ipcRenderer.invoke('kanripo:fetchCtextParallel', options),
   kanripoListCtextSections: (url: string) => ipcRenderer.invoke('kanripo:listCtextSections', url),
@@ -1243,6 +1259,21 @@ const electronAPI: ElectronAPI = {
     ) => callback(order);
     ipcRenderer.on('wikisource:import-order', listener);
     return () => ipcRenderer.removeListener('wikisource:import-order', listener);
+  },
+  onKanripoImportOrder: (callback) => {
+    const listener = (
+      _event: Electron.IpcRendererEvent,
+      order: {
+        action: string;
+        url: string;
+        kr_id: string;
+        scope?: 'work' | 'juan';
+        juan?: string;
+        loc?: string;
+      },
+    ) => callback(order);
+    ipcRenderer.on('kanripo:import-order', listener);
+    return () => ipcRenderer.removeListener('kanripo:import-order', listener);
   },
   signalRendererReady: () => ipcRenderer.invoke('signalRendererReady'),
   onExternalFileChange: (callback: (filePath: string) => void) => {

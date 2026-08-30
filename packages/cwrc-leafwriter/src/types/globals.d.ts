@@ -551,6 +551,10 @@ declare global {
     kanripoClone?: (
       krId: string,
     ) => Promise<{ cachePath: string; reused: boolean; files: string[] }>;
+    kanripoFetchJuan?: (
+      krId: string,
+      juan: string,
+    ) => Promise<{ kr_id: string; loc: string; path: string; files: string[]; reused: boolean }>;
     kanripoFlush?: (krId: string) => Promise<{ ok: boolean }>;
     kanripoFetchCtextParallel?: (options: {
       url: string;
@@ -590,6 +594,16 @@ declare global {
         title?: string;
         wiki?: string;
         scope?: 'page' | 'work';
+      }) => void,
+    ) => () => void;
+    onKanripoImportOrder?: (
+      callback: (order: {
+        action: string;
+        url: string;
+        kr_id: string;
+        scope?: 'work' | 'juan';
+        juan?: string;
+        loc?: string;
       }) => void,
     ) => () => void;
     kanripoFetchParallelUrl?: (options: {

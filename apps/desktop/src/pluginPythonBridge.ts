@@ -19,6 +19,7 @@ const PYTHON_TIMEOUT_MS = 5 * 60 * 1000;
 const DAOZANG_SYNC_TIMEOUT_MS = 30 * 60 * 1000;
 const MIN_SANMIAO_VERSION = '0.2.10';
 const SANMIAO_SPEC = `sanmiao[fuzzy]==${MIN_SANMIAO_VERSION}`;
+const KANRIPO_API_SPEC = 'kanripo==0.31';
 
 export type PluginPythonProgressEvent =
   | { type: 'init'; total: number; tablesMs: number }
@@ -152,6 +153,9 @@ const pythonCandidatesForPlugin = (pluginId: string): PythonCommand[] => {
 const isMissingSanmiaoModule = (stderr: string): boolean =>
   /ModuleNotFoundError: No module named ['"]sanmiao['"]/.test(stderr);
 
+const isMissingKanripoApiModule = (stderr: string): boolean =>
+  /ModuleNotFoundError: No module named ['"]kanripo['"]/.test(stderr);
+
 /**
  * Windows ships stub executables named python.exe/python3.exe ("App execution
  * aliases") that print this message and exit instead of running anything.
@@ -169,6 +173,28 @@ const forceUtf8Env = (env: NodeJS.ProcessEnv): NodeJS.ProcessEnv => ({
   PYTHONIOENCODING: 'utf-8',
 });
 
+const tryAutoInstallKanripoApi = async (pluginId: string, python: PythonCommand): Promise<boolean> => {
+  const label = commandLabel(python);
+  try {
+    logPluginPython(pluginId, 'attempting automatic kanripo API install', {
+      python: label,
+      spec: KANRIPO_API_SPEC,
+    });
+    await execFileAsync(
+      python.bin,
+      [...python.args, '-m', 'pip', 'install', '--no-warn-script-location', KANRIPO_API_SPEC],
+      { timeout: 3 * 60 * 1000, env: forceUtf8Env(process.env) },
+    );
+    return true;
+  } catch (error) {
+    const stderr = (error as { stderr?: string })?.stderr ?? String(error);
+    logPluginPython(pluginId, 'automatic kanripo API install failed', {
+      python: label,
+      reason: stderr.trim().slice(-500),
+    });
+    return false;
+  }
+};
 const tryAutoInstallSanmiao = async (pluginId: string, python: PythonCommand): Promise<boolean> => {
   const label = commandLabel(python);
   try {
@@ -205,6 +231,7 @@ const SANMIAO_IMPORT_CHECK = [
 const KANRIPO_IMPORT_CHECK = [
   'from kanripo_import.ljb_bridge import cli_main',
   'from kanripo_import.kanripo_tei import convert_kanripo_txt',
+  'import kanripo',
 ].join('; ');
 
 const DAOZANG_IMPORT_CHECK = [
@@ -362,6 +389,25 @@ const resolveGenericPluginPython = async (pluginId: string): Promise<PythonComma
       });
       return python;
     } catch (error) {
+      const stderr = (error as { stderr?: string })?.stderr ?? String(error);
+      if (
+        pluginId === 'kanripo-import' &&
+        isMissingKanripoApiModule(stderr) &&
+        (await tryAutoInstallKanripoApi(pluginId, python))
+      ) {
+        try {
+          await execFileAsync(python.bin, [...python.args, '-c', importCheck], {
+            timeout: 15_000,
+            env: forceUtf8Env(pythonEnvForPlugin(pluginId)),
+          });
+          pythonCache.set(pluginId, python);
+          logPluginPython(pluginId, 'using python (auto-installed kanripo API)', { python: label });
+          return python;
+        } catch (retryError) {
+          recordFailure(label, retryError);
+          continue;
+        }
+      }
       recordFailure(label, error);
     }
   }
