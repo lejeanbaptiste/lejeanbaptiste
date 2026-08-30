@@ -1,6 +1,7 @@
 import { refreshPluginRegistry } from '../../../../packages/cwrc-leafwriter/src/plugins';
 import { isDesktop } from '@src/types/desktop';
 import { useEffect } from 'react';
+import { documentLanguageMatchesPlugin } from './pluginLanguage';
 
 /** @deprecated Kept for call-site compatibility; installed plugins are enabled quietly. */
 export interface PluginLanguagePrompt {
@@ -9,31 +10,13 @@ export interface PluginLanguagePrompt {
 }
 
 /**
- * True when a project source language matches a plugin language tag.
- * Either side may be a prefix of the other so project `zh` matches plugin
- * `zh-hant`, and project `zh-Hant` matches a bare `zh` declaration.
- */
-const documentLanguageMatchesPlugin = (
-  documentLanguage: string,
-  pluginLanguages: string[],
-): boolean => {
-  const normalized = documentLanguage.toLowerCase();
-  return pluginLanguages.some((language) => {
-    const candidate = language.toLowerCase();
-    return (
-      normalized === candidate ||
-      normalized.startsWith(`${candidate}-`) ||
-      candidate.startsWith(normalized) ||
-      candidate.startsWith(`${normalized}-`)
-    );
-  });
-};
-
-/**
- * Load the plugin registry on desktop startup. Matching language plugins that
- * are already installed are enabled for the current project — no download /
- * availability dialog. Missing plugins are offered by Chinese/Japanese asset
- * onboarding instead.
+ * Load the plugin registry on desktop startup and align the project's enabled
+ * plugins with its source language: installed plugins that match are enabled —
+ * no download / availability dialog — and language-specific plugins that no
+ * longer match are disabled, so a project switched away from, say, Chinese does
+ * not keep offering Chinese-only menu items. Plugins that declare no language
+ * are universal and are never touched. Missing plugins are offered by
+ * Chinese/Japanese asset onboarding instead.
  */
 export function usePluginBootstrap(
   documentLanguage?: string,
@@ -52,19 +35,24 @@ export function usePluginBootstrap(
       const snapshot = await window.electronAPI?.pluginsGetSnapshot?.();
       if (!snapshot) return;
 
-      let enabledAny = false;
+      let changedAny = false;
       for (const plugin of snapshot.plugins) {
-        if (plugin.enabled || plugin.manifestError) continue;
+        if (plugin.manifestError) continue;
         const langs = plugin.manifest?.languagePrompt?.documentLanguages ?? plugin.languages ?? [];
-        if (!documentLanguageMatchesPlugin(detectedLanguage, langs)) continue;
+        if (langs.length === 0) continue;
+        const matches = documentLanguageMatchesPlugin(detectedLanguage, langs);
+        if (matches === plugin.enabled) continue;
         try {
-          await window.electronAPI?.pluginsSetEnabled?.(plugin.id, true);
-          enabledAny = true;
+          await window.electronAPI?.pluginsSetEnabled?.(plugin.id, matches);
+          changedAny = true;
         } catch (error) {
-          console.warn(`[plugins] Failed to enable ${plugin.id} during bootstrap`, error);
+          console.warn(
+            `[plugins] Failed to ${matches ? 'enable' : 'disable'} ${plugin.id} during bootstrap`,
+            error,
+          );
         }
       }
-      if (enabledAny) await refreshPluginRegistry();
+      if (changedAny) await refreshPluginRegistry();
     })();
   }, [documentLanguage]);
 }

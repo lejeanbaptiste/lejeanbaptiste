@@ -193,19 +193,19 @@ import {
   restoreTimeMachineSnapshotToDirectory,
 } from './timeMachine';
 import { invokePluginPython } from './pluginPythonBridge';
-import { cloneKanripoWork, flushKanripoWork, kanripoCacheRoot, listKanripoTxtFiles } from './kanripoClone';
+import {
+  cloneKanripoWork,
+  flushKanripoWork,
+  kanripoCacheRoot,
+  listKanripoTxtFiles,
+} from './kanripoClone';
 import { fetchCtextWikiParallel, listCtextWikiSections } from './ctextWikiParallel';
 import { fetchParallelFromUrl } from './parallelUrlFetch';
 import { getWikisourceModulePath, listWikisourceCatalog } from './wikisourceParallel';
 import { startBrowserImportBridge } from './browserBridge';
 import { searchKanripoWorks } from './kanripoWorks';
-import {
-  daozangCacheRoot,
-  daozangCorpusStatus,
-  daozangTextPath,
-  detectDaozangLocalSources,
-} from './daozangCorpus';
-import { clearDaozangIndexCache, searchDaozangWorks } from './daozangWorks';
+import { daozangCacheRoot, daozangCorpusStatus, daozangTextPath } from './daozangCorpus';
+import { searchDaozangWorks } from './daozangWorks';
 import {
   closeEntitySqliteReadRepositories,
   acceptEntitySqliteDateAssertion,
@@ -2451,58 +2451,6 @@ const registerIpcHandlers = () => {
       };
     }
     return daozangCorpusStatus();
-  });
-
-  ipcMain.handle('daozang:sync', async (_event, options?: { force?: boolean }) => {
-    if (!isPluginEnabledInMain('daozang-import')) {
-      throw new Error('Enable the Daozang import plugin first.');
-    }
-    const result = (await invokePluginPython('daozang-import', {
-      op: 'sync',
-      cache_root: daozangCacheRoot(),
-      force: Boolean(options?.force),
-    })) as { reused?: boolean; textCount?: number };
-    clearDaozangIndexCache();
-    return result;
-  });
-
-  ipcMain.handle('daozang:detectLocalSources', async () => detectDaozangLocalSources());
-
-  ipcMain.handle('daozang:pickCorpusSource', async () => {
-    if (!mainWindow) return null;
-    mainWindow.focus();
-    const result = await dialog.showOpenDialog(mainWindow, {
-      title: 'Install Daozang corpus',
-      message:
-        'Choose the Fang Tongzi RAR, an LJB corpus pack (.tar.gz), or a folder of .txt files.',
-      properties: ['openFile', 'openDirectory'],
-      defaultPath: app.getPath('downloads'),
-      filters: [
-        { name: 'Daozang corpus', extensions: ['rar', 'tar', 'gz', 'tgz'] },
-        { name: 'All files', extensions: ['*'] },
-      ],
-    });
-    if (result.canceled || result.filePaths.length === 0) return null;
-    const picked = result.filePaths[0];
-    rememberDialogDir(picked, statSync(picked).isDirectory() ? 'directory' : 'file');
-    approveRendererReadRoot(picked);
-    return picked;
-  });
-
-  ipcMain.handle('daozang:installFromSource', async (_event, sourcePath: string) => {
-    if (!isPluginEnabledInMain('daozang-import')) {
-      throw new Error('Enable the Daozang import plugin first.');
-    }
-    const source = String(sourcePath || '').trim();
-    if (!source) throw new Error('No corpus source selected.');
-    approveRendererReadRoot(source);
-    const result = (await invokePluginPython('daozang-import', {
-      op: 'install_from_source',
-      cache_root: daozangCacheRoot(),
-      source_path: source,
-    })) as { reused?: boolean; textCount?: number };
-    clearDaozangIndexCache();
-    return result;
   });
 
   ipcMain.handle('daozang:search', async (_event, query: string) => {

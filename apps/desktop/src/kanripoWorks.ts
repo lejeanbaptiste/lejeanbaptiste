@@ -1,24 +1,37 @@
 import fs from 'node:fs';
 import path from 'node:path';
-import { getCachedPluginHostSnapshot } from './plugins';
+import { getCachedPluginHostSnapshot, resolveDevPluginSourcePath } from './plugins';
 
+/** Rows of the bundled krp_works.json, which already carries the work metadata. */
 export interface KanripoWorkIndexEntry {
   id: string;
   title: string;
-  author?: string;
-  dynasty?: string;
+  /** Kanripo 部・類, e.g. 經部・易類. */
+  section: string;
+  dynasty: string;
+  authors: string;
+  /** DZ number of the parallel Daozang text, where there is one. */
+  dzid: string;
 }
 
-let worksCache: { installPath: string; works: KanripoWorkIndexEntry[] } | null = null;
+let worksCache: { indexPath: string; works: KanripoWorkIndexEntry[] } | null = null;
+
+/** The dev source tree when running unpackaged, else the installed copy. */
+const kanripoWorksPath = (): string | null => {
+  const candidates: string[] = [];
+  const dev = resolveDevPluginSourcePath('kanripo-import');
+  if (dev) candidates.push(path.join(dev, 'data', 'krp_works.json'));
+  const plugin = getCachedPluginHostSnapshot()?.plugins.find((p) => p.id === 'kanripo-import');
+  if (plugin?.installPath) candidates.push(path.join(plugin.installPath, 'data', 'krp_works.json'));
+  return candidates.find((candidate) => fs.existsSync(candidate)) ?? null;
+};
 
 const loadKanripoWorks = (): KanripoWorkIndexEntry[] => {
-  const plugin = getCachedPluginHostSnapshot()?.plugins.find((p) => p.id === 'kanripo-import');
-  if (!plugin) return [];
-  if (worksCache?.installPath === plugin.installPath) return worksCache.works;
-  const indexPath = path.join(plugin.installPath, 'data', 'krp_works.json');
-  if (!fs.existsSync(indexPath)) return [];
+  const indexPath = kanripoWorksPath();
+  if (!indexPath) return [];
+  if (worksCache?.indexPath === indexPath) return worksCache.works;
   const works = JSON.parse(fs.readFileSync(indexPath, 'utf8')) as KanripoWorkIndexEntry[];
-  worksCache = { installPath: plugin.installPath, works };
+  worksCache = { indexPath, works };
   return works;
 };
 
@@ -30,7 +43,10 @@ export const searchKanripoWorks = (query: string, limit = 40): KanripoWorkIndexE
   const matched = works.filter((work) => {
     if (work.id.toLowerCase().includes(lower)) return true;
     if (work.title.includes(q)) return true;
-    if (work.author && work.author.includes(q)) return true;
+    if (work.section.includes(q)) return true;
+    if (work.dynasty.includes(q)) return true;
+    if (work.authors.includes(q)) return true;
+    if (work.dzid.toLowerCase().includes(lower)) return true;
     return false;
   });
   matched.sort((a, b) => {

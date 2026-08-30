@@ -284,9 +284,16 @@ export interface ElectronAPI {
     projectFilePath: string,
   ) => Promise<{ merged: boolean }>;
   pluginsInvokePython?: (pluginId: string, payload: Record<string, unknown>) => Promise<unknown>;
-  kanripoSearch?: (
-    query: string,
-  ) => Promise<{ id: string; title: string; author?: string; dynasty?: string }[]>;
+  kanripoSearch?: (query: string) => Promise<
+    {
+      id: string;
+      title: string;
+      section: string;
+      dynasty: string;
+      authors: string;
+      dzid: string;
+    }[]
+  >;
   kanripoClone?: (krId: string) => Promise<{ cachePath: string; reused: boolean; files: string[] }>;
   kanripoFetchJuan?: (
     krId: string,
@@ -314,10 +321,7 @@ export interface ElectronAPI {
     url: string,
   ) => Promise<{ id: string; slug: string; title: string; rowCount: number }[]>;
   wikisourceInspect?: (url: string) => Promise<unknown>;
-  wikisourceFetchPage?: (options: {
-    apiHost: string;
-    title: string;
-  }) => Promise<{
+  wikisourceFetchPage?: (options: { apiHost: string; title: string }) => Promise<{
     title: string;
     stem: string;
     bodyXml: string;
@@ -366,25 +370,18 @@ export interface ElectronAPI {
     manifest?: Record<string, unknown>;
     cacheRoot?: string;
   }>;
-  daozangSync?: (options?: { force?: boolean }) => Promise<{
-    reused?: boolean;
-    textCount?: number;
-    converted?: number;
-    manifest?: Record<string, unknown>;
-  }>;
-  daozangDetectLocalSources?: () => Promise<
-    { path: string; label: string; kind: 'extracted' | 'rar' }[]
+  daozangSearch?: (query: string) => Promise<
+    {
+      id: string;
+      dz_no: string;
+      title: string;
+      rel_path: string;
+      section: string;
+      dynasty: string;
+      authors: string;
+      file_title: string;
+    }[]
   >;
-  daozangPickCorpusSource?: () => Promise<string | null>;
-  daozangInstallFromSource?: (sourcePath: string) => Promise<{
-    reused?: boolean;
-    textCount?: number;
-    converted?: number;
-    manifest?: Record<string, unknown>;
-  }>;
-  daozangSearch?: (
-    query: string,
-  ) => Promise<{ id: string; dz_no: string; title: string; variant: string; rel_path: string }[]>;
   daozangResolveText?: (relPath: string) => Promise<string>;
   daozangReadText?: (relPath: string) => Promise<{ text: string; rel_path: string; path: string }>;
   onPluginPythonProgress?: (
@@ -909,11 +906,6 @@ const electronAPI: ElectronAPI = {
     ipcRenderer.invoke('wikisource:fetchPage', options),
   kanripoFetchParallelUrl: (options) => ipcRenderer.invoke('kanripo:fetchParallelUrl', options),
   daozangStatus: () => ipcRenderer.invoke('daozang:status'),
-  daozangSync: (options) => ipcRenderer.invoke('daozang:sync', options),
-  daozangDetectLocalSources: () => ipcRenderer.invoke('daozang:detectLocalSources'),
-  daozangPickCorpusSource: () => ipcRenderer.invoke('daozang:pickCorpusSource'),
-  daozangInstallFromSource: (sourcePath: string) =>
-    ipcRenderer.invoke('daozang:installFromSource', sourcePath),
   daozangSearch: (query: string) => ipcRenderer.invoke('daozang:search', query),
   daozangResolveText: (relPath: string) => ipcRenderer.invoke('daozang:resolveText', relPath),
   daozangReadText: (relPath: string) => ipcRenderer.invoke('daozang:readText', relPath),

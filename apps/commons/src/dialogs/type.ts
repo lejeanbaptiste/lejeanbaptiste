@@ -49,7 +49,19 @@ export interface ChineseAssetsDialogProps extends IDialog {
   missingAssets?: MissingAssetType[];
 }
 
-export type DialogProps = SimpleDialogProps & ChineseAssetsDialogProps;
+/** Props the Kanripo import dialog accepts when it's opened programmatically
+ * rather than from the menu - see useProjectMenu's onKanripoImportOrder
+ * handler, which pre-fills the dialog from a kanripo:// deep link. Mirrors
+ * KanripoImportDialogProps in packages/cwrc-leafwriter's own dialogs/type.ts;
+ * `initialUrl` is shared with the Wikisource import and already sits on
+ * IDialog above. */
+export interface KanripoImportDialogProps extends IDialog {
+  initialKrId?: string;
+  initialImportScope?: 'work' | 'juan';
+  initialJuan?: string;
+}
+
+export type DialogProps = SimpleDialogProps & ChineseAssetsDialogProps & KanripoImportDialogProps;
 
 export interface DialogBarProps {
   dismissed?: boolean;

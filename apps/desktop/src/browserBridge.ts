@@ -71,16 +71,17 @@ const writeNativeManifests = (hostPath: string): void => {
   for (const dir of nativeMessagingDirs()) {
     try {
       fs.mkdirSync(dir, { recursive: true });
-      fs.writeFileSync(path.join(dir, `${NATIVE_HOST_NAME}.json`), `${JSON.stringify(manifest, null, 2)}\n`);
+      fs.writeFileSync(
+        path.join(dir, `${NATIVE_HOST_NAME}.json`),
+        `${JSON.stringify(manifest, null, 2)}\n`,
+      );
     } catch {
       // Browser not installed; skip.
     }
   }
 };
 
-export const startBrowserImportBridge = (
-  getWindow: () => BrowserWindow | null,
-): http.Server => {
+export const startBrowserImportBridge = (getWindow: () => BrowserWindow | null): http.Server => {
   const token = crypto.randomBytes(24).toString('hex');
   const server = http.createServer((req, res) => {
     if (req.method !== 'POST' || req.url !== '/import') {

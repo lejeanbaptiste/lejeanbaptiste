@@ -66,7 +66,9 @@ export const wrapWikisourceTeiDocument = ({
   );
 
   const idnos = [
-    meta.qid ? `\n      <idno type="URI">https://www.wikidata.org/entity/${escapeXmlText(meta.qid)}</idno>` : '',
+    meta.qid
+      ? `\n      <idno type="URI">https://www.wikidata.org/entity/${escapeXmlText(meta.qid)}</idno>`
+      : '',
     meta.ctextWorkId ? `\n      <idno type="CTP">${escapeXmlText(meta.ctextWorkId)}</idno>` : '',
   ].join('');
   const urlPara = meta.url ? `<p>${escapeXmlText(meta.url)}</p>` : '';

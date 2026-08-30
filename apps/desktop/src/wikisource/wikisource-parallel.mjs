@@ -399,7 +399,8 @@ export async function fetchPageWikitext(apiHost, title) {
 
 export async function resolveWikisourceCatalog(url) {
   const parsed = parseWikisourceUrl(url);
-  if (!parsed) throw new Error('Not a Wikisource URL (expected …wikisource.org/wiki/… or …/zh-hant/…).');
+  if (!parsed)
+    throw new Error('Not a Wikisource URL (expected …wikisource.org/wiki/… or …/zh-hant/…).');
 
   let links = await fetchPageLinks(parsed.apiHost, parsed.title);
   let editionRoot = resolveEditionRoot(parsed.title, links);
@@ -442,7 +443,8 @@ export async function listWikisourceCatalog(url) {
 
 export async function fetchWikisourceParallel(url, options = {}) {
   const parsed = parseWikisourceUrl(url);
-  if (!parsed) throw new Error('Not a Wikisource URL (expected …wikisource.org/wiki/… or …/zh-hant/…).');
+  if (!parsed)
+    throw new Error('Not a Wikisource URL (expected …wikisource.org/wiki/… or …/zh-hant/…).');
 
   const fetchAll = Boolean(options.fetchAll);
   const catalog = await resolveWikisourceCatalog(url);

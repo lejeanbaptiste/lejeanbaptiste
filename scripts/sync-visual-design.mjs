@@ -72,6 +72,10 @@ const BRANDING_TARGETS = [
   ['tool_hide_notes.svg', 'packages/cwrc-leafwriter/src/images/tool_hide_notes.svg'],
   ['tool_show_notes.svg', 'apps/commons/src/icons/tool_show_notes.svg'],
   ['tool_show_notes.dark.svg', 'apps/commons/src/icons/tool_show_notes.dark.svg'],
+  ['krp_menu.svg', 'apps/commons/src/icons/krp_menu.svg'],
+  ['krp_menu_dark.svg', 'apps/commons/src/icons/krp_menu.dark.svg'],
+  ['menu_norbert.svg', 'apps/commons/src/icons/menu_norbert.svg'],
+  ['menu_norbert_dark.svg', 'apps/commons/src/icons/menu_norbert.dark.svg'],
   ['norbert-mini.png', 'apps/commons/src/assets/images/norbert-mini.png'],
   ['splash.svg', 'apps/desktop/resources/branding/splash.svg'],
   ['splash_new.png', 'apps/desktop/resources/branding/splash_new.png'],
@@ -159,6 +163,19 @@ function removeIfPresent(relPath) {
   rmSync(path.join(ROOT, relPath), { force: true });
 }
 
+function exportMenuIconPngs() {
+  const menuIcons = ['krp_menu', 'menu_norbert'];
+  for (const base of menuIcons) {
+    for (const variant of ['', '.dark']) {
+      const svgPath = path.join(ROOT, 'apps/commons/src/icons', `${base}${variant}.svg`);
+      const pngPath = path.join(ROOT, 'apps/commons/src/icons', `${base}${variant}.png`);
+      execFileSync('rsvg-convert', ['-w', '32', '-h', '32', svgPath, '-o', pngPath], {
+        stdio: 'inherit',
+      });
+    }
+  }
+}
+
 function syncArtwork() {
   for (const relPath of CLEANUP_TARGETS) removeIfPresent(relPath);
 
@@ -171,6 +188,8 @@ function syncArtwork() {
           : SOURCE_REPO_ICON_DIR;
     copyRelative(sourceBase, sourceRel, destinationRel);
   }
+
+  exportMenuIconPngs();
 }
 
 function runVisualDesignScript(relScriptPath) {

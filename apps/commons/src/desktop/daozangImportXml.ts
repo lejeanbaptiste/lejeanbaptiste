@@ -40,8 +40,7 @@ export interface DaozangTeiMeta {
 const escapeXmlText = (value: string): string =>
   value.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
 
-const escapeXmlAttr = (value: string): string =>
-  escapeXmlText(value).replace(/"/g, '&quot;');
+const escapeXmlAttr = (value: string): string => escapeXmlText(value).replace(/"/g, '&quot;');
 
 const isoDate = (d = new Date()): string => d.toISOString().slice(0, 10);
 
@@ -108,7 +107,9 @@ export const wrapDaozangTeiDocument = ({
     meta.edition_qid && meta.edition_qid !== meta.work_qid
       ? `\n      <idno type="URI" subtype="edition">https://www.wikidata.org/entity/${escapeXmlText(meta.edition_qid)}</idno>`
       : '',
-    meta.ws_url ? `\n      <idno type="URI" subtype="wikisource">${escapeXmlText(meta.ws_url)}</idno>` : '',
+    meta.ws_url
+      ? `\n      <idno type="URI" subtype="wikisource">${escapeXmlText(meta.ws_url)}</idno>`
+      : '',
   ].join('');
   const sourcePara = `${sourceNote}; local path ${relPath} (${variant})`;
   xml = xml.replace(
@@ -123,10 +124,14 @@ export const wrapDaozangTeiDocument = ({
   if (meta.time_dynasty || meta.author_dates) {
     const whenParts = [
       meta.time_dynasty ? `<origDate>${escapeXmlText(meta.time_dynasty)}</origDate>` : '',
-      meta.author_dates ? `<note type="authorDates">${escapeXmlText(meta.author_dates)}</note>` : '',
+      meta.author_dates
+        ? `<note type="authorDates">${escapeXmlText(meta.author_dates)}</note>`
+        : '',
     ].filter(Boolean);
     if (whenParts.length) {
-      profileBits.push(`      <creation>\n        ${whenParts.join('\n        ')}\n      </creation>`);
+      profileBits.push(
+        `      <creation>\n        ${whenParts.join('\n        ')}\n      </creation>`,
+      );
     }
   }
   if (profileBits.length) {
@@ -148,9 +153,7 @@ export const wrapDaozangTeiDocument = ({
   }
 
   const metadataBlock = (metadataXml ?? '').trim();
-  const bodyContent = metadataBlock
-    ? `${metadataBlock}\n    ${trimmedBody}`
-    : trimmedBody;
+  const bodyContent = metadataBlock ? `${metadataBlock}\n    ${trimmedBody}` : trimmedBody;
   xml = xml.replace(/<div type="(?:text|juan)"[^>]*>[\s\S]*?<\/div>/, bodyContent);
 
   return xml;

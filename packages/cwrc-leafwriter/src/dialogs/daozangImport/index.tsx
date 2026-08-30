@@ -20,6 +20,7 @@ import {
   wrapDaozangTeiDocument,
   type DaozangTeiMeta,
 } from '../../../../../apps/commons/src/desktop/daozangImportXml';
+import { CorpusWorkRow } from '../corpusWorkRow';
 import type { IDialog } from '../type';
 import { isPluginEnabled } from '../../plugins';
 
@@ -29,8 +30,11 @@ interface DaozangWorkHit {
   id: string;
   dz_no: string;
   title: string;
-  variant: string;
   rel_path: string;
+  section: string;
+  dynasty: string;
+  authors: string;
+  file_title: string;
 }
 
 interface DaozangStatus {
@@ -81,10 +85,6 @@ export const DaozangImportDialog = ({ onClose, open = false }: DaozangImportDial
   const [busy, setBusy] = useState(false);
   const [status, setStatus] = useState('');
   const [error, setError] = useState<string | null>(null);
-  const [report, setReport] = useState<{ written: string[] } | null>(null);
-  const [localSources, setLocalSources] = useState<
-    { path: string; label: string; kind: 'extracted' | 'rar' }[]
-  >([]);
 
   const projectReady = Boolean(window.__leafWriterProject?.isProjectReady?.());
 
@@ -109,9 +109,6 @@ export const DaozangImportDialog = ({ onClose, open = false }: DaozangImportDial
 
   useEffect(() => {
     if (!open) return;
-    void window.electronAPI?.daozangDetectLocalSources?.().then((paths) => {
-      setLocalSources(paths ?? []);
-    });
     void refreshStatus().then((info) => {
       if (info?.ready) void search('');
     });
@@ -124,62 +121,6 @@ export const DaozangImportDialog = ({ onClose, open = false }: DaozangImportDial
     }, 200);
     return () => window.clearTimeout(handle);
   }, [open, query, search, statusInfo?.ready]);
-
-  const installFromSource = async (sourcePath: string) => {
-    const api = window.electronAPI?.daozangInstallFromSource;
-    if (!api) {
-      setError('Corpus install is only available in the desktop app.');
-      return;
-    }
-    setBusy(true);
-    setError(null);
-    setReport(null);
-    setStatus('Installing corpus from local file…');
-    try {
-      const result = await api(sourcePath);
-      await refreshStatus();
-      await search('');
-      setStatus(`Corpus ready: ${result.textCount ?? 0} texts converted to UTF-8.`);
-    } catch (installError) {
-      setError(installError instanceof Error ? installError.message : String(installError));
-      setStatus('');
-    } finally {
-      setBusy(false);
-    }
-  };
-
-  const pickCorpusSource = async () => {
-    const picked = await window.electronAPI?.daozangPickCorpusSource?.();
-    if (!picked) return;
-    await installFromSource(picked);
-  };
-
-  const rebuildCorpus = async (force: boolean) => {
-    const api = window.electronAPI?.daozangSync;
-    if (!api) {
-      setError('Corpus rebuild is only available in the desktop app.');
-      return;
-    }
-    setBusy(true);
-    setError(null);
-    setReport(null);
-    setStatus(force ? 'Rebuilding from cached RAR…' : 'Refreshing search index…');
-    try {
-      const result = await api({ force });
-      await refreshStatus();
-      await search('');
-      setStatus(
-        result.reused
-          ? `Local corpus ready (${result.textCount} texts).`
-          : `Rebuilt local corpus (${result.textCount} texts).`,
-      );
-    } catch (syncError) {
-      setError(syncError instanceof Error ? syncError.message : String(syncError));
-      setStatus('');
-    } finally {
-      setBusy(false);
-    }
-  };
 
   const runImport = async () => {
     if (!selected) return;
@@ -203,7 +144,6 @@ export const DaozangImportDialog = ({ onClose, open = false }: DaozangImportDial
 
     setBusy(true);
     setError(null);
-    setReport(null);
     setStatus(`Importing ${selected.title}…`);
 
     try {
@@ -269,7 +209,6 @@ export const DaozangImportDialog = ({ onClose, open = false }: DaozangImportDial
 
       await project.refreshExplorer?.();
       await project.openFile?.(written[0]);
-      setReport({ written });
       setStatus(
         written.length > 1
           ? `Imported ${selected.title} as ${written.length} juan files.`
@@ -296,41 +235,12 @@ export const DaozangImportDialog = ({ onClose, open = false }: DaozangImportDial
         )}
 
         <Typography variant="body2" sx={{ mb: 2 }}>
-          Search 方瞳子源 (Fang Tongzi) transcriptions. When the plugin is installed with its
-          bundled corpus, no separate download is needed. You can still replace the cache from a
-          local RAR or corpus pack if you prefer.
+          Search the {statusInfo?.textCount || 1504} 方瞳子 (Fang Tongzi) punctuated transcriptions.
         </Typography>
 
-        {statusInfo && (
-          <Alert severity={statusInfo.ready ? 'success' : 'info'} sx={{ mb: 2 }}>
-            {statusInfo.ready
-              ? statusInfo.source === 'bundled'
-                ? `Bundled corpus ready: ${statusInfo.textCount} texts (shipped with the plugin).`
-                : `Local corpus ready: ${statusInfo.textCount} texts${
-                    statusInfo.manifest?.syncedAt
-                      ? ` (installed ${new Date(statusInfo.manifest.syncedAt).toLocaleString()})`
-                      : ''
-                  }.`
-              : 'No corpus found. Reinstall the plugin with bundled data, or install from a local file.'}
-          </Alert>
-        )}
-
-        {!statusInfo?.ready && localSources.length > 0 && (
-          <Alert severity="info" sx={{ mb: 2 }}>
-            Found a local Fang Tongzi corpus in Downloads.
-            <Box sx={{ mt: 1, display: 'flex', gap: 1, flexWrap: 'wrap' }}>
-              {localSources.map((source) => (
-                <Button
-                  key={source.path}
-                  size="small"
-                  variant={source.kind === 'extracted' ? 'contained' : 'outlined'}
-                  disabled={busy}
-                  onClick={() => void installFromSource(source.path)}
-                >
-                  Install {source.label}
-                </Button>
-              ))}
-            </Box>
+        {statusInfo && !statusInfo.ready && (
+          <Alert severity="error" sx={{ mb: 2 }}>
+            The bundled corpus is missing. Reinstall the “Daozang import” plugin.
           </Alert>
         )}
 
@@ -357,35 +267,9 @@ export const DaozangImportDialog = ({ onClose, open = false }: DaozangImportDial
           </Typography>
         )}
 
-        {report && report.written.length > 0 && (
-          <Alert severity="success" sx={{ mb: 2 }}>
-            Wrote {report.written.length} file(s).
-          </Alert>
-        )}
-
-        <Box sx={{ display: 'flex', gap: 1, mb: 2, flexWrap: 'wrap' }}>
-          <Button variant="contained" disabled={busy} onClick={() => void pickCorpusSource()}>
-            Install corpus from file…
-          </Button>
-          <Button
-            variant="outlined"
-            disabled={busy || !statusInfo?.ready}
-            onClick={() => void rebuildCorpus(false)}
-          >
-            Refresh index
-          </Button>
-          <Button
-            variant="text"
-            disabled={busy || !statusInfo?.ready}
-            onClick={() => void rebuildCorpus(true)}
-          >
-            Rebuild from cached RAR
-          </Button>
-        </Box>
-
         <TextField
           fullWidth
-          label="Search by title or 道藏 number"
+          label="Search by title, 道藏 number, section, dynasty or author"
           value={query}
           disabled={!statusInfo?.ready || busy}
           onChange={(event) => setQuery(event.target.value)}
@@ -395,9 +279,7 @@ export const DaozangImportDialog = ({ onClose, open = false }: DaozangImportDial
         <List dense sx={{ maxHeight: 320, overflow: 'auto', border: 1, borderColor: 'divider' }}>
           {hits.length === 0 && (
             <ListItem>
-              <ListItemText
-                primary={statusInfo?.ready ? 'No matches.' : 'Install the corpus to browse texts.'}
-              />
+              <ListItemText primary={statusInfo?.ready ? 'No matches.' : 'Corpus unavailable.'} />
             </ListItem>
           )}
           {hits.map((hit) => (
@@ -406,11 +288,13 @@ export const DaozangImportDialog = ({ onClose, open = false }: DaozangImportDial
               selected={selected?.rel_path === hit.rel_path}
               onClick={() => setSelected(hit)}
             >
-              <ListItemText
-                primary={hit.title}
-                secondary={[hit.dz_no && `DZ ${hit.dz_no}`, hit.variant, hit.rel_path]
-                  .filter(Boolean)
-                  .join(' · ')}
+              <CorpusWorkRow
+                section={hit.section}
+                ident={hit.dz_no ? `DZ ${hit.dz_no}` : undefined}
+                title={hit.title}
+                fileTitle={hit.file_title}
+                dynasty={hit.dynasty}
+                authors={hit.authors}
               />
             </ListItemButton>
           ))}
@@ -429,7 +313,6 @@ export const DaozangImportDialog = ({ onClose, open = false }: DaozangImportDial
 export const isDaozangImportAvailable = (): boolean =>
   Boolean(
     window.electronAPI?.daozangStatus &&
-    window.electronAPI?.daozangInstallFromSource &&
     window.electronAPI?.daozangSearch &&
     window.electronAPI?.pluginsInvokePython,
   );

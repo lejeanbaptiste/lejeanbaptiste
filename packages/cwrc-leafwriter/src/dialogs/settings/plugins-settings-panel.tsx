@@ -23,18 +23,16 @@ import {
 import { clearPackContentCache } from '../../services/authority-pack-lookup';
 import { refreshCbdbConcordanceAfterPackLifecycle } from '../../autoTagging/cbdbConcordance';
 import type { PluginReleaseEntry } from '../../../../../apps/commons/src/desktop/pluginRegistryTypes';
+import { documentLanguageMatchesPlugin } from '../../../../../apps/commons/src/desktop/pluginLanguage';
 
 const pluginSupportsLanguage = (
   plugin: Pick<PluginRecordView, 'id'> & { languages?: string[] },
   language: string | null,
 ): boolean => {
   if (!language || !plugin.languages || plugin.languages.length === 0) return true;
-  const normalized = language.toLowerCase();
-  if (plugin.id === 'norbert') return normalized.startsWith('zh') || normalized === 'lzh';
-  if (plugin.id === 'cjk-dates') {
-    return normalized.startsWith('zh') || normalized === 'lzh' || normalized.startsWith('ja');
-  }
-  return plugin.languages.some((candidate) => normalized.startsWith(candidate.toLowerCase()));
+  // Same rule as the bootstrap auto-enable, so a plugin can never be enabled for a
+  // project and then be missing from the list that turns it off.
+  return documentLanguageMatchesPlugin(language, plugin.languages);
 };
 
 function PluginRow({

@@ -86,7 +86,15 @@ jest.mock(
       setWorkerUrl: jest.fn(),
     };
   },
-  { virtual: true },
+  // NOT `{ virtual: true }`. jest.config.ts maps `^maplibre-gl$` to
+  // test/mocks/maplibreGl.ts (the real package is ESM-only and jest's CJS
+  // resolver cannot reach it). A virtual mock is keyed by the raw request
+  // string and skips that resolution, so the component's mapped import could
+  // bind to the silent stub instead of this factory - and which one it got
+  // varied with module-registry state, so it only went wrong inside a large
+  // run. The stub constructs fine and records nothing, so the symptom was
+  // every assertion here seeing an untouched spy, with no error anywhere.
+  // Without `virtual`, this factory mocks the mapped module and always wins.
 );
 
 function makePin(overrides: Partial<MapPin> = {}): MapPin {
@@ -106,15 +114,26 @@ function makePin(overrides: Partial<MapPin> = {}): MapPin {
  *
  * The component's container div lives inside a MUI `Dialog`, whose portal
  * content mounts in a commit *after* the initial render, so the callback ref
- * that sets `container` — and therefore the effect that constructs the map —
- * has not necessarily run by the time `render()` returns. Asserting straight
- * afterwards measures whatever happened to have committed, which is why these
- * cases passed alone and failed under a loaded parallel run.
+ * that sets `container` runs a commit late.
  *
- * Waiting rather than assuming a commit count also keeps the failure honest:
- * `onLoadCallback?.()` no-ops silently while the effect is still pending, so a
- * too-early test previously failed on "marker never added" — a component bug
- * that wasn't there — instead of on the map not being ready.
+ * Two separate things made this suite fail as a unit, roughly half the runs,
+ * but only as part of the full Core project — never on its own, and not under
+ * CPU starvation either:
+ *
+ *  1. The map was built in a passive effect, which was sometimes never run at
+ *     all: the dialog and its container div committed, and the MapLibre
+ *     constructor was called zero times. No amount of waiting fixes that,
+ *     because nothing was pending. It's now a *layout* effect (see
+ *     PlaceComparisonMap.tsx), flushed as part of the commit that attaches the
+ *     node.
+ *  2. `render()` can still return before that commit has happened, so the
+ *     assertion has to poll rather than run once. Under the full run, React's
+ *     scheduler slices work by wall clock, so the number of flushes a mount
+ *     takes is genuinely not fixed — it is not a stable microtask count the
+ *     test can hard-code.
+ *
+ * The same reasoning applies to anything the effect's tile-status promise
+ * chain produces: wait for it, don't assume a tick count.
  */
 const renderMap = async (ui: Parameters<typeof render>[0]) => {
   const result = render(ui);
@@ -260,8 +279,14 @@ describe('PlaceComparisonMap', () => {
       await Promise.resolve();
     });
 
+    // Everything below is produced by the tile-status promise chain the effect
+    // starts, not by the (synchronous) map construction - so it has to be
+    // waited for. How many microtask ticks it takes to settle is not something
+    // the test can assume: React's scheduler slices work by wall clock, so the
+    // same file in the same order settles in a different number of flushes on
+    // a loaded run than on an idle one. See renderMap's note.
+    await waitFor(() => expect(mockSetStyle).toHaveBeenCalledTimes(1));
     expect(mockSetMaxZoom).toHaveBeenCalledWith(8);
-    expect(mockSetStyle).toHaveBeenCalledTimes(1);
     const [style] = mockSetStyle.mock.calls[0];
     expect(style.sources.protomaps.tiles[0]).toBe('pmtiles://china/{z}/{x}/{y}.mvt');
     expect(style.sources.protomaps.maxzoom).toBe(8);
@@ -284,8 +309,11 @@ describe('PlaceComparisonMap', () => {
       await Promise.resolve();
     });
 
+    // Wait for the warning (the chain's positive outcome) before asserting the
+    // negative: `not.toHaveBeenCalled()` would pass vacuously if the chain
+    // simply hadn't run yet, testing nothing.
+    expect(await screen.findByText(/isn't downloaded/)).toBeTruthy();
     expect(mockSetStyle).not.toHaveBeenCalled();
-    expect(screen.getByText(/isn't downloaded/)).toBeTruthy();
   });
 
   it('does not show the region warning once the current view is covered by an installed bundle', async () => {
@@ -305,6 +333,10 @@ describe('PlaceComparisonMap', () => {
       await Promise.resolve();
     });
 
+    // The style swap and the warning decision happen in the same branch of the
+    // chain, so waiting for the swap proves the chain ran - without it, a
+    // still-pending chain would make this pass for the wrong reason.
+    await waitFor(() => expect(mockSetStyle).toHaveBeenCalledTimes(1));
     expect(screen.queryByText(/isn't downloaded/)).toBeNull();
   });
 
@@ -321,6 +353,7 @@ describe('PlaceComparisonMap', () => {
       await Promise.resolve();
     });
 
+    expect(await screen.findByText(/isn't downloaded/)).toBeTruthy();
     expect(mockSetMaxBounds).not.toHaveBeenCalled();
   });
 
@@ -342,7 +375,7 @@ describe('PlaceComparisonMap', () => {
       onLoadCallback?.();
       await Promise.resolve();
     });
-    expect(screen.getByText(/isn't downloaded/)).toBeTruthy();
+    expect(await screen.findByText(/isn't downloaded/)).toBeTruthy();
     expect(mockSetMaxBounds).not.toHaveBeenCalled();
   });
 });

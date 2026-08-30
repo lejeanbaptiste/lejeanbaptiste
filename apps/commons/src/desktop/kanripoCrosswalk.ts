@@ -48,7 +48,5 @@ export const wikisourceSources = (
 ): ParallelSourceEntry[] =>
   (crosswalk?.sources ?? []).filter((source) => source.kind === 'wikisource' && source.url);
 
-export const daozangSources = (
-  crosswalk: ParallelCrosswalkEntry | null,
-): ParallelSourceEntry[] =>
+export const daozangSources = (crosswalk: ParallelCrosswalkEntry | null): ParallelSourceEntry[] =>
   (crosswalk?.sources ?? []).filter((source) => source.kind === 'daozang' && source.rel_path);

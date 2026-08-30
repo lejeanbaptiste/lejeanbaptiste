@@ -17,7 +17,7 @@ export function registerNorbertNobleTitleUi(context: PluginRegisterContext): voi
 
   context.registerToolbarItem({
     id: 'norbert-menu',
-    icon: 'entitiesTag',
+    icon: 'norbertMenu',
     title: 'Norbert',
     tooltip: 'Norbert tools',
     group: 'ui',

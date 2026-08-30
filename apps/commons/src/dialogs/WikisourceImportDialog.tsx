@@ -82,25 +82,28 @@ export const WikisourceImportDialog = ({
     return selectedTree.pages;
   }, [inspected, selectedTree]);
 
-  const inspect = useCallback(async (target = url) => {
-    const api = window.electronAPI;
-    if (!api?.wikisourceInspect) {
-      setError('Wikisource import is only available in the desktop app.');
-      return;
-    }
-    setInspecting(true);
-    setError(null);
-    setInspected(null);
-    try {
-      const result = (await api.wikisourceInspect(target.trim())) as InspectResult;
-      setInspected(result);
-      setTreeId(result.trees[0]?.id ?? '');
-    } catch (inspectError) {
-      setError(inspectError instanceof Error ? inspectError.message : String(inspectError));
-    } finally {
-      setInspecting(false);
-    }
-  }, [url]);
+  const inspect = useCallback(
+    async (target = url) => {
+      const api = window.electronAPI;
+      if (!api?.wikisourceInspect) {
+        setError('Wikisource import is only available in the desktop app.');
+        return;
+      }
+      setInspecting(true);
+      setError(null);
+      setInspected(null);
+      try {
+        const result = (await api.wikisourceInspect(target.trim())) as InspectResult;
+        setInspected(result);
+        setTreeId(result.trees[0]?.id ?? '');
+      } catch (inspectError) {
+        setError(inspectError instanceof Error ? inspectError.message : String(inspectError));
+      } finally {
+        setInspecting(false);
+      }
+    },
+    [url],
+  );
 
   useEffect(() => {
     if (initialUrl.trim()) void inspect(initialUrl);
@@ -168,9 +171,7 @@ export const WikisourceImportDialog = ({
           publicationDate: wd.publicationDate,
           authors: wd.authors,
           headerCredit,
-          extractionNote: page.hasPb
-            ? null
-            : 'No page breaks recovered from wikitext.',
+          extractionNote: page.hasPb ? null : 'No page breaks recovered from wikitext.',
         };
         const xml = wrapWikisourceTeiDocument({ config, meta, bodyXml: page.bodyXml });
         const outputPath = uniqueWikisourceXmlPath(destDir, page.stem, used);
@@ -178,7 +179,9 @@ export const WikisourceImportDialog = ({
         written += 1;
       }
       await refreshExplorer();
-      notifyViaSnackbar(`Imported ${written} Wikisource file(s) to imported/wikisource/${inspected.workTitle}/.`);
+      notifyViaSnackbar(
+        `Imported ${written} Wikisource file(s) to imported/wikisource/${inspected.workTitle}/.`,
+      );
       handleClose();
     } catch (importError) {
       if (importError instanceof DOMException && importError.name === 'AbortError') {

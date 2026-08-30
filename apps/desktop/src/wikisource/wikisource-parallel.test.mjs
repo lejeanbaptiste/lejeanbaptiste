@@ -59,10 +59,7 @@ test('listVolumePages sorts 卷 pages numerically', () => {
 
 test('volumeNumberFromTitle accepts 上中下 suffixes', () => {
   assert.equal(volumeNumberFromTitle('後漢書/卷80上'), 80);
-  assert.equal(
-    resolveEditionRoot('後漢書/卷80上', ['後漢書/卷80下', '後漢書/卷79']),
-    '後漢書',
-  );
+  assert.equal(resolveEditionRoot('後漢書/卷80上', ['後漢書/卷80下', '後漢書/卷79']), '後漢書');
 });
 
 test('isWikisourceSubPageTitle distinguishes index from subpages', () => {

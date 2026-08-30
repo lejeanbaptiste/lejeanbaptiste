@@ -545,9 +545,16 @@ declare global {
       projectFilePath: string,
     ) => Promise<{ merged: boolean }>;
     pluginsInvokePython?: (pluginId: string, payload: Record<string, unknown>) => Promise<unknown>;
-    kanripoSearch?: (
-      query: string,
-    ) => Promise<{ id: string; title: string; author?: string; dynasty?: string }[]>;
+    kanripoSearch?: (query: string) => Promise<
+      {
+        id: string;
+        title: string;
+        section: string;
+        dynasty: string;
+        authors: string;
+        dzid: string;
+      }[]
+    >;
     kanripoClone?: (
       krId: string,
     ) => Promise<{ cachePath: string; reused: boolean; files: string[] }>;
@@ -577,10 +584,7 @@ declare global {
       url: string,
     ) => Promise<{ id: string; slug: string; title: string; rowCount: number }[]>;
     wikisourceInspect?: (url: string) => Promise<unknown>;
-    wikisourceFetchPage?: (options: {
-      apiHost: string;
-      title: string;
-    }) => Promise<{
+    wikisourceFetchPage?: (options: { apiHost: string; title: string }) => Promise<{
       title: string;
       stem: string;
       bodyXml: string;
@@ -629,25 +633,18 @@ declare global {
       manifest?: Record<string, unknown>;
       cacheRoot?: string;
     }>;
-    daozangSync?: (options?: { force?: boolean }) => Promise<{
-      reused?: boolean;
-      textCount?: number;
-      converted?: number;
-      manifest?: Record<string, unknown>;
-    }>;
-    daozangDetectLocalSources?: () => Promise<
-      { path: string; label: string; kind: 'extracted' | 'rar' }[]
+    daozangSearch?: (query: string) => Promise<
+      {
+        id: string;
+        dz_no: string;
+        title: string;
+        rel_path: string;
+        section: string;
+        dynasty: string;
+        authors: string;
+        file_title: string;
+      }[]
     >;
-    daozangPickCorpusSource?: () => Promise<string | null>;
-    daozangInstallFromSource?: (sourcePath: string) => Promise<{
-      reused?: boolean;
-      textCount?: number;
-      converted?: number;
-      manifest?: Record<string, unknown>;
-    }>;
-    daozangSearch?: (
-      query: string,
-    ) => Promise<{ id: string; dz_no: string; title: string; variant: string; rel_path: string }[]>;
     daozangResolveText?: (relPath: string) => Promise<string>;
     daozangReadText?: (
       relPath: string,

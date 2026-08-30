@@ -109,7 +109,12 @@ const extractHeader = (wikitext) => {
 };
 
 const pageBreakFromTemplate = (parsed) => {
-  if (parsed.name === 'pb' || parsed.name === 'pagenum' || parsed.name === '頁' || parsed.name === 'page') {
+  if (
+    parsed.name === 'pb' ||
+    parsed.name === 'pagenum' ||
+    parsed.name === '頁' ||
+    parsed.name === 'page'
+  ) {
     const n = parsed.named.n || parsed.named.page || parsed.positional[0] || '';
     return n ? `<pb n="${escapeXml(n)}"/>` : '<pb/>';
   }
@@ -184,7 +189,8 @@ const paragraphXml = (block, locale) => {
 export function wikitextToBodyXml(wikitext, options = {}) {
   const locale = options.locale === 'zh' ? 'zh' : 'generic';
   const stripped = stripNoinclude(wikitext);
-  const { rest, header } = locale === 'zh' ? extractHeader(stripped) : { rest: stripped, header: null };
+  const { rest, header } =
+    locale === 'zh' ? extractHeader(stripped) : { rest: stripped, header: null };
   let body = rest;
   if (locale !== 'zh') {
     body = body.replace(/\{\{[^}]*\}\}/g, '');

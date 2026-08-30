@@ -1,4 +1,5 @@
 import { buildSkeletonForCatalog } from './schemaTemplates';
+import { normalizeTeiDateValue } from './sourceDescription';
 import type { ProjectFileConfig } from './projectTypes';
 
 export type KanripoNormalizeMode = 'off' | 'dpm' | 'hard_replacements';
@@ -7,6 +8,7 @@ export interface KanripoAuthorshipMeta {
   author_index?: string;
   person_name?: string;
   person_id?: string;
+  wikidata_qid?: string;
   function?: string;
   time_dynasty?: string;
   author_dates?: string;
@@ -25,6 +27,10 @@ export interface KanripoTeiMeta {
   vols?: string;
   juan_count?: string;
   catalog_source?: string;
+  edition_profile?: string;
+  edition_label?: string;
+  edition_date?: string;
+  source_locator?: string;
   cbeta_id?: string;
   time_dynasty?: string;
   date_not_before?: string;
@@ -42,27 +48,62 @@ export interface KanripoTeiMeta {
 const escapeXmlText = (value: string): string =>
   value.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
 
-const escapeXmlAttr = (value: string): string =>
-  escapeXmlText(value).replace(/"/g, '&quot;');
+const escapeXmlAttr = (value: string): string => escapeXmlText(value).replace(/"/g, '&quot;');
 
 const isoDate = (d = new Date()): string => d.toISOString().slice(0, 10);
 
-const authorBlocks = (meta: KanripoTeiMeta): string => {
+/** Wikidata Q-id or entity URL → ``https://www.wikidata.org/entity/Q…`` for TEI ``@ref``. */
+export const wikidataEntityRef = (value?: string | null): string | undefined => {
+  const trimmed = (value ?? '').trim();
+  if (!trimmed) return undefined;
+  const qid = trimmed.match(
+    /^(?:https?:\/\/(?:www\.)?wikidata\.org\/(?:wiki|entity)\/)?(Q\d+)$/i,
+  )?.[1];
+  return qid ? `https://www.wikidata.org/entity/${qid.toUpperCase()}` : undefined;
+};
+
+const authorBlocks = (meta: KanripoTeiMeta, indent = '      '): string => {
   const rows = meta.authorship ?? [];
   if (!rows.length) return '';
   return rows
     .map((row) => {
       const name = escapeXmlText(row.person_name ?? '');
       const pid = (row.person_id ?? '').trim();
+      const authorityRef =
+        wikidataEntityRef(row.wikidata_qid) ?? wikidataEntityRef(pid);
       const fn = (row.function ?? '').trim();
       const attrs = [
-        pid ? ` n="${escapeXmlAttr(pid)}"` : '',
+        authorityRef ? ` ref="${escapeXmlAttr(authorityRef)}"` : '',
+        !authorityRef && pid ? ` n="${escapeXmlAttr(pid)}"` : '',
         fn ? ` role="${escapeXmlAttr(fn)}"` : '',
       ].join('');
-      return name ? `      <author${attrs}>${name}</author>` : '';
+      return name ? `${indent}<author${attrs}>${name}</author>` : '';
     })
     .filter(Boolean)
     .join('\n');
+};
+
+const titleBlock = (title: string, workQid?: string, indent = '      '): string => {
+  const authorityRef = wikidataEntityRef(workQid);
+  const attrs = authorityRef ? ` ref="${escapeXmlAttr(authorityRef)}"` : '';
+  return `${indent}<title${attrs}>${title}</title>`;
+};
+
+const monogrIdnoBlocks = (meta: KanripoTeiMeta): string => {
+  const krId = escapeXmlText(meta.kanripo_id);
+  const rows = [
+    krId ? `<idno type="Kanripo">${krId}</idno>` : '',
+    meta.cbeta_id ? `<idno type="CBETA">${escapeXmlText(meta.cbeta_id)}</idno>` : '',
+    meta.dzid ? `<idno type="DZID">${escapeXmlText(meta.dzid)}</idno>` : '',
+    meta.work_qid
+      ? `<idno type="URI">https://www.wikidata.org/entity/${escapeXmlText(meta.work_qid)}</idno>`
+      : '',
+    meta.edition_qid && meta.edition_qid !== meta.work_qid
+      ? `<idno type="URI" subtype="edition">https://www.wikidata.org/entity/${escapeXmlText(meta.edition_qid)}</idno>`
+      : '',
+    meta.ws_url ? `<idno type="URI" subtype="wikisource">${escapeXmlText(meta.ws_url)}</idno>` : '',
+  ].filter(Boolean);
+  return rows.length ? `        ${rows.join('\n        ')}\n` : '';
 };
 
 export interface ParallelProvenanceSource {
@@ -130,58 +171,83 @@ export const wrapKanripoTeiDocument = ({
   const when = isoDate(importedAt);
   const url = githubUrl ?? (meta.kanripo_id ? `https://github.com/kanripo/${meta.kanripo_id}` : '');
   const authors = authorBlocks(meta);
+  const titleXml = titleBlock(title, meta.work_qid);
 
   let xml = buildSkeletonForCatalog(config);
 
   xml = xml.replace(
     /<titleStmt>\s*<title>[\s\S]*?<\/title>\s*<\/titleStmt>/,
-    `<titleStmt>\n      <title>${title}</title>\n${authors}\n    </titleStmt>`,
+    `<titleStmt>\n${titleXml}\n${authors}\n    </titleStmt>`,
   );
 
   const sourceBits = ['Kanseki Repository (Kanripo)'];
   if (krId) sourceBits.push(krId);
   if (juan) sourceBits.push(`juan ${juan}`);
   if (meta.source) sourceBits.push(`witness ${escapeXmlText(meta.source)}`);
-  if (meta.catalog_source) sourceBits.push(`catalog ${escapeXmlText(meta.catalog_source)}`);
-  const sourcePara = escapeXmlText(sourceBits.join(', '));
-  const urlPara = url ? `<p>${escapeXmlText(url)}</p>` : '';
-  const idnos = [
-    krId ? `\n      <idno type="Kanripo">${krId}</idno>` : '',
-    meta.cbeta_id ? `\n      <idno type="CBETA">${escapeXmlText(meta.cbeta_id)}</idno>` : '',
-    meta.dzid ? `\n      <idno type="DZID">${escapeXmlText(meta.dzid)}</idno>` : '',
-    meta.work_qid
-      ? `\n      <idno type="URI">https://www.wikidata.org/entity/${escapeXmlText(meta.work_qid)}</idno>`
-      : '',
-    meta.edition_qid && meta.edition_qid !== meta.work_qid
-      ? `\n      <idno type="URI" subtype="edition">https://www.wikidata.org/entity/${escapeXmlText(meta.edition_qid)}</idno>`
-      : '',
-    meta.ws_url ? `\n      <idno type="URI" subtype="wikisource">${escapeXmlText(meta.ws_url)}</idno>` : '',
-  ].join('');
+  const locator = (meta.source_locator ?? '').trim();
+  if (locator) {
+    sourceBits.push(`locator ${escapeXmlText(locator)}`);
+  } else if (meta.catalog_source) {
+    sourceBits.push(`catalog ${escapeXmlText(meta.catalog_source)}`);
+  }
+  const sourceNote = escapeXmlText(sourceBits.join(', '));
+  const monogrAuthors = authorBlocks(meta, '        ');
+  const editionLabel = (meta.edition_label ?? '').trim();
+  const editionDate = (meta.edition_date ?? '').trim();
+  const editionBlock = editionLabel
+    ? `          <edition>${escapeXmlText(editionLabel)}</edition>\n`
+    : '';
+  const imprintDate = editionDate
+    ? `<date when="${escapeXmlAttr(normalizeTeiDateValue(editionDate))}">${escapeXmlText(editionDate)}</date>`
+    : '<date/>';
+  const biblNotes = [
+    `<note>${sourceNote}.</note>`,
+    url ? `<note type="kanripo-github">${escapeXmlText(url)}</note>` : '',
+  ]
+    .filter(Boolean)
+    .join('\n      ');
   xml = xml.replace(
     /<sourceDesc>[\s\S]*?<\/sourceDesc>/,
-    `<sourceDesc>\n      <p>${sourcePara}.</p>\n      ${urlPara}${idnos}\n    </sourceDesc>`,
+    `<sourceDesc>
+      <biblStruct>
+        <monogr>
+${monogrAuthors ? `${monogrAuthors}\n` : ''}${titleBlock(title, meta.work_qid, '          ')}
+${monogrIdnoBlocks(meta)}${editionBlock}          <imprint>${imprintDate}</imprint>
+        </monogr>
+      ${biblNotes}
+      </biblStruct>
+    </sourceDesc>`,
   );
 
-  const profileBits: string[] = [];
   const volLabel = meta.vols ?? meta.juan_count;
   if (volLabel) {
-    profileBits.push(`      <extent>${escapeXmlText(volLabel)} 卷</extent>`);
+    xml = xml.replace(
+      /<publicationStmt>/,
+      `<extent>${escapeXmlText(volLabel)} 卷</extent>\n    <publicationStmt>`,
+    );
   }
-  if (meta.time_dynasty || meta.author_dates) {
-    const whenParts = [
-      meta.time_dynasty ? `<origDate>${escapeXmlText(meta.time_dynasty)}</origDate>` : '',
-      meta.author_dates
-        ? `<note type="authorDates">${escapeXmlText(meta.author_dates)}</note>`
+
+  const creationParts: string[] = [];
+  if (meta.time_dynasty) {
+    creationParts.push(`<origDate>${escapeXmlText(meta.time_dynasty)}</origDate>`);
+  }
+  if (meta.date_not_before || meta.date_not_after) {
+    const dateAttrs = [
+      meta.date_not_before
+        ? ` notBefore="${escapeXmlAttr(normalizeTeiDateValue(meta.date_not_before))}"`
         : '',
-    ].filter(Boolean);
-    if (whenParts.length) {
-      profileBits.push(`      <creation>\n        ${whenParts.join('\n        ')}\n      </creation>`);
-    }
+      meta.date_not_after
+        ? ` notAfter="${escapeXmlAttr(normalizeTeiDateValue(meta.date_not_after))}"`
+        : '',
+    ].join('');
+    creationParts.push(`<date${dateAttrs}/>`);
+  } else if (meta.author_dates) {
+    creationParts.push(`<date>${escapeXmlText(meta.author_dates)}</date>`);
   }
-  if (profileBits.length) {
+  if (creationParts.length) {
     xml = xml.replace(
       /<\/fileDesc>/,
-      `  </fileDesc>\n  <profileDesc>\n${profileBits.join('\n')}\n  </profileDesc>`,
+      `  </fileDesc>\n  <profileDesc>\n      <creation>\n        ${creationParts.join('\n        ')}\n      </creation>\n  </profileDesc>`,
     );
   }
 
@@ -198,11 +264,9 @@ export const wrapKanripoTeiDocument = ({
     throw new Error('Kanripo conversion did not return a TEI div.');
   }
 
-  const metadataBlock = (metadataXml ?? '').trim();
-  const bodyContent = metadataBlock
-    ? `${metadataBlock}\n    ${trimmedBody}`
-    : trimmedBody;
-  xml = xml.replace(/<div type="text">[\s\S]*?<\/div>/, bodyContent);
+  // DPM <metadata> fragments belong in the header, not the body (they are not valid TEI body content).
+  void metadataXml;
+  xml = xml.replace(/<div type="text">[\s\S]*?<\/div>/, trimmedBody);
 
   return xml;
 };

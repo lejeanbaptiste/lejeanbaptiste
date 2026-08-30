@@ -106,7 +106,10 @@ import toolShowNotes from '../../../../apps/commons/src/icons/tool_show_notes.pn
 import toolShowNotesDark from '../../../../apps/commons/src/icons/tool_show_notes.dark.png';
 import toolTransform from '../../../../apps/commons/src/icons/tool_transform.png';
 import toolTransformDark from '../../../../apps/commons/src/icons/tool_transform.dark.png';
-import kanripoIcon from './png/kanripo-64.png';
+import krpMenu from '../../../../apps/commons/src/icons/krp_menu.png';
+import krpMenuDark from '../../../../apps/commons/src/icons/krp_menu.dark.png';
+import menuNorbert from '../../../../apps/commons/src/icons/menu_norbert.png';
+import menuNorbertDark from '../../../../apps/commons/src/icons/menu_norbert.dark.png';
 
 export { BookIcon, BookOutlinedIcon } from './custom/Book';
 export { DisambiguateIcon } from './custom/Disambiguate';
@@ -143,24 +146,8 @@ const toolCorrectionIcon = themedToolIcon(toolCorrection, toolCorrectionDark);
 const toolHideNotesIcon = themedToolIcon(toolHideNotes, toolHideNotesDark);
 const toolShowNotesIcon = themedToolIcon(toolShowNotes, toolShowNotesDark);
 const toolTransformIcon = themedToolIcon(toolTransform, toolTransformDark);
-
-/** Official Kanripo mark — https://www.kanripo.org/static/img/kanripo-64.png */
-const KanripoIcon = ({ sx, className }: { className?: string; sx?: SxProps<Theme> }) => (
-  <Box
-    component="img"
-    aria-hidden
-    className={className}
-    src={kanripoIcon}
-    alt=""
-    sx={{
-      display: 'block',
-      width: '1em',
-      height: '1em',
-      objectFit: 'contain',
-      ...sx,
-    }}
-  />
-);
+const kanripoMenuIcon = themedToolIcon(krpMenu, krpMenuDark);
+const norbertMenuIcon = themedToolIcon(menuNorbert, menuNorbertDark);
 
 const icons = {
   accept: CheckIcon,
@@ -217,7 +204,8 @@ const icons = {
   imageViewer: PhotoLibraryRoundedIcon,
   insertTag: TagPlusIcon,
   invalid: WarningAmberRoundedIcon,
-  kanripo: KanripoIcon,
+  kanripo: kanripoMenuIcon,
+  norbertMenu: norbertMenuIcon,
   keyword: VpnKeyRoundedIcon,
   LabelImportantRoundedIcon: LabelImportantRoundedIcon,
   LabelRoundedIcon: LabelRoundedIcon,

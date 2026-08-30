@@ -173,7 +173,10 @@ const forceUtf8Env = (env: NodeJS.ProcessEnv): NodeJS.ProcessEnv => ({
   PYTHONIOENCODING: 'utf-8',
 });
 
-const tryAutoInstallKanripoApi = async (pluginId: string, python: PythonCommand): Promise<boolean> => {
+const tryAutoInstallKanripoApi = async (
+  pluginId: string,
+  python: PythonCommand,
+): Promise<boolean> => {
   const label = commandLabel(python);
   try {
     logPluginPython(pluginId, 'attempting automatic kanripo API install', {

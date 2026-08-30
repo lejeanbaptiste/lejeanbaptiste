@@ -121,13 +121,7 @@ See [apps/desktop/README.md](apps/desktop/README.md) for the compilation and pac
   - [ ] Include Bingenheimer's tagged bios
   - [ ] Search tool imitating CBETA
   - [ ] Bookmarks ?
-- Kanripo
-  - [ ] Importer
-  - [ ] Parser
-  - [ ] Normaliser
-  - [ ] Punctuator
 
-- [ ] Import profiles (rule engine + mandoku hand profile)
 - [x] Wikisource browser-extension + built-in import ([wikisource-import.md](docs/wikisource-import.md); remaining corpora still [corpus-extraction-planning.md](docs/corpus-extraction-planning.md))
 
 #### UX

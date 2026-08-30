@@ -34,13 +34,13 @@ The extension reads the hash, path, or `loc=` query parameter; it does not scrap
 
 ## zh wikitext map
 
-| Wikitext | TEI |
-| --- | --- |
-| `{{header\|…}}` | Consumed (not dumped); author/title kept as header credit |
-| `{{pb}}` / `{{pagenum}}` / `[[Page:…/n]]` | `<pb n="…"/>` |
-| `〈…〉` | `<note type="comm">` |
-| Unknown `{{…}}` | Stripped |
-| Blank line | `<p>` |
+| Wikitext                                  | TEI                                                       |
+| ----------------------------------------- | --------------------------------------------------------- |
+| `{{header\|…}}`                           | Consumed (not dumped); author/title kept as header credit |
+| `{{pb}}` / `{{pagenum}}` / `[[Page:…/n]]` | `<pb n="…"/>`                                             |
+| `〈…〉`                                   | `<note type="comm">`                                      |
+| Unknown `{{…}}`                           | Stripped                                                  |
+| Blank line                                | `<p>`                                                     |
 
 Other language wikis use a generic fallback (strip templates, paragraphs).
 
