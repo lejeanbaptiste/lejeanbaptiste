@@ -1,8 +1,16 @@
 #!/usr/bin/env node
 import assert from 'node:assert/strict';
 import test from 'node:test';
+import { DOMParser } from '@xmldom/xmldom';
 import { wikitextToBodyXml } from './wikitextToTei.mjs';
 import { isPersonItem, summarizeWikidataWork } from './wikidata.mjs';
+
+const assertWellFormedBody = (bodyXml) => {
+  const doc = new DOMParser().parseFromString(`<root>${bodyXml}</root>`, 'text/xml');
+  const err = doc.getElementsByTagName('parsererror');
+  assert.equal(err.length, 0, err[0]?.textContent ?? 'XML parse error');
+  assert.doesNotMatch(bodyXml, /<(?!\/?(?:p|pb|note)\b|pb\b[^>]*\/>)/);
+};
 
 test('zh map consumes header, maps pb and comm notes, strips unknown templates', () => {
   const wikitext = `{{header
@@ -41,6 +49,25 @@ test('generic locale strips templates and keeps paragraphs', () => {
 test('missing page breaks set hasPb false', () => {
   const result = wikitextToBodyXml('只有正文。', { locale: 'zh' });
   assert.equal(result.hasPb, false);
+});
+
+test('strips html comments, wrapper tags, and escapes raw angle brackets', () => {
+  const wikitext = `<!--
+editor note
+-->
+{{SKQS header|title=周髀算經|section=卷上之二}}
+<onlyinclude><poem>正文<子部,天文算法類,推步之屬,周髀算經,卷上之二>續</poem></onlyinclude>`;
+  const result = wikitextToBodyXml(wikitext, { locale: 'zh' });
+  assert.doesNotMatch(result.bodyXml, /<!--/);
+  assert.doesNotMatch(result.bodyXml, /<onlyinclude>|<poem>/);
+  assert.match(result.bodyXml, /&lt;子部,天文算法類,推步之屬,周髀算經,卷上之二&gt;/);
+  assertWellFormedBody(result.bodyXml);
+});
+
+test('maps SK notes templates to comm notes', () => {
+  const result = wikitextToBodyXml('正文{{SK notes|案此條多脱誤}}後', { locale: 'zh' });
+  assert.match(result.bodyXml, /<note type="comm">案此條多脱誤<\/note>/);
+  assertWellFormedBody(result.bodyXml);
 });
 
 test('summarizeWikidataWork prefers labels and P50 authors', () => {

@@ -45,6 +45,53 @@ describe('wrapDaozangTeiDocument', () => {
     expect(xml).toContain('zh.wikisource.org/wiki/');
   });
 
+  test('keeps DPM metadata out of the body', () => {
+    const metadataXml =
+      '<metadata><citation dz_id="19"/><wikidata><wsPage>太上昇玄消灾護命妙經</wsPage></wikidata></metadata>';
+    const xml = wrapDaozangTeiDocument({
+      config,
+      meta,
+      bodyXml: '<div type="text"><p>正文。</p></div>',
+      metadataXml,
+    });
+
+    expect(xml).not.toContain('<metadata');
+    expect(xml).not.toContain('<wsPage>');
+    expect(xml).toContain('<p>正文。</p>');
+  });
+
+  test('wires title and authors to authority refs', () => {
+    const xml = wrapDaozangTeiDocument({
+      config,
+      meta: {
+        ...meta,
+        authorship: [
+          { person_name: '張白', norbert_id: '1021', function: '注' },
+          { person_name: '宋真宗', wikidata_qid: 'Q7264', function: '序' },
+        ],
+      },
+      bodyXml: '<div type="text"><p>正文。</p></div>',
+    });
+
+    expect(xml).toContain('ref="https://www.wikidata.org/entity/Q10286283"');
+    expect(xml).toContain('<author ref="NORBERT:person-1021" role="注">張白</author>');
+    expect(xml).toContain('ref="https://www.wikidata.org/entity/Q7264"');
+  });
+
+  test('uses biblStruct for sourceDesc and extent in fileDesc', () => {
+    const xml = wrapDaozangTeiDocument({
+      config,
+      meta: { ...meta, vols: '3' },
+      bodyXml: '<div type="text"><p>正文。</p></div>',
+    });
+
+    expect(xml).toContain('<biblStruct>');
+    expect(xml).toContain('<idno type="Daozang">91</idno>');
+    expect(xml).not.toMatch(/<sourceDesc>[\s\S]*<idno/);
+    expect(xml).toContain('<extent>3 卷</extent>');
+    expect(xml).not.toContain('<profileDesc>\n      <extent>');
+  });
+
   test('allocates unique xml paths with numeric suffixes', () => {
     const used = new Set<string>();
     const first = uniqueDaozangXmlPath('/proj/imported/daozang', 'stem', used);

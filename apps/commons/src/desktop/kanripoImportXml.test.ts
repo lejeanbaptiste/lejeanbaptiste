@@ -121,8 +121,12 @@ describe('wrapKanripoTeiDocument', () => {
     });
 
     expect(xml).toContain('<title ref="https://www.wikidata.org/entity/Q18879076">');
-    expect(xml).toContain('<author ref="https://www.wikidata.org/entity/Q197649" role="撰">鄭玄</author>');
-    expect(xml).toContain('<author ref="https://www.wikidata.org/entity/Q5365469" role="編">王應麟</author>');
+    expect(xml).toContain(
+      '<author ref="https://www.wikidata.org/entity/Q197649" role="撰">鄭玄</author>',
+    );
+    expect(xml).toContain(
+      '<author ref="https://www.wikidata.org/entity/Q5365469" role="編">王應麟</author>',
+    );
   });
 
   test('zero-pads short CE years in creation/date attributes', () => {

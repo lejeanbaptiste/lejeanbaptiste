@@ -15,6 +15,7 @@ import {
 } from '@mui/material';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useActions, useAppState } from '../overmind';
+import { assertImportedXmlWellFormed } from '../desktop/documentImport';
 import {
   uniqueWikisourceXmlPath,
   wrapWikisourceTeiDocument,
@@ -174,6 +175,7 @@ export const WikisourceImportDialog = ({
           extractionNote: page.hasPb ? null : 'No page breaks recovered from wikitext.',
         };
         const xml = wrapWikisourceTeiDocument({ config, meta, bodyXml: page.bodyXml });
+        assertImportedXmlWellFormed(xml, `Wikisource import for ${page.title}`);
         const outputPath = uniqueWikisourceXmlPath(destDir, page.stem, used);
         await api.writeFile(outputPath, xml);
         written += 1;

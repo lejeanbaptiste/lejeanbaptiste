@@ -71,11 +71,24 @@ const descendantNS = (root: Element, localName: string): Element | null =>
 
 const readAuthors = (parent: Element): SourceAuthor[] =>
   childrenNS(parent, 'author')
-    .map((el) => ({
-      name: el.textContent?.trim() ?? '',
-      ref: el.getAttribute('ref') ?? undefined,
-      key: el.getAttribute('key') ?? undefined,
-    }))
+    .map((el) => {
+      const name = el.textContent?.trim() ?? '';
+      let ref = el.getAttribute('ref') ?? undefined;
+      const key = el.getAttribute('key') ?? undefined;
+      if (!ref && !key) {
+        const legacyN = (el.getAttribute('n') ?? '').trim();
+        if (/^\d+$/.test(legacyN)) {
+          ref = `NORBERT:person-${legacyN}`;
+        } else {
+          const wikidataRef = legacyN.match(/^(?:Q\d+|https?:\/\/.*)$/i) ? legacyN : '';
+          if (wikidataRef.startsWith('http')) ref = wikidataRef;
+          else if (/^Q\d+$/i.test(wikidataRef)) {
+            ref = `https://www.wikidata.org/entity/${wikidataRef.toUpperCase()}`;
+          }
+        }
+      }
+      return { name, ref, key };
+    })
     .filter((author) => author.name);
 
 export const readSourceDescription = (header: Element): SourceDescription => {

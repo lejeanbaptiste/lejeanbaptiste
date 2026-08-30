@@ -85,10 +85,19 @@ const parseTemplateArgs = (inner) => {
   return { name, named, positional };
 };
 
+const stripHtmlComments = (wikitext) => String(wikitext || '').replace(/<!--[\s\S]*?-->/g, '');
+
+const stripWrapperTags = (wikitext) =>
+  String(wikitext || '').replace(/<\/?(?:onlyinclude|includeonly|poem|div|span|br)\b[^>]*>/gi, '');
+
 const stripNoinclude = (wikitext) =>
-  String(wikitext || '')
-    .replace(/<noinclude>[\s\S]*?<\/noinclude>/gi, '')
-    .replace(/<includeonly>|<\/includeonly>/gi, '');
+  stripWrapperTags(
+    stripHtmlComments(
+      String(wikitext || '')
+        .replace(/<noinclude>[\s\S]*?<\/noinclude>/gi, '')
+        .replace(/<includeonly>|<\/includeonly>/gi, ''),
+    ),
+  );
 
 const extractHeader = (wikitext) => {
   const match = wikitext.match(/\{\{\s*header\b/i);
@@ -121,6 +130,16 @@ const pageBreakFromTemplate = (parsed) => {
   return '';
 };
 
+const noteFromTemplate = (parsed) => {
+  if (parsed.name === 'sk notes' || parsed.name === 'notes' || parsed.name === 'note') {
+    const text = parsed.positional[0] || parsed.named.text || parsed.named.案 || '';
+    return text ? `<note type="comm">${escapeXml(decodeEntities(text))}</note>` : '';
+  }
+  return '';
+};
+
+const appendPlainText = (output, text) => (text ? output + escapeXml(text) : output);
+
 const pageBreakFromLink = (inner) => {
   const target = inner.split('|')[0].trim();
   if (!/^Page:/i.test(target) && !/^頁面:/.test(target)) return null;
@@ -136,19 +155,19 @@ const convertInline = (text, locale) => {
     if (source.startsWith('{{', index)) {
       const balanced = findBalanced(source, '{{', '}}', index);
       if (!balanced) {
-        output += source[index];
+        output = appendPlainText(output, source[index]);
         index += 1;
         continue;
       }
       const parsed = parseTemplateArgs(balanced.inner);
-      output += pageBreakFromTemplate(parsed);
+      output += noteFromTemplate(parsed) || pageBreakFromTemplate(parsed);
       index = balanced.end;
       continue;
     }
     if (source.startsWith('[[', index)) {
       const balanced = findBalanced(source, '[[', ']]', index);
       if (!balanced) {
-        output += source[index];
+        output = appendPlainText(output, source[index]);
         index += 1;
         continue;
       }
@@ -158,7 +177,7 @@ const convertInline = (text, locale) => {
         const display = balanced.inner.includes('|')
           ? balanced.inner.slice(balanced.inner.lastIndexOf('|') + 1)
           : balanced.inner;
-        output += display;
+        output = appendPlainText(output, display);
       }
       index = balanced.end;
       continue;
@@ -172,8 +191,17 @@ const convertInline = (text, locale) => {
         continue;
       }
     }
-    output += source[index];
-    index += 1;
+    let next = index + 1;
+    while (
+      next < source.length &&
+      !source.startsWith('{{', next) &&
+      !source.startsWith('[[', next) &&
+      !((locale === 'zh' || locale === 'generic') && source[next] === '〈')
+    ) {
+      next += 1;
+    }
+    output = appendPlainText(output, source.slice(index, next));
+    index = next;
   }
   return output;
 };

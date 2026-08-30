@@ -62,19 +62,30 @@ export const wikidataEntityRef = (value?: string | null): string | undefined => 
   return qid ? `https://www.wikidata.org/entity/${qid.toUpperCase()}` : undefined;
 };
 
+/** Norbert person id → ``NORBERT:person-…`` for TEI ``@ref``. */
+export const norbertPersonRef = (value?: string | null): string | undefined => {
+  const id = (value ?? '').trim();
+  if (!id || !/^\d+$/.test(id)) return undefined;
+  return `NORBERT:person-${id}`;
+};
+
+export const authorAuthorityRef = (row: {
+  wikidata_qid?: string | null;
+  norbert_id?: string | null;
+  person_id?: string | null;
+}): string | undefined =>
+  wikidataEntityRef(row.wikidata_qid) ?? norbertPersonRef(row.norbert_id ?? row.person_id);
+
 const authorBlocks = (meta: KanripoTeiMeta, indent = '      '): string => {
   const rows = meta.authorship ?? [];
   if (!rows.length) return '';
   return rows
     .map((row) => {
       const name = escapeXmlText(row.person_name ?? '');
-      const pid = (row.person_id ?? '').trim();
-      const authorityRef =
-        wikidataEntityRef(row.wikidata_qid) ?? wikidataEntityRef(pid);
+      const authorityRef = authorAuthorityRef(row);
       const fn = (row.function ?? '').trim();
       const attrs = [
         authorityRef ? ` ref="${escapeXmlAttr(authorityRef)}"` : '',
-        !authorityRef && pid ? ` n="${escapeXmlAttr(pid)}"` : '',
         fn ? ` role="${escapeXmlAttr(fn)}"` : '',
       ].join('');
       return name ? `${indent}<author${attrs}>${name}</author>` : '';

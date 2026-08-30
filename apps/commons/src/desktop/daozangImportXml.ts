@@ -1,10 +1,14 @@
 import { buildSkeletonForCatalog } from './schemaTemplates';
+import { authorAuthorityRef, wikidataEntityRef } from './kanripoImportXml';
 import type { ProjectFileConfig } from './projectTypes';
 
 export interface DaozangAuthorshipMeta {
   author_index?: string;
   person_name?: string;
   person_id?: string;
+  wikidata_qid?: string;
+  cbdb_id?: string;
+  norbert_id?: string;
   function?: string;
   time_dynasty?: string;
   author_dates?: string;
@@ -44,22 +48,44 @@ const escapeXmlAttr = (value: string): string => escapeXmlText(value).replace(/"
 
 const isoDate = (d = new Date()): string => d.toISOString().slice(0, 10);
 
-const authorBlocks = (meta: DaozangTeiMeta): string => {
+const authorBlocks = (meta: DaozangTeiMeta, indent = '      '): string => {
   const rows = meta.authorship ?? [];
   if (!rows.length) return '';
   return rows
     .map((row) => {
       const name = escapeXmlText(row.person_name ?? '');
-      const pid = (row.person_id ?? '').trim();
+      const authorityRef = authorAuthorityRef(row);
       const fn = (row.function ?? '').trim();
       const attrs = [
-        pid ? ` n="${escapeXmlAttr(pid)}"` : '',
+        authorityRef ? ` ref="${escapeXmlAttr(authorityRef)}"` : '',
         fn ? ` role="${escapeXmlAttr(fn)}"` : '',
       ].join('');
-      return name ? `      <author${attrs}>${name}</author>` : '';
+      return name ? `${indent}<author${attrs}>${name}</author>` : '';
     })
     .filter(Boolean)
     .join('\n');
+};
+
+const titleBlock = (title: string, workQid?: string, indent = '      '): string => {
+  const authorityRef = wikidataEntityRef(workQid);
+  const attrs = authorityRef ? ` ref="${escapeXmlAttr(authorityRef)}"` : '';
+  return `${indent}<title${attrs}>${title}</title>`;
+};
+
+const monogrIdnoBlocks = (meta: DaozangTeiMeta): string => {
+  const rows = [
+    meta.dz_no ? `<idno type="Daozang">${escapeXmlText(meta.dz_no)}</idno>` : '',
+    meta.dzid ? `<idno type="DZID">${escapeXmlText(meta.dzid)}</idno>` : '',
+    meta.kr_id ? `<idno type="Kanripo">${escapeXmlText(meta.kr_id)}</idno>` : '',
+    meta.work_qid
+      ? `<idno type="URI">https://www.wikidata.org/entity/${escapeXmlText(meta.work_qid)}</idno>`
+      : '',
+    meta.edition_qid && meta.edition_qid !== meta.work_qid
+      ? `<idno type="URI" subtype="edition">https://www.wikidata.org/entity/${escapeXmlText(meta.edition_qid)}</idno>`
+      : '',
+    meta.ws_url ? `<idno type="URI" subtype="wikisource">${escapeXmlText(meta.ws_url)}</idno>` : '',
+  ].filter(Boolean);
+  return rows.length ? `        ${rows.join('\n        ')}\n` : '';
 };
 
 /** Wrap a Daozang body ``div`` in the project TEI skeleton with provenance. */
@@ -82,9 +108,6 @@ export const wrapDaozangTeiDocument = ({
   }
 
   const title = escapeXmlText(meta.title || meta.stem || 'Untitled');
-  const dzNo = escapeXmlText(meta.dz_no);
-  const dzid = escapeXmlText(meta.dzid ?? '');
-  const krId = escapeXmlText(meta.kr_id ?? '');
   const variant = escapeXmlText(meta.variant);
   const sourceNote = escapeXmlText(meta.source);
   const relPath = escapeXmlText(meta.rel_path);
@@ -94,50 +117,42 @@ export const wrapDaozangTeiDocument = ({
   let xml = buildSkeletonForCatalog(config);
   xml = xml.replace(
     /<titleStmt>\s*<title>[\s\S]*?<\/title>\s*<\/titleStmt>/,
-    `<titleStmt>\n      <title>${title}</title>\n${authors}\n    </titleStmt>`,
+    `<titleStmt>\n${titleBlock(title, meta.work_qid)}\n${authors}\n    </titleStmt>`,
   );
 
-  const idnos = [
-    dzNo ? `\n      <idno type="Daozang">${dzNo}</idno>` : '',
-    dzid ? `\n      <idno type="DZID">${dzid}</idno>` : '',
-    krId ? `\n      <idno type="Kanripo">${krId}</idno>` : '',
-    meta.work_qid
-      ? `\n      <idno type="URI">https://www.wikidata.org/entity/${escapeXmlText(meta.work_qid)}</idno>`
-      : '',
-    meta.edition_qid && meta.edition_qid !== meta.work_qid
-      ? `\n      <idno type="URI" subtype="edition">https://www.wikidata.org/entity/${escapeXmlText(meta.edition_qid)}</idno>`
-      : '',
-    meta.ws_url
-      ? `\n      <idno type="URI" subtype="wikisource">${escapeXmlText(meta.ws_url)}</idno>`
-      : '',
-  ].join('');
   const sourcePara = `${sourceNote}; local path ${relPath} (${variant})`;
+  const monogrAuthors = authorBlocks(meta, '        ');
   xml = xml.replace(
     /<sourceDesc>[\s\S]*?<\/sourceDesc>/,
-    `<sourceDesc>\n      <p>${sourcePara}.</p>${idnos}\n    </sourceDesc>`,
+    `<sourceDesc>
+      <biblStruct>
+        <monogr>
+${monogrAuthors ? `${monogrAuthors}\n` : ''}${titleBlock(title, meta.work_qid, '          ')}
+${monogrIdnoBlocks(meta)}          <imprint><date/></imprint>
+        </monogr>
+      <note>${sourcePara}.</note>
+      </biblStruct>
+    </sourceDesc>`,
   );
 
-  const profileBits: string[] = [];
   if (meta.vols) {
-    profileBits.push(`      <extent>${escapeXmlText(meta.vols)} 卷</extent>`);
+    xml = xml.replace(
+      /<publicationStmt>/,
+      `<extent>${escapeXmlText(meta.vols)} 卷</extent>\n    <publicationStmt>`,
+    );
   }
-  if (meta.time_dynasty || meta.author_dates) {
-    const whenParts = [
-      meta.time_dynasty ? `<origDate>${escapeXmlText(meta.time_dynasty)}</origDate>` : '',
-      meta.author_dates
-        ? `<note type="authorDates">${escapeXmlText(meta.author_dates)}</note>`
-        : '',
-    ].filter(Boolean);
-    if (whenParts.length) {
-      profileBits.push(
-        `      <creation>\n        ${whenParts.join('\n        ')}\n      </creation>`,
-      );
-    }
+
+  const creationParts: string[] = [];
+  if (meta.time_dynasty) {
+    creationParts.push(`<origDate>${escapeXmlText(meta.time_dynasty)}</origDate>`);
   }
-  if (profileBits.length) {
+  if (meta.author_dates) {
+    creationParts.push(`<note type="authorDates">${escapeXmlText(meta.author_dates)}</note>`);
+  }
+  if (creationParts.length) {
     xml = xml.replace(
       /<\/fileDesc>/,
-      `  </fileDesc>\n  <profileDesc>\n${profileBits.join('\n')}\n  </profileDesc>`,
+      `  </fileDesc>\n  <profileDesc>\n      <creation>\n        ${creationParts.join('\n        ')}\n      </creation>\n  </profileDesc>`,
     );
   }
 
@@ -152,9 +167,9 @@ export const wrapDaozangTeiDocument = ({
     throw new Error('Daozang conversion did not return a TEI div.');
   }
 
-  const metadataBlock = (metadataXml ?? '').trim();
-  const bodyContent = metadataBlock ? `${metadataBlock}\n    ${trimmedBody}` : trimmedBody;
-  xml = xml.replace(/<div type="(?:text|juan)"[^>]*>[\s\S]*?<\/div>/, bodyContent);
+  // DPM <metadata> fragments belong in the header, not the body (they are not valid TEI body content).
+  void metadataXml;
+  xml = xml.replace(/<div type="(?:text|juan)"[^>]*>[\s\S]*?<\/div>/, trimmedBody);
 
   return xml;
 };

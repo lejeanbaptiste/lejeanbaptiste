@@ -41,6 +41,16 @@ describe('applySourceDescriptionToXml', () => {
     expect(xml).not.toContain('<sourceDesc><p/>');
   });
 
+  test('reads legacy author @n as Norbert ref', () => {
+    const xml = applySourceDescriptionToXml(skeleton, emptySourceDescription()).replace(
+      '</titleStmt>',
+      '<author n="1421">葛巢甫</author>\n    </titleStmt>',
+    );
+    expect(readSourceDescriptionFromXml(xml).authors).toEqual([
+      { name: '葛巢甫', ref: 'NORBERT:person-1421' },
+    ]);
+  });
+
   test('round-trips through read', () => {
     const xml = applySourceDescriptionToXml(skeleton, fullData());
     expect(readSourceDescriptionFromXml(xml)).toEqual(fullData());
