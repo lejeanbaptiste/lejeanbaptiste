@@ -87,7 +87,8 @@ describe('wrapDaozangTeiDocument', () => {
 
     expect(xml).toContain('<biblStruct>');
     expect(xml).toContain('<idno type="Daozang">91</idno>');
-    expect(xml).not.toMatch(/<sourceDesc>[\s\S]*<idno/);
+    // idno belongs inside biblStruct/monogr, not as a direct child of sourceDesc.
+    expect(xml).not.toMatch(/<sourceDesc>\s*<idno/);
     expect(xml).toContain('<extent>3 卷</extent>');
     expect(xml).not.toContain('<profileDesc>\n      <extent>');
   });
