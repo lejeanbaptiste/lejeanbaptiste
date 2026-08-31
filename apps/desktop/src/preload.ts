@@ -198,7 +198,7 @@ export interface AiTranslationDateRef {
 
 export interface AiTranslationRequest {
   /** 'note' is a synthetic unit type used for translating a stripped-out footnote independently. */
-  alignmentUnit: 'div' | 'p' | 'note';
+  alignmentUnit: 'div' | 'p' | 'ab' | 'note';
   sourceUnitXml: string;
   targetLanguage: string;
   entities?: AiTranslationEntityRef[];
@@ -247,6 +247,8 @@ export interface WorkspaceSessionRestore {
 
 export interface ElectronAPI {
   openProject: () => Promise<ProjectBundle | null>;
+  /** Open a project by its jean-baptiste.project.json path (recent-projects menu). */
+  openProjectAtPath: (projectFilePath: string) => Promise<ProjectBundle | null>;
   /** @deprecated Use openProject */
   openProjectFolder: () => Promise<ProjectBundle | null>;
   restoreLastProject: () => Promise<ProjectBundle | null>;
@@ -876,6 +878,7 @@ export interface ElectronAPI {
   isWindowMaximized: () => Promise<boolean>;
   onWindowMaximized: (callback: (maximized: boolean) => void) => () => void;
   onAppMenuAction: (callback: (action: string) => void) => () => void;
+  onOpenRecentProject: (callback: (projectFilePath: string) => void) => () => void;
   signalRendererReady: () => Promise<void>;
   onExternalFileChange: (callback: (filePath: string) => void) => () => void;
   showNativeMessageBox: (
@@ -915,6 +918,8 @@ const electronAPI: ElectronAPI = {
   setUiZoomFactor: (factor: number) => webFrame.setZoomFactor(factor),
   getUiZoomFactor: () => webFrame.getZoomFactor(),
   openProject: () => ipcRenderer.invoke('openProject'),
+  openProjectAtPath: (projectFilePath: string) =>
+    ipcRenderer.invoke('openProjectAtPath', projectFilePath),
   openProjectFolder: () => ipcRenderer.invoke('openProject'),
   restoreLastProject: () => ipcRenderer.invoke('restoreLastProject'),
   setAppLocale: (locale: string) => ipcRenderer.invoke('setAppLocale', locale),
@@ -976,8 +981,10 @@ const electronAPI: ElectronAPI = {
   daozangResolveText: (relPath: string) => ipcRenderer.invoke('daozang:resolveText', relPath),
   daozangReadText: (relPath: string) => ipcRenderer.invoke('daozang:readText', relPath),
   bdrcInspect: (input: string) => ipcRenderer.invoke('bdrc:inspect', input),
-  bdrcImport: (input: string, opts?: { windowSize?: number; forceRefresh?: boolean; split?: boolean }) =>
-    ipcRenderer.invoke('bdrc:import', input, opts),
+  bdrcImport: (
+    input: string,
+    opts?: { windowSize?: number; forceRefresh?: boolean; split?: boolean },
+  ) => ipcRenderer.invoke('bdrc:import', input, opts),
   bdrcImportToProject: (
     input: string,
     opts: {
@@ -1317,6 +1324,12 @@ const electronAPI: ElectronAPI = {
     const listener = (_event: Electron.IpcRendererEvent, action: string) => callback(action);
     ipcRenderer.on('app:menu-action', listener);
     return () => ipcRenderer.removeListener('app:menu-action', listener);
+  },
+  onOpenRecentProject: (callback: (projectFilePath: string) => void) => {
+    const listener = (_event: Electron.IpcRendererEvent, projectFilePath: string) =>
+      callback(projectFilePath);
+    ipcRenderer.on('app:open-recent-project', listener);
+    return () => ipcRenderer.removeListener('app:open-recent-project', listener);
   },
   onWikisourceImportOrder: (callback) => {
     const listener = (

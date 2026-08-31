@@ -20,7 +20,8 @@
     "noUnusedParameters": false,
     "paths": {
       "@src/*": ["src/*"],
-      "@cwrc/leafwriter/pageBreakDetection": ["src/utilities/pageBreakDetection.ts"]
+      "@cwrc/leafwriter/pageBreakDetection": ["src/utilities/pageBreakDetection.ts"],
+      "@cwrc/leafwriter/teiMilestoneHeuristics": ["src/utilities/teiMilestoneHeuristics.ts"]
     },
     "preserveWatchOutput": true,
     "plugins": [{ "name": "typescript-plugin-css-modules" }],

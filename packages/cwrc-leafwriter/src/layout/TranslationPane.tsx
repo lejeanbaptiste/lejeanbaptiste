@@ -203,7 +203,7 @@ const getElementsByLocalName = (root: Document | Element, localName: string): El
 
 const findUnitByCorrespId = (
   doc: Document,
-  alignmentUnit: 'div' | 'p',
+  alignmentUnit: 'div' | 'p' | 'ab',
   sourceFileName: string,
   unitId: string,
 ): Element | null => {
@@ -294,7 +294,7 @@ const markActiveSourceUnit = (unitId: string | null): void => {
 
 interface DesktopElectronApi {
   generateAiTranslation?: (request: {
-    alignmentUnit: 'div' | 'p' | 'note';
+    alignmentUnit: 'div' | 'p' | 'ab' | 'note';
     sourceUnitXml: string;
     targetLanguage: string;
     /** Id + kind only — never names, or the model expands placeholders. */
@@ -498,7 +498,11 @@ const unwrapElementsByTagName = (root: ParentNode, tagName: string): void => {
   }
 };
 
-const findUnitById = (doc: Document, alignmentUnit: 'div' | 'p', unitId: string): Element | null =>
+const findUnitById = (
+  doc: Document,
+  alignmentUnit: 'div' | 'p' | 'ab',
+  unitId: string,
+): Element | null =>
   getElementsByLocalName(doc, alignmentUnit).find((element) => {
     return element.getAttribute('xml:id') === unitId || element.getAttribute('id') === unitId;
   }) ?? null;
@@ -515,7 +519,7 @@ const parseTranslationDocument = (xml: string): Document | null => {
 
 const serializeSourceUnit = (
   sourceXml: string,
-  alignmentUnit: 'div' | 'p',
+  alignmentUnit: 'div' | 'p' | 'ab',
   unitId: string,
 ): { error?: string; xml?: string } => {
   const doc = new DOMParser().parseFromString(sourceXml, 'application/xml');
@@ -552,7 +556,9 @@ const validateGeneratedFragment = (fragmentXml: string): { error?: string; xml?:
   const elementChildren = Array.from(root.children);
   const contentRoot =
     elementChildren.length === 1 &&
-    (elementChildren[0]!.tagName === 'p' || elementChildren[0]!.tagName === 'div')
+    (elementChildren[0]!.tagName === 'p' ||
+      elementChildren[0]!.tagName === 'div' ||
+      elementChildren[0]!.tagName === 'ab')
       ? elementChildren[0]!
       : root;
 
@@ -575,7 +581,7 @@ const validateGeneratedFragment = (fragmentXml: string): { error?: string; xml?:
 };
 
 interface BlindedUnitTranslationRequest {
-  alignmentUnit: 'div' | 'p' | 'note';
+  alignmentUnit: 'div' | 'p' | 'ab' | 'note';
   sourceUnitXml: string;
   targetLanguage: string;
   entities?: { id: string; kind: string }[];

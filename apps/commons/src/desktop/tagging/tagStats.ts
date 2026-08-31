@@ -243,15 +243,6 @@ export const loadTagStats = async (rootPath: string): Promise<TagUsageStats> => 
 
   const statsPath = getTagStatsPath(rootPath);
   try {
-    if (window.electronAPI.statFile) {
-      try {
-        await window.electronAPI.statFile(statsPath);
-      } catch {
-        cachedStats = emptyStats();
-        cachedRootPath = rootPath;
-        return cachedStats;
-      }
-    }
     const raw = await window.electronAPI.readFile(statsPath);
     const parsed = JSON.parse(raw) as TagUsageStats;
     cachedStats = {

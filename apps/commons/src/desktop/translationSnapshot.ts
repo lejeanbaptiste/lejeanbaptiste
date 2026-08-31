@@ -40,7 +40,7 @@ export const readTranslationSnapshot = async (
 
 export const buildSnapshotUnits = async (
   sourceDoc: Document,
-  alignmentUnit: 'div' | 'p',
+  alignmentUnit: 'div' | 'p' | 'ab',
 ): Promise<SnapshotUnit[]> => {
   const units: SnapshotUnit[] = [];
   const elements = getTranslatableUnits(sourceDoc, alignmentUnit);
@@ -71,7 +71,7 @@ export const writeTranslationSnapshot = async (
   bundle: ProjectBundle,
   sourceFileName: string,
   sourceDoc: Document,
-  alignmentUnit: 'div' | 'p',
+  alignmentUnit: 'div' | 'p' | 'ab',
 ): Promise<void> => {
   if (!window.electronAPI?.writeFile) return;
 

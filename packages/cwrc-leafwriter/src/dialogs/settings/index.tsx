@@ -43,11 +43,30 @@ export const SettingsDialog = ({ onClose, open = false, initialTab }: SettingsDi
   const [closeAttempted, setCloseAttempted] = useState(false);
 
   const handleClose = () => {
+    if (
+      activeId === 'project' &&
+      window.__ljbConfirmDiscardProjectSettings &&
+      !window.__ljbConfirmDiscardProjectSettings()
+    ) {
+      return;
+    }
     if (!validity.allValid) {
       setCloseAttempted(true);
       return;
     }
     onClose && onClose('close');
+  };
+
+  const handleTabChange = (id: SettingsTabId) => {
+    if (
+      activeId === 'project' &&
+      id !== 'project' &&
+      window.__ljbConfirmDiscardProjectSettings &&
+      !window.__ljbConfirmDiscardProjectSettings()
+    ) {
+      return;
+    }
+    setActiveId(id);
   };
 
   const isDesktop =
@@ -145,7 +164,7 @@ export const SettingsDialog = ({ onClose, open = false, initialTab }: SettingsDi
         <SideMenu
           activeId={activeId}
           items={items}
-          onChange={(id) => setActiveId(id as SettingsTabId)}
+          onChange={(id) => handleTabChange(id as SettingsTabId)}
         />
         <DialogContent
           sx={{

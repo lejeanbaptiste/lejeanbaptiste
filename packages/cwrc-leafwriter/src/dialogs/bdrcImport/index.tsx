@@ -14,6 +14,7 @@ import {
   Typography,
 } from '@mui/material';
 import { useCallback, useEffect, useRef, useState } from 'react';
+import { ensureImportHeaderEntitiesForPaths } from '../../../../../apps/commons/src/desktop/ensureImportHeaderEntities';
 import type { IDialog } from '../type';
 import { isPluginEnabled } from '../../plugins';
 
@@ -139,6 +140,7 @@ export const BdrcImportDialog = ({
         }
         if (!result.written?.length) throw new Error('BDRC returned no text.');
 
+        await ensureImportHeaderEntitiesForPaths(result.written);
         await project.refreshExplorer?.();
         await project.openFile?.(result.written[0]);
         const warn = result.warnings?.length

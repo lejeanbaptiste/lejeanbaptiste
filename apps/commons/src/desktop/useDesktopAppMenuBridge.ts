@@ -10,7 +10,7 @@ import {
 
 /** App-wide Electron menu shortcuts (registered once, survives route changes). */
 export const useDesktopAppMenuBridge = () => {
-  const { closeProject, openProject } = useActions().project;
+  const { closeProject, openProject, openRecentProject } = useActions().project;
   const { notifyViaSnackbar } = useActions().ui;
 
   useEffect(() => {
@@ -22,6 +22,10 @@ export const useDesktopAppMenuBridge = () => {
     if (Number.isFinite(storedUiZoom) && storedUiZoom > 0 && storedUiZoom !== 100) {
       window.electronAPI.setUiZoomFactor?.(storedUiZoom / 100);
     }
+
+    const unsubscribeRecent = window.electronAPI.onOpenRecentProject?.((projectFilePath) => {
+      void openRecentProject({ projectFilePath });
+    });
 
     const unsubscribe = window.electronAPI.onAppMenuAction((action) => {
       if (action === 'open-project') {
@@ -70,6 +74,9 @@ export const useDesktopAppMenuBridge = () => {
 
     void window.electronAPI.signalRendererReady?.();
 
-    return unsubscribe;
-  }, [closeProject, notifyViaSnackbar, openProject]);
+    return () => {
+      unsubscribeRecent?.();
+      unsubscribe();
+    };
+  }, [closeProject, notifyViaSnackbar, openProject, openRecentProject]);
 };

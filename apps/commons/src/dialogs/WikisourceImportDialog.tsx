@@ -16,6 +16,7 @@ import {
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useActions, useAppState } from '../overmind';
 import { assertImportedXmlWellFormed } from '../desktop/documentImport';
+import { ensureImportHeaderEntitiesForPaths } from '../desktop/ensureImportHeaderEntities';
 import {
   uniqueWikisourceXmlPath,
   wrapWikisourceTeiDocument,
@@ -170,6 +171,7 @@ export const WikisourceImportDialog = ({
     setBusy(true);
     setError(null);
     let written = 0;
+    const writtenPaths: string[] = [];
     try {
       await api.ensureDirectory(destDir);
       for (let index = 0; index < titlesToImport.length; index += 1) {
@@ -198,7 +200,9 @@ export const WikisourceImportDialog = ({
         const outputPath = uniqueWikisourceXmlPath(destDir, page.stem, used);
         await api.writeFile(outputPath, xml);
         written += 1;
+        writtenPaths.push(outputPath);
       }
+      await ensureImportHeaderEntitiesForPaths(writtenPaths);
       await refreshExplorer();
       notifyViaSnackbar(
         `Imported ${written} Wikisource file(s) to imported/wikisource/${inspected.workTitle}/.`,

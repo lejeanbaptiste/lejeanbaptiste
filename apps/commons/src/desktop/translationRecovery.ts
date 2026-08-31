@@ -37,7 +37,7 @@ export interface RecoveryResult {
 export const recoverIdsFromSnapshot = async (
   sourceXml: string,
   snapshotUnits: SnapshotUnit[],
-  alignmentUnit: 'div' | 'p',
+  alignmentUnit: 'div' | 'p' | 'ab',
 ): Promise<RecoveryResult | null> => {
   const doc = new DOMParser().parseFromString(sourceXml, 'application/xml');
   if (doc.getElementsByTagName('parsererror')[0]) return null;

@@ -23,7 +23,7 @@ export interface TranslationEnterPayload {
   lang: string;
   sourcePath: string;
   translationPath: string;
-  alignmentUnit: 'div' | 'p';
+  alignmentUnit: 'div' | 'p' | 'ab';
   /** CSL style id for footnote citations (undefined → app default). */
   citationStyle?: string;
 }

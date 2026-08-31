@@ -65,9 +65,11 @@ import {
   getLastDialogDir,
   getLocalAuthorityAssetsDir,
   getMapTilesDir,
+  getRecentProjects,
   getRememberWorkspaceOnStartup,
   getValidLastProjectFile,
   clearMissingProjectReferences,
+  removeMissingRecentProject,
   setLastDialogDir,
   getWorkspaceSession,
   saveWorkspaceSession,
@@ -306,7 +308,7 @@ interface AiTranslationDateRef {
 
 interface AiTranslationRequest {
   /** 'note' is a synthetic unit type used for translating a stripped-out footnote independently. */
-  alignmentUnit: 'div' | 'p' | 'note';
+  alignmentUnit: 'div' | 'p' | 'ab' | 'note';
   sourceUnitXml: string;
   targetLanguage: string;
   entities?: AiTranslationEntityRef[];
@@ -1120,6 +1122,49 @@ const sendMenuAction = (action: string) => {
   mainWindow?.webContents.send('app:menu-action', action);
 };
 
+const sendOpenRecentProject = (projectFilePath: string) => {
+  mainWindow?.webContents.send('app:open-recent-project', projectFilePath);
+};
+
+let cachedRecentProjectFiles: string[] = [];
+
+const refreshRecentProjectsCache = async () => {
+  cachedRecentProjectFiles = await getRecentProjects();
+};
+
+const rebuildApplicationMenu = () => {
+  void refreshRecentProjectsCache().finally(() => buildApplicationMenu());
+};
+
+const formatRecentProjectMenuLabel = (
+  projectFilePath: string,
+  allProjectFilePaths: string[],
+): string => {
+  const rootPath = path.dirname(projectFilePath);
+  const folderName = path.basename(rootPath);
+  const duplicateCount = allProjectFilePaths.filter(
+    (candidate) => path.basename(path.dirname(candidate)) === folderName,
+  ).length;
+
+  if (duplicateCount <= 1) return folderName;
+
+  const parentName = path.basename(path.dirname(rootPath));
+  return parentName ? `${folderName} (${parentName})` : folderName;
+};
+
+const buildRecentProjectsSubmenu = (): Electron.MenuItemConstructorOptions[] => {
+  if (cachedRecentProjectFiles.length === 0) {
+    return [{ label: 'No Recent Projects', enabled: false }];
+  }
+
+  return cachedRecentProjectFiles.map((projectFilePath) => ({
+    label: formatRecentProjectMenuLabel(projectFilePath, cachedRecentProjectFiles),
+    click: () => {
+      void handleOpenRecentProjectMenu(projectFilePath);
+    },
+  }));
+};
+
 const isMainWindowLive = (): boolean => mainWindow !== null && !mainWindow.isDestroyed();
 
 /**
@@ -1202,6 +1247,23 @@ const handleOpenProjectMenu = async () => {
   sendMenuAction('open-project');
 };
 
+const handleOpenRecentProjectMenu = async (projectFilePath: string) => {
+  const reopening = !isMainWindowLive();
+  if (!(await ensureMainWindowReady())) return;
+
+  if (reopening) {
+    try {
+      await waitForRendererReady();
+      await new Promise<void>((resolve) => setImmediate(resolve));
+    } catch (error) {
+      console.error('[le-jean-baptiste] Renderer not ready for recent project:', error);
+      return;
+    }
+  }
+
+  sendOpenRecentProject(projectFilePath);
+};
+
 const menuSeparator = (): Electron.MenuItemConstructorOptions => ({ type: 'separator' });
 
 const buildEditMenu = (): Electron.MenuItemConstructorOptions => ({
@@ -1264,6 +1326,11 @@ function buildApplicationMenu() {
     label: 'Settings',
     accelerator: 'CommandOrControl+,',
     click: () => sendMenuAction('open-settings'),
+  };
+
+  const recentProjectsItem: Electron.MenuItemConstructorOptions = {
+    label: 'Recent Projects',
+    submenu: buildRecentProjectsSubmenu(),
   };
 
   const openProjectItem: Electron.MenuItemConstructorOptions = {
@@ -1369,6 +1436,7 @@ function buildApplicationMenu() {
     exportDocumentItem,
     closeTabItem,
     menuSeparator(),
+    recentProjectsItem,
     openProjectItem,
     closeProjectItem,
     lookForUpdatesItem,
@@ -1455,6 +1523,68 @@ const rememberDialogDir = (pickedPath: string, kind: 'directory' | 'file') => {
   void setLastDialogDir(dir).catch(() => undefined);
 };
 
+const activateOpenedProject = async (bundle: ProjectBundle) => {
+  activateProjectBundle(bundle);
+  await writeLastProjectFile(bundle.projectFilePath);
+  rebuildApplicationMenu();
+  return bundle;
+};
+
+const openProjectFromPath = async (projectFilePath: string) => {
+  if (!mainWindow) {
+    await createWindow();
+    if (!mainWindow) return null;
+  }
+
+  mainWindow.focus();
+
+  try {
+    const stat = await fs.stat(projectFilePath);
+    if (!stat.isFile()) {
+      await removeMissingRecentProject(projectFilePath);
+      rebuildApplicationMenu();
+      await dialog.showMessageBox(mainWindow, {
+        type: 'error',
+        title: APP_NAME,
+        message: mainT('open_recent_project_failed_message'),
+        detail: projectFilePath,
+      });
+      return null;
+    }
+  } catch {
+    await removeMissingRecentProject(projectFilePath);
+    rebuildApplicationMenu();
+    await dialog.showMessageBox(mainWindow, {
+      type: 'error',
+      title: APP_NAME,
+      message: mainT('open_recent_project_failed_message'),
+      detail: projectFilePath,
+    });
+    return null;
+  }
+
+  rememberDialogDir(path.dirname(projectFilePath), 'directory');
+
+  try {
+    const bundle = await loadProjectFile(projectFilePath);
+    if (!bundle) {
+      throw new Error(`Could not load project file: ${projectFilePath}`);
+    }
+    return await activateOpenedProject(bundle);
+  } catch (error) {
+    console.error('[le-jean-baptiste] openProjectAtPath failed:', error);
+    if (!mainWindow.isDestroyed()) {
+      await dialog.showMessageBox(mainWindow, {
+        type: 'error',
+        title: APP_NAME,
+        message: mainT('open_project_failed_message'),
+        detail: error instanceof Error ? error.message : String(error),
+      });
+    }
+    throw error;
+  }
+};
+
 const openProjectFromDialog = async () => {
   if (!mainWindow) {
     await createWindow();
@@ -1486,9 +1616,7 @@ const openProjectFromDialog = async () => {
 
   try {
     const bundle = await loadOrCreateProject(result.filePaths[0]);
-    activateProjectBundle(bundle);
-    await writeLastProjectFile(bundle.projectFilePath);
-    return bundle;
+    return await activateOpenedProject(bundle);
   } catch (error) {
     console.error('[le-jean-baptiste] openProject failed:', error);
     if (!mainWindow.isDestroyed()) {
@@ -2164,6 +2292,9 @@ const registerIpcHandlers = () => {
 
   ipcMain.handle('openProject', openProjectFromDialog);
   ipcMain.handle('openProjectFolder', openProjectFromDialog);
+  ipcMain.handle('openProjectAtPath', (_event, projectFilePath: string) =>
+    openProjectFromPath(String(projectFilePath)),
+  );
 
   ipcMain.handle('restoreLastProject', async () => {
     if (!(await getRememberWorkspaceOnStartup())) return null;
@@ -3899,6 +4030,7 @@ app.whenReady().then(() => {
   void (async () => {
     await seedDevPluginsIfEmpty();
     await getPluginHostSnapshot();
+    await refreshRecentProjectsCache();
     buildApplicationMenu();
     await syncEnabledPluginContributions();
   })();

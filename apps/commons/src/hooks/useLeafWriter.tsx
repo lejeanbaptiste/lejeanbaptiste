@@ -295,7 +295,13 @@ export const useLeafWriter = () => {
           : {}),
       };
 
-      const visualXml = isDesktop() ? stripTeiHeaderForVisualEditor(xml) : xml;
+      const sourceOnly =
+        isDesktop() && Boolean(filePath && shouldOpenTeiInSourceMode(xml, filePath));
+      const visualXml = sourceOnly
+        ? stripTeiHeaderForVisualEditor(SETTINGS_BOOTSTRAP_XML)
+        : isDesktop()
+          ? stripTeiHeaderForVisualEditor(xml)
+          : xml;
 
       activeLeafWriter.init({
         document: {

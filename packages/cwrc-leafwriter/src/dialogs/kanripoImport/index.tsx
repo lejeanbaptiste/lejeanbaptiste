@@ -30,6 +30,7 @@ import {
   type KanripoNormalizeMode,
   type KanripoTeiMeta,
 } from '../../../../../apps/commons/src/desktop/kanripoImportXml';
+import { ensureImportHeaderEntitiesForPaths } from '../../../../../apps/commons/src/desktop/ensureImportHeaderEntities';
 import { loadParallelPlainText } from '../../../../../apps/commons/src/desktop/kanripoParallelText';
 import {
   daozangParallelIssueMessage,
@@ -897,6 +898,7 @@ export const KanripoImportDialog = ({
       }
       setUsedChapterIds(usedDuringImport);
 
+      await ensureImportHeaderEntitiesForPaths(written);
       await project.refreshExplorer?.();
       for (const outputPath of written) {
         await project.reloadFileFromDisk?.(outputPath);

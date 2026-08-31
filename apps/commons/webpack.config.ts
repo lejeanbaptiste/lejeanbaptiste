@@ -248,6 +248,15 @@ const webpackConfig: webpack.Configuration = {
         'utilities',
         'pageBreakDetection.ts',
       ),
+      // Same treatment: the source-mode heuristic is needed by file-level document
+      // loading, which must not pull in the editor bundle.
+      '@cwrc/leafwriter/teiMilestoneHeuristics$': path.resolve(
+        relPathToPackages,
+        'cwrc-leafwriter',
+        'src',
+        'utilities',
+        'teiMilestoneHeuristics.ts',
+      ),
       '@cwrc/leafwriter': path.resolve(relPathToPackages, 'cwrc-leafwriter', 'src', 'index.tsx'),
       '@cwrc/leafwriter-storage-service$': path.join(storageServiceSrc, 'index.tsx'),
       '@cwrc/leafwriter-storage-service/components$': path.join(

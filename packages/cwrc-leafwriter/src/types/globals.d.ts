@@ -910,6 +910,8 @@ declare global {
     __desktopValidatorInstrumentation?: DesktopValidatorInstrumentation;
     /** DevTools helper: `await __ljbDebugValidator()` */
     __ljbDebugValidator?: (options?: { runValidation?: boolean }) => Promise<unknown>;
+    /** Registered by the project-settings form while it has unsaved edits. */
+    __ljbConfirmDiscardProjectSettings?: () => boolean;
     __leafWriterEditorZoom?: {
       zoomIn: () => void;
       zoomOut: () => void;
@@ -1036,7 +1038,7 @@ declare global {
         values: Record<string, string>;
         custom: Array<{ path: string; label: string; value: string }>;
         applyToDocuments: boolean;
-        translationAlignmentUnit?: 'div' | 'p';
+        translationAlignmentUnit?: 'div' | 'p' | 'ab';
         translationLanguages?: Array<{ code: string; label: string }>;
         syncToCentral?: boolean;
         mode?: 'firstSetup' | 'edition';

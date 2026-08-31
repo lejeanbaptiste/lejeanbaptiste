@@ -7,7 +7,7 @@ export interface TranslationLanguage {
 
 export interface TranslationSettingsFile {
   version: 1;
-  alignmentUnit: 'div' | 'p';
+  alignmentUnit: 'div' | 'p' | 'ab';
   languages: TranslationLanguage[];
   lockedAt: string;
   /** CSL style id for rendering footnote citations (default chicago-note-bibliography).

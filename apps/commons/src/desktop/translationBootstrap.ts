@@ -31,7 +31,7 @@ const isInsideHeader = (element: Element): boolean => {
 };
 
 /** Alignment-unit elements eligible for translation: at the configured level, outside the header. */
-export const getTranslatableUnits = (doc: Document, alignmentUnit: 'div' | 'p'): Element[] =>
+export const getTranslatableUnits = (doc: Document, alignmentUnit: 'div' | 'p' | 'ab'): Element[] =>
   getElementsByLocalName(doc, alignmentUnit).filter((element) => !isInsideHeader(element));
 
 /** Whitespace-collapsed text content used for hashing and previews. */
@@ -54,7 +54,7 @@ export const hashUnitContent = async (element: Element): Promise<string> => {
 
 export const findAlignmentUnitsMissingIds = (
   doc: Document,
-  alignmentUnit: 'div' | 'p',
+  alignmentUnit: 'div' | 'p' | 'ab',
 ): Element[] =>
   getTranslatableUnits(doc, alignmentUnit).filter((element) => !element.getAttribute('xml:id'));
 
@@ -111,7 +111,7 @@ export interface DuplicateIdGroup {
  * split copied the original element's attributes (including xml:id) onto both halves. */
 export const findDuplicateAlignmentUnitIds = (
   doc: Document,
-  alignmentUnit: 'div' | 'p',
+  alignmentUnit: 'div' | 'p' | 'ab',
 ): DuplicateIdGroup[] => {
   const byId = new Map<string, Element[]>();
   for (const unit of getTranslatableUnits(doc, alignmentUnit)) {
@@ -142,7 +142,7 @@ export interface ReindexResult {
  */
 export const reindexAlignmentUnits = async (
   doc: Document,
-  alignmentUnit: 'div' | 'p',
+  alignmentUnit: 'div' | 'p' | 'ab',
   idPrefix = 'twu',
 ): Promise<ReindexResult> => {
   const duplicates = findDuplicateAlignmentUnitIds(doc, alignmentUnit);
@@ -174,7 +174,7 @@ export const createTranslationShell = (
   sourceDoc: Document,
   sourceFileName: string,
   lang: string,
-  alignmentUnit: 'div' | 'p',
+  alignmentUnit: 'div' | 'p' | 'ab',
 ): Document => {
   const alignmentUnits = getTranslatableUnits(sourceDoc, alignmentUnit).filter((element) =>
     element.getAttribute('xml:id'),
@@ -230,7 +230,7 @@ export const resyncTranslationShell = (
   existingTranslationDoc: Document,
   sourceFileName: string,
   lang: string,
-  alignmentUnit: 'div' | 'p',
+  alignmentUnit: 'div' | 'p' | 'ab',
 ): Document => {
   const freshShell = createTranslationShell(sourceDoc, sourceFileName, lang, alignmentUnit);
 

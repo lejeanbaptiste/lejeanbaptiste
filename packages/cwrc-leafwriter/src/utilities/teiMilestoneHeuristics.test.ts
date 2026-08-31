@@ -1,4 +1,8 @@
-import { countTeiMilestones, shouldOpenTeiInSourceMode } from './teiMilestoneHeuristics';
+import {
+  countTeiMilestones,
+  largestBlockLength,
+  shouldOpenTeiInSourceMode,
+} from './teiMilestoneHeuristics';
 
 /** Old BDRC shape: one enormous `<p>` holding the whole volume. */
 const hugeSingleBlock = (milestones: string): string =>
@@ -13,6 +17,7 @@ describe('teiMilestoneHeuristics', () => {
   it('allows visual mode for milestone-heavy TEI when blocks are modest', () => {
     const milestones = Array.from({ length: 120 }, () => '<lb/>').join('');
     const xml = `<div type="text"><p>${milestones}</p></div>`;
+    expect(largestBlockLength(xml)).toBeLessThan(20_000);
     expect(shouldOpenTeiInSourceMode(xml)).toBe(false);
   });
 
@@ -33,9 +38,7 @@ describe('teiMilestoneHeuristics', () => {
   it('prefers source mode for BDRC imports with moderate milestones in a huge block', () => {
     const milestones = Array.from({ length: 40 }, () => '<lb/>').join('');
     const xml = hugeSingleBlock(milestones);
-    expect(
-      shouldOpenTeiInSourceMode(xml, '/project/imported/bdrc/W123/UT456.xml'),
-    ).toBe(true);
+    expect(shouldOpenTeiInSourceMode(xml, '/project/imported/bdrc/W123/UT456.xml')).toBe(true);
   });
 
   it('allows visual mode for small documents', () => {

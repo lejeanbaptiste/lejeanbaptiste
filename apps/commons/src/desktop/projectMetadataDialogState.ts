@@ -77,7 +77,7 @@ export const buildProjectMetadataDialogState = async (
   const translationSettings = await readTranslationSettings(bundle);
   const translation: TranslationMetadataSection = translationSettings
     ? {
-        locked: true,
+        locked: translationSettings.languages.length > 0,
         alignmentUnit: translationSettings.alignmentUnit,
         languages: translationSettings.languages,
       }

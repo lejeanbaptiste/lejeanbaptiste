@@ -26,9 +26,8 @@ import {
 import type { ProjectMetadataDialogMode } from './projectMetadataSession';
 import type { AutoTaggingAuthoritySettings, ProjectMetadataFile } from './projectTypes';
 import {
-  addTranslationLanguage,
   readTranslationSettings,
-  writeTranslationSettings,
+  upsertTranslationSettings,
 } from './translationSettings';
 import type { TranslationLanguage } from './translationTypes';
 
@@ -37,7 +36,7 @@ export interface ProjectMetadataSavePayload {
   values: Record<string, string>;
   custom: { path: string; label: string; value: string }[];
   applyToDocuments: boolean;
-  translationAlignmentUnit?: 'div' | 'p';
+  translationAlignmentUnit?: 'div' | 'p' | 'ab';
   translationLanguages?: TranslationLanguage[];
   syncToCentral?: boolean;
   mode?: ProjectMetadataDialogMode;
@@ -101,8 +100,6 @@ export const saveProjectMetadataChanges = async (
         syncToCentral: payload.syncToCentral,
       });
     }
-    invalidateMetadataDialogStateCache(bundle.projectFilePath);
-    void warmMetadataDialogStateCache(bundle, mode);
   } catch (error) {
     return {
       ok: false,
@@ -113,20 +110,14 @@ export const saveProjectMetadataChanges = async (
   if (payload.translationAlignmentUnit) {
     try {
       const existingTranslationSettings = await readTranslationSettings(bundle);
-      if (!existingTranslationSettings) {
-        await writeTranslationSettings(bundle, {
+      const translationLanguages = payload.translationLanguages ?? [];
+      const shouldSaveTranslation =
+        translationLanguages.length > 0 || existingTranslationSettings !== null;
+      if (shouldSaveTranslation) {
+        await upsertTranslationSettings(bundle, {
           alignmentUnit: payload.translationAlignmentUnit,
-          languages: payload.translationLanguages ?? [],
+          languages: translationLanguages,
         });
-      } else {
-        const existingCodes = new Set(
-          existingTranslationSettings.languages.map((lang) => lang.code),
-        );
-        for (const lang of payload.translationLanguages ?? []) {
-          if (!existingCodes.has(lang.code)) {
-            await addTranslationLanguage(bundle, lang);
-          }
-        }
       }
     } catch (error) {
       return {
@@ -138,6 +129,9 @@ export const saveProjectMetadataChanges = async (
       };
     }
   }
+
+  invalidateMetadataDialogStateCache(bundle.projectFilePath);
+  void warmMetadataDialogStateCache(bundle, mode);
 
   const sanitized = sanitizeMetadataForSave(draft);
   let summary: string | undefined;

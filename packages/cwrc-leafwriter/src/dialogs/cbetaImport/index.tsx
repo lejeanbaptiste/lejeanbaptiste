@@ -20,6 +20,7 @@ import {
   wrapCbetaTeiDocument,
   type CbetaTeiMeta,
 } from '../../../../../apps/commons/src/desktop/cbetaImportXml';
+import { ensureImportHeaderEntitiesForPaths } from '../../../../../apps/commons/src/desktop/ensureImportHeaderEntities';
 import { CorpusWorkRow } from '../corpusWorkRow';
 import type { IDialog } from '../type';
 import { isPluginEnabled } from '../../plugins';
@@ -279,6 +280,7 @@ export const CbetaImportDialog = ({ onClose, open = false }: CbetaImportDialogPr
         if (juan.straddles?.length) warnings.push(...juan.straddles);
       }
 
+      await ensureImportHeaderEntitiesForPaths(written);
       await project.refreshExplorer?.();
       await project.openFile?.(written[0]);
       setStatus(

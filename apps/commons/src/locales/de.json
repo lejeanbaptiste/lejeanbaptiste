@@ -741,6 +741,7 @@
         "schema": "Schema",
         "div_alignment": "Div (Abschnittsebene, weniger strikt)",
         "paragraph_alignment": "Absatz (1:1)",
+        "ab_alignment": "Ab (anonymer Block, z. B. Folio)",
         "code": "Code",
         "label": "Bezeichnung",
         "value": "Wert",

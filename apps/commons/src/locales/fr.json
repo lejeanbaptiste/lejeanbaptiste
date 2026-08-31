@@ -501,7 +501,9 @@
           "save_button": "Enregistrer",
           "unsaved_changes_title": "Modifications non enregistrées",
           "unsaved_documents_title": "Documents non enregistrés",
-          "unsaved_new_document_title": "Nouveau document non enregistré"
+          "unsaved_new_document_title": "Nouveau document non enregistré",
+          "unsaved_settings_title": "Paramètres du projet non enregistrés",
+          "unsaved_settings_message": "Des paramètres du projet n'ont pas été enregistrés. Les abandonner et quitter ?"
         },
         "messages": {
           "could_not_create_new_file": "Impossible de créer un nouveau fichier.",
@@ -535,6 +537,7 @@
         "schema": "Schéma",
         "div_alignment": "Div (niveau section, plus souple)",
         "paragraph_alignment": "Paragraphe (1:1)",
+        "ab_alignment": "Ab (bloc anonyme, p. ex. folio)",
         "code": "Code",
         "label": "Étiquette",
         "value": "Valeur",

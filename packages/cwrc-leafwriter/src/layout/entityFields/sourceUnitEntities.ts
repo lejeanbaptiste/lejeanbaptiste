@@ -54,7 +54,7 @@ const elementsByLocalName = (root: Document | Element, localName: string): Eleme
  * currently selected for translation (live TinyMCE DOM).
  */
 export const collectSourceUnitEntities = (
-  alignmentUnit: 'div' | 'p',
+  alignmentUnit: 'div' | 'p' | 'ab',
   unitId: string,
 ): SourceUnitEntityHit[] => {
   const writer = window.writer as

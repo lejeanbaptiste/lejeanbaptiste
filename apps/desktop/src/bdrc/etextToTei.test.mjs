@@ -80,7 +80,30 @@ test('consecutive chunks on the same folio share one pb', () => {
   ];
   const { pbCount, bodyXml } = etextToBodyXml(extract);
   assert.equal(pbCount, 2);
-  assert.match(bodyXml, /<p>\s*<pb n="1a"\/>\s*ཀཁ\s*<pb n="1b"\/>\s*ག\s*<\/p>/s);
+  assert.match(bodyXml, /<ab><pb n="1a"\/>\s*ཀཁ<\/ab>\s*<ab><pb n="1b"\/>\s*ག<\/ab>/s);
+});
+
+test('each folio becomes its own block, never one paragraph for the volume', () => {
+  // Guards the fix for the Visual-mode freeze: a whole fascicle in a single
+  // block put ~396k characters and ~3.6k children in one <p>, and editors pay
+  // layout/selection cost per block. One block per folio keeps them small.
+  const chunks = [];
+  for (let i = 0; i < 40; i += 1) {
+    chunks.push({
+      index: i,
+      text: `line-${i}-a\nline-${i}-b`,
+      pageId: `p${i}`,
+      pageLabel: `${i + 1}a`,
+      startChar: i * 10,
+    });
+  }
+  const { bodyXml, pbCount } = etextToBodyXml({ meta: { lang: 'bo' }, chunks });
+  assert.equal(pbCount, 40);
+  assert.equal((bodyXml.match(/<ab>/g) ?? []).length, 40, 'one block per folio');
+  assert.equal((bodyXml.match(/<p>/g) ?? []).length, 0, 'no volume-wide paragraph');
+  // Every <pb/> opens a block rather than sitting mid-block.
+  assert.equal((bodyXml.match(/<ab><pb\b/g) ?? []).length, 40);
+  assertWellFormedBody(bodyXml);
 });
 
 test('xml special characters in the transcription are escaped', () => {
@@ -102,7 +125,7 @@ test('empty chunks are dropped and an empty extract yields <p></p>', () => {
       { index: 1, text: 'ཀ', pageLabel: '1a', pageId: 'p1' },
     ],
   });
-  assert.match(bodyXml, /<p>\s*<pb n="1a"\/>\s*ཀ\s*<\/p>/s);
+  assert.match(bodyXml, /<ab><pb n="1a"\/>\s*ཀ<\/ab>/s);
 });
 
 test('chunks are ordered by index, not array position', () => {
@@ -114,7 +137,7 @@ test('chunks are ordered by index, not array position', () => {
       { index: 1, text: 'B', pageLabel: '1a', pageId: 'p1' },
     ],
   });
-  assert.match(bodyXml, /<pb n="1a"\/>\s*AB\s*<pb n="2a"\/>\s*C/s);
+  assert.match(bodyXml, /<ab><pb n="1a"\/>\s*AB<\/ab>\s*<ab><pb n="2a"\/>\s*C<\/ab>/s);
 });
 
 test('outline offsets cut the body into typed divs; forceFlat overrides', () => {
@@ -130,14 +153,14 @@ test('outline offsets cut the body into typed divs; forceFlat overrides', () => 
   ];
   const { bodyXml, structure } = etextToBodyXml(extract);
   assert.equal(structure, 'outline');
-  assert.match(bodyXml, /<div><p>\s*<pb n="1a"\/>\s*front\s*<\/p><\/div>/s);
+  assert.match(bodyXml, /<div><ab><pb n="1a"\/>\s*front<\/ab><\/div>/s);
   assert.match(
     bodyXml,
-    /<div type="chapter"><head>le’u dang po<\/head><p>\s*<pb n="1b"\/>\s*ch-one\s*<\/p><\/div>/s,
+    /<div type="chapter"><head>le’u dang po<\/head><ab><pb n="1b"\/>\s*ch-one<\/ab><\/div>/s,
   );
   assert.match(
     bodyXml,
-    /<div type="chapter"><head>le’u gnyis pa<\/head><p>\s*<pb n="2a"\/>\s*ch-two\s*<\/p><\/div>/s,
+    /<div type="chapter"><head>le’u gnyis pa<\/head><ab><pb n="2a"\/>\s*ch-two<\/ab><\/div>/s,
   );
   assertWellFormedBody(bodyXml);
 

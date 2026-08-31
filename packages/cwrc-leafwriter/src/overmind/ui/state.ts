@@ -10,7 +10,7 @@ export interface TranslationModeState {
   lang: string | null;
   sourcePath: string | null;
   translationPath: string | null;
-  alignmentUnit: 'div' | 'p' | null;
+  alignmentUnit: 'div' | 'p' | 'ab' | null;
   /** CSL style id for footnote citations (null → app default). */
   citationStyle: string | null;
   selectedUnitId: string | null;

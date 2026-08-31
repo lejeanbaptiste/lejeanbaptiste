@@ -18,7 +18,7 @@ export type ProjectMetadataDialogMode = 'firstSetup' | 'edition';
 
 export interface TranslationMetadataSection {
   locked: boolean;
-  alignmentUnit: 'div' | 'p' | null;
+  alignmentUnit: 'div' | 'p' | 'ab' | null;
   languages: TranslationLanguage[];
 }
 

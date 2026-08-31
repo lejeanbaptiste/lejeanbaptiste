@@ -1,11 +1,13 @@
 import compression from 'compression';
 import express from 'express';
+import fs from 'fs/promises';
 import helmet from 'helmet';
 import path from 'path';
 import { api } from './routes';
 import { pluginsApi } from './routes/plugins';
 
 const publicPath = path.join(__dirname, '..', 'public');
+const indexHtmlPath = path.join(publicPath, 'index.html');
 const isDevelopment = process.env.NODE_ENV === 'development';
 
 export const server = express();
@@ -26,7 +28,7 @@ server.use(
 );
 
 // catch all
-server.get('*name', (req, res) => {
+server.get('*name', async (req, res) => {
   // Do not return the SPA HTML for a missing JavaScript/CSS asset. In
   // development this makes a stale chunk a normal 404, which the renderer
   // recovery handler can safely retry.
@@ -34,7 +36,18 @@ server.get('*name', (req, res) => {
     res.sendStatus(404);
     return;
   }
-  res.status(200).sendFile(path.join(publicPath, 'index.html'));
+
+  // Webpack writes public/index.html on first compile (and briefly during
+  // rebuilds). Avoid ENOENT stack traces; the desktop dev loader retries
+  // until this returns 200.
+  try {
+    await fs.access(indexHtmlPath);
+  } catch {
+    res.status(503).send('Application is still building. Retry shortly.');
+    return;
+  }
+
+  res.status(200).sendFile(indexHtmlPath);
 });
 
 export default server;

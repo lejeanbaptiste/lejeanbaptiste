@@ -10,8 +10,11 @@ import {
 
 export type { LanguageToolSettings };
 
+export const MAX_RECENT_PROJECTS = 10;
+
 interface AppPrefs {
   lastProjectFile: string | null;
+  recentProjectFiles?: string[];
   encoderName?: string;
   aiApi?: AiApiSettings;
   languageTool?: LanguageToolSettings;
@@ -150,8 +153,32 @@ const getDefaultEntityDbFolder = () =>
 // will fail when it tries to rename a temp file that another reader stole.
 let prefsWriteInProgress = false;
 
+export const sanitizeRecentProjectFiles = (value: unknown): string[] => {
+  if (!Array.isArray(value)) return [];
+  const seen = new Set<string>();
+  const recent: string[] = [];
+  for (const entry of value) {
+    if (typeof entry !== 'string') continue;
+    const trimmed = entry.trim();
+    if (!trimmed || seen.has(trimmed)) continue;
+    seen.add(trimmed);
+    recent.push(trimmed);
+    if (recent.length >= MAX_RECENT_PROJECTS) break;
+  }
+  return recent;
+};
+
+const touchRecentProject = (prefs: AppPrefs, projectFilePath: string) => {
+  prefs.lastProjectFile = projectFilePath;
+  const withoutCurrent = sanitizeRecentProjectFiles(prefs.recentProjectFiles).filter(
+    (entry) => entry !== projectFilePath,
+  );
+  prefs.recentProjectFiles = [projectFilePath, ...withoutCurrent].slice(0, MAX_RECENT_PROJECTS);
+};
+
 const defaultAppPrefs = (): AppPrefs => ({
   lastProjectFile: null,
+  recentProjectFiles: [],
   encoderName: '',
   aiApi: DEFAULT_AI_API_SETTINGS,
   languageTool: DEFAULT_LANGUAGE_TOOL_SETTINGS,
@@ -175,26 +202,36 @@ const readCommonPrefs = (
     typeof parsed.achievementsFolder === 'string' ? parsed.achievementsFolder.trim() || null : null,
 });
 
+const resolveLastProjectFile = (
+  parsed: Partial<AppPrefs> & { lastRootPath?: string | null },
+): string | null => {
+  if (typeof parsed.lastProjectFile === 'string') {
+    return parsed.lastProjectFile;
+  }
+
+  if (typeof parsed.lastRootPath === 'string') {
+    return path.join(parsed.lastRootPath, 'jean-baptiste.project.json');
+  }
+
+  return null;
+};
+
 /** Parse stored prefs JSON. Exported for unit tests. */
 export const parseAppPrefs = (
   parsed: Partial<AppPrefs> & { lastRootPath?: string | null },
 ): AppPrefs => {
   const common = readCommonPrefs(parsed);
+  const lastProjectFile = resolveLastProjectFile(parsed);
+  let recentProjectFiles = sanitizeRecentProjectFiles(parsed.recentProjectFiles);
 
-  if (typeof parsed.lastProjectFile === 'string') {
-    return { ...common, lastProjectFile: parsed.lastProjectFile };
-  }
-
-  if (typeof parsed.lastRootPath === 'string') {
-    return {
-      ...common,
-      lastProjectFile: path.join(parsed.lastRootPath, 'jean-baptiste.project.json'),
-    };
+  if (recentProjectFiles.length === 0 && lastProjectFile) {
+    recentProjectFiles = [lastProjectFile];
   }
 
   return {
     ...common,
-    lastProjectFile: null,
+    lastProjectFile,
+    recentProjectFiles,
   };
 };
 
@@ -260,7 +297,18 @@ let cachedEntityDbFolder: string | null | undefined;
 
 export const writeLastProjectFile = async (projectFilePath: string) => {
   await mutateAppPrefs((prefs) => {
-    prefs.lastProjectFile = projectFilePath;
+    touchRecentProject(prefs, projectFilePath);
+  });
+};
+
+export const removeMissingRecentProject = async (projectFilePath: string) => {
+  await mutateAppPrefs((prefs) => {
+    prefs.recentProjectFiles = sanitizeRecentProjectFiles(prefs.recentProjectFiles).filter(
+      (entry) => entry !== projectFilePath,
+    );
+    if (prefs.lastProjectFile === projectFilePath) {
+      prefs.lastProjectFile = prefs.recentProjectFiles[0] ?? null;
+    }
   });
 };
 
@@ -268,8 +316,39 @@ export const writeLastProjectFile = async (projectFilePath: string) => {
 export const clearMissingProjectReferences = async (): Promise<void> => {
   await mutateAppPrefs((prefs) => {
     prefs.lastProjectFile = null;
+    prefs.recentProjectFiles = [];
     prefs.workspaceSession = undefined;
   });
+};
+
+export const getRecentProjects = async (): Promise<string[]> => {
+  const prefs = await readAppPrefs();
+  const candidates = sanitizeRecentProjectFiles(prefs.recentProjectFiles);
+  const validated: string[] = [];
+
+  for (const projectFilePath of candidates) {
+    try {
+      const stat = await fs.stat(projectFilePath);
+      if (stat.isFile()) validated.push(projectFilePath);
+    } catch {
+      // Drop entries whose project file was moved or deleted.
+    }
+  }
+
+  const changed =
+    validated.length !== candidates.length ||
+    validated.some((entry, index) => entry !== candidates[index]);
+
+  if (changed) {
+    await mutateAppPrefs((nextPrefs) => {
+      nextPrefs.recentProjectFiles = validated;
+      if (nextPrefs.lastProjectFile && !validated.includes(nextPrefs.lastProjectFile)) {
+        nextPrefs.lastProjectFile = validated[0] ?? null;
+      }
+    });
+  }
+
+  return validated;
 };
 
 export const getValidLastProjectFile = async (): Promise<string | null> => {
@@ -538,7 +617,7 @@ export const saveWorkspaceSession = async (session: WorkspaceSession) => {
     };
     prefs.workspaceSession = nextSession;
     if (prefs.workspaceSession.projectFilePath) {
-      prefs.lastProjectFile = prefs.workspaceSession.projectFilePath;
+      touchRecentProject(prefs, prefs.workspaceSession.projectFilePath);
     }
   });
 };

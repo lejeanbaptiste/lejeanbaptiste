@@ -69,7 +69,7 @@ const attrsFromNamedNodeMap = (el: Element): Record<string, string> => {
  * selected for translation (live TinyMCE DOM).
  */
 export const collectSourceUnitDates = (
-  alignmentUnit: 'div' | 'p',
+  alignmentUnit: 'div' | 'p' | 'ab',
   unitId: string,
   lang?: string | null,
 ): SourceUnitDateHit[] => {

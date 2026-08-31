@@ -150,6 +150,8 @@ export const Editor = ({ showLOD }: EditorProps) => {
 
   const updateView = async (useDoc = false) => {
     if (!enabled) return;
+    // Source mode keeps the live XML in Monaco; TinyMCE is a stub — never export it.
+    if (writer.overmindState?.ui?.editorViewMode === 'source') return;
     // Avoid converting while the editor is empty or mid-load — that spam-logs
     // "converter: no root found for TEI" on every selection/content event.
     if (!writer.isDocLoaded || !writer.editor) return;

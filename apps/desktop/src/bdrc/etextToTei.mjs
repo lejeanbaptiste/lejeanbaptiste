@@ -8,9 +8,10 @@
  *
  * Design: docs/bdrc-import-planning.md §4.
  *
- * The volume is emitted flat by default: one `<p>` holding the whole text with
- * `<pb/>` at every folio boundary and `<lb/>` at every transcription line
- * break. Tibetan punctuation (tsheg ་, shad །, ༎) is content — kept verbatim,
+ * The volume is emitted as one `<ab>` block per folio, each opening with its
+ * `<pb/>` and containing that folio's `<lb/>`-separated lines. (It was
+ * previously a single `<p>` for the whole text; see `renderPageBlocks` for why
+ * that had to change.) Tibetan punctuation (tsheg ་, shad །, ༎) is content — kept verbatim,
  * never converted to `<pc>` and never used to split blocks. When the extract
  * carries an outline whose nodes all have character offsets, the body is cut
  * into `<div type="…">` at those offsets instead (docs §4.2).
@@ -90,21 +91,45 @@ const sortedChunks = (chunks) =>
     .sort((a, b) => (a.index ?? 0) - (b.index ?? 0));
 
 /**
- * Render chunk runs into inline XML, inserting a `<pb/>` whenever the folio
- * changes (and once at the start if the first chunk names a folio).
+ * Render chunks as one `<ab>` block per folio, each opening with its `<pb/>`
+ * and carrying that folio's `<lb/>`-separated lines.
+ *
+ * BDRC etexts arrive as one undifferentiated run of text. Emitting that as a
+ * single `<p>` put an entire fascicle in one block — measured at ~396k
+ * characters and ~3.6k children for the largest volume in MW4CZ5369. Editors
+ * pay layout, caret and selection costs per block, so one enormous block makes
+ * Visual mode unusable, while a folio-sized block (~1.5k characters, ~7
+ * children here) is unremarkable. Splitting on the folio is what makes the
+ * difference; the milestone count itself was never the problem.
+ *
+ * `<ab>` (anonymous block) rather than `<p>`: a folio is a physical page
+ * division, not a rhetorical paragraph, and a sentence may legitimately run
+ * across the boundary.
+ *
+ * BDRC only. The Kanripo/Daozang/CBETA importers build their bodies in their
+ * own modules and are deliberately left as they are.
  */
-const renderRuns = (chunks, facsAllowed) => {
-  let out = '';
+const renderPageBlocks = (chunks, facsAllowed) => {
+  const blocks = [];
+  let current = null;
   let lastPageKey = null;
+
   for (const chunk of chunks) {
     const pageKey = chunk.pageId ?? chunk.pageLabel ?? null;
     if (pageKey !== null && pageKey !== lastPageKey) {
-      out += `${pbXml(chunk, facsAllowed)}\n`;
+      if (current) blocks.push(current);
+      current = { pb: pbXml(chunk, facsAllowed), parts: [] };
       lastPageKey = pageKey;
     }
-    out += chunkInlineXml(chunk.text);
+    // Text before the first folio marker still needs a block to live in.
+    if (!current) current = { pb: '', parts: [] };
+    current.parts.push(chunkInlineXml(chunk.text));
   }
-  return out;
+  if (current) blocks.push(current);
+
+  return blocks
+    .map(({ pb, parts }) => `<ab>${pb ? `${pb}\n` : ''}${parts.join('')}</ab>`)
+    .join('\n');
 };
 
 const canUseOutline = (outline, chunks) =>
@@ -122,16 +147,14 @@ const renderWithOutline = (chunks, outline, facsAllowed) => {
     const nextStart = i + 1 < nodes.length ? nodes[i + 1].startChar : Infinity;
     const slice = chunks.filter((c) => c.startChar >= node.startChar && c.startChar < nextStart);
     const head = node.label ? `<head>${escapeXml(node.label)}</head>` : '';
-    const runs = renderRuns(slice, facsAllowed);
-    divs.push(
-      `<div type="${escapeAttr(node.type || 'section')}">${head}<p>\n${runs}\n</p></div>`,
-    );
+    const runs = renderPageBlocks(slice, facsAllowed);
+    divs.push(`<div type="${escapeAttr(node.type || 'section')}">${head}${runs}</div>`);
   }
   // Chunks before the first outline node, if any, go in a leading untyped div.
   const preludeEnd = nodes[0].startChar;
   const prelude = chunks.filter((c) => c.startChar < preludeEnd);
   if (prelude.length > 0) {
-    divs.unshift(`<div><p>\n${renderRuns(prelude, facsAllowed)}\n</p></div>`);
+    divs.unshift(`<div>${renderPageBlocks(prelude, facsAllowed)}</div>`);
   }
   return divs.join('');
 };
@@ -154,8 +177,7 @@ export function etextToBodyXml(extracted, options = {}) {
     bodyXml = renderWithOutline(chunks, outline, facsAllowed);
     structure = 'outline';
   } else {
-    const runs = renderRuns(chunks, facsAllowed);
-    bodyXml = `<p>\n${runs}\n</p>`;
+    bodyXml = renderPageBlocks(chunks, facsAllowed);
   }
   if (!bodyXml || /^<p>\s*<\/p>$/.test(bodyXml)) bodyXml = '<p></p>';
 

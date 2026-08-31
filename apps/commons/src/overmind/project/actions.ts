@@ -8,6 +8,7 @@ import {
   completePostLoadOnboarding,
 } from '@src/desktop/projectOnboarding';
 import { ensureEntityDbFolder } from '@src/desktop/entityDbOnboarding';
+import { ensureImportHeaderEntitiesForPaths } from '@src/desktop/ensureImportHeaderEntities';
 import {
   mergeMetadataIntoHeader,
   metadataFileExists,
@@ -271,11 +272,20 @@ const invokeOpenProjectDialog = async (): Promise<ProjectBundle | null> => {
 };
 
 const getActiveEditorContent = async (): Promise<string | null> => {
+  if (isSourceEditorMode()) {
+    const content =
+      window.writer?.overmindState?.ui?.sourceCurrentContent ??
+      window.__desktopStoredDocumentXml ??
+      window.writer?.overmindState?.document?.xml ??
+      null;
+    return content || null;
+  }
+
   if (window.writer?.getContent) {
     const content = await window.writer.getContent();
     if (!content) return null;
 
-    if (isDesktop() && !isSourceEditorMode()) {
+    if (isDesktop()) {
       const baseXml =
         window.__desktopStoredDocumentXml ?? window.writer.overmindState?.document?.xml ?? content;
       return mergeEditorBodyWithStoredHeader(stripTeiHeaderForVisualEditor(content), baseXml);
@@ -538,6 +548,44 @@ const restoreMainActiveProject = async (previousProjectFilePath: string | null) 
   await window.electronAPI.clearActiveProject?.().catch(() => undefined);
 };
 
+/** Shared tail of openProject / openRecentProject after a bundle is chosen in main. */
+const finishOpeningProject = async (
+  context: Context,
+  bundle: ProjectBundle,
+  previousProjectFilePath: string | null,
+) => {
+  const { notifyViaSnackbar } = context.actions.ui;
+
+  const localEncoderName = await window.electronAPI.getEncoderName?.();
+  if (!localEncoderName?.trim()) {
+    const projectEncoderName = await getProjectEncoderName(bundle);
+    if (projectEncoderName) {
+      await window.electronAPI.setEncoderName?.(projectEncoderName);
+      window.dispatchEvent(
+        new CustomEvent('ljbEncoderNameInherited', { detail: projectEncoderName }),
+      );
+    }
+  }
+
+  const onboarded = await completeProjectOnboarding(bundle);
+  if (!onboarded) {
+    await restoreMainActiveProject(previousProjectFilePath);
+    notifyViaSnackbar(t('LWC.desktop.project.messages.could_not_open_project_folder'));
+    return;
+  }
+
+  context.state.project.openTabs = [];
+  context.state.project.activeTabPath = null;
+  context.state.project.cursorPositions = {};
+  context.state.editor.contentHasChanged = false;
+  context.state.editor.contentLastSaved = undefined;
+  window.writer?.overmindActions?.ui?.resetSourceEditor?.();
+  await context.actions.editor.clearResource();
+  resetDesktopEditorSession();
+  await loadProjectBundle(context, onboarded);
+  await runPostLoadOnboarding(context, onboarded);
+};
+
 export const openProject = async (context: Context) => {
   const { notifyViaSnackbar } = context.actions.ui;
 
@@ -557,42 +605,40 @@ export const openProject = async (context: Context) => {
     const bundle = await invokeOpenProjectDialog();
     if (!bundle) return;
 
-    // Encoder identity is portable with a project. A fresh installation has no
-    // local preference yet, so inherit the name already recorded in the root
-    // instead of prompting for a divergent one. Never replace an existing
-    // machine-local identity.
-    const localEncoderName = await window.electronAPI.getEncoderName?.();
-    if (!localEncoderName?.trim()) {
-      const projectEncoderName = await getProjectEncoderName(bundle);
-      if (projectEncoderName) {
-        await window.electronAPI.setEncoderName?.(projectEncoderName);
-        window.dispatchEvent(
-          new CustomEvent('ljbEncoderNameInherited', { detail: projectEncoderName }),
-        );
-      }
-    }
-
-    const onboarded = await completeProjectOnboarding(bundle);
-    if (!onboarded) {
-      // openProject IPC already activated the new root in main; put the old
-      // (or empty) root back so entity-DB path checks match the still-open UI.
-      await restoreMainActiveProject(previousProjectFilePath);
-      notifyViaSnackbar(t('LWC.desktop.project.messages.could_not_open_project_folder'));
-      return;
-    }
-
-    context.state.project.openTabs = [];
-    context.state.project.activeTabPath = null;
-    context.state.project.cursorPositions = {};
-    context.state.editor.contentHasChanged = false;
-    context.state.editor.contentLastSaved = undefined;
-    window.writer?.overmindActions?.ui?.resetSourceEditor?.();
-    await context.actions.editor.clearResource();
-    resetDesktopEditorSession();
-    await loadProjectBundle(context, onboarded);
-    await runPostLoadOnboarding(context, onboarded);
+    await finishOpeningProject(context, bundle, previousProjectFilePath);
   } catch (error) {
     console.error('[project] openProject failed:', error);
+    notifyViaSnackbar(t('LWC.desktop.project.messages.could_not_open_project_folder'));
+    context.state.project.isProjectReady = true;
+  }
+};
+
+export const openRecentProject = async (
+  context: Context,
+  { projectFilePath }: { projectFilePath: string },
+) => {
+  const { notifyViaSnackbar } = context.actions.ui;
+
+  if (!window.electronAPI?.openProjectAtPath) {
+    notifyViaSnackbar(t('LWC.desktop.project.messages.desktop_file_access_unavailable_restart'));
+    return;
+  }
+
+  if (!projectFilePath.trim()) return;
+
+  try {
+    if (context.state.project.rootPath) {
+      const guard = await promptUnsavedBeforeProjectSwitch(context);
+      if (guard === 'abort') return;
+    }
+
+    const previousProjectFilePath = context.state.project.projectFilePath;
+    const bundle = await window.electronAPI.openProjectAtPath(projectFilePath);
+    if (!bundle) return;
+
+    await finishOpeningProject(context, bundle, previousProjectFilePath);
+  } catch (error) {
+    console.error('[project] openRecentProject failed:', error);
     notifyViaSnackbar(t('LWC.desktop.project.messages.could_not_open_project_folder'));
     context.state.project.isProjectReady = true;
   }
@@ -1082,6 +1128,8 @@ export const importDocuments = async (context: Context) => {
   if (writtenPaths.length > 0 && window.electronAPI?.syncWatchedFiles) {
     await window.electronAPI.syncWatchedFiles(state.project.openTabs.map((tab) => tab.filePath));
   }
+
+  await ensureImportHeaderEntitiesForPaths(writtenPaths);
 
   if (writtenPaths[0]) {
     try {

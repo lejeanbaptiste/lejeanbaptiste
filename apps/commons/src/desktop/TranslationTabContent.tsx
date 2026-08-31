@@ -1,7 +1,7 @@
 import { Box, LinearProgress, Typography } from '@mui/material';
 import { useActions, useAppState } from '@src/overmind';
 import { isDesktop } from '@src/types/desktop';
-import { useEffect, useRef, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { getActiveProjectBundle } from './activeProjectBundle';
 import { installCitationBridge } from './citations/citationBridge';
@@ -97,29 +97,44 @@ export const TranslationTabContent = ({ active }: TranslationTabContentProps) =>
       window.removeEventListener('desktop:translation-request-language', onRequestLanguage);
   }, []);
 
-  // Load the project's configured translation languages whenever the project changes.
-  useEffect(() => {
+  const applyConfiguredLanguages = useCallback(async (clearResolvedKey = false) => {
     if (!isDesktop() || !projectFilePath) {
       setLanguages(null);
       return;
     }
+    const bundle = getActiveProjectBundle();
+    if (!bundle) return;
+    const settings = await readTranslationSettings(bundle);
+    const nextLanguages = settings?.languages ?? [];
+    setLanguages(nextLanguages);
+    setSelectedLang((current) =>
+      current && nextLanguages.some((lang) => lang.code === current)
+        ? current
+        : (nextLanguages[0]?.code ?? ''),
+    );
+    if (clearResolvedKey) resolvedKeyRef.current = null;
+  }, [projectFilePath]);
+
+  // Load the project's configured translation languages whenever the project changes.
+  useEffect(() => {
     let cancelled = false;
-    void (async () => {
-      const bundle = getActiveProjectBundle();
-      if (!bundle) return;
-      const settings = await readTranslationSettings(bundle);
+    void applyConfiguredLanguages().then(() => {
       if (cancelled) return;
-      setLanguages(settings?.languages ?? []);
-      setSelectedLang((current) =>
-        current && settings?.languages.some((lang) => lang.code === current)
-          ? current
-          : (settings?.languages[0]?.code ?? ''),
-      );
-    })();
+    });
     return () => {
       cancelled = true;
     };
-  }, [projectFilePath]);
+  }, [applyConfiguredLanguages]);
+
+  // Project settings can be saved from the settings dialog or a native window
+  // without changing projectFilePath — reload languages when that happens.
+  useEffect(() => {
+    const onConfigSaved = () => {
+      void applyConfiguredLanguages(true);
+    };
+    window.addEventListener('ljb-project-config-saved', onConfigSaved);
+    return () => window.removeEventListener('ljb-project-config-saved', onConfigSaved);
+  }, [applyConfiguredLanguages]);
 
   // Leaving the translation tab calls exitTranslationMode (active → false). Clear the
   // resolved key so coming back re-runs enterTranslationMode; otherwise the pane mounts

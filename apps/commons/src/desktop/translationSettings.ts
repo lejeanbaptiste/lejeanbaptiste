@@ -6,6 +6,8 @@ import {
 } from './projectFile';
 import type { TranslationLanguage, TranslationSettingsFile } from './translationTypes';
 
+const VALID_ALIGNMENT_UNITS: TranslationSettingsFile['alignmentUnit'][] = ['div', 'p', 'ab'];
+
 export const readTranslationSettings = async (
   bundle: ProjectBundle,
 ): Promise<TranslationSettingsFile | null> => {
@@ -14,7 +16,7 @@ export const readTranslationSettings = async (
 
   try {
     const parsed = JSON.parse(raw) as TranslationSettingsFile;
-    if (parsed.alignmentUnit !== 'div' && parsed.alignmentUnit !== 'p') return null;
+    if (!VALID_ALIGNMENT_UNITS.includes(parsed.alignmentUnit)) return null;
     return {
       version: 1,
       alignmentUnit: parsed.alignmentUnit,
@@ -54,7 +56,7 @@ const writeSettingsFile = async (
  */
 export const writeTranslationSettings = async (
   bundle: ProjectBundle,
-  draft: { alignmentUnit: 'div' | 'p'; languages: TranslationLanguage[] },
+  draft: { alignmentUnit: 'div' | 'p' | 'ab'; languages: TranslationLanguage[] },
 ): Promise<TranslationSettingsFile> => {
   const existing = await readTranslationSettings(bundle);
   if (existing) {
@@ -72,6 +74,43 @@ export const writeTranslationSettings = async (
 
   await writeSettingsFile(bundle, settings);
   return settings;
+};
+
+/**
+ * Creates or updates translation settings from the project-metadata dialog.
+ * Skips creation when no languages are configured yet; replaces in-progress
+ * settings (alignment chosen but no languages saved yet); appends languages once
+ * the list is non-empty.
+ */
+export const upsertTranslationSettings = async (
+  bundle: ProjectBundle,
+  draft: { alignmentUnit: 'div' | 'p' | 'ab'; languages: TranslationLanguage[] },
+): Promise<TranslationSettingsFile | null> => {
+  const existing = await readTranslationSettings(bundle);
+
+  if (!existing) {
+    if (draft.languages.length === 0) return null;
+    return writeTranslationSettings(bundle, draft);
+  }
+
+  if (existing.languages.length === 0) {
+    const settings: TranslationSettingsFile = {
+      version: 1,
+      alignmentUnit: draft.alignmentUnit,
+      languages: draft.languages,
+      lockedAt: existing.lockedAt,
+      citationStyle: existing.citationStyle,
+    };
+    await writeSettingsFile(bundle, settings);
+    return settings;
+  }
+
+  let current = existing;
+  for (const language of draft.languages) {
+    if (current.languages.some((lang) => lang.code === language.code)) continue;
+    current = await addTranslationLanguage(bundle, language);
+  }
+  return current;
 };
 
 /** Updates the citation style used for footnote citations. No-op when settings don't

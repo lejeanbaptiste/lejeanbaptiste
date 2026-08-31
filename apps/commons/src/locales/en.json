@@ -467,7 +467,9 @@
           "save_button": "Save",
           "unsaved_changes_title": "Unsaved changes",
           "unsaved_documents_title": "Unsaved documents",
-          "unsaved_new_document_title": "Unsaved new document"
+          "unsaved_new_document_title": "Unsaved new document",
+          "unsaved_settings_title": "Unsaved project settings",
+          "unsaved_settings_message": "You have unsaved project settings. Discard them and leave?"
         },
         "messages": {
           "could_not_create_new_file": "Could not create a new file.",
@@ -501,6 +503,7 @@
         "schema": "Schema",
         "div_alignment": "Div (section-level, looser)",
         "paragraph_alignment": "Paragraph (1:1)",
+        "ab_alignment": "Ab (anonymous block, e.g. folio)",
         "code": "Code",
         "label": "Label",
         "value": "Value",

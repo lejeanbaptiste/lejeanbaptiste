@@ -67,8 +67,20 @@ export const useAttributeCommandController = (): AttributeCommandController => {
   }, [rootPath]);
 
   const refreshStatsForActiveFile = useCallback(async () => {
-    if (!rootPath || !activeTabPath || !window.writer?.getContent) return;
-    const xml = await window.writer.getContent();
+    if (!rootPath || !activeTabPath) return;
+    let xml = '';
+    if (window.writer?.overmindState?.ui?.editorViewMode === 'source') {
+      xml =
+        window.writer.overmindState.ui.sourceCurrentContent ||
+        window.__desktopStoredDocumentXml ||
+        '';
+    } else if (window.writer?.getContent) {
+      try {
+        xml = (await window.writer.getContent()) || '';
+      } catch {
+        xml = window.__desktopStoredDocumentXml || '';
+      }
+    }
     if (!xml) return;
     const next = await updateTagStatsForFile(rootPath, activeTabPath, xml);
     setStats(next);

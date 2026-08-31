@@ -11,7 +11,7 @@ import type { DateReviewRecalculate } from '../../autoTagging/batchHolder';
 import { isAiUiFeatureEnabled } from '../../autoTagging/aiUiFeatures';
 import type { Suggestion } from '../../autoTagging/types';
 import i18n, { Locales, localesSchema } from '../../i18n';
-import { shouldOpenTeiInSourceMode } from '../../../../../apps/commons/src/desktop/teiMilestoneHeuristics';
+import { shouldOpenTeiInSourceMode } from '../../utilities/teiMilestoneHeuristics';
 import type { ContextMenuState, NotificationProps, PaletteMode, PanelId, Side } from '../../types';
 import { MARKUP_TREE_SYNC_MODE_STORAGE_KEY, type EditorViewMode } from './state';
 import { checkWellFormedness } from '../../utilities/checkWellFormedness';
@@ -376,7 +376,7 @@ export const enterTranslationMode = (
     lang: string;
     sourcePath: string;
     translationPath: string;
-    alignmentUnit: 'div' | 'p';
+    alignmentUnit: 'div' | 'p' | 'ab';
     citationStyle?: string;
   },
 ) => {
@@ -820,11 +820,8 @@ export const exitSourceMode = async ({ state, actions }: Context): Promise<boole
   const contentToLoad = state.ui.sourceCurrentContent;
 
   if (shouldOpenTeiInSourceMode(contentToLoad, state.document.url)) {
-    window.writer?.dialogManager?.show('message', {
-      title: 'Visual mode unavailable',
-      msg: 'This document has too many page and line breaks for the visual editor. Continue editing in Source mode.',
-      type: 'info',
-    });
+    // exitSourceMode is only reachable when visualLocked is false in the UI; keep
+    // this guard for menu shortcuts and older builds.
     return false;
   }
 

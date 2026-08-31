@@ -191,7 +191,7 @@ export interface AiTranslationDateRef {
 }
 
 export interface AiTranslationRequest {
-  alignmentUnit: 'div' | 'p';
+  alignmentUnit: 'div' | 'p' | 'ab';
   sourceUnitXml: string;
   targetLanguage: string;
   entities?: AiTranslationEntityRef[];
@@ -290,6 +290,7 @@ export interface ElectronAPI {
   /** IPC methods are versioned independently from the shared renderer contract. */
   [method: string]: any;
   openProject: () => Promise<ProjectBundle | null>;
+  openProjectAtPath: (projectFilePath: string) => Promise<ProjectBundle | null>;
   /** @deprecated Use openProject */
   openProjectFolder: () => Promise<ProjectBundle | null>;
   restoreLastProject: () => Promise<ProjectBundle | null>;
@@ -678,6 +679,7 @@ export interface ElectronAPI {
   isWindowMaximized: () => Promise<boolean>;
   onWindowMaximized: (callback: (maximized: boolean) => void) => () => void;
   onAppMenuAction: (callback: (action: string) => void) => () => void;
+  onOpenRecentProject?: (callback: (projectFilePath: string) => void) => () => void;
   signalRendererReady: () => Promise<void>;
   onExternalFileChange: (callback: (filePath: string) => void) => () => void;
   showNativeMessageBox: (

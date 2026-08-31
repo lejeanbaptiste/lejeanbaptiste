@@ -125,6 +125,8 @@ const config: Config.InitialOptions = {
           '<rootDir>/packages/cwrc-leafwriter/src/utilities/pageBreakDetection.ts',
         '^@cwrc/leafwriter/languageCodes$':
           '<rootDir>/packages/cwrc-leafwriter/src/utilities/languageCodes.ts',
+        '^@cwrc/leafwriter/teiMilestoneHeuristics$':
+          '<rootDir>/packages/cwrc-leafwriter/src/utilities/teiMilestoneHeuristics.ts',
         // The bare specifier resolves to the package's webpack bundle, which cannot
         // be evaluated under jsdom. See the stub for what it covers.
         '^@cwrc/leafwriter$': '<rootDir>/apps/commons/test/mocks/cwrcLeafwriter.tsx',

@@ -25,7 +25,7 @@ export interface TranslationUnitCard {
 /** Companion alignment units for the open source file, in document order. */
 export const collectTranslationUnitCards = (
   doc: Document,
-  alignmentUnit: 'div' | 'p',
+  alignmentUnit: 'div' | 'p' | 'ab',
   sourceFileName: string,
 ): TranslationUnitCard[] => {
   const prefix = `${sourceFileName}#`;

@@ -501,6 +501,7 @@
         "schema": "スキーマ",
         "div_alignment": "Div (section-level, looser)",
         "paragraph_alignment": "段落（1:1）",
+        "ab_alignment": "Ab (anonymous block, e.g. folio)",
         "code": "コード",
         "label": "ラベル",
         "value": "値",

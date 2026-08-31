@@ -15,6 +15,7 @@ const STRINGS = {
       "This folder is configured as your entity database folder and can't be used as a project folder. Choose a different folder for your project.",
     ok: 'OK',
     open_project_failed_message: 'Could not open this project folder.',
+    open_recent_project_failed_message: 'This recent project is no longer available.',
     choose_schema_file_title: 'Choose schema file (.rng)',
     choose_css_file_title: 'Choose CSS file (optional)',
     choose_css_file_message: 'Optional: choose a CSS file for this schema, or Cancel to skip.',
@@ -62,6 +63,7 @@ const STRINGS = {
       'Ce dossier est configuré comme votre dossier de base de données d’entités et ne peut pas être utilisé comme dossier de projet. Choisissez un dossier différent pour votre projet.',
     ok: 'OK',
     open_project_failed_message: 'Impossible d’ouvrir ce dossier de projet.',
+    open_recent_project_failed_message: 'Ce projet récent n’est plus disponible.',
     choose_schema_file_title: 'Choisir un fichier de schéma (.rng)',
     choose_css_file_title: 'Choisir un fichier CSS (facultatif)',
     choose_css_file_message:

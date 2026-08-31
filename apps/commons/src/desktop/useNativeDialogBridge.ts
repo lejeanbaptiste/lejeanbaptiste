@@ -506,7 +506,6 @@ export const useNativeDialogBridge = () => {
             const dialogId = getStringArg(args, 'dialogId');
             const session = dialogId ? getProjectMetadataSession(dialogId) : undefined;
             if (!session) return null;
-            if (session.initialState) return session.initialState;
 
             const bundle = await resolveProjectBundle(session.projectFilePath);
             if (!bundle) return null;
@@ -524,7 +523,7 @@ export const useNativeDialogBridge = () => {
               values?: Record<string, string>;
               custom?: { path: string; label: string; value: string }[];
               applyToDocuments?: boolean;
-              translationAlignmentUnit?: 'div' | 'p';
+              translationAlignmentUnit?: 'div' | 'p' | 'ab';
               translationLanguages?: { code: string; label: string }[];
               syncToCentral?: boolean;
             };

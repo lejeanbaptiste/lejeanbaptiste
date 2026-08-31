@@ -40,6 +40,9 @@
       "@cwrc/leafwriter/pageBreakDetection": [
         "packages/cwrc-leafwriter/src/utilities/pageBreakDetection.ts"
       ],
+      "@cwrc/leafwriter/teiMilestoneHeuristics": [
+        "packages/cwrc-leafwriter/src/utilities/teiMilestoneHeuristics.ts"
+      ],
       "@cwrc/leafwriter-storage-service": [
         "packages/cwrc-leafwriter-storage-service/src/index.tsx"
       ],

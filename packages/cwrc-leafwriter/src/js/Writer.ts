@@ -278,7 +278,18 @@ class Writer extends EventManager {
   }
 
   async getContent() {
-    const docString = await this.getDocumentString();
+    if (this.overmindState?.ui?.editorViewMode === 'source') {
+      const fromSource = this.overmindState.ui.sourceCurrentContent;
+      if (fromSource) return fromSource;
+      return this.overmindState.document?.xml ?? null;
+    }
+
+    let docString: string | undefined;
+    try {
+      docString = await this.getDocumentString();
+    } catch {
+      return this.overmindState.document?.xml ?? null;
+    }
 
     const mergeEditorBodyWithStoredHeader = window.__desktopMergeEditorBodyWithStoredHeader;
     const contentForState =

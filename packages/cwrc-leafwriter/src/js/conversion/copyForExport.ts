@@ -8,7 +8,7 @@
 import { buildClipboardExport, type ExportBiblEntry, type ExportUnitPair } from './clipboardExport';
 
 interface TranslationModeInfo {
-  alignmentUnit: 'div' | 'p' | null;
+  alignmentUnit: 'div' | 'p' | 'ab' | null;
   sourcePath: string | null;
   translationPath: string | null;
 }

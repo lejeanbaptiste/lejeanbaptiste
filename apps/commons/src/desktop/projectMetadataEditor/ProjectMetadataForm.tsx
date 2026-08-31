@@ -31,7 +31,7 @@ import { SOURCE_LANGUAGE_PATH } from '@src/desktop/projectLanguage';
 import type { ProjectMetadataDialogState } from '@src/desktop/projectMetadataDialogState';
 import type { TranslationLanguage } from '@src/desktop/translationTypes';
 import { METADATA_FIELDS_TEMPLATE_PATH } from '@src/desktop/metadataFieldsTemplate';
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import type { ProjectMetadataSavePayload, ProjectMetadataSaveResult } from '../projectMetadataSave';
 
@@ -61,7 +61,7 @@ export const ProjectMetadataForm = ({
   const [loading, setLoading] = useState(true);
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [alignmentUnit, setAlignmentUnit] = useState<'div' | 'p'>('p');
+  const [alignmentUnit, setAlignmentUnit] = useState<'div' | 'p' | 'ab'>('p');
   const [languages, setLanguages] = useState<TranslationLanguage[]>([]);
   const [newLangCode, setNewLangCode] = useState('');
   const [syncToCentral, setSyncToCentral] = useState(false);
@@ -69,23 +69,107 @@ export const ProjectMetadataForm = ({
   const [confirmSyncOpen, setConfirmSyncOpen] = useState(false);
   const [pendingApplyToDocuments, setPendingApplyToDocuments] = useState(false);
   const [syncReport, setSyncReport] = useState<{ broken: number; conflicts: number } | null>(null);
+  const [savedSnapshot, setSavedSnapshot] = useState<string | null>(null);
+
+  const snapshotFromState = useCallback(
+    (
+      dialogState: ProjectMetadataDialogState,
+      nextAlignmentUnit: 'div' | 'p' | 'ab',
+      nextLanguages: TranslationLanguage[],
+      nextSyncToCentral: boolean,
+      pendingLangCode = '',
+    ) =>
+      JSON.stringify({
+        values: dialogState.values,
+        custom: dialogState.custom,
+        alignmentUnit: nextAlignmentUnit,
+        languages: nextLanguages,
+        syncToCentral: nextSyncToCentral,
+        pendingLangCode,
+      }),
+    [],
+  );
 
   const applyDialogState = useCallback(
     (dialogState: ProjectMetadataDialogState | null) => {
       if (dialogState) {
+        const nextAlignmentUnit = dialogState.translation.alignmentUnit ?? 'p';
+        const nextLanguages = dialogState.translation.languages;
         setState(dialogState);
-        setAlignmentUnit(dialogState.translation.alignmentUnit ?? 'p');
-        setLanguages(dialogState.translation.languages);
+        setAlignmentUnit(nextAlignmentUnit);
+        setLanguages(nextLanguages);
+        setNewLangCode('');
         setSyncToCentral(dialogState.syncToCentral);
         setSavedSyncToCentral(dialogState.syncToCentral);
+        setSavedSnapshot(
+          snapshotFromState(
+            dialogState,
+            nextAlignmentUnit,
+            nextLanguages,
+            dialogState.syncToCentral,
+          ),
+        );
         setError(null);
       } else {
         setError(t('LWC.desktop.project.errors.could_not_load_edition_metadata'));
+        setSavedSnapshot(null);
       }
       setLoading(false);
     },
-    [t],
+    [snapshotFromState, t],
   );
+
+  const isDirty = useMemo(() => {
+    if (!state || savedSnapshot === null) return false;
+    return (
+      snapshotFromState(state, alignmentUnit, languages, syncToCentral, newLangCode.trim()) !==
+      savedSnapshot
+    );
+  }, [
+    alignmentUnit,
+    languages,
+    newLangCode,
+    savedSnapshot,
+    snapshotFromState,
+    state,
+    syncToCentral,
+  ]);
+
+  const confirmDiscardUnsaved = useCallback(async (): Promise<boolean> => {
+    if (!isDirty) return true;
+    const title = t('LWC.desktop.project.dialogs.unsaved_settings_title');
+    const message = t('LWC.desktop.project.dialogs.unsaved_settings_message');
+    if (window.electronAPI?.showNativeMessageBox) {
+      const result = await window.electronAPI.showNativeMessageBox({
+        type: 'warning',
+        title,
+        message,
+        buttons: [
+          t('LWC.desktop.project.dialogs.discard_changes_button'),
+          t('LWC.commons.cancel'),
+        ],
+        cancelId: 1,
+        defaultId: 1,
+      });
+      return result.response === 0;
+    }
+    return window.confirm(`${title}\n\n${message}`);
+  }, [isDirty, t]);
+
+  useEffect(() => {
+    if (!active || !isDirty) {
+      delete window.__ljbConfirmDiscardProjectSettings;
+      return;
+    }
+    window.__ljbConfirmDiscardProjectSettings = () => {
+      const title = t('LWC.desktop.project.dialogs.unsaved_settings_title');
+      const message = t('LWC.desktop.project.dialogs.unsaved_settings_message');
+      return window.confirm(`${title}\n\n${message}`);
+    };
+    return () => {
+      delete window.__ljbConfirmDiscardProjectSettings;
+    };
+  }, [active, isDirty, t]);
 
   useEffect(() => {
     if (!active) return;
@@ -164,6 +248,8 @@ export const ProjectMetadataForm = ({
         return;
       }
       setSavedSyncToCentral(syncToCentral);
+      const refreshed = await io.loadState();
+      applyDialogState(refreshed);
       io.onSaved?.();
     } catch (error) {
       const message =
@@ -317,7 +403,7 @@ export const ProjectMetadataForm = ({
           <RadioGroup
             row
             value={alignmentUnit}
-            onChange={(event) => setAlignmentUnit(event.target.value as 'div' | 'p')}
+            onChange={(event) => setAlignmentUnit(event.target.value as 'div' | 'p' | 'ab')}
           >
             <FormControlLabel
               control={<Radio disabled={state.translation.locked} />}
@@ -328,6 +414,11 @@ export const ProjectMetadataForm = ({
               control={<Radio disabled={state.translation.locked} />}
               label={t('LWC.desktop.project.paragraph_alignment')}
               value="p"
+            />
+            <FormControlLabel
+              control={<Radio disabled={state.translation.locked} />}
+              label={t('LWC.desktop.project.ab_alignment')}
+              value="ab"
             />
           </RadioGroup>
 
@@ -404,7 +495,15 @@ export const ProjectMetadataForm = ({
   const actionBar = (
     <Stack direction="row" flexWrap="wrap" gap={1} justifyContent="flex-end" sx={{ pt: 1 }}>
       {layout === 'page' && !isFirstSetup && io.onCancel && (
-        <Button disabled={submitting} onClick={() => io.onCancel?.()}>
+        <Button
+          disabled={submitting}
+          onClick={() => {
+            void (async () => {
+              if (!(await confirmDiscardUnsaved())) return;
+              io.onCancel?.();
+            })();
+          }}
+        >
           {t('LWC.commons.cancel')}
         </Button>
       )}

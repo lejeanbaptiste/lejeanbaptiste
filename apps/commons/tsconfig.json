@@ -48,6 +48,9 @@
       "@cwrc/leafwriter/pageBreakDetection": [
         "../../packages/cwrc-leafwriter/src/utilities/pageBreakDetection.ts"
       ],
+      "@cwrc/leafwriter/teiMilestoneHeuristics": [
+        "../../packages/cwrc-leafwriter/src/utilities/teiMilestoneHeuristics.ts"
+      ],
       "@cwrc/leafwriter-validator": [
         "../../packages/cwrc-leafwriter-validator/src/index.worker.ts"
       ],

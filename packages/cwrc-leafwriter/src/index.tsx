@@ -47,6 +47,7 @@ export type { LanguageOption } from './utilities/languageCodes';
 export { isCjkDatesEnabled, isPluginEnabled } from './plugins/registry';
 export { entityLookupDialogAtom } from './jotai/entity-lookup';
 export { SETTINGS_BOOTSTRAP_URL } from './constants/settingsBootstrap';
+export { countTeiMilestones, shouldOpenTeiInSourceMode } from './utilities/teiMilestoneHeuristics';
 export * as Types from './types';
 export {
   buildDocxDocument,

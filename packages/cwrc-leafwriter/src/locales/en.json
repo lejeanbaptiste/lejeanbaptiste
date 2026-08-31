@@ -774,6 +774,7 @@
     "edit_source": "edit source",
     "view_mode_source": "Source",
     "view_mode_visual": "Visual",
+    "view_mode_visual_locked_hint": "This document has too many page and line breaks (<pb/>, <lb/>) for the visual editor — typical for BDRC imports. Continue in Source mode.",
     "zoom_in": "Zoom in",
     "zoom_out": "Zoom out",
     "editorToolbar": {
