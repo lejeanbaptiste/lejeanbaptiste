@@ -347,6 +347,9 @@ export interface ElectronAPI {
       loc?: string;
     }) => void,
   ) => () => void;
+  onBdrcImportOrder?: (
+    callback: (order: { action: string; url: string; etext_id: string; scope?: 'volume' }) => void,
+  ) => () => void;
   kanripoFetchParallelUrl?: (options: {
     url: string;
     section?: string;
@@ -384,6 +387,30 @@ export interface ElectronAPI {
   >;
   daozangResolveText?: (relPath: string) => Promise<string>;
   daozangReadText?: (relPath: string) => Promise<{ text: string; rel_path: string; path: string }>;
+  bdrcInspect?: (input: string) => Promise<{
+    utId: string;
+    title: string;
+    titleLang?: string;
+    access: string | null;
+    status: string | null;
+    restricted: boolean;
+    workId: string | null;
+    instanceId: string | null;
+    imageGroupId: string | null;
+    paginated: boolean;
+  }>;
+  bdrcImport?: (
+    input: string,
+    opts?: { windowSize?: number; forceRefresh?: boolean },
+  ) => Promise<{
+    restricted: boolean;
+    warnings: string[];
+    meta: { utId: string; instanceId?: string; workId?: string; volumeId?: string };
+    bodyXml: string;
+    headerFields: Record<string, unknown>;
+    pbCount: number;
+    structure: 'flat' | 'outline';
+  }>;
   onPluginPythonProgress?: (
     pluginId: string,
     callback: (
@@ -909,6 +936,9 @@ const electronAPI: ElectronAPI = {
   daozangSearch: (query: string) => ipcRenderer.invoke('daozang:search', query),
   daozangResolveText: (relPath: string) => ipcRenderer.invoke('daozang:resolveText', relPath),
   daozangReadText: (relPath: string) => ipcRenderer.invoke('daozang:readText', relPath),
+  bdrcInspect: (input: string) => ipcRenderer.invoke('bdrc:inspect', input),
+  bdrcImport: (input: string, opts?: { windowSize?: number; forceRefresh?: boolean }) =>
+    ipcRenderer.invoke('bdrc:import', input, opts),
   onPluginPythonProgress: (pluginId, callback) => {
     const listener = (
       _event: Electron.IpcRendererEvent,
@@ -1266,6 +1296,14 @@ const electronAPI: ElectronAPI = {
     ) => callback(order);
     ipcRenderer.on('kanripo:import-order', listener);
     return () => ipcRenderer.removeListener('kanripo:import-order', listener);
+  },
+  onBdrcImportOrder: (callback) => {
+    const listener = (
+      _event: Electron.IpcRendererEvent,
+      order: { action: string; url: string; etext_id: string; scope?: 'volume' },
+    ) => callback(order);
+    ipcRenderer.on('bdrc:import-order', listener);
+    return () => ipcRenderer.removeListener('bdrc:import-order', listener);
   },
   signalRendererReady: () => ipcRenderer.invoke('signalRendererReady'),
   onExternalFileChange: (callback: (filePath: string) => void) => {

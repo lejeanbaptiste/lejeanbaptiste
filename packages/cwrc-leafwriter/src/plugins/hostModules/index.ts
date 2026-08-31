@@ -5,6 +5,8 @@ export interface PluginHostModule {
   registerNorbertNobleTitleUi?: (context: PluginRegisterContext) => void;
   registerKanripoImportUi?: (context: PluginRegisterContext) => void;
   registerDaozangImportUi?: (context: PluginRegisterContext) => void;
+  registerCbetaImportUi?: (context: PluginRegisterContext) => void;
+  registerBdrcImportUi?: (context: PluginRegisterContext) => void;
 }
 
 const loaders: Record<string, () => Promise<PluginHostModule>> = {
@@ -12,6 +14,8 @@ const loaders: Record<string, () => Promise<PluginHostModule>> = {
   'norbert-noble-title-ui': () => import('./norbertNobleTitleUi'),
   'kanripo-import-ui': () => import('./kanripoImportUi'),
   'daozang-import-ui': () => import('./daozangImportUi'),
+  'cbeta-import-ui': () => import('./cbetaImportUi'),
+  'bdrc-import-ui': () => import('./bdrcImportUi'),
 };
 
 export async function loadPluginHostModule(moduleId: string): Promise<PluginHostModule> {

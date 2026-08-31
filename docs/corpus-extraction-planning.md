@@ -216,6 +216,10 @@ Priority tiers reflect **quality of structured access** and **overlap with leaf-
 
 ### BDRC (Buddhist Digital Resource Center / BUDA)
 
+**Full design: [bdrc-import-planning.md](bdrc-import-planning.md)** — browser
+extension, whole-`UT`-volume unit, live PDI fetch + local cache, `@ref`-only
+authority resolved later via the Wikidata P2477 crosswalk.
+
 - **Scale:** Largest archive of Tibetan Buddhist scans + growing etext corpus; manual transcription + OCR ([2026 open dataset initiative](https://www.bdrc.io/blog/2026/02/28/bdrc-launches-major-initiative-to-build-open-buddhist-datasets-for-ai/)).
 - **API:** [BDRC Public Data Interface](http://purl.bdrc.io/index) — RDF/JSON-LD; etext queries e.g. `/query/graph/Etext_base?R_RES=bdr:UT…`, chunk search by expression.
 - **OCR:** [Tibetan OCR desktop app](https://github.com/buda-base/tibetan-ocr-app) (PageXML export) — complementary, not extension core.

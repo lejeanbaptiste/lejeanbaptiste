@@ -28,7 +28,16 @@ export interface KanripoImportOrder {
   loc?: string;
 }
 
-export type BrowserImportOrder = WikisourceImportOrder | KanripoImportOrder;
+export interface BdrcImportOrder {
+  v?: number;
+  action: 'import-bdrc';
+  /** `VE…` volume id or `UT…` etext id from the reader's `openEtext` param. */
+  etext_id: string;
+  url: string;
+  scope: 'volume';
+}
+
+export type BrowserImportOrder = WikisourceImportOrder | KanripoImportOrder | BdrcImportOrder;
 
 const isWikisourceOrder = (payload: BrowserImportOrder): payload is WikisourceImportOrder =>
   payload?.action === 'import-wikisource';
@@ -36,34 +45,77 @@ const isWikisourceOrder = (payload: BrowserImportOrder): payload is WikisourceIm
 const isKanripoOrder = (payload: BrowserImportOrder): payload is KanripoImportOrder =>
   payload?.action === 'import-kanripo';
 
+const isBdrcOrder = (payload: BrowserImportOrder): payload is BdrcImportOrder =>
+  payload?.action === 'import-bdrc';
+
 const pointerPath = (): string =>
   path.join(os.homedir(), '.config', 'lejeanbaptiste', 'browser-bridge.json');
 
 const nativeMessagingDirs = (): string[] => {
   const home = os.homedir();
+  if (process.platform === 'darwin') {
+    const appSupport = path.join(home, 'Library', 'Application Support');
+    return [
+      path.join(appSupport, 'BraveSoftware', 'Brave-Browser', 'NativeMessagingHosts'),
+      path.join(appSupport, 'Google', 'Chrome', 'NativeMessagingHosts'),
+      path.join(appSupport, 'Chromium', 'NativeMessagingHosts'),
+      path.join(appSupport, 'Microsoft Edge', 'NativeMessagingHosts'),
+    ];
+  }
+  // Linux (XDG). Windows registers via the registry — not handled here.
   return [
     path.join(home, '.config', 'BraveSoftware', 'Brave-Browser', 'NativeMessagingHosts'),
     path.join(home, '.config', 'chromium', 'NativeMessagingHosts'),
     path.join(home, '.config', 'google-chrome', 'NativeMessagingHosts'),
+    path.join(home, '.config', 'microsoft-edge', 'NativeMessagingHosts'),
   ];
 };
 
-export const resolveNativeHostScript = (): string => {
-  const packaged = path.join(process.resourcesPath, 'native-host', 'ljb-browser-host.mjs');
-  if (fs.existsSync(packaged)) return packaged;
-  return path.resolve(__dirname, '../../resources/native-host/ljb-browser-host.mjs');
+/** Resolve a bundled native-host file, trying packaged then dev-tree layouts. */
+const resolveNativeHostFile = (basename: string): string => {
+  const candidates = [
+    process.resourcesPath && path.join(process.resourcesPath, 'native-host', basename),
+    path.resolve(__dirname, '../resources/native-host', basename), // dist/main.js → apps/desktop/resources
+    path.resolve(__dirname, '../../resources/native-host', basename), // src/ layout
+    path.resolve(__dirname, '../../apps/desktop/resources/native-host', basename),
+  ].filter((p): p is string => Boolean(p));
+  return candidates.find((p) => fs.existsSync(p)) ?? candidates[1];
 };
 
-export const resolveNativeHostLauncher = (): string => {
-  const packaged = path.join(process.resourcesPath, 'native-host', 'ljb-browser-host');
-  if (fs.existsSync(packaged)) return packaged;
-  return path.resolve(__dirname, '../../resources/native-host/ljb-browser-host');
+export const resolveNativeHostScript = (): string => resolveNativeHostFile('ljb-browser-host.mjs');
+
+export const resolveNativeHostLauncher = (): string => resolveNativeHostFile('ljb-browser-host');
+
+const shSingleQuote = (value: string): string => `'${value.replace(/'/g, `'\\''`)}'`;
+
+/**
+ * Write a launcher that runs the native host through **this app's own Node**
+ * (`ELECTRON_RUN_AS_NODE`), so it works when the browser spawns it with a bare
+ * PATH that has no `node` (the common macOS / nvm case). Falls back to the
+ * static `ljb-browser-host` bash script if the file can't be written.
+ */
+const ensureGeneratedLauncher = (): string => {
+  if (process.platform === 'win32') return resolveNativeHostLauncher();
+  const launcher = path.join(app.getPath('userData'), 'native-host', 'ljb-browser-host');
+  try {
+    fs.mkdirSync(path.dirname(launcher), { recursive: true });
+    fs.writeFileSync(
+      launcher,
+      `#!/bin/sh\nexport ELECTRON_RUN_AS_NODE=1\nexec ${shSingleQuote(process.execPath)} ${shSingleQuote(
+        resolveNativeHostScript(),
+      )} "$@"\n`,
+      { mode: 0o755 },
+    );
+    return launcher;
+  } catch {
+    return resolveNativeHostLauncher();
+  }
 };
 
 const writeNativeManifests = (hostPath: string): void => {
   const manifest = {
     name: NATIVE_HOST_NAME,
-    description: 'Le Jean-Baptiste browser import (Wikisource and Kanripo)',
+    description: 'Le Jean-Baptiste browser import (Wikisource, Kanripo, BDRC)',
     path: hostPath,
     type: 'stdio',
     allowed_origins: [`chrome-extension://${BROWSER_EXTENSION_ID}/`],
@@ -112,6 +164,12 @@ export const startBrowserImportBridge = (getWindow: () => BrowserWindow | null):
             res.end(JSON.stringify({ error: 'INVALID_ORDER' }));
             return;
           }
+        } else if (isBdrcOrder(payload)) {
+          if (!payload.etext_id || !payload.url) {
+            res.writeHead(400);
+            res.end(JSON.stringify({ error: 'INVALID_ORDER' }));
+            return;
+          }
         } else {
           res.writeHead(400);
           res.end(JSON.stringify({ error: 'INVALID_ORDER' }));
@@ -128,6 +186,8 @@ export const startBrowserImportBridge = (getWindow: () => BrowserWindow | null):
         win.focus();
         if (isWikisourceOrder(payload)) {
           win.webContents.send('wikisource:import-order', payload);
+        } else if (isBdrcOrder(payload)) {
+          win.webContents.send('bdrc:import-order', payload);
         } else {
           win.webContents.send('kanripo:import-order', payload);
         }
@@ -149,7 +209,7 @@ export const startBrowserImportBridge = (getWindow: () => BrowserWindow | null):
     fs.mkdirSync(path.dirname(pointerPath()), { recursive: true });
     fs.writeFileSync(pointerPath(), json);
     fs.writeFileSync(userDataFile, json);
-    writeNativeManifests(resolveNativeHostLauncher());
+    writeNativeManifests(ensureGeneratedLauncher());
   });
 
   return server;

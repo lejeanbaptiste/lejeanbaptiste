@@ -592,6 +592,9 @@ export interface ElectronAPI {
       loc?: string;
     }) => void,
   ) => () => void;
+  onBdrcImportOrder?: (
+    callback: (order: { action: string; url: string; etext_id: string; scope?: 'volume' }) => void,
+  ) => () => void;
   kanripoFetchParallelUrl?: (options: {
     url: string;
     section?: string;

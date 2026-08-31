@@ -30,8 +30,13 @@ const platformMap = {
   },
 };
 
-const platform = process.platform;
-const arch = process.arch === 'arm64' ? 'arm64' : 'x64';
+// Overridable via env vars rather than trusting process.platform/process.arch:
+// the macOS x64 package is cross-built on an arm64 runner, where process.arch
+// reports arm64 and would silently bundle the wrong-arch language server into
+// the Intel app. Mirrors LJB_PYTHON_* / LJB_PMTILES_*; CI sets these for the
+// platform/arch it is actually packaging for.
+const platform = process.env.LJB_LEMMINX_PLATFORM || process.platform;
+const arch = (process.env.LJB_LEMMINX_ARCH || process.arch) === 'arm64' ? 'arm64' : 'x64';
 
 if (platform !== 'darwin') {
   console.log(

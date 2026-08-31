@@ -91,6 +91,7 @@ export const useDialog = () => {
     if (type === 'calendar') return getPluginDialog('calendar');
     if (type === 'kanripoImport') return getPluginDialog('kanripoImport');
     if (type === 'daozangImport') return getPluginDialog('daozangImport');
+    if (type === 'cbetaImport') return getPluginDialog('cbetaImport');
     if (type === 'chineseAssets') return ChineseAssetsDialog;
   };
 };

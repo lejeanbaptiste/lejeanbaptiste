@@ -41,6 +41,8 @@ export type DialogType =
   | 'xpathSearch'
   | 'kanripoImport'
   | 'daozangImport'
+  | 'cbetaImport'
+  | 'bdrcImport'
   | 'wikisourceImport';
 
 export interface SimpleDialogMessageProps {

@@ -30,6 +30,7 @@ export type DialogType =
   | 'import'
   | 'kanripoImport'
   | 'daozangImport'
+  | 'bdrcImport'
   | 'wikisourceImport'
   | 'privacy'
   | 'signIn'
@@ -61,7 +62,17 @@ export interface KanripoImportDialogProps extends IDialog {
   initialJuan?: string;
 }
 
-export type DialogProps = SimpleDialogProps & ChineseAssetsDialogProps & KanripoImportDialogProps;
+/** Pre-fills the BDRC import dialog from a browser-extension order — see
+ * useProjectMenu's onBdrcImportOrder handler. `initialRef` is an etext id,
+ * a `VE…` volume id, or a library.bdrc.io reader URL. */
+export interface BdrcImportDialogProps extends IDialog {
+  initialRef?: string;
+}
+
+export type DialogProps = SimpleDialogProps &
+  ChineseAssetsDialogProps &
+  KanripoImportDialogProps &
+  BdrcImportDialogProps;
 
 export interface DialogBarProps {
   dismissed?: boolean;

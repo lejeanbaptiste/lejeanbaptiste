@@ -6,6 +6,7 @@ import { execFile, spawn } from 'node:child_process';
 import fs from 'node:fs';
 import path from 'node:path';
 import { promisify } from 'node:util';
+import { app } from 'electron';
 import {
   getCachedPluginHostSnapshot,
   isPluginEnabledInMain,
@@ -249,6 +250,14 @@ const pythonTimeoutMs = (pluginId: string, payload: Record<string, unknown>): nu
   ) {
     return DAOZANG_SYNC_TIMEOUT_MS;
   }
+  // CBETA: `sync`/`install_from_source` clone xml-p5; the first `search` builds
+  // the catalog index by scanning the whole checkout.
+  if (
+    pluginId === 'cbeta-import' &&
+    (payload.op === 'sync' || payload.op === 'install_from_source' || payload.op === 'search')
+  ) {
+    return DAOZANG_SYNC_TIMEOUT_MS;
+  }
   return PYTHON_TIMEOUT_MS;
 };
 
@@ -440,6 +449,13 @@ const pythonEnvForPlugin = (pluginId: string): NodeJS.ProcessEnv => {
   const installRoot = pluginInstallRootForPython(pluginId);
   if (installRoot) {
     env.LJB_PLUGIN_INSTALL_PATH = installRoot;
+  }
+  // Stable per-plugin cache dir for large on-demand data (e.g. cbeta-import's
+  // xml-p5 checkout). Kept out of the install tree so it survives reinstalls.
+  try {
+    env.LJB_PLUGIN_CACHE_PATH = path.join(app.getPath('userData'), 'plugin-cache', pluginId);
+  } catch {
+    // app not ready / non-electron context — Python falls back to its data dir
   }
   const extras: string[] = [];
   const devRoot = devRootCache.get(pluginId);

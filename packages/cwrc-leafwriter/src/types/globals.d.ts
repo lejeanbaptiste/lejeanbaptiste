@@ -610,6 +610,14 @@ declare global {
         loc?: string;
       }) => void,
     ) => () => void;
+    onBdrcImportOrder?: (
+      callback: (order: {
+        action: string;
+        url: string;
+        etext_id: string;
+        scope?: 'volume';
+      }) => void,
+    ) => () => void;
     kanripoFetchParallelUrl?: (options: {
       url: string;
       section?: string;
@@ -649,6 +657,30 @@ declare global {
     daozangReadText?: (
       relPath: string,
     ) => Promise<{ text: string; rel_path: string; path: string }>;
+    bdrcInspect?: (input: string) => Promise<{
+      utId: string;
+      title: string;
+      titleLang?: string;
+      access: string | null;
+      status: string | null;
+      restricted: boolean;
+      workId: string | null;
+      instanceId: string | null;
+      imageGroupId: string | null;
+      paginated: boolean;
+    }>;
+    bdrcImport?: (
+      input: string,
+      opts?: { windowSize?: number; forceRefresh?: boolean },
+    ) => Promise<{
+      restricted: boolean;
+      warnings: string[];
+      meta: { utId: string; instanceId?: string; workId?: string; volumeId?: string };
+      bodyXml: string;
+      headerFields: Record<string, unknown>;
+      pbCount: number;
+      structure: 'flat' | 'outline';
+    }>;
     onPluginPythonProgress?: (
       pluginId: string,
       callback: (progress: import('../autoTagging/dates').SanmiaoChunkProgressEvent) => void,

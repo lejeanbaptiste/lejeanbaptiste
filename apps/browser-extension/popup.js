@@ -13,6 +13,7 @@ const siteKind = (href) => {
     const url = new URL(href);
     if (/(^|\.)wikisource\.org$/i.test(url.hostname)) return 'wikisource';
     if (/(^|\.)kanripo\.org$/i.test(url.hostname)) return 'kanripo';
+    if (/(^|\.)bdrc\.io$/i.test(url.hostname)) return 'bdrc';
   } catch {
     // ignore
   }
@@ -23,12 +24,18 @@ const introFor = (kind) => {
   if (kind === 'kanripo') {
     return 'Import this Kanripo work or juan into Le Jean-Baptiste. A juan URL (e.g. #KR1a0030_001) imports one 卷; a work id alone imports the full GitHub edition.';
   }
+  if (kind === 'bdrc') {
+    return 'Import this BDRC etext volume into Le Jean-Baptiste. One import pulls the whole volume, with a page break per folio.';
+  }
   return 'Import this Wikisource page into Le Jean-Baptiste. A chapter sends one file; a work root sends every chapter or juan.';
 };
 
 const explainerFor = (kind) => {
   if (kind === 'kanripo') {
     return 'LJB must be running with a project open. The extension only names the KR id and juan; LJB fetches text and metadata. Confirm scope in the import dialog.';
+  }
+  if (kind === 'bdrc') {
+    return 'LJB must be running with a project open. The extension only names the etext volume; LJB fetches text and metadata from the BDRC Public Data Interface. Confirm in the import dialog.';
   }
   return 'LJB must be running with a project open. The extension only names the page; LJB fetches text and Wikidata metadata. If several editions exist, LJB asks which tree to import.';
 };
@@ -54,20 +61,21 @@ document.getElementById('import').addEventListener('click', async () => {
   }
   const kind = siteKind(tab.url);
   if (!kind) {
-    setStatus('Open a Wikisource or Kanripo page first.');
+    setStatus('Open a Wikisource, Kanripo, or BDRC page first.');
     return;
   }
 
-  const messageType = kind === 'kanripo' ? 'ljb-kanripo-page-info' : 'ljb-page-info';
+  const messageType =
+    kind === 'kanripo'
+      ? 'ljb-kanripo-page-info'
+      : kind === 'bdrc'
+        ? 'ljb-bdrc-page-info'
+        : 'ljb-page-info';
   let info;
   try {
     info = await chrome.tabs.sendMessage(tab.id, { type: messageType });
   } catch {
-    setStatus(
-      kind === 'kanripo'
-        ? 'Open a Kanripo text (reload after installing the extension).'
-        : 'Open a Wikisource page (reload after installing the extension).',
-    );
+    setStatus(`Open a ${kind} page (reload after installing the extension).`);
     return;
   }
   if (!info?.ok) {
@@ -75,25 +83,35 @@ document.getElementById('import').addEventListener('click', async () => {
     return;
   }
 
-  const order =
-    kind === 'kanripo'
-      ? {
-          v: 1,
-          action: 'import-kanripo',
-          kr_id: info.kr_id,
-          juan: info.juan,
-          loc: info.loc,
-          scope: info.scope,
-          url: info.url,
-        }
-      : {
-          v: 1,
-          action: 'import-wikisource',
-          wiki: info.wiki,
-          title: info.title,
-          url: info.url,
-          scope: info.scope,
-        };
+  let order;
+  if (kind === 'kanripo') {
+    order = {
+      v: 1,
+      action: 'import-kanripo',
+      kr_id: info.kr_id,
+      juan: info.juan,
+      loc: info.loc,
+      scope: info.scope,
+      url: info.url,
+    };
+  } else if (kind === 'bdrc') {
+    order = {
+      v: 1,
+      action: 'import-bdrc',
+      etext_id: info.etext_id,
+      scope: info.scope,
+      url: info.url,
+    };
+  } else {
+    order = {
+      v: 1,
+      action: 'import-wikisource',
+      wiki: info.wiki,
+      title: info.title,
+      url: info.url,
+      scope: info.scope,
+    };
+  }
 
   setStatus('Contacting LJB…');
   chrome.runtime.sendNativeMessage(HOST, order, (response) => {

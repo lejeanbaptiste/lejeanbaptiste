@@ -423,6 +423,21 @@ export const useProjectMenu = () => {
     return () => unsubscribe();
   }, [isProjectReady, notifyViaSnackbar, openDialog, t]);
 
+  useEffect(() => {
+    if (!isDesktop() || !window.electronAPI?.onBdrcImportOrder) return;
+    const unsubscribe = window.electronAPI.onBdrcImportOrder((order) => {
+      if (!isProjectReady) {
+        notifyViaSnackbar(t('LWC.desktop.project.messages.open_project_first'));
+        return;
+      }
+      openDialog({
+        type: 'bdrcImport',
+        props: { initialRef: order.etext_id || order.url },
+      });
+    });
+    return () => unsubscribe();
+  }, [isProjectReady, notifyViaSnackbar, openDialog, t]);
+
   const onKeydownHandle = useCallback(
     async (event: KeyboardEvent) => {
       if (event.key === 'Escape') {

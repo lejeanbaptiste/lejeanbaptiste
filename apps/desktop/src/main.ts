@@ -1334,6 +1334,18 @@ function buildApplicationMenu() {
       click: () => sendMenuAction('daozang-import.open'),
     });
   }
+  if (isPluginEnabledInMain('cbeta-import')) {
+    pluginFileMenuItems.push({
+      label: 'Import from CBETA…',
+      click: () => sendMenuAction('cbeta-import.open'),
+    });
+  }
+  if (isPluginEnabledInMain('bdrc-import')) {
+    pluginFileMenuItems.push({
+      label: 'Import from BDRC…',
+      click: () => sendMenuAction('bdrc-import.open'),
+    });
+  }
 
   const pluginToolsMenuItems: Electron.MenuItemConstructorOptions[] = [];
 
@@ -2551,6 +2563,33 @@ const registerIpcHandlers = () => {
   ipcMain.handle('wikisource:inspect', async (_event, url: string) => {
     const mod = await loadWikisourceImport();
     return mod.inspectWikisourceImport(String(url || '').trim());
+  });
+
+  const loadBdrcImport = async () => {
+    const candidates = [
+      path.join(__dirname, 'bdrc', 'bdrcImport.mjs'),
+      path.resolve(__dirname, '../src/bdrc/bdrcImport.mjs'),
+    ];
+    const hit = candidates.find((candidate) => existsSync(candidate));
+    if (!hit) throw new Error('bdrcImport.mjs not found in the LJB desktop bundle.');
+    return import(pathToFileURL(hit).href) as Promise<{
+      inspectBdrcEtext: (input: string) => Promise<unknown>;
+      runBdrcImport: (input: string, opts?: { windowSize?: number }) => Promise<unknown>;
+    }>;
+  };
+
+  ipcMain.handle('bdrc:inspect', async (_event, input: string) => {
+    if (!isPluginEnabledInMain('bdrc-import'))
+      throw new Error('Enable the BDRC import plugin first.');
+    const mod = await loadBdrcImport();
+    return mod.inspectBdrcEtext(String(input || '').trim());
+  });
+
+  ipcMain.handle('bdrc:import', async (_event, input: string, opts?: { windowSize?: number }) => {
+    if (!isPluginEnabledInMain('bdrc-import'))
+      throw new Error('Enable the BDRC import plugin first.');
+    const mod = await loadBdrcImport();
+    return mod.runBdrcImport(String(input || '').trim(), opts ?? {});
   });
 
   ipcMain.handle(
