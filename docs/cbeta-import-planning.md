@@ -546,12 +546,16 @@ CBETA → project → CBETA (and TEI-ALL ⇄ CBETA) reversible:
 
 ## 10. Still open
 
-1. **`xml:id` collision in practice.** CBETA-internal collisions across a
-   multi-file work are handled — `juan_split.prefix_ids` namespaces file
-   2..N's `xml:id`s + pointers with the file stem before concat, and each
-   juan's `<back>` is pruned to its own anchors (`attach_apparatus`). Still
-   to confirm: does LJB's *own* entity/annotation id minting collide with
-   CBETA's kept ids? If it does, reserve an `ljb-` prefix on the LJB side.
+1. **`xml:id` collision** — *resolved.* Two independent checks:
+   - **CBETA-internal** (multi-file works): `juan_split.prefix_ids`
+     namespaces file 2..N's `xml:id`s + pointers with the file stem before
+     concat; each juan's `<back>` is pruned to its own anchors.
+   - **LJB vs CBETA**: LJB's editor ids are `tinymce.DOM.uniqueId('dom_')`
+     (`Writer.getUniqueId`), assigned to *every* element on import and
+     **stripped on save** — `cwrc2xml.ts` skips any `id` value starting
+     `dom_`. CBETA's `xml:id` is not in `RESERVED_ATTRIBUTES`, so it rides
+     through the `_attributes` blob and is re-emitted verbatim on export
+     (pointers stay valid). No `ljb-` prefix reservation needed.
 2. **`.sch` rules** — *resolved:* CBETA's Schematron has only 3 rules, all
    requiring `@spanTo` on `addSpan`/`damageSpan`/`delSpan`; nothing touches
    inserted markup, so `loosen_schema.loosen_sch` passes it through.

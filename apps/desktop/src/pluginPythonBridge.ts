@@ -450,8 +450,8 @@ const pythonEnvForPlugin = (pluginId: string): NodeJS.ProcessEnv => {
   if (installRoot) {
     env.LJB_PLUGIN_INSTALL_PATH = installRoot;
   }
-  // Stable per-plugin cache dir for large on-demand data (e.g. cbeta-import's
-  // xml-p5 checkout). Kept out of the install tree so it survives reinstalls.
+  // Scratch dir for rebuilt catalog indexes. The xml-p5 checkout lives under
+  // LJB_PLUGIN_INSTALL_PATH/data/corpus/ (cloned on plugin install / enable).
   try {
     env.LJB_PLUGIN_CACHE_PATH = path.join(app.getPath('userData'), 'plugin-cache', pluginId);
   } catch {
@@ -622,6 +622,15 @@ export const invokePluginPython = async (
   }
   const stdout = await runPluginPythonCli(pluginId, payload, onProgress);
   return parseSanmiaoStdout(stdout, payload);
+};
+
+/** Like invokePluginPython but for install-time setup (corpus sync before the plugin is enabled). */
+export const invokePluginPythonSetup = async (
+  pluginId: string,
+  payload: Record<string, unknown>,
+): Promise<unknown> => {
+  const stdout = await runPluginPythonCli(pluginId, payload);
+  return JSON.parse(stdout.trim());
 };
 
 export const clearPluginPythonCache = (pluginId?: string): void => {

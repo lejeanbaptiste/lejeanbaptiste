@@ -76,7 +76,7 @@ const chunkInlineXml = (text) =>
     .replace(/\r\n?/g, '\n')
     .split('\n')
     .map((line) => escapeXml(line))
-    .join('<lb/>');
+    .join('<lb/>\n');
 
 const pbXml = (chunk, facsAllowed) => {
   const n = chunk.pageLabel ? ` n="${escapeAttr(chunk.pageLabel)}"` : '';
@@ -99,7 +99,7 @@ const renderRuns = (chunks, facsAllowed) => {
   for (const chunk of chunks) {
     const pageKey = chunk.pageId ?? chunk.pageLabel ?? null;
     if (pageKey !== null && pageKey !== lastPageKey) {
-      out += pbXml(chunk, facsAllowed);
+      out += `${pbXml(chunk, facsAllowed)}\n`;
       lastPageKey = pageKey;
     }
     out += chunkInlineXml(chunk.text);
@@ -123,13 +123,15 @@ const renderWithOutline = (chunks, outline, facsAllowed) => {
     const slice = chunks.filter((c) => c.startChar >= node.startChar && c.startChar < nextStart);
     const head = node.label ? `<head>${escapeXml(node.label)}</head>` : '';
     const runs = renderRuns(slice, facsAllowed);
-    divs.push(`<div type="${escapeAttr(node.type || 'section')}">${head}<p>${runs}</p></div>`);
+    divs.push(
+      `<div type="${escapeAttr(node.type || 'section')}">${head}<p>\n${runs}\n</p></div>`,
+    );
   }
   // Chunks before the first outline node, if any, go in a leading untyped div.
   const preludeEnd = nodes[0].startChar;
   const prelude = chunks.filter((c) => c.startChar < preludeEnd);
   if (prelude.length > 0) {
-    divs.unshift(`<div><p>${renderRuns(prelude, facsAllowed)}</p></div>`);
+    divs.unshift(`<div><p>\n${renderRuns(prelude, facsAllowed)}\n</p></div>`);
   }
   return divs.join('');
 };
@@ -153,9 +155,9 @@ export function etextToBodyXml(extracted, options = {}) {
     structure = 'outline';
   } else {
     const runs = renderRuns(chunks, facsAllowed);
-    bodyXml = `<p>${runs}</p>`;
+    bodyXml = `<p>\n${runs}\n</p>`;
   }
-  if (!bodyXml || /^<p><\/p>$/.test(bodyXml)) bodyXml = '<p></p>';
+  if (!bodyXml || /^<p>\s*<\/p>$/.test(bodyXml)) bodyXml = '<p></p>';
 
   const pbCount = (bodyXml.match(/<pb\b/g) || []).length;
   const hasFacs = /<pb\b[^>]*\sfacs=/.test(bodyXml);

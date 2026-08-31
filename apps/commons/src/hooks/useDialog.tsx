@@ -88,6 +88,8 @@ export const useDialog = () => {
     if (type === 'chineseAssets') return ChineseAssetsDialog;
     if (type === 'kanripoImport') return pluginDialog('kanripoImport');
     if (type === 'daozangImport') return pluginDialog('daozangImport');
+    if (type === 'cbetaImport') return pluginDialog('cbetaImport');
+    if (type === 'bdrcImport') return pluginDialog('bdrcImport');
     if (type === 'wikisourceImport') {
       return WikisourceImportDialog as ComponentType<DialogProps>;
     }

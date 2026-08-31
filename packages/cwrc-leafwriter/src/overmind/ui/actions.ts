@@ -11,6 +11,7 @@ import type { DateReviewRecalculate } from '../../autoTagging/batchHolder';
 import { isAiUiFeatureEnabled } from '../../autoTagging/aiUiFeatures';
 import type { Suggestion } from '../../autoTagging/types';
 import i18n, { Locales, localesSchema } from '../../i18n';
+import { shouldOpenTeiInSourceMode } from '../../../../../apps/commons/src/desktop/teiMilestoneHeuristics';
 import type { ContextMenuState, NotificationProps, PaletteMode, PanelId, Side } from '../../types';
 import { MARKUP_TREE_SYNC_MODE_STORAGE_KEY, type EditorViewMode } from './state';
 import { checkWellFormedness } from '../../utilities/checkWellFormedness';
@@ -590,6 +591,22 @@ export const clearSourcePendingCursorOffset = ({ state }: Context) => {
   state.ui.sourcePendingCursorOffset = null;
 };
 
+/** Load XML in Source mode only — skips the visual editor conversion. */
+export const openDocumentInSourceMode = (
+  { state, actions }: Context,
+  payload: { content: string; filePath?: string },
+) => {
+  const { content, filePath } = payload;
+  if (filePath) actions.document.setDocumentUrl(filePath);
+  actions.document.setDocumentXml(content);
+  state.ui.sourceOriginalContent = content;
+  state.ui.sourceCurrentContent = content;
+  state.ui.sourcePendingCursorOffset = null;
+  state.ui.sourceVisualOutOfSync = true;
+  actions.ui.setEditorViewMode('source');
+  actions.document.setLoaded(true);
+};
+
 export const enterSourceMode = async ({ state, actions }: Context) => {
   if (!state.editor.enableXmlEditing) return;
   const visualCaret = getVisualCaretForSourceSync();
@@ -801,6 +818,15 @@ export const exitSourceMode = async ({ state, actions }: Context): Promise<boole
 
   // Re-read after possible discard/revert so visual gets the live Source buffer.
   const contentToLoad = state.ui.sourceCurrentContent;
+
+  if (shouldOpenTeiInSourceMode(contentToLoad, state.document.url)) {
+    window.writer?.dialogManager?.show('message', {
+      title: 'Visual mode unavailable',
+      msg: 'This document has too many page and line breaks for the visual editor. Continue editing in Source mode.',
+      type: 'info',
+    });
+    return false;
+  }
 
   // Source edits do not refresh the hidden WYSIWYG tree; reload so the markup
   // panel and visual mode match the changed XML buffer.

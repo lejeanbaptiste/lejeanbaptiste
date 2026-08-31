@@ -22,6 +22,9 @@ export interface IDialog extends Partial<Omit<MuiDialogProps, 'onClose'>> {
   type?: DialogType;
   initialUrl?: string;
   importScope?: 'page' | 'work';
+  /** Corpus-import dialogs: run immediately and close on success when opened from
+   * the browser extension, unless the import needs a choice (e.g. edition tree). */
+  autoRun?: boolean;
 }
 
 export type DialogType =
@@ -30,6 +33,7 @@ export type DialogType =
   | 'import'
   | 'kanripoImport'
   | 'daozangImport'
+  | 'cbetaImport'
   | 'bdrcImport'
   | 'wikisourceImport'
   | 'privacy'
@@ -67,6 +71,7 @@ export interface KanripoImportDialogProps extends IDialog {
  * a `VE…` volume id, or a library.bdrc.io reader URL. */
 export interface BdrcImportDialogProps extends IDialog {
   initialRef?: string;
+  autoRun?: boolean;
 }
 
 export type DialogProps = SimpleDialogProps &

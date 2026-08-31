@@ -44,15 +44,18 @@ const platform = process.env.LJB_PYTHON_PLATFORM || process.platform;
 const arch = process.env.LJB_PYTHON_ARCH || process.arch;
 
 // kanripo depends on PyGithub, whose `pyjwt[crypto]` extra pulls in
-// cryptography. cryptography publishes no win_arm64 wheel (win_amd64 is its
-// only Windows tag), so on Windows arm64 pip falls back to a Rust + OpenSSL
-// source build that the runner has no toolchain for. That extra only provides
-// the RS256/ES256 JWT algorithms used for GitHub *App* auth; kanripo instead
-// authenticates with a plain token (`Github(token)`), so nothing it imports or
-// calls needs cryptography. On that one target we therefore install the same
-// dependency tree with the extra left out. PyGithub's other native dependency,
-// pynacl, does ship a win_arm64 wheel and installs normally.
-const needsCryptoFreeKanripo = platform === 'win32' && arch === 'arm64';
+// cryptography, and cryptography does not publish a wheel for every target we
+// package for: on Windows its only tag is win_amd64, and on macOS its only tag
+// is macosx_11_0_arm64. For the targets below pip therefore falls back to a
+// Rust + OpenSSL source build that the runner has no toolchain for. That extra
+// only provides the RS256/ES256 JWT algorithms used for GitHub *App* auth;
+// kanripo instead authenticates with a plain token (`Github(token)`), so
+// nothing it imports or calls needs cryptography. On those targets we install
+// the same dependency tree with the extra left out. PyGithub's other native
+// dependency, pynacl, ships a win_arm64 wheel and a macOS universal2 wheel, so
+// it installs normally everywhere.
+const TARGETS_WITHOUT_CRYPTOGRAPHY_WHEEL = new Set(['win32-arm64', 'darwin-x64']);
+const needsCryptoFreeKanripo = TARGETS_WITHOUT_CRYPTOGRAPHY_WHEEL.has(`${platform}-${arch}`);
 
 /** PyGithub's declared requirements, with `pyjwt[crypto]` reduced to `pyjwt`. */
 const PYGITHUB_DEPS_WITHOUT_CRYPTO = [
@@ -132,7 +135,7 @@ console.log(`[python-runtime] Installing ${KANRIPO_API_SPEC}`);
 if (needsCryptoFreeKanripo) {
   // Install kanripo and PyGithub without letting pip resolve `pyjwt[crypto]`,
   // then supply PyGithub's requirements explicitly minus that extra.
-  console.log('[python-runtime] win32-arm64: installing without the pyjwt[crypto] extra');
+  console.log(`[python-runtime] ${platform}-${arch}: installing without the pyjwt[crypto] extra`);
   pipInstall([KANRIPO_API_SPEC, 'PyGithub'], ['--no-deps']);
   pipInstall(PYGITHUB_DEPS_WITHOUT_CRYPTO);
 } else {

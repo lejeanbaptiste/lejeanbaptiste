@@ -40,7 +40,12 @@ import {
 import { refreshGraphicsInBody } from '../schema/mappings/utitlities';
 import { initEditorZoom } from './editorZoom';
 import { DEFAULT_EDITOR_FONT_SIZE } from '../../overmind/editor/state';
-import { isChineseLanguageCode, isJapaneseLanguageCode } from '../../utilities/languageCodes';
+import {
+  isChineseLanguageCode,
+  isJapaneseLanguageCode,
+  isTibetanLanguageCode,
+} from '../../utilities/languageCodes';
+import { TIBETAN_EDITOR_FONT_FAMILY } from '../../utilities/tibetanEditorFonts';
 
 declare global {
   interface Window {
@@ -61,6 +66,25 @@ const writerAssetUrl = (baseUrl: string, assetPath: string): string => {
   const root = baseUrl.replace(/\/+$/, '');
   const path = assetPath.startsWith('/') ? assetPath : `/${assetPath}`;
   return `${root}${path}`;
+};
+
+const syncProjectLanguageToEditorBody = (editor: LeafWriterEditor) => {
+  const editorBody = editor.getBody();
+  if (!editorBody) return;
+  const apply = (language: string | null | undefined) => {
+    editorBody.classList.toggle('project-language-chinese', isChineseLanguageCode(language));
+    editorBody.classList.toggle('project-language-japanese', isJapaneseLanguageCode(language));
+    const tibetan = isTibetanLanguageCode(language);
+    editorBody.classList.toggle('project-language-tibetan', tibetan);
+    if (tibetan) {
+      editorBody.setAttribute('lang', 'bo');
+      editorBody.style.fontFamily = TIBETAN_EDITOR_FONT_FAMILY;
+    } else {
+      editorBody.removeAttribute('lang');
+      editorBody.style.removeProperty('font-family');
+    }
+  };
+  void window.__leafWriterProject?.getProjectSourceLanguage?.().then(apply);
 };
 
 export const tinymceWrapperInit = function ({
@@ -756,15 +780,7 @@ export const tinymceWrapperInit = function ({
       editor.lastKeyPress = undefined; // the last key the user pressed
 
       editor.on('init', () => {
-        const editorBody = editor.getBody();
-        const projectLanguage = window.__leafWriterProject?.getProjectSourceLanguage?.();
-        void projectLanguage?.then((language) => {
-          editorBody.classList.toggle('project-language-chinese', isChineseLanguageCode(language));
-          editorBody.classList.toggle(
-            'project-language-japanese',
-            isJapaneseLanguageCode(language),
-          );
-        });
+        syncProjectLanguageToEditorBody(editor);
 
         if (writer.isReadOnly === true) {
           editor.mode.set('readonly');
@@ -1094,6 +1110,7 @@ export const tinymceWrapperInit = function ({
 
   writer.event('documentLoaded').subscribe(() => {
     if (!writer.editor) return;
+    syncProjectLanguageToEditorBody(writer.editor);
     const { overmindState, overmindActions } = writer;
 
     const documentFilePath =

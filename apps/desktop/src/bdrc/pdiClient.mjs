@@ -222,6 +222,8 @@ export async function fetchChunks(utId, opts = {}) {
   const chunks = new Map();
   /** @type {Map<string, { id: string, seqNum: number|null, startChar: number, endChar: number }>} */
   const pages = new Map();
+  /** most-specific `MW…_NNNN_NN` instance-part id → earliest startChar seen */
+  const partStart = new Map();
   let imageGroupId = null;
 
   let start = 0;
@@ -261,6 +263,18 @@ export async function fetchChunks(utId, opts = {}) {
             endChar: e,
           });
         }
+        // Each page carries `tmp:inInstancePart` for every enclosing part
+        // (whole text, section, sub-section). The most specific one — the
+        // deepest `_N` — is the bam po / fascicle boundary we split on.
+        if (s != null) {
+          const deepest = idx
+            .all(subj, 'inInstancePart')
+            .map((v) => bareId(v.o))
+            .filter((id) => /_\d+(_\d+)+$/.test(id))
+            .sort((a, b) => a.split('_').length - b.split('_').length || a.localeCompare(b))
+            .pop();
+          if (deepest && (partStart.get(deepest) ?? Infinity) > s) partStart.set(deepest, s);
+        }
       }
     }
 
@@ -268,8 +282,16 @@ export async function fetchChunks(utId, opts = {}) {
     start = advanced;
   }
 
+  const parts = [...partStart.entries()]
+    .map(([id, s]) => ({ id, startChar: s, label: id.split('_').slice(1).join('.') }))
+    .sort((a, b) => a.startChar - b.startChar)
+    .map((p, i) => ({ ...p, n: i + 1 }));
+  // The first part absorbs any un-tagged prelude (volume title, homage).
+  if (parts.length > 0) parts[0] = { ...parts[0], startChar: 0 };
+
   return {
     imageGroupId,
+    parts,
     chunks: [...chunks.values()].sort((a, b) => a.startChar - b.startChar),
     pages: [...pages.values()].sort(
       (a, b) => a.startChar - b.startChar || (a.seqNum ?? 0) - (b.seqNum ?? 0),
@@ -344,12 +366,19 @@ export async function importEtext(utId, opts = {}) {
   const revision = await fetchRevision(utId, opts);
   if (opts.cacheDir && !opts.forceRefresh) {
     const hit = readCache(opts.cacheDir, utId, revision);
-    if (hit)
+    // Entries written before bam-po `parts` were cached lack split boundaries.
+    if (hit && Array.isArray(hit.parts)) {
       return {
         ...hit,
         warnings: [...(hit.warnings ?? []), 'served from local cache'],
         fromCache: true,
       };
+    }
+    if (hit) {
+      warnings.push(
+        'ignoring stale local cache (missing bam po boundaries) — re-fetching from BDRC',
+      );
+    }
   }
 
   const base = await fetchEtextBase(utId, opts);
@@ -374,6 +403,25 @@ export async function importEtext(utId, opts = {}) {
     queryNames: ['Etext_base', 'chunkContext'],
   };
 
+  // A real BDRC transcription carries at least an access tier or an instance
+  // link. A near-empty Etext_base means the id resolves to nothing usable —
+  // typically an OpenPecha / pecha.org volume, which BDRC serves differently
+  // and this importer can't fetch (planning §9).
+  if (!base.access && !base.etextInstanceId && !base.title) {
+    warnings.push(
+      'no etext metadata for this id — the volume has no downloadable transcription ' +
+        '(BDRC serves OpenPecha / pecha.org texts differently)',
+    );
+    const stub = {
+      extracted: { meta, chunks: [], outline: [] },
+      restricted: true,
+      unsupported: true,
+      warnings,
+      revision,
+    };
+    return { ...stub, fromCache: false };
+  }
+
   if (base.status && base.status !== 'StatusReleased') {
     warnings.push(`etext status is ${base.status}, not StatusReleased`);
   }
@@ -392,7 +440,7 @@ export async function importEtext(utId, opts = {}) {
     return { ...stub, fromCache: false };
   }
 
-  const { chunks, pages, imageGroupId } = await fetchChunks(utId, opts);
+  const { chunks, pages, imageGroupId, parts } = await fetchChunks(utId, opts);
   if (chunks.length === 0) warnings.push('chunkContext returned no chunks');
   if (pages.length === 0)
     warnings.push('no page slices — pagination will fall back to a single <pb>');
@@ -409,10 +457,51 @@ export async function importEtext(utId, opts = {}) {
 
   const result = {
     extracted: { meta, chunks: aligned, outline: [] },
+    parts: parts ?? [],
     restricted: false,
     warnings,
     revision,
   };
   if (opts.cacheDir) writeCache(opts.cacheDir, utId, revision, result);
   return { ...result, fromCache: false };
+}
+
+/** Fascicle-level UT ids end with `_<parent>_<n>` (e.g. `…_0001_3`), not the combined `_0001`. */
+const isFascicleEtextId = (utId) => /_\d+_\d+$/.test(String(utId ?? ''));
+
+const fascicleSeq = (utId) => {
+  const m = String(utId ?? '').match(/_(\d+)$/);
+  return m ? Number.parseInt(m[1], 10) : 0;
+};
+
+/**
+ * List the per–bam po etext ids BDRC publishes for one scanned volume (`VE…`).
+ * Kangyur volumes expose both one combined UT and separate fascicle UTs; prefer
+ * the fascicles when there are ≥2.
+ * @param {string} veId  bare or prefixed `VE<n>_I<ig>`
+ * @returns {Promise<Array<{ utId: string, n: number, label: string, seqNum: number }>>}
+ */
+export async function fetchVolumeBampoEtexts(veId, opts = {}) {
+  const ve = bareId(veId);
+  const idx = indexTriples(await fetchGraphNt('Etext_base', { R_RES: `bdr:${ve}` }, opts));
+  const resource = `${BDR}${ve}`;
+  const utIds = idx
+    .all(resource, 'volumeHasEtext')
+    .map((v) => bareId(v.o))
+    .filter(isFascicleEtextId);
+  if (utIds.length < 2) return [];
+
+  const entries = await Promise.all(
+    utIds.map(async (utId) => {
+      const base = await fetchEtextBase(utId, opts);
+      const seqNum = fascicleSeq(utId);
+      return {
+        utId,
+        n: seqNum,
+        seqNum,
+        label: base.title || utId,
+      };
+    }),
+  );
+  return entries.sort((a, b) => a.seqNum - b.seqNum || a.utId.localeCompare(b.utId));
 }

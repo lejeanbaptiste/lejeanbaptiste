@@ -3,6 +3,7 @@ import { execFileSync } from 'node:child_process';
 import fs from 'node:fs';
 import fsp from 'node:fs/promises';
 import path from 'node:path';
+import { ensureCbetaCorpusInBackground } from '../cbetaCorpus';
 import { packPath, packsRoot } from '../authorityPacks';
 import { loadProjectFile, writeProjectConfig } from '../projectFile';
 import { toLocalFileUrl } from '../../../commons/src/desktop/localFileUrl';
@@ -265,6 +266,7 @@ export async function setPluginEnabled(
   if (enabled) {
     await ensurePluginBundledAssets(plugin);
     await applyPluginContributions(plugin);
+    if (pluginId === 'cbeta-import') ensureCbetaCorpusInBackground();
   }
 
   return getPluginHostSnapshot();
@@ -317,6 +319,7 @@ export async function installPluginFromDirectory(sourceDir: string): Promise<Plu
     manifest,
   };
   await ensurePluginBundledAssets(installed);
+  if (manifest.id === 'cbeta-import') ensureCbetaCorpusInBackground();
   return getPluginHostSnapshot();
 }
 
@@ -478,6 +481,7 @@ export async function syncEnabledPluginContributions(): Promise<void> {
     if (plugin.enabled && !plugin.manifestError) {
       await ensurePluginBundledAssets(plugin);
       await applyPluginContributions(plugin);
+      if (plugin.id === 'cbeta-import') ensureCbetaCorpusInBackground();
     }
   }
 }

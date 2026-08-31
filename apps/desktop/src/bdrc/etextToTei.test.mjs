@@ -56,7 +56,7 @@ test('flat: one pb per folio, lb per line break, punctuation verbatim', () => {
   assert.equal(hasFacs, true);
   assert.match(bodyXml, /<pb n="1a" facs="[^"]+0001\.jpg[^"]*"\/>/);
   assert.match(bodyXml, /<pb n="1b" facs="[^"]+0002\.jpg[^"]*"\/>/);
-  assert.match(bodyXml, new RegExp(`${BO_LINE_1}<lb/>${BO_LINE_2}`));
+  assert.match(bodyXml, new RegExp(`${BO_LINE_1}<lb/>\\n${BO_LINE_2}`));
   assert.ok(bodyXml.includes('།'), 'shad kept');
   assert.ok(bodyXml.includes('་'), 'tsheg kept');
   assertWellFormedBody(bodyXml);
@@ -80,7 +80,7 @@ test('consecutive chunks on the same folio share one pb', () => {
   ];
   const { pbCount, bodyXml } = etextToBodyXml(extract);
   assert.equal(pbCount, 2);
-  assert.match(bodyXml, /<p><pb n="1a"\/>ཀཁ<pb n="1b"\/>ག<\/p>/);
+  assert.match(bodyXml, /<p>\s*<pb n="1a"\/>\s*ཀཁ\s*<pb n="1b"\/>\s*ག\s*<\/p>/s);
 });
 
 test('xml special characters in the transcription are escaped', () => {
@@ -102,7 +102,7 @@ test('empty chunks are dropped and an empty extract yields <p></p>', () => {
       { index: 1, text: 'ཀ', pageLabel: '1a', pageId: 'p1' },
     ],
   });
-  assert.match(bodyXml, /<p><pb n="1a"\/>ཀ<\/p>/);
+  assert.match(bodyXml, /<p>\s*<pb n="1a"\/>\s*ཀ\s*<\/p>/s);
 });
 
 test('chunks are ordered by index, not array position', () => {
@@ -114,7 +114,7 @@ test('chunks are ordered by index, not array position', () => {
       { index: 1, text: 'B', pageLabel: '1a', pageId: 'p1' },
     ],
   });
-  assert.match(bodyXml, /<pb n="1a"\/>AB<pb n="2a"\/>C/);
+  assert.match(bodyXml, /<pb n="1a"\/>\s*AB\s*<pb n="2a"\/>\s*C/s);
 });
 
 test('outline offsets cut the body into typed divs; forceFlat overrides', () => {
@@ -130,14 +130,14 @@ test('outline offsets cut the body into typed divs; forceFlat overrides', () => 
   ];
   const { bodyXml, structure } = etextToBodyXml(extract);
   assert.equal(structure, 'outline');
-  assert.match(bodyXml, /<div><p><pb n="1a"\/>front<\/p><\/div>/);
+  assert.match(bodyXml, /<div><p>\s*<pb n="1a"\/>\s*front\s*<\/p><\/div>/s);
   assert.match(
     bodyXml,
-    /<div type="chapter"><head>le’u dang po<\/head><p><pb n="1b"\/>ch-one<\/p><\/div>/,
+    /<div type="chapter"><head>le’u dang po<\/head><p>\s*<pb n="1b"\/>\s*ch-one\s*<\/p><\/div>/s,
   );
   assert.match(
     bodyXml,
-    /<div type="chapter"><head>le’u gnyis pa<\/head><p><pb n="2a"\/>ch-two<\/p><\/div>/,
+    /<div type="chapter"><head>le’u gnyis pa<\/head><p>\s*<pb n="2a"\/>\s*ch-two\s*<\/p><\/div>/s,
   );
   assertWellFormedBody(bodyXml);
 

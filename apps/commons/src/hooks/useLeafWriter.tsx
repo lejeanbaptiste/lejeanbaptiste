@@ -11,6 +11,7 @@ import {
   stripTeiHeaderForVisualEditor,
 } from '@src/desktop/teiHeaderXml';
 import { separateBlockElements } from '@src/desktop/xmlBlockSpacing';
+import { shouldOpenTeiInSourceMode } from '@src/desktop/teiMilestoneHeuristics';
 import { ENABLED_CATALOG_IDS, getEnabledCatalogSchemas } from '@src/desktop/schemaCatalog';
 import { unlockAchievement } from '@src/desktop/achievements/engine';
 import {
@@ -399,6 +400,21 @@ export const useLeafWriter = () => {
 
     if (isDesktop()) {
       window.__desktopStoredDocumentXml = content;
+    }
+
+    if (shouldOpenTeiInSourceMode(content, filePath)) {
+      window.writer.overmindActions?.document?.setDocumentUrl?.(filePath);
+      window.writer.overmindActions?.ui?.openDocumentInSourceMode?.({ content, filePath });
+      const applyDirty = () => {
+        window.writer?.overmindActions?.editor?.setContentHasChanged?.(restoreDirty);
+        window.writer?.overmindActions?.project?.markTabDirty?.(restoreDirty);
+      };
+      applyDirty();
+      queueMicrotask(applyDirty);
+      window.writer.layoutManager?.resizeEditor?.();
+      window.writer.layoutManager?.resizeAll?.();
+      showDefaultEastPanel();
+      return true;
     }
 
     window.writer.overmindActions?.ui?.resetSourceEditor?.();

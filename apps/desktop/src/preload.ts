@@ -389,28 +389,67 @@ export interface ElectronAPI {
   daozangReadText?: (relPath: string) => Promise<{ text: string; rel_path: string; path: string }>;
   bdrcInspect?: (input: string) => Promise<{
     utId: string;
+    sourceId: string;
+    from: 'ut' | 've';
+    veId?: string | null;
     title: string;
     titleLang?: string;
     access: string | null;
     status: string | null;
     restricted: boolean;
+    unsupported: boolean;
     workId: string | null;
     instanceId: string | null;
     imageGroupId: string | null;
     paginated: boolean;
+    bampoCount?: number;
   }>;
   bdrcImport?: (
     input: string,
-    opts?: { windowSize?: number; forceRefresh?: boolean },
+    opts?: { windowSize?: number; forceRefresh?: boolean; split?: boolean },
   ) => Promise<{
     restricted: boolean;
+    unsupported: boolean;
     warnings: string[];
+    fromCache: boolean;
+    split?: boolean;
+    partCount: number;
+    revision: string;
     meta: { utId: string; instanceId?: string; workId?: string; volumeId?: string };
-    bodyXml: string;
     headerFields: Record<string, unknown>;
-    pbCount: number;
-    structure: 'flat' | 'outline';
+    sections: {
+      n: number | null;
+      label: string;
+      bodyXml: string;
+      pbCount: number;
+      structure: 'flat' | 'outline';
+    }[];
   }>;
+  bdrcImportToProject?: (
+    input: string,
+    opts: {
+      projectRoot: string;
+      forceRefresh?: boolean;
+      split?: boolean;
+      windowSize?: number;
+    },
+  ) => Promise<{
+    restricted: boolean;
+    unsupported: boolean;
+    warnings: string[];
+    fromCache: boolean;
+    split?: boolean;
+    partCount: number;
+    meta: { utId: string; instanceId?: string; workId?: string };
+    written: string[];
+    pbCount: number;
+  }>;
+  cbetaCorpusStatus?: () => Promise<{
+    present: boolean;
+    path: string | null;
+    source: 'bundled' | 'legacy-cache' | 'none';
+  }>;
+  cbetaEnsureCorpus?: () => Promise<{ present: boolean; action?: string }>;
   onPluginPythonProgress?: (
     pluginId: string,
     callback: (
@@ -937,8 +976,19 @@ const electronAPI: ElectronAPI = {
   daozangResolveText: (relPath: string) => ipcRenderer.invoke('daozang:resolveText', relPath),
   daozangReadText: (relPath: string) => ipcRenderer.invoke('daozang:readText', relPath),
   bdrcInspect: (input: string) => ipcRenderer.invoke('bdrc:inspect', input),
-  bdrcImport: (input: string, opts?: { windowSize?: number; forceRefresh?: boolean }) =>
+  bdrcImport: (input: string, opts?: { windowSize?: number; forceRefresh?: boolean; split?: boolean }) =>
     ipcRenderer.invoke('bdrc:import', input, opts),
+  bdrcImportToProject: (
+    input: string,
+    opts: {
+      projectRoot: string;
+      forceRefresh?: boolean;
+      split?: boolean;
+      windowSize?: number;
+    },
+  ) => ipcRenderer.invoke('bdrc:importToProject', input, opts),
+  cbetaCorpusStatus: () => ipcRenderer.invoke('cbeta:corpusStatus'),
+  cbetaEnsureCorpus: () => ipcRenderer.invoke('cbeta:ensureCorpus'),
   onPluginPythonProgress: (pluginId, callback) => {
     const listener = (
       _event: Electron.IpcRendererEvent,

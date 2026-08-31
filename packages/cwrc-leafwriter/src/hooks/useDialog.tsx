@@ -92,6 +92,7 @@ export const useDialog = () => {
     if (type === 'kanripoImport') return getPluginDialog('kanripoImport');
     if (type === 'daozangImport') return getPluginDialog('daozangImport');
     if (type === 'cbetaImport') return getPluginDialog('cbetaImport');
+    if (type === 'bdrcImport') return getPluginDialog('bdrcImport');
     if (type === 'chineseAssets') return ChineseAssetsDialog;
   };
 };

@@ -50,6 +50,9 @@ interface InspectResult {
 export interface WikisourceImportDialogProps extends IDialog {
   initialUrl?: string;
   importScope?: 'page' | 'work';
+  /** Opened from the browser extension: import straight away and close, unless
+   * the work has multiple edition trees to choose from. */
+  autoRun?: boolean;
 }
 
 const joinPath = (...parts: string[]): string =>
@@ -57,6 +60,7 @@ const joinPath = (...parts: string[]): string =>
 
 export const WikisourceImportDialog = ({
   initialUrl = '',
+  autoRun = false,
   onClose,
   open = true,
 }: WikisourceImportDialogProps) => {
@@ -112,6 +116,19 @@ export const WikisourceImportDialog = ({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [initialUrl]);
 
+  // One-click path from the extension: once inspected, import and close — unless
+  // the user has to pick an edition tree.
+  const didAutoRun = useRef(false);
+  useEffect(() => {
+    if (!autoRun || !inspected || didAutoRun.current) return;
+    const needsTreeChoice = inspected.scope === 'work' && inspected.trees.length > 1;
+    if (needsTreeChoice) return;
+    didAutoRun.current = true;
+    void runImport();
+    // runImport is recreated each render but closes over the fresh `inspected`.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [autoRun, inspected]);
+
   const handleClose = () => {
     abortRef.current?.abort();
     onClose?.('close');
@@ -131,7 +148,9 @@ export const WikisourceImportDialog = ({
 
     const destDir = joinPath(rootPath, 'imported', 'wikisource', inspected.workTitle);
     const used = new Set<string>();
-    if (api.pathExists) {
+    // The extension one-click path skips the prompt — imports never overwrite
+    // (colliding names get a numeric suffix), so there's nothing to confirm.
+    if (!autoRun && api.pathExists) {
       const exists = await api.pathExists(destDir);
       if (exists) {
         const box = await api.showNativeMessageBox?.({

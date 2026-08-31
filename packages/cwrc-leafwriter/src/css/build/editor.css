@@ -24,6 +24,20 @@
   direction: rtl !important;
 }
 
+/* Tibetan (U+0F00–U+0FFF) needs an explicit font — the Latin stack has no
+   glyphs and the editor iframe doesn't fall back to a Tibetan system face.
+   `:lang(bo)` keys off the computed language (lang / xml:lang, inherited),
+   which is more reliable than an attribute selector against a namespaced attr.
+   Kailasa ships with macOS; the rest cover Linux/Windows and free fonts. */
+*:lang(bo),
+*[lang|='bo'],
+*[xml\:lang|='bo'],
+body.project-language-tibetan,
+body.project-language-tibetan *:not([_tag]):not([_tag]:before):not([_tag]:after) {
+  font-family: 'Noto Serif Tibetan', 'Noto Sans Tibetan', Kailasa, 'BabelStone Tibetan',
+    Jomolhari, Yagpo, 'DDC Uchen', 'Microsoft Himalaya', 'Tibetan Machine Uni', serif !important;
+}
+
 /* Override writer content skin: drop centered max-width column in Visual mode */
 body {
   margin: 8px !important;

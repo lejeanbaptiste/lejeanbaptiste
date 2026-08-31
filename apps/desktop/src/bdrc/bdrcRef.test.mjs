@@ -7,6 +7,7 @@ test('bare and prefixed UT ids pass through', () => {
   assert.deepEqual(parseBdrcRef('UT4CZ5369_I1KG9127_0000'), {
     utId: 'UT4CZ5369_I1KG9127_0000',
     from: 'ut',
+    sourceId: 'UT4CZ5369_I1KG9127_0000',
   });
   assert.equal(parseBdrcRef('bdr:UT4CZ5369_I1KG9127_0000').utId, 'UT4CZ5369_I1KG9127_0000');
   assert.equal(
@@ -15,22 +16,37 @@ test('bare and prefixed UT ids pass through', () => {
   );
 });
 
-test('a VE volume id is mapped to the paginated UT…_0000', () => {
+test('a VE volume id is mapped to the paginated UT…_0000, keeping the source id', () => {
   assert.deepEqual(parseBdrcRef('VE4CZ5369_I1KG9127'), {
     utId: 'UT4CZ5369_I1KG9127_0000',
     from: 've',
+    sourceId: 'VE4CZ5369_I1KG9127',
   });
 });
 
 test('a BUDA reader URL: openEtext=bdr:VE… is resolved', () => {
   const url =
     'https://library.bdrc.io/show/bdr:IE4CZ5369?scope=bdr:IE4CZ5369&openEtext=bdr:VE4CZ5369_I1KG9127&startChar=1&back=bdr%3AMW4CZ5369';
-  assert.deepEqual(parseBdrcRef(url), { utId: 'UT4CZ5369_I1KG9127_0000', from: 've' });
+  assert.deepEqual(parseBdrcRef(url), {
+    utId: 'UT4CZ5369_I1KG9127_0000',
+    from: 've',
+    sourceId: 'VE4CZ5369_I1KG9127',
+  });
+});
+
+test('an OpenPecha-style VE (VE + IE id) still derives a UT candidate', () => {
+  // Derivation is best-effort; the PDI layer detects the dead id and reports it.
+  const { utId, from, sourceId } = parseBdrcRef(
+    'https://library.bdrc.io/show/bdr:IE0OPIA3E40644?openEtext=bdr:VEIE0OPIA3E40644_I1PD95846',
+  );
+  assert.equal(from, 've');
+  assert.equal(sourceId, 'VEIE0OPIA3E40644_I1PD95846');
+  assert.equal(utId, 'UTIE0OPIA3E40644_I1PD95846_0000');
 });
 
 test('reader URL with openEtext=bdr:UT… keeps the UT', () => {
   const url = 'https://library.bdrc.io/show/bdr:IE1?openEtext=bdr:UT9_I9_0000&startChar=0';
-  assert.deepEqual(parseBdrcRef(url), { utId: 'UT9_I9_0000', from: 'ut' });
+  assert.deepEqual(parseBdrcRef(url), { utId: 'UT9_I9_0000', from: 'ut', sourceId: 'UT9_I9_0000' });
 });
 
 test('a work / instance ref is rejected with guidance', () => {

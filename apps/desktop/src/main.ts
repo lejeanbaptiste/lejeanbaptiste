@@ -205,6 +205,8 @@ import { getWikisourceModulePath, listWikisourceCatalog } from './wikisourcePara
 import { startBrowserImportBridge } from './browserBridge';
 import { searchKanripoWorks } from './kanripoWorks';
 import { daozangCacheRoot, daozangCorpusStatus, daozangTextPath } from './daozangCorpus';
+import { cbetaCorpusStatus, ensureCbetaCorpus } from './cbetaCorpus';
+import { importBdrcToProject } from './bdrc/bdrcProjectImport';
 import { searchDaozangWorks } from './daozangWorks';
 import {
   closeEntitySqliteReadRepositories,
@@ -2591,6 +2593,27 @@ const registerIpcHandlers = () => {
     const mod = await loadBdrcImport();
     return mod.runBdrcImport(String(input || '').trim(), opts ?? {});
   });
+
+  ipcMain.handle(
+    'bdrc:importToProject',
+    async (
+      _event,
+      input: string,
+      opts: {
+        projectRoot: string;
+        forceRefresh?: boolean;
+        split?: boolean;
+        windowSize?: number;
+      },
+    ) => {
+      if (!isPluginEnabledInMain('bdrc-import'))
+        throw new Error('Enable the BDRC import plugin first.');
+      return importBdrcToProject(String(input || '').trim(), opts);
+    },
+  );
+
+  ipcMain.handle('cbeta:corpusStatus', () => cbetaCorpusStatus());
+  ipcMain.handle('cbeta:ensureCorpus', () => ensureCbetaCorpus());
 
   ipcMain.handle(
     'wikisource:fetchPage',

@@ -92,6 +92,7 @@ export const CbetaImportDialog = ({ onClose, open = false }: CbetaImportDialogPr
   const [selected, setSelected] = useState<CbetaWorkHit | null>(null);
   const [corpus, setCorpus] = useState<CbetaCorpusStatus | null>(null);
   const [busy, setBusy] = useState(false);
+  const [syncing, setSyncing] = useState(false);
   const [status, setStatus] = useState('');
   const [error, setError] = useState<string | null>(null);
 
@@ -124,16 +125,88 @@ export const CbetaImportDialog = ({ onClose, open = false }: CbetaImportDialogPr
 
   useEffect(() => {
     if (!open) return;
-    void refreshStatus().then((info) => {
-      if (info?.present) void search('');
+    void refreshStatus().then(async (info) => {
+      if (info?.present) {
+        void search('');
+        return;
+      }
+      setSyncing(true);
+      setStatus('Installing the CBETA corpus from GitHub (~1 GB, can take several minutes)…');
+      setError(null);
+      try {
+        await window.electronAPI?.cbetaEnsureCorpus?.();
+        const next = await refreshStatus();
+        if (next?.present) {
+          setStatus('Corpus ready.');
+          void search('');
+        }
+      } catch (e) {
+        setError(e instanceof Error ? e.message : String(e));
+        setStatus('');
+      } finally {
+        setSyncing(false);
+      }
     });
-  }, [open, refreshStatus, search]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [open]);
 
   useEffect(() => {
     if (!open || !corpus?.present) return;
     const h = window.setTimeout(() => void search(query), 200);
     return () => window.clearTimeout(h);
   }, [open, query, search, corpus?.present]);
+
+  const runSync = async (opts?: { force?: boolean }) => {
+    setSyncing(true);
+    setError(null);
+    setStatus('Cloning the CBETA corpus from GitHub (~1 GB, can take several minutes)…');
+    try {
+      if (!opts?.force && window.electronAPI?.cbetaEnsureCorpus) {
+        await window.electronAPI.cbetaEnsureCorpus();
+      } else {
+        await invokePython<{ action?: string; commit?: string }>({
+          op: 'sync',
+          force: opts?.force ?? false,
+        });
+      }
+      const info = await refreshStatus();
+      setStatus(
+        info?.present
+          ? `Corpus ready${info.commit ? ` (${info.commit.slice(0, 12)})` : ''}.`
+          : 'Corpus download did not complete.',
+      );
+      if (info?.present) void search(query);
+    } catch (e) {
+      setError(e instanceof Error ? e.message : String(e));
+      setStatus('');
+    } finally {
+      setSyncing(false);
+    }
+  };
+
+  const runInstallFromFolder = async () => {
+    const pick = window.electronAPI?.pluginsPickInstallFolder;
+    if (!pick) {
+      setError('Folder picker is only available in the desktop app.');
+      return;
+    }
+    const dir = await pick();
+    if (!dir) return;
+    setSyncing(true);
+    setError(null);
+    setStatus(`Installing corpus from ${dir}…`);
+    try {
+      await invokePython({ op: 'install_from_source', source_path: dir });
+      const info = await refreshStatus();
+      setStatus('Corpus installed.');
+      if (info?.present) void search(query);
+    } catch (e) {
+      setError(e instanceof Error ? e.message : String(e));
+      setStatus('');
+    } finally {
+      setSyncing(false);
+    }
+  };
 
   const runImport = async () => {
     if (!selected) return;
@@ -221,7 +294,8 @@ export const CbetaImportDialog = ({ onClose, open = false }: CbetaImportDialogPr
     }
   };
 
-  const canImport = Boolean(selected && projectReady && corpus?.present && !busy);
+  const canImport = Boolean(selected && projectReady && corpus?.present && !busy && !syncing);
+  const working = busy || syncing;
 
   return (
     <Dialog open={open} onClose={() => onClose?.()} maxWidth="md" fullWidth>
@@ -237,10 +311,30 @@ export const CbetaImportDialog = ({ onClose, open = false }: CbetaImportDialogPr
           Search the CBETA canon and import a work — one file per juan.
         </Typography>
 
-        {corpus && !corpus.present && (
+        {corpus && !corpus.present && syncing && (
           <Alert severity="info" sx={{ mb: 2 }}>
-            The CBETA corpus is not synced yet. Run Tools → CBETA → Sync corpus (pins tag{' '}
-            {corpus.pinned_tag ?? '—'}).
+            Installing the CBETA corpus from GitHub (tag {corpus.pinned_tag ?? '—'}, ~1 GB). This
+            runs once when you install the plugin and can take several minutes.
+          </Alert>
+        )}
+
+        {corpus && !corpus.present && !syncing && (
+          <Alert
+            severity="warning"
+            sx={{ mb: 2 }}
+            action={
+              <Box sx={{ display: 'flex', gap: 1 }}>
+                <Button size="small" variant="contained" disabled={working} onClick={() => void runSync()}>
+                  Retry download
+                </Button>
+                <Button size="small" disabled={working} onClick={() => void runInstallFromFolder()}>
+                  Install from folder…
+                </Button>
+              </Box>
+            }
+          >
+            The CBETA corpus is not ready yet. It should download automatically when the plugin is
+            installed or enabled.
           </Alert>
         )}
 
@@ -250,7 +344,7 @@ export const CbetaImportDialog = ({ onClose, open = false }: CbetaImportDialogPr
           </Alert>
         )}
 
-        {busy && (
+        {working && (
           <Box sx={{ mb: 2 }}>
             <LinearProgress />
             {status && (
@@ -260,9 +354,33 @@ export const CbetaImportDialog = ({ onClose, open = false }: CbetaImportDialogPr
             )}
           </Box>
         )}
-        {!busy && status && (
+        {!working && status && (
           <Typography variant="caption" sx={{ mb: 2, display: 'block' }}>
             {status}
+          </Typography>
+        )}
+
+        {corpus?.present && (
+          <Typography variant="caption" color="text.secondary" sx={{ mb: 1, display: 'block' }}>
+            Corpus at tag {corpus.pinned_tag ?? '—'}
+            {corpus.commit ? ` (${corpus.commit.slice(0, 12)})` : ''}.{' '}
+            <Button
+              size="small"
+              sx={{ minWidth: 0, p: 0, verticalAlign: 'baseline' }}
+              disabled={working}
+              onClick={() => void runSync({ force: true })}
+            >
+              Re-download
+            </Button>
+            {' · '}
+            <Button
+              size="small"
+              sx={{ minWidth: 0, p: 0, verticalAlign: 'baseline' }}
+              disabled={working}
+              onClick={() => void runInstallFromFolder()}
+            >
+              Install from folder…
+            </Button>
           </Typography>
         )}
 
@@ -270,7 +388,7 @@ export const CbetaImportDialog = ({ onClose, open = false }: CbetaImportDialogPr
           fullWidth
           label="Search by title, work id (T0001), dynasty or 部類"
           value={query}
-          disabled={!corpus?.present || busy}
+          disabled={!corpus?.present || working}
           onChange={(e) => setQuery(e.target.value)}
           sx={{ mb: 2 }}
         />

@@ -18,6 +18,8 @@ import { registerLinkedTagEditing } from './linkedTagEditing';
 import { registerPairedTagUnwrap } from './pairedTagUnwrap';
 import { useXmlLanguageClient } from './useXmlLanguageClient';
 import type { LspStartOptions } from './lsp/ipcLspClient';
+import { isTibetanLanguageCode } from '../../utilities/languageCodes';
+import { TIBETAN_EDITOR_FONT_FAMILY } from '../../utilities/tibetanEditorFonts';
 
 const TAG_NAME_RE = /^([a-zA-Z_:][\w:.-]*)/;
 
@@ -157,6 +159,7 @@ export const XmlMonacoEditor = ({
   const onEditorInstanceRef = useRef(onEditorInstance);
   const lastEditorValueRef = useRef(value);
   const [editor, setEditor] = useState<monaco.editor.IStandaloneCodeEditor | null>(null);
+  const [tibetanFont, setTibetanFont] = useState(false);
   const [decorations, setDecorations] = useState<
     monaco.editor.IEditorDecorationsCollection | undefined
   >(undefined);
@@ -166,6 +169,12 @@ export const XmlMonacoEditor = ({
 
   const isDarkMode = mode === 'dark' || (mode === 'system' && systemMode === 'dark');
   const theme = isDarkMode ? 'vs-dark' : 'vs-light';
+
+  useEffect(() => {
+    void window.__leafWriterProject?.getProjectSourceLanguage?.().then((language) => {
+      setTibetanFont(isTibetanLanguageCode(language));
+    });
+  }, [documentPath]);
 
   useXmlLanguageClient({ documentPath, editor, lspOptions, value });
 
@@ -406,6 +415,12 @@ export const XmlMonacoEditor = ({
   useEffect(() => {
     monaco.editor.setTheme(theme);
   }, [theme]);
+
+  useEffect(() => {
+    editor?.updateOptions({
+      fontFamily: tibetanFont ? TIBETAN_EDITOR_FONT_FAMILY : 'Menlo, Monaco, "Courier New", monospace',
+    });
+  }, [editor, tibetanFont]);
 
   useEffect(() => {
     if (!editor) return;

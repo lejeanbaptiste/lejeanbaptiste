@@ -33,13 +33,13 @@ browser-extension adapter, on-disk cache. Not yet run inside the packaged app.
 
 ### Known-good references
 
-| Ref | What it is |
-| --- | --- |
-| `UT4CZ5369_I1KG9127_0000` | Derge Kangyur, Vinaya vol. ka — `AccessOpen`, ~101 folios, has a git revision |
-| `VE4CZ5369_I1KG9127` | the same volume as a `VE…` id (must resolve to the `UT…_0000` above) |
-| `https://library.bdrc.io/show/bdr:IE4CZ5369?scope=bdr:IE4CZ5369&openEtext=bdr:VE4CZ5369_I1KG9127&startChar=1&back=bdr:MW4CZ5369` | the BUDA reader URL for that volume |
-| `bdr:MW4CZ5369` | a work/instance ref — must be **rejected** with guidance |
-| _(pick one)_ | a modern in-copyright etext at `AccessFairUse` / `AccessRestrictedByTbrc` — for the restricted path |
+| Ref                                                                                                                              | What it is                                                                                          |
+| -------------------------------------------------------------------------------------------------------------------------------- | --------------------------------------------------------------------------------------------------- |
+| `UT4CZ5369_I1KG9127_0000`                                                                                                        | Derge Kangyur, Vinaya vol. ka — `AccessOpen`, ~101 folios, has a git revision                       |
+| `VE4CZ5369_I1KG9127`                                                                                                             | the same volume as a `VE…` id (must resolve to the `UT…_0000` above)                                |
+| `https://library.bdrc.io/show/bdr:IE4CZ5369?scope=bdr:IE4CZ5369&openEtext=bdr:VE4CZ5369_I1KG9127&startChar=1&back=bdr:MW4CZ5369` | the BUDA reader URL for that volume                                                                 |
+| `bdr:MW4CZ5369`                                                                                                                  | a work/instance ref — must be **rejected** with guidance                                            |
+| _(pick one)_                                                                                                                     | a modern in-copyright etext at `AccessFairUse` / `AccessRestrictedByTbrc` — for the restricted path |
 
 ---
 
@@ -48,23 +48,23 @@ browser-extension adapter, on-disk cache. Not yet run inside the packaged app.
 Run before any UI testing. All green today.
 
 - [ ] **1.1** Unit tests (31):
-      ```bash
-      node --test apps/desktop/src/bdrc/*.test.mjs
-      ```
+      `bash
+    node --test apps/desktop/src/bdrc/*.test.mjs
+    `
 - [ ] **1.2** Typecheck: `npm run typecheck --workspaces --if-present` — no `error TS`.
 - [ ] **1.3** Lint/format: `npx prettier --check apps/desktop/src/bdrc` etc.
 - [ ] **1.4** Plugin manifest: `cd ../plugins && npm run validate` → `plugin-bdrc-import` ok.
 - [ ] **1.5** Plugin build: `npm run build -w @ljb/plugin-bdrc-import` → `dist/register.mjs`.
 - [ ] **1.6** Live core smoke (hits purl.bdrc.io):
-      ```bash
-      node --input-type=module -e '
-        import("./apps/desktop/src/bdrc/pdiClient.mjs").then(async (m) => {
-          const { extracted, warnings, revision, fromCache } =
-            await m.importEtext("UT4CZ5369_I1KG9127_0000", { windowSize: 60000, maxWindows: 3 });
-          console.log({ folios: extracted.chunks.length, revision: revision.slice(0,10), fromCache, warnings });
-          console.log("facs[0]:", extracted.chunks[0]?.imageUri);
-        });'
-      ```
+      `bash
+    node --input-type=module -e '
+      import("./apps/desktop/src/bdrc/pdiClient.mjs").then(async (m) => {
+        const { extracted, warnings, revision, fromCache } =
+          await m.importEtext("UT4CZ5369_I1KG9127_0000", { windowSize: 60000, maxWindows: 3 });
+        console.log({ folios: extracted.chunks.length, revision: revision.slice(0,10), fromCache, warnings });
+        console.log("facs[0]:", extracted.chunks[0]?.imageUri);
+      });'
+    `
       Expect ~100+ folios (this call caps at 3 windows — a real import fetches
       the whole volume), a 40-hex revision, `fromCache:false`, no warnings, and a
       `https://iiif.bdrc.io/bdr:I1KG9127::I1KG91270003.jpg/...` facs URL.

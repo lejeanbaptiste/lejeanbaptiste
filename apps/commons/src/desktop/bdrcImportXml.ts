@@ -108,11 +108,14 @@ export const wrapBdrcTeiDocument = ({
   config,
   headerFields,
   bodyXml,
+  titleSuffix,
   importedAt,
 }: {
   config: ProjectFileConfig;
   headerFields: BdrcHeaderFields;
   bodyXml: string;
+  /** Appended to `<title>` for a split file, e.g. " — bam po 3". */
+  titleSuffix?: string;
   importedAt?: Date;
 }): string => {
   const catalogId = config.schema?.catalogId ?? '';
@@ -120,12 +123,16 @@ export const wrapBdrcTeiDocument = ({
     throw new Error('BDRC import currently supports TEI projects (not Orlando or jTEI).');
   }
 
+  const fields: BdrcHeaderFields = titleSuffix
+    ? { ...headerFields, title: `${headerFields.title || 'Untitled'}${titleSuffix}` }
+    : headerFields;
+
   const when = isoDate(importedAt);
   let xml = buildSkeletonForCatalog(config);
 
   xml = xml.replace(
     /<titleStmt>\s*<title>[\s\S]*?<\/title>\s*<\/titleStmt>/,
-    titleStmtBlock(headerFields),
+    titleStmtBlock(fields),
   );
   xml = xml.replace(
     /<publicationStmt>[\s\S]*?<\/publicationStmt>/,

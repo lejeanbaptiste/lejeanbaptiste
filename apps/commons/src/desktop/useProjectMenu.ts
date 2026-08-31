@@ -397,7 +397,7 @@ export const useProjectMenu = () => {
       }
       openDialog({
         type: 'wikisourceImport',
-        props: { initialUrl: order.url, importScope: order.scope },
+        props: { initialUrl: order.url, importScope: order.scope, autoRun: true },
       });
     });
     return () => unsubscribe();
@@ -432,7 +432,7 @@ export const useProjectMenu = () => {
       }
       openDialog({
         type: 'bdrcImport',
-        props: { initialRef: order.etext_id || order.url },
+        props: { initialRef: order.etext_id || order.url, autoRun: true },
       });
     });
     return () => unsubscribe();

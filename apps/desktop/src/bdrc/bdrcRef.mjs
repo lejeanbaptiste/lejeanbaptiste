@@ -28,7 +28,10 @@ const veToUt = (veTail) => `UT${veTail}_0000`;
 
 /**
  * @param {string} input
- * @returns {{ utId: string, from: 'ut' | 've' }}
+ * @returns {{ utId: string, from: 'ut' | 've', sourceId: string }}
+ *   `utId` is the paginated etext to fetch; `sourceId` is the raw id matched
+ *   (a `VE…` when `from === 've'`), kept so a caller can fall back to it if the
+ *   `_0000` derivation turns out to have no content.
  */
 export function parseBdrcRef(input) {
   const raw = String(input ?? '').trim();
@@ -38,16 +41,16 @@ export function parseBdrcRef(input) {
   const open = raw.match(OPEN_ETEXT_RE);
   if (open) {
     const id = open[1];
-    if (/^UT/i.test(id)) return { utId: id, from: 'ut' };
+    if (/^UT/i.test(id)) return { utId: id, from: 'ut', sourceId: id };
     const ve = id.match(/^VE([0-9A-Za-z_]+)/i);
-    if (ve) return { utId: veToUt(ve[1]), from: 've' };
+    if (ve) return { utId: veToUt(ve[1]), from: 've', sourceId: id };
   }
 
   const ut = raw.match(UT_RE);
-  if (ut) return { utId: ut[0], from: 'ut' };
+  if (ut) return { utId: ut[0], from: 'ut', sourceId: ut[0] };
 
   const ve = raw.match(VE_RE);
-  if (ve) return { utId: veToUt(ve[1]), from: 've' };
+  if (ve) return { utId: veToUt(ve[1]), from: 've', sourceId: `VE${ve[1]}` };
 
   const other = raw.match(OTHER_RE);
   if (other) {
