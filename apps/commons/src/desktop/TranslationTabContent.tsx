@@ -97,23 +97,26 @@ export const TranslationTabContent = ({ active }: TranslationTabContentProps) =>
       window.removeEventListener('desktop:translation-request-language', onRequestLanguage);
   }, []);
 
-  const applyConfiguredLanguages = useCallback(async (clearResolvedKey = false) => {
-    if (!isDesktop() || !projectFilePath) {
-      setLanguages(null);
-      return;
-    }
-    const bundle = getActiveProjectBundle();
-    if (!bundle) return;
-    const settings = await readTranslationSettings(bundle);
-    const nextLanguages = settings?.languages ?? [];
-    setLanguages(nextLanguages);
-    setSelectedLang((current) =>
-      current && nextLanguages.some((lang) => lang.code === current)
-        ? current
-        : (nextLanguages[0]?.code ?? ''),
-    );
-    if (clearResolvedKey) resolvedKeyRef.current = null;
-  }, [projectFilePath]);
+  const applyConfiguredLanguages = useCallback(
+    async (clearResolvedKey = false) => {
+      if (!isDesktop() || !projectFilePath) {
+        setLanguages(null);
+        return;
+      }
+      const bundle = getActiveProjectBundle();
+      if (!bundle) return;
+      const settings = await readTranslationSettings(bundle);
+      const nextLanguages = settings?.languages ?? [];
+      setLanguages(nextLanguages);
+      setSelectedLang((current) =>
+        current && nextLanguages.some((lang) => lang.code === current)
+          ? current
+          : (nextLanguages[0]?.code ?? ''),
+      );
+      if (clearResolvedKey) resolvedKeyRef.current = null;
+    },
+    [projectFilePath],
+  );
 
   // Load the project's configured translation languages whenever the project changes.
   useEffect(() => {

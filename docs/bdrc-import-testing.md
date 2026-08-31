@@ -48,26 +48,26 @@ browser-extension adapter, on-disk cache. Not yet run inside the packaged app.
 Run before any UI testing. All green today.
 
 - [ ] **1.1** Unit tests (31):
-      `bash
-    node --test apps/desktop/src/bdrc/*.test.mjs
-    `
+  ```bash
+  node --test apps/desktop/src/bdrc/*.test.mjs
+  ```
 - [ ] **1.2** Typecheck: `npm run typecheck --workspaces --if-present` — no `error TS`.
 - [ ] **1.3** Lint/format: `npx prettier --check apps/desktop/src/bdrc` etc.
 - [ ] **1.4** Plugin manifest: `cd ../plugins && npm run validate` → `plugin-bdrc-import` ok.
 - [ ] **1.5** Plugin build: `npm run build -w @ljb/plugin-bdrc-import` → `dist/register.mjs`.
 - [ ] **1.6** Live core smoke (hits purl.bdrc.io):
-      `bash
-    node --input-type=module -e '
-      import("./apps/desktop/src/bdrc/pdiClient.mjs").then(async (m) => {
-        const { extracted, warnings, revision, fromCache } =
-          await m.importEtext("UT4CZ5369_I1KG9127_0000", { windowSize: 60000, maxWindows: 3 });
-        console.log({ folios: extracted.chunks.length, revision: revision.slice(0,10), fromCache, warnings });
-        console.log("facs[0]:", extracted.chunks[0]?.imageUri);
-      });'
-    `
-      Expect ~100+ folios (this call caps at 3 windows — a real import fetches
-      the whole volume), a 40-hex revision, `fromCache:false`, no warnings, and a
-      `https://iiif.bdrc.io/bdr:I1KG9127::I1KG91270003.jpg/...` facs URL.
+  ```bash
+  node --input-type=module -e '
+    import("./apps/desktop/src/bdrc/pdiClient.mjs").then(async (m) => {
+      const { extracted, warnings, revision, fromCache } =
+        await m.importEtext("UT4CZ5369_I1KG9127_0000", { windowSize: 60000, maxWindows: 3 });
+      console.log({ folios: extracted.chunks.length, revision: revision.slice(0,10), fromCache, warnings });
+      console.log("facs[0]:", extracted.chunks[0]?.imageUri);
+    });'
+  ```
+  Expect ~100+ folios (this call caps at 3 windows — a real import fetches
+  the whole volume), a 40-hex revision, `fromCache:false`, no warnings, and a
+  `https://iiif.bdrc.io/bdr:I1KG9127::I1KG91270003.jpg/...` facs URL.
 - [ ] **1.7** Open that facs URL in a browser → a real folio image (or its
       `.../info.json` → HTTP 200 IIIF Image API 2).
 

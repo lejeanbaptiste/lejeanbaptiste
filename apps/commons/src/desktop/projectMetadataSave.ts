@@ -25,10 +25,7 @@ import {
 } from './projectMetadataDialogState';
 import type { ProjectMetadataDialogMode } from './projectMetadataSession';
 import type { AutoTaggingAuthoritySettings, ProjectMetadataFile } from './projectTypes';
-import {
-  readTranslationSettings,
-  upsertTranslationSettings,
-} from './translationSettings';
+import { readTranslationSettings, upsertTranslationSettings } from './translationSettings';
 import type { TranslationLanguage } from './translationTypes';
 
 export interface ProjectMetadataSavePayload {

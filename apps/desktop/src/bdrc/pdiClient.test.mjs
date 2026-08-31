@@ -277,10 +277,7 @@ test('importEtext: stale cache without bam po parts is ignored and re-fetched', 
       revision: REVISION,
     };
     fs.mkdirSync(dir, { recursive: true });
-    fs.writeFileSync(
-      path.join(dir, `${UT}__${REVISION}.json`),
-      JSON.stringify(stale),
-    );
+    fs.writeFileSync(path.join(dir, `${UT}__${REVISION}.json`), JSON.stringify(stale));
 
     const { fetchImpl, calls } = makeFetch();
     const result = await importEtext(`bdr:${UT}`, {

@@ -774,6 +774,10 @@ declare global {
       revealAuthorityLifecycleFolder: () => Promise<void>;
     };
     __ljbOpenNativeSchemaPicker?: (options: SchemaPickerOpenerOptions) => Promise<void>;
+    /** Registered by the project-settings form while it has unsaved edits.
+     * Mirrors the declaration in the editor package's globals.d.ts; commons
+     * resolves its Window globals from this file, not from that one. */
+    __ljbConfirmDiscardProjectSettings?: () => boolean;
     /** Desktop: strip teiHeader before WYSIWYG load (registered by useLeafWriter). */
     __desktopStripTeiHeaderForVisualEditor?: (xml: string) => string;
     /** Desktop: merge visual editor body XML into the stored full document. */

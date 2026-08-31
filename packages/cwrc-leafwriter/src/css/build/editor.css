@@ -34,8 +34,9 @@
 *[xml\:lang|='bo'],
 body.project-language-tibetan,
 body.project-language-tibetan *:not([_tag]):not([_tag]:before):not([_tag]:after) {
-  font-family: 'Noto Serif Tibetan', 'Noto Sans Tibetan', Kailasa, 'BabelStone Tibetan',
-    Jomolhari, Yagpo, 'DDC Uchen', 'Microsoft Himalaya', 'Tibetan Machine Uni', serif !important;
+  font-family:
+    'Noto Serif Tibetan', 'Noto Sans Tibetan', Kailasa, 'BabelStone Tibetan', Jomolhari, Yagpo,
+    'DDC Uchen', 'Microsoft Himalaya', 'Tibetan Machine Uni', serif !important;
 }
 
 /* Override writer content skin: drop centered max-width column in Visual mode */

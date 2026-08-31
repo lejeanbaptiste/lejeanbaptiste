@@ -1,1 +1,4 @@
-export { countTeiMilestones, shouldOpenTeiInSourceMode } from '@cwrc/leafwriter/teiMilestoneHeuristics';
+export {
+  countTeiMilestones,
+  shouldOpenTeiInSourceMode,
+} from '@cwrc/leafwriter/teiMilestoneHeuristics';

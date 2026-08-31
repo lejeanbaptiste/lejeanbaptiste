@@ -1,7 +1,4 @@
-import {
-  authorityIdsFromTeiRef,
-  normalizeImportedWorkTitle,
-} from './ensureImportHeaderEntities';
+import { authorityIdsFromTeiRef, normalizeImportedWorkTitle } from './ensureImportHeaderEntities';
 
 describe('authorityIdsFromTeiRef', () => {
   it('parses Wikidata URIs', () => {
@@ -14,9 +11,7 @@ describe('authorityIdsFromTeiRef', () => {
     expect(authorityIdsFromTeiRef('NORBERT:person-1421')).toEqual([
       { type: 'NORBERT', value: 'person-1421' },
     ]);
-    expect(authorityIdsFromTeiRef('DILA:A001492')).toEqual([
-      { type: 'DILA', value: 'A001492' },
-    ]);
+    expect(authorityIdsFromTeiRef('DILA:A001492')).toEqual([{ type: 'DILA', value: 'A001492' }]);
   });
 
   it('parses BDRC purls', () => {

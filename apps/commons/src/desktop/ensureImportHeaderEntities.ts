@@ -64,9 +64,7 @@ const readHeaderIdnoRefs = (xml: string): string[] => {
     if (subtype === 'edition') continue;
 
     if (type === 'BDRC-work' || type === 'BDRC') {
-      refs.push(
-        /^https?:\/\//i.test(value) ? value : `http://purl.bdrc.io/resource/${value}`,
-      );
+      refs.push(/^https?:\/\//i.test(value) ? value : `http://purl.bdrc.io/resource/${value}`);
       continue;
     }
     if (type === 'URI' || type === 'Kanripo' || type === 'CBETA' || type === 'Wikidata') {

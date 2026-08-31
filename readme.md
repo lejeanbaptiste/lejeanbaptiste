@@ -97,6 +97,13 @@ For detailed build and packaging information, see [apps/desktop/README.md](apps/
 
 See [apps/desktop/README.md](apps/desktop/README.md) for the compilation and packaging instructions.
 
+### TODO
+
+- Full CBETA integration
+  - [ ] Include Bingenheimer's tagged bios
+- [ ] Confirm CBETA schema takes tags
+- [ ] Milestone projection matcher for auto-tagging (match across `<lb>` / empty anchors without stripping them — [autotagging-milestone-projection-planning.md](docs/autotagging-milestone-projection-planning.md))
+
 ### Future
 
 - [ ] `createCompoundAnchor` (`packages/cwrc-leafwriter/src/autoTagging/anchor.ts:247-248`) computes `localEnd` — the search-index equivalent of `localStart`, which the sibling `createAnchor` function's `rawRange` helper (same file) uses to convert a search-index back to a snapped raw text-node offset — but then never uses it: `endOffset: endRaw` (line 275) returns the _raw, unsnapped_ input instead of the computed-and-normalized value, unlike `offset: startSearch.map[localStart]` a few lines above it, which does apply that snapping for the start boundary. `localEnd` is assigned and read nowhere. This looks like an incomplete port of the pattern `createAnchor`/`rawRange` establish elsewhere in the file, not a deliberate choice — but the existing test (`apply.test.ts:72`) exercises exactly the case where `endRaw` equals the node's full length, where `localEnd`'s `findIndex` would miss (hit the `-1` fallback) and `endRaw` happens to already be correct, so the gap may not be as visible as it should be. This only affects `createCompoundAnchor`'s callers (the post-component person-wrapper pass) and only when the end boundary isn't at a node's natural end, where whitespace-policy snapping could shift the offset. **2026-08-24: low real-world priority** — Asian-script sources normally carry no whitespace, so the whitespace-policy snapping this gap would affect essentially doesn't come up in practice for this project's actual corpus. Still worth fixing for correctness/robustness, but not urgent.
@@ -114,21 +121,11 @@ See [apps/desktop/README.md](apps/desktop/README.md) for the compilation and pac
 - [ ] Think about how to organise for rapid data entry
 - [ ] Filters beyond entity kind (the kind filter ships and persists via `databaseViewPrefs`; no field-level or faceted filtering yet)
 
-#### I/O
-
-- Full CBETA integration
-  - [ ] Custom schema / conversion ?
-  - [ ] Include Bingenheimer's tagged bios
-  - [ ] Search tool imitating CBETA
-  - [ ] Bookmarks ?
-
-- [x] Wikisource browser-extension + built-in import ([wikisource-import.md](docs/wikisource-import.md); remaining corpora still [corpus-extraction-planning.md](docs/corpus-extraction-planning.md))
-
 #### UX
 
 - [ ] Find/replace Phase 2b: WYSIWYG visible-text replace across markup ([find-replace-planning.md](docs/find-replace-planning.md))
 - [ ] Persist last find query across sessions (match-case / ignore-case and regex toggles already ship; the query itself resets to `''` on mount)
-- [ ] Ignore page breaks, line breaks, and corrections in tagging and disambiguation?
+- [ ] Milestone-aware auto-tagging (projection match + wrap around `<lb>` / infrastructure) — [autotagging-milestone-projection-planning.md](docs/autotagging-milestone-projection-planning.md); interim: strip `<lb>` on CBETA import or accept missed spans
 - [ ] Re-explore Tag-boundary Bugs B/C/H (typing/delete at edges) keeping us from full Oxygen parity.
 
 #### Dates

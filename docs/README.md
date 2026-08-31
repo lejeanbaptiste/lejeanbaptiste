@@ -77,6 +77,7 @@ Supporting / deeper:
 | [wikisource-import.md](wikisource-import.md)                                                                            | Wikisource browser extension + built-in TEI import            |
 | [corpus-extraction-planning.md](corpus-extraction-planning.md)                                                          | Broader browser / corpus extract (Wikisource MVP started)     |
 | [cbeta-import-planning.md](cbeta-import-planning.md)                                                                    | CBETA P5 plugin (bundled corpus, by juan, schema translation) |
+| [autotagging-milestone-projection-planning.md](autotagging-milestone-projection-planning.md)                            | Match/tag across `<lb>` and other milestones without stripping them |
 | [bdrc-import-planning.md](bdrc-import-planning.md)                                                                      | BDRC plugin (extension, live PDI fetch, whole-volume Tibetan) |
 | [bdrc-import-testing.md](bdrc-import-testing.md)                                                                        | BDRC import smoke-test checklist                              |
 | [beta-plan.md](beta-plan.md)                                                                                            | Ship criteria                                                 |

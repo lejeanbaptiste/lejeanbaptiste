@@ -2,15 +2,21 @@ import {
   Alert,
   Box,
   Button,
+  Checkbox,
   Dialog,
   DialogActions,
   DialogContent,
   DialogTitle,
+  FormControl,
+  FormControlLabel,
+  FormGroup,
   LinearProgress,
   List,
   ListItem,
   ListItemButton,
   ListItemText,
+  MenuItem,
+  Select,
   TextField,
   Typography,
 } from '@mui/material';
@@ -26,6 +32,12 @@ import type { IDialog } from '../type';
 import { isPluginEnabled } from '../../plugins';
 
 const PLUGIN_ID = 'cbeta-import';
+
+const DIALOG_WIDTH = 720;
+const DIALOG_HEIGHT = 580;
+const RESULT_LIST_HEIGHT = 320;
+
+type CbetaSplitUnit = 'mulu' | 'juan';
 
 interface CbetaWorkHit {
   work_id: string;
@@ -96,6 +108,9 @@ export const CbetaImportDialog = ({ onClose, open = false }: CbetaImportDialogPr
   const [syncing, setSyncing] = useState(false);
   const [status, setStatus] = useState('');
   const [error, setError] = useState<string | null>(null);
+  const [cleanImport, setCleanImport] = useState(true);
+  const [stripLineBreaks, setStripLineBreaks] = useState(false);
+  const [splitUnit, setSplitUnit] = useState<CbetaSplitUnit>('mulu');
 
   const projectReady = Boolean(window.__leafWriterProject?.isProjectReady?.());
 
@@ -126,6 +141,10 @@ export const CbetaImportDialog = ({ onClose, open = false }: CbetaImportDialogPr
 
   useEffect(() => {
     if (!open) return;
+    const catalogId = window.__leafWriterProject?.getProjectConfig?.()?.schema?.catalogId ?? '';
+    setCleanImport(catalogId !== 'cbeta');
+    setStripLineBreaks(false);
+    setSplitUnit(catalogId === 'cbeta' ? 'juan' : 'mulu');
     void refreshStatus().then(async (info) => {
       if (info?.present) {
         void search('');
@@ -157,58 +176,6 @@ export const CbetaImportDialog = ({ onClose, open = false }: CbetaImportDialogPr
     return () => window.clearTimeout(h);
   }, [open, query, search, corpus?.present]);
 
-  const runSync = async (opts?: { force?: boolean }) => {
-    setSyncing(true);
-    setError(null);
-    setStatus('Cloning the CBETA corpus from GitHub (~1 GB, can take several minutes)…');
-    try {
-      if (!opts?.force && window.electronAPI?.cbetaEnsureCorpus) {
-        await window.electronAPI.cbetaEnsureCorpus();
-      } else {
-        await invokePython<{ action?: string; commit?: string }>({
-          op: 'sync',
-          force: opts?.force ?? false,
-        });
-      }
-      const info = await refreshStatus();
-      setStatus(
-        info?.present
-          ? `Corpus ready${info.commit ? ` (${info.commit.slice(0, 12)})` : ''}.`
-          : 'Corpus download did not complete.',
-      );
-      if (info?.present) void search(query);
-    } catch (e) {
-      setError(e instanceof Error ? e.message : String(e));
-      setStatus('');
-    } finally {
-      setSyncing(false);
-    }
-  };
-
-  const runInstallFromFolder = async () => {
-    const pick = window.electronAPI?.pluginsPickInstallFolder;
-    if (!pick) {
-      setError('Folder picker is only available in the desktop app.');
-      return;
-    }
-    const dir = await pick();
-    if (!dir) return;
-    setSyncing(true);
-    setError(null);
-    setStatus(`Installing corpus from ${dir}…`);
-    try {
-      await invokePython({ op: 'install_from_source', source_path: dir });
-      const info = await refreshStatus();
-      setStatus('Corpus installed.');
-      if (info?.present) void search(query);
-    } catch (e) {
-      setError(e instanceof Error ? e.message : String(e));
-      setStatus('');
-    } finally {
-      setSyncing(false);
-    }
-  };
-
   const runImport = async () => {
     if (!selected) return;
     const project = window.__leafWriterProject;
@@ -233,8 +200,13 @@ export const CbetaImportDialog = ({ onClose, open = false }: CbetaImportDialogPr
         op: 'convert',
         work_id: selected.work_id,
         cross_family: config.schema?.catalogId !== 'cbeta',
+        clean: cleanImport,
+        strip_lb: stripLineBreaks,
+        split_unit: splitUnit,
       });
-      if (!converted?.juan?.length) throw new Error('Python conversion returned no juan.');
+      if (!converted?.juan?.length) throw new Error('Python conversion returned no sections.');
+
+      const fileLabel = splitUnit === 'mulu' ? 'section' : 'juan';
 
       const destDir = joinPath(rootPath, 'imported', 'cbeta', converted.canon, converted.vol);
       await api.ensureDirectory(destDir);
@@ -249,6 +221,14 @@ export const CbetaImportDialog = ({ onClose, open = false }: CbetaImportDialogPr
       const written: string[] = [];
       const warnings = [...(converted.warnings ?? [])];
 
+      const importNotes = [
+        splitUnit === 'mulu' ? 'Split by CBETA section headings (mulu).' : 'Split by juan.',
+        cleanImport ? 'Clean reading edition (collation anchors and apparatus omitted).' : '',
+        stripLineBreaks ? 'Taishō line breaks (<lb>) omitted.' : '',
+      ]
+        .filter(Boolean)
+        .join(' ');
+
       for (const juan of converted.juan) {
         const meta: CbetaTeiMeta = {
           title: converted.title ?? selected.title,
@@ -258,14 +238,18 @@ export const CbetaImportDialog = ({ onClose, open = false }: CbetaImportDialogPr
           taisho_no: converted.taisho_no || converted.no,
           dynasty: converted.dynasty ?? selected.dynasty,
           category: converted.category ?? selected.category,
-          juan_n: juan.n,
-          juan_title: juan.title,
+          split_unit: splitUnit,
+          section_n: splitUnit === 'mulu' ? juan.n : undefined,
+          section_title: splitUnit === 'mulu' ? juan.title : undefined,
+          juan_n: splitUnit === 'juan' ? juan.n : undefined,
+          juan_title: splitUnit === 'juan' ? juan.title : undefined,
           stem: baseStem,
           source: 'CBETA 漢文電子佛典 (cbeta-xml-p5)',
           data_version: converted.data_version,
           git_commit: converted.git_commit,
           authorship: converted.authorship,
           work_qid: converted.work_qid,
+          importNotes: importNotes || undefined,
         };
         const xml = wrapCbetaTeiDocument({ config, meta, bodyXml: juan.body_xml });
         const outputPath = uniqueCbetaXmlPath(
@@ -284,7 +268,7 @@ export const CbetaImportDialog = ({ onClose, open = false }: CbetaImportDialogPr
       await project.refreshExplorer?.();
       await project.openFile?.(written[0]);
       setStatus(
-        `Imported ${selected.title} as ${written.length} juan file${written.length > 1 ? 's' : ''}.` +
+        `Imported ${selected.title} as ${written.length} ${fileLabel} file${written.length > 1 ? 's' : ''}.` +
           (warnings.length ? ` ${warnings.length} warning(s) — see console.` : ''),
       );
       if (warnings.length) console.warn('[cbeta-import]', warnings);
@@ -300,89 +284,105 @@ export const CbetaImportDialog = ({ onClose, open = false }: CbetaImportDialogPr
   const working = busy || syncing;
 
   return (
-    <Dialog open={open} onClose={() => onClose?.()} maxWidth="md" fullWidth>
-      <DialogTitle>Import from CBETA</DialogTitle>
-      <DialogContent>
+    <Dialog
+      open={open}
+      onClose={() => onClose?.()}
+      maxWidth={false}
+      scroll="paper"
+      PaperProps={{
+        sx: {
+          width: DIALOG_WIDTH,
+          height: DIALOG_HEIGHT,
+          maxWidth: DIALOG_WIDTH,
+          maxHeight: DIALOG_HEIGHT,
+          display: 'flex',
+          flexDirection: 'column',
+        },
+      }}
+    >
+      <DialogTitle sx={{ flexShrink: 0 }}>Import from CBETA</DialogTitle>
+      <DialogContent
+        sx={{
+          flex: 1,
+          minHeight: 0,
+          display: 'flex',
+          flexDirection: 'column',
+          overflow: 'hidden',
+          pt: 1,
+        }}
+      >
         {!isPluginEnabled(PLUGIN_ID) && (
-          <Alert severity="warning" sx={{ mb: 2 }}>
+          <Alert severity="warning" sx={{ mb: 1, flexShrink: 0 }}>
             Enable the “CBETA import” plugin in Tools → Plugins.
           </Alert>
         )}
 
-        <Typography variant="body2" sx={{ mb: 2 }}>
-          Search the CBETA canon and import a work — one file per juan.
-        </Typography>
+        <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5, mb: 1, flexShrink: 0 }}>
+          <Typography variant="body2" component="label" htmlFor="cbeta-split-unit" sx={{ flexShrink: 0 }}>
+            Split by
+          </Typography>
+          <FormControl size="small" sx={{ minWidth: 200 }} disabled={working}>
+            <Select
+              id="cbeta-split-unit"
+              value={splitUnit}
+              onChange={(e) => setSplitUnit(e.target.value as CbetaSplitUnit)}
+            >
+              <MenuItem value="mulu">Section (mulu)</MenuItem>
+              <MenuItem value="juan">Juan (卷)</MenuItem>
+            </Select>
+          </FormControl>
+        </Box>
 
-        {corpus && !corpus.present && syncing && (
-          <Alert severity="info" sx={{ mb: 2 }}>
-            Installing the CBETA corpus from GitHub (tag {corpus.pinned_tag ?? '—'}, ~1 GB). This
-            runs once when you install the plugin and can take several minutes.
-          </Alert>
-        )}
-
-        {corpus && !corpus.present && !syncing && (
-          <Alert
-            severity="warning"
-            sx={{ mb: 2 }}
-            action={
-              <Box sx={{ display: 'flex', gap: 1 }}>
-                <Button size="small" variant="contained" disabled={working} onClick={() => void runSync()}>
-                  Retry download
-                </Button>
-                <Button size="small" disabled={working} onClick={() => void runInstallFromFolder()}>
-                  Install from folder…
-                </Button>
-              </Box>
+        <FormGroup sx={{ mb: 1, flexShrink: 0 }}>
+          <FormControlLabel
+            control={
+              <Checkbox
+                checked={cleanImport}
+                disabled={working}
+                onChange={(e) => setCleanImport(e.target.checked)}
+              />
             }
-          >
-            The CBETA corpus is not ready yet. It should download automatically when the plugin is
-            installed or enabled.
-          </Alert>
+            label="Clean import (Remove collation anchors, back-matter; text follows the Taishō edition.)"
+          />
+          <FormControlLabel
+            control={
+              <Checkbox
+                checked={stripLineBreaks}
+                disabled={working}
+                onChange={(e) => setStripLineBreaks(e.target.checked)}
+              />
+            }
+            label="Strip Taishō line breaks (&lt;lb&gt;)"
+          />
+        </FormGroup>
+
+        {working && !error && status && (
+          <Box sx={{ flexShrink: 0, mb: 1 }}>
+            <LinearProgress sx={{ mb: 0.5 }} />
+            <Typography variant="caption" color="text.secondary" sx={{ display: 'block' }}>
+              {status}
+            </Typography>
+          </Box>
         )}
 
-        {error && (
-          <Alert severity="error" sx={{ mb: 2 }} onClose={() => setError(null)}>
-            {error}
-          </Alert>
-        )}
-
-        {working && (
-          <Box sx={{ mb: 2 }}>
-            <LinearProgress />
-            {status && (
-              <Typography variant="caption" sx={{ mt: 1, display: 'block' }}>
-                {status}
-              </Typography>
+        {(error || (corpus && !corpus.present && !working)) && (
+          <Box sx={{ flexShrink: 0, mb: 1 }}>
+            {corpus && !corpus.present && !working && !error && (
+              <Alert severity="warning">
+                CBETA corpus is not ready. Configure the CBETA import plugin in Tools → Plugins.
+              </Alert>
+            )}
+            {error && (
+              <Alert severity="error" onClose={() => setError(null)}>
+                {error}
+              </Alert>
             )}
           </Box>
         )}
-        {!working && status && (
-          <Typography variant="caption" sx={{ mb: 2, display: 'block' }}>
-            {status}
-          </Typography>
-        )}
 
-        {corpus?.present && (
-          <Typography variant="caption" color="text.secondary" sx={{ mb: 1, display: 'block' }}>
-            Corpus at tag {corpus.pinned_tag ?? '—'}
-            {corpus.commit ? ` (${corpus.commit.slice(0, 12)})` : ''}.{' '}
-            <Button
-              size="small"
-              sx={{ minWidth: 0, p: 0, verticalAlign: 'baseline' }}
-              disabled={working}
-              onClick={() => void runSync({ force: true })}
-            >
-              Re-download
-            </Button>
-            {' · '}
-            <Button
-              size="small"
-              sx={{ minWidth: 0, p: 0, verticalAlign: 'baseline' }}
-              disabled={working}
-              onClick={() => void runInstallFromFolder()}
-            >
-              Install from folder…
-            </Button>
+        {!working && status && !error && (
+          <Typography variant="caption" color="text.secondary" sx={{ mb: 1, display: 'block', flexShrink: 0 }}>
+            {status}
           </Typography>
         )}
 
@@ -392,10 +392,19 @@ export const CbetaImportDialog = ({ onClose, open = false }: CbetaImportDialogPr
           value={query}
           disabled={!corpus?.present || working}
           onChange={(e) => setQuery(e.target.value)}
-          sx={{ mb: 2 }}
+          sx={{ mb: 1, flexShrink: 0 }}
         />
 
-        <List dense sx={{ maxHeight: 320, overflow: 'auto', border: 1, borderColor: 'divider' }}>
+        <List
+          dense
+          sx={{
+            flex: 1,
+            minHeight: RESULT_LIST_HEIGHT,
+            overflow: 'auto',
+            border: 1,
+            borderColor: 'divider',
+          }}
+        >
           {hits.length === 0 && (
             <ListItem>
               <ListItemText primary={corpus?.present ? 'No matches.' : 'Corpus not synced.'} />
@@ -418,7 +427,7 @@ export const CbetaImportDialog = ({ onClose, open = false }: CbetaImportDialogPr
           ))}
         </List>
       </DialogContent>
-      <DialogActions>
+      <DialogActions sx={{ flexShrink: 0 }}>
         <Button onClick={() => onClose?.()}>Close</Button>
         <Button variant="contained" disabled={!canImport} onClick={() => void runImport()}>
           Import selected

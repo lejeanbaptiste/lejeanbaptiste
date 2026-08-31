@@ -40,6 +40,11 @@ export interface CbetaTeiMeta {
   /** Set when this file is one juan of a multi-juan work. */
   juan_n?: string;
   juan_title?: string;
+  /** Sequential section number when ``split_unit`` is ``mulu``. */
+  section_n?: string;
+  section_title?: string;
+  /** ``juan`` (default for CBETA-schema) or ``mulu`` (section headings). */
+  split_unit?: 'juan' | 'mulu';
   stem: string;
   source: string;
   /** Pinned CBETA data-version tag (provenance). */
@@ -47,6 +52,8 @@ export interface CbetaTeiMeta {
   git_commit?: string;
   authorship?: CbetaAuthorshipMeta[];
   work_qid?: string;
+  /** Extra provenance appended to ``<revisionDesc><change>``. */
+  importNotes?: string;
 }
 
 const escapeXmlText = (value: string): string =>
@@ -113,7 +120,9 @@ export const wrapCbetaTeiDocument = ({
     throw new Error('CBETA import currently supports TEI projects (not Orlando or jTEI).');
   }
 
-  const title = escapeXmlText(meta.juan_title || meta.title || meta.stem || 'Untitled');
+  const title = escapeXmlText(
+    meta.section_title || meta.juan_title || meta.title || meta.stem || 'Untitled',
+  );
   const when = isoDate(importedAt);
 
   let xml = buildSkeletonForCatalog(config);
@@ -124,7 +133,11 @@ export const wrapCbetaTeiDocument = ({
   );
 
   const sourcePara = `${escapeXmlText(meta.source)}; CBETA work ${escapeXmlText(meta.work_id)}${
-    meta.juan_n ? ` 卷${escapeXmlText(meta.juan_n)}` : ''
+    meta.split_unit === 'mulu' && meta.section_n
+      ? ` section ${escapeXmlText(meta.section_n)}`
+      : meta.juan_n
+        ? ` 卷${escapeXmlText(meta.juan_n)}`
+        : ''
   }${meta.data_version ? `; data ${escapeXmlText(meta.data_version)}` : ''}${
     meta.git_commit ? ` (${escapeXmlText(meta.git_commit.slice(0, 12))})` : ''
   }`;
@@ -144,17 +157,27 @@ ${idnoBlocks(meta)}          <imprint><date/></imprint>
 
   const creation: string[] = [];
   if (meta.dynasty) creation.push(`<origDate>${escapeXmlText(meta.dynasty)}</origDate>`);
-  if (meta.category) creation.push(`<note type="category">${escapeXmlText(meta.category)}</note>`);
   if (creation.length) {
     xml = xml.replace(
       /<\/fileDesc>/,
       `  </fileDesc>\n  <profileDesc>\n      <creation>\n        ${creation.join(
         '\n        ',
-      )}\n      </creation>\n  </profileDesc>`,
+      )}\n      </creation>${
+        meta.category
+          ? `\n      <textClass>\n        <keywords>\n          <term>${escapeXmlText(meta.category)}</term>\n        </keywords>\n      </textClass>`
+          : ''
+      }\n  </profileDesc>`,
+    );
+  } else if (meta.category) {
+    xml = xml.replace(
+      /<\/fileDesc>/,
+      `  </fileDesc>\n  <profileDesc>\n      <textClass>\n        <keywords>\n          <term>${escapeXmlText(meta.category)}</term>\n        </keywords>\n      </textClass>\n  </profileDesc>`,
     );
   }
 
-  const change = `Imported from CBETA (${escapeXmlText(meta.work_id)}) with plugin cbeta-import.`;
+  const change = `Imported from CBETA (${escapeXmlText(meta.work_id)}) with plugin cbeta-import.${
+    meta.importNotes ? ` ${escapeXmlText(meta.importNotes)}` : ''
+  }`;
   xml = xml.replace(
     /<\/teiHeader>/,
     `<revisionDesc>\n    <change when="${when}">${change}</change>\n  </revisionDesc>\n</teiHeader>`,
@@ -167,12 +190,16 @@ ${idnoBlocks(meta)}          <imprint><date/></imprint>
   const body = doc.getElementsByTagName('body')[0];
   const inner = body ? Array.from(body.childNodes).map(nodeToString).join('') : '';
   if (!inner.trim()) throw new Error('CBETA conversion returned an empty juan body.');
-  const juanAttrs = meta.juan_n ? ` n="${escapeXmlAttr(meta.juan_n)}"` : '';
-  const juanDiv = `<div type="juan"${juanAttrs}>${
-    meta.juan_title ? `<head>${escapeXmlText(meta.juan_title)}</head>` : ''
+  const isSection = meta.split_unit === 'mulu';
+  const divType = isSection ? 'section' : 'juan';
+  const divN = isSection ? meta.section_n : meta.juan_n;
+  const divAttrs = divN ? ` n="${escapeXmlAttr(divN)}"` : '';
+  const headTitle = isSection ? meta.section_title : meta.juan_title;
+  const bodyDiv = `<div type="${divType}"${divAttrs}>${
+    headTitle ? `<head>${escapeXmlText(headTitle)}</head>` : ''
   }${inner}</div>`;
 
-  xml = xml.replace(/<div type="(?:text|juan)"[^>]*>[\s\S]*?<\/div>/, juanDiv);
+  xml = xml.replace(/<div type="(?:text|juan|section)"[^>]*>[\s\S]*?<\/div>/, bodyDiv);
 
   // Carry the per-juan apparatus (planning §5.5) into <text><back>.
   const back = doc.getElementsByTagName('back')[0];

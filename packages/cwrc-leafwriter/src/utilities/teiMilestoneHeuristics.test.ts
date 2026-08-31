@@ -30,9 +30,7 @@ describe('teiMilestoneHeuristics', () => {
   it('allows visual mode for BDRC imports when blocks are modest', () => {
     const milestones = Array.from({ length: 40 }, () => '<lb/>').join('');
     const xml = `<div type="text"><p>${milestones}</p></div>`;
-    expect(
-      shouldOpenTeiInSourceMode(xml, '/project/imported/bdrc/W123/UT456.xml'),
-    ).toBe(false);
+    expect(shouldOpenTeiInSourceMode(xml, '/project/imported/bdrc/W123/UT456.xml')).toBe(false);
   });
 
   it('prefers source mode for BDRC imports with moderate milestones in a huge block', () => {

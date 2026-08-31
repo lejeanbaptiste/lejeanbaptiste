@@ -144,10 +144,7 @@ export const ProjectMetadataForm = ({
         type: 'warning',
         title,
         message,
-        buttons: [
-          t('LWC.desktop.project.dialogs.discard_changes_button'),
-          t('LWC.commons.cancel'),
-        ],
+        buttons: [t('LWC.desktop.project.dialogs.discard_changes_button'), t('LWC.commons.cancel')],
         cancelId: 1,
         defaultId: 1,
       });

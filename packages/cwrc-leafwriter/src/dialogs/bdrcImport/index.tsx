@@ -211,9 +211,8 @@ export const BdrcImportDialog = ({
 
         <Typography variant="body2" sx={{ mb: 2 }}>
           Paste a BDRC etext id (<code>UT…</code>) or a purl.bdrc.io / library.bdrc.io URL. One
-          import pulls the whole <strong>volume</strong> you have open in BUDA (not all 103
-          Kangyur volumes at once). With “Split into bam po” on, BDRC’s fascicles become separate
-          files.
+          import pulls the whole <strong>volume</strong> you have open in BUDA (not all 103 Kangyur
+          volumes at once). With “Split into bam po” on, BDRC’s fascicles become separate files.
         </Typography>
 
         {error && (

@@ -6,7 +6,10 @@ import {
   wrapBdrcTeiDocument,
   type BdrcHeaderFields,
 } from '../../../commons/src/desktop/bdrcImportXml';
-import { PROJECT_FILE_NAME, type ProjectFileConfig } from '../../../commons/src/desktop/projectTypes';
+import {
+  PROJECT_FILE_NAME,
+  type ProjectFileConfig,
+} from '../../../commons/src/desktop/projectTypes';
 
 type BdrcImportModule = typeof import('./bdrcImport.mjs');
 

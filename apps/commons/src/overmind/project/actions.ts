@@ -556,11 +556,11 @@ const finishOpeningProject = async (
 ) => {
   const { notifyViaSnackbar } = context.actions.ui;
 
-  const localEncoderName = await window.electronAPI.getEncoderName?.();
+  const localEncoderName = await window.electronAPI?.getEncoderName?.();
   if (!localEncoderName?.trim()) {
     const projectEncoderName = await getProjectEncoderName(bundle);
     if (projectEncoderName) {
-      await window.electronAPI.setEncoderName?.(projectEncoderName);
+      await window.electronAPI?.setEncoderName?.(projectEncoderName);
       window.dispatchEvent(
         new CustomEvent('ljbEncoderNameInherited', { detail: projectEncoderName }),
       );
