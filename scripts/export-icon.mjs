@@ -33,6 +33,10 @@ try {
     exportPng(size, path.join(iconsDir, `${size}x${size}.png`));
   }
   console.log(`[branding] Exported Linux icon set to ${iconsDir}`);
+
+  execFileSync('node', [path.join(__dirname, 'export-browser-extension-icons.mjs')], {
+    stdio: 'inherit',
+  });
 } catch {
   if (existsSync(pngPath)) {
     console.log('[branding] rsvg-convert not found; keeping the existing icon.png.');

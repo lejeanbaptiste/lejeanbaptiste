@@ -1,9 +1,6 @@
 import type { SourceDescription } from './sourceDescription';
 import { documentSupportsFileMetadata, isTeiCatalogForFileMetadata } from './fileMetadata';
-import {
-  applySourceDescriptionToXml,
-  readSourceDescriptionFromXml,
-} from './sourceDescription';
+import { applySourceDescriptionToXml, readSourceDescriptionFromXml } from './sourceDescription';
 import type {
   DedupedProjectSource,
   SharedSourceDescription,

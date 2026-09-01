@@ -14,8 +14,10 @@ Only the manifest differs per browser:
 - `manifest.json` — Chrome family (carries the pinned `key`).
 - `manifest.firefox.json` — Firefox (`browser_specific_settings.gecko.id`).
 
-The toolbar / management icon is the LJB app icon (`icons/icon-*.png`, copied
-from `apps/desktop/resources/branding/icons`).
+The toolbar / management icon is the LJB app icon (`icons/icon-*.png`), exported
+from `apps/desktop/resources/branding/icon.svg` with the outer margin cropped so
+the maroon tile fills the toolbar slot. Regenerate with
+`npm run icon:export` (or `node scripts/export-browser-extension-icons.mjs`).
 
 ## Install (end users)
 

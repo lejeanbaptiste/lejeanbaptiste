@@ -329,9 +329,9 @@ const SourceProfileControls = ({
 
     if (window.electronAPI?.showNativeMessageBox) {
       const folderFileCount = window.electronAPI.listProjectXmlFiles
-        ? (
-            await window.electronAPI.listProjectXmlFiles(rootPath)
-          ).filter((file) => fileInSameFolder(file.path, activeTabPath)).length
+        ? (await window.electronAPI.listProjectXmlFiles(rootPath)).filter((file) =>
+            fileInSameFolder(file.path, activeTabPath),
+          ).length
         : folderTabs.length;
 
       const confirm = await window.electronAPI.showNativeMessageBox({
@@ -341,10 +341,7 @@ const SourceProfileControls = ({
           label: profile.label,
           count: folderFileCount,
         }),
-        buttons: [
-          t('LWC.desktop.file_metadata.profile_apply_to_folder'),
-          t('LWC.commons.cancel'),
-        ],
+        buttons: [t('LWC.desktop.file_metadata.profile_apply_to_folder'), t('LWC.commons.cancel')],
         cancelId: 1,
         defaultId: 0,
       });
@@ -467,7 +464,9 @@ const SourceProfileControls = ({
             {t('LWC.desktop.file_metadata.profile_apply')}
           </Button>
           <Button
-            disabled={disabled || !selectedProfileId || !activeTabPath || !rootPath || folderApplyBusy}
+            disabled={
+              disabled || !selectedProfileId || !activeTabPath || !rootPath || folderApplyBusy
+            }
             onClick={() => void handleApplyToFolder()}
             size="small"
             variant="outlined"

@@ -340,7 +340,7 @@
 
 ### Fixed
 
-- **Entity database boot order on a new machine** — the app created the database *folder* early but not `entities.sqlite`, so cross-device sync, cloud backup, and the database viewer all failed until a project was opened. The main process now scaffolds the default central database at startup; sync and backup resolve the live file before running.
+- **Entity database boot order on a new machine** — the app created the database _folder_ early but not `entities.sqlite`, so cross-device sync, cloud backup, and the database viewer all failed until a project was opened. The main process now scaffolds the default central database at startup; sync and backup resolve the live file before running.
 - **Central database viewer without a project** — browsing your personal (central) entity database no longer requires an open project.
 - **After R2 restore** — restored data appears in the database viewer immediately (main notifies renderers; no restart required for the viewer).
 - **R2 backup includes achievements** — each entity snapshot now uploads a paired `achievements-…json.gz` sidecar when `achievements.json` exists locally; restore swaps both in (older snapshots without a sidecar still restore the database only).

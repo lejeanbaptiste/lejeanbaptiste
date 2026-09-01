@@ -159,12 +159,12 @@ once on each machine so blobs converge.
 
 ## When to use R2 restore instead of D1 pull
 
-| Situation                                    | Use                                                    |
-| -------------------------------------------- | ------------------------------------------------------ |
+| Situation                                    | Use                                                                                                                                            |
+| -------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------- |
 | Fresh second machine, normal workflow        | **R2 restore** (newest snapshot) for a full clone, then **D1 sync** for deltas; or **D1 pull** into an empty DB if you accept cold-pull limits |
-| Local `entities.sqlite` corrupted or missing | **R2 restore** (newest snapshot) — restores `entities.sqlite` and the paired `achievements.json` sidecar when present |
-| Clone machine A's DB at a point in time      | **R2 restore** of a chosen snapshot                    |
-| Machine B already has its own entity work    | **D1 sync** — expect conflicts; do not restore over it |
+| Local `entities.sqlite` corrupted or missing | **R2 restore** (newest snapshot) — restores `entities.sqlite` and the paired `achievements.json` sidecar when present                          |
+| Clone machine A's DB at a point in time      | **R2 restore** of a chosen snapshot                                                                                                            |
+| Machine B already has its own entity work    | **D1 sync** — expect conflicts; do not restore over it                                                                                         |
 
 After an R2 restore, enable D1 sync if it is not already on; the restored file
 may already carry a sync cursor from the machine that created the snapshot.
@@ -196,12 +196,12 @@ may already carry a sync cursor from the machine that created the snapshot.
 
 ## Troubleshooting
 
-| Symptom                            | Likely cause                                                                               |
-| ---------------------------------- | ------------------------------------------------------------------------------------------ |
-| Sync returns 403                   | GitHub account ≠ `OWNER_GITHUB_ID` on the Worker                                           |
-| Sync returns 401                   | Not signed in to GitHub, or token expired — sign in again                                  |
-| `database disk image is malformed` | Live DB in a file-sync folder — restore from R2, move DB to local disk                     |
-| B has entities but no medals       | **R2 restore** from a snapshot taken after machine A had medals, or run **Sync now** (achievements blob on D1) |
+| Symptom                            | Likely cause                                                                                                                               |
+| ---------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------ |
+| Sync returns 403                   | GitHub account ≠ `OWNER_GITHUB_ID` on the Worker                                                                                           |
+| Sync returns 401                   | Not signed in to GitHub, or token expired — sign in again                                                                                  |
+| `database disk image is malformed` | Live DB in a file-sync folder — restore from R2, move DB to local disk                                                                     |
+| B has entities but no medals       | **R2 restore** from a snapshot taken after machine A had medals, or run **Sync now** (achievements blob on D1)                             |
 | Restore did not fix medals         | Snapshots before this release only backed up `entities.sqlite` — run entity sync to pull achievements from D1, or restore a newer snapshot |
 
 Wire protocol and server behaviour:

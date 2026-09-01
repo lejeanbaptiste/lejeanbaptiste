@@ -211,6 +211,7 @@ See [apps/desktop/README.md](apps/desktop/README.md) for the compilation and pac
 - [ ] Persist last find query across sessions (match-case / ignore-case and regex toggles already ship; the query itself resets to `''` on mount)
 - [ ] Milestone-aware auto-tagging (projection match + wrap around `<lb>` / infrastructure) — [autotagging-milestone-projection-planning.md](docs/autotagging-milestone-projection-planning.md); interim: strip `<lb>` on CBETA import or accept missed spans
 - [ ] Re-explore Tag-boundary Bugs B/C/H (typing/delete at edges) keeping us from full Oxygen parity.
+- [ ] Finish Japanese, German, and Spanish localisation
 
 #### Dates
 
