@@ -15,6 +15,7 @@ Active product TODOs live in the root [`readme.md`](../readme.md) (`## Waiting` 
 | [keyboard-shortcuts.md](keyboard-shortcuts.md)                                                                            | Markup and app shortcuts                                         |
 | [smoke_test.md](smoke_test.md)                                                                                            | Manual smoke checklist                                           |
 | [entity-sync-manual-test-plan.md](entity-sync-manual-test-plan.md)                                                        | Manual QA for entity sync (until SQLite migration is signed off) |
+| [entity-db-cloud-backup-setup.md](entity-db-cloud-backup-setup.md)                                                        | Set up the R2 bucket + token for entity database cloud backup    |
 | [translation-smoke-tests.md](translation-smoke-tests.md) / [smoke-test-translation-ids.md](smoke-test-translation-ids.md) | Translation pane checks                                          |
 
 ---

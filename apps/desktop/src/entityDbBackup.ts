@@ -1,0 +1,488 @@
+/**
+ * Entity-database cloud backup — Phase 0 of docs/entity-sync-planning.
+ *
+ * The live `entities.sqlite` must never sit in a file-sync folder (that
+ * corrupts it). This module gives it an off-machine safety net instead: on a
+ * timer while the app runs, and once more on quit, it takes a consistent
+ * `VACUUM INTO` snapshot, gzips it, and uploads it to Cloudflare R2. Old
+ * snapshots are pruned on a keep-recent + keep-daily schedule. Restore pulls
+ * the newest (or a chosen) snapshot back down, verifies its integrity, and
+ * swaps it into place.
+ *
+ * This is a stop-gap until logical entity sync lands (Phase 2+); it is not a
+ * merge mechanism and only ever moves whole-database snapshots.
+ */
+import { app } from 'electron';
+import { createHash } from 'node:crypto';
+import { createReadStream, createWriteStream } from 'node:fs';
+import fs from 'node:fs/promises';
+import { createRequire } from 'node:module';
+import path from 'node:path';
+import type { DatabaseSync as DatabaseSyncType } from 'node:sqlite';
+import { pipeline } from 'node:stream/promises';
+import { createGzip, gunzipSync } from 'node:zlib';
+
+// esbuild rewrites a static `import ... from 'node:sqlite'` to `require("sqlite")`
+// (an uninstalled package) in the packaged bundle, so load it through
+// createRequire at runtime — same workaround as entityDbSqlite/repository.ts.
+const nodeRequire = createRequire(__filename);
+const { DatabaseSync } = nodeRequire('node:sqlite') as {
+  DatabaseSync: typeof DatabaseSyncType;
+};
+import {
+  isBackupConfigComplete,
+  readBackupConfig,
+  toR2Config,
+  type EntityDbBackupConfig,
+} from './entityDbBackupConfig';
+import { getEntityDbFolder } from './projectPrefs';
+import { R2Client, type R2Object } from './r2Client';
+
+const ENTITY_DB_FILENAME = 'entities.sqlite';
+const MARKER_FILENAME = 'entity-db-last-backup.json';
+const SNAPSHOTS_SEGMENT = 'snapshots/';
+
+export type BackupReason = 'timer' | 'quit' | 'manual';
+
+export interface BackupResult {
+  ok: boolean;
+  reason: BackupReason;
+  key?: string;
+  uploadedBytes?: number;
+  sourceBytes?: number;
+  sha256?: string;
+  durationMs?: number;
+  prunedKeys?: string[];
+  skipped?: 'not-configured' | 'disabled' | 'in-progress' | 'no-database';
+  error?: string;
+}
+
+export interface LastBackupMarker {
+  at: string;
+  reason: BackupReason;
+  key: string;
+  uploadedBytes: number;
+  sourceBytes: number;
+  sha256: string;
+}
+
+export interface CloudSnapshot {
+  key: string;
+  size: number;
+  lastModified: string;
+  reason: string;
+  timestamp: string;
+}
+
+// --- snapshot ---------------------------------------------------------------
+
+const getMarkerPath = () => path.join(app.getPath('userData'), MARKER_FILENAME);
+const getEntityDbPath = async (): Promise<string | null> => {
+  const folder = await getEntityDbFolder();
+  return folder ? path.join(folder, ENTITY_DB_FILENAME) : null;
+};
+
+/** `20260901T203015Z` — filesystem- and object-key-safe, still sortable. */
+const compactTimestamp = (date: Date): string => date.toISOString().replace(/[:-]|\.\d{3}/g, '');
+
+/** SQLite string literal: wrap in single quotes, double any interior quote. */
+const sqlStringLiteral = (value: string): string => `'${value.replace(/'/g, "''")}'`;
+
+const sha256File = async (filePath: string): Promise<string> => {
+  const hash = createHash('sha256');
+  for await (const chunk of createReadStream(filePath)) {
+    hash.update(chunk as Buffer);
+  }
+  return hash.digest('hex');
+};
+
+interface Snapshot {
+  gzPath: string;
+  uploadedBytes: number;
+  sourceBytes: number;
+  sha256: string;
+}
+
+/**
+ * Produce a gzipped, integrity-checked copy of the entity database in the OS
+ * temp dir. `VACUUM INTO` reads a consistent view over a read-only connection,
+ * so it is safe to run while the app holds its own handle to the same file.
+ */
+export const createSnapshot = async (sourceDbPath: string): Promise<Snapshot> => {
+  await fs.access(sourceDbPath);
+  const stem = `ljb-entities-${compactTimestamp(new Date())}-${process.pid}`;
+  const rawPath = path.join(app.getPath('temp'), `${stem}.sqlite`);
+  const gzPath = path.join(app.getPath('temp'), `${stem}.sqlite.gz`);
+
+  const source = new DatabaseSync(sourceDbPath, { readOnly: true });
+  try {
+    await fs.rm(rawPath, { force: true });
+    source.exec(`VACUUM INTO ${sqlStringLiteral(rawPath)}`);
+  } finally {
+    source.close();
+  }
+
+  try {
+    const verify = new DatabaseSync(rawPath, { readOnly: true });
+    try {
+      const rows = verify.prepare('PRAGMA integrity_check').all() as {
+        integrity_check: string;
+      }[];
+      const problems = rows.map((r) => r.integrity_check).filter((line) => line !== 'ok');
+      if (problems.length > 0) {
+        throw new Error(`snapshot failed integrity_check: ${problems.slice(0, 3).join('; ')}`);
+      }
+    } finally {
+      verify.close();
+    }
+
+    const sourceBytes = (await fs.stat(rawPath)).size;
+    await pipeline(createReadStream(rawPath), createGzip({ level: 6 }), createWriteStream(gzPath));
+    const uploadedBytes = (await fs.stat(gzPath)).size;
+    const sha256 = await sha256File(gzPath);
+    return { gzPath, uploadedBytes, sourceBytes, sha256 };
+  } finally {
+    await fs.rm(rawPath, { force: true });
+  }
+};
+
+// --- retention ------------------------------------------------------------
+
+const KEEP_RECENT = 24;
+const KEEP_DAILY_DAYS = 14;
+
+interface ParsedKey {
+  key: string;
+  date: Date;
+}
+
+const parseSnapshotKey = (key: string): ParsedKey | null => {
+  // <prefix>snapshots/entities-20260901T203015Z-<reason>.sqlite.gz
+  const match = key.match(/entities-(\d{8}T\d{6}Z)-[a-z]+\.sqlite\.gz$/);
+  if (!match) return null;
+  const [, ts] = match;
+  const iso = `${ts.slice(0, 4)}-${ts.slice(4, 6)}-${ts.slice(6, 8)}T${ts.slice(9, 11)}:${ts.slice(
+    11,
+    13,
+  )}:${ts.slice(13, 15)}Z`;
+  const date = new Date(iso);
+  return Number.isNaN(date.getTime()) ? null : { key, date };
+};
+
+/**
+ * Given every snapshot key, return the ones to delete: keep the newest
+ * {@link KEEP_RECENT}, then keep the newest one per UTC day for
+ * {@link KEEP_DAILY_DAYS} days, drop the rest (and anything older).
+ */
+export const selectSnapshotsToPrune = (keys: string[], now: Date = new Date()): string[] => {
+  const parsed = keys
+    .map(parseSnapshotKey)
+    .filter((entry): entry is ParsedKey => entry !== null)
+    .sort((a, b) => b.date.getTime() - a.date.getTime());
+
+  const keep = new Set<string>();
+  parsed.slice(0, KEEP_RECENT).forEach((entry) => keep.add(entry.key));
+
+  const dailyCutoff = now.getTime() - KEEP_DAILY_DAYS * 24 * 60 * 60 * 1000;
+  const seenDays = new Set<string>();
+  for (const entry of parsed) {
+    if (entry.date.getTime() < dailyCutoff) continue;
+    const day = entry.date.toISOString().slice(0, 10);
+    if (!seenDays.has(day)) {
+      seenDays.add(day);
+      keep.add(entry.key);
+    }
+  }
+
+  return parsed.filter((entry) => !keep.has(entry.key)).map((entry) => entry.key);
+};
+
+// --- orchestration -------------------------------------------------------
+
+let runInProgress = false;
+let timer: NodeJS.Timeout | null = null;
+
+const writeMarker = async (marker: LastBackupMarker): Promise<void> => {
+  const markerPath = getMarkerPath();
+  await fs.mkdir(path.dirname(markerPath), { recursive: true });
+  await fs.writeFile(`${markerPath}.tmp`, JSON.stringify(marker, null, 2));
+  await fs.rename(`${markerPath}.tmp`, markerPath);
+};
+
+export const getLastBackupMarker = async (): Promise<LastBackupMarker | null> => {
+  try {
+    return JSON.parse(await fs.readFile(getMarkerPath(), 'utf-8')) as LastBackupMarker;
+  } catch {
+    return null;
+  }
+};
+
+/**
+ * Run one backup cycle. `manual` runs even when `enabled` is false (the user
+ * pressed the button); `timer`/`quit` respect the toggle.
+ */
+export const runBackup = async (reason: BackupReason): Promise<BackupResult> => {
+  if (runInProgress) return { ok: false, reason, skipped: 'in-progress' };
+
+  const config = await readBackupConfig().catch(() => null);
+  if (!isBackupConfigComplete(config)) return { ok: false, reason, skipped: 'not-configured' };
+  if (!config.enabled && reason !== 'manual') return { ok: false, reason, skipped: 'disabled' };
+
+  const dbPath = await getEntityDbPath();
+  if (!dbPath) return { ok: false, reason, skipped: 'no-database' };
+  try {
+    await fs.access(dbPath);
+  } catch {
+    return { ok: false, reason, skipped: 'no-database' };
+  }
+
+  runInProgress = true;
+  const startedAt = Date.now();
+  let snapshot: Snapshot | null = null;
+  try {
+    snapshot = await createSnapshot(dbPath);
+    const client = new R2Client(toR2Config(config));
+    const timestamp = compactTimestamp(new Date());
+    const key = `${config.prefix}${SNAPSHOTS_SEGMENT}entities-${timestamp}-${reason}.sqlite.gz`;
+
+    await client.putObject(key, await fs.readFile(snapshot.gzPath), {
+      contentType: 'application/gzip',
+      metadata: {
+        sha256: snapshot.sha256,
+        'source-bytes': String(snapshot.sourceBytes),
+        'app-version': app.getVersion(),
+        reason,
+      },
+    });
+
+    let prunedKeys: string[] = [];
+    try {
+      const existing = await client.listObjects(`${config.prefix}${SNAPSHOTS_SEGMENT}`);
+      prunedKeys = selectSnapshotsToPrune(existing.map((o) => o.key));
+      for (const staleKey of prunedKeys) await client.deleteObject(staleKey);
+    } catch (pruneError) {
+      // A failed prune must not fail the backup — the snapshot is already up.
+      console.error('[entityDbBackup] prune failed:', pruneError);
+      prunedKeys = [];
+    }
+
+    const marker: LastBackupMarker = {
+      at: new Date().toISOString(),
+      reason,
+      key,
+      uploadedBytes: snapshot.uploadedBytes,
+      sourceBytes: snapshot.sourceBytes,
+      sha256: snapshot.sha256,
+    };
+    await writeMarker(marker);
+
+    return {
+      ok: true,
+      reason,
+      key,
+      uploadedBytes: snapshot.uploadedBytes,
+      sourceBytes: snapshot.sourceBytes,
+      sha256: snapshot.sha256,
+      durationMs: Date.now() - startedAt,
+      prunedKeys,
+    };
+  } catch (error) {
+    const message = error instanceof Error ? error.message : String(error);
+    console.error('[entityDbBackup] backup failed:', message);
+    return { ok: false, reason, error: message, durationMs: Date.now() - startedAt };
+  } finally {
+    if (snapshot) await fs.rm(snapshot.gzPath, { force: true }).catch(() => undefined);
+    runInProgress = false;
+  }
+};
+
+// --- timer -------------------------------------------------------------
+
+/** (Re)start the periodic timer from current config. Safe to call repeatedly. */
+export const startBackupTimer = async (): Promise<void> => {
+  stopBackupTimer();
+  const config = await readBackupConfig().catch(() => null);
+  if (!isBackupConfigComplete(config) || !config.enabled) return;
+  const everyMs = config.intervalMinutes * 60 * 1000;
+  timer = setInterval(() => {
+    void runBackup('timer');
+  }, everyMs);
+  timer.unref?.();
+};
+
+export const stopBackupTimer = (): void => {
+  if (timer) {
+    clearInterval(timer);
+    timer = null;
+  }
+};
+
+/** Best-effort snapshot on quit, bounded so it can't hang shutdown. */
+export const runQuitBackup = async (timeoutMs = 12_000): Promise<BackupResult> => {
+  const config = await readBackupConfig().catch(() => null);
+  if (!isBackupConfigComplete(config) || !config.enabled) {
+    return { ok: false, reason: 'quit', skipped: 'disabled' };
+  }
+  return Promise.race([
+    runBackup('quit'),
+    new Promise<BackupResult>((resolve) =>
+      setTimeout(() => resolve({ ok: false, reason: 'quit', error: 'timed out' }), timeoutMs),
+    ),
+  ]);
+};
+
+// --- restore ---------------------------------------------------------
+
+const describeSnapshot = (object: R2Object): CloudSnapshot => {
+  const parsed = parseSnapshotKey(object.key);
+  const reason = object.key.match(/-(\w+)\.sqlite\.gz$/)?.[1] ?? 'unknown';
+  return {
+    key: object.key,
+    size: object.size,
+    lastModified: object.lastModified.toISOString(),
+    reason,
+    timestamp: parsed ? parsed.date.toISOString() : object.lastModified.toISOString(),
+  };
+};
+
+/**
+ * Lightweight round-trip against the configured bucket/prefix — a signed LIST.
+ * Used by the settings panel's "Test connection" button. `config` may carry a
+ * not-yet-saved secret from the form.
+ */
+export const probeBackupTarget = async (
+  config: EntityDbBackupConfig,
+): Promise<{ ok: boolean; error?: string; objectCount?: number }> => {
+  if (!isBackupConfigComplete(config)) {
+    return { ok: false, error: 'Endpoint, access key, secret, and bucket are all required.' };
+  }
+  try {
+    const client = new R2Client(toR2Config(config));
+    const objects = await client.listObjects(`${config.prefix}${SNAPSHOTS_SEGMENT}`);
+    return { ok: true, objectCount: objects.length };
+  } catch (error) {
+    return { ok: false, error: error instanceof Error ? error.message : String(error) };
+  }
+};
+
+export const listCloudSnapshots = async (): Promise<CloudSnapshot[]> => {
+  const config = await readBackupConfig();
+  if (!isBackupConfigComplete(config)) {
+    throw new Error('Cloud backup is not configured.');
+  }
+  const client = new R2Client(toR2Config(config));
+  const objects = await client.listObjects(`${config.prefix}${SNAPSHOTS_SEGMENT}`);
+  return objects.map(describeSnapshot).sort((a, b) => b.timestamp.localeCompare(a.timestamp));
+};
+
+export interface RestoreResult {
+  ok: boolean;
+  restoredFromKey: string;
+  restoredBytes: number;
+  /** Where the pre-restore database (and sidecars) were moved. */
+  previousCopyDir: string;
+  error?: string;
+}
+
+/**
+ * Download a snapshot, verify it, and swap it in as the live entity database.
+ *
+ * The caller MUST have closed every SQLite handle to the entity database
+ * first and MUST relaunch (or reopen the store) afterwards — this function
+ * moves files, it does not coordinate open connections.
+ */
+export const restoreSnapshot = async (key: string): Promise<RestoreResult> => {
+  const config = await readBackupConfig();
+  if (!isBackupConfigComplete(config)) throw new Error('Cloud backup is not configured.');
+  const folder = await getEntityDbFolder();
+  if (!folder) throw new Error('No entity database folder is configured.');
+
+  const client = new R2Client(toR2Config(config));
+  const gz = await client.getObject(key);
+  const expectedSha = (await client.headObjectMetadata(key).catch(() => null))?.sha256;
+  if (expectedSha) {
+    const actual = createHash('sha256').update(gz).digest('hex');
+    if (actual !== expectedSha) {
+      throw new Error(`downloaded snapshot is corrupt (sha256 ${actual} ≠ ${expectedSha})`);
+    }
+  }
+
+  const stagedPath = path.join(folder, `entities.restore-${compactTimestamp(new Date())}.sqlite`);
+  await fs.writeFile(stagedPath, gunzipSync(gz));
+  try {
+    const verify = new DatabaseSync(stagedPath, { readOnly: true });
+    try {
+      const rows = verify.prepare('PRAGMA integrity_check').all() as {
+        integrity_check: string;
+      }[];
+      const problems = rows.map((r) => r.integrity_check).filter((line) => line !== 'ok');
+      if (problems.length > 0) {
+        throw new Error(`restored file failed integrity_check: ${problems.slice(0, 3).join('; ')}`);
+      }
+    } finally {
+      verify.close();
+    }
+
+    const previousCopyDir = path.join(folder, `pre-restore-${compactTimestamp(new Date())}`);
+    await fs.mkdir(previousCopyDir, { recursive: true });
+    for (const sidecar of ['', '-wal', '-shm']) {
+      const live = path.join(folder, `${ENTITY_DB_FILENAME}${sidecar}`);
+      try {
+        await fs.rename(live, path.join(previousCopyDir, `${ENTITY_DB_FILENAME}${sidecar}`));
+      } catch (error) {
+        if ((error as NodeJS.ErrnoException).code !== 'ENOENT') throw error;
+      }
+    }
+    await fs.rename(stagedPath, path.join(folder, ENTITY_DB_FILENAME));
+
+    return {
+      ok: true,
+      restoredFromKey: key,
+      restoredBytes: gz.length,
+      previousCopyDir,
+    };
+  } catch (error) {
+    await fs.rm(stagedPath, { force: true }).catch(() => undefined);
+    throw error;
+  }
+};
+
+// --- startup integrity gate ------------------------------------------
+
+export interface EntityDbIntegrityReport {
+  ok: boolean;
+  problems: string[];
+  checked: boolean;
+}
+
+/** Cheap `PRAGMA integrity_check` used at startup to offer a restore. */
+export const checkEntityDbIntegrity = async (): Promise<EntityDbIntegrityReport> => {
+  const dbPath = await getEntityDbPath();
+  if (!dbPath) return { ok: true, problems: [], checked: false };
+  try {
+    await fs.access(dbPath);
+  } catch {
+    return { ok: true, problems: [], checked: false };
+  }
+  try {
+    const db = new DatabaseSync(dbPath, { readOnly: true });
+    try {
+      const rows = db.prepare('PRAGMA integrity_check').all() as { integrity_check: string }[];
+      const problems = rows.map((r) => r.integrity_check).filter((line) => line !== 'ok');
+      return { ok: problems.length === 0, problems, checked: true };
+    } finally {
+      db.close();
+    }
+  } catch (error) {
+    return {
+      ok: false,
+      problems: [error instanceof Error ? error.message : String(error)],
+      checked: true,
+    };
+  }
+};
+
+/** Exported for tests. */
+export const __testing = { parseSnapshotKey, compactTimestamp, sqlStringLiteral, KEEP_RECENT };
+
+export type { EntityDbBackupConfig };

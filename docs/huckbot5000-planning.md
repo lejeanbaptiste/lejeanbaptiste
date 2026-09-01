@@ -297,6 +297,17 @@ remainder" excludes once this field is gone).
 
 ## Legal note (not advice)
 
+**Decision (2026-09-01): the reviewed gap-fill translations pack ships publicly.**
+`packs/huckbot5000/translations.ndjson` (reviewed `approved-include` rows only; every
+candidate matching known Hucker wording or a stock Hucker hedge phrase hard-gated out
+_before_ review; each row tagged `source: 'Huckbot5000'`, never `'Hucker'`) is treated as
+redistributable project output. It has shipped in `authority-packs-chinese` since **v0.1.14**;
+its manifest now carries `license: 'internal'` + `policy.redistribute: true` (emitted by
+`huckbot5000/compileTranslations.mjs`). Scope of the clearance: this pack only. Unchanged —
+`huckbot5000-insiders` (collision archive, `source: 'Hucker'`) stays local-only and out of
+every public release, and the morpheme-lexicon manifest (`compile.mjs`) keeps
+`internal-pending-review`. The reasoning below is the record of what was weighed.
+
 Daniel is at Collège de France, so the EU _sui generis_ database right (Directive 96/9/EC)
 applies and has no US equivalent. It protects substantial extraction from a database
 independently of whether the individual contents are copyrightable — a different question from

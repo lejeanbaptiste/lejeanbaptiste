@@ -93,6 +93,85 @@ export interface TimeMachineSnapshotSummary {
   version: 1;
 }
 
+/** Entity database cloud backup (see apps/desktop/src/entityDbBackup*.ts). */
+export interface EntityDbBackupConfig {
+  enabled: boolean;
+  endpoint: string;
+  accessKeyId: string;
+  secretAccessKey: string;
+  bucket: string;
+  prefix: string;
+  intervalMinutes: number;
+}
+
+/** Redacted config safe for the renderer — proves a secret is set without revealing it. */
+export interface EntityDbBackupConfigView {
+  enabled: boolean;
+  endpoint: string;
+  accessKeyId: string;
+  bucket: string;
+  prefix: string;
+  intervalMinutes: number;
+  hasSecret: boolean;
+  encryptionAvailable: boolean;
+}
+
+export interface EntityDbBackupResult {
+  ok: boolean;
+  reason: 'timer' | 'quit' | 'manual';
+  key?: string;
+  uploadedBytes?: number;
+  sourceBytes?: number;
+  sha256?: string;
+  durationMs?: number;
+  prunedKeys?: string[];
+  skipped?: 'not-configured' | 'disabled' | 'in-progress' | 'no-database';
+  error?: string;
+}
+
+export interface EntityDbBackupLastMarker {
+  at: string;
+  reason: 'timer' | 'quit' | 'manual';
+  key: string;
+  uploadedBytes: number;
+  sourceBytes: number;
+  sha256: string;
+}
+
+export interface EntityDbCloudSnapshot {
+  key: string;
+  size: number;
+  lastModified: string;
+  reason: string;
+  timestamp: string;
+}
+
+export interface EntityDbRestoreResult {
+  ok: boolean;
+  restoredFromKey: string;
+  restoredBytes: number;
+  previousCopyDir: string;
+  error?: string;
+}
+
+export interface EntityDbIntegrityReport {
+  ok: boolean;
+  problems: string[];
+  checked: boolean;
+}
+
+export interface EntityDbBackupStatus {
+  config: EntityDbBackupConfigView;
+  lastBackup: EntityDbBackupLastMarker | null;
+  integrity: EntityDbIntegrityReport;
+}
+
+export interface EntityDbBackupProbeResult {
+  ok: boolean;
+  error?: string;
+  objectCount?: number;
+}
+
 export interface AiApiSettings {
   apiKey: string;
   baseUrl: string;
@@ -646,6 +725,17 @@ export interface ElectronAPI {
   getAiApiSettings: () => Promise<AiApiSettings>;
   setAiApiSettings: (settings: Partial<AiApiSettings>) => Promise<void>;
   testAiConnection: (settings: Partial<AiApiSettings>) => Promise<AiConnectionResult>;
+  entityDbBackupGetStatus?: () => Promise<EntityDbBackupStatus>;
+  entityDbBackupSetConfig?: (
+    patch: Partial<EntityDbBackupConfig>,
+  ) => Promise<EntityDbBackupConfigView>;
+  entityDbBackupClearConfig?: () => Promise<void>;
+  entityDbBackupTestConnection?: (
+    patch: Partial<EntityDbBackupConfig>,
+  ) => Promise<EntityDbBackupProbeResult>;
+  entityDbBackupRunNow?: () => Promise<EntityDbBackupResult>;
+  entityDbBackupListSnapshots?: () => Promise<EntityDbCloudSnapshot[]>;
+  entityDbBackupRestore?: (key: string) => Promise<EntityDbRestoreResult>;
   getLanguageToolSettings: () => Promise<LanguageToolSettings>;
   setLanguageToolSettings: (settings: Partial<LanguageToolSettings>) => Promise<void>;
   testLanguageToolConnection: (
@@ -747,6 +837,18 @@ declare global {
         error?: string;
         folder?: string;
       }>;
+      entityDbBackupStatus: EntityDbBackupStatus | null;
+      refreshEntityDbBackupStatus: () => Promise<void>;
+      setEntityDbBackupConfig: (
+        patch: Partial<EntityDbBackupConfig>,
+      ) => Promise<EntityDbBackupConfigView | null>;
+      clearEntityDbBackupConfig: () => Promise<void>;
+      testEntityDbBackupConnection: (
+        patch: Partial<EntityDbBackupConfig>,
+      ) => Promise<EntityDbBackupProbeResult>;
+      runEntityDbBackupNow: () => Promise<EntityDbBackupResult>;
+      listEntityDbBackupSnapshots: () => Promise<EntityDbCloudSnapshot[]>;
+      restoreEntityDbBackup: (key: string) => Promise<EntityDbRestoreResult>;
       setAiApiSettings: (settings: Partial<AiApiSettings>) => void | Promise<void>;
       setLanguageToolSettings: (settings: Partial<LanguageToolSettings>) => void | Promise<void>;
       githubConnected: boolean;

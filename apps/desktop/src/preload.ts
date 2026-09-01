@@ -15,6 +15,20 @@ import type {
 import type { AuthorityRefLookupRequest, AuthorityRefLookupResult } from './authorityRefLookup';
 import type { ProjectBundle } from './projectFile';
 import type { MapTileBundleSpec } from './mapTiles';
+import type { EntityDbBackupConfig, EntityDbBackupConfigView } from './entityDbBackupConfig';
+import type {
+  BackupResult,
+  CloudSnapshot,
+  EntityDbIntegrityReport,
+  LastBackupMarker,
+  RestoreResult,
+} from './entityDbBackup';
+
+export interface EntityDbBackupStatus {
+  config: EntityDbBackupConfigView;
+  lastBackup: LastBackupMarker | null;
+  integrity: EntityDbIntegrityReport;
+}
 
 export interface MapTilesProgress {
   bundleId: string;
@@ -912,6 +926,19 @@ export interface ElectronAPI {
   /** Interface (window chrome) zoom — scales the entire UI, unlike the per-pane text zooms. */
   setUiZoomFactor: (factor: number) => void;
   getUiZoomFactor: () => number;
+
+  /** Entity-database cloud backup (Settings › Entity database › Cloud backup). */
+  entityDbBackupGetStatus: () => Promise<EntityDbBackupStatus>;
+  entityDbBackupSetConfig: (
+    patch: Partial<EntityDbBackupConfig>,
+  ) => Promise<EntityDbBackupConfigView>;
+  entityDbBackupClearConfig: () => Promise<void>;
+  entityDbBackupTestConnection: (
+    patch: Partial<EntityDbBackupConfig>,
+  ) => Promise<{ ok: boolean; error?: string; objectCount?: number }>;
+  entityDbBackupRunNow: () => Promise<BackupResult>;
+  entityDbBackupListSnapshots: () => Promise<CloudSnapshot[]>;
+  entityDbBackupRestore: (key: string) => Promise<RestoreResult>;
 }
 
 const electronAPI: ElectronAPI = {
@@ -1410,6 +1437,14 @@ const electronAPI: ElectronAPI = {
     ipcRenderer.on('lsp:message', listener);
     return () => ipcRenderer.removeListener('lsp:message', listener);
   },
+  entityDbBackupGetStatus: () => ipcRenderer.invoke('entityDbBackup:getStatus'),
+  entityDbBackupSetConfig: (patch) => ipcRenderer.invoke('entityDbBackup:setConfig', patch),
+  entityDbBackupClearConfig: () => ipcRenderer.invoke('entityDbBackup:clearConfig'),
+  entityDbBackupTestConnection: (patch) =>
+    ipcRenderer.invoke('entityDbBackup:testConnection', patch),
+  entityDbBackupRunNow: () => ipcRenderer.invoke('entityDbBackup:runNow'),
+  entityDbBackupListSnapshots: () => ipcRenderer.invoke('entityDbBackup:listSnapshots'),
+  entityDbBackupRestore: (key: string) => ipcRenderer.invoke('entityDbBackup:restore', key),
 };
 
 contextBridge.exposeInMainWorld('electronAPI', electronAPI);

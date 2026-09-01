@@ -84,6 +84,23 @@ import {
   type LanguageToolSettings,
   type WorkspaceSession,
 } from './projectPrefs';
+import {
+  readBackupConfig,
+  readBackupConfigView,
+  writeBackupConfig,
+  clearBackupConfig,
+  type EntityDbBackupConfig,
+} from './entityDbBackupConfig';
+import {
+  runBackup,
+  runQuitBackup,
+  startBackupTimer,
+  getLastBackupMarker,
+  listCloudSnapshots,
+  restoreSnapshot,
+  checkEntityDbIntegrity,
+  probeBackupTarget,
+} from './entityDbBackup';
 import { setAppLocale } from './appLocale';
 import { mainT } from './mainI18n';
 import { checkLanguageToolText, testLanguageToolConnection } from './languageToolClient';
@@ -3660,6 +3677,59 @@ const registerIpcHandlers = () => {
     },
   );
 
+  ipcMain.handle('entityDbBackup:getStatus', async () => {
+    const [config, lastBackup, integrity] = await Promise.all([
+      readBackupConfigView(),
+      getLastBackupMarker(),
+      checkEntityDbIntegrity(),
+    ]);
+    return { config, lastBackup, integrity };
+  });
+
+  ipcMain.handle(
+    'entityDbBackup:setConfig',
+    async (_event, patch: Partial<EntityDbBackupConfig>) => {
+      const view = await writeBackupConfig(patch);
+      await startBackupTimer();
+      return view;
+    },
+  );
+
+  ipcMain.handle('entityDbBackup:clearConfig', async () => {
+    await clearBackupConfig();
+    await startBackupTimer();
+  });
+
+  ipcMain.handle(
+    'entityDbBackup:testConnection',
+    async (_event, patch: Partial<EntityDbBackupConfig>) => {
+      // Merge the form patch over the stored config so a blank secret field
+      // reuses the saved secret instead of failing the probe.
+      const stored = await readBackupConfig().catch(() => null);
+      const merged = {
+        enabled: patch.enabled ?? stored?.enabled ?? false,
+        endpoint: (patch.endpoint ?? stored?.endpoint ?? '').replace(/\/$/, ''),
+        accessKeyId: patch.accessKeyId ?? stored?.accessKeyId ?? '',
+        secretAccessKey: patch.secretAccessKey || stored?.secretAccessKey || '',
+        bucket: patch.bucket ?? stored?.bucket ?? '',
+        prefix: patch.prefix ?? stored?.prefix ?? 'entity-db-backups/',
+        intervalMinutes: patch.intervalMinutes ?? stored?.intervalMinutes ?? 15,
+      } satisfies EntityDbBackupConfig;
+      return probeBackupTarget(merged);
+    },
+  );
+
+  ipcMain.handle('entityDbBackup:runNow', async () => runBackup('manual'));
+
+  ipcMain.handle('entityDbBackup:listSnapshots', async () => listCloudSnapshots());
+
+  ipcMain.handle('entityDbBackup:restore', async (_event, key: string) => {
+    // Drop cached read handles so the file swap isn't fighting open fds; the
+    // renderer is expected to reload (or the app relaunch) right after.
+    closeEntitySqliteReadRepositories();
+    return restoreSnapshot(key);
+  });
+
   ipcMain.handle('languageToolGetInstallStatus', async () => getLanguageToolInstallStatus());
 
   ipcMain.handle('languageToolInstall', async (event) => {
@@ -4034,6 +4104,7 @@ app.whenReady().then(() => {
     buildApplicationMenu();
     await syncEnabledPluginContributions();
   })();
+  void startBackupTimer();
   void createWindow();
 
   app.on('activate', () => {
@@ -4049,7 +4120,10 @@ app.on('before-quit', (event) => {
     closeEntitySqliteReadRepositories();
     closeAllNativeDialogs();
 
-    void prepareRendererForQuit().finally(() => {
+    // A best-effort snapshot on the way out, in parallel with renderer
+    // teardown. runQuitBackup caps its own runtime and no-ops when backup is
+    // disabled or unconfigured, so this can't hang shutdown.
+    void Promise.allSettled([prepareRendererForQuit(), runQuitBackup()]).finally(() => {
       quitPreparationInProgress = false;
       app.quit();
     });

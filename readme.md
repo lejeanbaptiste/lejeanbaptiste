@@ -163,6 +163,21 @@ LJB should receive the import dialog for that source. More detail on what each s
 | Wrong or empty import                             | Check the URL matches the supported patterns above; use **File → Import from URL…** in LJB with the same link to compare.                                                                                                |
 | SmartScreen or security warning                   | The extension is not from a store; you install it manually from the LJB release. Only download zips from [github.com/lejeanbaptiste/lejeanbaptiste/releases](https://github.com/lejeanbaptiste/lejeanbaptiste/releases). |
 
+## Entity database cloud backup
+
+Le Jean-Baptiste can copy your entity database (`entities.sqlite`) to a private
+[Cloudflare R2](https://developers.cloudflare.com/r2/) bucket on a timer and on
+quit — a consistent, compressed, integrity-checked snapshot each time — so a
+lost or corrupted local file can be restored in one step. Keep the live
+database on a local disk (never in Dropbox/iCloud/Nextcloud, which corrupts
+SQLite) and let this hold the off-machine copy.
+
+Setup — creating the bucket and a scoped API token, then pointing LJB at it:
+**[docs/entity-db-cloud-backup-setup.md](docs/entity-db-cloud-backup-setup.md)**.
+
+This is a backup, not multi-machine sync; row-level sync is a later phase
+([docs/entity-sync-planning.md](docs/entity-sync-planning.md)).
+
 ## Build From Source
 
 See [apps/desktop/README.md](apps/desktop/README.md) for the compilation and packaging instructions.
