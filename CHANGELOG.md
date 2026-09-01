@@ -302,18 +302,36 @@
 - Rank 5+ backdrops now actually pair with modern-era weapons. The rule had been written but never took effect: the backdrop key was computed inside a `setBackgroundKey` updater and read on the very next line, and React doesn't run an updater until the following render — so the key was still `null` when the weapon pick needed its rank, `requireRank` came out `undefined` on every single portrait, and the weapon pool was never restricted at all. Pose, backdrop and weapon are now resolved synchronously in `pickPortraitFor`, with the "don't repeat the last one" values tracked in refs instead of read back through updaters.
 - Even once that was passing the floor through, it was the backdrop's own rank — and backdrops run to Rank 7 while weapon art stops at tier 5. A tier-6 floor empties `pickWeapon`'s pool, which then silently falls back to the _unrestricted_ one, which is how a Rank 6 desert backdrop ended up holding a flintlock. The rule now lives in one named function (`weaponFloorForBackground`) clamped to `MODERN_ERA_RANK`, so backdrop ranks 5, 6 and 7 all share tier-5 weapons. Earlier-rank backdrops stay unrestricted on purpose: at Rank 6 the pick is 80% current-world / 20% historical, and an officer drawing a Napoleonic scene should still be holding a Napoleonic weapon. A guard test fails the moment tier-6 weapon art is added, as a reminder to raise the constant.
 
-## Upstream
+## 0.1.0-beta.5
 
-### Added
+### CBETA import
 
-- Recent projects docket
-- CBETA importer wiring + plugin ([plugins](https://github.com/lejeanbaptiste/plugins) repo)
-- BDRC importer wiring + plugin ([plugins](https://github.com/lejeanbaptiste/plugins) repo)
-- Date ranges for edition year
-- Fully functional Chrome and Firefox extensions
+- Wired end-to-end **CBETA import** (File → Import from CBETA…): host UI, `cbetaImportXml.ts` TEI wrapper, CBETA P5 schema bundle (`cbeta_p5.rng` / `.sch` + `cbeta.css`), and project bootstrap for CBETA-family targets. Requires the `cbeta-import` plugin from the [plugins](https://github.com/lejeanbaptiste/plugins) repo (Tools → Plugins).
+- CBETA import dialog: fixed 720×700 layout (no resize while searching), **Split by section (mulu)** default for TEI-ALL projects (juan for CBETA-schema), plus **Clean import** and **Strip Taishō line breaks** checkboxes. Cross-family import now consumes nested `cb:mulu` into `<head>` (fixes TEI-ALL validation) and maps invalid `@place` on `<p>` to `@rend`. Dialog compacted: split-by dropdown, merged clean-import label, progress while importing/syncing.
+- Plugin-side mulu split fixes: omit the split-marker `cb:mulu` from slice bodies (no duplicate `<head>` with the host's section wrapper), fold content-less headings into the next slice, and strip redundant leading `<head>` when it repeats the slice title.
+
+### BDRC import
+
+- Wired **BDRC import** (File → Import from BDRC… and browser extension): host UI, `bdrcImportXml.ts`, and plugin bridge. Requires the `bdrc-import` plugin from the [plugins](https://github.com/lejeanbaptiste/plugins) repo.
+
+### Browser extension (corpus import)
+
+- **Chrome / Brave / Edge / Firefox** extension for one-click import from Wikisource, Kanripo, and BDRC. Native-messaging host registration on **macOS, Linux, and Windows** (registry + batch launcher on Windows; Firefox gecko id supported).
+- Release zips (`ljb-browser-extension-chromium-*`, `ljb-browser-extension-firefox-*`) built by `npm run package:browser-extension` and attached to the same GitHub release as the desktop installers. Step-by-step install instructions in [readme.md](readme.md#browser-extension-corpus-import).
+
+### Import metadata and source description
+
+- Expanded `sourceDescription` for the metadata panel: structured work title, authors with `ref`/`key`, work dates (`when` / `notBefore`–`notAfter`), edition, edition-year ranges, and transcription source; legacy `sourceDesc/p` free text migrates on apply.
+- Import headers (Kanripo, Daozang, Wikisource, BDRC, CBETA) aligned with the same `sourceDesc/biblStruct` patterns; CBETA canon labels via `cbetaCanons.ts`.
+
+### Project and UI
+
+- **Recent projects** menu (File → Recent Projects), capped at 10 entries with LRU eviction and cleanup of missing paths on failed open.
+- **Date ranges for edition year** in the metadata panel (edition `imprint/date` with `notBefore`/`notAfter`).
+- Created `<ab>` for Tibetan texts without paragraphs as the basic unit of translation. It is still unclear how this should be articulated with paragraphs.
 
 ### Fixed
 
 - The translation tab only loaded configured languages when a project was first opened, so saving English (or any target language) in Project settings left the Translation panel showing “no languages configured” until the project was closed and reopened. It now listens for the `ljb-project-config-saved` event and reloads `schema/translation-settings.json` immediately after a successful save.
 - Project settings had no guard against navigating away with unsaved edits — easy to miss because Save is separate from Add. The form now tracks a dirty snapshot and warns before leaving the Project tab, closing the settings dialog, or cancelling the native project-settings window.
-- Created `<ab>` for Tibetan texts without paragraphs as basic unit of translation. It is still unclear how this should be articulated with paragraphs.
+- Project settings save path fixed so schema and translation configuration persist reliably across sessions.

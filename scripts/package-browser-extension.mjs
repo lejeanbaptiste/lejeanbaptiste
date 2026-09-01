@@ -66,7 +66,13 @@ const stageChromium = async (stageDir) => {
 };
 
 const stageFirefox = async (stageDir) => {
-  for (const name of ['content.js', 'content-kanripo.js', 'content-bdrc.js', 'popup.html', 'popup.js']) {
+  for (const name of [
+    'content.js',
+    'content-kanripo.js',
+    'content-bdrc.js',
+    'popup.html',
+    'popup.js',
+  ]) {
     await copyPath(path.join(extensionRoot, name), path.join(stageDir, name));
   }
   await copyPath(path.join(extensionRoot, 'icons'), path.join(stageDir, 'icons'));

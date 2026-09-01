@@ -38,7 +38,7 @@ Download the extension zips from the [same GitHub release](https://github.com/le
    This assembles `dist/firefox/` (shared sources + `manifest.firefox.json`
    renamed to `manifest.json`).
 2. Start **Le Jean-Baptiste** once (registers the native-messaging host — see
-   *Native-messaging host* below).
+   _Native-messaging host_ below).
 3. `about:debugging#/runtime/this-firefox` → Load Temporary Add-on →
    pick `dist/firefox/manifest.json`.
 
@@ -53,10 +53,10 @@ Starting Le Jean-Baptiste registers the native host `org.lejeanbaptiste.import`
 so the extension can reach the running app. This is automatic on **macOS,
 Linux, and Windows**:
 
-| | Chrome / Brave / Chromium / Edge | Firefox |
-|---|---|---|
-| macOS | `~/Library/Application Support/<Browser>/NativeMessagingHosts/org.lejeanbaptiste.import.json` | `~/Library/Application Support/Mozilla/NativeMessagingHosts/…` |
-| Linux | `~/.config/<browser>/NativeMessagingHosts/org.lejeanbaptiste.import.json` | `~/.mozilla/native-messaging-hosts/…` |
+|         | Chrome / Brave / Chromium / Edge                                                                                                  | Firefox                                                                |
+| ------- | --------------------------------------------------------------------------------------------------------------------------------- | ---------------------------------------------------------------------- |
+| macOS   | `~/Library/Application Support/<Browser>/NativeMessagingHosts/org.lejeanbaptiste.import.json`                                     | `~/Library/Application Support/Mozilla/NativeMessagingHosts/…`         |
+| Linux   | `~/.config/<browser>/NativeMessagingHosts/org.lejeanbaptiste.import.json`                                                         | `~/.mozilla/native-messaging-hosts/…`                                  |
 | Windows | `HKCU\Software\<Vendor>\…\NativeMessagingHosts\org.lejeanbaptiste.import` → manifest in `%APPDATA%\Le Jean-Baptiste\native-host\` | `HKCU\Software\Mozilla\NativeMessagingHosts\org.lejeanbaptiste.import` |
 
 The manifest allows the Chrome extension id `dddnkaleimllefhfolmhdfbidnjfojjh`

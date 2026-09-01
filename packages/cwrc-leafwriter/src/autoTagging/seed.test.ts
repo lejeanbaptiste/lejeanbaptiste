@@ -178,7 +178,13 @@ describe('seedSuggestions + bucketSeeds', () => {
     const candidate = cand({
       authorityId: 'noble-title:hou-dao',
       searchStrings: ['侯道'],
-      metadata: { wrapper: { personId: '9', titleRowId: '99', components: { roleName: '侯', persName: '道' } } },
+      metadata: {
+        wrapper: {
+          personId: '9',
+          titleRowId: '99',
+          components: { roleName: '侯', persName: '道' },
+        },
+      },
     });
     expect(compoundWrapperSuggestions(doc, [candidate], 'ignore')).toHaveLength(0);
   });
@@ -192,7 +198,13 @@ describe('seedSuggestions + bucketSeeds', () => {
     const candidate = cand({
       authorityId: 'noble-title:21',
       searchStrings: ['鄱陽王範'],
-      metadata: { wrapper: { personId: '8', titleRowId: '21', components: { fief: '鄱陽', roleName: '王', persName: '範' } } },
+      metadata: {
+        wrapper: {
+          personId: '8',
+          titleRowId: '21',
+          components: { fief: '鄱陽', roleName: '王', persName: '範' },
+        },
+      },
     });
     expect(compoundWrapperSuggestions(doc, [candidate], 'ignore')).toHaveLength(0);
   });

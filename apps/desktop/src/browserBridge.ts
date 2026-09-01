@@ -77,9 +77,7 @@ const nativeMessagingDirs = (): string[] => {
 const firefoxNativeMessagingDirs = (): string[] => {
   const home = os.homedir();
   if (process.platform === 'darwin') {
-    return [
-      path.join(home, 'Library', 'Application Support', 'Mozilla', 'NativeMessagingHosts'),
-    ];
+    return [path.join(home, 'Library', 'Application Support', 'Mozilla', 'NativeMessagingHosts')];
   }
   // Linux. Windows uses the registry instead — see registerWindowsNativeHost.
   return [path.join(home, '.mozilla', 'native-messaging-hosts')];
@@ -100,9 +98,7 @@ const WINDOWS_CHROMIUM_REGISTRY_ROOTS = [
 const WINDOWS_FIREFOX_REGISTRY_ROOTS = ['Software\\Mozilla'];
 
 const regExe = (): string =>
-  process.env.SystemRoot
-    ? path.join(process.env.SystemRoot, 'System32', 'reg.exe')
-    : 'reg.exe';
+  process.env.SystemRoot ? path.join(process.env.SystemRoot, 'System32', 'reg.exe') : 'reg.exe';
 
 /** `HKCU\<root>\NativeMessagingHosts\<name>` (default value) → manifest path. */
 const setRegistryHostKey = (root: string, manifestPath: string): void => {

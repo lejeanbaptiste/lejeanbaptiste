@@ -192,9 +192,7 @@ const EDITION_RANGE_HYPHEN = /^(\d{3,4})\s*-\s*(\d{3,4})$/;
  * the caller keeps the text as a human label without emitting an invalid date.
  * Endpoints are zero-padded to 4 digits like every other TEI date here.
  */
-export const editionDateAttrs = (
-  raw: string,
-): { when?: string; from?: string; to?: string } => {
+export const editionDateAttrs = (raw: string): { when?: string; from?: string; to?: string } => {
   const text = (raw ?? '').trim();
   if (!text) return {};
 

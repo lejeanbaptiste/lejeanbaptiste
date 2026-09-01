@@ -102,12 +102,12 @@ Extension zips are attached to the **same [GitHub release](https://github.com/le
 - `ljb-browser-extension-chromium-<version>.zip` — Chrome, Brave, Edge, and other Chromium browsers
 - `ljb-browser-extension-firefox-<version>.zip` — Firefox
 
-Use the zips from the release that matches your installed LJB version (for example, if you installed `v0.1.0-beta.4`, download the extension zips whose names end in `0.1.0-beta.4`).
+Use the zips from the release that matches your installed LJB version (for example, if you installed `v0.1.0-beta.5`, download the extension zips whose names end in `0.1.0-beta.5`).
 
 ### Before you install the extension
 
 1. **Install Le Jean-Baptiste** (see [Install](#install) above).
-2. **Launch LJB at least once** before loading the extension. On first start the app registers a *native-messaging host* on your machine so the browser can talk to the running editor. If you skip this step, the extension icon may appear but **Import** will not reach LJB.
+2. **Launch LJB at least once** before loading the extension. On first start the app registers a _native-messaging host_ on your machine so the browser can talk to the running editor. If you skip this step, the extension icon may appear but **Import** will not reach LJB.
 3. **Keep LJB running** when you use the extension (it sends the page to the app that is already open).
 
 The extension only reads the page URL to decide what to import — it does not scrape page text in the browser.
@@ -156,22 +156,16 @@ LJB should receive the import dialog for that source. More detail on what each s
 
 ### Troubleshooting
 
-| Problem | What to try |
-|--------|-------------|
-| **Import** does nothing or says it cannot connect | Quit and reopen LJB so the native host is registered again. Confirm LJB is running before you click Import. |
-| Extension missing after browser update | Reload the unpacked folder (Chromium) or load the temporary add-on again (Firefox). |
-| Wrong or empty import | Check the URL matches the supported patterns above; use **File → Import from URL…** in LJB with the same link to compare. |
-| SmartScreen or security warning | The extension is not from a store; you install it manually from the LJB release. Only download zips from [github.com/lejeanbaptiste/lejeanbaptiste/releases](https://github.com/lejeanbaptiste/lejeanbaptiste/releases). |
+| Problem                                           | What to try                                                                                                                                                                                                              |
+| ------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| **Import** does nothing or says it cannot connect | Quit and reopen LJB so the native host is registered again. Confirm LJB is running before you click Import.                                                                                                              |
+| Extension missing after browser update            | Reload the unpacked folder (Chromium) or load the temporary add-on again (Firefox).                                                                                                                                      |
+| Wrong or empty import                             | Check the URL matches the supported patterns above; use **File → Import from URL…** in LJB with the same link to compare.                                                                                                |
+| SmartScreen or security warning                   | The extension is not from a store; you install it manually from the LJB release. Only download zips from [github.com/lejeanbaptiste/lejeanbaptiste/releases](https://github.com/lejeanbaptiste/lejeanbaptiste/releases). |
 
 ## Build From Source
 
 See [apps/desktop/README.md](apps/desktop/README.md) for the compilation and packaging instructions.
-
-### TODO
-
-3	§10.4 — 5-min check of downgrade.phonetic_glosses against a real 音義 juan (once the corpus is synced), since the fixture is synthetic.	5 min
-4	Write down the maintainer refresh recipe — which DILA repos, the crosswalk extraction from authority extraction/dist/…/concordance.ndjson, the gh api …/trees/master file-list. That recipe currently only lives in this conversation.	15 min
-5	Conscious calls on two known gaps: 8 obscure works with files: [], and cb_gaiji.json empty (PUA residue keeps <g> — valid TEI, per-file <charDecl> is the source). Both fine as-is; just decide.
 
 ### Future
 

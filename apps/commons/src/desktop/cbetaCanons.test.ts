@@ -20,7 +20,9 @@ describe('cbetaCanonEdition', () => {
       const attrs = editionDateAttrs(entry.editionDate);
       const usable = Boolean(attrs.when || (attrs.from && attrs.to));
       expect(`${code}: ${JSON.stringify(attrs)}`).toBe(
-        usable ? `${code}: ${JSON.stringify(attrs)}` : `${code}: <unparseable ${entry.editionDate}>`,
+        usable
+          ? `${code}: ${JSON.stringify(attrs)}`
+          : `${code}: <unparseable ${entry.editionDate}>`,
       );
     }
   });
