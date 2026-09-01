@@ -348,7 +348,7 @@
 - **AI API “Always on”** (`Settings → AI API → Toujours actif`) only updated local form state and was not written to disk until **Establish connection** — unchecking it snapped back to checked on return, and Disambiguate kept the per-run AI toggle disabled. The checkbox now persists immediately via `setAiApiSettings`; `projectPrefs.setAiApiSettings` merges partial updates instead of replacing the whole record.
 - **Disambiguate with AI curation** blocked the candidate list until the LLM pass finished. Authority candidates now appear as soon as lookup completes (including instant replay from the per-surface pending cache); AI ranking runs in the background and updates selections/rationales when done, with cached AI ranks applied without a spinner.
 
-## Upstream
+## 0.1.0-beta.7
 
 ### Entity database cloud backup
 
