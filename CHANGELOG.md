@@ -336,7 +336,7 @@
 - Project settings had no guard against navigating away with unsaved edits — easy to miss because Save is separate from Add. The form now tracks a dirty snapshot and warns before leaving the Project tab, closing the settings dialog, or cancelling the native project-settings window.
 - Project settings save path fixed so schema and translation configuration persist reliably across sessions.
 
-## Upstream
+## 0.1.0-beta.6
 
 ### Fixed
 

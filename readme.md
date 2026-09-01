@@ -102,7 +102,7 @@ Extension zips are attached to the **same [GitHub release](https://github.com/le
 - `ljb-browser-extension-chromium-<version>.zip` — Chrome, Brave, Edge, and other Chromium browsers
 - `ljb-browser-extension-firefox-<version>.zip` — Firefox
 
-Use the zips from the release that matches your installed LJB version (for example, if you installed `v0.1.0-beta.5`, download the extension zips whose names end in `0.1.0-beta.5`).
+Use the zips from the release that matches your installed LJB version (for example, if you installed `v0.1.0-beta.6`, download the extension zips whose names end in `0.1.0-beta.6`).
 
 ### Before you install the extension
 

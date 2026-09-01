@@ -190,7 +190,10 @@ const defaultAppPrefs = (): AppPrefs => ({
 
 const readCommonPrefs = (
   parsed: Partial<AppPrefs> & { lastRootPath?: string | null },
-): Omit<AppPrefs, 'lastProjectFile'> => ({
+): Omit<AppPrefs, 'lastProjectFile' | 'aiApi' | 'languageTool'> & {
+  aiApi: AiApiSettings;
+  languageTool: LanguageToolSettings;
+} => ({
   encoderName: typeof parsed.encoderName === 'string' ? parsed.encoderName : '',
   aiApi: sanitizeAiApiSettings(parsed.aiApi),
   languageTool: sanitizeLanguageToolSettings(parsed.languageTool),
@@ -219,7 +222,7 @@ const resolveLastProjectFile = (
 /** Parse stored prefs JSON. Exported for unit tests. */
 export const parseAppPrefs = (
   parsed: Partial<AppPrefs> & { lastRootPath?: string | null },
-): AppPrefs => {
+): AppPrefs & { aiApi: AiApiSettings; languageTool: LanguageToolSettings } => {
   const common = readCommonPrefs(parsed);
   const lastProjectFile = resolveLastProjectFile(parsed);
   let recentProjectFiles = sanitizeRecentProjectFiles(parsed.recentProjectFiles);
