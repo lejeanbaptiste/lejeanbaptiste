@@ -575,7 +575,8 @@ export const getAiApiSettings = async (): Promise<AiApiSettings> => {
 
 export const setAiApiSettings = async (settings: Partial<AiApiSettings>) => {
   await mutateAppPrefs((prefs) => {
-    prefs.aiApi = sanitizeAiApiSettings(settings);
+    const current = sanitizeAiApiSettings(prefs.aiApi);
+    prefs.aiApi = sanitizeAiApiSettings({ ...current, ...settings });
   });
 };
 

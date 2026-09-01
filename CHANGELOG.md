@@ -335,3 +335,10 @@
 - The translation tab only loaded configured languages when a project was first opened, so saving English (or any target language) in Project settings left the Translation panel showing “no languages configured” until the project was closed and reopened. It now listens for the `ljb-project-config-saved` event and reloads `schema/translation-settings.json` immediately after a successful save.
 - Project settings had no guard against navigating away with unsaved edits — easy to miss because Save is separate from Add. The form now tracks a dirty snapshot and warns before leaving the Project tab, closing the settings dialog, or cancelling the native project-settings window.
 - Project settings save path fixed so schema and translation configuration persist reliably across sessions.
+
+## Upstream
+
+### Fixed
+
+- **AI API “Always on”** (`Settings → AI API → Toujours actif`) only updated local form state and was not written to disk until **Establish connection** — unchecking it snapped back to checked on return, and Disambiguate kept the per-run AI toggle disabled. The checkbox now persists immediately via `setAiApiSettings`; `projectPrefs.setAiApiSettings` merges partial updates instead of replacing the whole record.
+- **Disambiguate with AI curation** blocked the candidate list until the LLM pass finished. Authority candidates now appear as soon as lookup completes (including instant replay from the per-surface pending cache); AI ranking runs in the background and updates selections/rationales when done, with cached AI ranks applied without a spinner.

@@ -127,6 +127,32 @@ function fallbackDateAnchoredSelection(
   };
 }
 
+export async function lookupCachedDisambiguationRank(options: {
+  doc: Document;
+  instance: MentionInstance;
+  candidates: DisambiguationCandidate[];
+  client: LlmClient;
+  cache?: DisambiguationAiCache | null;
+  promptProfile?: AiPromptProfile | null;
+}): Promise<DisambiguationAiRankResult | null> {
+  const { doc, instance, candidates, client, cache, promptProfile } = options;
+  if (candidates.length === 0 || !cache) return null;
+
+  const user = formatDisambiguationRankContext(
+    buildDisambiguationRankContext(doc, instance, candidates),
+  );
+  const promptVersion = promptVersionWithProfile(DISAMBIGUATION_RANK_PROMPT_VERSION, promptProfile);
+  const cacheKey = cache.cacheKey(
+    instance.tag,
+    instance.surface,
+    candidates.map((c) => c.id),
+    user,
+    client.modelId,
+    promptVersion,
+  );
+  return cache.get(cacheKey);
+}
+
 export async function rankDisambiguationCandidates(options: {
   doc: Document;
   instance: MentionInstance;

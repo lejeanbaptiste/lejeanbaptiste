@@ -92,7 +92,8 @@ import {
   createLlmClientFromSettings,
   isAiSuggestReady,
 } from './llmClientFromSettings';
-import { rankDisambiguationCandidates } from './llmDisambiguationRank';
+import { rankDisambiguationCandidates, lookupCachedDisambiguationRank } from './llmDisambiguationRank';
+import type { DisambiguationAiRankResult } from './disambiguationAiCache';
 import { getConfidenceLabel, getValidationColor } from './llmValidationRank';
 import { SourceBadges } from './SourceBadges';
 import {
@@ -648,6 +649,26 @@ export const DisambiguationPanel = ({
     });
   };
 
+  const applyRankResult = useCallback((rank: DisambiguationAiRankResult, groupKey: string) => {
+    if (currentKeyRef.current !== groupKey) return;
+    setAiRationales(rank.rationales);
+    setAiConfidences(rank.confidences ?? {});
+    if (rank.selectedCandidateIds.length > 0) {
+      setCheckedIds(new Set(rank.selectedCandidateIds));
+      setAiSuggestCreateNew(false);
+      setAiCreateRationale(null);
+    } else if (rank.suggestCreateNew) {
+      setCheckedIds(new Set());
+      setAiSuggestCreateNew(true);
+      setAiCreateRationale(rank.createNewRationale ?? null);
+    } else {
+      setCheckedIds(new Set());
+      setAiSuggestCreateNew(false);
+      setAiCreateRationale(null);
+    }
+    setAiRanked(true);
+  }, []);
+
   const applyAiRank = useCallback(
     async (
       targetGroup: MentionGroup,
@@ -672,10 +693,23 @@ export const DisambiguationPanel = ({
       const settings = aiApiSettingsFromDesktop();
       if (!settings || !isAiSuggestReady(settings)) return;
 
+      const doc = await session.getDocument();
+      const client = createLlmClientFromSettings(settings);
+      const cachedRank = await lookupCachedDisambiguationRank({
+        doc,
+        instance: targetInstance,
+        candidates: rows,
+        client,
+        cache: cacheDisabled ? null : session.disambiguationAiCache,
+        promptProfile: activePromptProfile,
+      });
+      if (cachedRank) {
+        applyRankResult(cachedRank, groupKey);
+        return;
+      }
+
       setRankingAi(true);
       try {
-        const doc = await session.getDocument();
-        const client = createLlmClientFromSettings(settings);
         const rank = await rankDisambiguationCandidates({
           doc,
           instance: targetInstance,
@@ -693,17 +727,7 @@ export const DisambiguationPanel = ({
         });
         if (!rank || currentKeyRef.current !== groupKey) return;
 
-        setAiRationales(rank.rationales);
-        setAiConfidences(rank.confidences ?? {});
-        if (rank.selectedCandidateIds.length > 0) {
-          setCheckedIds(new Set(rank.selectedCandidateIds));
-          setAiSuggestCreateNew(false);
-        } else if (rank.suggestCreateNew) {
-          setCheckedIds(new Set());
-          setAiSuggestCreateNew(true);
-          setAiCreateRationale(rank.createNewRationale ?? null);
-        }
-        setAiRanked(true);
+        applyRankResult(rank, groupKey);
       } catch (e) {
         if (currentKeyRef.current !== groupKey) return;
         setError(e instanceof Error ? e.message : String(e));
@@ -715,7 +739,7 @@ export const DisambiguationPanel = ({
         }
       }
     },
-    [activePromptProfile, aiCuration, cacheDisabled, i18n.language, session],
+    [activePromptProfile, aiCuration, applyRankResult, cacheDisabled, i18n.language, session],
   );
 
   /**
@@ -791,17 +815,28 @@ export const DisambiguationPanel = ({
       // candidates (this is how a stale, unrelated, possibly-checked candidate
       // could otherwise appear under the wrong group after quick j/k navigation).
       const groupKey = mentionGroupKey(targetGroup);
-      setLoadingCandidates(true);
       setError(null);
-      setCandidates([]);
       setAiRationales({});
       setAiConfidences({});
       setAiSuggestCreateNew(false);
       setAiCreateRationale(null);
+      setRateLimitRetry(null);
+      setAiRanked(false);
+
+      const pendingCache = cacheDisabled
+        ? null
+        : session.getPendingCandidates(targetGroup.tag, targetGroup.surface);
+
+      if (pendingCache && !forceRefresh) {
+        // Show the last authority lookup immediately; merge in fresh local DB hits next.
+        if (currentKeyRef.current === groupKey) setCandidates(pendingCache);
+      } else {
+        setLoadingCandidates(true);
+        setCandidates([]);
+      }
+
       try {
-        const cached = cacheDisabled
-          ? null
-          : session.getPendingCandidates(targetGroup.tag, targetGroup.surface);
+        const cached = pendingCache;
         if (cached && !forceRefresh) {
           // The cache only exists to avoid re-querying external authorities;
           // the project's own entity database is cheap to re-read (SQLite name
@@ -838,8 +873,6 @@ export const DisambiguationPanel = ({
               void refreshDilaDates(targetGroup, cacheForRefresh, dbSources, true);
             })();
           }
-          const inst = targetInstance ?? controllerRef.current?.currentInstance();
-          if (inst) await applyAiRank(targetGroup, rows, inst);
           return;
         }
         const cache = session.cache;
@@ -873,8 +906,6 @@ export const DisambiguationPanel = ({
         }
         if (currentKeyRef.current !== groupKey) return;
         setCandidates(rows);
-        const inst = targetInstance ?? controllerRef.current?.currentInstance();
-        if (inst) await applyAiRank(targetGroup, rows, inst);
       } catch (e) {
         if (currentKeyRef.current !== groupKey) return;
         setError(e instanceof Error ? e.message : String(e));
@@ -883,7 +914,7 @@ export const DisambiguationPanel = ({
         if (currentKeyRef.current === groupKey) setLoadingCandidates(false);
       }
     },
-    [applyAiRank, cacheDisabled, placeProximityKm, projectLang, refreshDilaDates, session],
+    [cacheDisabled, placeProximityKm, projectLang, refreshDilaDates, session],
   );
 
   useEffect(() => {

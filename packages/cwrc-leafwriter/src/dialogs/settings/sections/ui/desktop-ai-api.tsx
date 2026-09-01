@@ -85,6 +85,12 @@ export const DesktopAiApi = () => {
     setStatus(null);
   };
 
+  const persistPreference = async (patch: Partial<AiApiSettings>) => {
+    setSettings((current) => ({ ...current, ...patch }));
+    setStatus(null);
+    await bridge.setAiApiSettings(patch);
+  };
+
   const establishConnection = async () => {
     if (!settings.model.trim()) {
       setStatus({ severity: 'error', message: t('LW.settings.ai_api.choose_model_first') });
@@ -237,7 +243,7 @@ export const DesktopAiApi = () => {
             control={
               <Checkbox
                 checked={settings.alwaysOn}
-                onChange={(event) => updateSetting('alwaysOn', event.target.checked)}
+                onChange={(event) => void persistPreference({ alwaysOn: event.target.checked })}
                 size="small"
               />
             }

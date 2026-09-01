@@ -9,6 +9,7 @@ const mockBuildDisambiguationCandidates = jest.fn();
 const mockAiApiSettingsFromDesktop = jest.fn();
 
 jest.mock('./llmDisambiguationRank', () => ({
+  lookupCachedDisambiguationRank: jest.fn().mockResolvedValue(null),
   rankDisambiguationCandidates: (...args: unknown[]) => mockRankDisambiguationCandidates(...args),
 }));
 
@@ -167,6 +168,39 @@ describe('DisambiguationPanel', () => {
       confidences: { 'cbdb:1': 0.91 },
       suggestCreateNew: false,
     });
+  });
+
+  it('shows authority candidates while AI curation is still running', async () => {
+    let resolveRank: (value: unknown) => void = () => {};
+    mockRankDisambiguationCandidates.mockImplementation(
+      () =>
+        new Promise((resolve) => {
+          resolveRank = resolve;
+        }),
+    );
+
+    render(<DisambiguationPanel session={createSession()} groups={[createGroup()]} aiCuration />);
+
+    mockAiApiSettingsFromDesktop.mockReturnValue({
+      apiKey: '',
+      baseUrl: 'http://localhost:11434',
+      model: 'mock-model',
+    });
+    window.dispatchEvent(new Event('ljbCommonsUiChanged'));
+
+    expect((await screen.findAllByText('沈攸之')).length).toBeGreaterThan(0);
+    await waitFor(() =>
+      expect(screen.getByText(/AI is curating candidates/i)).toBeTruthy(),
+    );
+
+    resolveRank({
+      selectedCandidateIds: ['cbdb:1'],
+      rationales: { 'cbdb:1': 'Best match' },
+      confidences: { 'cbdb:1': 0.91 },
+      suggestCreateNew: false,
+    });
+
+    expect(await screen.findByText('AI pre-selected 1 candidate.')).toBeTruthy();
   });
 
   it('applies AI curation results back into the panel', async () => {

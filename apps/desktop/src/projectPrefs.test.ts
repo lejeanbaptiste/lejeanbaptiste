@@ -1,4 +1,4 @@
-import { parseAppPrefs, sanitizeRecentProjectFiles } from './projectPrefs';
+import { DEFAULT_AI_API_SETTINGS, parseAppPrefs, sanitizeRecentProjectFiles } from './projectPrefs';
 
 jest.mock('electron', () => ({
   app: {
@@ -53,6 +53,31 @@ describe('parseAppPrefs', () => {
     });
 
     expect(prefs.recentProjectFiles).toEqual(['/Users/me/tibet/jean-baptiste.project.json']);
+  });
+
+  it('defaults aiApi.alwaysOn to false when absent', () => {
+    const prefs = parseAppPrefs({
+      aiApi: {
+        ...DEFAULT_AI_API_SETTINGS,
+        model: 'test-model',
+        verifiedAt: '2026-01-01T00:00:00.000Z',
+      },
+    });
+
+    expect(prefs.aiApi.alwaysOn).toBe(false);
+  });
+
+  it('preserves aiApi.alwaysOn when explicitly saved', () => {
+    const prefs = parseAppPrefs({
+      aiApi: {
+        ...DEFAULT_AI_API_SETTINGS,
+        model: 'test-model',
+        alwaysOn: true,
+        verifiedAt: '2026-01-01T00:00:00.000Z',
+      },
+    });
+
+    expect(prefs.aiApi.alwaysOn).toBe(true);
   });
 });
 
