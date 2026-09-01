@@ -1,14 +1,11 @@
+import type { LeafWriterEditor } from '../types';
+
 /** Plain-text editor selection captured on toolbar mousedown (before focus leaves TinyMCE). */
 let capturedPlain = '';
 
-export function captureEditorSelectionFromEditor(editor: {
-  selection: {
-    isCollapsed?: () => boolean;
-    getContent: (args: { format: string }) => string;
-    getBookmark: (type: number) => unknown;
-  };
-  currentBookmark?: unknown;
-}): void {
+export function captureEditorSelectionFromEditor(
+  editor: Pick<LeafWriterEditor, 'selection' | 'currentBookmark'>,
+): void {
   if (editor.selection.isCollapsed?.()) {
     capturedPlain = '';
     return;

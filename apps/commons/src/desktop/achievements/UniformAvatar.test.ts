@@ -117,6 +117,17 @@ describe('pickWeapon requireRank', () => {
   });
 });
 
+describe('weaponTierForBackgroundRank', () => {
+  it('maps world ranks to weapon era tiers', () => {
+    expect(weaponTierForBackgroundRank(1)).toBe(1);
+    expect(weaponTierForBackgroundRank(2)).toBe(1);
+    expect(weaponTierForBackgroundRank(3)).toBe(3);
+    expect(weaponTierForBackgroundRank(4)).toBe(4);
+    expect(weaponTierForBackgroundRank(5)).toBe(MODERN_ERA_RANK);
+    expect(weaponTierForBackgroundRank(7)).toBe(MODERN_ERA_RANK);
+  });
+});
+
 describe('weaponRankBoundsForBackground', () => {
   // Ranks 5, 6 and 7 all share tier-5 weapon art for now.
   it('floors every modern-era backdrop at MODERN_ERA_RANK', () => {
