@@ -144,7 +144,9 @@ ${monogrIdnoBlocks(meta)}          <imprint><date/></imprint>
 
   const creationParts: string[] = [];
   if (meta.time_dynasty) {
-    creationParts.push(`<origDate>${escapeXmlText(meta.time_dynasty)}</origDate>`);
+    // `<date>` not `<origDate>` — CBETA P5 has no `origDate`, and TEI's `creation`
+    // takes `<date>` fine.
+    creationParts.push(`<date>${escapeXmlText(meta.time_dynasty)}</date>`);
   }
   if (meta.author_dates) {
     creationParts.push(`<note type="authorDates">${escapeXmlText(meta.author_dates)}</note>`);

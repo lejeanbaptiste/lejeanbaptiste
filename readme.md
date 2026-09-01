@@ -99,6 +99,12 @@ See [apps/desktop/README.md](apps/desktop/README.md) for the compilation and pac
 
 ### TODO
 
+1. Commit the built data — data/metadata/* (2.5 MB) + data/schema/* (340 KB). The release ships what's committed; nothing regenerates it in CI.	trivial
+2. One real end-to-end run in the app — install → enable → Sync from GitHub → search → import a work → open the file → confirm it validates against cbeta_p5.rng. Everything so far is unit tests + headless bridge calls; the actual Electron path is unexercised.	~30 min
+3	§10.4 — 5-min check of downgrade.phonetic_glosses against a real 音義 juan (once the corpus is synced), since the fixture is synthetic.	5 min
+4	Write down the maintainer refresh recipe — which DILA repos, the crosswalk extraction from authority extraction/dist/…/concordance.ndjson, the gh api …/trees/master file-list. That recipe currently only lives in this conversation.	15 min
+5	Conscious calls on two known gaps: 8 obscure works with files: [], and cb_gaiji.json empty (PUA residue keeps <g> — valid TEI, per-file <charDecl> is the source). Both fine as-is; just decide.
+
 - Full CBETA integration
   - [ ] Include Bingenheimer's tagged bios
 - [ ] Confirm CBETA schema takes tags

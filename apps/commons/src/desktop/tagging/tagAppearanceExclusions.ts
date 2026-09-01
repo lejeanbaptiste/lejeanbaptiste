@@ -155,6 +155,22 @@ const STRUCTURAL_TAGS = [
   'relation',
   'relationGrp',
   'listChange',
+  // CBETA P5 structural / apparatus markup and gaiji glyphs — high-count noise,
+  // not annotation targets.
+  'g',
+  'app',
+  'lem',
+  'rdg',
+  'caesura',
+  'space',
+  'cb:mulu',
+  'cb:div',
+  'cb:juan',
+  'cb:tt',
+  'cb:t',
+  'cb:jhead',
+  'cb:docNumber',
+  'cb:sg',
 ] as const;
 
 export const TAG_APPEARANCE_EXCLUDED_TAGS = new Set<string>([

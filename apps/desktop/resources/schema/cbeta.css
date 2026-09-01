@@ -1,0 +1,369 @@
+/*
+ * Le Jean-Baptiste — CBETA P5 editing stylesheet.
+ *
+ * Structure and layout only. Semantic-tag colour / highlighting is layered on
+ * top at runtime by the Tag Appearance panel (schema/tag-colors.css, injected
+ * as <style id="tagColors"> after these rules), so this file deliberately does
+ * NOT set `!important` colours on persName / placeName / orgName / date /
+ * nobleTitle / title / name. The faint defaults below are only a fallback for
+ * documents whose editor has never opened the highlighter.
+ *
+ * Base rules adapted from the CWRC TEI stylesheet; CBETA-specific additions
+ * (cb:div, cb:mulu, gaiji <g>, Taishō <lb>/<pb>, apparatus) follow at the end.
+ */
+
+TEI {
+  margin: 10px 25px;
+  font-family: 'Noto Serif CJK TC', 'Songti TC', Georgia, serif;
+  line-height: 1.7;
+}
+
+/* ---- block structure ---------------------------------------------------- */
+
+body {
+  display: block;
+  margin-top: 5px;
+  padding: 0 2em 0 0;
+}
+
+text,
+front,
+back,
+group {
+  display: block;
+}
+
+div,
+juan {
+  display: block;
+  margin: 0 0 1.5em 0;
+}
+
+p {
+  display: block;
+  margin-bottom: 0.5em;
+  text-indent: 2em;
+  line-height: 1.9;
+}
+
+head {
+  display: block;
+  font-weight: bold;
+  font-size: 1.15em;
+  margin: 1em 0 0.5em 0;
+}
+
+div div head {
+  font-size: 1.05em;
+}
+
+byline {
+  display: block;
+  font-style: italic;
+  margin-bottom: 0.5em;
+}
+
+trailer {
+  display: block;
+  margin: 1em 0;
+  text-align: center;
+}
+
+/* verse */
+lg {
+  display: block;
+  margin-bottom: 0.5em;
+}
+l {
+  display: block;
+}
+caesura:before {
+  content: '\3000';
+}
+
+/* lists */
+list {
+  display: block;
+  margin: 1em 0 1em 2em;
+  list-style-type: none;
+}
+item {
+  display: list-item;
+  margin-left: 12pt;
+}
+item[n]:before {
+  content: attr(n) '. ';
+}
+label {
+  display: inline;
+  font-weight: bold;
+}
+
+/* tables */
+table {
+  display: table;
+  margin: 1em;
+}
+row {
+  display: table-row;
+}
+cell {
+  display: table-cell;
+  border: 1px solid #e0e0e0;
+  padding: 3px;
+}
+
+/* quotes / citations */
+quote,
+cit {
+  display: block;
+  margin: 0.5em 2em;
+}
+q {
+  display: inline;
+}
+q:before {
+  content: '「';
+}
+q:after {
+  content: '」';
+}
+
+/* ---- inline phrase --------------------------------------------------------- */
+
+hi {
+  display: inline;
+}
+hi[rend='bold'] {
+  font-weight: bold;
+}
+hi[rend='italic'],
+foreign,
+mentioned,
+soCalled,
+emph {
+  display: inline;
+  font-style: italic;
+}
+term {
+  display: inline;
+  font-family: sans-serif;
+}
+seg,
+s,
+num,
+time,
+rs,
+w,
+c {
+  display: inline;
+}
+
+/* named entities — faint fallback only, highlighter overrides */
+persName {
+  display: inline;
+  color: #7a3d8f;
+}
+placeName {
+  display: inline;
+  color: #1f6b4c;
+}
+orgName {
+  display: inline;
+  color: #b25a00;
+}
+roleName,
+nobleTitle {
+  display: inline;
+  color: #8a1f3d;
+}
+name {
+  display: inline;
+}
+date {
+  display: inline;
+  color: #2a5db0;
+}
+title {
+  display: inline;
+  font-style: italic;
+}
+title[level='m'],
+title[level='j'] {
+  font-style: italic;
+}
+
+/* ---- editorial ----------------------------------------------------------- */
+
+note {
+  display: block;
+  color: #888;
+  font-size: 0.92em;
+  margin-left: 1.5em;
+}
+note:before {
+  content: '｜ ';
+}
+note[place='inline'],
+note[place='unspecified'] {
+  display: inline;
+  margin-left: 0;
+}
+note[place='inline']:before {
+  content: '（';
+}
+note[place='inline']:after {
+  content: '）';
+}
+
+add {
+  display: inline;
+  text-decoration: underline;
+}
+del {
+  display: inline;
+  text-decoration: line-through;
+}
+unclear {
+  display: inline;
+  font-style: italic;
+}
+unclear:after {
+  content: '(?)';
+  color: #999;
+}
+supplied:before {
+  content: '〔';
+}
+supplied:after {
+  content: '〕';
+}
+gap {
+  display: inline;
+}
+gap:after {
+  content: '□';
+  color: #999;
+}
+sic {
+  display: inline;
+  color: #b00;
+}
+corr {
+  display: inline;
+  color: #060;
+}
+
+/* ---- CBETA-specific ---------------------------------------------------------- */
+
+/* structural divisions carried from CBETA source (namespaced local names) */
+cb\:div,
+cb\:juan {
+  display: block;
+  margin: 0 0 1.5em 0;
+}
+cb\:mulu {
+  display: none; /* table-of-contents marker; not inline content */
+}
+cb\:jhead {
+  display: block;
+  font-weight: bold;
+  text-align: center;
+  margin: 0.5em 0;
+}
+
+/* bilingual (parallel) segments */
+cb\:tt {
+  display: block;
+}
+cb\:t {
+  display: block;
+  margin-left: 1em;
+}
+cb\:t[xml\:lang='sa-Sidd'],
+cb\:t[xml\:lang='sa'] {
+  font-style: italic;
+}
+
+/* Taishō line and page breaks */
+lb {
+  display: inline;
+}
+lb:after {
+  content: '';
+  display: inline;
+}
+lb[ed]:before {
+  content: '';
+}
+pb {
+  display: block;
+  color: #aaa;
+  font-size: 0.85em;
+  text-align: right;
+}
+pb:before {
+  content: '— ' attr(ed) ' ' attr(n) ' —';
+}
+
+/* milestones (juan boundaries etc.) */
+milestone {
+  display: block;
+  text-align: center;
+  color: #999;
+  margin: 0.5em 0;
+}
+milestone[unit='juan']:before {
+  content: '◇ 卷 ' attr(n) ' ◇';
+}
+anchor {
+  display: inline;
+}
+
+/* gaiji (missing characters) */
+g {
+  display: inline;
+  color: #444;
+}
+g:before {
+  content: '[';
+  color: #bbb;
+}
+g:after {
+  content: ']';
+  color: #bbb;
+}
+
+/* apparatus */
+app {
+  display: inline;
+}
+lem {
+  display: inline;
+}
+rdg {
+  display: none; /* variant readings hidden by default; shown via app panel */
+}
+
+graphic {
+  display: inline;
+  color: gray;
+}
+graphic:before {
+  content: '{' attr(url) '}';
+}
+figure {
+  display: block;
+  margin: 1em 0;
+  text-align: center;
+}
+
+/* ---- header (dimmed, non-editing context) ------------------------------- */
+
+teiHeader {
+  display: block;
+  color: gray;
+  background-color: rgb(251, 242, 234);
+  padding: 0.5em;
+  font-size: 0.9em;
+}

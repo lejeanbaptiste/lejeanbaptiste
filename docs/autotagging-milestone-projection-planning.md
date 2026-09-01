@@ -25,12 +25,12 @@ Neither node contains the full string `般舟三昧`.
 
 Today:
 
-| Producer | Match | Apply |
-| -------- | ----- | ----- |
-| Authority tag bomb (`dictionaryTag`) | Per text node only | Single-node `wrapRange` |
-| AI suggest / audit | Document-level chunk text | `locateInDoc` rejects spans crossing nodes |
-| Sanmiao dates | Document-level `index.text` on send | `offsetToRawRange` requires single-node span |
-| Person-wrapper compound pass | Document-level `index.text` | `add-compound` wraps adjacent **elements**, not `text + lb + text` |
+| Producer                             | Match                               | Apply                                                              |
+| ------------------------------------ | ----------------------------------- | ------------------------------------------------------------------ |
+| Authority tag bomb (`dictionaryTag`) | Per text node only                  | Single-node `wrapRange`                                            |
+| AI suggest / audit                   | Document-level chunk text           | `locateInDoc` rejects spans crossing nodes                         |
+| Sanmiao dates                        | Document-level `index.text` on send | `offsetToRawRange` requires single-node span                       |
+| Person-wrapper compound pass         | Document-level `index.text`         | `add-compound` wraps adjacent **elements**, not `text + lb + text` |
 
 **Workaround today:** check **Strip Taishō line breaks** on CBETA import (removes
 `<lb>`, joins text). That fixes matching but drops line-level citation markers in
@@ -41,7 +41,7 @@ running text.
 ## Desired architecture
 
 1. **Build a projection** — a flat search string from body text, skipping (not
-   deleting) configured *infrastructure* elements: at minimum empty `lb`, empty
+   deleting) configured _infrastructure_ elements: at minimum empty `lb`, empty
    `anchor`, `gap`; optionally `pb` (see open questions). Map each projection
    index back to a DOM position (text node + raw offset, or a boundary record).
 2. **Match on the projection** — reuse `MultiStringMatcher` / authority seed
@@ -59,14 +59,14 @@ Sanmiao **apply** for date strings split by `<lb>`.
 
 ## What already exists (partial building blocks)
 
-| Piece | Location | Role |
-| ----- | -------- | ---- |
-| `buildDocIndex` | `autoTagging/anchor.ts` | Concatenates text-node search strings; `<lb>` contributes nothing but still splits nodes |
-| `INFRASTRUCTURE_TAGS` | `autoTagging/purge.ts` | `lb`, `pb`, `anchor`, `milestone`, … — used by Tag Transform, not autotag |
-| `createCompoundAnchor` / `add-compound` | `anchor.ts`, `apply.ts`, `seed.ts` | Cross-node anchors for Norbert person-wrappers (sibling elements) |
-| `buildTaggableDocIndex` | `dateTeiHelpers.ts` | Excludes text inside `<date>` |
-| `offsetToRawRange` | `dates.ts` | Single-node only; same limitation as `locateInDoc` |
-| CBETA planning note | `cbeta-import-planning.md` | “plain-text projection … re-insert NE tags around the milestones” |
+| Piece                                   | Location                           | Role                                                                                     |
+| --------------------------------------- | ---------------------------------- | ---------------------------------------------------------------------------------------- |
+| `buildDocIndex`                         | `autoTagging/anchor.ts`            | Concatenates text-node search strings; `<lb>` contributes nothing but still splits nodes |
+| `INFRASTRUCTURE_TAGS`                   | `autoTagging/purge.ts`             | `lb`, `pb`, `anchor`, `milestone`, … — used by Tag Transform, not autotag                |
+| `createCompoundAnchor` / `add-compound` | `anchor.ts`, `apply.ts`, `seed.ts` | Cross-node anchors for Norbert person-wrappers (sibling elements)                        |
+| `buildTaggableDocIndex`                 | `dateTeiHelpers.ts`                | Excludes text inside `<date>`                                                            |
+| `offsetToRawRange`                      | `dates.ts`                         | Single-node only; same limitation as `locateInDoc`                                       |
+| CBETA planning note                     | `cbeta-import-planning.md`         | “plain-text projection … re-insert NE tags around the milestones”                        |
 
 ---
 
@@ -100,33 +100,33 @@ Taishō line refs at those points in the working file.
 ### Phase A — Projection index (read path)
 
 - [ ] `buildProjectionIndex(root, policy, options)` returning `{ text, map }`
-  where `map[i]` describes how projection offset `i` maps to the DOM (extend
-  `DocIndex` or parallel type).
+      where `map[i]` describes how projection offset `i` maps to the DOM (extend
+      `DocIndex` or parallel type).
 - [ ] Config: `skipTags` default `lb`, empty `anchor`, `gap`; `hardBoundaryTags`
-  default `pb` (do not match across until explicitly enabled).
+      default `pb` (do not match across until explicitly enabled).
 - [ ] Unit tests: `般舟三<lb/>昧` → `般舟三昧` in projection; `pb` boundary;
-  nested `persName` unchanged.
+      nested `persName` unchanged.
 
 ### Phase B — Authority tag bomb on projection
 
 - [ ] Scan `projection.text` with `MultiStringMatcher` (not per-node
-  `dictionaryTag` loop).
+      `dictionaryTag` loop).
 - [ ] Emit suggestions with compound boundaries when span crosses text nodes
-  (new action or extend `add` with `endXpath` / `endOffset`).
+      (new action or extend `add` with `endXpath` / `endOffset`).
 - [ ] Wire into `runAuthorityTagBombOnDocument` / `seedSuggestionsFromIndex`.
 
 ### Phase C — Apply across infrastructure
 
 - [ ] `wrapProjectionRange(doc, start, end, tag)` — walk siblings from start
-  text offset through end, moving nodes into the new element; preserve `lb` /
-  empty anchors inside the span.
+      text offset through end, moving nodes into the new element; preserve `lb` /
+      empty anchors inside the span.
 - [ ] Schema + user-rule checks on the **parent** of the wrapped run.
 - [ ] Tests mirroring CBETA example and `persName` with internal `anchor` pairs.
 
 ### Phase D — AI + Sanmiao parity
 
 - [ ] Replace `locateInDoc` / `offsetToRawRange` single-node guard with
-  projection-aware locator (or shared helper).
+      projection-aware locator (or shared helper).
 - [ ] Sanmiao date proposals that straddle `<lb>` apply instead of silent skip.
 
 ### Phase E — Settings & UX (optional)

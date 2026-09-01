@@ -36,10 +36,12 @@ export const buildProjectSchemas = (
   const cssPath = config.schema.css ? joinProjectPath(rootPath, config.schema.css) : null;
 
   const schemaName =
-    config.schema.rng
-      .split(/[/\\]/)
-      .pop()
-      ?.replace(/\.(rng|rnc|xsd)$/i, '') ?? config.name;
+    config.schema.catalogId === 'cbeta'
+      ? 'CBETA P5'
+      : (config.schema.rng
+          .split(/[/\\]/)
+          .pop()
+          ?.replace(/\.(rng|rnc|xsd)$/i, '') ?? config.name);
 
   const mapping =
     config.schema.catalogId === 'teiLite' || schemaName.toLowerCase().includes('lite')

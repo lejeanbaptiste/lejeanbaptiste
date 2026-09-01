@@ -7,10 +7,21 @@ export interface SchemaCatalogEntry {
   cssUrls: string[];
   localRngName: string;
   localCssName: string;
+  /**
+   * When set, the schema ships inside the app instead of being downloaded.
+   * `installCatalogSchema` reads `<name>` from the bundled `schema-catalog`
+   * resources directory rather than fetching `rngUrls` / `cssUrls`.
+   */
+  bundled?: {
+    rng: string;
+    css: string;
+    /** Optional extra files copied alongside (e.g. Schematron). */
+    extra?: string[];
+  };
 }
 
 export const PRIMARY_CATALOG_IDS = ['teiAll', 'teiLite'] as const;
-export const MORE_CATALOG_IDS = ['teiSimplePrint', 'jTei', 'orlando'] as const;
+export const MORE_CATALOG_IDS = ['teiSimplePrint', 'jTei', 'orlando', 'cbeta'] as const;
 export const ENABLED_CATALOG_IDS = [...PRIMARY_CATALOG_IDS, ...MORE_CATALOG_IDS] as const;
 
 /** @deprecated Use ENABLED_CATALOG_IDS */
@@ -76,6 +87,26 @@ export const SCHEMA_CATALOG: Record<string, SchemaCatalogEntry> = {
     ],
     localRngName: 'orlando_entry.rng',
     localCssName: 'orlando.css',
+  },
+  cbeta: {
+    id: 'cbeta',
+    name: 'CBETA P5',
+    mapping: 'tei',
+    // Fallback only (web build / manual re-download); the desktop app installs
+    // the bundled copy below. Kept pointing at the committed plugin artifact.
+    rngUrls: [
+      'https://raw.githubusercontent.com/lejeanbaptiste/plugins/main/packages/plugin-cbeta-import/data/schema/cbeta_p5.rng',
+    ],
+    cssUrls: [
+      'https://raw.githubusercontent.com/lejeanbaptiste/leaf-writer/main/apps/desktop/resources/schema/cbeta.css',
+    ],
+    localRngName: 'cbeta_p5.rng',
+    localCssName: 'cbeta.css',
+    bundled: {
+      rng: 'cbeta_p5.rng',
+      css: 'cbeta.css',
+      extra: ['cbeta_p5.sch'],
+    },
   },
 };
 

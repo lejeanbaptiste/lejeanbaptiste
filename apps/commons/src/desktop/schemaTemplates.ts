@@ -151,9 +151,47 @@ ${stylesheetPi(css)}
 </ENTRY>`;
 };
 
+/** CBETA's own namespace, declared on the root so spliced `<cb:div>` markup resolves. */
+export const CBETA_NS = 'http://www.cbeta.org/ns/1.0';
+
+/**
+ * CBETA P5 skeleton. `xmlns:cb` is declared so native CBETA markup (`<cb:div>`,
+ * `<cb:tt>`, …) spliced in by the importer resolves; the placeholder body
+ * division is a plain `<div>` — the LJB-loosened schema (`ljb-cbeta-loosen v2`)
+ * accepts `<div>` and `<cb:div>` interchangeably wherever a division is allowed,
+ * so this same skeleton is a valid target for the Daozang / Kanripo / Wikisource
+ * / BDRC importers too.
+ */
+export const buildCbetaSkeletonXml = (config: SchemaTemplateConfig): string => {
+  const rng = config.schema?.rng ?? 'schema/cbeta_p5.rng';
+  const css = config.schema?.css ?? 'schema/cbeta.css';
+
+  return `<?xml version="1.0" encoding="UTF-8"?>
+${xmlModelPi(rng)}
+${stylesheetPi(css)}
+<TEI xmlns="http://www.tei-c.org/ns/1.0" xmlns:cb="${CBETA_NS}">
+<teiHeader>
+  <fileDesc>
+    <titleStmt><title>Untitled</title></titleStmt>
+    <publicationStmt><publisher/></publicationStmt>
+    <sourceDesc><p/></sourceDesc>
+  </fileDesc>
+</teiHeader>
+<text>
+  <body>
+    <div type="text">
+      <head>Section heading</head>
+      <p>Paragraph text</p>
+    </div>
+  </body>
+</text>
+</TEI>`;
+};
+
 export const buildSkeletonForCatalog = (config: SchemaTemplateConfig): string => {
   const catalogId = config.schema?.catalogId;
   if (catalogId === 'orlando') return buildOrlandoSkeletonXml(config);
   if (catalogId === 'jTei') return buildJTeiSkeletonXml(config);
+  if (catalogId === 'cbeta') return buildCbetaSkeletonXml(config);
   return buildTeiSkeletonXml(config);
 };

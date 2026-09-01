@@ -29,4 +29,14 @@ describe('tagAppearanceExclusions', () => {
     expect(tagAppearanceSupportsHighlight('corr')).toBe(false);
     expect(tagAppearanceSupportsHighlight('date')).toBe(true);
   });
+
+  test('excludes CBETA structural / apparatus / gaiji noise', () => {
+    for (const tag of ['g', 'app', 'lem', 'rdg', 'cb:mulu', 'cb:div', 'cb:juan']) {
+      expect(isTagAppearanceExcluded(tag)).toBe(true);
+      expect(isTagAppearanceCandidate(tag, 999)).toBe(false);
+    }
+    // CBETA docs still expose the standard NE tags for colouring.
+    expect(isTagAppearanceCandidate('persName', 1)).toBe(true);
+    expect(isTagAppearanceCandidate('placeName', 1)).toBe(true);
+  });
 });

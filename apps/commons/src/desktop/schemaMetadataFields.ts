@@ -46,6 +46,11 @@ export const getMetadataFieldsForCatalog = (
     return { fields: TEI_V1_METADATA_FIELDS, kind: 'tei' };
   }
 
+  // CBETA P5 is a TEI P5 header — the standard edition fields all apply.
+  if (catalogId === 'cbeta') {
+    return { fields: TEI_V1_METADATA_FIELDS, kind: 'tei' };
+  }
+
   if (catalogId === 'teiSimplePrint') {
     return { fields: TEI_SIMPLE_PRINT_METADATA_FIELDS, kind: 'tei' };
   }

@@ -1,7 +1,7 @@
 import { schemas as catalogSchemas } from '../../../../packages/cwrc-leafwriter/src/config/schemas';
 
 export const PRIMARY_CATALOG_IDS = ['teiAll', 'teiLite'] as const;
-export const MORE_CATALOG_IDS = ['teiSimplePrint', 'jTei', 'orlando'] as const;
+export const MORE_CATALOG_IDS = ['teiSimplePrint', 'jTei', 'orlando', 'cbeta'] as const;
 export const ENABLED_CATALOG_IDS = [...PRIMARY_CATALOG_IDS, ...MORE_CATALOG_IDS] as const;
 
 /** @deprecated Use ENABLED_CATALOG_IDS */

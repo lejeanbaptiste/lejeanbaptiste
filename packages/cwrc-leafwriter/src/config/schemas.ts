@@ -61,4 +61,18 @@ export const schemas: Schema[] = [
     rng: ['https://tei-c.org/release/xml/tei/custom/schema/relaxng/tei_jtei.rng'],
     css: ['https://cwrc.ca/templates/css/tei.css'],
   },
+  {
+    id: 'cbeta',
+    name: 'CBETA P5',
+    mapping: 'tei',
+    // Desktop projects install a bundled, LJB-loosened copy into the project's
+    // schema/ folder (see apps/desktop schemaCatalog `cbeta`); this URL is only
+    // a web/manual fallback pointing at the committed plugin artifact.
+    rng: [
+      'https://raw.githubusercontent.com/lejeanbaptiste/plugins/main/packages/plugin-cbeta-import/data/schema/cbeta_p5.rng',
+    ],
+    css: [
+      'https://raw.githubusercontent.com/lejeanbaptiste/leaf-writer/main/apps/desktop/resources/schema/cbeta.css',
+    ],
+  },
 ];

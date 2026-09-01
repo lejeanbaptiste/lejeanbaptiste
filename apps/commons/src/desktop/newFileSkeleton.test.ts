@@ -1,6 +1,7 @@
 import { mergeMetadataIntoHeader } from './projectMetadata';
 import { getDefaultSaveAsPath, resolveSaveAsDirectory } from './saveAsDefaults';
 import {
+  buildCbetaSkeletonXml,
   buildOrlandoSkeletonXml,
   buildSkeletonForCatalog,
   buildTeiSkeletonXml,
@@ -66,6 +67,30 @@ describe('buildTeiSkeletonXml', () => {
     });
 
     expect(xml).toContain('href="schema/tei_jtei.rng"');
+  });
+});
+
+describe('buildCbetaSkeletonXml', () => {
+  test('cbeta skeleton points at cbeta_p5.rng, declares xmlns:cb, uses a plain <div>', () => {
+    const xml = buildCbetaSkeletonXml({
+      schema: { catalogId: 'cbeta', rng: 'schema/cbeta_p5.rng', css: 'schema/cbeta.css' },
+    });
+
+    expect(xml).toContain('href="schema/cbeta_p5.rng"');
+    expect(xml).toContain('href="schema/cbeta.css"');
+    // needed so spliced native CBETA <cb:div> markup resolves
+    expect(xml).toContain('xmlns:cb="http://www.cbeta.org/ns/1.0"');
+    // ljb-cbeta-loosen v2 accepts <div> in <body>; shared placeholder shape lets
+    // every importer's `<div type="text">` splice regex match.
+    expect(xml).toContain('<div type="text">');
+  });
+
+  test('buildSkeletonForCatalog routes cbeta to the CBETA skeleton', () => {
+    const xml = buildSkeletonForCatalog({
+      schema: { catalogId: 'cbeta', rng: 'schema/cbeta_p5.rng', css: 'schema/cbeta.css' },
+    });
+    expect(xml).toContain('href="schema/cbeta_p5.rng"');
+    expect(xml).toContain('xmlns:cb=');
   });
 });
 

@@ -145,6 +145,44 @@ The `_p5.rng` / `_p5.sch` the plugin bundles is CBETA's published schema
 with those three loosenings applied — the same edit we already make to
 TEI-ALL.
 
+**Now a first-class schema catalog entry.** The loosened `cbeta_p5.rng`
+(+ `.sch` + a structural `cbeta.css`) is copied into `apps/desktop/resources/schema/`
+and registered as catalog `id: 'cbeta'` ("CBETA P5", schema wizard "more"
+tier). Picking it in the wizard runs `installCatalogSchema('cbeta')`, which
+copies the bundled files into the project's `schema/` folder and writes
+`catalogId: 'cbeta'` — after which CBETA import takes its native (non
+cross-family) path and the standard **Tag Appearance** highlighter colours
+`persName`/`placeName`/`date`/… via `schema/tag-colors.css` exactly as for
+TEI.
+
+**CBETA P5 as a shared import target (`ljb-cbeta-loosen v2`).** Stock CBETA
+binds `model.divLike` to `<cb:div>` only, forbids `<origDate>` in `<creation>`,
+and requires `@scheme` on `<keywords>` — so the _other_ East Asian importers
+(Daozang / Kanripo / Wikisource / BDRC), which emit plain TEI `<div type="…">`,
+could not target it. The v2 loosenings fix that at the schema level: `tei_div`
+matches `<div>` **and** `<cb:div>` everywhere a division is allowed,
+`<creation>` takes `<date>`, `@scheme` is optional, `@role` is allowed on
+`<author>`. So:
+
+- the CBETA skeleton keeps a plain `<div type="text">` placeholder (with
+  `xmlns:cb` on the root for spliced `<cb:div>` markup) — every importer's
+  existing `<div type="text">` splice regex works against it;
+- `wrapCbetaTeiDocument` on the cbeta path still splices the converted juan
+  (which carries its own `<milestone unit="juan">` + `<cb:div>` structure)
+  **straight into `<body>`** — no synthetic `<div type="juan">` wrapper, no
+  injected `<head>` — and drops the `<creation>`/`<textClass>` blocks (CBETA
+  files use neither; dynasty + classification go to `<revisionDesc><change>`);
+- Daozang / Kanripo emit `<date>` (not `<origDate>`) in `<creation>`; otherwise
+  the non-CBETA importers need no cbeta-specific branch.
+
+Verified with `lxml.etree.RelaxNG` in `plugin-cbeta-import`'s
+`test_loosen_schema.py` (both `<div>` and `<cb:div>` bodies) and structurally in
+leaf-writer `importCbetaTarget.test.ts`. The bundle ships with the app (never downloaded/update-checked);
+`scripts/check-cbeta-schema-bundle.mjs` (in `npm run typecheck`) fails CI if
+the bundled `.rng` loses the loosen marker, an NE `model.phrase` ref, or a
+Sanmiao date part present in `sanmiaoSchemaMerge.ts`. See
+[schema_handling.md](schema_handling.md).
+
 ---
 
 ## 5. What does NOT carry cleanly into TEI-ALL

@@ -109,6 +109,12 @@ export const checkCatalogSchemaUpdate = async (
     return { status: 'skipped', reason: 'Unknown catalog entry' };
   }
 
+  if (entry.bundled) {
+    // Ships inside the app; refreshed on app update, never re-downloaded.
+    await touchLastCheckedAt(projectFilePath, bundle);
+    return { status: 'skipped', reason: 'Bundled schema' };
+  }
+
   try {
     const { text: remoteRng } = await fetchText(entry.rngUrls);
     const remoteRngHash = sha256Hex(remoteRng);
@@ -164,6 +170,10 @@ export const applyCatalogSchemaUpdate = async (
   const entry = getCatalogEntry(schema.catalogId);
   if (!entry) {
     throw new Error(`Unknown catalog schema: ${schema.catalogId}`);
+  }
+
+  if (entry.bundled) {
+    throw new Error('Bundled schemas are updated with the app, not re-downloaded');
   }
 
   const priorConfigRaw = await fs.readFile(projectFilePath, 'utf-8');

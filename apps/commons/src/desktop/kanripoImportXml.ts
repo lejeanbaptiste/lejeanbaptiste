@@ -240,7 +240,9 @@ ${monogrIdnoBlocks(meta)}${editionBlock}          <imprint>${imprintDate}</impri
 
   const creationParts: string[] = [];
   if (meta.time_dynasty) {
-    creationParts.push(`<origDate>${escapeXmlText(meta.time_dynasty)}</origDate>`);
+    // `<date>` not `<origDate>` — CBETA P5 has no `origDate`, and TEI's `creation`
+    // takes `<date>` fine.
+    creationParts.push(`<date>${escapeXmlText(meta.time_dynasty)}</date>`);
   }
   if (meta.date_not_before || meta.date_not_after) {
     const dateAttrs = [

@@ -119,6 +119,9 @@ export const wrapCbetaTeiDocument = ({
   if (catalogId === 'orlando' || catalogId === 'jTei') {
     throw new Error('CBETA import currently supports TEI projects (not Orlando or jTEI).');
   }
+  // A CBETA-family project keeps `<cb:div>` / `<cb:tt>` / juan milestones verbatim
+  // (Python `cross_family: false`); a TEI catalog gets the downgraded `<div>` tree.
+  const isCbetaFamily = catalogId === 'cbeta';
 
   const title = escapeXmlText(
     meta.section_title || meta.juan_title || meta.title || meta.stem || 'Untitled',
@@ -155,29 +158,43 @@ ${idnoBlocks(meta)}          <imprint><date/></imprint>
     </sourceDesc>`,
   );
 
-  const creation: string[] = [];
-  if (meta.dynasty) creation.push(`<origDate>${escapeXmlText(meta.dynasty)}</origDate>`);
-  if (creation.length) {
-    xml = xml.replace(
-      /<\/fileDesc>/,
-      `  </fileDesc>\n  <profileDesc>\n      <creation>\n        ${creation.join(
-        '\n        ',
-      )}\n      </creation>${
-        meta.category
-          ? `\n      <textClass>\n        <keywords>\n          <term>${escapeXmlText(meta.category)}</term>\n        </keywords>\n      </textClass>`
-          : ''
-      }\n  </profileDesc>`,
-    );
-  } else if (meta.category) {
-    xml = xml.replace(
-      /<\/fileDesc>/,
-      `  </fileDesc>\n  <profileDesc>\n      <textClass>\n        <keywords>\n          <term>${escapeXmlText(meta.category)}</term>\n        </keywords>\n      </textClass>\n  </profileDesc>`,
-    );
+  // CBETA's schema forbids `<origDate>` in `<creation>` (its `creation` model is
+  // `macro.phraseSeq.limited`) and requires `<keywords>` to carry `@scheme`;
+  // CBETA files themselves use neither block. Keep the structured `<profileDesc>`
+  // only for the TEI-catalog (cross-family) path.
+  if (!isCbetaFamily) {
+    const creation: string[] = [];
+    if (meta.dynasty) creation.push(`<origDate>${escapeXmlText(meta.dynasty)}</origDate>`);
+    if (creation.length) {
+      xml = xml.replace(
+        /<\/fileDesc>/,
+        `  </fileDesc>\n  <profileDesc>\n      <creation>\n        ${creation.join(
+          '\n        ',
+        )}\n      </creation>${
+          meta.category
+            ? `\n      <textClass>\n        <keywords>\n          <term>${escapeXmlText(meta.category)}</term>\n        </keywords>\n      </textClass>`
+            : ''
+        }\n  </profileDesc>`,
+      );
+    } else if (meta.category) {
+      xml = xml.replace(
+        /<\/fileDesc>/,
+        `  </fileDesc>\n  <profileDesc>\n      <textClass>\n        <keywords>\n          <term>${escapeXmlText(meta.category)}</term>\n        </keywords>\n      </textClass>\n  </profileDesc>`,
+      );
+    }
   }
 
+  const provenanceExtras = isCbetaFamily
+    ? [
+        meta.dynasty ? `Dynasty: ${meta.dynasty}.` : '',
+        meta.category ? `Classification: ${meta.category}.` : '',
+      ]
+        .filter(Boolean)
+        .join(' ')
+    : '';
   const change = `Imported from CBETA (${escapeXmlText(meta.work_id)}) with plugin cbeta-import.${
-    meta.importNotes ? ` ${escapeXmlText(meta.importNotes)}` : ''
-  }`;
+    provenanceExtras ? ` ${escapeXmlText(provenanceExtras)}` : ''
+  }${meta.importNotes ? ` ${escapeXmlText(meta.importNotes)}` : ''}`;
   xml = xml.replace(
     /<\/teiHeader>/,
     `<revisionDesc>\n    <change when="${when}">${change}</change>\n  </revisionDesc>\n</teiHeader>`,
@@ -191,15 +208,25 @@ ${idnoBlocks(meta)}          <imprint><date/></imprint>
   const inner = body ? Array.from(body.childNodes).map(nodeToString).join('') : '';
   if (!inner.trim()) throw new Error('CBETA conversion returned an empty juan body.');
   const isSection = meta.split_unit === 'mulu';
-  const divType = isSection ? 'section' : 'juan';
-  const divN = isSection ? meta.section_n : meta.juan_n;
-  const divAttrs = divN ? ` n="${escapeXmlAttr(divN)}"` : '';
-  const headTitle = isSection ? meta.section_title : meta.juan_title;
-  const bodyDiv = `<div type="${divType}"${divAttrs}>${
-    headTitle ? `<head>${escapeXmlText(headTitle)}</head>` : ''
-  }${inner}</div>`;
 
-  xml = xml.replace(/<div type="(?:text|juan|section)"[^>]*>[\s\S]*?<\/div>/, bodyDiv);
+  if (isCbetaFamily) {
+    // CBETA-family juan/section markup (`<milestone unit="juan"/>`, `<cb:div>`, …)
+    // goes straight into `<body>`: it already carries its own division structure,
+    // so wrapping it in another `<div>` (or injecting a `<head>`, which `<body>`
+    // does not permit) would be wrong. Replace the skeleton's placeholder div.
+    xml = xml.replace(/<div type="text">[\s\S]*?<\/div>/, inner);
+  } else {
+    const divType = isSection ? 'section' : 'juan';
+    const divN = isSection ? meta.section_n : meta.juan_n;
+    const divAttrs = divN ? ` n="${escapeXmlAttr(divN)}"` : '';
+    const headTitle = isSection ? meta.section_title : meta.juan_title;
+    const bodyDiv = `<div type="${divType}"${divAttrs}>${
+      headTitle ? `<head>${escapeXmlText(headTitle)}</head>` : ''
+    }${inner}</div>`;
+
+    // Skeleton body division: `<div type="text">…` for TEI catalogs.
+    xml = xml.replace(/<div(?:\s+type="(?:text|juan|section)")?\s*>[\s\S]*?<\/div>/, bodyDiv);
+  }
 
   // Carry the per-juan apparatus (planning §5.5) into <text><back>.
   const back = doc.getElementsByTagName('back')[0];

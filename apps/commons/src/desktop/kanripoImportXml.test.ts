@@ -71,7 +71,7 @@ describe('wrapKanripoTeiDocument', () => {
     expect(xml).toContain('<extent>11 卷</extent>');
     expect(xml).toContain('<title ref="https://www.wikidata.org/entity/Q18835058">');
     expect(xml).not.toContain('<profileDesc>\n      <extent>');
-    expect(xml).toContain('<origDate>周</origDate>');
+    expect(xml).toContain('<date>周</date>');
     expect(xml).toContain('notBefore="-0507"');
     expect(xml).toContain('notAfter="-0400"');
     expect(xml).not.toContain('<note type="authorDates">');

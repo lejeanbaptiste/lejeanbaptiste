@@ -6,7 +6,7 @@ import { mergeMetadataIntoSkeleton } from './projectMetadata';
 import { buildSkeletonForCatalog } from './schemaTemplates';
 import type { ProjectMetadataFile } from './projectTypes';
 
-type EnabledCatalogId = 'teiAll' | 'teiLite' | 'teiSimplePrint' | 'jTei' | 'orlando';
+type EnabledCatalogId = 'teiAll' | 'teiLite' | 'teiSimplePrint' | 'jTei' | 'orlando' | 'cbeta';
 
 const catalogConfig: Record<
   EnabledCatalogId,
@@ -21,6 +21,7 @@ const catalogConfig: Record<
   },
   jTei: { catalogId: 'jTei', rng: 'schema/tei_jtei.rng', css: 'schema/tei.css' },
   orlando: { catalogId: 'orlando', rng: 'schema/orlando_entry.rng', css: 'schema/orlando.css' },
+  cbeta: { catalogId: 'cbeta', rng: 'schema/cbeta_p5.rng', css: 'schema/cbeta.css' },
 };
 
 const sampleMetadata = (catalogId: EnabledCatalogId): ProjectMetadataFile => {
@@ -77,7 +78,7 @@ describe('new file skeleton RelaxNG validation', () => {
     fetchMock.enableMocks();
   });
 
-  test.each(['teiAll', 'teiLite', 'teiSimplePrint', 'jTei', 'orlando'] as const)(
+  test.each(['teiAll', 'teiLite', 'teiSimplePrint', 'jTei', 'orlando', 'cbeta'] as const)(
     'validates merged skeleton against %s catalog RNG (requires network)',
     (catalogId) =>
       new Promise<void>((resolve, reject) => {

@@ -1,6 +1,8 @@
 import fs from 'fs/promises';
 import path from 'path';
 
+import { app } from 'electron';
+
 import { getCatalogEntry } from './schemaCatalog';
 import {
   ensureSchemaDir,
@@ -20,6 +22,15 @@ import { shouldMergeSanmiaoDates, writeSanmiaoMergedTeiSchema } from './sanmiaoS
 import { isPluginEnabledInMain } from './plugins';
 
 const TEI_NS = 'http://www.tei-c.org/ns/1.0';
+
+/** Directory holding schemas that ship inside the app (see electron-builder `schema-catalog`). */
+export const bundledSchemaDir = (): string =>
+  app.isPackaged
+    ? path.join(process.resourcesPath, 'schema-catalog')
+    : path.join(__dirname, '../resources/schema');
+
+const readBundledSchemaFile = async (name: string): Promise<string> =>
+  fs.readFile(path.join(bundledSchemaDir(), name), 'utf-8');
 
 const restoreFile = async (filePath: string, prior: Buffer | null): Promise<void> => {
   if (prior) {
@@ -50,12 +61,23 @@ export const installCatalogSchema = async (
   const priorFiles = new Map<string, Buffer | null>();
 
   try {
-    const { text: rngContent, url: sourceUrl } = await fetchText(entry.rngUrls);
-    const { text: cssContent, url: sourceCssUrl } = await fetchText(entry.cssUrls);
+    const { text: rngContent, url: sourceUrl } = entry.bundled
+      ? {
+          text: await readBundledSchemaFile(entry.bundled.rng),
+          url: `bundled:${entry.bundled.rng}`,
+        }
+      : await fetchText(entry.rngUrls);
+    const { text: cssContent, url: sourceCssUrl } = entry.bundled
+      ? {
+          text: await readBundledSchemaFile(entry.bundled.css),
+          url: `bundled:${entry.bundled.css}`,
+        }
+      : await fetchText(entry.cssUrls);
 
     const rngPath = path.join(schemaDir, entry.localRngName);
     const cssPath = path.join(schemaDir, entry.localCssName);
-    for (const filePath of [rngPath, cssPath]) {
+    const extraPaths = (entry.bundled?.extra ?? []).map((name) => path.join(schemaDir, name));
+    for (const filePath of [rngPath, cssPath, ...extraPaths]) {
       priorFiles.set(filePath, await fs.readFile(filePath).catch(() => null));
     }
 
@@ -66,6 +88,12 @@ export const installCatalogSchema = async (
     }
     await fs.writeFile(cssPath, cssContent, 'utf-8');
     writtenFiles.push(rngPath, cssPath);
+
+    for (const name of entry.bundled?.extra ?? []) {
+      const destPath = path.join(schemaDir, name);
+      await fs.writeFile(destPath, await readBundledSchemaFile(name), 'utf-8');
+      writtenFiles.push(destPath);
+    }
 
     const schema: ProjectSchemaConfig = {
       rng: `schema/${entry.localRngName}`,

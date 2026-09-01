@@ -318,7 +318,12 @@ export const CbetaImportDialog = ({ onClose, open = false }: CbetaImportDialogPr
         )}
 
         <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5, mb: 1, flexShrink: 0 }}>
-          <Typography variant="body2" component="label" htmlFor="cbeta-split-unit" sx={{ flexShrink: 0 }}>
+          <Typography
+            variant="body2"
+            component="label"
+            htmlFor="cbeta-split-unit"
+            sx={{ flexShrink: 0 }}
+          >
             Split by
           </Typography>
           <FormControl size="small" sx={{ minWidth: 200 }} disabled={working}>
@@ -381,7 +386,11 @@ export const CbetaImportDialog = ({ onClose, open = false }: CbetaImportDialogPr
         )}
 
         {!working && status && !error && (
-          <Typography variant="caption" color="text.secondary" sx={{ mb: 1, display: 'block', flexShrink: 0 }}>
+          <Typography
+            variant="caption"
+            color="text.secondary"
+            sx={{ mb: 1, display: 'block', flexShrink: 0 }}
+          >
             {status}
           </Typography>
         )}
