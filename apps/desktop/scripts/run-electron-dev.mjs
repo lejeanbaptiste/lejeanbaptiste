@@ -25,6 +25,12 @@ const child = spawn(executable, process.argv.slice(2).length ? process.argv.slic
     // Cursor and some IDEs set this, which makes Electron run as plain Node.js
     // so require('electron') returns a path string instead of the API object.
     delete env.ELECTRON_RUN_AS_NODE;
+    // Prefer live plugin packages from the sibling plugins repo (dev only).
+    // Without this, Python may load a stale copy from Application Support.
+    const pluginsPackages = path.resolve(desktopRoot, '../../../plugins/packages');
+    if (existsSync(pluginsPackages)) {
+      env.LJB_PLUGINS_ROOT = pluginsPackages;
+    }
     return env;
   })(),
 });

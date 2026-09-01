@@ -7,6 +7,8 @@ import {
   poseEligibleForRank,
   rankOfBackgroundKey,
   weaponFloorForBackground,
+  weaponRankBoundsForBackground,
+  weaponTierForBackgroundRank,
   stampSvgPixelSize,
   svgStampPixelsForCssBox,
   BODY_CSS_OVERSAMPLE,
@@ -97,9 +99,25 @@ describe('pickWeapon requireRank', () => {
     const weapon = pickWeapon(5, 'm', 1, null, 5);
     expect(weapon?.rank).toBe(1);
   });
+
+  it('locks to a single tier when floor and ceiling match (era backdrop pairing)', () => {
+    const seenRanks = new Set<number>();
+    for (let i = 0; i < 200; i++) {
+      const weapon = pickWeapon(5, 'm', 6, null, 3, 3);
+      seenRanks.add(weapon!.rank);
+    }
+    expect(Array.from(seenRanks)).toEqual([3]);
+  });
+
+  it('falls back to the unrestricted pool if maxRank would empty it', () => {
+    // Pose 5 has no tier-1-only art at rankIndex 6 when capped to tier 1 -
+    // but tier 1 exists, so this should still work. Use maxRank 0 (impossible).
+    const weapon = pickWeapon(5, 'm', 6, null, undefined, 0);
+    expect(weapon?.rank).toBeGreaterThan(0);
+  });
 });
 
-describe('weaponFloorForBackground', () => {
+describe('weaponRankBoundsForBackground', () => {
   // Ranks 5, 6 and 7 all share tier-5 weapon art for now.
   it('floors every modern-era backdrop at MODERN_ERA_RANK', () => {
     for (const rank of [5, 6, 7]) {
@@ -107,24 +125,52 @@ describe('weaponFloorForBackground', () => {
         (asset) => asset.rank === rank,
       );
       expect(backdrop).toBeDefined();
-      expect(weaponFloorForBackground(backdrop!.assetKey)).toBe(MODERN_ERA_RANK);
+      expect(weaponRankBoundsForBackground(backdrop!.assetKey)).toEqual({
+        floor: MODERN_ERA_RANK,
+      });
     }
   });
 
-  // The whole point of a floor rather than an exact match: a Rank 6 player
-  // rolling a historical Napoleonic scene still gets a Napoleonic weapon.
-  it('leaves earlier-era backdrops unrestricted', () => {
-    for (const rank of [1, 2, 3, 4]) {
+  // A Rank 3 WWI scene gets tier-3 weapons only — not Napoleonic 1/2.
+  it('maps each backdrop era to its weapon tier', () => {
+    const rank1 = ARCHIVE_BACKGROUND_ASSETS_BY_RANK[0]!.find((asset) => asset.rank === 1)!;
+    expect(weaponRankBoundsForBackground(rank1.assetKey)).toEqual({ ceiling: 1, floor: 1 });
+    expect(weaponRankBoundsForBackground('bg/r02/military/r02-alps-road')).toEqual({
+      ceiling: 1,
+      floor: 1,
+    });
+    for (const rank of [3, 4]) {
       const backdrop = ARCHIVE_BACKGROUND_ASSETS_BY_RANK[rank - 1]!.find(
         (asset) => asset.rank === rank,
       );
       expect(backdrop).toBeDefined();
-      expect(weaponFloorForBackground(backdrop!.assetKey)).toBeUndefined();
+      expect(weaponRankBoundsForBackground(backdrop!.assetKey)).toEqual({
+        ceiling: rank,
+        floor: rank,
+      });
     }
   });
 
+  it('never asks pickWeapon for the nonexistent tier 2 on a Rank 2 backdrop', () => {
+    const bounds = weaponRankBoundsForBackground('bg/r02/military/r02-alps-road');
+    const seenRanks = new Set<number>();
+    for (let i = 0; i < 200; i++) {
+      const weapon = pickWeapon(7, 'm', 6, null, bounds.floor, bounds.ceiling);
+      seenRanks.add(weapon!.rank);
+    }
+    expect(Array.from(seenRanks)).toEqual([1]);
+  });
+
   it('leaves an unrecognised key unrestricted', () => {
+    expect(weaponRankBoundsForBackground('bg/does-not-exist')).toEqual({});
+  });
+});
+
+describe('weaponFloorForBackground', () => {
+  it('remains a floor-only view of weaponRankBoundsForBackground', () => {
     expect(weaponFloorForBackground('bg/does-not-exist')).toBeUndefined();
+    expect(weaponFloorForBackground('bg/r03/military/r03-artillery')).toBe(3);
+    expect(weaponFloorForBackground('bg/r05/military/r05-a-boarding')).toBe(MODERN_ERA_RANK);
   });
 });
 

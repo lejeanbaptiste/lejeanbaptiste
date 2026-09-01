@@ -21,6 +21,8 @@ export interface RunAiPunctuateResult {
   body_xml: string;
   stats: AiPunctApplyStats;
   applied: boolean;
+  targets_considered: number;
+  llm_segments: number;
 }
 
 export async function runAiPunctuate(
@@ -43,7 +45,7 @@ export async function runAiPunctuate(
   stats = mergeAiPunctStats(stats, { skipped_punctuated: skipped });
 
   if (!targets.length) {
-    return { body_xml: xml, stats, applied: false };
+    return { body_xml: xml, stats, applied: false, targets_considered: 0, llm_segments: 0 };
   }
 
   const segmentParallels: { parallel_text: string; han_start: number; han_end: number }[] = [];
@@ -72,9 +74,18 @@ export async function runAiPunctuate(
     options.onProgress?.(done, total);
   }
 
-  const applied = await applyAiParallelPunct(xml, segmentParallels, {
+  let applied = await applyAiParallelPunct(xml, segmentParallels, {
     reflow: !options.hanRange,
   });
+  if (!applied.applied && options.hanRange) {
+    // Scoped Han range can disagree with model output (extra context, selection drift).
+    // Retry with global infix overlap — same path as parallel import paste.
+    applied = await applyAiParallelPunct(
+      xml,
+      segmentParallels.map(({ parallel_text }) => ({ parallel_text })),
+      { reflow: true },
+    );
+  }
   xml = applied.body_xml;
   stats = mergeAiPunctStats(stats, {
     applied: applied.stats.marks_added,
@@ -87,6 +98,8 @@ export async function runAiPunctuate(
     body_xml: xml,
     stats,
     applied: applied.applied,
+    targets_considered: targets.length,
+    llm_segments: segmentParallels.length,
   };
 }
 

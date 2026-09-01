@@ -7,6 +7,7 @@ import { useTranslation } from 'react-i18next';
 // untestable for no reason connected to what it actually needs.
 import { StyledToolTip } from '../StyledToolTip';
 import { getIcon } from '../../icons';
+import { captureEditorSelectionFromEditor } from '../../aiPunctuation/editorSelectionCapture';
 import type { PluginToolbarMenuItem } from '../../plugins/pluginExtensions';
 
 import { type MenuItem as ToolbarMenuItem } from './';
@@ -68,6 +69,13 @@ export const MenuButton = ({
           <MenuItem
             key={item.id}
             disabled={item.disabled}
+            onMouseDown={(event) => {
+              event.preventDefault();
+              const editor = window.writer?.editor;
+              if (editor?.selection) {
+                captureEditorSelectionFromEditor(editor);
+              }
+            }}
             onClick={() => {
               closeMenu();
               item.onClick({ openCalendar });

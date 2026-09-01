@@ -5,6 +5,10 @@ import {
   MIN_SEGMENT_HAN,
   type AiPunctMark,
 } from './punctSchema';
+import {
+  consumeCapturedEditorSelection,
+  peekCapturedEditorSelection,
+} from './editorSelectionCapture';
 
 const PUNCT_SET = new Set<string>(AI_PUNCT_MARKS);
 
@@ -128,12 +132,34 @@ export function replaceJuanDiv(xml: string, bodyXml: string): string {
 
 /** Selected plain text from the TinyMCE visual editor (not parent-window selection). */
 export function getEditorSelectedPlainText(): string {
+  const captured = peekCapturedEditorSelection();
+  if (captured) return captured;
+
   const editor = window.writer?.editor;
   if (!editor?.selection) return '';
-  if (editor.selection.isCollapsed?.()) return '';
-  const text = editor.selection.getContent({ format: 'text' }) ?? '';
-  return text.replace(/\s+/g, '');
+
+  const readNonCollapsed = (): string => {
+    if (editor.selection.isCollapsed?.()) return '';
+    const text = editor.selection.getContent({ format: 'text' }) ?? '';
+    return text.replace(/\s+/g, '');
+  };
+
+  const direct = readNonCollapsed();
+  if (direct) return direct;
+
+  // Toolbar / menu clicks collapse the live selection before the command runs.
+  // Fall back to the last editor bookmark (saved on context menu, etc.).
+  const bookmark = editor.currentBookmark;
+  if (!bookmark) return '';
+  try {
+    editor.selection.moveToBookmark(bookmark);
+    return readNonCollapsed();
+  } catch {
+    return '';
+  }
 }
+
+export { consumeCapturedEditorSelection };
 
 export function selectionHanOnly(text: string): string {
   return text.replace(/[^\u3400-\u4dbf\u4e00-\u9fff\uf900-\ufaff]/g, '');

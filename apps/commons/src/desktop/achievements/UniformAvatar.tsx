@@ -257,6 +257,7 @@ export const pickWeapon = (
   rankIndex: number,
   previousRank: number | null,
   requireRank?: number,
+  maxRank?: number,
 ): WeaponSelection | null => {
   const channels = WEAPON_POOLS[poseIndex] ?? [];
   if (channels.length === 0) return null;
@@ -270,10 +271,13 @@ export const pickWeapon = (
   }
   if (unlockedRanks.size === 0) return null;
 
-  const restricted =
-    requireRank !== undefined
-      ? new Set(Array.from(unlockedRanks).filter((rank) => rank >= requireRank))
-      : unlockedRanks;
+  let restricted = unlockedRanks;
+  if (requireRank !== undefined) {
+    restricted = new Set(Array.from(restricted).filter((rank) => rank >= requireRank));
+  }
+  if (maxRank !== undefined) {
+    restricted = new Set(Array.from(restricted).filter((rank) => rank <= maxRank));
+  }
   const pool = Array.from(restricted.size > 0 ? restricted : unlockedRanks);
   const choices =
     previousRank !== null && pool.length > 1 ? pool.filter((rank) => rank !== previousRank) : pool;
@@ -495,10 +499,20 @@ export const rankOfBackgroundKey = (key: string): number | null => {
  * here. */
 export const MODERN_ERA_RANK = 5;
 
-/** The `requireRank` floor to pair with `backgroundKey` - the rule that
+/** Maps a backdrop's world rank to the weapon tier that era uses. Weapon art
+ * is labeled by era name (napoleonic/wwi/wwii/22c), not by world rank -
+ * see WEAPON_ERA_TIERS in visual_design/scripts/bodySvg.mjs. Ranks 1 and 2
+ * both share napoleonic (tier 1); there is no tier 2 at all. */
+export const weaponTierForBackgroundRank = (backgroundRank: number): number => {
+  if (backgroundRank >= MODERN_ERA_RANK) return MODERN_ERA_RANK;
+  if (backgroundRank <= 2) return 1;
+  return backgroundRank;
+};
+
+/** Floor/ceiling weapon tiers to pair with `backgroundKey` - the rule that
  * keeps a portrait's weapon in the same era as its backdrop.
  *
- * Ranks 5, 6 and 7 all resolve to MODERN_ERA_RANK: those backdrops are
+ * Ranks 5, 6 and 7 all floor at MODERN_ERA_RANK: those backdrops are
  * modern/sci-fi, but only tier 5 weapon art exists, so all three share it
  * (Daniel: "for now, ranks 5-7 should all use rank5 weapons"). Passing the
  * backdrop's own rank instead would ask pickWeapon for a tier-6 floor,
@@ -508,13 +522,27 @@ export const MODERN_ERA_RANK = 5;
  * lands (UniformAvatar.test.ts fails when it does, as a reminder to raise
  * MODERN_ERA_RANK).
  *
- * Earlier-rank backdrops return undefined: a Rank 6 player drawing a
- * "historical" Napoleonic scene should still get a Napoleonic weapon, so
- * the pool stays unrestricted there. */
-export const weaponFloorForBackground = (backgroundKey: string): number | undefined => {
+ * Earlier-rank backdrops lock to the weapon tier for that era (via
+ * weaponTierForBackgroundRank): a Rank 3 WWI scene gets tier-3 weapons
+ * only; Rank 1 and Rank 2 both get tier-1 napoleonic weapons — there is
+ * no tier 2, so using the backdrop rank directly would empty the pool and
+ * silently fall back to WWI/sci-fi gear on a Napoleonic scene. */
+export interface WeaponRankBounds {
+  ceiling?: number;
+  floor?: number;
+}
+
+export const weaponRankBoundsForBackground = (backgroundKey: string): WeaponRankBounds => {
   const backgroundRank = rankOfBackgroundKey(backgroundKey);
-  return backgroundRank !== null && backgroundRank >= MODERN_ERA_RANK ? MODERN_ERA_RANK : undefined;
+  if (backgroundRank === null) return {};
+  const tier = weaponTierForBackgroundRank(backgroundRank);
+  if (backgroundRank >= MODERN_ERA_RANK) return { floor: tier };
+  return { ceiling: tier, floor: tier };
 };
+
+/** @deprecated Prefer weaponRankBoundsForBackground — kept for tests. */
+export const weaponFloorForBackground = (backgroundKey: string): number | undefined =>
+  weaponRankBoundsForBackground(backgroundKey).floor;
 
 // bg_* artwork is 758x331.
 export const BG_ASPECT = 758 / 331;

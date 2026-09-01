@@ -97,6 +97,29 @@ describe('wrapCbetaTeiDocument', () => {
     expect(body).not.toMatch(/<head[^>]*>[^<]*<\/head>\s*<head/);
   });
 
+  test('<titleStmt>/<monogr> carry the work title, not the juan/section heading', () => {
+    const sectionMeta: CbetaTeiMeta = {
+      ...meta,
+      title: '高僧傳',
+      split_unit: 'mulu',
+      section_n: '1',
+      section_title: '1 譯經',
+      juan_n: undefined,
+      juan_title: undefined,
+    };
+    const bodyXml =
+      '<text xmlns="http://www.tei-c.org/ns/1.0" xmlns:cb="http://www.cbeta.org/ns/1.0">' +
+      '<body><p>如是我聞</p></body></text>';
+
+    const xml = wrapCbetaTeiDocument({ config: cbetaConfig, meta: sectionMeta, bodyXml });
+    const header = xml.slice(0, xml.indexOf('</teiHeader>'));
+
+    expect(header).toContain('<title>高僧傳</title>');
+    expect(header).not.toContain('1 譯經'); // section heading stays out of the header
+    // …but it still labels the body division
+    expect(xml.slice(xml.indexOf('<body>'))).toContain('<head>1 譯經</head>');
+  });
+
   test('TEI-catalog import keeps the <div type="juan"> wrapper and structured header', () => {
     const xml = wrapCbetaTeiDocument({ config: teiConfig, meta, bodyXml: teiBodyXml });
 

@@ -16,6 +16,7 @@ import {
   extractJuanDiv,
   findSelectionHanRange,
   getEditorSelectedPlainText,
+  consumeCapturedEditorSelection,
   punctInHanRange,
   replaceJuanDiv,
   segmentsInSelection,
@@ -125,6 +126,7 @@ export async function runAiPunctuateEditorCommand(options?: {
     }
     throw error;
   } finally {
+    consumeCapturedEditorSelection();
     finishAiRunProgress();
   }
 
@@ -132,9 +134,18 @@ export async function runAiPunctuateEditorCommand(options?: {
     const skippedShort =
       listed.segments.filter((s) => s.han.length < MIN_SEGMENT_HAN).length ===
       listed.segments.length;
-    const detail = skippedShort
-      ? ` All segments were too short (< ${MIN_SEGMENT_HAN} Han characters) or already punctuated.`
-      : ' All segments were skipped or the model returned no valid marks.';
+    let detail: string;
+    if (result.llm_segments === 0) {
+      detail = hanRange
+        ? ' The selection was too short, already punctuated, or could not be matched to a segment.'
+        : ' All segments were too short or already marked as punctuated.';
+    } else if (result.stats.align_failed > 0) {
+      detail = ` The model responded, but alignment failed (${result.stats.align_failed} segment(s) could not be matched onto the XML).`;
+    } else {
+      detail = skippedShort
+        ? ` All segments were too short (< ${MIN_SEGMENT_HAN} Han characters) or already punctuated.`
+        : ' The model returned no transferable punctuation marks.';
+    }
     return {
       ok: false,
       message: `No punctuation applied.${detail}`,

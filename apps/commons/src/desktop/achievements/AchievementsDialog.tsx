@@ -77,7 +77,7 @@ import {
   pickPose,
   pickWeapon,
   UniformAvatar,
-  weaponFloorForBackground,
+  weaponRankBoundsForBackground,
 } from './UniformAvatar';
 import { loadAchievementsState, saveAchievementsState } from './store';
 import type { AchievementsState, UnlockedAchievement } from './types';
@@ -249,16 +249,16 @@ export const AchievementsDialog = ({ onClose, open }: AchievementsDialogProps) =
       newPose,
       ribbonsIntoRank(loaded),
     );
-    // A Rank 5+ sci-fi backdrop shouldn't pair with an earlier-era rank-1/2
-    // weapon (Daniel: "Rank5+ background should be linked to rank5+
-    // weapons") - force the weapon pool up to match the backdrop that was
-    // just rolled. See weaponFloorForBackground for the era rule itself.
+    // Keep the weapon pool locked to the same era as the backdrop that was
+    // just rolled (exact tier for ranks 1–4; modern-era floor for 5+).
+    const weaponBounds = weaponRankBoundsForBackground(newBackgroundKey);
     const weapon = pickWeapon(
       newPose,
       loadedBodyType,
       rankIndex,
       lastWeaponRankRef.current,
-      weaponFloorForBackground(newBackgroundKey),
+      weaponBounds.floor,
+      weaponBounds.ceiling,
     );
     lastPoseRef.current = newPose;
     lastBackgroundKeyRef.current = newBackgroundKey;

@@ -72,7 +72,7 @@ export async function applyAiPunctInsertions(
 
 export async function applyAiParallelPunct(
   bodyXml: string,
-  segmentParallels: { parallel_text: string; han_start: number; han_end: number }[],
+  segmentParallels: { parallel_text: string; han_start?: number; han_end?: number }[],
   options?: { reflow?: boolean },
 ): Promise<AiParallelApplyResult> {
   return invokePython({

@@ -147,9 +147,11 @@ export const wrapCbetaTeiDocument = ({
   // (Python `cross_family: false`); a TEI catalog gets the downgraded `<div>` tree.
   const isCbetaFamily = catalogId === 'cbeta';
 
-  const title = escapeXmlText(
-    meta.section_title || meta.juan_title || meta.title || meta.stem || 'Untitled',
-  );
+  // The `<titleStmt>` / `<monogr>` title is the *work* title. A juan or section
+  // heading (`section_title` / `juan_title`) is a sub-unit label, not the work —
+  // it belongs in the body `<head>` (added below), never here. Mixing them up is
+  // how "1 譯經" ended up in the metadata panel's "work title" field.
+  const title = escapeXmlText(meta.title || meta.stem || 'Untitled');
   const when = isoDate(importedAt);
   // CBETA P5 `<author>` takes no `@role` (and `<title>` no `@type`).
   const authorList = (indent?: string) => {
