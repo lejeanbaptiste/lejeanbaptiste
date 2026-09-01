@@ -144,14 +144,16 @@ snapshots; keys do not collide.
 
 ### 5. Achievements on the second machine
 
-`achievements.json` lives beside `entities.sqlite`. When **Cross-device sync**
-runs (manual or timer), achievements blob sync runs immediately after entity
-sync on the same Worker — the encrypted file bytes are uploaded and downloaded
-opaque; the app decrypts, merges (`mergeAchievementsStates` semantics), and
-re-encrypts locally. No separate setup step.
+`achievements.json` lives beside `entities.sqlite`. **R2 restore** pulls back the
+paired achievements sidecar uploaded with each entity snapshot (when the file
+existed on the machine that created the backup). **Cross-device sync** also syncs
+the achievements blob through D1 after each entity sync run — use that for
+day-to-day updates once both machines are on the same snapshot baseline. The D1
+blob is opaque; the app decrypts, merges (`mergeAchievementsStates` semantics),
+and re-encrypts locally. No separate setup step.
 
-If machine B was set up before this shipped, run **Sync now** once on each
-machine so blobs converge.
+If machine B was set up before achievements sidecars shipped, run **Sync now**
+once on each machine so blobs converge.
 
 ---
 
@@ -159,8 +161,8 @@ machine so blobs converge.
 
 | Situation                                    | Use                                                    |
 | -------------------------------------------- | ------------------------------------------------------ |
-| Fresh second machine, normal workflow        | **D1 sync** (pull)                                     |
-| Local `entities.sqlite` corrupted or missing | **R2 restore** (newest snapshot), then restart LJB     |
+| Fresh second machine, normal workflow        | **R2 restore** (newest snapshot) for a full clone, then **D1 sync** for deltas; or **D1 pull** into an empty DB if you accept cold-pull limits |
+| Local `entities.sqlite` corrupted or missing | **R2 restore** (newest snapshot) — restores `entities.sqlite` and the paired `achievements.json` sidecar when present |
 | Clone machine A's DB at a point in time      | **R2 restore** of a chosen snapshot                    |
 | Machine B already has its own entity work    | **D1 sync** — expect conflicts; do not restore over it |
 
@@ -199,8 +201,8 @@ may already carry a sync cursor from the machine that created the snapshot.
 | Sync returns 403                   | GitHub account ≠ `OWNER_GITHUB_ID` on the Worker                                           |
 | Sync returns 401                   | Not signed in to GitHub, or token expired — sign in again                                  |
 | `database disk image is malformed` | Live DB in a file-sync folder — restore from R2, move DB to local disk                     |
-| B has entities but no medals       | Run **Sync now** on both machines; achievements blob sync rides on entity sync             |
-| Restore did not fix medals         | R2 backs up `entities.sqlite` only — run entity sync to pull the achievements blob from D1 |
+| B has entities but no medals       | **R2 restore** from a snapshot taken after machine A had medals, or run **Sync now** (achievements blob on D1) |
+| Restore did not fix medals         | Snapshots before this release only backed up `entities.sqlite` — run entity sync to pull achievements from D1, or restore a newer snapshot |
 
 Wire protocol and server behaviour:
 [entity-sync-protocol.md](entity-sync-protocol.md). Implementation planning:

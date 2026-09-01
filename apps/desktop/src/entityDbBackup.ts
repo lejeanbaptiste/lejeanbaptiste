@@ -4,10 +4,11 @@
  * The live `entities.sqlite` must never sit in a file-sync folder (that
  * corrupts it). This module gives it an off-machine safety net instead: on a
  * timer while the app runs, and once more on quit, it takes a consistent
- * `VACUUM INTO` snapshot, gzips it, and uploads it to Cloudflare R2. Old
- * snapshots are pruned on a keep-recent + keep-daily schedule. Restore pulls
- * the newest (or a chosen) snapshot back down, verifies its integrity, and
- * swaps it into place.
+ * `VACUUM INTO` snapshot, gzips it, and uploads it to Cloudflare R2 together
+ * with a paired `achievements.json` sidecar when that file exists locally.
+ * Old snapshots are pruned on a keep-recent + keep-daily schedule. Restore
+ * pulls the newest (or a chosen) snapshot back down, verifies its integrity,
+ * and swaps it in (entities + achievements when the sidecar is present).
  *
  * This is a stop-gap until logical entity sync lands (Phase 2+); it is not a
  * merge mechanism and only ever moves whole-database snapshots.
@@ -20,7 +21,7 @@ import { createRequire } from 'node:module';
 import path from 'node:path';
 import type { DatabaseSync as DatabaseSyncType } from 'node:sqlite';
 import { pipeline } from 'node:stream/promises';
-import { createGzip, gunzipSync } from 'node:zlib';
+import { createGzip, gunzipSync, gzipSync } from 'node:zlib';
 
 // esbuild rewrites a static `import ... from 'node:sqlite'` to `require("sqlite")`
 // (an uninstalled package) in the packaged bundle, so load it through
@@ -35,6 +36,11 @@ import {
   toR2Config,
   type EntityDbBackupConfig,
 } from './entityDbBackupConfig';
+import {
+  readAchievementsFileRaw,
+  resolveAchievementsPrimaryPath,
+  writeAchievementsEnvelopeRaw,
+} from './achievementsFile';
 import { getEntityDbFolder } from './projectPrefs';
 import { resolveLiveEntityDbPath } from './ensureDefaultEntityDatabase';
 import { R2Client, type R2Object } from './r2Client';
@@ -65,6 +71,8 @@ export interface LastBackupMarker {
   uploadedBytes: number;
   sourceBytes: number;
   sha256: string;
+  /** Paired achievements sidecar, when the local file existed at backup time. */
+  achievementsKey?: string;
 }
 
 export interface CloudSnapshot {
@@ -153,6 +161,12 @@ interface ParsedKey {
   key: string;
   date: Date;
 }
+
+/** Sidecar object key paired with an entity-database snapshot key. */
+export const companionAchievementsKey = (entitiesKey: string): string | null => {
+  if (!/entities-\d{8}T\d{6}Z-[a-z]+\.sqlite\.gz$/.test(entitiesKey)) return null;
+  return entitiesKey.replace(/entities-/, 'achievements-').replace(/\.sqlite\.gz$/, '.json.gz');
+};
 
 const parseSnapshotKey = (key: string): ParsedKey | null => {
   // <prefix>snapshots/entities-20260901T203015Z-<reason>.sqlite.gz
@@ -253,11 +267,35 @@ export const runBackup = async (reason: BackupReason): Promise<BackupResult> => 
       },
     });
 
+    let achievementsKey: string | undefined;
+    const achievementsRaw = await readAchievementsFileRaw();
+    const pairedAchievementsKey = companionAchievementsKey(key);
+    if (achievementsRaw && pairedAchievementsKey) {
+      const achievementsGz = gzipSync(Buffer.from(achievementsRaw, 'utf8'), { level: 6 });
+      const achievementsSha = createHash('sha256').update(achievementsGz).digest('hex');
+      await client.putObject(pairedAchievementsKey, achievementsGz, {
+        contentType: 'application/gzip',
+        metadata: {
+          sha256: achievementsSha,
+          'source-bytes': String(Buffer.byteLength(achievementsRaw, 'utf8')),
+          'app-version': app.getVersion(),
+          reason,
+        },
+      });
+      achievementsKey = pairedAchievementsKey;
+    }
+
     let prunedKeys: string[] = [];
     try {
       const existing = await client.listObjects(`${config.prefix}${SNAPSHOTS_SEGMENT}`);
       prunedKeys = selectSnapshotsToPrune(existing.map((o) => o.key));
-      for (const staleKey of prunedKeys) await client.deleteObject(staleKey);
+      for (const staleKey of prunedKeys) {
+        await client.deleteObject(staleKey);
+        const staleAchievementsKey = companionAchievementsKey(staleKey);
+        if (staleAchievementsKey) {
+          await client.deleteObject(staleAchievementsKey).catch(() => undefined);
+        }
+      }
     } catch (pruneError) {
       // A failed prune must not fail the backup — the snapshot is already up.
       console.error('[entityDbBackup] prune failed:', pruneError);
@@ -271,6 +309,7 @@ export const runBackup = async (reason: BackupReason): Promise<BackupResult> => 
       uploadedBytes: snapshot.uploadedBytes,
       sourceBytes: snapshot.sourceBytes,
       sha256: snapshot.sha256,
+      ...(achievementsKey ? { achievementsKey } : {}),
     };
     await writeMarker(marker);
 
@@ -379,6 +418,8 @@ export interface RestoreResult {
   restoredBytes: number;
   /** Where the pre-restore database (and sidecars) were moved. */
   previousCopyDir: string;
+  /** True when a paired achievements sidecar was restored from R2. */
+  achievementsRestored: boolean;
   error?: string;
 }
 
@@ -433,11 +474,50 @@ export const restoreSnapshot = async (key: string): Promise<RestoreResult> => {
     }
     await fs.rename(stagedPath, path.join(folder, ENTITY_DB_FILENAME));
 
+    let achievementsRestored = false;
+    const pairedAchievementsKey = companionAchievementsKey(key);
+    if (pairedAchievementsKey) {
+      try {
+        const achievementsGz = await client.getObject(pairedAchievementsKey);
+        const expectedAchievementsSha = (
+          await client.headObjectMetadata(pairedAchievementsKey).catch(() => null)
+        )?.sha256;
+        if (expectedAchievementsSha) {
+          const actualAchievementsSha = createHash('sha256').update(achievementsGz).digest('hex');
+          if (actualAchievementsSha !== expectedAchievementsSha) {
+            throw new Error(
+              `downloaded achievements snapshot is corrupt (sha256 ${actualAchievementsSha} ≠ ${expectedAchievementsSha})`,
+            );
+          }
+        }
+        const achievementsLive = await resolveAchievementsPrimaryPath();
+        try {
+          await fs.rename(
+            achievementsLive,
+            path.join(previousCopyDir, path.basename(achievementsLive)),
+          );
+        } catch (error) {
+          if ((error as NodeJS.ErrnoException).code !== 'ENOENT') throw error;
+        }
+        await writeAchievementsEnvelopeRaw(gunzipSync(achievementsGz).toString('utf8'));
+        achievementsRestored = true;
+      } catch (error) {
+        const message = error instanceof Error ? error.message : String(error);
+        const missing =
+          /not found|NoSuchKey|404|does not exist/i.test(message) ||
+          (error as NodeJS.ErrnoException).name === 'NoSuchKey';
+        if (!missing) {
+          console.warn('[entityDbBackup] achievements restore skipped:', message);
+        }
+      }
+    }
+
     return {
       ok: true,
       restoredFromKey: key,
       restoredBytes: gz.length,
       previousCopyDir,
+      achievementsRestored,
     };
   } catch (error) {
     await fs.rm(stagedPath, { force: true }).catch(() => undefined);
@@ -481,6 +561,12 @@ export const checkEntityDbIntegrity = async (): Promise<EntityDbIntegrityReport>
 };
 
 /** Exported for tests. */
-export const __testing = { parseSnapshotKey, compactTimestamp, sqlStringLiteral, KEEP_RECENT };
+export const __testing = {
+  parseSnapshotKey,
+  companionAchievementsKey,
+  compactTimestamp,
+  sqlStringLiteral,
+  KEEP_RECENT,
+};
 
 export type { EntityDbBackupConfig };

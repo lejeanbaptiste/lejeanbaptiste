@@ -536,6 +536,7 @@
           "restoring": "Restoring…",
           "cancel": "Cancel",
           "restore_ok": "Restored. Your previous database was moved to {{dir}}.",
+          "restore_ok_with_achievements": "Restored database and achievements. Your previous files were moved to {{dir}}.",
           "restore_failed": "Restore failed."
         },
         "entity_database": "Entity database",

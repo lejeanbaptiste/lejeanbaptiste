@@ -71,6 +71,7 @@ interface BackupResult {
 interface RestoreResult {
   ok: boolean;
   previousCopyDir: string;
+  achievementsRestored?: boolean;
   error?: string;
 }
 
@@ -277,9 +278,12 @@ export const DesktopEntityBackup = () => {
         result.ok
           ? {
               severity: 'success',
-              message: t('LW.desktop.settings.entity_backup.restore_ok', {
-                dir: result.previousCopyDir,
-              }),
+              message: t(
+                result.achievementsRestored
+                  ? 'LW.desktop.settings.entity_backup.restore_ok_with_achievements'
+                  : 'LW.desktop.settings.entity_backup.restore_ok',
+                { dir: result.previousCopyDir },
+              ),
             }
           : {
               severity: 'error',

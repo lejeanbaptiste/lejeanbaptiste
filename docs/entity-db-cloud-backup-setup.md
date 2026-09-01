@@ -8,11 +8,13 @@ Implementation notes: [entity-sync-planning.md](entity-sync-planning.md).
 [entity-db-multi-machine-setup.md](entity-db-multi-machine-setup.md) (type C
 users). This page covers **R2 backup only**.
 
-Le Jean-Baptiste can copy your entity database (`entities.sqlite`) to
+Le Jean-Baptiste can copy your entity database (`entities.sqlite`) and, when
+present, the paired `achievements.json` file to
 [Cloudflare R2](https://developers.cloudflare.com/r2/) on a timer and once more
 when you quit. Each backup is a consistent, compressed, integrity-checked
-snapshot of the whole database. If the local file is ever lost or corrupted,
-you restore the newest snapshot in one step.
+snapshot of the whole database (achievements ride as a gzipped sidecar object
+with the same timestamp). If the local files are ever lost or corrupted, you
+restore the newest snapshot in one step.
 
 **What this is and isn't:**
 

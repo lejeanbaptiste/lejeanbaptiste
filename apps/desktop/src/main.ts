@@ -143,7 +143,6 @@ import {
   lookupAuthorityPackRowsByIds,
   readAuthorityPackFile,
 } from './authorityPacks';
-import { AUTHORITY_PACKS_DIRNAME } from '../../commons/src/desktop/authorityPackTypes';
 import {
   getAuthorityLifecycleStatus,
   maybeCheckAuthorityUpdates,

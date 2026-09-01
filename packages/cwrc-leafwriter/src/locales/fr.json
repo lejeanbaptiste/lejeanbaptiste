@@ -1067,6 +1067,7 @@
           "restoring": "Restauration…",
           "cancel": "Annuler",
           "restore_ok": "Restauré. Votre base précédente a été déplacée vers {{dir}}.",
+          "restore_ok_with_achievements": "Base d’entités et succès restaurés. Vos fichiers précédents ont été déplacés vers {{dir}}.",
           "restore_failed": "Échec de la restauration."
         },
         "entity_database": "Base d’entités",

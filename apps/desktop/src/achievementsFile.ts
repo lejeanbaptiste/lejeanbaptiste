@@ -193,6 +193,9 @@ export const readAchievementsFileRaw = async (): Promise<string | null> => {
   }
 };
 
+/** Absolute path to the live achievements file (may not exist yet). */
+export const resolveAchievementsPrimaryPath = async (): Promise<string> => getPrimaryPath();
+
 /** Write a pre-encrypted envelope without re-encrypting (used after remote pull). */
 export const writeAchievementsEnvelopeRaw = async (raw: string): Promise<void> => {
   writeChain = writeChain.then(async () => {

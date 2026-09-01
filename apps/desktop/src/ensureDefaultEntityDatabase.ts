@@ -9,7 +9,7 @@ import fs from 'fs/promises';
 import path from 'path';
 import { createEntitiesScaffold } from '../../../packages/cwrc-leafwriter/src/autoTagging/entities';
 import { AUTHORITY_PACKS_DIRNAME } from '../../commons/src/desktop/authorityPackTypes';
-import { importEntitySqliteXml } from './entityDbSqlite/xmlCodec';
+import { importEntitySqliteXml } from './entityDbSqlite/readService';
 import { getEntityDbFolder } from './projectPrefs';
 
 export const ENTITY_DB_FILENAME = 'entities.sqlite';

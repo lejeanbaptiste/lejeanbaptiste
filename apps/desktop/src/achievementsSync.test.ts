@@ -97,7 +97,6 @@ describe('runAchievementsSync', () => {
 
   it('merges on push conflict then retries', async () => {
     await writePlain(JSON.stringify({ ...emptyState('2026-01-01T00:00:00.000Z'), saveCount: 3 }));
-    const localBlob = await readRaw();
 
     const serverState = { ...emptyState('2026-01-01T00:00:00.000Z'), saveCount: 9 };
     await writePlain(JSON.stringify(serverState));

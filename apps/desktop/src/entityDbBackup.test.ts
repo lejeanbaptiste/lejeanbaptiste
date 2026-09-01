@@ -13,7 +13,7 @@ jest.mock('electron', () => ({
 
 import { selectSnapshotsToPrune, __testing } from './entityDbBackup';
 
-const { parseSnapshotKey, sqlStringLiteral } = __testing;
+const { parseSnapshotKey, companionAchievementsKey, sqlStringLiteral } = __testing;
 
 const PREFIX = 'entity-db-backups/snapshots/';
 const keyAt = (iso: string, reason = 'timer') =>
@@ -28,6 +28,19 @@ describe('parseSnapshotKey', () => {
   it('rejects keys that are not snapshots', () => {
     expect(parseSnapshotKey(`${PREFIX}notes.txt`)).toBeNull();
     expect(parseSnapshotKey(`${PREFIX}entities-garbage.sqlite.gz`)).toBeNull();
+  });
+});
+
+describe('companionAchievementsKey', () => {
+  it('pairs an entity snapshot key with an achievements sidecar key', () => {
+    const entityKey = keyAt('2026-09-01T20:30:15.000Z', 'manual');
+    expect(companionAchievementsKey(entityKey)).toBe(
+      `${PREFIX}achievements-20260901T203015Z-manual.json.gz`,
+    );
+  });
+
+  it('returns null for non-entity keys', () => {
+    expect(companionAchievementsKey(`${PREFIX}notes.txt`)).toBeNull();
   });
 });
 
