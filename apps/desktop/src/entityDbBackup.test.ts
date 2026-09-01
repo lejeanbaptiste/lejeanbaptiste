@@ -85,9 +85,7 @@ describe('selectSnapshotsToPrune', () => {
 
     // Recent days (inside KEEP_RECENT=24 → 8 days at 3/day) keep all 3;
     // older days inside the 14-day window keep exactly 1; beyond 14 days keep 0.
-    const dayCutoff = new Date(now.getTime() - 14 * 24 * 60 * 60 * 1000)
-      .toISOString()
-      .slice(0, 10);
+    const dayCutoff = new Date(now.getTime() - 14 * 24 * 60 * 60 * 1000).toISOString().slice(0, 10);
     for (const [day, count] of keptByDay) {
       expect(count).toBeGreaterThanOrEqual(1);
       expect(day >= dayCutoff).toBe(true);

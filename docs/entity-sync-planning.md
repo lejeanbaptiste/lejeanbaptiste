@@ -1,16 +1,17 @@
 # Entity database cross-device sync — planning
 
 **Status (2026-09-01):** **Phases 0–4 built and run end-to-end**, plus
-provider-independence groundwork. Cloud backup shipped; D1 sync Worker deployed
-at `ljb-entity-sync.lejeanbaptiste.workers.dev` and the wire contract frozen as
+provider-independence groundwork. Cloud backup shipped; D1 sync Worker
+deployable from `workers/entity-sync/` and the wire contract frozen as
 [`entity-sync-protocol.md`](entity-sync-protocol.md) with an implementation-
 independent conformance suite; the client engine is wired to IPC, an auto-sync
 timer, a **Settings › Profil › Cross-device sync** panel with inline conflict
 resolution, and a pluggable auth mode (`github` / `bearer` work; `oidc`
-stubbed). One machine has pushed the full ~57 k-entity authority file (cursor
-56 912). Remaining: sync-coverage gaps (relations, cross-refs, merges),
-content-hash fidelity, a second-device soak, the OIDC flow, and a
-non-Cloudflare server.
+stubbed). End-user setup:
+[entity-db-multi-machine-setup.md](entity-db-multi-machine-setup.md). Remaining:
+sync-coverage gaps (relations, cross-refs, merges), content-hash fidelity, a
+second-device soak, the OIDC flow, and a non-Cloudflare server. **Achievements
+blob sync** (`GET/PUT /sync/achievements`) ships with entity sync.
 
 Context: the live `entities.sqlite` cannot live in a file-sync folder
 (Nextcloud/Dropbox/iCloud) — the sync client races SQLite's `-wal`/`-shm` and
@@ -186,7 +187,7 @@ Drive it from the DevTools console until the panel lands:
 ```js
 await window.electronAPI.entitySyncSetConfig({
   enabled: true,
-  endpoint: 'https://ljb-entity-sync.lejeanbaptiste.workers.dev',
+  endpoint: 'https://ljb-entity-sync.<your-subdomain>.workers.dev',
 });
 await window.electronAPI.entitySyncRunNow();
 await window.electronAPI.entitySyncGetStatus();
@@ -230,11 +231,12 @@ via the `__ljbCommonsUi` bridge — `entitySyncStatus` +
   **Keep theirs** (→ `resolveConflictKeepLocal` / `…KeepRemote`), and a
   **Show both versions** toggle with the two TEI snapshots.
 
-First full sync (~57 k entities) still has to be kicked off once — the panel's
-**Sync now**, or it happens on the auto-timer.
+First full sync (large authority files) still has to be kicked off once — the
+panel's **Sync now**, or it happens on the auto-timer.
 
-Done end-to-end: 2026-09-01, one machine pushed the whole authority file to
-`ljb-entity-sync.lejeanbaptiste.workers.dev` (cursor 56 912).
+Validated end-to-end 2026-09-01 on a single machine against a deployed Worker.
+See [entity-db-multi-machine-setup.md](entity-db-multi-machine-setup.md) for
+second-device onboarding.
 
 The panel also carries an **Authentication** selector (below).
 
@@ -344,6 +346,5 @@ calls, plus restore and troubleshooting:
 - **Corrupt-DB startup prompt** — `checkEntityDbIntegrity` runs and the panel
   shows a red alert, but there's no on-launch dialog offering a one-click
   restore yet.
-- **Real R2 smoke test** against a provisioned bucket + token.
 - **Packaged-build check** that `safeStorage` encryption is available on the
   target OSes (Linux needs an unlocked keyring).

@@ -132,6 +132,45 @@ Returns every change for the owner with `seq > since`, ordered by `seq`.
 `applied` and `reconciled` never overlap; a `localId` appears in exactly one
 bucket.
 
+### `GET /sync/achievements`
+
+Returns the owner's opaque achievements blob (encrypted `achievements.json`
+bytes as stored on disk). `404` when none stored yet.
+
+```jsonc
+// 200
+{
+  "revision": 3,
+  "blob": "{ \"v\": 2, \"iv\": \"…\", \"tag\": \"…\", \"data\": \"…\" }",
+  "sha256": "…",
+  "updatedAt": "2026-09-01T12:00:00.000Z",
+}
+```
+
+The server never decrypts `blob`. The client merges after decrypt locally.
+
+### `PUT /sync/achievements`
+
+```jsonc
+{
+  "baseRevision": 2, // 0 when never synced
+  "blob": "…", // non-empty encrypted envelope, max 500_000 chars
+}
+```
+
+```jsonc
+// 200 applied
+{ "applied": true, "revision": 3, "sha256": "…" }
+
+// 200 conflict (stale baseRevision)
+{
+  "conflict": true,
+  "serverRevision": 3,
+  "serverBlob": "…",
+  "serverSha256": "…",
+}
+```
+
 ---
 
 ## Auth

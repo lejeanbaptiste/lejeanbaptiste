@@ -103,23 +103,13 @@ const signRequest = (
   ].join('\n');
 
   const scope = `${dateStamp}/${REGION}/${SERVICE}/aws4_request`;
-  const stringToSign = [
-    'AWS4-HMAC-SHA256',
-    amzDate,
-    scope,
-    sha256Hex(canonicalRequest),
-  ].join('\n');
+  const stringToSign = ['AWS4-HMAC-SHA256', amzDate, scope, sha256Hex(canonicalRequest)].join('\n');
 
   const signingKey = hmac(
-    hmac(
-      hmac(hmac(`AWS4${config.secretAccessKey}`, dateStamp), REGION),
-      SERVICE,
-    ),
+    hmac(hmac(hmac(`AWS4${config.secretAccessKey}`, dateStamp), REGION), SERVICE),
     'aws4_request',
   );
-  const signature = createHmac('sha256', signingKey)
-    .update(stringToSign, 'utf8')
-    .digest('hex');
+  const signature = createHmac('sha256', signingKey).update(stringToSign, 'utf8').digest('hex');
 
   const authorization =
     `AWS4-HMAC-SHA256 Credential=${config.accessKeyId}/${scope}, ` +

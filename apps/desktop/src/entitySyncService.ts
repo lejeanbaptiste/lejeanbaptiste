@@ -24,6 +24,7 @@ import {
   type SyncProgress,
 } from './entitySync';
 import { EntitySyncAuthError, EntitySyncClient } from './entitySyncClient';
+import { runAchievementsSync } from './achievementsSync';
 import {
   isSyncConfigured,
   readSyncConfig,
@@ -70,6 +71,9 @@ export interface SyncRunSummary {
   pushedConflicts?: number;
   openConflicts?: number;
   cursor?: number;
+  achievementsPulled?: boolean;
+  achievementsPushed?: boolean;
+  achievementsRevision?: number;
   durationMs?: number;
   at?: string;
 }
@@ -144,6 +148,18 @@ export const runEntitySync = async (reason: SyncReason): Promise<SyncRunSummary>
     });
     console.log(`[entitySync] run (${reason}) started`);
     const result = await runSync({ repo, client, signal: abort.signal, onProgress: logProgress });
+    let achievements = { pulled: false, pushed: false, revision: 0 };
+    try {
+      achievements = await runAchievementsSync(client);
+      console.log(
+        `[entitySync] achievements sync: pulled=${achievements.pulled} pushed=${achievements.pushed} revision=${achievements.revision}`,
+      );
+    } catch (achievementsError) {
+      console.error(
+        '[entitySync] achievements sync failed:',
+        achievementsError instanceof Error ? achievementsError.message : achievementsError,
+      );
+    }
     const summary: SyncRunSummary = {
       ok: true,
       reason,
@@ -154,6 +170,9 @@ export const runEntitySync = async (reason: SyncReason): Promise<SyncRunSummary>
       pushedConflicts: result.pushedConflicts,
       openConflicts: result.openConflicts,
       cursor: result.cursor,
+      achievementsPulled: achievements.pulled,
+      achievementsPushed: achievements.pushed,
+      achievementsRevision: achievements.revision,
       durationMs: Date.now() - startedAt,
       at: new Date().toISOString(),
     };

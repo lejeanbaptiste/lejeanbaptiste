@@ -11,6 +11,7 @@
  */
 import { bearerToken, verifyGitHubUser as defaultVerifyGitHubUser } from './github';
 import type { GitHubUser } from './github';
+import { handleAchievementsGet, handleAchievementsPut, parseAchievementsPut } from './achievements';
 import {
   parsePullQuery,
   parsePushRequest,
@@ -65,7 +66,10 @@ async function authenticate(
     return { ok: false, response: json({ error: 'Could not verify GitHub identity.' }, 401) };
   }
   if (String(user.id) !== String(env.OWNER_GITHUB_ID)) {
-    return { ok: false, response: json({ error: 'This account is not the owner of this sync store.' }, 403) };
+    return {
+      ok: false,
+      response: json({ error: 'This account is not the owner of this sync store.' }, 403),
+    };
   }
   return { ok: true, ownerId: String(user.id) };
 }
@@ -99,7 +103,9 @@ async function reserveSeqRange(db: D1Database, ownerId: string, count: number): 
       if (res.meta.changes === 1) return row.last_seq;
     } else {
       const res = await db
-        .prepare('INSERT INTO sync_counter (owner_id, last_seq) VALUES (?, ?) ON CONFLICT(owner_id) DO NOTHING')
+        .prepare(
+          'INSERT INTO sync_counter (owner_id, last_seq) VALUES (?, ?) ON CONFLICT(owner_id) DO NOTHING',
+        )
         .bind(ownerId, count)
         .run();
       if ((res.meta.changes ?? 0) === 1) return 0;
@@ -329,6 +335,31 @@ export function createWorker(deps: WorkerDeps = {}) {
             return json({ error: parsed.error }, tooMany ? 413 : 400);
           }
           return json(await handlePush(env.DB, auth.ownerId, parsed.value.entities));
+        }
+
+        if (request.method === 'GET' && url.pathname === '/sync/achievements') {
+          const remote = await handleAchievementsGet(env.DB, auth.ownerId);
+          if (!remote) return json({ error: 'No achievements blob stored yet.' }, 404);
+          return json(remote);
+        }
+
+        if (request.method === 'PUT' && url.pathname === '/sync/achievements') {
+          let body: unknown;
+          try {
+            body = await request.json();
+          } catch {
+            return json({ error: 'Body must be valid JSON.' }, 400);
+          }
+          const parsed = parseAchievementsPut(body);
+          if (!parsed.ok) return json({ error: parsed.error }, 400);
+          return json(
+            await handleAchievementsPut(
+              env.DB,
+              auth.ownerId,
+              parsed.value.baseRevision,
+              parsed.value.blob,
+            ),
+          );
         }
       } catch (err) {
         return json({ error: err instanceof Error ? err.message : 'Internal error.' }, 500);

@@ -16,6 +16,7 @@ Active product TODOs live in the root [`readme.md`](../readme.md) (`## Waiting` 
 | [smoke_test.md](smoke_test.md)                                                                                            | Manual smoke checklist                                           |
 | [entity-sync-manual-test-plan.md](entity-sync-manual-test-plan.md)                                                        | Manual QA for entity sync (until SQLite migration is signed off) |
 | [entity-db-cloud-backup-setup.md](entity-db-cloud-backup-setup.md)                                                        | Set up the R2 bucket + token for entity database cloud backup    |
+| [entity-db-multi-machine-setup.md](entity-db-multi-machine-setup.md)                                                      | Type C: R2 + D1 sync, second machine, achievements               |
 | [entity-sync-protocol.md](entity-sync-protocol.md)                                                                        | Wire contract for a sync server (any implementation)             |
 | [translation-smoke-tests.md](translation-smoke-tests.md) / [smoke-test-translation-ids.md](smoke-test-translation-ids.md) | Translation pane checks                                          |
 

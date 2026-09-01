@@ -2,3 +2,5 @@ node_modules/
 .wrangler/
 .dev.vars
 dist/
+# Local deploy config — copy from wrangler.toml.example and fill in your ids.
+wrangler.toml

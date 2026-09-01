@@ -424,7 +424,21 @@ export const EntityLookupField = ({
         }
       }
 
-      onPersistedChange?.({ name: merged.label, ref: merged.uri });
+      const persisted: EntityLookupValue = {
+        name: merged.label,
+        ref: merged.uri,
+        key: resolvedId,
+      };
+      if (mode === 'single') {
+        onChange([persisted]);
+      } else {
+        onChange(
+          values.map((entry) =>
+            entry.name === merged.label && entry.ref === merged.uri ? persisted : entry,
+          ),
+        );
+      }
+      onPersistedChange?.(persisted);
     } catch {
       // Entity database write failed — the field is still applied to the header.
     }

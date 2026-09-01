@@ -35,7 +35,9 @@ describe('parsePushRequest', () => {
   it('rejects an empty or oversized batch', () => {
     expect(parsePushRequest({ entities: [] }).ok).toBe(false);
     const tooMany = parsePushRequest({
-      entities: Array.from({ length: MAX_PUSH_ENTITIES + 1 }, (_, i) => entity({ localId: `p${i}` })),
+      entities: Array.from({ length: MAX_PUSH_ENTITIES + 1 }, (_, i) =>
+        entity({ localId: `p${i}` }),
+      ),
     });
     expect(tooMany.ok).toBe(false);
     if (!tooMany.ok) expect(tooMany.error).toMatch(/Too many/);

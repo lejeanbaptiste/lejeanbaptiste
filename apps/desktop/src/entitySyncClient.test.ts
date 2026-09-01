@@ -1,8 +1,4 @@
-import {
-  EntitySyncAuthError,
-  EntitySyncClient,
-  EntitySyncError,
-} from './entitySyncClient';
+import { EntitySyncAuthError, EntitySyncClient, EntitySyncError } from './entitySyncClient';
 
 const jsonResponse = (body: unknown, status = 200): Response =>
   new Response(JSON.stringify(body), { status, headers: { 'content-type': 'application/json' } });
@@ -41,7 +37,9 @@ describe('EntitySyncClient', () => {
   });
 
   it('throws EntitySyncAuthError on 401/403 without retrying', async () => {
-    const fetchImpl = jest.fn(async () => jsonResponse({ error: 'not the owner' }, 403)) as unknown as typeof fetch;
+    const fetchImpl = jest.fn(async () =>
+      jsonResponse({ error: 'not the owner' }, 403),
+    ) as unknown as typeof fetch;
     const client = makeClient(fetchImpl);
     await expect(client.pull(0)).rejects.toBeInstanceOf(EntitySyncAuthError);
     expect(fetchImpl).toHaveBeenCalledTimes(1);
@@ -101,7 +99,9 @@ describe('EntitySyncClient', () => {
   });
 
   it('does not retry a 400', async () => {
-    const fetchImpl = jest.fn(async () => jsonResponse({ error: 'bad request' }, 400)) as unknown as typeof fetch;
+    const fetchImpl = jest.fn(async () =>
+      jsonResponse({ error: 'bad request' }, 400),
+    ) as unknown as typeof fetch;
     await expect(makeClient(fetchImpl).pull(0)).rejects.toMatchObject({ status: 400 });
     expect(fetchImpl).toHaveBeenCalledTimes(1);
   });
@@ -113,5 +113,23 @@ describe('EntitySyncClient', () => {
     })) as never[];
     await expect(makeClient(fetchImpl).push(oversized)).rejects.toBeInstanceOf(EntitySyncError);
     expect(fetchImpl).not.toHaveBeenCalled();
+  });
+
+  it('getAchievements returns null on 404', async () => {
+    const fetchImpl = jest.fn(async () =>
+      jsonResponse({ error: 'missing' }, 404),
+    ) as unknown as typeof fetch;
+    await expect(makeClient(fetchImpl).getAchievements()).resolves.toBeNull();
+  });
+
+  it('putAchievements PUTs the blob', async () => {
+    const fetchImpl = jest.fn(async (url: string | URL, init?: RequestInit) => {
+      expect(String(url)).toBe('https://sync.example.workers.dev/sync/achievements');
+      expect(init?.method).toBe('PUT');
+      expect(JSON.parse(String(init?.body))).toEqual({ baseRevision: 2, blob: 'cipher' });
+      return jsonResponse({ applied: true, revision: 3, sha256: 'abc' });
+    }) as unknown as typeof fetch;
+    const result = await makeClient(fetchImpl).putAchievements({ baseRevision: 2, blob: 'cipher' });
+    expect(result).toEqual({ applied: true, revision: 3, sha256: 'abc' });
   });
 });

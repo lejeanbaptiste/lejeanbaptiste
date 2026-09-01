@@ -342,3 +342,22 @@
 
 - **AI API “Always on”** (`Settings → AI API → Toujours actif`) only updated local form state and was not written to disk until **Establish connection** — unchecking it snapped back to checked on return, and Disambiguate kept the per-run AI toggle disabled. The checkbox now persists immediately via `setAiApiSettings`; `projectPrefs.setAiApiSettings` merges partial updates instead of replacing the whole record.
 - **Disambiguate with AI curation** blocked the candidate list until the LLM pass finished. Authority candidates now appear as soon as lookup completes (including instant replay from the per-surface pending cache); AI ranking runs in the background and updates selections/rationales when done, with cached AI ranks applied without a spinner.
+
+## Upstream
+
+### Entity database cloud backup
+
+- **Cloud backup** (Settings → Profil → Cloud backup): the entity database is snapshotted to a private Cloudflare R2 bucket on a timer and once more on quit — a consistent, gzipped, integrity-checked copy each time (`VACUUM INTO` over a read-only connection, safe while the app holds the file open). Snapshots are pruned on a keep-recent + keep-daily schedule. Restore downloads the newest (or a chosen) snapshot, verifies its checksum and integrity, moves the current database aside, and swaps it in. Credentials are held encrypted via Electron `safeStorage`; a startup integrity check surfaces a corrupt database. Setup: [docs/entity-db-cloud-backup-setup.md](docs/entity-db-cloud-backup-setup.md).
+- Keep the live `entities.sqlite` on a local disk, not in a synced folder — file-sync clients race SQLite's `-wal`/`-shm` and corrupt it. The backup (and cross-device sync, below) are the durable answer to moving data between machines.
+
+### Cross-device entity sync
+
+- **Cross-device sync** (Settings → Profil → Cross-device sync): the entity database can stay in step across machines through a Cloudflare Worker over D1 (`workers/entity-sync/`). Server-authoritative per-entity revisions; the client tracks a dirty set, pulls changes past a cursor, applies the clean ones, and queues genuine conflicts — populating `sync_state` / `sync_conflicts`, which the schema had reserved from the start. Auto-sync runs on launch and on a timer, single-flight, with a per-request timeout and a run watchdog so a stalled network cannot wedge it. First full sync of the ~57k-entity authority file verified end-to-end.
+- **Inline conflict resolution** in the sync panel: per entity, Keep mine / Keep theirs with both TEI snapshots shown. Keeping local re-pushes against the server's revision; keeping remote applies the server snapshot.
+- The sync **wire contract is a versioned spec** ([docs/entity-sync-protocol.md](docs/entity-sync-protocol.md)) with an implementation-independent conformance suite, so the server is not tied to Cloudflare — a Node/Postgres service on other infrastructure can implement the same contract.
+- **Pluggable authentication** for sync: GitHub (default, reuses the leaderboard sign-in) or a pasted bearer token (encrypted at rest). An OpenID Connect device flow is stubbed for a future non-Cloudflare / huma-num server.
+
+### Fixed
+
+- **File metadata authority links** — linking a book title (or author) to an authority in the File metadata panel did not stay visibly linked the way KRP, CBETA, and BDRC imports do. The panel re-read the XML on every editor buffer update and wiped in-progress `ref`/`key` state before the debounced save; `EntityLookupField` also omitted the minted entity `key` after linking. Reload from XML now happens only when opening a different file, and title/author fields receive the full persisted link (`ref` + `key`) once authority lookup finishes.
+- Localised dates in the desktop settings panels rendered `&#x2F;` instead of `/` — i18next was HTML-escaping interpolated values that React then rendered as literal entities. Turned off i18next's redundant `escapeValue` for the editor package's instance (React already escapes every rendered node).

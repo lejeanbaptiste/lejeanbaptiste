@@ -13,11 +13,13 @@ machines). The normative behaviour is the protocol doc; the executable form is
 `test/conformance.ts`, which `test/sync.test.ts` runs against this Worker and a
 future server would run against its own.
 
-| Route        | Method | Purpose                                                         |
-| ------------ | ------ | --------------------------------------------------------------- |
-| `/`          | GET    | Unauthenticated health check.                                   |
-| `/sync/pull` | GET    | `?since=<seq>&limit=<n>` → every change with `seq > since`.     |
-| `/sync/push` | POST   | `{ entities: [...] }` → `applied` / `reconciled` / `conflicts`. |
+| Route                | Method | Purpose                                                         |
+| -------------------- | ------ | --------------------------------------------------------------- |
+| `/`                  | GET    | Unauthenticated health check.                                   |
+| `/sync/pull`         | GET    | `?since=<seq>&limit=<n>` → every change with `seq > since`.     |
+| `/sync/push`         | POST   | `{ entities: [...] }` → `applied` / `reconciled` / `conflicts`. |
+| `/sync/achievements` | GET    | Opaque encrypted achievements blob (404 if none).               |
+| `/sync/achievements` | PUT    | `{ baseRevision, blob }` → applied or conflict.                 |
 
 Every non-health request carries `Authorization: Bearer <github-token>`. The
 Worker calls `GET https://api.github.com/user`, and rejects anyone whose id is
@@ -54,17 +56,23 @@ npm run typecheck
 ## Deploy
 
 ```bash
+# 0. Local config (not committed — see wrangler.toml.example).
+cp wrangler.toml.example wrangler.toml
+# Edit wrangler.toml: paste your D1 database_id and OWNER_GITHUB_ID.
+# GitHub numeric id: curl -s https://api.github.com/user -H "authorization: Bearer <token>" | jq .id
+
 # 1. Create the D1 database, then paste its id into wrangler.toml.
 npx wrangler d1 create ljb-entity-sync
 
 # 2. Apply migrations to the remote database.
 npx wrangler d1 migrations apply ljb-entity-sync --remote
 
-# 3. Set the owner id (or edit [vars] in wrangler.toml).
-npx wrangler secret put OWNER_GITHUB_ID    # your GitHub numeric id: curl -s https://api.github.com/user -H "authorization: Bearer <token>" | jq .id
-
-# 4. Ship it.
+# 3. Ship it.
 npx wrangler deploy
 ```
 
-`compatibility_date` and bindings live in `wrangler.toml`.
+`compatibility_date` and bindings live in `wrangler.toml` (gitignored). The
+committed template is `wrangler.toml.example`.
+
+End-user setup for R2 backup + D1 sync on multiple machines:
+[`docs/entity-db-multi-machine-setup.md`](../../docs/entity-db-multi-machine-setup.md).

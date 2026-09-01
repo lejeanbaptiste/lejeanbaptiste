@@ -85,11 +85,21 @@ class FakeCentral {
         existing.contentHash = e.contentHash;
         existing.deleted = e.deleted ?? false;
         existing.seq = this.lastSeq;
-        applied.push({ localId: e.localId, centralId, revision: existing.revision, seq: this.lastSeq });
+        applied.push({
+          localId: e.localId,
+          centralId,
+          revision: existing.revision,
+          seq: this.lastSeq,
+        });
         continue;
       }
       if (existing.contentHash === e.contentHash && existing.deleted === (e.deleted ?? false)) {
-        reconciled.push({ localId: e.localId, centralId, revision: existing.revision, seq: existing.seq });
+        reconciled.push({
+          localId: e.localId,
+          centralId,
+          revision: existing.revision,
+          seq: existing.seq,
+        });
         continue;
       }
       conflicts.push({

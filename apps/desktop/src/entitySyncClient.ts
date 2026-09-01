@@ -61,6 +61,28 @@ export interface SyncPullResult {
   hasMore: boolean;
 }
 
+export interface SyncAchievementsRemote {
+  revision: number;
+  blob: string;
+  sha256: string;
+  updatedAt: string;
+}
+
+export interface SyncAchievementsPutApplied {
+  applied: true;
+  revision: number;
+  sha256: string;
+}
+
+export interface SyncAchievementsPutConflict {
+  conflict: true;
+  serverRevision: number;
+  serverBlob: string;
+  serverSha256: string;
+}
+
+export type SyncAchievementsPutResult = SyncAchievementsPutApplied | SyncAchievementsPutConflict;
+
 export class EntitySyncError extends Error {
   constructor(
     message: string,
@@ -125,6 +147,31 @@ export class EntitySyncClient {
       );
     }
     return this.requestJson<SyncPushResult>('POST', `${this.endpoint}/sync/push`, { entities });
+  }
+
+  /** Pull the opaque encrypted achievements file from the server (404 → null). */
+  async getAchievements(): Promise<SyncAchievementsRemote | null> {
+    try {
+      return await this.requestJson<SyncAchievementsRemote>(
+        'GET',
+        `${this.endpoint}/sync/achievements`,
+      );
+    } catch (error) {
+      if (error instanceof EntitySyncError && error.status === 404) return null;
+      throw error;
+    }
+  }
+
+  /** Push encrypted achievements bytes; server returns applied or conflict. */
+  async putAchievements(body: {
+    baseRevision: number;
+    blob: string;
+  }): Promise<SyncAchievementsPutResult> {
+    return this.requestJson<SyncAchievementsPutResult>(
+      'PUT',
+      `${this.endpoint}/sync/achievements`,
+      body,
+    );
   }
 
   private async requestJson<T>(method: string, url: string, body?: unknown): Promise<T> {

@@ -167,11 +167,7 @@ export const isBackupConfigComplete = (
   config: EntityDbBackupConfig | null,
 ): config is EntityDbBackupConfig =>
   Boolean(
-    config &&
-      config.endpoint &&
-      config.accessKeyId &&
-      config.secretAccessKey &&
-      config.bucket,
+    config && config.endpoint && config.accessKeyId && config.secretAccessKey && config.bucket,
   );
 
 export const backupConfigConstants = {

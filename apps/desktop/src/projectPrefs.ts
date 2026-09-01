@@ -555,10 +555,8 @@ export const getMapTilesDir = async (): Promise<string> => {
 
 /**
  * Explicit override for where achievements.json lives. Returns null when
- * unset, meaning achievementsFile.ts falls back to the entity database
- * folder, then userData - this setting exists so a player can put their
- * medals somewhere synced (e.g. a Dropbox/iCloud folder) even when they
- * don't use a shared entity database at all.
+ * unset, meaning achievementsFile.ts uses the entity database folder, then
+ * userData. Default for all users is co-location with the entity database.
  */
 export const getAchievementsFolder = async (): Promise<string | null> => {
   const prefs = await readAppPrefs();

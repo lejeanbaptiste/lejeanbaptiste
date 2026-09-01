@@ -303,9 +303,7 @@ export const applyRemoteEntity = (
       repo.createEntity({ id: change.centralId, kind: change.kind });
     } else if (existing.deletedAt) {
       // Central un-deleted it; clear the tombstone before copying content back.
-      repo.db
-        .prepare(`UPDATE entities SET deleted_at = NULL WHERE id = ?`)
-        .run(change.centralId);
+      repo.db.prepare(`UPDATE entities SET deleted_at = NULL WHERE id = ?`).run(change.centralId);
     }
     repo.replaceEntityContentFrom(staging, change.centralId, change.centralId);
   } finally {

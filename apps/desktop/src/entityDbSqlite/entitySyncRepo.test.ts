@@ -50,7 +50,12 @@ describe('listDirtyForSync', () => {
 
     const dirty = listDirtyForSync(repo);
     expect(dirty).toHaveLength(1);
-    expect(dirty[0]).toMatchObject({ localId: 'person-1', kind: 'person', centralId: null, baseRevision: 0 });
+    expect(dirty[0]).toMatchObject({
+      localId: 'person-1',
+      kind: 'person',
+      centralId: null,
+      baseRevision: 0,
+    });
 
     upsertSyncState(repo, {
       projectEntityId: 'person-1',
@@ -160,7 +165,12 @@ describe('applyRemoteEntity', () => {
 
     const repo = freshRepo();
     addPerson(repo, 'person-9', 'old name');
-    applyRemoteEntity(repo, { centralId: 'person-9', kind: 'person', contentXml: xml, deleted: false });
+    applyRemoteEntity(repo, {
+      centralId: 'person-9',
+      kind: 'person',
+      contentXml: xml,
+      deleted: false,
+    });
 
     const names = repo.listNames('person-9').map((n) => n.text);
     expect(names).toContain('new name');

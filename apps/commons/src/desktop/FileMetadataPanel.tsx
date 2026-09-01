@@ -105,7 +105,18 @@ const TeiSourceFields = ({
         label={t('LWC.desktop.file_metadata.book_title')}
         mode="single"
         onChange={([item]: EntityLookupValue[]) =>
-          update({ title: item?.name ?? '', titleRef: item?.ref, titleKey: item?.key })
+          update({
+            title: item?.name ?? '',
+            titleRef: item?.ref,
+            titleKey: item?.key,
+          })
+        }
+        onPersistedChange={(item) =>
+          update({
+            title: item.name,
+            titleRef: item.ref,
+            titleKey: item.key,
+          })
         }
         onWorkDetails={({ workYear, authors }) => {
           const current = valueRef.current;
@@ -132,6 +143,16 @@ const TeiSourceFields = ({
         label={t('LWC.desktop.author_pill.authors_label')}
         mode="multi"
         onChange={(authors: EntityLookupValue[]) => update({ authors })}
+        onPersistedChange={(item) => {
+          const current = valueRef.current;
+          update({
+            authors: current.authors.map((author) =>
+              author.name === item.name && author.ref === item.ref
+                ? { ...author, key: item.key }
+                : author,
+            ),
+          });
+        }}
         tag="persName"
         values={value.authors}
       />
@@ -399,6 +420,7 @@ export const FileMetadataPanel = ({ visible = true }: { visible?: boolean }) => 
   const [values, setValues] = useState<Record<string, string>>({});
   const [sourceValues, setSourceValues] = useState<SourceDescription>(emptySourceDescription());
   const skipNextSyncRef = useRef(false);
+  const loadedTabRef = useRef<string | null>(null);
   const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const valuesRef = useRef(values);
   const sourceValuesRef = useRef(sourceValues);
@@ -419,13 +441,17 @@ export const FileMetadataPanel = ({ visible = true }: { visible?: boolean }) => 
     };
   }, [rootPath]);
 
-  const activeTab = openTabs.find((tab) => tab.filePath === activeTabPath);
   const catalogId = config?.schema?.catalogId;
   // Structured TEI fields unless a project template overrides the file fields.
   const structured = isTeiCatalogForFileMetadata(catalogId) && !(fieldsTemplate?.file?.length ?? 0);
   const metadataFields = resolveFileMetadataFields(fieldsTemplate, catalogId);
-  const xml = activeTabPath ? getActiveTabXml(activeTabPath, openTabs) : '';
-  const supported = Boolean(activeTabPath && xml && documentSupportsFileMetadata(xml, catalogId));
+  const supported = Boolean(
+    activeTabPath &&
+    documentSupportsFileMetadata(
+      activeTabPath ? getActiveTabXml(activeTabPath, openTabs) : '',
+      catalogId,
+    ),
+  );
 
   useEffect(() => {
     valuesRef.current = values;
@@ -437,7 +463,8 @@ export const FileMetadataPanel = ({ visible = true }: { visible?: boolean }) => 
 
   useEffect(() => {
     if (!visible) return;
-    if (!activeTabPath || !xml) {
+    if (!activeTabPath) {
+      loadedTabRef.current = null;
       setValues({});
       setSourceValues(emptySourceDescription());
       return;
@@ -445,15 +472,28 @@ export const FileMetadataPanel = ({ visible = true }: { visible?: boolean }) => 
 
     if (skipNextSyncRef.current) {
       skipNextSyncRef.current = false;
+      loadedTabRef.current = activeTabPath;
       return;
     }
 
+    // Reload from XML only when the user opens a different file — not on every
+    // editor buffer update, which would wipe in-progress authority links.
+    if (loadedTabRef.current === activeTabPath) return;
+    loadedTabRef.current = activeTabPath;
+
+    const currentXml = getActiveTabXml(activeTabPath, openTabs);
+    if (!currentXml) return;
+
     if (structured) {
-      setSourceValues(readSourceDescriptionFromXml(xml));
+      const next = readSourceDescriptionFromXml(currentXml);
+      sourceValuesRef.current = next;
+      setSourceValues(next);
     } else {
-      setValues(readFileMetadataFromXml(xml, catalogId, fieldsTemplate?.file));
+      const next = readFileMetadataFromXml(currentXml, catalogId, fieldsTemplate?.file);
+      valuesRef.current = next;
+      setValues(next);
     }
-  }, [activeTabPath, activeTab?.content, catalogId, fieldsTemplate, structured, visible, xml]);
+  }, [activeTabPath, catalogId, fieldsTemplate, openTabs, structured, visible]);
 
   const pushUpdatedXml = useCallback(
     (nextXml: string, currentXml: string) => {
@@ -485,6 +525,8 @@ export const FileMetadataPanel = ({ visible = true }: { visible?: boolean }) => 
       const currentXml = getActiveTabXml(activeTabPath, openTabs);
       if (!currentXml) return;
       pushUpdatedXml(applySourceDescriptionToXml(currentXml, next), currentXml);
+      sourceValuesRef.current = next;
+      setSourceValues(next);
     },
     [activeTabPath, openTabs, pushUpdatedXml, readonly],
   );

@@ -4,6 +4,10 @@
 backup** (step 5); the DevTools-console route still works as an alternative.
 Implementation notes: [entity-sync-planning.md](entity-sync-planning.md).
 
+**Multi-machine sync (D1) and second-device onboarding:**
+[entity-db-multi-machine-setup.md](entity-db-multi-machine-setup.md) (type C
+users). This page covers **R2 backup only**.
+
 Le Jean-Baptiste can copy your entity database (`entities.sqlite`) to
 [Cloudflare R2](https://developers.cloudflare.com/r2/) on a timer and once more
 when you quit. Each backup is a consistent, compressed, integrity-checked
@@ -16,8 +20,8 @@ you restore the newest snapshot in one step.
   local disk (never in Dropbox/iCloud/Nextcloud — that corrupts SQLite); let
   this feature hold the backup copy.
 - It is **not** multi-machine sync. Restoring a snapshot on machine B
-  _replaces_ B's database with A's. Real row-level sync between machines is a
-  later phase ([entity-sync-planning.md](entity-sync-planning.md)).
+  _replaces_ B's database with A's. Day-to-day sync between machines uses D1
+  ([entity-db-multi-machine-setup.md](entity-db-multi-machine-setup.md)).
 - R2 is object storage, not a database service. Nothing runs "in the cloud" —
   LJB just uploads and downloads snapshot files. (The Cloudflare **D1**
   database used by the future sync work is separate and not needed here.)
@@ -183,11 +187,13 @@ needs:
 
 ## Multiple machines
 
-Point every machine at the **same bucket**. Give each its own API token (easier
-to revoke one machine) or reuse one token. Snapshots from different machines
-don't collide — the timestamp and `-<reason>` suffix keep keys distinct. But
-remember this is backup, not sync: a restore on one machine overwrites that
-machine's database with whichever snapshot you pick.
+Point every machine at the **same bucket** for backup. Give each its own API
+token (easier to revoke one machine) or reuse one token. Snapshots from
+different machines don't collide — the timestamp and `-<reason>` suffix keep
+keys distinct.
+
+For **entity sync** between machines (not restore), see
+[entity-db-multi-machine-setup.md](entity-db-multi-machine-setup.md).
 
 ## Rotating or revoking access
 

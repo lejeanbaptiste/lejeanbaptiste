@@ -48,9 +48,7 @@ describe('signRequest', () => {
   it('hashes the body when present', () => {
     const body = Buffer.from('snapshot-bytes');
     const { headers } = signRequest(CONFIG, 'PUT', 'k', {}, body, {}, FIXED_DATE);
-    expect(headers['x-amz-content-sha256']).toBe(
-      createHash('sha256').update(body).digest('hex'),
-    );
+    expect(headers['x-amz-content-sha256']).toBe(createHash('sha256').update(body).digest('hex'));
   });
 
   it('produces a well-formed SigV4 Authorization header for the auto region', () => {
@@ -63,9 +61,17 @@ describe('signRequest', () => {
   it('is deterministic for fixed inputs, and changes when the request changes', () => {
     const base = signRequest(CONFIG, 'GET', 'k', {}, null, {}, FIXED_DATE).headers.authorization;
     const same = signRequest(CONFIG, 'GET', 'k', {}, null, {}, FIXED_DATE).headers.authorization;
-    const otherKey = signRequest(CONFIG, 'GET', 'k2', {}, null, {}, FIXED_DATE).headers.authorization;
-    const otherDate = signRequest(CONFIG, 'GET', 'k', {}, null, {}, new Date('2026-09-02T00:00:00Z'))
-      .headers.authorization;
+    const otherKey = signRequest(CONFIG, 'GET', 'k2', {}, null, {}, FIXED_DATE).headers
+      .authorization;
+    const otherDate = signRequest(
+      CONFIG,
+      'GET',
+      'k',
+      {},
+      null,
+      {},
+      new Date('2026-09-02T00:00:00Z'),
+    ).headers.authorization;
     expect(base).toBe(same);
     expect(base).not.toBe(otherKey);
     expect(base).not.toBe(otherDate);

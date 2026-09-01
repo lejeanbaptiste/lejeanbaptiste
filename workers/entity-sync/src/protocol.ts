@@ -145,7 +145,9 @@ export function parsePushRequest(raw: unknown): ParseResult<PushRequest> {
   return { ok: true, value: { entities: parsed } };
 }
 
-export function parsePullQuery(params: URLSearchParams): ParseResult<{ since: number; limit: number }> {
+export function parsePullQuery(
+  params: URLSearchParams,
+): ParseResult<{ since: number; limit: number }> {
   const sinceRaw = params.get('since') ?? '0';
   const since = Number(sinceRaw);
   if (!Number.isInteger(since) || since < 0) {

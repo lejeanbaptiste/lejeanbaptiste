@@ -1462,8 +1462,7 @@ const electronAPI: ElectronAPI = {
   entitySyncSetConfig: (patch) => ipcRenderer.invoke('entitySync:setConfig', patch),
   entitySyncRunNow: () => ipcRenderer.invoke('entitySync:runNow'),
   entitySyncListConflicts: () => ipcRenderer.invoke('entitySync:listConflicts'),
-  entitySyncResolveConflict: (request) =>
-    ipcRenderer.invoke('entitySync:resolveConflict', request),
+  entitySyncResolveConflict: (request) => ipcRenderer.invoke('entitySync:resolveConflict', request),
 };
 
 contextBridge.exposeInMainWorld('electronAPI', electronAPI);

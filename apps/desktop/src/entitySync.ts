@@ -186,7 +186,11 @@ function applyPulledChange(
   // Already in sync with this exact version — typically our own just-pushed
   // write coming back on the next pull. Nothing to do; the cursor still
   // advances per page.
-  if (state && state.centralRevision === change.revision && state.centralHash === change.contentHash) {
+  if (
+    state &&
+    state.centralRevision === change.revision &&
+    state.centralHash === change.contentHash
+  ) {
     return;
   }
 
@@ -195,9 +199,7 @@ function applyPulledChange(
   );
 
   if (localEntity && localIsDirty) {
-    const localHash = localEntity.deletedAt
-      ? ''
-      : (localEntityHash(repo, change.centralId) ?? '');
+    const localHash = localEntity.deletedAt ? '' : (localEntityHash(repo, change.centralId) ?? '');
     if (localHash !== change.contentHash) {
       openConflict(repo, {
         projectEntityId: change.centralId,
@@ -300,15 +302,17 @@ function recordPushConflict(
 const STAYS_DIRTY = -1;
 
 /** Keep the local version: next sync pushes it against the server's revision. */
-export function resolveConflictKeepLocal(repo: EntitySqliteRepository, conflictId: number): boolean {
+export function resolveConflictKeepLocal(
+  repo: EntitySqliteRepository,
+  conflictId: number,
+): boolean {
   const conflict = repo.db
     .prepare(
       `SELECT project_entity_id, central_entity_id, central_revision
          FROM sync_conflicts WHERE id = ? AND status = 'open'`,
     )
     .get(conflictId) as
-    | { project_entity_id: string; central_entity_id: string; central_revision: number }
-    | undefined;
+    { project_entity_id: string; central_entity_id: string; central_revision: number } | undefined;
   if (!conflict) return false;
 
   repo.transaction(() => {

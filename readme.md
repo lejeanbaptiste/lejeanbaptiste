@@ -163,20 +163,23 @@ LJB should receive the import dialog for that source. More detail on what each s
 | Wrong or empty import                             | Check the URL matches the supported patterns above; use **File → Import from URL…** in LJB with the same link to compare.                                                                                                |
 | SmartScreen or security warning                   | The extension is not from a store; you install it manually from the LJB release. Only download zips from [github.com/lejeanbaptiste/lejeanbaptiste/releases](https://github.com/lejeanbaptiste/lejeanbaptiste/releases). |
 
-## Entity database cloud backup
+## Entity database — cloud backup and multi-machine sync
 
-Le Jean-Baptiste can copy your entity database (`entities.sqlite`) to a private
-[Cloudflare R2](https://developers.cloudflare.com/r2/) bucket on a timer and on
-quit — a consistent, compressed, integrity-checked snapshot each time — so a
-lost or corrupted local file can be restored in one step. Keep the live
-database on a local disk (never in Dropbox/iCloud/Nextcloud, which corrupts
-SQLite) and let this hold the off-machine copy.
+Le Jean-Baptiste keeps the live `entities.sqlite` on **local disk** on every
+machine. Cloud services are optional and aimed at **type C** users (advanced
+backup + sync):
 
-Setup — creating the bucket and a scoped API token, then pointing LJB at it:
-**[docs/entity-db-cloud-backup-setup.md](docs/entity-db-cloud-backup-setup.md)**.
+| Piece                    | What it does                                                                       | Setup doc                                                                 |
+| ------------------------ | ---------------------------------------------------------------------------------- | ------------------------------------------------------------------------- |
+| **R2 cloud backup**      | Compressed snapshots on a timer and on quit; restore after corruption or data loss | [entity-db-cloud-backup-setup.md](docs/entity-db-cloud-backup-setup.md)   |
+| **D1 cross-device sync** | Row-level two-way entity sync between your machines                                | [entity-db-multi-machine-setup.md](docs/entity-db-multi-machine-setup.md) |
 
-This is a backup, not multi-machine sync; row-level sync is a later phase
-([docs/entity-sync-planning.md](docs/entity-sync-planning.md)).
+**Do not** put `entities.sqlite` in Dropbox, iCloud, or Nextcloud — that
+corrupts SQLite. A lone `achievements.json` in a synced folder is usually fine,
+but the default is to keep it next to the entity database; see the multi-machine
+guide for type A / B / C and second-device onboarding.
+
+Implementation planning: [entity-sync-planning.md](docs/entity-sync-planning.md).
 
 ## Build From Source
 
@@ -238,7 +241,7 @@ See [apps/desktop/README.md](apps/desktop/README.md) for the compilation and pac
 - [ ] Further Norbert functions
 - [ ] Support for custom authorities
 - [ ] Support for user SQL databases
-- [ ] Multi-machine offline sync beyond current mirror ([entity-sync-planning.md](docs/entity-sync-planning.md) — Phase 0 cloud backup shipped; Phases 1–5 D1 logical sync in progress)
+- [ ] Multi-machine soak and hardening ([entity-sync-planning.md](docs/entity-sync-planning.md) — Phase 0–4 shipped; achievements blob sync + Phase 5 hardening open)
 - [ ] Entity DB cloud backup: on-launch "restore from cloud" dialog when `checkEntityDbIntegrity` fails (currently only an in-panel alert)
 - [ ] Entity DB cloud backup: live R2 smoke test against a provisioned bucket + token
 - [ ] Entity DB cloud backup: confirm Electron `safeStorage` is available on a packaged Linux build (needs an unlocked keyring)

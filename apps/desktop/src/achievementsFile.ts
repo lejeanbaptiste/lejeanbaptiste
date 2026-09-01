@@ -13,11 +13,10 @@ import path from 'path';
 import { getAchievementsFolder, getEntityDbFolder } from './projectPrefs';
 
 /**
- * Achievements are global (cross-project) state. They live wherever the
- * player explicitly points achievementsFolder (e.g. a folder their own
- * cloud-sync tool watches), else next to the central entity database when
- * one is configured, else in userData. Reads fall back through each of
- * those in turn so changing folders later never looks like a wipe.
+ * Achievements are global (cross-project) state. They live next to the central
+ * entity database by default (`achievements.json` in the same folder as
+ * `entities.sqlite`). An optional `achievementsFolder` override exists for edge
+ * cases; type C users rely on co-location — see docs/entity-db-multi-machine-setup.md.
  */
 
 const ACHIEVEMENTS_FILENAME = 'achievements.json';
@@ -100,7 +99,7 @@ const encrypt = (plaintext: string): string => {
 };
 
 /** Returns null if `raw` isn't a v2 envelope, or if decryption/auth fails. */
-const tryDecrypt = (raw: string): string | null => {
+export const decryptAchievementsEnvelope = (raw: string): string | null => {
   let envelope: Partial<EncryptedEnvelope>;
   try {
     envelope = JSON.parse(raw) as Partial<EncryptedEnvelope>;
@@ -150,7 +149,7 @@ const readOneCandidate = async (filePath: string): Promise<string | null> => {
     return null;
   }
 
-  const decrypted = tryDecrypt(raw);
+  const decrypted = decryptAchievementsEnvelope(raw);
   if (decrypted !== null) return decrypted;
 
   const legacyHmac = await fs
@@ -182,6 +181,31 @@ export const readAchievementsFile = async (): Promise<string | null> => {
     if (content !== null) return content;
   }
   return null;
+};
+
+/** Raw on-disk envelope at the primary path (encrypted JSON string), or null. */
+export const readAchievementsFileRaw = async (): Promise<string | null> => {
+  const primary = await getPrimaryPath();
+  try {
+    return await fs.readFile(primary, 'utf-8');
+  } catch {
+    return null;
+  }
+};
+
+/** Write a pre-encrypted envelope without re-encrypting (used after remote pull). */
+export const writeAchievementsEnvelopeRaw = async (raw: string): Promise<void> => {
+  writeChain = writeChain.then(async () => {
+    const primary = await getPrimaryPath();
+    const primaryBak = `${primary}.bak`;
+    const primaryTmp = `${primary}.tmp`;
+    await fs.writeFile(primaryTmp, raw, 'utf-8');
+    await fs.rename(primary, primaryBak).catch(() => undefined);
+    await fs.rename(primaryTmp, primary);
+    await fs.rm(primaryBak, { force: true });
+    await fs.rm(`${primary}${LEGACY_HMAC_SUFFIX}`, { force: true }).catch(() => undefined);
+  });
+  await writeChain;
 };
 
 /** Serialize writes so rapid saves cannot interleave partial files. */
