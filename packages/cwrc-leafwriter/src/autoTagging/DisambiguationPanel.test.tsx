@@ -189,9 +189,7 @@ describe('DisambiguationPanel', () => {
     window.dispatchEvent(new Event('ljbCommonsUiChanged'));
 
     expect((await screen.findAllByText('沈攸之')).length).toBeGreaterThan(0);
-    await waitFor(() =>
-      expect(screen.getByText(/AI is curating candidates/i)).toBeTruthy(),
-    );
+    await waitFor(() => expect(screen.getByText(/AI is curating candidates/i)).toBeTruthy());
 
     resolveRank({
       selectedCandidateIds: ['cbdb:1'],

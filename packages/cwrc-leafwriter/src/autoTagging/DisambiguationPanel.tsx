@@ -92,7 +92,10 @@ import {
   createLlmClientFromSettings,
   isAiSuggestReady,
 } from './llmClientFromSettings';
-import { rankDisambiguationCandidates, lookupCachedDisambiguationRank } from './llmDisambiguationRank';
+import {
+  rankDisambiguationCandidates,
+  lookupCachedDisambiguationRank,
+} from './llmDisambiguationRank';
 import type { DisambiguationAiRankResult } from './disambiguationAiCache';
 import { getConfidenceLabel, getValidationColor } from './llmValidationRank';
 import { SourceBadges } from './SourceBadges';
