@@ -348,7 +348,10 @@ export const EntityLookupField = ({
           session.central.userStableId,
         );
       }
-      const typedNames = await collectTypedNamesForCandidate(merged).catch(() => undefined);
+      if (!merged) return;
+      const selected = merged;
+
+      const typedNames = await collectTypedNamesForCandidate(selected).catch(() => undefined);
       const givenFamilyNames =
         kind === 'person'
           ? await collectGivenFamilyNamesForCandidate(merged, session.projectLang).catch(
@@ -425,8 +428,8 @@ export const EntityLookupField = ({
       }
 
       const persisted: EntityLookupValue = {
-        name: merged.label,
-        ref: merged.uri,
+        name: selected.label,
+        ref: selected.uri,
         key: resolvedId,
       };
       if (mode === 'single') {
@@ -434,7 +437,7 @@ export const EntityLookupField = ({
       } else {
         onChange(
           values.map((entry) =>
-            entry.name === merged.label && entry.ref === merged.uri ? persisted : entry,
+            entry.name === selected.label && entry.ref === selected.uri ? persisted : entry,
           ),
         );
       }

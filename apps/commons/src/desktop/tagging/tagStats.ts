@@ -1,5 +1,19 @@
-import { joinProjectPath } from '@src/desktop/projectFile';
-import { normalizePathKey } from '@src/desktop/infrastructurePaths';
+import { normalizePathKey } from '../infrastructurePaths';
+
+const joinProjectPath = (rootPath: string, relativePath: string) => {
+  const separator = rootPath.includes('\\') ? '\\' : '/';
+  return [rootPath, ...relativePath.split(/[/\\]/)].join(separator);
+};
+
+const electronApi = () =>
+  (
+    window as typeof window & {
+      electronAPI?: {
+        readFile?: (path: string) => Promise<string>;
+        writeFile?: (path: string, content: string) => Promise<void>;
+      };
+    }
+  ).electronAPI;
 
 export const TAG_STATS_RELATIVE_PATH = 'schema/tag-stats.json';
 
@@ -235,7 +249,8 @@ export const mergeFileCountsIntoProject = (
 export const loadTagStats = async (rootPath: string): Promise<TagUsageStats> => {
   if (cachedStats && cachedRootPath === rootPath) return cachedStats;
 
-  if (!window.electronAPI?.readFile) {
+  const api = electronApi();
+  if (!api?.readFile) {
     cachedStats = emptyStats();
     cachedRootPath = rootPath;
     return cachedStats;
@@ -243,7 +258,7 @@ export const loadTagStats = async (rootPath: string): Promise<TagUsageStats> => 
 
   const statsPath = getTagStatsPath(rootPath);
   try {
-    const raw = await window.electronAPI.readFile(statsPath);
+    const raw = await api.readFile(statsPath);
     const parsed = JSON.parse(raw) as TagUsageStats;
     cachedStats = {
       version: 1,
@@ -263,11 +278,12 @@ export const loadTagStats = async (rootPath: string): Promise<TagUsageStats> => 
 };
 
 export const saveTagStats = async (rootPath: string, stats: TagUsageStats): Promise<void> => {
-  if (!window.electronAPI?.writeFile) return;
+  const api = electronApi();
+  if (!api?.writeFile) return;
   cachedStats = stats;
   cachedRootPath = rootPath;
   try {
-    await window.electronAPI.writeFile(getTagStatsPath(rootPath), JSON.stringify(stats, null, 2));
+    await api.writeFile(getTagStatsPath(rootPath), JSON.stringify(stats, null, 2));
   } catch {
     // Stats are optional; never block save or file open.
   }

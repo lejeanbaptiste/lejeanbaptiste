@@ -151,6 +151,7 @@ export interface EntityDbRestoreResult {
   restoredFromKey: string;
   restoredBytes: number;
   previousCopyDir: string;
+  achievementsRestored?: boolean;
   error?: string;
 }
 
