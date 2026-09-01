@@ -804,11 +804,7 @@ export const DisambiguationPanel = ({
   );
 
   const loadCandidates = useCallback(
-    async (
-      targetGroup: MentionGroup,
-      forceRefresh = false,
-      targetInstance?: MentionInstance | null,
-    ) => {
+    async (targetGroup: MentionGroup, forceRefresh = false) => {
       // Captured once so every later commit in this call can check it's still
       // the group the panel is showing — an in-flight fetch for a group the
       // user has since navigated away from must not overwrite the new group's
@@ -922,7 +918,7 @@ export const DisambiguationPanel = ({
       setCandidates([]);
       return;
     }
-    void loadCandidates(group, false, instance);
+    void loadCandidates(group, false);
     // The expansion check is deliberately inline: this must re-run when the group
     // is expanded or collapsed, which is not reachable from `group` alone. Naming
     // `controller` or `group` as the rule asks would re-run on every render,
