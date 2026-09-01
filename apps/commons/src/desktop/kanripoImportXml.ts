@@ -1,5 +1,6 @@
 import { buildSkeletonForCatalog } from './schemaTemplates';
-import { normalizeTeiDateValue } from './sourceDescription';
+import { cbetaFamilyBodyFragment, cbetaFamilyTitleStmt } from './cbetaFamilyMarkup';
+import { teiDateLiteral } from './sourceDescription';
 import type { ProjectFileConfig } from './projectTypes';
 
 export type KanripoNormalizeMode = 'off' | 'dpm' | 'hard_replacements';
@@ -175,13 +176,18 @@ export const wrapKanripoTeiDocument = ({
   if (catalogId === 'orlando' || catalogId === 'jTei') {
     throw new Error('Kanripo import currently supports TEI projects (not Orlando or jTEI).');
   }
+  // CBETA P5 target: body divisions must be `<cb:div>` (not TEI `<div>`), carry
+  // no CJK `@n`, and `<author>` takes no `@role`. TEI-ALL / TEI-Lite is unchanged.
+  const isCbetaFamily = catalogId === 'cbeta';
+  const authorList = (indent?: string) =>
+    isCbetaFamily ? cbetaFamilyTitleStmt(authorBlocks(meta, indent)) : authorBlocks(meta, indent);
 
   const title = escapeXmlText(meta.title || meta.kanripo_id || meta.stem || 'Untitled');
   const krId = escapeXmlText(meta.kanripo_id);
   const juan = escapeXmlText(meta.juan);
   const when = isoDate(importedAt);
   const url = githubUrl ?? (meta.kanripo_id ? `https://github.com/kanripo/${meta.kanripo_id}` : '');
-  const authors = authorBlocks(meta);
+  const authors = authorList();
   const titleXml = titleBlock(title, meta.work_qid);
 
   let xml = buildSkeletonForCatalog(config);
@@ -202,14 +208,15 @@ export const wrapKanripoTeiDocument = ({
     sourceBits.push(`catalog ${escapeXmlText(meta.catalog_source)}`);
   }
   const sourceNote = escapeXmlText(sourceBits.join(', '));
-  const monogrAuthors = authorBlocks(meta, '        ');
+  const monogrAuthors = authorList('        ');
   const editionLabel = (meta.edition_label ?? '').trim();
   const editionDate = (meta.edition_date ?? '').trim();
   const editionBlock = editionLabel
     ? `          <edition>${escapeXmlText(editionLabel)}</edition>\n`
     : '';
+  const editionDateLiteral = teiDateLiteral(editionDate);
   const imprintDate = editionDate
-    ? `<date when="${escapeXmlAttr(normalizeTeiDateValue(editionDate))}">${escapeXmlText(editionDate)}</date>`
+    ? `<date${editionDateLiteral ? ` when="${escapeXmlAttr(editionDateLiteral)}"` : ''}>${escapeXmlText(editionDate)}</date>`
     : '<date/>';
   const biblNotes = [
     `<note>${sourceNote}.</note>`,
@@ -244,14 +251,12 @@ ${monogrIdnoBlocks(meta)}${editionBlock}          <imprint>${imprintDate}</impri
     // takes `<date>` fine.
     creationParts.push(`<date>${escapeXmlText(meta.time_dynasty)}</date>`);
   }
-  if (meta.date_not_before || meta.date_not_after) {
+  const notBefore = teiDateLiteral(meta.date_not_before);
+  const notAfter = teiDateLiteral(meta.date_not_after);
+  if (notBefore || notAfter) {
     const dateAttrs = [
-      meta.date_not_before
-        ? ` notBefore="${escapeXmlAttr(normalizeTeiDateValue(meta.date_not_before))}"`
-        : '',
-      meta.date_not_after
-        ? ` notAfter="${escapeXmlAttr(normalizeTeiDateValue(meta.date_not_after))}"`
-        : '',
+      notBefore ? ` notBefore="${escapeXmlAttr(notBefore)}"` : '',
+      notAfter ? ` notAfter="${escapeXmlAttr(notAfter)}"` : '',
     ].join('');
     creationParts.push(`<date${dateAttrs}/>`);
   } else if (meta.author_dates) {
@@ -279,7 +284,10 @@ ${monogrIdnoBlocks(meta)}${editionBlock}          <imprint>${imprintDate}</impri
 
   // DPM <metadata> fragments belong in the header, not the body (they are not valid TEI body content).
   void metadataXml;
-  xml = xml.replace(/<div type="text">[\s\S]*?<\/div>/, trimmedBody);
+  // CBETA target: TEI `<div>` → `<cb:div>`, drop the CJK `@n` (still in the
+  // `<head>`, the filename and the document title).
+  const bodyForSplice = isCbetaFamily ? cbetaFamilyBodyFragment(trimmedBody) : trimmedBody;
+  xml = xml.replace(/<div type="text">[\s\S]*?<\/div>/, bodyForSplice);
 
   return xml;
 };

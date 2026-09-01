@@ -269,6 +269,35 @@ jobs:
             apps/desktop/release/latest-mac.yml
           if-no-files-found: error
 
+  browser-extension:
+    name: Package browser extension
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v5
+        with:
+          ref: ${{ inputs.source_ref || github.ref }}
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v5
+        with:
+          node-version: 24
+
+      - name: Package browser extension zips
+        run: |
+          TAG="${{ inputs.release_tag || github.ref_name }}"
+          node scripts/package-browser-extension.mjs "${TAG#v}"
+
+      - name: Upload browser extension artifacts
+        uses: actions/upload-artifact@v7
+        with:
+          name: browser-extension
+          path: |
+            apps/desktop/release/ljb-browser-extension-chromium-*.zip
+            apps/desktop/release/ljb-browser-extension-firefox-*.zip
+          if-no-files-found: error
+
   windows:
     name: Build Windows installer (${{ matrix.arch }})
     runs-on: ${{ matrix.runner }}
@@ -396,6 +425,7 @@ jobs:
       - linux-flatpak
       - macos-pkg
       - windows
+      - browser-extension
     runs-on: ubuntu-latest
     permissions:
       contents: write
@@ -440,6 +470,12 @@ jobs:
           pattern: windows-*
           path: release-assets/windows
           cache: npm
+
+      - name: Download browser extension artifacts
+        uses: actions/download-artifact@v8
+        with:
+          name: browser-extension
+          path: release-assets/browser-extension
 
       - name: Install release-tool dependencies
         run: npm ci --ignore-scripts

@@ -39,6 +39,47 @@ describe('wrapWikisourceTeiDocument', () => {
     expect(xml).toContain('<head>荀子/勸學篇</head>');
   });
 
+  describe('CBETA P5 target', () => {
+    const cbetaConfig: ProjectFileConfig = {
+      ...config,
+      schema: { catalogId: 'cbeta', css: 'schema/cbeta.css', rng: 'schema/cbeta_p5.rng' },
+    };
+    const wsMeta = {
+      title: '老子',
+      workTitle: '老子',
+      pageTitle: '老子/第一章',
+      url: 'https://zh.wikisource.org/wiki/老子',
+      qid: 'Q5626',
+      ctextWorkId: 'dao-de-jing',
+      publicationDate: '-0400',
+      authors: [{ qid: 'Q9598', name: '李耳' }],
+      headerCredit: '李耳 撰',
+      extractionNote: 'note',
+    };
+
+    test('emits a single <bibl> sourceDesc (no <p> + <idno> mix) and @ref authors', () => {
+      const xml = wrapWikisourceTeiDocument({
+        config: cbetaConfig,
+        meta: wsMeta,
+        bodyXml: '<p>道</p>',
+      });
+      const sourceDesc = xml.match(/<sourceDesc>[\s\S]*?<\/sourceDesc>/)?.[0] ?? '';
+      expect(sourceDesc).toContain('<bibl>');
+      expect(sourceDesc).not.toMatch(/<sourceDesc>\s*<p>/);
+      expect(sourceDesc).toContain('<ptr target="https://zh.wikisource.org/wiki/老子"/>');
+      expect(sourceDesc).toContain('<idno type="URI">https://www.wikidata.org/entity/Q5626</idno>');
+      expect(xml).toContain('<author ref="https://www.wikidata.org/entity/Q9598">李耳</author>');
+      expect(xml).not.toContain('<author n=');
+    });
+
+    test('non-CBETA target keeps the <p>-based sourceDesc and @n authors', () => {
+      const xml = wrapWikisourceTeiDocument({ config, meta: wsMeta, bodyXml: '<p>道</p>' });
+      expect(xml).toMatch(/<sourceDesc>\s*<p>Imported from Wikisource/);
+      expect(xml).toContain('<author n="Q9598">李耳</author>');
+      expect(xml).not.toContain('<bibl>');
+    });
+  });
+
   test('rejects Orlando projects', () => {
     expect(() =>
       wrapWikisourceTeiDocument({

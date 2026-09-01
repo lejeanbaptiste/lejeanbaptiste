@@ -1,5 +1,8 @@
 import { buildSkeletonForCatalog } from './schemaTemplates';
+import { cbetaFamilyTitleStmt } from './cbetaFamilyMarkup';
 import { norbertPersonRef, wikidataEntityRef } from './kanripoImportXml';
+import { cbetaCanonEdition } from './cbetaCanons';
+import { editionDateAttrs } from './sourceDescription';
 import type { ProjectFileConfig } from './projectTypes';
 
 /** DILA Buddhist Studies Authority person id (``A012345``) → TEI ``@ref`` token. */
@@ -95,6 +98,27 @@ const idnoBlocks = (meta: CbetaTeiMeta): string => {
 };
 
 /**
+ * `<edition>` + `<imprint><date>` derived from the CBETA canon code (`meta.canon`
+ * — the `T` in `T01n0001`). The `<date>` carries `@when` for a single-year canon
+ * or `@from`/`@to` for one printed over a span, matching the metadata panel's
+ * own output. Canons with no table entry keep the skeleton's empty `<date/>`.
+ */
+const editionImprintBlocks = (meta: CbetaTeiMeta, indent = '          '): string => {
+  const canonEd = cbetaCanonEdition(meta.canon);
+  if (!canonEd) return `${indent}<imprint><date/></imprint>`;
+  const attrs = editionDateAttrs(canonEd.editionDate);
+  const dateAttr = attrs.when
+    ? ` when="${escapeXmlAttr(attrs.when)}"`
+    : `${attrs.from ? ` from="${escapeXmlAttr(attrs.from)}"` : ''}${
+        attrs.to ? ` to="${escapeXmlAttr(attrs.to)}"` : ''
+      }`;
+  return (
+    `${indent}<edition>${escapeXmlText(canonEd.edition)}</edition>\n` +
+    `${indent}<imprint><date${dateAttr}>${escapeXmlText(canonEd.editionDate)}</date></imprint>`
+  );
+};
+
+/**
  * Wrap one juan of CBETA-converted TEI in the project skeleton with provenance.
  *
  * ``bodyXml`` is the ``<text><body>…</body></text>`` fragment from the Python
@@ -127,12 +151,17 @@ export const wrapCbetaTeiDocument = ({
     meta.section_title || meta.juan_title || meta.title || meta.stem || 'Untitled',
   );
   const when = isoDate(importedAt);
+  // CBETA P5 `<author>` takes no `@role` (and `<title>` no `@type`).
+  const authorList = (indent?: string) => {
+    const block = authorBlocks(meta, indent);
+    return isCbetaFamily ? cbetaFamilyTitleStmt(block) : block;
+  };
 
   let xml = buildSkeletonForCatalog(config);
 
   xml = xml.replace(
     /<titleStmt>\s*<title>[\s\S]*?<\/title>\s*<\/titleStmt>/,
-    `<titleStmt>\n${titleBlock(title, meta.work_qid)}\n${authorBlocks(meta)}\n    </titleStmt>`,
+    `<titleStmt>\n${titleBlock(title, meta.work_qid)}\n${authorList()}\n    </titleStmt>`,
   );
 
   const sourcePara = `${escapeXmlText(meta.source)}; CBETA work ${escapeXmlText(meta.work_id)}${
@@ -149,9 +178,9 @@ export const wrapCbetaTeiDocument = ({
     `<sourceDesc>
       <biblStruct>
         <monogr>
-${authorBlocks(meta, '          ')}
+${authorList('          ')}
 ${titleBlock(title, meta.work_qid, '          ')}
-${idnoBlocks(meta)}          <imprint><date/></imprint>
+${idnoBlocks(meta)}${editionImprintBlocks(meta)}
         </monogr>
       <note>${sourcePara}.</note>
       </biblStruct>
@@ -209,12 +238,27 @@ ${idnoBlocks(meta)}          <imprint><date/></imprint>
   if (!inner.trim()) throw new Error('CBETA conversion returned an empty juan body.');
   const isSection = meta.split_unit === 'mulu';
 
-  if (isCbetaFamily) {
-    // CBETA-family juan/section markup (`<milestone unit="juan"/>`, `<cb:div>`, …)
-    // goes straight into `<body>`: it already carries its own division structure,
-    // so wrapping it in another `<div>` (or injecting a `<head>`, which `<body>`
-    // does not permit) would be wrong. Replace the skeleton's placeholder div.
+  if (isCbetaFamily && !isSection) {
+    // Juan split: the CBETA source's own body markup (`<milestone unit="juan"/>`,
+    // `<cb:div>`, `<cb:juan fun="open">`, …) already carries a valid division
+    // structure — splice it straight into `<body>`.
     xml = xml.replace(/<div type="text">[\s\S]*?<\/div>/, inner);
+  } else if (isCbetaFamily) {
+    // Mulu split: `split_body_into_mulu` cut the source *inside* its division
+    // structure, so `inner` is a loose run of `<head>`/`<p>`/`<lb>`/`<pb>`/… that
+    // `<body>` will not take directly. Wrap the whole slice in one `<cb:div>`
+    // (every one of those elements is allowed inside `<cb:div>`), and re-add the
+    // section title — which lived in the split-point `<cb:mulu>` and survives
+    // only in `meta.section_title` — as its leading `<head>` unless `inner`
+    // already opens with one.
+    const sectionHead =
+      meta.section_title && !/^\s*<head[\s/>]/.test(inner)
+        ? `<head>${escapeXmlText(meta.section_title)}</head>`
+        : '';
+    xml = xml.replace(
+      /<div type="text">[\s\S]*?<\/div>/,
+      `<cb:div type="其他">${sectionHead}${inner}</cb:div>`,
+    );
   } else {
     const divType = isSection ? 'section' : 'juan';
     const divN = isSection ? meta.section_n : meta.juan_n;

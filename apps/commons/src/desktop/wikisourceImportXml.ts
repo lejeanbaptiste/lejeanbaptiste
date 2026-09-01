@@ -1,4 +1,5 @@
 import { buildSkeletonForCatalog } from './schemaTemplates';
+import { cbetaFamilyBodyFragment } from './cbetaFamilyMarkup';
 import type { ProjectFileConfig } from './projectTypes';
 
 export interface WikisourceAuthorMeta {
@@ -26,13 +27,19 @@ const escapeXmlAttr = (value: string): string => escapeXmlText(value).replace(/"
 
 const isoDate = (d = new Date()): string => d.toISOString().slice(0, 10);
 
-const authorBlocks = (meta: WikisourceTeiMeta): string => {
+const authorBlocks = (meta: WikisourceTeiMeta, cbetaFamily = false): string => {
   if (!meta.authors.length) return '';
   return meta.authors
     .map((row) => {
       const name = escapeXmlText(row.name);
       const qid = (row.qid ?? '').trim();
-      const attr = qid ? ` n="${escapeXmlAttr(qid)}"` : '';
+      // CBETA P5 carries the Wikidata id as a full `@ref` URI (as the CBETA /
+      // Kanripo / Daozang importers do); TEI-ALL keeps the bare `@n` id.
+      const attr = qid
+        ? cbetaFamily
+          ? ` ref="https://www.wikidata.org/entity/${escapeXmlAttr(qid)}"`
+          : ` n="${escapeXmlAttr(qid)}"`
+        : '';
       return name ? `      <author${attr}>${name}</author>` : '';
     })
     .filter(Boolean)
@@ -54,10 +61,14 @@ export const wrapWikisourceTeiDocument = ({
   if (catalogId === 'orlando' || catalogId === 'jTei') {
     throw new Error('Wikisource import currently supports TEI projects (not Orlando or jTEI).');
   }
+  // CBETA P5 target: its `<sourceDesc>` takes *either* prose (`<p>`) *or*
+  // bibliographic elements, not a mix, and its divisions reject a CJK `@n`.
+  // Emit a single `<bibl>`; the TEI-ALL / TEI-Lite path is unchanged.
+  const isCbetaFamily = catalogId === 'cbeta';
 
   const title = escapeXmlText(meta.title || meta.pageTitle || meta.workTitle || 'Untitled');
   const when = isoDate(importedAt);
-  const authors = authorBlocks(meta);
+  const authors = authorBlocks(meta, isCbetaFamily);
   let xml = buildSkeletonForCatalog(config);
 
   xml = xml.replace(
@@ -65,39 +76,67 @@ export const wrapWikisourceTeiDocument = ({
     `<titleStmt>\n      <title>${title}</title>\n${authors}\n    </titleStmt>`,
   );
 
-  const idnos = [
-    meta.qid
-      ? `\n      <idno type="URI">https://www.wikidata.org/entity/${escapeXmlText(meta.qid)}</idno>`
-      : '',
-    meta.ctextWorkId ? `\n      <idno type="CTP">${escapeXmlText(meta.ctextWorkId)}</idno>` : '',
-  ].join('');
-  const urlPara = meta.url ? `<p>${escapeXmlText(meta.url)}</p>` : '';
-  const credit = meta.headerCredit
-    ? `\n      <note type="wikisource-header">${escapeXmlText(meta.headerCredit)}</note>`
-    : '';
-  const extraction = meta.extractionNote
-    ? `\n      <note type="extraction">${escapeXmlText(meta.extractionNote)}</note>`
-    : '';
-  const dateNote = meta.publicationDate
-    ? `\n      <p>Wikidata P577: ${escapeXmlText(meta.publicationDate)}</p>`
-    : '';
+  if (isCbetaFamily) {
+    const biblKids = [
+      meta.url ? `<ptr target="${escapeXmlAttr(meta.url)}"/>` : '',
+      meta.qid
+        ? `<idno type="URI">https://www.wikidata.org/entity/${escapeXmlText(meta.qid)}</idno>`
+        : '',
+      meta.ctextWorkId ? `<idno type="CTP">${escapeXmlText(meta.ctextWorkId)}</idno>` : '',
+      meta.publicationDate
+        ? `<note type="pubDate">Wikidata P577: ${escapeXmlText(meta.publicationDate)}</note>`
+        : '',
+      meta.headerCredit
+        ? `<note type="wikisource-header">${escapeXmlText(meta.headerCredit)}</note>`
+        : '',
+      meta.extractionNote
+        ? `<note type="extraction">${escapeXmlText(meta.extractionNote)}</note>`
+        : '',
+    ].filter(Boolean);
+    xml = xml.replace(
+      /<sourceDesc>[\s\S]*?<\/sourceDesc>/,
+      `<sourceDesc>\n      <bibl>Imported from Wikisource (${escapeXmlText(meta.workTitle)}).${
+        biblKids.length ? `\n      ${biblKids.join('\n      ')}\n      ` : ' '
+      }</bibl>\n    </sourceDesc>`,
+    );
+  } else {
+    const idnos = [
+      meta.qid
+        ? `\n      <idno type="URI">https://www.wikidata.org/entity/${escapeXmlText(meta.qid)}</idno>`
+        : '',
+      meta.ctextWorkId ? `\n      <idno type="CTP">${escapeXmlText(meta.ctextWorkId)}</idno>` : '',
+    ].join('');
+    const urlPara = meta.url ? `<p>${escapeXmlText(meta.url)}</p>` : '';
+    const credit = meta.headerCredit
+      ? `\n      <note type="wikisource-header">${escapeXmlText(meta.headerCredit)}</note>`
+      : '';
+    const extraction = meta.extractionNote
+      ? `\n      <note type="extraction">${escapeXmlText(meta.extractionNote)}</note>`
+      : '';
+    const dateNote = meta.publicationDate
+      ? `\n      <p>Wikidata P577: ${escapeXmlText(meta.publicationDate)}</p>`
+      : '';
 
-  xml = xml.replace(
-    /<sourceDesc>[\s\S]*?<\/sourceDesc>/,
-    `<sourceDesc>\n      <p>Imported from Wikisource (${escapeXmlText(meta.workTitle)}).</p>\n      ${urlPara}${dateNote}${idnos}${credit}${extraction}\n    </sourceDesc>`,
-  );
+    xml = xml.replace(
+      /<sourceDesc>[\s\S]*?<\/sourceDesc>/,
+      `<sourceDesc>\n      <p>Imported from Wikisource (${escapeXmlText(meta.workTitle)}).</p>\n      ${urlPara}${dateNote}${idnos}${credit}${extraction}\n    </sourceDesc>`,
+    );
+  }
 
   xml = xml.replace(
     /<\/teiHeader>/,
     `<revisionDesc>\n    <change when="${when}">Imported from Wikisource.</change>\n  </revisionDesc>\n</teiHeader>`,
   );
 
-  const trimmedBody = bodyXml.trim() || '<p></p>';
-  const inner = /<p[\s>]/.test(trimmedBody) ? trimmedBody : `<p>${trimmedBody}</p>`;
-  xml = xml.replace(
-    /<div type="text">[\s\S]*?<\/div>/,
-    `<div type="text">\n      <head>${escapeXmlText(meta.pageTitle)}</head>\n      ${inner}\n    </div>`,
-  );
+  const rawBody = bodyXml.trim() || '<p></p>';
+  const inner = /<p[\s>]/.test(rawBody) ? rawBody : `<p>${rawBody}</p>`;
+  // CBETA P5 wants a `<cb:div>` (not TEI `<div>`) with no `@n`; TEI keeps `<div>`.
+  const division = isCbetaFamily
+    ? cbetaFamilyBodyFragment(
+        `<div type="text"><head>${escapeXmlText(meta.pageTitle)}</head>${inner}</div>`,
+      )
+    : `<div type="text">\n      <head>${escapeXmlText(meta.pageTitle)}</head>\n      ${inner}\n    </div>`;
+  xml = xml.replace(/<div type="text">[\s\S]*?<\/div>/, division);
 
   return xml;
 };

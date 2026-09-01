@@ -51,6 +51,7 @@
     "build:desktop:flatpak": "npm run build-commons && npm run build -w le-jean-baptiste-desktop && npm run package:linux:flatpak -w le-jean-baptiste-desktop",
     "build:desktop:flatpak:ci": "npm run build-commons && npm run build -w le-jean-baptiste-desktop && npm run package:linux:flatpak:ci -w le-jean-baptiste-desktop",
     "build:desktop:arch": "npm run build-commons && npm run build -w le-jean-baptiste-desktop && npm run package:dir -w le-jean-baptiste-desktop",
+    "package:browser-extension": "node scripts/package-browser-extension.mjs",
     "icon:export": "node scripts/export-icon.mjs",
     "visual-design:sync": "node scripts/sync-visual-design.mjs",
     "test:ci": "jest --silent",

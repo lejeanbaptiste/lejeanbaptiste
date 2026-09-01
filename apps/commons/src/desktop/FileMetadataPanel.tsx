@@ -204,6 +204,7 @@ const TeiSourceFields = ({
         />
         <TextField
           disabled={disabled}
+          helperText={t('LWC.desktop.file_metadata.year_of_edition_hint')}
           label={t('LWC.desktop.file_metadata.year_of_edition')}
           onChange={(event) => update({ editionDate: event.target.value })}
           size="small"

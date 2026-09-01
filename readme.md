@@ -93,26 +93,93 @@ sudo apt install le-jean-baptiste-desktop
 
 For detailed build and packaging information, see [apps/desktop/README.md](apps/desktop/README.md).
 
+## Browser extension (corpus import)
+
+The **LJB corpus import** browser extension lets you send the current **Wikisource**, **Kanripo**, or **BDRC** page straight to Le Jean-Baptiste with one click. It is optional: you can always import the same sources from inside LJB with **File → Import from URL…** (paste the page address). The extension is only a shortcut from the browser toolbar.
+
+Extension zips are attached to the **same [GitHub release](https://github.com/lejeanbaptiste/lejeanbaptiste/releases/latest)** as the desktop installers — look for:
+
+- `ljb-browser-extension-chromium-<version>.zip` — Chrome, Brave, Edge, and other Chromium browsers
+- `ljb-browser-extension-firefox-<version>.zip` — Firefox
+
+Use the zips from the release that matches your installed LJB version (for example, if you installed `v0.1.0-beta.4`, download the extension zips whose names end in `0.1.0-beta.4`).
+
+### Before you install the extension
+
+1. **Install Le Jean-Baptiste** (see [Install](#install) above).
+2. **Launch LJB at least once** before loading the extension. On first start the app registers a *native-messaging host* on your machine so the browser can talk to the running editor. If you skip this step, the extension icon may appear but **Import** will not reach LJB.
+3. **Keep LJB running** when you use the extension (it sends the page to the app that is already open).
+
+The extension only reads the page URL to decide what to import — it does not scrape page text in the browser.
+
+### Install on Chrome, Brave, or Edge (macOS, Linux, Windows)
+
+These steps are the same on all three operating systems; only the browser’s extensions page address differs slightly.
+
+1. Download `ljb-browser-extension-chromium-<version>.zip` from the release page.
+2. Unzip it. You should get a folder named `ljb-browser-extension-chromium-<version>` containing `manifest.json`, `popup.html`, and other files.
+3. Open your browser’s extensions page:
+   - **Chrome:** `chrome://extensions`
+   - **Brave:** `brave://extensions`
+   - **Edge:** `edge://extensions`
+4. Turn on **Developer mode** (toggle usually in the top-right corner).
+5. Click **Load unpacked** (Chrome/Brave) or **Load unpacked extension** (Edge).
+6. Select the **unzipped folder** from step 2 (the folder that contains `manifest.json`, not the zip file itself).
+7. Pin the **LJB corpus import** icon to the toolbar if you like (puzzle-piece menu → pin).
+
+After an LJB upgrade, download the matching extension zip from the new release and repeat steps 1–6 (you can remove the old unpacked copy from the extensions page first, or load the new folder alongside it and remove the old one).
+
+### Install on Firefox (macOS, Linux, Windows)
+
+Firefox does not use the Chromium zip. Use the Firefox asset from the same release.
+
+1. Download `ljb-browser-extension-firefox-<version>.zip` and unzip it.
+2. Launch **Le Jean-Baptiste** once if you have not already (see above).
+3. Open `about:debugging#/runtime/this-firefox` in Firefox.
+4. Click **Load Temporary Add-on…**
+5. Open the unzipped folder and choose **`manifest.json`** inside it.
+
+This is a **temporary** add-on: Firefox removes it when you quit the browser. Repeat step 3–5 after each Firefox restart, or keep using **File → Import from URL…** in LJB without the extension.
+
+For a permanent Firefox install you would need a signed package from Mozilla (not distributed on the LJB release page today). Developer-focused build notes live in [apps/browser-extension/README.md](apps/browser-extension/README.md).
+
+### Using the extension
+
+1. Open LJB and your project.
+2. In the browser, go to a supported page:
+   - **Wikisource** — a chapter or work page on `*.wikisource.org`
+   - **Kanripo** — a text URL with a `#KR…` fragment (juan or work)
+   - **BDRC** — an etext reader on `library.bdrc.io` with `openEtext=bdr:VE…` in the URL
+3. Click the **LJB corpus import** toolbar button, then **Import**.
+
+LJB should receive the import dialog for that source. More detail on what each source sends: [docs/wikisource-import.md](docs/wikisource-import.md) (Wikisource), [docs/kanripo-import-plugin-planning.md](docs/kanripo-import-plugin-planning.md) (Kanripo), [docs/bdrc-import-planning.md](docs/bdrc-import-planning.md) (BDRC).
+
+### Troubleshooting
+
+| Problem | What to try |
+|--------|-------------|
+| **Import** does nothing or says it cannot connect | Quit and reopen LJB so the native host is registered again. Confirm LJB is running before you click Import. |
+| Extension missing after browser update | Reload the unpacked folder (Chromium) or load the temporary add-on again (Firefox). |
+| Wrong or empty import | Check the URL matches the supported patterns above; use **File → Import from URL…** in LJB with the same link to compare. |
+| SmartScreen or security warning | The extension is not from a store; you install it manually from the LJB release. Only download zips from [github.com/lejeanbaptiste/lejeanbaptiste/releases](https://github.com/lejeanbaptiste/lejeanbaptiste/releases). |
+
 ## Build From Source
 
 See [apps/desktop/README.md](apps/desktop/README.md) for the compilation and packaging instructions.
 
 ### TODO
 
-1. Commit the built data — data/metadata/* (2.5 MB) + data/schema/* (340 KB). The release ships what's committed; nothing regenerates it in CI.	trivial
-2. One real end-to-end run in the app — install → enable → Sync from GitHub → search → import a work → open the file → confirm it validates against cbeta_p5.rng. Everything so far is unit tests + headless bridge calls; the actual Electron path is unexercised.	~30 min
 3	§10.4 — 5-min check of downgrade.phonetic_glosses against a real 音義 juan (once the corpus is synced), since the fixture is synthetic.	5 min
 4	Write down the maintainer refresh recipe — which DILA repos, the crosswalk extraction from authority extraction/dist/…/concordance.ndjson, the gh api …/trees/master file-list. That recipe currently only lives in this conversation.	15 min
 5	Conscious calls on two known gaps: 8 obscure works with files: [], and cb_gaiji.json empty (PUA residue keeps <g> — valid TEI, per-file <charDecl> is the source). Both fine as-is; just decide.
 
-- Full CBETA integration
-  - [ ] Include Bingenheimer's tagged bios
-- [ ] Confirm CBETA schema takes tags
-- [ ] Milestone projection matcher for auto-tagging (match across `<lb>` / empty anchors without stripping them — [autotagging-milestone-projection-planning.md](docs/autotagging-milestone-projection-planning.md))
-
 ### Future
 
 - [ ] `createCompoundAnchor` (`packages/cwrc-leafwriter/src/autoTagging/anchor.ts:247-248`) computes `localEnd` — the search-index equivalent of `localStart`, which the sibling `createAnchor` function's `rawRange` helper (same file) uses to convert a search-index back to a snapped raw text-node offset — but then never uses it: `endOffset: endRaw` (line 275) returns the _raw, unsnapped_ input instead of the computed-and-normalized value, unlike `offset: startSearch.map[localStart]` a few lines above it, which does apply that snapping for the start boundary. `localEnd` is assigned and read nowhere. This looks like an incomplete port of the pattern `createAnchor`/`rawRange` establish elsewhere in the file, not a deliberate choice — but the existing test (`apply.test.ts:72`) exercises exactly the case where `endRaw` equals the node's full length, where `localEnd`'s `findIndex` would miss (hit the `-1` fallback) and `endRaw` happens to already be correct, so the gap may not be as visible as it should be. This only affects `createCompoundAnchor`'s callers (the post-component person-wrapper pass) and only when the end boundary isn't at a node's natural end, where whitespace-policy snapping could shift the offset. **2026-08-24: low real-world priority** — Asian-script sources normally carry no whitespace, so the whitespace-policy snapping this gap would affect essentially doesn't come up in practice for this project's actual corpus. Still worth fixing for correctness/robustness, but not urgent.
+- [ ] Figure out how to accommodate both segmented and unsegmented Tibetan texts.
+- Full CBETA integration
+  - [ ] Include Bingenheimer's tagged bios
+  - [ ] Milestone projection matcher for auto-tagging (match across `<lb>` / empty anchors without stripping them — [autotagging-milestone-projection-planning.md](docs/autotagging-milestone-projection-planning.md))
 
 ### 'LJBtero' (After testing)
 

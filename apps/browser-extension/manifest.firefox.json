@@ -3,7 +3,13 @@
   "name": "LJB corpus import",
   "version": "0.3.0",
   "description": "Send the current Wikisource, Kanripo, or BDRC page to Le Jean-Baptiste for TEI import.",
-  "key": "MIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEApMcCj4Ti3bjkjTqdWvQXeOiQgIHJHH7NCAT+wNldo/OHFdPDRZZZ3bGYsTTvs2OWHLgM7lssIxXqAHB8o7wxYlrvSyJLAC4CMmMojNVpFT9q7LDn/at5TkFMvim5eOjVBTOkh5CdtQ7PHZnuJhGJ9xRn6bBDZNeStnzEcm23S4YwJQssGGo4XkfUUNYgEtHOG7rKS3r5QnzNoiqJdgcEj/08rnucXG9X6mX5RvoT8JdovGtH/9uTdlY/BjoG3M5i5fpV60GE5Y+eaAuKs9GfVKXBRcLzXElg1A7zIuHWvTcl6UnoC8QiGkqnD92qAatQ43CTpjze0aC5/DfIFWqU3QIDAQAB",
+  "browser_specific_settings": {
+    "gecko": {
+      "id": "ljb-corpus-import@lejeanbaptiste.org",
+      "strict_min_version": "140.0",
+      "data_collection_permissions": { "required": ["none"] }
+    }
+  },
   "permissions": ["activeTab", "storage", "nativeMessaging"],
   "host_permissions": [
     "https://*.wikisource.org/*",

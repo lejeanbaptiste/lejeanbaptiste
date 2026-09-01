@@ -1,5 +1,6 @@
 import {
   applySourceDescriptionToXml,
+  editionDateAttrs,
   emptySourceDescription,
   readSourceDescriptionFromXml,
   type SourceDescription,
@@ -155,5 +156,48 @@ describe('applySourceDescriptionToXml', () => {
     const data = { ...fullData(), workDate: { when: '-52-03-01' } };
     const xml = applySourceDescriptionToXml(skeleton, data);
     expect(xml).toContain('when="-0052-03-01"');
+  });
+
+  test('accepts an edition-date range and keeps integer years in @from/@to', () => {
+    const data = { ...fullData(), editionDate: '1924–1934' };
+    const xml = applySourceDescriptionToXml(skeleton, data);
+    expect(xml).toContain('<imprint><date from="1924" to="1934">1924–1934</date></imprint>');
+    expect(readSourceDescriptionFromXml(xml).editionDate).toBe('1924–1934');
+  });
+
+  test('round-trips a hyphen/spelled edition-date range', () => {
+    for (const raw of ['1924-1934', '1924 to 1934', '1924 / 1934']) {
+      const xml = applySourceDescriptionToXml(skeleton, { ...fullData(), editionDate: raw });
+      expect(xml).toContain('from="1924"');
+      expect(xml).toContain('to="1934"');
+      expect(xml).toContain(`>${raw.trim()}</date>`);
+    }
+  });
+
+  test('zero-pads a short-year edition range', () => {
+    const xml = applySourceDescriptionToXml(skeleton, { ...fullData(), editionDate: '605–664' });
+    expect(xml).toContain('<date from="0605" to="0664">605–664</date>');
+  });
+
+  test('keeps an unparseable edition date as label-only text (no invalid attribute)', () => {
+    const xml = applySourceDescriptionToXml(skeleton, { ...fullData(), editionDate: '乾隆年間' });
+    expect(xml).toContain('<imprint><date>乾隆年間</date></imprint>');
+    expect(readSourceDescriptionFromXml(xml).editionDate).toBe('乾隆年間');
+  });
+});
+
+describe('editionDateAttrs', () => {
+  test.each([
+    ['1735', { when: '1735' }],
+    ['92', { when: '0092' }],
+    ['1924–1934', { from: '1924', to: '1934' }],
+    ['1924-1934', { from: '1924', to: '1934' }],
+    ['1924 to 1934', { from: '1924', to: '1934' }],
+    ['605/664', { from: '0605', to: '0664' }],
+    ['', {}],
+    ['Taishō era', {}],
+    ['乾隆47年', {}],
+  ])('%s → %j', (input, expected) => {
+    expect(editionDateAttrs(input)).toEqual(expected);
   });
 });

@@ -46,7 +46,37 @@ interface CbetaWorkHit {
   dynasty: string;
   category: string;
   juan_count: number;
+  /** ``<vol>n<no>`` stems backing the work; empty when it has no TEI source in xml-p5. */
+  files?: string[];
 }
+
+/** A work is importable only when the catalogue entry maps to real xml-p5 file(s). */
+const hasSource = (hit: CbetaWorkHit): boolean => (hit.files?.length ?? 0) > 0;
+
+/**
+ * `pluginsInvokePython` rejects with the raw Python traceback wrapped in Electron's
+ * IPC prefix. Show the user just the final exception line; keep the rest in the console.
+ */
+const cleanPythonError = (raw: unknown): string => {
+  const text = (raw instanceof Error ? raw.message : String(raw)).trim();
+  const unwrapped = text
+    .replace(/^Error invoking remote method '[^']*':\s*/, '')
+    .replace(/^(?:Uncaught\s+)?Error:\s*/, '')
+    .trim();
+  if (!/Traceback \(most recent call last\)/.test(unwrapped)) return unwrapped;
+  const lines = unwrapped
+    .split(/\r?\n/)
+    .map((l) => l.trim())
+    .filter(Boolean);
+  for (let i = lines.length - 1; i >= 0; i -= 1) {
+    if (
+      /^(?:[A-Za-z_][\w.]*\.)?[A-Za-z_]\w*(?:Error|Exception|Warning|Interrupt):\s/.test(lines[i])
+    ) {
+      return lines[i];
+    }
+  }
+  return lines[lines.length - 1] ?? unwrapped;
+};
 
 interface CbetaCorpusStatus {
   present: boolean;
@@ -107,6 +137,7 @@ export const CbetaImportDialog = ({ onClose, open = false }: CbetaImportDialogPr
   const [busy, setBusy] = useState(false);
   const [syncing, setSyncing] = useState(false);
   const [status, setStatus] = useState('');
+  const [imported, setImported] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [cleanImport, setCleanImport] = useState(true);
   const [stripLineBreaks, setStripLineBreaks] = useState(false);
@@ -120,7 +151,8 @@ export const CbetaImportDialog = ({ onClose, open = false }: CbetaImportDialogPr
       setCorpus(next);
       return next;
     } catch (e) {
-      setError(e instanceof Error ? e.message : String(e));
+      console.error('[cbeta-import] status', e);
+      setError(cleanPythonError(e));
       return null;
     }
   }, []);
@@ -129,22 +161,26 @@ export const CbetaImportDialog = ({ onClose, open = false }: CbetaImportDialogPr
     try {
       const next = await invokePython<CbetaWorkHit[]>({ op: 'search', query: text, limit: 40 });
       setHits(next);
-      setSelected((cur) =>
-        cur && next.some((h) => h.work_id === cur.work_id) ? cur : (next[0] ?? null),
-      );
+      setSelected((cur) => {
+        if (cur && next.some((h) => h.work_id === cur.work_id)) return cur;
+        return next.find(hasSource) ?? next[0] ?? null;
+      });
     } catch (e) {
       // search stub raises until catalog_index is built (planning §5.7)
+      console.error('[cbeta-import] search', e);
       setHits([]);
-      setError(e instanceof Error ? e.message : String(e));
+      setError(cleanPythonError(e));
     }
   }, []);
 
   useEffect(() => {
     if (!open) return;
-    const catalogId = window.__leafWriterProject?.getProjectConfig?.()?.schema?.catalogId ?? '';
-    setCleanImport(catalogId !== 'cbeta');
+    setImported(false);
+    // Split by section headings into a clean reading edition by default, for
+    // every catalog — the most common import shape.
+    setCleanImport(true);
     setStripLineBreaks(false);
-    setSplitUnit(catalogId === 'cbeta' ? 'juan' : 'mulu');
+    setSplitUnit('mulu');
     void refreshStatus().then(async (info) => {
       if (info?.present) {
         void search('');
@@ -161,7 +197,8 @@ export const CbetaImportDialog = ({ onClose, open = false }: CbetaImportDialogPr
           void search('');
         }
       } catch (e) {
-        setError(e instanceof Error ? e.message : String(e));
+        console.error('[cbeta-import] ensure corpus', e);
+        setError(cleanPythonError(e));
         setStatus('');
       } finally {
         setSyncing(false);
@@ -178,6 +215,13 @@ export const CbetaImportDialog = ({ onClose, open = false }: CbetaImportDialogPr
 
   const runImport = async () => {
     if (!selected) return;
+    if (!hasSource(selected)) {
+      setError(
+        `${selected.title} (${selected.work_id}) is in the CBETA catalogue but has no TEI/XML ` +
+          `source in this release — it cannot be imported.`,
+      );
+      return;
+    }
     const project = window.__leafWriterProject;
     const rootPath = project?.getProjectRootPath?.();
     const config = project?.getProjectConfig?.();
@@ -193,6 +237,7 @@ export const CbetaImportDialog = ({ onClose, open = false }: CbetaImportDialogPr
 
     setBusy(true);
     setError(null);
+    setImported(false);
     setStatus(`Importing ${selected.title}…`);
 
     try {
@@ -251,7 +296,19 @@ export const CbetaImportDialog = ({ onClose, open = false }: CbetaImportDialogPr
           work_qid: converted.work_qid,
           importNotes: importNotes || undefined,
         };
-        const xml = wrapCbetaTeiDocument({ config, meta, bodyXml: juan.body_xml });
+        let xml: string;
+        try {
+          xml = wrapCbetaTeiDocument({ config, meta, bodyXml: juan.body_xml });
+        } catch (e) {
+          // A single degenerate slice (e.g. an empty section body) must not
+          // abort the whole multi-section import — skip it with a warning.
+          warnings.push(
+            `${fileLabel} ${juan.n}${juan.title ? ` (${juan.title})` : ''} skipped: ${
+              e instanceof Error ? e.message : String(e)
+            }`,
+          );
+          continue;
+        }
         const outputPath = uniqueCbetaXmlPath(
           destDir,
           `${baseStem}_${juan.n.padStart(3, '0')}`,
@@ -264,6 +321,8 @@ export const CbetaImportDialog = ({ onClose, open = false }: CbetaImportDialogPr
         if (juan.straddles?.length) warnings.push(...juan.straddles);
       }
 
+      if (!written.length) throw new Error('CBETA conversion produced no usable sections.');
+
       await ensureImportHeaderEntitiesForPaths(written);
       await project.refreshExplorer?.();
       await project.openFile?.(written[0]);
@@ -271,16 +330,21 @@ export const CbetaImportDialog = ({ onClose, open = false }: CbetaImportDialogPr
         `Imported ${selected.title} as ${written.length} ${fileLabel} file${written.length > 1 ? 's' : ''}.` +
           (warnings.length ? ` ${warnings.length} warning(s) — see console.` : ''),
       );
+      setImported(true);
       if (warnings.length) console.warn('[cbeta-import]', warnings);
     } catch (e) {
-      setError(e instanceof Error ? e.message : String(e));
+      console.error('[cbeta-import] import', e);
+      setError(cleanPythonError(e));
       setStatus('');
+      setImported(false);
     } finally {
       setBusy(false);
     }
   };
 
-  const canImport = Boolean(selected && projectReady && corpus?.present && !busy && !syncing);
+  const canImport = Boolean(
+    selected && hasSource(selected) && projectReady && corpus?.present && !busy && !syncing,
+  );
   const working = busy || syncing;
 
   return (
@@ -385,7 +449,13 @@ export const CbetaImportDialog = ({ onClose, open = false }: CbetaImportDialogPr
           </Box>
         )}
 
-        {!working && status && !error && (
+        {!working && status && !error && imported && (
+          <Alert severity="success" onClose={() => setStatus('')} sx={{ mb: 1, flexShrink: 0 }}>
+            {status}
+          </Alert>
+        )}
+
+        {!working && status && !error && !imported && (
           <Typography
             variant="caption"
             color="text.secondary"
@@ -419,21 +489,28 @@ export const CbetaImportDialog = ({ onClose, open = false }: CbetaImportDialogPr
               <ListItemText primary={corpus?.present ? 'No matches.' : 'Corpus not synced.'} />
             </ListItem>
           )}
-          {hits.map((hit) => (
-            <ListItemButton
-              key={hit.work_id}
-              selected={selected?.work_id === hit.work_id}
-              onClick={() => setSelected(hit)}
-            >
-              <CorpusWorkRow
-                section={hit.category}
-                ident={hit.work_id}
-                title={hit.title}
-                dynasty={hit.dynasty}
-                authors={hit.juan_count ? `${hit.juan_count} 卷` : undefined}
-              />
-            </ListItemButton>
-          ))}
+          {hits.map((hit) => {
+            const available = hasSource(hit);
+            return (
+              <ListItemButton
+                key={hit.work_id}
+                disabled={!available}
+                selected={selected?.work_id === hit.work_id}
+                onClick={() => setSelected(hit)}
+              >
+                <CorpusWorkRow
+                  section={hit.category}
+                  ident={hit.work_id}
+                  title={hit.title}
+                  dynasty={hit.dynasty}
+                  authors={hit.juan_count ? `${hit.juan_count} 卷` : undefined}
+                  note={
+                    available ? undefined : 'Not digitised in this CBETA release — no TEI source.'
+                  }
+                />
+              </ListItemButton>
+            );
+          })}
         </List>
       </DialogContent>
       <DialogActions sx={{ flexShrink: 0 }}>

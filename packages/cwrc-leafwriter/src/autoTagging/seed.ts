@@ -137,6 +137,36 @@ export function suggestionsFromSeedMatches(matches: SeedMatch[]): Suggestion[] {
   });
 }
 
+/**
+ * TEI elements a person-wrapper's components legitimately live in once the
+ * component tag-bomb has run. A wrapper compound match only makes sense when
+ * both ends of the span sit inside one of these — otherwise the concatenated
+ * search string has merely collided with untagged running text.
+ */
+const WRAPPER_COMPONENT_TAGS = new Set([
+  'persName',
+  'roleName',
+  'placeName',
+  'nobleTitle',
+  'nationality',
+  'name',
+  'surname',
+  'forename',
+  'addName',
+  'genName',
+  'orgName',
+]);
+
+/** True when `node` sits inside a TEI name/title component element. */
+function insideWrapperComponent(node: Text): boolean {
+  let el: Element | null = node.parentElement;
+  for (let depth = 0; el && depth < 4; depth += 1) {
+    if (WRAPPER_COMPONENT_TAGS.has(el.localName)) return true;
+    el = el.parentElement;
+  }
+  return false;
+}
+
 /** Find wrappers whose full string is now represented by adjacent tagged components. */
 export function compoundWrapperSuggestions(
   doc: Document,
@@ -149,7 +179,12 @@ export function compoundWrapperSuggestions(
   for (const candidate of candidates) {
     if (!candidate.metadata?.wrapper) continue;
     for (const surface of candidate.searchStrings) {
-      if ([...surface].length < 2) continue;
+      // A genuine wrapper concatenation (fief + rank + name, optionally with a
+      // nationality or dynasty prefix) runs to at least three characters. The
+      // two-character forms — a bare rank glyph plus a one-character personal
+      // name, e.g. 侯 + 道 — collide constantly with unrelated running text
+      // (安[侯][道]人), so they never earn a suggestion.
+      if ([...surface].length < 3) continue;
       let from = 0;
       while (true) {
         const flatStart = index.text.indexOf(surface, from);
@@ -158,6 +193,10 @@ export function compoundWrapperSuggestions(
         const start = boundaryAt(index, flatStart);
         const end = boundaryAt(index, flatStart + [...surface].length - 1);
         if (!start || !end || start.node === end.node) continue;
+        // Both ends must land inside already-tagged name/title components —
+        // this pass exists to wrap components that are *already* separate
+        // adjacent elements, not to tag a raw character run in body text.
+        if (!insideWrapperComponent(start.node) || !insideWrapperComponent(end.node)) continue;
         const key = `${flatStart}\t${surface}`;
         let match = byLocation.get(key);
         if (!match) {

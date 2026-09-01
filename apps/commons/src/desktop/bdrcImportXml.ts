@@ -1,4 +1,5 @@
 import { buildSkeletonForCatalog } from './schemaTemplates';
+import { cbetaFamilyBodyFragment, cbetaFamilyTitleStmt } from './cbetaFamilyMarkup';
 import type { ProjectFileConfig } from './projectTypes';
 
 /** Shape returned by `apps/desktop/src/bdrc/etextToTei.mjs#etextHeaderFields`. */
@@ -122,6 +123,10 @@ export const wrapBdrcTeiDocument = ({
   if (catalogId === 'orlando' || catalogId === 'jTei') {
     throw new Error('BDRC import currently supports TEI projects (not Orlando or jTEI).');
   }
+  // CBETA P5's `<div>` has no `<ab>` in its content model and its divisions
+  // reject a CJK `@n`: map the folio `<ab>` blocks to `<p>` and drop any `@n`.
+  // The TEI-ALL / TEI-Lite path keeps `<ab>` (a folio is a page, not a paragraph).
+  const isCbetaFamily = catalogId === 'cbeta';
 
   const fields: BdrcHeaderFields = titleSuffix
     ? { ...headerFields, title: `${headerFields.title || 'Untitled'}${titleSuffix}` }
@@ -132,7 +137,8 @@ export const wrapBdrcTeiDocument = ({
 
   xml = xml.replace(
     /<titleStmt>\s*<title>[\s\S]*?<\/title>\s*<\/titleStmt>/,
-    titleStmtBlock(fields),
+    // CBETA P5 `<author>` takes no `@role` and `<title>` no `@type`.
+    isCbetaFamily ? cbetaFamilyTitleStmt(titleStmtBlock(fields)) : titleStmtBlock(fields),
   );
   xml = xml.replace(
     /<publicationStmt>[\s\S]*?<\/publicationStmt>/,
@@ -145,9 +151,9 @@ export const wrapBdrcTeiDocument = ({
   xml = xml.replace(/<text>/, `<text xml:lang="${lang}">`);
 
   const body = bodyXml.trim();
-  const bodyContent = /^<div[\s>]/.test(body)
-    ? body
-    : `<div type="text">${body || '<p></p>'}</div>`;
+  let bodyContent = /^<div[\s>]/.test(body) ? body : `<div type="text">${body || '<p></p>'}</div>`;
+  // CBETA P5: TEI `<div>` → `<cb:div>`, `<ab>` folios → `<p>`, drop division `@n`.
+  if (isCbetaFamily) bodyContent = cbetaFamilyBodyFragment(bodyContent);
   xml = xml.replace(/<div type="text">[\s\S]*?<\/div>/, bodyContent);
 
   return xml;

@@ -1,4 +1,5 @@
 import { buildSkeletonForCatalog } from './schemaTemplates';
+import { cbetaFamilyBodyFragment, cbetaFamilyTitleStmt } from './cbetaFamilyMarkup';
 import { authorAuthorityRef, wikidataEntityRef } from './kanripoImportXml';
 import type { ProjectFileConfig } from './projectTypes';
 
@@ -106,13 +107,19 @@ export const wrapDaozangTeiDocument = ({
   if (catalogId === 'orlando' || catalogId === 'jTei') {
     throw new Error('Daozang import currently supports TEI projects (not Orlando or jTEI).');
   }
+  // CBETA P5 target: body divisions must be `<cb:div>` (not TEI `<div>`), carry
+  // no CJK `@n`, and `<author>` takes no `@role`. The TEI-ALL / TEI-Lite path is
+  // unchanged.
+  const isCbetaFamily = catalogId === 'cbeta';
+  const authorList = (indent?: string) =>
+    isCbetaFamily ? cbetaFamilyTitleStmt(authorBlocks(meta, indent)) : authorBlocks(meta, indent);
 
   const title = escapeXmlText(meta.title || meta.stem || 'Untitled');
   const variant = escapeXmlText(meta.variant);
   const sourceNote = escapeXmlText(meta.source);
   const relPath = escapeXmlText(meta.rel_path);
   const when = isoDate(importedAt);
-  const authors = authorBlocks(meta);
+  const authors = authorList();
 
   let xml = buildSkeletonForCatalog(config);
   xml = xml.replace(
@@ -121,7 +128,7 @@ export const wrapDaozangTeiDocument = ({
   );
 
   const sourcePara = `${sourceNote}; local path ${relPath} (${variant})`;
-  const monogrAuthors = authorBlocks(meta, '        ');
+  const monogrAuthors = authorList('        ');
   xml = xml.replace(
     /<sourceDesc>[\s\S]*?<\/sourceDesc>/,
     `<sourceDesc>
@@ -171,7 +178,10 @@ ${monogrIdnoBlocks(meta)}          <imprint><date/></imprint>
 
   // DPM <metadata> fragments belong in the header, not the body (they are not valid TEI body content).
   void metadataXml;
-  xml = xml.replace(/<div type="(?:text|juan)"[^>]*>[\s\S]*?<\/div>/, trimmedBody);
+  // CBETA target: TEI `<div>` → `<cb:div>`, drop the CJK `@n` (the juan number is
+  // still in the `<head>`, the filename and the document title).
+  const bodyForSplice = isCbetaFamily ? cbetaFamilyBodyFragment(trimmedBody) : trimmedBody;
+  xml = xml.replace(/<div type="(?:text|juan)"[^>]*>[\s\S]*?<\/div>/, bodyForSplice);
 
   return xml;
 };

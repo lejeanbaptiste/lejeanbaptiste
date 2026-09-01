@@ -304,6 +304,16 @@
 
 ## Upstream
 
-- CBETA import dialog: fixed 720×700 layout (no resize while searching), **Split by section (mulu)** default for TEI-ALL projects (juan for CBETA-schema), plus **Clean import** and **Strip Taishō line breaks** checkboxes. Cross-family import now consumes nested `cb:mulu` into `<head>` (fixes TEI-ALL validation) and maps invalid `@place` on `<p>` to `@rend`.
+### Added
+
+- Recent projects docket
+- CBETA importer wiring + plugin ([plugins](https://github.com/lejeanbaptiste/plugins) repo)
+- BDRC importer wiring + plugin ([plugins](https://github.com/lejeanbaptiste/plugins) repo)
+- Date ranges for edition year
+- Fully functional Chrome and Firefox extensions
+
+### Fixed
+
 - The translation tab only loaded configured languages when a project was first opened, so saving English (or any target language) in Project settings left the Translation panel showing “no languages configured” until the project was closed and reopened. It now listens for the `ljb-project-config-saved` event and reloads `schema/translation-settings.json` immediately after a successful save.
 - Project settings had no guard against navigating away with unsaved edits — easy to miss because Save is separate from Add. The form now tracks a dirty snapshot and warns before leaving the Project tab, closing the settings dialog, or cancelling the native project-settings window.
+- Created `<ab>` for Tibetan texts without paragraphs as basic unit of translation. It is still unclear how this should be articulated with paragraphs.

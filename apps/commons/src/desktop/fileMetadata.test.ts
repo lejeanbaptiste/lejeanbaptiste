@@ -1,9 +1,23 @@
-import { applyFileHeaderFields, readFileMetadataFromXml } from './fileMetadata';
-import { buildOrlandoSkeletonXml, buildTeiSkeletonXml } from './schemaTemplates';
+import {
+  applyFileHeaderFields,
+  documentSupportsFileMetadata,
+  isTeiCatalogForFileMetadata,
+  readFileMetadataFromXml,
+} from './fileMetadata';
+import {
+  buildCbetaSkeletonXml,
+  buildOrlandoSkeletonXml,
+  buildTeiSkeletonXml,
+} from './schemaTemplates';
 
 const teiSampleXml = () =>
   buildTeiSkeletonXml({
     schema: { catalogId: 'teiLite', rng: 'schema/tei_lite.rng', css: 'schema/tei.css' },
+  });
+
+const cbetaSampleXml = () =>
+  buildCbetaSkeletonXml({
+    schema: { catalogId: 'cbeta', rng: 'schema/cbeta_p5.rng', css: 'schema/cbeta.css' },
   });
 
 const orlandoSampleXml = () =>
@@ -32,6 +46,13 @@ describe('readFileMetadataFromXml', () => {
 
     expect(values['titleStmt/title']).toBe('My Document');
     expect(values['sourceDesc/p']).toBe('British Library MS 123');
+  });
+
+  test('reads title and source from CBETA P5 skeleton', () => {
+    const values = readFileMetadataFromXml(cbetaSampleXml(), 'cbeta');
+
+    expect(values['titleStmt/title']).toBe('Untitled');
+    expect(values['sourceDesc/p']).toBe('');
   });
 
   test('reads title and source from Orlando skeleton', () => {
@@ -105,6 +126,20 @@ describe('applyFileHeaderFields', () => {
     expect(updated).toMatch(/<sourceDesc>\s*<p\s*\/?>\s*<\/sourceDesc>/);
   });
 
+  test('updates CBETA P5 title and source through the TEI header', () => {
+    const updated = applyFileHeaderFields(
+      cbetaSampleXml(),
+      {
+        'titleStmt/title': 'T01n0001 長阿含經',
+        'sourceDesc/p': 'CBETA, Taishō Tripiṭaka Vol. 1, No. 1',
+      },
+      'cbeta',
+    );
+
+    expect(updated).toContain('<title>T01n0001 長阿含經</title>');
+    expect(updated).toContain('<p>CBETA, Taishō Tripiṭaka Vol. 1, No. 1</p>');
+  });
+
   test('updates Orlando title and source', () => {
     const updated = applyFileHeaderFields(
       orlandoSampleXml(),
@@ -118,5 +153,20 @@ describe('applyFileHeaderFields', () => {
     expect(updated).toContain('<DOCTITLE>Orlando Entry</DOCTITLE>');
     expect(updated).toContain('<SOURCEDESC>University archive</SOURCEDESC>');
     expect(updated).toContain('<DIV0>');
+  });
+});
+
+describe('documentSupportsFileMetadata', () => {
+  test('treats CBETA P5 as a TEI catalog', () => {
+    expect(isTeiCatalogForFileMetadata('cbeta')).toBe(true);
+  });
+
+  test('recognises the header on a CBETA P5 document', () => {
+    expect(documentSupportsFileMetadata(cbetaSampleXml(), 'cbeta')).toBe(true);
+  });
+
+  test('still rejects a CBETA document with no teiHeader', () => {
+    const headerless = '<TEI xmlns="http://www.tei-c.org/ns/1.0"><text><body/></text></TEI>';
+    expect(documentSupportsFileMetadata(headerless, 'cbeta')).toBe(false);
   });
 });

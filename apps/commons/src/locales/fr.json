@@ -410,6 +410,7 @@
         "year": "Année",
         "edition": "Édition",
         "year_of_edition": "Année de l’édition",
+        "year_of_edition_hint": "Une année ou une plage (p. ex. 1924–1934)",
         "transcription_source": "Source de la transcription",
         "source_profile": "Profil de source",
         "profile_none": "Aucun",

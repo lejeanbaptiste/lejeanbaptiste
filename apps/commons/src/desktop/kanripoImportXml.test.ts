@@ -144,6 +144,45 @@ describe('wrapKanripoTeiDocument', () => {
     expect(xml).toContain('notAfter="0200"');
   });
 
+  describe('CBETA P5 target', () => {
+    const cbetaConfig: ProjectFileConfig = {
+      ...config,
+      schema: { catalogId: 'cbeta', css: 'schema/cbeta.css', rng: 'schema/cbeta_p5.rng' },
+    };
+
+    test('emits <cb:div> (not TEI <div>) with no @n on the body division', () => {
+      const xml = wrapKanripoTeiDocument({
+        config: cbetaConfig,
+        meta,
+        bodyXml: '<div type="juan" n="之三"><head>卷之三</head><p>正文</p></div>',
+      });
+      const body = xml.slice(xml.indexOf('<body>'), xml.indexOf('</body>'));
+      expect(body).toContain('<cb:div type="juan">');
+      expect(body).not.toMatch(/<div[\s>]/);
+      expect(body).not.toMatch(/<cb:div[^>]*\sn=/);
+    });
+
+    test('never writes a non-ISO edition date as @when (any catalog)', () => {
+      const xml = wrapKanripoTeiDocument({
+        config: cbetaConfig,
+        meta: { ...meta, edition_label: '四庫全書本', edition_date: '乾隆47年' },
+        bodyXml: '<div type="juan"><p>正文</p></div>',
+      });
+      expect(xml).toContain('<date>乾隆47年</date>');
+      expect(xml).not.toContain('when="乾隆47年"');
+    });
+
+    test('non-CBETA target keeps @n and the structured <creation>', () => {
+      const xml = wrapKanripoTeiDocument({
+        config,
+        meta: { ...meta, time_dynasty: '魏' },
+        bodyXml: '<div type="juan" n="之三"><p>正文</p></div>',
+      });
+      expect(xml).toContain('<creation>');
+      expect(xml).toContain('<div type="juan" n="之三">');
+    });
+  });
+
   test('allocates unique xml paths with numeric suffixes', () => {
     const used = new Set<string>();
     const first = uniqueKanripoXmlPath('/proj/imported/kanripo/KR1', 'KR1_001', used);

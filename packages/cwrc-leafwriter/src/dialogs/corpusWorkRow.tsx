@@ -10,6 +10,8 @@ export interface CorpusWorkRowProps {
   fileTitle?: string;
   dynasty?: string;
   authors?: string;
+  /** Status line shown in warning colour, e.g. when the work has no source file. */
+  note?: string;
 }
 
 /**
@@ -23,6 +25,7 @@ export const CorpusWorkRow = ({
   fileTitle,
   dynasty,
   authors,
+  note,
 }: CorpusWorkRowProps) => (
   <ListItemText
     disableTypography
@@ -49,6 +52,11 @@ export const CorpusWorkRow = ({
         {(dynasty || authors) && (
           <Typography variant="caption" color="text.secondary" display="block">
             {[dynasty, authors].filter(Boolean).join(' · ')}
+          </Typography>
+        )}
+        {note && (
+          <Typography variant="caption" color="warning.main" display="block">
+            {note}
           </Typography>
         )}
       </>

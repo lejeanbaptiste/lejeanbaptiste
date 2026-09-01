@@ -386,6 +386,7 @@
         "year": "Year",
         "edition": "Edition",
         "year_of_edition": "Year of edition",
+        "year_of_edition_hint": "A year or a range (e.g. 1924–1934)",
         "transcription_source": "Transcription source",
         "source_profile": "Source profile",
         "profile_none": "None",

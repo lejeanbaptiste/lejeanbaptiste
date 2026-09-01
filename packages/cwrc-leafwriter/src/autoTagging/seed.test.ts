@@ -167,6 +167,35 @@ describe('seedSuggestions + bucketSeeds', () => {
     expect(match?.suggestion.anchor.endXpath).toBeDefined();
     expect(match?.candidates[0]?.metadata?.wrapper?.personId).toBe('8');
   });
+
+  it('ignores a two-character rank+name form colliding with untagged running text', () => {
+    // Real bug: a Norbert wrapper row for a 侯 linked to a one-character name
+    // 道 expands to the search string 侯道, which then matched the unrelated
+    // run 安[侯]|[道]人 (侯 tail of an already-tagged 安侯, 道 opening 道人).
+    const doc = parse(
+      '<TEI xmlns="http://www.tei-c.org/ns/1.0"><text><body><p>方有安<roleName>侯</roleName>道人？</p></body></text></TEI>',
+    );
+    const candidate = cand({
+      authorityId: 'noble-title:hou-dao',
+      searchStrings: ['侯道'],
+      metadata: { wrapper: { personId: '9', titleRowId: '99', components: { roleName: '侯', persName: '道' } } },
+    });
+    expect(compoundWrapperSuggestions(doc, [candidate], 'ignore')).toHaveLength(0);
+  });
+
+  it('ignores a wrapper string that straddles a tagged component and bare body text', () => {
+    // The span must be represented by adjacent *tagged* components; 範 here is
+    // loose running text, so the concatenation has merely collided with it.
+    const doc = parse(
+      '<TEI xmlns="http://www.tei-c.org/ns/1.0"><text><body><p><nobleTitle><placeName>鄱陽</placeName><roleName>王</roleName></nobleTitle>範居此</p></body></text></TEI>',
+    );
+    const candidate = cand({
+      authorityId: 'noble-title:21',
+      searchStrings: ['鄱陽王範'],
+      metadata: { wrapper: { personId: '8', titleRowId: '21', components: { fief: '鄱陽', roleName: '王', persName: '範' } } },
+    });
+    expect(compoundWrapperSuggestions(doc, [candidate], 'ignore')).toHaveLength(0);
+  });
 });
 
 describe('autoLinkUnique', () => {

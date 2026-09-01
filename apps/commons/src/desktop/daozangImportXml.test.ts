@@ -93,6 +93,50 @@ describe('wrapDaozangTeiDocument', () => {
     expect(xml).not.toContain('<profileDesc>\n      <extent>');
   });
 
+  describe('CBETA P5 target', () => {
+    const cbetaConfig: ProjectFileConfig = {
+      name: 'P5 project',
+      schema: { catalogId: 'cbeta', css: 'schema/cbeta.css', rng: 'schema/cbeta_p5.rng' },
+      version: 1,
+    };
+    const juanBody =
+      '<div type="juan" n="之三">\n  <head>元始說先天道德經註解卷之三</head>\n  <p>正文。</p>\n</div>';
+
+    test('emits <cb:div> (not TEI <div>) with no @n on the body division', () => {
+      const xml = wrapDaozangTeiDocument({
+        config: cbetaConfig,
+        meta: { ...meta, time_dynasty: '宋' },
+        bodyXml: juanBody,
+      });
+      const body = xml.slice(xml.indexOf('<body>'), xml.indexOf('</body>'));
+      expect(body).toContain('<cb:div type="juan">');
+      expect(body).not.toMatch(/<div[\s>]/); // no plain TEI <div>
+      expect(body).not.toMatch(/<cb:div[^>]*\sn=/);
+      expect(body).toContain('<head>元始說先天道德經註解卷之三</head>');
+    });
+
+    test('keeps the structured <creation> (valid in CBETA P5)', () => {
+      const xml = wrapDaozangTeiDocument({
+        config: cbetaConfig,
+        meta: { ...meta, time_dynasty: '宋' },
+        bodyXml: juanBody,
+      });
+      expect(xml).toContain('<creation>');
+      expect(xml).toContain('<date>宋</date>');
+    });
+
+    test('non-CBETA targets keep @n on the division', () => {
+      const xml = wrapDaozangTeiDocument({
+        config,
+        meta: { ...meta, time_dynasty: '元' },
+        bodyXml: juanBody,
+      });
+      expect(xml).toContain('<div type="juan" n="之三">');
+      expect(xml).toContain('<creation>');
+      expect(xml).toContain('<date>元</date>');
+    });
+  });
+
   test('allocates unique xml paths with numeric suffixes', () => {
     const used = new Set<string>();
     const first = uniqueDaozangXmlPath('/proj/imported/daozang', 'stem', used);

@@ -1,3 +1,4 @@
+import { execFileSync } from 'node:child_process';
 import crypto from 'node:crypto';
 import fs from 'node:fs';
 import http from 'node:http';
@@ -8,6 +9,8 @@ import { app, BrowserWindow } from 'electron';
 export const NATIVE_HOST_NAME = 'org.lejeanbaptiste.import';
 /** Pinned unpacked-extension id (see apps/browser-extension/manifest.json key). */
 export const BROWSER_EXTENSION_ID = 'dddnkaleimllefhfolmhdfbidnjfojjh';
+/** Firefox add-on id (see apps/browser-extension/manifest.firefox.json). */
+export const BROWSER_EXTENSION_GECKO_ID = 'ljb-corpus-import@lejeanbaptiste.org';
 
 export interface WikisourceImportOrder {
   v?: number;
@@ -62,13 +65,76 @@ const nativeMessagingDirs = (): string[] => {
       path.join(appSupport, 'Microsoft Edge', 'NativeMessagingHosts'),
     ];
   }
-  // Linux (XDG). Windows registers via the registry — not handled here.
+  // Linux (XDG). Windows uses the registry instead — see registerWindowsNativeHost.
   return [
     path.join(home, '.config', 'BraveSoftware', 'Brave-Browser', 'NativeMessagingHosts'),
     path.join(home, '.config', 'chromium', 'NativeMessagingHosts'),
     path.join(home, '.config', 'google-chrome', 'NativeMessagingHosts'),
     path.join(home, '.config', 'microsoft-edge', 'NativeMessagingHosts'),
   ];
+};
+
+const firefoxNativeMessagingDirs = (): string[] => {
+  const home = os.homedir();
+  if (process.platform === 'darwin') {
+    return [
+      path.join(home, 'Library', 'Application Support', 'Mozilla', 'NativeMessagingHosts'),
+    ];
+  }
+  // Linux. Windows uses the registry instead — see registerWindowsNativeHost.
+  return [path.join(home, '.mozilla', 'native-messaging-hosts')];
+};
+
+/**
+ * Per-user registry roots whose `NativeMessagingHosts\<name>` subkey points a
+ * browser at a host manifest file (Windows only). Chromium forks and Firefox
+ * read different roots but the same manifest shape (bar allowed_origins vs
+ * allowed_extensions).
+ */
+const WINDOWS_CHROMIUM_REGISTRY_ROOTS = [
+  'Software\\Google\\Chrome',
+  'Software\\BraveSoftware\\Brave-Browser',
+  'Software\\Chromium',
+  'Software\\Microsoft\\Edge',
+];
+const WINDOWS_FIREFOX_REGISTRY_ROOTS = ['Software\\Mozilla'];
+
+const regExe = (): string =>
+  process.env.SystemRoot
+    ? path.join(process.env.SystemRoot, 'System32', 'reg.exe')
+    : 'reg.exe';
+
+/** `HKCU\<root>\NativeMessagingHosts\<name>` (default value) → manifest path. */
+const setRegistryHostKey = (root: string, manifestPath: string): void => {
+  const key = `HKCU\\${root}\\NativeMessagingHosts\\${NATIVE_HOST_NAME}`;
+  try {
+    execFileSync(regExe(), ['add', key, '/ve', '/t', 'REG_SZ', '/d', manifestPath, '/f'], {
+      stdio: 'ignore',
+      windowsHide: true,
+    });
+  } catch {
+    // reg.exe missing or key not writable; skip this browser.
+  }
+};
+
+/**
+ * Windows equivalent of dropping a manifest into `NativeMessagingHosts/`: write
+ * the manifest files to userData and register their paths under HKCU for every
+ * supported browser. HKCU needs no elevation.
+ */
+const registerWindowsNativeHost = (chromeManifest: object, firefoxManifest: object): void => {
+  const dir = path.join(app.getPath('userData'), 'native-host');
+  const chromePath = path.join(dir, `${NATIVE_HOST_NAME}.json`);
+  const firefoxPath = path.join(dir, `${NATIVE_HOST_NAME}.firefox.json`);
+  try {
+    fs.mkdirSync(dir, { recursive: true });
+    fs.writeFileSync(chromePath, `${JSON.stringify(chromeManifest, null, 2)}\n`);
+    fs.writeFileSync(firefoxPath, `${JSON.stringify(firefoxManifest, null, 2)}\n`);
+  } catch {
+    return;
+  }
+  for (const root of WINDOWS_CHROMIUM_REGISTRY_ROOTS) setRegistryHostKey(root, chromePath);
+  for (const root of WINDOWS_FIREFOX_REGISTRY_ROOTS) setRegistryHostKey(root, firefoxPath);
 };
 
 /** Resolve a bundled native-host file, trying packaged then dev-tree layouts. */
@@ -91,11 +157,31 @@ const shSingleQuote = (value: string): string => `'${value.replace(/'/g, `'\\''`
 /**
  * Write a launcher that runs the native host through **this app's own Node**
  * (`ELECTRON_RUN_AS_NODE`), so it works when the browser spawns it with a bare
- * PATH that has no `node` (the common macOS / nvm case). Falls back to the
- * static `ljb-browser-host` bash script if the file can't be written.
+ * PATH that has no `node` (the common macOS / nvm case, and every Windows
+ * install). Falls back to the static `ljb-browser-host` bash script if the file
+ * can't be written. On Windows the browser can only spawn `.exe`/`.bat`/`.cmd`,
+ * so the launcher is a `.bat` wrapper around the app exe (the form both the
+ * Chrome and Firefox native-messaging docs use for script hosts).
  */
 const ensureGeneratedLauncher = (): string => {
-  if (process.platform === 'win32') return resolveNativeHostLauncher();
+  if (process.platform === 'win32') {
+    const bat = path.join(app.getPath('userData'), 'native-host', 'ljb-browser-host.bat');
+    try {
+      fs.mkdirSync(path.dirname(bat), { recursive: true });
+      fs.writeFileSync(
+        bat,
+        [
+          '@echo off',
+          'set "ELECTRON_RUN_AS_NODE=1"',
+          `"${process.execPath}" "${resolveNativeHostScript()}" %*`,
+          '',
+        ].join('\r\n'),
+      );
+      return bat;
+    } catch {
+      return resolveNativeHostLauncher();
+    }
+  }
   const launcher = path.join(app.getPath('userData'), 'native-host', 'ljb-browser-host');
   try {
     fs.mkdirSync(path.dirname(launcher), { recursive: true });
@@ -113,14 +199,25 @@ const ensureGeneratedLauncher = (): string => {
 };
 
 const writeNativeManifests = (hostPath: string): void => {
-  const manifest = {
+  const base = {
     name: NATIVE_HOST_NAME,
     description: 'Le Jean-Baptiste browser import (Wikisource, Kanripo, BDRC)',
     path: hostPath,
-    type: 'stdio',
+    type: 'stdio' as const,
+  };
+  const chromeManifest = {
+    ...base,
     allowed_origins: [`chrome-extension://${BROWSER_EXTENSION_ID}/`],
   };
-  for (const dir of nativeMessagingDirs()) {
+  const firefoxManifest = {
+    ...base,
+    allowed_extensions: [BROWSER_EXTENSION_GECKO_ID],
+  };
+  if (process.platform === 'win32') {
+    registerWindowsNativeHost(chromeManifest, firefoxManifest);
+    return;
+  }
+  const write = (dir: string, manifest: object): void => {
     try {
       fs.mkdirSync(dir, { recursive: true });
       fs.writeFileSync(
@@ -130,7 +227,9 @@ const writeNativeManifests = (hostPath: string): void => {
     } catch {
       // Browser not installed; skip.
     }
-  }
+  };
+  for (const dir of nativeMessagingDirs()) write(dir, chromeManifest);
+  for (const dir of firefoxNativeMessagingDirs()) write(dir, firefoxManifest);
 };
 
 export const startBrowserImportBridge = (getWindow: () => BrowserWindow | null): http.Server => {

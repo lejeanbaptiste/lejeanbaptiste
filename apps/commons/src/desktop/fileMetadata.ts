@@ -44,7 +44,16 @@ export const ORLANDO_FILE_METADATA_FIELDS: FileMetadataFieldDefinition[] = [
 /** @deprecated Use getFileMetadataFieldsForCatalog */
 export const FILE_METADATA_FIELDS = TEI_FILE_METADATA_FIELDS;
 
-const TEI_CATALOG_IDS = new Set(['teiAll', 'teiLite', 'teiSimplePrint', 'jTei', 'local-tei']);
+// CBETA P5 is a TEI P5 customization with a standard <teiHeader>, so the TEI
+// title/source fields apply unchanged (see schemaMetadataFields.ts).
+const TEI_CATALOG_IDS = new Set([
+  'teiAll',
+  'teiLite',
+  'teiSimplePrint',
+  'jTei',
+  'local-tei',
+  'cbeta',
+]);
 
 export const isTeiCatalogForFileMetadata = (catalogId?: string | null): boolean =>
   !catalogId || TEI_CATALOG_IDS.has(catalogId);
