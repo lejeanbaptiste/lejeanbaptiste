@@ -10,6 +10,11 @@ import {
   type EntityDbBackupStatus,
   type EntityDbCloudSnapshot,
   type EntityDbRestoreResult,
+  type EntitySyncConfig,
+  type EntitySyncConfigPatch,
+  type EntitySyncConflict,
+  type EntitySyncRunSummary,
+  type EntitySyncStatus,
   type LanguageToolSettings,
 } from '@src/types/desktop';
 import { clearAchievementsCache } from '@src/desktop/achievements/store';
@@ -58,6 +63,7 @@ export const useCommonsUiBridge = () => {
     useState<AuthorityLifecycleStatus | null>(null);
   const [entityDbBackupStatus, setEntityDbBackupStatusState] =
     useState<EntityDbBackupStatus | null>(null);
+  const [entitySyncStatus, setEntitySyncStatusState] = useState<EntitySyncStatus | null>(null);
 
   useEffect(() => {
     if (!isDesktop() || !window.electronAPI?.getEncoderName) return;
@@ -90,6 +96,14 @@ export const useCommonsUiBridge = () => {
     void window.electronAPI
       .entityDbBackupGetStatus()
       .then(setEntityDbBackupStatusState)
+      .catch(() => undefined);
+  }, []);
+
+  useEffect(() => {
+    if (!isDesktop() || !window.electronAPI?.entitySyncGetStatus) return;
+    void window.electronAPI
+      .entitySyncGetStatus()
+      .then(setEntitySyncStatusState)
       .catch(() => undefined);
   }, []);
 
@@ -293,6 +307,52 @@ export const useCommonsUiBridge = () => {
       return result;
     },
     [refreshEntityDbBackupStatus],
+  );
+
+  const refreshEntitySyncStatus = useCallback(async () => {
+    if (!window.electronAPI?.entitySyncGetStatus) return;
+    try {
+      setEntitySyncStatusState(await window.electronAPI.entitySyncGetStatus());
+    } catch {
+      // best-effort; the panel shows its own errors
+    }
+  }, []);
+
+  const setEntitySyncConfig = useCallback(
+    async (patch: EntitySyncConfigPatch): Promise<EntitySyncConfig | null> => {
+      if (!window.electronAPI?.entitySyncSetConfig) return null;
+      const config = await window.electronAPI.entitySyncSetConfig(patch);
+      await refreshEntitySyncStatus();
+      return config;
+    },
+    [refreshEntitySyncStatus],
+  );
+
+  const runEntitySyncNow = useCallback(async (): Promise<EntitySyncRunSummary> => {
+    const result = (await window.electronAPI?.entitySyncRunNow?.()) ?? {
+      ok: false,
+      reason: 'manual' as const,
+      error: 'Desktop entity sync bridge is unavailable.',
+    };
+    await refreshEntitySyncStatus();
+    return result;
+  }, [refreshEntitySyncStatus]);
+
+  const listEntitySyncConflicts = useCallback(
+    async (): Promise<EntitySyncConflict[]> =>
+      (await window.electronAPI?.entitySyncListConflicts?.()) ?? [],
+    [],
+  );
+
+  const resolveEntitySyncConflict = useCallback(
+    async (request: { id: number; keep: 'local' | 'remote' }): Promise<{ ok: boolean }> => {
+      const result = (await window.electronAPI?.entitySyncResolveConflict?.(request)) ?? {
+        ok: false,
+      };
+      await refreshEntitySyncStatus();
+      return result;
+    },
+    [refreshEntitySyncStatus],
   );
 
   const setLanguageToolSettings = useCallback(
@@ -567,6 +627,12 @@ export const useCommonsUiBridge = () => {
       runEntityDbBackupNow,
       listEntityDbBackupSnapshots,
       restoreEntityDbBackup,
+      entitySyncStatus,
+      refreshEntitySyncStatus,
+      setEntitySyncConfig,
+      runEntitySyncNow,
+      listEntitySyncConflicts,
+      resolveEntitySyncConflict,
     };
 
     window.dispatchEvent(new Event('ljbCommonsUiChanged'));
@@ -598,6 +664,12 @@ export const useCommonsUiBridge = () => {
     runEntityDbBackupNow,
     listEntityDbBackupSnapshots,
     restoreEntityDbBackup,
+    entitySyncStatus,
+    refreshEntitySyncStatus,
+    setEntitySyncConfig,
+    runEntitySyncNow,
+    listEntitySyncConflicts,
+    resolveEntitySyncConflict,
     setAiApiSettings,
     setLanguageToolSettings,
     setAuthorityLifecycleEnabled,

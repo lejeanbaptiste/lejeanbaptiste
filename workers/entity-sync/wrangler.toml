@@ -1,0 +1,18 @@
+name = "ljb-entity-sync"
+main = "src/index.ts"
+compatibility_date = "2026-07-01"
+workers_dev = true
+preview_urls = false
+
+# The single GitHub user id allowed to sync against this deployment. Numeric,
+# not secret — set it here per deployment, or override with
+# `wrangler secret put OWNER_GITHUB_ID` if you'd rather not commit it.
+[vars]
+OWNER_GITHUB_ID = "76396963"
+
+[[d1_databases]]
+binding = "DB"
+database_name = "ljb-entity-sync"
+# Fill in after `wrangler d1 create ljb-entity-sync`.
+database_id = "81aebb00-1a06-4970-b1ca-b18b1683f2f1"
+migrations_dir = "migrations"

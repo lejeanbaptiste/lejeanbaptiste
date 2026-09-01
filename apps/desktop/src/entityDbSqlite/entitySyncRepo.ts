@@ -1,0 +1,324 @@
+/**
+ * SQLite operations the entity-sync engine needs on top of
+ * EntitySqliteRepository. Phase 2 of docs/entity-sync-planning.md.
+ *
+ * `sync_state` is the source of truth for the local ↔ central mapping of
+ * *synced* entities: one row per (project_entity_id, central_entity_id) with
+ * the central revision/hash we last agreed on. An entity with no row, or with
+ * `project_revision` != the live `entities.revision`, is "dirty" and needs a
+ * push. `central_mappings` is left to the existing local-file bridge.
+ *
+ * `sync_conflicts` holds whole-entity snapshots for manual resolution; while a
+ * row is open for an entity, that entity is held back from push.
+ */
+import type { EntitySqliteRepository, SqliteEntityKind } from './repository';
+import { computeEntityContentHash, exportEntityElementXml, importEntitiesXml } from './xmlCodec';
+
+const TEI_NS = 'http://www.tei-c.org/ns/1.0';
+const CURSOR_KEY = 'sync_cursor';
+const DEVICE_KEY = 'sync_device_id';
+
+const ENTITY_LIST_BY_KIND: Record<SqliteEntityKind, string> = {
+  person: 'listPerson',
+  place: 'listPlace',
+  org: 'listOrg',
+  office: 'listOrg',
+  work: 'listBibl',
+};
+
+// --- cursor / device --------------------------------------------------------
+
+export const getSyncCursor = (repo: EntitySqliteRepository): number => {
+  const raw = repo.getMetadata(CURSOR_KEY);
+  const value = raw === null ? 0 : Number(raw);
+  return Number.isFinite(value) && value >= 0 ? Math.floor(value) : 0;
+};
+
+export const setSyncCursor = (repo: EntitySqliteRepository, seq: number): void => {
+  repo.setMetadata(CURSOR_KEY, String(Math.max(0, Math.floor(seq))));
+};
+
+export const getOrCreateDeviceId = (repo: EntitySqliteRepository): string => {
+  const existing = repo.getMetadata(DEVICE_KEY);
+  if (existing) return existing;
+  const id = crypto.randomUUID();
+  repo.setMetadata(DEVICE_KEY, id);
+  return id;
+};
+
+// --- dirty set ------------------------------------------------------------
+
+export interface DirtyEntity {
+  localId: string;
+  kind: SqliteEntityKind;
+  revision: number;
+  deleted: boolean;
+  /** null until the entity has been synced at least once. */
+  centralId: string | null;
+  /** Central revision we last agreed on (0 for a never-synced entity). */
+  baseRevision: number;
+  baseHash: string | null;
+}
+
+/**
+ * Entities that differ from their last synced state: no `sync_state` row, or a
+ * `project_revision` that no longer matches `entities.revision`. Entities with
+ * an open conflict are excluded — they can't push until resolved.
+ */
+export const listDirtyForSync = (repo: EntitySqliteRepository): DirtyEntity[] => {
+  const rows = repo.db
+    .prepare(
+      `SELECT e.id                          AS localId,
+              e.kind                        AS kind,
+              e.revision                    AS revision,
+              CASE WHEN e.deleted_at IS NOT NULL THEN 1 ELSE 0 END AS deleted,
+              ss.central_entity_id          AS centralId,
+              ss.central_revision           AS baseRevision,
+              ss.central_hash               AS baseHash
+         FROM entities e
+         LEFT JOIN sync_state ss ON ss.project_entity_id = e.id
+         WHERE (ss.project_entity_id IS NULL OR ss.project_revision <> e.revision)
+           AND NOT EXISTS (
+             SELECT 1 FROM sync_conflicts c
+              WHERE c.status = 'open' AND c.project_entity_id = e.id
+           )
+         ORDER BY e.id`,
+    )
+    .all() as {
+    localId: string;
+    kind: SqliteEntityKind;
+    revision: number;
+    deleted: number;
+    centralId: string | null;
+    baseRevision: number | null;
+    baseHash: string | null;
+  }[];
+
+  return rows.map((row) => ({
+    localId: row.localId,
+    kind: row.kind,
+    revision: row.revision,
+    deleted: row.deleted === 1,
+    centralId: row.centralId,
+    baseRevision: row.baseRevision ?? 0,
+    baseHash: row.baseHash,
+  }));
+};
+
+// --- sync_state ---------------------------------------------------------
+
+export interface SyncStateRow {
+  projectEntityId: string;
+  centralEntityId: string;
+  centralRevision: number;
+  projectRevision: number;
+  centralHash: string;
+  projectHash: string;
+}
+
+export const getSyncState = (
+  repo: EntitySqliteRepository,
+  projectEntityId: string,
+): SyncStateRow | null => {
+  const row = repo.db
+    .prepare(
+      `SELECT project_entity_id, central_entity_id, central_revision,
+              project_revision, central_hash, project_hash
+         FROM sync_state WHERE project_entity_id = ?`,
+    )
+    .get(projectEntityId) as
+    | {
+        project_entity_id: string;
+        central_entity_id: string;
+        central_revision: number;
+        project_revision: number;
+        central_hash: string;
+        project_hash: string;
+      }
+    | undefined;
+  if (!row) return null;
+  return {
+    projectEntityId: row.project_entity_id,
+    centralEntityId: row.central_entity_id,
+    centralRevision: row.central_revision,
+    projectRevision: row.project_revision,
+    centralHash: row.central_hash,
+    projectHash: row.project_hash,
+  };
+};
+
+export const upsertSyncState = (repo: EntitySqliteRepository, state: SyncStateRow): void => {
+  repo.db
+    .prepare(
+      `INSERT INTO sync_state
+         (project_entity_id, central_entity_id, central_revision, project_revision,
+          central_hash, project_hash, synced_at)
+       VALUES (?, ?, ?, ?, ?, ?, ?)
+       ON CONFLICT(project_entity_id, central_entity_id) DO UPDATE SET
+         central_revision = excluded.central_revision,
+         project_revision = excluded.project_revision,
+         central_hash     = excluded.central_hash,
+         project_hash     = excluded.project_hash,
+         synced_at        = excluded.synced_at`,
+    )
+    .run(
+      state.projectEntityId,
+      state.centralEntityId,
+      state.centralRevision,
+      state.projectRevision,
+      state.centralHash,
+      state.projectHash,
+      new Date().toISOString(),
+    );
+};
+
+// --- sync_conflicts ---------------------------------------------------
+
+export interface OpenConflictInput {
+  projectEntityId: string;
+  centralEntityId: string;
+  reason: string;
+  projectRevision: number;
+  centralRevision: number;
+  projectSnapshot: string;
+  centralSnapshot: string;
+}
+
+export interface SyncConflict extends OpenConflictInput {
+  id: number;
+  createdAt: string;
+}
+
+/** Insert a conflict unless one is already open for the same entity pair. */
+export const openConflict = (repo: EntitySqliteRepository, input: OpenConflictInput): void => {
+  repo.db
+    .prepare(
+      `INSERT INTO sync_conflicts
+         (project_entity_id, central_entity_id, reason, project_revision, central_revision,
+          project_snapshot, central_snapshot, status, created_at)
+       SELECT ?, ?, ?, ?, ?, ?, ?, 'open', ?
+       WHERE NOT EXISTS (
+         SELECT 1 FROM sync_conflicts
+          WHERE status = 'open' AND project_entity_id = ? AND central_entity_id = ?
+       )`,
+    )
+    .run(
+      input.projectEntityId,
+      input.centralEntityId,
+      input.reason,
+      input.projectRevision,
+      input.centralRevision,
+      input.projectSnapshot,
+      input.centralSnapshot,
+      new Date().toISOString(),
+      input.projectEntityId,
+      input.centralEntityId,
+    );
+};
+
+export const listOpenConflicts = (repo: EntitySqliteRepository): SyncConflict[] => {
+  const rows = repo.db
+    .prepare(
+      `SELECT id, project_entity_id, central_entity_id, reason, project_revision,
+              central_revision, project_snapshot, central_snapshot, created_at
+         FROM sync_conflicts WHERE status = 'open' ORDER BY created_at, id`,
+    )
+    .all() as Record<string, unknown>[];
+  return rows.map((row) => ({
+    id: Number(row.id),
+    projectEntityId: String(row.project_entity_id),
+    centralEntityId: String(row.central_entity_id),
+    reason: String(row.reason),
+    projectRevision: Number(row.project_revision),
+    centralRevision: Number(row.central_revision),
+    projectSnapshot: String(row.project_snapshot),
+    centralSnapshot: String(row.central_snapshot),
+    createdAt: String(row.created_at),
+  }));
+};
+
+export const countOpenConflicts = (repo: EntitySqliteRepository): number => {
+  const row = repo.db
+    .prepare(`SELECT COUNT(*) AS n FROM sync_conflicts WHERE status = 'open'`)
+    .get() as { n: number };
+  return row.n;
+};
+
+export const resolveConflict = (repo: EntitySqliteRepository, id: number): boolean => {
+  const result = repo.db
+    .prepare(
+      `UPDATE sync_conflicts SET status = 'resolved', resolved_at = ?
+        WHERE id = ? AND status = 'open'`,
+    )
+    .run(new Date().toISOString(), id);
+  return result.changes > 0;
+};
+
+// --- applying a remote entity --------------------------------------
+
+export interface ApplyRemoteResult {
+  /** Content hash of the local entity after applying. */
+  afterHash: string;
+  /** Live `entities.revision` after applying (for `sync_state.project_revision`). */
+  projectRevision: number;
+}
+
+/**
+ * Bring the local entity `centralId` in line with a remote change. The payload
+ * is a single TEI entity element (from another client's
+ * `exportEntityElementXml`); it's imported into an in-memory repository and
+ * then copied over, reusing the tested `replaceEntityContentBetween` path.
+ * Creates the local entity if it doesn't exist yet.
+ *
+ * Caller runs this inside `repo.transaction()`.
+ */
+export const applyRemoteEntity = (
+  repo: EntitySqliteRepository,
+  change: { centralId: string; kind: SqliteEntityKind; contentXml: string; deleted: boolean },
+): ApplyRemoteResult => {
+  const RepoCtor = repo.constructor as new (path: string) => EntitySqliteRepository;
+  const existing = repo.getEntity(change.centralId);
+
+  if (change.deleted) {
+    if (existing && !existing.deletedAt) repo.softDeleteEntity(change.centralId);
+    const after = repo.getEntity(change.centralId);
+    return {
+      afterHash: computeEntityContentHash(repo, change.centralId) ?? '',
+      projectRevision: after?.revision ?? existing?.revision ?? 0,
+    };
+  }
+
+  const wrapped =
+    `<?xml version="1.0" encoding="UTF-8"?>` +
+    `<TEI xmlns="${TEI_NS}"><teiHeader><fileDesc><publicationStmt>` +
+    `<idno type="ljb-entity-database">ljb-entity-sync</idno>` +
+    `</publicationStmt></fileDesc></teiHeader>` +
+    `<standOff><${ENTITY_LIST_BY_KIND[change.kind]}>${change.contentXml}` +
+    `</${ENTITY_LIST_BY_KIND[change.kind]}></standOff></TEI>`;
+
+  const staging = new RepoCtor(':memory:');
+  try {
+    importEntitiesXml(staging, wrapped, { replace: true });
+    if (!existing) {
+      repo.createEntity({ id: change.centralId, kind: change.kind });
+    } else if (existing.deletedAt) {
+      // Central un-deleted it; clear the tombstone before copying content back.
+      repo.db
+        .prepare(`UPDATE entities SET deleted_at = NULL WHERE id = ?`)
+        .run(change.centralId);
+    }
+    repo.replaceEntityContentFrom(staging, change.centralId, change.centralId);
+  } finally {
+    staging.close();
+  }
+
+  const after = repo.getEntity(change.centralId);
+  return {
+    afterHash: computeEntityContentHash(repo, change.centralId) ?? '',
+    projectRevision: after?.revision ?? 0,
+  };
+};
+
+export { CURSOR_KEY, DEVICE_KEY };
+export const exportLocalEntityXml = exportEntityElementXml;
+export const localEntityHash = computeEntityContentHash;

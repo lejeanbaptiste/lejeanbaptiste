@@ -23,6 +23,10 @@ const i18n: I18n = createInstance(
     // debug: true,
     defaultNS: 'LW',
     fallbackLng: ['en', 'fr'],
+    // React already escapes every rendered text node, so i18next must not
+    // double-escape interpolated values — its default turns `/` in a
+    // localised date (`01/09/2026`) into a literal `&#x2F;`.
+    interpolation: { escapeValue: false },
     lng: 'en',
     ns: ['LW'],
     nsSeparator: '.',

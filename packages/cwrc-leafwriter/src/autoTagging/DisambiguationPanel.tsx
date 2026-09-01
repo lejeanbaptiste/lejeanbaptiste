@@ -598,6 +598,19 @@ export const DisambiguationPanel = ({
     [session],
   );
 
+  // The editor keeps the focus highlight until something takes it away —
+  // closing the panel is one of those things.
+  useEffect(
+    () => () => {
+      try {
+        session.clearFocusHighlight();
+      } catch {
+        // best-effort
+      }
+    },
+    [session],
+  );
+
   const controllerRef = useRef<DisambiguationController | null>(null);
   if (!controllerRef.current) {
     controllerRef.current = new DisambiguationController(

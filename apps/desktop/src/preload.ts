@@ -23,6 +23,9 @@ import type {
   LastBackupMarker,
   RestoreResult,
 } from './entityDbBackup';
+import type { EntitySyncConfig } from './entitySyncConfig';
+import type { EntitySyncConfigPatch, EntitySyncStatus, SyncRunSummary } from './entitySyncService';
+import type { SyncConflict } from './entityDbSqlite/entitySyncRepo';
 
 export interface EntityDbBackupStatus {
   config: EntityDbBackupConfigView;
@@ -939,6 +942,16 @@ export interface ElectronAPI {
   entityDbBackupRunNow: () => Promise<BackupResult>;
   entityDbBackupListSnapshots: () => Promise<CloudSnapshot[]>;
   entityDbBackupRestore: (key: string) => Promise<RestoreResult>;
+
+  /** Cross-device entity sync (Settings › Profil › Cross-device sync). */
+  entitySyncGetStatus: () => Promise<EntitySyncStatus>;
+  entitySyncSetConfig: (patch: EntitySyncConfigPatch) => Promise<EntitySyncConfig>;
+  entitySyncRunNow: () => Promise<SyncRunSummary>;
+  entitySyncListConflicts: () => Promise<SyncConflict[]>;
+  entitySyncResolveConflict: (request: {
+    id: number;
+    keep: 'local' | 'remote';
+  }) => Promise<{ ok: boolean }>;
 }
 
 const electronAPI: ElectronAPI = {
@@ -1445,6 +1458,12 @@ const electronAPI: ElectronAPI = {
   entityDbBackupRunNow: () => ipcRenderer.invoke('entityDbBackup:runNow'),
   entityDbBackupListSnapshots: () => ipcRenderer.invoke('entityDbBackup:listSnapshots'),
   entityDbBackupRestore: (key: string) => ipcRenderer.invoke('entityDbBackup:restore', key),
+  entitySyncGetStatus: () => ipcRenderer.invoke('entitySync:getStatus'),
+  entitySyncSetConfig: (patch) => ipcRenderer.invoke('entitySync:setConfig', patch),
+  entitySyncRunNow: () => ipcRenderer.invoke('entitySync:runNow'),
+  entitySyncListConflicts: () => ipcRenderer.invoke('entitySync:listConflicts'),
+  entitySyncResolveConflict: (request) =>
+    ipcRenderer.invoke('entitySync:resolveConflict', request),
 };
 
 contextBridge.exposeInMainWorld('electronAPI', electronAPI);

@@ -203,7 +203,10 @@ export const AutoTaggingReviewPane = () => {
       dateRecalculate.current = null;
       dateAuthorityCiv.current = null;
       dismissedLocations.current = new Set();
-      if (session.current) void session.current.flushDecisions();
+      if (session.current) {
+        session.current.clearFocusHighlight();
+        void session.current.flushDecisions();
+      }
       session.current = null;
       return;
     }
@@ -334,7 +337,10 @@ export const AutoTaggingReviewPane = () => {
 
   const handleClose = useCallback(() => {
     if (busy) return;
-    if (session.current) void session.current.flushDecisions();
+    if (session.current) {
+      session.current.clearFocusHighlight();
+      void session.current.flushDecisions();
+    }
     session.current = null;
     setApplied(0);
     setCanRevert(false);
@@ -477,7 +483,10 @@ export const AutoTaggingReviewPane = () => {
           }
           // Resolve is a finishing pass — close once attributes are written.
           if (closeAfterApply && result.applied > 0) {
-            if (session.current) void session.current.flushDecisions();
+            if (session.current) {
+              session.current.clearFocusHighlight();
+              void session.current.flushDecisions();
+            }
             session.current = null;
             setApplied(0);
             setCanRevert(false);

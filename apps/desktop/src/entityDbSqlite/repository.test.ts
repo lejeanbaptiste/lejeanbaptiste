@@ -1553,6 +1553,66 @@ describe('EntitySqliteRepository', () => {
     repository.close();
   });
 
+  it('migration 10 withdraws dynasty spans stored as birth/death, keeps real lifespans', () => {
+    const repository = new EntitySqliteRepository();
+    const now = new Date().toISOString();
+    for (const id of [
+      'person-norbert-span', // Rule A: NORBERT-attributed birth/death
+      'person-sentinel-floor', // Rule B: -5999 synthetic Pre-Qin floor
+      'person-era-pair', // Rule C: lone birth/death > 150 years apart
+      'person-real-lifespan', // negative: a normal 61-year lifespan
+      'person-ambiguous-multi', // negative: >2 birth/death rows — left for the refresh path
+    ]) {
+      repository.createEntity({ id, kind: 'person' });
+    }
+    repository.db
+      .prepare(
+        `INSERT INTO entity_dates
+           (entity_id, date_kind, start_year, origin, source, status, created_at, updated_at)
+         VALUES
+           ('person-norbert-span', 'birth', -5999, 'authority', 'NORBERT', 'active', ?, ?),
+           ('person-norbert-span', 'death', -220,  'authority', 'NORBERT', 'active', ?, ?),
+           ('person-sentinel-floor', 'birth', -5999, 'user', NULL, 'active', ?, ?),
+           ('person-era-pair', 'birth', 420, 'authority', 'CBDB', 'active', ?, ?),
+           ('person-era-pair', 'death', 907, 'authority', 'CBDB', 'active', ?, ?),
+           ('person-real-lifespan', 'birth', 701, 'user', NULL, 'active', ?, ?),
+           ('person-real-lifespan', 'death', 762, 'user', NULL, 'active', ?, ?),
+           ('person-ambiguous-multi', 'birth', 701, 'authority', 'DILA', 'active', ?, ?),
+           ('person-ambiguous-multi', 'death', 762, 'authority', 'DILA', 'active', ?, ?),
+           ('person-ambiguous-multi', 'birth', 618, 'authority', 'CBDB', 'active', ?, ?),
+           ('person-ambiguous-multi', 'death', 907, 'authority', 'CBDB', 'active', ?, ?)`,
+      )
+      .run(...Array.from({ length: 22 }, () => now));
+
+    repository.db.exec('PRAGMA user_version = 9');
+    applyEntityDbMigrations(repository.db);
+
+    const active = (id: string) =>
+      (
+        repository.db
+          .prepare(
+            `SELECT date_kind, start_year FROM entity_dates
+             WHERE entity_id = ? AND status = 'active' ORDER BY date_kind, id`,
+          )
+          .all(id) as { date_kind: string; start_year: number }[]
+      ).map((row) => `${row.date_kind}:${row.start_year}`);
+
+    expect(active('person-norbert-span')).toEqual([]);
+    expect(active('person-sentinel-floor')).toEqual([]);
+    expect(active('person-era-pair')).toEqual([]);
+    expect(active('person-real-lifespan')).toEqual(['birth:701', 'death:762']);
+    // >2 birth/death rows: too ambiguous to pick a bad pair blindly — the
+    // per-entity authority refresh (clearAuthorityVitalSources) handles these.
+    expect(active('person-ambiguous-multi')).toEqual([
+      'birth:701',
+      'birth:618',
+      'death:762',
+      'death:907',
+    ]);
+
+    repository.close();
+  });
+
   it('normalizes mechanical name artifacts during ordinary name writes', () => {
     const repository = new EntitySqliteRepository();
     repository.createEntity({ id: 'person-name-integrity', kind: 'person' });

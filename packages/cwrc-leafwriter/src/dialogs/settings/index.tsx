@@ -16,6 +16,7 @@ import { FontSize } from './sections/editor/font-size';
 import { DesktopEncoderName } from './sections/profile/desktop-encoder-name';
 import { DesktopEntityDatabase } from './sections/profile/desktop-entity-database';
 import { DesktopEntityBackup } from './sections/profile/desktop-entity-backup';
+import { DesktopEntitySync } from './sections/profile/desktop-entity-sync';
 import { DesktopAiApi } from './sections/ui/desktop-ai-api';
 import { DesktopLanguageTool } from './sections/ui/desktop-language-tool';
 import { DesktopGithub } from './sections/ui/desktop-github';
@@ -213,6 +214,14 @@ export const SettingsDialog = ({ onClose, open = false, initialTab }: SettingsDi
                     >
                       <List dense>
                         <DesktopEntityBackup />
+                      </List>
+                    </Section>
+                    <Section
+                      id="profile-entity-sync"
+                      title={t('LW.desktop.settings.entity_sync.title')}
+                    >
+                      <List dense>
+                        <DesktopEntitySync />
                       </List>
                     </Section>
                     <Section id="profile-github" title={t('LW.settings.tabs.github')}>

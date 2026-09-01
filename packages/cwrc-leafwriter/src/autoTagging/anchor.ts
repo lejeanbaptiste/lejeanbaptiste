@@ -316,6 +316,15 @@ export function locateOccurrenceInIndex(
     from = flatStart + 1;
   }
 
+  return rangeAtFlatPosition(index, flatStart, surface.length);
+}
+
+/** Node + raw offsets for the match starting at `flatStart` in the index text. */
+function rangeAtFlatPosition(
+  index: DocIndex,
+  flatStart: number,
+  length: number,
+): { node: Text; start: number; end: number } | null {
   for (let i = 0; i < index.nodes.length; i++) {
     const nodeStart = index.nodeStart[i]!;
     const nodeLen = index.nodes[i]!.search.text.length;
@@ -324,13 +333,94 @@ export function locateOccurrenceInIndex(
 
     const local = flatStart - nodeStart;
     const { node, search } = index.nodes[i]!;
-    const endFlat = Math.min(flatStart + surface.length, nodeEnd);
+    const endFlat = Math.min(flatStart + length, nodeEnd);
     const rawStart = search.map[local];
     const rawEndMap = search.map[endFlat - nodeStart - 1];
     if (rawStart === undefined || rawEndMap === undefined) return null;
     return { node, start: rawStart, end: rawEndMap + 1 };
   }
   return null;
+}
+
+/** Flat-text context around a match, in the shape contextScore compares. */
+function flatContextsAt(index: DocIndex, flatStart: number, surfaceLength: number) {
+  return {
+    before: index.text.slice(Math.max(0, flatStart - CONTEXT_LENGTH), flatStart),
+    after: index.text.slice(flatStart + surfaceLength, flatStart + surfaceLength + CONTEXT_LENGTH),
+  };
+}
+
+function flatContextScore(index: DocIndex, anchor: Anchor, flatStart: number): number {
+  const { before, after } = flatContextsAt(index, flatStart, anchor.surface.length);
+  let score = 0;
+  for (let i = 1; i <= Math.min(anchor.contextBefore.length, before.length); i++) {
+    if (anchor.contextBefore[anchor.contextBefore.length - i] !== before[before.length - i]) break;
+    score++;
+  }
+  for (let i = 0; i < Math.min(anchor.contextAfter.length, after.length); i++) {
+    if (anchor.contextAfter[i] !== after[i]) break;
+    score++;
+  }
+  return score;
+}
+
+/**
+ * Locate an anchor in an index that was NOT built from the anchor's own
+ * document — the editor holds a converted HTML copy, so structural xpaths and
+ * node hashes don't apply and the occurrence count can drift (hidden readings,
+ * editor-only text). Prefer the recorded occurrence, but fall back to the
+ * best context match, so a jump still lands on the right mention when the
+ * counts disagree instead of landing on the wrong one or nowhere at all.
+ */
+export function locateAnchorInIndex(
+  index: DocIndex,
+  anchor: Pick<Anchor, 'surface' | 'occurrence' | 'contextBefore' | 'contextAfter'>,
+  surfaceOverride?: string,
+): { node: Text; start: number; end: number } | null {
+  const surface = surfaceOverride ?? anchor.surface;
+  if (!surface) return null;
+
+  const starts: number[] = [];
+  for (let at = index.text.indexOf(surface); at !== -1; at = index.text.indexOf(surface, at + 1)) {
+    starts.push(at);
+  }
+  if (starts.length === 0) return null;
+
+  const scoreOf = (flatStart: number) =>
+    flatContextScore(index, { ...anchor, surface } as Anchor, flatStart);
+
+  const recorded = starts[anchor.occurrence - 1];
+  if (recorded !== undefined) {
+    const recordedScore = scoreOf(recorded);
+    const contextLength = anchor.contextBefore.length + anchor.contextAfter.length;
+    // The recorded occurrence wins unless its surroundings clearly disagree
+    // and some other occurrence matches them better.
+    if (contextLength === 0 || recordedScore >= Math.min(contextLength, CONTEXT_LENGTH)) {
+      return rangeAtFlatPosition(index, recorded, surface.length);
+    }
+    let best = recorded;
+    let bestScore = recordedScore;
+    for (const start of starts) {
+      const score = scoreOf(start);
+      if (score > bestScore) {
+        best = start;
+        bestScore = score;
+      }
+    }
+    return rangeAtFlatPosition(index, best, surface.length);
+  }
+
+  // Occurrence past the end of this index: fall back to the best context match.
+  let best = starts[0]!;
+  let bestScore = scoreOf(best);
+  for (const start of starts) {
+    const score = scoreOf(start);
+    if (score > bestScore) {
+      best = start;
+      bestScore = score;
+    }
+  }
+  return rangeAtFlatPosition(index, best, surface.length);
 }
 
 /**

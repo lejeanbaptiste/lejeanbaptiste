@@ -242,7 +242,8 @@ const DECISION_TARGET_BACKFILL_META = 'decision_targets_backfill_v1';
 
 const repositories = new Map<string, EntitySqliteRepository>();
 
-const repositoryFor = (databasePath: string): EntitySqliteRepository => {
+/** Shared, process-wide open repository per `entities.sqlite` path. */
+export const repositoryFor = (databasePath: string): EntitySqliteRepository => {
   const existing = repositories.get(databasePath);
   if (existing) return existing;
   const repository = new EntitySqliteRepository(databasePath);

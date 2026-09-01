@@ -238,7 +238,10 @@ See [apps/desktop/README.md](apps/desktop/README.md) for the compilation and pac
 - [ ] Further Norbert functions
 - [ ] Support for custom authorities
 - [ ] Support for user SQL databases
-- [ ] Multi-machine offline sync beyond current mirror
+- [ ] Multi-machine offline sync beyond current mirror ([entity-sync-planning.md](docs/entity-sync-planning.md) — Phase 0 cloud backup shipped; Phases 1–5 D1 logical sync in progress)
+- [ ] Entity DB cloud backup: on-launch "restore from cloud" dialog when `checkEntityDbIntegrity` fails (currently only an in-panel alert)
+- [ ] Entity DB cloud backup: live R2 smoke test against a provisioned bucket + token
+- [ ] Entity DB cloud backup: confirm Electron `safeStorage` is available on a packaged Linux build (needs an unlocked keyring)
 - [ ] Option to track annotator on the tag level for collaborations.
 
 ---

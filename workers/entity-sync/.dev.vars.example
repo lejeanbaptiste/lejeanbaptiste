@@ -1,0 +1,2 @@
+# Local-only overrides for `wrangler dev`. Copy to .dev.vars (gitignored).
+OWNER_GITHUB_ID = "your-github-numeric-id"

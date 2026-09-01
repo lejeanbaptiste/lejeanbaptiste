@@ -13,6 +13,20 @@ export interface SearchText {
 const isWhitespace = (char: string) => /\s/.test(char);
 
 /**
+ * Characters with no visible extent that must never take part in matching:
+ * zero-width space, the joiners and the soft hyphen. Editors and pasted text
+ * seed these into text nodes (TinyMCE's own U+FEFF markers are already
+ * covered — JavaScript counts that one as whitespace), and a search text that
+ * kept them would stop matching anchors built from the serialized XML.
+ */
+const isInvisible = (char: string) =>
+  char === '\uFEFF' ||
+  char === '\u200B' ||
+  char === '\u200C' ||
+  char === '\u200D' ||
+  char === '\u00AD';
+
+/**
  * NFC-normalize every text node under root, in place. This is the single
  * central normalization point: anchors are created and resolved against
  * NFC text, and nothing downstream normalizes independently.
@@ -40,6 +54,7 @@ export function buildSearchText(raw: string, policy: WhitespacePolicy): SearchTe
 
   for (let i = 0; i < raw.length; i++) {
     const char = raw[i]!;
+    if (isInvisible(char)) continue;
     if (isWhitespace(char)) {
       if (policy === 'collapse') pendingSpace = true;
       continue;

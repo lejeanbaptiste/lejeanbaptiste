@@ -1,0 +1,70 @@
+# ljb-entity-sync
+
+The **reference implementation** of the entity-sync wire protocol
+([`docs/entity-sync-protocol.md`](../../docs/entity-sync-protocol.md)) — a
+Cloudflare Worker over D1. Any server implementing that contract works; this
+one is what the desktop client points at today. Fits into
+[`docs/entity-sync-planning.md`](../../docs/entity-sync-planning.md).
+
+## What it does
+
+Server-authoritative whole-entity sync for **one owner** (one account, several
+machines). The normative behaviour is the protocol doc; the executable form is
+`test/conformance.ts`, which `test/sync.test.ts` runs against this Worker and a
+future server would run against its own.
+
+| Route        | Method | Purpose                                                         |
+| ------------ | ------ | --------------------------------------------------------------- |
+| `/`          | GET    | Unauthenticated health check.                                   |
+| `/sync/pull` | GET    | `?since=<seq>&limit=<n>` → every change with `seq > since`.     |
+| `/sync/push` | POST   | `{ entities: [...] }` → `applied` / `reconciled` / `conflicts`. |
+
+Every non-health request carries `Authorization: Bearer <github-token>`. The
+Worker calls `GET https://api.github.com/user`, and rejects anyone whose id is
+not `OWNER_GITHUB_ID` (401 no/invalid token, 403 wrong account). Scope doesn't
+matter — an empty-scope token that can only read `/user` is enough.
+
+### Push semantics (per entity)
+
+`baseRevision` is the central revision the client last held.
+
+- **no `centralId`** → create; server mints `<kind>-<uuid>`, `revision = 1`.
+- **`centralId`, unknown to server** → accept the client copy (`revision = baseRevision + 1`); covers a rebuilt central store.
+- **`baseRevision` matches stored** → fast-forward; `revision = baseRevision + 1`.
+- **`baseRevision` stale, `contentHash` already equals stored** → `reconciled`: no write, client adopts the server revision as its new baseline (absorbs bulk re-hash / backfill churn).
+- **`baseRevision` stale, content differs** → `conflict`: nothing written; response carries the server's `revision` / `hash` / `xml` for the client's resolution queue.
+
+`seq` is a per-owner monotonic counter, bumped once per push via
+compare-and-swap on `sync_counter`, and is the pull cursor. Writes for one
+push commit together (`D1.batch`). Max 200 entities per push (413 otherwise);
+the client chunks.
+
+The server stores `content_xml` (the client's `exportEntityElementXml`) and
+`content_hash` (`computeEntityContentHash`) verbatim and never reparses the
+XML.
+
+## Develop & test
+
+```bash
+npm install
+npm test          # vitest + @cloudflare/vitest-pool-workers (real D1, migrations auto-applied)
+npm run typecheck
+```
+
+## Deploy
+
+```bash
+# 1. Create the D1 database, then paste its id into wrangler.toml.
+npx wrangler d1 create ljb-entity-sync
+
+# 2. Apply migrations to the remote database.
+npx wrangler d1 migrations apply ljb-entity-sync --remote
+
+# 3. Set the owner id (or edit [vars] in wrangler.toml).
+npx wrangler secret put OWNER_GITHUB_ID    # your GitHub numeric id: curl -s https://api.github.com/user -H "authorization: Bearer <token>" | jq .id
+
+# 4. Ship it.
+npx wrangler deploy
+```
+
+`compatibility_date` and bindings live in `wrangler.toml`.

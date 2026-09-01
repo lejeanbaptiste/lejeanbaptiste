@@ -1,4 +1,14 @@
-import { buildDocIndex, locateOccurrenceInIndex, type DocIndex } from './anchor';
+import {
+  buildDocIndex,
+  locateAnchorInIndex,
+  locateOccurrenceInIndex,
+  type DocIndex,
+} from './anchor';
+import {
+  clearFocusHighlight,
+  focusHighlightMutatesDom,
+  showFocusHighlight,
+} from './editorFocusHighlight';
 import { autoSyncEntitiesToCentral, autoSyncEntityToCentral } from './autoSync';
 import {
   applySuggestions,
@@ -110,7 +120,7 @@ import {
   type MentionInstance,
 } from './mentions';
 import type { DecisionEvent } from './reviewController';
-import type { Suggestion, WhitespacePolicy } from './types';
+import type { Anchor, Suggestion, WhitespacePolicy } from './types';
 import {
   iterateAuthorityNdjson,
   type AuthorityPackContent,
@@ -395,6 +405,10 @@ export interface WriterLike {
       scrollIntoView?: () => void;
     };
     getDoc: () => Document;
+    getWin?: () => Window | null | undefined;
+    undoManager?: { ignore?: (fn: () => void) => void };
+    on?: (events: string, handler: () => void) => void;
+    off?: (events: string, handler: () => void) => void;
   };
   overmindActions?: {
     editor?: { setContentHasChanged?: (value: boolean) => void };
@@ -459,6 +473,7 @@ export class AutoTaggingSession {
   private documentPaths = new Map<Document, string>();
   private projectLangPromise: Promise<string | null> | null = null;
   private focusIndex: { body: HTMLElement; index: DocIndex } | null = null;
+  private focusIndexWatcher: WriterLike['editor'] | null = null;
 
   constructor(
     private readonly writer: WriterLike,
@@ -2075,7 +2090,7 @@ export class AutoTaggingSession {
    * Best-effort: returns false when the editor is absent or the text differs.
    */
   focusMention(instance: MentionInstance): boolean {
-    return this.focusAnchor(instance.anchor.surface, instance.anchor.occurrence);
+    return this.focusAnchor(instance.anchor.surface, instance.anchor.occurrence, instance.anchor);
   }
 
   focus(suggestion: Suggestion): boolean {
@@ -2087,30 +2102,72 @@ export class AutoTaggingSession {
         suggestion.source === 'dates' && suggestion.dateResolution
           ? (suggestion.dateResolution.displaySurface ?? suggestion.anchor.surface)
           : suggestion.anchor.surface;
-      if (this.focusAnchor(displaySurface, suggestion.anchor.occurrence)) return true;
-      return this.focusAnchor(suggestion.anchor.surface, suggestion.anchor.occurrence);
+      if (this.focusAnchor(displaySurface, suggestion.anchor.occurrence, suggestion.anchor))
+        return true;
+      return this.focusAnchor(
+        suggestion.anchor.surface,
+        suggestion.anchor.occurrence,
+        suggestion.anchor,
+      );
     } catch {
       return false;
     }
   }
 
-  private focusAnchor(surface: string, occurrence: number): boolean {
+  /** Drop the editor's "you are here" marker (panel closed, or applying). */
+  clearFocusHighlight(): void {
+    clearFocusHighlight(this.writer.editor);
+  }
+
+  /**
+   * The editor body's search index, rebuilt whenever the editor content has
+   * changed under us. The cache used to be keyed on the body element alone,
+   * but TinyMCE keeps the same body across reloads and edits: a stale index
+   * then pointed at detached text nodes, and every jump silently did nothing.
+   */
+  private editorDocIndex(body: HTMLElement): DocIndex {
+    this.watchEditorContentChanges();
+    const cached = this.focusIndex;
+    if (cached?.body === body && cached.index.nodes[0]?.node.isConnected) return cached.index;
+    const index = buildDocIndex(body, this.policy);
+    this.focusIndex = { body, index };
+    return index;
+  }
+
+  /** Invalidate the focus index on any editor-side content change. */
+  private watchEditorContentChanges(): void {
+    const editor = this.writer.editor;
+    if (this.focusIndexWatcher === editor || !editor?.on) return;
+    this.focusIndexWatcher = editor;
+    editor.on('SetContent LoadContent input Undo Redo', () => {
+      clearFocusHighlight(this.writer.editor);
+      this.invalidateFocusIndex();
+    });
+    // Clicking into the text moves the user's own caret — the panel's marker
+    // has served its purpose and would only be stale from here on. The span
+    // fallback is left alone: unwrapping it mid-click would move the caret.
+    editor.on('mousedown', () => {
+      if (!focusHighlightMutatesDom()) clearFocusHighlight(this.writer.editor);
+    });
+  }
+
+  private focusAnchor(
+    surface: string,
+    occurrence: number,
+    anchor?: Pick<Anchor, 'surface' | 'occurrence' | 'contextBefore' | 'contextAfter'>,
+  ): boolean {
     const editor = this.writer.editor;
     if (!editor) return false;
 
     try {
-      const body = editor.getBody();
-      const index =
-        this.focusIndex?.body === body
-          ? this.focusIndex.index
-          : (() => {
-              const built = buildDocIndex(body, this.policy);
-              this.focusIndex = { body, index: built };
-              return built;
-            })();
+      const index = this.editorDocIndex(editor.getBody());
       // Use the Nth document-wide occurrence — never indexOf's first hit.
       // Flat search text also covers date strings that span element boundaries.
-      const located = locateOccurrenceInIndex(index, surface, occurrence);
+      // With an anchor in hand, its stored context breaks ties when the editor
+      // copy and the XML disagree about how many occurrences precede this one.
+      const located = anchor
+        ? locateAnchorInIndex(index, anchor, surface)
+        : locateOccurrenceInIndex(index, surface, occurrence);
       if (!located) return false;
 
       const range = editor.getDoc().createRange();
@@ -2118,7 +2175,14 @@ export class AutoTaggingSession {
       range.setEnd(located.node, located.end);
       editor.selection.setRng(range);
       editor.selection.scrollIntoView?.();
-      (located.node.parentElement as HTMLElement | null)?.scrollIntoView?.({ block: 'center' });
+      // A selection in the (unfocused) editor iframe is not painted while the
+      // panel has focus, so paint the mention ourselves as well.
+      if (!showFocusHighlight(editor, located.node, located.start, located.end)) {
+        (located.node.parentElement as HTMLElement | null)?.scrollIntoView?.({ block: 'center' });
+      } else if (focusHighlightMutatesDom()) {
+        // Only the span fallback splits text nodes; that invalidates the index.
+        this.invalidateFocusIndex();
+      }
       return true;
     } catch {
       // focusing is a convenience; never let it break the review walk

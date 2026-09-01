@@ -8,7 +8,7 @@
 
 import type { DatabaseSync } from 'node:sqlite';
 
-export const ENTITY_DB_SCHEMA_VERSION = 9;
+export const ENTITY_DB_SCHEMA_VERSION = 10;
 
 const migration1 = `
 CREATE TABLE IF NOT EXISTS entities (
@@ -457,6 +457,62 @@ WHERE status = 'active'
   AND language NOT LIKE '%Latn%';
 `;
 
+/**
+ * Retire dynasty/era spans that pre-0.1.16 builds stored as a person's
+ * birth–death. Nationality/dynasty years are filter anchors, never vitals
+ * (see `personDates.ts`, `dynastyDatesNeverVitals.test.ts`), but older mints
+ * and the pre-`dateSource` Norbert pack let a span like 先秦 (-5999–-220) land
+ * on birth/death rows — it then showed as the lifespan on the entity card.
+ *
+ * Rows are moved to status='withdrawn' (not deleted): every active-status read
+ * already ignores them, provenance is kept, and a curious user can still see
+ * what was cleared. Three disjoint rules, all scoped to birth/death rows:
+ *
+ *   A. source = NORBERT. Norbert's upstream `person` table has no year columns
+ *      at all, so any NORBERT-attributed birth/death is a dynasty span — clear
+ *      it whatever the year or origin.
+ *   B. an impossible year: 0 (CBDB "unknown" sentinel) or <= -2200 (before any
+ *      historically dated figure in this corpus — only synthetic dynasty floors
+ *      such as -5999 sit there).
+ *   C. an entity whose only birth and only death are > 150 years apart and
+ *      neither is a floruit bound: a lifespan that long is an era span. Catches
+ *      CBDB/DILA dynasty ranges and untagged mints without needing a dynasty
+ *      table. Left alone when the entity also has a plausible pair, or when the
+ *      span came straight from the user's TEI (origin='xml').
+ */
+const migration10 = `
+UPDATE entity_dates
+SET status = 'withdrawn', updated_at = datetime('now')
+WHERE status = 'active'
+  AND date_kind IN ('birth', 'death')
+  AND UPPER(COALESCE(source, '')) = 'NORBERT';
+
+UPDATE entity_dates
+SET status = 'withdrawn', updated_at = datetime('now')
+WHERE status = 'active'
+  AND date_kind IN ('birth', 'death')
+  AND (start_year = 0 OR start_year <= -2200);
+
+UPDATE entity_dates
+SET status = 'withdrawn', updated_at = datetime('now')
+WHERE status = 'active'
+  AND date_kind IN ('birth', 'death')
+  AND COALESCE(start_precision, '') <> 'fl.'
+  AND entity_id IN (
+    SELECT entity_id
+    FROM entity_dates
+    WHERE status = 'active'
+      AND date_kind IN ('birth', 'death')
+      AND origin IN ('user', 'authority')
+      AND start_year IS NOT NULL
+    GROUP BY entity_id
+    HAVING COUNT(*) = 2
+      AND COUNT(DISTINCT date_kind) = 2
+      AND MAX(CASE WHEN date_kind = 'death' THEN start_year END)
+        - MAX(CASE WHEN date_kind = 'birth' THEN start_year END) > 150
+  );
+`;
+
 const migrations: Record<number, string> = {
   1: migration1,
   2: migration2,
@@ -467,6 +523,7 @@ const migrations: Record<number, string> = {
   7: migration7,
   8: migration8,
   9: migration9,
+  10: migration10,
 };
 
 export function applyEntityDbMigrations(db: DatabaseSync): void {

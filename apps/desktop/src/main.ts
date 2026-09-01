@@ -101,6 +101,16 @@ import {
   checkEntityDbIntegrity,
   probeBackupTarget,
 } from './entityDbBackup';
+import {
+  runEntitySync,
+  getEntitySyncStatus,
+  setEntitySyncConfig,
+  listEntitySyncConflicts,
+  resolveEntitySyncConflict,
+  startSyncTimer,
+  scheduleLaunchSync,
+} from './entitySyncService';
+import type { EntitySyncConfigPatch } from './entitySyncService';
 import { setAppLocale } from './appLocale';
 import { mainT } from './mainI18n';
 import { checkLanguageToolText, testLanguageToolConnection } from './languageToolClient';
@@ -3730,6 +3740,22 @@ const registerIpcHandlers = () => {
     return restoreSnapshot(key);
   });
 
+  ipcMain.handle('entitySync:getStatus', async () => getEntitySyncStatus());
+
+  ipcMain.handle('entitySync:setConfig', async (_event, patch: EntitySyncConfigPatch) =>
+    setEntitySyncConfig(patch),
+  );
+
+  ipcMain.handle('entitySync:runNow', async () => runEntitySync('manual'));
+
+  ipcMain.handle('entitySync:listConflicts', async () => listEntitySyncConflicts());
+
+  ipcMain.handle(
+    'entitySync:resolveConflict',
+    async (_event, request: { id: number; keep: 'local' | 'remote' }) =>
+      resolveEntitySyncConflict(request.id, request.keep),
+  );
+
   ipcMain.handle('languageToolGetInstallStatus', async () => getLanguageToolInstallStatus());
 
   ipcMain.handle('languageToolInstall', async (event) => {
@@ -4105,6 +4131,8 @@ app.whenReady().then(() => {
     await syncEnabledPluginContributions();
   })();
   void startBackupTimer();
+  void startSyncTimer();
+  scheduleLaunchSync();
   void createWindow();
 
   app.on('activate', () => {

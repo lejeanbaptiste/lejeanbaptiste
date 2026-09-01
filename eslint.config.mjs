@@ -10,5 +10,7 @@ export default custom({
     // Each workspace lints itself via its own eslint.config.mjs.
     'apps/**',
     'packages/**',
+    // Standalone Cloudflare Worker: own tsconfig + `npm run typecheck`.
+    'workers/**',
   ],
 });

@@ -172,6 +172,64 @@ export interface EntityDbBackupProbeResult {
   objectCount?: number;
 }
 
+/** Cross-device entity sync (see apps/desktop/src/entitySync*.ts). */
+export type SyncAuthMode = 'github' | 'oidc' | 'bearer';
+
+export interface EntitySyncAuth {
+  mode: SyncAuthMode;
+  issuer?: string;
+  clientId?: string;
+}
+
+export interface EntitySyncConfig {
+  enabled: boolean;
+  endpoint: string;
+  intervalMinutes: number;
+  auth: EntitySyncAuth;
+}
+
+/** setConfig patch: deep-partial auth + a transient bearer token (stored encrypted, never returned). */
+export type EntitySyncConfigPatch = Partial<Omit<EntitySyncConfig, 'auth'>> & {
+  auth?: Partial<EntitySyncAuth>;
+  bearerToken?: string;
+};
+
+export interface EntitySyncRunSummary {
+  ok: boolean;
+  reason: 'manual' | 'timer' | 'launch';
+  skipped?: 'disabled' | 'in-progress' | 'no-database' | 'not-signed-in';
+  error?: string;
+  pulledApplied?: number;
+  pulledConflicts?: number;
+  pushedApplied?: number;
+  pushedReconciled?: number;
+  pushedConflicts?: number;
+  openConflicts?: number;
+  cursor?: number;
+  durationMs?: number;
+  at?: string;
+}
+
+export interface EntitySyncStatus {
+  config: EntitySyncConfig;
+  signedIn: boolean;
+  cursor: number | null;
+  openConflicts: number | null;
+  lastRun: EntitySyncRunSummary | null;
+}
+
+export interface EntitySyncConflict {
+  id: number;
+  projectEntityId: string;
+  centralEntityId: string;
+  reason: string;
+  projectRevision: number;
+  centralRevision: number;
+  projectSnapshot: string;
+  centralSnapshot: string;
+  createdAt: string;
+}
+
 export interface AiApiSettings {
   apiKey: string;
   baseUrl: string;
@@ -736,6 +794,14 @@ export interface ElectronAPI {
   entityDbBackupRunNow?: () => Promise<EntityDbBackupResult>;
   entityDbBackupListSnapshots?: () => Promise<EntityDbCloudSnapshot[]>;
   entityDbBackupRestore?: (key: string) => Promise<EntityDbRestoreResult>;
+  entitySyncGetStatus?: () => Promise<EntitySyncStatus>;
+  entitySyncSetConfig?: (patch: EntitySyncConfigPatch) => Promise<EntitySyncConfig>;
+  entitySyncRunNow?: () => Promise<EntitySyncRunSummary>;
+  entitySyncListConflicts?: () => Promise<EntitySyncConflict[]>;
+  entitySyncResolveConflict?: (request: {
+    id: number;
+    keep: 'local' | 'remote';
+  }) => Promise<{ ok: boolean }>;
   getLanguageToolSettings: () => Promise<LanguageToolSettings>;
   setLanguageToolSettings: (settings: Partial<LanguageToolSettings>) => Promise<void>;
   testLanguageToolConnection: (
@@ -849,6 +915,15 @@ declare global {
       runEntityDbBackupNow: () => Promise<EntityDbBackupResult>;
       listEntityDbBackupSnapshots: () => Promise<EntityDbCloudSnapshot[]>;
       restoreEntityDbBackup: (key: string) => Promise<EntityDbRestoreResult>;
+      entitySyncStatus: EntitySyncStatus | null;
+      refreshEntitySyncStatus: () => Promise<void>;
+      setEntitySyncConfig: (patch: EntitySyncConfigPatch) => Promise<EntitySyncConfig | null>;
+      runEntitySyncNow: () => Promise<EntitySyncRunSummary>;
+      listEntitySyncConflicts: () => Promise<EntitySyncConflict[]>;
+      resolveEntitySyncConflict: (request: {
+        id: number;
+        keep: 'local' | 'remote';
+      }) => Promise<{ ok: boolean }>;
       setAiApiSettings: (settings: Partial<AiApiSettings>) => void | Promise<void>;
       setLanguageToolSettings: (settings: Partial<LanguageToolSettings>) => void | Promise<void>;
       githubConnected: boolean;
