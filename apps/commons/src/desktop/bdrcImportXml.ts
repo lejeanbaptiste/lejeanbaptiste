@@ -10,6 +10,15 @@ export interface BdrcHeaderFields {
   creators: { name: string; ref?: string; role: string; lang?: string }[];
   idno: { type: string; value: string }[];
   sourceUri: string;
+  /** BUDA reader URL the import was launched from, when the user pasted one. */
+  readerUrl?: string;
+  /** BDRC edition statement (often Tibetan), verbatim. */
+  edition?: string;
+  editionLang?: string;
+  /** Publication year, ISO — only present when BDRC carries a clean 4-digit year. */
+  editionDate?: { when?: string; notBefore?: string; notAfter?: string } | null;
+  publisher?: string;
+  pubPlace?: string;
   availabilityStatus: string;
   accessTier: string | null;
   attribution: string | null;
@@ -66,20 +75,58 @@ const publicationStmtBlock = (fields: BdrcHeaderFields): string => {
   );
 };
 
+const editionDateEl = (date: BdrcHeaderFields['editionDate']): string => {
+  if (!date) return '';
+  if (date.when) {
+    return `        <date when="${escapeXmlAttr(date.when)}">${escapeXmlText(date.when)}</date>`;
+  }
+  const { notBefore, notAfter } = date;
+  if (!notBefore && !notAfter) return '';
+  const attrs =
+    (notBefore ? ` notBefore="${escapeXmlAttr(notBefore)}"` : '') +
+    (notAfter ? ` notAfter="${escapeXmlAttr(notAfter)}"` : '');
+  const label = [notBefore, notAfter].filter(Boolean).join('–');
+  return `        <date${attrs}>${escapeXmlText(label)}</date>`;
+};
+
 const sourceDescBlock = (fields: BdrcHeaderFields): string => {
-  const idnos = (fields.idno ?? [])
-    .filter((i) => i?.value)
-    .map((i) => `        <idno type="${escapeXmlAttr(i.type)}">${escapeXmlText(i.value)}</idno>`)
-    .join('\n');
-  const ref = fields.sourceUri
-    ? `\n        <ref target="${escapeXmlAttr(fields.sourceUri)}">${escapeXmlText(fields.sourceUri)}</ref>`
+  const rows: string[] = [
+    `        <title xml:lang="${escapeXmlAttr(fields.lang)}">${escapeXmlText(fields.title || 'Untitled')}</title>`,
+  ];
+
+  if (fields.edition?.trim()) {
+    const lang = fields.editionLang ? ` xml:lang="${escapeXmlAttr(fields.editionLang)}"` : '';
+    rows.push(`        <edition${lang}>${escapeXmlText(fields.edition.trim())}</edition>`);
+  }
+  if (fields.pubPlace?.trim()) {
+    rows.push(`        <pubPlace>${escapeXmlText(fields.pubPlace.trim())}</pubPlace>`);
+  }
+  if (fields.publisher?.trim()) {
+    rows.push(`        <publisher>${escapeXmlText(fields.publisher.trim())}</publisher>`);
+  }
+  const dateEl = editionDateEl(fields.editionDate ?? null);
+  if (dateEl) rows.push(dateEl);
+
+  for (const i of fields.idno ?? []) {
+    if (!i?.value) continue;
+    rows.push(`        <idno type="${escapeXmlAttr(i.type)}">${escapeXmlText(i.value)}</idno>`);
+  }
+
+  // The transcription source: name BDRC explicitly and cite the URL it came
+  // from (the reader URL the user opened, or the canonical resource purl).
+  const srcUrl = (fields.readerUrl || fields.sourceUri || '').trim();
+  const srcRef = srcUrl
+    ? ` <ref target="${escapeXmlAttr(srcUrl)}">${escapeXmlText(srcUrl)}</ref>`
     : '';
+  rows.push(
+    `        <note type="source">Transcription from the Buddhist Digital Resource Center (BDRC).` +
+      `${srcRef} Transcription method: ${escapeXmlText(fields.transcriptionMethod || 'unknown')}.</note>`,
+  );
+
   return (
     `<sourceDesc>\n` +
     `      <bibl>\n` +
-    `        <title xml:lang="${escapeXmlAttr(fields.lang)}">${escapeXmlText(fields.title || 'Untitled')}</title>\n` +
-    `${idnos}${idnos ? '\n' : ''}` +
-    `        <note>Transcription method: ${escapeXmlText(fields.transcriptionMethod)}.</note>${ref}\n` +
+    `${rows.join('\n')}\n` +
     `      </bibl>\n` +
     `    </sourceDesc>`
   );

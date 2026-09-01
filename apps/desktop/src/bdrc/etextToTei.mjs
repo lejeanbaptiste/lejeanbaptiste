@@ -40,6 +40,7 @@
  * @typedef {Object} EtextMeta
  * @property {string} utId
  * @property {string} [instanceId]  `W…` / `MW…`
+ * @property {string} [instanceUri] Purl of the scanned instance (`MW…`).
  * @property {string} [workId]      `WA…`
  * @property {string} [volumeId]    `I…`
  * @property {number} [volumeNumber]
@@ -51,7 +52,14 @@
  * @property {boolean} [facsAllowed] Whether `<pb @facs>` may point at the image.
  * @property {string} [attribution] Required credit string, kept verbatim.
  * @property {EtextCreator[]} [creators]
+ * @property {string} [edition]      BDRC edition statement (often Tibetan), verbatim.
+ * @property {string} [editionLang]  BCP-47 tag for `edition`.
+ * @property {{when?: string, notBefore?: string, notAfter?: string}} [editionDate]
+ *   Publication year, ISO — only when BDRC carries a clean 4-digit year.
+ * @property {string} [publisher]    Publisher name (often Tibetan).
+ * @property {string} [pubPlace]     Publication place.
  * @property {string} sourceUri     "http://purl.bdrc.io/resource/UT…"
+ * @property {string} [readerUrl]    The BUDA reader URL the import was launched from, when known.
  * @property {string} [dataRevision]
  * @property {string} [fetchedAt]   ISO timestamp.
  * @property {string} [importerVersion]
@@ -206,6 +214,12 @@ const AVAILABILITY = {
  *   creators: Array<{name: string, ref?: string, role: string, lang?: string}>,
  *   idno: Array<{type: string, value: string}>,
  *   sourceUri: string,
+ *   readerUrl: string,
+ *   edition: string,
+ *   editionLang: string,
+ *   editionDate: {when?: string, notBefore?: string, notAfter?: string} | null,
+ *   publisher: string,
+ *   pubPlace: string,
  *   availabilityStatus: string,
  *   accessTier: string | null,
  *   attribution: string | null,
@@ -243,6 +257,8 @@ export function etextHeaderFields(extracted) {
     transcriptionMethod: method,
   };
 
+  const editionDate = meta.editionDate ?? null;
+
   return {
     title: meta.title ?? '',
     altTitles: meta.altTitles ?? [],
@@ -250,6 +266,15 @@ export function etextHeaderFields(extracted) {
     creators,
     idno,
     sourceUri: meta.sourceUri ?? (meta.utId ? purl(meta.utId) : ''),
+    readerUrl: meta.readerUrl ?? '',
+    edition: meta.edition ?? '',
+    editionLang: meta.editionLang ?? '',
+    editionDate:
+      editionDate && (editionDate.when || editionDate.notBefore || editionDate.notAfter)
+        ? editionDate
+        : null,
+    publisher: meta.publisher ?? '',
+    pubPlace: meta.pubPlace ?? '',
     availabilityStatus: AVAILABILITY[meta.access] ?? 'unknown',
     accessTier: meta.access ?? null,
     attribution: meta.attribution ?? null,

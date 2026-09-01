@@ -216,6 +216,34 @@ test('header fields: purls, creator refs, idno list, availability, review flag',
   assert.equal(fields.provenance.queryNames, 'Etext_base');
 });
 
+test('header fields: edition, ISO edition date, publisher, reader URL pass through', () => {
+  const fields = etextHeaderFields({
+    meta: {
+      utId: 'UT0001',
+      title: 't',
+      edition: 'པར་གཞི་དང་པོ།',
+      editionLang: 'bo',
+      editionDate: { when: '1737' },
+      publisher: 'sde dge par khang',
+      pubPlace: 'sde dge',
+      readerUrl: 'https://library.bdrc.io/show/bdr:UT0001',
+    },
+    chunks: [],
+  });
+  assert.equal(fields.edition, 'པར་གཞི་དང་པོ།');
+  assert.equal(fields.editionLang, 'bo');
+  assert.deepEqual(fields.editionDate, { when: '1737' });
+  assert.equal(fields.publisher, 'sde dge par khang');
+  assert.equal(fields.pubPlace, 'sde dge');
+  assert.equal(fields.readerUrl, 'https://library.bdrc.io/show/bdr:UT0001');
+});
+
+test('header fields: an empty edition date object collapses to null', () => {
+  const fields = etextHeaderFields({ meta: { utId: 'UT0001', title: 't', editionDate: {} }, chunks: [] });
+  assert.equal(fields.editionDate, null);
+  assert.equal(fields.edition, '');
+});
+
 test('header fields strip a bdr: prefix when building purls', () => {
   const fields = etextHeaderFields({
     meta: { utId: 'bdr:UT9', title: 't', creators: [{ name: 'n', id: 'bdr:P9', role: 'author' }] },

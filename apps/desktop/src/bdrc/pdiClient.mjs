@@ -8,6 +8,7 @@
  *   Etext_base?R_RES=bdr:<UT>            → access, status, pagination, instance, image group, title
  *   chunkContext?R_UT=bdr:<UT>&I_START&I_END → EC chunks (bdo:chunkContents + slice chars)
  *                                             + EP pages   (bdo:seqNum   + slice chars)
+ *   resource/<MW>.nt                    → edition statement, publication year, publisher (best-effort)
  *   Instance_ImgList?R_RES=bdr:<MW>      → folio labels + image filenames  (TODO: blob format)
  *
  * All calls request `format=nt` (N-Triples) — trivial to parse without a
@@ -116,6 +117,18 @@ async function fetchGraphNt(queryName, params, opts = {}) {
 const num = (v) => (v == null ? null : Number.parseInt(v, 10));
 
 /**
+ * A bare / `xsd:gYear` / ISO date literal whose leading component is a 3–4 digit
+ * year → zero-padded `"YYYY"`. Anything else (`"乾隆年間"`, `"18th c."`, empty)
+ * → `null`, so a fuzzy BDRC date is never emitted as a machine value.
+ */
+const isoYear = (raw) => {
+  const m = String(raw ?? '')
+    .trim()
+    .match(/^-?(\d{3,4})(?:-\d{2}(?:-\d{2})?)?$/);
+  return m ? m[1].padStart(4, '0') : null;
+};
+
+/**
  * The content git revision of an etext, from `/admindata/<UT>`. Used as the
  * cache key (docs §7) — a volume re-imports from cache until BDRC re-syncs it.
  * Returns `''` when the admin graph has no revision (older / unsynced etexts).
@@ -203,6 +216,97 @@ export async function fetchEtextBase(utId, opts = {}) {
     imageGroupId: imageGroupUri ? bareId(imageGroupUri) : null,
     title,
     titleLang,
+  };
+}
+
+/**
+ * Bibliographic facts from a `W`/`MW` instance describe graph
+ * (`/resource/<id>.nt`, content-negotiated N-Triples): the edition statement,
+ * the publication year (kept only when it is a clean 4-digit year), and the
+ * publisher + place. Every field is optional — BDRC's coverage of these is
+ * uneven, and a miss here never blocks an import (docs §4.1).
+ *
+ * The publisher name/place sit on the instance itself; the date sits on a
+ * `bdo:PublishedEvent` node (usually a blank node) linked by `bdo:instanceEvent`.
+ * Events are matched by `rdf:type` local name so a scan/copy event's dates are
+ * never mistaken for the publication date.
+ *
+ * @param {string} instanceId  bare / `bdr:` / purl `W…` or `MW…`
+ * @returns {Promise<{
+ *   edition: string, editionLang: string|null,
+ *   editionDate: { when?: string, notBefore?: string, notAfter?: string } | null,
+ *   publisher: string, pubPlace: string
+ * }>}
+ */
+export async function fetchInstanceBibl(instanceId, opts = {}) {
+  const empty = {
+    edition: '',
+    editionLang: null,
+    editionDate: null,
+    publisher: '',
+    pubPlace: '',
+  };
+  const id = bareId(instanceId);
+  if (!id) return empty;
+  const base = opts.baseUrl ?? DEFAULT_BASE_URL;
+  const fetchImpl = opts.fetchImpl ?? globalThis.fetch;
+  if (typeof fetchImpl !== 'function') return empty;
+
+  let idx;
+  try {
+    const res = await fetchImpl(`${base}/resource/${id}.nt`, {
+      headers: { Accept: 'application/n-triples', 'User-Agent': USER_AGENT },
+    });
+    if (!res.ok) return empty;
+    idx = indexTriples(parseNTriples(await res.text()));
+  } catch {
+    return empty;
+  }
+
+  /** First non-empty literal for `predLocal` across every subject in the graph. */
+  const anyLiteral = (predLocal) => {
+    for (const s of idx.subjects()) {
+      const hit = idx.all(s, predLocal).find((v) => v.literal && v.o.trim());
+      if (hit) return hit;
+    }
+    return null;
+  };
+
+  const editionHit = anyLiteral('editionStatement');
+  const publisher = anyLiteral('publisherName')?.o.trim() ?? '';
+  const pubPlace = anyLiteral('publisherLocation')?.o.trim() ?? '';
+
+  const publishEvents = idx
+    .subjects()
+    .filter((s) => idx.all(s, 'type').some((v) => /Publish/i.test(localName(v.o))));
+
+  let editionDate = null;
+  for (const s of publishEvents.length ? publishEvents : idx.subjects()) {
+    const when = isoYear(idx.one(s, 'onYear'));
+    if (when) {
+      editionDate = { when };
+      break;
+    }
+  }
+  if (!editionDate) {
+    for (const s of publishEvents) {
+      const notBefore = isoYear(idx.one(s, 'notBefore'));
+      const notAfter = isoYear(idx.one(s, 'notAfter'));
+      if (notBefore || notAfter) {
+        editionDate = {};
+        if (notBefore) editionDate.notBefore = notBefore;
+        if (notAfter) editionDate.notAfter = notAfter;
+        break;
+      }
+    }
+  }
+
+  return {
+    edition: editionHit?.o.trim() ?? '',
+    editionLang: editionHit?.lang ?? null,
+    editionDate,
+    publisher,
+    pubPlace,
   };
 }
 
@@ -383,9 +487,23 @@ export async function importEtext(utId, opts = {}) {
 
   const base = await fetchEtextBase(utId, opts);
 
+  // Edition statement + publication year come from the scanned instance's own
+  // describe graph — a separate, always-public fetch. Best-effort: a failure or
+  // a gap here is a warning at most, never a blocked import (docs §4.1).
+  const biblInstanceId = base.scanInstanceId ?? base.etextInstanceId ?? null;
+  let bibl = { edition: '', editionLang: null, editionDate: null, publisher: '', pubPlace: '' };
+  if (biblInstanceId) {
+    try {
+      bibl = await fetchInstanceBibl(biblInstanceId, opts);
+    } catch {
+      warnings.push('could not read edition / publication metadata from the BDRC instance record');
+    }
+  }
+
   const meta = {
     utId: base.utId,
     instanceId: base.scanInstanceId ?? base.etextInstanceId ?? undefined,
+    instanceUri: base.scanInstanceId ? `${BDR}${base.scanInstanceId}` : undefined,
     workId: base.workId ?? undefined,
     volumeId: base.imageGroupId ?? undefined,
     title: base.title || base.utId,
@@ -396,11 +514,19 @@ export async function importEtext(utId, opts = {}) {
     facsAllowed: base.access === 'AccessOpen',
     attribution: ATTRIBUTION,
     creators: [], // TODO: from Instance metadata respStmt (docs §4.1).
+    edition: bibl.edition || undefined,
+    editionLang: bibl.editionLang || undefined,
+    editionDate: bibl.editionDate ?? undefined,
+    publisher: bibl.publisher || undefined,
+    pubPlace: bibl.pubPlace || undefined,
     sourceUri: `${BDR}${base.utId}`,
+    readerUrl: opts.readerUrl || undefined,
     dataRevision: revision,
     fetchedAt,
     importerVersion: IMPORTER_VERSION,
-    queryNames: ['Etext_base', 'chunkContext'],
+    queryNames: biblInstanceId
+      ? ['Etext_base', 'chunkContext', 'resource']
+      : ['Etext_base', 'chunkContext'],
   };
 
   // A real BDRC transcription carries at least an access tier or an instance

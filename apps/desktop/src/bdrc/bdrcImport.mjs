@@ -91,17 +91,22 @@ function splitByParts(extracted, parts) {
  * @param {{ windowSize?: number, forceRefresh?: boolean, split?: boolean }} [opts]
  */
 export async function runBdrcImport(input, opts = {}) {
-  const { utId } = parseBdrcRef(input);
+  const raw = String(input ?? '').trim();
+  const { utId } = parseBdrcRef(raw);
   const dir = cacheDir();
   if (opts.forceRefresh && dir) clearCache(dir, utId);
 
   const wantSplit = opts.split !== false;
+  // When the user pasted a BUDA reader URL (rather than a bare id), keep it so
+  // the TEI `<sourceDesc>` can cite exactly where the transcription came from.
+  const readerUrl = /^https?:\/\//i.test(raw) ? raw : '';
 
   const { extracted, parts, restricted, unsupported, warnings, revision, fromCache } =
     await importEtext(utId, {
       windowSize: opts.windowSize,
       cacheDir: dir,
       forceRefresh: opts.forceRefresh === true,
+      readerUrl,
     });
 
   const headerFields = etextHeaderFields(extracted);

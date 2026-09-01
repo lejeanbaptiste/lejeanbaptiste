@@ -8,6 +8,7 @@ import {
   parseNTriples,
   fetchEtextBase,
   fetchChunks,
+  fetchInstanceBibl,
   fetchRevision,
   importEtext,
 } from './pdiClient.mjs';
@@ -15,10 +16,27 @@ import { etextToBodyXml, etextHeaderFields } from './etextToTei.mjs';
 
 const CORE = 'http://purl.bdrc.io/ontology/core/';
 const ADM = 'http://purl.bdrc.io/ontology/admin/';
+const RDF = 'http://www.w3.org/1999/02/22-rdf-syntax-ns#';
+const XSD = 'http://www.w3.org/2001/XMLSchema#';
 const SKOS = 'http://www.w3.org/2004/02/skos/core#';
 const R = 'http://purl.bdrc.io/resource/';
 const A = 'http://purl.bdrc.io/admindata/';
 const UT = 'UT4CZ5369_I1KG9127_0000';
+
+// `/resource/MW…` describe graph: edition statement on the instance, publication
+// year on a `PublishedEvent` blank node, publisher name + place.
+const instanceNt = ({ year = '1737', edition = 'པར་གཞི་དང་པོ།', event = true } = {}) =>
+  `
+<${R}MW4CZ5369> <${CORE}editionStatement> "${edition}"@bo .
+<${R}MW4CZ5369> <${CORE}publisherName> "སྡེ་དགེ་པར་ཁང་"@bo .
+<${R}MW4CZ5369> <${CORE}publisherLocation> "sde dge" .
+` +
+  (event
+    ? `<${R}MW4CZ5369> <${CORE}instanceEvent> _:ev1 .
+_:ev1 <${RDF}type> <${CORE}PublishedEvent> .
+_:ev1 <${CORE}onYear> "${year}"^^<${XSD}gYear> .
+`
+    : '');
 
 // Real instance chain (confirmed live 2026-08-31):
 //   UT --eTextInInstance--> IE --instanceOf--> WA
@@ -102,6 +120,10 @@ const makeFetch = (opts = {}) => {
     if (u.pathname.startsWith('/admindata/')) {
       return opts.noRevision ? { ok: false, status: 404, text: async () => '' } : ok(adminNt());
     }
+    if (u.pathname.startsWith('/resource/')) {
+      if (opts.noInstanceBibl) return { ok: false, status: 404, text: async () => '' };
+      return ok(instanceNt(opts.instance));
+    }
     return { ok: false, status: 404, text: async () => '' };
   };
   return { fetchImpl, calls };
@@ -145,6 +167,58 @@ test('fetchEtextBase: resolves the UT→IE→(WA / MW) instance chain and title'
   assert.equal(base.workId, 'WA0BC001'); // IE instanceOf → abstract work
   assert.equal(base.imageGroupId, null); // not in Etext_base
   assert.equal(base.title, 'འདུལ་བ་ཀ');
+});
+
+test('fetchInstanceBibl: edition statement, ISO publication year, publisher + place', async () => {
+  const { fetchImpl, calls } = makeFetch();
+  const bibl = await fetchInstanceBibl('bdr:MW4CZ5369', { fetchImpl });
+  assert.ok(
+    calls.some((u) => u.endsWith('/resource/MW4CZ5369.nt')),
+    'hits the instance describe graph',
+  );
+  assert.equal(bibl.edition, 'པར་གཞི་དང་པོ།');
+  assert.equal(bibl.editionLang, 'bo');
+  assert.deepEqual(bibl.editionDate, { when: '1737' });
+  assert.equal(bibl.publisher, 'སྡེ་དགེ་པར་ཁང་');
+  assert.equal(bibl.pubPlace, 'sde dge');
+});
+
+test('fetchInstanceBibl: a fuzzy (non 4-digit) year is dropped, not emitted', async () => {
+  const { fetchImpl } = makeFetch({ instance: { year: 'circa 18th c.' } });
+  const bibl = await fetchInstanceBibl('MW4CZ5369', { fetchImpl });
+  assert.equal(bibl.editionDate, null);
+  assert.equal(bibl.edition, 'པར་གཞི་དང་པོ།'); // edition still comes through
+});
+
+test('fetchInstanceBibl: a 404 on the instance record is swallowed', async () => {
+  const { fetchImpl } = makeFetch({ noInstanceBibl: true });
+  const bibl = await fetchInstanceBibl('MW4CZ5369', { fetchImpl });
+  assert.deepEqual(bibl, {
+    edition: '',
+    editionLang: null,
+    editionDate: null,
+    publisher: '',
+    pubPlace: '',
+  });
+});
+
+test('importEtext: edition / publication year / reader URL land on meta', async () => {
+  const { fetchImpl } = makeFetch();
+  const { extracted } = await importEtext(`bdr:${UT}`, {
+    fetchImpl,
+    windowSize: 8,
+    readerUrl: 'https://library.bdrc.io/show/bdr:IE4CZ5369?openEtext=bdr:VE4CZ5369_I1KG9127',
+  });
+  assert.equal(extracted.meta.edition, 'པར་གཞི་དང་པོ།');
+  assert.deepEqual(extracted.meta.editionDate, { when: '1737' });
+  assert.equal(extracted.meta.publisher, 'སྡེ་དགེ་པར་ཁང་');
+  assert.equal(extracted.meta.instanceUri, `${R}MW4CZ5369`);
+  assert.match(extracted.meta.readerUrl, /openEtext=bdr:VE4CZ5369/);
+
+  const header = etextHeaderFields(extracted);
+  assert.equal(header.edition, 'པར་གཞི་དང་པོ།');
+  assert.deepEqual(header.editionDate, { when: '1737' });
+  assert.match(header.readerUrl, /library\.bdrc\.io/);
 });
 
 test('fetchChunks: windows the volume, dedupes, sorts, collects pages + image group + parts', async () => {

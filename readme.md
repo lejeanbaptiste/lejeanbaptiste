@@ -173,7 +173,6 @@ See [apps/desktop/README.md](apps/desktop/README.md) for the compilation and pac
 - [ ] Figure out how to accommodate both segmented and unsegmented Tibetan texts.
 - Full CBETA integration
   - [ ] Include Bingenheimer's tagged bios
-  - [ ] Milestone projection matcher for auto-tagging (match across `<lb>` / empty anchors without stripping them — [autotagging-milestone-projection-planning.md](docs/autotagging-milestone-projection-planning.md))
 
 ### 'LJBtero' (After testing)
 
