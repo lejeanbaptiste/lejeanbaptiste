@@ -239,7 +239,10 @@ test('header fields: edition, ISO edition date, publisher, reader URL pass throu
 });
 
 test('header fields: an empty edition date object collapses to null', () => {
-  const fields = etextHeaderFields({ meta: { utId: 'UT0001', title: 't', editionDate: {} }, chunks: [] });
+  const fields = etextHeaderFields({
+    meta: { utId: 'UT0001', title: 't', editionDate: {} },
+    chunks: [],
+  });
   assert.equal(fields.editionDate, null);
   assert.equal(fields.edition, '');
 });

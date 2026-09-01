@@ -26,7 +26,8 @@ const baseFields = (over: Partial<BdrcHeaderFields> = {}): BdrcHeaderFields => (
   ...over,
 });
 
-const sourceDescOf = (xml: string): string => xml.match(/<sourceDesc>[\s\S]*?<\/sourceDesc>/)?.[0] ?? '';
+const sourceDescOf = (xml: string): string =>
+  xml.match(/<sourceDesc>[\s\S]*?<\/sourceDesc>/)?.[0] ?? '';
 
 describe('BDRC <sourceDesc>', () => {
   test('emits <edition> + an ISO <date> when the instance carries them', () => {
