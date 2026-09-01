@@ -1160,6 +1160,47 @@
       "gz_helper": "1–60, or paste 甲子",
       "new_moon_gz": "New-moon gz",
       "nmd_gz_placeholder": "nmd_gz"
+    },
+    "nameTypes": {
+      "primary": "Primary name",
+      "birth": "Birth name",
+      "family": "Family name",
+      "given": "Given name",
+      "courtesy": "Courtesy name",
+      "art": "Art name",
+      "posthumous": "Posthumous name",
+      "temple": "Temple name",
+      "dharma": "Dharma name",
+      "pen": "Pen name",
+      "romanization": "Romanization",
+      "translation": "Translation",
+      "variant": "Variant"
+    },
+    "nameTypePolicy": {
+      "title": "Name types for auto-tagging",
+      "intro": "Phase 1 = first Tag bomb pass. Phase 2 = short-form pass after people are linked. Never = stored but never auto-tagged (e.g. family names).",
+      "primary_warning": "Primary names are usually tagged in Phase 1. Setting Primary to Phase 2 or Never may leave many person mentions untagged on the first pass.",
+      "phase1": "Phase 1",
+      "phase2": "Phase 2",
+      "never": "Never",
+      "art_length_hint": "Length-gated: short art names go to Phase 2 (≥ {{count}} code points → Phase 1)",
+      "bucket_aria": "{{label}} auto-tagging phase",
+      "reset_preset": "Reset to language preset",
+      "custom_title": "Custom name types",
+      "custom_intro": "Project-specific types (ASCII id slug). They follow the same Phase 1 / Phase 2 / Never rules.",
+      "id_label": "Id",
+      "id_placeholder": "my_alias",
+      "label_label": "Label",
+      "label_placeholder": "Display label",
+      "new_custom_bucket_aria": "New custom type auto-tagging phase",
+      "add_custom": "Add custom type",
+      "remove_custom": "Remove custom type {{label}}",
+      "errors": {
+        "invalid_slug": "Id must be an ASCII slug matching [a-z][a-z0-9_-]*",
+        "shadows_builtin": "Id \"{{id}}\" shadows a built-in name type",
+        "label_required": "Label is required.",
+        "id_exists": "A custom type with id \"{{id}}\" already exists."
+      }
     }
   }
 }

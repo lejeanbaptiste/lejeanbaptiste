@@ -1156,6 +1156,47 @@
       "gz_helper": "1–60, ou collez 甲子",
       "new_moon_gz": "gz de nouvelle lune",
       "nmd_gz_placeholder": "nmd_gz"
+    },
+    "nameTypes": {
+      "primary": "Nom principal",
+      "birth": "Nom de naissance",
+      "family": "Nom de famille",
+      "given": "Prénom",
+      "courtesy": "Nom de courtoisie",
+      "art": "Nom d’art",
+      "posthumous": "Nom posthume",
+      "temple": "Nom de temple",
+      "dharma": "Nom de dharma",
+      "pen": "Pseudonyme",
+      "romanization": "Romanisation",
+      "translation": "Traduction",
+      "variant": "Variante"
+    },
+    "nameTypePolicy": {
+      "title": "Types de noms pour le balisage automatique",
+      "intro": "Phase 1 = premier passage Tag bomb. Phase 2 = formes courtes après liaison des personnes. Jamais = stocké mais jamais balisé automatiquement (p. ex. noms de famille).",
+      "primary_warning": "Les noms principaux sont en général balisés en Phase 1. Mettre Principal en Phase 2 ou Jamais peut laisser beaucoup de mentions de personnes non balisées au premier passage.",
+      "phase1": "Phase 1",
+      "phase2": "Phase 2",
+      "never": "Jamais",
+      "art_length_hint": "Filtré par longueur : les noms d’art courts vont en Phase 2 (≥ {{count}} points de code → Phase 1)",
+      "bucket_aria": "Phase de balisage automatique pour {{label}}",
+      "reset_preset": "Réinitialiser au préréglage de langue",
+      "custom_title": "Types de noms personnalisés",
+      "custom_intro": "Types propres au projet (identifiant ASCII). Ils suivent les mêmes règles Phase 1 / Phase 2 / Jamais.",
+      "id_label": "Identifiant",
+      "id_placeholder": "mon_alias",
+      "label_label": "Étiquette",
+      "label_placeholder": "Libellé affiché",
+      "new_custom_bucket_aria": "Phase de balisage du nouveau type personnalisé",
+      "add_custom": "Ajouter un type personnalisé",
+      "remove_custom": "Retirer le type personnalisé {{label}}",
+      "errors": {
+        "invalid_slug": "L’identifiant doit être un slug ASCII correspondant à [a-z][a-z0-9_-]*",
+        "shadows_builtin": "L’identifiant « {{id}} » entre en conflit avec un type intégré",
+        "label_required": "L’étiquette est obligatoire.",
+        "id_exists": "Un type personnalisé avec l’identifiant « {{id}} » existe déjà."
+      }
     }
   }
 }
