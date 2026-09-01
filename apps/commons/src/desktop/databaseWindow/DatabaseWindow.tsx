@@ -335,7 +335,7 @@ export const DatabaseWindow = () => {
   const syncToCentral = config?.syncToCentral === true;
 
   const [databaseView, setDatabaseView] = useState<DatabaseView>(
-    syncToCentral ? 'central' : 'project',
+    syncToCentral || !rootPath ? 'central' : 'project',
   );
   const [entities, setEntities] = useState<EntitySummary[]>([]);
   const [activeStore, setActiveStore] = useState<EntityStore | null>(null);
@@ -433,6 +433,13 @@ export const DatabaseWindow = () => {
     window.addEventListener('desktop:refresh', handleRefresh);
     return () => window.removeEventListener('desktop:refresh', handleRefresh);
   }, [jobRunning, reload]);
+
+  useEffect(() => {
+    const unsubscribe = window.electronAPI?.onEntityDatabaseChanged?.(() => {
+      void reload();
+    });
+    return () => unsubscribe?.();
+  }, [reload]);
 
   const entityById = useMemo(() => {
     const map = new Map<string, EntitySummary>();

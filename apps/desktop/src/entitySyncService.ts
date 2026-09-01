@@ -34,12 +34,11 @@ import {
 } from './entitySyncConfig';
 import { writeSyncBearerToken } from './entitySyncAuthSecret';
 import { isSignedInForSync, resolveTokenProvider } from './entitySyncTokenProvider';
-import { getEntityDbFolder } from './projectPrefs';
+import { resolveLiveEntityDbPath, hasLocalEntityDatabase } from './ensureDefaultEntityDatabase';
 
 /** Config patch plus a transient bearer token, peeled off and stored encrypted. */
 export type EntitySyncConfigPatch = StoredConfigPatch & { bearerToken?: string };
 
-const ENTITY_DB_FILENAME = 'entities.sqlite';
 const MARKER_FILENAME = 'entity-sync-last-run.json';
 /** Hard ceiling on one sync run — generous for a first full push, but bounded. */
 const RUN_TIMEOUT_MS = 15 * 60 * 1000;
@@ -81,6 +80,7 @@ export interface SyncRunSummary {
 export interface EntitySyncStatus {
   config: EntitySyncConfig;
   signedIn: boolean;
+  hasLocalDatabase: boolean;
   cursor: number | null;
   openConflicts: number | null;
   lastRun: SyncRunSummary | null;
@@ -88,17 +88,7 @@ export interface EntitySyncStatus {
 
 const getMarkerPath = () => path.join(app.getPath('userData'), MARKER_FILENAME);
 
-const getEntityDbPath = async (): Promise<string | null> => {
-  const folder = await getEntityDbFolder();
-  if (!folder) return null;
-  const dbPath = path.join(folder, ENTITY_DB_FILENAME);
-  try {
-    await fs.access(dbPath);
-    return dbPath;
-  } catch {
-    return null;
-  }
-};
+const getEntityDbPath = async (): Promise<string | null> => resolveLiveEntityDbPath();
 
 const writeMarker = async (summary: SyncRunSummary): Promise<void> => {
   const markerPath = getMarkerPath();
@@ -215,8 +205,9 @@ export const runEntitySync = async (reason: SyncReason): Promise<SyncRunSummary>
 
 export const getEntitySyncStatus = async (): Promise<EntitySyncStatus> => {
   const config = await readSyncConfig();
-  const [signedIn, dbPath, lastRun] = await Promise.all([
+  const [signedIn, hasLocalDatabase, dbPath, lastRun] = await Promise.all([
     isSignedInForSync(config),
+    hasLocalEntityDatabase(),
     getEntityDbPath(),
     getLastSyncRun(),
   ]);
@@ -231,7 +222,7 @@ export const getEntitySyncStatus = async (): Promise<EntitySyncStatus> => {
       // status is best-effort
     }
   }
-  return { config, signedIn, cursor, openConflicts, lastRun };
+  return { config, signedIn, hasLocalDatabase, cursor, openConflicts, lastRun };
 };
 
 export const setEntitySyncConfig = async (

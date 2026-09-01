@@ -164,6 +164,7 @@ export interface EntityDbBackupStatus {
   config: EntityDbBackupConfigView;
   lastBackup: EntityDbBackupLastMarker | null;
   integrity: EntityDbIntegrityReport;
+  hasLocalDatabase: boolean;
 }
 
 export interface EntityDbBackupProbeResult {
@@ -213,6 +214,7 @@ export interface EntitySyncRunSummary {
 export interface EntitySyncStatus {
   config: EntitySyncConfig;
   signedIn: boolean;
+  hasLocalDatabase: boolean;
   cursor: number | null;
   openConflicts: number | null;
   lastRun: EntitySyncRunSummary | null;
@@ -794,6 +796,8 @@ export interface ElectronAPI {
   entityDbBackupRunNow?: () => Promise<EntityDbBackupResult>;
   entityDbBackupListSnapshots?: () => Promise<EntityDbCloudSnapshot[]>;
   entityDbBackupRestore?: (key: string) => Promise<EntityDbRestoreResult>;
+  entityDatabaseEnsure?: () => Promise<{ folder: string; dbPath: string; created: boolean } | null>;
+  onEntityDatabaseChanged?: (callback: () => void) => () => void;
   entitySyncGetStatus?: () => Promise<EntitySyncStatus>;
   entitySyncSetConfig?: (patch: EntitySyncConfigPatch) => Promise<EntitySyncConfig>;
   entitySyncRunNow?: () => Promise<EntitySyncRunSummary>;

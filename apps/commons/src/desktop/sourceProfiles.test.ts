@@ -1,7 +1,9 @@
 import type { SourceDescription } from './sourceDescription';
 import {
   applyProfileToSource,
+  applySourceProfileToFolderFiles,
   dedupeProjectSources,
+  fileInSameFolder,
   profileIdentityKey,
   profileLabelFromSource,
   toSharedSource,
@@ -92,5 +94,58 @@ describe('profileLabelFromSource', () => {
     expect(profileLabelFromSource(toSharedSource(sampleSource({ title: '   ' })))).toBe(
       'Untitled source',
     );
+  });
+});
+
+describe('fileInSameFolder', () => {
+  it('matches files in the same directory across path separators', () => {
+    expect(fileInSameFolder('/proj/vol01/ch1.xml', '/proj/vol01/ch2.xml')).toBe(true);
+    expect(fileInSameFolder('C:\\proj\\vol01\\ch1.xml', 'C:/proj/vol01/ch2.xml')).toBe(true);
+    expect(fileInSameFolder('/proj/vol01/ch1.xml', '/proj/vol02/ch1.xml')).toBe(false);
+  });
+});
+
+describe('applySourceProfileToFolderFiles', () => {
+  const originalElectronAPI = window.electronAPI;
+
+  afterEach(() => {
+    window.electronAPI = originalElectronAPI;
+  });
+
+  it('writes merged source metadata to files in the same folder only', async () => {
+    const writes = new Map<string, string>();
+    window.electronAPI = {
+      listProjectXmlFiles: jest.fn(async () => [
+        { path: '/proj/vol01/a.xml', name: 'a.xml' },
+        { path: '/proj/vol01/b.xml', name: 'b.xml' },
+        { path: '/proj/vol02/c.xml', name: 'c.xml' },
+      ]),
+      readFile: jest.fn(async (filePath: string) => {
+        if (filePath.endsWith('a.xml')) {
+          return `<?xml version="1.0"?><TEI xmlns="http://www.tei-c.org/ns/1.0"><teiHeader><fileDesc><titleStmt><title>Old A</title></titleStmt></fileDesc></teiHeader><text><body><p/></body></text></TEI>`;
+        }
+        if (filePath.endsWith('b.xml')) {
+          return `<?xml version="1.0"?><TEI xmlns="http://www.tei-c.org/ns/1.0"><teiHeader><fileDesc><titleStmt><title>Old B</title></titleStmt></fileDesc></teiHeader><text><body><p/></body></text></TEI>`;
+        }
+        return `<?xml version="1.0"?><TEI xmlns="http://www.tei-c.org/ns/1.0"><teiHeader><fileDesc><titleStmt><title>Other</title></titleStmt></fileDesc></teiHeader><text><body><p/></body></text></TEI>`;
+      }),
+      writeFile: jest.fn(async (filePath: string, content: string) => {
+        writes.set(filePath, content);
+      }),
+    } as unknown as typeof window.electronAPI;
+
+    const result = await applySourceProfileToFolderFiles(
+      '/proj',
+      '/proj/vol01/a.xml',
+      'teiSimplePrint',
+      toSharedSource(sampleSource({ sourceNote: 'ignored' })),
+    );
+
+    expect(result.updated).toBe(2);
+    expect(result.skipped).toBe(0);
+    expect(writes.has('/proj/vol01/a.xml')).toBe(true);
+    expect(writes.has('/proj/vol01/b.xml')).toBe(true);
+    expect(writes.has('/proj/vol02/c.xml')).toBe(false);
+    expect(writes.get('/proj/vol01/a.xml')).toContain('Nanqi shu');
   });
 });

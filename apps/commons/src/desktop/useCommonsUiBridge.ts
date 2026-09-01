@@ -318,6 +318,16 @@ export const useCommonsUiBridge = () => {
     }
   }, []);
 
+  useEffect(() => {
+    if (!isDesktop() || !window.electronAPI?.onEntityDatabaseChanged) return;
+    const unsubscribe = window.electronAPI.onEntityDatabaseChanged(() => {
+      void refreshEntityDbBackupStatus();
+      void refreshEntitySyncStatus();
+      window.dispatchEvent(new CustomEvent('ljb-entity-database-changed'));
+    });
+    return unsubscribe;
+  }, [refreshEntityDbBackupStatus, refreshEntitySyncStatus]);
+
   const setEntitySyncConfig = useCallback(
     async (patch: EntitySyncConfigPatch): Promise<EntitySyncConfig | null> => {
       if (!window.electronAPI?.entitySyncSetConfig) return null;

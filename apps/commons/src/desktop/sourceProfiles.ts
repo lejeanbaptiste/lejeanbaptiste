@@ -1,6 +1,9 @@
 import type { SourceDescription } from './sourceDescription';
 import { documentSupportsFileMetadata, isTeiCatalogForFileMetadata } from './fileMetadata';
-import { readSourceDescriptionFromXml } from './sourceDescription';
+import {
+  applySourceDescriptionToXml,
+  readSourceDescriptionFromXml,
+} from './sourceDescription';
 import type {
   DedupedProjectSource,
   SharedSourceDescription,
@@ -9,6 +12,72 @@ import type {
 
 export const normalizeProfileTitle = (title: string): string =>
   title.normalize('NFC').trim().toLowerCase();
+
+export const parentDirectory = (filePath: string): string => {
+  const normalized = filePath.replace(/\\/g, '/');
+  const index = normalized.lastIndexOf('/');
+  return index === -1 ? '' : normalized.slice(0, index);
+};
+
+export const fileInSameFolder = (filePath: string, referenceFilePath: string): boolean =>
+  parentDirectory(filePath) === parentDirectory(referenceFilePath);
+
+export interface ApplySourceProfileFolderResult {
+  updated: number;
+  skipped: number;
+  errors: string[];
+}
+
+export const applySourceProfileToFolderFiles = async (
+  rootPath: string,
+  referenceFilePath: string,
+  catalogId: string | null | undefined,
+  profile: SharedSourceDescription,
+): Promise<ApplySourceProfileFolderResult> => {
+  if (
+    !window.electronAPI?.listProjectXmlFiles ||
+    !window.electronAPI.readFile ||
+    !window.electronAPI.writeFile
+  ) {
+    throw new Error('Desktop file APIs unavailable');
+  }
+  if (!isTeiCatalogForFileMetadata(catalogId)) {
+    return { updated: 0, skipped: 0, errors: [] };
+  }
+
+  const files = await window.electronAPI.listProjectXmlFiles(rootPath);
+  const folderFiles = files.filter((file) => fileInSameFolder(file.path, referenceFilePath));
+
+  let updated = 0;
+  let skipped = 0;
+  const errors: string[] = [];
+
+  for (const file of folderFiles) {
+    try {
+      const original = await window.electronAPI.readFile(file.path);
+      if (!documentSupportsFileMetadata(original, catalogId)) {
+        skipped += 1;
+        continue;
+      }
+
+      const current = readSourceDescriptionFromXml(original);
+      const merged = applyProfileToSource(current, profile);
+      const next = applySourceDescriptionToXml(original, merged);
+      if (next === original) {
+        skipped += 1;
+        continue;
+      }
+
+      await window.electronAPI.writeFile(file.path, next);
+      updated += 1;
+    } catch (error) {
+      skipped += 1;
+      errors.push(`${file.name}: ${error instanceof Error ? error.message : 'Failed to update'}`);
+    }
+  }
+
+  return { updated, skipped, errors };
+};
 
 export const profileIdentityKey = (source: SourceDescription | SharedSourceDescription): string => {
   if (source.titleRef?.trim()) return `ref:${source.titleRef.trim()}`;

@@ -27,6 +27,7 @@ interface BackupConfigView {
 
 interface BackupStatus {
   config: BackupConfigView;
+  hasLocalDatabase: boolean;
   lastBackup: {
     at: string;
     reason: string;
@@ -93,6 +94,21 @@ const formatMB = (bytes: number) => `${(bytes / 1_048_576).toFixed(1)} MB`;
 const formatWhen = (iso: string) => {
   const date = new Date(iso);
   return Number.isNaN(date.getTime()) ? iso : date.toLocaleString();
+};
+
+const backupSkippedKey = (reason?: string): string => {
+  switch (reason) {
+    case 'no-database':
+      return 'LW.desktop.settings.entity_backup.skipped_no_database';
+    case 'disabled':
+      return 'LW.desktop.settings.entity_backup.skipped_disabled';
+    case 'not-configured':
+      return 'LW.desktop.settings.entity_backup.skipped_not_configured';
+    case 'in-progress':
+      return 'LW.desktop.settings.entity_backup.skipped_in_progress';
+    default:
+      return 'LW.desktop.settings.entity_backup.backup_skipped';
+  }
 };
 
 type Feedback = { severity: 'error' | 'info' | 'success'; message: string } | null;
@@ -218,13 +234,14 @@ export const DesktopEntityBackup = () => {
           }),
         });
       } else {
+        const skipKey = backupSkippedKey(result.skipped);
         setFeedback({
-          severity: 'error',
+          severity: result.skipped ? 'info' : 'error',
           message:
             result.error ??
-            t('LW.desktop.settings.entity_backup.backup_skipped', {
-              reason: result.skipped ?? 'unknown',
-            }),
+            (result.skipped
+              ? t(skipKey, { reason: result.skipped, defaultValue: result.skipped })
+              : t('LW.desktop.settings.entity_backup.backup_skipped', { reason: 'unknown' })),
         });
       }
     } finally {
@@ -295,6 +312,12 @@ export const DesktopEntityBackup = () => {
       {!encryptionAvailable && (
         <Alert severity="warning" sx={{ mb: 1, width: '100%' }}>
           {t('LW.desktop.settings.entity_backup.no_encryption')}
+        </Alert>
+      )}
+
+      {!status.hasLocalDatabase && (
+        <Alert severity="warning" sx={{ mb: 1, width: '100%' }}>
+          {t('LW.desktop.settings.entity_backup.no_local_database')}
         </Alert>
       )}
 

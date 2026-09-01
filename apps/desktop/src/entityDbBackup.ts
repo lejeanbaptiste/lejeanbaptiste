@@ -36,6 +36,7 @@ import {
   type EntityDbBackupConfig,
 } from './entityDbBackupConfig';
 import { getEntityDbFolder } from './projectPrefs';
+import { resolveLiveEntityDbPath } from './ensureDefaultEntityDatabase';
 import { R2Client, type R2Object } from './r2Client';
 
 const ENTITY_DB_FILENAME = 'entities.sqlite';
@@ -77,10 +78,7 @@ export interface CloudSnapshot {
 // --- snapshot ---------------------------------------------------------------
 
 const getMarkerPath = () => path.join(app.getPath('userData'), MARKER_FILENAME);
-const getEntityDbPath = async (): Promise<string | null> => {
-  const folder = await getEntityDbFolder();
-  return folder ? path.join(folder, ENTITY_DB_FILENAME) : null;
-};
+const getEntityDbPath = async (): Promise<string | null> => resolveLiveEntityDbPath();
 
 /** `20260901T203015Z` — filesystem- and object-key-safe, still sortable. */
 const compactTimestamp = (date: Date): string => date.toISOString().replace(/[:-]|\.\d{3}/g, '');

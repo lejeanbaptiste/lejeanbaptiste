@@ -389,6 +389,8 @@
         "source_profile": "來源設定檔",
         "profile_none": "無",
         "profile_apply": "套用",
+        "profile_apply_to_folder": "套用至資料夾",
+        "profile_apply_to_folder_confirm": "將來源設定檔「{{label}}」套用至此資料夾內的所有 TEI 檔案？此資料夾中的 {{count}} 個檔案將在磁碟上更新。",
         "profile_save_as": "另存為設定檔…",
         "import_from_project": "從專案匯入…",
         "save_profile_title": "儲存來源設定檔",
@@ -674,7 +676,7 @@
       },
       "database_setup_prompt": {
         "title": "實體資料庫",
-        "message": "You already have a working database folder deep in your system files. We suggest creating or choosing a folder synced to the cloud (Dropbox, iCloud, OneDrive, …) instead, so your entities can travel between machines.",
+        "message": "您已在系統檔案深處擁有一個可正常運作的資料庫資料夾。您也可以改為建立或選擇雲端同步資料夾（Dropbox、iCloud、OneDrive 等），讓實體能在不同機器間移動 — 但若同步用戶端與 SQLite 的日誌檔發生衝突，即時同步中的資料庫可能會損壞。",
         "folder_label": "資料庫資料夾",
         "folder_placeholder": "Using the built-in default…",
         "choose": "Choose a cloud-synced folder…",

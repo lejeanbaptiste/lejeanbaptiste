@@ -391,6 +391,8 @@
         "source_profile": "Source profile",
         "profile_none": "None",
         "profile_apply": "Apply",
+        "profile_apply_to_folder": "Apply to folder",
+        "profile_apply_to_folder_confirm": "Apply source profile “{{label}}” to all TEI files in this folder? {{count}} file(s) in this folder will be updated on disk.",
         "profile_save_as": "Save as profile…",
         "import_from_project": "Import from project…",
         "save_profile_title": "Save source profile",
@@ -678,7 +680,7 @@
       },
       "database_setup_prompt": {
         "title": "Entity database",
-        "message": "You already have a working database folder deep in your system files. We suggest creating or choosing a folder synced to the cloud (Dropbox, iCloud, OneDrive, …) instead, so your entities can travel between machines.",
+        "message": "You already have a working database folder deep in your system files. You may instead create or choose a folder synced to the cloud (Dropbox, iCloud, OneDrive, …) so your entities can travel between machines — but syncing the live database can corrupt it when file-sync clients race with SQLite's journal files.",
         "folder_label": "Database folder",
         "folder_placeholder": "Using the built-in default…",
         "choose": "Choose a cloud-synced folder…",

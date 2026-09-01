@@ -340,6 +340,10 @@
 
 ### Fixed
 
+- **Entity database boot order on a new machine** — the app created the database *folder* early but not `entities.sqlite`, so cross-device sync, cloud backup, and the database viewer all failed until a project was opened. The main process now scaffolds the default central database at startup; sync and backup resolve the live file before running.
+- **Central database viewer without a project** — browsing your personal (central) entity database no longer requires an open project.
+- **After R2 restore** — restored data appears in the database viewer immediately (main notifies renderers; no restart required for the viewer).
+- **Sync / backup settings** — clearer messages when sync is skipped (`no-database`, `disabled`, etc.); “Sync now” requires automatic sync to be enabled and saved.
 - **AI API “Always on”** (`Settings → AI API → Toujours actif`) only updated local form state and was not written to disk until **Establish connection** — unchecking it snapped back to checked on return, and Disambiguate kept the per-run AI toggle disabled. The checkbox now persists immediately via `setAiApiSettings`; `projectPrefs.setAiApiSettings` merges partial updates instead of replacing the whole record.
 - **Disambiguate with AI curation** blocked the candidate list until the LLM pass finished. Authority candidates now appear as soon as lookup completes (including instant replay from the per-surface pending cache); AI ranking runs in the background and updates selections/rationales when done, with cached AI ranks applied without a spinner.
 
@@ -356,6 +360,10 @@
 - **Inline conflict resolution** in the sync panel: per entity, Keep mine / Keep theirs with both TEI snapshots shown. Keeping local re-pushes against the server's revision; keeping remote applies the server snapshot.
 - The sync **wire contract is a versioned spec** ([docs/entity-sync-protocol.md](docs/entity-sync-protocol.md)) with an implementation-independent conformance suite, so the server is not tied to Cloudflare — a Node/Postgres service on other infrastructure can implement the same contract.
 - **Pluggable authentication** for sync: GitHub (default, reuses the leaderboard sign-in) or a pasted bearer token (encrypted at rest). An OpenID Connect device flow is stubbed for a future non-Cloudflare / huma-num server.
+
+### Functionality
+
+- **Apply source profile to folder** — File metadata → Source profile now has an **Apply to folder** button next to **Apply**, stamping the selected profile onto every TEI file in the same folder (each file keeps its own transcription source note). Warns when open files in that folder have unsaved edits.
 
 ### Fixed
 

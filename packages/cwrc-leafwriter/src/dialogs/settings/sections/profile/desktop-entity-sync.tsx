@@ -53,6 +53,7 @@ interface SyncRunSummary {
 interface SyncStatus {
   config: SyncConfig;
   signedIn: boolean;
+  hasLocalDatabase: boolean;
   cursor: number | null;
   openConflicts: number | null;
   lastRun: SyncRunSummary | null;
@@ -88,6 +89,21 @@ const formatWhen = (iso?: string) => {
   if (!iso) return '';
   const date = new Date(iso);
   return Number.isNaN(date.getTime()) ? iso : date.toLocaleString();
+};
+
+const syncSkippedKey = (reason?: string): string => {
+  switch (reason) {
+    case 'no-database':
+      return 'LW.desktop.settings.entity_sync.skipped_no_database';
+    case 'disabled':
+      return 'LW.desktop.settings.entity_sync.skipped_disabled';
+    case 'in-progress':
+      return 'LW.desktop.settings.entity_sync.skipped_in_progress';
+    case 'not-signed-in':
+      return 'LW.desktop.settings.entity_sync.skipped_not_signed_in';
+    default:
+      return 'LW.desktop.settings.entity_sync.sync_skipped';
+  }
 };
 
 type Feedback = { severity: 'error' | 'info' | 'success'; message: string } | null;
@@ -152,7 +168,7 @@ export const DesktopEntitySync = () => {
   if (!bridge || !status) return null;
 
   const { lastRun } = status;
-  const canSync = status.signedIn && Boolean(patch.endpoint);
+  const canSync = status.signedIn && enabled && Boolean(patch.endpoint);
 
   const handleSave = async () => {
     setBusy('save');
@@ -185,13 +201,14 @@ export const DesktopEntitySync = () => {
           }),
         });
       } else {
+        const skipKey = syncSkippedKey(result.skipped);
         setFeedback({
           severity: result.skipped ? 'info' : 'error',
           message:
             result.error ??
-            t('LW.desktop.settings.entity_sync.sync_skipped', {
-              reason: result.skipped ?? 'unknown',
-            }),
+            (result.skipped
+              ? t(skipKey, { reason: result.skipped, defaultValue: result.skipped })
+              : t('LW.desktop.settings.entity_sync.sync_skipped', { reason: 'unknown' })),
         });
       }
     } finally {
@@ -235,6 +252,12 @@ export const DesktopEntitySync = () => {
                 ? 'LW.desktop.settings.entity_sync.sign_in_oidc'
                 : 'LW.desktop.settings.entity_sync.sign_in_required',
           )}
+        </Alert>
+      )}
+
+      {!status.hasLocalDatabase && (
+        <Alert severity="warning" sx={{ mb: 1, width: '100%' }}>
+          {t('LW.desktop.settings.entity_sync.no_local_database')}
         </Alert>
       )}
 

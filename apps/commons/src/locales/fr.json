@@ -415,6 +415,8 @@
         "source_profile": "Profil de source",
         "profile_none": "Aucun",
         "profile_apply": "Appliquer",
+        "profile_apply_to_folder": "Appliquer au dossier",
+        "profile_apply_to_folder_confirm": "Appliquer le profil source « {{label}} » à tous les fichiers TEI de ce dossier ? {{count}} fichier(s) de ce dossier seront mis à jour sur le disque.",
         "profile_save_as": "Enregistrer comme profil…",
         "import_from_project": "Importer depuis le projet…",
         "save_profile_title": "Enregistrer le profil de source",
@@ -959,7 +961,7 @@
       },
       "database_setup_prompt": {
         "title": "Base d’entités",
-        "message": "Vous avez déjà un dossier de base fonctionnel, enfoui dans les fichiers système. Nous vous suggérons plutôt de créer ou de choisir un dossier synchronisé dans le cloud (Dropbox, iCloud, OneDrive…), pour que vos entités voyagent d’une machine à l’autre.",
+        "message": "Vous avez déjà un dossier de base fonctionnel, enfoui dans les fichiers système. Vous pouvez aussi créer ou choisir un dossier synchronisé dans le cloud (Dropbox, iCloud, OneDrive…), ce qui permet à vos entités de voyager d’une machine à l’autre — mais synchroniser la base en direct peut la corrompre lorsque le client de synchronisation entre en conflit avec les fichiers journaux de SQLite.",
         "folder_label": "Dossier de la base",
         "folder_placeholder": "Dossier par défaut en cours d’utilisation…",
         "choose": "Choisir un dossier synchronisé…",

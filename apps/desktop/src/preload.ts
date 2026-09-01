@@ -31,6 +31,7 @@ export interface EntityDbBackupStatus {
   config: EntityDbBackupConfigView;
   lastBackup: LastBackupMarker | null;
   integrity: EntityDbIntegrityReport;
+  hasLocalDatabase: boolean;
 }
 
 export interface MapTilesProgress {
@@ -943,6 +944,10 @@ export interface ElectronAPI {
   entityDbBackupListSnapshots: () => Promise<CloudSnapshot[]>;
   entityDbBackupRestore: (key: string) => Promise<RestoreResult>;
 
+  /** Ensure the configured central entity database folder contains entities.sqlite. */
+  entityDatabaseEnsure: () => Promise<{ folder: string; dbPath: string; created: boolean } | null>;
+  onEntityDatabaseChanged: (callback: () => void) => () => void;
+
   /** Cross-device entity sync (Settings › Profil › Cross-device sync). */
   entitySyncGetStatus: () => Promise<EntitySyncStatus>;
   entitySyncSetConfig: (patch: EntitySyncConfigPatch) => Promise<EntitySyncConfig>;
@@ -1458,6 +1463,12 @@ const electronAPI: ElectronAPI = {
   entityDbBackupRunNow: () => ipcRenderer.invoke('entityDbBackup:runNow'),
   entityDbBackupListSnapshots: () => ipcRenderer.invoke('entityDbBackup:listSnapshots'),
   entityDbBackupRestore: (key: string) => ipcRenderer.invoke('entityDbBackup:restore', key),
+  entityDatabaseEnsure: () => ipcRenderer.invoke('entityDatabase:ensure'),
+  onEntityDatabaseChanged: (callback: () => void) => {
+    const listener = () => callback();
+    ipcRenderer.on('entityDatabase:changed', listener);
+    return () => ipcRenderer.removeListener('entityDatabase:changed', listener);
+  },
   entitySyncGetStatus: () => ipcRenderer.invoke('entitySync:getStatus'),
   entitySyncSetConfig: (patch) => ipcRenderer.invoke('entitySync:setConfig', patch),
   entitySyncRunNow: () => ipcRenderer.invoke('entitySync:runNow'),

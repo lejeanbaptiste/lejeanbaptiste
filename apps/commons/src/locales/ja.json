@@ -390,6 +390,8 @@
         "source_profile": "ソースプロファイル",
         "profile_none": "なし",
         "profile_apply": "適用",
+        "profile_apply_to_folder": "フォルダに適用",
+        "profile_apply_to_folder_confirm": "ソースプロファイル「{{label}}」をこのフォルダ内のすべての TEI ファイルに適用しますか？このフォルダ内の {{count}} 件のファイルがディスク上で更新されます。",
         "profile_save_as": "プロファイルとして保存…",
         "import_from_project": "プロジェクトからインポート…",
         "save_profile_title": "ソースプロファイルを保存",
@@ -675,7 +677,7 @@
       },
       "database_setup_prompt": {
         "title": "エンティティデータベース",
-        "message": "You already have a working database folder deep in your system files. We suggest creating or choosing a folder synced to the cloud (Dropbox, iCloud, OneDrive, …) instead, so your entities can travel between machines.",
+        "message": "システムファイルの奥に、すでに動作するデータベースフォルダーがあります。代わりにクラウド同期フォルダー（Dropbox、iCloud、OneDrive など）を作成または選択すると、エンティティをマシン間で持ち運べます — ただし、同期クライアントが SQLite のジャーナルファイルと競合すると、稼働中のデータベースが破損するおそれがあります。",
         "folder_label": "データベースフォルダー",
         "folder_placeholder": "Using the built-in default…",
         "choose": "Choose a cloud-synced folder…",

@@ -1733,9 +1733,11 @@ export function centralEntityStoreFromDesktop(
 ): EntityStore | null {
   const api = desktopEntityFileApi();
   const project = (window as unknown as DesktopGlobals).__ljbLspProject;
-  const root = overrideProjectRoot ?? project?.projectRoot;
   const folder = centralFolder ?? project?.entityDbFolder ?? null;
-  if (!api || !root || !folder) return null;
+  if (!api || !folder) return null;
+  // Central browsing (database viewer, settings) must work before any project
+  // is open — fall back to the central folder itself for infra paths.
+  const root = overrideProjectRoot ?? project?.projectRoot ?? folder;
   try {
     const paths = resolveEntityStorePaths({
       projectRoot: root,

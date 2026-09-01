@@ -84,6 +84,8 @@ export const loadDatabaseWindowEntities = async (
   activeStore: EntityStore | null;
   error: string | null;
 }> => {
+  await window.electronAPI?.entityDatabaseEnsure?.().catch(() => undefined);
+
   const projectStore = entityStoreFromDesktop();
   const centralFolder = (await window.electronAPI?.getEntityDbFolder?.().catch(() => null)) ?? null;
   const centralStore = centralEntityStoreFromDesktop(centralFolder);
@@ -91,12 +93,23 @@ export const loadDatabaseWindowEntities = async (
   const activeStore = viewingCentral ? centralStore : projectStore;
 
   if (!activeStore) {
+    if (viewingCentral) {
+      return {
+        entities: [],
+        projectStore,
+        centralStore,
+        activeStore: null,
+        error: centralFolder
+          ? 'The central entity database could not be opened.'
+          : 'No entity database folder is configured. Choose one in Settings › Profil.',
+      };
+    }
     return {
       entities: [],
       projectStore,
       centralStore,
       activeStore: null,
-      error: 'No entity database is open.',
+      error: 'Open a project to browse its entity database, or switch to Central.',
     };
   }
   if (!(await activeStore.hasSqliteDatabase())) {

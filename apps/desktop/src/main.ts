@@ -102,6 +102,12 @@ import {
   probeBackupTarget,
 } from './entityDbBackup';
 import {
+  ensureDefaultEntityDatabase,
+  notifyEntityDatabaseChanged,
+  scaffoldEntityDatabaseInFolder,
+  hasLocalEntityDatabase,
+} from './ensureDefaultEntityDatabase';
+import {
   runEntitySync,
   getEntitySyncStatus,
   setEntitySyncConfig,
@@ -3570,16 +3576,7 @@ const registerIpcHandlers = () => {
     if (!statSync(normalizedFolder).isDirectory()) {
       throw new Error('The selected entity database path is not a folder.');
     }
-    if (existsSync(entityFile)) return;
-
-    await fs.writeFile(entityFile, content, 'utf-8');
-    // Sibling SQLite is the live runtime store; XML remains interchange scaffold.
-    if (!existsSync(sqliteFile)) {
-      await importEntitySqliteXml({ databasePath: sqliteFile, xml: content });
-    }
-    await fs.mkdir(path.join(normalizedFolder, AUTHORITY_PACKS_DIRNAME), {
-      recursive: true,
-    });
+    await scaffoldEntityDatabaseInFolder(normalizedFolder, content);
   });
 
   ipcMain.handle('moveEntityDbFolder', async () => {
@@ -3688,12 +3685,13 @@ const registerIpcHandlers = () => {
   );
 
   ipcMain.handle('entityDbBackup:getStatus', async () => {
-    const [config, lastBackup, integrity] = await Promise.all([
+    const [config, lastBackup, integrity, hasLocalDatabase] = await Promise.all([
       readBackupConfigView(),
       getLastBackupMarker(),
       checkEntityDbIntegrity(),
+      hasLocalEntityDatabase(),
     ]);
-    return { config, lastBackup, integrity };
+    return { config, lastBackup, integrity, hasLocalDatabase };
   });
 
   ipcMain.handle(
@@ -3734,11 +3732,14 @@ const registerIpcHandlers = () => {
   ipcMain.handle('entityDbBackup:listSnapshots', async () => listCloudSnapshots());
 
   ipcMain.handle('entityDbBackup:restore', async (_event, key: string) => {
-    // Drop cached read handles so the file swap isn't fighting open fds; the
-    // renderer is expected to reload (or the app relaunch) right after.
+    // Drop cached read handles so the file swap isn't fighting open fds.
     closeEntitySqliteReadRepositories();
-    return restoreSnapshot(key);
+    const result = await restoreSnapshot(key);
+    if (result.ok) notifyEntityDatabaseChanged();
+    return result;
   });
+
+  ipcMain.handle('entityDatabase:ensure', async () => ensureDefaultEntityDatabase());
 
   ipcMain.handle('entitySync:getStatus', async () => getEntitySyncStatus());
 
@@ -4127,6 +4128,7 @@ app.whenReady().then(() => {
     await seedDevPluginsIfEmpty();
     await getPluginHostSnapshot();
     await refreshRecentProjectsCache();
+    await ensureDefaultEntityDatabase();
     buildApplicationMenu();
     await syncEnabledPluginContributions();
   })();

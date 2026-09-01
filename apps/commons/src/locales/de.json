@@ -630,6 +630,8 @@
         "source_profile": "Quellenprofil",
         "profile_none": "Keine",
         "profile_apply": "Anwenden",
+        "profile_apply_to_folder": "Auf Ordner anwenden",
+        "profile_apply_to_folder_confirm": "Quellenprofil „{{label}}“ auf alle TEI-Dateien in diesem Ordner anwenden? {{count}} Datei(en) in diesem Ordner werden auf der Festplatte aktualisiert.",
         "profile_save_as": "Als Profil speichern…",
         "import_from_project": "Aus Projekt importieren…",
         "save_profile_title": "Quellenprofil speichern",
@@ -884,7 +886,7 @@
       },
       "database_setup_prompt": {
         "title": "Entitätsdatenbank",
-        "message": "You already have a working database folder deep in your system files. We suggest creating or choosing a folder synced to the cloud (Dropbox, iCloud, OneDrive, …) instead, so your entities can travel between machines.",
+        "message": "Sie haben bereits einen funktionierenden Datenbankordner tief in Ihren Systemdateien. Alternativ können Sie einen in der Cloud synchronisierten Ordner erstellen oder auswählen (Dropbox, iCloud, OneDrive …), damit Ihre Entitäten zwischen Rechnern mitwandern — aber die Synchronisation der laufenden Datenbank kann sie beschädigen, wenn Sync-Dienste mit den SQLite-Journaldateien kollidieren.",
         "folder_label": "Datenbankordner",
         "folder_placeholder": "Integrierten Standard verwenden…",
         "choose": "Cloud-synchronisierten Ordner auswählen…",

@@ -34,7 +34,9 @@ import {
 } from '@src/desktop/sourceDescription';
 import {
   applyProfileToSource,
+  applySourceProfileToFolderFiles,
   createSourceProfile,
+  fileInSameFolder,
   profileLabelFromSource,
   readGlobalSourceProfiles,
   scanProjectSourceProfiles,
@@ -249,25 +251,34 @@ const TeiSourceFields = ({
 };
 
 const SourceProfileControls = ({
+  activeTabPath,
   catalogId,
   disabled,
   onApplySource,
+  onAfterFolderApply,
+  openTabs,
   rootPath,
   sourceValues,
 }: {
+  activeTabPath: string | null;
   catalogId?: string | null;
   disabled: boolean;
   onApplySource: (next: SourceDescription) => void;
+  onAfterFolderApply: () => Promise<void>;
+  openTabs: { dirty: boolean; filePath: string }[];
   rootPath: string | null;
   sourceValues: SourceDescription;
 }) => {
   const { t } = useTranslation();
+  const { notifyViaSnackbar } = useActions().ui;
+  const { reloadTabFromDisk } = useActions().project;
   const [profiles, setProfiles] = useState<SourceProfile[]>([]);
   const [selectedProfileId, setSelectedProfileId] = useState('');
   const [importOpen, setImportOpen] = useState(false);
   const [importLoading, setImportLoading] = useState(false);
   const [importEntries, setImportEntries] = useState<DedupedProjectSource[]>([]);
   const [saveOpen, setSaveOpen] = useState(false);
+  const [folderApplyBusy, setFolderApplyBusy] = useState(false);
 
   const reloadProfiles = useCallback(async () => {
     if (!isDesktop()) return;
@@ -295,6 +306,88 @@ const SourceProfileControls = ({
     const profile = profiles.find((entry) => entry.id === selectedProfileId);
     if (!profile) return;
     applySharedSource(profile.source);
+  };
+
+  const handleApplyToFolder = async () => {
+    const profile = profiles.find((entry) => entry.id === selectedProfileId);
+    if (!profile || !rootPath || !activeTabPath || folderApplyBusy) return;
+
+    const folderTabs = openTabs.filter((tab) => fileInSameFolder(tab.filePath, activeTabPath));
+    const dirtyTabs = folderTabs.filter((tab) => tab.dirty);
+
+    if (dirtyTabs.length > 0 && window.electronAPI?.showNativeMessageBox) {
+      const warn = await window.electronAPI.showNativeMessageBox({
+        type: 'warning',
+        title: t('LWC.desktop.unsaved_documents'),
+        message: t('LWC.desktop.bulk_update_warning', { count: dirtyTabs.length }),
+        buttons: [t('LWC.commons.continue'), t('LWC.commons.cancel')],
+        cancelId: 1,
+        defaultId: 1,
+      });
+      if (warn.response !== 0) return;
+    }
+
+    if (window.electronAPI?.showNativeMessageBox) {
+      const folderFileCount = window.electronAPI.listProjectXmlFiles
+        ? (
+            await window.electronAPI.listProjectXmlFiles(rootPath)
+          ).filter((file) => fileInSameFolder(file.path, activeTabPath)).length
+        : folderTabs.length;
+
+      const confirm = await window.electronAPI.showNativeMessageBox({
+        type: 'question',
+        title: t('LWC.desktop.file_metadata.profile_apply_to_folder'),
+        message: t('LWC.desktop.file_metadata.profile_apply_to_folder_confirm', {
+          label: profile.label,
+          count: folderFileCount,
+        }),
+        buttons: [
+          t('LWC.desktop.file_metadata.profile_apply_to_folder'),
+          t('LWC.commons.cancel'),
+        ],
+        cancelId: 1,
+        defaultId: 0,
+      });
+      if (confirm.response !== 0) return;
+    }
+
+    setFolderApplyBusy(true);
+    try {
+      const result = await applySourceProfileToFolderFiles(
+        rootPath,
+        activeTabPath,
+        catalogId,
+        profile.source,
+      );
+
+      for (const tab of folderTabs) {
+        await reloadTabFromDisk(tab.filePath);
+      }
+      await onAfterFolderApply();
+
+      const summary = t('LWC.desktop.updated_files_summary', {
+        updated: result.updated,
+        skipped: result.skipped,
+      });
+      if (result.errors.length > 0) {
+        notifyViaSnackbar({
+          message: result.errors[0],
+          options: { variant: 'error' },
+        });
+      } else {
+        notifyViaSnackbar({
+          message: summary,
+          options: { variant: 'success' },
+        });
+      }
+    } catch (error) {
+      notifyViaSnackbar({
+        message: error instanceof Error ? error.message : t('LWC.error.something_went_wrong'),
+        options: { variant: 'error' },
+      });
+    } finally {
+      setFolderApplyBusy(false);
+    }
   };
 
   const handleSaveProfile = async (label: string) => {
@@ -372,6 +465,14 @@ const SourceProfileControls = ({
             variant="contained"
           >
             {t('LWC.desktop.file_metadata.profile_apply')}
+          </Button>
+          <Button
+            disabled={disabled || !selectedProfileId || !activeTabPath || !rootPath || folderApplyBusy}
+            onClick={() => void handleApplyToFolder()}
+            size="small"
+            variant="outlined"
+          >
+            {t('LWC.desktop.file_metadata.profile_apply_to_folder')}
           </Button>
           <Button
             disabled={disabled}
@@ -558,6 +659,18 @@ export const FileMetadataPanel = ({ visible = true }: { visible?: boolean }) => 
     [commitSourceChanges],
   );
 
+  const refreshSourceFromActiveTab = useCallback(async () => {
+    if (!activeTabPath || !structured) return;
+    const xml =
+      (await window.electronAPI?.readFile(activeTabPath).catch(() => null)) ??
+      getActiveTabXml(activeTabPath, openTabs);
+    if (!xml) return;
+    const next = readSourceDescriptionFromXml(xml);
+    loadedTabRef.current = activeTabPath;
+    sourceValuesRef.current = next;
+    setSourceValues(next);
+  }, [activeTabPath, openTabs, structured]);
+
   useEffect(
     () => () => {
       if (debounceRef.current) clearTimeout(debounceRef.current);
@@ -602,9 +715,12 @@ export const FileMetadataPanel = ({ visible = true }: { visible?: boolean }) => 
         {structured ? (
           <>
             <SourceProfileControls
+              activeTabPath={activeTabPath}
               catalogId={catalogId}
               disabled={readonly}
+              onAfterFolderApply={refreshSourceFromActiveTab}
               onApplySource={applySourceImmediately}
+              openTabs={openTabs}
               rootPath={rootPath}
               sourceValues={sourceValues}
             />
