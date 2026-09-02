@@ -27,6 +27,11 @@ export interface AutoTaggingAuthoritySettings {
   packs?: AuthorityPackId[];
   /** Show the live authority-pack string totals in the tag-bomb panel (off by default because the scan is expensive). */
   showPackStringCounts?: boolean;
+  /**
+   * Match authority tag-bomb strings across empty `<lb>`, `<pb>`, and similar
+   * milestones (projection matcher). Off by default until validated on your corpus.
+   */
+  matchAcrossLineBreaks?: boolean;
   dateFilter?: DateFilterMode;
   yearStart?: number;
   yearEnd?: number;
@@ -188,6 +193,13 @@ export function uiStateFromSettings(
   };
 }
 
+/** Whether the projection matcher is enabled for authority / dictionary tag bomb. */
+export function matchAcrossLineBreaksFromSettings(
+  settings?: AutoTaggingAuthoritySettings,
+): boolean {
+  return settings?.matchAcrossLineBreaks === true;
+}
+
 export function readPersistedAuthoritySettings(): AutoTaggingAuthoritySettings | undefined {
   const raw = window.__leafWriterProject?.getAutoTaggingAuthoritySettings?.();
   if (!raw) return undefined;
@@ -196,6 +208,7 @@ export function readPersistedAuthoritySettings(): AutoTaggingAuthoritySettings |
     // packsRecordFromSettings narrow it back to known ids.
     packs: raw.packs as AuthorityPackId[] | undefined,
     showPackStringCounts: raw.showPackStringCounts === true,
+    matchAcrossLineBreaks: raw.matchAcrossLineBreaks === true,
     dateFilter: raw.dateFilter,
     yearStart: raw.yearStart,
     yearEnd: raw.yearEnd,

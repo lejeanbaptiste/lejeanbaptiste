@@ -228,7 +228,7 @@ See [apps/desktop/README.md](apps/desktop/README.md) for the compilation and pac
 
 - [ ] Find/replace Phase 2b: WYSIWYG visible-text replace across markup ([find-replace-planning.md](docs/find-replace-planning.md))
 - [ ] Persist last find query across sessions (match-case / ignore-case and regex toggles already ship; the query itself resets to `''` on mount)
-- [ ] Milestone-aware auto-tagging (projection match + wrap around `<lb>` / `<pb>` / infrastructure) — [autotagging-milestone-projection-planning.md](docs/autotagging-milestone-projection-planning.md); **Phase A–C done** (match + apply behind `useProjectionMatcher`, default off); interim: strip `<lb>` on CBETA import or enable flag for testing
+- [ ] Milestone-aware auto-tagging — [autotagging-milestone-projection-planning.md](docs/autotagging-milestone-projection-planning.md); **Phases A–E done** (enable in Settings → Interface → Behaviour); Phase D (AI/Sanmiao) deferred
 - [ ] Re-explore Tag-boundary Bugs B/C/H (typing/delete at edges) keeping us from full Oxygen parity.
 
 

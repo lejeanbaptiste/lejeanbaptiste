@@ -62,6 +62,8 @@ export interface DisambiguationSettings {
 /** Persisted in jean-baptiste.project.json — mirrors cwrc-leafwriter authoritySettings. */
 export interface AutoTaggingAuthoritySettings {
   packs?: string[];
+  showPackStringCounts?: boolean;
+  matchAcrossLineBreaks?: boolean;
   dateFilter?: 'none' | 'limit' | 'exclude';
   yearFilterEnabled?: boolean;
   yearStart?: number;

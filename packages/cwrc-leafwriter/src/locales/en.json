@@ -170,6 +170,8 @@
         },
         "show_pack_string_counts": "Show live string counts in Tag Bomb",
         "show_pack_string_counts_description": "Counts strings in each authority pack when Tag Bomb opens. Can slow opening.",
+        "match_across_line_breaks": "Match across line and page breaks",
+        "match_across_line_breaks_description": "Find authority tag-bomb matches across empty <lb>, <pb>, and similar milestones. Keeps markers inside applied tags. Off by default.",
         "asset_packs_note": "Offline authority packs and map tiles now live in the Asset packs tab.",
         "messages": {
           "Are you sure you want to delete the authority -value": "<0>Are you sure you want to delete the authority </0><1>{{name}}</1><2>?</2>",

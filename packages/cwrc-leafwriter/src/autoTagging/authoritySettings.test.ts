@@ -3,6 +3,7 @@ import {
   DEFAULT_AUTHORITY_DATE_FILTER,
   DEFAULT_AUTHORITY_YEAR_RANGE,
   excludedNameTypesFromSettings,
+  matchAcrossLineBreaksFromSettings,
   migrateDateFilter,
   nameTypeTaggingPolicyFromSettings,
   uiStateFromSettings,
@@ -19,6 +20,12 @@ describe('authoritySettings', () => {
 
   it('preserves the optional live pack-count setting', () => {
     expect(uiStateFromSettings({ showPackStringCounts: true }).showPackStringCounts).toBe(true);
+  });
+
+  it('defaults projection matching off unless explicitly enabled', () => {
+    expect(matchAcrossLineBreaksFromSettings(undefined)).toBe(false);
+    expect(matchAcrossLineBreaksFromSettings({})).toBe(false);
+    expect(matchAcrossLineBreaksFromSettings({ matchAcrossLineBreaks: true })).toBe(true);
   });
 
   it('defaults to excluding from the work year to the slider max once the active file has one', () => {

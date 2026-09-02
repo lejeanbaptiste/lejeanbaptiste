@@ -1,10 +1,9 @@
 # Auto-tagging — milestone projection matcher
 
-**Status (2026-09-02):** Phase A–**C** implemented (`projectionIndex.ts`,
-`dictionaryTagProjection`, `wrapProjectionRange`, flag off by default). CBETA import
-keeps `<lb>` / `<pb>` / empty `<anchor>` in the XML; production matching still runs
-**per text node** via `dictionaryTag` unless `useProjectionMatcher` is enabled on the
-tag bomb. Phases D–E remain before full wire-in.
+**Status (2026-09-02):** Phases A–**E** implemented. CBETA import keeps `<lb>` / `<pb>` /
+empty `<anchor>` in the XML; enable **Match across line and page breaks** in
+Settings → Interface → Behaviour (project setting, default off) for the projection
+tag bomb. Phase D (AI + Sanmiao) deferred.
 
 **Rollout:** build the projection stack in parallel, regression-test against
 today’s matcher on plain TEI, wire in only when mature (project setting, default
@@ -146,9 +145,9 @@ Taishō line refs at those points in the working file.
 
 ### Phase E — Settings & UX
 
-- [ ] Project setting: “Match across line and page breaks” (default off until
+- [x] Project setting: “Match across line and page breaks” (default off until
       B+C are validated).
-- [ ] Link from CBETA import dialog to this behaviour vs strip-`lb` import.
+- [x] Link from CBETA import dialog to this behaviour vs strip-`lb` import.
 
 ---
 

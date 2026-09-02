@@ -170,6 +170,8 @@
         },
         "show_pack_string_counts": "在標記炸彈中顯示即時字串數量",
         "show_pack_string_counts_description": "開啟標記炸彈時統計每個權威套件的字串數量，可能會降低開啟速度。",
+        "match_across_line_breaks": "跨行與跨頁比對",
+        "match_across_line_breaks_description": "在空的 <lb>、<pb> 等里程碑兩側尋找標記炸彈比對；套用標籤時保留這些標記。預設關閉。",
         "asset_packs_note": "離線權威套件和地圖圖磚現在位於資產套件分頁。",
         "messages": {
           "Are you sure you want to delete the authority -value": "<0>確定要刪除權威資料 </0><1>{{name}}</1><2> 嗎？</2>",

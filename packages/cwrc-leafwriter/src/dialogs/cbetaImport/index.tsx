@@ -11,6 +11,7 @@ import {
   FormControlLabel,
   FormGroup,
   LinearProgress,
+  Link,
   List,
   ListItem,
   ListItemButton,
@@ -27,6 +28,7 @@ import {
   type CbetaTeiMeta,
 } from '../../../../../apps/commons/src/desktop/cbetaImportXml';
 import { ensureImportHeaderEntitiesForPaths } from '../../../../../apps/commons/src/desktop/ensureImportHeaderEntities';
+import { useActions } from '../../overmind';
 import { CorpusWorkRow } from '../corpusWorkRow';
 import type { IDialog } from '../type';
 import { isPluginEnabled } from '../../plugins';
@@ -130,6 +132,7 @@ const invokePython = async <T,>(payload: Record<string, unknown>): Promise<T> =>
 };
 
 export const CbetaImportDialog = ({ onClose, open = false }: CbetaImportDialogProps) => {
+  const { openDialog } = useActions().ui;
   const [query, setQuery] = useState('');
   const [hits, setHits] = useState<CbetaWorkHit[]>([]);
   const [selected, setSelected] = useState<CbetaWorkHit | null>(null);
@@ -423,6 +426,28 @@ export const CbetaImportDialog = ({ onClose, open = false }: CbetaImportDialogPr
             }
             label="Strip Taishō line breaks (&lt;lb&gt;)"
           />
+          {!stripLineBreaks && (
+            <Typography
+              variant="caption"
+              color="text.secondary"
+              component="div"
+              sx={{ pl: 4.5, mt: -0.5, mb: 0.5, maxWidth: 640 }}
+            >
+              Keeping <code>&lt;lb/&gt;</code> markers splits names across text nodes. Either
+              enable{' '}
+              <Link
+                component="button"
+                type="button"
+                variant="caption"
+                onClick={() => openDialog({ type: 'settings', props: { initialTab: 'interface' } })}
+                sx={{ verticalAlign: 'baseline' }}
+              >
+                Match across line and page breaks
+              </Link>{' '}
+              in Settings → Interface → Behaviour (off by default), or check “Strip Taishō line
+              breaks” above to join text at import.
+            </Typography>
+          )}
         </FormGroup>
 
         {working && !error && status && (

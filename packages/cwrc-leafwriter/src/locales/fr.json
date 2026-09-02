@@ -666,6 +666,8 @@
         "Add Custom Authority": "Ajouter une autorité personnalisée",
         "show_pack_string_counts": "Afficher le nombre de chaînes dans Tag Bomb",
         "show_pack_string_counts_description": "Compte les chaînes de chaque pack d'autorité à l'ouverture de Tag Bomb. Peut ralentir l'ouverture.",
+        "match_across_line_breaks": "Correspondre à travers les sauts de ligne et de page",
+        "match_across_line_breaks_description": "Trouve des correspondances dans Tag Bomb à travers les balises vides <lb>, <pb>, etc. Conserve les repères dans les balises appliquées. Désactivé par défaut.",
         "asset_packs_note": "Les packs d’autorités hors ligne et les tuiles cartographiques se trouvent maintenant dans l’onglet Packs de ressources.",
         "messages": {
           "Are you sure you want to delete the authority -value": "<0>Voulez-vous vraiment supprimer l'autorité </0><1>{{name}}</1><2> ?</2>",

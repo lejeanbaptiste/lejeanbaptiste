@@ -62,6 +62,8 @@ export interface AutoTaggingAuthoritySettings {
   packs?: string[];
   /** Show the live authority-pack string totals in the tag-bomb panel. */
   showPackStringCounts?: boolean;
+  /** Match tag-bomb strings across empty lb/pb milestones (projection matcher). */
+  matchAcrossLineBreaks?: boolean;
   dateFilter?: 'none' | 'limit' | 'exclude';
   yearStart?: number;
   yearEnd?: number;

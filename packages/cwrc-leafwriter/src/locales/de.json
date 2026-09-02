@@ -611,6 +611,8 @@
         },
         "show_pack_string_counts": "Live-String-Zählungen in Tag-Bombe anzeigen",
         "show_pack_string_counts_description": "Zählt Strings in jedem Autoritätspaket, wenn sich die Tag-Bombe öffnet. Kann das Öffnen verlangsamen.",
+        "match_across_line_breaks": "Über Zeilen- und Seitenumbrüche hinweg suchen",
+        "match_across_line_breaks_description": "Findet Tag-Bomben-Treffer über leere <lb>-, <pb>- und ähnliche Markierungen hinweg. Behält Markierungen in angewendeten Tags. Standardmäßig aus.",
         "asset_packs_note": "Offline-Autoritätspakete und Kartenkacheln sind jetzt auf der Registerkarte Asset-Pakete verfügbar."
       },
       "editor": {

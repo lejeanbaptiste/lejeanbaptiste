@@ -84,6 +84,12 @@ const normalizeAutoTaggingAuthority = (raw: unknown): AutoTaggingAuthoritySettin
   if (typeof value.artMinCodePoints === 'number' && value.artMinCodePoints > 0) {
     out.artMinCodePoints = value.artMinCodePoints;
   }
+  if (typeof value.showPackStringCounts === 'boolean') {
+    out.showPackStringCounts = value.showPackStringCounts;
+  }
+  if (typeof value.matchAcrossLineBreaks === 'boolean') {
+    out.matchAcrossLineBreaks = value.matchAcrossLineBreaks;
+  }
   return Object.keys(out).length ? out : undefined;
 };
 

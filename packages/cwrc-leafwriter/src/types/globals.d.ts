@@ -985,6 +985,7 @@ declare global {
         | {
             packs?: string[];
             showPackStringCounts?: boolean;
+            matchAcrossLineBreaks?: boolean;
             dateFilter?: 'none' | 'limit' | 'exclude';
             yearStart?: number;
             yearEnd?: number;
@@ -1004,6 +1005,7 @@ declare global {
       setAutoTaggingAuthoritySettings: (settings: {
         packs?: string[];
         showPackStringCounts?: boolean;
+        matchAcrossLineBreaks?: boolean;
         dateFilter?: 'none' | 'limit' | 'exclude';
         yearStart?: number;
         yearEnd?: number;

@@ -170,6 +170,8 @@
         },
         "show_pack_string_counts": "タグ爆弾で文字列数をリアルタイム表示",
         "show_pack_string_counts_description": "タグ爆弾を開いたときに各権限パックの文字列数を数えます。起動が遅くなる場合があります。",
+        "match_across_line_breaks": "行・ページ区切りをまたいでマッチ",
+        "match_across_line_breaks_description": "空の <lb>、<pb> などのマイルストーンをまたいでタグ爆弾のマッチを探します。適用したタグ内にマーカーを保持します。既定ではオフ。",
         "asset_packs_note": "オフライン権限パックと地図タイルはアセットパックタブにあります。",
         "messages": {
           "Are you sure you want to delete the authority -value": "<0>権限データ </0><1>{{name}}</1><2> を削除しますか？</2>",

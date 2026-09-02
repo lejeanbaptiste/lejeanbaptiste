@@ -10,6 +10,7 @@ import { Authorities, EntityLookups, Guardrails, MarkupPanel, Reset } from './se
 import { Toggler } from './components/toggler';
 import { DesktopOfflineAuthorities } from './sections/authorities/desktop-offline-authorities';
 import { DesktopMapTilesSettings } from './sections/authorities/desktop-maptiles-settings';
+import { MatchAcrossLineBreaks } from './sections/authorities/match-across-line-breaks';
 import { ShowPackStringCounts } from './sections/authorities/show-pack-string-counts';
 import { FontFamily } from './sections/editor/font-family';
 import { FontSize } from './sections/editor/font-size';
@@ -254,6 +255,7 @@ export const SettingsDialog = ({ onClose, open = false, initialTab }: SettingsDi
                           value={stripCjkWhitespace}
                         />
                         {isDesktop && <ShowPackStringCounts />}
+                        {isDesktop && <MatchAcrossLineBreaks />}
                       </List>
                     </Section>
                     {!isReadonly && (

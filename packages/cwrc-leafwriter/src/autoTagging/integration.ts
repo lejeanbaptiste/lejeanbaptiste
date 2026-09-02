@@ -86,9 +86,10 @@ import {
 import {
   nameTypeTaggingPolicyFromSettings,
   readPersistedAuthoritySettings,
+  matchAcrossLineBreaksFromSettings,
 } from './authoritySettings';
 import { crawlDocuments } from './crawl';
-import { dictionaryTag, type DictionaryEntry } from './dictionary';
+import { dictionaryTag, dictionaryTagProjection, type DictionaryEntry } from './dictionary';
 import { compoundWrapperSuggestions, seedSuggestions, suggestionsFromSeedMatches } from './seed';
 import { runGroupAndClean, type GroupAndCleanResult } from './groupAndClean';
 import { buildNobleTitleVocabulary } from './nobleTitleSpanParser';
@@ -809,6 +810,7 @@ export class AutoTaggingSession {
     const doc = await this.getDocument();
     const result = await runAuthorityTagBombOnDocument(doc, packIds, readPackFile, this.policy, {
       ...options,
+      useProjectionMatcher: matchAcrossLineBreaksFromSettings(readPersistedAuthoritySettings()),
       maxSuggestions: MAX_AUTHORITY_SUGGESTIONS,
       onProgress: (message) => {
         options.onProgress?.(message);
@@ -994,6 +996,11 @@ export class AutoTaggingSession {
     const sourceLang = await this.projectLanguage();
     const authoritySettings = readPersistedAuthoritySettings();
     const nameTypePolicy = nameTypeTaggingPolicyFromSettings(authoritySettings, sourceLang);
+    const useProjectionMatcher = matchAcrossLineBreaksFromSettings(authoritySettings);
+    const dictionaryMatch = (doc: Document, entries: DictionaryEntry[], sourceDetail: string) =>
+      useProjectionMatcher
+        ? dictionaryTagProjection(doc, entries, this.policy, sourceDetail)
+        : dictionaryTag(doc, entries, this.policy, sourceDetail);
 
     const pedbIds = packIds.filter((id) => this.specOrigin(id) === 'pedb');
     const cedbIds = packIds.filter((id) => this.specOrigin(id) === 'cedb');
@@ -1068,6 +1075,7 @@ export class AutoTaggingSession {
           dateFilter: options.dateFilter,
           extraCandidates,
           nameTypePolicy,
+          useProjectionMatcher,
           onProgress: (message) => {
             options.onProgress?.(multiDoc ? `${filePath}: ${message}` : message);
             void yieldToUi();
@@ -1082,7 +1090,7 @@ export class AutoTaggingSession {
         loaded['project' as AuthorityPackId] =
           (loaded['project' as AuthorityPackId] ?? 0) + pooledProjectEntries.length;
         extraSuggestionGroups.push(
-          dictionaryTag(doc, pooledProjectEntries, this.policy, 'this project'),
+          dictionaryMatch(doc, pooledProjectEntries, 'this project'),
         );
       }
 
@@ -1095,7 +1103,7 @@ export class AutoTaggingSession {
           if (filtered.length === 0) continue;
           loaded['list' as AuthorityPackId] =
             (loaded['list' as AuthorityPackId] ?? 0) + filtered.length;
-          extraSuggestionGroups.push(dictionaryTag(doc, filtered, this.policy, file.name));
+          extraSuggestionGroups.push(dictionaryMatch(doc, filtered, file.name));
         }
       }
 
