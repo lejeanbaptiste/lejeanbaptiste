@@ -24,7 +24,10 @@ import {
   type MentionRole,
 } from './mentionContext';
 import { buildCjkMentionParts, buildWesternMentionParts } from './mentionRender';
-import { fileOccurrenceIndexForUnitInsert, collectEntityFieldsInDocumentOrder } from './fileWideOccurrence';
+import {
+  fileOccurrenceIndexForUnitInsert,
+  collectEntityFieldsInDocumentOrder,
+} from './fileWideOccurrence';
 import type { MentionRenderPart } from './mentionRender';
 
 export const ENTITY_REF_TYPE = 'ljb-entity';
@@ -301,6 +304,8 @@ export const recalculateEntityFieldsInRoot = (
     alignmentUnit?: 'div' | 'p' | 'ab';
     sourceFileName?: string;
     unitId?: string;
+    /** Project source language — used to romanize mention surfaces (zh → pinyin). */
+    sourceLang?: string | null;
   },
 ): void => {
   const resolved = settings ?? dateFormatSettingsForLang(lang);
@@ -342,7 +347,12 @@ export const recalculateEntityFieldsInRoot = (
         ).length;
         const within = fields.slice(0, index + 1).indexOf(field) + 1;
         fileOccurrenceIndex = prior + within;
-      } else if (options?.translationDoc && options.unitId && options.alignmentUnit && options.sourceFileName) {
+      } else if (
+        options?.translationDoc &&
+        options.unitId &&
+        options.alignmentUnit &&
+        options.sourceFileName
+      ) {
         fileOccurrenceIndex = fileOccurrenceIndexForUnitInsert(
           options.translationDoc,
           options.alignmentUnit,
@@ -366,6 +376,7 @@ export const recalculateEntityFieldsInRoot = (
             fileOccurrenceIndex,
             displaySpec,
             resolved,
+            options?.sourceLang,
             lang,
           );
       writeDisplaySpecToField(field, displaySpec);

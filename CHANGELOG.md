@@ -381,3 +381,41 @@
 - **The packaged app assumed its bundled server had started.** `startCommonsServer` resolved on a fixed 2-second timer, or on the substring `listening` appearing in the child's stdout. Neither is a readiness check: Node emits `listening` and _then_ `EADDRINUSE` when a dual-stack bind half-fails, so a server that was already dying reported success and the app loaded a URL into a corpse. Startup now polls the server's own URL, races that against the child exiting, and puts the child's stderr into the failure dialog instead of a generic message.
 - **A busy plugin-API port took the entire server down.** The HTTPS listener for the Word add-in (port 3848) had no `error` handler, so an `EADDRINUSE` there was thrown and killed the process serving the whole application — a dev server or a second instance was enough. It now logs that the add-in API is unavailable and leaves the app running. The main listener keeps failing hard, as it should, but reports the reason in one readable line.
 - **Cloud backup no longer fails silently when its credentials cannot be unlocked.** A dismissed keychain prompt made `readBackupConfig()` throw, which was swallowed, leaving automatic backups switched off behind a settings panel that looked simply unconfigured. The status view now distinguishes "never configured" from "stored but locked", and the panel shows an error with a **Retry** that re-runs the decrypt — which is what asks the OS again.
+
+## Upstream
+
+### Translation pane
+
+- **Mention-faithful entity rendering (LJBtero).** Each keyed source span now gets its own manifest row (duplicate entity keys allowed). AI blinding uses `{{mention:N}}` (+ `{{holding:N}}` / `{{as:N}}` for offices); the model receives only `{ index, kind }`. After translation, `substituteMentionPlaceholders` renders atomic chips from the as-written surface and resolved role — courtesy names (e.g. 景撝), partial given names (e.g. 廓), and places/offices as written — not the canonical DB short form. Western targets show romanization + Chinese + dates on first **file-wide** mention; later mentions shorten. CJK targets (`zh`, `ja`, `ko`, `lzh`) show characters only (no romanization), with CJK life-date typography on first mention.
+- **Brackets policy** for partial kinship names (`never` / `first-mention-only` / `always`) in Translation policy settings — Western `[Cai] Kuo` vs `Kuo`; CJK `（蔡）廓` when allowed.
+- Same mention renderer for **AI substitute**, **toolbar insert**, and **autocomplete** (one manifest row per source span in the insert menu and autocomplete popup).
+- AI system prompt and payload migrated from `{{entity:KEY}}` to `{{mention:N}}`.
+- **OpenCC script conversion** (lazy-loaded `opencc-js`): Traditional → Simplified for `zh-Hans` (`t2s`) and Traditional → shinjitai for `ja` (`t2jp`) on entity chip surfaces. Offered in the Chinese project resources dialog; installed automatically with the Japan authority pack. Not loaded for users who skip those assets.
+- **Generate translation** status message now clears when switching source/translation files (and auto-dismisses after success).
+- While AI translation runs, the active card shows a grey overlay with spinner and is non-editable until the run finishes.
+
+### Mention rendering fixes (2026-09-02)
+
+- **Romanization source language.** Project source language (`zh`, etc.) is exposed on the translation tab and passed into mention romanization; when missing, pinyin falls back via `zh` and stored DB Latin names. Fixes duplicated Chinese (`濟陽 濟陽`) when the target language was mistaken for the source language.
+- **Person name parts.** All person-name surfaces (family, given, zi, hao, dharma, posthumous, partial given) romanize as **one concatenated word, one capital** — e.g. 興宗 → `Xingzong`, 景撝 → `Jinghui` (not `Xing Zong` / `Jing Hui`).
+- **Alternate name forms keep Chinese.** Courtesy, dharma, and partial-given mentions always append source characters even when they are the second chip for the same person key in a unit (e.g. `Jinghui 景撝` after `Cai Yue 蔡約`).
+- **Offices with a gloss.** Keyed `{{as:N}}` / `{{holding:N}}` / `{{mention:N}}` office chips default to **translation only** when a vernacular gloss exists (e.g. `Minister of Sacrifices`); romanization + Chinese only when there is no gloss or the mention forces romanization-first.
+- **Office placeholder substitution.** Fixed regex so `{{as:N}}` and `{{holding:N}}` tokens from the AI are replaced with entity chips (previously only `{{mention:N}}` matched, leaving raw `{{as:15}}` in output).
+
+### Entity display and data
+
+- Entity fields persist `data-mention-surface` and `data-mention-role` alongside the display recipe.
+- `nameRole` from SQLite is threaded through entity summaries for mention role resolution.
+
+### UI and settings
+
+- Translation policy panel: **brackets policy** control; language buckets extended with **zh** / **ja** / **ko** (CJK date typography defaults). Per-mention overrides (brackets, title order, show/hide parts) via the entity format popup on a chip in the translation pane.
+- Chinese project resources dialog: new **Script conversion (OpenCC)** checkbox.
+
+### Known gaps
+
+- **Noble titles (`<nobleTitle>`).** Still flattened to plain text for the AI to translate freely — no entity chips, pinyin, or character suffix on restore (e.g. “Zhenyang Princess” stays plain prose). Composite fief + rank rendering is not yet wired into the mention pipeline.
+
+### Documentation
+
+- Design note [`docs/mention-entity-rendering-planning.md`](docs/mention-entity-rendering-planning.md); smoke-test checklist §10d for mention manifest + CJK cases.

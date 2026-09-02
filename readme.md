@@ -221,6 +221,7 @@ See [apps/desktop/README.md](apps/desktop/README.md) for the compilation and pac
 
 #### AI
 
+- [ ] Noble titles
 - [ ] Translation panel: check for translation consistency across the document
 - [ ] Translation panel: suggest improvements with 'accept/reject'
 - [ ] AI-inferred import profiles

@@ -18,7 +18,9 @@ export const normalizeSurfaceForTargetLang = (
   targetLang: string | null | undefined,
 ): string => normalizeSurfaceWithOpencc(surface, targetLang);
 
-export const familyHanForEntity = (entity: Pick<EntitySummary, 'familyName' | 'names'>): string | null => {
+export const familyHanForEntity = (
+  entity: Pick<EntitySummary, 'familyName' | 'names'>,
+): string | null => {
   const fromNames = entity.names.find(
     (n) =>
       (n.role === 'family' || n.type === 'family' || n.type === 'familyName') &&

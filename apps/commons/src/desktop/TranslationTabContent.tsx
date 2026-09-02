@@ -5,6 +5,7 @@ import { useCallback, useEffect, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { getActiveProjectBundle } from './activeProjectBundle';
 import { installCitationBridge } from './citations/citationBridge';
+import { getProjectSourceLanguage } from './projectLanguage';
 import { startTranslationForLang } from './translationEntry';
 import { readTranslationSettings } from './translationSettings';
 import type { TranslationLanguage } from './translationTypes';
@@ -14,6 +15,7 @@ declare global {
     __desktopTranslationLanguageState?: {
       indexing: boolean;
       languages: TranslationLanguage[];
+      projectSourceLang: string | null;
       selectedLang: string;
       setSelectedLang: (lang: string) => void;
     };
@@ -44,6 +46,7 @@ export const TranslationTabContent = ({ active }: TranslationTabContentProps) =>
 
   const [languages, setLanguages] = useState<TranslationLanguage[] | null>(null);
   const [selectedLang, setSelectedLang] = useState<string>('');
+  const [projectSourceLang, setProjectSourceLang] = useState<string | null>(null);
   const [indexing, setIndexing] = useState(false);
   const resolvedKeyRef = useRef<string | null>(null);
 
@@ -63,6 +66,25 @@ export const TranslationTabContent = ({ active }: TranslationTabContentProps) =>
   }, [active]);
 
   useEffect(() => {
+    if (!projectFilePath) {
+      setProjectSourceLang(null);
+      return;
+    }
+    const bundle = getActiveProjectBundle();
+    if (!bundle) {
+      setProjectSourceLang(null);
+      return;
+    }
+    let cancelled = false;
+    void getProjectSourceLanguage(bundle).then((lang) => {
+      if (!cancelled) setProjectSourceLang(lang);
+    });
+    return () => {
+      cancelled = true;
+    };
+  }, [projectFilePath]);
+
+  useEffect(() => {
     if (!languages) {
       delete window.__desktopTranslationLanguageState;
       window.dispatchEvent(new CustomEvent('desktop:translation-language-state-changed'));
@@ -72,11 +94,12 @@ export const TranslationTabContent = ({ active }: TranslationTabContentProps) =>
     window.__desktopTranslationLanguageState = {
       indexing,
       languages,
+      projectSourceLang,
       selectedLang,
       setSelectedLang,
     };
     window.dispatchEvent(new CustomEvent('desktop:translation-language-state-changed'));
-  }, [indexing, languages, selectedLang]);
+  }, [indexing, languages, projectSourceLang, selectedLang]);
 
   useEffect(() => {
     return () => {

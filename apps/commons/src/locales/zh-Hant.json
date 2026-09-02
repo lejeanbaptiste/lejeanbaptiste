@@ -160,7 +160,8 @@
         "fr": "法文",
         "pt": "葡萄牙文",
         "ro": "羅馬尼亞文",
-        "zh-Hant": "繁體中文"
+        "zh-Hant": "繁體中文",
+        "ja": "日文"
       },
       "messages": {
         "annotation_need_space": "為文件加上註解需要更多空間。",
@@ -385,6 +386,7 @@
         "year": "年",
         "edition": "版本",
         "year_of_edition": "版本年份",
+        "year_of_edition_hint": "年份或範圍（例如 1924–1934）",
         "transcription_source": "轉錄來源",
         "source_profile": "來源設定檔",
         "profile_none": "無",
@@ -468,7 +470,9 @@
           "save_button": "儲存",
           "unsaved_changes_title": "未儲存的變更",
           "unsaved_documents_title": "未儲存的文件",
-          "unsaved_new_document_title": "未儲存的新文件"
+          "unsaved_new_document_title": "未儲存的新文件",
+          "unsaved_settings_title": "未儲存的專案設定",
+          "unsaved_settings_message": "您有尚未儲存的專案設定。要捨棄並離開嗎？"
         },
         "messages": {
           "could_not_create_new_file": "無法建立新檔案。",
@@ -1027,7 +1031,8 @@
       "fr": "法文",
       "pt": "葡萄牙文",
       "ro": "羅馬尼亞文",
-      "zh-Hant": "繁體中文"
+      "zh-Hant": "繁體中文",
+      "ja": "日文"
     },
     "messages": {
       "annotation_need_space": "Annotating documents needs more space.",
@@ -1157,6 +1162,47 @@
       "gz_helper": "1–60, or paste 甲子",
       "new_moon_gz": "新月干支",
       "nmd_gz_placeholder": "nmd_gz"
+    },
+    "nameTypes": {
+      "primary": "主要姓名",
+      "birth": "本名",
+      "family": "姓",
+      "given": "名",
+      "courtesy": "字",
+      "art": "號",
+      "posthumous": "諡號",
+      "temple": "廟號",
+      "dharma": "法名",
+      "pen": "筆名",
+      "romanization": "羅馬化",
+      "translation": "翻譯",
+      "variant": "異名"
+    },
+    "nameTypePolicy": {
+      "title": "自動標記的姓名類型",
+      "intro": "第一階段＝首次標記炸彈掃描。第二階段＝人物連結後的簡稱掃描。永不＝儲存但不自動標記（例如姓）。",
+      "primary_warning": "主要姓名通常會在第一階段標記。將主要姓名設為第二階段或永不，可能導致首次掃描遺漏許多人物提及。",
+      "phase1": "第一階段",
+      "phase2": "第二階段",
+      "never": "永不",
+      "art_length_hint": "依長度限制：較短的號會進入第二階段（≥ {{count}} 個代碼點 → 第一階段）",
+      "bucket_aria": "{{label}} 自動標記階段",
+      "reset_preset": "重設為語言預設值",
+      "custom_title": "自訂姓名類型",
+      "custom_intro": "專案專用類型（ASCII id slug）。遵循相同的第一階段／第二階段／永不規則。",
+      "id_label": "識別碼",
+      "id_placeholder": "my_alias",
+      "label_label": "標籤",
+      "label_placeholder": "顯示標籤",
+      "new_custom_bucket_aria": "新自訂類型的自動標記階段",
+      "add_custom": "新增自訂類型",
+      "remove_custom": "移除自訂類型 {{label}}",
+      "errors": {
+        "invalid_slug": "識別碼必須是符合 [a-z][a-z0-9_-]* 的 ASCII slug",
+        "shadows_builtin": "識別碼「{{id}}」會遮蔽內建姓名類型",
+        "label_required": "標籤為必填。",
+        "id_exists": "識別碼為「{{id}}」的自訂類型已存在。"
+      }
     }
   }
 }

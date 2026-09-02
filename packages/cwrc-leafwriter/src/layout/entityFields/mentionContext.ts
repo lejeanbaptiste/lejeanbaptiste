@@ -7,19 +7,17 @@ import {
   isJapaneseLanguageCode,
   isKoreanLanguageCode,
 } from '../../utilities/languageCodes';
-import { autoRomanize, autoRomanizeForKind } from '../../utilities/romanize';
+import { autoRomanize, autoRomanizeForKind, isLatinScript } from '../../utilities/romanize';
 import {
   chineseNameOf,
   familyAndGivenOf,
+  romanizedNameOf,
   shortNameOf,
   type EntityDisplaySpec,
 } from './entityDisplay';
 import type { BracketsPolicy } from './dateFormatSettings';
 import type { EntitySummary } from './entitySummary';
-import {
-  SOURCE_UNIT_ENTITY_TAGS,
-  elementsByLocalName,
-} from './mentionCollectShared';
+import { SOURCE_UNIT_ENTITY_TAGS, elementsByLocalName } from './mentionCollectShared';
 import { replaceEntitiesWithPlaceholdersInSourceXml } from './sourceUnitEntities';
 
 export type { BracketsPolicy };
@@ -61,13 +59,11 @@ const cjkNameRowForSurface = (
 ): { text: string; type: string | null; role: string | null } | null => {
   const normalized = surface.trim();
   if (!normalized) return null;
-  return (
-    entity.names.find(
-      (name) =>
-        name.text?.trim() === normalized ||
-        name.text?.normalize('NFC').trim() === normalized.normalize('NFC'),
-    ) ?? null
-  ) as { text: string; type: string | null; role: string | null } | null;
+  return (entity.names.find(
+    (name) =>
+      name.text?.trim() === normalized ||
+      name.text?.normalize('NFC').trim() === normalized.normalize('NFC'),
+  ) ?? null) as { text: string; type: string | null; role: string | null } | null;
 };
 
 const isPartialGivenPerson = (entity: EntitySummary, surface: string): boolean => {
@@ -87,9 +83,7 @@ const isPartialGivenPerson = (entity: EntitySummary, surface: string): boolean =
 
 /** True when the companion target language shows characters only (no romanization). */
 export const isCharacterOnlyTranslationTarget = (lang: string | null | undefined): boolean =>
-  isChineseLanguageCode(lang) ||
-  isJapaneseLanguageCode(lang) ||
-  isKoreanLanguageCode(lang);
+  isChineseLanguageCode(lang) || isJapaneseLanguageCode(lang) || isKoreanLanguageCode(lang);
 
 export const resolveMentionRole = (
   mention: Pick<MentionContext, 'kind' | 'surface' | 'teiTag' | 'teiType'>,
@@ -154,6 +148,50 @@ export const deriveDisplaySpec = (
   return base;
 };
 
+/** Languages to try for CJK→Latin conversion (target langs like en/fr are skipped). */
+const romanizationLangCandidates = (sourceLang?: string | null): string[] => {
+  const seen = new Set<string>();
+  const out: string[] = [];
+  const add = (code: string | null | undefined) => {
+    const trimmed = code?.trim();
+    if (!trimmed || seen.has(trimmed)) return;
+    seen.add(trimmed);
+    out.push(trimmed);
+  };
+  add(sourceLang);
+  add('zh');
+  add('zh-Hant');
+  return out;
+};
+
+const autoRomanizeWithLangFallback = (
+  surface: string,
+  sourceLang: string | null | undefined,
+  kind: string | null | undefined,
+  options?: { concatenate?: boolean },
+): string | null => {
+  for (const lang of romanizationLangCandidates(sourceLang)) {
+    // `concatenate` must win over kind-aware spacing — given names / name parts
+    // are one word (Xingzong), while autoRomanizeForKind('person') spaces syllables.
+    const result = options?.concatenate
+      ? autoRomanize(surface, lang, { concatenate: true })
+      : kind
+        ? autoRomanizeForKind(surface, lang, kind)
+        : autoRomanize(surface, lang, options);
+    if (result) return result;
+  }
+  return null;
+};
+
+const storedLatinRomanization = (entity: EntitySummary): string | null => {
+  const stored = romanizedNameOf(entity);
+  return stored && isLatinScript(stored) ? stored : null;
+};
+
+/** One Capitalized word for any person name part (family, given, zi, hao, dharma, posthumous…). */
+const romanizePersonNamePart = (surface: string, sourceLang?: string | null): string | null =>
+  autoRomanizeWithLangFallback(surface, sourceLang, null, { concatenate: true });
+
 export const romanizeMentionSurface = (
   mention: Pick<MentionContext, 'surface' | 'kind' | 'role'>,
   entity: EntitySummary,
@@ -162,40 +200,48 @@ export const romanizeMentionSurface = (
   const surface = mention.surface.trim();
   if (!surface) return shortNameOf(entity);
 
-  if (mention.role === 'courtesy' || mention.role === 'dharma') {
-    const fromSurface =
-      mention.role === 'dharma'
-        ? autoRomanize(surface, sourceLang, { concatenate: true })
-        : autoRomanize(surface, sourceLang);
+  // All person-name forms in the DB are one concatenated pinyin word with a
+  // single capital: 興宗 → Xingzong, 景撝 → Jinghui, 法號 → Faming, etc.
+  if (
+    mention.role === 'courtesy' ||
+    mention.role === 'dharma' ||
+    mention.role === 'partial-given'
+  ) {
+    const fromSurface = romanizePersonNamePart(surface, sourceLang);
     if (fromSurface) return fromSurface;
     const row = cjkNameRowForSurface(entity, surface);
     if (row) {
-      const fromDb =
-        mention.role === 'dharma'
-          ? autoRomanize(row.text, sourceLang, { concatenate: true })
-          : autoRomanize(row.text, sourceLang);
+      const fromDb = romanizePersonNamePart(row.text, sourceLang);
       if (fromDb) return fromDb;
     }
     return surface;
   }
 
-  if (mention.role === 'partial-given') {
+  if (mention.role.endsWith('-as-written')) {
     return (
-      autoRomanize(surface, sourceLang, { concatenate: true }) ??
-      autoRomanize(surface, sourceLang) ??
+      autoRomanizeWithLangFallback(surface, sourceLang, mention.kind) ??
+      storedLatinRomanization(entity) ??
       surface
     );
-  }
-
-  if (mention.role.endsWith('-as-written')) {
-    return autoRomanizeForKind(surface, sourceLang, mention.kind) ?? surface;
   }
 
   if (mention.role === 'full-name' && entity.kind === 'person') {
     return shortNameOf(entity);
   }
 
-  return autoRomanizeForKind(surface, sourceLang, entity.kind) ?? shortNameOf(entity);
+  if (entity.kind === 'person') {
+    return (
+      romanizePersonNamePart(surface, sourceLang) ??
+      storedLatinRomanization(entity) ??
+      shortNameOf(entity)
+    );
+  }
+
+  return (
+    autoRomanizeWithLangFallback(surface, sourceLang, entity.kind) ??
+    storedLatinRomanization(entity) ??
+    shortNameOf(entity)
+  );
 };
 
 /**
@@ -208,7 +254,6 @@ export const collectMentionsFromSourceUnitXml = (sourceUnitXml: string): Mention
   if (doc.getElementsByTagName('parsererror').length > 0) return [];
 
   const keys = new Set<string>();
-  const tagSet = new Set(SOURCE_UNIT_ENTITY_TAGS);
   for (const tag of SOURCE_UNIT_ENTITY_TAGS) {
     for (const el of elementsByLocalName(doc, tag)) {
       const key = el.getAttribute('key')?.trim();

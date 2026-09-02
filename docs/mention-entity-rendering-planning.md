@@ -17,15 +17,15 @@ Design note for LJBtero translation entity chips (implemented 2026).
 
 ## Key modules
 
-| Module | Role |
-|--------|------|
-| `mentionContext.ts` | Types, collector, role resolver, `deriveDisplaySpec` |
-| `mentionRender.ts` | Western + CJK part builders, `formatEntityDatesCjk` |
-| `mentionSubstitute.ts` | Replace `{{mention:N}}` in AI output |
-| `fileWideOccurrence.ts` | Count prior refs in companion doc |
+| Module                     | Role                                                                    |
+| -------------------------- | ----------------------------------------------------------------------- |
+| `mentionContext.ts`        | Types, collector, role resolver, `deriveDisplaySpec`                    |
+| `mentionRender.ts`         | Western + CJK part builders, `formatEntityDatesCjk`                     |
+| `mentionSubstitute.ts`     | Replace `{{mention:N}}` in AI output                                    |
+| `fileWideOccurrence.ts`    | Count prior refs in companion doc                                       |
 | `openccScriptNormalize.ts` | Lazy OpenCC (`t2s`, `t2jp`); installed via Chinese/Japanese asset packs |
-| `scriptNormalize.ts` | Thin wrapper + `familyHanForEntity` |
-| `sourceUnitEntities.ts` | Blinding emits manifest |
+| `scriptNormalize.ts`       | Thin wrapper + `familyHanForEntity`                                     |
+| `sourceUnitEntities.ts`    | Blinding emits manifest                                                 |
 
 ## Persisted field attrs
 

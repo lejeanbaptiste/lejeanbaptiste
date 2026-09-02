@@ -383,8 +383,10 @@
       "en": "Englisch",
       "es": "Spanisch",
       "fr": "Französisch",
+      "ja": "Japanisch",
       "pt": "Portugiesisch",
-      "ro": "Rumänisch"
+      "ro": "Rumänisch",
+      "zh-Hant": "Chinesisch (Traditionell)"
     },
     "lookups": {
       "entity": {
@@ -858,6 +860,13 @@
         "langEn": "Englisch",
         "langFr": "Französisch",
         "langDe": "Deutsch",
+        "langZh": "Chinesisch",
+        "langJa": "Japanisch",
+        "langKo": "Koreanisch",
+        "bracketsPolicy": "Abgeleiteter Familienname (Teilnamen)",
+        "bracketsNever": "Abgeleiteten Familiennamen nie anzeigen",
+        "bracketsFirstMention": "Nur bei erster Erwähnung in der Datei",
+        "bracketsAlways": "Abgeleiteten Familiennamen immer anzeigen",
         "resetDefaults": "Auf {{language}} Standardeinstellungen zurücksetzen",
         "titleConvention": "Titelreihenfolge (erste Nennung)",
         "titleConventionRomanizationFirst": "Romanisierung zuerst — Jinshu 晉書 (Livre des Jin)",

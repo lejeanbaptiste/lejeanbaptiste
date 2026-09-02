@@ -78,7 +78,7 @@ const jiyang: EntitySummary = {
 };
 
 describe('mentionRender western (fr)', () => {
-  test('courtesy mention romanizes surface, not canonical short name', () => {
+  test('courtesy mention romanizes surface as one concatenated word', () => {
     const m = mention({
       key: 'person-bf78',
       surface: '景撝',
@@ -89,7 +89,25 @@ describe('mentionRender western (fr)', () => {
     const parts = buildWesternMentionParts(m, caiYue, 1, spec, FRENCH_DEFAULTS, 'zh');
     const preview = mentionPartsToPlainPreview(parts);
     expect(preview).not.toContain('Cai Yue');
+    expect(preview).toContain('Jinghui');
+    expect(preview).not.toMatch(/Jing\s+Hui/);
     expect(preview).toContain('景撝');
+  });
+
+  test('courtesy after a prior same-key mention still keeps Chinese characters', () => {
+    const m = mention({
+      key: 'person-bf78',
+      surface: '景撝',
+      role: 'courtesy',
+      teiType: 'courtesy',
+    });
+    const spec = deriveDisplaySpec('courtesy', 2, 'first-mention-only');
+    // fileOccurrenceIndex 2 = second chip for Cai Yue in the unit (after 蔡約)
+    const parts = buildWesternMentionParts(m, caiYue, 2, spec, FRENCH_DEFAULTS, 'zh', 'en');
+    const preview = mentionPartsToPlainPreview(parts);
+    expect(preview).toContain('Jinghui');
+    expect(preview).toContain('景撝');
+    expect(preview).not.toMatch(/440|483/); // dates still only on first person mention
   });
 
   test('partial given shows brackets on first file occurrence', () => {
@@ -97,6 +115,94 @@ describe('mentionRender western (fr)', () => {
     const spec = deriveDisplaySpec('partial-given', 1, 'first-mention-only');
     const parts = buildWesternMentionParts(m, caiKuo, 1, spec, FRENCH_DEFAULTS, 'zh');
     expect(mentionPartsToPlainPreview(parts)).toMatch(/\[Cai\].*Kuo/);
+  });
+
+  test('multi-character given name concatenates as one word (Xingzong, not Xing Zong)', () => {
+    const xingzong: EntitySummary = {
+      id: 'person-378',
+      kind: 'person',
+      names: [
+        { lang: 'zh', text: '蔡興宗', type: 'primary' },
+        { lang: 'zh-Latn', text: 'Cai Xingzong', type: 'romanization' },
+        { lang: 'zh', text: '蔡', type: 'family', role: 'family' },
+        { lang: 'zh', text: '興宗', type: 'given', role: 'given' },
+      ],
+      primaryName: '蔡興宗',
+      romanizedName: 'Cai Xingzong',
+      translations: [],
+      description: null,
+      dates: { startYear: 415, endYear: 472, startPrecision: null, endPrecision: null },
+      familyName: 'Cai',
+      authorityIds: [],
+      classification: null,
+      workType: null,
+    };
+    const m = mention({ key: 'person-378', surface: '興宗', role: 'partial-given' });
+    const spec = deriveDisplaySpec('partial-given', 1, 'first-mention-only');
+    const parts = buildWesternMentionParts(m, xingzong, 1, spec, FRENCH_DEFAULTS, 'zh', 'en');
+    const preview = mentionPartsToPlainPreview(parts);
+    expect(preview).toContain('Xingzong');
+    expect(preview).not.toMatch(/Xing\s+Zong/);
+  });
+
+  test('office with vernacular gloss shows translation only', () => {
+    const office: EntitySummary = {
+      id: 'office-d12',
+      kind: 'office',
+      names: [
+        { lang: 'zh', text: '祠部尚書', type: 'primary' },
+        { lang: 'en', text: 'Minister of Sacrifices', type: 'translation' },
+      ],
+      primaryName: '祠部尚書',
+      romanizedName: 'Cibushangshu',
+      translations: [{ lang: 'en', text: 'Minister of Sacrifices' }],
+      description: null,
+      dates: null,
+      familyName: null,
+      authorityIds: [],
+      classification: null,
+      workType: null,
+    };
+    const m = mention({
+      key: 'office-d12',
+      kind: 'office',
+      surface: '祠部尚書',
+      role: 'office-as-written',
+    });
+    const spec = deriveDisplaySpec('office-as-written', 1, 'first-mention-only');
+    const parts = buildWesternMentionParts(m, office, 1, spec, FRENCH_DEFAULTS, 'zh', 'en');
+    const preview = mentionPartsToPlainPreview(parts);
+    expect(preview).toBe('Minister of Sacrifices');
+    expect(preview).not.toContain('祠部');
+    expect(preview).not.toMatch(/Cibu/i);
+  });
+
+  test('office falls back to romanization + Chinese when no gloss', () => {
+    const office: EntitySummary = {
+      id: 'office-d12',
+      kind: 'office',
+      names: [{ lang: 'zh', text: '祠部尚書', type: 'primary' }],
+      primaryName: '祠部尚書',
+      romanizedName: null,
+      translations: [],
+      description: null,
+      dates: null,
+      familyName: null,
+      authorityIds: [],
+      classification: null,
+      workType: null,
+    };
+    const m = mention({
+      key: 'office-d12',
+      kind: 'office',
+      surface: '祠部尚書',
+      role: 'office-as-written',
+    });
+    const spec = deriveDisplaySpec('office-as-written', 1, 'first-mention-only');
+    const parts = buildWesternMentionParts(m, office, 1, spec, FRENCH_DEFAULTS, 'zh', 'en');
+    const preview = mentionPartsToPlainPreview(parts);
+    expect(preview).toContain('祠部尚書');
+    expect(preview).toMatch(/Cibu/i);
   });
 
   test('place uses surface romanization without admin classification', () => {
@@ -111,6 +217,29 @@ describe('mentionRender western (fr)', () => {
     const preview = mentionPartsToPlainPreview(parts);
     expect(preview).toContain('濟陽');
     expect(preview).not.toContain('commandery');
+  });
+
+  test('does not duplicate Chinese when target lang was passed as sourceLang', () => {
+    const m = mention({
+      key: 'place-552',
+      kind: 'place',
+      surface: '濟陽',
+      role: 'place-as-written',
+    });
+    const spec = deriveDisplaySpec('place-as-written', 1, 'first-mention-only');
+    const parts = buildWesternMentionParts(m, jiyang, 1, spec, FRENCH_DEFAULTS, 'en');
+    const preview = mentionPartsToPlainPreview(parts);
+    expect(preview).toMatch(/Jiyang.*濟陽/);
+    expect(preview).not.toMatch(/濟陽\s+濟陽/);
+  });
+
+  test('partial given does not duplicate Chinese characters', () => {
+    const m = mention({ key: 'person-acf', surface: '廓', role: 'partial-given' });
+    const spec = deriveDisplaySpec('partial-given', 1, 'first-mention-only');
+    const parts = buildWesternMentionParts(m, caiKuo, 1, spec, FRENCH_DEFAULTS, 'en');
+    const preview = mentionPartsToPlainPreview(parts);
+    expect(preview).toMatch(/\[Cai\].*Kuo.*廓/);
+    expect(preview).not.toMatch(/廓\s+廓/);
   });
 
   test('second occurrence drops Chinese and dates', () => {

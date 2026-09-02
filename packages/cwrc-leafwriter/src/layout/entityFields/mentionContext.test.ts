@@ -4,7 +4,6 @@
 import {
   collectMentionsFromSourceUnitXml,
   deriveDisplaySpec,
-  resolveMentionRole,
   resolveMentionsWithEntities,
 } from './mentionContext';
 import type { EntitySummary } from './entitySummary';

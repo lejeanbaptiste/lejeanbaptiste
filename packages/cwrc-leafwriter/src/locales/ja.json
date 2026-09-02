@@ -321,6 +321,13 @@
         "langEn": "英語",
         "langFr": "フランス語",
         "langDe": "ドイツ語",
+        "langZh": "中国語",
+        "langJa": "日本語",
+        "langKo": "韓国語",
+        "bracketsPolicy": "推定された姓（部分的な名前）",
+        "bracketsNever": "推定された姓を表示しない",
+        "bracketsFirstMention": "ファイル内の初出のみ",
+        "bracketsAlways": "常に推定された姓を表示",
         "resetDefaults": "{{language}} のデフォルトに戻す",
         "titleConvention": "タイトルの順序（初出時）",
         "titleConventionRomanizationFirst": "ローマ字表記を先に — Jinshu 晉書（Livre des Jin）",
@@ -888,8 +895,10 @@
       "en": "英語",
       "es": "スペイン語",
       "fr": "フランス語",
+      "ja": "日本語",
       "pt": "ポルトガル語",
-      "ro": "ルーマニア語"
+      "ro": "ルーマニア語",
+      "zh-Hant": "繁体字中国語"
     },
     "lookups": {
       "entity": {

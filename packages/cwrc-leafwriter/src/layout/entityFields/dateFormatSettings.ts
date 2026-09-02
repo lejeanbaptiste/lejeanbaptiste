@@ -220,7 +220,6 @@ export const loadDateFormatState = (): StoredDateFormatState => {
     }
     if (raw) {
       const parsed = JSON.parse(raw) as Partial<StoredDateFormatState>;
-      const defaults = defaultByLanguage();
       return {
         byLanguage: {
           en: mergeLanguage(ENGLISH_DEFAULTS, parsed.byLanguage?.en),

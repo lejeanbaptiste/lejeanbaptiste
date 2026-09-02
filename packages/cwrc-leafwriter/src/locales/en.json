@@ -990,8 +990,10 @@
       "en": "English",
       "es": "Spanish",
       "fr": "French",
+      "ja": "Japanese",
       "pt": "Portuguese",
-      "ro": "Romanian"
+      "ro": "Romanian",
+      "zh-Hant": "Chinese (Traditional)"
     },
     "lookups": {
       "entity": {

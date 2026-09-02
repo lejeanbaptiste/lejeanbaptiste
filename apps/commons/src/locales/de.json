@@ -223,7 +223,7 @@
         "keep_editing": "Weiter bearbeiten",
         "merge": "Zusammenführen",
         "merge_done": "Entitätsdatenbank zusammengeführt: {{imported}} hinzugefügt, {{reconciled}} aktualisiert.",
-      "merge_done_with_conflicts": "Entitätsdatenbank zusammengeführt: {{imported}} hinzugefügt, {{reconciled}} aktualisiert, {{conflicts}} als Ihre Version beibehalten (gleichzeitige Änderungen) — prüfen Sie entities.xml.",
+        "merge_done_with_conflicts": "Entitätsdatenbank zusammengeführt: {{imported}} hinzugefügt, {{reconciled}} aktualisiert, {{conflicts}} als Ihre Version beibehalten (gleichzeitige Änderungen) — prüfen Sie entities.xml.",
         "merge_failed": "Entitätsdatenbank konnte nicht zusammengeführt werden. Laden Sie neu oder bearbeiten Sie weiter."
       },
       "translation_links_restored_one": "{{count}} Übersetzungsverknüpfung nach externer Änderung wiederhergestellt",

@@ -21,9 +21,7 @@ const companionXml = `
 describe('fileWideOccurrence', () => {
   test('counts prior refs across units before the current unit', () => {
     const doc = new DOMParser().parseFromString(companionXml, 'application/xml');
-    expect(
-      countPriorEntityRefsInDocument(doc, 'div', 'source.xml', 'unit-b', 'person-1'),
-    ).toBe(1);
+    expect(countPriorEntityRefsInDocument(doc, 'div', 'source.xml', 'unit-b', 'person-1')).toBe(1);
   });
 
   test('fileOccurrenceIndexForUnitInsert adds within-unit offset', () => {

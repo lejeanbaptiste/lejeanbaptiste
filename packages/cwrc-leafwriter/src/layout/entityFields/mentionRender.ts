@@ -7,6 +7,8 @@ import type { EntitySummary } from './entitySummary';
 import {
   familyAndGivenOf,
   formatDates,
+  officeUsesTranslationOnly,
+  translatedNameOf,
   type EntityDisplaySpec,
   type EntityPartId,
   type ResolvedEntityPart,
@@ -23,12 +25,22 @@ export interface MentionRenderPart {
   useParen?: boolean;
 }
 
-const astronomicalToHistorical = (isoYear: number): number => (isoYear <= 0 ? 1 - isoYear : isoYear);
+const normalizedSurfaceText = (text: string): string => text.normalize('NFC').trim();
+
+/** Skip the Chinese suffix when a name part already shows the same characters. */
+export const shouldAppendChinesePart = (parts: MentionRenderPart[], surface: string): boolean => {
+  const norm = normalizedSurfaceText(surface);
+  if (!norm) return false;
+  return !parts.some((part) => part.id !== 'dates' && normalizedSurfaceText(part.text) === norm);
+};
+
+const astronomicalToHistorical = (isoYear: number): number =>
+  isoYear <= 0 ? 1 - isoYear : isoYear;
 
 const formatCjkYear = (isoYear: number, settings: DateFormatSettings): string => {
   const display = astronomicalToHistorical(isoYear);
   const bce = isoYear <= 0;
-  const prefix = bce ? settings.bcePrefix ?? '前' : '';
+  const prefix = bce ? (settings.bcePrefix ?? '前') : '';
   return `${prefix}${display}`;
 };
 
@@ -38,7 +50,7 @@ export const formatEntityDatesCjk = (
   settings: DateFormatSettings,
 ): string | null => {
   if (!dates) return null;
-  const { startYear, endYear, startPrecision, endPrecision } = dates;
+  const { startYear, endYear, endPrecision } = dates;
   const open = settings.parenOpen ?? '（';
   const close = settings.parenClose ?? '）';
   const sep = settings.rangeSeparator ?? '～';
@@ -103,7 +115,35 @@ const westernPartsForFull = (
       text: romanizeMentionSurface(mention, entity, sourceLang),
     });
   }
-  if (fileOccurrenceIndex <= 1 && mention.surface) {
+  if (fileOccurrenceIndex <= 1 && shouldAppendChinesePart(parts, mention.surface)) {
+    parts.push({ id: 'chinese', text: mention.surface });
+  }
+  return parts;
+};
+
+const westernPartsForAsWritten = (
+  mention: MentionContext,
+  entity: EntitySummary,
+  fileOccurrenceIndex: number,
+  spec: EntityDisplaySpec,
+  sourceLang: string | null | undefined,
+  targetLang: string | null | undefined,
+): MentionRenderPart[] => {
+  // Offices with a vernacular gloss: translation alone (no pinyin / characters),
+  // matching resolveEntityParts / officeUsesTranslationOnly. Override to
+  // romanization-first on the mention spec to show pinyin + Chinese instead.
+  if (mention.role === 'office-as-written' && officeUsesTranslationOnly(entity, spec, targetLang)) {
+    const gloss = translatedNameOf(entity, targetLang);
+    if (gloss) return [{ id: 'translation', text: gloss }];
+  }
+
+  const parts: MentionRenderPart[] = [
+    {
+      id: 'name',
+      text: romanizeMentionSurface(mention, entity, sourceLang),
+    },
+  ];
+  if (fileOccurrenceIndex <= 1 && shouldAppendChinesePart(parts, mention.surface)) {
     parts.push({ id: 'chinese', text: mention.surface });
   }
   return parts;
@@ -116,6 +156,7 @@ export const buildWesternMentionParts = (
   spec: EntityDisplaySpec,
   settings: DateFormatSettings,
   sourceLang?: string | null,
+  targetLang?: string | null,
 ): MentionRenderPart[] => {
   let parts: MentionRenderPart[];
 
@@ -128,13 +169,16 @@ export const buildWesternMentionParts = (
           text: romanizeMentionSurface(mention, entity, sourceLang),
         },
       ];
-      if (fileOccurrenceIndex <= 1 && mention.surface) {
+      // Alternate name forms always keep characters — file-occurrence shortening
+      // is for the same *surface* repeating, not “2nd chip of this person key”
+      // (otherwise 景撝 after 蔡約 loses its Han).
+      if (shouldAppendChinesePart(parts, mention.surface)) {
         parts.push({ id: 'chinese', text: mention.surface });
       }
       break;
     case 'partial-given':
       parts = westernPartsForPartial(mention, entity, spec, sourceLang);
-      if (fileOccurrenceIndex <= 1 && mention.surface) {
+      if (shouldAppendChinesePart(parts, mention.surface)) {
         parts.push({ id: 'chinese', text: mention.surface });
       }
       break;
@@ -142,15 +186,14 @@ export const buildWesternMentionParts = (
     case 'office-as-written':
     case 'work-as-written':
     case 'org-as-written':
-      parts = [
-        {
-          id: 'name',
-          text: romanizeMentionSurface(mention, entity, sourceLang),
-        },
-      ];
-      if (fileOccurrenceIndex <= 1 && mention.surface) {
-        parts.push({ id: 'chinese', text: mention.surface });
-      }
+      parts = westernPartsForAsWritten(
+        mention,
+        entity,
+        fileOccurrenceIndex,
+        spec,
+        sourceLang,
+        targetLang,
+      );
       break;
     default:
       parts = westernPartsForFull(mention, entity, fileOccurrenceIndex, sourceLang);
@@ -206,9 +249,7 @@ export const mentionPartsToPlainPreview = (parts: MentionRenderPart[]): string =
     })
     .join('');
 
-export const resolvedPartsFromMention = (
-  parts: MentionRenderPart[],
-): ResolvedEntityPart[] =>
+export const resolvedPartsFromMention = (parts: MentionRenderPart[]): ResolvedEntityPart[] =>
   parts.map((part) => ({
     id: (part.id === 'surface' || part.id === 'bracket-family-han'
       ? 'chinese'

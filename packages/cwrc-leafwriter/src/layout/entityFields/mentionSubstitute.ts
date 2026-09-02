@@ -3,7 +3,11 @@
  */
 
 import { dateFormatSettingsForLang } from './dateFormatSettings';
-import { deriveDisplaySpec, isCharacterOnlyTranslationTarget, type MentionContext } from './mentionContext';
+import {
+  deriveDisplaySpec,
+  isCharacterOnlyTranslationTarget,
+  type MentionContext,
+} from './mentionContext';
 import { buildCjkMentionParts, buildWesternMentionParts } from './mentionRender';
 import { countPriorEntityRefsInDocument } from './fileWideOccurrence';
 import { normalizeAiPlaceholders } from './normalizeAiPlaceholders';
@@ -12,7 +16,11 @@ import { createEntityFieldElement, createMentionFieldElement } from './translati
 import { EMPTY_DISPLAY_SPEC } from './entityDisplay';
 import type { EntitySummary } from './entitySummary';
 
-const MENTION_PLACEHOLDER_RE = /\{\{(?:holding:|as:)?mention:(\d+)\}\}/g;
+/** Keyed mention tokens from blinding: {{mention:N}}, {{holding:N}}, {{as:N}} (not opaque variants). */
+const MENTION_PLACEHOLDER_RE = /\{\{(mention|holding|as):(\d+)\}\}/g;
+
+const hasKeyedMentionPlaceholders = (text: string): boolean =>
+  /\{\{(?:mention|holding|as):\d+\}\}/.test(text);
 
 export interface SubstituteMentionOptions {
   lang?: string | null;
@@ -40,7 +48,7 @@ export const substituteMentionPlaceholders = (
   const cleanedFragment = stripLeadingOfficePrepositionsFromText(
     normalizeAiPlaceholders(fragmentXml),
   );
-  if (!cleanedFragment.includes('{{mention:')) return cleanedFragment;
+  if (!hasKeyedMentionPlaceholders(cleanedFragment)) return cleanedFragment;
 
   const settings = dateFormatSettingsForLang(options.lang);
   const cjk = isCharacterOnlyTranslationTarget(options.lang);
@@ -54,7 +62,7 @@ export const substituteMentionPlaceholders = (
   let node: Node | null;
 
   while ((node = walker.nextNode())) {
-    if ((node.textContent ?? '').includes('{{mention:')) textNodes.push(node as Text);
+    if (hasKeyedMentionPlaceholders(node.textContent ?? '')) textNodes.push(node as Text);
   }
 
   for (const textNode of textNodes) {
@@ -73,7 +81,7 @@ export const substituteMentionPlaceholders = (
         replacement.appendChild(doc.createTextNode(text.slice(lastIndex, match.index)));
       }
 
-      const mentionIndex = Number(match[1]);
+      const mentionIndex = Number(match[2]);
       const mention = manifest[mentionIndex];
       if (!mention) {
         console.warn('[translation] unknown mention index:', mentionIndex);
@@ -117,7 +125,14 @@ export const substituteMentionPlaceholders = (
         settings.bracketsPolicy,
       );
       const parts = cjk
-        ? buildCjkMentionParts(mention, entity, fileOccurrenceIndex, displaySpec, settings, options.lang)
+        ? buildCjkMentionParts(
+            mention,
+            entity,
+            fileOccurrenceIndex,
+            displaySpec,
+            settings,
+            options.lang,
+          )
         : buildWesternMentionParts(
             mention,
             entity,
@@ -125,6 +140,7 @@ export const substituteMentionPlaceholders = (
             displaySpec,
             settings,
             options.sourceLang,
+            options.lang,
           );
 
       replacement.appendChild(createMentionFieldElement(entity, mention, parts, displaySpec));

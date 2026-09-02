@@ -39,7 +39,7 @@ export const normalizeAiPlaceholders = (text: string): string => {
     ),
     '{{as:opaque:$1}}',
   );
-  for (const role of ['entity', 'holding', 'as'] as const) {
+  for (const role of ['entity', 'mention', 'holding', 'as'] as const) {
     out = out.replace(
       new RegExp(
         `\\{\\{\\s*${QUOTE}\\s*${role}\\s*:\\s*${QUOTE}\\s*([^{}\\s"'“”]+?)\\s*${QUOTE}\\s*\\}\\}`,

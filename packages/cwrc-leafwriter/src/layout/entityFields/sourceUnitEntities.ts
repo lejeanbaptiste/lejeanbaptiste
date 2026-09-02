@@ -427,12 +427,7 @@ export const replaceEntitiesWithPlaceholdersInSourceXml = (
     const tag = el.localName || el.tagName.toLowerCase();
     if (tagSet.has(tag)) {
       const key = el.getAttribute('key')?.trim();
-      if (
-        key &&
-        knownKeys.has(key) &&
-        !isInsideNobleTitle(el) &&
-        !hasKeyedEntityAncestor(el)
-      ) {
+      if (key && knownKeys.has(key) && !isInsideNobleTitle(el) && !hasKeyedEntityAncestor(el)) {
         const isOffice = tag === 'roleName' || tag === 'officeName';
         const placeholderRole: MentionPlaceholderRole =
           isOffice && isAfterWei(el) ? 'as' : 'entity';

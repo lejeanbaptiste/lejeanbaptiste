@@ -97,10 +97,7 @@ import {
   deriveDisplaySpec,
   type MentionContext,
 } from './entityFields/mentionContext';
-import {
-  substituteMentionPlaceholders,
-  substituteEntityPlaceholders,
-} from './entityFields/mentionSubstitute';
+import { substituteMentionPlaceholders } from './entityFields/mentionSubstitute';
 import { dateFormatSettingsForLang } from './entityFields/dateFormatSettings';
 import {
   buildCjkMentionParts,
@@ -131,7 +128,6 @@ import {
   dayLevelByDateIndex,
 } from './entityFields/adjustDatePrepositions';
 import { normalizeAiPlaceholders } from './entityFields/normalizeAiPlaceholders';
-import { stripLeadingOfficePrepositionsFromText } from './entityFields/stripOfficePrepositions';
 import { entityStoreFromDesktop } from '../autoTagging/entityStore';
 import { clearOfficeGlossIndexCaches } from '../autoTagging/officeGlossLookup';
 import {
@@ -347,6 +343,7 @@ interface DesktopElectronApi {
 interface TranslationLanguageState {
   indexing: boolean;
   languages: { code: string; label: string }[];
+  projectSourceLang: string | null;
   selectedLang: string;
   setSelectedLang: (lang: string) => void;
 }
@@ -685,7 +682,10 @@ const applyMarkdownCleanupToFragment = (fragmentXml: string): string => {
 const DATE_PLACEHOLDER_RE = /\{\{date:(\d+)\}\}/g;
 
 /** @see mentionSubstitute.substituteEntityPlaceholders */
-export { substituteEntityPlaceholders, substituteMentionPlaceholders } from './entityFields/mentionSubstitute';
+export {
+  substituteEntityPlaceholders,
+  substituteMentionPlaceholders,
+} from './entityFields/mentionSubstitute';
 
 /**
  * Replace every `{{date:N}}` placeholder with an atomic `ref[type="ljb-date"]`
@@ -970,6 +970,7 @@ export const TranslationPane = () => {
     getTranslationLanguageState(),
   );
   const selectedLanguage = languageState?.selectedLang || translationMode.lang || '';
+  const projectSourceLang = languageState?.projectSourceLang ?? null;
   const [spellcheckEnabled, setSpellcheckEnabled] = useState(() => readSpellcheckEnabled());
   const [languageToolEnabled, setLanguageToolEnabled] = useState(false);
   const [languageToolLive, setLanguageToolLive] = useState(false);
@@ -1556,6 +1557,7 @@ export const TranslationPane = () => {
                 1,
                 displaySpec,
                 settings,
+                projectSourceLang,
                 selectedLanguage,
               );
           return candidateFromMention(
@@ -1856,7 +1858,11 @@ export const TranslationPane = () => {
         const noteHits = collectNotesFromSourceUnitXml(sourceUnit.xml);
         const sourceXmlNotesStripped = replaceNotesWithPlaceholdersInSourceXml(sourceUnit.xml);
 
-        const { xml: sourceUnitXmlForAi, opaques, mentions } = replaceEntitiesWithPlaceholdersInSourceXml(
+        const {
+          xml: sourceUnitXmlForAi,
+          opaques,
+          mentions,
+        } = replaceEntitiesWithPlaceholdersInSourceXml(
           replaceDatesWithPlaceholdersInSourceXml(sourceXmlNotesStripped),
           knownEntityKeys,
         );
@@ -1926,14 +1932,20 @@ export const TranslationPane = () => {
 
         const cleanedXml = normalizeAiPlaceholders(applyMarkdownCleanupToFragment(validated.xml));
         const withOpaques = substituteOpaquePlaceholders(cleanedXml, opaqueMap);
-        const withEntities = substituteMentionPlaceholders(withOpaques, resolvedManifest, entityMap, {
-          lang: selectedLanguage,
-          translationDoc: docRef.current,
-          alignmentUnit: alignmentUnit ?? undefined,
-          sourceFileName: sourcePath ? fileNameOf(sourcePath) : undefined,
-          unitId,
-          fileOccurrenceOffsetByKey,
-        });
+        const withEntities = substituteMentionPlaceholders(
+          withOpaques,
+          resolvedManifest,
+          entityMap,
+          {
+            lang: selectedLanguage,
+            sourceLang: projectSourceLang,
+            translationDoc: docRef.current,
+            alignmentUnit: alignmentUnit ?? undefined,
+            sourceFileName: sourcePath ? fileNameOf(sourcePath) : undefined,
+            unitId,
+            fileOccurrenceOffsetByKey,
+          },
+        );
         const withDates = substituteDatePlaceholders(withEntities, dateMap, selectedLanguage);
 
         // Translate each note independently, only after the main text succeeded.
@@ -2000,6 +2012,7 @@ export const TranslationPane = () => {
             entityMap,
             {
               lang: selectedLanguage,
+              sourceLang: projectSourceLang,
               translationDoc: docRef.current,
               alignmentUnit: alignmentUnit ?? undefined,
               sourceFileName: sourcePath ? fileNameOf(sourcePath) : undefined,
@@ -2833,16 +2846,6 @@ export const TranslationPane = () => {
       ).filter((node) => node.getAttribute('key') === entityId).length;
 
       const settings = dateFormatSettingsForLang(selectedLanguage);
-      const priorInFile =
-        translationDoc && alignmentUnit && sourcePath && selectedUnitId
-          ? countPriorEntityRefsInDocument(
-              translationDoc,
-              alignmentUnit,
-              fileNameOf(sourcePath),
-              selectedUnitId,
-              entityId,
-            )
-          : 0;
       const fileOccurrenceIndex = fileOccurrenceIndexForUnitInsert(
         translationDoc,
         alignmentUnit ?? 'p',
@@ -2875,6 +2878,7 @@ export const TranslationPane = () => {
               fileOccurrenceIndex,
               displaySpec,
               settings,
+              projectSourceLang,
               selectedLanguage,
             );
         field = createMentionFieldElement(entity, mention, parts, displaySpec);
@@ -2902,6 +2906,7 @@ export const TranslationPane = () => {
         alignmentUnit: alignmentUnit ?? undefined,
         sourceFileName: sourcePath ? fileNameOf(sourcePath) : undefined,
         unitId: selectedUnitId ?? undefined,
+        sourceLang: projectSourceLang,
       });
       setCardsEpoch((epoch) => epoch + 1);
       prepareAtomicEntityFields(editable);
@@ -3127,7 +3132,9 @@ export const TranslationPane = () => {
 
     writeDisplaySpecToField(field, spec);
     setEntityFormatSpec(spec);
-    recalculateEntityFieldsInRoot(editable, entity.id, entity, undefined, selectedLanguage);
+    recalculateEntityFieldsInRoot(editable, entity.id, entity, undefined, selectedLanguage, {
+      sourceLang: projectSourceLang,
+    });
     prepareAtomicEntityFields(editable);
     refreshFootnotes();
     setEntityFormatOccurrence(occurrenceIndexForField(field));
@@ -3157,6 +3164,7 @@ export const TranslationPane = () => {
           refreshed,
           undefined,
           selectedLanguage,
+          { sourceLang: projectSourceLang },
         );
         prepareAtomicEntityFields(editable);
         refreshFootnotes();
@@ -4091,7 +4099,8 @@ export const TranslationPane = () => {
                     borderLeftColor: isActive ? 'error.main' : 'transparent',
                     bgcolor: isActive ? 'background.paper' : 'transparent',
                     cursor: isActive ? (isGeneratingCard ? 'default' : 'text') : 'pointer',
-                    '&:hover': isActive || isGeneratingCard ? undefined : { bgcolor: 'action.hover' },
+                    '&:hover':
+                      isActive || isGeneratingCard ? undefined : { bgcolor: 'action.hover' },
                   }}
                 >
                   {!isActive ? (
@@ -4215,7 +4224,11 @@ export const TranslationPane = () => {
                             ...unitBodySx,
                             flex: '1 0 auto',
                             ...(isGeneratingCard
-                              ? { pointerEvents: 'none', userSelect: 'none', color: 'text.disabled' }
+                              ? {
+                                  pointerEvents: 'none',
+                                  userSelect: 'none',
+                                  color: 'text.disabled',
+                                }
                               : {}),
                             '&:empty::before': {
                               content: `"${t('LW.translationPane.startTypingPlaceholder')}"`,
@@ -4314,7 +4327,9 @@ export const TranslationPane = () => {
                                   data-leaf-footnote-editor={index}
                                   dangerouslySetInnerHTML={{ __html: text }}
                                   lang={spellcheckLang}
-                                  spellCheck={spellcheckEnabled && !languageToolLive && !isGeneratingCard}
+                                  spellCheck={
+                                    spellcheckEnabled && !languageToolLive && !isGeneratingCard
+                                  }
                                   onBlur={(event) => {
                                     rememberFootnoteRange(index, event.currentTarget);
                                     updateFootnote(index, event.currentTarget.innerHTML);
@@ -4368,7 +4383,11 @@ export const TranslationPane = () => {
                                     outline: 'none',
                                     py: 0.25,
                                     ...(isGeneratingCard
-                                      ? { pointerEvents: 'none', userSelect: 'none', color: 'text.disabled' }
+                                      ? {
+                                          pointerEvents: 'none',
+                                          userSelect: 'none',
+                                          color: 'text.disabled',
+                                        }
                                       : {}),
                                     '&:empty::before': {
                                       content: `"${t('LW.translationPane.footnotePlaceholder')}"`,
