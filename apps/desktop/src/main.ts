@@ -894,6 +894,7 @@ const DEV_COMMONS_URL = process.env.COMMONS_URL ?? 'http://localhost:3000';
 const PROD_SERVER_PORT = process.env.LJB_SERVER_PORT ?? '3847';
 const DEV_READY_TIMEOUT_MS = 120_000;
 const DEV_READY_POLL_MS = 1_000;
+const PROD_READY_TIMEOUT_MS = 30_000;
 
 const devCommonsUrl = (routePath: string): string => {
   const base = new URL(DEV_COMMONS_URL);
@@ -1022,30 +1023,46 @@ const getCommonsPaths = () => {
   };
 };
 
-const startCommonsServer = (): Promise<void> => {
-  return new Promise((resolve, reject) => {
-    const { serverPath } = getCommonsPaths();
-    serverProcess = fork(serverPath, [], {
-      env: { ...process.env, PORT: PROD_SERVER_PORT, NODE_ENV: 'production' },
-      stdio: 'pipe',
-    });
+const startCommonsServer = async (): Promise<void> => {
+  const { serverPath } = getCommonsPaths();
+  const stderr: string[] = [];
 
-    serverProcess.on('error', reject);
+  const child = fork(serverPath, [], {
+    env: { ...process.env, PORT: PROD_SERVER_PORT, NODE_ENV: 'production' },
+    stdio: 'pipe',
+  });
+  serverProcess = child;
 
-    const timeout = setTimeout(() => resolve(), 2000);
+  child.stdout?.on('data', (data: Buffer) => {
+    if (process.env.LJB_DEBUG === '1') console.log('[commons-server]', data.toString());
+  });
 
-    serverProcess.stdout?.on('data', (data: Buffer) => {
-      const text = data.toString();
-      if (text.includes('listening')) {
-        clearTimeout(timeout);
-        resolve();
-      }
-    });
+  child.stderr?.on('data', (data: Buffer) => {
+    const text = data.toString();
+    stderr.push(text);
+    if (stderr.length > 20) stderr.shift();
+    console.error('[commons-server]', text);
+  });
 
-    serverProcess.stderr?.on('data', (data: Buffer) => {
-      console.error('[commons-server]', data.toString());
+  // The child dying before it answers is the usual packaged-build failure (port
+  // already taken, a resource missing from the bundle). Carry its stderr out so
+  // the startup dialog can say what actually happened.
+  const died = new Promise<never>((_, reject) => {
+    child.on('error', reject);
+    child.on('exit', (code, signal) => {
+      const why = signal ?? `code ${code}`;
+      const tail = stderr.join('').trim();
+      reject(new Error(`Bundled server exited early (${why})${tail ? `:\n${tail}` : '.'}`));
     });
   });
+
+  // Poll the server itself rather than trusting a fixed delay: the old 2s timer
+  // resolved whether or not anything was listening, so a slow or failed start
+  // surfaced as an unexplained blank-window failure one line later.
+  await Promise.race([
+    waitForUrl(`http://127.0.0.1:${PROD_SERVER_PORT}/project`, PROD_READY_TIMEOUT_MS),
+    died,
+  ]);
 };
 
 const waitForUrl = (url: string, timeoutMs = DEV_READY_TIMEOUT_MS): Promise<void> => {
@@ -3953,6 +3970,27 @@ const registerIpcHandlers = () => {
   });
 };
 
+let backgroundServicesStarted = false;
+
+/**
+ * Backup and sync startup work, deferred until the window is up.
+ *
+ * These read credentials through Electron `safeStorage`, which is synchronous
+ * and can put a *blocking* OS keychain prompt in front of the main process. Run
+ * from `whenReady`, a prompt the user cannot answer (a login keychain out of
+ * sync with the account password, say) stalls the bundled server before it is
+ * even forked, and the app reports that as "could not start the bundled
+ * server". Run from `did-finish-load`, the worst it can block is a window that
+ * is already on screen.
+ */
+const startBackgroundServices = (): void => {
+  if (backgroundServicesStarted) return;
+  backgroundServicesStarted = true;
+  void startBackupTimer();
+  void startSyncTimer();
+  scheduleLaunchSync();
+};
+
 const createWindow = async () => {
   if (isMainWindowLive()) return;
 
@@ -3991,6 +4029,7 @@ const createWindow = async () => {
   mainWindow.webContents.on('did-finish-load', () => {
     setMainWindowTitle(APP_NAME);
     prewarmNativeDialog('projectMetadata');
+    startBackgroundServices();
   });
 
   // On Windows, clicking the title-bar close button otherwise starts closing
@@ -4048,11 +4087,12 @@ const createWindow = async () => {
     const detail = isDev
       ? 'Make sure leafwriter-commons is running on port 3000, then restart the desktop app.\n\nFrom the repo root: npm run dev -w leafwriter-commons'
       : 'The packaged app could not start its bundled server. Quit the app and open it again. If the problem persists, rebuild the installer and make sure the packaged Commons server was included.';
+    const reason = error instanceof Error ? error.message : String(error);
     await dialog.showMessageBox(mainWindow, {
       type: 'error',
       title: APP_NAME,
       message,
-      detail,
+      detail: `${detail}\n\n${reason}`,
     });
     app.quit();
     return;
@@ -4131,9 +4171,6 @@ app.whenReady().then(() => {
     buildApplicationMenu();
     await syncEnabledPluginContributions();
   })();
-  void startBackupTimer();
-  void startSyncTimer();
-  scheduleLaunchSync();
   void createWindow();
 
   app.on('activate', () => {

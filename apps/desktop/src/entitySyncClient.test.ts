@@ -1,4 +1,9 @@
-import { EntitySyncAuthError, EntitySyncClient, EntitySyncError } from './entitySyncClient';
+import {
+  EntitySyncAuthError,
+  EntitySyncClient,
+  EntitySyncError,
+  EntitySyncQuotaError,
+} from './entitySyncClient';
 
 const jsonResponse = (body: unknown, status = 200): Response =>
   new Response(JSON.stringify(body), { status, headers: { 'content-type': 'application/json' } });
@@ -49,6 +54,26 @@ describe('EntitySyncClient', () => {
     const fetchImpl = jest.fn() as unknown as typeof fetch;
     await expect(makeClient(fetchImpl, null).pull(0)).rejects.toBeInstanceOf(EntitySyncAuthError);
     expect(fetchImpl).not.toHaveBeenCalled();
+  });
+
+  it('throws EntitySyncQuotaError on a 429 { quota: true } without retrying', async () => {
+    const fetchImpl = jest.fn(async () =>
+      jsonResponse({ error: 'write limit reached', quota: true }, 429),
+    ) as unknown as typeof fetch;
+    const client = makeClient(fetchImpl);
+    await expect(client.push([])).rejects.toBeInstanceOf(EntitySyncQuotaError);
+    expect(fetchImpl).toHaveBeenCalledTimes(1);
+  });
+
+  it('still retries a plain 429 (no quota flag)', async () => {
+    let calls = 0;
+    const fetchImpl = jest.fn(async () => {
+      calls += 1;
+      if (calls < 2) return jsonResponse({ error: 'slow down' }, 429);
+      return jsonResponse({ changes: [], highSeq: 0, hasMore: false });
+    }) as unknown as typeof fetch;
+    await makeClient(fetchImpl).pull(0);
+    expect(calls).toBe(2);
   });
 
   it('retries 5xx then succeeds', async () => {

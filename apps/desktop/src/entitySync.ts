@@ -27,6 +27,7 @@ import {
 } from './entityDbSqlite/entitySyncRepo';
 import {
   EntitySyncClient,
+  EntitySyncQuotaError,
   type SyncAppliedEntity,
   type SyncConflictEntity,
   type SyncPullChange,
@@ -43,6 +44,8 @@ export interface SyncRunResult {
   pushedConflicts: number;
   cursor: number;
   openConflicts: number;
+  /** Set when the push loop stopped before finishing (server write quota). */
+  stoppedEarly?: 'write-quota';
 }
 
 export type SyncProgress =
@@ -98,7 +101,18 @@ export async function runSync(options: RunSyncOptions): Promise<SyncRunResult> {
       .filter((p): p is SyncPushEntity => p !== null);
     if (payload.length === 0) continue;
 
-    const res = await client.push(payload);
+    let res: Awaited<ReturnType<typeof client.push>>;
+    try {
+      res = await client.push(payload);
+    } catch (error) {
+      if (error instanceof EntitySyncQuotaError) {
+        // Server write quota (D1 free tier). Stop cleanly; the entities that
+        // did land keep their sync_state, the rest stay dirty for next time.
+        result.stoppedEarly = 'write-quota';
+        break;
+      }
+      throw error;
+    }
     const byLocal = new Map(batch.map((d) => [d.localId, d]));
     repo.transaction(() => {
       for (const applied of res.applied) {
@@ -129,9 +143,11 @@ export async function runSync(options: RunSyncOptions): Promise<SyncRunResult> {
     });
   }
 
-  // Drain anything that landed while we were pushing (our own writes are
-  // recognised and skipped; a concurrent device's writes get applied/queued).
-  result.cursor = await pullPhase(repo, client, pullLimit, result, signal, onProgress);
+  if (!result.stoppedEarly) {
+    // Drain anything that landed while we were pushing (our own writes are
+    // recognised and skipped; a concurrent device's writes get applied/queued).
+    result.cursor = await pullPhase(repo, client, pullLimit, result, signal, onProgress);
+  }
 
   result.openConflicts = countOpenConflicts(repo);
   return result;
@@ -194,12 +210,39 @@ function applyPulledChange(
     return;
   }
 
+  const localHash =
+    localEntity && !localEntity.deletedAt
+      ? (localEntityHash(repo, change.centralId) ?? '')
+      : localEntity?.deletedAt
+        ? ''
+        : null;
+
+  // Local content already equals the incoming change (a re-seed adoption, or
+  // our own edit that converged). Record the mapping and skip the expensive
+  // import/replace round-trip.
+  if (
+    localEntity &&
+    localHash !== null &&
+    localHash === change.contentHash &&
+    Boolean(localEntity.deletedAt) === change.deleted
+  ) {
+    upsertSyncState(repo, {
+      projectEntityId: change.centralId,
+      centralEntityId: change.centralId,
+      centralRevision: change.revision,
+      projectRevision: localEntity.revision,
+      centralHash: change.contentHash,
+      projectHash: change.contentHash,
+    });
+    result.pulledApplied += 1;
+    return;
+  }
+
   const localIsDirty = Boolean(
     localEntity && (!state || state.projectRevision !== localEntity.revision),
   );
 
   if (localEntity && localIsDirty) {
-    const localHash = localEntity.deletedAt ? '' : (localEntityHash(repo, change.centralId) ?? '');
     if (localHash !== change.contentHash) {
       openConflict(repo, {
         projectEntityId: change.centralId,

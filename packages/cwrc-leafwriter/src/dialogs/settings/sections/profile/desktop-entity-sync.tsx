@@ -39,6 +39,7 @@ interface SyncRunSummary {
   ok: boolean;
   reason: string;
   skipped?: string;
+  stoppedEarly?: string;
   error?: string;
   pulledApplied?: number;
   pulledConflicts?: number;
@@ -101,6 +102,8 @@ const syncSkippedKey = (reason?: string): string => {
       return 'LW.desktop.settings.entity_sync.skipped_in_progress';
     case 'not-signed-in':
       return 'LW.desktop.settings.entity_sync.skipped_not_signed_in';
+    case 'write-quota':
+      return 'LW.desktop.settings.entity_sync.skipped_write_quota';
     default:
       return 'LW.desktop.settings.entity_sync.sync_skipped';
   }
@@ -198,6 +201,13 @@ export const DesktopEntitySync = () => {
             pulled: result.pulledApplied ?? 0,
             pushed: result.pushedApplied ?? 0,
             conflicts: result.openConflicts ?? 0,
+          }),
+        });
+      } else if (result.stoppedEarly === 'write-quota') {
+        setFeedback({
+          severity: 'info',
+          message: t('LW.desktop.settings.entity_sync.skipped_write_quota', {
+            pushed: result.pushedApplied ?? 0,
           }),
         });
       } else {

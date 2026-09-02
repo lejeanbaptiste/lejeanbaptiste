@@ -203,12 +203,33 @@ force-clears its single-flight guard if a run outlives it, so a black-holed
 `fetch` can never lock sync out permanently. `onProgress` logs
 `[entitySync] push chunk N/M …` to the main-process console.
 
+**Write-quota resilience & first-load seeding.** A large first sync exceeds
+D1's free-tier write cap (100k rows/day, and each `central_entities` insert is
+~2 index rows). Handling:
+
+- Migration `0003` rebuilds `central_entities` `WITHOUT ROWID` — one fewer
+  index write per row.
+- The Worker returns `429 { quota: true }` when D1 refuses a write for quota;
+  `EntitySyncClient` raises `EntitySyncQuotaError` (no retry), `runSync`
+  returns `stoppedEarly: 'write-quota'` with partial progress, and the service
+  writes a `write-quota` marker and skips automatic runs for ~1h (manual "Sync
+  now" still tries).
+- `apps/desktop/scripts/generate-entity-sync-seed.mjs` emits `seed-NNN.sql`
+  files (INSERTs at `revision = 1` + the `sync_counter` row) from a local
+  `entities.sqlite`. Apply with `wrangler d1 execute … --file`, one per day if
+  needed. The next in-app **Sync now** then reconciles everything locally
+  (reads only) via the pull fast-path below — no D1 writes.
+- Pull fast-path: when a pulled change's `contentHash` already equals the local
+  entity's, `applyPulledChange` records `sync_state` and skips the
+  import/replace round-trip. Speeds every drain-pull and makes post-seed
+  adoption cheap.
+
 ### Still open
 
-- **Content-hash fidelity** — confirm `applyRemoteEntity` reproduces the
-  pusher's `computeEntityContentHash` byte-for-byte across app versions
-  (a spike showed the transfer is faithful; a schema/serialization change
-  could still drift it — version the hash and re-baseline on migration).
+- **Content-hash fidelity** — confirm `applyRemoteEntity` (and the seed script)
+  reproduce the pusher's `computeEntityContentHash` byte-for-byte across app
+  versions (a spike showed the transfer is faithful; a schema/serialization
+  change could still drift it — version the hash and re-baseline on migration).
 - **Second-device soak** — two project folders against one central store for a
   week; watch conflict rate and D1 usage.
 

@@ -33,6 +33,12 @@ export interface EntityDbBackupConfigView {
   intervalMinutes: number;
   hasSecret: boolean;
   encryptionAvailable: boolean;
+  /**
+   * Credentials are stored but could not be decrypted — typically an OS
+   * keychain prompt that was dismissed or could not be satisfied. Distinct from
+   * "never configured", which leaves every field blank too but is not a fault.
+   */
+  credentialsLocked: boolean;
 }
 
 const CONFIG_FILENAME = 'entity-db-backup-config.enc';
@@ -104,11 +110,16 @@ export const readBackupConfig = async (): Promise<EntityDbBackupConfig | null> =
 export const readBackupConfigView = async (): Promise<EntityDbBackupConfigView> => {
   const encryptionAvailable = isBackupEncryptionAvailable();
   let config: EntityDbBackupConfig | null = null;
+  let credentialsLocked = false;
   try {
     config = await readBackupConfig();
   } catch {
     // A decrypt failure still lets the panel render (with everything blank)
-    // and show that encryption is unavailable, rather than throwing at it.
+    // rather than throwing at it — but it must not look like "not configured":
+    // `readBackupConfig` returns null for a missing file and only throws when a
+    // file is there and unreadable, so reaching here means backups are silently
+    // off until the keychain lets us in.
+    credentialsLocked = true;
   }
   return {
     enabled: config?.enabled ?? false,
@@ -119,6 +130,7 @@ export const readBackupConfigView = async (): Promise<EntityDbBackupConfigView> 
     intervalMinutes: config?.intervalMinutes ?? DEFAULT_INTERVAL_MINUTES,
     hasSecret: Boolean(config?.secretAccessKey),
     encryptionAvailable,
+    credentialsLocked,
   };
 };
 

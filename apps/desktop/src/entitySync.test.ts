@@ -1,12 +1,15 @@
 import { EntitySqliteRepository } from './entityDbSqlite/repository';
 import {
   countOpenConflicts,
+  exportLocalEntityXml,
   getSyncCursor,
   listDirtyForSync,
   listOpenConflicts,
+  localEntityHash,
   setSyncCursor,
 } from './entityDbSqlite/entitySyncRepo';
 import { runSync, resolveConflictKeepLocal, resolveConflictKeepRemote } from './entitySync';
+import { EntitySyncQuotaError } from './entitySyncClient';
 import type {
   SyncPullChange,
   SyncPullResult,
@@ -34,6 +37,26 @@ class FakeCentral {
 
   private lastSeq = 0;
 
+  /** When set, `push` throws a quota error once it has accepted this many entities. */
+  quotaAfter = Infinity;
+  private acceptedTotal = 0;
+
+  /** Seed a central row directly (out-of-band, like the seed script). */
+  seed(
+    centralId: string,
+    row: Omit<SyncPushEntity, 'localId' | 'baseRevision'> & { seq?: number },
+  ) {
+    this.lastSeq += 1;
+    this.rows.set(centralId, {
+      kind: row.kind,
+      revision: 1,
+      contentXml: row.contentXml,
+      contentHash: row.contentHash,
+      deleted: row.deleted ?? false,
+      seq: row.seq ?? this.lastSeq,
+    });
+  }
+
   pull = async (since: number, limit = 500): Promise<SyncPullResult> => {
     const changes = [...this.rows.entries()]
       .filter(([, r]) => r.seq > since)
@@ -56,6 +79,9 @@ class FakeCentral {
   };
 
   push = async (entities: SyncPushEntity[]): Promise<SyncPushResult> => {
+    if (this.acceptedTotal >= this.quotaAfter) {
+      throw new EntitySyncQuotaError('write quota reached');
+    }
     const applied: SyncPushResult['applied'] = [];
     const reconciled: SyncPushResult['reconciled'] = [];
     const conflicts: SyncPushResult['conflicts'] = [];
@@ -111,6 +137,7 @@ class FakeCentral {
         serverDeleted: existing.deleted,
       });
     }
+    this.acceptedTotal += applied.length + reconciled.length;
     return { applied, reconciled, conflicts, highSeq: this.lastSeq };
   };
 
@@ -284,6 +311,45 @@ describe('runSync', () => {
       pushedConflicts: 0,
       openConflicts: 0,
     });
+  });
+
+  it('stops cleanly (no throw) when the server is out of write quota', async () => {
+    const central = new FakeCentral();
+    central.quotaAfter = 0; // refuse every push
+    const repo = freshRepo();
+    addPerson(repo, 'person-a', '甲');
+
+    const result = await runSync({ repo, client: central });
+    expect(result.stoppedEarly).toBe('write-quota');
+    expect(result.pushedApplied).toBe(0);
+    // the entity stays dirty for a later run; nothing was queued as a conflict
+    expect(listDirtyForSync(repo).map((d) => d.localId)).toEqual(['person-a']);
+    expect(countOpenConflicts(repo)).toBe(0);
+  });
+
+  it('adopts a seeded central row without a re-apply when local content already matches', async () => {
+    // Emulate the out-of-band seed: the entity exists locally, an identical
+    // row is on central at revision 1, and there's no local sync_state yet.
+    const source = freshRepo();
+    addPerson(source, 'person-x', '司馬遷');
+    const central = new FakeCentral();
+    central.seed('person-x', {
+      kind: 'person',
+      contentXml: exportLocalEntityXml(source, 'person-x')!,
+      contentHash: localEntityHash(source, 'person-x')!,
+    });
+
+    const repo = freshRepo();
+    addPerson(repo, 'person-x', '司馬遷');
+    const before = repo.getEntity('person-x')!.revision;
+
+    const result = await runSync({ repo, client: central });
+    expect(result.pulledApplied).toBe(1);
+    expect(result.pulledConflicts).toBe(0);
+    // fast path: the local row's content was not re-imported, so its revision
+    // is unchanged
+    expect(repo.getEntity('person-x')!.revision).toBe(before);
+    expect(listDirtyForSync(repo)).toHaveLength(0);
   });
 });
 

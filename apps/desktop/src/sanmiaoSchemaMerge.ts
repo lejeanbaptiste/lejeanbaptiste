@@ -8,7 +8,7 @@ import type { ProjectBundle } from './projectFile';
 
 export const SANMIAO_PATCH_FILENAME = 'ljb-sanmiao-dates.rng';
 /** Bump when the generated RNG changes so existing merged schemas get regenerated. */
-export const SANMIAO_MERGE_VERSION = 14;
+export const SANMIAO_MERGE_VERSION = 15;
 const MERGE_VERSION_MARKER = `ljb-sanmiao-merge v${SANMIAO_MERGE_VERSION}`;
 const TEI_NS = 'http://www.tei-c.org/ns/1.0';
 const TEI_CATALOG_IDS = new Set(['teiAll', 'teiLite', 'teiSimplePrint', 'jTei']);
@@ -190,17 +190,34 @@ export const generateSanmiaoHelperDefines = (): string => {
       <empty/>
     </element>
   </define>
+  <define name="ljb.dynasty">
+    <element name="dynasty">
+      <a:documentation>Dynasty naming a noble title's period. Not a TEI element: an LJB extension, like nobleTitle's other inline children.</a:documentation>
+      <zeroOrMore>
+        <choice>
+          <text/>
+          <ref name="model.global"/>
+        </choice>
+      </zeroOrMore>
+      <ref name="att.global.attributes"/>
+    </element>
+  </define>
   <define name="ljb.nobleTitle">
     <element name="nobleTitle">
       <oneOrMore>
         <choice>
           <text/>
           <ref name="model.global"/>
+          <ref name="ljb.dynasty"/>
           <ref name="placeName"/>
           <ref name="roleName"/>
           <ref name="persName"/>
         </choice>
       </oneOrMore>
+      <ref name="att.global.attributes"/>
+      <ref name="att.personal.attributes"/>
+      <ref name="att.datable.attributes"/>
+      <optional><attribute name="dynasty"><text/></attribute></optional>
     </element>
   </define>
   <define name="ljb.personWrapper">

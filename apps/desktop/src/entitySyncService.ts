@@ -61,7 +61,9 @@ export type SyncReason = 'manual' | 'timer' | 'launch';
 export interface SyncRunSummary {
   ok: boolean;
   reason: SyncReason;
-  skipped?: 'disabled' | 'in-progress' | 'no-database' | 'not-signed-in';
+  skipped?: 'disabled' | 'in-progress' | 'no-database' | 'not-signed-in' | 'write-quota';
+  /** Set when the push stopped on the server's write quota (partial progress above). */
+  stoppedEarly?: 'write-quota';
   error?: string;
   pulledApplied?: number;
   pulledConflicts?: number;
@@ -109,6 +111,9 @@ export const getLastSyncRun = async (): Promise<SyncRunSummary | null> => {
 
 /** Single-flight guard: timestamp of the current run, or null when idle. */
 let runStartedAt: number | null = null;
+/** After a server write-quota stop, skip automatic runs until this time. */
+let quotaCooldownUntil = 0;
+const QUOTA_COOLDOWN_MS = 60 * 60 * 1000;
 
 export const runEntitySync = async (reason: SyncReason): Promise<SyncRunSummary> => {
   // Normally single-flight; but if a run has outlived its watchdog (process
@@ -116,6 +121,11 @@ export const runEntitySync = async (reason: SyncReason): Promise<SyncRunSummary>
   // locking sync out forever.
   if (runStartedAt !== null && Date.now() - runStartedAt < RUN_TIMEOUT_MS + 60_000) {
     return { ok: false, reason, skipped: 'in-progress' };
+  }
+  // Don't hammer a server that's told us it's out of write quota; a manual
+  // "Sync now" still tries (the cap may have reset, or a pull-only run helps).
+  if (reason !== 'manual' && Date.now() < quotaCooldownUntil) {
+    return { ok: false, reason, skipped: 'write-quota' };
   }
 
   const config = await readSyncConfig();
@@ -150,9 +160,14 @@ export const runEntitySync = async (reason: SyncReason): Promise<SyncRunSummary>
         achievementsError instanceof Error ? achievementsError.message : achievementsError,
       );
     }
+    if (result.stoppedEarly === 'write-quota') {
+      quotaCooldownUntil = Date.now() + QUOTA_COOLDOWN_MS;
+    }
     const summary: SyncRunSummary = {
-      ok: true,
+      ok: result.stoppedEarly ? false : true,
       reason,
+      skipped: result.stoppedEarly === 'write-quota' ? 'write-quota' : undefined,
+      stoppedEarly: result.stoppedEarly,
       pulledApplied: result.pulledApplied,
       pulledConflicts: result.pulledConflicts,
       pushedApplied: result.pushedApplied,
@@ -168,7 +183,7 @@ export const runEntitySync = async (reason: SyncReason): Promise<SyncRunSummary>
     };
     await writeMarker(summary);
     console.log(
-      `[entitySync] run (${reason}) done in ${summary.durationMs}ms: ` +
+      `[entitySync] run (${reason}) ${result.stoppedEarly ? 'stopped (write quota)' : 'done'} in ${summary.durationMs}ms: ` +
         `pulled ${summary.pulledApplied}/${summary.pulledConflicts}, ` +
         `pushed ${summary.pushedApplied}/${summary.pushedReconciled}/${summary.pushedConflicts}, ` +
         `cursor ${summary.cursor}, open conflicts ${summary.openConflicts}`,

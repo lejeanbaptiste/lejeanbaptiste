@@ -114,6 +114,9 @@ export interface EntityDbBackupConfigView {
   intervalMinutes: number;
   hasSecret: boolean;
   encryptionAvailable: boolean;
+  /** Credentials are stored but could not be decrypted (e.g. a keychain prompt
+   * that was dismissed). Automatic backups stay off until this clears. */
+  credentialsLocked: boolean;
 }
 
 export interface EntityDbBackupResult {
@@ -199,7 +202,8 @@ export type EntitySyncConfigPatch = Partial<Omit<EntitySyncConfig, 'auth'>> & {
 export interface EntitySyncRunSummary {
   ok: boolean;
   reason: 'manual' | 'timer' | 'launch';
-  skipped?: 'disabled' | 'in-progress' | 'no-database' | 'not-signed-in';
+  skipped?: 'disabled' | 'in-progress' | 'no-database' | 'not-signed-in' | 'write-quota';
+  stoppedEarly?: 'write-quota';
   error?: string;
   pulledApplied?: number;
   pulledConflicts?: number;

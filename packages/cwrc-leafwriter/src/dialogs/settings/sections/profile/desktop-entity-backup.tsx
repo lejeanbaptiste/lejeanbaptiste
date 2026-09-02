@@ -23,6 +23,7 @@ interface BackupConfigView {
   intervalMinutes: number;
   hasSecret: boolean;
   encryptionAvailable: boolean;
+  credentialsLocked: boolean;
 }
 
 interface BackupStatus {
@@ -80,6 +81,7 @@ const getCommonsUiBridge = () =>
     window as Window & {
       __ljbCommonsUi?: {
         entityDbBackupStatus: BackupStatus | null;
+        refreshEntityDbBackupStatus: () => Promise<void>;
         setEntityDbBackupConfig: (patch: BackupPatch) => Promise<BackupConfigView | null>;
         clearEntityDbBackupConfig: () => Promise<void>;
         testEntityDbBackupConnection: (patch: BackupPatch) => Promise<ProbeResult>;
@@ -133,7 +135,7 @@ export const DesktopEntityBackup = () => {
   const [enabled, setEnabled] = useState(false);
 
   const [feedback, setFeedback] = useState<Feedback>(null);
-  const [busy, setBusy] = useState<'test' | 'save' | 'backup' | 'restore' | null>(null);
+  const [busy, setBusy] = useState<'test' | 'save' | 'backup' | 'restore' | 'unlock' | null>(null);
   const [showRestore, setShowRestore] = useState(false);
   const [snapshots, setSnapshots] = useState<CloudSnapshot[] | null>(null);
   const [restoreKey, setRestoreKey] = useState('');
@@ -177,10 +179,22 @@ export const DesktopEntityBackup = () => {
 
   if (!bridge || !status) return null;
 
-  const { encryptionAvailable, hasSecret } = status.config;
+  const { encryptionAvailable, hasSecret, credentialsLocked } = status.config;
   const secretKnown = hasSecret || secretInput.trim().length > 0;
   const coreFilled =
     patch.endpoint && patch.accessKeyId && patch.bucket && secretKnown && encryptionAvailable;
+
+  // Re-reading the status re-runs the decrypt, which is what re-triggers the
+  // OS keychain prompt — so this doubles as "ask me again".
+  const handleUnlockRetry = async () => {
+    setBusy('unlock');
+    setFeedback(null);
+    try {
+      await bridge.refreshEntityDbBackupStatus();
+    } finally {
+      setBusy(null);
+    }
+  };
 
   const handleTest = async () => {
     setBusy('test');
@@ -316,6 +330,25 @@ export const DesktopEntityBackup = () => {
       {!encryptionAvailable && (
         <Alert severity="warning" sx={{ mb: 1, width: '100%' }}>
           {t('LW.desktop.settings.entity_backup.no_encryption')}
+        </Alert>
+      )}
+
+      {credentialsLocked && (
+        <Alert
+          action={
+            <Button
+              color="inherit"
+              disabled={busy === 'unlock'}
+              onClick={handleUnlockRetry}
+              size="small"
+            >
+              {t('LW.desktop.settings.entity_backup.credentials_locked_retry')}
+            </Button>
+          }
+          severity="error"
+          sx={{ mb: 1, width: '100%' }}
+        >
+          {t('LW.desktop.settings.entity_backup.credentials_locked')}
         </Alert>
       )}
 

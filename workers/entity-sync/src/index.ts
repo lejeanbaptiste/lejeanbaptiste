@@ -38,6 +38,24 @@ const json = (body: unknown, status = 200): Response =>
     headers: { 'content-type': 'application/json' },
   });
 
+/**
+ * Best-effort detection of D1 refusing a write because a plan limit was hit
+ * (free tier: 100k rows/day). D1 surfaces this as an exception on the binding;
+ * the wording isn't contractual, so match broadly and let the client treat a
+ * `429 { quota: true }` as "stop pushing, resume later".
+ */
+const isWriteQuotaError = (err: unknown): boolean => {
+  const message = (err instanceof Error ? err.message : String(err)).toLowerCase();
+  return (
+    message.includes('exceeded') ||
+    message.includes('quota') ||
+    message.includes('rows written') ||
+    message.includes('daily limit') ||
+    message.includes('limit exceeded') ||
+    (message.includes('too many') && message.includes('write'))
+  );
+};
+
 interface StoredEntity {
   central_id: string;
   kind: PullChange['kind'];
@@ -362,6 +380,16 @@ export function createWorker(deps: WorkerDeps = {}) {
           );
         }
       } catch (err) {
+        if (isWriteQuotaError(err)) {
+          return json(
+            {
+              error:
+                'The sync server has reached its database write limit for now — sync will resume automatically.',
+              quota: true,
+            },
+            429,
+          );
+        }
         return json({ error: err instanceof Error ? err.message : 'Internal error.' }, 500);
       }
 

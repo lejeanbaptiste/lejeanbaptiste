@@ -100,6 +100,18 @@ export class EntitySyncAuthError extends EntitySyncError {
   }
 }
 
+/**
+ * The sync server hit a write quota (D1 free tier: 100k rows/day). Not
+ * retryable within a run — the caller should stop pushing cleanly and resume
+ * on a later cycle. The server flags this with `429 { quota: true }`.
+ */
+export class EntitySyncQuotaError extends EntitySyncError {
+  constructor(message: string) {
+    super(message, 429);
+    this.name = 'EntitySyncQuotaError';
+  }
+}
+
 export interface EntitySyncClientOptions {
   /** Base URL of the deployed Worker, e.g. https://ljb-entity-sync.<sub>.workers.dev */
   endpoint: string;
@@ -207,15 +219,18 @@ export class EntitySyncClient {
 
       if (response.ok) return (await response.json()) as T;
 
-      const detail = await safeErrorText(response);
+      const { message, quota } = await parseError(response);
       if (response.status === 401 || response.status === 403) {
-        throw new EntitySyncAuthError(detail, response.status);
+        throw new EntitySyncAuthError(message, response.status);
+      }
+      if (response.status === 429 && quota) {
+        throw new EntitySyncQuotaError(message); // daily cap — no point retrying now
       }
       if (response.status === 429 || response.status >= 500) {
-        lastError = new EntitySyncError(detail, response.status);
+        lastError = new EntitySyncError(message, response.status);
         continue; // retry
       }
-      throw new EntitySyncError(detail, response.status); // 4xx: not retryable
+      throw new EntitySyncError(message, response.status); // 4xx: not retryable
     }
     throw lastError instanceof Error
       ? new EntitySyncError(`sync request failed after retries: ${lastError.message}`)
@@ -226,12 +241,15 @@ export class EntitySyncClient {
 const delay = (ms: number): Promise<void> =>
   ms > 0 ? new Promise((resolve) => setTimeout(resolve, ms)) : Promise.resolve();
 
-const safeErrorText = async (response: Response): Promise<string> => {
+const parseError = async (response: Response): Promise<{ message: string; quota: boolean }> => {
   try {
-    const body = (await response.json()) as { error?: string };
-    if (body && typeof body.error === 'string') return body.error;
+    const body = (await response.json()) as { error?: string; quota?: boolean };
+    return {
+      message:
+        typeof body?.error === 'string' ? body.error : `${response.status} ${response.statusText}`,
+      quota: body?.quota === true,
+    };
   } catch {
-    // fall through
+    return { message: `${response.status} ${response.statusText}`, quota: false };
   }
-  return `${response.status} ${response.statusText}`;
 };

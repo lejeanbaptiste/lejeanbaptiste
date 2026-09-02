@@ -349,9 +349,17 @@ jobs:
       # fetch step below.
       - name: Prepare Windows workspace protection
         shell: pwsh
+        continue-on-error: true
         run: |
-          Add-MpPreference -ExclusionPath "$env:GITHUB_WORKSPACE"
-          Set-MpPreference -DisableRealtimeMonitoring $true
+          # Best-effort hardening: Defender is not running on the windows-11-arm
+          # image, where these cmdlets fail with 0x800106ba. Never fail the job
+          # over it -- the build works fine without the exclusions.
+          try {
+            Add-MpPreference -ExclusionPath "$env:GITHUB_WORKSPACE" -ErrorAction Stop
+            Set-MpPreference -DisableRealtimeMonitoring $true -ErrorAction Stop
+          } catch {
+            Write-Host "::notice::Skipping Defender exclusions: $($_.Exception.Message)"
+          }
           Stop-Service -Name WSearch -Force -ErrorAction SilentlyContinue
           Set-Service -Name WSearch -StartupType Disabled -ErrorAction SilentlyContinue
 

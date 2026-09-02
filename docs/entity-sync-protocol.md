@@ -199,15 +199,27 @@ The client picks the token by `config.auth.mode` (see
 
 ## Client expectations of the server
 
-- **Idempotent retries.** The client retries `5xx` / `429` / network failures
-  with backoff, and re-sends whole chunks. Re-applying a push whose entities
-  already landed at the same `(baseRevision → revision)` must be a safe
-  reconcile, not a conflict.
+- **Idempotent retries.** The client retries `5xx` / a plain `429` / network
+  failures with backoff, and re-sends whole chunks. Re-applying a push whose
+  entities already landed at the same `(baseRevision → revision)` must be a
+  safe reconcile, not a conflict.
+- **Write-quota signal.** A server that has run out of write budget (the
+  reference on D1's free tier: 100k rows/day) should return **`429` with
+  `{ "quota": true }`** on `/sync/push`. The client treats this as
+  non-retryable within the run: it stops pushing, keeps the entities that did
+  land, and resumes on a later cycle (with a ~1h cooldown on automatic runs).
+  A plain `429` without the flag is still a retry.
 - **`seq` monotonic and unique per owner.** Two concurrent pushes from the
   same owner must not hand out the same `seq` (the reference uses a
   compare-and-swap counter).
 - **No cross-request ordering guarantees needed** — the client always pulls
   before it pushes, then drains once more after pushing.
+
+A large first load can be seeded out of band instead of pushed: insert rows at
+`revision = 1` with ascending `seq`, set `sync_counter`, then the client's next
+pull adopts them (reads only — it recognises that local content already
+matches and records the mapping without a re-import). See
+`apps/desktop/scripts/generate-entity-sync-seed.mjs`.
 
 ## Left to the server (not specified here)
 

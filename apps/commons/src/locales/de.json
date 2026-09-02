@@ -802,15 +802,15 @@
         "not_now_button": "Nicht jetzt",
         "chinese": {
           "message": "Chinesische Autoritätsdatenbanken herunterladen?",
-          "detail": "This project uses Chinese as its source language. LEAF-Writer can download CBDB (China Biographical Database, ~600 MB), the DILA Buddhist Studies authorities (~85 MB), and Wikidata authority packs for automated tagging. They are stored next to your central entity database."
+          "detail": "Dieses Projekt verwendet Chinesisch als Quellsprache. LEAF-Writer kann CBDB (China Biographical Database, ca. 600 MB), die DILA-Buddhismus-Autoritätsdaten (ca. 85 MB) und Wikidata-Autoritätspakete für die automatische Markierung herunterladen. Sie werden neben Ihrer zentralen Entitätsdatenbank gespeichert."
         },
         "japanese": {
           "message": "Japanische Autoritätspakete herunterladen?",
-          "detail": "This project uses Japanese as its source language. LEAF-Writer can download NDL and Wikidata authority packs for automated tagging, and install Sanmiao (East Asian dates) for date tagging. They are stored next to your central entity database."
+          "detail": "Dieses Projekt verwendet Japanisch als Quellsprache. LEAF-Writer kann NDL- und Wikidata-Autoritätspakete für die automatische Markierung herunterladen und Sanmiao (ostasiatische Datumsangaben) für die Datumsmarkierung installieren. Sie werden neben Ihrer zentralen Entitätsdatenbank gespeichert."
         },
         "tibetan": {
           "message": "Tibetische Autoritätspakete herunterladen?",
-          "detail": "This project uses Tibetan as its source language. LEAF-Writer can download Wikidata authority packs for automated tagging. They are stored next to your central entity database."
+          "detail": "Dieses Projekt verwendet Tibetisch als Quellsprache. LEAF-Writer kann Wikidata-Autoritätspakete für die automatische Markierung herunterladen. Sie werden neben Ihrer zentralen Entitätsdatenbank gespeichert."
         }
       },
       "bulk_update_warning": "{{count}} offene(s) Dokument(e) enthalten nicht gespeicherte Änderungen. Die Massenaktualisierung schreibt auf die Festplatte und kann Änderungen im Speicher überschreiben.",
@@ -825,7 +825,7 @@
       "refreshing_zotero_citations": "Zotero-Zitate werden aktualisiert.",
       "schema_download_failed": "Herunterladen des Schemas fehlgeschlagen.",
       "unsaved_documents": "Nicht gespeicherte Dokumente",
-      "updated_files_overrides_skipped": "{{count}} field(s) left unchanged due to per-file edits.",
+      "updated_files_overrides_skipped": "{{count}} Feld(er) aufgrund dateispezifischer Änderungen unverändert gelassen.",
       "updated_files_summary": "{{updated}} Datei(en) aktualisiert; {{skipped}} unverändert.",
       "time_machine": {
         "title": "Zeitmaschine",
@@ -918,7 +918,7 @@
         "lookup": "Nachschlagen…",
         "loading_calendar_fields": "Kalenderfelder werden geladen…",
         "tag_appearance": "Tagdarstellung",
-        "tag_appearance_hint": "Body annotation tags only — not metadata or structure (div, p, …).",
+        "tag_appearance_hint": "Nur Tags für Textkörper-Annotationen — keine Metadaten oder Strukturelemente (div, p, …).",
         "tag_appearance_open_file": "Öffnen Sie eine Datei, um die Tagdarstellung zu verwalten.",
         "tag_appearance_empty": "Im Dokumenttext gibt es noch keine Annotationstags."
       },
@@ -941,18 +941,18 @@
       },
       "entity_db_setup": {
         "cancel": "Abbrechen",
-        "create_db_failed_message": "Le Jean-Baptiste could not set up the entity database in this folder.",
+        "create_db_failed_message": "Le Jean-Baptiste konnte die Entitätsdatenbank in diesem Ordner nicht einrichten.",
         "create_db_failed_title": "Entitätsdatenbank konnte nicht erstellt werden",
         "create_here": "Hier erstellen",
-        "create_here_title": "Create a database in this folder?",
+        "create_here_title": "Datenbank in diesem Ordner erstellen?",
         "folder_is_project_message": "This folder is already a Le Jean-Baptiste project. Choose a different folder for your entity database — you can keep it as the parent of your projects, just not a project folder itself.",
-        "folder_is_project_title": "That folder is a project",
+        "folder_is_project_title": "Dieser Ordner ist ein Projekt",
         "ok": "OK",
         "parent_has_db_detail": "If you meant that shared database, choose the parent instead. Otherwise Le Jean-Baptiste can create a new empty database in:",
-        "parent_has_db_intro": "The parent folder already has an entity database:",
+        "parent_has_db_intro": "Der übergeordnete Ordner enthält bereits eine Entitätsdatenbank:",
         "save_folder_failed_session": "The folder was set for this session, but saving it failed and it may not persist. Try again, or check that Le Jean-Baptiste can write to its app data folder.",
-        "save_folder_failed_title": "Could not save entity database folder",
-        "save_parent_folder_failed": "Saving the parent folder failed.",
+        "save_folder_failed_title": "Entitätsdatenbankordner konnte nicht gespeichert werden",
+        "save_parent_folder_failed": "Der übergeordnete Ordner konnte nicht gespeichert werden.",
         "use_parent_folder": "Übergeordneten Ordner verwenden"
       }
     },

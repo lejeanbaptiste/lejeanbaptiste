@@ -76,3 +76,27 @@ committed template is `wrangler.toml.example`.
 
 End-user setup for R2 backup + D1 sync on multiple machines:
 [`docs/entity-db-multi-machine-setup.md`](../../docs/entity-db-multi-machine-setup.md).
+
+## First full load on the free tier
+
+D1's free plan caps writes at 100k rows/day, and a first sync of a large
+authority file (each `central_entities` insert is ~2 index rows) blows past
+that. Options:
+
+- **Upgrade to Workers Paid** ($5/mo, 50M writes/mo) — the seed becomes a
+  non-event; just press Sync now.
+- **Seed out of band.** Generate SQL from a local database and apply it
+  directly (one file per day if you still trip the cap):
+  ```bash
+  node ../../apps/desktop/scripts/generate-entity-sync-seed.mjs \
+    --owner <github-id> --db /path/to/entities.sqlite --out ./seed
+  wrangler d1 execute ljb-entity-sync --remote --file=./seed/seed-001.sql
+  # …one per day…
+  ```
+  Then **Sync now** in the app: the pull reconciles every seeded row locally
+  (reads only) and finds nothing to push.
+
+If the Worker hits the write cap during a client push it returns
+`429 { quota: true }`; the client stops cleanly and retries on a later cycle.
+Migration `0003` makes `central_entities` `WITHOUT ROWID` to shave ~⅓ of the
+write amplification (it drops and recreates the table — re-seed after).

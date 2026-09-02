@@ -70,6 +70,22 @@ describe('sanmiaoSchemaMerge', () => {
     expect(merged.flatRng).toContain('<define name="ljb.sanmiao.date.parts">');
     expect(merged.flatRng).toContain('ref name="persName"');
     expect(merged.flatRng).toContain('ref name="ljb.nobleTitle"');
+    // <dynasty> is an LJB element, not TEI: allowing it inside <nobleTitle>
+    // means defining it here as well as referencing it.
+    expect(merged.flatRng).toContain('<define name="ljb.dynasty">');
+    expect(merged.flatRng).toContain('<element name="dynasty">');
+    const nobleTitleDefine = merged.flatRng.match(
+      /<define name="ljb\.nobleTitle">[\s\S]*?<\/define>/,
+    )?.[0];
+    expect(nobleTitleDefine).toContain('ref name="ljb.dynasty"');
+    // nobleTitle is an LJB element, so it has no attributes unless declared —
+    // and the auto-tagger writes @dynasty, @ref, @resp, @source and @when.
+    // @resp/@source come from att.global, @ref from att.personal, @when from
+    // att.datable; only @dynasty has to be spelled out.
+    expect(nobleTitleDefine).toContain('ref name="att.global.attributes"');
+    expect(nobleTitleDefine).toContain('ref name="att.personal.attributes"');
+    expect(nobleTitleDefine).toContain('ref name="att.datable.attributes"');
+    expect(nobleTitleDefine).toContain('<attribute name="dynasty">');
     expect(merged.flatRng).toContain('ljb.kanripo.graphic');
     expect(merged.flatRng).toContain('type=kanripo');
     expect(merged.flatRng).not.toMatch(/<attribute name="n">[\s\S]*?<attribute name="n">/);
