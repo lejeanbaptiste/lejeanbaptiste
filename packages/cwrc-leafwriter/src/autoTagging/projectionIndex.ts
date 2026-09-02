@@ -32,9 +32,9 @@ export interface ProjectionIndexOptions {
  * contribute no characters but are recorded in {@link ProjectionIndex.infrastructure}
  * for a future wrap apply (Phase C).
  *
- * Phase B: {@link createAnchorFromProjection} and {@link dictionaryTagProjection}
- * consume this index; production tag bomb still defaults to per-node matching
- * until Phase C apply ships.
+ * Phase B–C: {@link createAnchorFromProjection}, {@link dictionaryTagProjection}, and
+ * {@link wrapProjectionRange} consume this index; production tag bomb still defaults to
+ * per-node matching until `useProjectionMatcher` is enabled.
  */
 export interface ProjectionIndex {
   text: string;

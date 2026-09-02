@@ -1,5 +1,10 @@
 import { resolveAnchor, resolveXPath } from './anchor';
 import { isEntityTagForbiddenInDate, isInsideDateElement } from './dateTeiHelpers';
+import {
+  projectionSpanIsInsideDate,
+  resolveProjectionAdd,
+  wrapProjectionRange,
+} from './projectionApply';
 import { validatePersonWrappers, type PersonWrapperValidation } from './personWrapperValidation';
 import {
   ancestorTagsOf,
@@ -277,6 +282,26 @@ export function checkSuggestionStillApplicable(
     const resolved = resolveCompoundAdd(doc, suggestion, options);
     return resolved.ok ? { stale: false } : { stale: true, reason: resolved.reason };
   }
+  if (suggestion.action === 'add' && suggestion.anchor.endXpath) {
+    const resolved = resolveProjectionAdd(doc, suggestion.anchor, options.policy);
+    if (!resolved.ok) return { stale: true, reason: resolved.reason };
+    if (isWrappedByEntityTag(resolved.startNode, suggestion.tag)) {
+      return { stale: true, reason: `already tagged as <${suggestion.tag}>` };
+    }
+    if (blockedBySchema(schemaTagName(resolved.parent), suggestion.tag, options)) {
+      return { stale: true, reason: `schema no longer allows <${suggestion.tag}> here` };
+    }
+    if (blockedByUserRule(resolved.parent, suggestion.tag, options)) {
+      return { stale: true, reason: `blocked by a user tagging rule for <${suggestion.tag}>` };
+    }
+    if (
+      isEntityTagForbiddenInDate(suggestion.tag) &&
+      projectionSpanIsInsideDate(resolved.startNode, resolved.endNode)
+    ) {
+      return { stale: true, reason: 'now inside a <date> element' };
+    }
+    return { stale: false };
+  }
   if (suggestion.action !== 'add') return { stale: false };
 
   const resolved = resolveAnchor(doc, suggestion.anchor, options.policy);
@@ -505,6 +530,10 @@ function findAncestorTag(node: Node, tag: string): Element | null {
 }
 
 function applyAdd(doc: Document, suggestion: Suggestion, options: ApplyOptions): ApplyResult {
+  if (suggestion.anchor.endXpath && suggestion.anchor.endOffset !== undefined) {
+    return applyProjectionAdd(doc, suggestion, options);
+  }
+
   // Safety net: a compound suggestion's innerXml is built from authority
   // metadata (see seed.ts), separately from the text the anchor actually
   // matched. If the two ever drift — one authority record sharing several
@@ -564,6 +593,46 @@ function applyAdd(doc: Document, suggestion: Suggestion, options: ApplyOptions):
       ancestorTagsOf(element),
     );
   }
+  return { suggestion, outcome: 'applied', element };
+}
+
+function applyProjectionAdd(
+  doc: Document,
+  suggestion: Suggestion,
+  options: ApplyOptions,
+): ApplyResult {
+  const resolved = resolveProjectionAdd(doc, suggestion.anchor, options.policy);
+  if (!resolved.ok) return { suggestion, outcome: resolved.outcome };
+
+  const { parent, startNode, startOffset, endNode, endOffset } = resolved;
+
+  if (isWrappedByEntityTag(startNode, suggestion.tag)) {
+    return { suggestion, outcome: 'already-tagged' };
+  }
+  if (blockedBySchema(schemaTagName(parent), suggestion.tag, options)) {
+    return { suggestion, outcome: 'schema-blocked' };
+  }
+  if (blockedByUserRule(parent, suggestion.tag, options)) {
+    return { suggestion, outcome: 'rule-blocked' };
+  }
+  if (
+    isEntityTagForbiddenInDate(suggestion.tag) &&
+    projectionSpanIsInsideDate(startNode, endNode)
+  ) {
+    return { suggestion, outcome: 'rule-blocked' };
+  }
+  if (findAncestorTag(startNode, suggestion.tag)) {
+    return { suggestion, outcome: 'already-tagged' };
+  }
+
+  const element = wrapProjectionRange(
+    doc,
+    startNode,
+    startOffset,
+    endNode,
+    endOffset,
+    suggestion,
+  );
   return { suggestion, outcome: 'applied', element };
 }
 

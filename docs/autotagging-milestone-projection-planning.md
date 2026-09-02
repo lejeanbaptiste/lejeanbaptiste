@@ -1,10 +1,10 @@
 # Auto-tagging — milestone projection matcher
 
-**Status (2026-09-02):** Phase A and **Phase B** implemented (`projectionIndex.ts`,
-`dictionaryTagProjection`, not used in production until Phase C apply). CBETA import
+**Status (2026-09-02):** Phase A–**C** implemented (`projectionIndex.ts`,
+`dictionaryTagProjection`, `wrapProjectionRange`, flag off by default). CBETA import
 keeps `<lb>` / `<pb>` / empty `<anchor>` in the XML; production matching still runs
 **per text node** via `dictionaryTag` unless `useProjectionMatcher` is enabled on the
-tag bomb (default off). Phases C–E remain behind tests and a feature flag before wire-in.
+tag bomb. Phases D–E remain before full wire-in.
 
 **Rollout:** build the projection stack in parallel, regression-test against
 today’s matcher on plain TEI, wire in only when mature (project setting, default
@@ -132,11 +132,11 @@ Taishō line refs at those points in the working file.
 
 ### Phase C — Apply across infrastructure
 
-- [ ] `wrapProjectionRange(doc, start, end, tag)` — walk siblings from start
+- [x] `wrapProjectionRange(doc, start, end, tag)` — walk siblings from start
       through end; preserve `lb` / `pb` / empty anchors inside the span.
-- [ ] `<choice>`: wrap `<corr>` content; leave `<sic>` sibling intact.
-- [ ] Schema + user-rule checks on the **parent** of the wrapped run.
-- [ ] Tests mirroring CBETA example and `persName` with internal milestones.
+- [x] `<choice>`: wrap `<corr>` content; leave `<sic>` sibling intact.
+- [x] Schema + user-rule checks on the **parent** of the wrapped run.
+- [x] Tests mirroring CBETA example and `persName` with internal milestones.
 
 ### Phase D — AI + Sanmiao parity
 
@@ -181,7 +181,8 @@ unchanged.
 - `packages/cwrc-leafwriter/src/autoTagging/projectionIndex.ts` — Phase A index (**done**)
 - `packages/cwrc-leafwriter/src/autoTagging/anchor.ts` — compound boundaries
 - `packages/cwrc-leafwriter/src/autoTagging/dictionary.ts` — projection scan mode
-- `packages/cwrc-leafwriter/src/autoTagging/apply.ts` — `wrapProjectionRange`
+- `packages/cwrc-leafwriter/src/autoTagging/projectionApply.ts` — Phase C wrap apply (**done**)
+- `packages/cwrc-leafwriter/src/autoTagging/apply.ts` — projection `add` branch
 - `packages/cwrc-leafwriter/src/autoTagging/dates.ts` — projection-aware raw range
 - `packages/cwrc-leafwriter/src/autoTagging/llmParse.ts` — `locateInDoc`
 - `packages/cwrc-leafwriter/src/autoTagging/hiddenChoiceText.ts` — corr-only policy (shared)
