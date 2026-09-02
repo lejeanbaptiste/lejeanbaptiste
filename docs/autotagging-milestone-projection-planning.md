@@ -1,10 +1,13 @@
 # Auto-tagging — milestone projection matcher
 
-**Status (2026-09-01):** Planning only. CBETA import keeps `<lb>` / `<pb>` / empty
-`<anchor>` in the XML; the authority tag bomb and AI suggest paths still match
-**per text node** (or drop cross-node spans on apply). A plain-text projection
-matcher — match on collapsed text, wrap tags around infrastructure milestones —
-is the agreed direction for citation-faithful corpora but **not implemented**.
+**Status (2026-09-02):** Phase A implemented (`projectionIndex.ts`, not wired into
+the tag bomb). CBETA import keeps `<lb>` / `<pb>` / empty `<anchor>` in the XML;
+production matching still runs **per text node** via `dictionaryTag`. Phases B–E
+remain behind tests and a feature flag before wire-in.
+
+**Rollout:** build the projection stack in parallel, regression-test against
+today’s matcher on plain TEI, wire in only when mature (project setting, default
+off).
 
 **Related:** [cbeta-import-planning.md](cbeta-import-planning.md) (§ auto-tagger
 requirement), [Auto-tagging.md](Auto-tagging.md), [sanmiao-ljb-integration.md](sanmiao-ljb-integration.md)
@@ -41,19 +44,27 @@ running text.
 ## Desired architecture
 
 1. **Build a projection** — a flat search string from body text, skipping (not
-   deleting) configured _infrastructure_ elements: at minimum empty `lb`, empty
-   `anchor`, `gap`; optionally `pb` (see open questions). Map each projection
-   index back to a DOM position (text node + raw offset, or a boundary record).
+   deleting) empty _infrastructure_ elements: **`lb`, `pb`, empty `anchor`, `gap`**
+   (all bridged for matching). Map each projection index back to a DOM text node
+   + raw offset; record skipped infrastructure for wrap apply.
 2. **Match on the projection** — reuse `MultiStringMatcher` / authority seed
    index on `projection.text` (longest-first, document-order occurrence counting).
 3. **Apply by wrapping the DOM range** — insert the entity tag around the
    contiguous run of nodes from start boundary through end boundary, **keeping**
    milestones inside the tag when they fall within the span, e.g.
-   `<title>般舟三<lb …/>昧</title>`.
+   `<title>般舟三<lb …/>昧</title>` or
+   `<persName>王<lb/>安<pb n="…"/>石</persName>`.
+
+**`<choice>` / `<sic>` / `<corr>` (Norbert-style):** projection uses the
+**corrected reading only** (same rule as `hiddenChoiceText.ts` — exclude
+`<sic>` and `<surplus>`). Match and disambiguate on `<corr>` text; Phase C apply
+wraps the **corr branch** while preserving `<sic>` as a sibling inside
+`<choice>`. No global sic→attribute shuffle required if tags land inside
+`<corr>`.
 
 Sanmiao already follows step 1 on the **read** side (plain extracted text sent to
 Python). This plan completes the loop for **named-entity** tagging and fixes
-Sanmiao **apply** for date strings split by `<lb>`.
+Sanmiao **apply** for date strings split by `<lb>` / `<pb>`.
 
 ---
 
@@ -61,7 +72,9 @@ Sanmiao **apply** for date strings split by `<lb>`.
 
 | Piece                                   | Location                           | Role                                                                                     |
 | --------------------------------------- | ---------------------------------- | ---------------------------------------------------------------------------------------- |
+| `buildProjectionIndex`                  | `autoTagging/projectionIndex.ts`   | Phase A — flat text + per-char DOM map + infrastructure marks (**not wired**)            |
 | `buildDocIndex`                         | `autoTagging/anchor.ts`            | Concatenates text-node search strings; `<lb>` contributes nothing but still splits nodes |
+| `hiddenChoiceText.ts`                   | `autoTagging/`                     | corr-only surface for disambiguation / Sanmiao send                                      |
 | `INFRASTRUCTURE_TAGS`                   | `autoTagging/purge.ts`             | `lb`, `pb`, `anchor`, `milestone`, … — used by Tag Transform, not autotag                |
 | `createCompoundAnchor` / `add-compound` | `anchor.ts`, `apply.ts`, `seed.ts` | Cross-node anchors for Norbert person-wrappers (sibling elements)                        |
 | `buildTaggableDocIndex`                 | `dateTeiHelpers.ts`                | Excludes text inside `<date>`                                                            |
@@ -75,18 +88,18 @@ Sanmiao **apply** for date strings split by `<lb>`.
 Not a reason to avoid the architecture, but worth designing for:
 
 1. **Projection ≠ literal XML** — collapsing across milestones assumes the break
-   is pagination noise, not a semantic boundary (verse, paragraph layout). Wrong
-   spans are possible across `<pb>` in particular.
-2. **Apply complexity** — wrapping mixed `text | lb | text` without losing nodes;
-   stable bidirectional offset maps; harder undo and review “jump to mention”.
+   is pagination noise, not a semantic boundary. Wrong spans are still possible
+   across verse layout; **`<pb>` is bridged by design** (a name split by a page
+   break should still tag).
+2. **Apply complexity** — wrapping mixed `text | lb | pb | text` without losing
+   nodes; stable bidirectional offset maps; harder undo and review “jump to mention”.
 3. **Re-anchoring** — compound start/end boundaries; more `unresolvable` after
    edits. `createCompoundAnchor` end-offset snapping is already incomplete
    (see root `readme.md` Future).
-4. **Infrastructure rules** — `g`, `choice`/`sic`, ruby, notes each need an
-   explicit rule (too much stripping → false matches from hidden text; too little
-   → split strings remain).
+4. **Further markup** — `g` / gaiji, ruby, notes still need explicit rules
+   (Phase A: ordinary text nodes only; gaiji deferred).
 5. **Tags containing milestones** — valid TEI-ALL, but visual mode, export, and
-   downstream tools may render or handle `lb` inside `persName` unexpectedly.
+   downstream tools may render `lb` / `pb` inside `persName` unexpectedly.
 6. **Two representations** — projection and live DOM must stay aligned through
    import, visual round-trip, and batch apply.
 
@@ -99,55 +112,52 @@ Taishō line refs at those points in the working file.
 
 ### Phase A — Projection index (read path)
 
-- [ ] `buildProjectionIndex(root, policy, options)` returning `{ text, map }`
-      where `map[i]` describes how projection offset `i` maps to the DOM (extend
-      `DocIndex` or parallel type).
-- [ ] Config: `skipTags` default `lb`, empty `anchor`, `gap`; `hardBoundaryTags`
-      default `pb` (do not match across until explicitly enabled).
-- [ ] Unit tests: `般舟三<lb/>昧` → `般舟三昧` in projection; `pb` boundary;
-      nested `persName` unchanged.
+- [x] `buildProjectionIndex(root, policy, options)` → `{ text, points, infrastructure }`
+      (`projectionIndex.ts`).
+- [x] Bridge empty **`lb`, `pb`, `anchor`, `gap`** (no hard boundary on `pb`).
+- [x] Exclude `<sic>` / `<surplus>`; exclude `<teiHeader>` and `<date>` text.
+- [x] Unit tests: `般舟三<lb/>昧`, `王<pb/>安石`, `<choice><sic>…</sic><corr>…</corr></choice>`,
+      parity with `buildDocIndex` on plain paragraphs.
 
 ### Phase B — Authority tag bomb on projection
 
-- [ ] Scan `projection.text` with `MultiStringMatcher` (not per-node
-      `dictionaryTag` loop).
+- [ ] `dictionaryTagProjection()` — scan `projection.text` once (parallel to
+      `dictionaryTag`, do not replace until wired).
 - [ ] Emit suggestions with compound boundaries when span crosses text nodes
-      (new action or extend `add` with `endXpath` / `endOffset`).
-- [ ] Wire into `runAuthorityTagBombOnDocument` / `seedSuggestionsFromIndex`.
+      (`endXpath` / `endOffset` or projection-native anchor).
+- [ ] Parity test: plain TEI without milestones → identical suggestions to
+      current matcher.
+- [ ] Wire behind project flag in `seedSuggestionsFromIndex` (default off).
 
 ### Phase C — Apply across infrastructure
 
 - [ ] `wrapProjectionRange(doc, start, end, tag)` — walk siblings from start
-      text offset through end, moving nodes into the new element; preserve `lb` /
-      empty anchors inside the span.
+      through end; preserve `lb` / `pb` / empty anchors inside the span.
+- [ ] `<choice>`: wrap `<corr>` content; leave `<sic>` sibling intact.
 - [ ] Schema + user-rule checks on the **parent** of the wrapped run.
-- [ ] Tests mirroring CBETA example and `persName` with internal `anchor` pairs.
+- [ ] Tests mirroring CBETA example and `persName` with internal milestones.
 
 ### Phase D — AI + Sanmiao parity
 
-- [ ] Replace `locateInDoc` / `offsetToRawRange` single-node guard with
-      projection-aware locator (or shared helper).
-- [ ] Sanmiao date proposals that straddle `<lb>` apply instead of silent skip.
+- [ ] Shared `locateInProjection` (replace `locateInDoc` / `offsetToRawRange`
+      single-node guard).
+- [ ] Sanmiao date proposals that straddle `<lb>` / `<pb>` apply instead of silent skip.
 
-### Phase E — Settings & UX (optional)
+### Phase E — Settings & UX
 
-- [ ] Project setting: “Match across line breaks” / “Match across page breaks”.
-- [ ] Link from CBETA import dialog copy to this behaviour vs strip-`lb` import.
+- [ ] Project setting: “Match across line and page breaks” (default off until
+      B+C are validated).
+- [ ] Link from CBETA import dialog to this behaviour vs strip-`lb` import.
 
 ---
 
 ## Open questions
 
-1. **`<pb>`** — hard boundary by default, or bridge like `<lb>`? Page-spanning
-   entity tags may be undesirable for citation workflows.
-2. **Collation anchors** — with **clean import**, inline `beg`/`end` anchors are
-   stripped; without clean, should empty anchors be skipped in projection only,
-   or also wrapped inside new NE tags?
-3. **`<g>` / gaiji** — projection should use resolved Unicode (matching display
+1. **Collation anchors** — with **clean import**, inline `beg`/`end` anchors are
+   stripped; without clean, should non-empty anchors be bridged or hard boundaries?
+2. **`<g>` / gaiji** — projection should use resolved Unicode (matching display
    text); map offsets back through the original `<g>` node.
-4. **`choice` / `sic`** — follow `hiddenChoiceText.ts` rules for what enters the
-   projection (same as disambiguation surface).
-5. **Visual editor** — confirm TinyMCE body DOM matches XML DOM structure for
+3. **Visual editor** — confirm TinyMCE body DOM matches XML DOM structure for
    milestone placement before relying on wrap apply in visual mode.
 
 ---
@@ -159,13 +169,18 @@ import** and **strip lb unchecked**. Authority tag bomb suggests `般舟三昧` 
 the full work title if in packs) and apply produces a single tag spanning both
 text nodes with `<lb>` preserved inside.
 
+Hand-build `<choice><sic>王尭</sic><corr>王<lb/>堯</corr></choice>`: match on
+`王堯`, apply yields `<corr><persName>王<lb/>堯</persName></corr>` with `<sic>`
+unchanged.
+
 ---
 
-## Code touchpoints (expected)
+## Code touchpoints
 
-- `packages/cwrc-leafwriter/src/autoTagging/anchor.ts` — projection index, compound boundaries
+- `packages/cwrc-leafwriter/src/autoTagging/projectionIndex.ts` — Phase A index (**done**)
+- `packages/cwrc-leafwriter/src/autoTagging/anchor.ts` — compound boundaries
 - `packages/cwrc-leafwriter/src/autoTagging/dictionary.ts` — projection scan mode
 - `packages/cwrc-leafwriter/src/autoTagging/apply.ts` — `wrapProjectionRange`
-- `packages/cwrc-leafwriter/src/autoTagging/dates.ts` — `offsetToRawRange` generalisation
+- `packages/cwrc-leafwriter/src/autoTagging/dates.ts` — projection-aware raw range
 - `packages/cwrc-leafwriter/src/autoTagging/llmParse.ts` — `locateInDoc`
-- `packages/cwrc-leafwriter/src/autoTagging/purge.ts` — share `INFRASTRUCTURE_TAGS` list
+- `packages/cwrc-leafwriter/src/autoTagging/hiddenChoiceText.ts` — corr-only policy (shared)
