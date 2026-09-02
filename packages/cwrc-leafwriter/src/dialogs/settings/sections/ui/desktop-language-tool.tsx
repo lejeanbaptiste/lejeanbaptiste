@@ -179,7 +179,9 @@ export const DesktopLanguageTool = () => {
       setStatus({
         severity: 'error',
         message:
-          error instanceof Error ? error.message : t('LW.settings.language_tool.java_install_failed'),
+          error instanceof Error
+            ? error.message
+            : t('LW.settings.language_tool.java_install_failed'),
       });
     } finally {
       setBusy(false);
@@ -281,12 +283,22 @@ export const DesktopLanguageTool = () => {
               >
                 {t('LW.settings.language_tool.java_download')}
               </Button>
-              <Button disabled={busy} onClick={() => void refreshInstallStatus()} size="small" variant="outlined">
+              <Button
+                disabled={busy}
+                onClick={() => void refreshInstallStatus()}
+                size="small"
+                variant="outlined"
+              >
                 {t('LW.settings.language_tool.java_refresh')}
               </Button>
             </Stack>
           ) : (
-            <Button disabled={busy} onClick={() => void refreshInstallStatus()} size="small" variant="outlined">
+            <Button
+              disabled={busy}
+              onClick={() => void refreshInstallStatus()}
+              size="small"
+              variant="outlined"
+            >
               {t('LW.settings.language_tool.java_refresh')}
             </Button>
           )}

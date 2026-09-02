@@ -10,6 +10,7 @@ export type SettingsTabId =
   | 'authorities'
   | 'asset-packs'
   | 'plugins'
+  | 'entity-database'
   | 'ai';
 
 export interface SettingsDialogProps extends IDialog {

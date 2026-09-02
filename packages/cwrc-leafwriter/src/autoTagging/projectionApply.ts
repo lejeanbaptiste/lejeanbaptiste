@@ -13,7 +13,11 @@ export type ProjectionAddResolution =
       endNode: Text;
       endOffset: number;
     }
-  | { ok: false; outcome: 'unresolvable' | 'schema-blocked' | 'rule-blocked' | 'already-tagged'; reason: string };
+  | {
+      ok: false;
+      outcome: 'unresolvable' | 'schema-blocked' | 'rule-blocked' | 'already-tagged';
+      reason: string;
+    };
 
 const documentOrder = (a: Node, b: Node): number => {
   if (a === b) return 0;
@@ -174,7 +178,7 @@ export function wrapProjectionRange(
     spanStart = startNode.splitText(startOffset);
   }
 
-  let spanEnd: Text = endNode;
+  const spanEnd: Text = endNode;
   if (endOffset < endNode.data.length) {
     endNode.splitText(endOffset);
   }

@@ -47,9 +47,7 @@ describe('wrapProjectionRange', () => {
   });
 
   it('wraps corr text split by lb inside choice, leaving sic untouched', () => {
-    const doc = parse(
-      TEI_WRAP('<p><choice><sic>王尭</sic><corr>王<lb/>堯</corr></choice></p>'),
-    );
+    const doc = parse(TEI_WRAP('<p><choice><sic>王尭</sic><corr>王<lb/>堯</corr></choice></p>'));
     const corr = doc.getElementsByTagName('corr')[0]!;
     const start = corr.childNodes[0] as Text;
     const end = corr.childNodes[2] as Text;
@@ -122,7 +120,11 @@ describe('applySuggestions projection spans', () => {
 
   it('applies a persName across pb', async () => {
     const doc = parse(TEI_WRAP('<p>王<pb n="0324b26"/>安石</p>'));
-    const [suggestion] = dictionaryTagProjection(doc, [{ string: '王安石', tag: 'persName' }], 'ignore');
+    const [suggestion] = dictionaryTagProjection(
+      doc,
+      [{ string: '王安石', tag: 'persName' }],
+      'ignore',
+    );
 
     expect(await applyProjectionSuggestion(doc, suggestion!)).toBe(1);
 
@@ -132,10 +134,12 @@ describe('applySuggestions projection spans', () => {
   });
 
   it('applies inside corr with sic preserved (choice acceptance case)', async () => {
-    const doc = parse(
-      TEI_WRAP('<p><choice><sic>王尭</sic><corr>王<lb/>堯</corr></choice></p>'),
+    const doc = parse(TEI_WRAP('<p><choice><sic>王尭</sic><corr>王<lb/>堯</corr></choice></p>'));
+    const [suggestion] = dictionaryTagProjection(
+      doc,
+      [{ string: '王堯', tag: 'persName' }],
+      'ignore',
     );
-    const [suggestion] = dictionaryTagProjection(doc, [{ string: '王堯', tag: 'persName' }], 'ignore');
 
     expect(await applyProjectionSuggestion(doc, suggestion!)).toBe(1);
 
@@ -148,7 +152,11 @@ describe('applySuggestions projection spans', () => {
 
   it('blocks schema-invalid projection insertions', async () => {
     const doc = parse(TEI_WRAP('<p>王<pb/>安石</p>'));
-    const [suggestion] = dictionaryTagProjection(doc, [{ string: '王安石', tag: 'persName' }], 'ignore');
+    const [suggestion] = dictionaryTagProjection(
+      doc,
+      [{ string: '王安石', tag: 'persName' }],
+      'ignore',
+    );
 
     const { results } = await applySuggestions(doc, [suggestion!], {
       policy: 'ignore',

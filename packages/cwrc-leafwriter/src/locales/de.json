@@ -613,6 +613,7 @@
         "show_pack_string_counts_description": "Zählt Strings in jedem Autoritätspaket, wenn sich die Tag-Bombe öffnet. Kann das Öffnen verlangsamen.",
         "match_across_line_breaks": "Über Zeilen- und Seitenumbrüche hinweg suchen",
         "match_across_line_breaks_description": "Findet Tag-Bomben-Treffer über leere <lb>-, <pb>- und ähnliche Markierungen hinweg. Behält Markierungen in angewendeten Tags. Standardmäßig aus.",
+        "match_across_line_breaks_enable": "Für dieses Projekt aktivieren",
         "asset_packs_note": "Offline-Autoritätspakete und Kartenkacheln sind jetzt auf der Registerkarte Asset-Pakete verfügbar."
       },
       "editor": {
@@ -849,17 +850,25 @@
         "map_tiles": "Offline-Kartenkacheln"
       },
       "privacy": {
-        "description": "Was LEAF-Writer lokal speichert und was er nur sendet, wenn Sie sich für eine vernetzte Funktion entscheiden.",
-        "summary": "LEAF-Writer ist bei normaler Desktop-Nutzung meist local-first. Ihre Dateien, Datenbanken und Einstellungen bleiben auf Ihrem Computer, es sei denn, Sie verwenden eine Funktion, die explizit mit einem anderen Dienst kommuniziert.",
+        "description": "Was Le Jean-Baptiste lokal speichert und was er nur sendet, wenn Sie sich für eine vernetzte Funktion entscheiden.",
+        "summary": "Le Jean-Baptiste ist bei normaler Desktop-Nutzung meist local-first. Ihre Dateien, Datenbanken und Einstellungen bleiben auf Ihrem Computer, es sei denn, Sie verwenden eine Funktion, die explizit mit einem anderen Dienst kommuniziert.",
         "local_first": "Normale Bearbeitung, lokale Entitätsdatenbanken, Offline-Pakete und die meisten Einstellungen verbleiben auf Ihrem Computer.",
         "documents_title": "Dokument-Metadaten",
         "documents_body": "Der Benutzername, den Sie in den Einstellungen eingeben, kann als Projekt-/Dokument-Metadaten in Ihre Dokumente geschrieben werden. Dieser Name reist mit der Datei, weil sie Teil des Dokuments selbst wird, nicht weil die App sie automatisch irgendwo hochlädt.",
         "leaderboard_title": "Einreichung der Bestenliste",
-        "leaderboard_body": "Wenn Sie sich entscheiden, Ihren Servicebericht an die Bestenliste zu senden, sendet LEAF-Writer Ihr GitHub-Identitätstoken zur Überprüfung, Ihren angezeigten Benutzernamen/Rangkontext, Ihre Erfolgsmetriken und Ihr optionales Avatarbild an den Bestenlistendienst.",
+        "leaderboard_body": "Wenn Sie sich entscheiden, Ihren Servicebericht an die Bestenliste zu senden, sendet Le Jean-Baptiste Ihr GitHub-Identitätstoken zur Überprüfung, Ihren angezeigten Benutzernamen/Rangkontext, Ihre Erfolgsmetriken und Ihr optionales Avatarbild an den Bestenlistendienst.",
         "telemetry_title": "Crash- und Fehlerreporting",
         "telemetry_body": "Der Editorcode unterstützt optionale Sentry-Absturz-/Fehlerberichte, wenn ein Build dies aktiviert. Das ist konfigurationsabhängig und kein normaler Bearbeitungsbedarf.",
         "web_title": "Nur-Web-Mess-Cookies",
-        "web_body": "In der Web-App können anonyme Google Analytics-Seiten-/Editor-Ereignisse nur gesendet werden, wenn Mess-Cookies akzeptiert werden. Die Desktop-App verwendet diesen Cookie-Einwilligungs-Analysefluss nicht."
+        "web_body": "In der Web-App können anonyme Google Analytics-Seiten-/Editor-Ereignisse nur gesendet werden, wenn Mess-Cookies akzeptiert werden. Die Desktop-App verwendet diesen Cookie-Einwilligungs-Analysefluss nicht.",
+        "configure_title": "Wo vernetzte Funktionen konfiguriert werden",
+        "goto_profile_github": "Profil — Kodierername und GitHub / Bestenliste",
+        "goto_entity_database": "Entitätsdatenbank — Ordner, Cloud-Backup, geräteübergreifende Synchronisation",
+        "goto_ai": "KI — API-Schlüssel und Prompt-Profile",
+        "goto_proofreading": "Oberfläche › Korrekturlesen — LanguageTool (lokal oder Cloud)"
+      },
+      "entity_database": {
+        "description": "Wo Ihre Autoritätsentitäten auf der Festplatte liegen, plus optionales Cloud-Backup und geräteübergreifende Synchronisation."
       },
       "translationPolicy": {
         "description": "Persönliche Konventionen für die Darstellung von Entitätsnamen und -daten in Übersetzungen. Eine Reihe von Einstellungen pro Sprache; sie gelten, während Sie übersetzen und mit Ihnen zum Word-Export reisen.",
@@ -950,10 +959,12 @@
         "behaviour": "Verhalten",
         "asset_packs": "Asset-Pakete",
         "plugins": "Plugins",
+        "entity_database": "Entitätsdatenbank",
         "ai": "AI",
         "translation_policy": "Übersetzungsrichtlinie",
         "privacy": "Datenschutz",
-        "entity_types": "Entitätstypen"
+        "entity_types": "Entitätstypen",
+        "proofreading": "Korrekturlesen"
       }
     },
     "settlement": "Siedlung",

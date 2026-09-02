@@ -123,11 +123,7 @@ export const resolveJavaBinaryInTree = (root: string): string | null => {
   return findJavaBinaryRecursive(root, javaName, 0);
 };
 
-const findJavaBinaryRecursive = (
-  dir: string,
-  javaName: string,
-  depth: number,
-): string | null => {
+const findJavaBinaryRecursive = (dir: string, javaName: string, depth: number): string | null => {
   if (depth > 5) return null;
   let entries: fs.Dirent[];
   try {
@@ -190,11 +186,7 @@ export const collectJavaCandidatePaths = async (): Promise<string[]> => {
 
   if (process.env.JAVA_HOME) {
     add(
-      path.join(
-        process.env.JAVA_HOME,
-        'bin',
-        process.platform === 'win32' ? 'java.exe' : 'java',
-      ),
+      path.join(process.env.JAVA_HOME, 'bin', process.platform === 'win32' ? 'java.exe' : 'java'),
     );
   }
 

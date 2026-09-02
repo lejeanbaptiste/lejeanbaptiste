@@ -1,10 +1,7 @@
 import { buildDocIndex, collectTextNodes } from './anchor';
 import { findTeiBodyRoot } from './dateTeiHelpers';
 import { normalizeDomText } from './normalize';
-import {
-  buildProjectionIndex,
-  infrastructureInProjectionRange,
-} from './projectionIndex';
+import { buildProjectionIndex, infrastructureInProjectionRange } from './projectionIndex';
 
 const parse = (xml: string) => {
   const doc = new DOMParser().parseFromString(xml, 'application/xml');
@@ -47,9 +44,7 @@ describe('buildProjectionIndex', () => {
   });
 
   it('uses corr-only text inside choice (sic excluded)', () => {
-    const doc = parse(
-      TEI_WRAP('<p><choice><sic>王尭</sic><corr>王堯</corr></choice></p>'),
-    );
+    const doc = parse(TEI_WRAP('<p><choice><sic>王尭</sic><corr>王堯</corr></choice></p>'));
     const index = buildProjectionIndex(findTeiBodyRoot(doc), 'ignore');
 
     expect(index.text).toBe('王堯');

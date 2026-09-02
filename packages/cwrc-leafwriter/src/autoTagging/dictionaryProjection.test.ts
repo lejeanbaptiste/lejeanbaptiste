@@ -23,9 +23,7 @@ const anchorKey = (s: Suggestion) =>
   ].join('\t');
 
 const normalizeSuggestions = (suggestions: Suggestion[]) =>
-  [...suggestions]
-    .map(anchorKey)
-    .sort((a, b) => a.localeCompare(b));
+  [...suggestions].map(anchorKey).sort((a, b) => a.localeCompare(b));
 
 describe('dictionaryTagProjection', () => {
   it('matches dictionaryTag on plain body text without milestones', () => {
@@ -71,9 +69,7 @@ describe('dictionaryTagProjection', () => {
   });
 
   it('matches dictionaryTag on corr-only text inside choice (single node)', () => {
-    const doc = parse(
-      TEI_WRAP('<p><choice><sic>王尭</sic><corr>王堯</corr></choice></p>'),
-    );
+    const doc = parse(TEI_WRAP('<p><choice><sic>王尭</sic><corr>王堯</corr></choice></p>'));
     const entries = [{ string: '王堯', tag: 'persName' }];
 
     const legacy = dictionaryTag(doc, entries, 'ignore');
@@ -85,11 +81,7 @@ describe('dictionaryTagProjection', () => {
   });
 
   it('finds corr text split by lb inside choice', () => {
-    const doc = parse(
-      TEI_WRAP(
-        '<p><choice><sic>王尭</sic><corr>王<lb/>堯</corr></choice></p>',
-      ),
-    );
+    const doc = parse(TEI_WRAP('<p><choice><sic>王尭</sic><corr>王<lb/>堯</corr></choice></p>'));
     const entries = [{ string: '王堯', tag: 'persName' }];
 
     const [hit] = dictionaryTagProjection(doc, entries, 'ignore');

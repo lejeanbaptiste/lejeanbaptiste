@@ -57,6 +57,7 @@ export interface DisambiguationSettings {
   dateFilter?: 'none' | 'limit' | 'exclude';
   yearStart?: number;
   yearEnd?: number;
+  placeProximityKm?: number;
 }
 
 /** Persisted in jean-baptiste.project.json — mirrors cwrc-leafwriter authoritySettings. */

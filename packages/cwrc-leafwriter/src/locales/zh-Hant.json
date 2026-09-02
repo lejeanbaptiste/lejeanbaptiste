@@ -172,6 +172,7 @@
         "show_pack_string_counts_description": "開啟標記炸彈時統計每個權威套件的字串數量，可能會降低開啟速度。",
         "match_across_line_breaks": "跨行與跨頁比對",
         "match_across_line_breaks_description": "在空的 <lb>、<pb> 等里程碑兩側尋找標記炸彈比對；套用標籤時保留這些標記。預設關閉。",
+        "match_across_line_breaks_enable": "為此專案啟用",
         "asset_packs_note": "離線權威套件和地圖圖磚現在位於資產套件分頁。",
         "messages": {
           "Are you sure you want to delete the authority -value": "<0>確定要刪除權威資料 </0><1>{{name}}</1><2> 嗎？</2>",
@@ -310,17 +311,25 @@
         "map_tiles": "離線地圖圖磚"
       },
       "privacy": {
-        "description": "LEAF-Writer 儲存在本機的資料，以及您選擇使用網路功能時才會傳送的資料。",
-        "summary": "在一般桌面使用中，LEAF-Writer 大多採本機優先。除非您使用明確與其他服務通訊的功能，否則檔案、資料庫和設定都會留在您的電腦上。",
+        "description": "Le Jean-Baptiste 儲存在本機的資料，以及您選擇使用網路功能時才會傳送的資料。",
+        "summary": "在一般桌面使用中，Le Jean-Baptiste 大多採本機優先。除非您使用明確與其他服務通訊的功能，否則檔案、資料庫和設定都會留在您的電腦上。",
         "local_first": "一般編輯、本機實體資料庫、離線套件和大多數設定都會保留在您的電腦上。",
         "documents_title": "文件中繼資料",
         "documents_body": "您在設定中輸入的使用者名稱可能會作為專案／文件中繼資料寫入文件。該名稱會隨檔案移動，是因為它成為文件本身的一部分，而不是因為應用程式會自動將其上傳到某處。",
         "leaderboard_title": "提交排行榜資料",
-        "leaderboard_body": "如果您選擇將服務記錄提交至排行榜，LEAF-Writer 會將 GitHub 身分權杖（用於驗證）、顯示的使用者名稱／排名內容、成就指標數量和選填的大頭貼圖片傳送至排行榜服務。",
+        "leaderboard_body": "如果您選擇將服務記錄提交至排行榜，Le Jean-Baptiste 會將 GitHub 身分權杖（用於驗證）、顯示的使用者名稱／排名內容、成就指標數量和選填的大頭貼圖片傳送至排行榜服務。",
         "telemetry_title": "當機與錯誤回報",
         "telemetry_body": "如果建置啟用了 Sentry，編輯器程式碼支援選用的當機／錯誤回報。這取決於設定，並非一般編輯的必要功能。",
         "web_title": "僅限 Web 的測量 Cookie",
-        "web_body": "在 Web 應用程式中，只有接受測量 Cookie 後，才會傳送匿名的 Google Analytics 頁面／編輯器事件。桌面應用程式不使用這套 Cookie 同意分析流程。"
+        "web_body": "在 Web 應用程式中，只有接受測量 Cookie 後，才會傳送匿名的 Google Analytics 頁面／編輯器事件。桌面應用程式不使用這套 Cookie 同意分析流程。",
+        "configure_title": "可在哪裡設定網路功能",
+        "goto_profile_github": "設定檔 — 編碼者名稱與 GitHub／排行榜",
+        "goto_entity_database": "實體資料庫 — 資料夾、雲端備份、跨裝置同步",
+        "goto_ai": "AI — API 金鑰與提示設定檔",
+        "goto_proofreading": "介面 › 校對 — LanguageTool（本機或雲端伺服器）"
+      },
+      "entity_database": {
+        "description": "權威實體在本機的存放位置，以及選用的雲端備份與跨裝置同步。"
       },
       "translationPolicy": {
         "description": "設定翻譯中實體名稱和日期的個人慣例。每種語言各有一組偏好；翻譯時會套用，並會隨您帶到 Word 匯出。",
@@ -455,10 +464,12 @@
         "behaviour": "行為",
         "asset_packs": "資產套件",
         "plugins": "外掛程式",
+        "entity_database": "實體資料庫",
         "ai": "AI",
         "translation_policy": "翻譯政策",
         "privacy": "資料隱私",
-        "entity_types": "實體類型"
+        "entity_types": "實體類型",
+        "proofreading": "校對"
       }
     },
     "desktop": {
@@ -466,7 +477,7 @@
         "entity_sync": {
           "title": "跨裝置同步",
           "description": "透過 Cloudflare Worker 讓此實體資料庫與其他電腦保持同步。設定指南：docs/entity-sync-planning.md。",
-          "sign_in_required": "請先登入 GitHub（Profil › GitHub）— 同步會使用該身分。",
+          "sign_in_required": "請先登入 GitHub（設定檔 › GitHub）— 同步會使用該身分。",
           "sign_in_bearer": "在下方輸入 bearer 權杖，然後按一下儲存。",
           "sign_in_oidc": "OIDC 登入尚未提供 — 請選擇 GitHub 或 Bearer 權杖。",
           "auth_mode": "驗證方式",

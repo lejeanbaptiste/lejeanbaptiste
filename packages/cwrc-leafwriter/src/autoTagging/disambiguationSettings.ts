@@ -1,4 +1,5 @@
 import { AUTHORITY_YEAR_MAX, AUTHORITY_YEAR_MIN } from './authoritySettings';
+import { persistProjectConfigPatch } from './projectConfigPersist';
 import { DEFAULT_PLACE_PROXIMITY_KM } from './authorityOverlap';
 import type { DateFilterMode } from './packLoader';
 
@@ -95,11 +96,8 @@ export function readPersistedDisambiguationSettings(): DisambiguationSettings | 
 export async function persistDisambiguationSettings(
   settings: DisambiguationSettings,
 ): Promise<void> {
-  const projectFilePath = window.__leafWriterProject?.getProjectFilePath?.();
-  if (!projectFilePath || !window.electronAPI?.updateProjectFileConfig) return;
-  await window.electronAPI.updateProjectFileConfig(projectFilePath, {
-    disambiguation: settings,
-  });
+  const saved = await persistProjectConfigPatch({ disambiguation: settings });
+  if (!saved) return;
   window.__leafWriterProject?.setDisambiguationSettings?.(settings);
 }
 

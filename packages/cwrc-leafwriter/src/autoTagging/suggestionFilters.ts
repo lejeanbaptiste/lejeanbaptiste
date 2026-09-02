@@ -1,4 +1,5 @@
-import { buildDocIndex, type DocIndex } from './anchor';
+import { buildDocIndex, resolveXPath, type DocIndex } from './anchor';
+import type { Anchor } from './types';
 import { isEntityTagForbiddenInDate } from './dateTeiHelpers';
 import type { Suggestion, WhitespacePolicy } from './types';
 
@@ -193,12 +194,50 @@ function docSpanAt(
   return null;
 }
 
+/** Map an anchor to document-level search-text offsets for nested-span checks. */
+function docSpanFromAnchor(
+  doc: Document,
+  index: DocIndex,
+  anchor: Anchor,
+): { start: number; end: number } | null {
+  if (anchor.endXpath != null && anchor.endOffset != null) {
+    const startNode = resolveXPath(doc, anchor.xpath);
+    const endNode = resolveXPath(doc, anchor.endXpath);
+    if (!startNode || !endNode) return null;
+
+    const startNodeIdx = index.nodes.findIndex((n) => n.node === startNode);
+    const endNodeIdx = index.nodes.findIndex((n) => n.node === endNode);
+    if (startNodeIdx < 0 || endNodeIdx < 0) return null;
+
+    const startSearch = index.nodes[startNodeIdx]!.search;
+    const endSearch = index.nodes[endNodeIdx]!.search;
+    const startSearchIdx = startSearch.map.findIndex((raw) => raw >= anchor.offset);
+    if (startSearchIdx < 0) return null;
+
+    let endSearchEnd = endSearch.map.length;
+    for (let i = 0; i < endSearch.map.length; i++) {
+      if (endSearch.map[i]! >= anchor.endOffset) {
+        endSearchEnd = i;
+        break;
+      }
+    }
+    if (endSearchEnd <= startSearchIdx && startNodeIdx === endNodeIdx) return null;
+
+    const start = index.nodeStart[startNodeIdx]! + startSearchIdx;
+    const end = index.nodeStart[endNodeIdx]! + endSearchEnd;
+    if (end <= start) return null;
+    return { start, end };
+  }
+
+  return docSpanAt(index.text, anchor.surface, anchor.occurrence);
+}
+
 /** Deduplicate suggestions by their document location (tag, surface, xpath, offset, entity key). */
 export function suggestionLocationKey(suggestion: Suggestion): string {
   const anchor = suggestion.anchor;
   const entityKey = suggestion.attributes?.key ?? '';
   const typeAttr = suggestion.attributes?.type ?? '';
-  return `${suggestion.tag}\t${typeAttr}\t${anchor.surface}\t${anchor.xpath}\t${anchor.offset}\t${entityKey}`;
+  return `${suggestion.tag}\t${typeAttr}\t${anchor.surface}\t${anchor.xpath}\t${anchor.offset}\t${anchor.endXpath ?? ''}\t${anchor.endOffset ?? ''}\t${entityKey}`;
 }
 
 export function dedupeSuggestionsByLocation(suggestions: Suggestion[]): Suggestion[] {
@@ -240,7 +279,7 @@ export function filterNestedSameTagAdds(
   const spanned: SpannedAdd[] = [];
   const unresolvable = new Set<Suggestion>();
   for (const suggestion of adds) {
-    const span = docSpanAt(index.text, suggestion.anchor.surface, suggestion.anchor.occurrence);
+    const span = docSpanFromAnchor(doc, index, suggestion.anchor);
     if (!span) {
       unresolvable.add(suggestion);
       continue;

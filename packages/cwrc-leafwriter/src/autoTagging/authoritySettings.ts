@@ -1,3 +1,4 @@
+import { persistProjectConfigPatch } from './projectConfigPersist';
 import { persistedPacksFromUi, uiPacksFromPersisted, type AuthorityPackId } from './packPaths';
 import type { DateFilterMode } from './packLoader';
 import { DEFAULT_UNTAGGABLE_TYPES, normalizeNameType, type NameTypeId } from './nameTypes';
@@ -225,11 +226,8 @@ export function readPersistedAuthoritySettings(): AutoTaggingAuthoritySettings |
 export async function persistAuthoritySettings(
   settings: AutoTaggingAuthoritySettings,
 ): Promise<void> {
-  const projectFilePath = window.__leafWriterProject?.getProjectFilePath?.();
-  if (!projectFilePath || !window.electronAPI?.updateProjectFileConfig) return;
-  await window.electronAPI.updateProjectFileConfig(projectFilePath, {
-    autoTaggingAuthority: settings,
-  });
+  const saved = await persistProjectConfigPatch({ autoTaggingAuthority: settings });
+  if (!saved) return;
   window.__leafWriterProject?.setAutoTaggingAuthoritySettings?.(settings);
 }
 

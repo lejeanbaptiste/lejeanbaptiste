@@ -93,9 +93,10 @@ export const saveProjectMetadataChanges = async (
   try {
     await writeProjectMetadata(bundle, draft);
     if (typeof payload.syncToCentral === 'boolean' && electronAPI.updateProjectFileConfig) {
-      await electronAPI.updateProjectFileConfig(bundle.projectFilePath, {
+      const updatedBundle = await electronAPI.updateProjectFileConfig(bundle.projectFilePath, {
         syncToCentral: payload.syncToCentral,
       });
+      window.__leafWriterProject?.applyProjectConfigBundle?.(updatedBundle);
     }
   } catch (error) {
     return {
@@ -250,9 +251,10 @@ export const persistNameTypeTaggingPolicyChanges = async (
     customNameTypes: payload.customTypes ?? current.customNameTypes,
     artMinCodePoints: payload.artMinCodePoints ?? current.artMinCodePoints,
   };
-  await electronAPI.updateProjectFileConfig(bundle.projectFilePath, {
+  const updatedBundle = await electronAPI.updateProjectFileConfig(bundle.projectFilePath, {
     autoTaggingAuthority: next,
   });
+  window.__leafWriterProject?.applyProjectConfigBundle?.(updatedBundle);
   setAuthoritySettings(next);
   return { ok: true };
 };

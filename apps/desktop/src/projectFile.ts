@@ -108,6 +108,9 @@ const normalizeDisambiguationSettings = (raw: unknown): DisambiguationSettings |
   }
   if (typeof value.yearStart === 'number') out.yearStart = value.yearStart;
   if (typeof value.yearEnd === 'number') out.yearEnd = value.yearEnd;
+  if (typeof value.placeProximityKm === 'number' && Number.isFinite(value.placeProximityKm)) {
+    out.placeProximityKm = value.placeProximityKm;
+  }
   return Object.keys(out).length ? out : undefined;
 };
 

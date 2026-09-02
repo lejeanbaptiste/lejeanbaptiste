@@ -51,10 +51,12 @@ export interface AutoTaggingValidationSettings {
 
 export interface DisambiguationSettings {
   aiCuration?: boolean;
+  disableCaching?: boolean;
   /** Date-range filter for the disambiguation panel's own candidate filter. */
   dateFilter?: 'none' | 'limit' | 'exclude';
   yearStart?: number;
   yearEnd?: number;
+  placeProximityKm?: number;
 }
 
 /** Persisted in jean-baptiste.project.json — mirrors cwrc-leafwriter authoritySettings. */

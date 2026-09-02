@@ -112,8 +112,7 @@ export function buildProjectionIndex(
   const points: ProjectionTextPoint[] = [];
   const infrastructure: ProjectionInfrastructureMark[] = [];
 
-  const walkRoot =
-    root.nodeType === Node.DOCUMENT_NODE ? (root as Document).documentElement : root;
+  const walkRoot = root.nodeType === Node.DOCUMENT_NODE ? (root as Document).documentElement : root;
   if (!walkRoot) {
     return { text: '', points: [], infrastructure: [] };
   }
@@ -234,4 +233,5 @@ export const projectionSpanCrossesInfrastructure = (
   projection: ProjectionIndex,
   startOffset: number,
   length: number,
-): boolean => infrastructureInProjectionRange(projection, startOffset, startOffset + length).length > 0;
+): boolean =>
+  infrastructureInProjectionRange(projection, startOffset, startOffset + length).length > 0;

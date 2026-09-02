@@ -2,7 +2,7 @@
 
 **Status (2026-09-02):** Phases A–**E** implemented. CBETA import keeps `<lb>` / `<pb>` /
 empty `<anchor>` in the XML; enable **Match across line and page breaks** in
-Settings → Interface → Behaviour (project setting, default off) for the projection
+Settings → Project (project setting, default off) for the projection
 tag bomb. Phase D (AI + Sanmiao) deferred.
 
 **Rollout:** build the projection stack in parallel, regression-test against
@@ -46,7 +46,7 @@ running text.
 1. **Build a projection** — a flat search string from body text, skipping (not
    deleting) empty _infrastructure_ elements: **`lb`, `pb`, empty `anchor`, `gap`**
    (all bridged for matching). Map each projection index back to a DOM text node
-   + raw offset; record skipped infrastructure for wrap apply.
+   - raw offset; record skipped infrastructure for wrap apply.
 2. **Match on the projection** — reuse `MultiStringMatcher` / authority seed
    index on `projection.text` (longest-first, document-order occurrence counting).
 3. **Apply by wrapping the DOM range** — insert the entity tag around the

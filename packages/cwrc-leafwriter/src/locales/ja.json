@@ -172,6 +172,7 @@
         "show_pack_string_counts_description": "タグ爆弾を開いたときに各権限パックの文字列数を数えます。起動が遅くなる場合があります。",
         "match_across_line_breaks": "行・ページ区切りをまたいでマッチ",
         "match_across_line_breaks_description": "空の <lb>、<pb> などのマイルストーンをまたいでタグ爆弾のマッチを探します。適用したタグ内にマーカーを保持します。既定ではオフ。",
+        "match_across_line_breaks_enable": "このプロジェクトで有効にする",
         "asset_packs_note": "オフライン権限パックと地図タイルはアセットパックタブにあります。",
         "messages": {
           "Are you sure you want to delete the authority -value": "<0>権限データ </0><1>{{name}}</1><2> を削除しますか？</2>",
@@ -310,17 +311,25 @@
         "map_tiles": "オフライン地図タイル"
       },
       "privacy": {
-        "description": "LEAF-Writer がローカルに保存する情報と、ネットワーク機能の利用を選択した場合にのみ送信する情報です。",
-        "summary": "通常のデスクトップ利用では、LEAF-Writer はほぼローカル優先で動作します。別のサービスと明示的に通信する機能を使わない限り、ファイル、データベース、設定はコンピューター内に保持されます。",
+        "description": "Le Jean-Baptiste がローカルに保存する情報と、ネットワーク機能の利用を選択した場合にのみ送信する情報です。",
+        "summary": "通常のデスクトップ利用では、Le Jean-Baptiste はほぼローカル優先で動作します。別のサービスと明示的に通信する機能を使わない限り、ファイル、データベース、設定はコンピューター内に保持されます。",
         "local_first": "通常の編集、ローカルのエンティティデータベース、オフラインパック、大部分の設定はコンピューターに残ります。",
         "documents_title": "文書メタデータ",
         "documents_body": "設定で入力したユーザー名は、プロジェクト／文書メタデータとして文書に書き込まれることがあります。アプリが自動的にアップロードするからではなく、文書そのものの一部になるため、その名前はファイルとともに移動します。",
         "leaderboard_title": "リーダーボードへの送信",
-        "leaderboard_body": "サービス記録をリーダーボードに送信することを選択した場合、LEAF-Writer は確認用の GitHub 識別トークン、表示名と順位の情報、実績指標の件数、任意のアバター画像をリーダーボードサービスへ送信します。",
+        "leaderboard_body": "サービス記録をリーダーボードに送信することを選択した場合、Le Jean-Baptiste は確認用の GitHub 識別トークン、表示名と順位の情報、実績指標の件数、任意のアバター画像をリーダーボードサービスへ送信します。",
         "telemetry_title": "クラッシュとエラーの報告",
         "telemetry_body": "エディターコードは、ビルドで有効化されている場合に Sentry によるクラッシュ／エラー報告（任意）をサポートします。通常の編集に必須ではなく、ビルド設定によって決まります。",
         "web_title": "Web 専用の計測 Cookie",
-        "web_body": "Web アプリでは、計測 Cookie に同意した場合に限り、匿名化された Google Analytics のページ／エディターイベントを送信できます。デスクトップアプリではこの Cookie 同意による分析フローは使用しません。"
+        "web_body": "Web アプリでは、計測 Cookie に同意した場合に限り、匿名化された Google Analytics のページ／エディターイベントを送信できます。デスクトップアプリではこの Cookie 同意による分析フローは使用しません。",
+        "configure_title": "ネットワーク機能の設定場所",
+        "goto_profile_github": "プロファイル — エンコーダー名と GitHub／リーダーボード",
+        "goto_entity_database": "エンティティデータベース — フォルダー、クラウドバックアップ、デバイス間同期",
+        "goto_ai": "AI — API キーとプロンプトプロファイル",
+        "goto_proofreading": "インターフェース › 校正 — LanguageTool（ローカルまたはクラウド）"
+      },
+      "entity_database": {
+        "description": "権威エンティティのローカル保存場所と、オプションのクラウドバックアップ・デバイス間同期。"
       },
       "translationPolicy": {
         "description": "翻訳でエンティティ名と日付を表示する方法に関する個人設定です。言語ごとに設定を持ち、翻訳中に適用され、Word エクスポートにも引き継がれます。",
@@ -455,10 +464,12 @@
         "behaviour": "動作",
         "asset_packs": "アセットパック",
         "plugins": "プラグイン",
+        "entity_database": "エンティティデータベース",
         "ai": "AI",
         "translation_policy": "翻訳ポリシー",
         "privacy": "データプライバシー",
-        "entity_types": "エンティティの種類"
+        "entity_types": "エンティティの種類",
+        "proofreading": "校正"
       }
     },
     "desktop": {

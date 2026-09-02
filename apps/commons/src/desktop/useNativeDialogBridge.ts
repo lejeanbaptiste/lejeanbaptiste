@@ -78,6 +78,8 @@ declare global {
       setAutoTaggingValidationSettings: (settings: AutoTaggingValidationSettings) => void;
       getDisambiguationSettings: () => DisambiguationSettings | undefined;
       setDisambiguationSettings: (settings: DisambiguationSettings) => void;
+      /** Apply a bundle returned by `updateProjectFileConfig` to caches + Overmind. */
+      applyProjectConfigBundle?: (bundle: ProjectBundle) => void;
       loadProjectMetadataState?: (
         mode?: ProjectMetadataDialogMode,
       ) => ReturnType<typeof loadProjectMetadataDialogState>;
@@ -144,6 +146,7 @@ export const useNativeDialogBridge = () => {
   const authoritySettingsCache = useRef<AutoTaggingAuthoritySettings | undefined>(undefined);
   const validationSettingsCache = useRef<AutoTaggingValidationSettings | undefined>(undefined);
   const disambiguationSettingsCache = useRef<DisambiguationSettings | undefined>(undefined);
+  const bridgedProjectFilePathRef = useRef<string | null>(null);
   const metadataSaveDepsRef = useRef<() => ProjectMetadataSaveDeps>(() => {
     throw new Error('Project metadata save is not ready.');
   });
@@ -214,9 +217,14 @@ export const useNativeDialogBridge = () => {
       setActiveProjectBundle(null);
       return;
     }
-    authoritySettingsCache.current = undefined;
-    validationSettingsCache.current = undefined;
-    disambiguationSettingsCache.current = undefined;
+
+    if (bridgedProjectFilePathRef.current !== projectFilePath) {
+      authoritySettingsCache.current = undefined;
+      validationSettingsCache.current = undefined;
+      disambiguationSettingsCache.current = undefined;
+      bridgedProjectFilePathRef.current = projectFilePath;
+    }
+
     setActiveProjectBundle({ rootPath, projectFilePath, config });
 
     const getAuthoritySettings = (bundle: ProjectBundle) =>
@@ -292,6 +300,15 @@ export const useNativeDialogBridge = () => {
       setDisambiguationSettings: (settings) => {
         disambiguationSettingsCache.current = settings;
       },
+      applyProjectConfigBundle: (bundle) => {
+        setActiveProjectBundle(bundle);
+        authoritySettingsCache.current = bundle.config.autoTaggingAuthority;
+        validationSettingsCache.current = bundle.config.autoTaggingValidation;
+        disambiguationSettingsCache.current = bundle.config.disambiguation;
+        if (projectFilePath === bundle.projectFilePath) {
+          window.writer?.overmindActions?.project?.syncProjectFileConfig?.(bundle);
+        }
+      },
       loadProjectMetadataState: (mode = 'edition') =>
         loadProjectMetadataDialogState(projectFilePath, mode),
       saveProjectMetadata: (payload) => saveProjectMetadataChanges(metadataSaveDeps(), payload),
@@ -310,7 +327,6 @@ export const useNativeDialogBridge = () => {
     isProjectReady,
     openFile,
     refreshExplorer,
-    openTabs,
     reloadTabFromDisk,
     notifyViaSnackbar,
     t,

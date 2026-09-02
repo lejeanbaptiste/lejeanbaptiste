@@ -172,6 +172,7 @@
         "show_pack_string_counts_description": "Counts strings in each authority pack when Tag Bomb opens. Can slow opening.",
         "match_across_line_breaks": "Match across line and page breaks",
         "match_across_line_breaks_description": "Find authority tag-bomb matches across empty <lb>, <pb>, and similar milestones. Keeps markers inside applied tags. Off by default.",
+        "match_across_line_breaks_enable": "Enable for this project",
         "asset_packs_note": "Offline authority packs and map tiles now live in the Asset packs tab.",
         "messages": {
           "Are you sure you want to delete the authority -value": "<0>Are you sure you want to delete the authority </0><1>{{name}}</1><2>?</2>",
@@ -310,17 +311,25 @@
         "map_tiles": "Offline map tiles"
       },
       "privacy": {
-        "description": "What LEAF-Writer stores locally and what it only sends if you choose to use a networked feature.",
-        "summary": "LEAF-Writer is mostly local-first in normal desktop use. Your files, databases, and settings stay on your machine unless you use a feature that explicitly talks to another service.",
+        "description": "What Le Jean-Baptiste stores locally and what it only sends if you choose to use a networked feature.",
+        "summary": "Le Jean-Baptiste is mostly local-first in normal desktop use. Your files, databases, and settings stay on your machine unless you use a feature that explicitly talks to another service.",
         "local_first": "Normal editing, local entity databases, offline packs, and most settings remain on your computer.",
         "documents_title": "Document metadata",
         "documents_body": "The user name you enter in Settings can be written into your documents as project/document metadata. That name travels with the file because it becomes part of the document itself, not because the app uploads it somewhere automatically.",
         "leaderboard_title": "Leaderboard submission",
-        "leaderboard_body": "If you choose to submit your service record to the leaderboard, LEAF-Writer sends your GitHub identity token for verification, your displayed user name/rank context, your achievement metrics counts, and your optional avatar image to the leaderboard service.",
+        "leaderboard_body": "If you choose to submit your service record to the leaderboard, Le Jean-Baptiste sends your GitHub identity token for verification, your displayed user name/rank context, your achievement metrics counts, and your optional avatar image to the leaderboard service.",
         "telemetry_title": "Crash and error reporting",
         "telemetry_body": "The editor code supports optional Sentry crash/error reporting if a build enables it. That is configuration-dependent rather than a normal editing requirement.",
         "web_title": "Web-only measurement cookies",
-        "web_body": "In the web app, anonymous Google Analytics page/editor events can be sent only if measurement cookies are accepted. The desktop app does not use that cookie-consent analytics flow."
+        "web_body": "In the web app, anonymous Google Analytics page/editor events can be sent only if measurement cookies are accepted. The desktop app does not use that cookie-consent analytics flow.",
+        "configure_title": "Where to configure networked features",
+        "goto_profile_github": "Profile — encoder name and GitHub / leaderboard",
+        "goto_entity_database": "Entity database — folder, cloud backup, cross-device sync",
+        "goto_ai": "AI — API keys and prompt profiles",
+        "goto_proofreading": "Interface › Proofreading — LanguageTool (local server or cloud URL)"
+      },
+      "entity_database": {
+        "description": "Where your authority entities live on disk, plus optional cloud backup and cross-device sync."
       },
       "translationPolicy": {
         "description": "Personal conventions for how entity names and dates appear in translations. One set of preferences per language; they apply while you translate and travel with you to Word export.",
@@ -455,10 +464,12 @@
         "behaviour": "Behaviour",
         "asset_packs": "Asset packs",
         "plugins": "Plugins",
+        "entity_database": "Entity database",
         "ai": "AI",
         "translation_policy": "Translation policy",
         "privacy": "Data privacy",
-        "entity_types": "Entity types"
+        "entity_types": "Entity types",
+        "proofreading": "Proofreading"
       }
     },
     "desktop": {
@@ -466,7 +477,7 @@
         "entity_sync": {
           "title": "Cross-device sync",
           "description": "Keep this entity database in step with your other machines through a Cloudflare Worker. Setup guide: docs/entity-sync-planning.md.",
-          "sign_in_required": "Sign in to GitHub first (Profil › GitHub) — sync uses that identity.",
+          "sign_in_required": "Sign in to GitHub first (Profile › GitHub) — sync uses that identity.",
           "sign_in_bearer": "Enter a bearer token below, then Save.",
           "sign_in_oidc": "OIDC sign-in isn't available yet — choose GitHub or Bearer token.",
           "auth_mode": "Authentication",
@@ -493,7 +504,7 @@
           "skipped_in_progress": "A sync is already running.",
           "skipped_not_signed_in": "Sign in (or save a bearer token) before syncing.",
           "skipped_write_quota": "The sync server hit its daily write limit — {{pushed}} entities went up this run; the rest will follow automatically over the next day or two.",
-          "no_local_database": "Preparing your local entity database… If this message persists, restore from cloud backup or choose a database folder in Settings.",
+          "no_local_database": "Preparing your local entity database… If this message persists, open Settings › Entity database and choose a folder, or restore from cloud backup.",
           "never_synced": "Not yet synced",
           "synced_through": "Synced through change #{{cursor}}",
           "last_ok": "last run {{when}}: pulled {{pulled}}, pushed {{pushed}}",
@@ -537,7 +548,7 @@
           "skipped_disabled": "Automatic backup is turned off — tick “Back up automatically” and click Save first.",
           "skipped_not_configured": "Backup is not fully configured — fill in the fields and click Save.",
           "skipped_in_progress": "A backup is already running.",
-          "no_local_database": "Preparing your local entity database… If this message persists, choose a database folder in Settings.",
+          "no_local_database": "Preparing your local entity database… If this message persists, open Settings › Entity database and choose a folder.",
           "no_encryption": "Encrypted credential storage is unavailable on this system, so backup settings cannot be saved. On Linux, unlock a login keyring and restart.",
           "credentials_locked": "Backup credentials are saved but could not be unlocked, so automatic backups are switched off. This usually means an operating-system keychain prompt was dismissed or could not be answered. Retry to be asked again, or re-enter the credentials below to replace them.",
           "credentials_locked_retry": "Retry",

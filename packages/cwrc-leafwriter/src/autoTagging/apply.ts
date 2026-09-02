@@ -625,14 +625,7 @@ function applyProjectionAdd(
     return { suggestion, outcome: 'already-tagged' };
   }
 
-  const element = wrapProjectionRange(
-    doc,
-    startNode,
-    startOffset,
-    endNode,
-    endOffset,
-    suggestion,
-  );
+  const element = wrapProjectionRange(doc, startNode, startOffset, endNode, endOffset, suggestion);
   return { suggestion, outcome: 'applied', element };
 }
 

@@ -457,6 +457,9 @@
           "discard_changes_button": "Discard changes",
           "dont_save_button": "Don't Save",
           "import_diagnostics_title": "Import diagnostics",
+          "import_report_success_message": "Imported {{documentCount}} document{{documentCount, plural, one {} other {s}}}. {{schemaValidCount}} passed RelaxNG validation{{schemaUnavailableCount, plural, =0 {} other {; {{schemaUnavailableCount}} not checked}}}.",
+          "import_report_title": "Import report",
+          "import_report_with_issues_message": "Imported {{documentCount}} document{{documentCount, plural, one {} other {s}}} with {{problemCount}} failed file{{problemCount, plural, one {} other {s}}} and/or {{schemaInvalidCount}} schema warning{{schemaInvalidCount, plural, one {} other {s}}}.",
           "import_xml_continue_button": "Import",
           "import_xml_warning_detail": "Foreign entity keys (@key) will be moved to a backup token on @ana (ljb-former-key:…) so they do not point at this project's entity catalogue. Compatible header fields stay in the file; project edition metadata is merged in; the project's schema is attached. Element remapping between different schemas is not done yet.",
           "import_xml_warning_message": "{{documentCount}} XML file{{documentCount, plural, one {} other {s}}} will be imported into this project.",
@@ -473,6 +476,18 @@
           "unsaved_new_document_title": "Unsaved new document",
           "unsaved_settings_title": "Unsaved project settings",
           "unsaved_settings_message": "You have unsaved project settings. Discard them and leave?"
+        },
+        "import_report": {
+          "keys_demoted": "{{count}} foreign key{{count, plural, one {} other {s}}} moved to @ana",
+          "more_files": "…and {{count}} more file{{count, plural, one {} other {s}}}",
+          "paragraphs": "{{count}} paragraph block{{count, plural, one {} other {s}}}",
+          "schema_invalid": "Schema: {{count}} error{{count, plural, one {} other {s}}} — {{message}}",
+          "schema_skipped_not_well_formed": "Schema: not checked (XML not well formed)",
+          "schema_unavailable_no_schema": "Schema: not checked (no project schema)",
+          "schema_unavailable_schema_compile_failed": "Schema: not checked (schema could not compile)",
+          "schema_unavailable_schema_read_failed": "Schema: not checked (could not read schema file)",
+          "schema_unavailable_worker_unavailable": "Schema: not checked (validator unavailable)",
+          "schema_valid": "Schema: valid"
         },
         "messages": {
           "could_not_create_new_file": "Could not create a new file.",

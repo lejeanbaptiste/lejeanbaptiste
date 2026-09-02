@@ -1,3 +1,5 @@
+import { persistProjectConfigPatch } from './projectConfigPersist';
+
 /**
  * AI validation settings for auto-tagging review.
  * Controls whether AI pre-validates suggestions before human review.
@@ -56,14 +58,11 @@ export function readPersistedValidationSettings(): ValidationSettings | undefine
  * does not wipe `autoAcceptThreshold`.
  */
 export async function persistValidationSettings(settings: ValidationSettings): Promise<void> {
-  const projectFilePath = window.__leafWriterProject?.getProjectFilePath?.();
-  if (!projectFilePath || !window.electronAPI?.updateProjectFileConfig) return;
   const merged: ValidationSettings = {
     ...readPersistedValidationSettings(),
     ...settings,
   };
-  await window.electronAPI.updateProjectFileConfig(projectFilePath, {
-    autoTaggingValidation: merged,
-  });
+  const saved = await persistProjectConfigPatch({ autoTaggingValidation: merged });
+  if (!saved) return;
   window.__leafWriterProject?.setAutoTaggingValidationSettings?.(merged);
 }

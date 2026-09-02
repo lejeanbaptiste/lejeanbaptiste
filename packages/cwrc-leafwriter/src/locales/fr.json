@@ -668,6 +668,7 @@
         "show_pack_string_counts_description": "Compte les chaînes de chaque pack d'autorité à l'ouverture de Tag Bomb. Peut ralentir l'ouverture.",
         "match_across_line_breaks": "Correspondre à travers les sauts de ligne et de page",
         "match_across_line_breaks_description": "Trouve des correspondances dans Tag Bomb à travers les balises vides <lb>, <pb>, etc. Conserve les repères dans les balises appliquées. Désactivé par défaut.",
+        "match_across_line_breaks_enable": "Activer pour ce projet",
         "asset_packs_note": "Les packs d’autorités hors ligne et les tuiles cartographiques se trouvent maintenant dans l’onglet Packs de ressources.",
         "messages": {
           "Are you sure you want to delete the authority -value": "<0>Voulez-vous vraiment supprimer l'autorité </0><1>{{name}}</1><2> ?</2>",
@@ -796,17 +797,25 @@
         "map_tiles": "Tuiles cartographiques hors ligne"
       },
       "privacy": {
-        "description": "Ce que LEAF-Writer conserve localement et ce qu’il n’envoie que si vous choisissez d’utiliser une fonction en réseau.",
-        "summary": "LEAF-Writer fonctionne principalement en local dans l’usage normal de l’application de bureau. Vos fichiers, bases de données et paramètres restent sur votre machine, sauf si vous utilisez une fonction qui contacte explicitement un autre service.",
+        "description": "Ce que Le Jean-Baptiste conserve localement et ce qu’il n’envoie que si vous choisissez d’utiliser une fonction en réseau.",
+        "summary": "Le Jean-Baptiste fonctionne principalement en local dans l’usage normal de l’application de bureau. Vos fichiers, bases de données et paramètres restent sur votre machine, sauf si vous utilisez une fonction qui contacte explicitement un autre service.",
         "local_first": "L’édition normale, les bases d’entités locales, les packs hors ligne et la plupart des paramètres restent sur votre ordinateur.",
         "documents_title": "Métadonnées des documents",
         "documents_body": "Le nom d’utilisateur saisi dans les Paramètres peut être écrit dans vos documents comme métadonnée de projet ou de document. Ce nom voyage avec le fichier parce qu’il fait partie du document lui-même, et non parce que l’application le téléverse automatiquement quelque part.",
         "leaderboard_title": "Envoi au classement",
-        "leaderboard_body": "Si vous choisissez d’envoyer votre fiche de service au classement, LEAF-Writer transmet votre jeton d’identité GitHub pour vérification, votre nom affiché et votre contexte de grade, les totaux de vos indicateurs d’accomplissement et votre image d’avatar facultative au service de classement.",
+        "leaderboard_body": "Si vous choisissez d’envoyer votre fiche de service au classement, Le Jean-Baptiste transmet votre jeton d’identité GitHub pour vérification, votre nom affiché et votre contexte de grade, les totaux de vos indicateurs d’accomplissement et votre image d’avatar facultative au service de classement.",
         "telemetry_title": "Rapports d’erreur et de plantage",
         "telemetry_body": "Le code de l’éditeur prend en charge des rapports optionnels d’erreurs et de plantages via Sentry si une version les active. Cela dépend donc de la configuration de la version, et non de l’édition normale.",
         "web_title": "Mesure d’audience dans la version web",
-        "web_body": "Dans l’application web, des événements anonymisés Google Analytics (pages et ouverture de l’éditeur) peuvent être envoyés seulement si les cookies de mesure sont acceptés. L’application de bureau n’utilise pas ce flux d’analyse fondé sur le consentement aux cookies."
+        "web_body": "Dans l’application web, des événements anonymisés Google Analytics (pages et ouverture de l’éditeur) peuvent être envoyés seulement si les cookies de mesure sont acceptés. L’application de bureau n’utilise pas ce flux d’analyse fondé sur le consentement aux cookies.",
+        "configure_title": "Où configurer les fonctions en réseau",
+        "goto_profile_github": "Profil — nom d’encodeur et GitHub / classement",
+        "goto_entity_database": "Base d’entités — dossier, sauvegarde cloud, synchronisation",
+        "goto_ai": "IA — clés API et profils de consignes",
+        "goto_proofreading": "Interface › Relecture — LanguageTool (serveur local ou cloud)"
+      },
+      "entity_database": {
+        "description": "Où vivent vos entités d’autorité sur le disque, plus la sauvegarde cloud et la synchronisation multi-appareils en option."
       },
       "translationPolicy": {
         "description": "Conventions personnelles pour l’affichage des noms d’entités et des dates dans les traductions. Un jeu de préférences par langue ; elles s’appliquent pendant la traduction et voyagent avec vous vers l’export Word.",
@@ -941,10 +950,12 @@
         "behaviour": "Comportement",
         "asset_packs": "Packs de ressources",
         "plugins": "Plugins",
+        "entity_database": "Base d’entités",
         "ai": "IA",
         "translation_policy": "Politique de traduction",
         "privacy": "Confidentialité",
-        "entity_types": "Types d'entités"
+        "entity_types": "Types d'entités",
+        "proofreading": "Relecture"
       },
       "language_tool": {
         "title": "LanguageTool",

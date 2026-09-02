@@ -68,6 +68,13 @@ import {
   type DocumentImportSource,
 } from '@src/desktop/documentImport';
 import {
+  countImportedParagraphs,
+  formatDocumentImportReportDetail,
+  summarizeDocumentImportReport,
+  type DocumentImportReportEntry,
+} from '@src/desktop/documentImportReport';
+import { validateImportedXmlRelaxNg } from '@src/desktop/documentImportValidation';
+import {
   mergeEditorBodyWithStoredHeader,
   stripTeiHeaderForVisualEditor,
 } from '@src/desktop/teiHeaderXml';
@@ -956,7 +963,7 @@ const writeImportedDocument = async (
   item: DocumentImportPlanItem,
   config: ProjectBundle['config'],
   metadata: Awaited<ReturnType<typeof readProjectMetadata>>,
-): Promise<{ keysDemoted: number }> => {
+): Promise<{ keysDemoted: number; paragraphCount: number; xml: string }> => {
   if (!window.electronAPI) throw new Error('Desktop file APIs are unavailable.');
 
   let xml: string;
@@ -1036,7 +1043,7 @@ const writeImportedDocument = async (
   });
   assertImportedXmlWellFormed(writtenXml, 'Written import XML is not well formed');
 
-  return { keysDemoted };
+  return { keysDemoted, paragraphCount: countImportedParagraphs(writtenXml), xml: writtenXml };
 };
 
 const formatDocumentImportProblems = (problems: DocumentImportProblem[]): string =>
@@ -1048,6 +1055,53 @@ const formatDocumentImportProblems = (problems: DocumentImportProblem[]): string
       return `${sourceName}${outputName ? ` -> ${outputName}` : ''}: ${problem.message}`;
     })
     .join('\n');
+
+const showDocumentImportReportDialog = async ({
+  entries,
+  problemCount,
+  problems,
+  writtenCount,
+}: {
+  entries: DocumentImportReportEntry[];
+  problemCount: number;
+  problems: DocumentImportProblem[];
+  writtenCount: number;
+}) => {
+  if (
+    !window.electronAPI?.showNativeMessageBox ||
+    (entries.length === 0 && problems.length === 0)
+  ) {
+    return;
+  }
+
+  const { schemaInvalidCount, schemaUnavailableCount, schemaValidCount } =
+    summarizeDocumentImportReport(entries);
+  const detailParts = [
+    entries.length > 0 ? formatDocumentImportReportDetail(entries, t) : '',
+    problems.length > 0 ? formatDocumentImportProblems(problems) : '',
+  ].filter(Boolean);
+  const detail = detailParts.join('\n\n');
+  const hasProblems = problemCount > 0 || schemaInvalidCount > 0;
+
+  void window.electronAPI.showNativeMessageBox({
+    buttons: [t('LWC.desktop.project.dialogs.ok_button')],
+    defaultId: 0,
+    detail,
+    message: hasProblems
+      ? t('LWC.desktop.project.dialogs.import_report_with_issues_message', {
+          documentCount: writtenCount,
+          problemCount,
+          schemaInvalidCount,
+        })
+      : t('LWC.desktop.project.dialogs.import_report_success_message', {
+          documentCount: writtenCount,
+          schemaUnavailableCount,
+          schemaValidCount,
+        }),
+    title: t('LWC.desktop.project.dialogs.import_report_title'),
+    type: hasProblems ? 'warning' : 'info',
+  });
+};
 
 export const importDocuments = async (context: Context) => {
   const { state, actions } = context;
@@ -1099,12 +1153,25 @@ export const importDocuments = async (context: Context) => {
   };
   const metadata = await readProjectMetadata(bundle);
   const problems: DocumentImportProblem[] = [];
+  const reportEntries: DocumentImportReportEntry[] = [];
   const writtenPaths: string[] = [];
   let keysDemotedTotal = 0;
 
   for (const item of plan) {
     try {
       const written = await writeImportedDocument(item, state.project.config, metadata);
+      const schemaValidation = await validateImportedXmlRelaxNg(written.xml, {
+        config: state.project.config,
+        rootPath: state.project.rootPath,
+      });
+      reportEntries.push({
+        keysDemoted: written.keysDemoted,
+        outputPath: item.outputPath,
+        paragraphCount: written.paragraphCount,
+        schemaValidation,
+        sourceFormat: item.format,
+        sourcePath: item.sourcePath,
+      });
       writtenPaths.push(item.outputPath);
       keysDemotedTotal += written.keysDemoted;
     } catch (error) {
@@ -1151,22 +1218,17 @@ export const importDocuments = async (context: Context) => {
     }
   }
 
+  if (reportEntries.length > 0 || problems.length > 0) {
+    await showDocumentImportReportDialog({
+      entries: reportEntries,
+      problemCount: problems.length,
+      problems,
+      writtenCount: writtenPaths.length,
+    });
+  }
+
   if (problems.length > 0) {
     console.warn('[document-import] completed with problems', problems);
-    const detail = formatDocumentImportProblems(problems);
-    if (window.electronAPI?.showNativeMessageBox) {
-      void window.electronAPI.showNativeMessageBox({
-        buttons: [t('LWC.desktop.project.dialogs.ok_button')],
-        defaultId: 0,
-        message: t('LWC.desktop.project.dialogs.imported_documents_with_problems', {
-          documentCount: writtenPaths.length,
-          problemCount: problems.length,
-        }),
-        title: t('LWC.desktop.project.dialogs.import_diagnostics_title'),
-        type: writtenPaths.length > 0 ? 'warning' : 'error',
-        ...(detail ? { detail } : {}),
-      });
-    }
     notifyViaSnackbar({
       message: t('LWC.desktop.project.messages.imported_documents_with_problems_snackbar', {
         documentCount: writtenPaths.length,
@@ -2097,4 +2159,10 @@ export const refreshProjectSchemaConfig = ({ state }: Context, bundle: ProjectBu
     window.writer.overmindActions?.editor?.clearProjectSchemas?.();
     registerDesktopSchemas([...getEnabledCatalogSchemas(), ...state.project.projectSchemas]);
   }
+};
+
+/** Refresh in-memory project config after a partial jean-baptiste.project.json patch. */
+export const syncProjectFileConfig = ({ state }: Context, bundle: ProjectBundle) => {
+  if (state.project.projectFilePath !== bundle.projectFilePath) return;
+  state.project.config = bundle.config;
 };

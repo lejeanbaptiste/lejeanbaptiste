@@ -382,7 +382,7 @@
 - **A busy plugin-API port took the entire server down.** The HTTPS listener for the Word add-in (port 3848) had no `error` handler, so an `EADDRINUSE` there was thrown and killed the process serving the whole application — a dev server or a second instance was enough. It now logs that the add-in API is unavailable and leaves the app running. The main listener keeps failing hard, as it should, but reports the reason in one readable line.
 - **Cloud backup no longer fails silently when its credentials cannot be unlocked.** A dismissed keychain prompt made `readBackupConfig()` throw, which was swallowed, leaving automatic backups switched off behind a settings panel that looked simply unconfigured. The status view now distinguishes "never configured" from "stored but locked", and the panel shows an error with a **Retry** that re-runs the decrypt — which is what asks the OS again.
 
-## Upstream
+## 0.1.0-beta.9
 
 ### Translation pane
 
@@ -394,6 +394,10 @@
 - **Generate translation** status message now clears when switching source/translation files (and auto-dismisses after success).
 - While AI translation runs, the active card shows a grey overlay with spinner and is non-editable until the run finishes.
 
+### Document import (2026-09-02)
+
+- **Import report and schema validation.** After File → Import documents, a per-file report dialog lists source → output, paragraph block count, RelaxNG validation status, and foreign `@key` demotions. Schema validation runs in the existing validator worker against the project RNG (when available); well-formedness-only checks remain a fallback when the worker or schema is unavailable.
+
 ### Mention rendering fixes (2026-09-02)
 
 - **Romanization source language.** Project source language (`zh`, etc.) is exposed on the translation tab and passed into mention romanization; when missing, pinyin falls back via `zh` and stored DB Latin names. Fixes duplicated Chinese (`濟陽 濟陽`) when the target language was mistaken for the source language.
@@ -401,6 +405,19 @@
 - **Alternate name forms keep Chinese.** Courtesy, dharma, and partial-given mentions always append source characters even when they are the second chip for the same person key in a unit (e.g. `Jinghui 景撝` after `Cai Yue 蔡約`).
 - **Offices with a gloss.** Keyed `{{as:N}}` / `{{holding:N}}` / `{{mention:N}}` office chips default to **translation only** when a vernacular gloss exists (e.g. `Minister of Sacrifices`); romanization + Chinese only when there is no gloss or the mention forces romanization-first.
 - **Office placeholder substitution.** Fixed regex so `{{as:N}}` and `{{holding:N}}` tokens from the AI are replaced with entity chips (previously only `{{mention:N}}` matched, leaving raw `{{as:15}}` in output).
+
+### Auto-tagging — milestone projection (Phases A–E)
+
+CBETA and similar texts often split a running string across milestones, e.g. `《般舟三<lb/>昧》` — two text nodes, neither containing the full title. The old tag bomb scanned each text node separately and missed these spans unless you stripped `<lb>` on import.
+
+- **Phase A — projection index** (`projectionIndex.ts`): builds a flat search string from body text, bridging empty `<lb>`, `<pb>`, `<anchor>`, and `<gap>`; excludes `<sic>` / `<surplus>` (corr-only reading, shared with `hiddenChoiceText.ts`); maps every projection character back to a DOM text node + raw offset.
+- **Phase B — projection matcher** (`dictionaryTagProjection`): one `MultiStringMatcher` scan of projection text instead of per-node loops; cross-node spans set `anchor.endXpath` / `anchor.endOffset` for apply. Parity with the legacy matcher on plain TEI without milestones.
+- **Phase C — projection apply** (`projectionApply.ts`, `wrapProjectionRange`): wraps a contiguous sibling run from start through end text boundaries, preserving infrastructure nodes inside the tag — e.g. `<title>般舟三<lb/>昧</title>`. Inside `<choice>`, wraps the `<corr>` branch only and leaves `<sic>` untouched. Schema and user-rule checks run on the parent of the wrapped run.
+- **Phase E — settings & UX:** project setting **Match across line and page breaks** (Settings → Project). CBETA import dialog: when **Strip Taishō line breaks** is unchecked, a note explains the choice between enabling that setting or stripping `<lb>` at import (link opens Settings → Project).
+- **Visual-mode tag bomb** now reads the stored file snapshot (not the WYSIWYG export) when matching, so empty `<pb>` / `<lb>` milestones survive between characters — e.g. `丹<pb n="663"/>陽` can match authority entry `丹陽` even though the visual editor export often omits the milestone between text nodes.
+- **Review filter** for cross-node projection hits (`endXpath` set) resolves document spans by xpath instead of occurrence counting on the full-document index, so a header mention of the same surface no longer mis-locates body matches split by milestones.
+- **Deferred:** Phase D (AI suggest + Sanmiao date apply on the same projection locators) — intentionally not wired yet.
+- Planning: [`docs/autotagging-milestone-projection-planning.md`](docs/autotagging-milestone-projection-planning.md).
 
 ### Entity display and data
 
@@ -410,13 +427,18 @@
 ### UI and settings
 
 - **LanguageTool: managed Java on macOS and Windows.** When Java 17+ is missing or too old, Settings → AI → LanguageTool offers **Download Java for LanguageTool** — a pinned Temurin 17 JRE (~40 MB) into app user data, checksum-verified like the managed LanguageTool install. `probeJava` checks the LJB-managed runtime before system `JAVA_HOME` / PATH; a **Refresh** button re-probes after a manual Temurin or Homebrew install. Linux still requires Java installed separately.
+- **Match across line and page breaks** (Settings → Project): per-project toggle for the milestone-aware tag bomb. When enabled, authority packs, project crawl tags, and imported lists match on a flat projection of body text that bridges empty `<lb>`, `<pb>`, empty `<anchor>`, and `<gap>` — and apply wraps the DOM run with those milestones preserved inside the tag. Default **off**. Stored in `jean-baptiste.project.json` as `autoTaggingAuthority.matchAcrossLineBreaks`. Also available under Settings → Interface → Behaviour.
+- **Project settings now persist reliably.** Toggles that patch `jean-baptiste.project.json` (match across line/page breaks, show pack string counts, authority/disambiguation/validation prefs, name-type policy, sync-to-central) wrote to disk but the in-memory project config and settings caches were not refreshed; the cache was also cleared on every tab switch, so values appeared to revert immediately. A shared `persistProjectConfigPatch` helper now applies the returned bundle to Overmind and the desktop bridge; caches reset only when switching projects.
+- **Disambiguation place-proximity radius** (`disambiguation.placeProximityKm`) is no longer stripped when the project file is reloaded — the normalizer now keeps it.
 - Translation policy panel: **brackets policy** control; language buckets extended with **zh** / **ja** / **ko** (CJK date typography defaults). Per-mention overrides (brackets, title order, show/hide parts) via the entity format popup on a chip in the translation pane.
 - Chinese project resources dialog: new **Script conversion (OpenCC)** checkbox.
 
 ### Known gaps
 
 - **Noble titles (`<nobleTitle>`).** Still flattened to plain text for the AI to translate freely — no entity chips, pinyin, or character suffix on restore (e.g. “Zhenyang Princess” stays plain prose). Composite fief + rank rendering is not yet wired into the mention pipeline.
+- **Milestone projection (Phase D).** AI suggest and Sanmiao date apply still use single-node locators; spans split by `<lb>` / `<pb>` are not yet handled there.
 
 ### Documentation
 
 - Design note [`docs/mention-entity-rendering-planning.md`](docs/mention-entity-rendering-planning.md); smoke-test checklist §10d for mention manifest + CJK cases.
+- Milestone-aware auto-tagging planning and acceptance cases: [`docs/autotagging-milestone-projection-planning.md`](docs/autotagging-milestone-projection-planning.md).

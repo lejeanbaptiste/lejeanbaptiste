@@ -26,6 +26,10 @@ import {
   NameTypePolicyPanel,
   type NameTypePolicyIO,
 } from '../../../../../packages/cwrc-leafwriter/src/autoTagging/NameTypePolicyPanel';
+import {
+  persistAuthoritySettings,
+  readPersistedAuthoritySettings,
+} from '../../../../../packages/cwrc-leafwriter/src/autoTagging/authoritySettings';
 import { localizeMetadataFieldLabel } from '@src/desktop/metadataFieldLabels';
 import { SOURCE_LANGUAGE_PATH } from '@src/desktop/projectLanguage';
 import type { ProjectMetadataDialogState } from '@src/desktop/projectMetadataDialogState';
@@ -70,6 +74,7 @@ export const ProjectMetadataForm = ({
   const [pendingApplyToDocuments, setPendingApplyToDocuments] = useState(false);
   const [syncReport, setSyncReport] = useState<{ broken: number; conflicts: number } | null>(null);
   const [savedSnapshot, setSavedSnapshot] = useState<string | null>(null);
+  const [matchAcrossLineBreaks, setMatchAcrossLineBreaks] = useState(false);
 
   const snapshotFromState = useCallback(
     (
@@ -101,6 +106,7 @@ export const ProjectMetadataForm = ({
         setNewLangCode('');
         setSyncToCentral(dialogState.syncToCentral);
         setSavedSyncToCentral(dialogState.syncToCentral);
+        setMatchAcrossLineBreaks(readPersistedAuthoritySettings()?.matchAcrossLineBreaks === true);
         setSavedSnapshot(
           snapshotFromState(
             dialogState,
@@ -471,6 +477,29 @@ export const ProjectMetadataForm = ({
               {t('LWC.commons.add')}
             </Button>
           </Stack>
+
+          <Box sx={{ pt: 1 }}>
+            <Typography sx={{ pb: 0.5 }} variant="subtitle2">
+              {t('LW.settings.authorities.match_across_line_breaks')}
+            </Typography>
+            <Typography color="text.secondary" sx={{ pb: 1 }} variant="body2">
+              {t('LW.settings.authorities.match_across_line_breaks_description')}
+            </Typography>
+            <FormControlLabel
+              control={
+                <Checkbox
+                  checked={matchAcrossLineBreaks}
+                  onChange={(event) => {
+                    const checked = event.target.checked;
+                    setMatchAcrossLineBreaks(checked);
+                    const current = readPersistedAuthoritySettings() ?? {};
+                    void persistAuthoritySettings({ ...current, matchAcrossLineBreaks: checked });
+                  }}
+                />
+              }
+              label={t('LW.settings.authorities.match_across_line_breaks_enable')}
+            />
+          </Box>
 
           <Box sx={{ pt: 1 }}>
             <NameTypePolicyPanel

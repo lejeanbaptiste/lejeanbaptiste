@@ -32,6 +32,7 @@ import { PluginsSettingsPanel } from './plugins-settings-panel';
 import { AiPromptProfilesPanel } from './ai-prompt-profiles-panel';
 import { getProjectSettingsPanel } from './hostPanels';
 import { PrivacySettingsPanel } from './privacy-settings-panel';
+import { SettingsNavigationContext } from './settingsNavigationContext';
 import { TranslationPolicyPanel } from './translation-policy-panel';
 import { TranslationDatesPanel } from './translation-dates-panel';
 import { SettingsValidationContext } from './settingsValidationContext';
@@ -96,6 +97,11 @@ export const SettingsDialog = ({ onClose, open = false, initialTab }: SettingsDi
         hide: !isDesktop || isReadonly,
       },
       { id: 'plugins', label: t('LW.settings.tabs.plugins'), hide: !isDesktop },
+      {
+        id: 'entity-database',
+        label: t('LW.settings.tabs.entity_database'),
+        hide: !isDesktop,
+      },
       { id: 'ai', label: t('LW.settings.tabs.ai'), hide: !isDesktop },
       { id: 'translation-policy', label: t('LW.settings.tabs.translation_policy') },
       { id: 'privacy', label: t('LW.settings.tabs.privacy') },
@@ -182,202 +188,225 @@ export const SettingsDialog = ({ onClose, open = false, initialTab }: SettingsDi
           }}
         >
           <SettingsValidationContext.Provider value={{ ...validity, attempted: closeAttempted }}>
-            <AnimatePresence mode="wait" initial={false}>
-              <Stack
-                component={motion.div}
-                key={activeId}
-                initial={{ opacity: 0 }}
-                animate={{ opacity: 1 }}
-                exit={{ opacity: 0 }}
-                transition={{ duration: 0.15 }}
-                spacing={1.75}
-              >
-                {closeAttempted && !validity.allValid && (
-                  <Alert severity="error">{t('LW.desktop.settings.setup_incomplete')}</Alert>
-                )}
-                {activeId === 'project' && isDesktop && hasProject && ProjectSettingsPanel && (
-                  <Section id="project" title={t('LW.settings.tabs.project')}>
-                    <ProjectSettingsPanel active={activeId === 'project'} />
-                  </Section>
-                )}
+            <SettingsNavigationContext.Provider value={handleTabChange}>
+              <AnimatePresence mode="wait" initial={false}>
+                <Stack
+                  component={motion.div}
+                  key={activeId}
+                  initial={{ opacity: 0 }}
+                  animate={{ opacity: 1 }}
+                  exit={{ opacity: 0 }}
+                  transition={{ duration: 0.15 }}
+                  spacing={1.75}
+                >
+                  {closeAttempted && !validity.allValid && (
+                    <Alert severity="error">{t('LW.desktop.settings.setup_incomplete')}</Alert>
+                  )}
+                  {activeId === 'project' && isDesktop && hasProject && ProjectSettingsPanel && (
+                    <Section id="project" title={t('LW.settings.tabs.project')}>
+                      <ProjectSettingsPanel active={activeId === 'project'} />
+                    </Section>
+                  )}
 
-                {activeId === 'profile' && isDesktop && (
-                  <>
-                    <Section id="profile-main" title={t('LW.commons.profile')}>
-                      <List dense>
-                        <DesktopEncoderName />
-                        <DesktopEntityDatabase />
-                      </List>
-                    </Section>
-                    <Section
-                      id="profile-entity-backup"
-                      title={t('LW.desktop.settings.entity_backup.title')}
-                    >
-                      <List dense>
-                        <DesktopEntityBackup />
-                      </List>
-                    </Section>
-                    <Section
-                      id="profile-entity-sync"
-                      title={t('LW.desktop.settings.entity_sync.title')}
-                    >
-                      <List dense>
-                        <DesktopEntitySync />
-                      </List>
-                    </Section>
-                    <Section id="profile-github" title={t('LW.settings.tabs.github')}>
-                      <List dense>
-                        <DesktopGithub />
-                      </List>
-                    </Section>
-                  </>
-                )}
-
-                {activeId === 'interface' && (
-                  <>
-                    <Section id="appearance" title={t('LW.settings.tabs.appearance')}>
-                      <List dense>
-                        <ThemeAppearance />
-                        <Language />
-                        <TagBubble />
-                        <FontSize />
-                        <FontFamily />
-                      </List>
-                    </Section>
-                    <Section id="behaviour" title={t('LW.settings.tabs.behaviour')}>
-                      <List dense>
-                        {isDesktop && <DesktopStartup />}
-                        <Toggler
-                          icon="translate"
-                          onChange={setStripCjkWhitespace}
-                          title={t('LW.settings.editor.strip_east_asian_whitespace')}
-                          type="toggle"
-                          value={stripCjkWhitespace}
-                        />
-                        {isDesktop && <ShowPackStringCounts />}
-                        {isDesktop && <MatchAcrossLineBreaks />}
-                      </List>
-                    </Section>
-                    {!isReadonly && (
-                      <Section id="markup-panel" title={t('LW.settings.markupPanel.title')}>
-                        <MarkupPanel />
-                      </Section>
-                    )}
-                    <Section id="reset" title={t('LW.commons.reset')}>
-                      <Reset />
-                    </Section>
-                  </>
-                )}
-
-                {activeId === 'translation-policy' && (
-                  <>
-                    <Section
-                      id="translation-policy"
-                      title={t('LW.settings.tabs.translation_policy')}
-                      description={t('LW.settings.translationPolicy.description')}
-                    >
-                      <TranslationPolicyPanel />
-                    </Section>
-                    <Section
-                      id="translation-dates"
-                      title={t('LW.settings.translationPolicy.datesSection')}
-                      description={t('LW.settings.translationPolicy.datesDescription')}
-                    >
-                      <TranslationDatesPanel />
-                    </Section>
-                  </>
-                )}
-
-                {activeId === 'privacy' && (
-                  <Section
-                    id="privacy"
-                    title={t('LW.settings.tabs.privacy')}
-                    description={t('LW.settings.privacy.description')}
-                  >
-                    <PrivacySettingsPanel />
-                  </Section>
-                )}
-
-                {activeId === 'guardrails' && (
-                  <>
-                    <Section
-                      id="guardrails-main"
-                      title={t('LW.settings.guardrails.title')}
-                      description={t('LW.settings.guardrails.description')}
-                    >
-                      <Guardrails />
-                    </Section>
-                    {isDesktop && (
-                      <Section id="guardrails-warnings" title={t('LW.settings.warnings.title')}>
+                  {activeId === 'profile' && isDesktop && (
+                    <>
+                      <Section id="profile-main" title={t('LW.commons.profile')}>
                         <List dense>
-                          <DesktopWarnings />
+                          <DesktopEncoderName />
                         </List>
                       </Section>
-                    )}
-                  </>
-                )}
+                      <Section id="profile-github" title={t('LW.settings.tabs.github')}>
+                        <List dense>
+                          <DesktopGithub />
+                        </List>
+                      </Section>
+                    </>
+                  )}
 
-                {activeId === 'authorities' && !isReadonly && (
-                  <>
-                    {isDesktop && (
-                      <Alert severity="info">{t('LW.settings.authorities.asset_packs_note')}</Alert>
-                    )}
+                  {activeId === 'entity-database' && isDesktop && (
+                    <>
+                      <Section
+                        id="entity-database-folder"
+                        title={t('LW.desktop.settings.entity_database')}
+                        description={t('LW.settings.entity_database.description')}
+                      >
+                        <List dense>
+                          <DesktopEntityDatabase />
+                        </List>
+                      </Section>
+                      <Section
+                        id="entity-database-backup"
+                        title={t('LW.desktop.settings.entity_backup.title')}
+                      >
+                        <List dense>
+                          <DesktopEntityBackup />
+                        </List>
+                      </Section>
+                      <Section
+                        id="entity-database-sync"
+                        title={t('LW.desktop.settings.entity_sync.title')}
+                      >
+                        <List dense>
+                          <DesktopEntitySync />
+                        </List>
+                      </Section>
+                    </>
+                  )}
+
+                  {activeId === 'interface' && (
+                    <>
+                      <Section id="appearance" title={t('LW.settings.tabs.appearance')}>
+                        <List dense>
+                          <ThemeAppearance />
+                          <Language />
+                          <TagBubble />
+                          <FontSize />
+                          <FontFamily />
+                        </List>
+                      </Section>
+                      <Section id="behaviour" title={t('LW.settings.tabs.behaviour')}>
+                        <List dense>
+                          {isDesktop && <DesktopStartup />}
+                          <Toggler
+                            icon="translate"
+                            onChange={setStripCjkWhitespace}
+                            title={t('LW.settings.editor.strip_east_asian_whitespace')}
+                            type="toggle"
+                            value={stripCjkWhitespace}
+                          />
+                          {isDesktop && <ShowPackStringCounts />}
+                          {isDesktop && <MatchAcrossLineBreaks />}
+                        </List>
+                      </Section>
+                      {isDesktop && (
+                        <Section
+                          id="proofreading"
+                          title={t('LW.settings.tabs.proofreading')}
+                          description={t('LW.settings.language_tool.description')}
+                        >
+                          <List dense>
+                            <DesktopLanguageTool />
+                          </List>
+                        </Section>
+                      )}
+                      {!isReadonly && (
+                        <Section id="markup-panel" title={t('LW.settings.markupPanel.title')}>
+                          <MarkupPanel />
+                        </Section>
+                      )}
+                      <Section id="reset" title={t('LW.commons.reset')}>
+                        <Reset />
+                      </Section>
+                    </>
+                  )}
+
+                  {activeId === 'translation-policy' && (
+                    <>
+                      <Section
+                        id="translation-policy"
+                        title={t('LW.settings.tabs.translation_policy')}
+                        description={t('LW.settings.translationPolicy.description')}
+                      >
+                        <TranslationPolicyPanel />
+                      </Section>
+                      <Section
+                        id="translation-dates"
+                        title={t('LW.settings.translationPolicy.datesSection')}
+                        description={t('LW.settings.translationPolicy.datesDescription')}
+                      >
+                        <TranslationDatesPanel />
+                      </Section>
+                    </>
+                  )}
+
+                  {activeId === 'privacy' && (
                     <Section
-                      endDecorator={<AddCustomAuthority />}
-                      id="authorities-services"
-                      title={t('LW.settings.tabs.authorities')}
+                      id="privacy"
+                      title={t('LW.settings.tabs.privacy')}
+                      description={t('LW.settings.privacy.description')}
                     >
-                      <Authorities includeDesktopAssets={false} />
+                      <PrivacySettingsPanel />
                     </Section>
-                    <Section id="entity-lookups" title={t('LW.settings.tabs.entity_types')}>
-                      <EntityLookups />
-                    </Section>
-                  </>
-                )}
+                  )}
 
-                {activeId === 'asset-packs' && isDesktop && !isReadonly && (
-                  <>
-                    <Section
-                      id="asset-authorities"
-                      title={t('LW.settings.asset_packs.offline_authorities')}
-                    >
-                      <List dense>
-                        <DesktopOfflineAuthorities />
-                      </List>
-                    </Section>
-                    <Section id="asset-map-tiles" title={t('LW.settings.asset_packs.map_tiles')}>
-                      <List dense>
-                        <DesktopMapTilesSettings />
-                      </List>
-                    </Section>
-                  </>
-                )}
+                  {activeId === 'guardrails' && (
+                    <>
+                      <Section
+                        id="guardrails-main"
+                        title={t('LW.settings.guardrails.title')}
+                        description={t('LW.settings.guardrails.description')}
+                      >
+                        <Guardrails />
+                      </Section>
+                      {isDesktop && (
+                        <Section id="guardrails-warnings" title={t('LW.settings.warnings.title')}>
+                          <List dense>
+                            <DesktopWarnings />
+                          </List>
+                        </Section>
+                      )}
+                    </>
+                  )}
 
-                {activeId === 'plugins' && isDesktop && (
-                  <Section id="plugins" title={t('LW.settings.tabs.plugins')}>
-                    <PluginsSettingsPanel active={activeId === 'plugins'} />
-                  </Section>
-                )}
+                  {activeId === 'authorities' && !isReadonly && (
+                    <>
+                      {isDesktop && (
+                        <Alert severity="info">
+                          {t('LW.settings.authorities.asset_packs_note')}
+                        </Alert>
+                      )}
+                      <Section
+                        endDecorator={<AddCustomAuthority />}
+                        id="authorities-services"
+                        title={t('LW.settings.tabs.authorities')}
+                      >
+                        <Authorities includeDesktopAssets={false} />
+                      </Section>
+                      <Section id="entity-lookups" title={t('LW.settings.tabs.entity_types')}>
+                        <EntityLookups />
+                      </Section>
+                    </>
+                  )}
 
-                {activeId === 'ai' && isDesktop && (
-                  <>
-                    <Section id="ai-api" title={t('LW.settings.ai_api.title')}>
-                      <List dense>
-                        <DesktopAiApi />
-                      </List>
+                  {activeId === 'asset-packs' && isDesktop && !isReadonly && (
+                    <>
+                      <Section
+                        id="asset-authorities"
+                        title={t('LW.settings.asset_packs.offline_authorities')}
+                      >
+                        <List dense>
+                          <DesktopOfflineAuthorities />
+                        </List>
+                      </Section>
+                      <Section id="asset-map-tiles" title={t('LW.settings.asset_packs.map_tiles')}>
+                        <List dense>
+                          <DesktopMapTilesSettings />
+                        </List>
+                      </Section>
+                    </>
+                  )}
+
+                  {activeId === 'plugins' && isDesktop && (
+                    <Section id="plugins" title={t('LW.settings.tabs.plugins')}>
+                      <PluginsSettingsPanel active={activeId === 'plugins'} />
                     </Section>
-                    <Section id="language-tool" title={t('LW.settings.language_tool.title')}>
-                      <List dense>
-                        <DesktopLanguageTool />
-                      </List>
-                    </Section>
-                    <Section id="ai-prompts" title={t('LW.settings.ai_prompts.title')}>
-                      <AiPromptProfilesPanel active={activeId === 'ai'} />
-                    </Section>
-                  </>
-                )}
-              </Stack>
-            </AnimatePresence>
+                  )}
+
+                  {activeId === 'ai' && isDesktop && (
+                    <>
+                      <Section id="ai-api" title={t('LW.settings.ai_api.title')}>
+                        <List dense>
+                          <DesktopAiApi />
+                        </List>
+                      </Section>
+                      <Section id="ai-prompts" title={t('LW.settings.ai_prompts.title')}>
+                        <AiPromptProfilesPanel active={activeId === 'ai'} />
+                      </Section>
+                    </>
+                  )}
+                </Stack>
+              </AnimatePresence>
+            </SettingsNavigationContext.Provider>
           </SettingsValidationContext.Provider>
         </DialogContent>
       </Stack>

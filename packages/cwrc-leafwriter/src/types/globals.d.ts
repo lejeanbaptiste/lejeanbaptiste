@@ -1040,6 +1040,7 @@ declare global {
             dateFilter?: 'none' | 'limit' | 'exclude';
             yearStart?: number;
             yearEnd?: number;
+            placeProximityKm?: number;
           }
         | undefined;
       setDisambiguationSettings: (settings: {
@@ -1048,7 +1049,11 @@ declare global {
         dateFilter?: 'none' | 'limit' | 'exclude';
         yearStart?: number;
         yearEnd?: number;
+        placeProximityKm?: number;
       }) => void;
+      applyProjectConfigBundle?: (
+        bundle: import('../../../../apps/commons/src/desktop/projectTypes').ProjectBundle,
+      ) => void;
       loadProjectMetadataState?: (
         mode?: 'firstSetup' | 'edition',
       ) => Promise<

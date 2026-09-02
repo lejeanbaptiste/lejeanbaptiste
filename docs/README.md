@@ -60,30 +60,30 @@ Supporting / deeper:
 
 ## Feature plans (active or recent)
 
-| Doc                                                                                                                     | Topic                                                               |
-| ----------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------- |
-| [person-shortform-autotag-planning.md](person-shortform-autotag-planning.md)                                            | Short-form person names (phase 2)                                   |
-| [norbert-noble-title-autotagging-plan.md](norbert-noble-title-autotagging-plan.md)                                      | Norbert noble titles                                                |
-| [placename-geo-disambiguation-planning.md](placename-geo-disambiguation-planning.md)                                    | Place geo disambiguation + map (authoritative for maps)             |
-| [map-tiles-planning.md](map-tiles-planning.md)                                                                          | Regional PMTiles download / cache                                   |
-| [import-planning.md](import-planning.md)                                                                                | Document import (blind + profiled)                                  |
-| [kanripo-import-plugin-planning.md](kanripo-import-plugin-planning.md)                                                  | Kanripo clone → TEI plugin (coverage-bar punctuation)               |
-| [find-replace-planning.md](find-replace-planning.md)                                                                    | Find / replace                                                      |
-| [xpath-sidebar-planning.md](xpath-sidebar-planning.md)                                                                  | XPath sidebar                                                       |
-| [translation-planning.md](translation-planning.md)                                                                      | Translation pane (phases A–E + card reader — reference)             |
-| [live-passage-citation-planning.md](live-passage-citation-planning.md)                                                  | Future Word/LO live passage citations (dream)                       |
-| [tagging-planning.md](tagging-planning.md)                                                                              | Keyboard tagging (mostly shipped — historical plan)                 |
-| [project-schema-planning.md](project-schema-planning.md)                                                                | Schema onboarding plan (mostly shipped — see schema_handling)       |
-| [sanmiao-ljb-integration.md](sanmiao-ljb-integration.md)                                                                | Sanmiao bridge design notes                                         |
-| [versioning-planning.md](versioning-planning.md)                                                                        | Local history / time machine                                        |
-| [performance-planning.md](performance-planning.md) / [bundle-size-warning-planning.md](bundle-size-warning-planning.md) | Perf / first-load size                                              |
-| [wikisource-import.md](wikisource-import.md)                                                                            | Wikisource browser extension + built-in TEI import                  |
-| [corpus-extraction-planning.md](corpus-extraction-planning.md)                                                          | Broader browser / corpus extract (Wikisource MVP started)           |
-| [cbeta-import-planning.md](cbeta-import-planning.md)                                                                    | CBETA P5 plugin (bundled corpus, by juan, schema translation)       |
-| [autotagging-milestone-projection-planning.md](autotagging-milestone-projection-planning.md)                            | Match/tag across `<lb>`, `<pb>`, and `<choice>`; Phases A–E (setting in Interface → Behaviour) |
-| [bdrc-import-planning.md](bdrc-import-planning.md)                                                                      | BDRC plugin (extension, live PDI fetch, whole-volume Tibetan)       |
-| [bdrc-import-testing.md](bdrc-import-testing.md)                                                                        | BDRC import smoke-test checklist                                    |
-| [beta-plan.md](beta-plan.md)                                                                                            | Ship criteria                                                       |
+| Doc                                                                                                                     | Topic                                                                                       |
+| ----------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------- |
+| [person-shortform-autotag-planning.md](person-shortform-autotag-planning.md)                                            | Short-form person names (phase 2)                                                           |
+| [norbert-noble-title-autotagging-plan.md](norbert-noble-title-autotagging-plan.md)                                      | Norbert noble titles                                                                        |
+| [placename-geo-disambiguation-planning.md](placename-geo-disambiguation-planning.md)                                    | Place geo disambiguation + map (authoritative for maps)                                     |
+| [map-tiles-planning.md](map-tiles-planning.md)                                                                          | Regional PMTiles download / cache                                                           |
+| [import-planning.md](import-planning.md)                                                                                | Document import (blind + profiled)                                                          |
+| [kanripo-import-plugin-planning.md](kanripo-import-plugin-planning.md)                                                  | Kanripo clone → TEI plugin (coverage-bar punctuation)                                       |
+| [find-replace-planning.md](find-replace-planning.md)                                                                    | Find / replace                                                                              |
+| [xpath-sidebar-planning.md](xpath-sidebar-planning.md)                                                                  | XPath sidebar                                                                               |
+| [translation-planning.md](translation-planning.md)                                                                      | Translation pane (phases A–E + card reader — reference)                                     |
+| [live-passage-citation-planning.md](live-passage-citation-planning.md)                                                  | Future Word/LO live passage citations (dream)                                               |
+| [tagging-planning.md](tagging-planning.md)                                                                              | Keyboard tagging (mostly shipped — historical plan)                                         |
+| [project-schema-planning.md](project-schema-planning.md)                                                                | Schema onboarding plan (mostly shipped — see schema_handling)                               |
+| [sanmiao-ljb-integration.md](sanmiao-ljb-integration.md)                                                                | Sanmiao bridge design notes                                                                 |
+| [versioning-planning.md](versioning-planning.md)                                                                        | Local history / time machine                                                                |
+| [performance-planning.md](performance-planning.md) / [bundle-size-warning-planning.md](bundle-size-warning-planning.md) | Perf / first-load size                                                                      |
+| [wikisource-import.md](wikisource-import.md)                                                                            | Wikisource browser extension + built-in TEI import                                          |
+| [corpus-extraction-planning.md](corpus-extraction-planning.md)                                                          | Broader browser / corpus extract (Wikisource MVP started)                                   |
+| [cbeta-import-planning.md](cbeta-import-planning.md)                                                                    | CBETA P5 plugin (bundled corpus, by juan, schema translation)                               |
+| [autotagging-milestone-projection-planning.md](autotagging-milestone-projection-planning.md)                            | Match/tag across `<lb>`, `<pb>`, and `<choice>`; Phases A–E (setting in Settings → Project) |
+| [bdrc-import-planning.md](bdrc-import-planning.md)                                                                      | BDRC plugin (extension, live PDI fetch, whole-volume Tibetan)                               |
+| [bdrc-import-testing.md](bdrc-import-testing.md)                                                                        | BDRC import smoke-test checklist                                                            |
+| [beta-plan.md](beta-plan.md)                                                                                            | Ship criteria                                                                               |
 
 Related script notes: [scripts/extract-map-tile-bundles.md](../scripts/extract-map-tile-bundles.md).
 

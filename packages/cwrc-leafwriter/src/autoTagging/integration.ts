@@ -1089,9 +1089,7 @@ export class AutoTaggingSession {
       if (pooledProjectEntries.length > 0) {
         loaded['project' as AuthorityPackId] =
           (loaded['project' as AuthorityPackId] ?? 0) + pooledProjectEntries.length;
-        extraSuggestionGroups.push(
-          dictionaryMatch(doc, pooledProjectEntries, 'this project'),
-        );
+        extraSuggestionGroups.push(dictionaryMatch(doc, pooledProjectEntries, 'this project'));
       }
 
       if (listIds.length > 0 && (options.importedLists?.length ?? 0) > 0) {
