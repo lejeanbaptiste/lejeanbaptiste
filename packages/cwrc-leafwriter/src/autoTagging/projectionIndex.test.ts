@@ -118,6 +118,16 @@ describe('buildProjectionIndex', () => {
     expect(index.infrastructure).toHaveLength(0);
   });
 
+  it('accepts a Document root like buildDocIndex', () => {
+    const doc = parse(TEI_WRAP('<p>見王安石訪鄭玄。</p>'));
+    const body = findTeiBodyRoot(doc);
+    const fromDoc = buildProjectionIndex(doc, 'ignore');
+    const fromBody = buildProjectionIndex(body, 'ignore');
+
+    expect(fromDoc.text).toBe(fromBody.text);
+    expect(fromDoc.text).toContain('王安石');
+  });
+
   it('aligns with taggable nodes for plain paragraphs (minus header/date skips)', () => {
     const doc = parse(TEI_WRAP('<p>Alpha Beta</p>'));
     const body = findTeiBodyRoot(doc);

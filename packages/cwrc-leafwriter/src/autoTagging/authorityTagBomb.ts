@@ -73,6 +73,8 @@ import { applyNobleTitleFilter, buildNobleTitleFilterIndex } from './nobleTitleF
 export const MAX_AUTHORITY_SUGGESTIONS = 2000;
 
 export interface AuthorityTagBombOptions {
+  /** Phase B: match on milestone projection text (default off until Phase C apply). */
+  useProjectionMatcher?: boolean;
   dateFilter?: DateRangeFilter;
   /** @deprecated Use {@link dateFilter}. */
   yearRange?: { start: number; end: number };
@@ -224,7 +226,9 @@ export async function runAuthorityTagBombOnDocument(
 
   options.onProgress?.(`Matching ${candidateCount.toLocaleString()} authority entries…`);
 
-  const matches = seedSuggestionsFromIndex(doc, index, policy);
+  const matches = seedSuggestionsFromIndex(doc, index, policy, {
+    useProjectionMatcher: options.useProjectionMatcher,
+  });
   const allSuggestions = suggestionsFromSeedMatches(matches);
 
   // Deduplicate suggestions by location in case any slipped through

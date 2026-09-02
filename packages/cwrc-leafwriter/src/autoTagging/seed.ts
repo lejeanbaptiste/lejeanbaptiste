@@ -4,7 +4,7 @@ import type { AuthorityCandidate } from './authority';
 import { teiTagForCandidate } from './authority';
 import { collapseLinkedCandidates, mergeCandidateIntoLookupList } from './authorityOverlap';
 import { autoSyncEntitiesToCentral } from './autoSync';
-import { dictionaryTag, type DictionaryEntry } from './dictionary';
+import { dictionaryTag, dictionaryTagProjection, type DictionaryEntry } from './dictionary';
 import {
   addEntity,
   addOfficeRelation,
@@ -359,17 +359,21 @@ export function addCandidateToSeedIndex(
   }
 }
 
+export interface SeedSuggestionsOptions {
+  /** Phase B projection matcher (default off until Phase C apply ships). */
+  useProjectionMatcher?: boolean;
+}
+
 export function seedSuggestionsFromIndex(
   doc: Document,
   index: AuthoritySeedIndex,
   policy: WhitespacePolicy,
+  options: SeedSuggestionsOptions = {},
 ): SeedMatch[] {
-  const suggestions = dictionaryTag(
-    doc,
-    dedupeDictionaryEntries(index.entries),
-    policy,
-    'authority',
-  );
+  const entries = dedupeDictionaryEntries(index.entries);
+  const suggestions = options.useProjectionMatcher
+    ? dictionaryTagProjection(doc, entries, policy, 'authority')
+    : dictionaryTag(doc, entries, policy, 'authority');
   const matches = suggestions.map((suggestion) => ({
     suggestion,
     candidates: collapseLinkedCandidates(

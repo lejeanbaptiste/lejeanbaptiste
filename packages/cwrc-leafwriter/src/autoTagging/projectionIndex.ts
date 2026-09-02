@@ -1,6 +1,7 @@
-import { buildSearchText } from './normalize';
+import { buildSearchText, hashText } from './normalize';
 import { isInsideDateElement, isInsideTeiHeader } from './dateTeiHelpers';
-import type { WhitespacePolicy } from './types';
+import { createAnchor, xpathForTextNode, type DocIndex } from './anchor';
+import type { Anchor, WhitespacePolicy } from './types';
 
 /** Empty milestones bridged in projection text (match spans may include them on apply). */
 export const DEFAULT_PROJECTION_BRIDGE_TAGS = new Set(['lb', 'pb', 'anchor', 'gap']);
@@ -31,7 +32,9 @@ export interface ProjectionIndexOptions {
  * contribute no characters but are recorded in {@link ProjectionIndex.infrastructure}
  * for a future wrap apply (Phase C).
  *
- * Not wired into the tag bomb yet — Phase A read path only.
+ * Phase B: {@link createAnchorFromProjection} and {@link dictionaryTagProjection}
+ * consume this index; production tag bomb still defaults to per-node matching
+ * until Phase C apply ships.
  */
 export interface ProjectionIndex {
   text: string;
@@ -109,7 +112,13 @@ export function buildProjectionIndex(
   const points: ProjectionTextPoint[] = [];
   const infrastructure: ProjectionInfrastructureMark[] = [];
 
-  walkProjection(root, policy, bridgeTags, textParts, points, infrastructure);
+  const walkRoot =
+    root.nodeType === Node.DOCUMENT_NODE ? (root as Document).documentElement : root;
+  if (!walkRoot) {
+    return { text: '', points: [], infrastructure: [] };
+  }
+
+  walkProjection(walkRoot, policy, bridgeTags, textParts, points, infrastructure);
 
   return {
     text: textParts.join(''),
@@ -128,3 +137,101 @@ export function infrastructureInProjectionRange(
     (mark) => mark.afterOffset > startOffset && mark.afterOffset < endOffset,
   );
 }
+
+const PROJECTION_CONTEXT_LENGTH = 12;
+
+/** Raw text-node bounds for a half-open range `[startOffset, startOffset + length)` on projection text. */
+export function projectionRangeToRawBounds(
+  projection: ProjectionIndex,
+  startOffset: number,
+  length: number,
+): {
+  startNode: Text;
+  startRaw: number;
+  endNode: Text;
+  endRaw: number;
+} {
+  if (length <= 0 || startOffset < 0 || startOffset + length > projection.text.length) {
+    throw new Error('projectionRangeToRawBounds: invalid range');
+  }
+  const startPoint = projection.points[startOffset]!;
+  const endPoint = projection.points[startOffset + length - 1]!;
+  return {
+    startNode: startPoint.node,
+    startRaw: startPoint.rawOffset,
+    endNode: endPoint.node,
+    endRaw: endPoint.rawOffset + 1,
+  };
+}
+
+const occurrenceInProjectionText = (
+  projection: ProjectionIndex,
+  surface: string,
+  flatStart: number,
+): number => {
+  let seen = 0;
+  let from = 0;
+  while (true) {
+    const at = projection.text.indexOf(surface, from);
+    if (at < 0) return 0;
+    seen++;
+    if (at === flatStart) return seen;
+    from = at + 1;
+  }
+};
+
+/**
+ * Build an {@link Anchor} for a match on {@link ProjectionIndex.text}. Single-node
+ * spans delegate to {@link createAnchor} for parity with `dictionaryTag`; cross-node
+ * spans (milestones, corr-only choice text) set `endXpath` / `endOffset` for Phase C apply.
+ */
+export function createAnchorFromProjection(
+  root: Node,
+  projection: ProjectionIndex,
+  startOffset: number,
+  length: number,
+  surface: string,
+  policy: WhitespacePolicy,
+  prebuiltDocIndex?: DocIndex,
+): Anchor {
+  const { startNode, startRaw, endNode, endRaw } = projectionRangeToRawBounds(
+    projection,
+    startOffset,
+    length,
+  );
+
+  if (startNode === endNode) {
+    return createAnchor('', root, startNode, startRaw, endRaw, policy, prebuiltDocIndex);
+  }
+
+  const occurrence = occurrenceInProjectionText(projection, surface, startOffset);
+  if (!occurrence) {
+    throw new Error('createAnchorFromProjection: surface does not match projection range');
+  }
+
+  const startSearch = buildSearchText(startNode.data, policy);
+  return {
+    documentId: '',
+    xpath: xpathForTextNode(startNode),
+    offset: startRaw,
+    surface,
+    occurrence,
+    contextBefore: projection.text.slice(
+      Math.max(0, startOffset - PROJECTION_CONTEXT_LENGTH),
+      startOffset,
+    ),
+    contextAfter: projection.text.slice(
+      startOffset + length,
+      startOffset + length + PROJECTION_CONTEXT_LENGTH,
+    ),
+    nodeHash: hashText(startSearch.text),
+    endXpath: xpathForTextNode(endNode),
+    endOffset: endRaw,
+  };
+}
+
+export const projectionSpanCrossesInfrastructure = (
+  projection: ProjectionIndex,
+  startOffset: number,
+  length: number,
+): boolean => infrastructureInProjectionRange(projection, startOffset, startOffset + length).length > 0;

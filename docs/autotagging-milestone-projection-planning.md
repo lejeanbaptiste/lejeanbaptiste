@@ -1,9 +1,10 @@
 # Auto-tagging — milestone projection matcher
 
-**Status (2026-09-02):** Phase A implemented (`projectionIndex.ts`, not wired into
-the tag bomb). CBETA import keeps `<lb>` / `<pb>` / empty `<anchor>` in the XML;
-production matching still runs **per text node** via `dictionaryTag`. Phases B–E
-remain behind tests and a feature flag before wire-in.
+**Status (2026-09-02):** Phase A and **Phase B** implemented (`projectionIndex.ts`,
+`dictionaryTagProjection`, not used in production until Phase C apply). CBETA import
+keeps `<lb>` / `<pb>` / empty `<anchor>` in the XML; production matching still runs
+**per text node** via `dictionaryTag` unless `useProjectionMatcher` is enabled on the
+tag bomb (default off). Phases C–E remain behind tests and a feature flag before wire-in.
 
 **Rollout:** build the projection stack in parallel, regression-test against
 today’s matcher on plain TEI, wire in only when mature (project setting, default
@@ -121,13 +122,13 @@ Taishō line refs at those points in the working file.
 
 ### Phase B — Authority tag bomb on projection
 
-- [ ] `dictionaryTagProjection()` — scan `projection.text` once (parallel to
+- [x] `dictionaryTagProjection()` — scan `projection.text` once (parallel to
       `dictionaryTag`, do not replace until wired).
-- [ ] Emit suggestions with compound boundaries when span crosses text nodes
+- [x] Emit suggestions with compound boundaries when span crosses text nodes
       (`endXpath` / `endOffset` or projection-native anchor).
-- [ ] Parity test: plain TEI without milestones → identical suggestions to
+- [x] Parity test: plain TEI without milestones → identical suggestions to
       current matcher.
-- [ ] Wire behind project flag in `seedSuggestionsFromIndex` (default off).
+- [x] Wire behind project flag in `seedSuggestionsFromIndex` (default off).
 
 ### Phase C — Apply across infrastructure
 

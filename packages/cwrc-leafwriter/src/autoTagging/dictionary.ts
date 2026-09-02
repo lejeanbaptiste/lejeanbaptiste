@@ -1,5 +1,10 @@
 import { buildDocIndex, createAnchor } from './anchor';
 import { isInsideDateElement, isInsideTeiHeader } from './dateTeiHelpers';
+import {
+  buildProjectionIndex,
+  createAnchorFromProjection,
+  type ProjectionIndex,
+} from './projectionIndex';
 import { isWrappedByEntityTag } from './suggestionFilters';
 import { MultiStringMatcher } from './matcher';
 import type { Suggestion, WhitespacePolicy } from './types';
@@ -88,15 +93,36 @@ function splitRow(line: string, delimiter: string): string[] {
 /** Default minimum surface length: single characters match far too broadly. */
 export const DEFAULT_MIN_MATCH_LENGTH = 2;
 
+const buildTagsByString = (
+  entries: DictionaryEntry[],
+  minLength: number,
+): Map<string, string[]> => {
+  const tagsByString = new Map<string, string[]>();
+  for (const entry of entries) {
+    if ([...entry.string].length < minLength) continue;
+    const tags = tagsByString.get(entry.string);
+    if (!tags) tagsByString.set(entry.string, [entry.tag]);
+    else if (!tags.includes(entry.tag)) tags.push(entry.tag);
+  }
+  return tagsByString;
+};
+
+const suggestionRationale = (
+  pattern: string,
+  sourceDetail: string,
+  tag: string,
+  allTags: string[],
+): string => {
+  const others = allTags.filter((t) => t !== tag);
+  return others.length > 0
+    ? `Matched "${pattern}" (${sourceDetail}) — ambiguous: could also be ${others.map((t) => `<${t}>`).join(' or ')}`
+    : `Matched "${pattern}" (${sourceDetail})`;
+};
+
 /**
  * Dictionary producer: scan the document for entry strings and emit tag-only
  * 'add' suggestions (no ids — identity is deferred to disambiguation).
  * Longest string first, leftmost-longest, never crossing tag boundaries.
- * Strings shorter than `minLength` (default 2 code points) are skipped —
- * single characters over-match in running text and are almost never entities.
- * When the same string carries several tags (e.g. a name that is both a
- * persName and a title), each match emits one suggestion per tag; the review
- * walk treats same-span alternatives as mutually exclusive.
  * Whole-document occurrence counting happens in createAnchor.
  */
 export function dictionaryTag(
@@ -106,33 +132,20 @@ export function dictionaryTag(
   sourceDetail = 'dictionary',
   minLength: number = DEFAULT_MIN_MATCH_LENGTH,
 ): Suggestion[] {
-  // Map each surface string to its distinct tags (input order), dropping
-  // too-short strings.
-  const tagsByString = new Map<string, string[]>();
-  for (const entry of entries) {
-    if ([...entry.string].length < minLength) continue;
-    const tags = tagsByString.get(entry.string);
-    if (!tags) tagsByString.set(entry.string, [entry.tag]);
-    else if (!tags.includes(entry.tag)) tags.push(entry.tag);
-  }
-  const matcher = new MultiStringMatcher(tagsByString.keys());
+  const tagsByString = buildTagsByString(entries, minLength);
+  if (tagsByString.size === 0) return [];
 
+  const matcher = new MultiStringMatcher(tagsByString.keys());
   const index = buildDocIndex(doc, policy);
   const suggestions: Suggestion[] = [];
   let counter = 0;
 
   for (const { node, search } of index.nodes) {
-    // Never tag entity mentions inside <date> — reserved for sanmiao date workflow.
-    if (isInsideDateElement(node)) continue;
-    // <teiHeader> is metadata, not corpus text — never a tag-bomb target, and it's
-    // not visible in the body editor so matches there looked like they came from nowhere.
-    if (isInsideTeiHeader(node)) continue;
+    if (isInsideDateElement(node) || isInsideTeiHeader(node)) continue;
 
-    // Ancestor tag names for this node, computed once (not per match).
     const alreadyTagged = (tag: string) => isWrappedByEntityTag(node, tag);
 
     for (const match of matcher.scan(search.text)) {
-      // Skip tags already wrapping this spot — no point re-suggesting.
       const tags = tagsByString.get(match.pattern)!.filter((tag) => !alreadyTagged(tag));
       if (tags.length === 0) continue;
 
@@ -140,7 +153,6 @@ export function dictionaryTag(
       const rawEnd = search.map[match.end - 1]! + 1;
       const anchor = createAnchor('', doc, node, rawStart, rawEnd, policy, index);
       for (const tag of tags) {
-        const others = tags.filter((t) => t !== tag);
         suggestions.push({
           id: `dict_${counter++}`,
           source: 'dictionary',
@@ -148,10 +160,7 @@ export function dictionaryTag(
           action: 'add',
           tag,
           anchor: { ...anchor },
-          rationale:
-            others.length > 0
-              ? `Matched "${match.pattern}" (${sourceDetail}) — ambiguous: could also be ${others.map((t) => `<${t}>`).join(' or ')}`
-              : `Matched "${match.pattern}" (${sourceDetail})`,
+          rationale: suggestionRationale(match.pattern, sourceDetail, tag, tags),
           status: 'pending',
         });
       }
@@ -160,3 +169,65 @@ export function dictionaryTag(
 
   return suggestions;
 }
+
+/**
+ * Milestone-aware dictionary producer (Phase B): one scan of
+ * {@link buildProjectionIndex} text instead of per text-node scans. Cross-node
+ * spans set `anchor.endXpath` / `anchor.endOffset` for Phase C wrap apply.
+ * Not used in production until `useProjectionMatcher` is enabled on the tag bomb.
+ */
+export function dictionaryTagProjection(
+  doc: Document,
+  entries: DictionaryEntry[],
+  policy: WhitespacePolicy,
+  sourceDetail = 'dictionary',
+  minLength: number = DEFAULT_MIN_MATCH_LENGTH,
+  prebuiltProjection?: ProjectionIndex,
+): Suggestion[] {
+  const tagsByString = buildTagsByString(entries, minLength);
+  if (tagsByString.size === 0) return [];
+
+  const matcher = new MultiStringMatcher(tagsByString.keys());
+  const projection = prebuiltProjection ?? buildProjectionIndex(doc, policy);
+  const docIndex = buildDocIndex(doc, policy);
+  const suggestions: Suggestion[] = [];
+  let counter = 0;
+
+  for (const match of matcher.scan(projection.text)) {
+    const length = match.end - match.start;
+    const startNode = projection.points[match.start]?.node;
+    if (!startNode) continue;
+    if (isInsideDateElement(startNode) || isInsideTeiHeader(startNode)) continue;
+
+    const tags = tagsByString
+      .get(match.pattern)!
+      .filter((tag) => !isWrappedByEntityTag(startNode, tag));
+    if (tags.length === 0) continue;
+
+    const anchor = createAnchorFromProjection(
+      doc,
+      projection,
+      match.start,
+      length,
+      match.pattern,
+      policy,
+      docIndex,
+    );
+
+    for (const tag of tags) {
+      suggestions.push({
+        id: `dict_${counter++}`,
+        source: 'dictionary',
+        sourceDetail,
+        action: 'add',
+        tag,
+        anchor: { ...anchor },
+        rationale: suggestionRationale(match.pattern, sourceDetail, tag, tags),
+        status: 'pending',
+      });
+    }
+  }
+
+  return suggestions;
+}
+
