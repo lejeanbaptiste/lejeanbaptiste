@@ -27,6 +27,7 @@ import {
   buildCertificateSvg,
   buildPortraitFragment,
   CERTIFICATE_HEIGHT,
+  CERTIFICATE_PNG_OVERSAMPLE,
   CERTIFICATE_WIDTH,
   svgToPngBytes,
 } from './certificate';
@@ -459,7 +460,12 @@ export const AchievementsDialog = ({ onClose, open }: AchievementsDialogProps) =
       // be printed or shared at full size, so denser rasterization avoids
       // the staircased edges a plain 1x canvas draw leaves on diagonal/
       // curved body art.
-      const bytes = await svgToPngBytes(svg, CERTIFICATE_WIDTH, CERTIFICATE_HEIGHT, 3);
+      const bytes = await svgToPngBytes(
+        svg,
+        CERTIFICATE_WIDTH,
+        CERTIFICATE_HEIGHT,
+        CERTIFICATE_PNG_OVERSAMPLE,
+      );
       const now = new Date();
       const pad = (value: number) => String(value).padStart(2, '0');
       const dateTimeSuffix = `${now.getFullYear()}-${pad(now.getMonth() + 1)}-${pad(now.getDate())} ${pad(now.getHours())}h${pad(now.getMinutes())}`;

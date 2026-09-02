@@ -149,3 +149,17 @@ To reset a file's translation state: delete its `*.translation.xml` companions a
 - [ ] Unit with two or more notes — each gets its own footnote, numbered in document order, and `{{opaque:N}}` in one note's console-logged blinded XML never collides with another note's or the main text's.
 - [ ] Force a note-translation failure (e.g. temporarily break the API mid-run) — main translation still completes, the note keeps its original (untranslated) text, and the success status mentions the note(s) that could not be translated.
 - [ ] Unit with no notes — behavior is unchanged from before this feature (no `{{note:…}}` handling touches the main text).
+
+## 10d. Mention-faithful entity rendering
+
+**Pipeline (shipped):** Each keyed source span becomes one manifest row (`MentionContext`) blinded as `{{mention:N}}` (or `{{holding:N}}` / `{{as:N}}` for offices). After AI translate, `substituteMentionPlaceholders` renders atomic `ref[type="ljb-entity"]` chips from the DB using the as-written surface, resolved role (courtesy, partial given, place-as-written, …), and **file-wide** first vs later occurrence. Western targets (`en`, `fr`, `de`) show romanization + Chinese on first file mention; CJK targets (`zh`, `ja`, `ko`, `lzh`) show characters only (no romanization) with CJK life-date typography on first mention. Partial kinship names respect the user **brackets policy** (`never` / `first-mention-only` / `always`). Manual insert and autocomplete use the same renderer.
+
+**Automated:** `mentionContext.test.ts`, `mentionRender.test.ts`, `fileWideOccurrence.test.ts`, updated `sourceUnitEntities.test.ts` (blinding tokens).
+
+**Manual (蔡約 sample unit):**
+
+- [ ] AI-generate in `fr`: courtesy 景撝 ≠ canonical “Cai Yue”; partial 廓 shows `[Cai] Kuo` or `Kuo` per brackets policy; places romanize surface only (no DB admin suffix); second file mention of the same person drops Chinese and dates.
+- [ ] AI-generate in `zh-Hans`: no Latin romanization; partial 廓 may show `（蔡）廓` when brackets policy allows; entity life dates use Western years in Chinese typography, e.g. `（127～200年）`.
+- [ ] Autocomplete: typing `kuo` / `廓` suggests mention-shaped previews that match the inserted chip.
+- [ ] Insert menu lists **one row per manifest mention** (duplicate keys allowed), not deduped by entity id.
+- [ ] Chinese/Japanese asset onboarding offers **Script conversion (OpenCC)**; after install, `zh-Hans` companions show simplified forms (國→国) and `ja` companions show shinjitai (濟→済) on entity chips.

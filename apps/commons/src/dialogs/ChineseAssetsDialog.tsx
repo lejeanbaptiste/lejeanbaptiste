@@ -20,6 +20,7 @@ const assetLabels: Record<MissingAssetType, string> = {
   authorityPacks: 'Authority packs',
   mapTiles: 'Map tiles',
   plugins: 'Language plugins',
+  scriptNormalization: 'Script conversion (OpenCC)',
 };
 
 /** Desktop-hosted version of the Chinese optional-assets chooser.

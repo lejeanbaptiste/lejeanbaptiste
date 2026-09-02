@@ -16,6 +16,7 @@ import type { DialogBarProps } from '../dialogs';
 import { refreshCbdbConcordanceAfterPackLifecycle } from '../../../../packages/cwrc-leafwriter/src/autoTagging/cbdbConcordance';
 import { clearPackContentCache } from '../../../../packages/cwrc-leafwriter/src/services/authority-pack-lookup';
 import { ensureLanguagePlugins } from './ensureLanguagePlugins';
+import { installScriptNormalization } from '../../../../packages/cwrc-leafwriter/src/layout/entityFields/openccScriptNormalize';
 
 const isChineseRelatedLanguage = (language: string): boolean =>
   language.toLowerCase().startsWith('zh') || language.toLowerCase() === 'lzh';
@@ -46,6 +47,7 @@ const downloadSelectedChineseAssets = async (selected: MissingAssetType[]): Prom
   }
   if (choices.has('plugins')) tasks.push(ensureLanguagePlugins(isChineseRelatedLanguage));
   if (choices.has('mapTiles')) tasks.push(downloadChineseMapTiles());
+  if (choices.has('scriptNormalization')) tasks.push(installScriptNormalization());
   await Promise.allSettled(tasks);
 };
 

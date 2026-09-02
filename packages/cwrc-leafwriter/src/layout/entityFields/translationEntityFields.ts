@@ -17,8 +17,19 @@ import {
   type EntityPartId,
 } from './entityDisplay';
 import type { EntitySummary } from './entitySummary';
+import type { MentionContext } from './mentionContext';
+import {
+  deriveDisplaySpec,
+  isCharacterOnlyTranslationTarget,
+  type MentionRole,
+} from './mentionContext';
+import { buildCjkMentionParts, buildWesternMentionParts } from './mentionRender';
+import { fileOccurrenceIndexForUnitInsert, collectEntityFieldsInDocumentOrder } from './fileWideOccurrence';
+import type { MentionRenderPart } from './mentionRender';
 
 export const ENTITY_REF_TYPE = 'ljb-entity';
+export const MENTION_SURFACE_ATTR = 'data-mention-surface';
+export const MENTION_ROLE_ATTR = 'data-mention-role';
 export const ENTITY_FIELD_ATTR = 'data-leaf-entity-field';
 /**
  * Marker that this work mention uses citation italics. The attribute itself is
@@ -213,6 +224,54 @@ export const createEntityFieldElement = (
   return ref;
 };
 
+export const createMentionFieldElement = (
+  entity: EntitySummary,
+  mention: MentionContext,
+  parts: MentionRenderPart[],
+  displaySpec: EntityDisplaySpec,
+): HTMLElement => {
+  const ref = document.createElement('ref');
+  ref.setAttribute('type', ENTITY_REF_TYPE);
+  ref.setAttribute('key', entity.id);
+  ref.setAttribute('contenteditable', 'false');
+  ref.setAttribute(ENTITY_FIELD_ATTR, 'true');
+  ref.setAttribute('title', `${entity.kind}: ${entity.id}`);
+  ref.setAttribute(MENTION_SURFACE_ATTR, mention.surface);
+  ref.setAttribute(MENTION_ROLE_ATTR, mention.role);
+  writeDisplaySpecToField(ref, displaySpec);
+  applyMentionPartsToField(ref, parts);
+  return ref;
+};
+
+export const applyMentionPartsToField = (ref: Element, parts: MentionRenderPart[]): void => {
+  while (ref.firstChild) ref.removeChild(ref.firstChild);
+  const doc = ref.ownerDocument ?? document;
+
+  for (let i = 0; i < parts.length; i += 1) {
+    const part = parts[i];
+    if (i > 0 && part.id !== 'bracket-family-han' && parts[i - 1]?.id !== 'bracket-family-han') {
+      ref.appendChild(doc.createTextNode(' '));
+    }
+
+    if (part.id === 'bracket-family-han' && part.useBrackets) {
+      ref.appendChild(doc.createTextNode(`（${part.text}）`));
+      continue;
+    }
+
+    const span = doc.createElement('span');
+    span.setAttribute(
+      'data-entity-part',
+      part.id === 'surface' || part.id === 'bracket-family-han' ? 'chinese' : part.id,
+    );
+
+    if (part.useBrackets) span.textContent = `[${part.text}]`;
+    else if (part.useParen) span.textContent = `(${part.text})`;
+    else span.textContent = part.text;
+
+    ref.appendChild(span);
+  }
+};
+
 export const prepareAtomicEntityFields = (root: ParentNode): void => {
   for (const ref of Array.from(
     (
@@ -237,6 +296,12 @@ export const recalculateEntityFieldsInRoot = (
   entity: EntitySummary,
   settings?: DateFormatSettings | null,
   lang?: string | null,
+  options?: {
+    translationDoc?: Document | null;
+    alignmentUnit?: 'div' | 'p' | 'ab';
+    sourceFileName?: string;
+    unitId?: string;
+  },
 ): void => {
   const resolved = settings ?? dateFormatSettingsForLang(lang);
   const host = root as ParentNode & {
@@ -245,12 +310,75 @@ export const recalculateEntityFieldsInRoot = (
   const fields = Array.from(host.querySelectorAll?.(`ref[type="${ENTITY_REF_TYPE}"]`) ?? []).filter(
     (field) => field.getAttribute('key') === entityId,
   );
+
+  const fileOrdered =
+    options?.translationDoc && options.alignmentUnit && options.sourceFileName
+      ? collectEntityFieldsInDocumentOrder(
+          options.translationDoc,
+          options.alignmentUnit,
+          options.sourceFileName,
+        ).filter((ref) => ref.entityKey === entityId)
+      : null;
+
   fields.forEach((field, index) => {
+    const surface = field.getAttribute(MENTION_SURFACE_ATTR);
+    const roleAttr = field.getAttribute(MENTION_ROLE_ATTR) as MentionRole | null;
+
+    if (surface != null && roleAttr) {
+      const mention: MentionContext = {
+        index,
+        key: entityId,
+        kind: entity.kind,
+        surface,
+        teiTag: 'persName',
+        teiType: null,
+        role: roleAttr,
+        placeholderRole: 'entity',
+      };
+      let fileOccurrenceIndex = index + 1;
+      if (fileOrdered && options?.unitId) {
+        const prior = fileOrdered.filter(
+          (ref) => ref.unitId !== options.unitId || ref.field !== field,
+        ).length;
+        const within = fields.slice(0, index + 1).indexOf(field) + 1;
+        fileOccurrenceIndex = prior + within;
+      } else if (options?.translationDoc && options.unitId && options.alignmentUnit && options.sourceFileName) {
+        fileOccurrenceIndex = fileOccurrenceIndexForUnitInsert(
+          options.translationDoc,
+          options.alignmentUnit,
+          options.sourceFileName,
+          options.unitId,
+          entityId,
+          index,
+        );
+      }
+      const displaySpec = deriveDisplaySpec(
+        mention.role,
+        fileOccurrenceIndex,
+        resolved.bracketsPolicy,
+        readDisplaySpecFromField(field),
+      );
+      const parts: MentionRenderPart[] = isCharacterOnlyTranslationTarget(lang)
+        ? buildCjkMentionParts(mention, entity, fileOccurrenceIndex, displaySpec, resolved, lang)
+        : buildWesternMentionParts(
+            mention,
+            entity,
+            fileOccurrenceIndex,
+            displaySpec,
+            resolved,
+            lang,
+          );
+      writeDisplaySpecToField(field, displaySpec);
+      applyMentionPartsToField(field, parts);
+      field.setAttribute('contenteditable', 'false');
+      field.setAttribute(ENTITY_FIELD_ATTR, 'true');
+      return;
+    }
+
     const spec = readDisplaySpecFromField(field);
     applyWorkTypeStyle(field, entity, index + 1, spec, resolved, lang);
     field.setAttribute('contenteditable', 'false');
     field.setAttribute(ENTITY_FIELD_ATTR, 'true');
-    // Normalize storage: migrate legacy format attrs into data-display-spec.
     if (!isEmptyDisplaySpec(spec)) writeDisplaySpecToField(field, spec);
   });
 };

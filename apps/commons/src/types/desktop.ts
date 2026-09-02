@@ -334,10 +334,17 @@ export interface AiTranslationDateRef {
   gloss?: string | null;
 }
 
+export interface AiTranslationMentionRef {
+  index: number;
+  kind: string;
+}
+
 export interface AiTranslationRequest {
   alignmentUnit: 'div' | 'p' | 'ab';
   sourceUnitXml: string;
   targetLanguage: string;
+  mentions?: AiTranslationMentionRef[];
+  /** @deprecated Prefer mentions. */
   entities?: AiTranslationEntityRef[];
   dates?: AiTranslationDateRef[];
   retryInstruction?: string;

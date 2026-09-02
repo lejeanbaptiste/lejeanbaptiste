@@ -19,9 +19,9 @@ describe('replaceEntitiesWithPlaceholdersInSourceXml', () => {
       '</p>';
     const keys = new Set(['person-1', 'office-1', 'place-1']);
     const { xml: rewritten, opaques } = replaceEntitiesWithPlaceholdersInSourceXml(xml, keys);
-    expect(rewritten).toContain('{{entity:person-1}}');
-    expect(rewritten).toContain('{{entity:office-1}}');
-    expect(rewritten).toContain('{{entity:place-1}}');
+    expect(rewritten).toContain('{{mention:0}}');
+    expect(rewritten).toContain('{{mention:1}}');
+    expect(rewritten).toContain('{{mention:2}}');
     expect(rewritten).not.toContain('平北將軍');
     expect(opaques).toHaveLength(0);
   });
@@ -37,8 +37,8 @@ describe('replaceEntitiesWithPlaceholdersInSourceXml', () => {
       '</p>';
     const keys = new Set(['person-1', 'office-hold', 'office-as']);
     const { xml: rewritten } = replaceEntitiesWithPlaceholdersInSourceXml(xml, keys);
-    expect(rewritten).toContain('{{holding:office-hold}} {{entity:person-1}}');
-    expect(rewritten).toContain('{{as:office-as}}');
+    expect(rewritten).toContain('{{holding:0}} {{mention:1}}');
+    expect(rewritten).toContain('{{as:2}}');
     expect(rewritten).not.toContain('}}{{');
     expect(rewritten).not.toContain('personWrapper');
     expect(rewritten).not.toContain('平北將軍');
@@ -57,15 +57,15 @@ describe('replaceEntitiesWithPlaceholdersInSourceXml', () => {
     const { xml: rewritten } = replaceEntitiesWithPlaceholdersInSourceXml(xml, keys);
     expect(rewritten).toContain('貞陽公');
     expect(rewritten).toContain('江夏王');
-    expect(rewritten).toContain('{{entity:person-1}}');
+    expect(rewritten).toContain('{{mention:0}}');
     expect(rewritten).not.toContain('{{entity:place-1}}');
     expect(rewritten).not.toContain('nobleTitle');
     expect(rewritten).not.toContain('{{holding:opaque');
   });
 
   test('normalizePlaceholderSpacing inserts one space and collapses doubles', () => {
-    expect(normalizePlaceholderSpacing('{{holding:a}}{{entity:b}}')).toBe(
-      '{{holding:a}} {{entity:b}}',
+    expect(normalizePlaceholderSpacing('{{holding:0}}{{mention:1}}')).toBe(
+      '{{holding:0}} {{mention:1}}',
     );
     expect(normalizePlaceholderSpacing('{{a}}  {{b}}')).toBe('{{a}} {{b}}');
   });
@@ -94,7 +94,7 @@ describe('replaceEntitiesWithPlaceholdersInSourceXml', () => {
       '</p>';
     const keys = new Set(['office-nanyan', 'place-nanyan']);
     const { xml: rewritten } = replaceEntitiesWithPlaceholdersInSourceXml(xml, keys);
-    expect(rewritten).toContain('{{entity:office-nanyan}}');
+    expect(rewritten).toContain('{{mention:0}}');
     expect(rewritten).not.toContain('{{entity:place-nanyan}}');
   });
 

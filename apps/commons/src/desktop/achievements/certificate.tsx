@@ -3,6 +3,7 @@ import { STARTER_RANK_NAME } from './definitions';
 import { BODY_COLOR_STATS } from './generatedBodyPools';
 import { getHeadColorStats } from './headColorStats';
 import { medalAssetKey, type MedalMetric, type MedalTier } from './MedalIcon';
+import { sceneGradeDefs, sceneVignetteSvg } from './sceneTone';
 import {
   BG_ASPECT,
   DECORATION_PANEL,
@@ -22,6 +23,7 @@ import {
   RIBBON_BAND_FRACTION,
   RIBBON_COUNT_FLOOR,
   AIRCRAFT_SUBJECT_POSE,
+  archiveTreatmentForBackground,
   scenePhotoFilterForBackground,
 } from './UniformAvatar';
 
@@ -73,8 +75,35 @@ export interface CertificateOptions {
   totalAchievements: number;
 }
 
+/** Id prefix for the portrait's grade <filter> and vignette gradients. A
+ * fixed value rather than a per-render one (as the live avatar uses): a
+ * portrait fragment is always the only portrait in whatever document it ends
+ * up in - the certificate wrapper embeds exactly one, and a leaderboard
+ * thumbnail is its own standalone data: URI. */
+const PORTRAIT_TONE_PREFIX = 'ljb-portrait';
+
 export const CERTIFICATE_WIDTH = 640;
 export const CERTIFICATE_HEIGHT = 900;
+const CERTIFICATE_MARGIN = 60;
+
+/** Rasterization density for the exported certificate PNG - see
+ * svgToPngBytes. Exported so the call site and the grade's device-width
+ * calculation below can't drift apart. */
+export const CERTIFICATE_PNG_OVERSAMPLE = 3;
+
+/** Device-pixel width the portrait actually rasterizes at on the certificate,
+ * which is what QA's size-dependent tuning is measured against (see
+ * SceneMetrics): buildCertificateSvg scales the fragment to the card's
+ * content width, and AchievementsDialog rasterizes the card at 3x. It comes
+ * to 1560px - exactly the print canvas QA grades its second preview at, which
+ * is why the two line up without a fudge factor.
+ *
+ * A caller passing a smaller `size` (the leaderboard thumbnail) is still
+ * graded for the certificate rather than for its own size. That is
+ * deliberate: it's a downscaled preview of this image, not a separate
+ * rendering of it. */
+export const CERTIFICATE_PORTRAIT_DEVICE_WIDTH =
+  (CERTIFICATE_WIDTH - CERTIFICATE_MARGIN * 2) * CERTIFICATE_PNG_OVERSAMPLE;
 
 // Rendered, then scaled to fit CERTIFICATE_WIDTH - the same UniformAvatar
 // layout math (sceneWidth = size * BG_ASPECT) just needs a concrete pixel
@@ -240,7 +269,11 @@ export const buildPortraitFragment = async (
   const bodyStats = BODY_COLOR_STATS[`${input.poseIndex}:${input.bodyType}`] ?? NEUTRAL_STATS;
   const uniformFilter = isAircraftSubject ? 'none' : colorMatchFilter(bodyStats, backgroundStats);
   const headFilter = isAircraftSubject ? 'none' : colorMatchFilter(headStats, backgroundStats);
-  const scenePhotoFilter = scenePhotoFilterForBackground(input.backgroundImageKey);
+  const sceneTreatment = archiveTreatmentForBackground(input.backgroundImageKey);
+  const scenePhotoFilter = scenePhotoFilterForBackground(
+    input.backgroundImageKey,
+    PORTRAIT_TONE_PREFIX,
+  );
   // Already pre-padded by the local compositor (see SVG_PAD in
   // UniformAvatar.tsx) - no further viewBox surgery needed here.
   const paddedHeadMarkup = input.headSvgMarkup;
@@ -353,13 +386,36 @@ export const buildPortraitFragment = async (
   // The live avatar applies the WWI photo treatment to the complete scene,
   // not just to an individual layer. Wrapping the same fragment contents in
   // the shared filter keeps certificate exports visually identical.
+  //
+  // The treatment's tone step is a url() reference (see sceneTone.ts), so the
+  // <filter> it names has to travel *inside* this fragment: it's rasterized
+  // from a self-contained data: URI, where there is no outer document left to
+  // resolve the reference against. Injected right after the root tag, for the
+  // same reason the live avatar renders its defs inside the filtered element.
+  const gradeDefs = sceneGradeDefs(sceneTreatment, PORTRAIT_TONE_PREFIX, {
+    renderWidth: CERTIFICATE_PORTRAIT_DEVICE_WIDTH,
+    sceneWidth,
+  });
   const filteredSvg = scenePhotoFilter
-    ? svg.replace(
-        '<svg xmlns="http://www.w3.org/2000/svg"',
-        `<svg xmlns="http://www.w3.org/2000/svg" style="filter: ${scenePhotoFilter}"`,
-      )
+    ? svg
+        .replace(
+          '<svg xmlns="http://www.w3.org/2000/svg"',
+          `<svg xmlns="http://www.w3.org/2000/svg" style="filter: ${scenePhotoFilter}"`,
+        )
+        .replace(
+          `viewBox="0 0 ${sceneWidth} ${size}">`,
+          `viewBox="0 0 ${sceneWidth} ${size}"><defs>${gradeDefs}</defs>`,
+        )
     : svg;
-  return { svg: filteredSvg, width: sceneWidth, height: size };
+  // The vignette rides on top of the graded scene, not inside the filter -
+  // see sceneVignetteCss for why. Appended after the closing of the scene's
+  // content so it multiplies over every layer, matching the live portrait's
+  // overlay div.
+  const vignette = sceneVignetteSvg(sceneTreatment, PORTRAIT_TONE_PREFIX, sceneWidth, size);
+  const withVignette = vignette
+    ? `${filteredSvg.slice(0, filteredSvg.lastIndexOf('</svg>'))}${vignette}</svg>`
+    : filteredSvg;
+  return { svg: withVignette, width: sceneWidth, height: size };
 };
 
 export interface CertificateAssembleOptions extends CertificateOptions {
@@ -372,7 +428,7 @@ export interface CertificateAssembleOptions extends CertificateOptions {
  * metric. Pure string-building so it can be rasterized via svgToPngBytes
  * without any further DOM dependency. */
 export const buildCertificateSvg = (options: CertificateAssembleOptions): string => {
-  const margin = 60;
+  const margin = CERTIFICATE_MARGIN;
   const portraitWidth = CERTIFICATE_WIDTH - margin * 2;
   const portraitScale = portraitWidth / options.portraitFragment.width;
   const portraitHeight = options.portraitFragment.height * portraitScale;

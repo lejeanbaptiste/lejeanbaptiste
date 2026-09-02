@@ -19,6 +19,7 @@ import {
   type DateFormatLanguage,
   type DateFormatSettings,
   type EraDisplay,
+  type BracketsPolicy,
   type StoredDateFormatState,
   type TitleConvention,
   type YearNumbering,
@@ -140,6 +141,12 @@ export const TranslationPolicyPanel = () => {
         return t('LW.settings.translationPolicy.langFr');
       case 'de':
         return t('LW.settings.translationPolicy.langDe');
+      case 'zh':
+        return t('LW.settings.translationPolicy.langZh');
+      case 'ja':
+        return t('LW.settings.translationPolicy.langJa');
+      case 'ko':
+        return t('LW.settings.translationPolicy.langKo');
     }
   };
 
@@ -188,6 +195,26 @@ export const TranslationPolicyPanel = () => {
           <MenuItem value="translation-first">
             {t('LW.settings.translationPolicy.titleConventionTranslationFirst')}
           </MenuItem>
+        </Select>
+      </FormControl>
+
+      <FormControl fullWidth size="small">
+        <InputLabel>{t('LW.settings.translationPolicy.bracketsPolicy')}</InputLabel>
+        <Select
+          label={t('LW.settings.translationPolicy.bracketsPolicy')}
+          onChange={(event) =>
+            setDraft({
+              ...draft,
+              bracketsPolicy: event.target.value as BracketsPolicy,
+            })
+          }
+          value={draft.bracketsPolicy}
+        >
+          <MenuItem value="never">{t('LW.settings.translationPolicy.bracketsNever')}</MenuItem>
+          <MenuItem value="first-mention-only">
+            {t('LW.settings.translationPolicy.bracketsFirstMention')}
+          </MenuItem>
+          <MenuItem value="always">{t('LW.settings.translationPolicy.bracketsAlways')}</MenuItem>
         </Select>
       </FormControl>
 

@@ -18,6 +18,7 @@ import { isDesktop } from '@src/types/desktop';
 import { refreshCbdbConcordanceAfterPackLifecycle } from '../../../../packages/cwrc-leafwriter/src/autoTagging/cbdbConcordance';
 import { clearPackContentCache } from '../../../../packages/cwrc-leafwriter/src/services/authority-pack-lookup';
 import { ensureLanguagePlugins } from './ensureLanguagePlugins';
+import { installScriptNormalization } from '../../../../packages/cwrc-leafwriter/src/layout/entityFields/openccScriptNormalize';
 
 const { t } = i18next;
 
@@ -85,6 +86,7 @@ export const maybeOfferAuthorityDatabases = async (bundle: ProjectBundle): Promi
         if (api.pluginsEnsureSchemaContribution) {
           await api.pluginsEnsureSchemaContribution('cjk-dates', bundle.projectFilePath);
         }
+        await installScriptNormalization();
       } catch (error) {
         console.warn('[onboarding] Failed to install Sanmiao with Japan pack', error);
       }

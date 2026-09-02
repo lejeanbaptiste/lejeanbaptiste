@@ -338,11 +338,17 @@ interface AiTranslationDateRef {
   gloss?: string | null;
 }
 
+interface AiTranslationMentionRef {
+  index: number;
+  kind: string;
+}
+
 interface AiTranslationRequest {
   /** 'note' is a synthetic unit type used for translating a stripped-out footnote independently. */
   alignmentUnit: 'div' | 'p' | 'ab' | 'note';
   sourceUnitXml: string;
   targetLanguage: string;
+  mentions?: AiTranslationMentionRef[];
   entities?: AiTranslationEntityRef[];
   dates?: AiTranslationDateRef[];
   retryInstruction?: string;
@@ -560,6 +566,7 @@ const generateAiTranslation = async ({
   alignmentUnit,
   sourceUnitXml,
   targetLanguage,
+  mentions,
   entities,
   dates,
   retryInstruction,
@@ -569,6 +576,7 @@ const generateAiTranslation = async ({
     alignmentUnit,
     sourceUnitXml,
     targetLanguage,
+    mentions,
     entities,
     dates,
     retryInstruction,

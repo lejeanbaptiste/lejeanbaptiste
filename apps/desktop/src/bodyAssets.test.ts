@@ -1,4 +1,4 @@
-import { applyDisplayToggles } from './bodyAssets';
+import { allWeaponElementIds, applyDisplayToggles } from './bodyAssets';
 
 describe('applyDisplayToggles', () => {
   it('lets an id match win over a colliding inkscape:label match on the same tag', () => {
@@ -47,5 +47,38 @@ describe('applyDisplayToggles', () => {
 
     expect(/<g\b[^>]*>/.exec(out)![0]).toContain('display:inline');
     expect(/<image\b[^>]*>/.exec(out)![0]).toContain('display:inline');
+  });
+});
+
+describe('allWeaponElementIds', () => {
+  it("collects a labelled <g> wrapper's id alongside the images inside it", () => {
+    // Reproduces bodies/body11.svg, which wraps each weapon variant in its
+    // own display:none <g> carrying the same label as its images. Missing
+    // the wrapper id meant the wrapper stayed hidden and the weapon never
+    // rendered, however many leaf images were switched to display:inline.
+    const svg =
+      '<svg><g inkscape:label="weapons">' +
+      '<g inkscape:label="m-wwii4" id="g28" style="display:none">' +
+      '<image id="image90" inkscape:label="m-wwii4" />' +
+      '<image id="image91" inkscape:label="m-wwii4" />' +
+      '</g></g></svg>';
+    expect(allWeaponElementIds(svg)).toEqual(['g28', 'image90', 'image91']);
+  });
+
+  it('ignores an unlabelled structural <g> inside the weapons block', () => {
+    const svg =
+      '<svg><g inkscape:label="weapons">' +
+      '<g id="layer-transform"><image id="image7" inkscape:label="wwi1" /></g>' +
+      '</g></svg>';
+    expect(allWeaponElementIds(svg)).toEqual(['image7']);
+  });
+
+  it('finds elements across every weapons block a pose has', () => {
+    const svg =
+      '<svg>' +
+      '<g inkscape:label="weapons"><image id="rear" inkscape:label="wwi1" /></g>' +
+      '<g inkscape:label="Weapons"><image id="front" inkscape:label="wwi1" /></g>' +
+      '</svg>';
+    expect(allWeaponElementIds(svg)).toEqual(['rear', 'front']);
   });
 });

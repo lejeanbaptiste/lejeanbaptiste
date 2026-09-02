@@ -13,6 +13,7 @@ import {
   svgStampPixelsForCssBox,
   BODY_CSS_OVERSAMPLE,
   SVG_PIXEL_OVERSAMPLE,
+  archiveTreatmentForBackground,
   scenePhotoFilterForBackground,
   scenePhotoFilterForPose,
 } from './UniformAvatar';
@@ -203,10 +204,25 @@ describe('scene photo filter', () => {
   });
 
   it('uses the selected archive record rather than the pose for grading', () => {
-    expect(scenePhotoFilterForBackground('bg/r03/military/r03-artillery')).toContain('grayscale');
-    expect(scenePhotoFilterForBackground('bg/r04/military/r04-a-airfield')).toContain('grayscale');
-    expect(scenePhotoFilterForBackground('bg/r04/military/r04-a-hospital')).toContain('sepia');
-    expect(scenePhotoFilterForBackground('bg/r01/military/r01-artillery')).toBeUndefined();
+    expect(archiveTreatmentForBackground('bg/r03/military/r03-artillery')).toBe('wwi-ortho');
+    expect(archiveTreatmentForBackground('bg/r04/military/r04-a-airfield')).toBe('wwii-bw');
+    expect(archiveTreatmentForBackground('bg/r04/military/r04-a-hospital')).toBe('sepia');
+    expect(archiveTreatmentForBackground('bg/r01/military/r01-artillery')).toBe('colour');
+    expect(scenePhotoFilterForBackground('bg/r01/military/r01-artillery', 'p')).toBeUndefined();
+  });
+
+  it('references a grade the caller has to define, not a CSS approximation', () => {
+    // The filter value is only half the contract - it names a <filter> by id
+    // that the caller must render (see sceneGradeDefs). A treatment that
+    // silently dropped the url() would fall back to no grade at all rather
+    // than fail visibly, so pin it here.
+    for (const key of [
+      'bg/r03/military/r03-artillery',
+      'bg/r04/military/r04-a-airfield',
+      'bg/r04/military/r04-a-hospital',
+    ]) {
+      expect(scenePhotoFilterForBackground(key, 'p')).toBe('url(#p-grade)');
+    }
   });
 });
 

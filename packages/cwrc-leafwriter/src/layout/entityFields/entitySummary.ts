@@ -14,6 +14,8 @@ export interface EntityNameEntry {
   text: string;
   /** `primary` | `romanization` | `variant` | person name types, etc. */
   type?: string | null;
+  /** `family` | `given` | `primary` | `courtesy` | … from SQLite `name_role`. */
+  role?: string | null;
 }
 
 /** Vernacular gloss for a target language (fr/en/…), from entity_translations. */
@@ -157,6 +159,7 @@ export const summaryFromSqlitePanel = (panel: SqlitePanelLike): EntitySummary =>
       lang: name.language,
       text: name.text,
       type: name.nameType ?? null,
+      role: name.nameRole ?? null,
     })),
     primaryName: primary?.text ?? null,
     // Still scan all active names: legacy mis-tagged Latin under zh + type=translation

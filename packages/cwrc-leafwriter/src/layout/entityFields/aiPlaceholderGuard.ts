@@ -6,7 +6,7 @@ import { normalizeAiPlaceholders } from './normalizeAiPlaceholders';
 
 /** Full placeholder tokens we require the model to copy through unchanged. */
 const PLACEHOLDER_TOKEN_RE =
-  /\{\{(?:holding:opaque|as:opaque|opaque|holding|as|entity|date|note):[^{}]+\}\}/g;
+  /\{\{(?:holding:opaque|as:opaque|opaque|holding|as|entity|mention|date|note):[^{}]+\}\}/g;
 
 /** Count each distinct `{{…}}` token in document order. */
 export const collectPlaceholderInventory = (text: string): Map<string, number> => {

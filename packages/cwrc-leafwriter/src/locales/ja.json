@@ -970,7 +970,7 @@
           "subscript": "Cmd/Ctrl+,",
           "link": "Cmd/Ctrl+K",
           "footnote": "Cmd/Ctrl+Alt+F",
-          "zoteroPicker": "Zotero picker",
+          "zoteroPicker": "Zotero ピッカー",
           "clearFormatting": "Cmd/Ctrl+M"
         }
       },
@@ -991,7 +991,7 @@
       "startTypingPlaceholder": "この単位の翻訳を入力してください…",
       "footnotePlaceholder": "脚注テキスト…",
       "removeFootnote": "脚注を削除",
-      "unindexedUnitMessage": "This paragraph is new and not yet indexed for translation — save the document to add it.",
+      "unindexedUnitMessage": "この段落は新しく、まだ翻訳用に索引付けされていません — 文書を保存して追加してください。",
       "selectUnitMessage": "翻訳するソース内の {{unit}} を選択してください。",
       "defaultUnitLabel": "セクション",
       "insertEntity": "エンティティを挿入（この段落または検索）",
@@ -1112,10 +1112,10 @@
       "add_custom": "カスタム種類を追加",
       "remove_custom": "カスタム種類 {{label}} を削除",
       "errors": {
-        "invalid_slug": "Id must be an ASCII slug matching [a-z][a-z0-9_-]*",
-        "shadows_builtin": "Id \"{{id}}\" shadows a built-in name type",
-        "label_required": "Label is required.",
-        "id_exists": "A custom type with id \"{{id}}\" already exists."
+        "invalid_slug": "ID は [a-z][a-z0-9_-]* に一致する ASCII スラッグである必要があります",
+        "shadows_builtin": "ID「{{id}}」は組み込みの名前の種類と競合します",
+        "label_required": "ラベルは必須です。",
+        "id_exists": "ID「{{id}}」のカスタム種類はすでに存在します。"
       }
     }
   }

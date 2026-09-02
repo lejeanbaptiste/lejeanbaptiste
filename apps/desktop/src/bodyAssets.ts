@@ -114,10 +114,22 @@ export function applyDisplayToggles(
   return applyDisplayTogglePass(afterLabels, 'id', idValues);
 }
 
-/** Every <image id="..."> inside any <g inkscape:label="weapons"> block
- * (case-insensitive - see bodies/body7.svg's "Weapons"), across however many
- * such blocks this pose has (0, 1, or 2 - see bodySvg.mjs). */
-function allWeaponImageIds(svgText: string): string[] {
+/** Every toggleable weapon element id inside any <g inkscape:label="weapons">
+ * block (case-insensitive - see bodies/body7.svg's "Weapons"), across however
+ * many such blocks this pose has (0, 1, or 2 - see bodySvg.mjs).
+ *
+ * That means <image id="..."> leaves *and* any labelled <g id="..."> wrapper
+ * around them: bodies/body11.svg wraps each weapon variant in its own
+ * `<g inkscape:label="m-wwii4" style="display:none">` carrying the same label
+ * as the images inside it, so toggling only the leaves to display:inline
+ * leaves them invisible under a still-hidden parent - the weapon simply never
+ * appears. visual_design/scripts/bodySvg.mjs's poolImagesByRankLabel already
+ * pools those wrapper ids alongside the leaf ids (so they arrive here in
+ * `weaponIds`); this is the runtime half of the same fix. Unlabelled <g>
+ * wrappers are deliberately left alone - they're structural, not a weapon
+ * variant, and hiding them would take the whole block down with them.
+ * Exported for testing only. */
+export function allWeaponElementIds(svgText: string): string[] {
   const ids: string[] = [];
   const openRe = /<g\b[^>]*\binkscape:label="weapons"[^>]*>/gi;
   let openMatch: RegExpExecArray | null;
@@ -140,9 +152,15 @@ function allWeaponImageIds(svgText: string): string[] {
     }
     if (end === -1) break;
     const inner = svgText.slice(openMatch.index + openMatch[0].length, end - '</g>'.length);
-    const imageRe = /<image\b[^>]*\bid="([^"]*)"[^>]*>/g;
-    let imageMatch: RegExpExecArray | null;
-    while ((imageMatch = imageRe.exec(inner))) ids.push(imageMatch[1]);
+    const elementRe = /<(?<tag>g|image)\b[^>]*>/g;
+    let elementMatch: RegExpExecArray | null;
+    while ((elementMatch = elementRe.exec(inner))) {
+      const tag = elementMatch[0];
+      const id = /\bid="([^"]*)"/.exec(tag)?.[1];
+      if (!id) continue;
+      if (elementMatch.groups!.tag === 'g' && !/\binkscape:label="/.test(tag)) continue;
+      ids.push(id);
+    }
     openRe.lastIndex = end;
   }
   return ids;
@@ -232,7 +250,7 @@ function composeBodySvg(params: URLSearchParams): string | null {
       .filter((id) => id.length > 0 && isValidId(id)),
   );
   const idValues = new Map<string, 'inline' | 'none'>(
-    allWeaponImageIds(svg).map((id) => [id, requestedWeaponIds.has(id) ? 'inline' : 'none']),
+    allWeaponElementIds(svg).map((id) => [id, requestedWeaponIds.has(id) ? 'inline' : 'none']),
   );
 
   return applyDisplayToggles(svg, labelValues, idValues);

@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useRef, useState, type CSSProperties } from 'react';
+import { useEffect, useId, useMemo, useRef, useState, type CSSProperties } from 'react';
 import { colorMatchFilter, type ColorStats } from './colorMatch';
 import {
   ARCHIVE_BACKGROUND_ASSETS_BY_RANK,
@@ -14,6 +14,12 @@ import {
   type WeaponScope,
 } from './generatedBodyPools';
 import { getHeadColorStats } from './headColorStats';
+import {
+  sceneGradeDefs,
+  sceneGradeFilter,
+  sceneVignetteCss,
+  type ArchiveTreatment,
+} from './sceneTone';
 import { MedalIcon, type MedalMetric, type MedalTier } from './MedalIcon';
 
 // Served at runtime by the desktop app's ljb-asset:// protocol handler
@@ -91,32 +97,27 @@ const effectivePoseMinRankIndex = (poseIndex: number): number =>
  * export render the same treatment. */
 export const scenePhotoFilterForPose = (): string | undefined => undefined;
 
+export const archiveTreatmentForBackground = (backgroundImageKey: string): ArchiveTreatment =>
+  ARCHIVE_BACKGROUND_ASSETS_BY_RANK.flat().find((asset) => asset.assetKey === backgroundImageKey)
+    ?.treatment ?? 'colour';
+
 /**
  * Archive treatment belongs to the selected record, rather than the pose:
  * a later player can still encounter an older WWI image, and a Rank 4 image
- * may deliberately be sepia or hand-coloured. CSS is the runtime baseline;
- * the private QA browser provides the more faithful grain and film response
- * used to review source material.
+ * may deliberately be sepia or hand-coloured. The grade itself is QA's (see
+ * sceneTone.ts) so the app renders what the treatments were reviewed against.
+ *
+ * The returned value is a `url(#...)` reference, so whoever uses it must also
+ * have rendered `sceneGradeDefs` into the same document with the same
+ * `prefix` - UniformAvatar does that below, certificate.tsx into its exported
+ * SVG - and must apply `sceneVignetteCss`/`sceneVignetteSvg` over the result,
+ * which is the one pass that can't live inside a filter.
  */
-export const scenePhotoFilterForBackground = (backgroundImageKey: string): string | undefined => {
-  const treatment =
-    ARCHIVE_BACKGROUND_ASSETS_BY_RANK.flat().find((asset) => asset.assetKey === backgroundImageKey)
-      ?.treatment ?? 'colour';
-  switch (treatment) {
-    case 'wwi-ortho':
-      return 'grayscale(1) contrast(1.08) brightness(0.98)';
-    case 'wwii-bw':
-      return 'grayscale(1) contrast(1.08) brightness(0.98)';
-    case 'sepia':
-      return 'grayscale(1) sepia(0.78) saturate(0.78) contrast(1.10) brightness(0.96)';
-    case 'tinted':
-      return 'grayscale(1) sepia(0.24) saturate(0.72) contrast(1.05) brightness(0.98)';
-    case 'hand-coloured':
-      return 'contrast(1.03) saturate(0.92)';
-    default:
-      return undefined;
-  }
-};
+export const scenePhotoFilterForBackground = (
+  backgroundImageKey: string,
+  filterIdPrefix: string,
+): string | undefined =>
+  sceneGradeFilter(archiveTreatmentForBackground(backgroundImageKey), filterIdPrefix);
 
 /** True when this pose may appear in the random rotation at `rankIndex`.
  * Some poses have a minimum rank (see effectivePoseMinRankIndex). Poses with
@@ -1006,7 +1007,22 @@ export const UniformAvatar = ({
       return false;
     }
   }, [bodyFrontImageUrl]);
-  const scenePhotoFilter = scenePhotoFilterForBackground(backgroundImageKey);
+  // Per-instance so two avatars on screen at once (the dialog's portrait and
+  // a leaderboard thumbnail) don't both define a <filter> under the same id -
+  // see gradeFilterId. useId's own value contains ':', which isn't usable
+  // inside a url(#...) reference without escaping, so strip it.
+  const filterIdPrefix = `ljb-scene-${useId().replace(/:/g, '')}`;
+  const sceneTreatment = archiveTreatmentForBackground(backgroundImageKey);
+  const scenePhotoFilter = sceneGradeFilter(sceneTreatment, filterIdPrefix);
+  // QA's size-dependent tuning is anchored on the *rasterized* width, so the
+  // display density counts: this portrait is 293 CSS px, which is under the
+  // 758px reference on any display and therefore always lands on the gentler
+  // game-size end of the range - the same end QA's in-game preview shows.
+  const sceneMetrics = {
+    renderWidth: sceneWidth * (typeof window === 'undefined' ? 1 : window.devicePixelRatio || 1),
+    sceneWidth,
+  };
+  const sceneVignette = sceneVignetteCss(sceneTreatment);
   useEffect(() => {
     let cancelled = false;
     void getCachedColorStats(backgroundImageKey).then((backgroundStats) => {
@@ -1066,36 +1082,71 @@ export const UniformAvatar = ({
     <div
       aria-label="Service uniform portrait"
       style={{
-        backgroundColor: '#b7c4c7',
-        backgroundImage: isAircraftSubject ? undefined : `url(${backgroundSrc})`,
-        backgroundPosition: 'center',
-        backgroundRepeat: 'no-repeat',
-        backgroundSize: 'cover',
-        filter: scenePhotoFilter,
         height: size,
+        // Contains the vignette's multiply blending, which would otherwise
+        // reach past this component and darken whatever it sits on.
+        isolation: 'isolate',
         overflow: 'hidden',
         position: 'relative',
         width: sceneWidth,
       }}
     >
+      {/* The grade the scene filter references. Lives inside this element
+          rather than beside it purely to keep this component single-rooted;
+          <defs> content is never painted, so being a descendant of the
+          element it filters is not a cycle. Zero-sized and absolutely
+          positioned so it can't affect layout. */}
+      {scenePhotoFilter && (
+        <svg
+          aria-hidden="true"
+          focusable="false"
+          height={0}
+          style={{ position: 'absolute' }}
+          width={0}
+          // Set as markup rather than written out as JSX so certificate.tsx,
+          // which has to emit this same <filter> into a string of SVG, can
+          // share one definition instead of keeping a parallel copy in sync.
+          // The content is entirely module constants plus filterIdPrefix (a
+          // sanitized useId) - nothing here comes from player input or from
+          // an asset file.
+          dangerouslySetInnerHTML={{
+            __html: `<defs>${sceneGradeDefs(sceneTreatment, filterIdPrefix, sceneMetrics)}</defs>`,
+          }}
+        />
+      )}
+      {/* Everything the grade applies to. Separate from the element above so
+          the vignette can multiply over the *graded* result - QA grades then
+          vignettes, and an overlay inside this div would be graded itself. */}
       <div
         style={{
-          height: size,
-          left: portraitLeft,
+          backgroundColor: '#b7c4c7',
+          backgroundImage: isAircraftSubject ? undefined : `url(${backgroundSrc})`,
+          backgroundPosition: 'center',
+          backgroundRepeat: 'no-repeat',
+          backgroundSize: 'cover',
+          filter: scenePhotoFilter,
+          inset: 0,
           position: 'absolute',
-          top: 0,
-          width: coatWidth,
         }}
       >
-        {!bodyBackFailed && bodyBackSrc && (
-          <img
-            alt=""
-            draggable={false}
-            src={bodyBackSrc}
-            style={{ ...bodyLayerStyle, zIndex: PORTRAIT_Z_INDEX.bodyBack }}
-          />
-        )}
-        {/* Head paints between the two body layers - `back` (rear props, a
+        <div
+          style={{
+            height: size,
+            left: portraitLeft,
+            position: 'absolute',
+            top: 0,
+            width: coatWidth,
+          }}
+        >
+          {!bodyBackFailed && bodyBackSrc && (
+            <img
+              alt=""
+              draggable={false}
+              src={bodyBackSrc}
+              style={{ ...bodyLayerStyle, zIndex: PORTRAIT_Z_INDEX.bodyBack }}
+            />
+          )}
+          {/* Head paints between the two body layers - `back` (rear props, a
             flag pole) sits behind the head, `front` (the uniform itself)
             sits in front of it and is meant to cover the lower part of the
             neck, which is exactly why the neck/shadow were added to the
@@ -1104,153 +1155,164 @@ export const UniformAvatar = ({
             separate layers) left both the head floating above the
             uniform's collar and any rear prop/flag incorrectly covering the
             face instead of sitting behind it. */}
-        {!headFailed && paddedHeadSrc ? (
-          <img
-            alt=""
-            draggable={false}
-            src={paddedHeadSrc}
-            style={{
-              filter: headFilter,
-              height: resolvedHeadPlacement.height,
-              left: resolvedHeadPlacement.left,
-              objectFit: 'fill',
-              position: 'absolute',
-              top: resolvedHeadPlacement.top,
-              width: resolvedHeadPlacement.width,
-              zIndex: PORTRAIT_Z_INDEX.head,
-            }}
-          />
-        ) : (
-          <div
-            aria-label="Avatar unavailable"
-            style={{
-              background: '#f2d3b1',
-              border: '1px solid #716b61',
-              borderRadius: '50%',
-              height: fallbackHeadPlacement.height,
-              left: fallbackHeadPlacement.left,
-              position: 'absolute',
-              top: fallbackHeadPlacement.top,
-              width: fallbackHeadPlacement.width,
-              zIndex: PORTRAIT_Z_INDEX.head,
-            }}
-          >
-            <span
+          {!headFailed && paddedHeadSrc ? (
+            <img
+              alt=""
+              draggable={false}
+              src={paddedHeadSrc}
               style={{
-                color: '#26384a',
-                fontSize: size * 0.11,
-                left: '28%',
+                filter: headFilter,
+                height: resolvedHeadPlacement.height,
+                left: resolvedHeadPlacement.left,
+                objectFit: 'fill',
                 position: 'absolute',
-                top: '38%',
-              }}
-            >
-              ●
-            </span>
-            <span
-              style={{
-                color: '#26384a',
-                fontSize: size * 0.11,
-                right: '28%',
-                position: 'absolute',
-                top: '38%',
-              }}
-            >
-              ●
-            </span>
-            <span
-              style={{
-                borderBottom: '1px solid #8b3a32',
-                borderRadius: '50%',
-                bottom: '25%',
-                height: '15%',
-                left: '35%',
-                position: 'absolute',
-                width: '30%',
+                top: resolvedHeadPlacement.top,
+                width: resolvedHeadPlacement.width,
+                zIndex: PORTRAIT_Z_INDEX.head,
               }}
             />
-          </div>
-        )}
-        {!bodyFrontFailed && bodyFrontSrc && (
-          <img
-            alt=""
-            draggable={false}
-            src={bodyFrontSrc}
-            style={{ ...bodyLayerStyle, zIndex: PORTRAIT_Z_INDEX.bodyFront }}
+          ) : (
+            <div
+              aria-label="Avatar unavailable"
+              style={{
+                background: '#f2d3b1',
+                border: '1px solid #716b61',
+                borderRadius: '50%',
+                height: fallbackHeadPlacement.height,
+                left: fallbackHeadPlacement.left,
+                position: 'absolute',
+                top: fallbackHeadPlacement.top,
+                width: fallbackHeadPlacement.width,
+                zIndex: PORTRAIT_Z_INDEX.head,
+              }}
+            >
+              <span
+                style={{
+                  color: '#26384a',
+                  fontSize: size * 0.11,
+                  left: '28%',
+                  position: 'absolute',
+                  top: '38%',
+                }}
+              >
+                ●
+              </span>
+              <span
+                style={{
+                  color: '#26384a',
+                  fontSize: size * 0.11,
+                  right: '28%',
+                  position: 'absolute',
+                  top: '38%',
+                }}
+              >
+                ●
+              </span>
+              <span
+                style={{
+                  borderBottom: '1px solid #8b3a32',
+                  borderRadius: '50%',
+                  bottom: '25%',
+                  height: '15%',
+                  left: '35%',
+                  position: 'absolute',
+                  width: '30%',
+                }}
+              />
+            </div>
+          )}
+          {!bodyFrontFailed && bodyFrontSrc && (
+            <img
+              alt=""
+              draggable={false}
+              src={bodyFrontSrc}
+              style={{ ...bodyLayerStyle, zIndex: PORTRAIT_Z_INDEX.bodyFront }}
+            />
+          )}
+          {showAlignmentGrid && (
+            <div
+              aria-hidden="true"
+              style={{
+                backgroundImage:
+                  'linear-gradient(to right, rgba(255, 80, 80, .65) 1px, transparent 1px), linear-gradient(to bottom, rgba(255, 80, 80, .65) 1px, transparent 1px)',
+                backgroundSize: '12.5% 100%, 100% 16.666%',
+                border: '1px solid rgba(255, 80, 80, .8)',
+                height: '50%',
+                left: '50%',
+                pointerEvents: 'none',
+                position: 'absolute',
+                top: '43%',
+                width: '44%',
+                zIndex: PORTRAIT_Z_INDEX.devGrid,
+              }}
+            />
+          )}
+          <DecorationRack
+            coatHeight={coatHeight}
+            coatTop={coatTop}
+            coatWidth={coatWidth}
+            medals={medals}
+            ribbons={ribbons}
           />
-        )}
+        </div>
         {showAlignmentGrid && (
           <div
             aria-hidden="true"
             style={{
               backgroundImage:
-                'linear-gradient(to right, rgba(255, 80, 80, .65) 1px, transparent 1px), linear-gradient(to bottom, rgba(255, 80, 80, .65) 1px, transparent 1px)',
-              backgroundSize: '12.5% 100%, 100% 16.666%',
-              border: '1px solid rgba(255, 80, 80, .8)',
-              height: '50%',
-              left: '50%',
+                'linear-gradient(to right, rgba(255, 255, 255, .55) 1px, transparent 1px), linear-gradient(to bottom, rgba(255, 255, 255, .55) 1px, transparent 1px)',
+              backgroundSize: '10% 100%, 100% 10%',
+              border: '1px solid rgba(255, 255, 255, .8)',
+              inset: 0,
               pointerEvents: 'none',
               position: 'absolute',
-              top: '43%',
-              width: '44%',
-              zIndex: PORTRAIT_Z_INDEX.devGrid,
             }}
-          />
+          >
+            <span
+              style={{
+                background: '#ff4d4d',
+                height: 1,
+                left: 0,
+                position: 'absolute',
+                top: '50%',
+                width: '100%',
+              }}
+            />
+            <span
+              style={{
+                background: '#ff4d4d',
+                height: '100%',
+                left: '50%',
+                position: 'absolute',
+                top: 0,
+                width: 1,
+              }}
+            />
+          </div>
         )}
-        <DecorationRack
-          coatHeight={coatHeight}
-          coatTop={coatTop}
-          coatWidth={coatWidth}
-          medals={medals}
-          ribbons={ribbons}
-        />
-      </div>
-      {showAlignmentGrid && (
+        {/* Last graded child so it paints over every asset layer, including
+          the coat (flush to the bottom edge) and head, which otherwise cover
+          an inset box-shadow set on this container itself. */}
         <div
           aria-hidden="true"
           style={{
-            backgroundImage:
-              'linear-gradient(to right, rgba(255, 255, 255, .55) 1px, transparent 1px), linear-gradient(to bottom, rgba(255, 255, 255, .55) 1px, transparent 1px)',
-            backgroundSize: '10% 100%, 100% 10%',
-            border: '1px solid rgba(255, 255, 255, .8)',
+            boxShadow: `inset 0 0 0 1px ${PANEL_BORDER_COLOR}`,
             inset: 0,
             pointerEvents: 'none',
             position: 'absolute',
           }}
-        >
-          <span
-            style={{
-              background: '#ff4d4d',
-              height: 1,
-              left: 0,
-              position: 'absolute',
-              top: '50%',
-              width: '100%',
-            }}
-          />
-          <span
-            style={{
-              background: '#ff4d4d',
-              height: '100%',
-              left: '50%',
-              position: 'absolute',
-              top: 0,
-              width: 1,
-            }}
-          />
-        </div>
+        />
+      </div>
+      {/* Outside the graded element on purpose - see sceneVignetteCss. The
+          two gradients darken() into each other to give QA's Chebyshev
+          `max(|nx|, |ny|)` falloff, and the result multiplies onto the
+          scene. */}
+      {sceneVignette && (
+        <div
+          aria-hidden="true"
+          style={{ ...sceneVignette, inset: 0, pointerEvents: 'none', position: 'absolute' }}
+        />
       )}
-      {/* Last child so it paints over every asset layer, including the coat
-          (flush to the bottom edge) and head, which otherwise cover an
-          inset box-shadow set on this container itself. */}
-      <div
-        aria-hidden="true"
-        style={{
-          boxShadow: `inset 0 0 0 1px ${PANEL_BORDER_COLOR}`,
-          inset: 0,
-          pointerEvents: 'none',
-          position: 'absolute',
-        }}
-      />
     </div>
   );
 };

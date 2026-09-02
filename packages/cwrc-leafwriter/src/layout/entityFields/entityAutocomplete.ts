@@ -5,10 +5,15 @@
 
 import { chineseNameOf, familyAndGivenOf } from './entityDisplay';
 import type { EntitySummary } from './entitySummary';
+import type { MentionContext } from './mentionContext';
+import { isCharacterOnlyTranslationTarget } from './mentionContext';
+import { autoRomanize, autoRomanizeForKind } from '../../utilities/romanize';
 
 export interface EntityAutocompleteCandidate {
   id: string;
   kind: string;
+  /** Manifest row when this candidate maps to a specific source mention. */
+  mentionIndex?: number;
   /** Primary label shown in the popup. */
   label: string;
   /** Extra line under the label (kind · key). */
@@ -83,6 +88,54 @@ export const candidateFromEntity = (
     label,
     detail: `${entity.kind} · ${entity.id}`,
     aliases: [...aliases],
+  };
+};
+
+/** Build a mention-shaped candidate with preview label and surface-aware aliases. */
+export const candidateFromMention = (
+  mention: MentionContext,
+  entity: EntitySummary,
+  previewLabel: string,
+  targetLang?: string | null,
+): EntityAutocompleteCandidate => {
+  const aliases = new Set<string>();
+  addAlias(aliases, mention.surface);
+  addAlias(aliases, previewLabel);
+  addAlias(aliases, entity.romanizedName);
+  addAlias(aliases, entity.primaryName);
+
+  if (entity.kind === 'person') {
+    const { family, given } = familyAndGivenOf(entity);
+    addAlias(aliases, family);
+    addAlias(aliases, given);
+    if (family && given) addAlias(aliases, `${family} ${given}`);
+    if (mention.role === 'partial-given') {
+      addAlias(aliases, autoRomanize(mention.surface, targetLang, { concatenate: true }) ?? '');
+    }
+    if (mention.role === 'courtesy') {
+      addAlias(aliases, autoRomanize(mention.surface, targetLang) ?? '');
+    }
+  } else {
+    addAlias(aliases, autoRomanizeForKind(mention.surface, targetLang, mention.kind) ?? '');
+  }
+
+  const cjkTarget = isCharacterOnlyTranslationTarget(targetLang);
+  const aliasList = [...aliases].filter(Boolean);
+  if (cjkTarget) {
+    aliasList.sort((a, b) => {
+      const aCjk = isMostlyCjk(a) ? 1 : 0;
+      const bCjk = isMostlyCjk(b) ? 1 : 0;
+      return bCjk - aCjk;
+    });
+  }
+
+  return {
+    id: entity.id,
+    kind: entity.kind,
+    mentionIndex: mention.index,
+    label: previewLabel,
+    detail: `${mention.role} · ${mention.surface || entity.id}`,
+    aliases: aliasList,
   };
 };
 

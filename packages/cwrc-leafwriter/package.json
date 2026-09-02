@@ -95,6 +95,7 @@
     "mui-modal-provider": "^2.4.6",
     "nanoid": "^5.1.6",
     "notistack": "^3.0.2",
+    "opencc-js": "^1.4.2",
     "openseadragon": "^6.0.1",
     "overmind": "28.0.4",
     "overmind-react": "29.0.6",

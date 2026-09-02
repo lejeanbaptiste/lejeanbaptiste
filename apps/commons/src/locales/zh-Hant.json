@@ -80,9 +80,9 @@
     "cookie consent": {
       "consent_banner": {
         "let_me_choose": "讓我選擇",
-        "line1": "We and selected third parties use cookies or similar technologies for technical purposes and, with your consent, for measurement. Denying consent may make related features unavailable.",
-        "line2": "You can freely give, deny, or withdraw your consent at any time.",
-        "line3": "Use the 'Accept' button to consent to the use of such technologies. Use the 'Reject' button or close this notice to continue without accepting.",
+        "line1": "我們與選定的第三方會為技術用途使用 Cookie 或類似技術，並在取得您的同意後用於測量。拒絕同意可能導致相關功能無法使用。",
+        "line2": "您可以隨時自由給予、拒絕或撤回同意。",
+        "line3": "請使用「接受」按鈕同意使用此類技術。若要在不接受的情況下繼續，請使用「拒絕」按鈕或關閉此通知。",
         "we_use_cookies": "我們使用 Cookie"
       },
       "privacy_settings": "隱私設定",
@@ -91,30 +91,30 @@
         "AUTH_SESSION_description": "儲存使用者登入與工作階段資料。",
         "_ga_description": "Google Analytics 用於收集使用者造訪網站的次數，以及首次和最近一次造訪的日期。",
         "basic_interactions_description": "這些追蹤器用於 LEAF-Writer Commons 的基本功能，包括將使用者識別碼（例如 GitHub 帳戶名稱或 ORCID）插入建立的 Web 註解中。它支援透過使用者的 Git 儲存庫載入、儲存及分享檔案。沒有這些 Cookie，LEAF-Writer Commons 只能提供有限功能。",
-        "basic_interactions_description2": "If you log in using your GitHub account, GitHub will store several cookies with expiration dates varying from your current session to 1 year. Since the number and names of cookies may change, we invite you to check the",
+        "basic_interactions_description2": "如果您使用 GitHub 帳戶登入，GitHub 會儲存數個 Cookie，其到期時間可能從目前工作階段到 1 年不等。由於 Cookie 的數量和名稱可能變更，請查看",
         "cc_cookie_description": "儲存 Cookie 同意偏好。",
         "consent_preferences": "同意偏好設定",
         "cookie_expiration_time": "{{value}} {{period}}",
         "cookie_usage": "Cookie 使用情況",
-        "cookie_usage_description": "This panel allows you to customize your consent preferences for the usage of third-party services and cookie technology to help us achieve the features and activities described below. You may review and change your choices at any time. Please be aware that denying consent for a particular purpose may make related features unavailable. For more details relative to cookies and other sensitive data, please read the",
+        "cookie_usage_description": "此面板可讓您自訂使用第三方服務和 Cookie 技術的同意偏好，以使用下方所述的功能與活動。您可以隨時檢閱並變更選擇。請注意，拒絕某項用途的同意可能導致相關功能無法使用。如需 Cookie 和其他敏感資料的詳細資訊，請閱讀",
         "domain": "網域",
         "expiration": "到期時間",
         "indefinitely_until_user_sign_out": "直到使用者登出為止",
         "list of cookies used by GitHub": "GitHub 使用的 Cookie 清單",
-        "lw_description": "Stores usage data on the browser's local storage: preferred identity and storage providers, preferred language and colour theme, recent repositories and documents, XML schemas, etc.",
+        "lw_description": "將使用資料儲存在瀏覽器的本機儲存空間：偏好的身分與儲存提供者、偏好的語言與色彩主題、最近使用的儲存庫與文件、XML 結構等。",
         "measurement": "測量",
-        "measurement_description": "These cookies collect information about how you use the website, which pages you visit, and which links you click. All the data is anonymized and cannot be used to identify you.",
-        "more_information_description": "For any queries about our policy on cookies and your choices.",
+        "measurement_description": "這些 Cookie 會收集您使用網站的方式、造訪的頁面和點選的連結等資訊。所有資料皆經匿名化，無法用於識別您的身分。",
+        "more_information_description": "如對我們的 Cookie 政策和您的選擇有任何疑問，請參閱相關資訊。",
         "strictly_necessary": "絕對必要",
-        "strictly_necessary_description": "Necessary cookies are required to make a website usable by enabling basic functions such as page navigation and access to secure areas. The website cannot function properly without these cookies. Third-party error-monitoring service does not use cookies, but is essential for the proper use of this site."
+        "strictly_necessary_description": "必要 Cookie 可啟用頁面導覽和存取安全區域等基本功能，網站因此才能使用。沒有這些 Cookie，網站將無法正常運作。第三方錯誤監控服務不使用 Cookie，但對本網站的正常使用至關重要。"
       },
       "warning": {
-        "must_accept_cookies_message": "You must accept our cookie policies to be able to sign in. Click on the shield icon at the top.",
-        "remove_consent_basic_interactions_message": "<0>Removing consent for</0> <1>basic interactions & functionalities</1> <2>will sign you out.</2>"
+        "must_accept_cookies_message": "您必須接受 Cookie 政策才能登入。請點擊上方的盾牌圖示。",
+        "remove_consent_basic_interactions_message": "<0>撤回</0> <1>基本互動與功能</1> <2>的同意將使您登出。</2>"
       }
     },
     "error": {
-      "message404": "You either tried some shady route, or you came here by mistake. Go back to the <1>main page.</1>",
+      "message404": "您可能嘗試了無效的路徑，或是不小心來到這裡。請返回<1>首頁。</1>",
       "page_not_found": "找不到頁面",
       "illustration_from": "插圖來源",
       "page_not_Found": "找不到頁面",
@@ -128,7 +128,7 @@
         "or send by email to": "或透過電子郵件傳送至",
         "requests": "請求"
       },
-      "subtitle": "The XML & RDF online editor of the Linked Editing Academic Framework",
+      "subtitle": "Linked Editing Academic Framework 的 XML 與 RDF 線上編輯器",
       "team": "團隊"
     },
     "dialogs": {
@@ -143,13 +143,13 @@
         "rtf document": "RTF 文件（.rtf）",
         "markdown document": "Markdown 文件（.md）",
         "text document": "文字文件（.txt）",
-        "include translations": "Include translations inserted after paragraphs",
+        "include translations": "包含插入段落後的翻譯",
         "translation language": "翻譯語言",
         "include bibliography": "包含書目（參考文獻）",
         "message": {
-          "LEAF-Writer needs to convert it to be able to use it": "LEAF-Writer needs to convert it to be able to use it.",
+          "LEAF-Writer needs to convert it to be able to use it": "LEAF-Writer 必須轉換此文件才能使用。",
           "this_looks_like_a": "這看起來像一個 ",
-          "intercept_load_file_format": "<0>This looks like a </0> <1>{{format}}</1> <2>document.</2>"
+          "intercept_load_file_format": "<0>這看起來像是 </0><1>{{format}}</1><2> 文件。</2>"
         },
         "try to open it without converting": "嘗試不轉換直接開啟"
       },
@@ -163,17 +163,17 @@
         "zh-Hant": "繁體中文"
       },
       "messages": {
-        "annotation_need_space": "Annotating documents requires more space.",
+        "annotation_need_space": "為文件加上註解需要更多空間。",
         "link_to_storage_provider_instructions": "您可以點擊螢幕右上角的使用者圖示，然後從儲存提供者清單中選取選項。",
-        "rotate_phone": "Please rotate your phone or open LEAF-Writer on a large screen.",
+        "rotate_phone": "請旋轉手機，或在較大的螢幕上開啟 LEAF-Writer。",
         "service not available at the moment": "服務目前無法使用",
         "try_again": "再試一次",
         "unable_to_upload file": "無法上傳檔案",
-        "you_must_sign_in_to_open_and_save_document_from_the_cloud": "You must sign in to open and save documents from the cloud",
-        "you_must_sign_in_witn_a_storage_provider_to_open_and_save_document_from_the_cloud": "You must sign in witn a storage provider to open and save document from the cloud"
+        "you_must_sign_in_to_open_and_save_document_from_the_cloud": "您必須登入才能從雲端開啟和儲存文件",
+        "you_must_sign_in_witn_a_storage_provider_to_open_and_save_document_from_the_cloud": "您必須登入儲存提供者，才能從雲端開啟和儲存文件"
       },
       "messsages": {
-        "authentication_server_is_currently_unavailable": "Authentication server is currently unavailable"
+        "authentication_server_is_currently_unavailable": "驗證伺服器目前無法使用"
       },
       "on this page": "本頁",
       "profile": {

@@ -24,6 +24,10 @@ describe('pluginSupportsChinese', () => {
 describe('checkChineseProjectAssets', () => {
   const originalApi = window.electronAPI;
 
+  beforeEach(() => {
+    window.localStorage.removeItem('ljb.assets.openccScript.v1');
+  });
+
   afterEach(() => {
     window.electronAPI = originalApi;
   });
@@ -97,6 +101,6 @@ describe('checkChineseProjectAssets', () => {
     });
 
     const result = await checkChineseProjectAssets();
-    expect(result.missingAssets).toEqual(['authorityPacks', 'mapTiles']);
+    expect(result.missingAssets).toEqual(['authorityPacks', 'mapTiles', 'scriptNormalization']);
   });
 });

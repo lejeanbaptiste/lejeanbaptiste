@@ -10,44 +10,26 @@ import {
   type EntityTranslationEntry,
   type SqlitePanelLike,
 } from './entitySummary';
+import {
+  resolveMentionRole,
+  type MentionContext,
+  type MentionPlaceholderRole,
+  type MentionRole,
+} from './mentionContext';
+import {
+  SOURCE_UNIT_ENTITY_TAGS,
+  TAG_TO_KIND,
+  elementsByLocalName,
+  normalizeSurface,
+} from './mentionCollectShared';
+
+export type { MentionContext };
 
 export interface SourceUnitEntityHit {
   key: string;
   kind: string;
   surface: string;
 }
-
-const TAG_TO_KIND: Record<string, string> = {
-  persName: 'person',
-  placeName: 'place',
-  orgName: 'org',
-  title: 'work',
-  bibl: 'work',
-  roleName: 'office',
-  officeName: 'office',
-};
-
-/** TEI tags collected / blinded for the AI translation entity pipeline. */
-export const SOURCE_UNIT_ENTITY_TAGS = Object.keys(TAG_TO_KIND);
-
-const TEI_NS = 'http://www.tei-c.org/ns/1.0';
-
-const elementsByLocalName = (root: Document | Element, localName: string): Element[] => {
-  const namespaced =
-    'getElementsByTagNameNS' in root
-      ? Array.from(root.getElementsByTagNameNS(TEI_NS, localName))
-      : [];
-  const plain = Array.from(root.getElementsByTagName(localName));
-  const seen = new Set<Element>();
-  const result: Element[] = [];
-  for (const el of [...namespaced, ...plain]) {
-    if (!seen.has(el)) {
-      seen.add(el);
-      result.push(el);
-    }
-  }
-  return result;
-};
 
 /**
  * Collect unique keyed entity mentions inside the source alignment unit
@@ -279,40 +261,50 @@ export const searchEntitiesForPicker = async (
 /**
  * Blind keyed (and leftover unkeyed) entity tags for the AI translation pass.
  *
- * Norbert `name[@type=personWrapper]`: pack mechanically as
- *   `{{holding:OFFICE}} {{entity:PERSON}}`
- * so the model sees “title held + person”, not two anonymous offices.
- *
- * A `roleName` immediately after `為` becomes `{{as:…}}` (the office appointed
- * *to*), distinct from `{{holding:…}}` (office already held).
- *
- * `nobleTitle` (and placeName/roleName inside it) is left as plain text for the
- * model to translate — we do not blind those spans yet.
- *
- * Other keyed spans → `{{entity:KEY}}`. Leftover unkeyed entity tags →
- * `{{opaque:N}}` / `{{as:opaque:N}}`.
- *
- * Adjacent placeholders get a single space (`}} {{`); runs of spaces collapse.
+ * Keyed spans become `{{mention:N}}` (or `{{holding:N}}` / `{{as:N}}` for offices).
+ * The returned `mentions` manifest drives mention-faithful substitution.
  */
 export const replaceEntitiesWithPlaceholdersInSourceXml = (
   sourceUnitXml: string,
   knownKeys: ReadonlySet<string>,
-  /**
-   * First opaque index to hand out. Notes are blinded in independent calls
-   * after the main unit — pass the main call's `opaques.length` (running
-   * total) here so a note's `{{opaque:N}}` tokens never collide with the
-   * main text's.
-   */
   opaqueStartIndex = 0,
-): { xml: string; opaques: OpaqueEntityHit[] } => {
-  if (!sourceUnitXml.trim()) return { xml: sourceUnitXml, opaques: [] };
+): { xml: string; opaques: OpaqueEntityHit[]; mentions: MentionContext[] } => {
+  if (!sourceUnitXml.trim()) return { xml: sourceUnitXml, opaques: [], mentions: [] };
   const doc = new DOMParser().parseFromString(sourceUnitXml, 'application/xml');
   if (doc.getElementsByTagName('parsererror').length > 0) {
-    return { xml: sourceUnitXml, opaques: [] };
+    return { xml: sourceUnitXml, opaques: [], mentions: [] };
   }
 
   const opaques: OpaqueEntityHit[] = [];
+  const mentions: MentionContext[] = [];
   const tagSet = new Set(SOURCE_UNIT_ENTITY_TAGS);
+
+  const pushMention = (
+    el: Element,
+    key: string,
+    placeholderRole: MentionPlaceholderRole,
+  ): number => {
+    const tag = el.localName || el.tagName.toLowerCase();
+    const index = mentions.length;
+    const draft = {
+      index,
+      key,
+      kind: TAG_TO_KIND[tag] ?? 'unknown',
+      surface: normalizeSurface(el.textContent ?? ''),
+      teiTag: tag,
+      teiType: el.getAttribute('type')?.trim() || null,
+      role: 'full-name' as MentionRole,
+      placeholderRole,
+    };
+    mentions.push({ ...draft, role: resolveMentionRole(draft, null) });
+    return index;
+  };
+
+  const mentionToken = (index: number, placeholderRole: MentionPlaceholderRole): string => {
+    if (placeholderRole === 'holding') return `{{holding:${index}}}`;
+    if (placeholderRole === 'as') return `{{as:${index}}}`;
+    return `{{mention:${index}}}`;
+  };
 
   const pushOpaque = (kind: string, surface: string): number => {
     const index = opaques.length + opaqueStartIndex;
@@ -322,8 +314,12 @@ export const replaceEntitiesWithPlaceholdersInSourceXml = (
 
   const officePlaceholder = (el: Element, role: 'holding' | 'as' | 'entity'): string => {
     const key = el.getAttribute('key')?.trim();
-    if (key && knownKeys.has(key)) return `{{${role}:${key}}}`;
-    const surface = (el.textContent ?? '').replace(/\s+/g, ' ').trim();
+    if (key && knownKeys.has(key)) {
+      const placeholderRole: MentionPlaceholderRole =
+        role === 'holding' ? 'holding' : role === 'as' ? 'as' : 'entity';
+      return mentionToken(pushMention(el, key, placeholderRole), placeholderRole);
+    }
+    const surface = normalizeSurface(el.textContent ?? '');
     if (!surface) return '';
     const index = pushOpaque(
       TAG_TO_KIND[el.localName || el.tagName.toLowerCase()] ?? 'office',
@@ -393,7 +389,7 @@ export const replaceEntitiesWithPlaceholdersInSourceXml = (
       if (tag === 'persName') {
         const key = el.getAttribute('key')?.trim() || wrapperKey;
         if (key && (knownKeys.has(key) || key === wrapperKey)) {
-          chunks.push(`{{entity:${key}}}`);
+          chunks.push(mentionToken(pushMention(el, key, 'entity'), 'entity'));
         } else {
           const surface = (el.textContent ?? '').replace(/\s+/g, ' ').trim();
           if (surface) {
@@ -425,18 +421,30 @@ export const replaceEntitiesWithPlaceholdersInSourceXml = (
   };
 
   const toReplace: { el: Element; token: string }[] = [];
-  if (knownKeys.size > 0) {
-    for (const tag of SOURCE_UNIT_ENTITY_TAGS) {
-      for (const el of elementsByLocalName(doc, tag)) {
-        const key = el.getAttribute('key')?.trim();
-        if (!key || !knownKeys.has(key)) continue;
-        if (isInsideNobleTitle(el)) continue;
-        if (hasKeyedEntityAncestor(el)) continue;
+  const collectKeyedInDocumentOrder = (node: Node) => {
+    if (node.nodeType !== Node.ELEMENT_NODE) return;
+    const el = node as Element;
+    const tag = el.localName || el.tagName.toLowerCase();
+    if (tagSet.has(tag)) {
+      const key = el.getAttribute('key')?.trim();
+      if (
+        key &&
+        knownKeys.has(key) &&
+        !isInsideNobleTitle(el) &&
+        !hasKeyedEntityAncestor(el)
+      ) {
         const isOffice = tag === 'roleName' || tag === 'officeName';
-        const role = isOffice && isAfterWei(el) ? 'as' : 'entity';
-        toReplace.push({ el, token: `{{${role}:${key}}}` });
+        const placeholderRole: MentionPlaceholderRole =
+          isOffice && isAfterWei(el) ? 'as' : 'entity';
+        const index = pushMention(el, key, placeholderRole);
+        toReplace.push({ el, token: mentionToken(index, placeholderRole) });
       }
     }
+    for (const child of Array.from(el.childNodes)) collectKeyedInDocumentOrder(child);
+  };
+
+  if (knownKeys.size > 0) {
+    collectKeyedInDocumentOrder(doc.documentElement);
   }
 
   for (const { el, token } of toReplace) {
@@ -478,10 +486,11 @@ export const replaceEntitiesWithPlaceholdersInSourceXml = (
   }
 
   const root = doc.documentElement;
-  if (!root) return { xml: sourceUnitXml, opaques: [] };
+  if (!root) return { xml: sourceUnitXml, opaques: [], mentions: [] };
   return {
     xml: normalizePlaceholderSpacing(new XMLSerializer().serializeToString(root)),
     opaques,
+    mentions,
   };
 };
 

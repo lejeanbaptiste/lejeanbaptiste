@@ -223,7 +223,7 @@
         "keep_editing": "Weiter bearbeiten",
         "merge": "Zusammenführen",
         "merge_done": "Entitätsdatenbank zusammengeführt: {{imported}} hinzugefügt, {{reconciled}} aktualisiert.",
-        "merge_done_with_conflicts": "Merged entity database: {{imported}} added, {{reconciled}} updated, {{conflicts}} left as your version (concurrent edits) — check entities.xml.",
+      "merge_done_with_conflicts": "Entitätsdatenbank zusammengeführt: {{imported}} hinzugefügt, {{reconciled}} aktualisiert, {{conflicts}} als Ihre Version beibehalten (gleichzeitige Änderungen) — prüfen Sie entities.xml.",
         "merge_failed": "Entitätsdatenbank konnte nicht zusammengeführt werden. Laden Sie neu oder bearbeiten Sie weiter."
       },
       "translation_links_restored_one": "{{count}} Übersetzungsverknüpfung nach externer Änderung wiederhergestellt",
@@ -867,9 +867,9 @@
       "orphan_keys": {
         "title": "Nicht aufgelöste Entitätsschlüssel gefunden",
         "message": "{{keys}} Tag-Schlüssel in {{files}} Datei(en) entsprechen keiner Entität in dieser Datenbank mehr.",
-        "linked_detail": "This project is linked to a central database. If a matching project-database update is still arriving from your sync drive, leave the keys intact and reopen after sync settles.\n\nOtherwise:\n• Ingest stubs — recreate minimal entities from the tagged names in the corpus (keeps the same ids; authority links cannot be restored from the corpus alone).\n• Strip orphan keys — remove the dangling ids; tags stay.{{strayNote}}",
-        "local_detail": "This usually means the database was rolled back or hand-edited.\n\n• Ingest stubs — recreate minimal entities from the tagged names (keeps the same ids; no authority metadata).\n• Strip orphan keys — remove the dangling ids; tags stay.\n• Leave intact — restore from Time Machine instead.{{strayNote}}",
-        "stray_note": "\n\n{{count}} file(s) appear to belong to a different project database and were left untouched.",
+        "linked_detail": "Dieses Projekt ist mit einer zentralen Datenbank verknüpft. Wenn noch eine passende Aktualisierung der Projektdatenbank über Ihr Synchronisierungslaufwerk eintrifft, lassen Sie die Schlüssel unverändert und öffnen Sie das Projekt nach Abschluss der Synchronisierung erneut.\n\nAndernfalls:\n• Stub-Entitäten übernehmen — minimale Entitäten aus den markierten Namen im Korpus neu erstellen (IDs bleiben erhalten; Autoritätsverknüpfungen können aus dem Korpus allein nicht wiederhergestellt werden).\n• Verwaiste Schlüssel entfernen — die nicht mehr gültigen IDs löschen; Tags bleiben erhalten.{{strayNote}}",
+        "local_detail": "Dies bedeutet normalerweise, dass die Datenbank zurückgesetzt oder manuell bearbeitet wurde.\n\n• Stub-Entitäten übernehmen — minimale Entitäten aus den markierten Namen neu erstellen (IDs bleiben erhalten; keine Autoritätsmetadaten).\n• Verwaiste Schlüssel entfernen — die nicht mehr gültigen IDs löschen; Tags bleiben erhalten.\n• Unverändert lassen — stattdessen aus der Zeitmaschine wiederherstellen.{{strayNote}}",
+        "stray_note": "\n\n{{count}} Datei(en) scheinen zu einer anderen Projektdatenbank zu gehören und wurden unverändert gelassen.",
         "leave_intact": "Unverändert lassen",
         "ingest": "Stub-Entitäten übernehmen",
         "ok": "OK",
@@ -890,7 +890,7 @@
         "folder_label": "Datenbankordner",
         "folder_placeholder": "Integrierten Standard verwenden…",
         "choose": "Cloud-synchronisierten Ordner auswählen…",
-        "note": "Optional. A blank folder is fine — Le Jean-Baptiste will set the database up. Already have a database from another machine? Choose that folder to use it.",
+        "note": "Optional. Ein leerer Ordner ist ausreichend — Le Jean-Baptiste richtet die Datenbank ein. Haben Sie bereits eine Datenbank von einem anderen Rechner? Wählen Sie diesen Ordner aus, um sie zu verwenden.",
         "done": "Fertig"
       },
       "tagging": {
@@ -945,12 +945,12 @@
         "create_db_failed_title": "Entitätsdatenbank konnte nicht erstellt werden",
         "create_here": "Hier erstellen",
         "create_here_title": "Datenbank in diesem Ordner erstellen?",
-        "folder_is_project_message": "This folder is already a Le Jean-Baptiste project. Choose a different folder for your entity database — you can keep it as the parent of your projects, just not a project folder itself.",
+        "folder_is_project_message": "Dieser Ordner ist bereits ein Le-Jean-Baptiste-Projekt. Wählen Sie einen anderen Ordner für Ihre Entitätsdatenbank — er kann übergeordnet zu Ihren Projekten liegen, darf aber selbst kein Projektordner sein.",
         "folder_is_project_title": "Dieser Ordner ist ein Projekt",
         "ok": "OK",
-        "parent_has_db_detail": "If you meant that shared database, choose the parent instead. Otherwise Le Jean-Baptiste can create a new empty database in:",
+        "parent_has_db_detail": "Wenn Sie diese gemeinsam genutzte Datenbank meinten, wählen Sie stattdessen den übergeordneten Ordner. Andernfalls kann Le Jean-Baptiste eine neue leere Datenbank erstellen in:",
         "parent_has_db_intro": "Der übergeordnete Ordner enthält bereits eine Entitätsdatenbank:",
-        "save_folder_failed_session": "The folder was set for this session, but saving it failed and it may not persist. Try again, or check that Le Jean-Baptiste can write to its app data folder.",
+        "save_folder_failed_session": "Der Ordner wurde für diese Sitzung festgelegt, konnte aber nicht gespeichert werden und bleibt möglicherweise nicht erhalten. Versuchen Sie es erneut oder prüfen Sie, ob Le Jean-Baptiste in seinen App-Datenordner schreiben kann.",
         "save_folder_failed_title": "Entitätsdatenbankordner konnte nicht gespeichert werden",
         "save_parent_folder_failed": "Der übergeordnete Ordner konnte nicht gespeichert werden.",
         "use_parent_folder": "Übergeordneten Ordner verwenden"
@@ -958,7 +958,7 @@
     },
     "dialogs": {
       "importExport": {
-        "document": "document.",
+        "document": "Dokument.",
         "Learn more about importing files": "Mehr über den Import von Dateien erfahren",
         "convert and open": "konvertieren und öffnen",
         "convert document": "Dokument konvertieren",

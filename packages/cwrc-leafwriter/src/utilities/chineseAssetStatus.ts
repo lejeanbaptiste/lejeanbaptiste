@@ -1,14 +1,17 @@
+import { isScriptNormalizationInstalled } from '../layout/entityFields/openccScriptNormalize';
+
 /**
  * Check which assets are missing for a Chinese-language project.
  * Returns a list of missing asset types that should be downloaded.
  */
-export type MissingAssetType = 'authorityPacks' | 'mapTiles' | 'plugins';
+export type MissingAssetType = 'authorityPacks' | 'mapTiles' | 'plugins' | 'scriptNormalization';
 
 export interface ChineseProjectAssets {
   missingAssets: MissingAssetType[];
   authorityPacksInstalled: boolean;
   mapTilesInstalled: boolean;
   pluginsInstalled: boolean;
+  scriptNormalizationInstalled: boolean;
 }
 
 /**
@@ -42,6 +45,7 @@ export async function checkChineseProjectAssets(): Promise<ChineseProjectAssets>
     authorityPacksInstalled: false,
     mapTilesInstalled: false,
     pluginsInstalled: false,
+    scriptNormalizationInstalled: isScriptNormalizationInstalled(),
   };
 
   try {
@@ -87,6 +91,10 @@ export async function checkChineseProjectAssets(): Promise<ChineseProjectAssets>
     }
   } catch {
     result.missingAssets.push('plugins');
+  }
+
+  if (!result.scriptNormalizationInstalled) {
+    result.missingAssets.push('scriptNormalization');
   }
 
   return result;

@@ -83,15 +83,34 @@ import {
 } from './entityFields/aiPlaceholderGuard';
 import {
   collectEntitiesFromSourceUnitXml,
-  collectSourceUnitEntities,
   fetchEntitySummary,
   replaceEntitiesWithPlaceholdersInSourceXml,
   searchEntitiesForPicker,
   substituteOpaquePlaceholders,
   type EntityPickerSearchHit,
   type OpaqueEntityHit,
-  type SourceUnitEntityHit,
 } from './entityFields/sourceUnitEntities';
+import {
+  collectMentionsFromSourceUnitXml,
+  resolveMentionsWithEntities,
+  isCharacterOnlyTranslationTarget,
+  deriveDisplaySpec,
+  type MentionContext,
+} from './entityFields/mentionContext';
+import {
+  substituteMentionPlaceholders,
+  substituteEntityPlaceholders,
+} from './entityFields/mentionSubstitute';
+import { dateFormatSettingsForLang } from './entityFields/dateFormatSettings';
+import {
+  buildCjkMentionParts,
+  buildWesternMentionParts,
+  mentionPartsToPlainPreview,
+} from './entityFields/mentionRender';
+import {
+  countPriorEntityRefsInDocument,
+  fileOccurrenceIndexForUnitInsert,
+} from './entityFields/fileWideOccurrence';
 import {
   collectDatesFromSourceUnitXml,
   collectSourceUnitDates,
@@ -117,7 +136,7 @@ import { entityStoreFromDesktop } from '../autoTagging/entityStore';
 import { clearOfficeGlossIndexCaches } from '../autoTagging/officeGlossLookup';
 import {
   buildSuggestionsAtCaret,
-  candidateFromEntity,
+  candidateFromMention,
   caretAnchorPosition,
   type EntityAutocompleteCandidate,
   type EntityAutocompleteSuggestion,
@@ -129,6 +148,7 @@ import {
   ENTITY_REF_TYPE,
   ENTITY_WORK_STYLE_ATTR,
   createEntityFieldElement,
+  createMentionFieldElement,
   prepareAtomicEntityFields,
   recalculateAllEntityFieldsInRoot,
   recalculateEntityFieldsInRoot,
@@ -584,7 +604,7 @@ interface BlindedUnitTranslationRequest {
   alignmentUnit: 'div' | 'p' | 'ab' | 'note';
   sourceUnitXml: string;
   targetLanguage: string;
-  entities?: { id: string; kind: string }[];
+  mentions?: { index: number; kind: string }[];
   dates?: { index: number }[];
 }
 
@@ -662,95 +682,10 @@ const applyMarkdownCleanupToFragment = (fragmentXml: string): string => {
     .join('');
 };
 
-const ENTITY_PLACEHOLDER_RE = /\{\{(?:entity|holding|as):(?!opaque:)([^{}]+)\}\}/g;
 const DATE_PLACEHOLDER_RE = /\{\{date:(\d+)\}\}/g;
 
-/**
- * Replace every `{{entity:ID}}` placeholder the AI emitted with a real atomic
- * entity field (same element `insertEntityMention` builds by hand), so the
- * visible name/romanization always comes from the entity DB, never the LLM.
- * Occurrence index is a per-entity counter in document order, matching
- * `recalculateEntityFieldsInRoot`'s convention (first mention gets full form).
- */
-export const substituteEntityPlaceholders = (
-  fragmentXml: string,
-  entities: Map<string, EntitySummary>,
-  lang?: string | null,
-): string => {
-  const cleanedFragment = stripLeadingOfficePrepositionsFromText(
-    normalizeAiPlaceholders(fragmentXml),
-  );
-  if (
-    !cleanedFragment.includes('{{entity:') &&
-    !cleanedFragment.includes('{{holding:') &&
-    !cleanedFragment.includes('{{as:')
-  ) {
-    return cleanedFragment;
-  }
-
-  const wrapped = `<fragment>${cleanedFragment}</fragment>`;
-  const doc = new DOMParser().parseFromString(wrapped, 'text/html');
-  const root = doc.body.querySelector('fragment') ?? doc.body;
-
-  const occurrenceCounts = new Map<string, number>();
-  const textNodes: Text[] = [];
-  const walker = doc.createTreeWalker(root, NodeFilter.SHOW_TEXT);
-  let node: Node | null;
-
-  while ((node = walker.nextNode())) {
-    const content = node.textContent ?? '';
-    if (
-      content.includes('{{entity:') ||
-      content.includes('{{holding:') ||
-      content.includes('{{as:')
-    ) {
-      textNodes.push(node as Text);
-    }
-  }
-
-  for (const textNode of textNodes) {
-    const text = stripLeadingOfficePrepositionsFromText(
-      normalizeAiPlaceholders(textNode.textContent ?? ''),
-    );
-    ENTITY_PLACEHOLDER_RE.lastIndex = 0;
-    let lastIndex = 0;
-    let match: RegExpExecArray | null;
-    const replacement = doc.createDocumentFragment();
-    let sawMatch = false;
-
-    while ((match = ENTITY_PLACEHOLDER_RE.exec(text))) {
-      sawMatch = true;
-      if (match.index > lastIndex) {
-        replacement.appendChild(doc.createTextNode(text.slice(lastIndex, match.index)));
-      }
-      const entityId = match[1]!.trim();
-      const entity = entities.get(entityId);
-      if (entity) {
-        const nextOccurrence = (occurrenceCounts.get(entityId) ?? 0) + 1;
-        occurrenceCounts.set(entityId, nextOccurrence);
-        const field = createEntityFieldElement(
-          entity,
-          nextOccurrence,
-          EMPTY_DISPLAY_SPEC,
-          undefined,
-          lang,
-        );
-        replacement.appendChild(field);
-      } else {
-        console.warn('[translation] AI entity placeholder had no matching entity:', entityId);
-        replacement.appendChild(doc.createTextNode(match[0]));
-      }
-      lastIndex = ENTITY_PLACEHOLDER_RE.lastIndex;
-    }
-    if (!sawMatch) continue;
-    if (lastIndex < text.length) {
-      replacement.appendChild(doc.createTextNode(text.slice(lastIndex)));
-    }
-    textNode.parentNode?.replaceChild(replacement, textNode);
-  }
-
-  return root.innerHTML;
-};
+/** @see mentionSubstitute.substituteEntityPlaceholders */
+export { substituteEntityPlaceholders, substituteMentionPlaceholders } from './entityFields/mentionSubstitute';
 
 /**
  * Replace every `{{date:N}}` placeholder with an atomic `ref[type="ljb-date"]`
@@ -1029,7 +964,8 @@ export const TranslationPane = () => {
     message: string;
     severity: 'error' | 'info' | 'success';
   } | null>(null);
-  const [generating, setGenerating] = useState(false);
+  const [generatingUnitId, setGeneratingUnitId] = useState<string | null>(null);
+  const generating = generatingUnitId !== null;
   const [languageState, setLanguageState] = useState<TranslationLanguageState | null>(() =>
     getTranslationLanguageState(),
   );
@@ -1051,7 +987,7 @@ export const TranslationPane = () => {
   const [zoteroMenuAnchor, setZoteroMenuAnchor] = useState<HTMLElement | null>(null);
   const [aiMenuAnchor, setAiMenuAnchor] = useState<HTMLElement | null>(null);
   const [entityMenuAnchor, setEntityMenuAnchor] = useState<HTMLElement | null>(null);
-  const [sourceEntities, setSourceEntities] = useState<SourceUnitEntityHit[]>([]);
+  const [sourceMentions, setSourceMentions] = useState<MentionContext[]>([]);
   const [entityPickerQuery, setEntityPickerQuery] = useState('');
   const [entityPickerResults, setEntityPickerResults] = useState<EntityPickerSearchHit[]>([]);
   const [entityPickerSearching, setEntityPickerSearching] = useState(false);
@@ -1066,6 +1002,7 @@ export const TranslationPane = () => {
   entityAcCandidatesRef.current = entityAcCandidates;
   /** Maps a date candidate's synthetic id back to its source-unit hit (not persisted anywhere). */
   const dateAcHitsRef = useRef<Map<string, SourceUnitDateHit>>(new Map());
+  const mentionManifestRef = useRef<MentionContext[]>([]);
   const entityAcSuggestionsRef = useRef<EntityAutocompleteSuggestion[]>([]);
   entityAcSuggestionsRef.current = entityAcSuggestions;
   const entityAcIndexRef = useRef(0);
@@ -1085,6 +1022,7 @@ export const TranslationPane = () => {
   const savedRangeRef = useRef<Range | null>(null);
   const savedFootnoteRangeRef = useRef<{ index: number; range: Range } | null>(null);
   const zoteroStatusTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const aiStatusDismissTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const lastCitationTargetRef = useRef<'body' | 'footnote'>('body');
   const focusFootnoteIndexRef = useRef<number | null>(null);
   const [linkDialogOpen, setLinkDialogOpen] = useState(false);
@@ -1204,9 +1142,25 @@ export const TranslationPane = () => {
     () => () => {
       if (blurTimeoutRef.current) clearTimeout(blurTimeoutRef.current);
       if (zoteroStatusTimeoutRef.current) clearTimeout(zoteroStatusTimeoutRef.current);
+      if (aiStatusDismissTimeoutRef.current) clearTimeout(aiStatusDismissTimeoutRef.current);
     },
     [],
   );
+
+  // Drop focus from the rich editor while its unit is being AI-translated.
+  useEffect(() => {
+    if (!generatingUnitId || generatingUnitId !== selectedUnitId) return;
+    editableRef.current?.blur();
+  }, [generatingUnitId, selectedUnitId]);
+
+  // Success/error banners are per file — drop them when the user switches source or companion.
+  useEffect(() => {
+    if (aiStatusDismissTimeoutRef.current) {
+      clearTimeout(aiStatusDismissTimeoutRef.current);
+      aiStatusDismissTimeoutRef.current = null;
+    }
+    setAiStatus(null);
+  }, [sourcePath, translationPath]);
 
   // A Find hit inside this unit's content requests a highlight. If the content is already
   // showing (rendered before this event arrives), apply it immediately; otherwise store it as
@@ -1547,20 +1501,17 @@ export const TranslationPane = () => {
     return () => markActiveSourceUnit(null);
   }, [selectedUnitId, sourcePath]);
 
-  // Prefetch romanizations for this unit's entities so autocomplete can match while typing.
+  // Prefetch mention manifest + romanizations for autocomplete while typing.
   useEffect(() => {
-    if (!alignmentUnit || !selectedUnitId) {
+    if (!alignmentUnit || !selectedUnitId || !sourcePath) {
       setEntityAcCandidates([]);
       setEntityAcSuggestions([]);
       setEntityAcAnchor(null);
       dateAcHitsRef.current = new Map();
+      mentionManifestRef.current = [];
       return;
     }
-    const hits = collectSourceUnitEntities(alignmentUnit, selectedUnitId);
 
-    // Dates aren't in the entity database, so there's nothing to fetch — just
-    // mechanically romanize the Chinese surface text as a typing aid. Nothing
-    // here is stored; it only lives in this in-memory candidate list.
     const dateHits = collectSourceUnitDates(alignmentUnit, selectedUnitId, selectedLanguage);
     const dateHitsById = new Map<string, SourceUnitDateHit>();
     const dateCandidates = dateHits.map((hit) => {
@@ -1572,16 +1523,50 @@ export const TranslationPane = () => {
 
     let cancelled = false;
     void (async () => {
-      const rows = await Promise.all(
-        hits.map(async (hit) => {
-          const entity = await fetchEntitySummary(hit.key);
-          return entity ? { entity, sourceSurface: hit.surface } : null;
+      const api = getDesktopApi();
+      if (!api?.readFile) return;
+      const sourceXml = await api.readFile(sourcePath);
+      const sourceUnit = serializeSourceUnit(sourceXml, alignmentUnit, selectedUnitId);
+      const manifest = collectMentionsFromSourceUnitXml(sourceUnit.xml ?? '');
+      mentionManifestRef.current = manifest;
+
+      const entityMap = new Map<string, EntitySummary>();
+      await Promise.all(
+        [...new Set(manifest.map((mention) => mention.key))].map(async (key) => {
+          const entity = await fetchEntitySummary(key);
+          if (entity) entityMap.set(key, entity);
         }),
       );
       if (cancelled) return;
-      const entityCandidates = rows
-        .filter((row): row is { entity: EntitySummary; sourceSurface: string } => Boolean(row))
-        .map(({ entity, sourceSurface }) => candidateFromEntity(entity, sourceSurface));
+
+      const resolved = resolveMentionsWithEntities(manifest, entityMap);
+      const settings = dateFormatSettingsForLang(selectedLanguage);
+      const cjk = isCharacterOnlyTranslationTarget(selectedLanguage);
+
+      const entityCandidates = resolved
+        .map((mention) => {
+          const entity = entityMap.get(mention.key);
+          if (!entity) return null;
+          const displaySpec = deriveDisplaySpec(mention.role, 1, settings.bracketsPolicy);
+          const parts = cjk
+            ? buildCjkMentionParts(mention, entity, 1, displaySpec, settings, selectedLanguage)
+            : buildWesternMentionParts(
+                mention,
+                entity,
+                1,
+                displaySpec,
+                settings,
+                selectedLanguage,
+              );
+          return candidateFromMention(
+            mention,
+            entity,
+            mentionPartsToPlainPreview(parts),
+            selectedLanguage,
+          );
+        })
+        .filter((row): row is EntityAutocompleteCandidate => Boolean(row));
+
       setEntityAcCandidates([...entityCandidates, ...dateCandidates]);
     })();
     return () => {
@@ -1825,11 +1810,7 @@ export const TranslationPane = () => {
         return { skipped: false, error: 'AI translation unavailable.' };
       }
 
-      setGenerating(true);
-      if (!silent) {
-        setAiStatus({ severity: 'info', message: t('LW.translationPane.generatingTranslation') });
-      }
-
+      setGeneratingUnitId(unitId);
       try {
         const sourceXml = await api.readFile(sourcePath);
         const sourceUnit = serializeSourceUnit(sourceXml, alignmentUnit, unitId);
@@ -1842,6 +1823,7 @@ export const TranslationPane = () => {
         // Same source of truth as dates: collect + blind from the serialized unit
         // XML the model will see. TinyMCE DOM collect can miss the active unit.
         const sourceEntityHits = collectEntitiesFromSourceUnitXml(sourceUnit.xml);
+        const mentionManifest = collectMentionsFromSourceUnitXml(sourceUnit.xml);
         const entityMap = new Map<string, EntitySummary>();
         await Promise.all(
           sourceEntityHits.map(async (hit) => {
@@ -1850,11 +1832,10 @@ export const TranslationPane = () => {
             if (entity) entityMap.set(hit.key, entity);
           }),
         );
-        // Never send display names to the model — it will expand {{entity:KEY}}
-        // into "Chen Xianda" from romanizedName instead of copying the placeholder.
-        const entitiesPayload = sourceEntityHits.map((hit) => ({
-          id: hit.key,
-          kind: hit.kind,
+        const resolvedManifest = resolveMentionsWithEntities(mentionManifest, entityMap);
+        const mentionsPayload = resolvedManifest.map((mention) => ({
+          index: mention.index,
+          kind: mention.kind,
         }));
 
         const sourceDateHits = collectDatesFromSourceUnitXml(
@@ -1875,13 +1856,14 @@ export const TranslationPane = () => {
         const noteHits = collectNotesFromSourceUnitXml(sourceUnit.xml);
         const sourceXmlNotesStripped = replaceNotesWithPlaceholdersInSourceXml(sourceUnit.xml);
 
-        const { xml: sourceUnitXmlForAi, opaques } = replaceEntitiesWithPlaceholdersInSourceXml(
+        const { xml: sourceUnitXmlForAi, opaques, mentions } = replaceEntitiesWithPlaceholdersInSourceXml(
           replaceDatesWithPlaceholdersInSourceXml(sourceXmlNotesStripped),
           knownEntityKeys,
         );
         const opaqueMap = new Map<number, OpaqueEntityHit>(opaques.map((hit) => [hit.index, hit]));
         console.info('[translation] AI blinded source unit', {
           entityKeys: knownEntityKeys.size,
+          mentionCount: mentions.length,
           opaqueCount: opaques.length,
           dates: datesPayload.length,
           notes: noteHits.length,
@@ -1909,7 +1891,7 @@ export const TranslationPane = () => {
             alignmentUnit,
             sourceUnitXml: sourceUnitXmlForAi,
             targetLanguage: translationMode.lang ?? '',
-            entities: entitiesPayload,
+            mentions: mentionsPayload,
             dates: datesPayload,
           },
           retryLimit,
@@ -1926,9 +1908,32 @@ export const TranslationPane = () => {
           return { skipped: false, error: message };
         }
 
+        const fileOccurrenceOffsetByKey = new Map<string, number>();
+        if (docRef.current && alignmentUnit && sourcePath) {
+          for (const key of knownEntityKeys) {
+            fileOccurrenceOffsetByKey.set(
+              key,
+              countPriorEntityRefsInDocument(
+                docRef.current,
+                alignmentUnit,
+                fileNameOf(sourcePath),
+                unitId,
+                key,
+              ),
+            );
+          }
+        }
+
         const cleanedXml = normalizeAiPlaceholders(applyMarkdownCleanupToFragment(validated.xml));
         const withOpaques = substituteOpaquePlaceholders(cleanedXml, opaqueMap);
-        const withEntities = substituteEntityPlaceholders(withOpaques, entityMap, selectedLanguage);
+        const withEntities = substituteMentionPlaceholders(withOpaques, resolvedManifest, entityMap, {
+          lang: selectedLanguage,
+          translationDoc: docRef.current,
+          alignmentUnit: alignmentUnit ?? undefined,
+          sourceFileName: sourcePath ? fileNameOf(sourcePath) : undefined,
+          unitId,
+          fileOccurrenceOffsetByKey,
+        });
         const withDates = substituteDatePlaceholders(withEntities, dateMap, selectedLanguage);
 
         // Translate each note independently, only after the main text succeeded.
@@ -1937,10 +1942,6 @@ export const TranslationPane = () => {
         const noteHtmlByIndex = new Map<number, string>();
         const noteWarnings: string[] = [];
         let nextOpaqueStart = opaques.length;
-
-        if (noteHits.length > 0 && !silent) {
-          setAiStatus({ severity: 'info', message: t('LW.translationPane.generatingTranslation') });
-        }
 
         for (const noteHit of noteHits) {
           if (!noteHit.innerXml.trim()) {
@@ -1963,7 +1964,7 @@ export const TranslationPane = () => {
               alignmentUnit: 'note',
               sourceUnitXml: noteXmlForAi,
               targetLanguage: translationMode.lang ?? '',
-              entities: entitiesPayload,
+              mentions: mentionsPayload,
               dates: datesPayload,
             },
             retryLimit,
@@ -1993,10 +1994,18 @@ export const TranslationPane = () => {
             applyMarkdownCleanupToFragment(noteValidated.xml),
           );
           const noteWithOpaques = substituteOpaquePlaceholders(noteCleaned, opaqueMap);
-          const noteWithEntities = substituteEntityPlaceholders(
+          const noteWithEntities = substituteMentionPlaceholders(
             noteWithOpaques,
+            resolvedManifest,
             entityMap,
-            selectedLanguage,
+            {
+              lang: selectedLanguage,
+              translationDoc: docRef.current,
+              alignmentUnit: alignmentUnit ?? undefined,
+              sourceFileName: sourcePath ? fileNameOf(sourcePath) : undefined,
+              unitId,
+              fileOccurrenceOffsetByKey,
+            },
           );
           const noteWithDates = substituteDatePlaceholders(
             noteWithEntities,
@@ -2018,6 +2027,9 @@ export const TranslationPane = () => {
         }
 
         if (!silent) {
+          if (aiStatusDismissTimeoutRef.current) {
+            clearTimeout(aiStatusDismissTimeoutRef.current);
+          }
           setAiStatus({
             severity: 'success',
             message:
@@ -2025,6 +2037,10 @@ export const TranslationPane = () => {
                 ? `${t('LW.translationPane.translationGenerated')} ${t('LW.translationPane.aiNotesPartial', { count: noteWarnings.length })}`
                 : t('LW.translationPane.translationGenerated'),
           });
+          aiStatusDismissTimeoutRef.current = setTimeout(() => {
+            setAiStatus(null);
+            aiStatusDismissTimeoutRef.current = null;
+          }, 5000);
         }
         return { skipped: false };
       } catch (error) {
@@ -2032,7 +2048,7 @@ export const TranslationPane = () => {
         if (!silent) setAiStatus({ severity: 'error', message });
         return { skipped: false, error: message };
       } finally {
-        setGenerating(false);
+        setGeneratingUnitId(null);
       }
     },
     [
@@ -2081,14 +2097,25 @@ export const TranslationPane = () => {
       finishAiRunProgress();
     }
 
+    if (aiStatusDismissTimeoutRef.current) {
+      clearTimeout(aiStatusDismissTimeoutRef.current);
+      aiStatusDismissTimeoutRef.current = null;
+    }
+    const severity = failed > 0 ? 'error' : 'success';
     setAiStatus({
-      severity: failed > 0 ? 'error' : 'success',
+      severity,
       message: t('LW.translationPane.translateDocumentDone', {
         count: translated,
         skipped,
         failed,
       }),
     });
+    if (severity === 'success') {
+      aiStatusDismissTimeoutRef.current = setTimeout(() => {
+        setAiStatus(null);
+        aiStatusDismissTimeoutRef.current = null;
+      }, 5000);
+    }
   }, [generateTranslation, generating, t, unitCards]);
 
   const refreshLanguageToolOverlays = useCallback((matches: LanguageToolMatchView[]) => {
@@ -2740,7 +2767,10 @@ export const TranslationPane = () => {
 
   const insertEntityMention = async (
     entityId: string,
-    options?: { replace?: { textNode: Text; start: number; end: number } },
+    options?: {
+      replace?: { textNode: Text; start: number; end: number };
+      mention?: MentionContext;
+    },
   ) => {
     const editable = editableRef.current;
     if (!editable) return;
@@ -2801,13 +2831,62 @@ export const TranslationPane = () => {
       const existingCount = Array.from(
         editable.querySelectorAll(`ref[type="${ENTITY_REF_TYPE}"]`),
       ).filter((node) => node.getAttribute('key') === entityId).length;
-      const field = createEntityFieldElement(
-        entity,
-        existingCount + 1,
-        EMPTY_DISPLAY_SPEC,
-        undefined,
-        selectedLanguage,
+
+      const settings = dateFormatSettingsForLang(selectedLanguage);
+      const priorInFile =
+        translationDoc && alignmentUnit && sourcePath && selectedUnitId
+          ? countPriorEntityRefsInDocument(
+              translationDoc,
+              alignmentUnit,
+              fileNameOf(sourcePath),
+              selectedUnitId,
+              entityId,
+            )
+          : 0;
+      const fileOccurrenceIndex = fileOccurrenceIndexForUnitInsert(
+        translationDoc,
+        alignmentUnit ?? 'p',
+        sourcePath ? fileNameOf(sourcePath) : '',
+        selectedUnitId ?? '',
+        entityId,
+        existingCount,
       );
+
+      let field: HTMLElement;
+      if (options?.mention) {
+        const mention = options.mention;
+        const displaySpec = deriveDisplaySpec(
+          mention.role,
+          fileOccurrenceIndex,
+          settings.bracketsPolicy,
+        );
+        const parts = isCharacterOnlyTranslationTarget(selectedLanguage)
+          ? buildCjkMentionParts(
+              mention,
+              entity,
+              fileOccurrenceIndex,
+              displaySpec,
+              settings,
+              selectedLanguage,
+            )
+          : buildWesternMentionParts(
+              mention,
+              entity,
+              fileOccurrenceIndex,
+              displaySpec,
+              settings,
+              selectedLanguage,
+            );
+        field = createMentionFieldElement(entity, mention, parts, displaySpec);
+      } else {
+        field = createEntityFieldElement(
+          entity,
+          existingCount + 1,
+          EMPTY_DISPLAY_SPEC,
+          undefined,
+          selectedLanguage,
+        );
+      }
       range.insertNode(field);
       const guard = document.createTextNode('\u200B');
       field.after(guard);
@@ -2818,7 +2897,13 @@ export const TranslationPane = () => {
       selection?.removeAllRanges();
       selection?.addRange(after);
 
-      recalculateEntityFieldsInRoot(editable, entity.id, entity, undefined, selectedLanguage);
+      recalculateEntityFieldsInRoot(editable, entity.id, entity, undefined, selectedLanguage, {
+        translationDoc,
+        alignmentUnit: alignmentUnit ?? undefined,
+        sourceFileName: sourcePath ? fileNameOf(sourcePath) : undefined,
+        unitId: selectedUnitId ?? undefined,
+      });
+      setCardsEpoch((epoch) => epoch + 1);
       prepareAtomicEntityFields(editable);
       rememberBodyRange();
       setEntityAcSuggestions([]);
@@ -2914,6 +2999,14 @@ export const TranslationPane = () => {
         start: suggestion.replaceStart,
         end: suggestion.replaceEnd,
       },
+      mention:
+        suggestion.candidate.mentionIndex != null
+          ? mentionManifestRef.current.find(
+              (row) =>
+                row.index === suggestion.candidate.mentionIndex &&
+                row.key === suggestion.candidate.id,
+            )
+          : undefined,
     });
   };
 
@@ -2926,7 +3019,7 @@ export const TranslationPane = () => {
     // its own content for keyboard nav) — insertEntityMention falls back to this saved
     // range once the live selection is gone, which happens as soon as the menu mounts.
     rememberBodyRange();
-    setSourceEntities(collectSourceUnitEntities(alignmentUnit, selectedUnitId));
+    setSourceMentions(mentionManifestRef.current);
     setEntityPickerQuery('');
     setEntityPickerResults([]);
     setEntityPickerSearching(false);
@@ -3470,21 +3563,24 @@ export const TranslationPane = () => {
           />
         </Box>
 
-        {sourceEntities.length > 0 ? (
+        {sourceMentions.length > 0 ? (
           <ListSubheader disableSticky sx={{ lineHeight: 2 }}>
             {t('LW.translationPane.entityPickerFromUnit')}
           </ListSubheader>
         ) : null}
-        {sourceEntities.map((hit) => (
+        {sourceMentions.map((mention) => (
           <MenuItem
-            key={`unit-${hit.key}`}
+            key={`unit-${mention.index}-${mention.key}`}
             onMouseDown={(event) => event.preventDefault()}
             onClick={() => {
               setEntityMenuAnchor(null);
-              void insertEntityMention(hit.key);
+              void insertEntityMention(mention.key, { mention });
             }}
           >
-            <ListItemText primary={hit.surface || hit.key} secondary={`${hit.kind} · ${hit.key}`} />
+            <ListItemText
+              primary={mention.surface || mention.key}
+              secondary={`${mention.role} · ${mention.kind} · ${mention.key}`}
+            />
           </MenuItem>
         ))}
 
@@ -3520,7 +3616,7 @@ export const TranslationPane = () => {
           </MenuItem>
         ))}
 
-        {sourceEntities.length === 0 && entityPickerQuery.trim().length === 0 && (
+        {sourceMentions.length === 0 && entityPickerQuery.trim().length === 0 && (
           <MenuItem disabled>{t('LW.translationPane.entityPickerTypeToSearch')}</MenuItem>
         )}
       </Menu>
@@ -3884,6 +3980,7 @@ export const TranslationPane = () => {
                 : []
             ).map((card) => {
               const isActive = card.unitId === selectedUnitId;
+              const isGeneratingCard = generatingUnitId === card.unitId;
               const unitBodySx = {
                 p: 1.5,
                 outline: 'none',
@@ -3984,16 +4081,17 @@ export const TranslationPane = () => {
                     else cardNodeRefs.current.delete(card.unitId);
                   }}
                   onClick={() => {
-                    if (!isActive) void navigateToUnit(card.unitId);
+                    if (!isActive && !isGeneratingCard) void navigateToUnit(card.unitId);
                   }}
                   sx={{
+                    position: 'relative',
                     borderBottom: 1,
                     borderColor: 'divider',
                     borderLeft: 3,
                     borderLeftColor: isActive ? 'error.main' : 'transparent',
                     bgcolor: isActive ? 'background.paper' : 'transparent',
-                    cursor: isActive ? 'text' : 'pointer',
-                    '&:hover': isActive ? undefined : { bgcolor: 'action.hover' },
+                    cursor: isActive ? (isGeneratingCard ? 'default' : 'text') : 'pointer',
+                    '&:hover': isActive || isGeneratingCard ? undefined : { bgcolor: 'action.hover' },
                   }}
                 >
                   {!isActive ? (
@@ -4016,9 +4114,10 @@ export const TranslationPane = () => {
                       <Box sx={{ position: 'relative', flex: '0 0 auto' }}>
                         <Box
                           ref={editableRef}
-                          contentEditable
+                          contentEditable={!isGeneratingCard}
+                          aria-busy={isGeneratingCard}
                           lang={spellcheckLang}
-                          spellCheck={spellcheckEnabled && !languageToolLive}
+                          spellCheck={spellcheckEnabled && !languageToolLive && !isGeneratingCard}
                           suppressContentEditableWarning
                           onBlur={() => {
                             void persist();
@@ -4115,6 +4214,9 @@ export const TranslationPane = () => {
                           sx={{
                             ...unitBodySx,
                             flex: '1 0 auto',
+                            ...(isGeneratingCard
+                              ? { pointerEvents: 'none', userSelect: 'none', color: 'text.disabled' }
+                              : {}),
                             '&:empty::before': {
                               content: `"${t('LW.translationPane.startTypingPlaceholder')}"`,
                               color: 'text.disabled',
@@ -4208,11 +4310,11 @@ export const TranslationPane = () => {
                                   {footnoteStartIndex + index + 1}.
                                 </Typography>
                                 <Box
-                                  contentEditable
+                                  contentEditable={!isGeneratingCard}
                                   data-leaf-footnote-editor={index}
                                   dangerouslySetInnerHTML={{ __html: text }}
                                   lang={spellcheckLang}
-                                  spellCheck={spellcheckEnabled && !languageToolLive}
+                                  spellCheck={spellcheckEnabled && !languageToolLive && !isGeneratingCard}
                                   onBlur={(event) => {
                                     rememberFootnoteRange(index, event.currentTarget);
                                     updateFootnote(index, event.currentTarget.innerHTML);
@@ -4265,6 +4367,9 @@ export const TranslationPane = () => {
                                     minHeight: 22,
                                     outline: 'none',
                                     py: 0.25,
+                                    ...(isGeneratingCard
+                                      ? { pointerEvents: 'none', userSelect: 'none', color: 'text.disabled' }
+                                      : {}),
                                     '&:empty::before': {
                                       content: `"${t('LW.translationPane.footnotePlaceholder')}"`,
                                       color: 'text.disabled',
@@ -4294,6 +4399,7 @@ export const TranslationPane = () => {
                                 <Tooltip title={t('LW.translationPane.removeFootnote')}>
                                   <IconButton
                                     aria-label={t('LW.translationPane.removeFootnote')}
+                                    disabled={isGeneratingCard}
                                     onClick={() => removeFootnote(index)}
                                     size="small"
                                     sx={{ flexShrink: 0, alignSelf: 'center' }}
@@ -4308,6 +4414,31 @@ export const TranslationPane = () => {
                       ) : null}
                     </>
                   )}
+                  {isGeneratingCard ? (
+                    <Box
+                      aria-live="polite"
+                      sx={{
+                        position: 'absolute',
+                        inset: 0,
+                        zIndex: 3,
+                        display: 'flex',
+                        flexDirection: 'column',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        gap: 1.5,
+                        bgcolor: (theme) =>
+                          theme.palette.mode === 'dark'
+                            ? 'rgba(0, 0, 0, 0.55)'
+                            : 'rgba(255, 255, 255, 0.82)',
+                        pointerEvents: 'all',
+                      }}
+                    >
+                      <CircularProgress size={32} />
+                      <Typography color="text.secondary" variant="body2">
+                        {t('LW.translationPane.generatingTranslation')}
+                      </Typography>
+                    </Box>
+                  ) : null}
                 </Box>
               );
             })}

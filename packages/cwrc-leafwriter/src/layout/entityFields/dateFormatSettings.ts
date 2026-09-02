@@ -5,7 +5,7 @@
  * made for another language.
  */
 
-const STORAGE_KEY = 'ljb.translationPolicy.dateFormat.v1';
+const STORAGE_KEY = 'ljb.translationPolicy.dateFormat.v2';
 
 export type YearNumbering = 'astronomical' | 'historical';
 export type EraDisplay = 'none' | 'bce_only' | 'always';
@@ -14,6 +14,11 @@ export type EraDisplay = 'none' | 'bce_only' | 'always';
 export type TitleConvention = 'romanization-first' | 'translation-first';
 
 export const DEFAULT_TITLE_CONVENTION: TitleConvention = 'romanization-first';
+
+/** When to show inferred family in brackets for partial kinship names. */
+export type BracketsPolicy = 'never' | 'first-mention-only' | 'always';
+
+export const DEFAULT_BRACKETS_POLICY: BracketsPolicy = 'first-mention-only';
 
 export interface DateFormatSettings {
   birthWord: string;
@@ -36,6 +41,14 @@ export interface DateFormatSettings {
    * Per-mention EntityDisplaySpec.titleConvention overrides when set.
    */
   titleConvention: TitleConvention;
+  /** Inferred family brackets for partial person names (Western + CJK). */
+  bracketsPolicy: BracketsPolicy;
+  /** CJK entity life-date typography (Western years). */
+  rangeSeparator?: string;
+  yearSuffix?: string;
+  bcePrefix?: string;
+  parenOpen?: string;
+  parenClose?: string;
 }
 
 export const ENGLISH_DEFAULTS: DateFormatSettings = {
@@ -50,6 +63,7 @@ export const ENGLISH_DEFAULTS: DateFormatSettings = {
   eraDisplay: 'none',
   yearNumbering: 'astronomical',
   titleConvention: DEFAULT_TITLE_CONVENTION,
+  bracketsPolicy: DEFAULT_BRACKETS_POLICY,
 };
 
 export const FRENCH_DEFAULTS: DateFormatSettings = {
@@ -64,6 +78,7 @@ export const FRENCH_DEFAULTS: DateFormatSettings = {
   eraDisplay: 'none',
   yearNumbering: 'astronomical',
   titleConvention: DEFAULT_TITLE_CONVENTION,
+  bracketsPolicy: DEFAULT_BRACKETS_POLICY,
 };
 
 export const GERMAN_DEFAULTS: DateFormatSettings = {
@@ -78,12 +93,48 @@ export const GERMAN_DEFAULTS: DateFormatSettings = {
   eraDisplay: 'none',
   yearNumbering: 'astronomical',
   titleConvention: DEFAULT_TITLE_CONVENTION,
+  bracketsPolicy: DEFAULT_BRACKETS_POLICY,
+};
+
+export const CHINESE_DEFAULTS: DateFormatSettings = {
+  birthWord: '生於',
+  deathWord: '卒於',
+  floruitWord: '活躍於',
+  activeWord: '活動於',
+  activeToWord: '活動至',
+  circaWord: '約',
+  ceLabel: '',
+  bceLabel: '',
+  eraDisplay: 'none',
+  yearNumbering: 'historical',
+  titleConvention: DEFAULT_TITLE_CONVENTION,
+  bracketsPolicy: DEFAULT_BRACKETS_POLICY,
+  rangeSeparator: '～',
+  yearSuffix: '年',
+  bcePrefix: '前',
+  parenOpen: '（',
+  parenClose: '）',
+};
+
+export const JAPANESE_DEFAULTS: DateFormatSettings = {
+  ...CHINESE_DEFAULTS,
+  birthWord: '生於',
+  deathWord: '没於',
+};
+
+export const KOREAN_DEFAULTS: DateFormatSettings = {
+  ...CHINESE_DEFAULTS,
+  birthWord: '생於',
+  deathWord: '卒於',
 };
 
 export const LANGUAGE_PRESETS = {
   en: ENGLISH_DEFAULTS,
   fr: FRENCH_DEFAULTS,
   de: GERMAN_DEFAULTS,
+  zh: CHINESE_DEFAULTS,
+  ja: JAPANESE_DEFAULTS,
+  ko: KOREAN_DEFAULTS,
 } as const;
 
 export type DateFormatLanguage = keyof typeof LANGUAGE_PRESETS;
@@ -121,6 +172,11 @@ const parseTitleConvention = (value: unknown): TitleConvention | undefined => {
   return undefined;
 };
 
+const parseBracketsPolicy = (value: unknown): BracketsPolicy | undefined => {
+  if (value === 'never' || value === 'first-mention-only' || value === 'always') return value;
+  return undefined;
+};
+
 const mergeLanguage = (
   preset: DateFormatSettings,
   stored: Partial<DateFormatSettings> | undefined,
@@ -128,40 +184,58 @@ const mergeLanguage = (
   ...preset,
   ...stored,
   titleConvention: parseTitleConvention(stored?.titleConvention) ?? preset.titleConvention,
+  bracketsPolicy: parseBracketsPolicy(stored?.bracketsPolicy) ?? preset.bracketsPolicy,
+});
+
+const defaultByLanguage = (): DateFormatSettingsByLanguage => ({
+  en: { ...ENGLISH_DEFAULTS },
+  fr: { ...FRENCH_DEFAULTS },
+  de: { ...GERMAN_DEFAULTS },
+  zh: { ...CHINESE_DEFAULTS },
+  ja: { ...JAPANESE_DEFAULTS },
+  ko: { ...KOREAN_DEFAULTS },
 });
 
 export const loadDateFormatState = (): StoredDateFormatState => {
   try {
     if (typeof window === 'undefined' || !window.localStorage) {
-      return {
-        byLanguage: {
-          en: { ...ENGLISH_DEFAULTS },
-          fr: { ...FRENCH_DEFAULTS },
-          de: { ...GERMAN_DEFAULTS },
-        },
-      };
+      return { byLanguage: defaultByLanguage() };
     }
     const raw = window.localStorage.getItem(STORAGE_KEY);
+    if (!raw) {
+      const legacy = window.localStorage.getItem('ljb.translationPolicy.dateFormat.v1');
+      if (legacy) {
+        const parsed = JSON.parse(legacy) as Partial<StoredDateFormatState>;
+        return {
+          byLanguage: {
+            en: mergeLanguage(ENGLISH_DEFAULTS, parsed.byLanguage?.en),
+            fr: mergeLanguage(FRENCH_DEFAULTS, parsed.byLanguage?.fr),
+            de: mergeLanguage(GERMAN_DEFAULTS, parsed.byLanguage?.de),
+            zh: { ...CHINESE_DEFAULTS },
+            ja: { ...JAPANESE_DEFAULTS },
+            ko: { ...KOREAN_DEFAULTS },
+          },
+        };
+      }
+    }
     if (raw) {
       const parsed = JSON.parse(raw) as Partial<StoredDateFormatState>;
+      const defaults = defaultByLanguage();
       return {
         byLanguage: {
           en: mergeLanguage(ENGLISH_DEFAULTS, parsed.byLanguage?.en),
           fr: mergeLanguage(FRENCH_DEFAULTS, parsed.byLanguage?.fr),
           de: mergeLanguage(GERMAN_DEFAULTS, parsed.byLanguage?.de),
+          zh: mergeLanguage(CHINESE_DEFAULTS, parsed.byLanguage?.zh),
+          ja: mergeLanguage(JAPANESE_DEFAULTS, parsed.byLanguage?.ja),
+          ko: mergeLanguage(KOREAN_DEFAULTS, parsed.byLanguage?.ko),
         },
       };
     }
   } catch {
     // Ignore malformed storage.
   }
-  return {
-    byLanguage: {
-      en: { ...ENGLISH_DEFAULTS },
-      fr: { ...FRENCH_DEFAULTS },
-      de: { ...GERMAN_DEFAULTS },
-    },
-  };
+  return { byLanguage: defaultByLanguage() };
 };
 
 export const saveDateFormatState = (state: StoredDateFormatState): void => {
@@ -173,11 +247,14 @@ export const saveDateFormatState = (state: StoredDateFormatState): void => {
   window.dispatchEvent(new CustomEvent('desktop:translation-policy-changed'));
 };
 
-/** Map a translation language code (e.g. fr-FR, de) to a date-format bucket. */
+/** Map a translation language code (e.g. fr-FR, de, zh-Hant) to a date-format bucket. */
 export const dateFormatLanguageForCode = (lang: string | null | undefined): DateFormatLanguage => {
   const code = (lang ?? '').trim().toLowerCase().split(/[-_]/)[0] ?? '';
   if (code === 'fr') return 'fr';
   if (code === 'de') return 'de';
+  if (code === 'zh' || code === 'lzh') return 'zh';
+  if (code === 'ja') return 'ja';
+  if (code === 'ko') return 'ko';
   return 'en';
 };
 
@@ -185,6 +262,11 @@ export const dateFormatSettingsForLang = (
   lang: string | null | undefined,
   state: StoredDateFormatState = loadDateFormatState(),
 ): DateFormatSettings => state.byLanguage[dateFormatLanguageForCode(lang)];
+
+export const bracketsPolicyForLang = (
+  lang: string | null | undefined,
+  state: StoredDateFormatState = loadDateFormatState(),
+): BracketsPolicy => dateFormatSettingsForLang(lang, state).bracketsPolicy;
 
 /** Language-bucket default for title order (overridable per mention). */
 export const titleConventionForLang = (

@@ -2,10 +2,15 @@ import type { AiApiSettings } from './projectPrefs';
 
 export type StructuredOutputMode = 'json_schema' | 'json_object' | 'prompt_only';
 
+export interface AiTranslationMentionRef {
+  index: number;
+  kind: string;
+}
+
+/** @deprecated Use {@link AiTranslationMentionRef}. */
 export interface AiTranslationEntityRef {
   id: string;
   kind: string;
-  /** @deprecated Not sent to the model — names leak into the translation. */
   primaryName?: string | null;
   romanizedName?: string | null;
   familyName?: string | null;
@@ -25,21 +30,22 @@ export interface AiTranslationPayload {
   alignmentUnit: string;
   sourceUnitXml: string;
   targetLanguage: string;
+  mentions?: AiTranslationMentionRef[];
+  /** @deprecated Prefer mentions. */
   entities?: AiTranslationEntityRef[];
   dates?: AiTranslationDateRef[];
-  /** Extra instruction when retrying after the model dropped placeholders. */
   retryInstruction?: string;
 }
 
 const TRANSLATION_SYSTEM_PROMPT =
   'You translate scholarly XML passages. Return JSON only with one string field named translationXml. Translate only the provided passage. ' +
   'Entity, date, and note spans have already been removed and replaced with placeholders you must copy exactly: ' +
-  '{{entity:KEY}} (person/place/work/…), {{holding:KEY}} (office the person currently holds), {{as:KEY}} (office they are appointed to, after 為), ' +
+  '{{mention:N}} (person/place/work/…), {{holding:N}} (office the person currently holds), {{as:N}} (office they are appointed to, after 為), ' +
   '{{date:N}}, {{note:N}} (a footnote, translated separately — never expand or describe it, just copy the placeholder), ' +
   'and sometimes {{opaque:N}} / {{holding:opaque:N}} / {{as:opaque:N}}. ' +
-  'Pattern 以{{holding:…}} {{entity:…}}為{{as:…}} means “appoint [holding-title + person] as [new office]” — never swap holding and as; never drop either. ' +
+  'Pattern 以{{holding:…}} {{mention:…}}為{{as:…}} means “appoint [holding-title + person] as [new office]” — never swap holding and as; never drop either. ' +
   'Chinese (or other) text that remains inside the source — including noble titles such as 貞陽公 or 江夏王 — should be translated normally. ' +
-  'The "entities" list gives only id + kind. It does NOT contain names — never invent a person name, place name, or office title for a placeholder. ' +
+  'The "mentions" list gives only index + kind. It does NOT contain names — never invent a person name, place name, or office title for a placeholder. ' +
   'The "dates" list gives only indices. ' +
   'Copy every placeholder through into your translation exactly as written, in the same position and relative order. ' +
   'Do not expand, paraphrase, transliterate, swap, or delete placeholders; do not put a vernacular name, office title (Governor of, Prefect of, General, King, …), or date next to a placeholder; never invent new placeholder keys or indices. ' +
@@ -120,7 +126,7 @@ export function buildTranslationRequestBody(
           alignmentUnit: request.alignmentUnit,
           customInstructions: settings.customInstructions,
           sourceUnitXml: request.sourceUnitXml,
-          entities: request.entities ?? [],
+          mentions: request.mentions ?? [],
           dates: request.dates ?? [],
           ...(request.retryInstruction ? { retryInstruction: request.retryInstruction } : {}),
         }),

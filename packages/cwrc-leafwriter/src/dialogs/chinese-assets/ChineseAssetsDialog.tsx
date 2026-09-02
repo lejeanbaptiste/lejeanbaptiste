@@ -21,6 +21,10 @@ const assetLabels: Record<MissingAssetType, { en: string; zh: string }> = {
   authorityPacks: { en: 'Authority packs', zh: '权威人物数据库' },
   mapTiles: { en: 'Map tiles', zh: '地图瓦片' },
   plugins: { en: 'Language plugins', zh: '语言插件' },
+  scriptNormalization: {
+    en: 'Script conversion (OpenCC — Hans & shinjitai)',
+    zh: '字形转换（OpenCC — 简繁与日文新字体）',
+  },
 };
 
 export const ChineseAssetsDialog = ({
